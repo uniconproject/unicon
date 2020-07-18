@@ -2,7 +2,7 @@ BASE=../..
 include $(BASE)/Makedefs.uni
 
 BINPROGS=ie uprof  umake 
-PROGS= idxGen uget splitmail $(BINPROGS)
+PROGS= idxGen uget splitmail csv genAcc heap_demo mapStrings rpn $(BINPROGS)
 
 all: $(PROGS)
 	$(CP) $(BINPROGS) ../../bin

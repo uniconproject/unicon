@@ -12,6 +12,8 @@
    
 package util
 
+import lang
+
 #<p>
 #  <[param M a matrix]>
 #  <[returns a copy of matrix <tt>M</tt>]>
@@ -116,7 +118,7 @@ procedure m_binop(M1, M1, op)
 
    R = m_constant(*M1, *M1[1])
    every (i := 1 to *M1, j := 1 to *M1[1]) do
-      R[i,j] := invoke(op,M1[i,j],M2[i,j])
+      R[i,j] := invokeFcn(op,M1[i,j],M2[i,j])
    return R
 end
 
@@ -155,7 +157,7 @@ procedure m_unaryop(M, op)
 
    R = m_constant(*M, *M[1])
    every (i := 1 to *M, j := 1 to *M[1]) do
-      R[i,j] := invoke(op, M[i,j])
+      R[i,j] := invokeFcn(op, M[i,j])
    return R
 end
 
@@ -187,7 +189,7 @@ procedure m_multiply(M1, M2, addident:0, addfcn, mulfcn)
    every (i := 1 to *R, j := 1 to *R[1]) do {
       R[i,j] := addident
       every k := 1 to *M2 do 
-         R[i,j] := invoke(addfcn, R[i,j], invoke(mulfcn, M1[i,k],M2[k,j]))
+         R[i,j] := invokeFcn(addfcn, R[i,j], invokeFcn(mulfcn, M1[i,k],M2[k,j]))
       }
    return R
 end
@@ -216,7 +218,7 @@ procedure m_lupDecomposition(M, subfcn, mulfcn, divfcn,
    every k := 1 to n do {
       p := 0
       every i := k to n do
-         if invoke(invertMetric, M[i,k]) > p then {
+         if invokeFcn(invertMetric, M[i,k]) > p then {
             p := abs(M[i,k])
             k2 := i
 	    }
@@ -225,9 +227,9 @@ procedure m_lupDecomposition(M, subfcn, mulfcn, divfcn,
       every i := 1 to n do
 	 M[k,i] :=: M[k2,i]
       every i := k+1 to n do {
-	 M[i,k] := invoke(divfcn, M[i,k], M[k,k]) | fail
+	 M[i,k] := invokeFcn(divfcn, M[i,k], M[k,k]) | fail
 	 every j := k+1 to n do
-	    M[i,j] := invoke(subfcn,M[i,j],invoke(mulfcn,M[i,k],M[k,j]))
+	    M[i,j] := invokeFcn(subfcn,M[i,j],invokeFcn(mulfcn,M[i,k],M[k,j]))
 	 }
       }
    L := m_constant(*M, *M[1], addident)
@@ -263,14 +265,14 @@ procedure m_lupSolve(L,U,p,b,addfun,subfun,mulfun,divfun,addident:0.0)
    every i := 1 to n do {
       s := addident
       every j := 1 to i-1 do
-	 s := invoke(addfun,s,invoke(mulfun,L[i,j],y[j]))
-      y[i] := invoke(subfun,b[p[i]],s)
+	 s := invokeFcn(addfun,s,invokeFcn(mulfun,L[i,j],y[j]))
+      y[i] := invokeFcn(subfun,b[p[i]],s)
       }
    every i := n to 1 by -1 do {
       s := addident
       every j := i+1 to n do
-	 s := invoke(addfun,s,invoke(mulfun,U[i,j],x[j]))
-      x[i] := invoke(divfun,invoke(subfun,y[i],s),U[i,i]) | fail
+	 s := invokeFcn(addfun,s,invokeFcn(mulfun,U[i,j],x[j]))
+      x[i] := invokeFcn(divfun,invokeFcn(subfun,y[i],s),U[i,i]) | fail
       }
    return x
 end

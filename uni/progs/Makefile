@@ -7,6 +7,9 @@ PROGS= idxGen uget splitmail csv genAcc heap_demo mapStrings rpn $(BINPROGS)
 all: $(PROGS)
 	$(CP) $(BINPROGS) ../../bin
 
+csv: csv.icn
+	$(UNICON) $(UFLAGS) csv
+
 ie: ie.icn
 	$(UNICON) $(UFLAGS) ie
 

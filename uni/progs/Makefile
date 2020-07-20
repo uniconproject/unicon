@@ -10,8 +10,20 @@ all: $(PROGS)
 csv: csv.icn
 	$(UNICON) $(UFLAGS) csv
 
+genAcc: genAcc.icn
+	$(UNICON) $(UFLAGS) genAcc
+
+heap_demo: heap_demo.icn
+	$(UNICON) $(UFLAGS) heap_demo
+
 ie: ie.icn
 	$(UNICON) $(UFLAGS) ie
+
+mapStrings: mapStrings.icn
+	$(UNICON) $(UFLAGS) mapStrings
+
+rpn: rpn.icn
+	$(UNICON) $(UFLAGS) rpn
 
 uprof: uprof.icn
 	$(UNICON) $(UFLAGS) uprof

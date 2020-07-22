@@ -278,7 +278,7 @@ struct errtab errtab[] = {
    117, "missing main procedure",
    118, "co-expression expected",
    119, "set expected",
-   120, "two csets or two sets expected",
+   120, "two csets, two sets, or two tables expected",
    121, "function not supported",
    122, "set or table expected",
    123, "invalid type",

@@ -179,6 +179,18 @@ procedure makeProc(A)
 end
 
 #<p>
+#  <b>Deprecated.</b>
+#  There is a potential conflict with the name of this procedure
+#   and the method invoke in the Object class.  For example,
+#   the assignment:   <tt>call := invoke</tt> seems to think that the
+#   <tt>Object().invoke</tt> method is what's wanted, resulting in an error.
+#  Consequently, you should use <tt>invokeFcn</tt> instead.
+#</p>
+procedure invoke(fcn, args[])
+   suspend invokeFcn(fcn, args)
+end
+
+#<p>
 # invokes its first argument with the parameters provided by the
 # remaining arguments, returning the result.  Supported types are:
 #<pre>
@@ -199,7 +211,7 @@ end
 # <[generates results of evaluating <tt>fcn</tt>, using <tt>args</tt>
 #    to fill in gaps in closure]>
 #</p>
-procedure invoke(fcn, args[])
+procedure invokeFcn(fcn, args[])
    local i
    /args := list()
    case type(fcn) of {
@@ -234,7 +246,7 @@ end
 #  parameters to indicate a spot where an argument can be
 #  mapped.  For example:
 #<pre>
-#     invoke([f,3,Arg,5],4,6,7)
+#     invokeFcn([f,3,Arg,5],4,6,7)
 #</pre>
 #  invokes f(3,4,5,6,7)
 #</p>

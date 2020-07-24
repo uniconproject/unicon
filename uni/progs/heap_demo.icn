@@ -11,7 +11,7 @@
 # <i>This file is in the public domain.</i>
 #</p>
 
-import lang
+import util,lang
 import collection
 
 #<p>
@@ -19,62 +19,62 @@ import collection
 #</p>
 class HeapDemo()
 
-   method showTriple(x)
-      return write("\t",x[1],", ",x[2],", ",x[3])
-   end
+    method showTriple(x)
+        return write("\t",x[1],", ",x[2],", ",x[3])
+    end
 
-   method processTriples(H)
-      write("Inserted:")
-      every showTriple(H.add([j := 1 to 5, ?0, j]))
-      writes("Top: ")
-      showTriple(H.top())
-      write("All generated:")
-      every showTriple(H.gen())
-      write("Get:")
-      while showTriple(H.get())
-      write("Size of heap: ", H.size())
-   end
+    method processTriples(H)
+        write("Inserted:")
+        every showTriple(H.add([j := 1 to 5, ?0, j]))
+        writes("Top: ")
+        showTriple(H.top())
+        write("All generated:")
+        every showTriple(H.gen())
+        write("Get:")
+        while showTriple(H.get())
+        write("Size of heap: ", H.size())
+    end
 
-   method processReals(H)
-      write("Inserted:")
-      every write("\t",(1 to 5, H.add(?0)))
-      write("Top: ", H.top())
-      write("All generated:")
-      every write("\t",H.gen())
-      write("Get:")
-      while write("\t",H.get())
-      write("Size of heap: ", H.size())
-   end
+    method processReals(H)
+        write("Inserted:")
+        every write("\t",(1 to 5, H.add(?0)))
+        write("Top: ", H.top())
+        write("All generated:")
+        every write("\t",H.gen())
+        write("Get:")
+        while write("\t",H.get())
+        write("Size of heap: ", H.size())
+    end
 
-   method header(msg)
-      write("==============")
-      write(msg)
-      write("==============")
-   end
+    method header(msg)
+        write("==============")
+        write(msg)
+        write("==============")
+    end
 
-initially # demonstration and test
-   header("Triplets, sorted by 2nd coordinate")
-   processTriples(Heap(, Closure("[]",Arg,2) ))
+    initially # demonstration and test
+        header("Triplets, sorted by 2nd coordinate")
+        processTriples(Heap(, Closure("[]",Arg,2) ))
 
-   header("Heap of reals, sorted by their own value")
-   processReals(Heap())
+        header("Heap of reals, sorted by their own value")
+        processReals(Heap())
 
-   header("Heap of reals, sorted by inverse order.")
-   processReals(Heap(, Closure("*",-1)))
+        header("Heap of reals, sorted by inverse order.")
+        processReals(Heap(, Closure("*",-1)))
+     
+        header("Heap of reals, sorted by reverse order.")
+        processReals(Heap(,,">"))
+     
+        header("Heap of reals, minimal are those closest to 1/2.")
+        processReals(Heap(, heap_demo2 ))
 
-   header("Heap of reals, sorted by reverse order.")
-   processReals(Heap(,,">"))
-
-   header("Heap of reals, minimal are those closest to 1/2.")
-   processReals(Heap(, heap_demo2 ))
-
-   header("Heap of reals, sorted by their own value, non-empty start")
-   processReals(Heap([0.2,0.3,0.1,0.5,0.4]))
+        header("Heap of reals, sorted by their own value, non-empty start")
+        processReals(Heap([0.2,0.3,0.1,0.5,0.4]))
 end
 
 #<p><i>Internal use only</i></p>
 procedure heap_demo2(x); return abs(x-0.5); end
 
 procedure main()
-   HeapDemo()
+    HeapDemo()
 end

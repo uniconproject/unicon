@@ -143,14 +143,16 @@ int write_to_stream(BIO* bio, char* buffer, ssize_t length) {
 /**
  * Connect to a host using an encrypted stream
  */
-BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
-		       Tpdisc_t* tpdisc){
+BIO* connect_encrypted(char* host, unsigned short port, char* store_path,
+		       char store_type, Tpdisc_t* tpdisc){
   
    Tpssldisc_t* ssldisc = (Tpssldisc_t*) tpdisc;
    SSL_CTX* ctx = NULL;
    SSL* ssl = NULL;
    BIO* bio = NULL;
    int r = 0;
+   char sport[8];
+
    /* Set up the SSL pointers */
    //   const SSL_METHOD* method = TLSv1_client_method();
    const SSL_METHOD* method = SSLv23_client_method();
@@ -186,13 +188,17 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    ssldisc->ssl = ssl;
    SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
-   //   SSL_set_tlsext_host_name(ssl, host);
+   snprintf(sport, 8, "%d", port);
+   sport[7] = 0;
 
-   if (BIO_set_conn_hostname(bio, host_and_port) <=0 )  {
-      /* Exception: Unable to set connection hostname . */
-      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
-      return NULL;     
-     }
+   BIO_set_conn_hostname(bio, host);
+   BIO_set_conn_port(bio, sport);
+
+   /*
+    * Add an sni field to the request which is required
+    * by some https servers
+    */
+   SSL_set_tlsext_host_name(ssl, host);
 
    /* Attempt to connect */
    if (BIO_do_connect(bio) <= 0) {
@@ -300,8 +306,6 @@ int sslconnect(PURI puri, Tpdisc_t* tpdisc)
 {
    char store_type;
    char store_path[1024];
-   char *host_and_port = malloc(strlen(puri->host) + 7);
-   sprintf(host_and_port, "%s:%d", puri->host, puri->port);
 
    if ((store_type = get_storepath(tpdisc, store_path)) == 0) return -1;
 
@@ -310,9 +314,8 @@ int sslconnect(PURI puri, Tpdisc_t* tpdisc)
       ssl_is_initialized++;
       }
    ((Tpssldisc_t*)tpdisc)->bio =
-      connect_encrypted(host_and_port, store_path, store_type,
+      connect_encrypted(puri->host, puri->port, store_path, store_type,
 			tpdisc);
-   free(host_and_port);
    if (((Tpssldisc_t*)tpdisc)->bio == NULL) return -1;
    return 1;
 }

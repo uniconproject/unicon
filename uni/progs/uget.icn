@@ -69,7 +69,7 @@ procedure main(args)
 	    showheaders(web)
 	
 	# if this is a redirect then follow it
-	if web["Status-Code"] = 301 & redirect > 0 then {
+	if web["Status-Code"] = (301 | 302) & redirect > 0 then {
 	    url := web["Location"]
 	    /opts["v"] | write(left("Redirect", 16), ": ", image(url))
 	    close(web)
@@ -98,14 +98,15 @@ procedure main(args)
 	    fout := open(fname, "w") | stop("open(",image(fname), ") error: ", &errortext)
 	}
 	
-	size := integer(web["Content-Length"])
-	/opts["v"] | write("file size: ", size, " bytes")
+	size := integer(web["Content-Length"]) | -1
 	t := &time
 	line := reads(web, size) | stop("reads(",image(web),") error: ", &errortext)
 	write(fout, line)
 	close(\fout)
-	/opts["v"] | write("time: ", &time-t)
-
+	if \opts["v"] then {
+           write("file size: ", *line, " bytes")
+           write("time: ", &time-t)
+           }
     }
     close(web)
 end

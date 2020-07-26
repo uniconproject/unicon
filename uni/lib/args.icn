@@ -1,5 +1,6 @@
 #<p>
-# Singleton class that provides convenient access to program arguments.
+# Singleton class that provides convenient access to program options
+#  and arguments.
 #</p>
 #<p>
 # <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
@@ -14,60 +15,97 @@ package util
 
 #<p>
 # The <tt>Args</tt> class accepts a list of strings corresponding
-#   to the program argument list and provides convenient and
-#   efficient handling of those arguments.  If arguments are duplicated,
-#   only the last is made available.
+#   to the program parameter list, separates <i>options</i> (parameters
+#   starting with 1 or more hyphens ["-"]) from <i>arguments</i> (parameters)
+#   that don't start with a hyphen) and provides convenient and efficient
+#   separate handling of those options and arguments.
+#   Options may have values as in <tt>--cmd=write</tt>.
+#   If an option is duplicated, the values (if any) are kept in order.
+#   Arguments are also kept in order.
 #</p>
-class Args : Object (argMap)
+class Args : Object (optionMap, argList)
 
-   #<p>
-   #  Produce the value of an argument.
-   #   <[param arg name of argument]>
-   #   <[param defValue default value to use if argument exists, but
-   #           has no value.  Defaults to <tt>&null</tt>]>
-   #   <[returns first value given to argument]>
-   #   <[fails if this argument doesn't exist]>
-   #</p>
-   method get(argName, defValue)
-      value := \argMap[argName] | fail
-      return value[1] | defValue
-   end
+    #<p>
+    #  Produce the value of an option.
+    #   <[param option name of option]>
+    #   <[param defValue default value to use if option exists, but
+    #           has no value.  Defaults to <tt>&null</tt>]>
+    #   <[returns first value given to option]>
+    #   <[fails if this option doesn't exist]>
+    #</p>
+    method getOpt(option, defValue)
+        value := \optionMap[option] | fail
+        return value[1] | defValue
+    end
 
-   #<p>
-   #  Produce the value of an argument.
-   #   <[param arg name of argument]>
-   #   <[param defValue default value to use if argument does not exist
-   #           Defaults to <tt>&null</tt>]>
-   #   <[returns first value given to argument]>
-   #</p>
-   method getDef(argName, defValue)
-      return (\(argMap[argName]))[1] | defValue
-   end
+    #<p>
+    #  Produce the value of an option.
+    #   <[param option name of option]>
+    #   <[param defValue default value to use if option does not exist
+    #           Defaults to <tt>&null</tt>]>
+    #   <[returns first value given to option]>
+    #</p>
+    method getOptDef(option, defValue)
+        return (\(optionMap[option]))[1] | defValue
+    end
 
-   #<p>
-   #  Produce the value of an argument.
-   #   <[param arg name of argument]>
-   #   <[param defValue default value to use if argument does not exist
-   #           Defaults to <tt>&null</tt>]>
-   #   <[returns all values given to argument]>
-   #</p>
-   method getDefs(argName)
-      return \(argMap[argName]) | defValue
-   end
+    #<p>
+    #  Produce the value[s] of an option.
+    #   <[param option name of option]>
+    #   <[param defValue default value to use if option does not exist
+    #           Defaults to <tt>&null</tt>]>
+    #   <[returns all values given to option as a list]>
+    #</p>
+    method getOptDefs(option, defValue)
+        return \(optionMap[option]) | [defValue]
+    end
 
-#<p>
-#   Accept a list of arguments and process for efficient handling
-#</p>
-initially (args) # List of arguments
-   argMap := table()
-   every arg := !args do {
-      arg ? {
-	 tab(many('-'))
-	 aName := tab(upto('=')|0)
-	 aValue := (="=", tab(0)) | &null
-	 /argMap[aName] := []
-	 put(argMap[aName], \aValue)
-	 }
-      }
-   Args := create |self
+    #<p>
+    #  Generate the value[s] of an option.
+    #   <[param option name of option]>
+    #   <[param defValue default value to use if option does not exist
+    #           Defaults to <tt>&null</tt>]>
+    #   <[generates all values given to option]>
+    #</p>
+    method genOptDefs(option, defValue)
+        local ol := optionMap[option]
+        if \ol then suspend !ol
+        else return defValue
+    end
+
+    #<p>
+    #  Produce the list of arguments (with options stripped out).
+    #  <[returns list of arguments]>
+    #</p>
+    method getArgs()
+        return argList
+    end
+
+    #<p>
+    #  Generate the arguments (with options stripped out).
+    #  <[generates arguments]>
+    #</p>
+    method genArgs()
+        suspend !argList
+    end
+
+    #<p>
+    #   Accept a list of arguments and process for efficient handling
+    #</p>
+    initially (params # List of parametes
+              )
+         optionMap := table()
+         argList := []
+         every param := !params do {
+             param ? {
+                   if tab(many('-')) then {
+                      oName := tab(upto('=')|0)
+                      oValue := (="=", tab(0)) | &null
+                      /optionMap[oName] := []
+                      put(optionMap[oName], \oValue)
+                      }
+                   else put(argList, param)
+                   }
+             }
+        Args := create |self
 end

@@ -25,6 +25,7 @@ package util
 #</p>
 class Args : Object (optionMap, argList)
 
+
     #<p>
     #  Produce the value of an option.
     #   <[param option name of option]>
@@ -58,6 +59,14 @@ class Args : Object (optionMap, argList)
     #</p>
     method getOptDefs(option, defValue)
         return \(optionMap[option]) | [defValue]
+    end
+
+    #<p>
+    #  Generate the names of all options.
+    #   <[generates the names of all the options in alphabetic order]>
+    #</p>
+    method genOptNames()
+        suspend (!sort(optionMap,1))[1]
     end
 
     #<p>
@@ -97,8 +106,9 @@ class Args : Object (optionMap, argList)
          optionMap := table()
          argList := []
          every param := !params do {
+             if doneWithOpts := ("--" == param) then next
              param ? {
-                   if tab(many('-')) then {
+                   if /doneWithOpts & tab(many('-')) then {
                       oName := tab(upto('=')|0)
                       oValue := (="=", tab(0)) | &null
                       /optionMap[oName] := []

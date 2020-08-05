@@ -80,8 +80,8 @@ case $host_os in
         ;;
      *cygwin* | *mingw* | *msys*)
         unicon_os="windows"
-	AC_DEFINE([Windows], [1], [Windows platform])	
-        ;;	
+	AC_DEFINE([Windows], [1], [Windows platform])
+        ;;
 esac
 
 unicon_host="$unicon_cpu"_"$unicon_os"
@@ -150,8 +150,8 @@ AC_ARG_ENABLE([devmode],
 	[AS_HELP_STRING([--enable-devmode], [Developper mode: turn on warnings and debugging options])],
 			[devmode=yes], [devmode=no])
 
-			
-# Save flags 
+
+# Save flags
 orig_cflags="${CFLAGS:-}"
 CFLAGS=""
 AC_LANG([C])
@@ -212,7 +212,7 @@ AC_CFLAG([-fno-strict-aliasing])
 
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
-  AC_CFLAG([-Wno-missing-braces]) 
+  AC_CFLAG([-Wno-missing-braces])
 #  AC_CFLAG([-Wmissing-prototypes])
 #  AC_CFLAG([-Wmissing-declarations])
 fi
@@ -257,7 +257,7 @@ case $ac_cv_sizeof_int_p in
      ;;
      *4)
      BITS=32
-     # RCFLAGS used on Windows only at the moment     
+     # RCFLAGS used on Windows only at the moment
      RCFLAGS="--target=pe-i386"
      ;;
      *8)
@@ -270,7 +270,7 @@ esac
 OBJ=o
 CFUNCTARGET="cfun"
 CFDYN="-fPIC -shared -O2 $OMIT"
-SO=so 
+SO=so
 # OS specific flags go here
 case $unicon_host in
      *linux*)
@@ -469,17 +469,17 @@ if test "x$graphics" = "xyes"; then
          echo "FTGL: missing or untrusted C++; CXX is $CXX and GXX is $GXX"
        fi
     else
-      AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])   
-    fi    
+      AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])
+    fi
 
     echo "Building with graphics..."
     GRAPHICS=graphics
-    
+
     if test "ms$unicon_os" != "mswindows" ; then
        XL="-L../../bin -lXpm \$(XLIBS)"
        XPM=xpm
     fi
-    
+
     if test "$cv_libftgl" = "yes"; then
         DRAWSTRING=drawstring3d.o
     	COMMONDRAWSTRING=../common/drawstring3d.o
@@ -501,16 +501,16 @@ if test "x$graphics" = "xyes"; then
      *windows*)
         ;;
     esac
-    
+
   else
     echo "Graphics library missing: building without graphics..."
   fi
-  
+
 else
   echo "Building without graphics..."
   graphics3d=no
   AC_DEFINE([NoGraphics], [1], [No Graphics])
-  AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])   
+  AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])
 fi
 
   AC_SUBST(XLIBS)
@@ -581,7 +581,7 @@ if test "x$database" = "xyes"; then
      CHECK_ODBC32()
    else
      CHECK_ODBC()
-   fi  
+   fi
 else
   AC_DEFINE([NoDatabase], [1], [No Database])
 fi
@@ -611,7 +611,7 @@ AC_SUBST(mandir)
     clibdir="$libdir"
     cdocdir="$docdir"
     cmandir="$mandir"
-    
+
 for I in 1 2 3 4 5 6 7 8 9 10; do
     eval cprefix="\"$cprefix\""
     eval cexec_prefix="\"$cexec_prefix\""
@@ -619,7 +619,7 @@ for I in 1 2 3 4 5 6 7 8 9 10; do
     eval clibdir="\"$clibdir\""
     eval cdocdir="\"$cdocdir\""
     eval cmandir="\"$cmandir\""
-	
+
 done
 
 
@@ -661,7 +661,7 @@ if test "x$graphics" = "xyes" ; then
 
   if test "x$cv_libjpeg" = "xyes" ; then gtmp="$gtmp +JPG " ; else gtmp="$gtmp -JPG " ; fi
 
-	
+
   if test "x$cv_libpng"  = "xyes" ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
 
   if test "x$cv_libXft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
@@ -707,7 +707,7 @@ if test "x$concurrency" = "xyes" ; then
     contmp=" + Concurrency        : +pthread"
   else
     contmp=" - Concurrency        : -pthread"
-  fi 
+  fi
 else
 #disbaled Concurrency
   contmp=" ! Concurrency"
@@ -739,7 +739,7 @@ if test "x$audio" = "xyes" ; then
   else
     atmp="$atmp -ogg "
   fi
-  
+
   if test "x$cv_libvorbis"    = "xyes" ; then
     atmp="$atmp +vorbis "
     if test "$onAudio" = 3 ; then onAudio=4 ; fi
@@ -887,11 +887,11 @@ else
 fi
 
 if test "x$ovld"      = "xyes" ; then
-  echo " + Overlodading"
+  echo " + Overloading"
 else
   echo " ! Overloading"
 fi
 
-echo "" 
+echo ""
 echo "do make to continue the build"
 echo "or make -j8 for parallel and faster build"

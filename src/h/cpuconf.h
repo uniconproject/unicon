@@ -13,7 +13,7 @@
  */
 
 /*
- * Most of the present implementations use 32-bit "words".  Note that
+ * Most of the present implementations use 64-bit "words".  Note that
  *  WordBits is the number of bits in an Icon integer, not necessarily
  *  the number of bits in an int (given by IntBits).  For example,
  *  in MS-DOS an Icon integer is a long, not an int.
@@ -35,7 +35,7 @@
       #define MaxLong  ((word)0x7fffffffffffffff) /* largest long integer */
    #endif
    
-   #define MaxStrLen 0777777777777777777777L	/* maximum string length */
+   #define MaxStrLen 037777777777777777777L	/* maximum string length */
    
    #ifndef MaxNegInt
       #define MaxNegInt "-9223372036854775808"
@@ -70,7 +70,7 @@
    
    #define MaxNegInt "-2147483648"
    
-   #define MaxStrLen 017777777777		/* maximum string length */
+   #define MaxStrLen 0777777777		/* maximum string length */
    
    #define F_Nqual	0x80000000	/* set if NOT string qualifier */
    #define F_Var	0x40000000	/* set if variable */

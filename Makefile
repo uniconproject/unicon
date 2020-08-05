@@ -4,6 +4,8 @@
 #  configuration parameters
 VERSION=13.1
 name=unspecified
+IPATH=
+LPATH=
 
 REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD )"
 REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
@@ -26,7 +28,7 @@ unicwd=`basename \`pwd\``
 
 
 default: allsrc
-	$(MAKE) -C ipl/lib 
+	$(MAKE) -C ipl/lib
 	$(MAKE) -C uni
 	$(MAKE) -C plugins
 	@echo ========== Build Summary ==========
@@ -47,14 +49,14 @@ Makedefs: Makedefs.in configure
 #	autoreconf -i
 
 config: configure
-	sh configure	
+	sh configure
 
 help:
 	@echo
 	@echo Unicon Build Instructions:
 	@echo
 	@echo Platform
-	@echo "  UNIX:" 
+	@echo "  UNIX:"
 	@echo "      Run \"./configure\""
 	@echo
 	@echo "  Windows:"
@@ -62,7 +64,7 @@ help:
 	@echo "      GCC : Run \"make NT-Configure-GCC\" or \"make W-Configure-GCC\"."
 	@echo "            For a fully-automated build Run \"make WUnicon\" ."
 	@echo "            Autoconf:"
-	@echo "            sh configure --build=i686-w64-mingw32 when building 32-bit" 
+	@echo "            sh configure --build=i686-w64-mingw32 when building 32-bit"
 	@echo "            sh configure --build=x86_64-w64-mingw32 when building 64-bit"
 	@echo ""
 	@echo "All: after configuration, run \"make (or nmake) Unicon\"."
@@ -166,7 +168,7 @@ NT-Configure-GCC:
 		@echo Then run "make Unicon" to build
 
 ##################################################################
-# 
+#
 # This is used utilize the ncurses-based tool to build Unicon
 # make build name=xxxx
 
@@ -332,7 +334,7 @@ distclean2: clean
 #Makefile: Makefile.in config.status
 #	cd $(top_srcdir) && $(SHELL) ./config.status
 
-#config.status: $(srcdir)/configure 
+#config.status: $(srcdir)/configure
 #	$(SHELL) ./config.status --recheck
 
 update_rev:

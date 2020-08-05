@@ -1,12 +1,16 @@
 ############################################################################
 #
-#	File:     getpaths.icn
+#       File:     getpaths.icn
 #
-#	Subject:  Procedure to generate elements in path
+#       Subject:  Procedure to generate elements in path
 #
-#	Author:   Richard L. Goerwitz
+#       Author:   Richard L. Goerwitz
 #
-#	Date:     August 14, 1996
+#       Date:     August 14, 1996
+#
+#       Modified: Bruce Rennie
+#
+#       Date:     July 16, 2020
 #
 ############################################################################
 #
@@ -14,15 +18,20 @@
 #
 ############################################################################
 #
-#	Version:  1.3
+#       Version:  1.4
 #
 ############################################################################
 #
 #      Suspends, in turn, the paths supplied as args to getpaths(),
-#  then all paths in the PATH environment variable.  A typical
+#  then all paths in the PATH environment variable. It will append
+#  the system defined path trailer character if required. A typical
 #  invocation might look like:
 #
 #     open(getpaths("/usr/local/lib/icon/procs") || filename)
+#
+#     or like
+#
+#     open(getpaths("/usr/local/lib/icon/procs/") || filename)
 #
 #  Note that getpaths() will be resumed in the above context until
 #  open succeeds in finding an existing, readable file.  Getpaths()
@@ -36,29 +45,48 @@
 
 procedure getpaths(base_paths[])
 
-    local paths, p
-    static sep, trailer, trimmer
+    local paths, p, tmp
+    static sep, trailer, trimmer, pathsep
     initial {
-	if find("UNIX", &features) then {
-	    sep := ":"
-	    trailer := "/"
-	    trimmer := cset(trailer || " ")
+        if find("UNIX", &features) then {
+            sep := ":"
+            trailer := "/"
+            trimmer := cset(trailer || " ")
         }
-	else if find("MS-DOS"|"MS Windows NT", &features) then {
-	    sep := ";"
-	    trailer := "\\"
-	    trimmer := cset(trailer || " ")
-	}
+        else if find("MS-DOS"|"MS Windows NT", &features) then {
+            sep := ";"
+            trailer := "\\"
+            trimmer := cset(trailer || " ")
+        }
         else stop("getpaths:  OS not supported.")
+        pathsep := '\\/'
     }
 
-    suspend !base_paths
-    paths := getenv("PATH")
+    #
+    # place sep between each of the user supplied paths in base_paths and use
+    # the same processing as for paths found in environment variable PATHS to
+    # to append trailer as needed to all paths returned by this procedure
+    #
+    # convert, if required, the user supplied path pathsep to that required by
+    # the current OS. Example change "\\" to "/" if required.
+    #
+    paths := ""
+    every paths ||:= !base_paths || sep
+    p := ""
+    paths ? {
+        every tmp := upto(pathsep) do {
+            p ||:= tab(tmp) || trailer
+            move(1)
+        }
+        p ||:= tab(0)
+    }
+    paths := p
+    paths ||:= getenv("PATH")
     \paths ? {
-	tab(match(sep))
-	while p := 1(tab(find(sep)), move(1))
-	do suspend ("" ~== trim(p,trimmer)) || trailer
-	return ("" ~== trim(tab(0),trimmer)) || trailer
+        tab(match(sep))
+        while p := 1(tab(find(sep)), move(1))
+        do suspend ("" ~== trim(p,trimmer)) || trailer
+        return ("" ~== trim(tab(0),trimmer)) || trailer
     }
 
 end

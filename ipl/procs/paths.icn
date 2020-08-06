@@ -8,6 +8,12 @@
 link getpaths
 
 #
+# required global variable for use with unicon compiler. For all other uses
+# will be &null
+#
+global iconc
+
+#
 # pathsep() returns the sentinel value that separates elements of the path.
 # extra care is needed (on non-Windows systems) when space appears in a
 # pathname, since space is the path separator for many shells.
@@ -67,13 +73,13 @@ local sep, prefix
       prefix := ulibprefix()
 
       pathstr := ulibpaths()
-      
+
       pathstr ||:=
          prefix || "/ipl/incl"  || sep ||
          prefix || "/ipl/gincl" || sep ||
          prefix || "/ipl/mincl" || sep
 
-      if \iconc then 
+      if \iconc then
          pathstr ||:=
             prefix || "/ipl/procs"  || sep ||
             prefix || "/ipl/gprocs" || sep ||
@@ -113,14 +119,14 @@ end
 
 procedure ipaths_get()
    static rslt
-   initial 
+   initial
       rslt := paths_get(ipaths())
    return rslt
 end
 
 procedure lpaths_get()
    static rslt
-   initial 
+   initial
       rslt := paths_get(lpaths())
    return rslt
 end

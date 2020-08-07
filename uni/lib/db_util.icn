@@ -8,6 +8,7 @@
 #  This file is in the <i>public domain</i>.
 #</p>
 
+package database
 import lang
 
 #<p>
@@ -20,160 +21,166 @@ import lang
 #</p>
 class DButils : Object ()
 
-   #
-   # General support methods
-   #
+    ###################################################
+    # General support methods
+    ###################################################
 
-   #<p>
-   # Escape single quotes and backslashes
-   # <[returns copy of <tt>s</tt> with quotes and backslashes escaped]>
-   #</p>
-   method escape(s:"")   # String to examine for single quotes and backslashes
-      local ns := ""
+    #<p>
+    # Escape single quotes and backslashes
+    # <[returns copy of <tt>s</tt> with quotes and backslashes escaped]>
+    #</p>
+    method escape(s:""   # String to examine for single quotes and backslashes
+                 )
+        local ns := ""
 
-      s ? {
-	 while ns ||:= tab(upto('\\\'')) || "\\" || move(1)
-	 ns ||:= tab(0)
-	 }
-      return ns
-   end
+        s ? {
+            while ns ||:= tab(upto('\\\'')) || "\\" || move(1)
+            ns ||:= tab(0)
+            }
+        return ns
+    end
 
-   #<p>
-   # <[returns a list of column names from the database record <tt>rec</tt>]>
-   #</p>
-   method getColNames(rec)  # Record produced by fetch method in Database class
-      return [: key(rec) :]
-   end
+    #<p>
+    # <[returns a list of column names from the database record <tt>rec</tt>]>
+    #</p>
+    method getColNames(rec  # Record produced by fetch method in Database class
+                      )
+        local cNames
 
-   #
-   # Support methods for building up WHERE clauses
-   #
+        every put(cNames := [], key(rec))
+        return cNames
+    end
 
-   #<p>
-   # Add a condition clause to a string of condition clauses
-   #    using conjunction.  If values is a structure (list or
-   #    record), then adds a series of clauses joined by
-   #    disjunction.
-   # <[param wc existing WHERE clause to add condition to]>
-   # <[param field name of field involved in condition test]>
-   # <[param test condition to check on field, eg: <tt>"="</tt>]>
-   # <[param values one or more values to test <tt>field</tt> against]>
-   # <[returns modifed WHERE clause with new conditions added, joined
-   #      by AND]>
-   #</p>
-   #<p>
-   # Example:
-   #<pre>
-   #    addCondition("", "id", "=", ["one","'two","three"])
-   #</pre>
-   # produces:
-   #<pre>
-   #    "((id='one') OR (id='two') OR (id='three'))"
-   #</pre>
-   #</p>
-   #<p>
-   # Example:
-   #<pre>
-   #    addCondition("(id='one')", "part_no", "=", "two")
-   #</pre>
-   # produces:
-   #<pre>
-   #    "(id='one') AND (part_no='two')"
-   #</pre>
-   #</p>
-   #<p>
-   # Also locates '*' (simple wildcards) in values and adjusts
-   #    test to 'like' provided test had been '='.
-   #</p>
-   #<p>
-   # Example:
-   #<pre>
-   #    addCondition("", "filename", "=", "sam*.icn")
-   #</pre>
-   # produces:
-   #<pre>
-   #    "(filename LIKE 'sam%.icn')"
-   #</pre>
-   #</p>
-   method addCondition(wc:"", field, test, values)
-      local nc
+    ###################################################
+    # Support methods for building up WHERE clauses
+    ###################################################
 
-      if nc  := mapToSQL(field, test, values) then {
-	 if "" ~== wc then wc ||:= " AND "
-	 wc ||:= "(" || nc || ")"
-	 return wc
-	 }
-   end
+    #<p>
+    # Add a condition clause to a string of condition clauses
+    #    using conjunction.  If values is a structure (list or
+    #    record), then adds a series of clauses joined by
+    #    disjunction.
+    # <[param wc existing WHERE clause to add condition to]>
+    # <[param field name of field involved in condition test]>
+    # <[param test condition to check on field, eg: <tt>"="</tt>]>
+    # <[param values one or more values to test <tt>field</tt> against]>
+    # <[returns modifed WHERE clause with new conditions added, joined
+    #      by AND]>
+    #</p>
+    #<p>
+    # Example:
+    #<pre>
+    #    addCondition("", "id", "=", ["one","'two","three"])
+    #</pre>
+    # produces:
+    #<pre>
+    #    "((id='one') OR (id='two') OR (id='three'))"
+    #</pre>
+    #</p>
+    #<p>
+    # Example:
+    #<pre>
+    #    addCondition("(id='one')", "part_no", "=", "two")
+    #</pre>
+    # produces:
+    #<pre>
+    #    "(id='one') AND (part_no='two')"
+    #</pre>
+    #</p>
+    #<p>
+    # Also locates '*' (simple wildcards) in values and adjusts
+    #    test to 'like' provided test had been '='.
+    #</p>
+    #<p>
+    # Example:
+    #<pre>
+    #    addCondition("", "filename", "=", "sam*.icn")
+    #</pre>
+    # produces:
+    #<pre>
+    #    "(filename LIKE 'sam%.icn')"
+    #</pre>
+    #</p>
+    method addCondition(wc:"", field, test, values)
+        local nc
 
-   #<p>
-   # Build a set of SQL tests joined by
-   #    disjunction.  If values is a string, it's a single test
-   #    otherwise, step through elements, building tests
-   #    joined with disjunction.
-   #  <[param field name of field involved in test]>
-   #  <[param test condition to test, eg: <tt>"="</tt>]>
-   #  <[param values one or more values to test <tt>field</tt> against]>
-   #  <[returns SQL WHERE clause with conditions joined by disjunction]>
-   #</p>
-   #<p><i>Internal use only.</i></p>
-   method mapToSQL(field, test, values)
-      local nc := ""
+        /wc := ""
+        if nc  := mapToSQL(field, test, values) then {
+            if "" ~== wc then wc ||:= " AND "
+            wc ||:= "(" || nc || ")"
+            return wc
+            }
+    end
 
-      if (string|numeric)(values) then {
-	 nc := mapSQLExpr(field, test, values)
-	 }
-      else {
-	 nc := "(" || mapSQLExpr(field, test, values[1]) || ")"
-	 every val := values[2 to *values] do {
-	    nc ||:= " OR (" || mapSQLExpr(field, test, val) || ")"
-	    }
-	 }
-      return nc
-   end
+    #<p>
+    # Build a set of SQL tests joined by
+    #    disjunction.  If values is a string, it's a single test
+    #    otherwise, step through elements, building tests
+    #    joined with disjunction.
+    #  <[param field name of field involved in test]>
+    #  <[param test condition to test, eg: <tt>"="</tt>]>
+    #  <[param values one or more values to test <tt>field</tt> against]>
+    #  <[returns SQL WHERE clause with conditions joined by disjunction]>
+    #</p>
+    #<p><i>Internal use only.</i></p>
+    method mapToSQL(field, test, values)
+        local nc := ""
 
-   #<p>
-   # Look for wildcards in value and if found,
-   #   modify expression into SQL wildcard syntax
-   #   <[param field name of field involved in test]>
-   #   <[param op test to perform, eg: <tt>"="</tt>.  This may get
-   #           changed to equivalent SQL wild-card operation.]>
-   #   <[param value used to test fields]>
-   #   <[returns SQL WHERE clause for wild-card comparisions]>
-   #</p>
-   #<p><i>Internal use only.</i></p>
-   method mapSQLExpr(field, op, value)
-      if type(value) == "string" then {
-	 if (op == ("="|"~~")) & upto('*', value) then {
-	    op    := "LIKE"
-	    value := map(value, "*", "%")
-	    }
-	 else if (op == "~~*") & upto('*', value) then {
-	    op    := "ILIKE"
-	    value := map(value, "*", "%")
-	    }
-	 value := "'" || escape(value) || "'"
-	 }
-      return field || " " || op || " " || value
-   end
+        if (string|numeric)(values) then {
+            nc := mapSQLExpr(field, test, values)
+            }
+        else {
+            nc := "(" || mapSQLExpr(field, test, values[1]) || ")"
+            every val := values[2 to *values] do {
+                nc ||:= " OR (" || mapSQLExpr(field, test, val) || ")"
+                }
+            }
+        return nc
+    end
 
-   #
-   # Support methods for building up column descriptions for CREATE TABLE
-   #
+    #<p>
+    # Look for wildcards in value and if found,
+    #   modify expression into SQL wildcard syntax
+    #   <[param field name of field involved in test]>
+    #   <[param op test to perform, eg: <tt>"="</tt>.  This may get
+    #           changed to equivalent SQL wild-card operation.]>
+    #   <[param value used to test fields]>
+    #   <[returns SQL WHERE clause for wild-card comparisions]>
+    #</p>
+    #<p><i>Internal use only.</i></p>
+    method mapSQLExpr(field, op, value)
+        if type(value) == "string" then {
+            if (op == ("="|"~~")) & upto('*', value) then {
+                op    := "LIKE"
+                value := map(value, "*", "%")
+                }
+            else if (op == "~~*") & upto('*', value) then {
+                op    := "ILIKE"
+                value := map(value, "*", "%")
+                }
+            value := "'" || escape(value) || "'"
+            }
+        return field || " " || op || " " || value
+    end
 
-   #<p>
-   # Add a column description to a list (string) of column descriptions
-   # Can be used to help simplify calls to <tt>CREATE TABLE</tt>
-   # <[param cd string of existing column descriptions]>
-   # <[param colName name of column]>
-   # <[param colType type of column]>
-   # <[param colConstraints any constraints placed on column type]>
-   # <[returns modified column descriptions string]>
-   #</p>
-   method addColDesc(cd:"", colName, colType, colConstraints)
-      if *cd > 0 then cd ||:= ", "
-      return cd || colName || " " || colType || " " || colConstraints
-   end
+    ######################################################################
+    # Support methods for building up column descriptions for CREATE TABLE
+    ######################################################################
 
-initially   # forces this into a singleton class
-   DButils := create |self
+    #<p>
+    # Add a column description to a list (string) of column descriptions
+    # Can be used to help simplify calls to <tt>CREATE TABLE</tt>
+    # <[param cd string of existing column descriptions]>
+    # <[param colName name of column]>
+    # <[param colType type of column]>
+    # <[param colConstraints any constraints placed on column type]>
+    # <[returns modified column descriptions string]>
+    #</p>
+    method addColDesc(cd:"", colName, colType, colConstraints)
+        if *cd > 0 then cd ||:= ", "
+        return cd || colName || " " || colType || " " || colConstraints
+    end
+
+    initially   # forces this into a singleton class
+        DButils := create |self
 end

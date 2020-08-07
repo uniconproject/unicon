@@ -1,0 +1,576 @@
+#<p>
+#  A (ivib-originated) GUI for accessing an addressbook.
+#</p>
+#<p>
+#   The top half of the GUI provides an area for displaying
+#   <i>views</i> into the addressbook.  The initial view
+#   is all addresses.  The view can be changed by entering
+#   search criteria into the bottom half of the GUI, which
+#   functions both as an address book search tool and as
+#   an address display and edit tool.
+#</p>
+#<p>
+#   Selecting an address in the top half displays details
+#   of that address in the display/edit tool.
+#</p>
+#<p>
+#   To produce a view of all addresses an any time, just clear
+#   the search/display/edit tool and perform a search.
+#</p>
+#<p>
+#   Searches are caseless and position independent.  Any combination
+#   of address fields (with the exception of the address itself
+#   and the <i>miscellaneous-info</i> field on the right side
+#   of the search/display/edit tool) may be used in a search.
+#</p>
+#<p>
+# <i>The <tt>getLogin()</tt> procedure probably doesn't work under Windows.</i>
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package  guiwidgets
+import addressbook
+import gui
+$include "guih.icn"
+
+#<p>
+#  Obtain the database login information.  Start by looking for
+#    the file $HOME/.abook_key.  If found, then the first line
+#    of that file is assumed to be: USERNAME:PASSWORD
+#</p>
+#<p>
+#  If that file doesn't exist, prompt the user.
+#</p>
+procedure getLogin()
+    local f, home
+
+    if f := open(getenv("HOME")||"/.abook_key") then {
+        read(f) ? {
+	     user := tab(upto(':'))
+	     move(1)
+	     pw := tab(upto(':')|0)
+	     }
+	close(f)
+	}
+    else {
+        f := LoginDialog()
+        f.show_modal()
+        user := f.getUser()
+        pw   := f.getPW()
+        }
+end
+
+class AddressGui : Dialog(newAddress,helpButton,quitButton,addrListArea,miscTextArea,nameField,addrField,emailField,phoneField,cbFamily,cbFriend,cbWork,cbBusiness,cbOther,nameLabel,addrLabel,emailLabel,phoneLabel,catLabel,saveButton,clearButton,editPanel,chngFlag,searchButton,deleteButton,addressBookDB,addrTable,loadedFlag,companyField,companyLabel)
+
+
+   #<p>
+   #  Process an event in the address list area.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_addrListArea(ev)
+       if ev.get_type() = SELECTION_CHANGED_EVENT then {        # get selection
+           lab := (addrListArea.object_get_selections())[1]
+           putAddr(addrTable[lab])
+           }
+   end
+
+   #<p>
+   #  Process an event in the misc. text area.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_miscTextArea(ev)
+       if ev.get_type() = SELECTION_CHANGED_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the name field.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_nameField(ev)
+       if ev.get_type() = SELECTION_CHANGED_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the address field.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_addrField(ev)
+       if ev.get_type() = SELECTION_CHANGED_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the email field.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_emailField(ev)
+       if ev.get_type() = SELECTION_CHANGED_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the phone field.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_phoneField(ev)
+       if ev.get_type() = SELECTION_CHANGED_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the company field.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_companyField(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the Family choice.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_cbFamily(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the Friend choice.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_cbFriend(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the Work choice.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_cbWork(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the Business choice.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_cbBusiness(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then
+           changed()
+   end
+
+   #<p>
+   #  Process an event in the Other choice.
+   #  <i>Used internally.</i>
+   #  <[param ev event]>
+   #</p>
+   method handle_cbOther(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then
+           changed()
+   end
+
+   method init_dialog()
+   end
+
+   method end_dialog()
+   end
+
+   #<p>
+   #   Handle a click on the New Address button by clearing the entry fields.
+   #   <i>Used internally.</i>
+   #   <[param ev event generated by New Address button (<i>ignored</i>.)]>
+   #</p>
+   method handle_newAddress(ev)
+       clearEditPanel()
+   end
+
+   #<p>
+   #   Handle a click on the Quit button by stopping.
+   #   <i>Used internally.</i>
+   #   <[param ev event generated by Quit button (<i>ignored</i>.)]>
+   #</p>
+   method handle_quitButton(ev)
+       stop()
+   end
+
+   #<p>
+   #   Handle a click on the Help button by displaying help dialog.
+   #   <i>Used internally.</i>
+   #   <[param ev event generated by Help button (<i>ignored</i>.)]>
+   #</p>
+   method handle_helpButton(ev)
+       showHelp()
+   end
+
+   #<p>
+   #   Handle a click on the Save button by saving the entry fields.
+   #   <i>Used internally.</i>
+   #   <[param ev event generated by Clear button]>
+   #</p>
+   method handle_saveButton(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then {
+           unchanged()
+           changedFlag := &null
+           addr := getAddr()
+           addressBookDB.storeAddress(addr)
+           reloadView()
+           clearButton.clear_is_shaded()
+           }
+   end
+
+   #<p>
+   #   Handle a click on the Clear button by clearing the entry fields.
+   #   <i>Used internally.</i>
+   #   <[param ev event generated by Clear button]>
+   #</p>
+   method handle_clearButton(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then {
+           unchanged()
+           clearEditPanel()
+           }
+   end
+
+   #<p>
+   #   Clear the edit panel fields.
+   #   <i>Used internally.</i>
+   #</p>
+   method clearEditPanel()
+       nameField.set_contents("")
+       addrField.set_contents([])
+       emailField.set_contents("")
+       phoneField.set_contents("")
+       companyField.set_contents("")
+       miscTextArea.set_contents([])
+       setCategories(set([]))
+       loadedFlag := &null
+       deleteButton.set_is_shaded()
+   end
+
+   #<p>
+   #   Handle a click on the Search button.
+   #   <i>Used internally.</i>
+   #   <[param ev event generated by Search button]>
+   #</p>
+   method handle_searchButton(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then {
+           setView(performSearch(getAddr()))
+           unchanged()
+           deleteButton.set_is_shaded()
+           }
+   end
+
+   #<p>
+   #   Do a search using the information in an address.
+   #   <[param rec Address to use as search criteria]>
+   #   <[returns all addresses matching search criteria]>
+   #</p>
+   method performSearch(rec)
+       return addressBookDB.performSearch(rec)
+   end
+
+   #<p>
+   #   Handle a click on the Delete button.
+   #   <i>Used internally.</i>
+   #   <[param ev event generated by Delete button]>
+   #</p>
+   method handle_deleteButton(ev)
+       if ev.get_type() = BUTTON_RELEASE_EVENT then {
+           rec := getAddr()
+           a := rec.toIRecord()
+           if *trim(a.name,' \t') > 0 then {
+               d := YesNoDialog("Really delete address?")
+               d.setFont("sans,14")
+               d.show_modal()
+               if d.isYes() then {
+                   addressBookDB.remove(rec)
+                   unchanged()
+                   clearEditPanel()
+                   reloadView()
+                   }
+               }
+           }
+   end
+
+   #<p>
+   #  Initialize the GUI layout.
+   #  <i>Used internally.</i>
+   #</p>
+   method setup()
+      local menu_bar_1, fileMenu, helpMenu, border_1, miscBorder
+      self.set_attribs("size=921,636", "bg=pale gray")
+      menu_bar_1                 := Gui().mkMenuBar(0,0)
+      fileMenu                   := Gui().mkMenu("File")
+      fileMenu.add(newAddress    := Gui().mkMenuItem("New Address"))
+      newAddress.connect(self,"handle_newAddress",BUTTON_RELEASE_EVENT)
+      fileMenu.add(quitButton    := Gui().mkMenuItem("Quit"))
+      quitButton.connect(self,"handle_quitButton",DIALOG_CLOSE_EVENT)
+      menu_bar_1.add(fileMenu)
+      helpMenu                   := Gui().mkMenu("Help")
+      helpMenu.add(helpButton    := Gui().mkMenuItem("Quick help"))
+      helpButton.connect(self,"handle_helpButton",BUTTON_RELEASE_EVENT)
+      menu_bar_1.add(helpMenu)
+      self.add(menu_bar_1)
+      border_1                   := Gui().mkBorder(            22, 32, 884,319)
+      border_1.add(addrListArea  := Gui().mkAreaSingle([""],   10, 10, 865,298))
+      addrListArea.connect(self,"handle_addrListArea",SELECTION_CHANGED_EVENT)
+      self.add(border_1)
+      editPanel                  := Gui().mkBorder(            24,358, 882,223)
+      editPanel.add(nameLabel    := Gui().mkLabel("Name:",     15, 11))
+      editPanel.add(addrLabel    := Gui().mkLabel("Address",   15, 34))
+      editPanel.add(emailLabel   := Gui().mkLabel("Email:",    15,107))
+      editPanel.add(phoneLabel   := Gui().mkLabel("Phone(s):", 15,133))
+      editPanel.add(catLabel     := Gui().mkLabel("Category",  15,199))
+      miscBorder                 := Gui().mkBorder(           472, 11, 398,170)
+      miscBorder.add(miscTextArea:= Gui().mkEditArea([""],     10,  9, 381,155))
+      miscTextArea.connect(self,"handle_miscTextArea",CONTENT_CHANGED_EVENT)
+      editPanel.add(miscBorder)
+      editPanel.add(nameField    := Gui().mkField("",          70, 13, 400,20))
+      nameField.connect(self,"handle_nameField",CONTENT_CHANGED_EVENT)
+      editPanel.add(emailField   := Gui().mkField("",          70,107, 400,20))
+      emailField.connect(self,"handle_emailField",CONTENT_CHANGED_EVENT)
+      editPanel.add(phoneField   := Gui().mkField("",          70,133, 400,20))
+      phoneField.connect(self,"handle_phoneField",CONTENT_CHANGED_EVENT)
+      editPanel.add(cbFamily     := Gui().mkCheckBox("Family", 88,199))
+      cbFamily.connect(self,"handle_cbFamily",BUTTON_RELEASE_EVENT)
+      editPanel.add(cbFriend     := Gui().mkCheckBox("Friend",177,199))
+      cbFriend.connect(self,"handle_cbFriend",BUTTON_RELEASE_EVENT)
+      editPanel.add(cbWork       := Gui().mkCheckBox("Work",  264,199))
+      cbWork.connect(self,"handle_cbWork",BUTTON_RELEASE_EVENT)
+      editPanel.add(cbBusiness   := Gui().mkCheckBox("Business",352,199))
+      cbBusiness.connect(self,"handle_cbBusiness",BUTTON_RELEASE_EVENT)
+      editPanel.add(cbOther      := Gui().mkCheckBox("Other", 450,199))
+      cbOther.connect(self,"handle_cbOther",BUTTON_RELEASE_EVENT)
+      editPanel.add(addrField    := Gui().mkEditArea([""],     70, 40, 400,61))
+      addrField.connect(self,"handle_addrField",CONTENT_CHANGED_EVENT)
+      editPanel.add(companyLabel := Gui().mkLabel("Keywords:", 15,163))
+      editPanel.add(companyField := Gui().mkField("",          70,160, 400,20))
+      companyField.connect(self,"handle_companyField",CONTENT_CHANGED_EVENT)
+      self.add(editPanel)
+      self.add(saveButton        := Gui().mkButton("Save Address",31,593))
+      saveButton.connect(self,"handle_saveButton",BUTTON_RELEASE_EVENT)
+      saveButton.set_is_shaded()
+      self.add(clearButton       := Gui().mkButton("Clear",   134,593))
+      clearButton.set_is_shaded()
+      clearButton.connect(self,"handle_clearButton",BUTTON_RELEASE_EVENT)
+      self.add(searchButton      := Gui().mkButton("Do search",364,593))
+      searchButton.connect(self,"handle_searchButton",BUTTON_RELEASE_EVENT)
+      self.add(deleteButton      := Gui().mkButton("Delete",  848,593))
+      deleteButton.connect(self,"handle_deleteButton",BUTTON_RELEASE_EVENT)
+      self.connect(self,"handle_quitButton",CLOSE_BUTTON_EVENT)
+   end
+
+   #<p>
+   #  Setup the GUI and load an initial view of all addresses.
+   #  <i>Used internally.</i>
+   #</p>
+   method component_setup()
+      self.setup()
+      loadView()                # default to all lines
+   end
+
+   #<p>
+   #   Respond to a change in any edit field.
+   #  <i>Used internally.</i>
+   #</p>
+   method changed()
+       saveButton.clear_is_shaded()
+       clearButton.clear_is_shaded()
+       deleteButton.clear_is_shaded()
+       loadedFlag := "yes"
+       chngFlag := "yes"
+   end
+
+   #<p>
+   #   Ignore all changes.
+   #  <i>Used internally.</i>
+   #</p>
+   method unchanged()
+       chngFlag := &null
+       saveButton.set_is_shaded()
+       clearButton.set_is_shaded()
+   end
+
+   #<p>
+   #   Respond to loading in a new address.
+   #  <i>Used internally.</i>
+   #</p>
+   method loaded()
+       loadedFlag := "yes"
+       deleteButton.clear_is_shaded()
+       clearButton.clear_is_shaded()
+   end
+
+   #<p>
+   #  Get the current address as specified by the edit fields.
+   #  <[returns an address]>
+   #</p>
+   method getAddr()
+       rec := address()
+       rec.name := nameField.get_contents()
+       rec.address := addrField.get_contents()
+       rec.email := emailField.get_contents()
+       rec.phone := phoneField.get_contents()
+       rec.company := companyField.get_contents()
+       rec.misc  := miscTextArea.get_contents()
+       rec.category := getCategories()
+       return Address().fromIRecord(rec)
+   end
+
+   #<p>
+   #   Get the currently selected categories.
+   #   <i>Used internally.</i>
+   #   <[returns a set of the currently selected categories]>
+   #</p>
+   method getCategories()
+       cs := set([])
+       if cbFamily.is_checked()   then insert(cs, "Family")
+       if cbFriend.is_checked()   then insert(cs, "Friend")
+       if cbWork.is_checked()     then insert(cs, "Work")
+       if cbBusiness.is_checked() then insert(cs, "Business")
+       if cbOther.is_checked()    then insert(cs, "Other")
+       return cs
+   end
+
+   #<p>
+   #   Fill in the edit fields from an address record.
+   #   <[param rec address record used to fill in edit fields]>
+   #</p>
+   method putAddr(rec)
+       a := rec.toIRecord()
+       nameField.set_contents(a.name)
+       addrField.set_contents(a.address)
+       emailField.set_contents(a.email)
+       phoneField.set_contents(a.phone)
+       companyField.set_contents(a.company)
+       miscTextArea.set_contents(a.misc)
+       setCategories(a.category)
+       loaded()
+   end
+
+   #<p>
+   #   Mark the category fields based on categories in a category set.
+   #   <i>Used internally.</i>
+   #   <[param cs set of categories]>
+   #</p>
+   method setCategories(cs)
+       if member(cs, "Family")   then cbFamily.set_is_checked()
+                                 else cbFamily.clear_is_checked()
+       if member(cs, "Friend")   then cbFriend.set_is_checked()
+                                 else cbFriend.clear_is_checked()
+       if member(cs, "Work")     then cbWork.set_is_checked()
+                                 else cbWork.clear_is_checked()
+       if member(cs, "Business") then cbBusiness.set_is_checked()
+                                 else cbBusiness.clear_is_checked()
+       if member(cs, "Other")    then cbOther.set_is_checked()
+                                 else cbOther.clear_is_checked()
+   end
+
+   #<p>
+   #  Given search criteria and an ordering, load the address list display.
+   #  <[param criteria SQL criteria (for loading into a WHERE clause)]>
+   #  <[param field to order list on (defaults to <tt>"name"</tt>]>
+   #</p>
+   method loadView(criteria, order)
+       setView(addressBookDB.loadView(criteria,order))
+   end
+
+   #<p>
+   #  Given a list of addresses, displays that list.
+   #   <i>Used internally.</i>
+   #  <[param aView list of addresses to display]>
+   #</p>
+   method setView(aView)
+       addrTable := table()
+       addrList := []
+       every rec := aView.gen() do {
+           lab := makeLabel(rec.toIRecord())
+           put(addrList, lab)
+           addrTable[lab] := rec
+           }
+       addrList := sort(addrList)
+       addrListArea.set_contents(addrList)
+   end
+
+   #<p>
+   #  Reload the current address list display.
+   #</p>
+   method reloadView()
+       setView(addressBookDB.reload())
+   end
+
+   #<p>
+   #  Display a help message in a dialog.
+   #</p>
+   method showHelp()
+       local m
+       static helpMesg := [
+          "Addressbook Search, Display, and Edit",
+          "",
+          "The GUI is divided into two parts.  The upper portion displays",
+          "a list of addresses.  While the initial display shows all known",
+          "addresses, performing an addressbook search results in a display",
+          "of addresses that meet the search criteria.",
+          "",
+          "Selecting an address from the list causes a detailed description",
+          "of the information associated with that address to be displayed",
+          "in the bottom half.",
+          "",
+          "The bottom half of the display serves three purposes:",
+          "",
+          "1.   it displays detailed information about any address selected",
+          "     from the display list,",
+          "",
+          "2.   it allows changes to be made to that addresses information",
+          "     (addresses are stored by name, so if you change the name,",
+          "     you get a new address).  You can also delete and address or",
+          "     create a new address by first Clearing the edit area.",
+          "",
+          "3.   finally, you can search for addresses by entering the",
+          "     search criteria into the appropriate fields and clicking",
+          "     on 'Search'.  The results are displayed in the display list.",
+          "     [The Address and Comments (right side of display) fields are",
+          "     not currently used in searches.]"
+          ]
+
+       m := MessageBox(helpMesg)
+       m.show_modeless(self)
+       
+   end
+
+   #<p>
+   # Construct a label suitable for display in the address list from an
+   #   address.
+   #   <[param rec address to display]>
+   #</p>
+   method makeLabel(rec)
+       return left(rec.name,30)||" "||left(rec.email,30)||
+              left(rec.phone,50)||" "||rec.company
+   end
+
+   initially (aBookDB    # AddressDB database
+             )
+      self.Dialog.initially()
+      chngFlag := &null
+      addressBookDB := aBookDB
+end

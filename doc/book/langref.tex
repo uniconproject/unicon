@@ -5106,8 +5106,8 @@ terminal symbol with the name enclosed in {\em guillemets}, for example
         -- iv5/","[T] -!- ivx,
     pr0 -- pr1/"procedure declaration"[NT] -- prx,
     cl0 -- cl1/"class declaration"[NT] -- clx,
-    rc0 -- rc1/record[T] --  rc2/"("[T] --/-- rc3/"\guillemets{name}"[T]
-        -- rc4/","[T] -!- rc5 -- rc6/")"[T] -- rcx,
+    rc0 -- rc1/record[T] --  rc2/"\guillemets{name}"[T] -- rc3/"("[T] --/-- rc4/"\guillemets{name}"[T]
+        -- rc5/","[T] -!- rc6 -- rc7/")"[T] -- rcx,
     pk0 -- pk1/"0:1"[GATE] -- pk2/package[T]
         -- pk3/"\guillemets{name} or \guillemets{file name}"[T] -- pkx,
     im0 -- im1/import[T] -- im2/"\guillemets{name}"[T] -- im3/","[T] -!- imx,
@@ -5119,8 +5119,8 @@ terminal symbol with the name enclosed in {\em guillemets}, for example
   gl2.east --[uxd=0] glx; gl3.east --[d-xu=0] gl2.west;
   lk2.east --[uxd=0] lkx; lk3.east --[d-xu=0] lk2.west;
   iv4.east --[uxd=0] ivx; iv5.east --[d-xu=0] iv2.west;
-  rc2.east --[uxd=0] rc5; % yes, a null record is allowed.
-  rc3.east --[uxd=0] rc5; rc4.east --[d-xu=0] rc3.west;
+  rc3.east --[uxd=0] rc6; % yes, a null record is allowed.
+  rc4.east --[uxd=0] rc6; rc5.east --[d-xu=0] rc4.west;
   im2.east --[uxd=0] imx; im3.east --[d-xu=0] im2.west;
   \foreach \in / \out in
            {lk0/lkx, iva0/ivax, iv0/ivx, pr0/prx, cl0/clx, rc0/rcx, pk0/pkx, im0/imx}
@@ -5163,10 +5163,11 @@ meaning the path is compulsory and must appear exactly once.
   draw=black,very thick,shape=coordinate,
   graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
 ]
-\graph [ grow right sep=8mm,simple, branch down={3*\rad}]{
+\graph [ grow right sep=6mm,simple, branch down={3*\rad}]{
   "proc header"[NT],
   / --[In] entry -!-
   {
+    ph0/"\guillemets{name}"[T] --
     ph2/"("[T] -- / -- ph3/parameter[NT] -- ph4/","[T] -- /
     -- ph5/"\guillemets{name}"[T] -- ph6/"["[T] -- ph7/"]"[T] -- ph8/")"[T]
   }
@@ -5175,7 +5176,7 @@ meaning the path is compulsory and must appear exactly once.
   ph2.east --[uxd=0] ph8.west; ph3.east --[uxd=0] ph8.west;
   ph2.east --[dxu=\rad] ph5.west;
   ph4.east --[d-xu=0] ph3.west;
-  entry -- ph2.west;
+  entry -- ph0.west;
 };
 \end{tikzpicture}
 
@@ -5199,6 +5200,7 @@ meaning the path is compulsory and must appear exactly once.
 };
 \end{tikzpicture}
 
+\vspace{0.5cm}
 \noindent
 \begin{tikzpicture}% ----- Procedure body
 [
@@ -5209,22 +5211,43 @@ meaning the path is compulsory and must appear exactly once.
   "proc body"[NT],
   / --[In] / -- entry -!-
   {
-    {pb1/local[T],pb2/static[T]} -!-/-- pb3/"\guillemets{name}"[T] -- pb4/","[T]
-    -!-/-!- pb5/";"[T] -- pb6/initial[T] -- pb7/expr[NT] -- /
+    pb1 -- pb2/"var(s) declaration"[NT]
+    -!- pb5/";"[T] --/-- pb6/initial[T] -- pb7/expr[NT] -- /
     -- pb8/";"[T] -- pb9/expr[NT] --/-- pbx,
   }
   -- exit --[Out] /;
   %
-  entry -- pb1.west; pb1.east -- pb3.west;
-  entry --[dx] pb2.west; pb2.east --[ux]pb3.west;
-  pb4.east --[u-xd=0] pb3.west;
-  entry --[dxu=4*\rad] exit;
-  pb3.east --[dxu=4*\rad] pb5.west;
-  pb3.east --[dxu=4*\rad] pb8.west;
-  pb5.east --[u-xd=0.5*\rad] entry;
+  entry -- pb2.west; pb2.east -- pb5.west;
+  entry --[dxu=0] exit;
+  entry --[dxu=0] pb6.west;
+  pb5.east --[u-xd=0] entry;
   pb7.east --[uxd=0.5*\rad] exit;
   pb8.east --[u-xd=0] pb8.west;
   pb9.east --[u-xd=0] pb8.west;
+};
+\end{tikzpicture}
+
+\vspace{0.5cm}
+\noindent
+\begin{tikzpicture}% ----- Variable(s) declaration
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=7mm,simple, branch down={4*\rad}]{
+  "var(s) declaration"[NT],
+  / --[In] / -- entry -!-
+  {
+    {[branch down=3*\rad]{vd1/local[T],vd2/static[T]}}
+    -!-/-!-/-!-/-!-/-!- vd3/"\guillemets{name}"[T] --/-- vd4/":="[T]
+    -- vd5/"expr"[NT] -- / -- vd6/","[T]
+  }
+  --/--/-- exit --[Out] /;
+  %
+  entry -- vd1.west; vd1.east -- vd3.west;
+  entry --[dx] vd2.west; vd2.east --[ux]vd3.west;
+  vd6.east --[u-xd=0] vd3.west;
+  vd3.east --[dxu=0] vd6.west;
 };
 \end{tikzpicture}
 

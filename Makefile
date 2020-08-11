@@ -310,7 +310,7 @@ install Install:
 #	docs and man
 	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 ..."
 	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1/
-	@$(INST) -m 644 README $(DESTDIR)$(docdir)/unicon
+	@$(INST) -m 644 README.md $(DESTDIR)$(docdir)/unicon
 	@echo "Installing $(DESTDIR)$(docdir)/unicon ..."
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 

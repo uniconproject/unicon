@@ -8,13 +8,17 @@
 #
 #	Date:	  March 3, 1996
 #
+#	Modified: Bruce Rennie
+#
+#	Date:     August 7, 2020
+#
 ############################################################################
 #
 #   This file is in the public domain.
 #
 ############################################################################
 #
-#	Version:  1.11
+#	Version:  1.12
 #
 ############################################################################
 #
@@ -45,6 +49,8 @@
 #  also that &keywords should be implemented on the syntactic level -
 #  not on the lexical one.  As a result, a keyword like &features will
 #  be suspended as TOK("CONJUNC", "&") and TOK("IDENT", "features").
+#
+#  Updates to this file are to bring it to the current Unicon 13 Language
 #
 ############################################################################
 #
@@ -154,6 +160,7 @@ procedure expand_fake_beginner(next_token)
 	insert(exptbl, "NOTEQUIV",[TOK("TILDE", "~"), TOK("NUMEQ","="),
 				   TOK("NUMEQ", "="), TOK("NUMEQ", "=")])
 	insert(exptbl, "NUMNE",   [TOK("TILDE", "~"), TOK("NUMEQ","=")])
+	insert(exptbl, "PMATCH",  [TOK("QMARK", "?"), TOK("QMARK", "?")])
 	insert(exptbl, "UNION",   [TOK("PLUS", "+"),  TOK("PLUS", "+")])
     }
 
@@ -183,6 +190,11 @@ end
 #     stream, thus preserving the line structure of the original
 #     file, and making later diagnostic messages more usable.
 #
+#     Changes to this procedure include adding all addition reserved
+#     words that have entered the Unicon language, adding each of the
+#     additional operators that relate to message passing and pattern
+#     mathcing.
+#
 procedure iparse_tokens(stream, getchar)
 
     local elem, whitespace, token, last_token, primitives, reserveds
@@ -202,10 +214,13 @@ procedure iparse_tokens(stream, getchar)
 	# Reserved Words
 	#
 	reserveds  := [
+		       ["abstract",        "ABSTRACT",  ""  ],
 		       ["break",           "BREAK",     "be"],
 		       ["by",              "BY",        ""  ],
 		       ["case",            "CASE",      "b" ],
+		       ["class",           "CLASS",     ""  ],
 		       ["create",          "CREATE",    "b" ],
+		       ["critical",        "CRITICAL",  "b" ],
 		       ["default",         "DEFAULT",   "b" ],
 		       ["do",              "DO",        ""  ],
                        ["else",            "ELSE",      ""  ],
@@ -214,13 +229,17 @@ procedure iparse_tokens(stream, getchar)
 		       ["fail",            "FAIL",      "be"],
 		       ["global",          "GLOBAL",    ""  ],
 		       ["if",              "IF",        "b" ],
+		       ["import",          "IMPORT",    "b" ],
 		       ["initial",         "INITIAL",   "b" ],
+		       ["initially",       "INITIALLY", "be"],
 		       ["invocable",       "INVOCABLE", ""  ],
 		       ["link",            "LINK",      ""  ],
 		       ["local",           "LOCAL",     "b" ],
+		       ["method",          "METHOD",    ""  ],
 		       ["next",            "NEXT",      "be"],
 		       ["not",             "NOT",       "b" ],
 		       ["of",              "OF",        ""  ],
+		       ["package",         "PACKAGE",   ""  ],
 		       ["procedure",       "PROCEDURE", ""  ],
 		       ["record",          "RECORD",    ""  ],
 		       ["repeat",          "REPEAT",    "b" ],
@@ -228,6 +247,7 @@ procedure iparse_tokens(stream, getchar)
 		       ["static",          "STATIC",    "b" ],
 		       ["suspend",         "SUSPEND",   "be"],
 		       ["then",            "THEN",      ""  ],
+		       ["thread",          "THREAD",    "b" ],
 		       ["to",              "TO",        ""  ],
 		       ["until",           "UNTIL",     "b" ],
 		       ["while",           "WHILE",     "b" ]]
@@ -256,17 +276,23 @@ procedure iparse_tokens(stream, getchar)
 		       ["\\",              "BACKSLASH", "b" ],
 		       ["!",               "BANG",      "b" ],
 		       ["|",               "BAR",       "b" ],
+		       ["@<<",             "BLKRECM",   "be"],
+		       ["@>>",             "BLKSENDM",  "be"],
 		       ["^",               "CARET",     "b" ],
 		       ["^:=",             "CARETASGN", "b" ],
 		       [":",               "COLON",     ""  ],
+		       ["::",              "COLONCOLON","b" ],
 		       [",",               "COMMA",     ""  ],
+		       ["->",              "CONDASGN",  ""  ],
 		       ["||",              "CONCAT",    "b" ],
                        ["||:=",            "CONCATASGN",""  ],
 		       ["&",               "CONJUNC",   "b" ],
+		       [".>",              "CURASGN",   "b"  ],
 		       [".",               "DOT",       "b" ],
 		       ["--",              "DIFF",      "b" ],
 		       ["--:=",            "DIFFASGN",  ""  ],
 		       ["===",             "EQUIV",     "b" ],
+		       ["=>",              "IMMASGN",  ""  ],
 		       ["**",              "INTER",     "b" ],
 		       ["**:=",            "INTERASGN", ""  ],
 		       ["{",               "LBRACE",    "b" ],
@@ -279,6 +305,7 @@ procedure iparse_tokens(stream, getchar)
 		       ["<<=",             "LEXLE",     ""  ],
 		       ["<<",              "LEXLT",     ""  ],
 		       ["~==",             "LEXNE",     "b" ],
+		       ["[:",              "LLISTCOMP", "b" ],
 		       ["(",               "LPAREN",    "b" ],
 		       ["-:",              "MCOLON",    ""  ],
 		       ["-",               "MINUS",     "b" ],
@@ -292,17 +319,22 @@ procedure iparse_tokens(stream, getchar)
 		       ["<=",              "NUMLE",     ""  ],
 		       ["<",               "NUMLT",     ""  ],
 		       ["~=",              "NUMNE",     "b" ],
+		       [".|",              "PATTALT",   ""  ],
 		       ["+:",              "PCOLON",    ""  ],
 		       ["+",               "PLUS",      "b" ],
 		       ["+:=",             "PLUSASGN",  ""  ],
+		       ["??",              "PMATCH",    "b" ],
 		       ["?",               "QMARK",     "b" ],
 		       ["<-",              "REVASSIGN", ""  ],
 		       ["<->",             "REVSWAP",   ""  ],
 		       ["}",               "RBRACE",    "e" ],
 		       ["]",               "RBRACK",    "e" ],
+		       ["@<",              "RECM",      "be"],
+		       [":]",              "RLISTCOMP", "e" ],
 		       [")",               "RPAREN",    "e" ],
-		       [";",               "SEMICOL",   ""  ],
 		       ["?:=",             "SCANASGN",  ""  ],
+		       [";",               "SEMICOL",   ""  ],
+		       ["@>",              "SENDM",     "be"],
 		       ["/",               "SLASH",     "b" ],
 		       ["/:=",             "SLASHASGN", ""  ],
 		       ["*",               "STAR",      "b" ],
@@ -346,19 +378,6 @@ procedure iparse_tokens(stream, getchar)
     repeat {
 	case next_c of {
 
-	    "."      : {
-		# Could be a real literal *or* a dot operator.  Check
-		# following character to see if it's a digit.  If so,
-		# it's a real literal.  We can only get away with
-		# doing the dot here because it is not a substring of
-		# any longer identifier.  If this gets changed, we'll
-		# have to move this code into do_operator().
-		#
-		last_token := do_dot(getchar)
-		suspend last_token
-#		write(&errout, "next_c == ", image(next_c))
-		next
-	    }
 
 	    "\n"     : {
 		# If do_newline fails, it means we're at the end of
@@ -428,7 +447,7 @@ procedure iparse_tokens(stream, getchar)
 		    suspend last_token
 		    next
 		}
-#		write(&errout, "it's an operator")
+#		write(&errout, "it's an operator or a real number")
 		last_token := do_operator(getchar, operators)
 		suspend last_token
 		next
@@ -490,7 +509,7 @@ procedure do_dot(getchar)
     #
 #    write(&errout, "dot -> just a plain dot")
     return TOK("DOT", ".")
-    
+
 end
 
 
@@ -578,7 +597,7 @@ end
 
 #
 #  do_number_sign:  coexpression -> &null
-#                   getchar      -> 
+#                   getchar      ->
 #
 #      Where getchar is the coexpression that pops characters off the
 #      main input stream.  Sets the global variable next_c.  This
@@ -734,7 +753,7 @@ procedure do_digits(getchar)
     }
     tok_record.str := ("" ~== token) | "0"
     return tok_record
-    
+
 end
 
 
@@ -746,7 +765,7 @@ end
 #      the input stream.  Do_whitespace just repeats until it finds a
 #      non-whitespace character, whitespace being defined as
 #      membership of a given character in the whitespace argument (a
-#      cset). 
+#      cset).
 #
 procedure do_whitespace(getchar, whitespace)
 
@@ -780,7 +799,7 @@ procedure do_identifier(getchar, reserved_tbl)
     while any(&letters ++ &digits ++ '_', next_c := @getchar)
     do token ||:= next_c
     return TOK(\reserved_tbl[token], token) | TOK("IDENT", token)
-    
+
 end
 
 
@@ -798,13 +817,32 @@ end
 #
 procedure do_operator(getchar, operators)
 
-    local token, elem
+    local token, elem, dot_found
 
     token := next_c
 
+    if token == "." then  {
+	# Could be a real literal *or* a dot based operator.  Check
+	# following character to see if it's a digit.  If so,
+	# it's a real literal.
+	#
+	last_token := do_dot(getchar)
+	if last_token.sym == "REALLIT" then {
+	    return last_token
+#	    write(&errout, "next_c == ", image(next_c))
+	}
+	#
+	dot_found := 1
+    }
     # Go until recognop fails.
-    while elem := recognop(operators, token, 1) do
-	token ||:= (next_c := @getchar)
+    while elem := recognop(operators, token, 1) do {
+	if \dot_found then {
+	    dot_found := &null
+	    token ||:= next_c
+	} else {
+	    token ||:= (next_c := @getchar)
+	}
+    }
 #   write(&errout, ximage(elem))
     if *\elem = 1 then
 	return TOK(elem[1][2], elem[1][1])
@@ -866,9 +904,9 @@ procedure recognop(l, s, i)
 	    #
 	    if current_state.tbl === 0 then
 		fail
-	    
+
 #	    write(&errout, "c = ", image(c))
-#	    write(&errout, "table for current state = ", 
+#	    write(&errout, "table for current state = ",
 #		  ximage(current_state.tbl))
 
 	    # If we get to here, the current state has arcs leading
@@ -904,16 +942,16 @@ procedure create_arcs(master_list, field, current_state, POS)
 
     current_state.tbl := table()
     old_first_char := ""
-    
+
     every elem := master_list[i := current_state.b to current_state.e][field]
     do {
-	
+
 	# Get the first character for the current position (note that
 	# we're one character behind the calling routine; hence
 	# POS-1).
 	#
 	first_char := elem[POS-1] | next
-	
+
 	# If we have a new first character, create a new arc out of
 	# the current state.
 	#

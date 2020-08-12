@@ -58,7 +58,8 @@ class Dialog : Component(
    tooltip_x,
    tooltip_y,
    tooltip_w,
-   tooltip_h
+   tooltip_h,
+   abs_pos_flag		# set if set_pos() has been called
    )
 
    method invoke_validate()
@@ -120,10 +121,10 @@ class Dialog : Component(
    end
 
    method compute_absolutes()
-      self.x := 0
-      self.y := 0
-      self.w := WAttrib(self.win, "width")
-      self.h := WAttrib(self.win, "height")
+      /self.x := 0
+      /self.y := 0
+      self.w := WAttrib(\self.win, "width")
+      self.h := WAttrib(\self.win, "height")
    end
 
    #
@@ -345,6 +346,7 @@ class Dialog : Component(
       self.init()
       self.is_open := 1
       self.resize()
+      move_dialog()
       self.firstly()
       self.validate()
       self.tooltip_init()
@@ -922,6 +924,64 @@ $endif
          "pos" | "size" : set_attribs(as_attrib(attr, val))
          default: self.Component.set_one(attr, val)
       }
+   end
+
+   #<p>
+   #  Compute a default current position that is centered on the
+   #  parent window, if any.  <i>This is intended for internal use only!</i>
+   #</p>
+   method compute_position()
+      local win,pp,px,py,pw,ph,dx,dy
+      win := parent.win		# just to save some typing later...
+      if \self.abs_pos_flag then {   # compute position relative to screen
+         pw := WAttrib(win,"displaywidth")
+         ph := WAttrib(win,"displayheight")
+         self.x := parse_pos(pw, self.x_spec) |
+            fatal("invalid x position specification: "||image(self.x_spec))
+         self.y := parse_pos(ph, self.y_spec) |
+            fatal("invalid y position specification: "||image(self.y_spec))
+         }
+      else {			# compute position relative to parent window
+         pp := WAttrib(win,"pos")
+         pp ? {
+            px := integer(1(tab(upto(",")),move(1)))
+            py := integer(tab(0))
+            }
+         pw := WAttrib(win,"width")
+         ph := WAttrib(win,"height")
+         dx := WAttrib(win, "dx")
+         dy := WAttrib(win, "dy")
+         self.x := px + (pw-w)/2 - dx
+         self.y := py + (ph-w)/2 - dy
+         }
+   end
+
+   #<p>
+   #  Position the dialog, provided the dialog's parent is set.
+   #  Note that if <tt>set_pos()</tt> is not called first then the dialog is
+   #  centered in the parent window.  <i>Normally this method is only used
+   #  internally.</i>
+   #</p>
+   method move_dialog()
+      if /self.parent then return
+      compute_position()
+      WAttrib(self.win,"pos="||self.x||","||self.y)
+   end
+
+   #<p>
+   #  Change the expected location of the dialog relative to the 
+   #  upper-left corner of the display.  Position specifications
+   #  can be given in either absolute pixels or as a percentages
+   #  of total range.  See comments for <tt>Component.set_pos()</tt>
+   #  for details.  Note that if <tt>set_pos()</tt> is not called then the
+   #  dialog is centered in the parent window, <i>provided that the
+   #  parent has been set, as in <tt>dlg.set_parent(self)</tt></i>.
+   #  <[param x -- new X specification relative to display.>
+   #  <[param y -- new Y specification relative to display.]>
+   #</p>
+   method set_pos(x,y)
+      self.Component.set_pos(x,y)
+      abs_pos_flag := "yes"
    end
 
    initially(a[])

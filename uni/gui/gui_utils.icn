@@ -1,0 +1,248 @@
+#<p>
+#  General-purpose GUI support routines.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package guiwidgets
+
+import gui
+import lang
+
+#<p>
+#   Represents the size of a display area.
+#</p>
+record displayAreaSize(width, height)
+
+#<p>
+#   Compute the displayAreaSize for holding an array of text.
+#</p>
+procedure textAreaSize(w, text)
+    local lineHeight := WAttrib(w, "fheight"),
+          spacing    := WAttrib(w, "leading"),
+          lineWidth  := 0,
+          lineSpace  := 0,
+          line
+
+    every line := !text do {
+        lineWidth <:= TextWidth(w, line)
+        lineSpace +:= lineHeight
+        }
+
+    # Include room for vertical scroll bar, if needed.
+    return displayAreaSize(lineWidth+45, lineSpace+30)
+end
+
+#<p>
+#   Force the displayAreaSize to fall within bounds
+#</p>
+procedure forceAreaSize(aSize, minSize, maxSize)
+
+    aSize.width  <:= minSize.width
+    aSize.width  >:= maxSize.width
+
+    aSize.height <:= minSize.height
+    aSize.height >:= maxSize.height
+
+    return aSize
+end
+
+#<p>
+#   Singleton class that provides factory methods for producing
+#      Robert Parlett's gui widgets.  The methods here combine
+#      parameters from multiple widget methods to handle the
+#      more common uses of the widgets.
+#</p>
+class Gui : Class (editColor)
+
+    #<p>
+    #  Set the default color used to denote an editable field.
+    #</p>
+    method setEditColor(color   # Color to use as default
+                       )
+        editColor := color
+    end
+
+    #<p>
+    #  Produce the current default color used to denote an editable field.
+    #</p>
+    method getEditColor()
+        return editColor
+    end
+
+    #<p>
+    #   Produce a <tt>Label</tt>.
+    #</p>
+    method mkLabel(label,       # text for label
+                   x,           # x-position
+                   y,           # y-position
+                   align:"l",   # internal and horizontal alignment
+                   align2:"c"   # vertical alignment
+                   )
+       local lab
+       lab := Label()
+       lab.set_pos(x,y)
+       lab.set_align(align, align2)
+       lab.set_internal_alignment(align)
+       lab.set_label(label)
+       return lab
+    end
+ 
+    #<p>
+    #  Produce a <tt>TextField</tt>.
+    #</p>
+    method mkField(contents:"", # initial contents of field
+                   x,           # x-position
+                   y,           # y-position
+                   dx,          # horizontal size
+                   dy           # vertical size
+                   )
+       local field
+       field := TextField()
+       field.set_attribs("bg="||editColor)
+       field.set_pos(x,y)
+       field.set_size(dx,dy)
+       field.set_draw_border()
+       field.set_contents(contents)
+       return field
+    end
+ 
+    #<p>
+    #  Produce a <tt>TextButton</tt>.
+    #</p>
+    method mkButton(label,      # text for label
+                    x,          # x-position
+                    y,          # y-position
+                    align:"c"   # internal alignment of text
+                    )
+       local button
+       button := TextButton()
+       button.set_pos(x,y)
+       button.set_label(label)
+       button.set_internal_alignment(align)
+       return button
+    end
+ 
+    #<p>
+    #  Produce a <tt>EditableTextList</tt>.
+    #</p>
+    method mkEditArea(contents, # initial contents of field
+                      x,        # x-position
+                      y,        # y-position
+                      dx,       # horizontal size
+                      dy        # vertical size
+                      )
+       local area
+       area := EditableTextList()
+       area.set_attribs("bg="||editColor)
+       area.set_pos(x,y)
+       area.set_size(dx,dy)
+       area.set_contents(contents)
+       return area
+    end
+
+    #<p>
+    #  Produce a <tt>TextList</tt>.
+    #</p>
+    method mkArea(contents,     # initial contents of field
+                  x,            # x-position
+                  y,            # y-position
+                  dx,           # horizontal size
+                  dy            # vertical size
+                  )
+       local area
+       area := TextList()
+       area.set_pos(x,y)
+       area.set_size(dx,dy)
+       area.set_contents(contents)
+       return area
+    end
+
+    #<p>
+    #  Produce a <tt>TextList</tt> allowing only a single selection.
+    #</p>
+    method mkAreaSingle(contents,     # initial contents of field
+                        x,            # x-position
+                        y,            # y-position
+                        dx,           # horizontal size
+                        dy            # vertical size
+                        )
+       local area
+       area := mkArea(contents, x,y, dx,dy)
+       area.set_select_one()
+       return area
+    end
+ 
+    #<p>
+    #  Produce a <tt>CheckBox</tt>.
+    #</p>
+    method mkCheckBox(label,    # text for CheckBox label
+                      x,        # x-position
+                      y         # y-position
+                      )
+       local box
+       box := CheckBox()
+       box.set_pos(x,y)
+       box.set_label(label)
+       return box
+    end
+
+    #<p>
+    #  Produce a <tt>Border</tt>
+    #</p>
+    method mkBorder(x,          # x-position
+                    y,          # y-position
+                    dx,         # horizontal size
+                    dy,         # vertical size
+                    align:"l"   # internal alignment
+                   )
+        local border
+        border := Border()
+        border.set_pos(x,y)
+        border.set_size(dx,dy)
+        border.set_internal_alignment(align)
+        return border
+    end
+
+    #<p>
+    #  Produce a <tt>TextMenuItem</tt>
+    #</p>
+    method mkMenuItem(label     # text for menu item
+                     )
+        local item
+        item := TextMenuItem()
+        item.set_label(label)
+        return item
+    end
+
+    #<p>
+    #  Produce a <tt>Menu</tt>
+    #</p>
+    method mkMenu(label         # text for menu label
+                 )
+        local menu
+        menu := Menu()
+        menu.set_label(label)
+        return menu
+    end
+
+    #<p>
+    #  Produce a <tt>MenuBar</tt>
+    #</p>
+    method mkMenuBar(x,         # x-position
+                     y          # y-position
+                    )
+        local bar
+        bar := MenuBar()
+        bar.set_pos(x,y)
+        return bar
+    end
+ 
+    initially ()
+        editColor := "white"
+        Gui := create |self
+end

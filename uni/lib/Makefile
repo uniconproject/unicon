@@ -17,7 +17,7 @@ UFILES=gui.u file_dlg.u db.u \
  texthandler.u time.u timezone.u typehandler.u \
  undoableedit.u undomanager.u url.u webup.u \
  notification.u md5.u httprequest.u httpresponse.u \
- thread.u matrix_util.u
+ thread.u matrix_util.u struct.u db_util.u database.u addressdb.u
 
 # COPYINS are library files copied in from other directories for
 # organizational purposes. Inspired by ipl/lib.  They have to be

@@ -1,50 +1,105 @@
+#<p>
+# YesNoDialog.icn -- provide a dialog box for a yes/no response.
+#</p>
+#<p>
+# Resizes the dialog box appropriately.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package guiwidgets
+
+import gui
 import util
-package gui
 $include "guih.icn"
 
-#
-# Basic IVIB-based yes/no dialog. Compatible-ish with the Wampler UniLib
-# yes no dialog. To-do: add back in the dynamic area/position calculations
-# for the message.
-#
-class YesNoDialog : Dialog(text_button_1, text_button_3, text_list_1,
-			   value, mesg, mFont)
-   method component_setup()
-      self.setup()
-   end
+#<p>
+#  Provide a simple dialog box that allows you to ask a question and get
+#  a Yes/No response.
+#</p>
+class YesNoDialog : Dialog(yesButton, noButton, messageArea, mesg, mFont, minArea, maxArea, value)
 
-   method end_dialog()
-   end
-
-   method handle_noButton(ev)
-       value := "no"
-       dispose()
-   end
-
+   #<p>
+   # <i>Internal use only!</i>
+   #</p>
    method handle_yesButton(ev)
        value := "yes"
        dispose()
    end
 
    #<p>
-   #   Succeed if the "Yes" button was pressed.
+   # <i>Internal use only!</i>
    #</p>
-   method isYes()
-       return value == "yes"
+   method handle_noButton(ev)
+       value := "no"
+       dispose()
    end
 
    #<p>
-   #   Succeed if the "No" button was pressed.
+   # <i>Internal use only!</i>
+   # <b>Should be improved!!</b>
    #</p>
-   method isNo()
-       return value == "no"
+   method final_setup()
+       self.Dialog.final_setup(self)
    end
 
    #<p>
-   #   Produce the response ("yes" or "no")
+   # <i>Internal use only!</i>
    #</p>
-   method getResponse()
-       return value
+   method end_dialog()
+   end
+
+   #<p>
+   # <i>Internal use only!</i>
+   #</p>
+   method setup()
+
+       messageArea := TextList()
+       messageArea.attrib(\mFont)
+       messageArea.set_pos("15", "10")
+       messageArea.set_contents(mesg)
+       self.add(messageArea)
+
+       yesButton := Gui().mkButton("Yes")
+       yesButton.set_internal_alignment("c")
+       yesButton.connect(self, "handle_yesButton", BUTTON_RELEASE_EVENT)
+       self.add(yesButton)
+
+       noButton := Gui().mkButton("No")
+       noButton.set_internal_alignment("c")
+       noButton.connect(self, "handle_noButton", BUTTON_RELEASE_EVENT)
+       self.add(noButton)
+
+   end
+
+   #<p>
+   # <i>Internal use only!</i>
+   #</p>
+   method component_setup()
+       local win, sizeMInfo, sizeDInfo
+
+       /minArea := displayAreaSize(50,20)
+       /maxArea := displayAreaSize(500,500)
+
+       self.setup()
+       win := (WOpen ! (["canvas=hidden"] ||| self.attribs |||
+                        ([\mFont] | []))) |
+               fatal("Component setup: couldn't open hidden window")
+       sizeMInfo := textAreaSize(win, mesg)
+       WClose(win)
+
+       sizeMInfo := forceAreaSize(sizeMInfo, minArea, maxArea)
+       sizeDInfo := displayAreaSize(sizeMInfo.width+30, sizeMInfo.height+40)
+
+       messageArea.set_size(sizeMInfo.width, sizeMInfo.height)
+       yesButton.set_pos(sizeDInfo.width-72, sizeDInfo.height-25)
+       noButton.set_pos(sizeDInfo.width-32, sizeDInfo.height-25)
+
+       self.set_attribs("size="||sizeDInfo.width||","||sizeDInfo.height)
    end
 
    #<p>
@@ -52,7 +107,6 @@ class YesNoDialog : Dialog(text_button_1, text_button_3, text_list_1,
    #</p>
    method setFont(font)
        mFont := "font="||font
-       (\text_list_1).attrib(mFont)
    end
 
    #<p>
@@ -60,8 +114,7 @@ class YesNoDialog : Dialog(text_button_1, text_button_3, text_list_1,
    #   (<i>Default is 100x100.</i>)
    #</p>
    method setMinSize(width:100, height:100)
-      write(&errout, "setMinSize not implemented yet")
-      # minArea := displayAreaSize(width, height)
+       minArea := displayAreaSize(width, height)
    end
 
    #<p>
@@ -69,89 +122,42 @@ class YesNoDialog : Dialog(text_button_1, text_button_3, text_list_1,
    #   (<i>Default is 500x500.</i>)
    #</p>
    method setMaxSize(width:500, height:500)
-      write(&errout, "setMaxSize not implemented yet")
-      # maxArea := displayAreaSize(width, height)
+       maxArea := displayAreaSize(width, height)
    end
 
-   method init_dialog()
-      text_list_1.set_contents(mesg)
-      text_list_1.attrib(\mFont)
+   #<p>
+   #   Succeed if the "Yes" button was pressed.
+   #</p>
+   method isYes()
+       return \value == "yes"
    end
 
-   method setup()
-      self.set_attribs("size=644,399", "resize=on")
-      text_button_1 := TextButton()
-      text_button_1.set_pos("33%-47", "75%-21")
-      text_button_1.set_size("94", "42")
-      text_button_1.connect(self, "handle_yesButton", ACTION_EVENT)
-      text_button_1.clear_toggles()
-      text_button_1.set_label("Yes")
-      text_button_1.set_internal_alignment("c")
-      self.add(text_button_1)
-      text_button_3 := TextButton()
-      text_button_3.set_pos("66%-47", "75%-21")
-      text_button_3.set_size("94", "42")
-      text_button_3.connect(self, "handle_noButton", ACTION_EVENT)
-      text_button_3.clear_toggles()
-      text_button_3.set_label("No")
-      text_button_3.set_internal_alignment("c")
-      self.add(text_button_3)
-      text_list_1 := TextList()
-      text_list_1.set_pos("5%", "10%")
-      text_list_1.set_size("90%", "51%-21")
-      text_list_1.set_contents([""])
-      self.add(text_list_1)
-      self.connect(self, "handle_yesButton", ACTION_EVENT)
+   #<p>
+   #   Succeed if the "No" button was pressed.
+   #</p>
+   method isNo()
+       return \value == "no"
    end
 
-initially(msg : "Yes or No?")
-   self$Dialog.initially()
-   mesg := msg
-   if type(mesg) == "string" then {
-      mesg := stringToList(mesg)
-      }
-   else {
-      if *mesg = 0 then mesg := ["Yes or No?"]
-      }
+   #<p>
+   #   Produce the response ("yes" or "no")
+   #</p>
+   method getResponse()
+       return \value
+   end
+
+   #<p>
+   #   If message is a string, split it vertically on embedded newlines.
+   #   Otherwise, message should be a list of lines forming the question.
+   #</p>
+   initially (message)
+      self.Dialog.initially()
+      /message := "Yes or No?"
+      if type(message) == "string" then {
+          mesg := stringToList(message)
+	  }
+      else {
+          if *message = 0 then message := ["Yes or No?"]
+          mesg := message
+	  }
 end
-
-### Ivib-v2 layout ##
-#class|Canvas|17|Name Table|table|integer|0|2|string|text_button|intege
-#r|3|string|text_list|integer|1|SuperClass Name|string|Dialog|Import Na
-#me|string|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Box
-#es|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Box
-#es|list|0|Gen Indent|integer|3|Gen Main|null|Gen Component Setup|integ
-#er|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|c
-#lass|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs
-#|list|1|string|resize=on|Name|string|YesNoDialog|Width|integer|644|Hei
-#ght|integer|399|Items|list|3|class|CanvasTextButton|36|Parent Canvas|1
-#|Name|string|text_button_1|Class Name|string|TextButton|Import Name|st
-#ring|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H 
-#Default|null|X Spec|string|33%-47|Y Spec|string|75%-21|W Spec|string|9
-#4|H Spec|string|42|X Align|string|l|Y Align|string|t|Is shaded|null|Is
-# Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|nul
-#l|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|h
-#andle_yesButton|Class Variable|integer|1|Parent Component|1|Label|stri
-#ng|Yes|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img H
-#eight|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxG
-#roup|null|Parent Button Group|null|Internal Align|string|c|class|Canva
-#sTextButton|36|Parent Canvas|1|Name|string|text_button_3|Class Name|st
-#ring|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|nul
-#l|H Fix|null|W Default|null|H Default|null|X Spec|string|66%-47|Y Spec
-#|string|75%-21|W Spec|string|94|H Spec|string|42|X Align|string|l|Y Al
-#ign|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|n
-#ull|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|
-#2|string|ACTION_EVENT|string|handle_noButton|Class Variable|integer|1|
-#Parent Component|1|Label|string|No|No Keyboard|null|Img Up|null|Img Do
-#wn|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Checkbo
-#x Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null|Interna
-#l Align|string|c|class|CanvasTextList|29|Parent Canvas|1|Name|string|t
-#ext_list_1|Class Name|string|TextList|Import Name|string|gui|X Fix|nul
-#l|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spe
-#c|string|5%|Y Spec|string|10%|W Spec|string|90%|H Spec|string|51%-21|X
-# Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|nul
-#l|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handle
-#rs|list|0|Class Variable|integer|1|Parent Component|1|Select One|null|
-#Select Many|null|Checked|list|1|null|Contents|list|1|string||Initial F
-#ocus|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|hand
-#le_yesButton|

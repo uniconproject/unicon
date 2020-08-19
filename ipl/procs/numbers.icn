@@ -8,6 +8,10 @@
 #
 #	Date:     June 10, 2001
 #
+#	Modified: Bruce Rennie
+#
+#	Date:     August 13, 2020
+#
 ############################################################################
 #
 #   This file is in the public domain.
@@ -19,6 +23,8 @@
 #
 #       May 08, 2019: add mfloor() and mceil() functions
 #       Nov 15, 2019: add thread-safe large() function
+#
+#       Aug 13, 2020: fix thread-safe large() function to return parameter
 #
 ############################################################################
 #
@@ -104,7 +110,7 @@
 #
 #	mdr(i)		multiplicative digital root of i
 #
-#	min ! L		produces minimum of numbers in L.	
+#	min ! L		produces minimum of numbers in L.
 #
 #	mod1(i, m)	residue for 1-based indexing.
 #
@@ -132,7 +138,7 @@
 ############################################################################
 #
 #	Links:  factors, strings
-#	
+#
 ############################################################################
 
 link factors
@@ -273,7 +279,7 @@ procedure digroot(i)		#: digital root
    if i = 0 then return 1
 
    i %:= 9
-   
+
    return if i = 0 then 9 else i
 
 end
@@ -321,7 +327,7 @@ procedure distseq(low, high)		#: generate low to high nonsequentially
    suspend low + n
 
    incr := integer(range / &phi ^ 2 + 0.5)
-   if incr <= 1 then 
+   if incr <= 1 then
       incr := 1
    else while gcd(incr, range) > 1 do
       incr +:= 1
@@ -436,7 +442,7 @@ procedure gcdl(L[])		#: greatest common divisor of list
    return i
 
 end
-   
+
 procedure gmean(L[])		#: geometric mean
    local m
 
@@ -450,7 +456,7 @@ procedure gmean(L[])		#: geometric mean
    else
       fail
 end
-   
+
 procedure hmean(L[])		#: harmonic mean
    local m, r
 
@@ -486,11 +492,14 @@ end
 
 $else
 
-# 
+#
 # The procedure above isn't thread safe because, if another thread
 # makes a storage allocation between the two uses of &allocate,
 # it might report that a small integer is a large integer.
-# 
+#
+# Updated return value on success to return the value supplied as per
+# the procedure large() above.
+#
 procedure large(i)		#: detect large integers
    static m,e
    initial { m := mutex(); e := -1 }
@@ -500,7 +509,7 @@ procedure large(i)		#: detect large integers
       if seq(i) then {
          &error :=: e; unlock(m); fail
       } else { # seq() failed, so i must be a large integer
-         &error :=: e; unlock(m); return 		# Success
+         &error :=: e; unlock(m); return i		# Success
       }
    }
 end

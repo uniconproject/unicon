@@ -115,7 +115,7 @@ procedure main()
    gen(tanh, &pi / 3)
 
    write()
-   write("numbers:")			# numbers 
+   write("numbers:")			# numbers
    gen(adp, 2147483647)
    gen(adr, 2147483647)
    gen(amean, 1, 1, 2, 3, 5, 8, 13, 21, 42)
@@ -136,7 +136,11 @@ procedure main()
    gen(gcdl, 42, 120, 81)
    gen(gmean, 1, 1, 2, 3, 5, 8, 13, 21, 42)
    gen(hmean, 1, 1, 2, 3, 5, 8, 13, 21, 42)
-   gen(large, 214748364721474836472147483647)
+   #
+   # modify value to be tested to be larger than 128 bits to cover future
+   # implementation changes that allow 128 bit systems.
+   #
+   gen(large, 214748364721474836472147483647214748364721474836472147483647)
    gen(lcm, 20, 24)
    gen(lcm, 20, 24, 16)
    gen(mantissa, &e)
@@ -157,7 +161,7 @@ procedure main()
 
    write()
    write("options:")			# options  (not part of core)
-   argv := ["-abc","-","-s","-v","-i","42","-r","98.6","--","-b","x","y"] 
+   argv := ["-abc","-","-s","-v","-i","42","-r","98.6","--","-b","x","y"]
    tbl(options, copy(argv))
    tbl(options, copy(argv), "scrivab")
    tbl(options, copy(argv), "a:s:i:r:b:")
@@ -174,7 +178,7 @@ procedure main()
    gen(randrange, 30, 50)
    gen(randrangeseq, 52, 99)
    gen(randseq, 1903)
-   gen(rng) 
+   gen(rng)
    gen(shuffle, "A23456789TJQK")
 
    write()
@@ -298,7 +302,7 @@ procedure lst(p, a[])			#: test a procedure that returns a list
 
    L := (p ! a) | ["[FAILED]"]
    writes(left(image(p)[11:0], LSIZE - 1))
-   if type(L)=="integer" then L := string(L) 
+   if type(L)=="integer" then L := string(L)
    if type(L)=="set" then L:= sort(L)
    every writes(" ", (!L \ GENLIMIT) | "\n")
    return

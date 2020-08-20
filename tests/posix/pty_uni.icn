@@ -7,6 +7,7 @@
 #
 
 procedure main()
+    local fo, fi
    #
    # test 1: most trivial Unicon program, compiled w/iconx
    #
@@ -32,29 +33,66 @@ $endif
    # test 2: prove you can actually read and write interactively, with
    # at least a line-at-a-time program, such as udb
    #
+   # the stand/pty_uni.std has been updated to reflect the changes in the  testing
+   # process
+   #
+   write("\ntesting interactive read/write with at least a line-at-a-time program\nusing Unicon Debugger\n\n../../bin/udb")
    fi := open("../../bin/udb", "prw") | stop("can't open udb mode prw")
    line := ""
-   repeat {
-       if line ||:= ready(fi) then
-	   write(image(line))
-       if find("(udb)", line) then break
-   }
-   write("got initial udb prompt")
-   write(fi, "where"); flush(fi)
-   line := ""
-   repeat {
-       if line ||:= ready(fi) then
-	   write(image(line))
-       if find("(udb)", line) then break
-   }
-   write(fi, "quit")
-   line := ""
-   repeat {
-       if line ||:= ready(fi) then
-	   write(image(line))
-       if find("Goodbye", line) then break
-   }
-   write("closing")
+   cntnl := 0
+   cnt := 0
+   #
+   # we are not interested in the first line that comes back from udb as this
+   # conatins the udb version information and is not required in the test
+   #
+   response(fi, "", "\n")
+   #
+   # skip everything up to the first newline encountered and then return
+   # everything else up to the prompt "(udb)". We use writes here to place the
+   # sent command on the same line as the prompt.
+   #
+   writes(response(fi, "\n", "(udb)"))
+   #
+   # send down the first command to udb and also print this on the standard
+   # output for this program.
+   #
+   # remove flush() call as it is causing runtime memory violation
+   #
+   write(write(fi, "where")); #flush(fi)
+   #
+   # skip everything up to the command sent above and then return everything
+   # up to prompt that is placed on a new line.
+   #
+   writes(response(fi, "where\r\n", "\r\n(udb)"))
+   #
+   # send down the next command to udb and also print this on the standard
+   # output for this program.
+   #
+   write(write(fi, "quit"))
+   #
+   # skip everything up to the command sent above and then return everything
+   # up to final word that udb send on quitting. We use write here to place the
+   # next set of messages on a new line.
+   #
+   write(response(fi, "quit\r\n", "Goodbye"))
+   writes("\nclosing link to udb")
    close(fi)
    write("...done")
+end
+
+procedure response(fi, skipstr, responsestr)
+   local line, cntskip
+
+   line := ""
+   cntskip := 0
+   repeat {
+       if line ||:= ready(fi) then {
+	   if find(skipstr, line) & cntskip = 0 then {
+		cntskip +:= 1
+		line := ""
+	   }
+        }
+       if find(responsestr, line) then break
+   }
+   return line
 end

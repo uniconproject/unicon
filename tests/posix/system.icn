@@ -2,7 +2,6 @@
 # system.icn: test system() function.
 # TODO: expand to test system() parameters and more exotic features.
 #
-# Note: can't expect JDK on end-users' path.
 # Note: doing a unicon compile would have a temp filename difference.
 #
 
@@ -15,34 +14,26 @@ procedure main()
    write(f,"   write(\"hello world\")")
    write(f,"end")
    close(f)
-   system("icont x.icn > foo.out 2>&1")
+   #
+   # change format of command use the file redirection as given below
+   # this was a cause of error difference between what is expected and
+   # what was actually obtained
+   #
+   system("icont x.icn &>foo.out")
    fin := open("foo.out") | stop("can't open foo.out for reading")
    every write(!fin)
    close(fin)
 
-#   if write("javac: ", pathfind("javac", getenv("PATH"))) then {
-#      write("trying javac -version")
-#      f := open("hello.java","w")
-#      write(f,"class hello {")
-#      write(f,"public static void main(String[] args) {")
-#      write(f,"   System.out.println(\"hello world\")")
-#      write(f,"}}")
-#      close(f)
-#      if i := system("javac -version") then write("\t-->returns ",i)
-#      else write("system(javac -version) fails")
-#      if i := system("javac hello.java > bar.out 2>&1") then
-#	 write("\t-->returns ",i)
-#      else write("system(javac hello) fails")
-#      if fin := open("bar.out") then {
-#	 every write("\t",!fin)
-#	 close(fin)
-#	 }
-#      else stop("can't open foo.out for reading")
-#      }
-#   else {
-#      write("did not find a javac along ", getenv("PATH") | "no path?")
-#      }
    remove("foo.out")
    remove("x.icn")
+   #
+   # add following remove command to remove the generated executable file,
+   # this non-removal caused a problem in Makefile
+   #
+$ifdef _MS_WINDOWS_NT
+   remove("x.exe")
+$else
+   remove("x")
+$endif
    write("...done")
 end

@@ -1,0 +1,64 @@
+#<p>
+#  A simple addressbook application.  A database is used
+#   to hold the addresses and is accessed using ODBC.  A GUI
+#   provides access to the address book.  <i>Because of the use of the
+#   <tt>getLogin()</tt> procedure from <tt>addressdb.icn</tt> is is likely
+#   that this program won't work under Windows unless that procedure
+#   is improved.</i>
+#</p>
+#<p>
+#   The top half of the GUI provides an area for displaying
+#   <i>views</i> into the addressbook.  The initial view
+#   is all addresses.  The view can be changed by entering
+#   search criteria into the bottom half of the GUI which
+#   functions both as an address book search tool and as
+#   an address display/edit tool.
+#</p>
+#<p>
+#   Selecting an address in the top half displays details
+#   of that address in the display/edit tool. Once the address details
+#   are displayed on the bottom half, they can be emended
+#   and resaved.  Note that changing the name in the address will result
+#   in a new address entry.  Delete the old address if you don't want both.
+#</p>
+#<p>
+#   To produce a view of all addresses an any time, just clear
+#   the search/display/edit tool and perform a search.  You can
+#   also clear the tool, create a new address entry, and save it
+#   into the address book.
+#</p>
+#<p>
+#   Searches are caseless and position independent.  Any combination
+#   of address fields (with the exception of the address itself
+#   and the <i>miscellaneous-info</i> field on the right side
+#   of the search/display/edit tool) may be used in a search.
+#</p>
+#<p>
+#   <b>The <tt>addressbook</tt> must exist before running this program.
+#   see the comments for the <tt>AddressDB</tt> class in
+#   <tt>addresssdb.icn</tt> for how to do so in PostgreSQL.</b>
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import addressbook	# The real addressbook code
+import guiwidgets	# Access to the UniLib GUI classes
+
+global user, pw
+
+#<p>
+#    After successfully logging into the relational database,
+#    start up the address book GUI.
+#</p>
+procedure main()
+   local a
+   
+   getLogin()
+   a := AddressDB(user,pw) |
+        stop("Unable to access addressbook!")
+   AddressGui(a).show_modal()
+end

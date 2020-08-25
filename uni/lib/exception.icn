@@ -102,7 +102,7 @@ class Try : Object (sources, exceptions, lastException)
    #<p>
    #  Catch an exception.  Succeeds if the last thrown Exception
    #    is an instance of the named Exception.  A null argument
-   #    defaults to <tt>"Exceptions::Exception"</tt>.
+   #    defaults to <tt>"exception::Exception"</tt>.
    #  <[returns the matched exception]>
    #  <[fails if no match]>
    #</p>
@@ -117,7 +117,7 @@ class Try : Object (sources, exceptions, lastException)
    #  <[param eName subclass of <tt>Exception</tt> that <tt>x</tt> must match]>
    #</p>
    method isException(x, eName)
-      /eName := "Exceptions::Exception"
+      /eName := "exception::Exception"
       return lang::instanceof(x, eName)
    end
 
@@ -127,6 +127,14 @@ class Try : Object (sources, exceptions, lastException)
    #</p>
    method getException()
       return lastException
+   end
+
+   #<p>
+   #  Display the exception thrown from this try clause.
+   #  <[param outFile -- output stream (defaults to <tt>&errout</tt>)]>
+   #</p>
+   method showException(outFile)
+       (\lastException).show(outFile)
    end
 
 #<p>
@@ -143,9 +151,19 @@ end
 
 #<p>
 # The <b>Exception</b> provides the basics.  It can be subclassed to
-# provide differ types of exceptions.
+# provide different types of exceptions.
 #</p>
 class Exception : Object (message, location)
+
+   #<p>
+   #  Display the exception, showing the message and the stacktrace.
+   #  <[param outFile -- output stream (defaults to <tt>&errout</tt>)
+   #</p>
+   method show(outFile)
+       /outFile := &errout
+       write(outFile, self.getMessage(), ":\n", self.getLocation())
+       return
+   end
 
    #<p>
    #  <i>Typically, this is the only method overridden by subclasses.</i>

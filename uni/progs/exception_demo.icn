@@ -1,0 +1,100 @@
+#<p>
+# Demonstration of the exception package
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+#<p>
+#  Demonstration of exception handling.
+#  A call with any numeric argument other than three runs without Exception.
+#  Any non-numeric argument throws a NumException (locally defined) while
+#  a call with the argument 3 throws an Exception (base class for
+#  all Exceptions).
+#</p>
+#<p>
+#  The result of calling:
+#<pre>
+#    ExceptionDemo 1 2 3 4 a 6
+#</pre>
+#  is:
+#<pre>
+#    x is '1'.
+#    x is '2'.
+#    Exception: bad value of 3:
+#        g [ExceptionDemo.icn:96]
+#        f [ExceptionDemo.icn:80]
+#        main [ExceptionDemo.icn:56]
+#    
+#    x is '4'.
+#    NumException: 'a' is not a number:
+#        g [ExceptionDemo.icn:93]
+#        f [ExceptionDemo.icn:80]
+#        main [ExceptionDemo.icn:56]
+#    
+#    x is '6'.
+#</pre>
+#<p>
+
+import exception
+
+#<p>
+#  A simple example of subclassing the base Exception class.
+#</p>
+class NumException : Exception()
+    method getMessage()
+        return "NumException: " || (\message | "unknown")
+    end
+end
+
+procedure main(args)
+
+    every i := !args do {
+
+        case Try().call{ f(i) } of {   # note use of PDCO!
+
+            Try().catch("NumException"): {
+                    Try().showException()
+                    }
+
+            Try().catch(): {    # catches all other exceptions
+                    # Here's an alternative approach to handling
+                    #   an exception (does same as above, in this demo):
+                    x := Try().getException()
+                    write(&errout, x.getMessage(), ":\n", x.getLocation())
+                    }
+
+            }
+
+        }
+        
+end
+
+#<p>
+#  Simple function that outputs the result of another function.
+#    Used to show that exception handling is a true 'throw'.
+#  <[param i - arbitrary value]>
+#</p>
+procedure f(i)
+    write("x is '",g(i),"'.")
+end
+
+#<p>
+#  Simple function that performs (meaningless) work but can
+#    throw two different types of Exceptions.
+# <[param i - arbitrary value]>
+# <[returns i if <tt>numeric(i) ~= 3</tt>]>
+# <[Throws NumException if argument is <i>not</i> numeric]>
+# <[Throws Exception if argument is <tt><b>3</b></tt>]>
+#</p>
+procedure g(i)
+    if not numeric(i) then {
+       NumException().throw("'"||i||"' is not a number")
+       }
+    if i = 3 then {
+       Exception().throw("bad value of "||i)
+       }
+    return i
+end

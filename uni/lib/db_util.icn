@@ -34,7 +34,9 @@ class DButils : Object ()
         local ns := ""
 
         s ? {
-            while ns ||:= tab(upto('\\\'')) || "\\" || move(1)
+            while ns ||:= tab(upto('\\\'')) do {
+                ns ||:= if ="'" then "''" else "\\\\"
+                }
             ns ||:= tab(0)
             }
         return ns

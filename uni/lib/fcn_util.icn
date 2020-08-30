@@ -11,6 +11,7 @@
 #</p>
 
 package lang
+invocable all
 
 #<p>
 # Compose multiple single-argument functions into a
@@ -123,15 +124,15 @@ class Closure : Object (fcn)
    # Merges the argument list into the Closure object and then
    #  invokes it.  Missing arguments are mapped to &null.
    #</p>
-   method doInvocation(fcn, args)
+   method doInvocation(flist, args)
       local i
 
-      fcn := copy(fcn)
+      flist := copy(flist)
       /args := list()
-      every i := 2 to *fcn do
-	 if fcn[i] === Arg then
-	    fcn[i] := pop(args) | &null
-      suspend invoke ! (fcn ||| args)
+      every i := 2 to *flist do
+	 if flist[i] === Arg then
+	    flist[i] := pop(args) | &null
+      suspend invokeFcn ! (flist ||| args)
    end
 
 #<p>
@@ -220,12 +221,13 @@ procedure invokeFcn(fcn, args[])
 	 }
       "list" : {
 	 fcn := copy(fcn)
-	 every i := 2 to *fcn do {
+         f := pull(fcn)
+	 every i := 1 to *fcn do {
 	    if fcn[i] === Arg then {
 	       fcn[i] := pop(args) | &null
 	       }
 	    }
-	 suspend invoke!(fcn ||| args)
+	 suspend f!(fcn ||| args)
 	 }
       "co-expression" : {
 	 while suspend args@fcn

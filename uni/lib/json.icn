@@ -6,6 +6,7 @@
 # This library is intended to support conversion of Unicon values
 # to and from JSON format, suitable for storage or transmission.
 #
+link "escape"
 
 #
 # Error handling object
@@ -176,6 +177,35 @@ procedure jtou(s,mode,error)
       suspend u
       }
    jerror.get_err()
+end
+
+#<p>
+# Simple interface to convert a JSON string into a unicon entity.
+# <i>Note: Unlike jtou(), this assumes the JSON string contains a single
+# unicon entity.</i>
+# <[param s JSON-encoded string]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+# <[return unicon entity encoded in JSON string]>
+#</p>
+procedure json2unicon(s,error)
+   local tok_gen, u, jerror
+
+   /error := &errout
+   jerror := ErrorHandler(error)
+   tok_gen := create json_scanner(s, jerror)
+   while u := json_parser(tok_gen, jerror) do suspend u
+   jerror.get_err()
+end
+
+#<p>
+# Simple interface to convert a unicon entity into a JSON string.
+# <[param u -- unicon entity to convert]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+# <[return JSON-encoded string]>
+#</p>
+procedure unicon2json(u, error)
+   /error := &errout
+   return utoj(u, error)
 end
 
 
@@ -375,28 +405,34 @@ end
 # String scanning helper function that returns a valid JSON escape character 
 #
 procedure scan_ctrl_char(c,jerror)
-   static ctrl, hex, unicode
-
-   initial {
-      ctrl := '\"\\/bfnrt'
-      hex := '0123456789abcdefABCDEF'
-      unicode := 'u'
-      }
+   local ns
+   ns := ""
 
    if c == "\\" then {
-      # ctrl character
-      if any(ctrl,c1 := move(1)) then return c || c1
-      else if any(unicode,c1 := move(1)) &
-              any(hex, u1 := move(1)) &
-              any(hex, u2 := move(1)) &
-              any(hex, u3 := move(1)) &
-              any(hex, u4 := move(1)) then 
-         {
-         return c || c1 || u1 || u2 || u3 || u4
-         }
-      else return jerror.set_err("JSON string invalid escape sequence: " ||
-                  c || tab(upto(' \t\n\"{}[]:,')\1))
+       # This code is lifted directly from the inside of the
+       #   procedure escape(s) found in the IPL file escape.icn.
+       #   We can't call escape here because it does its own
+       #   string scanning in a manner that conflicts with the
+       #   scanning done here in the json handling.
+       ns ||:= case map(c := move(1)) | fail of {	# trailing \ illegal
+          "b":  "\b"
+          "d":  "\d"
+          "e":  "\e"
+          "f":  "\f"
+          "l":  "\n"
+          "n":  "\n"
+          "r":  "\r"
+          "t":  "\t"
+          "v":  "\v"
+          "u":  hexcode(4)
+          "x":  hexcode(2)
+          "^":  ctrlcode()
+          !"01234567":  octcode()
+          default:  c				# takes care of ", ', and \
+          }
+      return ns
       }
+   return c
 end
 
 #
@@ -416,7 +452,7 @@ procedure scan_string(jerror)
          else fail
          }
       }
-   if (c := move(1)) == "\"" then return image(str)
+   if (c := move(1)) == "\"" then return "\""||str||"\""
    else return jerror.set_err(
                "JSON string missing terminating double-quotes: " || str) 
 end

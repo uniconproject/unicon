@@ -4,7 +4,9 @@
 # This file is in the public domain.
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
+#   Addition of call_by_name by Steve Wampler (sbw@tapestry.tucson.az.us)
 #
+invocable all
 
 package lang
 
@@ -591,4 +593,27 @@ end
 #
 procedure find_method(obj, method_name)
    return lang::get_class(obj).get_method(method_name).get_as_procedure()
+end
+
+#
+# Invoke a procedure by string name.
+# This is a convenience procedure for invoking a procedure given its
+#   string name.  The primary convenience is that it maps external
+#   package procedure names into internal form for string-invocation.
+#   An example of its use would be to call the constructor for some
+#   class identified by its string name at runtime.
+#
+# @param f_name -- Name of procedure
+# @param f_args... -- arguments to pass to the procedure, if any
+# @return result of invocation
+#
+procedure call_by_name(f_name, f_args[])
+   local intName
+   /f_args := []
+   intName := ""
+   f_name ? {
+       while intName ||:= tab(find("::")) || (move(2),"__")
+       intName ||:= tab(0)
+       }
+   return intName ! f_args
 end

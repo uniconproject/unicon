@@ -48,7 +48,8 @@ procedure escape(s)
             "r":  "\r"
             "t":  "\t"
             "v":  "\v"
-            "x":  hexcode()
+            "u":  hexcode(4)
+            "x":  hexcode(2)
             "^":  ctrlcode()
             !"01234567":  octcode()
             default:  c				# takes care of ", ', and \
@@ -59,13 +60,14 @@ procedure escape(s)
 
 end
 
-procedure hexcode()
+procedure hexcode(l)
    local i, s
+   /l := 2	# Default to original behavior
 
    s := tab(many('0123456789ABCDEFabcdef')) | ""	# get hex digits
 
-   if (i := *s) > 2 then {		# if too many digits, back off
-      s := s[1:3]
+   if (i := *s) > l then {		# if too many digits, back off
+      s := s[1:l+1]
       move(*s - i)
       }
    

@@ -1,0 +1,44 @@
+###############################################################################
+#
+#   Testing the use of the extended command line options processing procedure
+#
+#       xoptions(arg, optstring, errproc, finishoption[])
+#
+#
+# Requires f1.xop and f2.xop to exist in the data directory and writes the
+# results to standard output which will redirected to local/xcommand.out and
+# this will be compared to the output stored in stand/xcommand.std
+#
+link ximage
+link xoptions
+
+
+procedure main()
+    local   arglist, optionspecifier, options
+
+    #
+    # the following is an example argument list that would be obtained when using
+    # procedure main(arglist)
+    #
+    arglist := ["while", "-n8", "-geometry=230:340", "-Ffilename1.ext1",
+                "@data/f1.xop", "-F", "filename2.ext2", "-si=4", "-ui",
+                "-o", "file=filename3.ext3,sz=230x333,in=4,l,verbose=5",
+                "-sil", "-x", "f1", "f2", "@data/f1.xop", "--", "f3"]
+    optionspecifier := "x<*n+tvqF:*-geometry:-ui$-si+-silent!-?!=help _
+                        --help-me!o(-file:-sz:-in+lmn-verb:-verbose+) _
+                        -bish-bash-bosh--bash=pish-pash-posh--pash"
+
+    #
+    # write out the original arglist to the standard output first
+    #
+    write(ximage(arglist))
+    #
+    # process the arglist against the optionspecifier and write the resultant
+    # values to the standard output
+    #
+    options := xoptions(arglist, optionspecifier)
+
+    write(ximage(options))
+    write(ximage(arglist))
+end
+

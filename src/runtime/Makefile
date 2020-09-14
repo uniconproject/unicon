@@ -2,13 +2,7 @@
 
 include ../../Makedefs
 
-
-#REPO_REV="$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"
-
-
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD )"
-REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
-REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
+REPO_REV="$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
@@ -16,7 +10,7 @@ HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/rproto.h ../h/mproto.h ../h/version.h ../h/sys.h
 
 GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h
-GRAPHICSRI = rmac.ri rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri
+GRAPHICSRI = rmac.ri rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri ropengl2d.ri
 
 # default: iconx
 
@@ -50,7 +44,7 @@ interp_all: update_rev
 
 # NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
 iconx $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../bin/libucommon.a ../../bin/libuconsole.a ../../bin/libgdbm.a ../../bin/libtp.a
-	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../bin/libuconsole.a
+	$(CC) -pg $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../bin/libuconsole.a
 	cp iconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/iconx$(EXE);
 

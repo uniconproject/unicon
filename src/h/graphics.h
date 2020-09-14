@@ -24,13 +24,6 @@
 #include "direct3d.h"
 #endif					/* HAVE_LIBGL */
 
-#ifndef POLL_INTERVAL
-#define POLL_INTERVAL 400
-#endif /* POLL_INTERVAL */
-#ifndef FLUSH_POLL_INTERVAL
-#define FLUSH_POLL_INTERVAL 10 
-#endif /* FLUSH_POLL_INTERVAL */
-
 #define REDRAW_CUBE 		0x010
 #define REDRAW_CYLINDER 	0x020
 #define REDRAW_DISK		0x030 
@@ -65,26 +58,6 @@
 #define REDRAW_NORMODE 		0x200
 #define REDRAW_SLICES 		0x210
 #define REDRAW_RINGS 		0x220
-
-/* aliases for better comprehension */
-#define	GL3D_CUBE 	REDRAW_CUBE
-#define	GL3D_CYLINDER 	REDRAW_CYLINDER
-#define	GL3D_DISK 	REDRAW_DISK
-#define	GL3D_SPHERE	REDRAW_SPHERE
-#define	GL3D_TORUS	REDRAW_TORUS
-#define	GL3D_IDENTITY	REDRAW_IDENTITY	
-#define	GL3D_MATRIXMODE	REDRAW_MATRIXMODE
-#define	GL3D_POPMATRIX	REDRAW_POPMATRIX
-#define	GL3D_PUSHMATRIX	REDRAW_PUSHMATRIX 
-#define	GL3D_ROTATE	REDRAW_ROTATE	
-#define	GL3D_SCALE	REDRAW_SCALE	
-#define	GL3D_TEXTURE	REDRAW_TEXTURE	
-#define	GL3D_TRANSLATE	REDRAW_TRANSLATE
-#define GL3D_FONT	REDRAW_FONT3D 	
-#define GL3D_DRAWSTRING	REDRAW_DRAWSTRING3D 
-#define GL3D_MARK	REDRAW_MARK 	
-#define GL3D_ENDMARK	REDRAW_ENDMARK 	
-#define GL3D_MESHMODE	REDRAW_MESHMODE 
 
 #endif					/* Graphics3D */
 
@@ -269,13 +242,6 @@ typedef struct _wfont {
   LONG		charwidth;
   LONG		height;
 #endif					/* MSWindows */
-#ifdef GraphicsGL
-#if HAVE_LIBFREETYPE
-  FT_Library	library;
-  FT_Face	face;
-#endif					/* HAVE_LIBFREETYPE */
-  struct fontsymbol chars[256];
-#endif					/* GraphicsGL */
 } wfont, *wfp;
 
 /*
@@ -308,9 +274,6 @@ struct imgdata {			/* image loaded from a file */
 
 struct imgmem {
    int x, y, width, height;
-#ifdef GraphicsGL
-   unsigned short *pixmap;
-#endif					/* GraphicsGL */
 #ifdef XWindows
    XImage *im;
 #endif					/* XWindows */
@@ -396,17 +359,9 @@ typedef struct _wdisplay {
 #ifdef HAVE_XFT
   XFontStruct   *xfont;
 #endif					/* HAVE_XFT */
-#ifdef GraphicsGL
-  int		nConfigs;
-  GLXFBConfig	*configs;
-  XVisualInfo   *vis;
-  GLXContext	sharedCtx;		/* shared context for texture sharing */
-  GLXContext	currCtx;		/* keeps track of current context */
-  unsigned int  stdPatTexIds[16];	/* array of std pattern texture ids */
-  unsigned int  *texIds;
-  unsigned int  numTexIds;
-  unsigned int  maxTexIds;
-#endif					/* GraphicsGL */
+#ifdef Graphics3D
+  XVisualInfo  *vis;
+#endif					/* Graphics3D */
   Cursor	cursors[NUMCURSORSYMS];
   int           numColors;		/* allocated color info */
   int		sizColors;		/* # elements of alloc. color array */
@@ -416,13 +371,6 @@ typedef struct _wdisplay {
   wfp		fonts;
   int		buckets[16384];		/* hash table for quicker lookups */
 #endif					/* XWindows */
-#ifdef GraphicsGL
-  wfp		glfonts;		/* For OpenGL & X11 to live happily together */
-  //struct mcolors mclrs;
-  int 		numMclrs;
-  int 		muteIdCount; 
-  struct color *mclrs;
-#endif					/* GraphicsGL */
 #ifdef Graphics3D
 
   int ntextures;			/* # textures actually used */
@@ -454,12 +402,6 @@ typedef struct _wcontext {
   double	gamma;			/* gamma correction value */
   int		bits;			/* context bits */
 
-#ifdef GraphicsGL
-  struct color  glfg, glbg;
-  int		reverse;
-  double	alpha;
-#endif					/* GraphicsGL */
-
 #ifdef MacGraph
   ContextPtrType   contextPtr;
 #endif					/* MacGraph */
@@ -484,8 +426,18 @@ typedef struct _wcontext {
 #endif					/* MSWindows*/
 
 #ifdef Graphics3D
+
+#if HAVE_LIBGL
+#ifdef XWindows
+  GLXContext    ctx;			   /* context for "gl" windows */
+#endif					/* XWindows */
+#ifdef MSWindows
+  HGLRC ctx;
+#endif					/* MSWindows */
+#endif					/* HAVE_LIBGL */
+
   int           dim;			/* # of coordinates per vertex */
-  int           rendermode;			/* flag for 3D windows */
+  int           is_3D;			/* flag for 3D windows */
   char          buffermode;		/* 3D buffering flag */
   char		meshmode;		/* fillpolygon mesh mode */
 
@@ -500,7 +452,13 @@ typedef struct _wcontext {
   int		selectionnamecount;	/* how many - used so far   */	
   int		selectionnamelistsize;  /* current available size  */
   int		app_use_selection3D;    /* the application uses 3D selection */
+ 
+  double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
+  double        eyedirx, eyediry, eyedirz; /* eye direction vector */
+  double        eyeposx, eyeposy, eyeposz; /* eye position */
 
+  double        fov; 		/* field of view angle */
+  
   struct b_realarray  *normals;		/* vertex normals data */
   
   int           normode;	    	/* normals on, off or auto */
@@ -561,10 +519,6 @@ typedef struct _wstate {
 #ifdef Graphics3D
   int type;
   int texindex;
-  double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
-  double        eyedirx, eyediry, eyedirz; /* eye direction vector */
-  double        eyeposx, eyeposy, eyeposz; /* eye position */
-  double        fov; 		/* field of view angle */
 #endif					/* Graphics3D */
 
   int		inputmask;		/* user input mask */
@@ -606,28 +560,6 @@ typedef struct _wstate {
   Boolean   visible;
 #endif					/* MacGraph */
   wdp		display;
-
-#ifdef GraphicsGL
-#ifdef XWindows
-  GLXContext    ctx;			/* context for "gl" windows */
-  GLXPbuffer	pbuf;			/* offscreen render surface */
-#endif					/* XWindows */
-#ifdef MSWindows
-  HGLRC ctx;
-#endif					/* MSWindows */
-
-  struct _wcontext wcrender, wcdef;	/* render & default/init contexts */
-  int		lastwcserial;		/* remembers the last context used */
-  unsigned char	updateRC;		/* flag for render context, default: 0 */
-  unsigned char initAttrs;		/* flag for initializing attributes default: 0 */
-  unsigned char resize;			/* window resize flag */
-  unsigned char is_gl;			/* flag for coexisting with Xlib */
-  unsigned char dx_flag, dy_flag;
-  unsigned char	stencil_mask;		/* bitmask for stencil buffer */
-  int 		rendermode;
-#endif					/* GraphicsGL */
-
-
 #ifdef XWindows
   Window	win;			/* X window */
   Pixmap	pix;			/* current screen state */
@@ -673,12 +605,6 @@ typedef struct _wstate {
   int            is_3D;        /* flag for 3D windows */
   struct descrip funclist;    /* descriptor to hold list of 3d functions */
 #endif					/* Graphics3D */
-#ifdef GraphicsGL 
-  struct descrip funclist2d;  /* descriptor to hold list of 2d functions */
-  unsigned char redraw_flag;
-  unsigned char busy_flag;
-  unsigned char buffermode; 
-#endif					/* GraphicsGL */
   int            no;          /* new field added for child windows */
 } wstate, *wsp;
 
@@ -816,9 +742,11 @@ typedef struct
 #define A_GLVERSION    	86
 #define A_GLVENDOR     	87
 #define A_GLRENDERER   	88
-#define A_ALPHA	 	89	
-#define A_RENDERMODE	90	
 
-#define NUMATTRIBS	90	
+#define NUMATTRIBS	88
 
 #define XICONSLEEP	20 /* milliseconds */
+
+/* Values for 3D attribute "buffer" */
+#define IMMEDIATE3D   1
+#define BUFFERED3D 0

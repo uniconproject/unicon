@@ -44,11 +44,6 @@ function{1} Alert(argv[argc])
       if (argc == warg) volume = 0;
       else if (!def:C_integer(argv[warg], 0, volume))
         runerr(101, argv[warg]);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_walert(w, volume);
-      else
-#endif					/* GraphicsGL */
       walert(w, volume);
       ReturnWindow;
       }
@@ -83,24 +78,12 @@ function{0,1} Bg(argv[argc])
        */
       if (argc - warg > 0) {
 	 if (is:integer(argv[warg])) {    /* mutable color or packed RGB */
-#ifdef GraphicsGL
-	    if (w->window->is_gl) {
-	       if (gl_isetbg(w, IntVal(argv[warg])) == Failed) fail;
-	       }
-	    else 
-#endif					/* GraphicsGL */
 	    if (isetbg(w, IntVal(argv[warg])) == Failed) fail;
 	    }
 	 else {
 	    if (!cnv:C_string(argv[warg], tmp))
 	       runerr(103,argv[warg]);
-#ifdef GraphicsGL
-            if (w->window->is_gl) {
-	       if (gl_setbg(w, tmp) == Failed) fail;
-               }
-            else
-#endif					/* GraphicsGL */
-	    if (setbg(w, tmp) == Failed) fail;
+	    if(setbg(w, tmp) == Failed) fail;
 	    }
 
          }
@@ -108,11 +91,6 @@ function{0,1} Bg(argv[argc])
       /*
        * In any event, this function returns the current background color.
        */
-#ifdef GraphicsGL
-      if (w->window->is_gl) 
-         gl_getbg(w, sbuf1);
-      else
-#endif					/* GraphicsGL */
       getbg(w, sbuf1);
       len = strlen(sbuf1);
       Protect(tmp = alcstr(sbuf1, len), runerr(0));
@@ -139,11 +117,6 @@ function{1} Clip(argv[argc])
       if (argc <= warg) {
          wc->clipx = wc->clipy = 0;
          wc->clipw = wc->cliph = -1;
-#ifdef GraphicsGL
-         if (w->window->is_gl)
-            gl_unsetclip(w);
-         else
-#endif					/* GraphicsGL */
          unsetclip(w);
          }
       else {
@@ -154,11 +127,6 @@ function{1} Clip(argv[argc])
          wc->clipy = y;
          wc->clipw = width;
          wc->cliph = height;
-#ifdef GraphicsGL
-         if (w->window->is_gl)
-            gl_setclip(w);
-         else
-#endif					/* GraphicsGL */
          setclip(w);
          }
 
@@ -178,7 +146,7 @@ function{1} Clone(argv[argc])
 #endif					/* Graphics3D */
       }
    body {
-      wbp w, w2, new_w;
+      wbp w, w2;
       int warg = 0, n;
       tended struct descrip sbuf, sbuf2;
       char answer[128];
@@ -198,7 +166,7 @@ function{1} Clone(argv[argc])
 
 	 if (texhandle >= w->context->display->ntextures) runerr(101, argv[warg]);
 
-      	 if (!constr && !(constr = rec_structor3d(GL3D_TEXTURE)))
+      	 if (!constr && !(constr = rec_structor3d("gl_texture")))
 	    syserr("failed to create opengl record constructor");
       	 nfields = (int) BlkD(*constr, Proc)->nfields;
 
@@ -217,44 +185,56 @@ function{1} Clone(argv[argc])
 	 }
 #endif					/* Graphics3D */
 
-      Protect(new_w = alc_wbinding(), runerr(0));
-
       for (n=warg; n<argc; n++) {
          if (!is:string(argv[n])) runerr(103, argv[n]);
+	 }
 
+      Protect(w2 = alc_wbinding(), runerr(0));
+
+      for (n=warg; n<argc; n++) {
          if (StrLen(argv[n])==2 && !strncmp(StrLoc(argv[n]), "gl", 2)){
 #ifdef Graphics3D
-	    child_window = CHILD_WIN3D;
+	     child_window = CHILD_WIN3D;
 #else					/* Graphics3D */
-	    runerr(150, argv[n]);
+	     runerr(150, argv[n]);
 #endif					/* Graphics3D */
-	    argv[n] = nulldesc;
-	    break;
-	    }
-	 else if (StrLen(argv[n])==2 && !strncmp(StrLoc(argv[n]), "gt", 2)){
+	     argv[n] = nulldesc;
+	     break;
+	     }
+	 else
+         if (StrLen(argv[n])==2 && !strncmp(StrLoc(argv[n]), "gt", 2)){
 #ifdef Graphics3D
-	    child_window = CHILD_WINTEXTURE;
+	     child_window = CHILD_WINTEXTURE;
 #else					/* Graphics3D */
-	    runerr(150, argv[n]);
+	     runerr(150, argv[n]);
 #endif					/* Graphics3D */
-	    argv[n] = nulldesc;
-	    break;
-	    }
+	     argv[n] = nulldesc;
+	     break;
+	     }
+         }
 
-         else if (StrLen(argv[n])==1 && !strncmp(StrLoc(argv[n]), "g", 1)){
-	    child_window = CHILD_WIN2D;
-	    argv[n] = nulldesc;
-	    break;
-  	    }
+      if (child_window==0){
+         for (n=warg; n<argc; n++) {
+            if (StrLen(argv[n])==1 && !strncmp(StrLoc(argv[n]), "g", 1)){
+	       child_window = CHILD_WIN2D;
+	       argv[n] = nulldesc;
+	       break;
+  	       }
+            }
          }
 
 #ifdef Graphics3D
-      if (is_texture == TEXTURE_RECORD) {
+      if (is_texture == TEXTURE_RECORD){
          child_window = CHILD_WINTEXTURE + texhandle;
-         }
+      }
 #endif					/* Graphics3D */
-      
-      /* check for optional second window arg */
+
+      if (!child_window) {
+        w2->window = w->window;
+        w2->window->refcount++;
+      }
+
+
       if (argc>warg && is:file(argv[warg])) {
 	 if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
@@ -262,88 +242,47 @@ function{1} Clone(argv[argc])
 	    runerr(142,argv[warg]);
 	 if (ISCLOSED(BlkLoc(argv[warg])->File.fd.wb))
 	    runerr(142,argv[warg]);
-	 w2 = (wbp)BlkD(argv[warg],File)->fd.wb; 
+         if (child_window)
+	    child_window_stuff(w2, w, child_window);
+	 else
+	    Protect(w2->context =
+		 clone_context((wbp)BlkD(argv[warg],File)->fd.wb),runerr(0));
 	 warg++;
 	 }
       else {
-         w2 = w; 
-         }
+         if (child_window)
+	    child_window_stuff(w2, w, child_window);
+	 else
+	    Protect(w2->context = clone_context(w), runerr(0));
+	 }
 
-      /* initialize new window's canvas and context */
-      if (!child_window) {
-         new_w->window = w->window;
-         new_w->window->refcount++;
-#ifdef GraphicsGL
-         if (w->window->is_gl) {
-	    Protect(new_w->context = gl_clone_context(w2),runerr(0));
-	    }
-	 else 
-#endif					/* GraphicsGL */
-	 Protect(new_w->context = clone_context(w2),runerr(0));
-         }
-      else {
-#ifdef GraphicsGL
-         /* Allow legacy X11 to work with OpenGL 3D windows */
-         if (w->window->is_gl || child_window==CHILD_WIN3D) {
-            if (!gl_child_window_stuff(new_w, w, child_window)) runerr(0);
-            }
-         else
-#endif					/* GraphicsGL */
-         if (!child_window_stuff(new_w, w, child_window)) runerr(0);
-         }
+#ifdef Graphics3D
+      if (child_window==CHILD_WIN3D) {
+	 if(create_display_list(w2, 40000) == Failed)
+	    fail;
+	 }
+#endif					/* Graphics3D */
 
-#ifdef GraphicsGL 
-      if (new_w->window->is_gl) {
-         if (!new_w->window->initAttrs)
-            new_w->window->initAttrs = 1;
-         else 
-            glprintf("Clone(): need a mutex lock\n"); 
-         }
-#endif					/* GraphicsGL */
       for (n = warg; n < argc; n++) {
 	 if (!is:null(argv[n])) {
 	    if (!cnv:tmp_string(argv[n], sbuf))  /* sbuf not allocated */
 	       runerr(109, argv[n]);
-	    switch (wattrib(new_w, StrLoc(argv[n]), StrLen(argv[n]), &sbuf2, answer)) {
+	    switch (wattrib(w2, StrLoc(argv[n]), StrLen(argv[n]), &sbuf2, answer)) {
 	    case Failed: fail;
 	    case RunError: runerr(0, argv[n]);
 	       }
 	    }
 	 }
-#ifdef GraphicsGL
-      if (new_w->window->is_gl) {
-         if (new_w->window->initAttrs)
-            new_w->window->initAttrs = 0;
-         else 
-            glprintf("Clone(): need a mutex unlock\n"); 
-         }
-
-      if (new_w->window->is_gl) {
-         if (child_window) 
-       	    gl_wmap(new_w);
-         else 
-            MakeCurrent(new_w); 
-         }
-#endif					/* GraphicsGL */
+      if (child_window)
+      	 my_wmap(w2);
 
       Protect(BlkLoc(result) =
-	      (union block *)alcfile((FILE *)new_w, Fs_Window|Fs_Read|Fs_Write
+	      (union block *)alcfile((FILE *)w2, Fs_Window|Fs_Read|Fs_Write
 #ifdef Graphics3D
-			     | (w->context->rendermode == UGL3D?Fs_Window3D:0)
+				      | (w->context->is_3D?Fs_Window3D:0)
 #endif					/* Graphics3D */
-#ifdef GraphicsGL
-			     | (w->window->is_gl?Fs_WinGL2D:0)
-#endif					/* GraphicsGL */
 				   , &emptystr),runerr(0));
       result.dword = D_File;
-
-#ifdef GraphicsGL
-      /*
-       * link in the Icon file value so this window can find it
-       */
-      if (new_w->window->is_gl && child_window)
-         linkfiletowindow(new_w, BlkD(result,File));
-#endif					/* GraphicsGL */
 
 #if 0 /* Graphics3D */
       if (is_texture){
@@ -378,13 +317,6 @@ function{0,1} Color(argv[argc])
 
       if (argc - warg == 1) {			/* if this is a query */
          CnvCInteger(argv[warg], n)
-#ifdef GraphicsGL
-         if (w->window->is_gl) {
-            if ((colorname = gl_get_mutable_name(w, n)) == NULL)
-               fail;
-            }
-         else
-#endif					/* GraphicsGL */
          if ((colorname = get_mutable_name(w, n)) == NULL)
             fail;
          len = strlen(colorname);
@@ -396,32 +328,15 @@ function{0,1} Color(argv[argc])
 
       for (i = warg; i < argc; i += 2) {
          CnvCInteger(argv[i], n)
-#ifdef GraphicsGL
-         if (w->window->is_gl) {
-            if ((colorname = gl_get_mutable_name(w, n)) == NULL)
-               fail;
-            } 
-         else 
-#endif					/* GraphicsGL */
          if ((colorname = get_mutable_name(w, n)) == NULL)
             fail;
 
          if (is:integer(argv[i+1])) {		/* copy another mutable  */
             if (IntVal(argv[i+1]) >= 0)
                runerr(205, argv[i+1]);		/* must be negative */
-#ifdef GraphicsGL
-            if (w->window->is_gl) {
-               if ((srcname = gl_get_mutable_name(w, IntVal(argv[i+1]))) == NULL)
-                  fail;
-               if (gl_set_mutable(w, n, srcname) == Failed) fail;
-               } 
-            else 
-#endif					/* GraphicsGL */
-             {
-             if ((srcname = get_mutable_name(w, IntVal(argv[i+1]))) == NULL)
-                fail;
-             if (set_mutable(w, n, srcname) == Failed) fail;
-             }
+            if ((srcname = get_mutable_name(w, IntVal(argv[i+1]))) == NULL)
+               fail;
+            if (set_mutable(w, n, srcname) == Failed) fail;
             strcpy(colorname, srcname);
             }
    
@@ -430,12 +345,6 @@ function{0,1} Color(argv[argc])
             if (!cnv:C_string(argv[i+1],tmp))
                runerr(103,argv[i+1]);
    
-#ifdef GraphicsGL
-            if (w->window->is_gl) {
-               if (gl_set_mutable(w, n, tmp) == Failed) fail;
-               }
-            else
-#endif					/* GraphicsGL */
             if (set_mutable(w, n, tmp) == Failed) fail;
             strcpy(colorname, tmp);
             }
@@ -525,7 +434,6 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
        */
 
 #ifdef Graphics3D
-   if (w->context->rendermode == UGL3D) {
       if (argc>warg && is:record(argv[warg])) {
 	/* set a boolean flag, use a texture */
 	dest_is_texture=1;
@@ -579,7 +487,6 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
 	 }
 	 ReturnWindow;
 	 }
-      }
 #endif					/* Graphics3D */
 
       /*
@@ -615,13 +522,7 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
       r = rectargs(w2, n, argv, warg + 4, &x2, &y2, &width2, &height2);
       if (r >= 0)
          runerr(101, argv[r]);
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_copyArea(w, w2, x, y, width, height, x2, y2) == RunError)
-            runerr(0);
-         }
-      else
-#endif					/* GraphicsGL */
+
       if (copyArea(w, w2, x, y, width, height, x2, y2) == Failed)
          fail;
       ReturnWindow;
@@ -661,12 +562,6 @@ function{0,1} Couple(w,w2)
 	     * Bind an existing window to an existing context,
 	     * and up the context's reference count.
 	     */
-#ifdef GraphicsGL
-	    if (wb->window->is_gl) {
-	       if (gl_rebind(wb_new, BlkLoc(w2)->File.fd.wb) == Failed) fail;
-	       }
-	    else
-#endif					/* GraphicsGL */
 	    if (rebind(wb_new, BlkLoc(w2)->File.fd.wb) == Failed) fail;
 	    wb_new->context->refcount++;
 	    }
@@ -704,17 +599,9 @@ function{1} DrawArc(argv[argc])
       double a1, a2;
 
       OptWindow(w);
-
       j = 0;
       for (i = warg; i < argc || i == warg; i += 6) {
          if (j == MAXXOBJS) {
-#ifdef GraphicsGL
-            if (w->window->is_gl) {
-               if (gl_drawarcs(w, arcs, MAXXOBJS) == RunError) 
-                  runerr(0);
-               }
-            else 
-#endif					/* GraphicsGL */
             drawarcs(w, arcs, MAXXOBJS);
             j = 0;
             }
@@ -771,13 +658,6 @@ function{1} DrawArc(argv[argc])
          j++;
          }
 
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_drawarcs(w, arcs, j) == RunError)
-            runerr(0);
-         }
-      else 
-#endif					/* GraphicsGL */
       drawarcs(w, arcs, j);
       ReturnWindow;
       }
@@ -850,8 +730,8 @@ function{1} DrawCurve(argv[argc])
 	       fail;
 	    }
          }
-
       CheckArgMultiple(2);
+
       if (w) {
 	 dx = w->context->dx;
 	 dy = w->context->dy;
@@ -893,11 +773,6 @@ function{1} DrawCurve(argv[argc])
 
 	 if (w) {
 	    if (n == 2) {
-#ifdef GraphicsGL
-	       if (w->window->is_gl)
-	          gl_drawlines(w, points+1, 2);
-	       else
-#endif					/* GraphicsGL */
 	       drawlines(w, points+1, 2);
 	       }
 	    else {
@@ -1006,14 +881,6 @@ function{0,1} DrawImage(argv[argc])
          if (nchars % row != 0)
             fail;
          height = nchars / row;
-#ifdef GraphicsGL
-         if (w->window->is_gl) {
-            if (gl_blimage(w, x, y, width, height, c, s, (word)(z - s)) == RunError)
-               runerr(305);
-            else return nulldesc;
-            }
-         else 
-#endif					/* GraphicsGL */ 
          if (blimage(w, x, y, width, height, c, s, (word)(z - s)) == RunError)
             runerr(305);
          else
@@ -1062,11 +929,6 @@ function{0,1} DrawImage(argv[argc])
        * Call platform-dependent code to draw the image.
        */
       height = nchars / width;
-#ifdef GraphicsGL
-      if (w->window->is_gl) 
-         i = gl_strimage(w, x, y, width, height, e, s, (word)(z - s), 0);
-      else
-#endif					/* GraphicsGL */
       i = strimage(w, x, y, width, height, e, s, (word)(z - s), 0);
       if (i == 0)
          return nulldesc;
@@ -1121,11 +983,15 @@ function{1} DrawLine(argv[argc])
 	 ReturnWindow;
 	 }
 
-      if (w->context->rendermode == UGL3D) {
+      if (w->context->is_3D){
 	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
+
+         /* create a list to keep track of function information */
+	 if (create3Dlisthdr(&f, "DrawLine", 4)!=Succeeded)
+	   fail;
 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
@@ -1133,25 +999,24 @@ function{1} DrawLine(argv[argc])
 	 else {
 	    num = argc-warg;
 	    }
-	 /* Check the number of coordinates*/
-	 if (num%w->context->dim != 0 || num<w->context->dim*2)
+	  
+	  /* Check the number of coordinates*/
+	  if (num%w->context->dim != 0 || num<w->context->dim*2)
 	    runerr(146);
-
-         /* create a list to keep track of function information */
+	    
 	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-
-	 if (create3Dlisthdr(&f, "DrawLine", 4)!=Succeeded)
-	    fail;
 	 c_put(&f, &d);
+	 
          c_put(&(w->window->funclist), &f);
 
 	 /* draw the lines */
-	 if (w->window->buffermode == UGL_IMMEDIATE) {
+	 if (w->context->buffermode) {
 	    drawpoly(w, ap->a, num, U3D_LINE_STRIP, w->context->dim);
-	    glFlush();
+	    swapbuffers(w, 1);
 	    }
+         redraw3D(w); /* workaround an apparent render/update bug */
          return f;
          }
      else 
@@ -1165,13 +1030,6 @@ function{1} DrawLine(argv[argc])
       for(i=0, j=0;i<n;i++, j++) {
 	 int base = warg + i * 2;
          if (j==MAXXOBJS) {
-#ifdef GraphicsGL
-	    if (w->window->is_gl) {
-	       if (gl_drawlines(w, points, MAXXOBJS) == RunError)
-	          runerr(0); 
-	       } 
-	    else
-#endif					/* GraphicsGL */
 	    drawlines(w, points, MAXXOBJS);
 	    points[0] = points[MAXXOBJS-1];
    	    j = 1;
@@ -1181,13 +1039,6 @@ function{1} DrawLine(argv[argc])
 	 points[j].x += dx;
 	 points[j].y += dy;
          }
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_drawlines(w, points, j) == RunError)
-            runerr(0); 
-         } 
-      else
-#endif					/* GraphicsGL */
       drawlines(w, points, j);
       ReturnWindow;
         }
@@ -1214,6 +1065,7 @@ function{1} DrawPoint(argv[argc])
       int is_texture=0;
       int texhandle;
 #endif					/* Graphics3D */
+
       OptTexWindow(w);
 #ifdef Graphics3D
       if (is_texture) {
@@ -1230,11 +1082,16 @@ function{1} DrawPoint(argv[argc])
 	 ReturnWindow;
 	 }
   
-      if (w->context->rendermode == UGL3D) {
+      if (w->context->is_3D) {
 	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
+	 
+
+	 /* create a list to store function information */
+	 if (create3Dlisthdr(&f, "DrawPoint", 4)!=Succeeded)
+	   fail;
 	 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
@@ -1242,25 +1099,23 @@ function{1} DrawPoint(argv[argc])
 	 else {
 	    num = argc-warg;
 	    }
-	
+	 
 	 /* Check the number of coordinates*/
 	 if (num%w->context->dim!=0)
-	    runerr(146);
-
-	 /* create a list to store function information */
+	   runerr(146);
+	 
 	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
-	    runerr(305, argv[warg]);
+	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-
-  	 if (create3Dlisthdr(&f, "DrawPoint", 4)!=Succeeded)
-	    fail;
 	 c_put(&f, &d);
+	 
          c_put(&(w->window->funclist), &f);
 
-	 if (w->window->buffermode == UGL_IMMEDIATE) {
+	 if (w->context->buffermode) {
 	    drawpoly(w, ap->a, num, U3D_POINTS, w->context->dim);
-	    glFlush();
+	    swapbuffers(w, 1);
 	    }
+         redraw3D(w); /* workaround an apparent render/update bug */
          return f;
 	 }
       else 
@@ -1272,13 +1127,6 @@ function{1} DrawPoint(argv[argc])
       for(i=0, j=0; i < n; i++, j++) {
 	 int base = warg + i * 2;
          if (j == MAXXOBJS) {
-#ifdef GraphicsGL
-	    if (w->window->is_gl) {
-	       if (gl_drawpoints(w, points, MAXXOBJS) == RunError)
-	          runerr(0); 
-	       } 
-	    else 
-#endif					/* GraphicsGL */
 	    drawpoints(w, points, MAXXOBJS);
             j = 0;
             }
@@ -1287,13 +1135,6 @@ function{1} DrawPoint(argv[argc])
 	 points[j].x += dx;
 	 points[j].y += dy;
        }
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_drawpoints(w, points, j) == RunError)
-            runerr(0); 
-         } 
-      else 
-#endif					/* GraphicsGL */
       drawpoints(w, points, j);
       ReturnWindow;
 
@@ -1313,46 +1154,43 @@ function{1} DrawPolygon(argv[argc])
    body {
       wbp w;
       int i, j, n, base, dx, dy, warg = 0;
-#ifdef GraphicsGL
-      XPoint *points;
-#else					/* GraphicsGL */
       XPoint points[MAXXOBJS];
-#endif					/* GraphicsGL */
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (w->context->rendermode == UGL3D) {
+      if (w->context->is_3D) {
 	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
-
+      
+         /* create a list for function information */
+	 if (create3Dlisthdr(&f, "DrawPolygon", 4)!=Succeeded)
+	   fail;
+	 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
 	    num = BlkD(argv[warg], List)->size;
 	 else {
 	    num = argc-warg;
 	    }
-
- 	 /* Check the number of coordinates*/
-	 if (num%w->context->dim!=0 || num<3*w->context->dim)
+	  /* Check the number of coordinates*/
+	  if (num%w->context->dim!=0 || num<3*w->context->dim)
 	    runerr(146);
-
-	 /* create a list for function information */
+	  
 	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
-	    runerr(305, argv[warg]);
+	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-
-	 if (create3Dlisthdr(&f, "DrawPolygon", 4)!=Succeeded)
-	    fail;
 	 c_put(&f, &d);
+	 
          c_put(&(w->window->funclist), &f);
  
          /* draw the polygon */
-	 if (w->window->buffermode == UGL_IMMEDIATE) {
+	 if (w->context->buffermode) {
 	    drawpoly(w, ap->a, num, U3D_LINE_LOOP /* w->context->meshmode*/, w->context->dim);
-	    glFlush();
+	    swapbuffers(w, 1);
 	    }
+         redraw3D(w); /* workaround an apparent render/update bug */
          return f;
 	 }
       else 
@@ -1363,16 +1201,6 @@ function{1} DrawPolygon(argv[argc])
       dx = w->context->dx;
       dy = w->context->dy;
 
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if ((points = (XPoint *)malloc((n+1)*sizeof(XPoint))) == NULL)
-            runerr(305);
-         }
-      else {
-         if ((points = (XPoint *)malloc((MAXXOBJS)*sizeof(XPoint))) == NULL)
-            runerr(305);
-         }
-#endif					/* GraphicsGL */
       /*
        * To make a closed polygon, start with the *last* point.
        */
@@ -1386,7 +1214,7 @@ function{1} DrawPolygon(argv[argc])
        */
       for(i = 0, j = 1; i < n; i++, j++) {
          base = warg + i * 2;
-         if (!w->window->is_gl && j == MAXXOBJS) {
+         if (j == MAXXOBJS) {
             drawlines(w, points, MAXXOBJS);
             points[0] = points[MAXXOBJS-1];
             j = 1;
@@ -1396,17 +1224,7 @@ function{1} DrawPolygon(argv[argc])
          points[j].x += dx;
          points[j].y += dy;
          }
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_drawlines(w, points, j) == RunError)
-            runerr(0); 
-         }
-      else
-#endif					/* GraphicsGL */
       drawlines(w, points, j);
-#ifdef GraphicsGL
-      free(points);
-#endif					/* GraphicsGL */
       ReturnWindow;
        }
      }
@@ -1458,13 +1276,6 @@ function{1} DrawRectangle(argv[argc])
          if (r >= 0)
             runerr(101, argv[r]);
          if (j == MAXXOBJS) {
-#ifdef GraphicsGL 
-            if (w->window->is_gl) {
-               if (gl_drawrectangles(w,recs,MAXXOBJS) == RunError)
-                  runerr(0); 
-               } 
-            else
-#endif					/* GraphicsGL */
             drawrectangles(w,recs,MAXXOBJS);
             j = 0;
             }
@@ -1475,13 +1286,6 @@ function{1} DrawRectangle(argv[argc])
          j++;
          }
 
-#ifdef GraphicsGL 
-      if (w->window->is_gl) {
-         if (gl_drawrectangles(w,recs,j) == RunError)
-            runerr(0); 
-         } 
-      else
-#endif					/* GraphicsGL */
       drawrectangles(w, recs, j);
       ReturnWindow;
       }
@@ -1522,38 +1326,40 @@ function{1} DrawSegment(argv[argc])
 	 ReturnWindow;
 	 }
 
-      if (w->context->rendermode == UGL3D) {
+      if (w->context->is_3D) {
 	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
 
+         /* create a list for function information */
+	 if (create3Dlisthdr(&f, "DrawSegment", 4)!=Succeeded)
+	   fail;
+	 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
 	    num = BlkD(argv[warg], List)->size;
 	 else {
 	    num = argc-warg;
 	    }
-
-	 /* Check the number of coordinates*/
-	 if (num%(2*w->context->dim) != 0) 
+	  
+	  /* Check the number of coordinates*/
+	  if (num%(2*w->context->dim) != 0)
 	    runerr(146);
-
-         /* create a list for function information */
+	  
 	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
-	    runerr(305, argv[warg]);
+	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-
-	 if (create3Dlisthdr(&f, "DrawSegment", 4)!=Succeeded)
-	    fail;
 	 c_put(&f, &d);
+	 
+         /* draw the line segments */
          c_put(&(w->window->funclist), &f);
 
-         /* draw the line segments */
-	 if (w->window->buffermode == UGL_IMMEDIATE) {
+	 if (w->context->buffermode) {
 	    drawpoly(w, ap->a, argc-warg, U3D_LINES, w->context->dim);
-	    glFlush();
+	    swapbuffers(w, 1);
 	    }
+	 redraw3D(w);
 	 return f;
 	 }
        else
@@ -1567,13 +1373,6 @@ function{1} DrawSegment(argv[argc])
       for(i=0, j=0; i < n; i++, j++) {
 	 int base = warg + i * 4;
          if (j == MAXXOBJS) {
-#ifdef GraphicsGL
-	    if (w->window->is_gl) {
-	       if (gl_drawsegments(w, segs, MAXXOBJS) == RunError)
-	          runerr(0); 
-	       } 
-	    else
-#endif					/* GraphicsGL */
 	    drawsegments(w, segs, MAXXOBJS);
             j = 0;
             }
@@ -1586,13 +1385,6 @@ function{1} DrawSegment(argv[argc])
 	 segs[j].y1 += dy;
 	 segs[j].y2 += dy;
          }
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_drawsegments(w, segs, j) == RunError)
-            runerr(0); 
-         } 
-      else
-#endif					/* GraphicsGL */
       drawsegments(w, segs, j);
 	 }
       ReturnWindow;
@@ -1620,12 +1412,12 @@ function{1} DrawString(argv[argc])
 
       OptWindow(w);
 #ifdef Graphics3D
-      if (w->context->rendermode == UGL3D) {
+      if (w->context->is_3D) {
 
 	 if (argc - warg < 3) fail;
 
 	 if (!constr) {
-	    if (!(constr = rec_structor3d(GL3D_DRAWSTRING)))
+	    if (!(constr = rec_structor3d("gl_drawstring3d")))
 	      syserr("failed to create opengl record constructor");
 	    }
          nf = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
@@ -1638,12 +1430,8 @@ function{1} DrawString(argv[argc])
 	    runerr(102, argv[warg+2]);
 	 if (!(cnv:C_string(argv[warg+3], s)))
 	    runerr(103, argv[warg+3]);
-
-         if (w->window->buffermode == UGL_IMMEDIATE) {
-	    drawstrng3d(w, (double) x, (double) y, (double) z, s);
-	    glFlush();
-	    }
-	 //swapbuffers(w, 1);
+	 drawstrng3d(w, (double) x, (double) y, (double) z, s);
+	 swapbuffers(w, 1);
 
 	 /* create a record of the graphical object */
 
@@ -1679,11 +1467,6 @@ function{1} DrawString(argv[argc])
          CnvTmpString(argv[base + 2], argv[base + 2]);
 	 s = StrLoc(argv[base + 2]);
 	 len = StrLen(argv[base + 2]);
-#ifdef GraphicsGL 
-	 if (w->window->is_gl)
-	    gl_drawstrng(w, x, y, s, len);
-	 else
-#endif					/* GraphicsGL */
 	 drawstrng(w, x, y, s, len);
          }
       ReturnWindow;
@@ -1727,7 +1510,7 @@ function{1} EraseArea(argv[argc])
 	 ReturnWindow;
 	 }
 
-      if (wc->rendermode == UGL3D) {
+      if (wc->is_3D) {
 	 if(create_display_list(w, 40000) == Failed)
 	    runerr(0);
 	 
@@ -1745,13 +1528,6 @@ function{1} EraseArea(argv[argc])
          r = rectargs(w, argc, argv, i, &x, &y, &width, &height);
          if (r >= 0)
             runerr(101, argv[r]);
-#ifdef GraphicsGL
-         if (w->window->is_gl) {
-            if (gl_eraseArea(w, x, y, width, height) == RunError)
-               runerr(0);
-            }
-         else
-#endif					/* GraphicsGL */
          eraseArea(w, x, y, width, height);
          }
 
@@ -1810,19 +1586,9 @@ function{1} Event(argv[argc])
 	    lastEventWin = kywd_xwin[XKey_Window];
 	 else
 	    lastEventWin = argv[warg-1];
-#ifdef GraphicsGL
-         if (BlkD(lastEventWin,File)->fd.wb->window->is_gl) {
-            lastEvFWidth = GL_FWIDTH(BlkD(lastEventWin,File)->fd.wb);
-            lastEvLeading = GL_LEADING(BlkD(lastEventWin,File)->fd.wb);
-            lastEvAscent = GL_ASCENT(BlkD(lastEventWin,File)->fd.wb);
-            }
-         else
-#endif					/* GraphicsGL */
-         {
          lastEvFWidth = FWIDTH(BlkD(lastEventWin,File)->fd.wb);
          lastEvLeading = LEADING(BlkD(lastEventWin,File)->fd.wb);
          lastEvAscent = ASCENT(BlkD(lastEventWin,File)->fd.wb);
-         }
 	 if (is:integer(d) && IntVal(d)==WINDOWCLOSED && 
 	     !(w->window->inputmask & WindowClosureMask)) {
 	    /* closed, don't accept more I/O on it */
@@ -1866,53 +1632,33 @@ function{0,1} Fg(argv[argc])
        */
       if (argc - warg > 0) {
 	  if (is:integer(argv[warg])) {	/* mutable color or packed RGB */
-#ifdef GraphicsGL
-            if (w->window->is_gl) {
-	       if (gl_isetfg(w, IntVal(argv[warg])) == Failed) fail;
-               }
-	    else
-#endif					/* GraphicsGL */
 	    if (isetfg(w, IntVal(argv[warg])) == Failed) fail;
 	    }
 	  else {
 	    if (!cnv:C_string(argv[warg], tmp))
 	       runerr(103,argv[warg]);
 #ifdef Graphics3D  
-	    if (w->context->rendermode == UGL3D) {
-               /* set the material properties */
-               if (setmaterials(w, tmp) == Failed) fail; 
-               }
+	    if (w->context->is_3D) {
+             /* set the material properties */
+             if(setmaterials(w, tmp) == Failed) fail; 
+            }
 	    else
-#endif					/* Graphics3D */
-               {
-#ifdef GraphicsGL
-               if (w->window->is_gl) {
-	          if (gl_setfg(w, tmp) == Failed) fail;
-                  }
-               else 
-#endif 					/* GraphicsGL */
-	       if (setfg(w, tmp) == Failed) fail;
-               }
- 	    }
-         }
+#endif
+	     if(setfg(w, tmp) == Failed) fail;
+ 	 }
+
+      }
 
       /*
        * In any case, this function returns the current foreground color.
        */
-#ifdef Graphics3D  
-      if (w->context->rendermode == UGL3D)
-         getmaterials(sbuf1); 
-      else
-#endif
-      {
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_getfg(w, sbuf1);
-      else
-#endif 					/* GraphicsGL */
-      getfg(w, sbuf1);
-      }
 
+      getfg(w, sbuf1);
+
+#ifdef Graphics3D  
+      if (w->context->is_3D)
+         getmaterials(sbuf1); 
+#endif
       len = strlen(sbuf1);
       Protect(tmp = alcstr(sbuf1, len), runerr(0));
       return string(len, tmp);
@@ -1939,13 +1685,6 @@ function{1} FillArc(argv[argc])
       j = 0;
       for (i = warg; i < argc || i == warg; i += 6) {
          if (j == MAXXOBJS) {
-#ifdef GraphicsGL
-            if (w->window->is_gl) {
-               if (gl_fillarcs(w, arcs, MAXXOBJS) == RunError)
-                  runerr(0);
-               }
-            else 
-#endif					/* GraphicsGL */
             fillarcs(w, arcs, MAXXOBJS);
             j = 0;
             }
@@ -1995,13 +1734,7 @@ function{1} FillArc(argv[argc])
 
          j++;
          }
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_fillarcs(w, arcs, j) == RunError)
-            runerr(0);
-         }
-      else 
-#endif					/* GraphicsGL */
+
       fillarcs(w, arcs, j);
       ReturnWindow;
       }
@@ -2028,7 +1761,6 @@ function{1} FillCircle(argv[argc])
          runerr(146);
       else 
          runerr(102, argv[warg + r]);
-
       }
 end
 
@@ -2049,10 +1781,14 @@ function{1} FillPolygon(argv[argc])
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (w->context->rendermode == UGL3D) {
+      if (w->context->is_3D) {
          tended struct descrip f;
          tended struct descrip d;
          tended struct b_realarray *ap;
+
+	 /* create a list to store function information */
+	 if (create3Dlisthdr(&f, "FillPolygon", 4)!=Succeeded)
+	    fail;
 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg])) {
@@ -2066,21 +1802,18 @@ function{1} FillPolygon(argv[argc])
 	 if (num%w->context->dim != 0 || num<w->context->dim*3)
 	    runerr(146);
 
-         /* create a list to store function information */
 	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	    runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-
-	 if (create3Dlisthdr(&f, "FillPolygon", 4)!=Succeeded)
-	    fail;
 	 c_put(&f, &d);
-         c_put(&(w->window->funclist), &f);
 
          /* draw polygons */
+         c_put(&(w->window->funclist), &f);
+
          /*CheckArgMultiple(w->context->dim);*/
-	 if (w->window->buffermode == UGL_IMMEDIATE) {
+	 if (w->context->buffermode) {
 	    drawpoly(w, ap->a, num, U3D_POLYGON, w->context->dim);
-	    glFlush();
+	    swapbuffers(w, 1);
 	    }
 	 return f;
 	 }
@@ -2104,13 +1837,6 @@ function{1} FillPolygon(argv[argc])
 	 points[i].x += dx;
 	 points[i].y += dy;
 	 }
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_fillpolygon(w, points, n) == RunError)
-            runerr(0); 
-         } 
-      else
-#endif					/* GraphicsGL */
       fillpolygon(w, points, n);
       free(points);
       ReturnWindow;
@@ -2166,13 +1892,6 @@ function{1} FillRectangle(argv[argc])
          if (r >= 0)
             runerr(101, argv[r]);
          if (j == MAXXOBJS) {
-#ifdef GraphicsGL 
-	    if (w->window->is_gl) {
-	       if (gl_fillrectangles(w,recs,MAXXOBJS) == RunError)
-	          runerr(0); 
-	       } 
-            else
-#endif					/* GraphicsGL */
             fillrectangles(w,recs,MAXXOBJS);
             j = 0;
             }
@@ -2183,13 +1902,6 @@ function{1} FillRectangle(argv[argc])
          j++;
          }
 
-#ifdef GraphicsGL 
-      if (w->window->is_gl) {
-         if (gl_fillrectangles(w,recs,j) == RunError)
-            runerr(0); 
-         } 
-      else
-#endif					/* GraphicsGL */
       fillrectangles(w, recs, j);
       ReturnWindow;
       }
@@ -2218,26 +1930,14 @@ function{0,1} Font(argv[argc])
       if (warg < argc) {
          if (!cnv:C_string(argv[warg],tmp))
             runerr(103,argv[warg]);
-#ifdef GraphicsGL 
-         if (w->window->is_gl) {
-            if (gl_setfont(w,&tmp) == Failed) fail;
-            }
-         else
-#endif					/* GraphicsGL */
-          {
-          if (setfont(w,&tmp) == Failed) fail;
-         }}
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_getfntnam(w, buf);
-      else
-#endif					/* GraphicsGL */
+         if (setfont(w,&tmp) == Failed) fail;
+         }
       getfntnam(w, buf);
       len = strlen(buf);
 #ifdef Graphics3D
-      if (w->context->rendermode == UGL3D) {
+      if (w->context->is_3D) {
 	 if (!constr)
-	    if (!(constr = rec_structor3d(GL3D_FONT)))
+	    if (!(constr = rec_structor3d("gl_font3d")))
 	      syserr("failed to create opengl record constructor");
          nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -2282,21 +1982,11 @@ function{1} FreeColor(argv[argc])
          if (is:integer(argv[i])) {
             CnvCInteger(argv[i], n)
             if (n < 0)
-#ifdef GraphicsGL
-               if (w->window->is_gl) 
-                  gl_free_mutable(w, n);
-               else
-#endif					/* GraphicsGL */
                free_mutable(w, n);
             }
          else {
             if (!cnv:C_string(argv[i], s))
                runerr(103,argv[i]);
-#ifdef GraphicsGL
-            if (!w->window->is_gl) 
-               gl_freecolor(w, s);
-            else
-#endif					/* GraphicsGL */
             freecolor(w, s);
             }
          }
@@ -2373,11 +2063,6 @@ function{1} Lower(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_lowerWindow(w);
-      else
-#endif					/* GraphicsGL */
       lowerWindow(w);
       ReturnWindow;
       }
@@ -2395,12 +2080,7 @@ function{0,1} NewColor(argv[argc])
       int rv;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_mutable_color(w, argv+warg, argc-warg, &rv) == Failed) fail;
-         }
-      else 
-#endif					/* GraphicsGL */
+
       if (mutable_color(w, argv+warg, argc-warg, &rv) == Failed) fail;
       return C_integer rv;
       }
@@ -2520,13 +2200,6 @@ function{0,1} PaletteKey(argv[argc])
          fail;
 
       if (cnv:C_integer(argv[warg + 1], n)) {
-#ifdef GraphicsGL
-         if (w->window->is_gl) {
-            if (w == NULL || (s = gl_get_mutable_name(w, n)) == NULL)
-               fail;
-            }
-         else
-#endif					/* GraphicsGL */
          if (w == NULL || (s = get_mutable_name(w, n)) == NULL)
             fail;
          }
@@ -2558,16 +2231,6 @@ function{1} Pattern(argv[argc])
       if (! cnv:string(argv[warg], argv[warg]))
          runerr(103, nulldesc);
 
-#ifdef GraphicsGL
-      if (w->window->is_gl) 
-         switch (gl_SetPattern(w, StrLoc(argv[warg]), StrLen(argv[warg]))) {
-            case RunError:
-               runerr(0, argv[warg]);
-            case Failed:
-               fail;
-            }
-      else
-#endif					/* GraphicsGL */
       switch (SetPattern(w, StrLoc(argv[warg]), StrLen(argv[warg]))) {
          case RunError:
             runerr(0, argv[warg]);
@@ -2621,14 +2284,8 @@ function{0,1} Pending(argv[argc])
          }
 
       ws = w->window;
-      if (isclosed == 0) {
-#ifdef GraphicsGL
-	 if (w->window->is_gl)
-	    gl_wsync(w);
-	 else
-#endif					/* GraphicsGL */
+      if (isclosed == 0)
 	 wsync(w);
-	 }
 
       /*
        * put additional arguments to Pending on the pending list in
@@ -2686,25 +2343,14 @@ function{3} Pixel(argv[argc])
       imem.width = min(width, (int)ws->width - imem.x);
       imem.height = min(height, (int)ws->height - imem.y);
 
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_getpixel_init(w, &imem) == Failed) fail;
-         }
-      else
-#endif					/* GraphicsGL */
       if (getpixel_init(w, &imem) == Failed) fail;
 
       lastval = emptystr;
 
       for (j=y; j < y + height; j++) {
          for (i=x; i < x + width; i++) {
-#ifdef GraphicsGL
-            if (w->window->is_gl) 
-               gl_getpixel(w, i, j, &rv, strout, &imem);
-            else
-#endif					/* GraphicsGL */
             getpixel(w, i, j, &rv, strout, &imem);
-
+	
             slen = strlen(strout);
             if (rv >= 0) {
 	       int signal;
@@ -2727,11 +2373,6 @@ function{3} Pixel(argv[argc])
 	       if ((signal = interp(G_Fsusp, r_args)) != A_Resume) {
 #endif 		 	   	  	 /* TSTATARG */
 		  tend = r_tend.previous;
-#ifdef GraphicsGL
-		  if (w->window->is_gl)
-		     gl_getpixel_term(w, &imem);
-		  else
-#endif					/* GraphicsGL */
 		  getpixel_term(w, &imem);
 		  VanquishReturn(signal);
 		  }
@@ -2754,11 +2395,6 @@ function{3} Pixel(argv[argc])
 	       if ((signal = interp(G_Fsusp, r_args)) != A_Resume) {
 #endif 		 	   	  	 /* TSTATARG */
 		  tend = r_tend.previous;
-#ifdef GraphicsGL
-		  if (w->window->is_gl)
-		     gl_getpixel_term(w, &imem);
-		  else
-#endif					/* GraphicsGL */
 		  getpixel_term(w, &imem);
 		  VanquishReturn(signal);
 		  }
@@ -2766,11 +2402,6 @@ function{3} Pixel(argv[argc])
                }
             }
          }
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_getpixel_term(w, &imem);
-      else
-#endif					/* GraphicsGL */
       getpixel_term(w, &imem);
       fail;
       }
@@ -2797,11 +2428,6 @@ function{0,2} QueryPointer(w)
       else {
 	 if (!is:file(w) || !(BlkD(w,File)->status & Fs_Window))
 	    runerr(140, w);
-#ifdef GraphicsGL
-	 if ((BlkD(w,File)->fd.wb)->window->is_gl)
-	    gl_query_pointer(BlkLoc(w)->File.fd.wb, &xp);
-	 else
-#endif					/* GraphicsGL */
 	 query_pointer(BlkLoc(w)->File.fd.wb, &xp);
 	 }
       suspend C_integer xp.x;
@@ -2821,11 +2447,6 @@ function{1} Raise(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_raiseWindow(w);
-      else
-#endif					/* GraphicsGL */
       raiseWindow(w);
       ReturnWindow;
       }
@@ -2920,12 +2541,6 @@ function{0,1} ReadImage(argv[argc])
 	    }
 #endif					/* Graphics3D */
 
-#ifdef GraphicsGL
-         if (w->window->is_gl) 
-            status = gl_strimage(w, x, y, imd.width, imd.height, imd.paltbl,
-			   imd.data, (word)imd.width * (word)imd.height, 0);
-         else
-#endif					/* GraphicsGL */
          status = strimage(w, x, y, imd.width, imd.height, imd.paltbl,
 			   imd.data, (word)imd.width * (word)imd.height, 0);
          if (status < 0)
@@ -2933,14 +2548,8 @@ function{0,1} ReadImage(argv[argc])
          free((pointer)imd.paltbl);
          free((pointer)imd.data);
          }
-      else if (r == Failed) {
-#ifdef GraphicsGL
-         if (w->window->is_gl)
-            r = gl_readimage(w, filename, x, y, &status);
-         else
-#endif					/* GraphicsGL */
+      else if (r == Failed)
          r = readimage(w, filename, x, y, &status);
-         }
       if (r == RunError)
          runerr(305);
       if (r == Failed)
@@ -2974,11 +2583,6 @@ function{1} WSync(w)
          _w_ = BlkLoc(w)->File.fd.wb;
 	 }
 
-#ifdef GraphicsGL
-      if (_w_ != NULL &&_w_->window->is_gl)
-         gl_wsync(_w_);
-      else
-#endif					/* GraphicsGL */
       wsync(_w_);
 #endif
       pollevent();
@@ -3002,12 +2606,7 @@ function{1} TextWidth(argv[argc])
       if (warg == argc) runerr(103,nulldesc);
       else if (!cnv:tmp_string(argv[warg],argv[warg]))
 	 runerr(103,argv[warg]);
-          
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         i = GL_TEXTWIDTH(w, StrLoc(argv[warg]), StrLen(argv[warg]));
-      else
-#endif					/* GraphicsGL */
+       
       i = TEXTWIDTH(w, StrLoc(argv[warg]), StrLen(argv[warg]));
       return C_integer i;
       }
@@ -3058,12 +2657,6 @@ function{*} WAttrib(argv[argc])
       for (pass = 1; pass <= 2; pass++) {
 	 w = wsave;
 	 if (config && pass == 2) {
-#ifdef GraphicsGL
-	    if (w->window->is_gl) {
-  	       if (gl_do_config(w, config) == Failed) fail;
-  	       }
-	    else
-#endif					/* GraphicsGL */
 	    if (do_config(w, config) == Failed) fail;
 	    }
          for (n = warg; n < argc; n++) {
@@ -3077,12 +2670,6 @@ function{*} WAttrib(argv[argc])
                   runerr(140,argv[n]);
                w = BlkLoc(argv[n])->File.fd.wb;
 	       if (config && pass == 2) {
-#ifdef GraphicsGL
-		  if (w->window->is_gl) {
-		     if (gl_do_config(w, config) == Failed) fail;
-		     }
-		  else
-#endif					/* GraphicsGL */
 		  if (do_config(w, config) == Failed) fail;
 		  }
                }
@@ -3262,12 +2849,6 @@ function{0,1} WDefault(argv[argc])
       if (!cnv:C_string(argv[warg+1],opt))
          runerr(103,argv[warg+1]);
 
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_getdefault(w, prog, opt, sbuf1) == Failed) fail;
-         }
-      else
-#endif					/* GraphicsGL */
       if (getdefault(w, prog, opt, sbuf1) == Failed) fail;
       l = strlen(sbuf1);
       Protect(prog = alcstr(sbuf1,l),runerr(0));
@@ -3286,11 +2867,6 @@ function{1} WFlush(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_wflush(w);
-      else
-#endif					/* GraphicsGL */
       wflush(w);
       ReturnWindow;
       }
@@ -3342,11 +2918,6 @@ function{0,1} WriteImage(argv[argc])
        * try platform-dependent code first; it will reject the call
        * if the file name s does not specify a platform-dependent format.
        */
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         r = gl_dumpimage(w, s, x, y, width, height);
-      else
-#endif					/* GraphicsGL */
       r = dumpimage(w, s, x, y, width, height);
 #if HAVE_LIBJPEG
       if ((r == NoCvt) &&
@@ -4164,17 +3735,14 @@ function{1} DrawTorus(argv[argc])
       CheckArgMultiple(5);
       
       wc = w->context;
+      bfmode = wc->buffermode;
       /* tori are not allowed in a 2-dim space */
       if (wc->dim == 2) 
          runerr(150);
 
-      if (!constr && !(constr = rec_structor3d(GL3D_TORUS)))
+      if (!constr && !(constr = rec_structor3d("gl_torus")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
-
-      MakeCurrent(w);
-      CheckRendermode(w);
-      bfmode = w->window->buffermode;
 
       for (i = warg; i < argc; i += 5) {
 
@@ -4184,12 +3752,10 @@ function{1} DrawTorus(argv[argc])
          if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
          if (!cnv:C_double(argv[i+3], r1)) runerr(102, argv[i+3]);
          if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
-	 if (bfmode == UGL_IMMEDIATE) {
+	 if (bfmode)
 	    torus(r1, r2, x, y, z, 
 		    wc->slices, wc->rings, 
 		   (wc->texmode?wc->autogen:0));
-	    glFlush(); 
-	    }
 	 /* create a record of the graphical object */	   
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 	 f.dword = D_Record;
@@ -4206,6 +3772,10 @@ function{1} DrawTorus(argv[argc])
 	    rp->fields[2 + j-i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
+   
+	/* Since we are using double buffers, swap */
+      if (bfmode)
+	 swapbuffers(w, 0);
       return f;
    }
 end
@@ -4230,19 +3800,18 @@ function{1} DrawCube(argv[argc])
       OptWindow(w);
       EnsureWindow3D(w);      
       CheckArgMultiple(4);
+      bfmode = w->context->buffermode;
 
       /* Cubes are not 2-dim objects */
       if (w->context->dim == 2) 
 	 runerr(150);	
 
       if (!constr)
-	 if (!(constr = rec_structor3d(GL3D_CUBE)))
+	 if (!(constr = rec_structor3d("gl_cube")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
-      MakeCurrent(w);
-      CheckRendermode(w);
-      bfmode = w->window->buffermode;
+      makecurrent(w);
 
       for(i = warg; i < argc; i += 4) {
  
@@ -4251,10 +3820,8 @@ function{1} DrawCube(argv[argc])
          if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
          if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
          if (!cnv:C_double(argv[i+3], l)) runerr(102, argv[i+3]);  
-	 if (bfmode == UGL_IMMEDIATE) {
+	 if (bfmode)
 	    cube(l, x, y, z, (w->context->texmode?w->context->autogen:0));
-	    glFlush(); 
-	    }
         
 	 /*
 	  * create a record of the graphical object and its parameters
@@ -4273,6 +3840,9 @@ function{1} DrawCube(argv[argc])
             rp->fields[2 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
+
+      if (bfmode)
+	 swapbuffers(w, 0);
       return f;
       }
 end
@@ -4306,13 +3876,11 @@ function{1} DrawSphere(argv[argc])
       if (wc->dim == 2) runerr(150);
 
       if (!constr)
-	 if (!(constr = rec_structor3d(GL3D_SPHERE)))
+	 if (!(constr = rec_structor3d("gl_sphere")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
-      MakeCurrent(w);
-      CheckRendermode(w);
-      bfmode = w->window->buffermode;
+      bfmode = wc->buffermode;
       for(i = warg; i < argc; i += 4) {
 
 	 /* convert parameters and draw a sphere */
@@ -4320,10 +3888,8 @@ function{1} DrawSphere(argv[argc])
 	 if (!cnv:C_double(argv[i+1], y))  runerr(102, argv[i+1]);
 	 if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
 	 if (!cnv:C_double(argv[i+3], r))  runerr(102, argv[i+3]); 
-	 if (bfmode == UGL_IMMEDIATE) {
+	 if (bfmode)
 	    sphere(r, x, y, z, wc->slices, wc->rings, (wc->texmode?wc->autogen:0));
-	    glFlush();
-	    }
 
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -4343,6 +3909,9 @@ function{1} DrawSphere(argv[argc])
 	 rp->fields[5] = argv[i+3];
 	 c_put(&(w->window->funclist), &f);
 	 }
+
+      if (bfmode)
+	 swapbuffers(w, 0);
       return f;
       }
 end
@@ -4375,13 +3944,11 @@ function{1} DrawCylinder(argv[argc])
       if (wc->dim == 2) runerr(150);
 
       if (!constr)
-	 if (!(constr = rec_structor3d(GL3D_CYLINDER)))
+	 if (!(constr = rec_structor3d("gl_cylinder")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr,Proc)->nfields;
 
-      MakeCurrent(w);
-      CheckRendermode(w);
-      bfmode = w->window->buffermode;
+      bfmode = wc->buffermode;
 
       for(i = warg; i < argc; i += 6) {
 
@@ -4392,10 +3959,8 @@ function{1} DrawCylinder(argv[argc])
 	 if (!cnv:C_double(argv[i+3], h))  runerr(102, argv[i+3]);  
 	 if (!cnv:C_double(argv[i+4], r1)) runerr(102, argv[i+4]);
 	 if (!cnv:C_double(argv[i+5], r2)) runerr(102, argv[i+5]);
-	 if (bfmode == UGL_IMMEDIATE) {
+	 if (bfmode)
 	    cylinder(r1, r2, h, x, y, z, wc->slices, wc->rings, (wc->texmode ? wc->autogen : 0));
-	    glFlush();
-	    }
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
          f.dword = D_Record;
@@ -4413,6 +3978,8 @@ function{1} DrawCylinder(argv[argc])
 	    rp->fields[2 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
+      if (bfmode)
+	 swapbuffers(w, 0);
       return f;
    }
 end
@@ -4441,13 +4008,11 @@ function{1} DrawDisk(argv[argc])
       EnsureWindow3D(w);      
       wc = w->context;
       if (!constr)
-	 if (!(constr = rec_structor3d(GL3D_DISK)))
+	 if (!(constr = rec_structor3d("gl_disk")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
-      MakeCurrent(w);
-      CheckRendermode(w);
-      bfmode = w->window->buffermode;
+      bfmode = wc->buffermode;
 
       for (i = warg; i < argc; i += 7) {
 	 if (argc-warg <= i+3)
@@ -4492,12 +4057,12 @@ function{1} DrawDisk(argv[argc])
 	    if (!cnv:C_double(argv[i+6], a2)) runerr(102, argv[i+6]);
 	    rp->fields[8] = argv[i+6];
 	    }
-	 if (bfmode == UGL_IMMEDIATE) {
+	 if (bfmode)
 	    disk(r1, r2, a1, a2, x, y, z, wc->slices, wc->rings, (wc->texmode ? wc->autogen : 0));
-	    glFlush(); 
-	    }
          c_put(&(w->window->funclist), &f);
         }
+      if (bfmode)
+	 swapbuffers(w, 0);
       return f;
       }
 end
@@ -4514,30 +4079,29 @@ function{1} Eye(argv[argc])
     abstract{ return record }
     body {
       wbp w;
-      wsp ws;
+      wcp wc;
       int warg = 0, i=0, len;
       double x;
       char abuf[128];
 
       OptWindow(w);
       EnsureWindow3D(w);      
-
-      ws = w->window;
+      wc = w->context;
 
       while (warg+i < argc && i < 9) {
 	 if (!is:null(argv[warg+i]))
 	    if (!cnv:C_double(argv[warg+i], x))
                runerr(102, argv[warg+i]);
 	 switch (i) {
-  	    case 0: ws->eyeposx = x; break;
-	    case 1: ws->eyeposy = x; break;
-	    case 2: ws->eyeposz = x; break;
-	    case 3: ws->eyedirx = x; break;
-	    case 4: ws->eyediry = x; break;
-	    case 5: ws->eyedirz = x; break;
-	    case 6: ws->eyeupx = x; break;
-	    case 7: ws->eyeupy = x; break;
-	    case 8: ws->eyeupz = x; break;
+	 case 0: wc->eyeposx = x; break;
+	 case 1: wc->eyeposy = x; break;
+	 case 2: wc->eyeposz = x; break;
+	 case 3: wc->eyedirx = x; break;
+	 case 4: wc->eyediry = x; break;
+	 case 5: wc->eyedirz = x; break;
+	 case 6: wc->eyeupx = x; break;
+	 case 7: wc->eyeupy = x; break;
+	 case 8: wc->eyeupz = x; break;
 	    }
 	 i++;
 	 }
@@ -4545,8 +4109,8 @@ function{1} Eye(argv[argc])
       if (warg < argc) redraw3D(w);
 
       sprintf(abuf,"%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-	      ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx,
-	      ws->eyediry, ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
+	      wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx,
+	      wc->eyediry, wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
       len = strlen(abuf);
       StrLoc(result) = alcstr(abuf, len);
       StrLen(result) = len;
@@ -4572,6 +4136,7 @@ function{1} Rotate(argv[argc])
       OptWindow(w);
       EnsureWindow3D(w);
       CheckArgMultiple(4);
+
       for(i = warg; i < argc-warg; i = i+4) {
 	 if ((j = rotate(w, argv, i, &f))) {
 	    if (j == 1) runerr(0);
@@ -4663,11 +4228,11 @@ function{1} PopMatrix(argv[argc])
 	 runerr(101, argv[warg]);
 
       if (!constr)
-	 if (!(constr = rec_structor3d(GL3D_POPMATRIX)))
+	 if (!(constr = rec_structor3d("gl_popmatrix")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
-      MakeCurrent(w);
+      makecurrent(w);
 
       for (i=0; i<npops; i++) {
 
@@ -4714,11 +4279,11 @@ function{1} PushMatrix(argv[argc])
       OptWindow(w);
       EnsureWindow3D(w);
 
-      if (!constr && !(constr = rec_structor3d(GL3D_PUSHMATRIX)))
+      if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
-      MakeCurrent(w);
+      makecurrent(w);
       /* push a copy of the top matrix, if possible */
       if (pushmatrix() == Failed)
 	 runerr(151);
@@ -4852,7 +4417,7 @@ function{1} IdentityMatrix(argv[argc])
       EnsureWindow3D(w);
 
       if (!constr)
-	 if (!(constr = rec_structor3d(GL3D_IDENTITY)))
+	 if (!(constr = rec_structor3d("gl_identity")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
@@ -4897,7 +4462,7 @@ function{1} MatrixMode(argv[argc])
       OptWindow(w);
       EnsureWindow3D(w);
   	
-      if (!constr && !(constr = rec_structor3d(GL3D_MATRIXMODE)))
+      if (!constr && !(constr = rec_structor3d("gl_matrixmode")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
@@ -4962,7 +4527,7 @@ function{1} Texture(argv[argc])
       if (argc - warg < 1)/* missing texture source */
          runerr(103);	
       
-      if (!constr && !(constr = rec_structor3d(GL3D_TEXTURE)))
+      if (!constr && !(constr = rec_structor3d("gl_texture")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
@@ -5060,7 +4625,7 @@ function{1} Texture(argv[argc])
 	    wc->curtexture = theTexture;
 
 	 /* convert the window into a texture */
-         if (w2->context->rendermode == UGL3D)
+         if (w2->context->is_3D)
 	    i = texwindow3D(w, w2);
 	 else
 	    i = texwindow2D(w, w2);
@@ -5283,12 +4848,7 @@ function{1} Refresh(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-      if (!w->window->is_gl) {
-         if (warg == 0)
-	   runerr(150, kywd_xwin[XKey_Window]);
-         else
-	   runerr(150, argv[0]);
-         }
+      EnsureWindow3D(w);
       redraw3D(w);
       ReturnWindow; 
 
@@ -5308,14 +4868,9 @@ function{1} WindowContents(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->context->rendermode == UGL2D)
-         return w->window->funclist2d; 
-      else
-#else 					/* GraphicsGL */
       EnsureWindow3D(w);
-#endif					/* GraphicsGL */
       return w->window->funclist; 
+
    }
 end
 
@@ -5349,7 +4904,7 @@ function{1} WSection(argv[argc])
 	    return C_integer 1;   /* selection is off. no record need to be added */
 
 	 /*  selection is enabled. add a record to mark the end of the section  */
-	 if (!constr2 && !(constr2 = rec_structor3d(GL3D_ENDMARK))) {
+	 if (!constr2 && !(constr2 = rec_structor3d("gl_endmark"))) {
 	    syserr("failed to create opengl record constructor");
 	    }
 	 nfields = (int) ((struct b_proc *)BlkLoc(*constr2))->nfields;
@@ -5375,7 +4930,7 @@ function{1} WSection(argv[argc])
       if (argc - warg != 1)
          fail;
 
-      if (!constr && !(constr = rec_structor3d(GL3D_MARK))) {
+      if (!constr && !(constr = rec_structor3d("gl_mark"))) {
 	     syserr("failed to create opengl record constructor");
       }
       nfields = (int) BlkD(*constr, Proc)->nfields;

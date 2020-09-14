@@ -528,7 +528,7 @@ int region;
     */
 
 #if !COMPILER
-   if (sp == NULL){
+   if (sp == NULL) {
 #ifdef VerifyHeap
      vrfyEnd();
 #endif                  /* VerifyHeap */
@@ -644,13 +644,32 @@ int region;
      wcp wc;
 
      for (ws = wstates; ws ; ws = ws->next) {
-	    if (is:file(ws->filep))
-	      markblock(&(ws->filep));
-	    if (is:list(ws->listp))
-	      markblock(&(ws->listp));
+#ifdef GraphicsGL
+        /* 
+         * For some reason, the 2d display doesn't get marked because
+         * the title word of {BlkLoc(ws->filep)} would contain the address
+         * of {ws->funclist2d} as it was getting explicitly marked, 
+         * resulting in the 2d display not getting marked
+         * at all and a subsequent memory violation after GC.
+         * It would seem that shouldn't happen during GC, but I believe
+         * I've checked for all buffer overflows in drawgeometry2d()...
+         * What's worse is this memory violation is sporadic...
+         * 
+         * For now, try marking the display list before the Unicon window 
+         * values. It seems to work...?
+         * - Gigi
+         */
+        if (is:list(ws->funclist2d))
+	   markblock(&(ws->funclist2d));
+#endif					/* GraphicsGL */
+
+	if (is:file(ws->filep))
+	   markblock(&(ws->filep));
+	if (is:list(ws->listp))
+	   markblock(&(ws->listp));
 #ifdef Graphics3D
-         if (is:list(ws->funclist))
-	    markblock(&(ws->funclist));
+        if (is:list(ws->funclist))
+	   markblock(&(ws->funclist));
 #endif                            /* Graphics3D */
         }
 
@@ -2350,7 +2369,7 @@ static void vrfyRegion(int expected)
           case T_Tvtbl: {       /* table element trapped variable */
             vrfy_Tvtbl(&b->Tvtbl); break;
           }
-           case T_Slots: {       /* set/table hash slots */
+          case T_Slots: {       /* set/table hash slots */
             vrfy_Slots(&b->Slots); break;
           }
           case T_Tvsubs: break; /* substring trapped variable */

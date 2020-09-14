@@ -12,6 +12,12 @@ int textureimg(wbp w, int width, int height,
 		struct palentry *e, unsigned char *s, word len);
 int init_3dcontext(wcp wc);
 
+int traversefunclist(wbp w);
+
+
+/*
+ * Replaced by gl_wopen(). Should remove? Do some testing
+ */
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
    FILE *f;
@@ -40,17 +46,17 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
        return NULL;
 #endif					/* XWindows */
 
-   f = wopen(name, lp, attr, n, err_index, 1);
+   /* 
+    * Even for 2D opengl mode, make is_3d = 1. That way, there is a good way
+    * to distinguish between opengl 2D mode vs X Windows 2D
+    */
+   f = gl_wopen(name, lp, attr, n, err_index, 1);
 
    if (!f) return NULL;
    w = (wbp) f;
    wc = w->context;
 
    if (init_3dcontext(wc) == Failed) return NULL;
-
-   /* create displaylist moved up into wopen so it exists during attrib sets */
-
-   /* initialize opengl state*/
    if (init_3dcanvas(w) == Failed) return NULL;
 
    return f;
@@ -63,24 +69,18 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 /*
  * Initialize the 3D subsystem for rendering.
  */
-/*
- * Initialize the 3D subsystem for rendering.
- */
 int init_3dcanvas(wbp  w)
 {
-/*   GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0}; */
-   wsp ws;
-   wcp wc;
+   wcp wc = w->context;
 
-   ws= w->window;
-   wc= w->context;
-
-   /* set up the appropriate opengl states */
-   glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
-   glClearColor(RED(wc->bg)/(GLfloat)255, GREEN(wc->bg)/(GLfloat)255,
-		BLUE(wc->bg)/(GLfloat)255, 0.0);
-
+   /* Textures (for now) and lighting are 3d specific */
    glShadeModel(GL_SMOOTH);
+   glEnable(GL_TEXTURE_GEN_S);
+   glEnable(GL_TEXTURE_GEN_T);
+   glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
+   glEnable(GL_LIGHTING);
+   glEnable(GL_LIGHT0);
+   glEnable(GL_NORMALIZE);
 
    if (wc->display->stex == NULL) {
       wc->display->ntextures = 0;
@@ -93,24 +93,7 @@ int init_3dcanvas(wbp  w)
       if (init_texnames(w->context) == Failed) return Failed ;
 
       }
-   
-   /*glPolygonMode(GL_FRONT, GL_FILL);*/
-   glEnable(GL_DEPTH_TEST);
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   glEnable(GL_TEXTURE_GEN_S);
-   glEnable(GL_TEXTURE_GEN_T);
-   glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
-   glEnable(GL_LIGHTING);
-   glEnable(GL_LIGHT0);
-   glEnable(GL_NORMALIZE);
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
-   glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
-	     0.125 * ws->height / ws->width, 0.25, 50000.0);
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
+
    return Succeeded;
 }
 
@@ -137,9 +120,6 @@ int release_3d_resources(wbp w)
       free(wc->selectionnamelist[--i]);
    }
    free(wc->selectionnamelist);
-#ifdef XWindows
-   glXDestroyContext( wd->display, wc->ctx);
-#endif					/* XWindows */
    return 0;
 }
 
@@ -271,7 +251,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
    double n[3] = {0.0, 0.0, 1.0};
    wcp wc = w->context;
 
-   makecurrent(w);
+   MakeCurrent(w);
    
    /* each vertex has an x-coordinate and a y-coordinate */
    if (dim == 2){
@@ -481,7 +461,6 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
        }
    return Succeeded;
 }
-
 
 /* helper function to draw a torus */
 void torus(double radius1, double radius2, double x,double y, double z,
@@ -824,61 +803,62 @@ GLfloat deflt_specular[4] = {0.0, 0.0, 0.0, 1.0};
  */
 int redraw3D(wbp w)
 {
-   wcp wc = w->context;
    wsp ws = w->window;
+   wcp wc = w->context, wcr = &(ws->wcrender);
+   wdp wd = ws->display;
 
-   makecurrent(w);
+   ws->busy_flag = 1;
+
+   MakeCurrent(w);
 
    /*
     * reset the defaults for those objects that used them
     */
-   glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT);
+#ifdef GraphicsGL
+   copy_2dcontext(&(ws->wcrender), &(ws->wcdef));
+   init_2dcanvas(w);
+#endif					/* GraphicsGL */
+   if (ws->is_3D)
+      wc->dim = 3;
 
-   setlinewidth(w, 1);
-   glLineWidth(1.0);
-   wc->dim = 3;
+   /* clear screen to bg color */
+   ClearScreenToColor(w, BG);
 
   /*
    *  render in GL_RENDER mode otherwise GL_SELECT
    */
    if (!wc->selectionrendermode) {      /* GL_RENDER mode  */
-
-    /* restore the viewing volume to the default  */
-      glMatrixMode(GL_PROJECTION);
+      /* set viewport in case window dimensions changed */
+      SetWindowSize(w);
       glLoadIdentity();
-      glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
-	         0.125 * ws->height / ws->width, 0.25, 50000.0);
-
-      glMatrixMode(GL_MODELVIEW);
       glPushMatrix();
-      glLoadIdentity();
-      gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-		wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
-
-      glMaterialfv(GL_FRONT, GL_AMBIENT, deflt_ambient);
-      glMaterialfv(GL_FRONT, GL_DIFFUSE, deflt_diffuse);
-      glMaterialfv(GL_FRONT, GL_SPECULAR, deflt_specular);
-      glMaterialfv(GL_FRONT, GL_EMISSION, deflt_emission);
-      glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
-
-      if (!wc->autogen) {
-	 glEnable(GL_TEXTURE_GEN_S);
-	 glEnable(GL_TEXTURE_GEN_T);
-	 wc->autogen = 1;
+      gluLookAt(ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx, ws->eyediry,
+		ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
+      if (ws->is_3D) {
+         glMaterialfv(GL_FRONT, GL_AMBIENT, deflt_ambient);
+         glMaterialfv(GL_FRONT, GL_DIFFUSE, deflt_diffuse);
+         glMaterialfv(GL_FRONT, GL_SPECULAR, deflt_specular);
+         glMaterialfv(GL_FRONT, GL_EMISSION, deflt_emission);
+         glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
+         if (!wc->autogen) {
+   	    glEnable(GL_TEXTURE_GEN_S);
+	    glEnable(GL_TEXTURE_GEN_T);
+	    wc->autogen = 1;
+	    }
 	 }
+
 /*
       if (wc->texmode) {
 	 glDisable(GL_TEXTURE_2D);
 	 wc->texmode = 0;
 	 }
 */
-      if (w->window->funclist.vword.bptr != NULL) {
-	 if (traversefunctionlist(w) == Failed)
-	    return Failed;
-	 }
 
+      if (traversefunctionlist(w) == Failed) {
+         ws->busy_flag = 0;
+	 return Failed;
+	 }
       glPopMatrix();
-      glXSwapBuffers(w->window->display->display, w->window->win);
       }
    else {	/* GL_SELECT mode  */
       GLint viewport[4];
@@ -899,15 +879,12 @@ int redraw3D(wbp w)
                    (GLdouble)(viewport[3]-ws->pointery),
                     3.0, 3.0,    /*  picking region width and height  */
                     viewport);
-
-      glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
-	         0.125 * ws->height / ws->width, 0.25, 50000.0);
-
-     glMatrixMode(GL_MODELVIEW);
-     glPushMatrix();
-     glLoadIdentity();
-     gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-	       wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+      glFrustum(-HALF_CWIDTH, HALF_CWIDTH, -HALF_CHEIGHT(w), HALF_CHEIGHT(w), CNEAR, CFAR);
+      glMatrixMode(GL_MODELVIEW);
+      glPushMatrix();
+      glLoadIdentity();
+      gluLookAt(ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx, ws->eyediry,
+ 	        ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
 
       /* switch to GL_SELECT render mode  */
 
@@ -915,19 +892,21 @@ int redraw3D(wbp w)
       glRenderMode(GL_SELECT);
       glInitNames();
 
-      if (w->window->funclist.vword.bptr != NULL) {
 	 /* render the scene in GL_SELECT render mode */
-         if (traversefunctionlist(w) == Failed)
-             return Failed;
-      }
+      if (traversefunctionlist(w) == Failed) {
+          ws->busy_flag = 0;
+          return Failed;
+          }
 
       /* switch back to GL_RENDER render mode and save the hits  */
-      /*glFlush(); */
       selectionhits = glRenderMode(GL_RENDER);
 
-      if (selectionhits < 0)
+      if (selectionhits < 0) {
+         ws->busy_flag = 0;
 	 return Failed;
+         }
       else if (selectionhits > 256) { /* too many hits? maybe nonsense then. */
+         ws->busy_flag = 0;
 	 return Failed;
 	 }
       else if (selectionhits != 0) { /* > 0, hits were found */ 
@@ -937,8 +916,10 @@ int redraw3D(wbp w)
          GLuint savedhits=0;
          int newnameadded=0;
 
-         if ((namelist = alclist(0, MinListSlots)) == NULL)
+         if ((namelist = alclist(0, MinListSlots)) == NULL) {
+            ws->busy_flag = 0;
 	    return Failed;
+	    }
          selectednameslist.dword = D_List;
          selectednameslist.vword.bptr = (union block*) namelist;
 
@@ -1021,10 +1002,11 @@ int redraw3D(wbp w)
       glPopMatrix();
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
-      glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
-	         0.125 * ws->height / ws->width, 0.25, 50000.0);
+      glFrustum(-HALF_CWIDTH, HALF_CWIDTH, -HALF_CHEIGHT(w), HALF_CHEIGHT(w), CNEAR, CFAR);
       glMatrixMode(GL_MODELVIEW);
    }
+
+   ws->busy_flag = 0;
    return Succeeded;
 }
 
@@ -1087,9 +1069,65 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 }
 
 /*
+ * Traverse the 2d and 3d display lists to redraw the scene.
+ * Optimizations should be added to determine whether a display list is
+ * empty and should be skipped. 
+ * 
+ * The order of operations on matrix transfomations seems to be reversed,
+ * hence why glLoadIdentity() is called before drawing the 2d scene.
+ * The HUD should be drawn from the modelview matrix resulting from
+ * gluLookAt() and 3d objects should be drawn from the world origin.
+ *
+ * Lighting is disabled for drawing 2D objects so only glColor*() affects
+ * OpenGL colors. Ask Dr. J if this is kosher
+ *
+ * Draw 3d first and 2d last to preserve the back-to-front rendering for
+ * transparency.
+ */
+int traversefunctionlist(wbp w) 
+   {
+   wsp ws = w->window;
+   int rendermode = ws->rendermode;
+
+   /* Render 3d scene */
+   if (is:list(ws->funclist)) {
+      ApplyRendermode(w, UGL3D);
+
+      if (traversefunclist(w) == Failed) { /* 3d */
+         ApplyRendermode(w, rendermode);
+         return Failed; 
+         }
+      }
+
+   /* Render 2d scene */
+   if (is:list(ws->funclist2d)) {
+      ApplyRendermode(w, UGL2D);
+      glDisable(GL_LIGHTING);
+      glPushMatrix();
+      glLoadIdentity();
+
+      if (traversefunclist2d(w) == Failed) { /* 2d */
+         ApplyRendermode(w, rendermode);
+         return Failed; 
+         }
+      glPopMatrix();
+      glEnable(GL_LIGHTING);
+      }
+
+   /* restore settings */
+   ApplyRendermode(w, rendermode);
+
+   if (ws->resize) ws->resize = 0;
+
+   /* update screen */
+   FlushWindow(w);
+   return Succeeded; 
+   }
+
+/*
  * Traverse the list of functions and redraw the scene.
  */
-int traversefunctionlist(wbp w)
+int traversefunclist(wbp w)
 {
    wcp wc = w->context;
    wsp ws = w->window;
@@ -1782,7 +1820,7 @@ C_integer r, g, b, a;
 
    /*
     * must convert from an integer between 0 and 65535
-    * to a float between 0.0 and 0.0
+    * to a float between 0.0 and 1.0
     */
    color[0] = r/(GLfloat)65535;
    color[1] = g/(GLfloat)65535;
@@ -1808,7 +1846,6 @@ C_integer r, g, b, a;
    if (!strcmp(temp, "none")) {
       glColor4f(color[0], color[1], color[2], color[3]);
       }
-
    return Succeeded;
 }
 
@@ -1860,7 +1897,7 @@ int setlinewidth3D(wbp w, LONG linewid)
    struct descrip  width;
 
    if (linewid < 0) return RunError;
-   makecurrent(w);
+   MakeCurrent(w);
    setlinewidth(w, linewid);
    glLineWidth(linewid);
 
@@ -1891,7 +1928,7 @@ int setmaterials(wbp w, char* s)
    tended struct descrip f;
    struct descrip material, r, b, g, a;
 
-   makecurrent(w);
+   MakeCurrent(w);
    while(s[i]) {
       j = 0;
       k = 0;
@@ -2079,7 +2116,7 @@ int setlight(wbp w, char* s, int light)
    GLfloat color[4];
    long rd, gr, bl, al;
 
-   makecurrent(w);
+   MakeCurrent(w);
 
    while(isspace(*s2)) s2++;
 
@@ -2274,7 +2311,7 @@ int settexcoords(wbp w, char* s)
    tended struct b_realarray *ap;
 
 
-   makecurrent(w);
+   MakeCurrent(w);
 
    /* create a list */
    if (create3Dlisthdr(&f, "Texcoord", 4)!=Succeeded)
@@ -2359,7 +2396,7 @@ int settexcoords(wbp w, char* s)
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;
       c_put(&(w->window->funclist), &f);
-     }
+   }
    /* return an error for any other value */
    else return RunError;
    return Succeeded;
@@ -2530,7 +2567,7 @@ int textureimg(wbp w, int width, int height,
    if (tex == NULL)
       return Failed;
      
-   makecurrent(w);
+   MakeCurrent(w);
 
    /*
     * convert string s into an array that can be used by opengl as a texture.
@@ -2593,7 +2630,7 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
    if (tex == NULL)
       return Failed;
 
-   makecurrent(w);
+   MakeCurrent(w);
 
    m = width % 4;
    if (m == 0)
@@ -2740,7 +2777,7 @@ int translate(wbp w, dptr argv, int i, dptr f)
    tended struct b_record *rp;
 
    if (!constr)
-      if (!(constr = rec_structor3d("gl_translate")))
+      if (!(constr = rec_structor3d(GL3D_TRANSLATE)))
 	 syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -2750,7 +2787,7 @@ int translate(wbp w, dptr argv, int i, dptr f)
    for (j=0; j<3; j++)
       if (!cnv:C_double(argv[i+j], coords[j])) return (-(i+j)-1);
 
-   makecurrent(w);
+   MakeCurrent(w);
    glTranslated(coords[0], coords[1], coords[2]);
 
    /*
@@ -2784,14 +2821,14 @@ int rotate(wbp w, dptr argv, int i, dptr f)
    tended struct b_record *rp;
 
    if (!constr)
-      if (!(constr = rec_structor3d("gl_rotate")))
+      if (!(constr = rec_structor3d(GL3D_ROTATE)))
 	 syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
    /* convert parameters and perform the rotation */
    for (j=0; j < 4; j++)
       if (!cnv:C_double(argv[i+j], coords[j])) return (-(i+j)-1);
-   makecurrent(w);
+   MakeCurrent(w);
    glRotated(coords[0], coords[1], coords[2], coords[3]);
 
    /*
@@ -2828,7 +2865,7 @@ int scale(wbp w, dptr argv, int i, dptr f)
    tended struct b_record *rp;
 
    if (!constr)
-      if (!(constr = rec_structor3d("gl_scale")))
+      if (!(constr = rec_structor3d(GL3D_SCALE)))
 	 syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -2837,7 +2874,7 @@ int scale(wbp w, dptr argv, int i, dptr f)
     */
    for(j=0; j<3; j++)
       if (!cnv:C_double(argv[i+j], coords[j])) return -(i+j)-1;
-   makecurrent(w);
+   MakeCurrent(w);
    glScaled(coords[0], coords[1], coords[2]);
 
    /*
@@ -2877,7 +2914,7 @@ int lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
    wdp wd = wc->display;
    int i, saved_tex;
 
-   makecurrent(w);
+   MakeCurrent(w);
    i=0;
    while (i<wd->ntextures) {
       wt = &(wd->stex[i]);
@@ -2945,7 +2982,7 @@ int texture_24img(wbp w, struct imgdata im)
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
    if (tex == NULL)
       return Failed;
-   makecurrent(w);
+   MakeCurrent(w);
 
    /*
     * convert string s into an array that can be used by opengl as a texture.
@@ -3011,7 +3048,7 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
       curr_font = end_font;
       }
    len_font=strlen(curr_font->name);
-   makecurrent(w);
+   MakeCurrent(w);
    if (full_name==NULL) {
       full_name = (char *) malloc(sizeof(char)*255);
       findonpath("unicon", full_name, 255);
@@ -3098,12 +3135,12 @@ int setmeshmode(wbp w, char* s)
    tended struct b_record *rp;
    tended struct descrip f;
 
-   if (!constr && !(constr = rec_structor3d("gl_meshmode")))
+   if (!constr && !(constr = rec_structor3d(GL3D_MESHMODE)))
       syserr("failed to create opengl record constructor");
 
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-   makecurrent(w);
+   MakeCurrent(w);
 
    /*
     * create a record of the graphical object
@@ -3147,7 +3184,7 @@ int setselectionmode(wbp w, char* s)
    tended struct descrip mode;
    wcp wc = w->context;
 
-   makecurrent(w);
+   MakeCurrent(w);
    /* create a list to store function information */
    if (create3Dlisthdr(&f, "Pick", 4)!=Succeeded)
      return RunError;
@@ -3163,8 +3200,8 @@ int setselectionmode(wbp w, char* s)
 
    MakeInt(wc->selectionenabled, &mode);
    c_put(&f, &mode);
-
    c_put(&(w->window->funclist), &f);
+
    return Succeeded;
 }
 
@@ -3186,20 +3223,20 @@ int setselectionmode(wbp w, char* s)
 
 #ifdef XWindows
 #define MKCURRENT3D(w3d) \
-   glXMakeCurrent(w3d->window->display->display, w3d->window->win, w3d->context->ctx);
+   glXMakeCurrent(w3d->window->display->display, w3d->window->win, w3d->window->ctx);
 #endif					/* XWindows */
 
 #ifdef MSWindows
 #define MKCURRENT3D(w3d){ \
    HDC stddc = CreateWinDC(w3d); \
-   wglMakeCurrent(stddc, w3d->context->ctx); \
+   wglMakeCurrent(stddc, w3d->window->ctx); \
    ReleaseDC(w3d->window->iconwin, stddc);}
 #endif					/* MSWindows */
 
 #define TEXUPDATE(win, wc, texhand, tex, wd, ht) \
       if (wc->buffermode) { \
       	  wc->curtexture = texhand; \
-      	  MKCURRENT3D(wc->display->stex[texhand].w); \
+      	  MakeCurrent(wc->display->stex[texhand].w); \
 	  glBindTexture(GL_TEXTURE_2D, wc->display->stex[texhand].texName); \
 	  texture1(wd, ht, tex, \
 	    wc->display->stex[texhand].w->context->texmode); }
@@ -3612,7 +3649,7 @@ int copyareaTexToTex(wbp w, int texhandle, int dest_texhandle,
 	   }
 	}
 
-   MKCURRENT3D(w);
+   MakeCurrent(w);
    glBindTexture(GL_TEXTURE_2D,
 		 wd->stex[dest_texhandle].texName);
    texture(wd->stex[dest_texhandle].width,
@@ -3743,14 +3780,14 @@ int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,
 
    /* change the current context to w2's context */
 #ifdef XWindows
-   glXMakeCurrent(w3d->window->display->display, w3d->window->win, wc->ctx);
+   glXMakeCurrent(w3d->window->display->display, w3d->window->win, w3d->window->ctx);
    glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height, 
    		 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
 #endif					/* XWindows */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w3d);
-   wglMakeCurrent(stddc, w3d->context->ctx);
+   wglMakeCurrent(stddc, w3d->window->ctx);
    glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height, 
    		 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
    ReleaseDC(w3d->window->iconwin, stddc);
@@ -3786,7 +3823,8 @@ int texwindow2D(wbp w, wbp w2d)
     */
    GLubyte *tex = (GLubyte *)malloc((ws->height+1) * ws->width * 3);
    wcp wc = w->context;
-   makecurrent(w);
+
+   MakeCurrent(w);
 
    if (tex == NULL)
       return Failed;
@@ -3796,7 +3834,7 @@ int texwindow2D(wbp w, wbp w2d)
 
    /* apply the texture */
 
-   MKCURRENT3D(w);
+   MakeCurrent(w);
    glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
 
    r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
@@ -3816,7 +3854,7 @@ int texwindow2D(wbp w, wbp w2d)
 /* use another opengl window as a texture source */
 int texwindow3D(wbp w1, wbp w2)
 {
-   wsp ws = w2->window;
+   wsp ws = w2->window, w1s = w1->window;
    wcp wc = w2->context, w1c = w1->context;
    int width = ws->width;
    int height = ws->height;
@@ -3827,20 +3865,20 @@ int texwindow3D(wbp w1, wbp w2)
 
    /* change the current context to w2's context */
 #ifdef XWindows
-   glXMakeCurrent(ws->display->display, ws->win, wc->ctx);
+   glXMakeCurrent(ws->display->display, ws->win, ws->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
-   glXMakeCurrent(w1->window->display->display, w1->window->win, w1c->ctx);
+   glXMakeCurrent(w1s->display->display, w1s->win, w1s->ctx);
    glBindTexture(GL_TEXTURE_2D, w1c->display->stex[w1c->curtexture].texName);
     i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
 #endif					/* XWindows */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w2);
-   wglMakeCurrent(stddc, wc->ctx);
+   wglMakeCurrent(stddc, ws->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
    ReleaseDC(ws->iconwin, stddc);
    stddc = CreateWinDC(w1);
-   wglMakeCurrent(stddc, w1c->ctx);
+   wglMakeCurrent(stddc, w1s->ctx);
    glBindTexture(GL_TEXTURE_2D,
 		 w1c->display->stex[w1c->curtexture].texName);
    i = texture(width, height, (GLubyte *)tex, w1c->texmode);
@@ -3897,7 +3935,7 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width,
 
    if (width<=0 || height<=0) return Failed;
 
-   if (w->context->is_3D){
+   if (w->context->rendermode == UGL3D){
       y = wht-y - height;
       yt = ht-yt - height;
       if (copyareaToTex3D(w, tex, x, y, width, height, xt, yt, wd, ht)==Failed)
@@ -3924,8 +3962,20 @@ int identitymatrix()
  */
 void swapbuffers(wbp w, int flush)
 {
-   if (flush) glFlush();
-   glXSwapBuffers(w->window->display->display, w->window->win);
+   wsp ws = w->window;
+
+#ifdef XWindows
+   /*
+    * Hidden state uses unmapped windows. From experimentation, it
+    * seems that the front buffer in double buffering mode is undefined when
+    * the window is unmapped. 
+    */
+   if (ws->win != (Window) NULL && ws->iconic != HiddenState)
+#endif					/* XWindows */
+      {
+      MakeCurrent(w);
+      glXSwapBuffers(ws->display->display, ws->win); /* implcit flush */
+      }
 }
 
 /*
@@ -3953,17 +4003,18 @@ void bindtexture(wbp w, int texturehandle)
 
 int create3Dcontext(wbp w)
 {
-   wcp wc = w->context;
+   wsp ws = w->window;
    wdp wd = w->window->display;
 #ifdef MSWindows
    HDC hdc = CreateWinDC(w);
-   wc->ctx = wglCreateContext (hdc);
-   wglMakeCurrent (hdc, wc->ctx);
-#else
-   wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
-   if (wc->ctx == NULL) 
+   ws->ctx = wglCreateContext (hdc);
+   wglMakeCurrent (hdc, ws->ctx);
+#endif					/* MSWindows */
+#ifdef XWindows
+   ws->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
+   if (ws->ctx == NULL) 
       return Failed;
-   glXMakeCurrent(wd->display, w->window->win, wc->ctx);
-#endif
+   glXMakeCurrent(wd->display, w->window->win, ws->ctx);
+#endif					/* XWindows */
    return Succeeded;
 }

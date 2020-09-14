@@ -365,6 +365,10 @@
 #include <GL/glx.h>
 #endif					/* XWindows */
 #include <GL/glu.h>
+#if HAVE_LIBFREETYPE
+   #include <ft2build.h>
+   #include FT_FREETYPE_H
+#endif					/* HAVE_LIBFREETYPE */
 #endif					/* HAVE_LIBGL */
 
 #if HAVE_LIBZ

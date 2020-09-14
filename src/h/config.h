@@ -487,7 +487,7 @@
 #endif					/* DeBug */
 
 #ifndef AllocType
-   #define AllocType uword
+   #define AllocType uword 
 #endif					/* AllocType */
 
 #ifndef MaxHdr
@@ -709,7 +709,7 @@ Deliberate Syntax Error
    #define AllocReg(n) malloc((msize)n)
 #endif					/* AllocReg */
 
-#define MaxFileName MaxPath
+#define MaxFileName MaxPath 
 
 #ifndef RttSuffix
    #define RttSuffix ".r"
@@ -923,6 +923,7 @@ Deliberate Syntax Error
 
 #if HAVE_LIBGL
 #define Graphics3D 1
+#define GraphicsGL 1 /* could replace Graphics3D? */
 #else					/* HAVE_LIBGL */
 #if HAVE_FTGL
 #undef HAVE_FTGL

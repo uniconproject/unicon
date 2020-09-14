@@ -1131,9 +1131,9 @@ function{1} list(n, x)
       body {
          struct descrip d;
          cnv_list(&n, &d); /* can't fail, already know n is a set */
-     return d;
-     }
-   }
+         return d;
+         }
+      }
 #ifdef Arrays
    else if is:list(n) then {
      abstract { return type(n) }

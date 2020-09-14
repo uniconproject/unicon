@@ -41,17 +41,7 @@ static void vrfySetPhase(int expected, int new);
 static void vrfyStart();
 static void vrfyEnd();
 static void vrfyRegion(int expected);
-#ifdef Arrays
-static void vrfy_Intarray(struct b_intarray *b);
-static void vrfy_Realarray(struct b_realarray *b);
-#endif					/* Arrays */
-static void vrfy_File(struct b_file *b);
-static void vrfy_Cons(struct b_cons *b);
-static void vrfy_Record(struct b_record *b);
-static void vrfy_List(struct b_list *b);
-static void vrfy_Lelem(struct b_lelem *b);
 static void vrfy_Set(struct b_set *b);
-static void vrfy_Tvtbl(struct b_tvtbl *b);
 static void vrfy_Table(struct b_table *b);
 static void vrfy_Selem(struct b_selem *b);
 static void vrfy_Telem(struct b_telem *b);
@@ -528,7 +518,7 @@ int region;
     */
 
 #if !COMPILER
-   if (sp == NULL){
+   if (sp == NULL) {
 #ifdef VerifyHeap
      vrfyEnd();
 #endif                  /* VerifyHeap */
@@ -644,13 +634,32 @@ int region;
      wcp wc;
 
      for (ws = wstates; ws ; ws = ws->next) {
-	    if (is:file(ws->filep))
-	      markblock(&(ws->filep));
-	    if (is:list(ws->listp))
-	      markblock(&(ws->listp));
+#ifdef GraphicsGL
+        /* 
+         * For some reason, the 2d display doesn't get marked because
+         * the title word of {BlkLoc(ws->filep)} would contain the address
+         * of {ws->funclist2d} as it was getting explicitly marked, 
+         * resulting in the 2d display not getting marked
+         * at all and a subsequent memory violation after GC.
+         * It would seem that shouldn't happen during GC, but I believe
+         * I've checked for all buffer overflows in drawgeometry2d()...
+         * What's worse is this memory violation is sporadic...
+         * 
+         * For now, try marking the display list before the Unicon window 
+         * values. It seems to work...?
+         * - Gigi
+         */
+        if (is:list(ws->funclist2d))
+	   markblock(&(ws->funclist2d));
+#endif					/* GraphicsGL */
+
+	if (is:file(ws->filep))
+	   markblock(&(ws->filep));
+	if (is:list(ws->listp))
+	   markblock(&(ws->listp));
 #ifdef Graphics3D
-         if (is:list(ws->funclist))
-	    markblock(&(ws->funclist));
+        if (is:list(ws->funclist))
+	   markblock(&(ws->funclist));
 #endif                            /* Graphics3D */
         }
 
@@ -1963,8 +1972,8 @@ return memorysize(0);
  * Heap verification
  */
 
-#passthru #define ELEMENTS(A) (sizeof((A))/sizeof((A)[0]))
-#passthru #define HIGHEST(A)  (ELEMENTS((A))-1)
+#define ELEMENTS(A) (sizeof((A))/sizeof((A)[0]))
+#define HIGHEST(A)  (ELEMENTS((A))-1)
 
 /*
  * A circular buffer of messages
@@ -2006,33 +2015,33 @@ void vrfyPrintLog(int nmess)
   }
 }
 
-#passthru /* Use this when continuing is not an option */
-#passthru static void vrfyCrash(const char *fmt, ...)
-#passthru {
-#passthru   va_list args;
-#passthru   va_start(args, fmt);
-#passthru   (void) vsnprintf((char *)&vlog[vlogNext], sizeof(vlogmessage), fmt, args);
-#passthru   va_end(args);
-#passthru   if (++vlogNext > HIGHEST(vlog)) {vlogNext = 0;}
-#passthru
-#passthru   /* gcc and clang define __GNUC__ */
-#passthru #if defined(__GNUC__)
-#passthru   do { __builtin_trap(); } while (1);
-#passthru #else
-#passthru   /*
-#passthru    * put something here that your compiler will accept
-#passthru    * (surrounded by appropriate #ifdefs) to force a program crash.
-#passthru    */
-#passthru   do { __builtin_trap(); } while (1);
-#passthru #endif                   /* __GNUC__ */
-#passthru }
+/* Use this when continuing is not an option */
+static void vrfyCrash(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  (void) vsnprintf((char *)&vlog[vlogNext], sizeof(vlogmessage), fmt, args);
+  va_end(args);
+  if (++vlogNext > HIGHEST(vlog)) {vlogNext = 0;}
+
+  /* gcc and clang define __GNUC__ */
+#if defined(__GNUC__)
+  do { __builtin_trap(); } while (1);
+#else
+  /*
+   * put something here that your compiler will accept
+   * (surrounded by appropriate #ifdefs) to force a program crash.
+   */
+  do { __builtin_trap(); } while (1);
+#endif
+}
 
 #define PRE_GC  0
 #define IN_GC   1
 #define POST_GC 2
 
 /* An arbitrary check for an implausible (but non zero) pointer */
-#define BAD_PTR(p) ((p) && (10000 > (intptr_t)(p)))
+#define BAD_PTR(p) ((p) && (10000 > (long)(p)))
 
 static int vrfyPhase = PRE_GC;
 /*
@@ -2293,46 +2302,38 @@ static void vrfyRegion(int expected)
     {
       char *blk = curblock->base;
 
-      while (blk < curblock->free) {
-        union block *b = (union block *)blk;
+      while (blk < curblock->free)
+        {
+          union block *b = (union block *)blk;
 
-        /*
-         * If environment var $VRFY = -1 all checks are enabled (and so is this
-         * log entry). But it generates a *lot* of entries, sometimes making it
-         * difficult to see what has been going on. To suppress this entry,
-         * but keep all the checks enabled, set $VRFY to -2
-         */
-        if (vrfy & 0x01) {
-          vrfyLog("Block Addr = %p type = %ld", b, BlkType(b));
-        }
-        switch(BlkType(b))
-          {
+          /*
+           * If environment var $VRFY = -1 all checks are enabled (and so is this
+           * log entry). But it generates a *lot* of entries, sometimes making it
+           * difficult to see what has been going on. To suppress this entry,
+           * but keep all the checks enabled, set $VRFY to -2
+           */
+          if (vrfy & 0x01) {
+            vrfyLog("Block Addr = %p type = %ld", b, BlkType(b));
+          }
+          switch(BlkType(b)) {
           default:
-            vrfyCrash("Bad block type at %p", b);
+            vrfyCrash("Bad block type");
 
           case T_Null:          /* null value */
-            vrfyCrash("Null object? at %p", b);
+            vrfyCrash("Null object?");
           case T_Integer:   /* integer */
-            vrfyCrash("Integer? at %p", b);
+            vrfyCrash("Integer?");
 #ifdef LargeInts
           case T_Lrgint: break; /* long integer */
 #endif                  /* LargeInts */
           case T_Real: break;   /* real number */
           case T_Cset: break;   /* cset */
-          case T_File: {        /* file */
-            vrfy_File(&b->File); break;
-          }
-          case T_Proc:          /* procedure */
-            vrfyCrash("Proc? at %p", b);
-          case T_Record: {      /* record */
-            vrfy_Record(&b->Record); break;
-          }
-          case T_List: {        /* list header */
-            vrfy_List(&b->List); break;
-          }
-          case T_Lelem: {       /* list element */
-            vrfy_Lelem(&b->Lelem); break;
-          }
+          case T_File: break;   /* file */
+
+          case T_Proc: break;   /* procedure */
+          case T_Record: break; /* record */
+          case T_List: break;    /* list header */
+          case T_Lelem: break;   /* list element */
           case T_Set: {          /* set header */
             vrfy_Set(&b->Set); break;
           }
@@ -2345,280 +2346,35 @@ static void vrfyRegion(int expected)
           case T_Telem: {       /* table element */
             vrfy_Telem(&b->Telem); break;
           }
-          case T_Tvtbl: {       /* table element trapped variable */
-            vrfy_Tvtbl(&b->Tvtbl); break;
-          }
-           case T_Slots: {       /* set/table hash slots */
+          case T_Tvtbl: break;  /* table element trapped variable */
+          case T_Slots: {       /* set/table hash slots */
             vrfy_Slots(&b->Slots); break;
           }
           case T_Tvsubs: break; /* substring trapped variable */
           case T_Refresh: break; /* refresh block */
-          case T_Coexpr:         /* co-expression */
-            vrfyCrash("Coexpr? at %p", b);
+          case T_Coexpr: break;  /* co-expression */
           case T_External: break; /* external block */
-          case T_Kywdint:         /* integer keyword */
-            vrfyCrash("Kywdint? at %p", b);
-          case T_Kywdpos:      /* keyword &pos */
-            vrfyCrash("&pos? at %p", b);
-          case T_Kywdsubj:      /* keyword &subject */
-            vrfyCrash("&subj? at %p", b);
-          case T_Kywdwin:       /* keyword &window */
-            vrfyCrash("&window? at %p", b);
+          case T_Kywdint: break;  /* integer keyword */
+          case T_Kywdpos: break;  /* keyword &pos */
+          case T_Kywdsubj: break; /* keyword &subject */
+          case T_Kywdwin:         /* keyword &window */
+            vrfyCrash("&window?");
           case T_Kywdstr:       /* string keyword */
-            vrfyCrash("string keyword? at %p", b);
+            vrfyCrash("string keyword?");
           case T_Kywdevent:     /* keyword &eventsource, etc. */
-            vrfyCrash("&eventsource? at %p", b);
+              vrfyCrash("&eventsource?");
 #ifdef PatternType
           case T_Pattern: break; /* pattern header */
-          case T_Pelem: break;   /* pattern element */
+          case T_Pelem: break;    /* pattern element */
 #endif                  /* PatternType */
           case T_Tvmonitored: break; /* Monitored trapped variable */
-#ifdef Arrays
-          case T_Intarray: {    /* integer array */
-            vrfy_Intarray(&b->Intarray); break;
+          case T_Intarray: break;     /* integer array */
+          case T_Realarray: break;    /* real array */
+          case T_Cons: break;         /* generic link list element */
           }
-          case T_Realarray: {   /* real array */
-            vrfy_Realarray(&b->Realarray); break;
-          }
-#endif                  /* Arrays */
-          case T_Cons: {              /* generic link list element */
-            vrfy_Cons((struct b_cons *)b); break;
-          }
-          }
-        blk += BlkSize(blk);
-      }
-    }
-  }
-}
 
-#ifdef Arrays
-static void vrfy_Intarray(struct b_intarray *b)
-{
-  if ((vrfy & (1<<T_Intarray)) == 0) { return;}
-  else {
-    if ((b->listp == NULL) || BAD_PTR(b->listp) || BAD_PTR(b->dims)) {
-      vrfyCrash("Intarray at %p: bad ptr", b);
-    } else if (vrfyPhase == POST_GC) {
-      if (BlkType(b->listp) != T_List) {
-        vrfyCrash("Intarray at %p, bad hdr pointer (%p)",
-                  b, b->listp);
-      } else {
-        struct b_list *hdr = &(b->listp->List);
-        if (&(hdr->listhead->Intarray) != b) {
-        vrfyCrash("Intarray at %p: hdr (%p) bad head ptr (%p)",
-                  b, b->listp, hdr->listhead);
+          blk += BlkSize(blk);
         }
-        if (b->blksize != (hdr->size*sizeof(b->a[0]))) {
-          vrfyCrash("Intarray at %p: wrong size (%ld) should be %ld",
-                    b, b->blksize, (hdr->size*sizeof(b->a[0])));
-        }
-      }
-    }
-  }
-}
-
-static void vrfy_Realarray(struct b_realarray *b)
-{
-  if ((vrfy & (1<<T_Realarray)) == 0) { return;}
-  else {
-    if ((b->listp == NULL) || BAD_PTR(b->listp) || BAD_PTR(b->dims)) {
-      vrfyCrash("Realarray at %p: bad ptr", b);
-    } else if (vrfyPhase == POST_GC) {
-      if (BlkType(b->listp) != T_List) {
-        vrfyCrash("Realarray at %p, bad hdr pointer (%p)",
-                  b, b->listp);
-      } else {
-        struct b_list *hdr = &(b->listp->List);
-        if (&(hdr->listhead->Realarray) != b) {
-          vrfyCrash("Realarray at %p: hdr (%p) bad head ptr (%p)",
-                    b, b->listp, hdr->listhead);
-        }
-        if (b->blksize != (hdr->size*sizeof(b->a[0]))) {
-          vrfyCrash("Realarray at %p: wrong size (%ld) should be %ld",
-                    b, b->blksize, (hdr->size*sizeof(b->a[0])));
-        }
-      }
-    }
-  }
-}
-#endif					/* Arrays */
-
-static void vrfy_File(struct b_file *b)
-{
-  if ((vrfy & (1<<T_File)) == 0) { return;}
-  else {
-    /*
-     * It would be nice to check the file pointer, but the possibility
-     * of int-based file descriptors makes that a non-runner.
-     */
-
-    if (!Qual(b->fname)) {
-      vrfyCrash("File at %p: file name must be a Qualifier", b);
-    } else { /* Look for "impossible" combinations of file status bits */
-      word status = b->status;
-      if (((status & (Fs_Create | Fs_Append)) == (Fs_Create | Fs_Append))
-          || ((status & (Fs_Write | Fs_Append)) == Fs_Append)
-          || ((status & (Fs_Write | Fs_Create)) == Fs_Create)
-          || ((status & (Fs_Pipe | Fs_Directory)) == (Fs_Pipe | Fs_Directory))
-          || ((status & (Fs_Untrans | Fs_Directory)) == (Fs_Untrans | Fs_Directory))
-          || ((status & (Fs_Write | Fs_Directory)) == (Fs_Write | Fs_Directory))
-          || ((status & (Fs_Read | Fs_Reading)) == Fs_Reading)
-          || ((status & (Fs_Write | Fs_Writing)) == Fs_Writing)
-#ifdef PosixFns
-          || ((status & (Fs_Buff | Fs_Unbuf)) == (Fs_Buff | Fs_Unbuf))
-          || ((status & (Fs_Socket | Fs_Directory)) == (Fs_Socket | Fs_Directory))
-          || ((status & (Fs_BPipe | Fs_Directory)) == (Fs_BPipe | Fs_Directory))
-#endif					/* PosixFns */
-          ) {
-        vrfyCrash("File at %p: bogus status value (0x%lx)", b, status);
-      }
-    }
-  }
-}
-
-static void vrfy_Cons(struct b_cons *b)
-{
-  if ((vrfy & (1<<T_Cons)) == 0) { return;}
-  else {
-    if (BAD_PTR(b->data)) vrfyCrash("Cons at %p: bad data ptr", b);
-    if (BAD_PTR(b->next)) vrfyCrash("Cons at %p: bad next ptr", b);
-  }
-}
-
-static void vrfy_Record(struct b_record *b)
-{
-  if ((vrfy & (1<<T_Record)) == 0) { return;}
-  else {
-    if ((b->recdesc == NULL) || (BAD_PTR(b->recdesc))) {
-      vrfyCrash("Rec at %p: bad record constructor", b);
-    } else if (vrfyPhase == POST_GC) {
-      /* Record constructors are procedure blocks in disguise */
-      struct b_proc *rc = &(b->recdesc->Proc);
-
-      if (!Qual(rc->recname)) {
-        vrfyCrash("Rec at %p: constructor (%p) recname must be a Qualifier",
-                  b, rc);
-      } else {
-        word fields = rc->nfields;
-        if (fields < 0) {
-          vrfyCrash("Rec at %p: constructor (%p) fields (%ld) < 0",
-                    b, rc, fields);
-        } else {
-          if (b->blksize != (sizeof(struct b_record)
-                             + (fields - 1) * sizeof(b->fields))) {
-            vrfyCrash("Rec at %p: size(%d) inconsistent with nfields (%ld)",
-                      b, b->blksize, fields);
-          } else {
-            word nf = 0;
-            while (nf < fields) {
-              if (!Qual(rc->lnames[nf])) {
-                vrfyCrash("Rec at %p: constructor (%p) field %ld must be a Qualifier",
-                          b, rc, nf);
-              }
-              nf +=1;
-            }
-          }
-        }
-      }
-    } /* post-GC checks */
-  }
-}
-
-static void vrfy_List(struct b_list *b)
-{
-  if ((vrfy & (1<<T_List)) == 0) { return;}
-  else {
-    if ((b->listhead == NULL) || BAD_PTR(b->listhead)) {
-      vrfyCrash("List at %p: Bad head ptr", b);
-    } else if (BAD_PTR(b->listtail)) {
-      vrfyCrash("List at %p: Bad tail ptr", b);
-    } else if (vrfyPhase == POST_GC) {
-      if (BlkType(b->listhead) == T_Lelem) {
-        if ((b->listtail == NULL) || (BlkType(b->listtail) != T_Lelem)) {
-          vrfyCrash("List at %p: tail ptr not list element", b);
-        } else {
-          struct b_lelem *el = &b->listhead->Lelem;
-
-          if ((el->listprev == NULL) || (&el->listprev->List != b )){
-            vrfyCrash("List at %p: 1st elem at %p back ptr not hdr", b, el);
-          }
-          if (&(el->listnext->List) == b) { /* Only one Lelem */
-            if (el->nused != b-> size) {
-              vrfyCrash("List at %p, elements (%ld) != size (%ld)",
-                        b, el->nused, b->size);
-            }
-          } else {
-            struct b_lelem *nel;
-            word elements = 0;
-
-            while (&(el->listnext->List) != b) {
-              nel = &el->listnext->Lelem;
-              if ((nel == NULL) || BAD_PTR(nel)) {
-                vrfyCrash("List at %p, Bad next Lelem ptr at %p", b, el);
-              }
-              if (&nel->listprev->Lelem != el) {
-                vrfyCrash("List at %p, Broken chain at %p <-> %p", b, el, nel);
-              }
-              if ((elements += el->nused) > b->size) {
-                vrfyCrash("List at %p: too many elements (%ld < %ld)",
-                          b, b->size, elements);
-              }
-              el = nel;
-            } /* end of lelem chain checking */
-            if ((elements += el->nused) != b->size) {
-              vrfyCrash("List at %p: elements (%ld) != %ld",
-                        b, elements, b->size);
-            }
-          }
-        }
-      } else { /* Not a list: Check for array */
-        if ((BlkType(b->listhead) != T_Intarray) &&
-            (BlkType(b->listhead) != T_Realarray) ) {
-          vrfyCrash("List at %p: head ptr not array or list", b);
-        } else {
-          if (b->listtail != NULL) {
-            vrfyCrash("List at %p: array tail ptr should be null", b);
-          } else {
-            struct b_intarray *el = &b->listhead->Intarray;
-            if (&(el->listp->List) != b) {
-              vrfyCrash("Array at %p: Bad array back ptr at %p", b, el);
-            }
-          }
-        }
-      }
-      vrfyLog("List at %p (%ld) verified", b, b->id);
-   } /* Post-GC checks */
-  }
-}
-
-static void vrfy_Lelem(struct b_lelem *b)
-{
-  if ((vrfy & (1<<T_Lelem)) == 0) { return;}
-  else {
-#if 0
-    /* nslots can be smaller than MinListSlots (in the limit, can be 0) */
-    if (b->nslots < MinListSlots) {
-      vrfyCrash("Lelem at %p: bad nslots (%ld < %d)",
-                b, b->nslots, MinListSlots);
-    }
-#endif                  /* 0 */
-#ifdef MaxListSlots
-    if (b->nslots > MaxListSlots) {
-      vrfyCrash("Lelem at %p: bad slots (%ld > %d)",
-                b, b->nslots, MaxListSlots);
-    }
-#endif					/* MaxListSlots */
-    if (b->nused > b->nslots) {
-      vrfyCrash("Lelem at %p: bad used slots (%ld > %ld)",
-                b, b->nused, b->nslots);
-    }
-    if ((b->first < 0) ||
-        ((b->nslots > 0) && (b->first >= b->nslots))) {
-      vrfyCrash("Lelem at %p: bad first slot (%ld)", b, b->first);
-    }
-    if (b->blksize != (sizeof(struct b_lelem) - sizeof(b->lslots[0]) +
-                       (sizeof(b->lslots[0])*b->nslots))) {
-      vrfyCrash("Lelem at %p: bad block size (%ld)", b, b->blksize);
     }
   }
 }
@@ -2649,23 +2405,6 @@ static void vrfy_Set(struct b_set *b)
             vrfyCrash("Set at %p: hdir[%ld] = hdir[%ld]", b, seg, seg1);
           }
         }
-      }
-    }
-  }
-}
-
-static void vrfy_Tvtbl(struct b_tvtbl *b)
-{
-  if ((vrfy & (1<<T_Tvtbl)) == 0) { return; }
-  else {
-    struct b_table *tbl = &(b->clink->Table);
-    if ((tbl == NULL) | BAD_PTR(tbl)) {
-      vrfyCrash("Tvtbl at %p: bad link ptr %p", b, tbl);
-    }
-    if (vrfyPhase == POST_GC) {
-      if (BlkType(tbl) != T_Table) {
-        vrfyCrash("Tvtbl at %p does not point to a table (%p -> %ld)",
-                  b, tbl, BlkType(tbl));
       }
     }
   }

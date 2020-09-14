@@ -195,6 +195,10 @@ typedef struct wcolor {
    int		refcount;
    char		name[6+MAXCOLORNAME];	/* name for WAttrib & WColor reads */
    unsigned short r, g, b;		/* rgb for colorsearch */
+#ifdef GraphicsGL
+   unsigned short a;
+   int 		id;			/* for mutable color */
+#endif 					/* GraphicsGL */
    unsigned long	c;		/* X pixel value */
    int           type;			/* CLR_SHARED or CLR_MUTABLE */
    int prev, next;			/* hash table bucket prev/next */

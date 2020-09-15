@@ -1,0 +1,861 @@
+############################################################################
+#
+#       File:     xoptions.icn
+#
+#       Subject:  Procedure to get command-line options
+#
+#       Based on the options.icn by
+#       Robert J. Alexander and Gregg M. Townsend and Don Ward
+#
+#       Modified: Bruce Rennie          Rewrite and extensions
+#
+#       Date:     August 29, 2020
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#       xoptions(arg, optstring, errproc, finishoption[]) removes command options
+#       from the argument list of an Icon main procedure, returning a table of
+#       option values.
+#
+############################################################################
+#
+#     xoptions(arg, optstring, errproc, finishoption[]) -- Get command line options.
+#
+#     This procedure separates and interprets command line options included in
+#  the main program argument list.  Option names and values are removed
+#  from the argument list and returned in a table. Allows for options to have
+#  sub-options and allows for options/sub-options to be stored in separate files
+#  and called by referencing these files by use of "@".
+#
+#     This procedure will now handle the POSIX conventions, the GNU long option
+#  conventions and the various conventions that were originally in this procedure,
+#  including non-alphanumeric characters as options.
+#
+#     Additionally, Icon/Unicon conventions of using "-x" as well as "--" to end
+#  the processing of options from the command line by allowing an additional list
+#  of values to do this. A addition allows for a series of values to be stored
+#  against an option till "--" or other specified values are encountered.
+#
+#     On the command line, options are introduced by a "-" character.  An option
+#  name is either a single printable character, as in "-n" or "-?", or a string
+#  of letters, numbers, and underscores, as in "-geometry". Valueless
+#  single-character options may appear in combination, for example as "-qtv".
+#
+#
+#     Some options require values.  Generally, the option name is one argument
+#  and the value appears as the next argument, for example "-F file.txt".
+#  However, with a single-character argument name (as in that example), the
+#  value may be concatenated: "-Ffile.txt" is accepted as equivalent. In addition
+#  the "=" can be used as the separator between the option and the value (no
+#  space separation allowed) as in "-F=file.txt".
+#
+#     Options may be freely interspersed with non-option arguments. An argument
+#  of a single "-" is treated as a non-option.  The special argument "--" or other
+#  specified values will terminate the option processing. Non-option arguments
+#  are returned in the original argument list for interpretation by the caller,
+#  including those collected from any specified option file (as described in the
+#  next paragraph).
+#
+#     An argument of the form @filename (a "@" immediately followed by a file name)
+#  causes xoptions() to replace that argument with arguments retrieved from the
+#  file "filename".  Each line of the file is taken as a separate argument,
+#  exactly as it appears in the file. Arguments beginning with - are processed
+#  as options, and those starting with @ are processed as nested argument files.
+#  An argument of "--" causes all remaining arguments IN THAT FILE ONLY to be
+#  treated as non-options (including @filename arguments). filename can have a
+#  fully specified path or a relative specified path or a local directory
+#  specified path.
+#
+#     The parameters of xoptions(arg, optstring, errproc, finishoption[]) are:
+#
+#       arg         the argument list as passed to the main procedure. This is the
+#                   list that is passed into the program from the operating system
+#                   being used.
+#
+#       optstring   a string specifying the allowable options.  This is a
+#                   concatenation, with optional spaces between, of one or more
+#                   option specs of the form
+#
+#                       -name%*     (one or more alphanumeric or _)
+#                       --name%*    (one or more alphanumeric or _ or -)
+#                       name%*      (one or more characters not flags and each
+#                                    character is treated as a separate single
+#                                    character option)
+#                       =name%*     (one or more alphanumeric or _)
+#
+#                   where
+#
+#                       -       introduces the option
+#
+#                       --      introduces the option where the option name can
+#                               contain "-"
+#
+#                       =       introduces the option where command line option
+#                               can be either --name or -name
+#
+#                       name    is either a string of alphanumerics (any of a-z,
+#                               A-Z, 0-9, and _)
+#                               or any single printable character. The "-" is
+#                               allowed when prefixed by "--".
+#
+#                       %       is one of the following flag characters:
+#                               !       No value is required or allowed
+#                               :       A string value is required
+#                               +       An integer value is required
+#                               .       A real value is required
+#                               $       Optional value - anything
+#                               ()      Defines a set of comma separated sub-option
+#                                       option/pairs. The option string definition
+#                                       use the above flag characters "!", ":",
+#                                       "+", ".", "$" with an optional "*". The
+#                                       value (if supplied) is separated by "=".
+#                               <       all values following this option up to any
+#                                       value found in finishoption are to be
+#                                       collected into a list for this option.
+#                                       any "*" following this will be ignored.
+#
+#                       *       optional and indicates that the option can occur
+#                               multiple times in the command options and must
+#                               follow the % specifier, if used.
+#
+#                       For all options that do not allow multiple occurrences,
+#                       the consequence of multiple appearances of that option
+#                       is that the last occurrence will overwrite any previous
+#                       occurrence.
+#
+#                   The leading "-" may be omitted for a single-characteroption.
+#                   The "!" flag may be omitted except when needed to terminate
+#                   a multi-character name. In the case of a single "-" as the
+#                   start of the option specifier, any following "-" will
+#                   terminate the multi-character name.
+#
+#                   Thus the following optstrings are equivalent:
+#
+#                       "-n+ -t -v -q -F: -geometry: -silent"
+#                       "n+tvqF:-geometry:-silent"
+#                       "-silent!n+tvqF:-geometry:"
+#
+#                   If "optstring" is omitted any single letter or digit is
+#                   assumed to be valid and require no data.
+#
+#       errproc     a procedure which will be called if an error is is detected
+#                   in the command line options. The procedure is called with
+#                   one argument:  a string describing the error that occurred.
+#                   After errproc() is called, xoptions() immediately returns the
+#                   outcome of errproc(), without processing further arguments.
+#                   Already processed arguments will have been removed from "arg".
+#                   If "errproc" is omitted, stop() is called if an error is
+#                   detected and the program will abort.
+#
+#       finishoption is a list of options that terminate the processing of options.
+#                   This allows the proceeding options to be passed to another
+#                   program. By default this is "--". An example of other values
+#                   being used is the "-x" used in the icont compiler to pass
+#                   all following parameters to the iconx interpreter.
+#
+#
+#     A table is returned containing the options that were specified. The keys
+#  are the specified option names. The assigned values are the data values
+#  following the options converted to the specified type.
+#
+#  A value of 1 is stored for options that accept no values.
+#
+#     The table's default value is &null so testing for the occurrence of that
+#  specific parameter can use the \ operator to check if it was actually specified
+#  on the command line.
+#
+#
+#     Upon return, the option arguments are removed from arg, leaving only the
+#  non-option arguments.
+#
+#
+# Options with embedded "-"
+#
+#     Options may begin with "--" and, if they do, may contain "-" characters.
+#  So options like --dry-run will be parsed correctly and will result in an
+#  entry in the options table with a key of "-dry-run" (note the leading minus
+#  in the key). All such options must be terminated by a space or one of
+#  allowable specifier characters described above. The handling of these options
+#  allows any number of "-" to be in the option name after the initial
+#  alphanumeric or "_" character. The normal expectation is that the option name
+#  will have a single "-" between each group of alphanumeric character grouping.
+#  However, if you require multiple sequential "-" in the option name, this is
+#  allowed.
+#
+#     For all options that have an associated value (optional or required), there
+#  are three usable alternatives (as per POSIX standards).
+#
+#     For single character options, the value can follow immediately, or it can be
+#  space separated or have a an "=" between the option and the value.
+#
+#     Using -l as an example, we can specify the command line as
+#
+#       -lone
+#       -l one
+#       -l=one
+#
+#     For multi-character options, the value is either space separated or have
+#  an "=" between the option and the value.
+#
+#     Using -geometry as an example, we can specify the command line as
+#
+#       -geometry "240:240"
+#       -geometry="240:240"
+#
+#     For options that have sub-options the following has been added (as per the
+#  POSIX standards). The options that have sub-options have the sub-options as a
+#  comma separated list of option/value pairs. Those sub-options that have values use
+#  a "=" between sub-option and the associated value. To define the sub-options,
+#  place these in parentheses.
+#
+#     An example of defining the option string.
+#
+#       -o(h!file:*sfr)
+#
+#     The command line form could be as follows
+#
+#       -o h,file=filename.ext,file="another file.ext",r
+#
+#     The value returned for an option that has sub-options is a table of key/values
+#  pairs, the default is &null and for keys that have no required values, the value
+#  returned is 1.
+#
+#
+#     A similar extension is available in the @ file. You can now write
+#
+#       -time 45
+#     or
+#       -time=45
+#
+#     instead of the two lines previously required as in
+#
+#       -time
+#       45
+#
+# Treating options specified as --opt and -opt as the same option.
+#
+#     To remove the leading minus from such keys, make the first character
+#  of the specified option in the option string an "=" character: then, a
+#  supplied argument of either --opt or -opt would result in a key of "opt" in
+#  the table. When the first character is an equals character, the procedure
+#  ensures that only one of "--opt" or "-opt" may be specified in the option
+#  way to allow (for example) both --run and -run as options is to miss out
+#  string. The only the leading equals and to treat option["-run"] and option["run"]
+#  separately in the calling program.
+#
+# e.g.
+#
+#   "-bish-bash-bosh--bash"   gives to four different options, which are
+#
+#   command line                        option table
+#   ------------------------------|-----------------------------
+#       -bish                     |        bish
+#       -bash                     |        bash
+#       -bosh                     |        bosh
+#       --bash                    |        -bash
+#
+#   "--bish-bash-bosh--bash"  recognises a single command line option
+#
+#   command line                        option table
+#   ------------------------------|-----------------------------
+#       --bish-bash-bosh--bash    |     -bish-bash-bosh--bash
+#
+#   "=bish-bash-bosh--bash"  recognises two command line options that have the
+#  same meaning
+#
+#   command line                        option table
+#   ------------------------------|-----------------------------
+#       -bish-bash-bosh--bash     |    bish-bash-bosh--bash
+#       --bish-bash-bosh--bash    |    bish-bash-bosh--bash
+#
+#
+# Specify short form of option names
+#
+#     As per GNU extensions, the option names can be shortened as long as these
+#  shortened forms are able to be disambiguated from all other valid option
+#  names. An example of this would be two options such as "-si" and "-silent".
+#
+#     In this case, "-s" would NOT be a valid short form as it could not be
+#  disambiguated between either of the options. "-si" would be available as this
+#  is the full option name and "-sil" and any longer prefix of "-silent" would
+#  also be valid.
+#
+#  The command line could use the full names as:
+#
+#   "-si -silent"
+#
+#  or it could be specified as
+#
+#   "-si -sil"
+#
+#  as being equivalent command line forms.
+#
+############################################################################
+
+#PD:
+#: xoptions(arg, optstring, errproc, finishoption[])
+#:
+#:@param arg                list of strings which represent the arguments given
+#:@                         to the calling program
+#:@param optstring          string representing the allowable options and sub-options
+#:@                         and any required values for those options/sub-options
+#:@errproc                  error procedure to be used when an error is found in
+#:@                         the supplied arg list
+#:@finishoption[]           list of applicable values that can terminate the
+#:@                         processing of options and values
+#:@returns                  table containing option/values found in the arg list
+#:@updates arg              the value of arg is updated by the removal the found
+#:@                         options/values and by pointer semantics, the value in
+#:@                         calling procedure
+#:
+procedure xoptions(arg, optstring, errproc, finishoption[])
+    local   opttable,                   #LV: table whose keys are the various options
+                                        #:   that have been specified in the parameter
+                                        #:   "optstring" and the value is the option
+                                        #:   type found in the parameter "optstring"
+            option,                     #LV: table holding currently found options
+                                        #:   in the arg list
+            flags,                      #LV: cset holding the valid option flag
+                                        #:   values
+            maptable,                   #LV: maps valid command line short form
+                                        #:   parameters to full names of parameters
+            tmpt                        #LV: temporary variable
+
+
+    #
+    # if no optstring is supplied, then set the default value to a string consisting
+    # of the alphanumeric characters. The default does not allow for values that
+    # can be supplied by the user.
+    #
+    /optstring := string(&letters ++ &digits)
+    #
+    # the default error processing is to call the system stop() function
+    #
+    /errproc := stop
+    #
+    # the normal default value for terminating option processing is "--", the icont
+    # and unicon both use "-x" as a different terminating value for option processing
+    #
+    *finishoption = 0 & finishoption := ["--"]
+    option := table()
+    #
+    # the valid flags are set here. See the allowable characters in the desrciption
+    # above.
+    #
+    flags := "!:+.$(<"
+    #
+    #  Scan the option specification string.
+    #
+    tmpt := process_option_string(optstring, flags)
+    #
+    # Two tables are returned for the actual processing of the command line options.
+    # The first is the option specifier table and the second is the short form
+    # to option name mapping table.
+    #
+    opttable := tmpt[1]
+    maptable := tmpt[2]
+    #
+    # Process the argument list, using option specifier table and mapping table.
+    #
+    return process_command_option(arg, option, opttable, maptable, finishoption, errproc)
+end
+
+#PD:
+#: process_option_string(optstring, flags, nosuboption)
+#:
+#:
+procedure process_option_string(optstring, flags, nosuboption)
+    local   optname,                    #LV: the name of the current option being
+                                        #:   processed from "optstring"
+            opttable,                   #LV: table whose keys are the various options
+                                        #:   that have been specified in the parameter
+                                        #:   "optstring" and the value is the option
+                                        #:   type found in the parameter "optstring"
+            opttype,                    #LV: holds the option type for the current
+                                        #:   option being processed from "optstring"
+            optcs,                      #LV: cset for valid option characters
+                                        #:   which are the alphanumeric and _ characters
+            minusoptcs,                 #LV: cset for valid option characters when
+                                        #:   a -- pair is found, these are the
+                                        #:   alphanumeric, _ and - characters.
+            suboption,                  #LV: holds the suboption sequence for processing
+            maptable,                   #LV: maps valid command line short form parameters
+                                        #:   to full names of parameters
+            tkey,                       #LV: used to sequence through options table keys
+                                        #:   to calculate the valid short form names
+                                        #:   applicable to an option.
+            str,                        #LV: used as the option name value to calculate
+                                        #:   the valid short form name.
+            i,                          #LV: index into the option name to select
+                                        #:   the next short form name.
+            cannotshorten,              #LV: holds the table of option names that
+                                        #:   cannot be shortened due to ambiguities
+                                        #:   between option names
+            skey,                       #LV: used to find option names that cannot
+                                        #:   be shortened.
+            prefixset                   #LV: table containing all valid short forms
+                                        #:   as keys with the value as a set of
+                                        #:   applicable options. These will be removed
+                                        #:   from the maptable as the last process
+
+    #
+    # Initialise the various variables with their required values.
+    #
+    # if no optstring is supplied, then set the default value to a cset consisting
+    # of the alphanumeric characters. The
+    #
+    /optstring := string(&letters ++ &digits)
+    #
+    opttable := table()
+    #
+    # the valid option name characters allowed for multi-character option names
+    #
+    optcs := &letters ++ &digits ++ '_'
+    minusoptcs := optcs ++ '-'
+    #
+    # this table holds each valid short form option name and refers this back to
+    # the full valid option name. An example of this is:
+    #
+    # if two options are specified are -si and -silent, this table will hold
+    # the following key/value pairs
+    #
+    #   key                     value
+    #   ----------------|------------------
+    #   si              |       si
+    #   sil             |       silent
+    #   sile            |       silent
+    #   silen           |       silent
+    #   silent          |       silent
+    #
+    #   the short "s" is not a valid short form, since it cannot be disambiguated
+    #
+    maptable := table()
+    cannotshorten := table()
+    #
+    #  Scan the option specification string.
+    #
+
+    optstring ? {
+        while optname := move(1) do {
+
+            #
+            # this will skip each space character found in the parameter "optstring"
+            # where the space is not found between "" or '' pairs
+            #
+            if optname == " " then {
+                tab(many(' '))
+                next
+            }
+            #
+            # if we see a "-" as the option name then we will expect either a
+            # sequence of characters as specified in optcs or a second "-". get
+            # the option name
+            #
+            if optname == "-" then {
+                optname := move(1) | break
+                #
+                # if the next character is a member of the option name set then
+                # collect these into the optname
+                #
+                if member(optcs, optname) then {
+                    optname ||:= tab(many(optcs))
+                    maptable[optname] := optname
+                #
+                # we check to see if this character is a "-" then collect any
+                # characters that follow that are members of the extended option name
+                # set and collect these into the option name
+                #
+                } else if optname == "-" then {
+                    optname ||:= tab(many(minusoptcs))
+                    maptable[optname] := optname
+                } else {
+                    maptable[optname] := optname
+                }
+            #
+            # we next look for the "=" as the start for the next option
+            #
+            } else if optname == "=" then {
+                optname := move(1) | break
+                #
+                # if the next character is a member of the option name set then
+                # collect these into the optname
+                #
+                if member(minusoptcs, optname) then {
+                    optname ||:= tab(many(minusoptcs))
+                    maptable[optname] := optname
+                    maptable["-" || optname] := optname
+                } else {
+                    maptable[optname] := optname
+                    maptable["-" || optname] := optname
+                }
+            } else {
+                maptable[optname] := optname
+            }
+            #
+            # We now determine the option type from the valid possibilities and
+            # if not found, we will make it "!"
+            #
+            opttype := tab(any(flags)) | "!"
+            #
+            # check if the flag indicates that suboption processing is required
+            #
+            if /nosuboption then {
+                if opttype == "(" then {
+                    suboption := tab(upto(")"))
+                    move(1)
+                    opttype := process_option_string(suboption, flags -- '(', 1)
+                }
+            }
+            #
+            # the last possibility for the option type to be checked is if there
+            # option multiplicity indicator to be found. If it is, convert opttype
+            # to a list value.
+            #
+            if ="*" then {
+                if opttype ~== "<" then {
+                    opttype := [opttype]
+                }
+            }
+            #
+            # we have found the option and and its associated option type, so
+            # we can enter it into the local option table by which we will process
+            # the supplied arguments. This value will be either a character or a
+            # table of suboption pairs or a list containing a character or a table.
+            #
+            opttable[optname] := opttype
+        }
+    }
+    #
+    # determine the valid short forms applicable for each option.
+    #
+    # There will be certain options that are prefixes of other options and as a
+    # consequence of this cannot be shortened. here we determine which of the options
+    # this condition applies to
+    #
+    every tkey := key(maptable) do {
+        if match(tkey, skey := key(maptable)) & tkey ~== skey then {
+            cannotshorten[tkey] := 1
+        }
+    }
+    #
+    # we no determine all of the short forms that can occurrences. However, this
+    # does add a number of short forms which are not valid. These will be removed
+    # later
+    #
+    every tkey := key(maptable) do {
+        str := maptable[tkey]
+        every i := *str to 2 by -1 do {
+            (/cannotshorten[str] & /maptable[str[1:i]] := str) | break
+        }
+    }
+    #
+    # To determine which of the short forms need to be removed, we need to determine
+    # what options each of the short forms could be a prefix to. We will use a set
+    # to hold the different options applicable
+    #
+    prefixset := table()
+    every tkey := key(maptable) do {
+        #
+        # we add to the set the option applicable from the maptable
+        #
+        prefixset[tkey] := set([maptable[tkey]])
+        #
+        # find any other option where the current tkey is a prefix and the applicable
+        # options do not match and the tkey does not match the applicable option itself
+        # and the length of the short form is less than or equal to the option. This
+        # last requirement takes care of any situation where an "=" has been used in
+        # the option definition above
+        #
+        if match(tkey, str := key(maptable)) &
+                maptable[tkey] ~== maptable[str] &
+                maptable[tkey] ~== tkey & *tkey <= *maptable[tkey] then {
+            insert(prefixset[tkey], maptable[str])
+        }
+    }
+    #
+    # we look at each of the short forms and if it has more than 1 applicable optional
+    # we remove this from the maptable
+    #
+    every tkey := key(prefixset) do {
+        if *prefixset[tkey] > 1 then {
+            delete(maptable, tkey)
+        }
+    }
+    return [opttable, maptable]
+end
+
+#PD:
+#: process_command_option(args, option, opttable, maptable, finishoption, errproc, nosuboption)
+#:
+#:
+procedure process_command_option(args, option, opttable, maptable, finishoption, errproc, nosuboption)
+    local   f,                          #LV: temporary to hold a file descriptor if
+                                        #:   a @filename is found in arg list
+            fList,                      #LV: holds accumulating list of arguments
+                                        #:   that are not options or option values
+            fn,                         #LV: holds the current filename found @filename
+            optname,                    #LV: the name of the current option being
+                                        #:   processed from "optstring"
+            opttype,                    #LV: holds the option type for the current
+                                        #:   option being processed from "optstring"
+            p,                          #LV: holds the current option value found
+            x,                          #LV: current argument being processed
+            suboptionsep,               #LV: holds the suboption separator character
+            tmpopt,                     #LV: temporary to hold the current option value
+            mulopt,                     #LV: flag to indicate if the current option
+                                        #:   allows multiple occurrences
+            argstack,                   #LV: stack of arg lists, allows @filenames
+                                        #:   to be used uniformly without special
+                                        #:   treatment of an argument
+            currentarg,                 #LV: the current arg list being processed
+            tmpx,                       #LV: temporary variable
+            tmpstr,                     #LV: temporary variable
+            tmplst                      #LV: temporary variable
+
+    #
+    # for those options that allow sub-options, this is the character that separates
+    # each sub-options
+    #
+    suboptionsep := ","
+    argstack := []
+    currentarg := args
+    fList := []
+    while x := \get(currentarg) do {
+        x ? {
+            #
+            # if any of the finish processing options are found, we will push
+            # the current argument being tested back onto the current arg list,
+            # append this list to the accumulating non-option arguments and pop
+            # the arg stack for any further processing
+            #
+            if =!finishoption & pos(0) then {
+                fList |||:= currentarg
+                currentarg := []
+            #
+            # no finish processing option has been found, test against the
+            # valid set of options
+            #
+            } else if ="-" & not pos(0) then {
+                (tmpx := tab(0)) ? until pos(0) do {
+                    #
+                    # if the option is a valid option as specified in the
+                    # optstring, we will process it according to its specification
+                    #
+                    if opttype := \opttable[(optname := (((pos(1),tab(find("=") | 0)) | maptable[optname]) |
+                                                               (move(1) | maptable[optname])))] then {
+                        #
+                        # since we allow the possibility of an option to occur
+                        # multiple times in the arg list, we need to check
+                        # if the type of the current option is one of these.
+                        # this will be a list value
+                        # If it is then the values found are stored in a list
+                        # and set the flag to indicate this
+                        #
+                        ="="
+                        if type(opttype) == ("list") & *opttype = 1 then {
+                            /option[optname] := []
+                            mulopt := 1
+                            opttype := opttype[1]
+                        } else {
+                            mulopt := &null
+                        }
+                        tmpopt :=
+                            #
+                            # we check for the suboption case first, which means
+                            # that the opttype will be a list of size 2
+                            #
+                            if type(opttype) == "list" then {
+                                #
+                                # check the size of this list to make sure it is
+                                # of size 2
+                                #
+                                if *opttype = 2 then {
+                                    process_command_option(convert_to_list(get(currentarg), suboptionsep), table(), opttype[1], opttype[2], finishoption, errproc, 1)
+                                #
+                                # we have somehow managed to get an error here. this
+                                # should not have been possible
+                                #
+                                } else {
+                                    stop("This error should NEVER occur!!!!!!!\n\nProcessing of sub-options has given rise to a critical error!!!!\n")
+                                }
+                            #
+                            # we check for the required value cases second,
+                            # at this point in time, these types are ":", "+"
+                            # and "."
+                            #
+                            } else if any(':+.',opttype) then {
+                                #
+                                # required value immediately follows the option or
+                                # is the next argument in the arg list
+                                #
+                                p := "" ~== trim(tab(0) | get(currentarg), ' ', 0) |
+                                    return errproc("No parameter following -" ||
+                                                   optname)
+                                #
+                                # depending on the option, we may have to coerce
+                                # the value to the correct unicon base type. This
+                                # value is result for the assignment above.
+                                #
+                                case opttype[1] of {
+                                    ":" : {
+                                        trim(p, ' ', 0)
+                                    }
+                                    "+" : {
+                                        integer(p) |
+                                            return errproc("-" || optname ||
+                                                           " needs numeric parameter")
+                                    }
+                                    "." : {
+                                        real(p) |
+                                            return errproc("-" || optname ||
+                                                           " needs numeric parameter")
+                                    }
+                                }
+                            #
+                            # we will now check for optional values and if found
+                            # this will be treated as a string value for the
+                            # assignment
+                            #
+                            } else if opttype[1] == "$" then {
+                                #
+                                # optional value immediately follows the option or
+                                # is the next argument in the arg list. if a valid
+                                # option is found, then there is no optional value
+                                # and we need to restore the option found back to
+                                # the argument list
+                                #
+                                p := "" ~== trim(tab(0) | get(args), ' ', 0)
+                                if match("-", p) then {
+                                    push(args, p)
+                                    p := 1
+                                }
+                                p
+                            #
+                            # collect all following parameters into a list up to the end
+                            # or one of the values found in finishoptions
+                            #
+                            } else if opttype[1] == "<" then {
+                                tmplst := []
+                                while p := get(currentarg) do {
+                                    if p == !finishoption then {
+                                        push(currentarg, p)
+                                        break
+                                    } else {
+                                        put(tmplst, p)
+                                    }
+                                }
+                                tmplst
+
+                            #
+                            # all options that do not have associated values are
+                            # given a default value of 1 to indicate their presence
+                            # in the arg list
+                            #
+                            } else {
+                                1
+                            }
+                        #
+                        # if this option allows multiple occurrences, put the option
+                        # value onto the list of values found for this option
+                        #
+                        if \mulopt then {
+                            put(option[optname], trim(tmpopt, ' ', 0))
+                        #
+                        # otherwise we just overwrite any previous value that
+                        # has been found for this option
+                        #
+                        } else {
+                            option[optname] := tmpopt
+                        }
+                        tab(0)
+                    #
+                    # the option found is not know and so we will handled this
+                    # by the user specified error procedure, which defaults to
+                    # a program stop if the user has not specified any such
+                    # error handling
+                    #
+                    } else {
+                        tmpstr := "Unrecognized option: -" || tmpx || "\nThis is either not a valid "
+                        tmpstr ||:= (/nosuboption & "option") | "sub-option"
+                        tmpstr ||:= " or not a valid short form name of the "
+                        tmpstr ||:= (/nosuboption & "option") | "sub-option"
+                        tmpstr ||:= "\n\nValid "
+                        tmpstr ||:= (/nosuboption & "option") | "sub-option"
+                        tmpstr ||:= "s are :\n"
+                        tmplst := sort(opttable)
+                        every tmpstr ||:= "    " || tmplst[1 to *tmplst][1] || "\n"
+                        return errproc(tmpstr)
+                    }
+                }
+            #
+            # If the argument begins with the character "@", push the current
+            # arg list onto the arg stack and create a new current arg list,
+            # fetch option words from lines of a text file and push onto the
+            # current arg list for subsequent processing.
+            #
+            } else if ="@" & not pos(0) then {
+                push(argstack, currentarg)
+                f := open(fn := tab(0)) |
+                     return errproc("Can't open " || fn)
+                currentarg := []
+                while put(currentarg, read(f))
+                close(f)
+                option := process_command_option(currentarg, option, opttable, maptable, finishoption, errproc, 1)
+                fList |||:= currentarg
+                currentarg := pop(argstack)
+            #
+            # argument is not an option and so we append it to the accumulating
+            # arguments
+            #
+            } else {
+                put(fList,x)
+            }
+        }
+    }
+    #
+    # clear the args list of any remaining values. Since we are using pointer semantics,
+    # this will affect the list in the calling procedure.
+    #
+    while pop(args)
+    #
+    # put onto the args list all values that have been collected. The pointer semantics
+    # will ensure that the list in the calling procedure will be updated accordingly.
+    #
+    while push(args, pull(fList))
+    return option
+end
+
+#PD:
+#: convert_to_list(str, suboptionsep) - the sub-string elements that are separated
+#: by the value found in suboptionsep into a list of strings that are option/value
+#: pairs and prefix each sub-string with the "-".
+#:
+#: This procedure is helper procedure to allow processing of sub-options as if
+#: they were an argument list.
+#:
+procedure convert_to_list(str, suboptionsep)
+    local   lst,                        #LV: resultant list value to be returned
+            element                     #LV: the element from the supplied string
+
+    lst := []
+    str ? {
+        until pos(0) do {
+            if element := tab(find(suboptionsep)) then {
+                put(lst, "-" || element)
+                move(1)
+            #
+            # the last sub-option will not have a following suboptionsep, so we just
+            # take the option/value pair as ending at the end of the supplied strings
+            #
+            } else {
+                put(lst, element := "-" || tab(0))
+            }
+        }
+    }
+    return lst
+end
+

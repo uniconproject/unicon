@@ -30,6 +30,10 @@
    Feature(1, "_MACOSX", "MacOSX")
 #endif					/* MacOSX */
 
+#ifdef MacOS
+   Feature(1, "_MACOS", "MacOS")
+#endif					/* MacOS */
+
 #if MSDOS
 #if NT
    Feature(1, "_MS_WINDOWS_NT", "MS Windows NT")

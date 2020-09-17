@@ -166,7 +166,7 @@
    #include <sys/time.h>
    #include <sys/times.h>
    #include <sys/types.h>
-#ifdef MacOSX
+#if defined(MacOSX) || defined(MacOS)
    #include <sys/sysctl.h>
 #endif
 #ifdef HAVE_SYS_RESOURCE_H

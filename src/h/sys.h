@@ -166,7 +166,7 @@
    #include <sys/time.h>
    #include <sys/times.h>
    #include <sys/types.h>
-#ifdef MacOSX
+#ifdef MacOS
    #include <sys/sysctl.h>
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
@@ -332,7 +332,7 @@
 #ifdef ISQL
 #ifndef BOOL
   /* to prevent double-typedef of BOOL on some platforms */
-#ifdef MacOSX
+#ifdef MacOS
   #define BOOL rumplemacskin
 #else
   #define BOOL int

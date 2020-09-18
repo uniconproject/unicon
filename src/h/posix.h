@@ -83,7 +83,7 @@ extern char *sys_errlist[];
 #include <sys/param.h>
 #endif
 
-#if (defined(BSD) || defined(BSD_4_4_LITE)) && !defined(MacOSX)
+#if (defined(BSD) || defined(BSD_4_4_LITE)) && !defined(MacOS)
 #define Setpgrp() setpgrp(0, 0)
 #else
 #define Setpgrp() setpgrp()

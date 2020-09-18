@@ -315,9 +315,9 @@ Deliberate Syntax Error
 
    buf = growcat(buf, &buflen, 2, " ", LinkLibs);
 
-#if defined(MacOSX) || defined(HAVE_LIBFTGL)
+#if defined(MacOS) || defined(HAVE_LIBFTGL)
    buf = growcat(buf, &buflen, 1, " -lstdc++");
-#endif					/* MacOSX || HAVE_LIBFTGL */
+#endif					/* MacOS || HAVE_LIBFTGL */
 
 #if HAVE_LIBSSL
    buf = growcat(buf, &buflen, 1, " -lssl -lcrypto");

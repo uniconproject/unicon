@@ -246,7 +246,7 @@ procedure get_CPU()
        result := read(f) # read the actual name
        close(f)
        }
-   else if &features == ("MacOSX"|"MacOS") then {
+   else if &features == "MacOS" then {
        if f := open("sysctl -n machdep.cpu.brand_string", "p") then {
        read(f) ? result := tab(find("CPU"))
        close(f)
@@ -303,7 +303,7 @@ procedure get_clockspeed()
              close(f)
              }
           }
-      else if &features == ("MacOSX"|"MacOS") then {
+      else if &features == "MacOS" then {
          if f := open("sysctl -n machdep.cpu.brand_string", "p") then {
             read(f) ? (tab(find("@") + 2) & result := tab(0))
             close(f)

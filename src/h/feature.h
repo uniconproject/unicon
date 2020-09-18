@@ -26,9 +26,9 @@
    Feature(1, "_MACINTOSH", "Macintosh")
 #endif					/* MACINTOSH */
 
-#ifdef MacOSX
-   Feature(1, "_MACOSX", "MacOSX")
-#endif					/* MacOSX */
+#ifdef MacOS
+   Feature(1, "_MACOS", "MacOS")
+#endif					/* MacOS */
 
 #if MSDOS
 #if NT

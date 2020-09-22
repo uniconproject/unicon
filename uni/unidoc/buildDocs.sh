@@ -2,8 +2,8 @@
 
 # Build and install the UniDoc documentation
 
-# You must reset UBASE for your system's location of Unicon.
-UBASE=/opt/unicon
+# Assumes you're running this from the unidoc source directory
+UBASE=../..
 SBASE=${UBASE}/uni/lib
 TBASE=${UBASE}/doc/uni-api
 title="Unicon Uni Lib API"

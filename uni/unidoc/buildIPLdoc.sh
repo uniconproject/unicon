@@ -2,8 +2,8 @@
 
 # Build and install the IPL documentation
 
-# You must reset UBASE for your system's location of Unicon.
-UBASE=/opt/unicon
+# Assumes you're running this from the unidoc source directory
+UBASE=../..
 SBASE=${UBASE}/ipl
 TBASE=${UBASE}/doc/ipl-api
 DIRS=(procs gprocs mprocs progs gprogs mprogs)

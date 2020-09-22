@@ -1,5 +1,4 @@
-BASE=../..
-include $(BASE)/Makedefs.uni
+SHELL=/bin/sh
 
 ########################################################
 # Manage the construction of the UniDoc program        #
@@ -9,9 +8,6 @@ include $(BASE)/Makedefs.uni
 #
 SRCS   := $(wildcard ./*.icn)
 UFILES := $(filter-out ./UniDoc.u,$(patsubst %.icn, %.u, $(SRCS)))
-CLIB   := ../../Classes
-
-all: ufiles UniDoc
 
 # The first target is the default target.
 #    The "@"'s tell make to suppress printing the command before
@@ -30,15 +26,14 @@ help:
 #    commonly used suffixes.
 #
 %.u:	%.icn
-	$(UNICON) $(UFLAGS) -c $?
+	unicon -c $?
 
 UniDoc: $(UFILES) UniDoc.icn
-	$(UNICON) $(UFLAGS) UniDoc
-	$(CP) UniDoc$(EXE) ../../bin/
+	unicon UniDoc
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)
-	$(UNICON) $(UFLAGS) -c $?
+	unicon -c $?
 
 doc docs:	UniDoc
 	./buildDocs.sh
@@ -48,8 +43,9 @@ deps depends:
 
 # Clean up the directory.
 #
-Clean clean:
-	$(RM) uniclass.dir uniclass.pag uniclass.db UniDoc$(EXE) *.u .lastbuild *~
+clean:
+	@-rm -f *.u
+	@-rm -f *~
 
 # List all source files that have been modified since the last build.
 #

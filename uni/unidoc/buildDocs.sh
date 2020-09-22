@@ -2,10 +2,11 @@
 
 # Build and install the UniDoc documentation
 
-LBASE=/opt/unicon/ipl
-SBASE=${HOME}/.src/Unicon/Samples/UniDoc
-TBASE=/var/www/html/unicon/unisamples/UniDoc
-title="UniDoc Code Generator"
+# You must reset UBASE for your system's location of Unicon.
+UBASE=/opt/unicon
+SBASE=${UBASE}/uni/lib
+TBASE=${UBASE}/doc/uni-api
+title="Unicon Uni Lib API"
 
 echo
 echo "[Building docs for ${title}]"
@@ -14,5 +15,5 @@ echo
 mkdir -p ${TBASE}
 cd ${SBASE}
 UniDoc --title="${title}" --linkSrc \
-       --sourcePath=${SBASE}/../../Classes \
+       --sourcePath=${SBASE} \
        --resolve --targetDir=${TBASE} *.icn

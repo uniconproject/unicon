@@ -25,84 +25,84 @@ import lang
 # </p>
 class Sequence : Object (contents, comments)
 
-   # <p>
-   # Produce the size of the Sequence.
-   # </p>
-   method size()
-      return *contents
-   end
-   # <p>
-   # Change the contents of the Sequence.
-   # </p>
-   method set(newContents)
-      contents := newContents
-   end
-   # <p>
-   # Add an item to the Sequence
-   # </p>
-   method add(item)
-      put(contents, item)
-   end
-   # <p>
-   # Generate all the items in the Sequence
-   # </p>
-   method get()
-      suspend \!contents
-   end
+    # <p>
+    # Produce the size of the Sequence.
+    # </p>
+    method size()
+        return *contents
+    end
+    # <p>
+    # Change the contents of the Sequence.
+    # </p>
+    method set(newContents)
+        contents := newContents
+    end
+    # <p>
+    # Add an item to the Sequence
+    # </p>
+    method add(item)
+        put(contents, item)
+    end
+    # <p>
+    # Generate all the items in the Sequence
+    # </p>
+    method get()
+        suspend \!contents
+    end
 
-   # <p>
-   # Succeeds if <b>item</b> is contained in the Sequence
-   # </p>
-   method contains(item)
-      return item === !contents
-   end
+    # <p>
+    # Succeeds if <b>item</b> is contained in the Sequence
+    # </p>
+    method contains(item)
+        return item === !contents
+    end
 
-   # <p>
-   # Change the comments associated with the Sequence
-   # </p>
-   method setComments(newComments)
-      comments := \newComments | Comments()
-   end
-   # <p>
-   # Produce the Comments() associated with the Sequence
-   # </p>
-   method getComments()
-      return comments
-   end
-   # <p>
-   # Add a new line to the current comment paragraph.
-   # </p>
-   method addComment(newComment)
-      comments.addComment(newComment)
-   end
-   # <p>
-   # Start a new comment paragraph
-   # </p>
-   method startNewComments(newComment)
-      comments.newBlock()
-      addComment(newComment)
-   end
+    # <p>
+    # Change the comments associated with the Sequence
+    # </p>
+    method setComments(newComments)
+        comments := \newComments | Comments()
+    end
+    # <p>
+    # Produce the Comments() associated with the Sequence
+    # </p>
+    method getComments()
+        return comments
+    end
+    # <p>
+    # Add a new line to the current comment paragraph.
+    # </p>
+    method addComment(newComment)
+        comments.addComment(newComment)
+    end
+    # <p>
+    # Start a new comment paragraph
+    # </p>
+    method startNewComments(newComment)
+        comments.newBlock()
+        addComment(newComment)
+    end
 
-   # <p>
-   # Succeeds if any item in the sequence has comments attached to it.
-   #   (Used in UniHTML class to determine whether or not parameter
-   #    and field sequences need to be expanded in detail.)
-   # </p></p>
-   # Fails if no comments attached to any item.
-   # </p>
-   method itemsHaveComments()
-      local item, c
+    # <p>
+    # Succeeds if any item in the sequence has comments attached to it.
+    #   (Used in UniHTML class to determine whether or not parameter
+    #    and field sequences need to be expanded in detail.)
+    # </p></p>
+    # Fails if no comments attached to any item.
+    # </p>
+    method itemsHaveComments()
+        local item, c
 
-      every item := !contents do {
-	 if c := (\item).getComments() then {
-	    if c.size() > 0 then return
-	    }
-	 }
-   end
-
-initially
-   /contents := []
-   /comments := Comments()
+        every item := !contents do {
+            if c := (\item).getComments() then {
+                if c.size() > 0 then return
+                }
+            }
+    end
+    
+    initially
+        /contents := []
+        /comments := Comments()
 end
 
 # <p>
@@ -110,178 +110,178 @@ end
 # </p>
 class Set : Object (contents, comments)
 
-   # <p>
-   # Produce the size of the Set
-   # </p>
-   method size()
-      return *contents
-   end
-   # <p>
-   # Change the Set contents
-   # </p>
-   method set(newContents)
-      contents := newContents
-   end
-   # <p>
-   # Insert an item into the Set
-   # </p>
-   method add(iName, item)
-      contents[iName] := item
-   end
-   # <p>
-   # Delete an item from the Set, given that item's name
-   # </p>
-   method del(iName)
-      contents[iName] := &null
-   end
-   # <p>
-   # Generate a sorted (by name) sequence of the items in the Set
-   # </p>
-   method get()
-      suspend \(!sort(contents))[2]
-   end
-   # <p>
-   # Get a specific item from the Set, given that item's name
-   # </p>
-   method getByName(iName)
-      return contents[iName]
-   end
-   # <p>
-   # Generate a sorted sequence of the names of the items in the Set
-   # </p>
-   method getNames()
-      suspend \(!sort(contents))[1]
-   end
+    # <p>
+    # Produce the size of the Set
+    # </p>
+    method size()
+        return *contents
+    end
+    # <p>
+    # Change the Set contents
+    # </p>
+    method set(newContents)
+        contents := newContents
+    end
+    # <p>
+    # Insert an item into the Set
+    # </p>
+    method add(iName, item)
+        contents[iName] := item
+    end
+    # <p>
+    # Delete an item from the Set, given that item's name
+    # </p>
+    method del(iName)
+        contents[iName] := &null
+    end
+    # <p>
+    # Generate a sorted (by name) sequence of the items in the Set
+    # </p>
+    method get()
+        suspend \(!sort(contents))[2]
+    end
+    # <p>
+    # Get a specific item from the Set, given that item's name
+    # </p>
+    method getByName(iName)
+        return contents[iName]
+    end
+    # <p>
+    # Generate a sorted sequence of the names of the items in the Set
+    # </p>
+    method getNames()
+        suspend \(!sort(contents))[1]
+    end
 
-   # <p>
-   # Succeed if item is in the Set
-   # </p>
-   method contains(item)
-      return item === !contents
-   end
-   # <p>
-   # Succeed if the named item is in the Set
-   # </p>
-   method containsName(iName)
-      return iName == key(contents)
-   end
+    # <p>
+    # Succeed if item is in the Set
+    # </p>
+    method contains(item)
+        return item === !contents
+    end
+    # <p>
+    # Succeed if the named item is in the Set
+    # </p>
+    method containsName(iName)
+        return iName == key(contents)
+    end
 
-   # <p>
-   # Change the comments associated with this Set
-   # </p>
-   method setComments(newComments)
-      comments := \newComments | Comments()
-   end
-   # <p>
-   # Produce this Set's Comments()
-   # </p>
-   method getComments()
-      return comments
-   end
-   # <p>
-   # Add a line to the this Set's current comment paragraph
-   # </p>
-   method addComment(newComment)
-      comments.addComment(newComment)
-   end
-   # <p>
-   # Start a new comment paragraph
-   # </p>
-   method startNewComments(newComment)
-      comments.newBlock()
-      addComment(newComment)
-   end
+    # <p>
+    # Change the comments associated with this Set
+    # </p>
+    method setComments(newComments)
+        comments := \newComments | Comments()
+    end
+    # <p>
+    # Produce this Set's Comments()
+    # </p>
+    method getComments()
+        return comments
+    end
+    # <p>
+    # Add a line to the this Set's current comment paragraph
+    # </p>
+    method addComment(newComment)
+        comments.addComment(newComment)
+    end
+    # <p>
+    # Start a new comment paragraph
+    # </p>
+    method startNewComments(newComment)
+        comments.newBlock()
+        addComment(newComment)
+    end
 
-initially
-   /contents := table()
-   /comments := Comments()
+    initially
+        /contents := table()
+        /comments := Comments()
 end
 
 # <p>
 # Base class for representing a Unicon language entity.
 # </p>
-class UEntity : Class (name, parent, comments, srcFile)
+class UEntity : Object (name, parent, comments, srcFile)
 
-   # <p>
-   # Name this entity
-   # </p>
-   method setName(newName)
-      name := newName
-   end
-   # <p>
-   # Produce this entity's name
-   # </p>
-   method getName()
-      return \name
-   end
+    # <p>
+    # Name this entity
+    # </p>
+    method setName(newName)
+        name := newName
+    end
+    # <p>
+    # Produce this entity's name
+    # </p>
+    method getName()
+        return \name
+    end
 
-   # <p>
-   # Remember the parent entity for this entity.
-   # </p>
-   method setParent(newParent)
-      parent := newParent
-   end
-   # <p>
-   # Produce this entity's parent entity.
-   # </p>
-   method getParent()
-      return \parent | ""
-   end
+    # <p>
+    # Remember the parent entity for this entity.
+    # </p>
+    method setParent(newParent)
+        parent := newParent
+    end
+    # <p>
+    # Produce this entity's parent entity.
+    # </p>
+    method getParent()
+        return \parent | ""
+    end
 
-   # <p>
-   # Remember the source file name for this entity.
-   # </p>
-   method setSrcFile(fName)
-      srcFile := fName
-   end
-   # <p>
-   # Produce the source file for this entity.
-   # </p>
-   method getSrcFile()
-      return \srcFile
-   end
+    # <p>
+    # Remember the source file name for this entity.
+    # </p>
+    method setSrcFile(fName)
+        srcFile := fName
+    end
+    # <p>
+    # Produce the source file for this entity.
+    # </p>
+    method getSrcFile()
+        return \srcFile
+    end
 
-   # <p>
-   # Produce a nice name for the type of this entity.
-   # </p>
-   method getFormType()
-      return UniDoc::getFormType(self)
-   end
+    # <p>
+    # Produce a nice name for the type of this entity.
+    # </p>
+    method getFormType()
+        return UniDoc::getFormType(self)
+    end
 
-   # <p>
-   # Change the comments associated with this entity
-   # </p>
-   method setComments(newComments)
-      comments := \newComments | Comments()
-   end
-   # <p>
-   # Produce the Comments() associated with this entity
-   # </p>
-   method getComments()
-      return comments
-   end
-   # <p>
-   # Add a comment to this entity's current comment paragraph
-   # </p>
-   method addComment(newComment)
-      comments.add(newComment)
-   end
-   # <p>
-   # Start a new comment paragraph for this entity
-   # </p>
-   method startNewComments(newComment)
-      comments.newBlock()
-      comments.add(newComment)
-   end
-   # <p>
-   # Add an entire comment paragraph to this entity's comments
-   # </p>
-   method mergeComments(newComments)
-      comments.append(newComments)
-   end
+    # <p>
+    # Change the comments associated with this entity
+    # </p>
+    method setComments(newComments)
+        comments := \newComments | Comments()
+    end
+    # <p>
+    # Produce the Comments() associated with this entity
+    # </p>
+    method getComments()
+        return comments
+    end
+    # <p>
+    # Add a comment to this entity's current comment paragraph
+    # </p>
+    method addComment(newComment)
+        comments.add(newComment)
+    end
+    # <p>
+    # Start a new comment paragraph for this entity
+    # </p>
+    method startNewComments(newComment)
+        comments.newBlock()
+        comments.add(newComment)
+    end
+    # <p>
+    # Add an entire comment paragraph to this entity's comments
+    # </p>
+    method mergeComments(newComments)
+        comments.append(newComments)
+    end
 
-initially
-   /comments := Comments()
+    initially
+        /comments := Comments()
 end
 
 # <p>
@@ -290,47 +290,47 @@ end
 # </p>
 class UName : UEntity (name, parent, comments, category, defValue, typeValue)
 
-   # <p>
-   # Remember the category of this name (i.e. what it represents)
-   # </p>
-   method setCategory(newCategory)
-      category := newCategory
-   end
-   # <p>
-   # Produce the category for this name
-   # </p>
-   method getCategory()
-      return category
-   end
+    # <p>
+    # Remember the category of this name (i.e. what it represents)
+    # </p>
+    method setCategory(newCategory)
+        category := newCategory
+    end
+    # <p>
+    # Produce the category for this name
+    # </p>
+    method getCategory()
+        return category
+    end
 
-   # <p>
-   # If this name has an associated default value, remember it.
-   # </p>
-   method setDefValue(newDefValue)
-      defValue := newDefValue
-   end
-   # <p>
-   # Produce the default value, if any.
-   # </p>
-   method getDefValue()
-      return \defValue
-   end
+    # <p>
+    # If this name has an associated default value, remember it.
+    # </p>
+    method setDefValue(newDefValue)
+        defValue := newDefValue
+    end
+    # <p>
+    # Produce the default value, if any.
+    # </p>
+    method getDefValue()
+        return \defValue
+    end
 
-   # <p>
-   # If this name has an associated type, remember it.
-   # </p>
-   method setTypeValue(newTypeValue)
-      typeValue := newTypeValue
-   end
-   # <p>
-   # Produce the type value, if any.
-   # </p>
-   method getTypeValue()
-      return \typeValue
-   end
+    # <p>
+    # If this name has an associated type, remember it.
+    # </p>
+    method setTypeValue(newTypeValue)
+        typeValue := newTypeValue
+    end
+    # <p>
+    # Produce the type value, if any.
+    # </p>
+    method getTypeValue()
+        return \typeValue
+    end
 
-initially
-   /comments := Comments()
+    initially
+        /comments := Comments()
 end
 
 # <p>
@@ -338,34 +338,34 @@ end
 # </p>
 class UGlobal : UEntity (name, parent, comments, defValue, typeValue)
 
-   # <p>
-   # If this name has an associated default value, remember it.
-   # </p>
-   method setDefValue(newDefValue)
-      defValue := newDefValue
-   end
-   # <p>
-   # Produce the default value, if any.
-   # </p>
-   method getDefValue()
-      return \defValue
-   end
+    # <p>
+    # If this name has an associated default value, remember it.
+    # </p>
+    method setDefValue(newDefValue)
+        defValue := newDefValue
+    end
+    # <p>
+    # Produce the default value, if any.
+    # </p>
+    method getDefValue()
+        return \defValue
+    end
 
-   # <p>
-   # If this name has an associated type, remember it.
-   # </p>
-   method setTypeValue(newTypeValue)
-      typeValue := newTypeValue
-   end
-   # <p>
-   # Produce the type value, if any.
-   # </p>
-   method getTypeValue()
-      return \typeValue
-   end
+    # <p>
+    # If this name has an associated type, remember it.
+    # </p>
+    method setTypeValue(newTypeValue)
+        typeValue := newTypeValue
+    end
+    # <p>
+    # Produce the type value, if any.
+    # </p>
+    method getTypeValue()
+        return \typeValue
+    end
 
-initially
-   /comments := Comments()
+    initially
+        /comments := Comments()
 end
 
 # <p>
@@ -373,28 +373,28 @@ end
 # </p>
 class UMethod : UEntity (name, parent, comments, params)
 
-   # <p>
-   # Set the parameter list for this method
-   # </p>
-   method setParams(newParams)
-      params := newParams
-   end
-   # <p>
-   # Produce the parameter list for this method
-   # </p>
-   method getParams()
-      return params
-   end
-   # <p>
-   # Add a parameter to the parameter list.
-   # </p>
-   method addParam(newParam)
-      params.add(newParam)
-   end
+    # <p>
+    # Set the parameter list for this method
+    # </p>
+    method setParams(newParams)
+        params := newParams
+    end
+    # <p>
+    # Produce the parameter list for this method
+    # </p>
+    method getParams()
+        return params
+    end
+    # <p>
+    # Add a parameter to the parameter list.
+    # </p>
+    method addParam(newParam)
+        params.add(newParam)
+    end
 
-initially
-   /comments := Comments()
-   /params := Sequence()
+    initially
+        /comments := Comments()
+        /params := Sequence()
 end
 
 # <p>
@@ -402,28 +402,28 @@ end
 # </p>
 class UProc : UEntity (name, parent, comments, params)
 
-   # <p>
-   # Set the parameter list for this method
-   # </p>
-   method setParams(newParams)
-      params := newParams
-   end
-   # <p>
-   # Produce the parameter list for this method
-   # </p>
-   method getParams()
-      return params
-   end
-   # <p>
-   # Add a parameter to the parameter list.
-   # </p>
-   method addParam(newParam)
-      params.add(newParam)
-   end
+    # <p>
+    # Set the parameter list for this method
+    # </p>
+    method setParams(newParams)
+        params := newParams
+    end
+    # <p>
+    # Produce the parameter list for this method
+    # </p>
+    method getParams()
+        return params
+    end
+    # <p>
+    # Add a parameter to the parameter list.
+    # </p>
+    method addParam(newParam)
+        params.add(newParam)
+    end
 
-initially
-   /comments := Comments()
-   /params := Sequence()
+    initially
+        /comments := Comments()
+        /params := Sequence()
 end
 
 # <p>
@@ -431,37 +431,37 @@ end
 # </p>
 class URecord : UEntity (name, parent, comments, fields)
 
-   # <p>
-   # Set the field list for this method
-   # </p>
-   method setParams(newFields)
-      fields := newFields
-   end
-   # <p>
-   # Produce the field list for this method
-   # </p>
-   method getParams()
-      return fields
-   end
-   # <p>
-   # Add a field to the field list.
-   # </p>
-   method addField(newField)
-      fields.add(newField)
-   end
+    # <p>
+    # Set the field list for this method
+    # </p>
+    method setParams(newFields)
+        fields := newFields
+    end
+    # <p>
+    # Produce the field list for this method
+    # </p>
+    method getParams()
+        return fields
+    end
+    # <p>
+    # Add a field to the field list.
+    # </p>
+    method addField(newField)
+        fields.add(newField)
+    end
 
-initially
-   /comments := Comments()
-   /fields := Sequence()
+    initially
+        /comments := Comments()
+        /fields := Sequence()
 end
 
 # <p>
-# An import
+# An import 
 # </p>
 class UImport : UEntity (name, parent, comments)
 
-initially
-   /comments := Comments()
+    initially
+        /comments := Comments()
 end
 
 # <p>
@@ -469,8 +469,8 @@ end
 # </p>
 class ULink : UEntity (name, parent, comments)
 
-initially
-   /comments := Comments()
+    initially
+        /comments := Comments()
 end
 
 # <p>
@@ -479,148 +479,148 @@ end
 class UClass : UEntity ( name, parent, comments, constructor,
                          superClasses, fields, methods, pack, file)
 
-   # <p>
-   # Set this class' name
-   # </p>
-   method setName(newName)
-      newName ?:= {
-	 tabSkip("::")
-	 tab(0)
-	 }
-      name := newName
-   end
+    # <p>
+    # Set this class' name
+    # </p>
+    method setName(newName)
+        newName ?:= {
+             tabSkip("::")
+             tab(0)
+             }
+        name := newName
+    end
+        
+    # <p>
+    # Return the full name (with package name included) for this class.
+    # </p>
+    method getFullName()
+        if \pack then {
+            return pack.getName()||"::"||getName()
+            }
+        return "::"||getName()
+    end
 
-   # <p>
-   # Return the full name (with package name included) for this class.
-   # </p>
-   method getFullName()
-      if \pack then {
-	 return pack.getName()||"::"||getName()
-	 }
-      return "::"||getName()
-   end
+    # <p>
+    # Set the Sequence() of superclass names.
+    # </p>
+    method setSuperClasses(newSuperClasses)
+        superClasses := newSuperClasses
+    end
+    # <p>
+    # Get the Sequence() of superclass names.
+    # </p>
+    method getSuperClasses()
+        return superClasses
+    end
+    # <p>
+    # Append a superclass name to the Sequence() of superclass names.
+    # </p>
+    method addSuperClass(superClass)
+        superClasses.add(superClass)
+    end
 
-   # <p>
-   # Set the Sequence() of superclass names.
-   # </p>
-   method setSuperClasses(newSuperClasses)
-      superClasses := newSuperClasses
-   end
-   # <p>
-   # Get the Sequence() of superclass names.
-   # </p>
-   method getSuperClasses()
-      return superClasses
-   end
-   # <p>
-   # Append a superclass name to the Sequence() of superclass names.
-   # </p>
-   method addSuperClass(superClass)
-      superClasses.add(superClass)
-   end
+    # <p>
+    # Set the Sequence() of parameters (really fields).  Given this
+    #   name to be compatible with other entities that have parameter
+    #   or field lists associated with them.)
+    # </p>
+    method setParams(newParams)
+        fields := newParams
+    end
+    # <p>
+    # Produce the Sequence() of parameters.
+    # </p>
+    method getParams()
+        return fields
+    end
+    # <p>
+    # Append a field to the Sequence() of parameters.
+    # </p>
+    method addField(newField)
+        fields.add(newField)
+    end
 
-   # <p>
-   # Set the Sequence() of parameters (really fields).  Given this
-   #   name to be compatible with other entities that have parameter
-   #   or field lists associated with them.)
-   # </p>
-   method setParams(newParams)
-      fields := newParams
-   end
-   # <p>
-   # Produce the Sequence() of parameters.
-   # </p>
-   method getParams()
-      return fields
-   end
-   # <p>
-   # Append a field to the Sequence() of parameters.
-   # </p>
-   method addField(newField)
-      fields.add(newField)
-   end
+    # <p>
+    # Set the Set() of methods defined in this class.
+    # </p>
+    method setMethods(newMethods)
+        methods := newMethods
+    end
+    # <p>
+    # Produce the Set() of methods defined in this class.
+    # </p>
+    method getMethods()
+        return methods
+    end
+    # <p>
+    # Add a method to the Set()of methods.
+    # </p>
+    method addMethod(aMethod)
+        methods.add(aMethod.getName(),aMethod)
+    end
+    # <p>
+    # Does this class define a method with the given name?  <i>Does not
+    # include inherited methods.</i>
+    # </p>
+    method hasMethod(aMethodName)
+        return methods.containsName(aMethodName)
+    end
+    # <p>
+    # Produce the method with the given name if any.  <i>Does not
+    # include inherited methdos.</i>
+    # </p>
+    method getMethod(aMethodName)
+        return methods.getByName(aMethodName)
+    end
 
-   # <p>
-   # Set the Set() of methods defined in this class.
-   # </p>
-   method setMethods(newMethods)
-      methods := newMethods
-   end
-   # <p>
-   # Produce the Set() of methods defined in this class.
-   # </p>
-   method getMethods()
-      return methods
-   end
-   # <p>
-   # Add a method to the Set()of methods.
-   # </p>
-   method addMethod(aMethod)
-      methods.add(aMethod.getName(),aMethod)
-   end
-   # <p>
-   # Does this class define a method with the given name?  <i>Does not
-   # include inherited methods.</i>
-   # </p>
-   method hasMethod(aMethodName)
-      return methods.containsName(aMethodName)
-   end
-   # <p>
-   # Produce the method with the given name if any.  <i>Does not
-   # include inherited methdos.</i>
-   # </p>
-   method getMethod(aMethodName)
-      return methods.getByName(aMethodName)
-   end
+    # <p>
+    # Set the constructor (initially clause).
+    # </p>
+    method setConstructor(newConstructor)
+        constructor := newConstructor
+    end
+    # <p>
+    # Produce the constructor.
+    # </p>
+    method getConstructor()
+        return constructor
+    end
 
-   # <p>
-   # Set the constructor (initially clause).
-   # </p>
-   method setConstructor(newConstructor)
-      constructor := newConstructor
-   end
-   # <p>
-   # Produce the constructor.
-   # </p>
-   method getConstructor()
-      return constructor
-   end
+    # <p>
+    # Set the package that this class belongs to.  <i>Every class belongs
+    #   to a package, even if its the default package.</i>
+    # </p>
+    method setPackage(aPack)
+        pack := aPack
+    end
+    # <p>
+    # Produce the package containing this class.
+    # </p>
+    method getPackage()
+        return pack
+    end
 
-   # <p>
-   # Set the package that this class belongs to.  <i>Every class belongs
-   #   to a package, even if its the default package.</i>
-   # </p>
-   method setPackage(aPack)
-      pack := aPack
-   end
-   # <p>
-   # Produce the package containing this class.
-   # </p>
-   method getPackage()
-      return pack
-   end
+    # <p>
+    # Set the file that contains this class.
+    # </p>
+    method setFile(aFile)
+        file := aFile
+    end
+    # <p>
+    # Produce the file that contains this class.
+    # </p>
+    method getFile()
+        return file
+    end
 
-   # <p>
-   # Set the file that contains this class.
-   # </p>
-   method setFile(aFile)
-      file := aFile
-   end
-   # <p>
-   # Produce the file that contains this class.
-   # </p>
-   method getFile()
-      return file
-   end
-
-initially
-   /comments := Comments()
-   /superClasses := Sequence()
-   /methods      := Set()
-   /fields       := Sequence()
-   if \name then {
-      setName(name)
-      }
+    initially
+        /comments := Comments()
+        /superClasses := Sequence()
+        /methods      := Set()
+        /fields       := Sequence()
+        if \name then {
+            setName(name)
+            }
 end
 
 # <p>
@@ -633,19 +633,19 @@ end
 #
 class UConstructor : UEntity (name, parent, comments, params)
 
-   method setParams(newParams)
-      params := newParams
-   end
-   method getParams()
-      return params
-   end
-   method addParam(newParam)
-      /params := Sequence()
-      params.add(newParam)
-   end
+    method setParams(newParams)
+        params := newParams
+    end
+    method getParams()
+        return params
+    end
+    method addParam(newParam)
+        /params := Sequence()
+        params.add(newParam)
+    end
 
-initially
-   /comments := Comments()
+    initially
+        /comments := Comments()
 end
 
 # <p>
@@ -655,409 +655,409 @@ end
 class UPackage : UEntity (name, parent, comments, files, procs, imports,
                                 classes, globals, records)
 
-   # <p>
-   # Set the Set() of files that contain code defined in this package.
-   # </p>
-   method setFiles(newFiles)
-      files := newFiles
-   end
-   # <p>
-   # Produce the Set() of files that contain code defined in this package.
-   # </p>
-   method getFiles()
-      return files
-   end
-   # <p>
-   # Add a new file to the Set() of files that contain code defined in
-   #   this package.
-   # </p>
-   method addFile(newFile)
-      files.add(newFile.getName(), newFile)
-   end
-   # <p>
-   # Delete a file from the Set() of files that contain code defined
-   #   in this package.  <i>Usually used to remove files from the
-   #   default package set.</i>
-   method delFile(fName)
-      files.del(fName)
-   end
-   # <p>
-   # Produce a sorted (by name) list of files that contain code
-   #   defined in this package.
-   # </p>
-   method getFileNames()
-      local clist
+    # <p>
+    # Set the Set() of files that contain code defined in this package.
+    # </p>
+    method setFiles(newFiles)
+        files := newFiles
+    end
+    # <p>
+    # Produce the Set() of files that contain code defined in this package.
+    # </p>
+    method getFiles()
+        return files
+    end
+    # <p>
+    # Add a new file to the Set() of files that contain code defined in
+    #   this package.
+    # </p>
+    method addFile(newFile)
+        files.add(newFile.getName(), newFile)
+    end
+    # <p>
+    # Delete a file from the Set() of files that contain code defined
+    #   in this package.  <i>Usually used to remove files from the
+    #   default package set.</i>
+    method delFile(fName)
+        files.del(fName)
+    end
+    # <p>
+    # Produce a sorted (by name) list of files that contain code
+    #   defined in this package.
+    # </p>
+    method getFileNames()
+        local clist
 
-      every put(clist := [], files.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], files.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the Set() of imports.
-   # </p>
-   method setImports(newImports)
-      imports := newImports
-   end
-   # <p>
-   # Produce the Set() of imports.
-   # </p>
-   method getImports()
-      return imports
-   end
-   # <p>
-   # Add an import to this package.
-   # </p>
-   method addImport(newImport)
-      imports.add(newImport.getName(), newImport)
-   end
-   # <p>
-   # Produce a sorted list of the names of this package's imports.
-   # </p>
-   method getImportNames()
-      local clist
+    # <p>
+    # Set the Set() of imports.
+    # </p>
+    method setImports(newImports)
+        imports := newImports
+    end
+    # <p>
+    # Produce the Set() of imports.
+    # </p>
+    method getImports()
+        return imports
+    end
+    # <p>
+    # Add an import to this package.
+    # </p>
+    method addImport(newImport)
+        imports.add(newImport.getName(), newImport)
+    end
+    # <p>
+    # Produce a sorted list of the names of this package's imports.
+    # </p>
+    method getImportNames()
+        local clist
 
-      every put(clist := [], imports.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], imports.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the procedures defined in this package.
-   # </p>
-   method setProcedures(newProcs)
-      procs := newProcs
-   end
-   # <p>
-   # Produce the procedures defined in this package.
-   # </p>
-   method getProcedures()
-      return procs
-   end
-   # <p>
-   # Add a procedure to this package.
-   # </p>
-   method addProcedure(newProc)
-      procs.add(newProc.getName(), newProc)
-   end
-   # <p>
-   # Produce a sorted list of the names of this package's procedures.
-   # </p>
-   method getProcedureNames()
-      local clist
+    # <p>
+    # Set the procedures defined in this package.
+    # </p>
+    method setProcedures(newProcs)
+        procs := newProcs
+    end
+    # <p>
+    # Produce the procedures defined in this package.
+    # </p>
+    method getProcedures()
+        return procs
+    end
+    # <p>
+    # Add a procedure to this package.
+    # </p>
+    method addProcedure(newProc)
+        procs.add(newProc.getName(), newProc)
+    end
+    # <p>
+    # Produce a sorted list of the names of this package's procedures.
+    # </p>
+    method getProcedureNames()
+        local clist
 
-      every put(clist := [], procs.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], procs.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the classes defined in this package.
-   # </p>
-   method setClasses(newClasses)
-      classes := newClasses
-   end
-   # <p>
-   # Produce the classes in this package.
-   # </p>
-   method getClasses()
-      return classes
-   end
-   # <p>
-   # Given the name of a class, return that class if it's
-   #   defined in this package.
-   # </p>
-   method getClass(cName)
-      return classes.getByName(cName)
-   end
-   # <p>
-   # Add a class to this package.
-   # </p>
-   method addClass(newClass)
-      classes.add(newClass.getName(), newClass)
-   end
-   # <p>
-   # Produce a list (sorted by name) of this package's classes.
-   # </p>
-   method getClassNames()
-      local clist
+    # <p>
+    # Set the classes defined in this package.
+    # </p>
+    method setClasses(newClasses)
+        classes := newClasses
+    end
+    # <p>
+    # Produce the classes in this package.
+    # </p>
+    method getClasses()
+        return classes
+    end
+    # <p>
+    # Given the name of a class, return that class if it's
+    #   defined in this package.
+    # </p>
+    method getClass(cName)
+        return classes.getByName(cName)
+    end
+    # <p>
+    # Add a class to this package.
+    # </p>
+    method addClass(newClass)
+        classes.add(newClass.getName(), newClass)
+    end
+    # <p>
+    # Produce a list (sorted by name) of this package's classes.
+    # </p>
+    method getClassNames()
+        local clist
 
-      every put(clist := [], classes.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], classes.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the globals defined in this package.
-   # </p>
-   method setGlobals(newGlobals)
-      globals := newGlobals
-   end
-   # <p>
-   # Produce the globals defined in this package.
-   # </p>
-   method getGlobals()
-      return globals
-   end
-   # <p>
-   # Add a global to this package.
-   # </p>
-   method addGlobal(newGlobal)
-      globals.add(newGlobal.getName(), newGlobal)
-   end
-   # <p>
-   # Produce a list (sorted by name) of this package's globals.
-   # </p>
-   method getGlobalNames()
-      local clist
+    # <p>
+    # Set the globals defined in this package.
+    # </p>
+    method setGlobals(newGlobals)
+        globals := newGlobals
+    end
+    # <p>
+    # Produce the globals defined in this package.
+    # </p>
+    method getGlobals()
+        return globals
+    end
+    # <p>
+    # Add a global to this package.
+    # </p>
+    method addGlobal(newGlobal)
+        globals.add(newGlobal.getName(), newGlobal)
+    end
+    # <p>
+    # Produce a list (sorted by name) of this package's globals.
+    # </p>
+    method getGlobalNames()
+        local clist
 
-      every put(clist := [], globals.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], globals.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the records defined in this package.
-   # </p>
-   method setRecords(newRecords)
-      records := newRecords
-   end
-   # <p>
-   # Produce the records defined in this package.
-   # </p>
-   method getRecords()
-      return records
-   end
-   # <p>
-   # Add a record to this package.
-   # </p>
-   method addRecord(newRecord)
-      records.add(newRecord.getName(), newRecord)
-   end
-   # <p>
-   # Produce a sorted list of the names of the records defined in this
-   #   package.
-   # </p>
-   method getRecordNames()
-      local clist
+    # <p>
+    # Set the records defined in this package.
+    # </p>
+    method setRecords(newRecords)
+        records := newRecords
+    end
+    # <p>
+    # Produce the records defined in this package.
+    # </p>
+    method getRecords()
+        return records
+    end
+    # <p>
+    # Add a record to this package.
+    # </p>
+    method addRecord(newRecord)
+        records.add(newRecord.getName(), newRecord)
+    end
+    # <p>
+    # Produce a sorted list of the names of the records defined in this
+    #   package.
+    # </p>
+    method getRecordNames()
+        local clist
 
-      every put(clist := [], records.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], records.getNames())
+        return sort(clist)
+    end
 
-initially
-   /files    := Set()
-   /imports  := Set()
-   /procs    := Set()
-   /classes  := Set()
-   /globals  := Set()
-   /records  := Set()
-   /comments := Comments()
+    initially
+        /files    := Set()
+        /imports  := Set()
+        /procs    := Set()
+        /classes  := Set()
+        /globals  := Set()
+        /records  := Set()
+        /comments := Comments()
 end
 
 # <p>
 # A file (composed of anything except another file)
 # </p>
 class UFile : UEntity (name, parent, comments, imports, links, pack,
-		       procs, classes, globals, records)
+                             procs, classes, globals, records)
 
-   # <p>
-   # Set the imports listed in this file.
-   # </p>
-   method setImports(newImports)
-      imports := newImports
-   end
-   # <p>
-   # Produce the imports listed in this file.
-   # </p>
-   method getImports()
-      return imports
-   end
-   # <p>
-   # Add an import to this file.
-   # </p>
-   method addImport(newImport)
-      imports.add(newImport)
-   end
-   # <p>
-   # Produce a sorted list of the names of files imported by this file.
-   # </p>
-   method getImportNames()
-      local clist
+    # <p>
+    # Set the imports listed in this file.
+    # </p>
+    method setImports(newImports)
+        imports := newImports
+    end
+    # <p>
+    # Produce the imports listed in this file.
+    # </p>
+    method getImports()
+        return imports
+    end
+    # <p>
+    # Add an import to this file.
+    # </p>
+    method addImport(newImport)
+        imports.add(newImport)
+    end
+    # <p>
+    # Produce a sorted list of the names of files imported by this file.
+    # </p>
+    method getImportNames()
+        local clist
 
-      every put(clist := [], imports.get().getName())
-      return sort(clist)
-   end
+        every put(clist := [], imports.get().getName())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the links listed in this file.
-   # </p>
-   method setLinks(newLinks)
-      links := newLinks
-   end
-   # <p>
-   # Produce the links listed in this file.
-   # </p>
-   method getLinks()
-      return links
-   end
-   # <p>
-   # Add a link to this file.
-   # </p>
-   method addLink(newLink)
-      links.add(newLink)
-   end
-   # <p>
-   # Produce a sorted list of the names of files lined by this file.
-   # </p>
-   method getLinkNames()
-      local clist
+    # <p>
+    # Set the links listed in this file.
+    # </p>
+    method setLinks(newLinks)
+        links := newLinks
+    end
+    # <p>
+    # Produce the links listed in this file.
+    # </p>
+    method getLinks()
+        return links
+    end
+    # <p>
+    # Add a link to this file.
+    # </p>
+    method addLink(newLink)
+        links.add(newLink)
+    end
+    # <p>
+    # Produce a sorted list of the names of files lined by this file.
+    # </p>
+    method getLinkNames()
+        local clist
 
-      every put(clist := [], links.get().getName())
-      return sort(clist)
-   end
+        every put(clist := [], links.get().getName())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the package that this file belongs in.
-   # </p>
-   method setPackage(newPack)
-      pack := newPack
-   end
-   # <p>
-   # Produce the package associated with this file.
-   # </p>
-   method getPackage()
-      return pack
-   end
-   # <p>
-   # Produce the name of the package associated with this file.
-   # </p>
-   method getPackageName()
-      return pack.getName()
-   end
+    # <p>
+    # Set the package that this file belongs in.
+    # </p>
+    method setPackage(newPack)
+        pack := newPack
+    end
+    # <p>
+    # Produce the package associated with this file.
+    # </p>
+    method getPackage()
+        return pack
+    end
+    # <p>
+    # Produce the name of the package associated with this file.
+    # </p>
+    method getPackageName()
+        return pack.getName()
+    end
 
-   # <p>
-   # Set the procedures listed in this file.
-   # </p>
-   method setProcedures(newProcs)
-      procs := newProcs
-   end
-   # <p>
-   # Produce the procedures listed in this file.
-   # </p>
-   method getProcedures()
-      return procs
-   end
-   # <p>
-   # Add an procedure to this file.
-   # </p>
-   method addProcedure(newProc)
-      procs.add(newProc.getName(), newProc)
-   end
-   # <p>
-   # Produce a sorted list of the names of the procedures in this file.
-   # </p>
-   method getProcedureNames()
-      local clist
+    # <p>
+    # Set the procedures listed in this file.
+    # </p>
+    method setProcedures(newProcs)
+        procs := newProcs
+    end
+    # <p>
+    # Produce the procedures listed in this file.
+    # </p>
+    method getProcedures()
+        return procs
+    end
+    # <p>
+    # Add an procedure to this file.
+    # </p>
+    method addProcedure(newProc)
+        procs.add(newProc.getName(), newProc)
+    end
+    # <p>
+    # Produce a sorted list of the names of the procedures in this file.
+    # </p>
+    method getProcedureNames()
+        local clist
 
-      every put(clist := [], procs.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], procs.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the classes listed in this file.
-   # </p>
-   method setClasses(newClasses)
-      classes := newClasses
-   end
-   # <p>
-   # Produce the classes listed in this file.
-   # </p>
-   method getClasses()
-      return classes
-   end
-   # <p>
-   # Produce the class with the given name if it's defined in this file.
-   # </p>
-   method getClass(cName)
-      return classes.getByName(cName)
-   end
-   # <p>
-   # Add a class to this file.
-   # </p>
-   method addClass(newClass)
-      classes.add(newClass.getName(), newClass)
-   end
-   # <p>
-   # Produce a sorted list of the names of classes defined by this file.
-   # </p>
-   method getClassNames()
-      local clist
+    # <p>
+    # Set the classes listed in this file.
+    # </p>
+    method setClasses(newClasses)
+        classes := newClasses
+    end
+    # <p>
+    # Produce the classes listed in this file.
+    # </p>
+    method getClasses()
+        return classes
+    end
+    # <p>
+    # Produce the class with the given name if it's defined in this file.
+    # </p>
+    method getClass(cName)
+        return classes.getByName(cName)
+    end
+    # <p>
+    # Add a class to this file.
+    # </p>
+    method addClass(newClass)
+        classes.add(newClass.getName(), newClass)
+    end
+    # <p>
+    # Produce a sorted list of the names of classes defined by this file.
+    # </p>
+    method getClassNames()
+        local clist
 
-      every put(clist := [], classes.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], classes.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the globals listed in this file.
-   # </p>
-   method setGlobals(newGlobals)
-      globals := newGlobals
-   end
-   # <p>
-   # Produce the globals listed in this file.
-   # </p>
-   method getGlobals()
-      return globals
-   end
-   # <p>
-   # Add a global to this file.
-   # </p>
-   method addGlobal(newGlobal)
-      globals.add(newGlobal.getName(), newGlobal)
-   end
-   # <p>
-   # Produce a sorted list of the names of globals listed by this file.
-   # </p>
-   method getGlobalNames()
-      local clist
+    # <p>
+    # Set the globals listed in this file.
+    # </p>
+    method setGlobals(newGlobals)
+        globals := newGlobals
+    end
+    # <p>
+    # Produce the globals listed in this file.
+    # </p>
+    method getGlobals()
+        return globals
+    end
+    # <p>
+    # Add a global to this file.
+    # </p>
+    method addGlobal(newGlobal)
+        globals.add(newGlobal.getName(), newGlobal)
+    end
+    # <p>
+    # Produce a sorted list of the names of globals listed by this file.
+    # </p>
+    method getGlobalNames()
+        local clist
 
-      every put(clist := [], globals.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], globals.getNames())
+        return sort(clist)
+    end
 
-   # <p>
-   # Set the records listed in this file.
-   # </p>
-   method setRecords(newRecords)
-      records := newRecords
-   end
-   # <p>
-   # Produce the records listed in this file.
-   # </p>
-   method getRecords()
-      return records
-   end
-   # <p>
-   # Add a record to this file.
-   # </p>
-   method addRecord(newRecord)
-      records.add(newRecord.getName(), newRecord)
-   end
-   # <p>
-   # Produce a sorted list of the names of records defined by this file.
-   # </p>
-   method getRecordNames()
-      local clist
+    # <p>
+    # Set the records listed in this file.
+    # </p>
+    method setRecords(newRecords)
+        records := newRecords
+    end
+    # <p>
+    # Produce the records listed in this file.
+    # </p>
+    method getRecords()
+        return records
+    end
+    # <p>
+    # Add a record to this file.
+    # </p>
+    method addRecord(newRecord)
+        records.add(newRecord.getName(), newRecord)
+    end
+    # <p>
+    # Produce a sorted list of the names of records defined by this file.
+    # </p>
+    method getRecordNames()
+        local clist
 
-      every put(clist := [], records.getNames())
-      return sort(clist)
-   end
+        every put(clist := [], records.getNames())
+        return sort(clist)
+    end
 
-initially
-   /imports := Sequence()
-   /links   := Sequence()
-   # There's at most one package for a file, so no sequence needed!
-   /procs   := Set()
-   /classes := Set()
-   /globals := Set()
-   /records := Set()
-   /comments := Comments()
+    initially
+        /imports := Sequence()
+        /links   := Sequence()
+        # There's at most one package for a file, so no sequence needed!
+        /procs   := Set()
+        /classes := Set()
+        /globals := Set()
+        /records := Set()
+        /comments := Comments()
 end
 
 # <p>
@@ -1068,69 +1068,70 @@ end
 # </p>
 class Comments: Object (head, tail)
 
-   # <p>
-   # How many comments are there?
-   # </p>
-   method size()
-      local block, s
+    # <p>
+    # How many comments are there?
+    # </p>
+    method size()
+        local block, s
 
-      s := 0
-      block := head
-      while \block do {
-	 s +:= block.size()
-	 block := block.nextblock
-	 }
-      return s
-   end
+        s := 0
+        block := head
+        while \block do {
+            s +:= block.size()
+            block := block.nextblock
+            }
+        return s
+    end
 
-   # <p>
-   # Add a comment to the current comment block.
-   # </p>
-   method add(newComment)
-      tail.put(newComment)
-   end
+    # <p>
+    # Add a comment to the current comment block.
+    # </p>
+    method add(newComment)
+        tail.put(newComment)
+    end
 
-   # <p>
-   # Generates the chain of comment blocks.
-   # Fails if no comment blocks available.
-   # </p>
-   method get()
-      local block
+    # <p>
+    # Generates the chain of comment blocks.
+    # Fails if no comment blocks available.
+    # </p>
+    method get()
+        local block
 
-      block := head
-      while \block do {
-	 if block.size() > 0 then {
-	    suspend block
-	    }
-	 block := block.nextblock
-	 }
-   end
+        block := head
+        while \block do {
+            if block.size() > 0 then {
+                suspend block
+                }
+            block := block.nextblock
+            }
 
-   # <p>
-   # Start a new comment block
-   # </p>
-   method newBlock()
-      tail.nextblock := CommentBlock()
-      tail := tail.nextblock
-   end
+    end
 
-   # <p>
-   # Append another list of comments to this list.
-   # </p>
-   method append(newComments)
-      tail.nextblock := newComments.get()
-   end
+    # <p>
+    # Start a new comment block
+    # </p>
+    method newBlock()
+        tail.nextblock := CommentBlock()
+        tail := tail.nextblock
+    end
 
-   # <p>
-   # Produce the first "sentence" of this sequence of comments.
-   #    Later, the definition of "sentence" will be improved.
-   # </p>
-   method getFirstSentence()
-      return head.getFirstSentence()
-   end
+    # <p>
+    # Append another list of comments to this list.
+    # </p>
+    method append(newComments)
+        tail.nextblock := newComments.get()
+    end
 
-initially
-   tail := head := CommentBlock()
+    # <p>
+    # Produce the first "sentence" of this sequence of comments.
+    #    Later, the definition of "sentence" will be improved.
+    # </p>
+    method getFirstSentence()
+        return head.getFirstSentence()
+    end
+
+    initially
+        tail := head := CommentBlock()
 end
 
 # <p>
@@ -1138,77 +1139,77 @@ end
 # </p>
 class CommentBlock: Object (legacy, comments, nextblock)
 
-   # <p>
-   # Produce the number of lines in this paragraph.
-   # </p>
-   method size()
-      return *comments
-   end
+    # <p>
+    # Produce the number of lines in this paragraph.
+    # </p>
+    method size()
+        return *comments
+    end
 
-   # <p>
-   # Succeed if this comment paragraph appears to be a 'legacy'
-   #   comment paragraph.  A <i>legacy</i> comment paragraph is
-   #   one that does not start with an HTML key, though it can
-   #   still contain HTML clauses.
-   # </p>
-   method isLegacy()
-      return \legacy
-   end
+    # <p>
+    # Succeed if this comment paragraph appears to be a 'legacy'
+    #   comment paragraph.  A <i>legacy</i> comment paragraph is
+    #   one that does not start with an HTML key, though it can
+    #   still contain HTML clauses.
+    # </p>
+    method isLegacy()
+        return \legacy
+    end
 
-   # <p>
-   # Add a comment to the paragraph.
-   # </p>
-   method put(newComment)
-      if firstNonBlank() then {    # see if this is a legacy comment or not.
-	 if match("<", lTrim(newComment)) then {
-	    legacy := &null
-	    }
-	 else {
-	    legacy := "yes"
-	    }
-	 }
-      ::put(comments, newComment)
-   end
+    # <p>
+    # Add a comment to the paragraph.
+    # </p>
+    method put(newComment)
+        if firstNonBlank() then {    # see if this is a legacy comment or not.
+            if match("<", lTrim(newComment)) then {
+                legacy := &null
+                }
+            else {
+                legacy := "yes"
+                }
+            }
+        ::put(comments, newComment)
+    end
 
-   # <p>
-   # Succeeds if the newComment has been preceded
-   #   only by blank comments.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method firstNonBlank()
-      local c
+    # <p>
+    # Succeeds if the newComment has been preceded
+    #   only by blank comments.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method firstNonBlank()
+        local c
 
-      every c := !comments do {
-	 if *trim(c, ' \t\n') > 0 then fail
-	 }
-      return
-   end
+        every c := !comments do {
+            if *trim(c, ' \t\n') > 0 then fail
+            }
+        return
+    end
 
-   # <p>
-   # Generate all the comments in this paragraph
-   # </p>
-   method get()
-      suspend !comments
-   end
+    # <p>
+    # Generate all the comments in this paragraph
+    # </p>
+    method get()
+        suspend !comments
+    end
 
-   # <p>
-   # Produce the first "sentence" of this comment block.  Later,
-   #    the definition of "sentence" will be improved.
-   # </p>
-   method getFirstSentence()
-      return \comments[1]
-   end
+    # <p>
+    # Produce the first "sentence" of this comment block.  Later,
+    #    the definition of "sentence" will be improved.
+    # </p>
+    method getFirstSentence()
+        return \comments[1]
+    end
 
-initially
-   comments := []
-   nextblock := &null
+    initially
+        comments := []
+        nextblock := &null
 end
 
 #<p>
 # Produce a more useful name for the type of form <tt>obj</tt>.
 #</p>
 procedure getFormType(obj)
-   return case obj.className() of {
+    return case obj.className() of {
         "UniDoc::UName"        : obj.getCategory()
         "UniDoc::UGlobal"      : "global"
         "UniDoc::UMethod"      : "method"
@@ -1222,3 +1223,4 @@ procedure getFormType(obj)
         "UniDoc::UFile"        : "file"
         }
 end
+

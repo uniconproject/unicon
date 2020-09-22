@@ -2,17 +2,19 @@
 
 # Build and install the IPL documentation
 
-SBASE=/opt/unicon/ipl
-TBASE=/var/www/html/unicon/ipl
+# You must reset UBASE for your system's location of Unicon.
+UBASE=/opt/unicon
+SBASE=${UBASE}/ipl
+TBASE=${UBASE}/doc/ipl-api
 DIRS=(procs gprocs mprocs progs gprogs mprogs)
+basetitle="Unicon IPL API"
 
 cdir=$(pwd)
 for dir in ${DIRS}; do
      echo
      echo "[Building IPL docs for ${dir}]"
      echo
-     echo -n "Please enter the title for this section: "
-     read title
+     title="${basetitle} for ${dir}"
      SD=${SBASE}/${dir}
      TD=${TBASE}/${dir}
      mkdir -p ${TD}

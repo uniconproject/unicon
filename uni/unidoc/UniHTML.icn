@@ -21,592 +21,593 @@ global dirFlag
 #   the internal representation of Unicon programs that is produced
 #   by the <b>UniALL</b> class.
 # </p>
-class UniHTML : Object (title, idoc, baseDir, mainIndex, linkPath, debug)
+class UniHTML : Object (title, idoc, baseDir, mainIndex, linkPath,
+                       debug)
 
-   # <p>
-   # Construct all the needed HTML pages.  <i>All other methods are
-   #   intended for internal use only.</i>
-   # </p>
-   method buildPages()
-      buildMainIndex()
-      buildBeginPage()
-      buildMasterNavIndex()
-      buildAllIndex()
-      buildPackageIndices()
-      buildClassIndices()
-      buildFileIndices()
-      buildClassFiles()
-      buildPackageFiles()
-      buildFileFiles()
-   end
+    # <p>
+    # Construct all the needed HTML pages.  <i>All other methods are
+    #   intended for internal use only.</i>
+    # </p>
+    method buildPages()
+        buildMainIndex()
+        buildBeginPage()
+        buildMasterNavIndex()
+        buildAllIndex()
+        buildPackageIndices()
+        buildClassIndices()
+        buildFileIndices()
+        buildClassFiles()
+        buildPackageFiles()
+        buildFileFiles()
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildMainIndex()
-      local page
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildMainIndex()
+        local page
 
-      page := openStdHtmlFile(baseDir, mainIndex)
+        page := openStdHtmlFile(baseDir, mainIndex)
 
-      write(page, "<html>")
-      write(page, "<title>")
-      write(page, title)
-      write(page, "</title>")
-      write(page, "</head>")
+        write(page, "<html>")
+        write(page, "<title>")
+        write(page, title)
+        write(page, "</title>")
+        write(page, "</head>")
 
-      write(page, "<frameset cols=\"20%,80%\">")
-      write(page, "<frameset rows=\"40%,60%\">")
-      write(page, "<frame src=\"nav.",mainIndex,"\" name=\"navFrame\">")
-      write(page, "<frame src=\"index_all_",mainIndex,
-		  "\" name=\"listFrame\">")
-      write(page, "</frameset>")
-      write(page, "<frame src=\"begin_",mainIndex,"\" name=\"displayFrame\">")
-      write(page, "</frameset>")
+        write(page, "<frameset cols=\"20%,80%\">")
+        write(page, "<frameset rows=\"40%,60%\">")
+        write(page, "<frame src=\"nav.",mainIndex,"\" name=\"navFrame\">")
+        write(page, "<frame src=\"index_all_",mainIndex,
+                                       "\" name=\"listFrame\">")
+        write(page, "</frameset>")
+        write(page, "<frame src=\"begin_",mainIndex,"\" name=\"displayFrame\">")
+        write(page, "</frameset>")
 
-      write(page, "<noframes>")
-      write(page, "<h2>Frame Alert</h2>")
-      write(page, "<p>")
-      write(page, "This document requires the use of frames to ")
-      write(page, "display properly.  If you see this message, then")
-      write(page, "you don't have frames enabled in your browser.")
-      write(page, "</p>")
+        write(page, "<noframes>")
+        write(page, "<h2>Frame Alert</h2>")
+        write(page, "<p>")
+        write(page, "This document requires the use of frames to ")
+        write(page, "display properly.  If you see this message, then")
+        write(page, "you don't have frames enabled in your browser.")
+        write(page, "</p>")
 
-      write(page, "</html>")
-      close(page)
-   end
+        write(page, "</html>")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildBeginPage()
-      local page, bc
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildBeginPage()
+        local page, bc
 
-      page := openStdHtmlFile(baseDir, "begin_"||mainIndex)
-      write(page, "<html>")
-      pageTop(page)
-      outputHeading(page, title||"- Full Index", "+6", "#ccccff")
-      bc := "#eeeeff"
-      outputUrlSection(page, "Files:",     idoc.getAllFiles(),     &null, bc)
-      outputUrlSection(page, "Packages:",  idoc.getAllPackages(),  &null, bc)
-      outputUrlSection(page, "Classes:",   idoc.getAllClasses(),   &null, bc)
-      outputUrlSection(page, "Procedures:",idoc.getAllProcedures(),&null, bc)
-      outputUrlSection(page, "Records:",   idoc.getAllRecords(),   &null, bc)
-      outputUrlSection(page, "Global variables",
-		       idoc.getAllGlobals(),   &null, bc)
-      pageBottom(page)
-      write(page, "</html>")
-      close(page)
-   end
+        page := openStdHtmlFile(baseDir, "begin_"||mainIndex)
+        write(page, "<html>")
+        pageTop(page)
+        outputHeading(page, title||"- Full Index", "+6", "#ccccff")
+        bc := "#eeeeff"
+        outputUrlSection(page, "Files:",     idoc.getAllFiles(),     &null, bc)
+        outputUrlSection(page, "Packages:",  idoc.getAllPackages(),  &null, bc)
+        outputUrlSection(page, "Classes:",   idoc.getAllClasses(),   &null, bc)
+        outputUrlSection(page, "Procedures:",idoc.getAllProcedures(),&null, bc)
+        outputUrlSection(page, "Records:",   idoc.getAllRecords(),   &null, bc)
+        outputUrlSection(page, "Global variables",
+                                             idoc.getAllGlobals(),   &null, bc)
+        pageBottom(page)
+        write(page, "</html>")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildMasterNavIndex()
-      local page, f, fName, ffName, p, pfName
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildMasterNavIndex()
+        local page, f, fName, ffName, p, pfName
 
-      page := openStdHtmlFile(baseDir, "nav."||mainIndex)
-      write(page, "<html>")
-      pageTop(page)
-      write(page, "<h1>Navigation</h1>")
-      write(page, "<p></p>")
-      write(page, listFrameRef("all_"||mainIndex,"Everything"))
-      write(page, "<p></p>")
-      write(page, "<h2>Files</h2>")
-      write(page, "<p></p>")
-      every f := !idoc.getAllFiles() do {
-	 fName  := delSuffix(f.getName(), ".icn")||".icn"
-	 ffName := delSuffix(getURL(f), ".html")||".html"
-	 write(page, listFrameRef(fixName(ffName), fName))
-	 }
-      write(page, "<h2>Packages</h2>")
-      write(page, "<p></p>")
-      every p := (!sort(idoc.packages))[2] do {
-	 pfName := delSuffix(getURL(p), ".html")||".html"
-	 write(page, listFrameRef(fixName(pfName), p.getName()))
-	 }
-      pageBottom(page, "quiet")
-      close(page)
-   end
+        page := openStdHtmlFile(baseDir, "nav."||mainIndex)
+        write(page, "<html>")
+        pageTop(page)
+        write(page, "<h1>Navigation</h1>")
+        write(page, "<p></p>")
+        write(page, listFrameRef("all_"||mainIndex,"Everything"))
+        write(page, "<p></p>")
+        write(page, "<h2>Files</h2>")
+        write(page, "<p></p>")
+        every f := !idoc.getAllFiles() do {
+            fName  := delSuffix(f.getName(), ".icn")||".icn"
+            ffName := delSuffix(getURL(f), ".html")||".html"
+            write(page, listFrameRef(fixName(ffName), fName))
+            }
+        write(page, "<h2>Packages</h2>")
+        write(page, "<p></p>")
+        every p := (!sort(idoc.packages))[2] do {
+            pfName := delSuffix(getURL(p), ".html")||".html"
+            write(page, listFrameRef(fixName(pfName), p.getName()))
+            }
+        pageBottom(page, "quiet")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildAllIndex()
-      local page
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildAllIndex()
+        local page
 
-      page := openStdHtmlFile(baseDir, "index_all_"||mainIndex)
-      pageTop(page)
-      write(page, "<h1>",displayFrameRef("begin_"||mainIndex, "Full Index"),
-		  "</h1>")
-      outputNameList(page, "Packages",   idoc.getAllPackages())
-      outputNameList(page, "Classes",    idoc.getAllClasses())
-      outputNameList(page, "Procedures", idoc.getAllProcedures())
-      outputNameList(page, "Records",    idoc.getAllRecords())
-      outputNameList(page, "Variables",  idoc.getAllGlobals())
-      outputFileList(page, "Files",      idoc.getAllFiles())
-      pageBottom(page, "quiet")
-      close(page)
-   end
+        page := openStdHtmlFile(baseDir, "index_all_"||mainIndex)
+        pageTop(page)
+        write(page, "<h1>",displayFrameRef("begin_"||mainIndex, "Full Index"),
+                    "</h1>")
+        outputNameList(page, "Packages",   idoc.getAllPackages())
+        outputNameList(page, "Classes",    idoc.getAllClasses())
+        outputNameList(page, "Procedures", idoc.getAllProcedures())
+        outputNameList(page, "Records",    idoc.getAllRecords())
+        outputNameList(page, "Variables",  idoc.getAllGlobals())
+        outputFileList(page, "Files",      idoc.getAllFiles())
+        pageBottom(page, "quiet")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildPackageIndices()
-      local pack
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildPackageIndices()
+        local pack
 
-      every pack := !idoc.packages do {
-	 buildOnePackageIndex(pack)
-	 }
-   end
+        every pack := !idoc.packages do {
+            buildOnePackageIndex(pack)
+            }
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildOnePackageIndex(pack)
-      local pName, pfName, page
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildOnePackageIndex(pack)
+        local pName, pfName, page
 
-      pName := pack.getName()
-      pfName := delSuffix(getURL(pack), ".html")||".html"
-      page := openStdHtmlFile(baseDir, "index_"||pfName)
-      pageTop(page)
-      write(page, "<h1>",displayFrameRef(getURL(pack), pName),"</h2>")
-      outputNameList(page, "Classes",    mkList(pack.getClasses()))
-      outputNameList(page, "Procedures", mkList(pack.getProcedures()))
-      outputNameList(page, "Records",    mkList(pack.getRecords()))
-      outputNameList(page, "Variables",  mkList(pack.getGlobals()))
-      outputFileList(page, "Files",      mkList(pack.getFiles()))
-      pageBottom(page, "quiet")
-      close(page)
-   end
+        pName := pack.getName()
+        pfName := delSuffix(getURL(pack), ".html")||".html"
+        page := openStdHtmlFile(baseDir, "index_"||pfName)
+        pageTop(page)
+        write(page, "<h1>",displayFrameRef(getURL(pack), pName),"</h2>")
+        outputNameList(page, "Classes",    mkList(pack.getClasses()))
+        outputNameList(page, "Procedures", mkList(pack.getProcedures()))
+        outputNameList(page, "Records",    mkList(pack.getRecords()))
+        outputNameList(page, "Variables",  mkList(pack.getGlobals()))
+        outputFileList(page, "Files",      mkList(pack.getFiles()))
+        pageBottom(page, "quiet")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildClassIndices()
-      local pack, aClass
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildClassIndices()
+        local pack, aClass
 
-      every pack := !idoc.packages do {
-	 every aClass := pack.getClasses().get() do {
-	    buildOneClassIndex(aClass)
-	    }
-	 }
-   end
+        every pack := !idoc.packages do {
+            every aClass := pack.getClasses().get() do {
+                buildOneClassIndex(aClass)
+                }
+            }
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildOneClassIndex(aClass)
-      local cName, cfName, page
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildOneClassIndex(aClass)
+        local cName, cfName, page
 
-      cName := aClass.getName()
-      cfName := delSuffix(getURL(aClass), ".html")||".html"
-      page := openStdHtmlFile(baseDir, "index_"||cfName)
-      pageTop(page)
-      write(page, "<h1>",displayFrameRef(getURL(aClass), cName),"</h2>")
-      outputNameList(page, "Methods",    mkList(aClass.getMethods()))
-      outputNameList(page, "Fields",     mkList(aClass.getParams()))
-      pageBottom(page, "quiet")
-      close(page)
-   end
+        cName := aClass.getName()
+        cfName := delSuffix(getURL(aClass), ".html")||".html"
+        page := openStdHtmlFile(baseDir, "index_"||cfName)
+        pageTop(page)
+        write(page, "<h1>",displayFrameRef(getURL(aClass), cName),"</h2>")
+        outputNameList(page, "Methods",    mkList(aClass.getMethods()))
+        outputNameList(page, "Fields",     mkList(aClass.getParams()))
+        pageBottom(page, "quiet")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildFileIndices()
-      local file
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildFileIndices()
+        local file
 
-      every file := !idoc.files do {
-	 buildOneFileIndex(file)
-	 }
-   end
+        every file := !idoc.files do {
+            buildOneFileIndex(file)
+            }
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildOneFileIndex(f)
-      local fName, ffName, page
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildOneFileIndex(f)
+        local fName, ffName, page
 
-      fName := delSuffix(f.getName(), ".icn")||".icn"
-      ffName := delSuffix(getURL(f), ".html")||".html"
-      page := openStdHtmlFile(baseDir, "index_"||ffName)
-      pageTop(page)
-      write(page, "<h1>",displayFrameRef(getURL(f), fName),"</h2>")
-      outputNameList(page, "Classes",    mkList(f.getClasses()))
-      outputNameList(page, "Procedures", mkList(f.getProcedures()))
-      outputNameList(page, "Records",    mkList(f.getRecords()))
-      outputNameList(page, "Variables",  mkList(f.getGlobals()))
-      outputNameList(page, "Imports",    mkList(f.getImports()))
-      outputNameList(page, "Links",      mkList(f.getLinks()))
-      pageBottom(page, "quiet")
-      close(page)
-   end
+        fName := delSuffix(f.getName(), ".icn")||".icn"
+        ffName := delSuffix(getURL(f), ".html")||".html"
+        page := openStdHtmlFile(baseDir, "index_"||ffName)
+        pageTop(page)
+        write(page, "<h1>",displayFrameRef(getURL(f), fName),"</h2>")
+        outputNameList(page, "Classes",    mkList(f.getClasses()))
+        outputNameList(page, "Procedures", mkList(f.getProcedures()))
+        outputNameList(page, "Records",    mkList(f.getRecords()))
+        outputNameList(page, "Variables",  mkList(f.getGlobals()))
+        outputNameList(page, "Imports",    mkList(f.getImports()))
+        outputNameList(page, "Links",      mkList(f.getLinks()))
+        pageBottom(page, "quiet")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildClassFiles()
-      write("Building HTML files for classes:")
-      every buildClass(!idoc.getAllClasses())
-   end
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildClassFiles()
+        write("Building HTML files for classes:")
+        every buildClass(!idoc.getAllClasses())
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildPackageFiles()
-      write("Building HTML files for ",*idoc.packages," packages:")
-      every buildPackage(!idoc.getAllPackages())
-   end
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildPackageFiles()
+        write("Building HTML files for ",*idoc.packages," packages:")
+        every buildPackage(!idoc.getAllPackages())
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildFileFiles()
-      write("Building HTML files for ",*idoc.files," files:")
-      every buildFile(!idoc.files)
-   end
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildFileFiles()
+        write("Building HTML files for ",*idoc.files," files:")
+        every buildFile(!idoc.files)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method defineDiversions()
-      return "<STYLE TYPE=\"text/css\">\n"                    ||
-             "div.colored {\n"                                ||
-             "   background-color: #f1f1ff;\n"                ||
-             "   opacity: 0.9;\n"                             ||
-             "   filter:alpha(opacity=50); /* IE's opacity*/" ||
-             "   width: relative;\n"                          ||
-             "   }\n"                                         ||
-             "div.indented {\n"                               ||
-             "   padding-left: 25pt;\n"                       ||
-             "   font-size: small;\n"                         ||
-             "   width: relative;\n"                          ||
-             "   }\n"                                         ||
-             "</STYLE>"
-   end
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method defineDiversions()
+        return "<STYLE TYPE=\"text/css\">\n"                    ||
+               "div.colored {\n"                                ||
+               "   background-color: #f1f1ff;\n"                ||
+               "   opacity: 0.9;\n"                             ||
+               "   filter:alpha(opacity=50); /* IE's opacity*/" ||
+               "   width: relative;\n"                          ||
+               "   }\n"                                         ||
+               "div.indented {\n"                               ||
+               "   padding-left: 25pt;\n"                       ||
+               "   font-size: small;\n"                         ||
+               "   width: relative;\n"                          ||
+               "   }\n"                                         ||
+               "</STYLE>"
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildClass(aClass)
-      local page, pack, pName, file, fName
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildClass(aClass)
+        local page, pack, pName, file, fName
 
-      page := openStdHtmlFile(baseDir, getURL(aClass))
-      write("\t",getURL(aClass))
-      write(page, "<html>")
-      write(page, "<head>")
-      write(page, "<title>",aClass.getName(),"</title>")
-      write(page, defineDiversions())
-      write(page, "</head>")
-      pageTop(page)
-      outputHeading(page, "Class "||aClass.getName(), "+6")
-      outputComments(page, "<h2>Summary</h2>", aClass.getComments())
-      write(page, "<dl>")
-      outputUrlList(page, "Superclasses:",  mkList(aClass.getSuperClasses()))
-      pack  := aClass.getPackage()
-      pName := pack.getName()
-      pack  := getURL(pack)
-      write(page, "<dt>Package:</dt><dd>",listFrameRef(pack, pName),"</dd>")
-      file  := aClass.getFile()
-      fName := delSuffix(file.getName(),".icn")||".icn"
-      file  := getURL(file)
-      write(page, "<dt>File:</dt><dd>",listFrameRef(file, fName),"</dd>")
-      write(page, "</dl>")
-      outputUrlList(page, "Methods:",          mkList(aClass.getMethods()))
-      outputInheritedMethods(page, aClass)
-      outputUrlList(page, "Fields:",           mkList(aClass.getParams()))
-      sRef := displaySrcURL(aClass, "Source code.") 
-      if sRef ~== "Source code." then {
-	 write(page, "<b><i>", sRef, "</i></b><p></p>")
-	 }
-      outputHeading(page, "Details", "+4")
-      outputHeading(page, "Constructor", "+2", "#eeeeff")
-      outputFunction(page, aClass.getConstructor())
-      outputMethods(page, "Methods:", aClass)
-      outputVars(page,  "Fields:",             mkList(aClass.getParams()))
-      pageBottom(page)
-      write(page, "</html>")
-      close(page)
-   end
+        page := openStdHtmlFile(baseDir, getURL(aClass))
+        write("\t",getURL(aClass))
+        write(page, "<html>")
+        write(page, "<head>")
+        write(page, "<title>",aClass.getName(),"</title>")
+        write(page, defineDiversions())
+        write(page, "</head>")
+        pageTop(page)
+        outputHeading(page, "Class "||aClass.getName(), "+6")
+        outputComments(page, "<h2>Summary</h2>", aClass.getComments())
+        write(page, "<dl>")
+        outputUrlList(page, "Superclasses:",  mkList(aClass.getSuperClasses()))
+        pack  := aClass.getPackage()
+        pName := pack.getName()
+        pack  := getURL(pack)
+        write(page, "<dt>Package:</dt><dd>",listFrameRef(pack, pName),"</dd>")
+        file  := aClass.getFile()
+        fName := delSuffix(file.getName(),".icn")||".icn"
+        file  := getURL(file)
+        write(page, "<dt>File:</dt><dd>",listFrameRef(file, fName),"</dd>")
+        write(page, "</dl>")
+        outputUrlList(page, "Methods:",          mkList(aClass.getMethods()))
+        outputInheritedMethods(page, aClass)
+        outputUrlList(page, "Fields:",           mkList(aClass.getParams()))
+        sRef := displaySrcURL(aClass, "Source code.") 
+        if sRef ~== "Source code." then {
+            write(page, "<b><i>", sRef, "</i></b><p></p>")
+            }
+        outputHeading(page, "Details", "+4")
+        outputHeading(page, "Constructor", "+2", "#eeeeff")
+        outputFunction(page, aClass.getConstructor())
+        outputMethods(page, "Methods:", aClass)
+        outputVars(page,  "Fields:",             mkList(aClass.getParams()))
+        pageBottom(page)
+        write(page, "</html>")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildPackage(aPack)
-      local page, p, r, g
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildPackage(aPack)
+        local page, p, r, g
 
-      page := openStdHtmlFile(baseDir, getURL(aPack))
-      write("\t",getURL(aPack))
-      write(page, "<html>")
-      write(page, "<head>")
-      write(page, "<title>",aPack.getName(),"</title>")
-      write(page, defineDiversions())
-      write(page, "</head>")
-      pageTop(page)
-      outputHeading(page, "Package "||aPack.getName(), "+6")
-      outputComments(page, "<h2>Summary</h2>", aPack.getComments())
-      outputUrlList(page, "Classes:",          mkList(aPack.getClasses()))
-      outputUrlList(page, "Procedures:",       mkList(aPack.getProcedures()))
-      outputUrlList(page, "Records:",          mkList(aPack.getRecords()))
-      outputUrlList(page, "Global variables:", mkList(aPack.getGlobals()))
-      outputUrlList(page, "Files in package:", mkList(aPack.getFiles()))
-      p := mkList(aPack.getProcedures())
-      r := mkList(aPack.getRecords())
-      g := mkList(aPack.getGlobals())
-      if *(p|r|g) > 0 then {
-	 outputHeading(page, "Details", "+4")
-	 outputCalls(page, "Procedures:",         p)
-	 outputCalls(page, "Records:",            r)
-	 outputVars(page,  "Global variables:",   g)
-	 }
-      pageBottom(page)
-      write(page, "</html>")
-      close(page)
-   end
+        page := openStdHtmlFile(baseDir, getURL(aPack))
+        write("\t",getURL(aPack))
+        write(page, "<html>")
+        write(page, "<head>")
+        write(page, "<title>",aPack.getName(),"</title>")
+        write(page, defineDiversions())
+        write(page, "</head>")
+        pageTop(page)
+        outputHeading(page, "Package "||aPack.getName(), "+6")
+        outputComments(page, "<h2>Summary</h2>", aPack.getComments())
+        outputUrlList(page, "Classes:",          mkList(aPack.getClasses()))
+        outputUrlList(page, "Procedures:",       mkList(aPack.getProcedures()))
+        outputUrlList(page, "Records:",          mkList(aPack.getRecords()))
+        outputUrlList(page, "Global variables:", mkList(aPack.getGlobals()))
+        outputUrlList(page, "Files in package:", mkList(aPack.getFiles()))
+        p := mkList(aPack.getProcedures())
+        r := mkList(aPack.getRecords())
+        g := mkList(aPack.getGlobals())
+        if *(p|r|g) > 0 then {
+            outputHeading(page, "Details", "+4")
+            outputCalls(page, "Procedures:",         p)
+            outputCalls(page, "Records:",            r)
+            outputVars(page,  "Global variables:",   g)
+            }
+        pageBottom(page)
+        write(page, "</html>")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method buildFile(aFile)
-      local page, aName, p, r, g
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method buildFile(aFile)
+        local page, aName, p, r, g
 
-      page := openStdHtmlFile(baseDir, getURL(aFile))
-      aName := delSuffix(aFile.getName(), ".icn")||".icn"
-      write("\t",getURL(aFile))
-      write(page, "<html>")
-      write(page, "<head>")
-      write(page, "<title>",aName,"</title>")
-      write(page, defineDiversions())
-      write(page, "</head>")
-      pageTop(page)
-      outputHeading(page, "File "||aName, "+6")
-      outputComments(page, "<h2>Summary</h2>", aFile.getComments())
-      outputUrlList(page, "Classes:",          mkList(aFile.getClasses()))
-      outputUrlList(page, "Procedures:",       mkList(aFile.getProcedures()))
-      outputUrlList(page, "Records:",          mkList(aFile.getRecords()))
-      outputUrlList(page, "Global variables:", mkList(aFile.getGlobals()))
-      outputUrlList(page, "Imports: ",         mkList(aFile.getImports()))
-      outputUrlList(page, "Links: ",           mkList(aFile.getLinks()))
-      p := aFile.getPackage()
-      write(page, "<p>This file is part of the <b>",
-	    displayURL(getURL(p), p.getName()),
-	    "</b> package.</p>")
-      sRef := displaySrcURL(aFile, "Source code.") 
-      if sRef ~== "Source code." then {
-	 write(page, "<b><i>", sRef, "</i></b><p></p>")
-	 }
-      p := mkList(aFile.getProcedures())
-      r := mkList(aFile.getRecords())
-      g := mkList(aFile.getGlobals())
-      if *(p|r|g) > 0 then {
-	 outputHeading(page, "Details", "+4")
-	 outputCalls(page, "Procedures:",         p)
-	 outputCalls(page, "Records:",            r)
-	 outputVars(page,  "Global variables:",   g)
-	 }
-      pageBottom(page)
-      write(page, "</html>")
-      close(page)
-   end
+        page := openStdHtmlFile(baseDir, getURL(aFile))
+        aName := delSuffix(aFile.getName(), ".icn")||".icn"
+        write("\t",getURL(aFile))
+        write(page, "<html>")
+        write(page, "<head>")
+        write(page, "<title>",aName,"</title>")
+        write(page, defineDiversions())
+        write(page, "</head>")
+        pageTop(page)
+        outputHeading(page, "File "||aName, "+6")
+        outputComments(page, "<h2>Summary</h2>", aFile.getComments())
+        outputUrlList(page, "Classes:",          mkList(aFile.getClasses()))
+        outputUrlList(page, "Procedures:",       mkList(aFile.getProcedures()))
+        outputUrlList(page, "Records:",          mkList(aFile.getRecords()))
+        outputUrlList(page, "Global variables:", mkList(aFile.getGlobals()))
+        outputUrlList(page, "Imports: ",         mkList(aFile.getImports()))
+        outputUrlList(page, "Links: ",           mkList(aFile.getLinks()))
+        p := aFile.getPackage()
+        write(page, "<p>This file is part of the <b>",
+                        displayURL(getURL(p), p.getName()),
+                       "</b> package.</p>")
+        sRef := displaySrcURL(aFile, "Source code.") 
+        if sRef ~== "Source code." then {
+            write(page, "<b><i>", sRef, "</i></b><p></p>")
+            }
+        p := mkList(aFile.getProcedures())
+        r := mkList(aFile.getRecords())
+        g := mkList(aFile.getGlobals())
+        if *(p|r|g) > 0 then {
+            outputHeading(page, "Details", "+4")
+            outputCalls(page, "Procedures:",         p)
+            outputCalls(page, "Records:",            r)
+            outputVars(page,  "Global variables:",   g)
+            }
+        pageBottom(page)
+        write(page, "</html>")
+        close(page)
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method outputMethods(page, label, aClass)
-      local metd, mList
-
-      mList := mkList(aClass.getMethods())
-      if *mList > 0 then {
-	 outputHeading(page, label, "+2", "#eeeeff")
-	 every metd := !mList do {
-	    outputFunction(page, metd)
-	    if sc := idoc.overrides(aClass, metd.getName()) then {
-	       sName := sc.getName()
-	       mName := metd.getName()
-	       metd  := sc.getMethod(mName)
-	       write(page, "<dd><i>This method overrides</i> <b>",
-                           displayURL(getURL(metd), mName),
-                           "</b> <i>in class</i> <b>",
-                           displayURL(getURL(sc), sName),"</b>")
-	       }
-	    write(page, "<hr>")
-	    }
-	 }
-   end
-
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method outputInheritedMethods(page, aClass)
-      local iTab, sc, scName, sUrl
-
-      iTab := idoc.inherited(aClass)
-      if *iTab > 0 then {
-	 every sc := !idoc.makeNameTab(iTab) do {
-	    scName := sc.getName()
-	    sUrl := getURL(sc)
-	    outputUrlList(page, "Methods inherited from "||
-                                displayURL(sUrl, scName)||":",
-                                mkList(iTab[sc]))
-	    }
-	 }
-   end
-
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method outputNameList(page, heading, aList)
-      local obj, oName
-
-      if *aList > 0 then {
-	 write(page, "<p></p>")
-	 write(page, "<h2>",heading,"</h2>")
-	 write(page, "<p></p>")
-	 every obj := !aList do {
-	    oName := obj.getName()
-	    write(page, displayFrameRef(getURL(obj), oName))
-	    }
-	 }
-   end
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method outputMethods(page, label, aClass)
+        local metd, mList
     
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method outputFileList(page, heading, aList)
-      local f, fName
+        mList := mkList(aClass.getMethods())
+        if *mList > 0 then {
+            outputHeading(page, label, "+2", "#eeeeff")
+            every metd := !mList do {
+                outputFunction(page, metd)
+                if sc := idoc.overrides(aClass, metd.getName()) then {
+                    sName := sc.getName()
+                    mName := metd.getName()
+                    metd  := sc.getMethod(mName)
+                    write(page, "<dd><i>This method overrides</i> <b>",
+                                displayURL(getURL(metd), mName),
+                                "</b> <i>in class</i> <b>",
+                                displayURL(getURL(sc), sName),"</b>")
+                    }
+                write(page, "<hr>")
+                }
+            }
+    end
 
-      if *aList > 0 then {
-	 write(page, "<p></p>")
-	 write(page, "<h2>",heading,"</h2>")
-	 write(page, "<p></p>")
-	 every f := !aList do {
-	    fName := delSuffix(f.getName(), ".icn")||".icn"
-	    write(page, displayFrameRef(getURL(f), fName))
-	    }
-	 }
-   end
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method outputInheritedMethods(page, aClass)
+        local iTab, sc, scName, sUrl
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method outputUrlSection(page, label, aList, fSize, bColor)
-      if *aList > 0 then {
-	 outputHeading(page, label, fSize, bColor)
-	 outputUrlList(page, &null, aList)
-	 }
-   end
+        iTab := idoc.inherited(aClass)
+        if *iTab > 0 then {
+            every sc := !idoc.makeNameTab(iTab) do {
+                scName := sc.getName()
+                sUrl := getURL(sc)
+                outputUrlList(page, "Methods inherited from "||
+                                       displayURL(sUrl, scName)||":",
+                                    mkList(iTab[sc]))
+                }
+            }
+    end
 
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method outputUrlList(page, label, aList)
-      local s, item, iName, iUrl
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method outputNameList(page, heading, aList)
+        local obj, oName
 
-      if *aList > 0 then {
-	 write(page, "<dt><b>",\label,"</b></dt><dd>")
-	 s := ""
-	 every item := !aList do {
-	    iName := item.getName()
-	    iUrl  := getURL(item)
-	    s ||:= displayURL(iUrl, iName)||", "
-	    }
-	 write(page, s[1:-2])
-	 write(page, "</dd><p></p>")
-	 }
-   end
-
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method getURL(obj)
-      /fileMap := table()
-      /fileMap[obj] := mkURL(obj)
-      return fileMap[obj]
-   end
+        if *aList > 0 then {
+            write(page, "<p></p>")
+            write(page, "<h2>",heading,"</h2>")
+            write(page, "<p></p>")
+            every obj := !aList do {
+                oName := obj.getName()
+                write(page, displayFrameRef(getURL(obj), oName))
+                }
+            }
+    end
     
-   # <p>
-   # <i>This is intended for internal use only!</i>
-   # </p>
-   method mkURL(obj)
-      local bName, pName, cat, p, nObj
-    
-      bName := obj.getName()
-      case obj.className() of {
-	 "UniDoc::ULink"       |
-         "UniDoc::UFile"       : {
-	    return "file_"||delSuffix(bName, ".icn")||".html"
-	    }
-	 "UniDoc::UClass"      : {
-	    pName := obj.getParent().getName()
-	    pName := "class_"||delSuffix(pName,".icn")
-	    return pName||"_"||fixName(bName)||".html"
-	    }
-	 "UniDoc::UImport"     |
-         "UniDoc::UPackage"    : {
-	    pName := "pack_"
-	    return pName||fixName(bName)||".html"
-	    }
-	 "UniDoc::UProc"       |
-         "UniDoc::URecord"     |
-         "UniDoc::UGlobal"     |
-         "UniDoc::UMethod"     |
-         "UniDoc::UConstructor": {
-	    pName := mkURL(obj.getParent())
-	    return pName||"#"||bName
-	    }
-	 "UniDoc::UName"       : {
-	    cat := obj.category
-	    if cat == "class" then {
-	       p := obj.getParent()
-	       if nObj := idoc.locateSuperClass(p, bName) then {
-		  return mkURL(nObj)
-		  }
-	       else {
-		  # See if there's already an HTML page for it!
-		  if pName := idoc.classOnLinkPath(p, bName) then {
-		     return pName||".html";
-		     }
-		  write("can't find: ",bName)
-		  }
-	       }
-	    pName := mkURL(obj.getParent())
-	    return pName||"#"||bName
-	    }
-	 }
-      stop("mkURL: cannot handle class type ",obj.className(),"!")
-   end
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method outputFileList(page, heading, aList)
+        local f, fName
 
-initially
-   /title     := "Generated Documentation"
-   /baseDir   := "./htmlDoc"
-   baseDir    := trim(baseDir, '/\\')||"/"
-   mkdir(baseDir) | close(open(baseDir)) |
-      stop("Cannot access directory '",baseDir,"'.")
-   /mainIndex := "index.html"
-   mainIndex  := delSuffix(mainIndex, ".html") || ".html"
+        if *aList > 0 then {
+            write(page, "<p></p>")
+            write(page, "<h2>",heading,"</h2>")
+            write(page, "<p></p>")
+            every f := !aList do {
+                fName := delSuffix(f.getName(), ".icn")||".icn"
+                write(page, displayFrameRef(getURL(f), fName))
+                }
+            }
+    end
+
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method outputUrlSection(page, label, aList, fSize, bColor)
+        if *aList > 0 then {
+            outputHeading(page, label, fSize, bColor)
+            outputUrlList(page, &null, aList)
+            }
+    end
+    
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method outputUrlList(page, label, aList)
+        local s, item, iName, iUrl
+
+        if *aList > 0 then {
+            write(page, "<dt><b>",\label,"</b></dt><dd>")
+            s := ""
+            every item := !aList do {
+                iName := item.getName()
+                iUrl  := getURL(item)
+                s ||:= displayURL(iUrl, iName)||", "
+                }
+            write(page, s[1:-2])
+            write(page, "</dd><p></p>")
+            }
+    end
+
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method getURL(obj)
+        /fileMap := table()
+        /fileMap[obj] := mkURL(obj)
+        return fileMap[obj]
+    end
+    
+    # <p>
+    # <i>This is intended for internal use only!</i>
+    # </p>
+    method mkURL(obj)
+        local bName, pName, cat, p, nObj
+    
+        bName := obj.getName()
+        case obj.className() of {
+            "UniDoc::ULink"       |
+            "UniDoc::UFile"       : {
+                    return "file_"||delSuffix(bName, ".icn")||".html"
+                    }
+            "UniDoc::UClass"      : {
+                    pName := obj.getParent().getName()
+                    pName := "class_"||delSuffix(pName,".icn")
+                    return pName||"_"||fixName(bName)||".html"
+                    }
+            "UniDoc::UImport"     |
+            "UniDoc::UPackage"    : {
+                    pName := "pack_"
+                    return pName||fixName(bName)||".html"
+                    }
+            "UniDoc::UProc"       |
+            "UniDoc::URecord"     |
+            "UniDoc::UGlobal"     |
+            "UniDoc::UMethod"     |
+            "UniDoc::UConstructor": {
+                    pName := mkURL(obj.getParent())
+                    return pName||"#"||bName
+                    }
+            "UniDoc::UName"       : {
+                    cat := obj.category
+                    if cat == "class" then {
+                        p := obj.getParent()
+                        if nObj := idoc.locateSuperClass(p, bName) then {
+                            return mkURL(nObj)
+                            }
+                        else {
+                            # See if there's already an HTML page for it!
+                            if pName := idoc.classOnLinkPath(p, bName) then {
+                                return pName||".html";
+                                }
+                            write("can't find: ",bName)
+                            }
+                        }
+                    pName := mkURL(obj.getParent())
+                    return pName||"#"||bName
+                    }
+            }
+        stop("mkURL: cannot handle class type ",obj.className(),"!")
+    end
+
+    initially
+        /title     := "Generated Documentation"
+        /baseDir   := "./htmlDoc"
+        baseDir    := trim(baseDir, '/\\')||"/"
+        mkdir(baseDir) | close(open(baseDir)) |
+            stop("Cannot access directory '",baseDir,"'.")
+        /mainIndex := "index.html"
+        mainIndex  := delSuffix(mainIndex, ".html") || ".html"
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure navFrameRef(ref, label)
-   ref := delSuffix(ref, ".html")||".html"
-   ref := adjustDir("index_"||ref)
-   return "<a href=\""                             ||
-              ref||"\" target=\"listFrame\">"      ||
-              label                                ||
-          "</a><br>"
+    ref := delSuffix(ref, ".html")||".html"
+    ref := adjustDir("index_"||ref)
+    return "<a href=\""                             ||
+               ref||"\" target=\"listFrame\">"      ||
+               label                                ||
+           "</a><br>"
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure listFrameRef(ref, label)
-   ref := delSuffix(ref, ".html")||".html"
-   ref := adjustDir("index_"||ref)
-   return "<a href=\""                             ||
-              ref||"\" target=\"listFrame\">"      ||
-              label                                ||
-          "</a><br>"
+    ref := delSuffix(ref, ".html")||".html"
+    ref := adjustDir("index_"||ref)
+    return "<a href=\""                             ||
+               ref||"\" target=\"listFrame\">"      ||
+               label                                ||
+           "</a><br>"
 end
 
 # <p>
@@ -614,8 +615,8 @@ end
 # </p>
 procedure adjustDir(fName)
    if \dirFlag & not match("../", fName) then {
-      fName := "../"||fName
-      }
+       fName := "../"||fName
+       }
    return fName
 end
 
@@ -624,110 +625,110 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure displayFrameRef(ref, label)
-   ref := delSuffix(fixName(ref), ".html")||".html"
-   ref := adjustDir(ref)   # handle subdirectories
-   return "<a href=\""                                       ||
-              ref||"\" target=\"displayFrame\">"             ||
-              label                                          ||
-          "</a><br>"
+    ref := delSuffix(fixName(ref), ".html")||".html"
+    ref := adjustDir(ref)   # handle subdirectories
+    return "<a href=\""                                       ||
+               ref||"\" target=\"displayFrame\">"             ||
+               label                                          ||
+           "</a><br>"
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure displayURL(ref, label)
-   ref := fixName(ref)
-   ref := adjustDir(ref)   # handle subdirectories
-   return "<a href=\""                                       ||
-              ref||"\" target=\"displayFrame\">"             ||
-              label                                          ||
-          "</a>"
+    ref := fixName(ref)
+    ref := adjustDir(ref)   # handle subdirectories
+    return "<a href=\""                                       ||
+               ref||"\" target=\"displayFrame\">"             ||
+               label                                          ||
+           "</a>"
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure fixName(pName)
-   pName := if pName == "(main)" then "0main"
-   return pName
+    pName := if pName == "(main)" then "0main"
+    return pName
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure getTagFromURL(url)
-   reverse(url) ? return reverse(tab(upto('#'))||move(1))
+    reverse(url) ? return reverse(tab(upto('#'))||move(1))
 end
         
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure outputCalls(page, label, aList)
-   local item
+    local item
 
-   if *aList > 0 then {
-      outputHeading(page, label, "+2", "#eeeeff")
-      every item := !aList do {
-	 outputFunction(page, item)
-	 write(page, "<hr>")
-	 }
-      }
+    if *aList > 0 then {
+        outputHeading(page, label, "+2", "#eeeeff")
+        every item := !aList do {
+            outputFunction(page, item)
+            write(page, "<hr>")
+            }
+        }
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure outputVars(page, label, aList)
-   local item
+    local item
 
-   if *aList > 0 then {
-      outputHeading(page, label, "+2", "#eeeeff")
-      every item := !aList do {
-	 outputVar(page, item)
-	 write(page, "<hr>")
-	 }
-      }
+    if *aList > 0 then {
+        outputHeading(page, label, "+2", "#eeeeff")
+        every item := !aList do {
+            outputVar(page, item)
+            write(page, "<hr>")
+            }
+        }
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure outputFunction(page, metd)
-   local params, p, m, s, pc
+    local params, p, m, s, pc
 
-   write(page, getTag(metd))
-   m := mkCallStr(metd)
-   write(page, "<p><b><i><font size=+1>",displaySrcURL(metd, m),
-               "</font></i></b>")
-   params := metd.getParams()
-   if params.itemsHaveComments() then {
-      pc := Comments()
-      every p := params.get() do {
-	 s := "<[param "||p.getName()||" "||
-              (stripParagraph(cmts2html(p.getComments()))|"")||"]>"
-	 pc.add(s)
-	 }
-      params.setComments()
-      }
-   write(page, "<dd>")
-   outputParComments(page, &null, \pc);
-   outputComments(page, &null, metd.getComments())
-   write(page, "</dd>")
-   write(page, "</p>")
+    write(page, getTag(metd))
+    m := mkCallStr(metd)
+    write(page, "<p><b><i><font size=+1>",displaySrcURL(metd, m),
+                "</font></i></b>")
+    params := metd.getParams()
+    if params.itemsHaveComments() then {
+        pc := Comments()
+        every p := params.get() do {
+            s := "<[param "||p.getName()||" "||
+                 (stripParagraph(cmts2html(p.getComments()))|"")||"]>"
+            pc.add(s)
+            }
+        params.setComments()
+        }
+    write(page, "<dd>")
+    outputParComments(page, &null, \pc);
+    outputComments(page, &null, metd.getComments())
+    write(page, "</dd>")
+    write(page, "</p>")
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure getTag(obj)
-   return makeTag(obj.getName())
+    return makeTag(obj.getName())
 end
 
 # <p>
 # Convert a string into an HTML reference tag.
 # </p>
 procedure makeTag(s)
-   return "<a name=\""||s||"\">"
+    return "<a name=\""||s||"\">"
 end
 
 # <p>
@@ -735,9 +736,9 @@ end
 # not possible, just return the label.
 # </p>
 procedure displaySrcURL(obj, label)
-   if ref := adjustDir(mkSrcURL(obj)) then
-      return displayURL(ref, label)
-   return label
+    if ref := adjustDir(mkSrcURL(obj)) then
+        return displayURL(ref, label)
+    return label
 end
 
 # <p>
@@ -746,73 +747,73 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure mkSrcURL(obj)
-   local fName, bName, pName
+    local fName, bName, pName
 
-   if fName := obj.getSrcFile() then {
-      pName := "src_"||fixName(delSuffix(fName, ".icn"))||".html"
-      bName := obj.getFormType() || "_" || obj.getName()
-      if obj.getFormType() == "file" then return pName
-      return pName || "#" || bName
-      }
+    if fName := obj.getSrcFile() then {
+        pName := "src_"||fixName(delSuffix(fName, ".icn"))||".html"
+        bName := obj.getFormType() || "_" || obj.getName()
+        if obj.getFormType() == "file" then return pName
+        return pName || "#" || bName
+        }
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure outputVar(page, var)
-   write(page, getTag(var))
-   outputVarComments(page, displaySrcURL(var, var.getName()),
-		     var.getComments())
+    write(page, getTag(var))
+    outputVarComments(page, displaySrcURL(var, var.getName()),
+                            var.getComments())
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure outputComments(page, label, comments)
-   local s
+    local s
 
-   write(page, \label)
-   if s := cmts2html(comments) then {
-      write(page, s)
-      }
+    write(page, \label)
+    if s := cmts2html(comments) then {
+        write(page, s)
+        }
 end
 
 # <p>
 # <i>Output parameter comments
 # </p>
 procedure outputParComments(page, label, comments)
-   local s
+    local s
 
-   write(page, \label)
-   if s := cmts2html(comments) then {
-      write(page, s)
-      }
+    write(page, \label)
+    if s := cmts2html(comments) then {
+        write(page, s)
+        }
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure outputVarComments(page, varName, comments)
-   local s
+    local s
 
-   if s := cmts2html(comments) then {
-      s := stripParagraph(s)
-      if *s > 0 then {
-	 write(page, "<dd><b>",varName,"</b> -- <i>",s,"</i></dd>")
-	 }
-      else {
-	 write(page, "<dd><b>",varName,"</b></dd>")
-	 }
-      }
+    if s := cmts2html(comments) then {
+        s := stripParagraph(s)
+        if *s > 0 then {
+            write(page, "<dd><b>",varName,"</b> -- <i>",s,"</i></dd>")
+            }
+        else {
+            write(page, "<dd><b>",varName,"</b></dd>")
+            }
+        }
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure stripParagraph(s)
-   s ? return 2(="<p>\n",  tab(-*"</p>\n"),  ="</p>\n") |
-              2(="<pre>\n",tab(-*"</pre>\n"),="</pre>\n")
-   return s
+    s ? return 2(="<p>\n",  tab(-*"</p>\n"),  ="</p>\n") |
+               2(="<pre>\n",tab(-*"</pre>\n"),="</pre>\n")
+    return s
 end
         
 
@@ -820,56 +821,58 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure cmts2html(comments)
-   local s1, s2, s, t, cblock, keyMap
+    local s1, s2, s, t, cblock, keyMap
 
-   if \comments then {
-      keyMap := table()
-      s := ""
-      s1:= ""
-      every cblock := comments.get() do {
-	 s ||:= if cblock.isLegacy() then "<pre>\n"
-	 every s ||:= cblock.get() || "\n"
-	 s ||:= if cblock.isLegacy() then "</pre>\n"
-	 }
-      s := checkSpecial(s, keyMap)
-      if \(throws := keyMap["throws"]) then {   
-	 t := "\n<b>Throws:</b> "
-	 t ||:= "<table>\n"
-	 while t ||:= ::get(throws)
-	 s1 := t || "\n</table>\n" || s1
-	 }
-      if \(fails := keyMap["fails"]) then {   
-         t := "\n<b>Fails:</b> "
-         t ||:= "<table>\n"
-         while t ||:= ::get(fails)
-         s1 := t || "\n</table>\n" || s1
-         }
-      if \(returns := keyMap["returns"]) then {   
-	 t := "\n<b>Returns:</b> "
-	 t ||:= "<table>\n"
-	 while t ||:= ::get(returns)
-         s1 := t || "\n</table>\n" || s1
-         }
-      if \(generates := keyMap["generates"]) then {   
-         t := "\n<b>Generates:</b> "
-         t ||:= "<table>\n"
-         while t ||:= ::get(generates)
-         s1 := t || "\n</table>\n" || s1
-         }
-      if \(params := keyMap["params"]) then {   
-         t := "\n<b>Parameter"||(if *params > 1 then "s" else "")||":</b> "
-         t ||:= "<table>\n"
-         while t ||:= ::get(params)
-         s1 := t || "\n</table>\n" || s1
-         }
+    if \comments then {
+        keyMap := table()
+        s := ""
+        s1:= ""
+        every cblock := comments.get() do {
+            s ||:= if cblock.isLegacy() then "<pre>\n"
+            every s ||:= cblock.get() || "\n"
+            s ||:= if cblock.isLegacy() then "</pre>\n"
+            }
+        s := checkSpecial(s, keyMap)
+        if \(throws := keyMap["throws"]) then {   
+            t := "\n<b>Throws:</b> "
+            t ||:= "<table>\n"
+            while t ||:= ::get(throws)
+            s1 := t || "\n</table>\n" || s1
+            }
+        if \(fails := keyMap["fails"]) then {   
+            t := "\n<b>Fails:</b> "
+            t ||:= "<table>\n"
+            while t ||:= ::get(fails)
+            s1 := t || "\n</table>\n" || s1
+            }
+        if \(returns := keyMap["returns"]) then {   
+            t := "\n<b>Returns:</b> "
+            t ||:= "<table>\n"
+            while t ||:= ::get(returns)
+            s1 := t || "\n</table>\n" || s1
+            }
+        if \(generates := keyMap["generates"]) then {   
+            t := "\n<b>Generates:</b> "
+            t ||:= "<table>\n"
+            while t ||:= ::get(generates)
+            s1 := t || "\n</table>\n" || s1
+            }
+        if \(params := keyMap["params"]) then {   
+            t := "\n<b>Parameter"||(if *params > 1 then "s" else "")||":</b> "
+            t ||:= "<table>\n"
+            while t ||:= ::get(params)
+            s1 := t || "\n</table>\n" || s1
+            }
 
-     if *s1 > 0 then {
-        s1 := "\n<DIV CLASS=\"indented\">\n<DIV CLASS=\"colored\">\n" ||
-              s1 ||
-              "\n</DIV>\n</DIV>\n"
+        if *s1 > 0 then {
+            s1 := "\n<DIV CLASS=\"indented\">\n<DIV CLASS=\"colored\">\n" ||
+                  s1 ||
+                  "\n</DIV>\n</DIV>\n"
+            }
+
+        return s1 || s
         }
-     return s1 || s
-     }
+
 end
 
 # <p>
@@ -877,23 +880,23 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure checkSpecial(s, keyMap)
-   local ns
-   static cMap      # map of UniDoc special comments fields for sbal()
-   initial {
-      cMap := table()
-      cMap["<["] := "]>"
-      }
-   ns := ""
-   s ? {
-      while ns ||:= tab(find("<[")) do {
-	 if not parseClause(sbal(cMap), keyMap) then {
-	    ns ||:= "&lt["
-	    }
-	 }
-      ns ||:= tab(0)
-      }
+    local ns
+    static cMap      # map of UniDoc special comments fields for sbal()
+    initial {
+        cMap := table()
+        cMap["<["] := "]>"
+        }
+    ns := ""
+    s ? {
+        while ns ||:= tab(find("<[")) do {
+            if not parseClause(sbal(cMap), keyMap) then {
+                ns ||:= "&lt;["
+                }
+            }
+        ns ||:= tab(0)
+        }
 
-   return ns
+    return ns
 end
 
 # <p>
@@ -905,40 +908,40 @@ end
 #  comment fields.
 # </p>
 procedure parseClause(s, kMap)
-   local t
-   t := map(s)
-   s ? {
-      if match("<[throw",t) then {
-	 ="<[" & tab(many(&letters))
-	 /kMap["throws"] := []
-	 put(kMap["throws"], parseThrows(tab(find("]>"))))
-	 return
-	 }
-      else if match("<[generate",t) then {
-	 ="<[" & tab(many(&letters))
-	 /kMap["generates"] := []
-	 put(kMap["generates"], parseGenerates(tab(find("]>"))))
-	 return
-	 }
-      else if match("<[return",t) then {
-	 ="<[" & tab(many(&letters))
-	 /kMap["returns"] := []
-	 put(kMap["returns"], parseReturns(tab(find("]>"))))
-	 return
-	 }
-      else if match("<[fail",t) then {
-	 ="<[" & tab(many(&letters))
-	 /kMap["fails"] := []
-	 put(kMap["fails"], parseFails(tab(find("]>"))))
-	 return
-	 }
-      else if match("<[param",t) then {
-	 ="<[" & tab(many(&letters))
-	 /kMap["params"] := []
-	 put(kMap["params"], parseParams(tab(find("]>"))))
-	 return
-	 }
-      }
+    local t
+    t := map(s)
+    s ? {
+        if match("<[throw",t) then {
+            ="<[" & tab(many(&letters))
+            /kMap["throws"] := []
+            put(kMap["throws"], parseThrows(tab(find("]>"))))
+            return
+            }
+        else if match("<[generate",t) then {
+            ="<[" & tab(many(&letters))
+            /kMap["generates"] := []
+            put(kMap["generates"], parseGenerates(tab(find("]>"))))
+            return
+            }
+        else if match("<[return",t) then {
+            ="<[" & tab(many(&letters))
+            /kMap["returns"] := []
+            put(kMap["returns"], parseReturns(tab(find("]>"))))
+            return
+            }
+        else if match("<[fail",t) then {
+            ="<[" & tab(many(&letters))
+            /kMap["fails"] := []
+            put(kMap["fails"], parseFails(tab(find("]>"))))
+            return
+            }
+        else if match("<[param",t) then {
+            ="<[" & tab(many(&letters))
+            /kMap["params"] := []
+            put(kMap["params"], parseParams(tab(find("]>"))))
+            return
+            }
+        }
 end
 
 # <p>
@@ -946,21 +949,22 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure parseThrows(s)
-   local ns
-   static ws
-   initial ws := ' \t'
+    local ns
+    static ws
+    initial ws := ' \t'
 
-   ns := ""
-   s ? {
-      tab(many(ws))
-      ns ||:= "\t<tr valign=TOP><td><div class=\"indented\"><tt>" ||
-              tab(upto(ws)|0)                          ||
-              "</tt></div></td>"
-      if not pos(0) then {
-	 ns ||:= "<td><div class=\"indented\">"||tab(0)||"</div></td>"
-	 }
-      return ns || "</tr>"
-      }
+    ns := ""
+    s ? {
+        tab(many(ws))
+        ns ||:= "\t<tr valign=TOP><td><div class=\"indented\"><tt>" ||
+                tab(upto(ws)|0)                          ||
+                "</tt></div></td>"
+        if not pos(0) then {
+            ns ||:= "<td><div class=\"indented\">"||tab(0)||"</div></td>"
+            }
+        return ns || "</tr>"
+        }
+
 end
 
 # <p>
@@ -968,21 +972,22 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure parseParams(s)
-   local ns
-   static ws
-   initial ws := ' \t'
+    local ns
+    static ws
+    initial ws := ' \t'
 
-   ns := ""
-   s ? {
-      tab(many(ws))
-      ns ||:= "\t<tr valign=TOP><td><div class=\"indented\"><tt>" ||
-              tab(upto(ws)|0)                          ||
-              "</tt></div></td>"
-      if not pos(0) then {
-	 ns ||:= "<td><div class=\"indented\">"||tab(0)||"</div></td>"
-	 }
-      return ns || "</tr>"
-      }
+    ns := ""
+    s ? {
+        tab(many(ws))
+        ns ||:= "\t<tr valign=TOP><td><div class=\"indented\"><tt>" ||
+                tab(upto(ws)|0)                          ||
+                "</tt></div></td>"
+        if not pos(0) then {
+            ns ||:= "<td><div class=\"indented\">"||tab(0)||"</div></td>"
+            }
+        return ns || "</tr>"
+        }
+
 end
 
 # <p>
@@ -990,7 +995,7 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure parseGenerates(s)
-   return "\t<tr valign=TOP><td><div class=\"indented\">"||s||"</div></td></tr>"
+    return "\t<tr valign=TOP><td><div class=\"indented\">" || s || "</div></td></tr>"
 end
 
 # <p>
@@ -998,7 +1003,7 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure parseReturns(s)
-   return "\t<tr valign=TOP><td><div class=\"indented\">" || s || "</div></td></tr>"
+    return "\t<tr valign=TOP><td><div class=\"indented\">" || s || "</div></td></tr>"
 end
 
 # <p>
@@ -1006,7 +1011,7 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure parseFails(s)
-   return "\t<tr valign=TOP><td><div class=\"indented\">" || s || "</div></td></tr>"
+    return "\t<tr valign=TOP><td><div class=\"indented\">" || s || "</div></td></tr>"
 end
 
 # <p>
@@ -1015,14 +1020,14 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure outputHeading(page, label, fSize, bColor)
-   /fSize  := "+2"
-   /bColor := "#ccccff"
-   write(page, "<table border=\"1\" cellpadding=\"3\" ",
-                      "cellspacing=\"0\" width=\"100%\">")
-   write(page, "<tr bgcolor=\"",bColor,"\">")
-   write(page, "<td colspan=1><font size=\"",fSize,"\">")
-   write(page, "<b>", label, "</b></font></td>")
-   write(page, "</tr></table>")
+    /fSize  := "+2"
+    /bColor := "#ccccff"
+    write(page, "<table border=\"1\" cellpadding=\"3\" ",
+                       "cellspacing=\"0\" width=\"100%\">")
+    write(page, "<tr bgcolor=\"",bColor,"\">")
+    write(page, "<td colspan=1><font size=\"",fSize,"\">")
+    write(page, "<b>", label, "</b></font></td>")
+    write(page, "</tr></table>")
 end
 
 # <p>
@@ -1030,32 +1035,32 @@ end
 #  processing by replacing them with their HTML equivalents.
 # </p>
 procedure protectLine(s)
-   static hMap
-   initial {
-      hMap := table()
-      hMap["&"] := "&amp;"
-      hMap["<"] := "&lt;"
-      hMap[">"] := "&gt;"
-      }
-   return Utils::replaceStrs(s, hMap)
+    static hMap
+    initial {
+        hMap := table()
+        hMap["&"] := "&amp;"
+        hMap["<"] := "&lt;"
+        hMap[">"] := "&gt;"
+        }
+    return util::replaceStrs(s, hMap)
 end
 
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure openStdHtmlFile(path, name, mode)
-   local fName, dName, f
+    local fName, dName, f
 
-   dirFlag := &null        # assume not in subdirectory
+    dirFlag := &null        # assume not in subdirectory
 
-   /mode := "w"
-   fName := path || "/" || name
-   if upto('w', mode) then {   # Make sure directory path exists
-      makeDirPath(fName)
-      if isSubDir(name) then dirFlag := "yes"  # assumption was wrong
-      }
-   f := open(fName, mode) | stop("Cannot open '",fName,"'!:\n")
-   return f
+    /mode := "w"
+    fName := path || "/" || name
+    if upto('w', mode) then {   # Make sure directory path exists
+        makeDirPath(fName)
+        if isSubDir(name) then dirFlag := "yes"  # assumption was wrong
+        }
+    f := open(fName, mode) | stop("Cannot open '",fName,"'!:\n")
+    return f
 end
 
 # <p>
@@ -1063,7 +1068,7 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure isSubDir(fName)
-   return upto('/', fName)
+    return upto('/', fName)
 end
 
 # <p>
@@ -1071,12 +1076,12 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure makeDirPath(fName)
-   reverse(fName) ? {
-      if tab(upto('/')) then {
-	 mkdir(reverse(tab(0)))
-	 }
-      }
-   return
+    reverse(fName) ? {
+        if tab(upto('/')) then {
+            mkdir(reverse(tab(0)))
+            }
+        }
+    return
 end
 
 
@@ -1085,7 +1090,7 @@ end
 # </p>
 # <i>This is intended for internal use only!</i>
 procedure pageTop(page)
-   write(page, "<body bgcolor=\"#ffffff\">")
+    write(page, "<body bgcolor=\"#ffffff\">")
 end
 
 # <p>
@@ -1094,34 +1099,35 @@ end
 # </p>
 # <i>This is intended for internal use only!</i>
 procedure pageBottom(page, sFlag)
-   if /sFlag then {
-      write(page, "<hr>",
-	    "<font size=\"-4\">",
-	    "<i>This page produced by <b>UniDoc</b></i>.",
-	    "</font>")
-      }
-   write(page, "</body>")
+    if /sFlag then {
+        write(page, "<hr>",
+                "<font size=\"-4\">",
+                "<i>This page produced by <b>UniDoc</b> on ",
+                &date," @ ",&clock,"</i>.",
+                "</font>")
+        }
+    write(page, "</body>")
 end
 
 # <p>
 # Output a source code file as an HTML document.
 # </p>
 procedure writeSrcFile(targetDir, uFile)
-   local tName
+    local tName
 
-   fName := uFile.getFilename()
-   tName := delSuffix(fName, ".icn") || ".html"
-   if page := openStdHtmlFile(targetDir, "src_"||tName, "w") then {
-      write(page, "<html>")
-      write(page, "<head>")
-      write(page, "<title>",fName," - source code","</title>")
-      write(page, "</head>")
-      pageTop(page)
-      outputHeading(page, "Source file "||fName, "+6")
-      write(page, "<pre>")
-      every writes(page, uFile.getSrc())
-      write(page, "</pre>")
-      pageBottom(page)
-      close(page)
-      }
+    fName := uFile.getFilename()
+    tName := delSuffix(fName, ".icn") || ".html"
+    if page := openStdHtmlFile(targetDir, "src_"||tName, "w") then {
+        write(page, "<html>")
+        write(page, "<head>")
+        write(page, "<title>",fName," - source code","</title>")
+        write(page, "</head>")
+        pageTop(page)
+        outputHeading(page, "Source file "||fName, "+6")
+        write(page, "<pre>")
+        every writes(page, uFile.getSrc())
+        write(page, "</pre>")
+        pageBottom(page)
+        close(page)
+        }
 end

@@ -274,7 +274,6 @@ SO=so
 # OS specific flags go here
 case $unicon_host in
      *linux*)
-      AC_CFLAG([-fno-unit-at-a-time])
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "

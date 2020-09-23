@@ -1,27 +1,87 @@
 name: Build
 on:
   push:
+    branches:
+      - master
+      - ci
     paths-ignore:
     - 'docs/**'
 
   pull_request:
     branches:
       - master
+      - ci
+    paths-ignore:
+    - 'docs/**'
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  Windows:
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
     strategy:
       matrix:
-        os: [macOS-latest, windows-latest, ubuntu-latest]
-
+        cfg:
+        -  { os: windows-latest,  name: 'Windows 64',   opt: '' }
+        #-  { os: windows-latest,  name: 'Windows 32',   opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
     steps:
-    - uses: actions/checkout@v1
-    - name: configure
-      run: sh configure
-    - name: make
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure
+      run: sh configure  ${{ matrix.cfg.opt }}
+
+    - name: Make
       run: make
-    - name: test
+
+    - name: Test
       run: make Test
 
+  macOs:
+    runs-on: macos-latest
+    steps:
 
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure
+      run: ./configure
+
+    - name: Make
+      run: make
+
+    - name: Test
+      run: make Test
+
+  Ubuntu:
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
+    strategy:
+      matrix:
+        cfg:
+        -  { os: ubuntu-16.04,  name: 'Ubuntu 16.04',   opt: '' }
+        -  { os: ubuntu-18.04,  name: 'Ubuntu 18.04',   opt: '' }
+        -  { os: ubuntu-20.04,  name: 'Ubuntu 20.04',   opt: '' }
+        -  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
+        -  { os: ubuntu-latest, name: 'clang',          opt: 'CC=clang CXX=clang' }
+        -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics' }
+        -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency' }
+        -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib g++-multilib
+        sudo apt-get install -y build-essential fakeroot devscripts equivs
+        sudo mk-build-deps --install debian/control
+
+    - name: Configure
+      run: ./configure ${{ matrix.cfg.opt }}
+
+    - name: Make
+      run: make
+
+    - name: Test
+      run: make Test

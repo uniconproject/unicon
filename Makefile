@@ -344,7 +344,7 @@ update_rev:
 	   echo "#define REPO_REVISION \"0\"" > src/h/revision.h; \
 	fi
 
-MV=2
+MV=3
 VV=13.1.$(MV)
 UTAR=unicon-$(VV).tar.gz
 UTARORIG=unicon_$(VV).orig.tar.gz
@@ -379,10 +379,14 @@ deb: dist
 debin: deb
 	cd ../$(udist)/unicon-$(VV) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
 	@echo "  Did we get : ../$(udist)/unicon-$(VV).deb"
+	ls -lh ../$(udist)/unicon-$(VV).deb
+
+
 
 debsrc: deb
 	cd ../$(udist)/unicon-$(VV) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
 	@echo "  Did we get : ../$(udist)/unicon-$(VV).deb"
+	ls -lh ../$(udist)/unicon-$(VV).deb
 
 debsign:
 	cd ../$(udist) && debsign unicon_$(VV)-1_amd64.changes  $(SIGNOPT)
@@ -408,16 +412,19 @@ rpmbin: rpm
 	cd ../$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
 	@ls ../$(rpmdir)/RPMS/
 	@echo "  Did we get : ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm"
+	ls -lh ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm
 
 rpmresume: rpm
 	cd ../$(rpmdir) &&  rpmbuild -bi --short-circuit unicon.spec
 	@ls ../$(rpmdir)/RPMS/
 	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*rpm"
+	ls -lh ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm
 
 rpmsrc:
 	cd ../$(rpmdir) &&  rpmbuild -bs unicon.spec
 	@ls ../$(rpmdir)/SRPMS/
 	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*.src.rpm"
+	ls -lh ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm
 
 
 ##################################################################

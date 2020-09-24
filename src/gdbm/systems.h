@@ -162,7 +162,7 @@
 #if HAVE_FTRUNCATE
 #define TRUNCATE(dbf) ftruncate (dbf->desc, 0)
 #else
-#define TRUNCATE(dbf) close( open (dbf->name, O_RDWR|O_TRUNC, mode));
+#define TRUNCATE(dbf) close( open (dbf->name, O_RDWR|O_TRUNC, mode))
 #endif
 
 /* Do we have 32bit or 64bit longs? */

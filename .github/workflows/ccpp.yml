@@ -74,7 +74,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y gcc-multilib g++-multilib
-        sudo apt-get install -y build-essential fakeroot devscripts equivs
+        sudo apt-get install -y build-essential fakeroot devscripts equivs dh-autoreconf
         sudo mk-build-deps --install debian/control
 
     - name: Configure
@@ -86,5 +86,13 @@ jobs:
     - name: Test
       run: make Test
 
-    - name: deb
-      run: make debin
+    - name: Deb
+      run: |
+        make debin
+        cp ../unicondist/unicon-13.1.2.deb .
+
+    - name: Publish
+      uses: actions/upload-artifact@v2
+      with:
+        name: unicon-deb-${{ matrix.cfg.name}}
+        path: unicon-13.1.2.deb

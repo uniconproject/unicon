@@ -210,6 +210,8 @@ AC_CFLAG([-fno-omit-frame-pointer])
 
 AC_CFLAG([-fno-strict-aliasing])
 
+AC_CFLAG([-Wno-parentheses-equality])
+
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces])

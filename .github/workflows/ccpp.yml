@@ -80,19 +80,17 @@ jobs:
     - name: Configure
       run: ./configure ${{ matrix.cfg.opt }}
 
-    - name: Make
-      run: make
-
-    - name: Test
-      run: make Test
-
     - name: Deb
       run: |
         make debin
-        cp ../unicondist/unicon-13.1.2.deb .
+        cp ../unicondist/unicon-13.*.deb .
 
     - name: Publish
       uses: actions/upload-artifact@v2
       with:
         name: unicon-deb-${{ matrix.cfg.name}}
-        path: unicon-13.1.2.deb
+        path: unicon-13.*.deb
+
+    - name: Test
+      run: make Test
+

@@ -296,8 +296,8 @@ case $unicon_host in
        DNT="-DNT"
        SO=dll
        DASHG="-G"
-       LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
-       CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+       LDFLAGS="$LDFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+       CPPFLAGS="$CPPFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        LIBS="$LIBS -lgdi32 -lws2_32"
 
        WSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"

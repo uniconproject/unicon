@@ -21,8 +21,8 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: windows-latest,  name: 'Windows 64',   opt: '' }
-        #-  { os: windows-latest,  name: 'Windows 32',   opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
+        -  { os: windows-latest,  name: 'Windows 64-bit',  opt: '' }
+        #-  { os: windows-latest,  name: 'Windows 32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -65,7 +65,7 @@ jobs:
         -  { os: ubuntu-latest, name: 'clang',          opt: 'CC=clang CXX=clang' }
         -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics' }
         -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency' }
-        -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
+        #-  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -85,3 +85,6 @@ jobs:
 
     - name: Test
       run: make Test
+
+    - name: deb
+      run: make debin

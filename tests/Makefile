@@ -1,7 +1,9 @@
 #  Makefile for testing Icon
 
 E=/bin/echo
-UC=../bin/unicon
+
+# define UC if it is not defined already
+UC?=../bin/unicon
 
 TESTS=general posix thread pattern mt
 

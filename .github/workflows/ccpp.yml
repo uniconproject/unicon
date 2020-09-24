@@ -58,7 +58,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: ubuntu-16.04,  name: 'Ubuntu 16.04',   opt: '' }
+        #-  { os: ubuntu-16.04,  name: 'Ubuntu 16.04',   opt: '' }
         -  { os: ubuntu-18.04,  name: 'Ubuntu 18.04',   opt: '' }
         -  { os: ubuntu-20.04,  name: 'Ubuntu 20.04',   opt: '' }
         -  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
@@ -83,13 +83,16 @@ jobs:
     - name: Deb
       run: |
         make debin
-        cp ../unicondist/unicon-13.*.deb .
+        cp ../unicondist/unicon_*.* .
 
     - name: Publish
       uses: actions/upload-artifact@v2
       with:
         name: unicon-deb-${{ matrix.cfg.name}}
-        path: unicon-13.*.deb
+        path: unicon_*.*
+
+    - name: Install
+      run: sudo apt install ./*.deb
 
     - name: Test
       run: make Test

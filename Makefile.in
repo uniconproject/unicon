@@ -378,15 +378,13 @@ deb: dist
 
 debin: deb
 	cd ../$(udist)/unicon-$(VV) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
-	@echo "  Did we get : ../$(udist)/unicon-$(VV).deb"
-	ls -lh ../$(udist)/unicon-$(VV).deb
+	ls -lh ../$(udist)/unicon_*.*
 
 
 
 debsrc: deb
 	cd ../$(udist)/unicon-$(VV) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
-	@echo "  Did we get : ../$(udist)/unicon-$(VV).deb"
-	ls -lh ../$(udist)/unicon-$(VV).deb
+	ls -lh ../$(udist)/unicon_*.*
 
 debsign:
 	cd ../$(udist) && debsign unicon_$(VV)-1_amd64.changes  $(SIGNOPT)

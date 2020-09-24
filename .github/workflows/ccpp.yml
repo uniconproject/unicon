@@ -21,8 +21,8 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: windows-latest,  name: 'Windows 64',   opt: '' }
-        #-  { os: windows-latest,  name: 'Windows 32',   opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
+        -  { os: windows-latest,  name: 'Windows 64-bit',  opt: '' }
+        #-  { os: windows-latest,  name: 'Windows 32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -58,14 +58,14 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: ubuntu-16.04,  name: 'Ubuntu 16.04',   opt: '' }
+        #-  { os: ubuntu-16.04,  name: 'Ubuntu 16.04',   opt: '' }
         -  { os: ubuntu-18.04,  name: 'Ubuntu 18.04',   opt: '' }
         -  { os: ubuntu-20.04,  name: 'Ubuntu 20.04',   opt: '' }
         -  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
         -  { os: ubuntu-latest, name: 'clang',          opt: 'CC=clang CXX=clang' }
         -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics' }
         -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency' }
-        -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
+        #-  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -74,14 +74,26 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y gcc-multilib g++-multilib
-        sudo apt-get install -y build-essential fakeroot devscripts equivs
+        sudo apt-get install -y build-essential fakeroot devscripts equivs dh-autoreconf
         sudo mk-build-deps --install debian/control
 
     - name: Configure
       run: ./configure ${{ matrix.cfg.opt }}
 
-    - name: Make
-      run: make
+    - name: Deb
+      run: |
+        make debin
+        cp ../unicondist/unicon_*.* .
+
+    - name: Publish
+      uses: actions/upload-artifact@v2
+      with:
+        name: unicon-deb-${{ matrix.cfg.name}}
+        path: unicon_*.*
+
+    - name: Install
+      run: sudo apt install ./*.deb
 
     - name: Test
       run: make Test
+

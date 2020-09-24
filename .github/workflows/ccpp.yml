@@ -16,13 +16,19 @@ on:
 
 jobs:
   Windows:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
+    strategy:
+      matrix:
+        cfg:
+        -  { os: windows-latest,  name: 'Windows 64',   opt: '' }
+        -  { os: windows-latest,  name: 'windows 32',   opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32 --disable-graphics' }
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
     - name: Configure
-      run: sh configure
+      run: sh configure  ${{ matrix.cfg.opt }}
 
     - name: Make
       run: make

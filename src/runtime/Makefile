@@ -1,4 +1,4 @@
-#  Makefile for the (Un)Icon run-time system.
+#  test Makefile for the (Un)Icon run-time system.
 
 include ../../Makedefs
 

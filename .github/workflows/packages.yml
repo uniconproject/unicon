@@ -1,0 +1,53 @@
+name: Binary Packages
+on:
+  push:
+    branches:
+      - master
+      - ci
+    paths-ignore:
+    - 'docs/**'
+
+jobs:
+  Ubuntu:
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
+    strategy:
+      matrix:
+        cfg:
+        #-  { os: ubuntu-16.04,  name: 'Ubuntu-16.04_amd64',   opt: '' }
+        -  { os: ubuntu-18.04,  name: 'Ubuntu-18.04_amd64',   opt: '' }
+        -  { os: ubuntu-20.04,  name: 'Ubuntu-20.04_amd64',   opt: '' }
+        -  { os: ubuntu-20.04, name: 'Ubuntu-20.04_x86',  opt: '--host=i686-pc-linux-gnu' }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib g++-multilib
+        sudo apt-get install -y build-essential fakeroot devscripts equivs dh-autoreconf
+        sudo mk-build-deps --install debian/control
+
+    - name: Configure
+      run: ./configure ${{ matrix.cfg.opt }}
+
+    - name: Deb
+      run: |
+        make debin
+        cp ../unicondist/unicon_*.* .
+
+    - name: Publish
+      uses: actions/upload-artifact@v2
+      with:
+        name: unicon-${{ matrix.cfg.name}}
+        path: unicon_*.*
+
+    - name: Install
+      run: sudo apt install ./*.deb
+
+    - name: Test
+      run: make Test
+      env:
+        UC: unicon

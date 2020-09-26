@@ -189,13 +189,13 @@ class UniAll : Object (files, packages,
     end
 
     #<p>
-    # Given a string of space-separated directories, generates the
+    # Given a string of comma-separated directories, generates the
     # individual directories from that string.  Guarantees that
     # each directory produced ends with "/".
     #</p>
     # <i>This is intended for internal use only!</i>
     method genDirs(s)
-        suspend trim(genFields(s),"/\\")||"/"
+        suspend trim(genFields(s,','),"/\\")||"/"
     end
 
     #<p>
@@ -943,6 +943,23 @@ class UniAll : Object (files, packages,
         return clist
     end
 
+    method locatePack(pName)
+        every dir := !linkPath do {
+            d := open(dir) | next
+            every cf := !d do {
+                #  Note that this is a best guess effort: it may fail, or
+                #   worse find wrong package!
+                fName := "pack_"||pName||".html"
+                if fName == cf then {
+                   return (close(d), dir||"/"||fName)
+                   }
+                }
+            close(d)
+            }
+        # Give up
+        return "pack_"||fixName(pName)||".html"  # Placeholder code
+    end
+
     # <p>
     # Given the name of a class, attempts to find an existing
     # html page for that class, by searching the <b>linkPath</b>.
@@ -951,20 +968,29 @@ class UniAll : Object (files, packages,
     method classOnLinkPath(bClass, cName)
         local pName
 
-        # great idea, but generates wrong name (need source file
-        #   for class, not the package name!)  Leave in for
-        #   now because it's no worse than anything else.
-        #
-        cName ? {
-            if pName := tabSkip("::"|"__") then {
-                if pName == "" then pName := "0main"
-                cName := tab(0)
-                return "class_"||pName||"_"||cName
-                }
-            }
+        imps := curFile.getImportNames()
+        every dir := !linkPath do {
+            d := open(dir) | next
+            every cf := !d do {
+                # Start by hoping it's a full class name (with package)
+                cName ? {
+                    if pName := tabSkip("::"|"__") then {
+                        if pName == (""|"(main)") then pName := "0main"
+                        cName := tab(0)
+                        return dir||"/class_"||pName||"_"||cName||".html"
+                        }
+                    }
 
-        # Don't know how to write the rest because can't determine
-        #   the package for a class from the class name yet!
+                #  Have to check imports next.
+                #  Note that this is a best guess effort: it may fail, or
+                #   worse find the class in the wrong package!
+                every pName := ("0main" | !\imps) do {
+                    fName := "class_"||pName||"_"||cName||".html"
+                    if fName == cf then return (close(d), dir||"/"||fName)
+                    }
+                }
+            close(d)
+            }
     end
 
     # <p>
@@ -977,7 +1003,7 @@ class UniAll : Object (files, packages,
         # If the superclass name tells us the package, use that.
         scName ? {
             if pName := tabSkip("::"|"__") then {
-                if pName := "" then pName := "(main)"
+                if pName == (""|"(main)") then pName := "0main"
                 scName := tab(0)
                 if \(p := packages[pName]) then {
                     sc := p.getClass(scName)

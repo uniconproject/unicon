@@ -50,7 +50,8 @@
 # <tr>
 # <td valign=top align=left><tt><b>--linkPath=PATH</b>  </tt></td>
 # <td valign=top >-- where to look for existing HTML files for entities that
-#                    can't be found in source files.
+#                    can't be found in source files.  This is a
+#                    <b>comma</b>-separated list of directories.
 #                    <b><i>Not yet implemented</i></b>
 #                    </td>
 # </tr>
@@ -141,9 +142,10 @@ procedure main(args)
     local uniAll, html
 
     if *args = 0 then helpMesg()
+    Args(args)
 
     uniAll := UniAll()
-    processArgs(args, uniAll)
+    processArgs(uniAll)
     uniAll.dumpStatistics("yes")
 
     html := UniHTML(title, uniAll, targetDir, indexFile, linkPath, debug)
@@ -154,39 +156,35 @@ end
 # <p>
 # Process the arguments, passing flags as appropriate to parser.
 # </p>
-procedure processArgs(args, # Command line arguments
-                      uniAll # Unicon parser (instance of <tt>UniAll</tt>)
+procedure processArgs(uniAll # Unicon parser (instance of <tt>UniAll</tt>)
                      )
     local arg
 
     indexFile := "index.html"
     targetDir := "./htmlDoc"
     # Some parameters are global, find them now.
-    linkPath  := zapPrefix(!args, "--linkPath=")
-    indexFile := zapPrefix(!args, "--indexFile=")
-    title     := zapPrefix(!args, "--title=")
+    title     := Args().getOpt("title", "Generated API Docs")
+    indexFile := Args().getOptDef("indexFile","index.html")
+    linkPath  := []	# Default situation (no --linkPath option)
+    linkPath  := [: genFields(\(Args().getOptDef("linkPath")),",") :]
+    uniAll.setSourcePath(Args().getOptDef("sourcePath"))
+    uniAll.setTargetDir(targetDir := Args().getOptDef("targetDir"))
 
-
-    while arg := ::get(args) do {
-        if match("--",arg) then {
-            case arg of {
-                "--help"     : helpMesg()
-                "--resolve"  : uniAll.fullyResolve("yes")
-                "--noresolve": uniAll.fullyResolve("no")
-                "--debug"    : debug := "yes"
-                "--nodebug"  : debug := &null
-                "--linkSrc"  : uniAll.setSaveSrc("yes")
-                "--nolinkSrc": uniAll.setSaveSrc()
-                }
-            uniAll.setSourcePath(zapPrefix(arg, "--sourcePath="))
-            targetDir := zapPrefix(!args, "--targetDir=")
-            uniAll.setTargetDir(targetDir)
-            }
-        else {
-            uniAll.processFile(arg)
+    every opt := Args().genOptNames() do {
+        case opt of {
+            "help"     : helpMesg()
+            "resolve"  : uniAll.fullyResolve("yes")
+            "noresolve": uniAll.fullyResolve("no")
+            "debug"    : debug := "yes"
+            "nodebug"  : debug := &null
+            "linkSrc"  : uniAll.setSaveSrc("yes")
+            "nolinkSrc": uniAll.setSaveSrc()
             }
         }
 
+    every arg := Args().genArgs() do {
+            uniAll.processFile(arg)
+            }
 end
 
 # <p>

@@ -1,4 +1,4 @@
-#!/bin/zsh -f
+#!/bin/sh
 
 # Build and install the IPL documentation
 
@@ -6,7 +6,10 @@
 UBASE=../..
 SBASE=${UBASE}/ipl
 TBASE=${UBASE}/doc/ipl-api
-DIRS=(procs gprocs mprocs progs gprogs mprogs)
+DIRS="procs gprocs mprocs progs gprogs mprogs"
+# SDIRS and LDIRS are comma-separated lists
+#  (This script doesn't use LDIRS
+SDIRS="${UBASE}/ipl/procs"
 basetitle="Unicon IPL API"
 
 cdir=$(pwd)
@@ -19,7 +22,8 @@ for dir in ${DIRS}; do
      TD=${TBASE}/${dir}
      mkdir -p ${TD}
      cd ${SD}
-     UniDoc --title="${title}" --resolve --linkSrc --targetDir=${TD} *.icn
+     UniDoc --title=\"${title}\" --resolve \
+            --sourcePath=${SDIRS} --linkSrc --targetDir=${TD} *.icn
      echo
      echo
      echo

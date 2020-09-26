@@ -537,14 +537,15 @@ class UniHTML : Object (title, idoc, baseDir, mainIndex, linkPath,
                     return "file_"||delSuffix(bName, ".icn")||".html"
                     }
             "UniDoc::UClass"      : {
-                    pName := obj.getParent().getName()
+                    pName := fixName(obj.getPackage().getName())
                     pName := "class_"||delSuffix(pName,".icn")
-                    return pName||"_"||fixName(bName)||".html"
+                    return pName||"_"||bName||".html"
                     }
-            "UniDoc::UImport"     |
+            "UniDoc::UImport"     : {
+                    return idoc.locatePack(bName)
+                    }
             "UniDoc::UPackage"    : {
-                    pName := "pack_"
-                    return pName||fixName(bName)||".html"
+                    return "pack_"||fixName(bName)||".html"
                     }
             "UniDoc::UProc"       |
             "UniDoc::URecord"     |
@@ -564,7 +565,7 @@ class UniHTML : Object (title, idoc, baseDir, mainIndex, linkPath,
                         else {
                             # See if there's already an HTML page for it!
                             if pName := idoc.classOnLinkPath(p, bName) then {
-                                return pName||".html";
+                                return pName;
                                 }
                             write("can't find: ",bName)
                             }
@@ -614,7 +615,7 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure adjustDir(fName)
-   if \dirFlag & not match("../", fName) then {
+   if \dirFlag & not match("../"|"/", fName) then {
        fName := "../"||fName
        }
    return fName

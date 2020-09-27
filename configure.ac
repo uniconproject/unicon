@@ -210,6 +210,8 @@ AC_CFLAG([-fno-omit-frame-pointer])
 
 AC_CFLAG([-fno-strict-aliasing])
 
+AC_CFLAG([-Wno-parentheses-equality])
+
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces])
@@ -274,7 +276,6 @@ SO=so
 # OS specific flags go here
 case $unicon_host in
      *linux*)
-      AC_CFLAG([-fno-unit-at-a-time])
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
@@ -297,8 +298,8 @@ case $unicon_host in
        DNT="-DNT"
        SO=dll
        DASHG="-G"
-       LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
-       CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+       LDFLAGS="$LDFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+       CPPFLAGS="$CPPFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        LIBS="$LIBS -lgdi32 -lws2_32"
 
        WSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"

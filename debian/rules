@@ -4,13 +4,10 @@
 export DH_VERBOSE = 1
 export DH_OPTIONS = -v
 
-# Don't deal with any files in the .svn directory
-export DH_ALWAYS_EXCLUDE=CVS:.svn
+# Don't deal with any files in the revision control directory
+export DH_ALWAYS_EXCLUDE=CVS:.git
 
-# see FEATURE AREAS in dpkg-buildflags(1)
-#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-# see ENVIRONMENT in dpkg-buildflags(1)
 # package maintainers to append CFLAGS
 #export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
 # package maintainers to append LDFLAGS
@@ -24,17 +21,15 @@ DEB_CONFIGURE_EXTRA_FLAGS += --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)
 %:
 	dh $@  --with autoreconf --with autotools-dev
 
-# Override configure to pass autoconf the configuration options that we want
+# Unicon build configuration
 override_dh_auto_configure:
 	dh_auto_configure -- --prefix=/usr --mandir=/usr/share/man --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) --enable-verbosebuild
-
-#--enable-verbosebuild
 
 
 #override_dh_installinit:
 #	dh_installinit --no-start
 
-# Override install
+# Do we need to custmoize the install?
 #override_dh_auto_install:
 #	dh_auto_install
 
@@ -42,13 +37,5 @@ override_dh_auto_configure:
 # for manually installed dependencies
 override_dh_shlibdeps:
 	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
-
-# dh_make generated override targets
-# This is example for Cmake (See https://bugs.debian.org/641051 )
-#override_dh_auto_configure:
-#	dh_auto_configure -- #	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
-
-#override_dh_gencontrol:
-#	dh_gencontrol -- -Tsubstvars
 
 

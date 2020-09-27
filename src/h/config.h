@@ -58,8 +58,6 @@
 #if MacOS
 //#define COpts "-I/usr/X11R6/include"
 
-#define NoLIBZ
-
 #define NamedSemaphores
 #define INTMAIN
 #define PROFIL_CHAR_P

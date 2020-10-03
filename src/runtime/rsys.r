@@ -365,9 +365,9 @@ FILE *fd;
    word pos = ftell(fd);
 #endif					/* NT_FIXFTELL */
 
-#ifdef XWindows
+#if defined(XWindows) && !defined(MacOS)
    if (isatty(fileno(fd))) wflushall();
-#endif					/* XWindows */
+#endif					/* XWindows && !MacOS */
 
    while (len > 0) {
       n = gzread(fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));

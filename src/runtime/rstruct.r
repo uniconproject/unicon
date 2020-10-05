@@ -26,41 +26,102 @@ void cpslots(dptr dp1, dptr slotptr, word i, word j)
    {
    word size;
    struct b_list *lp1; /* these were tended, but I see no allocations here */
-   struct b_lelem *bp1;
    /*
     * Get pointers to the list and list elements for the source list
     *  (bp1, lp1).
     */
    lp1 = BlkD(*dp1, List);
-   bp1 = Blk(lp1->listhead, Lelem);
    size = j - i;
 
-   /*
-    * Locate the block containing element i in the source list.
-    */
-   if (size > 0) {
-      while (i > bp1->nused) {
-         i -= bp1->nused;
-         bp1 = (struct b_lelem *) bp1->listnext;
-         }
+   switch (lp1->listhead->Lelem.title) {
+   case T_Lelem: {
+
+      struct b_lelem *bp1;
+
+      bp1 = Blk(lp1->listhead, Lelem);
+
+      /*
+       * Locate the block containing element i in the source list.
+       */
+      if (size > 0) {
+	 while (i > bp1->nused) {
+	    i -= bp1->nused;
+	    bp1 = (struct b_lelem *) bp1->listnext;
+	 }
       }
 
-   /*
-    * Copy elements from the source list into the sublist, moving to
-    *  the next list block in the source list when all elements in a
-    *  block have been copied.
-    */
-   while (size > 0) {
-      j = bp1->first + i - 1;
-      if (j >= bp1->nslots)
-         j -= bp1->nslots;
-      *slotptr++ = bp1->lslots[j];
-      if (++i > bp1->nused) {
-         i = 1;
-         bp1 = (struct b_lelem *) bp1->listnext;
+      /*
+       * Copy elements from the source list into the sublist, moving to
+       *  the next list block in the source list when all elements in a
+       *  block have been copied.
+       */
+      while (size > 0) {
+	 j = bp1->first + i - 1;
+	 if (j >= bp1->nslots)
+	   j -= bp1->nslots;
+	 *slotptr++ = bp1->lslots[j];
+	 if (++i > bp1->nused) {
+	   i = 1;
+	   bp1 = (struct b_lelem *) bp1->listnext;
+           }
+         size--;
          }
-      size--;
-      }
+      break;
+      } // case T_Lelem
+   case T_Intarray: {
+
+      struct b_intarray *ap = (struct b_intarray *) lp1->listhead;
+      int ndims;
+      word k;
+
+      ndims = (ap->dims?
+               ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +sizeof(word)) /
+                sizeof(word))
+               : 1);
+      i--; // ith element is slot back
+      if (ndims==1){
+         for (k=0; k<size; k++){
+            MakeInt(ap->a[i++],&(slotptr[k]));
+            }
+         }
+      else {
+         // TODO: multi-dimensional
+         syserr("multi-dimensional arrays are not supported yet\n");
+         }
+      break;
+      } /* IntArray*/
+   case T_Realarray: {
+      struct b_realarray *ap = (struct b_realarray *) lp1->listhead;
+      int ndims;
+      word k;
+      ndims = (ap->dims ?
+               ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
+                 sizeof(word)) / sizeof(word))
+               : 1);
+      i--;  // ith element is slot back
+      if (ndims==1) {
+         for (k=0; i<size; k++) {
+#ifdef DescriptorDouble
+            slotptr[k].vword.realval = (double)ap->a[i++];
+#else                                   /* DescriptorDouble */
+            {
+            struct b_real *xp;
+            xp = alcreal((double)ap->a[i++]);
+            slotptr[k].vword.bptr = (union block *) xp;
+	    }
+#endif					/* DescriptorDouble */
+	    slotptr[k].dword = D_Real;
+	    }
+         } /* if (ndims==1) */
+     else {
+        // TODO: multi-dimensional
+        syserr("multi-dimensional arrays are not supported yet\n");
+        }
+      break;
+   } /* Realrray */
+   default:
+      syserr("impossible cpslots\n");
+   }
    }
 
 
@@ -1124,7 +1185,7 @@ union block *mkIArray(int x[], int n)
    tended struct b_intarray *ap;
 
    Protect(ap = (struct b_intarray *) alcintarray(n), return NULL);
-   /* consider whether memcpy() or similar would be faster here */
+   /* TODO: consider whether memcpy() or similar would be faster here */
    if (x != NULL)
       for(i=0; i<n; i++) ap->a[i] = x[i];
    return (union block *)alclisthdr(n, (union block *) ap);
@@ -1136,7 +1197,7 @@ union block *mkRArray(double x[], int n)
    tended struct b_realarray *ap;
 
    Protect(ap = (struct b_realarray *) alcrealarray(n), return NULL);
-   /* consider whether memcpy() or similar would be faster here */
+   /* TODO: consider whether memcpy() or similar would be faster here */
    if (x != NULL)
       for(i=0; i<n; i++) ap->a[i] = x[i];
    return (union block *)alclisthdr(n, (union block *) ap);
@@ -1184,10 +1245,10 @@ int arraytolist(struct descrip *arr)
       ndims = (ap->dims ?
 	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
 		 sizeof(word)) / sizeof(word))
-      : 1);
-      
+	       : 1);
+
       lsize = (ndims>1 ? ap->dims->Intarray.a[0] :
-       (ap->blksize - sizeof(struct b_realarray) + sizeof(double)) /
+	       (ap->blksize - sizeof(struct b_realarray) + sizeof(double)) /
 	       sizeof(double));
 
       Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return RunError );      

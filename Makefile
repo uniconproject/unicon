@@ -10,6 +10,8 @@ LPATH=
 REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD )"
 REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
 REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
+REPO_REV_DESCR="$(shell LC_ALL=C git describe --long HEAD)"
+REPO_REV_BRANCH="$(shell LC_ALL=C git branch --show-current)"
 
 SHELL=sh
 SHTOOL=./shtool
@@ -343,6 +345,13 @@ update_rev:
 	elif test ! -f src/h/revision.h ; then \
 	   echo "#define REPO_REVISION \"0\"" > src/h/revision.h; \
 	fi
+	@if test -z $(REPO_REV_DESCR) ; then \
+	   echo "#define gitDescription \"commit $(REPO_REV_HASH)\"" > src/h/build.h; \
+	else \
+	   echo "#define gitDescription \"$(REPO_REV_DESCR)\"" > src/h/build.h; \
+	fi
+	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> src/h/build.h;
+
 
 MV=3
 VV=13.1.$(MV)

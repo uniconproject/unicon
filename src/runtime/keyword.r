@@ -915,9 +915,16 @@ keyword{1} ucase
    constant 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 end
 
-"&version - a string indentifying this version of Icon."
-keyword{1} version
-   constant Version
+"&version - strings identifying this version of Unicon."
+keyword{3} version
+   abstract {
+      return string
+    }
+   inline {
+      suspend C_string Version;        /* As before, from version.h */
+      suspend C_string gitDescription; /* output from "git describe --long HEAD" */
+      return  C_string gitBranch;      /* output from "git branch --show-current" */
+   }
 end
 
 "&errno - variable containing error number from previous posix command."

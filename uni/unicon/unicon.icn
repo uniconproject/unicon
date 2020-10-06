@@ -440,6 +440,50 @@ procedure handle_C(arg)
    calc_posix_loc()
 end
 
+procedure versionLine()
+   static vline
+   local latest, LTB, LTBchars, v
+   initial {
+      v := []
+      every put(v, &version)
+      LTBchars := '0123456789.'
+      vline := v[1] || " ("
+      v[2]? {
+         latest := tab(many(LTBchars))
+         if = "-" then {
+            if v[3] ~== "master" then { # Are we on a maintenance long term branch?
+               v[3] ? {
+                  LTB := tab(many(LTBchars))
+                  if \LTB == v[3] then LTB := 1 else LTB := &null
+               }
+            }
+
+            if "0" == tab(many(&digits)) then { # Latest commit is tagged
+               if v[3] == "master" then {
+                  vline ||:= "Release)"
+               } else if \LTB then {
+                  vline ||:= latest; vline ||:= " Maintenance Release)"
+               } else {
+                  vline ||:= v[2] || " Development \"" || v[3] || "\")"
+               }
+            } else { # Latest commit is not tagged
+               if v[3] == "master" then {
+                  vline ||:= v[2]; vline ||:= " pre-release)"
+               } else if \LTB then {
+                  vline ||:= v[2]; vline ||:= " Maintenance pre-release)"
+               } else {
+                  vline ||:= v[2] || " Development \"" || v[3] || "\")"
+               }
+            }
+         } else { # We don't understand the output of git describe
+            vline ||:= v[2] || ")"
+         }
+      }
+   }
+
+   return vline
+end
+
 procedure unicon(argv)
    local tmpfnames, tmpopt, skip, parseonly,
       EmptyNode, N_Empty, i, thepath, tmp_s, ucodefile,
@@ -514,11 +558,11 @@ procedure unicon(argv)
                      }
                   }
                "-version": {
-                  iwrite(&version)
+                  iwrite(versionLine())
                   return 0
                   }
                "-features": {
-                  iwrite(&version)
+                  iwrite(versionLine())
                   every iwrite(&features)
                   return 0
                   }

@@ -1,0 +1,129 @@
+#<p>
+# This file contains support for a Property service.
+#</p>
+#<p>
+#  Author: Steve Wampler (sbw@tapestry.tucson.az.us)
+#</p>
+#<p>
+#  <i>This file is in the public domain.</i>
+#</p>
+
+package propertydb
+
+import lang
+import database
+
+
+#<p>
+#  Provide an API for storing and retreving properties from an SQL
+#    database via ODBC.  Uses methods in the <tt>PropertyUtil</tt>
+#    class (or a subclass) to obtain SQL statements for accessing
+#    the table. The methods in <tt>PropertyUtil</tt> class itself
+#    are known to work with PostgreSQL 9.6+ but some may need to be
+#    overridden for other SQL database implementations.
+#    <i>Normally, this class is used internally with Property database
+#    access gained through the <tt>Property</tt> class.</i>
+#</p>
+class PropertyDB:Object(db, utils)
+
+   #<p>
+   # Produce a set of all property names in the table.
+   # <[return set of all property names]>
+   #</p>
+   method fetchAllNames()
+      local nSet, row
+      db.sql(utils.fetchAllNamesSQL())
+      nSet := set()
+      while row := db.fetch() do {
+         insert(nSet, row.propertyname)
+         } 
+      return nSet
+   end
+
+   #<p>
+   # Produce a table containing all of the stored properties.
+   #   The table is keyed by property name and each property
+   #   value is represented as a JSON string.
+   # <[return table of properties]>
+   #</p>
+   method fetchAll()
+      local tabl, row
+      db.sql(utils.fetchAllSQL())
+      tabl := table()
+      while row := db.fetch() do {
+          tabl[row.propertyname] := row.propertyvalue
+          }
+      return tabl
+   end
+
+   #<p>
+   # Produce the value of a property.
+   # <[param pName name of the desired property]>
+   # <[return property value as a JSON string]>
+   # <[fail if property isn't stored in database]>
+   #</p>
+   method fetch(pName)
+      local v
+      db.sql(utils.fetchPropertySQL(pName))
+      if v := db.fetch() then {
+         return v.propertyvalue
+         }
+   end
+
+   #<p>
+   # Store a property into the database
+   # <[param pName name of the property]>
+   # <[param pValue value of the property as a JSON string]>
+   method store(pName,pValue)
+      db.sql(utils.insertPropertySQL(pName, pValue))
+   end
+
+   #<p>
+   # Remove all properties from the database
+   #</p>
+   method clearAll()
+      db.sql(utils.clearAllSQL())
+   end
+
+   #<p>
+   # Remove a property from the database
+   # <[param pName name of property to remove]>
+   #</p>
+   method removeProperty(pName)
+      db.sql(utils.removePropertySQL(pName))
+   end
+
+   #<p>
+   # Switch to a different property table in the database.
+   # Reference properties in a different table.  The table
+   # must be (and will be created there if not) in the same
+   # SQL database as the original.
+   # <[param tableName name of property table to use]>
+   #</p>
+   method switchPropertyTable(tableName)
+      utils.changeTableName(tableName)
+      db.sql(utils.describeTableSQL())
+   end
+
+   #<p>
+   # Create class instance.
+   # <[param user name of user owning the database table]>
+   # <[param passwd that user's database access password (defaults to "")]>
+   # <[param dsn  database name as known by ODBC]>
+   # <[param tabl name of the property table in that database
+   #      (defaults to <tt>"property_table"</tt>)
+   # <[param utilsName name of the support class for a specific
+   #     type of SQL database.  The default is
+   #     <tt>"propertydb::PropertyUtil"</tt> which is suitable for
+   #     PostgreSQL 9.6+ (and possibly others)]>
+   #</p>
+   initially (user, passwd:"", dsn,
+              tabl:"property_table", utilsName:"propertydb::PropertyUtil")
+       /dsn := user
+       utils := call_by_name(utilsName,tabl)
+       db := Database(dsn, tabl)
+       if db.open(user,passwd) then {
+           db.sql(utils.describeTableSQL())
+           return
+           }
+end

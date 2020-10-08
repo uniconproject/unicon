@@ -1,43 +1,104 @@
 #<p>
-#<b>
-# A class to manage application properties.
-#</b>
+# This file contains support for a Property service.
 #</p>
 #<p>
-# A <i>property</i> is a simple name/value pair that represents an
-# item of information that is available to all components in an
-# application.  While a global table could be used to record
-# properties, this exposes the implementation and limits the
-# possible behaviors.
+#  Author: Steve Wampler (sbw@tapestry.tucson.az.us)
 #</p>
 #<p>
-# This class provides a simple implementation of a generic Property
-# service. Additional functionality can be added through subclassing.
+#  <i>This file is in the public domain.</i>
 #</p>
 
 package lang
 
 #<p>
-# A singleton class that provides global access to a set of
-# properties.
-# The following simple example illustrates the use of the
-# <tt>Property</tt> singleton class:
+# A <i>property</i> is a simple name/value pair that represents an
+# item of information that is available to all components in an
+# application.  The value of a property can be any Unicon entity,
+# such as a string, set, table, class, etc. though a specific
+# implementation of a property manager may impose some restrictions.
+# </p>
+# <p>
+# This file provides two classes for
+# managing properties: <tt>SProperty</tt> is simple property
+# support that is local to a single program's execution instance,
+# while <tt>Property</tt> provides <i>persistent</i> properties
+# that survive program execution.
+# The procedure <tt>useSimpleProperties()</tt> turns the
+# <tt>Property</tt> references into <tt>SProperty</tt>
+# references.  For example, the following program uses
+# either the default Property class or SProperty class
+# depending on the presence of the command-line option
+# <tt>--simple</tt>:
 #<pre>
-#   import lang
+#    import lang, util
+#    link "ximage"
 #
-#    procedure main()
+#    procedure main(A)
+#        if Args(A).getOpt("simple") then useSimpleProperties()
+#
+#        Property("myDBname")
 #        # Set a few properties...
 #        Property().setP("A", 5)
-#        Property().setP("B", 6)
+#        t := table()
+#        t["a"] := "hello"
+#        t["b"] := "world"
+#        Property().setP("B", t)
 #    
-#        # Now, get the values (this could be anywhere in the program,
-#        #  of course)...
+#        # Now, get the values
 #        write("A is ",Property().getP("A"))
-#        write("B is ",Property().getP("B"))
+#        write("B is ",ximage(Property().getP("B")))
 #    end
 #</pre>
 #</p>
-class Property : Object (pTable)
+
+import propertydb
+link "ximage"
+
+#<p>
+#  Switch over to using the simple (transient) property service.
+#</p>
+procedure useSimpleProperties()
+    SProperty()
+    Property := SProperty
+end
+
+#<p>
+# A singleton class that provides global access to a set of
+# properties throughout a program's execution.  Note that,
+# unlike the <tt>Property</tt> class, <tt>SProperty</tt> does
+# not provide persistence outside of a single execution.
+# Any Unicon entity can be the value of a property managed
+# by <tt>SProperty</tt>.
+#</p>
+class SProperty : Object (pTable)
+
+   #<p>
+   # Produce the number of properties.
+   # <[return the number of properties]>
+   #</p>
+   method count()
+      return *pTable
+   end
+
+   #<p>
+   # Produce a set of the names of all of the properties.
+   # <[return set of property names]>
+   #</p>
+   method getAllNames()
+      local k
+      k := set()
+      every insert(k, key(pTable))
+      return k
+   end
+
+   #<p>
+   #  Produce a table containing all of the properties.
+   #  The keys are the property names.
+   #  <[return table of all the properties]>
+   #</p>
+   method getAllProperties()
+      return pTable
+   end
 
    # <p>
    # Set a property's value.
@@ -49,19 +110,178 @@ class Property : Object (pTable)
       pTable[name] := value
    end
 
+   #<p>
+   # Remove all properties from the database
+   #</p>
+   method clearAll()
+      pTable := table()
+   end
+
+   #<p>
+   # Remove a property from the database
+   # <[param pName name of property to remove]>
+   #</p>
+   method removeP(pName)
+      delete(pTable, pName)
+   end
+
    # <p>
    # Produce a property's value.
-   # <[param name name of the property]>
+   # <[param pName name of the property]>
    # <[return the current value of the named property]>
    # </p>
-   method getP(name)
+   method getP(pName)
       /pTable := table()
-      return pTable[name]
+      return pTable[pName]
+   end
+
+   #<p>
+   # Produce a property's value as an <tt>ximage()</tt> string.
+   # <[param pName name of the property]>
+   # <[return the <tt>ximage()</tt> string value of the named property]>
+   #</p>
+   method getPString(pName)
+      return ximage(pTable[pName])
+   end
+
+   #<p>
+   # This is a NO-OP in the <tt>SProperty</tt> class.
+   #</p>
+   method switchPropertyTable(tableName)
+      # NO-OP!
    end
 
 #<p>
-# Construct a single Property class.
+# Construct a singleton SProperty class.
 #</p>
 initially()
-   Property := create |self
+   SProperty := create |self
+end
+
+#<p>
+# A singleton class that provides global access to a set of
+# persistent properties.
+# Persistent properties are stored in an SQL database and can be
+# retrieved by other program executions.
+# A persistent property is a simple name/value pair that represents an
+# item of information that is available across Unicon applications.
+# The value can be any Unicon type that can be converted to and from a
+# JSON string representation by the <tt>json</tt> support.
+# <b>Note that this should not include structures containing multiple
+# references to the same structure (e.g. circular graphs, etc.) as
+# the fetched property will not match the saved property.</b>
+#</p>
+#<p>
+#<i>
+# The base implementation works with PostgreSQL 9.6+ via ODBC.
+# All of the database-specific code can be found in the class
+# <tt>propertydb::PropertyUtil</tt>, found in the file
+# <tt>$UNICON/src/lib/pdb_util.icn</tt> which can serve as a template
+# for adapting to different SQL databases.  The <tt>Property</tt>
+# constructor can be passed the string name of the required
+# adaptation class, e.g. <tt>"MySQL_utils"</tt> (or whatever).
+#</i>
+#</p>
+class Property : Object (pdb)
+
+   #<p>
+   # Produce the number of properties.
+   # <[return the number of properties]>
+   #</p>
+   method count()
+      # This is inefficient, but not horribly worse than alternatives...
+      return *getAllNames()
+   end
+
+   #<p>
+   # Produce a set of the names of all of the properties.
+   # <[return set of property names]>
+   #</p>
+   method getAllNames()
+      return pdb.fetchAllNames()
+   end
+
+   #<p>
+   #  Produce a table containing all of the properties.
+   #  The keys are the property names.
+   #  <[return table of all the properties]>
+   #</p>
+   method getAllProperties()
+      local t, k
+      t := pdb.fetchAll()
+      every k := key(t) do t[k] := Union().decode(t[k])
+      return t
+   end
+
+   #<p>
+   # Remove all properties from the database
+   #</p>
+   method clearAll()
+      pdb.clearAll()
+   end
+
+   #<p>
+   # Remove a property from the database
+   # <[param pName name of property to remove]>
+   #</p>
+   method removeP(pName)
+      pdb.removeProperty(pName)
+   end
+
+   #<p>
+   # Set a property's value.
+   # <[param pName name of the property]>
+   # <[param value value for the named property]>
+   #</p>
+   method setP(pName, value)
+      pdb.store(pName, Union().encode(value))
+   end
+
+   #<p>
+   # Produce a property's value.
+   # <[param pName name of the property]>
+   # <[return the current value of the named property]>
+   #</p>
+   method getP(pName)
+      return Union().decode(getPString(pName))
+   end
+
+   #<p>
+   # Produce a property's value as a JSON string.
+   # <[param pName name of the property]>
+   # <[return the JSON string value of the named property]>
+   #</p>
+   method getPString(pName)
+      return pdb.fetch(pName)
+   end
+
+   #<p>
+   # Switch to a different property table in the database.
+   # Reference properties in a different table.  The table
+   # must be (and will be created there if not) in the same
+   # SQL database as the original.
+   # <[param tableName name of property table to use]>
+   #</p>
+   method switchPropertyTable(tableName)
+      pdb.switchPropertyTable(tableName)
+   end
+
+#<p>
+# Construct a singleton Property class.
+   # <[param user name of user owning the database table]>
+   # <[param passwd that user's database access password (defaults to "")]>
+   # <[param dsn database name as known by ODBC].  The default is the
+   #       same as the user name]>
+   # <[param tabl name of the property table in that database
+   #      (defaults to <tt>"property_table"</tt>)]>
+   # <[param uClass name of the support class for a specific
+   #     type of SQL database.  The default is
+   #     <tt>"propertydb::PropertyUtil"</tt> which is suitable for
+   #     PostgreSQL 9.6+ (and possibly others).  See the
+   #     <tt>PropertyDB</tt> class for more details.]>
+#</p>
+initially(user, passwd:"", dsn, tabl, uClass)
+   if pdb := PropertyDB(user,passwd,dsn,tabl,uClass) then
+       Property := create |self
+   else stop("Cannot open PropertyDB")
 end

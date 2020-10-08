@@ -1,0 +1,922 @@
+#<p>
+# union.icn - Union Object Notation (<b><tt>UniON</tt></b>) support
+#</p>
+#<p>
+# Authors: Gigi Young, Clinton Jeffery, Steve Wampler
+#</p>
+#<p>
+# The <tt>Union</tt> class is intended to support conversion of Unicon values
+# to and from a JSON-like string format, <tt>UniON</tt>, that is suitable for
+# storage or transmission.
+# It draws <i>extremely</i> heavily from Gigi's json.icn with the
+# major difference that it emphasizes intra-Unicon encoding and decoding
+# of values over inter-language support for JSON syntax.
+# For example, Unicon structures (csets, sets, tables, records, and
+# objects) are uniquely identified as such in their UniON form.
+#</p>
+
+package propertydb
+
+import lang, util
+link "escape"
+
+#<p>
+# A singleton class supporting conversions to/from UniON
+# (<i>Unicon Object Notation</i>).  Heavily based on the
+# JSON support by Gigi Young found in <tt>json.icn</tt>.
+# <i>Note that UniON is <b>not</b> JSON, although it shares
+# many characteristics.  In particular, Unicon structures
+# are uniquely identified by structure type in UniON which
+# does not correspond to any JSON structure encode (i.e.
+# they are not treated as dictionaries).  So UniON is <b>not</b>
+# suitable for inter-language information exchange but
+# <b>only</b> for information exchange between Unicon applications.
+# If you need inter-language information exchange, see
+# <tt>json.icn</tt>.</i>
+#</p>
+#<p>
+# <i>Any Unicon value, including structures containing cyclical
+# references, can be (in theory) converted to/from UniON.
+# Report a bug if that's not the case.</i>
+# For example, the following (absurd) code outputs <tt>SAME</tt>.
+#</p>
+#<pre>
+#   t := table()
+#   t[t] := t
+#   y := Union().decode(Union().encode(t))
+#   write(if equals(t,y) then "SAME" else "DIFFERENT")
+#</pre>
+#<p>
+# The following example, pulled from <tt>property.icn</tt>, illustrate
+# a more pratical use of the <tt>Union</tt> class:
+#</p>
+#<pre>
+#   #<p>
+#   # Store a property's value into a database.
+#   # <[param pName name of the property]>
+#   # <[param value value for the named property]>
+#   #</p>
+#   method setP(pName, value)
+#      pdb.store(pName, Union().encode(value))
+#   end
+#
+#   #<p>
+#   # Produce a property's value from a database.
+#   # <[param pName name of the property]>
+#   # <[return the current value of the named property]>
+#   #</p>
+#   method getP(pName)
+#      return Union().decode(getPString(pName))
+#   end
+#</pre>
+class Union:Object()
+
+   #<p>
+   # Convert a UniON string into the equivalent unicon entity.
+   # <[param s UniON-encoded string]>
+   # <[return unicon entity that was encoded in <tt>s</tt>]>
+   #</p>
+   method decode(s,error)
+      local tok_gen, u, uerror
+   
+      uerror := ErrorHandler()
+      tok_gen := create union_scanner(s, uerror)
+      while u := union_parser(tok_gen, uerror) do suspend u
+      uerror.get_err()
+   end
+   
+   #<p>
+   # Given a Unicon value, produce a UniON equivalent if possible.
+   # <[param x Unicon value to encode into UniON]>
+   #</p>
+   method encode(x,error)
+      local j;
+      uerror := ErrorHandler(error)
+      if j := _toUs(x,uerror) then return j
+      uerror.get_err()
+   end
+
+initially
+   Union := create |self
+end
+   
+#<p>
+# Given a Unicon structure, produce a UniON equivalent if possible.
+# <b><i>Intended for internal use only.</i></b>
+# <[param u Unicon value to encode]>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure _toUs(u,uerror, seen)
+   local s, tmp, firstElem, ref
+   /seen := set()
+   case type(u) of {
+      "null": return type(u)
+      "string": {
+         return      if u == "__true__" then "true"
+                else if u == "__false__" then "false"
+                else unionify_string(u,uerror)
+         }
+      "integer" | "real": return image(u)
+      "cset": return ximage(u)
+      "list": {
+         ref := mkRef(u)
+         if member(seen,ref) then return "{ref:"||ref||"}"
+         insert(seen,ref)
+         s := "["||ref||" "
+         if *u > 0 then s ||:= _toUs(u[1],uerror,seen)
+         every i := 2 to *u do {
+            s ||:= ("," || _toUs(u[i],uerror,seen)) | fail
+            }
+         s ||:= "]"
+         return s
+         }
+      "set": {
+         ref := mkRef(u)
+         if member(seen,ref) then return "{ref:"||ref||"}"
+         insert(seen,ref)
+         s := "{set:"||mkRef(u)||" "; i := 1
+         every x := !u do {
+            if i>1 then s ||:= ","
+            s ||:= _toUs(x,uerror,seen) | fail
+            i +:= 1
+            }
+         s ||:= "}"
+         return s
+         }
+      "table": {
+         ref := mkRef(u)
+         if member(seen,ref) then return "{ref:"||ref||"}"
+         insert(seen,ref)
+         s := "{table:"||mkRef(u)||" "
+         firstElem := "y"
+         every k := key(u) do {
+            if /firstElem then s ||:= ","
+            firstElem := &null
+            s ||:= _toUs(k,uerror,seen) || ":" || _toUs(u[k],uerror,seen) | fail
+            }
+         s ||:= "}"
+         return s
+         }
+      default: {
+         ref := mkRef(u)
+         if member(seen,ref) then return "{ref:"||ref||"}"
+         insert(seen,ref)
+         # Class - Do we care about method names? Currently we don't
+         if match("object ", tmp := image(u)) then {
+            s := "{object:"||ref||" \""||tmp[8:upto("_",tmp)\1|0]||"\" "
+            firstElem := "y"
+            every k := key(u) do {
+               if /firstElem then s ||:= ","
+               firstElem := &null
+               if k == ("__s" | "__m") then next
+               if type(k) ~== "string" then fail
+               s ||:= unionify_string(k)|| ":" || _toUs(u[k],uerror,seen) | fail
+               }
+            s ||:= "}"
+            return s
+            }
+         # Record
+         else if match("record ", tmp := image(u)) then {
+            s := "{record:"||ref||" \""||tmp[8:upto("_",tmp)\1|0]||"\" "
+            needComma := &null
+            every k := key(u) do {
+               if \needComma then s ||:= ","
+               needComma := "y"
+               if type(k) ~== "string" then fail
+               s ||:= unionify_string(k)|| ":" || _toUs(u[k],uerror,seen) | fail
+               }
+            s ||:= "}"
+            return s
+            }
+         else return uerror.set_err(type(u) || " has no UniON equivalent")
+         }
+      }
+end
+
+procedure mkRef(u)
+   image(u) ? return "\""||map(tab(upto('(')|0)," ","_")||"\""
+end
+
+#####################
+# SCANNER FUNCTIONS #
+#####################
+
+#<p>
+# A string-scanning generator - takes a UniON-formatted string 
+# and returns single UniON tokens until scanning is complete
+# <b><i>Intended for internal use only.</i></b>
+# <[param s UniON string to convert]>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure union_scanner(s,uerror)
+   local token
+   local end_pos := *s + 1 
+   static ws, operator, number
+
+   initial {
+      ws := ' \t'
+      operator := '{}[]:,'
+      number := '-0123456789'
+      }
+
+   s ? {
+      repeat {
+         tab(many(ws))
+         # Special case Unicon structures (UniON objects)
+         if ="ref:"         then token := "ref"
+         else if ="set:"    then token := "set"
+         else if ="table:"  then token := "table"
+         else if ="record:" then token := "record"
+         else if ="object:" then token := "object"
+         else {
+            c := move(1) | fail
+            if any(operator, c) then token := c
+            else if any(number, c) then token := scan_number(c,uerror) | fail
+            else if c == "\"" then token := scan_string(uerror) | fail
+            else if c == "'"  then token := scan_cset(uerror) | fail
+            else if c == "t"  then token := scan_true(uerror) | fail
+            else if c == "f"  then token := scan_false(uerror) | fail
+            else if c == "n"  then token := scan_null(uerror) | fail
+            else if c == "\n" then { uerror.incr_line(); next }
+            else return uerror.set_err("Unrecognized UniON token: " ||
+                      c || tab(upto(ws++operator)\1))
+            }
+         suspend token
+         }
+      }
+end
+
+
+#<p>
+# String scanning helper function to retrieve UniON value 'true'
+# <b><i>Intended for internal use only.</i></b>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure scan_true(uerror)
+   if move(3) == "rue" then return "true"
+   else return uerror.set_err("Expected UniON true: " || 
+                "t"||tab(upto(' \t\n{}[]:,')\1))
+end   
+
+#<p>
+# String scanning helper function to retrieve UniON value 'false'
+# <b><i>Intended for internal use only.</i></b>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure scan_false(uerror)
+   if move(4) == "alse" then return "false"
+   else return uerror.set_err("Expected UniON false: " || 
+                "f"||tab(upto(' \t\n{}[]:,')\1))
+end
+
+#<p>
+# String scanning helper function to retrieve UniON value 'null'
+# <b><i>Intended for internal use only.</i></b>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure scan_null(uerror)
+   if move(3) == "ull" then return "null" 
+   else return uerror.set_err("Expected UniON null: " || 
+                "n"||tab(upto(' \t\n{}[]:,')\1))
+end
+
+#<p>
+# String scanning helper function that finds a valid UniON escape sequence
+# and returns a valid Unicon escape or escape sequence if possible.
+# <b><i>Intended for internal use only.</i></b>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure scan_ctrl_char(uerror)
+   static hex := '0123456789abcdefABCDEF'
+   local i, ns
+
+   #
+   # This code is modified from escape() from IPL file escape.icn
+   #
+   case (c := move(1)) | 
+        return uerror.set_err("Incomplete UniON escape sequence") of {
+      "b":  return "\b"
+      "d":  return "\d"
+      "e":  return "\e"
+      "f":  return "\f"
+      "l":  return "\l"
+      "n":  return "\n"
+      "r":  return "\r"
+      "t":  return "\t"
+      "v":  return "\v"
+      "\\":  return "\\"
+      "/":  return "/"
+      "\"":  return "\""
+      "u":  return hexcode(4)
+      "x":  return hexcode(2)
+      "^":  return ctrlcode()
+      default: return c
+      }
+end
+
+#<p>
+# String scanning helper function that identifies a UniON string and 
+# returns a Unicon string
+# <b><i>Intended for internal use only.</i></b>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure scan_string(uerror)
+   local str, ctrl, c, is_cset
+   str := ""
+
+   while any(~'\"', c := move(1)) do {
+      if c ~== "\\" then str ||:= c
+      else { 
+         if ctrl := scan_ctrl_char(uerror) then str ||:= ctrl
+         else fail
+         }
+      }
+   if move(1) == "\"" then return "\""||str||"\""
+   else return uerror.set_err(
+               "UniON string missing terminating double-quotes: " || str) 
+end
+
+#<p>
+# String scanning helper function that identifies a UniON cset and 
+# returns a Unicon cset.
+# <b><i>Intended for internal use only.</i></b>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure scan_cset(uerror)
+   local str, ctrl, c, is_cset
+   str := ""
+
+   while any(~'\'', c := move(1)) do {
+      if c ~== "\\" then str ||:= c
+      else { 
+         if ctrl := scan_ctrl_char(uerror) then str ||:= ctrl
+         else fail
+         }
+      }
+   if move(1) == "'" then return "'"||str||"'"
+   else return uerror.set_err(
+               "UniON cset missing terminating single-quote: " || str) 
+end
+
+#<p>
+# String scanning helper function that returns a UniON number as a string
+# <b><i>Intended for internal use only.</i></b>
+# <[param c first character in scan]>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure scan_number(c,uerror)
+   local num_str
+   num_str := ""
+ 
+   # if negative
+   if c == "-" then {
+      num_str ||:= c
+      c := move(1)
+      }
+
+   # integer 
+   if any(&digits,c) then {
+      num_str ||:= c
+      if c == "0" then {
+         # number starting with 0 is either 0, frac, or exp
+         if any(&digits,move(1)) then 
+            return uerror.set_err("UniON int cannot have leading zero: " || 
+                   num_str)
+         } 
+      # c is 1-9, get all sequential digits
+      else num_str ||:= tab(many(&digits)) 
+      }
+   
+   # fraction 
+   if (c := move(1)) == "." then {
+      num_str ||:= c
+      if not (num_str ||:= tab(many(&digits))) then 
+         return uerror.set_err("Expected digits after '.' in UniON frac: " || 
+                num_str)
+      }
+   # exponent
+   if any('eE',c := move(1)) then { 
+      num_str ||:= c
+      if (c := move(1)) == "-" then num_str ||:= c
+      else if (c := move(1)) == "+" then {}
+
+      if not (num_str ||:= tab(many(&digits))) then 
+         return uerror.set_err("Expected digits after 'e' in UniON exp: " ||
+                   num_str)
+      } 
+   return num_str
+end
+   
+#########################
+# END SCANNER FUNCTIONS #
+#########################
+
+#<p>
+# Handle conversions of special characters when building a UniON string.
+# <b><i>Intended for internal use only.</i></b>
+# <[param s UniON string to fix]>
+#</p>
+procedure unionify_string(s)
+   return ximage(s)
+end
+
+####################
+# PARSER FUNCTIONS #
+####################
+
+#<p>
+# Takes a co-expression to generate UniON tokens.
+# Returns a Unicon equivalent UniON structure.
+# <b><i>Intended for internal use only.</i></b>
+# <[param token_gen generator of tokens from UniON string]>
+# <[param uerror Error handling support class instance]>
+#</p>
+procedure union_parser(token_gen,uerror)
+   local unicon_struct, struct, token
+   static parse_funcs, refs
+
+   initial {
+      parse_funcs := table()
+
+      parse_funcs["{"] := parse_object 
+      parse_funcs["["] := parse_array 
+      parse_funcs["\""] := parse_string 
+      parse_funcs["'"] := parse_string 
+      parse_funcs["-"] := parse_number
+      parse_funcs["0"] := parse_number
+      parse_funcs["1"] := parse_number
+      parse_funcs["2"] := parse_number
+      parse_funcs["3"] := parse_number
+      parse_funcs["4"] := parse_number
+      parse_funcs["5"] := parse_number
+      parse_funcs["6"] := parse_number
+      parse_funcs["7"] := parse_number
+      parse_funcs["8"] := parse_number
+      parse_funcs["9"] := parse_number
+      parse_funcs["t"] := parse_true
+      parse_funcs["f"] := parse_false
+      parse_funcs["n"] := parse_null
+
+      refs := table()
+      }
+   
+   while token := @token_gen do {
+      if \(func := parse_funcs[token[1]]) then {
+         if struct := func(token, token_gen, parse_funcs, refs, uerror) then
+            suspend struct
+         else fail
+         }
+      else fail
+      }
+end
+
+#
+# Helper parsing functions that return the equivalent Unicon data structure
+#
+
+#<p>
+# Replace with the referenced value.
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_ref(token, token_gen, parse_funcs, refs, uerror)
+   local ref, tok
+   ref := @token_gen
+   if "}" ~== @token_gen then {
+       uerror.set_err("Expected '}', got: '"||tok||"'")
+       }
+   return refs[ref]
+end
+
+#<p>
+# Returns a string to represent a boolean true
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_true(token, token_gen, parse_funcs, refs, uerror)
+   return "__true__"
+end
+
+#<p>
+# Returns a string to represent a boolean false
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_false(token, token_gen, parse_funcs, refs, uerror)
+   return "__false__"
+end
+
+#<p>
+# Returns the null value
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_null(token, token_gen, parse_funcs, refs, uerror)
+   return &null
+end
+
+#<p>
+# Returns the numeric() of the token
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_number(token, token_gen, parse_funcs, refs, uerror)
+   return numeric(token)
+end
+
+#<p>
+# Removes the delimiting double-quotes from the token. Converts to cset if
+# there are delimiting single-quotes instead of double-quotes.
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_string(token, token_gen, parse_funcs, refs, uerror)
+   if token[1] == "\'" then 
+      return cset(token[2:-1])
+   else
+      return escape(token[2:-1])
+end
+
+#<p>
+# Helper parsing function that recognizes the production rules for a
+# UniON object.  The first token can denote that the object is a
+# Unicon table, set, record, or class.  If it doesn't then a table
+# is assumed for backward compatibility.
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_object(token, token_gen, parse_funcs, refs, uerror)
+   local prev_token, tok
+   prev_token := token
+   # Look for object type identifier
+   tok := @token_gen
+   if "ref" == tok then
+      return parse_ref(token, token_gen, parse_funcs, refs, uerror)
+   else if "set" == tok then
+      return parse_set(token, token_gen, parse_funcs, refs, uerror)
+   else if "table" == tok then
+      return parse_table(token, token_gen, parse_funcs, refs, uerror)
+   else if "record" == tok then
+      return parse_record(token, token_gen, parse_funcs, refs, uerror)
+   else if "object" == tok then
+      return parse_class(token, token_gen, parse_funcs, refs, uerror)
+
+   # If we get here, there was no object type identifier.
+   uerror.set_err("Missing a type idenfifier for object, got '"||
+                   tok||"' instead.")
+end
+
+#<p>
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
+   local rName, aList, union_object, union_key, union_value, prev_token, tok, r
+   ref := @token_gen
+   rName := (@token_gen)[2:-1]  # skips ":" and strips quotes
+   if not proc(rName) then {	# No constructor in this context
+      uerror.set_err("No constructor for record '"||rName||" in this context.")
+      fail
+      }
+   r := rName()
+   refs[ref] := r
+   aList := []
+   prev_token := "{"
+
+   # A record in our UniON looks a lot like a table, with fieldname:fieldValue
+   #  pairs.  But we really don't care about the fieldnames - all that matters
+   #  are the fact the the fields appear in the same order as in the
+   #  record statement, which is the case.  So we throw way the fieldnames.
+   #  If we threw them away when creating the UniON string this code would
+   #  be a lot simpler, but the UniON string wouldn't be as readable.
+   while tok := @token_gen do {
+
+      # end of record, return
+      if tok == "}"  then {
+         every i := 1 to *aList do {
+            r[i] := aList[i]
+            }
+         return r
+         }
+
+      # commas are valid only if the preceeding token is a value (not { or ,)
+      else if tok == "," then {
+         if not (prev_token == ("{"|",")) then prev_token := tok
+         else return uerror.set_err("Unexpected comma in UniON object after: "||
+                     tok)
+         }
+
+      # parse pairs
+      else if prev_token == ("{"|",") then {
+            # fieldname (we're going to ignore it...)
+            # We could simplify this code as we know it's a string, but
+            #  but just in case someone plays around with the UniON...
+            prev_token := tok
+            if \(func := parse_funcs[tok[1]]) then {
+               union_key := func(tok, token_gen, parse_funcs, refs, uerror)
+               }
+            else 
+               return uerror.set_err("Expected UniON key in UniON pair" ||                        ", got: " || tok)
+
+            # check for colon
+            if (tok := @token_gen) == ":" then prev_token := tok 
+            else return uerror.set_err(
+                        "Expected colon in UniON pair before: " || tok)
+
+            # value 
+            if tok := @token_gen then {
+               if \(func := parse_funcs[tok[1]]) then {
+                  union_value := func(tok, token_gen, parse_funcs, refs, uerror)
+                  put(aList, union_value)  # add to record constructor args
+                  prev_token := "value"
+                  }
+               else 
+                  return uerror.set_err("Expected UniON value in UniON pair" ||                        ", got: " || tok)
+               }
+            else 
+               return uerror.set_err("UniON pair missing UniON value")
+            }
+
+      # Invalid object syntax
+      else {
+         if prev_token == (","|"{") then 
+            return uerror.set_err("Expected UniON pair, got: " || tok)
+         else
+            return uerror.set_err("Token violated UniON object syntax: " ||
+                   tok)
+         }
+      }
+   return uerror.set_err("Expected terminating } for UniON object")
+end
+
+
+#<p>
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
+   local cName, aList, c, union_object, union_key, union_value, prev_token, tok
+   local ref
+   ref := @token_gen
+   cName := (@token_gen)[2:-1]  # skips ":" and strips quotes
+   if not proc(cName) then {	# No constructor in this context
+      uerror.set_err("No constructor for class '"||cName||" in this context.")
+      fail
+      }
+   cl := cName()  # Only works if class cName is defined in this context
+   refs[ref] := cl
+   aList := []
+   prev_token := "{"
+
+   # A class in our UniON looks a lot like a table, with fieldname:fieldValue
+   #  pairs.  But we really don't care about the fieldnames - all that matters
+   #  are the fact the the fields appear in the same order as in the
+   #  class encoding, which is the case.  So we throw way the fieldnames.
+   #  If we threw them away when creating the UniON string this code would
+   #  be a lot simpler, but the UniON string wouldn't be as readable.
+   while tok := @token_gen do {
+
+      # end of class, return
+      if tok == "}"  then {
+         every i := 1 to *aList do
+            cl[i] := aList[i] | &null
+         return cl
+         }
+
+      # commas are valid only if the preceeding token is a value (not { or ,)
+      else if tok == "," then {
+         if not (prev_token == ("{"|",")) then prev_token := tok
+         else return uerror.set_err("Unexpected comma in UniON class after: "||
+                     tok)
+         }
+
+      # parse pairs
+      else if prev_token == ("{"|",") then {
+            # fieldname (we're going to ignore it...)
+            # We could simplify this code as we know it's a string, but
+            #  but just in case someone plays around with the UniON...
+            prev_token := tok
+            if \(func := parse_funcs[tok[1]]) then {
+               union_key := func(tok, token_gen, parse_funcs, refs, uerror)
+               }
+            else 
+               return uerror.set_err("Expected UniON key in UniON pair" ||                        ", got: " || tok)
+
+            # check for colon
+            if (tok := @token_gen) == ":" then prev_token := tok 
+            else return uerror.set_err(
+                        "Expected colon in UniON pair before: " || tok)
+
+            # value 
+            if tok := @token_gen then {
+               if \(func := parse_funcs[tok[1]]) then {
+                  union_value := func(tok, token_gen, parse_funcs, refs, uerror)
+                  put(aList, union_value)  # add to record constructor args
+                  prev_token := "value"
+                  }
+               else 
+                  return uerror.set_err("Expected UniON value in UniON pair" ||                        ", got: " || tok)
+               }
+            else 
+               return uerror.set_err("UniON pair missing UniON value")
+            }
+
+      # Invalid class syntax
+      else {
+         if prev_token == (","|"{") then 
+            return uerror.set_err("Expected UniON pair, got: " || tok)
+         else
+            return uerror.set_err("Token violated UniON class syntax: " ||
+                   tok)
+         }
+      }
+   return uerror.set_err("Expected terminating } for UniON class")
+end
+
+#<p>
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_table(token, token_gen, parse_funcs, refs, uerror)
+   local union_object, union_key, union_value, prev_token, tok, pt
+   union_object := table()
+
+   refs[@token_gen] := union_object
+   prev_token := "{"
+   while tok := @token_gen do {
+
+      # end of object, return
+      if tok == "}"  then {
+         refs[mkRef(union_object)] := union_object
+         return union_object
+         }
+
+      # commas are valid only if the preceeding token is a value (not { or ,)
+      else if tok == "," then {
+         if not (prev_token == ("{"|",")) then prev_token := tok
+         else return uerror.set_err("Unexpected comma in UniON object after: "||
+                     tok)
+         }
+
+      # parse pairs
+      else if prev_token == ("{"|",") then {
+            # key
+            prev_token := tok
+            if \(func := parse_funcs[tok[1]]) then {
+               union_key := func(tok, token_gen, parse_funcs, refs, uerror)
+               }
+            else 
+               return uerror.set_err("Expected UniON key in UniON pair" ||                        ", got: " || tok)
+
+            # check for colon
+            if (tok := @token_gen) == ":" then prev_token := tok 
+            else return uerror.set_err(
+                        "Expected colon in UniON pair before: " || tok)
+
+            # value 
+            if tok := @token_gen then {
+               if \(func := parse_funcs[tok[1]]) then {
+                  union_value := func(tok, token_gen, parse_funcs, refs, uerror)
+                  prev_token := "value"
+                  union_object[union_key] := union_value
+                  }
+               else 
+                  return uerror.set_err("Expected UniON value in UniON pair" ||                        ", got: " || tok)
+               }
+            else 
+               return uerror.set_err("UniON pair missing UniON value")
+            }
+
+      # Invalid object syntax
+      else {
+         if prev_token == (","|"{") then 
+            return uerror.set_err("Expected UniON pair, got: " || tok)
+         else
+            return uerror.set_err("Token violated UniON object syntax: " ||
+                   tok)
+         }
+      }
+   return uerror.set_err("Expected terminating } for UniON object")
+end
+
+#</p>
+# Helper parsing function recognizes the production rules for a UniON array.
+# Returns a Unicon list if the syntax is proper (success).
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_array(token, token_gen, parse_funcs, refs, uerror)
+   local union_array, union_value, prev_token, tok, ref
+   prev_token := token
+   ref := @token_gen
+   union_array := []
+   refs[ref] := union_array
+
+   while tok := @token_gen do {
+
+      # end of array, return
+      if tok == "]" then {
+         return union_array
+         }
+
+      # comma can only come after a value (not [ or ,)
+      else if tok == "," then {
+         if not any('[,', prev_token) then prev_token := tok
+         else return uerror.set_err("Unexpected comma in UniON array")
+         }
+
+      # value
+      else if \(func := parse_funcs[tok[1]]) then {
+         if prev_token == ("["|",") then { 
+            union_value := func(tok, token_gen, parse_funcs, refs, uerror)
+            prev_token := "value"
+            put(union_array, union_value) 
+            }
+         else return uerror.set_err("Expected comma in UniON array before: " ||
+              tok)
+         }
+        
+      # invalid array syntax
+      else { 
+         if prev_token == ("["|",") then
+            return uerror.set_err("Expected UniON value, got: " || tok)
+         else
+            return uerror.set_err("Token violated UniON array syntax: " || 
+                tok) 
+         }
+      }
+   return uerror.set_err("Expected terminating ] for UniON array")
+end
+
+#<p>
+# Helper parsing function recognizes the production rules for a UniON set.
+# Returns a Unicon set if the syntax is proper (success).
+# <b><i>Intended for internal use only.</i></b>
+#</p>
+procedure parse_set(token, token_gen, parse_funcs, refs, uerror)
+   local union_array, union_value, prev_token, tok, s
+   prev_token := "{"
+   s := set()
+   refs[@token_gen] := s
+
+   while tok := @token_gen do {
+      # end of set, return
+      if tok == "}" then {
+         return s
+         }
+
+      # comma can only come after a value (not [ or ,)
+      else if tok == "," then {
+         if not any('{,', prev_token) then prev_token := tok
+         else return uerror.set_err("Unexpected comma in UniON set")
+         }
+
+      # value
+      else if \(func := parse_funcs[tok[1]]) then {
+         if prev_token == ("{"|",") then { 
+            union_value := func(tok, token_gen, parse_funcs, refs, uerror)
+            prev_token := "value"
+            insert(s, union_value) 
+            }
+         else return uerror.set_err("Expected comma in UniON set before: " ||
+              tok)
+         }
+        
+      # invalid set syntax
+      else { 
+         if prev_token == ("{"|",") then
+            return uerror.set_err("Expected UniON value, got: " || tok)
+         else
+            return uerror.set_err("Token violated UniON set syntax: " || tok) 
+         }
+      }
+   return uerror.set_err("Expected terminating } for UniON set")
+end
+
+#<p>
+# Error handling object.
+#</p>
+class ErrorHandler:Object(lineno, error, tag)
+
+   method incr_line()
+      return lineno +:= 1
+   end
+
+   method constr_msg(s)
+      return tag || " " ||  s
+   end
+
+   #<p>
+   # Sets <tt>error</tt> using constr_msg()
+   #</p>
+   method set_err(s)
+      if /error then error := constr_msg(s)
+   end
+
+   #<p>
+   # Writes error (s) to <tt>&errout</tt>
+   #</p>
+   method write_err(s)
+      write(&errout,tag||" "||s)
+   end
+
+   #<p>
+   # Write out <tt>error</tt>, if it exists, to &errout
+   #</p>
+   method get_err() 
+       if \error then write(&errout, error)
+   end
+
+initially()
+   self.lineno := 1
+   self.tag := "[union]"
+end

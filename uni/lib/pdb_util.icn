@@ -1,0 +1,169 @@
+#<p>
+# This file contains support for a Property service.
+#</p>
+#<p>
+#  Author: Steve Wampler (sbw@tapestry.tucson.az.us)
+#</p>
+#<p>
+#  <i>This file is in the public domain.</i>
+#</p>
+
+package propertydb
+
+import lang
+import database
+
+#<p>
+#  Utility support class for use when implementing a persistent
+#  Property class.  The methods include those that are likely to need
+#  overriding, depending on the specifics of the underlying database.
+#  The versions provided here are known to work the PostgreSQL versions
+#  9.6+. <i>This class may need to be overridden to support other
+#  SQL databases.</i>
+#</p>
+class PropertyUtil: Object(pdbTableName, dbu)
+
+   #<p>
+   #  Produce a table of the fields in the table.
+   #  <i>May need overriding.</i>
+   #  Generally, there are just two fields: the <tt>propertyname</tt> and
+   #  the <tt>propertyvalue</tt>.  The propertyname can be assumed to be
+   #  less than 256 characters (because no sane person would want
+   #  to use a longer one!) but the propertyvalue should support
+   #  arbitrary-length text since it's going to hold the JSON
+   #  encoding of an arbitrary Unicon entity.  For PostgreSQL
+   #  this means using TEXT datatype.  Other DBs might need
+   #  some other datatype.
+   #  <[return table containing propertyname and propertynalue descriptions]>
+   #</p>
+   method getTableFieldsDesc()
+       local t
+       t := table()
+       t["propertyname"]  := "varchar(256)"
+       t["propertyvalue"] := "text"
+       return t
+   end
+
+   #<p>
+   #  Return an SQL command for creating the Property table if it
+   #  doesn't already exist.
+   #  <i>Note: Works with PostgreSQL 9.6+ but may need to be
+   #  overridden and called from code that first determines if the
+   #  table exists or not in other languages.  Uses the
+   #  <tt>IF NOT EXISTS</tt> option on the <tt>CREATE TABLE</tt>
+   #  command.</i>
+   #  <[return SQL string for creating a table if it doesn't exist]>
+   #</p>
+   method describeTableSQL()
+      local s, types
+      types := self.getTableFieldsDesc()
+      # The time_stamp column isn't used by the property service.
+      #  It's there in case someone wants to manually consult the
+      #  the database to see when a Property was last modified.
+      s := "CREATE TABLE IF NOT EXISTS "||pdbTableName||"("||
+                  "propertyname "||types["propertyname"]||" PRIMARY KEY, "||
+                  "propertyvalue "||types["propertyvalue"]||", "||
+                  "time_stamp timestamp DEFAULT now())"
+      return s
+   end
+
+   #<p>
+   #  Return an SQL command for doing an <i>upsert</i> into the Property table.
+   #  <i>Note: Works with PostgreSQL 9.6+ but may need to be
+   #  overridden for other databases.</i>
+   #  <[param pName Property name]>
+   #  <[property value as a JSON encoded string]>
+   #  <[return SQL string for doing an upsert of (pName,pValue) pair]>
+   #</p>
+   method insertPropertySQL(pName, pValue)
+      local s
+      # The time_stamp column isn't used by the property service.
+      #  It's there in case someone wants to manually consult the
+      #  the database to see when a Property was last modified.
+      s := "INSERT INTO "||pdbTableName||
+             "(propertyname,propertyvalue)"||
+             " VALUES ('"||dbu.escape(pName)||"','"||dbu.escape(pValue)||"')"||
+             " ON CONFLICT (propertyname) DO UPDATE SET"||
+                 " propertyvalue = excluded.propertyvalue,"||
+                 " time_stamp = now()"
+      return s
+   end
+
+   #<p>
+   # Return an SQL command for fetching a property value from the Property
+   # table.
+   # <[param pName Property name]>
+   # <[return SQL string for fetching property value as a JSON string]>
+   #</p>
+   method fetchPropertySQL(pName)
+      local s
+      s := "SELECT propertyvalue FROM "||pdbTableName||
+           " WHERE propertyname = '"||dbu.escape(pName)||"'"
+      return s
+   end
+
+   #<p>
+   # Return an SQL command for fetching all property names in the table.
+   # <[return SQL string for fetching all property names]>
+   #</p>
+   method fetchAllNamesSQL()
+      local s
+      s := "SELECT propertyname FROM "||pdbTableName
+      return s
+   end
+
+   #<p>
+   # Return an SQL command for fetching all properties from the Property
+   # table.
+   # <[return SQL string for fetching all properties]>
+   #</p>
+   method fetchAllSQL()
+      local s
+      s := "SELECT propertyname,propertyvalue FROM "||pdbTableName
+      return s
+   end
+
+   #<p>
+   # Return an SQL command for removing a property from the Property
+   # table.
+   # <[param pName name of property to remove]>
+   # <[return SQL string for clearing all properties]>
+   #</p>
+   method removePropertySQL(pName)
+      local s
+      s := "DELETE FROM "||pdbTableName||" WHERE propertyname = '"||
+               dbu.escape(pName)||"'"
+      return s
+   end
+
+   #<p>
+   # Return an SQL command for clearing all properties from the Property
+   # table.
+   # <[return SQL string for clearing all properties]>
+   #</p>
+   method clearAllSQL()
+      local s
+      s := "DELETE FROM "||pdbTableName
+      return s
+   end
+
+   #<p>
+   # Reference a different table name.
+   # <[param tableName name of new table]>
+   #</p>
+   method changeTableName(tableName)
+      pdbTableName := tableName
+   end
+
+   #<p>
+   # Produce the current property table name.
+   # <[return current property table name]>
+   #</p>
+   method getPropertyTableName()
+      return pdbTableName
+   end
+
+initially(tableName:"property_table")
+   dbu := DButils()
+   pdbTableName := tableName
+end

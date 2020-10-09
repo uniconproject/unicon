@@ -957,7 +957,7 @@ char* print_sockaddrport(struct sockaddr* sa, char* buf, int buflen ) {
 struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
   int port = atoi(p);
   int nohost = 0, rc;
-  struct addrinfo hints, *res0, *res;
+  struct addrinfo hints, *res0;
 
   if (port == 0) {
     errno = ENXIO;
@@ -994,7 +994,6 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
   int saveflags, rc, s, len;
    struct sockaddr *sa;
    char *p, fname[BUFSIZ];
-   char *host = fname;
    struct addrinfo *res, *res0, *saddrinfo;
 
 #if UNIX
@@ -1245,7 +1244,6 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
 int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 {
    int fd, s, len;
-   char hostname[MAXHOSTNAMELEN];
    struct addrinfo *res0, *res;
    struct sockaddr *sa;
 
@@ -1419,7 +1417,7 @@ int sock_me(int s, char* addrbuf, int bufsize)
 int sock_send(char *adr, char *msg, int msglen, int af_fam)
 {
    char *host, *p, hostname[MAXHOSTNAMELEN], addr[BUFSIZ];
-   int s, port, rc;
+   int s, rc;
    struct addrinfo *res0, *res;
 
    SAFE_strncpy(addr, adr, sizeof(addr));
@@ -1470,11 +1468,9 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
 int sock_recv(int s, struct b_record **rp)
 {
    int s_type;
-   struct hostent *hp;
    char buf[2048];
    int bufsize = 2048, msglen;
 
-   struct addrinfo *res0, *res;
    struct sockaddr_storage conn;
    struct sockaddr* sa = (struct sockaddr*) &conn;
    unsigned int len, addrlen = sizeof(conn);

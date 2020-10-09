@@ -16,7 +16,6 @@
 #include "uri.h"
 #include "uri_schm.h"
 
-static const char *URI_DEFAULT_PATH="";
 
 PURI _pop_parse(char *uri, PURI puri);
 
@@ -35,7 +34,6 @@ const SCHEME scPOP  = { "pop", _pop_parse, 110 };
 PURI _pop_parse(char *uri, PURI puri)
 {
   char *colon;
-  char *slash;
   char *at;
   
   if (uri[0] == '/' && uri[1] == '/') {

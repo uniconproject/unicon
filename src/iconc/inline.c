@@ -797,7 +797,9 @@ char *asgn;
 struct il_c *value;
    {
    struct code *cd;
+#ifdef OptimizeDescripAsgn
    struct val_loc *new_vloc;
+#endif				/* OptimizeDescripAsgn */
    int rv = 0;
 
    cd = alc_ary(4);
@@ -850,6 +852,7 @@ char *typ;
    cd_add(cd);
    }
 
+#if 0
 /*
  * Substitute inline C for the explicit arg in a func call.
  */
@@ -896,6 +899,7 @@ sub_ilc_fncall_explicit_arg_old(argilc, protoilc, cd, indx)
    /* printf("sub_ilc_fncall_explicit_arg: hit.\n"); */
    /* printf("sub_ilc_fncall_explicit_arg: proto: %s.\n", protoilc->s); */
 }
+#endif               /*  Old version of function*/
 
 static
 void

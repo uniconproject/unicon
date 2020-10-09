@@ -133,7 +133,6 @@ can_il(p, n, impl)
    struct node * n;
    struct implement * impl;
 {
-   struct implement * ip;
    extern int num_dynrec_ctors;
 
    if (impl->oper_typ == 'K')

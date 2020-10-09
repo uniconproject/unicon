@@ -107,7 +107,6 @@ publish_unreachable_funcs(pents)
  */
 int trans(char *argv0)
    {
-   char * s;
    register struct pentry *proc;
    struct srcfile *sf;
    extern char * ca_first_perifile;

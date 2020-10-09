@@ -511,7 +511,6 @@ tv_int_get(tv, intidx)
 {
    vord v;
    int vidx;
-   int rslt;
 
    vidx = intidx >> 1;
    v = tv->ent->bits[vidx];
@@ -840,6 +839,7 @@ tv_type_bits_set(tv, typcd)
       tv_bit_set(tv, i);
 }
 
+#if 0
 static
 inline
 vord *
@@ -865,6 +865,7 @@ alcbits_old_n_crufty(void)
       }
    return rslt;
 }
+#endif  /* Not used */
 
 static
 inline
@@ -1082,6 +1083,7 @@ hash_bh(raw)
    return (u & hash_mask);
 }
 
+#if 0
 static
 int
 is_tgt_vect(ent)
@@ -1097,6 +1099,7 @@ is_tgt_vect(ent)
       }
    return 1;
 }
+#endif  /* Not used anywhere*/
 
 static
 inline
@@ -1211,7 +1214,7 @@ printull(u)
    ull u;
 {
    ull msk;
-   int i, c, shr;
+   int c, shr;
    char * ctbl[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a",
       "b", "c", "d", "e", "f" };
 

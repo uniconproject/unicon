@@ -146,6 +146,12 @@ AC_ARG_ENABLE([thin],
 AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug], [Add debugging symbols])],
 			[debug=yes], [debug=no])
+AC_ARG_ENABLE([debugheap],
+	[AS_HELP_STRING([--enable-debugheap], [Enable advanced heap debugging ])],
+			[debugheap=yes], [debugheap=no])
+AC_ARG_ENABLE([verifyheap],
+	[AS_HELP_STRING([--enable-verifyheap], [Enable advanced heap verification])],
+			[verifyheap=yes], [verifyheap=no])
 AC_ARG_ENABLE([devmode],
 	[AS_HELP_STRING([--enable-devmode], [Developper mode: turn on warnings and debugging options])],
 			[devmode=yes], [devmode=no])
@@ -185,6 +191,14 @@ if test x"$devmode" = x"yes" ; then
   AC_DEFINE([DEVMODE], [1], [Developer Mode])
 fi
 
+if test x"$debugheap" = x"yes" ; then
+  AC_DEFINE([DebugHeap], [1], [Debug Heap])
+fi
+
+if test x"$verifyheap" = x"yes" ; then
+  AC_DEFINE([VerifyHeap], [1], [Verify Heap])
+fi
+
 if test x"$udbtools" = x"yes" ; then
   UDBTOOLS=udbtools
 fi
@@ -210,7 +224,7 @@ AC_CFLAG([-fno-omit-frame-pointer])
 
 AC_CFLAG([-fno-strict-aliasing])
 
-AC_CFLAG([-Wno-parentheses-equality])
+AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
 
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
@@ -605,6 +619,7 @@ AC_SUBST(bindir)
 AC_SUBST(libdir)
 AC_SUBST(docdir)
 AC_SUBST(mandir)
+AC_SUBST(htmldir)
 
     cprefix="$prefix"
     cexec_prefix="$exec_prefix"

@@ -755,6 +755,8 @@ enable_progs
 enable_verbosebuild
 enable_thin
 enable_debug
+enable_debugheap
+enable_verifyheap
 enable_devmode
 with_zlib
 with_xlib
@@ -1428,6 +1430,8 @@ Optional Features:
   --enable-thin           Do a minimalist build disabling non critical
                           features
   --enable-debug          Add debugging symbols
+  --enable-debugheap      Enable advanced heap debugging
+  --enable-verifyheap     Enable advanced heap verification
   --enable-devmode        Developper mode: turn on warnings and debugging
                           options
 
@@ -3140,6 +3144,20 @@ else
   debug=no
 fi
 
+# Check whether --enable-debugheap was given.
+if test "${enable_debugheap+set}" = set; then :
+  enableval=$enable_debugheap; debugheap=yes
+else
+  debugheap=no
+fi
+
+# Check whether --enable-verifyheap was given.
+if test "${enable_verifyheap+set}" = set; then :
+  enableval=$enable_verifyheap; verifyheap=yes
+else
+  verifyheap=no
+fi
+
 # Check whether --enable-devmode was given.
 if test "${enable_devmode+set}" = set; then :
   enableval=$enable_devmode; devmode=yes
@@ -4529,6 +4547,18 @@ $as_echo "#define DEVMODE 1" >>confdefs.h
 
 fi
 
+if test x"$debugheap" = x"yes" ; then
+
+$as_echo "#define DebugHeap 1" >>confdefs.h
+
+fi
+
+if test x"$verifyheap" = x"yes" ; then
+
+$as_echo "#define VerifyHeap 1" >>confdefs.h
+
+fi
+
 if test x"$udbtools" = x"yes" ; then
   UDBTOOLS=udbtools
 fi
@@ -4820,9 +4850,9 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Wno-parentheses-equality"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wno-parentheses-equality" >&5
-$as_echo_n "checking whether $CC supports -Wno-parentheses-equality... " >&6; }
+	CFLAGS="$CFLAGS -Werror -Wno-parentheses-equality"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Werror -Wno-parentheses-equality" >&5
+$as_echo_n "checking whether $CC supports -Werror -Wno-parentheses-equality... " >&6; }
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -4838,6 +4868,9 @@ if ac_fn_c_try_compile "$LINENO"; then :
 
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				CFLAGS="$CFLAGS -Wno-parentheses-equality"
 
 
 else
@@ -13632,6 +13665,7 @@ fi
 # autoconf does this too late, so just do it now...
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
 
 
 

@@ -336,7 +336,6 @@ operator{1} ++ union(x,y)
 	 int res;
 	 register int i;
 	 register word slotnum;
-         struct descrip d;
          tended union block *dstp;
          tended struct b_slots *seg;
          tended struct b_telem *ep;

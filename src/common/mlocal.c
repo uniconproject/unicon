@@ -40,10 +40,11 @@ getenv_r(const char *name, char *buf, size_t len);
 char *
 getenv_var(const char *name)
 {
-  char *buf, *buf2;
+  char *buf;
+#if HAVE_GETENV_R
+  char *buf2;
   int rv, len = 512;
 
-#if HAVE_GETENV_R
   buf = malloc(len);
   if (buf == NULL)
     return NULL;

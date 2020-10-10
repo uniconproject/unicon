@@ -1726,9 +1726,7 @@ int pattern_image(union block *pe, int prev_index, dptr result,
    tended struct descrip right;
    tended struct descrip left;
    tended struct descrip arg;
-   struct descrip punct;
    int index_image = 0; 
-   int flag = 0; 
    if (ep != NULL) {
 
        if(Blk(ep, Pelem)->index == pe_index)
@@ -1737,7 +1735,6 @@ int pattern_image(union block *pe, int prev_index, dptr result,
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
              int common_index;
-             union block * temp;  
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
         
@@ -2100,7 +2097,6 @@ int pattern_image(union block *pe, int prev_index, dptr result,
 
 int arg_image(struct descrip arg, int pcode,  int type, dptr result)
    {
-   struct descrip image;
    tended struct descrip param = arg;  
    
    if(!is:list(param)) {
@@ -2132,7 +2128,6 @@ int arg_image(struct descrip arg, int pcode,  int type, dptr result)
    else {
       struct b_list *l = (struct b_list *) BlkLoc(param);
       tended struct b_lelem *le = (struct b_lelem *) l->listhead;
-      struct descrip str;
       int leCurrent = 1;
 
       if(!is:string(le->lslots[le->first]))

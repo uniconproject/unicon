@@ -30,10 +30,6 @@
  */
 long millisec()
    {
-#ifdef HAVE_CLOCK_GETTIME
-   long usertime = 0;
-#endif					/* HAVE_CLOCK_GETTIME */   
-
 #ifdef HAVE_GETRUSAGE
    struct rusage ruse;
    int i = getrusage(RUSAGE_SELF, &ruse);
@@ -45,7 +41,9 @@ long millisec()
    static long starttime = -2;
 
 #ifdef HAVE_CLOCK_GETTIME
-    { struct timespec ts;
+   long usertime = 0;
+
+   { struct timespec ts;
       static long system_millisec;
      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
      if (starttime == -2)

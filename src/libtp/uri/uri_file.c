@@ -37,7 +37,6 @@
 #include "uri.h"
 #include "uri_schm.h"
 
-static const char *URI_DEFAULT_PATH="/";
 
 PURI _file_parse(char *uri, PURI puri);
 

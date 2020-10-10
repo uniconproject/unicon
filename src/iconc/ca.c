@@ -926,7 +926,6 @@ read_caf_class(void)
 {
    int len;
    char * p;
-   char * q;
    struct cls * cls;
  
    /* read the name of a class defined in the current caf */
@@ -947,7 +946,6 @@ read_caf_import(void)
 {
    int len;
    char * p;
-   char * q;
    struct imp * imp;
 
    /* read an import of the cur caf */
@@ -968,7 +966,6 @@ read_caf_link(void)
 {
    int len;
    char * p;
-   char * q;
    struct lnk * lnk;
 
    /* read a link of the cur caf */
@@ -1027,7 +1024,6 @@ read_caf_pkgname(void)
 {
    int len;
    char * p;
-   char * q;
 
    /* read cur caf's package name */
    for (p=buf_; *p && *p != ':'; p++)
@@ -1044,7 +1040,6 @@ read_caf_proc(void)
 {
    int len;
    char * p;
-   char * q;
    unsigned h;
    struct bkt * bkt;
    struct prc * prc;
@@ -1078,7 +1073,6 @@ read_caf_supercls(void)
 {
    int len;
    char * p;
-   char * q;
    struct supercls * sc;
 
    /*
@@ -1129,7 +1123,6 @@ resolve_invk(caf, prc, invk, cafs, prcs)
    int n;
    char buf[256];
    struct cls * cls;
-   struct mthd * mthd;
    struct supercls * sc;
 
    n = 0;

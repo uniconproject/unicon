@@ -40,11 +40,12 @@ struct b_coexpr *sblkp;
 #ifndef CoExpr
    syserr("co_init() called, but co-expressions not implemented");
 #else					/* CoExpr */
-   register word *newsp;
    register dptr dp, dsp;
    int na, nl, i;
 #if COMPILER
    int nt;
+#else
+   register word *newsp;
 #endif					/* COMPILER */
    /*
     * Get pointer to refresh block.

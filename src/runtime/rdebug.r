@@ -29,11 +29,10 @@ dptr argp;
 FILE *logfptr; 
    {
    struct b_proc *cproc;
-   long depth = 0, iteration = 0;
 #if COMPILER
    struct debug *debug;
-   word nparam;
 #else					/* COMPILER */
+   long depth = 0, iteration = 0;
    struct pf_marker *origpfp;
    dptr arg;
    inst cipc;

@@ -3927,7 +3927,6 @@ field_ref(p, n, rslt)
    struct code *lbl;
    struct lentry *single;
    int deref;
-   int nrecs;
    int num_offsets;
    int offset;
    int bad_recs;
@@ -4755,7 +4754,6 @@ static void setloc(n)
 nodeptr n;
    {
    struct code *cd;
-   static int   count=0;
 
    if (n == NULL || File(n) == NULL || Line(n) == 0)
       return;

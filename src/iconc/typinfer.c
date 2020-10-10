@@ -4101,7 +4101,10 @@ side_effect(il)
    struct il_code * il;
 {
    int n_set;
-   int i, j, k;
+   int i, k;
+#ifdef opt_try
+   int j;
+#endif
    int num_bits;
    int frst_bit;
    unsigned int * rng;

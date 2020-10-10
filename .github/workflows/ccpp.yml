@@ -62,6 +62,7 @@ jobs:
         -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics' }
         -  { os: ubuntu-latest, name: 'No 3D Graphics', opt: '--disable-graphics3d' }
         -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency' }
+        -  { os: ubuntu-latest, name: 'Heap Test', opt: '--enable-debugheap  --enable-verifyheap' }
         #-  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
     steps:
     - name: Checkout
@@ -72,8 +73,10 @@ jobs:
         sudo apt-get update
         if [[ "${{ matrix.cfg.name }}" = "Ubuntu 32-bit" ]]
         then
+        # Install tools to cross compile 32-bit
         sudo apt-get install -y gcc-multilib g++-multilib
         fi
+        # Easy way to install all dependencies
         sudo apt-get install -y devscripts equivs
         sudo mk-build-deps --install debian/control
 
@@ -82,6 +85,12 @@ jobs:
 
     - name: Make
       run: make
+      # set VRFY globally even though it is only needed in the debug test
+      env:
+        VRFY: -2
 
     - name: Test
       run: make Test
+      # set VRFY globally even though it is only needed in the debug test
+      env:
+        VRFY: -2

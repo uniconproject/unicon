@@ -881,23 +881,39 @@ end
 # <i>This is intended for internal use only!</i>
 # </p>
 procedure checkSpecial(s, keyMap)
-    local ns
+    local ns, inPre, inCode
     static cMap      # map of UniDoc special comments fields for sbal()
     initial {
         cMap := table()
         cMap["<["] := "]>"
         }
+    inPre := inCode := 0
     ns := ""
     s ? {
-        while ns ||:= tab(find("<[")) do {
-            if not parseClause(sbal(cMap), keyMap) then {
-                ns ||:= "&lt;["
-                }
-            }
+        # Have to ignore UniDoc special comments inside <pre> or <code> blocks
+        while ns ||:= tab(find("<")) do {
+           if ns ||:= 1(="<pre>",inPre +:= 1) then next
+           if ns ||:= 1(="</pre>",inPre := decr(inPre)) then next
+           if ns ||:= 1(="<code>",inCode +:= 1) then next
+           if ns ||:= 1(="</code>",inCode := decr(inCode)) then next
+           if (inPre = 0) & (inCode = 0) then {
+              if match("<[") then {
+                 if not parseClause(sbal(cMap), keyMap) then {
+                    ns ||:= (move(2),"&lt;[")
+                    }
+                 }
+              else ns ||:= move(1)
+              }
+           else ns ||:= (move(1), "&lt;")
+           }
         ns ||:= tab(0)
         }
 
     return ns
+end
+
+procedure decr(n)
+   return (n > 0, n-1)|0
 end
 
 # <p>

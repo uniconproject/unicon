@@ -4,8 +4,11 @@
 
 # Assumes you're running this from the unidoc source directory
 UBASE=$(realpath ../..)
+if [ -z "${htmldir}" ]; then
+   htmldir=${UBASE}/doc
+fi
 SBASE=${UBASE}/uni
-TBASE=${UBASE}/doc/uni-api
+TBASE=${htmldir}/uni-api
 DIRS="lib unidoc"
 # SDIRS and LDIRS are comma-separated lists
 SDIRS="${SBASE}/lib,${UBASE}/ipl/procs"

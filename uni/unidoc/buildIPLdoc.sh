@@ -3,9 +3,12 @@
 # Build and install the IPL documentation
 
 # Assumes you're running this from the unidoc source directory
-UBASE=../..
+UBASE=$(realpath ../..)
+if [ -z "${htmldir}" ]; then
+   htmldir=${UBASE}/doc
+fi
 SBASE=${UBASE}/ipl
-TBASE=${UBASE}/doc/ipl-api
+TBASE=${htmldir}/ipl-api
 DIRS="procs gprocs mprocs progs gprogs mprogs"
 # SDIRS and LDIRS are comma-separated lists
 #  (This script doesn't use LDIRS

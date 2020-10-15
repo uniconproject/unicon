@@ -12,11 +12,11 @@ name=unspecified
 IPATH=
 LPATH=
 
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD )"
+REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD)"
 REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
 REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
 REPO_REV_DESCR="$(shell LC_ALL=C git describe --long HEAD)"
-REPO_REV_BRANCH="$(shell LC_ALL=C git branch --show-current)"
+REPO_REV_BRANCH="$(shell LC_ALL=C git branch rev-parse --abbrev-ref HEAD)"
 
 SHELL=sh
 SHTOOL=./shtool

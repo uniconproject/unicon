@@ -2,7 +2,12 @@
 #
 
 #  configuration parameters
-VERSION=13.1
+
+PKG_NAME=Unicon
+PKG_TARNAME=unicon
+PKG_VERSION=13.2
+PKG_STRING=Unicon 13.2
+
 name=unspecified
 IPATH=
 LPATH=
@@ -317,12 +322,11 @@ install Install:
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 
 # Bundle up for binary distribution.
-
-DIR=unicon.$(VERSION)
+DIR=$(PKG_TARNAME).$(PKG_VERSION)
 Package:
 		rm -rf $(DIR)
 		umask 002; $(MAKE) Install dest=$(DIR)
-		tar cf - unicon.$(VERSION) | gzip -9 >unicon.$(VERSION).tgz
+		tar cf - $(PKG_TARNAME).$(PKG_VERSION) | gzip -9 >$(PKG_TARNAME).$(PKG_VERSION).tgz
 		rm -rf $(DIR)
 
 distclean2: clean
@@ -351,7 +355,6 @@ update_rev:
 	   echo "#define gitDescription \"$(REPO_REV_DESCR)\"" > src/h/build.h; \
 	fi
 	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> src/h/build.h;
-
 
 MV=3
 VV=13.1.$(MV)

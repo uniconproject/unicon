@@ -7,6 +7,9 @@
 #undef UVersion
 #undef IVersion
 
+/* Include build information for files that need version details */
+#include "../h/build.h"
+
 /*
  *  Icon version number and date.
  *  These are the only two entries that change any more.

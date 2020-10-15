@@ -9,6 +9,8 @@ include ../../Makedefs
 REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD )"
 REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
 REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
+REPO_REV_DESCR="$(shell LC_ALL=C git describe --long HEAD)"
+REPO_REV_BRANCH="$(shell LC_ALL=C git branch --show-current)"
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
@@ -164,6 +166,12 @@ update_rev:
 	elif test ! -f ../h/revision.h ; then \
 	   echo "#define REPO_REVISION \"0\"" > ../h/revision.h; \
 	fi
+	@if test -z $(REPO_REV_DESCR) ; then \
+	   echo "#define gitDescription \"commit $(REPO_REV_HASH)\"" > ../h/build.h; \
+	else \
+	   echo "#define gitDescription \"$(REPO_REV_DESCR)\"" > ../h/build.h; \
+	fi
+	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> ../h/build.h;
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "

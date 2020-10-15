@@ -19,9 +19,11 @@ prefix=/usr/local
 exec_prefix=${prefix}
 bindir=${exec_prefix}/bin
 libdir=${exec_prefix}/lib
+datarootdir=${prefix}/share
 docdir=${datarootdir}/doc/${PACKAGE_TARNAME}
 mandir=${datarootdir}/man
-datarootdir = ${prefix}/share
+htmldir=${docdir}
+
 
 PATCHSTR=./bin/patchstr
 

@@ -922,8 +922,8 @@ keyword{3} version
     }
    inline {
       suspend C_string Version;        /* As before, from version.h */
-      suspend C_string gitDescription; /* output from "git describe --long HEAD" */
-      return  C_string gitBranch;      /* output from "git branch --show-current" */
+      suspend C_string gitDescription; /* git describe --long HEAD */
+      return  C_string gitBranch;      /* current git branch */
    }
 end
 

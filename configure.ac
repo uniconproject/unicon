@@ -1,4 +1,4 @@
-AC_INIT([Unicon],[13.1],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
+AC_INIT([Unicon],[13.2],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
 
 AC_CANONICAL_HOST
 
@@ -849,7 +849,7 @@ fi
 AC_MSG_RESULT([
 
 --------------------------------------------------
-           Configuration Summary
+    $PACKAGE_STRING Configuration Summary
 --------------------------------------------------
 *** Build Environment
 Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osrel

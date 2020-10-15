@@ -2,16 +2,21 @@
 #
 
 #  configuration parameters
-VERSION=13.1
+
+PKG_NAME=@PACKAGE_NAME@
+PKG_TARNAME=@PACKAGE_TARNAME@
+PKG_VERSION=@PACKAGE_VERSION@
+PKG_STRING=@PACKAGE_STRING@
+
 name=unspecified
 IPATH=
 LPATH=
 
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD )"
+REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD)"
 REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
 REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
 REPO_REV_DESCR="$(shell LC_ALL=C git describe --long HEAD)"
-REPO_REV_BRANCH="$(shell LC_ALL=C git branch --show-current)"
+REPO_REV_BRANCH="$(shell LC_ALL=C git branch rev-parse --abbrev-ref HEAD)"
 
 SHELL=sh
 SHTOOL=./shtool
@@ -319,12 +324,11 @@ install Install:
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 
 # Bundle up for binary distribution.
-
-DIR=unicon.$(VERSION)
+DIR=$(PKG_TARNAME).$(PKG_VERSION)
 Package:
 		rm -rf $(DIR)
 		umask 002; $(MAKE) Install dest=$(DIR)
-		tar cf - unicon.$(VERSION) | gzip -9 >unicon.$(VERSION).tgz
+		tar cf - $(PKG_TARNAME).$(PKG_VERSION) | gzip -9 >$(PKG_TARNAME).$(PKG_VERSION).tgz
 		rm -rf $(DIR)
 
 distclean2: clean

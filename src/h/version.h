@@ -14,9 +14,9 @@
  *  Icon version number and date.
  *  These are the only two entries that change any more.
  */
-#define VersionNumber "13.1"
+#define VersionNumber "13.2"
 
-#define VersionDate "November 6, 2019"
+#define VersionDate "October 15, 2020"
 
 /*
  * Version number to insure format of data base matches version of iconc

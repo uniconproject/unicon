@@ -1,4 +1,6 @@
 SHELL=/bin/sh
+BASE=../..
+include $(BASE)/Makedefs.uni
 
 ########################################################
 # Manage the construction of the UniDoc program        #
@@ -26,14 +28,14 @@ help:
 #    commonly used suffixes.
 #
 %.u:	%.icn
-	unicon -c $?
+	$(UNICON) $(UFLAGS) -c $?
 
 UniDoc: $(UFILES) UniDoc.icn
-	unicon UniDoc
+	$(UNICON) UniDoc
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)
-	unicon -c $?
+	$(UNICON) $(UFLAGS) -c $?
 
 doc docs:	UniDoc
 	./buildDocs.sh

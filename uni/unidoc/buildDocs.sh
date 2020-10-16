@@ -2,17 +2,37 @@
 
 # Build and install the UniDoc documentation
 
-LBASE=/opt/unicon/ipl
-SBASE=${HOME}/.src/Unicon/Samples/UniDoc
-TBASE=/var/www/html/unicon/unisamples/UniDoc
-title="UniDoc Code Generator"
+# Assumes you're running this from the unidoc source directory
+UBASE=$(realpath ../..)
+if [ -z "${htmldir}" ]; then
+   htmldir=${UBASE}/doc
+fi
+SBASE=${UBASE}/uni
+TBASE=${htmldir}/uni-api
+DIRS="lib unidoc"
+# SDIRS and LDIRS are comma-separated lists
+SDIRS="${SBASE}/lib,${UBASE}/ipl/procs"
+LDIRS="${TBASE}/lib"
+basetitle="Unicon Uni API "
 
-echo
-echo "[Building docs for ${title}]"
-echo "UBASE is ${UBASE}"
-echo
-mkdir -p ${TBASE}
-cd ${SBASE}
-UniDoc --title="${title}" --linkSrc \
-       --sourcePath=${SBASE}/../../Classes \
-       --resolve --targetDir=${TBASE} *.icn
+cdir=$(pwd)
+for dir in ${DIRS}; do
+     echo
+     echo "[Building API docs for ${dir}]"
+     echo
+     title="${basetitle} for ${dir}"
+     SD=${SBASE}/${dir}
+     TD=${TBASE}/${dir}
+     mkdir -p ${TD}
+     cd ${SD}
+     /opt/unicon/uni/unidoc/UniDoc --title="${title}" --linkSrc \
+            --sourcePath=${SDIRS} \
+            --linkPath=${LDIRS} \
+            --resolve --targetDir=${TD} *.icn
+     cd ${cdir}
+     echo
+     echo
+     echo
+     echo
+done
+

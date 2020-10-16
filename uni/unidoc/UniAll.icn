@@ -20,1022 +20,1060 @@
 package UniDoc
 
 import util
-import parser
 import lang
+import parser
 
 #<p>
 #  The UniAll class holds the entire internal form of a Unicon
 #    documentation set.
 #</p>
-class UniAll : Object (files, packages,
-		       curFile, curClass, curPackage, curComments, fileHead,
-		       uniFile, resolveFlag, targetDir, saveSrcFlag,
-		       importSet, linkSet, badFiles, sourcePath)
-
-   # <p>
-   # Set the level of entity resolution.  If <b>flag</b> is <b>&null</b>,
-   # then references to entities <i>not</i> contained in files passed
-   # to <b>processFile()</b> are not expanded.  If <b>flag</b> is non-null,
-   # then the current sourcePath is used to locate these entities.
-   # </p>
-   method fullyResolve(flag)
-      if map(flag[1]) == "n" then flag := &null
-      resolveFlag := flag
-   end
-
-   # <p>
-   # Set the source path to be used when attempting to resolve
-   # unknown entities.
-   # </p>
-   method setSourcePath(p)
-      sourcePath := p
-   end
-
-   # <p>
-   # Decide whether or not to save a copy of source code to link to.
-   # </p>
-   method setSaveSrc(flag)
-      if map(flag[1]) == "n" then flag := &null
-      saveSrcFlag := flag
-   end
-
-   # <p>
-   # Remember the target directory (needed if we're output source
-   # code for later linking.)
-   # </p>
-   method setTargetDir(tDir)
-      targetDir := tDir
-   end
-
-   # <p>
-   # Remember <b>fName</b> as a file that has been processed.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   #
-   method addFile(fName)
-      if curFile := /files[fName] := UFile(fName) then {
-         if \saveSrcFlag then
-            curFile.setSrcFile(uniFile.getFilename())
-         return curFile
-         }
-   end
-
-   # <p>
-   # Insert a tag for an entirty into the saved source code, if any.
-   # </p>
-   method addTag(obj)
-      if uniFile.hasSource() then {
-	 if \saveSrcFlag then
-	    obj.setSrcFile(uniFile.getFilename())
-	 tag := obj.getFormType()||"_"||obj.getName()
-	 uniFile.setTag(tag)
-	 }
-   end
-
-   # <p>
-   #  Remove any files that have already been processed from the
-   #    import and link sets.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   #
-   method cleanSets()
-      local fName, pName, fList
-
-      # for now, just be satisfied with the link set, since
-      #     imports are *not* file names!
-      #
-      every fName := !linkSet do {
-	 if \files[fName] then {     # Already processed, remove
-	    delete(linkSet, fName)
-	    }
-	 }
-      every pName := !importSet do {
-	 every fName := genPackageFiles(pName) do {
-	    if /fName | (*fName == 0) then next
-	    if /files[fName] then {     # Need to process
-	       insert(linkSet, \fName)
-	       }
-	    }
-	 }
-      every delete(linkSet, !badFiles)
-   end
-
-   # <p>
-   # This is the main entry point to the <b>UniAll</b> class.  When
-   # invoked, the file <b>fName</b> is parsed and added to an
-   # internal representation for the Unicon source code being
-   # handled by this class instance.  May be called repeatedly to
-   # process multiple files.
-   # </p>
-   method processFile(fName)
-
-      if /fName | (*fName = 0) then fail
-      fName := delSuffix(fName,".icn")||".icn"
-      uniFile := UniFile(fName) |
-	 UniFile(fName, genDirs(\sourcePath)) | {
-	    insert(badFiles, fName)
-	    fail
-	    }
-      if f := addFile(fName) then {
-	 uniFile.setSaveSrc(saveSrcFlag)
-	 fileHead := "yes"
-	 curClass := &null
-	 curComments := Comments()
-
-	 # Start by assuming this file is not part of a package
-	 curPackage := packages["(main)"]
-	 curFile.setPackage(curPackage)
-	 packages["(main)"].addFile(f)
-	 classifyLines(uniFile)
-	 if uniFile.hasSource() then {
-	    UniDoc::writeSrcFile(targetDir, uniFile)
-	    }
-	 uniFile.close()
-	 }
-
-      # See if we need to resolve imports and links...
-
-      if \resolveFlag then {     # Yep...
-
-	 cleanSets()
-
-	 # Have added package files from imports to linkSet, since
-	 #     imports are *not* file names!
-	 #
-	 while *linkSet > 0 do {
-	    every fName := !linkSet do {
-	       processFile(fName)
-	       }
-	    cleanSets()
-	    }
-	 }
-   end
-
-   #<p>
-   #  Given the name of a package, generates all the files associated with
-   #    that package.  (Uses <b>parser</b> package from <i>Robert Parlett</i>
-   #    and requires that the package has been compiled and exists on IPATH.)
-   #</p>
-   method genPackageFiles(pName)
-      local pi
-
-      pi := parser::load_package_info(pName) | fail
-      suspend !pi.get_files()
-   end
-
-   #<p>
-   # Given a string of space-separated directories, generates the
-   # individual directories from that string.  Guarantees that
-   # each directory produced ends with "/".
-   #</p>
-   # <i>This is intended for internal use only!</i>
-   method genDirs(s)
-      suspend trim(genFields(s),"/\\")||"/"
-   end
-
-   #<p>
-   # Output some simple statistics on the amount of processing
-   #  that has been performed.  Give more detail if <b>detail</b>
-   #  is non-null.
-   #</p>
-   method dumpStatistics(detail)
-      local p
-
-      write()
-      write()
-      write("UniDoc processing:")
-      write()
-
-      write("Files:         ",*files)
-      if \detail then dumpNames("\t",files)
-      write("Packages:      ",*packages)
-      if \detail then {
-	 every p := (!sort(packages))[2] do {
-	    write("\t",p.getName(),":")
-	    write("\t\tfiles:",      p.files.size())
-	    write("\t\tpackages:",   p.imports.size())
-	    write("\t\tclasses:",    p.classes.size())
-	    write("\t\tprocedures:", p.procs.size())
-	    write("\t\trecords:",    p.records.size())
-	    write("\t\tglobals:",    p.globals.size())
-	    write()
-	    }
-	 }
-
-      write("\n")
-      write("Unprocessed files: ",*badFiles)
-      if \detail then dumpNames("\t", badFiles)
-   end
-
-   # <p>
-   # Outputs a list of entity names.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method dumpNames(prefix, data)
-      if Utils::istype(data, "table") then {
-	 every write(prefix, key(data))
-	 }
-      else if Utils::istype(data, "UniDoc::Sequence") then {
-	 every write(prefix, data.get().getName())
-	 }
-      else if Utils::istype(data, "UniDoc::Set") then {
-	 every write(prefix, data.get().getName())
-	 }
-      else {
-	 every write(prefix, !sort(data))
-	 }
-   end
-
-   # <p>
-   # Parse a file, building an internal representation.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method classifyLines(f)
-      while classify(f)
-   end
-
-   # <p>
-   #  Classify the type of an input line based on tokens produced
-   #  during parsing of the file <b>f</b>.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method classify(f)
-      local token
-
-      token := f.nextToken() | fail
-
-      case token.Type() of {
-	 "UniDoc::BlankLine" : processBlank(f)
-	 "UniDoc::Comment"   : processComment(f, token.value)
-	 "UniDoc::Keyword"   : processKeyword(f, token.value)
-	 }
-
-      f.clearLine()
-      return
-   end
-
-   # <p>
-   #   Process a blank line.  Blank lines are only interesting
-   #   in that they serve to distinguish comment blocks.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processBlank(f)
-      if \fileHead then {     # File-level comments
-	 fileHead := &null
-	 curFile.setComments(curComments)
-	 }
-      curComments := Comments()    # discard current comment block
-   end
-
-   # <p>
-   #   Process a comment.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processComment(f, s)
-      curComments.add(s)
-   end
-
-   # <p>
-   # Process a keyword.  Not all keywords are interesting.  Many
-   # are simply ignored.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processKeyword(f, word)
-      case word of {
-	 "package"   : processPackage(f)
-	 "import"    : processImport(f)
-	 "link"      : processLink(f)
-	 "class"     : processClass(f)
-	 "initially" : processInitially(f)
-	 "method"    : processMethod(f)
-	 "procedure" : processProcedure(f)
-	 "global"    : processGlobal(f)
-	 "record"    : processRecord(f)
-	 }
-   end
-
-   # <p>
-   # There are places in a Unicon program where an entity may be
-   # represented by either a <i>name</i> or a <i>string</i>.
-   # This guarentees that it's represented by a name.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method getName(token)
-      if token.Type() == "UniDoc::String" then {
-	 return token.value[2:-1]
-	 }
-      return token.value
-   end
-
-   # <p>
-   # Process a package header.  Note that this implies that
-   # the current file isn't part of the <i>default</i> package.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processPackage(f)
-      local pName
-
-      pName := getName(f.nextToken())
-      /packages[pName] := UPackage(pName, curFile)
-      curPackage := packages[pName]
-      curPackage.mergeComments(curComments)
-      curComments := Comments()
-      curFile.setPackage(curPackage)
-      curPackage.addFile(curFile)
-      packages["(main)"].delFile(curFile.getName())
-   end
-
-   # <p>
-   # Process an import statement.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processImport(f)
-      local iName, iList, imp, token, sawComma
-
-      iName := getName(f.nextToken())
-      iList := iName
-      insert(importSet, iName)           # Remember for later processing
-      imp := UImport(iName, curFile, curComments)
-      curComments := Comments()
-      curFile.addImport(imp)
-      curPackage.addImport(imp)
-      while not f.EOS() do {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comma" then {
-	    token := f.nextToken()
-	    sawComma := "yes"
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    imp.addComment(token.value)
-	    if \sawComma then {
-	       f.pushback(Comma())
-	       }
-	    }
-	 else if token.Type() == ("UniDoc::Name" | "UniDoc::String") then {
-	    iName := getName(token)
-	    insert(importSet, iName)   # Remember for later processing
-	    imp := UImport(iName, curFile)
-	    iList ||:= " " || iName
-	    curFile.addImport(imp)
-	    curPackage.addImport(imp)
-	    sawComma := &null
-	    }
-	 }
-   end
-
-   # <p>
-   # Process a link statement.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processLink(f)
-      local lName, lList, lnk, token, sawComma
-
-      lName := getName(f.nextToken())
-      lList := lName
-      lName := delSuffix(lName, ".icn")||".icn"
-      insert(linkSet, lName)             # Remember for later processing
-      lName := delSuffix(lName,".icn")||".icn"
-      lnk := ULink(lName, curFile, curComments)
-      curComments := Comments()
-      curFile.addLink(lnk)
-      while not f.EOS() do {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comma" then {
-	    token := f.nextToken()
-	    sawComma := "yes"
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    lnk.addComment(token.value)
-	    if \sawComma then {
-	       f.pushback(Comma())
-	       }
-	    }
-	 else if token.Type() == ("UniDoc_Name" | "UniDoc_String") then {
-	    lName := getName(token)
-	    insert(linkSet, lName)     # Remember for later processing
-	    lList ||:= " " || lName
-	    lName := delSuffix(lName,".icn")||".icn"
-	    lnk := ULink(lName, curFile)
-	    curFile.addLink(lnk)
-	    sawComma := &null
-	    }
-	 }
-   end
-
-   # <p>
-   # Process a class header.  If there's an <b>initially</b> clause that
-   # will get tacked on later.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processClass(f)
-      local cName, const, scList, token, scName, pList, field
-
-      cName := getName(f.nextToken())
-      curClass := UClass(cName, curFile, curComments)
-      addTag(curClass)
-
-      const := UConstructor(curClass.getName(), curClass, Comments())
-      curClass.setConstructor(const)
-      curComments := Comments()
-
-      curClass.setFile(curFile)
-      curClass.setPackage(curPackage)
-      curFile.addClass(curClass)
-      curPackage.addClass(curClass)
-      scList := ""
-
-      while (token := f.nextToken()).className() ~== "UniDoc::LParen" do {
-	 if token.Type() == "UniDoc::Colon" then {
-	    next
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    if /scName then {   # attach to class
-	       curClass.addComment(token.value)
-	       }
-	    else {
-	       sClass.addComment(token.value)
-	       }
-	    }
-	 else if token.Type() == "UniDoc::Name" then {
-	    scName := getName(token)
-	    sClass := UName(scName, curClass)
-	    sClass.setCategory("class")
-	    curClass.addSuperClass(sClass)
-	    scList ||:= ": " || scName
-	    }
-	 }
-      f.pushback(token)
-      pList := ""
-      while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
-	 if token.Type() == "UniDoc::Comma" then {
-	    next
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    if /field then {        # apply to class itself
-	       curClass.addComment(token.value)
-	       }
-	    else {                # apply to field name
-	       field.addComment(token.value)
-	       }
-	    }
-	 else if token.Type() == "UniDoc::Name" then {
-	    field := getParam(f, token, "field", curClass)
-	    pList ||:= " " || field.getName()
-	    curClass.addField(field)
-	    }
-	 }
-
-      if not f.EOS() then {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comment" then {
-	    curClass.addComment(token.value)
-	    }
-	 else f.pushback(token)
-	 }
-
-      curClass.getConstructor().setParams(curClass.getParams())
-   end
-
-   # <p>
-   # Get a parameter.
-   # </p>
-   method getParam(f, token, category, parent)
-      fName := getName(token)
-      param := UName(fName, parent)
-      param.setCategory(category)
-
-      # Look for default value and or type. (Note: if
-      #   only one or the other, can't distinquish so assume default value
-      #
-      if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
-	 token := f.nextToken()      # initializer
-	 param.setDefValue(token.get())
-	 if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
-	    # oops, had a type earlier!
-	    param.setTypeValue(param.getDefValue())
-	    token := f.nextToken()      # initializer
-	    param.setDefValue(token.get())
-	    }
-	 else f.pushback(token)
-	 }
-      else f.pushback(token)
-
-      return param
-   end
-
-   # <p>
-   # Get a global.
-   # </p>
-   method getGlobal(f, token, parent, comments)
-      gName := getName(token)
-      glob := UGlobal(gName, parent, comments)
-      addTag(glob)
-
-      # Look for default value and or type. (Note: if
-      #   only one or the other, can't distinquish so assume default
-      #   value
-      if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
-	 token := f.nextToken()      # initializer
-	 glob.setDefValue(token.get())
-	 if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
-	    # oops, had a type earlier!
-	    glob.setTypeValue(glob.getDefValue())
-	    token := f.nextToken()      # initializer
-	    glob.setDefValue(token.get())
-	    }
-	 else f.pushback(token)
-	 }
-      else f.pushback(token)
-
-      curFile.addGlobal(glob)
-      curPackage.addGlobal(glob)
-
-      return glob
-   end
-
-   # <p>
-   # Process an initially clause, treating it as a class
-   # constructor.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processInitially(f)
-      local const, token, pList, param
-
-      const := UConstructor(curClass.getName(), curClass, curComments)
-      addTag(const)
-      curComments := Comments()
-      curClass.setConstructor(const)
-      token := f.nextToken()
-      if token.Type() == "UniDoc::LParen" then {
-	 const.setParams(Sequence())
-	 pList := ""
-	 while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
-	    if token.Type() == "UniDoc::Comma" then {
-	       next
-	       }
-	    if token.Type() == "UniDoc::Comment" then {
-	       if /param then {        # apply to constructor itself
-		  const.addComment(token.value)
-		  }
-	       else {                # apply to parameter name
-		  param.addComment(token.value)
-		  }
-	       }
-	    else if token.Type() == "UniDoc::Name" then {
-	       param := getParam(f, token, "param", curClass)
-	       pList ||:= " " || param.getName()
-	       const.addParam(param)
-	       }
-	    }
-	 }
-      else {
-	 f.pushback(token)
-	 }
-
-      if not f.EOS() then {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comment" then {
-	    const.addComment(token.value)
-	    }
-	 else f.pushback(token)
-	 }
-
-      # No param list on constructor, so assume all fields!
-      if /const.getParams() then {
-	 const.setParams(curClass.getParams())
-	 }
-   end
-
-   # <p>
-   # Process a method definition.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processMethod(f)
-      local mName, pList, met, token, param
-
-      mName := getName(f.nextToken())
-      pList := ""
-      met := UMethod(mName, curClass, curComments)
-      addTag(met)
-      curClass.addMethod(met)
-      curComments := Comments()
-      token := f.nextToken()
-      if token.Type() == "UniDoc::LParen" then {
-	 token := f.nextToken()
-	 }
-      if token.Type() == "UniDoc::Comment" then {
-	 met.addComment(token.value)
-	 }
-      else if token.Type() ~== "UniDoc::LParen" then {
-	 f.pushback(token)
-	 }
-
-      while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
-	 if token.Type() == "UniDoc::Comma" then {
-	    next
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    if /param then {        # apply to method itself
-	       met.addComment(token.value)
-	       }
-	    else {                # apply to parameter name
-	       param.addComment(token.value)
-	       }
-	    }
-	 else if token.Type() == "UniDoc::Name" then {
-	    param := getParam(f, token, "param", curClass)
-	    pList ||:= " " || param.getName()
-	    met.addParam(param)
-	    }
-	 }
-
-      if not f.EOS() then {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comment" then {
-	    met.addComment(token.value)
-	    }
-	 else f.pushback(token)
-	 }
-   end
-
-   # <p>
-   # Process a procedure definition.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processProcedure(f)
-      local pName, pList, proced, token, param
-
-      pName := getName(f.nextToken())
-      pList := ""
-      proced := UProc(pName, curFile, curComments)
-      addTag(proced)
-      curFile.addProcedure(proced)
-      curPackage.addProcedure(proced)
-      curComments := Comments()
-      token := f.nextToken()
-      if token.Type() == "UniDoc::LParen" then {
-	 token := f.nextToken()
-	 }
-      if token.Type() == "UniDoc::Comment" then {
-	 proced.addComment(token.value)
-	 }
-      else if token.Type() ~== "UniDoc::LParen" then {
-	 f.pushback(token)
-	 }
-
-      while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
-	 if token.Type() == "UniDoc::Comma" then {
-	    next
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    if /param then {        # apply to record itself
-	       proced.addComment(token.value)
-	       }
-	    else {                # apply to field name
-	       param.addComment(token.value)
-	       }
-	    }
-	 else if token.Type() == "UniDoc::Name" then {
-	    param := getParam(f, token, "param", proced)
-	    pList ||:= " " || param.getName()
-	    proced.addParam(param)
-	    }
-	 }
-
-      if not f.EOS() then {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comment" then {
-	    proced.addComment(token.value)
-	    }
-	 else f.pushback(token)
-	 }
-   end
-
-   # <p>
-   # Process a global statement.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processGlobal(f)
-      local gName, gList, glob, token, sawComma
-      gList := ""
-
-      glob := getGlobal(f, f.nextToken(), curFile, curComments)
-      gList ||:= " " || glob.getName()
-      curComments := Comments()
-      while not f.EOS() do {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comma" then {
-	    token := f.nextToken()
-	    sawComma := "yes"
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    glob.addComment(token.value)
-	    if \sawComma then {
-	       f.pushback(Comma())
-	       }
-	    }
-	 else if token.Type() == "UniDoc::Name" then {
-	    glob := getGlobal(f, token, curFile)
-	    gList ||:= " " || glob.getName()
-	    sawComma := &null
-	    }
-	 }
-      uniFile.setInside()                # re-enable Unicon keywords
-   end
-
-   # <p>
-   # Process a record definition.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method processRecord(f)
-      local rName, pList, rec, token, field
-
-      rName := getName(f.nextToken())
-      pList := ""
-      rec := URecord(rName, curFile, curComments)
-      addTag(rec)
-      curFile.addRecord(rec)
-      curPackage.addRecord(rec)
-      curComments := Comments()
-      token := f.nextToken()
-      if token.Type() == "UniDoc::LParen" then {
-	 token := f.nextToken()
-	 }
-      if token.Type() == "UniDoc::Comment" then {
-	 rec.addComment(token.value)
-	 }
-      else if token.Type() ~== "UniDoc::LParen" then {
-	 f.pushback(token)
-	 }
-
-      while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
-	 if token.Type() == "UniDoc::Comma" then {
-	    next
-	    }
-	 if token.Type() == "UniDoc::Comment" then {
-	    if /field then {        # apply to record itself
-	       rec.addComment(token.value)
-	       }
-	    else {                # apply to field name
-	       field.addComment(token.value)
-	       }
-	    }
-	 else if token.Type() == "UniDoc::Name" then {
-	    field := getParam(f, token, "field", rec)
-	    pList ||:= " " || field.getName()
-	    rec.addField(field)
-	    }
-	 }
-
-      if not f.EOS() then {
-	 token := f.nextToken()
-	 if token.Type() == "UniDoc::Comment" then {
-	    rec.addComment(token.value)
-	    }
-	 else f.pushback(token)
-	 }
-
-      uniFile.setInside()                # re-enable Unicon keywords
-   end
-
-   # <p>
-   # Produce a table of all methods that are inherited by
-   #   a class.  Keys are superclasses, entries are
-   #   UniDoc::Set()s of methods.
-   # </p>
-   method inherited(aClass)
-      local iSet, mSet, sc, metd, mName
-
-      # Start with all the methods in the current class
-      every insert(mSet := ::set(), aClass.getMethods().get().getName())
-
-      iSet := table()
-      #mSet := set()
-      every sc := genAllSuperClasses(aClass) do {
-	 every metd := sc.getMethods().get() do {
-	    mName := metd.getName()
-	    if not member(mSet, mName) then {
-	       insert(mSet, mName)
-	       /iSet[sc] := Set()
-	       iSet[sc].add(mName, metd)
-	       }
-	    }
-	 }
-
-      return iSet
-   end
-
-   # <p>
-   # Produce a sorted list (by name) of superclasses,
-   #    given a table whose keys are superclasses.
-   # </p>
-   method makeNameTab(aTab)
-
-      nTab := table()
-      every sc := key(aTab) do {
-	 nTab[sc.getName()] := sc
-	 }
-      every put(nList := [], (!sort(nTab))[2])
-      return nList
-   end
-
-   # <p>
-   # Produce a list of <i>all</i> packages.
-   # </p>
-   method getAllPackages()
-      local ptab, p, plist
-
-      ptab := table()
-      every p := !packages do {
-	 ptab[p] := p.getName()
-	 }
-      every put(plist := [], (!sort(ptab, 2))[1])
-      return plist
-   end
-
-   # <p>
-   # Produce a list of <i>all</i> classes.
-   # </p>
-   method getAllClasses()
-      local ctab, p, g, clist
-
-      ctab := table()
-      every p := !files do {
-	 every g := p.getClasses().get() do {
-	    ctab[g] := g.getName()
-	    }
-	 }
-      every put(clist := [], (!sort(ctab, 2))[1])
-      return clist
-   end
-
-   # <p>
-   # Produce a list of <i>all</i> procedures.
-   # </p>
-   method getAllProcedures()
-      local ctab, p, g, clist
-
-      ctab := table()
-      every p := !files do {
-	 every g := p.getProcedures().get() do {
-	    ctab[g] := g.getName()
-	    }
-	 }
-      every put(clist := [], (!sort(ctab, 2))[1])
-      return clist
-   end
-
-   # <p>
-   # Produce a list of <i>all</i> records.
-   # </p>
-   method getAllRecords()
-      local ctab, p, g, clist
-
-      ctab := table()
-      every p := !files do {
-	 every g := p.getRecords().get() do {
-	    ctab[g] := g.getName()
-	    }
-	 }
-      every put(clist := [], (!sort(ctab, 2))[1])
-      return clist
-   end
-
-   # <p>
-   # Produce a list of <i>all</i> globals.
-   # </p>
-   method getAllGlobals()
-      local ctab, p, g, clist
-
-      ctab := table()
-      every p := !files do {
-	 every g := p.getGlobals().get() do {
-	    ctab[g] := g.getName()
-	    }
-	 }
-      every put(clist := [], (!sort(ctab, 2))[1])
-      return clist
-   end
-
-   # <p>
-   # Produce a list of <i>all</i> files that have been processed,
-   # whether by explicit reference <b>processFile()</b> or during
-   # entity resolution.
-   # </p>
-   method getAllFiles()
-      local ctab, f, clist
-
-      ctab := table()
-      every f := \!files do {
-	 ctab[f.getName()] := f
-	 }
-      every put(clist := [], (!sort(ctab))[2])
-      return clist
-   end
-
-   # <p>
-   # Given the name of a class, attempts to find an existing
-   # html page for that class, by searching the <b>linkPath</b>.
-   # </p>
-   # <p><b>This method is currently broken!</b></p>
-   method classOnLinkPath(bClass, cName)
-      local pName
-
-      # great idea, but generates wrong name (need source file
-      #   for class, not the package name!)  Leave in for
-      #   now because it's no worse than anything else.
-      #
-      cName ? {
-	 if pName := tabSkip("::"|"__") then {
-	    if pName == "" then pName := "0main"
-	    cName := tab(0)
-	    return "class_"||pName||"_"||cName
-	    }
-	 }
-
-      # Don't know how to write the rest because can't determine
-      #   the package for a class from the class name yet!
-   end
-
-   # <p>
-   # Given a class and the name of a superclass of that class,
-   #   return that superclass.
-   # </p>
-   method locateSuperClass(aClass, scName)
-      local pName, p, f, sc
-
-      # If the superclass name tells us the package, use that.
-      scName ? {
-	 if pName := tabSkip("::"|"__") then {
-	    if pName := "" then pName := "(main)"
-	    scName := tab(0)
-	    if \(p := packages[pName]) then {
-	       sc := p.getClass(scName)
-	       return \sc
-	       }
-	 fail                # No hope of finding it!
-	 }
-      }
-
-      # Have to look for it.  Go file, package, imports, links...
-      f := aClass.getFile()
-      p := f.getPackage()
-      if \(sc := (f|p).getClass(scName)) then return sc
-      every pName := f.getImports().get().getName() do {
-	 if \(p := packages[pName]) then {
-	    if \(sc := p.getClass(scName)) then return sc
+class UniAll : Object (files, packages, 
+                      curFile, curClass, curPackage, curComments, fileHead,
+                      uniFile, resolveFlag, targetDir, saveSrcFlag,
+                      importSet, linkSet, badFiles, sourcePath)
+
+    # <p>
+    # Set the level of entity resolution.  If <b>flag</b> is <b>&null</b>,
+    # then references to entities <i>not</i> contained in files passed
+    # to <b>processFile()</b> are not expanded.  If <b>flag</b> is non-null,
+    # then the current sourcePath is used to locate these entities.
+    # </p>
+    method fullyResolve(flag)
+        if map(flag[1]) == "n" then flag := &null
+        resolveFlag := flag
+    end
+
+    # <p>
+    # Set the source path to be used when attempting to resolve
+    # unknown entities.
+    # </p>
+    method setSourcePath(p)
+        sourcePath := p
+    end
+
+    # <p>
+    # Decide whether or not to save a copy of source code to link to.
+    # </p>
+    method setSaveSrc(flag)
+        if map(flag[1]) == "n" then flag := &null
+        saveSrcFlag := flag
+    end
+
+    # <p>
+    # Remember the target directory (needed if we're output source
+    # code for later linking.)
+    # </p>
+    method setTargetDir(tDir)
+        targetDir := tDir
+    end
+
+    # <p>
+    # Remember <b>fName</b> as a file that has been processed.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    #
+    method addFile(fName)
+        if curFile := /files[fName] := UFile(fName) then {
+            if \saveSrcFlag then 
+                curFile.setSrcFile(uniFile.getFilename())
+            return curFile
             }
-         }
-      every fName := f.getLinks().get().getName() do {
-	 if \(p := files[pName]) then {
-	    if \(sc := p.getClass(scName)) then return sc
+    end
+
+    # <p>
+    # Insert a tag for an entirty into the saved source code, if any.
+    # </p>
+    method addTag(obj)
+        if uniFile.hasSource() then {
+            if \saveSrcFlag then 
+                obj.setSrcFile(uniFile.getFilename())
+            tag := obj.getFormType()||"_"||obj.getName()
+            uniFile.setTag(tag)
             }
-         }
+    end
 
-      # Last chance - check the (main) package.
-      sc := packages["(main)"].getClass(scName)
-      return \sc
-   end
+    # <p>
+    #  Remove any files that have already been processed from the
+    #    import and link sets.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    #
+    method cleanSets()
+        local fName, pName, fList
 
-   # <p>
-   # Generate (in order) all the superclasses of a class
-   # </p>
-   method genAllSuperClasses(aClass, scSet)
-      /scSet := ::set()
-      insert(scSet, aClass)
-      scSeq := aClass.getSuperClasses()
-      every scName := scSeq.get().getName() do {
-	 if sc := locateSuperClass(aClass, scName) then {
-	    if not member(scSet, sc) then {   # Haven't seen it yet
-	       suspend sc | genAllSuperClasses(sc, scSet)
-	       }
-	    }
-	 }
-   end
+        # for now, just be satisfied with the link set, since
+        #     imports are *not* file names!
+        #
+        every fName := !linkSet do {
+            if \files[fName] then {     # Already processed, remove
+                delete(linkSet, fName)
+                }
+            }
+        every pName := !importSet do {
+            every fName := genPackageFiles(pName) do {
+                if /fName | (*fName == 0) then next
+                if /files[fName] then {     # Need to process
+                    insert(linkSet, \fName)
+                    }
+                }
+            }
+        every delete(linkSet, !badFiles)
 
-   # <p>
-   # Given a class and a method name from that class, does this method
-   #   override any method from a superclass?
-   # </p><p>
-   # Returns the superclass of the overridden method, if any.
-   # </p>
-   method overrides(aClass, mName)
-      every sc := genAllSuperClasses(aClass) do {
-	 if sc.hasMethod(mName) then {
-	    return sc
-	    }
-	 }
-   end
+    end
+            
 
-initially ()
-   every (files|packages) := table()
-   packages["(main)"]     := UPackage("(main)")
-   resolveFlag            := &null
-   sourcePath             := &null
-   importSet              := ::set()
-   linkSet                := ::set()
-   lName                  := delSuffix(lName, ".icn")||".icn"
-   badFiles               := ::set()
+    # <p>
+    # This is the main entry point to the <b>UniAll</b> class.  When
+    # invoked, the file <b>fName</b> is parsed and added to an
+    # internal representation for the Unicon source code being
+    # handled by this class instance.  May be called repeatedly to
+    # process multiple files.
+    # </p>
+    method processFile(fName)
+
+        if /fName | (*fName = 0) then fail
+        fName := delSuffix(fName,".icn")||".icn"
+        uniFile := UniFile(fName) |
+                   UniFile(fName, genDirs(\sourcePath)) | {
+                   insert(badFiles, fName)
+                   fail
+                   }
+        if f := addFile(fName) then {
+            uniFile.setSaveSrc(saveSrcFlag)
+            fileHead := "yes"
+            curClass := &null
+            curComments := Comments()
+
+            # Start by assuming this file is not part of a package
+            curPackage := packages["(main)"]
+            curFile.setPackage(curPackage)
+            packages["(main)"].addFile(f)
+            classifyLines(uniFile)
+            if uniFile.hasSource() then {
+                UniDoc::writeSrcFile(targetDir, uniFile)
+                }
+            uniFile.close()
+            }
+
+        # See if we need to resolve imports and links...
+        
+        if \resolveFlag then {     # Yep...
+
+            cleanSets()
+
+            # Have added package files from imports to linkSet, since
+            #     imports are *not* file names!
+            #
+            while *linkSet > 0 do {
+                every fName := !linkSet do {
+                    processFile(fName)
+                    }
+                cleanSets()
+                }
+
+            }
+            
+
+    end
+
+    #<p>
+    #  Given the name of a package, generates all the files associated with
+    #    that package.  (Uses <b>parser</b> package from <i>Robert Parlett</i>
+    #    and requires that the package has been compiled and exists on IPATH.)
+    #</p>
+    method genPackageFiles(pName)
+        local pi
+
+        pi := parser::load_package_info(pName) | fail
+        suspend !pi.get_files()
+    end
+
+    #<p>
+    # Given a string of comma-separated directories, generates the
+    # individual directories from that string.  Guarantees that
+    # each directory produced ends with "/".
+    #</p>
+    # <i>This is intended for internal use only!</i>
+    method genDirs(s)
+        suspend trim(genFields(s,','),"/\\")||"/"
+    end
+
+    #<p>
+    # Output some simple statistics on the amount of processing
+    #  that has been performed.  Give more detail if <b>detail</b>
+    #  is non-null.
+    #</p>
+    method dumpStatistics(detail)
+        local p
+
+        write()
+        write()
+        write("UniDoc processing:")
+        write()
+
+        write("Files:         ",*files)
+        if \detail then dumpNames("\t",files)
+        write("Packages:      ",*packages)
+        if \detail then {
+            every p := (!sort(packages))[2] do {
+                write("\t",p.getName(),":")
+                write("\t\tfiles:",      p.files.size())
+                write("\t\tpackages:",   p.imports.size())
+                write("\t\tclasses:",    p.classes.size())
+                write("\t\tprocedures:", p.procs.size())
+                write("\t\trecords:",    p.records.size())
+                write("\t\tglobals:",    p.globals.size())
+                write()
+                }
+            }
+
+        write("\n")
+        write("Unprocessed files: ",*badFiles)
+        if \detail then dumpNames("\t", badFiles)
+    end
+
+    # <p>
+    # Outputs a list of entity names.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method dumpNames(prefix, data)
+        if lang::istype(data, "table") then {
+            every write(prefix, key(data))
+            }
+        else if lang::istype(data, "UniDoc::Sequence") then {
+            every write(prefix, data.get().getName())
+            }
+        else if lang::istype(data, "UniDoc::Set") then {
+            every write(prefix, data.get().getName())
+            }
+        else {
+            every write(prefix, !sort(data))
+            }
+    end
+
+    # <p>
+    # Parse a file, building an internal representation.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method classifyLines(f)
+        while classify(f)
+    end
+
+    # <p>
+    #  Classify the type of an input line based on tokens produced
+    #  during parsing of the file <b>f</b>.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method classify(f)
+        local token
+
+        token := f.nextToken() | fail
+    
+        case token.Type() of {
+            "UniDoc::BlankLine" : processBlank(f)
+            "UniDoc::Comment"   : processComment(f, token.value)
+            "UniDoc::Keyword"   : processKeyword(f, token.value)
+            }
+    
+        f.clearLine()
+        return
+    end
+    
+    # <p>
+    #   Process a blank line.  Blank lines are only interesting
+    #   in that they serve to distinguish comment blocks.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processBlank(f)
+        if \fileHead then {     # File-level comments
+            fileHead := &null
+            curFile.setComments(curComments)
+            }
+        curComments := Comments()    # discard current comment block
+    end
+    
+    # <p>
+    #   Process a comment.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processComment(f, s)
+        curComments.add(s)
+    end
+    
+    # <p>
+    # Process a keyword.  Not all keywords are interesting.  Many
+    # are simply ignored.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processKeyword(f, word)
+        case word of {
+            "package"   : processPackage(f)
+            "import"    : processImport(f)
+            "link"      : processLink(f)
+            "class"     : processClass(f)
+            "initially" : processInitially(f)
+            "method"    : processMethod(f)
+            "procedure" : processProcedure(f)
+            "global"    : processGlobal(f)
+            "record"    : processRecord(f)
+            }
+    end
+    
+    # <p>
+    # There are places in a Unicon program where an entity may be
+    # represented by either a <i>name</i> or a <i>string</i>.
+    # This guarentees that it's represented by a name.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method getName(token)
+        if token.Type() == "UniDoc::String" then {
+            return token.value[2:-1]
+            }
+        return token.value
+    end
+
+    # <p>
+    # Process a package header.  Note that this implies that
+    # the current file isn't part of the <i>default</i> package.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processPackage(f)
+        local pName
+
+        pName := getName(f.nextToken())
+        /packages[pName] := UPackage(pName, curFile)
+        curPackage := packages[pName]
+        curPackage.mergeComments(curComments)
+        curComments := Comments()
+        curFile.setPackage(curPackage)
+        curPackage.addFile(curFile)
+        packages["(main)"].delFile(curFile.getName())
+    end
+    
+    # <p>
+    # Process an import statement.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processImport(f)
+        local iName, iList, imp, token, sawComma
+
+        iName := getName(f.nextToken())
+        iList := iName
+        insert(importSet, iName)           # Remember for later processing
+        imp := UImport(iName, curFile, curComments)
+        curComments := Comments()
+        curFile.addImport(imp)
+        curPackage.addImport(imp)
+        while not f.EOS() do {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comma" then {
+                token := f.nextToken()
+                sawComma := "yes"
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                imp.addComment(token.value)
+                if \sawComma then {
+                    f.pushback(Comma())
+                    }
+                }
+            else if token.Type() == ("UniDoc::Name" | "UniDoc::String") then {
+                iName := getName(token)
+                insert(importSet, iName)   # Remember for later processing
+                imp := UImport(iName, curFile)
+                iList ||:= " " || iName
+                curFile.addImport(imp)
+                curPackage.addImport(imp)
+                sawComma := &null
+                }
+            }
+    
+    end
+    
+    # <p>
+    # Process a link statement.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processLink(f)
+        local lName, lList, lnk, token, sawComma
+
+        lName := getName(f.nextToken())
+        lList := lName
+        lName := delSuffix(lName, ".icn")||".icn"
+        insert(linkSet, lName)             # Remember for later processing
+        lName := delSuffix(lName,".icn")||".icn"
+        lnk := ULink(lName, curFile, curComments)
+        curComments := Comments()
+        curFile.addLink(lnk)
+        while not f.EOS() do {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comma" then {
+                token := f.nextToken()
+                sawComma := "yes"
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                lnk.addComment(token.value)
+                if \sawComma then {
+                    f.pushback(Comma())
+                    }
+                }
+            else if token.Type() == ("UniDoc_Name" | "UniDoc_String") then {
+                lName := getName(token)
+                insert(linkSet, lName)     # Remember for later processing
+                lList ||:= " " || lName
+                lName := delSuffix(lName,".icn")||".icn"
+                lnk := ULink(lName, curFile)
+                curFile.addLink(lnk)
+                sawComma := &null
+                }
+            }
+    
+    end
+    
+    # <p>
+    # Process a class header.  If there's an <b>initially</b> clause that
+    # will get tacked on later.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processClass(f)
+        local cName, const, scList, token, scName, pList, field
+
+        cName := getName(f.nextToken())
+        curClass := UClass(cName, curFile, curComments)
+        addTag(curClass)
+
+        const := UConstructor(curClass.getName(), curClass, Comments())
+        curClass.setConstructor(const)
+        curComments := Comments()
+
+        curClass.setFile(curFile)
+        curClass.setPackage(curPackage)
+        curFile.addClass(curClass)
+        curPackage.addClass(curClass)
+        scList := ""
+
+        while (token := f.nextToken()).className() ~== "UniDoc::LParen" do {
+            if token.Type() == "UniDoc::Colon" then {
+                next
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                if /scName then {   # attach to class
+                    curClass.addComment(token.value)
+                    }
+                else {
+                    sClass.addComment(token.value)
+                    }
+                }
+            else if token.Type() == "UniDoc::Name" then {
+                scName := getName(token)
+                sClass := UName(scName, curClass)
+                sClass.setCategory("class")
+                curClass.addSuperClass(sClass)
+                scList ||:= ": " || scName
+                }
+            }
+        f.pushback(token)
+        pList := ""
+        while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
+            if token.Type() == "UniDoc::Comma" then {
+                next
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                if /field then {        # apply to class itself
+                    curClass.addComment(token.value)
+                    }
+                else {                # apply to field name
+                    field.addComment(token.value)
+                    }
+                }
+            else if token.Type() == "UniDoc::Name" then {
+                field := getParam(f, token, "field", curClass)
+                pList ||:= " " || field.getName()
+                curClass.addField(field)
+                }
+            }
+    
+        if not f.EOS() then {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comment" then {
+                curClass.addComment(token.value)
+                }
+            else f.pushback(token)
+            }
+
+        curClass.getConstructor().setParams(curClass.getParams())
+    end
+
+    # <p>
+    # Get a parameter.
+    # </p>
+    method getParam(f, token, category, parent)
+        fName := getName(token)
+        param := UName(fName, parent)
+        param.setCategory(category)
+
+        # Look for default value and or type. (Note: if
+        #   only one or the other, can't distinquish so assume default value
+        #
+        if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
+            token := f.nextToken()      # initializer
+            param.setDefValue(token.get())
+            if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
+                # oops, had a type earlier!
+                param.setTypeValue(param.getDefValue())
+                token := f.nextToken()      # initializer
+                param.setDefValue(token.get())
+                }
+            else f.pushback(token)
+            }
+        else f.pushback(token)
+
+        return param
+    end
+
+    # <p>
+    # Get a global.
+    # </p>
+    method getGlobal(f, token, parent, comments)
+        gName := getName(token)
+        glob := UGlobal(gName, parent, comments)
+        addTag(glob)
+
+        # Look for default value and or type. (Note: if
+        #   only one or the other, can't distinquish so assume default
+        #   value
+        if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
+            token := f.nextToken()      # initializer
+            glob.setDefValue(token.get())
+            if (token := f.nextToken()).Type() == "UniDoc::Colon" then {
+                # oops, had a type earlier!
+                glob.setTypeValue(glob.getDefValue())
+                token := f.nextToken()      # initializer
+                glob.setDefValue(token.get())
+                }
+            else f.pushback(token)
+            }
+        else f.pushback(token)
+
+        curFile.addGlobal(glob)
+        curPackage.addGlobal(glob)
+
+        return glob
+    end
+    
+    # <p>
+    # Process an initially clause, treating it as a class
+    # constructor.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processInitially(f)
+        local const, token, pList, param
+
+        const := UConstructor(curClass.getName(), curClass, curComments)
+        addTag(const)
+        curComments := Comments()
+        curClass.setConstructor(const)
+        token := f.nextToken()
+        if token.Type() == "UniDoc::LParen" then {
+            const.setParams(Sequence())
+            pList := ""
+            while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
+                if token.Type() == "UniDoc::Comma" then {
+                    next
+                    }
+                if token.Type() == "UniDoc::Comment" then {
+                    if /param then {        # apply to constructor itself
+                        const.addComment(token.value)
+                        }
+                    else {                # apply to parameter name
+                        param.addComment(token.value)
+                        }
+                    }
+                else if token.Type() == "UniDoc::Name" then {
+                    param := getParam(f, token, "param", curClass)
+                    pList ||:= " " || param.getName()
+                    const.addParam(param)
+                    }
+                }
+            }
+        else {
+            f.pushback(token)
+            }
+    
+        if not f.EOS() then {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comment" then {
+                const.addComment(token.value)
+                }
+            else f.pushback(token)
+            }
+        
+        # No param list on constructor, so assume all fields!
+        if /const.getParams() then {
+            const.setParams(curClass.getParams())
+            }
+    end
+    
+    # <p>
+    # Process a method definition.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processMethod(f)
+        local mName, pList, met, token, param
+
+        mName := getName(f.nextToken())
+        pList := ""
+        met := UMethod(mName, curClass, curComments)
+        addTag(met)
+        curClass.addMethod(met)
+        curComments := Comments()
+        token := f.nextToken()
+        if token.Type() == "UniDoc::LParen" then {
+            token := f.nextToken()
+            }
+        if token.Type() == "UniDoc::Comment" then {
+            met.addComment(token.value)
+            }
+        else if token.Type() ~== "UniDoc::LParen" then {
+            f.pushback(token)
+            }
+        
+        while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
+            if token.Type() == "UniDoc::Comma" then {
+                next
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                if /param then {        # apply to method itself
+                    met.addComment(token.value)
+                    }
+                else {                # apply to parameter name
+                    param.addComment(token.value)
+                    }
+                }
+            else if token.Type() == "UniDoc::Name" then {
+                param := getParam(f, token, "param", curClass)
+                pList ||:= " " || param.getName()
+                met.addParam(param)
+                }
+            }
+    
+        if not f.EOS() then {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comment" then {
+                met.addComment(token.value)
+                }
+            else f.pushback(token)
+            }
+        
+    end
+    
+    # <p>
+    # Process a procedure definition.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processProcedure(f)
+        local pName, pList, proced, token, param
+
+        pName := getName(f.nextToken())
+        pList := ""
+        proced := UProc(pName, curFile, curComments)
+        addTag(proced)
+        curFile.addProcedure(proced)
+        curPackage.addProcedure(proced)
+        curComments := Comments()
+        token := f.nextToken()
+        if token.Type() == "UniDoc::LParen" then {
+            token := f.nextToken()
+            }
+        if token.Type() == "UniDoc::Comment" then {
+            proced.addComment(token.value)
+            }
+        else if token.Type() ~== "UniDoc::LParen" then {
+            f.pushback(token)
+            }
+        
+        while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
+            if token.Type() == "UniDoc::Comma" then {
+                next
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                if /param then {        # apply to record itself
+                    proced.addComment(token.value)
+                    }
+                else {                # apply to field name
+                    param.addComment(token.value)
+                    }
+                }
+            else if token.Type() == "UniDoc::Name" then {
+                param := getParam(f, token, "param", proced)
+                pList ||:= " " || param.getName()
+                proced.addParam(param)
+                }
+            }
+    
+        if not f.EOS() then {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comment" then {
+                proced.addComment(token.value)
+                }
+            else f.pushback(token)
+            }
+    end
+    
+    # <p>
+    # Process a global statement.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processGlobal(f)
+        local gName, gList, glob, token, sawComma
+        gList := ""
+
+        glob := getGlobal(f, f.nextToken(), curFile, curComments)
+        gList ||:= " " || glob.getName()
+        curComments := Comments()
+        while not f.EOS() do {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comma" then {
+                token := f.nextToken()
+                sawComma := "yes"
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                glob.addComment(token.value)
+                if \sawComma then {
+                    f.pushback(Comma())
+                    }
+                }
+            else if token.Type() == "UniDoc::Name" then {
+                glob := getGlobal(f, token, curFile)
+                gList ||:= " " || glob.getName()
+                sawComma := &null
+                }
+
+            }
+
+            uniFile.setInside()                # re-enable Unicon keywords
+    end
+    
+    # <p>
+    # Process a record definition.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method processRecord(f)
+        local rName, pList, rec, token, field
+
+        rName := getName(f.nextToken())
+        pList := ""
+        rec := URecord(rName, curFile, curComments)
+        addTag(rec)
+        curFile.addRecord(rec)
+        curPackage.addRecord(rec)
+        curComments := Comments()
+        token := f.nextToken()
+        if token.Type() == "UniDoc::LParen" then {
+            token := f.nextToken()
+            }
+        if token.Type() == "UniDoc::Comment" then {
+            rec.addComment(token.value)
+            }
+        else if token.Type() ~== "UniDoc::LParen" then {
+            f.pushback(token)
+            }
+        
+        while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
+            if token.Type() == "UniDoc::Comma" then {
+                next
+                }
+            if token.Type() == "UniDoc::Comment" then {
+                if /field then {        # apply to record itself
+                    rec.addComment(token.value)
+                    }
+                else {                # apply to field name
+                    field.addComment(token.value)
+                    }
+                }
+            else if token.Type() == "UniDoc::Name" then {
+                field := getParam(f, token, "field", rec)
+                pList ||:= " " || field.getName()
+                rec.addField(field)
+                }
+            }
+    
+        if not f.EOS() then {
+            token := f.nextToken()
+            if token.Type() == "UniDoc::Comment" then {
+                rec.addComment(token.value)
+                }
+            else f.pushback(token)
+            }
+        
+            uniFile.setInside()                # re-enable Unicon keywords
+    end
+
+    # <p>
+    # Produce a table of all methods that are inherited by
+    #   a class.  Keys are superclasses, entries are 
+    #   UniDoc::Set()s of methods.
+    # </p>
+    method inherited(aClass)
+        local iSet, mSet, sc, metd, mName
+
+        # Start with all the methods in the current class
+        every insert(mSet := ::set(), aClass.getMethods().get().getName())
+
+        iSet := table()
+        #mSet := set()
+        every sc := genAllSuperClasses(aClass) do {
+            every metd := sc.getMethods().get() do {
+                mName := metd.getName()
+                if not member(mSet, mName) then {
+                    insert(mSet, mName)
+                    /iSet[sc] := Set()
+                    iSet[sc].add(mName, metd)
+                    }
+                }
+            }
+
+        return iSet
+    end
+
+    # <p>
+    # Produce a sorted list (by name) of superclasses,
+    #    given a table whose keys are superclasses.
+    # </p>
+    method makeNameTab(aTab)
+        
+        nTab := table()
+        every sc := key(aTab) do {
+            nTab[sc.getName()] := sc
+            }
+        every put(nList := [], (!sort(nTab))[2])
+        return nList
+    end
+            
+    # <p>
+    # Produce a list of <i>all</i> packages.
+    # </p>
+    method getAllPackages()
+        local ptab, p, plist
+
+        ptab := table()
+        every p := !packages do {
+            ptab[p] := p.getName()
+            }
+        every put(plist := [], (!sort(ptab, 2))[1])
+        return plist
+    end
+
+    # <p>
+    # Produce a list of <i>all</i> classes.
+    # </p>
+    method getAllClasses()
+        local ctab, p, g, clist
+
+        ctab := table()
+        every p := !files do {
+            every g := p.getClasses().get() do {
+                ctab[g] := g.getName()
+                }
+            }
+        every put(clist := [], (!sort(ctab, 2))[1])
+        return clist
+    end
+
+    # <p>
+    # Produce a list of <i>all</i> procedures.
+    # </p>
+    method getAllProcedures()
+        local ctab, p, g, clist
+
+        ctab := table()
+        every p := !files do {
+            every g := p.getProcedures().get() do {
+                ctab[g] := g.getName()
+                }
+            }
+        every put(clist := [], (!sort(ctab, 2))[1])
+        return clist
+    end
+
+    # <p>
+    # Produce a list of <i>all</i> records.
+    # </p>
+    method getAllRecords()
+        local ctab, p, g, clist
+
+        ctab := table()
+        every p := !files do {
+            every g := p.getRecords().get() do {
+                ctab[g] := g.getName()
+                }
+            }
+        every put(clist := [], (!sort(ctab, 2))[1])
+        return clist
+    end
+
+    # <p>
+    # Produce a list of <i>all</i> globals.
+    # </p>
+    method getAllGlobals()
+        local ctab, p, g, clist
+
+        ctab := table()
+        every p := !files do {
+            every g := p.getGlobals().get() do {
+                ctab[g] := g.getName()
+                }
+            }
+        every put(clist := [], (!sort(ctab, 2))[1])
+        return clist
+    end
+
+    # <p>
+    # Produce a list of <i>all</i> files that have been processed,
+    # whether by explicit reference <b>processFile()</b> or during
+    # entity resolution.
+    # </p>
+    method getAllFiles()
+        local ctab, f, clist
+
+        ctab := table()
+        every f := \!files do {
+           ctab[f.getName()] := f
+           }
+        every put(clist := [], (!sort(ctab))[2])
+        return clist
+    end
+
+    method locatePack(pName)
+        every dir := !linkPath do {
+            d := open(dir) | next
+            every cf := !d do {
+                #  Note that this is a best guess effort: it may fail, or
+                #   worse find wrong package!
+                fName := "pack_"||pName||".html"
+                if fName == cf then {
+                   return (close(d), dir||"/"||fName)
+                   }
+                }
+            close(d)
+            }
+        # Give up
+        return "pack_"||fixName(pName)||".html"  # Placeholder code
+    end
+
+    # <p>
+    # Given the name of a class, attempts to find an existing
+    # html page for that class, by searching the <b>linkPath</b>.
+    # </p>
+    # <p><b>This method is currently broken!</b></p>
+    method classOnLinkPath(bClass, cName)
+        local pName
+
+        imps := curFile.getImportNames()
+        every dir := !linkPath do {
+            d := open(dir) | next
+            every cf := !d do {
+                # Start by hoping it's a full class name (with package)
+                cName ? {
+                    if pName := tabSkip("::"|"__") then {
+                        if pName == (""|"(main)") then pName := "0main"
+                        cName := tab(0)
+                        return dir||"/class_"||pName||"_"||cName||".html"
+                        }
+                    }
+
+                #  Have to check imports next.
+                #  Note that this is a best guess effort: it may fail, or
+                #   worse find the class in the wrong package!
+                every pName := ("0main" | !\imps) do {
+                    fName := "class_"||pName||"_"||cName||".html"
+                    if fName == cf then return (close(d), dir||"/"||fName)
+                    }
+                }
+            close(d)
+            }
+    end
+
+    # <p>
+    # Given a class and the name of a superclass of that class,
+    #   return that superclass.
+    # </p>
+    method locateSuperClass(aClass, scName)
+        local pName, p, f, sc
+
+        # If the superclass name tells us the package, use that.
+        scName ? {
+            if pName := tabSkip("::"|"__") then {
+                if pName == (""|"(main)") then pName := "0main"
+                scName := tab(0)
+                if \(p := packages[pName]) then {
+                    sc := p.getClass(scName)
+                    return \sc
+                    }
+                fail                # No hope of finding it!
+                }
+            }
+
+        # Have to look for it.  Go file, package, imports, links...
+        f := aClass.getFile()
+        p := f.getPackage()
+        if \(sc := (f|p).getClass(scName)) then return sc
+        every pName := f.getImports().get().getName() do {
+            if \(p := packages[pName]) then {
+                if \(sc := p.getClass(scName)) then return sc
+                }
+            }
+        every fName := f.getLinks().get().getName() do {
+            if \(p := files[pName]) then {
+                if \(sc := p.getClass(scName)) then return sc
+                }
+            }
+
+        # Last chance - check the (main) package.
+        sc := packages["(main)"].getClass(scName)
+        return \sc
+
+    end
+
+    # <p>
+    # Generate (in order) all the superclasses of a class
+    # </p>
+    method genAllSuperClasses(aClass, scSet)
+        /scSet := ::set()
+        insert(scSet, aClass)
+        scSeq := aClass.getSuperClasses()
+        every scName := scSeq.get().getName() do {
+            if sc := locateSuperClass(aClass, scName) then {
+                if not member(scSet, sc) then {   # Haven't seen it yet
+                    suspend sc | genAllSuperClasses(sc, scSet)
+                    }
+                }
+            }
+
+    end
+
+    # <p>
+    # Given a class and a method name from that class, does this method
+    #   override any method from a superclass?
+    # </p><p>
+    # Returns the superclass of the overridden method, if any.
+    # </p>
+    method overrides(aClass, mName)
+        every sc := genAllSuperClasses(aClass) do {
+            if sc.hasMethod(mName) then {
+                return sc
+                }
+            }
+    end
+
+    initially ()
+        every (files|packages) := table()
+        packages["(main)"]     := UPackage("(main)")
+        resolveFlag            := &null
+        sourcePath             := &null
+        importSet              := ::set()
+        linkSet                := ::set()
+        lName                  := delSuffix(lName, ".icn")||".icn"
+        badFiles               := ::set()
 end
 
 # <p>
@@ -1044,14 +1082,14 @@ end
 #   name.
 # </p>
 procedure mkList(aSet)
-   local ctab, obj, clist
+    local ctab, obj, clist
 
-   ctab := table()
-   every obj := \aSet.get() do {
-      ctab[obj] := obj.getName()
-      }
-   every put(clist := [], (!sort(ctab, 2))[1])
-   return clist
+    ctab := table()
+    every obj := \aSet.get() do {
+        ctab[obj] := obj.getName()
+        }
+    every put(clist := [], (!sort(ctab, 2))[1])
+    return clist
 end
 
 # <p>
@@ -1061,18 +1099,18 @@ end
 #   syntax of call.
 # </p>
 procedure mkCallStr(obj)
-   local s
+    local s
 
-   s := obj.getName()
-   case obj.className() of {
-      "UniDoc::UMethod"     |
-	 "UniDoc::UConstructor"|
-	 "UniDoc::UProc"       |
-	 "UniDoc::UClass"      |
-	 "UniDoc::URecord"     :
-	 s ||:= mkParamListStr(obj.getParams())
-      }
-   return s
+    s := obj.getName()
+    case obj.className() of {
+        "UniDoc::UMethod"     |
+        "UniDoc::UConstructor"|
+        "UniDoc::UProc"       |
+        "UniDoc::UClass"      |
+        "UniDoc::URecord"     :
+                              s ||:= mkParamListStr(obj.getParams())
+        }
+    return s
 end
 
 # <p>
@@ -1081,7 +1119,7 @@ end
 #   enclosing parentheses</i>).
 # </p>
 procedure mkParamListStr(sequence)
-   return "("||mkListStr(sequence)||")"
+    return "("||mkListStr(sequence)||")"
 end
 
 # <p>
@@ -1089,18 +1127,18 @@ end
 #   produces a string showing that list.
 # </p>
 procedure mkListStr(sequence)
-   local s, item, n
+    local s, item, n
 
-   s := ""
-   if \sequence then {
-      every item := sequence.get() do {
-	 n := item.getName()
-	 if item.Type() == ("UniDoc::UName"|"UniDoc::UGlob") then {
+    s := ""
+    if \sequence then {
+        every item := sequence.get() do {
+            n := item.getName()
+            if item.Type() == ("UniDoc::UName"|"UniDoc::UGlob") then {
             n ||:= ":"||item.getTypeValue()
-	    n ||:= ":"||item.getDefValue()
-	    }
-	 s ||:= n||", "
-	 }
-      }
-   return (s[1:-2] | "")
+                n ||:= ":"||item.getDefValue()
+                }
+            s ||:= n||", "
+            }
+        }
+    return (s[1:-2] | "")
 end

@@ -1,3 +1,4 @@
+SHELL=/bin/sh
 BASE=../..
 include $(BASE)/Makedefs.uni
 
@@ -9,9 +10,6 @@ include $(BASE)/Makedefs.uni
 #
 SRCS   := $(wildcard ./*.icn)
 UFILES := $(filter-out ./UniDoc.u,$(patsubst %.icn, %.u, $(SRCS)))
-CLIB   := ../../Classes
-
-all: ufiles UniDoc
 
 # The first target is the default target.
 #    The "@"'s tell make to suppress printing the command before
@@ -33,8 +31,7 @@ help:
 	$(UNICON) $(UFLAGS) -c $?
 
 UniDoc: $(UFILES) UniDoc.icn
-	$(UNICON) $(UFLAGS) UniDoc
-	$(CP) UniDoc$(EXE) ../../bin/
+	$(UNICON) UniDoc
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)
@@ -48,8 +45,9 @@ deps depends:
 
 # Clean up the directory.
 #
-Clean clean:
-	$(RM) uniclass.dir uniclass.pag uniclass.db UniDoc$(EXE) *.u .lastbuild *~
+clean:
+	@-rm -f *.u
+	@-rm -f *~
 
 # List all source files that have been modified since the last build.
 #

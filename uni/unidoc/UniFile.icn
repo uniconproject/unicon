@@ -15,8 +15,8 @@
 
 package UniDoc
 
-import lang
 import util
+import lang
 
 # <p>
 # A class that supports buffered production of tokens from a file containing
@@ -25,317 +25,320 @@ import util
 #   call <b>setSaveSrc("yes")</b> is made on this class.
 # </p>
 class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, f, fName,
-			insideFlag, debug, saveSrc, cBuf)
+                       insideFlag, debug, saveSrc, cBuf)
 
-   # <p>
-   # Turn on/off debugging.  Turning on (by using a non-null value
-   #   for <b>dbg</b> produces <i>lots</i> of output!
-   # </p>
-   method setDebug(dbg)
-      debug := dbg
-   end
+    # <p>
+    # Turn on/off debugging.  Turning on (by using a non-null value
+    #   for <b>dbg</b> produces <i>lots</i> of output!
+    # </p>
+    method setDebug(dbg)
+        debug := dbg
+    end
 
-   # <p>
-   # Turn on/off recognition of Unicon-specific keywords.
-   # Icon program may be using these keywords as variable names.
-   # </p>
-   method setInside(flag)
-      insideFlag := flag
-   end
+    # <p>
+    # Turn on/off recognition of Unicon-specific keywords.
+    # Icon program may be using these keywords as variable names.
+    # </p>
+    method setInside(flag)
+        insideFlag := flag
+    end
 
-   # <p>
-   # Turn on/off saving of source code (default is <i>off</i>).
-   # </p>
-   method setSaveSrc(flag)
-      saveSrc := flag
-   end
+    # <p>
+    # Turn on/off saving of source code (default is <i>off</i>).
+    # </p>
+    method setSaveSrc(flag)
+        saveSrc := flag
+    end
 
-   # <p>
-   # Succeed if source code is being saved.
-   # </p>
-   method hasSource()
-      return \saveSrc
-   end
+    # <p>
+    # Succeed if source code is being saved.
+    # </p>
+    method hasSource()
+        return \saveSrc
+    end
 
-   # <p>
-   # Produce the source file name
-   # </p>
-   method getFilename()
-      return fName
-   end
+    # <p>
+    # Produce the source file name
+    # </p>
+    method getFilename()
+        return fName
+    end
 
-   # <p>
-   # Generate the source code lines.
-   # </p>
-   method getSrc()
-      if hasSource() then {
-	 suspend (\cBuf).getLines()
-	 }
-   end
+    # <p>
+    # Generate the source code lines.
+    # </p>
+    method getSrc()
+        if hasSource() then {
+            suspend (\cBuf).getLines()
+            }
+    end
 
-   # <p>
-   # Tag a source code line so it can be referenced from the documentation.
-   # </p>
-   method setTag(tagName)
-      if \saveSrc then (\cBuf).insertTag(tagName)
-   end
+    # <p>
+    # Tag a source code line so it can be referenced from the documentation.
+    # </p>
+    method setTag(tagName)
+        if \saveSrc then (\cBuf).insertTag(tagName)
+    end
 
-   # <p>
-   # Produce the next token from the file.  Fails on EOF
-   # </p>
-   # <p>
-   #    Always skips trailing whitespace before returning.
-   # </p>
-   method nextToken()
-      local t, word, result
+    # <p>
+    # Produce the next token from the file.  Fails on EOF
+    # </p>
+    # <p>
+    #    Always skips trailing whitespace before returning.
+    # </p>
+    method nextToken()
+        local t, word, result
 
-      if t := ::get(oldTokens) then return t
+        if t := ::get(oldTokens) then return t
 
-      if *line = 0 then {
-	 readline() | fail
-	 if *line = 0 then { # Empty line read in
-	    return BlankLine()
-	    }
-	 }
+        if *line = 0 then {
+            readline() | fail
+            if *line = 0 then { # Empty line read in
+                return BlankLine()
+                }
+            }
 
-      line ? {
-	 ws()
-	 if ="#" then {
-	    result := Comment(tab(0))
-	    clearLine()
-	    showToken(result)
-	    return result
-	    }
+        line ? {
+            ws()
+            if ="#" then {
+                result := Comment(tab(0))
+                clearLine()
+                showToken(result)
+                return result
+                }
 
-	 if (word := (matchVar() || ((="::"||matchVar())|""))) & ws() then {
-	    if isKeyword(word) then {
-	       result := Keyword(word)
-	       }
-	    else {      # assume it's a var, ok if wrong!
-	       result := Name(word)
-	       }
-	    line := tab(0)
-	    showToken(result)
-	    return result
-	    }
+            if (word := (matchVar() || ((="::"||matchVar())|""))) & ws() then {
+                if isKeyword(word) then {
+                    result := Keyword(word)
+                    }
+                else {      # assume it's a var, ok if wrong!
+                    result := Name(word)
+                    }
+                line := tab(0)
+                showToken(result)
+                return result
+                }
 
-	 if (s := matchString()) & ws() then {
-	    result := String(s)
-	    line := tab(0)
-	    showToken(result)
-	    return result
-	    }
+            if (s := matchString()) & ws() then {
+                result := String(s)
+                line := tab(0)
+                showToken(result)
+                return result
+                }
 
-	 if ="(" & ws() then {
-	    line := tab(0)
-	    result := LParen()
-	    showToken(result)
-	    return result
-	    }
+            if ="(" & ws() then {
+                line := tab(0)
+                result := LParen()
+                showToken(result)
+                return result
+                }
 
-	 if =")" & ws() then {
-	    line := tab(0)
-	    result := RParen()
-	    showToken(result)
-	    return result
-	    }
+            if =")" & ws() then {
+                line := tab(0)
+                result := RParen()
+                showToken(result)
+                return result
+                }
 
-	 if ="::" then {        # Class with no package!
-	    if (word := matchVar()) & ws() then {
-	       # assume it's a var, ok if wrong!
-	       result := Name("::"||word)
-	       }
-	    line := tab(0)
-	    showToken(result)
-	    return result
-	    }
-	 if =":" & ws() then {
-	    line := tab(0)
-	    result := Colon()
-	    showToken(result)
-	    return result
-	    }
+            if ="::" then {        # Class with no package!
+                if (word := matchVar()) & ws() then {
+                    # assume it's a var, ok if wrong!
+                    result := Name("::"||word)
+                    }
+                line := tab(0)
+                showToken(result)
+                return result
+                }
+            if =":" & ws() then {
+                line := tab(0)
+                result := Colon()
+                showToken(result)
+                return result
+                }
 
-	 if ="," & ws() then {
-	    line := tab(0)
-	    result := Comma()
-	    showToken(result)
-	    return result
-	    }
+            if ="," & ws() then {
+                line := tab(0)
+                result := Comma()
+                showToken(result)
+                return result
+                }
 
-	 if (s := matchCSet() | move(1)) & ws() then {
-	    line := tab(0)
-	    result := Noise(s)
-	    showToken(result)
-	    return result
-	    }
+            if (s := matchCSet() | move(1)) & ws() then {
+                line := tab(0)
+                result := Noise(s)
+                showToken(result)
+                return result
+                }
 
-	 write("nextToken: '",fName,"' cannot happen!")
-	 snapshot("----> ")
-	 }
-   end
+            write("nextToken: '",fName,"' cannot happen!")
+            snapshot("----> ")
+            }
 
-   # <p>
-   # Display a token's type and value.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method showToken(token)
-      if \debug then {
-	 write("\t\tToken: ",token.Type()," (",token.value,")")
-	 }
-   end
+    end
 
-   # <p>
-   # Push an arbitrary token back onto the stream
-   # </p>
-   method pushback(token)
-      push(oldTokens, token)
-   end
+    # <p>
+    # Display a token's type and value.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method showToken(token)
+        if \debug then {
+            write("\t\tToken: ",token.Type()," (",token.value,")")
+            }
+    end
 
-   # <p>
-   # Read in a line of Unicon program text, joining continuations
-   #   and splitting on semicolons.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method readline()
-      static WS
-      initial WS := ' \t'
+    # <p>
+    # Push an arbitrary token back onto the stream
+    # </p>
+    method pushback(token)
+        push(oldTokens, token)
+    end
 
-      while line := lTrim(buffer || Read(f), ' \t') do {
-	 setBuffer(line)
-	 line := ""
-	 buffer ? {
-	    repeat {
-	       if not (line ||:= tab(upto('\'"#;'))) then {
-		  line := buffer
-		  clearBuffer()
-		  return line
-		  }
-	       else {  # Hard cases, might have continuation
+    # <p>
+    # Read in a line of Unicon program text, joining continuations
+    #   and splitting on semicolons.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method readline()
+        static WS
+        initial WS := ' \t'
+    
+        while line := lTrim(buffer || Read(f), ' \t') do {
+            setBuffer(line)
+            line := ""
+            buffer ? {
+                repeat {
+                    if not (line ||:= tab(upto('\'"#;'))) then {
+                        line := buffer
+                        clearBuffer()
+                        return line
+                        }
+                    else {  # Hard cases, might have continuation
+    
+                        if =";" then {          # Not so hard after all
+                            setBuffer(tab(0))
+                            return line
+                            }
+    
+                        if ="#" then {          # Also easy
+                            line := buffer
+                            clearBuffer()
+                            return line
+                            }
+    
+                        if any('\'') then {    l    # Hard
+                            if not (line ||:= matchCSet()) then {
+                                # Must be a continued cset!
+                                setBuffer(buffer[1:-1] | "")
+                                break
+                                }
+                            }
+    
+                        if any('"') then {         # Hard
+                            if not (line ||:= matchString()) then {
+                                # Must be a continued string!
+                                setBuffer(buffer[1:-1] | "")
+                                break
+                                }
+                            }
+    
+                        }
+                    }
+                }
+            }
+    
+        if *buffer > 0 then {
+            line := buffer
+            clearBuffer()
+            line
+            }
+    
+    end
 
-		  if =";" then {          # Not so hard after all
-		     setBuffer(tab(0))
-		     return line
-		     }
+    # <p>
+    # Read in a line of source code.  Add it to the source code buffer and
+    # return it.
+    # </p>
+    method Read(f)
+        if line := read(f) then {
+            if \saveSrc then (\cBuf).add(line)
+            return line
+            }
+    end
 
-		  if ="#" then {          # Also easy
-		     line := buffer
-		     clearBuffer()
-		     return line
-		     }
+    # <p>
+    # Are we at the end of the current line?
+    # </p>
+    method EOS()
+       return ((*oldTokens = 0) & (*line = 0))
+    end
 
-		  if any('\'') then {    # Hard
-		     if not (line ||:= matchCSet()) then {
-			# Must be a continued cset!
-			setBuffer(buffer[1:-1] | "")
-			break
-			}
-		     }
+    # <p>
+    # Clear the input stream readahead
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method clearLine()
+        clearPushback()
+        return line := ""
+    end
 
-		  if any('"') then {         # Hard
-		     if not (line ||:= matchString()) then {
-			# Must be a continued string!
-			setBuffer(buffer[1:-1] | "")
-			break
-			}
-		     }
-		  }
-	       }
-	    }
-	 }
+    # <p>
+    # Clear any pushed back tokens
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method clearPushback()
+        oldTokens := []
+    end
 
-      if *buffer > 0 then {
-	 line := buffer
-	 clearBuffer()
-	 line
-	 }
-   end
+    # <p>
+    # Clear the buffer
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method clearBuffer()
+        return buffer := ""
+    end
 
-   # <p>
-   # Read in a line of source code.  Add it to the source code buffer and
-   # return it.
-   # </p>
-   method Read(f)
-      if line := read(f) then {
-	 if \saveSrc then (\cBuf).add(line)
-	 return line
-	 }
-   end
+    # <p>
+    # Force the buffer to a known content.
+    # </p>
+    # <i>This is intended for internal use only!</i>
+    method setBuffer(s)
+        return buffer := s
+    end
 
-   # <p>
-   # Are we at the end of the current line?
-   # </p>
-   method EOS()
-      return ((*oldTokens = 0) & (*line = 0))
-   end
+    # <p>
+    # Close this file.
+    # </p>
+    method close()
+        cBuf := &null
+        ::close(f)
+    end
 
-   # <p>
-   # Clear the input stream readahead
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method clearLine()
-      clearPushback()
-      return line := ""
-   end
+    # <p>
+    # Is a word a keyword?
+    # </p>
+    method isKeyword(word)
+        if member(iKeySet, word) then {
+            if word == "end" then setInside()
+            if word == ("procedure"|"record"|"global") then setInside("yes")
+            return
+            }
+        if /insideFlag then {
+            return member(uKeySet, word)
+            }
+    end
 
-   # <p>
-   # Clear any pushed back tokens
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method clearPushback()
-      oldTokens := []
-   end
-
-   # <p>
-   # Clear the buffer
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method clearBuffer()
-      return buffer := ""
-   end
-
-   # <p>
-   # Force the buffer to a known content.
-   # </p>
-   # <i>This is intended for internal use only!</i>
-   method setBuffer(s)
-      return buffer := s
-   end
-
-   # <p>
-   # Close this file.
-   # </p>
-   method close()
-      cBuf := &null
-      ::close(f)
-   end
-
-   # <p>
-   # Is a word a keyword?
-   # </p>
-   method isKeyword(word)
-      if member(iKeySet, word) then {
-	 if word == "end" then setInside()
-	 if word == ("procedure"|"record"|"global") then setInside("yes")
-	 return
-	 }
-      if /insideFlag then {
-	 return member(uKeySet, word)
-	 }
-   end
-
-# <b>Fails if cannot open <tt>fName</tt> for reading.</b>
-initially (fileName, path)
-   /path := ""
-   fName := delSuffix(fileName,".icn")||".icn"
-   f := open(path||fName) | fail
-   clearBuffer()
-   line := ""
-   # the only keywords we care about, everything else is noise...
-   iKeySet := ::set(["link", "procedure", "end", "global", "record"])
-   uKeySet := ::set(["package", "import", "class", "method", "initially"])
-   oldTokens := []
-   cBuf := CodeBuf()
+    # <b>Fails if cannot open <tt>fName</tt> for reading.</b>
+    initially (fileName, path)
+        /path := ""
+        fName := delSuffix(fileName,".icn")||".icn"
+        f := open(path||fName) | fail
+        clearBuffer()
+        line := ""
+        # the only keywords we care about, everything else is noise...
+        iKeySet := ::set(["link", "procedure", "end", "global", "record"])
+        uKeySet := ::set(["package", "import", "class", "method", "initially"])
+        oldTokens := []
+        cBuf := CodeBuf()
 end
 
 #<p>
@@ -347,33 +350,33 @@ end
 #</p>
 class CodeBuf : Object (buffer)
 
-   #<p>
-   # Generate the source code lines that have been buffered up.
-   #</p>
-   method getLines()
-      suspend !buffer
-   end
+    #<p>
+    # Generate the source code lines that have been buffered up.
+    #</p>
+    method getLines()
+        suspend !buffer
+    end
 
-   #<p>
-   # Add a source code line to the end of the buffer.
-   # <i>Protects</i> the line by having the converter hide any
-   # text that might interfere with the conversion process later.
-   #</p>
-   method add(line)
-      put(buffer, (UniDoc::protectLine(line) | line)||"\n")
-   end
+    #<p>
+    # Add a source code line to the end of the buffer.
+    # <i>Protects</i> the line by having the converter hide any
+    # text that might interfere with the conversion process later.
+    #</p>
+    method add(line)
+       put(buffer, (UniDoc::protectLine(line) | line)||"\n")
+    end
 
-   #<p>
-   # Insert a <i>tag</i> just <i>prior</i> the last source code line.
-   # The tag is produced by the converter given the source code file
-   #   name and the tagged name.
-   #</p>
-   method insertTag(tagName)
-      last := pull(buffer)
-      put(buffer, UniDoc::makeTag(tagName))
-      put(buffer, \last)
-   end
+    #<p>
+    # Insert a <i>tag</i> just <i>prior</i> the last source code line.
+    # The tag is produced by the converter given the source code file
+    #   name and the tagged name.
+    #</p>
+    method insertTag(tagName)
+        last := pull(buffer)
+        put(buffer, UniDoc::makeTag(tagName))
+        put(buffer, \last)
+    end
 
-initially ()
-   buffer    := []
+    initially ()
+        buffer    := []
 end

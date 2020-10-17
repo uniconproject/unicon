@@ -8,6 +8,37 @@ on:
     - 'docs/**'
 
 jobs:
+  Windows:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
+    strategy:
+      matrix:
+        cfg:
+        -  { os: windows-latest,  name: 'Windows_64-bit',  opt: '' }
+        #-  { os: windows-latest,  name: 'Windows_32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure
+      run: sh configure  ${{ matrix.cfg.opt }}
+
+    - name: Make
+      run: make
+
+    - name: Installer
+      run: |
+        make WinInstaller
+        cp ../unicondist/unicon_*.* .
+
+    - name: Publish
+      uses: actions/upload-artifact@v2
+      with:
+        name: unicon-${{ matrix.cfg.name}}
+        path: config/win32/gcc/Output/setup-unicon*.exe
+
+
   Ubuntu:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}

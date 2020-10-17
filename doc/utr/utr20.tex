@@ -1,5 +1,6 @@
 \documentclass[letterpaper,12pt]{article}
 \usepackage{utr}
+\usepackage[margin=1in]{geometry}
 
 \title{The Unicon JSON Library}
 \author{Gigi Young, Clinton Jeffery}
@@ -25,8 +26,8 @@ between JSON and Unicon.
 
 The JSON grammar is straightforward. A JSON data structure is composed
 of one or more JSON values, which can be either a string, number,
-boolean true, boolean false, null, array, or ``object''. An array contains
-a list of JSON values, while an ``object'' is a set of string-value
+boolean true, boolean false, null, array, or object. An array contains
+a list of JSON values, while an object is a set of string-value
 pairs. In other words, an array is a list of values and an object is a
 table (dictionary) that requires keys to be strings.
 Arrays and objects may be arbitrarily nested within each other.
@@ -34,7 +35,7 @@ Arrays and objects may be arbitrarily nested within each other.
 The manner in which the tokens of the JSON grammar are defined allows
 a token's category to be determined from its first character. The JSON
 tokens are string, number, true, false, null, and the operators used
-for array, object, and their productions (\verb {}[]:, ). The
+for array, object, and their productions (\texttt{\{\}[]:,}). The
 following table gives the possible first characters of each
 non-operator JSON token.
 
@@ -53,29 +54,28 @@ non-operator JSON token.
 \end{tabular}
 \end{center}
 
-\pagebreak
-
 \section{The Unicon JSON API}
 
-The JSON library contains two thread-safe functions, {\tt jtou()} and 
-{\tt utoj()}, for converting from JSON to Unicon and Unicon to JSON, 
-respectively. The data equivalencies are as follows: 
+The JSON library contains four thread-safe functions: \texttt{jtou()},
+\texttt{jtous()}, \texttt{jtouf()} for converting from JSON to Unicon and 
+\texttt{utoj()} for converting from Unicon to JSON.
+The data equivalencies are as follows: 
 
 \begin{center}
-{\large\bf JSON to Unicon}
+{\large\bf JSON to Unicon data type equivalency}
 \end{center}
 
 \begin{center}
 \begin{tabular}{ c | c }
- JSON      & Unicon \\
+ JSON data type	& Unicon data type \\
  \hline
- object    & table \\
- array     & list \\
- string    & string \\
- number    & int or real \\
- true      & string - {\tt "\_\_true\_\_"} \\
- false     & string - {\tt "\_\_false\_\_"} \\
- null      & null value - {\tt \&null} \\
+ object		& table \\
+ array		& list \\
+ string		& string \\
+ number		& int, real \\
+ true		& string - \texttt{"\_\_true\_\_"} \\
+ false		& string - \texttt{"\_\_false\_\_"} \\
+ null		& null value - \texttt{\&null} \\
 
 \end{tabular}
 \end{center}
@@ -83,240 +83,391 @@ respectively. The data equivalencies are as follows:
 \vspace{1em}
 
 \begin{center}
-\center{\large\bf Unicon to JSON}
+\center{\large\bf Unicon to JSON data equivalency}
 \end{center}
 
 \begin{center}
 \begin{tabular}{ c | c }
- Unicon                   & JSON\\
+ Unicon data type			& JSON data type\\
  \hline
- table, record, or class  & object \\
- list or set              & array  \\
- string                   & string \\
- int or real              & number \\
- string - {\tt "\_\_true\_\_"}  & true   \\
- string - {\tt "\_\_false\_\_"} & false  \\
- null value - {\tt \&null}& null   \\
+ table, set, cset, record, class	& object \\
+ list					& array  \\
+ string					& string \\
+ int, real				& number \\
+ string - \texttt{"\_\_true\_\_"}	& true   \\
+ string - \texttt{"\_\_false\_\_"}	& false  \\
+ null value - \texttt{\&null}		& null   \\
 
 \end{tabular}
 \end{center}
 
-% Horizontal line spanning width of the page
-\noindent\rule{\textwidth}{1pt}
+There are more Unicon data structures than JSON was designed to represent.
+Consequently, string encodings
+(\texttt{"\_\_unitable\_\_"}, \texttt{"\_\_uniset\_\_"}, 
+\texttt{"\_\_unicset\_\_"},
+\texttt{"\_\_unirecord\_\_"}, and \texttt{"\_\_uniclass\_\_"})
+have been defined 
+to differentiate the different types of Unicon structures 
+represented by a JSON object (tables, sets, csets, records, and classes 
+respectively). The JSON object Unicon-encodings are listed in the table 
+below:
 
-\begin{description}
+\begin{center}
+\center{\large\bf JSON object Unicon-encodings}
+\end{center}
 
-\item[{\tt\bf jtou(s)}] converts JSON to Unicon.
-  If parameter {\tt s} is a legal JSON string, it is interpreted as such;
-  otherwise, it is treated as a filename and its JSON contents are converted.
+\begin{center}
+\begin{tabular}{ c | c }
+ Unicon	data type	& JSON specification\\
+ \hline
+ table	& \texttt{\{"\_\_unitable\_\_":1, ...\}} \\
+ set	& \texttt{\{"\_\_uniset\_\_":[...]\}} \\
+ cset	& \texttt{\{"\_\_unicset\_\_":"..."\}} \\
+ record	& \texttt{\{"\_\_unirecord\_\_":"RecordName","Field1":"Value1", ...\}}\\
+ class	& \texttt{\{"\_\_uniclass\_\_":"ClassName","Field1":"Value1", ...\}} \\
 
-  It should noted that a JSON-formatted Unicon string must contain escaped
-  double quotes due to the fact that double quotes define a string literal
-  in the language. A sample string is as follows:
+\end{tabular}
+\end{center}
 
-  \begin{verbatim}
-    s := "{\"one\":1, \"two\":2, \"three\":3 }"
-  \end{verbatim}
-\vspace{-1em}
+\noindent
+These encodings are strict and no type coercions will be performed. 
+For example,
 
-\item[{\tt\bf jtou(s,mode)}] forces conversion as a filename (mode {\tt "f"})
-  or a string (mode {\tt "s"}).
-  So for example {\tt jtou("x.json","f")} would read from file {\tt x.json}
-  while {\tt jtou("[1,2,{$\backslash$"three$\backslash$":3}]", "s")} would 
-  convert a string.
+\begin{verbatim}
+{"__unitable__":"1"}
+\end{verbatim}
 
-\item[{\tt\bf jtou(s,mode,error:&errout)}] specifies that in the case of a 
-  conversion error, the error is written to a file handle specifed by 
-  {\tt error}.
-  This can be done with or without the optional second parameter as 
-  {\tt jtou(s,,file)} or {\tt jtou(fname,"f",file)}, where {\tt file}
-  can be any of the standard output streams or an open file
-  handle. If {\tt error} is not given, then {\tt error} defaults to standard
-  error.
+\noindent
+would produce a Unicon table with key-value pair
 
-\vspace{1em}
+\begin{verbatim}
+T["__unitable__"] := "1"
+\end{verbatim}
 
-{\tt jtou()} is a generator that produces Unicon data one-by-one until
-all JSON data is converted or an error occurs. If a JSON data contains 
-one structure,
-then one output will be generated. If a JSON data contains multiple 
-structures, the outputs will appear in the order found in the JSON data.
-To conform with other JSON libraries, {\tt jtou()} allows for single
-trailing commas in JSON arrays and objects.
+\noindent
+instead of an empty table. 
+Any JSON object that does not adhere to these Unicon-encodings will default
+to a Unicon table. Furthermore, records and classes that adhere to 
+Unicon-encoding syntax but whose constructors do not exist in the calling 
+program will also be converted to Unicon tables. 
 
-\vspace{1em}
+The Unicon table is a superset of what the JSON object can represent. 
+A JSON object is a dictionary which only supports string keys, while
+a Unicon table supports any valid Unicon type as a key. To support
+JSON conversion of Unicon tables, the grammar of a JSON object is optionally
+extended to accept any JSON value as a key. The extended JSON object becomes 
+a set of value-value pairs instead of string-value pairs.
 
-%A simple toy program is as follows
-%
-%  \begin{verbatim}
-%  link json
-%  procedure main()
-%     write( jtou("\"this is a string\"") )
-%  end
-%  \end{verbatim}
+Although the aim of this library is to support inter-language data exchange, 
+it is just as important to support all Unicon data types. The choosen compromise
+allows Unicon users the decision of whether or not to adhere to strict JSON
+with the parameter \texttt{strict}. \texttt{strict} is a parameter for 
+every function in the JSON library API and defaults to \texttt{\&null}. If
+\texttt{strict} is non-null, then library functions adhere to the JSON
+specification. Otherwise, an extended-JSON specification which allows for
+non-string key values for JSON objects is used.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf jtou(s, strict:\&null, mode:\&null, error:\&errout)} \hfill {\tt\bf JSON to Unicon}
+
+\vspace{0.1cm}
+\noindent
+\texttt{jtou(s)} generates the equivalent Unicon data structure(s) to
+parameter \texttt{s}, a JSON-encoded string or JSON filename. 
+Parameter \texttt{strict} enforces strict adherence to the JSON specification 
+if non-null.
+Parameter \texttt{mode} can be specified as \texttt{"s"} (see \texttt{jtous()}) 
+to force JSON-encoded string conversion or as \texttt{"f"} 
+(see \texttt{jtouf()}) to force JSON file conversion.
+\texttt{jtou(s)} tries to first process \texttt{s} as a string, then as a 
+filename if \texttt{mode} is not specified. 
+Parameter \texttt{error} allows the user to specify a file or filestream other 
+than standard error for error output. 
+This function fails if \texttt{s} is not valid JSON, depending on parameter 
+\texttt{strict}.
+It should be noted that error messages may be misleading if \texttt{mode}
+is not specified.
+
+To conform with other JSON libraries, trailing commas are allows for JSON arrays
+and objects.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf jtous(s, strict:\&null, error:\&errout)} \hfill {\tt\bf JSON string to Unicon}
+
+\vspace{0.1cm}
+\noindent
+\texttt{jtous(s)} (equivalent to \texttt{jtou(s,"s")}) generates the
+equivalent Unicon data structure(s) to parameter \texttt{s}, a JSON-encoded 
+string. 
+Parameter \texttt{strict} enforces strict adherence to the JSON specification 
+if non-null.
+Parameter \texttt{error} allows the user to specify a file or filestream other 
+than standard error for error output. 
+This function fails if \texttt{s} is not valid JSON, depending on parameter 
+\texttt{strict}.
+
+To conform with other JSON libraries, trailing commas are allows for JSON arrays
+and objects.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf jtouf(s, strict:\&null, error:\&errout)} \hfill {\tt\bf JSON file to Unicon}
+
+\vspace{0.1cm}
+\noindent
+\texttt{jtouf(s)} (equivalent to \texttt{jtou(s,"f")}) generates the 
+equivalent Unicon data structure(s) to parameter \texttt{s}, a JSON filename. 
+Parameter \texttt{strict} enforces strict adherence to the JSON specification 
+if non-null.
+Parameter \texttt{error} allows the user to specify a file or filestream other 
+than standard error for error output. 
+This function fails if \texttt{s} is not valid JSON, depending on parameter 
+\texttt{strict}.
+
+To conform with other JSON libraries, trailing commas are allows for JSON arrays
+and objects.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf utoj(u, strict:\&null, error:\&errout)} \hfill {\tt\bf Unicon to JSON}
+
+\vspace{0.1cm}
+\noindent
+\texttt{utoj(u)} takes a Unicon value, \texttt{u}, and returns a corresponding 
+JSON-formatted string. 
+Parameter \texttt{strict} enforces strict adherence to the JSON specification 
+if non-null.
+Parameter \texttt{error} allows the user to specify a filestream other than 
+standard error for error output. 
+%This function should not fail unless there's a bug...
+
+\pagebreak
+\section{Examples}
+
+Unicon's JSON library is straightforward. \texttt{jtou()}, \texttt{jtous()},
+or \texttt{jtouf()} are used to convert JSON to Unicon data types and 
+\texttt{utoj()} is used to convert Unicon data types to JSON. 
+\texttt{jtou(s,"s")} is equivalent to \texttt{jtous(s)} and \texttt{jtou(s,"f")}
+is equivalent to \texttt{jtouf(s)}. \texttt{jtou(s)} will convert \texttt{s}
+whether it is a JSON-encoded string or JSON filename as long as the JSON is
+valid. However, one may want to use the specific functions \texttt{jtous()}
+and \texttt{jtouf()} in the case of error handling accuracy. 
+
+\bigskip
+\hrule\vspace{0.1cm}
+\bigskip
+\noindent
+The following program converts a JSON data structure which
+consists of an object and an array to a Unicon list containing a table and
+list. The \texttt{jtou*()} family of functions are generators, which allows
+the use of the list constructor.
+
+\begin{verbatim}
+link json
+procedure main()
+   u := [: jtou("{\"one\":1, \"two\":2, \"three\":3}_
+       [true, false, null, 1.23e3]") :]
+   x := u[1]
+   y := u[2]
+   write(x["one"])
+   write(x["two"])
+   write(x["three"])
+   every i := 1 to *y do write(y[i])
+end
+\end{verbatim}
+
+\vspace{0.1cm}
+\noindent
+The output of which is:
+
+\begin{verbatim}
+1
+2
+3
+__true__
+__false__
+ 1230.0
+\end{verbatim}
+
+\bigskip
+\hrule\vspace{0.1cm}
+\bigskip
+\noindent
 %\vspace{-1em}
-%
-%for which the output is:
-%
-%  \begin{verbatim}
-%  this is a string
-%  \end{verbatim}
-%\vspace{-1em}
+%\noindent
+This simple program converts a Unicon table to a JSON object
 
-In the following program, if we convert a JSON data structure which
-consists of an object and an array, the first result produced and
-placed into {\tt u} is a table of size three and the second result
-is a list of size four.
+\begin{verbatim}
+link json
+procedure main()
+   T := table()
+   T["one"] := 1
+   T["two"] := 2
+   T["list"] := [1,2,3]
+   T["table"] := table()
+   write(utoj(T))
+end
+\end{verbatim}
 
-  \begin{verbatim}
-  link json
-  procedure main()
-     u := [: jtou("{\"one\":1, \"two\":2, \"three\":3}_
-         [true, false, null, 1.23e3]") :]
-     x := u[1]
-     y := u[2]
-     write(x["one"])
-     write(x["two"])
-     write(x["three"])
-     every i := 1 to *y do write(y[i])
-  end
-  \end{verbatim}
-\vspace{-1em}
+\vspace{0.1cm}
+\noindent
+and outputs:
 
-\newpage
-produces the output:
-
-  \begin{verbatim}
-  1
-  2
-  3
-  __true__
-  __false__
-
-  1230.0
-  \end{verbatim}
-\vspace{-1em}
-
-
-Another example is 
-
-  \begin{verbatim}
-  link json
-  procedure main()
-     write( jtou("\"this is a string\"") )
-  end
-  \end{verbatim}
-\vspace{-1em}
-
-
-for which the output is:
-
-  \begin{verbatim}
-  this is a string
-  \end{verbatim}
-\vspace{-1em}
-
-\end{description}
-
-\noindent\rule{\textwidth}{1pt}
-\begin{description}
-
-\item[{\tt\bf utoj(u)}] takes a Unicon value, {\tt u}, and returns a 
-  corresponding JSON-formatted string. If no such equivalent structure exists,
-  then the function fails. 
-
-\item[{\tt\bf utoj(u,error:&errout)}] the optional second parameter, {\tt error}
-  takes a file handle which is written to in case of a conversion error and
-  function failure, e.g. {\tt utoj(u,\&errout)} or {\tt utoj(u,file)}. If not
-  given, {\tt error} defaults to standard error.
-
-\vspace{1em}
-
-The following page shows some examples of primitive data conversions from Unicon to JSON.
-
-\newpage
-  \begin{verbatim}
-  link json
-  procedure main()
-     write(utoj("this is a string"))
-     write(utoj(100))
-     write(utoj("__true__"))
-     write(utoj("__false__"))
-     write(utoj(&null))
-  end
-  \end{verbatim}
-\vspace{-1em}
-
-which produces the output:
-
-  \begin{verbatim}
-  "this is a string"
-  100
-  true
-  false
-  null 
-  \end{verbatim}
-\vspace{-1em}
-
-More frequently, JSON will come into play when lists or tables are
-involved. Here is an example of converting a Unicon table to a JSON object.
-
-  \begin{verbatim}
-  link json
-  procedure main()
-     T := table()
-     T["one"] := 1
-     T["two"] := 2
-     T["list"] := [1,2,3]
-     T["table"] := table()
-     write("A table: ", utoj(T))
-  end
-  \end{verbatim}
-\vspace{-1em}
-
-
-This program writes out:
-
-  \begin{verbatim}
-  A table: {"two":2,"table":{},"one":1,"list":[1,2,3]}
-  \end{verbatim}
-\vspace{-1em}
-
+\begin{verbatim}
+{"__unitable__":1,"two":2,"table":{"__unitable__":1},"one":1,"list":[1,2,3]}
+\end{verbatim}
 
 The extraction of keys from Unicon tables occurs in a random manner,
 resulting in JSON data that does not follow the order in which the Unicon
 table was constructed. However, lists are sequential in Unicon, so the
 resulting ordering of the JSON array is retained. 
 
-A class conversion is as follows:
+\bigskip
+\hrule\vspace{0.1cm}
+\bigskip
+\noindent
+The following program performs a class conversion 
 
-  \begin{verbatim}
-  link json
+\begin{verbatim}
+link json
 
-  class Person(name, age, gender)
-     #
-     # some methods here
-     #
-  end
+class Person(name, age, gender)
+   #
+   # some methods here
+   #
+end
 
-  procedure main()
-     person := Person("Joe", 42, "Male")
-     write("A Person: ", utoj(person))
-  end
-  \end{verbatim}
-\vspace{-1em}
+procedure main()
+   person := Person("Joe", 42, "Male")
+   write(utoj(person))
+end
+\end{verbatim}
 
-This outputs:
+\vspace{0.1cm}
+\noindent
+which outputs:
 
-  \begin{verbatim}
-  A Person: {"name":"Joe","age":42,"gender":"Male"}
-  \end{verbatim}
-\vspace{-1em}
+\begin{verbatim}
+{"__uniclass__":"Person","name":"Joe","age":42,"gender":"Male"}
+\end{verbatim}
 
-\end{description}
+\bigskip
+\hrule\vspace{0.1cm}
+\bigskip
+\noindent
+The following program performs a Unicon-to-JSON-back-to-Unicon conversion and
+is more complicated than the previous examples. This shows that the JSON
+library can be used to store Unicon data. Unicon's JSON library does not
+store object references, but can recreate structually equivalent objects.
 
-\noindent\rule{\textwidth}{1pt}
+\begin{verbatim}
+link json
+link ximage
 
+record R(a,b,c)
+
+class S(d,e,f)
+end
+
+procedure main()
+   c := S()
+   c.d := "a"
+   c.e := "b"
+   c.f := "c"
+   r := R(1,2,3)
+   s := set(["abc"])
+   s2 := set(["__unicset__","__uniset__","__uniclass__","__unirecord__"])
+   t := table()
+   t['a'] := 'bc'
+   t["\177b"] := 2
+   t["c"] := table()
+   t["c"]["\^cd"] := 3.89e-4
+   t[1] := r
+   t[2] := c
+   t[s] := set(["I'm a set element"])
+   t["__uniset__"] := s2
+   l := [t, s]
+
+   write("Before encoding:",ximage(l))
+   X := utoj(l)
+   write("\nEncoded JSON: ",X)
+   y := jtous(X)
+   write("\nAfter encoding:",ximage(y),"\n")
+end
+
+\end{verbatim}
+
+\vspace{0.1cm}
+\noindent
+This program produces the output:
+
+\begin{verbatim}
+Before encoding:L4 := list(2)
+   L4[1] := T1 := table(&null)
+      T1[1] := R_R_1 := R()
+         R_R_1.a := 1
+         R_R_1.b := 2
+         R_R_1.c := 3
+      T1[2] := S_1 := S()
+         S_1.d := "a"
+         S_1.e := "b"
+         S_1.f := "c"
+      T1["__uniset__"] := S2 := set()
+         insert(S2,"__uniclass__")
+         insert(S2,"__unicset__")
+         insert(S2,"__unirecord__")
+         insert(S2,"__uniset__")
+      T1["c"] := T2 := table(&null)
+         T2["\x03d"] := 0.000389
+      T1["\db"] := 2
+      T1['a'] := 'bc'
+      T1[{S1 := set()
+            insert(S1,"abc")
+         S1}] := S3 := set()
+         insert(S3,"I'm a set element")
+   L4[2] := S1
+
+Encoded JSON: [{"__unitable__":1,"\u007Fb":2,2:{"__uniclass__":"S","d":"a","
+e":"b","f":"c"},"__uniset__":{"__uniset__":["__uniclass__","__uniset__","__u
+nirecord__","__unicset__"]},1:{"__unirecord__":"R","a":1,"b":2,"c":3},{"__un
+iset__":["abc"]}:{"__uniset__":["I'm a set element"]},{"__unicset__":"a"}:{"
+__unicset__":"bc"},"c":{"__unitable__":1,"\u0003d":0.000389}},{"__uniset__":
+["abc"]}]
+
+After encoding:L24 := list(2)
+   L24[1] := T7 := table(&null)
+      T7[1] := R_R_3 := R()
+         R_R_3.a := 1
+         R_R_3.b := 2
+         R_R_3.c := 3
+      T7[2] := S_2 := S()
+         S_2.d := "a"
+         S_2.e := "b"
+         S_2.f := "c"
+      T7["__uniset__"] := S4 := set()
+         insert(S4,"__uniclass__")
+         insert(S4,"__unicset__")
+         insert(S4,"__unirecord__")
+         insert(S4,"__uniset__")
+      T7["c"] := T13 := table(&null)
+         T13["\x03d"] := 0.000389
+      T7["\db"] := 2
+      T7['a'] := 'bc'
+      T7[{S5 := set()
+            insert(S5,"abc")
+         S5}] := S6 := set()
+         insert(S6,"I'm a set element")
+   L24[2] := S7 := set()
+      insert(S7,"abc")
+\end{verbatim}
+
+\newpage
 \section*{References}
 
 [Crawford] anonymous, but owing to Douglas Crawford.

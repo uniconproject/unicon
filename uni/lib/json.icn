@@ -14,7 +14,8 @@ class ErrorHandler(filename,
                    lineno, 
                    error,
                    errout,
-                   tag
+                   tag,
+                   strict	# Flag to enforce strict JSON if not null
                   )
    method init(filename)
       self.filename := filename
@@ -59,8 +60,9 @@ class ErrorHandler(filename,
           write(errout, error)
           }
    end
-initially(errout)
+initially(errout,strict)
    self.errout := \errout | &errout
+   self.strict := strict | &null
    self.lineno := 1
    self.tag := "[json]"
 end
@@ -117,20 +119,19 @@ $endif
 # If the conversion fails, jtou() attempts to use s as a
 # filename. If it fails, then the function fails.
 #
-# The optional second parameter, mode, can be specified to
-# force file conversion ("f") or string conversion ("s").
-#
 # This procedure is a generator. It will return the 
 # corresponding unicon objects, one-by-one, until the
 # conversion is complete.
 #
-# An optional third parameter, error, as a file handle will specify 
-# where to print an error message in the event of a error
+# <[param s - JSON-encoded string or JSON filename]>
+# <[param strict - Flag for specifing strict JSON syntax (non-null)]>
+# <[param mode - Specifies explicit string, "s", or file, "f", handling]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
 #
-procedure jtou(s,mode,error)
+procedure jtou(s,strict,mode,error)
    local file, j, u, tok_gen, jerror, errout
    j := ""
-   jerror := ErrorHandler(error)
+   jerror := ErrorHandler(error,strict)
 
    # default semantics
    if /mode then {
@@ -180,14 +181,16 @@ end
 # Simple interface to convert a JSON string into a unicon entity.
 # <i>Note: Unlike jtou(), this assumes the JSON string contains a single
 # unicon entity.</i>
-# <[param s JSON-encoded string]>
+# <[param s - JSON-encoded string]>
+# <[param strict - Flag for specifing strict JSON syntax (non-null)]>
 # <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
 # <[return unicon entity encoded in JSON string]>
 #</p>
-procedure jtous(s,error)
+procedure jtous(s,strict,error)
    local tok_gen, u, jerror
 
-   jerror := ErrorHandler(error) # ErrorHandler() defaults error to &errout
+   #jerror := ErrorHandler(error,strict) # defaults error to &errout
+   jerror := ErrorHandler(error) # defaults error to &errout
    tok_gen := create json_scanner(s, jerror)
    while u := json_parser(tok_gen, jerror) do suspend u
    jerror.get_err()
@@ -196,13 +199,14 @@ end
 #<p>
 # Simple interface to convert a JSON file into a unicon entity.
 # <[param s - JSON filename]>
+# <[param strict - Flag for specifing strict JSON syntax (non-null)]>
 # <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
 # <[return unicon entity encoded in JSON string]>
 #</p>
-procedure jtouf(s,error)
+procedure jtouf(s,strict,error)
    local tok_gen, u, jerror
 
-   jerror := ErrorHandler(error) # ErrorHandler() defaults error to &errout
+   jerror := ErrorHandler(error,strict) # defaults error to &errout
    if not (file := open(s)) then {
       return jerror.write_err("Unable to open file "||image(s))
       }
@@ -223,9 +227,9 @@ end
 # An optional second parameter, error, as a file handle will specify 
 # where to print an error message in the event of a error
 #
-procedure utoj(x,error)
+procedure utoj(x,strict,error)
    local j;
-   jerror := ErrorHandler(error)
+   jerror := ErrorHandler(error,strict)
     
    if j := _utoj(x,jerror) then
       return j
@@ -257,53 +261,54 @@ procedure _utoj(u,jerror)
          s ||:= "]"
          return s
          }
-      "set": {
-         s := "["; i := 1
+      "set": { # {"__uniset__":[...]}
+         s := "{\"__uniset__\":["; i := 1
 
          every x := !u do {
             if i>1 then s ||:= ","
 	    s ||:= _utoj(x,jerror) | fail
             i +:= 1
             }
-         s ||:= "]"
+         s ||:= "]}"
          return s
          }
- 
-      "table": {
-         s := "{"
+      "cset": { # {"__unicset__":"..."}
+         return "{\"__unicset__\":"||jsonify_string(string(u),jerror)||"}"
+         }
+      "table": { # {"__unitable__":1, ...}
+         s := "{\"__unitable__\":1"
          every k := key(u) do {
 	    if s[-1] ~== "{" then s ||:= ","
             if type(k) == "string" then 
-               s ||:= jsonify_string(k)|| ":" || _utoj(u[k],jerror) | fail
-            else
-               s ||:= "\""||image(k)||"\""||":"||_utoj(u[k],jerror) | fail
+               s ||:= jsonify_string(k,jerror)||":"|| _utoj(u[k],jerror) | fail
+            else {
+               if \(jerror.strict) then 
+                  s ||:= "\""||image(k)||"\":"||_utoj(u[k],jerror) | fail
+               else
+                  s ||:= _utoj(k,jerror)||":"||_utoj(u[k],jerror) | fail
+               }
             }
          s ||:= "}"
          return s
          }
-
-      "cset": { 
-         return jsonify_cset(u)
-         }
-
       default: {
-         # Class - Do we care about method names? Currently we don't
+         # Class - {"__uniclass__":"ClassName", ...}
          if match("object ", tmp := image(u)) then {
-            s := "{\"class\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
+            s := "{\"__uniclass__\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
             every k := key(u) do {
                if k == ("__s" | "__m") then next
                if type(k) ~== "string" then fail
-	       s ||:= ","||jsonify_string(k)|| ":" || _utoj(u[k],jerror) | fail
+	       s ||:=","||jsonify_string(k,jerror)||":"||_utoj(u[k],jerror)|fail
                }
             s ||:= "}"
             return s
             }
-         # Record
+         # Record - {"__unirecord__":"RecordName", ...}
          else if match("record ", tmp := image(u)) then {
-            s := "{\"record\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
+            s := "{\"__unirecord__\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
             every k := key(u) do {
                if type(k) ~== "string" then fail
-	       s ||:= ","||jsonify_string(k)|| ":" || _utoj(u[k],jerror) | fail
+	       s ||:=","||jsonify_string(k,jerror)||":"||_utoj(u[k],jerror)|fail
                }
             s ||:= "}"
             return s
@@ -315,19 +320,11 @@ procedure _utoj(u,jerror)
       }
 end
 
-procedure jsonify_cset(c,jerror)
-   return "\"\'"||_jsonify_string(string(c),jerror)||"\'\""
-end
-
-procedure jsonify_string(s,jerror)
-   return "\""||_jsonify_string(s,jerror)||"\""
-end
-
 #
 # Procedure for converting Unicon escapes and escape sequences to valid 
 # JSON escape sequences.
 #
-procedure _jsonify_string(s,jerror)
+procedure jsonify_string(s,jerror)
    static hex, oct, T_Esc
    local ns := "", tmp, i
 
@@ -336,20 +333,21 @@ procedure _jsonify_string(s,jerror)
       oct := '01234567'
       T_Esc := table()
 
-      every i := 0 to 31 do 
+      every i := 0 to 31 do
          T_Esc[char(i)] := "\\u"||right(_dectohex(i),4,"0")
       T_Esc[char(8)] := "\\b"
+      T_Esc[char(9)] := "\\t"
       T_Esc[char(10)] := "\\n"
-      T_Esc[char(11)] := "\\t"
       T_Esc[char(12)] := "\\f"
       T_Esc[char(13)] := "\\r"
+      T_Esc[char(127)] := "\\u007F" # \d
       }
 
    s ? {
       while c := move(1) do {
          if c == '\"' then return jerror.set_err("Unicon string \""||s||
             "\" contains an illegal double quote for JSON strings")
-
+         # Handle escape sequences
          if c == "\\" then {
             case (c := move(1)) | 
                   return jerror.set_err("Incomplete escape sequence") of {
@@ -357,7 +355,7 @@ procedure _jsonify_string(s,jerror)
                "\\": ns ||:= "\\\\"
                "/": ns ||:= "\\/"
                "\"": ns ||:= "\\\""
-               "u": { # unicode - restrict to 16-bit unicode
+               "u": { # restrict to 16-bit unicode
                   tmp := tab(many(hex)) | ""
                   if (i := *tmp) > 4 then {
                      tmp := tmp[1:5]
@@ -370,8 +368,7 @@ procedure _jsonify_string(s,jerror)
                "d": ns ||:= "\\u007F"
                "e": ns ||:= "\\u001B"
                "f": ns ||:= "\\f"
-               "l": ns ||:= "\\u000A"
-               "n": ns ||:= "\\n"
+               "l"|"n": ns ||:= "\\n"
                "r": ns ||:= "\\r"
                "t": ns ||:= "\\t"
                "v": ns ||:= "\\u000B"
@@ -394,20 +391,20 @@ procedure _jsonify_string(s,jerror)
                   ns ||:= "\\u"||right(_octtohex(tmp),4,"0")
                   }
                "^": { # control sequence
-                  c := move(1) 
-                  write("Control character: "||c)
-                  ns ||:= \(T_Esc[char(ord(c)%32)]) | ""
+                  c := move(1)
+                  if c == "?" then ns ||:= T_Esc["\d"]
+                  else ns ||:= \(T_Esc[tmp := char(ord(c)%32)]) | tmp
                   }
                default: { # Use unicon conventions for escape sequences
-                  write("default: "||c)
                   ns ||:= c
                   }
                } # end case
             } # end if
+         # Handle escaped characters
          else ns ||:= \(T_Esc[c]) | c
          } # end while
       } 
-   return ns
+   return "\""||ns||"\""
 end
 
 #
@@ -492,7 +489,6 @@ procedure json_scanner(s,jerror)
       }
 end
 
-
 #
 # String scanning helper function to retrieve JSON value 'true'
 #
@@ -536,6 +532,7 @@ procedure scan_ctrl_char(jerror)
    #
    case (c := move(1)) | 
         return jerror.set_err("Incomplete JSON escape sequence") of {
+      # JSON escapes
       "b":  return "\b"
       "f":  return "\f"
       "n":  return "\n"
@@ -749,66 +746,155 @@ end
 
 #
 # Helper parsing function that recognizes the production rules for a
-# JSON object. Returns a Unicon table if proper syntax (success).
+# JSON object. Returns a Unicon object (table, class, record, set, or cset) 
+# if successfully parsed.
 #
 procedure parse_object(token, token_gen, parse_funcs, jerror)
-   local json_object, json_key, json_value, prev_token, tok
+   local json_object, json_key, json_value, prev_token, tok, func, first := 1
+   local constr, attribs, fields, uni_object, i
    prev_token := token
-   json_object := table()
 
+   # {json_object} is a table which holds the traditional JSON dictionary. 
+   # {uni_object} is a unicon object which uses unique JSON object encoding,
+   # "__uniset__", "__unicset__", "__unitable__", "__uniclass__", and
+   # "__unirecord__". {json_object} is always built in case the unique Unicon
+   # JSON object encoding syntax is not satisfied.
    while tok := @token_gen do {
-
-      # end of object, return
+      # end of object, allow for trailing comma, e.g. {... ,}
       if tok == "}"  then {
-         # allow for trailing comma, e.g. {... ,}
-         #if prev_token ~== "," then return json_object
-         #else return jerror.set_err("Unexpected comma before: }")
-         return json_object
+         if \constr then 
+            return constr ! attribs # class/record
+         else if \uni_object then
+            return uni_object # set/cset
+         else
+            return json_object # dictionary/table
          }
 
-      # commas are valid only if the preceeding token is a value (not { or ,)
+      # Commas are valid only if the preceeding token is a value (not { or ,)
       else if tok == "," then {
          if not (prev_token == ("{"|",")) then prev_token := tok
          else return jerror.set_err("Unexpected comma in JSON object after: "||
                      tok)
          }
 
-      # parse pairs: a key is always a string
-      else if tok[1] == "\"" then {
-         if prev_token == ("{"|",") then {
-            # string
+      # JSON pair
+      else if prev_token == ("{"|",") then {
+         # Dictionary - JSON string as key only
+         if \(jerror.strict) then {
+            if tok[1] ~== "\"" then 
+               return jerror.set_err("Expecting JSON string for object key, "||
+                      "got "||tok)
+            json_key := tok[2:-1]
+            }
+         # For Unicon tables where the key can be any JSON value
+         else {
+            if /(func := parse_funcs[tok[1]]) then 
+               return jerror.set_err("Invalid JSON object key value: "||tok)
             prev_token := tok
-            json_key := parse_funcs["\""](tok, token_gen, parse_funcs, jerror)
+            json_key := func(tok, token_gen, parse_funcs, jerror)
+            }
 
-            # check for colon
-            if (tok := @token_gen) == ":" then prev_token := tok 
-            else return jerror.set_err(
-                        "Expected colon in JSON pair before: " || tok)
-            # value 
-            if tok := @token_gen then {
-               if \(func := parse_funcs[tok[1]]) then {
-                  json_value := func(tok, token_gen, parse_funcs, jerror)
-                  prev_token := "value"
+         # Colon
+         if (tok := @token_gen) == ":" then prev_token := tok 
+         else return jerror.set_err("Expected colon in JSON pair before: "||tok)
+
+         # JSON value
+         if tok := @token_gen then {
+            if \(func := parse_funcs[tok[1]]) then {
+               json_value := func(tok, token_gen, parse_funcs, jerror)
+               prev_token := "value"
+               
+               # Special case for handling Unicon data types
+               if \first then {
+                  first := &null
+                  case json_key of {
+                     # {"__unicset__":"..."}
+                     "__unicset__": {
+                        if type(json_value) == "string" then
+                           uni_object := cset(json_value)
+                        json_object := table()
+                        json_object[json_key] := json_value
+                        next
+                        }
+                     # {"__uniset__":[...]}
+                     "__uniset__": { 
+                        if type(json_value) == "list" then 
+                           uni_object := set(json_value)
+                        json_object := table()
+                        json_object[json_key] := json_value
+                        next
+                        }
+                     # {"__unirecord__":"RecordName", ...}
+                     # 
+                     # Try to create a class/record with its constructor.
+                     # If the constructor doesn't exist, return a table instead
+                     "__unirecord__": { 
+                        if constr := proc(json_value) then {
+                           tmp := constr()
+                           fields := [: fieldnames(tmp) :] | []
+                           #fields := []
+                           #every put(fields, fieldnames(tmp))
+                           attribs := list(*fields) 
+                           next
+                           }
+                        json_object := table()
+                        }
+                     # {"__uniclass__":"ClassName", ...}
+                     # 
+                     # Try to create a class with its constructor.
+                     # If the constructor doesn't exist, return a table instead
+                     "__uniclass__": { 
+                        if constr := proc(json_value) then {
+                           fields := membernames(json_value)
+                           # Get rid of internal class members: 
+                           # [name, methods, methods_map, variables, 
+                           # state_instance, oprec, supers, implemented_classes]
+                           if fields[-1] == "implemented_classes" then
+                              fields := fields[1:-8]
+                           attribs := list(*fields) 
+                           next
+                           }
+                        json_object := table()
+                        }
+                     # {"__unitable__":1, ...}
+                     "__unitable__": {
+                        json_object := table()
+                        # Don't encode "__unitable__":1 into the table if
+                        # correct syntax
+                        if json_value === 1 then next
+                        }
+                     # Returning a dictionary (table)
+                     default: {
+                        json_object := table()
+                        }
+                     } 
+                  }
+               if \json_object then {
+                  # Build a table
+                  if type(\uni_object) ~== "table" then 
+                     uni_object := &null
                   json_object[json_key] := json_value
                   }
-               else 
-                  return jerror.set_err("Expected JSON value in JSON pair" ||                        ", got: " || tok)
+               else { 
+                  # Build an attribute list for the class/record constructor.
+                  # Check field names in case the JSON was user-constructed
+                  # instead of from utoj*()
+                  i := 1
+                  every field := !fields do {
+                     if field == json_key then {
+                        attribs[i] := json_value
+                        break 
+                        }
+                     i +:= 1
+                     }
+                  }
                }
-            else 
-               return jerror.set_err("JSON pair missing JSON value")
-            }
-         else return jerror.set_err(
-                     "Expected comma in JSON object before: " || tok)
+            else return jerror.set_err("Expected JSON value in JSON pair" ||
+                        ", got: " || tok)
+            } 
+         else return jerror.set_err("JSON pair missing JSON value")
          }
-
-      # Invalid object syntax
-      else {
-         if prev_token == (","|"{") then 
-            return jerror.set_err("Expected JSON pair, got: " || tok)
-         else
-            return jerror.set_err("Token violated JSON object syntax: " ||
-                   tok)
-         }
+      else return jerror.set_err("Token violated JSON object syntax: " || tok)
       }
    return jerror.set_err("Expected terminating } for JSON object")
 end
@@ -827,8 +913,6 @@ procedure parse_array(token, token_gen, parse_funcs, jerror)
       # end of array, return
       if tok == "]" then {
          # allow for a trailing comma, e.g. [... ,]
-         #if prev_token ~== "," then return json_array
-         #else return jerror.set_err("Unexpected comma at end of JSON array")
          return json_array
          }
 

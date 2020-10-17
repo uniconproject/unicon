@@ -1,0 +1,245 @@
+#
+# jsontest.icn - Test file for the Unicon JSON library
+# Author - Gigi Young (email: kzyoung93@gmail.com)
+#
+
+import lang
+
+link "json"
+link "ximage"
+
+record R(a,b,c)
+
+class S:Class(d,e,f)
+end
+
+#
+# DEBUG is used to detailed inspection (including debugging) of the JSON
+# library test suite.
+#
+$ifdef DEBUG
+procedure dwrite(s[])
+   write ! s
+end
+$else
+procedure dwrite(s[])
+end
+$endif
+
+procedure main()
+   # Test general Unicon data structures
+   json_unicon_encoding_tests()
+
+   c := S()
+   c.d := "a"
+   c.e := "b"
+   c.f := "c"
+   r := R(1,2,3)
+   s := set(["abc"])
+   s2 := set(["__unicset__","__uniset__","__uniclass__","__unirecord__"])
+   t := table()
+   t['a'] := 'bc'
+   t["\177b"] := 2 
+   t["c"] := table()
+   t["c"]["\^cd"] := 3.89e-4
+   t[1] := r
+   t[2] := c
+   t[s] := set(["I'm a set element"])
+   t["__uniset__"] := s2
+   l := [t, s]
+   object_test(l, "Object test")
+
+   t1 := table()
+   l := ["__unicset__","__uniset__","__uniclass__","__unirecord__"]
+   t1["__uniset__"] := l
+   object_test(t1, "JSON Unicon object encoding test")
+
+   # 
+   # Is it possible to handle cyclic references without extending the JSON
+   # grammar further?
+   # 
+   #t_rec := table()
+   #t_rec[t_rec] := t_rec
+   #object_test(t_rec, "Cyclic reference test")
+ 
+   # Escapes/escape sequence testing 
+   t2 := table()
+   t2["\bb"] := "\^h" 
+   t2["\db"] := "\d" 
+   t2["\eb"] := "\^[" 
+   t2["\fb"] := "\^l"
+   t2["\lb"] := "\^j" 
+   t2["\nb"] := "\^J" 
+   t2["\rb"] := "\^M" 
+   t2["\tb"] := "\^i" 
+   t2["\vb"] := "\^k" 
+   t2["\x00"] := "\^@" 
+   t2["\001"] := "\^A" 
+   object_test(t2,"Unicon escapes & control characters test")
+   escapeseq_test("Unicon escape & control sequence test")
+
+end
+
+procedure json_unicon_encoding_tests()
+   c := &digits ++ '#$'
+   t := table()
+   l := ["__unicset__","__uniset__","__uniclass__","__unirecord__"]
+   s := set(l)
+   C := S(3.1415e0,"hello","world")
+   r := R(1,2,"three")
+
+$ifdef DEBUG
+   json_test("{\"__unitable__\":\"1\"}")
+   json_test("{\"__unitable__\":1}")
+   json_test("{\"__unitable__\":\"abc\", \"a\":1}")
+
+   json_test("{\"__uniset__\":[1,2,3]}")
+   json_test("{\"__uniset__\":[1,2,3], \"a\":1}")
+
+   json_test("{\"__unicset__\":\"abc\"}")
+   json_test("{\"__unicset__\":\"abc\", \"a\":1}")
+
+   json_test("{\"__unirecord__\":\"R\"}")
+   json_test("{\"__unirecord__\":\"R\",\"a\":1}")
+   json_test("{\"__unirecord__\":\"not a record\", \"a\":1}")
+
+   json_test("{\"__uniclass__\":\"S\"}")
+   json_test("{\"__uniclass__\":\"S\", \"a\":1, \"d\":\"a\"}")
+   json_test("{\"__uniclass__\":\"not a class\", \"a\":1}")
+$endif
+
+   object_test(t,"Unicon table encoding test")
+   object_test(s,"Unicon set encoding test")
+   object_test(c,"Unicon cset encoding test")
+   object_test(r,"Unicon record encoding test")
+   object_test(C,"Unicon class encoding test")
+end
+
+procedure escapeseq_test(s)
+   msg := \s || ": " | ""
+   t := table()
+   t["\b"] := "\\^h" 
+   t["\d"] := "\\^?" 
+   t["\e"] := "\\^[" 
+   t["\f"] := "\\^l"
+   t["\l"] := "\\^j" 
+   t["\n"] := "\\^J" 
+   t["\r"] := "\\^M" 
+   t["\t"] := "\\^i" 
+   t["\v"] := "\\^k" 
+   t["\x00"] := "\\^@" 
+   t["\001"] := "\\^A" 
+   t["\x02"] := "\\x02" 
+   t["\003"] := "\\003" 
+
+   dwrite("-------------------------------------------------------------------")
+   dwrite("Before encoding:",ximage(t))
+   X := utoj(t)
+   dwrite("\nEncoded JSON: ",X)
+   y := jtous(X)
+   dwrite("\nAfter encoding:",ximage(y),"\n")
+
+   every k := key(y) do
+      if k ~== y[k] then {
+         write(msg,"FAILURE")
+         fail
+         }
+   write(msg,"SUCCESS")
+end
+
+procedure json_test(s)
+   y := jtous(s)
+   dwrite("-------------------------------------------------------------------")
+   dwrite("Encoded JSON: ",s)
+   dwrite("After encoding:\n",ximage(y),"\n")
+end
+
+procedure object_test(x,s)
+   msg := \s || ": " | ""
+
+   dwrite("-------------------------------------------------------------------")
+   dwrite("Before encoding:",ximage(x))
+   X := utoj(x)
+   dwrite("\nEncoded JSON: ",X)
+   y := jtous(X)
+   dwrite("\nAfter encoding:",ximage(y),"\n")
+   if objects_equal(x,y) then write(msg,"SUCCESS")
+   else write(msg,"FAILURE")
+end
+
+#
+# Procedure for testing structural object equivalence
+#
+procedure objects_equal(x,y)
+   if type(x) ~== type(y) then fail
+   case type(x) of {
+      "integer"|"real": {  
+         if x ~= y then fail 
+         }
+      "string": {  
+         if x ~== y then fail 
+         }
+      "cset": {  
+         if string(x) ~== string(y) then fail 
+         }
+      "null": {  
+         return
+         }
+      "table": {  
+         xkeys := [: key(x) :] | []
+         ykeys := [: key(y) :] | []
+         if *xkeys ~= *ykeys then fail
+         every k := !xkeys do {
+            every i := 1 to *ykeys do {
+               if objects_equal(k,ykeys[i]) then {
+                  if not objects_equal(x[k],y[ykeys[i]]) then fail
+                  delete(ykeys,i)
+                  break 
+                  }
+               }
+            }
+         if *ykeys > 0 then fail
+         }
+      "set": {  
+         if *x ~= *y then fail
+         L := [: !y :] | []
+         every objx := !x do {
+            if *L <= 0 then break
+            every i := 1 to *L do { 
+               if objects_equal(objx, L[i]) then {
+                  delete(L, i)   
+                  break
+                  }
+               }
+            }
+         if *L > 0 then fail
+         }
+      "list": {  
+         if *x ~= *y then fail
+         every i := 1 to *x do 
+            if not objects_equal(x[i], y[i]) then fail
+         }
+      default: {  
+         # Class
+         if match("object ", namex := image(x)) & 
+            match("object ", namey := image(y)) then {
+            if namex == namey then {
+               fields := membernames(namex)
+               every field := !fields do
+                  if not objects_equal(x.field,y.field) then fail
+               }  
+            }
+         # Record
+         if match("record ", namex := image(x)) & 
+            match("record ", namey := image(y)) then {
+            if namex == namey then { 
+               tmp := namex()
+               fields := [: fieldnames[tmp] :] | []
+               every field := !fields do 
+                  if not objects_equal(x.field,y.field) then fail
+               }  
+            }
+         }
+      }  
+   return
+end

@@ -158,6 +158,13 @@ WUnicon:
 	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
 	@echo
 
+INNOSETUP="c:\Program Files (x86)\Inno Setup 5\ISCC.exe"
+WinInstaller:
+	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
+	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
+	@echo "#define AppRevision \"$(REPO_REV)\"" >> config/win32/gcc/unicon_version.iss
+	$(INNOSETUP) config/win32/gcc/unicon.iss
+
 NT-Configure:
 		cmd /C "cd config\win32\msvc && config"
 		@echo Now remember to add unicon/bin to your path

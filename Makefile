@@ -163,6 +163,7 @@ WinInstaller:
 	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
 	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
 	@echo "#define AppRevision \"$(REPO_REV)\"" >> config/win32/gcc/unicon_version.iss
+	@echo "#define PATCHSTR \"$(PATCHSTR)\"" >> config/win32/gcc/unicon_version.iss
 	$(INNOSETUP) config/win32/gcc/unicon.iss
 
 NT-Configure:

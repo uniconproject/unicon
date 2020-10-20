@@ -32,8 +32,7 @@ DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputBaseFilename=setup-{#PkgName}_{#AppVersion}~{#AppRevision}(64-bit)
 Compression=lzma2/ultra
-InternalCompressLevel=ultra
-;SolidCompression=yes
+SolidCompression=yes
 Uninstallable=yes
 SetupIconFile=config\win32\gcc\setup.ico
 WizardImageFile=config\win32\gcc\setupbig.bmp
@@ -355,11 +354,26 @@ begin
   end;
 end;
 
+//show a "marquee" (= infinite) progress bar
+procedure SetMarqueeProgress(Marquee: Boolean);
+begin
+  if Marquee then
+  begin
+    WizardForm.ProgressGauge.Style := npbstMarquee;
+  end
+    else
+  begin
+    WizardForm.ProgressGauge.Style := npbstNormal;
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
     Log('Post install');
+    SetMarqueeProgress(True)
     PostInstall();
+    SetMarqueeProgress(False)
   end;
 end;

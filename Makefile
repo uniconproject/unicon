@@ -379,7 +379,7 @@ dist: distclean update_rev
 #                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
 publishdist: dist
-	scp ../$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/dist/uniconsrc-nightly.tar.gz
+	scp ../$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/download/
 
 # Deb Section
 udist=unicondist

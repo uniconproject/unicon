@@ -158,6 +158,14 @@ WUnicon:
 	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
 	@echo
 
+INNOSETUP="c:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+WinInstaller:
+	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
+	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
+	@echo "#define AppRevision \"$(REPO_REV)\"" >> config/win32/gcc/unicon_version.iss
+	@echo "#define PATCHSTR \"$(PATCHSTR)\"" >> config/win32/gcc/unicon_version.iss
+	$(INNOSETUP) config/win32/gcc/unicon.iss
+
 NT-Configure:
 		cmd /C "cd config\win32\msvc && config"
 		@echo Now remember to add unicon/bin to your path
@@ -358,10 +366,10 @@ update_rev:
 	fi
 	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> src/h/build.h;
 
-MV=3
-VV=13.1.$(MV)
-UTAR=unicon-$(VV).tar.gz
-UTARORIG=unicon_$(VV).orig.tar.gz
+MV=0
+VV=$(PKG_VERSION).$(MV)
+UTAR=$(PKG_TARNAME)-$(VV).tar.gz
+UTARORIG=$(PKG_TARNAME)_$(VV).orig.tar.gz
 
 dist: distclean update_rev
 #	$(SHTOOL) fixperm -v *;
@@ -371,7 +379,7 @@ dist: distclean update_rev
 #                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
 publishdist: dist
-	scp ../$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/dist/uniconsrc-nightly.tar.gz
+	scp ../$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/download/
 
 # Deb Section
 udist=unicondist
@@ -391,20 +399,18 @@ deb: dist
 	@echo "	 debuild -us -uc"
 
 debin: deb
-	cd ../$(udist)/unicon-$(VV) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
+	cd ../$(udist)/$(PKG_TARNAME)-$(VV) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
 	ls -lh ../$(udist)/unicon_*.*
-
-
 
 debsrc: deb
-	cd ../$(udist)/unicon-$(VV) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
-	ls -lh ../$(udist)/unicon_*.*
+	cd ../$(udist)/$(PKG_TARNAME)-$(VV) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
+	ls -lh ../$(udist)/$(PKG_TARNAME)_*.*
 
 debsign:
-	cd ../$(udist) && debsign unicon_$(VV)-1_amd64.changes  $(SIGNOPT)
+	cd ../$(udist) && debsign $(PKG_TARNAME)_$(VV)-1_amd64.changes  $(SIGNOPT)
 
 launchpad:
-	cd ../$(udist) && dput unicon-ppa unicon_$(VV)-1_source.changes
+	cd ../$(udist) && dput unicon-ppa $(PKG_TARNAME)_$(VV)-1_source.changes
 
 
 # RPM section
@@ -423,20 +429,20 @@ rpm: dist
 rpmbin: rpm
 	cd ../$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
 	@ls ../$(rpmdir)/RPMS/
-	@echo "  Did we get : ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm"
-	ls -lh ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm
+	@echo "  Did we get : ../$(rpmdir)/RPMS/-$(VV)-*.*.rpm"
+	ls -lh ../$(rpmdir)/RPMS/$(PKG_TARNAME)-$(VV)-*.*.rpm
 
 rpmresume: rpm
 	cd ../$(rpmdir) &&  rpmbuild -bi --short-circuit unicon.spec
 	@ls ../$(rpmdir)/RPMS/
-	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*rpm"
-	ls -lh ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm
+	@echo "  Did we get : ../$(rpmdir)/SRPMS/$(PKG_TARNAME)-$(VV)-*.*rpm"
+	ls -lh ../$(rpmdir)/RPMS/$(PKG_TARNAME)-$(VV)-*.*.rpm
 
 rpmsrc:
 	cd ../$(rpmdir) &&  rpmbuild -bs unicon.spec
 	@ls ../$(rpmdir)/SRPMS/
-	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*.src.rpm"
-	ls -lh ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm
+	@echo "  Did we get : ../$(rpmdir)/SRPMS/$(PKG_TARNAME)-$(VV)-*.*.src.rpm"
+	ls -lh ../$(rpmdir)/RPMS/$(PKG_TARNAME)-$(VV)-*.*.rpm
 
 
 ##################################################################

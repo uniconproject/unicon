@@ -1,34 +1,18 @@
 #  Top Level Makefile for Unicon
 #
 
-#  configuration parameters
-
-PKG_NAME=Unicon
-PKG_TARNAME=unicon
-PKG_VERSION=13.2
-PKG_STRING=Unicon 13.2
+include Makedefs
 
 name=unspecified
+
+# Make sure no custom PATHs are set so the build doesn't get affected
+# by other installations of unicon if the do exists
 IPATH=
 LPATH=
 
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD)"
-REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
-REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
-REPO_REV_DESCR="$(shell LC_ALL=C git describe --long HEAD)"
-REPO_REV_BRANCH="$(shell LC_ALL=C git branch rev-parse --abbrev-ref HEAD)"
 
 SHELL=sh
 SHTOOL=./shtool
-prefix=/usr/local
-exec_prefix=${prefix}
-bindir=${exec_prefix}/bin
-libdir=${exec_prefix}/lib
-datarootdir=${prefix}/share
-docdir=${datarootdir}/doc/${PACKAGE_TARNAME}
-mandir=${datarootdir}/man
-htmldir=${docdir}
-
 
 PATCHSTR=./bin/patchstr
 
@@ -89,43 +73,13 @@ allsrc: Makedefs update_rev
 	$(MAKE) -C src
 
 
-config/unix/$(name)/status src/h/define.h:
-	:
-	: To configure Unicon, run either
-	:
-	:	make Configure name=xxxx     [for no graphics]
-	: or	make X-Configure name=xxxx   [with X-Windows graphics]
-	:
-	: where xxxx is one of
-	:
-	@cd config/unix; ls -d [a-z]*
-	:
-	@exit 1
-
 ##################################################################
-#
-# Code configuration.
-#
-# $Id: top.mak,v 1.30 2010-05-06 23:13:56 jeffery Exp $
 
 # needed especially for MacOS
 .PHONY: Configure
 
 # Configure the code for a specific system.
 
-Configure:
-		./configure --disable-graphics
-
-X-Configure:
-		./configure
-
-
-Thin-Configure:
-		./configure --enable-thin
-
-
-Thin-X-Configure:
-		./configure --enable-thinx
 
 V-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -146,19 +100,7 @@ WUnicon32:
 WUnicon64:
 	sh configure --build=x86_64-w64-mingw32 --disable-iconc
 
-WUnicon:
-	@echo Reloading the Makefile from config/win32/gcc/makefile.top
-	cp config/win32/gcc/makefile.top Makefile
-	@echo Done.
-	@echo
-	@echo Ready to build Windows Unicon
-	@echo Make sure the Unicon bin directory is in your path before continuing, then run:
-	@echo
-	@echo "   - " \"make WUnicon32\" for a 32-bit build, or
-	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
-	@echo
-
-INNOSETUP="c:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+INNOSETUP="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 WinInstaller:
 	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
 	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
@@ -173,16 +115,6 @@ NT-Configure:
 W-Configure:
 		cmd /C "cd config\win32\msvc && w-config"
 		@echo Now remember to add unicon/bin to your path
-
-W-Configure-GCC:
-		cd config/win32/gcc && sh w-config.sh
-		@echo Now remember to add unicon/bin to your path
-		@echo Then run "make Unicon" to build
-
-NT-Configure-GCC:
-		cd config/win32/gcc && sh config.sh
-		@echo Now remember to add unicon/bin to your path
-		@echo Then run "make Unicon" to build
 
 ##################################################################
 #

@@ -598,11 +598,17 @@ if test "x$database" = "xyes"; then
      CHECK_ODBC()
    fi
 else
-  AC_DEFINE([NoDatabase], [1], [No Database])
+   AC_DEFINE([NoDatabase], [1], [No Database])
 fi
 
+
 CHECK_PTHREAD()
-CHECK_OPENSSL()
+
+if test "x$ssl" = "xyes" ; then
+   CHECK_OPENSSL()
+else
+   AC_DEFINE([NoDatabase], [1], [No Database])
+fi
 
 # autoconf does this too late, so just do it now...
 test "x$prefix" = xNONE && prefix=$ac_default_prefix

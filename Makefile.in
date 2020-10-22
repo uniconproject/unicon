@@ -6,7 +6,7 @@ include Makedefs
 name=unspecified
 
 # Make sure no custom PATHs are set so the build doesn't get affected
-# by other installations of unicon if the do exists
+# by other installations of unicon on the same system if they do exist
 IPATH=
 LPATH=
 

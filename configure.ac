@@ -92,35 +92,38 @@ echo "##########################################"
 
 AC_ARG_ENABLE([graphics],
 	[AS_HELP_STRING([--disable-graphics], [No graphics subsystem])],
-			[graphics=no], [graphics=yes])
+			[graphics=$enableval], [graphics=on])
 AC_ARG_ENABLE([graphics3d],
 	[AS_HELP_STRING([--disable-graphics3d], [No 3D graphics support])],
-		        [graphics3d=no], [graphics3d=yes])
+		        [graphics3d=$enableval], [graphics3d=on])
+AC_ARG_ENABLE([multiprograms],
+	[AS_HELP_STRING([--disable-multiprograms], [No multi programs support])],
+			[multiprograms=$enableval], [multiprograms=on])
 AC_ARG_ENABLE([concurrency],
 	[AS_HELP_STRING([--disable-concurrency], [No concurrent thread support])],
-			[concurrency=no], [concurrency=yes])
+			[concurrency=$enableval], [concurrency=on])
 AC_ARG_ENABLE([pattern],
 	[AS_HELP_STRING([--disable-pattern], [No pattern type support])],
-			[pattern=no], [pattern=yes])
+			[pattern=$enableval], [pattern=on])
 AC_ARG_ENABLE([database],
 	[AS_HELP_STRING([--disable-database], [No database support])],
-			[database=no], [database=yes])
+			[database=$enableval], [database=on])
 AC_ARG_ENABLE([ssl],
 	[AS_HELP_STRING([--disable-ssl], [No SSL support])],
-			[ssl=no], [ssl=yes])
+			[ssl=$enableval], [ssl=on])
 AC_ARG_ENABLE([audio],
 	[AS_HELP_STRING([--disable-audio], [No audio support])],
-			[audio=no], [audio=yes])
+			[audio=$enableval], [audio=on])
 AC_ARG_ENABLE([voip],
 	[AS_HELP_STRING([--disable-voip], [No VOIP support])],
-			[voip=no], [voip=yes])
+			[voip=$enableval], [voip=on])
 AC_ARG_ENABLE([plugins],
 	[AS_HELP_STRING([--disable-plugins], [No loadfunc or plugins support])],
-			[plugins=no], [plugins=yes])
+			[plugins=$enableval], [plugins=on])
 
 AC_ARG_ENABLE([iconc],
 	[AS_HELP_STRING([--disable-iconc], [Build Unicon Compiler (Iconc/Uniconc)])],
-			[iconc=no], [iconc=yes])
+			[iconc=$enableval], [iconc=on])
 AC_ARG_ENABLE([iconcurrency],
 	[AS_HELP_STRING([--enable-iconcurrency], [enable thread support in Unicon Compiler])],
 			[coniconc=yes], [coniconc=no])
@@ -139,6 +142,13 @@ AC_ARG_ENABLE([progs],
 AC_ARG_ENABLE([verbosebuild],
 	[AS_HELP_STRING([--enable-verbosebuild], [Show full CC build lines with all compiler arguments])],
 			[verbosebuild=yes], [verbosebuild=no])
+
+AC_ARG_ENABLE([doc],
+	[AS_HELP_STRING([--enable-doc], [Add makefile rule to build documentation])],
+			[doc=yes], [doc=no])
+AC_ARG_ENABLE([htmldoc],
+	[AS_HELP_STRING([--enable-htmldoc], [ADd makefile rule to html documentation])],
+			[htmldoc=yes], [htmldoc=no])
 
 AC_ARG_ENABLE([thin],
 	[AS_HELP_STRING([--enable-thin], [Do a minimalist build disabling non critical features])],
@@ -337,7 +347,7 @@ case $unicon_host in
         ;;
 esac
 
-if test "x$iconc"      = "xyes" ; then
+if test "x$iconc" = "xyes" || test "x$iconc" = "xon" ; then
        ICONCTARGET=Iconc
 fi
 
@@ -401,21 +411,52 @@ AC_SUBST(UNIPROGS)
 
 
 if test "x$thin" = "xyes"; then
-graphics=no
-graphics3d=no
-concurrency=no
-pattern=no
-audio=no
-database=no
-voip=no
-plugins=no
-database=no
-ssl=no
 
-  AC_DEFINE([NoMultiProgram], [1], [No MultiProgram])
+   if test "x$graphics" = "xon"; then
+      graphics=no
+   fi
+
+   if test "x$graphics3d" = "xon"; then
+      graphics3d=no
+   fi
+
+   if test "x$concurrency" = "xon"; then
+      concurrency=no
+   fi
+
+   if test "x$pattern" = "xon"; then
+      pattern=no
+   fi
+
+   if test "x$audio" = "xon"; then
+      audio=no
+   fi
+
+   if test "x$database" = "xon"; then
+      database=no
+   fi
+
+   if test "x$voip" = "xon"; then
+      voip=no
+   fi
+
+   if test "x$plugins" = "xon"; then
+      plugins=no
+   fi
+
+   if test "x$database" = "xon"; then
+      database=no
+   fi
+
+   if test "x$databse" = "xon"; then
+      ssl=no
+   fi
+
+   if test "x$multiprograms" = "xon"; then
+      multiprograms=no
+   fi
   # what else we need to disable?
 fi
-
 
 AC_CHECK_FUNCS([socket bcopy bzero memcpy memset inet_aton inet_pton \
 	       snprintf vsprintf rename ftruncate flock fsync \
@@ -436,6 +477,10 @@ AC_SEARCH_LIBS([clock_gettime],[rt],
 AC_SEARCH_LIBS([crypt],[crypt],
 	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
 
+if test "x$multiprograms" = "xno"; then
+  AC_DEFINE([NoMultiProgram], [1], [No MultiProgram])
+fi
+
 if test "x$concurrency" = "xno"; then
   AC_DEFINE([NoConcurrent], [1], [No Concurrency])
 fi
@@ -455,7 +500,7 @@ fi
 
 CHECK_ZLIB()
 
-if test "x$graphics" = "xyes"; then
+if ! test "x$graphics" = "xno"; then
 
   CHECK_XLIB()
   # if we have X11 or if we are running on MS Windows check for graphics libs
@@ -466,7 +511,7 @@ if test "x$graphics" = "xyes"; then
     CHECK_JPEG()
     CHECK_PNG()
 
-    if test "x$graphics3d" = "xyes"; then
+    if ! test "x$graphics3d" = "xno"; then
        # assume we have opengl on windows
        if test "ms$unicon_os" = "mswindows" ; then
           cv_libGL=yes
@@ -554,7 +599,7 @@ else
    fi
 fi
 
-if test "x$plugins" = "xyes"; then
+if ! test "x$plugins" = "xno"; then
   AC_SEARCH_LIBS([dlopen], [dl dld],
         [AC_DEFINE([HAVE_LIBDL], [1], [define to 1 if you have dlopen])],
 	[])
@@ -571,7 +616,7 @@ fi
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 
-if test "x$audio" = "xyes"; then
+if ! test "x$audio" = "xno"; then
    CHECK_OGG()
    CHECK_SDL()
    CHECK_SMPEG()
@@ -580,7 +625,7 @@ else
   AC_DEFINE([NoAudio], [1], [No Audio])
 fi
 
-if test "x$voip" = "xyes"; then
+if ! test "x$voip" = "xno"; then
     # A C++ compiler must be present and usable
     if test "$CXX" = "g++" -a "$GXX" = "yes"; then
       CHECK_VOICE()
@@ -591,7 +636,7 @@ else
   AC_DEFINE([NoVoip], [1], [No VOIP])
 fi
 
-if test "x$database" = "xyes"; then
+if ! test "x$database" = "xno"; then
    if test "ms$unicon_os" = "mswindows" ; then
      CHECK_ODBC32()
    else
@@ -604,7 +649,7 @@ fi
 
 CHECK_PTHREAD()
 
-if test "x$ssl" = "xyes" ; then
+if ! test "x$ssl" = "xno" ; then
    CHECK_OPENSSL()
 else
    AC_DEFINE([NoDatabase], [1], [No Database])
@@ -673,11 +718,14 @@ else
 fi
 
 # want graphics
-if test "x$graphics" = "xyes" ; then
+if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
   gtmp="Graphics           :"
   if test "x$cv_libX11"    = "xyes" ; then
     gtmp=" + $gtmp +X11 "
   else
+    if test "x$graphics" = "xyes" ; then
+        AC_MSG_ERROR("Graphics requires libx11-dev or equivalent")
+    fi
     gtmp=" - $gtmp -X11 "
   fi
 
@@ -695,12 +743,15 @@ else
 fi
 
 # want graphics3d
-if test "x$graphics3d" = "xyes" ; then
+if test "x$graphics3d" = "xyes" || test "x$graphics3d" = "xon" ; then
 
   if test "x$cv_libGL"   = "xyes" ; then
     gdtmp="$gdtmp+OpenGL "
     ong3d=1
   else
+    if test "x$graphics3d" = "xyes" ; then
+        AC_MSG_ERROR("3D graphics requires libGL-dev")
+    fi
     gdtmp="$gdtmp-OpenGL "
   fi
 
@@ -708,6 +759,9 @@ if test "x$graphics3d" = "xyes" ; then
     gdtmp="$gdtmp +GLU "
     if test $ong3d = 1 ; then ong3d=2 ; fi
   else
+    if test "x$graphics3d" = "xyes" ; then
+        AC_MSG_ERROR("3D graphics requires libGLU-dev")
+    fi
     gdtmp="$gdtmp -GLU "
   fi
 
@@ -716,6 +770,9 @@ if test "x$graphics3d" = "xyes" ; then
   if test "x$cv_opengl" = "xyes" ; then
     gdtmp=" + Graphics3D         : $gdtmp"
   else
+    if test "x$graphics3d" = "xyes" ; then
+        AC_MSG_ERROR("3D graphics requires opengl librarry")
+     fi
     gdtmp=" - Graphics3D         : $gdtmp"
   fi
 else
@@ -724,25 +781,31 @@ else
 fi
 
 # want concurrency
-if test "x$concurrency" = "xyes" ; then
+if test "x$concurrency" = "xyes" || test "x$concurrency" = "xon" ; then
   if test "x$cv_libpthread"  = "xyes" ; then
     contmp=" + Concurrency        : +pthread"
   else
     contmp=" - Concurrency        : -pthread"
   fi
 else
-#disbaled Concurrency
+  #disabled Concurrency
   contmp=" ! Concurrency"
+  if test "x$concurrency" = "xyes" ; then
+     AC_MSG_ERROR("concurrency requires libpthread-dev")
+  fi
 fi
 
 # want audio
-if test "x$audio" = "xyes" ; then
+if test "x$audio" = "xyes" || test "x$audio" = "xon" ; then
   atmp="Audio              :"
   onAudio=0
   if test "x$cv_libopenal" = "xyes" ; then
     atmp="$atmp +OpenAL "
     onAudio="1"
   else
+     if test "x$audio" = "xyes" ; then
+        AC_MSG_ERROR("audio requires libopenal-dev")
+     fi
     atmp="$atmp -OpenAL "
   fi
 
@@ -750,7 +813,10 @@ if test "x$audio" = "xyes" ; then
     atmp="$atmp +alut "
     if test "$onAudio" = 1 ; then onAudio=2 ; fi
   else
-    atmp="$atmp -alut "
+     if test "x$audio" = "xyes" ; then
+        AC_MSG_ERROR("audio requires libalut-dev")
+     fi
+     atmp="$atmp -alut "
   fi
 
 
@@ -786,6 +852,9 @@ if test "x$audio" = "xyes" ; then
     atmp=" + $atmp"
   else
     atmp=" - $atmp"
+    if test "x$audio" = "xyes" ; then
+       AC_MSG_ERROR("audio requires libsmpeg or libogg and libvorbis-dev")
+    fi
   fi
 
 else
@@ -794,28 +863,40 @@ else
 fi
 
 # want voip
-if test "x$voip" = "xyes" ; then
+if test "x$voip" = "xyes" || test "x$voip" = "xon" ; then
   if test "x$cv_libvoip"         = "xyes" ; then
     vtmp=" + VOIP               : +voip"
   else
+     if test "x$voip" = "xyes" ; then
+        AC_MSG_ERROR("voip requires libvoip-dev")
+     fi
     vtmp=" - VOIP               : -voip"
   fi
 
   if test "x$cv_libjvoip"         = "xyes" ; then
     vtmp="$vtmp +jvoip"
   else
-    vtmp="$vtmp -jvoip"
+     if test "x$voip" = "xyes" ; then
+        AC_MSG_ERROR("voip requires libjvoip-dev")
+     fi
+     vtmp="$vtmp -jvoip"
   fi
 
   if test "x$cv_libjthread"         = "xyes" ; then
     vtmp="$vtmp +jthread"
   else
+     if test "x$voip" = "xyes" ; then
+        AC_MSG_ERROR("voip requires libjthread-dev")
+     fi
     vtmp="$vtmp -jthread"
   fi
 
   if test "x$cv_libjrtp"         = "xyes" ; then
     vtmp="$vtmp +jrtp"
   else
+     if test "x$voip" = "xyes" ; then
+        AC_MSG_ERROR("voip requires libjrtp-dev")
+     fi
     vtmp="$vtmp -jrtp"
   fi
 
@@ -825,14 +906,17 @@ else
 fi
 
 # want database
-if test "x$database" = "xyes" ; then
+if test "x$database" = "xyes" || test "x$database" = "xon" ; then
   if test "$cv_libodbc"        = yes ; then
     dtmp=" + Database           : +odbc"
   else
   if test "x$cv_libiodbc"       = "xyes" ; then
     dtmp=" + Database           : +iodbc"
   else
-    dtmp=" - Database           : -odbc | -iodbc"
+     if test "x$database" = "xyes" ; then
+        AC_MSG_ERROR("database requires libodbc-dev or libiodbc-dev")
+     fi
+     dtmp=" - Database           : -odbc | -iodbc"
   fi
   fi
 else
@@ -841,11 +925,14 @@ else
 fi
 
 # want ssl
-if test "x$ssl" = "xyes" ; then
+if test "x$ssl" = "xyes" || test "x$ssl" = "xon" ; then
   if test "x$cv_libssl"      = "xyes" ; then
-    stmp=" + SSL                : +ssl"
+     stmp=" + SSL                : +ssl"
   else
-    stmp=" - SSL                : -ssl"
+     if test "x$ssl" = "xyes" ; then
+        AC_MSG_ERROR("ssl requirels libssl-dev or equivalent")
+     fi
+     stmp=" - SSL                : -ssl"
   fi
 else
 #disbaled ssl
@@ -882,7 +969,7 @@ $dtmp
 $stmp
 ])
 
-if test "x$plugins"      = "xyes" ; then
+if test "x$plugins" = "xyes" || test "x$plugins"  = "xon" ; then
   if test "x$ac_cv_search_dlopen" = "xno" ; then
     echo " - Plugins"
   else
@@ -892,7 +979,7 @@ else
   echo " ! Plugins"
 fi
 
-if test "x$iconc"      = "xyes" ; then
+if test "x$iconc"  = "xyes" || test "x$iconc" = "xon" ; then
   if test "x$coniconc"      = "xyes" ; then
      echo " + Compiler: with concurrency"
   else
@@ -902,13 +989,13 @@ else
   echo " ! Compiler"
 fi
 
-if test "x$pattern"      = "xyes" ; then
+if test "x$pattern" = "xyes" || test "x$pattern" = "xon" ; then
   echo " + Patterns"
 else
   echo " ! Patterns"
 fi
 
-if test "x$ovld"      = "xyes" ; then
+if test "x$ovld" = "xyes"  ||  test "x$ovld" = "xon" ; then
   echo " + Overloading"
 else
   echo " ! Overloading"

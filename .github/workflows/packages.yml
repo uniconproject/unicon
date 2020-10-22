@@ -50,7 +50,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        #-  { os: ubuntu-16.04,  name: 'Ubuntu-16.04_amd64',   opt: '' }
+        -  { os: ubuntu-16.04,  name: 'Ubuntu-16.04_amd64',   opt: '' }
         -  { os: ubuntu-18.04,  name: 'Ubuntu-18.04_amd64',   opt: '' }
         -  { os: ubuntu-20.04,  name: 'Ubuntu-20.04_amd64',   opt: '' }
         #-  { os: ubuntu-20.04, name: 'Ubuntu-20.04_x86',  opt: '--host=i686-pc-linux-gnu' }
@@ -62,6 +62,11 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
+        if [[ "${{ matrix.cfg.os }}" = "ubuntu-16.04" ]]
+        then
+        # need newer debhelper
+        sudo apt-get install debhelper -t xenial-backports
+        fi
         sudo apt-get install -y gcc-multilib g++-multilib
         sudo apt-get install -y build-essential fakeroot devscripts equivs dh-autoreconf
         sudo mk-build-deps --install debian/control

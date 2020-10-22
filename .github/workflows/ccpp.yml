@@ -54,7 +54,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        #-  { os: ubuntu-16.04,  name: 'Ubuntu 16.04',   opt: '' }
+        -  { os: ubuntu-16.04,  name: 'Ubuntu 16.04',   opt: '' }
         -  { os: ubuntu-18.04,  name: 'Ubuntu 18.04',   opt: '' }
         -  { os: ubuntu-20.04,  name: 'Ubuntu 20.04',   opt: '' }
         -  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
@@ -71,6 +71,11 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
+        if [[ "${{ matrix.cfg.os }}" = "ubuntu-16.04" ]]
+        then
+        # need newer debhelper
+        sudo apt-get install debhelper -t xenial-backports
+        fi
         if [[ "${{ matrix.cfg.name }}" = "Ubuntu 32-bit" ]]
         then
         # Install tools to cross compile 32-bit

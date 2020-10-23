@@ -1,6 +1,10 @@
 #  Makefile for the Icon translator, icont.
 
-include ../../Makedefs
+TOPDIR=../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 TRANS= trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(O) tmem.$(O) tree.$(O) yyerror.$(O) tglobals.$(O)
 

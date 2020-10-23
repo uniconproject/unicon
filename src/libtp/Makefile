@@ -2,7 +2,11 @@
 # No longer generated automatically from Makefile.in by configure.
 # Instead, it relies on main unicon autconf results in ../../Makedefs
 
-include ../../Makedefs
+TOPDIR=../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 SHTOOL = shtool/shtool
 RANLIB=ranlib

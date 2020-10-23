@@ -1,7 +1,11 @@
 #  Makefile for the Icon compiler, iconc.
 #
 
-include ../../Makedefs
+TOPDIR=../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 
 OBJS=		cmain.o clocal.o ctrans.o dbase.o clex.o\

@@ -1,6 +1,10 @@
 #  Makefile for iyacc, the Icon-enabled version of Berkeley YACC
 
-include ../../Makedefs
+TOPDIR=../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 DEST	      = .
 HDRS	      = defs.h

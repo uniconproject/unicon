@@ -1,6 +1,10 @@
 #  Top Level Makefile for Unicon
 #
 
+TOPDIR=.
+
+default: default_target
+
 include Makedefs
 
 name=unspecified
@@ -10,17 +14,11 @@ name=unspecified
 IPATH=
 LPATH=
 
-
-SHELL=sh
-SHTOOL=./shtool
-
-PATCHSTR=./bin/patchstr
-
 # get the current unicon dir name
 unicwd=`basename \`pwd\``
 
 
-default: allsrc
+default_target: allsrc
 	$(MAKE) -C ipl/lib
 	$(MAKE) -C uni
 	$(MAKE) -C plugins
@@ -285,18 +283,6 @@ distclean2: clean
 #config.status: $(srcdir)/configure
 #	$(SHELL) ./config.status --recheck
 
-update_rev:
-	@if test ! -z $(REPO_REV) ; then \
-	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > src/h/revision.h; \
-	elif test ! -f src/h/revision.h ; then \
-	   echo "#define REPO_REVISION \"0\"" > src/h/revision.h; \
-	fi
-	@if test -z $(REPO_REV_DESCR) ; then \
-	   echo "#define gitDescription \"commit $(REPO_REV_HASH)\"" > src/h/build.h; \
-	else \
-	   echo "#define gitDescription \"$(REPO_REV_DESCR)\"" > src/h/build.h; \
-	fi
-	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> src/h/build.h;
 
 MV=0
 VV=$(PKG_VERSION).$(MV)

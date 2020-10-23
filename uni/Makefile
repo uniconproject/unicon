@@ -1,5 +1,9 @@
-include ../Makedefs
-include ../Makedefs.uni
+TOPDIR=..
+
+default: all
+
+include $(TOPDIR)/Makedefs
+include $(TOPDIR)/Makedefs.uni
 
 .PHONY: all iyacc unicon lib xml gui
 

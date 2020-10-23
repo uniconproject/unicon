@@ -1,5 +1,11 @@
 # Generated automatically from Makefile.in by configure.
-include ../../../Makedefs
+
+TOPDIR=../../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
+
 RM = rm -f
 AR = ar
 RANLIB = ranlib

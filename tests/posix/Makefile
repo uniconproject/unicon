@@ -4,7 +4,7 @@ include ../Makedefs
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 IGNORE=rusage
 
-WINSKIP=pty_uni tcp rusage
+WINSKIP=pty_uni tcp rusage kill wait
 
 # default is to run all tests, using icont
 Test:  DoTest

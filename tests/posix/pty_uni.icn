@@ -85,14 +85,19 @@ procedure response(fi, skipstr, responsestr)
 
    line := ""
    cntskip := 0
+
+   # keep track of time and don't wait for more than
+   # 2.5 CPU seconds for a response
+   t:=&time
    repeat {
        if line ||:= ready(fi) then {
 	   if find(skipstr, line) & cntskip = 0 then {
 		cntskip +:= 1
 		line := ""
 	   }
+           t:=&time # target process is still talking to us
         }
-       if find(responsestr, line) then break
+       if find(responsestr, line) | (&time-t>2500) then break
    }
    return line
 end

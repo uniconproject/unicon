@@ -24,11 +24,13 @@ $(SKIP):
 $(IGNORE):
 	-@$E -n "[Testing $@]... "
 	@$(UC) $(UFLAGS) $@
-	-@./$@ < data/$@.dat  > local/$@.out 2>&1 || true
+	@if [ -f data/$@.dat ] ; then \
+	./$@ < data/$@.dat  > local/$@.out 2>&1; \
+	else ./$@ > local/$@.out 2>&1; fi || true
 	-@echo "Expect/ignore these differences in $@:"
 	-@diff stand/$@.std local/$@.out; \
 	if [ $$? -eq 0 ] ; then echo "OK"; \
-	else echo "Ignored"; fi || true
+	else echo "[Test $@] Ignored"; fi || true
 	-@rm $@$(EXE)
 
 # special skip rules for different platforms

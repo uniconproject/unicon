@@ -1,7 +1,11 @@
 # GDBM Makefile, modified for Unicon
 # No longer generated automatically from Makefile.in by configure.
 
-include ../../Makedefs
+TOPDIR=../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 srcdir=.
 

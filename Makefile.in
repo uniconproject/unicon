@@ -1,42 +1,24 @@
 #  Top Level Makefile for Unicon
 #
 
-#  configuration parameters
+TOPDIR=.
 
-PKG_NAME=@PACKAGE_NAME@
-PKG_TARNAME=@PACKAGE_TARNAME@
-PKG_VERSION=@PACKAGE_VERSION@
-PKG_STRING=@PACKAGE_STRING@
+default: default_target
+
+include Makedefs
 
 name=unspecified
+
+# Make sure no custom PATHs are set so the build doesn't get affected
+# by other installations of unicon on the same system if they do exist
 IPATH=
 LPATH=
-
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD)"
-REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
-REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
-REPO_REV_DESCR="$(shell LC_ALL=C git describe --long HEAD)"
-REPO_REV_BRANCH="$(shell LC_ALL=C git branch rev-parse --abbrev-ref HEAD)"
-
-SHELL=sh
-SHTOOL=./shtool
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-bindir=@bindir@
-libdir=@libdir@
-datarootdir=@datarootdir@
-docdir=@docdir@
-mandir=@mandir@
-htmldir=@htmldir@
-
-
-PATCHSTR=./bin/patchstr
 
 # get the current unicon dir name
 unicwd=`basename \`pwd\``
 
 
-default: allsrc
+default_target: allsrc
 	$(MAKE) -C ipl/lib
 	$(MAKE) -C uni
 	$(MAKE) -C plugins
@@ -89,43 +71,13 @@ allsrc: Makedefs update_rev
 	$(MAKE) -C src
 
 
-config/unix/$(name)/status src/h/define.h:
-	:
-	: To configure Unicon, run either
-	:
-	:	make Configure name=xxxx     [for no graphics]
-	: or	make X-Configure name=xxxx   [with X-Windows graphics]
-	:
-	: where xxxx is one of
-	:
-	@cd config/unix; ls -d [a-z]*
-	:
-	@exit 1
-
 ##################################################################
-#
-# Code configuration.
-#
-# $Id: top.mak,v 1.30 2010-05-06 23:13:56 jeffery Exp $
 
 # needed especially for MacOS
 .PHONY: Configure
 
 # Configure the code for a specific system.
 
-Configure:
-		./configure --disable-graphics
-
-X-Configure:
-		./configure
-
-
-Thin-Configure:
-		./configure --enable-thin
-
-
-Thin-X-Configure:
-		./configure --enable-thinx
 
 V-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -146,19 +98,7 @@ WUnicon32:
 WUnicon64:
 	sh configure --build=x86_64-w64-mingw32 --disable-iconc
 
-WUnicon:
-	@echo Reloading the Makefile from config/win32/gcc/makefile.top
-	cp config/win32/gcc/makefile.top Makefile
-	@echo Done.
-	@echo
-	@echo Ready to build Windows Unicon
-	@echo Make sure the Unicon bin directory is in your path before continuing, then run:
-	@echo
-	@echo "   - " \"make WUnicon32\" for a 32-bit build, or
-	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
-	@echo
-
-INNOSETUP="c:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+INNOSETUP="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 WinInstaller:
 	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
 	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
@@ -173,16 +113,6 @@ NT-Configure:
 W-Configure:
 		cmd /C "cd config\win32\msvc && w-config"
 		@echo Now remember to add unicon/bin to your path
-
-W-Configure-GCC:
-		cd config/win32/gcc && sh w-config.sh
-		@echo Now remember to add unicon/bin to your path
-		@echo Then run "make Unicon" to build
-
-NT-Configure-GCC:
-		cd config/win32/gcc && sh config.sh
-		@echo Now remember to add unicon/bin to your path
-		@echo Then run "make Unicon" to build
 
 ##################################################################
 #
@@ -353,18 +283,6 @@ distclean2: clean
 #config.status: $(srcdir)/configure
 #	$(SHELL) ./config.status --recheck
 
-update_rev:
-	@if test ! -z $(REPO_REV) ; then \
-	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > src/h/revision.h; \
-	elif test ! -f src/h/revision.h ; then \
-	   echo "#define REPO_REVISION \"0\"" > src/h/revision.h; \
-	fi
-	@if test -z $(REPO_REV_DESCR) ; then \
-	   echo "#define gitDescription \"commit $(REPO_REV_HASH)\"" > src/h/build.h; \
-	else \
-	   echo "#define gitDescription \"$(REPO_REV_DESCR)\"" > src/h/build.h; \
-	fi
-	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> src/h/build.h;
 
 MV=0
 VV=$(PKG_VERSION).$(MV)

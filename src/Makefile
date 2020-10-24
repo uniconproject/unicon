@@ -1,6 +1,10 @@
 #  Icon source Makefile, normally used only for cleanup.
 
-include ../Makedefs
+TOPDIR=..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 # Common components.
 

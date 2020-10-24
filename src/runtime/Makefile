@@ -1,16 +1,11 @@
 #  Makefile for the (Un)Icon run-time system.
 
-include ../../Makedefs
+TOPDIR=../..
 
+default: all
 
-#REPO_REV="$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"
+include $(TOPDIR)/Makedefs
 
-
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD)"
-REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
-REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
-REPO_REV_DESCR="$(shell LC_ALL=C git describe --long HEAD)"
-REPO_REV_BRANCH="$(shell LC_ALL=C git rev-parse --abbrev-ref HEAD)"
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
@@ -159,19 +154,6 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
 	$(RTT) $(DASHS) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
 	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
-
-update_rev:
-	@if test ! -z $(REPO_REV) ; then \
-	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > ../h/revision.h; \
-	elif test ! -f ../h/revision.h ; then \
-	   echo "#define REPO_REVISION \"0\"" > ../h/revision.h; \
-	fi
-	@if test -z $(REPO_REV_DESCR) ; then \
-	   echo "#define gitDescription \"commit $(REPO_REV_HASH)\"" > ../h/build.h; \
-	else \
-	   echo "#define gitDescription \"$(REPO_REV_DESCR)\"" > ../h/build.h; \
-	fi
-	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> ../h/build.h;
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "

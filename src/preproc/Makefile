@@ -1,4 +1,9 @@
-include ../../Makedefs
+
+TOPDIR=../..
+
+default: common
+
+include $(TOPDIR)/Makedefs
 
 POBJS = pout.o pchars.o perr.o pmem.o bldtok.o macro.o preproc.o evaluate.o\
 	files.o gettok.o pinit.o

@@ -4,7 +4,11 @@
 # This file is a simplification of XPM's standard Makefile
 #
 
-include ../../../Makedefs
+TOPDIR=../../..
+
+default: libXpm.a
+
+include $(TOPDIR)/Makedefs
 
 ## if your system doesn't provide strcasecmp add -DNEED_STRCASECMP
 ## if your system doesn't provide pipe remove -DZPIPE

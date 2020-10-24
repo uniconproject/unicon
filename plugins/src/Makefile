@@ -1,11 +1,14 @@
 
-include ../../Makedefs
+TOPDIR=../..
 
-BASE=../..
-LIBD=$(BASE)/plugins/lib
+default: default_target
 
-UC=$(BASE)/bin/unicon
-WUC=$(BASE)/bin/unicon -G
+include $(TOPDIR)/Makedefs
+
+LIBD=$(TOPDIR)/plugins/lib
+
+UC=$(TOPDIR)/bin/unicon
+WUC=$(TOPDIR)/bin/unicon -G
 
 UFLAGS=-s -u -c
 #SO=so
@@ -26,7 +29,7 @@ PMOS=
 
 .PHONY: clean zip $(PCMN) $(PWIN) $(PNIX) $(PMOS) windows linux macos
 
-default:   icall.$(O) $(LIBD)/uso.u $(PCMN)
+default_target:   icall.$(O) $(LIBD)/uso.u $(PCMN)
 
 all: uso.u icall.$(O)
 

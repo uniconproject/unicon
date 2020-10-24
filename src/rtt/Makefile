@@ -1,7 +1,11 @@
 #  Makefile for the Icon run-time translator, rtt,
 #  which is used to build the Icon run-time system.
 
-include ../../Makedefs
+TOPDIR=../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 ROBJS = rttparse.o rttmain.o rttlex.o rttsym.o rttnode.o rttout.o rttmisc.o\
 	  rttdb.o rttinlin.o rttilc.o yyerror.o

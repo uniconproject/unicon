@@ -1,6 +1,11 @@
 # Makefile for libtp/tests. No longer generated from a local autoconf run.
 
-include ../../../Makedefs
+
+TOPDIR=../../..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 SHELL = /bin/sh
 

@@ -9,8 +9,12 @@
 $include "defaults.icn"
 
 procedure main(argv)
-   local udb := Console()
+   local udb
 
+   if not (&features == "multiple programs") then
+      stop("udb requires multiple programs feature to be enabled.")
+
+   udb := Console()
    trap("SIGINT",  sig_ignore)
    trap("SIGPIPE", sig_ignore)
 

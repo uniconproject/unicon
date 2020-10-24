@@ -14,7 +14,7 @@ CSRC = $(LNAME).c
 MYLIBS=$(LIBS)
 
 # Relative to top level
-BASE=../../..
+TOPDIR=../../..
 
 # lib relative to top
 TDIR=../..

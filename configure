@@ -740,6 +740,7 @@ ac_user_opts='
 enable_option_checking
 enable_graphics
 enable_graphics3d
+enable_multiprograms
 enable_concurrency
 enable_pattern
 enable_database
@@ -753,6 +754,8 @@ enable_ovld
 enable_udbtools
 enable_progs
 enable_verbosebuild
+enable_doc
+enable_htmldoc
 enable_thin
 enable_debug
 enable_debugheap
@@ -1414,6 +1417,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-graphics      No graphics subsystem
   --disable-graphics3d    No 3D graphics support
+  --disable-multiprograms No multi programs support
   --disable-concurrency   No concurrent thread support
   --disable-pattern       No pattern type support
   --disable-database      No database support
@@ -1427,6 +1431,8 @@ Optional Features:
   --enable-udbtools       enable Unicon debugger tools
   --enable-progs          enable Unicon programs
   --enable-verbosebuild   Show full CC build lines with all compiler arguments
+  --enable-doc            Add makefile rule to build documentation
+  --enable-htmldoc        ADd makefile rule to html documentation
   --enable-thin           Do a minimalist build disabling non critical
                           features
   --enable-debug          Add debugging symbols
@@ -3022,73 +3028,80 @@ echo "##########################################"
 
 # Check whether --enable-graphics was given.
 if test "${enable_graphics+set}" = set; then :
-  enableval=$enable_graphics; graphics=no
+  enableval=$enable_graphics; graphics=$enableval
 else
-  graphics=yes
+  graphics=on
 fi
 
 # Check whether --enable-graphics3d was given.
 if test "${enable_graphics3d+set}" = set; then :
-  enableval=$enable_graphics3d; graphics3d=no
+  enableval=$enable_graphics3d; graphics3d=$enableval
 else
-  graphics3d=yes
+  graphics3d=on
+fi
+
+# Check whether --enable-multiprograms was given.
+if test "${enable_multiprograms+set}" = set; then :
+  enableval=$enable_multiprograms; multiprograms=$enableval
+else
+  multiprograms=on
 fi
 
 # Check whether --enable-concurrency was given.
 if test "${enable_concurrency+set}" = set; then :
-  enableval=$enable_concurrency; concurrency=no
+  enableval=$enable_concurrency; concurrency=$enableval
 else
-  concurrency=yes
+  concurrency=on
 fi
 
 # Check whether --enable-pattern was given.
 if test "${enable_pattern+set}" = set; then :
-  enableval=$enable_pattern; pattern=no
+  enableval=$enable_pattern; pattern=$enableval
 else
-  pattern=yes
+  pattern=on
 fi
 
 # Check whether --enable-database was given.
 if test "${enable_database+set}" = set; then :
-  enableval=$enable_database; database=no
+  enableval=$enable_database; database=$enableval
 else
-  database=yes
+  database=on
 fi
 
 # Check whether --enable-ssl was given.
 if test "${enable_ssl+set}" = set; then :
-  enableval=$enable_ssl; ssl=no
+  enableval=$enable_ssl; ssl=$enableval
 else
-  ssl=yes
+  ssl=on
 fi
 
 # Check whether --enable-audio was given.
 if test "${enable_audio+set}" = set; then :
-  enableval=$enable_audio; audio=no
+  enableval=$enable_audio; audio=$enableval
 else
-  audio=yes
+  audio=on
 fi
 
 # Check whether --enable-voip was given.
 if test "${enable_voip+set}" = set; then :
-  enableval=$enable_voip; voip=no
+  enableval=$enable_voip; voip=$enableval
 else
-  voip=yes
+  voip=on
 fi
 
 # Check whether --enable-plugins was given.
 if test "${enable_plugins+set}" = set; then :
-  enableval=$enable_plugins; plugins=no
+  enableval=$enable_plugins; plugins=$enableval
 else
-  plugins=yes
+  plugins=on
 fi
 
 
 # Check whether --enable-iconc was given.
 if test "${enable_iconc+set}" = set; then :
-  enableval=$enable_iconc; iconc=no
+  enableval=$enable_iconc; iconc=$enableval
 else
-  iconc=yes
+  iconc=on
 fi
 
 # Check whether --enable-iconcurrency was given.
@@ -3127,6 +3140,21 @@ if test "${enable_verbosebuild+set}" = set; then :
   enableval=$enable_verbosebuild; verbosebuild=yes
 else
   verbosebuild=no
+fi
+
+
+# Check whether --enable-doc was given.
+if test "${enable_doc+set}" = set; then :
+  enableval=$enable_doc; doc=yes
+else
+  doc=no
+fi
+
+# Check whether --enable-htmldoc was given.
+if test "${enable_htmldoc+set}" = set; then :
+  enableval=$enable_htmldoc; htmldoc=yes
+else
+  htmldoc=no
 fi
 
 
@@ -7020,7 +7048,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         ;;
 esac
 
-if test "x$iconc"      = "xyes" ; then
+if test "x$iconc" = "xyes" || test "x$iconc" = "xon" ; then
        ICONCTARGET=Iconc
 fi
 
@@ -7084,23 +7112,52 @@ fi
 
 
 if test "x$thin" = "xyes"; then
-graphics=no
-graphics3d=no
-concurrency=no
-pattern=no
-audio=no
-database=no
-voip=no
-plugins=no
-database=no
-ssl=no
 
+   if test "x$graphics" = "xon"; then
+      graphics=no
+   fi
 
-$as_echo "#define NoMultiProgram 1" >>confdefs.h
+   if test "x$graphics3d" = "xon"; then
+      graphics3d=no
+   fi
 
+   if test "x$concurrency" = "xon"; then
+      concurrency=no
+   fi
+
+   if test "x$pattern" = "xon"; then
+      pattern=no
+   fi
+
+   if test "x$audio" = "xon"; then
+      audio=no
+   fi
+
+   if test "x$database" = "xon"; then
+      database=no
+   fi
+
+   if test "x$voip" = "xon"; then
+      voip=no
+   fi
+
+   if test "x$plugins" = "xon"; then
+      plugins=no
+   fi
+
+   if test "x$database" = "xon"; then
+      database=no
+   fi
+
+   if test "x$databse" = "xon"; then
+      ssl=no
+   fi
+
+   if test "x$multiprograms" = "xon"; then
+      multiprograms=no
+   fi
   # what else we need to disable?
 fi
-
 
 for ac_func in socket bcopy bzero memcpy memset inet_aton inet_pton \
 	       snprintf vsprintf rename ftruncate flock fsync \
@@ -7703,6 +7760,12 @@ $as_echo "#define HAVE_CRYPT 1" >>confdefs.h
 fi
 
 
+if test "x$multiprograms" = "xno"; then
+
+$as_echo "#define NoMultiProgram 1" >>confdefs.h
+
+fi
+
 if test "x$concurrency" = "xno"; then
 
 $as_echo "#define NoConcurrent 1" >>confdefs.h
@@ -7957,7 +8020,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
   fi
 
 
-if test "x$graphics" = "xyes"; then
+if ! test "x$graphics" = "xno"; then
 
 
 
@@ -9154,7 +9217,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 fi
 
 
-    if test "x$graphics3d" = "xyes"; then
+    if ! test "x$graphics3d" = "xno"; then
        # assume we have opengl on windows
        if test "ms$unicon_os" = "mswindows" ; then
           cv_libGL=yes
@@ -10014,7 +10077,7 @@ $as_echo "#define NoNativeCoswitch 1" >>confdefs.h
    fi
 fi
 
-if test "x$plugins" = "xyes"; then
+if ! test "x$plugins" = "xno"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5
 $as_echo_n "checking for library containing dlopen... " >&6; }
 if ${ac_cv_search_dlopen+:} false; then :
@@ -10127,7 +10190,7 @@ fi
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 
-if test "x$audio" = "xyes"; then
+if ! test "x$audio" = "xno"; then
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ogg is wanted" >&5
@@ -11655,7 +11718,7 @@ $as_echo "#define NoAudio 1" >>confdefs.h
 
 fi
 
-if test "x$voip" = "xyes"; then
+if ! test "x$voip" = "xno"; then
     # A C++ compiler must be present and usable
     if test "$CXX" = "g++" -a "$GXX" = "yes"; then
 
@@ -12121,7 +12184,7 @@ $as_echo "#define NoVoip 1" >>confdefs.h
 
 fi
 
-if test "x$database" = "xyes"; then
+if ! test "x$database" = "xno"; then
    if test "ms$unicon_os" = "mswindows" ; then
 
 
@@ -12798,6 +12861,7 @@ fi
 
 
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if pthread is wanted" >&5
 $as_echo_n "checking if pthread is wanted... " >&6; }
 
@@ -13024,6 +13088,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
   fi
 
+
+if ! test "x$ssl" = "xno" ; then
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ssl is wanted" >&5
@@ -13661,6 +13727,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 fi
 #        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
 
+else
+
+$as_echo "#define NoDatabase 1" >>confdefs.h
+
+fi
 
 # autoconf does this too late, so just do it now...
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -15378,11 +15449,14 @@ else
 fi
 
 # want graphics
-if test "x$graphics" = "xyes" ; then
+if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
   gtmp="Graphics           :"
   if test "x$cv_libX11"    = "xyes" ; then
     gtmp=" + $gtmp +X11 "
   else
+    if test "x$graphics" = "xyes" ; then
+        as_fn_error $? "\"Graphics requires libx11-dev or equivalent\"" "$LINENO" 5
+    fi
     gtmp=" - $gtmp -X11 "
   fi
 
@@ -15400,12 +15474,15 @@ else
 fi
 
 # want graphics3d
-if test "x$graphics3d" = "xyes" ; then
+if test "x$graphics3d" = "xyes" || test "x$graphics3d" = "xon" ; then
 
   if test "x$cv_libGL"   = "xyes" ; then
     gdtmp="$gdtmp+OpenGL "
     ong3d=1
   else
+    if test "x$graphics3d" = "xyes" ; then
+        as_fn_error $? "\"3D graphics requires libGL-dev\"" "$LINENO" 5
+    fi
     gdtmp="$gdtmp-OpenGL "
   fi
 
@@ -15413,6 +15490,9 @@ if test "x$graphics3d" = "xyes" ; then
     gdtmp="$gdtmp +GLU "
     if test $ong3d = 1 ; then ong3d=2 ; fi
   else
+    if test "x$graphics3d" = "xyes" ; then
+        as_fn_error $? "\"3D graphics requires libGLU-dev\"" "$LINENO" 5
+    fi
     gdtmp="$gdtmp -GLU "
   fi
 
@@ -15421,6 +15501,9 @@ if test "x$graphics3d" = "xyes" ; then
   if test "x$cv_opengl" = "xyes" ; then
     gdtmp=" + Graphics3D         : $gdtmp"
   else
+    if test "x$graphics3d" = "xyes" ; then
+        as_fn_error $? "\"3D graphics requires opengl librarry\"" "$LINENO" 5
+     fi
     gdtmp=" - Graphics3D         : $gdtmp"
   fi
 else
@@ -15429,25 +15512,31 @@ else
 fi
 
 # want concurrency
-if test "x$concurrency" = "xyes" ; then
+if test "x$concurrency" = "xyes" || test "x$concurrency" = "xon" ; then
   if test "x$cv_libpthread"  = "xyes" ; then
     contmp=" + Concurrency        : +pthread"
   else
     contmp=" - Concurrency        : -pthread"
   fi
 else
-#disbaled Concurrency
+  #disabled Concurrency
   contmp=" ! Concurrency"
+  if test "x$concurrency" = "xyes" ; then
+     as_fn_error $? "\"concurrency requires libpthread-dev\"" "$LINENO" 5
+  fi
 fi
 
 # want audio
-if test "x$audio" = "xyes" ; then
+if test "x$audio" = "xyes" || test "x$audio" = "xon" ; then
   atmp="Audio              :"
   onAudio=0
   if test "x$cv_libopenal" = "xyes" ; then
     atmp="$atmp +OpenAL "
     onAudio="1"
   else
+     if test "x$audio" = "xyes" ; then
+        as_fn_error $? "\"audio requires libopenal-dev\"" "$LINENO" 5
+     fi
     atmp="$atmp -OpenAL "
   fi
 
@@ -15455,7 +15544,10 @@ if test "x$audio" = "xyes" ; then
     atmp="$atmp +alut "
     if test "$onAudio" = 1 ; then onAudio=2 ; fi
   else
-    atmp="$atmp -alut "
+     if test "x$audio" = "xyes" ; then
+        as_fn_error $? "\"audio requires libalut-dev\"" "$LINENO" 5
+     fi
+     atmp="$atmp -alut "
   fi
 
 
@@ -15491,6 +15583,9 @@ if test "x$audio" = "xyes" ; then
     atmp=" + $atmp"
   else
     atmp=" - $atmp"
+    if test "x$audio" = "xyes" ; then
+       as_fn_error $? "\"audio requires libsmpeg or libogg and libvorbis-dev\"" "$LINENO" 5
+    fi
   fi
 
 else
@@ -15499,28 +15594,40 @@ else
 fi
 
 # want voip
-if test "x$voip" = "xyes" ; then
+if test "x$voip" = "xyes" || test "x$voip" = "xon" ; then
   if test "x$cv_libvoip"         = "xyes" ; then
     vtmp=" + VOIP               : +voip"
   else
+     if test "x$voip" = "xyes" ; then
+        as_fn_error $? "\"voip requires libvoip-dev\"" "$LINENO" 5
+     fi
     vtmp=" - VOIP               : -voip"
   fi
 
   if test "x$cv_libjvoip"         = "xyes" ; then
     vtmp="$vtmp +jvoip"
   else
-    vtmp="$vtmp -jvoip"
+     if test "x$voip" = "xyes" ; then
+        as_fn_error $? "\"voip requires libjvoip-dev\"" "$LINENO" 5
+     fi
+     vtmp="$vtmp -jvoip"
   fi
 
   if test "x$cv_libjthread"         = "xyes" ; then
     vtmp="$vtmp +jthread"
   else
+     if test "x$voip" = "xyes" ; then
+        as_fn_error $? "\"voip requires libjthread-dev\"" "$LINENO" 5
+     fi
     vtmp="$vtmp -jthread"
   fi
 
   if test "x$cv_libjrtp"         = "xyes" ; then
     vtmp="$vtmp +jrtp"
   else
+     if test "x$voip" = "xyes" ; then
+        as_fn_error $? "\"voip requires libjrtp-dev\"" "$LINENO" 5
+     fi
     vtmp="$vtmp -jrtp"
   fi
 
@@ -15530,14 +15637,17 @@ else
 fi
 
 # want database
-if test "x$database" = "xyes" ; then
+if test "x$database" = "xyes" || test "x$database" = "xon" ; then
   if test "$cv_libodbc"        = yes ; then
     dtmp=" + Database           : +odbc"
   else
   if test "x$cv_libiodbc"       = "xyes" ; then
     dtmp=" + Database           : +iodbc"
   else
-    dtmp=" - Database           : -odbc | -iodbc"
+     if test "x$database" = "xyes" ; then
+        as_fn_error $? "\"database requires libodbc-dev or libiodbc-dev\"" "$LINENO" 5
+     fi
+     dtmp=" - Database           : -odbc | -iodbc"
   fi
   fi
 else
@@ -15546,11 +15656,14 @@ else
 fi
 
 # want ssl
-if test "x$ssl" = "xyes" ; then
+if test "x$ssl" = "xyes" || test "x$ssl" = "xon" ; then
   if test "x$cv_libssl"      = "xyes" ; then
-    stmp=" + SSL                : +ssl"
+     stmp=" + SSL                : +ssl"
   else
-    stmp=" - SSL                : -ssl"
+     if test "x$ssl" = "xyes" ; then
+        as_fn_error $? "\"ssl requirels libssl-dev or equivalent\"" "$LINENO" 5
+     fi
+     stmp=" - SSL                : -ssl"
   fi
 else
 #disbaled ssl
@@ -15616,7 +15729,7 @@ $dtmp
 $stmp
 " >&6; }
 
-if test "x$plugins"      = "xyes" ; then
+if test "x$plugins" = "xyes" || test "x$plugins"  = "xon" ; then
   if test "x$ac_cv_search_dlopen" = "xno" ; then
     echo " - Plugins"
   else
@@ -15626,7 +15739,7 @@ else
   echo " ! Plugins"
 fi
 
-if test "x$iconc"      = "xyes" ; then
+if test "x$iconc"  = "xyes" || test "x$iconc" = "xon" ; then
   if test "x$coniconc"      = "xyes" ; then
      echo " + Compiler: with concurrency"
   else
@@ -15636,13 +15749,13 @@ else
   echo " ! Compiler"
 fi
 
-if test "x$pattern"      = "xyes" ; then
+if test "x$pattern" = "xyes" || test "x$pattern" = "xon" ; then
   echo " + Patterns"
 else
   echo " ! Patterns"
 fi
 
-if test "x$ovld"      = "xyes" ; then
+if test "x$ovld" = "xyes"  ||  test "x$ovld" = "xon" ; then
   echo " + Overloading"
 else
   echo " ! Overloading"

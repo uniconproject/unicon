@@ -1,4 +1,8 @@
-include ../Makedefs
+TOPDIR=..
+
+default: all
+
+include $(TOPDIR)/Makedefs
 
 all: 
 	cd src; $(MAKE)

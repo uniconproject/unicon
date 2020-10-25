@@ -55,4 +55,4 @@ cfunc.icn:	$(CSRC) mkfunc.sh
 
 # cleanup
 clean Clean:
-	-rm -f $(FUNCLIB) *.o *.u? *.so so_locations cfunc.icn
+	-rm -f $(FUNCLIB) *.o *.u? *.so so_locations

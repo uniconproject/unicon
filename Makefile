@@ -262,12 +262,12 @@ install Install:
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 
 # Bundle up for binary distribution.
-DIR=$(PKG_TARNAME).$(PKG_VERSION)
+PKGDIR=$(PKG_TARNAME).$(PKG_VERSION)
 Package:
-		rm -rf $(DIR)
-		umask 002; $(MAKE) Install dest=$(DIR)
+		rm -rf $(PKGDIR)
+		umask 002; $(MAKE) Install dest=$(PKGDIR)
 		tar cf - $(PKG_TARNAME).$(PKG_VERSION) | gzip -9 >$(PKG_TARNAME).$(PKG_VERSION).tgz
-		rm -rf $(DIR)
+		rm -rf $(PKGDIR)
 
 distclean2: clean
 	@for d in $(SUBDIRS); do \
@@ -284,17 +284,16 @@ distclean2: clean
 #	$(SHELL) ./config.status --recheck
 
 
-MV=0
-VV=$(PKG_VERSION).$(MV)
-UTAR=$(PKG_TARNAME)-$(VV).tar.gz
-UTARORIG=$(PKG_TARNAME)_$(VV).orig.tar.gz
+#MV=.0
+VSUFFIX?=~prerelease
+VV=$(PKG_VERSION)$(MV)
+PKG_STRNAME=$(PKG_TARNAME)_$(VV)$(VSUFFIX)
+UTAR=$(PKG_STRNAME).tar.gz
+UTARORIG=$(PKG_STRNAME).orig.tar.gz
 
 dist: distclean update_rev
-#	$(SHTOOL) fixperm -v *;
 	echo "Building $(UTAR)"
 	tar -czf ../$(UTAR) --exclude-vcs --exclude-backups ../$(unicwd)
-#	$(SHTOOL) tarball -o $(UTAR) -c 'gzip -9' \
-#                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
 publishdist: dist
 	scp ../$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/download/
@@ -310,25 +309,25 @@ deb: dist
 	cp ../$(udist)/$(UTAR) ../$(udist)/$(UTARORIG)
 	@echo unpacking ../$(udist)/$(UTAR)
 	cd ../$(udist) && tar -xf $(UTAR)
-	mv ../$(udist)/unicon ../$(udist)/unicon-$(VV)
+	mv ../$(udist)/unicon ../$(udist)/$(PKG_STRNAME)
 	@echo "To finish building the deb package, do"
-	@echo "   cd ../$(udist)/unicon-$(VV)"
+	@echo "   cd ../$(udist)/$(PKG_STRNAME)"
 	@echo "Then run:"
 	@echo "	 debuild -us -uc"
 
 debin: deb
-	cd ../$(udist)/$(PKG_TARNAME)-$(VV) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
+	cd ../$(udist)/$(PKG_STRNAME) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
 	ls -lh ../$(udist)/unicon_*.*
 
 debsrc: deb
-	cd ../$(udist)/$(PKG_TARNAME)-$(VV) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
+	cd ../$(udist)/$(PKG_STRNAME) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
 	ls -lh ../$(udist)/$(PKG_TARNAME)_*.*
 
 debsign:
-	cd ../$(udist) && debsign $(PKG_TARNAME)_$(VV)-1_amd64.changes  $(SIGNOPT)
+	cd ../$(udist) && debsign $(PKG_STRNAME)*.changes  $(SIGNOPT)
 
 launchpad:
-	cd ../$(udist) && dput unicon-ppa $(PKG_TARNAME)_$(VV)-1_source.changes
+	cd ../$(udist) && dput unicon-ppa $(PKG_STRNAME)*_source.changes
 
 
 # RPM section
@@ -347,20 +346,17 @@ rpm: dist
 rpmbin: rpm
 	cd ../$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
 	@ls ../$(rpmdir)/RPMS/
-	@echo "  Did we get : ../$(rpmdir)/RPMS/-$(VV)-*.*.rpm"
-	ls -lh ../$(rpmdir)/RPMS/$(PKG_TARNAME)-$(VV)-*.*.rpm
+	ls -lh ../$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
 
 rpmresume: rpm
 	cd ../$(rpmdir) &&  rpmbuild -bi --short-circuit unicon.spec
 	@ls ../$(rpmdir)/RPMS/
-	@echo "  Did we get : ../$(rpmdir)/SRPMS/$(PKG_TARNAME)-$(VV)-*.*rpm"
-	ls -lh ../$(rpmdir)/RPMS/$(PKG_TARNAME)-$(VV)-*.*.rpm
+	ls -lh ../$(rpmdir)/RPMS/$(PKG_STRNAME)-$(VV)-*.*.rpm
 
 rpmsrc:
 	cd ../$(rpmdir) &&  rpmbuild -bs unicon.spec
 	@ls ../$(rpmdir)/SRPMS/
-	@echo "  Did we get : ../$(rpmdir)/SRPMS/$(PKG_TARNAME)-$(VV)-*.*.src.rpm"
-	ls -lh ../$(rpmdir)/RPMS/$(PKG_TARNAME)-$(VV)-*.*.rpm
+	ls -lh ../$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
 
 
 ##################################################################

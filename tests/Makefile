@@ -67,19 +67,19 @@ Samples-iconc:		; cd general; $(MAKE) Samples-iconc
 #  Clean up.
 
 distclean:
-		-cd bench;	$(MAKE) disclean
-		-cd calling;	$(MAKE) disclean
-		-cd general;	$(MAKE) disclean
-		-cd graphics;	$(MAKE) disclean
-		-cd ipl;	$(MAKE) disclean
-		-cd preproc;	$(MAKE) disclean
-		-cd samples;	$(MAKE) disclean
-		-cd special;	$(MAKE) disclean
-		-cd posix;	$(MAKE) disclean
-		-cd mt;		$(MAKE) disclean
-		-cd pattern &&	$(MAKE) disclean
-		-cd thread &&	$(MAKE) disclean
-		-cd coexpr &&	$(MAKE) disclean
+		-cd bench;	$(MAKE) distclean
+		-cd calling;	$(MAKE) distclean
+		-cd general;	$(MAKE) distclean
+		-cd graphics;	$(MAKE) distclean
+		-cd ipl;	$(MAKE) distclean
+		-cd preproc;	$(MAKE) distclean
+		-cd samples;	$(MAKE) distclean
+		-cd special;	$(MAKE) distclean
+		-cd posix;	$(MAKE) distclean
+		-cd mt;		$(MAKE) distclean
+		-cd pattern &&	$(MAKE) distclean
+		-cd thread &&	$(MAKE) distclean
+		-cd coexpr &&	$(MAKE) distclean
 		-rm -f posix/x.icn
 		-rm -f posix/1
 

@@ -13,5 +13,5 @@ Clean:
 #   *** Do not delete the line above; it is used in trimming Makefiles
 #   for distribution ***
 
-Dist-clean:
+distclean:
 		rm -f .*K* .emacs*

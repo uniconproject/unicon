@@ -159,5 +159,4 @@ clean Clean:
 
 Pure distclean: clean
 		rm -f .*K* .emacs*
-		rm -rf `gcomp Test-pp README Makefile local stand *.[ch] \
-		   dir1 dir2`
+		rm -f *.u

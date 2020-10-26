@@ -189,11 +189,7 @@ shuffle.u: shuffle.icn
 
 
 Clean clean:
-	rm -f *.u uni* *.o *.exe thread-ring spectral-norm		\
-	reverse-complement regex-dna pidigits n-body binary-trees	\
-	chameneos-redux fannkuch fasta k-nucleotide mandelbrot		\
-	meteor-contest queens rsg concord deal ipxref run-test		\
-	run-shootout run-benchmark run-med generate.out generate
+	rm -f *.u uni* *.o *.exe generate.out $(EXE)
 
-Pure: clean
-	rm *.dat
+distclean Pure: clean
+	rm -f *.dat

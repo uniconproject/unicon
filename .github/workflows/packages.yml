@@ -77,16 +77,21 @@ jobs:
     - name: Deb
       run: |
         make debin
-        cp ../unicondist/unicon_*.* .
+        mkdir debian-pkg
+        cp ../unicondist/unicon_*.deb debian-pkg/
+        cp ../unicondist/unicon_*.changes debian-pkg/
+        cp ../unicondist/unicon_*.dsc debian-pkg/
+        cp ../unicondist/unicon_*.debian.tar.xz debian-pkg/
+        cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
 
     - name: Publish
       uses: actions/upload-artifact@v2
       with:
         name: unicon-${{ matrix.cfg.name}}
-        path: unicon_*.*
+        path: debian-pkg/unicon_*
 
     - name: Install
-      run: sudo apt install ./*.deb
+      run: sudo apt install debian-pkg/*.deb
 
     - name: Test
       run: make Test

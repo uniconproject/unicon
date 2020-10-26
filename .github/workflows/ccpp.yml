@@ -99,3 +99,43 @@ jobs:
       # set VRFY globally even though it is only needed in the debug test
       env:
         VRFY: -2
+
+  DebianPkg:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
+    strategy:
+      matrix:
+        cfg:
+        -  { os: ubuntu-20.04,  name: 'Debian-Pkg',   opt: '' }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential fakeroot devscripts equivs dh-autoreconf
+        sudo mk-build-deps --install debian/control
+
+    - name: Configure
+      run: ./configure ${{ matrix.cfg.opt }}
+
+    - name: Deb
+      run: |
+        make debin
+        mkdir debian-pkg
+        cp ../unicondist/unicon_*.deb debian-pkg/
+        cp ../unicondist/unicon_*.changes debian-pkg/
+        cp ../unicondist/unicon_*.dsc debian-pkg/
+        cp ../unicondist/unicon_*.debian.tar.xz debian-pkg/
+        cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
+
+    - name: Install
+      run: sudo apt install debian-pkg/*.deb
+
+    - name: Test
+      run: make Test
+      env:
+        UC: unicon

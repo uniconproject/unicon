@@ -425,3 +425,9 @@ extern long vrfy;
 extern void vrfyLog(const char *fmt, ...);
 extern void vrfy_Live_Table(struct b_table *b);
 #endif                  /* VerifyHeap */
+
+#ifdef DEVMODE
+extern void dbgUFL();
+extern void dbgUtrace();
+extern int dbgbrkpoint();
+#endif                  /* DEVMODE */

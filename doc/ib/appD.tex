@@ -1324,11 +1324,42 @@ a value, a core dump is produced if an Icon program terminates as a result of
 \texttt{ICONCORE} when making modifications to Icon. For an extended debugging
 session, it may be convenient to set \texttt{dodump} in \textfn{runtime/init.r} to 1.
 
+\subsection{Extra help in \texttt{DEVMODE} (Unicon)}
+When Unicon is built with \texttt{DEVMODE} enabled there are some extra
+facilities that are provided to help with debugging.
+\subsubsection{Breakpoints in the Unicon program}
+It is difficult (when debugging the runtime system) to arrange for a breakpoint
+to occur at a particular location in the Unicon program. In \texttt{DEVMODE}
+there is a new standard function, which is callable from Unicon, named
+\texttt{dbgbreak}. Writing something like the code fragment below will
+cause a debugger breakpoint at the desired moment -- provided the debugger is
+instructed to place a break point at the function called \texttt{Zdbgbrk}.
+\begin{iconcode}
+\$ifdef \_DEVMODE\\
+\>if check\_for\_condition() then \{ dbgbrk() \}\\
+\$endif\\
+\end{iconcode}
+Note that use of \texttt{dbgbrk} should always be protected by
+\texttt{\$ifdef \_DEVMODE} because the function is only defined when
+\texttt{DEVMODE} is enabled.
+\subsubsection{Identifying the current Unicon line}
+The position in the Unicon program can always be established by looking into the
+runtime system with the debugger. A couple of functions make this process
+easier. The functions may be invoked directly from \texttt{gdb} or \texttt{lldb}.
+Both functions are parameterless.
+\begin{quote}
+\begin{description}
+\item[\texttt{dbgUFL}] Print the current Unicon file and line number.
+\item[\texttt{dbgUTrace}] Print a Unicon stack trace.
+\end{description}
+\end{quote}
+
 \subsection{Heap Verification (Unicon)}
 \label{HeapVerifier}
 Icon may be built with optional extra heap checking code that is enabled by
-defining \texttt{DebugHeap} in \textfn{h/define.h}. The extra checking is
-defined in \textfn{h/rmacros.h} and may be summarized by
+defining \texttt{DebugHeap} in \textfn{h/define.h} or by giving the
+\texttt{--enable-verifyheap} argument to \texttt{configure}.
+The extra checking is defined in \textfn{h/rmacros.h} and may be summarized by
 \begin{iconcode}
 /* Debug Heap macros.  These add runtime checks to catch (most)\\
  * illegal block references resulting from untended pointers.\\

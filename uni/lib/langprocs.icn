@@ -61,14 +61,15 @@ procedure get_name(object)
          if ="record " then {
             return type(object)
 	 }
-      else if ="procedure " then
-         return tab(0)
-      else if ="file(" then
-         return tab(-1)
-      else if ="window_" then {
-         tab(find("("))
-         move(1)
-         return tab(-1)
+         else if ="procedure " then
+            return tab(0)
+         else if ="file(" then
+            return tab(-1)
+         else if ="window_" then {
+            tab(find("("))
+            move(1)
+            return tab(-1)
+         }
       }
    }
 end
@@ -88,11 +89,7 @@ end
 # @ 5
 #
 procedure get_id(object)
-   image(object) ? {
-      while tab(find("_")) do
-         move(1)
-      return tab(find("("))
-   }
+   return ::serial(object)
 end
 
 #

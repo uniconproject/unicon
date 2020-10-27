@@ -16,21 +16,11 @@ import util
 # Return the class name for the instance o
 #
 procedure get_class_name(o)
-local i
-   image(o) ? {
-      if ="object " then {
-	 # the last _ is the one to cut at
-	 every i := find("_")
-         return tab(\i) | stop("Not a class")
-      }
-      else if ="record " then {
-         return tab(find("__state")) | stop("Not a class")
-      }
-   }
+   return ::classname(o)
 end
 
 #
-# Get the Class object for this object  
+# Get the Class object for this object
 #
 procedure get_class(object)
    return lang::get_class_for_name(get_class_name(object))
@@ -41,19 +31,18 @@ end
 # this is the value returned by the {type()} function.  For records, it
 # is the string "record" and for classes it is the string "class".
 #
-procedure get_type(object) 
-   image(object) ? {
-      if ="record " then {
-         if find("__state") then
-            return "class"
-         else
+procedure get_type(object)
+   if ::classname(object) then {
+      return "class"
+   } else {
+      image(object) ? {
+         if ="record " then {
             return "record"
-	 }
-      else if ="object " then {
-	 return "class"
-	 }
-      else
-         return type(object)
+	    }
+         else {
+	    return type(object)
+	    }
+      }
    }
 end
 
@@ -65,15 +54,12 @@ end
 #
 procedure get_name(object)
    local s
-   image(object) ? {
-      if ="record " then {
-         if s := tab(find("__state")) then
-            return s
-         else
+   if s := ::classname(object) then {
+      return s
+   } else {
+      image(object) ? {
+         if ="record " then {
             return type(object)
-	 }
-      else if ="object " then {
-	 return get_class_name(object)
 	 }
       else if ="procedure " then
          return tab(0)
@@ -103,7 +89,7 @@ end
 #
 procedure get_id(object)
    image(object) ? {
-      while tab(find("_")) do 
+      while tab(find("_")) do
          move(1)
       return tab(find("("))
    }
@@ -275,7 +261,7 @@ procedure hash_string(s)
    local n
    n := *s
    every n +:= ord(!s \ 10)
-   return n 
+   return n
 end
 
 #
@@ -300,10 +286,10 @@ procedure hash_code(x, depth, seen)
 
    /seen := table()
    /depth := 3
-   
+
    if (depth = 0) | \seen[x] then
       return 0
-   
+
    n := 0
 
    case get_type(x) of {
@@ -330,10 +316,10 @@ procedure hash_code(x, depth, seen)
          n +:= hash_code(x[[]], depth - 1, seen)
          every n +:= hash_code(!sort(x) \ 10, depth - 1, seen)
       }
-      
+
       "string" :
          n +:= hash_string(x)
-      
+
       "cset" :
          n +:= hash_string(string(x))
 
@@ -416,7 +402,7 @@ procedure clone(o, seen)
          return res
       }
 
-      default : 
+      default :
          return o
    }
 end
@@ -495,7 +481,7 @@ procedure to_string(o, depth, seen)
 
          if is_instance(o, "lang__Object") then
             string_buff.add(o.to_string(depth, seen))
-         else 
+         else
             string_buff.add(object_to_string(o, depth, seen))
       }
 
@@ -504,10 +490,10 @@ procedure to_string(o, depth, seen)
 
       "null" :
          string_buff.add("&null")
-      
+
       "string" :
          string_buff.add("\"" || format_escape(o) || "\"")
-      
+
       "cset" :
          string_buff.add("\'" || format_escape(o) || "\'")
 
@@ -576,7 +562,7 @@ procedure to_string(o, depth, seen)
          string_buff.add(ty || "<" || get_id(o) || ">(" || get_name(o) || ")")
       }
 
-      default : 
+      default :
          string_buff.add("unknown type")
    }
 

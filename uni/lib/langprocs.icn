@@ -15,6 +15,8 @@ import util
 #
 # Return the class name for the instance o
 #
+# <i>Deprecated in favor of function <tt>classname(o)</tt>.</i>
+#
 procedure get_class_name(o)
    return ::classname(o)
 end
@@ -76,8 +78,10 @@ end
 
 #
 # Return the id of the object, based on the string returned by {image()}.  For
-# types that do not produce such a value, this method will have undefined
-# results.
+# types that do not produce such a value, this method will fail for values that
+# do not have a serial number.
+#
+# <i>Deprecated in favor of function <tt>serial()</tt>.</i>
 #
 # @example
 # @ x := [1, 2 ,3]
@@ -93,38 +97,39 @@ procedure get_id(object)
 end
 
 #
-# Generate the record names for a record.  The results are undefined for a
-# non-record type of object.
+# Generate the record names for a record.  All other values/objects will cause
+# failure.
 #
 procedure generate_record_names(object)
-   local i
-   every i := 1 to *object do {
-      name(object[i]) ? {
-         tab(find("."))
-         move(1)
-         suspend tab(0)
+   if get_type(object) == "record" then {
+      suspend fieldnames(object)
+   }
+end
+
+#
+# Generate the names of the member variables of an object. All other values/objects
+# will cause failure.
+#
+procedure generate_member_names(object)
+   local l, el
+   if get_type(object) == "class" then {
+      l := membernames(object)
+      every el := !l do {
+         if el == ("__s" | "__m") then {
+            next
+         } else {
+            suspend el
+         }
       }
    }
 end
 
 #
-# Generate the names of the member variables of an object.  The results
-# are undefined for a non-class object.
-#
-procedure generate_member_names(object)
-   every name(object[1 to *object]) ? {
-      tab(find("."))
-      move(1)
-      suspend tab(0)
-   }
-end
-
-#
-# Generate the values of the member variables of an object.  The results
-# are undefined for a non-class object.
+# Generate the values of the member variables of an object.  All other values/objects
+# will cause failure.
 #
 procedure generate_class_members(object)
-   suspend object[1 to *object]
+   suspend object[generate_member_names(object)]
 end
 
 #

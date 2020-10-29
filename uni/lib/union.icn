@@ -161,34 +161,23 @@ procedure _toUs(u,uerror, seen)
          ref := mkRef(u)
          if member(seen,ref) then return "{ref:"||ref||"}"
          insert(seen,ref)
+         tmp := image(u)
          # Class - Do we care about method names? Currently we don't
-         if match("object ", tmp := image(u)) then {
-            s := "{object:"||ref||" \""||tmp[8:upto("_",tmp)\1|0]||"\" "
-            firstElem := "y"
-            every k := key(u) do {
-               if /firstElem then s ||:= ","
-               firstElem := &null
-               if k == ("__s" | "__m") then next
-               if type(k) ~== "string" then fail
-               s ||:= unionify_string(k)|| ":" || _toUs(u[k],uerror,seen) | fail
-               }
-            s ||:= "}"
-            return s
+         if match("object ", tmp) then {
+            s := "{object:"||ref||" \""||classname(u)||"\" "
             }
-         # Record
-         else if match("record ", tmp := image(u)) then {
-            s := "{record:"||ref||" \""||tmp[8:upto("_",tmp)\1|0]||"\" "
-            needComma := &null
-            every k := key(u) do {
-               if \needComma then s ||:= ","
-               needComma := "y"
-               if type(k) ~== "string" then fail
-               s ||:= unionify_string(k)|| ":" || _toUs(u[k],uerror,seen) | fail
-               }
-            s ||:= "}"
-            return s
+         else if match("record ", tmp) then {
+            s := "{record:"||ref||" \""||type(u)||"\" "
             }
          else return uerror.set_err(type(u) || " has no UniON equivalent")
+         needComma := &null
+         every k := key(u) do {
+            if \needComma then s ||:= ","
+            needComma := "y"
+            s ||:= unionify_string(k)|| ":" || _toUs(u[k],uerror,seen) | fail
+            }
+         s ||:= "}"
+         return s
          }
       }
 end
@@ -563,7 +552,7 @@ end
 # <b><i>Intended for internal use only.</i></b>
 #</p>
 procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
-   local rName, aList, union_object, union_key, union_value, prev_token, tok, r
+   local rName, union_object, union_key, union_value, prev_token, tok, r
    ref := @token_gen
    rName := (@token_gen)[2:-1]  # skips ":" and strips quotes
    if not proc(rName) then {	# No constructor in this context
@@ -572,7 +561,6 @@ procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
       }
    r := rName()
    refs[ref] := r
-   aList := []
    prev_token := "{"
 
    # A record in our UniON looks a lot like a table, with fieldname:fieldValue
@@ -585,9 +573,6 @@ procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
 
       # end of record, return
       if tok == "}"  then {
-         every i := 1 to *aList do {
-            r[i] := aList[i]
-            }
          return r
          }
 
@@ -600,7 +585,7 @@ procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
 
       # parse pairs
       else if prev_token == ("{"|",") then {
-            # fieldname (we're going to ignore it...)
+            # fieldname
             # We could simplify this code as we know it's a string, but
             #  but just in case someone plays around with the UniON...
             prev_token := tok
@@ -619,7 +604,7 @@ procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
             if tok := @token_gen then {
                if \(func := parse_funcs[tok[1]]) then {
                   union_value := func(tok, token_gen, parse_funcs, refs, uerror)
-                  put(aList, union_value)  # add to record constructor args
+                  r[union_key] := union_value
                   prev_token := "value"
                   }
                else 
@@ -646,7 +631,7 @@ end
 # <b><i>Intended for internal use only.</i></b>
 #</p>
 procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
-   local cName, aList, c, union_object, union_key, union_value, prev_token, tok
+   local cName, c, union_object, union_key, union_value, prev_token, tok
    local ref
    ref := @token_gen
    cName := (@token_gen)[2:-1]  # skips ":" and strips quotes
@@ -656,7 +641,6 @@ procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
       }
    cl := cName()  # Only works if class cName is defined in this context
    refs[ref] := cl
-   aList := []
    prev_token := "{"
 
    # A class in our UniON looks a lot like a table, with fieldname:fieldValue
@@ -669,8 +653,6 @@ procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
 
       # end of class, return
       if tok == "}"  then {
-         every i := 1 to *aList do
-            cl[i] := aList[i] | &null
          return cl
          }
 
@@ -683,7 +665,7 @@ procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
 
       # parse pairs
       else if prev_token == ("{"|",") then {
-            # fieldname (we're going to ignore it...)
+            # fieldname
             # We could simplify this code as we know it's a string, but
             #  but just in case someone plays around with the UniON...
             prev_token := tok
@@ -702,7 +684,7 @@ procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
             if tok := @token_gen then {
                if \(func := parse_funcs[tok[1]]) then {
                   union_value := func(tok, token_gen, parse_funcs, refs, uerror)
-                  put(aList, union_value)  # add to record constructor args
+                  cl[union_key] := union_value
                   prev_token := "value"
                   }
                else 

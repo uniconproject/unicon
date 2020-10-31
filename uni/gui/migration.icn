@@ -25,7 +25,7 @@ end
 # Convert a V2 style Event to a V1 _Event.
 #
 procedure V2TOV1(ev)
-   local p, code, c, classnam
+   local p, code, c
 
    #
    # V1 didn't have mouse movement, so speed things up
@@ -34,8 +34,7 @@ procedure V2TOV1(ev)
    if ev.get_param() === -12 then
       fail
 
-   classnam := get_class_name(ev.get_source())
-   c := get_class_for_name( classnam ).get_implemented_classes()
+   c := get_class_for_name( ev.get_source() ).get_implemented_classes()
 
    if member(c, "gui__Button") then {
       code := case ev.get_type() of {

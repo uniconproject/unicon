@@ -17,12 +17,12 @@ global lang_class_table
 procedure get_class_for(obj)
    local x, name
    /lang_class_table := table()
-   case get_type(obj) of {
+   case lang::get_type(obj) of {
       "class" : {
          #
          # convert class name to the external form for storing in the table
          #
-         name := mapPackageInt2Ext(::classname(obj))
+         name := lang::mapPackageInt2Ext(::classname(obj))
          #
          # use the object supplied to be create a Class object and insert into
          # the table with the key of the external class names#
@@ -35,7 +35,7 @@ procedure get_class_for(obj)
          #
          # make sure that the class name supplied is in external form
          #
-         name := mapPackageInt2Ext(obj)
+         name := lang::mapPackageInt2Ext(obj)
          #
          # if there is no key by the string value supplied, we need to raise failure
          x := \lang_class_table[name] | fail
@@ -108,12 +108,12 @@ class Class(name,
    end
 
 initially(obj)
-   local v, s, m, cname, cmeths := table(), lm := []
+   local v, s, sa, m, cname, cmeths := table(), lm := []
 
    #
    # get the class name based on the object that we are looking at
    #
-   self.name := ::classname(obj)
+   self.name := lang::mapPackageInt2Ext(::classname(obj))
    #
    # provide the initial values for the methods, supers, methods_map, variables
    # and implemented_classes. These will be added to as we process the information
@@ -122,7 +122,7 @@ initially(obj)
    self.methods := []
    self.supers := []
    self.methods_map := table()
-   self.implemented_classes := set(self.name)
+   self.implemented_classes := set(lang::mapPackageInt2Ext(self.name))
    self.variables := []
    #
    # there are two variables in the class structure which are not of interest
@@ -155,7 +155,8 @@ initially(obj)
 
    every s := ::fieldnames(self.oprec) do {
       v := self.oprec[s]
-      if type(v) == "procedure" then {
+      sa := lang::mapPackageInt2Ext(s)
+      if ::type(v) == "procedure" then {
          #
          # lm holds a list of lists where the internal list is the procedure value
          # and the name of the method. This will be used later to generate the
@@ -168,8 +169,8 @@ initially(obj)
          # the applicable list of methods for that class into an apprporiate set
          # for creating the methods and methods_map values
          #
-         put(self.supers, s)
-         cmeths[s] := set(::methods(s))
+         put(self.supers, sa)
+         cmeths[sa] := set(::methods(s))
       }
    }
    #

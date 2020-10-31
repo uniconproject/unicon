@@ -12,17 +12,39 @@ global lang_class_table
 
 
 #
-# Get the Class corresponding to the given object
+# Get the Class corresponding to the given object or the class name
 #
 procedure get_class_for(obj)
    local x, name
    /lang_class_table := table()
-   name := ::classname(obj)
-
-   if not(x := \lang_class_table[name]) then {
-      x := Class(obj)
-      lang_class_table[name] := x
+   case get_type(obj) of {
+      "class" : {
+         #
+         # convert class name to the external form for storing in the table
+         #
+         name := mapPackageInt2Ext(::classname(obj))
+         #
+         # use the object supplied to be create a Class object and insert into
+         # the table with the key of the external class names#
+         if not(x := \lang_class_table[name]) then {
+            x := Class(obj)
+            lang_class_table[name] := x
+         }
       }
+      "string" : {
+         #
+         # make sure that the class name supplied is in external form
+         #
+         name := mapPackageInt2Ext(obj)
+         #
+         # if there is no key by the string value supplied, we need to raise failure
+         x := \lang_class_table[name] | fail
+      }
+      #
+      # any other kind of value is not a class or a class name, therefore we need to failure#
+      default : fail
+   }
+
    return x
 end
 

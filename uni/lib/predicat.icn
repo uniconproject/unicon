@@ -55,14 +55,18 @@ end
 #  <i>Intended for internal use only.</i>
 #  Map "package__object" into "package::object". This is implementation dependent
 #  code and at present there is no Unicon function that returns the package
-#  information for any defined value.
+#  information for any defined value. It also checks that the name is not in
+#  external format first and if it finds it is then it will return it unchanged.
+#  This allows "__" to be used in external names.
 #</p>
 procedure mapPackageInt2Ext(s)
    local ns := ""
    s ? {
-      ns ||:= tab(find("__")) || (move(2),"::")
-      ns ||:= tab(0)
+      if not find("::") then {
+         ns ||:= tab(find("__")) || (move(2),"::")
+         ns ||:= tab(0)
       }
+   }
    return ns
 end
 

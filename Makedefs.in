@@ -109,12 +109,6 @@ mandir=@mandir@
 htmldir=@htmldir@
 
 
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD)"
-REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
-REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
-REPO_REV_DESCR="$(shell LC_ALL=C git describe --long --always --dirty='-modified')"
-REPO_REV_BRANCH="$(shell LC_ALL=C git rev-parse --abbrev-ref HEAD | sed -e 's!heads/!!')"
-
 #  configuration parameters
 
 PKG_NAME=@PACKAGE_NAME@
@@ -128,19 +122,6 @@ SHTOOL=$(TOPDIR)/shtool
 PATCHSTR=$(TOPDIR)/bin/patchstr
 
 
-# Rule to update revision/build info in header files
-# Caller must set TOPDIR relative to the path where
-# the makefile invokes the rule
-update_rev:
-	@if test ! -z $(REPO_REV) ; then \
-	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > $(TOPDIR)/src/h/revision.h; \
-	elif test ! -f $(TOPDIR)/src/h/revision.h ; then \
-	   echo "#define REPO_REVISION \"0\"" > $(TOPDIR)/src/h/revision.h; \
-	fi
-	@if test -z $(REPO_REV_DESCR) ; then \
-	   echo "#define gitDescription \"commit $(REPO_REV_HASH)\"" > $(TOPDIR)/src/h/build.h; \
-	else \
-	   echo "#define gitDescription \"$(REPO_REV_DESCR)\"" > $(TOPDIR)/src/h/build.h; \
-	fi
-	@echo "#define gitBranch \"$(REPO_REV_BRANCH)\"" >> $(TOPDIR)/src/h/build.h;
+
+
 

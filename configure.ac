@@ -1,4 +1,10 @@
-AC_INIT([Unicon],[13.2],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
+AC_PREREQ(2.57)
+LT_PREREQ(2.4.6)
+
+m4_define([unicon_version],[m4_esyscmd_s([config/scripts/version.sh "version"])])
+AC_INIT([Unicon],[unicon_version],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
+
+#AC_INIT([Unicon],[13.2],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
 
 AC_CANONICAL_HOST
 
@@ -311,7 +317,6 @@ case $unicon_host in
      *bsd*)
         ;;
      *macos*)
-       AC_CFLAG([-Wno-parentheses-equality])
        CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
        DASHX=-x
        RLIBS="-ldl "
@@ -939,8 +944,9 @@ else
   stmp=" ! SSL"
 fi
 
-AC_MSG_RESULT([
+revision=`./config/scripts/version.sh "revision"`
 
+cat << EOF  > unicon-config.log
 --------------------------------------------------
     $PACKAGE_STRING Configuration Summary
 --------------------------------------------------
@@ -953,10 +959,11 @@ LDFLAGS  :$LDFLAGS
 LIBS     : $LIBS
 CXX      :  $CXX  (Required only with FTGL and VOIP)
 CXXFLAGS : $CXXFLAGS
-prefix	 : $prefix
+prefix	 :  $prefix
 Verbose  :  $verbosebuild
 Debug    :  $debug
 Devmode  :  $devmode
+Revision :  $revision
 
 *** Features (+Available   -Missing   !Disabled)
 $ctmp
@@ -967,39 +974,42 @@ $atmp
 $vtmp
 $dtmp
 $stmp
-])
+EOF
+
 
 if test "x$plugins" = "xyes" || test "x$plugins"  = "xon" ; then
   if test "x$ac_cv_search_dlopen" = "xno" ; then
-    echo " - Plugins"
+    echo " - Plugins" >> unicon-config.log
   else
-    echo " + Plugins"
+    echo " + Plugins" >> unicon-config.log
   fi
 else
-  echo " ! Plugins"
+  echo " ! Plugins" >> unicon-config.log
 fi
 
 if test "x$iconc"  = "xyes" || test "x$iconc" = "xon" ; then
   if test "x$coniconc"      = "xyes" ; then
-     echo " + Compiler: with concurrency"
+     echo " + Compiler: with concurrency >> unicon-config.log"
   else
-     echo " + Compiler: no concurrency"
+     echo " + Compiler: no concurrency" >> unicon-config.log
   fi
 else
-  echo " ! Compiler"
+  echo " ! Compiler" >> unicon-config.log
 fi
 
 if test "x$pattern" = "xyes" || test "x$pattern" = "xon" ; then
-  echo " + Patterns"
+  echo " + Patterns" >> unicon-config.log
 else
-  echo " ! Patterns"
+  echo " ! Patterns" >> unicon-config.log
 fi
 
 if test "x$ovld" = "xyes"  ||  test "x$ovld" = "xon" ; then
-  echo " + Overloading"
+  echo " + Overloading" >> unicon-config.log
 else
-  echo " ! Overloading"
+  echo " ! Overloading" >> unicon-config.log
 fi
+
+cat unicon-config.log
 
 echo ""
 echo "do make to continue the build"

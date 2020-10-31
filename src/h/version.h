@@ -8,7 +8,8 @@
 #undef IVersion
 
 /* Include build information for files that need version details */
-#include "../h/build.h"
+
+#include "../h/revision.h"
 
 /*
  *  Icon version number and date.

@@ -22,16 +22,20 @@ default_target: allsrc
 	$(MAKE) -C ipl/lib
 	$(MAKE) -C uni
 	$(MAKE) -C plugins
-	@echo ========== Build Summary ==========
-	bin/unicon -features
-	@echo ===================================
+	@echo ============ Build Features ============ > unicon-features.log
+	bin/unicon -features >> unicon-features.log
+	@echo ======================================== >> unicon-features.log
+	@cat unicon-features.log
 	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
 
-.PHONY: plugins
+.PHONY: plugins update_rev
 
 Makedefs: Makedefs.in configure
 	sh configure
+
+update_rev:
+	@./config/scripts/version.sh
 
 #
 # if you make any changes to configure.ac or aclocal.m4 run  autoreconf -i
@@ -78,19 +82,18 @@ allsrc: Makedefs update_rev
 
 # Configure the code for a specific system.
 
-
 V-Configure:	config/unix/$(name)/status
-		$(MAKE) Pure >/dev/null
-		-cd src/lib/voice; $(MAKE)
-		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
-		sh ./configure --disable-graphics CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
+	$(MAKE) Pure >/dev/null
+	-cd src/lib/voice; $(MAKE)
+	cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
+	sh ./configure --disable-graphics CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
 VX-Configure:	config/unix/$(name)/status
-		$(MAKE) Pure >/dev/null
-		-cd src/lib/voice; $(MAKE)
-		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
-		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
-		@echo Remember to add unicon/bin to your path
+	$(MAKE) Pure >/dev/null
+	-cd src/lib/voice; $(MAKE)
+	cd config/unix; $(MAKE) Setup-Graphics name=$(name)
+	sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
+	@echo Remember to add unicon/bin to your path
 
 WUnicon32:
 	sh configure --host=i686-w64-mingw32 --disable-iconc
@@ -99,20 +102,23 @@ WUnicon64:
 	sh configure --build=x86_64-w64-mingw32 --disable-iconc
 
 INNOSETUP="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+
 WinInstaller:
+
 	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
 	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
-	@echo "#define AppRevision \"$(REPO_REV)\"" >> config/win32/gcc/unicon_version.iss
+	@echo "#define AppRevision \""`./config/scripts/version.sh "revision"`"\"" \
+		>> config/win32/gcc/unicon_version.iss
 	@echo "#define PATCHSTR \"$(PATCHSTR)\"" >> config/win32/gcc/unicon_version.iss
 	$(INNOSETUP) config/win32/gcc/unicon.iss
 
 NT-Configure:
-		cmd /C "cd config\win32\msvc && config"
-		@echo Now remember to add unicon/bin to your path
+	cmd /C "cd config\win32\msvc && config"
+	@echo Now remember to add unicon/bin to your path
 
 W-Configure:
-		cmd /C "cd config\win32\msvc && w-config"
-		@echo Now remember to add unicon/bin to your path
+	cmd /C "cd config\win32\msvc && w-config"
+	@echo Now remember to add unicon/bin to your path
 
 ##################################################################
 #

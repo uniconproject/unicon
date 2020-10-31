@@ -15,9 +15,14 @@ HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h
 GRAPHICSRI = rmac.ri rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri
 
+.PHONY: update_rev
+
 # default: iconx
 
 all:	interp_all comp_all
+
+update_rev:
+	@../../config/scripts/version.sh
 
 ####################################################################
 #

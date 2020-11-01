@@ -297,28 +297,9 @@ dptr da, dx;
    struct b_bignum *b;
    word i, blen, d;
    int sgn;
-
-#ifdef Double
    double x;
-   {
-   int	*rp, *rq;
-#ifdef DescriptorDouble
-   rp = (int *) &(da->vword.realval);
-#else					/* DescriptorDouble */
-   rp = (int *) &(BlkLoc(*da)->Real.realval);
-#endif					/* DescriptorDouble */
-   rq = (int *) &x;
-   *rq++ = *rp++;
-   *rq = *rp;
-   }
-#else					/* Double */
-   double x = BlkD(*da,Real)->realval;
-#endif					/* Double */
 
-   if (x > 0.9999 * MinLong && x < 0.9999 * MaxLong) {
-      MakeInt((word)x, dx);
-      return Succeeded;		/* got lucky; a simple integer suffices */
-      }
+   GetReal(da, x);
 
    if ((sgn = (x < 0)))
       x = -x;

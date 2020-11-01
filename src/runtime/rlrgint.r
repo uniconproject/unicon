@@ -155,7 +155,7 @@ dptr dx;
       word i;
 
       for (i = x->msd; ++i <= x->lsd; )
-         val = (val << NB) - x->digits[i];
+	 val = (word)((uword)val << NB) - x->digits[i];
       if (!x->sign)
 	 val = -val;
       dx->dword = D_Integer;
@@ -1522,7 +1522,7 @@ dptr da, db, dx;
       if (a->sign) {
          x->sign = 1;
          *DIG(x,0) |=
-            B - (1 << r);
+            B - (1L << r);
          compl1(DIG(x,0),
                 DIG(x,0),
                 xlen);
@@ -1540,9 +1540,8 @@ dptr da, db, dx;
 word bigcmp(da, db)
 dptr da, db;
 {
-   word alen, blen; 
-
    if (Type(*da) == T_Lrgint && Type(*db) == T_Lrgint) {
+      word alen, blen;
       struct b_bignum *a = LrgInt(da);
       struct b_bignum *b = LrgInt(db);
       if (a->sign != b->sign)
@@ -2048,7 +2047,7 @@ struct b_bignum *tu, *tv;
 
    /* D1 */
    for (d = 0; d < NB; d++)
-      if (b[0] & (1 << (NB - 1 - d)))
+      if (b[0] & (1L << (NB - 1 - d)))
          break;
 
    u[0] = shifti1(a, d, (DIGIT)0, &u[1], m+n);

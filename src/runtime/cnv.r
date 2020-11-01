@@ -64,7 +64,7 @@ double *d;
 
 #ifdef LargeInts
          if (Type(*s) == T_Lrgint)
-            *d = bigtoreal(s);
+            return bigtoreal(s, d);
          else
 #endif					/* LargeInts */
 
@@ -96,7 +96,7 @@ double *d;
       case T_Lrgint:
          result.dword = D_Lrgint;
 	 BlkLoc(result) = (union block *)numrc.big;
-         *d = bigtoreal(&result);
+         return bigtoreal(&result, d);
          return 1;
 #endif					/* LargeInts */
 

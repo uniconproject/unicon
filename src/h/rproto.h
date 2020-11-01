@@ -446,7 +446,7 @@ void		xmfree		(void);
 #endif					/* MultiProgram */
    word		bigradix	(int sign, int r, char *s, char *x,
 						   union numeric *result);
-   double	bigtoreal	(dptr da);
+int		bigtoreal	(dptr da, double *result);
    int		realtobig	(dptr da, dptr dx);
    int		bigtos		(dptr da, dptr dx);
    void		bigprint	(FILE *f, dptr da);

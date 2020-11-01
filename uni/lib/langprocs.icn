@@ -210,7 +210,7 @@ procedure equals(x, y, seen)
          #
          # If x subclasses Object, use its .equals method.
          #
-         if is_instance(x, "lang__Object") then
+         if is_instance(x, "lang::Object") then
             return x.equals(y, seen)
          else
             return object_equals(x, y, seen)
@@ -298,7 +298,7 @@ procedure hash_code(x, depth, seen)
    case get_type(x) of {
       "class" : {
          seen[x] := 1
-         if is_instance(x, "lang__Object") then
+         if is_instance(x, "lang::Object") then
             return x.hash_code(depth, seen)
          else
             return object_hash_code(x, depth, seen)
@@ -367,7 +367,7 @@ procedure clone(o, seen)
 
    case ty of {
       "class" : {
-         if is_instance(o, "lang__Object") then {
+         if is_instance(o, "lang::Object") then {
             t := o.clone(seen)
             seen[o] := t
             return t
@@ -482,7 +482,7 @@ procedure to_string(o, depth, seen)
       "class" : {
          seen[o] := 1
 
-         if is_instance(o, "lang__Object") then
+         if is_instance(o, "lang::Object") then
             string_buff.add(o.to_string(depth, seen))
          else
             string_buff.add(object_to_string(o, depth, seen))

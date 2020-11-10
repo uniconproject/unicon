@@ -21,7 +21,7 @@
 /*#include "keyword.h"*/
 /*#undef YYSTYPE*/
 /*#define YYSTYPE nodeptr*/
-/*#define YYMAXDEPTH 5000*/
+/*#define YYMAXDEPTH 40000*/
 
 extern int fncargs[];
 int idflag;

@@ -54,7 +54,9 @@ Questions and comments to: jeffery@cs.uidaho.edu
 The Icon Project at the University of Arizona provides the following
 documentation of their public domain code, which we gratefully incorporate
 into the Unicon language. By this point, however, our code bases have
-diverged substantially.
+diverged substantially. Both Icon and Unicon require a production quality
+C99 compiler. This (and other requirements) is discussed in the porting guide.
+Note the references below are to the Arizona documentation, not this repository.
 
     doc/docguide.htm  documentation guide
     doc/relnotes.htm  version 9.4 release notes
@@ -62,3 +64,4 @@ diverged substantially.
     doc/build.htm     build instructions         (for source releases)
     doc/install.htm   installation instructions  (for binary releases)
     doc/faq.htm       frequently asked questions about Icon
+    doc/port.htm      porting the Icon implementation

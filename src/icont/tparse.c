@@ -32,7 +32,7 @@ static const char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 #include "keyword.h"
 #undef YYSTYPE
 #define YYSTYPE nodeptr
-#define YYMAXDEPTH 5000
+#define YYMAXDEPTH 40000
 
 extern int fncargs[];
 int idflag;

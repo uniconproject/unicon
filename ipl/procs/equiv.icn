@@ -8,16 +8,19 @@
 #
 #	Date:     February 20, 1996
 #
+#       Updated:  Bruce Rennie
+#       Date:     November 05, 2020
+#
 ############################################################################
 #
 #   This file is in the public domain.
 #
 ############################################################################
-#  
+#
 #       equiv(s,y)	compare arbitrary structures x and y
 #
 ############################################################################
-#  
+#
 #     The procedure equiv() tests for the "equivalence" of two values. For types
 #  other than structures, it does the same thing as x1 === x2.  For structures,
 #  the test is for "shape".  For example,
@@ -45,11 +48,15 @@
 #  structures sort by "age", there may be a mismatch between equivalent
 #  structures in two tables or sets.
 #
+#     Now checks if image(procedure|file|window) is identical. If so then
+#  succeeds, otherwise assumes any differences means that they are not
+#  equivalent.
+#
 #  Note:
 #     The procedures equiv and ldag have a trailing argument that is used on
 #  internal recursive calls; a second argument must not be supplied
 #  by the user.
-#  
+#
 ############################################################################
 
 procedure equiv(x1,x2,done)		#: compare values for equivalence
@@ -59,8 +66,11 @@ procedure equiv(x1,x2,done)		#: compare values for equivalence
 
    if type(x1) ~== type(x2) then fail	# Must be same type.
 
-   if type(x1) == ("procedure" | "file" | "window")
-      then fail				# Leave only those with sizes (null
+   if type(x1) == ("procedure" | "file" | "window") then
+      if image(x1) == image(x2) then
+         return x2
+      else
+         fail				# Leave only those with sizes (null
 					# taken care of by first two tests).
 
    if *x1 ~= *x2 then fail		# Skip a lot of possibly useless work.
@@ -76,12 +86,12 @@ procedure equiv(x1,x2,done)		#: compare values for equivalence
    image(x1) ? (code := (="record" | type(x1)))
 
    case code of {
-      "list" | "record": 
+      "list" | "record":
          every i := 1 to *x1 do
             if not equiv(x1[i],x2[i],done) then fail
       "table": if not equiv(sort(x1,3),sort(x2,3),done) then fail
       "set":   if not equiv(sort(x1),sort(x2),done) then fail
-      default: fail			# Vaues of other types are different. 
+      default: fail			# Values of other types are different.
       }
 
    insert(done[x1],x2)			# Equivalent; add to set.

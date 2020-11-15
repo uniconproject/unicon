@@ -24,9 +24,9 @@
 #		like bal() with quoting from characters in c5.
 #
 #       balqc(c1, c2, c3, c4, c5, s1, s2, s3, i1, i2)
-#		like balq() with the addition that balanced characters within 
-#       	"comments", as delimited by the strings s1 and s2, are also 
-#        	excluded from balancing.  In addition, if s1 is given and s2 
+#		like balq() with the addition that balanced characters within
+#       	"comments", as delimited by the strings s1 and s2, are also
+#        	excluded from balancing.  In addition, if s1 is given and s2
 #
 #       limatch(L, c)
 #		matches items in list L delimited by characters in c
@@ -128,10 +128,10 @@ end
 #  Slshupto works just like upto, except that it ignores backslash
 #  escaped characters.  I can't even begin to express how often I've
 #  run into problems applying Icon's string scanning facilities to
-#  to input that uses backslash escaping.  Normally, I tokenize first,
-#  and then work with lists.  With slshupto() I can now postpone or
-#  even eliminate the traditional tokenizing step, and let Icon's
-#  string scanning facilities to more of the work.
+#  input that uses backslash escaping.  Normally, I tokenize first
+#  and then work with lists.  With slshupto(), I can now postpone or
+#  even eliminate the traditional tokenizing step and let Icon's
+#  string scanning facilities to do more of the work.
 #
 #  If you're confused:
 #
@@ -139,8 +139,8 @@ end
 #  "escape" (i.e. remove the special meaning of) metacharacters.  For
 #  instance, UNIX shells normally accept "*" as a shorthand for "any
 #  series of zero or more characters.  You can make the "*" a literal
-#  "*," with no special meaning, by prepending a backslash.  The rou-
-#  tine slshupto() understands these backslashing conventions.  You
+#  "*" with no special meaning by prepending a backslash.  The routine
+#  slshupto() understands these backslashing conventions.  You
 #  can use it to find the "*" and other special characters because it
 #  will ignore "escaped" characters.
 #
@@ -154,8 +154,8 @@ end
 
 #
 # slshupto:  cset x string x integer x integer -> integers
-#             (c, s, i, j) -> Is (a generator)
-#    where Is are the integer positions in s[i:j] before characters
+#             (c, s, i, j) -> I's (a generator)
+#    where I's are the integer positions in s[i:j] before characters
 #    in c that is not preceded by a backslash escape
 #
 procedure slshupto(c, s, i, j)		#: upto() with escapes
@@ -166,7 +166,7 @@ procedure slshupto(c, s, i, j)		#: upto() with escapes
     then /i := &pos
     else /i := 1
     /j := *s + 1
-    
+
     /c := &cset
     c2 := '\\' ++ c
     s[1:j] ? {
@@ -191,7 +191,7 @@ end
 #     The procedure snapshot(title,len) writes a snapshot of the state
 #  of string scanning, showing the value of &subject and &pos, an
 #  optional title, and (again optionally) wrapping the display
-#  for len widht.
+#  for len width.
 #
 #  For example,
 #
@@ -311,10 +311,10 @@ end
 #
 #     balq( c1, c2, c3, c4, c5, s, i1, i2 ) : i3
 #
-#        generates the sequence of integer positions in s preceding a 
+#        generates the sequence of integer positions in s preceding a
 #        character of c1 in s[i1:i2] that is (a) balanced with respect to
-#        characters in c2 and c3 and (b) not "quoted" by characters in c4 
-#        with "escape" sequences as defined in c5, but 
+#        characters in c2 and c3 and (b) not "quoted" by characters in c4
+#        with "escape" sequences as defined in c5, but
 #        fails if there is no such position.
 #
 #        defaults:   same as for bal,
@@ -325,18 +325,18 @@ end
 #
 #     balqc( c1, c2, c3, c4, c5, s1, s2, s3, i1, i2 ) : i3
 #
-#        like balq with the addition that balanced characters within 
-#        "comments", as delimited by the strings s1 and s2, are also 
-#        excluded from balancing.  In addition, if s1 is given and s2 
+#        like balq with the addition that balanced characters within
+#        "comments", as delimited by the strings s1 and s2, are also
+#        excluded from balancing.  In addition, if s1 is given and s2
 #        is null then the comment terminates at the end of string.
 #
 #        defaults:   same as for balq,
 #                    s3 is the subject string
-#                    s1 "/*" 
+#                    s1 "/*"
 #                    s2 "*/" if s1 defaults, null otherwise
 #        errors:     same as for balq,
 #                    s1 is not a string
-#                    s2 is not a string (if s1 defaults or is specified) 
+#                    s2 is not a string (if s1 defaults or is specified)
 #
 #############################################################################
 
@@ -361,32 +361,32 @@ spos   := i1                                          # scanning position
 
 ca := cstop ++ copen ++ cclose ++ cquote ++ cescape   # characters to check
 
-while sp := s[ spos := upto( ca, s, spos, i2 ) ] do { 
-      
+while sp := s[ spos := upto( ca, s, spos, i2 ) ] do {
+
       if /quote & ( pcount = 0 ) & any( cstop, sp) then suspend spos
-      
+
       if any( c := ( copen | cclose | cquote | cescape ), sp ) then
-         
+
          case c of {
-            
-            copen  : if /quote then 
+
+            copen  : if /quote then
                         pcount +:= 1
-            
-            cclose : if /quote then 
+
+            cclose : if /quote then
                         if ( pcount -:= 1 ) < 0 then
                            fail
-            
-            cquote : if /quote then 
-                        quote := sp 
-                     else 
+
+            cquote : if /quote then
+                        quote := sp
+                     else
                         if quote == sp then quote := &null
-            
+
             cescape: if \quote then
                         spos +:= 1
             }
-      
+
       spos +:= 1
-      
+
       }
 
 end
@@ -411,8 +411,8 @@ if /scm & /ecm then {
    scm := "/*"                                        # start of comment
    ecm := "*/"                                        # end of comment
    }
-else 
-   if \scm & /ecm then 
+else
+   if \scm & /ecm then
       ecm := &null                                    # icon style comment
 
 ccom := ''
@@ -424,32 +424,32 @@ spos   := i1                                          # scanning position
 
 ca := cstop ++ copen ++ cclose ++ cquote ++ cescape ++ ccom # chars to check
 
-while sp := s[ spos := upto( ca, s, spos, i2 ) ] do { 
-      
-      if /quote & ( pcount = 0 ) & /comnt & any( cstop, sp) then 
+while sp := s[ spos := upto( ca, s, spos, i2 ) ] do {
+
+      if /quote & ( pcount = 0 ) & /comnt & any( cstop, sp) then
          suspend spos
-      
+
       if any( c := ( copen | cclose | cquote | cescape | ccom ), sp ) then
-         
+
          case c of {
-            
-            copen  : if /quote & /comnt then 
+
+            copen  : if /quote & /comnt then
                         pcount +:= 1
-            
-            cclose : if /quote & /comnt then 
+
+            cclose : if /quote & /comnt then
                         if ( pcount -:= 1 ) < 0 then
                            fail
-            
+
             cquote : if /comnt then
-                        if /quote then 
-                           quote := sp 
-                        else 
+                        if /quote then
+                           quote := sp
+                        else
                            if quote == sp then quote := &null
-            
-            cescape: if \quote then 
+
+            cescape: if \quote then
                         spos +:= 1
 
-            ccom   : if /quote then 
+            ccom   : if /quote then
                         if /comnt then {
                            if comnt := ( s[ spos +: *scm ] == scm ) then
                               spos +:= *scm - 1
@@ -459,33 +459,33 @@ while sp := s[ spos := upto( ca, s, spos, i2 ) ] do {
                               spos +:= *ecm - 1
                               comnt := &null
                               }
-                              
+
             }
-      
+
       spos +:= 1
-      
+
       }
 
 end
 
 #############################################################################
 #
-#  This matching function illustrates how every can be 
-#  used in string scanning.   
+#  This matching function illustrates how every can be
+#  used in string scanning.
 #
-#                 1. Each element of the list argument is matched in 
-#                    succession. 
+#                 1. Each element of the list argument is matched in
+#                    succession.
 #                 2. Leading characters in the subject are skipped over
 #                    to match the first element.
 #                 3. The strings listed may be seperated by other characters
-#                    provided they are specified in a cset of characters to 
+#                    provided they are specified in a cset of characters to
 #                    be ignored.
 #
 #                 It could be used to find things in text that have varying
 #                 representations, for example: "i.e.", "e.g.", "P.O.", etc.
 #
 #  limatch(l,i)
-#  
+#
 #        l  list of strings to be found
 #        i  cset containing characters to be ignored between each string
 #

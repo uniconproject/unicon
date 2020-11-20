@@ -178,7 +178,7 @@ method checkIcodeVersion(p)
    readIcodeHeader()
 
    # What kind of icode do we have? Field Table compressed?
-   if hdr.config ? (="I12.U." & tab(-2) & ="FT") then {
+   if hdr.config ? (="I12.U." & move(2) & ="FT") then {
       write("found 32-bit icode ", cstr(hdr.config))
       FTC := "FT"
       &pos := p   # start over as field-table aware; this may be unimplemented
@@ -192,9 +192,16 @@ method checkIcodeVersion(p)
       &pos := p   # start over as a 64-bit machine
       wordSize := 8
       readIcodeHeader()
-      if not match("I12.U",hdr.config) then
+      if hdr.config ? (="I12.U." & move(2) & ="FT") then {
+         write("found 64-bit icode ", cstr(hdr.config))
+         FTC := "FT"
+         &pos := p   # start over as field-table aware; this may be unimplemented
+         readIcodeHeader()
+      }
+      else if not match("I12.U",hdr.config) then
 	 write("Warning: did not recognize icode version:\n",
 	       image(hdr.config))
+
       icodeVersion := "64-bit"
       }
 end

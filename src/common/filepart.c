@@ -76,7 +76,10 @@ void vet_the_PathSep(char *s)
     * instance of that character, search only using that non-space char.
     */
    if (strlen(PathSep)>1) {
-      if (PathSep[0] == ' ') vetted_PathSep = PathSep+1;
+      if (PathSep[0] == ' ') {
+         vetted_PathSep = PathSep;
+         vetted_PathSep++;
+      }
       else if ((vetted_PathSep = malloc(2)) != NULL) {
 	 vetted_PathSep[0] = PathSep[0]; vetted_PathSep[1] = '\0';
 	 }

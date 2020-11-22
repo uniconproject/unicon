@@ -301,7 +301,8 @@ esac
 
 OBJ=o
 CFUNCTARGET="cfun"
-CFDYN="-fPIC -shared -O2 $OMIT"
+CFDYN="-fPIC "
+LDDYN="-shared "
 SO=so
 # OS specific flags go here
 case $unicon_host in
@@ -317,7 +318,7 @@ case $unicon_host in
      *bsd*)
         ;;
      *macos*)
-       CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
+       LDDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -shared "
        DASHX=-x
        RLIBS="-ldl "
 	;;
@@ -393,6 +394,7 @@ AC_SUBST(CC)
 AC_SUBST(RLINK)
 AC_SUBST(RLIBS)
 AC_SUBST(CFDYN)
+AC_SUBST(LDDYN)
 AC_SUBST(SO)
 AC_SUBST(ICONCTARGET)
 

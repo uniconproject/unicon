@@ -770,7 +770,7 @@ end
 # Returns Unicon's library paths (IPATH) as a semicolon-delimited string
 #
 method getLibPath()
-   return pathOSCompat(ulibpaths())
+   return pathOSCompat(lpaths())
 end
 
 #
@@ -785,7 +785,10 @@ end
 #
 #
 method pathOSCompat(path)
-   return replace(path, "/", "\\")
+   if &features == "MS Windows NT" then
+      return replace(path, "/", "\\")
+   else
+      return path
 end
 
 #

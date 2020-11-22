@@ -11,6 +11,7 @@ WUC=$(TDIR)/bin/unicon -G
 UFLAGS=-s -u -c
 
 CFDYN2= $(CFDYN)
+LDDYN2= $(LDDYN)
 
 .SUFFIXES: .c .$(O)
 
@@ -26,7 +27,7 @@ $(LNAME): $(TLIB) $(LIBD)/$(LNAME).u
 	cp  $(TLIB) $(LIBD)/
 
 $(TLIB): $(COBJ)
-	$(CC) $(CFDYN2) -o $(TLIB) $(COBJ) ../../lib/icall.$(O) $(MYLIBS) $(XLIBS)
+	$(CC) $(LDDYN2) -o $(TLIB) $(CFDYN2) $(COBJ) ../../lib/icall.$(O) $(MYLIBS) $(XLIBS)
 	cp $(TLIB) $(LIBD)
 	
 # Unicon interface

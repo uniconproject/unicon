@@ -1227,11 +1227,39 @@ function{1} list(n, x)
 end
 
 
-"member(x1, x2) - returns x1 if x2 is a member of set or table x2 but fails"
-" otherwise."
+"member(x1, x2) - returns x1 if x2 ... are members of x1 but fails otherwise."
+"x1 may be a set, cset, table, list, database file or record."
 
 function{0,1} member(s, x[n])
    type_case s of {
+      record: {
+         abstract {
+            return type(s)
+            }
+         inline {
+           C_integer i=0, sz = Blk(BlkD(s,Record)->recdesc,Proc)->nfields;
+           C_integer j, k, ismatched, nmatched=0;
+           if (n==0) fail;
+
+           for(i=0; i<n; i++) {
+              struct descrip s1;
+              if (!cnv:string(x[i], s1)) runerr(103, s1);
+              for(j=0;j<sz;j++) {
+                 struct descrip s2 =
+                    Blk(BlkD(s,Record)->recdesc,Proc)->lnames[j];
+                 if (StrLen(s1) != StrLen(s2)) fail;
+                 ismatched = 1;
+                 for (k=0; k<StrLen(s1); k++)
+                    if (StrLoc(s1)[k] != StrLoc(s2)[k]) {
+                       ismatched = 0; break;
+                       }
+                 if (ismatched) { nmatched++; break; }
+                 }
+            }
+         if (nmatched == n) return s;
+         fail;
+         }
+       }
       set: {
          abstract {
             return type(x) ** store[type(s).set_elem]

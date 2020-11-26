@@ -1052,6 +1052,7 @@ long *r, *g, *b, *a;
  *
  *  A Unicon color phrase matches the pattern
  *
+ *   (0.0, 1.0]
  *   transparent
  *   subtransparent                           weak
  *   translucent                 pale         moderate
@@ -1083,10 +1084,10 @@ long *r, *g, *b, *a;
    {
    int len, very;
    char c, *p, *ebuf, cbuffer[MAXCOLORNAME];
-   float lgt, sat, blend, bl2, m1, m2, alpha;
+   float lgt, sat, blend, bl2, m1, m2, alpha, tmpf;
    float h1, l1, s1, h2, l2, s2, r2, g2, b2;
 
-   alpha = (float)(*a/65535.0);
+   alpha = (float)(*a/65535.0);		/* default transparency */
    lgt = -1.0;				/* default no lightness mod */
    sat =  1.0;				/* default vivid saturation */
    len = strlen(buf);
@@ -1113,14 +1114,22 @@ long *r, *g, *b, *a;
    p = qsearch(buf, (char *)transptable,
       ElemCount(transptable), ElemSize(transptable), strcmp);
 
-   if (p) {
+   /* check for numeric diaphaneity value */
+   tmpf = atof(buf);
+
+   if (p || tmpf > 0.0) {
       /* skip past word */
       buf += strlen(buf) + 1;
       if (buf >= ebuf)
          return 0;
       /* save diaphaneity value, but ignore "opaque" */
-      if ((((colrmod *)p) -> val) != 100)
+      if (p && (((colrmod *)p) -> val) != 100)
          alpha = ((colrmod *)p) -> val / 100.0;
+      /* save numeric diaphaneity value */
+      else {
+         if (tmpf >= 1.0) tmpf = 1.0;
+         alpha = tmpf;
+         }
       }
 
    /* check for "very" */
@@ -3723,12 +3732,11 @@ char * abuf;
       case A_ALPHA:
          {
          double alpha;
-         char c = val[0];
-
-         if (c != '.' && !isdigit(c))
-            return Failed;
 
          alpha = atof(val);
+         if (alpha == 0.0)
+            return Failed;
+
          alpha = Abs(alpha); 
          if (alpha >= 1.0) 
             alpha = 1.0;
@@ -3736,6 +3744,23 @@ char * abuf;
          wc->alpha = alpha;
 	 break;
          }
+      case A_PROJECTION:
+	 if (!strcmp(val,"ortho"))
+	    ws->projection = UGL_ORTHOGONAL;
+	 else if (!strcmp(val,"perspec"))
+	    ws->projection = UGL_PERSPECTIVE;
+	 break;
+      case A_CAMWIDTH:
+	 {
+	 double width;
+
+	 width = atof(val);
+	 if (width == 0.0) 
+	    return Failed;
+
+         ws->camwidth = Abs(width);
+	 break;
+	 }
 #endif					/* HAVE_LIBGL */
       case A_MESHMODE:
 	 if (!setmeshmode(w,val)) return Failed;
@@ -4416,6 +4441,17 @@ char * abuf;
         break;
       case A_ALPHA:
         sprintf(abuf,"%f",wc->alpha);
+        MakeStr(abuf, strlen(abuf), answer);
+	break;
+      case A_PROJECTION:
+	if (ws->projection == UGL_PERSPECTIVE)
+           sprintf(abuf,"perspec");
+	else
+           sprintf(abuf,"ortho");
+        MakeStr(abuf, strlen(abuf), answer);
+	break;
+      case A_CAMWIDTH:
+        sprintf(abuf,"%f",ws->camwidth);
         MakeStr(abuf, strlen(abuf), answer);
 	break;
       case A_MESHMODE:
@@ -5256,6 +5292,7 @@ stringint attribs[] = {
    {"ascent",		A_ASCENT},
    {"bg",		A_BG},
    {"buffer",           A_BUFFERMODE},
+   {"camwidth",		A_CAMWIDTH},
    {"canvas",		A_CANVAS},
    {"ceol",		A_CEOL},
    {"cliph",		A_CLIPH},
@@ -5323,6 +5360,7 @@ stringint attribs[] = {
    {"pos",		A_POS},
    {"posx",		A_POSX},
    {"posy",		A_POSY},
+   {"projection",	A_PROJECTION},
    {"rendermode",	A_RENDERMODE},
    {"resize",		A_RESIZE},
    {"reverse",		A_REVERSE},

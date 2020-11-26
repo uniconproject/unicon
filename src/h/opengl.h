@@ -11,12 +11,12 @@
 #define glprintf(s, ...) 
 #endif					/* GL2D_DEBUG */
 
-/* Values for 3D attribute "buffer" */
-#define IMMEDIATE3D   1
-#define BUFFERED3D 0
-/* Make buffermode for 2D & 2D */
-#define UGL_IMMEDIATE 1
-#define UGL_BUFFERED 0
+/* Definitions for attribute buffermode */
+#define UGL_IMMEDIATE	1
+#define UGL_BUFFERED 	0
+/* Legacy definitons */
+#define IMMEDIATE3D    	UGL_IMMEDIATE	
+#define BUFFERED3D	UGL_BUFFERED	
 
 
 /*
@@ -550,24 +550,43 @@ struct fontsymbol {
    } while(0)
 
 /*
- * Viewing volume defaults
+ * Viewing volume definitions
  */ 
-#define CWIDTH 0.25
-#define CNEAR 0.25
-#define CFAR 50000.0
-#define CHEIGHT(w) \
+//#define CWIDTH 0.25
+//#define CNEAR 0.25
+//#define CFAR 50000.0
+//#define CHEIGHT(w) \
    (CWIDTH*((double)w->window->height)/((double)w->window->width))
 
-#define HALF_CWIDTH (CWIDTH/2.0)
+#define CNEAR 0.25
+#define CFAR 50000.0
+#define DEFAULT_CWIDTH 0.25
+#define CWIDTH(w) ((w)->window->camwidth)
+#define CHEIGHT(w) ((w)->window->camwidth*((double)w->window->height)/\
+                    ((double)w->window->width))
+#define HALF_CWIDTH(w) (CWIDTH(w)/2.0)
 #define HALF_CHEIGHT(w) (CHEIGHT(w)/2.0)
+
+/* Projection definitons */
+#define UGL_PERSPECTIVE	0
+#define UGL_ORTHOGONAL	1
+
+#define UGLProj(w) do {\
+   wsp ws = (w)->window;\
+   if (ws->projection == UGL_PERSPECTIVE)\
+      glFrustum(-HALF_CWIDTH(w),HALF_CWIDTH(w),-HALF_CHEIGHT(w),\
+                HALF_CHEIGHT(w),CNEAR,CFAR);\
+   else\
+      glOrtho(-HALF_CWIDTH(w),HALF_CWIDTH(w),-HALF_CHEIGHT(w),HALF_CHEIGHT(w),\
+                CNEAR,CFAR);\
+   } while(0)
 
 #define SetWindowSize(w) do {\
    wsp ws = (w)->window;\
    glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);\
    glMatrixMode(GL_PROJECTION);\
    glLoadIdentity();\
-   glFrustum(-HALF_CWIDTH, HALF_CWIDTH, -HALF_CHEIGHT(w), HALF_CHEIGHT(w),\
-             CNEAR, CFAR);\
+   UGLProj(w);\
    glMatrixMode(GL_MODELVIEW);\
    } while(0)
 
@@ -604,7 +623,7 @@ struct fontsymbol {
  */
 #define PIXW(w) (w->window->width)
 #define PIXH(w) (w->window->height)
-#define CLIPW(w) (CWIDTH)
+#define CLIPW(w) (CWIDTH(w))
 #define CLIPH(w) (CHEIGHT(w))
 
 /*

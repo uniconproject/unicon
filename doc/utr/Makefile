@@ -11,7 +11,7 @@
 # and/or utr18.pdf.
 #
 
-all: utr9c.html utr18.pdf
+all: utr9c.html utr18.pdf utr22.pdf
 
 utr9c.html: utr9c.pdf htmlean
 	pdftohtml -noframes utr9c.pdf
@@ -29,3 +29,6 @@ utr9c.pdf: utr9.tex
 
 utr20.pdf: utr20.tex
 	pdflatex utr20
+
+utr22.pdf: utr22.tex
+	pdflatex utr22

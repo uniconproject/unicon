@@ -1,0 +1,913 @@
+\documentclass[letterpaper,12pt]{article}
+\usepackage{geometry}[margins=1in]
+%\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{pdftex, colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=, pdfauthor=, pdfsubject=, pdfkeywords=}
+\usepackage{utr22/utr22}
+\usepackage[pdftex]{graphicx}
+\graphicspath{{./}{./utr22/}}
+
+\title{Unicon OpenGL 2D and 2D/3D Graphics User's Guide}
+\author{Gigi Young and Clinton Jeffery}
+\trnumber{22}
+\date{November 24, 2020}
+
+% Outline numbering
+\setcounter{secnumdepth}{3}
+\makeatletter
+
+\begin{document}
+\abstract{
+Unicon version 13.3 has a new graphics implementation that
+extends the language's 2D capabilities.
+This guide is a gentle introduction on the new graphics features 
+introduced by the OpenGL-based implementation of Unicon's 2D and
+integrated 2D/3D facilities.
+}
+\maketitle
+
+\section{Introduction}
+
+The implementation of OpenGL-based 2D graphics facilities in Version
+13.3 of Unicon introduces new features to Unicon programmers, such as
+a display list architecture inherited from the 3D facilities and an
+integrated 2D/3D graphics mode.  This guide introduces the new
+features of Unicon's graphics facilities in this implementation. It
+supplements IPD268a [1] for Unicon's 2D facilities and UTR9d [2] for
+Unicon's 3D facilities. The reader should consult [3] for additional
+details on this implementation.
+
+Currently, the OpenGL-based 2D facilities described in this report
+have only been implemented and tested on Linux systems.
+The OpenGL 2D and 2D/3D facilities are enabled by installing the OpenGL and 
+FreeType development headers and libraries. 
+Additionally, Linux systems require the installation of X11 development headers 
+and libraries.
+The source code is configured when \texttt{OpenGL graphics} appears in 
+the \texttt{unicon -features} listing.
+
+The OpenGL graphics implementation is toggled on/off by setting/unsetting  
+the environmental variable \texttt{UNICONGL2D}. Use mode \texttt{"g"} with
+function \texttt{open()} to open a 2D-only window and mode \texttt{"gl"}
+to open an integrated 2D/3D window.
+
+\newpage
+\section{2D Features}
+
+The OpenGL implementation of the 2D facilities introduces a display list
+achitecture and transparency that will be familiar to users of
+Unicon's 3D facilities. These two primary added features and a number of
+smaller items augment Unicon's previous 2D graphics feature set. While
+great effort is made to preserve the Unicon's classic 2D graphics, a
+few changes can be observed.
+
+\subsection{Display List}
+
+The display list of the 2D facilities is a list of records. Every record 
+on the display list possesses the field \texttt{name} which contains the
+string literal identifying its record type. Most Unicon 2D graphics functions
+create and append corresponding graphics records to the display list.
+See Section 4 in this report for details on display list records and their 
+corresponding graphics functions.
+
+Graphics function \texttt{WindowContents()} returns a reference to the
+display list.  The reference to the most recently generated display
+list record can be obtained by grabbing the last element of the
+display list after returning from a successful call to a Unicon
+graphics procedure that creates a display list record.
+
+\begin{verbatim}
+DrawRectangle(0,0,100,100)
+drawrect := WindowContents()[-1]
+\end{verbatim}
+
+The display list can be modified by the user as long as it holds only 
+records specified in Section 4. Failure to comply is likely
+to result in a run-time error.
+
+\subsubsection{Animation}
+
+The display list offers the ability for intuitive animation.
+References to primitives on the display list can be used to modify
+position, color, text, font, and more without needed to write specialized
+drawing procedures for changing these attributes. 
+See Section 4 in this report (Modifiable Display List Record Fields)
+for details on which fields of display list records are modifiable.
+Changes to display list
+record fields can be applied by calling graphics function \texttt{Refresh()}.
+
+All graphical primitives except 
+\texttt{FillPolygon}, \texttt{DrawPolygon}, \texttt{DrawLine}, \\
+\texttt{DrawSegment}, and \texttt{DrawPoint} have 
+\texttt{x} and \texttt{y} (positional) fields to be used for modifying the 
+position of a particular primitives.
+
+\newpage % WIDOW/ORPHAN
+\begin{verbatim}
+drawrect.x +:= 5
+drawrect.y +:= 5 
+Refresh()
+\end{verbatim}
+
+For graphical primitives that do not possess positional fields, 
+the translational coordinates \texttt{dx} and \texttt{dy} can be used
+instead. Display list records \texttt{Dx} and \texttt{Dy} affect
+the translational coordinates of all subsequent graphical primitives
+until another translational display list record of the same type is 
+encountered. Thus, \texttt{Dx} and \texttt{Dy} can be used to 
+translate groups of primitives. This is more efficient than modifying
+each \texttt{x} and \texttt{y} for each graphical primitive that 
+possesses those fields. 
+
+Context attribute display list records are created and appended to the
+display list by \texttt{WAttrib()} in order of the argument list given. 
+Only assignments create display list
+records. However, all records are created before the first suspension
+of \texttt{WAttrib()}. 
+
+\begin{verbatim}
+dl := WindowContents()
+WAttrib("dx=0","dy=0")
+dx := dl[-2]
+dy := dl[-1]
+DrawPolygon(0,0,0,100,100,100,100,0)
+DrawLine(0,0,100,100)
+DrawLine(0,100,100,0)
+
+dx.val +:= 5   
+dy.val +:= 5   
+Refresh()
+\end{verbatim}
+
+Another technique is to build a list of references to display list records
+that need to be modified in a render loop. A case statement can be used 
+on the \texttt{name} field of the records to differentiate between the types
+of records. The following program uses an animation loop which results in a 
+color-shifting, filled circle that bounces off the walls of the window. 
+
+\begin{verbatim}
+link graphics
+$include "keysyms.icn"
+
+procedure main()
+   width := height := 400
+   L := []
+   &window := open("simple animation", "g", "size="||width||","||height)
+   dl := WindowContents()
+
+   WAttrib("fg=red")
+   put(L, dl[-1])
+   FillCircle(10,200,10)
+   put(L, dl[-1])
+
+   dirx := diry := 1
+   speed := .1
+   repeat {
+      if *Pending() > 0 then {
+         case Event() of {
+            "q": exit(0)
+            }
+         }
+      else every obj := !L do {
+         case obj.name of {
+            "FillCircle": {
+               if (obj.x + dirx*(obj.r + speed) > width) then
+                  dirx := -1
+               else if (obj.x + dirx*(obj.r + speed) < 0) then
+                  dirx := 1
+               if (obj.y + diry*(obj.r + speed) > height) then
+                  diry := -1
+               else if (obj.y + diry*(obj.r + speed) < 0) then
+                  diry := 1
+               obj.x +:= speed*dirx
+               obj.y +:= speed*diry
+               }
+            "Fg": {
+               tmp := obj.r
+               obj.r := obj.g
+               obj.g := obj.b
+               obj.b := tmp
+               }
+            }
+         }
+      WDelay(1)
+      Refresh()
+      }
+end
+\end{verbatim}
+
+\subsubsection{Optimizing Performance}
+
+Graphics facilities that utilize a display list should provide a
+mechanism by which to manage the list size. For Unicon, graphics functions
+\texttt{CopyArea()} and \texttt{EraseArea()} may be used to truncate
+the display list, preventing the display list from growing indefinitely.
+
+Calling \texttt{CopyArea()} with positional and 
+dimensional arguments to cover the entire destination window will delete
+the destination window's display list and add a \texttt{CopyArea} display 
+list record. 
+Calling \texttt{EraseArea()} with positional and dimensional arguments
+to cover the entire window will cause the display list to be deleted without
+appending a new display list record.
+These uses of \texttt{CopyArea()} and \texttt{EraseArea()} are useful
+when previous rendering operations are fully obscured and no longer needed.
+
+\texttt{EraseArea()} is useful
+when previous rendering operations are fully obscured and no longer needed.
+On the other hand, \texttt{CopyArea()} can be used to condense multiple
+rendering operations into one display list record as long as animation
+is no longer needed for any part of the area copied. \texttt{CopyArea()} can 
+also be used to reduce the number of items on the display list for any portion
+of the window smaller than its maximum dimensions if the obscured items
+are removed manually.
+
+%
+% Auto-removal of useless display list records would be a great TODO item
+%
+
+\subsection{Transparency}
+
+Transparency is denoted by the alpha value, which ranges from 0 (fully
+transparent) to 1 (fully opaque). 
+To ensure proper transparency blending, any transparent objects should be drawn
+in the correct order, i.e. objects that appear farther away should be drawn
+first. Once drawn in the correct order, the display list will preserve the
+order, unless the ordering list is modified by the user. 
+
+\subsubsection{Color Specification}
+
+Transparency can be specified explicitly within a color specification in a
+few different ways. The first of which is a transparency modifier that
+prepends the usual Unicon color name string. The available transparency
+modifiers are in the following table taken from [2].
+
+\begin{center}
+\begin{tabular}{|l | l|}\hline
+Transparency name & percent visible \\\hline
+\texttt{opaque} & 100 \\
+\texttt{dull}, a.k.a. \texttt{subtranslucent} & 75 \\
+\texttt{translucent} & 50 \\
+\texttt{subtransparent} & 25 \\
+\texttt{transparent} & 5 \\\hline
+\end{tabular}
+\end{center}
+
+\noindent
+Alternatively, the transparency modifier can be a floating-point
+number from $(0,1]$. If the transparency modifier is 0, then the value
+of context attribute \texttt{alpha} is used. If the transparency modifier is
+greater than 1, then an alpha of 1 is used.
+Thus, \texttt{Fg("translucent red")} is equivalent to \texttt{Fg("0.5 red")}.
+The alpha value can also be set by defining RGBA values directly, such as
+\texttt{Fg("\#FF000080")} or \texttt{Fg("\#65535,0,0,32768")}.
+
+\subsubsection{Context Attribute}
+
+The OpenGL implementation introduces a new context attribute, \texttt{alpha},
+which has a default value of 1 (fully opaque). 
+\texttt{alpha} denotes the alpha value of
+a color specification which does not explicitly assign transparency, i.e.
+\texttt{"red"} or \texttt{"\#FF0000"}. Thus,
+
+\begin{verbatim}
+WAttrib("alpha=0.5","fg=red","bg=black")
+\end{verbatim}
+
+\noindent
+would assign an alpha value of 0.5 to both the \texttt{fg} and \texttt{bg} 
+colors. However, if alpha values are specified in the color phrase
+
+\begin{verbatim}
+WAttrib("alpha=0.5","fg=0.4 red","bg=0.7 black")
+\end{verbatim}
+
+\noindent
+then the value of \texttt{alpha} is ignored.
+
+\subsubsection{Modifying Display List Record Fields}
+
+The third way is by modifying the alpha field, 
+\texttt{a}, of a \texttt{Fg} or \texttt{Bg} display list record 
+(see Section 4 in this report for more details).
+
+\begin{verbatim}
+Fg("red")
+fg := WindowContents()[-1]
+fg.a := 32768
+Refresh()
+\end{verbatim}
+
+\noindent
+It should be noted that the RGBA fields of \texttt{Fg} and \texttt{Bg} display 
+list records are 16-bit integers ranging from 0 to 65535 opposed to the alpha 
+values ranging from 0.0 to 1.0. To apply the alpha (or color) change, simply
+use the library function \texttt{Refresh()}. This is also an alternative to 
+using native mutable colors.
+
+\subsubsection{A Simple Program}
+
+To bring everything together, the following program phases three colored
+rectangles in and out in a loop.
+
+\begin{verbatim}
+link graphics
+$include "keysyms.icn"
+
+procedure main()
+   local const := 0.01, incr1, incr2, incr3, alpha1, alpha2, alpha3,
+         fg1, fg2, fg3
+   incr1 := incr2 := incr3 := const
+   &window := open("","g","size=200,200","bg=black")
+   Fg("blue")
+   fg1 := WindowContents()[-1]
+   alpha1 := fg1.a/65535.0
+   FillRectangle(25,25,150,150)
+
+   Fg("0.67 green")
+   fg2 := WindowContents()[-1]
+   alpha2 := fg2.a/65535.0
+   FillRectangle(50,50,100,100)
+
+   Fg("0.33 red")
+   fg3 := WindowContents()[-1]
+   alpha3 := fg3.a/65535.0
+   FillRectangle(75,75,50,50)
+   Refresh()
+
+   repeat {
+      if *Pending() > 0 then
+         case Event() of {
+            "q": exit()
+            }
+      else {
+         WDelay(10)
+
+         if alpha1 >= 1.0 then incr1 := -const
+         else if alpha1 <= 0 then incr1 := const
+         alpha1 +:= incr1
+
+         if alpha2 >= 1.0 then incr2 := -const
+         else if alpha2 <= 0 then incr2 := const
+         alpha2 +:= incr2
+
+         if alpha3 >= 1.0 then incr3 := -const
+         else if alpha3 <= 0 then incr3 := const
+         alpha3 +:= incr3
+
+         fg1.a := alpha1*65535
+         fg2.a := alpha2*65535
+         fg3.a := alpha3*65535
+         Refresh()
+         }
+      }
+end
+\end{verbatim}
+
+\subsection{Fonts}
+
+The OpenGL-based implementation uses FreeType for font rasterization, which
+now allows for \texttt{family} in the font string format 
+\texttt{family[,styles],size} to specify a TrueType or OpenType font file.
+Both library functions \texttt{WAttrib()} and \texttt{Font()} can be used
+to select a user-specified font file with
+
+\begin{verbatim}
+WAttrib("font=mymonofont.ttf,18")
+\end{verbatim}
+
+\noindent
+or
+
+\begin{verbatim}
+Font("mymonofont.ttf,18")
+\end{verbatim}
+
+\noindent 
+The semantics of font specification remains otherwise unchanged.
+
+\newpage
+\section{Integrated 2D/3D Features}
+
+The integrated 2D/3D facilities are an optional extension to 
+Unicon's 3D mode, the mode obtained by passing \texttt{"gl"} to
+\texttt{open()}. The
+semantics of the integrated graphics mode can be imagined by looking through
+the lens of a camera. The lens (near plane), contains all 2D rendering,
+while the rest of the space (viewing volume) contains all 3D rendering.
+Effectively, 3D windows now have an additional display list for 2D
+primitives, and an integrated 2D/3D window is a 3D window in which the
+2D display list is non-empty.
+
+\begin{figure}[h!]
+  \centering
+  \begin{minipage}{0.45\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{viewingvolume-orthogonal.png}
+    \caption{Orthogonal viewing volume}
+  \end{minipage}\hfill
+  \begin{minipage}{0.45\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{viewingvolume-perspective.png}
+    \caption{Perspective viewing volume}
+  \end{minipage}\hfill
+\end{figure}
+
+\subsection{Canvas Attribute \texttt{projection}}
+
+The canvas attribute \texttt{projection} was added to give the option of
+selecting an orthogonal (one-to-one) or perspective (foreshortening) projection 
+for the viewing volume. The call
+\texttt{WAttrib("projection=ortho")} selects an orthogonal projection while
+the call \texttt{WAttrib("projection=perspec")} selects a perspective
+projection. The default value of attribute \texttt{projection} is
+\texttt{"projection=perspec"}. Changes to viewing volume
+projection can be applied by calling \texttt{Refresh()}.
+
+\subsection{Canvas Attribute \texttt{camwidth}}
+
+To give more control over the camera (viewing volume) dimensions, an additional 
+canvas attribute \texttt{camwidth} was added. By adjusting the
+camera width with \texttt{camwidth}, the camera height is implicitly
+calculated based on the ratio of window width to height. \texttt{camwidth}
+cannot be given a value less than or equal to 0. Assigning 0 to 
+\texttt{camwidth} causes \texttt{WAttrib()} to fail, while assigning a negative
+value to \texttt{camwidth} causes its absolute value to be assigned.
+Changes to camera dimensions can be applied by calling \texttt{Refresh()}.
+
+\subsection{Context Attribute \texttt{rendermode}}
+
+The new context attribute \texttt{rendermode} dictates whether 2D or 3D 
+rendering is active. The semantics of the 2D and 3D graphics facilities 
+remain unaffected by the integrated graphics mode. 
+\texttt{WAttrib("rendermode=2d")} activates 2D rendering
+and \texttt{WAttrib("rendermode=3d")} activates 3D rendering. By default, 
+\texttt{"rendermode=3d"} for mode \texttt{"gl"}. If a graphics function is 
+used in the incorrect render mode, a run-time error will occur. 
+
+\begin{verbatim}
+WAttrib("rendermode=2d")        # Activate 2D rendering
+DrawPolygon(...)
+WAttrib("rendermode=3d")        # Activate 3D rendering
+DrawPolygon(...)
+\end{verbatim}
+
+For graphics function \texttt{Clone()}, \texttt{rendermode} defaults to the 
+value of the source context unless specified by the passed argument list. 
+\texttt{Clone()} can be used to bind a new context to the canvas to alleviate 
+the need to call \texttt{WAttrib()} to switch render modes. The following
+example designates a window each for 2D and 3D rendering.
+
+\begin{verbatim}
+w3d := open("", "gl", ...)
+w2d := Clone(w3d, "rendermode=2d", ...)
+DrawPolygon(w2d, ...)	# Draw in 2D mode
+DrawPolygon(w3d, ...)   # Draw in 3D mode
+\end{verbatim}
+
+\noindent
+\texttt{WindowContents()} returns the display list of the corresponding
+rendermode. Both
+
+\begin{verbatim}
+w3d := open("", "gl", ...)
+w2d := Clone(w3d, "rendermode=2d", ...)
+...
+dl := WindowContents(w2d)
+\end{verbatim}
+
+\noindent and
+
+\begin{verbatim}
+&window := open("", "gl", ...)
+...
+WAttrib("rendermode=2d")
+dl := WindowContents()
+\end{verbatim}
+
+\noindent return the 2D display list. 
+Graphics function \texttt{Refresh()} redraws both (2D and 3D) display lists,
+if available. If a display list is empty, it is ignored. \texttt{Eye()},
+a 3D graphics function, performs an implicit \texttt{Refresh()} in addition to 
+changing the camera attributes.
+
+\newpage
+\section{Modifiable Display List Record Fields}
+
+The display list records with their modifiable fields are shown as Unicon
+record declarations. 
+Every display list record has the field \texttt{name}, containing the string
+literal which identifies it. \texttt{name} should not be modified.
+It is shown here as useful information rather than a modifiable
+field. If no fields other than \texttt{name} are shown, it means that no 
+modifiable
+fields are available. It is possible to query the fields of these records at
+runtime, but modifying any fields other than the ones shown in this section
+will result in undefined behavior.
+
+\subsection{Primitives}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_blimage: record} \hfill {\bf DrawImage()}
+
+{\bf name:} \texttt{"BilevelImage"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Int,
+{\bf height:} Int,
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_readimage: record} \hfill {\bf ReadImage()} 
+
+{\bf name:} \texttt{"ReadImage"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Int,
+{\bf height:} Int,
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_strimage: record} \hfill {\bf DrawImage()/ReadImage()} 
+
+{\bf name:} \texttt{"StringImage"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Int,
+{\bf height:} Int,
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawstring: record} \hfill {\bf DrawString()} 
+
+{\bf name:} \texttt{"DrawString"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf s:} Int
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_wwrite: record} \hfill {\bf WWrite*()} 
+
+{\bf name:} \texttt{"WWrite"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf s:} Int
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_copyarea: record} \hfill {\bf CopyArea()} 
+
+{\bf name:} \texttt{"CopyArea"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+
+\noindent
+{\bf x} and {\bf y} define the coordinates of the destination window.
+
+\newpage\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_erasearea: record} \hfill {\bf EraseArea()} 
+
+{\bf name:} \texttt{"EraseArea"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Real,
+{\bf height:} Real
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_fillpolygon: record} \hfill {\bf FillPolygon()} 
+
+{\bf name:} \texttt{"FillPolygon"}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawpolygon: record} \hfill {\bf DrawPolygon()} 
+
+{\bf name:} \texttt{"DrawPolygon"}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawline: record} \hfill {\bf DrawCurve()/DrawLine()} 
+
+{\bf name:} \texttt{"DrawLine"}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawsegment: record} \hfill {\bf DrawSegment()} 
+
+{\bf name:} \texttt{"DrawSegment"}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawpoint: record} \hfill {\bf DrawPoint()} 
+
+{\bf name:} \texttt{"DrawPoint"}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawcircle: record} \hfill {\bf DrawCircle()} 
+
+{\bf name:} \texttt{"DrawCircle"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf r:} Real,
+{\bf theta:} Real,
+{\bf alpha:} Real
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_fillcircle: record} \hfill {\bf FillCircle()} 
+
+{\bf name:} \texttt{"FillCircle"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf r:} Real,
+{\bf theta:} Real,
+{\bf alpha:} Real
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawarc: record} \hfill {\bf DrawArc()} 
+
+{\bf name:} \texttt{"DrawArc"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Real,
+{\bf height:} Real,
+{\bf theta:} Real,
+{\bf alpha:} Real
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_fillarc: record} \hfill {\bf FillArc()}
+
+{\bf name:} \texttt{"FillArc"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Real,
+{\bf height:} Real,
+{\bf theta:} Real,
+{\bf alpha:} Real
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawrectangle: record} \hfill {\bf DrawRectangle()}
+
+{\bf name:} \texttt{"DrawRectangle"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Real,
+{\bf height:} Real
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_fillrectangle: record} \hfill {\bf FillRectangle()}
+
+{\bf name:} \texttt{"FillRectangle"},\newline\indent
+{\bf x:} Real,
+{\bf y:} Real,
+{\bf width:} Real,
+{\bf height:} Real
+
+%
+% Context Attributes
+%
+\subsection{Context Attributes}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_fg: record} \hfill {\bf WAttrib()/Fg()}
+
+{\bf name:} \texttt{"Fg"},\newline\indent
+{\bf r:} Int,
+{\bf g:} Int,
+{\bf b:} Int,
+{\bf a:} Int
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_bg: record} \hfill {\bf WAttrib()/Bg()}
+
+{\bf name:} \texttt{"Bg"},\newline\indent
+{\bf r:} Int,
+{\bf g:} Int,
+{\bf b:} Int,
+{\bf a:} Int
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_reverse: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Reverse"}
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_gamma: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Gamma"},\newline\indent
+{\bf val:} Real
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_drawop: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Drawop"},\newline\indent
+{\bf s:} String 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_font: record} \hfill {\bf WAttrib()/Font()}
+
+{\bf name:} \texttt{"Font"},\newline\indent
+{\bf s:} String 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_leading: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Leading"},\newline\indent
+{\bf val:} Int 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_linewidth: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Linewidth"},\newline\indent
+{\bf val:} Int 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_linestyle: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Linestyle"},\newline\indent
+{\bf s:} String 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_fillstyle: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Fillstyle"},\newline\indent
+{\bf s:} String 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_pattern: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Pattern"},\newline\indent
+{\bf s:} String
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_clip: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Clip"},\newline\indent
+{\bf x:} Int,
+{\bf y:} Int,
+{\bf width:} Int,
+{\bf height:} Int 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_dx: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Dx"},\newline\indent
+{\bf val:} Int
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf gl2d\_dy: record} \hfill {\bf WAttrib()}
+
+{\bf name:} \texttt{"Dy"},\newline\indent
+{\bf val:} Int
+
+\newpage
+\section{References}
+
+\noindent
+[1] Gregg M. Townsend, Ralph E. Griswold, Clinton L. Jeffery (1995) Graphic Facilities for the Icon Programming Language. IPD268a, Department of Computer Science, The University of Arizona. Available at \url{https://www2.cs.arizona.edu/icon/ftp/doc/ipd268.pdf} [Verified 21 Oct 2020]
+
+\bigskip\noindent
+[2] Naomi Martinez, Clinton Jeffery, Jafar Al Gharaibeh (2017) Unicon 3D Graphics User's Guide and Reference Manual. UTR9d, University of Idaho, Moscow, ID 83844. Available at \url{http://unicon.org/utr/utr9.pdf} [Verified 21 Oct 2020]
+
+\bigskip\noindent
+[3] Kevin Z. Young (2020) Unicon's OpenGL 2D and Integrated 2D/3D Graphics Implementation. University of Idaho, Moscow Idaho. Available at \url{http://unicon.org/reports/young.pdf} [Verified 30 Oct 2020]
+
+\bigskip\noindent
+[4] Ralph Griswold, Clinton Jeffery, and Gregg Townsend (1998)
+Graphics Programming in Icon. Peer to Peer Communications, San Jose CA. Available at \url{http://www2.cs.arizona.edu/icon/ftp/doc/gb1up.pdf} [Verified 24 Nov 2020]
+
+\newpage
+\appendix
+\section{Platform Differences}
+
+Unicon's OpenGL-based 2D implementation strives to be backwards-compatible
+with its X11-based predecessor and run existing Unicon 2D graphics 
+applications as-is.
+Platform differences between Unicon 2D implementations do exist but
+great effort is made to minimize them; see Appendix N of [4].
+The OpenGL 2D implementation achieves compatibility that is as good or
+better than most other ports of Unicon's 2D graphics, such as the MS
+Windows port.
+
+This appendix summarizes the most relevant information to the Unicon
+programmer from [3]. See Section 5 from [3] for a more detailed
+evaluation of the OpenGL 2D implementation.
+
+\subsection{Graphical Accuracy} 
+
+Due to semantic differences between OpenGL and platform-native APIs,
+there are minor differences in the appearance of some primitives,
+especially fonts and lines. Additional graphical differences occur on
+different OpenGL implementations, such as Nvidia hardware-based
+rendering versus Mesa software rendering.
+
+The following figures depict the differences in rendering between the X11
+implementation and the OpenGL implementation with Mesa and Nvidia OpenGL 
+drivers through the Unicon program \texttt{gpxtest}.
+
+\begin{figure}[h!]
+  \centering
+  \begin{minipage}{0.33\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{gpxtest-x11.png}
+    \caption{gpxtest (Xlib)}
+  \end{minipage}\hfill
+  \begin{minipage}{0.33\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{gpxtest-ogl.png}
+    \caption{gpxtest (Mesa)}
+  \end{minipage}\hfill
+  \begin{minipage}{0.33\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{gpxtest-ogl-nvidia.png}
+    \caption{gpxtest (Nvidia)}
+  \end{minipage}\hfill
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \begin{minipage}{0.33\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{gpxtest-dialog-x11.png}
+    \caption{gpxtest dialog (Xlib)}
+  \end{minipage}\hfill
+  \begin{minipage}{0.33\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{gpxtest-dialog-ogl.png}
+    \caption{gpxtest dialog (Mesa)}
+  \end{minipage}\hfill
+  \begin{minipage}{0.33\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{gpxtest-dialog-ogl-nvidia.png}
+    \caption{gpxtest dialog (Nvidia)}
+  \end{minipage}\hfill
+\end{figure}
+
+\subsubsection{Fonts}
+
+The migration to FreeType for font rasterization requires the use of font files 
+which differ from native X11 fonts. Consequently, the four supported Unicon 
+font names---\texttt{mono}, \texttt{typewriter}, \texttt{sans}, and 
+\texttt{serif}---use different base fonts. It is possible for users to load 
+a specific font if needed by providing their own TrueType or OpenType font 
+files. See Section 2.3 (Fonts) for more details.
+
+\subsubsection{Lines}
+
+The OpenGL implementation currently lacks a quality algorithm for rendering
+thick lines (\texttt{linewidth} greater than 1) in addition to capping
+and joining thick lines. Minor differences in arcs and circles
+should be expected due to differences the algorithm between the OpenGL and
+X11 implementations.
+
+\subsection{Performance}
+
+The OpenGL 2D implementation's performance is different than the 
+X11 implementation. The OpenGL implementation is faster on some operations
+such as rendering dashed lines of any type, while the X11 implementation excels
+at rendering normal filled and unfilled geometric primitives, text strings,
+and copyareas. 
+
+Depending on the OpenGL driver used (e.g. Mesa vs. Nvidia),
+the X11 implementation is anywhere from 3-5x faster than the OpenGL
+implementation on programs that use a majority of filled and unfilled
+primitives (rectangles, arcs, circles, polygons, and copyareas) with
+\texttt{linestyle=solid} and \texttt{fillstyle=solid}. This type of
+primitive composition is most likely to reflect the average 2D graphics
+program.
+
+\subsection{What to Expect}
+
+This is the beta-test release of the OpenGL-based implementation for the
+2D and integrated 2D/3D graphics facilities. The majority of existing Unicon
+2D programs should work as expected under the OpenGL-based implementation.
+However, programs that periodically draw new graphics without erasing the
+window are likely to run into performance issues over time
+due to display list growth. To improve performance
+of legacy programs, see Section 2.1.2 (Optimizing Performance) in this
+report. 
+
+\end{document}

@@ -922,7 +922,7 @@ Deliberate Syntax Error
 
 #if HAVE_LIBGL
 #define Graphics3D 1
-#define GraphicsGL 1 /* could replace Graphics3D? */
+#define GraphicsGL 1
 #else					/* HAVE_LIBGL */
 #if HAVE_FTGL
 #undef HAVE_FTGL

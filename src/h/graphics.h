@@ -28,18 +28,18 @@
  * # of POLL_INTERVAL intervals for determining OpenGL 2D graphics refresh rate
  * (see pollevent())
  */
-#define FLUSH_POLL_INTERVAL 10 
+#define FLUSH_POLL_INTERVAL 10
 
 #define REDRAW_CUBE 		0x010
 #define REDRAW_CYLINDER 	0x020
-#define REDRAW_DISK		0x030 
+#define REDRAW_DISK		0x030
 #define REDRAW_LINE		0x040
 #define REDRAW_POINT		0x050
-#define REDRAW_POLYGON		0x060 
+#define REDRAW_POLYGON		0x060
 #define REDRAW_SEGMENT		0x070
-#define REDRAW_SPHERE		0x080 
-#define REDRAW_TORUS		0x090 
-#define REDRAW_FG		0x0A0 
+#define REDRAW_SPHERE		0x080
+#define REDRAW_TORUS		0x090
+#define REDRAW_FG		0x0A0
 #define REDRAW_FILLPOLYGON	0x0B0
 #define REDRAW_IDENTITY		0x0C0
 #define REDRAW_MATRIXMODE	0x0D0
@@ -71,19 +71,19 @@
 #define	GL3D_DISK 	REDRAW_DISK
 #define	GL3D_SPHERE	REDRAW_SPHERE
 #define	GL3D_TORUS	REDRAW_TORUS
-#define	GL3D_IDENTITY	REDRAW_IDENTITY	
+#define	GL3D_IDENTITY	REDRAW_IDENTITY
 #define	GL3D_MATRIXMODE	REDRAW_MATRIXMODE
 #define	GL3D_POPMATRIX	REDRAW_POPMATRIX
-#define	GL3D_PUSHMATRIX	REDRAW_PUSHMATRIX 
-#define	GL3D_ROTATE	REDRAW_ROTATE	
-#define	GL3D_SCALE	REDRAW_SCALE	
-#define	GL3D_TEXTURE	REDRAW_TEXTURE	
+#define	GL3D_PUSHMATRIX	REDRAW_PUSHMATRIX
+#define	GL3D_ROTATE	REDRAW_ROTATE
+#define	GL3D_SCALE	REDRAW_SCALE
+#define	GL3D_TEXTURE	REDRAW_TEXTURE
 #define	GL3D_TRANSLATE	REDRAW_TRANSLATE
-#define GL3D_FONT	REDRAW_FONT3D 	
-#define GL3D_DRAWSTRING	REDRAW_DRAWSTRING3D 
-#define GL3D_MARK	REDRAW_MARK 	
-#define GL3D_ENDMARK	REDRAW_ENDMARK 	
-#define GL3D_MESHMODE	REDRAW_MESHMODE 
+#define GL3D_FONT	REDRAW_FONT3D
+#define GL3D_DRAWSTRING	REDRAW_DRAWSTRING3D
+#define GL3D_MARK	REDRAW_MARK
+#define GL3D_ENDMARK	REDRAW_ENDMARK
+#define GL3D_MESHMODE	REDRAW_MESHMODE
 
 #endif					/* Graphics3D */
 
@@ -625,13 +625,15 @@ typedef struct _wstate {
 
   struct _wcontext wcrender, wcdef;	/* render & default/init contexts */
   int		lastwcserial;		/* remembers the last context used */
-  unsigned char	updateRC;		/* flag for render context, default: 0 */
-  unsigned char initAttrs;		/* flag for initializing attributes default: 0 */
+  unsigned char	updateRC;		/* render context flag, default:0 */
+  unsigned char initAttrs;		/* initialize attribs falg, default:0 */
   unsigned char resize;			/* window resize flag */
   unsigned char is_gl;			/* flag for coexisting with Xlib */
   unsigned char dx_flag, dy_flag;
   unsigned char	stencil_mask;		/* bitmask for stencil buffer */
-  int 		rendermode;
+  int 		rendermode;		/* 2D/3D rendering attrib */
+  int 		projection;		/* viewing volume projection attrib */
+  double	camwidth;		/* viewing volume cam width attrib */
 #endif					/* GraphicsGL */
 
 
@@ -825,7 +827,9 @@ typedef struct
 #define A_GLRENDERER   	88
 #define A_ALPHA	 	89	
 #define A_RENDERMODE	90	
+#define A_PROJECTION	91
+#define A_CAMWIDTH	92
 
-#define NUMATTRIBS	90	
+#define NUMATTRIBS	92
 
 #define XICONSLEEP	20 /* milliseconds */

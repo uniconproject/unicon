@@ -1363,10 +1363,8 @@ int init_canvas(wbp w)
    glClearDepth(1.0);
    glEnable(GL_DEPTH_TEST);
    glDepthFunc(GL_LEQUAL);
-
    glEnable(GL_ALPHA_TEST);
    glAlphaFunc(GL_GEQUAL, 0.01); /* have a little buffer space */
-
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -6690,6 +6688,10 @@ static wfp loadfont(wdp wd, char *s, int len)
     * requested font 
     *
     * Maybe should keep track of a "best" font.
+    *
+    * TODO: How to search for {flags} specifiers. Currently,
+    *       fonts of the type 'family,size' are accepted. Not
+    *       'family[,styles],size'
     */
    for (i = 0, num_faces = 1; i < num_faces; i++) {
       rv = FT_New_Face(wf->library, fname, i, &(wf->face)); 
@@ -6855,8 +6857,8 @@ static wfp loadfont(wdp wd, char *s, int len)
 #define IS_FONT_SERIF(flag) (flag & FONTFLAG_SERIF)
 
 /*
- * Have not yet decided what to use to find the file. Maybe fontconfig?
- * maybe bruteforce through Unicon standard fonts???
+ * Returns the filename for either a use provided TTF/OTF file or one of
+ * the standard portable Unicon fonts in unicon/dat/fonts.
  *
  * This function allocates the return string with malloc()! Don't forget
  * to cleanup!!!
@@ -6864,16 +6866,31 @@ static wfp loadfont(wdp wd, char *s, int len)
 #define MAX_LEN 512
 char *find_fontfile(char *family, int flags) {
    static char fontdir[MAX_LEN];
-   char *fname = NULL, *abspath, *dest, *src;
+   char *fname = NULL, *abspath, *dest, *src, *ptr;
+   int len;
 #ifdef MSWindows 
    const char PS = '\\';
 #else					/* MSWindows */
    const char PS = '/';
 #endif					/* MSWindows */
 
+   /*
+    * Check if {family} is a .ttf or .oft. Return the filename if so.
+    */
+   len = strlen(family);
+   ptr = family + (len - 4);
+   if (!strcmp(ptr,".ttf") || !strcmp(ptr,".otf")) {
+      if (access(family, F_OK) != -1) {
+         abspath = strdup(family);
+         if (!abspath) return NULL;
+         return abspath; 
+         }
+      }
+
+   /*
+    * Get path to unicon/dat/fonts
+    */
    if (!(fontdir[0])) {
-      int len;
-      char *ptr;
       /* NOTE: findonpath() does not support '~' */
       if (!findonpath("iconx", fontdir, MAX_LEN)) {
          fprintf(stderr,"could not find iconx on path\n");
@@ -6898,6 +6915,7 @@ char *find_fontfile(char *family, int flags) {
          }
       sprintf(ptr+1,"..%cdat%cfonts",PS,PS);
       }
+
 
    /*
     * Check first for special "standard" family names to add to flags
@@ -7620,6 +7638,10 @@ wsp gl_alc_winstate()
    ws->eyeupy = 1.0;
    ws->eyeposx = ws->eyeposy = ws->eyeposz = ws->eyedirx = ws->eyediry = 0.0;
    ws->eyedirz = -100.0;
+
+   /* Set viewing volume defaults */
+   ws->projection = UGL_PERSPECTIVE;
+   ws->camwidth = DEFAULT_CWIDTH;
 
    return ws;
    }

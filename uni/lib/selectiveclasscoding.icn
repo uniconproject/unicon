@@ -46,7 +46,7 @@ class SelectiveClassCoding : ClassCoding()
    method decode_obj(e)
       local n, t, m, x, v, f
 
-      n := integer(e.line_in()) | fail
+      n := ::integer(e.line_in()) | fail
       t := self.load_template()
       m := self.load_map()
 
@@ -72,23 +72,23 @@ class SelectiveClassCoding : ClassCoding()
       local t, class_name, i
       static template_cache
       initial {
-         template_cache := table()
+         template_cache := ::table()
       }
 
       class_name := lang::get_class_name(self)
 
-      if member(template_cache, class_name) then
+      if ::member(template_cache, class_name) then
          return template_cache[class_name]
 
       t := get_template()
 
       # Convert any single string elements to pairs.
       every i := 1 to *t do {
-         if type(t[i]) == "string" then
+         if ::type(t[i]) == "string" then
             t[i] := [t[i], t[i]]
       }
 
-      insert(template_cache, class_name, t)
+      ::insert(template_cache, class_name, t)
 
       return t
    end
@@ -101,18 +101,18 @@ class SelectiveClassCoding : ClassCoding()
       local i, fields, e, class_name, map, s, t
       static map_cache
       initial {
-         map_cache := table()
+         map_cache := ::table()
       }
 
       class_name := lang::get_class_name(self)
 
-      if member(map_cache, class_name) then
+      if ::member(map_cache, class_name) then
          return map_cache[class_name]
 
       #
       # Create a table mapping class member names to record indices.
       #
-      fields := table()
+      fields := ::table()
       i := 1
       every s := lang::generate_member_names(self) do {
          fields[s] := i
@@ -123,12 +123,12 @@ class SelectiveClassCoding : ClassCoding()
       # Create a table mapping field names to record indices.  Check
       # for duplicate names and non-existent variable names.
       #
-      map := table()
+      map := ::table()
       t := self.load_template()
       every e := !t do
-         /map[e[1]] := \fields[e[2]] | stop("invalid template")
+         /map[e[1]] := \fields[e[2]] | ::stop("invalid template")
 
-      insert(map_cache, class_name, map)
+      ::insert(map_cache, class_name, map)
 
       return map
    end

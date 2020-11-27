@@ -9,7 +9,7 @@
 #<p>
 # <i>This file is in the public domain.</i>
 #</p>
-   
+
 package util
 
 import lang
@@ -19,9 +19,9 @@ import lang
 #  <[returns a copy of matrix <tt>M</tt>]>
 #</p>
 procedure m_copy(M)
-   local i, R := list(*M)
+   local i, R := ::list(*M)
    every i := 1 to *R do
-      R[i] := copy(M[i])
+      R[i] := ::copy(M[i])
    return R
 end
 
@@ -34,9 +34,9 @@ end
 procedure m_constant(m,n,x:0.0)
    local A
    /n := m
-    
-   A := list(m)
-   every !A := list(n,x)
+
+   A := ::list(m)
+   every !A := ::list(n,x)
    return A
 end
 
@@ -51,7 +51,7 @@ end
 procedure m_identity(m,n, zero:0.0,one:1.0)
    local A, i
    /n := m
-    
+
    A := m_constant(m,n,zero)
    every i := 1 to m > n | m do A[i,i] := one
    return A
@@ -75,7 +75,7 @@ end
 #</p>
 procedure m_colswap(M,a,b)
    local i
-    
+
    every i := 1 to *M do {
       M[i,a] :=: M[i,b]
       }
@@ -114,7 +114,7 @@ procedure m_binop(M1, M1, op)
    /op := proc("+", 2)
 
    if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
-      runerr(500, "nonequal matrix dimensions to m_binop")
+      ::runerr(500, "nonequal matrix dimensions to m_binop")
 
    R = m_constant(*M1, *M1[1])
    every (i := 1 to *M1, j := 1 to *M1[1]) do
@@ -129,7 +129,7 @@ end
 #</p>
 procedure m_add(M1, M2)
    if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
-      runerr(500, "nonequal matrix dimensions to m_add")
+      ::runerr(500, "nonequal matrix dimensions to m_add")
    return m_binop(M1,M2,proc("+",2))
 end
 
@@ -140,7 +140,7 @@ end
 #</p>
 procedure m_subtract(M1, M2)
    if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
-      runerr(500, "nonequal matrix dimensions to m_subtract")
+      ::runerr(500, "nonequal matrix dimensions to m_subtract")
    return m_binop(M1,M2,proc("-",2))
 end
 
@@ -179,16 +179,16 @@ end
 #</p>
 procedure m_multiply(M1, M2, addident:0, addfcn, mulfcn)
    local R, i, j, k
-   /addfcn := proc("+", 2)
-   /mulfcn := proc("*", 2)
+   /addfcn := ::proc("+", 2)
+   /mulfcn := ::proc("*", 2)
 
    if (*M1[1] ~= *M2) then
-      runerr(500, "incompatible matrix dimensions to m_multiply")
+      ::runerr(500, "incompatible matrix dimensions to m_multiply")
 
    R := m_constant(*M1, *M2[1])
    every (i := 1 to *R, j := 1 to *R[1]) do {
       R[i,j] := addident
-      every k := 1 to *M2 do 
+      every k := 1 to *M2 do
          R[i,j] := invokeFcn(addfcn, R[i,j], invokeFcn(mulfcn, M1[i,k],M2[k,j]))
       }
    return R
@@ -206,20 +206,20 @@ end
 procedure m_lupDecomposition(M, subfcn, mulfcn, divfcn,
                              invertMetric, addident:0.0, mulident:1.0)
    local n, i, b, k, k2, p, j, L, U
-   /subfcn := proc("-", 2)
-   /mulfcn := proc("*", 2)
-   /divfcn := proc("/", 2)
-   /invertMetric := proc("abs", 1)
+   /subfcn := ::proc("-", 2)
+   /mulfcn := ::proc("*", 2)
+   /divfcn := ::proc("/", 2)
+   /invertMetric := ::proc("abs", 1)
 
    M := m_copy(M)
    n := *M
-   b := list(n)
+   b := ::list(n)
    every i := 1 to n do b[i] := i
    every k := 1 to n do {
       p := 0
       every i := k to n do
          if invokeFcn(invertMetric, M[i,k]) > p then {
-            p := abs(M[i,k])
+            p := ::abs(M[i,k])
             k2 := i
 	    }
       if p = 0 then fail
@@ -254,14 +254,14 @@ end
 #</p>
 procedure m_lupSolve(L,U,p,b,addfun,subfun,mulfun,divfun,addident:0.0)
    local n, i, j, y, x
-   /addfun := proc("+", 2)
-   /subfun := proc("-", 2)
-   /mulfun := proc("*", 2)
-   /divfun := proc("/", 2)
+   /addfun := ::proc("+", 2)
+   /subfun := ::proc("-", 2)
+   /mulfun := ::proc("*", 2)
+   /divfun := ::proc("/", 2)
 
    n := *L
-   y := list(n)
-   x := list(n)
+   y := ::list(n)
+   x := ::list(n)
    every i := 1 to n do {
       s := addident
       every j := 1 to i-1 do
@@ -307,7 +307,7 @@ procedure m_divide(M1,M2,addfun,subfun,mulfun,divfun,
                    addident,mulident,invertMetric)
    local X, i, n, x
    n := *M1
-   X := list()
+   X := ::list()
    every i := 1 to n do {
       x := m_linearSolve(M2,m_col(M1, i),addfun,subfun,mulfun,divfun,
 			 addident,mulident,invertMetric) | fail
@@ -342,17 +342,17 @@ end
 procedure m_write(args[])   # Matrices and output files
    local i, outfile
    outfile := &output
-   while arg := get(args) do {
-      case type(arg) of {
+   while arg := ::get(args) do {
+      case ::type(arg) of {
 	 "file": outfile := arg
 	 "list": {    # Assume it's a matrix!
 	    every i := !M do {
-	       every writes(outfile, !i," ")
-	       write(outfile)
+	       every ::writes(outfile, !i," ")
+	       ::write(outfile)
 	       }
 	    }
-	 default: writes(outfile, arg)
+	 default: ::writes(outfile, arg)
 	 }
       }
-   write(outfile)
+   ::write(outfile)
 end

@@ -70,12 +70,12 @@ class Notifier:Object(listeners)
    #</p>
    method addListener(listener, typ:"default", methodname:"callback")
       if lang::isClass(listener) then connect(listener, methodname, typ)
-      else if type(listener) == ("procedure"|"co-expression"|"string") then {
+      else if ::type(listener) == ("procedure"|"co-expression"|"string") then {
          l := Subscription(listener,&null,typ)
          addToListeners(l)
          }
       else {
-         write(&errout, "Not ready to handle ",lang::Type(listener),
+         ::write(&errout, "Not ready to handle ",lang::Type(listener),
               " listeners yet.")
          fail
          }
@@ -93,7 +93,7 @@ class Notifier:Object(listeners)
    method removeListener(listener, typ:"default", methodname:"callback")
       every l := genListeners(typ) do {
          if lang::Type(l.obj)\1 == "string" then {   # Special case
-            if proc(l.obj) === listener then disconnect(l)
+            if ::proc(l.obj) === listener then disconnect(l)
             }
 	 else if (l.obj === listener) then {
             if lang::isClass(listener) &
@@ -148,7 +148,7 @@ class Notifier:Object(listeners)
       local l, p, sum
 
       p := lang::find_method(obj,meth_name) | {
-          write(&errout, "Connect: No such method '",meth_name,"'")
+          ::write(&errout, "Connect: No such method '",meth_name,"'")
           fail
           }
       # omit duplicate requests
@@ -168,7 +168,7 @@ class Notifier:Object(listeners)
    #</p>
    method addToListeners(l)
       /listeners[l.type] := []
-      put(listeners[l.type], l)
+      ::put(listeners[l.type], l)
 
       return l
    end
@@ -182,7 +182,7 @@ class Notifier:Object(listeners)
       local k := l.type, t
 
       t := []
-      every put(t, l ~=== !listeners[k])
+      every ::put(t, l ~=== !listeners[k])
       listeners[k] := t
    end
 
@@ -193,16 +193,16 @@ class Notifier:Object(listeners)
    #  <[param message message to pass to listener's callback]>
    #</p>
    method notify1(l, message)
-      case type(l.obj) of {
+      case ::type(l.obj) of {
 	 "procedure" | "string" : l.obj(lang::Type(self)\1, l.type, message)
 	 "co-expression" : [lang::Type(self)\1, l.type , message] @ l.obj
 	 # list invocation here uses substitution rules per future UniLib
 	 # integration.  This probably won't work well until that happens.
 	 "list": {
-             a := copy(l.obj)
-	     fcn := pop(a)
+             a := ::copy(l.obj)
+	     fcn := ::pop(a)
 	     args := [lang::Type(self)\1, l.type, param]
-	     every i := 1 to *a do if a[i] === Arg then a[i] := pop(args)
+	     every i := 1 to *a do if a[i] === Arg then a[i] := ::pop(args)
 	     suspend fcn ! a
 	     }
 	 default: if lang::isClass(l.obj) then notifyClass(l, message)
@@ -224,5 +224,5 @@ class Notifier:Object(listeners)
    end
 
 initially
-   listeners := table()
+   listeners := ::table()
 end

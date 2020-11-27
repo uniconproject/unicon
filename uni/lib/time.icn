@@ -37,7 +37,7 @@ global Time_data_months, Time_data_base_year, Time_data_week_days,
 # @ t := Time()           # t is uninitialized
 # @ t.set_current_time(Timezone(-18000))  # t now represents the current time;
 #                                         # time zone GMT-5hrs
-# @ t.parse("1990/12/2 11:22:03 -0500")  # the given date 
+# @ t.parse("1990/12/2 11:22:03 -0500")  # the given date
 # @ t.set_fields(1990, 12, 2, 11, 22, 03, Timezone(-18000))  # the same date
 # @ t.set_seconds(n, z)      # n seconds past the base date in GMT, +/-z mins
 #
@@ -55,9 +55,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    # @p
    method format_int(n, w)
       local s
-      s := string(n)
+      s := ::string(n)
       if *s < w then
-	 return right(s, w, "0")
+	 return ::right(s, w, "0")
       else
 	 return s
    end
@@ -104,49 +104,49 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 
    #
    # Format the instance using the given pattern string.  The pattern
-   # consists of pattern chars and other chars.  
-   # 
+   # consists of pattern chars and other chars.
+   #
    # The "width" of a field is the number of successive equal pattern
    # chars.  For example in the pattern
-   # 
+   #
    # yyyy/MMM/dd
-   # 
+   #
    # the widths are 4, 3 and 2 respectively.
-   # 
+   #
    # The possible pattern chars are :-
-   # 
+   #
    # E - The weekday.  A width < 4 gives the first three chars (eg Mon),
    # otherwise the full day is given (eg Monday)
-   # 
+   #
    # y - The year.  If the width is 2, the year will be the least
    # significant 2 digits (eg "99"), otherwise it is the full year
-   # padded to the width. 
-   # 
+   # padded to the width.
+   #
    # d - The day of the month padded to the width.
-   # 
+   #
    # H - The hour in the day using the 24 hour clock padded to the width.
-   # 
+   #
    # h - The hour in the day using the 12 hour clock padded to the width.
-   # 
+   #
    # M - The month of the year.  If the width is less than 3 then the
    # numeric value is used, padded to the width.  If the width is 3, then
    # the abbreviated month is used (eg "Jul"); otherwise the full month is
    # used (eg "July").
-   # 
+   #
    # m - The minute in the hour padded to the width.
-   # 
+   #
    # s - The second in the minute padded to the width.
-   # 
+   #
    # a - am or pm.  The width is ignored.
-   # 
+   #
    # A - AM or PM  The width is ignored.
-   # 
+   #
    # z - the timezone id (eg UTC or +0400).   The width is ignored.
-   # 
+   #
    # Literal strings (which can include the above chars) can be
    # included using single quotes.  Two single quotes maps to
    # an actual single quote.
-   # 
+   #
    # @example
    # @
    # @ yyyy MM dd HH mm ss -> 1999 12 17 23 30 01
@@ -154,18 +154,18 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    # @ yyyy/M/d HH:mm:ss zzz -> 1999/2/7 23:30:01 PST
    # @ E MMM dd HH:mm:ss zzz yyyy -> Mon Feb 07 23:30:01 PST 1999
    # @ yy MM dd HH mm ss -> 99 12 17 23 30 01
-   # 
+   #
    method format(p)
       local res, ch, w
-      
+
       /p := DEFAULT_FORMAT
 
       res := ""
       p ? {
-	 while not pos(0) do {
+	 while not ::pos(0) do {
 	    if any('EydHMhmsaAz') then {
 	       ch := p[&pos]
-	       w := *tab(many(ch))
+	       w := *::tab(::many(ch))
 	       res ||:= case ch of {
 		  "E": format_weekday(w)
 		  "y": format_year(w)
@@ -195,16 +195,16 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 		        "PM"
  		     }
 		  }
-	    } else if any('\'') then 
+	    } else if any('\'') then
 	       res ||:= match_literal()
-	    else 
-	       res ||:= move(1)
+	    else
+	       res ||:= ::move(1)
 	 }
       }
       return res
    end
 
-   # 
+   #
    # Get the next parsed int
    # @p
    method parse_int(w)
@@ -214,55 +214,55 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       # If there is a numeric field immediately following, limit the length
       # of this field.  This allows for example yyyyMMdd to parse 20001201.
       #
-      if any('ydHMhms') then 
+      if ::any('ydHMhms') then
 	 j >:= ppos + w
 
-      n := integer(psub[ppos:j])
+      n := ::integer(psub[ppos:j])
       ppos := j
       return n
    end
 
-   # 
+   #
    # Get the next parsed timezone
    # @p
    method parse_timezone()
       local j, z
-      j := many(Time_data_tzchars, psub, ppos)|return error("Timezone expected")
+      j := ::many(Time_data_tzchars, psub, ppos)|return error("Timezone expected")
       z := get_known_timezone(psub[ppos:j]) | return error("Invalid timezone")
       ppos := j
       return z
    end
 
-   # 
+   #
    # Get the next parsed am/pm
    # @p
    method parse_ampm()
       local s
-      s := map(psub[ppos+:2]) | return error("am/pm expected")
+      s := ::map(psub[ppos+:2]) | return error("am/pm expected")
       s == ("am" | "pm") | return error("am/pm expected")
       ppos +:= 2
       return s
    end
 
-   # 
+   #
    # Get the next parsed month
    # @p
    method parse_month(w)
       local j, m
       if w < 3 then
          return parse_int(w)
-      j := many(&ucase ++ &lcase, psub, ppos) | return error("Month expected")
+      j := ::many(&ucase ++ &lcase, psub, ppos) | return error("Month expected")
       m := month_to_num(psub[ppos:j]) | return error("Invalid month")
       ppos := j
       return m
    end
 
-   # 
+   #
    # Get the next parsed weekday
    # @p
    method parse_weekday()
       local j
-      j := many(&letters, psub, ppos) | return error("Weekday expected")
+      j := ::many(&letters, psub, ppos) | return error("Weekday expected")
       ppos := j
       return
    end
@@ -276,17 +276,17 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       ="\'"
       s := ""
       repeat {
-	 s ||:= tab(find("\'") | 0)
-	 if pos(0) then
+	 s ||:= ::tab(::find("\'") | 0)
+	 if ::pos(0) then
 	    break
-	 move(1)
+	 ::move(1)
 	 # Two ''s in a row mean a single ' and press on - else break.
 	 s ||:= ="'" | break
 	 }
       return s
    end
 
-   # 
+   #
    # Get the next parsed month
    # @p
    method parse_year(w)
@@ -300,55 +300,55 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 	 return n
    end
 
-   # 
+   #
    # Parse the instance using the given pattern string.  The pattern
    # consists of pattern chars and other chars.
-   # 
+   #
    # The "width" of a field is the number of successive equal pattern
    # chars.  For example in the pattern
-   # 
+   #
    # yyyy/MMM/dd
-   # 
+   #
    # the widths are 4, 3 and 2 respectively.
-   # 
+   #
    # Except for the month (see below), the only use of the width is to
    # separate adjacent fields, eg yyyyMMdd with input "19991201".
-   # 
+   #
    # The possible pattern chars are :-
-   # 
+   #
    # E - The weekday (eg Mon) - this is just a sequence of upper and lower
    # case chars and is otherwise ignored.
-   # 
+   #
    # y - The year.  If the year is less than 70 it is taken to be 20xx; if
    # it is less than 100 it is taken to be 19xx, otherwise it is as given.
-   # 
+   #
    # d - The day of the month
-   # 
+   #
    # H/h - The hour in the day
-   # 
+   #
    # M - The month of the year.  If the width is less than 3 then the
    # numeric value is expected, otherwise the textual value is expected.
-   # 
+   #
    # m - The minute in the hour
-   # 
+   #
    # s - The second in the minute
-   # 
+   #
    # a/A - am or pm.  Case is ignored.  If pm, then the hour is
    # adjusted accordingly in the result.
-   # 
+   #
    # z - The timezone (eg UTC or +0400).
    #
    method parse(s, p)
       local y, d, m, hh, mm, ss, z, ampm, lit, ch, w
-      
+
       /p := DEFAULT_FORMAT
       psub := s
       ppos := 1
       p ? {
-         while not pos(0) do {
-            if any('EydHMhmsaAz') then {
+         while not ::pos(0) do {
+            if ::any('EydHMhmsaAz') then {
                ch := p[&pos]
-               w := *tab(many(ch))
+               w := *::tab(::many(ch))
                case ch of {
 		  "E": parse_weekday() | fail
 		  "y": y := parse_year(w) | fail
@@ -360,18 +360,18 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 		  "z": z := parse_timezone() | fail
 		  "A"|"a": {
 		     ampm := parse_ampm() | fail
-		     if ampm == "pm" & (0 < \hh < 12) then 
+		     if ampm == "pm" & (0 < \hh < 12) then
 		        hh +:= 12
 		     }
 		  }
 	       }
-	    else if any('\'') then {
+	    else if ::any('\'') then {
 	       lit := match_literal()
-	       ppos := match(lit, psub, ppos) |
+	       ppos := ::match(lit, psub, ppos) |
 		  return error("Expected literal:" || lit)
 	       }
 	    else {
-	       ch := move(1)
+	       ch := ::move(1)
 	       while psub[ppos] == ch do
 	          ppos +:= 1
 	       }
@@ -380,7 +380,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       set_fields(y, m, d, hh, mm, ss, z)
       return
    end
-      
+
    #
    # Convert to string in accordance with RFC 822.
    #
@@ -402,7 +402,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       return format("d-MMM-yy")
    end
 
-   ##      
+   ##
    # Convert to icon &date format
    #
    # @p
@@ -516,7 +516,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 
       #
       # Normalize mday downwards, adjusting month, year as we go along
-      #     
+      #
       while self.mday > (n := get_days(self.year, self.month)) do {
          self.mday -:= n
          self.month +:= 1
@@ -528,7 +528,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 
       #
       # Normalize mday upwards, adjusting month, year as we go along
-      #     
+      #
       while self.mday < 1 do {
          self.month -:= 1
          if self.month = 0 then {
@@ -658,7 +658,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       self.mday := 1
       self.month := n
       self.compute_seconds()
-      
+
       d := get_days(self.year, self.month)
       if t > d then
          t := d
@@ -712,7 +712,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    method get_zone()
       return self.zone
    end
-   
+
    #
    # Get the seconds past the base date
    #
@@ -772,7 +772,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       else							# non-leap year
          [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365][m]
    end
-   
+
    #
    # Utility procedure - return in month m for year y
    #
@@ -787,10 +787,13 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    #
    # Utility to get next integer
    #
+   # Remove and allow the procedure get_int() from str_util.icn to be used
+   # instead as the code is identical to the procedure get_int()
+   #
    # @p
-   method get_int()
-      suspend tab(upto(&digits)) & integer(tab(many(&digits)))
-   end
+   #method get_int()
+   #   suspend ::tab(::upto(&digits)) & ::integer(::tab(::many(&digits)))
+   #end
 
    #
    # An alternative more liberal form of parsing.  The numeric fields are taken
@@ -836,7 +839,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    #
    # Set the fields
    #
-   method set_fields(year, month, mday, hour, min, sec, zone)   
+   method set_fields(year, month, mday, hour, min, sec, zone)
       self.year := \year | Time_data_base_year
       self.month := \month | 1
       self.mday := \mday | 1
@@ -893,9 +896,9 @@ procedure month_to_num(s)
       init_time()
    }
 
-   s := map(s)
+   s := ::map(s)
    every i := 1 to *Time_data_months do {
-      if match(s, map(Time_data_months[i])) then
+      if ::match(s, ::map(Time_data_months[i])) then
          return i
    }
 end
@@ -905,7 +908,7 @@ end
 # use the built-in function delay() instead.
 #
 procedure sleep(n)
-   return delay(\n)
+   return ::delay(\n)
 end
 
 #

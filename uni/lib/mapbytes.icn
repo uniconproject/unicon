@@ -30,9 +30,9 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
    method mapIn(s:"")
       local ns := ""
       s ? {
-	 while ns ||:= map(outMap, inMap, move(*inMap))
-	 while ns ||:= map(outM,   inM,   move(*inM))
-	 ns ||:= tab(0)
+	 while ns ||:= ::map(outMap, inMap, ::move(*inMap))
+	 while ns ||:= ::map(outM,   inM,   ::move(*inM))
+	 ns ||:= ::tab(0)
 	 }
       return ns
    end
@@ -45,9 +45,9 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
    method mapOut(s:"")
       local ns := ""
       s ? {
-	 while ns ||:= map(inMap, outMap, move(*outMap))
-	 while ns ||:= map(inM,   outM,   move(*outM))
-	 ns ||:= tab(0)
+	 while ns ||:= ::map(inMap, outMap, ::move(*outMap))
+	 while ns ||:= ::map(inM,   outM,   ::move(*outM))
+	 ns ||:= ::tab(0)
 	 }
       return ns
    end
@@ -60,7 +60,7 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
 		    blockSize  # If present, overrides class' blkSize
                     )
       blockSize := adjBlockSize(blockSize)
-      while writes(outFile, mapIn(reads(inFile, blockSize)))
+      while ::writes(outFile, mapIn(::reads(inFile, blockSize)))
    end
 
    #<p>
@@ -71,7 +71,7 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
 		     blockSize  # If present, overrides class' blkSize
                      )
       blockSize := adjBlockSize(blockSize)
-      while writes(outFile, mapOut(reads(inFile, blockSize)))
+      while ::writes(outFile, mapOut(::reads(inFile, blockSize)))
    end
 
    #<p>
@@ -101,8 +101,8 @@ initially(in,        # Arrangement of bytes found in input string
    blkSize := adjBlockSize(blockSize)
 
    # bootStrap to longest possible transposition strings...
-   inMap := string(&cset)
+   inMap := ::string(&cset)
    inMap := inMap[1+:(*inMap - (*inMap % (*inM)))]
    outMap := ""
-   inMap ? while(outMap ||:= map(outM, inM, move(*inM)))
+   inMap ? while(outMap ||:= ::map(outM, inM, ::move(*inM)))
 end

@@ -21,8 +21,8 @@ import lang
 #   <[returns an empty string, corresponding to a <tt>move(0)</tt>]>
 #</p>
 procedure snapshot(prefix:"")   # Precedes any output (default is "")
-   write(prefix, "'",&subject,"'")
-   write(prefix, " ",repl(" ",&pos-1),"^")
+   ::write(prefix, "'",&subject,"'")
+   ::write(prefix, " ",repl(" ",&pos-1),"^")
    return ""   # Makes this a matching procedure!
 end
 
@@ -38,8 +38,8 @@ procedure scanlocus(prefix:"", # Precedes any output (default is "")
 
    p1 := if &pos < n then 1 else &pos-(n/2)
    p2 := if (p1+n) > *&subject then 0 else p1+n
-   write(&errout, prefix, &subject[p1:p2])
-   write(&errout, prefix, repl(" ",&pos-p1), "^ ", &pos)
+   ::write(&errout, prefix, &subject[p1:p2])
+   ::write(&errout, prefix, ::repl(" ",&pos-p1), "^ ", &pos)
 
    return ""
 end
@@ -51,7 +51,7 @@ end
 #    <[returns tabbed over portion, omitting skipped substring]>
 #</p>
 procedure tabSkip(s)     # substring to tab up to and skip over
-   suspend 1(tab(find(s)),move(*s))
+   suspend 1(::tab(::find(s)),::move(*s))
 end
 
 #<p>
@@ -62,7 +62,7 @@ end
 #</p>
 procedure WS()
    static WS := ' \t'
-   suspend tab(many(WS))
+   suspend ::tab(::many(WS))
 end
 
 #<p>
@@ -82,7 +82,7 @@ end
 procedure matchVar()
    static fc := &letters ++ '_',
           wc := fc ++ &digits
-   suspend tab(any(fc)) || (tab(many(wc))|"")
+   suspend ::tab(::any(fc)) || (::tab(::many(wc))|"")
 end
 
 #<p>
@@ -91,7 +91,7 @@ end
 # <i>The list of strings is searched in order.  To locate the longest
 # substring first, sort the list in reverse order, as in:</i>
 # <pre>
-#     findFirst(reverse(sort(a)))
+#     findFirst(::reverse(::sort(a)))
 # </pre>
 #</p>
 #<p>
@@ -100,7 +100,7 @@ end
 procedure findFirst(a)   # List of strings to look for.
    local fc := '', p
    every fc ++:= (!a)[1]
-   suspend 1(p := upto(fc), match(!a,,p))
+   suspend 1(p := ::upto(fc), ::match(!a,,p))
 end
 
 #<p>
@@ -134,8 +134,8 @@ class FindFirst : Object(fchars,cMaps,subs,lastMatch)
       /i := &pos
       /j := 0
       if *\s > 0 then {
-	 suspend 1(p := upto(fchars,s,i,j),
-		   match(lastMatch <- !cMaps[s[p]],s,p,j))
+	 suspend 1(p := ::upto(fchars,s,i,j),
+		   ::match(lastMatch <- !cMaps[s[p]],s,p,j))
 	 }
    end
 
@@ -173,7 +173,7 @@ class FindFirst : Object(fchars,cMaps,subs,lastMatch)
       local k
 
       subs := a
-      cMaps := table()
+      cMaps := ::table()
       fchars := ''
       every k := !subs do {
 	 fchars ++:= k[1]
@@ -196,8 +196,8 @@ end
 procedure tabPast(cs)    # cset of characters to tab past.
    local sPos := &pos
    s := ""
-   while s ||:= isEscapeSeq(tab(upto(cs))) || move(1)
-   suspend s ||:= tab(upto(cs))\1 || move(1)
+   while s ||:= isEscapeSeq(::tab(::upto(cs))) || ::move(1)
+   suspend s ||:= ::tab(::upto(cs))\1 || ::move(1)
    &pos := sPos
 end
 
@@ -239,7 +239,7 @@ end
 procedure isEscapeSeq(s,        # String to examine
                       esc:'\\'  # Escape character (defaults to <tt>\</tt>)
                      )
-   reverse(s) ? if *tab(many(esc)) % 2 = 1 then return s
+   reverse(s) ? if *::tab(::many(esc)) % 2 = 1 then return s
 end
 
 #<p>
@@ -294,20 +294,20 @@ end
 procedure sbal(keyStrings)
    local startStrings, stopStrings, allStrings, w, ff, bCount
 
-   every insert(startStrings := set(), key(keyStrings))
-   every insert(stopStrings  := set(), !keyStrings)
-   every put(allStrings := [], !(startStrings|stopStrings))
+   every ::insert(startStrings := ::set(), ::key(keyStrings))
+   every ::insert(stopStrings  := ::set(), !keyStrings)
+   every ::put(allStrings := [], !(startStrings|stopStrings))
 
    ff := FindFirst(allStrings)
    inside := 0
-    
-   while tab(ff.locate()) do {
+
+   while ::tab(ff.locate()) do {
       p1 := &pos
       w := ff.moveMatch()
-      if member(startStrings, w) then {
+      if ::member(startStrings, w) then {
 	 if (inside +:= 1) = 1 then sPos := p1
 	 }
-      else if member(stopStrings, w) then {
+      else if ::member(stopStrings, w) then {
 	 if (inside -:= 1) = 0 then {
 	    suspend .&subject[sPos:&pos]
 	    }

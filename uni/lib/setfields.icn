@@ -8,18 +8,18 @@ import lang
 
 class SetFields()
    method test_flag(attr, val)
-      if map(val[1]) == ("y" | "yes" | "t" | "true") then
+      if ::map(val[1]) == ("y" | "yes" | "t" | "true") then
          return
-      if map(val[1]) == ("n" | "no" | "f" | "false") then
+      if ::map(val[1]) == ("n" | "no" | "f" | "false") then
          fail
       field_error("Attribute " || attr || " needs a single boolean parameter")
    end
 
-   method as_attrib(attr, val) 
+   method as_attrib(attr, val)
       local s, e
       s := ""
       every e := !val do {
-         if *s > 0 then 
+         if *s > 0 then
             s ||:= ","
          s ||:= e
       }
@@ -27,7 +27,7 @@ class SetFields()
    end
 
    method int_val(attr, val)
-      return /val[1] | integer(val[1]) | field_error("Attribute " || attr || " needs a single integer parameter")
+      return /val[1] | ::integer(val[1]) | field_error("Attribute " || attr || " needs a single integer parameter")
    end
 
    method int_vals(attr, val, n)
@@ -35,13 +35,13 @@ class SetFields()
       if *val < \n then
          field_error("Attribute " || attr || " needs " || n || " parameters")
       every i := 1 to *val do {
-         val[i] := /val[i] | integer(val[i]) | field_error("Attribute " || attr || " needs integer parameters")
+         val[i] := /val[i] | ::integer(val[i]) | field_error("Attribute " || attr || " needs integer parameters")
       }
       return val
    end
 
    method numeric_val(attr, val)
-      return /val[1] | numeric(val[1]) | field_error("Attribute " || attr || " needs a single numeric parameter")
+      return /val[1] | ::numeric(val[1]) | field_error("Attribute " || attr || " needs a single numeric parameter")
    end
 
    method numeric_vals(attr, val, n)
@@ -49,13 +49,13 @@ class SetFields()
       if *val < \n then
          field_error("Attribute " || attr || " needs " || n || " parameters")
       every i := 1 to *val do {
-         val[i] := /val[i] | numeric(val[i]) | field_error("Attribute " || attr || " needs numeric parameters")
+         val[i] := /val[i] | ::numeric(val[i]) | field_error("Attribute " || attr || " needs numeric parameters")
       }
       return val
    end
 
    method cset_val(attr, val)
-      return /val[1] | cset(val[1]) | field_error("Attribute " || attr || " needs a single cset parameter")
+      return /val[1] | ::cset(val[1]) | field_error("Attribute " || attr || " needs a single cset parameter")
    end
 
    method string_val(attr, val)
@@ -76,22 +76,22 @@ class SetFields()
       local s, t, attr, val, vals
       every s := !l do {
          s ? {
-            if attr := tab(find("=")) then {
+            if attr := ::tab(::find("=")) then {
                ="="
                vals := []
                tab(0) ? {
-                  while t := tab(find(",")) do {
+                  while t := ::tab(::find(",")) do {
                      if *t = 0 then
-                        put(vals, &null)
+                        ::put(vals, &null)
                      else
-                        put(vals,t )
-                     move(1)
+                        ::put(vals,t )
+                     ::move(1)
                   }
-                  t := tab(0)
+                  t := ::tab(0)
                   if *t = 0 then
-                     put(vals, &null)
+                     ::put(vals, &null)
                   else
-                     put(vals,t )
+                     ::put(vals,t )
                }
             } else {
                attr := s
@@ -115,6 +115,6 @@ class SetFields()
    # @param s the error message
    #
    method field_error(s)
-      stop("setfields : error in " || lang::get_class_name(self) || " : " || s)
+      ::stop("setfields : error in " || lang::get_class_name(self) || " : " || s)
    end
 end

@@ -21,7 +21,7 @@ package util
 # Unicon now initializes the seed by default, so this is largely moot.
 #</p>
 procedure initRandom()
-   return &random := integer(map("smhSMH","Hh:Mm:Ss",&clock))
+   return &random := ::integer(::map("smhSMH","Hh:Mm:Ss",&clock))
 end
 
 #<p>
@@ -30,8 +30,8 @@ end
 # <[returns a copy of the inverted table <tt>tbl</tt>]>
 #</p>
 procedure invertTable(tbl)   # Table to invert
-   local nTbl := table(), k
-   every k := key(tbl) do {
+   local nTbl := ::table(), k
+   every k := ::key(tbl) do {
       nTbl[tbl[k]] := k
       }
    return nTbl
@@ -55,22 +55,22 @@ end
 procedure deepcopy(A, cache)
    local k
 
-   /cache := table()       # used to handle multireferenced objects
+   /cache := ::table()       # used to handle multireferenced objects
    if \cache[A] then return cache[A]
 
-   case type(A) of {
+   case ::type(A) of {
       "table"|"list": {
-	 cache[A] := copy(A)
-	 every cache[A][k := key(A)] := deepcopy(A[k], cache)
+	 cache[A] := ::copy(A)
+	 every cache[A][k := ::key(A)] := deepcopy(A[k], cache)
 	 }
       "set": {
-	 cache[A] := set()
-	 every insert(cache[A], deepcopy(!A, cache))
+	 cache[A] := ::set()
+	 every ::insert(cache[A], deepcopy(!A, cache))
 	 }
       default: {
-	 cache[A] := copy(A)
-	 if match("record ",image(A)) then {
-	    every cache[A][k := key(A)] := deepcopy(A[k], cache)
+	 cache[A] := ::copy(A)
+	 if ::match("record ",::image(A)) then {
+	    every cache[A][k := ::key(A)] := deepcopy(A[k], cache)
 	    }
 	 }
       }
@@ -96,12 +96,12 @@ procedure breadthwalk(root,        # node of graph to start walk at
    local node, child, queue, visited
    /getChildren := defaultGenChildren
    queue := [root]
-   visited := set([root])
-   while node := get(queue) do {
+   visited := ::set([root])
+   while node := ::get(queue) do {
       every child := getChildren(node) do {
-	 if not member(visited, child) then {
-	    insert(visited, child)
-	    put(queue, child)
+	 if not ::member(visited, child) then {
+	    ::insert(visited, child)
+	    ::put(queue, child)
 	    }
 	 }
       suspend node
@@ -130,9 +130,9 @@ procedure depthwalk(root,        # node of graph to start walk at
 		    getChildren, # function that generates a node's children
 		    visited)     # ignore, <i>used internally.</i>
    /getChildren := defaultGenChildren
-   /visited := set()
-   if not member(visited, root) then {
-      insert(visited, root)
+   /visited := ::set()
+   if not ::member(visited, root) then {
+      ::insert(visited, root)
       suspend root | depthwalk(getChildren(root), getChildren, visited)
       }
 end
@@ -254,9 +254,9 @@ end
 # <[returns method named <tt>s</tt>]>
 #</p>
 procedure getMethod(c, s:string)
-   local L := list()
+   local L := ::list()
    c := c["__m"]
-   every put(L, genFieldsOne(s, '.'))
+   every ::put(L, genFieldsOne(s, '.'))
    every c := c[L[1 to *L-1]]
    return c[L[-1]]
 end
@@ -286,10 +286,10 @@ procedure buildStackTrace(n:0,  # starting distance from this call
    local L := []
    /ce := &current
    n -:= 1
-   while pName := image(proc(ce, n+:=1)) do {
-      fName := keyword("&file",ce, n) | "no file name"
-      fLine := keyword("&line",ce, n) | "no line number"
-      put(L, pName||" ["||fName||":"||fLine||"]" )
+   while pName := ::image(::proc(ce, n+:=1)) do {
+      fName := ::keyword("&file",ce, n) | "no file name"
+      fLine := ::keyword("&line",ce, n) | "no line number"
+      ::put(L, pName||" ["||fName||":"||fLine||"]" )
       }
    return L
 end

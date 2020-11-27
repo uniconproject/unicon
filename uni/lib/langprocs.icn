@@ -38,12 +38,12 @@ procedure get_type(object)
    if ::classname(object) then {
       return "class"
    } else {
-      image(object) ? {
+      ::image(object) ? {
          if ="record " then {
             return "record"
 	    }
          else {
-	    return type(object)
+	    return ::type(object)
 	    }
       }
    }
@@ -60,18 +60,18 @@ procedure get_name(object)
    if s := ::classname(object) then {
       return s
    } else {
-      image(object) ? {
+      ::image(object) ? {
          if ="record " then {
-            return type(object)
+            return ::type(object)
 	 }
          else if ="procedure " then
-            return tab(0)
+            return ::tab(0)
          else if ="file(" then
-            return tab(-1)
+            return ::tab(-1)
          else if ="window_" then {
-            tab(find("("))
-            move(1)
-            return tab(-1)
+            ::tab(::find("("))
+            ::move(1)
+            return ::tab(-1)
          }
       }
    }
@@ -86,7 +86,7 @@ end
 #
 # @example
 # @ x := [1, 2 ,3]
-# @ write(image(x))
+# @ write(::image(x))
 # @ write(get_id(x))
 # @
 # @ Output:
@@ -103,7 +103,7 @@ end
 #
 procedure generate_record_names(object)
    if get_type(object) == "record" then {
-      suspend fieldnames(object)
+      suspend ::fieldnames(object)
    }
 end
 
@@ -114,7 +114,7 @@ end
 procedure generate_member_names(object)
    local l, el
    if get_type(object) == "class" then {
-      l := membernames(object)
+      l := ::membernames(object)
       every el := !l do {
          if el == ("__s" | "__m") then {
             next
@@ -147,7 +147,7 @@ end
 procedure cast(object, other)
    local i, t, s
 
-   t := table()
+   t := ::table()
    i := 1
    every s := generate_member_names(other) do {
       t[s] := i
@@ -175,9 +175,9 @@ end
 procedure object_equals(obj, other, seen)
    local i
 
-   /seen := table()
-   /seen[obj] := set()
-   insert(seen[obj], other)
+   /seen := ::table()
+   /seen[obj] := ::set()
+   ::insert(seen[obj], other)
    get_type(other) == "class" | fail
    get_name(obj) == get_name(other) | fail
    if *obj ~= *other then
@@ -194,9 +194,9 @@ end
 procedure equals(x, y, seen)
    local cx, cy, i
 
-   /seen := table()
+   /seen := ::table()
 
-   if member(\seen[x], y) then
+   if ::member(\seen[x], y) then
       return
 
    if get_type(x) ~== get_type(y) then
@@ -204,8 +204,8 @@ procedure equals(x, y, seen)
 
    case get_type(x) of {
       "class" : {
-         /seen[x] := set()
-         insert(seen[x], y)
+         /seen[x] := ::set()
+         ::insert(seen[x], y)
 
          #
          # If x subclasses Object, use its .equals method.
@@ -217,8 +217,8 @@ procedure equals(x, y, seen)
       }
 
       "record" : {
-         /seen[x] := set()
-         insert(seen[x], y)
+         /seen[x] := ::set()
+         ::insert(seen[x], y)
          get_name(x) == get_name(y) | fail
          if *x ~= *y then
             fail
@@ -228,8 +228,8 @@ procedure equals(x, y, seen)
       }
 
       "list" : {
-         /seen[x] := set()
-         insert(seen[x], y)
+         /seen[x] := ::set()
+         ::insert(seen[x], y)
          if *x ~= *y then
             fail
          every i := 1 to *x do
@@ -238,18 +238,18 @@ procedure equals(x, y, seen)
       }
 
       "set" : {
-         /seen[x] := set()
-         insert(seen[x], y)
+         /seen[x] := ::set()
+         ::insert(seen[x], y)
          if *x ~= *y then
             fail
-         return equals(sort(x), sort(y), seen)
+         return equals(::sort(x), ::sort(y), seen)
       }
 
       "table" : {
-         /seen[x] := set()
-         insert(seen[x], y)
+         /seen[x] := ::set()
+         ::insert(seen[x], y)
          equals(x[[]], y[[]]) | fail
-         return equals(sort(x), sort(y), seen)
+         return equals(::sort(x), ::sort(y), seen)
       }
 
       default : {
@@ -263,7 +263,7 @@ end
 procedure hash_string(s)
    local n
    n := *s
-   every n +:= ord(!s \ 10)
+   every n +:= ::ord(!s \ 10)
    return n
 end
 
@@ -272,7 +272,7 @@ end
 #
 procedure object_hash_code(o, depth, seen)
    local n
-   /seen := table()
+   /seen := ::table()
    /depth := 3
    seen[o] := 1
    n := 0
@@ -287,7 +287,7 @@ end
 procedure hash_code(x, depth, seen)
    local cx, cy, i, n
 
-   /seen := table()
+   /seen := ::table()
    /depth := 3
 
    if (depth = 0) | \seen[x] then
@@ -311,26 +311,26 @@ procedure hash_code(x, depth, seen)
 
       "set" : {
          seen[x] := 1
-         every n +:= hash_code(!sort(x) \ 10, depth - 1, seen)
+         every n +:= hash_code(!::sort(x) \ 10, depth - 1, seen)
       }
 
       "table" : {
          seen[x] := 1
          n +:= hash_code(x[[]], depth - 1, seen)
-         every n +:= hash_code(!sort(x) \ 10, depth - 1, seen)
+         every n +:= hash_code(!::sort(x) \ 10, depth - 1, seen)
       }
 
       "string" :
          n +:= hash_string(x)
 
       "cset" :
-         n +:= hash_string(string(x))
+         n +:= hash_string(::string(x))
 
       "integer" :
-         n +:= abs(x)
+         n +:= ::abs(x)
 
       "real" :
-         n +:= hash_string(string(x))
+         n +:= hash_string(::string(x))
 
       default :
          n +:= hash_string(get_name(x))
@@ -344,8 +344,8 @@ end
 procedure object_clone(o, seen)
    local res, i
 
-   /seen := table()
-   res := proc(get_name(o))()
+   /seen := ::table()
+   res := ::proc(get_name(o))()
    seen[o] := res
    every i := 1 to *o do
       res[i] := clone(o[i], seen)
@@ -358,7 +358,7 @@ end
 procedure clone(o, seen)
    local c, e, ty, res, t, i
 
-   /seen := table()
+   /seen := ::table()
 
    if res := \seen[o] then
       return res
@@ -376,7 +376,7 @@ procedure clone(o, seen)
       }
 
       "record" : {
-         res := proc(get_name(o))()
+         res := ::proc(get_name(o))()
          seen[o] := res
          every i := 1 to *o do
             res[i] := clone(o[i], seen)
@@ -384,23 +384,23 @@ procedure clone(o, seen)
       }
 
       "set" : {
-         res := set([])
+         res := ::set([])
          seen[o] := res
-         every insert(res, clone(!o, seen))
+         every ::insert(res, clone(!o, seen))
          return res
       }
 
       "list" : {
          res := []
          seen[o] := res
-         every put(res, clone(!o, seen))
+         every ::put(res, clone(!o, seen))
          return res
       }
 
       "table" : {
-         res := table(clone(o[[]], seen))
+         res := ::table(clone(o[[]], seen))
          seen[o] := res
-         every e := !sort(o) do
+         every e := !::sort(o) do
             res[clone(e[1], seen)] := clone(e[2], seen)
          return res
       }
@@ -416,7 +416,7 @@ end
 procedure object_to_string(o, depth, seen)
    local i, s, string_buff
 
-   /seen := table()
+   /seen := ::table()
    /depth := -1
    seen[o] := 1
    string_buff := StringBuff()
@@ -447,7 +447,7 @@ end
 procedure to_string(o, depth, seen)
    local ty, string_buff, s, i, e, pairs
 
-   /seen := table()
+   /seen := ::table()
    /depth := -1
 
    if \seen[o] then {
@@ -540,7 +540,7 @@ procedure to_string(o, depth, seen)
          if depth ~= 0 then {
             string_buff.add("def=")
             string_buff.add(to_string(o[[]], depth - 1, seen))
-            pairs := sort(o)
+            pairs := ::sort(o)
             string_buff.add("[")
             every e := !pairs do {
                string_buff.add(to_string(e[1], depth - 1, seen))
@@ -601,8 +601,8 @@ procedure call_by_name(f_name, f_args[])
    /f_args := []
    intName := ""
    f_name ? {
-       while intName ||:= tab(find("::")) || (move(2),"__")
-       intName ||:= tab(0)
+       while intName ||:= ::tab(::find("::")) || (::move(2),"__")
+       intName ||:= ::tab(0)
        }
    return intName ! f_args
 end

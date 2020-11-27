@@ -16,7 +16,7 @@ global lang_class_table
 #
 procedure get_class_for(obj)
    local x, name
-   /lang_class_table := table()
+   /lang_class_table := ::table()
    case lang::get_type(obj) of {
       "class" : {
          #
@@ -79,7 +79,7 @@ class Class(name,
    # is no such method.
    #
    method get_method(s)
-      if member(methods_map, s) then
+      if ::member(methods_map, s) then
          return methods_map[s]
    end
 
@@ -108,7 +108,7 @@ class Class(name,
    end
 
 initially(obj)
-   local v, s, sa, m, cname, cmeths := table(), lm := []
+   local v, s, sa, m, cname, cmeths := ::table(), lm := []
 
    #
    # get the class name based on the object that we are looking at
@@ -121,8 +121,8 @@ initially(obj)
    #
    self.methods := []
    self.supers := []
-   self.methods_map := table()
-   self.implemented_classes := set(lang::mapPackageInt2Ext(self.name))
+   self.methods_map := ::table()
+   self.implemented_classes := ::set(lang::mapPackageInt2Ext(self.name))
    self.variables := []
    #
    # there are two variables in the class structure which are not of interest
@@ -130,9 +130,9 @@ initially(obj)
    # examine the names provided by the Unicon function membernames(), we will not
    # include these in the list of available variable names.
    #
-   every s := !membernames(obj) do {
+   every s := !::membernames(obj) do {
       if not (s == ("__s" | "__m")) then {
-         put(self.variables, s)
+         ::put(self.variables, s)
       }
    }
    #
@@ -141,7 +141,7 @@ initially(obj)
    #
    # the first entry will be the set of methods defined for the class
    #
-   cmeths[self.name] := set(::methods(self.name))
+   cmeths[self.name] := ::set(::methods(self.name))
    #
    # Get the oprec, the field names of this record will be the method names
    # defined directly in the class as well as the superclass names applicable
@@ -162,28 +162,28 @@ initially(obj)
          # and the name of the method. This will be used later to generate the
          # methods and the methods_map values.
          #
-         put(lm, [v, s])
+         ::put(lm, [v, s])
       } else {
          #
          # we place the super class name onto the end of the supers list and put
          # the applicable list of methods for that class into an apprporiate set
          # for creating the methods and methods_map values
          #
-         put(self.supers, sa)
-         cmeths[sa] := set(::methods(s))
+         ::put(self.supers, sa)
+         cmeths[sa] := ::set(::methods(s))
       }
    }
    #
    # we can now add the super class list to the set of implemented classes
    #
-   self.implemented_classes ++:= set(self.supers)
+   self.implemented_classes ++:= ::set(self.supers)
    #
    # this is where we finalise the methods list and the methods_map table
    #
    every v := !lm do {
-      every s := key(cmeths) do {
+      every s := ::key(cmeths) do {
          if ::member(cmeths[s], v[1]) then {
-            put(self.methods, m := Method(v[1], v[2], s))
+            ::put(self.methods, m := Method(v[1], v[2], s))
             methods_map[v[2]] := m
          }
       }

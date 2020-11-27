@@ -48,7 +48,7 @@ procedure Type(var)      # Object to examine
    if isClass(var) then {
       suspend mapPackageInt2Ext(!get_class(var).get_supers())
       }
-   else return mapPackageInt2Ext(type(var))
+   else return mapPackageInt2Ext(::type(var))
 end
 
 #<p>
@@ -62,9 +62,9 @@ end
 procedure mapPackageInt2Ext(s)
    local ns := ""
    s ? {
-      if not find("::") then {
-         ns ||:= tab(find("__")) || (move(2),"::")
-         ns ||:= tab(0)
+      if not ::find("::") then {
+         ns ||:= ::tab(::find("__")) || (::move(2),"::")
+         ns ||:= ::tab(0)
       } else {
          ns := s
       }
@@ -104,9 +104,9 @@ procedure istype(x,         # Object to examine
                  s)         # Type to check against
    local ss
 
-   if ss := string(s) then {
+   if ss := ::string(s) then {
       if ss == "numeric" then {
-         return numeric(x) & x
+         return ::numeric(x) & x
       } else {
          return ss == get_type(x) & x
       }

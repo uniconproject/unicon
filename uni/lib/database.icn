@@ -31,7 +31,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    method open(user,      # Valid database user id
 	       password)   # Password for that user.
       static real_open
-      initial real_open := proc("open")
+      initial real_open := ::proc("open")
       return \accessDb(real_open(dsn,"o",db_table,user,password))
    end
 
@@ -62,7 +62,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #  <[generates rows that have been selected from the database]>
    #</p>
    method fetch()
-      static real_fetch := proc("fetch")
+      static real_fetch := ::proc("fetch")
       suspend |real_fetch(\accessDb())
    end
 
@@ -72,7 +72,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #  <[fails if cannot close the database]>
    #</p>
    method close()
-      static real_close := proc("close")
+      static real_close := ::proc("close")
       return real_close(\accessDb())
    end
 
@@ -81,7 +81,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #   <[returns result of executing <tt>sqlstatement</tt>]>
    #</p>
    method sql(sqlstatement)  # Arbitrary SQL statement
-      static real_sql := proc("sql")
+      static real_sql := ::proc("sql")
       return real_sql(\accessDb(), sqlstatement)
    end
 
@@ -108,15 +108,15 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
                       #    entry is new field value) to update
                       # <i>(Can also be a record)</i>
       s := "INSERT INTO " || db_table || "("
-      every k := key(rec) do { s ||:= k; s||:= "," }
+      every k := ::key(rec) do { s ||:= k; s||:= "," }
       s := s[1:-1] # delete trailing comma?
       s ||:= ") VALUES ("
-      every k := key(rec) do { s ||:= "'"||dbu.escape(rec[k])||"'," }
+      every k := ::key(rec) do { s ||:= "'"||dbu.escape(rec[k])||"'," }
       s := s[1:-1] # delete trailing comma?
       s ||:= ")"
       return sql(s)
    end
-    
+
    #<p>
    # Select rows from the currently active database table.
    #   <[returns result of performing query]>
@@ -134,7 +134,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
          s ||:= " ORDER BY " || order
       return sql(s)
    end
-    
+
    #<p>
    # Update rows in the currently active database table.
    #  <[returns result of updating rows]>
@@ -146,7 +146,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
                                #    that identifies rows to modify
                  )
       s := "UPDATE " || db_table || " SET "
-      every k := key(rec) do {
+      every k := ::key(rec) do {
 	 s ||:= k ||"="||"'"||dbu.escape(rec[k])||"',"
 	 }
       s := s[1:-1]  # delete trailing comma?
@@ -159,7 +159,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #   <[returns database metadata record]>
    #</p>
    method product()
-      return dbproduct(accessDb())
+      return ::dbproduct(accessDb())
    end
 
    #<p>
@@ -167,7 +167,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #  <[returns database driver metadata record]>
    #</p>
    method driver()
-      return dbdriver(accessDb())
+      return ::dbdriver(accessDb())
    end
 
    #<p>
@@ -175,7 +175,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #  <[returns database limits]>
    #</p>
    method limits()
-      return dblimits(accessDb())
+      return ::dblimits(accessDb())
    end
 
    #<p>

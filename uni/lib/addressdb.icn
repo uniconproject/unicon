@@ -38,7 +38,7 @@ record address(name, address, email, phone, company, misc, category)
 class Category : Struct()
 
 #<p>
-# <[param s 
+# <[param s
 # a string consisting of categories, each terminated with
 # a newline (<b>\n</b>).  (This string is how the set of
 # of categories is held in the address book database.) ]>
@@ -59,7 +59,7 @@ class ALines : Struct()
    #  <[returns <i>nothing useful</i>]>
    #</p>
    method addElement(e)
-      return put(struct, e)
+      return ::put(struct, e)
    end
 
    #<p>
@@ -231,9 +231,9 @@ class AddressView : Object(aList)
    method addRecord(rec)
       a := Address()
       a.fromRecord(rec)
-      put(aList, a)
+      ::put(aList, a)
    end
-       
+
    #<p>
    #  Add an address from a (GUI) record.
    #  <[param rec GUI record to load]>
@@ -241,7 +241,7 @@ class AddressView : Object(aList)
    method addIRecord(rec)
       a := Address()
       a.fromIRecord(rec)
-      put(aList, a)
+      ::put(aList, a)
    end
 
    #<p>
@@ -250,7 +250,7 @@ class AddressView : Object(aList)
    method gen()
       suspend !aList
    end
-       
+
 #<p>
 #  The constructor takes a list of (database) records and
 #    converts each into the internal model of an address.
@@ -272,13 +272,13 @@ end
 # with <b>PostgreSQL</b> to build the database table:
 #<pre>
 # SET search_path = public, pg_catalog;
-# 
+#
 # CREATE FUNCTION plpgsql_call_handler () RETURNS language_handler
 #     AS '/usr/lib/pgsql/plpgsql.so', 'plpgsql_call_handler'
 #        LANGUAGE c;
-# 
+#
 # CREATE TRUSTED PROCEDURAL LANGUAGE plpgsql HANDLER plpgsql_call_handler;
-# 
+#
 # CREATE TABLE addressbook (
 #     name character varying(64),
 #     address text,
@@ -288,7 +288,7 @@ end
 #     misc text,
 #     category character varying(128)
 #     );
-# 
+#
 # CREATE FUNCTION insertabook () RETURNS "trigger"
 #     AS '
 #         DECLARE a_rec record;
@@ -304,7 +304,7 @@ end
 #             END IF;
 #         END;'
 #     LANGUAGE plpgsql;
-# 
+#
 # CREATE TRIGGER trigger_insert
 #     BEFORE INSERT ON addressbook
 #     FOR EACH ROW
@@ -409,7 +409,7 @@ class AddressDB : Object(db, tablName, criteria, order)
    #</p>
    method setCatCondition(wc,cats,terminator:"\n")
       if *cats > 0 then {
-         every put(cList := [],"%"||(!cats)||terminator||"%")
+         every ::put(cList := [],"%"||(!cats)||terminator||"%")
          return DButils().addCondition(wc,"category","like",cList)
          }
    end

@@ -101,7 +101,7 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
       s ||:= "#" || \self.ref
       return s
    end
-   
+
    #
    # Open a file based on the address and the port and return it.
    #
@@ -123,19 +123,19 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    method extract_cgi_parameters()
       local cgi, s, key, data, val
 
-      cgi := table()
+      cgi := ::table()
       self.file ? {
-	 if tab(find("?")) then {
-	    move(1)
-	    while not pos(0) do {
-	       key := tab(upto('&=') | 0)
+	 if ::tab(::find("?")) then {
+	    ::move(1)
+	    while not ::pos(0) do {
+	       key := ::tab(::upto('&=') | 0)
 	       if ="=" then
-	          val := extract_hex(tab(find("&") | 0))
+	          val := extract_hex(::tab(::find("&") | 0))
 	       else
 	          val := ""
 	       ="&"
 	       /cgi[key] := []
-	       put(cgi[key], val)
+	       ::put(cgi[key], val)
 	    }
 	 }
       }
@@ -148,7 +148,7 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    # @param cgi   The table of keys/values.
    #
    method set_cgi_parameters(cgi)
-      self.file ?:= tab(find("?") | 0) || "?" || make_cgi_string(cgi)
+      self.file ?:= ::tab(::find("?") | 0) || "?" || make_cgi_string(cgi)
    end
 
    #
@@ -157,8 +157,8 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    method make_cgi_string(cgi)
       local l, s
       s := ""
-      every l := !sort(cgi) do {
-	 if string(l[2]) then
+      every l := !::sort(cgi) do {
+	 if ::string(l[2]) then
 	    s ||:= convert_hex(l[1]) || "=" || convert_hex(l[2]) || "&"
 	 else
 	    every s ||:= convert_hex(l[1]) || "=" || convert_hex(!l[2]) || "&"
@@ -173,17 +173,17 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    method convert_hex(s)
       local res
       static convert_chars
-      initial 
+      initial
 	 convert_chars := &lcase ++ &ucase ++ &digits ++ '_*.- '
 
       res := ""
       s ? repeat {
-	 res ||:= tab(many(convert_chars))
-	 if pos(0) then
+	 res ||:= ::tab(::many(convert_chars))
+	 if ::pos(0) then
 	    break
-	 res ||:= "%" || format_int_to_string(ord(move(1)),,2)
+	 res ||:= "%" || format_int_to_string(::ord(::move(1)),,2)
 	 }
-      res := map(res, " ", "+")
+      res := ::map(res, " ", "+")
       return res
    end
 
@@ -193,13 +193,13 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    method extract_hex(s)
       local res
       res := ""
-      s := map(s, "+", " ") 
+      s := ::map(s, "+", " ")
       s ? repeat {
-	 res ||:= tab(find("%") | 0)
-	 if pos(0) then
+	 res ||:= ::tab(::find("%") | 0)
+	 if ::pos(0) then
 	    break
-	 move(1)
-	 res ||:= char(format_string_to_int(move(2)))
+	 ::move(1)
+	 res ||:= ::char(format_string_to_int(::move(2)))
 	 }
       return res
    end
@@ -209,24 +209,24 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    #
    method parse(s)
       s ? {
-	 set_protocol(1(tab(many(&letters)), ="://") | "http")
-	 set_address(tab(upto(':/') | 0))
+	 set_protocol(1(::tab(::many(&letters)), ="://") | "http")
+	 set_address(::tab(::upto(':/') | 0))
 
 	 if =":" then {
-	    set_port(integer(tab(many(&digits)))) | return error("Bad port")
+	    set_port(::integer(::tab(::many(&digits)))) | return error("Bad port")
 	    }
 	 else
 	    set_port(getserv(get_protocol() | "www").port) |
 	       return error("Unknown protocol")
 
-	 if pos(0) then
+	 if ::pos(0) then
 	    set_file("/")
 	 else {
-	    any('/') | fail
-	    set_file(tab(find("#") | 0))
-	    if any('#') then {
-	       move(1)
-	       set_ref(tab(0))
+	    ::any('/') | fail
+	    set_file(::tab(::find("#") | 0))
+	    if ::any('#') then {
+	       ::move(1)
+	       set_ref(::tab(0))
 	    }
 	 }
       }
@@ -242,7 +242,7 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
       if s[1] == "#" then
 	 #
 	 # Just reference, filename doesn't change.
-	 # 
+	 #
 	 set_ref(s[2:0])
       else {
 	 #
@@ -253,9 +253,9 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
 	    s := get_file_dir() || s
 
 	 s ? {
-	    set_file(tab(find("#") | 0))
+	    set_file(::tab(::find("#") | 0))
 	    if ="#" then {
-	       set_ref(tab(0))
+	       set_ref(::tab(0))
 	       }
 	    else
 	       set_ref()
@@ -268,8 +268,8 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    #
    method get_file_last()
       file ? {
-	 while tab(find("/")+1)
-	 return tab(0)
+	 while ::tab(::find("/")+1)
+	 return ::tab(0)
 	 }
    end
 
@@ -278,8 +278,8 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref,
    #
    method get_file_dir()
       file ? {
-	 while tab(find("/")+1)
-	 return tab(1)
+	 while ::tab(::find("/")+1)
+	 return ::tab(1)
 	 }
    end
 

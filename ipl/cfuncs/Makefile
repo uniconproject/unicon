@@ -42,8 +42,9 @@ windows:
 	echo cfuncs are not supported on Windows builds yet
 
 # library
-$(FUNCLIB):	$(FUNCS) mklib.sh
-		CC="$(CC)" CFLAGS="$(CFLAGS)" sh mklib.sh $(FUNCLIB) $(FUNCS)
+$(FUNCLIB):	$(FUNCS)
+		$(CC) $(LDDYN) -o $(FUNCLIB) $(CFDYN) $(FUNCS)
+
 $(FUNCS):	icall.h
 
 # Icon interface
@@ -55,4 +56,4 @@ cfunc.icn:	$(CSRC) mkfunc.sh
 
 # cleanup
 clean Clean:
-	-rm -f $(FUNCLIB) *.o *.u? *.so so_locations
+	-$(RM) -f $(FUNCLIB) *.o *.u? *.so so_locations

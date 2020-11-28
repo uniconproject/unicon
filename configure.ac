@@ -318,7 +318,7 @@ case $unicon_host in
      *bsd*)
         ;;
      *macos*)
-       LDDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -shared "
+       LDDYN="-Xlinker -undefined -Xlinker dynamic_lookup -shared "
        DASHX=-x
        RLIBS="-ldl "
 	;;

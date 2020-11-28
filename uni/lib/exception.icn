@@ -61,17 +61,17 @@ class Try : Object (sources, exceptions, lastException)
                    # Only the first is used as the <i>try-clause</i>.
       local result
 
-      push(sources, &current)
-      push(exceptions, &null)     # placeholder
+      ::push(sources, &current)
+      ::push(exceptions, &null)     # placeholder
       #  Consider making this a generator!
       if result := (@L[1])\1 then {
-	 pop(sources)
-	 lastException := pop(exceptions) | &null
+	 ::pop(sources)
+	 lastException := ::pop(exceptions) | &null
 	 return result
 	 }
       else {
-	 pop(sources)
-	 lastException := pop(exceptions) | &null
+	 ::pop(sources)
+	 lastException := ::pop(exceptions) | &null
 	 fail
 	 }
     end
@@ -94,7 +94,7 @@ class Try : Object (sources, exceptions, lastException)
       #    If the exception is thrown inside a Try() that doesn't
       #    catch it, this code is never reached.  I.e. uncaught
       #    exceptions are ignored if any are tried to be caught.
-      stop("Exception thrown outside of Try call: ",
+      ::stop("Exception thrown outside of Try call: ",
 	   exception.getMessage(),":\n",exception.getLocation())
 
    end
@@ -147,7 +147,7 @@ initially ()
    exceptions := []    # Stack of thrown exceptions (probably always
 		       #   <= size 1) - this needs more thought!
    Try := create |self # Convert to a singleton object
-end        
+end
 
 #<p>
 # The <b>Exception</b> provides the basics.  It can be subclassed to
@@ -161,7 +161,7 @@ class Exception : Object (message, location)
    #</p>
    method show(outFile)
        /outFile := &errout
-       write(outFile, self.getMessage(), ":\n", self.getLocation())
+       ::write(outFile, self.getMessage(), ":\n", self.getLocation())
        return
    end
 
@@ -209,4 +209,4 @@ initially (aMessage)  # default message to attach to this exception.
    message := aMessage
    location := buildStackTrace(2) # allow getLocation() to work
                                         #   without a throw()
-end    
+end

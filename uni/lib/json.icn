@@ -846,11 +846,6 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
                      "__uniclass__": { 
                         if constr := proc(json_value) then {
                            fields := membernames(json_value)
-                           # Get rid of internal class members: 
-                           # [name, methods, methods_map, variables, 
-                           # state_instance, oprec, supers, implemented_classes]
-                           if fields[-1] == "implemented_classes" then
-                              fields := fields[1:-8]
                            attribs := list(*fields) 
                            next
                            }

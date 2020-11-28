@@ -9,14 +9,14 @@ import mail
 procedure get_from()
    local cvs_user, entry, mb, pwent
 
-   cvs_user := getenv("CVS_USER") | stop("Couldn't get CVS_USER")
+   cvs_user := ::getenv("CVS_USER") | ::stop("Couldn't get CVS_USER")
 
-   entry := get_cvs_user(cvs_user) | stop("Couldn't get user entry for " || cvs_user)
+   entry := get_cvs_user(cvs_user) | ::stop("Couldn't get user entry for " || cvs_user)
 
-   mb := Mailbox(entry.get_mail()) | stop("Invalid RFC822 address: " || entry.get_mail())
+   mb := Mailbox(entry.get_mail()) | ::stop("Invalid RFC822 address: " || entry.get_mail())
 
-   if (mb.get_phrase() == "") & (pwent := getpw(entry.get_user())) then
-      mb.set_phrase(image(pwent.gecos))
+   if (mb.get_phrase() == "") & (pwent := ::getpw(entry.get_user())) then
+      mb.set_phrase(::image(pwent.gecos))
 
    return mb
 end

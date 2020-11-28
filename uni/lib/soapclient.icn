@@ -20,7 +20,7 @@ import xml          # From Robert Parlett's class library
 
 #<p>
 # A simple SoapClient.  Really meant to be subclassed.  Only handles
-#   procedure calls.  
+#   procedure calls.
 #</p>
 #<p>
 # Here is a sample client based on this class.  The URI and
@@ -28,16 +28,16 @@ import xml          # From Robert Parlett's class library
 #</p>
 #<pre>
 # import soap
-# 
+#
 # procedure main()
 #     soap := SoapClient(URI_GOES_HERE, PROXY_GOES_HERE)
 #     result := soap.call("query","*","host = 'weaver'","date DESC")
-# 
+#
 #     every row := !result do {
 #         write("  ",row["host"],"  ",row["percent"],"  ",
 #                    row["date"],"  ",row["filesys"])
 #         }
-# end    
+# end
 #</pre>
 class SoapClient : Object (uri, proxy, port, debugFile)
 
@@ -48,7 +48,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    #</p>
    method setDebugFile(f)
       if ::type(f) == "string" then {
-	 f := open(f, "w") | fail
+	 f := ::open(f, "w") | fail
 	 }
       debugFile := f
    end
@@ -60,7 +60,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    #</p>
    #<p><i>Internal use only.</i></p>
    method debugMsg(msg[])
-      write ! push(msg, \debugFile)
+      ::write ! ::push(msg, \debugFile)
    end
 
    #<p>
@@ -75,14 +75,14 @@ class SoapClient : Object (uri, proxy, port, debugFile)
       msg := mkHttpMesgForm(msg)
       debugMsg("Sending: \n",msg)
 
-      host := getHost() | stop("Cannot figure out host!")
-      svc := open(host||":"||port, "n") |
-	 stop("Cannot get '",host,"' connection: ", &errortext)
+      host := getHost() | ::stop("Cannot figure out host!")
+      svc := ::open(host||":"||port, "n") |
+	 ::stop("Cannot get '",host,"' connection: ", &errortext)
 
-      write(svc, msg) | stop("Cannot send msg: ",&errortext)
+      ::write(svc, msg) | ::stop("Cannot send msg: ",&errortext)
       result := ""
-      while result ||:= reads(svc, 8192)
-      close(svc)
+      while result ||:= ::reads(svc, 8192)
+      ::close(svc)
       debugMsg("\n\n\nGot: \n",result)
 
       result := convertRawMsg(result)
@@ -103,8 +103,8 @@ class SoapClient : Object (uri, proxy, port, debugFile)
       static parser
       initial parser := soap::getXmlParser()
 
-      map(result) ? {
-	 if p := find("<soap-env:envelope") then {
+      ::map(result) ? {
+	 if p := ::find("<soap-env:envelope") then {
 	    result := result[p:0]
 	    }
 	 }
@@ -123,7 +123,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    method getHost()
       proxy ? {
 	 ="http://"
-	 return tab(upto('/'))
+	 return ::tab(::upto('/'))
 	 }
    end
 
@@ -135,7 +135,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    method getTarget()
       proxy ? {
 	 ="http://"
-	 (&pos := upto('/')) & return tab(0)
+	 (&pos := ::upto('/')) & return ::tab(0)
 	 }
    end
 
@@ -148,7 +148,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
 		       args[])      # Remaining args are args to use on rpc
       local msg, i
 
-      i := create seq()
+      i := create ::seq()
       msg :=   " <SOAP-ENV:Body>\n"
       msg ||:= "  <namesp:"||rpc||" xmlns:namesp=\""||uri||"\">\n"
       if *args > 0 then every msg ||:= soap::encode(!args,"    ",i)||"\n"
@@ -178,13 +178,13 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    end
 
 #<p>
-# Create a new SOAP client. 
+# Create a new SOAP client.
 #</p>
 initially (newUri,      # URI for server
 	   newProxy,    # 'Proxy' information for server (defaults to URI)
 	   newPort)      # Port on server (defaults to 80)
    uri := newUri
    proxy := \newProxy | uri
-   port := \newPort | getserv("http").port | "80"
+   port := \newPort | ::getserv("http").port | "80"
    debugFile := &null
 end

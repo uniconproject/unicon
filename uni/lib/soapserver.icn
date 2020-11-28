@@ -24,7 +24,7 @@ import lang
 #</p>
 #<pre>
 # import soap
-# 
+#
 # procedure main()
 #     server := SoapServer(URI_GOES_HERE)
 #     server.setDebugFile("/dev/null")
@@ -36,13 +36,13 @@ import lang
 #     write(msg)
 #     exit(0)
 # end
-# 
+#
 # procedure hi(a[])
 #     s := ""
 #     every s ||:= !a
 #     return ("Hi "||s)
 # end
-# 
+#
 # procedure bye(a[])
 #     s := table()
 #     s["a1"] := a[1]
@@ -50,13 +50,13 @@ import lang
 #     s["a3"] := a[3]
 #     return s
 # end
-# 
+#
 # procedure guy(a[])
 #     s := list()
 #     every put(s := [], !a)
 #     return s
 # end
-# 
+#
 # procedure spcl(a[])
 #     return "&lt;result&gt;&lt;v1&gt;special service called!&lt;/v1&gt;&lt;/result&gt;"
 # end
@@ -75,7 +75,7 @@ class SoapServer : Object(uri,            # URI of service
    #</p>
    method setDebugFile(f)  # File name or open file.
       if ::type(f) == "string" then {
-	 f := open(f, "w") | fail
+	 f := ::open(f, "w") | fail
 	 }
       debugFile := f
    end
@@ -102,7 +102,7 @@ class SoapServer : Object(uri,            # URI of service
 			    func,   # Procedure implementing service
 			    helpMsg) # (Optional) help message
       addService(sName, func, helpMsg)
-      insert(specialServices, sName)
+      ::insert(specialServices, sName)
    end
 
    #<p>
@@ -120,8 +120,8 @@ class SoapServer : Object(uri,            # URI of service
    #</p>
    method listServices()
       local aList := [], sName
-      every sName := (!sort(services))[1] do {
-	 put(aList, left(sName,30)||(\servicesHelp[sName] | ""))
+      every sName := (!::sort(services))[1] do {
+	 ::put(aList, ::left(sName,30)||(\servicesHelp[sName] | ""))
 	 }
       return aList
    end
@@ -164,20 +164,20 @@ class SoapServer : Object(uri,            # URI of service
 	 children := request.get_children()
 	 debugMsg("Children: ",image(children))
 	 (svc := (!children), ::type(svc) ~== "string")
-	 debugMsg("SVC: ",image(svc))
+	 debugMsg("SVC: ",::image(svc))
 	 sName := svc.get_name()
-	 sName ?:= 2(skipTo(upto(':')+1),tab(0))
+	 sName ?:= 2(skipTo(::upto(':')+1),::tab(0))
 	 debugMsg("Name: ",sName)
 	 arglist := []
 	 every param := !soap::getNonWSChildren(svc) do {
-	    put(arglist, soap::decode(param))
+	    ::put(arglist, soap::decode(param))
 	    }
 	 debugMsg("Param count: ",*arglist)
 	 if sName == "listServices" then {
 	    return respond(listServices())
 	    }
 	 else if msg := invokeService(sName, arglist) then {
-	    if not member(specialServices, sName) then {
+	    if not ::member(specialServices, sName) then {
 	       return respond(msg)
 	       }
 	    else {
@@ -216,10 +216,10 @@ class SoapServer : Object(uri,            # URI of service
       initial parser := soap::getXmlParser()
 
       if getenv("REQUEST_METHOD") == "GET" then {
-	 line := getenv("QUERY_STRING")
+	 line := ::getenv("QUERY_STRING")
 	 }
       else {
-	 line := reads(&input, getenv("CONTENT_LENGTH"))
+	 line := ::reads(&input, ::getenv("CONTENT_LENGTH"))
 	 }
       debugMsg("Got: '",line,"'")
       root := parser.parse(line).get_root_element()
@@ -230,7 +230,7 @@ class SoapServer : Object(uri,            # URI of service
    # Log a message to a file if told to do so.
    #</p>
    method debugMsg(msg[])   # Arguments are displayed to (non-null) debugfile
-      write ! push(msg, \debugFile)
+      ::write ! ::push(msg, \debugFile)
    end
 
    # These next methods are internal methods for constructing a response
@@ -284,8 +284,8 @@ class SoapServer : Object(uri,            # URI of service
 initially (newUri,      # URI indentifying server
 	   newServices)  # (Optional) table mapping procedures to services
    uri := newUri
-   services := \newServices | table()
-   servicesHelp := table()
-   specialServices := set()
+   services := \newServices | ::table()
+   servicesHelp := ::table()
+   specialServices := ::set()
    debugFile := &null
 end

@@ -6,9 +6,9 @@ package mail
 
 class MultipartHandler : TypeHandler()
    method can_handle(ct)
-      return map(ct.get_type()) == "multipart"
+      return ::map(ct.get_type()) == "multipart"
    end
-   
+
    method convert_to_object(m, data)
       local s, res, b, ct, sm
 
@@ -30,7 +30,7 @@ class MultipartHandler : TypeHandler()
 
             ="\r\n" | return error("Unexpected char after boundary")
 
-            data := tab(find(b)) | return error("Boundary not found")
+            data := ::tab(::find(b)) | return error("Boundary not found")
             =b
             sm := Message()
             sm.parse(data) | return error(sm)
@@ -46,7 +46,7 @@ class MultipartHandler : TypeHandler()
       local b, s, ct, e
 
       b := generate_boundary(obj.get_parts())
-      
+
       ct := m.get_content_type()
 
       #
@@ -72,7 +72,7 @@ class MultipartHandler : TypeHandler()
 
       repeat {
          b := "boundary" || id
-         if find(b, (!l).get_content()) then
+         if ::find(b, (!l).get_content()) then
             id +:= 1
          else
             return b

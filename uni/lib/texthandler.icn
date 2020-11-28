@@ -6,9 +6,9 @@ package mail
 
 class TextHandler : TypeHandler()
    method can_handle(ct)
-      return map(ct.get_type()) == "text"
+      return ::map(ct.get_type()) == "text"
    end
-   
+
    method convert_to_object(m, data)
       local res
 
@@ -17,10 +17,10 @@ class TextHandler : TypeHandler()
       #
       res := ""
       data ? repeat {
-         res ||:= tab(find("\r\n") | 0)
-         if pos(0) then
+         res ||:= ::tab(::find("\r\n") | 0)
+         if ::pos(0) then
             break
-         move(2)
+         ::move(2)
          res ||:= "\n"
       }
       return res
@@ -34,10 +34,10 @@ class TextHandler : TypeHandler()
       #
       res := ""
       obj ? repeat {
-         res ||:= tab(upto('\n') | 0)
-         if pos(0) then
+         res ||:= ::tab(::upto('\n') | 0)
+         if ::pos(0) then
             break
-         move(1)
+         ::move(1)
          res ||:= "\r\n"
       }
       return res

@@ -11,7 +11,7 @@ global base64_string, base64_cset
 #
 class Base64Handler:EncodingHandler()
    method can_handle(enc)
-      return map(enc) == "base64"
+      return ::map(enc) == "base64"
    end
 
    method decode_data(m, data)
@@ -19,32 +19,32 @@ class Base64Handler:EncodingHandler()
 
       static n64
       initial {
-         n64 := string(&cset)[1+:64]
+         n64 := ::string(&cset)[1+:64]
       }
 
       # Transform the data by stripping out all non base64 encoding chars.
       t := ""
       pad := 0
       data ? {
-         while tab(upto(base64_cset)) do
-            t ||:= tab(many(base64_cset))
-         while tab(upto('=')) do {
-            s := tab(many('='))
+         while ::tab(::upto(base64_cset)) do
+            t ||:= ::tab(::many(base64_cset))
+         while ::tab(::upto('=')) do {
+            s := ::tab(::many('='))
             pad +:= *s
-            t ||:= repl("\x00", *s)
+            t ||:= ::repl("\x00", *s)
          }
       }
 
-      if (pad > 2) | (*t % 4 ~= 0) then 
+      if (pad > 2) | (*t % 4 ~= 0) then
          return error("Badly formatted Base64 data")
 
-      t := map(t, base64_string, n64)
+      t := ::map(t, base64_string, n64)
 
       res := ""
-      t ? while ( w := ord(move(1)), x := ord(move(1)), y := ord(move(1)), z := ord(move(1)) ) do {
-         res ||:= char( ior( ishift(w,2), ishift(x,-4) ) )
-         res ||:= char( ior( iand(ishift(x,4),255), ishift(y,-2) ) )
-         res ||:= char( ior( iand(ishift(y,6),255), z ) )
+      t ? while ( w := ::ord(::move(1)), x := ::ord(::move(1)), y := ::ord(::move(1)), z := ::ord(::move(1)) ) do {
+         res ||:= ::char( ::ior( ::ishift(w,2), ::ishift(x,-4) ) )
+         res ||:= ::char( ::ior( ::iand(::ishift(x,4),255), ::ishift(y,-2) ) )
+         res ||:= ::char( ::ior( ::iand(::ishift(y,6),255), z ) )
       }
 
       res[0 -: pad] := ""
@@ -52,7 +52,7 @@ class Base64Handler:EncodingHandler()
       return res
    end
 
-   method encode_data(m, data) 
+   method encode_data(m, data)
       local i, j, k, pad, res, ll
 
       res := ""
@@ -62,18 +62,18 @@ class Base64Handler:EncodingHandler()
 
       data ||:= repl("\x00", pad)
 
-      data ? while (i := ord(move(1)), j := ord(move(1)), k := ord(move(1))) do {
-         res ||:= base64_string[ 1 + ishift(i,-2) ]
-         res ||:= base64_string[ 1 + ior( ishift(iand(i,3),4), ishift(j,-4) ) ]
-         res ||:= base64_string[ 1 + ior( ishift(iand(j,15),2), ishift(k,-6) ) ]
-         res ||:= base64_string[ 1 + iand(k,63) ]
+      data ? while (i := ::ord(::move(1)), j := ::ord(::move(1)), k := ::ord(::move(1))) do {
+         res ||:= base64_string[ 1 + ::ishift(i,-2) ]
+         res ||:= base64_string[ 1 + ::ior( ::ishift(::iand(i,3),4), ::ishift(j,-4) ) ]
+         res ||:= base64_string[ 1 + ::ior( ::ishift(::iand(j,15),2), ::ishift(k,-6) ) ]
+         res ||:= base64_string[ 1 + ::iand(k,63) ]
          ll +:= 1
          if ll = 19 then {
             res ||:= "\r\n"
             ll := 0
          }
       }
-      res[ 0 -: pad ] := repl("=", pad) || "\r\n"
+      res[ 0 -: pad ] := ::repl("=", pad) || "\r\n"
 
       return res
    end
@@ -81,6 +81,6 @@ class Base64Handler:EncodingHandler()
    initially()
       initial {
          base64_string := &ucase || &lcase || &digits || "+/"
-         base64_cset := cset(base64_string)
+         base64_cset := ::cset(base64_string)
       }
 end

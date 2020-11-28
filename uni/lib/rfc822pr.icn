@@ -53,7 +53,7 @@ end
 #
 
 #
-# qtext = <any CHAR excepting <">, "\" & CR, and including 
+# qtext = <any CHAR excepting <">, "\" & CR, and including
 #         linear-white-space>
 # quoted-pair =  "\" CHAR
 # quoted-string = <"> *(qtext/quoted-pair) <">
@@ -63,14 +63,14 @@ end
 procedure parse_quoted_string()
    local res
 
-   res := move(1)
+   res := ::move(1)
    repeat {
-      if any('\\') then {
-         res ||:= move(2) | fail
-      } else if any(qtext_char) then
-         res ||:= tab(many(qtext_char))
-      else if any('\"') then {
-         return res || move(1)
+      if ::any('\\') then {
+         res ||:= ::move(2) | fail
+      } else if ::any(qtext_char) then
+         res ||:= ::tab(::many(qtext_char))
+      else if ::any('\"') then {
+         return res || ::move(1)
       } else
          # Missing closing quote or illegal char
          fail
@@ -84,7 +84,7 @@ end
 # Must be preceded by a call to next_token()
 #
 procedure parse_atom()
-   return tab(many(atom_char))
+   return ::tab(::many(atom_char))
 end
 
 #
@@ -95,14 +95,14 @@ end
 #
 procedure parse_domain_literal()
    local res
-   res := move(1)
+   res := ::move(1)
    repeat {
-      if any('\\') then
-         res ||:= move(2) | fail
-      else if any(dtext_char) then
-         res ||:= tab(many(dtext_char))
-      else if any(']') then 
-         return res || move(1)
+      if ::any('\\') then
+         res ||:= ::move(2) | fail
+      else if ::any(dtext_char) then
+         res ||:= ::tab(::many(dtext_char))
+      else if ::any(']') then
+         return res || ::move(1)
       else
          # Missing closing ] or illegal char
          fail
@@ -114,15 +114,15 @@ end
 #
 procedure parse_comment()
    local res
-   res := move(1)
+   res := ::move(1)
    repeat {
-      if any('\\') then
-         res ||:= move(2) | fail
-      else if any(ctext_char) then
-         res ||:= tab(many(ctext_char))
-      else if any('(') then
+      if ::any('\\') then
+         res ||:= ::move(2) | fail
+      else if ::any(ctext_char) then
+         res ||:= ::tab(::many(ctext_char))
+      else if ::any('(') then
          res ||:= parse_comment() | fail
-      else if any(')') then 
+      else if ::any(')') then
          return res || move(1)
       else
          # Missing closing ) or illegal char
@@ -132,8 +132,8 @@ end
 
 procedure next_token()
    repeat {
-      tab(many(lwsp_char))
-      if any('(') then
+      ::tab(::many(lwsp_char))
+      if ::any('(') then
          parse_comment() | fail
       else
          return
@@ -143,22 +143,22 @@ end
 #
 # word =  atom / quoted-string
 #
-procedure parse_word() 
+procedure parse_word()
    next_token() | fail
-   if any('\"') then
+   if ::any('\"') then
       return parse_quoted_string()
    else
       return parse_atom()
 end
 
 #
-# local-part  =  word *("." word)             
+# local-part  =  word *("." word)
 #
 procedure parse_local_part()
    local res
 
    res := parse_word() | fail
-   
+
    while res ||:= ="." do
       res ||:= parse_word() | fail
 
@@ -185,7 +185,7 @@ end
 #
 procedure parse_sub_domain()
    next_token() | fail
-   if any('[') then
+   if ::any('[') then
       return parse_domain_literal()
    else
       return parse_atom()
@@ -193,7 +193,7 @@ end
 
 #
 # phrase =  1*word
-# 
+#
 # In fact this is parsed as just "*word".  This allows
 # parsing of mailboxes such as, for example "<rparlett@xyz.com>" and
 # groups such as :joe@soap.com;
@@ -202,7 +202,7 @@ procedure parse_phrase()
    local res
    res := ""
    next_token() | fail
-   while any('\"' | atom_char) do {
+   while ::any('\"' | atom_char) do {
       # Single spaces between words
       if *res > 0 then
          res ||:= " "
@@ -229,8 +229,8 @@ procedure parse_addr_spec(mb)
 end
 
 #
-# route       =  1#("@" domain) ":" 
-# where 1#X means '(X *("," X))' 
+# route       =  1#("@" domain) ":"
+# where 1#X means '(X *("," X))'
 #
 procedure parse_route(mb)
    mb.route := []
@@ -253,7 +253,7 @@ end
 procedure parse_route_addr(mb)
    ="<" | fail
    next_token() | fail
-   if any('@') then
+   if ::any('@') then
       parse_route(mb) | fail
    else
       mb.route := []
@@ -282,7 +282,7 @@ procedure parse_mailbox(mb)
       mb.phrase := ""
       mb.route := []
    } else {
-      tab(x)
+      ::tab(x)
       mb.phrase := parse_phrase() | fail
       parse_route_addr(mb) | fail
    }
@@ -293,7 +293,7 @@ end
 #
 # group =  phrase ":" [#mailbox] ";"
 # #X means empty or X,X,X...
-#    
+#
 procedure parse_group(group)
    local mb
 
@@ -308,12 +308,12 @@ procedure parse_group(group)
    =":" | fail
 
    next_token() | fail
-   if any(';') then # empty group
+   if ::any(';') then # empty group
       move(1)
    else {
       repeat {
          mb := parse_mailbox() | fail
-         put(group.mailboxes, mb)
+         ::put(group.mailboxes, mb)
          next_token() | fail
          ="," | break
       }
@@ -329,7 +329,7 @@ procedure parse_mailbox_or_group()
    x := &pos
    if a := parse_mailbox() then
       return a
-   tab(x)
+   ::tab(x)
 
    return parse_group()
 end
@@ -340,7 +340,7 @@ procedure parse_address_list(can_be_empty)
 
    if \can_be_empty then {
       next_token() | fail
-      if pos(0) then
+      if ::pos(0) then
          return l
    }
 
@@ -357,19 +357,19 @@ procedure parse_mailbox_list(can_be_empty)
 
    if \can_be_empty then {
       next_token() | fail
-      if pos(0) then
+      if ::pos(0) then
          return l
    }
 
    repeat {
-      put(l, parse_mailbox()) | fail
+      ::put(l, parse_mailbox()) | fail
       next_token() | fail
       ="," | return l
    }
 end
 
 #
-# month =  "Jan"  /  "Feb" /  "Mar"  /  "Apr" /  "May"  /  "Jun" /  
+# month =  "Jan"  /  "Feb" /  "Mar"  /  "Apr" /  "May"  /  "Jun" /
 #         "Jul"  /  "Aug" /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
 #
 procedure parse_month()
@@ -383,41 +383,41 @@ end
 procedure parse_day()
    local s
    next_token() | fail
-   s := tab(many(&digits)) | fail
+   s := ::tab(::many(&digits)) | fail
    if *s <= 2 then
-      return integer(s)
+      return ::integer(s)
    fail
 end
 
 procedure parse_year()
    local s
    next_token() | fail
-   s := tab(many(&digits)) | fail
+   s := ::tab(::many(&digits)) | fail
    if *s = (2 | 4) then
-      return integer(s)
+      return ::integer(s)
    fail
 end
 
 procedure parse_2dig()
    local s
    next_token() | fail
-   s := tab(many(&digits)) | fail
+   s := ::tab(::many(&digits)) | fail
    if *s = 2 then
-      return integer(s)
+      return ::integer(s)
    fail
 end
 
 procedure parse_zone()
    next_token() | fail
-   tab(upto(tz_chars)) | fail
-   return tab(many(tz_chars)) | fail
+   ::tab(::upto(tz_chars)) | fail
+   return ::tab(::many(tz_chars)) | fail
 end
 
 #
 # date-time = [ day "," ] date time
 # day =  "Mon"  / "Tue" /  "Wed"  / "Thu"/  "Fri"  / "Sat" /  "Sun"
-# date =  1*2DIGIT month 2DIGIT        
-# time =  hour zone                    
+# date =  1*2DIGIT month 2DIGIT
+# time =  hour zone
 # hour =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
 #
 procedure parse_date_time()
@@ -443,7 +443,7 @@ procedure parse_date_time()
    =":" | fail
    mm := parse_2dig() | fail
    next_token() | fail
-   if any(':') then {
+   if ::any(':') then {
       move(1)
       ss := parse_2dig() | fail
    } else
@@ -465,11 +465,11 @@ end
 procedure parse_field(message)
    local f, v
    next_token() | fail
-   f := tab(many(field_name_chars)) | fail
+   f := ::tab(::many(field_name_chars)) | fail
    next_token() | fail
    =":" | fail
    next_token() | fail
-   v := tab(0)
+   v := ::tab(0)
    message.add_header(f, v)
    return
 end

@@ -78,7 +78,7 @@ procedure channel(x, port)
 	    if *L=0 then ::delete(chTable[ce], x)
 	    }
 	 else if \(L := chTable[x][ce]) then
-	       put(L, chnl := ::condvar([]))
+	       ::put(L, chnl := ::condvar([]))
          else {
 	    L := []
             ::put(L, chnl := ::condvar([]))
@@ -319,7 +319,7 @@ method submit_async(tsk, r_func, args, n)
     }
 
    tsk.set_caller()
-   critical task_ready: put(task_ready, tsk)
+   critical task_ready: ::put(task_ready, tsk)
    ::signal(cv_work, tsk.nthread)
 end
 

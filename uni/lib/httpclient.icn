@@ -364,7 +364,7 @@ class HttpClient : NetClient(request,
             if ::any('\"') then
                v := parse_quoted_string()
             else
-               v := ::tab(upto(';') | 0)
+               v := ::tab(::upto(';') | 0)
          } else
             v := &null
          if /c then {
@@ -458,7 +458,7 @@ class HttpClient : NetClient(request,
          every f := !::reverse(::sort(e[2])) do {
             ::write("\tpath:", f[1])
             every c := (!f[2].sort())[2] do {
-               write("\t\t", c.to_string())
+               ::write("\t\t", c.to_string())
             }
          }
       }
@@ -517,7 +517,7 @@ class HttpClient : NetClient(request,
          close()
 
          if (i -:= 1) < 0 then {
-            remove(\request.data_file)
+            ::remove(\request.data_file)
             fire("Failed")
             if retries = 0 then
                fail
@@ -563,7 +563,7 @@ class HttpClient : NetClient(request,
          # the status/headers again - they follow immediately after
          # the end of the first headers.
          #
-         find("100", result.get_status()) | break
+         ::find("100", result.get_status()) | break
       }
 
       if request.the_method ~=== "HEAD" then
@@ -652,7 +652,7 @@ class HttpClient : NetClient(request,
    #
    # @p
    method read_data()
-      if find("206", result.get_status()) then {
+      if ::find("206", result.get_status()) then {
          #
          # Continue a partial read.  The self.read and self.length values
          # continue from the previous attempt.

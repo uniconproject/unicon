@@ -169,7 +169,7 @@ procedure _toUs(u,uerror, seen)
          else if ::match("record ", tmp) then {
             s := "{record:"||ref||" \""||::type(u)||"\" "
             }
-         else return uerror.set_err(type(u) || " has no UniON equivalent")
+         else return uerror.set_err(::type(u) || " has no UniON equivalent")
          needComma := &null
          every k := ::key(u) do {
             if \needComma then s ||:= ","
@@ -183,7 +183,7 @@ procedure _toUs(u,uerror, seen)
 end
 
 procedure mkRef(u)
-   image(u) ? return "\""||::map(::tab(::upto('(')|0)," ","_")||"\""
+   ::image(u) ? return "\""||::map(::tab(::upto('(')|0)," ","_")||"\""
 end
 
 #####################
@@ -827,7 +827,7 @@ end
 procedure parse_set(token, token_gen, parse_funcs, refs, uerror)
    local union_array, union_value, prev_token, tok, s
    prev_token := "{"
-   s := set()
+   s := ::set()
    refs[@token_gen] := s
 
    while tok := @token_gen do {
@@ -847,7 +847,7 @@ procedure parse_set(token, token_gen, parse_funcs, refs, uerror)
          if prev_token == ("{"|",") then {
             union_value := func(tok, token_gen, parse_funcs, refs, uerror)
             prev_token := "value"
-            insert(s, union_value)
+            ::insert(s, union_value)
             }
          else return uerror.set_err("Expected comma in UniON set before: " ||
               tok)

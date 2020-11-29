@@ -188,7 +188,7 @@ class Message:Error(headers, content, parser)
             # Not too big, so continue this line.
             l ||:= t
          }
-         if pos(0) then {
+         if ::pos(0) then {
             # Add any remainder.
             return fold1(res, l)
          }
@@ -212,7 +212,7 @@ class Message:Error(headers, content, parser)
    #
    method show_headers()
       local h
-      every h := !sort(headers) do {
+      every h := !::sort(headers) do {
          every ::write(h[1], ": ", !h[2])
       }
    end
@@ -294,7 +294,7 @@ class Message:Error(headers, content, parser)
    # @p
    method catenate_addresses(a, delim)
       local s, e
-      if type(a) == "list" then {
+      if ::type(a) == "list" then {
          s := ""
          every e := !a do {
             if *s > 0 then

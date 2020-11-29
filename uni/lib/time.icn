@@ -163,7 +163,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       res := ""
       p ? {
 	 while not ::pos(0) do {
-	    if any('EydHMhmsaAz') then {
+	    if ::any('EydHMhmsaAz') then {
 	       ch := p[&pos]
 	       w := *::tab(::many(ch))
 	       res ||:= case ch of {
@@ -195,7 +195,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 		        "PM"
  		     }
 		  }
-	    } else if any('\'') then
+	    } else if ::any('\'') then
 	       res ||:= match_literal()
 	    else
 	       res ||:= ::move(1)
@@ -209,7 +209,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    # @p
    method parse_int(w)
       local j, n
-      j := many(&digits, psub, ppos) | return error("Digit expected")
+      j := ::many(&digits, psub, ppos) | return error("Digit expected")
       #
       # If there is a numeric field immediately following, limit the length
       # of this field.  This allows for example yyyyMMdd to parse 20001201.
@@ -810,8 +810,8 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
          hh := get_int() | 0
          mm := get_int() | 0
          ss := get_int() | 0
-         if tab(upto(Time_data_tzchars)) then
-            z := get_known_timezone(tab(many(Time_data_tzchars))) |
+         if ::tab(::upto(Time_data_tzchars)) then
+            z := get_known_timezone(::tab(::many(Time_data_tzchars))) |
 	    return error("No timezone")
          else
             z := get_system_timezone()

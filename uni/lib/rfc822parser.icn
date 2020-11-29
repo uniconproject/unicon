@@ -57,7 +57,7 @@ class RFC822Parser : Error()
 
       res := ::move(1)
       repeat {
-         if any('\\') then {
+         if ::any('\\') then {
             res ||:= ::move(2) | return parse_error("Unterminated quoted string")
          } else if ::any(qtext_char) then
             res ||:= ::tab(::many(qtext_char))
@@ -94,7 +94,7 @@ class RFC822Parser : Error()
          else if ::any(dtext_char) then
             res ||:= ::tab(::many(dtext_char))
          else if ::any(']') then
-            return res || move(1)
+            return res || ::move(1)
          else
             # Missing closing ] or illegal char
             return parse_error("Missing closing ] or illegal char")

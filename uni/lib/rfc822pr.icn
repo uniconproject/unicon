@@ -123,7 +123,7 @@ procedure parse_comment()
       else if ::any('(') then
          res ||:= parse_comment() | fail
       else if ::any(')') then
-         return res || move(1)
+         return res || ::move(1)
       else
          # Missing closing ) or illegal char
          fail
@@ -237,7 +237,7 @@ procedure parse_route(mb)
    repeat {
       next_token() | fail
       ="@" | fail
-      put(mb.route, parse_domain()) | fail
+      ::put(mb.route, parse_domain()) | fail
       next_token() | fail
       ="," | break
       next_token() | fail
@@ -309,7 +309,7 @@ procedure parse_group(group)
 
    next_token() | fail
    if ::any(';') then # empty group
-      move(1)
+      ::move(1)
    else {
       repeat {
          mb := parse_mailbox() | fail
@@ -345,7 +345,7 @@ procedure parse_address_list(can_be_empty)
    }
 
    repeat {
-      put(l, parse_mailbox_or_group()) | fail
+      ::put(l, parse_mailbox_or_group()) | fail
       next_token() | fail
       ="," | return l
    }
@@ -444,7 +444,7 @@ procedure parse_date_time()
    mm := parse_2dig() | fail
    next_token() | fail
    if ::any(':') then {
-      move(1)
+      ::move(1)
       ss := parse_2dig() | fail
    } else
       ss := 0

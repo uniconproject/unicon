@@ -111,7 +111,7 @@ end
 #</p>
 procedure m_binop(M1, M1, op)
    local R, i, j
-   /op := proc("+", 2)
+   /op := ::proc("+", 2)
 
    if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
       ::runerr(500, "nonequal matrix dimensions to m_binop")
@@ -153,7 +153,7 @@ end
 #<p>
 procedure m_unaryop(M, op)
    local R, i, j
-   /op := proc("-", 1)
+   /op := ::proc("-", 1)
 
    R = m_constant(*M, *M[1])
    every (i := 1 to *M, j := 1 to *M[1]) do
@@ -166,7 +166,7 @@ end
 #  <[returns <tt>-M</tt>]>
 #</p>
 procedure m_negative(M)
-   return m_unaryop(M, proc("-", 1))
+   return m_unaryop(M, ::proc("-", 1))
 end
 
 #<p>
@@ -311,7 +311,7 @@ procedure m_divide(M1,M2,addfun,subfun,mulfun,divfun,
    every i := 1 to n do {
       x := m_linearSolve(M2,m_col(M1, i),addfun,subfun,mulfun,divfun,
 			 addident,mulident,invertMetric) | fail
-      put(X, x)
+      ::put(X, x)
       }
    return m_transpose(X)
 end

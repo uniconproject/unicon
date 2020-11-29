@@ -29,7 +29,7 @@ class Msg(id)
    method send(o)
       static f
       initial {
-         f := loadfunc(LIB, "msg_send")
+         f := ::loadfunc(LIB, "msg_send")
       }
       f(id, lang::encode(o))
    end
@@ -40,7 +40,7 @@ class Msg(id)
    method receive()
       static f
       initial {
-         f := loadfunc(LIB, "msg_receive")
+         f := ::loadfunc(LIB, "msg_receive")
       }
       return lang::decode(f(id))
    end
@@ -52,7 +52,7 @@ class Msg(id)
    method attempt()
       static f
       initial {
-         f := loadfunc(LIB, "msg_receive_nowait")
+         f := ::loadfunc(LIB, "msg_receive_nowait")
       }
       return lang::decode(f(id))
    end
@@ -80,7 +80,7 @@ class Msg(id)
    method remove()
       static f
       initial {
-         f := loadfunc(LIB, "msg_remove")
+         f := ::loadfunc(LIB, "msg_remove")
       }
       f(id)
    end
@@ -100,7 +100,7 @@ end
 procedure open_public_msg(key)
    static f
    initial {
-      f := loadfunc(LIB, "msg_open_public")
+      f := ::loadfunc(LIB, "msg_open_public")
    }
    return Msg(f(key))
 end
@@ -111,7 +111,7 @@ end
 procedure create_public_msg(key)
    static f
    initial {
-      f := loadfunc(LIB, "msg_create_public")
+      f := ::loadfunc(LIB, "msg_create_public")
    }
    return Msg(f(key))
 end
@@ -122,7 +122,7 @@ end
 procedure create_private_msg()
    static f
    initial {
-      f := loadfunc(LIB, "msg_create_private")
+      f := ::loadfunc(LIB, "msg_create_private")
    }
    return Msg(f())
 end

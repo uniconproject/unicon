@@ -34,7 +34,7 @@ class HttpClient : NetClient(request,
                              http_error,
                              keep_alive_flag,
                              user_agent,
-                             redir_set, 
+                             redir_set,
                              auth_req_count,
                              auth_scheme,
                              basic_auth_header,
@@ -82,7 +82,7 @@ class HttpClient : NetClient(request,
    method write_request_headers()
       local e, v
       every e := !request.headers.sort() do {
-         e[1][1] := map(e[1][1], &lcase, &ucase)
+         e[1][1] := ::map(e[1][1], &lcase, &ucase)
          every v := !e[2] do
             write_line(e[1] || ": " || v) | fail
       }
@@ -105,19 +105,19 @@ class HttpClient : NetClient(request,
    method retrieve(request)
       self.request := request.clone()
       auth_req_count := 0
-      redir_set := set()
+      redir_set := ::set()
       repeat {
          http_error := &null
 
          retrieve_page() | fail
-         if find("200"|"206", result.get_status()) then
+         if ::find("200"|"206", result.get_status()) then
             return result
 
-         remove(\request.data_file)
+         ::remove(\request.data_file)
 
-         if find("401", result.get_status()) then
+         if ::find("401", result.get_status()) then
             handle_authentication() | fail
-         else if find("301"|"302"|"303"|"307", result.get_status()) then
+         else if ::find("301"|"302"|"303"|"307", result.get_status()) then
             handle_redirect() | fail
          else
             return on_http_error(result.get_status())
@@ -132,7 +132,7 @@ class HttpClient : NetClient(request,
       # A redirection, so extract the URL if possible.
       #
       l := result.get_first_header("Location") | return on_http_error("No Location in a redirect response")
-      if match("http://", l) then
+      if ::match("http://", l) then
          request.url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
       else
          #
@@ -140,11 +140,11 @@ class HttpClient : NetClient(request,
          # commonplace.
          #
          request.url.set_relative(l)
-      
+
       s := request.url.to_string()
-      if member(redir_set, s) then
+      if ::member(redir_set, s) then
          return on_http_error("Circular redirection detected:" || s)
-      insert(redir_set, s)
+      ::insert(redir_set, s)
 
       #
       # On a redirect, a POST becomes a GET.
@@ -170,15 +170,15 @@ class HttpClient : NetClient(request,
          return on_http_error("Failed to authenticate - correct username, password")
       auth_req_count +:= 1
 
-      s := result.get_first_header("www-authenticate") | 
+      s := result.get_first_header("www-authenticate") |
          return on_http_error("No WWW-Authenticate in a 401 response")
 
       t := parse_generic_header(s)
-      if member(t, "Basic") then {
+      if ::member(t, "Basic") then {
          auth_scheme := "Basic"
          return setup_basic_authentication()
       }
-      if member(t, "Digest") then {
+      if ::member(t, "Digest") then {
          auth_scheme := "Digest"
          return setup_digest_authentication()
       }
@@ -194,10 +194,10 @@ class HttpClient : NetClient(request,
       # Strip off any \r\n in result.
       s := ""
       b64h.encode_data(&null, request.username || ":" || request.password) ? repeat {
-         s ||:= tab(find("\r\n") | 0)
-         if pos(0) then
+         s ||:= ::tab(::find("\r\n") | 0)
+         if ::pos(0) then
             break
-         move(2)
+         ::move(2)
       }
       basic_auth_header := "Basic " || s
       return
@@ -208,22 +208,22 @@ class HttpClient : NetClient(request,
    method setup_digest_authentication(t)
       local algorithm, md5, qop_options
 
-      self.realm := \t["realm"] | 
+      self.realm := \t["realm"] |
          return on_http_error("WWW-Authenticate digest header didn't contain a realm")
-      self.nonce := \t["nonce"] | 
+      self.nonce := \t["nonce"] |
          return on_http_error("WWW-Authenticate digest header didn't contain a nonce")
-      self.opaque := t["opaque"] 
+      self.opaque := t["opaque"]
 
       algorithm := \t["algorithm"] | "MD5"
       self.nonce_count := 0
       self.cnonce := "0a4f113b"
-      
+
       #
       # Calculate HA1
       #
       md5 := MD5()
       md5.update(unq(request.username) || ":" || unq(realm) || ":" || request.password)
-      if map(unq(algorithm)) == "md5-sess" then {
+      if ::map(unq(algorithm)) == "md5-sess" then {
          md5.update(":" || unq(nonce) || ":" || unq(cnonce))
       }
       self.ha1 := md5.final_str()
@@ -231,12 +231,12 @@ class HttpClient : NetClient(request,
       #
       # Get the available qop values and select a qop.
       #
-      qop_options := set()
+      qop_options := ::set()
       \t["qop"] ? {
-         while(tab(upto(token_char))) do 
-            insert(qop_options, map(tab(many(token_char))))
+         while(::tab(::upto(token_char))) do
+            ::insert(qop_options, ::map(::tab(::many(token_char))))
       }
-      self.qop := member(qop_options, "auth-int" | "auth") | &null
+      self.qop := ::member(qop_options, "auth-int" | "auth") | &null
    end
 
    #
@@ -245,7 +245,7 @@ class HttpClient : NetClient(request,
       local md5, nc, h, t, hentity, ha2
 
       self.nonce_count +:= 1
-      nc := map(format_int_to_string(self.nonce_count, 16, 8))
+      nc := ::map(format_int_to_string(self.nonce_count, 16, 8))
       md5 := MD5()
       #
       # Calculate HA2
@@ -286,9 +286,9 @@ class HttpClient : NetClient(request,
    #
    # @p
    method unq(s)
-      if s[1] == "\"" then 
+      if s[1] == "\"" then
          s[1] := ""
-      if s[-1] == "\"" then 
+      if s[-1] == "\"" then
          s[-1] := ""
       return s
    end
@@ -298,18 +298,18 @@ class HttpClient : NetClient(request,
    method parse_generic_header(s)
       local t, k, v
 
-      t := table()
+      t := ::table()
       s ? repeat {
-         tab(upto(token_char)) | break
-         k := tab(many(token_char))
+         ::tab(::upto(token_char)) | break
+         k := ::tab(::many(token_char))
          if ="=" then {
-            if any('\"') then
+            if ::any('\"') then
                v := parse_quoted_string()
             else
-               v := tab(many(token_char)) | ""
+               v := ::tab(::many(token_char)) | ""
          } else
             v := &null
-         insert(t, k, v)
+         ::insert(t, k, v)
       }
       return t
    end
@@ -321,13 +321,13 @@ class HttpClient : NetClient(request,
       res := ""
       res ||:= ="\""
       repeat {
-         res ||:= tab(upto('\\\"') | 0)
-         if pos(0) then
+         res ||:= ::tab(::upto('\\\"') | 0)
+         if ::pos(0) then
             break
          if res ||:= ="\"" then
             break
-         if any('\\') then {
-            res ||:= move(2)
+         if ::any('\\') then {
+            res ||:= ::move(2)
          }
       }
       return res
@@ -358,13 +358,13 @@ class HttpClient : NetClient(request,
       local c, k, v, t
 
       s ? repeat {
-         tab(upto(token_char)) | break
-         k := tab(many(token_char))
+         ::tab(::upto(token_char)) | break
+         k := ::tab(::many(token_char))
          if ="=" then {
-            if any('\"') then
+            if ::any('\"') then
                v := parse_quoted_string()
             else
-               v := tab(upto(';') | 0)
+               v := ::tab(upto(';') | 0)
          } else
             v := &null
          if /c then {
@@ -372,7 +372,7 @@ class HttpClient : NetClient(request,
             c.name := k
             c.value := v
          } else {
-            case map(k) of {
+            case ::map(k) of {
                "expires" : {
                   t := Time()
                   if t.parse(v, "EEE, dd-MMM-yyyy hh:mm:ss zzz") then
@@ -396,21 +396,21 @@ class HttpClient : NetClient(request,
 
       every s := !result.get_headers("set-cookie") do {
          if c := parse_cookie_string(s) then {
-            domain := map(\c.domain | request.url.get_address())
-            if member(cookies, domain) then 
+            domain := ::map(\c.domain | request.url.get_address())
+            if ::member(cookies, domain) then
                paths := cookies[domain]
             else {
-               paths := table()
-               insert(cookies, domain, paths)
+               paths := ::table()
+               ::insert(cookies, domain, paths)
             }
 
             path := \c.path | request.url.get_file()
 
-            if member(paths, path) then
+            if ::member(paths, path) then
                vals := paths[path]
             else {
                vals := ClTable()
-               insert(paths, path, vals)
+               ::insert(paths, path, vals)
             }
             vals.insert(c.name, c)
          }
@@ -422,15 +422,15 @@ class HttpClient : NetClient(request,
    method create_cookie_header()
       local s, e, f, host, path, c, now
 
-      host := map(request.url.get_address())
+      host := ::map(request.url.get_address())
       path := request.url.get_file()
       now := Time()
       now.set_current_time()
       s := ""
-      every e := !sort(cookies) do {
+      every e := !::sort(cookies) do {
          if host[0-:*e[1]] == e[1] then {
-            every f := !reverse(sort(e[2])) do {
-               if match(f[1], path) then {
+            every f := !::reverse(::sort(e[2])) do {
+               if ::match(f[1], path) then {
                   every c := (!f[2].sort())[2] do {
                      if /c.expires | c.expires.after(now) then {
                         if *s > 0 then
@@ -453,10 +453,10 @@ class HttpClient : NetClient(request,
    # @p
    method dump_cookies()
       local c, e, f, g
-      every e := !sort(cookies) do {
-         write("domain:", e[1])
-         every f := !reverse(sort(e[2])) do {
-            write("\tpath:", f[1])
+      every e := !::sort(cookies) do {
+         ::write("domain:", e[1])
+         every f := !::reverse(::sort(e[2])) do {
+            ::write("\tpath:", f[1])
             every c := (!f[2].sort())[2] do {
                write("\t\t", c.to_string())
             }
@@ -485,7 +485,7 @@ class HttpClient : NetClient(request,
    # @p
    method maybe_open()
       if /connection | /open_url | open_url.get_address() ~== request.url.get_address() |
-         open_url.get_port() ~= request.url.get_port() then 
+         open_url.get_port() ~= request.url.get_port() then
       {
          close()
          set_server(request.url.get_address())
@@ -559,7 +559,7 @@ class HttpClient : NetClient(request,
          read_headers() | fail
 
          #
-         # A 100 ("Continue") result means go round again and get 
+         # A 100 ("Continue") result means go round again and get
          # the status/headers again - they follow immediately after
          # the end of the first headers.
          #
@@ -580,7 +580,7 @@ class HttpClient : NetClient(request,
       #
       # Close if told to do so.
       #
-      if map(result.get_first_header("connection")) == "close" then
+      if ::map(result.get_first_header("connection")) == "close" then
          close()
    end
 
@@ -601,7 +601,7 @@ class HttpClient : NetClient(request,
       else
          request.unset_header("range")
 
-      write_line(request.the_method || " " || request.url.get_file() || 
+      write_line(request.the_method || " " || request.url.get_file() ||
                  " HTTP/" || http_version) | fail
 
       if /request.post_data then {
@@ -635,14 +635,14 @@ class HttpClient : NetClient(request,
             #
             # A continuation line starts with a space or a tab.
             #
-            if any(' \t') then
-               val ||:= tab(0)
+            if ::any(' \t') then
+               val ||:= ::tab(0)
             else {
                # Add current header and start a new one.
                result.add_header(\key, val)
-               key := tab(upto(':') | 0)
+               key := ::tab(::upto(':') | 0)
                =": "
-               val := tab(0)
+               val := ::tab(0)
             }
          }
       }
@@ -658,7 +658,7 @@ class HttpClient : NetClient(request,
          # continue from the previous attempt.
          #
          if \request.data_file then
-            data_out := ::open(request.data_file, "a") | stop("Couldn't open ", request.data_file)
+            data_out := ::open(request.data_file, "a") | ::stop("Couldn't open ", request.data_file)
       } else {
          #
          # Set up either a new data file or a string buffer, and reset
@@ -667,9 +667,9 @@ class HttpClient : NetClient(request,
          if /request.data_file then
             string_buff := StringBuff()
          else
-            data_out := ::open(request.data_file, "w") | stop("Couldn't open ", request.data_file)
+            data_out := ::open(request.data_file, "w") | ::stop("Couldn't open ", request.data_file)
 
-         self.length := integer(result.get_first_header("content-length")) | &null
+         self.length := ::integer(result.get_first_header("content-length")) | &null
          self.read := 0
       }
 
@@ -682,7 +682,7 @@ class HttpClient : NetClient(request,
       #
       # Close the result
       #
-      if /request.data_file then 
+      if /request.data_file then
          result.set_data(string_buff.get_string())
       else {
          ::close(\data_out)
@@ -698,7 +698,7 @@ class HttpClient : NetClient(request,
       #
       # Read the data.
       #
-      if map(result.get_first_header("transfer-encoding")) == "chunked" then
+      if ::map(result.get_first_header("transfer-encoding")) == "chunked" then
          return read_chunked()
       else if /length then
          return read_to_eof()
@@ -713,13 +713,13 @@ class HttpClient : NetClient(request,
       repeat {
          l := read_line() | fail
          l ? {
-            chunk := integer("16r" || tab(many('0987654321abcdefABCDEF'))) |
+            chunk := ::integer("16r" || ::tab(::many('0987654321abcdefABCDEF'))) |
                return error("Expected chunk-length specifier; got " || l)
          }
          if chunk = 0 then
             break
          while chunk > 0 do {
-            s := read_str(min(1024, chunk)) | fail
+            s := read_str(::min(1024, chunk)) | fail
             add_some(s)
             chunk -:= *s
          }
@@ -804,7 +804,7 @@ class HttpClient : NetClient(request,
       if /request.data_file then
          string_buff.add(s)
       else
-         writes(data_out, s)
+         ::writes(data_out, s)
    end
 
    method set_one(attr, val)
@@ -827,7 +827,7 @@ class HttpClient : NetClient(request,
          token_char := &ascii[33:128] -- '()<>@,;:\\\"/[]?={} \t'
       }
       self.NetClient.initially()
-      cookies := table()
+      cookies := ::table()
       timeout := 12000
       keep_alive_flag := 1
       retries := 2

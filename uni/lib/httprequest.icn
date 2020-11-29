@@ -39,18 +39,18 @@ class HttpRequest:SetFields:Object(url,
    end
 
    #
-   # Add a request header with the given key, after any existing ones 
+   # Add a request header with the given key, after any existing ones
    # with the same key
    #
    method add_header(key, val)
       if headers.member(key) then
-         put(headers.get(key), val)
+         ::put(headers.get(key), val)
       else
          headers.insert(key, [val])
    end
 
    #
-   # Set a request header with the given key; any existing headers with 
+   # Set a request header with the given key; any existing headers with
    # the same key are removed.
    #
    method set_header(key, val)
@@ -134,7 +134,7 @@ class HttpRequest:SetFields:Object(url,
       case attr of {
          "url": {
             s := string_val(attr, val)
-            u := URL(s) | stop("Bad URL:" || s)
+            u := URL(s) | ::stop("Bad URL:" || s)
             set_url(u)
          }
          "data_file": set_data_file(string_val(attr, val))

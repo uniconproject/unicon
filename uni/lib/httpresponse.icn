@@ -41,16 +41,16 @@ class HttpResponse : Object(url, status, headers, data, data_file)
    # Succeed iff the status was an HTTP OK status.
    #
    method status_okay()
-      return find("200", status)
+      return ::find("200", status)
    end
 
    #
-   # Add a response header with the given key, after any existing ones 
+   # Add a response header with the given key, after any existing ones
    # with the same key
    #
    method add_header(key, val)
       if headers.member(key) then
-         put(headers.get(key), val)
+         ::put(headers.get(key), val)
       else
          headers.insert(key, [val])
    end
@@ -76,7 +76,7 @@ class HttpResponse : Object(url, status, headers, data, data_file)
    # Set the data of the response.
    #
    method set_data(s)
-      return data :=s 
+      return data :=s
    end
 
    #
@@ -114,12 +114,12 @@ class HttpResponse : Object(url, status, headers, data, data_file)
       local res, s
       res := []
       data ? {
-         while s := tab(upto('\n')) do {
-            put(res, s)
-            move(1)
+         while s := ::tab(::upto('\n')) do {
+            ::put(res, s)
+            ::move(1)
          }
-         if not(pos(0)) then
-            put(res, tab(0))
+         if not(::pos(0)) then
+            ::put(res, ::tab(0))
       }
       return res
    end

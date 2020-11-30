@@ -346,7 +346,7 @@ classhead : CLASS IDENT supers LPAREN carglist RPAREN {
    $$.name := package_mangled_symbol($2.s)
    if proc($$.name, 0) then
       warning("Warning: class "|| $$.name ||" overrides the built-in function")
-   else if \ (foobar := classes.lookup($$.name)) then {
+   if \ (foobar := classes.lookup($$.name)) then {
       yyerror("redeclaration of class " || $$.name)
       }
    else

@@ -2900,7 +2900,6 @@ procedure yyparse()
   local yys        # current token string
   local doaction   # set to 1 if there need to execute action
   local token      # current token
-  local arv        # action return value (0=accept; 1=abort; else fail)
 
   if /yytable then init() 
   init_stacks() 
@@ -3114,7 +3113,7 @@ procedure action_18()
    yyval.name := package_mangled_symbol(valstk[5].s)
    if proc(yyval.name, 0) then
       warning("Warning: class "|| yyval.name ||" overrides the built-in function")
-   else if \ (foobar := classes.lookup(yyval.name)) then {
+   if \ (foobar := classes.lookup(yyval.name)) then {
       yyerror("redeclaration of class " || yyval.name)
       }
    else
@@ -4470,4 +4469,4 @@ procedure action_323()
  yyval := node("error") 
 end
 
-#line 4477 "unigram.icn"
+#line 4476 "unigram.icn"

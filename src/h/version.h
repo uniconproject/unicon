@@ -15,9 +15,17 @@
  *  Icon version number and date.
  *  These are the only two entries that change any more.
  */
-#define VersionNumber "13.2"
 
-#define VersionDate "October 15, 2020"
+#ifdef UNICON_VERSION
+   #define VersionNumber UNICON_VERSION
+#else
+   #define VersionNumber "13.2"
+#endif
+#ifdef UNICON_VERSION_DATE
+   #define VersionDate UNICON_VERSION_DATE
+#else
+   #define VersionDate "October 15, 2020"
+#endif
 
 /*
  * Version number to insure format of data base matches version of iconc

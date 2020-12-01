@@ -1,6 +1,7 @@
 #!/bin/sh
 
 UNICON_VERSION=13.2
+UNICON_VERSION_DATE=November 28, 2020
 
 # Interested in version only
 if [ "x$1" = "xversion"  ]; then
@@ -16,6 +17,7 @@ REV_FILE=./src/h/revision.h
 
 # If we have .git directory let us assume we are in tree
 if [ -d .git ]; then
+  UNICON_VERSION_DATE=`LC_ALL=C git log -1 --format=%cd --date=format:'%B %d, %Y'`
   REPO_REV_DESCR=`git describe --long --always --dirty='-modified'`
   REPO_REV_BRANCH=`git rev-parse --abbrev-ref HEAD | sed -e 's!heads/!!'`
   REPO_REV_COUNT=`git rev-list --first-parent --count HEAD`
@@ -35,6 +37,8 @@ if [ -d .git ]; then
   fi
 
   echo "#define gitBranch \"${REPO_REV_BRANCH}\"" >> $REV_FILE
+  echo "#define UNICON_VERSION \"${UNICON_VERSION}\"" >> $REV_FILE
+  echo "#define UNICON_VERSION_DATE \"${UNICON_VERSION_DATE}\"" >> $REV_FILE
 
 else # not under git revision control
 
@@ -43,6 +47,8 @@ else # not under git revision control
       echo "#define REPO_REVISION \"0\"" > $REV_FILE
       echo "#define gitDescription \"commit 0\"" >> $REV_FILE
       echo "#define gitBranch \"0\"" >> $REV_FILE
+      echo "#define UNICON_VERSION \"${UNICON_VERSION}\"" >> $REV_FILE
+      echo "#define UNICON_VERSION_DATE \"${UNICON_VERSION_DATE}\"" >> $REV_FILE
   fi 
 
   REPO_REV=`cat src/h/revision.h | sed -n -e 's/^.*REPO_REVISION //p'`

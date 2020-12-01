@@ -61,7 +61,7 @@ ca.u : ca.icn
 #unigram.u: unigram.icn
 #	$(ICONT) -c unigram
 
-# build iyacc, and uncomment these lines, if you change the language grammar
+# build iyacc, and uncomment these lines, if you change the language grammar (or unigram.y)
 #unigram.icn : unigram.y ytab_h.icn
 #	$(IYACC) -i unigram.y
 

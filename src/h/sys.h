@@ -333,7 +333,7 @@
 #ifndef BOOL
   /* to prevent double-typedef of BOOL on some platforms */
 #ifdef MacOS
-  #define BOOL rumplemacskin
+//#define BOOL rumplemacskin
 #else
   #define BOOL int
 #endif

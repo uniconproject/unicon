@@ -248,6 +248,10 @@ Deliberate Syntax Error
 
    buf = growcat(buf, &buflen, 3, c_comp, " ", c_opts);
 
+#ifdef MacOS
+   buf = growcat(buf, &buflen, 1," -Wno-parentheses-equality");
+#endif
+
 #ifdef Messaging
 #if NTGCC
    buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\libtp");
@@ -267,6 +271,12 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\xpm");
 #else					/* NTGCC */
    buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/xpm");
+
+#ifdef MacOS
+   buf = growcat(buf, &buflen, 1,
+	 " -I/usr/X11/include  -I/usr/X11 -I/usr/X11/include/freetype2 -L/usr/X11/lib");
+#endif
+
 #endif					/* NTGCC */
 #endif					/* Graphics */
 #if NTGCC
@@ -302,7 +312,7 @@ Deliberate Syntax Error
 #endif					/* Graphics3D */
 #endif					/* Graphics */
 
-   buf = growcat(buf, &buflen, 1, " -luconsole");
+   buf = growcat(buf, &buflen, 1, " -luconsole  -lucommon");
    buf = growcat(buf, &buflen, 2, " ", ICONC_LIB);
 
 #if HAVE_LIBZ

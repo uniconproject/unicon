@@ -561,7 +561,21 @@ int setrgbmode(wbp w, char *s)
    return Failed;
 }
 
-
+
+/*
+ * src/common/filepart.c defines FILE *flog, the file itself is part of libucommon.
+ * On MacOS iconc fails to find the symbol flog even though it is linking libucommon.
+ * If we call a function in filepart.c, it forces clang on MacOS to not
+ * optimize out filepart.c symbols inclduing flog avoiding the link error.
+ *
+ * This unused function is a hack to fix iconc on MacOS until someone finds a way
+ * to make clang not "too smart"
+ */
+void call_filepart_openlog_because_macOS_clang_is_too_smart() {
+  char *trash="random";
+  openlog(trash);
+}
+
 /*
  * put a string out to a window using the current attributes
  */

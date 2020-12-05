@@ -99,7 +99,9 @@ AC_DEFUN([do_arg_with],
    [AS_HELP_STRING([--with-$1[[=DIR]]], [Use $1 package (DIR: custom library path)])],
    [if test x$withval != xno ; then
       AC_MSG_RESULT(yes)
-      $1_HOME="$withval"
+      if test x$withval != xyes ; then
+         $1_HOME="$withval"
+      fi
     else
       AC_MSG_RESULT(no)
     fi],

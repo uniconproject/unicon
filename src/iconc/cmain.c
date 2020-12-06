@@ -124,7 +124,16 @@ char **argv;
       refpath = patchpath+18;
 #endif					/* ExpTools */
    else
-     refpath = relfile(argv[0], "/../");
+      refpath = relfile(argv[0], "/../");
+
+     if (refpath[strlen(refpath)] != '/') {
+       unsigned int n = (unsigned int)strlen(refpath) + 2;
+       char * refpathtmp = (char *)alloc(n);
+       strncpy(refpathtmp, refpath, n-1);
+       refpath = refpathtmp;
+       strcat(refpath, "/");
+     }
+
 
    /*
     * Process options.

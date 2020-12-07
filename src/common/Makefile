@@ -17,7 +17,7 @@ all: $(PROGS)
 
 doincl$(EXE):doincl.$(O)
 	$(CC) $(CPPFLAGS) $(LDFLAGS) -o doincl doincl.$(O)
-	-./doincl -o ../../bin/rt.h ../h/rt.h
+	-./doincl -o ../../rt/include/rt.h ../h/rt.h
 
 # TODO: if the above rule doesn't work on windows we have to make switch to the rule below
 TMPdoincl.exe:     doincl.$(O)
@@ -46,22 +46,22 @@ libucommon.a: $(OBJS) $(HDRS)
 	$(RM) $@
 	$(AR) q $@ $(OBJS)
 	$(RANLIB) $@
-	$(CP) $@ ../../bin/
+	$(CP) $@ ../../rt/lib/
 
 libuconsole.a: $(NTCONDEP) uconsole.$(O)
 	$(RM) $@
 	$(AR) q $@ uconsole.$(O)
 	$(RANLIB) $@
-	$(CP) $@ ../../bin/
+	$(CP) $@ ../../rt/lib/
 
 libwuconsole.a: WNTCON wuconsole.$(O)
 	$(RM) $@
 	$(AR) q $@ wuconsole.$(O)
 	$(RANLIB) $@
-	$(CP) $@ ../../bin/
+	$(CP) $@ ../../rt/lib/
 
 common:         doincl$(EXE) patchstr$(EXE)
-		./doincl -o ../../bin/rt.h ../h/rt.h
+		./doincl -o ../../rt/include/rt.h ../h/rt.h
 
 $(OBJS): $(HDRS)
 

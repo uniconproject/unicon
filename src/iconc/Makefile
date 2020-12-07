@@ -17,16 +17,14 @@ OBJS=		cmain.o clocal.o ctrans.o dbase.o clex.o\
 all:		iconc
 
 
-iconc:		$(OBJS) ../../bin/libucommon.a
-		$(CC) $(LDFLAGS) -o iconc  $(OBJS) $(COBJS) -L../../bin/ -lucommon
+iconc:		$(OBJS) ../../rt/lib/libucommon.a
+		$(CC) $(LDFLAGS) -o iconc  $(OBJS) -lucommon
 		$(CP) iconc$(EXE) ../../bin
 		strip ../../bin/iconc$(EXE)
 
 $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 		../h/proto.h ../h/mproto.h ../h/typedefs.h ../h/gsupport.h \
 		ccode.h cglobals.h cproto.h csym.h ctrans.h ctree.h
-
-$(COBJS):	../h/mproto.h
 
 %.o: %.c
 	$(CMNT)@echo "   [ICONC] $<"

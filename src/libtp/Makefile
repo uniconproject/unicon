@@ -37,11 +37,15 @@ all: Makefile
 	  fi; \
 	done
 
-libtp.a: $(OBJS) $(LIBURI)
+libtp.a:  CP_HEADERS $(OBJS) $(LIBURI)
 	$(RM) $@
 	$(SHTOOL) arx -C $(AR) rc $@ $(OBJS) $(LIBURI)
 	$(RANLIB) $@
-	$(CP) $@ ../../bin/
+	$(CP) $@ ../../rt/lib/
+
+CP_HEADERS: tp.h uri/uri.h
+	$(CP) tp.h ../../rt/include/
+	$(CP) uri/uri.h ../../rt/include/uri/
 
 $(LIBURI) uri:
 	cd uri && $(MAKE)

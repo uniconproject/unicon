@@ -194,6 +194,7 @@ plugins:
 
 # Installation:  "make Install dest=new-parent-directory"
 ULROT=$(libdir)/unicon
+RTDIR=$(ULROT)/rt
 ULB=$(ULROT)/uni
 UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
@@ -204,6 +205,7 @@ Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr iyacc rt
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
 IPLdirs=lib incl gincl mincl procs
+RTdirs=lib include include/uri
 
 uninstall Uninstall:
 #	be conservative when deleting directories
@@ -224,6 +226,9 @@ install Install:
 #	create all directories first
 	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir) $(DESTDIR)$(mandir)/man1 $(Tdirs) ; do \
 	    (echo "Creating dir $$d") && (mkdir -p $$d); \
+	done
+	@for d in $(RTdirs); do \
+	    (echo "Creating dir $(DESTDIR)$(RTDIR)/$$d") && (mkdir -p $(DESTDIR)$(RTDIR)/$$d); \
 	done
 	@for d in $(IPLdirs); do \
 	    (echo "Creating dir $(DESTDIR)$(UIPL)/$$d") && (mkdir -p $(DESTDIR)$(UIPL)/$$d); \
@@ -247,6 +252,11 @@ install Install:
             fi; \
 	  fi; \
 	done
+#	install unicon/rt
+	@echo "Installing unicon/rt to $(DESTDIR)$(RTDIR) ..."
+	@$(INST) -m 644 rt/lib/* $(DESTDIR)$(RTDIR)/lib
+	@$(INST) -m 644 rt/include/*.h $(DESTDIR)$(RTDIR)/include
+	@$(INST) -m 644 rt/include/uri/*.h $(DESTDIR)$(RTDIR)/include/uri
 #	install unicon/ipl
 	@echo "Installing unicon/ipl to $(DESTDIR)$(UIPL) ..."
 	@$(INST) -m 644 ipl/lib/*.u $(DESTDIR)$(UIPL)/lib

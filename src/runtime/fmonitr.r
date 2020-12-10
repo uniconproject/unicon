@@ -139,7 +139,9 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       p->Cnvstr = cnv_str_1;
       p->Cnvtcset = cnv_tcset_1;
       p->Cnvtstr = cnv_tstr_1;
+#ifdef PatternTypexb
       p->Cnvpattern = cnv_pattern_1;
+#endif					/* PatternType */
       }
    else {
       p->Cnvcset = cnv_cset_0;

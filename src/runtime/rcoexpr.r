@@ -139,11 +139,11 @@ struct b_coexpr *sblkp;
 #else					/* COMPILER */
    *((struct pf_marker *)dsp) = rblkp->pfmkr;
    sblkp->es_pfp = (struct pf_marker *)dsp;
-
+#ifdef PatternType
  if (!is_in_a_block_region((char *)(sblkp->es_pfp->pattern_cache)) ||
      (sblkp->es_pfp->pattern_cache->title != T_Table))
    sblkp->es_pfp->pattern_cache = NULL;
-
+#endif					/* PatternType */
    sblkp->es_tend = NULL;
    dsp = (dptr)((word *)dsp + Vwsizeof(*pfp));
    sblkp->es_ipc.opnd = rblkp->ep;

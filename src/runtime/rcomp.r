@@ -182,6 +182,7 @@ dptr dp1, dp2;
             return Equal;
          return ((lresult > 0) ? Greater : Less);
 
+#ifdef PatternType
       case T_Pattern:
          /*
           * Collate on pattern id.
@@ -190,6 +191,7 @@ dptr dp1, dp2;
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);
+#endif					/* PatternType */
 
       case T_External:
 	 /*
@@ -249,8 +251,10 @@ dptr dp;
 	 return 10;
       case T_Record:
 	 return 11;
+#ifdef PatternType
       case T_Pattern:
-         return 12;
+	return 12;
+#endif					/* PatternType */
       case T_External:
          return 13;
       default:

@@ -88,7 +88,9 @@
           */
          body {
             C_integer i;
-
+#ifndef Arrays
+	    CURTSTATE();
+#endif					/* Arrays */
             if (!cnv:C_integer(y, i))
                runerr(101, y);
 
@@ -119,6 +121,9 @@
          if !cnv:string(y, *VarLoc(x)) then
             runerr(103, y);
          inline {
+#ifndef Arrays
+	   CURTSTATE();
+#endif					/* Arrays */
 #ifdef MultiProgram
 	    IntVal(*(VarLoc(x)-1)) = 1;
 #else					/* MultiProgram */

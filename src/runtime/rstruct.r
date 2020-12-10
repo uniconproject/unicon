@@ -68,6 +68,9 @@ void cpslots(dptr dp1, dptr slotptr, word i, word j)
          }
       break;
       } // case T_Lelem
+
+#ifdef Arrays
+
    case T_Intarray: {
 
       struct b_intarray *ap = (struct b_intarray *) lp1->listhead;
@@ -119,6 +122,9 @@ void cpslots(dptr dp1, dptr slotptr, word i, word j)
         }
       break;
    } /* Realrray */
+
+#endif				/* Arrays */
+
    default:
       syserr("impossible cpslots\n");
    }

@@ -2228,9 +2228,11 @@ static stringint siKeywords[] = {
       else if (strcmp(kname,"errorvalue") == 0) {
 	 return tstate->K_errorvalue;
 	 }
+#ifdef PatternType
       else if (strcmp(kname,"patindex") == 0) {
          return C_integer tstate->K_patindex;
-         } 
+         }
+#endif					/* PatternType */
       else if (strcmp(kname,"errout") == 0) {
 	 return file(&(p->K_errout));
 	 }

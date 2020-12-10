@@ -740,7 +740,8 @@ Deliberate Syntax Error
    #define DescriptorDouble 1
 #endif					/* DescriptorDouble */
 
-#ifndef NoPatternType
+
+#ifndef NoPattern
    #define PatternType 1
 #endif					/* PatternType */		      
 
@@ -930,6 +931,7 @@ Deliberate Syntax Error
 
 #ifndef Arrays
   #undef Graphics3D
+  #undef PatternType
 #endif
 
 #ifndef Graphics

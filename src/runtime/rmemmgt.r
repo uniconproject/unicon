@@ -1313,11 +1313,13 @@ struct b_coexpr *ce;
 
 static void sweep_pfps(struct p_frame *fp)
 {
+#ifdef PatternType
    while (fp != NULL) {
       if (fp->pattern_cache != NULL)
 	 markptr((union block **)&(fp->pattern_cache));
       fp = fp->old_pfp;
       }
+#endif					/* PatternType */
 }
 #else
 /*

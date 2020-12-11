@@ -1593,10 +1593,11 @@ function{*} localnames(ce,i)
       BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else if is:proc(ce) then inline {
-      int j;
+      int j, np;
       struct b_proc *cproc = BlkD(ce, Proc);
+      np = abs((int)cproc->nparam);
       for(j = 0; j < cproc->ndynam; j++) {
-	 result = cproc->lnames[j + cproc->nparam];
+	 result = cproc->lnames[j + np];
 	 suspend result;
          }
       fail;
@@ -1610,7 +1611,7 @@ function{*} localnames(ce,i)
       runerr(101,i)
    body {
 #if !COMPILER
-      int j;
+      int j, np;
       dptr arg;
       struct b_proc *cproc;
       struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
@@ -1632,8 +1633,9 @@ function{*} localnames(ce,i)
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
       cproc = BlkD(arg[0], Proc);
+      np = abs((int)cproc->nparam);
       for(j = 0; j < cproc->ndynam; j++) {
-	 result = cproc->lnames[j + cproc->nparam];
+	 result = cproc->lnames[j + np];
 	 suspend result;
          }
 #endif					/* !COMPILER */
@@ -1682,6 +1684,7 @@ function{*} staticnames(ce,i)
       runerr(101,i)
    body {
 #if !COMPILER
+      int j;
       dptr arg;
       struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
       if (thePfp == NULL) fail;
@@ -1722,10 +1725,11 @@ function{1,*} paramnames(ce,i)
       BlkD(k_main, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else if is:proc(ce) then inline {
-      int j;
+      int j, np;
       struct b_proc *cproc = BlkD(ce, Proc);
-      /* do built-ins (nparam < 0) have readable parameter names? maybe not.*/
-      for(j = 0; j < cproc->nparam; j++) {
+      /* do built-ins (ndynam < 0) have readable parameter names? maybe not.*/
+      np = abs((int)cproc->nparam);
+      for(j = 0; j < np; j++) {
 	 result = cproc->lnames[j];
 	 suspend result;
          }
@@ -1740,7 +1744,7 @@ function{1,*} paramnames(ce,i)
       runerr(101,i)
    body {
 #if !COMPILER
-      int j;
+      int j, np;
       dptr arg;
       struct b_proc *cproc;
       struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
@@ -1762,7 +1766,8 @@ function{1,*} paramnames(ce,i)
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
       cproc = BlkD(arg[0], Proc);
-      for(j = 0; j < cproc->nparam; j++) {
+      np = abs((int)cproc->nparam);
+      for(j = 0; j < np; j++) {
 	 result = cproc->lnames[j];
 	 suspend result;
          }
@@ -2105,9 +2110,9 @@ function{*} keyword(keyname,ce,i)
    body {
       struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
-#if 0
       int k;
 
+#if 0
 /*
  * Unfinished: change keyword()'s gigantic chain of if (strcmp())... into
  * a switch statement that uses the stringint mechanism. Status: about

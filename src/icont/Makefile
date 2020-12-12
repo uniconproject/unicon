@@ -18,21 +18,17 @@ WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 # These files are affected by NTConsole on Windows
 CONSOLEOBJS=  lcode.$(O) lglob.$(O) link.$(O) tcode.$(O) tmain.$(O)
 
-COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
-		../common/filepart.$(O) ../common/strtbl.$(O)\
-		../common/mlocal.$(O) ../common/ipp.$(O)
-
 PGMS=		icont$(EXE)
 
 all:		icont
 
-icont $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../bin/libucommon.a
+icont $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a
 		$(CC) $(CFLAGS) $(LDFLAGS) -o icont $(OBJS) -lucommon $(LIBS)
 		cp $(PGMS) ../../bin
 		strip ../../bin/$(PGMS)
 
-wicont $(WICONTEXE): WNTCON $(OBJS) ../../bin/libucommon.a common
-	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS)  $(COBJS) $(WOBJS)  -lucommon -lwuconsole -lwinmm $(LIBS) $(WGLIBS)
+wicont $(WICONTEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a common
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS) $(WOBJS)  -lucommon -lwuconsole -lwinmm $(LIBS) $(WGLIBS)
 	$(CP) wicont.exe ../../bin
 
 
@@ -58,8 +54,6 @@ common: $(COBJS) ../common/dconsole.$(O)
 $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
 		   ../h/proto.h ../h/mproto.h ../h/auto.h \
 		   ../h/typedefs.h ../h/cstructs.h tproto.h
-
-$(COBJS):	../h/mproto.h
 
 %.o: %.c
 	$(CMNT)@echo "   [ICONT] $<"

@@ -14,8 +14,10 @@
 
 CC = @CC@
 
-CFLAGS = @CFLAGS@ -I../libtp -I../gdbm -I../xpm
-LDFLAGS= -L../../bin @LDFLAGS@
+RTDIR=$(TOPDIR)/rt
+
+CFLAGS = @CFLAGS@ -I../../rt/include
+LDFLAGS= -L../../rt/lib @LDFLAGS@
 LIBS= @LIBS@
 CPPFLAGS = @CPPFLAGS@
 
@@ -28,7 +30,7 @@ LDDYN = @LDDYN@
 
 SO = @SO@
 RLINK = @RLINK@ -L../../bin
-RLIBS = -L../../bin -ltp -lgdbm -lucommon $(LIBS) -lm  @RLIBS@
+RLIBS = -L../../rt/lib -ltp -lgdbm -lucommon $(LIBS) -lm  @RLIBS@
 
 XLIBS = @XLIBS@
 XPMDEFS = -DZPIPE
@@ -101,6 +103,7 @@ WUNICONEXE=@WUNICONEXE@
 ICONCEXE=@ICONCEXE@
 
 SHELL=sh
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@

@@ -223,8 +223,8 @@ Deliberate Syntax Error
    /*
     * Visual Studio / VC++ / cl.exe
     */
-   buf = growcat(buf, &buflen, 10, c_comp, " /c ", c_opts, " /I", refpath,
-		 "..\\src\\gdbm /I", refpath, "..\\src\\libtp ", srcname, " ");
+   buf = growcat(buf, &buflen, 8, c_comp, " /c ", c_opts, " /I", refpath,
+		 "\\rt\\include ", srcname, " ");
 
    /* First, the compile. */
    /*
@@ -252,25 +252,13 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 1," -Wno-parentheses-equality");
 #endif
 
-#ifdef Messaging
-#if NTGCC
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\libtp");
-#else					/* NTGCC */
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/libtp");
-#endif					/* NTGCC */
-#endif					/* Messaging */
-#ifdef Dbm
-#if NTGCC
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\gdbm");
-#else					/* NTGCC */
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/gdbm");
-#endif					/* NTGCC */
-#endif					/* Dbm */
 #ifdef Graphics
 #if NTGCC
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\xpm");
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "\\src\\xpm");
 #else					/* NTGCC */
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/xpm");
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "/src/xpm");
+
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "/rt/include");
 
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1,
@@ -279,11 +267,7 @@ Deliberate Syntax Error
 
 #endif					/* NTGCC */
 #endif					/* Graphics */
-#if NTGCC
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\common");
-#else					/* NTGCC */
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/common");
-#endif					/* NTGCC */
+
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
 
 #if 0
@@ -295,7 +279,7 @@ Deliberate Syntax Error
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }
 
-   buf = growcat(buf, &buflen, 2, " -L", refpath);
+   buf = growcat(buf, &buflen, 3, " -L", refpath, "/rt/lib" );
 
 #ifdef Messaging
    buf = growcat(buf, &buflen, 1, " -ltp");
@@ -408,9 +392,9 @@ Deliberate Syntax Error
 
 #ifdef Graphics
 #ifdef HAVE_LIBXPM
-   buf = growcat(buf, &buflen, 3, ",", refpath, "Xpm/lib");
+   buf = growcat(buf, &buflen, 3, ",", refpath, "/Xpm/lib");
 #endif						/* HAVE_LIBXPM */
-   buf = growcat(buf, &buflen, 3, ",", refpath, "X11.opt/opt");
+   buf = growcat(buf, &buflen, 3, ",", refpath, "/X11.opt/opt");
 #endif						/* Graphics */
 
    if (system(buf) == 0)

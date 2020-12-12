@@ -16,23 +16,6 @@ LIBS =  -lc
 
 # SunOS users might wish to add '-fpcc-struct-return' to CFLAGS. see INSTALL.
 
-# Common prefix for installation directories
-prefix = /usr/local
-exec_prefix = $(prefix)
-binprefix = $(exec_prefix)
-manprefix = $(prefix)
-
-# Directory in which to put libgdbm.a.
-libdir = $(exec_prefix)/lib
-# The include directory for gdbm.h and dbm.h.
-includedir = $(prefix)/include
-# Info and man directories.
-infodir = $(prefix)/info
-man3dir = $(prefix)/man/man3
-manext = 3
-
-#### End of system configuration section. ####
-
 %.o: %.c
 	$(CMNT)@echo "   [GDBM] $<"
 	$(SLNT)$(CC) -c $(CPPFLAGS) $(DEFS) -I. -I$(srcdir) $(CFLAGS) $<
@@ -85,11 +68,16 @@ all: libgdbm.a
 
 progs: $(PROGS)
 
-libgdbm.a: $(OBJS) gdbm.h
+libgdbm.a: CP_HEADERS $(OBJS) gdbm.h
 	$(RM) $@
 	$(AR) q $@ $(OBJS)
 	$(RANLIB) $@
-	$(CP) $@ ../../bin/
+	$(CP) $@ ../../rt/lib/
+
+CP_HEADERS:gdbm.h ndbm.h
+	$(CP) gdbm.h ../../rt/include/
+	$(CP) ndbm.h ../../rt/include/
+
 
 gdbm.h:	gdbm.proto gdbmerrno.h gdbm.proto2
 	$(RM) gdbm.h

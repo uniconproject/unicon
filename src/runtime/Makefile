@@ -51,14 +51,14 @@ interp_all: update_rev
 # so only use strip -x when it is known to be needed and available (MacOS).
 
 # NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
-iconx $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../bin/libucommon.a ../../bin/libuconsole.a ../../bin/libgdbm.a ../../bin/libtp.a
-	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../bin/libuconsole.a
+iconx $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../rt/lib/libuconsole.a
 	cp iconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/iconx$(EXE);
 
 # on windows, always add WNTCON dependency to set NTCONSOLE accordingly
-wiconx $(WICONEXE): WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libwuconsole.a ../../bin/libgdbm.a ../../bin/libtp.a
-	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../bin/libwuconsole.a
+wiconx $(WICONEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../rt/lib/libwuconsole.a
 	cp wiconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/wiconx$(EXE);
 
@@ -136,7 +136,7 @@ RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 comp_all comp_all_uniconc: update_rev
 	$(MAKE) db_lib
 
-db_lib: rt.db rt.a ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a ../../bin/libuconsole.a
+db_lib: rt.db rt.a ../../rt/lib/libucommon.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a ../../rt/lib/libuconsole.a
 
 #
 # if rt.db is missing or any header files have been updated, recreate
@@ -147,18 +147,18 @@ rt.db: $(HDRS)
 	$(SLNT)$(RM) rt.db rt.a
 	$(MAKE) rt.a
 
-rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O)\
+rt.a: ../common/libucommon.a \
       cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fdb.$(O) fload.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) \
       fscan.$(O) fstr.$(O) fstranl.$(O) fstruct.$(O) fsys.$(O) fwindow.$(O) init.$(O) invoke.$(O)\
       keyword.$(O) lmisc.$(O) oarith.$(O) oasgn.$(O) ocat.$(O) ocomp.$(O) omisc.$(O) oref.$(O) oset.$(O)\
       ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
       rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
       rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
-      ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)
+      $(COMMONDRAWSTRING)
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
 	$(RTT) $(DASHS) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
-	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin
-	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
+	$(CP) rt.a rt.db ../common/dlrgint.$(O) ../../rt/lib/
+	-(test -f ../../NoRanlib) || (ranlib ../../rt/lib/rt.a)
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "

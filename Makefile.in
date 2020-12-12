@@ -103,7 +103,7 @@ WUnicon64:
 
 INNOSETUP="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
-WinInstaller:
+winbin WinInstaller:
 
 	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
 	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
@@ -194,20 +194,22 @@ plugins:
 
 # Installation:  "make Install dest=new-parent-directory"
 ULROT=$(libdir)/unicon
+RTDIR=$(ULROT)/rt
 ULB=$(ULROT)/uni
 UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr iyacc
+Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr iyacc rt.a rt.h
 
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
-IPLdirs=lib incl gincl mincl
+IPLdirs=lib incl gincl mincl procs
+RTdirs=lib include include/uri
 
 uninstall Uninstall:
 #	be conservative when deleting directories
-	@for d in $(DESTDIR)$(ULROT) $(DESTDIR)$(docdir)/unicon ; do \
+	@for d in $(DESTDIR)$(ULROT) $(DESTDIR)$(docdir) ; do \
 	   echo "Uninstalling dir $$d ..."; \
 	   rm -rf $$d; \
 	done
@@ -222,8 +224,11 @@ uninstall Uninstall:
 
 install Install:
 #	create all directories first
-	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir)/man1 $(Tdirs) ; do \
+	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir) $(DESTDIR)$(mandir)/man1 $(Tdirs) ; do \
 	    (echo "Creating dir $$d") && (mkdir -p $$d); \
+	done
+	@for d in $(RTdirs); do \
+	    (echo "Creating dir $(DESTDIR)$(RTDIR)/$$d") && (mkdir -p $(DESTDIR)$(RTDIR)/$$d); \
 	done
 	@for d in $(IPLdirs); do \
 	    (echo "Creating dir $(DESTDIR)$(UIPL)/$$d") && (mkdir -p $(DESTDIR)$(UIPL)/$$d); \
@@ -247,12 +252,18 @@ install Install:
             fi; \
 	  fi; \
 	done
+#	install unicon/rt
+	@echo "Installing unicon/rt to $(DESTDIR)$(RTDIR) ..."
+	@$(INST) -m 644 rt/lib/* $(DESTDIR)$(RTDIR)/lib
+	@$(INST) -m 644 rt/include/*.h $(DESTDIR)$(RTDIR)/include
+	@$(INST) -m 644 rt/include/uri/*.h $(DESTDIR)$(RTDIR)/include/uri
 #	install unicon/ipl
 	@echo "Installing unicon/ipl to $(DESTDIR)$(UIPL) ..."
 	@$(INST) -m 644 ipl/lib/*.u $(DESTDIR)$(UIPL)/lib
 	@$(INST) -m 644 ipl/incl/*.icn $(DESTDIR)$(UIPL)/incl
 	@$(INST) -m 644 ipl/gincl/*.icn $(DESTDIR)$(UIPL)/gincl
 	@$(INST) -m 644 ipl/mincl/*.icn $(DESTDIR)$(UIPL)/mincl
+	@$(INST) -m 644 ipl/procs/*.icn $(DESTDIR)$(UIPL)/procs
 #	install unicon/uni
 	@for d in $(Udirs); do \
 	  echo "Installing uni/$$d to $(DESTDIR)$(ULB)/$$d ..."; \
@@ -263,9 +274,9 @@ install Install:
 #	docs and man
 	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 ..."
 	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1/
-	@$(INST) -m 644 README.md $(DESTDIR)$(docdir)/unicon
-	@echo "Installing $(DESTDIR)$(docdir)/unicon ..."
-	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
+	@$(INST) -m 644 README.md $(DESTDIR)$(docdir)
+	@echo "Installing $(DESTDIR)$(docdir) ..."
+	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)
 
 # Bundle up for binary distribution.
 PKGDIR=$(PKG_TARNAME).$(PKG_VERSION)

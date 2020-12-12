@@ -122,24 +122,11 @@ char **argv;
       }
    fprintf(stderr,"iconc library files found in %s\n",refpath);
 #else					/* ExpTools */
-   if ((int)strlen(patchpath) > 18)
-      refpath = patchpath + 18;
-#endif					/* ExpTools */
-   else
-      refpath = relfile(argv[0], "/../");
-
-   /*
-      if (refpath[strlen(refpath)] != '/') {
-       unsigned int n = (unsigned int)strlen(refpath) + 2;
-       char * refpathtmp = (char *)alloc(n);
-       strncpy(refpathtmp, refpath, n-1);
-       refpath = refpathtmp;
-       strcat(refpath, "/");
-     }
-    */
 
    // find the path to the top level directory
-   refpath = unirootfile(argv[0], "/../../");
+   refpath = unirootfile(argv[0], "/../..");
+
+#endif					/* ExpTools */
 
    /*
     * Process options.
@@ -327,9 +314,9 @@ char **argv;
       readdb(db_lst);
       addlib(salloc(makename(buf,SourceDir, db_lst, LibSuffix)));
       }
-   db_path = (char *)alloc((unsigned int)strlen(refpath) + /*"rt/lib/"*/ 7 + strlen(db_name) + 1);
+   db_path = (char *)alloc((unsigned int)strlen(refpath) + /*"/rt/lib/"*/ 8 + strlen(db_name) + 1);
    strcpy(db_path, refpath);
-   strcat(db_path, "rt/lib/");
+   strcat(db_path, "/rt/lib/");
    strcat(db_path, db_name);
    readdb(db_path);
    addlib(salloc(makename(buf,SourceDir, db_path, LibSuffix)));
@@ -452,10 +439,10 @@ Deliberate Syntax Error
    inclfile = open_out(hfile);
    fprintf(inclfile, "#define COMPILER 1\n");
 
-   incl_path = (char *)alloc((unsigned int)(strlen(refpath) + /*rt/include/*/ 11 +
+   incl_path = (char *)alloc((unsigned int)(strlen(refpath) + /*/rt/include/*/ 12 +
        strlen(incl_file) + 1));
    strcpy(incl_path, refpath);
-   strcat(incl_path, "rt/include/");
+   strcat(incl_path, "/rt/include/");
    strcat(incl_path, incl_file);
    fprintf(inclfile,"#include \"%s\"\n", incl_path);
 

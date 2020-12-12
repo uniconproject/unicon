@@ -258,7 +258,7 @@ Deliberate Syntax Error
 #else					/* NTGCC */
    buf = growcat(buf, &buflen, 3, " -I", refpath, "/src/xpm");
 
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "rt/include");
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "/rt/include");
 
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1,
@@ -279,7 +279,7 @@ Deliberate Syntax Error
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }
 
-   buf = growcat(buf, &buflen, 3, " -L", refpath, "rt/lib" );
+   buf = growcat(buf, &buflen, 3, " -L", refpath, "/rt/lib" );
 
 #ifdef Messaging
    buf = growcat(buf, &buflen, 1, " -ltp");
@@ -392,9 +392,9 @@ Deliberate Syntax Error
 
 #ifdef Graphics
 #ifdef HAVE_LIBXPM
-   buf = growcat(buf, &buflen, 3, ",", refpath, "Xpm/lib");
+   buf = growcat(buf, &buflen, 3, ",", refpath, "/Xpm/lib");
 #endif						/* HAVE_LIBXPM */
-   buf = growcat(buf, &buflen, 3, ",", refpath, "X11.opt/opt");
+   buf = growcat(buf, &buflen, 3, ",", refpath, "/X11.opt/opt");
 #endif						/* Graphics */
 
    if (system(buf) == 0)

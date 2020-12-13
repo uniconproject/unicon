@@ -146,6 +146,7 @@ rt.db: $(HDRS)
 	@echo "   [ICONC] This might take a while..."
 	$(SLNT)$(RM) rt.db rt.a
 	$(MAKE) rt.a
+	$(CP) rt.db ../../rt/lib/
 
 rt.a: ../common/libucommon.a \
       cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fdb.$(O) fload.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) \
@@ -157,8 +158,8 @@ rt.a: ../common/libucommon.a \
       $(COMMONDRAWSTRING)
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
 	$(RTT) $(DASHS) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
-	$(CP) rt.a rt.db ../common/dlrgint.$(O) ../../rt/lib/
-	-(test -f ../../NoRanlib) || (ranlib ../../rt/lib/rt.a)
+	$(RANLIB) $@
+	$(CP) rt.a ../common/dlrgint.$(O) ../../rt/lib/
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "

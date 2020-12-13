@@ -27,16 +27,27 @@ end
 # return the top level unicon directory
 procedure ulibprefix()
    static prefix
-   local path, f
+   local path, f, c, i
    initial  {
       if path := (&features ? (="Libraries at " & tab(upto(';') | 0))) then
          prefix := path || "/"
       else if (path := (&features ? (="Binaries at " & tab(0)))) |
          ((f := open((path := getpaths()) || ("iconx"|"iconx.exe"| "wiconx.exe"))))
       then {
-         close(\f)
-         prefix := path || "../"
+	 close(\f)
+	 # The returned path has the form  /path/unicon/bin/
+	 # Drop the bin directory from the path to get the root
+	 # unicon directory
+
+	 # remove the trailing slash it could be / or \
+	 c := path[-1:0]
+	 path := path[1:-1]
+	 # find the previous slash and copy the path up to it including the slash
+         every i:= find(c, path)
+	 prefix := path[1:i+1]
          }
+      if &features=="MS Windows NT" then
+	  prefix:=map(prefix, '/', '\\')
       }
    return prefix
 end
@@ -56,6 +67,9 @@ procedure ulibpaths()
 	  prefix || "uni/parser"  || sep ||
 	  prefix || "uni/3d"      || sep ||
 	  prefix || "plugins/lib" || sep
+
+      if &features=="MS Windows NT" then
+	  libpath:=map(libpath, '/', '\\')
       }
    return libpath
 end
@@ -88,6 +102,8 @@ local sep, prefix
             prefix || "/ipl/gprogs" || sep
 
       pathstr := (semicolonpath("LPATH") | ".") || sep || pathstr
+      if &features=="MS Windows NT" then
+	  pathstr:=map(pathstr, '/', '\\')
       }
    return pathstr
 end

@@ -252,19 +252,23 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 1," -Wno-parentheses-equality");
 #endif
 
+#if NTGCC
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "\\rt\\include");
+   buf = growcat(buf, &buflen, 3, " -L", refpath, "\\rt\\lib" );
+#else					/* NTGCC */
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "/rt/include");
+   buf = growcat(buf, &buflen, 3, " -L", refpath, "/rt/lib" );
+#endif					/* NTGCC */
+
 #ifdef Graphics
 #if NTGCC
    buf = growcat(buf, &buflen, 3, " -I", refpath, "\\src\\xpm");
 #else					/* NTGCC */
    buf = growcat(buf, &buflen, 3, " -I", refpath, "/src/xpm");
-
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "/rt/include");
-
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1,
 	 " -I/usr/X11/include  -I/usr/X11 -I/usr/X11/include/freetype2 -L/usr/X11/lib");
 #endif
-
 #endif					/* NTGCC */
 #endif					/* Graphics */
 
@@ -278,8 +282,6 @@ Deliberate Syntax Error
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }
-
-   buf = growcat(buf, &buflen, 3, " -L", refpath, "/rt/lib" );
 
 #ifdef Messaging
    buf = growcat(buf, &buflen, 1, " -ltp");

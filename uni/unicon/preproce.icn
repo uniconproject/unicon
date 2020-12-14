@@ -602,7 +602,7 @@ end
 procedure preproc_sync_lines()
     local delta
     if preproc_filename ~=== preproc_print_filename then {
-        suspend "#line " || preproc_line - 1 || " " || image(preproc_filename)
+        suspend "#line " || preproc_line - 1 || "\"" || preproc_filename || "\""
         preproc_print_filename := preproc_filename
     }
     else {
@@ -614,8 +614,7 @@ procedure preproc_sync_lines()
             if 1 < delta < 20 then {
                 suspend 2 to delta & ""
             } else {
-                suspend "#line " || preproc_line - 1 || " " ||
-                    image(preproc_filename)
+                suspend "#line " || preproc_line - 1 || "\"" || preproc_filename || "\""
             }
         }
     }

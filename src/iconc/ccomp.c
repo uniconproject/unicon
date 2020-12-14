@@ -368,6 +368,9 @@ Deliberate Syntax Error
       strcpy(buf, "strip ");
       s = buf + 6;
       strcpy(s, exename);
+#if NTGCC
+      strcat(s, ".exe");
+#endif
       if ((rv = system(buf)) == -1) return EXIT_FAILURE;
       if (WEXITSTATUS(rv) != 0) return EXIT_FAILURE;
       }

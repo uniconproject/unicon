@@ -261,15 +261,10 @@ Deliberate Syntax Error
 #endif					/* NTGCC */
 
 #ifdef Graphics
-#if NTGCC
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "\\src\\xpm");
-#else					/* NTGCC */
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "/src/xpm");
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1,
 	 " -I/usr/X11/include  -I/usr/X11 -I/usr/X11/include/freetype2 -L/usr/X11/lib");
 #endif
-#endif					/* NTGCC */
 #endif					/* Graphics */
 
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
@@ -394,13 +389,6 @@ Deliberate Syntax Error
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, ",", l->libname);
       }
-
-#ifdef Graphics
-#ifdef HAVE_LIBXPM
-   buf = growcat(buf, &buflen, 3, ",", refpath, "/Xpm/lib");
-#endif						/* HAVE_LIBXPM */
-   buf = growcat(buf, &buflen, 3, ",", refpath, "/X11.opt/opt");
-#endif						/* Graphics */
 
    if (system(buf) == 0)
       return EXIT_FAILURE;

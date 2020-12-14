@@ -157,7 +157,7 @@ rt.a: ../common/libucommon.a \
       rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
       $(COMMONDRAWSTRING)
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
-	$(RTT) $(DASHS) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
+	$(RTT) $(DASHS) -A -O "$(COMMONDRAWSTRING)"
 	$(RANLIB) $@
 	$(CP) rt.a ../common/dlrgint.$(O) ../../rt/lib/
 

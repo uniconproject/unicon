@@ -27,8 +27,8 @@ OBJS1 = data.o create.o misc.o rgb.o scan.o parse.o hashtab.o \
 libXpm.a: $(OBJS1)
 	$(RM) $@
 	$(AR) $@ $(OBJS1)
-	$(CP) $@ ../../../bin/
-	$(CP) xpm.h ../X11
+	$(CP) $@ ../../../rt/lib
+	$(CP) xpm.h ../../../rt/include
 
 $(OBJS1): xpm.h
 

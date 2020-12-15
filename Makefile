@@ -96,10 +96,10 @@ VX-Configure:	config/unix/$(name)/status
 	@echo Remember to add unicon/bin to your path
 
 WUnicon32:
-	sh configure --host=i686-w64-mingw32 --disable-iconc
+	sh configure --host=i686-w64-mingw32
 
 WUnicon64:
-	sh configure --build=x86_64-w64-mingw32 --disable-iconc
+	sh configure --build=x86_64-w64-mingw32
 
 INNOSETUP="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 

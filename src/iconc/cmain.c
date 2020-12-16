@@ -500,6 +500,7 @@ Deliberate Syntax Error
       /*
        * Finish by removing C files.
        */
+      fprintf(stderr,"Succeeded\n");
       rmfile(cfile);
       rmfile(hfile);
       rmfile(makename(buf,TargetDir,cfile,ObjSuffix));

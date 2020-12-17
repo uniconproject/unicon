@@ -252,20 +252,19 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 1," -Wno-parentheses-equality");
 #endif
 
-#ifdef Graphics
 #if NTGCC
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "\\src\\xpm");
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "\\rt\\include");
+   buf = growcat(buf, &buflen, 3, " -L", refpath, "\\rt\\lib" );
 #else					/* NTGCC */
-   buf = growcat(buf, &buflen, 3, " -I", refpath, "/src/xpm");
-
    buf = growcat(buf, &buflen, 3, " -I", refpath, "/rt/include");
+   buf = growcat(buf, &buflen, 3, " -L", refpath, "/rt/lib" );
+#endif					/* NTGCC */
 
+#ifdef Graphics
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1,
 	 " -I/usr/X11/include  -I/usr/X11 -I/usr/X11/include/freetype2 -L/usr/X11/lib");
 #endif
-
-#endif					/* NTGCC */
 #endif					/* Graphics */
 
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
@@ -278,8 +277,6 @@ Deliberate Syntax Error
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }
-
-   buf = growcat(buf, &buflen, 3, " -L", refpath, "/rt/lib" );
 
 #ifdef Messaging
    buf = growcat(buf, &buflen, 1, " -ltp");
@@ -366,6 +363,9 @@ Deliberate Syntax Error
       strcpy(buf, "strip ");
       s = buf + 6;
       strcpy(s, exename);
+#if NTGCC
+      strcat(s, ".exe");
+#endif
       if ((rv = system(buf)) == -1) return EXIT_FAILURE;
       if (WEXITSTATUS(rv) != 0) return EXIT_FAILURE;
       }
@@ -389,13 +389,6 @@ Deliberate Syntax Error
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, ",", l->libname);
       }
-
-#ifdef Graphics
-#ifdef HAVE_LIBXPM
-   buf = growcat(buf, &buflen, 3, ",", refpath, "/Xpm/lib");
-#endif						/* HAVE_LIBXPM */
-   buf = growcat(buf, &buflen, 3, ",", refpath, "/X11.opt/opt");
-#endif						/* Graphics */
 
    if (system(buf) == 0)
       return EXIT_FAILURE;

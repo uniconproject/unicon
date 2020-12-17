@@ -543,7 +543,7 @@ if ! test "x$graphics" = "xno"; then
     GRAPHICS=graphics
 
     if test "ms$unicon_os" != "mswindows" ; then
-       XL="-L../../bin -lXpm \$(XLIBS)"
+       XL="-lXpm \$(XLIBS)"
        XPM=xpm
     fi
 

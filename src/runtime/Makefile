@@ -38,6 +38,14 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfl
 	xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O) xrwinrsc.$(O) xrposix.$(O) xrmsg.$(O)\
 	xraudio.$(O)
 
+COBJS=  cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fdb.$(O) fload.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) \
+        fscan.$(O) fstr.$(O) fstranl.$(O) fstruct.$(O) fsys.$(O) fwindow.$(O) init.$(O) invoke.$(O)\
+        keyword.$(O) lmisc.$(O) oarith.$(O) oasgn.$(O) ocat.$(O) ocomp.$(O) omisc.$(O) oref.$(O) oset.$(O)\
+        ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
+        rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
+        rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
+        $(COMMONDRAWSTRING)
+
 # These files are affected by NTConsole on Windows
 CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwinsys.$(O) xkeyword.$(O)
 
@@ -52,13 +60,13 @@ interp_all: update_rev
 
 # NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
 iconx $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
-	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../rt/lib/libuconsole.a
+	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
 	cp iconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/iconx$(EXE);
 
 # on windows, always add WNTCON dependency to set NTCONSOLE accordingly
 wiconx $(WICONEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
-	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../rt/lib/libwuconsole.a
+	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -lwuconsole
 	cp wiconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/wiconx$(EXE);
 
@@ -146,19 +154,14 @@ rt.db: $(HDRS)
 	@echo "   [ICONC] This might take a while..."
 	$(SLNT)$(RM) rt.db rt.a
 	$(MAKE) rt.a
+	$(CP) rt.db ../../rt/lib/
 
-rt.a: ../common/libucommon.a \
-      cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fdb.$(O) fload.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) \
-      fscan.$(O) fstr.$(O) fstranl.$(O) fstruct.$(O) fsys.$(O) fwindow.$(O) init.$(O) invoke.$(O)\
-      keyword.$(O) lmisc.$(O) oarith.$(O) oasgn.$(O) ocat.$(O) ocomp.$(O) omisc.$(O) oref.$(O) oset.$(O)\
-      ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
-      rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
-      rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
-      $(COMMONDRAWSTRING)
+rt.a: ../common/libucommon.a $(COBJS)
+
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
-	$(RTT) $(DASHS) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
-	$(CP) rt.a rt.db ../common/dlrgint.$(O) ../../rt/lib/
-	-(test -f ../../NoRanlib) || (ranlib ../../rt/lib/rt.a)
+	$(RTT) $(DASHS) -A -O  "$(COBJS)"
+	$(RANLIB) $@
+	$(CP) rt.a ../common/dlrgint.$(O) ../../rt/lib/
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "

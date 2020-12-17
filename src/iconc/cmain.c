@@ -316,7 +316,11 @@ char **argv;
       }
    db_path = (char *)alloc((unsigned int)strlen(refpath) + /*"/rt/lib/"*/ 8 + strlen(db_name) + 1);
    strcpy(db_path, refpath);
+#if NTGCC
+   strcat(db_path, "\\rt\\lib\\");
+#else					/* NTGCC */
    strcat(db_path, "/rt/lib/");
+#endif					/* NTGCC */
    strcat(db_path, db_name);
    readdb(db_path);
    addlib(salloc(makename(buf,SourceDir, db_path, LibSuffix)));
@@ -442,7 +446,11 @@ Deliberate Syntax Error
    incl_path = (char *)alloc((unsigned int)(strlen(refpath) + /*/rt/include/*/ 12 +
        strlen(incl_file) + 1));
    strcpy(incl_path, refpath);
+#if NTGCC
+   strcat(incl_path, "\\rt\\include\\");
+#else					/* NTGCC */
    strcat(incl_path, "/rt/include/");
+#endif					/* NTGCC */
    strcat(incl_path, incl_file);
    fprintf(inclfile,"#include \"%s\"\n", incl_path);
 
@@ -492,6 +500,7 @@ Deliberate Syntax Error
       /*
        * Finish by removing C files.
        */
+      fprintf(stderr,"Succeeded\n");
       rmfile(cfile);
       rmfile(hfile);
       rmfile(makename(buf,TargetDir,cfile,ObjSuffix));

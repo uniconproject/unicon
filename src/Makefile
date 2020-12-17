@@ -16,7 +16,7 @@ Common: libs
 	$(MAKE) -C rtt
 
 
-libs: gdbm tp $(XPM)
+libs:  $(XPM) gdbm tp
 
 tp:
 	$(MAKE) -C libtp

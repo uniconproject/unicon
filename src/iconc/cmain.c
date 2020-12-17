@@ -8,6 +8,7 @@
 #include "csym.h"
 #include "cproto.h"
 #include "wop.h"
+#include "../h/version.h"
 
 /*
  * Prototypes.
@@ -127,6 +128,122 @@ char **argv;
    refpath = unirootfile(argv[0], "/../..");
 
 #endif					/* ExpTools */
+
+   /*
+    * Pre-process options looking for -help and -version
+    *  (this is a temporary measure; in the longer term we will probably
+    *   switch from getopt() to getopt_long() or similar).
+    * At that time, much of this code will get put into a couple of procedures to
+    * build the version string and to emit the help text
+    */
+   {
+     int n, nargs = argc;
+     char ** opts = argv;
+     for (n = 1; n < nargs; ++n)
+       {
+         if ((0 == strncmp("--", opts[n],2)) || (0 == strncmp("-x", opts[n],2))) {
+           break;             /* Stop at a -- or -x option */
+         }
+         if (opts[n][0] != '-') {
+           break;               /* stop at first non option */
+         } else { /* See if we have -help or -version */
+           if (0 == strncmp("-help", opts[n], 5)) {
+             printf("Usage: %s [-cEgmstTuU] [-help] [-version] [-C comp]\n", progname);
+             printf("       [-e efile] [-f[adelns]] [-n[acest]] [-o ofile]\n");
+             printf("       [-p opt] [-r path] [-v i] [-w[bf]] file ... [-x args]\n");
+             printf("options may be one of:\n");
+             printf("   -c          : produce C file(s) only; do not compile\n");
+             printf("   -C comp     : the C compiler is called comp\n");
+             printf("   -e efile    : redirect standard error output to efile\n");
+             printf("   -E          : preprocess only; do not compile\n");
+             printf("   -fa         : enable all features (-fd -fe -fl -fn -fs)\n");
+             printf("     -fd       :   enable debugging\n");
+             printf("     -fe       :   enable error conversion\n");
+             printf("     -fl       :   enable support for large integers\n");
+             printf("     -fn       :   enable line numbering\n");
+             printf("     -fs       :   enable full string invocation\n");
+             printf("   -g          : emit debugging symbols\n");
+             printf("   -help       : produce this information\n");
+             printf("   -m          : preprocess using m4\n");
+             printf("   -na         : disable all optimizations (-nc -ne -ns -nt)\n");
+             printf("     -nc       :   disable control flow optimizations\n");
+             printf("     -ne       :   disable in-line expansion\n");
+             printf("     -ns       :   disable switch optimizations\n");
+             printf("     -nt       :   disable type inference\n");
+             printf("   -p opt      : pass opt through to C compiler (or linker)\n");
+             printf("   -r path     : path is the location of the runtime system\n");
+             printf("   -s          : work silently\n");
+             printf("   -t          : turn on tracing\n");
+             printf("   -T          : type trace only\n");
+             printf("   -u          : warn of undeclared variables\n");
+             printf("   -U          : indicate the source file(s) were produced by Unicon\n");
+             printf("   -v i        : set diagnostic verbosity level to i\n");
+             printf("   -version    : report the build version\n");
+             printf("   -wb         : optimize argument dereferences\n");
+             printf("   -wf         : optimize field dereferences\n");
+             printf("   -x args     : execute immediately\n");
+             printf("\n");
+             exit(EXIT_SUCCESS);
+           }
+
+           if(0 == strncmp("-version", opts[n],8)) {
+             /* Construct and print the version string */
+             char *p;
+             char gd[] = gitDescription;
+             int tagged, ltb;
+             /*
+              * By convention, A "Long Term Branch", used for the maintenance of previous
+              * releases, has a branch name consisting of digits and decimal points
+              */
+             for (ltb = 1, p=gitBranch; *p != '\0'; ++p) {
+               if (!isdigit(*p) && *p != '.') { ltb = 0; break; /* not LTB */}
+             }
+
+             /*
+              * gitDescription is the output of git describe, which finds the most recent
+              * tag that is reachable plus the number of commits to reach it. If that number
+              * is 0, the present commit is tagged (i.e. we are at a release point).
+              */
+             for (tagged=0, p=gd; *p != '0'; ++p) {
+               if (isdigit(*p) || *p == '.') continue;
+               if (*p == '-') {
+                 if (*(p+1) == '0') {
+                   tagged = 1;
+                   *p = '\0';   /* Terminate string here to get tagname */
+                 }
+                 break;
+                }
+              }
+
+             if (tagged == 1) {
+               if (0 == strncmp("master", gitBranch, 6)) {
+                 printf("iconc version %s    %s (Release)\n",
+                        VersionNumber, VersionDate);
+               } else if (ltb == 1) {
+                 printf("iconc version %s    %s (%s Maintenance Release)\n",
+                        VersionNumber, VersionDate, gd);
+               } else {
+                 printf("iconc version %s    %s (%s Development \"%s\")\n",
+                        VersionNumber, VersionDate, gitDescription, gitBranch);
+               }
+             } else { /* Not tagged */
+               if (0 == strncmp("master", gitBranch, 6)) {
+                 printf("iconc version %s    %s (%s pre-release)\n",
+                        VersionNumber, VersionDate, gitDescription);
+               } else if (ltb == 1) {
+                 printf("iconc version %s    %s (%s Maintenance pre-release)\n",
+                        VersionNumber, VersionDate, gitDescription);
+               } else {
+                 printf("iconc version %s    %s (%s Development \"%s\")\n",
+                        VersionNumber, VersionDate, gitDescription, gitBranch);
+               }
+            }
+
+             exit(EXIT_SUCCESS);
+           }
+         }
+       }
+   }
 
    /*
     * Process options.
@@ -692,5 +809,6 @@ char *fname;
 static void usage()
    {
    fprintf(stderr,"usage: %s %s file ... [-x args]\n", progname, CUsage);
+   fprintf(stderr,"%s -help       for full listing of options\n", progname);
    exit(EXIT_FAILURE);
    }

@@ -417,8 +417,11 @@ procedure preproc_scan_text(done_set)
                                 break
                             }
                             &subject := preproc_read() | fail
-                            preproc_print_line := preproc_line
-                            preproc_line +:= 1
+                            # we have just read the next line and incremented
+                            # preproc_line; treat previous line as if already
+                            # printed.
+                            preproc_print_line := preproc_line-1
+                            # preproc_line +:= 1 # already incr'd by pp_read
                             result := ""
                         }
                     }

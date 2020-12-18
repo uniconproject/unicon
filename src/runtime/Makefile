@@ -29,22 +29,25 @@ update_rev:
 # Make entries for iconx
 #
 
-XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfload.$(O) xfmath.$(O)\
-	xfmisc.$(O) xfmonitr.$(O) xfscan.$(O) xfstr.$(O) xfstranl.$(O) xfstruct.$(O) xfsys.$(O)\
-	xfwindow.$(O) ximain.$(O) ximisc.$(O) xinit.$(O) xinterp.$(O) xinvoke.$(O) xfdb.$(O)\
-	xkeyword.$(O) xlmisc.$(O) xoarith.$(O) xoasgn.$(O) xocat.$(O) xocomp.$(O)\
-	xomisc.$(O) xoref.$(O) xoset.$(O) xovalue.$(O) xralc.$(O) xrcoexpr.$(O) xrcomp.$(O) xrdb.$(O)\
-	xrdebug.$(O) xrlocal.$(O) xrlrgint.$(O) xrmemmgt.$(O) xrmisc.$(O) xrstruct.$(O) xrsys.$(O)\
-	xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O) xrwinrsc.$(O) xrposix.$(O) xrmsg.$(O)\
-	xraudio.$(O)
+XOBJS=	xcnv.$(O)     xdata.$(O)    xdef.$(O)     xerrmsg.$(O)  xextcall.$(O) xfconv.$(O)  \
+	xfload.$(O)   xfmath.$(O)   xfmisc.$(O)   xfmonitr.$(O) xfscan.$(O)   xfstr.$(O)   \
+	xfstranl.$(O) xfstruct.$(O) xfsys.$(O)    xfwindow.$(O) ximain.$(O)   ximisc.$(O)  \
+	xinit.$(O)    xinterp.$(O)  xinvoke.$(O)  xfdb.$(O)     xkeyword.$(O) xlmisc.$(O)  \
+	xoarith.$(O)  xoasgn.$(O)   xocat.$(O)    xocomp.$(O)	xomisc.$(O)   xoref.$(O)   \
+	xoset.$(O)    xovalue.$(O)  xralc.$(O)    xrcoexpr.$(O) xrcomp.$(O)   xrdb.$(O)    \
+	xrdebug.$(O)  xrlocal.$(O)  xrlrgint.$(O) xrmemmgt.$(O) xrmisc.$(O)   xrstruct.$(O)\
+	xrsys.$(O)    xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O)   xrwinrsc.$(O)\
+	xrposix.$(O)  xrmsg.$(O)    xraudio.$(O)
 
-COBJS=  cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fdb.$(O) fload.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) \
-        fscan.$(O) fstr.$(O) fstranl.$(O) fstruct.$(O) fsys.$(O) fwindow.$(O) init.$(O) invoke.$(O)\
-        keyword.$(O) lmisc.$(O) oarith.$(O) oasgn.$(O) ocat.$(O) ocomp.$(O) omisc.$(O) oref.$(O) oset.$(O)\
-        ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
-        rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
-        rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
-        $(COMMONDRAWSTRING)
+COBJS=	cnv.$(O)     data.$(O)    def.$(O)     errmsg.$(O)  extcall.$(O) fconv.$(O)  \
+	fload.$(O)   fmath.$(O)   fmisc.$(O)   fmonitr.$(O) fscan.$(O)   fstr.$(O)   \
+	fstranl.$(O) fstruct.$(O) fsys.$(O)    fwindow.$(O) imain.$(O)   imisc.$(O)  \
+	init.$(O)    interp.$(O)  invoke.$(O)  fdb.$(O)     keyword.$(O) lmisc.$(O)  \
+	oarith.$(O)  oasgn.$(O)   ocat.$(O)    ocomp.$(O)   omisc.$(O)   oref.$(O)   \
+	oset.$(O)    ovalue.$(O)  ralc.$(O)    rcoexpr.$(O) rcomp.$(O)   rdb.$(O)    \
+	rdebug.$(O)  rlocal.$(O)  rlrgint.$(O) rmemmgt.$(O) rmisc.$(O)   rstruct.$(O)\
+	rsys.$(O)    rgfxsys.$(O) rwinsys.$(O) rwindow.$(O) fxtra.$(O)   rwinrsc.$(O)\
+	rposix.$(O)  rmsg.$(O)    raudio.$(O)  $(COMMONDRAWSTRING)
 
 # These files are affected by NTConsole on Windows
 CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwinsys.$(O) xkeyword.$(O)
@@ -142,26 +145,15 @@ RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 	rposix.r rmsg.r
 
 comp_all comp_all_uniconc: update_rev
-	$(MAKE) db_lib
-
-db_lib: rt.db rt.a ../../rt/lib/libucommon.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a ../../rt/lib/libuconsole.a
-
-#
-# if rt.db is missing or any header files have been updated, recreate
-# rt.db from scratch along with the .$(O) files.
-#
-rt.db: $(HDRS)
 	@echo "   [ICONC] This might take a while..."
-	$(SLNT)$(RM) rt.db rt.a
 	$(MAKE) rt.a
-	$(CP) rt.db ../../rt/lib/
 
-rt.a: ../common/libucommon.a $(COBJS)
-
+rt.a: ../../rt/lib/libucommon.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a ../../rt/lib/libuconsole.a $(COBJS)
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
-	$(RTT) $(DASHS) -A -O  "$(COBJS)"
+	$(RTT) $(DASHS) -A -O  "$(COBJS) f_*.$(O) o_*$(O)"
 	$(RANLIB) $@
 	$(CP) rt.a ../common/dlrgint.$(O) ../../rt/lib/
+	$(CP) rt.db ../../rt/lib/
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "

@@ -68,49 +68,6 @@ int mterm = Op_Quit;
 
 
 
-#if NT
-/*
- * Convert an argv array to a command line string.  argv[0] is searched
- * on the PATH, since system() or its relatives do not reliably do that.
- */
-char *ArgvToCmdline(char **argv)
-{
-   int i, q, len = 0;
-   char *mytmp, *tmp2;
-   mytmp = malloc(1024);
-   if ((argv == NULL) || (argv[0] == NULL)) return NULL;
-   for (i=0; argv[i]; i++) len += strlen(argv[i]) + 1;
-   if (strcmp(".exe", argv[0]+(strlen(argv[0])-4))) {
-      tmp2 = malloc(strlen(argv[0])+5);
-      strcpy(tmp2, argv[0]);
-      strcat(tmp2, ".exe");
-      }
-   else tmp2 = strdup(argv[0]);
-   mytmp[0] = '\0';
-   q = pathFind(tmp2, mytmp, 2048);
-   if (!q) strcpy(mytmp,argv[0]);
-   else {
-      char *qq = mytmp;
-      while (qq=strchr(qq, '/')) *qq='\\';
-      if (strchr(mytmp, ' ')) {
-	 int j = strlen(mytmp);
-	 mytmp[j+2] = '\0';
-	 mytmp[j+1] = '"';
-	 for( ; j > 0 ; j--) mytmp[j] = mytmp[j-1];
-	 mytmp[0] = '"';
-	 }
-      }
-   len += strlen(mytmp);
-   if (len > 1023) mytmp = realloc(mytmp, len+1);
-
-   i = 1;
-   while (argv[i] != NULL) {
-      strcat(mytmp, " ");
-      strcat(mytmp, argv[i++]);
-   }
-   return mytmp;
-}
-#endif					/* NT */
 
 #if NT
 /*
@@ -879,6 +836,51 @@ void xmfree()
    MUTEX_UNLOCKID(MTX_STKLIST);
    }
 #endif					/* !COMPILER */
+
+#if NT
+
+/*
+ * Convert an argv array to a command line string.  argv[0] is searched
+ * on the PATH, since system() or its relatives do not reliably do that.
+ */
+char *ArgvToCmdline(char **argv)
+{
+   int i, q, len = 0;
+   char *mytmp, *tmp2;
+   mytmp = malloc(1024);
+   if ((argv == NULL) || (argv[0] == NULL)) return NULL;
+   for (i=0; argv[i]; i++) len += strlen(argv[i]) + 1;
+   if (strcmp(".exe", argv[0]+(strlen(argv[0])-4))) {
+      tmp2 = malloc(strlen(argv[0])+5);
+      strcpy(tmp2, argv[0]);
+      strcat(tmp2, ".exe");
+      }
+   else tmp2 = strdup(argv[0]);
+   mytmp[0] = '\0';
+   q = pathFind(tmp2, mytmp, 2048);
+   if (!q) strcpy(mytmp,argv[0]);
+   else {
+      char *qq = mytmp;
+      while (qq=strchr(qq, '/')) *qq='\\';
+      if (strchr(mytmp, ' ')) {
+	 int j = strlen(mytmp);
+	 mytmp[j+2] = '\0';
+	 mytmp[j+1] = '"';
+	 for( ; j > 0 ; j--) mytmp[j] = mytmp[j-1];
+	 mytmp[0] = '"';
+	 }
+      }
+   len += strlen(mytmp);
+   if (len > 1023) mytmp = realloc(mytmp, len+1);
+
+   i = 1;
+   while (argv[i] != NULL) {
+      strcat(mytmp, " ");
+      strcat(mytmp, argv[i++]);
+   }
+   return mytmp;
+}
+#endif					/* NT */
 
 
 #ifdef MacGraph

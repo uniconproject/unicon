@@ -302,7 +302,7 @@ distclean2: clean
 
 
 #MV=.0
-VSUFFIX?=~prerelease
+VSUFFIX?=""
 VV=$(PKG_VERSION)$(MV)
 PKG_STRNAME=$(PKG_TARNAME)_$(VV)$(VSUFFIX)
 UTAR=$(PKG_STRNAME).tar.gz

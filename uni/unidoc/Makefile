@@ -9,12 +9,15 @@ include $(BASE)/Makedefs.uni
 # Some variables to reduce typing later...
 #
 SRCS   := $(wildcard ./*.icn)
-UFILES := $(filter-out ./UniDoc.u,$(patsubst %.icn, %.u, $(SRCS)))
+UFILES := $(patsubst %.icn, %.u, $(SRCS))
 
 # The first target is the default target.
 #    The "@"'s tell make to suppress printing the command before
 #    running it.
 #
+
+default: UniDoc$(EXE)
+
 help:
 	@echo "You may make: "
 	@echo ""
@@ -24,14 +27,15 @@ help:
 
 # This is an implicit rule that tells how to build ".u" files from ".icn"
 #    files (saves having to enter a bunch of separate rules for each
-#    source file).  Make has predefined implicit rules for most of the
+#    sxbource file).  Make has predefined implicit rules for most of the
 #    commonly used suffixes.
 #
 %.u:	%.icn
 	$(UNICON) $(UFLAGS) -c $?
 
-UniDoc: $(UFILES) UniDoc.icn
-	$(UNICON) UniDoc
+UniDoc$(EXE): $(UFILES)
+	$(UNICON) -o UniDoc $(UFILES)
+	$(CP) UniDoc$(EXE) $(BIN)
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)
@@ -46,8 +50,8 @@ deps depends:
 # Clean up the directory.
 #
 clean:
-	@-rm -f *.u
-	@-rm -f *~
+	$(RM) UniDoc$(EXE) *.u uniclass.dir uniclass.pag uniclass.db *~
+
 
 # List all source files that have been modified since the last build.
 #

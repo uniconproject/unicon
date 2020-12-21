@@ -60,9 +60,10 @@ Source: "config\win32\gcc\uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "config\win32\gcc\internet.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\*.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 ;Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
-;Source: "\unicon\rt\lib\*.*"; DestDir: "{app}\rt\lib"; Flags: ignoreversion
-;Source: "\unicon\rt\include\*.h"; DestDir: "{app}\rt\include"; Flags: ignoreversion
-;Source: "\unicon\rt\include\uri\*.h"; DestDir: "{app}\rt\include\uri"; Flags: ignoreversion
+Source: "\unicon\rt\lib\*.*"; DestDir: "{app}\rt\lib"; Flags: ignoreversion
+Source: "\unicon\rt\include\*.h"; DestDir: "{app}\rt\include"; Flags: ignoreversion
+Source: "\unicon\rt\include\uri\*.h"; DestDir: "{app}\rt\include\uri"; Flags: ignoreversion
+Source: "\unicon\rt\include\openssl\*.h"; DestDir: "{app}\rt\include\openssl"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "COPYING"; DestDir: "{app}"; DestName: "COPYING.txt"; Flags: ignoreversion
 
 ; Documentation

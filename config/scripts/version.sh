@@ -1,7 +1,7 @@
 #!/bin/sh
 
-UNICON_VERSION=13.2
-UNICON_VERSION_DATE="November 28, 2020"
+UNICON_VERSION=13.3
+UNICON_VERSION_DATE="December 22, 2020"
 
 # Interested in version only
 if [ "x$1" = "xversion"  ]; then

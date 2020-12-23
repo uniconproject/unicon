@@ -29,7 +29,7 @@ class Shm(id)
    method set_value(o)
       static f
       initial {
-         f := loadfunc(LIB, "shm_set_value")
+         f := ::loadfunc(LIB, "shm_set_value")
       }
       f(id, lang::encode(o))
    end
@@ -40,7 +40,7 @@ class Shm(id)
    method get_value()
       static f
       initial {
-         f := loadfunc(LIB, "shm_get_value")
+         f := ::loadfunc(LIB, "shm_get_value")
       }
       return lang::decode(f(id))
    end
@@ -52,7 +52,7 @@ class Shm(id)
    method remove()
       static f
       initial {
-         f := loadfunc(LIB, "shm_remove")
+         f := ::loadfunc(LIB, "shm_remove")
       }
       f(id)
    end
@@ -72,7 +72,7 @@ end
 procedure open_public_shm(key)
    static f
    initial {
-      f := loadfunc(LIB, "shm_open_public")
+      f := ::loadfunc(LIB, "shm_open_public")
    }
    return Shm(f(key))
 end
@@ -83,7 +83,7 @@ end
 procedure create_public_shm(key, o)
    static f
    initial {
-      f := loadfunc(LIB, "shm_create_public")
+      f := ::loadfunc(LIB, "shm_create_public")
    }
    return Shm(f(key, lang::encode(o)))
 end
@@ -94,7 +94,7 @@ end
 procedure create_private_shm(o)
    static f
    initial {
-      f := loadfunc(LIB, "shm_create_private")
+      f := ::loadfunc(LIB, "shm_create_private")
    }
    return Shm(f(lang::encode(o)))
 end

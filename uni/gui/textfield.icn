@@ -39,14 +39,14 @@ $include "guih.icn"
 class TextField : Component(
    filter,                  # Cset for filtering characters
    printable,               # The printable characters
-   contents,                #                
+   contents,                #
    is_held,                 # True if dragging
    going_left,
-   cursor,                  #              
+   cursor,                  #
    mark,
-   leftmost,                #                
-   rightmost,               #                 
-   tx,                      #          
+   leftmost,                #
+   rightmost,               #
+   tx,                      #
    tw,                      #
    displaychar,             # char to print on screen
    undo_manager,
@@ -82,9 +82,9 @@ class TextField : Component(
    end
 
    method resize()
-      if \self.draw_border_flag then 
+      if \self.draw_border_flag then
          /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
-      else 
+      else
          /self.h_spec := WAttrib(self.cwin, "fheight")
       self.Component.resize()
 
@@ -145,14 +145,14 @@ class TextField : Component(
       #
       hr := has_region()
       if (/old_has_region & \hr) | (\old_has_region & /hr) |
-         (\hr & (\moved | \changed)) then 
+         (\hr & (\moved | \changed)) then
       {
          self.invalidate()
          fire(SELECTION_CHANGED_EVENT, e)
       }
    end
 
-   #      
+   #
    # Mouse click - compute new cursor position, re-display
    #
    # @p
@@ -386,7 +386,7 @@ class TextField : Component(
       local ce, ed
 
       start_handle(e)
-      # 
+      #
       # Add any printable character at cursor position
       #
       if type(e) == "string" & not(&control | &meta) & any(filter, e) then {
@@ -460,7 +460,7 @@ class TextField : Component(
       }
    end
 
-   method get_region() 
+   method get_region()
       if self.mark < self.cursor then {
          return self.contents[self.mark:self.cursor]
       } else {
@@ -522,7 +522,7 @@ class TextField : Component(
       if TextWidth(self.cwin, s[self.leftmost:self.rightmost]) <= self.tw then {
          while TextWidth(self.cwin, s[self.leftmost:self.rightmost + 1]) <= self.tw do
             self.rightmost +:= 1
-         while (self.leftmost > 1) & 
+         while (self.leftmost > 1) &
             TextWidth(self.cwin, s[self.leftmost - 1:self.rightmost]) <= self.tw do
             self.leftmost -:= 1
       } else {
@@ -535,7 +535,7 @@ class TextField : Component(
 
    method display(buffer_flag)
       local cp, fh, mp, np, off1, off2, cw, dwin, nocursor, mp2
-      
+
       fh := WAttrib(self.cwin, "fheight")
 
       if /self.transparent then{
@@ -545,8 +545,8 @@ class TextField : Component(
          #
          EraseRectangle(dwin, self.x, self.y, self.w, self.h)
 	}
-      else{ 
-         dwin := self.cwin 
+      else{
+         dwin := self.cwin
          }
 
       #
@@ -558,7 +558,7 @@ class TextField : Component(
          DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
 
       if has_region() then {
-         mp := self.mark - self.leftmost + 1 
+         mp := self.mark - self.leftmost + 1
          mp <:= 1
          mp >:= (*view_str + 1)
          if mp > cp then {
@@ -581,12 +581,12 @@ class TextField : Component(
 
 
 	    cw := Clone(dwin, "fg=blue")
-	    FillRectangle(cw, self.tx + off1, 
-                       1 + self.y + (self.h - fh) / 2, 
+	    FillRectangle(cw, self.tx + off1,
+                       1 + self.y + (self.h - fh) / 2,
                        off2 - off1, fh)
 
 	    WAttrib(cw, "fg=white")
-	    left_string(cw, self.tx+off1, self.y + self.h / 2 , view_str[mp2:np]) 
+	    left_string(cw, self.tx+off1, self.y + self.h / 2 , view_str[mp2:np])
 	    Uncouple(cw)
 
 	    left_string(dwin, self.tx+off2, self.y + self.h / 2 , view_str[np:0])
@@ -605,7 +605,7 @@ class TextField : Component(
 
          if \self.has_focus then {
             cw := Clone(dwin, "fg=black")
-            CursorLine(cw, self.tx + TextWidth(self.cwin, view_str[1:cp]), 
+            CursorLine(cw, self.tx + TextWidth(self.cwin, view_str[1:cp]),
                    1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, view_str[cp]), fh)
             Uncouple(cw)
             }
@@ -637,7 +637,7 @@ class TextField : Component(
 end
 
 class TextFieldEdit:UndoableEdit(parent,
-                                 cursor, 
+                                 cursor,
                                  mark)
    method redo()
       restore()
@@ -743,7 +743,7 @@ end
 
 class TextFieldDefaultEdit:TextFieldEdit(s)
    method add_edit(other)
-      if is_instance(other, "gui__TextFieldDefaultEdit") &
+      if is_instance(other, "gui::TextFieldDefaultEdit") &
          (other.cursor = self.cursor + *s) then {
             s ||:= other.s
             return

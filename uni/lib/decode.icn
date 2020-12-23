@@ -41,11 +41,11 @@ class Decode : Object(
       buff := StringBuff()
       s ? {
          repeat {
-            buff.add(tab(many(esc)))
-            if pos(0) then
+            buff.add(::tab(::many(esc)))
+            if ::pos(0) then
                return buff.get_string()
-            move(1)
-            buff.add(char(move(3)))
+            ::move(1)
+            buff.add(::char(::move(3)))
          }
       }
    end
@@ -53,9 +53,9 @@ class Decode : Object(
    method line_in()
       local s
       buff ? {
-         if s := tab(upto('|')) then {
-            move(1)
-            buff := tab(0)
+         if s := ::tab(::upto('|')) then {
+            ::move(1)
+            buff := ::tab(0)
             return s
          }
       }
@@ -64,12 +64,12 @@ class Decode : Object(
    method decode_record()
       local rname, n, res, i
       (rname := line_in() &
-       n := integer(line_in())) | fail
-      res := proc(rname)()
+       n := ::integer(line_in())) | fail
+      res := ::proc(rname)()
       seen[tag_count +:= 1] := res
       every i := 1 to n do
          res[i] := decode() | fail
-      
+
       return res
    end
 
@@ -78,7 +78,7 @@ class Decode : Object(
 
       t := line_in() | fail
 
-      if i := integer(t) then
+      if i := ::integer(t) then
          return \seen[i]
 
       case t of {
@@ -86,7 +86,7 @@ class Decode : Object(
             return
 
          "procedure" :
-            return proc(line_in())
+            return ::proc(line_in())
 
          "record" :
             return decode_record()
@@ -98,36 +98,36 @@ class Decode : Object(
             return decode_string(line_in())
 
          "integer" :
-            return integer(line_in())
+            return ::integer(line_in())
 
          "real" :
-            return real(line_in())
+            return ::real(line_in())
 
          "cset" :
-            return cset(decode_string(line_in()))
+            return ::cset(decode_string(line_in()))
 
          "list" : {
-            n := integer(line_in()) | fail
+            n := ::integer(line_in()) | fail
             res := []
             seen[tag_count +:= 1] := res
-            every 1 to n do 
-               put(res, decode()) | fail
+            every 1 to n do
+               ::put(res, decode()) | fail
             return res
          }
 
          "set" : {
-            n := integer(line_in()) | fail
-            res := set([])
+            n := ::integer(line_in()) | fail
+            res := ::set([])
             seen[tag_count +:= 1] := res
-            every 1 to n do 
-               insert(res, decode()) | fail
+            every 1 to n do
+               ::insert(res, decode()) | fail
             return res
          }
 
          "table" : {
             def := decode() | fail
-            res := table(def)
-            n := integer(line_in()) | fail
+            res := ::table(def)
+            n := ::integer(line_in()) | fail
             seen[tag_count +:= 1] := res
             every 1 to n do {
                (key := decode() &
@@ -135,11 +135,11 @@ class Decode : Object(
                res[key] := val
             }
             return res
-         }            
+         }
 
          default :
             return []
-      }            
+      }
    end
 
    method decode_class()
@@ -150,7 +150,7 @@ class Decode : Object(
       #
       # Create an instance
       #
-      p := proc(cname) | fail
+      p := ::proc(cname) | fail
       res := p()
       seen[tag_count +:= 1] := res
 
@@ -162,6 +162,6 @@ class Decode : Object(
 
    initially(s)
       tag_count := 0
-      seen := table()
+      seen := ::table()
       buff := s
 end

@@ -44,7 +44,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
       l := get_all_mailboxes(m.get_to()) | return error("Invalid To address in message")
       if *l = 0 then
          return error("No To address in message")
-      every mb := !l do 
+      every mb := !l do
          send_command("RCPT TO: " || smtp_address(mb), 250)  | fail
 
       send_command("DATA", 354) | fail
@@ -58,11 +58,11 @@ class SmtpClient:NetClient(hostname, sent_helo)
          if ="." then {
             s ||:= ".."
          }
-         while s ||:= tab(find("\r\n.")) do {
-            move(3)
+         while s ||:= ::tab(::find("\r\n.")) do {
+            ::move(3)
             s ||:= "\r\n.."
          }
-         s ||:= tab(0)
+         s ||:= ::tab(0)
       }
       write_line(s)
       send_command(".", 250) | fail
@@ -80,7 +80,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
 
       s := read_response() | fail
 
-      rc := integer(s[1:4]) | return error("Couldn't get return code")
+      rc := ::integer(s[1:4]) | return error("Couldn't get return code")
       return (rc = reply) | error("Server responded " || s)
    end
 
@@ -95,7 +95,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
 
          if not(s[4] == "-") then
             return t
-      }         
+      }
    end
 
    # Output the first header with the key only
@@ -120,7 +120,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
       local x
       static rfc822_headers
       initial {
-         rfc822_headers := set(["date", "resent-date", "return-path", "received", "sender", "from", "reply-to", "resent-sender", "resent-from", "resent-reply-to", "to", "resent-to", "cc", "resent-cc", "bcc", "resent-bcc", "message-id", "resent-message-id", "in-reply-to", "references", "keywords", "subject", "comments", "encrypted"])
+         rfc822_headers := ::set(["date", "resent-date", "return-path", "received", "sender", "from", "reply-to", "resent-sender", "resent-from", "resent-reply-to", "to", "resent-to", "cc", "resent-cc", "bcc", "resent-bcc", "message-id", "resent-message-id", "in-reply-to", "references", "keywords", "subject", "comments", "encrypted"])
       }
 
       send_first_header(m, "Resent-Date")
@@ -144,8 +144,8 @@ class SmtpClient:NetClient(hostname, sent_helo)
       send_first_header(m, "Comments")
       send_first_header(m, "Encrypted")
 
-      every x := map(m.headers.keys()) do {
-         if not member(rfc822_headers, x) then 
+      every x := ::map(m.headers.keys()) do {
+         if not ::member(rfc822_headers, x) then
             send_headers_list(m, x)
       }
 

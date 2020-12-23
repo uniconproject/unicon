@@ -33,8 +33,8 @@ class Struct : Object (sType, struct)
    #   <[fails if structure is not a <tt>set</tt> or <tt>list</tt>]>
    #</p>
    method addElement(e)
-      if type(struct) == "set" then return insert(struct, e)
-      else if type(struct) == "list" then return put(struct, e)
+      if ::type(struct) == "set" then return ::insert(struct, e)
+      else if ::type(struct) == "list" then return ::put(struct, e)
    end
 
    #<p>
@@ -44,7 +44,7 @@ class Struct : Object (sType, struct)
    #   <[param e element to remove]>
    #</p>
    method remove(e)
-      delete(struct, e)
+      ::delete(struct, e)
    end
 
    #<p>
@@ -75,12 +75,12 @@ class Struct : Object (sType, struct)
    #</p>
    method fromString(s, prefix:"", terminator:'\n')
       terminator := cset(terminator)
-      string(s) ? {
+      ::string(s) ? {
 	 struct := sType()        # Clear out old, if any
-	 while not pos(0) do {
+	 while not ::pos(0) do {
 	    =prefix
-	    addElement(tab(upto(terminator)|0))
-	    move(1)        # skip terminator
+	    addElement(::tab(::upto(terminator)|0))
+	    ::move(1)        # skip terminator
 	    }
 	 }
       return self
@@ -102,7 +102,7 @@ class Struct : Object (sType, struct)
    #   <[returns (a copy of internal) structure]>
    #</p>
    method toIStruct()
-      return copy(struct)
+      return ::copy(struct)
    end
 
 #<p>
@@ -111,6 +111,6 @@ class Struct : Object (sType, struct)
 initially (sTypeCons # type of structure, e.g. <b>set</b> or <b>list</b>.
                      #   Default is <b>set</b>.
            )
-   sType := \sTypeCons | set
+   sType := \sTypeCons | ::set
    struct := sType()
 end

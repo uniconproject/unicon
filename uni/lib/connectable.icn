@@ -23,7 +23,7 @@ package util
 #
 class Connectable(listeners)
    method genlisteners(typ)
-      case type(listeners) of {
+      case ::type(listeners) of {
 	 "table": suspend !\(listeners[typ])
 	 "list": every x := !listeners do
 		    if x.type === typ then suspend x
@@ -46,10 +46,10 @@ class Connectable(listeners)
 	    # list invocation here uses substitution rules per future UniLib
 	    # integration.  This probably won't work well until that happens.
 	    "list": {
-	       a := copy(l.obj)
-	       fcn := pop(a)
+	       a := ::copy(l.obj)
+	       fcn := ::pop(a)
 	       args := [self, typ, param]
-	       every i := 1 to *a do if a[i] === Arg then a[i] := pop(args)
+	       every i := 1 to *a do if a[i] === Arg then a[i] := ::pop(args)
 	       suspend fcn ! a
 	       }
 	    "co-expression": {
@@ -71,7 +71,7 @@ class Connectable(listeners)
    method connect(obj, meth, typ)
       local l, p, sum
 
-      p := lang::find_method(obj, meth) | stop("No such method ", meth)
+      p := lang::find_method(obj, meth) | ::stop("No such method ", meth)
 
       # omit duplicate requests
       every l := genlisteners(typ) do
@@ -82,30 +82,30 @@ class Connectable(listeners)
 
       if /listeners then return listeners := l
 
-      else if type(listeners) ~== "list" & type(listeners) ~== "table" then
+      else if ::type(listeners) ~== "list" & ::type(listeners) ~== "table" then
 	 listeners := [listeners] # promote to list and continue
 
-      if type(listeners) == "list" then {
+      if ::type(listeners) == "list" then {
 	 if (!listeners).type ~=== typ then {
-	    T := table()
+	    T := ::table()
 	    every x := !listeners do {
 	       /T[x.type] := []
-	       put(T[x.type], x)
+	       ::put(T[x.type], x)
 	       }
 	    listeners := T # promote to table and continue
 	    }
-	 else { put(listeners, l); return l }
+	 else { ::put(listeners, l); return l }
 	 }
 
       /listeners[typ] := []
-      put(listeners[typ], l)
+      ::put(listeners[typ], l)
 
       return l
    end
 
    method disconnect_fromlist(L, obj)
       local elem, newL := []
-      every elem := !L do if elem.obj ~=== obj then put(newL, elem)
+      every elem := !L do if elem.obj ~=== obj then ::put(newL, elem)
       return newL
    end
 
@@ -115,14 +115,14 @@ class Connectable(listeners)
    method disconnect_all(obj)
       local k, t, l
 
-      if type(listeners) == "table" then {
-	 every k := key(listeners) do
+      if ::type(listeners) == "table" then {
+	 every k := ::key(listeners) do
 	    listeners[k] := disconnect_fromlist(listeners[k], obj)
 	 }
-      else if type(listeners) == "list" then
+      else if ::type(listeners) == "list" then
 	 listeners := disconnect_fromlist(listeners, obj)
 
-      else if type(listeners) == "Subscription" then
+      else if ::type(listeners) == "Subscription" then
 	 if listeners.obj === obj then listeners := &null
 
    end
@@ -137,12 +137,12 @@ class Connectable(listeners)
 
       t := []
 
-      if type(listeners) == "list" then {
-	 every put(t, l ~=== !listeners)
+      if ::type(listeners) == "list" then {
+	 every ::put(t, l ~=== !listeners)
 	 listeners := t
 	 }
-      else if type(listeners) == "table" then {
-	 every put(t, l ~=== !listeners[k])
+      else if ::type(listeners) == "table" then {
+	 every ::put(t, l ~=== !listeners[k])
 	 listeners[k] := t
 	 }
    end

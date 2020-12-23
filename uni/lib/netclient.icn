@@ -14,7 +14,7 @@ $include "posix.icn"
 # server and communicates using CRLF-terminated lines.
 #
 class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, timeout)
-   # 
+   #
    # Fail and set the error code, and close the connection.
    # @p
    method error_and_close(a)
@@ -86,7 +86,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
       if /timeout | (timeout = 0) then
          return syswrite(connection, s)
 
-      fcntl(connection, "F", "d")
+      ::fcntl(connection, "F", "d")
       t := milliseconds()
       while *s > 0 do {
          if i := syswrite(connection, s) then {
@@ -105,7 +105,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
 
    #
    # Get an error string based on &errno
-   # 
+   #
    method strerror()
       return sys_errstr(&errno) | ("&errno=" || &errno)
    end
@@ -116,7 +116,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
       local l
 
       if \timeout > 0 then {
-         l := select(connection, timeout) | return error("Failed to select:" || strerror())
+         l := ::select(connection, timeout) | return error("Failed to select:" || strerror())
          if *l = 0 then
             return error("Failed to select (timeout)")
       }
@@ -137,7 +137,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
    method write_line(s)
       /s := ""
       fire("Sending line", s)
-      return send(s || "\r\n") 
+      return send(s || "\r\n")
    end
 
    #
@@ -151,9 +151,9 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
          # Look for a line and if found return it.
          #
          sbuff ? {
-            if line := tab(find("\r\n")) then {
-               move(2)
-               sbuff := tab(0)
+            if line := ::tab(::find("\r\n")) then {
+               ::move(2)
+               sbuff := ::tab(0)
                fire("Read line", line)
                return line
             }
@@ -172,8 +172,8 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
       #
       if *sbuff > 0 then {
          sbuff ? {
-            t := move(len) | tab(0)
-            sbuff := tab(0)
+            t := ::move(len) | ::tab(0)
+            sbuff := ::tab(0)
          }
       } else {
          t := recv(len) | fail

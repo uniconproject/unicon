@@ -78,13 +78,13 @@ class Union:Object()
    #</p>
    method decode(s,error)
       local tok_gen, u, uerror
-   
+
       uerror := ErrorHandler()
       tok_gen := create union_scanner(s, uerror)
       while u := union_parser(tok_gen, uerror) do suspend u
       uerror.get_err()
    end
-   
+
    #<p>
    # Given a Unicon value, produce a UniON equivalent if possible.
    # <[param x Unicon value to encode into UniON]>
@@ -99,7 +99,7 @@ class Union:Object()
 initially
    Union := create |self
 end
-   
+
 #<p>
 # Given a Unicon structure, produce a UniON equivalent if possible.
 # <b><i>Intended for internal use only.</i></b>
@@ -108,20 +108,20 @@ end
 #</p>
 procedure _toUs(u,uerror, seen)
    local s, tmp, firstElem, ref
-   /seen := set()
-   case type(u) of {
-      "null": return type(u)
+   /seen := ::set()
+   case ::type(u) of {
+      "null": return ::type(u)
       "string": {
          return      if u == "__true__" then "true"
                 else if u == "__false__" then "false"
                 else unionify_string(u,uerror)
          }
-      "integer" | "real": return image(u)
+      "integer" | "real": return ::image(u)
       "cset": return ximage(u)
       "list": {
          ref := mkRef(u)
-         if member(seen,ref) then return "{ref:"||ref||"}"
-         insert(seen,ref)
+         if ::member(seen,ref) then return "{ref:"||ref||"}"
+         ::insert(seen,ref)
          s := "["||ref||" "
          if *u > 0 then s ||:= _toUs(u[1],uerror,seen)
          every i := 2 to *u do {
@@ -132,8 +132,8 @@ procedure _toUs(u,uerror, seen)
          }
       "set": {
          ref := mkRef(u)
-         if member(seen,ref) then return "{ref:"||ref||"}"
-         insert(seen,ref)
+         if ::member(seen,ref) then return "{ref:"||ref||"}"
+         ::insert(seen,ref)
          s := "{set:"||mkRef(u)||" "; i := 1
          every x := !u do {
             if i>1 then s ||:= ","
@@ -145,11 +145,11 @@ procedure _toUs(u,uerror, seen)
          }
       "table": {
          ref := mkRef(u)
-         if member(seen,ref) then return "{ref:"||ref||"}"
-         insert(seen,ref)
+         if ::member(seen,ref) then return "{ref:"||ref||"}"
+         ::insert(seen,ref)
          s := "{table:"||mkRef(u)||" "
          firstElem := "y"
-         every k := key(u) do {
+         every k := ::key(u) do {
             if /firstElem then s ||:= ","
             firstElem := &null
             s ||:= _toUs(k,uerror,seen) || ":" || _toUs(u[k],uerror,seen) | fail
@@ -159,19 +159,19 @@ procedure _toUs(u,uerror, seen)
          }
       default: {
          ref := mkRef(u)
-         if member(seen,ref) then return "{ref:"||ref||"}"
-         insert(seen,ref)
-         tmp := image(u)
+         if ::member(seen,ref) then return "{ref:"||ref||"}"
+         ::insert(seen,ref)
+         tmp := ::image(u)
          # Class - Do we care about method names? Currently we don't
-         if match("object ", tmp) then {
-            s := "{object:"||ref||" \""||classname(u)||"\" "
+         if ::match("object ", tmp) then {
+            s := "{object:"||ref||" \""||::classname(u)||"\" "
             }
-         else if match("record ", tmp) then {
-            s := "{record:"||ref||" \""||type(u)||"\" "
+         else if ::match("record ", tmp) then {
+            s := "{record:"||ref||" \""||::type(u)||"\" "
             }
-         else return uerror.set_err(type(u) || " has no UniON equivalent")
+         else return uerror.set_err(::type(u) || " has no UniON equivalent")
          needComma := &null
-         every k := key(u) do {
+         every k := ::key(u) do {
             if \needComma then s ||:= ","
             needComma := "y"
             s ||:= unionify_string(k)|| ":" || _toUs(u[k],uerror,seen) | fail
@@ -183,7 +183,7 @@ procedure _toUs(u,uerror, seen)
 end
 
 procedure mkRef(u)
-   image(u) ? return "\""||map(tab(upto('(')|0)," ","_")||"\""
+   ::image(u) ? return "\""||::map(::tab(::upto('(')|0)," ","_")||"\""
 end
 
 #####################
@@ -191,7 +191,7 @@ end
 #####################
 
 #<p>
-# A string-scanning generator - takes a UniON-formatted string 
+# A string-scanning generator - takes a UniON-formatted string
 # and returns single UniON tokens until scanning is complete
 # <b><i>Intended for internal use only.</i></b>
 # <[param s UniON string to convert]>
@@ -199,7 +199,7 @@ end
 #</p>
 procedure union_scanner(s,uerror)
    local token
-   local end_pos := *s + 1 
+   local end_pos := *s + 1
    static ws, operator, number
 
    initial {
@@ -210,7 +210,7 @@ procedure union_scanner(s,uerror)
 
    s ? {
       repeat {
-         tab(many(ws))
+         ::tab(::many(ws))
          # Special case Unicon structures (UniON objects)
          if ="ref:"         then token := "ref"
          else if ="set:"    then token := "set"
@@ -218,9 +218,9 @@ procedure union_scanner(s,uerror)
          else if ="record:" then token := "record"
          else if ="object:" then token := "object"
          else {
-            c := move(1) | fail
-            if any(operator, c) then token := c
-            else if any(number, c) then token := scan_number(c,uerror) | fail
+            c := ::move(1) | fail
+            if ::any(operator, c) then token := c
+            else if ::any(number, c) then token := scan_number(c,uerror) | fail
             else if c == "\"" then token := scan_string(uerror) | fail
             else if c == "'"  then token := scan_cset(uerror) | fail
             else if c == "t"  then token := scan_true(uerror) | fail
@@ -228,7 +228,7 @@ procedure union_scanner(s,uerror)
             else if c == "n"  then token := scan_null(uerror) | fail
             else if c == "\n" then { uerror.incr_line(); next }
             else return uerror.set_err("Unrecognized UniON token: " ||
-                      c || tab(upto(ws++operator)\1))
+                      c || ::tab(::upto(ws++operator)\1))
             }
          suspend token
          }
@@ -242,10 +242,10 @@ end
 # <[param uerror Error handling support class instance]>
 #</p>
 procedure scan_true(uerror)
-   if move(3) == "rue" then return "true"
-   else return uerror.set_err("Expected UniON true: " || 
-                "t"||tab(upto(' \t\n{}[]:,')\1))
-end   
+   if ::move(3) == "rue" then return "true"
+   else return uerror.set_err("Expected UniON true: " ||
+                "t"||::tab(::upto(' \t\n{}[]:,')\1))
+end
 
 #<p>
 # String scanning helper function to retrieve UniON value 'false'
@@ -253,9 +253,9 @@ end
 # <[param uerror Error handling support class instance]>
 #</p>
 procedure scan_false(uerror)
-   if move(4) == "alse" then return "false"
-   else return uerror.set_err("Expected UniON false: " || 
-                "f"||tab(upto(' \t\n{}[]:,')\1))
+   if ::move(4) == "alse" then return "false"
+   else return uerror.set_err("Expected UniON false: " ||
+                "f"||::tab(::upto(' \t\n{}[]:,')\1))
 end
 
 #<p>
@@ -264,9 +264,9 @@ end
 # <[param uerror Error handling support class instance]>
 #</p>
 procedure scan_null(uerror)
-   if move(3) == "ull" then return "null" 
-   else return uerror.set_err("Expected UniON null: " || 
-                "n"||tab(upto(' \t\n{}[]:,')\1))
+   if ::move(3) == "ull" then return "null"
+   else return uerror.set_err("Expected UniON null: " ||
+                "n"||::tab(::upto(' \t\n{}[]:,')\1))
 end
 
 #<p>
@@ -282,7 +282,7 @@ procedure scan_ctrl_char(uerror)
    #
    # This code is modified from escape() from IPL file escape.icn
    #
-   case (c := move(1)) | 
+   case (c := ::move(1)) |
         return uerror.set_err("Incomplete UniON escape sequence") of {
       "b":  return "\b"
       "d":  return "\d"
@@ -304,7 +304,7 @@ procedure scan_ctrl_char(uerror)
 end
 
 #<p>
-# String scanning helper function that identifies a UniON string and 
+# String scanning helper function that identifies a UniON string and
 # returns a Unicon string
 # <b><i>Intended for internal use only.</i></b>
 # <[param uerror Error handling support class instance]>
@@ -313,20 +313,20 @@ procedure scan_string(uerror)
    local str, ctrl, c, is_cset
    str := ""
 
-   while any(~'\"', c := move(1)) do {
+   while ::any(~'\"', c := ::move(1)) do {
       if c ~== "\\" then str ||:= c
-      else { 
+      else {
          if ctrl := scan_ctrl_char(uerror) then str ||:= ctrl
          else fail
          }
       }
-   if move(1) == "\"" then return "\""||str||"\""
+   if ::move(1) == "\"" then return "\""||str||"\""
    else return uerror.set_err(
-               "UniON string missing terminating double-quotes: " || str) 
+               "UniON string missing terminating double-quotes: " || str)
 end
 
 #<p>
-# String scanning helper function that identifies a UniON cset and 
+# String scanning helper function that identifies a UniON cset and
 # returns a Unicon cset.
 # <b><i>Intended for internal use only.</i></b>
 # <[param uerror Error handling support class instance]>
@@ -335,16 +335,16 @@ procedure scan_cset(uerror)
    local str, ctrl, c, is_cset
    str := ""
 
-   while any(~'\'', c := move(1)) do {
+   while ::any(~'\'', c := ::move(1)) do {
       if c ~== "\\" then str ||:= c
-      else { 
+      else {
          if ctrl := scan_ctrl_char(uerror) then str ||:= ctrl
          else fail
          }
       }
-   if move(1) == "'" then return "'"||str||"'"
+   if ::move(1) == "'" then return "'"||str||"'"
    else return uerror.set_err(
-               "UniON cset missing terminating single-quote: " || str) 
+               "UniON cset missing terminating single-quote: " || str)
 end
 
 #<p>
@@ -356,46 +356,46 @@ end
 procedure scan_number(c,uerror)
    local num_str
    num_str := ""
- 
+
    # if negative
    if c == "-" then {
       num_str ||:= c
-      c := move(1)
+      c := ::move(1)
       }
 
-   # integer 
-   if any(&digits,c) then {
+   # integer
+   if ::any(&digits,c) then {
       num_str ||:= c
       if c == "0" then {
          # number starting with 0 is either 0, frac, or exp
-         if any(&digits,move(1)) then 
-            return uerror.set_err("UniON int cannot have leading zero: " || 
+         if ::any(&digits,move(1)) then
+            return uerror.set_err("UniON int cannot have leading zero: " ||
                    num_str)
-         } 
+         }
       # c is 1-9, get all sequential digits
-      else num_str ||:= tab(many(&digits)) 
+      else num_str ||:= ::tab(::many(&digits))
       }
-   
-   # fraction 
-   if (c := move(1)) == "." then {
+
+   # fraction
+   if (c := ::move(1)) == "." then {
       num_str ||:= c
-      if not (num_str ||:= tab(many(&digits))) then 
-         return uerror.set_err("Expected digits after '.' in UniON frac: " || 
+      if not (num_str ||:= ::tab(::many(&digits))) then
+         return uerror.set_err("Expected digits after '.' in UniON frac: " ||
                 num_str)
       }
    # exponent
-   if any('eE',c := move(1)) then { 
+   if ::any('eE',c := ::move(1)) then {
       num_str ||:= c
-      if (c := move(1)) == "-" then num_str ||:= c
-      else if (c := move(1)) == "+" then {}
+      if (c := ::move(1)) == "-" then num_str ||:= c
+      else if (c := ::move(1)) == "+" then {}
 
-      if not (num_str ||:= tab(many(&digits))) then 
+      if not (num_str ||:= ::tab(::many(&digits))) then
          return uerror.set_err("Expected digits after 'e' in UniON exp: " ||
                    num_str)
-      } 
+      }
    return num_str
 end
-   
+
 #########################
 # END SCANNER FUNCTIONS #
 #########################
@@ -425,12 +425,12 @@ procedure union_parser(token_gen,uerror)
    static parse_funcs, refs
 
    initial {
-      parse_funcs := table()
+      parse_funcs := ::table()
 
-      parse_funcs["{"] := parse_object 
-      parse_funcs["["] := parse_array 
-      parse_funcs["\""] := parse_string 
-      parse_funcs["'"] := parse_string 
+      parse_funcs["{"] := parse_object
+      parse_funcs["["] := parse_array
+      parse_funcs["\""] := parse_string
+      parse_funcs["'"] := parse_string
       parse_funcs["-"] := parse_number
       parse_funcs["0"] := parse_number
       parse_funcs["1"] := parse_number
@@ -446,9 +446,9 @@ procedure union_parser(token_gen,uerror)
       parse_funcs["f"] := parse_false
       parse_funcs["n"] := parse_null
 
-      refs := table()
+      refs := ::table()
       }
-   
+
    while token := @token_gen do {
       if \(func := parse_funcs[token[1]]) then {
          if struct := func(token, token_gen, parse_funcs, refs, uerror) then
@@ -505,7 +505,7 @@ end
 # <b><i>Intended for internal use only.</i></b>
 #</p>
 procedure parse_number(token, token_gen, parse_funcs, refs, uerror)
-   return numeric(token)
+   return ::numeric(token)
 end
 
 #<p>
@@ -514,8 +514,8 @@ end
 # <b><i>Intended for internal use only.</i></b>
 #</p>
 procedure parse_string(token, token_gen, parse_funcs, refs, uerror)
-   if token[1] == "\'" then 
-      return cset(token[2:-1])
+   if token[1] == "\'" then
+      return ::cset(token[2:-1])
    else
       return escape(token[2:-1])
 end
@@ -555,7 +555,7 @@ procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
    local rName, union_object, union_key, union_value, prev_token, tok, r
    ref := @token_gen
    rName := (@token_gen)[2:-1]  # skips ":" and strips quotes
-   if not proc(rName) then {	# No constructor in this context
+   if not ::proc(rName) then {	# No constructor in this context
       uerror.set_err("No constructor for record '"||rName||" in this context.")
       fail
       }
@@ -592,31 +592,31 @@ procedure parse_record(token, token_gen, parse_funcs, refs, uerror)
             if \(func := parse_funcs[tok[1]]) then {
                union_key := func(tok, token_gen, parse_funcs, refs, uerror)
                }
-            else 
+            else
                return uerror.set_err("Expected UniON key in UniON pair" ||                        ", got: " || tok)
 
             # check for colon
-            if (tok := @token_gen) == ":" then prev_token := tok 
+            if (tok := @token_gen) == ":" then prev_token := tok
             else return uerror.set_err(
                         "Expected colon in UniON pair before: " || tok)
 
-            # value 
+            # value
             if tok := @token_gen then {
                if \(func := parse_funcs[tok[1]]) then {
                   union_value := func(tok, token_gen, parse_funcs, refs, uerror)
                   r[union_key] := union_value
                   prev_token := "value"
                   }
-               else 
+               else
                   return uerror.set_err("Expected UniON value in UniON pair" ||                        ", got: " || tok)
                }
-            else 
+            else
                return uerror.set_err("UniON pair missing UniON value")
             }
 
       # Invalid object syntax
       else {
-         if prev_token == (","|"{") then 
+         if prev_token == (","|"{") then
             return uerror.set_err("Expected UniON pair, got: " || tok)
          else
             return uerror.set_err("Token violated UniON object syntax: " ||
@@ -635,7 +635,7 @@ procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
    local ref
    ref := @token_gen
    cName := (@token_gen)[2:-1]  # skips ":" and strips quotes
-   if not proc(cName) then {	# No constructor in this context
+   if not ::proc(cName) then {	# No constructor in this context
       uerror.set_err("No constructor for class '"||cName||" in this context.")
       fail
       }
@@ -672,31 +672,31 @@ procedure parse_class(token, token_gen, parse_funcs, refs, uerror)
             if \(func := parse_funcs[tok[1]]) then {
                union_key := func(tok, token_gen, parse_funcs, refs, uerror)
                }
-            else 
+            else
                return uerror.set_err("Expected UniON key in UniON pair" ||                        ", got: " || tok)
 
             # check for colon
-            if (tok := @token_gen) == ":" then prev_token := tok 
+            if (tok := @token_gen) == ":" then prev_token := tok
             else return uerror.set_err(
                         "Expected colon in UniON pair before: " || tok)
 
-            # value 
+            # value
             if tok := @token_gen then {
                if \(func := parse_funcs[tok[1]]) then {
                   union_value := func(tok, token_gen, parse_funcs, refs, uerror)
                   cl[union_key] := union_value
                   prev_token := "value"
                   }
-               else 
+               else
                   return uerror.set_err("Expected UniON value in UniON pair" ||                        ", got: " || tok)
                }
-            else 
+            else
                return uerror.set_err("UniON pair missing UniON value")
             }
 
       # Invalid class syntax
       else {
-         if prev_token == (","|"{") then 
+         if prev_token == (","|"{") then
             return uerror.set_err("Expected UniON pair, got: " || tok)
          else
             return uerror.set_err("Token violated UniON class syntax: " ||
@@ -711,7 +711,7 @@ end
 #</p>
 procedure parse_table(token, token_gen, parse_funcs, refs, uerror)
    local union_object, union_key, union_value, prev_token, tok, pt
-   union_object := table()
+   union_object := ::table()
 
    refs[@token_gen] := union_object
    prev_token := "{"
@@ -737,31 +737,31 @@ procedure parse_table(token, token_gen, parse_funcs, refs, uerror)
             if \(func := parse_funcs[tok[1]]) then {
                union_key := func(tok, token_gen, parse_funcs, refs, uerror)
                }
-            else 
+            else
                return uerror.set_err("Expected UniON key in UniON pair" ||                        ", got: " || tok)
 
             # check for colon
-            if (tok := @token_gen) == ":" then prev_token := tok 
+            if (tok := @token_gen) == ":" then prev_token := tok
             else return uerror.set_err(
                         "Expected colon in UniON pair before: " || tok)
 
-            # value 
+            # value
             if tok := @token_gen then {
                if \(func := parse_funcs[tok[1]]) then {
                   union_value := func(tok, token_gen, parse_funcs, refs, uerror)
                   prev_token := "value"
                   union_object[union_key] := union_value
                   }
-               else 
+               else
                   return uerror.set_err("Expected UniON value in UniON pair" ||                        ", got: " || tok)
                }
-            else 
+            else
                return uerror.set_err("UniON pair missing UniON value")
             }
 
       # Invalid object syntax
       else {
-         if prev_token == (","|"{") then 
+         if prev_token == (","|"{") then
             return uerror.set_err("Expected UniON pair, got: " || tok)
          else
             return uerror.set_err("Token violated UniON object syntax: " ||
@@ -792,28 +792,28 @@ procedure parse_array(token, token_gen, parse_funcs, refs, uerror)
 
       # comma can only come after a value (not [ or ,)
       else if tok == "," then {
-         if not any('[,', prev_token) then prev_token := tok
+         if not ::any('[,', prev_token) then prev_token := tok
          else return uerror.set_err("Unexpected comma in UniON array")
          }
 
       # value
       else if \(func := parse_funcs[tok[1]]) then {
-         if prev_token == ("["|",") then { 
+         if prev_token == ("["|",") then {
             union_value := func(tok, token_gen, parse_funcs, refs, uerror)
             prev_token := "value"
-            put(union_array, union_value) 
+            ::put(union_array, union_value)
             }
          else return uerror.set_err("Expected comma in UniON array before: " ||
               tok)
          }
-        
+
       # invalid array syntax
-      else { 
+      else {
          if prev_token == ("["|",") then
             return uerror.set_err("Expected UniON value, got: " || tok)
          else
-            return uerror.set_err("Token violated UniON array syntax: " || 
-                tok) 
+            return uerror.set_err("Token violated UniON array syntax: " ||
+                tok)
          }
       }
    return uerror.set_err("Expected terminating ] for UniON array")
@@ -827,7 +827,7 @@ end
 procedure parse_set(token, token_gen, parse_funcs, refs, uerror)
    local union_array, union_value, prev_token, tok, s
    prev_token := "{"
-   s := set()
+   s := ::set()
    refs[@token_gen] := s
 
    while tok := @token_gen do {
@@ -838,27 +838,27 @@ procedure parse_set(token, token_gen, parse_funcs, refs, uerror)
 
       # comma can only come after a value (not [ or ,)
       else if tok == "," then {
-         if not any('{,', prev_token) then prev_token := tok
+         if not ::any('{,', prev_token) then prev_token := tok
          else return uerror.set_err("Unexpected comma in UniON set")
          }
 
       # value
       else if \(func := parse_funcs[tok[1]]) then {
-         if prev_token == ("{"|",") then { 
+         if prev_token == ("{"|",") then {
             union_value := func(tok, token_gen, parse_funcs, refs, uerror)
             prev_token := "value"
-            insert(s, union_value) 
+            ::insert(s, union_value)
             }
          else return uerror.set_err("Expected comma in UniON set before: " ||
               tok)
          }
-        
+
       # invalid set syntax
-      else { 
+      else {
          if prev_token == ("{"|",") then
             return uerror.set_err("Expected UniON value, got: " || tok)
          else
-            return uerror.set_err("Token violated UniON set syntax: " || tok) 
+            return uerror.set_err("Token violated UniON set syntax: " || tok)
          }
       }
    return uerror.set_err("Expected terminating } for UniON set")
@@ -888,14 +888,14 @@ class ErrorHandler:Object(lineno, error, tag)
    # Writes error (s) to <tt>&errout</tt>
    #</p>
    method write_err(s)
-      write(&errout,tag||" "||s)
+      ::write(&errout,tag||" "||s)
    end
 
    #<p>
    # Write out <tt>error</tt>, if it exists, to &errout
    #</p>
-   method get_err() 
-       if \error then write(&errout, error)
+   method get_err()
+       if \error then ::write(&errout, error)
    end
 
 initially()

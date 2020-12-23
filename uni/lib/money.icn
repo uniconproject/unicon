@@ -18,7 +18,7 @@ class Money : Error : Object(units)
    # Return a string representation
    #
    method to_string()
-      return self.units / 100 || "." || right(abs(self.units % 100), 2, "0")
+      return self.units / 100 || "." || ::right(::abs(self.units % 100), 2, "0")
    end
 
    #
@@ -27,7 +27,7 @@ class Money : Error : Object(units)
    #
    method to_right_string(w)
       /w := 9
-      return right(self.to_string(), w)
+      return ::right(self.to_string(), w)
    end
 
    #
@@ -50,10 +50,10 @@ class Money : Error : Object(units)
    method parse(s)
       local pounds, r
       s ? {
-         if pounds := tab(upto('.')) then
-            r := integer(pounds) * 100 + integer(2(move(1), tab(0))) 
+         if pounds := ::tab(::upto('.')) then
+            r := ::integer(pounds) * 100 + ::integer(2(::move(1), ::tab(0)))
          else
-            r := integer(tab(0)) * 100
+            r := ::integer(::tab(0)) * 100
       }
       return set_units(\r)
    end

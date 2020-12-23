@@ -25,7 +25,7 @@ end
 # Convert a V2 style Event to a V1 _Event.
 #
 procedure V2TOV1(ev)
-   local p, code, c, classnam
+   local p, code, c
 
    #
    # V1 didn't have mouse movement, so speed things up
@@ -34,10 +34,9 @@ procedure V2TOV1(ev)
    if ev.get_param() === -12 then
       fail
 
-   classnam := get_class_name(ev.get_source())
-   c := get_class_for_name( classnam ).get_implemented_classes()
+   c := get_class_for( ev.get_source() ).get_implemented_classes()
 
-   if member(c, "gui__Button") then {
+   if member(c, "gui::Button") then {
       code := case ev.get_type() of {
          BUTTON_PRESS_EVENT : 0
          BUTTON_RELEASE_EVENT : 1
@@ -47,21 +46,21 @@ procedure V2TOV1(ev)
          default: fail
       }
    }
-   else if member(c, "gui__TextField") then {
+   else if member(c, "gui::TextField") then {
       code := case ev.get_type() of {
          CONTENT_CHANGED_EVENT : 1
          ACTION_EVENT : 0
          default: fail
       }
    }
-   else if member(c, "gui__ScrollBar") then {
+   else if member(c, "gui::ScrollBar") then {
       code := case ev.get_type() of {
          SCROLLBAR_PRESSED_EVENT : 0
          SCROLLBAR_DRAGGED_EVENT : 1
          default: fail
       }
    }
-   else if member(c, "gui__Tree") then {
+   else if member(c, "gui::Tree") then {
       code := case ev.get_type() of {
          CURSOR_MOVED_EVENT : 0
          SELECTION_CHANGED_EVENT : 1
@@ -69,14 +68,14 @@ procedure V2TOV1(ev)
          default: fail
       }
    }
-   else if member(c, "gui__SelectableScrollArea") then {
+   else if member(c, "gui::SelectableScrollArea") then {
       code := case ev.get_type() of {
          CURSOR_MOVED_EVENT : 0
          SELECTION_CHANGED_EVENT : 1
          default: fail
       }
    }
-   else if member(c, "gui__Table") then {
+   else if member(c, "gui::Table") then {
       code := case ev.get_type() of {
          MOUSE_RELEASE_EVENT : 0
          CURSOR_MOVED_EVENT : 0
@@ -84,7 +83,7 @@ procedure V2TOV1(ev)
          default: fail
       }
    }
-   else if member(c, "gui__EditableTextList") then {
+   else if member(c, "gui::EditableTextList") then {
       code := case ev.get_type() of {
          CURSOR_MOVED_EVENT |
          CONTENT_CHANGED_EVENT |
@@ -92,20 +91,20 @@ procedure V2TOV1(ev)
          default: fail
       }
    }
-   else if member(c, "gui__List") then {
+   else if member(c, "gui::List") then {
       code := case ev.get_type() of {
          SELECTION_CHANGED_EVENT : 0
          default: fail
       }
    }
-   else if member(c, "gui__EditList") then {
+   else if member(c, "gui::EditList") then {
       code := case ev.get_type() of {
          SELECTION_CHANGED_EVENT : 0
          CONTENT_CHANGED_EVENT : 2
          default: fail
       }
    }
-   else if member(c, "gui__MenuComponent") then {
+   else if member(c, "gui::MenuComponent") then {
       code := case ev.get_type() of {
          ACTION_EVENT : 0
          default: fail
@@ -119,7 +118,7 @@ procedure V2TOV1(ev)
    # field; so go down to the lowest level if needed.
    #
    p := ev.get_param()
-   while lang::is_instance(p, "util__Notification") do
+   while lang::is_instance(p, "util::Notification") do
       p := p.get_param()
 
    return _Event(p, ev.get_source(), code)

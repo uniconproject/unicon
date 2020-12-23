@@ -66,7 +66,7 @@ class Args : Object (optionMap, argList)
     #   <[generates the names of all the options in alphabetic order]>
     #</p>
     method genOptNames()
-        suspend (!sort(optionMap,1))[1]
+        suspend (!::sort(optionMap,1))[1]
     end
 
     #<p>
@@ -103,18 +103,18 @@ class Args : Object (optionMap, argList)
     #</p>
     initially (params # List of parametes
               )
-         optionMap := table()
+         optionMap := ::table()
          argList := []
          every param := !params do {
              if doneWithOpts := ("--" == param) then next
              param ? {
-                   if /doneWithOpts & tab(many('-')) then {
-                      oName := tab(upto('=')|0)
-                      oValue := (="=", tab(0)) | &null
+                   if /doneWithOpts & ::tab(::many('-')) then {
+                      oName := ::tab(::upto('=')|0)
+                      oValue := (="=", ::tab(0)) | &null
                       /optionMap[oName] := []
-                      put(optionMap[oName], \oValue)
+                      ::put(optionMap[oName], \oValue)
                       }
-                   else put(argList, param)
+                   else ::put(argList, param)
                    }
              }
         Args := create |self

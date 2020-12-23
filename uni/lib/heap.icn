@@ -46,7 +46,7 @@ class Heap : Object (L, f, p)
    #</p>
    method gen()
       local temp := Heap(,f,p)
-      temp.L := copy(L)
+      temp.L := ::copy(L)
       suspend |temp.get()
    end
 
@@ -73,7 +73,7 @@ class Heap : Object (L, f, p)
       initial call := invokeFcn
       if *L > 0 then {
          L[up:=1] :=: L[-1]
-	 result := pull(L)
+	 result := ::pull(L)
 	 while (down := 2*up) <= *L do {
 	    if call(p,call(f,L[down+1]), call(f,L[down])) then down +:= 1
 	    if call(p,call(f,L[down]),call(f,L[up])) then L[up]:=:L[down]
@@ -92,7 +92,7 @@ class Heap : Object (L, f, p)
       local i
       static call
       initial call := invokeFcn
-      put(L,a)
+      ::put(L,a)
       i := *L
       while call(p,call(f,L[i]), call(f,L[i/2])) do {
 	 L[i] :=: L[i/2]

@@ -32,51 +32,51 @@ $define BIT32 16rffffffff
 # @ s := m.final()
 #
 # This will leave s containing a 16 char string, being the
-# digest.   
+# digest.
 #
 class MD5(a, b, c, d, bit_count, buffer)
    method F(x, y, z)
-      return ior(iand(x, y), iand(icom(x), z));
+      return ::ior(::iand(x, y), ::iand(::icom(x), z));
    end
 
    method G(x, y, z)
-      return ior(iand(x, z), iand(y, icom(z)))
+      return ::ior(::iand(x, z), ::iand(y, ::icom(z)))
    end
 
    method H(x, y, z)
-      return ixor(ixor(x, y), z)
+      return ::ixor(::ixor(x, y), z)
    end
 
    method I(x, y, z)
-      return ixor(y, ior(x, icom(z)))
+      return ::ixor(y, ::ior(x, ::icom(z)))
    end
 
    method rotate_left(x, n)
-      return ior(ishift(x, n), ishift(iand(x, BIT32), -(32 - n)))
+      return ::ior(::ishift(x, n), ::ishift(::iand(x, BIT32), -(32 - n)))
    end
 
    method FF(a, b, c, d, x, s, ac)
       a +:= F(b, c, d) + x + ac
       a := rotate_left(a, s) + b
-      return iand(a, BIT32)
+      return ::iand(a, BIT32)
    end
 
    method GG(a, b, c, d, x, s, ac)
       a +:= G(b, c, d) + x + ac
       a := rotate_left(a, s) + b
-      return iand(a, BIT32)
+      return ::iand(a, BIT32)
    end
 
    method HH(a, b, c, d, x, s, ac)
       a +:= H(b, c, d) + x + ac
       a := rotate_left(a, s) + b
-      return iand(a, BIT32)
+      return ::iand(a, BIT32)
    end
 
    method II(a, b, c, d, x, s, ac)
       a +:= I(b, c, d) + x + ac
       a := rotate_left(a, s) + b
-      return iand(a, BIT32)
+      return ::iand(a, BIT32)
    end
 
    #
@@ -91,9 +91,9 @@ class MD5(a, b, c, d, bit_count, buffer)
 
       buffer ||:= input
       buffer ? {
-         while block := move(64) do
+         while block := ::move(64) do
             transform(block)
-         buffer := tab(0)
+         buffer := ::tab(0)
       }
    end
 
@@ -104,8 +104,8 @@ class MD5(a, b, c, d, bit_count, buffer)
    method final_str()
       local s
       s := ""
-      every s ||:= format_int_to_string(ord(!final()), 16, 2)
-      return map(s)
+      every s ||:= format_int_to_string(::ord(!final()), 16, 2)
+      return ::map(s)
    end
 
    #
@@ -115,15 +115,15 @@ class MD5(a, b, c, d, bit_count, buffer)
    method final()
       local bits, pad_len, s, padding
 
-      bits := encode(iand(bit_count, BIT32)) ||
-         encode(iand(ishift(bit_count, -32), BIT32))
+      bits := encode(::iand(bit_count, BIT32)) ||
+         encode(::iand(::ishift(bit_count, -32), BIT32))
 
       if *buffer < 56 then
          pad_len := 56 - *buffer
       else
          pad_len := 120 - *buffer
-      padding := char(16r80) || repl(char(0), pad_len - 1)
-      
+      padding := ::char(16r80) || ::repl(char(0), pad_len - 1)
+
       update(padding)
       update(bits)
 
@@ -212,20 +212,20 @@ class MD5(a, b, c, d, bit_count, buffer)
       c := II (c, d, a, b, x[ 3], S43, 16r2ad7d2bb)
       b := II (b, c, d, a, x[10], S44, 16reb86d391)
 
-      self.a := iand(self.a + a, BIT32)
-      self.b := iand(self.b + b, BIT32)
-      self.c := iand(self.c + c, BIT32)
-      self.d := iand(self.d + d, BIT32)
+      self.a := ::iand(self.a + a, BIT32)
+      self.b := ::iand(self.b + b, BIT32)
+      self.c := ::iand(self.c + c, BIT32)
+      self.d := ::iand(self.d + d, BIT32)
    end
 
    #
    # Transform a 32 bit number to 4 corresponding bytes
    # @p
    method encode(n)
-      return char(iand(n, 16rff)) ||
-         char(iand(ishift(n, -8), 16rff)) ||
-         char(iand(ishift(n, -16), 16rff)) ||
-         char(iand(ishift(n, -24), 16rff))
+      return ::char(::iand(n, 16rff)) ||
+         ::char(::iand(::ishift(n, -8), 16rff)) ||
+         ::char(::iand(::ishift(n, -16), 16rff)) ||
+         ::char(::iand(::ishift(n, -24), 16rff))
    end
 
    #
@@ -236,9 +236,9 @@ class MD5(a, b, c, d, bit_count, buffer)
       l := []
       block ? {
          repeat {
-            s := move(4) | break
-            put(l, ord(s[1]) + ishift(ord(s[2]), 8) +
-                ishift(ord(s[3]), 16) + ishift(ord(s[4]), 24))
+            s := ::move(4) | break
+            ::put(l, ::ord(s[1]) + ::ishift(::ord(s[2]), 8) +
+                ::ishift(::ord(s[3]), 16) + ::ishift(::ord(s[4]), 24))
          }
       }
       return l

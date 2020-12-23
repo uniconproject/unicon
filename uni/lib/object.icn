@@ -53,7 +53,7 @@ class Object()
    end
 
    #
-   # Get the Class object for this object  
+   # Get the Class object for this object
    #
    method get_class()
       return lang::get_class(self)
@@ -91,7 +91,7 @@ class Object()
    # <[returns the classname for the current class in package::class format]>
    # </p>
    method className()
-      return Type()
+      return mapPackageInt2Ext(::classname(self))
    end
 
    # <p>
@@ -102,7 +102,7 @@ class Object()
    method invoke(mName,    # Name of method to call
 		 args[])   # Remaining arguments are arguments to call
       if hasMethod(mName) then {
-	 suspend (self.__m[mName]) ! push(args, self)
+	 suspend (self.__m[mName]) ! ::push(args, self)
 	 }
    end
 
@@ -138,21 +138,23 @@ class Object()
    end
 
    #<p>
-   #   <[generates the names of all fields]>
+   #   <[generates the names of all fieldsmof an object]>
+   #   This now depends on lang::generate_member_names procedure which is no
+   #   longer dependent on the implementation details, but uses one of the
+   #   Unicon functions membernames().
    #</p>
    method fieldNames()
-      every ::name(self[1 to *self]) ? {
-	 &pos := upto('.')+1
-	 suspend tab(0)
-	 }
+      suspend lang::generate_member_names(self)
    end
 
    # <p>
    # What methods are available for this class?
    #    <[generates the names of all methods]>
+   #    remove implementation dependency and instead use Unicon function for this
+   #    information.
    # </p>
    method genMethods()
-      suspend fieldnames(self.__m)
+      suspend !::methodnames(self)
    end
 
    # <p>

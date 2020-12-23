@@ -31,7 +31,7 @@ invocable all
 #<pre>
 #   sqrt(abs(integer(sqrt(ord("1")))))
 #</pre>
-#</p>   
+#</p>
 #<p>
 #Any Unicon entity that can be evaluated using
 #the standard single-argument function call syntax
@@ -43,9 +43,9 @@ invocable all
 #<pre>
 #   sqrt(2^3.5)
 #<pre>
-#</p>   
+#</p>
 procedure compose(fL[])
-   fL := reverse(fL)
+   fL := ::reverse(fL)
    return makeProc { {saveSource := &source
                        repeat {
                            x := (x@saveSource)[1]
@@ -54,7 +54,7 @@ procedure compose(fL[])
                            }
                       }
                     }
-end 
+end
 
 #<p>
 #  A closure binds some function parameters at definition time,
@@ -88,11 +88,11 @@ procedure closure(f,paramList[])
              argList := []
              every arg := !paramList do {
                 if arg === Arg then {   # Replace unbound parameter
-                    put(argList, get(x) | &null) #    with argument
+                    ::put(argList, ::get(x) | &null) #    with argument
                     }
-                else put(argList, arg)           # Use bound parameter
+                else ::put(argList, arg)           # Use bound parameter
                 }
-             every put(argList, !x)    # append extra arguments
+             every ::put(argList, !x)    # append extra arguments
 
              # Invoke the procedure
              x := f ! argList
@@ -127,11 +127,11 @@ class Closure : Object (fcn)
    method doInvocation(flist, args)
       local i
 
-      flist := copy(flist)
-      /args := list()
+      flist := ::copy(flist)
+      /args := ::list()
       every i := 2 to *flist do
 	 if flist[i] === Arg then
-	    flist[i] := pop(args) | &null
+	    flist[i] := ::pop(args) | &null
       suspend invokeFcn ! (flist ||| args)
    end
 
@@ -175,7 +175,7 @@ end
 #</pre>
 #</p>
 procedure makeProc(A)
-   if type(A) == "co-expression" then return (@A,A)    # Not called as PDCO!
+   if ::type(A) == "co-expression" then return (@A,A)    # Not called as PDCO!
    return (@A[1], A[1])
 end
 
@@ -214,17 +214,17 @@ end
 #</p>
 procedure invokeFcn(fcn, args[])
    local i
-   /args := list()
-   case type(fcn) of {
+   /args := ::list()
+   case ::type(fcn) of {
       "procedure" | "integer" | "string" : {
 	 suspend fcn!args
 	 }
       "list" : {
-	 fcn := copy(fcn)
-         f := pull(fcn)
+	 fcn := ::copy(fcn)
+         f := ::pull(fcn)
 	 every i := 1 to *fcn do {
 	    if fcn[i] === Arg then {
-	       fcn[i] := pop(args) | &null
+	       fcn[i] := ::pop(args) | &null
 	       }
 	    }
 	 suspend f!(fcn ||| args)

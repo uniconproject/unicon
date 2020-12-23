@@ -43,7 +43,7 @@ package lang
 #        t["a"] := "hello"
 #        t["b"] := "world"
 #        Property().setP("B", t)
-#    
+#
 #        # Now, get the values
 #        write("A is ",Property().getP("A"))
 #        write("B is ",ximage(Property().getP("B")))
@@ -86,8 +86,8 @@ class SProperty : Object (pTable)
    #</p>
    method getAllNames()
       local k
-      k := set()
-      every insert(k, key(pTable))
+      k := ::set()
+      every ::insert(k, ::key(pTable))
       return k
    end
 
@@ -106,7 +106,7 @@ class SProperty : Object (pTable)
    # <[param value value for the named property]>
    # </p>
    method setP(name, value)
-      /pTable := table()
+      /pTable := ::table()
       pTable[name] := value
    end
 
@@ -114,7 +114,7 @@ class SProperty : Object (pTable)
    # Remove all properties from the database
    #</p>
    method clearAll()
-      pTable := table()
+      pTable := ::table()
    end
 
    #<p>
@@ -122,7 +122,7 @@ class SProperty : Object (pTable)
    # <[param pName name of property to remove]>
    #</p>
    method removeP(pName)
-      delete(pTable, pName)
+      ::delete(pTable, pName)
    end
 
    # <p>
@@ -131,7 +131,7 @@ class SProperty : Object (pTable)
    # <[return the current value of the named property]>
    # </p>
    method getP(pName)
-      /pTable := table()
+      /pTable := ::table()
       return pTable[pName]
    end
 
@@ -209,7 +209,7 @@ class Property : Object (pdb)
    method getAllProperties()
       local t, k
       t := pdb.fetchAll()
-      every k := key(t) do t[k] := Union().decode(t[k])
+      every k := ::key(t) do t[k] := Union().decode(t[k])
       return t
    end
 
@@ -283,5 +283,5 @@ class Property : Object (pdb)
 initially(user, passwd:"", dsn, tabl, uClass)
    if pdb := PropertyDB(user,passwd,dsn,tabl,uClass) then
        Property := create |self
-   else stop("Cannot open PropertyDB")
+   else ::stop("Cannot open PropertyDB")
 end

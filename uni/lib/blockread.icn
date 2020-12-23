@@ -35,7 +35,7 @@ package util
 #and
 #<pre>
 #     import util
-#     
+#
 #     procedure main(args)
 #         bRead := BlockRead()
 #         i := 0
@@ -102,7 +102,7 @@ class BlockRead : Object (f, bSize, buffer)
    #</p>
    method readBlock(n)
       /n := bSize
-      if s := reads(f, n) then {
+      if s := ::reads(f, n) then {
 	 i := *s
 	 while (i > 0) & (s[i] ~== "\n") do {
 	    i -:= 1
@@ -172,9 +172,9 @@ initially (fileOrName, blockSize)
       f := &input
       }
    else {
-      if type(fileOrName) == "string" then {
-	 f := open(fileOrName) |
-	    stop("BlockRead: Cannot open '",fileOrName,"'!")
+      if ::type(fileOrName) == "string" then {
+	 f := ::open(fileOrName) |
+	    ::stop("BlockRead: Cannot open '",fileOrName,"'!")
 	 }
       else {
 	 f := fileOrName     # Assume it's a file

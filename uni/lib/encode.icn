@@ -59,17 +59,17 @@ class Encode : Object(
       local buff
       static printable
       initial
-         printable := cset(&ascii[33:128]) -- '|\\'
+         printable := ::cset(&ascii[33:128]) -- '|\\'
 
       buff := StringBuff()
       s ? {
          repeat {
-            buff.add(tab(many(printable)))
-            if pos(0) then
+            buff.add(::tab(::many(printable)))
+            if ::pos(0) then
                return buff.get_string()
-            buff.add("\\" || right(ord(move(1)), 3, "0"))
+            buff.add("\\" || ::right(::ord(::move(1)), 3, "0"))
          }
-      }	 
+      }
    end
 
    method encode_record(o)
@@ -122,12 +122,12 @@ class Encode : Object(
          "table" : {
             seen[o] := (tag_count +:= 1)
             encode(o[[]])
-            pairs := sort(o)
+            pairs := ::sort(o)
             line_out(*pairs)
             every encode(!!pairs)
          }
 
-         default : 
+         default :
             &null
 
       }
@@ -140,7 +140,7 @@ class Encode : Object(
    method encode_class(o)
       local cname, t, m, e
 
-      cname := lang::get_class_name(o) | stop("invalid class name")
+      cname := lang::get_class_name(o) | ::stop("invalid class name")
       line_out(cname)
       seen[o] := (tag_count +:= 1)
 
@@ -150,6 +150,6 @@ class Encode : Object(
 
    initially()
       tag_count := 0
-      seen := table()
+      seen := ::table()
       string_buff := StringBuff()
 end

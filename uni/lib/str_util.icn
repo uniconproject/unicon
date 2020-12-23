@@ -20,7 +20,7 @@ import lang
 # Utility to get next integer
 #
 procedure get_int()
-   suspend tab(upto(&digits)) & integer(tab(many(&digits)))
+   suspend ::tab(::upto(&digits)) & ::integer(::tab(::many(&digits)))
 end
 
 #<p>
@@ -31,7 +31,7 @@ end
 procedure zapSuffix(s,      # String to examine
                     suffix  # Suffix to find and remove
                    )
-    return (string(s), string(suffix), s[-*suffix:0] == suffix, s[1:-*suffix])
+    return (::string(s), ::string(suffix), s[-*suffix:0] == suffix, s[1:-*suffix])
 end
 
 #<p>
@@ -42,7 +42,7 @@ end
 procedure zapPrefix(s,      # String to examine
                     prefix  # Prefix to find and remove
                    )
-    return (string(s), string(prefix), s[1+:*prefix] == prefix, s[*prefix+1:0])
+    return (::string(s), ::string(prefix), s[1+:*prefix] == prefix, s[*prefix+1:0])
 end
 
 #<p>
@@ -53,7 +53,7 @@ end
 procedure delSuffix(s,      # String to examine
                     suffix  # Suffix to remove if present
                    )
-    return zapSuffix(s, suffix) | string(s)
+    return zapSuffix(s, suffix) | ::string(s)
 end
 
 #<p>
@@ -64,7 +64,7 @@ end
 procedure delPrefix(s,      # String to examine
                     prefix  # Suffix to remove if present
                    )
-    return zapPrefix(s, prefix) | string(s)
+    return zapPrefix(s, prefix) | ::string(s)
 end
 
 #<p>
@@ -75,7 +75,7 @@ end
 procedure lTrim(s,      # String to examine
                 cs      # Characters to strip from beginning of <tt>s</tt>.
                )
-    return reverse(trim(reverse(s),cs))
+    return ::reverse(::trim(::reverse(s),cs))
 end
 
 #<p>
@@ -86,8 +86,8 @@ procedure genWords(s,   # String to examine
                    cs   # Characters comprising words (default: &letters)
                   )
     /cs := &letters
-    s ? while &pos := upto(cs) do {
-        suspend tab(many(cs))\1
+    s ? while &pos := ::upto(cs) do {
+        suspend ::tab(::many(cs))\1
         }
 end
 
@@ -102,9 +102,9 @@ procedure genFields(s,  # String to examine
     local s1
 
     lTrim(s, cs) ? {
-        while s1 := tab(upto(cs)|0) do {
+        while s1 := ::tab(::upto(cs)|0) do {
             suspend s1
-            tab(many(cs)) | fail
+            ::tab(::many(cs)) | fail
             }
         }
 end
@@ -118,9 +118,9 @@ procedure genFieldsOne(s,   # String to examine
                        cs:' \t\n'
                       )
     s ? {
-        while s1 := tab(upto(cs)|0) do {
+        while s1 := ::tab(::upto(cs)|0) do {
             suspend s1
-            move(1) | fail
+            ::move(1) | fail
             }
         }
 end
@@ -150,20 +150,20 @@ procedure hideEscapedChars(s,       # String to examine
                            s2,      # ... and replace with these
                            esc:'\\' # Escape character
                           )
-    local c1 := cset(s1), ns := ""
+    local c1 := ::cset(s1), ns := ""
 
     /s2 := hideAllChars(s1)
 
     s ? {
-        while ns ||:= tab(upto(c1)) do {
+        while ns ||:= ::tab(::upto(c1)) do {
             if isEscapeSeq(ns, esc) then {
-                ns ||:= map(move(1), s1, s2)
+                ns ||:= ::map(::move(1), s1, s2)
                 }
             else {
-                ns ||:= move(1)
+                ns ||:= ::move(1)
                 }
             }
-        ns ||:= tab(0)
+        ns ||:= ::tab(0)
         }
 
     return ns
@@ -180,7 +180,7 @@ end
 #</p>
 procedure hideAllChars(s    # String of characters to hide.
                       )
-    return map(s, &ascii, &cset--&ascii)
+    return ::map(s, &ascii, &cset--&ascii)
 end
 
 #<p>
@@ -201,13 +201,13 @@ procedure replaceStrs(s,    # String to examine
                             #   entries are corresponding replacements
                      )
     local a, ns := ""
-    every put(a := [], key(tbl))
-    a := reverse(sort(a))
+    every ::put(a := [], ::key(tbl))
+    a := ::reverse(::sort(a))
     s ? {
-        while ns ||:= tab(findFirst(a)) do {
+        while ns ||:= ::tab(findFirst(a)) do {
             ns ||:= tbl[=!a]
             }
-        ns ||:= tab(0)
+        ns ||:= ::tab(0)
         }
     return ns
 end
@@ -225,7 +225,7 @@ end
 #   <[returns longest common suffix of <tt>s1</tt> and <tt>s2</tt>]>
 #</p>
 procedure lcs(s1,s2)
-   return reverse(lcp(reverse(s1),reverse(s2)))
+   return ::reverse(lcp(::reverse(s1),::reverse(s2)))
 end
 
 #<p>
@@ -259,17 +259,17 @@ procedure mapBytes(s,   # String to re-arrange
        (/saveOut | (saveOut ~== out)) then {
         saveIn  := in
         saveOut := out
-        inMap   := string(&cset)
+        inMap   := ::string(&cset)
         inMap   := inMap[1+:((*inMap/*in)*(*in))]
         outMap  := ""
-        inMap ? while(outMap ||:= map(in,out,move(*in)))
+        inMap ? while(outMap ||:= ::map(in,out,::move(*in)))
         }
-    
+
     # now do the work
     s ? {
-        while ns ||:= map(inMap,outMap,move(*inMap))
-        while ns ||:= map(in,out,move(*in))  # catch short strings
-        ns ||:= tab(0)                       # just append last tidbit
+        while ns ||:= ::map(inMap,outMap,::move(*inMap))
+        while ns ||:= ::map(in,out,::move(*in))  # catch short strings
+        ns ||:= ::tab(0)                       # just append last tidbit
         }
     return ns
 end
@@ -286,9 +286,9 @@ procedure stringToList(s, sep:'\n')
     if s[0] == sep then s := s[1:-1]       # strip only last sep
 
     s ? {
-        while put(a, tab(upto(sep)|0)) do move(1) | break
+        while ::put(a, ::tab(::upto(sep)|0)) do ::move(1) | break
         }
-        
+
     return a
 end
 
@@ -316,7 +316,7 @@ end
 #  <[param p string to use as padding]>
 #</p>
 procedure lPad(s,n,p)
-   return if *s < n then left(s,n,p) else s
+   return if *s < n then ::left(s,n,p) else s
 end
 
 #<p>
@@ -330,7 +330,7 @@ end
 #  <[param p string to use as padding]>
 #</p>
 procedure rPad(s,n,p)
-   return if *s < n then right(s,n,p) else s
+   return if *s < n then ::right(s,n,p) else s
 end
 
 #<p>
@@ -358,29 +358,29 @@ procedure genCSV(s, sep, spanFlag)
     static span, nospan
     initial {
         # Default to not treating spans of separators as single separators
-        nospan := makeProc { repeat { @&source; move(1) } }
-        span   := makeProc { repeat { sep := @&source; tab(many(\sep[1])) } }
+        nospan := makeProc { repeat { @&source; ::move(1) } }
+        span   := makeProc { repeat { sep := @&source; ::tab(::many(\sep[1])) } }
         }
 
     spanner := if /spanFlag then nospan else span
-    
+
     /sep := ","
     WS := ' \t\n' -- sep  # Can't include separators in whitespace
                           #  (The '\n' is a trick so there's always
                           #  something at the end of the last field.)
 
     (s||WS) ? {
-        while not pos(0) do {
-            tab(many(WS))
+        while not ::pos(0) do {
+            ::tab(::many(WS))
             if ="\"" then {    # Quoted string
                 r := ""
                 while r ||:= tabSkip("\"") do {
                     if not ="\"" then break     # End of quoted string
                     r ||:= "\""
                     }
-                suspend (tab((upto(sep))|0)\1, r) do spanner(sep)     
+                suspend (::tab((::upto(sep))|0)\1, r) do spanner(sep)
                 }
-            else suspend trim(tab((upto(sep))|0)\1,WS) do spanner(sep)
+            else suspend ::trim(::tab((::upto(sep))|0)\1,WS) do spanner(sep)
             }
         }
 end
@@ -395,7 +395,7 @@ end
 #</p>
 procedure parseCSV(s, sep, spanFlag)
     local A
-    every put(A := [], genCSV(s, sep, spanFlag))
+    every ::put(A := [], genCSV(s, sep, spanFlag))
     return A
 end
 
@@ -422,8 +422,8 @@ procedure encodeCsvField(field)
     local r
     r := ""
     field ? {
-        while r ||:= tab(upto('"')+1) do r ||:= "\""
-        r := "\"" || r || tab(0) || "\""
+        while r ||:= ::tab(::upto('"')+1) do r ||:= "\""
+        r := "\"" || r || ::tab(0) || "\""
         }
     return r
 end

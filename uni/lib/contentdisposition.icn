@@ -33,12 +33,12 @@ class ContentDisposition:Error(type, parameters)
       local s
       parameters.member(key) | fail
       s := parameters.get(key)
-      if any('\"', s) then
+      if ::any('\"', s) then
          return s[2:-1]
       else
          return s
    end
-   
+
    #
    # Get the parameter for the given key.
    #
@@ -59,7 +59,7 @@ class ContentDisposition:Error(type, parameters)
    method parse(s)
       local p := mail::RFC822Parser()
       return p.parse_content_disposition(s, self) | error(p)
-   end   
+   end
 
    method rfc1521_parameters()
       local e, s := ""

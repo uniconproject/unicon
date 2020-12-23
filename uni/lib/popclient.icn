@@ -91,28 +91,28 @@ class PopClient:NetClient(username, password)
    method list(n)
       local l, r, num, size, s
 
-      r := table()
-      
+      r := ::table()
+
       if /n then {
          send_command("LIST") | fail
          l := read_multi_lines() | fail
          every s := !l do {
             s ? {
-               num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+               num := ::integer(::tab(::many(&digits))) | return error("Bad list: " || s)
                =" "
-               size := integer(tab(many(&digits))) | return error("Bad list: " || s)
+               size := ::integer(::tab(::many(&digits))) | return error("Bad list: " || s)
             }
-            insert(r, num, size)
+            ::insert(r, num, size)
          }
       }
       else {
          s := send_command("LIST " || n) | fail
          s ? {
-            num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+            num := ::integer(::tab(::many(&digits))) | return error("Bad list: " || s)
             =" "
-            size := integer(tab(many(&digits))) | return error("Bad list: " || s)
+            size := ::integer(::tab(::many(&digits))) | return error("Bad list: " || s)
          }
-         insert(r, num, size)
+         ::insert(r, num, size)
       }
 
       return r
@@ -127,28 +127,28 @@ class PopClient:NetClient(username, password)
    method uidl(n)
       local l, r, num, id, s
 
-      r := table()
-      
+      r := ::table()
+
       if /n then {
          send_command("UIDL") | fail
          l := read_multi_lines() | fail
          every s := !l do {
             s ? {
-               num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+               num := ::integer(::tab(::many(&digits))) | return error("Bad list: " || s)
                =" "
-               id := tab(0)
+               id := ::tab(0)
             }
-            insert(r, num, id)
+            ::insert(r, num, id)
          }
       }
       else {
          s := send_command("UIDL " || n) | fail
          s ? {
-            num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+            num := ::integer(::tab(::many(&digits))) | return error("Bad list: " || s)
             =" "
-            id := tab(0)
+            id := ::tab(0)
          }
-         insert(r, num, id)
+         ::insert(r, num, id)
       }
 
       return r
@@ -166,7 +166,7 @@ class PopClient:NetClient(username, password)
             s[1:3] := "."
          if s == "." then
             break
-         put(l, s)
+         ::put(l, s)
       }
       return l
    end
@@ -188,9 +188,9 @@ class PopClient:NetClient(username, password)
 
       s := send_command("STAT") | fail
       s ? {
-         num_messages := integer(tab(many(&digits))) | return error("Bad stat listing: " || s)
+         num_messages := ::integer(::tab(::many(&digits))) | return error("Bad stat listing: " || s)
          =" "
-         total_size := integer(tab(many(&digits))) | return error("Bad stat listing: " || s)
+         total_size := ::integer(::tab(::many(&digits))) | return error("Bad stat listing: " || s)
       }
 
       return [num_messages, total_size]
@@ -207,12 +207,12 @@ class PopClient:NetClient(username, password)
       s ? {
          if ="+OK" then {
             =" "
-            return tab(0)
+            return ::tab(0)
          }
 
          if ="-ERR" then {
             =" "
-            return error_and_close("Got an error: " || tab(0))
+            return error_and_close("Got an error: " || ::tab(0))
          }
       }
 

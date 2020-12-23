@@ -5,7 +5,9 @@
 #       Kevin Wampler
 #       Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
 #</pre>
-#   This is one of several files contributing to the lang package.
+#   This is one of several files contributing to the lang package. Changes have
+#   been made to rationalise the code to use Unicon functions to avoid implementation
+#   dependencies.
 #</p>
 #<p>
 #  This file is in the <i>public domain</i>.
@@ -14,13 +16,15 @@
 package lang
 
 #<p>
-# How to tell if something is a class.
+# How to tell if something is a class. We now use the langprocs procedure instead
+# of implementation dependent code.
 # <i>This can be tricked, but only by evil people.</i>
+#
 # <[returns <tt>var</tt> if it's a class]>
 # <[fails if <tt>var</tt> is not a class]>
 #</p>
 procedure isClass(var)       # Object to examine
-   return (match("__state", type(var), -7), var)
+   return get_type(var) == "class" & var
 end
 
 #<p>
@@ -32,30 +36,39 @@ end
 #              Unicon type if <tt>var</tt> is not a class]>
 #</p>
 #<p>
-#   <p>Note:</b> For classes and records in packages, returns user-level
-#      form of name, e.g.: "package::class".
+#   <p>Note:</b> For all entities defined in packages, returns user-level
+#      form of name, e.g.: "package::class" instead of the internal form
+#      of name, e.g.: "package__class".
 #</p>
 #<p>
+# We now use the langprocs procedure instead of implementation dependent code.
 #   <i>As with <tt>isClass()</tt>, this can be tricked by evil people.</i>
 #</p>
 procedure Type(var)      # Object to examine
    if isClass(var) then {
-      suspend mapPackageInt2Ext(util::zapSuffix(type(var), "__state") |
-				util::zapSuffix(type(!var.__m), "__methods"))
+      suspend mapPackageInt2Ext(!get_class(var).get_supers())
       }
-   else return mapPackageInt2Ext(type(var))
+   else return mapPackageInt2Ext(::type(var))
 end
 
 #<p>
 #  <i>Intended for internal use only.</i>
-#  Map "package__object" into "package::object"
+#  Map "package__object" into "package::object". This is implementation dependent
+#  code and at present there is no Unicon function that returns the package
+#  information for any defined value. It also checks that the name is not in
+#  external format first and if it finds it is then it will return it unchanged.
+#  This allows "__" to be used in external names.
 #</p>
 procedure mapPackageInt2Ext(s)
    local ns := ""
    s ? {
-      ns ||:= tab(find("__")) || (move(2),"::")
-      ns ||:= tab(0)
+      if not ::find("::") then {
+         ns ||:= ::tab(::find("__")) || (::move(2),"::")
+         ns ||:= ::tab(0)
+      } else {
+         ns := s
       }
+   }
    return ns
 end
 
@@ -89,14 +102,20 @@ end
 #</p>
 procedure istype(x,         # Object to examine
                  s)         # Type to check against
-   case string(s) of {
-      "class"  : return isClass(x)
-      "record" : return isRecord(x)
-      "numeric": return 2(numeric(x), x)
-      default  : return 2(string(s) == Type(x), x )
+   local ss
+
+   if ss := ::string(s) then {
+      if ss == "numeric" then {
+         return ::numeric(x) & x
+      } else {
+         return ss == get_type(x) & x
       }
-   # Last gasp, maybe s is really a class instead of a classname
-   return 2(Type(s)\1 == Type(x), x )
+   } else {
+      #
+      # Last gasp, maybe s is really a class/object instead of a classname
+      #
+      return get_type(s) == Type(x) & x
+   }
 end
 
 #<p>
@@ -128,12 +147,13 @@ end
 
 #<p>
 # Is x a record?
-#   A class is NOT a record!
+#   A class is NOT a record! Use get_type(o) which returns "record" for all not
+#   object/class values that are records.
 #   <[returns <tt>x</tt> if <tt>x</tt> is a record]>
 #   <[fails if <tt>x</tt> is not a record]>
 #</p>
 procedure isRecord(x)        # Object to examine
-   return 3(image(x)[1:7] == "record", not isClass(x), x)
+   return (get_type(x) == "record" & x)
 end
 
 #<p>

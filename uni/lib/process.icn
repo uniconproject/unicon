@@ -22,19 +22,19 @@ class Process : Runnable(
    # Called by the parent process to start the child
    #
    method start()
-      pid := fork() | stop("Couldn't fork")
+      pid := ::fork() | ::stop("Couldn't fork")
       if pid = 0 then {
          invoke_run()
-         exit(0)
+         ::exit(0)
       }
    end
-   
+
    #
    # Called by the parent.  The method waits for the child to terminate,
    # and then closes the pipes.
    #
    method join()
-      wait(pid)
+      ::wait(pid)
       return
    end
 
@@ -42,7 +42,7 @@ class Process : Runnable(
    # Called by the parent to kill the child.  Then the {join} method is invoked.
    #
    method stop()
-      kill(pid, "SIGTERM")
+      ::kill(pid, "SIGTERM")
       join()
    end
 
@@ -50,7 +50,7 @@ class Process : Runnable(
    # Sleep for n milliseconds.
    #
    method sleep(n)
-      return delay(\n)
+      return ::delay(\n)
    end
 
    #
@@ -64,7 +64,7 @@ class Process : Runnable(
          self.runnable.run()
    end
 
-   ## 
+   ##
    # Set the runnable object as the code body of the process.
    #
    # @p

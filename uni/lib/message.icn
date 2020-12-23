@@ -144,7 +144,7 @@ class Message:Error(headers, content, parser)
 
    #
    # Return a string representation of the message in RFC822 format.
-   # 
+   #
    method to_rfc822()
       local s, h
       s := ""
@@ -163,7 +163,7 @@ class Message:Error(headers, content, parser)
       local res, l, t
 
       # Drop trailing w/s
-      while any(' \t', s[-1]) do
+      while ::any(' \t', s[-1]) do
          s[-1] := ""
 
       # Check for simple quick case
@@ -178,8 +178,8 @@ class Message:Error(headers, content, parser)
          # Get a block of text being w/s followed by non-ws eg
          #             "   here"
          #
-         t := tab(many(' \t')) | ""
-         t ||:= tab(upto(' \t') | 0)
+         t := ::tab(::many(' \t')) | ""
+         t ||:= ::tab(::upto(' \t') | 0)
          if *l + *t > 78 then {
             # Too big, so start a new line.
             res := fold1(res, l)
@@ -188,7 +188,7 @@ class Message:Error(headers, content, parser)
             # Not too big, so continue this line.
             l ||:= t
          }
-         if pos(0) then {
+         if ::pos(0) then {
             # Add any remainder.
             return fold1(res, l)
          }
@@ -212,8 +212,8 @@ class Message:Error(headers, content, parser)
    #
    method show_headers()
       local h
-      every h := !sort(headers) do {
-         every write(h[1], ": ", !h[2])
+      every h := !::sort(headers) do {
+         every ::write(h[1], ": ", !h[2])
       }
    end
 
@@ -222,8 +222,8 @@ class Message:Error(headers, content, parser)
    #
    method show_message()
       show_headers()
-      write()
-      write(content)
+      ::write()
+      ::write(content)
    end
 
    #
@@ -232,15 +232,15 @@ class Message:Error(headers, content, parser)
    method parse(data)
       local s
       data ? {
-         while s := tab(find("\r\n")) do {
-            move(2)
-            while any(' \t') do {
-               s ||:= tab(many(' \t'))
-               s ||:= tab(find("\r\n")) | return error("Unexpected end of message")
-               move(2)
+         while s := ::tab(::find("\r\n")) do {
+            ::move(2)
+            while ::any(' \t') do {
+               s ||:= ::tab(::many(' \t'))
+               s ||:= ::tab(::find("\r\n")) | return error("Unexpected end of message")
+               ::move(2)
             }
             if *s = 0 then {
-               content := tab(0)
+               content := ::tab(0)
                return
             }
             parser.parse_field(s, self) | return error(parser)
@@ -280,7 +280,7 @@ class Message:Error(headers, content, parser)
 
       s := ""
       every e := !l do {
-         if *s > 0 then 
+         if *s > 0 then
             s ||:= delim
          s ||:= e
       }
@@ -294,10 +294,10 @@ class Message:Error(headers, content, parser)
    # @p
    method catenate_addresses(a, delim)
       local s, e
-      if type(a) == "list" then {
+      if ::type(a) == "list" then {
          s := ""
          every e := !a do {
-            if *s > 0 then 
+            if *s > 0 then
                s ||:= delim
             s ||:= e
          }
@@ -313,7 +313,7 @@ class Message:Error(headers, content, parser)
    #
    method add_header(key, val)
       if headers.member(key) then
-         put(headers.get(key), val)
+         ::put(headers.get(key), val)
       else
          headers.insert(key, [val])
    end
@@ -362,7 +362,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "To" header(s) as a list of {Address} instances.
    # @return a list of {Address} instances
-   # @fail if the "To" header is absent or cannot be parsed as a 
+   # @fail if the "To" header is absent or cannot be parsed as a
    # @     list of {Address}es
    #
    method get_to()
@@ -393,7 +393,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "Reply-To" header(s) as a list of {Address} instances.
    # @return a list of {Address} instances
-   # @fail if the "Reply-To" header is absent or cannot be parsed as a 
+   # @fail if the "Reply-To" header is absent or cannot be parsed as a
    # @     list of {Address}es
    #
    method get_reply_to()
@@ -424,7 +424,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "Resent-To" header(s) as a list of {Address} instances.
    # @return a list of {Address} instances
-   # @fail if the "Resent-To" header is absent or cannot be parsed as a 
+   # @fail if the "Resent-To" header is absent or cannot be parsed as a
    # @     list of {Address}es
    #
    method get_resent_to()
@@ -455,7 +455,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "cc" header(s) as a list of {Address} instances.
    # @return a list of {Address} instances
-   # @fail if the "bcc" header is absent or cannot be parsed as a 
+   # @fail if the "bcc" header is absent or cannot be parsed as a
    # @     list of {Address}es
    #
    method get_cc()
@@ -486,7 +486,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "Resent-cc" header(s) as a list of {Address} instances.
    # @return a list of {Address} instances
-   # @fail if the "Resent-cc" header is absent or cannot be parsed as a 
+   # @fail if the "Resent-cc" header is absent or cannot be parsed as a
    # @     list of {Address}es
    #
    method get_resent_cc()
@@ -517,7 +517,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "bcc" header(s) as a list of {Address} instances.
    # @return a list of {Address} instances
-   # @fail if the "bcc" header is absent or cannot be parsed as a 
+   # @fail if the "bcc" header is absent or cannot be parsed as a
    # @     list of {Address}es
    #
    method get_bcc()
@@ -548,7 +548,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "Resent-bcc" header(s) as a list of {Address} instances.
    # @return a list of {Address} instances
-   # @fail if the "Reset-bcc" header is absent or cannot be parsed as a 
+   # @fail if the "Reset-bcc" header is absent or cannot be parsed as a
    # @     list of {Address}es
    #
    method get_resent_bcc()
@@ -579,7 +579,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "From" header(s) as a list of {Mailbox} instances.
    # @return a list of {Mailbox} instances
-   # @fail if the "From" header is absent or cannot be parsed as a 
+   # @fail if the "From" header is absent or cannot be parsed as a
    # @     list of {Mailbox}es
    #
    method get_from()
@@ -610,7 +610,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "Sender" header as a {Mailbox} instance.
    # @return a {Mailbox}
-   # @fail if the "Sender" header is absent or cannot be parsed as a 
+   # @fail if the "Sender" header is absent or cannot be parsed as a
    # @     {Mailbox}
    #
    method get_sender()
@@ -660,7 +660,7 @@ class Message:Error(headers, content, parser)
    #
    # Get the "Resent-Sender" header as a {Mailbox} instance.
    # @return a {Mailbox}
-   # @fail if the "Resent-Sender" header is absent or cannot be parsed as a 
+   # @fail if the "Resent-Sender" header is absent or cannot be parsed as a
    # @     {Mailbox}
    #
    method get_resent_sender()
@@ -779,6 +779,6 @@ end
 procedure get_all_mailboxes(l)
    local res
    res := []
-   every put(res, (!l).generate_mailboxes())
+   every ::put(res, (!l).generate_mailboxes())
    return res
 end

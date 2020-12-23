@@ -26,7 +26,7 @@ class Sem(id)
    method set_value(x)
       static f
       initial {
-         f := loadfunc(LIB, "sem_set_value")
+         f := ::loadfunc(LIB, "sem_set_value")
       }
       f(id, x)
    end
@@ -37,7 +37,7 @@ class Sem(id)
    method get_value()
       static f
       initial {
-         f := loadfunc(LIB, "sem_get_value")
+         f := ::loadfunc(LIB, "sem_get_value")
       }
       return f(id)
    end
@@ -72,24 +72,24 @@ class Sem(id)
    method semop(n)
       static f
       initial {
-         f := loadfunc(LIB, "sem_semop")
+         f := ::loadfunc(LIB, "sem_semop")
       }
       f(id, n)
    end
 
-   # 
+   #
    # Peform a semop with the IPC_NOWAIT flag set.  This is the same as
    # {semop()}, but instead of suspending the call will fail.
    #
    method semop_nowait(n)
       static f
       initial {
-         f := loadfunc(LIB, "sem_semop_nowait")
+         f := ::loadfunc(LIB, "sem_semop_nowait")
       }
       return f(id, n)
    end
 
-   # 
+   #
    # Repeatedly peform {semop_nowait()}, sleeping for a short period between each try
    # until t milliseconds or {semop_nowait()} succeeds.  Fails on a timeout; otherwise
    # succeeds.
@@ -101,7 +101,7 @@ class Sem(id)
       c := util::milliseconds()
       repeat {
          if semop_nowait(n) then
-            return 
+            return
          if util::milliseconds() - c > t then
             fail
          util::sleep(50)
@@ -115,7 +115,7 @@ class Sem(id)
    method remove()
       static f
       initial {
-         f := loadfunc(LIB, "sem_remove")
+         f := ::loadfunc(LIB, "sem_remove")
       }
       f(id)
    end
@@ -135,7 +135,7 @@ end
 procedure open_public_sem(key)
    static f
    initial {
-      f := loadfunc(LIB, "sem_open_public")
+      f := ::loadfunc(LIB, "sem_open_public")
    }
    return Sem(f(key))
 end
@@ -146,7 +146,7 @@ end
 procedure create_public_sem(key, val)
    static f
    initial {
-      f := loadfunc(LIB, "sem_create_public")
+      f := ::loadfunc(LIB, "sem_create_public")
    }
    /val := 1
    return Sem(f(key, val))
@@ -158,7 +158,7 @@ end
 procedure create_private_sem(val)
    static f
    initial {
-      f := loadfunc(LIB, "sem_create_private")
+      f := ::loadfunc(LIB, "sem_create_private")
    }
    /val := 1
    return Sem(f(val))

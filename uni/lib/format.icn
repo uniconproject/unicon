@@ -18,9 +18,9 @@ procedure format_string_to_int(subject, base)
    /base := 16
    digs := "0123456789abcdef"[1:base + 1] | fail
 
-   s := string(subject) | fail
-   every c := !map(s) do
-      n := base * n + find(c, digs) - 1 | fail
+   s := ::string(subject) | fail
+   every c := !::map(s) do
+      n := base * n + ::find(c, digs) - 1 | fail
    return n
 end
 
@@ -36,7 +36,7 @@ procedure format_int_to_string(subject, base, p)
    s := ""
    /base := 16
    /p := 1
-   n := integer(subject) | fail
+   n := ::integer(subject) | fail
 
    digs := "0123456789ABCDEF"[1:base + 1] | fail
    while n > 0 do {
@@ -45,7 +45,7 @@ procedure format_int_to_string(subject, base, p)
    }
 
    if p > *s then
-      s := repl("0", p - *s) || s
+      s := ::repl("0", p - *s) || s
 
    return s
 end
@@ -59,72 +59,72 @@ end
 # @         are introduced into the non-fractional part of the number;
 # @         if c contains {'+'} then a leading + is added to positive
 # @         numbers.
-# @           
+# @
 #
 procedure format_numeric_to_string(subject, p, f)
    local n1, s, t, lim, d, zs, dig, i, n, sig_digs
 
    /f := ''
-   n := numeric(subject) | fail
+   n := ::numeric(subject) | fail
    sig_digs := 16 - 2
    /p := 4
-   n1 := abs(n)
-   if not any(f, "e") & type(n1) == "integer" then 
-      s := string(n1) || repl("0", p)
+   n1 := ::abs(n)
+   if not ::any(f, "e") & ::type(n1) == "integer" then
+      s := ::string(n1) || ::repl("0", p)
    else {
       t := format_norm(n1)
-      lim := if any(f, "e") then p else p + t[2]
+      lim := if ::any(f, "e") then p else p + t[2]
       if lim >= -1 then {
          s := ""
          d := t[1]
          if lim > sig_digs then {
-            zs := repl("0", lim - sig_digs)
+            zs := ::repl("0", lim - sig_digs)
             lim := sig_digs
          }
          every 0 to lim do {
-            s ||:= dig := integer(d)
+            s ||:= dig := ::integer(d)
             d := (d - dig) * 10.0
          }
-         if integer(d) >= 5 then {
+         if ::integer(d) >= 5 then {
             (every i := *s to 1 by -1 do
              if s[i] := 10 > s[i] + 1 then break
              else s[i] := 0
              ) | {          # need to add 1 to left of s
                 s := "1" || s
-                if any(f, "e") then {
+                if ::any(f, "e") then {
                    s[-1] := ""
                    t[2] +:= 1
                 }
              }
          }
          s ||:= \zs
-         s := repl("0", 0 < p + 1 - *s) || s
-      } 
-      else s := repl("0", p + 1)
+         s := ::repl("0", 0 < p + 1 - *s) || s
+      }
+      else s := ::repl("0", p + 1)
    }
 
-   if any(f, ",") then
+   if ::any(f, ",") then
       every s[*s - p - 3 to 1 by -3] ||:= ","
 
    if p > 0 then {
       s[-p - 1] ||:= "."
-      if any(f, "s"| "z") then {
-         "0" ~== s[i := *s to *s - p + 1 by -1]         
-         s[i + 1 : 0] := if any(f, "s") then
-            repl(" ", *s - i)
+      if ::any(f, "s"| "z") then {
+         "0" ~== s[i := *s to *s - p + 1 by -1]
+         s[i + 1 : 0] := if ::any(f, "s") then
+            ::repl(" ", *s - i)
          else ""
       }
    }
-   if n < 0 & upto('123456789', s) then
+   if n < 0 & ::upto('123456789', s) then
       s := "-" || s
    else
-      if any(f, "+") then 
+      if ::any(f, "+") then
          s := "+" || s
 
-   return if any(f, "e") then
-      s || "E" || (if t[2] < 0 then "-" else "+") || 
-      right(abs(t[2]), 3, "0")
-   else s   
+   return if ::any(f, "e") then
+      s || "E" || (if t[2] < 0 then "-" else "+") ||
+      ::right(::abs(t[2]), 3, "0")
+   else s
 end
 
 procedure format_norm(n)
@@ -144,7 +144,7 @@ procedure format_norm(n)
       ve -:= 1
    }
 
-   # invariant : 1 <= m < pwr[1 + ve] & m * 10 ^ e = m0 
+   # invariant : 1 <= m < pwr[1 + ve] & m * 10 ^ e = m0
    while m >= 10.0 do {
       if m /:= (m >= pwr[ve]) then
          e +:= 2 ^ (ve - 1)
@@ -153,7 +153,7 @@ procedure format_norm(n)
 
    if n < 1.0 then {
       e := -e
-      if m := 10.0 / (1.0 ~= m) then 
+      if m := 10.0 / (1.0 ~= m) then
          e -:= 1
    }
    return [m, e]
@@ -166,23 +166,23 @@ end
 procedure format_unescape(subject)
    local s, res, ch
 
-   s := string(subject) | fail
-   
+   s := ::string(subject) | fail
+
    res := ""
    s ? {
       repeat {
-         res ||:= tab(upto('\\') | 0)
-         if pos(0) then
+         res ||:= ::tab(::upto('\\') | 0)
+         if ::pos(0) then
             break
-         move(1)
-         if any('01234567') then
-            res ||:= char(format_string_to_int(move(3), 8))
+         ::move(1)
+         if ::any('01234567') then
+            res ||:= ::char(format_string_to_int(::move(3), 8))
          else if ="x" then
-            res ||:= char(format_string_to_int(move(2), 16))
+            res ||:= ::char(format_string_to_int(::move(2), 16))
          else if ="^" then
-            res ||:= char(map(move(1)) + 1 - ord("a"))
+            res ||:= ::char(::map(::move(1)) + 1 - ::ord("a"))
          else {
-            ch := move(1) | "\""
+            ch := ::move(1) | "\""
             res ||:= case ch of {
                "z" : ""
                "n" : "\n"
@@ -211,17 +211,17 @@ procedure format_escape(subject)
    local s, res, ch
    static printable
    initial
-      printable := cset(&ascii[33:128]) -- '\\'
+      printable := ::cset(&ascii[33:128]) -- '\\'
 
-   s := string(subject) | fail
-   
+   s := ::string(subject) | fail
+
    res := ""
    s ? {
       repeat {
-         res ||:= tab(many(printable))
-         if pos(0) then
+         res ||:= ::tab(::many(printable))
+         if ::pos(0) then
             break
-         ch := move(1)
+         ch := ::move(1)
          res ||:= case ch of {
             "\n" : "\\n"
             "\l" : "\\l"
@@ -233,7 +233,7 @@ procedure format_escape(subject)
             "\v" : "\\v"
             "\f" : "\\f"
             "\\" : "\\\\"
-            default  :  "\\x" || format_int_to_string(ord(ch), 16, 2)
+            default  :  "\\x" || format_int_to_string(::ord(ch), 16, 2)
          }
       }
    }
@@ -249,7 +249,7 @@ procedure format_int_to_words(subject)
 
    initial {
       small := ["One", "Two", "Three", "Four", "Five", "Six",
-                "Seven", "Eight", "Nine", "Ten", "Eleven", 
+                "Seven", "Eight", "Nine", "Ten", "Eleven",
                 "Twelve", "Thirteen", "Fourteen", "Fifteen",
                 "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
 
@@ -261,7 +261,7 @@ procedure format_int_to_words(subject)
       pwr10num := [1000000, 1000, 100]
    }
 
-   n := integer(subject) | fail
+   n := ::integer(subject) | fail
 
    s := ""
 

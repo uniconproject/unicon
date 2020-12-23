@@ -53,7 +53,7 @@ class Complex:Object(r:0,i:0)
        if x := convert(x) then {
           c := x.conjugate()
           n := self.mult(c)
-          d := real((x.mult(c)).r)
+          d := ::real((x.mult(c)).r)
           return Complex(n.r/d,n.i/d)
           }
     end
@@ -112,7 +112,7 @@ class Complex:Object(r:0,i:0)
     #</p>
     method multInverse()
        n := conjugate()
-       d := real(r^2 + i^2)
+       d := ::real(r^2 + i^2)
        return Complex(n.r/d, n.i/d)
     end
 
@@ -128,8 +128,8 @@ class Complex:Object(r:0,i:0)
     #  <i>Used internally.</i>
     #</p>
     method convert(x)
-       if type(x) == "math__Complex__state" then return x
-       return Complex(numeric(x),0)
+       if ::type(x) == "math__Complex__state" then return x
+       return Complex(::numeric(x),0)
     end
 
 end

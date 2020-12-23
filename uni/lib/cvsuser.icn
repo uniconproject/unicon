@@ -17,19 +17,19 @@ end
 procedure get_cvs_user(name)
    local cvs_root, s, f
 
-   cvs_root := getenv("CVSROOT") | stop("Couldn't get CVS_ROOT")
-   f := open(cvs_root || "/CVSROOT/users") | stop("Couldn't open users file")
+   cvs_root := ::getenv("CVSROOT") | ::stop("Couldn't get CVS_ROOT")
+   f := ::open(cvs_root || "/CVSROOT/users") | ::stop("Couldn't open users file")
 
    every s := !f do {
       s ? {
-         if tab(upto(':')) == name then {
-            move(1)
-            close(f)
-            return CvsUser(name, tab(0))
+         if ::tab(::upto(':')) == name then {
+            ::move(1)
+            ::close(f)
+            return CvsUser(name, ::tab(0))
          }
       }
    }
 
-   close(f)
+   ::close(f)
 end
 

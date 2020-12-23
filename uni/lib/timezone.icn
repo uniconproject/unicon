@@ -30,11 +30,11 @@ class Timezone(offset, id)
 	 offset := 0
 	 }
       else if *a = 1 then {
-	 if type(a[1]) == "integer" then {
+	 if ::type(a[1]) == "integer" then {
 	    offset := a[1]
 	    id := (if offset < 0 then "-" else "+") ||
-	       right(abs(offset) / 3600, 2, "0") || 
-	       right((abs(offset) % 3600) / 60, 2, "0") 
+	       ::right(::abs(offset) / 3600, 2, "0") ||
+	       ::right((::abs(offset) % 3600) / 60, 2, "0")
 	    }
 	 else {
 	    id := a[1]
@@ -49,37 +49,37 @@ end
 
 procedure init_timezone()
    local s, t1, pat, t2, f, t
-   known_timezones := table()
+   known_timezones := ::table()
 
    utc_timezone := Timezone(0, "UTC")
-   insert(known_timezones, "GMT", Timezone(0, "GMT"))
-   insert(known_timezones, "UTC", utc_timezone)
-   insert(known_timezones, "UT", Timezone(0, "UT"))
-   insert(known_timezones, "BST", Timezone(3600, "BST"))
-   insert(known_timezones, "EST", Timezone(-18000, "EST"))
-   insert(known_timezones, "EDT", Timezone(-14400, "EDT"))
-   insert(known_timezones, "CST", Timezone(-21600, "CST"))
-   insert(known_timezones, "CDT", Timezone(-18000, "CDT"))
-   insert(known_timezones, "MST", Timezone(-25200, "MST"))
-   insert(known_timezones, "MDT", Timezone(-21600, "MDT"))
-   insert(known_timezones, "PST", Timezone(-28800, "PST"))
-   insert(known_timezones, "PDT", Timezone(-25200, "PDT"))
+   ::insert(known_timezones, "GMT", Timezone(0, "GMT"))
+   ::insert(known_timezones, "UTC", utc_timezone)
+   ::insert(known_timezones, "UT", Timezone(0, "UT"))
+   ::insert(known_timezones, "BST", Timezone(3600, "BST"))
+   ::insert(known_timezones, "EST", Timezone(-18000, "EST"))
+   ::insert(known_timezones, "EDT", Timezone(-14400, "EDT"))
+   ::insert(known_timezones, "CST", Timezone(-21600, "CST"))
+   ::insert(known_timezones, "CDT", Timezone(-18000, "CDT"))
+   ::insert(known_timezones, "MST", Timezone(-25200, "MST"))
+   ::insert(known_timezones, "MDT", Timezone(-21600, "MDT"))
+   ::insert(known_timezones, "PST", Timezone(-28800, "PST"))
+   ::insert(known_timezones, "PDT", Timezone(-25200, "PDT"))
 
    #
    # Set the system timezone
    #
-   s := gettimeofday()[1]
+   s := ::gettimeofday()[1]
    t1 := util::Time()
    pat := "E MMM dd hh:mm:ss yyyy zzzz"
-   t1.parse(ctime(s) || " +0000", pat) | stop("Couldn't parse ctime")
+   t1.parse(ctime(s) || " +0000", pat) | ::stop("Couldn't parse ctime")
    t2 := util::Time()
-   t2.parse(gtime(s) || " +0000", pat) | stop("Couldn't parse gtime")
+   t2.parse(gtime(s) || " +0000", pat) | ::stop("Couldn't parse gtime")
    system_timezone := Timezone(t1.get_seconds() - t2.get_seconds())
    # If possible, use a symbolic representation, eg "EST" instead of -0500
    if &features == "UNIX" then {
-      if f := open("date +%Z", "p") then {
-	 t := read(f)
-	 close(f)
+      if f := ::open("date +%Z", "p") then {
+	 t := ::read(f)
+	 ::close(f)
 	 }
       # Only use a known symbol whose offset agrees with the one just calculated
       if (\known_timezones[\t]).get_offset() = system_timezone.get_offset() then
@@ -109,18 +109,18 @@ procedure get_known_timezone(id)
    initial {
       init_timezone()
       }
-   if member(known_timezones, id) then
+   if ::member(known_timezones, id) then
       return known_timezones[id]
 
    id ? {
-      if any('+-') then {
-	 if any('-') then 
+      if ::any('+-') then {
+	 if ::any('-') then
 	    sign := -1
 	 else
 	    sign := 1
-	 move(1)
-	 s := tab(many(&digits)) | fail
-	 return Timezone(sign * 3600 * integer(s[1:3]) + 60 * integer(s[3:5]),
+	 ::move(1)
+	 s := ::tab(::many(&digits)) | fail
+	 return Timezone(sign * 3600 * ::integer(s[1:3]) + 60 * ::integer(s[3:5]),
 			 id) | fail
 	 }
       }

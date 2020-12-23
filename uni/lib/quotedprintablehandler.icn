@@ -11,32 +11,32 @@ import util
 #
 class QuotedPrintableHandler:EncodingHandler(res, ll)
    method can_handle(enc)
-      return map(enc) == "quoted-printable"
+      return ::map(enc) == "quoted-printable"
    end
 
    method encode_data(m, data)
       local s
       static quotable_chars
       initial {
-         quotable_chars := cset(&ascii[33:62] || &ascii[63:128])
+         quotable_chars := ::cset(&ascii[33:62] || &ascii[63:128])
       }
 
       res := ""
       ll := 0
 
       data ? {
-         while not pos(0) do {
-            if s := tab(many(quotable_chars)) then {
-               if pos(0) & any(' \t', s[-1]) then {
-                  put(s[1:-1])
+         while not ::pos(0) do {
+            if s := ::tab(::many(quotable_chars)) then {
+               if ::pos(0) & ::any(' \t', s[-1]) then {
+                  ::put(s[1:-1])
                   escape(s[-1])
                } else {
-                  put(s)
+                  ::put(s)
                }
             } else if ="\r\n" then {
                nl()
             } else {
-               escape(move(1))
+               escape(::move(1))
             }
          }
       }
@@ -81,18 +81,18 @@ class QuotedPrintableHandler:EncodingHandler(res, ll)
       }
    end
 
-   method decode_data(m, data) 
+   method decode_data(m, data)
       local res
       res := ""
       data ? repeat {
-         res ||:= tab(upto('\r=') | 0)
-         if pos(0) then
+         res ||:= ::tab(::upto('\r=') | 0)
+         if ::pos(0) then
             break
-         if any('=') then {
-            move(1)
+         if ::any('=') then {
+            ::move(1)
             # If not a soft line break, then unescape the =XX format.
             if not ="\r\n" then {
-               res ||:= char(format_string_to_int(move(2))) | return error("Bad quoted-printable data")
+               res ||:= ::char(format_string_to_int(::move(2))) | return error("Bad quoted-printable data")
             }
          } else
             res ||:= ="\r\n" | return error("Bad quoted-printable data")

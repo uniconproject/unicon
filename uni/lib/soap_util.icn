@@ -42,7 +42,7 @@ procedure soapHead()
                  "\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
    return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"||s
 end
-    
+
 #<p>
 # Build the tail of the SOAP envelope: All the boiler-plate stuff for the
 #    end of the envelope.
@@ -65,7 +65,7 @@ procedure getNonWSChildren(x)
 
    every e := !x.get_children() do {
       if ::type(e) ~== "string" then {
-	 put(a, e)
+	 ::put(a, e)
 	 }
       }
    return a
@@ -82,7 +82,7 @@ procedure encode(x,                     # Message element
                 i, label)
    local s := prefix
 
-   /i := create seq()
+   /i := create ::seq()
    /label := "value"||@i
 
    if lang::istype(x, "string"|"cset"|"numeric") then {
@@ -93,7 +93,7 @@ procedure encode(x,                     # Message element
       }
    else if lang::istype(x, "table"|"record") then {
       s := "\n"||prefix||"<"||label||">\n"
-      every k := key(x) do {
+      every k := ::key(x) do {
 	 s ||:= prefix||"  "||encode(x[k], prefix,i,k)||"\n"
 	 }
       s ||:= prefix||"</"||label||">\n"
@@ -105,7 +105,7 @@ procedure encode(x,                     # Message element
       s ||:= prefix||"</"||label||">\n"
       }
    return s
-end  
+end
 
 #<p>
 # Internal procedure to help construct SOAP tags.
@@ -115,7 +115,7 @@ procedure mkTag(label, x)
    local s
    static typeMap
    initial {
-      typeMap := table("")
+      typeMap := ::table("")
       typeMap["string"]  := " xsi:type=\"xsd:string\""
       typeMap["integer"] := " xsi:type=\"xsd:int\""
       typeMap["real"]    := " xsi:type=\"xsd:decimal\""
@@ -136,15 +136,15 @@ procedure decode(x)
 
    case getElementType(x) of {
       "string"  : return x.get_children()[1]
-      "real"    : return real(x.get_children()[1])
-      "integer" : return integer(x.get_children()[1])
+      "real"    : return ::real(x.get_children()[1])
+      "integer" : return ::integer(x.get_children()[1])
       "null"    : return &null
       "list"    : {
-	 every put(a := [], decode(!getNonWSChildren(x)))
+	 every ::put(a := [], decode(!getNonWSChildren(x)))
 	 return a
 	 }
       "table"   : {
-	 a := table()
+	 a := ::table()
 	 every child := !getNonWSChildren(x) do {
 	    a[child.get_name()] := decode(child)
 	    }
@@ -165,7 +165,7 @@ procedure getElementType(x)
    local a, k
    static typeMap
    initial {       # no doubt very incomplete!
-      typeMap := table()
+      typeMap := ::table()
       typeMap["string"] := "string"
       typeMap["int"]    := "integer"
       typeMap["decimal"]:= "real"
@@ -174,14 +174,14 @@ procedure getElementType(x)
       }
 
    a := x.get_attributes()
-   every k := key(a) do {
+   every k := ::key(a) do {
       k ? {
-	 &pos := upto(':')+1                     # skip any namespace id
-	 if ="type" & pos(0) then {
+	 &pos := ::upto(':')+1                     # skip any namespace id
+	 if ="type" & ::pos(0) then {
 	    a[k] ? {
-	       &pos := any('\'"')
-	       &pos := upto(':')+1             # skip any namespace id
-	       return typeMap[map(tab(upto('\'"')|0))]
+	       &pos := ::any('\'"')
+	       &pos := ::upto(':')+1             # skip any namespace id
+	       return typeMap[::map(::tab(::upto('\'"')|0))]
 	       }
 	    }
 	 }
@@ -222,9 +222,9 @@ class ErrHandler : xml::DefaultErrorHandler (out_file)
    #  <[stack stack trace]>
    #</p>
    method fatal_error(msg:"", stack)
-      writes(\out_file, "Fatal error: " || msg)
+      ::writes(\out_file, "Fatal error: " || msg)
       if \stack then {
-	 write(\out_file, " at:")
+	 ::write(\out_file, " at:")
 	 show_stack(stack)
 	 }
    end
@@ -255,8 +255,8 @@ class ErrHandler : xml::DefaultErrorHandler (out_file)
 	 if \x.id then {
 	    t := x.subject[1:x.pos]
 	    i := 1
-	    every find("\n", t) do i +:= 1
-	    write(\out_file, x.id || ": "||i)
+	    every ::find("\n", t) do i +:= 1
+	    ::write(\out_file, x.id || ": "||i)
 	    }
 	 }
     end

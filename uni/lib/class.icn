@@ -10,31 +10,54 @@ package lang
 
 global lang_class_table
 
-#
-# Get the Class corresponding to the given class name
-#
-procedure get_class_for_name(name)
-   local x
-   /lang_class_table := table()
 
-   if not(x := \lang_class_table[name]) then {
-      x := Class()
-      x.init(name) | fail
-      lang_class_table[name] := x
+#
+# Get the Class corresponding to the given object or the class name
+#
+procedure get_class_for(obj)
+   local x, name
+   /lang_class_table := ::table()
+   case lang::get_type(obj) of {
+      "class" : {
+         #
+         # convert class name to the external form for storing in the table
+         #
+         name := lang::mapPackageInt2Ext(::classname(obj))
+         #
+         # use the object supplied to be create a Class object and insert into
+         # the table with the key of the external class names#
+         if not(x := \lang_class_table[name]) then {
+            x := Class(obj)
+            lang_class_table[name] := x
+         }
       }
+      "string" : {
+         #
+         # make sure that the class name supplied is in external form
+         #
+         name := lang::mapPackageInt2Ext(obj)
+         #
+         # if there is no key by the string value supplied, we need to raise failure
+         x := \lang_class_table[name] | fail
+      }
+      #
+      # any other kind of value is not a class or a class name, therefore we need to failure#
+      default : fail
+   }
+
    return x
 end
 
 #
 # This class provides information about a Unicon class.
 #
-class Class(name, 
-            methods, 
-            methods_map, 
-            variables, 
-            state_instance, 
-            oprec, 
-            supers, 
+class Class(name,
+            methods,
+            methods_map,
+            variables,
+            state_instance,
+            oprec,
+            supers,
             implemented_classes)
 
    #
@@ -56,7 +79,7 @@ class Class(name,
    # is no such method.
    #
    method get_method(s)
-      if member(methods_map, s) then
+      if ::member(methods_map, s) then
          return methods_map[s]
    end
 
@@ -84,54 +107,85 @@ class Class(name,
       return variables
    end
 
-   method init(n)
-      local i, v, s, p, m, imgv, cname
+initially(obj)
+   local v, s, sa, m, cname, cmeths := ::table(), lm := []
 
-      self.name := n
-      self.methods := []
-      self.supers := []
-      self.methods_map := table()
-
-      #
-      # Initialize the class
-      #
-      p := proc(name || "initialize") | fail
-      p()
-
-      #
-      # Get the oprec
-      #
-      self.oprec := variable(name || "__oprec") | fail
-   
-      every i := 1 to *self.oprec do {
-	 ::name(self.oprec[i]) ? {
-	    tab(find(".")+1)
-	    s := tab(0)
-	    }
-         
-	 v := self.oprec[i]
-	 if type(v) == "procedure" then {
-	    imgv := image(v)
-	    cname := imgv[11+:*imgv-*s-11]
-	    m := Method(v, s, cname)
-	    put(methods, m)
-	    insert(methods_map, s, m)
-	    }
-	 else {
-	    put(supers, s)
-	    }
+   #
+   # get the class name based on the object that we are looking at
+   #
+   self.name := lang::mapPackageInt2Ext(::classname(obj))
+   #
+   # provide the initial values for the methods, supers, methods_map, variables
+   # and implemented_classes. These will be added to as we process the information
+   # available from the Unicon functions.
+   #
+   self.methods := []
+   self.supers := []
+   self.methods_map := ::table()
+   self.implemented_classes := ::set(lang::mapPackageInt2Ext(self.name))
+   self.variables := []
+   #
+   # there are two variables in the class structure which are not of interest
+   # here as these are implementation related variables:- __s and __m. So as we
+   # examine the names provided by the Unicon function membernames(), we will not
+   # include these in the list of available variable names.
+   #
+   every s := !::membernames(obj) do {
+      if not (s == ("__s" | "__m")) then {
+         ::put(self.variables, s)
       }
+   }
+   #
+   # the method values associated with the class or superclasses for this class
+   # will be stored in set associated with the key of the class name.
+   #
+   # the first entry will be the set of methods defined for the class
+   #
+   cmeths[self.name] := ::set(::methods(self.name))
+   #
+   # Get the oprec, the field names of this record will be the method names
+   # defined directly in the class as well as the superclass names applicable
+   # for this class.
+   #
+   # the field names for a method hold a procedure value, the super classes hold
+   # a record value. We use this distinction in values to determine what is a
+   # method name and what is a class name.
+   #
+   self.oprec := ::oprec(obj) | fail
 
-      p := proc(name || "__state") | fail
-      state_instance := p()
-      variables := []
-      every ::name(state_instance[1 to *state_instance]) ? {
-	 tab(find(".")+1)
-	 put(variables, tab(0))
-	 }
-
-      implemented_classes := set(supers)
-      insert(implemented_classes, name)
-      return
-   end
+   every s := ::fieldnames(self.oprec) do {
+      v := self.oprec[s]
+      sa := lang::mapPackageInt2Ext(s)
+      if ::type(v) == "procedure" then {
+         #
+         # lm holds a list of lists where the internal list is the procedure value
+         # and the name of the method. This will be used later to generate the
+         # methods and the methods_map values.
+         #
+         ::put(lm, [v, s])
+      } else {
+         #
+         # we place the super class name onto the end of the supers list and put
+         # the applicable list of methods for that class into an apprporiate set
+         # for creating the methods and methods_map values
+         #
+         ::put(self.supers, sa)
+         cmeths[sa] := ::set(::methods(s))
+      }
+   }
+   #
+   # we can now add the super class list to the set of implemented classes
+   #
+   self.implemented_classes ++:= ::set(self.supers)
+   #
+   # this is where we finalise the methods list and the methods_map table
+   #
+   every v := !lm do {
+      every s := ::key(cmeths) do {
+         if ::member(cmeths[s], v[1]) then {
+            ::put(self.methods, m := Method(v[1], v[2], s))
+            methods_map[v[2]] := m
+         }
+      }
+   }
 end

@@ -133,6 +133,11 @@ int t;
 #endif
       }
 
+#ifdef GraphicsGL
+   if (w->window->is_gl)
+      retval = gl_wgetq(w,res,t);
+   else
+#endif					/* GraphicsGL */
    retval = wgetq(w,res,t);
    if (retval == -1)
       return -1;					/* window died */
@@ -142,16 +147,31 @@ int t;
    if (BlkD(w->window->listp,List)->size < 2)
       return -2;					/* malformed queue */
 
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      gl_wgetq(w,&xdesc,-1);
+      gl_wgetq(w,&ydesc,-1);
+      }
+   else
+#endif					/* GraphicsGL */
+   {
    wgetq(w,&xdesc,-1);
    wgetq(w,&ydesc,-1);
+   }
 
 #ifdef Graphics3D
    hp = BlkD(w->window->listp, List);
    if (hp->size > 0) {   /* we might have picking results */
       c_traverse( hp , &pickdesc ,0);
-      if (is:list(pickdesc))  /* pull out the picking results */
+      if (is:list(pickdesc)) { /* pull out the picking results */
+#ifdef GraphicsGL
+         if (w->window->is_gl)
+            gl_wgetq( w, &amperPick, -1);
+         else
+#endif					/* GraphicsGL */
          wgetq( w, &amperPick, -1);
-     else
+         }
+      else
         amperPick = nulldesc;
       }
    else
@@ -159,7 +179,9 @@ int t;
 #endif					/* Graphics3D */
 
    if (xdesc.dword != D_Integer || ydesc.dword != D_Integer)
+{
       return -2;			/* bad values on queue */
+}
 
    IntVal(amperX) = IntVal(xdesc) & 0xFFFF;		/* &x */
    if (IntVal(amperX) >= 0x8000)
@@ -169,8 +191,18 @@ int t;
       IntVal(amperY) -= 0x10000;
    IntVal(amperX) -= w->context->dx;
    IntVal(amperY) -= w->context->dy;
+
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      MakeInt(1 + GL_XTOCOL(w,IntVal(amperX)), &(amperCol));	/* &col */
+      MakeInt(GL_YTOROW(w,IntVal(amperY)) , &(amperRow));	/* &row */
+      }
+   else
+#endif					/* GraphicsGL */
+   {
    MakeInt(1 + XTOCOL(w,IntVal(amperX)), &(amperCol));	/* &col */
    MakeInt(YTOROW(w,IntVal(amperY)) , &(amperRow));	/* &row */
+   }
 
    xmod_control = IntVal(xdesc) & EQ_MOD_CONTROL;	/* &control */
    xmod_meta = IntVal(xdesc) & EQ_MOD_META;		/* &meta */
@@ -221,9 +253,17 @@ dptr res;
       return i;
    i = *StrLoc(*res);
    if ((0 <= i) && (i <= 127) && (ISECHOON(w))) {
-      wputc(i, w);
-      if (i == '\r') wputc((int)'\n', w); /* CR -> CR/LF */
-      }
+#ifdef GraphicsGL
+      if (w->window->is_gl) {
+         gl_wputc(i, w);
+         if (i == '\r') gl_wputc((int)'\n', w); /* CR -> CR/LF */
+         }
+      else
+#endif					/* GraphicsGL */
+       {
+       wputc(i, w);
+       if (i == '\r') wputc((int)'\n', w); /* CR -> CR/LF */
+      }}
    return 1;
    }
 
@@ -370,6 +410,11 @@ dptr dx;
 	 }
       else {
          w = BlkD(lastEventWin,File)->fd.wb;
+#ifdef GraphicsGL
+         if (w->window->is_gl)
+            MakeInt(1 + GL_XTOCOL(w, IntVal(amperX)), &amperCol);
+         else
+#endif					/* GraphicsGL */
          MakeInt(1 + XTOCOL(w, IntVal(amperX)), &amperCol);
          }
       }
@@ -382,6 +427,11 @@ dptr dx;
          }
       else {
          w = BlkD(lastEventWin,File)->fd.wb;
+#ifdef GraphicsGL
+         if (w->window->is_gl)
+            MakeInt(GL_YTOROW(w, IntVal(amperY)), &amperRow);
+         else
+#endif					/* GraphicsGL */
          MakeInt(YTOROW(w, IntVal(amperY)), &amperRow);
          }
       }
@@ -394,6 +444,11 @@ dptr dx;
          }
       else {
          w = BlkD(lastEventWin,File)->fd.wb;
+#ifdef GraphicsGL
+         if (w->window->is_gl)
+            MakeInt(GL_COLTOX(w, IntVal(amperCol)), &amperX);
+         else
+#endif					/* GraphicsGL */
          MakeInt(COLTOX(w, IntVal(amperCol)), &amperX);
          }
       }
@@ -406,6 +461,11 @@ dptr dx;
          }
       else {
          w = BlkD(lastEventWin,File)->fd.wb;
+#ifdef GraphicsGL
+         if (w->window->is_gl)
+            MakeInt(GL_ROWTOY(w, IntVal(amperRow)), &amperY);
+         else
+#endif					/* GraphicsGL */
          MakeInt(ROWTOY(w, IntVal(amperRow)), &amperY);
          }
       }
@@ -419,9 +479,19 @@ void linkfiletowindow(wbp w, struct b_file *fl)
    BlkLoc(w->window->filep) = (union block *)fl;
    if (is:null(lastEventWin)) {
       lastEventWin = w->window->filep;
+#ifdef GraphicsGL
+      if (w->window->is_gl) {
+         lastEvFWidth = GL_FWIDTH(w);
+         lastEvLeading = GL_LEADING(w);
+         lastEvAscent = GL_ASCENT(w);
+         }
+      else
+#endif					/* GraphicsGL */
+         {
       lastEvFWidth = FWIDTH(w);
       lastEvLeading = LEADING(w);
       lastEvAscent = ASCENT(w);
+         }
       }
 }
 
@@ -511,6 +581,11 @@ char *s;
       }
    w->window->real_posx = posx;
    w->window->real_posy = posy;
+#ifdef GraphicsGL 
+   if (w->window->is_gl)
+      return gl_setgeometry(w,tmp);
+   else
+#endif					/* GraphicsGL */
    return setgeometry(w,tmp);
    }
 
@@ -544,6 +619,11 @@ char *s;
       }
    if (*s2) return RunError;
    sprintf(tmp,"%dx%d",width,height);
+#ifdef GraphicsGL
+   if (w->window->is_gl)
+      return gl_setgeometry(w,tmp);
+   else
+#endif					/* GraphicsGL */
    return setgeometry(w,tmp);
    }
 
@@ -659,12 +739,23 @@ int len;
       /*
        * if a chunk was parsed, write it out
        */
-      if (s2 != s)
+      if (s2 != s) {
+#ifdef GraphicsGL
+         if (w->window->is_gl)
+            gl_xdis(w, s, s2 - s);
+         else
+#endif					/* GraphicsGL */
          xdis(w, s, s2 - s);
+         }
       /*
        * put the 'unprintable' character, if didn't just hit the end
        */
       if (len-- > 0) {
+#ifdef GraphicsGL
+         if (w->window->is_gl)
+            gl_wputc(*s2++, w);
+         else
+#endif					/* GraphicsGL */
          wputc(*s2++, w);
          }
     s = s2;
@@ -800,7 +891,11 @@ long *r, *g, *b, *a;
    double dr, dg, db, da = 1.0;
 
    *r = *g = *b = 0L;
+#ifdef GraphicsGL
+   *a = (long) (w->context->alpha*65535.0);
+#else					/* GraphicsGL */
    *a = 65535;
+#endif					/* GraphicsGL */
 
    /* trim leading spaces */
    while (isspace(*buf))
@@ -833,7 +928,7 @@ RGBnums:
       case 0:			/* nonreverted auto treated as 24-bit color */
 #ifdef Graphics3D
 				/* unless you are in 3D using normalized */
-	 if (w->context->is_3D && dr>=0 && dr<=1.0 &&
+	 if (w->context->rendermode == UGL3D && dr>=0 && dr<=1.0 &&
 	     dg>=0 && dg<=1.0 && db>=0 && db<=1.0)
 	    goto normalized;
 #endif					/* Graphics3D */
@@ -894,6 +989,15 @@ normalized:
 #endif					/* Graphics3D */
 
    /* try interpreting as a color phrase or as a native color spec */
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      if (colorphrase(buf, r, g, b, a) || gl_nativecolor(w, buf, r, g, b))
+         return Succeeded;
+      else
+         return Failed;
+      }
+   else
+#endif					/* GraphicsGL */
    if (colorphrase(buf, r, g, b, a) || nativecolor(w, buf, r, g, b))
       return Succeeded;
    else
@@ -948,6 +1052,7 @@ long *r, *g, *b, *a;
  *
  *  A Unicon color phrase matches the pattern
  *
+ *   (0.0, 1.0]
  *   transparent
  *   subtransparent                           weak
  *   translucent                 pale         moderate
@@ -979,10 +1084,10 @@ long *r, *g, *b, *a;
    {
    int len, very;
    char c, *p, *ebuf, cbuffer[MAXCOLORNAME];
-   float lgt, sat, blend, bl2, m1, m2, alpha;
+   float lgt, sat, blend, bl2, m1, m2, alpha, tmpf;
    float h1, l1, s1, h2, l2, s2, r2, g2, b2;
 
-   alpha = 1.0;
+   alpha = (float)(*a/65535.0);		/* default transparency */
    lgt = -1.0;				/* default no lightness mod */
    sat =  1.0;				/* default vivid saturation */
    len = strlen(buf);
@@ -1009,14 +1114,22 @@ long *r, *g, *b, *a;
    p = qsearch(buf, (char *)transptable,
       ElemCount(transptable), ElemSize(transptable), strcmp);
 
-   if (p) {
+   /* check for numeric diaphaneity value */
+   tmpf = atof(buf);
+
+   if (p || tmpf > 0.0) {
       /* skip past word */
       buf += strlen(buf) + 1;
       if (buf >= ebuf)
          return 0;
       /* save diaphaneity value, but ignore "opaque" */
-      if ((((colrmod *)p) -> val) != 100)
+      if (p && (((colrmod *)p) -> val) != 100)
          alpha = ((colrmod *)p) -> val / 100.0;
+      /* save numeric diaphaneity value */
+      else {
+         if (tmpf >= 1.0) tmpf = 1.0;
+         alpha = tmpf;
+         }
       }
 
    /* check for "very" */
@@ -2247,7 +2360,16 @@ int writePNG(wbp w, char *filename, int x, int y, int width, int height)
    if (!(imgBuf = (unsigned char*)malloc( width * height * 3 * sizeof(unsigned char))))
       return RunError;
 
-   if (!getimstr24(w, x, y, width, height, imgBuf)){
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      if (!gl_getimstr24(w, x, y, width, height, imgBuf)) {
+         free(imgBuf);
+         return RunError;
+         }
+      }
+   else
+#endif					/* GraphicsGL */
+   if (!getimstr24(w, x, y, width, height, imgBuf)) {
       free(imgBuf);
       return RunError;
       }
@@ -2306,6 +2428,13 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
 
    for (i = 0; i < DMAXCOLORS; i++)
       paltbl[i].used = paltbl[i].valid = paltbl[i].transpt = 0;
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      if (!gl_getimstr(w, x, y, width, height, paltbl, gf_string))
+         return RunError;
+      }
+   else 
+#endif					/* GraphicsGL */
    if (!getimstr(w, x, y, width, height, paltbl, gf_string))
       return RunError;
 
@@ -2394,6 +2523,13 @@ int x, y, width, height;
 
    for (i = 0; i < DMAXCOLORS; i++)
       paltbl[i].used = paltbl[i].valid = paltbl[i].transpt = 0;
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      if (!gl_getimstr(w, x, y, width, height, paltbl, gf_string))
+         return RunError;
+      }
+   else
+#endif					/* GraphicsGL */
    if (!getimstr(w, x, y, width, height, paltbl, gf_string))
       return RunError;
 
@@ -2645,10 +2781,19 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
    if (!(imgBuf = (unsigned char*)malloc( height * row_stride * sizeof(unsigned char))))
       return RunError;
 
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      if (!gl_getimstr24(w, x, y, width, height, imgBuf)) {
+         free(imgBuf);
+         return RunError;
+         }
+      }
+   else
+#endif					/* GraphicsGL */
    if (!getimstr24(w, x, y, width, height, imgBuf)) {
       free(imgBuf);
       return RunError;
-   }
+      }
 
    while (cinfo.next_scanline < cinfo.image_height) {
       row_pointer[0] = &imgBuf[cinfo.next_scanline*row_stride];
@@ -3458,7 +3603,6 @@ char * abuf;
    wcp wc = w->context;
    tended struct descrip f;
 
-
    valptr = val;
    /*
     * catch up on any events pending - mainly to update pointerx, pointery
@@ -3498,8 +3642,23 @@ char * abuf;
 	    return Failed;
 	 if ((new_height = tmp) < 1)
 	    return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    new_height = GL_ROWTOY(w, new_height);
+	    new_height += GL_MAXDESCENDER(w);
+	    }
+	 else
+#endif					/* GraphicsGL */
+	 {
 	 new_height = ROWTOY(w, new_height);
 	 new_height += MAXDESCENDER(w);
+	 }
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    if (gl_setheight(w, new_height) == Failed) return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
 	 if (setheight(w, new_height) == Failed) return Failed;
 	 break;
          }
@@ -3508,11 +3667,28 @@ char * abuf;
 	    return Failed;
 	 if ((new_width = tmp) < 1)
 	    return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    new_width = GL_COLTOX(w, new_width + 1);
+	    if (gl_setwidth(w, new_width) == Failed) return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
+	 {
 	 new_width = COLTOX(w, new_width + 1);
 	 if (setwidth(w, new_width) == Failed) return Failed;
+	 }
 	 break;
          }
 #ifdef Graphics3D
+      case A_RENDERMODE:
+         if (!strcmp(val,"2d"))
+            wc->rendermode = UGL2D;
+         else if (!strcmp(val,"3d"))
+            wc->rendermode = UGL3D;
+         else 
+            return Failed;
+	 break;
       case A_DIM:
 	 AttemptAttr(setdim(w, val));
 	 break;
@@ -3551,8 +3727,40 @@ char * abuf;
 	 AttemptAttr(setlight(w, val, GL_LIGHT6));
 	 break;
       case A_LIGHT7:
-	 AttemptAttr( setlight(w, val, GL_LIGHT7));
+	 AttemptAttr(setlight(w, val, GL_LIGHT7));
 	 break;
+      case A_ALPHA:
+         {
+         double alpha;
+
+         alpha = atof(val);
+         if (alpha == 0.0)
+            return Failed;
+
+         alpha = Abs(alpha); 
+         if (alpha >= 1.0) 
+            alpha = 1.0;
+
+         wc->alpha = alpha;
+	 break;
+         }
+      case A_PROJECTION:
+	 if (!strcmp(val,"ortho"))
+	    ws->projection = UGL_ORTHOGONAL;
+	 else if (!strcmp(val,"perspec"))
+	    ws->projection = UGL_PERSPECTIVE;
+	 break;
+      case A_CAMWIDTH:
+	 {
+	 double width;
+
+	 width = atof(val);
+	 if (width == 0.0) 
+	    return Failed;
+
+         ws->camwidth = Abs(width);
+	 break;
+	 }
 #endif					/* HAVE_LIBGL */
       case A_MESHMODE:
 	 if (!setmeshmode(w,val)) return Failed;
@@ -3584,8 +3792,16 @@ char * abuf;
 	 AttemptAttr(setselectionmode(w, val));
 	 break;
       case A_BUFFERMODE: {
-        if (!strcmp(val,"on")) wc->buffermode=BUFFERED3D;
-        else wc->buffermode = IMMEDIATE3D;
+        if (!strcmp(val,"on")) {
+           wc->buffermode=BUFFERED3D;
+           ws->buffermode=UGL_BUFFERED;
+           }
+        else if (!strcmp(val,"off")) { 
+           wc->buffermode = IMMEDIATE3D;
+           ws->buffermode=UGL_IMMEDIATE;
+           }
+        else return Failed;
+        if (!ws->initAttrs) ApplyBuffermode(w, ws->buffermode);
         break;
 	}
 #endif					/* Graphics3D */
@@ -3596,6 +3812,12 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
          if ((new_height = tmp) < 1) return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    if (gl_setheight(w, new_height) == Failed) return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
 	 if (setheight(w, new_height) == Failed) return Failed;
 	 break;
          }
@@ -3603,6 +3825,12 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
          if ((new_width = tmp) < 1) return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    if (gl_setwidth(w, new_width) == Failed) return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
 	 if (setwidth(w, new_width) == Failed) return Failed;
 	 break;
          }
@@ -3611,12 +3839,22 @@ char * abuf;
 	 break;
 	 }
       case A_GEOMETRY: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setgeometry(w, val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setgeometry(w, val));
 	 break;
          }
       case A_SELECTION: {
 	 if (setselection(w, &d) == Succeeded) {
             *answer = d;
+#ifdef GraphicsGL
+            if (ws->is_gl)
+               gl_wflush(w);
+            else
+#endif					/* GraphicsGL */
             wflush(w);
             return Succeeded;
             }
@@ -3629,6 +3867,11 @@ char * abuf;
       case A_RESIZE: {
 	 if (strcmp(val, "on") & strcmp(val, "off"))
 	    return Failed;
+#ifdef GraphicsGL
+         if (ws->is_gl)
+            gl_allowresize(w, ATOBOOL(val));
+         else
+#endif					/* GraphicsGL */
          allowresize(w, ATOBOOL(val));
 	 break;
          }
@@ -3647,38 +3890,78 @@ char * abuf;
       case A_ROW: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+  	    ws->y = GL_ROWTOY(w, tmp) + wc->dy;
+  	 else
+#endif					/* GraphicsGL */
 	 ws->y = ROWTOY(w, tmp) + wc->dy;
 	 break;
 	 }
       case A_COL: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    ws->x = GL_COLTOX(w, tmp) + wc->dx;
+	 else
+#endif					/* GraphicsGL */
 	 ws->x = COLTOX(w, tmp) + wc->dx;
 	 break;
 	 }
       case A_CANVAS: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setcanvas(w,val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setcanvas(w,val));
 	 break;
 	 }
       case A_ICONIC: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_seticonicstate(w,val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(seticonicstate(w,val));
 	 break;
 	 }
       case A_ICONIMAGE: {
 	 if (!val[0]) return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_seticonimage(w, &d));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(seticonimage(w, &d));
          break;
 	 }
       case A_ICONLABEL: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_seticonlabel(w, val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(seticonlabel(w, val));
 	 break;
 	 }
       case A_ICONPOS: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_seticonpos(w,val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(seticonpos(w,val));
 	 break;
 	 }
       case A_LABEL:
       case A_WINDOWLABEL: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setwindowlabel(w, val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setwindowlabel(w, val));
 	 break;
          }
@@ -3687,14 +3970,29 @@ char * abuf;
 	 if (strcmp(val, "on") & strcmp(val, "off"))
 	    return Failed;
 	 on_off = ATOBOOL(val);
+#ifdef GraphicsGL
+         if (ws->is_gl)
+            gl_setcursor(w, on_off);
+         else
+#endif					/* GraphicsGL */
          setcursor(w, on_off);
 	 break;
          }
       case A_FONT: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setfont(w, &valptr));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setfont(w, &valptr));
 	 break;
          }
       case A_PATTERN: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_SetPattern(w, val, strlen(val)));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(SetPattern(w, val, strlen(val)));
          break;
 	 }
@@ -3716,25 +4014,51 @@ char * abuf;
 	 }
       case A_FG: {
 	 if (cnv:C_integer(d, tmp) && tmp < 0) {
+#ifdef GraphicsGL
+	    if (ws->is_gl) {
+	       if (gl_isetfg(w, tmp) != Succeeded) return Failed;
+	       }
+	    else
+#endif					/* GraphicsGL */
 	    if (isetfg(w, tmp) != Succeeded) return Failed;
 	    }
 	 else {
 #ifdef Graphics3D
-       if (w->context->is_3D) {
-	  if (setmaterials(w,val) != Succeeded)
-	     return Failed;
-          }
-       else
+
+            if (w->context->rendermode == UGL3D) {
+	       if (setmaterials(w,val) != Succeeded)
+	          return Failed;
+               }
+            else 
 #endif					/* Graphics3D */
-	    if (setfg(w, val) != Succeeded) return Failed;
-	    }
+#ifdef GraphicsGL
+               if (ws->is_gl) { 
+ 	          if (gl_setfg(w, val) != Succeeded) return Failed;
+                  }
+	       else
+#endif					/* GraphicsGL */
+             {
+	     if (setfg(w, val) != Succeeded) return Failed;
+            }}
 	 break;
          }
       case A_BG: {
 	 if (cnv:C_integer(d, tmp) && tmp < 0) {
+#ifdef GraphicsGL
+	    if (ws->is_gl) {
+	       if (gl_isetbg(w, tmp) != Succeeded) return Failed;
+	       }
+	    else
+#endif					/* GraphicsGL */
 	    if (isetbg(w, tmp) != Succeeded) return Failed;
 	    }
 	 else {
+#ifdef GraphicsGL
+            if (ws->is_gl) { 
+ 	       if (gl_setbg(w, val) != Succeeded) return Failed;
+               }
+	    else
+#endif					/* GraphicsGL */
 	    if (setbg(w, val) != Succeeded) return Failed;
 	    }
 	 break;
@@ -3742,15 +4066,32 @@ char * abuf;
       case A_GAMMA: {
          if (sscanf(val, "%lf%c", &gamma, &c) != 1 || gamma <= 0.0)
             return Failed;
+#ifdef GraphicsGL
+         if (ws->is_gl) {
+            if (gl_setgamma(w, gamma) != Succeeded)
+               return Failed;
+            }
+         else
+#endif					/* GraphicsGL */
          if (setgamma(w, gamma) != Succeeded)
             return Failed;
          break;
          }
       case A_FILLSTYLE: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setfillstyle(w, val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setfillstyle(w, val));
 	 break;
 	 }
       case A_LINESTYLE: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setlinestyle(w, val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setlinestyle(w, val));
 	 break;
 	 }
@@ -3758,25 +4099,47 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
 #ifdef Graphics3D
- 	 if (w->context->is_3D) {
+ 	 if (w->context->rendermode == UGL3D) {
             if (setlinewidth3D(w, tmp) == RunError)
 	       return Failed;
 	    }
          else
 #endif					/* Graphics3D */
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    if (gl_setlinewidth(w, tmp) == RunError)
+	       return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
 	 if (setlinewidth(w, tmp) == RunError)
 	    return Failed;
 	 break;
 	 }
       case A_POINTER: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setpointer(w, val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setpointer(w, val));
 	 break;
          }
       case A_DRAWOP: {
+#ifdef GraphicsGL
+	 if (ws->is_gl) 
+	    AttemptAttr(gl_setdrawop(w, val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setdrawop(w, val));
 	 break;
          }
       case A_DISPLAY: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    AttemptAttr(gl_setdisplay(w,val));
+	 else
+#endif					/* GraphicsGL */
 	 AttemptAttr(setdisplay(w,val));
 	 break;
          }
@@ -3798,6 +4161,10 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
 	 wc->dx = tmp;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+            gl_setdx(w);
+#endif					/* GraphicsGL */
          UpdateCursorPos(ws, wc);	/* tell system where to blink it */
 	 break;
 	 }
@@ -3805,12 +4172,21 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
 	 wc->dy = tmp;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+            gl_setdy(w);
+#endif					/* GraphicsGL */
          UpdateCursorPos(ws, wc);	/* tell system where to blink it */
 	 break;
 	 }
       case A_LEADING: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_setleading(w, tmp);
+	 else
+#endif					/* GraphicsGL */
 	 setleading(w, tmp);
          break;
          }
@@ -3825,11 +4201,25 @@ char * abuf;
          /* first try supported image file formats; then try platform-dependent format */
          r = readImage(val, 0, &ws->initimage);
          if (r == Succeeded) {
-            setwidth(w, ws->initimage.width);
-            setheight(w, ws->initimage.height);
-            }
-         else
+#ifdef GraphicsGL
+            if (ws->is_gl) {
+               gl_setwidth(w, ws->initimage.width);
+               gl_setheight(w, ws->initimage.height);
+               }
+            else
+#endif					/* GraphicsGL */
+             {
+             setwidth(w, ws->initimage.width);
+             setheight(w, ws->initimage.height);
+            }}
+         else {
+#ifdef GraphicsGL
+            if (ws->is_gl)
+               r = gl_setimage(w, val);
+            else
+#endif					/* GraphicsGL */
             r = setimage(w, val);
+            }
 
 	 AttemptAttr(r);
          break;
@@ -3848,6 +4238,11 @@ char * abuf;
 	 if (!*val) {
 	    wc->clipx = wc->clipy = 0;
 	    wc->clipw = wc->cliph = -1;
+#ifdef GraphicsGL
+	    if (ws->is_gl)
+	       gl_unsetclip(w);
+	    else
+#endif					/* GraphicsGL */
 	    unsetclip(w);
 	    }
 	 else {
@@ -3864,6 +4259,11 @@ char * abuf;
 	       case A_CLIPW:  wc->clipw = tmp;  break;
 	       case A_CLIPH:  wc->cliph = tmp;  break;
 	       }
+#ifdef GraphicsGL
+	    if (ws->is_gl)
+	       gl_setclip(w);
+	    else
+#endif					/* GraphicsGL */
 	    setclip(w);
 	    }
 	 break;
@@ -3873,8 +4273,15 @@ char * abuf;
 	    return Failed;
 	 if ((!ATOBOOL(val) && ISREVERSE(w)) ||
 	     (ATOBOOL(val) && !ISREVERSE(w))) {
+#ifdef GraphicsGL
+            if (ws->is_gl)
+	       gl_toggle_fgbg(w);
+	    else
+#endif					/* GraphicsGL */
+	    {
 	    toggle_fgbg(w);
 	    ISREVERSE(w) ? CLRREVERSE(w) : SETREVERSE(w);
+	    }
 	    }
 	 break;
          }
@@ -3882,6 +4289,11 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
 	 ws->pointerx = tmp + wc->dx;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_warpPointer(w, ws->pointerx, ws->pointery);
+	 else
+#endif					/* GraphicsGL */
 	 warpPointer(w, ws->pointerx, ws->pointery);
 	 break;
 	 }
@@ -3889,21 +4301,44 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
 	 ws->pointery = tmp + wc->dy;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_warpPointer(w, ws->pointerx, ws->pointery);
+	 else
+#endif					/* GraphicsGL */
 	 warpPointer(w, ws->pointerx, ws->pointery);
 	 break;
 	 }
       case A_POINTERCOL: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    ws->pointerx = GL_COLTOX(w, tmp) + wc->dx;
+	    gl_warpPointer(w, ws->pointerx, ws->pointery);
+	    }
+	 else
+#endif					/* GraphicsGL */
+	 {
 	 ws->pointerx = COLTOX(w, tmp) + wc->dx;
 	 warpPointer(w, ws->pointerx, ws->pointery);
+	 }
 	 break;
 	 }
       case A_POINTERROW: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    ws->pointery = GL_ROWTOY(w, tmp) + wc->dy;
+	    gl_warpPointer(w, ws->pointerx, ws->pointery);
+	    }
+	 else
+#endif					/* GraphicsGL */
+	 {
 	 ws->pointery = ROWTOY(w, tmp) + wc->dy;
 	 warpPointer(w, ws->pointerx, ws->pointery);
+	 }
 	 break;
 	 }
       /*
@@ -3943,25 +4378,32 @@ char * abuf;
          ReturnErrNum(147, RunError);
          break;
 #ifdef Graphics3D
+      case A_RENDERMODE:
+         if (wc->rendermode == UGL3D)
+	    sprintf(abuf, "3d");
+         else
+	    sprintf(abuf, "2d");
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
       case A_DIM:
 	 MakeInt(wc->dim, answer);
 	 break;
       case A_EYE:
 	 sprintf(abuf,"%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-		 wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx,
-		 wc->eyediry, wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+		 ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx,
+		 ws->eyediry, ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_EYEPOS:
- 	 sprintf(abuf,"%.2f,%.2f,%.2f", wc->eyeposx, wc->eyeposy, wc->eyeposz);
+ 	 sprintf(abuf,"%.2f,%.2f,%.2f", ws->eyeposx, ws->eyeposy, ws->eyeposz);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_EYEUP:
- 	sprintf(abuf, "%.2f,%.2f,%.2f", wc->eyeupx, wc->eyeupy, wc->eyeupz);
+ 	sprintf(abuf, "%.2f,%.2f,%.2f", ws->eyeupx, ws->eyeupy, ws->eyeupz);
 	MakeStr(abuf, strlen(abuf), answer);
 	break;
       case A_EYEDIR:
-	sprintf(abuf, "%.2f,%.2f,%.2f", wc->eyedirx, wc->eyediry, wc->eyedirz);
+	sprintf(abuf, "%.2f,%.2f,%.2f", ws->eyedirx, ws->eyediry, ws->eyedirz);
 	MakeStr(abuf, strlen(abuf), answer);
 	break;
       case A_LIGHT:
@@ -3997,6 +4439,21 @@ char * abuf;
         getlight(7, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
+      case A_ALPHA:
+        sprintf(abuf,"%f",wc->alpha);
+        MakeStr(abuf, strlen(abuf), answer);
+	break;
+      case A_PROJECTION:
+	if (ws->projection == UGL_PERSPECTIVE)
+           sprintf(abuf,"perspec");
+	else
+           sprintf(abuf,"ortho");
+        MakeStr(abuf, strlen(abuf), answer);
+	break;
+      case A_CAMWIDTH:
+        sprintf(abuf,"%f",ws->camwidth);
+        MakeStr(abuf, strlen(abuf), answer);
+	break;
       case A_MESHMODE:
         getmeshmode(w, abuf);
 	MakeStr(abuf, strlen(abuf), answer);
@@ -4080,12 +4537,18 @@ char * abuf;
 	 break;
 	 }
       case A_BUFFERMODE: {
-	 sprintf(abuf,"%s",((w->context->buffermode==BUFFERED3D)?"on":"off"));
+	 sprintf(abuf,"%s",((ws->buffermode==UGL_BUFFERED)?"on":"off"));
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
 	 }
 #endif					/* Graphics3D */
       case A_VISUAL:
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    if (gl_getvisual(w, abuf) == Failed) return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
 	 if (getvisual(w, abuf) == Failed) return Failed;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
@@ -4093,19 +4556,48 @@ char * abuf;
 	 MakeInt(SCREENDEPTH(w), answer);
 	 break;
       case A_DISPLAY:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_getdisplay(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getdisplay(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_ASCENT:
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    MakeInt(GL_ASCENT(w), answer);
+            }
+         else
+#endif					/* GraphicsGL */
 	 MakeInt(ASCENT(w), answer);
 	 break;
       case A_DESCENT:
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    MakeInt(GL_DESCENT(w), answer);
+            }
+         else
+#endif					/* GraphicsGL */
 	 MakeInt(DESCENT(w), answer);
 	 break;
       case A_FHEIGHT:
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    MakeInt(GL_FHEIGHT(w), answer);
+            }
+         else
+#endif					/* GraphicsGL */
 	 MakeInt(FHEIGHT(w), answer);
 	 break;
       case A_FWIDTH:
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    MakeInt(GL_FWIDTH(w), answer);
+            }
+         else
+#endif					/* GraphicsGL */
 	 MakeInt(FWIDTH(w), answer);
 	 break;
       case A_INPUTMASK: {
@@ -4122,31 +4614,76 @@ char * abuf;
 	 break;
          }
       case A_ROW:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    MakeInt(GL_YTOROW(w, ws->y - wc->dy), answer);
+	 else
+#endif					/* GraphicsGL */
 	 MakeInt(YTOROW(w, ws->y - wc->dy), answer);
 	 break;
       case A_COL:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    MakeInt(1 + GL_XTOCOL(w, ws->x - wc->dx), answer);
+	 else
+#endif					/* GraphicsGL */
 	 MakeInt(1 + XTOCOL(w, ws->x - wc->dx), answer);
 	 break;
       case A_POINTERROW: {
 	 XPoint xp;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    gl_query_pointer(w, &xp);
+	    MakeInt(GL_YTOROW(w, xp.y - wc->dy), answer);
+	    }
+	 else
+#endif					/* GraphicsGL */
+	 {
 	 query_pointer(w, &xp);
 	 MakeInt(YTOROW(w, xp.y - wc->dy), answer);
+	 }
 	 break;
 	 }
       case A_POINTERCOL: {
 	 XPoint xp;
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    gl_query_pointer(w, &xp);
+	    MakeInt(1 + GL_XTOCOL(w, xp.x - wc->dx), answer);
+	    }
+	 else
+#endif					/* GraphicsGL */
+	 {
 	 query_pointer(w, &xp);
 	 MakeInt(1 + XTOCOL(w, xp.x - wc->dx), answer);
+	 }
 	 break;
 	 }
       case A_LINES:
       case A_ROWS:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    MakeInt(GL_YTOROW(w,ws->height - DESCENT(w)), answer);
+	 else
+#endif					/* GraphicsGL */
 	 MakeInt(YTOROW(w,ws->height - DESCENT(w)), answer);
 	 break;
       case A_COLUMNS:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    MakeInt(GL_XTOCOL(w,ws->width), answer);
+	 else
+#endif					/* GraphicsGL */
 	 MakeInt(XTOCOL(w,ws->width), answer);
 	 break;
       case A_POS: case A_POSX: case A_POSY:
+#ifdef GraphicsGL
+	 if (ws->is_gl) {
+	    if (gl_getpos(w) == Failed)
+	       return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
 	 if (getpos(w) == Failed)
 	    return Failed;
 	 switch (a) {
@@ -4164,14 +4701,24 @@ char * abuf;
 	 break;
       case A_FG:
 #ifdef Graphics3D
- 	 if (w->context->is_3D)
+ 	 if (w->context->rendermode == UGL3D)
 	    getmaterials(abuf);
 	 else
 #endif
+#ifdef GraphicsGL 
+	 if (ws->is_gl)
+	    gl_getfg(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getfg(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_BG:
+#ifdef GraphicsGL 
+	 if (ws->is_gl)
+	    gl_getbg(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getbg(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
          break;
@@ -4191,6 +4738,11 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_LINESTYLE:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_getlinestyle(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getlinestyle(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
@@ -4226,6 +4778,11 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_FONT:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_getfntnam(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getfntnam(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
@@ -4236,25 +4793,50 @@ char * abuf;
       case A_LEADING: MakeInt(LEADING(w), answer); break;
       case A_POINTERX: {
 	 XPoint xp;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_query_pointer(w, &xp);
+	 else
+#endif					/* GraphicsGL */
 	 query_pointer(w, &xp);
 	 MakeInt(xp.x - wc->dx, answer);
 	 break;
 	 }
       case A_POINTERY: {
 	 XPoint xp;
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_query_pointer(w, &xp);
+	 else
+#endif					/* GraphicsGL */
 	 query_pointer(w, &xp);
 	 MakeInt(xp.y - wc->dy, answer);
 	 break;
 	 }
       case A_POINTER:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_getpointername(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getpointername(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_DRAWOP:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_getdrawop(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getdrawop(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_GEOMETRY:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    if (gl_getpos(w) == Failed) return Failed;
+	 else
+#endif					/* GraphicsGL */
 	 if (getpos(w) == Failed) return Failed;
          if (ws->win)
            sprintf(abuf, "%dx%d+%d+%d",
@@ -4264,10 +4846,20 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_CANVAS:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_getcanvas(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 getcanvas(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_ICONIC:
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    gl_geticonic(w, abuf);
+	 else
+#endif					/* GraphicsGL */
 	 geticonic(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
@@ -4291,6 +4883,14 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
       case A_ICONPOS: {
+#ifdef GraphicsGL
+	 if (ws->is_gl)
+	    switch (gl_geticonpos(w,abuf)) {
+	       case Failed: return Failed;
+	       case RunError:  return Failed;
+	    }
+	 else
+#endif					/* GraphicsGL */
 	 switch (geticonpos(w,abuf)) {
 	    case Failed: return Failed;
 	    case RunError:  return Failed;
@@ -4338,6 +4938,11 @@ char * abuf;
 	 ReturnErrNum(145, RunError);
 	 }
    }
+#ifdef GraphicsGL
+   if (ws->is_gl)
+      gl_wflush(w);
+   else
+#endif					/* GraphicsGL */
    wflush(w);
    return Succeeded;
    }
@@ -4480,12 +5085,23 @@ int fill;
       /*
        * Draw or fill the arc.
        */
+#ifdef GraphicsGL
+      if (w->window->is_gl) {
+         if (fill) 
+            gl_fillcircles(w, &arc, 1);
+         else 
+            gl_drawcircles(w, &arc, 1);
+         }
+      else 
+#endif					/* GraphicsGL */
+      {
       if (fill) {			/* {} required due to form of macros */
          fillarcs(w, &arc, 1);
          }
       else {
          drawarcs(w, &arc, 1);
          }
+      }
       }
    return -1;
    }
@@ -4611,6 +5227,11 @@ static void curveHelper(wbp w, XPoint *thepoints, int n)
     * Might make linestyle work a little better by "compressing" straight
     *  sections produced by genCurve into single drawline points.
     */
+#ifdef GraphicsGL
+   if (w->window->is_gl)
+      gl_drawlines(w, thepoints, n);
+   else
+#endif					/* GraphicsGL */
    drawlines(w, thepoints, n);
    }
 
@@ -4667,9 +5288,11 @@ pointer p1, p2;
 
 stringint attribs[] = {
    { 0,			NUMATTRIBS},
+   {"alpha",		A_ALPHA},
    {"ascent",		A_ASCENT},
    {"bg",		A_BG},
    {"buffer",           A_BUFFERMODE},
+   {"camwidth",		A_CAMWIDTH},
    {"canvas",		A_CANVAS},
    {"ceol",		A_CEOL},
    {"cliph",		A_CLIPH},
@@ -4737,6 +5360,8 @@ stringint attribs[] = {
    {"pos",		A_POS},
    {"posx",		A_POSX},
    {"posy",		A_POSY},
+   {"projection",	A_PROJECTION},
+   {"rendermode",	A_RENDERMODE},
    {"resize",		A_RESIZE},
    {"reverse",		A_REVERSE},
    {"rgbmode",		A_RGBMODE},
@@ -4767,16 +5392,25 @@ void gotorc(wbp w,int r,int c)
     */
    hidecrsr(ws);
 
-      ws->y = ROWTOY(w, r);
-      ws->x = COLTOX(w, c);
-      ws->x += wc->dx;
-      ws->y += wc->dy;
+#ifdef GraphicsGL
+   if (ws->is_gl) {
+      ws->y = GL_ROWTOY(w, r);
+      ws->x = GL_COLTOX(w, c);
+      }
+   else
+#endif					/* GraphicsGL */
+   {
+   ws->y = ROWTOY(w, r);
+   ws->x = COLTOX(w, c);
+   }
+   ws->x += wc->dx;
+   ws->y += wc->dy;
 
-      /*
-       * turn it back on at new location
-       */
-      UpdateCursorPos(ws, wc);
-      showcrsr(ws);
+   /*
+    * turn it back on at new location
+    */
+   UpdateCursorPos(ws, wc);
+   showcrsr(ws);
 }
 
 void gotoxy(wbp w, int x, int y)
@@ -4803,11 +5437,20 @@ void drawpts(wbp w, XPoint *points, int npoints)
 
 int guicurses_lines(wbp w)
 {
+#ifdef GraphicsGL
+   if (w->window->is_gl)
+      return GL_YTOROW(w,w->window->height - GL_DESCENT(w));
+   else
+#endif					/* GraphicsGL */
    return YTOROW(w,w->window->height - DESCENT(w));
 }
 
 int guicurses_cols(wbp w)
 {
+#ifdef GraphicsGL
+   if (w->window->is_gl)
+      return GL_XTOCOL(w,w->window->width - GL_DESCENT(w));
+#endif					/* GraphicsGL */
    return XTOCOL(w,w->window->width - DESCENT(w));
 }
 
@@ -4871,6 +5514,12 @@ char * watt(wbp w, char *s)
       }
 
    if (config) {
+#ifdef GraphicsGL
+      if (w->window->is_gl) {
+         if (gl_do_config(w, config) == Failed) return NULL;
+         }
+      else
+#endif					/* GraphicsGL */
       if (do_config(w, config) == Failed) return NULL;
       }
 
@@ -4898,16 +5547,35 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    /*
     * allocate a window state, and a context
     */
-   
+#ifdef GraphicsGL   
+   if (wp->window->is_gl || is_3d) {
+      Protect(w->window = gl_alc_winstate(), { free_binding(w); return 0; });
+      //if (!wp->window->is_gl) w->window->is_gl = 0;
+      }
+   else
+#endif					/* GraphicsGL */
    Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
    ws = w->window;
    ws->display = wd;
     CLRTITLEBAR(ws);
+#ifdef GraphicsGL   
+   if (w->window->is_gl) {
+      Protect(w->context = gl_alc_context(w), { free_binding(w); return 0; });
+      }
+   else
+#endif					/* GraphicsGL */
    Protect(w->context = alc_context(w), { free_binding(w); return 0; });
 
    wc = w->context;
    wc->display = wd;
-  
+#ifdef GraphicsGL 
+   if (wp->window->is_gl) 
+      wc->font = wd->glfonts;
+   else
+#endif					/* GraphicsGL */
+#ifdef XWindows
+      wc->font = wd->fonts;
+#endif					/* XWindows */
    wd->refcount++;
 
    ws->listp.dword = D_List;
@@ -4927,13 +5595,8 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    /*
     * some attributes of the context determine window defaults
     */
-
-#ifdef Graphics3D
-   ws->is_3D = wc->is_3D = is_3d;
-   if (is_3d){
-      if (init_3dcontext(wc) == Failed)
-      	 return 0;
-      }
+#ifdef GraphicsGL
+   ws->is_3D = wc->rendermode = is_3d;
    if (child_window >= CHILD_WINTEXTURE ){
       wtp wt = &(ws->display->stex[ws->texindex]);
       ws->height = wt->height;
@@ -4942,11 +5605,11 @@ char child_window_generic(wbp w, wbp wp, int child_window)
       ws->x = 0;
       ws->texindex = child_window - CHILD_WINTEXTURE;
       ws->type = TEXTURE_WSTATE;
-      wc->is_3D = 0;
-      wc->buffermode = 1;
+      wc->rendermode = UGL2D; /* 0 */
+      wc->buffermode = IMMEDIATE3D;
       }
    else
-#endif					/* Graphics3D */
+#endif					/* GraphicsGL */
       {
       ws->y = 0;
       ws->x = 0;

@@ -667,6 +667,9 @@ int handle_misc(wdp wd, wbp w)
 	          XCopyArea(wd->display, ws->iconpix, ws->iconwin,
 			    wd->icongc, 0, 0, ws->iconw, ws->iconh, 3, 3);
 	       else
+#ifdef GraphicsGL
+                  if (!ws->is_gl)
+#endif					/* GraphicsGL */
 	          XDrawString(wd->display, evwin, wd->icongc, 4,
 	                      ws->display->fonts->fsp->max_bounds.ascent + 2,
 		              ws->iconlabel, strlen(ws->iconlabel));
@@ -794,7 +797,7 @@ int handle_misc(wdp wd, wbp w)
 	    presscount++;
 	    handle_mouse(wb, (XButtonEvent *)&event);
 #ifdef Graphics3D
-	    if (wb->context->is_3D && wb->context->app_use_selection3D){
+	    if (wb->window->is_3D && wb->context->app_use_selection3D) {
 	       wb->context->selectionrendermode = 1;
 	       redraw3D(wb);
 	       wb->context->selectionrendermode = 0;
@@ -912,7 +915,7 @@ int helper_thread_pollevent(){
 	    }
          }
       }
-   return 400;
+   return POLL_INTERVAL;
 
 }
 #endif					/* HELPER_THREAD */
@@ -922,6 +925,10 @@ int pollevent()
 #ifndef HELPER_THREAD
    wdp wd;
    int hm;
+#ifdef GraphicsGL
+   wbp wb;
+   static int gpx_poll = FLUSH_POLL_INTERVAL;
+#endif					/* GraphicsGL */
 #ifdef Concurrent
    int isbusy;
 /*   CURTSTATE();
@@ -929,8 +936,30 @@ int pollevent()
 */
    MUTEX_TRYLOCKID(MTX_POLLEVENT, isbusy);
 
-   if (isbusy) return 400;
+   if (isbusy) return POLL_INTERVAL;
 #endif					/* Concurrent */
+
+#ifdef GraphicsGL
+   if (gpx_poll) gpx_poll--;
+   if (!gpx_poll) {
+      for (wb = wbndngs; wb; wb=wb->next) {
+         wsp ws = wb->window;
+         if (ws->buffermode == UGL_IMMEDIATE) {
+            if (ws->redraw_flag && !ws->busy_flag) {
+               ws->busy_flag = 1;
+
+               MakeCurrent(wb);
+               glFlush();
+
+               ws->redraw_flag = 0;
+               ws->busy_flag = 0;
+               }
+            }
+         }
+      gpx_poll = FLUSH_POLL_INTERVAL;
+      }
+#endif					/* GraphicsGL */
+
    for (wd = wdsplys; wd; wd = wd->next) {
       if ((hm = handle_misc(wd, NULL)) < 1) {
 	if (hm == -1){
@@ -945,7 +974,7 @@ int pollevent()
    MUTEX_UNLOCKID(MTX_POLLEVENT);
 #endif					/* HELPER_THREAD */
 
-   return 400;
+   return POLL_INTERVAL;
    }
 
 /*
@@ -1082,11 +1111,28 @@ wbp w;
    
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
-      XDestroyWindow(stddpy,ws->win);
+#ifdef GraphicsGL
+      if (ws->is_gl) {
+         ws->busy_flag = 1; /* set so pollevent won't redraw */
+         UnbindCurrent(ws->display);
+         if (ws->win != (Window) NULL)
+            XDestroyWindow(stddpy, ws->win);
+         XFlush(stddpy);
+         ws->refcount--;
+         while (ws->win)
+   	    if (pollevent() == -1) return -1;
+         ws->win = (Window) NULL; 
+         ws->busy_flag = 0;
+         }
+      else
+#endif						/* GraphicsGL */
+      {
+      XDestroyWindow(stddpy, ws->win);
       XFlush(stddpy);
       ws->refcount--;
       while (ws->win)
 	 if (pollevent() == -1) return -1;
+      }
       }
    /*
     * Entire canvas terminates
@@ -1147,7 +1193,7 @@ wbp w;
  *  -1  : ordinary failure
  *  -2  : out of memory
  */
-FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int is_3d)
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int is_3d, int is_gl)
    {
    wbp w;
    wsp ws;
@@ -1174,7 +1220,24 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       *err_index = -2;
       return NULL;
       }
-   if ((w->window = alc_winstate()) == NULL) {
+#ifdef GraphicsGL
+   if (is_gl) {
+      if ((ws = w->window = gl_alc_winstate()) == NULL) {
+         *err_index = -2;
+         free_binding(w);
+         return NULL;
+         }
+      if ((ws->display = gl_alc_display(display)) == NULL) {
+         *err_index = -1;
+         free_binding(w);
+         set_errortext(145); /* maybe out of memory, probably bad DISPLAY var. */
+         return NULL;
+         }
+      }
+   else
+#endif					/* GraphicsGL */
+   {
+   if ((ws = w->window = alc_winstate()) == NULL) {
       *err_index = -2;
       free_binding(w);
       return NULL;
@@ -1186,9 +1249,9 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       set_errortext(145); /* maybe out of memory, probably bad DISPLAY var. */
       return NULL;
       }
-   ws = w->window;
+      ws->vis = DefaultVisual(ws->display->display, ws->display->screen); 
+   }
 
-   ws->vis = DefaultVisual(ws->display->display, ws->display->screen); 
 
    ws->children=NULL;
    ws->parent = NULL;
@@ -1200,6 +1263,16 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
     * some attributes of the display and window are used in the context
     */
 	
+#ifdef GraphicsGL
+   if (is_gl) {
+      if ((wc = w->context = gl_alc_context(w)) == NULL) {
+         *err_index = -2;
+         free_binding(w);
+         return NULL;
+         }
+      }
+   else
+#endif					/* GraphicsGL */
    if ((wc = w->context = alc_context(w)) == NULL) {
       *err_index = -2;
       free_binding(w);
@@ -1210,21 +1283,50 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
     * some attributes of the context determine window defaults
     */
    ws->height = wc->font->height * 12;
+#ifdef GraphicsGL
+   if (is_gl) {
+      ws->width = wc->font->maxwidth * 80;
+      ws->y = wc->font->height;
+      }
+   else
+#endif					/* GraphicsGL */
+   {
    ws->width  = wc->font->fsp->max_bounds.width * 80;
    ws->y = wc->font->fsp->max_bounds.ascent;
+   }
    ws->x = 0;
    ws->y += wc->dy;
    ws->x += wc->dx;
-#ifdef Graphics3D
-   wc->is_3D = ws->is_3D = is_3d;
-   if (is_3d) {
-      /* create an empty list for list of function calls */
-      if (create_display_list(w, 40000) == Failed) {
-	 *err_index = -2;
-	 return NULL;
+
+#ifdef GraphicsGL
+   if (is_gl) {
+      ws->is_3D = wc->rendermode = is_3d;
+
+      /* Allocate display lists */
+      if (is_3d) {
+         if (create_display_list(w, 40000) == Failed) {
+            *err_index = -2;
+            return NULL;
+	    }
 	 }
+      if (create_display_list2d(w, 40000) == Failed) {
+         *err_index = -2;
+         return NULL;
+         }
+
+      /*
+       * Need to determine a way to initialize the default context for a 
+       * window without adding items to the display list.
+       */
+      if (!ws->initAttrs)
+         ws->initAttrs = 1;
+      else {
+         glprintf("gl_wopen(): need a mutex lock\n"); 
+         return NULL;
+         }
       }
-#endif					/* Graphics3D */
+#endif					/* GraphicsGL */
+
    /*
     * Loop through any remaining arguments.
     */
@@ -1254,6 +1356,27 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 	 return NULL;
 	 }
       }
+
+#ifdef GraphicsGL
+   if (is_gl) {
+      if (ws->initAttrs)
+         ws->initAttrs = 0;
+      else {
+         glprintf("gl_wopen(): need a mutex unlock\n"); 
+         return NULL;
+         }
+
+      if ((i = gl_wmap(w)) != Succeeded) {
+         if (i == Failed) {
+   	    /* why would wmap() fail? either 144 or 145; have it say which */
+   	    *err_index = -1;
+	    }
+         else *err_index = 0;
+         return NULL;
+         }
+      }
+   else
+#endif					/* GraphicsGL */
    if ((i = wmap(w)) != Succeeded) {
       if (i == Failed) {
 	 /* why would wmap() fail? either 144 or 145; have it say which */
@@ -1357,13 +1480,308 @@ static void setclasshints(wbp w)
 int wmap(wbp w)
    {
    XWindowAttributes attrs;
+   XWMHints wmhints;
+   struct imgdata *imd;
+   int i, r;
+
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+
+   XSetWindowAttributes attr;
+   Display *stddpy;
+   GLXContext stdctx;
+   Visual *visual;
+   Window stdwin = (Window) NULL;
+   Window rootwin;
+
+   wsp ws = w->window; 
+   wdp wd;
+   wcp wc = w->context; 
+   wbp wp = ws->parent;
+   CURTSTATE();
+
+
+   /* 
+    * Initialize glX and X11 resources. OpenGL does not use backing store 
+    * (Pixmap), only a (Window).
+    */
+
+   /*
+    * Set display and root window defaults for windows/subwindows
+    */
+   wd = ws->display;
+   stddpy = wd->display;
+   if (wp == NULL) {
+      rootwin = RootWindow(wd->display, wd->vis->screen);
+      }
+   else { 
+      rootwin = wp->window->win ? wp->window->win : RootWindow(wd->display, wd->vis->screen);
+      }
+
+   /*
+    * Create a context with direct rendering (if possible)
+    */
+   if (ws->ctx == NULL) {
+      /* Create a shared context for textures */
+      ws->ctx = glXCreateContext(stddpy, wd->vis, wd->sharedCtx, GL_TRUE);
+      if (ws->ctx == NULL) {
+         //*err_index = -1;
+         free_binding(w);
+         set_errortext(145); /* maybe out of memory, probably bad DISPLAY var */
+         return RunError;
+         }
+      }
+   ws->vis = DefaultVisual(wd->display, wd->screen);
+   stdctx = ws->ctx;
+
+   /*
+    * Find/allocate an XColor for background color and reference it
+    */
+   {
+   wclrp color;
+   char buf[MAXCOLORNAME] = {0};
+   unsigned short r, g, b, a;
+
+   if (wc->glbg.c == -1) {
+      /* allocate bg */
+      GetColorUS(w, wc->glbg, r, g, b, a);
+      color = alc_rgb(w, buf, r, g, b, 0);
+      if (!color) 
+         return RunError;
+      wc->glbg.c = color->c;
+      }
+
+   if (wc->glfg.c == -1) {
+      /* allocate fg */
+      GetColorUS(w, wc->glfg, r, g, b, a);
+      color = alc_rgb(w, buf, r, g, b, 0);
+      if (!color) 
+         return RunError;
+      wc->glfg.c = color->c;
+      }
+   } 
+
+   attr.background_pixmap = None;
+   attr.background_pixel = wc->glbg.c;
+   attr.border_pixel = wc->glfg.c;
+   attr.event_mask = StructureNotifyMask | ExposureMask;
+   attr.colormap = XCreateColormap(stddpy,rootwin,wd->vis->visual,AllocNone);
+   if (attr.colormap == (Colormap) NULL) {
+      set_errortext(144);
+      return Failed;
+      }
+
+   /* 
+    * Create X Window and GLX Window
+    */
+   ws->win = ((ws->iconic == RootState) ? rootwin :
+               XCreateWindow (stddpy, rootwin,
+	       ws->posx < 0 ? 0 : ws->posx,
+	       ws->posy < 0 ? 0 : ws->posy,
+	       ws->width,  ws->height, 0,
+	       wd->vis->depth, InputOutput,
+	       wd->vis->visual,
+	       CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
+   if (ws->win == (Window) NULL) {
+      /* consider freeing window binding/resources */
+      set_errortext(144);
+      return Failed;
+      }
+   stdwin = ws->win;
+   XClearWindow(stddpy, stdwin);
+
+   /*
+    * Get PBuffer for offscreen rendering (OpenGL rendering only)
+    */
+   {
+   int pbufattrs[] = {GLX_PBUFFER_WIDTH, DisplayWidth(stddpy, wd->screen),
+                      GLX_PBUFFER_HEIGHT, DisplayHeight(stddpy, wd->screen),
+                      GLX_PRESERVED_CONTENTS, True,
+                      None};
+   ws->pbuf = glXCreatePbuffer(stddpy, wd->configs[0],pbufattrs);
+   if (ws->pbuf == (GLXPixmap)NULL) {
+      /* consider freeing window binding/resources */
+      set_errortext(144);
+      return Failed;
+      }
+   }
+
+   /*
+    * Bind context to window
+    */
+   MakeCurrent(w);
+
+   /*
+    * Initialize OpenGL states 
+    */
+   if (init_canvas(w) == Failed)
+      return Failed;
+
+   if (!ISTITLEBAR(ws)) {
+      /*
+       * Disable title bar.  Code allegedly from GLUT via tonyobryan.com.
+       */
+      struct {
+         unsigned long flags;
+         unsigned long functions;
+         unsigned long decorations;
+         long inputMode;
+         unsigned long status;
+         } hints;
+      Atom property;
+      hints.flags = 2;
+      hints.decorations = 0;
+      if ((property = XInternAtom(stddpy, "_MOTIF_WM_HINTS",True))) {
+         XChangeProperty(stddpy, ws->win, property, property, 32,
+         PropModeReplace, (unsigned char *)&hints, 5);
+         }
+      }
+
+   /*
+    * Set initial pixmaps, if applicable
+    */
+   imd = &ws->initimage;
+   if (imd->width) {
+      r = gl_strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
+         imd->data, (word)imd->width * (word)imd->height, 0);
+      if (imd->paltbl)
+	 free((pointer)imd->paltbl);
+      free((pointer)imd->data);
+      imd->width = 0;
+      if (r < 0) {
+	 set_errortext(145);
+	 return Failed;
+	 }
+      }
+
+   imd = &ws->initicon;
+   if (imd->width) {
+      r = gl_strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
+         imd->data, (word)imd->width * (word)imd->height, 1);
+      free((pointer)imd->paltbl);
+      free((pointer)imd->data);
+      imd->width = 0;
+      if (r < 0) {
+	 set_errortext(145);
+	 return Failed;
+	 }
+      wmhints.icon_window = ws->iconwin;
+      ws->wmhintflags |= IconWindowHint;
+      }
+
+   /* 
+    * Set X hints if not RootState or Icon. 
+    */
+   if (ws->iconic != RootState) {
+      size_hints.flags = PSize | PMinSize | PMaxSize;
+      size_hints.width = ws->width;
+      size_hints.height= ws->height;
+      if (ws->posx == -(MaxInt)) ws->posx = 0;
+      else size_hints.flags |= USPosition;
+      if (ws->posy == -(MaxInt)) ws->posy = 0;
+      else size_hints.flags |= USPosition;
+      size_hints.x = ws->posx;
+      size_hints.y = ws->posy;
+      if (ISRESIZABLE(w)) {
+	 size_hints.min_width = 0;
+	 size_hints.min_height = 0;
+	 size_hints.max_width = DisplayWidth(stddpy, wd->screen);
+	 size_hints.max_height = DisplayHeight(stddpy, wd->screen);
+	 }
+      else {
+	 size_hints.min_width = size_hints.max_width = ws->width;
+	 size_hints.min_height = size_hints.max_height = ws->height;
+	 }
+      if (ws->windowlabel == NULL) {
+         ws->windowlabel = salloc(wp->window->windowlabel);
+         }
+      if (ws->iconlabel == NULL) {
+	 if ((ws->iconlabel = salloc(ws->windowlabel)) == NULL)
+	    ReturnErrNum(305, RunError);
+	 }
+      XSetStandardProperties(stddpy, stdwin, ws->windowlabel, ws->iconlabel,
+			     0,0,0, &size_hints);
+      XSelectInput(stddpy, stdwin, XMasks(ws->inputmask));
+      }
+
+   wmhints.input = True;
+   wmhints.flags = InputHint;
+   if (ws->iconic != RootState) {
+      if (ws->iconimage != NULL) {
+	 makeIcon(w, ws->posx < 0 ? 0 : ws->posx, ws->posy < 0 ? 0 : ws->posy);
+	 wmhints.icon_window = ws->iconwin;
+	 ws->wmhintflags |= IconWindowHint;
+         }
+      wmhints.flags |= (ws->wmhintflags | StateHint);
+      wmhints.initial_state = ws->iconic;
+      wmhints.icon_x = ws->iconx;
+      wmhints.icon_y = ws->icony;
+      }
+   XSetWMHints(stddpy, stdwin, &wmhints);
+   setclasshints(w);
+
+   if (wd->cmap != DefaultColormap(stddpy,wd->screen)) {
+      XSetWindowColormap(stddpy, stdwin, wd->cmap);
+      }
+   XSync(stddpy, False);
+
+   /*
+    * Map window if not RootState or HiddenState
+    *
+    * It appears as though mapping brings X windows out of hidden state...
+    */
+   if (ws->iconic != RootState && ws->iconic != HiddenState) {
+      CLREXPOSED(w);
+      XMapWindow(stddpy, stdwin);
+      }
+
+   /*
+    * Get actual size of window allocated by X
+    */
+   XGetWindowAttributes(stddpy, stdwin, &attrs);
+   ws->width = attrs.width;
+   ws->height = attrs.height;
+
+
+   /* 
+    * Set a cursor
+    */
+   if (stdwin) {
+      i = ws->theCursor;
+      if (!(wd->cursors[i]))
+         wd->cursors[i] = XCreateFontCursor(stddpy, 2 * i);
+      XDefineCursor(stddpy, stdwin, wd->cursors[i]);
+      }
+
+   /*
+    * busy loop for an expose event, unless of course we are starting out
+    *  in an iconic state. Does not execute if hidden window
+    *
+    * Note: Subwindows seem to hang on XNextEvent() in handle_misc(), so 
+    * prevent subwindows from waiting for an event that won't come.
+    */
+   CLRZOMBIE(w);
+   if (ws->iconic != HiddenState && !wp) {
+      int hm;
+      while (!ISEXPOSED(w) && (ws->iconic != IconicState || ws->iconwin)) {
+	 if ((hm = handle_misc(wd, w)) < 1) {
+	    if (hm == -1) return RunError;
+	    else if (hm == 0) {
+	       /* how to handle failure? */
+	       }
+	    }
+         }
+      }
+   XSync(stddpy, False);
+
+   }
+   else /* if (!ws->is_gl) */
+#endif 					/* GraphicsGL */
+   {
    XGCValues gcv;
    unsigned long gcmask =
       GCFont | GCForeground | GCBackground | GCFillStyle | GCCapStyle;
-   struct imgdata *imd;
-   int i, r;
    int new_pixmap = 0;
-   XWMHints wmhints;
    CURTSTATE();
    STDLOCALS(w);
 #ifdef Graphics3D
@@ -1372,8 +1790,7 @@ int wmap(wbp w)
                  malloc(wc->maxstex*sizeof(struct _savetexture));
 		 */
 #endif					/* Graphics3D */
-   
-
+  
    /*
     *  Create a pixmap for this canvas if there isn't one already.
     */
@@ -1502,7 +1919,7 @@ int wmap(wbp w)
       XChangeGC(stddpy, stdgc, gcmask, &gcv);
 
 #ifdef Graphics3D
-   if (wc->is_3D) {
+   if (wc->rendermode == UGL3D) {
       if (create3Dcontext(w) == Failed) {
 	 set_errortext(144);
 	 return Failed;
@@ -1620,6 +2037,7 @@ int wmap(wbp w)
    XGetWindowAttributes(stddpy, stdwin, &attrs);
    ws->width = attrs.width;
    ws->height = attrs.height;
+
    if (!resizePixmap(w, ws->width, ws->height)) {
       set_errortext(144);
       return Failed;
@@ -1651,6 +2069,8 @@ int wmap(wbp w)
 
    XSetFunction(stddpy, stdgc, wc->drawop);
    XSync(stddpy, False);
+   } /* end if (!ws->is_gl) */
+
    return Succeeded;
 }
 
@@ -1663,6 +2083,10 @@ int status;
    wdp wd = ws->display;
    int wid = ws->width, ht = ws->height;
    int posx = ws->posx, posy = ws->posy;
+#ifdef GraphicsGL
+   int x = posx, y = posy;
+#endif 					/* GraphicsGL */
+
    XTextProperty textprop;
 
    if (! resizePixmap(w, ws->width, ws->height))
@@ -1678,24 +2102,16 @@ int status;
 	 if (moveResizeWindow(w, posx, posy, wid, ht) == Failed)
 	    return Failed;
 	 }
-#ifdef Graphics3D
-        if (ws->is_3D) {
-            makecurrent(w);
-#if HAVE_LIBGL
-            glViewport(0, 0, (GLsizei) wid, (GLsizei) ht);
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width, 0.125 * ws->height / ws->width, 0.25, 50000.0);
-            glMatrixMode(GL_MODELVIEW);
-/*            glLoadIdentity(); */
-#endif					/* HAVE_LIBGL */
-        }
-#endif					/* Graphics3D */
 
       /* XSync is not enough because the window manager gets involved here. */
       XFlush(wd->display);			      /* force out request */
       XGetWMName(wd->display, ws->win, &textprop);    /* force WM round trip */
       XSync(wd->display, False);		      /* NOW sync */
+
+#ifdef GraphicsGL 
+      if (ws->is_gl && (status & 2))
+         redraw3D(w);
+#endif					/* GraphicsGL */
       }
    return Succeeded;
    }
@@ -1704,8 +2120,13 @@ int setheight(w, new_height)
 wbp w;
 SHORT new_height;
    {
+   wsp ws = w->window;
    if (new_height < 0) return Failed;
-   w->window->height = size_hints.height = new_height;
+#ifdef GraphicsGL
+   if (ws->is_gl && ws->height != new_height) 
+      ws->resize = 1;
+#endif					/* GraphicsGL */
+   ws->height = size_hints.height = new_height;
    return Succeeded;
    }
 
@@ -1713,8 +2134,13 @@ int setwidth(w, new_width)
 wbp w;
 SHORT new_width;
 {
+   wsp ws = w->window;
    if (new_width < 0) return Failed;
-   w->window->width = size_hints.width = new_width;
+#ifdef GraphicsGL
+   if (ws->is_gl && ws->width != new_width) 
+      ws->resize = 1;
+#endif					/* GraphicsGL */
+   ws->width = size_hints.width = new_width;
    return Succeeded;
 }
 
@@ -1728,9 +2154,18 @@ char *geo;
 
    if ((status = parsegeometry(geo, &x, &y, &width, &height)) == 0)
       return RunError;
+
    if (status & 1) {
+#ifdef GraphicsGL
+      if (ws->is_gl && (ws->width != width || ws->height != height)) {
+         ws->resize = 1;
+         }
+#endif					/* GraphicsGL */
+      {
       ws->width = size_hints.width = width;
       ws->height = size_hints.height = height;
+      }
+
       }
    /*
     * can't set position on hidden windows (but can on opening ones)
@@ -1786,6 +2221,9 @@ char *val;
       XSetIconName(wd->display, ws->win, ws->iconlabel);
       if (ws->iconic == IconicState && !ws->iconpix && ws->iconwin) {
 	 XClearWindow(wd->display, ws->iconwin);
+#ifdef GraphicsGL
+         if (!ws->is_gl)
+#endif					/* GraphicsGL */
 	 XDrawString(wd->display, ws->iconwin, wd->icongc, 4,
 		     wd->fonts->fsp->max_bounds.ascent + 2,
 		     ws->iconlabel, strlen(ws->iconlabel));
@@ -1920,7 +2358,13 @@ void getcanvas(w, s)
 wbp w;
 char *s;
    {
-   if (w->window->win == (Window) NULL) sprintf(s, "hidden");
+   if (w->window->win == (Window) NULL) {
+#ifdef GraphicsGL
+      if (w->window->is_gl) sprintf(s, "???");
+      else
+#endif					/* GraphicsGL */
+      sprintf(s, "hidden");
+      }
    else
       switch (w->window->iconic) {
       case RootState:
@@ -2009,7 +2453,125 @@ char *s;
    wdp wd = ws->display;
    Display *stddpy = wd->display;
    Window  stdwin  = ws->win;
-   
+
+#ifdef GraphicsGL
+   /*
+    * For OpenGL implementation:
+    *
+    * Hidden windows are unmapped instead of being placed off-screen.
+    * Since unmapping and iconifying both generate the same events,
+    * a little trickery is used to keep ws->iconic straight.
+    */
+   if (ws->is_gl) {
+
+   if (!strcmp(s, "iconic")) {
+      /* uninitialized */
+      if (stdwin == (Window) NULL) {
+	 ws->wmhintflags |= StateHint;
+	 ws->iconic = IconicState;
+	 }
+      else {
+	 if (ws->iconic != IconicState) {
+#ifdef Iconify
+	    XIconifyWindow(ws->display->display, stdwin, ws->display->screen);
+	    XSync(stddpy, False);
+	    while (ws->iconic != IconicState)
+	       if ((hm = handle_misc(wd, NULL)) < 1) {
+		  if (hm == -1) return RunError;
+		  else if (hm == 0) {
+		     return Failed;
+		     }
+		  }
+#else					/* Iconify */
+	    return Failed;
+#endif					/* Iconify */
+	    }
+	 }
+      }
+
+   else if (!strcmp(s, "normal")) {
+      /* uninitialized */
+      if (stdwin == (Window) NULL) {
+	 ws->wmhintflags |= StateHint;
+	 ws->iconic = NormalState;
+	 }
+      else {
+	 if (ws->iconic == IconicState) {
+	    XMapWindow(stddpy, stdwin);
+	    XSync(stddpy, False);
+	    while (ws->iconic == IconicState)
+	       pollevent();
+	    }
+	 else if (ws->iconic == MaximizedState) {
+	    moveResizeWindow(w, ws->normalx, ws->normaly,
+			     ws->normalw, ws->normalh);
+	    ws->iconic = NormalState;
+	    }
+	 else if (ws->iconic == HiddenState) {
+	    XMapWindow(stddpy, stdwin);
+	    XSync(stddpy, False);
+	    while (ws->iconic == HiddenState)
+	       pollevent();
+            }
+	 }
+      }
+   else if (!strcmp(s, "maximal")) {
+      if (ws->iconic != MaximizedState) {
+	 int expect_config= (ws->width != DisplayWidth(stddpy, wd->screen)) ||
+	    (ws->height != DisplayHeight(stddpy, wd->screen));
+	 ws->normalx = ws->posx;
+	 ws->normaly = ws->posy;
+	 ws->normalw = ws->width;
+	 ws->normalh = ws->height;
+	 ws->width = DisplayWidth(stddpy, wd->screen);
+	 ws->height= DisplayHeight(stddpy, wd->screen);
+
+	 if (stdwin != (Window) NULL) {
+	    if (ws->iconic == IconicState) {
+	       XMapWindow(stddpy, stdwin);
+	       XSync(stddpy, False);
+	       while (ws->iconic == IconicState)
+  	          pollevent();
+	       }
+	    else if (ws->iconic == HiddenState) {
+	       XMapWindow(stddpy, stdwin);
+	       XSync(stddpy, False);
+	       while (ws->iconic == HiddenState)
+	          pollevent();
+	       }
+	    else if (expect_config) {
+	       moveResizeWindow(w, 0, 0, ws->width, ws->height);
+	       /* XSync is not enough because the window manager gets involved here. */
+	       XFlush(wd->display);			      /* force out request */
+	       XGetWMName(wd->display, ws->win, &textprop);    /* force WM round trip */
+	       XSync(wd->display, False);		      /* NOW sync */
+	       if (pollevent() == -1) return RunError;
+	       moveWindow(w, -ws->posx, -ws->posy);
+	       XFlush(wd->display);			      /* force out request */
+	       XGetWMName(wd->display, stdwin, &textprop);    /* force WM round trip */
+	       XSync(wd->display, False);		      /* NOW sync */
+	       }
+	    }
+	 ws->iconic = MaximizedState;
+	 }
+      }
+   else if (!strcmp(s, "hidden")) {
+      /* Window initialized and not hidden */
+      if (stdwin != (Window) NULL && ws->iconic != HiddenState) {
+         //XUnmapWindow(stddpy, stdwin); /* what's the difference? */
+         XWithdrawWindow(stddpy, stdwin, wd->vis->screen);
+	 XSync(stddpy, False);
+	 while (ws->iconic != IconicState) /* Wait for UnmapNotify event */
+	    pollevent();
+	 } 
+      ws->iconic = HiddenState;
+      }
+   else return RunError;
+
+   } /* end if (ws->is_gl) */
+   else
+#endif 					/* GraphicsGL */ 
+   {
    if (!strcmp(s, "iconic")) {
       if (ws->pix == (Pixmap) NULL) {
 	 ws->wmhintflags |= StateHint;
@@ -2047,10 +2609,12 @@ char *s;
 	    ws->initialPix = ws->pix;
 	    ws->pix = (Window) NULL;
             if (ws->parent) { 
-                my_wmap(w); 
-#ifdef Graphics3D
+#ifdef GraphicsGL
+                gl_wmap(w); 
                 if (w->window->is_3D) redraw3D(w); 
-#endif					/* Graphics3D */
+#else					/* GraphicsGL */
+                my_wmap(w); 
+#endif					/* GraphicsGL */
             }
 	    else wmap(w);
 	    }
@@ -2148,6 +2712,8 @@ char *s;
 	 }
       }
    else return RunError;
+   }
+
    XSync(ws->display->display, False);
    return Succeeded;
    }
@@ -2208,6 +2774,9 @@ char *s;
    if (ws->win) {
       if (ws->iconwin == (Window) NULL)
 	 makeIcon(w, ws->iconx, ws->icony);
+#ifdef GraphicsGL
+      if (!ws->is_gl)
+#endif 					/* GraphicsGL */
       if (remap(w, ws->iconx, ws->icony) == -1) return RunError;
       }
    return Succeeded;
@@ -2229,15 +2798,17 @@ char *s;
 void moveWindow(w,x,y)
 wbp w;
 int x, y;
-{
+   {
    wsp ws = w->window;
-   ws->posx = x;
-   ws->posy = y;
-   if (ws->win) {
-      XMoveWindow(ws->display->display, ws->win, ws->posx, ws->posy);
-      XSync(ws->display->display, False);
+   if (ws->posx != x || ws->posy != y) {
+      ws->posx = x;
+      ws->posy = y;
+      if (ws->win) {
+         XMoveWindow(ws->display->display, ws->win, ws->posx, ws->posy);
+         XSync(ws->display->display, False);
+         }
       }
-}
+   }
 
 int moveResizeWindow(w, x, y, width, height)
 wbp w;
@@ -2498,15 +3069,45 @@ wbp w;
 char *s;
    {
    wdp d;
+   wsp ws = w->window;
+   wcp wc = w->context;
+
+#ifdef GraphicsGL
+   if (ws->is_gl) {
+      /* can't change display for mapped window! */
+      if (ws->iconic != HiddenState) return Failed;
+
+      Protect(d = gl_alc_display(s), return 0);
+      ws->display = d;
+
+      strcpy(wc->glfg.name, "black");
+      wc->glfg.r = 0;
+      wc->glfg.g = 0;
+      wc->glfg.b = 0;
+      wc->glfg.a = 65535;
+      wc->glfg.id = 0;
+
+      strcpy(wc->glbg.name, "white");
+      wc->glbg.r = 65535;
+      wc->glbg.g = 65535;
+      wc->glbg.b = 65535;
+      wc->glbg.a = 65535;
+      wc->glbg.id = 0;
+      }
+   else
+#endif 					/* GraphicsGL */   
+   {
    /* can't change display for mapped window! */
    if (w->window->pix != (Pixmap) NULL)
       return Failed;
 
    Protect(d = alc_display(s), return 0);
-   w->window->display = d;
-   w->context->fg = 0;
-   w->context->bg = 1;
-   w->context->font = d->fonts;
+   ws->display = d;
+   wc->fg = 0;
+   wc->bg = 1;
+   }
+
+   wc->font = d->fonts;
    return Succeeded;
    }
 
@@ -2675,7 +3276,7 @@ char **s;
    wsp ws = w->window;
 
 #ifdef Graphics3D
-   if (wc->is_3D) {
+   if (wc->rendermode == UGL3D) {
       mkfont(*s, 1);
       return Succeeded;
       }
@@ -2710,19 +3311,17 @@ XExposeEvent *event;
    returnval = ISEXPOSED(w);
    SETEXPOSED(w);
    if (stdwin && !ISZOMBIE(w)) {
-#ifdef Graphics3D
-       if (wc->is_3D) {
-	  /*
-	   * since we redraw whole window, its safe to discard duplicate
-	   * exposures
-	   */
-	  while (XCheckTypedWindowEvent(wd->display, ws->win, Expose,
-					(XEvent *)event) == True) ;
-	  redraw3D(w);
+#ifdef GraphicsGL 
+       if (ws->is_gl) {
+          /*
+           * Go ahead and redraw. Messing with the event queue might 
+           * de-sync ConfigureNotify events with exposures, resulting
+           * in undefined behavior
+           */
+          redraw3D(w); 
 	  }
        else
-
-#endif					/* Graphics3D */
+#endif					/* GraphicsGL */
       {
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy, stdgc, GXcopy);
@@ -2824,11 +3423,17 @@ XConfigureEvent *event;
    /*
     * Update X-Icon's information about the window's configuration
     */
+#ifdef GraphicsGL
+   if (ws->is_gl)
+      ws->x = min(ws->x, event->width - GL_FWIDTH(w));
+   else
+#endif					/* GraphicsGL */
    ws->x = min(ws->x, event->width - FWIDTH(w));
    ws->y = min(ws->y, event->height);
 
    ws->posx = event->x;
    ws->posy = event->y;
+
 
    /*
     * If this was not a resize, drop it
@@ -2841,21 +3446,18 @@ XConfigureEvent *event;
 
    if (! resizePixmap(w, event->width, event->height)) return 0;
 
-#ifdef Graphics3D
-   if (ws->is_3D) {
-      double tb = 0.125 * ws->height / ws->width;
-#if HAVE_LIBGL
-      glViewport(0, 0, (GLsizei)event->width, (GLsizei) event->height);
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-      glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
-      glMatrixMode(GL_MODELVIEW);
-#endif					/* HAVE_LIBGL */
+#ifdef GraphicsGL
+   if (ws->is_gl) {
+      ws->resize = 1;
+      redraw3D(w);
       }
-#endif					/* Graphics3D */
+#endif					/* GraphicsGL */
 
    /*
     * The initial configure event generates no Icon-level "events"
+    *
+    * Commenting this for the ui initial window size bug breaks 
+    * the integrated cve demo..
     */
    if (!ISEXPOSED(w))
       return 1;
@@ -4709,11 +5311,29 @@ wbp w;
    SETCLOSED(w);
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
+#ifdef GraphicsGL
+      if (ws->is_gl) {
+         ws->busy_flag = 1; /* set so pollevent won't redraw */
+         UnbindCurrent(ws->display);
+
+         if (ws->win != (Window) NULL)
+            XDestroyWindow(stddpy, ws->win);
+         XFlush(stddpy);
+         ws->refcount--;
+         while (ws->win)
+   	    if (pollevent() == -1) return -1;
+         ws->win = (Window) NULL; 
+         ws->busy_flag = 0;
+         }
+      else
+#endif						/* GraphicsGL */
+      {
       XDestroyWindow(stddpy, ws->win);
       XFlush(stddpy);
       ws->refcount--;
       while (ws->win)
 	 if (pollevent() == -1) return -1;
+      }
       }
    /*
     * Entire canvas terminates
@@ -4731,10 +5351,9 @@ wbp w;
    }
 
 int setglXVisual(wdp wd){
-#ifdef Graphics3D
-#if HAVE_LIBGL
+#ifdef GraphicsGL
    int query;
-   int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+   int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, GLX_STENCIL_SIZE, 2, None}; 
    if (!glXQueryExtension(wd->display, &query, &query)) {
       return 0;
       }
@@ -4743,11 +5362,8 @@ int setglXVisual(wdp wd){
       return 0;
       }
   return 1;
-#endif					/* HAVE_LIBGL */
-#else					/* Graphics3D */      
-      /* printf("3D subwindow requested on VM built without 3D facilities\n"); */
-      return 0;      
-#endif					/* Graphics3D */
+#endif					/* GraphicsGL */
+  return 0;      
 }
 
 /*
@@ -4755,14 +5371,11 @@ int setglXVisual(wdp wd){
  */
 char child_window_stuff(wbp w, wbp wp, int child_window)
 {
-   if (child_window==CHILD_WIN3D) {
-      if (setglXVisual(wp->window->display) == 0)
-         return 0;      
-      }
-
    if (child_window_generic(w, wp, child_window) == 0)
       return 0;
-      
+#ifdef GraphicsGL 
+   if (!w->window->is_gl)      
+#endif					/* GraphicsGL */
    w->window->vis = DefaultVisual(w->window->display->display, w->window->display->screen);
    return 1;
 }
@@ -4897,13 +5510,13 @@ char my_wmap(wbp w)
       XChangeGC(wd->display, wc->gc, gcmask, &gcv);
 
 #ifdef Graphics3D
-   if (wc->is_3D) {
+   if (ws->is_3D) {
 #if HAVE_LIBGL
-      wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
-      if (wc->ctx == NULL) 
+      ws->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
+      if (ws->ctx == NULL) 
 	 return 0;
       if (w->window->win)
-	 glXMakeCurrent(wd->display, w->window->win, wc->ctx);
+	 glXMakeCurrent(wd->display, w->window->win, ws->ctx);
 #endif					/* HAVE_LIBGL */
       }
 #endif					/* Graphics3D */
@@ -5064,12 +5677,18 @@ char my_wmap(wbp w)
 }
 
 #ifdef Graphics3D
+
+/* could be macro? */
 void makecurrent(wbp w)
 {
    wsp ws = w->window;
-#if HAVE_LIBGL
-   glXMakeCurrent(ws->display->display, ws->win, w->context->ctx);
-#endif					/* HAVE_LIBGL */
+   wdp wd = ws->display;
+#ifdef GraphicsGL
+   /* Avoid redundant state changes for efficiency */
+   if (glXGetCurrentContext() != ws->ctx) {
+      glXMakeCurrent(ws->display->display, ws->win, ws->ctx);
+      }
+#endif					/* GraphicsGL */
 }
 
 void mkfont(char *s, char is_3D)

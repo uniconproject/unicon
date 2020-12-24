@@ -93,6 +93,9 @@
    #define Fs_Pty   	040000000            /* pty */
 #endif
 
+#ifdef GraphicsGL 
+   #define Fs_WinGL2D	0100000000	/* for OpenGL 2D window */
+#endif					/* GraphicsGL */
 
 /*
  * Thread status flags in status field of coexpr blocks.
@@ -338,6 +341,13 @@
 #endif					/* DescriptorDouble */
 #endif					/* Double */
 
+#ifdef DescriptorDouble
+   #define RealVal(d)		(d).vword.realval
+#else					/* DescriptorDouble */
+   #define RealVal(d)		BlkLoc(d)->Real.realval
+#endif					/* DescriptorDouble */
+
+
 /*
  * Absolute value, maximum, and minimum.
  */
@@ -378,6 +388,7 @@
    #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
 #endif					/* EBCDIC */
 
+
 /*
  * Construct an integer descriptor.
  */
@@ -385,6 +396,22 @@
                  	 (dp)->dword = D_Integer; \
                          IntVal(*dp) = (word)(i); \
 			 } while (0)
+
+/*
+ * Construct a real descriptor. dword set after vword so that we don't
+ * have any half-baked reals tended at time of call to alcreal.
+ */
+#ifdef DescriptorDouble
+#define MakeRealAlc(r,dp) do {\
+   (dp)->vword.realval = r;\
+   (dp)->dword = D_Real;\
+   } while(0)
+#else					/* !DescriptorDouble */
+#define MakeRealAlc(r,dp) do {\
+   Protect((dp)->vword.bptr = (union block *)alcreal(r), fatalerr(0,NULL));\
+   (dp)->dword = D_Real;\
+   } while(0)
+#endif					/* DescriptorDouble */
 
 /*
  * Construct a string descriptor.
@@ -1329,7 +1356,7 @@
    #define MTX_PUBLICBLKHEAP	25
    
    #define MTX_ROOT_FILEPIDS	26
-
+   
    #define MTX_PATIMG_FUNCARR   27
    
    #define MTX_STKLIST		28
@@ -1996,3 +2023,8 @@
 	strncpy(_dst, _src, _bufsize - 1);	\
 	_dst[_bufsize - 1] = '0';		\
       } while (0)
+
+/*
+ * Macro definition used by pollevent() to avoid magic numbers
+ */
+#define POLL_INTERVAL 400

@@ -972,15 +972,17 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 
       if (n>0)
       for(bpelem = dr_arrays[n-1]; bpelem; bpelem = bpelem->next, ct++) {
-    bp = bpelem->this;
-    for (i=0; i<n; i++) {
-       if((StrLen(fields[i]) != StrLen(bp->lnames[i])) ||
-           strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]),StrLen(fields[i]))) break;
+         bp = bpelem->this;
+         /* compare name of record */
+         if (strncmp(StrLoc(*s),StrLoc(bp->recname),StrLen(*s))) break;
+         for (i=0; i<n; i++) {
+            if((StrLen(fields[i]) != StrLen(bp->lnames[i])) ||
+                strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]),StrLen(fields[i]))) break;
             }
-    if(i==n) {
-       return bp;
-       }
-    }
+         if(i==n) {
+            return bp;
+            }
+         }
 
       bp = (struct b_proc *)malloc(sizeof(struct b_proc) +
                sizeof(struct descrip) * n);
@@ -1687,7 +1689,6 @@ cpintarray_macro(cpintarray_0, 0)
 #else					/* MultiProgram */
 cpintarray_macro(cpintarray, 0)
 #endif					/* MultiProgram */
-
 
 /*
  * Convert a list to an array. If not possible, return the original list

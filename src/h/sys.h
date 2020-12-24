@@ -365,6 +365,15 @@
 #include <GL/glx.h>
 #endif					/* XWindows */
 #include <GL/glu.h>
+#if HAVE_LIBFREETYPE
+   #include <ft2build.h>
+   #include FT_FREETYPE_H
+   #define PNG_SKIP_SETJMP_CHECK	/* 
+					 * Fixes compile error for Ubuntu 16.04:
+					 * 'expected [...] before __pngconf.h in
+					 * libpng already includes setjmp.h'
+					 */
+#endif					/* HAVE_LIBFREETYPE */
 #endif					/* HAVE_LIBGL */
 
 #if HAVE_LIBZ

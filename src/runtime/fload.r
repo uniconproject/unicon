@@ -108,9 +108,9 @@ function{0,1} loadfunc(filename,funcname)
 #if UNIX
       if (!handle) {
 	 char path[MaxPath];
-	 if (findonpath("iconx", path, MaxPath)) {
+	 if (findonpath(UNICONX, path, MaxPath)) {
 	    int n = strlen(path);
-	    snprintf(path+n-strlen("iconx"), MaxPath - n, "../plugins/lib/%s", filename );
+	    snprintf(path+n-strlen(UNICONX), MaxPath - n, "../plugins/lib/%s", filename );
 	    handle = dlopen(path, RTLD_LAZY);	/* get the handle */
 	    }
          }

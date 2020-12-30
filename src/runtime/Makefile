@@ -55,23 +55,23 @@ CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwin
 OBJS=	$(XOBJS) $(EXEICONTARGET)
 
 interp_all: update_rev 
-	$(MAKE) iconx
+	$(MAKE) $(UNICONX)
 
 # Some systems require global symbols to be left in iconx for loadfunc() to work
 # but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
 # so only use strip -x when it is known to be needed and available (MacOS).
 
 # NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
-iconx $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
-	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
-	cp iconx$(EXE) ../../bin
-	strip $(DASHX) ../../bin/iconx$(EXE);
+$(UNICONX) $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o $(UNICONX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
+	cp $(UNICONX)$(EXE) ../../bin
+	strip $(DASHX) ../../bin/$(UNICONX)$(EXE);
 
 # on windows, always add WNTCON dependency to set NTCONSOLE accordingly
-wiconx $(WICONEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
-	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -lwuconsole
-	cp wiconx$(EXE) ../../bin
-	strip $(DASHX) ../../bin/wiconx$(EXE);
+$(UNICONWX) $(WICONEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o $(UNICONWX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -lwuconsole
+	cp $(UNICONWX)$(EXE) ../../bin
+	strip $(DASHX) ../../bin/$(UNICONWX)$(EXE);
 
 # prepare the icon for the executables
 icon.$(O):

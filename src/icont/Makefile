@@ -18,18 +18,18 @@ WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 # These files are affected by NTConsole on Windows
 CONSOLEOBJS=  lcode.$(O) lglob.$(O) link.$(O) tcode.$(O) tmain.$(O)
 
-PGMS=		icont$(EXE)
+PGMS=		$(UNICONT)$(EXE)
 
-all:		icont
+all:		$(UNICONT)
 
-icont $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a
-		$(CC) $(CFLAGS) $(LDFLAGS) -o icont $(OBJS) -lucommon $(LIBS)
+$(UNICONT) $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $(UNICONT) $(OBJS) -lucommon $(LIBS)
 		cp $(PGMS) ../../bin
 		strip ../../bin/$(PGMS)
 
-wicont $(WICONTEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a common
-	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS) $(WOBJS)  -lucommon -lwuconsole -lwinmm $(LIBS) $(WGLIBS)
-	$(CP) wicont.exe ../../bin
+$(UNICONWT) $(WICONTEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a common
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o $(UNICONWT) -mwindows $(OBJS) $(WOBJS)  -lucommon -lwuconsole -lwinmm $(LIBS) $(WGLIBS)
+	$(CP) $(UNICONWT)$(EXE) ../../bin
 
 
 # set NTConsole for wiconx

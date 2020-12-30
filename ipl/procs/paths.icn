@@ -32,7 +32,9 @@ procedure ulibprefix()
       if path := (&features ? (="Libraries at " & tab(upto(';') | 0))) then
          prefix := path || "/"
       else if (path := (&features ? (="Binaries at " & tab(0)))) |
-         ((f := open((path := getpaths()) || ("iconx"|"iconx.exe"| "wiconx.exe"))))
+	  ((f := open((path := getpaths()) || ("uniconx" | "iconx" |
+					       "uniconx.exe" |"iconx.exe" |
+					       "wuniconx.exe" | "wiconx.exe"))))
       then {
 	 close(\f)
 	 # The returned path has the form  /path/unicon/bin/

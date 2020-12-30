@@ -200,7 +200,8 @@ UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr iyacc rt.a rt.h
+Tbins=unicon icont iconx iconc unicont uniconx uniconc udb uprof unidep UniDoc \
+	ui ivib patchstr iyacc rt.a rt.h
 
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
@@ -240,11 +241,11 @@ install Install:
 	@for f in $(Tbins); do \
 	  if test -f "bin/$$f"; then \
 	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
-	    if test "$$f" = "icont" ; then \
-              $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/iconx || true; \
+	    if test "$$f" = $(UNICONT) ; then \
+              $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/$(UNICONX) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
-	    elif test "$$f" = "wicont" ; then \
-              $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/wiconx || true; \
+	    elif test "$$f" = $(UNICONWT) ; then \
+              $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/$(UNICONWX) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
 	    elif test "$$f" != "patchstr" ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir) || true; \

@@ -1,15 +1,16 @@
 #  Makefile for the Icon Program Library
 
+include ../Makedefs.uni
 
 #  Make a library distribution (portable ucode and include files).
 
 Ilib:	../bin/libcfunc.so
-../bin/libcfunc.so:  ../bin/icont
+../bin/libcfunc.so:  ../bin/$(UNICONT)
 	cp incl/*.icn gincl/*.icn cfuncs/icall.h ../lib
 	$(MAKE) -C procs
 	$(MAKE) -C gprocs
 	$(MAKE) -C mprocs
-	cd cfuncs; LPATH= $(MAKE) ICONT=../../bin/icont
+	cd cfuncs; LPATH= $(MAKE) ICONT=../../bin/$(UNICONT)
 	mv cfuncs/*.u? lib
 	mv cfuncs/libcfunc.so ../bin
 
@@ -18,7 +19,7 @@ Ilib:	../bin/libcfunc.so
 #  given that ../lib is ready
 
 Ibin:	../bin/ipatch
-../bin/ipatch:  ../bin/icont
+../bin/ipatch:  ../bin/$(UNICONT)
 	MAKE=$(MAKE) ./BuildBin
 
 
@@ -34,7 +35,7 @@ Iexe:
 #  (A few are expected: references to Mp, program, init, goal).
 
 Undef:
-	cd ../lib; for f in *.u2; do (echo $$f; icont -us -fs $$f); done
+	cd ../lib; for f in *.u2; do (echo $$f; $(UNICONT) -us -fs $$f); done
 
 
 #  Check for stray files

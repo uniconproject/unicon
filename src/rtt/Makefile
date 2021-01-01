@@ -19,12 +19,12 @@ POBJS = pout.o pchars.o  perr.o pmem.o  bldtok.o macro.o preproc.o\
 
 OBJ = $(ROBJS) $(POBJS)
 
-all:	rtt$(EXE)
+all:	urtt$(EXE)
 
-rtt$(EXE):	$(OBJ)
-	$(CC) $(LDFLAGS) -o rtt $(OBJ) -lucommon
-	$(CP) rtt$(EXE) ../../bin/
-	strip ../../bin/rtt$(EXE)
+urtt$(EXE):	$(OBJ)
+	$(CC) $(LDFLAGS) -o urtt $(OBJ) -lucommon
+	$(CP) urtt$(EXE) ../../bin/
+	strip ../../bin/urtt$(EXE)
 
 library:	$(OBJ)
 		$(RM) -r rtt.a

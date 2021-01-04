@@ -5,17 +5,37 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+# Date:    2021-01-03
+#
 
 package parser
 
+link ximage
+
 class ParsedRecord : ParsedObject(fields)
    method init(n)
-      name := n.children[2].s
+      local t, x
+
+      name := n.children[1].s
       fields := []
-      every put(fields, tree_seq2(n.children[4], "idlist").s)
+      t := n.children[2]
+      if t.label == "fldlist" then {
+         every x := t.children[1 to *t.children] do {
+            ::put(fields, x.s)
+         }
+      } else {
+         parsing_error(t)
+      }
    end
 
    method to_string()
+      local s
+
       s := "record " || name || "("
       every s ||:= !fields || ","
       if *fields > 0 then

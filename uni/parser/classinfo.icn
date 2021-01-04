@@ -5,13 +5,21 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+# Date:    2021-01-03
+#
+#
 
 package parser
 
-link scan
+link scan, paths
 
 #
-# This class represents and entry in the class database for a single class.
+# This class represents an entry in the class database for a single class.
 #
 #
 class ClassInfo : DatabaseInfo(file,
@@ -54,42 +62,45 @@ class ClassInfo : DatabaseInfo(file,
    #
    # @p
    method init(s)
+      local idchars, filechars
+
       idchars := &lcase ++ &ucase ++ &digits ++ "_"
       filechars := &lcase ++ &ucase ++ &digits ++ "._"
       s ? {
-         file := tab(upto('\n')) | fail
+         file := ::tab(::upto('\n')) | fail
          ="\nclass " | fail
-         name := tab(many(idchars)) | fail
+         name := ::tab(::many(idchars)) | fail
          supers := []
-         while tab(match(" : " | ":")) do 
-            put(supers, tab(many(idchars))) | fail
+         while ::tab(::match(" : " | ":")) do
+            ::put(supers, ::tab(::many(idchars))) | fail
          ="(" | fail
          variables := []
-         if any(idchars) then {
+         if ::any(idchars) then {
             repeat {
-               put(variables, tab(upto(',)'))) | fail
-               if any(')') then
+               ::put(variables, ::tab(::upto(',)'))) | fail
+               if ::any(')') then
                   break
-               move(1)
+               ::move(1)
             }
          }
          =")\n" | fail
 
          methods := []
          repeat {
-            s := tab(upto('\n')) | fail
+            s := ::tab(::upto('\n')) | fail
             if s == "end" then
                break
-            put(methods, s)
-            move(1)
-         }            
+            ::put(methods, s)
+            ::move(1)
+         }
       }
       return
    end
 
    method to_string()
       local s
-      s := "Name: " || name || " File: " || file 
+
+      s := "Name: " || name || " File: " || file
       if *supers > 0 then {
          s ||:= " Supers: ("
          every s ||:= !supers || ","
@@ -116,18 +127,19 @@ end
 #
 procedure load_class_info(name, home)
    local f, x, t, ci
+
    every x := get_all_dirs(home) do {
-      if f := open(x || "uniclass", "dr") then {
-         if t := fetch(f, name) then {
-            if not match("package ", t) then {
+      if f := ::open(x || "uniclass", "dr") then {
+         if t := ::fetch(f, name) then {
+            if not ::match("package ", t) then {
                ci := ClassInfo()
                ci.init(t) | stop("Corrupt class database " || t)
                ci.directory := x
-               close(f)
+               ::close(f)
                return ci
             }
          }
-         close(f)
+         ::close(f)
       }
    }
 end
@@ -136,7 +148,7 @@ end
 # Get the package name from a raw name in the form package__name; or fail.
 #
 procedure get_package_name(sym)
-   return sym ? tab(find("__" | "::"))
+   return sym ? ::tab(::find("__" | "::"))
 end
 
 #
@@ -144,9 +156,9 @@ end
 #
 procedure get_symbol_name(sym)
    sym ? {
-      if tab(find("__" | "::")) then {
-         move(2)
-         return tab(0)
+      if ::tab(::find("__" | "::")) then {
+         ::move(2)
+         return ::tab(0)
       }
    }
 end
@@ -156,30 +168,30 @@ end
 #
 procedure get_all_dirs(home)
    local s, x
+
    /home := "."
-   s := getenv("IPATH") | fail
+   s := ::getenv("IPATH") | fail
    every x := home | split_path_string(s) do {
       if x[-1] ~== "/" then
          x ||:= "/"
+      #::write("get_all_dirs(", home, ") x:", x)
       suspend x
    }
 end
 
 #
-# Split a space or semicolon separated string into its constituent elements.
+# Split a space, colon or semicolon separated string into its constituent elements.
 #
 procedure split_path_string(s)
    local x, sep
+
+   sep := ' ;:'
    s ? {
-       if find(";") then
-	   sep := ';'
-       else
-          sep := pathsep()
       repeat {
-         tab(many(' ;'))
-         if pos(0) then
+         ::tab(::many(sep))
+         if ::pos(0) then
             break
-         x := tab(upto(sep) | 0)
+         x := ::tab(::upto(sep) | 0)
          suspend x
       }
    }

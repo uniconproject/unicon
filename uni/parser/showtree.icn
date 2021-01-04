@@ -5,14 +5,21 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+#
+# Now using the variation of dump_tree that is defined in parser.icn. The output
+# is using format 2 as defined in the file parser.icn.
+
 
 import parser
+link ximage
 
 procedure main(a)
    *a = 1 | stop()
    t := parse_unicon(a[1]) | stop("couldnt parse")
-   write("tree:")
-   dump_tree(t)
+   dump_tree(t, 2)
    p := ParsedProgram(t)
    write(p.to_string())
 end

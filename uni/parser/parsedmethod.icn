@@ -5,13 +5,24 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+# Date:    2021-01-03
+#
 
 package parser
 
+link ximage
+
+$include "ytab_h.icn"
 
 class ParsedMethod : ParsedFunction(abstract_flag)
    method to_string()
       local s
+
       s :=  "method " || to_string_impl()
       if \abstract_flag then
          s := "abstract " || s
@@ -19,34 +30,31 @@ class ParsedMethod : ParsedFunction(abstract_flag)
    end
 
    method init(n)
-      local prochead, arglist, locals_node
+      local prochead, arglist, locals_node, x, l, tok
 
       self.ParsedFunction.init(n)
 
+      name := n.children[1].s
+
+      arglist := n.children[2]
+      every x := arglist.children[1 to *arglist.children].children[1] do {
+         ::put(args, x.s)
+      }
+
       if *n.children = 2 then {
          abstract_flag := 1
-         prochead := n.children[2]
       } else {
-         prochead := n.children[1]
-         initial_node := n.children[4]
-         body_node := n.children[5]
-         locals_node := n.children[3]
-         every x := tree_seq1a(\locals_node) do {
-            l := if x.children[2].tok = 281 then locals else statics
-            every tok := tree_seq2(x.children[3], "idlist") do
-               put(l, tok.s)
+         locals_node := n.children[4]
+         initial_node := n.children[5]
+         body_node := n.children[6]
+         every x := locals_node.children[1 to *locals_node.children] do {
+            l := if x.label == "local" then locals else statics
+            every tok := x.children[1].children[1 to *x.children - 1].children[1] do
+               ::put(l, tok.s)
          }
       }
 
-      arglist := prochead.children[4]
-      name := prochead.children[2].s
 
-      every x := tree_seq2((\arglist).children[1], "parmlist") do {
-         if type(x) == "token" then
-            put(args, x.s)
-         else
-            put(args, x.children[1].s)
-      }
    end
 
    initially(n, p)

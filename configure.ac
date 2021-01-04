@@ -171,6 +171,9 @@ AC_ARG_ENABLE([verifyheap],
 AC_ARG_ENABLE([devmode],
 	[AS_HELP_STRING([--enable-devmode], [Developper mode: turn on warnings and debugging options])],
 			[devmode=yes], [devmode=no])
+AC_ARG_ENABLE([uniconx],
+	[AS_HELP_STRING([--enable-uniconx], [Change then name of executables to co-exist with Icon])],
+			[uniconx=yes], [uniconx=no])
 
 
 # Save flags
@@ -200,6 +203,21 @@ else
   CMNT=
   SLNT="@"
   DASHS="-s"
+fi
+
+if test x"$uniconx" = x"yes" ; then
+  AC_DEFINE([UniconX], [1], [Avoid naming conflicts with Icon])
+  UNICONX=uniconx
+  UNICONWX=wuniconx
+  UNICONC=uniconc
+  UNICONT=unicont
+  UNICONWT=wunicont
+else
+  UNICONX=iconx
+  UNICONWX=wiconx
+  UNICONC=iconc
+  UNICONT=icont
+  UNICONWT=wicont
 fi
 
 if test x"$devmode" = x"yes" ; then
@@ -337,19 +355,19 @@ case $unicon_host in
        WSUBSYS="-Wl,--subsystem,console"
        NTCONDEP="NTCON"
        LIBWUCONSOLE="libwuconsole.a"
-       WICONXTARGET="wiconx"
-       WICONTTARGET="wicont"
+       WICONXTARGET="$UNICONWX"
+       WICONTTARGET="$UNICONWT"
        WUNICONTARGET="wunicon"
        CFUNCTARGET="windows"
        EXEICONTARGET=icon.$OBJ
 
-       ICONXEXE=iconx.exe
-       WICONXEXE=wiconx.exe
-       ICONTEXE=icont.exe
-       WICONTEXE=wicont.exe
+       ICONXEXE=$UNICONX.exe
+       WICONXEXE=$UNICONWX.exe
+       ICONTEXE=$UNICONT.exe
+       WICONTEXE=$UNICONWT.exe
        UNICONEXE=unicon.exe
        WUNICONEXE=wunicon.exe
-       ICONCEXE=iconc.exe
+       ICONCEXE=$UNICONC.exe
         ;;
 esac
 
@@ -361,6 +379,12 @@ fi
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
+AC_SUBST(UNICONX)
+AC_SUBST(UNICONT)
+AC_SUBST(UNICONWX)
+AC_SUBST(UNICONWT)
+AC_SUBST(UNICONC)
 
 AC_SUBST(EXE)
 AC_SUBST(WSTKLDFLAG)

@@ -662,7 +662,7 @@ void iconx(int argc, char** argv){
        * Try to find iconx on the PATH or the current working directory
        */
 	if ((f = pathOpen(iconx2, ReadBinary)) == NULL) {
-	  sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx);
+	  sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx2);
 	  report(mesg);
 	  errors++;
 	}

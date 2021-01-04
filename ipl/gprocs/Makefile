@@ -1,6 +1,8 @@
+include ../../Makedefs.uni
+
 TARGETS=$(patsubst %.icn,%.u,$(wildcard *.icn))
 
-IC=../../bin/icont
+IC=../../bin/$(UNICONT)
 UFLAGS= -usc
 
 all:$(TARGETS)

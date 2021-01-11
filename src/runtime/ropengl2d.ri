@@ -432,6 +432,7 @@ char *getDLiteminfo2d(struct b_record *rp)
 #else					/* GL2D_DEBUG */
 char *getDLiteminfo2d(struct b_record *rp) 
    {
+     return NULL; /* Avoid clang: "non-void function does not return a value" */
    }
 #endif					/* GL2D_DEBUG */
 
@@ -2338,6 +2339,7 @@ int drawblimage2d(wbp w, struct b_record *rp)
 
 
 
+
 /*
  * Draw an image loaded from a file
  */
@@ -2374,7 +2376,7 @@ int drawreadimage2d(wbp w, struct b_record *rp)
    if (update) {
       unsigned int *texptr;
 
-      img = StrLoc(rp->fields[7]);
+      img = (unsigned char *)StrLoc(rp->fields[7]);
       index = get_tex_index(wd, 1);
       texptr = &(wd->texIds[index]);
       InitTexture2d(texptr);
@@ -2447,7 +2449,7 @@ int drawstrimage2d(wbp w, struct b_record *rp)
    if (update) {
       unsigned int *texptr;
 
-      pixmap = StrLoc(rp->fields[6]); 
+      pixmap = (unsigned char *)StrLoc(rp->fields[6]); 
       index = get_tex_index(wd, 1);
       texptr = &(wd->texIds[index]);
       InitTexture2d(texptr);
@@ -3201,8 +3203,8 @@ int setpattern2d(wbp w, struct b_record *rp)
       int ix, iy, i, j;
       unsigned char *img, *src, *dest;
       tended struct b_record *recp = rp;
-      char data[MAXXOBJS];
-      char *buf = data;
+      unsigned char data[MAXXOBJS];
+      unsigned char *buf = data;
       C_integer v, bits[MAXXOBJS];
       int symbol;
 
@@ -3452,7 +3454,7 @@ int gl_blimage(wbp w, int x, int y, int width, int height, int ch,
    MakeInt(width, &(rp->fields[4]));
    MakeInt(height , &(rp->fields[5]));
 
-   Protect(s2 = alcstr(s,len), return RunError);
+   Protect(s2 = alcstr((char *)s,len), return RunError);
    MakeStr(s2, len, &(rp->fields[6]));
 
    /* store transparency char */
@@ -5732,7 +5734,7 @@ int gl_mutable_color(wbp w, dptr argv, int warg, int *rv)
        * Check for mutable color id as arg
        */
       else if (is:integer(argv[0])) {/* check for color cell */
-	 if ((id == IntVal(argv[0])) >= 0)
+	 if ((id = IntVal(argv[0])) >= 0)
 	    return Failed;        /* must be negative */
 
          /*
@@ -6712,7 +6714,7 @@ static wfp loadfont(wdp wd, char *s, int len)
        * Bits 0-15 contain the index of the current face. 0 if
        * there is only one face
        */
-      num_faces = wf->face->num_faces && 0xFFFF;
+      num_faces = wf->face->num_faces & 0xFFFF;
 
       /*
        * Check family name

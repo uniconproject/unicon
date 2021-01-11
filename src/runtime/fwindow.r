@@ -2286,7 +2286,7 @@ function{1} FreeColor(argv[argc])
       for (i = warg; i < argc; i++) {
          if (is:integer(argv[i])) {
             CnvCInteger(argv[i], n)
-            if (n < 0)
+            if (n < 0) {
 #ifdef GraphicsGL
                if (w->window->is_gl) 
                   gl_free_mutable(w, n);
@@ -2294,6 +2294,7 @@ function{1} FreeColor(argv[argc])
 #endif					/* GraphicsGL */
                free_mutable(w, n);
             }
+         }
          else {
             if (!cnv:C_string(argv[i], s))
                runerr(103,argv[i]);

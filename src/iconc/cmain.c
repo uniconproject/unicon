@@ -64,6 +64,51 @@ compute_dynrec_start()
    return rslt;
 }
 
+/* Temporary home for versionLine() */
+char *versionLine(char *prefix)
+{
+  static char vline[200];
+  int pos, dots;
+  char c, *dstr, *branch;
+
+  sprintf(vline, "%s Version %s   %s (", prefix, VersionNumber, VersionDate);
+  for (dstr = gitDescription, pos = 0, dots = 0; (c = dstr[pos]) != '\0'; ++pos) {
+    if (c == '.') ++dots;
+    if (!isdigit(c) && c != '.') break; /* Not an LTB char */
+  }
+  if (c == '-') {
+    if (dstr[pos+1] == '0' && dstr[pos+2] == '-') { /* Latest commit is tagged */
+      /* Use the tag name (in dstr) to decide the annotation */
+      if (dots == 0) {
+        strcat(vline, dstr); strcat(vline, " Development)");
+      } else if (dots == 1) {
+        strcat(vline, "Release)");
+      } else {
+        strncat(vline, dstr, pos); strcat(vline, " Maintenance Release)");
+      }
+    } else { /*  Latest commit is not tagged */
+      strcat(vline,dstr);
+      if (0 == strcmp(branch, "master")) {
+        strcat(vline, " pre-release)");
+      } else { /* Use the branch name to decide the annotation */
+        for (branch = gitBranch, pos = 0; (c = branch[pos]) != '\0'; ++pos) {
+          if (!isdigit(c) && c != '.') break;
+        }
+        if (c == '\0') {
+          strcat(vline, " Maintenance pre-release)");
+        } else {
+          strcat(vline, " Development \""); strcat(vline, branch); strcat(vline, "\")");
+        }
+      }
+    }
+  } else { /* We don't understand the output of git describe */
+    strcat(vline, dstr); strcat(vline, ")");
+  }
+
+  return vline;
+}
+
+
 /*
  *  main program
  */
@@ -187,58 +232,7 @@ char **argv;
            }
 
            if(0 == strncmp("-version", opts[n],8)) {
-             /* Construct and print the version string */
-             char *p;
-             char gd[] = gitDescription;
-             int tagged, ltb;
-             /*
-              * By convention, A "Long Term Branch", used for the maintenance of previous
-              * releases, has a branch name consisting of digits and decimal points
-              */
-             for (ltb = 1, p=gitBranch; *p != '\0'; ++p) {
-               if (!isdigit(*p) && *p != '.') { ltb = 0; break; /* not LTB */}
-             }
-
-             /*
-              * gitDescription is the output of git describe, which finds the most recent
-              * tag that is reachable plus the number of commits to reach it. If that number
-              * is 0, the present commit is tagged (i.e. we are at a release point).
-              */
-             for (tagged=0, p=gd; *p != '0'; ++p) {
-               if (isdigit(*p) || *p == '.') continue;
-               if (*p == '-') {
-                 if (*(p+1) == '0') {
-                   tagged = 1;
-                   *p = '\0';   /* Terminate string here to get tagname */
-                 }
-                 break;
-                }
-              }
-
-             if (tagged == 1) {
-               if (0 == strncmp("master", gitBranch, 6)) {
-                 printf("iconc version %s    %s (Release)\n",
-                        VersionNumber, VersionDate);
-               } else if (ltb == 1) {
-                 printf("iconc version %s    %s (%s Maintenance Release)\n",
-                        VersionNumber, VersionDate, gd);
-               } else {
-                 printf("iconc version %s    %s (%s Development \"%s\")\n",
-                        VersionNumber, VersionDate, gitDescription, gitBranch);
-               }
-             } else { /* Not tagged */
-               if (0 == strncmp("master", gitBranch, 6)) {
-                 printf("iconc version %s    %s (%s pre-release)\n",
-                        VersionNumber, VersionDate, gitDescription);
-               } else if (ltb == 1) {
-                 printf("iconc version %s    %s (%s Maintenance pre-release)\n",
-                        VersionNumber, VersionDate, gitDescription);
-               } else {
-                 printf("iconc version %s    %s (%s Development \"%s\")\n",
-                        VersionNumber, VersionDate, gitDescription, gitBranch);
-               }
-            }
-
+             printf("%s\n", versionLine(progname));
              exit(EXIT_SUCCESS);
            }
          }

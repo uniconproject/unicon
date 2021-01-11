@@ -451,32 +451,31 @@ procedure versionLine()
       v[2]? {
          latest := tab(many(LTBchars))
          if = "-" then {
-            if v[3] ~== "master" then { # Are we on a maintenance long term branch?
-               v[3] ? {
-                  LTB := tab(many(LTBchars))
-                  if \LTB == v[3] then LTB := 1 else LTB := &null
-               }
-            }
-
             if "0" == tab(many(&digits)) then { # Latest commit is tagged
-               if v[3] == "master" then {
-                  vline ||:= "Release)"
-               } else if \LTB then {
-                  vline ||:= latest; vline ||:= " Maintenance Release)"
-               } else {
-                  vline ||:= v[2] || " Development \"" || v[3] || "\")"
+               # Use the tag name (in latest) to decide the annotation
+               dots := 0; every find(".",latest) do dots +:= 1
+               case dots of {
+                  default: { vline ||:= latest; vline ||:= " Maintenance Release)"}
+                  0:       { vline ||:= v[2];   vline ||:= " Development)"}
+                  1:       { vline ||:= "Release)"}
                }
             } else { # Latest commit is not tagged
                if v[3] == "master" then {
                   vline ||:= v[2]; vline ||:= " pre-release)"
-               } else if \LTB then {
-                  vline ||:= v[2]; vline ||:= " Maintenance pre-release)"
-               } else {
-                  vline ||:= v[2] || " Development \"" || v[3] || "\")"
+               } else { # Use the branch name (in v[3]) to decide the annotation
+                  v[3] ? {
+                     LTB := tab(many(LTBchars))
+                     if \LTB == v[3] then {
+                        vline ||:= v[2]; vline ||:= " Maintenance pre-release)"
+                     } else {
+                        vline ||:= v[2]; vline ||:= " Development \""
+                        vline ||:= v[3]; vline ||:= "\")"
+                     }
+                  }
                }
             }
          } else { # We don't understand the output of git describe
-            vline ||:= v[2] || ")"
+            vline ||:= v[2]; vline ||:= ")"
          }
       }
    }

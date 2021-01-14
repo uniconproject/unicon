@@ -4834,7 +4834,7 @@ char * abuf;
       case A_GEOMETRY:
 #ifdef GraphicsGL
 	 if (ws->is_gl)
-	    if (gl_getpos(w) == Failed) return Failed;
+       { if (gl_getpos(w) == Failed) return Failed; }
 	 else
 #endif					/* GraphicsGL */
 	 if (getpos(w) == Failed) return Failed;

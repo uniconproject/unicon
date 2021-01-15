@@ -1,0 +1,743 @@
+#############################################################################
+#                                                                           #
+# file : errorsystem.icn                                                    #
+#                                                                           #
+# Author : Bruce Rennie                                                     #
+# Date   : 11-July-2013                                                     #
+# Update : 22-November-2015                                                 #
+#                                                                           #
+# Purpose:  To provide a class that provides a set of common error          #
+#           handling facilities and to allow a standardised debugging       #
+#           environment applicable to all objects within the system.        #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+# Conventions:                                                              #
+#    Private fields start with __                                           #
+#    Private methods start with _ or __                                     #
+#                                                                           #
+#    Private classes start with __                                          #
+#    Private classes have an associated Public Class                        #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Classes:                                                           #
+#                                                                           #
+#    class ErrorSystem()                                                    #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Private Classes: none                                                     #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Private Fields:                                                           #
+#                                                                           #
+#   __DebugMode             : Sets the Debug Mode for all objects           #
+#                             that inherit from the ErrorSystem class.      #
+#                             This  value is applicable on an object        #
+#                             by object basis                               #
+#   __ErrorOutFile          : The error out file applicable for all         #
+#                             messages printed. Individual objects can      #
+#                             be set to different output files. By          #
+#                             default this is error out                     #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Fields:                                                            #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Private Methods:                                                          #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Methods: ErrorSystem                                               #
+#                                                                           #
+#    StopMessage(param[])   -: Halts program with message param[]           #
+#    PrintMessage(param[])  -: Print message param[] onto current           #
+#                              error file (default &errout)                 #
+#    Caller()               -> name of procedure or method that has         #
+#                              called the current procedure                 #
+#    ProcedureCalling(level)                                                #
+#                           -> name of procedure that has called            #
+#                              the current procedure                        #
+#    ClassCalling(level)    -> name of the class that has called the        #
+#                              current procedure                            #
+#    MethodCalling(level)   -> name of the method that has called the       #
+#                              current procedure                            #
+#    ParamCalling(level)    -> the list of parameters from the calling      #
+#                              procedure                                    #
+#    CallingComponents(name)                                                #
+#                           -> return a list containing the components      #
+#                              the calling procedure or class/method        #
+#    Debug(mode)            -: sets whether the Debug mode is on or         #
+#                              for all methods that test this               #
+#    DebugMode()            -> succeeds if debug mode is on, fails if       #
+#                              debug mode if off                            #
+#    NotInDebugMode()       -> succeeds if debug mode is off, fails if      #
+#                              debug mode if on                             #
+#    ErrorOut(errorfile, writeappend)                                       #
+#                           -> Sets the errorout file to be used,           #
+#                              if called with no parameters, sets to        #
+#                              &errout, otherwise if a string, opens        #
+#                              the specified file based on writeappend      #
+#                              ("w" for write, "a" for append, default      #
+#                              is "w"), if errorfile is an open file,       #
+#                              the output will be sent to this file         #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Procedures:                                                        #
+#                                                                           #
+#############################################################################
+
+# required link statements
+link utilities
+link runtimeerrors
+
+# required import statements
+
+# required global statements
+global  __trace_all                     #GV: this variable is normally &null, but
+                                        #:   when it is ncessary to turn on all
+                                        #:   debugging facilities, this can be
+                                        #:   used to so indicate this state. The
+                                        #:   normal debugging is on an object by
+                                        #:   object control
+
+#
+# Package ErrorSystem - This is the uppermost class for the class hierarchy that
+# all the associated classes that are being developed in accordance with the model
+# that this is superclass too.
+#
+# As such, each level will be in its own package to ensure that there is no crossover
+# with other packages in the Unicon Class Libraries.
+#
+# Hence this package.
+package ErrorSystem
+
+#CD:
+#: class ErrorSystem - there is only one standalone ErrorSystem object. However,
+#: all objects that inherit from ErrorSystem allow each object to have its own
+#: debugging and error out designations.
+#:
+#: This class is inherited by the ClassObject class and in turn is inherited by all
+#: all other objects and classes that inherit from ClassObject and ClassClass classes.
+#:
+#: At this point, the overall intent for these classes (ErrorSystem, ClassObject
+#: and ClassClass) is to create a unified class/object protocol where a new object
+#: of any class will have the same error/debugging and creation facilities.
+#:
+#: It is intended that both Robert Parlett's and Steve Wampler's class setups be
+#: merged into a single unified system. At this point, this alternative structure
+#: has been created to allow a simpler conversion of a variety of javascript and
+#: Python systems that I am interested in to a Unicon code base.
+#:
+class ErrorSystem(
+    __DebugMode,                        #CV: Sets the Debug Mode for all objects
+                                        #:   that inherit from the ErrorSystem class
+    __ErrorOutFile,                     #CV: The error out file applicable for all
+                                        #:   messages printed.
+    DebugPrint                          #CV: holds either the trace function or 1,
+                                        #:   when debugging is turned on or off
+)
+
+    #MD:
+    #: __proc_components(level, pos) - this is the helper funtion used by Procedurecalling,
+    #: ClassCalling and MethodCalling. This is a merging of the common code
+    #: from each of the aforementioned procedures.
+    #;
+    #:@param level      the level in the call stack which will be used to find the
+    #:@                 procedure/class/method value required
+    #:@param pos        the required position of the information that will be in
+    #:@                 data list. Procedure information is in [1], Class information
+    #:                  is in [2], Method information is in [3].
+    #:@return           the information as per the position selected
+    #:
+    method __proc_components(level, pos)
+        local   name,                   #LV: temporary variable holding the name of
+                                        #:   calling procedure
+
+                res                     #LV: temporary variable contains a list
+
+        #
+        # If there is no value assigned to the DebugPrint, we must turn off all
+        # debugging
+        #
+        /DebugPrint & Off()
+        /level := 2                     # if no level is specified, then the information
+                                        # is for the caller two levels out from this method
+        name := ::get_active_name(::proc(&current, level))
+        #
+        # if debugging is On, then we want to see the level of the call
+        # stack level and the specific result produced. Otherwise this is a null
+        # operation
+        #
+        DebugPrint("(level=", level, "): (pos=", pos, "): ", \name | "name is Not Known")
+        res := CallingComponents(name)
+        #
+        # if debugging is On, then we want to see the level of the call
+        # stack level and the specific result produced. Otherwise this is a null
+        # operation
+        #
+        DebugPrint("(level=", level, "): (pos=", pos, "): ", \res[pos] | "Not Known")
+        return \res[pos]
+    end
+
+    #MD:
+    #: AbortIfDebug(param[]) - If the object is in Debug Mode, then print
+    #: a message and abort, otherwise the method fails, which can be passed to the
+    #: calling method
+    #:
+    #:@param param      list of strings to be sent to the file specified in the
+    #:@                 __ErrorOutFile class variable
+    #:@return           will either fail or if successful, does not return to program
+    #:
+    method AbortIfDebug(param[])
+        if \self.__DebugMode then {
+            StopMessage ! param
+        }
+    end
+
+    #MD:
+    #: AbortMessage(errorcode, param[]) - all objects and classes that inherit
+    #: from this class have a method that will cause a runtime abort with the
+    #: supplied errorcode and appropriate message in the similar way to the unicon
+    #: runtime error aborts. If &error is non-zero, this will tranform the aborts
+    #: to a failure response and decrement &error.
+    #:
+    #:@param param      list of strings to be sent to the file specified in the
+    #:@                 __ErrorOutFile class variable
+    #:
+    method AbortMessage(errorcode, file, lineno, param[])
+        #
+        # If no file has been defined to take the error or other messages, we will
+        # use the standard &errout file.
+        #
+        /(self.__ErrorOutFile) := &errout
+        #
+        # Since we will use the apply operator to call the relevant function
+        # with the supplied parameters. To do this, we need to prepend the
+        # defined error file to the list of parameters. We will also append an
+        # additional message for this particular to indicate that this procedure
+        # call was due to a critical error.
+        #
+        errorcode := integer(errorcode) | 100
+        ::push(param, ::runtime_error_message(errorcode) || " ")
+        ::push(param, "File " || file || "; Line " || lineno || "\n")
+        ::push(param, "\nRuntime error " || errorcode || "\n")
+        ::push(param, self.__ErrorOutFile)
+        if &error ~= 0 then {
+            &error -:= (&error >= 1) | 0
+            &errornumber := errorcode
+        } else {
+            ::stop ! param
+        }
+    end
+
+    #MD:
+    #: Caller(addedlvl) - returns the details of the procedure/method that has called
+    #: the procedure or method that has called this method. It has to search back through
+    #: the call stack to get the required information. By default, it will look at
+    #: the callstack three levels back. However, under a couple of usages for this
+    #: procedure, there is a requirement to look back 4 levels due to an extra level
+    #: of call that has taken place from the relevant procedure or method.
+    #:
+    #:@param addedlvl   level in call stack to return the procedure information
+    #:@return           the name of the procedure or method and its parameter names
+    #:
+    method Caller(addedlvl)
+        local   pc,                     #LV: temporary variable to hold the calling
+                                        #:   procedure name
+                cc,                     #LV: temporary variable to hold the calling
+                                        #:   class name
+                mc,                     #LV: temporary variable to hold the calling
+                                        #:   method name
+                parc,                   #LV: temporary variable to hold the parameter
+                                        #:   names for the calling procedure/class/method
+                lvl := 3,               #LV: default level from which to determine
+                                        #:   the results for the system function "proc"
+                tstr                    #LV: this is a temporary string used to collect
+                                        #:   the results returned from the various
+                                        #:   information procedures
+
+        #
+        # If there is no value assigned to the DebugPrint, we must turn off all
+        # debugging
+        #
+        /DebugPrint & Off()
+        #
+        # The level on the call stack that we want to actually get the details
+        # for is going to be dependent on how this method is called. We use the
+        # flag addedlvl to distinguish if we have an extra procedure call on the
+        # call stack prior to this method being called. If we do, it is necessary
+        # to add 1 the lvl variable (so using 4 instead of 3) to determine the
+        # correct procedure
+        #
+        \addedlvl & lvl +:= 1
+        #
+        # we cannot really use DebugPrint here as this will give rise to a
+        # recursive loop due to DebugPrint referencing the procedure trace
+        # which calls this procedure and would therefore call trace etc.
+        #
+        # So we call PrintMessage directly by testing if DebugPrint is of type "procedure"
+        #
+        #PrintMessage("method ErrorSystem.Caller(addedlvl): (lvl=", lvl, ")")
+
+        pc := ProcedureCalling(lvl)
+        cc := ClassCalling(lvl)
+        mc := MethodCalling(lvl)
+        parc := ParamCalling(lvl)
+        #
+        # the result will either be the name of the procedure or class/method and
+        # the associated parameter names
+        #
+        tstr := (("procedure " || \pc) | "method " || cc || "." || mc) || parc
+        #
+        # if debugging is On, then we want to see if we had to add to the call
+        # stack level and what was the actual calling procedure/method and
+        # associated parameters were. Otherwise this is a null operation
+        #
+        #PrintMessage("method ErrorSystem.Caller(addedlvl): (lvl=", lvl, "): (addedlvl = ", \addedlvl | "&null", "): tstr: ", tstr)
+        return tstr
+    end
+
+    #MD:
+    #: CallingComponents(name) - returns a 4 element list which has information
+    #: relating the procedure/method as it is returned from the runtime system
+    #:
+    #:@param name       this is the system name returned from the runtime system
+    #:@                 and holds information that indicates if it is just a procedure
+    #:@                 or is a method. One thing that has not yet been tested
+    #:@                 is how a package alters the name structure. this is yet
+    #:@                 to be investigated and may require a more complicated
+    #:@                 process to be written to handle this.
+    #:@returns          a three element list, the first element is related to
+    #:@                 procedures and the last two relate to class and method names
+    #:
+    method CallingComponents(name)
+        static  active_packages,        #SV: temporary to hold a list of active
+                                        #:   active packages that can be determined
+                                        #:   from the current globalnames
+                active_classes          #SV: temporary to hold a list of active
+                                        #:   available classes in this program.
+        local   nameproc,               #LV: temporary to hold the name of the
+                                        #:   procedure that has been called
+                nameclass,              #LV: temporary to hold the name of the
+                                        #:   class that is initiating the call
+                namemethod,             #LV: temporary to hold the name of the
+                                        #:   method that has been called
+                namepackage,            #LV: temporary to hold the name of the
+                                        #:   package that this belongs to.
+                i,                      #LV: position of searched sub-string
+                j,                      #LV: position of searched sub-string for
+                                        #:   package name if it exists
+                temp_global_name        #LV: temproary to hold each of the global
+                                        #:   names that are available in this program
+
+        initial {
+            #
+            # we make the active_classes a set value to hold only one value per
+            # class found.
+            #
+            active_classes := ::set([])
+            #
+            # this is based on the current implementation of classes within
+            # unicon. If this ever changes, this will have to be updated.
+            #
+            # so, under the current implementation, all classes will have a
+            # procedure defined <class name>_initially. We look for these
+            # procedures within the list of global names provided by the unicon
+            # function globalnames. Having found the class name, we insert this
+            # into a set.
+            #
+            every temp_global_name := ::globalnames(&main) do {
+                temp_global_name ? {
+                    if i := ::find("_initially") then {
+                        ::insert(active_classes, ::tab(i))
+                    }
+                }
+            }
+            #
+            # likewise, we make active_packages as set value into which we will
+            # put all the packages that we have so far found.
+            #
+            active_packages := ::set([])
+            #
+            # again this will based on the current implementation of packages within
+            # the unicon environment. To do this we will look at each of the
+            # classes that we have found and look for the string "__" within the
+            # class name. if we find this, we will assume that the value prior
+            # to this string will be the package name. This, of course, can be
+            # circumvented by "malicious" users who create class names that use
+            # "__" in the name and don't use packages.
+            #
+            # Note that in my implementation using the unicon classes, I do use
+            # "__" as the prefix of value classes. But this is done in such a way
+            # that does not, as far as I know, cause any issues with the methodology
+            # used here
+            #
+            every temp_global_name := !active_classes do {
+                ::insert(active_packages, temp_global_name[1:(::find("__", temp_global_name))])
+            }
+        }
+
+        #
+        # If there is no value assigned to the DebugPrint, we must turn off all
+        # debugging
+        #
+        /DebugPrint & Off()
+        #
+        #
+        #
+        name ? {
+            j := &null
+            j := ::match(!(active_packages))
+            if \j then {
+                (namepackage := ::tab(j)) & ::move(2)
+            }
+            i := &pos
+            ::tab(::many('_'))
+            j := &null
+            j := ::find("_")
+            if \j then {
+                ::tab(i)
+                nameclass := ::tab(j)
+                ::move(1)
+                namemethod := ::tab(0)
+            } else {
+                nameproc := name
+            }
+        }
+        #
+        # if debugging is on, then we want to see displayed, the name supplied
+        # and the breakdown form that name of the various information that we
+        # can determine. Otherwise, this is a null operation
+        #
+        DebugPrint(
+            "(",
+            name,
+            "): [",
+            \nameproc | "none",
+            \nameclass | "none",
+            \namemethod | "none",
+            \namepackage | "none",
+            "]")
+        return [nameproc, nameclass, namemethod, namepackage]
+    end
+
+    #MD:
+    #: ClassCalling(level) - if the calling object is a class method, then
+    #: it will find the name of the class and return it.Since this procedure
+    #: can be called in a variety of ways, it is necessary to be able to specify
+    #: at what level in the call stack, we are seeking information. If no level
+    #: is specified then it is assumed that the information is for the procedure that
+    #: has directly called this method.
+    #:
+    #:@param level      the level in the call stack which will be used to find the
+    #:@                 method value (if a method) required
+    #:@return           name of class value found
+    #:
+    method ClassCalling(level)
+
+        /level := 1                     # if no level is specified, then the information
+                                        # is for the caller of this method
+        return __proc_components(level + 1, 2)
+    end
+
+    #MD:
+    method Debug(mode)
+        __DebugMode := mode
+        return self
+    end
+
+    #MD:
+    #: DebugMode() - if the local class variable __DebugMode is set the return
+    #: the value, otherwise fail
+    #:
+    #:@return           the current __DebugMode value if not null
+    #:@                 fails if null
+    #:
+    method DebugMode()
+        return .\__DebugMode
+    end
+
+    #MD:
+    #: ErrorOut(errorfile, writeappend) - this procedure allows us to specify
+    #: where we want the error/debugging output to go to. By default it will
+    #: be directed to &errout and with overwrite (w). However, we can choose
+    #: another file and we can also choose to append to that file.
+    #:
+    #:
+    method ErrorOut(errorfile, writeappend)
+        /errorfile := &errout
+        #
+        # we will close any previously open file if it has been set
+        #
+        close(\__ErrorOutFile)
+        #
+        # there are two types of value that will be valid for opening files
+        # the first is a string filename, which if it doesn't work, we will
+        # use &errout
+        # the second is an actual file, we will use that
+        # if the value is neither then we'll use &errout instead
+        #
+        if ::type(errorfile) == "string" then {
+            /writeappend := "w"
+            if ::type(writeappend) == "string" then {
+                __ErrorOutFile := ::open(errorfile, (("w" | "a") == writeappend) | "w")
+            } else {
+                __ErrorOutFile := ::open(errorfile, "w")
+            }
+        } else if ::type(errorfile) == "file" then {
+            __ErrorOutFile := errorfile
+        } else {
+            __ErrorOutFile := &errout
+        }
+        return self
+    end
+
+    #MD:
+    #: IsOn() - this tests if the global debugging state is on or off. If it is
+    #: active, it will run the method On(). If it is inactive, it will run the
+    #: method Off()
+    #:
+    #:@returns          returns the object itself
+    #:
+    method IsOn()
+        if \ErrorSystem::__trace_all then {
+            On()
+        } else {
+            Off()
+        }
+        return self
+    end
+
+    #MD:
+    #: MethodCalling(level) - if the calling object is a class method, then
+    #: it will find the name of the method and return it. Since this procedure
+    #: can be called in a variety of ways, it is necessary to be able to specify
+    #: at what level in the call stack, we are seeking information. If no level
+    #: is specified then it is assumed that the information is for the procedure that
+    #: has directly called this method.
+    #:
+    #:@param level      the level in the call stack which will be used to find the
+    #:@                 method value (if a method) required
+    #:@return           name of method value found
+    #:
+    method MethodCalling(level)
+
+        /level := 1                     # if no level is specified, then the information
+                                        # is for the caller of this method
+        return __proc_components(level + 1, 3)
+    end
+
+    #MD:
+    #: NotInDebugMode() - if the local class variable __DebugMode is not set the
+    #: return &null, otherwise fail
+    #:
+    #:@return           &null if __DebugMode === &null
+    #:@                 fails if not null
+    #:
+    method NotInDebugMode()
+        return ./__DebugMode
+    end
+
+    #MD:
+    #: Off() - this will turn off debugging associated with this object
+    #:
+    #:@returns          returns the object itself
+    #:
+    method Off()
+        __DebugMode := &null
+        #
+        # setting the value of DebugPrint to a numeric value (here we use the value
+        # 1) will ensure that the operation is effectively a null operation
+        #
+        self.DebugPrint := 1
+        return self
+    end
+
+    #MD:
+    #: On() - this will turn on debugging associated with this object
+    #:
+    #:@returns          returns the object itself
+    #:
+    method On()
+        __DebugMode := 1
+        self.DebugPrint := trace
+        /__ErrorOutFile := &errout
+        return self
+    end
+
+    #MD:
+    #: PackageCalling(level) - if the calling object is a class method, then
+    #: it will find the name of the class and return it.Since this procedure
+    #: can be called in a variety of ways, it is necessary to be able to specify
+    #: at what level in the call stack, we are seeking information. If no level
+    #: is specified then it is assumed that the information is for the procedure that
+    #: has directly called this method.
+    #:
+    #:@param level      the level in the call stack which will be used to find the
+    #:@                 method value (if a method) required
+    #:@return           name of class value found
+    #:
+    method PackageCalling(level)
+
+        /level := 1                     # if no level is specified, then the information
+                                        # is for the caller of this method
+        return __proc_components(level + 1, 4)
+    end
+
+    #MD:
+    #: ParamCalling(level) - this will give the name information available for
+    #: for each parameter of the praocedure/method specified  by the position in
+    #: the call stack
+    #:
+    #:@param level      the level in thecall stack which be used to find the
+    #:                  list of parameters for the procedure/method
+    #:@return           a formatted string of the parameter names
+    #:
+    method ParamCalling(level)
+        local   name                    #LV: a formatted string of the parameter names
+
+        #
+        # If there is no value assigned to the DebugPrint, we must turn off all
+        # debugging
+        #
+        /DebugPrint & Off()
+        /level := 1
+        #
+        # we will create a string that represents the parameters for the specific
+        # call stack. Methods are different to a procedure in that the first
+        # parameter is not shown in the method definition. This parameter is called
+        # "self". We will remove this specific parameter from the display.
+        #
+        name := "("
+        every name ||:= ::paramnames((::proc(&current, level))) || ","
+        name[-1] := (name[-1] == "," & "")
+        name[2:7] := (name[2:7] == "self," & "")
+        name ||:= ")"
+        #
+        # if debugging is On, display the name value. Otherwise, it is a null
+        # operation
+        #
+        DebugPrint("(", level, "): ", name)
+        return name
+    end
+
+    #MD:
+    #: PrintMessage(param[]) - all objects and classes that inherit from this class
+    #: have a method that will print the messages supplied and then return the object
+    #:
+    #:@param param      list of strings to be sent to the file specified in the
+    #:@                 __ErrorOutFile class variable
+    #:@return           the object that has called ths method
+    #:
+    method PrintMessage(param[])
+        #
+        # If no file has been defined to take the error or other messages, we will
+        # use the standard &errout file.
+        #
+        /(self.__ErrorOutFile) := &errout
+        #
+        # Since we will use the apply operator to call the relevant function
+        # with the supplied parameters. To do this, we need to prepend the
+        # defined error file to the list of parameters.
+        #
+        ::push(param, __ErrorOutFile)
+        ::write ! param
+        #&trace := -1
+        return self
+    end
+
+    #MD:
+    #: ProcedureCalling(level) - if the calling object is a procedure value, then
+    #: it will find the name of the procedure and return it. Since this procedure
+    #: can be called in a variety of ways, it is necessary to be able to specify
+    #: at what level in the call stack, we are seeking information. If no level
+    #: is specified then it is assumed that the information is for the procedure that
+    #: has directly called this method.
+    #:
+    #:@param level      the level in the call stack which will be used to find the
+    #:@                 procedure value (if a procedure) required
+    #:@return           name of procedure value found
+    #:
+    method ProcedureCalling(level)
+
+        /level := 1                     # if no level is specified, then the information
+                                        # is for the caller of this method
+        return __proc_components(level + 1, 1)
+    end
+
+    #MD:
+    #: StopMessage(param[]) - all objects and classes that inherit from this class
+    #: have a method that will cause a runtime abort with and appropriate message
+    #:
+    #:@param param      list of strings to be sent to the file specified in the
+    #:@                 __ErrorOutFile class variable
+    #:
+    method StopMessage(param[])
+        #
+        # If no file has been defined to take the error or other messages, we will
+        # use the standard &errout file.
+        #
+        /(self.__ErrorOutFile) := &errout
+        #
+        # Since we will use the apply operator to call the relevant function
+        # with the supplied parameters. To do this, we need to prepend the
+        # defined error file to the list of parameters. We will also append an
+        # additional message for this particular to indicate that this procedure
+        # call was due to a critical error.
+        #
+        ::push(param, self.__ErrorOutFile)
+        ::put(param, "Critical Error Found.")
+        ::stop ! param
+    end
+
+#MD:
+#:
+initially(errorfile, writeappend)
+    ErrorOut(errorfile, writeappend)
+    Off()
+    ErrorSystem::ErrorSystem := self
+end
+
+#PD:
+#: AllOff() - this will turn off debugging associated with this object
+#:
+#:@returns          returns the object itself
+#:
+procedure AllOff()
+    ErrorSystem::__trace_all := &null
+end
+
+#MD:
+#: AllOn() - this will turn on debugging associated with this object
+#:
+#:@returns          returns the object itself
+#:
+procedure AllOn()
+    ErrorSystem::__trace_all := 1
+end
+
+#PD:
+#: trace(message[]) - this procedure takes one or more string values and prepends
+#: the calling procedure name to the list of values and then prints them out
+#: using the ErrorSystem method PrintMessage
+#:
+#:@param message        a list of strings that are to be printed
+#:@returns              will always fail
+#:
+procedure trace(message[])
+    local   lst                         #LV:
+
+    #&trace := 0
+    lst := [ErrorSystem::ErrorSystem.Caller(), ": "]
+    every ::put(lst, message[1 to *message], " ")
+    return ErrorSystem::ErrorSystem.PrintMessage ! lst
+end

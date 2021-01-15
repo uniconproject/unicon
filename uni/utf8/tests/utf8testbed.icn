@@ -1,0 +1,1886 @@
+procedure main()
+    local s1 := "abcde", s2 := "Необычная активность", s3 := "극지탐험　협회결성　체계적　연구"
+    local s10 := "abc\tde", us10, s11 := "Нео\tбычн\tая", us11
+    local s4 := "\xef\xbb\xbf", s5, s6, us6
+    local i, j, k ,l
+    local us1, us2, us3, us4, us5
+    local uset1, uset2, uset3
+
+    #
+    # Initialise the UTF-8 classes
+    #
+    write("Initialise UTF8 and UTF8Set class objects")
+    Header()
+    UTF8()
+    DisplayLine("UTF8()", image(UTF8))
+    UTF8Set()
+    DisplayLine("UTF8Set()", image(UTF8Set))
+    Footer()
+    #
+    # Create the three UTF-8 objects
+    #
+    write("\n\nCreate the five UTF-8 objects")
+    write("Create us1 based on string s1:", s1, "\nximage(s1):", ximage(s1))
+    us1 := UTF8.New(s1)
+    Header()
+    DisplayLine("us1 := UTF8.New(s1)", image(us1))
+    DisplayLine("us1.String()", us1.String())
+    Footer()
+    write("Create us2 based on string s2:", s2, "\nximage(s2):", ximage(s2))
+    us2 := UTF8.New(s2)
+    Header()
+    DisplayLine("us2 := UTF8.New(s2)", image(us2))
+    DisplayLine("us2.String()", us2.String())
+    Footer()
+    write("Create us3 based on string s3:", s3, "\nximage(s3):", ximage(s3))
+    us3 := UTF8.New(s3)
+    Header()
+    DisplayLine("us3 := UTF8.New(s3)", image(us3))
+    DisplayLine("us3.String()", us3.String())
+    Footer()
+    write("Create us10 based on string s10:", s10, "\nximage(s10):", ximage(s10))
+    us10 := UTF8.New(s10)
+    Header()
+    DisplayLine("us10 := UTF8.New(s10)", image(us10))
+    DisplayLine("us10.String()", us10.String())
+    Footer()
+    write("Create us11 based on string s11:", s11, "\nximage(s11):", ximage(s11))
+    us11 := UTF8.New(s11)
+    Header()
+    DisplayLine("us11 := UTF8.New(s11)", image(us11))
+    DisplayLine("us11.String()", us11.String())
+    Footer()
+
+    #s5 := UTF8.SkipBOM(s4 || us1.String())
+
+    #
+    # Display the data contained in each of the strings
+    #
+    write("\n\nDisplay the data contained in each of the strings")
+    write("\nData Display Test 1")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("ximage(us1.String())", ximage(us1.String()))
+    Footer()
+
+    write("\nData Display Test 2")
+    Header()
+    DisplayLine("s2", s2)
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("ximage(us2.String())", ximage(us2.String()))
+    Footer()
+
+    write("\nData Display Test 3")
+    Header()
+    DisplayLine("s3", s3)
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("ximage(us3.String())", ximage(us3.String()))
+    Footer()
+
+    write("\nData Display Test 4")
+    Header()
+    DisplayLine("s10", s10)
+    DisplayLine("us10.String():", us10.String())
+    DisplayLine("ximage(us10.String())", ximage(us10.String()))
+    Footer()
+
+    write("\nData Display Test 5")
+    Header()
+    DisplayLine("s11", s11)
+    DisplayLine("us11.String():", us11.String())
+    DisplayLine("ximage(us11.String())", ximage(us11.String()))
+    Footer()
+
+    #
+    # Test the relational operators
+    #
+    write("\n\nTest the relational operators")
+    write("\nRelational Test 1 - LexEquals - ==")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.LexEquals(us1, s1)", (UTF8.LexEquals(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexEquals(us1, s2)", (UTF8.LexEquals(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexEquals(us1, us2)", (UTF8.LexEquals(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexEquals(s1, us1)", (UTF8.LexEquals(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexEquals(s1, s2)", (UTF8.LexEquals(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexEquals(s1, us2)", (UTF8.LexEquals(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexEquals(us2, us1)", (UTF8.LexEquals(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexEquals(s1)", (us1.LexEquals(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexEquals(s2)", (us1.LexEquals(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexEquals(us2)", (us1.LexEquals(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 == s1", (us1 == s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 == s2", (us1 == s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 == us2", (us1 == us2 & "Succeeded") | "Failed")
+    Footer()
+
+    write("\nRelational Test 2 - LexGTorEq - >>=")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.LexGTorEq(us1, s1)", (UTF8.LexGTorEq(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGTorEq(us1, s2)", (UTF8.LexGTorEq(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGTorEq(us1, us2)", (UTF8.LexGTorEq(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGTorEq(s1, us1)", (UTF8.LexGTorEq(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGTorEq(s1, s2)", (UTF8.LexGTorEq(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGTorEq(s1, us2)", (UTF8.LexGTorEq(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGTorEq(us2, us1)", (UTF8.LexGTorEq(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexGTorEq(s1)", (us1.LexGTorEq(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexGTorEq(s2)", (us1.LexGTorEq(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexGTorEq(us2)", (us1.LexGTorEq(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 >>= s1", (us1 >>= s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 >>= s2", (us1 >>= s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 >>= us2", (us1 >>= us2 & "Succeeded") | "Failed")
+    Footer()
+
+    write("\nRelational Test 3 - LexGT     - >>")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.LexGT(us1, s1)", (UTF8.LexGT(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGT(us1, s2)", (UTF8.LexGT(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGT(us1, us2)", (UTF8.LexGT(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGT(s1, us1)", (UTF8.LexGT(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGT(s1, s2)", (UTF8.LexGT(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGT(s1, us2)", (UTF8.LexGT(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexGT(us2, us1)", (UTF8.LexGT(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexGT(s1)", (us1.LexGT(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexGT(s2)", (us1.LexGT(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexGT(us2)", (us1.LexGT(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 >> s1", (us1 >> s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 >> s2", (us1 >> s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 >> us2", (us1 >> us2 & "Succeeded") | "Failed")
+    Footer()
+
+    write("\nRelational Test 4 - LexLTorEq - <<=")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.LexLTorEq(us1, s1)", (UTF8.LexLTorEq(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLTorEq(us1, s2)", (UTF8.LexLTorEq(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLTorEq(us1, us2)", (UTF8.LexLTorEq(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLTorEq(s1, us1)", (UTF8.LexLTorEq(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLTorEq(s1, s2)", (UTF8.LexLTorEq(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLTorEq(s1, us2)", (UTF8.LexLTorEq(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLTorEq(us2, us1)", (UTF8.LexLTorEq(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexLTorEq(s1)", (us1.LexLTorEq(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexLTorEq(s2)", (us1.LexLTorEq(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexLTorEq(us2)", (us1.LexLTorEq(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 <<= s1", (us1 <<= s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 <<= s2", (us1 <<= s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 <<= us2", (us1 <<= us2 & "Succeeded") | "Failed")
+    Footer()
+
+    write("\nRelational Test 5 - LexLT     - <<")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.LexLT(us1, s1)", (UTF8.LexLT(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLT(us1, s2)", (UTF8.LexLT(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLT(us1, us2)", (UTF8.LexLT(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLT(s1, us1)", (UTF8.LexLT(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLT(s1, s2)", (UTF8.LexLT(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLT(s1, us2)", (UTF8.LexLT(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexLT(us2, us1)", (UTF8.LexLT(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexLT(s1)", (us1.LexLT(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexLT(s2)", (us1.LexLT(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexLT(us2)", (us1.LexLT(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 << s1", (us1 << s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 << s2", (us1 << s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 << us2", (us1 << us2 & "Succeeded") | "Failed")
+    Footer()
+
+    write("\nRelational Test 6 - LexNE     - ~==")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.LexNE(us1, s1)", (UTF8.LexNE(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexNE(us1, s2)", (UTF8.LexNE(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexNE(us1, us2)", (UTF8.LexNE(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexNE(s1, us1)", (UTF8.LexNE(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexNE(s1, s2)", (UTF8.LexNE(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexNE(s1, us2)", (UTF8.LexNE(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.LexNE(us2, us1)", (UTF8.LexNE(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexNE(s1)", (us1.LexNE(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexNE(s2)", (us1.LexNE(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.LexNE(us2)", (us1.LexNE(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 ~== s1", (us1 ~== s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 ~== s2", (us1 ~== s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 ~== us2", (us1 ~== us2 & "Succeeded") | "Failed")
+    Footer()
+
+    write("\nRelational Test 7 - Equiv     - ===")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Equiv(us1, s1)", (UTF8.Equiv(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Equiv(us1, s2)", (UTF8.Equiv(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Equiv(us1, us2)", (UTF8.Equiv(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Equiv(s1, us1)", (UTF8.Equiv(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Equiv(s1, s2)", (UTF8.Equiv(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Equiv(s1, us2)", (UTF8.Equiv(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Equiv(us2, us1)", (UTF8.Equiv(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.Equiv(s1)", (us1.Equiv(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.Equiv(s2)", (us1.Equiv(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.Equiv(us2)", (us1.Equiv(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 === s1", (us1 === s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 === s2", (us1 === s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 === us2", (us1 === us2 & "Succeeded") | "Failed")
+    Footer()
+
+    write("\nRelational Test 8 - Nequiv    - ~===")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Nequiv(us1, s1)", (UTF8.Nequiv(us1, s1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Nequiv(us1, s2)", (UTF8.Nequiv(us1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Nequiv(us1, us2)", (UTF8.Nequiv(us1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Nequiv(s1, us1)", (UTF8.Nequiv(s1, us1) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Nequiv(s1, s2)", (UTF8.Nequiv(s1, s2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Nequiv(s1, us2)", (UTF8.Nequiv(s1, us2) & "Succeeded") | "Failed")
+    DisplayLine("UTF8.Nequiv(us2, us1)", (UTF8.Nequiv(us2, us1) & "Succeeded") | "Failed")
+    DisplayLine("us1.Nequiv(s1)", (us1.Nequiv(s1) & "Succeeded") | "Failed")
+    DisplayLine("us1.Nequiv(s2)", (us1.Nequiv(s2) & "Succeeded") | "Failed")
+    DisplayLine("us1.Nequiv(us2)", (us1.Nequiv(us2) & "Succeeded") | "Failed")
+    DisplayLine("us1 ~=== s1", (us1 ~=== s1 & "Succeeded") | "Failed")
+    DisplayLine("us1 ~=== s2", (us1 ~=== s2 & "Succeeded") | "Failed")
+    DisplayLine("us1 ~=== us2", (us1 ~=== us2 & "Succeeded") | "Failed")
+    Footer()
+
+    #
+    # Test if Byte Order Mark is found at start of UTF-8 string
+    #
+    write("\n\nTest if Byte Order Mark is found at start of UTF-8 string")
+    write("\nBOM Test 1 : Should be Failed.")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("ximage(UTF8.BOMFound(us1))", ximage(UTF8.BOMFound(us1)) | "Failed")
+    Footer()
+
+    write("\nBOM Test 2 : Should be \\xef\\xbb\\xbf.")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("ximage(s4)", ximage(s4))
+    DisplayLine("ximage(UTF8.BOMFound(s4 || us1.String()))", ximage(UTF8.BOMFound(s4 || us1.String()).String()) | "Failed")
+    Footer()
+
+    #
+    # test sizes of raw data and of UTF-8 codepoints
+    #
+    write("\n\ntest sizes of raw data and of UTF-8 codepoints")
+    write("\nSize Test 1")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("*us1.String()", *us1.String())
+    DisplayLine("*us1", *us1)
+    DisplayLine("UTF8.Size(us1)", UTF8.Size(us1))
+    DisplayLine("us1.Size()", us1.Size())
+    Footer()
+
+    write("\nSize Test 2")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("*us2.String()", *us2.String())
+    DisplayLine("*us2", *us2)
+    DisplayLine("UTF8.Size(us2)", UTF8.Size(us2))
+    DisplayLine("us2.Size()", us2.Size())
+    Footer()
+
+    write("\nSize Test 3")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("*us3.String()", *us3.String())
+    DisplayLine("*us3", *us3)
+    DisplayLine("UTF8.Size(us3)", UTF8.Size(us3))
+    DisplayLine("us3.Size()", us3.Size())
+    Footer()
+
+    #
+    # Test if UTF-8 strings are valid
+    #
+    write("\n\nTest if UTF-8 strings are valid")
+    write("\nData Validity Test 1")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("ximage(us1.String())", ximage(us1.String()))
+    DisplayLine("UTF8.Valid(us1)", UTF8.Valid(us1) | "Failed")
+    Footer()
+
+    write("\nData Validity Test 2")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("ximage(us2.String())", ximage(us2.String()))
+    DisplayLine("UTF8.Valid(us2)", UTF8.Valid(us2) | "Failed")
+    Footer()
+
+    write("\nData Validity Test 3")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("ximage(us3.String())", ximage(us3.String()))
+    DisplayLine("UTF8.Valid(us3)", UTF8.Valid(us3) | "Failed")
+    Footer()
+
+    write("\nData Validity Test 4")
+    Header()
+    DisplayLine("ximage(s4[2:0] || us1.String())", ximage(s4[2:0] || us1.String()))
+    DisplayLine("UTF8.Valid(s4[2:0] || us1.String())", ximage(UTF8.Valid(s4[2:0] || us1.String())) | "Failed")
+    Footer()
+
+    #
+    # Obtain subsection of the UTF-8 string, returns a UTF8 object
+    #
+    write("\n\nObtain subsection of the UTF-8 string, returns a unicon string")
+    write("\nSubsection Test 1 should be \"a\"")
+    Header()
+    DisplayLine("UTF8.Subsection(us1,1,2)", UTF8.Subsection(us1,1,2).String())
+    DisplayLine("UTF8.Subscript(us1,1)", UTF8.Subscript(us1,1).String())
+    Footer()
+
+    write("\nSubsection Test 2 should be \"Н\"")
+    Header()
+    DisplayLine("UTF8.Subsection(us2,1,2)", UTF8.Subsection(us2,1,2).String())
+    DisplayLine("UTF8.Subscript(us2,1)", UTF8.Subscript(us2,1).String())
+    Footer()
+
+    write("\nSubsection Test 3 should be \"극\"")
+    Header()
+    DisplayLine("UTF8.Subsection(us3,1,2)", UTF8.Subsection(us3,1,2).String())
+    DisplayLine("UTF8.Subscript(us3,1)", UTF8.Subscript(us3,1).String())
+    Footer()
+
+    write("\nSubsection Test 4 should be \"bcd\"")
+    Header()
+    DisplayLine("UTF8.Subsection(us1,2,5)", UTF8.Subsection(us1,2,5).String())
+    Footer()
+
+    write("\nSubsection Test 5 should be \"бычная акти\"")
+    Header()
+    DisplayLine("UTF8.Subsection(us2,4,15)", UTF8.Subsection(us2,4,15).String())
+    Footer()
+
+    write("\nSubsection Test 6 should be \"결성　체\"")
+    Header()
+    DisplayLine("UTF8.Subsection(us3,8,12)", UTF8.Subsection(us3,8,12).String())
+    Footer()
+
+    write("\nSubsection Test 7 should be \"bcd\"")
+    Header()
+    DisplayLine("us1.Subsection(2,5)", us1.Subsection(2,5).String())
+    DisplayLine("us1[2:5].String()", us1[2:5].String())
+    Footer()
+
+    write("\nSubsection Test 8 should be \"бычная акти\"")
+    Header()
+    DisplayLine("us2.Subsection(4,15)", us2.Subsection(4,15).String())
+    DisplayLine("us2[4:15].String()", us2[4:15].String())
+    Footer()
+
+    write("\nSubsection Test 9 should be \"결성　체\"")
+    Header()
+    DisplayLine("us3.Subsection(8,12)", us3.Subsection(8,12).String())
+    DisplayLine("us3[8:12].String()", us3[8:12].String())
+    Footer()
+
+    #
+    # Check if selected UTF-8 codepoint is multibyte or not
+    #
+    write("\n\nCheck if selected UTF-8 codepoint is multibyte or not")
+    write("\nMultibyte Test 1 should be Failed")
+    Header()
+    DisplayLine("UTF8.Multibyte(UTF8.Subscript(us1,1)).String()", UTF8.Multibyte(UTF8.Subscript(us1,1)).String() | "Failed")
+    DisplayLine("UTF8.Multibyte(us1.Subscript(1)).String()", UTF8.Multibyte(us1.Subscript(1)).String() | "Failed")
+    Footer()
+
+    write("\nMultibyte Test 2 should be \"Н\"")
+    Header()
+    DisplayLine("UTF8.Multibyte(UTF8.Subscript(us2,1)).String()", UTF8.Multibyte(UTF8.Subscript(us2,1)).String() | "Failed")
+    DisplayLine("UTF8.Multibyte(us2.Subscript(1)).String()", UTF8.Multibyte(us2.Subscript(1)).String() | "Failed")
+    Footer()
+
+    write("\nMultibyte Test 3 should be \"극\"")
+    Header()
+    DisplayLine("UTF8.Multibyte(UTF8.Subscript(us3,1)).String()", UTF8.Multibyte(UTF8.Subscript(us3,1)).String() | "Failed")
+    DisplayLine("UTF8.Multibyte(us3.Subscript(1)).String()", UTF8.Multibyte(us3.Subscript(1)).String() | "Failed")
+    Footer()
+
+    write("\nMultibyte Test 4 should be Failed")
+    Header()
+    DisplayLine("UTF8.Multibyte(UTF8.Subscript(us1,4)).String()", UTF8.Multibyte(UTF8.Subscript(us1,4)).String() | "Failed")
+    DisplayLine("UTF8.Multibyte(us1.Subscript(4)).String()", UTF8.Multibyte(us1.Subscript(4)).String() | "Failed")
+    Footer()
+
+    write("\nMultibyte Test 5 should be \"б\"")
+    Header()
+    DisplayLine("UTF8.Multibyte(UTF8.Subscript(us2,4)).String()", UTF8.Multibyte(UTF8.Subscript(us2,4)).String() | "Failed")
+    DisplayLine("UTF8.Multibyte(us2.Subscript(4)).String()", UTF8.Multibyte(us2.Subscript(4)).String() | "Failed")
+    Footer()
+
+    write("\nMultibyte Test 6 should be \"험\"")
+    Header()
+    DisplayLine("UTF8.Multibyte(UTF8.Subscript(us3,4)).String()", UTF8.Multibyte(UTF8.Subscript(us3,4)).String() | "Failed")
+    DisplayLine("UTF8.Multibyte(us3.Subscript(4)).String()", UTF8.Multibyte(us3.Subscript(4)).String() | "Failed")
+    Footer()
+
+    #
+    # Extract each codepoint from the UTF-8 string
+    #
+    write("\n\nExtract each codepoint from the UTF-8 string")
+    write("\nForEach Test 1")
+    write("Extract each codepoint from us1 using UTF8.ForEach(us1) - ", us1.String())
+    Header()
+    DisplayLine("image(s6 := UTF8.New(\"\"))", image(s6 := UTF8.New("")))
+    DisplayLine("every s5 := UTF8.ForEach(us1) do {")
+    i := 0
+    every s5 := UTF8.ForEach(us1) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    s5.String()", s5.String())
+        DisplayLine("    (s6 ||:= s5).String()", (s6 ||:= s5).String())
+    }
+    DisplayLine("}")
+    DisplayLine("s6.String() === us1.String()", (s6.String() === us1.String() & " matches with original") | " fails to match original")
+    Footer()
+
+    write("\nForEach Test 2")
+    write("Extract each codepoint from us2 using UTF8.ForEach(us2) - ", us2.String())
+    Header()
+    DisplayLine("image(s6 := UTF8.New(\"\"))", image(s6 := UTF8.New("")))
+    DisplayLine("every s5 := UTF8.ForEach(us2) do {")
+    i := 0
+    every s5 := UTF8.ForEach(us2) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    s5.String()", s5.String())
+        DisplayLine("    (s6 ||:= s5).String()", (s6 ||:= s5).String())
+    }
+    DisplayLine("}")
+    DisplayLine("s6.String() === us2.String()", (s6.String() === us2.String() & " matches with original") | " fails to match original")
+    Footer()
+
+    write("\nForEach Test 3")
+    write("Extract each codepoint from us3 using UTF8.ForEach(us3) - ", us3.String())
+    Header()
+    DisplayLine("image(s6 := UTF8.New(\"\"))", image(s6 := UTF8.New("")))
+    DisplayLine("every s5 := UTF8.ForEach(us3) do {")
+    i := 0
+    every s5 := UTF8.ForEach(us3) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    s5.String()", s5.String())
+        DisplayLine("    (s6 ||:= s5).String()", (s6 ||:= s5).String())
+    }
+    DisplayLine("}")
+    DisplayLine("s6.String() === us3.String()", (s6.String() === us3.String() & " matches with original") | " fails to match original")
+    Footer()
+
+    write("\nForEach Test 4")
+    write("Extract each codepoint from us1 using us1.ForEach() - ", us1.String())
+    Header()
+
+    DisplayLine("image(s6 := UTF8.New(\"\"))", image(s6 := UTF8.New("")))
+    DisplayLine("every s5 := UTF8.ForEach(us1) do {")
+    i := 0
+    every s5 := us1.ForEach() do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    s5.String()", s5.String())
+        DisplayLine("    (s6 ||:= s5).String()", (s6 ||:= s5).String())
+    }
+    DisplayLine("}")
+    DisplayLine("s6.String() === us1.String()", (s6.String() === us1.String() & " matches with original") | " fails to match original")
+    Footer()
+
+    write("\nForEach Test 5")
+    write("Extract each codepoint from us2 using us2.ForEach() - ", us2.String())
+    Header()
+    DisplayLine("image(s6 := UTF8.New(\"\"))", image(s6 := UTF8.New("")))
+    DisplayLine("every s5 := UTF8.ForEach(us2) do {")
+    i := 0
+    every s5 := us2.ForEach() do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    s5.String()", s5.String())
+        DisplayLine("    (s6 ||:= s5).String()", (s6 ||:= s5).String())
+    }
+    DisplayLine("}")
+    DisplayLine("s6.String() === us2.String()", (s6.String() === us2.String() & " matches with original") | " fails to match original")
+    Footer()
+
+    write("\nForEach Test 6")
+    write("Extract each codepoint from us3 using us3.ForEach() - ", us3.String())
+    Header()
+    DisplayLine("image(s6 := UTF8.New(\"\"))", image(s6 := UTF8.New("")))
+    DisplayLine("every s5 := UTF8.ForEach(us3) do {")
+    i := 0
+    every s5 := us3.ForEach() do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    s5.String()", s5.String())
+        DisplayLine("    (s6 ||:= s5).String()", (s6 ||:= s5).String())
+    }
+    DisplayLine("}")
+    DisplayLine("s6.String() === us3.String()", (s6.String() === us3.String() & " matches with original") | " fails to match original")
+    Footer()
+
+    #
+    # Convert UTF-8 codepoint to Unicode 32 string format
+    #
+    write("\n\nConvert UTF-8 codepoint to Unicode 32 string format")
+    write("\nUnicode 32 Test 1 should be U+0061")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us1[1].String()", us1[1].String())
+    DisplayLine("us1.ForEach().String()", us1.ForEach().String())
+    DisplayLine("UTF8.ToUnicode32(us1)", UTF8.ToUnicode32(us1))
+    DisplayLine("UTF8.ToUnicode32(us1[1])", UTF8.ToUnicode32(us1[1]))
+    DisplayLine("UTF8.ToUnicode32(us1.ForEach())", UTF8.ToUnicode32(us1.ForEach()))
+    Footer()
+
+    write("\nUnicode 32 Test 2 should be U+041D")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("us2[1].String()", us2[1].String())
+    DisplayLine("us2.ForEach().String()", us2.ForEach().String())
+    DisplayLine("UTF8.ToUnicode32(us2)", UTF8.ToUnicode32(us2))
+    DisplayLine("UTF8.ToUnicode32(us2[1])", UTF8.ToUnicode32(us2[1]))
+    DisplayLine("UTF8.ToUnicode32(us2.ForEach())", UTF8.ToUnicode32(us2.ForEach()))
+    Footer()
+
+    write("\nUnicode 32 Test 3 should be U+ADF9")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("us3[1].String()", us3[1].String())
+    DisplayLine("us3.ForEach().String()", us3.ForEach().String())
+    DisplayLine("UTF8.ToUnicode32(us3)", UTF8.ToUnicode32(us3))
+    DisplayLine("UTF8.ToUnicode32(us3[1])", UTF8.ToUnicode32(us3[1]))
+    DisplayLine("UTF8.ToUnicode32(us3.ForEach())", UTF8.ToUnicode32(us3.ForEach()))
+    Footer()
+
+    #
+    # Convert from Unicode 32 value to UTF-8 codepoint
+    #
+    write("\n\nConvert from Unicode 32 value to UTF-8 codepoint")
+    write("\nUnicode 32 value to UTF-8 Test 1")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us1[1].String()", us1[1].String())
+    DisplayLine("s5 := \"U+0061\"", s5 := "U+0061")
+    DisplayLine("UTF8.Unicode32To(s5).String()", UTF8.Unicode32To(s5).String())
+    Footer()
+
+    write("\nUnicode 32 value to UTF-8 Test 2")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("us2[1].String()", us2[1].String())
+    DisplayLine("s5 := \"U+041D\"", s5 := "U+041D")
+    DisplayLine("UTF8.Unicode32To(s5).String()", UTF8.Unicode32To(s5).String())
+    Footer()
+
+    write("\nUnicode 32 value to UTF-8 Test 3")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("us3[1].String()", us3[1].String())
+    DisplayLine("s5 := \"U+ADF9\"", s5 := "U+ADF9")
+    DisplayLine("UTF8.Unicode32To(s5).String()", UTF8.Unicode32To(s5).String())
+    Footer()
+
+    #
+    # Convert decimal number to UTF-8 codepoint
+    #
+    write("\n\nConvert decimal number to UTF-8 codepoint")
+    write("\nDecimal Number to UTF-8 Test 1 - ", "\xc2\x80")
+    Header()
+    DisplayLine("UTF8.DecimalTo(128).String()", UTF8.DecimalTo(128).String())
+    DisplayLine("UTF8.Char(128).String()", UTF8.Char(128).String())
+    DisplayLine("UTF8.New(\"" || "\xc2\x80" || "\").String()", UTF8.New("\xc2\x80").String())
+    Footer()
+
+    write("\nDecimal Number to UTF-8 Test 2 - ", "\xd0\x9d")
+    Header()
+    DisplayLine("UTF8.DecimalTo(1053).String()", UTF8.DecimalTo(1053).String())
+    DisplayLine("UTF8.Char(1053).String()", UTF8.Char(1053).String())
+    DisplayLine("UTF8.New(\"" || "\xd0\x9d" || "\").String()", UTF8.New("\xd0\x9d").String())
+    Footer()
+
+    write("\nDecimal Number to UTF-8 Test 3 - ", "\xea\xb7\xb9")
+    Header()
+    DisplayLine("UTF8.DecimalTo(44537).String()", UTF8.DecimalTo(44537).String())
+    DisplayLine("UTF8.Char(44537).String()", UTF8.Char(44537).String())
+    DisplayLine("UTF8.New(\"" || "\xea\xb7\xb9" || "\").String()", UTF8.New("\xea\xb7\xb9").String())
+    Footer()
+
+    DisplayLine("", )
+    #
+    # Convert Hex number to UTF-8 codepoint
+    #
+    write("\n\nConvert Hex number to UTF-8 codepoint")
+    write("\nHex to UTF-8 Test 1")
+    Header()
+    DisplayLine("hex(\"80\")", hex("80"))
+    DisplayLine("UTF8.DecimalTo(128).String()", UTF8.DecimalTo(128).String())
+    DisplayLine("UTF8.HexTo(\"80\").String()", UTF8.HexTo("80").String())
+    Footer()
+
+    write("\nHex to UTF-8 Test 2")
+    Header()
+    DisplayLine("hex(\"41d\")", hex("41d"))
+    DisplayLine("UTF8.DecimalTo(1053).String()", UTF8.DecimalTo(1053).String())
+    DisplayLine("UTF8.HexTo(\"41d\").String()", UTF8.HexTo("41d").String())
+    Footer()
+
+    write("\nHex to UTF-8 Test 3")
+    Header()
+    DisplayLine("hex(\"adf9\")", hex("adf9"))
+    DisplayLine("UTF8.DecimalTo(44537).String()", UTF8.DecimalTo(44537).String())
+    DisplayLine("UTF8.HexTo(\"adf9\").String()", UTF8.HexTo("adf9").String())
+    Footer()
+
+    #
+    # Concatenate two UTF-8 strings
+    #
+    write("\n\nConcatenate two UTF-8 strings")
+    write("\nConcatenate Test 1")
+    write("Concatenate 2 Unicon strings to create a new UTF8 object")
+    Header()
+    DisplayLine("", )
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("UTF8.Concatenate(s1, s2).String()", UTF8.Concatenate(s1, s2).String())
+    DisplayLine("UTF8.New(s1 || s2).String()", UTF8.New(s1 || s2).String())
+    Footer()
+
+    write("\nConcatenate Test 2")
+    write("Concatenate 2 UTF8 objects to create a new UTF8 object")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Concatenate(us1, us2).String()", UTF8.Concatenate(us1, us2).String())
+    DisplayLine("(us1 || us2).String()", (us1 || us2).String())
+    Footer()
+
+    write("\nConcatenate Test 3")
+    write("Concatenate an Unicon string with an UTF8 object to create a new UTF8 object")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("image(us2)", image(us2))
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Concatenate(s1, us2)", UTF8.Concatenate(s1, us2).String())
+    DisplayLine("s1 || us2", "Run-time error 103")
+    DisplayLine(, "string expected")
+    DisplayLine(, "offending value: " || image(us2))
+    Footer()
+
+    write("\nConcatenate Test 4")
+    write("Concatenate an Unicon number with an UTF-8 object to create a new UTF8 object")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Concatenate(10, us2)", UTF8.Concatenate(10, us2).String())
+    Footer()
+
+    write("\nConcatenate Test 5")
+    write("Concatenate 2 Unicon strings using the standard || operator")
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    DisplayLine("s1 || s2", s1 || s2)
+    Footer()
+
+    write("\nConcatenate Test 6")
+    write("Concatenate 2 UTF8 objects using operator overload for || operator")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("(us1 || us2).String()", (us1 || us2).String())
+    Footer()
+
+    write("\nConcatenate Test 7")
+    write("Concatenate an UTF8 object with an Unicon string using operator overload for || operator")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("s2", s2)
+    DisplayLine("(us1 || s2).String()", (us1 || s2).String())
+    Footer()
+
+    write("\nConcatenate Test 8")
+    write("Concatenate an Unicon string with an UTF8 object using the standard || operator")
+    write("This should give a runtime error and we convert to failure for this test")
+    Header()
+    DisplayLine("&error := -1", &error := -1)
+    DisplayLine("s1", s1)
+    DisplayLine("us2", image(us2))
+    DisplayLine("(s1 || us2).String()", (s1 || us2).String() | "Cannot concatenate a UTF-8 string to a Unicon string.")
+    DisplayLine("&error := 0", &error := 0)
+    Footer()
+
+    #
+    # Center the UTF-8 string in a field of 50 UTF-8 codepoints
+    #
+    write("\n\nCenter the UTF-8 string in a field of 50 UTF-8 codepoints")
+    write("\nCenter Test 1")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("UTF8.Center(us1, 50, \"극\").String()", UTF8.Center(us1, 50, "극").String())
+    Footer()
+
+    write("\nCenter Test 2")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Center(us2, 50, UTF8.New(\"극\")).String()", UTF8.Center(us2, 50, UTF8.New("극")).String())
+    Footer()
+
+    write("\nCenter Test 3")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("UTF8.Center(us3, 50, \"чная\").String()", UTF8.Center(us3, 50, "чная").String())
+    Footer()
+
+    write("\nCenter Test 4")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("UTF8.Center(us3, 50, UTF8.New(\"чная\")).String()", UTF8.Center(us3, 50, UTF8.New("чная")).String())
+    Footer()
+
+    #
+    # Test Detab
+    #
+    write("\n\nTest Detab")
+    write("\nDetab Test 1")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Detab(us2).String()", UTF8.Detab(us2).String())
+    Footer()
+
+    write("\nDetab Test 2")
+    Header()
+    DisplayLine("us10.String()", us10.String())
+    DisplayLine("UTF8.Detab(us10).String()", UTF8.Detab(us10).String())
+    Footer()
+
+    write("\nDetab Test 3")
+    Header()
+    DisplayLine("us11.String()", us11.String())
+    DisplayLine("UTF8.Detab(us11).String()", UTF8.Detab(us11).String())
+    Footer()
+
+    write("\nDetab Test 4")
+    Header()
+    DisplayLine("us11.String()", us11.String())
+    DisplayLine("UTF8.Detab(us11, 11, 25).String()", UTF8.Detab(us11, 11, 25).String())
+    Footer()
+
+    #
+    # Test Entab
+    #
+    write("\n\nTest Entab")
+    write("\nEntab Test 1")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("image(us6 := UTF8.Detab(us2))", image(us6 := UTF8.Detab(us2)))
+    DisplayLine("us6.String()", us6.String())
+    DisplayLine("image(us6 := UTF8.Entab(us6))", image(us6 := UTF8.Entab(us6)))
+    DisplayLine("us6.String()", us6.String())
+    Footer()
+
+    write("\nEntab Test 2")
+    Header()
+    DisplayLine("us10.String()", us10.String())
+    DisplayLine("image(us6 := UTF8.Detab(us10))", image(us6 := UTF8.Detab(us10)))
+    DisplayLine("us6.String()", us6.String())
+    DisplayLine("image(us6 := UTF8.Entab(us6))", image(us6 := UTF8.Entab(us6)))
+    DisplayLine("us6.String()", us6.String())
+    Footer()
+
+    write("\nEntab Test 3")
+    Header()
+    DisplayLine("us11.String()", us11.String())
+    DisplayLine("image(us6 := UTF8.Detab(us11))", image(us6 := UTF8.Detab(us11)))
+    DisplayLine("us6.String()", us6.String())
+    DisplayLine("image(us6 := UTF8.Entab(us6))", image(us6 := UTF8.Entab(us6)))
+    DisplayLine("us6.String()", us6.String())
+    DisplayLine("image(us6 := UTF8.Detab(us11, 11, 25))", image(us6 := UTF8.Detab(us11, 11, 25)))
+    DisplayLine("us6.String()", us6.String())
+    DisplayLine("image(us6 := UTF8.Entab(us6, 11, 25))", image(us6 := UTF8.Entab(us6, 11, 25)))
+    DisplayLine("us6.String()", us6.String())
+    Footer()
+
+    #
+    #
+    # Left the UTF-8 string in a field of 50/10 UTF-8 codepoints
+    #
+    write("\n\nLeft the UTF-8 string in a field of 50/10 UTF-8 codepoints")
+    write("\nLeft Test 1")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("UTF8.Left(us1, 50, \"극\").String()", UTF8.Left(us1, 50, "극").String())
+    DisplayLine("UTF8.Left(us1, 50, UTF8.New(\"극\")).String()", UTF8.Left(us1, 50, UTF8.New("극")).String())
+    Footer()
+
+    write("\nLeft Test 2")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Left(us2, 50, \"극\").String()", UTF8.Left(us2, 50, "극").String())
+    DisplayLine("UTF8.Left(us2, 50, UTF8.New(\"극\")).String()", UTF8.Left(us2, 50, UTF8.New("극")).String())
+    Footer()
+
+    write("\nLeft Test 3")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("UTF8.Left(us3, 50, \"чная\").String()", UTF8.Left(us3, 50, "чная").String())
+    DisplayLine("UTF8.Left(us3, 50, UTF8.New(\"чная\")).String()", UTF8.Left(us3, 50, UTF8.New("чная")).String())
+    Footer()
+
+    write("\nLeft Test 4")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("UTF8.Left(us1, 10, \"극\").String()", UTF8.Left(us1, 10, "극").String())
+    DisplayLine("UTF8.Left(us1, 10, UTF8.New(\"극\")).String()", UTF8.Left(us1, 10, UTF8.New("극")).String())
+    Footer()
+
+    write("\nLeft Test 5")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Left(us2, 10, \"극\").String()", UTF8.Left(us2, 10, "극").String())
+    DisplayLine("UTF8.Left(us2, 10, UTF8.New(\"극\")).String()", UTF8.Left(us2, 10, UTF8.New("극")).String())
+    Footer()
+
+    write("\nLeft Test 6")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("UTF8.Left(us3, 10, \"чная\").String()", UTF8.Left(us3, 10, "чная").String())
+    DisplayLine("UTF8.Left(us3, 10, UTF8.New(\"чная\")).String()", UTF8.Left(us3, 10, UTF8.New("чная")).String())
+    Footer()
+
+    #
+    # Get the Ord of the first UTF-8 character in the string
+    #
+    write("\n\nGet the Ord of the first UTF-8 character in the string")
+    write("\nOrd Test 1 should be 97")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us1[1].String()", us1[1].String())
+    DisplayLine("UTF8.Ord(us1[1])", UTF8.Ord(us1[1]))
+    Footer()
+
+    write("\nOrd Test 2 should be 1053")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("us2[1].String()", us2[1].String())
+    DisplayLine("UTF8.Ord(us2[1])", UTF8.Ord(us2[1]))
+    Footer()
+
+    write("\nOrd Test 3 should be 44537")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("us3[1].String()", us3[1].String())
+    DisplayLine("UTF8.Ord(us3[1])", UTF8.Ord(us3[1]))
+    Footer()
+
+    write("\nOrd Test  should be 04")
+    Header()
+    DisplayLine("image(s5 := \"\\x00\")", image(s5 := "\x00"))
+    DisplayLine("image(UTF8.New(s5).String())", image(UTF8.New(s5).String()))
+    DisplayLine("UTF8.Ord(s5):", UTF8.Ord(s5))
+    Footer()
+
+    #
+    # Repl the UTF-8 string a number of times
+    #
+    write("\n\nRepl the UTF-8 string a number of times")
+    write("\nRepl Test 1")
+    Header()
+    DisplayLine("UTF8.Repl(\"극\", 5).String():", UTF8.Repl("극", 5).String())
+    DisplayLine("UTF8.Repl(UTF8.New(\"극\"), 5).String():", UTF8.Repl(UTF8.New("극"), 5).String())
+    Footer()
+
+    write("\nRepl Test 2")
+    Header()
+    DisplayLine("UTF8.Repl(\"чная\", 6).String():", UTF8.Repl("чная", 6).String())
+    DisplayLine("UTF8.Repl(UTF8.New(\"чная\"), 6).String():", UTF8.Repl(UTF8.New("чная"), 6).String())
+    Footer()
+
+    write("\nRepl Test 3")
+    Header()
+    DisplayLine("UTF8.Repl(\"чн극극ая\", 4).String():", UTF8.Repl("чн극극ая", 4).String())
+    DisplayLine("UTF8.Repl(UTF8.New(\"чн극극ая\"), 4).String():", UTF8.Repl(UTF8.New("чн극극ая"), 4).String())
+    Footer()
+
+    #
+    # Reverse a UTF-8 string
+    #
+    write("\n\nReverse a UTF-8 string")
+    write("\nReverse Test 1")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("UTF8.Reverse(us1).String():", UTF8.Reverse(us1).String())
+    Footer()
+
+    write("\nReverse Test 2")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Reverse(us2).String():", UTF8.Reverse(us2).String())
+    Footer()
+
+    write("\nReverse Test 3")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("UTF8.Reverse(us3).String():", UTF8.Reverse(us3).String())
+    Footer()
+
+    #
+    # Right the UTF-8 string in a field of 50/10 UTF-8 codepoints
+    #
+    write("\n\nRight the UTF-8 string in a field of 50/10 UTF-8 codepoints")
+    write("\nRight Test 1")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("UTF8.Right(us1, 50, \"극\").String()", UTF8.Right(us1, 50, "극").String())
+    DisplayLine("UTF8.Right(us1, 50, UTF8.New(\"극\")).String()", UTF8.Right(us1, 50, UTF8.New("극")).String())
+    Footer()
+
+    write("\nRight Test 2")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Right(us2, 50, \"극\").String()", UTF8.Right(us2, 50, "극").String())
+    DisplayLine("UTF8.Right(us2, 50, UTF8.New(\"극\")).String()", UTF8.Right(us2, 50, UTF8.New("극")).String())
+    Footer()
+
+    write("\nRight Test 3")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("UTF8.Right(us3, 50, \"чная\").String()", UTF8.Right(us3, 50, "чная").String())
+    DisplayLine("UTF8.Right(us3, 50, UTF8.New(\"чная\")).String()", UTF8.Right(us3, 50, UTF8.New("чная")).String())
+    Footer()
+
+    write("\nRight Test 4")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("UTF8.Right(us1, 10, \"극\").String()", UTF8.Right(us1, 10, "극").String())
+    DisplayLine("UTF8.Right(us1, 10, UTF8.New(\"극\")).String()", UTF8.Right(us1, 10, UTF8.New("극")).String())
+    Footer()
+
+    write("\nRight Test 5")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("UTF8.Right(us2, 10, \"극\").String()", UTF8.Right(us2, 10, "극").String())
+    DisplayLine("UTF8.Right(us2, 10, UTF8.New(\"극\")).String()", UTF8.Right(us2, 10, UTF8.New("극")).String())
+    Footer()
+
+    write("\nRight Test 6")
+    Header()
+    DisplayLine("us3.String()", us3.String())
+    DisplayLine("UTF8.Right(us3, 10, \"чная\").String()", UTF8.Right(us3, 10, "чная").String())
+    DisplayLine("UTF8.Right(us3, 10, UTF8.New(\"чная\")).String()", UTF8.Right(us3, 10, UTF8.New("чная")).String())
+    Footer()
+
+    #
+    # UTF8Set Processing
+    #
+    write("\n\nUTF8Set Processing")
+    write("\nUTF8Set Test 1")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("*s1", *s1)
+    DisplayLine("UTF8.Size(s1)", UTF8.Size(s1))
+    DisplayLine("image(uset1 := UTF8Set.New(s1))", image(uset1 := UTF8Set.New(s1)))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= uset1.ForEach()", "")
+    every s5 ||:= uset1.ForEach()
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= UTF8Set.ForEach(uset1)", "")
+    every s5 ||:= UTF8Set.ForEach(uset1)
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    Footer()
+
+    write("\nUTF8Set Test 2")
+    Header()
+    DisplayLine("us1.String()", "\"" || us1.String() || "\"")
+    DisplayLine("*us1", *us1)
+    DisplayLine("UTF8.Size(us1)", UTF8.Size(us1))
+    DisplayLine("image(uset1 := UTF8Set.New(us1))", image(uset1 := UTF8Set.New(us1)))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("UTF8Set.Size(uset1)", UTF8Set.Size(uset1))
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= uset1.ForEach()", "")
+    every s5 ||:= uset1.ForEach()
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= UTF8Set.ForEach(uset1)", "")
+    every s5 ||:= UTF8Set.ForEach(uset1)
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    Footer()
+
+    write("\nUTF8Set Test 3")
+    Header()
+    DisplayLine("s2", "\"" || s2 || "\"")
+    DisplayLine("*s2", *s2)
+    DisplayLine("UTF8.Size(s2)", UTF8.Size(s2))
+    DisplayLine("image(uset2 := UTF8Set.New(s2))", image(uset2 := UTF8Set.New(s2)))
+    DisplayLine("uset2.String()", "\"" || uset2.String() || "\"")
+    DisplayLine("uset2.Size()", uset2.Size())
+    DisplayLine("UTF8Set.Size(uset2)", UTF8Set.Size(uset2))
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= uset2.ForEach()", "")
+    every s5 ||:= uset2.ForEach()
+    DisplayLine("s5.String()", "\"" || s5.String())
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= UTF8Set.ForEach(uset2)", "")
+    every s5 ||:= UTF8Set.ForEach(uset2)
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    Footer()
+
+    write("\nUTF8Set Test 4")
+    Header()
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("*s3", *s3)
+    DisplayLine("UTF8.Size(s3)", UTF8.Size(s3))
+    DisplayLine("image(uset3 := UTF8Set.New(s3))", image(uset3 := UTF8Set.New(s3)))
+    DisplayLine("uset3.String()", "\"" || uset3.String() || "\"")
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("UTF8Set.Size(uset3)", UTF8Set.Size(uset3))
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= uset3.ForEach()", "")
+    every s5 ||:= uset3.ForEach()
+    DisplayLine("s5.String()", "\"" || s5.String())
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= UTF8Set.ForEach(uset3)", "")
+    every s5 ||:= UTF8Set.ForEach(uset3)
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    Footer()
+
+    write("\nUTF8Set Test 5")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("s2", "\"" || s2 || "\"")
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("*(s1 || s2 || s3)", *(s1 || s2 || s3))
+    DisplayLine("UTF8.Size(s1 || s2 || s3)", UTF8.Size(s1 || s2 || s3))
+    DisplayLine("image(uset1 := UTF8Set.New(s1 || s2 || s3))", image(uset1 := UTF8Set.New(s1 || s2 || s3)))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("UTF8Set.Size(uset1)", UTF8Set.Size(uset1))
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= uset1.ForEach()", "")
+    every s5 ||:= uset1.ForEach()
+    DisplayLine("s5.String()", "\"" || s5.String())
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= UTF8Set.ForEach(uset1)", "")
+    every s5 ||:= UTF8Set.ForEach(uset1)
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    Footer()
+
+    write("\nUTF8Set Test 6")
+    Header()
+    DisplayLine("*\"\"", *"")
+    DisplayLine("image(uset1 := UTF8Set.New(\"\"))", image(uset1 := UTF8Set.New("")))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("UTF8Set.Size(uset1)", UTF8Set.Size(uset1))
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= uset1.ForEach()", "")
+    every s5 ||:= uset1.ForEach()
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every s5 ||:= UTF8Set.ForEach(uset1)", "")
+    every s5 ||:= UTF8Set.ForEach(uset1)
+    DisplayLine("s5.String()", "\"" || s5.String() || "\"")
+    Footer()
+
+    write("\nUTF8Set Test 7")
+    Header()
+    DisplayLine("image(uset1 := UTF8Set.New())", image(uset1 := UTF8Set.New()))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("UTF8Set.Size(uset1)", UTF8Set.Size(uset1))
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every (s5 ||:= uset1.ForEach()) \\ 300", "")
+    every (s5 ||:= uset1.ForEach()) \ 300
+    DisplayLine("s5.String()", image(s5.String()))
+    DisplayLine("s5.String()[2:0]", "\"" || s5.String()[2:0] || "\"")
+    s5 := UTF8.New("")
+    DisplayLine("s5 := UTF8.New(\"\")")
+    DisplayLine("every (s5 ||:= UTF8Set.ForEach(uset1)} \\ 300", "")
+    every (s5 ||:= UTF8Set.ForEach(uset1)) \ 300
+    DisplayLine("s5.String()", image(s5.String()))
+    DisplayLine("s5.String()[2:0]", "\"" || s5.String()[2:0] || "\"")
+    Footer()
+
+    #
+    # Membership of UTF8Set
+    #
+    write("\n\nMembership of UTF8Set")
+    write("\nMember Test 1")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("image(uset1 := UTF8Set.New(s1))", image(uset1 := UTF8Set.New(s1)))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("UTF8Set.Member(uset1, \"a\")", (UTF8Set.Member(uset1, "a") & "\"a\" Found") | "\"a\" Not Found")
+    DisplayLine("UTF8Set.Member(uset1, \"j\")", (UTF8Set.Member(uset1, "j") & "\"j\" Found") | "\"j\" Not Found")
+    Footer()
+
+    write("\nMember Test 2")
+    Header()
+    DisplayLine("s2", "\"" || s2 || "\"")
+    DisplayLine("image(uset2 := UTF8Set.New(s2))", image(uset2 := UTF8Set.New(s2)))
+    DisplayLine("uset2.String()", "\"" || uset2.String() || "\"")
+    DisplayLine("UTF8Set.Member(uset2, \"a\")", (UTF8Set.Member(uset2, "a") & "\"a\" Found") | "\"a\" Not Found")
+    DisplayLine("UTF8Set.Member(uset2, \"б\")", (UTF8Set.Member(uset2, "б") & "\"б\" Found") | "\"б\" Not Found")
+    Footer()
+
+    #
+    # get Size of UTF8Set
+    #
+    write("\n\nget Size of UTF8Set")
+    write("\nSize Test 1")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("s2", "\"" || s2 || "\"")
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("s3 || s2 || s1", "\"" || s3 || s2 || s1 || "\"")
+    DisplayLine("*(s3 || s2 || s1)", *(s3 || s2 || s1))
+    DisplayLine("UTF8.Size(s3 || s2 || s1)", UTF8.Size(s3 || s2 || s1))
+    DisplayLine("image(uset1 := UTF8Set.New(s3 || s2 || s1))", image(uset1 := UTF8Set.New(s3 || s2 || s1)))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("*uset1", *uset1)
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("UTF8Set.Size(uset1)", UTF8Set.Size(uset1))
+    Footer()
+
+    code_width := 60
+    write("\nSize Test 2")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("s2", "\"" || s2 || "\"")
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("s3 || s2 || s1", "\"" || s3 || s2 || s1 || "\"")
+    DisplayLine("*(s3 || s2 || s1)", *(s3 || s2 || s1))
+    DisplayLine("UTF8.Size(s3 || s2 || s1)", UTF8.Size(s3 || s2 || s1))
+    DisplayLine("image(uset1 := UTF8Set.New(s3 || s2 || s1).Complement())", image(uset1 := UTF8Set.New(s3 || s2 || s1).Complement()))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("*uset1", *uset1)
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("UTF8Set.Size(uset1)", UTF8Set.Size(uset1))
+    Footer()
+    code_width := &null
+
+    write("\nSize Test 3")
+    Header()
+    DisplayLine("&letters", "\"" || &letters || "\"")
+    DisplayLine("*&letters", *&letters)
+    DisplayLine("UTF8.Size(&letters)", UTF8.Size(&letters))
+    DisplayLine("image(uset1 := UTF8Set.New(&letters))", image(uset1 := UTF8Set.New(&letters)))
+    DisplayLine("uset1.String()", "\"" || uset1.String() || "\"")
+    DisplayLine("*uset1", *uset1)
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("UTF8Set.Size(uset1)", UTF8Set.Size(uset1))
+    Footer()
+
+    #
+    # Test Any(uset, string, i, j)
+    #
+    write("\n\nTest Any(uset, string, i, j)")
+    write("\nAny Test 1")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("&ascii", image(string(&ascii)))
+    DisplayLine("UTF8.Any(&ascii, s1)", UTF8.Any(&ascii, s1) | "Not Found")
+    Footer()
+
+    write("\nAny Test 2")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("&letters", "\"" || &letters || "\"")
+    DisplayLine("UTF8.Any(&letters, s1)", UTF8.Any(&letters, s1) | "Not Found")
+    Footer()
+
+    write("\nAny Test 3")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("&digits", "\"" || &digits || "\"")
+    DisplayLine("UTF8.Any(&digits, s1)", UTF8.Any(&digits, s1) | "Not Found")
+    Footer()
+
+    write("\nAny Test 4")
+    Header()
+    DisplayLine("us1.String()", "\"" || us1.String() || "\"")
+    DisplayLine("&ascii", image(string(&ascii)))
+    DisplayLine("UTF8.Any(&ascii, us1)", UTF8.Any(&ascii, us1) | "Not Found")
+    Footer()
+
+    write("\nAny Test 5")
+    Header()
+    DisplayLine("us1.String()", "\"" || us1.String() || "\"")
+    DisplayLine("&ascii", image(string(&ascii)))
+    DisplayLine("UTF8.Any(&letters, us1)", UTF8.Any(&letters, us1) | "Not Found")
+    Footer()
+
+    write("\nAny Test 6")
+    Header()
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("&digits", "\"" || &digits || "\"")
+    DisplayLine("UTF8.Any(&digits, us1)", UTF8.Any(&digits, us1) | "Not Found")
+    Footer()
+
+    write("\nAny Test 7")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("image(uset1 := UTF8Set.New(us2))", image(uset1 := UTF8Set.New(us2)))
+    DisplayLine("uset1.String()", uset1.String())
+    DisplayLine("us2.String() ? UTF8.Any(uset1)", us2.String() ? UTF8.Any(uset1))
+    Footer()
+
+    write("\nAny Test 8 using i = 3")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("&letters", "\"" || &letters || "\"")
+    DisplayLine("UTF8.Any(&letters, s1, 3)", UTF8.Any(&letters, s1, 3) | "Not Found")
+    Footer()
+
+    write("\nAny Test 9 using i = 6")
+    Header()
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("image(uset1 := UTF8Set.New(us2))", image(uset1 := UTF8Set.New(us2)))
+    DisplayLine("uset1.String()", uset1.String())
+    DisplayLine("us2.String() ? UTF8.Any(uset1, , 6)", us2.String() ? UTF8.Any(uset1, , 6))
+    Footer()
+
+    #
+    # Test Bal(UTF8Set1, UTF8Set2, UTF8Set3, UTF8, i, j)
+    #
+    code_width := 70
+    write("\n\nTest Bal(UTF8Set1, UTF8Set2, UTF8Set3, UTF8, i, j)")
+    write("\nBal Test 1")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"", "\"" || "б" || s1 || "тбббтттб" || s3 || "тacd" || "\"")
+    DisplayLine("image(us4 := UTF8.New(\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"))", image(us4 := UTF8.New("б" || s1 || "тбббтттб" || s3 || "тacd")))
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(uset3 := UTF8Set.New())", image(uset3 := UTF8Set.New()))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("every UTF8.Bal(uset3, \"б\", \"т\", us4) do {")
+    i := 0
+    every j := UTF8.Bal(uset3, "б", "т", us4) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+
+    write("\nBal Test 2 - Using Unicon String Scanning operator \"?\"")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"", "\"" || "б" || s1 || "тбббтттб" || s3 || "тacd" || "\"")
+    DisplayLine("image(us4 := UTF8.New(\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"))", image(us4 := UTF8.New("б" || s1 || "тбббтттб" || s3 || "тacd")))
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("us4.String() ? every j := UTF8.Bal(, \"б\", \"т\") do {")
+    i := 0
+    us4.String() ? every j := UTF8.Bal(, "б", "т") do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+
+    write("\nBal Test 3 using i = 5")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"", "\"" || "б" || s1 || "тбббтттб" || s3 || "тacd" || "\"")
+    DisplayLine("image(us4 := UTF8.New(\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"))", image(us4 := UTF8.New("б" || s1 || "тбббтттб" || s3 || "тacd")))
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(uset3 := UTF8Set.New())", image(uset3 := UTF8Set.New()))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("every UTF8.Bal(uset3, \"б\", \"т\", us4, 5) do {")
+    i := 0
+    every j := UTF8.Bal(uset3, "б", "т", us4, 5) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+
+    write("\nBal Test 4 - Using Unicon String Scanning operator \"?\" and i = 9")
+    Header()
+    DisplayLine("s1", "\"" || s1 || "\"")
+    DisplayLine("s3", "\"" || s3 || "\"")
+    DisplayLine("\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"", "\"" || "б" || s1 || "тбббтттб" || s3 || "тacd" || "\"")
+    DisplayLine("image(us4 := UTF8.New(\"б\" || s1 || \"тбббтттб\" || s3 || \"тacd\"))", image(us4 := UTF8.New("б" || s1 || "тбббтттб" || s3 || "тacd")))
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("us4.String() ? every j := UTF8.Bal(, \"б\", \"т\", , 9) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Bal(, "б", "т", , 9) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+    code_width := &null
+
+    #
+    # Test Find(UTF8_1, UTF8_2, i, j)
+    #
+    write("\n\nTest Find(UTF8_1, UTF8_2, i, j)")
+    write("\nFind Test 1")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(us5 := UTF8.New(\"б\"))", image(us5 := UTF8.New("б")))
+    DisplayLine("us5.String()", us5.String())
+    DisplayLine("every j := UTF8.Find(us5, us4) do {")
+    i := 0
+    every j := UTF8.Find(us5, us4) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Find(us5) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Find(us5) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+
+    write("\nFind Test 2")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(us5 := UTF8.New(\"т\"))", image(us5 := UTF8.New("т")))
+    DisplayLine("us5.String()", us5.String())
+    DisplayLine("every j := UTF8.Find(us5, us4) do {")
+    i := 0
+    every j := UTF8.Find(us5, us4) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Find(us5) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Find(us5) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+
+    write("\nFind Test 3")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(us5 := UTF8.New(\"ббб\"))", image(us5 := UTF8.New("ббб")))
+    DisplayLine("us5.String()", us5.String())
+    DisplayLine("every j := UTF8.Find(us5, us4) do {")
+    i := 0
+    every j := UTF8.Find(us5, us4) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Find(us5) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Find(us5) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+
+    code_width := 70
+    write("\nFind Test 4")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(us5 := UTF8.New(\"б\"))", image(us5 := UTF8.New("б")))
+    DisplayLine("us5.String()", us5.String())
+    DisplayLine("every j := UTF8.Find(us5, us4, 8, 25) do {")
+    i := 0
+    every j := UTF8.Find(us5, us4, 8, 25) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Find(us5, , 8, 25) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Find(us5, , 8, 25) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+    code_width := &null
+
+    code_width := 70
+    write("\nFind Test 5")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(us5 := UTF8.New(\"т\"))", image(us5 := UTF8.New("т")))
+    DisplayLine("us5.String()", us5.String())
+    DisplayLine("every j := UTF8.Find(us5, us4, 8, 25) do {")
+    i := 0
+    every j := UTF8.Find(us5, us4, 8, 25) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Find(us5, , 8, 25) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Find(us5, , 8, 25) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+    code_width := &null
+
+    code_width := 70
+    write("\nFind Test 6")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(us5 := UTF8.New(\"ббб\"))", image(us5 := UTF8.New("ббб")))
+    DisplayLine("us5.String()", us5.String())
+    DisplayLine("every j := UTF8.Find(us5, us4, 8, 25) do {")
+    i := 0
+    every j := UTF8.Find(us5, us4, 8, 25) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Find(us5, , 8, 25) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Find(us5, , 8, 25) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+    code_width := &null
+
+    #
+    # Test Many(UTF8Set1, UTF8_1, i, j)
+    #
+    code_width := 70
+    write("\n\nTest Many(UTF8Set1, UTF8_1, i, j)")
+    Header()
+    DisplayLine("image(us4 := UTF8.New(UTF8.Repl(\"тб\", 6).String() || \"asdfg\"))", image(us4 := UTF8.New(UTF8.Repl("тб", 6).String() || "asdfg")))
+    DisplayLine("image(us4)", image(us4))
+    DisplayLine("image(uset3 := UTF8Set.New(\"бт\"))", image(uset3 := UTF8Set.New("бт")))
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("UTF8.Many(uset3, us4)", UTF8.Many(uset3, us4))
+    DisplayLine("us4.String() ? UTF8.Many(uset3)", us4.String() ? UTF8.Many(uset3))
+    DisplayLine("UTF8.Many(uset3, us4, 9)", UTF8.Many(uset3, us4, 9))
+    DisplayLine("us4.String() ? UTF8.Many(uset3, , 9)", us4.String() ? UTF8.Many(uset3, , 9))
+    Footer()
+    code_width := &null
+
+    #
+    # Test Map(UTF8_1, UTF8_2, UTF8_3)
+    #
+    write("\n\nTest Map(UTF8_1, UTF8_2, UTF8_3)")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("UTF8.Map(us4, \"бт\", \"тб\").String()", UTF8.Map(us4, "бт", "тб").String())
+    DisplayLine("image(us5 := UTF8.New(\"бт\"))", image(us5 := UTF8.New("бт")))
+    DisplayLine("image(us6 := UTF8.New(\"тб\"))", image(us6 := UTF8.New("тб")))
+    DisplayLine("UTF8.Map(us4, us5, us6).String()", UTF8.Map(us4, us5, us6).String())
+    Footer()
+
+    #
+    # Test Match(UTF8_1, UTF8_Subject, i, j)
+    #
+    write("\n\nTest Match(UTF8_1, UTF8_Subject, i, j)")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("us5.String()", us5.String())
+    DisplayLine("UTF8.Match(us5, us4)", UTF8.Match(us5, us4) | "Failed")
+    DisplayLine("UTF8.Match(us5, us4, 2)", UTF8.Match(us5, us4, 2) | "Failed")
+    DisplayLine("us4.String() ? UTF8.Match(us5)", us4.String() ? UTF8.Match(us5) | "Failed")
+    DisplayLine("us4.String() ? UTF8.Match(us5, , 2)", us4.String() ? UTF8.Match(us5, , 2) | "Failed")
+    Footer()
+
+    #
+    # Test Trim(UTF8_1, UTFSet_1, i)
+    #
+    write("\n\nTest Trim(UTF8_1, UTFSet_1, i)")
+    Header()
+    DisplayLine("image(us4 := UTF8.New(\"ббб\" || s1 || \"ббб\"))", image(us4 := UTF8.New("ббб" || s1 || "ббб")))
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("UTF8.Trim(us4, \"б\").String()", UTF8.Trim(us4, "б").String())
+    DisplayLine("UTF8.Trim(us4, \"б\", -1).String()", UTF8.Trim(us4, "б", -1).String())
+    DisplayLine("UTF8.Trim(us4, \"б\", 0).String()", UTF8.Trim(us4, "б", 0).String())
+    DisplayLine("UTF8.Trim(us4, \"б\", 1).String()", UTF8.Trim(us4, "б", 1).String())
+    Footer()
+
+    #
+    # Test Upto(UTF8Set1, UTF8_1, i, j)
+    #
+    write("\n\nTest Upto(UTF8Set1, UTF8_1, i, j)")
+    code_width := 70
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("image(uset1 := UTF8Set.New(\"б\"))", image(uset1 := UTF8Set.New("б")))
+    DisplayLine("uset1.String()", uset1.String())
+    DisplayLine("UTF8.Upto(uset1, us4)", UTF8.Upto(uset1, us4))
+    DisplayLine("us4.String() ? UTF8.Upto(uset1)", us4.String() ? UTF8.Upto(uset1))
+    DisplayLine("every j := UTF8.Upto(uset1, us4) do {")
+    i := 0
+    every j := UTF8.Upto(uset1, us4) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Upto(uset1) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Upto(uset1) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("every j := UTF8.Upto(uset1, us4, 4) do {")
+    i := 0
+    every j := UTF8.Upto(uset1, us4, 4) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    DisplayLine("us4.String() ? every j := UTF8.Upto(uset1, , 4) do {")
+    i := 0
+    us4.String() ? every j := UTF8.Upto(uset1, , 4) do {
+        DisplayLine("# Iteration " || (i +:= 1))
+        DisplayLine("    j", j)
+    }
+    DisplayLine("}")
+    Footer()
+    code_width := &null
+
+    #
+    # Test Move(i)
+    #
+    write("\n\nTest Move(i)")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("us4.String() ? {", )
+    us4.String() ? {
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Match(\"ббб\")", l := UTF8.Match("ббб"))
+        DisplayLine("    l", l)
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Move(l).String()", UTF8.Move(l).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Move(-6).String()", UTF8.Move(-6).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Move(15).String()", UTF8.Move(15).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Move(5).String()", UTF8.Move(5).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+    }
+    DisplayLine("}")
+    DisplayLine("\"abcdefghijklmnopqrstuvwxyz\" ? {")
+    "abcdefghijklmnopqrstuvwxyz" ? {
+        DisplayLine("    move(4)", move(4) | "fail")
+        DisplayLine("    move(-6)", move(-6) | "fail")
+        DisplayLine("    move(15)", move(15) | "fail")
+    }
+    DisplayLine("}")
+    Footer()
+
+    #
+    # Test Tab(i)
+    #
+    write("\n\nTest Tab(i)")
+    Header()
+    DisplayLine("us4.String()", us4.String())
+    DisplayLine("us4.String() ? {", )
+    us4.String() ? {
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Match(\"ббб\")", l := UTF8.Match("ббб"))
+        DisplayLine("    l", l)
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Tab(l).String()", UTF8.Tab(l).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Tab(-6).String()", UTF8.Tab(-6).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Tab(15).String()", UTF8.Tab(15).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Tab(5).String()", UTF8.Tab(5).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Tab().String()", UTF8.Tab().String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Tab(1).String()", UTF8.Tab(1).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+        DisplayLine("    UTF8.Tab(0).String()", UTF8.Tab(0).String() | "fail")
+        DisplayLine("    UTF8.AmpPos()", UTF8.AmpPos())
+    }
+    DisplayLine("}")
+    DisplayLine("\"abcdefghijklmnopqrstuvwxyz\" ? {")
+    "abcdefghijklmnopqrstuvwxyz" ? {
+        DisplayLine("    tab(4)", tab(4) | "fail")
+        DisplayLine("    tab(-6)", tab(-6) | "fail")
+        DisplayLine("    tab(15)", tab(15) | "fail")
+    }
+    DisplayLine("}")
+    Footer()
+
+    Header()
+    DisplayLine("s1", s1)
+    DisplayLine("s2", s2)
+    us1 := UTF8.New("8.45")
+    DisplayLine("us1.String()", us1.String())
+    DisplayLine("us2.String()", us2.String())
+    DisplayLine("(s1 == s2).String()", (s1 == s2) | "Failed")
+    DisplayLine("(us1 == s2).String()", (us1 == s2).String() | "Failed")
+    DisplayLine("(us1 = s1)", (us1 == s1) | "Failed")
+    DisplayLine("(us2 == s2)", (us2 == s2) | "Failed")
+    DisplayLine("UTF8.Integer(10)", UTF8.Integer(10) | "Failed")
+    DisplayLine("UTF8.Integer(10.1)", UTF8.Integer(10.1) | "Failed")
+    DisplayLine("UTF8.Integer(s1)", UTF8.Integer(s1) | "Failed")
+    DisplayLine("UTF8.Integer(us1)", UTF8.Integer(us1) | "Failed")
+    DisplayLine("UTF8.Numeric(10)", UTF8.Numeric(10) | "Failed")
+    DisplayLine("UTF8.Numeric(10.1)", UTF8.Numeric(10.1) | "Failed")
+    DisplayLine("UTF8.Numeric(s1)", UTF8.Numeric(s1) | "Failed")
+    DisplayLine("UTF8.Numeric(us1)", UTF8.Numeric(us1) | "Failed")
+    DisplayLine("UTF8.Real(10)", UTF8.Real(10) | "Failed")
+    DisplayLine("UTF8.Real(10.1)", UTF8.Real(10.1) | "Failed")
+    DisplayLine("UTF8.Real(s1)", UTF8.Real(s1) | "Failed")
+    DisplayLine("UTF8.Real(us1)", UTF8.Real(us1) | "Failed")
+    DisplayLine("UTF8.LTorEqual(10.1, 10)", UTF8.LTorEqual(10.1, 10) | "Failed")
+    DisplayLine("UTF8.LTorEqual(10, 10.1)", UTF8.LTorEqual(10, 10.1) | "Failed")
+    #DisplayLine("UTF8.LTorEqual(s1, 10)", UTF8.LTorEqual(s1, 10) | "Failed")
+    DisplayLine("UTF8.LTorEqual(us1, 10)", UTF8.LTorEqual(us1, 10) | "Failed")
+    DisplayLine("us1 <= 10", us1 <= 10 | "Failed")
+    DisplayLine("us1 < 10", us1 < 10 | "Failed")
+    DisplayLine("us1 = 10", us1 = 10 | "Failed")
+    DisplayLine("us1 >= 10", us1 >= 10 | "Failed")
+    DisplayLine("us1 > 10", us1 > 10 | "Failed")
+    DisplayLine("us1 + 10", us1 + 10 | "Failed")
+    DisplayLine("us1 - 10", us1 - 10 | "Failed")
+    DisplayLine("us1 * 10", us1 * 10 | "Failed")
+    DisplayLine("us1 / 10", us1 / 10 | "Failed")
+    DisplayLine("us1 % 10", us1 % 10 | "Failed")
+    DisplayLine("us1 ^ 10", us1 ^ 10 | "Failed")
+    DisplayLine("UTF8.LTorEqual(\"9\", 10)", UTF8.LTorEqual("9", 10) | "Failed")
+
+    Footer()
+
+    #
+    # UTF8Set Union
+    #
+    write("\n\nUTF8Set Union")
+    write("\nTest 1")
+    code_width := 70
+    Header()
+    DisplayLine("image(uset1 := UTF8Set.New(\"abcdefg\"))", image(uset1 := UTF8Set.New("abcdefg")))
+    DisplayLine("uset1.String()", uset1.String())
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("image(uset2 := UTF8Set.New(\"abcdefgfedbac\"))", image(uset2 := UTF8Set.New("abcdefgfedbac")))
+    DisplayLine("uset2.String()", uset2.String())
+    DisplayLine("uset2.Size()", uset2.Size())
+    DisplayLine("image(uset2 := uset2.Complement())", image(uset2 := uset2.Complement()))
+    DisplayLine("uset2.String()", uset2.String())
+    DisplayLine("uset2.Size()", uset2.Size())
+    DisplayLine("image(uset3 := uset1.Union(uset2))", image(uset3 := uset1.Union(uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(uset1, uset2))", image(uset3 := UTF8Set.Union(uset1, uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(\"abcdefg\", uset2))", image(uset3 := UTF8Set.Union("abcdefg", uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(\"abcdefgfedbac\", uset2))", image(uset3 := UTF8Set.Union("abcdefgfedbac", uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    Footer()
+    code_width := &null
+
+    write("\nTest 2")
+    code_width := 70
+    Header()
+    DisplayLine("image(uset1 := UTF8Set.New(\"abcdefg\"))", image(uset1 := UTF8Set.New("abcdefg")))
+    DisplayLine("uset1.String()", uset1.String())
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("image(uset2 := UTF8Set.New(\"abcdefgfedbac\"))", image(uset2 := UTF8Set.New("abcdefgfedbac")))
+    DisplayLine("uset2.String()", uset2.String())
+    DisplayLine("uset2.Size()", uset2.Size())
+    DisplayLine("image(uset3 := uset1.Union(uset2))", image(uset3 := uset1.Union(uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(uset1, uset2))", image(uset3 := UTF8Set.Union(uset1, uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(\"abcdefg\", uset2))", image(uset3 := UTF8Set.Union("abcdefg", uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(\"abcdefgfedbac\", uset2))", image(uset3 := UTF8Set.Union("abcdefgfedbac", uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    Footer()
+    code_width := &null
+
+    write("\nTest 3")
+    code_width := 70
+    Header()
+    DisplayLine("image(uset1 := UTF8Set.New(\"abcdefg\"))", image(uset1 := UTF8Set.New("abcdefg")))
+    DisplayLine("uset1.String()", uset1.String())
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("image(uset2 := UTF8Set.New(\"abcdefghij\"))", image(uset2 := UTF8Set.New("abcdefghij")))
+    DisplayLine("uset2.String()", uset2.String())
+    DisplayLine("uset2.Size()", uset2.Size())
+    DisplayLine("image(uset3 := uset1.Union(uset2))", image(uset3 := uset1.Union(uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(uset1, uset2))", image(uset3 := UTF8Set.Union(uset1, uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(\"abcdefg\", uset2))", image(uset3 := UTF8Set.Union("abcdefg", uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(\"abcdefgfedbac\", uset2))", image(uset3 := UTF8Set.Union("abcdefgfedbac", uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    Footer()
+    code_width := &null
+
+    write("\nTest 4")
+    code_width := 70
+    Header()
+    DisplayLine("image(uset1 := UTF8Set.New())", image(uset1 := UTF8Set.New()))
+    DisplayLine("uset1.String()", uset1.String())
+    DisplayLine("uset1.Size()", uset1.Size())
+    DisplayLine("image(uset2 := UTF8Set.New(\"abcdefghij\"))", image(uset2 := UTF8Set.New("abcdefghij")))
+    DisplayLine("uset2.String()", uset2.String())
+    DisplayLine("uset2.Size()", uset2.Size())
+    DisplayLine("image(uset3 := uset1.Union(uset2))", image(uset3 := uset1.Union(uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(uset3 := UTF8Set.Union(uset1, uset2))", image(uset3 := UTF8Set.Union(uset1, uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    DisplayLine("image(UTF8Set.All())", image(UTF8Set.All()))
+    DisplayLine("UTF8Set.All().String()", UTF8Set.All().String())
+    DisplayLine("image(uset3 := UTF8Set.Union(UTF8Set.All(), uset2))", image(uset3 := UTF8Set.Union(UTF8Set.All(), uset2)))
+    DisplayLine("uset3.String()", uset3.String())
+    DisplayLine("uset3.Size()", uset3.Size())
+    Footer()
+    code_width := &null
+
+    #
+    # UTF8Set Intersect
+    #
+    write("\n\nUTF8Set Intersect")
+    write("\nTest 1")
+    Header()
+    uset1 := UTF8Set.New("abcdefg")
+    uset2 := UTF8Set.New("fghijk")
+    uset3 := uset1.Intersect(uset2)
+    write("uset1.String():", uset1.String())
+    write("uset1.Size():", uset1.Size())
+    write("uset2.String():", uset2.String())
+    write("uset2.Size():", uset2.Size())
+    write("uset3.String():", uset3.String())
+    write("uset3.Size():", uset3.Size())
+    Footer()
+
+    write("\nTest 2")
+    Header()
+    uset1 := UTF8Set.New("abcdefg")
+    uset2 := UTF8Set.New("fghijk").Complement()
+    uset3 := uset1.Intersect(uset2)
+    write("uset1.String():", uset1.String())
+    write("uset1.Size():", uset1.Size())
+    write("uset2.String():", uset2.String())
+    write("uset2.Size():", uset2.Size())
+    write("uset3.String():", uset3.String())
+    write("uset3.Size():", uset3.Size())
+    Footer()
+
+    #
+    # UTF8Set Difference
+    #
+    write("\n\nUTF8Set Difference")
+    write("\nTest 1")
+    Header()
+    uset1 := UTF8Set.New("abcdefg")
+    uset2 := UTF8Set.New("fghijk")
+    uset3 := uset1.Difference(uset2)
+    write("uset1.String():", uset1.String())
+    write("uset1.Size():", uset1.Size())
+    write("uset2.String():", uset2.String())
+    write("uset2.Size():", uset2.Size())
+    write("uset3.String():", uset3.String())
+    write("uset3.Size():", uset3.Size())
+    write("\nTest 2")
+    uset1 := UTF8Set.New("abcdefg")
+    uset2 := UTF8Set.New("fghijk").Complement()
+    uset3 := uset1.Difference(uset2)
+    write("uset1.String():", uset1.String())
+    write("uset1.Size():", uset1.Size())
+    write("uset2.String():", uset2.String())
+    write("uset2.Size():", uset2.Size())
+    write("uset3.String():", uset3.String())
+    write("uset3.Size():", uset3.Size())
+    Footer()
+
+    Header()
+    write("\n'abcdefg' -- 'fghijk':", 'abcdefg' -- 'fghijk')
+    write("\n'abcdefg' -- (&cset -- 'fghijk'):", 'abcdefg' -- (&cset -- 'fghijk'))
+    Footer()
+end
+
+global code_width
+
+procedure Header()
+    /code_width := 50
+    write(repl("-", code_width), ":", repl("-", 30))
+    write(left("  Unicon Code", code_width), ":    Result")
+    write(repl("-", code_width), ":", repl("-", 30))
+end
+
+procedure Footer()
+    /code_width := 50
+    write(repl("-", code_width), ":", repl("-", 30))
+    write()
+end
+
+procedure DisplayLine(codefrag, result)
+    /code_width := 50
+    /codefrag := ""
+    write(UTF8.Left(codefrag, code_width).String(), ": ", result)
+    #
+    # a return is required here to stop alternative matches occuring in the supplied
+    # parameter for result. If we allow the procedure to fail, which it does when
+    # running off the end of the procedure code, this will trigger alterantive
+    # matching in the parameters within the calling procedure
+    #
+    return
+end
+
+link ximage
+link hexcvt
+import UTF8
+

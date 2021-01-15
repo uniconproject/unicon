@@ -1,0 +1,2233 @@
+#############################################################################
+#                                                                           #
+# file : classobject.icn                                                    #
+#                                                                           #
+# Author : Bruce Rennie                                                     #
+# Date   : 11-July-2013                                                     #
+# Update : 22-November-2015                                                 #
+# Update : 02-December-2020                                                 #
+#                                                                           #
+# Purpose: This provides a generalised object value and object algebra      #
+#          facility for use in other classes and objects. It is based       #
+#          on the ErrorSystem class for common error handling               #
+#          facilities.                                                      #
+#                                                                           #
+# Conventions:                                                              #
+#    Private fields start with __                                           #
+#    Private methods start with _ or __                                     #
+#                                                                           #
+#    Private classes start with __                                          #
+#    Private classes have an associated Public Class                        #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Classes:                                                           #
+#                                                                           #
+#    class ClassObject : ErrorSystem()                                      #
+#    class ClassClass : ClassObject()                                       #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Private Classes: none                                                     #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Private Fields: ClassClass                                                #
+#                                                                           #
+#   __ClassToObject         : table holding the class to object class mapping
+#   __ObjectToClass         : table holding the object class to class mapping
+#   __operator_overload_error_messages
+#                           : table holding the operator overload
+#                             error messages, keyed by operator symbol
+#
+# Private Fields: ClassObject                                               #
+#
+#   __operator_overload     : by default, operator overload will
+#                             fail if the appropriate methods are
+#                             not implemented. This variable will
+#                             normally contain 1 to indicate that
+#                             condition. If this variable is &null,
+#                             then a runtime error will be initiated.
+#                             This will be controlled by the
+#                             appropriate error method defined in
+#                             this class. This error method can
+#                             be overridden at the subclass level
+#                             by defining a method of the same name.
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Fields: ClassClass                                                 #
+#                                                                           #
+#   New                     : This variable is initialised at sub-class
+#                             runtime to the associated class by the call
+#                             to SetClass. By default it is set to a dummy
+#                             message function in ClassClass.
+#                                                                           #
+#                                                                           #
+# Public Fields: ClassObject                                                #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Private Methods:                                                          #
+#                                                                           #
+#  class ClassClass                                                         #
+#    __InitClass()          -> returns the name of the originating          #
+#                              class                                        #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Methods:                                                           #
+#                                                                           #
+#  Inherit from class ErrorSystem()                                         #
+#    StopMessage(param[])   -: Halts program with message param[]           #
+#    PrintMessage(param[])  -: Print message param[] onto current           #
+#                              error file (default &errout)                 #
+#    Caller()               -> name of procedure or method that has         #
+#                              called the current procedure                 #
+#    ProcedureCalling(level)                                                #
+#                           -> name of procedure that has called            #
+#                              the current procedure                        #
+#    ClassCalling(level)    -> name of the class that has called the        #
+#                              current procedure                            #
+#    MethodCalling(level)   -> name of the method that has called the       #
+#                              current procedure                            #
+#    ParamCalling(level)    -> the list of parameters from the calling      #
+#                              procedure                                    #
+#    CallingComponents(name)                                                #
+#                           -> return a list containing the components      #
+#                              the calling procedure or class/method        #
+#    Debug(mode)            -: sets whether the Debug mode is on or         #
+#                              for all methods that test this               #
+#    DebugMode()            -> succeeds if debug mode is on, fails if       #
+#                              debug mode if off                            #
+#    ErrorOut(errorfile, writeappend)                                       #
+#                           -> Sets the errorout file to be used,           #
+#                              if called with no parameters, sets to        #
+#                              &errout, otherwise if a string, opens        #
+#                              the specified file based on writeappend      #
+#                              ("w" for write, "a" for append, default      #
+#                              is "w"), if errorfile is an open file,       #
+#                              the output will be sent to this file         #
+#                                                                           #
+#                   ######################                                  #
+#            classes and method found in this file                          #
+#                                                                           #
+#  class ClassObject                                                        #
+#    New(object_parameters[])                                               #
+#                           -> return a new object of the private           #
+#                              object class associated with the public      #
+#                              class class                                  #
+#    Copy()                 -> returns a copy of the calling object         #
+#    Clone()                -> returns a copy of the calling object         #
+#    ClassName()            -> returns the name of the public class         #
+#                              to which the current object private          #
+#                              is associated with                           #
+#                                                                           #
+#  class ClassClass                                                         #
+#    SetClass(obj)          -: sets the associated private object           #
+#                              class to the public class class              #
+#                                                                           #
+#############################################################################
+#                                                                           #
+# Public Procedures:                                                        #
+#    IsObjectOf(val, expectedtypes[])                                       #
+#                           -> tests if the object is a member of any       #
+#                              of the supplied public class names. Any      #
+#                              object belonging to a subclass is a          #
+#                              member of the superclass, on success it      #
+#                              returns the value tested                     #
+#    IsObject(val)          -> tests if value given is an object of         #
+#                              any kind and on success returns the          #
+#                              of the public class this object belongs      #
+#                              to                                           #
+#    ObjectProperties(objectorclassname)                                    #
+#                           -> a generator returning the field names        #
+#                              and method names available to an object      #
+#                              or to the string name of a public class      #
+#                              class                                        #
+#    AlreadyRun(obj)        -> succeeds if a public class class has         #
+#                              been run and converted to a singleton        #
+#                              object representing the public class         #
+#                              class                                        #
+#    SuperClass(obj)        -> returns a list containing all the names      #
+#                              of the superclasses for this obj.            #
+#                              Private class names are converted to         #
+#                              associated public class name                 #
+#    DeepCopy(obj)          -> returns a copy of the value or object        #
+#                              given. The copy process is applied to        #
+#                              levels of the object, including any and      #
+#                              structures found in the object               #
+#                                                                           #
+#############################################################################
+
+#
+
+#LKD:
+#: required link statements
+link ximage                             #LK: used for debugging display
+
+#link equiv                              #LK:
+
+#link numbers                            #LK:
+
+link utilities                          #LK: used for determining current active
+                                        #:   procedure names
+#IMD:
+#: required import statements
+import ErrorSystem                      #IM: required for superclasses and other
+                                        #:   procedures from this package
+
+#PKD:
+#: Package ClassObject - This is the class that implements the basic class
+#: facilities that all the associated classes will inherit. A description of the
+#: model will be explained in further documentation.
+#:
+#: The two classes inherit from the ErrorSystem class in package ErrorSystem and
+#: are the basic superclasses of any further classes that will be developed in
+#: accordance with the described model.
+#:
+#: As such, each level will be in its own package to ensure that there is no crossover
+#: with other packages in the Unicon Class Libraries.
+#:
+#: Hence this package.
+#:
+package ClassObject
+
+
+##GBL:
+##: required global statements
+##:
+##: These global variables are now placed in object ClassClass
+##:
+#global __ClassToObject,             #GV: table holding the class to object class mapping
+#       __ObjectToClass,             #GV: table holding the object class to class mapping
+#       __operator_overload_error_message
+#                                    #GV: table holding the operator overload
+#                                    #:   error messages, keyed by operator symbol
+
+#
+#   General comments:
+#
+# The way I envisage this to work is the creation of a pair of classes, one that
+# represents the class and one that represents all of the objects of that class.
+# One of the operations/methods of the "class" class it has is New(). This method
+# will create the objects that are members of the class, with the class definition
+# containing methods that are specific to the class and each of the obejcts
+# having methods specific to the objects
+#
+# We shall see how this may outwork.
+#
+# An example would be the class Matrix which has the generic Vector methods and
+# all the actual vector objects being of class __MatrixObject which has the relevant
+# object specific methods. In terms of association required, an example in terms
+# a general layout is as follows:
+#
+#   package Matrix
+#
+#   import ClassObject
+#
+#   class Matrix : ClassClass(... parameters required)
+#
+#       list of class specific methods
+#
+#   initially()
+#       if not AlreadyRun(Matrix::Matrix) then {
+#           Execute(ClassObject::ClassClass)
+#           SetClass(Matrix::__MatrixObject)
+#           Off()
+#           Matrix::Matrix := self
+#       }
+#   end
+#
+#   class __MatrixObject : ClassObject(... list of object specific parameters)
+#
+#       list of object specific methods
+#
+#   initially(list of paramters)
+#       ...
+#
+#   end
+#
+#
+# the execution of Matrix::Matrix.New(... paramaters) will create an object of
+# Matrix::__MatrixObject
+#
+#
+
+#CD:
+#: class ClassClass - This class is used as a parent of all classes that provides
+#: general facilities for an associated object class. This is intended to allow
+#: a generic class object to be able to create new objects (specified by an
+#: associated class) by the use of a standardised New() method.
+#:
+#:
+#: My intent is to allow the migration of specific Javascript and Python systems
+#: that I am interested in to Unicon. I want to showcase the Unicon version and how
+#: the Unicon language allows a better coding practice. We shall see if this
+#: attempt works in a practical way.
+#:
+class ClassClass : ErrorSystem(
+    New,                                #CV: This variable is initialised at sub-class
+                                        #:   runtime to the associated class by the call
+                                        #:   to SetClass. By default it is set to a dummy
+                                        #:   message function in ClassClass.
+    __ClassToObject,                    #CV: table holding the class to object class mapping
+    __ObjectToClass,                    #CV: table holding the object class to class mapping
+    __operator_overload_error_messages, #CV: table holding the operator overload
+                                        #:   error messages, keyed by operator symbol
+    __file,                             #CV: set to the &file value when operator overload
+                                        #:   procedures are called
+    __line                              #CV: set to the &line value when operator overload
+                                        #:   procedures are called.
+)
+
+    #MD:
+    #:
+    method __InitClass()
+        local   class_Identifier,       #LV:
+                index := 0              #LV:
+
+        #
+        # if the object variable is currently &null then we need to initialise
+        # it. This will be done by running the Off() method and will ensure that
+        # the dubugging facilities are placed in the normal state of being off.
+        #
+        # By the time this method is called in normal operation, the following
+        # statement should in effect be a null action. However, to prevent any
+        # problems in the future, the test is still being made.
+        #
+        /DebugPrint & Off()
+
+        #
+        #
+        #
+        while class_Identifier := self.ClassCalling(index +:= 1) do {
+            DebugPrint("Class Identifier: ", class_Identifier, " index: ", index)
+        }
+
+        #
+        # The following statement will normally be executed based on what debugging
+        # has been turned on or off elsewhere in the system and not on the initialisation
+        # process above in this method
+        #
+        DebugPrint("return value: index:", index, " - ", image(class_Identifier))
+
+        return class_Identifier
+    end
+
+    #MD:
+    #: __AuxMessage(errorno, messageno)
+    #:
+    #:
+    method __AuxMessage(errorno, messageno)
+        static  ErrorMessages           #SV: table holding error messages for error
+                                        #:   numbers used in UFT8/UTF8Set aborts
+
+        initial {
+            ErrorMessages := ::table()
+
+            ErrorMessages[101 || "-" || 1] := "\noffending value: &null"
+            ErrorMessages[101 || "-" || 2] := "\noffending value: "
+            ErrorMessages[101 || "-" || 3] := "\noffending value for i: "
+            ErrorMessages[101 || "-" || 4] := "\noffending value for j: "
+            ErrorMessages[101 || "-" || 5] := "\noffending value for i has type of: "
+            ErrorMessages[101 || "-" || 6] := "\noffending value for i is less than or equal to 0: "
+            ErrorMessages[101 || "-" || 7] := "\nlength of mapping strings are not equal: "
+            ErrorMessages[102 || "-" || 1] := "\noffending value: &null"
+            ErrorMessages[102 || "-" || 2] := "\noffending value: "
+            ErrorMessages[103 || "-" || 1] := "\noffending value: &null_
+                                               \nMissing Unicon string value or value that can be converted to an Unicon string value."
+            ErrorMessages[103 || "-" || 2] := "\noffending value: "
+            ErrorMessages[103 || "-" || 3] := "\noffending value: &null_
+                                               \nMissing Unicon string value"
+            ErrorMessages[103 || "-" || 4] := "\noffending value: &null_
+                                               \nMissing Unicon integer value or Unicon string value"
+            ErrorMessages[104 || "-" || 1] := "\noffending value: &null_
+                                               \nMissing Unicon cset value or value that can be converted to an Unicon cset value."
+            ErrorMessages[104 || "-" || 2] := "\noffending value: &null"
+            ErrorMessages[110 || "-" || 1] := "\noffending value: &null_
+                                               \nMissing Unicon string or list value or value that can be converted to an Unicon string or list value."
+            ErrorMessages[113 || "-" || 1] := "\noffending value: &null_
+                                               \nMissing Unicon string or list value or value that can be converted to an Unicon string or list value."
+            ErrorMessages[120 || "-" || 1] := "\noffending value: &null_
+                                               \nMissing Unicon cset, set or table value or value that can be converted to an Unicon cset, set or table value."
+        }
+        /messageno := 1
+        return \ErrorMessages[errorno || "-" || messageno] | ""
+    end
+
+
+
+    #MD:
+    #:
+    method SetClass(obj)
+        local   procedure_name,         #LV: Holds the classname of the object
+                object_name,            #LV: Extracted from the object image
+                object_Identifier,      #LV: Extracted from the initialising class
+                package_name            #LV: package name to be removed from object_name
+
+        #
+        # if the object variable is currently &null then we need to initialise
+        # it. This will be done by running the Off() method and will ensure that
+        # the dubugging facilities are placed in the normal state of being off.
+        #
+        # In normal operation, this should be a null action as the initialisation
+        # should have been done in a subclass of this class.
+        #
+        /DebugPrint & Off()
+
+        #
+        #
+        #
+        object_Identifier := self.__InitClass()
+
+        #
+        # we obtain the name of the procedure that is the code for this object_identifier
+        #
+        object_name := ::get_active_name(obj)
+        package_name := CallingComponents(object_name)[4]
+
+        DebugPrint("object is:", ::image(obj), " Object Identifier: ", object_Identifier, " object_name: ", image(object_name))
+        DebugPrint("package name is ", package_name)
+
+        #__operator_overload_error_messages[object_name] := object_Identifier
+        ClassObject::ClassClass.__ObjectToClass[object_Identifier] := object_Identifier
+        ClassObject::ClassClass.__ObjectToClass[object_name] := object_Identifier
+        ClassObject::ClassClass.__ObjectToClass[object_name[::match(package_name || "__",object_name):0]] := object_Identifier
+        ClassObject::ClassClass.__ObjectToClass[::trim(object_name[::match(package_name || "__",object_name):0], "_", 0)] := object_Identifier
+
+        #
+        # if debugging is On, we want see the three different keys for objects
+        # with the associated object Identifier. Otherwise, this is a null action
+        #
+        DebugPrint(
+            "__ObjectToClass[", ::image(object_name), "]: ", ::image(object_Identifier),
+            "\n__ObjectToClass[", ::image(object_Identifier), "]: ", ::image(object_Identifier),
+            "\n__ObjectToClass[", object_name, "]: ", ::image(object_Identifier),
+            "\n__ObjectToClass[", object_name[::match(package_name || "__",object_name):0], "]: ", ::image(object_Identifier),
+            "\n__ObjectToClass[", ::trim(object_name[::match(package_name || "__",object_name):0], "_", 0), "]: ", ::image(object_Identifier))
+
+        if ::type(obj) == "procedure" then {
+            ClassObject::ClassClass.__ClassToObject[object_Identifier] := obj
+            #
+            # if debugging is On, we want see the key for procedure
+            # with the associated object Identifier (or class identifier).
+            # Otherwise, this is a null action
+            #
+            DebugPrint(
+                "__ClassToObject[", ::image(object_Identifier), "]: ", ::image(obj))
+
+        } else if procedure_name := ::classname(obj) then {
+            ClassObject::ClassClass.__ClassToObject[object_Identifier] := ::proc(procedure_name)
+
+            #
+            # if debugging is On, we want see the key for class name
+            # with the associated object Identifier (or class identifier).
+            # Otherwise, this is a null action
+            #
+            DebugPrint(
+                "__ClassToObject[", ::image(object_Identifier), "]: ::proc(", ::image(procedure_name), "): ", ::image(::proc(procedure_name)))
+
+        } else if ::type(obj) == "string" then {
+            ClassObject::ClassClass.__ClassToObject[object_Identifier] := ::proc(obj)
+
+            #
+            # if debugging is On, we want see the key for the string and the associated
+            # procedure/function with the associated object Identifier (or class identifier).
+            # Otherwise, this is a null action
+            #
+            DebugPrint(
+                "__ClassToObject[", ::image(object_Identifier), "]: ::proc(", ::image(obj), "): ", ::image(::proc(obj)))
+
+        } else {
+            self.StopMessage("Unable to set the Class object creator:", ::ximage(obj))
+        }
+
+        #
+        # if debugging is On, we want see the three different keys for objects
+        # with the associated object Identifier. Otherwise, this is a null action
+        #
+        DebugPrint(
+            "Setting self.New() to __ClassToObject[",
+            ::image(object_Identifier),
+            "]: ::proc(",
+            ::image(obj),
+            "): ",
+            ::image(::proc(obj)),
+            " New: ", ::image(::proc(New)))
+
+        self.New := ClassObject::ClassClass.__ClassToObject[object_Identifier]
+
+        #
+        # if debugging is On, we want see the three different keys for objects
+        # with the associated object Identifier. Otherwise, this is a null action
+        #
+        DebugPrint(
+            "Setting self.New() to __ClassToObject[",
+            ::image(object_Identifier),
+            "]: ::proc(",
+            ::image(obj),
+            "): ",
+            ::image(::proc(obj)),
+            " New: ", ::image(::proc(New)))
+
+        Off()
+        return self
+    end
+
+    #MD:
+    #:
+    method ClassName(obj)
+        local   name                    #LV: temporary to hold the system classname
+                                        #:   for the current object
+
+        name := ::classname(obj)
+
+        #
+        # using the system classname, obtain the classname of the class that
+        # obj is associated with
+        #
+        return \ClassObject::ClassClass.__ObjectToClass[name]
+    end
+
+    ############################################################################
+    ############################################################################
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    ############################################################################
+    ############################################################################
+
+    #MD:
+    #: Addition(val1, val2)
+    #:
+    method Addition(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 + local_val2
+    end
+
+    #MD:
+    #: Divide(val1, val2)
+    #:
+    method Divide(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 / local_val2
+    end
+
+    #MD:
+    #: Minus(val1, val2)
+    #:
+    method Minus(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102 ,2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 - local_val2
+    end
+
+    #MD:
+    #: Modulus(val1, val2)
+    #:
+    method Modulus(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 % local_val2
+
+    end
+
+    #MD:
+    #: Multiply(val1, val2)
+    #:
+    method Multiply(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 * local_val2
+    end
+
+    #MD:
+    #: Negate(val)
+    #:
+    method Negate(val)
+        local   local_val               #LV:
+
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        local_val := Numeric(val)
+
+        /local_val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                  __AuxMessage(102, 2), image(val))
+
+        return -local_val
+    end
+
+
+    #MD:
+    #: UnaryPlus(val)
+    #:
+    method UnaryPlus(val)
+        local   local_val               #LV:
+
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        local_val := Numeric(val)
+
+        /local_val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                  __AuxMessage(102, 2), image(val))
+
+        return + local_val
+    end
+
+    #MD:
+    #: Power(val1, val2)
+    #:
+    method Power(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 ^ local_val2
+    end
+
+    ############################################################################
+    ############################################################################
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    ############################################################################
+    ############################################################################
+
+    #MD:
+    #: Equals(val1, val2) - this will convert the supplied parameters to numeric
+    #: values if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the second argument if the two values are
+    #: numerically equal or failure if the test fails.
+    #:
+    #: A runtime error is generated if neither value can be converted to an Unicon
+    #: numeric value. This follows the current Unicon semnatics for implicitly
+    #: converting an Unicon string to a numeric before doing the test.
+    #:
+    method Equals(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 = local_val2
+    end
+
+    #MD:
+    #: GTorEqual(val1, val2) - this will convert the supplied parameters to numeric
+    #: values if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the second argument if the first value is
+    #: numerically equal to or greater than the second or failure if the test fails.
+    #:
+    #: A runtime error is generated if neither value can be converted to an Unicon
+    #: numeric value. This follows the current Unicon semnatics for implicitly
+    #: converting an Unicon string to a numeric before doing the test.
+    #:
+    method GTorEqual(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 >= local_val2
+    end
+
+    #MD:
+    #: Greater(val1, val2) - this will convert the supplied parameters to numeric
+    #: values if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the second argument if the first value is
+    #: numerically greater than the second or failure if the test fails.
+    #:
+    #: A runtime error is generated if neither value can be converted to an Unicon
+    #: numeric value. This follows the current Unicon semnatics for implicitly
+    #: converting an Unicon string to a numeric before doing the test.
+    #:
+    method Greater(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 > local_val2
+    end
+
+    #MD:
+    #: LTorEqual(val1, val2) - this will convert the supplied parameters to numeric
+    #: values if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the second argument if the first value is
+    #: numerically equal to or less than the second or failure if the test fails.
+    #:
+    #: A runtime error is generated if neither value can be converted to an Unicon
+    #: numeric value. This follows the current Unicon semnatics for implicitly
+    #: converting an Unicon string to a numeric before doing the test.
+    #:
+    method LTorEqual(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 <= local_val2
+    end
+
+    #MD:
+    #: Less(val1, val2) - this will convert the supplied parameters to numeric
+    #: values if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the second argument if the first value is
+    #: numerically less than the second or failure if the test fails.
+    #:
+    #: A runtime error is generated if neither value can be converted to an Unicon
+    #: numeric value. This follows the current Unicon semnatics for implicitly
+    #: converting an Unicon string to a numeric before doing the test.
+    #:
+    method Less(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 < local_val2
+    end
+
+    #MD:
+    #: Nequal(val1, val2) - this will convert the supplied parameters to numeric
+    #: values if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the second argument if the first value is
+    #: numerically not equal to the second or failure if the test fails.
+    #:
+    #: A runtime error is generated if neither value can be converted to an Unicon
+    #: numeric value. This follows the current Unicon semnatics for implicitly
+    #: converting an Unicon string to a numeric before doing the test.
+    #:
+    method Nequal(val1, val2)
+        local   local_val1,             #LV:
+                local_val2              #LV:
+
+        /val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        /val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                             __AuxMessage(102))
+
+        local_val1 := Numeric(val1)
+        local_val2 := Numeric(val2)
+
+        /local_val1 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val1))
+
+        /local_val2 & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                                   __AuxMessage(102, 2), image(val2))
+
+        return local_val1 ~= local_val2
+    end
+
+    ############################################################################
+    ############################################################################
+    #                                                                          #
+    #   The following three methods are inherited by all Class Objects and     #
+    #   provide the analog to the standard functions that are available in     #
+    #   Unicon.                                                                #
+    #                                                                          #
+    #   Integer(val)            -   integer(val)                               #
+    #                                                                          #
+    #   Numeric(val)            -   numeric(val)                               #
+    #                                                                          #
+    #   Real(val)               -   real(val)                                  #
+    #                                                                          #
+    #   For non object values, the stardard Unicon function will be used to do #
+    #   the conversions. All object values will use the String() method, if    #
+    #   available to convert the object value to a Unicon string and then the  #
+    #   standard Unicon funtion will be applied to that string value.          #
+    #                                                                          #
+    #                                                                          #
+    ############################################################################
+    ############################################################################
+
+    #MD:
+    #: Integer(val) - this will return the integer value representation of the
+    #: supplied argument or will fail if no such representation exists
+    #:
+    method Integer(val)
+        local   tmp                     #LV:
+
+        #
+        # if the object value supplied has a method that provides an Unicon string
+        # string representation of that object value, run that method and see if it
+        # will produce an Unicon integer value. Otherwise, simply fail. This will
+        # use the standard Unicon function integer()
+        #
+        if HasMethod(val, "String") then {
+            return ::integer(val.String())
+        }
+        return ::integer(val)
+    end
+
+    #MD:
+    #: Numeric(val) - this will return the numeric value representation of the
+    #: supplied argument or will fail if no such representation exists
+    #:
+    method Numeric(val)
+        local   tmp                     #LV:
+
+        #
+        # if the object value supplied has a method that provides an Unicon string
+        # string representation of that object value, run that method and see if it
+        # will produce an Unicon numeric value. Otherwise, simply fail. This will
+        # use the standard Unicon function numeric()
+        #
+        if HasMethod(val, "String") then {
+            return ::numeric(val.String())
+        }
+        return ::numeric(val)
+    end
+
+    #MD:
+    #: Real(val) - this will return the numeric value representation of the
+    #: supplied argument or will fail if no such representation exists
+    #:
+    method Real(val)
+        local   tmp                     #LV:
+
+        #
+        # if the object value supplied has a method that provides an Unicon string
+        # string representation of that object value, run that method and see if it
+        # will produce an Unicon numeric value. Otherwise, simply fail. This will
+        # use the standard Unicon function numeric()
+        #
+        if HasMethod(val, "String") then {
+            return ::real(val.String())
+        }
+        return ::real(val)
+    end
+
+
+
+#MD:
+#:
+#: The generic design of the "class" classes is highlighted in the initially()
+#: method below. It ensures that no matter how many subclasses a class may end up
+#: having the initially() method is only run once and only one class object is
+#: created for the relevant class. This means that the class name refers to the
+#: relevant object directly without having to use the function call method.
+#:
+#: We only want the initially method to be run once ever and even with the class
+#: name no longer pointing to the relevant code, it is still possible to execute
+#: the class initially code from within a subclass using the superclass method
+#: call protocol. Therefore, we check to see if the class name now holds an object
+#: or is still the original procedure.
+#:
+#: This is unlike the methodology that the classes of Steve Wampler uses.
+#: In those cases, the class name is associated with a co-expression and each call
+#: to the class is via the function call process. In his classes, this always
+#: returns the same object.
+#:
+initially()
+
+    #
+    # We test if this code has already been run and we will only execute it the
+    # first time through. I need to investigate whether or not it is possible to
+    # run this code in an initial section. If it is possible, this may be a
+    # simplification of the entire process. At this point, it must be noted that
+    # the following code is assuming that the classes do not belong to a package.
+    # If they do, then the package name will have to be included with the class
+    # name.
+    #
+    initial {
+        #
+        # We need to ensure that the superclasses are executed and this is done
+        # with the following call. If they have already been executed once, this
+        # will be a null operation.
+        #
+        Execute(ClassObject::ClassObject)
+
+        #
+        # By default, we will turn the debugging facilities off for this class
+        #
+        Off()
+
+        #
+        # we now set this class name to be the object itself, so that no more
+        # objects of this class are produced. This is a singleton class.
+        #
+        ClassObject::ClassClass := self
+
+        #
+        # since this class does not have an associated object class, we will set
+        # the inherited class variable New to the __NewNotSet procedure which is
+        # available in the ErrorSystem file.
+        #
+        ClassObject::ClassClass.New := ::proc(__NewNotSet)
+
+        #
+        # We initialise the __ObjectToClass and __ClassToObject class variables
+        # to the required tables.
+        #
+        /ClassObject::ClassClass.__ClassToObject := ::table()
+        /ClassObject::ClassClass.__ObjectToClass := ::table()
+
+        #
+        # we now need to initialise the __operator_overload_error_message to the
+        # required tables#
+        set_operator_overload_error_messages()
+    }
+end
+
+#CD:
+#: class ClassObject    This is the parent object for object classes that
+#:                      have an associated operations class. This gives all objects
+#:                      created by this system a set of standard methods. It also
+#:                      provides a set of the operator overload methods for every
+#:                      object that inherits from this class.
+#:
+class ClassObject : ErrorSystem(
+    __operator_overload                #CV: by default, operator overload will
+                                        #:   fail if the appropriate methods are
+                                        #:   not implemented. This variable will
+                                        #:   normally contain 1 to indicate that
+                                        #:   condition. If this variable is &null,
+                                        #:   then a runtime error will be initiated.
+                                        #:   This will be controlled by the
+                                        #:   appropriate error method defined in
+                                        #:   this class. This error method can
+                                        #:   be overridden at the subclass level
+                                        #:   by defining a method of the same name.
+)
+
+    #MD:
+    #: String() - if implemented, returns the string representation of the object
+    #:
+    abstract method String()
+
+    #MD:
+    #: __call_by_method_name - the generic method that will call the specified
+    #: method by name. This is a class helper function and should not be used
+    #: outside of this class
+    #:
+    method __call_by_method_name(methname, params[])
+        DebugPrint("methname: ", methname, " --> ", ::image(\self.__m[methname]))
+        DebugPrint("params[]:", ::image(params))
+
+        if \self.__m[methname] then {
+            return self.__m[methname] ! ::push(params, self)
+        } else if \__operator_overload then {
+            fail
+        } else {
+            operator_overload_error_error(methname)
+        }
+    end
+
+    #MD:
+    #:
+    method ClassName()
+        return \ClassObject::ClassClass.ClassName(self)
+    end
+
+    #MD:
+    #: Clone() - provide a full copy of this object. It creates a new object. At
+    #: the present time, it is the same as Copy()
+    #:
+    method Clone()
+        return DeepCopy(self)
+    end
+
+    #MD:
+    #: Copy() - provide a full copy of this object. It creates a new object.
+    #:
+    method Copy()
+        return DeepCopy(self)
+    end
+
+    #MD:
+    #: operator_overload_error_error(methname) - this will display the relevant
+    #: abort message for the missing method if called. If an unknown operator
+    #: is supplied, a default message will be displayed to indicate this.
+    #:
+    method operator_overload_error_error(methname)
+        local   err_message_info        #LV: temporary to hold the selected error
+                                        #:   message details
+
+        err_message_info := \ClassObject::ClassClass.__operator_overload_error_messages[methname]
+
+        AbortMessage(err_message_info,
+                     keyword("&file",,3),
+                     keyword("&line",,3),
+                     "is not defined for this object.")
+    end
+
+    #MD:
+    #: Serial() - provide the system serial number for this object
+    #:
+    method Serial()
+        return ::serial(self)
+    end
+
+    #MD:
+    #: set_operator_overload_abort(noabort) - use this method to change  whether
+    #: or not operator overload fails or aborts, when no relevant method is found
+    #:
+    method set_operator_overload_abort(noabort)
+        if \noabort then {
+            __operator_overload := noabort
+        } else {
+            __operator_overload := &null
+            set_operator_overload_error_messages()
+        }
+    end
+
+    ############################################################################
+    ############################################################################
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    ############################################################################
+    ############################################################################
+
+    #MD:
+    #: Addition(val)
+    #:
+    method Addition(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Addition(self, val)
+    end
+
+    #MD:
+    #: Divide(val)
+    #:
+    method Divide(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Divide(self, val)
+    end
+
+    #MD:
+    #: Minus(val)
+    #:
+    method Minus(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Minus(self, val)
+    end
+
+    #MD:
+    #: Modulus(val)
+    #:
+    method Modulus(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Modulus(self, val)
+    end
+
+    #MD:
+    #: Multiply(val)
+    #:
+    method Multiply(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Multiply(self, val)
+    end
+
+    #MD:
+    #: Negate()
+    #:
+    method Negate()
+        return ClassObject::ClassClass.Negate(self)
+    end
+
+
+    #MD:
+    #: UnaryPlus()
+    #:
+    method UnaryPlus()
+        return ClassObject::ClassClass.UnaryPlus(self)
+    end
+
+    #MD:
+    #: Power(val)
+    #:
+    method Power(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Power(self, val)
+    end
+
+    ############################################################################
+    ############################################################################
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    ############################################################################
+    ############################################################################
+
+    #MD:
+    #: Equals(val) - this will convert the supplied parameter to numeric
+    #: value if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the this coverted argument if the two values are
+    #: numerically equal or failure if the test fails.
+    #:
+    method Equals(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Equals(self, val)
+    end
+
+    #MD:
+    #: GTorEqual(val) - this will convert the supplied parameters to numeric
+    #: values if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the converted argument if the self value is
+    #: numerically equal to or greater than the supplied or failure if the test fails.
+    #:
+    method GTorEqual(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.GTorEqual(self, val)
+    end
+
+    #MD:
+    #: Greater(val) - this will convert the supplied parameter to numeric
+    #: value if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the supplied argument if the self value is
+    #: numerically greater than the supplied or failure if the test fails.
+    #:
+    method Greater(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Greater(self, val)
+    end
+
+    #MD:
+    #: LTorEqual(val) - this will convert the supplied parameter to numeric
+    #: value if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the supplied argument if the self value is
+    #: numerically less than or equal to the supplied or failure if the test fails.
+    #:
+    method LTorEqual(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.LTorEqual(self, val)
+    end
+
+    #MD:
+    #: Less(val) - this will convert the supplied parameter to numeric
+    #: value if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the supplied argument if the self value is
+    #: numerically less than the supplied or failure if the test fails.
+    #:
+    method Less(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Less(self, val)
+    end
+
+    #MD:
+    #: Nequal(val) - this will convert the supplied parameter to numeric
+    #: value if possible. The result returned will be the numeric value (either
+    #: an Unicon integer or real) of the supplied argument if the self value is
+    #: numerically not equal to the supplied or failure if the test fails.
+    #:
+    method Nequal(val)
+        /val & AbortMessage(102, keyword("&file", , 1), keyword("&line", , 1),
+                            __AuxMessage(102))
+
+        return ClassObject::ClassClass.Nequal(self, val)
+    end
+
+
+    ############################################################################
+    ############################################################################
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    #                                                                          #
+    ############################################################################
+    ############################################################################
+
+    #MD:
+    #: Integer() - this will return the integer value representation of the
+    #: object value or will fail if no such representation exists
+    #:
+    method Integer()
+        return ClassObject::ClassClass.Integer(self)
+    end
+
+    #MD:
+    #: Numeric() - this will return the numeric value representation of the
+    #: object value or will fail if no such representation exists
+    #:
+    method Numeric()
+        return ClassObject::ClassClass.Numeric(self)
+    end
+
+    #MD:
+    #: Real() - this will return the numeric value representation of the
+    #: object value or will fail if no such representation exists
+    #:
+    method Real()
+        return ClassObject::ClassClass.Real(self)
+    end
+
+
+
+    ############################################################################
+    ############################################################################
+    #                                                                          #
+    #   Operator Overload Method Definitions                                   #
+    #                                                                          #
+    #   These specific methods require that the Unicon system to be built with #
+    #   the Operator Overload facilities.                                      #
+    #                                                                          #
+    #   This requires that the following configuration option to be specified  #
+    #   as follows:                                                            #
+    #                                                                          #
+    #       --enable-ovld                                                      #
+    #                                                                          #
+    ############################################################################
+    ############################################################################
+
+    #
+    # The following methods are used with the operator overload enhancements. They
+    # are placed in this class as all objects will inherit them. However, each object class
+    # will need to supply the relevant mathod that is referenced by these methods.
+    #
+
+    #
+    # The specific arithmatic methods will be
+    #   __add__(y)              : x + y
+    #   __div__(y)              : x / y
+    #   __minus__(y)            : x - y
+    #   __mod__(y)              : x % y
+    #   __mult__(y)             : x * y
+    #   __neg__()               : - x
+    #   __number__()            : + x
+    #   __powr__(y)             : x ^ y
+
+    #MD:
+    #: __add__(y) - This is the operator overload method and will call an
+    #: Addition(y) method within the object that is the first operand of binary "+". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __add__(y)
+        return __call_by_method_name("Addition", y)
+    end
+
+    #MD:
+    #: __div__(y) - This is the operator overload method and will call an
+    #: Divide(y) method within the object that is the first operand of binary "/". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __div__(y)
+        return __call_by_method_name("Divide", y)
+    end
+
+    #MD:
+    #: __minus__(y) - This is the operator overload method and will call an
+    #: Minus(y) method within the object that is the first operand of binary "-". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __minus__(y)
+        return __call_by_method_name("Minus", y)
+    end
+
+    #MD:
+    #: __mod__(y) - This is the operator overload method and will call an
+    #: Modulus(y) method within the object that is the first operand of binary "%". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __mod__(y)
+        return __call_by_method_name("Modulus", y)
+    end
+
+    #MD:
+    #: __mult__(y) - This is the operator overload method and will call an
+    #: Multiply(y) method within the object that is the first operand of binary "*". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __mult__(y)
+        return __call_by_method_name("Multiply", y)
+    end
+
+    #MD:
+    #: __neg__() - This is the operator overload method and will call an
+    #: Negate() method within the object that is the first operand of unary "-". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __neg__()
+        return __call_by_method_name("Negate")
+    end
+
+    #MD:
+    #: __number__() - This is the operator overload method and will call an
+    #: UnaryPlus(y) method within the object that is the first operand of unary "+". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __number__()
+        return __call_by_method_name("UnaryPlus")
+    end
+
+    #MD:
+    #: __powr__(y) - This is the operator overload method and will call an
+    #: Power(y) method within the object that is the first operand of binary "^". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __powr__(y)
+        return __call_by_method_name("Power", y)
+    end
+
+    #
+    # The specific equivalence methods will be
+    #   __eqv__(y)              : x === y
+    #   __neqv__(y)             : x ~=== y
+
+    #MD:
+    #: __eqv__(y) - This is the operator overload method and will call an
+    #: Equiv(y) method within the object that is the first operand of binary "===". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __eqv__(y)
+        return __call_by_method_name("Equiv", y)
+    end
+
+    #MD:
+    #: __neqv__(y) - This is the operator overload method and will call an
+    #: Nequiv(y) method within the object that is the first operand of binary "~===". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __neqv__(y)
+        DebugPrint("self:", ::image(self), " y:", ::image(y))
+        return __call_by_method_name("Nequiv", y)
+    end
+
+    #
+    # The specific lexical test methods will be
+    #   __lexeq__(y)            : x == y
+    #   __lexge__(y)            : x >>= y
+    #   __lexgt__(y)            : x >> y
+    #   __lexle__(y)            : x <<= y
+    #   __lexlt__(y)            : x << y
+    #   __lexne__(y)            : x ~== y
+
+    #MD:
+    #: __lexeq__(y) - This is the operator overload method and will call an
+    #: LexEquals(y) method within the object that is the first operand of binary "==". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __lexeq__(y)
+        return __call_by_method_name("LexEquals", y)
+    end
+
+    #MD:
+    #: __lexge__(y) - This is the operator overload method and will call an
+    #: LexGTorEq(y) method within the object that is the first operand of binary ">>=". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __lexge__(y)
+        return __call_by_method_name("LexGTorEq", y)
+    end
+
+    #MD:
+    #: __lexgt__(y) - This is the operator overload method and will call an
+    #: LexGT(y) method within the object that is the first operand of binary ">>". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __lexgt__(y)
+        return __call_by_method_name("LexGT", y)
+    end
+
+    #MD:
+    #: __lexle__(y) - This is the operator overload method and will call an
+    #: LexLTorEq(y) method within the object that is the first operand of binary "<<=". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __lexle__(y)
+        return __call_by_method_name("LexLTorEq", y)
+    end
+
+    #MD:
+    #: __lexlt__(y) - This is the operator overload method and will call an
+    #: LexLT(y) method within the object that is the first operand of binary "<<". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __lexlt__(y)
+        return __call_by_method_name("LexLT", y)
+    end
+
+    #MD:
+    #: __lexne__(y) - This is the operator overload method and will call an
+    #: LexNE(y) method within the object that is the first operand of binary "~==". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __lexne__(y)
+        return __call_by_method_name("LexNE", y)
+    end
+
+    #
+    # The specific numerical test methods will be
+    #   __numeq__(y)            : x = y
+    #   __numge__(y)            : x >= y
+    #   __numgt__(y)            : x > y
+    #   __numle__(y)            : x <= y
+    #   __numlt__(y)            : x < y
+    #   __numne__(y)            : x ~= y
+
+    #MD:
+    #: __numeq__(y) - This is the operator overload method and will call an
+    #: Equals(y) method within the object that is the first operand of binary "=". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __numeq__(y)
+        return __call_by_method_name("Equals", y)
+    end
+
+    #MD:
+    #: __numge__(y) - This is the operator overload method and will call an
+    #: GTorEqual(y) method within the object that is the first operand of binary ">=". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __numge__(y)
+        return __call_by_method_name("GTorEqual", y)
+    end
+
+    #MD:
+    #: __numgt__(y) - This is the operator overload method and will call an
+    #: Greater(y) method within the object that is the first operand of binary ">". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __numgt__(y)
+        return __call_by_method_name("Greater", y)
+    end
+
+    #MD:
+    #: __numle__(y) - This is the operator overload method and will call an
+    #: LTorEqual(y) method within the object that is the first operand of binary "<=". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __numle__(y)
+        return __call_by_method_name("LTorEqual", y)
+    end
+
+    #MD:
+    #: __numlt__(y) - This is the operator overload method and will call an
+    #: Less(y) method within the object that is the first operand of binary "<". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __numlt__(y)
+        return __call_by_method_name("Less", y)
+    end
+
+    #MD:
+    #: __numne__(y) - This is the operator overload method and will call an
+    #: Nequal(y) method within the object that is the first operand of binary "~=". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __numne__(y)
+        return __call_by_method_name("Nequal", y)
+    end
+
+    #
+    # The other special list methods will be
+    #   __cat__(y)              : x || y
+    #   __lcat__(y)             : [x] ||| y
+
+    #MD:
+    #: __cat__(y) - This is the operator overload method and will call an
+    #: Concatenate(y) method within the object that is the first operand of binary "||". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __cat__(y)
+        DebugPrint("self:", ::image(self), " y:", ::image(y))
+        return __call_by_method_name("Concatenate", y)
+    end
+
+    #MD:
+    #: __lcat__(y) - This is the operator overload method and will call an
+    #: Lconcatenate(y) method within the object that is the first operand of binary "|||". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __lcat__(y)
+        return __call_by_method_name("Lconcatenate", y)
+    end
+
+    #
+    # The other special set methods will be
+    #   __compl__()             : ~x
+    #   __diff__(y)             : x -- y
+    #   __inter__(y)            : x ** y
+    #   __union__(y)            : x ++ y
+
+    #MD:
+    #: __compl__() - This is the operator overload method and will call an
+    #: Complement() method within the object that is the first operand of binary "~". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __compl__()
+        return __call_by_method_name("Complement")
+    end
+
+    #MD:
+    #: __diff__(y) - This is the operator overload method and will call an
+    #: Difference(y) method within the object that is the first operand of binary "--". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __diff__(y)
+        return __call_by_method_name("Difference", y)
+    end
+
+    #MD:
+    #: __inter__(y) - This is the operator overload method and will call an
+    #: Intersect(y) method within the object that is the first operand of binary "**". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __inter__(y)
+        return __call_by_method_name("Intersect", y)
+    end
+
+    #MD:
+    #: __union__(y) - This is the operator overload method and will call an
+    #: Union(y) method within the object that is the first operand of binary "++". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __union__(y)
+        return __call_by_method_name("Union", y)
+    end
+
+    #
+    # The other special unary methods will be
+    #   __bang__()              : !x
+    #   __random__()            : ?x
+    #   __refresh__()           : ^create x     : one may want to return self for some uses.
+    #   __sect__(y,z)           : x[y : z]
+    #   __size__()              : *x            : need to consider that *self recurses indefinitely
+    #   __subsc__(y)            : x[y]
+    #   __tabmat__()            : =x
+    #   __toby__(y,z)           : x to y by z
+
+    #MD:
+    #: __bang__() - This is the operator overload method and will call an
+    #: Generate() method within the object that is the first operand of unary "!". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __bang__()
+        return __call_by_method_name("ForEach")
+    end
+
+    #MD:
+    #: __random__() - This is the operator overload method and will call an
+    #: Random() method within the object that is the first operand of unary "?". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __random__()
+        return __call_by_method_name("Random")
+    end
+
+    #MD:
+    #: __refresh__() - This is the operator overload method and will call an
+    #: Refresh() method within the object that is the first operand of unary "^". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __refresh__()
+        return __call_by_method_name("Refresh")
+    end
+
+    #MD:
+    #: __sect__(y, z) - This is the operator overload method and will call an
+    #: Subsection(y, z) method within the object that is the first operand of binary "[:]". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __sect__(y, z)
+        DebugPrint("self:", image(self), " y:", y, " z:", z)
+        return __call_by_method_name("Subsection", y, z)
+    end
+
+    #MD:
+    #: __size__() - This is the operator overload method and will call an
+    #: Size() method within the object that is the first operand of unary "*". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __size__()
+        return __call_by_method_name("Size")
+    end
+
+    #MD:
+    #: __subsc__(y) - This is the operator overload method and will call an
+    #: Subscript(y) method within the object that is the first operand of binary "[]". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __subsc__(y)
+        return __call_by_method_name("Subscript", y)
+    end
+
+    #MD:
+    #: __tabmat__() - This is the operator overload method and will call an
+    #: TabMatch() method within the object that is the first operand of unary "=". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __tabmat__()
+        return __call_by_method_name("TabMatch")
+    end
+
+    #MD:
+    #: __toby__(y, z) - This is the operator overload method and will call an
+    #: ToBy(y, z) method within the object that is the first operand of binary "...". If
+    #: the method doesn't exist, this method will fail.
+    #:
+    method __toby__(y, z)
+        return __call_by_method_name("ToBy", y, z)
+    end
+
+#MD:
+#:
+initially()
+    local tmp
+    #
+    # Since we only want this code to ever be run once, we use the initial {}
+    # expression to ensure this happens.
+    #
+    initial {
+        #
+        # We need to ensure that the superclasses are executed and this is done
+        # with the following call. If they have already been executed once, this
+        # will be a null operation.
+        #
+        Execute(ErrorSystem::ErrorSystem)
+
+        #
+        # We need to ensure that the CLassClass class has been initialised.
+        #
+        tmp := CallingComponents(::get_active_name(::proc(&current, 3)))
+        if tmp[3] ~== "initially" & tmp[2] ~== "ClassClass" then {
+            ClassObject::ClassClass()
+        }
+
+        #
+        # By default, we will turn the debugging facilities off for this class
+        #
+        Off()
+
+        #
+        # we now set this class name to be the object itself, so that no more
+        # objects of this unicon class are created. This is a singleton class.
+        #
+        ClassObject::ClassObject := self
+
+        #
+        # Make the operator overlaod facilities available for all subclasses
+        # of this class
+        #
+        __operator_overload := 1
+    }
+end
+
+#PD:
+#: __NewNotSet(val) - this procedure is the default value for New. It should be
+#: overridden by a call to the method SetClass in the subclass
+#:
+procedure __NewNotSet(val)
+    \val &  ::write("The method New() has not be initialised. Initialise by _
+                     calling the method SetClass() in the initially method _
+                     of the subclass of ClassObject::ClassClass.")
+end
+
+#PD:
+#: AlreadyRun(object_tested) - tests if a singleton class has become an object
+#: by having been run once.
+#:
+#:@param object_tested  any unicon value
+#:@returns              the class name of the object
+#:@fails                if the unicon value is not an object
+procedure AlreadyRun(object_tested)
+    #
+    # test if a singleton class has been created by checking if it is an object
+    # since a singleton class will be an object if its intially method has been run
+    #
+    return IsObject(object_tested)
+end
+
+#PD:
+#: DeepCopy(A, cache) - this is a modified copy of the procedure defined in the
+#: IPL. It will recursively copy all levels of any structure and handles
+#: structures that have loops within the structure. The initial call does not
+#: supply a parameter for cache. This is used for the internal recursive calls
+#; to ensure that any child structure is only copied once and that the relevant
+#: reference is used whenever it is found in the structure a subsequent time.
+#:
+#:@param A
+#:@param cache
+#:@return
+#:
+procedure DeepCopy(A, cache)
+    local   k                           #LV:
+
+    /cache := ::table()                 # used to handle multireferenced objects
+    if \cache[A] then {
+        return cache[A]
+    }
+
+    case type(A) of {
+        "table" | "list": {
+            cache[A] := ::copy(A)
+            every cache[A][k := ::key(A)] := DeepCopy(A[k], cache)
+        }
+        "set": {
+            cache[A] := ::set()
+            every ::insert(cache[A], DeepCopy(!A, cache))
+         }
+        default: {
+            cache[A] := ::copy(A)
+            if ::match("record ", ::image(A)) then {
+                every cache[A][k := ::key(A)] := DeepCopy(A[k], cache)
+            }
+        }
+    }
+    return .cache[A]
+end
+
+#PD:
+#: Execute(object_or_class_value) - test a unicon object or class value and if
+#: not an object execute as a class
+#:
+#:@param object_or_class_value
+#:@                     class or object value
+#:@fails                will always produce a failure result, but will cuase a
+#:@                     class to be executed
+procedure Execute(object_or_class_value)
+    if not IsObject(object_or_class_value) then {
+        object_or_class_value()
+    }
+end
+
+#PD:
+#: IsObject(value_tested) - if image of the value to be tested starts
+#: with "object" then it is an object. We return the object classname
+#:
+#:@param value_tested   any unicon value to be tested
+#:@returns              the classname of the value tested
+#:@fails                if the value tested is not an unicon object
+procedure IsObject(value_tested)
+    local   object_identifier           #LV: temporary to hold object identifier, if
+                                        #:   the value given is an object
+
+    #
+    # using the system image function, obtain the system object name
+    # otherwise the object_identifier will retain the &null value
+    #
+    ::image(value_tested) ? { ="object" & object_identifier := ::trim(::tab(0))}
+
+    #
+    # on the basis that there is an object_identifier, we obtain the system classname
+    # and return this as the result
+    #
+    return \object_identifier & \::classname(value_tested)
+end
+
+#PD:
+#: IsObjectOf(value, expectedtypes[]) - This procedure will test a value
+#: to see if it belongs to any of the expected classes. We test against all
+#: superclasses of this value and against any of the main classes that it is
+#: associated with.
+#:
+#:@param value          object value to be tested
+#:@param expectedtypes  list of string names of classes that this value can
+#:@                     belong to
+#:@returns              value if it belongs to any of the classes specified
+#:@fails                if value is not a member of any of the specified classes
+procedure IsObjectOf(value, expectedtypes[])
+    local   object_identifier,          #LV: if given value is an object, this will
+                                        #:   hold the object name, &null otherwise
+            superclasses := [],         #LV: list of all applicable superclasses for
+                                        #:   the value supplied, otherwise an empty list
+            current_superclass,         #LV: the current item out of the superclass list
+            parentclass_list := []      #LV: the applicable parent classes to test
+                                        #:   the expected types against
+
+    #
+    # determine if this value is an object of some kind and get its system name
+    # if it is not an object, object_identifer will retain the &null value
+    #
+    ErrorSystem::ErrorSystem.DebugPrint("value", ::image(value), " *expectedtypes:",
+                                        *expectedtypes, " expectedtypes:", ::image(expectedtypes))
+    ::image(value) ? { ="object" & object_identifier := ::trim(::tab(0))}
+
+    #
+    # if the value is an object of some kind, we will get the list of applicable
+    # superclasses. otherwise superclasses will retain the initial empty list value
+    #
+    superclasses := SuperClass(value)
+
+    #
+    # for each element of the superclasses that have been found, we need the
+    # translation of associated class to class. If there is no such translation,
+    # we just add the found superclass to the new list
+    #
+    every current_superclass := !superclasses do {
+        ::put(parentclass_list, \ClassObject::ClassClass.__ObjectToClass[current_superclass] | current_superclass)
+    }
+
+    ::push(parentclass_list, ::classname(value) & value.ClassName())
+
+    #
+    # if this value's class matches any of the given expected classes then return
+    # the value, otherwise fail
+    #
+    if \object_identifier & \::classname(value) & (!parentclass_list == !expectedtypes) then {
+        return value
+    }
+end
+
+
+#PD:
+#: ObjectProperties(object_or_classname) - this returns all of the
+#: object/class fieldnames and associated methods for any object or classname
+#: supplied
+#:
+#:@param object_or_classname
+#:@                     either an unicon object or the string
+#:@                     representation of a class name
+#:@suspends             with each of the member names (fieldnames) followed by
+#:@                     each of the methods
+#:@fails                if the object_or_classname is not an object or class name
+procedure ObjectProperties(object_or_classname)
+    local   class_name                  #LV: temporary to hold the system classname
+                                        #:   for the value supplied
+
+    #
+    # we first test if the value supplied is a string representing the class
+    #
+    if ::type(object_or_classname) == "string" then {
+        #
+        # we obtain the system type name for this value
+        #
+        class_name := ::proc(object_or_classname, 0)
+
+        #
+        # if it is anything other than a procedure, we will set the class_name
+        # to the &null value
+        #
+        if ::type(class_name) ~== "procedure" then {
+            class_name := &null
+        }
+
+    #
+    # otherwise, we have a value that is possibly an object or class
+    #
+    } else {
+        class_name := (IsObject(object_or_classname) & object_or_classname)
+    }
+
+    if \class_name then {
+        #
+        # we suspend this procedure for each found field as a 2 element list, the
+        # first element being the member name and the second being the type
+        # indicator "member"
+        #
+        suspend [!::membernames(class_name), "member"]
+
+        #
+        # we suspend this procedure for each found method as a 2 element list, the
+        # first element being the method name and the second being the type
+        # indicator "procedure"
+        #
+        suspend [!::methodnames(class_name), "procedure"]
+    }
+end
+
+#PD:
+#: set_operator_overload_error_messages() - this initialises the __operator_overload_error_messages
+#: variable to hold a table keyed by operator symbol with an appropriate list value
+#: containing the error number as the first element and the customisation error
+#: message as the second element. This will be used to create a standard error message.
+#:
+procedure set_operator_overload_error_messages()
+    #
+    # We only want this to ever run once, so we place the coce in the initialexpression
+    #
+    initial {
+        if /ClassObject::ClassClass.__operator_overload_error_messages then {
+            #
+            # we want a specific result to be returned from the table when an
+            # unimplemented overloaded operator has not been implemented within
+            # the Unicon compiler/runtime system. This is separate from the classes
+            # not having a specific method that implemented the system defined
+            # operator overload methods.
+            #
+            #
+            #
+            ::runtime_error_message(999, "This is an Unknown Operator and has not been defined in Unicon and")
+            ::runtime_error_message(900, "The Operater Overload method Addition(y) for the binary operator \"+\"")
+            ::runtime_error_message(901, "The Operater Overload method Minus(y) for the binary operator \"-\"")
+            ::runtime_error_message(902, "The Operater Overload method Multiply(y) for the binary operator \"*\"")
+            ::runtime_error_message(903, "The Operater Overload method Divide(y) for the binary operator \"/\"")
+            ::runtime_error_message(904, "The Operater Overload method Power(y) for the binary operator \"^\"")
+            ::runtime_error_message(905, "The Operater Overload method UnaryPlus() for the unary operator \"+\"")
+            ::runtime_error_message(906, "The Operater Overload method Negate() for the unary operator \"-\"")
+            ::runtime_error_message(907, "The Operater Overload method Modulus(y) for the binary operator \"%\"")
+            ::runtime_error_message(908, "The Operater Overload method Equiv(y) for the binary operator \"===\"")
+            ::runtime_error_message(909, "The Operater Overload method Nequiv(y) for the binary operator \"~===\"")
+            ::runtime_error_message(910, "The Operater Overload method ForEach() for the unary operator \"!\"")
+            ::runtime_error_message(911, "The Operater Overload method Random() for the unary operator \"?\"")
+            ::runtime_error_message(912, "The Operater Overload method Complement() for the unary operator \"~\"")
+            ::runtime_error_message(913, "The Operater Overload method TabMatch() for the unary operator \"=\"")
+            ::runtime_error_message(914, "The Operater Overload method Size() for the unary operator \"*\"")
+            ::runtime_error_message(915, "The Operater Overload method Concatenate(y) for the binary operator \"||\"")
+            ::runtime_error_message(916, "The Operater Overload method Lconcatenate(y) for the binary operator \"|||\"")
+            ::runtime_error_message(917, "The Operater Overload method Difference(y) for the binary operator \"--\"")
+            ::runtime_error_message(918, "The Operater Overload method Union(y) for the binary operator \"++\"")
+            ::runtime_error_message(919, "The Operater Overload method Intersect(y) for the binary operator \"**\"")
+            ::runtime_error_message(920, "The Operater Overload method LexEquals(y) for the binary operator \"==\"")
+            ::runtime_error_message(921, "The Operater Overload method LexGTorEq(y) for the binary operator \">>=\"")
+            ::runtime_error_message(922, "The Operater Overload method LexGT(y) for the binary operator \">>\"")
+            ::runtime_error_message(923, "The Operater Overload method LexLTorEq(y) for the binary operator \"<<=\"")
+            ::runtime_error_message(924, "The Operater Overload method LexLT(y) for the binary operator \"<<\"")
+            ::runtime_error_message(925, "The Operater Overload method LexNE(y) for the binary operator \"~==\"")
+            ::runtime_error_message(926, "The Operater Overload method Equals(y) for the binary operator \"=\"")
+            ::runtime_error_message(927, "The Operater Overload method GTorEqual(y) for the binary operator \">=\"")
+            ::runtime_error_message(928, "The Operater Overload method Greater(y) for the binary operator \">\"")
+            ::runtime_error_message(929, "The Operater Overload method LTorEqual(y) for the binary operator \"<=\"")
+            ::runtime_error_message(930, "The Operater Overload method Less(y) for the binary operator \"<\"")
+            ::runtime_error_message(931, "The Operater Overload method Nequal(y) for the binary operator \"~=\"")
+            ::runtime_error_message(932, "The Operater Overload method Refresh(y) for the unary operator \"^\"")
+            ::runtime_error_message(933, "The Operater Overload method Subsection(y, z) for the ternary operator \"[:]\"")
+            ::runtime_error_message(934, "The Operater Overload method Subscript(y) for the binary operator \"[]\"")
+            ::runtime_error_message(935, "The Operater Overload method ToBy(y) for the binary operator \"...\"")
+
+
+            ClassObject::ClassClass.__operator_overload_error_messages := ::table(999)
+            ClassObject::ClassClass.__operator_overload_error_messages["Addition"] := 900
+            ClassObject::ClassClass.__operator_overload_error_messages["Minus"] := 901
+            ClassObject::ClassClass.__operator_overload_error_messages["Multiply"] := 902
+            ClassObject::ClassClass.__operator_overload_error_messages["Divide"] := 903
+            ClassObject::ClassClass.__operator_overload_error_messages["Power"] := 904
+            ClassObject::ClassClass.__operator_overload_error_messages["UnaryPlus"] := 905
+            ClassObject::ClassClass.__operator_overload_error_messages["Negate"] := 906
+            ClassObject::ClassClass.__operator_overload_error_messages["Modulus"] := 907
+            ClassObject::ClassClass.__operator_overload_error_messages["Equiv"] := 908
+            ClassObject::ClassClass.__operator_overload_error_messages["Nequiv"] := 909
+            ClassObject::ClassClass.__operator_overload_error_messages["ForEach"] := 910
+            ClassObject::ClassClass.__operator_overload_error_messages["Random"] := 911
+            ClassObject::ClassClass.__operator_overload_error_messages["Complement"] := 912
+            ClassObject::ClassClass.__operator_overload_error_messages["TabMatch"] := 913
+            ClassObject::ClassClass.__operator_overload_error_messages["Size"] := 914
+            ClassObject::ClassClass.__operator_overload_error_messages["Concatenate"] := 915
+            ClassObject::ClassClass.__operator_overload_error_messages["Lconcatenate"] := 916
+            ClassObject::ClassClass.__operator_overload_error_messages["Difference"] := 917
+            ClassObject::ClassClass.__operator_overload_error_messages["Union"] := 918
+            ClassObject::ClassClass.__operator_overload_error_messages["Intersect"] := 919
+            ClassObject::ClassClass.__operator_overload_error_messages["LexEquals"] := 920
+            ClassObject::ClassClass.__operator_overload_error_messages["LexGTorEq"] := 921
+            ClassObject::ClassClass.__operator_overload_error_messages["LexGT"] := 922
+            ClassObject::ClassClass.__operator_overload_error_messages["LexLTorEq"] := 923
+            ClassObject::ClassClass.__operator_overload_error_messages["LexLT"] := 924
+            ClassObject::ClassClass.__operator_overload_error_messages["LexNE"] := 925
+            ClassObject::ClassClass.__operator_overload_error_messages["Equals"] := 926
+            ClassObject::ClassClass.__operator_overload_error_messages["GTorEqual"] := 927
+            ClassObject::ClassClass.__operator_overload_error_messages["Greater"] := 928
+            ClassObject::ClassClass.__operator_overload_error_messages["LTorEqual"] := 929
+            ClassObject::ClassClass.__operator_overload_error_messages["Less"] := 930
+            ClassObject::ClassClass.__operator_overload_error_messages["Nequal"] := 931
+            ClassObject::ClassClass.__operator_overload_error_messages["Refresh"] := 932
+            ClassObject::ClassClass.__operator_overload_error_messages["Subsection"] := 933
+            ClassObject::ClassClass.__operator_overload_error_messages["Subscript"] := 934
+            ClassObject::ClassClass.__operator_overload_error_messages["ToBy"] := 935
+        }
+    }
+end
+
+#PD:
+#: SuperClass(this_object) - return the list of superclasses for this object,
+#: it does this by looking at the object oprec. The methods and superclasses
+#: are found in this record type. All methods have a type of "procedure", and
+#: superclasses do not.
+#:
+#:@param this_object    the object for which we want the superclasses
+#:@returns              the list of superclasses for this object in the same order
+#:@                     as defined by class declaration
+#:@fails                when this_object is any unicon value that is not an object
+procedure SuperClass(this_object)
+    local   superclass_list,            #LV: holds list of applicable superclasses
+            index,                      #LV: index used into both object oprec and
+                                        #:   fieldname list
+            possible_method,            #LV: selected item from object oprec, to be
+                                        #:   tested if it is a method or not
+            object_oprec,               #LV: object internal oprec record (part of
+                                        #:   the unicon object system)
+            field_name,                 #LV: current fieldname from object oprec record
+            fieldname_list              #LV: list of all fieldnames from object oprec
+                                        #:   record
+
+    #
+    # We need to know if this value is an object or not, if it is we can look
+    # at the oprec for this value and obtain the superclasses if it has any.
+    # Since every object in the system is implemented as a record, the oprec
+    # function returns this record and we can use this to determine what the
+    # names of the methods (procedures) and superclasses are, as they are all
+    # fields within the record structure
+    #
+    if IsObject(this_object) then {
+        #
+        # obtain the oprec record for this object, this record contains all the
+        # information related toan object. Each fieldname contains one of method
+        # values (procedure) or superclass pointers (another record). We are
+        # only interested in those fields which do not hold procedure values.
+        #
+        object_oprec := ::oprec(this_object)
+
+        #
+        # initialise each of superclass_list and fieldname_list to their own
+        # empty list. These must be kept seperate due to the pointer semeantics
+        # of the underlying virtual machine, as lists are structured values
+        #
+        superclass_list := []
+        fieldname_list := []
+
+        #
+        # we need to know each field name from the oprec record. These field names
+        # are the method names and the superclass names as defined in the class
+        # definition under the current implemtation for classes in unicon.
+        #
+        every ::put(fieldname_list, ::fieldnames(object_oprec))
+
+        #
+        # to check if one of the field names is a superclass name, for each
+        # element of fieldname_list, we look at the corresponding index in the
+        # oprec record and see what kind of value it is. If it is not a procedure
+        # value then it will be a superclass and we can put the fieldname into the
+        # superclass_list.
+        #
+        # It should be noted that if the class implementation changes then this
+        # code must be updated to reflect those changes, otherwise, we will be
+        # getting erroneous information.
+        #
+        every index := 1 to *fieldname_list do {
+            possible_method := object_oprec[index]
+            field_name := fieldname_list[index]
+            if ::type(possible_method) ~== "procedure" then {
+                ::put(superclass_list, field_name)
+            }
+        }
+        return superclass_list
+    }
+end
+
+#PD:
+#: HasMethod(val, methodname) - if the parameter val is an object and has a method
+#: methodname, return the methodname, otherwise fail
+#:
+procedure HasMethod(val, methodname)
+    local   tmpname,                    #LV: a temporary to hold the current
+                                        #:   method name being looked at
+            name_components             #LV: a temporary to hold the various
+                                        #:   components of the object property
+
+        if IsObject(val) then {
+            every tmpname := ClassObject::ObjectProperties(val) do {
+                if tmpname[2] == "procedure" then {
+                    name_components := ErrorSystem::ErrorSystem.CallingComponents(tmpname[1])
+                    if \name_components[3] == methodname then {
+                        return methodname
+                    }
+                }
+            }
+        }
+end

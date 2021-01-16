@@ -8,6 +8,7 @@
 # Update : 5-July-2015                                                      #
 # Update : 4-September-2018 through to 24-October-2018                      #
 # Update : 7-September-2020                                                 #
+# Update : 16-January-2021                                                 #
 #                                                                           #
 # Purpose:  To provide a set of procedures for processing UTF-8 streams     #
 #           This set of routines is incomplete and will not handle          #
@@ -91,7 +92,7 @@
 # less common CJK characters and various historic scripts and               #
 # mathematical symbols.                                                     #
 #                                                                           #
-# Examples                                                                  #
+# Examples:                                                                 #
 #                                                                           #
 # Let us consider how to encode the Euro sign, €.                           #
 #                                                                           #
@@ -144,7 +145,27 @@
 #    Private methods start with _ or __                                     #
 #                                                                           #
 #    Private classes start with __                                          #
-#    Private classes have an associated Public Class                        #
+#                                                                           #
+#    Private classes have an associated Public Class. When this occurs, the #
+#    Public Class acts as the type and the Private Class acts as the values #
+#    of that type. All such Public Classes have a common infrastructure and #
+#    a common value generator method called New. The method creates a new   #
+#    value by calling the initially method of the Private Class.            #
+#                                                                           #
+#    In addition, all such values have automatically associated a set of    #
+#    methods that can be used for the Operator Overload facilities, if these#
+#    have been compiled into the runtime system. These are made available   #
+#    by defining a set of standard methods which can be used either directly#
+#    as a method call or indirectly by using the specific Unicon operators  #
+#    which calls the internally defined method which calls these publicly   #
+#    available methods.                                                     #
+#                                                                           #
+#    This association is described in the file "README.txt" that is in this #
+#    directory. The specific set of available operators is dependent on the #
+#    associated public methods being defined for the relevant classes. If   #
+#    no such method is defined, the relevant operator overload internally   #
+#    defined method will either cause the operator to fail or produce a     #
+#    runtime abort if these facilities are not defined in the runtime.      #
 #                                                                           #
 #                                                                           #
 #############################################################################
@@ -156,10 +177,22 @@
 #                   __UTF8LimitTable,                                       #
 #                   __UTF8BOM,                                              #
 #                   __UTF8CountTable,                                       #
+#                   __ByteTranslate,                                        #
 #                   __UTF8InvalidChar,                                      #
-#                   __UTF8Max                                               #
+#                   __UTF8Max,                                              #
+#                   __SpecialUTF8Strings                                    #
 #           )                                                               #
-#    class UTF8Set : ClassClass()                                           #
+#                                                                           #
+#    class UTF8Set : ClassClass(                                            #
+#                   __ascii_blank,                                          #
+#                   __uft8_blanks,                                          #
+#                   __all_codepoints,                                       #
+#                   __ascii_lparens,                                        #
+#                   __ascii_rparens,                                        #
+#                   __ascii_128,                                            #
+#                   __defined_sets,                                         #
+#                   __max_size_of_set                                       #
+#           )                                                               #
 #                                                                           #
 #############################################################################
 #                                                                           #
@@ -167,214 +200,232 @@
 #                                                                           #
 #    class __UTF8Object : ClassObject(                                      #
 #                   __data,                                                 #
-#                   __asciionly                                             #
+#                   __asciionly,                                            #
+#                   __size,                                                 #
+#                   __source_data                                           #
 #           )                                                               #
+#                                                                           #
 #    class __UTF8SetObject : ClassObject(                                   #
 #                   __allcp,                                                #
 #                   __cset,                                                 #
 #                   __2bytedata,                                            #
 #                   __3bytedata,                                            #
 #                   __4bytedata,                                            #
-#                   __negated                                               #
+#                   __negated,                                              #
+#                   __string_representation                                 #
 #           )                                                               #
 #                                                                           #
 #############################################################################
 #                                                                           #
-# Private Fields:                                                           #
+# Debugging the Classes and Methods:                                        #
 #                                                                           #
-#  class UTF8                                                               #
-#    __UTF8SizeTable        -: variable holding the table that has as       #
-#                              a key each byte that can be found in a       #
-#                              UTF-8 codepoint. The value is the            #
-#                              number of bytes that exist in a              #
-#                              codepoint that starts with this byte.        #
-#                              Those bytes that cannot start a              #
-#                              codepoint have a value of -1                 #
-#    __UTF8LimitTable       -: variable holding a table that has as a       #
-#                              key the number of bytes in a valid           #
-#                              codepoint. The value is a list of lists      #
-#                              where each list element is a list that       #
-#                              contains the range of value bytes for        #
-#                              the specific byte in the codepoint.          #
-#    __UTF8BOM              -: variable containing the optional byte        #
-#                              order mark that can start a UTF-8 file.      #
-#                              It is recommended that a byte order          #
-#                              mark not be used.                            #
-#    __UTF8CountTable       -: variable holding a table that has as a       #
-#                              key each byte that can be found in a         #
-#                              UTF-8 codepoint. The value is used to        #
-#                              count how many codepoints are in a byte      #
-#                              stream.                                      #
-#    __UTF8InvalidChar      -: variable holding the UTF-8 codepoint         #
-#                              is used to replace any invalid sequence      #
-#                              of bytes in a UTF-8 byte stream.             #
+#   The superclass ErrorSystem provides a set of debugging facilities that  #
+#   can be dynamically turned at runtime. The source code has many of the   #
+#   debugging calls placed throughout.                                      #
 #                                                                           #
-#  class UTF8Set                                                            #
-#                           -:                                              #
-#                                                                           #
-#                                                                           #
-#  class __UTF8Object                                                       #
-#                           -:                                              #
-#                           -:                                              #
-#                                                                           #
-#  class __UTF8SetObject                                                    #
-#                           -:                                              #
-#                           -:                                              #
-#                           -:                                              #
-#                           -:                                              #
-#                           -:                                              #
-#                           -:                                              #
-#                                                                           #
+#   When the debugging facilities are turned off, these calls are null      #
+#   actions, even though the parameters are still evaluated. Nothing is     #
+#   printed during the run.                                                 #
 #                                                                           #
 #############################################################################
 #                                                                           #
-# Public Fields:                                                            #
+#                                                                           #
+#                                                                           #
 #                                                                           #
 #############################################################################
 #                                                                           #
 # Private Methods:                                                          #
 #                                                                           #
-#  Inherit from class ClassClass                                            #
-#    __InitClass()          -> returns the name of the originating          #
-#                              class                                        #
+#  class UTF8:                                                              #
 #                                                                           #
-#                   ######################                                  #
-#            classes and method found in this file                          #
+#    method __Initialise()                                                  #
+#    method __ActualPos(ustr, i)                                            #
+#    method __Coerce(val)                                                   #
+#    method __GetAt(ustr, i, j)                                             #
+#    method __AuxMessage(errorno, messageno)                                #
 #                                                                           #
-#  class __UTF8Object                                                       #
-#    _tolistRO()            ->  helper function to return list in row       #
-#                               order                                       #
 #                                                                           #
-#  class __UTF8SetObject                                                    #
-#    _tolistRO()            ->  helper function to return list in row       #
-#                               order                                       #
+#  class __UTF8Object:                                                      #
 #                                                                           #
+#                                                                           #
+#  class UTF8Set:                                                           #
+#                                                                           #
+#    method __Coerce(val)                                                   #
+#    method __AuxMessage(errorno, messageno)                                #
+#                                                                           #
+#                                                                           #
+#  class __UTF8SetObject:                                                   #
+#                                                                           #
+#    method __DebugPrint(modifier, val, uset)                               #
 #                                                                           #
 #############################################################################
 #                                                                           #
 # Public Methods:                                                           #
 #                                                                           #
-#  Inherit from class ErrorSystem()                                         #
-#    self.StopMessage(param[])   -: Halts program with message param[]      #
-#    PrintMessage(param[])  -: Print message param[] onto current           #
-#                              error file (default &errout)                 #
-#    Caller()               -> name of procedure or method that has         #
-#                              called the current procedure                 #
-#    ProcedureCalling(level)                                                #
-#                           -> name of procedure that has called            #
-#                              the current procedure                        #
-#    ClassCalling(level)    -> name of the class that has called the        #
-#                              current procedure                            #
-#    MethodCalling(level)   -> name of the method that has called the       #
-#                              current procedure                            #
-#    ParamCalling(level)    -> the list of parameters from the calling      #
-#                              procedure                                    #
-#    CallingComponents(name)                                                #
-#                           -> return a list containing the components      #
-#                              the calling procedure or class/method        #
-#    Debug(mode)            -: sets whether the Debug mode is on or         #
-#                              for all methods that test this               #
-#    DebugMode()            -> succeeds if debug mode is on, fails if       #
-#                              debug mode if off                            #
-#    ErrorOut(errorfile, writeappend)                                       #
-#                           -> Sets the errorout file to be used,           #
-#                              if called with no parameters, sets to        #
-#                              &errout, otherwise if a string, opens        #
-#                              the specified file based on writeappend      #
-#                              ("w" for write, "a" for append, default      #
-#                              is "w"), if errorfile is an open file,       #
-#                              the output will be sent to this file         #
+#  class UTF8:                                                              #
 #                                                                           #
-#  Inherit from class ClassObject                                           #
-#    New(objectparams[])    -> return a new object of the private           #
-#                              object class associated with the public      #
-#                              class class                                  #
-#    Copy()                 -> returns a copy of the calling object         #
-#    Clone()                -> returns a copy of the calling object         #
-#    ClassName()            -> returns the name of the public class         #
-#                              to which the current object private          #
-#                              is associated with                           #
+#    ----- Testing method specific to UTF8 sequences                        #
 #                                                                           #
-#  Inherit from class ClassClass                                            #
-#    SetClass(obj)          -: sets the associated private object           #
-#                              class to the public class class              #
+#    method BOMFound(str)                                                   #
+#    method SkipBOM(str)                                                    #
+#    method Valid(str)                                                      #
+#    method ByteTranslate(byte)                                             #
+#    method Multibyte(codepoint)                                            #
+#    method SpecialString(str)                                              #
 #                                                                           #
-#                   ######################                                  #
-#            classes and method found in this file                          #
+#    ----- Translation methods                                              #
 #                                                                           #
-#  class UTF8                                                               #
-#    Concatenate(utf81/string, utf82/string)                                #
-#                           -> return the concatenation of the two          #
-#                              UTF-8 or normal strings as a UTF-8           #
-#                              string. It will fail if either are not       #
-#                              strings.                                     #
-#    Any(UTF8Set/cset, UTF8 string/string, i1, i2)                          #
-#                           ->                                              #
-#    Bal(UTF8Set/cset,                                                      #
-#        UTF8Set/cset:'(',                                                  #
-#        UTF8Set/cset:')', UTF8 string/string, i1, i2)                      #
-#                           ->                                              #
-#    Center(UTF8 string/string, i:1, UTF8 string/string:" ")                #
-#                           ->                                              #
-#    Char(i)                ->                                              #
+#    method ToUnicode32(ustr)                                               #
+#    method Unicode32To(unicode)                                            #
+#    method HexTo(hexcode)                                                  #
+#    method DecimalTo(num)                                                  #
 #                                                                           #
-#    Initialise
-#    BOMFound
-#    SkipBOM
-#    Size
-#    Valid
-#    UTF8
-#    Multibyte
-#    UTF8debug
-#    ToUnicode32
-#    HexTo
-#    DecimalTo
-#    Unicode32To
-#    __ActualPos
-#    __Coerce
-#    __GetAt
-#    Concatenate
-#    Any
-#    Bal
-#    Center
-#    Char
-#    Cset
-#    Detab
-#    Entab
-#    Find
-#    Left
-#    Many
-#    Map
-#    Match
-#    Move
-#    Ord
-#    Pos
-#    Repl
-#    Reverse
-#    Right
-#    Tab
-#    Trim
-#    Upto
-#
-#    Data
-#    Size
-#    ForEach
-#
-#    Member
-#    __Coerce
-#
-#    ForEach
-#    Member
-#    Size
-#
+#    ----- Auxilary methods                                                 #
 #                                                                           #
-#  class __UTF8Object                                                       #
-#    Size()                 -> returns a list containing the row and        #
-#                              column counts                                #
-#    ForEach()              -> generator returning each codepoint of        #
-#                              the UTF-8 string                             #
-#    Data()                 -> returns the UTF-8 data in a form             #
-#                              suitable for string scanning.                #
+#    method AmpPos()                                                        #
+#                                                                           #
+#    ----- class methods equivalent to Operator Overload methods available  #
+#               to object values                                            #
+#                                                                           #
+#    method Equiv(val1, val2)                                               #
+#    method Nequiv(val1, val2)                                              #
+#    method LexEquals(str1, str2)                                           #
+#    method LexGTorEq(str1, str2)                                           #
+#    method LexGT(str1, str2)                                               #
+#    method LexLTorEq(str1, str2)                                           #
+#    method LexLT(str1, str2)                                               #
+#    method LexNE(str1, str2)                                               #
+#    method Concatenate(ustr1, ustr2)                                       #
+#    method Complement(val)                                                 #
+#    method Difference(val1, val2)                                          #
+#    method Intersect(val1, val2)                                           #
+#    method Union(val1, val2)                                               #
+#    method ForEach(str)                                                    #
+#    method Size(str)                                                       #
+#    method Random(str)                                                     #
+#    method Subsection(ustr, i, j)                                          #
+#    method Subscript(str, i)                                               #
+#    method TabMatch(str)                                                   #
+#                                                                           #
+#    ----- UTF8 analogues to standard Unicon string functions               #
+#                                                                           #
+#    method Any(uset, ustr, i, j)                                           #
+#    method Bal(uset, usetopen, usetclose, ustr, i, j)                      #
+#    method Center(ustr, i, pstr)                                           #
+#    method Char(i)                                                         #
+#    method Detab(ustr, i[])                                                #
+#    method Entab(ustr, i[])                                                #
+#    method Find(ustr1, ustr, i, j)                                         #
+#    method Left(ustr, i, pstr)                                             #
+#    method Many(uset, ustr, i, j)                                          #
+#    method Map(ustr, ustr1, ustr2)                                         #
+#    method Match(ustr1, ustr, i, j)                                        #
+#    method Move(i)                                                         #
+#    method Ord(ustr)                                                       #
+#    method Pos(i)                                                          #
+#    method Repl(ustr, i)                                                   #
+#    method Reverse(ustr)                                                   #
+#    method Right(ustr, i, pstr)                                            #
+#    method String(val)                                                     #
+#    method Tab(i)                                                          #
+#    method Trim(ustr, uset, i, allutf8blanks)                              #
+#    method Upto(uset, ustr, i, j)                                          #
+#                                                                           #
+#                                                                           #
+#  class __UTF8Object:                                                      #
+#                                                                           #
+#    ----- Auxiliary Data methods                                           #
+#                                                                           #
+#    method Data()                                                          #
+#    method Invalid()                                                       #
+#                                                                           #
+#    ----- Operator Overload methods                                        #
+#                                                                           #
+#    method Complement()                                                    #
+#    method Difference(val)                                                 #
+#    method Intersect(val)                                                  #
+#    method Union(val)                                                      #
+#    method Equiv(val)                                                      #
+#    method Nequiv(val)                                                     #
+#    method LexEquals(str)                                                  #
+#    method LexGTorEq(str)                                                  #
+#    method LexGT(str)                                                      #
+#    method LexLTorEq(str)                                                  #
+#    method LexLT(str)                                                      #
+#    method LexNE(str)                                                      #
+#    method ForEach()                                                       #
+#    method Random()                                                        #
+#    method TabMatch()                                                      #
+#    method Size()                                                          #
+#    method Concatenate(ustr)                                               #
+#    method Subsection(i, j)                                                #
+#    method Subscript(i)                                                    #
+#                                                                           #
+#    ----- UTF8 analogues to standard Unicon string functions               #
+#                                                                           #
+#    method String()                                                        #
+#                                                                           #
+#  class UTF8Set:                                                           #
+#                                                                           #
+#    ----- class methods equivalent to Operator Overload methods available  #
+#               to object values                                            #
+#                                                                           #
+#    method Complement(uset)                                                #
+#    method Difference(uset1, uset2)                                        #
+#    method Intersect(uset1, uset2)                                         #
+#    method Union(uset1, uset2)                                             #
+#    method ForEach(val)                                                    #
+#    method Size(val)                                                       #
+#    method Subscript(val, i)                                               #
+#                                                                           #
+#    ----- UTF8Set analogues to standard Unicon string functions            #
+#                                                                           #
+#    method String(val)                                                     #
+#    method Member(uset, val[])                                             #
+#                                                                           #
+#    ----- Auxilary methods                                                 #
+#                                                                           #
+#    method Space()                                                         #
+#    method UTF8Spaces()                                                    #
+#    method Ascii()                                                         #
+#    method Rparens()                                                       #
+#    method Lparens()                                                       #
+#    method All()                                                           #
+#    method MaxSize()                                                       #
+#    method Defined(str)                                                    #
+#                                                                           #
+#  class __UTF8SetObject:                                                   #
+#                                                                           #
+#    ----- Operator Overload methods                                        #
+#                                                                           #
+#    method Equiv(uset)                                                     #
+#    method Nequiv(uset)                                                    #
+#    method LexEquals(str)                                                  #
+#    method LexGTorEq(str)                                                  #
+#    method LexGT(str)                                                      #
+#    method LexLTorEq(str)                                                  #
+#    method LexLT(str)                                                      #
+#    method LexNE(str)                                                      #
+#    method Complement()                                                    #
+#    method Difference(val)                                                 #
+#    method Intersect(val)                                                  #
+#    method Union(val)                                                      #
+#    method ForEach()                                                       #
+#    method Size()                                                          #
+#    method Subscript(i)                                                    #
+#    method Random()                                                        #
+#    method TabMatch()                                                      #
+#    method Concatenate(ustr)                                               #
+#    method Subsection(i, j)                                                #
+#                                                                           #
+#    ----- UTF8 analogues to standard Unicon string functions               #
+#                                                                           #
+#    method Member(c[])                                                     #
+#    method String()                                                        #
+#                                                                           #
+#    ----- Auxiliary Data methods                                           #
+#                                                                           #
+#    method UTF8Value()                                                     #
 #                                                                           #
 #                                                                           #
 #                                                                           #
@@ -384,6 +435,7 @@
 #                                                                           #
 #############################################################################
 
+#### Completed ####
 #IND:
 #: required include files
 
@@ -392,16 +444,14 @@
 #: required link statements
 link ximage                             #LK: IPL file - functionality to produce
                                         #:   string images of all Unicon values
+
 link hexcvt                             #LK: IPL file - functionality to convert
                                         #:   strings of hex digits to and from
                                         #:   integer values
+
 link equiv                              #LK: IPL file - functionality to test if
                                         #:   two objects or structures are equivalent
                                         #:   in value
-#   ##########  ##########  ##########
-# This appears to be a spurious link statement and will need further investigation
-#link trace                              #LK:
-#   ##########  ##########  ##########
 
 #### Completed ####
 #IMD:
@@ -415,7 +465,7 @@ import ClassObject                      #IM: Locally defined Unicon class file
 #### Completed ####
 #PKD:
 #: Package UTF8 - This is the package that implements the basic processing for UTF-8
-#: strings. The classes defined in this package and the associated objects
+#: strings. The classes defined in this package and the associated objects/values
 #: generated by these classes will have corresponding methods that match the
 #: standard strings functions provided by Unicon/Icon.
 #:
@@ -445,6 +495,7 @@ package UTF8
 #: There are no global variables required or created in this package.
 
 
+#### Completed ####
 #CD: class UTF8 - This class is a singleton object and acts as the type for all
 #: UTF-8 objects that can be generated from this packages functionality.
 #:
@@ -452,7 +503,6 @@ package UTF8
 #: the class __UTF8Object to create the actual value required.
 #:
 class UTF8 : ClassClass(
-#### Completed ####
     __UTF8SizeTable,                    #CV: This is an Unicon table whose keys
                                         #:   are each of the 256 8 bit bytes
                                         #:   available within the Unicon system.
@@ -640,12 +690,14 @@ class UTF8 : ClassClass(
             # codepoint and should never be found elsewhere in a UTF-8 byte stream.
             #
             __UTF8BOM := SpecialString("\xEF\xBB\xBF")
+
             DebugPrint("__UTF8BOM:", ::image(__UTF8BOM))
 
             #
             # This encoding will be used to replace any invalid byte sequences
             #
             __UTF8InvalidChar := SpecialString("\xEF\xBF\xBD")
+
             DebugPrint("__UTF8InvalidChar:", ::image(__UTF8InvalidChar))
 
             #
@@ -661,6 +713,7 @@ class UTF8 : ClassClass(
             # by a two byte sequence as a UTF-8 codepoint.
             #
             DebugPrint("Creating the Byte Translate table")
+
             __ByteTranslate := ::table()
 
             #
@@ -680,6 +733,7 @@ class UTF8 : ClassClass(
             # be \xC3 and the following byte to be from \x80 to \xBF
             #
             every __ByteTranslate[charlist[i := 193 to 256]] := "\xC3" || char(i - 65)
+
             DebugPrint("Creating the Byte Translate table has finished")
 
             #
@@ -754,11 +808,6 @@ class UTF8 : ClassClass(
         #
         data := ustr.String()
 
-        #
-        # if debugging is On, we want to see the actual data from the UTF-8 object
-        # otherwise this is a null operation.  ::ximage() will display the string
-        # data is a format that shows all non-printing bytes as hex numbers
-        #
         DebugPrint("data:", ::ximage(data))
 
         #
@@ -767,12 +816,7 @@ class UTF8 : ClassClass(
         #
         s := ustr.Size()
 
-        #
-        # if debugging is on, we want to see the size of the string as well as
-        # the specified position in the string
-        #
-        DebugPrint("s:", s, "\n",
-                   "i:", i)
+        DebugPrint("s:", s, "\n", "i:", i)
 
         #
         # if the position has been specified as less than or equal to 0, we need to
@@ -782,10 +826,6 @@ class UTF8 : ClassClass(
         #
         (i < 1) & i := s + 1 + i
 
-        #
-        # if debugging is on, we want to know what this position value is in terms
-        # of the start of the string, otherwise this is a null operation
-        #
         DebugPrint("i:", i)
 
         #
@@ -805,14 +845,7 @@ class UTF8 : ClassClass(
             j +:= __UTF8CountTable[data[k]]
         }
 
-        #
-        # if debugging is On, we want to see the position we asked for, the
-        # original position we asked for, the position we reached and the actual
-        # position in the unicon string, otherwise this is a null operation
-        #
-        DebugPrint("i:", i, "\n",
-                   "j:", j, "\n",
-                   "k:", k)
+        DebugPrint("i:", i, "\n", "j:", j, "\n", "k:", k)
 
         return k
     end
@@ -839,9 +872,11 @@ class UTF8 : ClassClass(
 
         if IsObjectOf(val, "UTF8") then {
             DebugPrint("return val:", ::image(val))
+
             return val
         } else {
             DebugPrint("creating a New UTF-8 value")
+
             return UTF8::UTF8.New(val)
         }
     end
@@ -883,12 +918,7 @@ class UTF8 : ClassClass(
 
         /ustr & AbortMessage(103, keyword("&file", , 1), keyword("&line", , 1),
                              __AuxMessage(103))
-        #
-        # if debugging is On, we would like to see what the raw string data in
-        # the supplied UTF-8 string object actually is, otherwise this is a null
-        # operation.  ::ximage() will display the string
-        # data is a format that shows all non-printing bytes as hex numbers
-        #
+
         DebugPrint("ustr:", ::image(ustr), " String():", ::image(ustr.String()),
                    " Size():", ustr.Size())
 
@@ -936,14 +966,8 @@ class UTF8 : ClassClass(
         #
         (i = j) & fail
 
-        #
-        # if debugging is On, we want to see the size of the UTF-8 string object in
-        # codepoints and the starting and ending positions applicable, otherwise
-        # this is a null action
-        #
-        DebugPrint("k:", k, "\n",
-                   "j:", j, "\n",
-                   "i:", i)
+
+        DebugPrint("k:", k, "\n", "j:", j, "\n", "i:", i)
 
         #
         # At this point both i and j must be between the starting and ending
@@ -959,12 +983,7 @@ class UTF8 : ClassClass(
         i1 := __ActualPos(ustr, i)
         j1 := __ActualPos(ustr, j)
 
-        #
-        # if debugging is On, we want to see what these actual positions are,
-        # otherwise this is a null action
-        #
-        DebugPrint("i1:", i1, "\n",
-                   "j1:", j1)
+        DebugPrint("i1:", i1, "\n", "j1:", j1)
 
         #
         # we now need the raw data from the UTF-8 string object, from which we
@@ -972,28 +991,14 @@ class UTF8 : ClassClass(
         #
         data := ustr.String()
 
-        #
-        # if debugging is On, we want to see the raw data and the actual size
-        # (in bytes) of this data, as well as the start and end points for
-        # which we will use to extract those specific bytes, otherwise this is
-        # a null action.  ::ximage() will display the string
-        # data is a format that shows all non-printing bytes as hex numbers
-        #
-        DebugPrint("data:", ::ximage(data), "\n",
-                   "*data:", *data, "\n",
-                   "i1:", i1, "\n",
-                   "j1:", j1)
+        DebugPrint("data:", ::ximage(data), "\n", "*data:", *data, "\n",
+                   "i1:", i1, "\n", "j1:", j1)
 
         #
         # grab the sub-string required, we use this to create a new UTF-8 string
         #
         data := data[i1:j1]
 
-        #
-        # if debugging is On, we would like to see the actual extracted data,
-        # otherwise this is a null action. ::ximage() will display the string
-        # data is a format that shows all non-printing bytes as hex numbers
-        #
         DebugPrint("data:", ::ximage(data))
 
         #
@@ -1112,6 +1117,7 @@ class UTF8 : ClassClass(
 
         /str & AbortMessage(103, keyword("&file", , 1), keyword("&line", , 1),
                             __AuxMessage(103))
+
         #
         # coerce the value supplied into a UTF-8 object. The coerced value
         # is placed in a new variable to ensure that the original value/variable
@@ -1120,11 +1126,6 @@ class UTF8 : ClassClass(
         #
         str1 := __Coerce(str)
 
-        #
-        # if the debugging is turned On, display the value of the coerced string
-        # data. Otherwise this is a null action.  ::ximage() will display the string
-        # data in a format that shows all non-printing bytes as hex numbers
-        #
         DebugPrint("str1.String():", ::ximage(str1.String()))
 
         #
@@ -1144,11 +1145,7 @@ class UTF8 : ClassClass(
             #
             str2 := ::tab(0)
         }
-        #
-        # if debugging is On, we want to see the data without the Byte Order Mark,
-        # otherwise this is a null action.  ::ximage() will display the string
-        # data is a format that shows all non-printing bytes as hex numbers
-        #
+
         DebugPrint("str2:", ::ximage(str2))
 
         #
@@ -1226,13 +1223,7 @@ class UTF8 : ClassClass(
         /str & AbortMessage(103, keyword("&file", , 1), keyword("&line", , 1),
                             __AuxMessage(103))
 
-        #
-        # we coerce the supplied parameter first. The coerced value
-        # is placed in a new variable to ensure that the original value/variable
-        # supplied is not altered. If cannot be coerced then a runtime abort
-        # is performed with a value of 103 - "not a string"
-        #
-        #local_str := __Coerce(str)
+
         DebugPrint("type of str: ", ::type(str), " value of str: ", ::image(str))
 
         data := if ::type(str) == "string" then {
@@ -1255,12 +1246,7 @@ class UTF8 : ClassClass(
         # valid UTF-8 codepoint
         #
         data ? {
-            #
-            # if debugging is On, print the data, otherwise debugging is Off and
-            # this will be a null operation. This is available for any testing
-            # that may be required.  ::ximage() will display the string
-            # data is a format that shows all non-printing bytes as hex numbers
-            #
+
             DebugPrint("data:", ::ximage(data))
 
             #
@@ -1275,13 +1261,6 @@ class UTF8 : ClassClass(
                 #
                 byte := ::move(1)
 
-                #
-                # if debugging is On, print the byte that we have just found,
-                # otherwise if debugging is Off, this will be a null operation.
-                # if we have debugging turned on, we can see if this first byte is
-                # one of the allowable UTF-8 start bytes. ::ximage() will display the string
-                # data is a format that shows all non-printing bytes as hex numbers
-                #
                 DebugPrint("byte:", ::ximage(byte))
 
                 #
@@ -1299,10 +1278,7 @@ class UTF8 : ClassClass(
                 # either 0 or -1.
                 #
                 if (i := __UTF8SizeTable[byte]) >= 1 then {
-                    #
-                    # This will show the expected size of this codepoint when we
-                    # have debugging turned on, otherwise it is a null operation
-                    #
+
                     DebugPrint("*:", i, ":*")
 
                     #
@@ -1313,12 +1289,7 @@ class UTF8 : ClassClass(
                     #
                     limits := __UTF8LimitTable[i]
 
-                    #
-                    # We can see what the limits should be, when we are debugging
-                    # this code, otherwise it is a null operation.  ::ximage()
-                    # will display the string data is a format that shows all
-                    # non-printing bytes as hex numbers
-                    #
+
                     DebugPrint("l:", ::ximage(limits), ":l")
 
                     #
@@ -1388,10 +1359,12 @@ class UTF8 : ClassClass(
             if *byte = 1 then {
                 DebugPrint("byte:", ::ximage(byte), " __ByteTranslate[",
                            ::ximage(byte), "]:", ::ximage(__ByteTranslate[byte]))
+
                 return __ByteTranslate[byte]
             } else if *byte > 1 then {
                 DebugPrint("byte[1]:", ::ximage(byte[1]), " __ByteTranslate[",
                            ::ximage(byte[1]), "]:", ::ximage(__ByteTranslate[byte[1]]))
+
                 return __ByteTranslate[byte[1]]
             } else {
                 fail
@@ -1439,11 +1412,6 @@ class UTF8 : ClassClass(
         #
         local_codepoint := __Coerce(codepoint)
 
-        #
-        # if debugging is on, we can see what the byte/bytes are that are being
-        # tested. Otherwise, it is a null action.  ::ximage() will display the string
-        # data is a format that shows all non-printing bytes as hex numbers
-        #
         DebugPrint("coerced parameter codepoint:", ::ximage(local_codepoint.String()))
 
         #
@@ -2090,7 +2058,9 @@ class UTF8 : ClassClass(
         # seen and we count the actual number of bytes we have passed.
         # so k count of bytes, j count of codepoints
         #
+
         DebugPrint("&subject:", image(&subject))
+
         while k < &pos do {
             DebugPrint("&subject[k]:", image(&subject[k]), "\n",
                        "__UTF8SizeTable[&subject[k]]:", __UTF8SizeTable[&subject[k]], "\n",
@@ -2098,18 +2068,13 @@ class UTF8 : ClassClass(
 
             k +:= __UTF8SizeTable[&subject[k]]
             j +:= 1
-            DebugPrint("&pos:", &pos, "\n",
-                       "j:", j, "\n",
-                       "k:", k)
+
+            DebugPrint("&pos:", &pos, "\n", "j:", j, "\n", "k:", k)
+
         }
-        #
-        # if debugging is On, we want to see the position we asked for, the
-        # original position we asked for, the position we reached and the actual
-        # position in the unicon string, otherwise this is a null operation
-        #
-        DebugPrint("&pos:", &pos, "\n",
-                   "j:", j, "\n",
-                   "k:", k)
+
+        DebugPrint("&pos:", &pos, "\n", "j:", j, "\n", "k:", k)
+
         return .j
     end
 
@@ -2190,16 +2155,24 @@ class UTF8 : ClassClass(
         # we coerce the supplied valid first. If cannot be coerced
         # then aruntime abort is performed with a value of 103 - "not a string"
         #
+
         DebugPrint("val1:", ::image(val1))
+
         local_val1 := __Coerce(val1)
+
         DebugPrint("local_val1:", ::image(local_val1))
+
         #
         # we coerce the supplied valid first. If cannot be coerced
         # then a runtime abort is performed with a value of 103 - "not a string"
         #
+
         DebugPrint("val2:", ::image(val2))
+
         local_val2 := __Coerce(val2)
+
         DebugPrint("local_val2:", ::image(local_val2))
+
         return (local_val1.String() == local_val2.String()) & val2
     end
 
@@ -2608,19 +2581,28 @@ class UTF8 : ClassClass(
         # we coerce the supplied ustr1 first. If cannot be coerced
         # then a runtime abort is performed with a value of 103 - "not a string"
         #
+
         DebugPrint("ustr1:", ::image(ustr1))
+
         local_ustr1 := __Coerce(ustr1)
+
         DebugPrint("local_ustr1:", ::image(local_ustr1))
 
         #
         # we coerce the supplied ustr2 second. If cannot be coerced
         # then a runtime abort is performed with a value of 103 - "not a string"
         #
+
         DebugPrint("ustr2:", ::image(ustr2))
+
         local_ustr2 := __Coerce(ustr2)
+
         DebugPrint("local_ustr2:", ::image(local_ustr2))
+
         str := local_ustr1.String() || local_ustr2.String()
+
         DebugPrint("str:", ::image(str))
+
         return UTF8::UTF8.New(str)
     end
 
@@ -2712,13 +2694,17 @@ class UTF8 : ClassClass(
 
         /str & AbortMessage(116, keyword("&file", , 1), keyword("&line", , 1),
                             __AuxMessage(103))
+
         DebugPrint("type of str: ", ::type(str), " value of str: ", ::image(str))
+
         #
         # we coerce the supplied valid first. If cannot be coerced
         # then a runtime abort is performed with a value of 103 - "not a string"
         #
         local_str := __Coerce(str)
+
         DebugPrint("type of local_str: ", ::type(local_str), " value of local_str: ", ::image(local_str))
+
         #
         # scan the raw data and select out each of the UTF-8 codepoints (1 to 4 bytes)
         #
@@ -2741,31 +2727,25 @@ class UTF8 : ClassClass(
                 # what further bytes are to be collected.
                 #
                 codepoint := ::move(1)
-                #
-                # we can see what this byte is if debugging has been turned On,
-                # otherwise this is a null action.  ::ximage() will display the
-                # string data is a format that shows all non-printing bytes as
-                # hex numbers
-                #
+
                 DebugPrint("codepoint:", ::ximage(codepoint))
+
                 #
                 # we will now collect what further bytes are required based on
                 # the size that is expected for the first byte.
                 #
                 codepoint ||:= ::move(1 <= (__UTF8SizeTable[.codepoint] - 1))
-                #
-                # again we can see what the collected bytes are if debugging
-                # has been turned On, otherwise this is a null action.  ::ximage()
-                # will display the string data is a format that shows all
-                # non-printing bytes as hex numbers
-                #
+
                 DebugPrint("codepoint:", ::ximage(codepoint))
+
                 #
                 # we check if this codepoint is valid or not and suspend it or
                 # the to Invalid codepoint to the calling expression
                 #
                 tmp_val := (SpecialString(Valid(codepoint)) | __UTF8InvalidChar)
+
                 DebugPrint("tmp_val:", ::image(tmp_val))
+
                 suspend tmp_val
             }
         }
@@ -2844,16 +2824,19 @@ class UTF8 : ClassClass(
 
         /str & AbortMessage(113, keyword("&file", , 1), keyword("&line", , 1),
                             __AuxMessage(103))
+
         #
         # we coerce the supplied valid first. If cannot be coerced
         # then a runtime abort is performed with a value of 103 - "not a string"
         #
         local_str := __Coerce(str)
+
         #
         # we choose a random integer value between 1 and the length of the UTF-8 value
         # value
         #
         i := ?local_str.Size()
+
         #
         # We return the codepoint found at that position
         #
@@ -2908,7 +2891,9 @@ class UTF8 : ClassClass(
                                            __AuxMessage(101, 4), ::image(j))
 
         tmpstr := __Coerce(ustr)
+
         DebugPrint("tmpstr:", ::image(tmpstr), " i:", i, " j:", j)
+
         return __GetAt(tmpstr, i, j)
     end
 
@@ -3067,10 +3052,12 @@ class UTF8 : ClassClass(
         # test that uset is not null, if it is procedure fails
         #
         /uset & fail
+
         #
         # coerce the supplied value to a UFT-8 cset
         #
         local_uset := Cset(uset)
+
         #
         #######################################################################
         # common set-up code for string analysis code
@@ -3079,15 +3066,18 @@ class UTF8 : ClassClass(
         # if the string to scan is null or 1 (the start of the string to scan)
         #
         /i := ((/ustr & &pos) | 1)
+
         #
         # we will use the current value found in &subject if no string is specified
         # for scanning
         #
         /ustr := &subject
+
         #
         # we need to coerce the given string value to a UTF-8 string if it needs this
         #
         local_ustr := __Coerce(ustr)
+
         #
         # we need the size of the UTF-8 string for various calculations, so get it now
         #
@@ -3114,31 +3104,37 @@ class UTF8 : ClassClass(
         #
         (i <= 0) & i := sz + i + 1
         (j <= 0) & j := sz + j + 1
+
         #
         # there is nothing to do if the values of i and j are equal, so the procedure
         # just needs to fail as we will have no results
         #
         (i ~= j) | fail
+
         #
         # it is allowed that i can be greater than j, in this case we simply swap the
         # values before starting the scan of the string
         #
         (i > j) & i :=: j
+
         #
         # the last check we need to make is that j is in fact less than or equal
         # the length of the string + 1. if it is greater than the last possible
         # position for a string, we then need to fail.
         #
         (j <= sz + 1) | fail
+
         #
         # end of common set-up code for string analysis code
         #######################################################################
         #
-        DebugPrint("i:", i, "\n",
-                   "j:", j, "\n",
-                   "sz:", sz)
+
+        DebugPrint("i:", i, "\n", "j:", j, "\n", "sz:", sz)
+
         fc := __GetAt(local_ustr, i)
+
         DebugPrint("fc.String():", ::ximage(fc.String()))
+
         return local_uset.Member(fc) & (i + 1)
     end
 
@@ -3210,23 +3206,28 @@ class UTF8 : ClassClass(
         # if the string to scan is null or 1 (the start of the string to scan)
         #
         /i := ((/ustr & &pos) | 1)
+
         #
         # we will use the current value found in &subject if no string is specified
         # for scanning
         #
         /ustr := &subject
+
         #
         # we need to coerce the given string value to a UTF-8 string if it needs this
         #
         local_ustr := __Coerce(ustr)
+
         #
         # we need the size of the UTF-8 string for various calculations, so get it now
         #
         sz := local_ustr.Size()
+
         #
         # if j is not supplied, we set it to a position just after the last codepoint
         #
         /j := sz + 1
+
         #
         #
         # convert i and j to integers if necessary and abort if either cannot be
@@ -3245,11 +3246,13 @@ class UTF8 : ClassClass(
         #
         (i <= 0) & i := sz + i + 1
         (j <= 0) & j := sz + j + 1
+
         #
         # there is nothing to do if the values of i and j are equal, so the procedure
         # just needs to fail as we will have no results
         #
         (i ~= j) | fail
+
         #
         # it is allowed that i can be greater than j, in this case we simply swap the
         # values before starting the scan of the string
@@ -3261,18 +3264,12 @@ class UTF8 : ClassClass(
         # position for a string, we then need to fail.
         #
         (j <= sz + 1) | fail
+
         #
         # end of common set-up code for string analysis code
         #######################################################################
-        #
-        #
-        # if debugging is On, we want to see the resolved i, resolved j, size of
-        # UTF-8 string object and the associated data. Otherwise, this is a null
-        # action
-        #
-        DebugPrint("i:", i, "\n",
-                   "j:", j, "\n",
-                   "sz:", sz, "\n",
+
+        DebugPrint("i:", i, "\n", "j:", j, "\n", "sz:", sz, "\n",
                    "coerced parameter ustr.String():", ::ximage(local_ustr.String()))
         #
         # Ensure that the supplied value is convertible to a UTF-8 cset. In the
@@ -3283,27 +3280,26 @@ class UTF8 : ClassClass(
         # created and are stored as values in the UTF8Set class.
         #
         local_uset := Cset(uset)
+
         #
         # if no open UTF-8 cset is supplied, we want the default cset to be '('
         # and make sure it is a UTF-8 cset
         #
         /usetopen := '('
         local_usetopen := Cset(usetopen)
+
         #
         # if no close UTF-8 cset is supplied, we want the default cset to be ')'
         # and make sure it is a UTF-8 cset
         #
         /usetclose := ')'
         local_usetclose := Cset(usetclose)
-        #
-        # if debugging is On, we want to see what the actual values of the open
-        # cset, the close cset and the source UTF-8 string object being scanned
-        # are. Otherwise this is a null action
-        #
+
         DebugPrint("coerced parameter usetopen.UTF8Value().String():",
                    ::ximage(local_usetopen.UTF8Value().String()), "\n",
                    "coerced parameter usetclose.UTF8Value().String():", ::ximage(local_usetclose.UTF8Value().String()), "\n",
                    "coerced parameter ustr.String():", ::ximage(local_ustr.String()))
+
         #
         # Since this is a UTF-8 string object, we cannot use the string scanning
         # operation due to the variable size codepoints. So, we will simply step
@@ -3327,21 +3323,21 @@ class UTF8 : ClassClass(
             # by i as this is how we will move through the UTF-8 string object
             #
             testchar := __GetAt(local_ustr, i)
-            #
-            # if debugging is On, we want to see the current codepoint that will
-            # be used for testing
-            #
+
             DebugPrint("testchar.String():", ::ximage(testchar.String()))
+
             #
             #
             if cnt = 0 & local_uset.Member(testchar) then {
                 suspend i
             }
+
             if local_usetopen.Member(testchar) then {
                 cnt +:= 1
             } else if local_usetclose.Member(testchar) then {
                 cnt -:= 1
             }
+
             if cnt < 0 then {
                 fail
             }
@@ -3490,27 +3486,27 @@ class UTF8 : ClassClass(
         # set the default field size to 1 if not supplied
         #
         /i := 1
+
         #
         # set the default padding character/codepoint to the default of ascii
         # space
         #
         /pstr := " "
+
         #
         # we need to coerce the given string value to a UTF-8 string if it needs this
         #
         local_ustr := __Coerce(ustr)
+
         #
         # we need to coerce the padding string value to a UTF-8 string if it needs this
         #
         local_pstr := __Coerce(pstr)
-        #
-        # if debugging is On, then we want to display the contents of given string
-        # and the padding string and the size of the expected length, otherwise
-        # this is a null action
-        #
+
         DebugPrint("coerced parameter ustr.String():", ::ximage(local_ustr.String()), "\n",
                    "coerced parameter pstr.String():", ::ximage(local_pstr.String()), "\n",
                    "i:", i)
+
         #
         # we need the i value to be convertible to an integer and the value to
         # be greater or equal to 0
@@ -3518,17 +3514,17 @@ class UTF8 : ClassClass(
         (i := ::integer(i)) | AbortMessage(101, keyword("&file", , 1), keyword("&line", , 1),
                                            __AuxMessage(101, 3), ::image(i))
 
+
         (i >= 0) | AbortMessage(205, keyword("&file", , 1), keyword("&line", , 1), "\noffending value for i: ", i)
+
         #
         # we also need to have the size of the supplied string for further calculations
         # related to padding and field sized
         #
         sz := local_ustr.Size()
-        #
-        # if debugging is On, we want to see the size of the supplied input UTF-8
-        # strings
-        #
+
         DebugPrint("sz:", sz)
+
         #
         # there are three conditions that can arise:
         #   (1). the size of the field is greater than the size of the display string
@@ -3536,24 +3532,29 @@ class UTF8 : ClassClass(
         if i > sz then {
             j := (i - sz) / 2
             k := (i - sz - j)
-            DebugPrint("j:", j, "\n",
-                       "k:", k)
+
+            DebugPrint("j:", j, "\n", "k:", k)
+
             lstr := __GetAt(Repl(local_pstr, j), 1, j + 1)
             rstr := Repl(local_pstr, k)
             s := rstr.Size()
             rstr := __GetAt(rstr, s - k + 1, 0)
             data := local_ustr.String()
+
             DebugPrint("lstr.String():", ::ximage(lstr.String()), "\n",
                        "rstr.String():", ::ximage(rstr.String()), "\n",
                        "s:", s, "\n",
                        "rstr.String():", ::ximage(rstr.String()), "\n",
                        "data:", ::ximage(data))
+
             return UTF8::UTF8.New(lstr.String() || data || rstr.String())
+
         } else if i % 2 = 0 then {
             k := i / 2
             j := ((sz + 2) / 2) - k
             data := __GetAt(local_ustr, j, j + i)
             return data
+
         } else {
             j := (sz + 3 - i) / 2
             data := __GetAt(local_pstr, j, j + i)
@@ -3638,26 +3639,32 @@ class UTF8 : ClassClass(
             AbortMessage(210, keyword("&file", , 1), keyword("&line", , 1), "\noffending value: ", k)
         }
 
-        DebugPrint("ximage(i):", ::ximage(i), "\n",
-                   "interval:", interval)
+        DebugPrint("ximage(i):", ::ximage(i), "\n", "interval:", interval)
+
         local_ustr := __Coerce(ustr)
+
         DebugPrint("coerced parameter ustr.String():", ::ximage(local_ustr.String()))
+
         every tst := ::type(!i) do {
             (tst == "integer") | AbortMessage(101, keyword("&file", , 1), keyword("&line", , 1),
                                               __AuxMessage(101, 3), ::image(i))
         }
+
         DebugPrint("all elements of i are integers")
+
         every (tst := !i) do {
             (j <=:= tst) | AbortMessage(210, keyword("&file", , 1), keyword("&line", , 1), "\noffending values for i: ", i, " and j:", j)
         }
+
         DebugPrint("all elements of i are in sequence")
+
         j := 1
         k := i[j]
-        DebugPrint("j:", j, "\n",
-                   "k:", k)
+
+        DebugPrint("j:", j, "\n", "k:", k)
+
         every ch := local_ustr.ForEach().String() do {
-            DebugPrint("ch:", ::ximage(ch), "\n",
-                       "col:", col)
+            DebugPrint("ch:", ::ximage(ch), "\n","col:", col)
 
             case ch of {
                 "\b" : {
@@ -3682,16 +3689,21 @@ class UTF8 : ClassClass(
                     j +:= (col = k > 1)
                 }
             }
-            DebugPrint("col:", col, "\n",
-                       "k:", k)
+
+            DebugPrint("col:", col, "\n", "k:", k)
+
             if col = k then {
                 j +:= 1
                 k := (i[j] | k + interval)
             }
+
             DebugPrint("str:", ::ximage(str))
+
         }
+
         DebugPrint("str:", ::ximage(str), "\n",
                    "coerced parameter ustr.String():", ::ximage(local_ustr.String()))
+
         return if local_ustr.String() == str then {
             local_ustr
         } else {
@@ -3743,26 +3755,34 @@ class UTF8 : ClassClass(
             AbortMessage(210, keyword("&file", , 1), keyword("&line", , 1), "\noffending value: ", k)
         }
 
-        DebugPrint("ximage(i):", ::ximage(i), "\n",
-                   "interval:", interval)
+        DebugPrint("ximage(i):", ::ximage(i), "\n", "interval:", interval)
+
         local_ustr := __Coerce(ustr)
+
         DebugPrint("coerced parameter ustr.String():", ::ximage(local_ustr.String()))
+
         every tst := ::type(!i) do {
             (tst == "integer") | AbortMessage(101, keyword("&file", , 1), keyword("&line", , 1),
                                               __AuxMessage(101, 3), ::image(i))
         }
+
         DebugPrint("all elements of i are integers")
+
         every (tst := !i) do {
             (j <=:= tst) | AbortMessage(210, keyword("&file", , 1), keyword("&line", , 1), "\noffending values for i: ", i, " and j:", j)
         }
+
         DebugPrint("all elements of i are in sequence")
+
         j := 1
         k := i[j]
-        DebugPrint("j:", j, "\n",
-                   "k:", k)
+
+        DebugPrint("j:", j, "\n", "k:", k)
+
         every ch := local_ustr.ForEach().String() do {
-            DebugPrint("ch:", ::ximage(ch), "\n",
-                       "col:", col)
+
+            DebugPrint("ch:", ::ximage(ch), "\n", "col:", col)
+
             case ch of {
                 "\b" : {
                     str ||:= ch
@@ -3780,18 +3800,28 @@ class UTF8 : ClassClass(
                 " " : {
                     str ||:= " "
                     col +:= 1
-                    DebugPrint("col:", col, "\n",
-                               "k:", k)
+
+                    DebugPrint("col:", col, "\n", "k:", k)
+
                     if col = k then {
+
                         DebugPrint("str:", ::ximage(str))
+
                         str := ::reverse(str)
+
                         DebugPrint("str:", ::ximage(str))
+
                         if p := ::many(' ', str) then {
                             str := "\t" || str[p:0]
+
                             DebugPrint("str:", ::ximage(str))
+
                         }
+
                         DebugPrint("str:", ::ximage(str))
+
                         str := ::reverse(str)
+
                         DebugPrint("str:", ::ximage(str))
                     }
                 }
@@ -3801,16 +3831,21 @@ class UTF8 : ClassClass(
                     j +:= (col = k > 1)
                 }
             }
-            DebugPrint("col:", col, "\n",
-                       "k:", k)
+
+            DebugPrint("col:", col, "\n", "k:", k)
+
             if col = k then {
                 j +:= 1
                 k := i[j] | k + interval
             }
+
             DebugPrint("str:", ::ximage(str))
+
         }
+
         DebugPrint("str:", ::ximage(str), "\n",
                    "coerced parameter ustr.String():", ::ximage(local_ustr.String()))
+
         return if local_ustr.String() == str then {
             local_ustr
         } else {
@@ -3912,25 +3947,32 @@ class UTF8 : ClassClass(
         #
         # end of common set-up code for string analysis code
         #######################################################################
-        #
+
         DebugPrint("coerced parameter ustr.String():", ::ximage(local_ustr.String()), "\n",
-                   "i:", i, "\n",
-                   "j:", j, "\n",
-                   "sz:", sz)
+                   "i:", i, "\n", "j:", j, "\n", "sz:", sz)
+
         local_ustr1 := __Coerce(ustr1)
+
         DebugPrint("coerced parameter ustr1.String():", ::ximage(local_ustr1.String()))
+
         sz1 := local_ustr1.Size()
+
         DebugPrint("sz1:", sz1)
+
         termcnt := j - sz1
+
         DebugPrint("termcnt:", termcnt)
+
         str3 := local_ustr1.String()
         while i <= termcnt do {
             str4 := __GetAt(local_ustr, i, i + sz1).String()
-            DebugPrint("str3:", ::ximage(str3), "\n",
-                       "str4:", ::ximage(str4), "\n",
-                       "i:", i)
+
+            DebugPrint("str3:", ::ximage(str3), "\n", "str4:", ::ximage(str4), "\n", "i:", i)
+
             if str3 == str4 then {
+
                 DebugPrint("suspend ", i)
+
                 suspend i
             }
             i +:= 1
@@ -3986,17 +4028,22 @@ class UTF8 : ClassClass(
                    "i:", i)
 
         j := local_ustr.Size()
+
         DebugPrint("j:", j)
+
         if i > j then {
             k := (i - j)
             rstr := Repl(local_pstr, k)
             s := rstr.Size()
-            DebugPrint("k:", k, "\n",
-                       "rstr.String():", ::ximage(rstr.String()), "\n",
-                       "s:", s)
+
+            DebugPrint("k:", k, "\n", "rstr.String():",
+                       ::ximage(rstr.String()), "\n", "s:", s)
+
             rstr := __GetAt(rstr, s - k + 1, 0)
+
             DebugPrint("rstr.String():", ::ximage(rstr.String()), "\n",
                        "coerced parameter ustr.String():", ::ximage(local_ustr.String()))
+
             return UTF8::UTF8.New(local_ustr.String() || rstr.String())
         } else {
             return __GetAt(local_ustr, 1, i)
@@ -4036,6 +4083,7 @@ class UTF8 : ClassClass(
 
         /uset & AbortMessage(104, keyword("&file", , 1), keyword("&line", , 1),
                              __AuxMessage(104))
+
         #
         #######################################################################
         # common set-up code for string analysis code
@@ -4329,10 +4377,7 @@ class UTF8 : ClassClass(
         (i := ::integer(i)) | AbortMessage(101, keyword("&file", , 1), keyword("&line", , 1),
                                            __AuxMessage(101, 3), ::image(i))
 
-        DebugPrint("curpos(&pos):", curpos, "\n",
-                  "curcpos:", curcpos,
-                  "i:", i,
-                  "sz:", sz)
+        DebugPrint("curpos(&pos):", curpos, "\n", "curcpos:", curcpos, "i:", i, "sz:", sz)
 
         newcpos := curcpos + i
         (newcpos < 0) & fail
@@ -4341,8 +4386,7 @@ class UTF8 : ClassClass(
 
         DebugPrint("curpos:", curpos, " curcpos:", curcpos)
         DebugPrint("newpos:", newpos, " newcpos:", newcpos)
-        DebugPrint("&pos:", &pos, "\n",
-                   "newpos:", newpos)
+        DebugPrint("&pos:", &pos, "\n", "newpos:", newpos)
 
         suspend UTF8::UTF8.New(&subject[.&pos:&pos <- newpos])
     end
@@ -4419,8 +4463,7 @@ class UTF8 : ClassClass(
         local_ustr := __Coerce(ustr)
         data := local_ustr.String()
 
-        DebugPrint("data:", ::ximage(data), "\n",
-                   "i:", i)
+        DebugPrint("data:", ::ximage(data), "\n", "i:", i)
 
         str := data
         every 2 to i do {
@@ -4526,19 +4569,15 @@ class UTF8 : ClassClass(
         (i := ::integer(i)) | AbortMessage(101, keyword("&file", , 1), keyword("&line", , 1),
                                            __AuxMessage(101, 3), ::image(i))
 
-        DebugPrint("curpos(&pos):", curpos, "\n",
-                  "curcpos:", curcpos,
-                  "i:", i,
-                  "sz:", sz)
+        DebugPrint("curpos(&pos):", curpos, "\n", "curcpos:", curcpos, "i:", i, "sz:", sz)
 
         newcpos :=  i
         newpos := __ActualPos(ustr, newcpos)
         (newcpos > sz + 1) & fail
 
-        DebugPrint("curpos:", curpos, " curcpos:", curcpos)
-        DebugPrint("newpos:", newpos, " newcpos:", newcpos)
-        DebugPrint("&pos:", &pos, "\n",
-                   "newpos:", newpos)
+        DebugPrint("curpos:", curpos, " curcpos:", curcpos,
+                   "newpos:", newpos, " newcpos:", newcpos,
+                   "&pos:", &pos, "\n", "newpos:", newpos)
 
         suspend UTF8::UTF8.New(&subject[.&pos:&pos <- newpos])
     end
@@ -4616,10 +4655,6 @@ class UTF8 : ClassClass(
         #
         local_ustr := __Coerce(ustr)
 
-        #
-        # Only if debugging has been turned on will this print the source string,
-        # otherwise it is a null operation
-        #
         DebugPrint("coerced parameter ustr.String():", local_ustr.String())
 
         #
@@ -4627,6 +4662,7 @@ class UTF8 : ClassClass(
         # default of -1, strip from RHS of string
         #
         /i := -1
+
         #
         # if the value given for which end to start is not an integer, we need
         # to runtime abort with an error of 101 - not an integer
@@ -4641,13 +4677,7 @@ class UTF8 : ClassClass(
         j := local_ustr.Size() + 1
         k := 1
 
-        #
-        # if debugging is On, we would like to see which ends to trim and the
-        # relevant starting points for those trims
-        #
-        DebugPrint("i:", i, "\n",
-                   "j:", j, "\n",
-                   "k:", k)
+        DebugPrint("i:", i, "\n", "j:", j, "\n", "k:", k)
 
         #
         # there are two situations in which we want to test each codepoint from
@@ -4662,6 +4692,7 @@ class UTF8 : ClassClass(
         #
         while (i <= 0) & local_uset.Member(__GetAt(local_ustr, j - 1)) do {
             j -:= 1
+
             DebugPrint("  j:", j)
         }
 
@@ -4679,15 +4710,11 @@ class UTF8 : ClassClass(
         #
         while (i >= 0) & local_uset.Member(__GetAt(local_ustr, k)) do {
             k +:= 1
+
             DebugPrint("  k:", k)
         }
 
-        #
-        # if debugging is On, we want to see what the final start and end points
-        # are, otherwise this is a null operation
-        #
-        DebugPrint("j:", j, "\n",
-                   "k:", k)
+        DebugPrint("j:", j, "\n", "k:", k)
 
         #
         # using the final start and end points, we will create a new UTF-8 string
@@ -5098,6 +5125,7 @@ class __UTF8Object : ClassObject(
         # ASCII is a special case and we can use the standard unicon/icon
         # processes for generating each character
         #
+
         DebugPrint("__asciionly:", ::image(__asciionly),"\n__data:", ::image(__data))
 
         if \__asciionly then {
@@ -5162,8 +5190,7 @@ class __UTF8Object : ClassObject(
         /ustr & AbortMessage(103, keyword("&file", , 1), keyword("&line", , 1),
                              UTF8::UTF8.__AuxMessage(103))
 
-        DebugPrint("self:", ::image(self))
-        DebugPrint("ustr:", ::image(ustr))
+        DebugPrint("self:", ::image(self), "ustr:", ::image(ustr))
 
         return UTF8::UTF8.Concatenate(self, ustr)
     end
@@ -5187,6 +5214,7 @@ class __UTF8Object : ClassObject(
     #:@                 the method will fail
     #:
     method Subsection(i, j)
+
         DebugPrint("self:", image(self), " i:", i, " j:", j)
 
         /i & AbortMessage(101, keyword("&file", , 1), keyword("&line", , 1),
@@ -5266,6 +5294,7 @@ initially(val, convert)
     # byte stream.
     #
     if ::type(val) == ("string" | "cset") then {
+
         DebugPrint("(", &level, ") type of val: ", ::type(val), " value of val: ", ::ximage(val))
 
         #
@@ -5285,12 +5314,14 @@ initially(val, convert)
         # __UTF8CountTable.
         #
         __size := UTF8::UTF8.Size(val)
+
         DebugPrint("(", &level, ") Size of val: ", __size)
 
         #
         # if the val is made up of Valid UTF-8 codepoints then just assign val to
         # the __data field and calculate the size of the UTF-8 string
         #
+
         DebugPrint("Is Valid: ", image(UTF8::UTF8.Valid(val)) | "fail")
 
         if __data := (UTF8::UTF8.Valid(val)) then {
@@ -5299,8 +5330,11 @@ initially(val, convert)
             # codepoints. We are able to set the size of the UTF-8 string at the
             # same time we test for it being ASCII
             #
+
             DebugPrint("(", &level, ") pretest - Is ASCII only: ", \__asciionly | "null", " __data:", ::image(__data))
+
             __asciionly := ((*val = __size) & 1 )
+
             DebugPrint("(", &level, ") posttest - Is ASCII only: ", \__asciionly | "null", " __data:", ::image(__data))
             DebugPrint("(", &level, ") __data:", ::image(__data))
 
@@ -5311,6 +5345,7 @@ initially(val, convert)
         #
         } else {
             __source_data := val
+
             DebugPrint("__source_data:", ::image(__source_data))
 
             __data := ""
@@ -5556,8 +5591,11 @@ class UTF8Set : ClassClass(
                               __AuxMessage(120))
 
         DebugPrint("image(uset1):", image(uset1), "\nimage(uset2):", image(uset2))
+
         local_uset1 := __Coerce(uset1)
+
         DebugPrint("image(local_uset1):", image(local_uset1))
+
         return local_uset1.Union(uset2)
     end
 
@@ -5642,8 +5680,7 @@ class UTF8Set : ClassClass(
 
         local_uset := __Coerce(uset)
 
-        DebugPrint("Size of val:", *val, "\n",
-                   "image(val):", ::image(val), "\n",
+        DebugPrint("Size of val:", *val, "\n", "image(val):", ::image(val), "\n",
                    "coerced parameter uset:", ::image(uset))
 
         (*val = 0) & return uset
@@ -5834,6 +5871,7 @@ class __UTF8SetObject : ClassObject(
         # from the rest of the debugging message.
         #
         \modifier := modifier || " "
+
         #
         # if no modifier is supplied, change the value to the empty string for
         # display. We do the null test after the non-null test to ensure that
@@ -5842,10 +5880,7 @@ class __UTF8SetObject : ClassObject(
         # output.
         #
         /modifier := ""
-        #
-        # when debugging is turned On, we will see all the details of the self
-        # object, the val object and the uset object.
-        #
+
         DebugPrint(modifier, "self.__allcp:", ::ximage(__allcp), "\n",
                    modifier, "self.__cset:", ::ximage(__cset), "\n",
                    modifier, "self.__2bytedata:", ::ximage(__2bytedata), "\n",
@@ -5978,6 +6013,7 @@ class __UTF8SetObject : ClassObject(
             temp.__negated := &null
             temp.__allcp := (\self.__allcp & &null) | 1
             temp.__string_representation := UTF8Set.SpecialString((\self.__allcp & "-- Full UTF-8 codepoint set (1,112,064 codepoints) --") | "")
+
         } else {
             temp.__allcp := &null
             temp.__negated := (\self.__negated & &null) | 1
@@ -6043,6 +6079,7 @@ class __UTF8SetObject : ClassObject(
         #   ------+--------+--------+--------+--------+--------++--------+--------+-----------
         #
         if (\self.__allcp | \local_val.__allcp) then {
+
             DebugPrint("(A)self.__allcp:", image(self.__allcp), " local_val.__allcp:", image(local_val.__allcp))
 
             if \self.__allcp & /local_val.__allcp then {
@@ -6064,6 +6101,7 @@ class __UTF8SetObject : ClassObject(
 
             }
         } else if /self.__allcp & /self.__negated & /local_val.__allcp & /local_val.__negated then {
+
             DebugPrint("(B)self.__allcp:", image(self.__allcp), " self.__negated:", image(self.__negated),
                        "\nlocal_val.__allcp:", image(local_val.__allcp), " local_val.__negated:", image(local_val.__negated))
 
@@ -6078,6 +6116,7 @@ class __UTF8SetObject : ClassObject(
             uset.__string_representation := UTF8::UTF8.New(temp)
 
         } else if /self.__allcp & /local_val.__allcp & (\self.__negated | \local_val.__negated) then {
+
             DebugPrint("(C)self.__allcp:", image(self.__allcp), " self.__negated:", image(self.__negated),
                        "\nlocal_val.__allcp:", image(local_val.__allcp), " local_val.__negated:", image(local_val.__negated))
 
@@ -6117,6 +6156,7 @@ class __UTF8SetObject : ClassObject(
             }
         }
         __DebugPrint(, local_val, uset)
+
         return uset
     end
 
@@ -6139,6 +6179,7 @@ class __UTF8SetObject : ClassObject(
 
         local_val := UTF8::UTF8Set.__Coerce(val)
         uset := UTF8::UTF8Set.New("")
+
         #
         # We need to calulate the flags and values of the resultant UTFSet. There
         # are only a small number of valid combinations of flags that will occur
@@ -6162,6 +6203,7 @@ class __UTF8SetObject : ClassObject(
         #   ------+--------+--------+--------+--------+--------++--------+--------+-----------
         #
         if (\self.__allcp | \local_val.__allcp) then {
+
             DebugPrint("(A)self.__allcp:", image(self.__allcp), " local_val.__allcp:", image(local_val.__allcp))
 
             if \self.__allcp & \local_val.__allcp then {
@@ -6189,6 +6231,7 @@ class __UTF8SetObject : ClassObject(
 
             }
         } else if /self.__allcp & /self.__negated & /local_val.__allcp & /local_val.__negated then {
+
             DebugPrint("(B)self.__allcp:", image(self.__allcp), " self.__negated:", image(self.__negated),
                        "\nlocal_val.__allcp:", image(local_val.__allcp), " local_val.__negated:", image(local_val.__negated))
 
@@ -6203,6 +6246,7 @@ class __UTF8SetObject : ClassObject(
             uset.__string_representation := UTF8::UTF8.New(temp)
 
         } else if /self.__allcp & /local_val.__allcp & (\self.__negated | \local_val.__negated) then {
+
             DebugPrint("(C)self.__allcp:", image(self.__allcp), " self.__negated:", image(self.__negated),
                        "\nlocal_val.__allcp:", image(local_val.__allcp), " local_val.__negated:", image(local_val.__negated))
 
@@ -6240,6 +6284,7 @@ class __UTF8SetObject : ClassObject(
                 uset.__string_representation := UTF8::UTF8.New("-- All UTF-8 codepoints except (" || temp || ") --")
             }
         }
+
         __DebugPrint(, local_val, uset)
 
         return uset
@@ -6313,6 +6358,7 @@ class __UTF8SetObject : ClassObject(
             uset.__string_representation := UTF8::UTF8.New(temp)
 
         } else if /self.__allcp & /local_val.__allcp & (\self.__negated | \local_val.__negated) then {
+
             DebugPrint("(C)self.__allcp:", image(self.__allcp), " self.__negated:", image(self.__negated),
                        "\nlocal_val.__allcp:", image(local_val.__allcp), " local_val.__negated:", image(local_val.__negated))
 
@@ -6405,28 +6451,29 @@ class __UTF8SetObject : ClassObject(
                 l,
                 __1
 
-        DebugPrint("Entering")
-        DebugPrint("__allcp:", ::ximage(__allcp))
-        DebugPrint("__negated:", ::ximage(__negated))
-        DebugPrint("__cset:", ::ximage(__cset))
-        DebugPrint("__2bytedata:", ::ximage(__2bytedata))
-        DebugPrint("__3bytedata:", ::ximage(__3bytedata))
-        DebugPrint("__4bytedata:", ::ximage(__4bytedata))
+        DebugPrint("Entering", "__allcp:", ::ximage(__allcp),
+                   "__negated:", ::ximage(__negated),
+                   "__cset:", ::ximage(__cset),
+                   "__2bytedata:", ::ximage(__2bytedata),
+                   "__3bytedata:", ::ximage(__3bytedata),
+                   "__4bytedata:", ::ximage(__4bytedata))
 
         if \__allcp then {
+
             DebugPrint("Producing all UTF-8 codepoints")
 
             every i := 0 to UTF8Set.MaxSize() - 1 do {
                 ch := UTF8.DecimalTo(i)
 
-                DebugPrint("codepoint ch:", ::image(ch), " ximage(ch.String()):", ::ximage(ch.String()))
-                DebugPrint("i:", i)
+                DebugPrint("codepoint ch:", ::image(ch), " ximage(ch.String()):",
+                           ::ximage(ch.String()), "i:", i)
 
                 suspend ch
             }
         } else if \__negated then {
-            DebugPrint("Producing negated UTF-8 codepoints")
-            DebugPrint("Producing all UTF-8 codepoints")
+
+            DebugPrint("Producing negated UTF-8 codepoints",
+                       "Producing all UTF-8 codepoints")
 
             every i := 0 to UTF8Set.MaxSize() - 1 do {
                 ch := UTF8.DecimalTo(i)
@@ -6437,11 +6484,13 @@ class __UTF8SetObject : ClassObject(
                 }
             }
         } else {
+
             DebugPrint("Producing available UTF-8 codepoints")
 
             lst := []
             lst := ::sort(\__cset)
             every ch := !\lst do {
+
                 DebugPrint("ch:", ::image(ch))
 
                 suspend UTF8.New(ch)
@@ -6449,9 +6498,11 @@ class __UTF8SetObject : ClassObject(
 
             lst := []
             lst := ::sort(\__2bytedata)
+
             DebugPrint("lst:", ::ximage(lst))
 
             every ch := !\lst do {
+
                 DebugPrint("ch:", ::image(ch), " ximage(ch):", ::ximage(ch))
 
                 suspend UTF8.New(ch)
@@ -6468,6 +6519,7 @@ class __UTF8SetObject : ClassObject(
             lst := []
             lst := ::sort(\__4bytedata)
             every ch := !\lst do {
+
                 DebugPrint("ch:", ::image(ch), " ximage(ch):", ::ximage(ch))
 
                 suspend UTF8.New(ch)
@@ -6538,8 +6590,7 @@ class __UTF8SetObject : ClassObject(
         /ustr & AbortMessage(103, keyword("&file", , 1), keyword("&line", , 1),
                              UTF8::UTF8Set.__AuxMessage(103))
 
-        DebugPrint("self:", ::image(self))
-        DebugPrint("ustr:", ::image(ustr))
+        DebugPrint("self:", ::image(self), "ustr:", ::image(ustr))
 
         return UTF8::UTF8.Concatenate(self.UTF8Value(), ustr)
     end
@@ -6563,6 +6614,7 @@ class __UTF8SetObject : ClassObject(
     #:@                 the method will fail
     #:
     method Subsection(i, j)
+
         DebugPrint("self:", image(self), " i:", i, " j:", j)
 
         /i & AbortMessage(101, keyword("&file", , 1), keyword("&line", , 1),
@@ -6587,29 +6639,34 @@ class __UTF8SetObject : ClassObject(
                 cp                      #LV:
 
         *c = 0 & return self
-        DebugPrint("Size of c:", *c, "\n",
-                   "image(c):", ::image(c))
+
+        DebugPrint("Size of c:", *c, "\n", "image(c):", ::image(c))
 
         every val := !c do {
             if ::type(val) == ("string" | "cset" | "integer" | "real") | IsObject(val, "UTF8" | "UTF8Set") then {
                 val := UTF8::UTF8.__Coerce(val)
+
                 DebugPrint("val.String():", val.String())
 
                 every cp := val.ForEach().String() do {
+
                     DebugPrint("cp:", cp)
 
                     if \__allcp then {
                         if /__negated then {
+
                             DebugPrint("All codepoints in set, so is a member.")
 
                             break
                         } else {
+
                             DebugPrint("All codepoints not in set, so is not a member.")
 
                             found := &null
                             break break
                         }
                     } else {
+
                         DebugPrint("ximage(__cset):", ::ximage(__cset), "\n",
                                    "ximage(__2bytedata):", ::ximage(__2bytedata), "\n",
                                    "ximage(__3bytedata):", ::ximage(__3bytedata), "\n",
@@ -6618,9 +6675,11 @@ class __UTF8SetObject : ClassObject(
                         if ::member(\__cset | \__2bytedata | \__3bytedata | \__4bytedata, cp) then {
                             if /__negated then {
                                 # do nothing
+
                                 DebugPrint("Member of one of the sets")
 
                             } else {
+
                                 DebugPrint("Not Member of one of the sets")
 
                                 found := &null
@@ -6629,10 +6688,12 @@ class __UTF8SetObject : ClassObject(
                         } else {
                             if /__negated then {
                                 found := &null
+
                                 DebugPrint("Not Found in any set")
 
                                 break break
                             } else {
+
                                 DebugPrint("Found in negated set")
                             }
                         }
@@ -6640,11 +6701,13 @@ class __UTF8SetObject : ClassObject(
                 }
             } else {
                 found := &null
+
                 DebugPrint("Not a value of any required form")
 
                 break
             }
         }
+
         DebugPrint("found:", ::ximage(found))
 
         return (\found & self) | fail
@@ -6707,8 +6770,9 @@ initially(val)
     # We will test if the global debugging is turned on or off.
     #
     IsOn()
-    DebugPrint("type of val:", ::type(val))
-    DebugPrint("classname of val:", ::classname(val) | "no class name")
+
+    DebugPrint("type of val:", ::type(val),
+               "classname of val:", ::classname(val) | "no class name")
 
     #
     # Since we have made UTF-8 cset objects immutable, we just return any UTF-8
@@ -6723,6 +6787,7 @@ initially(val)
     # the call stack is not as it appears within this code.
     #
     if IsObjectOf(val, "UTF8Set") then {
+
         DebugPrint("val: ", val.String())
 
         variable("self", , 1) := val
@@ -6735,6 +6800,7 @@ initially(val)
     # in the cset >> "\x7f", the size will be > 0, so we won't process it here.
     #
     } else if ::type(val) == "cset" & *(val -- &ascii) = 0 then {
+
         DebugPrint("type of val:", ::type(val), " and covers the ASCII characters.")
 
         #
@@ -6770,6 +6836,7 @@ initially(val)
         # If the value representing this UTFSet has been created previously,
         # we will use that value.
         #
+
         DebugPrint("type of val:", ::type(val), " value of val: ", ::ximage(val))
 
         if temp := \UTF8::UTF8Set.All() then {
@@ -6805,6 +6872,7 @@ initially(val)
     # choice, we can change the call to use the method SpecialString at a later date.
     #
     } else if ::type(val) == ("integer" | "real") then {
+
         DebugPrint("type of val:", ::type(val), " value of val: ", ::ximage(val))
 
         data := ::string(::cset(val))
@@ -6822,11 +6890,13 @@ initially(val)
     # the extraction of the ascii values.
     #
     } else if ::type(val) == "cset" then {
+
         DebugPrint("val:", ::ximage(val))
 
         #
         # extract the relevant ascii values in the cset
         temp := ::string(val ** &ascii)
+
         DebugPrint("__cset:", ::ximage(temp))
 
         __cset := ::set([:!temp:])
@@ -6836,6 +6906,7 @@ initially(val)
         # extract and convert each of the bytes to a proper codepoint
         #
         data := ::string(val -- &ascii)
+
         DebugPrint("data:", ::ximage(data))
 
         __2bytedata := ::set([:UTF8::UTF8.ByteTranslate(!data):])
@@ -6848,7 +6919,9 @@ initially(val)
         #
         temp := ""
         every temp ||:= !::sort(__cset ++ __2bytedata)
+
         DebugPrint("__cset ++ __2bytedata:", ::ximage(temp))
+
         __string_representation := UTF8::UTF8.New(temp)
 
     #
@@ -6858,15 +6931,18 @@ initially(val)
     # set based on the size of each codepoint.
     #
     } else if ::type(val) == "string" | IsObjectOf(val, "UTF8") then {
+
         DebugPrint("level(", &level, ") type of val:", ::type(val), " value of val: ", ::image(val))
 
         val := UTF8::UTF8.__Coerce(val)
+
         DebugPrint("level(", &level, ") classname of val:", ::classname(val) | "none", " value of val: ", ::image(val))
 
         __cset := ::set([])
         __2bytedata := ::set([])
         __3bytedata := ::set([])
         __4bytedata := ::set([])
+
         DebugPrint("\n__cset:", ::ximage(__cset), "\n__2bytedata:", ::ximage(__2bytedata), "\n__3bytedata:", ::ximage(__3bytedata), "\n__4bytedata:", ::ximage(__4bytedata))
 
         every data := val.ForEach().String() do {

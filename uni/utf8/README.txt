@@ -50,9 +50,10 @@ procedure trace(message[])
 
 
 package ClassObject
-class ClassClass : ClassObject
+class ClassClass : ErrorSystem
     method __InitClass()
     method SetClass(obj)
+    method __AuxMessage(errorno, messageno)
 
     method Addition(val1, val2)
     method Divide(val1, val2)
@@ -165,6 +166,7 @@ class UTF8 : ClassClass
     method __ActualPos(ustr, i)
     method __Coerce(val)
     method __GetAt(ustr, i, j)
+    method __AuxMessage(errorno, messageno)
 
     method BOMFound(str)
     method SkipBOM(str)
@@ -257,6 +259,7 @@ class __UTF8Object : ClassObject
 
 class UTF8Set : ClassClass
     method __Coerce(val)
+    method __AuxMessage(errorno, messageno)
 
     method Complement(uset)
     method Difference(uset1, uset2)

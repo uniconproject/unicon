@@ -24,7 +24,7 @@ UFILES=gui.u file_dlg.u db.u \
 # organizational purposes. Inspired by ipl/lib.  They have to be
 # compiled in this directory in order for the class specification
 # database to work.
-COPYINS=selection3D.u
+COPYINS=selection3D.u utf8.u
 
 all: $(UFILES) $(COPYINS)
 
@@ -32,6 +32,31 @@ selection3D.u: ../3d/selection3D.icn
 	cp ../3d/selection3D.icn .
 	$(UNICON) $(UFLAGS) -c selection3D.icn
 	rm selection3D.icn
+
+utf8.u: ../utf8/utf8.icn classobject.u
+	cp ../utf8/utf8.icn .
+	$(UNICON) $(UFLAGS) -c utf8.icn
+	rm utf8.icn
+
+classobject.u: ../library/classobject.icn errorsystem.u
+	cp ../library/classobject.icn .
+	$(UNICON) $(UFLAGS) -c classobject.icn
+	rm classobject.icn
+
+errorsystem.u: ../library/errorsystem.icn runtimeerrors.u utilities.u
+	cp ../library/errorsystem.icn .
+	$(UNICON) $(UFLAGS) -c errorsystem.icn
+	rm errorsystem.icn
+
+runtimeerrors.u: ../library/runtimeerrors.icn
+	cp ../library/runtimeerrors.icn .
+	$(UNICON) $(UFLAGS) -c runtimeerrors.icn
+	rm runtimeerrors.icn
+
+utilities.u: ../library/utilities.icn
+	cp ../library/utilities.icn .
+	$(UNICON) $(UFLAGS) -c utilities.icn
+	rm utilities.icn
 
 deps:
 	$(UNIDEP) *.icn -nb -f deps.out

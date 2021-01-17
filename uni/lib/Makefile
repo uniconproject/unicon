@@ -24,39 +24,29 @@ UFILES=gui.u file_dlg.u db.u \
 # organizational purposes. Inspired by ipl/lib.  They have to be
 # compiled in this directory in order for the class specification
 # database to work.
-COPYINS=selection3D.u utf8.u
+COPYINS=selection3D.u
 
 all: $(UFILES) $(COPYINS)
 
 selection3D.u: ../3d/selection3D.icn
-	cp ../3d/selection3D.icn .
+	$(CP) ../3d/selection3D.icn .
 	$(UNICON) $(UFLAGS) -c selection3D.icn
-	rm selection3D.icn
+	$(RM) selection3D.icn
 
-utf8.u: ../utf8/utf8.icn classobject.u
-	cp ../utf8/utf8.icn .
+utf8.u: utf8.icn classobject.u
 	$(UNICON) $(UFLAGS) -c utf8.icn
-	rm utf8.icn
 
-classobject.u: ../library/classobject.icn errorsystem.u
-	cp ../library/classobject.icn .
+classobject.u: classobject.icn errorsystem.u
 	$(UNICON) $(UFLAGS) -c classobject.icn
-	rm classobject.icn
 
-errorsystem.u: ../library/errorsystem.icn runtimeerrors.u utilities.u
-	cp ../library/errorsystem.icn .
+errorsystem.u: errorsystem.icn runtimeerrors.u utilities.u
 	$(UNICON) $(UFLAGS) -c errorsystem.icn
-	rm errorsystem.icn
 
-runtimeerrors.u: ../library/runtimeerrors.icn
-	cp ../library/runtimeerrors.icn .
+runtimeerrors.u: runtimeerrors.icn
 	$(UNICON) $(UFLAGS) -c runtimeerrors.icn
-	rm runtimeerrors.icn
 
-utilities.u: ../library/utilities.icn
-	cp ../library/utilities.icn .
+utilities.u: utilities.icn
 	$(UNICON) $(UFLAGS) -c utilities.icn
-	rm utilities.icn
 
 deps:
 	$(UNIDEP) *.icn -nb -f deps.out

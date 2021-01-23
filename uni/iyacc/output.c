@@ -848,6 +848,18 @@ void output_defines(void)
     register int c, i;
     register char *s;
 
+    if (dflag > 1) { /* -dd means write Java-compatible Unicon definitions */
+	fprintf(defines_file, "class Parser(");
+	for (i = 2; i < ntokens; ++i){
+	    s = symbol_name[i];
+	    if (is_C_identifier(s)){
+		fprintf(defines_file, "%s%s", ((i>2)?", ":""), symbol_name[i]);
+	    }
+	}
+	fprintf(defines_file, ")\n");
+	fprintf(defines_file, "initially\n");
+    }
+
     for (i = 2; i < ntokens; ++i)
     {
 	s = symbol_name[i];
@@ -860,7 +872,11 @@ void output_defines(void)
 	    else
 	      fprintf(code_file, "#define ");
 
-	    if (dflag) fprintf(defines_file, iflag ? "$define " : "#define ");
+	    if (dflag) {
+		if (dflag==1)
+		    fprintf(defines_file, iflag ? "$define " : "#define ");
+		else fprintf(defines_file, "   ");
+	    }
 	    c = *s;
 	    if (c == '"')
 	    {
@@ -885,8 +901,16 @@ void output_defines(void)
 	      fprintf(code_file, "=%d;\n", symbol_value[i]);
 	    else
 	      fprintf(code_file, " %d\n", symbol_value[i]);
-	    if (dflag) fprintf(defines_file, " %d\n", symbol_value[i]);
+	    if (dflag) {
+		if (dflag==1)
+		    fprintf(defines_file, " %d\n", symbol_value[i]);
+		else
+		    fprintf(defines_file, " := %d\n", symbol_value[i]);
+	    }
 	}
+    }
+    if(dflag > 1){
+	fprintf(defines_file, "end\n");
     }
 
     ++outline;

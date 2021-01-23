@@ -149,7 +149,7 @@ void usage(void)
      "      [-s java_semantic_type] [-f class_name] filename\n", myname);
 */
     fprintf(stderr,
-     "usage: %s [--help] [-dilrtv] [-p symbol_prefix] filename\n", myname);
+     "usage: %s [--help] [-d[d]] [-ilrtv] [-p symbol_prefix] filename\n", myname);
     
     exit(1);
 }
@@ -161,10 +161,11 @@ void help(void)
 {
    fprintf(stderr, "This is iyacc son of jyacc son of byacc. Tremble before me! Usage:\n");
    fprintf(stderr,
-	   "\n   %s [-dilrtv] [-p symbol_prefix] filename\n", myname);
+	   "\n   %s [-d[d]] [-ilrtv] [-p symbol_prefix] filename\n", myname);
    fprintf(stderr, "\ntakes in a filename.y grammar and writes a filename.icn parser\n");
    fprintf(stderr, "\nOptions:\n\n");
    fprintf(stderr, "   -d                write a filename_tab.icn include file w/ token $define's\n");
+   fprintf(stderr, "   -dd               produce java compatible object definitions\n");
    fprintf(stderr, "   -i                generate Icon/Unicon (default)\n");
    fprintf(stderr, "   -l                suppress line directives\n");
    fprintf(stderr, "   -p symbol_prefix  use symbol_prefix instead of yy\n");
@@ -288,7 +289,8 @@ void getargs(int argc,char **argv)
 		goto end_of_option;
 
 	    case 'd':
-		dflag = 1;
+		if (iflag) dflag++; /* -dd: java-compatible object define */
+		else dflag = 1;
 		break;
 
 	    case 'l':
@@ -443,7 +445,10 @@ void create_file_names(void)
 	    if (defines_file_name == 0)
 	      no_space();
 	    strcpy(defines_file_name, file_prefix);
-	    strcpy(defines_file_name + len, DEFINES_SUFFIX);
+	    if (jflag)
+		strcpy(defines_file_name + strlen(file_prefix), "tab.java");
+	    else
+		strcpy(defines_file_name + len, DEFINES_SUFFIX);
 	}
     }
     if (vflag)

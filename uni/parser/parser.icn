@@ -5,7 +5,23 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
-
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+#
+# Add additional output formats for the dump_tree procedure. Each format is shown
+# as a comment for the relevant procedure.
+#
+# Change the standard Unicon function calls to have the :: prefix to ensure that
+# any future additions to the package will not shadow the standard Unicon functions
+# being used.
+#
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+#                         Remove tree searching procedures as they are no longer
+#                         used
+# Date:    2021-01-03
+#
 package parser
 
 link unigram, preproce, unilex
@@ -13,118 +29,371 @@ link unigram, preproce, unilex
 procedure parse_unicon(fname)
    yyin := ""
    /yydebug := 0
-   every yyin ||:= preprocessor(fname, predefs()) do 
+   every yyin ||:= preprocessor(fname, predefs()) do
       yyin ||:= "\n"
+   ::write("parse_unicon(", ::image(fname), ") \nyyin:", yyin)
    yylex_reinit()
    yyout := &output
-#   write(yyout, "#line 0 \"", fName, "\"")
-#  writes(&errout, "Parsing ", fName ,": ")
    rv := yyparse()
    if yynerrs > 0 then
       fail
    return yyval
 end
 
-#
-# Suspend the sequence of nodes X1, X2, ... Xn, held in
-# the following node structure :-
-#
-#                 n
-#                / \
-#               n   Xn
-#              / \
-#             n   Xn-1
-#            /
-#          ...
-#          n
-#         / \
-#     &null  X1
-#
-# The indices of the child tree/leaf may be supplied, but
-# default to 1, 2 respectively.
-#
-# A single EmptyNode is the empty list, and just fails.
-#
-procedure tree_seq1(n, i, j)
-   /i := 1
-   /j := 2
-   if \n then
-      suspend tree_seq1(\n.children[i], i, j) | n.children[j]
-end
-
-#
-# Same, but in preorder
-#
-procedure tree_seq1_pre(n, i, j)
-   /i := 1
-   /j := 2
-   if \n then
-      suspend n.children[j] | tree_seq1_pre(\n.children[i], i, j) 
-end
-
-#
-# As above, but suspends the parent node rather than the leaf.
-#
-procedure tree_seq1a(n, i)
-   /i := 1
-   if \n then
-      suspend tree_seq1a(\n.children[i]) | n
-end
-
-#
-# Suspend the sequence of nodes t1, t2, ..., tn held in
-# the following node structure :-
-#
-#                 n
-#               / | \
-#            .... S  tN
-#             n
-#           / | \
-#          n  S  t3
-#        / | \
-#      t1  S  t2 
-#
-# The parameter "lab" provides the common label for all
-# the nodes n.
-#
-procedure tree_seq2(n, lab, i, j)
-   /i := 1
-   /j := 3
-   if (type(n) == "treenode") & (n.label == lab) then
-      suspend tree_seq2(n.children[i], lab, i, j) | n.children[j]
-   else
-      return n
-end
 
 procedure dump_node(n)
    if /n then
-      write("EmptyNode")
-   else if type(n) == "treenode" then {
-      write("treenode : ", n.label, ", ", *n.children, " children")
+      ::write("EmptyNode")
+   else if ::type(n) == "treenode" then {
+      ::write("treenode : ", n.label, ", ", *n.children, " children")
    } else if type(n) == "token" then {
-      write("token ", n.s)
+      ::write("token ", n.s)
    } else
-      write("other ", image(n))
+      ::write("other ", ::image(n))
 end
 
-procedure dump_tree(root, level, count)
+#PD:
+#: dump_tree(root, variation) - print the parse tree represented by "root" with
+#: the choice of how to display the tree by specifying a number between 0 and 6.
+#: Each of these variations will be shown in the comments assocated with each of
+#: the display procedures
+#:
+procedure dump_tree(root, variation)
+   /variation := 0
+   case variation of {
+      0 : dump_tree0(root)
+      1 : dump_tree1(root)
+      2 : dump_tree2(root)
+      3 : dump_tree3(root)
+      4 : dump_tree4(root)
+      5 : dump_tree5(root)
+      6 : dump_tree6(root)
+      default : dump_tree2(root)
+   }
+end
+
+#PD:
+#: dump_tree0(root, level, count)
+#:
+#:    |Start Column
+#:    |-----------------------------------------
+#:    |0:node("decls" : *children=2)
+#:    |   1:node("package" : *children=1)
+#:    |      1:node("lnkfile" : *children=1)
+#:    |         1:parser
+#:    |   2:node("class" : *children=8)
+#:    |      1:DatabaseInfo
+#:    |      2:node("supers" : *children=0)
+#:    |      3:node("cparmlist" : *children=2)
+#:    |         1:node("carg" : *children=2)
+#:    |            1:node("priv" : *children=0)
+#:    |            2:node("arg" : *children=1)
+#:    |               1:name
+#:    |         2:node("carg" : *children=2)
+#:    |            1:node("priv" : *children=0)
+#:    |            2:node("arg" : *children=1)
+#:    |               1:directory
+#:    |      4:node("semicolon" : *children=0)
+#:
+procedure dump_tree0(root, level, count)
+   local i, j, e
+
    /level := 0
    /count := 0
-   i := repl(" ", level * 3) || count || ":"
+   i := ::repl(" ", level * 3) || count || ":"
    if /root then {
-      write(i, "EmptyNode")
-   } else if type(root) == "treenode" then {
-      write(i, "node(\"", root.label, "\"")
+      ::write(i, "EmptyNode")
+   } else if ::type(root) == "treenode" then {
+      ::write(i, "node(\"", root.label, "\" : *children=", *root.children, ")")
       j := 1
       every e := !root.children do  {
-         dump_tree(e, level + 1, j)
+         dump_tree0(e, level + 1, j)
          j +:= 1
       }
-   } else if type(root) == "token" then {
-      write(i, root.s)
+   } else if ::type(root) == "token" then {
+      ::write(i, root.s)
    } else
-      write(i, image(root))
+      ::write(i, ::image(root))
 end
 
+#PD:
+#: dump_tree1(root, level, count, prefix1l, prefixfl, branch)
+#:
+#:    |Start Column
+#:    |-----------------------------------------
+#:    |--1:node("decls" : *children=2)
+#:    |   +----1:node("package" : *children=1)
+#:    |   |     +----1:node("lnkfile" : *children=1)
+#:    |   |           +----1:parser
+#:    |   +----2:node("class" : *children=8)
+#:    |         +----1:DatabaseInfo
+#:    |         +----2:node("supers" : *children=0)
+#:    |         +----3:node("cparmlist" : *children=2)
+#:    |         |     +----1:node("carg" : *children=2)
+#:    |         |     |     +----1:node("priv" : *children=0)
+#:    |         |     |     +----2:node("arg" : *children=1)
+#:    |         |     |           +----1:name
+#:    |         |     +----2:node("carg" : *children=2)
+#:    |         |           +----1:node("priv" : *children=0)
+#:    |         |           +----2:node("arg" : *children=1)
+#:    |         |                 +----1:directory
+#:    |         +----4:node("semicolon" : *children=0)
+#:
+procedure dump_tree1(root, level, count, prefix1l, prefixfl, branch)
+   local i, j, e
 
+   /level := 0
+   /count := 1
+   /prefix1l := ""
+   /prefixfl := "   "
+   /branch := ""
+   i := prefix1l || branch || ::right(count, 3, "-") || ":"
+   if /root then {
+      ::write(i, "EmptyNode")
+   } else if ::type(root) == "treenode" then {
+      ::write(i, "node(\"", root.label, "\" : *children=", *root.children, ")")
+      prefix1l := prefixfl
+      every e := root.children[j := 1 to *root.children - 1] do  {
+         dump_tree1(e, level + 1, j, prefix1l, prefixfl || "|     ", "+--")
+      }
+      dump_tree1(root.children[*root.children], level + 1, *root.children, prefix1l, prefixfl || "      ", "+--")
+   } else if ::type(root) == "token" then {
+      ::write(i, root.s)
+   } else
+      ::write(i, ::image(root))
+end
+
+#PD:
+#: dump_tree2(root, level, count, prefix1l, prefixfl, branch)
+#:
+#:    |Start Column
+#:    |-----------------------------------------
+#:    |--1:node("decls" : *children=2)
+#:    |   +--1:node("package" : *children=1)
+#:    |   |   +--1:node("lnkfile" : *children=1)
+#:    |   |       +--1:parser
+#:    |   +--2:node("class" : *children=8)
+#:    |       +--1:DatabaseInfo
+#:    |       +--2:node("supers" : *children=0)
+#:    |       +--3:node("cparmlist" : *children=2)
+#:    |       |   +--1:node("carg" : *children=2)
+#:    |       |   |   +--1:node("priv" : *children=0)
+#:    |       |   |   +--2:node("arg" : *children=1)
+#:    |       |   |       +--1:name
+#:    |       |   +--2:node("carg" : *children=2)
+#:    |       |       +--1:node("priv" : *children=0)
+#:    |       |       +--2:node("arg" : *children=1)
+#:    |       |           +--1:directory
+#:    |       +--4:node("semicolon" : *children=0)
+#:
+procedure dump_tree2(root, level, count, prefix1l, prefixfl, branch)
+   local i, j, e
+
+   /level := 0
+   /count := 1
+   /prefix1l := ""
+   /prefixfl := "   "
+   /branch := ""
+   i := prefix1l || branch || ::right(count, 3, "-") || ":"
+   if /root then {
+      ::write(i, "EmptyNode")
+   } else if ::type(root) == "treenode" then {
+      ::write(i, "node(\"", root.label, "\" : *children=", *root.children, ")")
+      prefix1l := prefixfl
+      every e := root.children[j := 1 to *root.children - 1] do  {
+         dump_tree2(e, level + 1, j, prefix1l, prefixfl || "|   ", "+")
+      }
+      dump_tree2(root.children[*root.children], level + 1, *root.children, prefix1l, prefixfl || "    ", "+")
+   } else if ::type(root) == "token" then {
+      ::write(i, root.s)
+   } else
+      ::write(i, ::image(root))
+end
+
+#PD:
+#: dump_tree3(root, level, count, prefix1l, prefixfl, branch)
+#:
+#:    |Start Column
+#:    |-----------------------------------------
+#:    |--1:node("decls")
+#:    |   +--1:node("package")
+#:    |   |   +--1:node("lnkfile")
+#:    |   |       +--1:parser
+#:    |   +--2:node("class")
+#:    |       +--1:DatabaseInfo
+#:    |       +--2:node("supers")
+#:    |       +--3:node("cparmlist")
+#:    |       |   +--1:node("carg")
+#:    |       |   |   +--1:node("priv")
+#:    |       |   |   +--2:node("arg")
+#:    |       |   |       +--1:name
+#:    |       |   +--2:node("carg")
+#:    |       |       +--1:node("priv")
+#:    |       |       +--2:node("arg")
+#:    |       |           +--1:directory
+#:    |       +--4:node("semicolon")
+#:
+procedure dump_tree3(root, level, count, prefix1l, prefixfl, branch)
+   local i, j, e
+
+   /level := 0
+   /count := 1
+   /prefix1l := ""
+   /prefixfl := "   "
+   /branch := ""
+   i := prefix1l || branch || ::right(count, 3, "-") || ":"
+   if /root then {
+      ::write(i, "EmptyNode")
+   } else if ::type(root) == "treenode" then {
+      ::write(i, "node(\"", root.label, "\")")
+      prefix1l := prefixfl
+      every e := root.children[j := 1 to *root.children - 1] do  {
+         dump_tree3(e, level + 1, j, prefix1l, prefixfl || "|   ", "+")
+      }
+      dump_tree3(root.children[*root.children], level + 1, *root.children, prefix1l, prefixfl || "    ", "+")
+   } else if ::type(root) == "token" then {
+      ::write(i, root.s)
+   } else
+      ::write(i, ::image(root))
+end
+
+#PD:
+#: dump_tree4(root, level, count)
+#:
+#:    |Start Column
+#:    |-----------------------------------------
+#:    |0:node("decls")
+#:    |   1:node("package")
+#:    |      1:node("lnkfile")
+#:    |         1:parser
+#:    |   2:node("class")
+#:    |      1:DatabaseInfo
+#:    |      2:node("supers")
+#:    |      3:node("cparmlist")
+#:    |         1:node("carg")
+#:    |            1:node("priv")
+#:    |            2:node("arg")
+#:    |               1:name
+#:    |         2:node("carg")
+#:    |            1:node("priv")
+#:    |            2:node("arg")
+#:    |               1:directory
+#:    |      4:node("semicolon")
+#:
+procedure dump_tree4(root, level, count)
+   local i, j, e
+
+   /level := 0
+   /count := 0
+   i := ::repl(" ", level * 3) || count || ":"
+   if /root then {
+      ::write(i, "EmptyNode")
+   } else if ::type(root) == "treenode" then {
+      ::write(i, "node(\"", root.label, "\")")
+      j := 1
+      every e := !root.children do  {
+         dump_tree4(e, level + 1, j)
+         j +:= 1
+      }
+   } else if ::type(root) == "token" then {
+      ::write(i, root.s)
+   } else
+      ::write(i, ::image(root))
+end
+
+#PD:
+#: dump_tree5(root, level, count)
+#:
+#:    |Start Column
+#:    |-----------------------------------------
+#:    |0:node("decls"
+#:    |   1:node("package"
+#:    |      1:node("lnkfile"
+#:    |         1:parser
+#:    |   2:node("class"
+#:    |      1:DatabaseInfo
+#:    |      2:node("supers"
+#:    |      3:node("cparmlist"
+#:    |         1:node("carg"
+#:    |            1:node("priv"
+#:    |            2:node("arg"
+#:    |               1:name
+#:    |         2:node("carg"
+#:    |            1:node("priv"
+#:    |            2:node("arg"
+#:    |               1:directory
+#:    |      4:node("semicolon"
+#:
+procedure dump_tree5(root, level, count)
+   local i, j, e
+
+   /level := 0
+   /count := 0
+   i := ::repl(" ", level * 3) || count || ":"
+   if /root then {
+      ::write(i, "EmptyNode")
+   } else if ::type(root) == "treenode" then {
+      ::write(i, "node(\"", root.label, "\"")
+      j := 1
+      every e := !root.children do  {
+         dump_tree5(e, level + 1, j)
+         j +:= 1
+      }
+   } else if ::type(root) == "token" then {
+      ::write(i, root.s)
+   } else
+      ::write(i, ::image(root))
+end
+
+#PD:
+#: dump_tree6(root, level, count, prefix1l, prefixfl, branch)
+#:
+#:    |Start Column
+#:    |-----------------------------------------
+#:    |--1:node("decls"
+#:    |   +--1:node("package"
+#:    |   |   +--1:node("lnkfile"
+#:    |   |       +--1:parser
+#:    |   +--2:node("class"
+#:    |       +--1:DatabaseInfo
+#:    |       +--2:node("supers"
+#:    |       +--3:node("cparmlist"
+#:    |       |   +--1:node("carg"
+#:    |       |   |   +--1:node("priv"
+#:    |       |   |   +--2:node("arg"
+#:    |       |   |       +--1:name
+#:    |       |   +--2:node("carg"
+#:    |       |       +--1:node("priv"
+#:    |       |       +--2:node("arg"
+#:    |       |           +--1:directory
+#:    |       +--4:node("semicolon"
+#:
+procedure dump_tree6(root, level, count, prefix1l, prefixfl, branch)
+   local i, j, e
+
+   /level := 0
+   /count := 1
+   /prefix1l := ""
+   /prefixfl := "   "
+   /branch := ""
+   i := prefix1l || branch || ::right(count, 3, "-") || ":"
+   if /root then {
+      ::write(i, "EmptyNode")
+   } else if ::type(root) == "treenode" then {
+      ::write(i, "node(\"", root.label, "\"")
+      prefix1l := prefixfl
+      every e := root.children[j := 1 to *root.children - 1] do  {
+         dump_tree6(e, level + 1, j, prefix1l, prefixfl || "|   ", "+")
+      }
+      dump_tree6(root.children[*root.children], level + 1, *root.children, prefix1l, prefixfl || "    ", "+")
+   } else if ::type(root) == "token" then {
+      ::write(i, root.s)
+   } else
+      ::write(i, ::image(root))
+end
+
+procedure parsing_error(t)
+   ::write(&errout, "something has gone wrong - we expected an identifier or a string literal",
+                    "\nand we got something else instead: ", ::image(t))
+end
 

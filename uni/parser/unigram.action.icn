@@ -1,0 +1,3244 @@
+#
+# Unicon unigram.y code include/link file for semantic action section
+#
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+#
+
+record treenode(label, children)
+
+procedure node(label, children[])
+   return treenode(label, children)
+end
+
+$include "ytab_h.icn"
+
+#
+# Procedure to generate unique temporary variable name
+#
+procedure TempVar()
+    static  counter,                    #LV: holds the current counter value to
+                                        #:   be used for the next temporary variable
+                                        #:   name to be generated
+            prefix                      #LV: the prefix to be used for the temporary
+                                        #:   variable name
+    local   tmpname                     #LV: the temporary name to be returned
+
+    initial {
+        counter := 1
+        prefix := "__"
+    }
+    tmpname := prefix || counter
+    counter +:= 1
+    return tmpname
+end
+
+#
+# Semantic actions related to nonterminal "program"
+#
+procedure program_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure program_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(\items[2].children, items[1])
+    result := items[2]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "decls"
+#
+procedure decls_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("decls")
+    return result
+end
+
+procedure decls_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[2])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "decl"
+#
+procedure decl_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure decl_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure decl_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure decl_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure decl_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure decl_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure decl_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure decl_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "initiallysection"
+#
+procedure initiallysection_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("initially")
+    return result
+end
+
+procedure initiallysection_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("initially", &null, semicolon_action_1(), items[3], items[4], items[5])
+    return result
+end
+
+procedure initiallysection_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("initially", items[3], semicolon_action_1(), items[6], items[7], items[8])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "optsemi" which will always insert the ";"
+#
+procedure semicolon_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("semicolon")
+    return result
+end
+
+procedure semicolon_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := semicolon_action_1()
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "cl"
+#
+procedure cl_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("class", items[1].children[1], items[1].children[2], items[1].children[3], items[2], items[3], items[4], items[5], items[6])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "classhead"
+#
+procedure classhead_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("classhead", items[2], items[3], items[5])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "supers"
+#
+procedure supers_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("supers")
+    return result
+end
+
+procedure supers_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(items[3].children, items[2])
+    result := items[3]
+    return result
+end
+
+procedure supers_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(items[3].children, items[2])
+    result := items[3]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "packageref"
+#
+procedure packageref_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("packageref", items[1], items[3])
+    return result
+end
+
+procedure packageref_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("packageref", &null, items[2])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "methods"
+#
+procedure methods_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("methods")
+    return result
+end
+
+procedure methods_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(items[2].children, items[1])
+    result := items[2]
+    return result
+end
+
+procedure methods_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(items[2].children, items[1])
+    result := items[2]
+    return result
+end
+
+procedure methods_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(items[2].children, items[1])
+    result := items[2]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "invocable"
+#
+procedure invocable_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node ! (["invocable"] ||| items[2].children)
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "invoclist"
+#
+procedure invoclist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invoclist", items[1])
+    return result
+end
+
+procedure invoclist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "invocop"
+#
+procedure invocop_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invocop1", items[1])
+    return result
+end
+
+procedure invocop_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invocop2", items[1])
+    return result
+end
+
+procedure invocop_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invocop3", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "package"
+#
+procedure package_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("package", items[2])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "import"
+#
+procedure import_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node ! (["import"] ||| items[2].children)
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "link"
+#
+procedure link_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node ! (["link"] ||| items[2].children)
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "lnklist"
+#
+procedure lnklist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("lnklist", items[1])
+    return result
+end
+
+procedure lnklist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "implist"
+#
+procedure implist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("implist", items[1])
+    return result
+end
+
+procedure implist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "lnkfile"
+#
+procedure lnkfile_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("lnkfile", items[1])
+    return result
+end
+
+procedure lnkfile_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("lnkfile", items[1])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "global"
+#
+procedure global_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node ! (["global"] ||| items[2].children)
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "record"
+#
+procedure record_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("record", items[2], items[4])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "fldlist"
+#
+procedure fldlist_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("fldlist")
+    return result
+end
+
+procedure fldlist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    #result := node ! (["fldlist"] ||| items[1].children)
+    items[1].label := "fldlist"
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "proc"
+#
+procedure proc_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, semicolon_action_1(), items[3], items[4], items[5])
+    result := items[1]
+    return result
+end
+
+procedure proc_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, semicolon_action_1(), items[2], items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "meth"
+#
+procedure meth_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, semicolon_action_1(), items[3], items[4], items[5])
+    result := items[1]
+    return result
+end
+
+procedure meth_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("abstract", items[2])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "prochead"
+#
+procedure prochead_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("procedure", items[2], items[4])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "methhead"
+#
+procedure methhead_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("method", items[2], items[4])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "arglist"
+#
+procedure arglist_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("parmlist")
+    return result
+end
+
+procedure arglist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure arglist_action_3(items[])
+    local   result,                     #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+            restitem                    #LV: the lastitem of the parmlist that will
+                                        #:   hold all remaining parameters
+
+    restitem := ::pull(items[1].children)
+    ::put(restitem.children, node("rest([])"))
+    ::put(items[1].children, restitem)
+    result :=  items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "carglist"
+#
+procedure carglist_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("cparmlist")
+    return result
+end
+
+procedure carglist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure carglist_action_3(items[])
+    local   result,                     #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+            restitem                    #LV: the lastitem of the parmlist that will
+                                        #:   hold all remaining parameters
+
+    restitem := ::pull(items[1].children)
+    ::put(restitem.children[2].children, node("rest([])"))
+    ::put(items[1].children, restitem)
+    result :=  items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "idlist"
+#
+procedure idlist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("idlist", items[1])
+    return result
+end
+
+procedure idlist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "varlist"
+#
+procedure varlist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("varlist", node("variable", items[1]))
+    return result
+end
+
+procedure varlist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("varlist", node("variableassign", items[1], node("assign(:=)", items[1], items[3])))
+    return result
+end
+
+procedure varlist_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, node("variable", items[3]))
+    result := items[1]
+    return result
+end
+
+procedure varlist_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+
+    ::put(items[1].children, node("variableassign", items[3], node("assign(:=)", items[3], items[5])))
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "stalist"
+#
+procedure stalist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("stalist", node("variable", items[1]))
+    return result
+end
+
+procedure stalist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("stalist", node("variableassign", items[1], node("assign(:=)", items[1], items[3])))
+    return result
+end
+
+procedure stalist_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, node("variable", items[3]))
+    result := items[1]
+    return result
+end
+
+procedure stalist_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, node("variableassign", items[3], node("assign(:=)", items[3], items[5])))
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "parmlist"
+#
+procedure parmlist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("parmlist", items[1])
+    return result
+end
+
+procedure parmlist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "cparmlist"
+#
+procedure cparmlist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("cparmlist", items[1])
+    return result
+end
+
+procedure cparmlist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "arg"
+#
+procedure arg_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1])
+    return result
+end
+
+procedure arg_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1], node("argtype", items[3]))
+    return result
+end
+
+procedure arg_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1], &null, node("argvalue", items[3]))
+    return result
+end
+
+procedure arg_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1], node("argtype", items[3]), node("argvalue", items[5]))
+    return result
+end
+
+procedure arg_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1], &null, node("Keyword", items[4]))
+    return result
+end
+
+procedure arg_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1], node("argtype", items[3]), node("Keyword", items[6]))
+    return result
+end
+
+procedure arg_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1], &null, node("argvalue", "[]"))
+    return result
+end
+
+procedure arg_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("arg", items[1], node("argtype", items[3]), node("argvalue", "[]"))
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "carg"
+#
+procedure carg_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("carg", items[1], items[2])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "priv"
+#
+procedure priv_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("priv")
+    return result
+end
+
+procedure priv_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("priv", items[1])
+    return result
+end
+
+procedure priv_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("priv", items[1])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "clocals"
+#
+procedure clocals_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("clocals")
+    return result
+end
+
+procedure clocals_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, node("local", items[3], items[4]))
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "locals"
+#
+procedure locals_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("locals")
+    return result
+end
+
+procedure locals_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, node("local", items[3], semicolon_action_1()))
+    result := items[1]
+    return result
+end
+
+procedure locals_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, node("static", items[3], semicolon_action_1()))
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "initial"
+#
+procedure initial_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("initial")
+    return result
+end
+
+procedure initial_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("initial", items[2], semicolon_action_1())
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "procbody"
+#
+procedure procbody_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("procbody")
+    return result
+end
+
+procedure procbody_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(items[3].children, semicolon_action_1(), items[1])
+    result := items[3]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "nexpr"
+#
+procedure nexpr_action_1()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("nullexpression")
+    return result
+end
+
+procedure nexpr_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    #result := node("nullexpression", items[1])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr"
+#
+procedure expr_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("and(&)", items[1], items[3])
+    return result
+end
+
+procedure expr_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("error", items[1])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr1a"
+#
+procedure expr1a_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr1a_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("binques(?)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr1"
+#
+procedure expr1_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr1_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("swap(:=:)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("assign(:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("revswap(<->)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("revasgn(<-)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("augcat(||:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("auglcat(|||:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bdiffa(--:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_9(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Buniona(++:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_10(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bplusa(+:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_11(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bminusa(-:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_12(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bstara(*:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_13(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bintera(**:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_14(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bslasha(/:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_15(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bmoda(%:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_16(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bcareta(^:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_17(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugeq(=:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_18(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugeqv(===:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_19(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugge(>=:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_20(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bauggt(>:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_21(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugle(<=:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_22(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bauglt(<:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_23(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugne(~=:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_24(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugneqv(~===:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_25(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugseq(==:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_26(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugsge(>>=:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_27(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugsgt(>>:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_28(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugsle(<<=:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_29(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugslt(<<:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_30(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugsne(~==:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_31(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugques(?:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_32(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugamper(&:=)", items[1], items[3])
+    return result
+end
+
+procedure expr1_action_33(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Baugact(@:=)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr2a"
+#
+procedure expr2a_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr2a_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("BPmatch(??)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr2"
+#
+procedure expr2_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr2_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("to", items[1], items[3])
+    return result
+end
+
+procedure expr2_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("toby", items[1], items[3], items[5])
+    return result
+end
+
+procedure expr2_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("BPor(.|)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr3"
+#
+procedure expr3_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr3_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("BPand(&&)", items[1], items[3])
+    return result
+end
+
+procedure expr3_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("BAR(|)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr4"
+#
+procedure expr4_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr4_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bseq(==)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsge(>>=)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsgt(>>)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsle(<<=)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bslt(<<)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsne(~==)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Beq(=)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_9(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bge(>=)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_10(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bgt(>)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_11(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Ble(<=)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_12(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Blt(<)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_13(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bne(~=)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_14(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Beqv(===)", items[1], items[3])
+    return result
+end
+
+procedure expr4_action_15(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bneqv(~===)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr5"
+#
+procedure expr5_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr5_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bcat(||)", items[1], items[3])
+    return result
+end
+
+procedure expr5_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Blcat(|||)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr6"
+#
+procedure expr6_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr6_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("BPiam($$)", items[1], items[3])
+    return result
+end
+
+procedure expr6_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("BPaom(->)", items[1], items[3])
+    return result
+end
+
+procedure expr6_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bplus(+)", items[1], items[3])
+    return result
+end
+
+procedure expr6_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bdiff(--)", items[1], items[3])
+    return result
+end
+
+procedure expr6_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bunion(++)", items[1], items[3])
+    return result
+end
+
+procedure expr6_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bminus(-)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr7"
+#
+procedure expr7_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr7_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bstar(*)", items[1], items[3])
+    return result
+end
+
+procedure expr7_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Binter(**)", items[1], items[3])
+    return result
+end
+
+procedure expr7_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bslash(/)", items[1], items[3])
+    return result
+end
+
+procedure expr7_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bmod(%)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr8"
+#
+procedure expr8_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr8_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr8_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bcaret(^)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "postfixthreadop"
+#
+procedure postfixthreadop_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsnd(@>)", items[1], &null)
+    return result
+end
+
+procedure postfixthreadop_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsndbk(@>>)", items[1], &null)
+    return result
+end
+
+procedure postfixthreadop_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcv(@<)", items[1], &null)
+    return result
+end
+
+procedure postfixthreadop_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcvbk(@<<)", items[1], &null)
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "expr9"
+#
+procedure expr9_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr9_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("limit(\\)", items[1], items[3])
+    return result
+end
+
+procedure expr9_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("at(@)", items[1], items[3])
+    return result
+end
+
+procedure expr9_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsnd(@>)", items[1], items[3])
+    return result
+end
+
+procedure expr9_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsndbk(@>>)", items[1], items[3])
+    return result
+end
+
+procedure expr9_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcv(@<)", items[1], items[3])
+    return result
+end
+
+procedure expr9_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcvbk(@<<)", items[1], items[3])
+    return result
+end
+
+procedure expr9_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("apply(!)", items[1], items[3])
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "expr10"
+#
+procedure expr10_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr10_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uat(@)", items[2])
+    return result
+end
+
+procedure expr10_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsnd(@>)", &null, items[2])
+    return result
+end
+
+procedure expr10_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsndbk(@>>)", &null, items[2])
+    return result
+end
+
+procedure expr10_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcv(@<)", &null, items[2])
+    return result
+end
+
+procedure expr10_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcvbk(@<<)", &null, items[2])
+    return result
+end
+
+procedure expr10_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("unot(not)", items[2])
+    return result
+end
+
+procedure expr10_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ubar(|)", items[2])
+    return result
+end
+
+procedure expr10_action_9(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uconcat(||)", items[2])
+    return result
+end
+
+procedure expr10_action_10(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ulconcat(|||)", items[2])
+    return result
+end
+
+procedure expr10_action_11(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("udot(.)", items[2])
+    return result
+end
+
+procedure expr10_action_12(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ubang(!)", items[2])
+    return result
+end
+
+procedure expr10_action_13(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("udiff(--)", items[2])
+    return result
+end
+
+procedure expr10_action_14(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uplus(+)", items[2])
+    return result
+end
+
+procedure expr10_action_15(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ustar(*)", items[2])
+    return result
+end
+
+procedure expr10_action_16(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uslash(/)", items[2])
+    return result
+end
+
+procedure expr10_action_17(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ucaret(^)", items[2])
+    return result
+end
+
+procedure expr10_action_18(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uinter(**)", items[2])
+    return result
+end
+
+procedure expr10_action_19(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("utilde(~)", items[2])
+    return result
+end
+
+procedure expr10_action_20(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uminus(-)", items[2])
+    return result
+end
+
+procedure expr10_action_21(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("unumeq(=)", items[2])
+    return result
+end
+
+procedure expr10_action_22(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("unumne(~=)", items[2])
+    return result
+end
+
+procedure expr10_action_23(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ulexeq(==)", items[2])
+    return result
+end
+
+procedure expr10_action_24(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ulexne(~==)", items[2])
+    return result
+end
+
+procedure expr10_action_25(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uequiv(===)", items[2])
+    return result
+end
+
+procedure expr10_action_26(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uunion(++)", items[2])
+    return result
+end
+
+procedure expr10_action_27(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("uqmark(?)", items[2])
+    return result
+end
+
+procedure expr10_action_28(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("unotequiv(~===)", items[2])
+    return result
+end
+
+procedure expr10_action_29(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ubackslash(\\)", items[2])
+    return result
+end
+
+procedure expr10_action_30(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("upsetcur(.$)", items[2])
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "expr11"
+#
+procedure expr11_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_2a()
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    next_gt_is_ender := 1
+    return result
+end
+
+procedure expr11_action_2b(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regex", items[3])
+    return result
+end
+
+procedure expr11_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_9(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_10(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_11(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsnd(@>)", &null, &null)
+    return result
+end
+
+procedure expr11_action_12(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Bsndbk(@>>)", &null, &null)
+    return result
+end
+
+procedure expr11_action_13(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcv(@<)", &null, &null)
+    return result
+end
+
+procedure expr11_action_14(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brcvbk(@<<)", &null, &null)
+    return result
+end
+
+procedure expr11_action_15(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("BPuneval(`)")
+    return result
+end
+
+procedure expr11_action_16(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("create", items[2])
+    return result
+end
+
+procedure expr11_action_17(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("thread", items[2])
+    return result
+end
+
+procedure expr11_action_18(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("critical", items[2], items[4])
+    return result
+end
+
+procedure expr11_action_19(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_20(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Next")
+    return result
+end
+
+procedure expr11_action_21(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Break", items[2])
+    return result
+end
+
+procedure expr11_action_22(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Paren", items[2])
+    return result
+end
+
+procedure expr11_action_23(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    #::write(::image(::proc(&current)))
+    #::write(ximage(items))
+    #result := node("Brace", items[2])
+    result := items[2]
+    return result
+end
+
+procedure expr11_action_24(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("tablelit", items[2])
+    return result
+end
+
+procedure expr11_action_25(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Brack", items[2])
+    return result
+end
+
+procedure expr11_action_26(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Listcomp", items[3])
+    return result
+end
+
+procedure expr11_action_27(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Subscript", items[1], items[3])
+    return result
+end
+
+procedure expr11_action_28(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Pdco0", items[1])
+    return result
+end
+
+procedure expr11_action_29(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Pdco1", items[1], items[3])
+    return result
+end
+
+procedure expr11_action_30(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invoke", items[1], items[3])
+    return result
+end
+
+procedure expr11_action_31(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invoke", node("methodlookup", items[1], "initially"), items[5])
+    return result
+end
+
+procedure expr11_action_32(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invoke", node("methodlookup", items[1], items[3].s), items[5])
+    return result
+end
+
+procedure expr11_action_33(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invoke", node("methodlookup", node("superlookup", items[1], items[3].s), "initially"), items[7])
+    return result
+end
+
+procedure expr11_action_34(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("invoke", node("methodlookup", node("superlookup", items[1], items[3].s), items[5].s), items[7])
+    return result
+end
+
+procedure expr11_action_35(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Field", items[1], items[3])
+    return result
+end
+
+procedure expr11_action_36(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure expr11_action_37(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("methodlookup", items[1], "initially")
+    return result
+end
+
+procedure expr11_action_38(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Keyword", items[2])
+    return result
+end
+
+procedure expr11_action_39(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("Keyword", items[2])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "while"
+#
+procedure while_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("while", items[2])
+    return result
+end
+
+procedure while_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("whiledo", items[2], items[4])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "until"
+#
+procedure until_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("until", items[2])
+    return result
+end
+
+procedure until_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("untildo", items[2], items[4])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "every"
+#
+procedure every_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+    #::write(::image(::proc(&current)))
+    #::write(ximage(items))
+    result := node("every", items[2])
+    return result
+end
+
+procedure every_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("everydo", items[2], items[4])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "repeat"
+#
+procedure repeat_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("repeat", items[2])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "return"
+#
+procedure return_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("fail")
+    return result
+end
+
+procedure return_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("return", items[2])
+    return result
+end
+
+procedure return_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("suspend", items[2])
+    return result
+end
+
+procedure return_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("suspenddo", items[2], items[4])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "if"
+#
+procedure if_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("if", items[2], items[4])
+    return result
+end
+
+procedure if_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("ifelse", items[2], items[4], items[6])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "case"
+#
+procedure case_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("case", items[2], items[5])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "caselist"
+#
+procedure caselist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("caselist", items[1])
+    return result
+end
+
+procedure caselist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, semicolon_action_1(), items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "cclause"
+#
+procedure cclause_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("default", items[3])
+    return result
+end
+
+procedure cclause_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("cclause", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "exprlist"
+#
+procedure exprlist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("exprlist", items[1])
+    return result
+end
+
+procedure exprlist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "pdcolist"
+#
+procedure pdcolist_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("pdcolist", items[1])
+    return result
+end
+
+procedure pdcolist_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[3])
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "literal"
+#
+procedure literal_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure literal_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure literal_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure literal_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "regex"
+#
+procedure regex_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regex")
+    return result
+end
+
+procedure regex_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "neregex"
+#
+procedure neregex_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexbar(|)", items[1], items[3])
+    return result
+end
+
+#
+# Semantic actions related to nonterminal "neregex2a"
+#
+procedure neregex2a_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexlist", items[1])
+    return result
+end
+
+procedure neregex2a_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::push(items[3].children, items[1])
+    result := items[3]
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "neregex2"
+#
+procedure neregex2_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex2_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexstar(*)", items[1])
+    return result
+end
+
+procedure neregex2_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexplus(+)", items[1])
+    return result
+end
+
+procedure neregex2_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexqmark(?)", items[1])
+    return result
+end
+
+procedure neregex2_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexrepeat([n])", items[1], items[3])
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "neregex3"
+#
+procedure neregex3_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_7(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_8(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_9(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure neregex3_action_10(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexparen(())", items[2])
+    return result
+end
+
+procedure neregex3_action_11(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexbrack([])", items[2])
+    return result
+end
+
+procedure neregex3_action_12(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexnot([^])", items[2])
+    return result
+end
+
+procedure neregex3_action_13(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("regexbackslash(\\)", items[2])
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "brackchars"
+#
+procedure brackchars_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("brackchars", items[1])
+    return result
+end
+
+procedure brackchars_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, node("brackminus(-)", items[3]))
+    result := items[1]
+    return result
+end
+
+procedure brackchars_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[1].children, items[2])
+    result := items[1]
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "brackchars2"
+#
+procedure brackchars2_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure brackchars2_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure brackchars2_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure brackchars2_action_4(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := items[1]
+    return result
+end
+
+procedure brackchars2_action_5(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("backslash", items[2])
+    return result
+end
+
+procedure brackchars2_action_6(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("backslash", items[2])
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "section"
+#
+procedure section_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    ::put(items[4].children, items[3], items[5])
+    result := node("section", items[1], items[4])
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "sectop"
+#
+procedure sectop_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("sectopcolon(:)")
+    return result
+end
+
+procedure sectop_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("sectoppcolon(+:)")
+    return result
+end
+
+procedure sectop_action_3(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    result := node("sectopmcolon(-:)")
+    return result
+end
+
+
+#
+# Semantic actions related to nonterminal "compound"
+#
+procedure compound_action_1(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    #::write(::image(::proc(&current)))
+    #::write(ximage(items))
+    #result := node("compound", items[1], semicolon_action_1())
+    result := node("compound", items[1])
+    return result
+end
+
+procedure compound_action_2(items[])
+    local   result                      #LV: this is the result of the semantic
+                                        #:   action that will be returned to the
+                                        #:   parsing action
+
+    #::write(::image(::proc(&current)))
+    #::write(ximage(items))
+    #/items[3] := compound_action_1()
+    #::write(ximage(items))
+    ::push(items[3].children, semicolon_action_1(), items[1])
+    result := items[3]
+    return result
+end
+

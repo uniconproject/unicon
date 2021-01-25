@@ -5,6 +5,9 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+# Date:    2021-01-03
 
 package parser
 
@@ -22,6 +25,8 @@ class ParsedFunction : ParsedObject(args,
    end
 
    method to_string_impl()
+      local s
+
       s := name || "("
       every s ||:= !args || ","
       if *args > 0 then

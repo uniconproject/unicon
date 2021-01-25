@@ -5,20 +5,30 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+# Date:    2021-01-03
+#
+#
 
 package parser
- 
+
+link ximage
+
 class ParsedClass : ParsedObject(superclasses,
                                  superclasses_nodes,
                                  methods,
                                  variables,
                                  initially_method)
    method add_method(n)
-      put(methods, ParsedMethod(n, self))
+      ::put(methods, ParsedMethod(n, self))
    end
 
    method init(n)
-      local classhead, arglist
+      local supers, arglist, sc, pref, t, x, tok, locals_node
 
       superclasses := []
       superclasses_nodes := []
@@ -26,46 +36,86 @@ class ParsedClass : ParsedObject(superclasses,
       variables := []
       initially_method := &null
 
-      classhead := n.children[1]
-      name := classhead.children[2].s
-      every sc := tree_seq1_pre(\classhead.children[3], 3, 2) do {
-         if type(sc) == "token" then
-            pref := sc.s
-         else { # It's a packageref node
-            if *sc.children = 2 then
-               pref := "::" || sc.children[2].s
-            else
-               pref := sc.children[1].s || "::" || sc.children[3].s
+      name := n.children[1].s
+      t := n.children[2]
+      if t.label == "supers" then {
+         supers := t.children
+         every sc := supers[1 to *supers] do {
+            if ::type(sc) == "token" then {
+               pref := sc.s
+            } else if sc.label == "packageref" then {
+               #
+               # It's a packageref node
+               #
+               if /sc.children[1] then
+                  pref := "::" || sc.children[2].s
+               else
+                  pref := sc.children[1].s || "::" || sc.children[2].s
+            } else {
+               parsing_error(sc)
+               sc := &null
+               pref := ""
+            }
+            ::put(superclasses, pref)
+            ::put(superclasses_nodes, sc)
          }
-         put(superclasses, pref)
-         put(superclasses_nodes, sc)
+
+      } else {
+         parsing_error(t)
       }
 
-      arglist := classhead.children[5]
-      every x := tree_seq2((\arglist).children[1], "parmlist") do {
-         if type(x) == "token" then
-            put(variables, x.s)
-         else
-            put(variables, x.children[1].s)
+      t := n.children[3]
+      if t.label == "cparmlist" then {
+         every x := t.children[1 to *t.children] do {
+            if ::type(x.children[2].children[1]) == "token" then
+               ::put(variables, x.children[2].children[1].s)
+            else
+               parsing_error(t)
+         }
+      } else {
+         parsing_error(t)
+      }
+      #::write("variables:", ximage(variables))
+
+      if n.children[5].label == "clocals" then {
+         locals_node := n.children[5]
+         every x := (\locals_node.children)[1 to *locals_node.children] do {
+            every t := x.children[1 to *x.children] do {
+               every tok := t.children[1 to * t.children] do {
+                  ::put(variables, tok.children[1].s)
+               }
+            }
+         }
+      } else {
+         parsing_error(n.children[5])
       }
 
-      if *n.children = 5 then {
-         every x := tree_seq1_pre(\n.children[2], 2, 1) do {
+      if n.children[6].label == "methods" then {
+         every x := n.children[6].children[1 to *n.children[6].children] do {
             case x.label of {
                # "Inner" records/globals are treated as
                # top-level definitions.
                "record" : parent.add_record(x)
                "global" : parent.add_global(x)
-               "method":  add_method(x)
+               "method" :  add_method(x)
+               "abstract" : add_method(x.children[1])
             }
          }
-         if \n.children[4] then
-            initially_method := ParsedInitiallyMethod(n.children[4], self)
+      } else {
+         parsing_error(n.children[6])
+      }
+      if n.children[8].label == "initially" then {
+         initially_method := ParsedInitiallyMethod(n.children[8], self)
+
+      } else {
+         parsing_error(n.children[8])
       }
 
    end
 
    method to_string()
+      local s
+
       s := "class " || name
       every s ||:= " : " || !superclasses
       s ||:= "("
@@ -74,7 +124,7 @@ class ParsedClass : ParsedObject(superclasses,
          s[-1] := ""
       s ||:= ")"
 
-      every s ||:= "\n" || (!methods).to_string() 
+      every s ||:= "\n" || (!methods).to_string()
       s ||:= "\n" || (\initially_method).to_string()
       return s
    end

@@ -5,12 +5,27 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+#                         Add additional comments to the class variables
+# Date:    2021-01-03
+#
+
 
 package parser
 
-class PackageInfo : DatabaseInfo(files, 
-                                 symbols,
-                                 classes
+class PackageInfo : DatabaseInfo(
+   files,                              #CV: list of files that are a part of the
+                                       #:   package. This is extracted from the
+                                       #:   uniclass database file.
+   symbols,                            #CV: list of symbols associated with the
+                                       #:   package. This is also extracted from
+                                       #:   the uniclass database file.
+   classes                             #CV: list of the classes that are contained
+                                       #:   in the package. This is also extracted
+                                       #:   from the uniclass database file.
                                  )
 
    #
@@ -31,17 +46,18 @@ class PackageInfo : DatabaseInfo(files,
    # Return the symbols which are classes in the package.
    #
    method get_classes()
-      local f
+      local f, sym
+
       if \classes then
          return classes
 
       classes := []
-      f := open(directory || "uniclass", "dr") | stop("Couldn't re-open uniclass db in " || directory)
-      every sym := !symbols do 
-         if fetch(f, name || "__" || sym) then
-            put(classes, sym)
-      
-      close(f)
+      f := ::open(directory || "uniclass", "dr") | ::stop("Couldn't re-open uniclass db in " || directory)
+      every sym := !symbols do
+         if ::fetch(f, name || "__" || sym) then
+            ::put(classes, sym)
+
+      ::close(f)
 
       return classes
    end
@@ -52,28 +68,30 @@ class PackageInfo : DatabaseInfo(files,
    #
    # @p
    method init(s)
+      local idchars, filechars
+
       idchars := &lcase ++ &ucase ++ &digits ++ "_"
       filechars := &lcase ++ &ucase ++ &digits ++ "._"
 
       s ? {
          ="package " | fail
-         name := tab(many(idchars)) | fail
+         name := ::tab(::many(idchars)) | fail
          =" : " | fail
          files := []
          repeat {
-            put(files, tab(upto(':('))) | fail
-            if any('(') then
+            ::put(files, ::tab(::upto(':('))) | fail
+            if ::any('(') then
                break
-            move(1)
+            ::move(1)
          }
          ="(" | fail
          symbols := []
-         if any(idchars) then {
+         if ::any(idchars) then {
             repeat {
-               put(symbols, tab(upto(',)'))) | fail
-               if any(')') then
+               ::put(symbols, ::tab(::upto(',)'))) | fail
+               if ::any(')') then
                   break
-               move(1)
+               ::move(1)
             }
          }
       }
@@ -102,18 +120,19 @@ end
 #
 procedure load_package_info(pack, home)
    local f, t, pi, x
+
    every x := get_all_dirs(home) do {
-      if f := open(x || "uniclass", "dr") then {
-         if t := fetch(f, pack) then {
-            if match("package ", t) then {
+      if f := ::open(x || "uniclass", "dr") then {
+         if t := ::fetch(f, pack) then {
+            if ::match("package ", t) then {
                pi := PackageInfo()
-               pi.init(t) | stop("Corrupt class database " || t)
+               pi.init(t) | ::stop("Corrupt class database " || t)
                pi.directory := x
-               close(f)
+               ::close(f)
                return pi
             }
          }
-         close(f)
+         ::close(f)
       }
    }
 end
@@ -123,19 +142,21 @@ end
 # @param home the first directory to look in ahead of IPATH; default "."
 #
 procedure get_all_packages(home)
+   local l, x, f, k, pi, v
+
    l := []
    every x := get_all_dirs(home) do {
-      if f := open(x || "uniclass", "dr") then {
-         every k := key(f) do {
-            v := fetch(f, k)
-            if match("package ", v) then {
+      if f := ::open(x || "uniclass", "dr") then {
+         every k := ::key(f) do {
+            v := ::fetch(f, k)
+            if ::match("package ", v) then {
                pi := PackageInfo()
-               pi.init(v) | stop("Corrupt class database " || v)
+               pi.init(v) | ::stop("Corrupt class database " || v)
                pi.directory := x
-               put(l, pi)
+               ::put(l, pi)
             }
          }
-         close(f)
+         ::close(f)
       }
    }
    return l

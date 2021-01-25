@@ -5,38 +5,41 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+#
+# Updated: Bruce Rennie - convert all standard Unicon functions to have "::" prefix
+# Date:    2020-12-28
+# Updated: Bruce Rennie - define all local variables as local, to prevent problems
+#                         when using the Unicon compiler -n option
+# Date:    2021-01-03
+#
 
 package parser
 
+link ximage
+
 class ParsedInitiallyMethod : ParsedFunction()
    method init(n)
-      local arglist, locals_node
+      local arglist, locals_node, x, l, t, tok
 
       self.ParsedFunction.init(n)
 
-      if *n.children = 5 then {
-         locals_node := n.children[3]
-         initial_node := n.children[4]
-         body_node := n.children[5]
-      } else {
-         locals_node := n.children[6]
-         initial_node := n.children[7]
-         body_node := n.children[8]
-         arglist := n.children[3]
-         every x := tree_seq2((\arglist).children[1], "parmlist") do {
-            if type(x) == "token" then
-               put(args, x.s)
-            else
-               put(args, x.children[1].s)
-         }
+      arglist := n.children[1]
+      locals_node := n.children[3]
+      initial_node := n.children[4]
+      body_node := n.children[5]
+      every x := (\arglist).children[1 to *arglist.children] do {
+         ::put(args, x.children[1].s)
       }
 
       name := "initially"
 
-      every x := tree_seq1a(\locals_node) do {
-         l := if x.children[2].tok = 281 then locals else statics
-         every tok := tree_seq2(x.children[3], "idlist") do
-            put(l, tok.s)
+      every x := (\locals_node).children[1 to *locals_node.children] do {
+         l := if x.label == "local" then locals else statics
+         every t := x.children[1 to *x.children] do {
+            every tok := t.children[1 to * t.children] do {
+               ::put(l, tok.children[1].s)
+            }
+         }
       }
    end
 

@@ -16,12 +16,11 @@
    #include "../h/mswin.h"
 #endif					/* MSWindows */
 
-#ifdef Graphics3D
-/* at present, it is OpenGL or Direct3D */
+#if Graphics3D || GraphicsGL
 #if HAVE_LIBGL
-#include "opengl.h"
+#include "../h/opengl.h"
 #else					/* HAVE_LIBGL */
-#include "direct3d.h"
+#include "../h/direct3d.h"
 #endif					/* HAVE_LIBGL */
 
 /*
@@ -85,7 +84,7 @@
 #define GL3D_ENDMARK	REDRAW_ENDMARK
 #define GL3D_MESHMODE	REDRAW_MESHMODE
 
-#endif					/* Graphics3D */
+#endif					/* Graphics3D || GraphicsGL */
 
 #ifndef MAXXOBJS
    #define MAXXOBJS 256

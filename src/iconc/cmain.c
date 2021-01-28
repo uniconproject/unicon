@@ -88,7 +88,7 @@ char *versionLine(char *prefix)
       }
     } else { /*  Latest commit is not tagged */
       strcat(vline,dstr);
-      if (0 == strcmp(branch, "master")) {
+      if (0 == strcmp(gitBranch, "master")) {
         strcat(vline, " pre-release)");
       } else { /* Use the branch name to decide the annotation */
         for (branch = gitBranch, pos = 0; (c = branch[pos]) != '\0'; ++pos) {

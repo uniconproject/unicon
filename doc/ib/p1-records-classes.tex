@@ -1,0 +1,438 @@
+\chapter{Records and Classes}
+\label{RC-Chapter}
+
+\textsc{Perspective}: Records are fixed size data aggregates where each
+component (field) is named. Icon's records look superficially similar to
+records in other languages but, as with other data structures, there is a
+lot going on behind the scenes. Much of the complication arises because the
+translator is unable to check whether a particular field name is correct
+until run time. For some methods of access the field name is not known until
+run time, precluding the possibility of compile time checking
+altogether. Information about the order of fields and their names must
+therefore be present at run time.  This information is stored in the record
+descriptor block for each record, which contains the string field names in
+order. For efficiency, it is also stored centrally in a global field table
+which is used by the field reference operator to select the correct field in
+each record.
+
+Unicon allows new record types to be constructed at run time, which is
+particularly useful in database applications. Internally, it uses a slight
+extension of Icon's record type to implement classes, which add further to
+the information required in the descriptor.
+
+\section{Records}
+Much of the implementation of records has already been mentioned, in
+passing, in earlier sections where a record was used as one of the example
+data structures -- see, for example, page \pageref{ComplexRecord}. What has
+been missing, until now, is a description of the record constructor
+block. Record constructors are a kind of procedure, so the record
+constructor block is a special case procedure block that provides
+alternative names and uses for some of the fields.
+
+\begin{iconcode}
+/*\\
+ * Alternate uses for procedure block fields, applied to records.\\
+ */\\
+\#define nfields nparam\ \ \  /* number of fields */\\
+\#define recnum  nstatic\ \ \ /* record number */\\
+\#define recid   fstatic\ \ \ /* record serial number */\\
+\#define recname pname \ \ \  /* record name */\\
+\end{iconcode}
+
+A central data structure called the field table (described later in section
+\ref{FieldTableDescription}) allows constant time access to fields by name;
+all field names used in the dot operator are compiled down to integer
+subscripts within the field table, which maps their positions for all record
+types known at link time.
+
+Here is the full picture, including a record constructor, of how the example
+previously given on page \pageref{ComplexRecord} looks if it is constructed
+dynamically by
+\begin{iconcode}
+  point := constructor("complex", "r", "i")(1,3)
+\end{iconcode}
+
+\label{FullComplexRecord}
+\begin{picture}(300,400)(-20,-240)
+%\put(-10,-250){\graphpaper{30}{40}}
+\put(0,112){\dvboxptr{record}{np}{60}{}}
+\put(140,96){\blkbox{record}{32}}
+\put(140,96){\rightboxlabels{title}{size of block in bytes}}
+\put(140,80){\wordbox{\textit{id}}{}}
+\put(140,64){\wordboxptr{50}{~~~~~record constructor}}
+% Join up the record constructor block
+\put(270,72){\line(1,0){10}}
+\put(280,72){\line(0,-1){82}}
+\put(280,-10){\vector(-1,0){160}}
+\put(120,-10){\line(-1,0){140}}
+\put(-20,-10){\line(0,-1){20}}
+\put(-20,-30){\vector(1,0){20}}
+%  
+\put(140,32){\dvbox{integer}{n}{1}}
+\put(140,0){\dvbox{integer}{n}{3}}
+\begin{picture}(0,0)(0,150)
+\put(0,16){\wordbox{1}{}}
+\put(0,0){\trboxlabel{record serial number}}
+\put(0,32){\blkbox{-2}{-1}}
+\put(0,32){\rightboxlabels{}{record number$^{\ddagger}$}}
+\put(0,64){\wordbox{2}{}}
+\put(0,48){\rightboxlabels{number of fields}{record indicator$^{\dagger}$}}
+\put(0,80){\blkboxptr{52}{40}{entry point of the library routine to create a record (mkrec)}}
+\put(0,80){\trboxlabel{size of block}}
+\put(0,112){\wordbox{proc}{}}
+\begin{picture}(0,0)(0,80)
+\put(0,0){\dvboxptr{1}{}{40}{"i"}}
+\put(0,32){\dvboxptr{1}{}{40}{"r"}}
+\put(0,64){\dvboxptr{7}{}{40}{"complex"}}
+\end{picture}
+\end{picture}
+\end{picture}
+
+\noindent
+$^{\dagger}$The \texttt{ndynam} field (labelled as ``record indicator''
+above) serves multiple purposes, depending on whether it is describing a
+procedure, a builtin function, a record or a class. Its value is described
+in the following table.
+\begin{quote}
+\begin{tabular}{cl}
+  0 \ldots \textit{n} & Unicon procedure with \textit{n} parameters\\
+  -1 & Builtin function\\\
+  -2 & Record\\
+  -3 & Class\\
+\end{tabular}
+\end{quote}
+$^{\ddagger}$Dynamically created records have a record number of -1, which
+indicates that they have no field table entry.
+
+\section{Classes}
+The ``heavy lifting'' to implement classes is done by the Unicon translator;
+in the runtime system, the field reference operator provides a minor
+assist. Within the runtime system, a class is, to a first approximation,
+just a pair of record types. Objects are instances of a primary record type
+that has some extra (hidden) fields. Thus, most of the time when the runtime
+system needs to distinguish between a class object and a record, it is to
+hide the extra fields. For example, in the \texttt{image} builtin function,
+care is taken not to output the values of the \texttt{\_\_m} and
+\texttt{\_\_s} fields. In the \texttt{size} function, they are subtracted
+from the total count of fields etc. The additional code for \texttt{size} is
+typical
+\begin{iconcode}
+operator{1} * size(x)\\
+\>   abstract \{\\
+\>\>      return integer\\
+\>      \}\\
+\>   type\_case x of \{\\
+\ldots\\
+\>      record: inline \{\\
+\>\>         C\_integer siz;\\
+\>\>	 union block *bp, *rd;\\
+\>\>	 bp = BlkLoc(x);\\
+\>\>	 rd = Blk(bp,Record)->recdesc;\\
+\>\>         siz = Blk(BlkD(x,Record)->recdesc,Proc)->nfields;\\
+\>	 {\color{blue}/*}\\
+\>	 {\color{blue}~* if the record is an object, subtract 2 from the size}\\
+\>	 {\color{blue}~*/}\\
+\>\> {\color{blue} if (Blk(rd,Proc)->ndynam == -3)~ siz -= 2;}\\
+\>\>         return C\_integer siz;\\
+\>         \}\\
+\ldots\\
+\end{iconcode}
+
+When referencing the fields by field number, care has to be taken to skip
+over the hidden fields by adding 2 to the index.  The \texttt{?} and
+\texttt{!}  operators must also take the hidden fields into account when
+their operand is a class.
+
+\subsection{Definitions made by a class declaration}
+When a class (called, for example, \texttt{foo}) is declared, two record
+types are created called \texttt{foo\_\_methods} and
+\texttt{foo\_\_state}. \texttt{foo\_\_methods}, as the name suggests, is a
+vector of procedure descriptors, one for each method declared within the
+class and its superclasses.  A singleton instance of \texttt{foo\_\_methods}
+is shared by all \texttt{foo} objects. \texttt{foo\_\_state} contains the
+descriptors for the fields of the class, prepended with two extra fields
+\texttt{\_\_s} and \texttt{\_\_m} at the start of the vector.
+
+\texttt{\_\_m} is used by the field reference operator when selecting a
+method for subsequent invocation. \texttt{\_\_s} is self reference and is
+seemingly more vestigial%
+%
+\footnote{Unicon's predecessor Idol used \fntexttt{\_\_s} to implement
+the notion that object fields were {\em private} and not accessible outside
+the methods of a class. When Unicon eventually rejected this departure from
+Icon's record semantics, much of the need for \fntexttt{\_\_s} vanished.
+}:
+its continued presence remains to be justified and it might be removed
+someday.
+
+The complete list of additional reserved identifiers introduced by a
+declaration of a class called \texttt{foo} is given below
+\begin{quote}
+  \begin{tabular}{lp{5in}}
+    \texttt{foo\_\_state} & \\
+    \texttt{foo\_\_methods} & \\
+
+    \texttt{foo\_bar} & for each method \texttt{bar} defined in the class.
+    In the current implementation, these definitions allow a method to be
+    called as a procedure from Icon code. When doing so, the class instance
+    {\em must} be supplied as the first parameter.  E.g. given an instance
+    \texttt{f} of \texttt{foo} that has a method \texttt{bar} defined with
+    two parameters, it may be called by \texttt{foo\_bar(f,a,b)}, which is
+    completely equivalent to the usual \texttt{f.bar(a,b)}.\\
+
+    \texttt{fooinitialize} & The name given to the code defined by the
+    \texttt{initially} section of the class.  The name is present even if
+    the \texttt{initially} section is absent.\\
+
+    \texttt{foo\_\_oprec} & The (global) name for the methods vector of
+    \texttt{foo}. Used by the \texttt{oprec} standard function to search
+    through the list of globals for the correct methods vector.\\
+
+   
+  \end{tabular}
+\end{quote}
+
+\section{The Field Table}
+\label{FieldTableDescription}
+The field table is two-dimensional array that maps field names (which are
+converted into integer indices during code generation) to positions of
+descriptors within all of the record types known at link time. It provides
+constant-time access to record fields that is even faster than list
+subscripting.
+
+The size of the field table can be a problem when the available address
+space and memory are limited; some large programs with many records or
+classes%
+\footnote{
+The use of large class libraries, such as in programs that implement
+graphical interfaces, make the space occupied by the field table dramatically
+worse. Every referenced class introduces two record types, and while a
+program might not itself use that many fields, the methods of all referenced
+classes are also fields -- they have to be because the compiler cannot know
+whether \fntexttt{rec.f(1)} is actually using a field called \fntexttt{f} to
+store a procedure or whether it is invoking the \fntexttt{f} method of
+\fntexttt{rec} -- and there are lots of programs that contain hundreds, if
+not thousands of methods.}
+%
+have even failed to run on small-memory platforms due to space
+requirements. The problem is now a potential performance issue rather than a
+matter of crashing with an out of memory error.
+
+The field table, which is placed in the icode by the back end code generator
+and linker \texttt{icont}, is a two dimensional ($N{\times}M$) array of
+numbers where $M$ is the total number of record types -- including records
+defined by class definitions -- and $N$ is the total number of field
+names. The array contains the field offset, an index into an array of slots
+in the record, for each field name in each record type that is in use%
+\footnote{
+Record (or class) declarations that are not used anywhere are optimized
+by the linker and omitted from the field table, but this optimization may
+be conservative and imperfect.
+}
+in the program. If a particular record type does not have that field, -1 is
+stored at that position in the table.
+For example
+\begin{iconcode}
+record a (m, n, o, p)\\
+record b (o, p, q, r)\\
+record c (s, t, u, m)\\
+\end{iconcode}
+has a resulting field table of
+{\small
+\begin{quote}
+\begin{tabular}{|c|c|c|c|}
+    \hline 
+       & a  & b  & c  \\ \hline
+    m  & 0  & -1 &  3 \\ \hline
+    n  & 1  & -1 & -1 \\ \hline
+    o  & 2  &  0 & -1 \\ \hline
+    p  & 3  &  1 & -1 \\ \hline
+    q  & -1 &  2 & -1 \\ \hline
+    r  & 1  &  3 & -1 \\ \hline
+    s  & -1 & -1 &  0 \\ \hline
+    t  & -1 & -1 &  1 \\ \hline
+    u  & -1 & -1 & -2 \\ \hline
+ \end{tabular}
+\end{quote}
+}
+The field table also includes the fields from the record types that are
+generated as a result of class declarations, so both the names of the fields
+in a class and the names of the class methods contribute to $N$ (and each
+class declaration adds 2 to $M$). It is instructive to compare the field
+table above with the corresponding example where the records have been
+converted to classes (and one method added)
+\begin{iconcode}
+class a (m, n, o, p); method x(); end; end\\
+class b (o, p, q, r); end\\
+class c (s, t, u, m); end\\
+\end{iconcode}
+The field table that results is
+{\small
+\begin{quote}
+ \begin{tabular}{|c|c|c|c|c|c|c|}
+   \hline
+& a\_\_state & a\_\_methods & b\_\_state & b\_\_methods & c\_\_state & c\_\_methods\\
+\hline
+\_\_s &  0 & -1 &  0 & -1 &  0 & -1 \\ \hline
+\_\_m &  1 & -1 &  1 & -1 &  1 & -1 \\ \hline
+    m &  2 & -1 & -1 & -1 &  5 & -1 \\ \hline
+    n &  3 & -1 & -1 & -1 & -1 & -1 \\ \hline
+    o &  4 & -1 &  2 & -1 & -1 & -1 \\ \hline
+    p &  5 & -1 &  3 & -1 & -1 & -1 \\ \hline
+    x & -1 &  0 & -1 & -1 & -1 & -1 \\ \hline
+    q & -1 & -1 &  4 & -1 & -1 & -1 \\ \hline
+    r & -1 & -1 &  5 & -1 & -1 & -1 \\ \hline
+    s & -1 & -1 & -1 & -1 &  2 & -1 \\ \hline
+    t & -1 & -1 & -1 & -1 &  3 & -1 \\ \hline
+    u & -1 & -1 & -1 & -1 &  4 & -1 \\ \hline
+\end{tabular}   
+\end{quote}
+}
+The number of columns is increased, because of the extra records, and method
+names are intermixed with field names.
+
+The information needed for the field table is accumulated by the linker as
+it processes the ucode files that make up the program. When it encounters a
+record declaration the name of each field is stored (together with its
+offset within the record type). Every time the linker encounters a
+\texttt{field} instruction, it replaces the name of the field with the
+integer position of that name in the list of field names. Some field
+references may not be contained in any declared record type -- because it
+might be a dynamically created record, or it could just be plain wrong -- in
+this case the linker adds the field name to the global list of field names
+but does not add the field name to the field table and replaces the name of
+the field with the position of the name, relative to {\em the end} of the
+name list (so the number is negative). The negative number is a signal to
+the field reference operator that the field table is not in use for this
+access.
+
+Although the field table is fast, it is sparse.  Programs may have many
+record types, most of which will not share field names, so the table will
+contain a high proportion of -1 entries corresponding to all the types where
+a particular field name is not defined. Unicon has further optimizations
+that can reduce the size of the table. It does this first by reducing the
+size of each entry: if no record in the entire program has more than 254
+fields then each element of the field table can be a byte, rather than a 16
+bit (or 32 bit) integer -- although one bad actor with 255 fields will spoil
+it for everyone. Secondly, it reduces the number of -1 entries in the table
+by suppressing the leading and trailing -1 entries in each row and using
+some clever indexing and packing.
+
+UTR23 has the details of the compression mechanisms, which are enabled by
+building the Unicon system with \texttt{FieldTableCompression} defined. Note
+that the format of the icode file is different when the compression is
+enabled and has a different icode version -- programs built with compression
+enabled are not executable on systems that do not have compression enabled,
+and vice-versa.
+
+On modern platforms with large amounts of available memory, the pressing
+need to ``squeeze'' the program into the space available has receded; but as
+Wirth%
+\footnote{
+Niklaus Wirth, discussing the programming language (and operating system) \em{Oberon}.
+} once wisely remarked
+\begin{quote}
+We do not consider it good engineering practice to consume a resource lavishly
+just because it happens to be cheap.
+\end{quote}
+economical designs are still worth pursuing.
+
+The \texttt{FieldTableCompression} optimizations described in UTR23 are not
+enabled by default because they incur a small run-time penalty from the
+extra indexing that is needed to implement the compression. The option is in
+the source code in case Unicon is needed on some platform where space once
+again becomes an overriding concern.
+
+\section{The field reference operator}
+The field reference operator, as with many other operators in the runtime
+system, conceals some complexity behind its apparently simple
+appearance. Exactly the same code is emitted to access the fields of a
+record (both declared records and dynamically created records), for access
+to the fields of a class and also for access to the class methods: it is up
+to the field reference operator to sort out what is needed.
+
+The operator is called with two parameters on the stack: a descriptor for
+the record (or class) that is being referenced and an integer that describes
+which field is required.
+In the most straightforward case -- the linker has replaced the field name
+by a positive number $n$, so the field name is described by row $n$ of the
+field table -- the operator recovers the record sequence number $m$ from the
+record descriptor which gives the column number in the field table.  The
+field offset may then be retrieved directly from the field table.
+\begin{iconcode}
+  fnum = ftabp[IntVal(Arg2) * *records + Blk(rp->recdesc,Proc)->recnum - 1];
+\end{iconcode}
+\texttt{Arg2} is the second parameter ($n$); \texttt{*records} contains the
+number of record types in the field table; the \texttt{recnum} field from the
+descriptor determines $m$.
+
+The record descriptor that is supplied for classes is the
+\texttt{class\_\_state} record, so field access for classes works exactly the
+same as for records. But when the access is for a method, the field offset
+returned by the calculation above will be -1, because the method name is not
+(usually%
+\footnote{Unicon does not prohibit the name of a field in a class being the
+same name as a method. But having such a field means that the method can
+never be accessed via the field reference operator -- the field will be
+returned instead of the method -- the method may still be accessed using its
+global name via the \fntexttt{foo\_methodname( \ldots)} syntax.
+}%
+) in the \texttt{class\_\_state} record. In this case the operator checks if
+the record is actually a class and, if so, tries again, but with the
+\texttt{\_\_m} field of the class as the record descriptor. Only if this
+also returns -1 will an error be raised.
+
+The final case is when the linker has not been able to determine a field
+name entry in the field table from its collection of record declarations. In
+this case, it places a negative number in the second parameter and this is
+used at run time to pick up the name from the global list of field names. If
+the record has been dynamically constructed, the field reference operator
+then makes a sequential search through the list of field names (see the
+diagram on page \pageref{FullComplexRecord}) using string comparison to
+determine whether or not the field name belongs to the record.
+
+\bigskip\bigskip
+\textsc{Retrospective}:
+Access to the fields of a class is the same as for a record. The field table
+provides excellent speed access for record types and field names known at
+link time. Dynamic record types resort to sequential search and string
+comparison.  Some extra code is needed to conceal the ``hidden'' fields of a
+class, but the total increase is small.
+
+\bigskip
+
+\noindent\textbf{EXERCISES}
+
+\noindent\textbf{\ref*{RC-Chapter}.1}
+Discuss the pros and cons of replacing the two record definitions for a
+class by a single definition that contains both the field names and the
+method names.
+%% % + pro   - con   ~ neutral
+%% +  The field table will be smaller by as much as 50 percent.
+%%
+%% +  Method access will be slightly quicker and code implementing the field
+%%    selection operator will become slightly simpler.
+%%
+%% ~  The compiler will have to detect, and handle, the situation of the same
+%%    name in use for a field and a method (perhaps issue a warning).
+%%
+%% ~  The icode version will need to change (because the code in imisc.r
+%%    that implements the field reference operator will have to change).
+%%
+%% -  The memory cost per instance might increase by many times (for classes
+%%    with many methods and few fields) or only slightly (for classes with
+%%    many fields and few methods).
+%%
+%% -  Existing code that handles the insertion of the self parameter for
+%%    method invocation might be more difficult to implement if there is
+%%    no ready distinction between a field and a method.
+%%
+%% -  Existing code (in package lang) that expects there to be two records
+%%    must be changed, or it must become sensitive to the icode version.
+
+\noindent\textbf{\ref*{RC-Chapter}.2}
+Could Unicon provide dynamically created classes? What would be the advantages?
+%% Unicon allows the dynamic introduction of record types, but
+%% new code (for method bodies) has to be compiled.
+%% It is possible to invoke the translator and then use the load()
+%% function to introduce dynamic classes, but is not straightforward.

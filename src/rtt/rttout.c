@@ -546,6 +546,19 @@ struct node *desc;
 struct token *tok;
 int indent;
    {
+/*
+ * If rtt has been built by clang, assume it is producing code to
+ * be compiled by clang.  clang doesn't like the extra parentheses.
+ * We like the "extra" parentheses (which are needed in some cases)
+ * so we suppress clang's warning messages about them.
+ */
+#if __clang__
+   ForceNl();
+   prt_str("#pragma clang diagnostic push", 0);
+   ForceNl();
+   prt_str("#pragma clang diagnostic ignored \"-Wparentheses-equality\"", 0);
+   ForceNl();
+#endif                              /* clang */
    tok_line(tok, indent);
 
    if (typcd == str_typ) {
@@ -597,6 +610,12 @@ int indent;
       prt_str(typ_name(typcd, tok), indent);
       prt_str(")", indent);
       }
+#if __clang__
+   /* Restore clang's previous diagnostic level */
+   ForceNl();
+   prt_str("#pragma clang diagnostic pop", 0);
+   ForceNl();
+#endif                              /* clang */
    }
 
 /*

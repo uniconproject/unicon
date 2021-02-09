@@ -36,9 +36,9 @@ Iconx:	Common
 	$(MAKE) -C runtime interp_all
 
 #force wiconx and wicont to be built at the end
-wiconx Wiconx:	Icont
+wuniconx wiconx Wiconx:	Icont
 	$(MAKE) -C runtime $(UNICONWX)
-wicont Wicont: Wiconx
+wunicont wicont Wicont: Wiconx
 	$(MAKE) -C icont $(UNICONWT)
 
 # force Iconx to always build first to avoid building part of both at the same time

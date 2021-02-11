@@ -1490,7 +1490,6 @@ int wmap(wbp w)
    XSetWindowAttributes attr;
    Display *stddpy;
    GLXContext stdctx;
-   Visual *visual;
    Window stdwin = (Window) NULL;
    Window rootwin;
 
@@ -2083,9 +2082,6 @@ int status;
    wdp wd = ws->display;
    int wid = ws->width, ht = ws->height;
    int posx = ws->posx, posy = ws->posy;
-#ifdef GraphicsGL
-   int x = posx, y = posy;
-#endif 					/* GraphicsGL */
 
    XTextProperty textprop;
 
@@ -5682,7 +5678,6 @@ char my_wmap(wbp w)
 void makecurrent(wbp w)
 {
    wsp ws = w->window;
-   wdp wd = ws->display;
 #ifdef GraphicsGL
    /* Avoid redundant state changes for efficiency */
    if (glXGetCurrentContext() != ws->ctx) {

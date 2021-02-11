@@ -19,7 +19,6 @@ SOCKET fd;
    {
    int r = 0, i=0;
    char *stmp=NULL;
-   CURTSTATE();
   
    if ((r=recv(fd, buf, maxi, MSG_PEEK))==SOCKET_ERROR) {
 #if NT

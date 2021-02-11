@@ -1843,7 +1843,7 @@ int pattern_image(union block *pe, int prev_index, dptr result,
                 image_case = PT_VP;
              else if(Blk(ep, Pelem)->pcode == PC_BreakX_MF)
                 image_case = PT_MF;
-             else if(Blk(ep, Pelem)->pcode == PC_BreakX_CS)
+             else /* if(Blk(ep, Pelem)->pcode == PC_BreakX_CS)  <-- must always be true */
                 image_case = PT_EVAL; 
 
 	     if (construct_funcimage(ep, image_case, Blk(ep, Pelem)->pcode, 

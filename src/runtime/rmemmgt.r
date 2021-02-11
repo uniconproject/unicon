@@ -1530,8 +1530,7 @@ static void cofree()
    ep = &stklist;
    while (*ep != NULL) {
 
-      if ((BlkType(*ep) == T_Coexpr) /* &&
-      (((struct b_coexpr *)(*ep))->program == curpstate) */) {
+      if (BlkType(*ep) == T_Coexpr) {
 
          xep = *ep;
          *ep = (*ep)->nextstk;

@@ -104,9 +104,9 @@ int release_3d_resources(wbp w)
 {
    int i;
    wcp wc = w->context;
+#if 0
    wdp wd = w->window->display;
 
-#if 0
    /* need to consider what 3D resources can be freed in the wdp and when */
    for (i=0; i < wd->ntextures; i++) {
       free(wd->stex[i].tex);
@@ -804,8 +804,7 @@ GLfloat deflt_specular[4] = {0.0, 0.0, 0.0, 1.0};
 int redraw3D(wbp w)
 {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
-   wdp wd = ws->display;
+   wcp wc = w->context;
 
    ws->busy_flag = 1;
 
@@ -3771,7 +3770,6 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,  
     int width, int height, int xt, int yt, int txw, int txh)
 {
-   wcp wc = w3d->context;
    int i, j, twd3, l, m;
    GLubyte *tex2;
 

@@ -1684,7 +1684,6 @@ function{*} staticnames(ce,i)
       runerr(101,i)
    body {
 #if !COMPILER
-      int j;
       dptr arg;
       struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
       if (thePfp == NULL) fail;
@@ -2110,9 +2109,9 @@ function{*} keyword(keyname,ce,i)
    body {
       struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
+#if 0
       int k;
 
-#if 0
 /*
  * Unfinished: change keyword()'s gigantic chain of if (strcmp())... into
  * a switch statement that uses the stringint mechanism. Status: about

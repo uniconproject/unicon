@@ -169,10 +169,10 @@ AC_ARG_ENABLE([verifyheap],
 	[AS_HELP_STRING([--enable-verifyheap], [Enable advanced heap verification])],
 			[verifyheap=yes], [verifyheap=no])
 AC_ARG_ENABLE([devmode],
-	[AS_HELP_STRING([--enable-devmode], [Developper mode: turn on warnings and debugging options])],
+	[AS_HELP_STRING([--enable-devmode], [Developer mode: turn on warnings and debugging options])],
 			[devmode=yes], [devmode=no])
 AC_ARG_ENABLE([uniconx],
-	[AS_HELP_STRING([--enable-uniconx], [Change then name of executables to co-exist with Icon])],
+	[AS_HELP_STRING([--enable-uniconx], [Change executable names to co-exist with Icon])],
 			[uniconx=yes], [uniconx=no])
 
 
@@ -253,18 +253,20 @@ if test "z$orig_cflags" = "z"; then
   fi
 fi
 
-# We always want these CFLAGS if available, the second one is neseccary for a stable runtime
-AC_CFLAG([-fno-omit-frame-pointer])
-
-AC_CFLAG([-fno-strict-aliasing])
-
-AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
-
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces])
 #  AC_CFLAG([-Wmissing-prototypes])
 #  AC_CFLAG([-Wmissing-declarations])
+fi
+
+# We always want these CFLAGS if available, the second one is neseccary for a stable runtime
+AC_CFLAG([-fno-omit-frame-pointer])
+
+AC_CFLAG([-fno-strict-aliasing])
+
+if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" ; then
+   AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
 fi
 
 if test x"${enable_werror}" = x"yes" ; then

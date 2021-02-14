@@ -242,7 +242,7 @@ struct fontsymbol {
  * it to be true.
  */
 #define UGLBindTexture(target, texid) do {\
-   unsigned int err, errcount = 0;\
+   unsigned int err;\
 /*\
    while ((err = glGetError()) != GL_NO_ERROR)\
       glprintf("previous OpenGL error 0x%x\n",err);\
@@ -556,7 +556,7 @@ struct fontsymbol {
 //#define CNEAR 0.25
 //#define CFAR 50000.0
 //#define CHEIGHT(w) \
-   (CWIDTH*((double)w->window->height)/((double)w->window->width))
+//  (CWIDTH*((double)w->window->height)/((double)w->window->width))
 
 #define CNEAR 0.25
 #define CFAR 50000.0
@@ -920,9 +920,8 @@ struct fontsymbol {
  */
 #define SetDrawopColorState(w, drawop, is_fg) do {\
    wsp ws = (w)->window;\
-   wcp wc = (w)->context, wcr = &(ws->wcrender);\
-   int is_reverse;\
-   unsigned short color[4], fg[4], bg[4];\
+   wcp wcr = &(ws->wcrender);\
+   unsigned short color[4];\
 \
    if (is_fg)\
       GetContextColorUS(w, FG, color[0], color[1], color[2], color[3]);\
@@ -931,6 +930,7 @@ struct fontsymbol {
 \
    /* set fg to (fg ^ bg) */\
    if (drawop == GL2D_DRAWOP_REVERSE) {\
+      unsigned short bg[4];\
       if (is_fg)\
          GetContextColorUS(w, BG, bg[0], bg[1], bg[2], bg[3]);\
       else\
@@ -1059,7 +1059,6 @@ struct fontsymbol {
    } while(0)
 
 #define _RenderTexturedRect(w, x, y, wd, ht, texwd, texht, near) do {\
-   wcp wcr = &(w->window->wcrender);\
    int drawop;\
    double wx1, wy1, wx2, wy2;\
    float tx1, ty1, tx2, ty2;\
@@ -1096,7 +1095,6 @@ struct fontsymbol {
 #define RenderTexturedBitmapRect(w, x, y, wd, ht, texwd, texht, near, fillbg)\
    do {\
    wcp wcr = &(w->window->wcrender);\
-   int drawop;\
    double wx1, wy1, wx2, wy2;\
    float tx1, ty1, tx2, ty2;\
 \

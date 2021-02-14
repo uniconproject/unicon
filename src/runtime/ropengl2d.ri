@@ -887,8 +887,7 @@ int traverselist2d(wbp w, struct b_lelem *bp, int start, int end, int used,
 int traversefunclist2d(wbp w)
    {
    wsp ws = w->window;
-   wcp wc = w->context;
-   int i, j, intcode, rv;
+   int i, intcode, rv;
    int used;
    word k;
    int elements;
@@ -1063,7 +1062,6 @@ struct b_record *getlastlistitem(wbp w, int intcode)
    struct b_list *dl;
    struct b_lelem *lastlelem;
    struct descrip *dptr;
-   union block *blk;
    struct b_record *rp;
    word i, first;
    
@@ -1277,7 +1275,7 @@ int updaterendercontext(wbp w, int intcode)
 int init_2dcanvas(wbp w) 
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wcr = &(ws->wcrender);
 
    /* byte alignment for OpenGL bitmaps/pixmaps */
    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
@@ -1335,8 +1333,6 @@ int init_canvas(wbp w)
    wsp ws = w->window;
    wcp wc = w->context;
    wdp wd = ws->display;
-   unsigned short bg[4];
-   GLfloat bgf[4];
 
    /*
     * Copy default context state to render context and default
@@ -1523,7 +1519,6 @@ int copy_2dcontext(wcp wcdest, wcp wcsrc)
 int get_tex_index(wdp wd, unsigned int ntex) 
    {
    int rv;
-   unsigned int err;
    /* Max # is dependent on GLuint (65536), but reserve a fraction */
    const unsigned int MAX_TEXTURES = 32768;
 
@@ -1751,14 +1746,19 @@ struct b_list *segment_line(wbp w, int num, struct b_realarray *ap2,
 int drawgeometry2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wcr = &(ws->wcrender);
    double dx, dy, *v, *vseg, wx, wy;
    tended struct b_realarray *ap, *apseg;
    tended struct b_record *rp_t = rp;
    word n, nseg;
    word i, j, k;
-   int rv, fill, polytype = 0, drawcode, intcode, recalc = 0;
+   int fill, polytype = 0, drawcode, intcode, recalc = 0;
+#if 0
+   /* [DonW] Preserved to ask Gigi about it
+    *        Inside #if 0 to stop clang complaining it isn't used anywhere
+    */
    const int THRESHOLD = 2000; /* should research this */
+#endif
 
    intcode = IntVal(rp->fields[1]);
    dx = wcr->dx;
@@ -2419,7 +2419,6 @@ int drawreadimage2d(wbp w, struct b_record *rp)
 int drawstrimage2d(wbp w, struct b_record *rp) 
    {
    wsp ws = w->window;
-   wcp wcr = &(ws->wcrender);
    wdp wd = ws->display;
    int width, height;
    double x, y;
@@ -2471,7 +2470,7 @@ int drawstrimage2d(wbp w, struct b_record *rp)
 int drawstring2d(wbp w, struct b_record *rp) 
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wcr = &(ws->wcrender);
    int len, fill, rv;
    double x, y;
    char *s;
@@ -2562,7 +2561,7 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
          FT_GlyphSlot glyph;
          FT_Bitmap ftbitmap;
          int size, rv, bmwidth;
-         unsigned char *bitmap, *pixmap;
+         unsigned char *bitmap;
 
          /* Load a monochrome bitmap (1 bit per pixel) */
          rv = FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_MONOCHROME);
@@ -2675,11 +2674,9 @@ int copyarea2d(wbp w2, struct b_record *rp)
    {
    wbp w, tmp1, tmp2;
    wsp ws2 = w2->window, ws;
-   wcp wcr2 = &(ws2->wcrender), wcr;
    wdp wd;
-   double wx, wy, dx, dy;
    double x, y, x2, y2;
-   int width, height, drawop, update = 0;
+   int width, height, update = 0;
    unsigned char *depth, *pixmap = NULL;
    unsigned int texid, index, *texptr;
 
@@ -2762,7 +2759,7 @@ int copyarea2d(wbp w2, struct b_record *rp)
       tended struct b_record *rp_t = rp;
       int ix, iy, px, py;
       unsigned char bg[4];
-      int outofbounds = 0, size, drawop;
+      int outofbounds = 0, size;
 
       ws = w->window;
 
@@ -2857,10 +2854,8 @@ int copyarea2d(wbp w2, struct b_record *rp)
 int erasearea2d(wbp w, struct b_record *rp) 
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
    double x, y, width, height;
-   double x1, y1, x2, y2;
-
+ 
    if (!rp) return Failed;
 
    GetDouble(rp->fields[2], x);
@@ -2914,10 +2909,8 @@ int setcolor2d(wbp w, struct b_record *rp, int type)
    {
    wsp ws = w->window;
    wcp wc = w->context, wcr = &(ws->wcrender);
-   wdp wd = wc->display;
-   int i, index, intcode;
+   int index, intcode;
    unsigned int r, g, b, a;
-   unsigned long pixel;
   
    /*
     * No display list entry, so use the current render context color
@@ -3085,7 +3078,7 @@ int setleading2d(wbp w, struct b_record *rp)
 
 int setlinewidth2d(wbp w, struct b_record *rp)
    {
-   wcp wc = w->context, wcr = &(w->window->wcrender);
+   wcp wcr = &(w->window->wcrender);
 
    /* should this be a double instead? */
    GetInt(rp->fields[2], wcr->linewidth);
@@ -3098,7 +3091,7 @@ int setlinewidth2d(wbp w, struct b_record *rp)
 int setlinestyle2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wcr = &(ws->wcrender);
    char *s;
    int len;
 
@@ -3123,7 +3116,7 @@ int setlinestyle2d(wbp w, struct b_record *rp)
 int setfillstyle2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wcr = &(ws->wcrender);
    char *s;
    int len;
 
@@ -3150,10 +3143,9 @@ int setpattern2d(wbp w, struct b_record *rp)
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
    wdp wd = ws->display;
-   int width, nbits, size, slen, s1len, update;
+   int width, nbits, slen, s1len, update;
    unsigned int index = 0;
-   char *pattern;
-   char *s, *bits, *s1;
+   char *s, *s1;
    unsigned int texid = 0, *texptr = NULL;
 
    if (rp) {
@@ -3199,9 +3191,9 @@ int setpattern2d(wbp w, struct b_record *rp)
       /*
        * Allocate texture 
        */
-      int bmwidth, size, winsize;
-      int ix, iy, i, j;
-      unsigned char *img, *src, *dest;
+      int size;
+      int i, j;
+      unsigned char *img;
       tended struct b_record *recp = rp;
       unsigned char data[MAXXOBJS];
       unsigned char *buf = data;
@@ -3333,8 +3325,7 @@ int setclip2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
-   int clipx, clipy, clipw, cliph, px, py;
-   double wx, wy;
+   int clipx, clipy, clipw, cliph;
 
    if (rp == NULL) {
       clipx = wcr->clipx; 
@@ -3425,7 +3416,6 @@ int gl_blimage(wbp w, int x, int y, int width, int height, int ch,
    {
    wcp wc = w->context;
    wsp ws = w->window;
-   wdp wd = wc->display;
    static struct descrip *constr = NULL;
    const int intcode = GL2D_BLIMAGE;
    tended struct descrip f;
@@ -3489,7 +3479,6 @@ int gl_blimage(wbp w, int x, int y, int width, int height, int ch,
 int gl_readimage(wbp w, char *filename, int x, int y, int *status)
    {
    wsp ws = w->window;
-   wcp wc = w->context;
    static struct descrip *constr = NULL;
    tended struct descrip f;
    tended struct b_record *rp;
@@ -3556,7 +3545,6 @@ int gl_readimage(wbp w, char *filename, int x, int y, int *status)
  */
 #define PutPixelPixmap(w,pix,width,height,ix,iy,clr) do {\
    int index = 4*((height-1-iy)*width+ix);\
-   wcp wcr = &(w->window->wcrender);\
    AssignRGB(&(pix[index]),(clr).red,(clr).green,(clr).blue);\
    } while(0)
 
@@ -3577,19 +3565,15 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
    {
    wsp ws = w->window;
    wcp wc = w->context;
-   wdp wd = ws->display;
    const int intcode = GL2D_STRIMAGE;
    static struct descrip *constr = NULL;
    tended struct descrip f;
    tended struct b_record *rp;
    tended char *pixmap, *shape;
-   unsigned int r, g, b, ix, iy;
+   unsigned int ix, iy;
    unsigned char alpha;
-   double wx, wy;
-   wclrp cp;
-   int nfields, nspaces = 0, c, v;
-   int size, drawop;
-   int is_transparent = 0;
+   int nfields, c, v;
+   int size;
 
    ws->busy_flag = 1;
    MakeCurrent(w);
@@ -3661,7 +3645,6 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
     */
    else {
       LinearColor clr;
-      char c;
       while (iy < height) {
          ix = 0;
          while (ix < width) {
@@ -3705,7 +3688,7 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
 int gl_drawstrng(wbp w, int x, int y, char *s, int len) 
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wcr = &(ws->wcrender);
    static struct descrip *constr = NULL;
    const int intcode = GL2D_DRAWSTRING;
    tended struct descrip f;
@@ -3820,12 +3803,11 @@ int gl_copyArea(wbp w1, wbp w2, int x, int y, int width, int height, int x2,
    int y2)
    {
    wsp ws1 = w1->window, ws2 = w2->window;
-   wcp wc1 = w1->context, wc2 = w2->context;
    static struct descrip *constr = NULL;
    const int intcode = GL2D_COPYAREA;
    tended struct descrip f;
    tended struct b_record *rp;
-   int size, nfields, rv;
+   int nfields, rv;
 
    ws2->busy_flag = 1;
 
@@ -3903,9 +3885,8 @@ int gl_copyArea(wbp w1, wbp w2, int x, int y, int width, int height, int x2,
 int gl_eraseArea(wbp w, int x, int y, int width, int height)
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
-   wdp wd = ws->display;
-   int size, nfields;
+   wcp wc = w->context;
+   int nfields;
    const int intcode = GL2D_ERASEAREA;
    static struct descrip *constr = NULL;
    tended struct descrip f;
@@ -3985,7 +3966,6 @@ int gl_eraseArea(wbp w, int x, int y, int width, int height)
 
 int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill) 
    {
-   wcp wc = w->context;
    wsp ws = w->window;
    static struct descrip *fillarc_constr, *drawarc_constr;
    static struct descrip *fillcirc_constr, *drawcirc_constr;
@@ -3994,7 +3974,7 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
    tended struct b_realarray *ap;
    int nfillarc, ndrawarc, nfillcirc, ndrawcirc;
    int i, nfields;
-   double x, y, r, width, height, theta, alpha, *v;
+   double x, y, r, width, height, theta, alpha;
 
    if (n <= 0) return Failed;
 
@@ -4250,14 +4230,12 @@ int gl_drawrectangles(wbp w, XRectangle *recs, int n)
 int gl_drawlines(wbp w, XPoint *points, int n)
    {
    wsp ws = w->window;
-   static struct descrip *constr = NULL;
    tended struct descrip f;
    tended struct b_record *rp;
    tended struct b_realarray *ap;
    int i, nfields, size;
    const int intcode = GL2D_DRAWLINE;
    static struct descrip *line_constr, *poly_constr;
-   int nline, npoly;
    double dx, dy;
 
    ws->busy_flag = 1;
@@ -4449,7 +4427,7 @@ int gl_drawsegments(wbp w, XSegment *segs, int n)
  */
 int polygon_type(XPoint *points, int n)
    {
-   int i, winding, rv;
+   int i, rv;
    double curr_x, curr_y, prev_x, prev_y;
    double curr_angle_abs, prev_angle_abs, last_angle, angle, accum_angle;
    const double TWO_PI = 2*Pi;
@@ -4586,7 +4564,7 @@ int gl_fillpolygon(wbp w, XPoint *points, int n)
 int write_xbm(char *filename, int width, int height, unsigned char *pixmap, 
    unsigned char bg[4])
    {
-   int ix, iy, i;
+   int ix, iy;
    FILE *fout;
    char buf[256], name[128], *p1, *p2;
    unsigned int byte, m;
@@ -4676,8 +4654,6 @@ int write_xpm(char *filename, int width, int height, unsigned char *pixmap)
    int ix, iy, i, j;
    FILE *fout;
    char buf[1028], name[128], tmp[32], *p1, *p2;
-   unsigned char *byte, m;
-   unsigned short bg[4];
    struct color clist[DMAXCOLORS];
    int ncolors, chars_per_pixel;
    tended char *tended_s = filename;
@@ -5205,12 +5181,11 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
 int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y, 
    unsigned int width, unsigned int height)
    {
-   int status, slen;
+   int slen;
    wcp wc = w->context;
    wsp ws = w->window;
-   wdp wd = ws->display;
    unsigned char *tmp;
-   int px, py, rv;
+   int px, py, rv = NoCvt;   /* not an X format -- write GIF instead */
    unsigned short bgs[4];
    unsigned char bg[4];
 
@@ -5251,9 +5226,7 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
       }
 
    free(tmp);
-   if (rv == Succeeded) return rv; 
-
-   return NoCvt;		/* not an X format -- write GIF instead */
+   return rv;
    }
 
 
@@ -5282,10 +5255,8 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
 int gl_getimstr(wbp w, int x, int y, int width, int height, 
    struct palentry *ptbl, unsigned char *data)
    {
-   wcp wc = w->context;
    wsp ws = w->window;
-   wdp wd = ws->display;
-   int px, py, i, ix, iy, index, row_size;
+   int px, py, i, ix, iy;
    unsigned short *tmp;
    int ncolors;
 
@@ -5360,9 +5331,7 @@ int gl_getimstr(wbp w, int x, int y, int width, int height,
 int gl_getimstr24(wbp w, int x, int y, int width, int height, 
    unsigned char *data)
    {
-   wcp wc = w->context;
    wsp ws = w->window;
-   wdp wd = ws->display;
    int px, py, ix, iy, index, row_size;
    unsigned char *tmp;
 
@@ -5419,7 +5388,6 @@ int gl_getimstr24(wbp w, int x, int y, int width, int height,
 int gl_getpixel_init(wbp w, struct imgmem *imem)
    {
    wcp wc = w->context;
-   wdp wd = wc->display;
    int px, py, size, width, height, i;
 
    if (imem->width <= 0 || imem->height <= 0) {
@@ -5463,10 +5431,6 @@ int gl_getpixel_term(wbp w, struct imgmem *imem)
 
 int gl_getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem)
    {
-   wclrp cp;
-   unsigned long c;
-   wcp wc = w->context;
-   wdp wd = w->window->display;
    int ix, iy, index;
    long r, g, b, a;
 
@@ -5588,10 +5552,7 @@ char *gl_get_mutable_name(wbp w, int mute_index)
 int gl_set_mutable(wbp w, int mute_index, char *s)
    {
    wsp ws = w->window;
-   wdp wd = ws->display;
    int i = mute_index;
-   wclrp cp;
-   char *colorname;
    struct color *mclr;
    long r, g, b, a;
    ws->busy_flag = 1;
@@ -5717,12 +5678,10 @@ void free_mutables(wdp wd) {
 int gl_mutable_color(wbp w, dptr argv, int warg, int *rv)
    {
    long r, g, b, a;
-   int i, id, nfields, index;
-   char *colorname;
+   int id;
    tended char *str;
    struct color *mclr;
    wsp ws = w->window;
-   wdp wd = ws->display;
 
    /*
     * check args
@@ -5786,12 +5745,10 @@ int gl_color(wbp w, int intcode, int mindex, char *s)
    {
    wsp ws = w->window;
    wcp wc = w->context;
-   wdp wd = w->window->display;
    static struct descrip *fgconstr, *bgconstr;
    struct descrip *constr;
    tended struct descrip f;
    tended struct b_record *rp;
-   wclrp cp;
    int index, nfields, is_mutable = 0, rv;
    static char fgstr[] = "Fg", bgstr[] = "Bg";
    char *name;
@@ -5933,7 +5890,6 @@ int gl_setfgrgb(wbp w, int r, int g, int b)
  */
 int gl_isetbg(wbp w, int mindex)
    {
-   int i;
    struct color *mclr;
 
    if (!(mclr = find_mutable(w, mindex))) {
@@ -5954,7 +5910,6 @@ int gl_isetbg(wbp w, int mindex)
  */
 int gl_isetfg(wbp w, int mindex)
    {
-   int i;
    struct color *mclr;
 
    if (!(mclr = find_mutable(w, mindex))) {
@@ -6069,14 +6024,6 @@ int gl_setgamma(wbp w, double gamma)
 
    return Succeeded;
    }
-
-
-
-
-
-
-
-
 
 
 /*
@@ -6085,14 +6032,15 @@ int gl_setgamma(wbp w, double gamma)
 int gl_setclip(wbp w)
 {   
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wc = w->context;
    tended struct descrip f;
    tended struct b_record *rp;
    static struct descrip *constr = NULL;
    const int intcode = GL2D_CLIP;
-   int nfields, size, rv;
+   int nfields, rv;
    int clipx, clipy, clipw, cliph;
-   char *pixmap;
+   
+
 
    /* context attributes already set in wattrib() */
    if (ws->initAttrs)
@@ -6223,7 +6171,7 @@ int gl_SetPattern(wbp w, char *name, int len)
 int gl_setdx(wbp w) 
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wc = w->context;
    tended struct descrip f;
    tended struct b_record *rp;
    static struct descrip *constr = NULL;
@@ -6264,7 +6212,7 @@ int gl_setdx(wbp w)
 int gl_setdy(wbp w) 
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wc = w->context;
    tended struct descrip f;
    tended struct b_record *rp;
    static struct descrip *constr = NULL;
@@ -6302,14 +6250,12 @@ int gl_setdrawop(wbp w, char *s)
    {
    wsp ws = w->window;
    wcp wc = w->context;
-   wdp wd = w->window->display;
    static struct descrip *constr = NULL;
    const int intcode = GL2D_DRAWOP;
-   static char revstr[] = "reverse", copystr[] = "copy";
    tended struct descrip f;
    tended struct b_record *rp;
    char *s_op;
-   int nfields, drawop, len;
+   int nfields, len;
 
 
    /* "reverse" */
@@ -6638,9 +6584,8 @@ static wfp loadfont(wdp wd, char *s, int len)
    int rv, flags, size, tp, i;
    int num_faces;
    char family[MAXFONTWORD+1], buf[MAXFONTWORD+1];
-   char *ptr, *fname;
+   char *fname;
    wfp wf;
-   double dpi, dpi_w, dpi_h, width_px, height_px, width_in, height_in;
    int platform_id, encoding_id, cmap_index;
    CURTSTATE();
 
@@ -6868,7 +6813,7 @@ static wfp loadfont(wdp wd, char *s, int len)
 #define MAX_LEN 512
 char *find_fontfile(char *family, int flags) {
    static char fontdir[MAX_LEN];
-   char *fname = NULL, *abspath, *dest, *src, *ptr;
+   char *fname = NULL, *abspath, *ptr;
    int len;
 #ifdef MSWindows 
    const char PS = '\\';
@@ -7315,7 +7260,7 @@ int gl_setleading(wbp w, int leading)
    tended struct b_record *rp;
    static struct descrip *constr = NULL;
    const int intcode = GL2D_LEADING;
-   int nfields, len;
+   int nfields;
 
    if (!ws->updateRC) 
       wc->leading = leading;
@@ -7451,7 +7396,9 @@ int gl_wputc(int ci, wbp w)
    {
    int lh, width, height, over;
    char c = (char)ci;
-   STDLOCALS(w);
+   /* STDLOCALS(w);   replaced by the declarations below*/
+   wcp wc = w->context;
+   wsp ws = w->window;
 
    lh = wc->leading;
    width = ws->width;
@@ -7554,7 +7501,6 @@ int gl_wputc(int ci, wbp w)
 wcp gl_alc_context(wbp w)
    {
    wcp wc;
-   wdp wd = w->window->display;
  
    wc = alc_context(w); /* platform-specific init */
    if (!wc) return NULL;
@@ -7611,7 +7557,6 @@ wdp gl_alc_display(char *s)
  */
 wsp gl_alc_winstate()
    {
-   int i;
    wsp ws = alc_winstate(); /* platform-specific init */
    if (!ws) return NULL;
 

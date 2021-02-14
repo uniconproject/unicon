@@ -3576,7 +3576,8 @@ SHORT *x, *y, *width, *height;
 #define AttemptAttr(operation) do { switch (operation) { case RunError: t_errornumber=145; StrLen(t_errorvalue)=strlen(val);StrLoc(t_errorvalue)=val;return RunError; case Succeeded: break; default: return Failed; } } while(0)
 
 /* does string (already checked for "on" or "off") say "on"? */
-#define ATOBOOL(s) (s[1]=='n')
+/* passthru so clang doesn't complain about extra parentheses*/
+#passthru #define ATOBOOL(s) (s[1]=='n')
 
 /*
  * Attribute manipulation

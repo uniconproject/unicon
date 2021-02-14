@@ -103,11 +103,25 @@ char *relfile(char *prog, char *mod) {
 
    canonize(buf);			/* canonize result */
 
+#if __clang__
+/*
+ * clang moans about extra parentheses [-Wparentheses-equality] when MSDOS
+ *  is not defined.  NB. MSDOS actually means "MSDOS and descendants"
+ *  -- i.e. it includes MS WINDOWS.
+ */       
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wparentheses-equality"
+#endif                    /* clang */
+
    if ((mod[strlen(mod)-1] == '/')	/* if trailing slash wanted */
 #if MSDOS
        ||(mod[strlen(mod)-1] == '\\')
 #endif
        )
+#if __clang__
+#pragma clang diagnostic pop
+#endif                    /* clang */
+
       sprintf(buf+strlen(buf), "%c", FILESEP);/* append to result */
    return salloc(buf);			/* return allocated string */
    }

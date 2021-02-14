@@ -1705,8 +1705,6 @@ function{0,1} reads(f,i)
 	 slen = gzread((gzFile) fp, StrLoc(s), i);
       	 INC_NARTHREADS_CONTROLLED;
 	 if (slen == 0) {
-	    int ern, slen;
-	    char *s;
 	    if (gzeof(fp)) fail;
 	    /* an underlying read error, but gzread() returned 0? */
 	    set_gzerrortext((gzFile) fp);

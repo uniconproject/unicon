@@ -1041,18 +1041,28 @@ local cmd, dash_s
               (&progname ? tab(find("unicon"))) | "")
 
       if &features=="MS Windows NT" then {
-	 if (cmd ~== "") & (not (cmd[-1] == "\\")) then cmd ||:= "\\"
-	 if &features=="console window" then {
-            cmd ||:= "wicont.exe"
+         if (cmd ~== "") & (not (cmd[-1] == "\\")) then cmd ||:= "\\"
+         if &features=="console window" then {
+            if stat(cmd || "wunicont.exe") then
+                cmd ||:= "wunicont.exe"
+            else
+                cmd ||:= "wicont.exe"
+
             dash_s:=1
             }
          else
-            cmd ||:= "icont.exe"
+            if stat(cmd || "unicont.exe") then
+                cmd ||:= "unicont.exe"
+            else
+                cmd ||:= "icont.exe"
          }
       else {
-	 if (cmd ~== "") & (not (cmd[-1] == "/")) then cmd ||:= "/"
-         cmd ||:= "icont"
-	 }
+          if (cmd ~== "") & (not (cmd[-1] == "/")) then cmd ||:= "/"
+          if stat(cmd || "unicont") then
+              cmd ||:= "unicont"
+          else
+              cmd ||:= "icont"
+         }
       }
 
    cmd := quotes(cmd)

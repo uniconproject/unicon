@@ -317,7 +317,7 @@ char *outname;
     */
    sprintf(script,
            "@echo off\r\n%s %%0 %%1 %%2 %%3 %%4 %%5 %%6 %%7 %%8 %%9\r\n",
-           ((iconxloc!=NULL)?iconxloc:"wiconx"));
+           ((iconxloc!=NULL)?iconxloc:UNICONWX));
    strcat(script,"noop.bat\r\n@echo on\r\n");
    strcat(script,"pause missing noop.bat - press ^c or shell will exit\r\n");
    strcat(script,"exit\r\nrem [executable Icon binary follows]\r\n");
@@ -347,7 +347,7 @@ char *outname;
       "[ -x \"$IXLCL\" ] && exec \"$IXLCL\" \"$0\" ${1+\"$@\"}",
       "[ -x \"$IXBIN\" ] && exec \"$IXBIN\" \"$0\" ${1+\"$@\"}",
       "exec ",
-      "iconx",
+      UNICONX,
       " \"$0\" ${1+\"$@\"}",
       "[executable Icon binary follows]");
 #if __clang__

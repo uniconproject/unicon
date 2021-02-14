@@ -384,13 +384,9 @@ keyword{1,*} features
 	 char *iconx;
 	 int xnamelen;
 
-#if NT
-	 iconx = relfile(StrLoc(kywd_prog), "/../iconx.exe");
-	 xnamelen = 9; /* "iconx.exe" */
-#else					/* NT */
-	 iconx = relfile(StrLoc(kywd_prog), "/../iconx");
-	 xnamelen = 5; /* "iconx" */
-#endif					/* NT */
+	 iconx = relfile(StrLoc(kywd_prog), "/../" UNICONX_EXE);
+	 xnamelen = strlen(UNICONX_EXE); /* "iconx.exe" */
+
 	 // check if we have iconx on a path relative to us
 	 if ((stat(iconx,&buffer)) == 0) {
 	    refpath = patchpath+18;
@@ -400,15 +396,15 @@ keyword{1,*} features
          }
       else {
 #if MSDOS
-	 if (pathFind("iconx.exe", patchpath+18, MaxPath)) {
+	 if (pathFind(UNICONX_EXE, patchpath+18, MaxPath)) {
 	    refpath = patchpath+18;
-	    patchpath[strlen(patchpath)-strlen("iconx.exe")] = '\0';
+	    patchpath[strlen(patchpath)-strlen(UNICONX_EXE)] = '\0';
 	    }
 #endif					/* MSDOS */
 #if UNIX
-	 if (findonpath("iconx", patchpath+18, MaxPath)) {
+	 if (findonpath(UNICONX, patchpath+18, MaxPath)) {
 	    refpath = patchpath+18;
-	    patchpath[strlen(patchpath)-strlen("iconx")] = '\0';
+	    patchpath[strlen(patchpath)-strlen(UNICONX)] = '\0';
 	    }
 	 else {
 	    int c;
@@ -505,17 +501,8 @@ void get_arch(char *);
 
       if (refpath && strlen(refpath) > 0) {
 	 char *s;
-#if UNIX
-#define ICONXNAM "iconx"
-#else
-#if MSDOS
-#define ICONXNAM "iconx.exe"
-#else
-deliberate syntax error
-#endif
-#endif
-	 if (!strcmp(refpath+strlen(refpath)-strlen(ICONXNAM), ICONXNAM)) {
-	    refpath[strlen(refpath)-strlen(ICONXNAM)] = '\0';
+	 if (!strcmp(refpath+strlen(refpath)-strlen(UNICONX_EXE), UNICONX_EXE)) {
+	    refpath[strlen(refpath)-strlen(UNICONX_EXE)] = '\0';
 	    /*
 	     * Trim prefix letters in front of iconx, if any
 	     */

@@ -14,13 +14,13 @@ OBJS=		cmain.o clocal.o ctrans.o dbase.o clex.o\
 		typinfer.o lifetime.o incheck.o vtbl.o tv.o wop.o ca.o\
 		util.o yyerror.o
 
-all:		iconc
+all:		$(UNICONC)
 
 
-iconc:		$(OBJS) ../../rt/lib/libucommon.a
-		$(CC) $(LDFLAGS) -o iconc  $(OBJS) -lucommon
-		$(CP) iconc$(EXE) ../../bin
-		strip ../../bin/iconc$(EXE)
+$(UNICONC):		$(OBJS) ../../rt/lib/libucommon.a
+		$(CC) $(LDFLAGS) -o $(UNICONC)  $(OBJS) -lucommon
+		$(CP) $(UNICONC)$(EXE) ../../bin
+		strip ../../bin/$(UNICONC)$(EXE)
 
 $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 		../h/proto.h ../h/mproto.h ../h/typedefs.h ../h/gsupport.h \
@@ -48,7 +48,7 @@ typinfer.o:	../h/lexdef.h ctoken.h
 types.o:	../h/lexdef.h ctoken.h
 
 Pure Clean clean:
-	$(RM) $(OBJS) iconc$(EXE)
+	$(RM) $(OBJS) $(UNICONC)$(EXE)
 
 #  The following sections are commented out because they do not need to
 #  be performed unless changes are made to cgrammar.c, ../h/grammar.h,

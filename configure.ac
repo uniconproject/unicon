@@ -169,8 +169,11 @@ AC_ARG_ENABLE([verifyheap],
 	[AS_HELP_STRING([--enable-verifyheap], [Enable advanced heap verification])],
 			[verifyheap=yes], [verifyheap=no])
 AC_ARG_ENABLE([devmode],
-	[AS_HELP_STRING([--enable-devmode], [Developper mode: turn on warnings and debugging options])],
+	[AS_HELP_STRING([--enable-devmode], [Developer mode: turn on warnings and debugging options])],
 			[devmode=yes], [devmode=no])
+AC_ARG_ENABLE([uniconx],
+	[AS_HELP_STRING([--enable-uniconx], [Change executable names to co-exist with Icon])],
+			[uniconx=yes], [uniconx=no])
 
 
 # Save flags
@@ -200,6 +203,21 @@ else
   CMNT=
   SLNT="@"
   DASHS="-s"
+fi
+
+if test x"$uniconx" = x"yes" ; then
+  AC_DEFINE([UniconX], [1], [Avoid naming conflicts with Icon])
+  UNICONX=uniconx
+  UNICONWX=wuniconx
+  UNICONC=uniconc
+  UNICONT=unicont
+  UNICONWT=wunicont
+else
+  UNICONX=iconx
+  UNICONWX=wiconx
+  UNICONC=iconc
+  UNICONT=icont
+  UNICONWT=wicont
 fi
 
 if test x"$devmode" = x"yes" ; then
@@ -235,18 +253,20 @@ if test "z$orig_cflags" = "z"; then
   fi
 fi
 
-# We always want these CFLAGS if available, the second one is neseccary for a stable runtime
-AC_CFLAG([-fno-omit-frame-pointer])
-
-AC_CFLAG([-fno-strict-aliasing])
-
-AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
-
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces])
 #  AC_CFLAG([-Wmissing-prototypes])
 #  AC_CFLAG([-Wmissing-declarations])
+fi
+
+# We always want these CFLAGS if available, the second one is neseccary for a stable runtime
+AC_CFLAG([-fno-omit-frame-pointer])
+
+AC_CFLAG([-fno-strict-aliasing])
+
+if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" ; then
+   AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
 fi
 
 if test x"${enable_werror}" = x"yes" ; then
@@ -337,19 +357,19 @@ case $unicon_host in
        WSUBSYS="-Wl,--subsystem,console"
        NTCONDEP="NTCON"
        LIBWUCONSOLE="libwuconsole.a"
-       WICONXTARGET="wiconx"
-       WICONTTARGET="wicont"
+       WICONXTARGET="$UNICONWX"
+       WICONTTARGET="$UNICONWT"
        WUNICONTARGET="wunicon"
        CFUNCTARGET="windows"
        EXEICONTARGET=icon.$OBJ
 
-       ICONXEXE=iconx.exe
-       WICONXEXE=wiconx.exe
-       ICONTEXE=icont.exe
-       WICONTEXE=wicont.exe
+       ICONXEXE=$UNICONX.exe
+       WICONXEXE=$UNICONWX.exe
+       ICONTEXE=$UNICONT.exe
+       WICONTEXE=$UNICONWT.exe
        UNICONEXE=unicon.exe
        WUNICONEXE=wunicon.exe
-       ICONCEXE=iconc.exe
+       ICONCEXE=$UNICONC.exe
         ;;
 esac
 
@@ -361,6 +381,12 @@ fi
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
+AC_SUBST(UNICONX)
+AC_SUBST(UNICONT)
+AC_SUBST(UNICONWX)
+AC_SUBST(UNICONWT)
+AC_SUBST(UNICONC)
 
 AC_SUBST(EXE)
 AC_SUBST(WSTKLDFLAG)

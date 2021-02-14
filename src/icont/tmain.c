@@ -229,7 +229,7 @@ void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstan
       wc.hCursor    = LoadCursor(NULL, IDC_ARROW);
       wc.hbrBackground = GetStockObject(WHITE_BRUSH);
       wc.lpszMenuName = NULL;
-      wc.lpszClassName = "iconx";
+      wc.lpszClassName = UNICONX;
       RegisterClass(&wc);
       }
    }
@@ -294,16 +294,16 @@ void iconx(int argc, char** argv){
 #endif					/* WildCards */
 
    if ((int)strlen(patchpath) > 18)
-      iconxloc = patchpath+18;	/* use stated iconx path if patched */
+      iconxloc = patchpath+18; /* use stated iconx path if patched */
    else {
 #if NT
    #ifdef NTConsole
-     iconxloc = relfile(argv[0], "/../iconx.exe");
+     iconxloc = relfile(argv[0], "/../" UNICONX_EXE);
    #else				/* NTConsole */
-     iconxloc = relfile(argv[0], "/../wiconx.exe");
+     iconxloc = relfile(argv[0], "/../" UNICONWX_EXE);
    #endif				/* NTConsole */
 #else					/* NT */
-     iconxloc = relfile(argv[0], "/../iconx");
+     iconxloc = relfile(argv[0], "/../" UNICONX);
 #endif					/* NT */
    }
 
@@ -433,7 +433,7 @@ void iconx(int argc, char** argv){
                "Can't understand what directory icont was run from.\n");
             exit(EXIT_FAILURE);
             }
-            strcpy( ++pathCursor, (makeExe==1) ?  "ixhdr.exe" : "iconx.exe");
+            strcpy( ++pathCursor, (makeExe==1) ?  "ixhdr.exe" : UNICONX_EXE);
          }
 #endif                                  /* MSDOS && !NT */
 
@@ -644,28 +644,25 @@ void iconx(int argc, char** argv){
 	if (((p = strrchr(tmp2, '\\')) != 0)) {
 	  p++;
 	  *p = '\0';
-	  strcat(tmp2, "wiconx.exe");
+	  strcat(tmp2, UNICONWX_EXE);
 	  iconx = tmp2;
 	}
       }
 #endif					/* NT && NTConsole */
 
       if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
-#if NT
 	if (Gflag) {
-	  iconx2 = "wiconx.exe";
+	  iconx2 = UNICONWX_EXE;
 	}
 	else {
-	  iconx2 = "iconx.exe";
+	  iconx2 = UNICONX_EXE;
 	}
-#else					/* NT */
-	iconx2 = "iconx";
-#endif					/* NT */
-      /*
+
+       /*
        * Try to find iconx on the PATH or the current working directory
        */
 	if ((f = pathOpen(iconx2, ReadBinary)) == NULL) {
-	  sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx);
+	  sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx2);
 	  report(mesg);
 	  errors++;
 	}
@@ -748,7 +745,7 @@ char *ofile, *efile, **args;
 
    for (n = 0; args[n] != NULL; n++)	/* count arguments */
       ;
-   p = argv = (char **)alloc((unsigned int)((n + 5) * sizeof(char *)));
+   p = argv = (char **)alloc((unsigned int)((n + strlen(UNICONX) + 1) * sizeof(char *)));
 
 #if !UNIX	/* exec the file, not iconx; stderr already redirected  */
    *p++ = iconxloc;			/* set iconx pathname */
@@ -765,7 +762,7 @@ char *ofile, *efile, **args;
    {
       char cmdline[256], *tmp;
 
-      strcpy(cmdline, "wiconx ");
+      strcpy(cmdline, UNICONWX " ");
       if (efile != NULL) {
          strcat(cmdline, "-e ");
          strcat(cmdline, efile);

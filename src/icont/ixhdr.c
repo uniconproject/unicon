@@ -60,7 +60,7 @@ char **argv;
    else if (findcmd(fullpath, name, "PATH"))
       doiconx(argv, fullpath);
    else
-      hsyserr("iconx: icode file not found: ", fullpath);
+      hsyserr(UNICONX ": icode file not found: ", fullpath);
    }
 
 /*
@@ -82,10 +82,10 @@ char *file;
 #ifdef HardWiredPaths
    static char hardpath[MaxPath];
 
-   if ((int)(strlen(refpath) + 6) > MaxPath)
+   if ((int)(strlen(refpath) + strlen(UNICONX) + 1) > MaxPath)
       hsyserr("path to iconx too long","");
    strcpy(hardpath, refpath);
-   strcat(hardpath, "iconx");
+   strcat(hardpath, UNICONX);
 
    if ((int)strlen(patchpath) > 18)
       strcpy(hardpath, patchpath+18);
@@ -93,7 +93,8 @@ char *file;
 
    argv[1] = file;
 
-   if ((argv[0] = getenv("ICONX")) != NULL && argv[0][0] != '\0') {
+   if (((argv[0] = getenv("ICONX")) != NULL && argv[0][0] != '\0') ||
+       ((argv[0] = getenv("UNICONX")) != NULL && argv[0][0] != '\0')) {
       execv(argv[0], argv);		/* exec file specified by $ICONX */
       hsyserr("cannot execute $ICONX: ", argv[0]);
       }
@@ -103,7 +104,7 @@ char *file;
    execv(hardpath, argv);
 #endif					/* HardWiredPaths */
  
-   if (findcmd(xcmd, "iconx", "PATH")) {
+   if (findcmd(xcmd, UNICONX, "PATH")) {
       argv[0] = xcmd;
       execv(xcmd, argv);	/* if no path, search path for "iconx" */
       hsyserr("cannot execute ", xcmd);
@@ -112,7 +113,7 @@ char *file;
 #ifdef HardWiredPaths
    hsyserr("cannot execute ", hardpath);
 #else					/* HardWiredPaths */
-   hsyserr("cannot find iconx", "");
+   hsyserr("cannot find " UNICONX, "");
 #endif					/* HardWiredPaths */
    }
 

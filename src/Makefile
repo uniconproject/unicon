@@ -36,10 +36,10 @@ Iconx:	Common
 	$(MAKE) -C runtime interp_all
 
 #force wiconx and wicont to be built at the end
-wiconx Wiconx:	Icont
-	$(MAKE) -C runtime wiconx
-wicont Wicont: Wiconx
-	$(MAKE) -C icont wicont
+wuniconx wiconx Wiconx:	Icont
+	$(MAKE) -C runtime $(UNICONWX)
+wunicont wicont Wicont: Wiconx
+	$(MAKE) -C icont $(UNICONWT)
 
 # force Iconx to always build first to avoid building part of both at the same time
 Iconc: Common Iconx
@@ -62,12 +62,12 @@ FreshIconc:
 .PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm libs
 
 clean Clean:
-	cd iconc;	$(RM) *.o iconc$(EXE)
+	cd iconc;	$(RM) *.o $(UNICONC)$(EXE)
 	cd common;	$(RM) *.o doincl$(EXE) patchstr$(EXE)
 	cd preproc;	$(RM) *.o pp$(EXE)
 	cd rtt;		$(RM) *.o rtt$(EXE)
-	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst iconx$(EXE) wiconx$(EXE)
-	cd icont;	$(RM) *.o icont$(EXE) wicont$(EXE)
+	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst $(UNICONX)$(EXE) $(UNICONWX)$(EXE)
+	cd icont;	$(RM) *.o $(UNICONT)$(EXE) $(UNICONWT)$(EXE)
 	cd xpm;		$(RM) *.o *.a
 	cd xpm/lib;	$(RM) *.o *.a
 	cd libtp;	$(RM) *.o *.a config.cache

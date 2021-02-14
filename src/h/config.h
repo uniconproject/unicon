@@ -52,6 +52,37 @@
 #include "../h/auto.h"
 #endif					/* NoAuto */
 
+/*
+ *  Avoid name conflicts with Icon by using unicon-specific names 
+ */
+#ifdef UniconX
+#define UNICONX "uniconx"
+#define UNICONWX "wuniconx"
+#define UNICONT "unicont"
+#define UNICONWT "wunicont"
+#define UNICONC "uniconc"
+#else					/* UNICONX */
+#define UNICONX "iconx"
+#define UNICONWX "wiconx"
+#define UNICONT "icont"
+#define UNICONWT "wicont"
+#define UNICONC "iconc"
+#endif					/* UNICONX */
+
+#if Windows
+#define UNICONX_EXE UNICONX".exe"
+#define UNICONWX_EXE UNICONWX".exe"
+#define UNICONT_EXE UNICONT".exe"
+#define UNICONWT_EXE UNICONWT".exe"
+#define UNICONC_EXE UNICONC".exe"
+#else					/* NT */
+#define UNICONX_EXE UNICONX
+#define UNICONWX_EXE UNICONWX
+#define UNICONT_EXE UNICONT
+#define UNICONWT_EXE UNICONWT
+#define UNICONC_EXE UNICONC
+#endif					/* NT */
+
 /* make SQL_LENORIND definition global for now*/
 #define SQL_LENORIND SQLLEN
 

@@ -167,7 +167,7 @@ struct b_list *ResolveList(struct b_list *lp)
    for (i = 1; i < elsrc->nused; i++) {
       tended char * varname;
       struct descrip parm;
-      dptr pvar;
+      /* dptr pvar;  No longer used -- see below */
       if (is:string(elsrc->lslots[i])) {
          /*
 	  * if a string constant, drop double quotes,
@@ -218,7 +218,7 @@ struct b_list *ResolveList(struct b_list *lp)
 		  AsgnCStr(parm, varname);
 		  ReturnErrVal(160, parm, NULL);
 		  }
-	       pvar = VarLoc(parm);
+	       /* pvar = VarLoc(parm); */
 	       elsrc->lslots[i] = parm; /* = *pvar too aggressive */
 
 	       if (complement) {
@@ -1908,11 +1908,9 @@ dptr processMethodCallList(struct b_list *lp)
  * 3. remaining elements of the list are parameters to the method invocation
  */
 #begdef GetResultFromMethodCall()
-int nargs;
 tended struct descrip cresult;
 dptr call_result;
 tended struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
-nargs = lp->size -1;
 
 if (is:list(Node->parameter)) {
    call_result = processMethodCallList(lp);

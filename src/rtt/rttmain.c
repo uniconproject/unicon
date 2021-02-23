@@ -479,12 +479,10 @@ char **argv;
       ccomp_line = alloc(strlen(CComp) + strlen(ccomp_opts) +
 			 strlen(curlst_string) + 6);
       sprintf(ccomp_line, "%s -c %s%s", CComp, ccomp_opts, curlst_string);
-      if (!silent)
-	fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
+      if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
       if (system(ccomp_line)) return EXIT_FAILURE;
       sprintf(ccomp_line, "%s%s", "rm", curlst_string);
-      if (!silent)
-	fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
+      if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
       if (system(ccomp_line)) return EXIT_FAILURE;
       }
 

@@ -175,5 +175,8 @@ stringint cursorsyms[] = {
 };
 
 #else					/* XWindows */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
   static char x;
+#pragma GCC diagnostic pop
 #endif					/* XWindows */

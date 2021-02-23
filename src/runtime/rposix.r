@@ -888,11 +888,10 @@ int dump_addrinfo(struct addrinfo *ai)
 {
 	struct addrinfo *runp;
 	char hostbuf[50], portbuf[10];
-	int e;
 	for (runp = ai; runp != NULL; runp = runp->ai_next) {
 		printf("family: %d, socktype: %d, protocol: %d, ",
 		       runp->ai_family, runp->ai_socktype, runp->ai_protocol);
-		e = getnameinfo(
+		(void) getnameinfo(
 			runp->ai_addr, runp->ai_addrlen,
 			hostbuf, sizeof(hostbuf),
 			portbuf, sizeof(portbuf),
@@ -1989,8 +1988,7 @@ struct descrip handler;
 void signal_dispatcher(sig)
 int sig;
 {
-   struct descrip proc, val;
-   char *p;
+   struct descrip proc;
 
    proc = handlers[sig];
 #ifdef MultiProgram
@@ -2028,16 +2026,20 @@ int sig;
 #endif					/* MultiProgram */
       }
 
-   /* Invoke proc */
-   p = si_i2s(signalnames, sig);
-   StrLen(val) = strlen(p);
-   StrLoc(val) = p;
-
 #if COMPILER
    syserr("signal handlers are not supported by iconc");
 #else
-   (void) calliconproc(proc, &val, 1);
-#endif
+   {
+     char *p;
+     struct descrip val;
+     /* Invoke proc */
+     p = si_i2s(signalnames, sig);
+     StrLen(val) = strlen(p);
+     StrLoc(val) = p;
+
+     (void) calliconproc(proc, &val, 1);
+   }
+#endif					/* COMPILER */
    
    /* Restore signal just in case (for non-BSD systems) */
    signal(sig, signal_dispatcher);

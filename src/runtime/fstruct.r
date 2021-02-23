@@ -912,7 +912,9 @@ function{1} methods(r)
    type_case r of {
       record:
 	 body {
+#if !COMPILER
       char * suffix;
+#endif /* COMPILER */
       unsigned recnm_len;
       struct b_record * br;
       tended char * recnm_bgn;

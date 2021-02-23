@@ -11,9 +11,9 @@
  */
 
 extern int  __merr_errors;
+#ifndef SEPARATE_YYERROR
 static	char	*mapterm	(int typ,struct node *val);
 
-#ifndef SEPARATE_YYERROR
 /*
  * yyerror produces syntax error messages.  tok is the offending token
  *  (yychar), lval is yylval, and state is the parser's state.
@@ -70,7 +70,6 @@ nodeptr lval;
    __merr_errors++;
    nocode++;
    }
-#endif					/* SEPARATE_YYERROR */
 
 /*
  * mapterm finds a printable string for the given token type
@@ -96,6 +95,7 @@ nodeptr val;
          return ot->tok.t_word;
    return "???";
    }
+#endif					/* SEPARATE_YYERROR */
 
 /*
  * tfatal produces the translator error messages s1 and s2 (if nonnull).  The

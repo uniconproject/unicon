@@ -2417,10 +2417,21 @@ interp_quit:
 #enddef
 
 #ifdef MultiProgram
+/*
+ * When all event codes are zero, interp_macro sets the value of the 
+ * variable lastdesc but never uses it (because the invocations of
+ * RealEVValD, which do use the variable, are elided by the preprocessor).
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+#pragma GCC diagnostic pop
 interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick, E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail, E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret, E_Oret,E_Literal,E_Operand,E_Syntax,E_Cstack)
 #else					/* MultiProgram */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+#pragma GCC diagnostic pop
 #endif					/* MultiProgram */
 
 

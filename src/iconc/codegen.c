@@ -170,7 +170,7 @@ void var_dcls()
             if (!(gptr->flag & F_SmplInv))
                fprintf(codefile, "   {%d, \"%s\"},\n",
 		       (int)strlen(gptr->name), gptr->name);
-         fprintf(codefile, "   };\n");
+      fprintf(codefile, "   };\n");
       }
 
    /*
@@ -194,7 +194,7 @@ void var_dcls()
                else
                   fprintf(codefile, "   0,\n");
                }
-         fprintf(codefile, "   };\n");
+      fprintf(codefile, "   };\n");
       }
 
    /*

@@ -847,7 +847,9 @@ struct descrip *dp;
 struct b_proc *bi_strprc(dptr s, C_integer arity)
    {
    C_integer i;
+#if !COMPILER
    struct pstrnm *pp;
+#endif					/* !COMPILER */
 
    if (!StrLen(*s))
       return NULL;

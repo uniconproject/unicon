@@ -2,20 +2,11 @@
  * tp.c: User functions for libtp.
  *	 Copyright 2000 by Steve Lumos.  All rights reserved.
  */
-
 #include <stdio.h>
 
 #include "../h/config.h"
 #include "tp.h"
 #include "util.h"
-
-#ifdef STDC_HEADERS
-#include <string.h>  /* For strlen() */
-#endif
-
-#ifdef HAVE_STRINGS_H
-#include <strings.h> /* For bzero() on Solaris */
-#endif
 
 void tp_free(Tp_t* tp)
 {

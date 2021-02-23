@@ -181,11 +181,9 @@ orig_cflags="${CFLAGS:-}"
 CFLAGS=""
 AC_LANG([C])
 AC_USE_SYSTEM_EXTENSIONS
-# Try CC 99, or better
+# Try CC 99
 ac_cc="$CC"
-CC="${CC% -std=c99}"
-
-AC_CFLAG([-std=gnu11], [CC="$ac_cc"], [CC="$CC -std=gnu11"])
+AC_CFLAG([-std=c11])
 
 # try to add -m32 or -m64
 ARCHFLAG="-m$ARCHBITS"
@@ -282,7 +280,7 @@ AC_PROG_CPP
 AC_PROG_RANLIB
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)
-AC_HEADER_STDC
+#AC_HEADER_STDC
 AC_CHECK_HEADERS(errno.h netdb.h unistd.h strings.h arpa/inet.h net/errno.h \
 		 stdlib.h string.h fcntl.h memory.h sys/file.h sys/resource.h \
                  netinet/in.h sys/errno.h sys/socket.h sys/types.h)

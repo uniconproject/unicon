@@ -355,14 +355,16 @@
    /*
     * gcc docs recommends these type-safe definitions for Max/Min
     */
-   #define Max(a, b) \
-      ({ typeof (a) _a = (a); \
-         typeof (b) _b = (b); \
-         _a > _b ? _a : _b; })
-   #define Min(a, b) \
-     ({ typeof (a) _a = (a); \
-        typeof (b) _b = (b); \
-        _a < _b ? _a : _b; })
+
+#define Max(a,b)            \
+  ({ __auto_type _a = (a);  \
+    __auto_type _b = (b);   \
+    _a > _b ? _a : _b; })
+
+#define Min(a,b)            \
+  ({ __auto_type _a = (a);  \
+    __auto_type _b = (b);   \
+    _a < _b ? _a : _b; })
 
 /*
  * Number of elements of a C array, and element size.

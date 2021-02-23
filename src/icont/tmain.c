@@ -626,7 +626,7 @@ void iconx(int argc, char** argv){
    if (!errors && bundleiconx) {
       FILE *f, *f2;
       char tmp[MaxPath], *iconx, *iconx2, mesg[MaxPath+80];
-      char tmp2[MaxPath + 80];
+
       strcpy(tmp, ofile);
       strcpy(tmp+strlen(tmp)-4, ".bat");
       rename(ofile, tmp);
@@ -640,6 +640,7 @@ void iconx(int argc, char** argv){
        */
       if (Gflag) {
 	char *p;
+	char tmp2[MaxPath + 80];
 	strncpy(tmp2, iconxloc, MaxPath);
 	if (((p = strrchr(tmp2, '\\')) != 0)) {
 	  p++;

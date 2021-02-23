@@ -72,7 +72,8 @@
 /* Do we have flock?  (BSD...) */
 #if 1
 
-#define UNLOCK_FILE(dbf) 0
+/* void cast suppresses gcc warning: statement with no effect [-Wunused-value] */
+#define UNLOCK_FILE(dbf) (void) 0
 #define READLOCK_FILE(dbf) lock_val = 0
 #define WRITELOCK_FILE(dbf) lock_val = 0
 

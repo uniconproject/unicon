@@ -675,7 +675,7 @@ tv_rng_get(tv, bgn, end, numset)
 {
    int n;
    vord tgt, msk;
-   int bidx, eidx;
+   int bidx;
 
    *numset = 0;
    if (end < bgn) {
@@ -684,7 +684,6 @@ tv_rng_get(tv, bgn, end, numset)
       }
    n = 0;
    bidx = DivVordBits(bgn);
-   eidx = DivVordBits(end);
    tgt = tv->ent->bits[bidx++];
    msk = 1;
    msk <<= ModVordBits(bgn);

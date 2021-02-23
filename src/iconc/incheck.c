@@ -53,7 +53,6 @@ do_inlin(impl, p, n, cont_loc, symtab, n_va)
 {
    int i;
    int nsyms;
-   extern int num_dynrec_ctors;
 
    /*
     * Copy arguments needed by other functions into globals and
@@ -77,14 +76,6 @@ do_inlin(impl, p, n, cont_loc, symtab, n_va)
    if (!can_il(p, n, impl))
       return 0;
 
-   /*
-    * this is now performed in can_il...
-    *
-    * mdw: Don't perform inlining if this program is using dynamic records.
-    *
-   if (num_dynrec_ctors)
-      return 0;
-    */
    /*
     * Don't in-line if there is more than one decision made based on
     *  run-time type checks (this is a heuristic).

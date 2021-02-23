@@ -122,9 +122,7 @@ function{0,1} loadfunc(filename,funcname)
        */
       func = (int (*)())dlsym(handle, "init");
       if (func) {
-        int i;
-
-	/*
+ 	/*
 	 * Windows .dll's have to be informed of the addresses for functions
 	 * that are called from icall.h macros. FIXME: modify progstate to
 	 * provide a discrete struct of functions pointers so that Windows
@@ -152,7 +150,7 @@ function{0,1} loadfunc(filename,funcname)
  	 rtentryvector.Alcstr = alcstr;
  	 rtentryvector.Getdbl = getdbl;
 
-	 i = (*func)(&rtentryvector);
+	 (void) (*func)(&rtentryvector);
          }
 
       /*

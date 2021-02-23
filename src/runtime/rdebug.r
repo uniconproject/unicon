@@ -10,7 +10,9 @@ static int     glbcmp    (char *pi, char *pj);
 static int     keyref    (union block *bp, dptr dp);
 static void showline  (char *f, int l);
 static void showlevel (register int n);
+#if !COMPILER
 static void ttrace	(FILE *f);
+#endif					/* !COMPILER */
 static void xtrace
    (struct b_proc *bp, word nargs, dptr arg, int pline, char *pfile, FILE *logfile);
 

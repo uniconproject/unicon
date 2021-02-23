@@ -68,7 +68,7 @@ static void         deref_lcl   (typeinfo_t *src, typeinfo_t *dest);
 static int             eval_cond   (struct il_code *il);
 static int             findloops   ( struct node *n, int resume,
                                      typeinfo_t *rslt_type);
-static int          fldref_maybe_class(struct node *, int *);
+/* static int          fldref_maybe_class(struct node *, int *); Not used */
 static int          fldref_maybe_method(struct node *, int *);
 static void         free_argtyp (struct argtyps *argtyps);
 static void         free_store  (struct store *store);
@@ -198,7 +198,6 @@ void typeinfer()
    int i, j, k;
    int size;
    int flag;
-   long lastchanged;
 #ifdef DebugOnly
 struct rusage ru_in, ru_out;
 getrusage(RUSAGE_SELF, &ru_in);
@@ -675,7 +674,6 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
       fprintf(stderr, "type inferencing: ");
    
    while (changed > 0L) {
-      lastchanged = changed;
       changed = 0L;
       ++iteration;
 
@@ -1626,222 +1624,6 @@ int nsyms;
    return tab;
    }
 
-/*
- * infer_proc - perform type inference on a call to an Icon procedure.
- */
-static void infer_prc_original(proc, n)
-struct pentry *proc;
-nodeptr n;
-   {
-   struct store *s_store;
-   struct store *f_store;
-   struct store *store;
-   struct pentry *sv_proc;
-   struct t_coexpr *sv_coexp;
-   struct lentry *lptr;
-   nodeptr n1;
-   int i;
-   int nparams;
-   int coexp_bit;
-
-   /*
-    * Determine what co-expressions the procedure might be called from.
-    */
-   if (cur_coexp == NULL)
-      Vpp(ChkMrgTyp(n_icntyp, cur_proc->coexprs, proc->coexprs));
-   else {
-      coexp_bit = type_array[coexp_typ].frst_bit + cur_coexp->typ_indx;
-      if (!Vcall(bitset(proc->coexprs, coexp_bit))) {
-         ++changed;
-         Vcall(set_typ(proc->coexprs, coexp_bit));
-         }
-      }
-
-   proc->reachable = 1; /* this procedure can be called */
-
-   /*
-    * If this procedure can suspend, there may be backtracking paths
-    *  to this invocation. If so, propagate types of globals from the
-    *  backtracking paths to the suspends of the procedure and propagate
-    *  types of locals to the success store of the call.
-    */
-   if (proc->ret_flag & DoesSusp && n->store != NULL) {
-      for (i = 0; i < n_gbl; ++i)
-         Vpp(ChkMrgTyp(n_icntyp, n->store->types[i], proc->susp_store->types[i]));
-      for (i = 0; i < n_loc; ++i)
-         Vpp(MrgTyp(n_icntyp, n->store->types[n_gbl + i],
-            succ_store->types[n_gbl + i]));
-      }
-
-   /*
-    * Merge the types of global variables into the "in store" of the
-    *  procedure. Because the body of the procedure may already have
-    *  been processed for this pass, the "changed" flag must be set if
-    *  there is a change of type in the store. This will insure that
-    *  there will be another iteration in which to propagate the change
-    *  into the body.
-    */
-   store = proc->in_store;
-   for (i = 0; i < n_gbl; ++i)
-      Vpp(ChkMrgTyp(n_icntyp, succ_store->types[i], store->types[i]));
-
-#ifdef TypTrc
-   /*
-    * Trace the call.
-    */
-   if (trcfile != NULL) {
-      fprintf(trcfile, "%s (%d,%d) %s%s(", n->n_file, n->n_line, n->n_col,
-         trc_indent, proc->name);
-      }
-#endif					/* TypTrc */
-
-   /*
-    * Get the types of the arguments, starting with the non-varargs part.
-    */
-   nparams = proc->nargs;               /* number of parameters */
-   if (nparams < 0)
-      nparams = -nparams - 1;
-   for (i = 0; i < num_args && i < nparams; ++i) {
-      typ_deref(arg_typs->types[i], store->types[n_gbl + i], 1);
-
-#ifdef TypTrc
-      if (trcfile != NULL) {
-         /*
-          * Trace the argument type to the call.
-          */
-         if (i > 0)
-            fprintf(trcfile, ", ");
-         prt_d_typ(trcfile, arg_typs->types[i]);
-         }
-#endif					/* TypTrc */
-
-      }
-
-   /*
-    * Get the type of the varargs part of the argument list.
-    */
-   if (proc->nargs < 0)
-      while (i < num_args) {
-         typ_deref(arg_typs->types[i],
-            compnt_array[lst_elem].store->types[proc->arg_lst], 1);
-
-#ifdef TypTrc
-         if (trcfile != NULL) {
-            /*
-             * Trace the argument type to the call.
-             */
-            if (i > 0)
-               fprintf(trcfile, ", ");
-            prt_d_typ(trcfile, arg_typs->types[i]);
-            }
-#endif					/* TypTrc */
-
-         ++i;
-         }
-
-   /*
-    * Missing arguments have the null type.
-    */
-   while (i < nparams) {
-      Vcall(set_typ(store->types[n_gbl + i], null_bit));
-      ++i;
-      }
-
-#ifdef TypTrc
-   if (trcfile != NULL)
-      fprintf(trcfile, ")\n");
-   {
-      char *trc_ind_sav = trc_indent;
-      trc_indent = "";  /* staring a new procedure, don't indent tracing */
-#endif					/* TypTrc */
-
-   /*
-    * only perform type inference on the body of a procedure
-    *  once per iteration
-    */
-   if (proc->iteration < iteration) {
-      proc->iteration = iteration;
-      s_store = succ_store;
-      f_store = fail_store;
-      sv_proc = cur_proc;
-      succ_store = cpy_store(proc->in_store);
-      cur_proc = proc;
-      sv_coexp = cur_coexp;
-      cur_coexp = NULL;     /* we are not in a create expression */
-      /*
-       * Perform type inference on the initial clause. Static variables
-       *  are initialized to null on this path.
-       */
-      for (lptr = proc->statics; lptr != NULL; lptr = lptr->next)
-         Vcall(set_typ(succ_store->types[lptr->val.index], null_bit));
-      n1 = Tree1(proc->tree);
-      if (n1->flag & CanFail) {
-         /*
-          * The initial clause can fail. Because it is bounded, we need
-          *  a new failure store that we can merge into the success store
-          *  at the end of the clause.
-          */
-         store = get_store(1);
-         fail_store = store;
-         infer_nd(n1);
-         mrg_store(store, succ_store);
-         free_store(store);
-         }
-      else
-         infer_nd(n1);
-      /*
-       * Perform type inference on the body of procedure. Execution may
-       *  pass directly to it without executing initial clause.
-       */
-      mrg_store(proc->in_store, succ_store);
-      n1 = Tree2(proc->tree);
-      if (n1->flag & CanFail) {
-         /*
-          * The body can fail. Because it is bounded, we need a new failure
-          *  store that we can merge into the success store at the end of
-          *  the procedure.
-          */
-         store = get_store(1);
-         fail_store = store;
-         infer_nd(n1);
-         mrg_store(store, succ_store);
-         free_store(store);
-         }
-      else
-         infer_nd(n1);
-      set_ret(NULL);  /* implicit fail */
-      free_store(succ_store);
-      succ_store = s_store;
-      fail_store = f_store;
-      cur_proc = sv_proc;
-      cur_coexp = sv_coexp;
-      }
-
-#ifdef TypTrc
-      trc_indent = trc_ind_sav;
-   }
-#endif					/* TypTrc */
-
-   /*
-    * Get updated types for global variables at the end of the call.
-    */
-   store = proc->out_store;
-   for (i = 0; i < n_gbl; ++i)
-      tv_cpy(succ_store->types[i], store->types[i]);
-
-   /*
-    * If the procedure can fail, merge variable types into the failure
-    *  store.
-    */
-   if (proc->ret_flag & DoesFail)
-      mrg_store(succ_store, fail_store);
-
-   /*
-    * The return type of the procedure is the result type of the call.
-    */
-   Vpp(MrgTyp(n_intrtyp, proc->ret_typ, n->type));
-   }
-
 static
 void
 infer_prc(proc, n)
@@ -2097,14 +1879,12 @@ mrg_store(src, dst)
    struct store *src;
    struct store *dst;
 {
-   int i, nints;
+   int i;
 
    if (src == NULL)
       return;
 
    i = n_gbl + n_loc - 1;
-   nints = NumInts(n_icntyp) - 1;
-
    tv_stores_or(dst, src, 0, i);
 }
 
@@ -2359,11 +2139,10 @@ methodinvok_add_implicit_self(n)
    int nargs;
    struct node * t;
    struct node * lhs;
-   struct node * rhs;
 
    nargs = Val0(n);
    lhs = Tree0(Tree1(n)); /* lhs of subordinate N_Field */
-   rhs = Tree1(Tree1(n)); /* rhs of subordinate N_Field */
+   /* rhs = Tree1(Tree1(n)); rhs of subordinate N_Field */
    if (nargs > 0 && (n->n_field[2].n_ptr->n_col == 123456789 ||
       (n->n_field[2].n_ptr->n_type == lhs->n_type &&
       n->n_field[2].n_ptr->n_field[0].n_ptr == lhs->n_field[0].n_ptr))) {
@@ -2384,6 +2163,8 @@ methodinvok_add_implicit_self(n)
    n->n_field[2].n_ptr = t;
 }
 
+#if 0
+/* This function isn't used, except for debugging */
 void
 infer_nd_in(n)
    struct node * n;
@@ -2409,6 +2190,7 @@ infer_nd_in(n)
       printf("  fld-id: \"%s\"\n", Str0(fld));
       }
 }
+#endif              /* Not used */
 
 /*
  * infer_nd - perform type inference on a subtree of the syntax tree.
@@ -3487,7 +3269,7 @@ infer_act(n)
           * Only perform type inference on the body of a co-expression
           *  once per iteration. The main co-expression has no body.
           */
-         if (coexp->iteration < iteration & coexp->n != NULL) {
+         if ((coexp->iteration < iteration) && (coexp->n != NULL)) {
             coexp->iteration = iteration;
             succ_store = cpy_store(coexp->in_store);
             fail_store = coexp->out_store;
@@ -5217,7 +4999,6 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
    int var_indx;
    int frst_bit;
    int num_bits;
-   unsigned int * rng;
    struct store * stv_stor;
 
    subtypes = 0;
@@ -5235,7 +5016,7 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
          }
       }
 #else
-   rng = tv_rng_get(typ, 0, n_icntyp, &n_set);
+   (void) tv_rng_get(typ, 0, n_icntyp, &n_set);
    if (n_set)
       subtypes |= HasVal;
    n_types += n_set;
@@ -5292,7 +5073,7 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
          continue;
       frst_bit = compnt_array[i].frst_bit;
       num_bits = compnt_array[i].num_bits;
-      rng = tv_rng_get(typ, frst_bit, frst_bit + num_bits - 1, &n_set);
+      (void) tv_rng_get(typ, frst_bit, frst_bit + num_bits - 1, &n_set);
       if (n_set)
          subtypes |= HasGlb;
       n_types += n_set;
@@ -5310,7 +5091,7 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
          }
       }
 #else
-   rng = tv_rng_get(typ, frst_fld, frst_fld + n_fld - 1, &n_set);
+   (void) tv_rng_get(typ, frst_fld, frst_fld + n_fld - 1, &n_set);
    if (n_set)
       subtypes |= HasGlb;
    n_types += n_set;

@@ -100,8 +100,8 @@ int		cplist2realarray(dptr dp, dptr dp2, word i, word j,
 #endif					/* Arrays */
 int		bfunc		(void);
 struct b_proc	*bi_strprc	(dptr s, C_integer arity);
-#if __clang__
-/* Stop clang from warning "control may reach end of non-void function" when calling this function */
+#if __clang__ || __GNUC__
+/* Stop clang and gcc from warning "control may reach end of non-void function" when calling this function */
 void		c_exit		(int i)  __attribute__ ((noreturn,nothrow));
 #else
 void		c_exit		(int i);
@@ -244,12 +244,12 @@ int		equiv		(dptr dp1,dptr dp2);
 int		err		(void);
 void		err_msg		(int n, dptr v);
 void		error		(char *s1, char *s2);
-#if __clang__
-/* Stop clang from warning "control may reach end of non-void function" when calling this function */
+#if __clang__ || __GNUC__
+/* Stop clang and gcc from warning "control may reach end of non-void function" when calling this function */
 void		fatalerr 	(int n,dptr v) __attribute__ ((noreturn,nothrow));
 #else
 void		fatalerr	(int n,dptr v);
-#endif /* __clang__ */
+#endif /* __clang__ || __GNUC__ */
 int		findcol		(word *ipc_in);
 char		*findfile	(word *ipc_in);
 #ifdef MultiProgram
@@ -410,12 +410,12 @@ void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp);
 void		segvtrap	(void);
 void		stkdump		(int);
 word		sub		(word a,word b, int *over_flowp);
-#if __clang__
-/* Stop clang from warning "control may reach end of non-void function" when calling this function */
+#if __clang__ || __GNUC__
+/* Stop clang and gcc from warning "control may reach end of non-void function" when calling this function */
 void		syserr		(char *s) __attribute__ ((noreturn,nothrow));
 #else
 void		syserr		(char *s);
-#endif /* __clang__ */
+#endif /* __clang__ || __GNUC__ */
 struct b_coexpr	*topact		(struct b_coexpr *ce);
 void		xmfree		(void);
 #ifdef MultiProgram

@@ -8,8 +8,7 @@ include $(TOPDIR)/Makedefs
 
 # Common components.
 
-all: Common Icont Iconx $(WICONTTARGET) $(WICONXTARGET) $(ICONCTARGET)
-
+all: Common Icont iyacc Iconx $(WICONTTARGET) $(WICONXTARGET) $(ICONCTARGET)
 
 Common: libs
 	$(MAKE) -C common
@@ -26,6 +25,10 @@ gdbm:
 
 xpm:
 	$(MAKE) -C xpm/lib
+
+
+iyacc: Icont
+	$(MAKE) -C iyacc
 
 # The interpreter: icont and iconx.
 
@@ -59,7 +62,7 @@ FreshIconc:
 	$(MAKE) -C iconc
 	$(MAKE) -C common doincl
 
-.PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm libs
+.PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm iyacc libs
 
 clean Clean:
 	cd iconc;	$(RM) *.o $(UNICONC)$(EXE)

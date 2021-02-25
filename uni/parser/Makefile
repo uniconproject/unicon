@@ -1,8 +1,6 @@
 BASE=../..
 include $(BASE)/Makedefs.uni
 
-IYACC=$(UNI)/iyacc/iyacc
-
 .PHONY: all clean deps
 
 UFILES=classinfo.u databaseinfo.u packageinfo.u parsedclass.u \

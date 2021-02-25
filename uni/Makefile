@@ -5,14 +5,11 @@ default: all
 include $(TOPDIR)/Makedefs
 include $(TOPDIR)/Makedefs.uni
 
-.PHONY: all iyacc unicon lib xml gui
+.PHONY: all unicon lib xml gui
 
 all: nographics $(GRAPHICS)  $(UDBTOOLS)
 
-iyacc:
-	cd iyacc; $(MAKE)
-
-unicon: iyacc
+unicon:
 	cd unicon; $(MAKE)
 
 lib: unicon

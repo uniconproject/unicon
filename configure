@@ -755,6 +755,7 @@ enable_audio
 enable_voip
 enable_plugins
 enable_iconc
+enable_stdc
 enable_iconcurrency
 enable_ovld
 enable_udbtools
@@ -1432,14 +1433,15 @@ Optional Features:
   --disable-audio         No audio support
   --disable-voip          No VOIP support
   --disable-plugins       No loadfunc or plugins support
-  --disable-iconc         Build Unicon Compiler (Iconc/Uniconc)
-  --enable-iconcurrency   enable thread support in Unicon Compiler
-  --enable-ovld           enable operator overloading
-  --enable-udbtools       enable Unicon debugger tools
-  --enable-progs          enable Unicon programs
+  --disable-iconc         Don't build Unicon Compiler (Iconc/Uniconc)
+  --disable-stdc          Disable the default std C compiler option
+  --enable-iconcurrency   Enable thread support in Unicon Compiler
+  --enable-ovld           Enable operator overloading
+  --enable-udbtools       Enable Unicon debugger tools
+  --enable-progs          Enable Unicon programs
   --enable-verbosebuild   Show full CC build lines with all compiler arguments
   --enable-doc            Add makefile rule to build documentation
-  --enable-htmldoc        ADd makefile rule to html documentation
+  --enable-htmldoc        Add makefile rule to html documentation
   --enable-thin           Do a minimalist build disabling non critical
                           features
   --enable-debug          Add debugging symbols
@@ -3114,6 +3116,15 @@ else
   iconc=on
 fi
 
+
+# Check whether --enable-stdc was given.
+if test "${enable_stdc+set}" = set; then :
+  enableval=$enable_stdc; stdc=$enableval
+else
+  stdc=on
+fi
+
+
 # Check whether --enable-iconcurrency was given.
 if test "${enable_iconcurrency+set}" = set; then :
   enableval=$enable_iconcurrency; coniconc=yes
@@ -4469,9 +4480,11 @@ $as_echo "$ac_cv_safe_to_define___extensions__" >&6; }
   $as_echo "#define _TANDEM_SOURCE 1" >>confdefs.h
 
 
-# Try CC 99
+# Try CC 11
 ac_cc="$CC"
-{
+
+if  test "x$stdc" = "xon" ; then
+   {
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4515,6 +4528,107 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
+else
+   if test "x$stdc" = "xyes" ; then
+      {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -std=c11"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=c11" >&5
+$as_echo_n "checking whether $CC supports -std=c11... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				 CFLAGS="$CFLAGS -std=c11"
+
+
+else
+
+			CFLAGS="$ac_c_flag_save"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+			as_fn_error $? "\"-std=c11 is required but not available\"" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+   else
+      if ! test "x$stdc" = "xno" ; then
+         {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -std=$stdc"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=$stdc" >&5
+$as_echo_n "checking whether $CC supports -std=$stdc... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				 CFLAGS="$CFLAGS -std=$stdc"
+
+
+else
+
+			CFLAGS="$ac_c_flag_save"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+			as_fn_error $? "\"-std=$stdc is required but not available\"" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+      fi
+   fi
+fi
 
 # try to add -m32 or -m64
 ARCHFLAG="-m$ARCHBITS"

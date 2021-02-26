@@ -89,7 +89,7 @@ rtdb.$(O): ../h/version.h icontype.h
 drawstring3d.$(O): drawstring3d.cc
 	@if test "`which $(CXX)`" != "" ; then \
 		echo "Got C++, building drawstring3d.o"; \
-		$(CXX) -c $(CPPFLAGS) $(CFLAGS) -I/usr/include/freetype2 -I/opt/X11/include/freetype2 -o drawstring3d.o drawstring3d.cc; \
+		$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) -I/usr/include/freetype2 -I/opt/X11/include/freetype2 -o drawstring3d.o drawstring3d.cc; \
 	else \
 		echo "No C++, too bad"; \
 		echo "extern void syserr(char*); int cpp_drawstring3d(double x, double y, double z, char *s, char *f, int t, int size, void **tfont) { syserr(\"no C++; it is required for 3d fonts\"); return -1; } " > drawstring3d.c ; \

@@ -128,21 +128,26 @@ AC_ARG_ENABLE([plugins],
 			[plugins=$enableval], [plugins=on])
 
 AC_ARG_ENABLE([iconc],
-	[AS_HELP_STRING([--disable-iconc], [Build Unicon Compiler (Iconc/Uniconc)])],
+	[AS_HELP_STRING([--disable-iconc], [Don't build Unicon Compiler (Iconc/Uniconc)])],
 			[iconc=$enableval], [iconc=on])
+
+AC_ARG_ENABLE([stdc],
+	[AS_HELP_STRING([--disable-stdc], [Disable the default std C compiler option])],
+			[stdc=$enableval], [stdc=on])
+
 AC_ARG_ENABLE([iconcurrency],
-	[AS_HELP_STRING([--enable-iconcurrency], [enable thread support in Unicon Compiler])],
+	[AS_HELP_STRING([--enable-iconcurrency], [Enable thread support in Unicon Compiler])],
 			[coniconc=yes], [coniconc=no])
 AC_ARG_ENABLE([ovld],
-	[AS_HELP_STRING([--enable-ovld], [enable operator overloading])],
+	[AS_HELP_STRING([--enable-ovld], [Enable operator overloading])],
 			[ovld=yes], [ovld=no])
 
 AC_ARG_ENABLE([udbtools],
-	[AS_HELP_STRING([--enable-udbtools], [enable Unicon debugger tools])],
+	[AS_HELP_STRING([--enable-udbtools], [Enable Unicon debugger tools])],
 			[udbtools=yes], [udbtools=no])
 
 AC_ARG_ENABLE([progs],
-	[AS_HELP_STRING([--enable-progs], [enable Unicon programs])],
+	[AS_HELP_STRING([--enable-progs], [Enable Unicon programs])],
 			[progs=yes], [progs=no])
 
 AC_ARG_ENABLE([verbosebuild],
@@ -153,7 +158,7 @@ AC_ARG_ENABLE([doc],
 	[AS_HELP_STRING([--enable-doc], [Add makefile rule to build documentation])],
 			[doc=yes], [doc=no])
 AC_ARG_ENABLE([htmldoc],
-	[AS_HELP_STRING([--enable-htmldoc], [ADd makefile rule to html documentation])],
+	[AS_HELP_STRING([--enable-htmldoc], [Add makefile rule to html documentation])],
 			[htmldoc=yes], [htmldoc=no])
 
 AC_ARG_ENABLE([thin],
@@ -181,9 +186,20 @@ orig_cflags="${CFLAGS:-}"
 CFLAGS=""
 AC_LANG([C])
 AC_USE_SYSTEM_EXTENSIONS
-# Try CC 99
+# Try CC 11
 ac_cc="$CC"
-AC_CFLAG([-std=c11])
+
+if  test "x$stdc" = "xon" ; then
+   AC_CFLAG([-std=c11])
+else
+   if test "x$stdc" = "xyes" ; then
+      AC_CFLAG([-std=c11],[AC_MSG_ERROR("-std=c11 is required but not available")], [ CFLAGS="$CFLAGS -std=c11" ])
+   else
+      if ! test "x$stdc" = "xno" ; then
+         AC_CFLAG([-std=$stdc],[AC_MSG_ERROR("-std=$stdc is required but not available")], [ CFLAGS="$CFLAGS -std=$stdc" ])
+      fi
+   fi
+fi
 
 # try to add -m32 or -m64
 ARCHFLAG="-m$ARCHBITS"

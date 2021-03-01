@@ -65,6 +65,9 @@ FreshIconc:
 .PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm iyacc libs
 
 clean Clean:
+	if [ -f iyacc/Makefile ] ; then \
+		cd iyacc; $(MAKE) Clean;\
+	fi
 	cd iconc;	$(RM) *.o $(UNICONC)$(EXE)
 	cd common;	$(RM) *.o doincl$(EXE) patchstr$(EXE)
 	cd preproc;	$(RM) *.o pp$(EXE)

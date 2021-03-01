@@ -555,8 +555,7 @@ struct fontsymbol {
 //#define CWIDTH 0.25
 //#define CNEAR 0.25
 //#define CFAR 50000.0
-//#define CHEIGHT(w) \
-//  (CWIDTH*((double)w->window->height)/((double)w->window->width))
+//#define CHEIGHT(w) (CWIDTH*((double)w->window->height)/((double)w->window->width))
 
 #define CNEAR 0.25
 #define CFAR 50000.0

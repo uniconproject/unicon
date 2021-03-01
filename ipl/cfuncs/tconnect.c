@@ -44,6 +44,7 @@
 
 #include "icall.h"
 
+#define h_addr h_addr_list[0] /* for backward compatibility */
 
 int tconnect(int argc, descriptor *argv)	/*: connect to TCP socket */
    {

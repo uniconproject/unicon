@@ -41,9 +41,6 @@ graphics: gui
 	cd 3d; $(MAKE)
 
 clean Clean Pure:
-	if [ -f iyacc/Makefile ] ; then \
-		cd iyacc; $(MAKE) Clean;\
-	fi
 	cd unicon && $(MAKE) Clean
 	cd udb && $(MAKE) Clean
 	cd udb && $(MAKE) cleantools

@@ -11,24 +11,24 @@
 # and/or utr18.pdf.
 #
 
-all: utr9c.html utr18.pdf utr22.pdf
+FILES=utr3.pdf utr15.pdf utr16.pdf utr18.pdf utr19.pdf utr22.pdf utr20.pdf
+
+all: $(FILES)
+
+htmlean: htmlean.icn
+	unicon htmlean.icn
+
 
 utr9c.html: utr9c.pdf htmlean
 	pdftohtml -noframes utr9c.pdf
 	./htmlean utr9c.html
 
-htmlean: htmlean.icn
-	unicon htmlean
-
-utr18.pdf: utr18.tex
-	pdflatex utr18
-
 utr9c.pdf: utr9.tex
-	pdflatex utr9
+	pdflatex utr9.tex
 	mv utr9.pdf utr9c.pdf
 
-utr20.pdf: utr20.tex
-	pdflatex utr20
+%.pdf: %.tex
+	pdflatex $<
 
-utr22.pdf: utr22.tex
-	pdflatex utr22
+clean:
+	rm -f  utr*.png utr*.jpg *.log *.out htmlean $(FILES)

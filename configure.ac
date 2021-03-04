@@ -441,6 +441,16 @@ AC_SUBST(ICONCTARGET)
 AC_SUBST(UDBTOOLS)
 AC_SUBST(UNIPROGS)
 
+if test "x$doc" = "xyes"; then
+   UDOC=doc
+fi
+
+if test "x$htmldoc" = "xyes"; then
+   HTMLDOC=htmldoc
+fi
+
+AC_SUBST(UDOC)
+AC_SUBST(HTMLDOC)
 
 # Do we have rdynamic?
 #AC_LANG_PUSH(C)
@@ -709,7 +719,6 @@ test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 AC_SUBST(JV_LDFLAGS)
 AC_SUBST(GL_CFLAGS)
 AC_SUBST(GL_LDFLAGS)
-
 
 AC_SUBST(prefix)
 AC_SUBST(exec_prefix)

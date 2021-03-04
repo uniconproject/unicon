@@ -30,5 +30,5 @@ utr9c.pdf: utr9.tex
 %.pdf: %.tex
 	pdflatex $<
 
-clean:
+Clean clean:
 	rm -f  utr*.png utr*.jpg *.log *.out htmlean $(FILES)

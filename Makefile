@@ -22,6 +22,8 @@ default_target: allsrc
 	$(MAKE) -C ipl/lib
 	$(MAKE) -C uni
 	$(MAKE) -C plugins
+	$(MAKE) docrule
+	$(MAKE) htmldocrule
 	@echo ============ Build Features ============ > unicon-features.log
 	bin/unicon -features >> unicon-features.log
 	@echo ======================================== >> unicon-features.log
@@ -29,7 +31,7 @@ default_target: allsrc
 	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
 
-.PHONY: plugins update_rev
+.PHONY: plugins update_rev doc
 
 Makedefs: Makedefs.in configure
 	sh configure
@@ -186,6 +188,17 @@ Ibin:		bin/icont
 
 plugins:
 		$(MAKE) -C plugins
+
+# Documentation
+
+docrule: $(UDOC)
+doc:
+		$(MAKE) -C doc
+
+htmldocrule: $(HTMLDOC)
+htmldoc:
+		@echo "build class library html documentation"
+
 
 ##################################################################
 #

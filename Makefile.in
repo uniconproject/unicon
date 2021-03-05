@@ -22,6 +22,8 @@ default_target: allsrc
 	$(MAKE) -C ipl/lib
 	$(MAKE) -C uni
 	$(MAKE) -C plugins
+	$(MAKE) docrule
+	$(MAKE) htmldocrule
 	@echo ============ Build Features ============ > unicon-features.log
 	bin/unicon -features >> unicon-features.log
 	@echo ======================================== >> unicon-features.log
@@ -29,7 +31,7 @@ default_target: allsrc
 	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
 
-.PHONY: plugins update_rev
+.PHONY: plugins update_rev doc
 
 Makedefs: Makedefs.in configure
 	sh configure
@@ -186,6 +188,18 @@ Ibin:		bin/icont
 
 plugins:
 		$(MAKE) -C plugins
+
+# Documentation
+
+docrule: $(UDOC)
+doc:
+		$(MAKE) -C doc
+
+htmldocrule: $(HTMLDOC)
+htmldoc:
+		@echo ""
+		@echo "TODO: Build class library html documentation"
+		@echo ""
 
 ##################################################################
 #
@@ -415,6 +429,7 @@ clean Clean:
 		cd src;			$(MAKE) Clean
 		cd tests;		$(MAKE) Clean
 		cd plugins;		$(MAKE) Clean
+		cd doc;			$(MAKE) Clean
 
 distclean:
 		touch Makedefs Makedefs.uni
@@ -424,8 +439,10 @@ distclean:
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) distclean
 		cd plugins;		$(MAKE) Pure
+		cd doc;			$(MAKE) Clean
 		rm -f src/common/rswitch.[csS]
-		$(RM) config.status config.cache config.log
+		$(RM) config.status config.cache
+		$(RM) config.log unicon-config.log
 
 
 Pure:
@@ -436,17 +453,14 @@ Pure:
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
 		cd plugins;		$(MAKE) Pure
+		cd doc;			$(MAKE) Clean
 		rm -f src/common/rswitch.[csS]
 #		rm -f Makedefs Makedefs.uni
 		$(RM) config.status config.cache config.log
+		$(RM) config.log unicon-config.log
 
 #		rm -f \#*# *~ .#*
 #		rm -f */#*# */*~ */.#*
 #		rm -f */*/#*# */*/*~ */*/.#*
 #		rm -f */*/*/#*# */*/*/*~ */*/*/.#*
 
-#  (This is used at Arizona to prepare source distributions.)
-
-Dist-Clean:
-		rm -rf `find * -type d -name CVS`
-		rm -f `find * -type f | xargs grep -l '<<ARIZONA-[O]NLY>>'`

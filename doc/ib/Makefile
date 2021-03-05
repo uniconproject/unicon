@@ -92,10 +92,11 @@ idxtmp:
 	test ! -d idxtmp && mkdir idxtmp
 	(cd ..; tar -c -f - --exclude '*idxtmp*' *.sty ib/* ) | (cd idxtmp; tar -x -f - )
 
-CLEAN:
-	rm -f *.aux *.log ib.ind
-	rm -rdf idxtmp
 
 # Temporary development aid: Just run idxGen with maximum output
 indexrun:
 	../../uni/progs/idxGen -V -Dir idxtmp/ib -wait 30  -float *.tex
+
+Clean clean:
+	rm -f *.aux *.log ib.ind
+	rm -rdf idxtmp

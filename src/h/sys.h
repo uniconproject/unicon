@@ -316,6 +316,10 @@
    void *dlopen(char *, int); /* LoadLibrary */
    void *dlsym(void *, char *sym); /* GetProcAddress */
    int dlclose(void *); /* FreeLibrary */
+#ifndef RTLD_LAZY	/* normally from <dlfcn.h> */
+#define RTLD_LAZY 1
+#endif					/* RTLD_LAZY */
+
 #else					/* NT */
    #include <dlfcn.h>
 #endif					/* NT */

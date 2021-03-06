@@ -150,9 +150,21 @@ int getvar(s,vp)
          return Succeeded;
          }
       else if (strcmp(s,"&random") == 0) {
+#ifdef RngLibrary
+        if (curtstate->rng == NULL) {
+          vp->dword = D_Kywdint; /* Built-in generator */
+          VarLoc(*vp) = &kywd_ran;
+          return Succeeded;
+        } else {
+          vp->dword = D_Intarray | F_RngState | F_Var; /* RNG library */
+          VarLoc(*vp) = kywd_ran.vword.descptr;
+          return Succeeded;
+        }
+#else
          vp->dword = D_Kywdint;
          VarLoc(*vp) = &kywd_ran;
          return Succeeded;
+#endif					/*RngLibrary */
          }
       else if (strcmp(s,"&subject") == 0) {
          vp->dword = D_Kywdsubj;

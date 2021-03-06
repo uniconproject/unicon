@@ -54,6 +54,13 @@ extern struct descrip onedesc;	/* one */
 extern struct descrip ucase;	/* uppercase string */
 extern struct descrip zerodesc;	/* zero */
 
+#ifdef RngLibrary
+extern struct rnglibchain *rngDefInfo;  /* Default properties of RNG */
+extern word rngIconId;
+extern struct descrip rngIconName;
+extern struct b_cons *rngLibs;          /* chain of loaded libraries */
+#endif					/* RngLibrary */
+
 extern word mstksize;		/* size of main stack in words */
 extern word stksize;		/* size of co-expression stacks in words */
 extern word qualsize;		/* size of string qualifier list */

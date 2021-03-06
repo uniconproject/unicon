@@ -1,0 +1,61 @@
+################################################################################
+# 
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+################################################################################
+#
+#    A simple speed test to see how fast a generator is.
+#    usage:  time ./rngSpeed rnglib iterations
+#            (add a third parameter to measure the loop overhead).
+#
+#    The actual values returned by time may not be all that useful, but the
+#    relative differences between different rnglibs should be illuminating.
+# 
+#    Don Ward
+#    August 2019
+#
+################################################################################
+
+procedure main(args)
+$ifdef _RNG_LIBRARY
+   local rng := args[1] | "rngIcon"    # Default generator is the built-in one.
+   local limit := args[2] | 10000000   # Default number of iterations
+   local total := 0.0
+   local percentFromPerfect
+
+   loadrng(rng)
+
+   # It would be nice to set the initial seed (via an assignment to &random)
+   # so repeatable sequences are generated.
+   # 
+   # But the disadvantage of explicitly setting a value to &random in a 
+   # test program like this is that the values needed will vary between
+   # generators; there is no one "good value" that fits all generators.
+   # 
+   # Not initializing &random means that the generator has to initialize its
+   # own state, which works for all generators, but with the downside that
+   # the sequences are not repeatable.
+
+   if \args[3] then { # just the loop overhead
+      every 1 to limit do { total +:= 0.5 }
+   } else {
+      every 1 to limit do { total +:= ?0 }
+   }
+
+   write(loadrng(), " : total = ", total)
+
+   if limit >= 100000 then {
+      # Complain if the total isn't close to 50% of the limit.
+      percentFromPerfect :=  abs(total + total - limit)/(0.0 + limit)
+      if percentFromPerfect >= 0.01 then {
+         write(loadrng(), 
+               " isn't looking good (", 
+               integer(100.0*percentFromPerfect), "% from the ideal value)")
+      }
+   }
+$else
+   write(&errout, "RNG libraries are not available")
+$endif
+end

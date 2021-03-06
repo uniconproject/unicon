@@ -606,6 +606,30 @@ int region;
    markblock(&k_main);
    markblock(&k_current);
 
+#ifdef RngLibrary
+   /* GC doesn't know about any descriptors in the T_External blocks.           */
+   /* NB. walk the chain of loaded libraries *before* marking the chain itself  */
+   /* (because, after marking the chain, the pointers are all backwards).       */
+   {
+     struct b_cons *rl;
+     struct rnglibchain *rngp;
+     for (rl = rngLibs; rl != NULL; rl = (struct b_cons *)(rl->next)) {
+       rngp = (struct rnglibchain *) rl->data;
+       postqual(&rngp->info.name);
+     }
+   }
+   
+   /*
+    * Mark the chain of loaded rng libraries.  GC will follow 
+    * the chain and mark each b_cons and the T_External block.
+    */
+   if (rngLibs) markptr((union block **) &rngLibs);
+
+   /*  Add the default rng pointer to the basis */
+   if (rngDefInfo != NULL) {
+     markptr((union block **) &rngDefInfo);
+   }
+#endif					/* RngLibrary */
 
    /*
     * Mark &subject and the cached s2 and s3 strings for map.
@@ -782,6 +806,11 @@ static void markthread(struct threadstate *tcp)
    if(!is:null(tcp->Kywd_ran)) {
       PostDescrip(tcp->Kywd_ran);
       }
+#ifdef RngLibrary
+   if (tcp->rng != NULL) {
+     markptr((union block **)&(tcp->rng));
+   }
+#endif					/* RngLibrary */
    if(!is:null(tcp->K_current)) {
       PostDescrip(tcp->K_current);
       }

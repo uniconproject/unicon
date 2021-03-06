@@ -744,6 +744,7 @@ end
 
 "&random - a variable containing the current seed for random operations."
 keyword{1} random
+#ifndef RngLibrary
    abstract {
       return kywdint
       }
@@ -751,9 +752,22 @@ keyword{1} random
 #if !ConcurrentCOMPILER
       /* plausible to omit is there is only one program, one seed */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                  /* !ConcurrentCOMPILER */
       return kywdint(&kywd_ran);
       }
+#else
+   abstract {
+     return any_value
+     }
+   inline {
+    CURTSTATE();
+    if (curtstate->rng == NULL) {
+      return kywdint(&kywd_ran);
+    } else {
+       return curtstate->Kywd_ran;
+    }
+   }
+#endif					/* RngLibrary */
 end
 
 "&regions - generates regions sizes"

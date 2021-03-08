@@ -1,0 +1,524 @@
+################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+# It uses source code that is copyrighted by the IETF trust.
+# See the file ../RFC6234/sha.h for the conditions governing the redistribution
+# and use of that code.
+#
+# Note that the original RFC6234 source code has been modified to be
+# thread-safe. The original code may be used by compiling it with the
+# ORIGINAL_SHA_CODE_NOT_THREAD_SAFE symbol defined.
+#
+################################################################################
+#
+#    Test Code for the SecureHash plugin
+#
+#    Don Ward
+#    June 2019
+#
+#    March 2021         Added Raw output
+#
+################################################################################
+import SecureHash
+link options
+
+global passes          # No. of tests that passed
+global failures        # No. of tests that failed
+global quiet           # Suppress normal output if \quiet
+global veryQuiet       # Suppress all output if \veryQuiet
+global verbose
+
+global Tests           # The set of known tests
+
+#-------------------------------------------------------------------------------
+procedure main(args)
+   local opt := options(args,
+                        "-q -Q -? -help -trace, -Verbose -verbose",
+                        usage)
+   local test
+
+#-------------------- Initialisation & option processing
+   if \opt["help"] | \opt["?"] then usage()
+
+   Tests := set ("SecureHash", "Defaults", "GrandSlam", "Errors", "Raw", "SelfTest",
+                 "GC", "LSOF")
+   passes := failures := 0
+
+   if \opt["Verbose"] | \opt["verbose"] then verbose := 1
+   else {
+      if \opt["q"] then quiet := 1
+      if \opt["Q"] then veryQuiet := quiet := 1
+   }
+
+   # hidden debug option
+   if \opt["trace"] then &trace := -1
+
+   # Sanity check: if the character set isn't ASCII, nothing will work.
+   # The Sha routine will still work but, because it's being given different
+   # character values to digest, all of the answers (except NULL) will be different.
+   if Verify {"ASCII character set:", char(16R41) == "A" } then {
+
+      # Workaround for Bus error:10 on macOS
+      # (if the very first use of loadfunc() is not in the main coroutine
+      #  bad things happen)
+      ShaFunction()
+
+#-------------------- Perform the specified tests
+      if Verify {"Some tests specified:", *args > 0} then {
+         every test := !args do {
+            if test == "All" then {
+               if Verify {"\"All\" must be the only test:", *args = 1 } then {
+                  every doTest("LSOF" ~== !Tests)
+               } else {
+                  break # abort further testing
+                  }
+            } else {
+               if Verify { test || " is a valid test:", member(Tests, test) } then {
+                  doTest(test)
+               }
+            }
+         }
+      }
+   }
+
+   Assert{"Secure Hash Plugin Test", failures = 0 }
+   if \veryQuiet then {
+      if failures > 0 then write(&errout, "Passes = ", passes, " Failures = ", failures)
+   } else if /quiet then write(&errout, "Passes = ", passes, " Failures = ", failures)
+
+   return failures = 0
+end
+
+record fml (first, middle, last)
+
+#-------------------------------------------------------------------------------
+procedure doTest(test)
+   local sh
+   local failcount := failures   # get initial failure count
+   local mySet, myTable, myThread
+   local SHA1abc := "A9993E364706816ABA3E25717850C26C9CD0D89D"
+   local SHA1Null := "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709"
+   local ans
+   local n, hex
+
+   static testNumber
+   initial { testNumber := 0 }
+
+   if /quiet then write(test, " test:")
+   testNumber +:= 1
+   case test of {
+      default: {
+         write(&errout, "Program error: unknown test \"", test, "\"")
+         Fail()
+      }
+
+      # This doesn't exercise the underlying RFC6234 routines much; it's more
+      # to do with testing the "added value" of the Sha routine (dealing with
+      # lists, files and records etc.).
+      "SecureHash": {
+         sh := SecureHash("SHA1"); Verify{"SecureHash initialisation", \sh}
+         # Make sure that More by itself doesn't affect the state
+         Verify{"sh.Sha(More)", /sh.Sha(More)}
+         Verify{"sh.Sha(More)", /sh.Sha(More)}
+         Verify{ "Sha(\"abc\")", \sh.Sha("abc") == SHA1abc }
+         Verify{"No input", \sh.Sha() == SHA1Null }
+         Verify{"sh.Sha( ..., More)", /sh.Sha("a","b", More) }
+         Verify{"additional parameters", \sh.Sha("c") == SHA1abc }
+         # csets enumerate in the natural order
+         Verify{ "Sha(\"abc\") == Sha('abc')", \sh.Sha("abc") == \sh.Sha('abc') }
+         # Test that parameters go together nicely
+         Verify{ "Sha(\"abc\") == Sha(\"a\",\"b\",\"c\")",
+                   \sh.Sha("abc") == \sh.Sha("a", "b", "c") }
+         # Test that Lists work as expected, including lists of lists and empty lists
+         # ***** This code causes Bus error 10 on macOS
+         # Verify { "Sha(\"abcdefghijkl\")", \sh.Sha("abcdefghijkl") ==
+         #            \sh.Sha("a", ["b", "c"], [["d", "e", ["f"], "g"], "h", "i"],
+         #                    "j", "k", ["l"], [], [[[]]]) }
+         # ***** This code doesn't
+         ans := \sh.Sha("a", ["b", "c"], [["d", "e", ["f"], "g"], "h", "i"],
+                        "j", "k", ["l"], [], [[[]]])
+         Verify { "Sha(\"abcdefghijkl\")", \sh.Sha("abcdefghijkl") == \ans }
+         # Test that file parameters work
+         Verify { "Sha( abc.txt )", \sh.Sha(open("./abc.txt", "r")) == SHA1abc }
+         # Test that records work
+         Verify { "Sha( record(\"a\",\"b\",\"c\"))", \sh.Sha(fml("a","b","c")) == SHA1abc }
+         # Test that lists of records work
+         Verify { "Sha(\"abcabcabc\")",
+                    \sh.Sha("abcabcabc") ==
+                    \sh.Sha("ab", "c", [fml("ab", "ca", "b"), "c"]) }
+         # Test that a partial octet works. The return value is "borrowed"
+         # from the Grand-Slam test.
+         Verify { "Final 5", \sh.Sha(Final(5), "\x98") ==
+                    "29826B003B906E660EFF4027CE98AF3531AC75BA" }
+         # Test that More() works
+         Verify { "Sha(\"More() works\")", \sh.Sha("More() works") ==
+                    (/sh.Sha("More(", More()) & \sh.Sha(") w", "orks")) }
+         # Test that null parameters and empty strings don't upset things.
+         Verify{ "Nulls and empty strings", \sh.Sha("a","","b",,&null,"c") == SHA1abc }
+         # Test that Final8 and Final(8) work as expected
+         Verify{ "Final8", \sh.Sha("ab",Final8,"c") == SHA1abc }
+         Verify{ "Final(8)", \sh.Sha("ab",Final(8),"c") == SHA1abc }
+         # Note that in this test Final8 actually selects more than 8 bits, as intended.
+         Verify{ "Sha(... Final8, x) == Sha(...,x)",
+                   \sh.Sha("a",Final8,"bc") == \sh.Sha("a", "bc") == SHA1abc }
+         # Test that Final0 and Final(0) work
+         Verify{ "Final0", \sh.Sha("a","b","c", Final0, "d") == SHA1abc }
+         Verify{ "Final(0)", \sh.Sha("a","b","c", Final(0), "d") == SHA1abc }
+         # Test the Final function and its inverse _laniF
+         # Note that _laniF is not really part of the public interface
+         Verify{ "F0", (Final(0) === Final0 ) & (_laniF(Final0) = 0) }
+         Verify{ "F1", (Final(1) === Final1 ) & (_laniF(Final1) = 1) }
+         Verify{ "F2", (Final(2) === Final2 ) & (_laniF(Final2) = 2) }
+         Verify{ "F3", (Final(3) === Final3 ) & (_laniF(Final3) = 3) }
+         Verify{ "F4", (Final(4) === Final4 ) & (_laniF(Final4) = 4) }
+         Verify{ "F5", (Final(5) === Final5 ) & (_laniF(Final5) = 5) }
+         Verify{ "F6", (Final(6) === Final6 ) & (_laniF(Final6) = 6) }
+         Verify{ "F7", (Final(7) === Final7 ) & (_laniF(Final7) = 7) }
+         Verify{ "F8", (Final(8) === Final8 ) & (_laniF(Final8) = 8) }
+      }
+
+      # Test default values
+      "Defaults": {
+
+         Verify{"Initial default SHA function", "SHA512" == ShaFunction() }
+         Verify{"Set default to SHA1", ShaFunction("SHA1") }
+         Verify{"New default is SHA1", "SHA1" == ShaFunction() }
+
+         sh := SecureHash(); Verify{"SecureHash initialisation", \sh}
+         Verify{"Default Sha function is new default", sh.shaF == "SHA1"}
+         # test that it really is SHA1
+         Verify{"Sha(\"abc\")", sh.Sha("abc") == SHA1abc }
+
+         Verify{"Set default to SHA512", ShaFunction("SHA512") }
+         Verify{"New default is SHA512", "SHA512" == ShaFunction() }
+         Verify{"Restart()", sh.Restart()}
+         # test that it is still SHA1, not SHA512
+         Verify{"Sha(\"abc\") uses SHA1", sh.Sha("abc") == SHA1abc }
+
+         Verify{"Restart(SHA224)", sh.Restart("SHA224") }
+         # test that it is now using SHA224, not SHA512
+         Verify{"Sha(\"abc\") uses SHA224",
+                   sh.Sha("abc") == "23097D223405D8228642A477BDA255B32AADBCE4BDA0B3F7E36C9DA7" }
+      }
+
+
+      # Give the underlying RFC6324 routines a reasonable workout.
+      "GrandSlam": {
+         GrandSlamTest()
+      }
+
+      # Check the error detection of the SecureHash.Sha method
+      "Errors": {
+         # Initialise some illegal parameter types to Sha()
+         # The thread isn't intended to run, just be a valid thread type.
+         myThread := thread (wait(mutex()) & write(&errout, "THIS SHOULDN'T HAPPEN!"))
+         mySet := set(1,2,3)
+         myTable := table()
+         myTable[42] := 42
+
+         Verify{ "Create illegal parameter types", \mySet & \myThread & \myTable }
+
+         sh := SecureHash("SHA1"); Verify{"SecureHash initialisation", \sh}
+
+         # Every call of Sha is expected to fail
+         Verify{"Unknown procedure", not sh.Sha(Pass) }
+         Verify{"Co-expression parameter", not sh.Sha( create 1) }
+         Verify{"Thread parameter", not sh.Sha(myThread) }
+         Verify{"Table parameter", not sh.Sha(myTable) }
+         Verify{"Set parameter", not sh.Sha(mySet) }
+
+         # The underlying SHA routines shouldn't have been called by any of the above
+         # so it should still be "open for business". Sha should produce a hash of the
+         # null string and also not fail thereafter
+         Verify{"Blank parameter after failures", sh.Sha()==SHA1Null } # note lack of not
+         Verify{"Subsequent call", sh.Sha() }
+         Verify{"Subsequent string parameter:", sh.Sha("abc") }
+
+         Verify{"Incorrect SHA function", not ShaFunction("Sha1") }
+         Verify{"More in wrong place", not sh.Sha("a", More, "bc") }
+         Verify{"Final in wrong place", not sh.Sha("a", Final(1), "b","c") }
+         Verify{"Incorrect Final Parameter(9)", not sh.Sha("ab", Final(9), "c") }
+         Verify{"Incorrect Final Parameter(-1)", not sh.Sha("ab", Final(-1), "c") }
+         Verify{"Final Parameter not a scalar", not sh.Sha("ab", Final(4), ["c"]) }
+         Verify{"Null final Parameter", not sh.Sha("ab", Final(4), ) }
+      }
+
+      # Check that "raw" output works
+      "Raw": {
+         sh := SecureHash("SHA1"); Verify{"SecureHash initialisation", \sh}
+         Verify{"Sha(\"abc\") uses SHA1", sh.Sha("abc") == SHA1abc }
+         ans := sh.Sha("abc",Raw)
+         Verify{"Sha(Raw) is accepted", \ans }
+         Verify{"Length is correct", (*ans * 2) = *SHA1abc }
+         Verify{"Sha(Raw) output is different", ans ~== SHA1abc }
+         every n := 1 to *SHA1abc by 2 do {
+            hex := integer("16R" || SHA1abc[n:n+2])
+            Verify{"Byte " || (1 + n)/2, ans[(1 + n)/2] == char(hex) }
+         }
+         Verify{"Raw may be anywhere", sh.Sha(Raw,"abc") == sh.Sha("abc",Raw) }
+         Verify{"Raw output is not persistent", sh.Sha("abc") == SHA1abc }
+      }
+
+      # Self test
+      "SelfTest": {
+         sh := SecureHash(); Verify{"SecureHash initialisation", \sh}
+         ans := sh.test()
+         Verify{"Self test", *ans = 0 }
+         every write(!ans)
+      }
+
+      # Not really a test: do a garbage collection
+      "GC": {
+         if \verbose then {
+            writes("Allocated storage =")
+            every writes(" ", &allocated)
+            write()
+
+            writes("Collections =")
+            every writes(" ", &collections)
+            write()
+         }
+
+         collect()
+      }
+
+      # Not really a test: spawn a process to run lsof and log the results
+      # (Was useful when we were running out of semaphores on macOS but,
+      #  since that has been fixed, not really relevant any more)
+      "LSOF": {
+         if \verbose then { write("waiting for lsof_log_", testNumber, " ...") }
+         system("lsof -c iconx" || " >lsof_log_" || string(testNumber))
+      }
+
+   }
+
+   return Assert{test || " test: ", failcount = failures} # i.e there are no new errors
+
+end
+
+#-------------------------------------------------------------------------------
+procedure Pass()
+   passes +:= 1
+   return # success
+end
+
+#-------------------------------------------------------------------------------
+procedure Fail()
+   failures +:= 1
+   return # success
+end
+
+#-------------------------------------------------------------------------------
+# Args must be a list with two co-expressions
+# Use like this  Assert{ "Test name", expression_for_success }
+procedure Assert(args)
+   if *args = 2 then {
+      if @args[2]
+      then {
+         Pass()
+         if /quiet then write(@args[1], " PASSED")
+         return # sucesss
+      } else {
+         Fail()
+         if /veryQuiet then write(@args[1], " FAILED")
+      }
+   } else {
+      Fail()
+      write(&errout, "Assert must have two arguments")
+   }
+   fail
+end
+
+#-------------------------------------------------------------------------------
+# Like Assert, but quiet if it passes
+procedure Verify(args)
+   if *args = 2 then {
+      if @args[2]
+      then {
+         Pass()
+         if \verbose then write(@args[1], " PASSED")
+         return # sucesss
+      } else {
+         Fail()
+         if /veryQuiet | \verbose then write(@args[1], " FAILED")
+      }
+   } else {
+      Fail()
+      write(&errout, "Verify must have two arguments")
+   }
+   fail
+end
+
+#-------------------------------------------------------------------------------
+procedure usage(s)
+   local cmd := "shaPlugTest [-q] [-Q] [-?] [-help] [-Verbose] Tests..."
+
+   if \s then {
+      write(&errout, s, " ... type \"shaPlugTest -?\" for full instructions. Briefly")
+      write(&errout, "  ", cmd)
+   } else {
+      every write(&errout,
+                  ![
+                    cmd,
+                    "",
+                    "Test the Secure Hash plugin",
+                    "",
+                    "   -q          Suppress normal (sucessful) output.",
+                    "   -Q          Suppress all output, including failures.",
+                    "   -Verbose    Lots of output. Overrides -q and -Q",
+                    "",
+                    "   All         Perform all tests in no particular order.",
+                    "          NB.  On some systems (e.g. macOs) this \"combined\"",
+                    "               test may fail due to running out of semaphores.",
+                    "               See  \"ulimit -n\" or \"launchctl\" for a palliative.",
+                    "",
+                    "   Defaults    Test default parameters.",
+                    "   Errors      Test expected errors.",
+                    "   GrandSlam   Test a subset of the RF6423 test suite,",
+                    "   SecureHash  Test the SecureHash class.",
+                    "   Raw         Test raw output.",
+                    "   GC          Perform a garbage collection.",
+                    "",
+                    "   -? -help    Produce this output.",
+                    ""
+                    ])
+   }
+   exit()
+end
+
+# ------------------------------------------------------------------------------
+# Replicate a subset of the RFC6423 tests as far as practicable
+#
+# The string values have been copy/pasted directly from ./RFC6234/shatest.c
+
+$define TEST1     "abc"
+$define TEST2_1   "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+$define TEST2_2a  "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmn"
+$define TEST2_2b  "hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
+$define TEST2_2   TEST2_2a || TEST2_2b
+
+$define TEST3     "a"  # /* 1000000 times */
+$define TEST4a    "01234567012345670123456701234567"
+$define TEST4b    "01234567012345670123456701234567"
+$define TEST4     TEST4a || TEST4b  #   /* an exact multiple of 512 bits */
+
+record ShaT (name, function, input, repeats, extraBits, nExtra, result)
+
+procedure GrandSlamTest()
+   local context, test, n
+   local sh
+   local ShaTests :=
+      [ # These tests are derived from ./RFC6234/shatest.c
+       ShaT("Test1", "SHA1", TEST1, 1, 0, 0,
+            "A9993E364706816ABA3E25717850C26C9CD0D89D"),
+       ShaT("Test2", "SHA1", TEST2_1, 1, 0, 0,
+            "84983E441C3BD26EBAAE4AA1F95129E5E54670F1"),
+       ShaT("Test3", "SHA1", TEST3, 1000000, 0, 0,
+            "34AA973CD4C4DAA4F61EEB2BDBAD27316534016F"),
+       ShaT("Test4", "SHA1", TEST4, 10, 0, 0,
+            "DEA356A2CDDD90C7A7ECEDC5EBB563934F460452"),
+       ShaT("Test5", "SHA1", "", 0, "\x98", 5,
+            "29826B003B906E660EFF4027CE98AF3531AC75BA"),
+
+       ShaT("Test6", "SHA224", TEST1, 1, 0, 0,
+            "23097D223405D8228642A477BDA255B32AADBCE4BDA0B3F7E36C9DA7"),
+       ShaT("Test7", "SHA224", TEST2_1, 1, 0, 0,
+            "75388B16512776CC5DBA5DA1FD890150B0C6455CB4F58B1952522525"),
+       ShaT("Test8", "SHA224", TEST3, 1000000, 0, 0,
+            "20794655980C91D8BBB4C1EA97618A4BF03F42581948B2EE4EE7AD67"),
+       ShaT("Test9", "SHA224", TEST4, 10, 0, 0,
+            "567F69F168CD7844E65259CE658FE7AADFA25216E68ECA0EB7AB8262"),
+       ShaT("Test10", "SHA224", "", 0, "\x68", 5,
+            "E3B048552C3C387BCAB37F6EB06BB79B96A4AEE5FF27F51531A9551C"),
+
+       ShaT("Test11", "SHA256", TEST1, 1, 0, 0,
+            "BA7816BF8F01CFEA4141" ||
+            "40DE5DAE2223B00361A396177A9CB410FF61F20015AD"),
+       ShaT("Test12", "SHA256", TEST2_1, 1, 0, 0,
+            "248D6A61D20638B8" ||
+            "E5C026930C3E6039A33CE45964FF2167F6ECEDD419DB06C1"),
+       ShaT("Test13", "SHA256", TEST3, 1000000, 0, 0,
+            "CDC76E5C9914FB92" ||
+            "81A1C7E284D73E67F1809A48A497200E046D39CCC7112CD0"),
+       ShaT("Test14", "SHA256", TEST4, 10, 0, 0,
+            "594847328451BDFA" ||
+            "85056225462CC1D867D877FB388DF0CE35F25AB5562BFBB5"),
+       ShaT("Test15", "SHA256", "", 0, "\x68", 5,
+            "D6D3E02A31A84A8CAA9718ED6C2057BE" ||
+            "09DB45E7823EB5079CE7A573A3760F95"),
+
+       ShaT("Test16", "SHA384", TEST1, 1, 0, 0,
+            "CB00753F45A35E8BB5A03D699AC65007272C32AB0EDED163" ||
+            "1A8B605A43FF5BED8086072BA1E7CC2358BAECA134C825A7"),
+       ShaT("Test17", "SHA384", TEST2_2, 1, 0, 0,
+            "09330C33F71147E83D192FC782CD1B4753111B173B3B05D2" ||
+            "2FA08086E3B0F712FCC7C71A557E2DB966C3E9FA91746039"),
+       ShaT("Test18", "SHA384", TEST3, 1000000, 0, 0,
+            "9D0E1809716474CB086E834E310A4A1CED149E9C00F24852" ||
+            "7972CEC5704C2A5B07B8B3DC38ECC4EBAE97DDD87F3D8985"),
+       ShaT("Test19", "SHA384", TEST4, 10, 0, 0,
+            "2FC64A4F500DDB6828F6A3430B8DD72A368EB7F3A8322A70" ||
+            "BC84275B9C0B3AB00D27A5CC3C2D224AA6B61A0D79FB4596"),
+       ShaT("Test20", "SHA384", "", 0, "\x10", 5,
+            "8D17BE79E32B6718E07D8A603EB84BA0478F7FCFD1BB9399" ||
+            "5F7D1149E09143AC1FFCFC56820E469F3878D957A15A3FE4"),
+
+       ShaT("Test21", "SHA512", TEST1, 1, 0, 0,
+            "DDAF35A193617ABACC417349AE20413112E6FA4E89A97EA2" ||
+            "0A9EEEE64B55D39A2192992A274FC1A836BA3C23A3FEEBBD" ||
+            "454D4423643CE80E2A9AC94FA54CA49F"),
+       ShaT("Test22", "SHA512", TEST2_2, 1, 0, 0,
+            "8E959B75DAE313DA8CF4F72814FC143F8F7779C6EB9F7FA1" ||
+            "7299AEADB6889018501D289E4900F7E4331B99DEC4B5433A" ||
+            "C7D329EEB6DD26545E96E55B874BE909"),
+       ShaT("Test23", "SHA512", TEST3, 1000000, 0, 0,
+            "E718483D0CE769644E2E42C7BC15B4638E1F98B13B204428" ||
+            "5632A803AFA973EBDE0FF244877EA60A4CB0432CE577C31B" ||
+            "EB009C5C2C49AA2E4EADB217AD8CC09B"),
+       ShaT("Test24", "SHA512", TEST4, 10, 0, 0,
+            "89D05BA632C699C31231DED4FFC127D5A894DAD412C0E024" ||
+            "DB872D1ABD2BA8141A0F85072A9BE1E2AA04CF33C765CB51" ||
+            "0813A39CD5A84C4ACAA64D3F3FB7BAE9"),
+       ShaT("Test25", "SHA512", "", 0, "\xB0", 5,
+            "D4EE29A9E90985446B913CF1D1376C836F4BE2C1CF3CADA0" ||
+            "720A6BF4857D886A7ECB3C4E4C0FA8C7F95214E41DC1B0D2" ||
+            "1B22A84CC03BF8CE4845F34DD5BDBAD4")
+       ]
+
+   sh := SecureHash()
+   every test := ! ShaTests do {
+      Verify { "Reset to " || test.function, sh.Restart(test.function) }
+      if (test.repeats = 1 & test.nExtra = 0) then { # Only one Sha call needed
+         Verify { test.name, \sh.Sha(test.input) == test.result }
+      } else {
+         # Call Sha as many times as required (including none)
+         every n := 1 to test.repeats do {
+            # On macOS, which has a small number of semaphores, this test easily exceeds the
+            # limit so we don't use Verify
+            #             Verify { test.name || "-" || n, /sh.Sha(test.input, More) }
+            if /sh.Sha(test.input,More) then {
+               Pass()
+               # Some tests have a large number of repetitions: suppress the
+               # PASSED output after the first ten.
+               if \verbose then {
+                  if n < 10 then write(test.name, "-", n, " PASSED")
+                  else if n = 10 then write(test.name, " ...")
+               }
+            } else {
+               Fail()
+               if /veryQuiet | \verbose then write(test.name, "-", n, " FAILED")
+            }
+         }
+         # Add final bits, if wanted
+         if 0 < test.nExtra then {
+            Verify { test.name || "_Final(" || test.nExtra || ")",
+                       \sh.Sha(Final(test.nExtra), test.extraBits) == test.result }
+         } else {
+            Verify { test.name, \sh.Sha() == test.result }
+         }
+      }
+   }
+end

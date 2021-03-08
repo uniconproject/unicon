@@ -1,0 +1,78 @@
+# A program to test the behaviour of loadfunc in a coroutine
+import SecureHash
+import threads
+
+procedure main(args)
+
+   if *args = 0 then { test(0) }
+   else {
+      case integer(args[1]) of {
+         0 to 3:    { test(args[1]) }
+         default: { MakePool(); Dispatch(test,args[1]); ClosePool() }
+      }
+   }
+
+end
+
+procedure Verify(args)
+    if *args = 2 then {
+        if @args[2]
+        then {
+            write(@args[1], " PASSED")
+            return # sucesss
+        } else {
+            write(@args[1], " FAILED")
+        }
+    } else {
+        write(&errout, "Verify must have two arguments")
+    }
+    fail
+end
+
+procedure UniProc()
+   local f
+   f := ShaFunction()
+   return f
+end
+
+procedure test(arg)
+   case integer(arg) of {
+      0: {
+         write("first loadfunc in main coroutine ...")
+         write("Default sha function is ", ShaFunction())
+         Verify{"Default is SHA512", "SHA512" == ShaFunction() }
+      }
+
+      1: {
+         write("first loadfunc not in main coroutine ...")
+         Verify{"Default is SHA512", "SHA512" == ShaFunction() }
+         write("Default sha function is ", ShaFunction())
+      }
+
+      2: {
+         write("first loadfunc via UniProc in main coroutine ...")
+         write("Default sha function is ", UniProc())
+         Verify{"Default is SHA512", "SHA512" == UniProc() }
+      }
+
+      3: {
+         write("first loadfunc via UniProc not in main coroutine ...")
+         Verify{"Default is SHA512", "SHA512" == UniProc() }
+         write("Default sha function is ", UniProc())
+      }
+
+      4: {
+         write("first loadfunc in initial coroutine of thread...")
+         write("Default sha function is ", ShaFunction())
+         Verify{"Default is SHA512", "SHA512" == ShaFunction() }
+      }
+
+      5: {
+         write("first loadfunc not in initial coroutine  of thread...")
+         Verify{"Default is SHA512", "SHA512" == ShaFunction() }
+         write("Default sha function is ", ShaFunction())
+      }
+
+      default: write(&errout, "0 <= ", arg, " <= 5")
+   }
+end

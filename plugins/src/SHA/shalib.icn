@@ -1,0 +1,429 @@
+################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+# It uses source code that is copyrighted by the IETF trust.
+# See the file ./RFC6234/sha.h for the conditions governing the redistribution
+# and use of that code.
+#
+# Note that the original RFC6234 source code has been modified to be
+# thread-safe. The original code may be used by compiling it with the
+# ORIGINAL_SHA_CODE_NOT_THREAD_SAFE symbol defined.
+#
+################################################################################
+#
+#     Sha(...) provides convenient access to the RFC6234 secure hash functions
+#
+#     Don Ward
+#     June 2019
+#
+#     March 2021         Added Raw output
+################################################################################
+#
+# The SecureHash plugin has two public methods, Sha and Restart.
+#
+# The secure hash algorithm may be selected by initialising the class with the
+# name of a SHA algorithm. The initial default algorithm if no parameter is
+# supplied is SHA512. This default value may be changed by calling the procedure
+# ShaFunction. The algorithm may also be changed after initialisation by calling
+# SecureHash.Restart() with a parameter. The legal values for ShaFunction, the
+# parameter to the initialiser and the Restart method are "SHA1", "SHA224",
+# "SHA256", "SHA384" or "SHA512".
+#
+# Parameters to Sha may be strings, csets, open files, numbers, records or lists.
+#    String parameters are "fed to the underlying hash routines" (fttuhr);
+#    if the parameter is a cset, each character in the set is fttuhr;
+#    if the parameter is a file, each line of the file is read and fttuhr;
+#    if the parameter is a number, it is converted to a string and fttuhr.
+# Sha() applies itself recursively to record or list parameters (depth first
+# traversal). So records and lists may contain strings, csets, open files,
+# numbers, records or lists.
+#
+# Sets and Tables are not allowed as parameters to Sha because their order of
+# enumeration is not defined. Any other type (thread, co-expression, window ...)
+# is also disallowed by fiat, with one exception: A procedure type (using special
+# "command procedures" ) may be used to signal that Sha should take some special
+# action as follows:
+#
+#    The procedure More is allowed as the final parameter. Normally the Sha
+#    method returns the secure hash of all its parameters, but if the final
+#    parameter is the procedure More, subsequent calls to Sha will continue the
+#    hashing operation. Note the style is
+#         Sha( ... , More )
+#    rather than
+#         Sha( ... , More() )
+#    although the latter has been made to work as a "concession to ease of use".
+#
+#    The procedures Final1, Final2 ... Final7 may be used to signal that the
+#    final parameter to Sha is not a whole octet, only the specified number of
+#    bits are to be included in the hash. These procedures are only allowed just
+#    before the final parameter.  Where the final number of bits is calculated,
+#    the Final(expr) procedure may be used. 0 <= expr <= 8. There is a Final0
+#    procedure, but using it explicitly would be slightly odd, since it will
+#    cause the final parameter to be ignored. There is also a Final8 procedure
+#    which causes all of the final parameter to be included.
+#
+#    The Raw procedure switches the default output from a string of hexadecimal
+#    characters to a string of half the length containing the actual bits
+#    returned by the RFC6234 result procedure.
+#
+# Once Sha has produced a hash value (or failed) it will automatically reset the
+# underlying hash routines the next time it is called.
+#
+# Note that Sha(number) will return a secure hash of the string representation
+# of the number, not a hash of the underlying bits. This is different to RFC6234
+# but probably more useful for Unicon programs.
+#
+# Sha is tolerent of null parameters and empty strings. The effect is to add
+# nothing to the hash.
+#
+# The SecureHash class is not thread-safe. Using a shared SecureHash object in
+# different threads without mutual exclusion is unlikely to produce predictable
+# results. Using a SecureHash object that is private to each thread is safe
+# because the underlying hash routines are thread-safe.
+#
+# Note that ShaFunction alters the value of the default hash algorithm, which is
+# not thread-safe if different threads are using different algorithms and using
+# ShaFunction to express their choice of algorithm. To avoid this, specify the
+# algorithm to be used explicitly when creating the SecureHash object for each
+# thread.
+#
+# Using RFC6234 directly:
+# The Interface procedures to the underlying RFC6234 C routines may be called
+# directly, without using the SecureHash class.  In this case the user is
+# assumed to know what parameters are needed and in which order the functions
+# must be called. In particular, the routines must be reset before the
+# calulation of each hash. The correct ordering is
+#  sha_Reset       -- reset the underlying routines.
+#  sha_Input       -- (optional) repeat for as many input fragments as required.
+#  sha_FinalBits   -- (optional) if there is a partial octet at the end.
+#  sha_Result      -- return the secure hash result.
+#
+################################################################################
+
+package SecureHash
+
+# ------------------------------ Secure Hash ------------------------------
+class SecureHash : uso::USO (
+    context,   # Private SHA context,
+    shaF,      # SHA Function name.
+    tbc,       # \tbc means "to be continued" (must not reset)
+    result     # result proc (either sha_Result or sha_RawResult)
+    )
+
+# ----------------------------------------
+method api()
+   return [
+           lang::find_method("Sha"),
+           lang::find_method("Restart"),
+           lang::find_method("test")
+           ]
+end
+
+# ----------------------------------------
+# Confidence testing (see ./shaPlugTest.icn for more comprehensive testing)
+$define FAIL_TEST put(failures, "Test failure at " || &file || ":"  || &line)
+method test()
+   local failures := []
+   local shaFcopy := shaF
+   local SHA1abc := "A9993E364706816ABA3E25717850C26C9CD0D89D"
+   local SHA1Null := "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709"
+
+
+   self.Restart("SHA1")
+   if shaF ~== "SHA1" then FAIL_TEST
+   if SHA1Null ~== self.Sha() then FAIL_TEST
+   if SHA1abc ~== self.Sha("abc") then FAIL_TEST
+   if SHA1abc ~== self.Sha("a","b","c") then FAIL_TEST
+   if SHA1abc ~== self.Sha(["a"],[], [[[]]], ["b",[["c"]]]) then FAIL_TEST
+   if SHA1abc ~== (self.Sha("a", More), self.Sha("bc")) then FAIL_TEST
+
+   self.Restart(shaFcopy)
+   if shaF ~== shaFcopy then FAIL_TEST
+
+   return failures
+end
+$undef FAIL_TEST
+
+
+# ----------------------------------------
+# The private Sha method that does all the work (and calls itself recursively).
+# Do NOT override this method in a subclass; override Sha() instead.
+method _Sha(a[])
+   local x,xx,n
+
+   # Check to see if we should re-initialise everything before proceeding.
+   if (/tbc)
+   then {
+       self.Restart(shaF)
+       tbc := 1
+    }
+
+   if /context then fail  # a null context means the initialisation failed.
+
+   # hash each parameter (ignoring nulls)
+   every n := 1 to *a do {
+      if \(x:=a[n]) then {
+        case type(x) of {
+
+        # sha_Input can deal with empty strings, but why bother it?
+          "string": if *x > 0 then sha_Input(context, x)
+
+            "file":   every sha_Input(context, !x)
+
+            "cset" | "integer" | "real" : sha_Input(context, string(x))
+
+            "list": { every xx := !x do _Sha(xx, More) | fail }
+
+       # A procedure type is used to signal something special. Only More, Raw or Final0 .. Final8
+       # are allowed.  If "More", it must be the last parameter.  If one of "Final0..Final8", it
+       # must be the penultimate parameter and the final parameter must be a scalar.  Note that
+       # _laniF() will fail if not given one of the procedures Final0 .. Final8.
+       # Raw may be placed anywhere and switches the final output from a hexadecimal string
+       # to a string containing the raw bits.
+            "procedure":
+                case x of {
+                    More: {
+                        if (n = *a)
+                        then return More # To be continued ...
+                        else fail        # More in the wrong place
+                    }
+
+                    Raw: { result := sha_RawResult } # ask for raw output
+
+                    Final0: {
+                       if (n + 1) = *a
+                       then {
+                          # No bits to be taken from the final parameter ... Odd, but legal.
+                          # Perhaps we should check the type of the final parameter, but since
+                          # we're not making any use of it, it seems a bit pernickety to do so.
+                          return result(context)
+                       }
+                       else fail # Final in the wrong place
+                    }
+
+                    Final1 | Final2 | Final3 | Final4 |
+                    Final5 | Final6 | Final7: {
+                        if (n + 1) = *a
+                        then { # Make sure the final parameter is a scalar
+                                case type(\a[*a]) of {
+                                    "string": {
+                                        sha_FinalBits(context, a[*a], _laniF(x))
+                                        return result(context)
+                                    }
+                                    "cset" | "integer" | "real" : {
+                                        sha_FinalBits(context, string(a[*a]), _laniF(x))
+                                       return result(context)
+                                    }
+                                    default: fail # Wrong type for final parameter
+                                }
+                                fail # final parameter is null
+                            }
+                        else fail # Final in the wrong place
+                     }
+
+                    Final8: {
+                       if (n + 1) = *a
+                       then {
+                          # We want the whole of the last octet.  There is an argument for
+                          # checking that there is only a single octet to be hashed.
+                          # We don't do that because we wish to assert the equivalence of
+                          #      Sha( ..., Final8, x)
+                          # and
+                          #      Sha( ..., x)
+                          # even if x happens to have more than 8 bits.
+                          case type(\a[*a]) of {
+                             "string" : {
+                                sha_Input(context, a[*a])
+                                return result(context)
+                                }
+                             "cset" | "integer" | "real" : {
+                                sha_Input(context, string(a[*a]))
+                                return result(context)
+                             }
+                             default: fail # Wrong type for final parameter
+                          }
+                          fail # final parameter is null
+                       }
+                       else fail # Final in the wrong place
+                    }
+
+                    default: fail # not a special "command procedure"
+                }
+
+            # this list 'borrowed' from ximage.icn
+            "set"|"table"|"window"|"thread"|"co-expression"|"external": fail
+
+            # If it's none of the above, assume it's a record
+            default: every xx := key(x) do _Sha(x[xx], More) | fail
+         }
+      }
+   }
+
+# All parameters have been hashed
+# (and the final parameter is not the special procedure More)
+   return result(context)
+end
+
+# ----------------------------------------
+# The private Restart method
+# Do NOT override this method in a subclass
+method _Restart(sf)
+    context := if \sf then sha_Reset(shaF := sf)
+                      else sha_Reset( (/shaF := ShaFunction()) | shaF )
+    result := sha_Result       # Default return type is hex characters
+    return # success
+end
+
+# ----------------------------------------
+# The public Sha method
+method Sha(a[])
+   local hash
+
+   # if _Sha fails, do a reset next time in
+   if not (hash := _Sha ! a) then {
+      tbc := &null; fail
+   } else {
+      if hash === More then {
+         tbc := 1; return &null
+      } else {
+         tbc := &null; return hash
+      }
+   }
+end
+
+# ----------------------------------------
+# The public Restart method
+# (Re)initialise the class with the desired SHA function (initial default SHA512
+# unless ShaFunction() has altered it). After initialisation, the initial choice
+# is used until a subsequent restart.
+method Restart(sf)
+    return _Restart(sf)
+end
+
+# ----------------------------------------
+# The class is initialised with the desired SHA function (initial default SHA512)
+initially(sf)
+   tbc := 1   # Avoid a superfluous reset on 1st call
+   _Restart(sf)
+end #------------------------------ Secure Hash ------------------------------
+
+# ------------------------------------------------------------------------------
+# "Command Procedures":
+#
+# All but one of these procedures are not intended to be called; instead the
+# procedure value is used as a "command" to alter the behaviour of Sha().
+# Thus the intended style of use is to specify the name of the procedure as a
+# parameter to Sha rather than invoking it. The exception is Final, which takes
+# a single parameter between 0 and 8.
+#
+# The underlying reason for such a peculiar way of sending "commands" to the Sha
+# procedure is that it's necessary to stop it from computing a hash value on the
+# command.  For example, if we used strings like "Final4" or "More" as commands,
+# how would Sha distinguish these from normal strings to be hashed? Using
+# procedure types allows an easy way of telling them apart; because it doesn't
+# make sense to ask what the Sha value of a procedure is, they can't be confused
+# with normal parameters.
+
+# ------------------------------------------------------------------------------
+# A procedure used to tell Sha not to call sha_Result (because there will be
+# more input in subsequent calls). If used, it must be the final parameter.
+# Note that proper usage is "Sha( ... , More )" not "Sha( ..., More() )",
+# although the latter does work.
+procedure More()
+    return More    # Make "More()" work as (probably) intended.
+end
+
+# ------------------------------------------------------------------------------
+# A procedure to tell Sha to return the 'raw' bits, rather than a hex characters.
+# It may be placed anywhere in the list of parameters.
+procedure Raw(); return Raw; end
+
+# ------------------------------------------------------------------------------
+# finalbits procedures.
+# Used to tell Sha that the final parameter is not a whole octet (except Final8).
+# May only be used as the penultimate parameter of Sha.
+procedure Final0(); return Final0; end
+procedure Final1(); return Final1; end
+procedure Final2(); return Final2; end
+procedure Final3(); return Final3; end
+procedure Final4(); return Final4; end
+procedure Final5(); return Final5; end
+procedure Final6(); return Final6; end
+procedure Final7(); return Final7; end
+procedure Final8(); return Final8; end
+
+
+# Final() may be used in cases where there is a calculation to determine the final bits
+procedure Final(bits)
+    case bits of {
+        default: fail
+        0: return Final0
+        1: return Final1
+        2: return Final2
+        3: return Final3
+        4: return Final4
+        5: return Final5
+        6: return Final6
+        7: return Final7
+        8: return Final8
+    }
+end
+
+# The inverse of Final.  It is not intended to be used explicitly
+# (it is used internally within the _Sha method to convert procedure
+# values back into a number of bits)
+procedure _laniF(p)
+    case p of {
+        default: fail
+        Final0: return 0
+        Final1: return 1
+        Final2: return 2
+        Final3: return 3
+        Final4: return 4
+        Final5: return 5
+        Final6: return 6
+        Final7: return 7
+        Final8: return 8
+    }
+end
+
+#------------------------------ RFC6234 Interface Routines ------------------------------
+#
+# The following is with thanks to Gregg Townsend (see ../ipl/cfuncs )
+#
+
+$define LIB "shalib.so"
+
+# sha_Reset:
+procedure sha_Reset(a[])
+   return(sha_Reset:=loadfunc(LIB,"sha_Reset"))!a
+end
+
+# sha_Input:
+procedure sha_Input(a[])
+   return(sha_Input:=loadfunc(LIB,"sha_Input"))!a
+end
+
+# sha_Result:
+procedure sha_Result(a[])
+   return(sha_Result:=loadfunc(LIB,"sha_Result"))!a
+end
+
+# sha_RawResult:
+procedure sha_RawResult(a[])
+   return(sha_RawResult:=loadfunc(LIB,"sha_RawResult"))!a
+end
+
+# sha_FinalBits:
+procedure sha_FinalBits(a[])
+   return(sha_FinalBits:=loadfunc(LIB,"sha_FinalBits"))!a
+end
+
+# ShaFunction:
+procedure ShaFunction(a[])
+   return(ShaFunction:=loadfunc(LIB,"ShaFunction"))!a
+end
+

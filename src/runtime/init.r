@@ -461,19 +461,25 @@ struct header *hdr;
 
 #if NT
    struct _stat sbuf;
-#define lstat _stat
 #else					/* NT */
    struct stat sbuf;
 #endif					/* NT */
    int rv;
    FILE *ftmp;
 
-   if ((rv = pathFind(tname, pathbuf, 150)) == 0) error(name, errmsg);
-   if (lstat(pathbuf, &sbuf) != 0) error(name, errmsg);
-   filebuffer = malloc(sbuf.st_size + 2);
+   if ((rv = pathFind(tname, pathbuf, 150)) == 0)
+     error(name, errmsg);
+   if (stat(pathbuf, &sbuf) != 0)
+     error(name, errmsg);
+
    ftmp = fopen(pathbuf,"rb");
-   if (ftmp == NULL) error(name, errmsg);
-   if (fread(filebuffer, 1, sbuf.st_size, ftmp) <= 0) error(name, errmsg);
+
+   filebuffer = malloc(sbuf.st_size + 2);
+   if (ftmp == NULL)
+     error(name, errmsg);
+   if (fread(filebuffer, 1, sbuf.st_size, ftmp) <= 0)
+     error(name, errmsg);
+
    fclose(ftmp);
 #if UNIX
    offset = superstr("[executable Icon binary follows]",filebuffer,sbuf.st_size);

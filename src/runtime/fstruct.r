@@ -22,7 +22,7 @@ function{1} delete(s, x[n])
             register uword hn;
             register union block **pd;
             int res, argc;
-	    
+
 	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Set), "delete(): lock set");
 	    for (argc = 0; argc < n; argc++) {
 	       hn = hash(x+argc);
@@ -71,7 +71,7 @@ function{1} delete(s, x[n])
 	    int i, size, argc;
 
 #ifdef Arrays
-	    if (BlkD(s,List)->listtail==NULL) 
+	    if (BlkD(s,List)->listtail==NULL)
 	       if (arraytolist(&s)!=Succeeded) fail;
 #endif					/* Arrays*/
 
@@ -81,8 +81,8 @@ function{1} delete(s, x[n])
 	       if (!cnv:C_integer(x[argc], cnv_x)) runerr(101, x[argc]);
 	       hp = BlkD(s, List);
 	       size = hp->size;
-	       if (cnv_x < 0 ) 
-	       	  cnv_x = size +  cnv_x + 1; 
+	       if (cnv_x < 0 )
+	       	  cnv_x = size +  cnv_x + 1;
 	       for (i = 1; i <= size; i++) {
 		  c_get(hp, &d);
 		  if (i != cnv_x)
@@ -211,10 +211,10 @@ function{0,1} get_or_pop(x,i)
 	    tended struct b_list *hp;
       	    if (i <= 0)
       	    fail;
-	    
+
 	    EVValD(&x, E_Lget);
 #ifdef Arrays
-	    if (BlkD(x, List)->listtail==NULL) 
+	    if (BlkD(x, List)->listtail==NULL)
 	       if (arraytolist(&x)!=Succeeded) fail;
 #endif					/* Arrays*/
 	    hp = BlkD(x, List);
@@ -269,11 +269,11 @@ function{0,1} get_or_pop(x,i)
 	       runerr(1212, x);
 	       }
 	    tp_freeresp(mf->tp, mf->resp);
-	    
+
 	    Protect(reserve(Strings, msglen), runerr(0));
 	    StrLen(result) = msglen;
 	    StrLoc(result) = alcstr(NULL, msglen);
-	    
+
 	    req.type = RETR;
 	    mf->resp = tp_sendreq(mf->tp, &req);
 	    if (mf->resp->sc != 200) {
@@ -364,7 +364,7 @@ function{*} key(t)
 #ifdef Dbm
 	    if (status & Fs_Dbm) {
 	       DBM *db;
-	       datum key; 
+	       datum key;
 	       db = BlkD(t,File)->fd.dbm;
 	       for (key = dbm_firstkey(db); key.dptr != NULL;
 		    key = dbm_nextkey(db)) {
@@ -386,7 +386,7 @@ function{*} key(t)
 
 		  if (mf->resp == NULL)
 		     fail;
-		     
+
 		  Protect(StrLoc(result) = alcstr("Status-Code", 11),runerr(0));
 		  StrLen(result) = 11;
 		  suspend result;
@@ -408,7 +408,7 @@ function{*} key(t)
 		     while (strchr(" \r\n", *field)) {
 			field++;
 			}
-		     
+
 		     end = strchr(field, ':');
 		     Protect(StrLoc(result) = alcstr(field, end - field),runerr(0));
 		     StrLen(result) = end - field;
@@ -499,7 +499,7 @@ function{1} insert(s, x[n])
             int res, argc;
             struct b_selem *se;
             register union block **pd;
-	    
+
    	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Set), "insert(): lock set");
 
 	    for(argc=0;argc<n;argc++) {
@@ -551,7 +551,7 @@ function{1} insert(s, x[n])
             word i, j, size, argc;
 
 #ifdef Arrays
-	    if (BlkD(s,List)->listtail==NULL) 
+	    if (BlkD(s,List)->listtail==NULL)
 	       if (arraytolist(&s)!=Succeeded) fail;
 #endif					/* Arrays*/
 
@@ -689,7 +689,6 @@ function{0,1} classname(r)
       if ((first__ = strstr(recnm_bgn, "__")) == NULL)
 	 fail;
       second__ = strstr(first__ + 2, "__");
-      if (second__ != NULL) recnm_bgn = first__ + 2;
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       if (recnm_end > recnm_bgn) {
          StrLen(result) = recnm_end - recnm_bgn;
@@ -723,7 +722,7 @@ function{0,1} membernames(r)
 	 if (i == GlobalName) {
 	    deref(&d, &d);
 	    if (!is:proc(d)) runerr(131,d);
-	    
+
 	    pr = BlkD(d, Proc);
 	    n_flds = pr->nfields;
 	    j = 0;
@@ -736,7 +735,7 @@ function{0,1} membernames(r)
 
 	    Protect(p = alclist_raw(n_flds, n_flds), runerr(0));
 	    bp = Blk(p->listhead,Lelem);
-	    
+
 	    for (i=0 ; i < n_flds; i++, j++) {
 	       bp->lslots[i] = pr->lnames[j];
 	       }
@@ -1387,12 +1386,12 @@ function{0,1} pull(x,n)
 
       if (n <= 0)
       	 fail;
-	 
+
 #ifdef Arrays
-      if (BlkD(x,List)->listtail==NULL) 
+      if (BlkD(x,List)->listtail==NULL)
 	 if (arraytolist(&x)!=Succeeded) fail;
 #endif					/* Arrays*/
-      
+
       MUTEX_LOCKBLK_CONTROLLED(BlkD(x, List), "pull(): lock list");
 
       for(j=0;j<n;j++) {
@@ -1448,7 +1447,7 @@ dptr val;
    static int two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
 #ifdef Arrays
-   if (BlkD(*l,List)->listtail==NULL) 
+   if (BlkD(*l,List)->listtail==NULL)
       if (arraytolist(l)!=Succeeded) return;
 #endif					/* Arrays*/
 
@@ -1532,7 +1531,7 @@ function{1} push(x, vals[n])
 				   division by a constant that's a power of 2*/
 
 #ifdef Arrays
-      if (BlkD(x,List)->listtail==NULL) 
+      if (BlkD(x,List)->listtail==NULL)
 	 if (arraytolist(&x)!=Succeeded) fail;
 #endif					/* Arrays*/
 
@@ -1639,7 +1638,7 @@ void c_put(struct descrip *l, struct descrip *val)
     */
 
    bp = Blk(BlkD(*l,List)->listtail, Lelem);
-   
+
    /*
     * If the last list-element block is full, allocate a new
     *  list-element block, make it the last list-element block,
@@ -1711,7 +1710,7 @@ function{1} put(x, vals[n])
       static int two = 2;	/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
 #ifdef Arrays
-	    if (BlkD(x,List)->listtail==NULL) 
+	    if (BlkD(x,List)->listtail==NULL)
 	       if (arraytolist(&x)!=Succeeded) fail;
 #endif					/* Arrays*/
 
@@ -1733,7 +1732,7 @@ function{1} put(x, vals[n])
       for(val = 0; val < num; val++) {
 	 hp = BlkD(x, List);
 	 bp = Blk(hp->listtail, Lelem);
-   
+
 	 i = 0;			/* block isn't full */
 
 	 /*
@@ -1899,7 +1898,7 @@ function{1} set(x[n])
             if (!pollctr--) {
                pollctr = pollevent();
 	       if (pollctr == -1) fatalerr(141, NULL);
-	       }	       
+	       }
 #endif					/* Polling */
 		    j = Blk(pb,Lelem)->first + i;
 		    if (j >= Blk(pb,Lelem)->nslots)
@@ -1933,7 +1932,7 @@ function{1} table(x[n])
       }
    inline {
       tended union block *bp;
-   
+
       bp = hmake(T_Table, (word)0, (word)n);
       if (bp == NULL)
          runerr(0);

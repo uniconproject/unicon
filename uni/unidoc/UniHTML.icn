@@ -21,8 +21,8 @@ global dirFlag
 #   the internal representation of Unicon programs that is produced
 #   by the <b>UniALL</b> class.
 # </p>
-class UniHTML : Object (title, idoc, baseDir, mainIndex, linkPath,
-                       debug)
+class UniHTML : Object (title, idoc, mainIndex, linkPath,
+                       debug, baseDir)
 
     # <p>
     # Construct all the needed HTML pages.  <i>All other methods are
@@ -579,8 +579,7 @@ class UniHTML : Object (title, idoc, baseDir, mainIndex, linkPath,
 
     initially
         /title     := "Generated Documentation"
-        /baseDir   := "./htmlDoc"
-        baseDir    := trim(baseDir, '/\\')||"/"
+        /baseDir   := idoc.getTargetDir()
         mkdir(baseDir) | close(open(baseDir)) |
             stop("Cannot access directory '",baseDir,"'.")
         /mainIndex := "index.html"

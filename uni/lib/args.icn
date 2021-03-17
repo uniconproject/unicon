@@ -23,7 +23,14 @@ package util
 #   If an option is duplicated, the values (if any) are kept in order.
 #   Arguments are also kept in order.
 #</p>
-class Args : Object (optionMap, argList)
+#<p>
+# The class may also be given a set of valid option names (without the leading
+#   hyphens.  If given such a set, then any options that are not in the set are
+#   flagged to standard error and program execution is halted.  The class can
+#   also be given a procedure to call prior to program termination when bad
+#   options are found.  Usually, this is used to display a help message.
+#</p>
+class Args : Object (optionMap, argList, badOptions)
 
 
     #<p>
@@ -101,21 +108,35 @@ class Args : Object (optionMap, argList)
     #<p>
     #   Accept a list of arguments and process for efficient handling
     #</p>
-    initially (params # List of parametes
+    initially (params,       # List of parametes
+               validOptions, # Option set of valid option names
+               helpMesg      # Optional help message procedure to be
+                             #   called if any invalid options are found
               )
          optionMap := ::table()
          argList := []
+         badOptions := []
          every param := !params do {
              if doneWithOpts := ("--" == param) then next
              param ? {
                    if /doneWithOpts & ::tab(::many('-')) then {
                       oName := ::tab(::upto('=')|0)
-                      oValue := (="=", ::tab(0)) | &null
-                      /optionMap[oName] := []
-                      ::put(optionMap[oName], \oValue)
+                      if /validOptions | member(validOptions, oName) then {
+                          oValue := (="=", ::tab(0)) | &null
+                          /optionMap[oName] := []
+                          ::put(optionMap[oName], \oValue)
+                          }
+                      else {
+                          put(badOptions, oName)
+                          }
                       }
                    else ::put(argList, param)
                    }
              }
+        if *badOptions > 0 then {
+            every write(&errout, "Invalid option: '",!badOptions,"'")
+            \helpMesg()
+            stop()
+            }
         Args := create |self
 end

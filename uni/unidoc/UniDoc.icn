@@ -132,7 +132,6 @@ import lang
 import UniDoc
 
 global linkPath,  # Path to search when looking for already-generated HTML
-       targetDir, # Directory into which all generated HTML is placed
        title,     # Title for base document
        indexFile, # Name of base index file
        debug      # Debug flag
@@ -148,7 +147,7 @@ procedure main(args)
     processArgs(uniAll)
     uniAll.dumpStatistics("yes")
 
-    html := UniHTML(title, uniAll, targetDir, indexFile, linkPath, debug)
+    html := UniHTML(title, uniAll, indexFile, linkPath, debug)
     html.buildPages()
 
 end
@@ -161,14 +160,13 @@ procedure processArgs(uniAll # Unicon parser (instance of <tt>UniAll</tt>)
     local arg
 
     indexFile := "index.html"
-    targetDir := "./htmlDoc"
     # Some parameters are global, find them now.
     title     := Args().getOpt("title", "Generated API Docs")
     indexFile := Args().getOptDef("indexFile","index.html")
     linkPath  := []	# Default situation (no --linkPath option)
     linkPath  := [: genFields(\(Args().getOptDef("linkPath")),",") :]
     uniAll.setSourcePath(Args().getOptDef("sourcePath"))
-    uniAll.setTargetDir(targetDir := Args().getOptDef("targetDir","./htmlDoc"))
+    uniAll.setTargetDir(Args().getOptDef("targetDir","./htmlDoc"))
 
     every opt := Args().genOptNames() do {
         case opt of {

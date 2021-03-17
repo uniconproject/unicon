@@ -198,8 +198,9 @@ doc:
 htmldocrule: $(HTMLDOC)
 htmldoc:
 		@echo ""
-		@echo "TODO: Build class library html documentation"
+		@echo " Building class library html documentation"
 		@echo ""
+		$(MAKE) -C uni/unidoc htmldoc
 
 ##################################################################
 #

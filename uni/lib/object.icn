@@ -91,18 +91,7 @@ class Object()
    # <[returns the classname for the current class in package::class format]>
    # </p>
    method className()
-      local cl, cn
-
-      cl := ::image(self)
-      cl := cl[8:(::find("(", cl))]
-      cn := ::classname(self)
-      if ::match(cn, cl) then {
-         cl := cn
-      } else {
-         cl := ::reverse(cl)
-         cl := ::reverse(cl[::find("_", cl) + 1:0])
-      }
-      return lang::mapPackageInt2Ext(cl)
+      return lang::mapPackageInt2Ext(::classname(self))       
    end
 
    # <p>

@@ -23,7 +23,7 @@ help:
 	@echo ""
 	@echo "UniDoc ufiles depends doc clean list print printall"
 
-.PHONY: ufiles deps depends doc docs clean list print printall
+.PHONY: ufiles deps depends doc docs clean list print printall htmldoc
 
 # This is an implicit rule that tells how to build ".u" files from ".icn"
 #    files (saves having to enter a bunch of separate rules for each
@@ -46,6 +46,10 @@ doc docs:	UniDoc
 
 deps depends:
 	unidep $(SRCS)
+
+
+htmldoc:
+	./UniDoc --title="UniDoc API" --linkSrc --sourcePath=. --resolve *.icn
 
 # Clean up the directory.
 #

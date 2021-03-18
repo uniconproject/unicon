@@ -16,12 +16,12 @@ UFILES := $(patsubst %.icn, %.u, $(SRCS))
 #    running it.
 #
 
-default: UniDoc$(EXE)
+default: unidoc$(EXE)
 
 help:
 	@echo "You may make: "
 	@echo ""
-	@echo "UniDoc ufiles depends doc clean list print printall"
+	@echo "unidoc ufiles depends doc clean list print printall"
 
 .PHONY: ufiles deps depends doc docs clean list print printall htmldoc
 
@@ -33,15 +33,15 @@ help:
 %.u:	%.icn
 	$(UNICON) $(UFLAGS) -c $?
 
-UniDoc$(EXE): $(UFILES)
-	$(UNICON) -o UniDoc $(UFILES)
-	$(CP) UniDoc$(EXE) $(BIN)
+unidoc$(EXE): $(UFILES)
+	$(UNICON) -o unidoc $(UFILES)
+	$(CP) unidoc$(EXE) $(BIN)
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)
 	$(UNICON) $(UFLAGS) -c $?
 
-doc docs:	UniDoc
+doc docs:	unidoc
 	./buildDocs.sh
 
 deps depends:
@@ -49,12 +49,12 @@ deps depends:
 
 
 htmldoc:
-	./UniDoc --title="UniDoc API" --linkSrc --sourcePath=. --resolve *.icn
+	./unidoc --title="UniDoc API" --linkSrc --sourcePath=. --resolve *.icn
 
 # Clean up the directory.
 #
 clean:
-	$(RM) UniDoc$(EXE) *.u uniclass.dir uniclass.pag uniclass.db *~
+	$(RM) unidoc$(EXE) *.u uniclass.dir uniclass.pag uniclass.db *~
 
 
 # List all source files that have been modified since the last build.

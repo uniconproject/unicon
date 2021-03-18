@@ -25,7 +25,7 @@ for dir in ${DIRS}; do
      TD=${TBASE}/${dir}
      mkdir -p ${TD}
      cd ${SD}
-     /opt/unicon/uni/unidoc/UniDoc --title="${title}" --linkSrc \
+     /opt/unicon/uni/unidoc/unidoc --title="${title}" --linkSrc \
             --sourcePath=${SDIRS} \
             --linkPath=${LDIRS} \
             --resolve --targetDir=${TD} *.icn

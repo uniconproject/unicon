@@ -215,7 +215,7 @@ UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc unicont uniconx uniconc udb uprof unidep UniDoc \
+Tbins=unicon icont iconx iconc unicont uniconx uniconc udb uprof unidep unidoc \
 	ui ivib patchstr iyacc rt.a rt.h
 
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)

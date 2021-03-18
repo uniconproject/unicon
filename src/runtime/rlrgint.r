@@ -274,9 +274,7 @@ union numeric *result;          /* output T_Integer or T_Lrgint */
  *  bignum -> real
  */
 
-int bigtoreal(da, d)
-dptr da;
-double *d;
+int bigtoreal(dptr da, double *d)
 {
    word i;
    double r = 0;
@@ -291,7 +289,7 @@ double *d;
    *d = (b->sign ? -r : r);
    return 1;
 }
-
+
 /*
  *  real -> bignum
  */

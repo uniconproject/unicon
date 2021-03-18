@@ -27,9 +27,7 @@ static int tmp_str (char *sbuf, dptr s, dptr d);
 /*
  * cnv_c_dbl - cnv:C_double(*s, *d), convert a value directly into a C double
  */
-int cnv_c_dbl(s, d)
-dptr s;
-double *d;
+int cnv_c_dbl(dptr s, double *d)
    {
 
    /*
@@ -97,7 +95,6 @@ double *d;
          result.dword = D_Lrgint;
 	 BlkLoc(result) = (union block *)numrc.big;
          return bigtoreal(&result, d);
-         return 1;
 #endif					/* LargeInts */
 
       case T_Real:

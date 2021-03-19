@@ -129,7 +129,16 @@ class UniAll : Object (files, packages,
         every delete(linkSet, !badFiles)
 
     end
-            
+
+    # <p>
+    #   Returns its argument if that argument ends in the specified suffix.
+    #   <[param s -- string to test]>
+    #   <[param suffix -- suffix to test against]>
+    #   <[returns <tt>s</tt> if it ends in <tt>suffix</tt>]>
+    # </p>
+    method hasSuffix(s, suffix)
+        return (s[-*suffix:0] == suffix, s)
+    end
 
     # <p>
     # This is the main entry point to the <b>UniAll</b> class.  When
@@ -138,9 +147,19 @@ class UniAll : Object (files, packages,
     # handled by this class instance.  May be called repeatedly to
     # process multiple files.
     # </p>
+    # <p>
+    # If the argument is a directory, then all files suffixed with ".icn"
+    # within that directory are processed.
+    # </p>
     method processFile(fName)
 
         if /fName | (*fName = 0) then fail
+
+        if stat(fName||"/") then {   # Handle source files in directory
+           every processFile(hasSuffix(!open(fName), ".icn"))
+           return
+           }
+
         fName := delSuffix(fName,".icn")||".icn"
         uniFile := UniFile(fName) |
                    UniFile(fName, genDirs(\sourcePath)) | {

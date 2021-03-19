@@ -6,7 +6,7 @@
 #
 #	Author:   William H. Mitchell
 #
-#	Date:     June 16, 2003
+#	Date:     March 18, 2021 
 #
 ############################################################################
 #
@@ -14,7 +14,8 @@
 #
 ############################################################################
 #
-#	Contributors:   Cheyenne Wills, Phillip Lee Thomas, Michael Glass
+#	Contributors:   Cheyenne Wills, Phillip Lee Thomas,
+#			Michael Glass, Gregg M. Townsend,
 #			Clinton Jeffery
 #
 ############################################################################
@@ -106,7 +107,7 @@ procedure _doprnt(format, args)
 		    "x": v := hexstr(v)
 		    "o": v := octstr(v)
 		    "i": v := image(v)
-		    "r": v := rformatstr(v,prec)
+		    "r": v := fixnum(v,prec)
 		    "e": v := eformatstr(v, prec, width)
 		    default: {
 			push(args, v)
@@ -123,115 +124,52 @@ procedure _doprnt(format, args)
 end
 
 procedure hexstr(n)
-   local h, neg
-   static BigNeg, hexdigs, hexfix
-
-	initial {
-		BigNeg := -2147483647-1
-		hexdigs := "0123456789abcdef"
-		hexfix := "89abcdef"
-		}
-
-	n := integer(n)
-	if n = BigNeg then
-		return "80000000"
-	h := ""
-	if n < 0 then {
-		n := -(BigNeg - n)
-		neg := 1
-		}
-	repeat {
-		h := hexdigs[n%16+1]||h
-		if (n /:= 16) = 0 then
-			break
-		}
-	if \neg then {
-		h := right(h,8,"0")
-		h[1] := hexfix[h[1]+1]
-		}
-	return h
+   return _basestr(n, 4)
 end
+
 procedure octstr(n)
-   local h, neg
-   static BigNeg, octdigs, octfix
-
-	initial {
-		BigNeg := -2147483647-1
-		octdigs := "01234567"
-		octfix := "23"
-		}
-
-	n := integer(n)
-	if n = BigNeg then
-		return "20000000000"
-	h := ""
-	if n < 0 then {
-		n := -(BigNeg - n)
-		neg := 1
-		}
-	repeat {
-		h := octdigs[n%8+1]||h
-		if (n /:= 8) = 0 then
-			break
-		}
-	if \neg then {
-		h := right(h,11,"0")
-		h[1] := octfix[h[1]+1]
-		}
-	return h
+   return _basestr(n, 3)
 end
 
-# r-format:  [-]mmm.ddd
-#
-#  This is similar to C or Fortran f format.
-#
-#  -- The "precision" (number of decimal places) is adhered to exactly.
-#
-#  -- If there are too many digits in the converted number to fit
-#     in the available width, then the number is not truncated to
-#     fit.  It just becomes too wide.
-#
-procedure rformatstr(x, prec)
-   local s, signpart, wholepart, fracpart, exppart
+procedure _basestr(n, b)
+   local s, mask
 
-   /prec := 6
+	n := integer(n) | return image(n)
 
-   # Check for so-large-that-we-return-e-format 
-   integer(x) | return image(x)
+	if n = 0 then
+		return "0"
 
+	# backwards compatibility hack
+	# treat 31-bit negative integers as positive values
+	if -16r80000000 <= n <= -1 then
+		n +:= 16r100000000
 
-   # Separate string representation of x into parts
-   #
-   s := string(real(x)) | return image(x)
-   s ? { signpart  :=  (=("-" | "+") | "")
-         wholepart :=  1(tab(many(&digits)), any('.eE')) | return image(x) 
-         fracpart  :=  ((=".", tab(many(&digits)))  | "")
-         exppart   :=  integer((=("e"|"E"), tab(0))  | 0)
-       }
+	s := ""
+	mask := ishift(1, b) - 1
+	while n ~= 0 & n ~= -1 do {
+		s := "0123456789abcdef" [1 + iand(n, mask)] || s
+		n := ishift(n, -b)
+		}
+	return s
+end
 
-   # Shift fraction into whole part if exponent > 0
-   #
-   if exppart > 0 then {
-      fracpart ||:= repl("0", exppart)
-      wholepart ||:= fracpart[1+:exppart]
-      fracpart := fracpart[exppart+1:0]
+procedure fixnum(x, prec)
+   local s
 
-   # Shift whole part into fraction if exponent < 0
-   #
-   } else if exppart < 0 then {
-      wholepart := repl("0", -exppart) || wholepart 
-      fracpart := wholepart[exppart:0] || fracpart
-      wholepart := wholepart[1:exppart]
-   }
+	/prec := 6
+	x := real(x) | return image(x)
 
-   # Round fraction to requested number of places
-   #
-   fracpart := adjustfracprec(fracpart, prec)
-   wholepart +:= fracpart[2]
+	if x < 0 then {
+	   s := "-"
+	   x := -x
+	   }
+	else
+	   s := ""
 
-   # Assemble and return result
-   #
-   return signpart || wholepart || "." || fracpart[1]
+	x := string(integer(x * 10 ^ prec + 0.5))
+	if *x <= prec then
+	   x := right(x, prec + 1, "0")
+	return s || x[1:-prec] || "." || x[-prec:0]
 end
 
 
@@ -253,16 +191,17 @@ procedure eformatstr(x, prec, width)
    local rslt, s
 
    /prec := 6
-   /width := prec+7
+   /width := prec + 7
 
    # Separate string representation of x into parts
    #
    s := string(real(x)) | return image(x)
-   s ? { signpart  :=  (=("-" | "+") | "")
-         wholepart :=  1(tab(many(&digits)), any('.eE')) | return image(x) 
-         fracpart  :=  ((=".", tab(many(&digits)))  | "")
-         exppart   :=  integer((=("e"|"E"), tab(0))  | 0)
-       }
+   s ? {
+      signpart  :=  (=("-" | "+") | "")
+      wholepart :=  1(tab(many(&digits)), any('.eE')) | return image(x) 
+      fracpart  :=  ((=".", tab(many(&digits)))  | "")
+      exppart   :=  integer((=("e"|"E"), tab(0))  | 0)
+      }
 
    # When the integer part has more than 1 digit, shift it
    #  right into fractional part and scale the exponent
@@ -271,7 +210,7 @@ procedure eformatstr(x, prec, width)
       exppart +:= *wholepart -1
       fracpart := wholepart[2:0] || fracpart
       wholepart := wholepart[1]
-   }
+      }
 
    # If the the number is unnormalized, shift the fraction
    #   left into the whole part and scale the exponent
@@ -281,8 +220,8 @@ procedure eformatstr(x, prec, width)
          exppart -:= shiftcount
          wholepart := fracpart[shiftcount] 
          fracpart := fracpart[shiftcount+1:0]
+         }
       }
-   }
 
    # Adjust the fractional part to the requested precision.
    # If the carry causes the whole part to overflow from
@@ -292,9 +231,9 @@ procedure eformatstr(x, prec, width)
    wholepart +:= fracpart[2]
    fracpart := fracpart[1]
    if *wholepart > 1 then {
-       wholepart := wholepart[1]
-       exppart +:= 1
-    }
+      wholepart := wholepart[1]
+      exppart +:= 1
+      }
 
    #  Assemble the final result.
    #  - Leading "+" dropped in mantissa
@@ -338,27 +277,27 @@ procedure adjustfracprec(fracpart, prec)
    #
    carryout := 0
    if *fracpart > prec then {
-       choppart := fracpart[prec+1:0]
-       fracpart := fracpart[1+:prec]
+      choppart := fracpart[prec+1:0]
+      fracpart := fracpart[1+:prec]
 
-       # If rounding up is needed...
-       #
-       if choppart[1] >>= "5" then {
+      # If rounding up is needed...
+      #
+      if choppart[1] >>= "5" then {
 
-          #  When the fractional part is .999s or the precision is 0,
-          #     then round up overflows into the whole part.
-          #
-          if (prec = 0) | (string(cset(fracpart)) == "9") then {
-             fracpart := left("0", prec, "0")
-             carryout := 1
-          }
-          #  In the usual case, round up simply increments the
-          #     fractional part.  (We put back any leading
-          #     zeros that got lost.) 
-          else {
-             fracpart := right(integer(fracpart)+1, prec, "0")
-          }
+         #  When the fractional part is .999s or the precision is 0,
+         #     then round up overflows into the whole part.
+         #
+         if (prec = 0) | (string(cset(fracpart)) == "9") then {
+            fracpart := left("0", prec, "0")
+            carryout := 1
+            }
+         #  In the usual case, round up simply increments the
+         #     fractional part.  (We put back any leading
+         #     zeros that got lost.) 
+         else {
+            fracpart := right(integer(fracpart)+1, prec, "0")
+            }
+         }
       }
-   }
    return [fracpart, carryout]
 end

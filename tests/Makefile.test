@@ -58,7 +58,8 @@ endif
 	else ./$@ > local/$@.out 2>&1; fi || true
 	-@diff -wq stand/$@.std local/$@.out >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "OK"; \
-	else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
+	else echo "Failed"; \
+	diff --suppress-common-lines -wy stand/$@.std local/$@.out > $@.diff; fi || true
 	-@rm $@$(EXE)
 
 FILES=$(patsubst %.diff,%.report,$(wildcard *.diff))
@@ -101,13 +102,12 @@ all: Test Report
 clean:
 	-@rm -f *.u uniclass.* $(TARGETS)
 	-@rm -f local/*.out *.diff
-	-@touch local/.placeholder
+
 
 #verbose clean
 Clean:
 	-rm -f *.u uniclass.* $(TARGETS)
 	-rm -f local/*.out *.diff *.exe
-	-touch local/.placeholder
 
 distclean:
 	-@rm -f *.u uniclass.* $(TARGETS)

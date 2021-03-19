@@ -1,0 +1,211 @@
+#-------------------------------------------------------------------------------
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+#-------------------------------------------------------------------------------
+package Bitman
+
+# ------------------------------------------------------------------------------
+# A plugin to do low level bit manipulation.
+#
+# Author  :    Don Ward
+# Date    :    March 2021
+#
+#
+# These routines are the equivalent of the Unicon built-in functions
+# except they never produce a large integer and there is no special
+# case for the sign bit.
+#    bor      bitwise inclusive or       (ior)
+#    bxor     bitwise exclusive or       (ixor)
+#    band     bitwise and                (iand)
+#    bcom     bitwise one's complement   (icom)
+#    bshift   bitwise shift              (ishift)
+# plus
+#    bits     enquiry and bit extraction
+#    bit      single bit extraction
+#    brot     bit rotation
+#
+# bit(x,n) works the same way as string indexing (but indexing bits instead
+# of characters, including negative indices meaning "from the end").
+#   bit(x,1) is the ls bit of x,      (analogous to s[1]).
+#   bit(x,n) is the nth bit of x      (analogous to s[n] when n is +ve).
+#   bit(x,0) is the ms bit of x       (analogous to s[0]).
+#   bit(x,-n) is analogous to s[-n] i.e indexes from the ms end of x.
+#
+# bits(x,n,m) works the same way as substring indexing s[n:m].
+# Note that, as with substrings, the bits are not reversed if m < n.
+#    bits(x,n,m) = bits(x,m,n)
+#
+# The routines are not portable by design (i.e. on machines with different
+# word lengths they will give different results) which is, presumably, why
+# you're using them in place of ior and friends.
+# ------------------------------------------------------------------------------
+
+class Bitman : uso::USO()
+   # ----------------------------------------
+   # bitwise inclusive or
+   method bor(v1:integer, v2:integer)
+      static Cbor
+      initial Cbor := loadfunc("bitman.so", "bor")
+
+      return \Cbor(v1,v2)
+   end
+
+   # ----------------------------------------
+   # bitwise exclusive or
+   method bxor(v1:integer, v2:integer)
+      static Cbxor
+      initial Cbxor := loadfunc("bitman.so", "bxor")
+
+      return \Cbxor(v1,v2)
+   end
+
+   # ----------------------------------------
+   # bitwise and
+   method band(v1:integer, v2:integer)
+      static Cband
+      initial Cband := loadfunc("bitman.so", "band")
+
+      return \Cband(v1,v2)
+   end
+
+   # ----------------------------------------
+   # bitwise one's complement
+   method bcom(v1:integer)
+      static Cbcom
+      initial Cbcom := loadfunc("bitman.so", "bcom")
+
+      return \Cbcom(v1)
+   end
+
+   # ----------------------------------------
+   # shift
+   method bshift(v1:integer, v2:integer)
+      static Cbshift
+      initial Cbshift := loadfunc("bitman.so", "bshift")
+
+      return \Cbshift(v1,v2)
+   end
+
+   # ----------------------------------------
+   # bit rotation
+   method brot(v1:integer, v2:integer)
+      static Cbrot
+      initial Cbrot := loadfunc("bitman.so", "brot")
+
+      return \Cbrot(v1,v2)
+   end
+
+   # ----------------------------------------
+   # single bit extraction
+   method bit(v:integer, n:integer)
+      static Cbit
+      initial Cbit := loadfunc("bitman.so", "bit")
+
+      return \Cbit(v, n)
+   end
+
+   # ----------------------------------------
+   # enquiry and bit extraction
+   # bits()      returns the number of bits in a word
+   # bits(x,n,m) returns a bit subset x[min(n,m) : max(n,m)]
+   method bits(args[])
+      static Cbits
+      initial Cbits := loadfunc("bitman.so", "bits")
+
+      case *args of {
+         0: return \Cbits()
+         3: return \Cbits(args[1], args[2], args[3])
+      }
+      # Fail
+   end
+
+   # ----------------------------------------
+   method api()
+      return [
+              lang::find_method("bor"),
+              lang::find_method("xbor"),
+              lang::find_method("band"),
+              lang::find_method("bcom"),
+              lang::find_method("bshift"),
+              lang::find_method("bit"),
+              lang::find_method("bits"),
+              lang::find_method("brot"),
+              lang::find_method("test")
+              ]
+   end
+
+$define FAIL_TEST put(failures, "Test failure at " || &file || ":"  || &line)
+
+   # ----------------------------------------
+   # Confidence testing
+   method test()
+      local failures := [], nbits
+      local n, val
+
+      # Check that every routine actually functions
+      if not bor(1,1) then FAIL_TEST
+      if not bxor(1,1) then FAIL_TEST
+      if not band(1,1) then FAIL_TEST
+      if not bcom(1,1) then FAIL_TEST
+      if not bshift(1,1) then FAIL_TEST
+      if not bit(1,1) then FAIL_TEST
+      if not bits(1,1,2) then FAIL_TEST
+
+      # Some simple confidence tests, mostly on the low 32 bits (so the
+      # tests work on 32-bit and 64-bit machines)
+      if bor (16RF0F0, 16RFF00) ~= 16RFFF0 then FAIL_TEST
+      if band(16RF0F0, 16RFF00) ~= 16RF000 then FAIL_TEST
+      if bxor(16RF0F0, 16RFF00) ~= 16R0FF0 then FAIL_TEST
+      if bcom(0) ~= -1 then FAIL_TEST
+      if bcom(42) ~= -43 then FAIL_TEST
+      if bshift(16R42,4) ~= 16R420 then FAIL_TEST
+      if bshift(16R678, -8) ~= 6 then FAIL_TEST
+      if (bit(16R123456,2) ~= 1) ||
+         (bit(16R123456,3) ~= 1) ||
+         (bit(16R123456,4) ~= 0) ||
+         (bit(16R123456,5) ~= 1)  then FAIL_TEST
+      if bits(16R123456,1,5) ~= 6 then FAIL_TEST
+      if bits(16R123456,5,1) ~= 6 then FAIL_TEST
+      if bits(16R12345678,30,33) ~= 0 then FAIL_TEST
+      if bits(16R12345678,29,33) ~= 1 then FAIL_TEST
+      if bits(16R123456,9,21) ~= 16R234 then FAIL_TEST
+
+      nbits := bits()
+      # tests that depend on the number of bits in a word
+      if \nbits = 32 then {
+         val := 16R55555555     # make sure this is not a large integer!
+         every n := 1 to 32 do {
+            if bit(val,n) ~= bit(n,1) then FAIL_TEST
+            if bit(val,n) ~= bit(val, n - 32 - 1) then FAIL_TEST
+         }
+         every n := 1 to 30 do {
+            if bits(val,n, n+3) ~= (2 + bit(n,1)*3) then FAIL_TEST
+            if bits(val, (n - 32), (n - 32 - 3)) ~= (2 + bit(n,1)*3) then FAIL_TEST
+         }
+         if brot(16R12345678,1) ~= 16R2468ACF0 then FAIL_TEST
+         if brot(16R12345678,4) ~= 16R23456781 then FAIL_TEST
+         if brot(16R76543210, -3) ~= 16R0ECA8642 then FAIL_TEST
+         if brot(16R4321,-1) ~= -2147475056 then FAIL_TEST
+      } else if \nbits = 64 then {
+         val := 16R5555555555555555 # make sure this is not a large integer!
+         every n := 1 to 64 do {
+            if bit(val,n) ~= bit(n,1) then FAIL_TEST
+            if bit(val,n) ~= bit(val, n - 64 - 1) then FAIL_TEST
+         }
+         every n := 1 to 62 do {
+            if bits(val,n, n+3) ~= (2 + bit(n,1)*3) then FAIL_TEST
+            if bits(val, (n - 64), (n - 64 - 3)) ~= (2 + bit(n,1)*3) then FAIL_TEST
+         }
+         # note different answers to 32-bit case
+         if brot(16R12345678,1) ~= 16R2468ACF0 then FAIL_TEST
+         if brot(16R7000000012345678,4) ~= 16R123456787 then FAIL_TEST
+         if brot(16R4321,-1) ~= -9223372036854767216 then FAIL_TEST
+      } else FAIL_TEST
+
+      return failures
+   end
+end
+

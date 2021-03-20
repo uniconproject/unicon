@@ -155,7 +155,7 @@ dptr dx;
       word i;
 
       for (i = x->msd; ++i <= x->lsd; )
-         val = (val << NB) - x->digits[i];
+	 val = (word)((uword)val << NB) - x->digits[i];
       if (!x->sign)
 	 val = -val;
       dx->dword = D_Integer;
@@ -274,8 +274,7 @@ union numeric *result;          /* output T_Integer or T_Lrgint */
  *  bignum -> real
  */
 
-double bigtoreal(da)
-dptr da;
+int bigtoreal(dptr da, double *d)
 {
    word i;
    double r = 0;
@@ -284,9 +283,13 @@ dptr da;
    for (i = b->msd; i <= b->lsd; i++)
       r = r * B + b->digits[i];
 
-   return (b->sign ? -r : r);
+   if (isinf(r))
+     return 0;
+
+   *d = (b->sign ? -r : r);
+   return 1;
 }
-
+
 /*
  *  real -> bignum
  */
@@ -297,28 +300,9 @@ dptr da, dx;
    struct b_bignum *b;
    word i, blen, d;
    int sgn;
-
-#ifdef Double
    double x;
-   {
-   int	*rp, *rq;
-#ifdef DescriptorDouble
-   rp = (int *) &(da->vword.realval);
-#else					/* DescriptorDouble */
-   rp = (int *) &(BlkLoc(*da)->Real.realval);
-#endif					/* DescriptorDouble */
-   rq = (int *) &x;
-   *rq++ = *rp++;
-   *rq = *rp;
-   }
-#else					/* Double */
-   double x = BlkD(*da,Real)->realval;
-#endif					/* Double */
 
-   if (x > 0.9999 * MinLong && x < 0.9999 * MaxLong) {
-      MakeInt((word)x, dx);
-      return Succeeded;		/* got lucky; a simple integer suffices */
-      }
+   GetReal(da, x);
 
    if ((sgn = (x < 0)))
       x = -x;
@@ -1541,7 +1525,7 @@ dptr da, db, dx;
       if (a->sign) {
          x->sign = 1;
          *DIG(x,0) |=
-            B - (1 << r);
+            B - (1L << r);
          compl1(DIG(x,0),
                 DIG(x,0),
                 xlen);
@@ -1559,9 +1543,8 @@ dptr da, db, dx;
 word bigcmp(da, db)
 dptr da, db;
 {
-   word alen, blen; 
-
    if (Type(*da) == T_Lrgint && Type(*db) == T_Lrgint) {
+      word alen, blen;
       struct b_bignum *a = LrgInt(da);
       struct b_bignum *b = LrgInt(db);
       if (a->sign != b->sign)
@@ -1834,7 +1817,7 @@ word i;
    if (i > 0) {
       /* scan bits left to right.  skip leading 1. */
       while (--n >= 0)
-         if (i & ((word)1 << n))
+         if (i & ((uword)1 << n))
 	    break;
       /* then, for each zero, square the partial result;
          for each one, square it and multiply it by a */
@@ -1842,7 +1825,7 @@ word i;
       while (--n >= 0) {
          if (bigmul(dx, dx, dx) == RunError)
 	    return RunError;
-         if (i & ((word)1 << n))
+         if (i & ((uword)1 << n))
             if (bigmul(dx, da, dx) == RunError)
 	       return RunError;
          }
@@ -1892,7 +1875,7 @@ dptr dx;
 
       /* scan bits left to right.  skip leading 1. */
       while (--n >= 0)
-         if (i & ((word)1 << n))
+         if (i & ((uword)1 << n))
 	    break;
       /* then, for each zero, square the partial result;
          for each one, square it and multiply it by a */
@@ -1913,7 +1896,7 @@ dptr dx;
                isbig = (Type(*dx) == T_Lrgint);
                } 
             }
-         if (i & ((word)1 << n)) {
+         if (i & ((uword)1 << n)) {
             if (isbig) {
                if (bigmuli(dx, a, dx) == RunError)
 		  return RunError;
@@ -2067,7 +2050,7 @@ struct b_bignum *tu, *tv;
 
    /* D1 */
    for (d = 0; d < NB; d++)
-      if (b[0] & (1 << (NB - 1 - d)))
+      if (b[0] & (1L << (NB - 1 - d)))
          break;
 
    u[0] = shifti1(a, d, (DIGIT)0, &u[1], m+n);

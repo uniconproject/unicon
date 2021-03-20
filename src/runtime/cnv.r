@@ -27,9 +27,7 @@ static int tmp_str (char *sbuf, dptr s, dptr d);
 /*
  * cnv_c_dbl - cnv:C_double(*s, *d), convert a value directly into a C double
  */
-int cnv_c_dbl(s, d)
-dptr s;
-double *d;
+int cnv_c_dbl(dptr s, double *d)
    {
 
    /*
@@ -64,7 +62,7 @@ double *d;
 
 #ifdef LargeInts
          if (Type(*s) == T_Lrgint)
-            *d = bigtoreal(s);
+            return bigtoreal(s, d);
          else
 #endif					/* LargeInts */
 
@@ -96,8 +94,7 @@ double *d;
       case T_Lrgint:
          result.dword = D_Lrgint;
 	 BlkLoc(result) = (union block *)numrc.big;
-         *d = bigtoreal(&result);
-         return 1;
+         return bigtoreal(&result, d);
 #endif					/* LargeInts */
 
       case T_Real:
@@ -920,7 +917,6 @@ char *s;
    {
    register char *p;
    word ival;
-   char *maxneg = MaxNegInt;
 
    p = s + MaxCvtLen - 1;
    ival = num;
@@ -932,9 +928,9 @@ char *s;
 	 ival /= 10L;
 	 } while (ival != 0L);
    else {
-      if (ival == -ival) {      /* max negative value */
-	 p -= strlen (maxneg);
-	 sprintf (p, "%s", maxneg);
+      if (ival == MinLong) {
+	 p -= strlen(MaxNegInt);
+	 strcpy(p, MaxNegInt);
          }
       else {
 	ival = -ival;

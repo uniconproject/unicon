@@ -5,9 +5,10 @@
 # capability to invoke and control other (console mode) unicon programs.
 # Status: runs on Linux, not on Windows yet.
 #
+link io
 
 procedure main()
-    local fo, fi
+    local fo, fi, unicon
    #
    # test 1: most trivial Unicon program, compiled w/iconx
    #
@@ -17,7 +18,14 @@ procedure main()
    write(fo, "   write(\"hello, world\")")
    write(fo, "end")
    close(fo)
-   system("unicon -s ptytest")
+$ifdef _MS_WINDOWS_NT
+   unicon := "../../bin/unicon.exe"
+$else
+   unicon := "../../bin/unicon"
+$endif
+   if not exists(unicon) then
+      unicon := "unicon"
+   system(unicon || " -s ptytest")
    fi := open("./ptytest", "prw") | stop("can't open mode prw")
    write("pty gives me: ", image(read(fi)))
    close(fi)

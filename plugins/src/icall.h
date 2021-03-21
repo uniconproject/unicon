@@ -9,7 +9,7 @@
 #                 Clinton Jeffery, Jafar Al-Gharaibeh,
 #                 Don Ward
 #
-#       Date:     September 2nd 2020
+#       Date:     March 21st 2021
 #
 ############################################################################
 #
@@ -62,6 +62,8 @@
 #   and returning an error code if the argument is wrong:
 #
 #       ArgInteger(i)   check that argv[i] is an integer
+#       ArgNativeInteger(i) check that argv[i] is an integer and not 
+#                           a large integer
 #       ArgReal(i)      check that argv[i] is a real number
 #       ArgString(i)    check that argv[i] is a string
 #       ArgList(i)      check that argv[i] is a list (note that a list
@@ -135,6 +137,7 @@
  */
 #define T_Null           0              /* null value */
 #define T_Integer        1              /* integer */
+#define T_Lrgint         2              /* long integer */
 #define T_Real           3              /* real number */
 #define T_File           5              /* file, including window */
 #define T_Record         7              /* record */
@@ -146,6 +149,7 @@
 
 #define D_Null          (T_Null     | D_Typecode)
 #define D_Integer       (T_Integer  | D_Typecode)
+#define D_Lrgint        ((word)(T_Lrgint | D_Typecode | F_Ptr))
 #ifdef DescriptorDouble
 #define D_Real          (T_Real     | D_Typecode)
 #else                                   /* Descriptor Double */
@@ -170,6 +174,7 @@
 #define Type(d) ((int)((d).dword & TypeMask))
 
 typedef long word;
+typedef unsigned long uword;
 typedef struct descrip {
    word dword;
    union {
@@ -349,6 +354,10 @@ extern rtentryvector rtfuncs;
 */
 
 #define ArgInteger(i) do { if (argc < (i)) FailCode(101); \
+if (!cnv_int(&argv[i],&argv[i])) ArgError(i,101); } while(0)
+
+#define ArgNativeInteger(i) do { if (argc < (i)) FailCode(101); \
+if (argv[i].dword == D_Lrgint) FailCode(101); \
 if (!cnv_int(&argv[i],&argv[i])) ArgError(i,101); } while(0)
 
 #define ArgReal(i) \

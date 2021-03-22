@@ -13,6 +13,7 @@ procedure main()
       write(read(f))
 
       delay(1000)
+      close(f)
       exit(0)
    }
 
@@ -20,6 +21,7 @@ procedure main()
    if f := open("revsock", "na") then {
       if fork() = 0 then {
 	 handle(f)
+	 close(f)
 	 exit(0)
       }
       close(f)

@@ -8,6 +8,14 @@
 
 link io
 procedure main()
+    local icont
+$ifdef _MS_WINDOWS_NT
+    icont := "../../bin/icont.exe"
+$else
+    icont := "../../bin/icont"
+$endif
+   if not exists(icont) then
+      icont := "icont"
    remove("foo.out")
    f := open("x.icn","w")
    write(f,"procedure main()")
@@ -19,7 +27,7 @@ procedure main()
    # this was a cause of error difference between what is expected and
    # what was actually obtained
    #
-   system("icont x.icn &>foo.out")
+   system(icont || " x.icn &>foo.out")
    fin := open("foo.out") | stop("can't open foo.out for reading")
    every write(!fin)
    close(fin)

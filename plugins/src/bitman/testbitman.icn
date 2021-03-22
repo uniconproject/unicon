@@ -1,0 +1,76 @@
+#-------------------------------------------------------------------------------
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+#-------------------------------------------------------------------------------
+#
+# A brief test for the Bitman bit manipulation plugin
+#
+# Author  :    Don Ward
+# Date    :    March 2021
+#
+#-------------------------------------------------------------------------------
+import Bitman
+link numbers
+
+$define UFL &file || ":" || &line
+
+global failures
+
+procedure Fail(mess:string)
+   put(failures, "Test failure " || mess)
+end
+
+procedure main()
+   local p, L
+
+   &error := -1
+   p := Bitman()
+   failures := p.test()
+$ifdef _LARGE_INTEGERS
+   # This is a large integer on 32-bit and 64-bit systems
+   L := 16RFF1234567812345678
+
+   # Check that large integers fail
+   if large(L) then {
+      if \(p.bor(L,1)) then Fail(UFL || " (bor)")
+      if \(p.bor(1,L)) then Fail(UFL || " (bor)")
+      if \(p.bor(L,L)) then Fail(UFL || " (bor)")
+
+      if \(p.bxor(L,1)) then Fail(UFL || " (bxor)")
+      if \(p.bxor(1,L)) then Fail(UFL || " (bxor)")
+      if \(p.bxor(L,L)) then Fail(UFL || " (bxor)")
+
+      if \(p.band(L,1)) then Fail(UFL || " (band)")
+      if \(p.band(1,L)) then Fail(UFL || " (band)")
+      if \(p.band(L,L)) then Fail(UFL || " (band)")
+
+      if \(p.bcom(L)) then Fail(UFL || " (bcom)")
+
+      if \(p.bshift(L,1)) then Fail(UFL || " (bshift)")
+      if \(p.bshift(1,L)) then Fail(UFL || " (bshift)")
+
+      if \(p.bit(L,1)) then Fail(UFL || " (bit)")
+      if \(p.bit(1,L)) then Fail(UFL || " (bit)")
+
+      if \(p.bits(L,1,2)) then Fail(UFL || " (bits)")
+      if \(p.bits(1,L,2)) then Fail(UFL || " (bits)")
+      if \(p.bits(1,2,L)) then Fail(UFL || " (bits)")
+
+      if \(p.brot(L,1)) then Fail(UFL || " (brot)")
+      if \(p.brot(1,L)) then Fail(UFL || " (brot)")
+   } else {
+      Fail(UFL || " Neither 32-bit nor 64-bit machine")
+   }
+$endif
+
+   if *failures = 0 then {
+      write("Passed")
+   } else {
+      write(*failures, " failure", if *failures > 1 then "s" else "")
+      every write(!failures)
+   }
+
+end

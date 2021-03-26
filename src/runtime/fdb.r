@@ -77,18 +77,30 @@ function{0,1} dbcolumns(f,table_name)
     static struct descrip colnames[12];
     static int cnm=0;
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "catalog");
-       AsgnCStr(colnames[cnm++], "schema");
-       AsgnCStr(colnames[cnm++], "tablename");
-       AsgnCStr(colnames[cnm++], "colname");
-       AsgnCStr(colnames[cnm++], "datatype");
-       AsgnCStr(colnames[cnm++], "typename");
-       AsgnCStr(colnames[cnm++], "colsize");
-       AsgnCStr(colnames[cnm++], "buflen");
-       AsgnCStr(colnames[cnm++], "decdigits");
-       AsgnCStr(colnames[cnm++], "numprecradix");
-       AsgnCStr(colnames[cnm++], "nullable");
-       AsgnCStr(colnames[cnm++], "remarks");
+       AsgnCStr(colnames[cnm], "catalog");
+       cnm++;
+       AsgnCStr(colnames[cnm], "schema");
+       cnm++;
+       AsgnCStr(colnames[cnm], "tablename");
+       cnm++;
+       AsgnCStr(colnames[cnm], "colname");
+       cnm++;
+       AsgnCStr(colnames[cnm], "datatype");
+       cnm++;
+       AsgnCStr(colnames[cnm], "typename");
+       cnm++;
+       AsgnCStr(colnames[cnm], "colsize");
+       cnm++;
+       AsgnCStr(colnames[cnm], "buflen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "decdigits");
+       cnm++;
+       AsgnCStr(colnames[cnm], "numprecradix");
+       cnm++;
+       AsgnCStr(colnames[cnm], "nullable");
+       cnm++;
+       AsgnCStr(colnames[cnm], "remarks");
+       cnm++;
        };
 #else					/* MacOS */
     static struct descrip colnames[12] = {
@@ -250,12 +262,18 @@ function {0,1} dbdriver(f)
     static struct descrip colnames[6];
     static int cnm=0;
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "name");
-       AsgnCStr(colnames[cnm++], "ver");
-       AsgnCStr(colnames[cnm++], "odbcver");
-       AsgnCStr(colnames[cnm++], "connections");
-       AsgnCStr(colnames[cnm++], "statements");
-       AsgnCStr(colnames[cnm++], "dsn");
+       AsgnCStr(colnames[cnm], "name");
+       cnm++;
+       AsgnCStr(colnames[cnm], "ver");
+       cnm++;
+       AsgnCStr(colnames[cnm], "odbcver");
+       cnm++;
+       AsgnCStr(colnames[cnm], "connections");
+       cnm++;
+       AsgnCStr(colnames[cnm], "statements");
+       cnm++;
+       AsgnCStr(colnames[cnm], "dsn");
+       cnm++;
        }
 #else					/* MacOS */
     static struct descrip colnames[6]={
@@ -334,7 +352,10 @@ function{1} dbkeys(f, table_name)
     static struct descrip colnames[2];
     static int cnm=0;
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "col"); AsgnCStr(colnames[cnm++], "seq");
+       AsgnCStr(colnames[cnm], "col");
+       cnm++;
+       AsgnCStr(colnames[cnm], "seq");
+       cnm++;
        }
 #else					/* MacOS */
     static struct descrip colnames[2]={{3,(word)"col"}, {3,(word)"seq"}};
@@ -447,25 +468,44 @@ function {0,1} dblimits(f)
     static struct descrip colnames[19];
     static int cnm=0;
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "maxbinlitlen");
-       AsgnCStr(colnames[cnm++], "maxcharlitlen");
-       AsgnCStr(colnames[cnm++], "maxcolnamelen");
-       AsgnCStr(colnames[cnm++], "maxgroupbycols");
-       AsgnCStr(colnames[cnm++], "maxorderbycols");
-       AsgnCStr(colnames[cnm++], "maxindexcols");
-       AsgnCStr(colnames[cnm++], "maxselectcols");
-       AsgnCStr(colnames[cnm++], "maxtblcols");
-       AsgnCStr(colnames[cnm++], "maxcursnamelen");
-       AsgnCStr(colnames[cnm++], "maxindexsize");
-       AsgnCStr(colnames[cnm++], "maxownnamelen");
-       AsgnCStr(colnames[cnm++], "maxprocnamelen");
-       AsgnCStr(colnames[cnm++], "maxqualnamelen");
-       AsgnCStr(colnames[cnm++], "maxrowsize");
-       AsgnCStr(colnames[cnm++], "maxrowsizelong");
-       AsgnCStr(colnames[cnm++], "maxstmtlen");
-       AsgnCStr(colnames[cnm++], "maxtblnamelen");
-       AsgnCStr(colnames[cnm++], "maxselecttbls");
-       AsgnCStr(colnames[cnm++], "maxusernamelen");
+       AsgnCStr(colnames[cnm], "maxbinlitlen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxcharlitlen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxcolnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxgroupbycols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxorderbycols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxindexcols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxselectcols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxtblcols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxcursnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxindexsize");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxownnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxprocnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxqualnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxrowsize");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxrowsizelong");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxstmtlen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxtblnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxselecttbls");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxusernamelen");
+       cnm++;
        }
 #else					/* MacOS */
     static struct descrip colnames[19]={{12,(word)"maxbinlitlen"},
@@ -538,7 +578,10 @@ function {0,1} dbproduct(f)
       static struct descrip colnames[2];
       static int cnm=0;
       if (!cnm) {
-	 AsgnCStr(colnames[cnm++], "name"); AsgnCStr(colnames[cnm++], "ver");
+	 AsgnCStr(colnames[cnm], "name");
+         cnm++;
+	 AsgnCStr(colnames[cnm], "ver");
+         cnm++;
 	 }
 #else
       static struct descrip colnames[]={{4,(word)"name"}, {3,(word)"ver"}};
@@ -649,11 +692,16 @@ function{0,1} dbtables(f)
       static struct descrip colnames[5];
       static int cnm=0;
       if (!cnm) {
-	 AsgnCStr(colnames[cnm++], "qualifier");
-	 AsgnCStr(colnames[cnm++], "owner");
-	 AsgnCStr(colnames[cnm++], "name");
-	 AsgnCStr(colnames[cnm++], "type");
-	 AsgnCStr(colnames[cnm++], "remarks");
+	 AsgnCStr(colnames[cnm], "qualifier");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "owner");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "name");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "type");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "remarks");
+	 cnm++;
 	 }
 #else					/* MacOS */
     static struct descrip colnames[5]={

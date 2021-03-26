@@ -2133,7 +2133,7 @@ ParseAndPutPixels(
 #endif
 
 
-	    bzero((char *)colidx, 256 * sizeof(short));
+	    memset((char *)colidx, 0,  256 * sizeof(short));
 	    for (a = 0; a < ncolors; a++)
 		colidx[(unsigned char)colorTable[a].string[0]] = a + 1;
 
@@ -2180,7 +2180,7 @@ if (cidx[f]) XpmFree(cidx[f]);}
 	    unsigned short *cidx[256];
 	    int char1;
 
-	    bzero((char *)cidx, 256 * sizeof(unsigned short *)); /* init */
+	    memset((char *)cidx, 0, 256 * sizeof(unsigned short *)); /* init */
 	    for (a = 0; a < ncolors; a++) {
 		char1 = colorTable[a].string[0];
 		if (cidx[char1] == NULL) { /* get new memory */

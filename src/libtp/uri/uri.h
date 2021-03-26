@@ -18,6 +18,10 @@ enum URIERR {
 
 extern const char* const _uri_errlist[];
 
+#ifndef strdup
+char *strdup(const char* s);
+#endif
+
 /* A parsed URI */
 typedef struct _uri {
   int   status;   /* Success or error code */

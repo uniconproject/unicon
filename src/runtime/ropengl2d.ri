@@ -4968,14 +4968,14 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
    f = fopen(filename, "r");
    if (!f) return NULL;
 
-   fscanf(f," /* XPM */"); /* optional */
+   rv = fscanf(f," /* XPM */"); /* optional */
    rv = fscanf(f, " static char * %s = { ", tmp);
    if (rv < 1) {
       fclose(f);
       return NULL;
       }
 
-   fscanf(f," /* width height ncolors chars_per_pixel */");
+   rv = fscanf(f," /* width height ncolors chars_per_pixel */");
    rv = fscanf(f, " \" %d %d %d %d \", \n", &wid, &ht, &ncolors, 
                &chars_per_pixel);
    if (rv < 4 || chars_per_pixel < 1 || wid < 1 || ht < 1 || ncolors < 1) {
@@ -5030,7 +5030,7 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
     *
     * format: "pixel_chars type color_val"
     */
-   fscanf(f," /* colors */"); /* optional */
+   rv = fscanf(f," /* colors */"); /* optional */
    for (i = 0; i < ncolors; i++) {
       char *ptr;
       while ((rv = fgetc(f)) != '\"') {
@@ -5103,7 +5103,7 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
    /* 
     * Get pixels
     */
-   fscanf(f," /* pixels */"); /* optional */
+   rv = fscanf(f," /* pixels */"); /* optional */
    for (iy = 0; iy < ht; iy++) {
       while ((rv = fgetc(f)) == ' ' || rv == '\n');
       if (rv != '\"' || !fgets(buf, wid*chars_per_pixel+1, f)) {

@@ -46,7 +46,7 @@ Tp_t* tp_new(URI* puri, Tpmethod_t* meth, Tpdisc_t* disc)
     return NULL;
   }
 
-  bzero(tp, sizeof(Tp_t));
+  memset(tp, 0, sizeof(Tp_t));
 
   /* Deep copy the URI */
   tp->uri.status = puri->status;

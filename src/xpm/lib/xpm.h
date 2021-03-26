@@ -57,6 +57,8 @@
 #define XpmRevision 11
 #define XpmIncludeVersion ((XpmFormat * 100 + XpmVersion) * 100 + XpmRevision)
 
+#define _POSIX_C_SOURCE 200809L
+
 #ifdef FOR_MSW
 # define SYSV			/* uses memcpy string.h etc. */
 # include <malloc.h>
@@ -65,6 +67,7 @@
 #else /* FOR_MSW */
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
+#  include <strings.h>
 #endif /* FOR_MSW */
 
 /* let's define Pixel if it is not done yet */

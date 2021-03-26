@@ -317,6 +317,7 @@ FUNC(xpmstrdup, char *, (char *s1));
 #define xpmstrdup strdup
 #endif
 
+
 #ifdef NEED_STRCASECMP                   
 FUNC(xpmstrcasecmp, int, (char *s1, char *s2));
 #else

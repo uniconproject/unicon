@@ -1252,6 +1252,7 @@ void envset()
 
 #ifdef VerifyHeap
    env_int("VRFY", &vrfy, 0, (uword)0); /* Bit significant verify flags */
+   env_int("VRFYOP", &vrfyOpCtrl, 0, (uword)0); /* Bit significant verify flags */
 #endif                  /* VerifyHeap */
 
 /*

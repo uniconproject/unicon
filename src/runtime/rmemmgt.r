@@ -1990,7 +1990,11 @@ return memorysize(0);
  * A circular buffer of messages
  */
 typedef char vlogmessage[64];
+#ifdef VRFY_LOGSIZE
+static vlogmessage vlog[VRFY_LOGSIZE];
+#else
 static vlogmessage vlog[2000];
+#endif					/* VRFY_LOGSIZE */
 static int vlogNext;
 
 /* Insert a (formatted) message into the log buffer with parameters */
@@ -2065,6 +2069,7 @@ static int vrfyPhase = PRE_GC;
  *      sets will not be verified; and so on.
  */
 long vrfy = 0;
+long vrfyOpCtrl = 0;            /* As for vrfy but controls "is verified" messages */
 
 long vrfyStarts = 0;
 long vrfyEnds = 0;
@@ -2433,6 +2438,7 @@ static void vrfy_Intarray(struct b_intarray *b)
                     b, b->blksize, (hdr->size*sizeof(b->a[0])));
         }
       }
+      if (vrfyOpCtrl & (1<<T_Intarray)) vrfyLog("Intarray at %p verified", b);
     }
   }
 }
@@ -2458,6 +2464,7 @@ static void vrfy_Realarray(struct b_realarray *b)
                     b, b->blksize, (hdr->size*sizeof(b->a[0])));
         }
       }
+      if (vrfyOpCtrl & (1<<T_Realarray)) vrfyLog("Realarray at %p verified", b);
     }
   }
 }
@@ -2540,6 +2547,7 @@ static void vrfy_Record(struct b_record *b)
           }
         }
       }
+      if (vrfyOpCtrl & (1<<T_Record)) vrfyLog("Record at %p (%ld) verified", b, b->id);
     } /* post-GC checks */
   }
 }
@@ -2606,7 +2614,7 @@ static void vrfy_List(struct b_list *b)
           }
         }
       }
-      vrfyLog("List at %p (%ld) verified", b, b->id);
+      if (vrfyOpCtrl & (1<<T_List)) vrfyLog("List at %p (%ld) verified", b, b->id);
    } /* Post-GC checks */
   }
 }
@@ -2753,7 +2761,7 @@ static void vrfy_Table(struct b_table *b)
       if (members > 0) {
         vrfyCrash("Table at %p: %ld unaccounted members", b, members);
       }
-      vrfyLog("Table at %p (%ld) verified", b, b->id);
+      if (vrfyOpCtrl & (1<<T_Table)) vrfyLog("Table at %p (%ld) verified", b, b->id);
     }
 
   }
@@ -2814,7 +2822,7 @@ void vrfy_Live_Table(struct b_table *b)
     if (members > 0) {
       vrfyCrash("Table at %p (%ld): %ld unaccounted members", b, b->id, members);
     }
-    vrfyLog("Table at %p (%ld) verified", b, b->id);
+    if (vrfyOpCtrl & (1<<T_Table)) vrfyLog("Table at %p (%ld) verified", b, b->id);
   }
 
 

@@ -74,9 +74,9 @@ isql_open_fail:
       }
 
    if (SQLConnect(fp->hdbc,
-		  db, (SQLSMALLINT)strlen(db),
-		  StrLoc(*user), (SQLSMALLINT)StrLen(*user),
-		  StrLoc(*password), (SQLSMALLINT)StrLen(*password)) ==
+		  (SQLCHAR *) db, (SQLSMALLINT)strlen(db),
+		  (SQLCHAR *) StrLoc(*user), (SQLSMALLINT)StrLen(*user),
+		  (SQLCHAR *) StrLoc(*password), (SQLSMALLINT)StrLen(*password)) ==
        SQL_ERROR){
       odbcerror(fp, CONNECT_ERR);
 failed_connect:
@@ -110,7 +110,7 @@ failed_connect:
 
 int dbfetch(struct ISQLFile *fp, dptr pR)
 {
-   UWORD i, p, orig;
+   UWORD i, p;
    int rc;
    SWORD numcols, colsize;
 
@@ -118,7 +118,8 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
     * SQLINTEGER, SQLLEN, or SDWORD? Depending on ODBC version and doc
     * you read.  SQLLEN tried, and did not magically fix on AMD64.
     */
-   SQLLEN colsz, len, typesize;
+   SQLLEN colsz, len;
+   SQLULEN typesize;
    char buff[BUFF_SZ*2]; /* data buffer */
    UCHAR colname[MAX_COL_NAME+1];
    SWORD SQLType, scale, nullable;
@@ -156,7 +157,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
             return Failed;
             }
          if (colsize >= MAX_COL_NAME-1) printf("column name size exceeded\n");
-         StrLoc(fieldname[p]) = alcstr(colname, colsize);
+         StrLoc(fieldname[p]) = alcstr((char *) colname, colsize);
          StrLen(fieldname[p]) = colsize;
          }
       /* allocate record */
@@ -289,8 +290,8 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 
 void odbcerror(struct ISQLFile *fp, int errornum)
 {
-   char SQLState[6];
-   static char ErrMsg[SQL_MAX_MESSAGE_LENGTH];
+   SQLCHAR  SQLState[6];
+   static char ErrMsg[SQL_MAX_MESSAGE_LENGTH]; /* FIXME: static! */
    SQLINTEGER NativeErr;
    SWORD  ErrMsgLen;
 
@@ -310,7 +311,7 @@ void odbcerror(struct ISQLFile *fp, int errornum)
 
    k_errornumber=errornum;
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState, &NativeErr,
-		       ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
+		       (SQLCHAR *) ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
 	      SQL_NO_DATA_FOUND)) {
       StrLoc(k_errortext) = alcstr(ErrMsg, ErrMsgLen);
       StrLen(k_errortext) = ErrMsgLen;

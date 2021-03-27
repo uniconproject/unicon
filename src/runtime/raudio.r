@@ -327,7 +327,7 @@ ALboolean (*talutLoadMS_ADPCMData)(ALuint bid,
 				ALvoid *data, ALuint size, ALuint freq,
 				ALenum format);
 
-#define GP(x)  alGetProcAddress((const ALubyte *) x)
+#define GP(x)  alGetProcAddress((const ALchar *) x)
 
 
 void micro_sleep(unsigned int n)

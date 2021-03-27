@@ -677,7 +677,6 @@ function{0,1} classname(r)
       char * recnm_bgn;
       char * recnm_end;
       char * first__;
-      char * second__;
       struct b_record * br;
 
       if (!is:record(r)) {
@@ -688,7 +687,6 @@ function{0,1} classname(r)
       recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
       if ((first__ = strstr(recnm_bgn, "__")) == NULL)
 	 fail;
-      second__ = strstr(first__ + 2, "__");
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       if (recnm_end > recnm_bgn) {
          StrLen(result) = recnm_end - recnm_bgn;

@@ -422,6 +422,7 @@ extern int isPlaying;
 
 #ifdef VerifyHeap
 extern long vrfy;
+extern long vrfyOpCtrl;
 extern void vrfyLog(const char *fmt, ...);
 extern void vrfy_Live_Table(struct b_table *b);
 #endif                  /* VerifyHeap */

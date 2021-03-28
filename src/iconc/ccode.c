@@ -3944,7 +3944,7 @@ field_ref(p, n, rslt)
     * (Remove the pragmas if the deref issue referred to below is fixed)
     */
    deref = HasVar(varsubtyp(rec->type, &single));
-   if (deref) { /* silence compiler warning */ }
+   (void) deref;  /* silence "not used" compiler warning */
    if (single != NULL) {
       /*
        * The record is in a named variable. Use value directly from

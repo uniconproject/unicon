@@ -74,7 +74,7 @@ function{0,1} Bg(argv[argc])
 #ifdef Graphics3D
       if (is_texture) {
 	 warg=1;
-	 if (texhandle) { /* silence a compiler warning */ }
+	 (void) texhandle;  /* silence "not used" compiler warning */
 	 }
 #endif					/* Graphics3D */
 
@@ -1864,8 +1864,8 @@ function{0,1} Fg(argv[argc])
 #ifdef Graphics3D
       if (is_texture) {
 	 warg=1;
-	 if (texhandle) { /* silence a compiler warning */ }
-      }
+	 (void) texhandle;  /* silence "not used" compiler warning */
+         }
 #endif					/* Graphics3D */
       /*
        * If there is a (non-window) argument we are setting by

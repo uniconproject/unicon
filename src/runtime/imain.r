@@ -752,7 +752,7 @@ int *ip;
 #ifdef MultiProgram
    curpstate = savedstate;
    curtstate = curpstate->tstate;
-   if (curtstate) { /* silence compiler warning */ }
+   (void) curtstate;  /* silence "not used" compiler warning */
 #endif						/* MultiProgram */
    }
 

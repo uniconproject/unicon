@@ -178,7 +178,7 @@ struct il_code *il;
    struct val_loc **locs;
    struct val_loc **locs1;
    struct val_loc *tnd;
-   int fall_thru;
+   int fall_thru = 0;
    int cond;
    int ncases;
    int indx;
@@ -1883,7 +1883,7 @@ struct il_code *src;
 struct il_c *dflt;
 struct il_c *dest;
    {
-   struct code *cd;
+   struct code *cd = NULL;
    int sym_indx;
 
    sym_indx = src->u[0].n;

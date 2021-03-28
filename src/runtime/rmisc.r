@@ -1734,7 +1734,7 @@ int pattern_image(union block *pe, int prev_index, dptr result,
 
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
-             int common_index;
+             int common_index = -1;
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
         
@@ -1751,12 +1751,16 @@ int pattern_image(union block *pe, int prev_index, dptr result,
 
              if ((pattern_image(Blk(ep,Pelem)->pthen, prev_index, &left,
 				peCount, pe_index, common_index)) == RunError) 
-                  return RunError;         
+	        return RunError;
+
              if ((pattern_image(r, prev_index, &right, peCount, pe_index, 
-                                common_index)) == RunError) return RunError;
+                                common_index)) == RunError)
+	        return RunError;
         
              if(construct_image(&left, bi_pat(PI_ALT), &right, result) 
-                                == RunError) return RunError;
+                                == RunError)
+	        return RunError;
+
              construct_image(bi_pat(PI_FPAREN), result, 
                              bi_pat(PI_BPAREN), result);
 

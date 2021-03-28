@@ -3,6 +3,8 @@
 # Look for @Replace and change the line(s) that follow(s)  
 #
 
+.PHONY: Clean default
+
 # @Replace: What is the name of this library?
 LNAME=upexample
 
@@ -23,4 +25,5 @@ include ../Makedefs
 
 default:	 $(LIBD)/$(LNAME).u
 
-
+Clean: clean
+# @Replace: Add plugin specific clean up actions here.

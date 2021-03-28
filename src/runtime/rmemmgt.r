@@ -15,7 +15,6 @@ static void postqual		(dptr dp);
 static void markblock	(dptr dp);
 static void markptr		(union block **ptr);
 static void sweep		(struct b_coexpr *ce);
-static void sweep_stk	(struct b_coexpr *ce);
 static void reclaim		(void);
 static void cofree		(void);
 static void scollect		(word extra);
@@ -32,6 +31,8 @@ static void markthreads();
 #endif					/* Concurrent */
 #if COMPILER
 static void sweep_pfps(struct p_frame *fp);
+#else
+static void sweep_stk	(struct b_coexpr *ce);
 #endif					/* COMPILER */
 
 #ifdef VerifyHeap

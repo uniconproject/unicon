@@ -2067,9 +2067,9 @@ int pattern_image(union block *pe, int prev_index, dptr result,
          Blk(ep, Pelem)->index == stop_index)
           return Succeeded;  
 
-      if (Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
+      if ((Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
 	   Blk(ep,Pelem)->pcode != PC_Assign_OnM &&
-           Blk(ep,Pelem)->pcode != PC_Setcur ||
+           Blk(ep,Pelem)->pcode != PC_Setcur) ||
 	   ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)) {
 	  if ((StrLen(*result)>0) ||
 	      ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)){

@@ -2222,7 +2222,6 @@ int drawgeometry2d(wbp w, struct b_record *rp)
 int drawblimage2d(wbp w, struct b_record *rp) 
    {
    wsp ws = w->window;
-   wcp wcr = &(ws->wcrender);
    wdp wd = ws->display;
    char c, ch, *s;
    int width, height, len, update = 0;
@@ -2346,7 +2345,6 @@ int drawblimage2d(wbp w, struct b_record *rp)
 int drawreadimage2d(wbp w, struct b_record *rp) 
    {
    wsp ws = w->window;
-   wcp wcr = &(ws->wcrender);
    wdp wd = ws->display;
    int width, height, is_pixmap, update = 0;
    double x, y;
@@ -2908,7 +2906,7 @@ int erasearea2d(wbp w, struct b_record *rp)
 int setcolor2d(wbp w, struct b_record *rp, int type)
    {
    wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
+   wcp wcr = &(ws->wcrender);
    int index, intcode;
    unsigned int r, g, b, a;
   
@@ -3000,23 +2998,13 @@ int setdrawop2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
-
 int setgamma2d(wbp w, struct b_record *rp) 
    {
-   wsp ws = w->window;
-   wcp wc = w->context, wcr = &(ws->wcrender);
-   double gamma;
-
    if (!rp) return Failed;
-   GetReal(&(rp->fields[2]), gamma);
-   wcr->gamma = gamma; 
-   
+   GetReal(&(rp->fields[2]), w->window->wcrender.gamma);
    ApplyGamma(w);
    return Succeeded;
    }
-
-
 
 /*
  * Toggles "reverse" attribute
@@ -3025,15 +3013,12 @@ int togglefgbg2d(wbp w)
    {
    wcp wcr = &(w->window->wcrender);
   
-   if (wcr->reverse) wcr->reverse = 0; 
-   else wcr->reverse = 1;
+   wcr->reverse = !(wcr->reverse);
 
    /* set OpenGL color state using render context */
-   SetDrawopColorState(w, w->window->wcrender.drawop, FG);
+   SetDrawopColorState(w, wcr->drawop, FG);
    return Succeeded;
    }
-
-
 
 int setfont2d(wbp w, struct b_record *rp) 
    {
@@ -3414,7 +3399,6 @@ int setdy2d(wbp w, struct b_record *rp)
 int gl_blimage(wbp w, int x, int y, int width, int height, int ch, 
    unsigned char *s, word len)
    {
-   wcp wc = w->context;
    wsp ws = w->window;
    static struct descrip *constr = NULL;
    const int intcode = GL2D_BLIMAGE;
@@ -3744,7 +3728,6 @@ int gl_drawstrng(wbp w, int x, int y, char *s, int len)
 int gl_xdis(wbp w, char *s, int len)
    {
    wsp ws = w->window;
-   wcp wc = w->context;
    static struct descrip *constr = NULL;
    const int intcode = GL2D_WWRITE;
    tended struct descrip f;
@@ -3973,7 +3956,7 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
    tended struct b_record *rp;
    tended struct b_realarray *ap;
    int nfillarc, ndrawarc, nfillcirc, ndrawcirc;
-   int i, nfields;
+   int i;
    double x, y, r, width, height, theta, alpha;
 
    if (n <= 0) return Failed;
@@ -4427,7 +4410,7 @@ int gl_drawsegments(wbp w, XSegment *segs, int n)
  */
 int polygon_type(XPoint *points, int n)
    {
-   int i, rv;
+   int i;
    double curr_x, curr_y, prev_x, prev_y;
    double curr_angle_abs, prev_angle_abs, last_angle, angle, accum_angle;
    const double TWO_PI = 2*Pi;
@@ -4435,7 +4418,6 @@ int polygon_type(XPoint *points, int n)
    /* check if polygon */
    if (n < 3) return Failed;
 
-   rv = 0;
    prev_x = points[0].x;
    prev_y = points[0].y;
    curr_x = points[1].x;
@@ -5438,6 +5420,7 @@ int gl_getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem)
    if (x < imem->x || x >= imem->x + imem->width ||
        y < imem->y || y >= imem->y + imem->height) {
       GetContextColorUS(w, BG, r, g, b, a);
+      if (a) { /*silence compiler warning */ }
       }
    else {
       ix = x - imem->x;
@@ -5536,7 +5519,6 @@ void gl_getfntnam(wbp w, char *s)
 
 char *gl_get_mutable_name(wbp w, int mute_index)
    {
-   wdp wd = w->window->display;
    struct color *mclr;
    char *colorname;
 
@@ -5681,7 +5663,6 @@ int gl_mutable_color(wbp w, dptr argv, int warg, int *rv)
    int id;
    tended char *str;
    struct color *mclr;
-   wsp ws = w->window;
 
    /*
     * check args
@@ -7313,10 +7294,8 @@ int gl_allowresize(wbp w, int on)
 wcp gl_clone_context(wbp w)
    {
    wcp wc, rv;
-   wdp wd;
 
    wc = w->context;
-   wd = w->context->display;
    Protect(rv = gl_alc_context(w), return NULL);
 
    copy_2dcontext(rv, wc);

@@ -1058,7 +1058,6 @@ struct fontsymbol {
    } while(0)
 
 #define _RenderTexturedRect(w, x, y, wd, ht, texwd, texht, near) do {\
-   int drawop;\
    double wx1, wy1, wx2, wy2;\
    float tx1, ty1, tx2, ty2;\
 \
@@ -1093,7 +1092,6 @@ struct fontsymbol {
 #define TRANSP_BG 0
 #define RenderTexturedBitmapRect(w, x, y, wd, ht, texwd, texht, near, fillbg)\
    do {\
-   wcp wcr = &(w->window->wcrender);\
    double wx1, wy1, wx2, wy2;\
    float tx1, ty1, tx2, ty2;\
 \

@@ -2211,13 +2211,11 @@ function{0,1} fetch(d, k)
 	       if (is:null(k))
 		  return result;
 	       else { /* pick out element k from result record */
-		  register union block *bp;  /* doesn't need to be tended */
 		  register union block *bp2; /* doesn't need to be tended */
 		  register word i;
 		  register int len;
 		  char *loc;
 		  int nf;
-		  bp = BlkLoc(result);
 		  bp2 = BlkD(result,Record)->recdesc;
 		  nf = Blk(bp2,Proc)->nfields;
 		  loc = StrLoc(dkey);
@@ -2234,7 +2232,11 @@ function{0,1} fetch(d, k)
 			/*
 			 * Found the field, return a pointer to it.
 			 */
+			{
+			register union block *bp;  /* doesn't need to be tended */
+			bp = BlkLoc(result);
 			return struct_var(&(Blk(bp,Record)->fields[i]), bp);
+			}
 #endif					/* COMPILER */
 			}
 		     }

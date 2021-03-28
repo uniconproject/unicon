@@ -2325,6 +2325,10 @@ C_rtn_term:
 		  }
 #endif					/* MultiProgram */
 	       goto Unmark_uw;
+#ifdef MultiProgram
+	       /* unreachable, but good to silence silence compiler wwarning */
+	       value_tmp = lastdesc;
+#endif					/* MultiProgram */
 
 	    case A_Lsusp_uw:		/* unwind for lsusp */
 #ifdef MultiProgram

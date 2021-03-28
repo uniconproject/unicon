@@ -2716,7 +2716,6 @@ function{3} Pixel(argv[argc])
 
             slen = strlen(strout);
             if (rv >= 0) {
-	       int signal;
                if (slen != StrLen(lastval) ||
                      strncmp(strout, StrLoc(lastval), slen)) {
                   Protect((StrLoc(lastval) = alcstr(strout, slen)), runerr(0));
@@ -2729,6 +2728,8 @@ function{3} Pixel(argv[argc])
 		* suspend, but free up imem if vanquished; RTL workaround.
 		* Needs implementing under the compiler iconc.
 		*/
+	       {
+	       int signal;
 	       r_args[0] = lastval;
 #ifdef TSTATARG 
 	       if ((signal = interp(G_Fsusp, r_args, CURTSTATARG)) != A_Resume) {
@@ -2744,6 +2745,7 @@ function{3} Pixel(argv[argc])
 		  getpixel_term(w, &imem);
 		  VanquishReturn(signal);
 		  }
+	       }
 #endif					/* COMPILER */
                }
             else {

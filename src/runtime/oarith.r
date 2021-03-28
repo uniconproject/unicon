@@ -109,8 +109,6 @@ end
 #enddef
 #begdef RealDivide(x,y)
 {
-   double z;
-
    if (y == 0.0)
       runerr(204);
 

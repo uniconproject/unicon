@@ -1452,7 +1452,7 @@ loop:
 int mark_symbol(void)
 {
     register int c;
-    register bucket *bp;
+    register bucket *bp = NULL;
 
     c = cptr[1];
     if (c == '%' || c == '\\')

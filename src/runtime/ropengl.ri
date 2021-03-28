@@ -3033,7 +3033,6 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
    char path[255] = "../dat/fonts/";
 #endif
    static char *full_name = NULL;
-   FILE *f = 0;
 #if NT
    struct _stat sb;
 #else					/* NT */
@@ -3665,7 +3664,6 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 {
    struct imgmem imem;
    int i, j, l, twd3;
-   long rv;
    LinearColor clr;
    unsigned long c;
 #ifdef XWindows
@@ -3731,7 +3729,6 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 	   if (rv == 0xff000000) {
 */
 	      XQueryColor(stddpy, wd->cmap, &clrcell);
-	      rv = 1;
 	      clr = lcolor(w2d, clrcell);
               tex[l] = clr.red>>8;
               tex[l+1] = clr.green>>8;
@@ -3741,6 +3738,7 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 #else
 	   {
 	   char *s2, strout[50];
+	   long rv;
 
 	   if (getpixel(w2d, i, height-j-1, &rv, strout, &imem) == Failed)
                return Failed;

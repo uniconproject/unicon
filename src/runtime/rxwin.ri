@@ -1489,7 +1489,6 @@ int wmap(wbp w)
 
    XSetWindowAttributes attr;
    Display *stddpy;
-   GLXContext stdctx;
    Window stdwin = (Window) NULL;
    Window rootwin;
 
@@ -1531,7 +1530,6 @@ int wmap(wbp w)
          }
       }
    ws->vis = DefaultVisual(wd->display, wd->screen);
-   stdctx = ws->ctx;
 
    /*
     * Find/allocate an XColor for background color and reference it
@@ -1557,6 +1555,7 @@ int wmap(wbp w)
       if (!color) 
          return RunError;
       wc->glfg.c = color->c;
+      (void) a;  /* silence "not used" compiler warning */
       }
    } 
 

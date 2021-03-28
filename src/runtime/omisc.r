@@ -128,6 +128,9 @@ operator{1} * size(x)
 	    SQLLEN numrows;			/* was SQLINTEGER */
 	    fp = BlkLoc(x)->File.fd.sqlf;
 	    rc = SQLRowCount(fp->hstmt, &numrows);
+	    if (rc != SQL_SUCCESS) {
+	      //TODO: handle failure
+	    }
 	    return C_integer(numrows);
 	    }
 #endif					/* ISQL */

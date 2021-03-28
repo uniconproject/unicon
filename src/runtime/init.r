@@ -2098,7 +2098,6 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 struct progstate * findicode(word *opnd)
 {
    struct progstate *p = NULL;
-   CURTSTATE_AND_CE();
 
    for (p = &rootpstate; p != NULL; p = p->next) {
       if (InRange(p->Code, opnd, p->Ecode)) {

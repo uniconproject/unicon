@@ -63,8 +63,6 @@ function{0,1} dbcolumns(f,table_name)
    
     SQLRETURN retcode;
     
-    short i;
-
     /* buffers for bytes available to return */
 
     SQL_LENORIND cbCatalog, cbSchema, cbTableName, cbColumnName;
@@ -75,20 +73,32 @@ function{0,1} dbcolumns(f,table_name)
     
 #ifdef MacOS
     static struct descrip colnames[12];
-    static int cnm=0;
+    static int cnm=0;  /* FIXME: thread unsafe  */
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "catalog");
-       AsgnCStr(colnames[cnm++], "schema");
-       AsgnCStr(colnames[cnm++], "tablename");
-       AsgnCStr(colnames[cnm++], "colname");
-       AsgnCStr(colnames[cnm++], "datatype");
-       AsgnCStr(colnames[cnm++], "typename");
-       AsgnCStr(colnames[cnm++], "colsize");
-       AsgnCStr(colnames[cnm++], "buflen");
-       AsgnCStr(colnames[cnm++], "decdigits");
-       AsgnCStr(colnames[cnm++], "numprecradix");
-       AsgnCStr(colnames[cnm++], "nullable");
-       AsgnCStr(colnames[cnm++], "remarks");
+       AsgnCStr(colnames[cnm], "catalog");
+       cnm++;
+       AsgnCStr(colnames[cnm], "schema");
+       cnm++;
+       AsgnCStr(colnames[cnm], "tablename");
+       cnm++;
+       AsgnCStr(colnames[cnm], "colname");
+       cnm++;
+       AsgnCStr(colnames[cnm], "datatype");
+       cnm++;
+       AsgnCStr(colnames[cnm], "typename");
+       cnm++;
+       AsgnCStr(colnames[cnm], "colsize");
+       cnm++;
+       AsgnCStr(colnames[cnm], "buflen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "decdigits");
+       cnm++;
+       AsgnCStr(colnames[cnm], "numprecradix");
+       cnm++;
+       AsgnCStr(colnames[cnm], "nullable");
+       cnm++;
+       AsgnCStr(colnames[cnm], "remarks");
+       cnm++;
        };
 #else					/* MacOS */
     static struct descrip colnames[12] = {
@@ -118,7 +128,7 @@ function{0,1} dbcolumns(f,table_name)
     retcode=SQLColumns(hstmt,      
                        NULL, 0,                /* all catalogs */
                        NULL, 0,                /* all schemas */
-                       StrLoc(table_name), StrLen(table_name), /* table */
+                       (SQLCHAR *) StrLoc(table_name), StrLen(table_name), /* table */
                        NULL, 0);               /* All columns */
 
     if (retcode!=SQL_SUCCESS) {
@@ -160,26 +170,26 @@ function{0,1} dbcolumns(f,table_name)
 
       /* populate list with column info */
       /* TABLE_CAT (varchar) */
-      StrLoc(r->fields[0])=cbCatalog>0?alcstr(szCatalog, cbCatalog):"";
+      StrLoc(r->fields[0])=cbCatalog>0?alcstr((char *) szCatalog, cbCatalog):"";
       StrLen(r->fields[0])=cbCatalog>0?cbCatalog:0;
 
       /* TABLE_SCHEM (varchar) */
-      StrLoc(r->fields[1])=cbSchema>0?alcstr(szSchema, cbSchema):"";
+      StrLoc(r->fields[1])=cbSchema>0?alcstr((char *) szSchema, cbSchema):"";
       StrLen(r->fields[1])=cbSchema>0?cbSchema:0;  /* cbSchema could be -1 */
 
       /* TABLE_NAME (varchar not NULL) */
-      StrLoc(r->fields[2])=cbTableName>0?alcstr(szTableName, cbTableName):"";
+      StrLoc(r->fields[2])=cbTableName>0?alcstr((char *) szTableName, cbTableName):"";
       StrLen(r->fields[2])=cbTableName>0?cbTableName:0;                     
 
       /* COLUMN_NAME (varchar not NULL) */
-      StrLoc(r->fields[3])=cbColumnName>0?alcstr(szColumnName, cbColumnName):"";
+      StrLoc(r->fields[3])=cbColumnName>0?alcstr((char *) szColumnName, cbColumnName):"";
       StrLen(r->fields[3])=cbColumnName>0?cbColumnName:0;                     
               
       /* DATA_TYPE (Smallint not NULL) */
       MakeInt(DataType, &(r->fields[4]));
 
       /* TYPE_NAME (varchar not NULL) */
-      StrLoc(r->fields[5])=cbTypeName>0?alcstr(szTypeName, cbTypeName):"";
+      StrLoc(r->fields[5])=cbTypeName>0?alcstr((char *) szTypeName, cbTypeName):"";
       StrLen(r->fields[5])=cbTypeName>0?cbTypeName:0;
 
       /* COLUMN_SIZE (Integer) */
@@ -198,7 +208,7 @@ function{0,1} dbcolumns(f,table_name)
       MakeInt(Nullable, &(r->fields[10]));
 
       /* REMARKS (varchar) */
-      StrLoc(r->fields[11])=cbRemarks>0?alcstr(szRemarks, cbRemarks):"";
+      StrLoc(r->fields[11])=cbRemarks>0?alcstr((char *) szRemarks, cbRemarks):"";
       StrLen(r->fields[11])=cbRemarks>0?cbRemarks:0;
       if (StrLoc(r->fields[11]) == NULL) {
          runerr(306);
@@ -248,14 +258,20 @@ function {0,1} dbdriver(f)
     /* unicon field names */
 #ifdef MacOS
     static struct descrip colnames[6];
-    static int cnm=0;
+    static int cnm=0;  /* FIXME: thread unsafe  */
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "name");
-       AsgnCStr(colnames[cnm++], "ver");
-       AsgnCStr(colnames[cnm++], "odbcver");
-       AsgnCStr(colnames[cnm++], "connections");
-       AsgnCStr(colnames[cnm++], "statements");
-       AsgnCStr(colnames[cnm++], "dsn");
+       AsgnCStr(colnames[cnm], "name");
+       cnm++;
+       AsgnCStr(colnames[cnm], "ver");
+       cnm++;
+       AsgnCStr(colnames[cnm], "odbcver");
+       cnm++;
+       AsgnCStr(colnames[cnm], "connections");
+       cnm++;
+       AsgnCStr(colnames[cnm], "statements");
+       cnm++;
+       AsgnCStr(colnames[cnm], "dsn");
+       cnm++;
        }
 #else					/* MacOS */
     static struct descrip colnames[6]={
@@ -328,13 +344,14 @@ function{1} dbkeys(f, table_name)
     SQLHSTMT hstmt;
     SQLRETURN retcode;
 
-    short i;
-    
 #ifdef MacOS
     static struct descrip colnames[2];
-    static int cnm=0;
+    static int cnm=0;  /* FIXME: thread unsafe  */
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "col"); AsgnCStr(colnames[cnm++], "seq");
+       AsgnCStr(colnames[cnm], "col");
+       cnm++;
+       AsgnCStr(colnames[cnm], "seq");
+       cnm++;
        }
 #else					/* MacOS */
     static struct descrip colnames[2]={{3,(word)"col"}, {3,(word)"seq"}};
@@ -363,7 +380,7 @@ function{1} dbkeys(f, table_name)
     retcode=SQLPrimaryKeys(hstmt,      
                            NULL, 0,                 /* all catalogs */
                            NULL, 0,                 /* all schemas */
-                           StrLoc(table_name), StrLen(table_name)); /* table */
+                           (SQLCHAR *) StrLoc(table_name), StrLen(table_name)); /* table */
 
     if (retcode!=SQL_SUCCESS) {
       odbcerror(fp, PRIMARY_KEYS_ERR);
@@ -390,7 +407,7 @@ function{1} dbkeys(f, table_name)
       R.vword.bptr=(union block *) r;
 
       /* key column (varchar) */
-      StrLoc(r->fields[0])=cbPkCol>0?alcstr(szPkCol, cbPkCol):"";
+      StrLoc(r->fields[0])=cbPkCol>0?alcstr((char *) szPkCol, cbPkCol):"";
       StrLen(r->fields[0])=cbPkCol>0?cbPkCol:0;
       if (StrLoc(r->fields[0]) == NULL) runerr(306);
           
@@ -445,27 +462,46 @@ function {0,1} dblimits(f)
     
 #ifdef MacOS
     static struct descrip colnames[19];
-    static int cnm=0;
+    static int cnm=0;  /* FIXME: thread unsafe  */
     if (!cnm) {
-       AsgnCStr(colnames[cnm++], "maxbinlitlen");
-       AsgnCStr(colnames[cnm++], "maxcharlitlen");
-       AsgnCStr(colnames[cnm++], "maxcolnamelen");
-       AsgnCStr(colnames[cnm++], "maxgroupbycols");
-       AsgnCStr(colnames[cnm++], "maxorderbycols");
-       AsgnCStr(colnames[cnm++], "maxindexcols");
-       AsgnCStr(colnames[cnm++], "maxselectcols");
-       AsgnCStr(colnames[cnm++], "maxtblcols");
-       AsgnCStr(colnames[cnm++], "maxcursnamelen");
-       AsgnCStr(colnames[cnm++], "maxindexsize");
-       AsgnCStr(colnames[cnm++], "maxownnamelen");
-       AsgnCStr(colnames[cnm++], "maxprocnamelen");
-       AsgnCStr(colnames[cnm++], "maxqualnamelen");
-       AsgnCStr(colnames[cnm++], "maxrowsize");
-       AsgnCStr(colnames[cnm++], "maxrowsizelong");
-       AsgnCStr(colnames[cnm++], "maxstmtlen");
-       AsgnCStr(colnames[cnm++], "maxtblnamelen");
-       AsgnCStr(colnames[cnm++], "maxselecttbls");
-       AsgnCStr(colnames[cnm++], "maxusernamelen");
+       AsgnCStr(colnames[cnm], "maxbinlitlen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxcharlitlen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxcolnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxgroupbycols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxorderbycols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxindexcols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxselectcols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxtblcols");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxcursnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxindexsize");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxownnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxprocnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxqualnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxrowsize");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxrowsizelong");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxstmtlen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxtblnamelen");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxselecttbls");
+       cnm++;
+       AsgnCStr(colnames[cnm], "maxusernamelen");
+       cnm++;
        }
 #else					/* MacOS */
     static struct descrip colnames[19]={{12,(word)"maxbinlitlen"},
@@ -536,9 +572,12 @@ function {0,1} dbproduct(f)
       static int sql_parm[DBPRODNCOLS]={SQL_DBMS_NAME, SQL_DBMS_VER};
 #ifdef MacOS
       static struct descrip colnames[2];
-      static int cnm=0;
+      static int cnm=0;  /* FIXME: thread unsafe  */
       if (!cnm) {
-	 AsgnCStr(colnames[cnm++], "name"); AsgnCStr(colnames[cnm++], "ver");
+	 AsgnCStr(colnames[cnm], "name");
+         cnm++;
+	 AsgnCStr(colnames[cnm], "ver");
+         cnm++;
 	 }
 #else
       static struct descrip colnames[]={{4,(word)"name"}, {3,(word)"ver"}};
@@ -595,7 +634,7 @@ function{0,1} sql(f, query)
 
     SQLFreeStmt(fp->hstmt, SQL_CLOSE);
 
-    rc=SQLExecDirect(fp->hstmt, StrLoc(query), StrLen(query));
+    rc=SQLExecDirect(fp->hstmt, (SQLCHAR *) StrLoc(query), StrLen(query));
 
     if(rc==SQL_ERROR || rc==SQL_SUCCESS_WITH_INFO) {
       odbcerror(fp, EXEC_DIRECT_ERR);
@@ -643,17 +682,20 @@ function{0,1} dbtables(f)
     
     HSTMT hstmt;
     
-    short i;
-    
 #ifdef MacOS
       static struct descrip colnames[5];
-      static int cnm=0;
+      static int cnm=0; /* FIXME: thread unsafe  */
       if (!cnm) {
-	 AsgnCStr(colnames[cnm++], "qualifier");
-	 AsgnCStr(colnames[cnm++], "owner");
-	 AsgnCStr(colnames[cnm++], "name");
-	 AsgnCStr(colnames[cnm++], "type");
-	 AsgnCStr(colnames[cnm++], "remarks");
+	 AsgnCStr(colnames[cnm], "qualifier");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "owner");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "name");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "type");
+	 cnm++;
+	 AsgnCStr(colnames[cnm], "remarks");
+	 cnm++;
 	 }
 #else					/* MacOS */
     static struct descrip colnames[5]={
@@ -706,19 +748,19 @@ function{0,1} dbtables(f)
       R.vword.bptr=(union block *) r;
 
       /* fill fields */
-      StrLoc(r->fields[0])=cbQualif>0?alcstr(szTblQualif,cbQualif):"";
+      StrLoc(r->fields[0])=cbQualif>0?alcstr((char *) szTblQualif,cbQualif):"";
       if (StrLoc(r->fields[0]) == NULL) runerr(306);
       StrLen(r->fields[0])=cbQualif>0?cbQualif:0;
-      StrLoc(r->fields[1])=cbOwner>0?alcstr(szTblOwner,cbOwner):"";
+      StrLoc(r->fields[1])=cbOwner>0?alcstr((char *) szTblOwner,cbOwner):"";
       if (StrLoc(r->fields[1]) == NULL) runerr(306);
       StrLen(r->fields[1])=cbOwner>0?cbOwner:0;
-      StrLoc(r->fields[2])=cbName>0?alcstr(szTblName,cbName):"";
+      StrLoc(r->fields[2])=cbName>0?alcstr((char *) szTblName,cbName):"";
       if (StrLoc(r->fields[2]) == NULL) runerr(306);
       StrLen(r->fields[2])=cbName>0?cbName:0;
-      StrLoc(r->fields[3])=cbType>0?alcstr(szTblType,cbType):"";
+      StrLoc(r->fields[3])=cbType>0?alcstr((char *) szTblType,cbType):"";
       if (StrLoc(r->fields[3]) == NULL) runerr(306);
       StrLen(r->fields[3])=cbType>0?cbType:0;
-      StrLoc(r->fields[4])=cbRemarks>0?alcstr(szRemarks,cbRemarks):"";
+      StrLoc(r->fields[4])=cbRemarks>0?alcstr((char *) szRemarks,cbRemarks):"";
       if (StrLoc(r->fields[4]) == NULL) runerr(306);
       StrLen(r->fields[4])=cbRemarks>0?cbRemarks:0;
       

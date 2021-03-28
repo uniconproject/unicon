@@ -337,7 +337,7 @@ typedef struct {
   typedef int LPSTR, HENV, HDBC, HSTMT, ISQLFile, PTR, SQLPOINTER;
   typedef int SWORD, SDWORD, UWORD, UDWORD, UCHAR;
   typedef int SQLUSMALLINT, SQLSMALLINT, SQLHSTMT;
-  typedef int SQLUINTEGER, SQLRETURN, RETCODE, SQLLEN;
+typedef int SQLUINTEGER, SQLRETURN, RETCODE, SQLLEN, SQLULEN;
   typedef int SQLHBDC, SQLHENV, SQLCHAR, SQLINTEGER, SQLLEN; /* 3.0 */
 #endif					/* ISQL */
 
@@ -350,7 +350,7 @@ typedef struct {
    typedef int ALCcontext, ALCdevice;
    typedef int pthread_t, pthread_mutex_t, pthread_attr_t;
    typedef int ALfloat, ALuint, ALint, ALenum, ALvoid, ALboolean, ALsizei;
-   typedef int ALubyte;
+   typedef int ALubyte, ALchar;
 #endif				/* HAVE_LIBOPENAL */
 #endif				/* Audio */
 

@@ -3943,10 +3943,8 @@ field_ref(p, n, rslt)
     * Generate code to compute the record value and dereference it.
     * (Remove the pragmas if the deref issue referred to below is fixed)
     */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
    deref = HasVar(varsubtyp(rec->type, &single));
-#pragma GCC diagnostic pop
+   (void) deref;  /* silence "not used" compiler warning */
    if (single != NULL) {
       /*
        * The record is in a named variable. Use value directly from

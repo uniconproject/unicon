@@ -113,16 +113,18 @@ static struct bndl * bndl_get(char *);
 static void caf_free(struct caf *);
 static struct caf * caf_get_by_alias(char *);
 static struct caf * caf_get_by_name(char *);
+/*
 static struct cls * caf_get_class(char *, struct caf *);
+static char * is_ctor(char *);
+static char * name_get_pkgspec(char *);
+*/
 static struct prc * caf_get_prc(struct caf *, char *);
 static int caf_has_posix_rec_defs(struct caf *);
 static void caf_parse(struct caf *, char *);
 static void cleanup(void);
 static void cls_free(struct cls *);
 static void gui_app_init(void);
-static char * is_ctor(char *);
 static int is_rtl_func(char *);
-static char * name_get_pkgspec(char *);
 static unsigned name_hash(char *);
 static void parse(char *, char *);
 static void posix_recs_init(void);
@@ -493,6 +495,7 @@ caf_get_by_name(fname)
    return caf;
 }
 
+/*
 static
 struct cls *
 caf_get_class(name, caf)
@@ -507,6 +510,7 @@ caf_get_class(name, caf)
       }
    return rslt;
 }
+*/
 
 static
 struct prc *
@@ -634,6 +638,7 @@ gui_app_init(void)
    resolve_gui_syms();
 }
 
+/*
 static
 char *
 is_ctor(name)
@@ -647,6 +652,7 @@ is_ctor(name)
       return name;
    return 0;
 }
+*/
 
 /*
  * Determine whether name refers to a rtl function by using
@@ -671,7 +677,7 @@ is_rtl_func(name)
       }
    return 0;
 }
-
+/*
 static
 char *
 name_get_pkgspec(name)
@@ -693,6 +699,7 @@ name_get_pkgspec(name)
       return buf;
    return NULL;
 }
+*/
 
 /*
  * this is stupid for now...

@@ -1700,6 +1700,7 @@ yyparse()
 		yy_ps = yyps;
 		yy_state = yystate;
 		goto yy_newstate;
+		goto yynewstate; /* noop, silence unused label warning */
 
 		/*
 		** get globals into registers.
@@ -1883,6 +1884,7 @@ yyparse()
 			case 0:		/* new error */
 				yyerror( "syntax error" );
 				goto skip_init;
+				goto yyerrlab; /* noop, silence unused label warning */
 			yyerrlab:
 				/*
 				** get globals into registers.

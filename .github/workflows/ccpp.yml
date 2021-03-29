@@ -69,6 +69,40 @@ jobs:
         cat unicon-config.log
         cat unicon-features.log
 
+  CentOS:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    runs-on: ubuntu-latest
+    container: 'centos:7'
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        yum update -y
+        yum install -y gcc make
+
+    - name: Configure
+      run: ./configure
+
+    - name: Make
+      run: make
+
+    - name: HtmlDoc
+      run: make htmldoc
+
+    - name: Test
+      run: make Test
+
+    - name: TestReport
+      run: make -C tests Report
+
+    - name: Summary
+      run: |
+        cat unicon-config.log
+        cat unicon-features.log
+
   Ubuntu:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}

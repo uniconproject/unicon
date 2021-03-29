@@ -357,14 +357,14 @@
     * gcc docs recommends these type-safe definitions for Max/Min
     */
 
-#define Max(a,b)            \
-  ({ __auto_type _a = (a);  \
-    __auto_type _b = (b);   \
+#define Max(a,b)               \
+  ({ __typeof__(a) _a = (a);   \
+     __typeof__(b) _b = (b);   \
     _a > _b ? _a : _b; })
 
-#define Min(a,b)            \
-  ({ __auto_type _a = (a);  \
-    __auto_type _b = (b);   \
+#define Min(a,b)               \
+  ({ __typeof__ (a) _a = (a);  \
+     __typeof__ (b) _b = (b);  \
     _a < _b ? _a : _b; })
 
 /*

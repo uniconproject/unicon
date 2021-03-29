@@ -6,6 +6,8 @@
  * grammar is changed.
  */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 static struct errmsg {
    int	e_state;		/* parser state number */
    char *e_mesg;		/* message text */
@@ -175,3 +177,4 @@ static struct errmsg {
    361, "invalid case clause",
     -1,  "syntax error"
    };
+#pragma GCC diagnostic pop

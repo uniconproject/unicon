@@ -28,6 +28,8 @@
 ############################################################################
 */
 
+#define _POSIX_SOURCE
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>

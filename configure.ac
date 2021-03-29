@@ -176,6 +176,12 @@ AC_ARG_ENABLE([verifyheap],
 AC_ARG_ENABLE([devmode],
 	[AS_HELP_STRING([--enable-devmode], [Developer mode: turn on warnings and debugging options])],
 			[devmode=yes], [devmode=no])
+AC_ARG_ENABLE([werror],
+	[AS_HELP_STRING([--enable-werror], [Change compiler warnings to errors])],
+			[werror=yes], [werror=no])
+AC_ARG_ENABLE([warnings],
+	[AS_HELP_STRING([--enable-warnings], [Turn on most types of compiler warnings])],
+			[warn=yes], [warn=no])
 AC_ARG_ENABLE([uniconx],
 	[AS_HELP_STRING([--enable-uniconx], [Change executable names to co-exist with Icon])],
 			[uniconx=yes], [uniconx=no])
@@ -236,6 +242,7 @@ fi
 
 if test x"$devmode" = x"yes" ; then
   debug=yes
+  warn=yes
   AC_DEFINE([DEVMODE], [1], [Developer Mode])
 fi
 
@@ -267,12 +274,16 @@ if test "z$orig_cflags" = "z"; then
   fi
 fi
 
-if test x"$devmode" = x"yes" ; then
+if test x"$warn" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces])
+fi
+
+
+#if test x"$devmode" = x"yes" ; then
 #  AC_CFLAG([-Wmissing-prototypes])
 #  AC_CFLAG([-Wmissing-declarations])
-fi
+#fi
 
 # We always want these CFLAGS if available, the second one is neseccary for a stable runtime
 AC_CFLAG([-fno-omit-frame-pointer])
@@ -283,9 +294,9 @@ if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" ; then
    AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
 fi
 
-if test x"${enable_werror}" = x"yes" ; then
-  WERROR="-Werror"
-fi
+#if test x"${enable_werror}" = x"yes" ; then
+#  WERROR="-Werror"
+#fi
 
 #AC_GNU_SOURCE
 
@@ -716,6 +727,12 @@ fi
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
+
+if test x"$werror" = x"yes" ; then
+  AC_CFLAG([-Werror])
+fi
+
+
 AC_SUBST(JV_LDFLAGS)
 AC_SUBST(GL_CFLAGS)
 AC_SUBST(GL_LDFLAGS)
@@ -1013,6 +1030,8 @@ CXXFLAGS : $CXXFLAGS
 prefix	 :  $prefix
 Verbose  :  $verbosebuild
 Debug    :  $debug
+Warnings :  $warn
+Werror   :  $werror
 Devmode  :  $devmode
 Revision :  $revision
 

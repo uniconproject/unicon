@@ -42,6 +42,7 @@ void checkpollevent(){
 
 #else					/* Graphics */
 #if NT
+int iconx(int argc, char **argv);
 int main(int argc, char *argv[])
 {
    return iconx(argc, argv);

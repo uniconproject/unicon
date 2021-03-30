@@ -91,7 +91,10 @@ Tpresponse_t* smtpend(Tp_t* tp)
   if (TPIN(tp, WRITING)) {
      disc->writef("\r\n.\r\n", 5, disc);
      }
-
+#pragma GCC diagnostic push
+#if __GNUC__ > 7
+#  pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
   disc->readlnf(buf, sizeof(buf), disc);
   resp->sc = atoi(buf);
   msg[0] = '\0';
@@ -106,6 +109,7 @@ Tpresponse_t* smtpend(Tp_t* tp)
     strncat(msg, buf+4, (len < nleft) ? len : nleft);
     nleft -= len;
   }
+#pragma GCC diagnostic pop
 
   resp->msg = _tpastrcpy(msg, disc);
 

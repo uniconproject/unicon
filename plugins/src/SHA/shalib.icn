@@ -19,7 +19,7 @@
 #     Don Ward
 #     June 2019
 #
-#     March 2021         Added Raw output
+#     March 2021         Added Raw output and direct access methods
 ################################################################################
 #
 # The SecureHash plugin has two public methods, Sha and Restart.
@@ -104,6 +104,8 @@
 ################################################################################
 
 package SecureHash
+
+$define LIB "shalib.so"
 
 # ------------------------------ Secure Hash ------------------------------
 class SecureHash : uso::USO (
@@ -304,6 +306,43 @@ method Restart(sf)
 end
 
 # ----------------------------------------
+#                RFC6234 Interface methods
+# These are provided to cater for a situation where use of the Sha method is
+# intermingled with direct access to the underlying routines. If the goal is to
+# provide a different API then it is probably better to use the access procedures
+# (below) rather than these methods.
+# Note the (very slightly) different capitalisation compared to the procedures.
+method Sha_Reset(a[])
+   static Csha_Reset; initial Csha_Reset := loadfunc(LIB,"sha_Reset")
+   return Csha_Reset !a
+end
+
+method Sha_Input(a[])
+   static Csha_Input; initial Csha_Input := loadfunc(LIB,"sha_Input")
+   return Csha_Input !a
+end
+
+method Sha_Result(a[])
+   static Csha_Result; initial Csha_Result := loadfunc(LIB,"sha_Result")
+   return Csha_Result !a
+end
+
+method Sha_RawResult(a[])
+   static Csha_RawResult; initial Csha_RawResult := loadfunc(LIB,"sha_RawResult")
+   return Csha_RawResult !a
+end
+
+method Sha_FinalBits(a[])
+   static Csha_FinalBits; initial Csha_FinalBits := loadfunc(LIB,"sha_FinalBits")
+   return Csha_FinalBits !a
+end
+
+method Sha_ShaFunction(a[])
+   static Csha_ShaFunction; initial Csha_ShaFunction := loadfunc(LIB,"sha_ShaFunction")
+   return Csha_ShaFunction !a
+end
+
+# ----------------------------------------
 # The class is initialised with the desired SHA function (initial default SHA512)
 initially(sf)
    tbc := 1   # Avoid a superfluous reset on 1st call
@@ -392,10 +431,8 @@ end
 
 #------------------------------ RFC6234 Interface Routines ------------------------------
 #
-# The following is with thanks to Gregg Townsend (see ../ipl/cfuncs )
+# The following is with thanks to Gregg Townsend (see .../ipl/cfuncs )
 #
-
-$define LIB "shalib.so"
 
 # sha_Reset:
 procedure sha_Reset(a[])

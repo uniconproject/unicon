@@ -162,6 +162,7 @@ dptr v;
    {
    IntVal(kywd_err) = 0;
    err_msg(n, v);
+   return;
    }
 
 struct b_list *alclist_0(uword size, uword nslots)

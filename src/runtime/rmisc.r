@@ -2042,10 +2042,10 @@ int pattern_image(union block *pe, int prev_index, dptr result,
           default: {
 	    char buf[128];
 	    if (Blk(ep,Pelem)->title != T_Pelem)
-	      sprintf(buf, "pattern_image: bad pattern element, title %ld\n",
+	      sprintf(buf, "pattern_image: bad pattern element, title %" LINTFRMT "d\n",
 		      Blk(ep,Pelem)->title);
 	    else
-	      sprintf(buf, "pattern_image: bad pattern element code %ld\n",
+	      sprintf(buf, "pattern_image: bad pattern element code %" LINTFRMT "d\n",
 		      Blk(ep,Pelem)->pcode);
 	    syserr(buf);
 	    }

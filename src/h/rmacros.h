@@ -410,9 +410,9 @@
    (dp)->dword = D_Real;\
    } while(0)
 #else					/* !DescriptorDouble */
-#define MakeRealAlc(r,dp) do {\
-   Protect((dp)->vword.bptr = (union block *)alcreal(r), fatalerr(0,NULL));\
-   (dp)->dword = D_Real;\
+#define MakeRealAlc(r,dp) do { \
+   BlkLoc(*dp) = (union block *)alcreal(r); \
+   (dp)->dword = D_Real; \
    } while(0)
 #endif					/* DescriptorDouble */
 

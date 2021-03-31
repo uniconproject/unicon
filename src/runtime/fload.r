@@ -35,7 +35,6 @@ int dlclose(void *handle)
 { /* FreeLibrary */
    return FreeLibrary((HMODULE)handle);
 }
-
 char *dlerror(void)
 {
    return "undiagnosed dynamic load error";
@@ -64,7 +63,7 @@ char *dlerror(void)
 int glue(int, dptr, dptr, continuation);
 #else
 int glue(int, dptr);
-#endif
+#endif 					/* COMPILER */
 
 "loadfunc(filename,funcname) - load C function dynamically."
 
@@ -173,8 +172,13 @@ function{0,1} loadfunc(filename,funcname)
             }
          }
       if (!handle || !func) {
+#if COMPILER && NT
+         fprintf(stderr, "\nloadfunc(\"%s\",\"%s\"): dl error\n",
+            filename, funcname);
+#else						/* COMPILER && NT */
          fprintf(stderr, "\nloadfunc(\"%s\",\"%s\"): %s\n",
             filename, funcname, dlerror());
+#endif						/* COMPILER && NT*/
          MUTEX_UNLOCKID(MTX_CURFILE_HANDLE);
          runerr(216);
          }

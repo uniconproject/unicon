@@ -770,6 +770,8 @@ enable_debug
 enable_debugheap
 enable_verifyheap
 enable_devmode
+enable_werror
+enable_warnings
 enable_uniconx
 with_zlib
 with_xlib
@@ -1451,6 +1453,8 @@ Optional Features:
   --enable-verifyheap     Enable advanced heap verification
   --enable-devmode        Developer mode: turn on warnings and debugging
                           options
+  --enable-werror         Change compiler warnings to errors
+  --enable-warnings       Turn on most types of compiler warnings
   --enable-uniconx        Change executable names to co-exist with Icon
 
 Optional Packages:
@@ -3216,6 +3220,20 @@ else
   devmode=no
 fi
 
+# Check whether --enable-werror was given.
+if test "${enable_werror+set}" = set; then :
+  enableval=$enable_werror; werror=yes
+else
+  werror=no
+fi
+
+# Check whether --enable-warnings was given.
+if test "${enable_warnings+set}" = set; then :
+  enableval=$enable_warnings; warn=yes
+else
+  warn=no
+fi
+
 # Check whether --enable-uniconx was given.
 if test "${enable_uniconx+set}" = set; then :
   enableval=$enable_uniconx; uniconx=yes
@@ -4715,6 +4733,7 @@ fi
 
 if test x"$devmode" = x"yes" ; then
   debug=yes
+  warn=yes
 
 $as_echo "#define DEVMODE 1" >>confdefs.h
 
@@ -4924,7 +4943,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
   fi
 fi
 
-if test x"$devmode" = x"yes" ; then
+if test x"$warn" = x"yes" ; then
   {
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -5013,9 +5032,13 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
+fi
+
+
+#if test x"$devmode" = x"yes" ; then
 #  AC_CFLAG([-Wmissing-prototypes])
 #  AC_CFLAG([-Wmissing-declarations])
-fi
+#fi
 
 # We always want these CFLAGS if available, the second one is neseccary for a stable runtime
 {
@@ -5158,9 +5181,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 	}
 fi
 
-if test x"${enable_werror}" = x"yes" ; then
-  WERROR="-Werror"
-fi
+#if test x"${enable_werror}" = x"yes" ; then
+#  WERROR="-Werror"
+#fi
 
 #AC_GNU_SOURCE
 
@@ -13782,6 +13805,55 @@ test "x$prefix" = xNONE && prefix=$ac_default_prefix
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
 
+if test x"$werror" = x"yes" ; then
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Werror"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Werror" >&5
+$as_echo_n "checking whether $CC supports -Werror... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+else
+
+			CFLAGS="$ac_c_flag_save"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+fi
+
+
+
 
 
 
@@ -15731,6 +15803,8 @@ CXXFLAGS : $CXXFLAGS
 prefix	 :  $prefix
 Verbose  :  $verbosebuild
 Debug    :  $debug
+Warnings :  $warn
+Werror   :  $werror
 Devmode  :  $devmode
 Revision :  $revision
 

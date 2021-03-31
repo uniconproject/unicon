@@ -458,12 +458,7 @@ struct header *hdr;
 #ifdef ShellHeader
    char pathbuf[512];
    int offset;
-
-#if NT
-   struct _stat sbuf;
-#else					/* NT */
    struct stat sbuf;
-#endif					/* NT */
    int rv;
    FILE *ftmp;
 

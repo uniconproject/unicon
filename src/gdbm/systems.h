@@ -172,3 +172,7 @@ typedef int word_t;
 #else
 typedef long word_t;
 #endif
+
+#ifdef NT
+int link(const char *path1, const char *path2);
+#endif

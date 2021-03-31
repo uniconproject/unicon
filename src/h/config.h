@@ -548,6 +548,8 @@
 #endif					/* IntBits */
 
 #if (WordBits == 64)
+   #define LINTFRMT "l"
+
    #if Windows
       #define MSWIN64
       #define LongLongWord
@@ -556,6 +558,7 @@
       #define Double
    #endif				/* OLD_NTGCC */
 #else
+   #define LINTFRMT ""
     #ifdef ARM
       #define Double
    #endif				/* ARM */  

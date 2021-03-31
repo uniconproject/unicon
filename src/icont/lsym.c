@@ -272,7 +272,8 @@ union xval *valp;
 #endif					/* Double */
 
    else
-      fprintf(stderr, "putconst: bad flags: %06o %011lo\n", flags, valp->ival);
+      fprintf(stderr, "putconst: bad flags: %06o %011" LINTFRMT  "o\n",
+	      flags, valp->ival);
    }
 
 /*

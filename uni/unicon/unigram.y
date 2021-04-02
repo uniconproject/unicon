@@ -202,8 +202,8 @@ global outline, outcol, outfilename,package_level_syms,package_level_class_syms
 
 procedure Progend(x1)
 
-   write("Progend:\nximage(x1):", ximage(x1))
-   &trace := 0
+   #write("Progend:\nximage(x1):", ximage(x1))
+   #&trace := 0
    if *\parsingErrors > 0 then {
       every pe := !parsingErrors do {
 	 write(&errout, pe.errorMessage)
@@ -292,7 +292,7 @@ $endif					# NoPatternIntegration
       dummyrecno +:= 1
       set_of_all_fields := set()
       }
-   &trace := 0
+   #&trace := 0
 
 end
 %}
@@ -520,10 +520,10 @@ initial	: { $$ := &null } ;
 	      } ;
 
 procbody: {
-                write("\nprocbody:")
+                #write("\nprocbody:")
                 $$ := node("procbody") } ;
 	| nexpr SEMICOL procbody {
-                writes("#")
+                #writes("#")
                 push($3.children, ";", $1)
                 $$ := $3 } ;
 
@@ -1138,9 +1138,9 @@ end
 procedure ListCompTemps(n)
    local LCT
    if type(n) == "treenode" then {
-      write("ListCompTemps: label:", n.label, " *children:", *n.children)
+      #write("ListCompTemps: label:", n.label, " *children:", *n.children)
       if n.label=="ListComp" then {
-         write("found ListComp: children:", *n.children)
+         #write("found ListComp: children:", *n.children)
 	 LCT := [n.children[2]]
 	 LCT |||:= ListCompTemps(n.children[4])
 	 return LCT

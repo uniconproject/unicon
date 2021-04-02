@@ -877,9 +877,12 @@ end
 # Scope-check a procbody parse node.
 #
 procedure scopecheck_procbody(n, local_vars, self_vars)
-   while n ~=== &null do {
-      scopecheck_expr(n.children[1], local_vars, self_vars)
-      n := n.children[3]
+   local sz, i
+
+   /n & fail
+   sz := *n.children
+   every i := 1 to *sz by 2 do {
+      scopecheck_expr(n.children[i], local_vars, self_vars)
       }
 end
 

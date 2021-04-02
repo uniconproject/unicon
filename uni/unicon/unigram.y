@@ -513,8 +513,10 @@ initial	: { $$ := &null } ;
 	   $$ := node("initial", $1, $2,";")
 	      } ;
 
-procbody: { $$ := &null } ;
-	| nexpr SEMICOL procbody { $$ := node("procbody", $1,";",$3) } ;
+procbody: { $$ := node("procbody") } ;
+	| nexpr SEMICOL procbody {
+                push($3.children, ";", $1)
+                $$ := $3 } ;
 
 nexpr	: { $$ := &null } ;
 	| expr ;

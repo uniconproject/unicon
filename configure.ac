@@ -8,6 +8,9 @@ AC_INIT([Unicon],[unicon_version],[jeffery@cs.uidaho.edu], [unicon], [http://www
 
 AC_CANONICAL_HOST
 
+AH_TOP([#ifndef __AUTO_CONFIG_H
+#define __AUTO_CONFIG_H])
+AH_BOTTOM([#endif          /* __AUTO_CONFIG_H  */])
 
 # not needed yet
 #AC_CANONICAL_BUILD

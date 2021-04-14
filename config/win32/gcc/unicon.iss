@@ -108,15 +108,37 @@ Source: "ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; Flags: ignoreversion
 Source: "ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; Flags: ignoreversion
 
 ; uni misc
-Source: "Makedefs.uni"; DestDir: "{app}\uni\"; Flags: ignoreversion
+Source: "Makedefs.uni"; DestDir: "{app}\"; Flags: ignoreversion
 Source: "uni\lib\*.*"; DestDir: "{app}\uni\lib"; Flags: ignoreversion
-Source: "uni\xml\*.icn"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
-Source: "uni\xml\*.u"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
-Source: "uni\xml\Makefile"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
 Source: "uni\util\*.icn"; DestDir: "{app}\uni\util"; Flags: ignoreversion
 Source: "uni\util\Makefile"; DestDir: "{app}\uni\util"; Flags: ignoreversion
 Source: "uni\progs\Makefile"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
 Source: "uni\progs\*.icn"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
+
+;xml
+Source: "uni\xml\*.u"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "uni\xml\*.icn"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "uni\xml\Makefile"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "uni\xml\uniclass.*"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+
+;parser
+Source: "uni\parser\*.u"; DestDir: "{app}\uni\parser"; Flags: ignoreversion
+Source: "uni\parser\*.icn"; DestDir: "{app}\uni\parser"; Flags: ignoreversion
+Source: "uni\parser\Makefile"; DestDir: "{app}\uni\parser"; Flags: ignoreversion
+Source: "uni\parser\uniclass.*"; DestDir: "{app}\uni\parser"; Flags: ignoreversion
+
+;unidep
+Source: "uni\unidep\*.u"; DestDir: "{app}\uni\unidep"; Flags: ignoreversion
+Source: "uni\unidep\*.icn"; DestDir: "{app}\uni\unidep"; Flags: ignoreversion
+Source: "uni\unidep\Makefile"; DestDir: "{app}\uni\unidep"; Flags: ignoreversion
+Source: "uni\unidep\uniclass.*"; DestDir: "{app}\uni\unidep"; Flags: ignoreversion
+
+;unidoc
+Source: "uni\unidoc\*.u"; DestDir: "{app}\uni\unidoc"; Flags: ignoreversion
+Source: "uni\unidoc\*.icn"; DestDir: "{app}\uni\unidoc"; Flags: ignoreversion
+Source: "uni\unidoc\Makefile"; DestDir: "{app}\uni\unidoc"; Flags: ignoreversion
+Source: "uni\unidoc\uniclass.*"; DestDir: "{app}\uni\unidoc"; Flags: ignoreversion
+
 
 ; GUI library
 Source: "uni\gui\*.icn"; DestDir: "{app}\uni\gui"; Flags: ignoreversion

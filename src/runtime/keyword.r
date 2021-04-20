@@ -1158,7 +1158,7 @@ keyword{1} proc
    abstract {
       return proc
       }
-   inline {
+   body {
       struct b_proc *prc;
       struct descrip x;
 

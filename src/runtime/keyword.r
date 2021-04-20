@@ -31,7 +31,7 @@ keyword{4} allocated
       MUTEX_LOCKID(MTX_TLS_CHAIN);
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
-      tstate = curpstate->tstate; 
+      tstate = curpstate->tstate;
       do {
 	 blktot += tstate->blocktotal;
 	 strtot += tstate->stringtotal;
@@ -447,15 +447,15 @@ keyword{1,*} features
 #if NT
         unsigned long long int l = physicalmemorysize();
 #else					        /* NT */
-        unsigned long l = physicalmemorysize();	
-#endif		      	  			/* NT */	
+        unsigned long l = physicalmemorysize();
+#endif		      	  			/* NT */
         if (l > 0) {
-#if NT 
+#if NT
            sprintf(s, "Physical memory: %llu bytes", l);
 #else	   	       		 	       /* NT */
            sprintf(s, "Physical memory: %lu bytes", l);
-#endif					       /* NT */ 	  
-           suspend C_string s;	     
+#endif					       /* NT */
+           suspend C_string s;
            }
 }
 
@@ -486,7 +486,7 @@ void get_arch(char *);
       {
       int value = GetSystemMetrics(SM_DIGITIZER);
       if (value & NID_READY){ /* stack ready */
-	 if (value  & NID_MULTI_INPUT){ /* digitizer is multitouch */ 
+	 if (value  & NID_MULTI_INPUT){ /* digitizer is multitouch */
 	    suspend C_string "Multitouch input";
 	    }
 	 else if (value & (NID_INTEGRATED_TOUCH|NID_EXTERNAL_TOUCH)){
@@ -824,7 +824,7 @@ keyword{3} storage
       CURTSTATE();
 
       suspend C_integer 0;		/* static region */
-  
+
       MUTEX_LOCKID(MTX_STRHEAP);
       allRegions = DiffPtrs(strfree,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
@@ -833,7 +833,7 @@ keyword{3} storage
 	 allRegions += DiffPtrs(rp->free,rp->base);
       MUTEX_UNLOCKID(MTX_STRHEAP);
       suspend C_integer allRegions;	/* string region */
-  
+
       MUTEX_LOCKID(MTX_BLKHEAP);
       allRegions = DiffPtrs(blkfree,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
@@ -1151,4 +1151,20 @@ constant '\
 \320\321\322\323\324\325\326\327\330\331\332\333\334\335\336\337\
 \340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\
 \360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
+end
+
+"&proc - the function reference to proc"
+keyword{1} proc
+   abstract {
+      return proc
+      }
+   inline {
+      struct b_proc *prc;
+      struct descrip x;
+
+      StrLen(x) = 4;
+      StrLoc(x) = "proc";
+      prc = bi_strprc(&x, 0);
+      return proc(prc);
+      }
 end

@@ -195,12 +195,27 @@ docrule: $(UDOC)
 doc:
 		$(MAKE) -C doc
 
+# build full html documentation using unidoc
+UBASE=$(shell pwd)
+SBASE=$(UBASE)/uni
+TBASE=$(UBASE)/doc/uni-api
+# SRCDIRS is a space-separated list, SDIRS and LDIRS are comma-separated lists
+SRCDIRS="$(SBASE)/progs $(SBASE)/gprogs $(SBASE)/lib $(UBASE)/ipl/procs $(UBASE)/progs $(UBASE)/gprogs $(SBASE)/unidoc"
+SDIRS="$(SBASE)/progs,$(SBASE)/gprogs,$(SBASE)/lib,$(UBASE)/ipl/procs,$(UBASE)/progs,$(UBASE)/gprogs,$(SBASE)/unidoc"
+LDIRS="$(TBASE)/lib"
+basetitle="Unicon API "
+cdir=$(shell pwd)
+TD=$(TBASE)
+title=$(basetitle)
+
 htmldocrule: $(HTMLDOC)
 htmldoc:
 		@echo ""
 		@echo " Building class library html documentation"
 		@echo ""
-		$(MAKE) -C uni/unidoc htmldoc
+#		$(MAKE) -C uni/unidoc htmldoc
+		mkdir -p ${TD}
+		unidoc --title=$(title) --linkSrc --sourcePath="$(SDIRS)" --linkPath="$(LDIRS)" --resolve --targetDir=$(TD) "$(SRCDIRS)"
 
 ##################################################################
 #

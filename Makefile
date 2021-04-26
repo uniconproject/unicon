@@ -215,7 +215,7 @@ htmldoc:
 		@echo ""
 #		$(MAKE) -C uni/unidoc htmldoc
 		mkdir -p ${TD}
-		unidoc --title=$(title) --linkSrc --sourcePath="$(SDIRS)" --linkPath="$(LDIRS)" --resolve --targetDir=$(TD) "$(SRCDIRS)"
+		./bin/unidoc --title=$(title) --linkSrc --sourcePath="$(SDIRS)" --linkPath="$(LDIRS)" --resolve --targetDir=$(TD) "$(SRCDIRS)"
 
 ##################################################################
 #

@@ -52,15 +52,19 @@ end
 
 procedure base64decode(s)  #: decode a string from base 64 (MIME)
    local t, w, x, y, z
-   static b64, c64, n64
+   static b64, c64, n64, padding
    initial {
       b64 := &ucase || &lcase || &digits || "+/"
       c64 := cset(b64)
       n64 := string(&cset)[1+:64]
       }
 
-   if not s ? ( tab(many(c64)), =("===" | "==" | "=" | ""), pos(0)) then fail
    if ( *s % 4 ) ~= 0 then fail
+   s ? {
+      tab(many(c64))
+      padding := *tab(many('=')) | 0
+      if (padding > 2) | not pos(0) then fail
+   }
 
    s := map(s,"=","\x00")
    s := map(s,b64,n64)
@@ -73,5 +77,5 @@ procedure base64decode(s)  #: decode a string from base 64 (MIME)
       t ||:= char( ior( iand(ishift(y,6),255), z ) )
       }
 
-   return trim(t,'\x00')
+   return if padding = 0 then t else t[1+:*t-padding]
 end

@@ -1235,6 +1235,19 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
    return s;
 }
 
+
+int
+ip_version(const char *src) {
+    char buf[16];
+    if (inet_pton(AF_INET, src, buf)) {
+        return 4;
+    } else if (inet_pton(AF_INET6, src, buf)) {
+        return 6;
+    }
+    return -1;
+}
+
+
 /*
  * Although this function is named "listen", it opens all incoming sockets,
  * including UDP sockets and non-blocking "listener" sockets on which a

@@ -735,8 +735,10 @@ Deliberate Syntax Error
 		    af_fam = AF_UNSPEC;
 		  else if (is_ipv6)
 		    af_fam = AF_INET6;
-		  else
+		  else if (is_ipv4)
 		    af_fam = AF_INET;
+		  else
+		    af_fam = AF_UNSPEC;
 
 		  /* Try to parse the filename as a URL and set the protocol family */
 		  puri = uri_parse(fnamestr, af_fam);
@@ -945,8 +947,10 @@ Deliberate Syntax Error
 	       af_fam = AF_UNSPEC;
 	    else if (is_ipv6)
 	       af_fam = AF_INET6;
-	    else
+	    else  if (is_ipv4)
 	       af_fam = AF_INET;
+	    else
+	       af_fam = AF_UNSPEC;
 
 	    /* The only allowed values for flags are "n" and "na" */
 	    if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen))

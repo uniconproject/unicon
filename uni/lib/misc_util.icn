@@ -216,6 +216,47 @@ procedure nthResults(L)  # first arg is <b>n</b>, second is <b>sq</b>.
 end
 
 #<p>
+#  A PDCO to evaluate 1 or more result sequences in "parallel".
+#  Each co-expression passed in is evaluated to produce a result with the
+#  PDCO suspending after each pass through all the co-expressions.
+#  <i>Note that Unicon's scoping rules can lead to unexpected results if the
+#  co-expressions include assignments to local variables.</i>
+#  <[param A -- list of co-expressions]>
+#  <[generates &null after getting the next result from every result sequence]>
+#  <[fails as soon as any result sequence is emptied]>
+#</p>
+procedure parallel(A)
+    local a
+    repeat {
+        every a := !A do {
+           @a | fail
+           }
+        suspend
+        }
+end
+
+#<p>
+#  A PDCO to evaluate 1 or more result sequences in "parallel".
+#  Each co-expression passed in is evaluated to produce a result with the
+#  PDCO suspending after each pass through all the co-expressions.
+#  <i>Note that Unicon's scoping rules can lead to unexpected results if the
+#  co-expressions include assignments to local variables.</i>
+#  <[param A -- list of co-expressions]>
+#  <[generates &null after getting a result from every result sequence]>
+#  <[fails when all result sequences are empty]>
+#</p>
+procedure parallelAll(A)
+    local a, i, haveOne
+    repeat {
+        haveOne := &null
+        every \(a := A[i := 1 to *A]) do {
+           (@a, haveOne := "yes") | (A[i] := &null)
+           }
+        if \haveOne then suspend else fail
+        }
+end
+
+#<p>
 # A PDCO that can be used to time expressions.
 # <i>(Only accurate to the millisecond level.)</i>
 # <[returns the time in milliseconds to execute its argument.]>

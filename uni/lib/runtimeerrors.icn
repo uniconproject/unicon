@@ -1,0 +1,175 @@
+############################################################################
+#
+#       File:     runtimeerrors.icn
+#
+#       Subject:  Procedure to display the current runtime error message
+#                 give the current runtime error code.
+#
+#
+#       Author:   Bruce Rennie
+#
+#       Date:     September 14, 2020
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#       runtime_error_message(errorcode, errormessage) returns the associated
+#       error message for a given Unicon runtime error code. Normally the parameter
+#       error message will be null. This is included to allow the user to add
+#       additional error code and messages (or update error messages) as needed
+#
+############################################################################
+#
+#     This procedure is a helper procedure to allow the user to build errorcode
+#   handling code for runtime aborts in their own code, independent of the normal
+#   Unicon runtime error handling.
+#
+############################################################################
+
+procedure runtime_error_message(errorcode, errormessage)
+    static  ErrorCode                   #SV: table holding all known Unicon runtime
+                                        #:   error codes to error message mappings
+    initial {
+        ErrorCode := table()
+        ErrorCode[100] := "unspecified runtime error"
+        ErrorCode[101] := "integer expected or out of range"
+        ErrorCode[102] := "numeric expected"
+        ErrorCode[103] := "string expected"
+        ErrorCode[104] := "cset expected"
+        ErrorCode[105] := "file expected"
+        ErrorCode[106] := "procedure or integer expected"
+        ErrorCode[107] := "record expected"
+        ErrorCode[108] := "list expected"
+        ErrorCode[109] := "string or file expected"
+        ErrorCode[110] := "string or list expected"
+        ErrorCode[111] := "variable expected"
+        ErrorCode[112] := "invalid type to size operation"
+        ErrorCode[113] := "invalid type to random operation"
+        ErrorCode[114] := "invalid type to subscript operation"
+        ErrorCode[115] := "structure expected"
+        ErrorCode[116] := "invalid type to element generator"
+        ErrorCode[117] := "missing main procedure"
+        ErrorCode[118] := "co-expression expected"
+        ErrorCode[119] := "set expected"
+        ErrorCode[120] := "two csets, two sets, or two tables expected"
+        ErrorCode[121] := "function not supported"
+        ErrorCode[122] := "set or table expected"
+        ErrorCode[123] := "invalid type"
+        ErrorCode[124] := "table expected"
+        ErrorCode[125] := "list, record, or set expected"
+        ErrorCode[126] := "list or record expected"
+        ErrorCode[127] := "pattern expected"
+        ErrorCode[128] := "unevaluated variable or function call expected"
+        ErrorCode[129] := "unable to convert unevaluated variable to pattern"
+        ErrorCode[130] := "incorrect number of arguments"
+        ErrorCode[131] := "string is not a class name"
+        ErrorCode[140] := "window expected"
+        ErrorCode[141] := "program terminated by window manager"
+        ErrorCode[142] := "attempt to read/write on closed window"
+        ErrorCode[143] := "malformed event queue"
+        ErrorCode[144] := "window system error"
+        ErrorCode[145] := "bad window attribute"
+        ErrorCode[146] := "incorrect number of arguments to drawing function"
+        ErrorCode[147] := "window attribute cannot be read or written as requested"
+        ErrorCode[148] := "graphics is not enabled in this virtual machine"
+        ErrorCode[150] := "drawing a 3D object while in 2D mode"
+        ErrorCode[151] := "pushed/popped too many matrices"
+        ErrorCode[152] := "modelview or projection expected"
+        ErrorCode[153] := "texture not in correct format"
+        ErrorCode[154] := "must have an even number of texture coordinates"
+        ErrorCode[155] := "3D graphics is not enabled in this virtual machine"
+        ErrorCode[160] := "nonexistent variable name"
+        ErrorCode[161] := "cannot convert unevaluated variable to pattern"
+        ErrorCode[162] := "uninitialized pattern"
+        ErrorCode[163] := "object, method, or method parameter problem in unevaluated expression"
+        ErrorCode[164] := "unsupported unevaluated expression"
+        ErrorCode[165] := "null pattern argument where name was expected"
+        ErrorCode[166] := "unable to produce pattern image, possible malformed pattern"
+        ErrorCode[170] := "string or integer expected"
+        ErrorCode[171] := "UDP socket expected"
+        ErrorCode[172] := "signal handler procedure must take one argument"
+        ErrorCode[173] := "cannot open directory for writing"
+        ErrorCode[174] := "invalid file operation"
+        ErrorCode[175] := "network connection expected"
+        ErrorCode[180] := "invalid mutex"
+        ErrorCode[181] := "invalid condition variable"
+        ErrorCode[182] := "illegal recursion in initial clause"
+        ErrorCode[183] := "concurrent threads are not enabled in this virtual machine"
+        ErrorCode[184] := "structure cannot have more than one mutex at the same time"
+        ErrorCode[185] := "converting an active co-expression to a thread is not yet supported"
+        ErrorCode[190] := "dbm database expected"
+        ErrorCode[191] := "cannot open dbm database"
+        ErrorCode[201] := "division by zero"
+        ErrorCode[202] := "remaindering by zero"
+        ErrorCode[203] := "integer overflow"
+        ErrorCode[204] := "real overflow, underflow, or division by zero"
+        ErrorCode[205] := "invalid value"
+        ErrorCode[206] := "negative first argument to real exponentiation"
+        ErrorCode[207] := "invalid field name"
+        ErrorCode[208] := "second and third arguments to map of unequal length"
+        ErrorCode[209] := "invalid second argument to open"
+        ErrorCode[210] := "non-ascending arguments to detab/entab"
+        ErrorCode[211] := "by value equal to zero"
+        ErrorCode[212] := "attempt to read file not open for reading"
+        ErrorCode[213] := "attempt to write file not open for writing"
+        ErrorCode[214] := "input/output error"
+        ErrorCode[215] := "attempt to refresh &main"
+        ErrorCode[216] := "external function not found"
+        ErrorCode[217] := "unsafe inter-program variable assignment"
+        ErrorCode[218] := "invalid file name"
+        ErrorCode[301] := "evaluation stack overflow"
+        ErrorCode[302] := "memory violation"
+        ErrorCode[303] := "inadequate space for evaluation stack"
+        ErrorCode[304] := "inadequate space in qualifier list"
+        ErrorCode[305] := "inadequate space for static allocation"
+        ErrorCode[306] := "inadequate space in string region"
+        ErrorCode[307] := "inadequate space in block region"
+        ErrorCode[308] := "system stack overflow in co-expression"
+        ErrorCode[309] := "pattern stack overflow"
+        ErrorCode[316] := "interpreter stack too large"
+        ErrorCode[318] := "co-expression stack too large"
+        ErrorCode[401] := "co-expressions not implemented"
+        ErrorCode[402] := "program not compiled with debugging option"
+        ErrorCode[500] := "program malfunction"
+        ErrorCode[600] := "vidget usage error"
+        ErrorCode[1040] := "socket error"
+        ErrorCode[1041] := "cannot initialize network library"
+        ErrorCode[1042] := "fdup of closed file"
+        ErrorCode[1043] := "invalid signal"
+        ErrorCode[1044] := "invalid operation to flock/fcntl"
+        ErrorCode[1045] := "invalid mode string"
+        ErrorCode[1046] := "invalid permission string for umask"
+        ErrorCode[1047] := "invalid protocol name"
+        ErrorCode[1048] := "low-level read or select mixed with buffered read"
+        ErrorCode[1049] := "nonexistent service or services database error"
+        ErrorCode[1050] := "command not found"
+        ErrorCode[1051] := "cannot create temporary file"
+        ErrorCode[1100] := "ODBC connection expected"
+        ErrorCode[1200] := "system error (see errno)"
+        ErrorCode[1201] := "malformed URL"
+        ErrorCode[1202] := "missing username in URL"
+        ErrorCode[1203] := "unknown scheme in URL"
+        ErrorCode[1204] := "cannot parse URL"
+        ErrorCode[1205] := "cannot connect"
+        ErrorCode[1206] := "unknown host"
+        ErrorCode[1207] := "invalid field in header"
+        ErrorCode[1208] := "messaging file expected"
+        ErrorCode[1209] := "cannot determine smtpserver (set UNICON_SMTPSERVER)"
+        ErrorCode[1210] := "cannot determine user return address (set UNICON_USERADDRESS)"
+        ErrorCode[1211] := "invalid email address"
+        ErrorCode[1212] := "server error"
+        ErrorCode[1213] := "POP messaging file expected"
+        ErrorCode[1214] := "cannot find certificate store (set SSL_CERT_FILE or SSL_CERT_DIR)"
+        ErrorCode[1215] := "cannot verify peer's certificate"
+    }
+    errorcode := integer(errorcode)
+    if type(errorcode) == "integer" then {
+        if \errormessage then {
+            ErrorCode[errorcode] := string(errormessage)
+        }
+        return \ErrorCode[errorcode]
+    }
+end

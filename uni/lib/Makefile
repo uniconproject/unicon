@@ -18,7 +18,7 @@ UFILES=gui.u file_dlg.u db.u \
  undoableedit.u undomanager.u url.u webup.u \
  notification.u md5.u httprequest.u httpresponse.u exception.u \
  thread.u matrix_util.u struct.u db_util.u database.u addressdb.u \
- union.u pdb_util.u propertydb.u property.u
+ union.u pdb_util.u propertydb.u property.u utf8.u
 
 # COPYINS are library files copied in from other directories for
 # organizational purposes. Inspired by ipl/lib.  They have to be
@@ -29,9 +29,24 @@ COPYINS=selection3D.u
 all: $(UFILES) $(COPYINS)
 
 selection3D.u: ../3d/selection3D.icn
-	cp ../3d/selection3D.icn .
+	$(CP) ../3d/selection3D.icn .
 	$(UNICON) $(UFLAGS) -c selection3D.icn
-	rm selection3D.icn
+	$(RM) selection3D.icn
+
+utf8.u: utf8.icn classobject.u
+	$(UNICON) $(UFLAGS) -c utf8.icn
+
+classobject.u: classobject.icn errorsystem.u
+	$(UNICON) $(UFLAGS) -c classobject.icn
+
+errorsystem.u: errorsystem.icn runtimeerrors.u utilities.u
+	$(UNICON) $(UFLAGS) -c errorsystem.icn
+
+runtimeerrors.u: runtimeerrors.icn
+	$(UNICON) $(UFLAGS) -c runtimeerrors.icn
+
+utilities.u: utilities.icn
+	$(UNICON) $(UFLAGS) -c utilities.icn
 
 deps:
 	$(UNIDEP) *.icn -nb -f deps.out

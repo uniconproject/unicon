@@ -75,3 +75,4 @@
 #define K_WINDOW      65
 #define K_X           66
 #define K_Y           67
+#define K_PROC        68

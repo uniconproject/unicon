@@ -419,7 +419,7 @@ runtime errors are converted into expression failure. By assigning to
 this keyword, error conversion can be enabled or disabled for specific
 sections of code. The integer \&error is decremented by one on each
 error, and if it reaches zero, a runtime error is generated. Assigning
-a value of -1 effectively disables runtime errors indefinitely. 
+a value of -1 effectively disables runtime errors indefinitely.
 There is not one \texttt{\&error} integer for each thread \ConcurrencyIssue\
 --- the value applies to the whole program, not just the thread that sets it.
 
@@ -678,7 +678,7 @@ backward compatibility reasons.
 value used in string scanning and analysis functions. Assigning to
 \texttt{\&subject} implicitly assigns the value \texttt{1} to
 \texttt{\&pos}.
-Each thread has its own instance of 
+Each thread has its own instance of
 \texttt{\&subject}; \ConcurrencyIssue assigning a value to it in one
 thread does not affect the string scanning environment of any another thread.
 
@@ -973,7 +973,7 @@ co-expression to evaluate \textit{expr}.
 execution of \textit{expr} on value {\textit x}. Value {\textit x} must
 be a mutex or protected object that has a mutex. The critical section
 causes {\textit x} to be locked before evaluating {\textit expr} and
-unlocked afterward. Breaking, returning or failing out of {\textit expr} 
+unlocked afterward. Breaking, returning or failing out of {\textit expr}
 does not automatically unlock {\textit x}.\WarningNotThreadSafe
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1202,7 +1202,7 @@ not be resumed.
 {\bf \textbf{static} \textit{var} [, \textit{var}]* } \hfill {\bf declare static variables}
 
 \noindent
-\index{static}The \texttt{static} declaration introduces 
+\index{static}The \texttt{static} declaration introduces
 local variables that persist for the entire program execution
 into the current procedure or method body. Variable
 declarations must be at the beginning of a procedure or method.
@@ -1338,6 +1338,7 @@ required numeric type.
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf = pattern } \hfill {\bf anchored pattern match} \\
+\noindent
 {\bf = string } \hfill {\bf tab/match} \\
 
 \noindent
@@ -1485,8 +1486,7 @@ superclass name prior to the field operator.
 {\bf number1 = number2 } \hfill {\bf equal}
 
 \noindent
-\index{equal!numeric =}
-{\bf number1 \~{}= number2 } \hfill {\bf not equal}
+{\bf number1 \~{}= number2 }\index{equal!numeric =}  \hfill {\bf not equal}
 
 \noindent
 {\bf number1 {\textless} number2 } \hfill {\bf less than}
@@ -1501,8 +1501,7 @@ superclass name prior to the field operator.
 {\bf number1 {\textgreater}= number2 } \hfill {\bf greater or equal}
 
 \noindent
-{\bf string1 == string2 } \hfill {\bf string equal}
-\index{string!comparison}\index{equal!string ==}
+{\bf string1 == string2 }\index{string!comparison}\index{equal!string ==} \hfill {\bf string equal}
 
 \noindent
 {\bf string1 \~{}== string2 } \hfill {\bf string not equal}
@@ -1520,8 +1519,7 @@ superclass name prior to the field operator.
 {\bf string1 {\textgreater}{\textgreater}= string2 } \hfill {\bf string greater or equal}
 
 \noindent
-{\bf x1 === x2 } \hfill {\bf equivalence}
-\index{equal!reference ===}
+{\bf x1 === x2 }\index{equal!reference ===} \hfill {\bf equivalence}
 
 \noindent
 {\bf x1 \~{}=== x2 } \hfill {\bf non equivalence}
@@ -1536,24 +1534,25 @@ may be augmented.
 {\bf var := expr } \hfill {\bf assign}
 
 \noindent
-{\bf var1 :=: var2 } \hfill {\bf swap}\WarningNotThreadSafe
-\index{swap}
+{\bf var1 :=: var2 }\index{swap} \hfill {\bf swap}\WarningNotThreadSafe
+
 
 \noindent
-{\bf var {\textless}- expr } \hfill {\bf reversible assignment}
-\index{assignment!reversible}\index{reversible assignment}
+{\bf var {\textless}- expr }\index{assignment!reversible}\index{reversible assignment} \hfill {\bf reversible assignment}
+
 
 \noindent
-{\bf var1 {\textless}-{\textgreater} var2 } \hfill {\bf reversible swap}\WarningNotThreadSafe
-\index{reversible swap}
+{\bf var1 {\textless}-{\textgreater} var2 }\index{reversible swap} \hfill {\bf reversible swap}\WarningNotThreadSafe
+
 
 \noindent
 The several \index{assignment}assignment
 operators all require variables for their left operands, and swap
 operators also require variables for their right operands.
 
+\noindent
 Assignment operators are usually thread safe \ConcurrencyIssue
-but there are some situations where they are not. 
+but there are some situations where they are not.
 See the discussion of thread safe assignment without a mutex (on page
 \pageref{ThreadSafeAssignment}) for details. If in doubt, protect the
 global variable with a mutex.
@@ -1587,8 +1586,8 @@ a procedure.  y is a list or record.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf [x] @ co-expression } \hfill {\bf activate co-expression}
-\index{activate co-expression}
+{\bf [x] @ co-expression }\index{activate co-expression} \hfill {\bf activate co-expression}
+
 
 \noindent
 The activate operator transfers execution
@@ -1598,8 +1597,8 @@ if no left operand is supplied. Activation may be augmented.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf [x] @$>$ [y] } \hfill {\bf send message}
-\index{activate co-expression} \linebreak
+{\bf [x] @$>$ [y] }\index{activate co-expression} \hfill {\bf send message}
+ \linebreak
 \noindent
 {\bf [x] @$>>$ [y] } \hfill {\bf blocking send message}
 
@@ -1611,8 +1610,8 @@ available.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf [x] $<$@ [y] } \hfill {\bf receive message}
-\index{activate co-expression} \linebreak
+{\bf [x] $<$@ [y] }\index{activate co-expression} \hfill {\bf receive message}
+ \linebreak
 \noindent
 {\bf [x] $<<$@ [y] } \hfill {\bf blocking receive message}
 
@@ -1696,12 +1695,12 @@ equal to its right operand.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf ( expr [, expr]* ) } \hfill {\bf mutual evaluation}
-\index{mutual evaluation}
+{\bf ( expr [, expr]* ) }\index{mutual evaluation} \hfill {\bf mutual evaluation}
+
 
 \noindent
-{\bf p ( expr [, expr]* ) } \hfill {\bf invocation}
-\index{invocation}
+{\bf p ( expr [, expr]* ) }\index{invocation} \hfill {\bf invocation}
+
 
 \noindent
 By themselves, \index{parentheses}parentheses are used
@@ -1718,29 +1717,29 @@ that selects the parameter to use as the result of the entire expression.
 \bigskip\hrule\vspace{0.1cm}
 
 \noindent
-{\bf \textbf{[} \textbf{]} } \hfill {\bf empty list creation}
-\index{empty list}
+{\bf \textbf{[} \textbf{]} }\index{empty list} \hfill {\bf empty list creation}
+
 
 \noindent
-{\bf \textbf{[} expr [, expr]* \textbf{]} } \hfill {\bf list creation}
-\index{list creation}
+{\bf \textbf{[} expr [, expr]* \textbf{]} }\index{list creation} \hfill {\bf list creation}
+
 
 \noindent
-{\bf \textbf{[:} expr \textbf{:]} } \hfill {\bf list comprehension}
-\index{list creation}
+{\bf \textbf{[:} expr \textbf{:]} }\index{list creation} \hfill {\bf list comprehension}
+
 
 \noindent
-{\bf \textbf{[} expr : expr [; expr : expr ]* \textbf{]} } \hfill {\bf
+{\bf \textbf{[} expr : expr [; expr : expr ]* \textbf{]} }\index{table!initializer} \hfill {\bf
 initialized table creation}
-\index{table!initializer}
+
 
 \noindent
-{\bf expr1 \textbf{[} expr2 [, expr]* \textbf{]} } \hfill {\bf subscript}
-\index{subscript}
+{\bf expr1 \textbf{[} expr2 [, expr]* \textbf{]} }\index{subscript} \hfill {\bf subscript}
+
 
 \noindent
-{\bf expr1 \textbf{[} expr2 : expr3 \textbf{]} } \hfill {\bf subsection}\WarningNotThreadSafe
-\index{slice}\index{subsection}
+{\bf expr1 \textbf{[} expr2 : expr3 \textbf{]} }\index{slice}\index{subsection} \hfill {\bf subsection}\WarningNotThreadSafe
+
 
 \noindent
 {\bf expr1 \textbf{[} expr2 +: expr3 \textbf{]} } \hfill {\bf forward relative subsection}
@@ -1784,18 +1783,18 @@ A semicolon bounds \texttt{expr1}. Once \texttt{expr2} is entered,
 \texttt{expr2} is the result of the entire expression.
 \index{semicolon insertion}Semicolons are automatically
 inserted at ends of lines wherever it is syntactically
-allowable to do so. This results in many \textit{implicitly} 
+allowable to do so. This results in many \textit{implicitly}
 \index{bounded expressions}\textit{bounded} expressions.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf \{ expr [; expr]* \} } \hfill {\bf compound expression}
-\index{compound expression}
+{\bf \{ expr [; expr]* \} }\index{compound expression} \hfill {\bf compound expression}
+
 
 \noindent
-{\bf p \{ expr [, expr]* \} } \hfill {\bf programmer defined control structure}
-\index{programmer defined control structure}
-\index{control structure!programmer defined}
+{\bf p \{ expr [, expr]* \} }\index{programmer defined control structure}\index{control structure!programmer defined} \hfill {\bf programmer defined control structure}
+
+
 
 \noindent
 Curly brackets typically cause a sequence
@@ -1812,6 +1811,7 @@ Unicon's \index{built-in functions}built-in functions
 are a key element of its ease of learning and use. They provide
 substantial functionality in a consistent and easily memorized manner.
 
+\medskip\noindent
 In addition to automatic type conversion, built-in functions make
 extensive use of optional parameters with default values. Default
 values are indicated in the function descriptions, with the exception
@@ -1967,10 +1967,9 @@ working directory, which is shared between threads.
 \noindent
 \index{permissions, file}
 \index{file!permissions}\index{chmod()}\texttt{chmod(f, m)}
-sets the access permissions ("mode") of
-a string filename (or on UNIX systems, an open file) \texttt{f} to a
-string or integer mode \texttt{m}. The mode indicates the change to be
-performed. The string is of the form
+sets the access permissions ("mode") of a string filename (or on UNIX systems,
+an open file) \texttt{f} to a string or integer mode \texttt{m}. The mode
+indicates the change to be performed. The string is of the form
 
 \iconcode{
 \>   [ugoa]*[+-=][rwxRWXstugo]* }%iconcode
@@ -1980,25 +1979,26 @@ is the owner set, \texttt{g} is the group and \texttt{o} is the set of
 all others. The character \texttt{a} designates all the fields. The
 operator (\texttt{+-=}) describes the operation to be performed:
 \texttt{+} adds a permission, \texttt{{}-} removes a permission, and
-\texttt{=} sets a permission. The permissions themselves are: 
+\texttt{=} sets a permission. The permissions themselves are:
 
-\ \ \ \ \ \texttt{r} \ \ \ \ \ \ \ \ read\\
- \ \ \ \ \texttt{w} \ \ \ \ \ \ \ write\\
- \ \ \ \ \texttt{x} \ \ \ \ \ \ \ \ execute\\
- \ \ \ \ \texttt{R} \ \ \ \ \ \ \ read if any other set already has
-r\\
- \ \ \ \ \texttt{W} \ \ \ \ \ \ write if any other set already has
-w\\
- \ \ \ \ \texttt{X} \ \ \ \ \ \ \ execute if any other set already has
-x\\
- \ \ \ \ \texttt{s} \ \ \ \ \ \ \ \ setuid (if the first part contains u
-and/or setgid if the first part contains g\\
- \ \ \ \ \texttt{t} \ \ \ \ \ \ \ \ sticky if the first part has
-o\\
- \ \ \ \ \texttt{u} \ \ \ \ \ \ \ the u bits on the same file\\
- \ \ \ \ \texttt{g} \ \ \ \ \ \ \ the g bits on the same file\\
- \ \ \ \ \texttt{o} \ \ \ \ \ \ \ the o bits on the same file
-
+\begin{center}
+\begin{xtabular}{m{2.00cm}m{13.00cm}}\\
+{\sffamily\bfseries Permission} &
+{\sffamily\bfseries Description}\\\hline
+\ \ \ \ \texttt{r} & read\\
+\ \ \ \ \texttt{w} & write\\
+\ \ \ \ \texttt{x} & execute\\
+\ \ \ \ \texttt{R} & read if any other set already has r\\
+\ \ \ \ \texttt{W} & write if any other set already has w\\
+\ \ \ \ \texttt{X} & execute if any other set already has x\\
+\ \ \ \ \texttt{s} & setuid (if the first part contains u and/or setgid if the first part contains g\\
+\ \ \ \ \texttt{t} & sticky if the first part has o\\
+\ \ \ \ \texttt{u} & the u bits on the same file\\
+\ \ \ \ \texttt{g} & the g bits on the same file\\
+\ \ \ \ \texttt{o} & the o bits on the same file\\
+\end{xtabular}
+\end{center}
+\noindent
 If the first group is missing, then it is treated as
 "all" except that any bits in the
 user's umask will not be modified in the mode. Not all
@@ -2122,11 +2122,12 @@ the local timezone. See also keywords \&clock and \&dateline.
 
 \noindent
 \index{column!ODBC}\texttt{dbcolumns(db, tablename)} produces a list
-of record entries with fields:
+of record entries with fields:\\
 \texttt{catalog}, \texttt{schema}, \texttt{tablename},
-\texttt{colname}, \texttt{datatype}, \texttt{typename}, \texttt{colsize},
+\texttt{colname}, \texttt{datatype}, \texttt{typename}, \\\texttt{colsize},
 \texttt{buflen}, \texttt{decdigits}, \texttt{numprecradix},
-\texttt{nullable}, and \texttt{remarks}.The fields
+\texttt{nullable}, \texttt{remarks}.\\
+\noindent The fields
 \texttt{datatype} and \texttt{typename} are SQL-dependent and data
 source dependent, respectively. Field \texttt{colsize} gives the
 maximum length in characters for SQL\_CHAR or SQL\_VARCHAR columns..
@@ -2143,9 +2144,9 @@ known whether the column accepts null values.
 {\bf dbdriver(D) : record } \hfill {\bf ODBC driver information}
 
 \noindent
-\index{ODBC driver}\texttt{dbdriver(db)} produces a record with fields
+\index{ODBC driver}\texttt{dbdriver(db)} produces a record with fields:\\
 \texttt{name}, \texttt{ver}, \texttt{odbcver}, \texttt{connections},
-\texttt{statements}, and \texttt{dsn} that describes the details of
+\texttt{statements}, \texttt{dsn}\\ \noindent that describes the details of
 the \index{ODBC}ODBC driver used to connect to database \texttt{db}.
 Fields \texttt{connections} and \texttt{statements} are the maximums
 the driver can support. Fields
@@ -2160,8 +2161,8 @@ and Windows Data Source Name associated with the connection.
 
 \noindent
 \index{key!ODBC}\texttt{dbkeys(db,tablename)} produces a list of records
-with fields \texttt{columnname}, and \texttt{sequencenumber}
-containing information about the primary keys in \texttt{tablename}.
+with fields:\\ \texttt{columnname}, \texttt{sequencenumber}\\
+\noindent containing information about the primary keys in \texttt{tablename}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{dblimits}
@@ -2169,12 +2170,13 @@ containing information about the primary keys in \texttt{tablename}.
 {\bf dblimits(D) : record } \hfill {\bf ODBC operation limits}
 
 \noindent
-\texttt{dblimits(db)} produces a record with fields \texttt{maxbinlitlen},
-\texttt{maxcharlitlen, maxcolnamelen, maxgroupbycols, maxorderbycols},
-\texttt{maxindexcols, maxselectcols, maxtblcols, maxcursnamelen, maxindexsize},
-\texttt{maxrownamelen, maxprocnamelen, maxqualnamelen, maxrowsize},
-\texttt{maxrowsizelong, maxstmtlen, maxtblnamelen, maxselecttbls}, and
-\texttt{maxusernamelen} that contains the upper bounds of the database
+\texttt{dblimits(db)} produces a record with fields:\\ \texttt{maxbinlitlen},
+\texttt{maxcharlitlen}, \texttt{maxcolnamelen}, \texttt{maxgroupbycols},\\ \texttt{maxorderbycols},
+\texttt{maxindexcols}, \texttt{maxselectcols}, \texttt{maxtblcols},\\ \texttt{maxcursnamelen}, \texttt{maxindexsize},
+\texttt{maxrownamelen}, \texttt{maxprocnamelen},\\ \texttt{maxqualnamelen}, \texttt{maxrowsize},
+\texttt{maxrowsizelong}, \texttt{maxstmtlen},\\ \texttt{maxtblnamelen}, \texttt{maxselecttbls},
+\texttt{maxusernamelen}\\
+\noindent that contains the upper bounds of the database
 for many parameters.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2374,14 +2376,19 @@ substring in \texttt{s2[i1:i2]}.
 \index{lock, file}lock to the file. Advisory locks enable processes to
 cooperate when accessing a shared file, but do not enforce exclusive
 access. The following characters can be used to make up the operation
-string: 
+string:
 
-\ \ \ \ \ s \ \ \ \ \ \ \ shared lock\\
- \ \ \ \ x \ \ \ \ \ \ \ exclusive lock\\
- \ \ \ \ b \ \ \ \ \ \ \ don't block when
-locking\\
- \ \ \ \ u \ \ \ \ \ \ \ unlock 
-
+\begin{center}
+\begin{xtabular}{m{2.00cm}m{12.00cm}}\\
+{\sffamily\bfseries Lock} &
+{\sffamily\bfseries Description}\\\hline
+\ \ \texttt{s} & shared lock\\
+\ \ \texttt{x} & exclusive lock\\
+\ \ \texttt{b} & don't block when locking\\
+\ \ \texttt{u} & unlock\\
+\end{xtabular}
+\end{center}
+\noindent
 Locks cannot be applied to windows, directories or database files. A
 file may not simultaneously have shared and exclusive locks.
 
@@ -2452,7 +2459,7 @@ from the operating system.
 since the epoch, Jan 1, 1970 00:00:00. The \texttt{sec} value may be
 converted to a date string with ctime or gtime. See also keywords
 \texttt{\&now}, \texttt{\&clock}, and \texttt{\&dateline}. Return
-value: \texttt{record posix\_timeval(sec, usec)} 
+value: \texttt{record posix\_timeval(sec, usec)}
 
 \bigskip\hrule\vspace{0.1cm}
 \index{globalnames}
@@ -2470,7 +2477,7 @@ variables in the program that created co-expression \texttt{ce}.
 
 \noindent
 Converts an integer time in seconds since the epoch, Jan 1, 1970
-00:00:00 into a string in Coordinated Universal Time (UTC). 
+00:00:00 into a string in Coordinated Universal Time (UTC).
 
 \bigskip\hrule\vspace{0.1cm}
 \index{iand}
@@ -2549,14 +2556,15 @@ end opposite the shift direction.
 
 \noindent
 \texttt{istate(ce, attrib)} reports selected virtual machine interpreter
-state information. \texttt{attrib} must be one of:
+state information. \texttt{attrib} must be one of:\\
 \texttt{{\textquotedblleft}count{\textquotedblright}},
 \texttt{{\textquotedblleft}ilevel{\textquotedblright}},
 \texttt{{\textquotedblleft}ipc{\textquotedblright}},
 \texttt{{\textquotedblleft}ipc\_offset{\textquotedblright}},
 \texttt{{\textquotedblleft}sp{\textquotedblright}},
 \texttt{{\textquotedblleft}efp{\textquotedblright}},
-\texttt{{\textquotedblleft}gfp{\textquotedblright}}. Used by monitors.
+\texttt{{\textquotedblleft}gfp{\textquotedblright}}.\\
+\noindent Used by monitors.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{ixor}
@@ -2627,10 +2635,8 @@ is a mutable value such as a list, all elements refer to the
 {\bf load(s,L,f:\&input,f:\&output,f:\&errout,i,i,i) : co-expression } \hfill {\bf load Unicon program}
 
 \noindent
-\index{load!Unicon program}
-\index{load()}
 \texttt{load(s,arglist,input,output,error,blocksize,stringsize,stacksize)}
-loads the icode file named \texttt{s} and returns that
+\index{load!Unicon program}\index{load()}loads the icode file named \texttt{s} and returns that
 program's execution as a co-expression ready to start
 its \texttt{main()} procedure with parameter \texttt{arglist} as its
 command line arguments. The three file parameters are used as that
@@ -2780,8 +2786,8 @@ arguments, which must be numeric.
 {\bf mkdir(s, s?) : ? } \hfill {\bf create directory}
 
 \noindent
-\index{directory!create}\index{create!directory}\index{mkdir()}
-\texttt{mkdir(path,mode)} creates a new directory named \texttt{path} with
+\texttt{mkdir(path,mode)}\index{directory!create}\index{create!directory}\index{mkdir()}
+creates a new directory named \texttt{path} with
 mode \texttt{mode}. The optional \texttt{mode} parameter can be numeric or a
 string of the form accepted by \texttt{chmod()}. The function succeeds
 if a new directory is created.
@@ -2821,7 +2827,7 @@ within the program that created co-expression \texttt{c}. Keyword
 variables are recognized and named correctly. \texttt{name()} returns
 the base type and subscript or field information for variables that are
 elements within other values, but does not produce the source code
-variable name for such variables. 
+variable name for such variables.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{numeric}
@@ -2841,48 +2847,37 @@ the conversion is not possible.
 \noindent
 \index{open file}\texttt{open(s1, s2, ...)} opens a file named
 \texttt{s1} with mode \texttt{s2} and attributes given in trailing
-arguments. The modes recognized by \texttt{open()} are: 
-
-\ \ \ \ \ \texttt{"a"\ \ \ \ }append; write
-after current contents\\
- \ \ \ \ \texttt{"b"\ \ \ \ }open for both
-reading and writing (b does not mean binary mode!)\\
- \ \ \ \ \texttt{"c"\ \ \ \ }create a new
-file and open it\\
- \ \ \ \ \texttt{"d"\ \ \ \ }open a
-[NG]\index{DBM}DBM database\\
- \ \ \ \ \texttt{"g"\ \ \ \ }create a 2D
-graphics window\\
- \ \ \ \ \texttt{"gl"\ \ \ \ }create a 3D
-graphics window\\
- \ \ \ \ \texttt{"n"\ \ \ \ }connect to a
-remote TCP network socket\\
- \ \ \ \ \texttt{"na"\ \ \ \ }accept a
-connection from a TCP network socket \\
- \ \ \ \ \texttt{"nau"\ \ }accept a
-connection from a UDP network socket\\
- \ \ \ \ \texttt{"nl"\ \ \ \ }listen on a
-TCP network socket \\
- \ \ \ \ \texttt{"nu"\ \ \ \ }connect to a
-UDP network socket\\
- \ \ \ \ \texttt{"m"\ \ \ \ }connect to a
-messaging server (HTTP, HTTPS, SMTP, POP, ...)\\
- \ \ \ \ \texttt{"o"\ \ \ \ }open an
-\index{ODBC}ODBC connection to a (typically \index{SQL}SQL)
-database\\
- \ \ \ \ \texttt{"p"\ \ \ \ }execute a
-program given by command line s1 and open a pipe to it\\
- \ \ \ \ \texttt{"r"\ \ \ \ }read\\
- \ \ \ \ \texttt{"t"\ \ \ \ }use text mode,
-with newlines translated\\
- \ \ \ \ \texttt{"u"\ \ \ \ }use a binary
-untranslated mode\\
- \ \ \ \ \texttt{"w"\ \ \ \ }write
-
+arguments. The modes recognized by \texttt{open()} are:
+\begin{center}
+\begin{xtabular}{m{2.00cm}m{12.00cm}}\\
+{\sffamily\bfseries Mode} &
+{\sffamily\bfseries Description}\\\hline
+\ \ \texttt{"a"} & append; write after current contents\\
+\ \ \texttt{"b"} & open for both reading and writing (b does not mean binary mode!)\\
+\ \ \texttt{"c"} & create a new file and open it\\
+\ \ \texttt{"d"} & open a [NG]\index{DBM}DBM database\\
+\ \ \texttt{"g"} & create a 2D graphics window\\
+\ \ \texttt{"gl"} & create a 3D graphics window\\
+\ \ \texttt{"n"} & connect to a remote TCP network socket\\
+\ \ \texttt{"na"} & accept a connection from a TCP network socket\\
+\ \ \texttt{"nau"} & accept a connection from a UDP network socket\\
+\ \ \texttt{"nl"} & listen on a TCP network socket\\
+\ \ \texttt{"nu"} & connect to a UDP network socket\\
+\ \ \texttt{"m"} & connect to a messaging server (HTTP, HTTPS, SMTP, POP, ...)\\
+\ \ \texttt{"o"} & open an \index{ODBC}ODBC connection to a (typically \index{SQL}SQL) database\\
+\ \ \texttt{"p"} & execute a program given by command line s1 and open a pipe to it\\
+\ \ \texttt{"r"} & read\\
+\ \ \texttt{"t"} & use text mode, with newlines translated\\
+\ \ \texttt{"u"} & use a binary untranslated mode\\
+\ \ \texttt{"w"} & write\\
+\end{xtabular}
+\end{center}
+\medskip\noindent
 Directories may only be opened for reading, and produce the names of all
 files, one per line. Pipes may be opened for reading or writing, but
 not both.
 
+\medskip\noindent
 When opening a network socket: the first argument \texttt{s1} is the
 name of the socket to connect. If \texttt{s1} is of the form
 \texttt{"s:i"}, it is an Internet domain socket on
@@ -2892,13 +2887,15 @@ host. Mode \texttt{"n"} allows an optional third parameter,
 an integer timeout (in milliseconds) after which \texttt{open()} fails
 if no connection has been established by that time.
 
+\medskip\noindent
 For a UDP socket, there is not really a connection, but any writes to
 that file will send a datagram to that address, so that the address
 doesn't have to be specified each time. Also,
 \texttt{read()} or \texttt{reads()} cannot be performed on a UDP
 socket; use receive. UDP sockets must be in the INET domain; the
-address must have a colon. 
+address must have a colon.
 
+\medskip\noindent
 For a DBM database, only one modifier character may be used: if
 \texttt{s1} is \texttt{"dr"} it indicates that the database should be
 opened in read-only mode.  For an ODBC database, following the mode
@@ -2907,6 +2904,7 @@ by functions such as \texttt{dbcolumns()}, followed by two generally
 required strings giving the username and password authentication for the
 connection.
 
+\medskip\noindent
 The filename argument is a Uniform Resource Indicator (URI) when opening
 a messaging connection. Mode \texttt{"m-"} may be given to skip the
 validation of an encryption certificate for HTTPS connections.
@@ -2916,6 +2914,7 @@ Messaging/10.0" and Host defaults to the host and port
 indicated in the URI. The SMTP From: header obtains its default from a
 UNICON\_USERADDRESS environment variable if it is present.
 
+\medskip\noindent
 For 2D and 3D windows, attribute values may be specified in the
 following arguments to \texttt{open()}. \texttt{open()} fails if a
 window cannot be opened or an attribute cannot be set to a requested
@@ -3016,8 +3015,7 @@ identifier by that name has been assigned differently. If \texttt{i} is
 1, 2, or 3, the procedure for an operator with that number of operands
 is produced. For example,
 \texttt{proc("-",2)} produces the procedure
-for subtraction, while
-\ \ \texttt{proc("-")} produces the
+for subtraction, while \texttt{proc("-")} produces the
 procedure for unary negation. \texttt{proc(C,i)} returns the procedure
 activated \texttt{i} levels up with \texttt{C}. \texttt{proc(p, i, C)}
 returns procedure \texttt{p} if it belongs to the program which created
@@ -3045,7 +3043,7 @@ of the order they are supplied as parameters to the call to
 \index{push()}\texttt{push()}. \texttt{push()} returns the list that is
 passed as its first parameter, with the new elements added.
 
-\hrule\vspace{0.1cm}
+\bigskip\hrule\vspace{0.1cm}
 \index{put}
 \noindent
 {\bf put(L, x1, ..., xN) : list } \hfill {\bf add to list end}\WarningNotThreadSafe
@@ -3108,7 +3106,7 @@ or fails if the conversion cannot be performed.
 to the port associated with \texttt{f}, waiting if necessary. The
 returned value is a record of type \texttt{posix\_message(addr, msg)},
 containing the address of the sender and the contents of the message
-respectively. 
+respectively.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{remove}
@@ -3211,6 +3209,7 @@ arguments may be files or lists of files, ending with an optional
 integer timeout value in milliseconds. It returns a list of those files
 among its arguments that have input waiting.
 
+\medskip\noindent
 If the final argument to \index{select()}\texttt{select()} is an
 integer, it is an upper bound on the time elapsed before select
 returns. A timeout of 0 causes \texttt{select()} to return immediately
@@ -3362,15 +3361,16 @@ arbitrary state and should be used with care.
 \noindent
 \index{file!information}\index{stat(f)}\texttt{stat(f)} returns a record
 with information about the file \texttt{f} which may be a path or a
-file object. The return value is of type:
-\texttt{record posix\_stat(dev, ino, mode, nlink, uid, gid, rdev},
-\texttt{size, atime, mtime, ctime, blksize, blocks, symlink)}.
-Many of these fields are POSIX
+file object. The return value is of type:\\
+\texttt{record posix\_stat(dev, ino, mode, nlink, uid, gid, rdev},\\
+\ \ \ \ \texttt{size, atime, mtime, ctime, blksize, blocks, symlink)}.\\
+\noindent Many of these fields are POSIX
 specific, but a number are supported across platforms, such as the
 \index{file size}file size in bytes (the \texttt{size} field), access
 permissions (the \texttt{mode} field), and the last modified time (the
 \texttt{mtime} field).
 
+\medskip\noindent
 The \texttt{atime}, \texttt{mtime}, and \texttt{ctime} fields are
 integers that may be formatted with the \texttt{ctime()} and
 \texttt{gtime()} functions. The mode is a string similar to the long
@@ -3426,6 +3426,7 @@ each member of the list is an argument and the second and subsequent
 list elements are passed unmodified to the program named in the first
 element of the list.
 
+\medskip\noindent
 The three file arguments are files that will be used for the new
 process' standard input, standard output and standard
 error. The return value is the exit status from the process. If the
@@ -3482,7 +3483,8 @@ which is the string name of the signal received. Unicon knows about 40
 names; most folks will care mainly about
 \texttt{"SIGINT"} and \texttt{"SIGPIPE"}.
 
-Caveat: This is not supported by the optimizing
+\medskip\noindent
+{\bf Caveat:} This is not supported by the optimizing
 \index{compiler}compiler (the -C command line option, which invokes iconc).
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3775,7 +3777,7 @@ with \texttt{width=height}.
 length \texttt{len} at the position (\texttt{x}, \texttt{y},
 \texttt{z}) on the 3D window \texttt{w}. The display list element is
 returned. This procedure fails if the context attribute \texttt{dim} is
-set to 2. 
+set to 2.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{DrawCurve}
@@ -3945,11 +3947,13 @@ clears the contents of the entire window.
 \texttt{w}. If no events are available, \texttt{Event()} waits for
 \texttt{i} milliseconds. Keystrokes are encoded as strings, while mouse
 events are encoded as integers. The retrieval of an event is
-accompanied by assignments to the keywords \texttt{\&x}, \texttt{\&y},
+accompanied by assignments to the keywords:\\ \texttt{\&x}, \texttt{\&y},
 \texttt{\&row}, \texttt{\&col}, \texttt{\&interval},
-\texttt{\&control}, \texttt{\&shift}, \texttt{\&meta}, and if 3D
-attribute \texttt{{\textquotedblleft}pick=on{\textquotedblright}},
-\texttt{\&pick}. \texttt{Event()} fails if the timeout expires before
+\texttt{\&control}, \texttt{\&shift}, \texttt{\&meta},\\
+\noindent and if 3D
+attribute \texttt{{\textquotedblleft}pick=on{\textquotedblright}}:\\
+\texttt{\&pick}.\\
+\noindent\texttt{Event()} fails if the timeout expires before
 an event occurs.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3964,13 +3968,14 @@ foreground cannot be set to the requested color. In 3D,
 \texttt{Fg(w, s)} changes the material properties of subsequently drawn objects
 to the material properties specified by \texttt{s}. The string \texttt{s}
 must be one or more semi-colon separated material properties. A
-material property is of the form 
+material property is of the form
 
-\ \ \ \ \ \ \ \ [diffuse {\textbar} ambient {\textbar} specular
+\ \ \ \ \ [diffuse {\textbar} ambient {\textbar} specular
 {\textbar} emission] \textit{color name} or
 {\textquotedblleft}shininess n{\textquotedblright}, 0 {\textless}= n
 {\textless}= 128.
 
+\medskip\noindent
 If string \texttt{s} is omitted, the current values of the material
 properties will be returned.
 
@@ -4002,7 +4007,7 @@ ellipses, and/or circles. Coordinates are as in \texttt{DrawArc()}.
 beginning and ending points are connected if they are not the same. In
 3D\texttt{, FillPolygon()} takes from 2-4 coordinates per vertex and
 returns the list that represents the polygon on the display list for
-refresh purposes. 
+refresh purposes.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{FillRectangle}
@@ -4069,7 +4074,7 @@ location in pixels.
 
 \noindent
 \texttt{IdentityMatrix(w)} changes the current matrix to the identity
-matrix on 3D window \texttt{w}. The display list element is returned. 
+matrix on 3D window \texttt{w}. The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{Lower}
@@ -4201,7 +4206,7 @@ extends beyond the canvas.
 \texttt{PopMatrix(w)} pops the top matrix from either the projection or
 modelview matrix stack on 3D window \texttt{w}, depending on the
 current matrix mode\texttt{.} This procedure fails if there is only one
-matrix on the matrix stack. The display list element is returned. 
+matrix on the matrix stack. The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{PushMatrix}
@@ -4288,7 +4293,7 @@ reading or is an invalid file format.
 \noindent
 \texttt{Refresh(w) }redraws the contents of window \texttt{w}. It is
 used mainly when objects have been moved in a 3D scene. The window
-\texttt{w} is returned. 
+\texttt{w} is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{Rotate}
@@ -4346,8 +4351,11 @@ the font currently defined for window \texttt{w}.
 \noindent
 \texttt{Texture(w, s) }specifies a texture image that is applied to
 subsequent objects drawn on 3D window \texttt{w}. The string \texttt{s}
-specifies the texture image as a filename, a string of the form
-\texttt{width,pallet,data} or \texttt{width,\#,data}, where pallet is a
+specifies the texture image as a filename, a string of the form\\
+\texttt{width,pallet,data}\\
+\noindent or\\
+\texttt{width,\#,data},\\
+\noindent where pallet is a
 pallet from the Unicon 2D graphics facilities and data is the
 hexadecimal representation of an image. \texttt{Texture(w1, w2)}
 specifies that the contents of 2D or 3D window \texttt{w2} be used as
@@ -4387,7 +4395,7 @@ strings. If called with more than one attribute argument,
 \texttt{WAttrib()} produces one string result per argument, prefixing
 each value by the attribute name and an equals sign (=). If
 \texttt{xi} is a window, subsequent attributes apply to \texttt{xi}.
-\ \texttt{WAttrib()} fails if an attempt is made to set the attribute
+\texttt{WAttrib()} fails if an attempt is made to set the attribute
 \texttt{font}, \texttt{fg}, \texttt{bg}, or \texttt{pattern} to a value
 that is not supported. A run-time error occurs for an invalid attribute
 name or invalid value.
@@ -4531,7 +4539,7 @@ but not including any of the characters in cset c.\\
 
 \noindent
 \texttt{Breakx(c)} matches any characters up to any of the subject
-characters in c, and 
+characters in c, and
 will search beyond the break position for a possible larger match.\\
 
 
@@ -4541,7 +4549,7 @@ will search beyond the break position for a possible larger match.\\
 
 \noindent
 \texttt{Fail()} signals a failure in the current portion of the
-pattern match and sends 
+pattern match and sends
 an instruction to go back and try a different alternative.\\
 
 
@@ -4655,7 +4663,7 @@ using Unicon's negative indices in \texttt{Pos()}.
 
 \noindent
 \texttt{Rtab(i)} matches any characters from the current cursor or
-index position up to 
+index position up to
 the specified position (back from the end) of the subject string,
 equivalent to using a negative index in \texttt{Tab()}.
 Position \texttt{n} must be to the right of the current position.\\
@@ -4693,16 +4701,15 @@ of the \$include line.
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf \$ifdef symbol } \hfill {\bf conditional compilation}
-
-\noindent
-\index{ifdef symbol}{\textbf \$ifndef \textit{symbol} } \hfill {\bf conditional compilation}
 \linebreak
-{\textbf \$else } \hfill {\bf conditional alternative}
+\index{ifdef symbol}{\bf \$ifndef \textit{symbol} } \hfill {\bf conditional compilation}
 \linebreak
-{\textbf \$endif } \hfill {\bf end of conditional code}
+{\bf \$else } \hfill {\bf conditional alternative}
+\linebreak
+{\bf \$endif } \hfill {\bf end of conditional code}
 
-The subsequent lines of code, up to an \$else or \$endif, are discarded
-unless \textit{symbol} is defined by some \$define directive. \$ifndef
+The subsequent lines of code, up to an \texttt{\$else} or \texttt{\$endif}, are discarded
+unless \textit{symbol} is defined by some \texttt{\$define} directive. \texttt{\$ifndef}
 reverses this logic.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -4716,9 +4723,9 @@ supplied text as a message.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\textbf \$line \textit{number} [\textit{filename}] } \hfill {\bf source code line}
-\index{source code \$line}
-{\textbf \#line \textit{number} [\textit{filename}] } \hfill {\bf source code line}
+{\bf \$line \textit{number} [\textit{filename}] } \hfill {\bf source code line}
+\index{source code \$line}\linebreak
+{\bf \#line \textit{number} [\textit{filename}] } \hfill {\bf source code line}
 
 \noindent
 The subsequent lines of code are treated by the compiler as commencing
@@ -4757,42 +4764,46 @@ brackets on keyboards that do not have these characters.
 platform and each feature that is optionally compiled in on some
 platforms. These symbols include:
 
-{\bfseries Preprocessor Symbol\ \ \ \ Feature}
-
-\_V9\ \ \ \ \ \ \ \ \ \ Version 9\\
-\_CMS\ \ \ \ \ \ \ \ \ \ CMS\\
-\_MACINTOSH\ \ \ \ \ \ Macintosh\\
-\_MSDOS\_386\ \ \ \ \ \ MS-DOS/386\\
-\_MS\_WINDOWS\_NT\ \ \ \ MS Windows NT\\
-\_MSDOS\ \ \ \ \ \ \ \ MS-DOS\\
-\_MVS\ \ \ \ \ \ \ \ \ \ MVS\\
-\_OS2\ \ \ \ \ \ \ \ \ \ OS/2\\
-\_PORT\ \ \ \ \ \ \ \ PORT\\
-\_UNIX\ \ \ \ \ \ \ \ \ \ UNIX\\
-\_POSIX\ \ \ \ \ \ \ \ POSIX\\
-\_DBM\ \ \ \ \ \ \ \ \ \ \index{DBM}DBM\\
-\_VMS\ \ \ \ \ \ \ \ \ \ VMS\\
-\_ASCII\ \ \ \ \ \ \ \ \index{ASCII}ASCII\\
-\_EBCDIC\ \ \ \ \ \ \ \ \index{EBCDIC}EBCDIC\\
-\_CO\_EXPRESSIONS\ \ \ \ co-expressions\\
-\_CONSOLE\_WINDOW\ \ \ \ console window\\
-\_DYNAMIC\_LOADING\ \ \ \ dynamic loading\\
-\_EVENT\_MONITOR\ \ \ \ event monitoring\\
-\_EXTERNAL\_FUNCTIONS\ \ external functions\\
-\_KEYBOARD\_FUNCTIONS\ \ \index{keyboard}keyboard functions\\
-\_LARGE\_INTEGERS\ \ \ \ large integers\\
-\_MULTITASKING\ \ \ \ \ \ multiple programs\\
-\_PIPES\ \ \ \ \ \ \ \ pipes\\
-\_RECORD\_IO\ \ \ \ \ \ record I/O\\
-\_SYSTEM\_FUNCTION\ \ \ \ system function\\
-\_MESSAGING\ \ \ \ \ \ messaging\\
-\_GRAPHICS\ \ \ \ \ \ \ \ graphics\\
-\_X\_WINDOW\_SYSTEM\ \ \ \ X Windows\\
-\_MS\_WINDOWS\ \ \ \ \ \ MS Windows\\
-\_WIN32\ \ \ \ \ \ \ \ \ \ \ Win32\\
-\_PRESENTATION\_MGR\ \ \ \ Presentation Manager\\
-\_DOS\_FUNCTIONS\ \ \ \ \ \ MS-DOS extensions\\
-\_DEVMODE\ \ \ \ \ \ \ \ developer mode
+\begin{center}
+\begin{xtabular}{m{6.00cm}m{6.00cm}}\\
+{\sffamily\bfseries Preprocessor Symbol} &
+{\sffamily\bfseries Feature}\\\hline
+\ \ \ \ \texttt{\_V9} & Version 9\\
+\ \ \ \ \texttt{\_CMS} & CMS\\
+\ \ \ \ \texttt{\_MACINTOSH} & Macintosh\\
+\ \ \ \ \texttt{\_MSDOS\_386} & MS-DOS/386\\
+\ \ \ \ \texttt{\_MS\_WINDOWS\_NT} & MS Windows NT\\
+\ \ \ \ \texttt{\_MSDOS} & MS-DOS\\
+\ \ \ \ \texttt{\_MVS} & MVS\\
+\ \ \ \ \texttt{\_OS2} & OS/2\\
+\ \ \ \ \texttt{\_PORT} & PORT\\
+\ \ \ \ \texttt{\_UNIX} & UNIX\\
+\ \ \ \ \texttt{\_POSIX} & POSIX\\
+\ \ \ \ \texttt{\_DBM} & \index{DBM}DBM\\
+\ \ \ \ \texttt{\_VMS} & VMS\\
+\ \ \ \ \texttt{\_ASCII} & \index{ASCII}ASCII\\
+\ \ \ \ \texttt{\_EBCDIC} & \index{EBCDIC}EBCDIC\\
+\ \ \ \ \texttt{\_CO\_EXPRESSIONS} & co-expressions\\
+\ \ \ \ \texttt{\_CONSOLE\_WINDOW} & console window\\
+\ \ \ \ \texttt{\_DYNAMIC\_LOADING} & dynamic loading\\
+\ \ \ \ \texttt{\_EVENT\_MONITOR} & event monitoring\\
+\ \ \ \ \texttt{\_EXTERNAL\_FUNCTIONS} & external functions\\
+\ \ \ \ \texttt{\_KEYBOARD\_FUNCTIONS} & \index{keyboard}keyboard functions\\
+\ \ \ \ \texttt{\_LARGE\_INTEGERS} & large integers\\
+\ \ \ \ \texttt{\_MULTITASKING} & multiple programs\\
+\ \ \ \ \texttt{\_PIPES} & pipes\\
+\ \ \ \ \texttt{\_RECORD\_IO} & record I/O\\
+\ \ \ \ \texttt{\_SYSTEM\_FUNCTION} & system function\\
+\ \ \ \ \texttt{\_MESSAGING} & messaging\\
+\ \ \ \ \texttt{\_GRAPHICS} & graphics\\
+\ \ \ \ \texttt{\_X\_WINDOW\_SYSTEM} & X Windows\\
+\ \ \ \ \texttt{\_MS\_WINDOWS} & MS Windows\\
+\ \ \ \ \texttt{\_WIN32} & Win32\\
+\ \ \ \ \texttt{\_PRESENTATION\_MGR} &  Presentation Manager\\
+\ \ \ \ \texttt{\_DOS\_FUNCTIONS} &  MS-DOS extensions\\
+\ \ \ \ \texttt{\_DEVMODE} &  developer mode\\
+\end{xtabular}
+\end{center}
 
 \section{Execution Errors}
 
@@ -4822,155 +4833,154 @@ system call failure; the numbering systems of \texttt{\&errornumber}
 and \texttt{\&errno} are unrelated; \texttt{\&errno} numbers are
 platform dependent.
 
-101 \ \ \ \ \ \ \ integer expected or out of range\\
-102 \ \ \ \ \ \ \ numeric expected\\
-103 \ \ \ \ \ \ \ string expected\\
-104 \ \ \ \ \ \ \ cset expected\\
-105 \ \ \ \ \ \ \ file expected\\
-106 \ \ \ \ \ \ \ procedure or integer expected\\
-107 \ \ \ \ \ \ \ record expected\\
-108 \ \ \ \ \ \ \ list expected\\
-109 \ \ \ \ \ \ \ string or file expected\\
-110 \ \ \ \ \ \ \ string or list expected\\
-111 \ \ \ \ \ \ \ variable expected\\
-112 \ \ \ \ \ \ \ invalid type to size operation\\
-113 \ \ \ \ \ \ \ invalid type to random operation\\
-114 \ \ \ \ \ \ \ invalid type to subscript operation\\
-115 \ \ \ \ \ \ \ structure expected\\
-116 \ \ \ \ \ \ \ invalid type to element generator\\
-117 \ \ \ \ \ \ \ missing main procedure\\
-118 \ \ \ \ \ \ \ co-expression expected\\
-119 \ \ \ \ \ \ \ set expected\\
-120 \ \ \ \ \ \ \ two csets, two sets, or two tables expected\\
-121 \ \ \ \ \ \ \ function not supported\\
-122 \ \ \ \ \ \ \ set or table expected\\
-123 \ \ \ \ \ \ \ invalid type\\
-124 \ \ \ \ \ \ \ table expected\\
-125 \ \ \ \ \ \ \ list, record, or set expected\\
-126 \ \ \ \ \ \ \ list or record expected\\
-127 \ \ \ \ \ \ \ invalid type to pattern operation\\
-128 \ \ \ \ \ \ \ unevaluated variable or function call expected\\
-129 \ \ \ \ \ \ \ unable to convert unevaluated variable to pattern\\
-130 \ \ \ \ \ \ \ incorrect number of arguments\\
-131 \ \ \ \ \ \ \ string is not a class name\\
-140 \ \ \ \ \ \ \ window expected\\
-141 \ \ \ \ \ \ \ program terminated by window manager\\
-142 \ \ \ \ \ \ \ attempt to read/write on closed window\\
-143 \ \ \ \ \ \ \ malformed event queue\\
-144 \ \ \ \ \ \ \ window system error\\
-145 \ \ \ \ \ \ \ bad window attribute\\
-146 \ \ \ \ \ \ \ incorrect number of arguments to drawing
-function\\
-147 \ \ \ \ \ \ \ window attribute cannot be read or written as requested\\
-150 \ \ \ \ \ \ \ drawing a 3D object while in 2D mode\\
-151 \ \ \ \ \ \ \ pushed/popped too many matrices\\
-152 \ \ \ \ \ \ \ modelview or projection expected\\
-153 \ \ \ \ \ \ \ texture not in correct format\\
-154 \ \ \ \ \ \ \ must have an even number of texture coordinates\\
-155 \ \ \ \ \ \ \ 3D graphics is not enabled in this virtual machine\\
-160 \ \ \ \ \ \ \ nonexistent variable name\\
-161 \ \ \ \ \ \ \ cannot convert unevaluated variable to pattern\\
-162 \ \ \ \ \ \ \ uninitialized pattern\\
-163 \ \ \ \ \ \ \ object, method, or method parameter problem in
-unevaluated expression\\
-164 \ \ \ \ \ \ \ unsupported unevaluated expression\\
-165 \ \ \ \ \ \ \ null pattern argument where name was expected\\
+\begin{center}
+\begin{xtabular}{m{2.00cm}m{13.00cm}}\\
+{\sffamily\bfseries Error Number} &
+{\sffamily\bfseries Description}\\\hline
+101  &  integer expected or out of range\\
+102  &  numeric expected\\
+103  &  string expected\\
+104  &  cset expected\\
+105  &  file expected\\
+106  &  procedure or integer expected\\
+107  &  record expected\\
+108  &  list expected\\
+109  &  string or file expected\\
+110  &  string or list expected\\
+111  &  variable expected\\
+112  &  invalid type to size operation\\
+113  &  invalid type to random operation\\
+114  &  invalid type to subscript operation\\
+115  &  structure expected\\
+116  &  invalid type to element generator\\
+117  &  missing main procedure\\
+118  &  co-expression expected\\
+119  &  set expected\\
+120  &  two csets, two sets, or two tables expected\\
+121  &  function not supported\\
+122  &  set or table expected\\
+123  &  invalid type\\
+124  &  table expected\\
+125  &  list, record, or set expected\\
+126  &  list or record expected\\
+127  &  invalid type to pattern operation\\
+128  &  unevaluated variable or function call expected\\
+129  &  unable to convert unevaluated variable to pattern\\
+130  &  incorrect number of arguments\\
+131  &  string is not a class name\\
+140  &  window expected\\
+141  &  program terminated by window manager\\
+142  &  attempt to read/write on closed window\\
+143  &  malformed event queue\\
+144  &  window system error\\
+145  &  bad window attribute\\
+146  &  incorrect number of arguments to drawing function\\
+147  &  window attribute cannot be read or written as requested\\
+150  &  drawing a 3D object while in 2D mode\\
+151  &  pushed/popped too many matrices\\
+152  &  modelview or projection expected\\
+153  &  texture not in correct format\\
+154  &  must have an even number of texture coordinates\\
+155  &  3D graphics is not enabled in this virtual machine\\
+160  &  nonexistent variable name\\
+161  &  cannot convert unevaluated variable to pattern\\
+162  &  uninitialized pattern\\
+163  &  object, method, or method parameter problem in unevaluated expression\\
+164  &  unsupported unevaluated expression\\
+165  &  null pattern argument where name was expected\\
 %%----------------------------------------
 %% These codes are not in unicon/src/runtime/data.r or are different
-%% 160 \ \ \ \ \ \ \ cannot open file\\
-%% 161 \ \ \ \ \ \ \ bad file attribute\\
-%% 162 \ \ \ \ \ \ \ cannot open socket\\
-%% 171 \ \ \ \ \ \ \ posix header file not included\\
-%% 172 \ \ \ \ \ \ \ posix record overridden by global value\\
-%% 173 \ \ \ \ \ \ \ directory opened for writing\\
-%% 174 \ \ \ \ \ \ \ directory or database invalid as file\\
-%% 175 \ \ \ \ \ \ \ invalid mode string\\
-%% 176 \ \ \ \ \ \ \ invalid signal\\
-%% 177 \ \ \ \ \ \ \ invalid operation to flock/fcntl\\
-%% 178 \ \ \ \ \ \ \ invalid procedure type\\
-%% 179 \ \ \ \ \ \ \ fdup of closed file\\
-%% 180 \ \ \ \ \ \ \ low-level read or select mixed with buffered
-%% read\\
-%% 181 \ \ \ \ \ \ \ not a network connection\\
-%% 182 \ \ \ \ \ \ \ not a UDP socket\\
-%% 183 \ \ \ \ \ \ \ invalid protocol name\\
-%% 184 \ \ \ \ \ \ \ invalid permission string for umask\\
-170 \ \ \ \ \ \ \ string or integer expected\\
-171 \ \ \ \ \ \ \ UDP socket expected\\
-172 \ \ \ \ \ \ \ signal handler procedure must take one argument\\
-173 \ \ \ \ \ \ \ cannot open directory for writing\\
-174 \ \ \ \ \ \ \ invalid file operation on directory or database\\
-175 \ \ \ \ \ \ \ network connection expected\\
-180 \ \ \ \ \ \ \ invalid mutex\\
-181 \ \ \ \ \ \ \ invalid condition variable\\
-182 \ \ \ \ \ \ \ illegal recursion in initial clause\\
-183 \ \ \ \ \ \ \ concurrent threads are not enabled in
-this virtual machine\\
-184 \ \ \ \ \ \ \ structure cannot have more than one mutex at 
-the same time\\
-185 \ \ \ \ \ \ \ converting an active co-expression to a thread
-is not yet supported\\
+%% 160  &  cannot open file\\
+%% 161  &  bad file attribute\\
+%% 162  &  cannot open socket\\
+%% 171  &  posix header file not included\\
+%% 172  &  posix record overridden by global value\\
+%% 173  &  directory opened for writing\\
+%% 174  &  directory or database invalid as file\\
+%% 175  &  invalid mode string\\
+%% 176  &  invalid signal\\
+%% 177  &  invalid operation to flock/fcntl\\
+%% 178  &  invalid procedure type\\
+%% 179  &  fdup of closed file\\
+%% 180  &  low-level read or select mixed with buffered read\\
+%% 181  &  not a network connection\\
+%% 182  &  not a UDP socket\\
+%% 183  &  invalid protocol name\\
+%% 184  &  invalid permission string for umask\\
+170  &  string or integer expected\\
+171  &  UDP socket expected\\
+172  &  signal handler procedure must take one argument\\
+173  &  cannot open directory for writing\\
+174  &  invalid file operation on directory or database\\
+175  &  network connection expected\\
+180  &  invalid mutex\\
+181  &  invalid condition variable\\
+182  &  illegal recursion in initial clause\\
+183  &  concurrent threads are not enabled in this virtual machine\\
+184  &  structure cannot have more than one mutex at the same time\\
+185  &  converting an active co-expression to a thread is not yet supported\\
 %%----------------------------------------
-190 \ \ \ \ \ \ \ dbm database expected\\
-201 \ \ \ \ \ \ \ division by zero\\
-202 \ \ \ \ \ \ \ remaindering by zero\\
-203 \ \ \ \ \ \ \ integer overflow\\
-204 \ \ \ \ \ \ \ real overflow, underflow, or division by zero\\
-205 \ \ \ \ \ \ \ invalid value\\
-206 \ \ \ \ \ \ \ negative first argument to real exponentiation\\
-207 \ \ \ \ \ \ \ invalid field name\\
-208 \ \ \ \ \ \ \ second and third arguments to map of unequal
-length\\
-209 \ \ \ \ \ \ \ invalid second argument to open\\
-210 \ \ \ \ \ \ \ non-ascending arguments to detab/entab\\
-211 \ \ \ \ \ \ \ by value equal to zero\\
-212 \ \ \ \ \ \ \ attempt to read file not open for reading\\
-213 \ \ \ \ \ \ \ attempt to write file not open for writing\\
-214 \ \ \ \ \ \ \ input/output error\\
-215 \ \ \ \ \ \ \ attempt to refresh \&main\\
-216 \ \ \ \ \ \ \ external function not found\\
-217 \ \ \ \ \ \ \ unsafe inter-program variable assignment\\
-301 \ \ \ \ \ \ \ evaluation stack overflow\\
-302 \ \ \ \ \ \ \ memory violation\\
-303 \ \ \ \ \ \ \ inadequate space for evaluation stack\\
-304 \ \ \ \ \ \ \ inadequate space in qualifier list\\
-305 \ \ \ \ \ \ \ inadequate space for static allocation\\
-306 \ \ \ \ \ \ \ inadequate space in string region\\
-307 \ \ \ \ \ \ \ inadequate space in block region\\
-308 \ \ \ \ \ \ \ system stack overflow in co-expression\\
-309 \ \ \ \ \ \ \ pattern stack overflow\\
-316 \ \ \ \ \ \ \ interpreter stack too large\\
-318 \ \ \ \ \ \ \ co-expression stack too large\\
-401 \ \ \ \ \ \ \ co-expressions not implemented\\
-402 \ \ \ \ \ \ \ program not compiled with debugging option\\
-500 \ \ \ \ \ \ \ program malfunction\\
-600 \ \ \ \ \ \ \ vidget usage error\\
-1040 \ \ \ \ \ \ \ socket error \\
-1041 \ \ \ \ \ \ \ cannot initialize network library \\
-1042 \ \ \ \ \ \ \ fdup of closed file \\
-1043 \ \ \ \ \ \ \ invalid signal \\
-1044 \ \ \ \ \ \ \ invalid operation to flock/fcntl\\
-1045 \ \ \ \ \ \ \ invalid mode string\\
-1046 \ \ \ \ \ \ \ invalid permission string for umask\\
-1047 \ \ \ \ \ \ \ invalid protocol name\\
-1048 \ \ \ \ \ \ \ low-level read or select mixed with buffered read\\
-1100 \ \ \ \ \ \ \ ODBC connection expected\\
-1200 \ \ \ \ \ \ \ system error (see \&errno)\\
-1201 \ \ \ \ \ \ \ malformed URL\\
-1202 \ \ \ \ \ \ \ missing username in URL\\
-1203 \ \ \ \ \ \ \ unknown scheme in URL\\
-1204 \ \ \ \ \ \ \ cannot parse URL\\
-1205 \ \ \ \ \ \ \ cannot connect\\
-1206 \ \ \ \ \ \ \ unknown host\\
-1207 \ \ \ \ \ \ \ invalid field in header\\
-1208 \ \ \ \ \ \ \ messaging file expected\\
-1209 \ \ \ \ \ \ \ cannot determine smtpserver\\
-1210 \ \ \ \ \ \ \ cannot determine user return address\\
-1211 \ \ \ \ \ \ \ invalid email address\\
-1212 \ \ \ \ \ \ \ server error\\
-1213 \ \ \ \ \ \ \ POP messaging file expected\\
-1214 \ \ \ \ \ \ \ cannot find certificate store\\
-1215 \ \ \ \ \ \ \ cannot verify peer's certificate\\
+190  &  dbm database expected\\
+201  &  division by zero\\
+202  &  remaindering by zero\\
+203  &  integer overflow\\
+204  &  real overflow, underflow, or division by zero\\
+205  &  invalid value\\
+206  &  negative first argument to real exponentiation\\
+207  &  invalid field name\\
+208  &  second and third arguments to map of unequal length\\
+209  &  invalid second argument to open\\
+210  &  non-ascending arguments to detab/entab\\
+211  &  by value equal to zero\\
+212  &  attempt to read file not open for reading\\
+213  &  attempt to write file not open for writing\\
+214  &  input/output error\\
+215  &  attempt to refresh \&main\\
+216  &  external function not found\\
+217  &  unsafe inter-program variable assignment\\
+301  &  evaluation stack overflow\\
+302  &  memory violation\\
+303  &  inadequate space for evaluation stack\\
+304  &  inadequate space in qualifier list\\
+305  &  inadequate space for static allocation\\
+306  &  inadequate space in string region\\
+307  &  inadequate space in block region\\
+308  &  system stack overflow in co-expression\\
+309  &  pattern stack overflow\\
+316  &  interpreter stack too large\\
+318  &  co-expression stack too large\\
+401  &  co-expressions not implemented\\
+402  &  program not compiled with debugging option\\
+500  &  program malfunction\\
+600  &  vidget usage error\\
+1040  &  socket error \\
+1041  &  cannot initialize network library \\
+1042  &  fdup of closed file \\
+1043  &  invalid signal \\
+1044  &  invalid operation to flock/fcntl\\
+1045  &  invalid mode string\\
+1046  &  invalid permission string for umask\\
+1047  &  invalid protocol name\\
+1048  &  low-level read or select mixed with buffered read\\
+1100  &  ODBC connection expected\\
+1200  &  system error (see \&errno)\\
+1201  &  malformed URL\\
+1202  &  missing username in URL\\
+1203  &  unknown scheme in URL\\
+1204  &  cannot parse URL\\
+1205  &  cannot connect\\
+1206  &  unknown host\\
+1207  &  invalid field in header\\
+1208  &  messaging file expected\\
+1209  &  cannot determine smtpserver\\
+1210  &  cannot determine user return address\\
+1211  &  invalid email address\\
+1212  &  server error\\
+1213  &  POP messaging file expected\\
+1214  &  cannot find certificate store\\
+1215  &  cannot verify peer's certificate\\
+\end{xtabular}
+\end{center}
 
 \subsection*{System errors}
 
@@ -4985,74 +4995,78 @@ numbers between 1001 and 1040 are reserved for the system errors listed
 below. Platforms may report other system error codes so long as they do not
 conflict with existing runtime or system error codes.
 
-1001 \ \ \ \ \ Operation not permitted\\
-1002 \ \ \ \ \ No such file or directory\\
-1003 \ \ \ \ \ No such process\\
-1004 \ \ \ \ \ Interrupted system call\\
-1005 \ \ \ \ \ I/O error\\
-1006 \ \ \ \ \ No such device or address\\
-1007 \ \ \ \ \ Arg list too long\\
-1008 \ \ \ \ \ Exec format error\\
-1009 \ \ \ \ \ Bad file number\\
-1010 \ \ \ \ \ No child processes\\
-1011 \ \ \ \ \ Try again\\
-1012 \ \ \ \ \ Out of memory\\
-1013 \ \ \ \ \ Permission denied\\
-1014 \ \ \ \ \ Bad address\\
-1016 \ \ \ \ \ Device or resource busy\\
-1017 \ \ \ \ \ File exists\\
-1018 \ \ \ \ \ Cross-device \index{link!file system}link\\
-1019 \ \ \ \ \ No such device\\
-1020 \ \ \ \ \ Not a directory\\
-1021 \ \ \ \ \ Is a directory\\
-1022 \ \ \ \ \ Invalid argument\\
-1023 \ \ \ \ \ File table overflow\\
-1024 \ \ \ \ \ Too many open files\\
-1025 \ \ \ \ \ Not a typewriter\\
-1027 \ \ \ \ \ File too large\\
-1028 \ \ \ \ \ No space left on device\\
-1029 \ \ \ \ \ Illegal seek\\
-1030 \ \ \ \ \ Read-only file system\\
-1031 \ \ \ \ \ Too many links\\
-1032 \ \ \ \ \ Broken pipe\\
-1033 \ \ \ \ \ Math argument out of domain of func\\
-1034 \ \ \ \ \ Math result not representable\\
-1035 \ \ \ \ \ Resource deadlock would occur\\
-1036 \ \ \ \ \ File name too long\\
-1037 \ \ \ \ \ No record locks available\\
-1038 \ \ \ \ \ Function not implemented\\
-1039 \ \ \ \ \ Directory not empty
+\begin{center}
+\begin{xtabular}{m{2.00cm}m{13.00cm}}\\
+{\sffamily\bfseries Error Number} &
+{\sffamily\bfseries Description}\\\hline
+1001  &  Operation not permitted\\
+1002  &  No such file or directory\\
+1003  &  No such process\\
+1004  &  Interrupted system call\\
+1005  &  I/O error\\
+1006  &  No such device or address\\
+1007  &  Arg list too long\\
+1008  &  Exec format error\\
+1009  &  Bad file number\\
+1010  &  No child processes\\
+1011  &  Try again\\
+1012  &  Out of memory\\
+1013  &  Permission denied\\
+1014  &  Bad address\\
+1016  &  Device or resource busy\\
+1017  &  File exists\\
+1018  &  Cross-device \index{link!file system}link\\
+1019  &  No such device\\
+1020  &  Not a directory\\
+1021  &  Is a directory\\
+1022  &  Invalid argument\\
+1023  &  File table overflow\\
+1024  &  Too many open files\\
+1025  &  Not a typewriter\\
+1027  &  File too large\\
+1028  &  No space left on device\\
+1029  &  Illegal seek\\
+1030  &  Read-only file system\\
+1031  &  Too many links\\
+1032  &  Broken pipe\\
+1033  &  Math argument out of domain of func\\
+1034  &  Math result not representable\\
+1035  &  Resource deadlock would occur\\
+1036  &  File name too long\\
+1037  &  No record locks available\\
+1038  &  Function not implemented\\
+1039  &  Directory not empty\\
 
 %% Extra definitions from unicon/src/runtime/data.r
-1040 \ \ \ \ \ socket error\\
+1040  &  socket error\\
 
-\bigskip\hrule\vspace{0.1cm}
+%%\bigskip\hrule\vspace{0.1cm}
 
-1041 \ \ \ \ \ cannot initialize network library\\
-1042 \ \ \ \ \ fdup of closed file\\
-1043 \ \ \ \ \ invalid signal\\
-1044 \ \ \ \ \ invalid operation to flock/fcntl\\
-1045 \ \ \ \ \ invalid mode string\\
-1046 \ \ \ \ \ invalid permission string for umask\\
-1047 \ \ \ \ \ invalid protocol name\\
-1048 \ \ \ \ \ low-level read or select mixed with buffered read\\
-1100 \ \ \ \ \ ODBC connection expected\\
-1200 \ \ \ \ \ system error (see \&errno)\\
-1201 \ \ \ \ \ malformed URL\\
-1202 \ \ \ \ \ missing username in URL\\
-1203 \ \ \ \ \ unknown scheme in URL\\
-1204 \ \ \ \ \ cannot parse URL\\
-1205 \ \ \ \ \ cannot connect\\
-1206 \ \ \ \ \ unknown host\\
-1207 \ \ \ \ \ invalid field in header\\
-1208 \ \ \ \ \ messaging file expected\\
-1209 \ \ \ \ \ cannot determine smtpserver
-(set UNICON\_SMTPSERVER)\\
-1210 \ \ \ \ \ cannot determine user return address
-(set UNICON\_USERADDRESS)\\
-1211 \ \ \ \ \ invalid email address\\
-1212 \ \ \ \ \ server error\\
-1213 \ \ \ \ \ POP messaging file expected\\
+1041  &  cannot initialize network library\\
+1042  &  fdup of closed file\\
+1043  &  invalid signal\\
+1044  &  invalid operation to flock/fcntl\\
+1045  &  invalid mode string\\
+1046  &  invalid permission string for umask\\
+1047  &  invalid protocol name\\
+1048  &  low-level read or select mixed with buffered read\\
+1100  &  ODBC connection expected\\
+1200  &  system error (see \&errno)\\
+1201  &  malformed URL\\
+1202  &  missing username in URL\\
+1203  &  unknown scheme in URL\\
+1204  &  cannot parse URL\\
+1205  &  cannot connect\\
+1206  &  unknown host\\
+1207  &  invalid field in header\\
+1208  &  messaging file expected\\
+1209  &  cannot determine smtpserver (set UNICON\_SMTPSERVER)\\
+1210  &  cannot determine user return address (set UNICON\_USERADDRESS)\\
+1211  &  invalid email address\\
+1212  &  server error\\
+1213  &  POP messaging file expected\\
+\end{xtabular}
+\end{center}
 
 \newpage
 \section{Syntax}

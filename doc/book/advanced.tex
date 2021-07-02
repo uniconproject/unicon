@@ -67,8 +67,7 @@ is none of the three words. The second expression always writes
 least one of the three strings in the alternation. The \texttt{then}
 part will always execute, which is probably not what was intended.
 
-{\sffamily\bfseries Note}
-
+\bigskip\noindent{\sffamily\bfseries \bf Note:}\
 {\sffamily
 Negating an == operator is not the same as using a \~{}== operator!}
 
@@ -188,7 +187,7 @@ sequence \texttt{"\_L0"},
 activation \texttt{@varname}\texttt{ }produces the next in the sequence
 \texttt{"\_V0"},
 \texttt{"\_V1"},
-\texttt{"\_V2"}, and so on. 
+\texttt{"\_V2"}, and so on.
 
 \iconcode{
 loop\_name := @labelname \\
@@ -225,22 +224,21 @@ primes (2, 3, 5, 7, 11, ?), this expression produces the numbers 1, 2,
 
 \iconcode{
 procedure seqsel(a) \\
-\>   (*a = 2) {\textbar} stop("seqsel requires a list of
-two arguments") \\
-\>   e1 := a[1]; e2 := a[2] \\
-\ \ \ \# position in the first stream we are looking at \\
-\>   index := 1 \\
-\>   repeat \{ \\
-\>   \ \ \ \# Get the next index \\
-\>   \ \ \ (i := @e2 ) {\textbar} fail \\
-\ \ \ \ \ \ \# Keep getting values from the second expression until \\
-\ \ \ \ \ \ \# we get to the i'th one. If e1 cannot produce that \\
-\ \ \ \ \ \ \# many values, we fail. \\
-\>   \ \ \ every index to i do \\
-\>\>   \ \ \ (value := @e1) {\textbar} fail \\
-\>   \ \ \ suspend value \\
-\>   \ \ \ index := i+1 \\
-\>   \ \ \ \} \\
+\>(*a = 2) {\textbar} stop("seqsel requires a list of two arguments") \\
+\>e1 := a[1]; e2 := a[2] \\
+\>\# position in the first stream we are looking at \\
+\>index := 1 \\
+\>repeat \{ \\
+\>\>\# Get the next index \\
+\>\>(i := @e2 ) {\textbar} fail \\
+\>\>\# Keep getting values from the second expression until \\
+\>\>\# we get to the i'th one. If e1 cannot produce that \\
+\>\>\# many values, we fail. \\
+\>\>every index to i do \\
+\>\>\>(value := @e1) {\textbar} fail \\
+\>\>suspend value \\
+\>\>index := i+1 \\
+\>\>\} \\
 end
 }
 
@@ -267,106 +265,64 @@ hex, decimal, and octal equivalents:
 
 \iconcode{
 procedure main() \\
-\>   dec := create(0 to 255) \\
-\>   hex\_dig := "0123456789abcdef" \\
-\>   hex := create(!hex\_dig {\textbar}{\textbar} !hex\_dig) \\
-\>   oct := create((0 to 3) {\textbar}{\textbar} (0 to 7)
-{\textbar}{\textbar} (0 to 7)) \\
-\>   char := create image(!\&cset) \\
-\>   while write(@dec, "{\textbackslash}t",
-@oct, "{\textbackslash}t", @hex,
+\>dec := create(0 to 255) \\
+\>hex\_dig := "0123456789abcdef" \\
+\>hex := create(!hex\_dig {\textbar}{\textbar} !hex\_dig) \\
+\>oct := create((0 to 3) {\textbar}{\textbar} (0 to 7) {\textbar}{\textbar} (0 to 7)) \\
+\>char := create image(!\&cset) \\
+\>while write(@dec, "{\textbackslash}t", @oct, "{\textbackslash}t", @hex,
 "{\textbackslash}t", @char) \\
 end
 }
 
-Co-expression \texttt{dec} produces the sequence 0, 1, 2, ... 255;
-\texttt{hex} the sequence \texttt{"00"},
-\texttt{"01"},
-\texttt{"03"}, ...
-\texttt{"ff"}; \texttt{oct}\texttt{ }the
-sequence \texttt{"001"},
-\texttt{"002"}, ...
-\texttt{"377"}; and \texttt{char}\texttt{
-}the sequence ..., \texttt{" "},
-\texttt{"!"}, ...,
-\texttt{"A"}, ...
-\texttt{"Z"}, ...,
-\texttt{"a"}, ...
-\texttt{"z"}, and so forth.
+\noindent
+Co-expression \texttt{dec} produces the sequence:\\ 0, 1, 2, ... 255;\\
+\noindent
+co-expression \texttt{hex} produces the sequence:\\ \texttt{"00"},
+\texttt{"01"}, \texttt{"03"}, ... \texttt{"ff"};\\
+\noindent
+co-expression \texttt{oct} produces the sequence:\\ \texttt{"001"},
+\texttt{"002"}, ... \texttt{"377"};\\
+\noindent
+and co-expression \texttt{char} produces the sequence:\\
+..., \texttt{" "}, \texttt{"!"}, ..., \texttt{"A"}, ...
+\texttt{"Z"}, ..., \texttt{"a"}, ..., \texttt{"z"},\\
+\noindent
+and so forth.
 
 Every invocation of \texttt{write()} results in all the co-expressions
 being activated once, so they are all run in lock-step, producing this
 table:
 
-{\sffamily
-0 \ \ \ \ \ \ 000 \ \ \ \ 00
-\ \ \ \ \ "{\textbackslash}x00"}
-
-{\sffamily
-1 \ \ \ \ \ \ 001 \ \ \ \ 01
-\ \ \ \ \ "{\textbackslash}x01"}
-
-{\sffamily
-2 \ \ \ \ \ \ 002 \ \ \ \ 02
-\ \ \ \ \ "{\textbackslash}x02"}
-
-{\sffamily
-...}
-
-{\sffamily
-45 \ \ \ \ \ 055 \ \ \ \ 2d \ \ \ \ \ "-"}
-
-{\sffamily
-46 \ \ \ \ \ 056 \ \ \ \ 2e \ \ \ \ \ "."}
-
-{\sffamily
-47 \ \ \ \ \ 057 \ \ \ \ 2f \ \ \ \ \ "/"}
-
-{\sffamily
-48 \ \ \ \ \ 060 \ \ \ \ 30 \ \ \ \ \ "0"}
-
-{\sffamily
-49 \ \ \ \ \ 061 \ \ \ \ 31 \ \ \ \ \ "1"}
-
-{\sffamily
-50 \ \ \ \ \ 062 \ \ \ \ 32 \ \ \ \ \ "2"}
-
-{\sffamily
-...}
-
-{\sffamily
-90 \ \ \ \ \ 132 \ \ \ \ 5a \ \ \ \ \ "Z"}
-
-{\sffamily
-91 \ \ \ \ \ 133 \ \ \ \ 5b \ \ \ \ \ "["}
-
-{\sffamily
-92 \ \ \ \ \ 134 \ \ \ \ 5c
-\ \ \ \ \ "{\textbackslash}{\textbackslash}"}
-
-{\sffamily
-93 \ \ \ \ \ 135 \ \ \ \ 5d \ \ \ \ \ "]"}
-
-{\sffamily
-94 \ \ \ \ \ 136 \ \ \ \ 5e
-\ \ \ \ \ "\^{}"}
-
-{\sffamily
-95 \ \ \ \ \ 137 \ \ \ \ 5f \ \ \ \ \ "\_"}
-
-{\sffamily
-96 \ \ \ \ \ 140 \ \ \ \ 60
-\ \ \ \ \ "'"}
-
-{\sffamily
-97 \ \ \ \ \ 141 \ \ \ \ 61 \ \ \ \ \ "a"}
-
-{\sffamily
-...}
-
-{\sffamily
-255 \ \ \ \ 377 \ \ \ \ ff
-\ \ \ \ \ "{\textbackslash}xff"}
+\begin{center}
+\begin{xtabular}{m{2.00cm}m{2.00cm}m{2.00cm}m{2.00cm}}\\
+{\sffamily\bfseries Dec} &
+{\sffamily\bfseries Oct} &
+{\sffamily\bfseries Hex} &
+{\sffamily\bfseries Char}\\\hline
+\ 0  &  000  &  00  &  "{\textbackslash}x00"\\
+\ 1  &  001  &  01  &  "{\textbackslash}x01"\\
+\ 2  &  002  &  02  &  "{\textbackslash}x02"\\
+\ ...\\
+\ 45  &  055  &  2d  &  "-"\\
+\ 46  &  056  &  2e  &  "."\\
+\ 47  &  057  &  2f  &  "/"\\
+\ 48  &  060  &  30  &  "0"\\
+\ 49  &  061  &  31  &  "1"\\
+\ 50  &  062  &  32  &  "2"\\
+\ ...\\
+\ 90  &  132  &  5a  &  "Z"\\
+\ 91  &  133  &  5b  &  "["\\
+\ 92  &  134  &  5c  &  "{\textbackslash}{\textbackslash}"\\
+\ 93  &  135  &  5d  &  "]"\\
+\ 94  &  136  &  5e  &  "\^{}"\\
+\ 95  &  137  &  5f  &  "\_"\\
+\ 96  &  140  &  60  &  "'"\\
+\ 97  &  141  &  61  &  "a"\\
+\ ...\\
+\ 255  &  377  &  ff  &  "{\textbackslash}xff"\\
+\end{xtabular}
+\end{center}
 
 \noindent
 Parallel evaluation can also be used to assign to a set of variables:
@@ -376,9 +332,7 @@ ce := create !stat(f) \\
 every (dev {\textbar} ino {\textbar} mode {\textbar} lnk {\textbar} uid
 {\textbar} gid) := @ ce}
 
-{\sffamily\bfseries
-Note}
-
+\bigskip\bigskip\noindent{\sffamily\bfseries \bf Note:}\
 {\sffamily
 \texttt{stat()} returns file information. It is presented in the next chapter.}
 
@@ -425,29 +379,29 @@ Producer and Consumer Coroutines}
 
 \iconcode{
 procedure main(args) \\
-\>   C1 := create consumer(args[1]) \\
-\>   C2 := create producer(C1) \\
-\>   @C2 \\
+\>C1 := create consumer(args[1]) \\
+\>C2 := create producer(C1) \\
+\>@C2 \\
 end \\
 \ \\
 procedure producer(ce) \\
-\>   x := 1 \\
-\>   repeat \{ \\
-\>   \ \ \ val := x \^{} 2 \\
-\>   \ \ \ ret := val @ ce {\textbar} break \\
-\>   \ \ \ x +:= 1 \\
-\>   \ \ \ \} \\
-\>   @ \&main \\
+\>x := 1 \\
+\>repeat \{ \\
+\>\>val := x \^{} 2 \\
+\>\>ret := val @ ce {\textbar} break \\
+\>\>x +:= 1 \\
+\>\>\} \\
+\>@ \&main \\
 end \\
 \ \\
 procedure consumer(limit) \\
-\>   value := @ \&source \\
-\>   repeat \{ \\
-\>   \ \ \ \# process value \\
-\>   \ \ \ if value {\textgreater} limit then break \\
-\>   \ \ \ if value \% 2 = 0 then write(value) \\
-\>   \ \ \ value := retval @ \&source \\
-\>   \ \ \ \} \\
+\>value := @ \&source \\
+\>repeat \{ \\
+\>\>\# process value \\
+\>\>if value {\textgreater} limit then break \\
+\>\>if value \% 2 = 0 then write(value) \\
+\>\>value := retval @ \&source \\
+\>\>\} \\
 end
 }
 
@@ -455,10 +409,7 @@ When producer resumes consumer, it passes \texttt{value}; the consumer
 passes a return code (\texttt{retval}) back. \texttt{\&source} is the
 coexpression that activated the current co-expression.
 
-{\sffamily\bfseries
-Note}
-
-{\sffamily
+\bigskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
 This example doesn't mean the producer/consumer problem
 should always be done with coroutines!}
 
@@ -608,87 +559,86 @@ link graphics \\
 global pegsize, height, width, pegsize2 \\
 \ \\
 procedure main(args) \\
-local n, steps := 10 \\
-\>   pegsize := 10 \\
-\>   pegsize2 := pegsize * 2 \\
-\>   n := integer(args[1]) {\textbar} 100 \\
-\>   setup\_window(steps) \\
-\>   every 1 to n do galton(steps) \\
-\>   WDone() \\
+\>local n, steps := 10 \\
+\>pegsize := 10 \\
+\>pegsize2 := pegsize * 2 \\
+\>n := integer(args[1]) {\textbar} 100 \\
+\>setup\_window(steps) \\
+\>every 1 to n do galton(steps) \\
+\>WDone() \\
 end \\
 \ \\
 procedure setup\_window(n) \\
-\ \\
-local max, xpos, ypos, i, j \\
-\>   \# Draw the n levels of pegs \\
-\>   \# Pegboard size is 2n-1 square \\
-\>   \# Expected max value of histogram is (n, n/2)/2\^{}n  \\
-\>   \# ... approximate with something simpler? \\
-\>   max := n*n/pegsize \\
-\>   width := (2*n+1)*pegsize \\
-\>   height := width + n*n/2*pegsize \\
-\>   Window("size=" {\textbar}{\textbar}
+\>local max, xpos, ypos, i, j \\
+\>\# Draw the n levels of pegs \\
+\>\# Pegboard size is 2n-1 square \\
+\>\# Expected max value of histogram is (n, n/2)/2\^{}n  \\
+\>\# ... approximate with something simpler? \\
+\>max := n*n/pegsize \\
+\>width := (2*n+1)*pegsize \\
+\>height := width + n*n/2*pegsize \\
+\>Window("size=" {\textbar}{\textbar}
 width {\textbar}{\textbar} ","
 {\textbar}{\textbar} height, "fg=grayish-white") \\
-\>   WAttrib("fg=dark-grey") \\
-\>   every i := 1 to n do \{ \\
-\>   \ \ \ ypos := i * pegsize2 \\
-\>   \ \ \ xpos := width/2 - (i - 1) * pegsize - pegsize/2 \\
-\>   \ \ \ every j := 1 to i do \{ \\
-\>   \ \ \ \ \ \ FillArc(xpos, ypos, pegsize, pegsize) \\
-\>   \ \ \ \ \ \ xpos +:= pegsize2 \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   \# Set up drawing mode to draw the falling balls \\
-\>   WAttrib("fg=black") \\
-\>   WAttrib("drawop=reverse") \\
-end
+\>WAttrib("fg=dark-grey") \\
+\>every i := 1 to n do \{ \\
+\>\>ypos := i * pegsize2 \\
+\>\>xpos := width/2 - (i - 1) * pegsize - pegsize/2 \\
+\>\>every j := 1 to i do \{ \\
+\>\>\>FillArc(xpos, ypos, pegsize, pegsize) \\
+\>\>\>xpos +:= pegsize2 \\
+\>\>\>\} \\
+\>\>\} \\
+\>\# Set up drawing mode to draw the falling balls \\
+\>WAttrib("fg=black") \\
+\>WAttrib("drawop=reverse") \\
+end\\
 \ \\
 \# Do it! \\
 procedure galton(n) \\
-local xpos, ypos, oldx, oldy \\
-\>   xpos := oldx := width/2 - pegsize/2 \\
-\>   ypos := oldy := pegsize \\
-\>   \# For every ball... \\
-\>   every 1 to n do \{ \\
-\>   \ \ \ if ?2 = 1 then xpos -:= pegsize \\
-\>   \ \ \ else xpos +:= pegsize \\
-\>   \ \ \ ypos +:= pegsize2 \\
-\>   \ \ \ animate(oldx, oldy, xpos, ypos) \\
-\>   \ \ \ oldx := xpos; oldy := ypos \\
-\>   \ \ \ \} \\
-\>   \# Now the ball falls to the floor \\
-\>   animate(xpos, ypos, xpos, ypos + 40) \\
-\>   animate(xpos, ypos+40, xpos, ypos + 200) \\
-\>   \# Record this ball \\
-\>   draw\_ball(xpos) \\
-end
+\>local xpos, ypos, oldx, oldy \\
+\>xpos := oldx := width/2 - pegsize/2 \\
+\>ypos := oldy := pegsize \\
+\>\# For every ball... \\
+\>every 1 to n do \{ \\
+\>\>if ?2 = 1 then xpos -:= pegsize \\
+\>\>else xpos +:= pegsize \\
+\>\>ypos +:= pegsize2 \\
+\>\>animate(oldx, oldy, xpos, ypos) \\
+\>\>oldx := xpos; oldy := ypos \\
+\>\>\} \\
+\>\# Now the ball falls to the floor \\
+\>animate(xpos, ypos, xpos, ypos + 40) \\
+\>animate(xpos, ypos+40, xpos, ypos + 200) \\
+\>\# Record this ball \\
+\>draw\_ball(xpos) \\
+end\\
 \ \\
 procedure animate(xfrom, yfrom, xto, yto) \\
-\>   animate\_actual(xfrom, yfrom, xto, yfrom, 4) \\
-\>   animate\_actual(xto, yfrom, xto, yto, 10) \\
-end
+\>animate\_actual(xfrom, yfrom, xto, yfrom, 4) \\
+\>animate\_actual(xto, yfrom, xto, yto, 10) \\
+end\\
 \ \\
 \# Drawing op is already set to "reverse",
 and fg colour is black. \\
 procedure animate\_actual(xfrom, yfrom, xto, yto, steps) \\
-local x := xfrom, y := yfrom, xstep, ystep, i, lastx, lasty \\
-\>   xstep := (xto - xfrom)/steps \\
-\>   ystep := (yto - yfrom)/steps \\
-\>   every i := 1 to steps do \{ \\
-\>   \ \ \ lastx := x; lasty := y \\
-\>   \ \ \ FillArc(x, y, pegsize, pegsize) \\
-\>   \ \ \ WDelay(1) \\
-\>   \ \ \ FillArc(x, y, pegsize, pegsize) \\
-\>   \ \ \ x +:= xstep; y +:= ystep \\
-\>   \ \ \ \} \\
-end
+\>local x := xfrom, y := yfrom, xstep, ystep, i, lastx, lasty \\
+\>xstep := (xto - xfrom)/steps \\
+\>ystep := (yto - yfrom)/steps \\
+\>every i := 1 to steps do \{ \\
+\>\>lastx := x; lasty := y \\
+\>\>FillArc(x, y, pegsize, pegsize) \\
+\>\>WDelay(1) \\
+\>\>FillArc(x, y, pegsize, pegsize) \\
+\>\>x +:= xstep; y +:= ystep \\
+\>\>\} \\
+end\\
 \ \\
 procedure draw\_ball(x) \\
-static ballcounts \\
-initial ballcounts := table(0) \\
-\>   ballcounts[x] +:= 1 \\
-\>   FillArc(x, height-ballcounts[x]*pegsize, pegsize, pegsize) \\
+\>static ballcounts \\
+\>initial ballcounts := table(0) \\
+\>ballcounts[x] +:= 1 \\
+\>FillArc(x, height-ballcounts[x]*pegsize, pegsize, pegsize) \\
 end
 }
 

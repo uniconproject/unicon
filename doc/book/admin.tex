@@ -71,6 +71,7 @@ and then reuse it in subsequent calls.
 procedure findfile(dir, pattern) \\
 \>local d, f, s \\
 \>static pat \\
+\\
 \>initial \{ \\
 \>\>pat := RePat(pattern) {\textbar} stop("Invalid pattern ", image(pattern)) \\
 \>\>\} \\
@@ -310,6 +311,7 @@ by Unicon is equivalent to:
 \iconcode{
 procedure hash(s) \\
 \>local i := 0 \\
+\\
 \>every i +:= ord(s[1 to min(*s, 10)]) do \\
 \>i *:= 37 \\
 \>i +:= *s \\
@@ -1096,6 +1098,7 @@ rule matches, the message is saved to the default folder (the inbox).
 \iconcode{
 procedure filter(message, rules) \\
 \>local filter\_rule \\
+\\
 \>every filter\_rule := !rules do \\
 \>\>if message? ReFind(filter\_rule.pattern) then \\
 \>\>\>perform(filter\_rule.action, filter\_rule.args, message) {\textbar} \\
@@ -1113,6 +1116,7 @@ matching.
 \iconcode{
 procedure perform(action, args, message) \\
 \>local procname\\
+\\
 \>procname := {\textbackslash}proc("filterproc\_" {\textbar}{\textbar} action, 2) {\textbar}\\
 \>\>stop(\&progname, ": action ", image(action), " unknown.")\\
 \>procname(message, args) {\textbar} fail\\
@@ -1136,6 +1140,7 @@ end\\
 \\
 procedure filterproc\_save(message, filename)\\
 \>local f\\
+\\
 \>f := open(filename, "a") {\textbar} fail\\
 \>write(f, message)\\
 \>close(f)\\
@@ -1174,6 +1179,7 @@ reads a file and strips out comments and blank lines:
 \# Read a line from a file, skipping comments and blank lines\\
 procedure getline(f)\\
 \>local line, s\\
+\\
 \>while line := read(f) do line? \{\\
 \>\>s := tab(upto('\#') {\textbar} 0)\\
 \>\>if *trim(s) = 0 then next\\
@@ -1192,6 +1198,7 @@ the program first starts executing.
 \# Read the \~{}/.popfilter file and return a table of name -{\textgreater} value pairs\\
 procedure get\_parameters()\\
 \>local f, P := table(), line\\
+\\
 \>f := open(getenv("HOME") {\textbar}{\textbar} "/.popfilter") {\textbar} return P\\
 \\
 \>while line := getline(f) do line ? \{\\
@@ -1221,6 +1228,7 @@ a newline character to the front of the pattern.
 \# actually done in getline() and parse()\\
 procedure read\_rulefile(filename)\\
 \>local f, rules := [ ]\\
+\\
 \>f := open(filename) {\textbar} fail\\
 \>while push(rules, parse(getline(f)))\\
 \>close(f)\\
@@ -1295,6 +1303,7 @@ invocable all\\
 \\
 procedure main()\\
 \>local server, user, password\\
+\\
 \>WS := ' {\textbackslash}t' \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# whitespace\\
 \>params := get\_parameters()\\
 \>server := {\textbackslash}params["server"] {\textbar}

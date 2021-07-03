@@ -49,13 +49,12 @@ support text I/O, much as one uses a text terminal. A simple Unicon
 graphics program might look like this:
 
 \iconcode{
-\ \ \ procedure main()\\
- \ \ \ \ \ w := open("hello",
-"g")\\
- \ \ \ \ \ write(w, "hello, world")\\
- \ \ \ \ \ \# do processing ... use w as if it were a terminal\\
- \ \ \ \ \ close(w)\\
- \ \ end
+procedure main()\\
+\>w := open("hello", "g")\\
+\>write(w, "hello, world")\\
+\>\# do processing ... use w as if it were a terminal\\
+\>close(w)\\
+end
 }
 
 Windows are open for both reading and writing, and support the usual
@@ -113,11 +112,12 @@ created. For example, to say hello in italics on a blue background one
 may write:
 
 \iconcode{
-\ \ \ procedure main()\\
- \ \ \ \ \ w := open("hello", "g", "font=sans,italics", "bg=blue")\\
- \ \ \ \ \ write(w, "hello, world")\\
- \ \ \ \ \ \# processing ...\\
- \ \ end}
+procedure main()\\
+\>w := open("hello", "g", "font=sans,italics", "bg=blue")\\
+\>write(w, "hello, world")\\
+\>\# processing ...\\
+end
+}
 
 After a window is created, its attributes are read and set using the
 function \texttt{WAttrib(w,s1,s2,...)}. Arguments to
@@ -153,7 +153,7 @@ e.g. \texttt{"pos=200,200"}.
 \begin{center}
 {\sffamily\bfseries Table 7-1} \\
 {\sffamily\bfseries Canvas Attributes} \\
-\ \\ 
+\ \\
   \tablehead{\hline
     \centering \bfseries\itshape Name &
     \centering \bfseries\itshape Type / Example &
@@ -429,18 +429,14 @@ through the loop there is no box to erase so the first call to
 
 \iconcode{
 procedure main()\\
- \ \ \&window := open("hello",
-"g",
-"drawop=reverse")\\
- \ \ repeat if Event() === (\&ldrag {\textbar} \&mdrag {\textbar}
-\&rdrag) then \{\\
- \ \ \ \ \ \# erase box at old position, then draw at new
-position\\
- \ \ \ \ \ FillRectangle({\textbackslash}x, {\textbackslash}y, 10,
-10)\\
- \ \ \ \ \ FillRectangle(x := \&x, y := \&y, 10, 10)\\
- \ \ \ \ \ \}\\
-end}
+\>\&window := open("hello", "g","drawop=reverse")\\
+\>repeat if Event() === (\&ldrag {\textbar} \&mdrag {\textbar} \&rdrag) then \{\\
+\>\>\# erase box at old position, then draw at new position\\
+\>\>FillRectangle({\textbackslash}x, {\textbackslash}y, 10, 10)\\
+\>\>FillRectangle(x := \&x, y := \&y, 10, 10)\\
+\>\>\}\\
+end
+}
 
 The program can inspect the window's state using
 \texttt{WAttrib()}. Between the time the mouse event occurs and the
@@ -504,8 +500,9 @@ naming system found in [Berk82]. The color names are simple English
 phrases that specify hue, lightness, and saturation values of the
 desired color. The syntax of colors is
 
-\iconcode{[\textit{lightness}] [\textit{saturation}] [\textit{hue}[ish]]
-\textit{hue}}
+\iconcode{
+[\textit{lightness}] [\textit{saturation}] [\textit{hue}[ish]] \textit{hue}
+}
 
 \noindent
 where lightness is one of: \texttt{pale}, \texttt{light},
@@ -524,9 +521,11 @@ hue. When adding \texttt{ish} to a word ending in e, the e is dropped
 (for example, purple becomes purplish); the ish form of red is
 reddish. Mixing radically different colors such as yellow and purple
 does not usually produce the expected results. The default lightness
-is \texttt{medium} and the default saturation is \texttt{vivid}. Note
-that human perception of color varies significantly, as do the actual
-colors produced from these names on different monitors.
+is \texttt{medium} and the default saturation is \texttt{vivid}.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+Human perception of color varies significantly, as do the actual
+colors produced from these names on different monitors.}\medskip
 
 \paragraph{Color Coordinate Systems and Gamma Correction}
 In addition to the standard color names, platform-specific color names
@@ -588,7 +587,8 @@ digit defines four bits and each row is defined by the number of
 digits required to supply width bits. For example, the call
 
 \iconcode{
-\>   Pattern("4,\#5A5A")}
+\>Pattern("4,\#5A5A")
+}
 
 \noindent defines a 4x4 pattern where each row is defined by one hex digit.
 
@@ -623,26 +623,24 @@ icon which shows what color is drawn by each of the mouse buttons.
 \iconcode{
 link dialog, file\_dlg \\
 global lmargin, colors, colorbinds \\
+\\
 procedure main(argv) \\
-\>   local i := 1, j, s, e, x, y, width := 32, height := 32
+\>local i := 1, j, s, e, x, y, width := 32, height := 32
 }
 
 The image width and height can be specified on the command line with a
 \texttt{-size} option, for example, \texttt{pme -size 16,64}.
 
 \iconcode{
-\>   if argv[1]=="-size" then \{ \\
-\>   \ \ \ i +:= 1 \\
-\>   \ \ \ argv[2] ? \{ \\
-\>   \ \ \ \ \ \ width := integer(tab(many(\&digits))) {\textbar}
-stop("bad -size") \\
-\>   \ \ \ \ \ \ ="," {\textbar}
-stop("bad -size") \\
-\>   \ \ \ \ \ \ height := integer(tab(0)) {\textbar}
-stop("bad -size") \\
-\>   \ \ \ \ \ \ i +:= 1 \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \}
+\>if argv[1]=="-size" then \{ \\
+\>\>i +:= 1 \\
+\>\>argv[2] ? \{ \\
+\>\>\>width := integer(tab(many(\&digits))) {\textbar} stop("bad -size") \\
+\>\>\>="," {\textbar} stop("bad -size") \\
+\>\>\>height := integer(tab(0)) {\textbar} stop("bad -size") \\
+\>\>\>i +:= 1 \\
+\>\>\>\} \\
+\>\>\}
 }
 
 Following the size arguments, \texttt{pme} checks for a filename
@@ -652,13 +650,13 @@ by reading each pixel using the function \texttt{Pixel()}, and filling
 an 8x8 rectangle with the corresponding color.
 
 \iconcode{
-\>   \ \ \ i := j := 0 \\
-\>   \ \ \ every p := Pixel(0, 0, width, height) do \{ \\
-\>   \ \ \ \ \ \ Fg(p) \\
-\>   \ \ \ \ \ \ FillRectangle(j * 8 + lmargin + 5, i * 8, 8, 8) \\
-\>   \ \ \ \ \ \ j +:= 1 \\
-\>   \ \ \ \ \ \ if j = width then \{ i +:= 1; j := 0 \} \\
-\>   \ \ \ \ \ \ \}
+\>\>i := j := 0 \\
+\>\>every p := Pixel(0, 0, width, height) do \{ \\
+\>\>\>Fg(p) \\
+\>\>\>FillRectangle(j * 8 + lmargin + 5, i * 8, 8, 8) \\
+\>\>\>j +:= 1 \\
+\>\>\>if j = width then \{ i +:= 1; j := 0 \} \\
+\>\>\>\}
 }
 
 After the images are loaded with their initial contents, if any, a
@@ -669,8 +667,7 @@ bindings to the window, each with an independently-set foreground
 color, is used to represent the color settings of the mouse buttons.
 
 \iconcode{
-\>   colors :=
-[Clone("fg=red"),Clone("fg=green"),Clone("fg=blue")]
+\>colors := [Clone("fg=red"), Clone("fg=green"), Clone("fg=blue")]
 }
 
 The main event processing loop of \texttt{pme} is simple: Each event
@@ -681,48 +678,38 @@ keystroke \texttt{"s"} saves the bitmap in a file by calling
 supplied.
 
 \iconcode{
-\>   \ \ \ case e := Event() of \{ \\
-\>   \ \ \ "q"{\textbar}"{\textbackslash}e":
-return \\
-\>   \ \ \ "s"{\textbar}"S":
-\{ \\
-\>   \ \ \ \ \ \ if /s {\textbar} (e=="S")
-then s := getfilename() \\
-\>   \ \ \ \ \ \ write("saving image ", s,
-" size ",
-width,",", height) \\
-\>   \ \ \ \ \ \ WriteImage( s, 0, 0, width, height) \\
-\>   \ \ \ \ \ \ \}
+\>case e := Event() of \{ \\
+\>\>"q" {\textbar} "{\textbackslash}e" : return \\
+\>\>"s" {\textbar} "S" : \{ \\
+\>\>\>if /s {\textbar} (e=="S") then s := getfilename() \\
+\>\>\>write("saving image ", s, " size ", width,",", height) \\
+\>\>\>WriteImage( s, 0, 0, width, height) \\
+\>\>\>\}
 }
 
 Mouse events result in drawing a single pixel in both the magnified and
-regular scale bitmaps using one of the colors depicted on the mouse icon. 
+regular scale bitmaps using one of the colors depicted on the mouse icon.
 
 \iconcode{
-\>   \ \ \ \&lpress {\textbar} \&ldrag {\textbar} \&mpress {\textbar}
+\>\>\&lpress {\textbar} \&ldrag {\textbar} \&mpress {\textbar}
 \&mdrag {\textbar} \&rpress {\textbar} \&rdrag : \{ \\
-\>   \ \ \ \ \ \ x := (\&x - lmargin - 5) / 8 \\
-\>   \ \ \ \ \ \ y := \&y / 8 \\
-\>   \ \ \ \ \ \ if (y {\textless} 0) {\textbar} (y {\textgreater}
+\>\>\>x := (\&x - lmargin - 5) / 8 \\
+\>\>\>y := \&y / 8 \\
+\>\>\>if (y {\textless} 0) {\textbar} (y {\textgreater}
 height-1) {\textbar} (x {\textgreater} width) then next \\
-\>   \ \ \ \ \ \ if x {\textgreater}= 0 then dot(x, y, (-e - 1) \% 3)
+\>\>\>if x {\textgreater}= 0 then dot(x, y, (-e - 1) \% 3)
 }
 
 To change the color drawn by a mouse button, you click on it.
 
 \iconcode{
-\>   \ \ \ \ \ \ else \{ \# x {\textless} logical 0. User clicked in
-mouse area \\
-\>   \ \ \ \ \ \ \ \ \ if \&x {\textless} 21 then getacolor(1,
-"left", height) \\
-\>   \ \ \ \ \ \ \ \ \ else if \&x {\textless} 31 then getacolor(2,
-"middle", height) \\
-\>   \ \ \ \ \ \ \ \ \ else getacolor(3,
-"right", height) \\
-\>   \ \ \ \ \ \ \ \ \ until Event() === (\&mrelease {\textbar}
-\&lrelease{\textbar} \&rrelease) \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ \}
+\>\>\>else \{ \# x {\textless} logical 0. User clicked in mouse area \\
+\>\>\>\>if \&x {\textless} 21 then getacolor(1, "left", height) \\
+\>\>\>\>else if \&x {\textless} 31 then getacolor(2, "middle", height) \\
+\>\>\>\>else getacolor(3, "right", height) \\
+\>\>\>\>until Event() === (\&mrelease {\textbar} \&lrelease{\textbar} \&rrelease) \\
+\>\>\>\>\} \\
+\>\>\>\}
 }
 
 Pixel drawing is handled by procedure \texttt{dot()}, whose third
@@ -732,17 +719,20 @@ in the regular scale window \texttt{DrawPoint()} suffices.
 
 \iconcode{
 procedure dot(x, y, c) \\
-\>   if (x{\textbar}y) {\textless} 0 then fail \\
-\>   FillRectangle(colors[c+1], x*8 + lmargin + 5, y*8, 8, 8) \\
-\>   DrawPoint(colors[c+1], x, y) \\
-\>   DrawRectangle(x*8 + lmargin + 5, y*8, 8, 8) \\
+\>if (x{\textbar}y) {\textless} 0 then fail \\
+\>FillRectangle(colors[c+1], x*8 + lmargin + 5, y*8, 8, 8) \\
+\>DrawPoint(colors[c+1], x, y) \\
+\>DrawRectangle(x*8 + lmargin + 5, y*8, 8, 8) \\
 end
 }
 
 \texttt{pme} illustrates several aspects of the Unicon graphics
-facilities. Note the event-handling: a case expression handles various
+facilities.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+The event-handling: a case expression handles various
 keystrokes and mouse events with simpler control structure than in
-most languages' GUI event processing.
+most languages' GUI event processing.}\medskip
 
 \bigskip
 
@@ -753,117 +743,98 @@ most languages' GUI event processing.
 link dialog \\
 link file\_dlg \\
 global lmargin, colors \\
+\\
 procedure main(argv) \\
-\>   local i := 1, j, s, e, x, y, width := 32, height := 32 \\
-\>   if argv[1]=="-size" then \{ \\
-\>   \ \ \ i +:= 1 \\
-\>   \ \ \ argv[2] ? \{ \\
-\>   \ \ \ \ \ \ width := integer(tab(many(\&digits))) {\textbar}
-stop("bad -size") \\
-\>   \ \ \ \ \ \ ="," {\textbar}
-stop("bad -size") \\
-\>   \ \ \ \ \ \ height := integer(tab(0)) {\textbar}
-stop("bad -size") \\
-\>   \ \ \ \ \ \ i +:= 1 \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   lmargin := max(width, 65) \\
-\>   if s := argv[i] then \{ \\
-\>   \ \ \ \&window := open("pme",
-"g",
-"image="{\textbar}{\textbar}s) {\textbar}
+\>local i := 1, j, s, e, x, y, width := 32, height := 32 \\
+\\
+\>if argv[1]=="-size" then \{ \\
+\>\>i +:= 1 \\
+\>\>argv[2] ? \{ \\
+\>\>\>width := integer(tab(many(\&digits))) {\textbar} stop("bad -size") \\
+\>\>\>="," {\textbar} stop("bad -size") \\
+\>\>\>height := integer(tab(0)) {\textbar} stop("bad -size") \\
+\>\>\>i +:= 1 \\
+\>\>\>\} \\
+\>\>\} \\
+\>lmargin := max(width, 65) \\
+\>if s := argv[i] then \{ \\
+\>\>\&window := open("pme", "g", "image=" {\textbar}{\textbar} s) {\textbar}
 stop("cannot open window") \\
-\>   \ \ \ width \ {\textless}:=
-WAttrib("width") \\
-\>   \ \ \ height {\textless}:=
-WAttrib("height") \\
-\>   \ \ \ lmargin := max(width, 65) \\
-\>   \ \ \ WAttrib("size="{\textbar}{\textbar}(width*8+lmargin+5){\textbar}{\textbar}","{\textbar}{\textbar}(height*8)) \\
-\>   \ \ \ i := j := 0 \\
-\>   \ \ \ every p := Pixel(0, 0, width, height) do \{ \\
-\>   \ \ \ \ \ \ Fg(p) \\
-\>   \ \ \ \ \ \ FillRectangle(j * 8 + lmargin + 5, i * 8, 8, 8) \\
-\>   \ \ \ \ \ \ j +:= 1 \\
-\>   \ \ \ \ \ \ if j = width then \{ i +:= 1; j := 0 \} \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   else \{ \\
-\>   \ \ \ \&window := open("pme",
-"g",
-"size=" {\textbar}{\textbar}
-(lmargin+width*8+5){\textbar}{\textbar}","{\textbar}{\textbar}(height*8+5))
+\>\>width {\textless}:= WAttrib("width") \\
+\>\>height {\textless}:= WAttrib("height") \\
+\>\>lmargin := max(width, 65) \\
+\>\>WAttrib("size=" {\textbar}{\textbar} (width*8+lmargin+5) {\textbar}{\textbar} "," {\textbar}{\textbar} (height*8)) \\
+\>\>i := j := 0 \\
+\>\>every p := Pixel(0, 0, width, height) do \{ \\
+\>\>\>Fg(p) \\
+\>\>\>FillRectangle(j * 8 + lmargin + 5, i * 8, 8, 8) \\
+\>\>\>j +:= 1 \\
+\>\>\>if j = width then \{ i +:= 1; j := 0 \} \\
+\>\>\>\} \\
+\>\>\} \\
+\>else \{ \\
+\>\>\&window := open("pme", "g", "size=" {\textbar}{\textbar}
+(lmargin+width*8+5) {\textbar}{\textbar} "," {\textbar}{\textbar} (height*8+5))
 {\textbar} \\
- \ \ \ \ \ \ \ \ stop("cannot open window") \\
-\>   \ \ \ \} \\
-\>   colors :=
-[Clone("fg=red"),Clone("fg=green"),Clone("fg=blue")] \\
-\>   every i := 1 to 3 do \{ \\
-\>   \ \ \ DrawArc(4+i*10, height+68, 7, 22) \\
-\>   \ \ \ FillArc(colors[i], 5+i*10, height+70, 5, 20) \\
-\>   \ \ \ \} \\
-\>   DrawRectangle( 5, height+55, 45, 60, 25, height+50, 5, 5) \\
-\>   DrawCurve(27, height+50, 27, height+47, 15, height+39, \\
-\>   \ \ \ \ \ \ \ \ \ \ 40, height+20, 25, height+5) \\
-\>   Fg("black") \\
-\>   every i := 0 to height-1 do \\
-\>   \ \ \ every j := 0 to width-1 do \\
-\>   \ \ \ \ \ \ DrawRectangle(j*8+lmargin+5, i*8, 8, 8) \\
-\>   DrawLine(0, height, width, height, width, 0) \\
-\>   repeat \{ \\
-\>   \ \ \ case e := Event() of \{ \\
-\>   \ \ \ "q"{\textbar}"{\textbackslash}e":
-return \\
-\>   \ \ \ "s"{\textbar}"S":
-\{ \\
-\>   \ \ \ \ \ \ if /s {\textbar} (e=="S")
-then s := getfilename() \\
-\>   \ \ \ \ \ \ write("saving image ", s,
-" size ",
-width,",", height) \\
-\>   \ \ \ \ \ \ WriteImage( s, 0, 0, width, height) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \&lpress {\textbar} \&ldrag {\textbar} \&mpress {\textbar}
+\>\>\>stop("cannot open window") \\
+\>\>\} \\
+\>colors := [Clone("fg=red"),Clone("fg=green"),Clone("fg=blue")] \\
+\>every i := 1 to 3 do \{ \\
+\>\>DrawArc(4+i*10, height+68, 7, 22) \\
+\>\>FillArc(colors[i], 5+i*10, height+70, 5, 20) \\
+\>\>\} \\
+\>DrawRectangle( 5, height+55, 45, 60, 25, height+50, 5, 5) \\
+\>DrawCurve(27, height+50, 27, height+47, 15, height+39, \\
+\>\>40, height+20, 25, height+5) \\
+\>Fg("black") \\
+\>every i := 0 to height-1 do \\
+\>\>every j := 0 to width-1 do \\
+\>\>\>DrawRectangle(j*8+lmargin+5, i*8, 8, 8) \\
+\>DrawLine(0, height, width, height, width, 0) \\
+\>repeat \{ \\
+\>\>case e := Event() of \{ \\
+\>\>\>"q" {\textbar} "{\textbackslash}e" : return \\
+\>\>\>"s" {\textbar} "S" : \{ \\
+\>\>\>\>if /s {\textbar} (e=="S") then s := getfilename() \\
+\>\>\>\>write("saving image ", s, " size ", width,",", height) \\
+\>\>\>\>WriteImage( s, 0, 0, width, height) \\
+\>\>\>\>\} \\
+\>\>\>\&lpress {\textbar} \&ldrag {\textbar} \&mpress {\textbar}
 \&mdrag {\textbar} \&rpress {\textbar} \&rdrag : \{ \\
-\>   \ \ \ \ \ \ x := (\&x - lmargin - 5) / 8 \\
-\>   \ \ \ \ \ \ y := \&y / 8 \\
-\>   \ \ \ \ \ \ if (y {\textless} 0) {\textbar} (y {\textgreater}
+\>\>\>\>x := (\&x - lmargin - 5) / 8 \\
+\>\>\>\>y := \&y / 8 \\
+\>\>\>\>if (y {\textless} 0) {\textbar} (y {\textgreater}
 height-1) {\textbar} (x {\textgreater} width) then next \\
-\>   \ \ \ \ \ \ if x {\textless} 0 then \{ \\
-\>   \ \ \ \ \ \ \ \ \ if \&x {\textless} 21 then getacolor(1,
-"left", height) \\
-\>   \ \ \ \ \ \ \ \ \ else if \&x {\textless} 31 then getacolor(2,
-"middle", height) \\
-\>   \ \ \ \ \ \ \ \ \ else getacolor(3,
-"right", height) \\
-\>   \ \ \ \ \ \ \ \ \ until Event() === (\&mrelease {\textbar}
-\&lrelease{\textbar} \&rrelease) \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ else dot(x, y, (-e-1)\%3) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   \} \\
-end
+\>\>\>\>if x {\textless} 0 then \{ \\
+\>\>\>\>\>if \&x {\textless} 21 then getacolor(1, "left", height) \\
+\>\>\>\>\>else if \&x {\textless} 31 then getacolor(2, "middle", height) \\
+\>\>\>\>\>else getacolor(3, "right", height) \\
+\>\>\>\>\>until Event() === (\&mrelease {\textbar} \&lrelease {\textbar} \&rrelease) \\
+\>\>\>\>\>\} \\
+\>\>\>\>else dot(x, y, (-e-1)\%3) \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>\>\} \\
+end \\
 \ \\
 procedure dot(x, y, c) \\
-\>   if (x{\textbar}y) {\textless} 0 then fail \\
-\>   FillRectangle(colors[c+1], x*8 + lmargin + 5, y*8, 8, 8) \\
-\>   DrawPoint(colors[c+1], x, y) \\
-\>   DrawRectangle( x*8 + lmargin + 5, y*8, 8, 8) \\
-end
+\>if (x {\textbar} y) {\textless} 0 then fail \\
+\>FillRectangle(colors[c+1], x*8 + lmargin + 5, y*8, 8, 8) \\
+\>DrawPoint(colors[c+1], x, y) \\
+\>DrawRectangle( x*8 + lmargin + 5, y*8, 8, 8) \\
+end \\
 \ \\
 procedure getacolor(n, s, height) \\
-\>   if ColorDialog(["Set
-"{\textbar}{\textbar}s{\textbar}{\textbar}"
-button color"],Fg(colors[n]))=="Okay" then \{ \\
-\>   \ \ \ Fg(colors[n], dialog\_value) \\
-\>   \ \ \ FillArc(colors[n], 5 + n * 10, height + 70, 5, 20) \\
-\>   \} \\
-end
+\>if ColorDialog(["Set " {\textbar}{\textbar} s {\textbar}{\textbar} " button color"], Fg(colors[n])) == "Okay" then \{ \\
+\>\>Fg(colors[n], dialog\_value) \\
+\>\>FillArc(colors[n], 5 + n * 10, height + 70, 5, 20) \\
+\>\>\} \\
+end \\
 \ \\
 procedure getfilename() \\
-\>   f := FileDialog() \\
-\>   f.show\_modal() \\
-\>   return f.file.contents \\
+\>f := FileDialog() \\
+\>f.show\_modal() \\
+\>return f.file.contents \\
 end
 }
 
@@ -910,11 +881,12 @@ To open a 3D graphics window, call the built in function \texttt{open()},
 passing in the title of the window to be opened and mode "gl".
 
 \iconcode{
-\>   W := open("win", "gl")}
+\>W := open("win", "gl")
+}
 
 \noindent
 As in the 2D facilities, if a window is assigned to the keyword variable
-\&window, it is a default window for subsequent 3D function calls. 
+\&window, it is a default window for subsequent 3D function calls.
 
 \subsection*{3D attributes}
 
@@ -1070,7 +1042,7 @@ Cube &
 \texttt{DrawCube()} &
 x, y, and z coordinates of the lower left front corner, and the
 length of the sides.  &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9543in,height=0.772in]{ub-img/ub-img12.png}
 \\\hline
 Cylinder &
@@ -1078,8 +1050,8 @@ Cylinder &
 x, y, and z coordinates of the center, the height, the radius of the
 top, the radius of the bottom. If one radius is smaller than the other,
 a cone is formed.  &
-\centering\arraybslash 
-\includegraphics[width=0.7984in,height=0.689in]{ub-img/ub-img13.png} 
+\centering\arraybslash
+\includegraphics[width=0.7984in,height=0.689in]{ub-img/ub-img13.png}
 \includegraphics[width=0.7953in,height=0.689in]{ub-img/ub-img14.png}
 \\\hline
 Disk &
@@ -1087,54 +1059,54 @@ Disk &
 x, y, and z coordinates of center, the radius of the inner circle,
 and the radius of the outer circle. An additional two
 angle values specify a partial disk.  &
-{\centering 
+{\centering
 \includegraphics[width=0.7866in,height=0.689in]{ub-img/ub-img15.png}
 \par}
 
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.7866in,height=0.689in]{ub-img/ub-img16.png}
 \\\hline
 Solid Polygon &
 \texttt{FillPolygon()} &
 x, y, and z coordinates of each vertex of the polygon.  &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9429in,height=0.6217in]{ub-img/ub-img17.png}
 \\\hline
 Line &
 \texttt{DrawLine()} &
 x, y, and z coordinates of each vertex.  &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9417in,height=0.5957in]{ub-img/ub-img18.png}
 \\\hline
 Polygon &
 \texttt{DrawPolygon()} &
 x, y, and z coordinates of each vertex.  &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9417in,height=0.6043in]{ub-img/ub-img19.png}
 \\\hline
 Point &
 \texttt{DrawPoint()} &
 x, y, and z coordinates of each point. &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9429in,height=0.5957in]{ub-img/ub-img20.png}
 \\\hline
 Segment &
 \texttt{DrawSegment()} &
 x, y, and z coordinates of each vertex. &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9362in,height=0.6425in]{ub-img/ub-img21.png}
 \\\hline
 Sphere &
 \texttt{DrawSphere()} &
 x, y, and z coordinates of center and the radius of the sphere.  &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9307in,height=0.6543in]{ub-img/ub-img22.png}
 \\\hline
 Torus &
 \texttt{DrawTorus()} &
 x, y, and z coordinates of the center, an inner radius and an outer
 radius.  &
-\centering\arraybslash 
+\centering\arraybslash
 \includegraphics[width=0.9398in,height=0.6272in]{ub-img/ub-img23.png}
 \\\hline
 \end{xtabular}
@@ -1198,25 +1170,26 @@ string which contains one or more semi-colon separated lighting
 properties. A lighting property is of the form
 
 \iconcode{
- \ \ \ [diffuse{\textbar}ambient{\textbar}specular] \textit{color name}}
+\>[diffuse {\textbar} ambient {\textbar} specular] \textit{color name}
+}
 
 \noindent
 A new lighting value can be specified without turning the light on or off.
 The following call turns \texttt{light1} on and gives it diffuse
-yellow and ambient gold lighting properties. 
+yellow and ambient gold lighting properties.
 
 \iconcode{
-\> WAttrib(w, "light1=on, diffuse yellow; ambient
-gold")}
+\>WAttrib(w, "light1=on, diffuse yellow; ambient gold")
+}
 
 \noindent
 The following expression sets \texttt{light0} to the default values for
 the lighting properties.
 
 \iconcode{
-\>   WAttrib(w, "light0=diffuse white; ambient black; \_ \\
-\>\>\>\>     specular white; position
-0.0, 1.0, 0.0")}
+\>WAttrib(w, "light0=diffuse white; ambient black; \_ \\
+\>\>specular white; position 0.0, 1.0, 0.0")
+}
 
 
 Interacting with the lights, the objects in a scene may have several
@@ -1236,8 +1209,8 @@ real numbers between \texttt{0.0} and \texttt{1.0}.  More general
 material properties are of the form
 
 \iconcode{
-\ \ [ diffuse {\textbar} ambient {\textbar} specular {\textbar} emission
-] \textit{color name}}
+\>[ diffuse {\textbar} ambient {\textbar} specular {\textbar} emission] \textit{color name}
+}
 
 \noindent
 or \texttt{"shininess n"}, where n is some integer
@@ -1251,18 +1224,17 @@ point. The following line of code changes the current material
 property to diffuse green and ambient orange.
 
 \iconcode{
-\ \ \ WAttrib(w, "fg=diffuse green; ambient
-orange")
+\>WAttrib(w, "fg=diffuse green; ambient orange")
 }
 
 
 \noindent The default values of the material properties are given in the
-following example. 
+following example.
 
 \iconcode{
-   Fg(w, \textrm{"}diffuse light grey; ambient grey;
-specular black; emission black; \_ \\
-\>\> shininess 50\textrm{"})}
+\>Fg(w, \textrm{"}diffuse light grey; ambient grey; specular black; emission black; \_ \\
+\>\> shininess 50\textrm{"})
+}
 
 Using lights and materials in Unicon was simplified by extending the
 design of the 2D graphics facilities. The \texttt{fg} attribute
@@ -1451,36 +1423,36 @@ redraws the screen; a given call to \texttt{WAttrib()} will only
 redraw the scene once.
 
 \iconcode{
-\>   WAttrib("eyepos=0.0,0.0,5.0","eyedir=0.0,0.0,1.0")}
+\>WAttrib("eyepos=0.0,0.0,5.0", "eyedir=0.0,0.0,1.0")
+}
 
 The values of the attributes can also be read by using the function
 \texttt{WAttrib()}. The current eye position could be stored in variable
 \texttt{ep} by the call:
 
 \iconcode{
-\>   ep := WAttrib("eyepos")}
+\>ep := WAttrib("eyepos")
+}
 
 \paragraph{Drawing Primitives}
-Here is an example that uses some of the drawing primitives. 
+Here is an example that uses some of the drawing primitives.
 
 \iconcode{
-\>   Fg(w, "ambient yellow") \\
-\>   DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 0.0, 1.0,
-		 0.5, -5.0, 0.5, 1.0) \\
-\>   Fg(w, "diffuse white") \\
-\>   DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 
-		225.0,1.0, 0.5, -5.0, 0.5,1.0,0.0,125.0) \\
-\>   Fg(w, "ambient pink") \\
-\>   DrawCylinder(w, 0.0, 1.0, -5.0, 1.0, 0.5, 0.3) \\
-\>   Fg(w, "specular navy") \\
-\>   DrawDisk(w, -0.5, -0.5, -2.0, 0.5, 0.3) \\
-\>   Fg(w, "emission green") \\
-\>   DrawSphere(w, 0.5, 1.0, -3.0, 0.5) \\
-\>   WAttrib(w, "light0=on, diffuse white")
+\>Fg(w, "ambient yellow") \\
+\>DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.5, -5.0, 0.5, 1.0) \\
+\>Fg(w, "diffuse white") \\
+\>DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 225.0,1.0, 0.5, -5.0, 0.5,1.0,0.0,125.0) \\
+\>Fg(w, "ambient pink") \\
+\>DrawCylinder(w, 0.0, 1.0, -5.0, 1.0, 0.5, 0.3) \\
+\>Fg(w, "specular navy") \\
+\>DrawDisk(w, -0.5, -0.5, -2.0, 0.5, 0.3) \\
+\>Fg(w, "emission green") \\
+\>DrawSphere(w, 0.5, 1.0, -3.0, 0.5) \\
+\>WAttrib(w, "light0=on, diffuse white")
 }
 
 \begin{center}
-\includegraphics[width=2.65in,height=2.0in]{ub-img/ub-img32.png} 
+\includegraphics[width=2.65in,height=2.0in]{ub-img/ub-img32.png}
 
 {\sffamily\bfseries Figure 7-2:}
 {\sffamily 3D Drawing Primitives Made From Various Materials}
@@ -1515,37 +1487,39 @@ lighting.
 \end{center}
 
 \iconcode{
-\>   w := open("ambient.icn","gl", "bg=black", "size=400,400") \\
-\>\>   WAttrib(w,"light0=on, ambient
-blue-green","fg=specular white") \\
-\>\>   DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>\>   DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>\>   DrawSphere(w,0.0, 0.59, -2.2, 0.3) \\
-\>   x := open("diffuse.icn","gl", "bg=black", "size=400,400") \\
-\>\>   WAttrib(x,"light0=on, diffuse blue-green","fg=specular white") \\
-\>\>   DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>\>   DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>\>   DrawSphere(x, 0.0, 0.59, -2.2, 0.3) \\
-\>   y := open("specular.icn","gl", "bg=black", "size=400,400") \\
-\>\>   WAttrib(y,"light0=on,specular blue-green","fg=specular white") \\
-\>\>   DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>\>   DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>\>   DrawSphere(y, 0.0, 0.59, -2.2, 0.3) \\
-\>   z := open("all.icn","gl", "bg=black", "size=400,400") \\
-\>\>   WAttrib(z, "light0=on, diffuse blue-green; \_ \\
-\>\>\>   specular blue-green; ambient blue-green","fg=specular white") \\
-\>\>   DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>\>   DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>\>   DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
+\>w := open("ambient.icn", "gl", "bg=black", "size=400,400") \\
+\>WAttrib(w,"light0=on, ambient blue-green", "fg=specular white") \\
+\>DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>DrawSphere(w,0.0, 0.59, -2.2, 0.3) \\
+\\
+\>x := open("diffuse.icn","gl", "bg=black", "size=400,400") \\
+\>WAttrib(x,"light0=on, diffuse blue-green", "fg=specular white") \\
+\>DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>DrawSphere(x, 0.0, 0.59, -2.2, 0.3) \\
+\\
+\>y := open("specular.icn","gl", "bg=black", "size=400,400") \\
+\>WAttrib(y,"light0=on,specular blue-green", "fg=specular white") \\
+\>DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>DrawSphere(y, 0.0, 0.59, -2.2, 0.3) \\
+\\
+\>z := open("all.icn","gl", "bg=black", "size=400,400") \\
+\>WAttrib(z, "light0=on, diffuse blue-green; \_ \\
+\>\>specular blue-green; ambient blue-green", "fg=specular white") \\
+\>DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
 }
 
 
 
-\noindent Figure 7-4 shows the effects of emission color on an object. 
+\noindent Figure 7-4 shows the effects of emission color on an object.
 
 
 \begin{center}
-{\centering 
+{\centering
 \includegraphics[width=2.5583in,height=1.8835in]{ub-img/ub-img34.png}
 }
 
@@ -1556,12 +1530,12 @@ blue-green","fg=specular white") \\
 \bigskip
 
 \iconcode{
-\>   Fg(w, "emission blue; diffuse yellow") \\
-\>   DrawSphere(w, -1.5, 1.0, -5.0, 0.7) \\
-\>   Fg(w, "emission black") \\
-\>   DrawSphere(w, 0.0, 0.0, -5.0, 0.7) \\
-\>   Fg(w, "emission red") \\
-\>   DrawSphere(w, 1.5, -1.0, -5.0, 0.7)
+\>Fg(w, "emission blue; diffuse yellow") \\
+\>DrawSphere(w, -1.5, 1.0, -5.0, 0.7) \\
+\>Fg(w, "emission black") \\
+\>DrawSphere(w, 0.0, 0.0, -5.0, 0.7) \\
+\>Fg(w, "emission red") \\
+\>DrawSphere(w, 1.5, -1.0, -5.0, 0.7)
 }
 
 In the above example, three yellow spheres are drawn. An emission
@@ -1580,7 +1554,7 @@ coordinates.
 
 \bigskip
 
-{\centering 
+{\centering
 \includegraphics[width=2.0583in,height=2.0583in]{ub-img/ub-img35.jpg}
 \par}
 
@@ -1588,9 +1562,8 @@ coordinates.
 {\sffamily A Texture from a GIF Image is Mapped onto a Torus}
 
 \iconcode{
-\>   WAttrib(w, "texmode=on",
-"texture=map.gif") \\
-\>   DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
+\>WAttrib(w, "texmode=on", "texture=map.gif") \\
+\>DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
 }
 
 Instead of using \texttt{WAttrib(w, "texture=map.gif")} to specify the
@@ -1604,7 +1577,7 @@ using the default texture coordinates.
 
 \bigskip
 
-{\centering 
+{\centering
 \includegraphics[width=2.0508in,height=2.0571in]{ub-img/ub-img36.jpg}
 \par}
 
@@ -1614,30 +1587,26 @@ using the default texture coordinates.
 \bigskip
 
 \iconcode{
-\ \ \ WAttrib(w, "texmode=on") \\
-\>   sphere:= "16,g16, FFFFB98788AEFFFF"
-{\textbar}{\textbar} \\
-\>   \ \ "FFD865554446AFFF FD856886544339FF
-E8579BA9643323AF"{\textbar}{\textbar} \\
-\>   \ \ "A569DECA7433215E 7569CDB86433211A
-5579AA9643222108"{\textbar}{\textbar} \\
-\>   \ \ "4456776533221007 4444443332210007
-4333333222100008"{\textbar}{\textbar} \\
-\>   \ \ "533322221100000A 822222111000003D
-D41111100000019F"{\textbar}{\textbar} \\
-\>   \ \ "FA200000000018EF FFA4000000028EFF
-FFFD9532248BFFFF" \\
-\>   Texture(w, sphere) \\
-\>   DrawCube(w, 0.0, 0.0, -3.0, 1.2)
+\>WAttrib(w, "texmode=on") \\
+\>sphere:= "16,g16, FFFFB98788AEFFFF " {\textbar}{\textbar} \\
+\>\>"FFD865554446AFFF FD856886544339FF E8579BA9643323AF "{\textbar}{\textbar} \\
+\>\>"A569DECA7433215E 7569CDB86433211A 5579AA9643222108 "{\textbar}{\textbar} \\
+\>\>"4456776533221007 4444443332210007 4333333222100008 "{\textbar}{\textbar} \\
+\>\>"533322221100000A 822222111000003D D41111100000019F "{\textbar}{\textbar} \\
+\>\>"FA200000000018EF FFA4000000028EFF FFFD9532248BFFFF" \\
+\>Texture(w, sphere) \\
+\>DrawCube(w, 0.0, 0.0, -3.0, 1.2)
 }
 
 The next example shows the use of a Unicon window as a texture. An
 image of a lamp is drawn on the first window in \texttt{gl} mode. This
 window is then used as a texture on a cylinder. The same method can be
-used to embed 2D window contents in 3D scenes. Note that in the
+used to embed 2D window contents in 3D scenes.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily In the
 following code the first window is opened with size 256 x 256. Texture
 images must have height and width that are powers of 2, or the system
-must rescale them. The default coordinates for cylinders are used.
+must rescale them. The default coordinates for cylinders are used.}\medskip
 
 {\centering\color{green}
  \includegraphics[width=1.4492in,height=1.4335in]{ub-img/ub-img37.jpg}
@@ -1652,25 +1621,25 @@ must rescale them. The default coordinates for cylinders are used.
 \bigskip
 
 \iconcode{
-\>   w := open("win1","gl","bg=light blue","size=256,256") \\
-\>   Fg(w, "emission pale grey") \\
-\>   PushMatrix(w) \\
-\>   Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
-\>   DrawCylinder(w, 0.0, 0.575, -2.0, 0.15, 0.05, 0.17) \\
-\>   PopMatrix(w) \  \\
-\>   Fg(w, "diffuse grey; emission black") \\
-\>   PushMatrix(w) \\
-\>   Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
-\>   DrawCylinder(w, 0.0, 0.0, -2.5, 0.7, 0.035, 0.035) \\
-\>   PopMatrix(w) \ \ \ \ \ \ \ \ \ \ \ \ \ \  \\
-\>   DrawTorus(w, 0.0, -0.22, -2.5, 0.03, 0.06) \\
-\>   DrawTorus(w, 0.0, 0.6, -2.5, 0.05, 0.03) \\
+\>w := open("win1", "gl", "bg=light blue", "size=256,256") \\
+\>Fg(w, "emission pale grey") \\
+\>PushMatrix(w) \\
+\>Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
+\>DrawCylinder(w, 0.0, 0.575, -2.0, 0.15, 0.05, 0.17) \\
+\>PopMatrix(w) \  \\
+\>Fg(w, "diffuse grey; emission black") \\
+\>PushMatrix(w) \\
+\>Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
+\>DrawCylinder(w, 0.0, 0.0, -2.5, 0.7, 0.035, 0.035) \\
+\>PopMatrix(w) \ \ \ \ \ \ \ \ \ \ \ \ \ \  \\
+\>DrawTorus(w, 0.0, -0.22, -2.5, 0.03, 0.06) \\
+\>DrawTorus(w, 0.0, 0.6, -2.5, 0.05, 0.03) \\
 \ \\
-\>   w2 := open("win2.icn","gl","bg=black","size=400,400") \\
-\>   WAttrib(w2, "texmode=on") \\
-\>   Texture(w2, w)  \\
-\>   Fg(w2, "diffuse purple; ambient blue") \\
-\>   DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, \ 0.7)
+\>w2 := open("win2.icn", "gl", "bg=black", "size=400,400") \\
+\>WAttrib(w2, "texmode=on") \\
+\>Texture(w2, w)  \\
+\>Fg(w2, "diffuse purple; ambient blue") \\
+\>DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, \ 0.7)
 }
 
 The next two examples illustrate the use of the default texture
@@ -1693,9 +1662,9 @@ to (1.0, 1.0, -2.0), and (1.0, 0.0) is mapped to (1.0, 0.0, -2.0).
 \end{center}
 
 \iconcode{
-\>   WAttrib(w,"fg=white","bg=blue","texmode=on","texture=4,\#8CA9") \\
-\>   Fg(w, "diffuse purple; ambient blue") \\
-\>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+\>WAttrib(w,"fg=white", "bg=blue", "texmode=on", "texture=4,\#8CA9") \\
+\>Fg(w, "diffuse purple; ambient blue") \\
+\>FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
 }
 
 This example uses the same texture image and the same object to be
@@ -1714,23 +1683,24 @@ texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
 \end{center}
 
 \iconcode{
-\>   WAttrib(w,"fg=white","bg=blue","texmode=on","texture=4,\#8CA9", \\
-\>   \ \ \ \ \ \ \ \ \ \ "texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0") \\
-\>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+\>WAttrib(w,"fg=white", "bg=blue", "texmode=on", "texture=4,\#8CA9", \\
+\>\>"texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0") \\
+\>FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
 }
 
 Instead of using \texttt{WAttrib()} with the attribute \texttt{texcoord},
-the function \texttt{Texcoord()} could be used. So the line 
+the function \texttt{Texcoord()} could be used. So the line
 
 \iconcode{
-\>   WAttrib(w,"texcoord=0.0, 1.0, 1.0, 1.0, 1.0,
-1.0,1.0, 0.0")}
+\>WAttrib(w, "texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0")
+}
 
 \noindent
-could be replaced by 
+could be replaced by
 
 \iconcode{
-\>   Texcoord(w, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0)}
+\>Texcoord(w, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0)
+}
 
 \paragraph[A Larger Textures Example]{A Larger Textures Example}
 The following more complicated example uses many features of the
@@ -1760,74 +1730,65 @@ facilities that makes adding textures simpler than using OpenGL.
 
 \iconcode{
 procedure main() \\
-\>   \&window := open("textured.icn","gl","bg=black","size=700,700") \\
+\>\&window := open("textured.icn", "gl", "bg=black", "size=700,700") \\
 \ \\
-\>   \# Draw the floor of the room \\
-\>   WAttrib("texmode=on", "texture=carpet.gif") \\
-\>   FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0, \\
-\>\>\> 7.0, -7.0,
--14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0) \\
+\>\# Draw the floor of the room \\
+\>WAttrib("texmode=on", "texture=carpet.gif") \\
+\>FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0, \\
+\>\>7.0, -7.0, -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0) \\
 \ \\
-\>   \# Draw the right and left walls \\
-\>   WAttrib("texture=wall1.gif",
-	"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0") \\
-\>   FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0,
-2.0, 0.4, -8.0) \\
-\>   WAttrib("texture=wall2.gif") \\
-\>   FillPolygon(2.0, 4.0 ,-8.0, -9.0, 8.0, -16.0, -9.0,-1.2,-16.0,
-2.0, 0.4, -8.0) \\
+\>\# Draw the right and left walls \\
+\>WAttrib("texture=wall1.gif", "texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0") \\
+\>FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0, 2.0, 0.4, -8.0) \\
+\>WAttrib("texture=wall2.gif") \\
+\>FillPolygon(2.0, 4.0 ,-8.0, -9.0, 8.0, -16.0, -9.0,-1.2,-16.0, 2.0, 0.4, -8.0) \\
 \ \\
-\>   \# Draw a picture \\
-\>   WAttrib("texture=poster.gif",
-	"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0") \\
-\>   FillPolygon(1.0, 1.2, -3.0, 1.0, 0.7, -3.0, 1.2, 0.5, -2.6, 1.2,
-1.0, -2.6) \\
-\>   \# Draw another picture \\
-\>   WAttrib("texture=unicorn.gif",
-	"texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0") \\
-\>   FillPolygon(0.8, 2.0, -9.0, -3.0, 1.6, -9.0, 3.0, 3.9,-9.0, 0.8,
-4.0, -9.0)
+\>\# Draw a picture \\
+\>WAttrib("texture=poster.gif", "texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0") \\
+\>FillPolygon(1.0, 1.2, -3.0, 1.0, 0.7, -3.0, 1.2, 0.5, -2.6, 1.2, 1.0, -2.6) \\
+\>\# Draw another picture \\
+\>WAttrib("texture=unicorn.gif", "texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0") \\
+\>FillPolygon(0.8, 2.0, -9.0, -3.0, 1.6, -9.0, 3.0, 3.9,-9.0, 0.8, 4.0, -9.0)
 \ \\
-\>   \# Draw the lamp \\
-\>   WAttrib("texmode=off") \\
-\>   PushMatrix() \\
-\>   Translate(0.7, 0.20, -0.5) \\
-\>   Fg("emission pale weak yellow") \\
-\>   PushMatrix() \\
-\>   Rotate(-5.0, 1.0, 0.0, 0.0) \\
-\>   Rotate( 5.0, 0.0, 0.0, 1.0) \\
-\>   DrawCylinder(-0.05, 0.570, -2.0, 0.15, 0.05, 0.17) \\
-\>   PopMatrix() \\
-\>   Fg("diffuse grey; emission black") \\
-\>   PushMatrix() \\
-\>   Rotate(-5.0, 1.0, 0.0, 0.0) \\
-\>   Rotate( 6.0, 0.0, 0.0, 1.0) \\
-\>   DrawCylinder(0.0, 0.0, -2.5, 0.7, 0.035, 0.035) \\
-\>   PopMatrix() \\
-\>   PushMatrix() \\
-\>   Rotate(6.0, 0.0, 0.0, 1.0) \\
-\>   DrawTorus(-0.02, -0.22, -2.5, 0.03, 0.05) \\
-\>   PopMatrix()  \\
-\>   PopMatrix() \\
+\>\# Draw the lamp \\
+\>WAttrib("texmode=off") \\
+\>PushMatrix() \\
+\>Translate(0.7, 0.20, -0.5) \\
+\>Fg("emission pale weak yellow") \\
+\>PushMatrix() \\
+\>Rotate(-5.0, 1.0, 0.0, 0.0) \\
+\>Rotate( 5.0, 0.0, 0.0, 1.0) \\
+\>DrawCylinder(-0.05, 0.570, -2.0, 0.15, 0.05, 0.17) \\
+\>PopMatrix() \\
+\>Fg("diffuse grey; emission black") \\
+\>PushMatrix() \\
+\>Rotate(-5.0, 1.0, 0.0, 0.0) \\
+\>Rotate( 6.0, 0.0, 0.0, 1.0) \\
+\>DrawCylinder(0.0, 0.0, -2.5, 0.7, 0.035, 0.035) \\
+\>PopMatrix() \\
+\>PushMatrix() \\
+\>Rotate(6.0, 0.0, 0.0, 1.0) \\
+\>DrawTorus(-0.02, -0.22, -2.5, 0.03, 0.05) \\
+\>PopMatrix()  \\
+\>PopMatrix() \\
 \ \\
-\>   \# Draw the table  \\
-\>   WAttrib("texcoord=auto", "texmode=on", "texture=table.gif") \\
-\>   PushMatrix() \\
-\>   Rotate(-10.0, 1.0, 0.0,0.0) \\
-\>   DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3) \\
-\>   PopMatrix() \\
-\>   PushMatrix() \\
-\>   Translate(0.0, -0.09, -1.8) \\
-\>   Rotate(65.0, 1.0, 0.0, 0.0) \\
-\>   DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29)  \\
-\>   PopMatrix() \\
-\>   WAttrib("texmode=off", "fg=diffuse weak brown") \\
-\>   PushMatrix() \\
-\>   Rotate(-20.0, 1.0, 0.0,0.0) \\
-\>   DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1) \\
-\>   PopMatrix() \\
-\>   while (e := Event()) \~{}== "q" do
-        write(image(e), ": ", \&x, ",", \&y) \\
+\>\# Draw the table  \\
+\>WAttrib("texcoord=auto", "texmode=on", "texture=table.gif") \\
+\>PushMatrix() \\
+\>Rotate(-10.0, 1.0, 0.0,0.0) \\
+\>DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3) \\
+\>PopMatrix() \\
+\>PushMatrix() \\
+\>Translate(0.0, -0.09, -1.8) \\
+\>Rotate(65.0, 1.0, 0.0, 0.0) \\
+\>DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29)  \\
+\>PopMatrix() \\
+\>WAttrib("texmode=off", "fg=diffuse weak brown") \\
+\>PushMatrix() \\
+\>Rotate(-20.0, 1.0, 0.0,0.0) \\
+\>DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1) \\
+\>PopMatrix() \\
+\>while (e := Event()) \~{}== "q" do write(image(e), ": ", \&x, ",", \&y) \\
 end
 }
 
@@ -1849,7 +1810,7 @@ are used. Texturing is applied to a cylinder and the disk.  Notice the
 call
 
 \iconcode{
-\>   WAttrib(w, "texcoord=auto")}
+\>WAttrib(w, "texcoord=auto")}
 
 \noindent
 This resets the texture coordinates to the defaults. Finally, texturing
@@ -1884,10 +1845,10 @@ need to incorporate physics.
 sphere := DrawSphere(w, x, y, z, r) \\
 increment := 0.2 \\
 every i := 1 to 100 do \\
-\>   every j := 1 to 100 do \{ \\
-\>   \ \ \ sphere.y +:= increment \\
-\>   \ \ \ Refresh(w) \\
-\>   \ \ \ \}
+\>every j := 1 to 100 do \{ \\
+\>\>sphere.y +:= increment \\
+\>\>Refresh(w) \\
+\>\>\}
 }
 
 This technique gives animation rates of hundreds of frames per second

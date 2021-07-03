@@ -123,8 +123,8 @@ the command line, and writes out the value corresponding to that key.
 
 \iconcode{
 procedure main(args) \\
-\>   d := open(args[1], "d") {\textbar} stop("can't open ", args[1]) \\
-\>   write(d[args[2]]) \\
+\>d := open(args[1], "d") {\textbar} stop("can't open ", args[1]) \\
+\>write(d[args[2]]) \\
 end
 }
 
@@ -139,10 +139,10 @@ this:
 
 \iconcode{
 procedure main(args) \\
-\>   d := open(args[1], "d") {\textbar} stop("can't open ", args[1]) \\
-\>   d[args[2]] := args[3] \\
-\>   write(d[args[2]]) \\
-\>   close(d) \\
+\>d := open(args[1], "d") {\textbar} stop("can't open ", args[1]) \\
+\>d[args[2]] := args[3] \\
+\>write(d[args[2]]) \\
+\>close(d) \\
 end
 }
 
@@ -220,8 +220,8 @@ unadorned by double quotes or other Unicon artifacts.
 New tables are created with a \texttt{CREATE TABLE} statement, such as
 
 \iconcode{
-create table addresses (name varchar(40), address varchar(40),\\
-\>\>\>\> phone varchar(15))}
+create table addresses (name varchar(40), address varchar(40), phone varchar(15))
+}
 
 Tables have a primary key that must be unique among rows in the table.
 By default the primary key is the first one listed, so \texttt{name} is
@@ -245,13 +245,9 @@ table. For example:
 
 \iconcode{
 insert into addresses (name, address, phone) \\
-\>   \ \ \ \ values ('Nick K',
-'1 Evil Empire',
-'(123)456-7890') \\
+\>\>values ('Nick K', '1 Evil Empire', '(123)456-7890') \\
 insert into addresses (name, address, phone) \\
-\>   \ \ \ \ values ('Vic T',
-'23 Frozen Glade',
-'(900)888-8888')
+\>\>values ('Vic T', '23 Frozen Glade', '(900)888-8888')
 }
 
 \texttt{UPDATE} and \texttt{DELETE} can modify or remove sets of rows
@@ -259,7 +255,7 @@ that match a particular criterion, as in
 
 \iconcode{
 update addresses set address = '666 RTH, Issaquah' \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ where name = 'Nick K' \\
+\>\>where name = 'Nick K' \\
 delete from addresses where name = 'Vic T'
 }
 
@@ -408,7 +404,8 @@ beginning of the set of selected rows. For example, to obtain Vic
 T's phone number you might say
 
 \iconcode{
-sql(db, "select phone from addresses where name='Vic T'")}
+sql(db, "select phone from addresses where name = 'Vic T'")
+}
 
 Vic's phone number is included if you use the original
 \texttt{select *} query, but the more specific your query, the less
@@ -446,8 +443,8 @@ column by name from the current row, without advancing the cursor.
 The preceding example could have been written
 
 \iconcode{
-   write(fetch(db,"Name")) \\
-   write(fetch(db,"Address"))
+write(fetch(db, "Name")) \\
+write(fetch(db, "Address"))
 }
 
 \subsection*{A SQL example application}
@@ -457,25 +454,22 @@ table might maintain employee information, such as names,
 identification numbers, and phone numbers, while another table
 maintains entries about specific jobs held, including
 employee's ID, the pay rate, a code indicating whether
-pay is hourly or salaried, and the job title. Note that the SQL is
-embedded within a string literal.
+pay is hourly or salaried, and the job title.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+The SQL is embedded within a string literal.}\medskip
 
 \iconcode{
-sql(db, "create table employees (id varchar(11), name
-varchar(40),\\
-\>\>\>\> phone varchar(15))") \\
-sql(db, "create table jobs (id varchar(11), payrate
-integer, is\_salaried char,\\
-\>\>\>\> title varchar(40))")
+sql(db, "create table employees (id varchar(11), name varchar(40), phone varchar(15))") \\
+sql(db, "create table jobs (id varchar(11), payrate integer, is\_salaried char, title varchar(40))")
 }
 
 \noindent
 Inserting rows into the database looks like
 
 \iconcode{
-sql("insert into employees (id, name, phone) values(32,
-'Ray',
-'274-2977')")}
+sql("insert into employees (id, name, phone) values(32, 'Ray', '274-2977')")
+}
 
 Now, how can you print out the job title for any particular employee? If
 you have the employee's identification number, the
@@ -488,9 +482,8 @@ closing double quotes has not been found and the line ends with an
 underscore character.
 
 \iconcode{
-sql(db, "select name,title from employees,jobs \_ \\
-\>   \ \ \ \ \ \ where name='Ray' and
-employees.id = jobs.id") \\
+sql(db, "select name, title from employees, jobs \_ \\
+\>\>where name='Ray' and employees.id = jobs.id") \\
 while write(fetch(db).Title)
 }
 
@@ -566,13 +559,12 @@ one row set is maintained at a time. The second \texttt{SELECT}
 replaces the first, so for example:
 
 \iconcode{
-db := open("mydsn",
-"o", ...) \\
+db := open("mydsn", "o", ...) \\
 sql(db, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
 while r := fetch(db) do \{ \\
-\>   sql(db, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
-\>   while r2 := fetch(db) do write(r2.foo) \\
-\>   \}
+\>sql(db, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
+\>while r2 := fetch(db) do write(r2.foo) \\
+\>\}
 }
 
 \noindent
@@ -581,15 +573,13 @@ server's limits, the easy solution is to open multiple
 connections to your database:
 
 \iconcode{
-db1 := open("mydsn",
-"o", ...) \\
-db2 := open("mydsn",
-"o", ...) \\
+db1 := open("mydsn", "o", ...) \\
+db2 := open("mydsn", "o", ...) \\
 sql(db, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
 while r := fetch(db) do \{ \\
-\>   sql(db2, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
-\>   while r2 := fetch(db2) do write(r2.foo) \\
-\>   \}
+\>sql(db2, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
+\>while r2 := fetch(db2) do write(r2.foo) \\
+\>\}
 }
 
 \subsection*{Dynamic records}

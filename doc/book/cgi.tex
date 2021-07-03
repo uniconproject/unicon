@@ -38,10 +38,9 @@ generation of HTML-tagged output from various data structures. The
 \texttt{cgi.icn} reference documentation can be found in Appendix B,
 which describes many important modules in the Icon Program Library.
 
-{\sffamily\bfseries Note}
-
-{\sffamily To use \texttt{cgi.icn}, place the statement \texttt{link cgi}
-at the top of your program.}
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+To use \texttt{cgi.icn}, place the statement \texttt{link cgi}
+at the top of your program.}\medskip
 
 CGI programs use the hypertext markup language HTML as their output
 format for communicating with the user through a Web browser.
@@ -77,11 +76,11 @@ with different methods of supplying user input, either from the
 standard input or from a \texttt{QUERY\_STRING} environment variable.
 In either case, the input is organized as a set of fields that were
 given names in the HTML code from which the CGI program was invoked.
-For example, an HTML form might include a tag such as: 
+For example, an HTML form might include a tag such as:
 
 \iconcode{
-\>   {\textless}INPUT TYPE = "text" NAME =
-"PHONE" SIZE=15{\textgreater}}
+\>   {\textless}INPUT TYPE = "text" NAME = "PHONE" SIZE=15{\textgreater}
+}
 
 \noindent
 which allows input of a string of length up to 15 characters into a
@@ -93,10 +92,11 @@ global variable named \texttt{cgi}. The keys of this table are exactly
 the names given in the HTML \texttt{INPUT} tags. The values accessed
 from the keys are the string values supplied by the user. For example,
 to access the \texttt{PHONE} field from the above example, the
-application could write 
+application could write
 
 \iconcode{
-\>   cgi["PHONE"]}
+\>cgi["PHONE"]
+}
 
 \subsection*{Processing output}
 
@@ -112,15 +112,13 @@ strings in the second parameter to \texttt{cgiSelect()}. A programmer
 might write
 
 \iconcode{
-\>   cgiSelect("GENDER",
-["female",
-"male"])}
+\>cgiSelect("GENDER", ["female", "male"])
+}
 
 \noindent to generate the HTML
 
 \iconcode{
-{\textless}SELECT
-NAME="GENDER"{\textgreater} \\
+{\textless}SELECT NAME="GENDER"{\textgreater} \\
 {\textless}OPTION SELECTED{\textgreater}female \\
 {\textless}OPTION{\textgreater}male \\
 {\textless}/SELECT{\textgreater}
@@ -135,7 +133,8 @@ information to the CGI script. Programmers access these environment
 variables using \texttt{getenv()}, as in
 
 \iconcode{
-\>   getenv("REMOTE\_HOST")}
+\>getenv("REMOTE\_HOST")
+}
 
 Table 14-1 presents a summary of the CGI environment variables as a
 convenience so that this book can serve as a stand-alone reference for
@@ -268,44 +267,32 @@ run, you can edit the URL in this file to point at your CGI program, the
 
 \iconcode{
 {\textless}HTML{\textgreater}{\textless}HEAD{\textgreater}{\textless}title{\textgreater}
-An HTML Form Example
-{\textless}/title{\textgreater}{\textless}/HEAD{\textgreater} \\
+An HTML Form Example {\textless}/title{\textgreater}{\textless}/HEAD{\textgreater} \\
 {\textless}BODY{\textgreater} \\
-{\textless}h1{\textgreater} A
-{\textless}tt{\textgreater}cgi.icn{\textless}/tt{\textgreater}
+{\textless}h1{\textgreater} A {\textless}tt{\textgreater}cgi.icn{\textless}/tt{\textgreater}
 Demonstration{\textless}/h1{\textgreater} \\
 {\textless}form method="GET" \\
-\>   \ \
-action="http://www.cs.uidaho.edu/\~{}jeffery/cgi-bin/simple.cgi"{\textgreater} \\
-1. Name: {\textless}input type="text"
-name="name" size=25{\textgreater}
+\>action="http://www.cs.uidaho.edu/\~{}jeffery/cgi-bin/simple.cgi"{\textgreater} \\
+1. Name: {\textless}input type="text" name="name" size=25{\textgreater}
 {\textless}p{\textgreater} \\
-2. Age: \ {\textless}input type="text"
-name="age" size=3{\textgreater}
+2. Age: \ {\textless}input type="text" name="age" size=3{\textgreater}
 \&nbsp;Years {\textless}p{\textgreater} \\
 3. Quest: \\
-{\textless}input type="checkbox"
-name="fame"{\textgreater}Fame{\textless}/input{\textgreater} \\
-{\textless}input type="checkbox"
-name="fortune"{\textgreater}Fortune{\textless}/input{\textgreater} \\
-{\textless}input type="checkbox"
-name="grail"{\textgreater}Grail{\textless}/input{\textgreater}{\textless}p{\textgreater} \\
+{\textless}input type="checkbox" name="fame"{\textgreater}Fame{\textless}/input{\textgreater} \\
+{\textless}input type="checkbox" name="fortune"{\textgreater}Fortune{\textless}/input{\textgreater} \\
+{\textless}input type="checkbox" name="grail"{\textgreater}Grail{\textless}/input{\textgreater}{\textless}p{\textgreater} \\
 4. Favorite Color: \\
-{\textless}select
-name="color"{\textgreater} \\
+{\textless}select name="color"{\textgreater} \\
 {\textless}option{\textgreater}Red \\
 {\textless}option{\textgreater}Green \\
 {\textless}option{\textgreater}Blue \\
-{\textless}option selected{\textgreater}Don't Know
-(Aaagh!) \\
+{\textless}option selected{\textgreater}Don't Know (Aaagh!) \\
 {\textless}/select{\textgreater}{\textless}p{\textgreater} \\
 Comments:{\textless}br{\textgreater} \\
 {\textless}textarea rows=5 cols=60
 name="comments"{\textgreater}{\textless}/textarea{\textgreater}{\textless}p{\textgreater} \\
-{\textless}input type="submit"
-value="Submit Data"{\textgreater} \\
-{\textless}input type="reset"
-value="Reset Form"{\textgreater} \\
+{\textless}input type="submit" value="Submit Data"{\textgreater} \\
+{\textless}input type="reset" value="Reset Form"{\textgreater} \\
 {\textless}/form{\textgreater} \\
 {\textless}/BODY{\textgreater} \\
 {\textless}/HTML{\textgreater}
@@ -322,7 +309,8 @@ copy from the book web site
 be compiled with the command
 
 \iconcode{
-unicon \textrm{$-$}o simple.cgi simple.icn }
+unicon \textrm{$-$}o simple.cgi simple.icn
+}
 
 Many Web servers are configured so that CGI scripts must end with the
 extension \texttt{.cgi}. Check with your system administrator about CGI
@@ -341,17 +329,15 @@ HTML output and a log file if given a file as its first argument.
 
 \iconcode{
 link cgi \\
+\\
 procedure cgimain() \\
-\>   cgiEcho("Hello, ",
-cgi["name"],
-"!") \\
-\>   cgiEcho("Are you really ", cgi["age"], " years old?") \\
-\>   cgiEcho("You seek: ", cgi["fame"]==="on" \& "fame") \\
-\>   cgiEcho("You seek: ", cgi["fortune"]==="on" \& "fortune") \\
-\>   cgiEcho("You seek: ", cgi["grail"]==="on" \& "grail") \\
-\>   cgiEcho("Your favorite color is: ", cgi["color"]) \\
-\>   cgiEcho("Your comments: ",
-cgi["comments"]) \\
+\>cgiEcho("Hello, ", cgi["name"], "!") \\
+\>cgiEcho("Are you really ", cgi["age"], " years old?") \\
+\>cgiEcho("You seek: ", cgi["fame"] === "on" \& "fame") \\
+\>cgiEcho("You seek: ", cgi["fortune"] === "on" \& "fortune") \\
+\>cgiEcho("You seek: ", cgi["grail"] === "on" \& "grail") \\
+\>cgiEcho("Your favorite color is: ", cgi["color"]) \\
+\>cgiEcho("Your comments: ", cgi["comments"]) \\
 end
 }
 
@@ -431,107 +417,65 @@ An online application form}
 \# \ \ \ \ \ \ Date: \ \ \ July 11, 2002 \\
 \#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
  \\
-\# This program processes a bunch of input fields defined in an
-on-line schol-\\
+\# This program processes a bunch of input fields defined in an on-line schol-\\
 \# arship application at http://unicon.org/book/appform.html and from them,\\
 \# generates a text file, prints and e-mails it to the scholarship coordinator. \\
 \#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
  \\
 \ \\
 link cgi, io \\
+\\
 \$define ADMIN "jeffery@cs.uidaho.edu" \\
+\\
 procedure cgimain() \\
-\ \ fname := tempname("appform", ".txt", "/tmp") \\
-\ \ f := open(fname, "w") {\textbar} stop("can't open ", fname) \\
-\ \ write("Generating typeset copy of application
-form...") \\
-\ \ write(f,"Scholarship Program
-Application{\textbackslash}n") \\
-\ \ write(f, "Name: ",
-cgi["NAME"],
-"{\textbackslash}t{\textbackslash}t Phone: ", cgi["PHONE"]) \\
-\ \ write(f, "Address: ", cgi["ADDRESS1"], '
-{\textbackslash}t{\textbackslash}t Social Sec. Number: ", cgi["SOC"]) \\
-\ \ write(f, cgi["ADDRESS2"],
-" {\textbackslash}t{\textbackslash}t Gender (M/F):
-",cgi["GENDER"],
-"{\textbackslash}n") \\
-\ \ write(f,"Semester hours completed: ",
-cgi["CREDITS"]) \\
-\ \ write(f,"College GPA: \ Overall ",
-cgi["GPA"]) \\
-\ \ write(f,"Present Employer: ",
-cgi["EMPLOYER"]) \\
-\ \ write(f,"Position: ", cgi["POSITION"], " Hours/week: ", cgi["HOURS"]) \\
-\ \ write(f,"Educational Background") \\
-\ \ write(f,"High School: name, year, GPA,
-		graduated?") \\
-\ \ write(f, cgi["HIGH1"],
-"{\textbackslash}n",
-cgi["HIGH2"]) \\
-\ \ write(f,"For each college, list name, dates attended,
-credit hours,") \\
-\ \ write(f,"degrees awarded", cgi["COLL1"], "{\textbackslash}n", cgi["COLL2"],
+\>fname := tempname("appform", ".txt", "/tmp") \\
+\>f := open(fname, "w") {\textbar} stop("can't open ", fname) \\
+\>write("Generating typeset copy of application form...") \\
+\>write(f,"Scholarship Program Application{\textbackslash}n") \\
+\>write(f, "Name: ", cgi["NAME"],"{\textbackslash}t{\textbackslash}t Phone: ", cgi["PHONE"]) \\
+\>write(f, "Address: ", cgi["ADDRESS1"], "{\textbackslash}t{\textbackslash}t Social Sec. Number: ", cgi["SOC"]) \\
+\>write(f, cgi["ADDRESS2"], " {\textbackslash}t{\textbackslash}t Gender (M/F): ",
+cgi["GENDER"], "{\textbackslash}n") \\
+\>write(f,"Semester hours completed: ", cgi["CREDITS"]) \\
+\>write(f,"College GPA: \ Overall ", cgi["GPA"]) \\
+\>write(f,"Present Employer: ", cgi["EMPLOYER"]) \\
+\>write(f,"Position: ", cgi["POSITION"], " Hours/week: ", cgi["HOURS"]) \\
+\>write(f,"Educational Background") \\
+\>write(f,"High School: name, year, GPA, graduated?") \\
+\>write(f, cgi["HIGH1"], "{\textbackslash}n", cgi["HIGH2"]) \\
+\>write(f,"For each college, list name, dates attended, credit hours,") \\
+\>write(f,"degrees awarded", cgi["COLL1"], "{\textbackslash}n", cgi["COLL2"],
 "{\textbackslash}n{\textbackslash}n") \\
-\ \ write(f,"Academic honors, scholarships, and
-fellowships") \\
-\ \ write(f,cgi["HONOR1"],
-"{\textbackslash}n",
-cgi["HONOR2"],
-"{\textbackslash}n") \\
-\ \ write(f,"Extracurricular interests:", cgi["EXTRA1"],
-"{\textbackslash}n",
-cgi["EXTRA2"]) \\
-\ \ write(f,"Professional organizations:",
-cgi["ORGS1"],
-"{\textbackslash}n",
-cgi["ORGS2"]) \\
-\ \ write(f,"Research interests:") \\
-\ \ write(f,cgi["RESEARCH1"],
-"{\textbackslash}n",
-cgi["RESEARCH2"]) \\
-\ \ write(f,"Name(s) of at least one person you have asked
-to") \\
-\ \ write(f,"write an academic reference
-letter.") \\
-\ \ write(f,"Name \ \ \ \ \ \ \ \ \ \ \ Address
-\ \ \ \ \ \ \ \ Relationship") \\
-\ \ write(f,cgi["REF1"],
-"{\textbackslash}t",
-cgi["REFADD1"],
-"{\textbackslash}t",cgi["REFREL1"]) \\
-\ \ write(f,cgi["REF2"],
-"{\textbackslash}t",
-cgi["REFADD2"],
-"{\textbackslash}t",cgi["REFREL2"]) \\
-\ \ write(f,"{\textbackslash}nI certify that information
-provided on this") \\
-\ \ write(f,"application is correct and complete to my
-knowledge.{\textbackslash}n") \\
-\ \ write(f,"Signature: ",
-repl("\_", 60), "{\textbackslash}n Date: ",
-repl("\_", 60), 
+\>write(f,"Academic honors, scholarships, and fellowships") \\
+\>write(f,cgi["HONOR1"], "{\textbackslash}n", cgi["HONOR2"], "{\textbackslash}n") \\
+\> write(f,"Extracurricular interests:", cgi["EXTRA1"], "{\textbackslash}n", cgi["EXTRA2"]) \\
+\>write(f,"Professional organizations:", cgi["ORGS1"], "{\textbackslash}n", cgi["ORGS2"]) \\
+\>write(f,"Research interests:") \\
+\>write(f,cgi["RESEARCH1"], "{\textbackslash}n", cgi["RESEARCH2"]) \\
+\>write(f,"Name(s) of at least one person you have asked to") \\
+\>write(f,"write an academic reference letter.") \\
+\>write(f,"Name \ \ \ \ \ \ \ \ \ \ \ Address \ \ \ \ \ \ \ \ Relationship") \\
+\>write(f,cgi["REF1"], "{\textbackslash}t", cgi["REFADD1"], "{\textbackslash}t",cgi["REFREL1"]) \\
+\>write(f,cgi["REF2"], "{\textbackslash}t", cgi["REFADD2"], "{\textbackslash}t",cgi["REFREL2"]) \\
+\>write(f,"{\textbackslash}nI certify that information provided on this") \\
+\>write(f,"application is correct and complete to my knowledge.{\textbackslash}n") \\
+\>write(f,"Signature: ", repl("\_", 60), "{\textbackslash}n Date: ", repl("\_", 60),
 "{\textbackslash}n{\textbackslash}\^{}l{\textbackslash}n") \\
-\ \ write(f,"Please write a short statement of purpose,
-including") \\
-\ \ write(f,"information about your background, major, and
-career") \\
-\ \ write(f,"interests, and professional
-goals.{\textbackslash}n") \\
-\ \ write(f, cgi["INFO"]) \\
-\ \ close(f) \\
-\ \ write("Mailing form to program director...") \\
-\ \ f := open(fname) \\
-\ \ m := open("mailto:" {\textbar}{\textbar} ADMIN, "m", "Subject: appform") \\
-\ \ while write(m, read(f)) \\
-\ \ close(m) \\
-\ \ close(f) \\
-\ \ write("Printing hard copy...") \\
-\ \ system("lpr " {\textbar}{\textbar} fname {\textbar}{\textbar} "; rm " {\textbar}{\textbar} fname) \\
-\ \ cgiEcho("Thank you for applying, ",
-cgi["NAME"]) \\
-\ \ cgiEcho("Your application has been submitted to
-" {\textbar}{\textbar} ADMIN) \\
+\>write(f,"Please write a short statement of purpose, including") \\
+\>write(f,"information about your background, major, and career") \\
+\>write(f,"interests, and professional goals.{\textbackslash}n") \\
+\>write(f, cgi["INFO"]) \\
+\>close(f) \\
+\>write("Mailing form to program director...") \\
+\>f := open(fname) \\
+\>m := open("mailto:" {\textbar}{\textbar} ADMIN, "m", "Subject: appform") \\
+\>while write(m, read(f)) \\
+\>close(m) \\
+\>close(f) \\
+\>write("Printing hard copy...") \\
+\>system("lpr " {\textbar}{\textbar} fname {\textbar}{\textbar} "; rm " {\textbar}{\textbar} fname) \\
+\>cgiEcho("Thank you for applying, ", cgi["NAME"]) \\
+\>cgiEcho("Your application has been submitted to " {\textbar}{\textbar} ADMIN) \\
 end
 }
 

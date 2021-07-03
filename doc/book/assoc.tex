@@ -27,7 +27,7 @@ methods, or both. In other cases a class is just a special case of
 another class. For example, if you have a class
 \texttt{fraction(numerator, denominator)}, you could define class
 \texttt{inverses(denominator)} whose behavior is identical to that of a
-fraction, but whose numerator is always 1. 
+fraction, but whose numerator is always 1.
 
 Both of these ideas are realized with the concept of
 \index{inheritance}inheritance. When the definition of a class is best
@@ -51,18 +51,18 @@ there. A new attribute (term) is added in \texttt{SalariedAppointment}
 that is not in \texttt{JobOffer}.
 
 \begin{center}
-\includegraphics[width=4.05in,height=1.52in]{ub-img/subclass.png} 
+\includegraphics[width=4.05in,height=1.52in]{ub-img/subclass.png}
 
 {\sffamily\bfseries Figure 11-1:}
 {\sffamily A Salaried Appointment is a subclass of a Job Offer}
 \end{center}
 
 \noindent
-The syntax of a subclass is 
+The syntax of a subclass is
 
 \iconcode{
 class \textit{classname} \textit{superclasses} (\textit{attributes}) \\
-\>   \textit{methods} \\
+\>\textit{methods} \\
 {\sffamily\itshape
 initially\_section} \\
 end
@@ -78,17 +78,17 @@ example
 
 \iconcode{
 class SalariedAppointment : JobOffer (term) \\
-\>   method SetTerm(t : interval) \\
-\>   \ \ \ term := t \\
-\>   end \\
+\>method SetTerm(t : interval) \\
+\>\>term := t \\
+\>end \\
 initially \\
-\>   /term := "unknown term" \\
+\>/term := "unknown term" \\
 end
 }
 
 As you can see, a subclass declaration is identical to a regular class,
 with the addition of one or more superclass names, separated by colons.
-The meaning of this declaration is the subject of the next section. 
+The meaning of this declaration is the subject of the next section.
 
 \subsection*{Inheritance semantics}
 
@@ -104,22 +104,20 @@ superclass that were not defined in the subclass, those in the second
 superclass not defined in the subclass or the first superclass, and so
 on. In ordinary single-inheritance, this adding of fields and methods
 follows a linear bottom-up visit of each superclass,
-followed in turn by its parent superclass. 
+followed in turn by its parent superclass.
 
 When a class has two or more superclasses, the search generalizes from a
 linear sequence to an arbitrary \index{tree}tree, directed acyclic
-\index{graph}graph, or full graph traversal. 
+\index{graph}graph, or full graph traversal.
 \index{inheritance!multiple}Multiple inheritance adds fields and
 methods in an order defined by a depth-first traversal of the parent
 edges of the superclass graph. Think of the second and following
 superclasses in the
 multiple inheritance case as adding methods and fields only if the
 single-inheritance case (following the first superclass and all its
-parents) has not already added a field or method of the same name. 
+parents) has not already added a field or method of the same name.
 
-{\sffamily\bfseries
-Warning}
-
+\medskip\noindent{\sffamily\bfseries \bf Warning:}
 {\sffamily
 Care should be taken employing multiple inheritance if the two parent
 classes have any fields or methods of the same name! }
@@ -133,9 +131,9 @@ section to call their superclasses'
 \iconcode{
 class sub : A : B(x) \\
 initially \\
-\>   x := 0 \\
-\>   A.initially() \\
-\>   B.initially() \\
+\>x := 0 \\
+\>A.initially() \\
+\>B.initially() \\
 end
 }
 
@@ -143,18 +141,18 @@ end
 It is also common to have some attributes initialized by parameters, and
 assign others in the \texttt{initially} section. For example, to define a
 class \texttt{inverse} (for numbers of the form 1 / \textit{n}) in terms
-of a class \texttt{fraction(numerator, denominator)} one can write: 
+of a class \texttt{fraction(numerator, denominator)} one can write:
 
 \iconcode{
 class inverse : fraction (denominator) \\
 initially \\
-\>   numerator := 1 \\
+\>numerator := 1 \\
 end
 }
 
 Objects of class inverse can be manipulated using all the methods
 defined in class fraction; the code is actually shared by both classes
-at runtime. 
+at runtime.
 
 Viewing inheritance as the addition of superclass elements not found in
 the subclass is the opposite of the more traditional object-oriented
@@ -162,7 +160,7 @@ view that a subclass is an \index{instance!superclass}instance of the
 superclass as augmented in the subclass definition.
 Unicon's viewpoint adds quite a bit of leverage, such
 as the ability to define classes that are subclasses of each other.
-This feature is described further below. 
+This feature is described further below.
 
 \subsection*{Invoking superclass operations}
 
@@ -174,17 +172,18 @@ subclass' version of the
 including the superclass name in the invocation:
 
 \iconcode{
-\>   object\$superclass.method(parameters)}
+\>object\$superclass.method(parameters)
+}
 
 This facility allows the subclass method to do any additional work
 required for added fields before or after calling an appropriate
 superclass method to achieve inherited behavior. The result is
-frequently a chain of inherited method invocations. 
+frequently a chain of inherited method invocations.
 
 Since initially sections are methods, they can invoke superclass
 operations including superclass initially sections. This allows a chain
 of initially sections to be specified to execute in either
-subclass-first or superclass-first order, or some mixture of the two. 
+subclass-first or superclass-first order, or some mixture of the two.
 
 \subsection*{Inheritance examples}
 
@@ -217,22 +216,21 @@ Although all these types of data are different, the code used to read
 the data files can be shared, as well as the initial construction of
 the tables. In fact, since we are storing our data one entry per line
 in text files, we can use the code already written for buffers to do
-the file I/O itself. 
+the file I/O itself.
 
 \iconcode{
 class buftable : buffer() \\
-\ \ method read() \\
-\>   \ self.buffer.read() \\
-\>   \ tmp := table() \\
-\>   \ every line := !text do \\
-\>   \ \ \ line ? \{ tmp[tab(many(\&letters))] := line {\textbar} fail
-\} \\
-\>   \ text := tmp \\
-\>   \ return \\
-\ \ end \\
-\ \ method index(s) \\
-\>   \ return text[s] \\
-\ \ end \\
+\>method read() \\
+\>\>self.buffer.read() \\
+\>\>tmp := table() \\
+\>\>every line := !text do \\
+\>\>\>line ? \{ tmp[tab(many(\&letters))] := line {\textbar} fail \} \\
+\>\>text := tmp \\
+\>\>return \\
+\>end \\
+\>method index(s) \\
+\>\>return text[s] \\
+\>end \\
 end
 }
 
@@ -249,13 +247,13 @@ sharing example is not complete: what about the data structures
 required to support the databases themselves? They are all variants of
 the \texttt{buftable} class, and a set of possible implementations
 follow. Note that the formats presented are designed to illustrate code
-sharing; clearly, an actual application might make different choices. 
+sharing; clearly, an actual application might make different choices.
 
 \paragraph{Bibliographies}
 Bibliographies might consist of a keyword followed by an uninterpreted
 string of information. This imposes no additional structure on the data
 beyond that imposed by the \texttt{buftable} class. An example keyword
-would be Jeffery99. 
+would be Jeffery99.
 
 \iconcode{
 class bibliography : buftable() \\
@@ -270,14 +268,13 @@ than to define a new data structure. This example introduces a lookup
 operation that can fail, for use in tests. In addition, since many
 spell-checking systems allow user definable dictionaries in addition to
 their central database, \texttt{spellChecker} objects may chain
-together for the purpose of looking up words. 
+together for the purpose of looking up words.
 
 \iconcode{
 class spellChecker : buftable(parent) \\
-\ \ method spell(s) \\
-\>   \ return {\textbackslash}text[s] {\textbar}
-({\textbackslash}parent).spell(s) \\
-\ \ end \\
+\>method spell(s) \\
+\>\>return {\textbackslash}text[s] {\textbar} ({\textbackslash}parent).spell(s) \\
+\>end \\
 end
 }
 
@@ -289,51 +286,47 @@ Since each such entry is itself a structure, a sensible decomposition
 of the dictionary structure consists of two classes: one that manages
 the table and external file I/O, and one that handles the manipulation
 of dictionary entries, including their decoding and encoding as
-strings. 
+strings.
 
 \iconcode{
 class dictionaryentry(word, partofspeech, etymology, definition) \\
-\ \ \# decode a dictionary entry into its components \\
-\ \ method decode(s)  \\
-\>   \ s ? \{ \\
-\>   \ \ \ word \ \ \ \ \ \ \ \ := tab(upto(';')) \\
-\>   \ \ \ move(1) \\
-\>   \ \ \ partofspeech := tab(upto(';')) \\
-\>   \ \ \ move(1) \\
-\>   \ \ \ etymology \ \ \ := tab(upto(';')) \\
-\>   \ \ \ move(1) \\
-\>   \ \ \ definition \ \ := tab(0) \\
-\>   \ \} \\
-\ \ end \\
-\ \ method encode() \ \# encode a dictionary entry into a string \\
-\>   \ return word {\textbar}{\textbar} ";"
-{\textbar}{\textbar} partofspeech {\textbar}{\textbar}
-";" {\textbar}{\textbar}
- etymology {\textbar}{\textbar}
+\>\# decode a dictionary entry into its components \\
+\>method decode(s)  \\
+\>\>s ? \{ \\
+\>\>\>word := tab(upto(';')) \\
+\>\>\>move(1) \\
+\>\>\>partofspeech := tab(upto(';')) \\
+\>\>\>move(1) \\
+\>\>\>etymology := tab(upto(';')) \\
+\>\>\>move(1) \\
+\>\>\>definition \ \ := tab(0) \\
+\>\>\>\} \\
+\>end \\
+\>method encode() \ \# encode a dictionary entry into a string \\
+\>\>return word {\textbar}{\textbar} ";" {\textbar}{\textbar} partofspeech {\textbar}{\textbar}
+";" {\textbar}{\textbar}  etymology {\textbar}{\textbar}
 ";" {\textbar}{\textbar} definition \\
-\ \ end \\
+\>end \\
 initially \\
-\ \ if /partofspeech then \{ \\
-\>   \ \# constructor was called with a single string argument \\
-\>   \ decode(word) \\
-\>   \ \} \\
+\>if /partofspeech then \{ \\
+\>\>\# constructor was called with a single string argument \\
+\>\>decode(word) \\
+\>\>\>\} \\
 end \\
 \ \\
 class dictionary : buftable() \\
-\ \ method read() \\
-\>   \ self.buffer.read() \\
-\>   \ tmp := table() \\
-\>   \ every line := !text do \\
-\>   \ \ \ line ? \{ tmp[tab(many(\&letters))] := dictionaryentry(line)
-{\textbar} fail \} \\
-\>   \ text := tmp \\
-\ \ end \\
-\ \ method write() \\
-\>   \ f := open(filename, "w") {\textbar}
-fail \\
-\>   \ every write(f, (!text).encode) \\
-\>   \ close(f) \\
-\ \ end \\
+\>method read() \\
+\>\>self.buffer.read() \\
+\>\>tmp := table() \\
+\>\>every line := !text do \\
+\>\>\>line ? \{ tmp[tab(many(\&letters))] := dictionaryentry(line) {\textbar} fail \} \\
+\>\>text := tmp \\
+\>end \\
+\>method write() \\
+\>\>f := open(filename, "w") {\textbar} fail \\
+\>\>every write(f, (!text).encode) \\
+\>\>close(f) \\
+\>end \\
 end
 }
 
@@ -344,7 +337,7 @@ synonyms followed by a comma-separated list of antonyms, with a
 semicolon separating the two lists. Since the code for such a structure
 is nearly identical to that given for dictionaries above, we omit it
 here (you might start by generalizing class \texttt{dictionaryentry} to
-handle arbitrary strings organized as fields separated by semicolons). 
+handle arbitrary strings organized as fields separated by semicolons).
 
 
 \subsection*{A (toy) Dictionary Program}
@@ -373,200 +366,195 @@ de-en.txt.
 \$define DEEN "http://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en/de-en.txt.gz" \\
 \ \\
 procedure main(av) \\
-\>   if av[1]=="-all" then all := pop(av) \\
-\>   dd := DeenDictionary() \\
-\>   every s := !av do \\
-\>\>    if lu := dd.lookup(s) then \{ \\
-\>\>\>	 if {\textbackslash}all then \\
-\>\>\>\>	    every write(s, ": ", dd.lookup(s).definition) \\
-\>\>\>	 else write(s, ": ", lu.definition) \\
-\>\>\>	 \} \\
-\>\>      else write(s, " is not in the dictionary.") \\
+\>if av[1] == "-all" then all := pop(av) \\
+\>dd := DeenDictionary() \\
+\>every s := !av do \\
+\>\>if lu := dd.lookup(s) then \{ \\
+\>\>\>if {\textbackslash}all then \\
+\>\>\>\>every write(s, ": ", dd.lookup(s).definition) \\
+\>\>\>else write(s, ": ", lu.definition) \\
+\>\>\>\} \\
+\>\>else write(s, " is not in the dictionary.") \\
 end \\
 \ \\
 class buffer(filename, text) \\
-\>   \# read a buffer in from a file \\
-\>   \# todo: decompress if .gz extension \\
-\>   method read() \\
-\>\>      if match("http://", filename) then mode := "m" else mode := "r" \\
-\>\>      f := open(filename, mode) {\textbar} stop("can't open ", image(filename)) \\
+\>\# read a buffer in from a file \\
+\>\# todo: decompress if .gz extension \\
+\>method read() \\
+\>\>if match("http://", filename) then mode := "m" else mode := "r" \\
+\>\>f := open(filename, mode) {\textbar} stop("can't open ", image(filename)) \\
 \ \\
-\>\>      if filename[-3:0] == ".gz" then \{ \\
-\>\>\>	 if mode=="m" then \{ \# download\_to\_local\_file \\
-\>\>\>\>	    if not (f2 := open("de-en.txt.gz","w")) then \\
-\>\>\>\>\>	       stop("can't write") \\
-\>\>\>\>	    while s := reads(f, 1000000) do writes(f2, s) \\
-\>\>\>\>	    close(f) \\
-\>\>\>\>	    close(f2) \\
-\>\>\>\>	    \} \\
-\>\>\>	 system("gunzip de-en.txt.gz") \\
-\>\>\>	 f := open("de-en.txt") {\textbar} stop("can't read de-en.txt") \\
-\>\>\>	 \} \\
+\>\>if filename[-3:0] == ".gz" then \{ \\
+\>\>\>if mode=="m" then \{ \# download\_to\_local\_file \\
+\>\>\>\>if not (f2 := open("de-en.txt.gz","w")) then \\
+\>\>\>\>\>stop("can't write") \\
+\>\>\>\>while s := reads(f, 1000000) do writes(f2, s) \\
+\>\>\>\>close(f) \\
+\>\>\>\>close(f2) \\
+\>\>\>\>\} \\
+\>\>\>system("gunzip de-en.txt.gz") \\
+\>\>\>f := open("de-en.txt") {\textbar} stop("can't read de-en.txt") \\
+\>\>\>\} \\
 \ \\
-\>\>      writes("Opened ",image(f),".{\textbackslash}nReading") \\
-\>\>      text := [ ] \\
-\>\>      every put(text, !f) do if *text\%1000=0 then writes(".") \\
-\>\>      close(f) \\
-\>\>      write("{\textbackslash}ndone.  Read ", *text, " lines") \\
-\>\>      return \\
-\>   end \\
-\>   method erase() \\
-\>\>      \#... ? \\
-\>   end \\
-\>   \# ...additional buffer operations \\
+\>\>writes("Opened ",image(f),".{\textbackslash}nReading") \\
+\>\>text := [ ] \\
+\>\>every put(text, !f) do if *text\%1000 = 0 then writes(".") \\
+\>\>close(f) \\
+\>\>write("{\textbackslash}ndone.  Read ", *text, " lines") \\
+\>\>return \\
+\>end \\
+\>method erase() \\
+\>\>\#... ? \\
+\>end \\
+\>\# ...additional buffer operations \\
 initially \\
-\>   if {\textbackslash}filename then read() \\
+\>if {\textbackslash}filename then read() \\
 end \\
 \ \\
 class buftable : buffer() \\
-\>   method read() \\
-\>\>      self.buffer.read() \\
-\>\>      tmp := table() \\
-\>\>      every line := !text do \{ \\
-\>\>\>	 line ? \{ \\
-\>\>\>\>	    word := tab(many(\&letters)) {\textbar} stop("failed on ",
-	    image(line)) \\
-\>\>\>\>	    tmp[word] := line \\
-\>\>\>\>	    \} \\
-\>\>\>	 \} \\
-\>\>      text := tmp \\
-\>\>      return \\
-\>   end \\
-\>   method lookup(s) \\
-\>\>      suspend ! {\textbackslash} (text[s]) \\
-\>   end \\
+\>method read() \\
+\>\>self.buffer.read() \\
+\>\>tmp := table() \\
+\>\>every line := !text do \{ \\
+\>\>\>line ? \{ \\
+\>\>\>\>word := tab(many(\&letters)) {\textbar} stop("failed on ", image(line)) \\
+\>\>\>\>tmp[word] := line \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>\>text := tmp \\
+\>\>return \\
+\>end \\
+\>method lookup(s) \\
+\>\>suspend ! {\textbackslash} (text[s]) \\
+\>end \\
 end \\
 \ \\
 class dictionaryentry(word, part, etymology, definition) \\
-\>   \# decode a dictionary entry into its components \\
-\>   \# assumed format is word;pos;eym;def \\
-\>   method decode(s) \\
-\>\>      s ? \{ \\
-\>\>\>	 word := tab(find(";")) \\
-\>\>\>	 move(1) \\
-\>\>\>	 part := tab(find(";")) \\
-\>\>\>	 move(1) \\
-\>\>\>	 etymology := tab(find(";")) \\
-\>\>\>	 move(1) \\
-\>\>\>	 definition := tab(0) \\
-\>\>\>	 \} \\
-\>   end \\
-\>   method encode() \# encode a dictionary entry into a string \\
-\>\>      return word {\textbar}{\textbar} ";" {\textbar}{\textbar} part {\textbar}{\textbar} ";" {\textbar}{\textbar} etymology {\textbar}{\textbar} ";" {\textbar}{\textbar}
-      definition \\
-\>   end \\
+\>\# decode a dictionary entry into its components \\
+\>\# assumed format is word;pos;eym;def \\
+\>method decode(s) \\
+\>\>s ? \{ \\
+\>\>\>word := tab(find(";")) \\
+\>\>\>move(1) \\
+\>\>\>part := tab(find(";")) \\
+\>\>\>move(1) \\
+\>\>\>etymology := tab(find(";")) \\
+\>\>\>move(1) \\
+\>\>\>definition := tab(0) \\
+\>\>\>\} \\
+\>end \\
+\>method encode() \# encode a dictionary entry into a string \\
+\>\>return word {\textbar}{\textbar} ";" {\textbar}{\textbar} part {\textbar}{\textbar}
+";" {\textbar}{\textbar} etymology {\textbar}{\textbar} ";" {\textbar}{\textbar} definition \\
+\>end \\
 initially \\
-\>   if /part then \# constructor was called with a single string argument \\
-\>\>      decode(word) \\
+\>if /part then \# constructor was called with a single string argument \\
+\>\>decode(word) \\
 end \\
 \ \\
 class dictionary : buftable() \\
-\>   method read() \\
-\>\>      self.buffer.read() \\
-\>\>      tmp := table() \\
-\>\>      every line := !text do \\
-\>\>\>	 line ? \{ \\
-\>\>\>\>	    word := tab(many(\&letters)) {\textbar} stop("failed on ",
-	    image(line)) \\
-\>\>\>\>	    tmp[word] := dictionaryentry(line) {\textbar} fail \\
-\>\>\>\>	    \} \\
-\>\>      text := tmp \\
-\>   end \\
-\>   method Write() \\
-\>\>      f := open(filename, "w") {\textbar} fail \\
-\>\>      every write(f, (!text).encode) \\
-\>\>      close(f) \\
-\>   end \\
+\>method read() \\
+\>\>self.buffer.read() \\
+\>\>tmp := table() \\
+\>\>every line := !text do \\
+\>\>\>line ? \{ \\
+\>\>\>\>word := tab(many(\&letters)) {\textbar} stop("failed on ", image(line)) \\
+\>\>\>\>tmp[word] := dictionaryentry(line) {\textbar} fail \\
+\>\>\>\>\} \\
+\>\>text := tmp \\
+\>end \\
+\>method Write() \\
+\>\>f := open(filename, "w") {\textbar} fail \\
+\>\>every write(f, (!text).encode) \\
+\>\>close(f) \\
+\>end \\
 end \\
 \ \\
 class DeenEntry : dictionaryentry(gender) \\
 initially(de, en) \\
-\ \\
-\>   de ? \{ \\
-\>\>      if word := trim(tab(find("\{")),,0) then \{ \\
-\>\>\>	 ="\{" \\
-\>\>\>	 gender := tab(find("\}")) \\
-\>\>\>	 \} \\
-\>\>      else \{ \# here is one without gender info \\
-\>\>\>	 word := trim(tab(find("["){\textbar}0),,0) \\
-\>\>\>	 gender := "?" \\
-\>\>\>	 \} \\
-\>      \} \\
-\>   definition := en \\
+\>de ? \{ \\
+\>\>if word := trim(tab(find("\{")),,0) then \{ \\
+\>\>\>="\{" \\
+\>\>\>gender := tab(find("\}")) \\
+\>\>\>\} \\
+\>\>else \{ \# here is one without gender info \\
+\>\>\>word := trim(tab(find("["){\textbar}0),,0) \\
+\>\>\>gender := "?" \\
+\>\>\>\} \\
+\>\>\} \\
+\>definition := en \\
 end \\
 \ \\
 \# \\
 \# Return a list of dictionary entries for a given line of text \\
 \# \\
 procedure get\_entries(s) \\
-\>   subentries := [] \\
-\>   s ? \{ \\
-\>\>      deutsch := tab(find("::")) {\textbar} stop("no :: in ", image(s)) \\
-\>\>      ="::"; tab(many(' ')) \\
-\>\>      english := tab(0) \\
+\>subentries := [] \\
+\>s ? \{ \\
+\>\>deutsch := tab(find("::")) {\textbar} stop("no :: in ", image(s)) \\
+\>\>="::"; tab(many(' ')) \\
+\>\>english := tab(0) \\
 \>\>\ \\
-\>\>      deutsch ? \{ \\
-\>\>\>	 while *(deutschwort := tab(find("{\textbar}") {\textbar} 0))$>$0 do \{ \\
-\>\>\>\>	    deutschwort := trim(deutschwort,,0) \\
-\>\>\>\>	    ="{\textbar}" \\
-\>\>\>\>	    tab(many(' ')) \\
-\>\>\>\>	    englishword := trim(english[1:find("{\textbar}",english){\textbar}0],,0) \\
-\>\>\>\>	    english ?:= \{ \\
-\>\>\>\>\>	       tab(many(' {\textbackslash}t')) \\
-\>\>\>\>\>	       =englishword \\
-\>\>\>\>\>	       tab(many(' {\textbackslash}t')) \\
-\>\>\>\>\>	       ="{\textbar}" \\
-\>\>\>\>\>	       tab(many(' {\textbackslash}t')) \\
-\>\>\>\>\>	       tab(0) \\
-\>\>\>\>\>	       \} \\
-\>\>\>\>	    if i := find(";", deutschwort) then \{ \\
-\>\>\>\>\>	       deutschwort ? \{ \\
-\>\>\>\>\>\>		  while *(dword := tab(find(";") {\textbar} 0))$>$0 do \{ \\
-\>\>\>\>\>\>\>		     =";" \\
-\>\>\>\>\>\>\>		     tab(many(' ')) \\
-\>\>\>\>\>\>\>		     if gronk:=englishword[1:upto(';{\textbar}',
-		     englishword){\textbar}0] then \{ \\
-\>\>\>\>\>\>\>\>			if *gronk$>$0 then \{ \\
-\>\>\>\>\>\>\>\>\>			   eword := gronk \\
-\>\>\>\>\>\>\>\>\>			   \} \\
-\>\>\>\>\>\>\>\>			\} \\
-\>\>\>\>\>\>\>		     put(subentries, DeenEntry(dword, eword)) \\
-\>\>\>\>\>\>\>		     englishword ?:= \{ =eword; =";"; tab(many(' '));
-		     tab(0)\} \\
-\>\>\>\>\>\>\>		     \} \\
-\>\>\>\>\>\>		  \} \\
-\>\>\>\>\>	       \} \\
-\>\>\>\>	    else \{ \\
-\>\>\>\>\>	       put(subentries, DeenEntry(deutschwort, englishword)) \\
-\>\>\>\>\>	       \} \\
-\>\>\>\>	    \} \\
-\>\>\>	 \} \\
-\>\>      \} \\
-\>   return subentries \\
+\>\>deutsch ? \{ \\
+\>\>\>while *(deutschwort := tab(find("{\textbar}") {\textbar} 0))$>$0 do \{ \\
+\>\>\>\>deutschwort := trim(deutschwort,,0) \\
+\>\>\>\>="{\textbar}" \\
+\>\>\>\>tab(many(' ')) \\
+\>\>\>\>englishword := trim(english[1:find("{\textbar}",english){\textbar}0],,0) \\
+\>\>\>\>english ?:= \{ \\
+\>\>\>\>\>tab(many(' {\textbackslash}t')) \\
+\>\>\>\>\>=englishword \\
+\>\>\>\>\>tab(many(' {\textbackslash}t')) \\
+\>\>\>\>\>="{\textbar}" \\
+\>\>\>\>\>tab(many(' {\textbackslash}t')) \\
+\>\>\>\>\>tab(0) \\
+\>\>\>\>\>\} \\
+\>\>\>\>if i := find(";", deutschwort) then \{ \\
+\>\>\>\>\>deutschwort ? \{ \\
+\>\>\>\>\>\>while *(dword := tab(find(";") {\textbar} 0))$>$0 do \{ \\
+\>\>\>\>\>\>\>=";" \\
+\>\>\>\>\>\>\>tab(many(' ')) \\
+\>\>\>\>\>\>\>if gronk:=englishword[1:upto(';{\textbar}', englishword){\textbar}0] then \{ \\
+\>\>\>\>\>\>\>\>if *gronk$>$0 then \{ \\
+\>\>\>\>\>\>\>\>\>eword := gronk \\
+\>\>\>\>\>\>\>\>\>\} \\
+\>\>\>\>\>\>\>\>\} \\
+\>\>\>\>\>\>\>put(subentries, DeenEntry(dword, eword)) \\
+\>\>\>\>\>\>\>englishword ?:= \{ =eword; =";"; tab(many(' ')); tab(0)\} \\
+\>\>\>\>\>\>\>\} \\
+\>\>\>\>\>\>\} \\
+\>\>\>\>\>\} \\
+\>\>\>\>else \{ \\
+\>\>\>\>\>put(subentries, DeenEntry(deutschwort, englishword)) \\
+\>\>\>\>\>\} \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>\>\} \\
+\>return subentries \\
 end \\
 \ \\
 class DeenDictionary : dictionary() \\
-\>   method read() \\
-\>\>      self.buffer.read() \\
-\>\>      tmp := table() \\
-\>\>      every line := !text do \\
-\>\>\>	 line ? \{ \\
-\>\>\>\>	    if ="\#" {\textbar} line=="" then next \\
-\>\>\>\>	    if not (L := get\_entries(line)) then \\
-\>\>\>\>\>	       stop("get\_entries failing on ", image(line)) \\
-\>\>\>\>	    every x := !L do \{ \\
-\>\>\>\>\>	       if not member(tmp, x.word) then \\
-\>\>\>\>\>\>		  tmp[x.word] := [x] \\
-\>\>\>\>\>	       else put(tmp[x.word], x) \\
-\>\>\>\>\>	       \} \\
-\>\>\>\>	    \} \\
-\>\>      text := tmp \\
-\>   end \\
+\>method read() \\
+\>\>self.buffer.read() \\
+\>\>tmp := table() \\
+\>\>every line := !text do \\
+\>\>\>line ? \{ \\
+\>\>\>\>if ="\#" {\textbar} line == "" then next \\
+\>\>\>\>if not (L := get\_entries(line)) then \\
+\>\>\>\>\>stop("get\_entries failing on ", image(line)) \\
+\>\>\>\>every x := !L do \{ \\
+\>\>\>\>\>if not member(tmp, x.word) then \\
+\>\>\>\>\>\>tmp[x.word] := [x] \\
+\>\>\>\>\>else put(tmp[x.word], x) \\
+\>\>\>\>\>\} \\
+\>\>\>\>\} \\
+\>\>text := tmp \\
+\>end \\
 initially \\
-\>   if stat("de-en.txt") then filename := "de-en.txt" \\
-\>   else if stat("de-en.txt.gz") then filename := "de-en.txt.gz" \\
-\>   else filename := DEEN \\
-\>   self.read() \\
+\>if stat("de-en.txt") then filename := "de-en.txt" \\
+\>else if stat("de-en.txt.gz") then filename := "de-en.txt.gz" \\
+\>else filename := DEEN \\
+\>self.read() \\
 end
 }
 
@@ -585,7 +573,7 @@ equivalent.
 
 In Unicon, expressing this equivalence is simple and direct. In defining
 classes \texttt{Cartesian} and \texttt{Radial} we may declare them to
-be superclasses of each other: 
+be superclasses of each other:
 
 \iconcode{
 class Cartesian : Radial (x, y) \\
@@ -593,15 +581,14 @@ class Cartesian : Radial (x, y) \\
 end \\
 \ \\
 class Radial : Cartesian (d, r) \\
-\# code that manipulates objects using \index{radial coordinates}radial
-coordinates \\
+\# code that manipulates objects using \index{radial coordinates}radial coordinates \\
 end
 }
 
 These superclass declarations make the two types equivalent names for
 the same type of object; after inheritance,
 \index{instance!class}\index{instance}instances of both classes will
-have fields x, y, d, and r, and support the same set of operations. 
+have fields x, y, d, and r, and support the same set of operations.
 
 Equivalent types each have a unique \index{constructor!class}constructor
 given by their class name. Often the differing order of the parameters
@@ -655,7 +642,7 @@ shows an aggregate found in the domain of sports, where a team is
 comprised of a group of players.
 
 \begin{center}
-\includegraphics[width=2.52in,height=0.54in]{ub-img/aggregat.png} 
+\includegraphics[width=2.52in,height=0.54in]{ub-img/aggregat.png}
 
 {\sffamily\bfseries Figure 11-3:}
 {\sffamily A Team is an Aggregation of Players}
@@ -680,7 +667,7 @@ must be specified in external documentation that describes Marriage for
 the purposes of the application at hand.
 
 \begin{center}
-\includegraphics[width=4.8in,height=1.0in]{ub-img/marriage.png} 
+\includegraphics[width=4.8in,height=1.0in]{ub-img/marriage.png}
 
 {\sffamily\bfseries Figure 11-4:}
 {\sffamily A User-Defined Association}
@@ -780,16 +767,16 @@ for the reader.
 
 \iconcode{
 class Man(wife) \\
-\>   method Marry(w) \\
-\>   \ \ \ wife := w \\
-\>   \ \ \ if not (self === w.husband) then w.Marry(self) \\
-\>   end \\
+\>method Marry(w) \\
+\>\>wife := w \\
+\>\>if not (self === w.husband) then w.Marry(self) \\
+\>end \\
 end \\
 class Woman(husband) \\
-\>   method Marry(m) \\
-\>   \ \ \ husband := m \\
-\>   \ \ \ if not (self === m.wife) then m.Marry(self) \\
-\>   end \\
+\>method Marry(m) \\
+\>\>husband := m \\
+\>\>if not (self === m.wife) then m.Marry(self) \\
+\>end \\
 end
 }
 
@@ -807,12 +794,12 @@ at the designated position is returned.
 
 \iconcode{
 class BasketballTeam : Team () \\
-\>   method Player(position, player) \\
-\>   \ \ \ players[position] := {\textbackslash}player \\
-\>   \ \ \ return players[position] \\
-\>   end \\
+\>method Player(position, player) \\
+\>\>players[position] := {\textbackslash}player \\
+\>\>return players[position] \\
+\>end \\
 initially \\
-\>   players := table() \\
+\>players := table() \\
 end
 }
 
@@ -825,13 +812,13 @@ either a set or the table in the last example.
 
 \iconcode{
 class BasketballTeam : Team (players) \\
-\>   method Player(player) \\
-\>   \ \ \ if player === !players then fail \# already on the team \\
-\>   \ \ \ if /!players := player then return \# added at null slot \\
-\>   \ \ \ ?players := player \# kick someone else off team to add \\
-\>   end \\
+\>method Player(player) \\
+\>\>if player === !players then fail \# already on the team \\
+\>\>if /!players := player then return \# added at null slot \\
+\>\>?players := player \# kick someone else off team to add \\
+\>end \\
 initially \\
-\>   players := list(5) \\
+\>players := list(5) \\
 end
 }
 
@@ -852,6 +839,6 @@ associations to map very naturally onto code.  In order
 to understand the subtleties of how these features are implemented, you
 may wish to study the output of \texttt{unicon -E} for various examples;
 the \texttt{-E} option writes out the Icon translation of the
-object-oriented code. 
+object-oriented code.
 \clearpage
 \bigskip

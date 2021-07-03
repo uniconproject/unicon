@@ -109,10 +109,10 @@ Class \texttt{Button} is a subclass of \texttt{Component} and
 provides an implementation of method \texttt{tick()}:
 
 \iconcode{
-   method tick() \\
- \>      if dispatcher.curr\_time\_of\_day() {\textgreater} self.repeat\_delay then \\
-\>\>         fire(BUTTON\_HELD\_EVENT) \\
-   end
+method tick() \\
+\>if dispatcher.curr\_time\_of\_day() {\textgreater} self.repeat\_delay then \\
+\>\>fire(BUTTON\_HELD\_EVENT) \\
+end
 }
 
 \section{Design Patterns}
@@ -162,7 +162,7 @@ class \textsf{Employee}, but only one instance of class
 \textsf{EmployeeTable}. What is a good name for this instance of
 \textsf{EmployeeTable}, and how can you prevent a second or subsequent
 instance from being created? The purpose of the singleton pattern is to
-answer these questions. 
+answer these questions.
 
 In Unicon, one interesting implementation of a singleton is to replace
 the \index{constructor!class}constructor procedure (a global variable)
@@ -176,7 +176,7 @@ be created.
 \iconcode{
 class EmployeeTable(...) \\
 initially \\
-\>   EmployeeTable := self \\
+\>EmployeeTable := self \\
 end
 }
 
@@ -220,20 +220,20 @@ local, remote, or mobile; it just interacts with the proxy instance.
 
 \iconcode{
 class gigantic(x1,x2,...,x1000) \\
-\>   method invoke() \\
-\>   \ \ \ ... \\
-\>   end \\
+\>method invoke() \\
+\>\>... \\
+\>end \\
 initially \\
-\>   \# Gigantic object's state is loaded from network \\
+\>\# Gigantic object's state is loaded from network \\
 end \\
 class proxy(g) \\
-\>   method invoke() \\
-\>   \ \ \ /g := gigantic() \\
-\>   \ \ \ return g.invoke() \\
-\>   end \\
-\>   method depart() \\
-\>   \ \ \ g := \&null \\
-\>   end \\
+\>method invoke() \\
+\>\>/g := gigantic() \\
+\>\>return g.invoke() \\
+\>end \\
+\>method depart() \\
+\>\>g := \&null \\
+\>end \\
 end
 }
 
@@ -261,29 +261,29 @@ intensive resolution enhancement algorithm.
 
 \iconcode{
 class Image(...) \\
-\>   method enhance\_resolution(area) \\
-\>   \ \ \ \# enormous computation... \\
+\>method enhance\_resolution(area) \\
+\>\>\# enormous computation... \\
 \ \\
-\>   end \\
+\>end \\
 initially \\
-\>   \# ... lots of computation to initialize lots of fields \\
+\>\# ... lots of computation to initialize lots of fields \\
 end \\
 \ \\
 class hirez\_cache(s, t) \\
-\>   method enhance\_resolution(area) \\
-\>   \ \ \ if member(t,area) then \{ \# proxy handles \\
-\>   \ \ \ \ \ \ return t[area] \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \# else create the gigantic instance \\
-\>   \ \ \ /im := image() \\
-\>   \ \ \ return t[area] := im.enhance\_resolution(area) \\
-\>   end \\
+\>method enhance\_resolution(area) \\
+\>\>if member(t,area) then \{ \# proxy handles \\
+\>\>\>return t[area] \\
+\>\>\>\} \\
+\>\>\# else create the gigantic instance \\
+\>\>/im := image() \\
+\>\>return t[area] := im.enhance\_resolution(area) \\
+\>end \\
 initially \\
-\>   t := table() \\
-\>   \# Insert some known values for otherwise enormous computation. \\
-\>   \# Don't need im if user only needs these values. \\
-\>   t[1] := 1 \\
-\>   t[2] := 1 \\
+\>t := table() \\
+\>\# Insert some known values for otherwise enormous computation. \\
+\>\# Don't need im if user only needs these values. \\
+\>t[1] := 1 \\
+\>t[2] := 1 \\
 end
 }
 
@@ -324,30 +324,33 @@ from visitation (implemented by methods \textsf{DoLeaf()} and
 visitor there may be many, and in that case, class Visitor may be an
 abstract class, instantiated by many concrete Visitor
 \index{subclass}subclasses that have the same method names but do not
-share code. Note also that this code example allows for heterogeneous
+share code.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+Also this code example allows for heterogeneous
 structures: the Visitor just defines a
 "Do..." method for each type of node in the
-structure.
+structure.}\medskip
 
 \iconcode{
 class Visitor() \\
-\>   method DoLeaf(theLeaf) \\
-\>   \ \ \ \# ... visit/use theLeaf.datum \\
-\>   end \\
-\>   method DoInternalNode(theNode) \\
-\>   \ \ \ \# ... visit/use theNode.datum \\
-\>   end \\
+\>method DoLeaf(theLeaf) \\
+\>\>\# ... visit/use theLeaf.datum \\
+\>end \\
+\>method DoInternalNode(theNode) \\
+\>\>\# ... visit/use theNode.datum \\
+\>end \\
 end \\
 class Leaf(datum) \\
-\>   method Accept(v) \\
-\>   \ \ \ v.DoLeaf(self) \\
-\>   end \\
+\>method Accept(v) \\
+\>\>v.DoLeaf(self) \\
+\>end \\
 end \\
 class InternalNode : Leaf(children) \\
-\>   method Accept(v) \\
-\>   \ \ \ every (!children).Accept(v) \\
-\>   \ \ \ v.DoInternalNode(self) \\
-\>   end \\
+\>method Accept(v) \\
+\>\>every (!children).Accept(v) \\
+\>\>v.DoInternalNode(self) \\
+\>end \\
 end
 }
 
@@ -360,22 +363,22 @@ nodes in the \index{tree}tree:
 
 \iconcode{
 class Printer() \\
-\>   method DoLeaf(theLeaf) \\
-\>   \ \ \ writes(theLeaf.datum, " ") \\
-\>   end \\
-\>   method DoInternalNode(theNode) \\
-\>   \ \ \ writes(theNode.datum, " ") \\
-\>   end \\
+\>method DoLeaf(theLeaf) \\
+\>\>writes(theLeaf.datum, " ") \\
+\>end \\
+\>method DoInternalNode(theNode) \\
+\>\>writes(theNode.datum, " ") \\
+\>end \\
 end \\
 class Heights() \\
-\>   method DoLeaf(theLeaf) \\
-\>   \ \ \ theLeaf.datum := 1 \\
-\>   end \\
-\>   method DoInternalNode(theNode) \\
-\>   \ \ \ theNode.datum := 0 \\
-\>   \ \ \ every theNode.datum {\textless}:= (!children).datum \\
-\>   \ \ \ theNode.datum +:= 1 \\
-\>   end \\
+\>method DoLeaf(theLeaf) \\
+\>\>theLeaf.datum := 1 \\
+\>end \\
+\>method DoInternalNode(theNode) \\
+\>\>theNode.datum := 0 \\
+\>\>every theNode.datum {\textless}:= (!children).datum \\
+\>\>theNode.datum +:= 1 \\
+\>end \\
 end
 }
 
@@ -405,12 +408,14 @@ belongs to a package.  The package declaration looks similar to the
 identifier, or a string filename:
 
 \iconcode{
-package foo}
+package foo
+}
 
 or
 
 \iconcode{
-package "/usr/local/lib/icon/foo"}
+package "/usr/local/lib/icon/foo"
+}
 
 There can be only one package declaration in a source file. It need not be at
 the beginning of the source file, but this is conventional.  Within a package,
@@ -423,14 +428,14 @@ that declares some globals and adds them to a package.
 \iconcode{
 \# pack1.icn \\
 package first \\
+\\
 procedure my\_proc() \\
-\>   write({\textquotedblleft}In my\_proc{\textquotedblright}) \\
+\>write({\textquotedblleft}In my\_proc{\textquotedblright}) \\
 end \\
 class SomeClass() \\
-\>   method f() \\
-\>   \ \ \ write({\textquotedblleft}In
-SomeClass.f{\textquotedblright}) \\
-\>   end \\
+\>method f() \\
+\>\>write({\textquotedblleft}In SomeClass.f{\textquotedblright}) \\
+\>end \\
 end
 }
 
@@ -447,7 +452,8 @@ To access symbols within another package, use the \texttt{import} declaration,
 which has the following syntax:
 
 \iconcode{
-import foo}
+import foo
+}
 
 This causes the compiler to look up the package in its database and
 identify its symbols.  Import declarations use the IPATH
@@ -466,10 +472,11 @@ procedure named write, then
 
 \iconcode{
 import first, second \\
+\\
 procedure main() \\
-\>   first::write()\ \ \ \ \# calls write() in package first \\
-\>   second::write()\ \ \ \ \# calls write() in package second \\
-\>   ::write()\ \ \ \ \ \ \# calls the global write() \\
+\>first::write()\>\>\>\>\>\>\# calls write() in package first \\
+\>second::write()\>\>\>\>\>\>\# calls write() in package second \\
+\>::write()\>\>\>\>\>\>\# calls the global write() \\
 end
 }
 
@@ -479,9 +486,9 @@ name, as in
 
 \iconcode{
 class Abc(x) \\
-\>   method write() \\
-\>   \ \ \ ::write({\textquotedblleft}Abc x={\textquotedblright}, x) \\
-\>   end \\
+\>method write() \\
+\>\>::write({\textquotedblleft}Abc x={\textquotedblright}, x) \\
+\>end \\
 end
 }
 
@@ -529,21 +536,26 @@ Consider the following code in three source files:
 \iconcode{
 \# order1.icn \\
 package demo \\
+\\
 procedure first() \\
-\>   write({\textquotedblleft}first{\textquotedblright}) \\
+\>write({\textquotedblleft}first{\textquotedblright}) \\
 end \\
 \ \\
+\\
 \# order2.icn \\
 package demo \\
+\\
 procedure second() \\
-\>   write({\textquotedblleft}second{\textquotedblright}) \\
-\>   first() \\
+\>write({\textquotedblleft}second{\textquotedblright}) \\
+\>first() \\
 end \\
 \ \\
+\\
 \# order3.icn \\
 import demo \\
+\\
 procedure main() \\
-\>   second() \\
+\>second() \\
 end
 }
 
@@ -568,9 +580,9 @@ and the following makefile:
 
 \iconcode{
 order: order1.u order2.u order3.u \\
-\ \ unicon -o order order1.u order2.u order3.u \\
+\>unicon -o order order1.u order2.u order3.u \\
 \%.u: \%.icn \\
-\ \ unicon -c \$*
+\>unicon -c \$*
 }
 
 Running the command {\textquotedblleft}unidep order1.icn order2.icn

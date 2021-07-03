@@ -36,7 +36,7 @@ them.
 	monitor access to target program data.
 	{\em Dynamic linking\/} is {\em not\/} desirable in the
 	context of execution monitoring; the names in the
-	monitor are distinct from those in the target program. 
+	monitor are distinct from those in the target program.
 	\index{dynamic loading}
 \item [{\bf Synchronous execution}] --- The monitor and target program execute
 	independently, but not concurrently.  This allows the monitor
@@ -56,7 +56,7 @@ them.
 	It also supercedes Icon and Unicon's procedure
 	tracing mechanism.
 	\index{automatic instrumentation}
-\item [{\bf Events}] --- 
+\item [{\bf Events}] ---
 	The primary language concept added in order to support execution
 	\index{event}
 	monitoring is an {\em event\/}.  An event is the smallest unit of
@@ -83,7 +83,7 @@ them.
 	multi-monitor environment, in which EMs are not coupled with the
 	instrumentation and multiple EMs can observe a TP's execution.
 
-\item [{\bf Event codes and values}] --- 
+\item [{\bf Event codes and values}] ---
 	From the monitor's perspective, an event has two components: an
 	\index{event!code}\index{event!value}
 	{\em event code\/} and an {\em event value\/}.  The code is
@@ -105,7 +105,7 @@ them.
 	semantics; the EM accesses them just like any other source language
 	value.\index{access!structure}
 
-\item [{\bf Event reports}] --- 
+\item [{\bf Event reports}] ---
 	The number of events that occurs during a program execution is
 	extremely large---large enough to create serious performance problems
 	in an interactive system.  Most EMs function effectively on a
@@ -117,7 +117,7 @@ them.
 	\index{event!report}
 
 
-\item [{\bf Event masks}] --- 
+\item [{\bf Event masks}] ---
 	A monitor controls the target program by means of this
 	dynamic form of filtering events.
 	\index{event!mask}\index{filtering}\index{event mask}
@@ -417,7 +417,7 @@ also check its own window for user activity.\index{event stream!dual}
 The runtime system instrumentation includes code that optionally
 checks for EM input and reports it as an event by the execution
 monitoring facility, instead of requiring that the EM explicitly check
-the user input stream.  This simplifies EM control 
+the user input stream.  This simplifies EM control
 flow and improves EM performance.
 
 \section{Obtaining Events Using {\tt evinit}}
@@ -463,14 +463,15 @@ book, follow the general outline:\index{outline!of an EM}
 
 %%%% \pagebreak
 \iconcode{
-     \$include \"evdefs.icn\" \\
-     link evinit \\
-     procedure main(arguments) \\
-\>	EvInit(arguments) $\mid$ stop(\"can't initialize monitor\") \\
-\>	\# ... initialization code, open the EM window \\
-\>	\# ... event processing loop (described below) \\
-\>	EvTerm() \\
-     end
+\$include \"evdefs.icn\" \\
+link evinit \\
+\\
+procedure main(arguments) \\
+\>EvInit(arguments) $\mid$ stop(\"can't initialize monitor\") \\
+\>\# ... initialization code, open the EM window \\
+\>\# ... event processing loop (described below) \\
+\>EvTerm() \\
+end
 }
 \noindent This template is generally omitted from program examples for
 the sake of brevity.
@@ -479,7 +480,7 @@ the sake of brevity.
 
 Events are requested by an EM using the function {\tt EvGet(mask)}.
 \index{EvGet@{\tt EvGet()}}
-{\tt EvGet(mask)} activates the co-expression value of the keyword 
+{\tt EvGet(mask)} activates the co-expression value of the keyword
 {\tt \&eventsource} to obtain an event whose code is a member of the
 cset {\tt mask}.
 {\tt mask} defaults to {\tt \&cset}, the universal set indicating all events
@@ -506,11 +507,15 @@ filters based on the {\tt \&eventcode}.  You may specify a different value
 mask for each event code.  Value masks for all event codes are supplied in a
 single Icon table value whose keys map event codes to corresponding value
 masks.  This table is passed as an optional second parameter to {\tt EvGet()}
-or third parameter to {\tt eventmask()}.  Note that no value mask filtering
-is performed for event codes that are not key in the value mask.  Note also
-that value masks persist across calls to {\tt EvGet()}. They are replaced
+or third parameter to {\tt eventmask()}.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily No value mask filtering
+is performed for event codes that are not key in the value mask.}\medskip
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily Also
+value masks persist across calls to {\tt EvGet()}. They are replaced
 when a new value mask is supplied, or disabled if a non-table is
-passed as the value mask parameter.
+passed as the value mask parameter.}\medskip
 
 There is one special case of value masks that receives extra support in
 Icon: virtual machine instructions.
@@ -539,9 +544,9 @@ instructions are defined in the include file {\tt opdefs.icn}.
 
 % \pagebreak
 \iconcode{
-   t := table() \\
-   t[E\_Opcode] := c \\
-   eventmask(C, , t)
+t := table() \\
+t[E\_Opcode] := c \\
+eventmask(C, , t)
 }
 \vspace{-1.5pc}
 
@@ -655,7 +660,7 @@ instrumentation.\index{E\_MXevent@{\tt E\_MXevent}}
 As described above, the Unicon co-expression model allows
 interprogram communication via explicit co-expression activation or
 implicit event reporting within the runtime system.
-{\em Artificial events\/} are events produced by explicit 
+{\em Artificial events\/} are events produced by explicit
 Icon code; they can be viewed at the language level as co-expression
 activations that follow the same protocol as implicit events,
 assigning to the keyword variables {\tt \&eventcode} and
@@ -687,7 +692,7 @@ in between the EM and TP, and uses its own logic to
 determine which events are reported to EM with more precision
 than is provided by the masking mechanism.  A transducer might just as
 easily report extra events with additional information
-it computes, in addition to those received from TP. 
+it computes, in addition to those received from TP.
 A more substantial application of virtual events is a monitor
 coordinator, an EM that coordinates and produces events for
 other monitors.  Such a tool is presented in [Jeffery99]
@@ -731,10 +736,10 @@ central loop of an EM typically looks like:
 % \pagebreak %%%%
 
 \iconcode{
-     while EvGet(eventmask) do \\
-\>	case \&eventcode of \{ \\
-\>\>	   \# a case clause for each code in the event mask \\
-\>\>	   \}
+while EvGet(eventmask) do \\
+\>case \&eventcode of \{ \\
+\>\>\# a case clause for each code in the event mask \\
+\>\>\}
 }
 
 Event-driven programming is more commonly found in programs that
@@ -753,12 +758,12 @@ An EM that handles user input could do so by polling the window system
 after each event in the main loop: \index{user!input}
 
 \iconcode{
-     while EvGet(eventmask) do \{ \\
-\>	case \&eventcode of \{ \\
-\>\>	   \# a case clause for each code in the event mask \\
-\>\>	   \} \\
-\>	\# poll the window system for user input \\
-\>	\}
+while EvGet(eventmask) do \{ \\
+\>case \&eventcode of \{ \\
+\>\>\# a case clause for each code in the event mask \\
+\>\>\} \\
+\>\# poll the window system for user input \\
+\>\}
 }
 
 \noindent If the events being requested from the TP are relatively
@@ -784,18 +789,18 @@ via the standard event stream produced by {\tt EvGet()}.
 Since the {\tt E\_MXevent} event occurs far less
 frequently than other events, it makes sense to place it last in the
 case expression that is used to select actions based on the event
-code.  Using this feature, the main loop becomes: 
+code.  Using this feature, the main loop becomes:
 
 \iconcode{
-     while EvGet() do \\
-\>	case \&eventcode of \{ \\
-\>\>	   \# other cases update image to reflect the event \\
-\>\>	   E\_MXevent: \{ \\
-\>\>\>	      \# process user event \\
-\>\>\>	      \} \\
-\>\>	   \}
+while EvGet() do \\
+\>case \&eventcode of \{ \\
+\>\>\# other cases update image to reflect the event \\
+\>\>E\_MXevent: \{ \\
+\>\>\>\# process user event \\
+\>\>\>\} \\
+\>\>\}
 }
- 
+
 {\tt EvGet()} reports pending user activity immediately when it is
 available; the control over execution it provides is comparable to
 polling for user input on each event.
@@ -823,7 +828,7 @@ As mentioned, several library procedures are useful in EMs.  The following
 library procedures that are included in the {\tt evinit\/} library.
 \index{evinit@{\tt evinit}}
 
-Location decoding and encoding procedures are useful in processing 
+Location decoding and encoding procedures are useful in processing
 location change event values, but they are also useful in other monitors
 in which two-dimensional screen coordinates must be manipulated.
 Besides program text line and columns, the technique can variously be
@@ -837,7 +842,7 @@ library procedures that are recommended for use in monitors.
 \medskip
 
 \begin{tabular}{|ll|} \hline
-procedure  & returns or computes \\
+{\bf procedure}  & {\bf returns or computes} \\\hline
 {\tt evnames(s)} & converts event codes to text descriptions and vice versa\\
 {\tt evsyms()} & two-way table mapping event codes to their names \\
 {\tt typebind(w,c)} & table mapping codes to color coded Clones for {\tt w}\\

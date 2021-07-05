@@ -54,10 +54,8 @@ to execute, and the remaining arguments are the values of argv that
 the program will get, starting with \texttt{argv[0]}.
 
 \iconcode{
-exec("/bin/echo",
-"echo",
-"Hello,",
-"world!")}
+exec("/bin/echo", "echo", "Hello,", "world!")
+}
 
 \subsection*{POSIX functions}
 
@@ -106,25 +104,25 @@ can execute them, such as /bin/sh.
 \texttt{fcntl(file, cmd, arg)} performs miscellaneous operations on the open
 file. See the fcntl(2) manual page for more details. Directories and
 DBM files cannot be arguments to \texttt{fcntl()}. The following characters are
-the possible values for cmd: 
+the possible values for cmd:
 
-\ \ \ \ \ f \ \ \ \ \ \ \ \ Get flags (F\_SETFL)
-
-\ \ \ \ \ F \ \ \ \ \ \ \ Set flags (F\_GETFL)
-
-\ \ \ \ \ x \ \ \ \ \ \ \ Get close-on-exec flags (F\_GETFD)
-
-\ \ \ \ \ X \ \ \ \ \ \ \ Set close-on-exec flag (F\_SETFD)
-
-\ \ \ \ \ l \ \ \ \ \ \ \ \ Get file lock (F\_GETLK)
-
-\ \ \ \ \ L \ \ \ \ \ \ \ Set file lock (F\_SETLK)
-
-\ \ \ \ \ W \ \ \ \ \ \ Set file lock and wait (F\_SETLKW)
-
-\ \ \ \ \ o \ \ \ \ \ \ \ \ Get file owner or process group (F\_GETOWN)
-
-\ \ \ \ \ O \ \ \ \ \ \ \ Set file owner or process group (F\_SETOWN)
+\begin{flushleft}
+\tablehead{
+    \bfseries cmd &
+    \bfseries Description \\\hline\\
+}
+\begin{xtabular}{m{3.00cm}m{9.00cm}}
+\ \texttt{f} & Get flags (F\_SETFL)\\
+\ \texttt{F} & Set flags (F\_GETFL)\\
+\ \texttt{x} & Get close-on-exec flags (F\_GETFD)\\
+\ \texttt{X} & Set close-on-exec flag (F\_SETFD)\\
+\ \texttt{l} & Get file lock (F\_GETLK)\\
+\ \texttt{L} & Set file lock (F\_SETLK)\\
+\ \texttt{W} & Set file lock and wait (F\_SETLKW)\\
+\ \texttt{o} & Get file owner or process group (F\_GETOWN)\\
+\ \texttt{O} & Set file owner or process group (F\_SETOWN)\\
+\end{xtabular}
+\end{flushleft}
 
 In the case of L, the arg value should be a string that describes the
 lock, otherwise arg is an integer. A \texttt{record posix\_lock(value,
@@ -135,13 +133,19 @@ lock (r, w or u), the starting position, and the length. The starting
 position can be an offset from the beginning of the file (e.g. 23), end
 of the file (e.g. -50), or from the current position in the file (e.g.
 +200). A length of 0 means lock till EOF. These characters represent
-the file flags set by F\_SETFL and accessed by F\_GETFL: 
+the file flags set by F\_SETFL and accessed by F\_GETFL:
 
-\ \ \ \ \ d \ \ \ \ \ \ \ FNDELAY 
-
-\ \ \ \ \ s \ \ \ \ \ \ \ FASYNC 
-
-\ \ \ \ \ a \ \ \ \ \ \ \ FAPPEND 
+\begin{flushleft}
+\tablehead{
+    \bfseries File Flags &
+    \bfseries Description \\\hline\\
+}
+\begin{xtabular}{m{3.00cm}m{4.00cm}}
+\ \ \ \ \ \texttt{d} & FNDELAY\\
+\ \ \ \ \ \texttt{s} & FASYNC\\
+\ \ \ \ \ \texttt{a} & FAPPEND\\
+\end{xtabular}
+\end{flushleft}
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf fdup(file, file) : ? \hfill duplicate file descriptor}
@@ -151,7 +155,7 @@ the file flags set by F\_SETFL and accessed by F\_GETFL:
 call. It is used to
 modify a specific UNIX file descriptor, such as just before calling
 \texttt{exec()}. The dest file is closed; src is made to have its Unix file
-descriptor; and the second file is replaced by the first. 
+descriptor; and the second file is replaced by the first.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf filepair() : list \hfill create connected files}
@@ -164,7 +168,7 @@ connection is bi-directional, unlike that of function \texttt{pipe()}.
 Caution: typically, the pair is
 created just before a \texttt{fork()}; after it, one process should close L[1]
 and the other should close L[2] or you will not get proper end-of-file
-notification. 
+notification.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf fork() : integer \hfill fork process}
@@ -226,7 +230,7 @@ type is \texttt{record posix\_hostent(name, aliases, addresses)}
 \noindent {\bf getpgrp() : integer \hfill get process group}
 
 \noindent
-\texttt{getpgrp()} returns the process group of the current process. 
+\texttt{getpgrp()} returns the process group of the current process.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf getpid() : integer \hfill get process identification}
@@ -272,7 +276,7 @@ return type is \texttt{record posix\_servent(name, aliases, port, proto)}
 \noindent {\bf getuid() : string \hfill get user identity}
 
 \noindent
-\texttt{getuid()} produces the real user identity (uid) of the current process. 
+\texttt{getuid()} produces the real user identity (uid) of the current process.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf kill(integer, x) : ? \hfill kill process}
@@ -301,14 +305,14 @@ at path \texttt{s}.
 
 \noindent
 \texttt{setgid(g)} sets the group id of the current process to g. See the UNIX
-\texttt{setgid(2)} man page. 
+\texttt{setgid(2)} man page.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf setgrent() : null \hfill reset group information cursor}
 
 \noindent
 \texttt{setgrent()} resets and rewinds the pointer to the group file used by
-\texttt{getgr()} when \texttt{getgr()} is called with no arguments. 
+\texttt{getgr()} when \texttt{getgr()} is called with no arguments.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -318,14 +322,14 @@ at path \texttt{s}.
 \texttt{sethostent(stayopen)} resets and rewinds the pointer to the host file
 used by \texttt{gethost()}. The argument defines whether the file should be kept
 open between calls to \texttt{gethost()}; a nonzero value (the default) keeps it
-open. 
+open.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf setpgrp() : ? \hfill set process group}
 
 \noindent
 \texttt{setpgrp()} sets the process group. This is equivalent to
-\texttt{setpgrp(0, 0)} on BSD systems. 
+\texttt{setpgrp(0, 0)} on BSD systems.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf setpwent() : null \hfill reset password information cursor}
@@ -342,14 +346,14 @@ open.
 \texttt{setservent(stayopen)} resets and rewinds the pointer to the
 services file used by \texttt{getserv()}. The argument defines whether
 the file should be kept open between calls to \texttt{getserv()}; a
-nonzero value (the default) keeps it open. 
+nonzero value (the default) keeps it open.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf setuid(integer) : ? \hfill set user identity}
 
 \noindent
 \texttt{setuid(u)} sets the user id of the current process to
-\texttt{u}. See the \texttt{setuid(2)} man page. 
+\texttt{u}. See the \texttt{setuid(2)} man page.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf symlink(string, string) : ? \hfill symbolic file link}
@@ -388,6 +392,7 @@ string represents the pid and the exit status as defined in this table:
 
 \vspace{0.05in}
 \begin{center}
+\tablehead{}
 \begin{xtabular}{m{2.4in} m{2.6in}}
  UNIX equivalent & example of returned string \\
  WIFSTOPPED(status) & "1234 stopped:SIGTSTP" \\

@@ -52,7 +52,7 @@ type:
 
 \iconcode{
 procedure main() \\
-\>   write("Hello, amigo!") \\
+\>write("Hello, amigo!") \\
 end
 }
 
@@ -107,14 +107,14 @@ If you type the \texttt{hello.icn} file correctly, the computer should
 chug and grind its teeth for awhile, and
 
 \iconcode{
-\>   Hello, amigo!
+\>Hello, amigo!
 }
 
 \noindent should appear in a window on your screen. This ought to be pretty
 intuitive, since the instructions included the line
 
 \iconcode{
-\>   write("Hello, amigo!")
+\>write("Hello, amigo!")
 }
 
 \noindent in it. That's how to write to the screen.
@@ -128,17 +128,17 @@ after the line \texttt{write("Hello,
 amigo")} in the previous program:
 
 \iconcode{
-\>   write("How are you?") \\
-\>   write(7 + 12)
+\>write("How are you?") \\
+\>write(7 + 12)
 }
 
 \noindent The end result after making your changes should look like this:
 
 \iconcode{
 procedure main() \\
-\>   write("Hello, amigo!") \\
-\>   write("How are you?") \\
-\>   write(7 + 12) \\
+\>write("Hello, amigo!") \\
+\>write("How are you?") \\
+\>write(7 + 12) \\
 end
 }
 
@@ -146,16 +146,13 @@ Run the program again. This example shows you what a list of
 instructions looks like, as well as how easy it is to tell the computer
 to do some arithmetic.
 
-{\sffamily\bfseries
-Note}
-
-{\sffamily
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
 It would be fine (but not very useful) to tell the computer to add 7 and
 12 without telling it to write the resulting value. On seeing the
-instruction}
+instruction}\medskip
 
 \iconcode{
-\>   7 + 12
+\>7 + 12
 }
 
 \noindent
@@ -164,7 +161,7 @@ the computer would do the addition, throw the 19 away, and go on.
 Add the following line, and run it:
 
 \iconcode{
-\>   write("7 + 12")
+\>write("7 + 12")
 }
 
 This illustrates what quotes are for. Quoted text is taken
@@ -173,13 +170,13 @@ some arithmetic, or compute the value of what is written), which might
 be difficult if the material in question is not an expression!
 
 \iconcode{
-\>   write(hey you)
+\>write(hey you)
 }
 
 \noindent makes no sense and is an error. Add this line, and run it:
 
 \iconcode{
-\>   write(7 + "12")
+\>write(7 + "12")
 }
 
 The 12 in quotes is taken literally as some text, but that text happens
@@ -201,9 +198,8 @@ as illustrated by the following program:
 
 \iconcode{
 procedure main() \\
-\>   write("Type a line ending with
-		{\textless}ENTER{\textgreater}:") \\
-\>   write("The line you typed was" , read()) \\
+\>write("Type a line ending with {\textless}ENTER{\textgreater}:") \\
+\>write("The line you typed was", read()) \\
 end
 }
 
@@ -227,8 +223,7 @@ Now let's try some variations. Can you guess what the
 following line will print?
 
 \iconcode{
-\>   write("this line says " ,
-"read()")
+\>write("this line says ", "read()")
 }
 
 The \texttt{read()} procedure is never executed because it is quoted!
@@ -236,7 +231,7 @@ Quotes say "take these letters literally, not
 as an equation or instruction to evaluate." How about:
 
 \iconcode{
-\>   write("this line says , read()")
+\>write("this line says, read()")
 }
 
 \noindent Here the quotes enclose one big value, which is printed, comma
@@ -246,8 +241,7 @@ separated by commas, you are giving it a
 \index{parameter list}\textit{parameter list}. For example,
 
 \iconcode{
-\>   write("this value ",
-"and this one")
+\>write("this value ", "and this one")
 }
 
 \noindent Compile and run the following strange-looking program.
@@ -255,7 +249,7 @@ What do you think it does?
 
 \iconcode{
 procedure main() \\
-\>   while write( "" \~{}== read() ) \\
+\>while write( "" \~{}== read() ) \\
 end
 }
 
@@ -308,20 +302,20 @@ compiler executable is named unicon, and to compile the program foo.icn
 you would type
 
 \iconcode{
-\>   unicon foo
+\>unicon foo
 }
 
 \noindent To execute the resulting program, just type
 
 \iconcode{
-\>   foo
+\>foo
 }
 
 To compile and link a program consisting of several modules, you can
 type them all on the command line, as in
 
 \iconcode{
-\>   unicon foo bar baz
+\>unicon foo bar baz
 }
 
 \noindent but often you will want to compile them separately
@@ -329,10 +323,10 @@ type them all on the command line, as in
 files, called ucode files; their extension is \texttt{.u}
 
 \iconcode{
-\>   unicon -c foo\newline \\
-\>   unicon -c bar\newline \\
-\>   unicon -c baz\newline \\
-\>   unicon foo.u bar.u baz.u
+\>unicon -c foo \\
+\>unicon -c bar \\
+\>unicon -c baz \\
+\>unicon foo.u bar.u baz.u
 }
 
 Some of the other useful command line options include:
@@ -383,7 +377,7 @@ code. Values of other types such as lists are constructed during
 execution. Later chapters describe structure types that organize
 collections of values, and system types for interacting with the
 operating system via files, databases, windows, and network
-connections. 
+connections.
 
 After literals, \index{reference}references to
 \index{variable}\textit{variable}\textit{s} are the next simplest form
@@ -433,13 +427,10 @@ typically 64-bit double precision values. In addition to
 \^{}}exponentiation (\texttt{\^{}}). Arithmetic operators require
 numeric operands.
 
-{\sffamily\bfseries
-Note}
-
-{\sffamily
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
 Operations on integers produce integers; fractions are truncated, so 8/3
 produces 2. If either operand is a real, the other is converted to real
-and the result is real, so 8.0/3 is 2.66666...}
+and the result is real, so 8.0/3 is 2.66666...}\medskip
 
 As a general rule in Unicon, arguments to numeric operators and
 functions are automatically \index{type conversion!type
@@ -483,18 +474,19 @@ appear. The compiler ignores them.
 \iconcode{
 \# What do I compute? \\
 procedure main() \\
-\>   local i, j, old\_r, r \\
-\>   i := read() \\
-\>   j := read() \\
-\>   old\_r := r := min(i, j) \\
-\>   while r {\textgreater} 0 do \{ \\
-\>\>    old\_r := r \\
-\>\>    if i {\textgreater} j then \\
-\>\>\>     i := r := i \% j \\
-\>\>    else \\
-\>\>\>     j := r := j \% i \\
-\>\>    \} \\
-\>   write(old\_r) \\
+\>local i, j, old\_r, r \\
+\\
+\>i := read() \\
+\>j := read() \\
+\>old\_r := r := min(i, j) \\
+\>while r {\textgreater} 0 do \{ \\
+\>\>old\_r := r \\
+\>\>if i {\textgreater} j then \\
+\>\>\>i := r := i \% j \\
+\>\>else \\
+\>\>\>j := r := j \% i \\
+\>\>\} \\
+\>write(old\_r) \\
 end
 }
 
@@ -526,8 +518,8 @@ increment the value in a variable by 2, these two statements are
 equivalent:
 
 \iconcode{
-\>   i +:= 2 \\
-\>   i := i + 2
+\>i +:= 2 \\
+\>i := i + 2
 }
 
 Augmented assignment works for most \index{binary operator}binary
@@ -615,8 +607,8 @@ input and performing some operation on them you might do something like
 this:
 
 \iconcode{
-\>   while (i := read()) \~{}= -1 do \\
-\>\>     process(i)
+\>while (i := read()) \~{}= -1 do \\
+\>\> process(i)
 }
 
 This will work, of course, except when you really need to use -1 as a
@@ -636,7 +628,7 @@ the termination condition, you would not need the
 intermediate variable \texttt{i}. If you would like to say:
 
 \iconcode{
-\>   process(read())
+\>process(read())
 }
 
 \noindent
@@ -652,7 +644,7 @@ is not called either. Here is the clincher: control expressions like
 becomes
 
 \iconcode{
-\>   while process(read())
+\>while process(read())
 }
 
 The \index{do clause}\texttt{do} clause of a \texttt{while} loop is
@@ -663,7 +655,7 @@ Consider the \index{if statement}\texttt{if}\texttt{ }statement that was
 used in the earlier arithmetic example:
 
 \iconcode{
-\>   if i {\textgreater} j then ...
+\>if i {\textgreater} j then ...
 }
 
 Comparison operators such as \texttt{{\textgreater}} succeed or fail
@@ -677,7 +669,7 @@ operators produce the value of their right operand when they succeed.
 You can write conditions like
 
 \iconcode{
-\>   if 3 {\textless} i {\textless} 7 then ...
+\>if 3 {\textless} i {\textless} 7 then ...
 }
 
 \noindent
@@ -734,19 +726,19 @@ fallible expressions.
 
 \bigskip
 
-\texttt{
-{\textless} \ \ \ \ {\textless}= \ \ \ \ {\textgreater}
-\ \ \ {\textgreater}= \ \ \ \ \ =
-\ \ \ \~{}=}\texttt{\ \ }\ \ \index{numeric comparison}numeric
-comparison operators
+\begin{flushleft}
+\tablehead{}
+\begin{xtabular}{m{0.75cm}m{0.75cm}m{0.75cm}m{0.75cm}m{0.75cm}m{0.75cm}m{7.00cm}}
+\texttt{{\textless}} & \texttt{{\textless}=} & \texttt{{\textgreater}} &
+\texttt{{\textgreater}=}  & \texttt{=} & \texttt{\~{}=} &
+\index{numeric comparison}numeric comparison operators \\
+\texttt{{\textless}{\textless}} & \texttt{{\textless}{\textless}=} &
+\texttt{{\textgreater}{\textgreater}} & \texttt{{\textgreater}{\textgreater}=} & \texttt{==} &
+\texttt{\~{}==} & \index{lexical comparison}lexical (alphabetic) comparison \\
+ & \texttt{===} & & \texttt{\~{}===} & & & \index{reference comparison}reference comparison \\
+\end{xtabular}
+\end{flushleft}
 
-\texttt{{\textless}{\textless} \ {\textless}{\textless}=
-\ {\textgreater}{\textgreater} \ {\textgreater}{\textgreater}= \ ==
-\ \~{}==\ \ }\ \ \index{lexical comparison}lexical (alphabetic)
-comparison
-
-\ \ \ \ \ \ \ \ \texttt{=== \ \ \ \ \ \ \ \ \~{}===}\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \index{reference
-comparison}reference comparison
 
 \section[Generators]{Generators}
 
@@ -757,8 +749,7 @@ than one result are called \index{generator}\textit{generators}.
 Consider the task of searching for a substring within a string:
 
 \iconcode{
-\>   find("lu",
-"Honolulu")
+\>find("lu", "Honolulu")
 }
 
 In most languages, this would return one of the substring matches,
@@ -773,8 +764,7 @@ sequence until the whole expression produces a value.
 Let us look at this example:
 
 \iconcode{
-\>   3 {\textless} find("or",
-"horror")
+\>3 {\textless} find("or", "horror")
 }
 
 The first value produced by \index{find()}\texttt{find()} is 2, which
@@ -787,7 +777,7 @@ The most obvious generator is the \index{alternation operator (
 {\textbar} )}alternation operator \texttt{{\textbar}}. The expression
 
 \iconcode{
-\>   expr1 {\textbar} expr2
+\>expr1 {\textbar} expr2
 }
 
 \noindent
@@ -796,7 +786,7 @@ by the surrounding expression. This can perform many computations quite
 compactly. For example,
 
 \iconcode{
-\>   x = (3 {\textbar} 5)
+\>x = (3 {\textbar} 5)
 }
 
 \noindent
@@ -804,7 +794,7 @@ checks to see if the value of \texttt{x} is 3 or 5. More complex
 expressions follow logically:
 
 \iconcode{
-\>   (x {\textbar} y) = (3 {\textbar} 5)
+\>(x {\textbar} y) = (3 {\textbar} 5)
 }
 
 \noindent
@@ -812,8 +802,7 @@ checks to see if either \texttt{x} or \texttt{y} has the value 3 or
 5. It is the Unicon equivalent of C's
 
 \iconcode{
-\>   (x == 3) {\textbar}{\textbar} (x == 5) {\textbar}{\textbar} (y ==
-3) {\textbar}{\textbar} (y == 5)
+\>(x == 3) {\textbar}{\textbar} (x == 5) {\textbar}{\textbar} (y == 3) {\textbar}{\textbar} (y == 5)
 }
 
 In understanding Unicon code, it helps if you identify the
@@ -879,7 +868,7 @@ The \index{control structure}control structure \index{every}\texttt{every}
 processes the entire sequence of values produced by a generator. The expression
 
 \iconcode{
-\>   every \textit{expr1} do \textit{expr2}
+\>every \textit{expr1} do \textit{expr2}
 }
 
 \noindent
@@ -902,7 +891,7 @@ can be used in \texttt{\textit{expr2}}. In many languages these are called
 ``for'' loops. A \index{for loop}for loop in Unicon is written like this:
 
 \iconcode{
-\>   every i := 1 to 10 do write(i)
+\>every i := 1 to 10 do write(i)
 }
 \noindent
 Of course, \texttt{every} and \texttt{to} are not limited to this BASIC-style
@@ -910,7 +899,7 @@ for loop. Generators are more flexible; the for loop
 above looks clumsy when compared with the equivalent
 
 \iconcode{
-\>   every write(1 to 10)
+\>every write(1 to 10)
 }
 
 \noindent
@@ -931,8 +920,7 @@ another example of how \texttt{every} expressions are more flexible than for
 loops. The expression
 
 \iconcode{
-\>   every f(1 {\textbar} 4 {\textbar} 9 {\textbar} 16 {\textbar} 25
-{\textbar} 36)
+\>every f(1 {\textbar} 4 {\textbar} 9 {\textbar} 16 {\textbar} 25 {\textbar} 36)
 }
 
 \noindent
@@ -948,7 +936,7 @@ control structures are available that may be more useful in certain
 situations. The loop
 
 \iconcode{
-\>   \index{until}until \textit{expr1} do \textit{expr2}
+\>\index{until}until \textit{expr1} do \textit{expr2}
 }
 
 \noindent is \texttt{while}'s evil twin, executing
@@ -956,7 +944,7 @@ situations. The loop
 \index{expression failure}fails; on the other hand
 
 \iconcode{
-\>   \index{repeat loop}repeat \textit{expr}
+\>\index{repeat loop}repeat \textit{expr}
 }
 
 \noindent is an infinite loop, executing \texttt{\textit{expr}}
@@ -972,12 +960,12 @@ else if ... else if ...} expressions. The \index{case expression} \texttt{case}
 expression replaces these chains of \texttt{if} expressions with the syntax:
 
 \iconcode{
-\>   case \textit{expr} of \{ \\
-\>   \textit{branch1}: \textit{expr1} \\
-\>   \textit{branch2}: \textit{expr2} \\
-\>   ... \\
-\>   default: \textit{expr}\textit{\textsubscript{i}} \\
-\>   \}
+\>case \textit{expr} of \{ \\
+\>\>\textit{branch1} : \textit{expr1} \\
+\>\>\textit{branch2} : \textit{expr2} \\
+\>\>... \\
+\>\>default : \textit{expr}\textit{\textsubscript{i}} \\
+\>\>\}
 }
 
 When a \texttt{case} expression executes, the \texttt{\textit{expr}} is
@@ -1000,7 +988,7 @@ A less drastic way to get out of any loop is to use the
 \index{break expression}\texttt{break} expression:
 
 \iconcode{
-\>   break \textit{expr}
+\>break \textit{expr}
 }
 
 This expression exits the nearest enclosing loop; \texttt{\textit{expr}}
@@ -1022,7 +1010,7 @@ computes a simple polynomial, $a x^2 + b x + c$.
 
 \iconcode{
 procedure poly(x,a,b,c) \\
-\>   return a * x\^{}2 + b * x + c \\
+\>return a * x\^{}2 + b * x + c \\
 end
 }
 
@@ -1056,8 +1044,8 @@ assigned a value. Here's an example:
 
 \iconcode{
 procedure succ(x, i) \\
-\>   /i := 1 \\
-\>   return x + i \\
+\>/i := 1 \\
+\>return x + i \\
 end
 }
 
@@ -1070,8 +1058,7 @@ The backward slash checks if its argument is non-null. For example, this
 will write the value of \texttt{x} if it has a non-null value:
 
 \iconcode{
-\>   write("The value of x is ",
-	{\textbackslash}x)
+\>write("The value of x is ", {\textbackslash}x)
 }
 
 If \texttt{x} does in fact have the null value, then \index{nonnull test
@@ -1107,8 +1094,8 @@ This parameter declaration is a more concise equivalent of
 
 \iconcode{
 procedure succ(x, i) \\
-\>   x := integer(x) {\textbar} runerr(101, x) \\
-\>   /i := 1 {\textbar} i := integer(i) {\textbar} runerr(101, i) \\
+\>x := integer(x) {\textbar} runerr(101, x) \\
+\>/i := 1 {\textbar} i := integer(i) {\textbar} runerr(101, i) \\
 end
 }
 
@@ -1154,9 +1141,9 @@ the following example:
 
 \iconcode{
 procedure foo() \\
-\>   local x, y \\
-\>   static z \\
-\>   ... \\\
+\>local x, y \\
+\>static z \\
+\>... \\
 end
 }
 
@@ -1185,17 +1172,18 @@ sequence between calls.
 
 \iconcode{
 procedure fib() \\
-static x,y \\
-local z \\
-initial \{ \\
-\>   x := 0 \\
-\>   y := 1 \\
-\>   return 1 \\
-\>   \} \\
-\>   z := x + y \\
-\>   x := y \\
-\>   y := z \\
-\>   return z \\
+\>static x,y \\
+\>local z \\
+\\
+\>initial \{ \\
+\>\>x := 0 \\
+\>\>y := 1 \\
+\>\>return 1 \\
+\>\>\} \\
+\>z := x + y \\
+\>x := y \\
+\>y := z \\
+\>return z \\
 end
 }
 
@@ -1217,13 +1205,13 @@ squares.
 
 \iconcode{
 procedure squares() \\
-\>   odds := 1 \\
-\>   sum := 0 \\
-\>   repeat \{ \\
-\>   \ \ \ suspend sum \\
-\>   \ \ \ sum +:= odds \\
-\>   \ \ \ odds +:= 2 \\
-\>   \} \\
+\>odds := 1 \\
+\>sum := 0 \\
+\>repeat \{ \\
+\>\>suspend sum \\
+\>\>sum +:= odds \\
+\>\>odds +:= 2 \\
+\>\>\} \\
 end
 }
 
@@ -1231,15 +1219,13 @@ To perform a computation on the squares, we can use it in an
 \texttt{every} statement:
 
 \iconcode{
-\>   every munge(squares())}
+\>every munge(squares())}
 
-{\sffamily\bfseries
-Warning}
-
+\medskip\noindent{\sffamily\bfseries \bf Warning:}
 {\sffamily
 This is an infinite loop! (Do you know why? Whether \texttt{munge()} succeeds or
 fails, \texttt{every} will always resume \texttt{squares()} for another result
-to try; \texttt{squares()} generates an infinite result sequence.)}
+to try; \texttt{squares()} generates an infinite result sequence.)}\medskip
 
 The \index{expression failure}\texttt{fail} expression makes the
 procedure fail. Control goes to the calling procedure, returning
@@ -1252,10 +1238,10 @@ string, but bails out if the character \texttt{\#} is reached:
 
 \iconcode{
 procedure nonblank(s) \\
-\>   every c := !s do \{ \\
-\>   \ \ \ if c == "\#" then fail \\
-\>   \ \ \ if c \~{}== " " then suspend c \\
-\>   \} \\
+\>every c := !s do \{ \\
+\>\>if c == "\#" then fail \\
+\>\>if c \~{}== " " then suspend c \\
+\>\>\} \\
 end
 }
 
@@ -1289,8 +1275,7 @@ The first part is simple: if you have one disk, just move it.
 
 \iconcode{
 procedure hanoi(n, needle1:1, needle2:2) \\
-\>   if n = 1 then write("Move disk from ",
-needle1, " to ", needle2)
+\>if n = 1 then write("Move disk from ", needle1, " to ", needle2)
 }
 
 \noindent
@@ -1298,7 +1283,8 @@ Otherwise, perform a recursive call with \textit{n-1}. First, to find
 the spare needle we have:
 
 \iconcode{
-\>   other := 6 - needle1 - needle2}
+\>other := 6 - needle1 - needle2
+}
 
 Now move the \textit{n-1} disks from \texttt{needle1} to \texttt{other},
 move the biggest disk, and then move the \textit{n-1} again. The
@@ -1306,10 +1292,9 @@ needles are passed as additional parameters into the recursive calls.
 They are always two distinct values out of the set \{1, 2, 3\}.
 
 \iconcode{
-\>   hanoi(n-1, needle1, other) \\
-\>   write("Move disk from ", needle1,
-" to ", needle2) \\
-\>   hanoi(n-1, other, needle2)
+\>hanoi(n-1, needle1, other) \\
+\>write("Move disk from ", needle1, " to ", needle2) \\
+\>hanoi(n-1, other, needle2)
 }
 
 \noindent
@@ -1323,20 +1308,20 @@ That's it! You're done. Listing
 
 \iconcode{
 procedure main() \\
-\>   write("How many disks are on the towers of
-Hanoi?") \\
-\>   hanoi(read()) \\
+\>write("How many disks are on the towers of Hanoi?") \\
+\>hanoi(read()) \\
 end \\
+\\
 procedure hanoi(n:integer, needle1:1, needle2:2) \\
-local other \\
-\>   if n = 1 then write("Move disk from ",
-needle1, " to ", needle2) \\
-\>   else \{ \\
-\>   \ \ \ other := 6 - needle1 - needle2 \\
-\>   \ \ \ hanoi(n-1, needle1, other) \\
-\>   \ \ \ write("Move disk from ", needle1, " to ", needle2) \\
-\>   \ \ \ hanoi(n-1, other, needle2) \\
-\>   \} \\
+\>local other \\
+\\
+\>if n = 1 then write("Move disk from ", needle1, " to ", needle2) \\
+\>else \{ \\
+\>\>other := 6 - needle1 - needle2 \\
+\>\>hanoi(n-1, needle1, other) \\
+\>\>write("Move disk from ", needle1, " to ", needle2) \\
+\>\>hanoi(n-1, other, needle2) \\
+\>\>\} \\
 end
 }
 

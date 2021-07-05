@@ -45,26 +45,19 @@ import gui \\
 \$include "guih.icn" \\
 \ \\
 class TestDialog : Dialog() \\
-\>   method component\_setup() \\
-\>   \ \ \ local b, l := Label("label=Click to
-close","pos=50\%,33\%",
-                    "align=c,c") \\
-\>   \ \ \ add(l) \\
-\>   \ \ \ b := TextButton("label=Button",
-"pos=50\%,66\%",
-"align=c,c") \\
-\>   \ \ \ b.connect(self, "dispose",
-ACTION\_EVENT) \\
-\>   \ \ \ add(b) \\
-\>   \ \ \ attrib("size=215,150",
-"bg=light gray",
-"font=serif",
-                      "resize=on") \\
-\>   end \\
+\>method component\_setup() \\
+\>\>local b, l := Label("label=Click to close", "pos=50\%,33\%", "align=c,c") \\
+\\
+\>\>add(l) \\
+\>\>b := TextButton("label=Button", "pos=50\%,66\%", "align=c,c") \\
+\>\>b.connect(self, "dispose", ACTION\_EVENT) \\
+\>\>add(b) \\
+\>\>attrib("size=215,150", "bg=light gray", "font=serif", "resize=on") \\
+\>end \\
 end \\
 \ \\
 procedure main() \\
-\>   TestDialog().show\_modal() \\
+\>TestDialog().show\_modal() \\
 end
 }
 
@@ -74,7 +67,7 @@ end
 the following command will compile it:
 
 \iconcode{
-\>   unicon testdialog
+\>unicon testdialog
 }
 
 \noindent The result should be an executable file called
@@ -96,12 +89,13 @@ This example program begins by
 declaring a class, \texttt{TestDialog}. The line
 
 \iconcode{
-\>   class TestDialog : Dialog()}
+\>class TestDialog : Dialog()
+}
 
 \noindent
 indicates that \texttt{TestDialog} is a \index{subclass}subclass of the
 class \texttt{Dialog} that is defined in the toolkit. This subclass
-relationship is true of all dialog windows. 
+relationship is true of all dialog windows.
 
 \subsection*{Adding Components and Attaching Listeners}
 
@@ -112,10 +106,9 @@ Inside the \texttt{component\_setup()} method is the code that adds
 the label to the dialog:
 
 \iconcode{
-\>   l := Label("label=Click to
-close","pos=50\%,33\%",
-"align=c,c") \\
-\>   add(l)}
+\>l := Label("label=Click to close", "pos=50\%, 33\%", "align=c,c") \\
+\>add(l)
+}
 
 \noindent This assigns \texttt{l} to a new \texttt{Label} object
 and sets the label string. The horizontal position is set to 50 percent of
@@ -126,12 +119,12 @@ dialog with the line \texttt{add(l)}.
 
 The code to add a button is very similar, but a \texttt{TextButton}
 object is created rather than a \texttt{Label} object, and the vertical
-position is 66 percent of the window height. 
+position is 66 percent of the window height.
 
 The next line is more interesting:
 
 \iconcode{
-\>   b.connect(self, "dispose", ACTION\_EVENT)
+\>b.connect(self, "dispose", ACTION\_EVENT)
 }
 
 \noindent This adds a \textit{listener} to the button, and tells the toolkit
@@ -148,16 +141,14 @@ initial size. Try changing these values to experiment with other dialog
 styles.
 
 \iconcode{
-\>   attrib("size=215,150",
-"bg=light gray",
-"font=serif",
-"resize=on")}
+\>attrib("size=215,150", "bg=light gray", "font=serif", "resize=on")
+}
 
 After the class comes a standard Icon \texttt{main()} procedure. This
 simply creates an instance of the dialog and invokes the method
 \texttt{show\_modal()}.
 This call displays the dialog window and goes into the
-toolkit's event handling loop. 
+toolkit's event handling loop.
 
 \subsection*{Positioning Objects}
 
@@ -168,10 +159,10 @@ plus or minus an offset. So the following are all valid position
 specifiers:
 
 \iconcode{
-\>   \ \ "100" \\
-\>   \ \ "10\%" \\
-\>   \ \ "25\%+10" \\
-\>   \ \ "33\%-10"
+\>\>"100" \\
+\>\>"10\%" \\
+\>\>"25\%+10" \\
+\>\>"33\%-10"
 }
 
 Positions are often specified in \index{constructor}constructors
@@ -208,9 +199,7 @@ Here are some examples of position, alignment, and size parameters, and
 a description of their meaning. In the call
 
 \iconcode{
-\>   attrib("pos=50\%,100",
-"align=c,t",
-"size=80\%,200")
+\>attrib("pos=50\%,100", "align=c,t", "size=80\%,200")
 }
 
 \noindent
@@ -219,9 +208,7 @@ percent of the width; vertically its top starts at 100 and its
 height is 200 pixels. In contrast, the code
 
 \iconcode{
-\>   attrib("pos=100\%,100\%",
-"align=r,b",
-"size=50\%,50\%")
+\>attrib("pos=100\%,100\%", "align=r,b", "size=50\%,50\%")
 }
 
 \noindent
@@ -229,8 +216,7 @@ specifies that the object fills up the bottom right quarter of the
 window. The call
 
 \iconcode{
-\>   attrib("pos=33\%+20,0\%",
-"size=100,100\%")
+\>attrib("pos=33\%+20,0\%", "size=100,100\%")
 }
 
 \noindent
@@ -254,248 +240,186 @@ SecondTest Program}
 \iconcode{
 import gui \\
 \$include "guih.icn" \\
-
+\\
 class SecondTest : Dialog( \\
-\>   text\_list, table, list, text\_field, oses, languages, shares\\
-\>   ) \\
+\>text\_list, table, list, text\_field, oses, languages, shares\\
+\>) \\
 \ \\
-\>   \# \\
-\>   \# Add a line to the end of the text list \\
-\>   \# \\
-\>   method put\_line(s) \\
-\>   \ \ \ local l := text\_list.get\_contents() \\
-\>   \ \ \ put(l, s) \\
-\>   \ \ \ text\_list.set\_contents(l) \\
-\>   \ \ \ text\_list.goto\_pos(*l) \\
-\>   end \\
+\>\# \\
+\>\# Add a line to the end of the text list \\
+\>\# \\
+\>method put\_line(s) \\
+\>\>local l := text\_list.get\_contents() \\
+\\
+\>\>put(l, s) \\
+\>\>text\_list.set\_contents(l) \\
+\>\>text\_list.goto\_pos(*l) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Event handlers - produce a line of interest. \\
-\>   \# \\
-\>   method handle\_check\_box\_1(ev) \\
-\>   \ \ \ put\_line("Favorite OS is "
-{\textbar}{\textbar} oses[1]) \\
-\>   end \\
-\>   method handle\_check\_box\_2(ev) \\
-\>   \ \ \ put\_line("Favorite OS is "
-{\textbar}{\textbar} oses[2]) \\
-\>   end \\
-\>   method handle\_check\_box\_3(ev) \\
-\>   \ \ \ put\_line("Favorite OS is "
-{\textbar}{\textbar} oses[3]) \\
-\>   end \\
-\>   method handle\_text\_field(ev) \\
-\>   \ \ \ put\_line("Contents = "
-{\textbar}{\textbar} text\_field.get\_contents()) \\
-\>   end \\
-\>   method handle\_list(ev) \\
-\>   \ \ \ put\_line("Favorite language is
-" {\textbar}{\textbar} languages[list.get\_selection()]) \\
-\>   end \\
-\>   method handle\_text\_menu\_item\_2(ev) \\
-\>   \ \ \ put\_line("You selected the menu
-item") \\
-\>   end \\
+\>\# \\
+\>\# Event handlers - produce a line of interest. \\
+\>\# \\
+\>method handle\_check\_box\_1(ev) \\
+\>\>put\_line("Favorite OS is " {\textbar}{\textbar} oses[1]) \\
+\>end \\
+\>method handle\_check\_box\_2(ev) \\
+\>\>put\_line("Favorite OS is " {\textbar}{\textbar} oses[2]) \\
+\>end \\
+\>method handle\_check\_box\_3(ev) \\
+\>\>put\_line("Favorite OS is " {\textbar}{\textbar} oses[3]) \\
+\>end \\
+\>method handle\_text\_field(ev) \\
+\>\>put\_line("Contents = " {\textbar}{\textbar} text\_field.get\_contents()) \\
+\>end \\
+\>method handle\_list(ev) \\
+\>\>put\_line("Favorite language is " {\textbar}{\textbar} languages[list.get\_selection()]) \\
+\>end \\
+\>method handle\_text\_menu\_item\_2(ev) \\
+\>\>put\_line("You selected the menu item") \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# The quit menu item \\
-\>   \# \\
-\>   method handle\_quit(ev) \\
-\>   \ \ \ dispose() \\
-\>   end \\
+\>\# \\
+\>\# The quit menu item \\
+\>\# \\
+\>method handle\_quit(ev) \\
+\>\>dispose() \\
+\>end \\
 \ \\
-\>   method handle\_table(ev) \\
-\>   \ \ \ local i := table.get\_selections()[1] \\
-\>   \ \ \ put\_line(shares[i][1] {\textbar}{\textbar} "
-is trading at " {\textbar}{\textbar} shares[i][2]) \\
-\>   end \\
+\>method handle\_table(ev) \\
+\>\>local i := table.get\_selections()[1] \\
+\\
+\>\>put\_line(shares[i][1] {\textbar}{\textbar} " is trading at " {\textbar}{\textbar} shares[i][2]) \\
+\>end \\
 \ \\
-\>   method handle\_table\_column\_1(ev) \\
-\>   \ \ \ put\_line("Clicked on column
-1") \\
-\>   end \\
-\>   method handle\_table\_column\_2(ev) \\
-\>   \ \ \ put\_line("Clicked on column
-2") \\
-\>   end
+\>method handle\_table\_column\_1(ev) \\
+\>\>put\_line("Clicked on column 1") \\
+\>end \\
+\>method handle\_table\_column\_2(ev) \\
+\>\>put\_line("Clicked on column 2") \\
+\>end
 \ \\
-\>   \# \\
-\>   \# Invoked for components that may potentially want to handle an event\\
-\>   \# (by firing an event to its listeners for example). A dialog is just\\
-\>   \# another component. It can override this method to do any custom processing. \\
-\>   \# \\
-\>   method handle\_event(ev) \\
-\>   \ \ \ put\_line("Icon event "
-{\textbar}{\textbar} ev) \\
-\>   \ \ \ self.Dialog.handle\_event(ev) \\
-\>   end \\
+\>\# \\
+\>\# Invoked for components that may potentially want to handle an event\\
+\>\# (by firing an event to its listeners for example). A dialog is just\\
+\>\# another component. It can override this method to do any custom processing. \\
+\>\# \\
+\>method handle\_event(ev) \\
+\>\>put\_line("Icon event " {\textbar}{\textbar} ev) \\
+\>\>self.Dialog.handle\_event(ev) \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ local menu\_bar, menu, panel\_1, panel\_2, panel\_3, panel\_4, panel\_5, \\
-\>   \ \ \ \ \ \ \ \ \ label\_1, label\_2, label\_3, label\_4, label\_5, \\
-\>   \ \ \ \ \ \ \ \ \ quit\_menu\_item, text\_menu\_item\_2, \\
-\>   \ \ \ \ \ \ \ \ \ check\_box\_1, check\_box\_2, check\_box\_3, \\
-\>   \ \ \ \ \ \ \ \ \ table\_column\_1, table\_column\_2, check\_box\_group \\
+\>method component\_setup() \\
+\>\>local menu\_bar, menu, panel\_1, panel\_2, panel\_3, panel\_4, panel\_5, \\
+\>\>\>label\_1, label\_2, label\_3, label\_4, label\_5, \\
+\>\>\>quit\_menu\_item, text\_menu\_item\_2, \\
+\>\>\>check\_box\_1, check\_box\_2, check\_box\_3, \\
+\>\>\>table\_column\_1, table\_column\_2, check\_box\_group \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Initialize some data for the objects. \\
-\>   \ \ \ \# \\
-\>   \ \ \ oses := ["Windows",
-"Linux",
-"Solaris"] \\
-\>   \ \ \ languages := ["C",
-"C++", "Java",
-"Icon"] \\
-\>   \ \ \ shares := [["Microsoft",
-"101.84"],
-["Oracle",
-"32.52"],
-["IBM",
-"13.22"], \\
-\>\>\>
-["Intel",
-"142.00"]] \\
+\>\>\# \\
+\>\>\# Initialize some data for the objects. \\
+\>\>\# \\
+\>\>oses := ["Windows", "Linux", "Solaris"] \\
+\>\>languages := ["C", "C++", "Java", "Icon"] \\
+\>\>shares := [["Microsoft", "101.84"], ["Oracle", "32.52"], ["IBM", "13.22"], \\
+\>\>\>["Intel", "142.00"]] \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Set the attributes, then setup a simple menu system \\
-\>   \ \ \ \# \\
-\>   \ \ \ attrib("size=490,400",
-"min\_size=490,400",
-"font=sans", \\
-\>   \ \ \ \ \ \ \ \ \ \ "bg=light
-gray","label=Second example",
-"resize=on") \\
-\>   \ \ \ menu\_bar := MenuBar() \\
-\>   \ \ \ menu := Menu("label=File") \\
-\>   \ \ \ quit\_menu\_item := TextMenuItem("label=Quit") \\
-\>   \ \ \ quit\_menu\_item.connect(self, "handle\_quit", ACTION\_EVENT) \\
-\>   \ \ \ menu.add(quit\_menu\_item) \\
-\>   \ \ \ text\_menu\_item\_2 :=
-TextMenuItem("label=Message") \\
-\>   \ \ \ text\_menu\_item\_2.connect(self,"handle\_text\_menu\_item\_2",ACTION\_EVENT) \\
-\>   \ \ \ menu.add(text\_menu\_item\_2) \\
-\>   \ \ \ menu\_bar.add(menu) \\
-\>   \ \ \ add(menu\_bar) \\
+\>\>\# \\
+\>\>\# Set the attributes, then setup a simple menu system \\
+\>\>\# \\
+\>\>attrib("size=490,400", "min\_size=490,400", "font=sans", \\
+\>\>\>"bg=light gray","label=Second example", "resize=on") \\
+\>\>menu\_bar := MenuBar() \\
+\>\>menu := Menu("label=File") \\
+\>\>quit\_menu\_item := TextMenuItem("label=Quit") \\
+\>\>quit\_menu\_item.connect(self, "handle\_quit", ACTION\_EVENT) \\
+\>\>menu.add(quit\_menu\_item) \\
+\>\>text\_menu\_item\_2 := TextMenuItem("label=Message") \\
+\>\>text\_menu\_item\_2.connect(self, "handle\_text\_menu\_item\_2", ACTION\_EVENT) \\
+\>\>menu.add(text\_menu\_item\_2) \\
+\>\>menu\_bar.add(menu) \\
+\>\>add(menu\_bar) \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Set-up the checkbox panel \\
-\>   \ \ \ \# \\
-\>   \ \ \ check\_box\_group := CheckBoxGroup() \\
-\>   \ \ \ panel\_1 := Panel("pos=20,50",
-"size=130,130") \\
-\>   \ \ \ label\_2 := Label("pos=0,0",
-"internal\_alignment=l",
-"label=Favorite OS") \\
-\>   \ \ \ panel\_1.add(label\_2) \\
-\>   \ \ \ check\_box\_1 :=
-CheckBox("pos=0,30") \\
-\>   \ \ \ check\_box\_1.set\_label(oses[1]) \\
-\>   \ \ \ check\_box\_1.connect(self,
-"handle\_check\_box\_1", ACTION\_EVENT) \\
-\>   \ \ \ check\_box\_group.add(check\_box\_1) \\
-\>   \ \ \ panel\_1.add(check\_box\_1) \\
-\>   \ \ \ check\_box\_2 :=
-CheckBox("pos=0,60") \\
-\>   \ \ \ check\_box\_2.set\_label(oses[2]) \\
-\>   \ \ \ check\_box\_group.add(check\_box\_2) \\
-\>   \ \ \ check\_box\_2.connect(self,
-"handle\_check\_box\_2", ACTION\_EVENT) \\
-\>   \ \ \ panel\_1.add(check\_box\_2) \\
-\>   \ \ \ check\_box\_3 :=
-CheckBox("pos=0,90") \\
-\>   \ \ \ check\_box\_3.set\_label(oses[3]) \\
-\>   \ \ \ check\_box\_group.add(check\_box\_3) \\
-\>   \ \ \ check\_box\_3.connect(self,
-"handle\_check\_box\_3", ACTION\_EVENT) \\
-\>   \ \ \ panel\_1.add(check\_box\_3) \\
-\>   \ \ \ add(panel\_1) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# The text-list of messages. \\
-\>   \ \ \ \# \\
-\>   \ \ \ panel\_2 := Panel("pos=220,50",
-"size=100\%-240,50\%-60") \\
-\>   \ \ \ label\_1 := Label("pos=0,0",
-"internal\_alignment=l",
-"label=Messages") \\
-\>   \ \ \ panel\_2.add(label\_1) \\
-\>   \ \ \ text\_list :=
-TextDisplay("pos=0,30",
-"size=100\%,100\%-30") \\
-\>   \ \ \ text\_list.set\_contents([]) \\
-\>   \ \ \ panel\_2.add(text\_list) \\
-\>   \ \ \ add(panel\_2) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# The table of shares. \\
-\>   \ \ \ \# \\
-\>   \ \ \ panel\_3 :=
-Panel("pos=220,50\%","size=100\%-240,50\%-40") \\
-\>   \ \ \ table :=
-Table("pos=0,30","size=100\%,100\%-30",
-"select\_one") \\
-\>   \ \ \ table.connect(self,
-"handle\_table",
-SELECTION\_CHANGED\_EVENT) \\
-\>   \ \ \ table.set\_contents(shares) \\
+\>\>\# \\
+\>\>\# Set-up the checkbox panel \\
+\>\>\# \\
+\>\>check\_box\_group := CheckBoxGroup() \\
+\>\>panel\_1 := Panel("pos=20,50", "size=130,130") \\
+\>\>label\_2 := Label("pos=0,0", "internal\_alignment=l", "label=Favorite OS") \\
+\>\>panel\_1.add(label\_2) \\
+\>\>check\_box\_1 := CheckBox("pos=0,30") \\
+\>\>check\_box\_1.set\_label(oses[1]) \\
+\>\>check\_box\_1.connect(self, "handle\_check\_box\_1", ACTION\_EVENT) \\
+\>\>check\_box\_group.add(check\_box\_1) \\
+\>\>panel\_1.add(check\_box\_1) \\
+\>\>check\_box\_2 := CheckBox("pos=0,60") \\
+\>\>check\_box\_2.set\_label(oses[2]) \\
+\>\>check\_box\_group.add(check\_box\_2) \\
+\>\>check\_box\_2.connect(self, "handle\_check\_box\_2", ACTION\_EVENT) \\
+\>\>panel\_1.add(check\_box\_2) \\
+\>\>check\_box\_3 := CheckBox("pos=0,90") \\
+\>\>check\_box\_3.set\_label(oses[3]) \\
+\>\>check\_box\_group.add(check\_box\_3) \\
+\>\>check\_box\_3.connect(self, "handle\_check\_box\_3", ACTION\_EVENT) \\
+\>\>panel\_1.add(check\_box\_3) \\
+\>\>add(panel\_1) \\
+\>\>\# \\
+\>\>\# The text-list of messages. \\
+\>\>\# \\
+\>\>panel\_2 := Panel("pos=220,50", "size=100\%-240,50\%-60") \\
+\>\>label\_1 := Label("pos=0,0", "internal\_alignment=l", "label=Messages") \\
+\>\>panel\_2.add(label\_1) \\
+\>\>text\_list := TextDisplay("pos=0,30", "size=100\%,100\%-30") \\
+\>\>text\_list.set\_contents([]) \\
+\>\>panel\_2.add(text\_list) \\
+\>\>add(panel\_2) \\
+\>\>\# \\
+\>\>\# The table of shares. \\
+\>\>\# \\
+\>\>panel\_3 := Panel("pos=220,50\%", "size=100\%-240,50\%-40") \\
+\>\>table := Table("pos=0,30", "size=100\%,100\%-30", "select\_one") \\
+\>\>table.connect(self, "handle\_table", SELECTION\_CHANGED\_EVENT) \\
+\>\>table.set\_contents(shares) \\
 \ \\
-\>   \ \ \ table\_column\_1 :=
-TableColumn("label=Company",
-"internal\_alignment=l", \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "column\_width=100") \\
-\>   \ \ \ table\_column\_1.connect(self,
-"handle\_table\_column\_1", ACTION\_EVENT) \\
-\>   \ \ \ table.add\_column(table\_column\_1) \\
-\>   \ \ \ table\_column\_2 := TableColumn("label=Share
-price",
-"internal\_alignment=r", \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "column\_width=100") \\
-\>   \ \ \ table\_column\_2.connect(self,
-"handle\_table\_column\_2", ACTION\_EVENT) \\
-\>   \ \ \ table.add\_column(table\_column\_2) \\
-\>   \ \ \ panel\_3.add(table) \\
-\>   \ \ \ label\_5 := Label("pos=0,0",
-"internal\_alignment=l",
-"label=Shares") \\
-\>   \ \ \ panel\_3.add(label\_5) \\
-\>   \ \ \ add(panel\_3) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# The drop-down list of languages. \\
-\>   \ \ \ \# \\
-\>   \ \ \ panel\_4 := Panel("pos=20,190",
-"size=180,50") \\
-\>   \ \ \ list := List("pos=0,30", "size=100,") \\
-\>   \ \ \ list.connect(self,
-"handle\_list", SELECTION\_CHANGED\_EVENT) \\
-\>   \ \ \ list.set\_selection\_list(languages) \\
-\>   \ \ \ panel\_4.add(list) \\
-\>   \ \ \ label\_3 := Label("pos=0,0", "internal\_alignment=l",
-"label=Favorite language") \\
-\>   \ \ \ panel\_4.add(label\_3) \\
-\>   \ \ \ add(panel\_4) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# The text field. \\
-\>   \ \ \ \# \\
-\>   \ \ \ panel\_5 := Panel("pos=20,280",
-"size=180,50") \\
-\>   \ \ \ label\_4 := Label("pos=0,0",
-"internal\_alignment=l",
-"label=Enter a string") \\
-\>   \ \ \ panel\_5.add(label\_4) \\
-\>   \ \ \ text\_field :=
-TextField("pos=0,30",
-"size=130,",
-"draw\_border=t") \\
-\>   \ \ \ text\_field.connect(self,
-"handle\_text\_field",
-TEXTFIELD\_CHANGED\_EVENT) \\
-\>   \ \ \ panel\_5.add(text\_field) \\
-\>   \ \ \ add(panel\_5) \\
-\>   end \\
+\>\>table\_column\_1 := TableColumn("label=Company", "internal\_alignment=l", \\
+\>\>\>\>\>\>"column\_width=100") \\
+\>\>table\_column\_1.connect(self, "handle\_table\_column\_1", ACTION\_EVENT) \\
+\>\>table.add\_column(table\_column\_1) \\
+\>\>table\_column\_2 := TableColumn("label=Share price", "internal\_alignment=r", \\
+\>\>\>\>\>\>"column\_width=100") \\
+\>\>table\_column\_2.connect(self, "handle\_table\_column\_2", ACTION\_EVENT) \\
+\>\>table.add\_column(table\_column\_2) \\
+\>\>panel\_3.add(table) \\
+\>\>label\_5 := Label("pos=0,0", "internal\_alignment=l", "label=Shares") \\
+\>\>panel\_3.add(label\_5) \\
+\>\>add(panel\_3) \\
+\>\>\# \\
+\>\>\# The drop-down list of languages. \\
+\>\>\# \\
+\>\>panel\_4 := Panel("pos=20,190", "size=180,50") \\
+\>\>list := List("pos=0,30", "size=100,") \\
+\>\>list.connect(self, "handle\_list", SELECTION\_CHANGED\_EVENT) \\
+\>\>list.set\_selection\_list(languages) \\
+\>\>panel\_4.add(list) \\
+\>\>label\_3 := Label("pos=0,0", "internal\_alignment=l", "label=Favorite language") \\
+\>\>panel\_4.add(label\_3) \\
+\>\>add(panel\_4) \\
+\>\>\# \\
+\>\>\# The text field. \\
+\>\>\# \\
+\>\>panel\_5 := Panel("pos=20,280", "size=180,50") \\
+\>\>label\_4 := Label("pos=0,0", "internal\_alignment=l", "label=Enter a string") \\
+\>\>panel\_5.add(label\_4) \\
+\>\>text\_field := TextField("pos=0,30", "size=130,", "draw\_border=t") \\
+\>\>text\_field.connect(self, "handle\_text\_field", TEXTFIELD\_CHANGED\_EVENT) \\
+\>\>panel\_5.add(text\_field) \\
+\>\>add(panel\_5) \\
+\>end \\
 end \\
 \# \\
 \# Simple main procedure just creates the dialog. \\
 \# \\
 procedure main() \\
-\>   SecondTest().show\_modal() \\
+\>SecondTest().show\_modal() \\
 end
 }
 
@@ -541,9 +465,11 @@ another is unchecked, they are placed in a
 ``brackets'' them together. When grouped
 together in this way the checkboxes are called \index{radio
 buttons}\textit{radio buttons} because they work like the
-tuner buttons found on old car radios. Note that each
-\texttt{CheckBox} is added to the \texttt{CheckBoxGroup} \textit{and}
-the \texttt{Panel}.
+tuner buttons found on old car radios.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+Each \texttt{CheckBox} is added to the \texttt{CheckBoxGroup} \textit{and}
+the \texttt{Panel}.}\medskip
 
 The next section is a \texttt{Panel} that holds a label
 ("Messages") and a \texttt{TextList}
@@ -555,9 +481,11 @@ which can be used for editing text.
 
 The third panel contains a label ("Shares"),
 and a \texttt{Table} object, which is used for displaying tabular data.
-Note that class \texttt{Table} has nothing to do with
-Icon's table data type. Adding a \texttt{TableColumn}
-object to the table sets up each column. A table column's
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+Class \texttt{Table} has nothing to do with Icon's table data type.}\medskip
+
+Adding a \texttt{TableColumn} object to the table sets up each column. A table column's
 initial column width is specified with attribute \texttt{column\_width}
 and the alignment of the column's contents is set with
 attribute \texttt{internal\_alignment}. Attribute
@@ -629,13 +557,13 @@ nearly all cases this is the original underlying Icon graphics event.\\
 
 The \texttt{get\_param()} method is necessary, for example, to
 distinguish between a left mouse click and a right mouse click on a
-\texttt{MOUSE\_RELEASE\_EVENT}; for instance 
+\texttt{MOUSE\_RELEASE\_EVENT}; for instance
 
 \iconcode{
-\>   method on\_release(ev) \\
-\>   \ \ \ if ev.get\_param() === \&rrelease then \\
-\>   \ \ \ \ \ \ ... process right mouse up \\
-\>   end
+\>method on\_release(ev) \\
+\>\>if ev.get\_param() === \&rrelease then \\
+\>\>\>... process right mouse up \\
+\>end
 }
 
 \section{Containers}
@@ -671,51 +599,45 @@ import gui \\
 \# Simple example of a TabSet \\
 \# \\
 class Tabs : Dialog(quit\_button) \\
-\>   method change(e) \\
-\>   \ \ \ write("The tabset selection
-changed") \\
-\>   end \\
+\>method change(e) \\
+\>\>write("The tabset selection changed") \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ local tab\_set, tab\_item\_1, tab\_item\_2, tab\_item\_3 \\
-\>   \ \ \ attrib("size=355,295", "font=sans", "bg=light gray", \\
-\>\>\> "label=TabSet example", "resize=on") \\
-\>   \ \ \ \#  \\
-\>   \ \ \ \# Create the TabSet \\
-\>   \ \ \ tab\_set := TabSet("pos=20,20",
-"size=100\%-40,100\%-80") \\
-\>   \ \ \ \#  \\
-\>   \ \ \ \# First, second, and third panes \\
-\>   \ \ \ \# \\
-\>   \ \ \ tab\_item\_1 := TabItem("label=Pane 1") \\
-\>   \ \ \ tab\_item\_1.add(Label("pos=50\%,50\%", "align=c,c",
-                            "label=Label 1")) \\
-\>   \ \ \ tab\_set.add(tab\_item\_1) \\
-\>   \ \ \ tab\_item\_2 := TabItem("label=Pane 2") \\
-\>   \ \ \ tab\_item\_2.add(Label("pos=50\%,50\%",
-                                  "align=c,c", "label=Label 2")) \\
-\>   \ \ \ tab\_set.add(tab\_item\_2) \\
-\>   \ \ \ tab\_item\_3 := TabItem("label=Pane 3") \\
-\>   \ \ \ tab\_item\_3.add(Label("pos=50\%,50\%",
-"align=c,c", "label=Label 3")) \\
-\>   \ \ \ tab\_set.add(tab\_item\_3) \\
-\>   \ \ \ tab\_set.set\_which\_one(tab\_item\_1) \\
-\>   \ \ \ tab\_set.connect(self, "change",
-SELECTION\_CHANGED\_EVENT) \\
-\>   \ \ \ add(tab\_set) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Add a quit button; close the dialog when it is pressed \\
-\>   \ \ \ quit\_button :=
-TextButton("pos=50\%,100\%-30", "align=c,c", "label=Quit") \\
-\>   \ \ \ quit\_button.connect(self,
-"dispose", ACTION\_EVENT) \\
-\>   \ \ \ add(quit\_button) \\
-\>   \ \ \ connect(self, "dispose",
-CLOSE\_BUTTON\_EVENT) \\
-\>   end \\
+\>method component\_setup() \\
+\>\>local tab\_set, tab\_item\_1, tab\_item\_2, tab\_item\_3 \\
+\\
+\>\>attrib("size=355,295", "font=sans", "bg=light gray", \\
+\>\>\>"label=TabSet example", "resize=on") \\
+\>\>\#  \\
+\>\>\# Create the TabSet \\
+\>\>\# \\
+\>\>tab\_set := TabSet("pos=20,20", "size=100\%-40,100\%-80") \\
+\>\>\#  \\
+\>\>\# First, second, and third panes \\
+\>\>\# \\
+\>\>tab\_item\_1 := TabItem("label=Pane 1") \\
+\>\>tab\_item\_1.add(Label("pos=50\%,50\%", "align=c,c", "label=Label 1")) \\
+\>\>tab\_set.add(tab\_item\_1) \\
+\>\>tab\_item\_2 := TabItem("label=Pane 2") \\
+\>\>tab\_item\_2.add(Label("pos=50\%,50\%", "align=c,c", "label=Label 2")) \\
+\>\>tab\_set.add(tab\_item\_2) \\
+\>\>tab\_item\_3 := TabItem("label=Pane 3") \\
+\>\>tab\_item\_3.add(Label("pos=50\%,50\%", "align=c,c", "label=Label 3")) \\
+\>\>tab\_set.add(tab\_item\_3) \\
+\>\>tab\_set.set\_which\_one(tab\_item\_1) \\
+\>\>tab\_set.connect(self, "change", SELECTION\_CHANGED\_EVENT) \\
+\>\>add(tab\_set) \\
+\>\>\# \\
+\>\>\# Add a quit button; close the dialog when it is pressed \\
+\>\>\# \\
+\>\>quit\_button := TextButton("pos=50\%,100\%-30", "align=c,c", "label=Quit") \\
+\>\>quit\_button.connect(self, "dispose", ACTION\_EVENT) \\
+\>\>add(quit\_button) \\
+\>\>connect(self, "dispose", CLOSE\_BUTTON\_EVENT) \\
+\>end \\
 end \\
 procedure main() \\
-\>   Tabs().show\_modal() \\
+\>Tabs().show\_modal() \\
 end
 }
 
@@ -734,7 +656,8 @@ The resulting window is shown in Figure 18-3:
 \noindent One interesting point in this dialog is the line:
 
 \iconcode{
-\>   connect(self, "dispose", CLOSE\_BUTTON\_EVENT)}
+\>connect(self, "dispose", CLOSE\_BUTTON\_EVENT)
+}
 
 
 \noindent A dialog generates an event whenever the close button is
@@ -802,125 +725,113 @@ import gui \\
 \$include "guih.icn" \\
 \ \\
 class MenuDemo : Dialog() \\
-\>   method component\_setup() \\
-\>\>    local file\_menu, menu\_bar, check\_box\_group, text\_menu\_item, \\
-\>\>\>   labels\_menu, images\_menu, checkboxes\_menu, group\_menu, \\
-\>\>\>   alone\_menu, menu\_button, check\_box\_menu\_item, button\_menu \\
+\>method component\_setup() \\
+\>\>local file\_menu, menu\_bar, check\_box\_group, text\_menu\_item, \\
+\>\>\>labels\_menu, images\_menu, checkboxes\_menu, group\_menu, \\
+\>\>\>alone\_menu, menu\_button, check\_box\_menu\_item, button\_menu \\
 \ \\
-\>\>   attrib("size=426,270", "font=sans", "bg=light gray",
-              "label=Menu example") \\
-\>   \ \ \ check\_box\_group := CheckBoxGroup() \\
+\>\>attrib("size=426,270", "font=sans", "bg=light gray", "label=Menu example") \\
+\>\>check\_box\_group := CheckBoxGroup() \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Create the menu bar. The position and size default to \\
-\>   \ \ \ \# give a bar covering the top of the window. \\
-\>   \ \ \ \# The first menu ("File") - just contains one text item. \\
-\>   \ \ \ menu\_bar := MenuBar() \\
-\>   \ \ \ file\_menu := Menu("label=File") \\
-\>   \ \ \ text\_menu\_item := TextMenuItem("label=Quit") \\
-\>   \ \ \ text\_menu\_item.connect(self, "dispose", ACTION\_EVENT) \\
-\>   \ \ \ file\_menu.add(text\_menu\_item) \\
-\>   \ \ \ menu\_bar.add(file\_menu) \\
+\>\>\# \\
+\>\>\# Create the menu bar. The position and size default to \\
+\>\>\# give a bar covering the top of the window. \\
+\>\>\# The first menu ("File") - just contains one text item. \\
+\>\>\# \\
+\>\>menu\_bar := MenuBar() \\
+\>\>file\_menu := Menu("label=File") \\
+\>\>text\_menu\_item := TextMenuItem("label=Quit") \\
+\>\>text\_menu\_item.connect(self, "dispose", ACTION\_EVENT) \\
+\>\>file\_menu.add(text\_menu\_item) \\
+\>\>menu\_bar.add(file\_menu) \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# The second menu ("Labels") - add some labels, followed by \\
-\>   \ \ \ \# a separator and another text item \\
-\>   \ \ \ labels\_menu := Menu("label=Labels") \\
-\>   \ \ \ labels\_menu.add(TextMenuItem("label=One")) \\
-\>   \ \ \ labels\_menu.add(TextMenuItem("label=Two", "label\_left=ABC")) \\
-\>   \ \ \ labels\_menu.add(MenuSeparator()) \\
-\>   \ \ \ labels\_menu.add(TextMenuItem("label=Three", "label\_right=123")) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# A sub-menu in this menu, labeled "Images", contains \\
-\>   \ \ \ \# three text items with custom images. The rather unwieldy \\
-\>   \ \ \ \# strings create a triangle, a circle and a rectangle. \\
-\>   \ \ \ images\_menu := Menu("label=Images") \\
-\>   \ \ \ text\_menu\_item := TextMenuItem("label=One") \\
-\>   \ \ \ text\_menu\_item.set\_img\_left("15,c1,\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\>\>\# \\
+\>\>\# The second menu ("Labels") - add some labels, followed by \\
+\>\>\# a separator and another text item \\
+\>\>\# \\
+\>\>labels\_menu := Menu("label=Labels") \\
+\>\>labels\_menu.add(TextMenuItem("label=One")) \\
+\>\>labels\_menu.add(TextMenuItem("label=Two", "label\_left=ABC")) \\
+\>\>labels\_menu.add(MenuSeparator()) \\
+\>\>labels\_menu.add(TextMenuItem("label=Three", "label\_right=123")) \\
+\>\>\# \\
+\>\>\# A sub-menu in this menu, labeled "Images", contains \\
+\>\>\# three text items with custom images. The rather unwieldy \\
+\>\>\# strings create a triangle, a circle and a rectangle. \\
+\>\>\# \\
+\>\>images\_menu := Menu("label=Images") \\
+\>\>text\_menu\_item := TextMenuItem("label=One") \\
+\>\>text\_menu\_item.set\_img\_left("15,c1,\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
 \>\>\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
 \>\>\~{}\~{}\~{}\~{}\~{}00\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\_ \\
 \>\>\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\_ \\
 \>\>\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\_ \\
 \>\>\~{}0000000000000\~{}000000000000000") \\
-\>   \ \ \ images\_menu.add(text\_menu\_item) \\
-\>   \ \ \ text\_menu\_item :=
-TextMenuItem("label=Two") \\
-\>   \ \ \ text\_menu\_item.set\_img\_left("15,c1,\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\>\>images\_menu.add(text\_menu\_item) \\
+\>\>text\_menu\_item := TextMenuItem("label=Two") \\
+\>\>text\_menu\_item.set\_img\_left("15,c1,\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
 \>\>\~{}\~{}\~{}\~{}0000000\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
 \>\>\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
 \>\>00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\_ \\
 \>\>\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\_ \\
 \>\>\~{}\~{}\~{}\~{}0000000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}") \\
-\>   \ \ \ images\_menu.add(text\_menu\_item) \\
-\>   \ \ \ text\_menu\_item :=
-TextMenuItem("label=Three") \\
-\>   \ \ \ text\_menu\_item.set\_img\_left("15,c1,\_ \\
+\>\>images\_menu.add(text\_menu\_item) \\
+\>\>text\_menu\_item := TextMenuItem("label=Three") \\
+\>\>text\_menu\_item.set\_img\_left("15,c1,\_ \\
 \>\>000000000000000000000000000000\_ \\
 \>\>00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
 \>\>00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
 \>\>00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
 \>\>00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
 \>\>000000000000000000000000000000") \\
-\>   \ \ \ images\_menu.add(text\_menu\_item) \\
-\>   \ \ \ labels\_menu.add(images\_menu) \\
-\>   \ \ \ menu\_bar.add(labels\_menu) \\
+\>\>images\_menu.add(text\_menu\_item) \\
+\>\>labels\_menu.add(images\_menu) \\
+\>\>menu\_bar.add(labels\_menu) \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# The third menu
-("Checkboxes") \\
-\>   \ \ \ \# Sub-menu - "Group" - two
-checkboxes in a checkbox group. \\
-\>   \ \ \ \# \\
-\>   \ \ \ checkboxes\_menu :=
-Menu("label=Checkboxes") \\
-\>   \ \ \ group\_menu :=
-Menu("label=Group") \\
-\>   \ \ \ check\_box\_menu\_item :=
-CheckBoxMenuItem("label=One") \\
-\>   \ \ \ check\_box\_group.add(check\_box\_menu\_item) \\
-\>   \ \ \ group\_menu.add(check\_box\_menu\_item) \\
-\>   \ \ \ check\_box\_menu\_item :=
-CheckBoxMenuItem("label=Two") \\
-\>   \ \ \ check\_box\_group.add(check\_box\_menu\_item) \\
-\>   \ \ \ group\_menu.add(check\_box\_menu\_item) \\
-\>   \ \ \ checkboxes\_menu.add(group\_menu) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Sub-menu - "Alone" - two
-checkboxes on their own \\
-\>   \ \ \ \# \\
-\>   \ \ \ alone\_menu := Menu() \\
-\>   \ \ \ alone\_menu.set\_label("Alone") \\
-\>   \ \ \ check\_box\_menu\_item\_3 :=
-CheckBoxMenuItem("label=Three") \\
-\>   \ \ \ alone\_menu.add(check\_box\_menu\_item\_3) \\
-\>   \ \ \ check\_box\_menu\_item\_4 :=
-CheckBoxMenuItem("label=Four") \\
-\>   \ \ \ alone\_menu.add(check\_box\_menu\_item\_4) \\
-\>   \ \ \ checkboxes\_menu.add(alone\_menu) \\
-\>   \ \ \ menu\_bar.add(checkboxes\_menu) \\
-\>   \ \ \ add(menu\_bar) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Finally, create a menu button - a mini floating menu with \\
-\>   \ \ \ \# one menu inside it. \\
-\>   \ \ \ \# \\
-\>   \ \ \ menu\_button :=
-MenuButton("pos=350,50\%",
-"align=c,c") \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# This is the menu, its label appears on the button. \ It just\\
-\>   \ \ \ \# contains a couple of text items for illustration purposes. \\
-\>   \ \ \ \# \\
-\>   \ \ \ button\_menu :=
-Menu("label=Click") \\
-\>   \ \ \ button\_menu.add(TextMenuItem("label=One")) \\
-\>   \ \ \ button\_menu.add(TextMenuItem("label=Two")) \\
-\>   \ \ \ menu\_button.set\_menu(button\_menu) \\
-\>   \ \ \ add(menu\_button) \\
-\>   end \\
+\>\>\# \\
+\>\>\# The third menu ("Checkboxes") \\
+\>\>\# Sub-menu - "Group" - two checkboxes in a checkbox group. \\
+\>\>\# \\
+\>\>checkboxes\_menu := Menu("label=Checkboxes") \\
+\>\>group\_menu := Menu("label=Group") \\
+\>\>check\_box\_menu\_item := CheckBoxMenuItem("label=One") \\
+\>\>check\_box\_group.add(check\_box\_menu\_item) \\
+\>\>group\_menu.add(check\_box\_menu\_item) \\
+\>\>check\_box\_menu\_item := CheckBoxMenuItem("label=Two") \\
+\>\>check\_box\_group.add(check\_box\_menu\_item) \\
+\>\>group\_menu.add(check\_box\_menu\_item) \\
+\>\>checkboxes\_menu.add(group\_menu) \\
+\>\>\# \\
+\>\>\# Sub-menu - "Alone" - two checkboxes on their own \\
+\>\>\# \\
+\>\>alone\_menu := Menu() \\
+\>\>alone\_menu.set\_label("Alone") \\
+\>\>check\_box\_menu\_item\_3 := CheckBoxMenuItem("label=Three") \\
+\>\>alone\_menu.add(check\_box\_menu\_item\_3) \\
+\>\>check\_box\_menu\_item\_4 := CheckBoxMenuItem("label=Four") \\
+\>\>alone\_menu.add(check\_box\_menu\_item\_4) \\
+\>\>checkboxes\_menu.add(alone\_menu) \\
+\>\>menu\_bar.add(checkboxes\_menu) \\
+\>\>add(menu\_bar) \\
+\>\>\# \\
+\>\>\# Finally, create a menu button - a mini floating menu with \\
+\>\>\# one menu inside it. \\
+\>\>\# \\
+\>\>menu\_button := MenuButton("pos=350,50\%", "align=c,c") \\
+\>\>\# \\
+\>\>\# This is the menu, its label appears on the button. \ It just\\
+\>\>\# contains a couple of text items for illustration purposes. \\
+\>\>\# \\
+\>\>button\_menu := Menu("label=Click") \\
+\>\>button\_menu.add(TextMenuItem("label=One")) \\
+\>\>button\_menu.add(TextMenuItem("label=Two")) \\
+\>\>menu\_button.set\_menu(button\_menu) \\
+\>\>add(menu\_button) \\
+\>end \\
 end \\
 \ \\
 procedure main() \\
-\>   MenuDemo().show\_modal() \\
+\>MenuDemo().show\_modal() \\
 end
 }
 
@@ -960,8 +871,7 @@ After setting up the tree of \texttt{Node}s, the root is passed
 to the \texttt{Tree} for display:
 
 \iconcode{
-tree := Tree("pos=0,0",
-"size=100,100")
+tree := Tree("pos=0,0", "size=100,100") \\
 tree.set\_root\_node(root)
 }
 
@@ -1010,164 +920,144 @@ import gui \\
 \# \\
 class Explorer : Dialog(tree, sizer, tbl) \\
 \ \\
-\>   \# \\
-\>   \# Given a Node n, get the full file path it represents by \\
-\>   \# traversing up the tree structure to the root. \\
-\>   \# \\
-\>   method get\_full\_path(n) \\
-\>   \ \ \ local s := "" \\
-\>   \ \ \ repeat \{ \\
-\>   \ \ \ \ \ \ s := n.get\_label() {\textbar}{\textbar} s \\
-\>   \ \ \ \ \ \ n := n.get\_parent\_node() {\textbar} break \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ return s \\
-\>   end \\
+\>\# \\
+\>\# Given a Node n, get the full file path it represents by \\
+\>\# traversing up the tree structure to the root. \\
+\>\# \\
+\>method get\_full\_path(n) \\
+\>\>local s := "" \\
+\\
+\>\>repeat \{ \\
+\>\>\>s := n.get\_label() {\textbar}{\textbar} s \\
+\>\>\>n := n.get\_parent\_node() {\textbar} break \\
+\>\>\>\} \\
+\>\>return s \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Invoked when a sub-tree is expanded (ie: the little + is \\
-\>   \# clicked). \ An expansion event also includes contractions too \\
-\>   \# \\
-\>   method handle\_tree\_expansion() \\
-\>   \ \ \ local n := tree.get\_last\_expanded() \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Check whether it was an expansion or a contraction. \ If \\
-\>   \ \ \ \# an expansion, load the subtree and refresh the tree. \\
-\>   \ \ \ \# \\
-\>   \ \ \ if n.is\_expanded() then \{ \\
-\>   \ \ \ \ \ \ load\_subtree(n) \\
-\>   \ \ \ \ \ \ tree.tree\_structure\_changed() \\
-\>   \ \ \ \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# Invoked when a sub-tree is expanded (ie: the little + is \\
+\>\# clicked). \ An expansion event also includes contractions too \\
+\>\# \\
+\>method handle\_tree\_expansion() \\
+\>\>local n := tree.get\_last\_expanded() \\
+\\
+\>\>\# \\
+\>\>\# Check whether it was an expansion or a contraction. \ If \\
+\>\>\# an expansion, load the subtree and refresh the tree. \\
+\>\>\# \\
+\>\>if n.is\_expanded() then \{ \\
+\>\>\>load\_subtree(n) \\
+\>\>\>tree.tree\_structure\_changed() \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Invoked when a row in the tree is selected (or de-selected). \\
-\>   \# If something is selected, load the table. We may not have something\\
-\>   \# selected if the user contracted the parent node of the selected node. \\
-\>   \# \\
-\>   method handle\_tree\_selection() \\
-\>   \ \ \ local n \\
-\>   \ \ \ if n := tree.object\_get\_selections()[1] then \\
-\>   \ \ \ \ \ \ load\_table(n) \\
-\>   end \\
+\>\# \\
+\>\# Invoked when a row in the tree is selected (or de-selected). \\
+\>\# If something is selected, load the table. We may not have something\\
+\>\# selected if the user contracted the parent node of the selected node. \\
+\>\# \\
+\>method handle\_tree\_selection() \\
+\>\>local n \\
+\\
+\>\>if n := tree.object\_get\_selections()[1] then \\
+\>\>\>load\_table(n) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Given a Node n, load its children with the sub-directories. \\
-\>   \# \\
-\>   method load\_subtree(n) \\
-\>   \ \ \ local name, r1, dir\_list := get\_directory\_list(get\_full\_path(n)) \\
-\>   \ \ \ n.clear\_children() \\
-\>   \ \ \ every name := !dir\_list[1] do \{ \\
-\>   \ \ \ \ \ \ if (name \~{}== "./") \&
-(name \~{}== "../") then \{ \\
-\>   \ \ \ \ \ \ \ \ \ r1 :=
-Node("always\_expandable=t") \\
-\>   \ \ \ \ \ \ \ \ \ r1.set\_label(name) \\
-\>   \ \ \ \ \ \ \ \ \ n.add(r1) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# Given a Node n, load its children with the sub-directories. \\
+\>\# \\
+\>method load\_subtree(n) \\
+\>\>local name, r1, dir\_list := get\_directory\_list(get\_full\_path(n)) \\
+\\
+\>\>n.clear\_children() \\
+\>\>every name := !dir\_list[1] do \{ \\
+\>\>\>if (name \~{}== "./") \& (name \~{}== "../") then \{ \\
+\>\>\>\>r1 := Node("always\_expandable=t") \\
+\>\>\>\>r1.set\_label(name) \\
+\>\>\>\>n.add(r1) \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Given a Node n, load the table with the sub-files and sub-directories.\\
-\>   \# \\
-\>   method load\_table(n) \\
-\>   \ \ \ local s := get\_full\_path(n), l := [ ], t := get\_directory\_list(s) \\
-\>   \ \ \ every el := !sort(t[1] {\textbar}{\textbar}{\textbar} t[2])
-do \{ \\
-\>   \ \ \ \ \ \ p := stat(s {\textbar}{\textbar} el) {\textbar}
-stop("No stat") \\
-\>   \ \ \ \ \ \ put(l, [el, p.size, ctime(p.mtime)[5:17], p.mode]) \\
-\>   \ \ \ \ \ \ \} \\
+\>\# \\
+\>\# Given a Node n, load the table with the sub-files and sub-directories.\\
+\>\# \\
+\>method load\_table(n) \\
+\>\>local s := get\_full\_path(n), l := [ ], t := get\_directory\_list(s) \\
+\\
+\>\>every el := !sort(t[1] {\textbar}{\textbar}{\textbar} t[2]) do \{ \\
+\>\>\>p := stat(s {\textbar}{\textbar} el) {\textbar} stop("No stat") \\
+\>\>\>put(l, [el, p.size, ctime(p.mtime)[5:17], p.mode]) \\
+\>\>\>\} \\
 \ \\
-\>   \ \ \ tbl.set\_contents(l) \\
-\>   \ \ \ tbl.goto\_pos(1, 0) \\
-\>   end \\
+\>\>tbl.set\_contents(l) \\
+\>\>tbl.goto\_pos(1, 0) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# The sizer has moved, so reset the sizes and positions of the \\
-\>   \# table, tree and sizer. \ Then call resize() to reposition \\
-\>   \# everything. \\
-\>   \# \\
-\>   method handle\_sizer(ev) \\
-\>   \ \ \ result\_x := sizer.get\_curr\_pos() \\
-\>   \ \ \ tree.set\_size(result\_x - 10, tree.h\_spec) \\
-\>   \ \ \ sizer.set\_pos(result\_x, sizer.y\_spec) \\
-\>   \ \ \ tbl.set\_pos(result\_x + 10, tbl.y\_spec) \\
-\>   \ \ \ tbl.set\_size("100\%-" {\textbar}{\textbar} string(result\_x + 20), tbl.h\_spec) \\
-\>   \ \ \ resize() \\
-\>   end \\
+\>\# \\
+\>\# The sizer has moved, so reset the sizes and positions of the \\
+\>\# table, tree and sizer. \ Then call resize() to reposition \\
+\>\# everything. \\
+\>\# \\
+\>method handle\_sizer(ev) \\
+\>\>result\_x := sizer.get\_curr\_pos() \\
+\>\>tree.set\_size(result\_x - 10, tree.h\_spec) \\
+\>\>sizer.set\_pos(result\_x, sizer.y\_spec) \\
+\>\>tbl.set\_pos(result\_x + 10, tbl.y\_spec) \\
+\>\>tbl.set\_size("100\%-" {\textbar}{\textbar} string(result\_x + 20), tbl.h\_spec) \\
+\>\>resize() \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Catch Alt-q to close the dialog. \\
-\>   \# \\
-\>   method quit\_check(ev) \\
-\>   \ \ \ if ev.get\_param() === "q" \&
-\&meta then dispose() \\
-\>   end \\
+\>\# \\
+\>\# Catch Alt-q to close the dialog. \\
+\>\# \\
+\>method quit\_check(ev) \\
+\>\>if ev.get\_param() === "q" \& \&meta then dispose() \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Override resize to set the sizer's min/max
-locations. \\
-\>   \# \\
-\>   method resize() \\
-\>   \ \ \ self.Dialog.resize() \\
-\>   \ \ \ sizer.set\_min\_max(135, get\_w\_reference() - 160) \\
-\>   end \\
+\>\# \\
+\>\# Override resize to set the sizer's min/max locations. \\
+\>\# \\
+\>method resize() \\
+\>\>self.Dialog.resize() \\
+\>\>sizer.set\_min\_max(135, get\_w\_reference() - 160) \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ local root\_node \\
+\>method component\_setup() \\
+\>\>local root\_node \\
 \ \\
-\>   \ \ \ attrib("size=750,440",
-"resize=on",
-"label=Explorer") \\
-\>   \ \ \ connect(self, "dispose",
-CLOSE\_BUTTON\_EVENT) \\
-\>   \ \ \ connect(self, "quit\_check",
-ICON\_EVENT) \\
-\>   \ \ \ tree := Tree("pos=10,10",
-"size=250,100\%-20",
-"select\_one") \\
-\>   \ \ \ tree.connect(self,
-"handle\_tree\_expansion",
-TREE\_NODE\_EXPANSION\_EVENT) \\
-\>   \ \ \ tree.connect(self,
-"handle\_tree\_selection",
-SELECTION\_CHANGED\_EVENT) \\
-\>   \ \ \ add(tree) \\
+\>\>attrib("size=750,440", "resize=on", "label=Explorer") \\
+\>\>connect(self, "dispose", CLOSE\_BUTTON\_EVENT) \\
+\>\>connect(self, "quit\_check", ICON\_EVENT) \\
+\>\>tree := Tree("pos=10,10", "size=250,100\%-20", "select\_one") \\
+\>\>tree.connect(self, "handle\_tree\_expansion", TREE\_NODE\_EXPANSION\_EVENT) \\
+\>\>tree.connect(self, "handle\_tree\_selection", SELECTION\_CHANGED\_EVENT) \\
+\>\>add(tree) \\
 \ \\
-\>   \ \ \ tbl := Table("pos=270,10",
-"size=100\%-280,100\%-20",
-"select\_none") \\
-\>   \ \ \ tbl.add\_column(TableColumn("label=File",
-"column\_width=150")) \\
-\>   \ \ \ tbl.add\_column(TableColumn("label=Size",
-"column\_width=75",
-"internal\_alignment=r")) \\
-\>   \ \ \ tbl.add\_column(TableColumn("label=Date",
-"column\_width=100")) \\
-\>   \ \ \ tbl.add\_column(TableColumn("label=Bits",
-"column\_width=100")) \\
-\>   \ \ \ add(tbl) \\
+\>\>tbl := Table("pos=270,10", "size=100\%-280,100\%-20", "select\_none") \\
+\>\>tbl.add\_column(TableColumn("label=File", "column\_width=150")) \\
+\>\>tbl.add\_column(TableColumn("label=Size", "column\_width=75", "internal\_alignment=r")) \\
+\>\>tbl.add\_column(TableColumn("label=Date", "column\_width=100")) \\
+\>\>tbl.add\_column(TableColumn("label=Bits", "column\_width=100")) \\
+\>\>add(tbl) \\
 \ \\
-\>   \ \ \ sizer := Sizer("pos=260,10",
-"size=10,100\%-20") \\
-\>   \ \ \ sizer.connect(self,
-"handle\_sizer", SIZER\_RELEASED\_EVENT) \\
-\>   \ \ \ add(sizer) \\
+\>\>sizer := Sizer("pos=260,10", "size=10,100\%-20") \\
+\>\>sizer.connect(self, "handle\_sizer", SIZER\_RELEASED\_EVENT) \\
+\>\>add(sizer) \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Initialize the tree data structure. \\
-\>   \ \ \ \# \\
-\>   \ \ \ root\_node := Node("label=/") \\
-\>   \ \ \ load\_subtree(root\_node) \\
-\>   \ \ \ tree.set\_root\_node(root\_node) \\
-\>   \ \ \ tree.object\_set\_selections([root\_node]) \\
-\>   \ \ \ load\_table(root\_node) \\
-\>   end \\
+\>\>\# \\
+\>\>\# Initialize the tree data structure. \\
+\>\>\# \\
+\>\>root\_node := Node("label=/") \\
+\>\>load\_subtree(root\_node) \\
+\>\>tree.set\_root\_node(root\_node) \\
+\>\>tree.object\_set\_selections([root\_node]) \\
+\>\>load\_table(root\_node) \\
+\>end \\
 end \\
 \ \\
 procedure main() \\
-\>   Explorer().show\_modal() \\
+\>Explorer().show\_modal() \\
 end
 }
 
@@ -1182,13 +1072,13 @@ method is used to set the title. Here is a program fragment to create a
 border with a label as its title:
 
 \iconcode{
-\>   \ \ b := Border() \\
-\>   \ \ \# \\
-\>   \ \ \# Add a Label as the title \\
-\>   \ \ \# \\
-\>   \ \ l := Label("label=Title String") \\
-\>   \ \ b.set\_title(l) \\
-\>   \ \ add(b)
+\>b := Border() \\
+\>\# \\
+\>\# Add a Label as the title \\
+\>\# \\
+\>l := Label("label=Title String") \\
+\>b.set\_title(l) \\
+\>add(b)
 }
 
 The \texttt{Border} class acts as a container (like a \texttt{Panel}),
@@ -1254,79 +1144,81 @@ package gui \\
 \# A progress bar \\
 \# \\
 class ProgressBar : Component( \\
-\>   p, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# The percentage on display. \\
-\>   bar\_x, bar\_y, \\
-\>   bar\_h, bar\_w)\ \ \ \# Maximum bar height and width. \\
+\>p,\>\>\>\>\>\>\>\# The percentage on display. \\
+\>bar\_x, bar\_y, \\
+\>bar\_h, bar\_w)\>\>\>\>\>\>\>\# Maximum bar height and width. \\
 \ \\
-\>   method resize() \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Set a default height based on the font size. \\
-\>   \ \ \ /h\_spec := WAttrib(cwin, "fheight") + 2 * 
-                          DEFAULT\_TEXT\_Y\_SURROUND \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Call the parent class's resize method (this is mandatory). \\
-\>   \ \ \ self.Component.resize() \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Set bar height and width figures - this just gives a \\
-\>   \ \ \ \# sensible border between the "bar" and the border of the \\
-\>   \ \ \ \# object. By using these constants, a consistent \\
-\>   \ \ \ \# appearance with other objects is obtained. \\
-\>   \ \ \ bar\_x := x + DEFAULT\_TEXT\_X\_SURROUND \\
-\>   \ \ \ bar\_y := y + BORDER\_WIDTH + 3 \\
-\>   \ \ \ bar\_w := w - 2 * DEFAULT\_TEXT\_X\_SURROUND \\
-\>   \ \ \ bar\_h := h - 2 * (BORDER\_WIDTH + 3)  \\
-\>   end \\
+\>method resize() \\
+\>\>\# \\
+\>\>\# Set a default height based on the font size. \\
+\>\>\# \\
+\>\>/h\_spec := WAttrib(cwin, "fheight") + 2 * DEFAULT\_TEXT\_Y\_SURROUND \\
+\>\>\# \\
+\>\>\# Call the parent class's resize method (this is mandatory). \\
+\>\>\# \\
+\>\>self.Component.resize() \\
+\>\>\# \\
+\>\>\# Set bar height and width figures - this just gives a \\
+\>\>\# sensible border between the "bar" and the border of the \\
+\>\>\# object. By using these constants, a consistent \\
+\>\>\# appearance with other objects is obtained. \\
+\>\>\# \\
+\>\>bar\_x := x + DEFAULT\_TEXT\_X\_SURROUND \\
+\>\>bar\_y := y + BORDER\_WIDTH + 3 \\
+\>\>bar\_w := w - 2 * DEFAULT\_TEXT\_X\_SURROUND \\
+\>\>bar\_h := h - 2 * (BORDER\_WIDTH + 3)  \\
+\>end \\
 \ \\
-\>   method display(buffer\_flag) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Erase and re-draw the border and bar \\
-\>   \ \ \ EraseRectangle(cbwin, x, y, w, h) \\
-\>   \ \ \ DrawRaisedRectangle(cbwin, x, y, w,
-h) \\
-\>   \ \ \ FillRectangle(cbwin, bar\_x, bar\_y, bar\_w * p / 100.0, bar\_h) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Draw the string in reverse mode \\
-\>   \ \ \ cw := Clone(cbwin, "drawop=reverse") \\
-\>   \ \ \ center\_string(cw, x + w / 2, y + h / 2,
-p {\textbar}{\textbar} "\%") \\
-\>   \ \ \ Uncouple(cw) \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Copy from buffer to window if flag not set. \\
-\>   \ \ \ \# \\
-\>   \ \ \ if /buffer\_flag then CopyArea(cbwin, cwin, x, y, w, h, x, y) \\
-\>   end \\
+\>method display(buffer\_flag) \\
+\>\>\# \\
+\>\>\# Erase and re-draw the border and bar \\
+\>\>\# \\
+\>\>EraseRectangle(cbwin, x, y, w, h) \\
+\>\>DrawRaisedRectangle(cbwin, x, y, w, h) \\
+\>\>FillRectangle(cbwin, bar\_x, bar\_y, bar\_w * p / 100.0, bar\_h) \\
+\>\>\# \\
+\>\>\# Draw the string in reverse mode \\
+\>\>\# \\
+\>\>cw := Clone(cbwin, "drawop=reverse") \\
+\>\>center\_string(cw, x + w / 2, y + h / 2, p {\textbar}{\textbar} "\%") \\
+\>\>Uncouple(cw) \\
+\>\>\# \\
+\>\>\# Copy from buffer to window if flag not set. \\
+\>\>\# \\
+\>\>if /buffer\_flag then CopyArea(cbwin, cwin, x, y, w, h, x, y) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Get the current percentage. \\
-\>   \# \\
-\>   method get\_percentage() \\
-\>   \ \ \ return p \\
-\>   end \\
+\>\# \\
+\>\# Get the current percentage. \\
+\>\# \\
+\>method get\_percentage() \\
+\>\>return p \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Set the percentage. \\
-\>   \# \\
-\>   method set\_percentage(p) \\
-\>   \ \ \ p {\textless}:= 0 \\
-\>   \ \ \ p {\textgreater}:= 100 \\
-\>   \ \ \ self.p := p \\
-\>   \ \ \ invalidate() \\
-\>   end \\
+\>\# \\
+\>\# Set the percentage. \\
+\>\# \\
+\>method set\_percentage(p) \\
+\>\>p {\textless}:= 0 \\
+\>\>p {\textgreater}:= 100 \\
+\>\>self.p := p \\
+\>\>invalidate() \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Provide an extra attribute, "percentage" \\
-\>   \# \\
-\>   method set\_one(attr, val) \\
-\>   \ \ \ case attr of \{ \\
-\>   \ \ \ \ \ \ "percentage" : set\_percentage(int\_val(attr, val)) \\
-\>   \ \ \ \ \ \ default: self.Component.set\_one(attr, val) \\
-\>   \ \ \ \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# Provide an extra attribute, "percentage" \\
+\>\# \\
+\>method set\_one(attr, val) \\
+\>\>case attr of \{ \\
+\>\>\>"percentage" : set\_percentage(int\_val(attr, val)) \\
+\>\>\>default : self.Component.set\_one(attr, val) \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   initially(a[]) \\
-\>   \ \ \ self.Component.initially() \\
-\>   \ \ \ set\_percentage(0) \\
-\>   \ \ \ set\_fields(a) \\
+initially(a[]) \\
+\>self.Component.initially() \\
+\>set\_percentage(0) \\
+\>set\_fields(a) \\
 end \\
 }
 
@@ -1366,13 +1258,16 @@ added to the component using the \texttt{add} method. This ensures
 they are properly initialized. A listener is connected to the button
 so that the selection moves on one when it is pressed. The
 \texttt{set\_selection()} method is available to a client program to
-change the selection programmatically. Note how this method invokes
+change the selection programmatically.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+This method invokes
 \texttt{invalidate()}. This tells the toolkit that the component
 needs to be re-displayed. To keep the GUI responsive, the toolkit
 will only schedule this re-display when there are no user input events
 to be processed. So, \texttt{invalidate()} doesn't
 actually invoke the component's \texttt{display()}
-method directly.
+method directly.}\medskip
 
 The \texttt{resize()} method sets the sub-components'
 position and size, and then calls the \texttt{resize()} method for each
@@ -1386,15 +1281,13 @@ all the standard attributes work too. So, a client can construct a
 \texttt{Circulate} with something like :
 
 \iconcode{
-\>   \ c := Circulate("size=,250",
-"pos=20,20", \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "selection\_list=hot,warm,cold",
-"selection=2",
-"bg=green")
+\>c := Circulate("size=,250", "pos=20,20", \\
+\>\>\>\>\>\ "selection\_list=hot,warm,cold", "selection=2", "bg=green")
 }
 
-Note how the height is omitted; the \texttt{resize()} method will set a
-default value.
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+The height is omitted; the \texttt{resize()} method will set a
+default value.}\medskip
 
 \bigskip
 
@@ -1412,107 +1305,101 @@ link graphics \\
 \# Selection from a list \\
 \# \\
 class Circulate : Component(selection, selection\_list, b, l) \\
-\>   \# \\
-\>   \# Set the list from which selections are made. \\
-\>   \# \\
-\>   \# @param x the list of selection strings \\
-\>   method set\_selection\_list(x) \\
-\>   \ \ \ selection\_list := x \\
-\>   \ \ \ set\_selection(1) \\
-\>   \ \ \ return x \\
-\>   end \\
+\>\# \\
+\>\# Set the list from which selections are made. \\
+\>\# \\
+\>\# @param x the list of selection strings \\
+\>method set\_selection\_list(x) \\
+\>\>selection\_list := x \\
+\>\>set\_selection(1) \\
+\>\>return x \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Set the selection to the given index into the selection list. \\
-\>   \# \\
-\>   \# @param x an index into the selection list \\
-\>   method set\_selection(x) \\
-\>   \ \ \ selection := x \\
-\>   \ \ \ l.set\_label(selection\_list[selection]) \\
-\>   \ \ \ invalidate() \\
-\>   \ \ \ return x \\
-\>   end \\
+\>\# \\
+\>\# Set the selection to the given index into the selection list. \\
+\>\# \\
+\>\# @param x an index into the selection list \\
+\>method set\_selection(x) \\
+\>\>selection := x \\
+\>\>l.set\_label(selection\_list[selection]) \\
+\>\>invalidate() \\
+\>\>return x \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Return the current selection, as an index in the selection list. \\
-\>   \# \\
-\>   \# @return an integer, being the current selection \\
-\>   method get\_selection() \\
-\>   \ \ \ return selection \\
-\>   end \\
+\>\# \\
+\>\# Return the current selection, as an index in the selection list. \\
+\>\# \\
+\>\# @return an integer, being the current selection \\
+\>method get\_selection() \\
+\>\>return selection \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Called once at startup, and whenever the window is resized. \\
-\>   \# \\
-\>   method resize() \\
-\>   \ \ \ /h\_spec := WAttrib(cwin, "fheight") + 16 \\
-\>   \ \ \ compute\_absolutes() \\
+\>\# \\
+\>\# Called once at startup, and whenever the window is resized. \\
+\>\# \\
+\>method resize() \\
+\>\>/h\_spec := WAttrib(cwin, "fheight") + 16 \\
+\>\>compute\_absolutes() \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Set button position and size \\
-\>   \ \ \ b.set\_pos(BORDER\_WIDTH, BORDER\_WIDTH) \\
-\>   \ \ \ b.set\_size(h - 2 * BORDER\_WIDTH, h - 2 * BORDER\_WIDTH) \\
-\>   \ \ \ b.resize() \\
+\>\>\# \\
+\>\>\# Set button position and size \\
+\>\>b.set\_pos(BORDER\_WIDTH, BORDER\_WIDTH) \\
+\>\>b.set\_size(h - 2 * BORDER\_WIDTH, h - 2 * BORDER\_WIDTH) \\
+\>\>b.resize() \\
 \ \\
-\>   \ \ \ l.set\_pos(h - BORDER\_WIDTH +
-DEFAULT\_TEXT\_X\_SURROUND, h / 2) \\
-\>   \ \ \ l.set\_align("l",
-"c") \\
-\>   \ \ \ l.set\_size(w - h - 2 *
-DEFAULT\_TEXT\_X\_SURROUND, \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ h - 2 * BORDER\_WIDTH) \\
-\>   \ \ \ l.resize() \\
-\>   \ \ \ return \\
-\>   end \\
+\>\>l.set\_pos(h - BORDER\_WIDTH + DEFAULT\_TEXT\_X\_SURROUND, h / 2) \\
+\>\>l.set\_align("l", "c") \\
+\>\>l.set\_size(w - h - 2 * DEFAULT\_TEXT\_X\_SURROUND, \\
+\>\>\>\>\>h - 2 * BORDER\_WIDTH) \\
+\>\>l.resize() \\
+\>\>return \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Display the object. \ In this case, double buffering is not necessary.\\
-\>   \# \\
-\>   method display(buffer\_flag) \\
-\>   \ \ \ W := if /buffer\_flag then cwin else cbwin \\
-\>   \ \ \ EraseRectangle(W, x, y, w, h) \\
-\>   \ \ \ DrawSunkenRectangle(W, x, y, w, h) \\
-\>   \ \ \ l.display(buffer\_flag) \\
-\>   \ \ \ b.display(buffer\_flag) \\
-\>   \ \ \ do\_shading(W) \\
-\>   end \\
+\>\# \\
+\>\# Display the object. \ In this case, double buffering is not necessary.\\
+\>\# \\
+\>method display(buffer\_flag) \\
+\>\>W := if /buffer\_flag then cwin else cbwin \\
+\>\>EraseRectangle(W, x, y, w, h) \\
+\>\>DrawSunkenRectangle(W, x, y, w, h) \\
+\>\>l.display(buffer\_flag) \\
+\>\>b.display(buffer\_flag) \\
+\>\>do\_shading(W) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# The handler for the button - move the selection forward. \\
-\>   \# \\
-\>   method on\_button\_pressed(ev) \\
-\>   \ \ \ set\_selection(1 + selection \% *selection\_list) \\
-\>   \ \ \ create\_event\_and\_fire(SELECTION\_CHANGED\_EVENT, e) \\
-\>   end \\
+\>\# \\
+\>\# The handler for the button - move the selection forward. \\
+\>\# \\
+\>method on\_button\_pressed(ev) \\
+\>\>set\_selection(1 + selection \% *selection\_list) \\
+\>\>create\_event\_and\_fire(SELECTION\_CHANGED\_EVENT, e) \\
+\>end \\
 \ \\
-\>   method set\_one(attr, val) \\
-\>   \ \ \ case attr of \{ \\
-\>   \ \ \ \ \ \ "selection" :
-set\_selection(int\_val(attr, val)) \\
-\>   \ \ \ \ \ \ "selection\_list" :
-set\_selection\_list(val) \\
-\>   \ \ \ \ \ \ default: self.Component.set\_one(attr, val) \\
-\>   \ \ \ \} \\
-\>   end \\
+\>method set\_one(attr, val) \\
+\>\>case attr of \{ \\
+\>\>\>"selection" : set\_selection(int\_val(attr, val)) \\
+\>\>\>"selection\_list" : set\_selection\_list(val) \\
+\>\>\>default : self.Component.set\_one(attr, val) \\
+\>\>\} \\
+\>end \\
 \ \\
-\>   initially(a[])  \\
-\>   \ \ \ self.Component.initially() \\
-\>   \ \ \ l := Label() \\
-\>   \ \ \ l.clear\_draw\_border() \\
-\>   \ \ \ add(l) \\
-\>   \ \ \ b := IconButton() \\
-\>   \ \ \ b.connect(self,
-"on\_button\_pressed", ACTION\_EVENT) \\
-\>   \ \ \ add(b) \\
-\>   \ \ \ b.set\_draw\_border() \\
-\>   \ \ \ b.set\_img("13,c1,\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\_ \\
+\>initially(a[])  \\
+\>\>self.Component.initially() \\
+\>\>l := Label() \\
+\>\>l.clear\_draw\_border() \\
+\>\>add(l) \\
+\>\>b := IconButton() \\
+\>\>b.connect(self, "on\_button\_pressed", ACTION\_EVENT) \\
+\>\>add(b) \\
+\>\>b.set\_draw\_border() \\
+\>\>b.set\_img("13,c1,\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\_ \\
 \>\>\~{}\~{}\~{}000000\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
 \>\>\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
 \>\>\~{}00\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}00\~{}\~{}\~{}\~{}00000\~{}\_ \\
 \>\>\~{}00\~{}\~{}\~{}0000000\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
 \>\>\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}000000\~{}\~{}\~{}\~{}\_ \\
 \>\>\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}") \\
-\>   \ \ \ set\_fields(a) \\
+\>\>set\_fields(a) \\
 end
 }
 
@@ -1542,180 +1429,173 @@ import gui \\
 \$define CELL\_WIDTH 30 \\
 \ \\
 class Palette : SubMenu( \\
-\>   w, h, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# width and height \\
-\>   colour, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# Color number selected \\
-\>   palette, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# List of colors \\
-\>   box\_size, \ \ \ \ \ \ \ \ \ \ \ \ \# Width/height in cells \\
-\>   temp\_win \ \ \ \ \ \ \ \ \ \ \ \ \# Temporary window \\
-\>   ) \\
+\>w, h,\>\>\>\>\>\>\>\# width and height \\
+\>colour,\>\>\>\>\>\>\>\# Color number selected \\
+\>palette,\>\>\>\>\>\>\>\# List of colors \\
+\>box\_size,\>\>\>\>\>\>\>\# Width/height in cells \\
+\>temp\_win\>\>\>\>\>\>\>\# Temporary window \\
+\>) \\
 \ \\
-\>   \# \\
-\>   \# Get the result \\
-\>   \# \\
-\>   method get\_colour() \\
-\>   \ \ \ return palette[colour] \\
-\>   end \\
+\>\# \\
+\>\# Get the result \\
+\>\# \\
+\>method get\_colour() \\
+\>\>return palette[colour] \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Set the palette list \\
-\>   \# \\
-\>   method set\_palette(l) \\
-\>   \ \ \ box\_size := integer(sqrt(*l)) \\
-\>   \ \ \ return palette := l \\
-\>   end \\
+\>\# \\
+\>\# Set the palette list \\
+\>\# \\
+\>method set\_palette(l) \\
+\>\>box\_size := integer(sqrt(*l)) \\
+\>\>return palette := l \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# This is called by the toolkit; it is a convenient place to initialize sizes. \\
-\>   \# \\
-\>   method resize() \\
-\>   \ \ \ w := h := box\_size * CELL\_WIDTH + 2 * BORDER\_WIDTH \\
-\>   end \\
+\>\# \\
+\>\# This is called by the toolkit; it is a convenient place to initialize sizes. \\
+\>\# \\
+\>method resize() \\
+\>\>w := h := box\_size * CELL\_WIDTH + 2 * BORDER\_WIDTH \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Called to display the item. \ The x, y co-ordinates have been set up \\
-\>   \# for us and give the top left hand corner of the display.  \\
-\>   \# \\
-\>   method display() \\
-\>   \ \ \ if /temp\_win then \{ \\
-\>   \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \# Open a temporary area for the menu and copy. \\
-\>   \ \ \ \ \ \ temp\_win := WOpen("canvas=hidden",
-                                    "size=" {\textbar}{\textbar} w
-                            {\textbar}{\textbar} "," {\textbar}{\textbar} h) \\
-\>   \ \ \ \ \ \ CopyArea(parent\_component.get\_parent\_win(), \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ temp\_win, x, y, w, h, 0, 0) \\
-\>\>   \} \\
+\>\# \\
+\>\# Called to display the item. \ The x, y co-ordinates have been set up \\
+\>\# for us and give the top left hand corner of the display.  \\
+\>\# \\
+\>method display() \\
+\>\>if /temp\_win then \{ \\
+\>\>\>\# \\
+\>\>\>\# Open a temporary area for the menu and copy. \\
+\>\>\>temp\_win := WOpen("canvas=hidden", "size=" {\textbar}{\textbar} w
+{\textbar}{\textbar} "," {\textbar}{\textbar} h) \\
+\>\>\>CopyArea(parent\_component.get\_parent\_win(), \\
+\>\>\>\>\>\>\ temp\_win, x, y, w, h, 0, 0) \\
+\>\>\>\} \\
 \ \\
-\>   \ \ \ cw := Clone(parent\_component.cwin) \\
+\>\>cw := Clone(parent\_component.cwin) \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Clear area and draw rectangle around whole, then draw the color grid \\
-\>   \ \ \ EraseRectangle(cw, x, y, w, h) \\
-\>   \ \ \ DrawRaisedRectangle(cw, x, y, w, h) \\
-\>   \ \ \ y1 := y + BORDER\_WIDTH \ \ \ \ \  \\
-\>   \ \ \ e := create "fg=" {\textbar}{\textbar} !palette \\
-\>   \ \ \ every 1 to box\_size do \{ \\
-\>   \ \ \ \ \ \ x1 := x + BORDER\_WIDTH \  \\
-\>   \ \ \ \ \ \ every 1 to box\_size do \{ \\
-\>   \ \ \ \ \ \ \ \ \ WAttrib(cw, @e) \\
-\>   \ \ \ \ \ \ \ \ \ FillRectangle(cw, x1, y1, CELL\_WIDTH, CELL\_WIDTH) \\
-\>   \ \ \ \ \ \ \ \ \ x1 +:= CELL\_WIDTH \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ y1 +:= CELL\_WIDTH \\
-\>   \ \ \ \} \\
-\>   \ \ \ Uncouple(cw) \\
-\>   end \\
+\>\>\# \\
+\>\>\# Clear area and draw rectangle around whole, then draw the color grid \\
+\>\>EraseRectangle(cw, x, y, w, h) \\
+\>\>DrawRaisedRectangle(cw, x, y, w, h) \\
+\>\>y1 := y + BORDER\_WIDTH \ \ \ \ \  \\
+\>\>e := create "fg=" {\textbar}{\textbar} !palette \\
+\>\>every 1 to box\_size do \{ \\
+\>\>\>x1 := x + BORDER\_WIDTH \  \\
+\>\>\>every 1 to box\_size do \{ \\
+\>\>\>\>WAttrib(cw, @e) \\
+\>\>\>\>FillRectangle(cw, x1, y1, CELL\_WIDTH, CELL\_WIDTH) \\
+\>\>\>\>x1 +:= CELL\_WIDTH \\
+\>\>\>\>\} \\
+\>\>\>y1 +:= CELL\_WIDTH \\
+\>\>\>\} \\
+\>\>Uncouple(cw) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Test whether pointer in palette\_region, and if so which cell it's in \\
-\>   \# \\
-\>   method in\_palette\_region() \\
-\>   \ \ \ if (x {\textless}= \&x {\textless} x + w) \& (y {\textless}= \&y {\textless} y + h)
-then \{ \\
-\>   \ \ \ \ \ \ x1 := (\&x - x - BORDER\_WIDTH) / CELL\_WIDTH \\
-\>   \ \ \ \ \ \ y1 := (\&y - y - BORDER\_WIDTH) / CELL\_WIDTH \\
-\>   \ \ \ \ \ \ return 1 + x1 + y1 * box\_size \\
-\>\>   \} \\
-\>   end \\
+\>\# \\
+\>\# Test whether pointer in palette\_region, and if so which cell it's in \\
+\>\# \\
+\>method in\_palette\_region() \\
+\>\>if (x {\textless}= \&x {\textless} x + w) \& (y {\textless}= \&y {\textless} y + h) then \{ \\
+\>\>\>x1 := (\&x - x - BORDER\_WIDTH) / CELL\_WIDTH \\
+\>\>\>y1 := (\&y - y - BORDER\_WIDTH) / CELL\_WIDTH \\
+\>\>\>return 1 + x1 + y1 * box\_size \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Will be called if our menu is open. \\
-\>   \# \\
-\>   method handle\_event(e) \\
-\>   \ \ \ if i := in\_palette\_region() then \{ \\
-\>   \ \ \ \ \ \ if integer(e) = (\&lrelease {\textbar} \&rrelease {\textbar}
-                                  \&mrelease) then \{ \\
-\>   \ \ \ \ \ \ \ \ \ colour := i \\
-\>   \ \ \ \ \ \ \ \ \ \# This is a helper method in the superclass which \\
-\>   \ \ \ \ \ \ \ \ \ \# closes the menu system and fires an ACTION\_EVENT \\
-\>   \ \ \ \ \ \ \ \ \ succeed(e) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} else \{ \\
-\>   \ \ \ \ \ \ if integer(e) = (\&lrelease {\textbar} \&rrelease
-{\textbar} \&mrelease {\textbar} \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&lpress {\textbar}
-\&rpress {\textbar} \&mpress) then \\
-\>   \ \ \ \ \ \ \ \ \ \# This is a helper method in the superclass
-which \\
-\>   \ \ \ \ \ \ \ \ \ \# closes the menu system, without firing an
-event. \\
-\>   \ \ \ \ \ \ \ \ \ close\_all() \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# Will be called if our menu is open. \\
+\>\# \\
+\>method handle\_event(e) \\
+\>\>if i := in\_palette\_region() then \{ \\
+\>\>\>if integer(e) = (\&lrelease {\textbar} \&rrelease {\textbar} \&mrelease) then \{ \\
+\>\>\>\>colour := i \\
+\>\>\>\>\# This is a helper method in the superclass which \\
+\>\>\>\>\# closes the menu system and fires an ACTION\_EVENT \\
+\>\>\>\>succeed(e) \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>\>else \{ \\
+\>\>\>if integer(e) = (\&lrelease {\textbar} \&rrelease {\textbar} \&mrelease {\textbar} \\
+\>\>\>\>\>\>\>\&lpress {\textbar} \&rpress {\textbar} \&mpress) then \\
+\>\>\>\>\# This is a helper method in the superclass which \\
+\>\>\>\>\# closes the menu system, without firing an event. \\
+\>\>\>\>close\_all() \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Close this menu. Restore window area. \\
-\>   \# \\
-\>   method hide() \\
-\>   \ \ \ EraseRectangle(parent\_component.cwin, x, y, w, h) \\
-\>   \ \ \ CopyArea(temp\_win, parent\_component.get\_parent\_win(),
-                    0, 0, w, h, x, y) \\
-\>   \ \ \ WClose(temp\_win) \\
-\>   \ \ \ temp\_win := \&null \\
-\>   end \\
+\>\# \\
+\>\# Close this menu. Restore window area. \\
+\>\# \\
+\>method hide() \\
+\>\>EraseRectangle(parent\_component.cwin, x, y, w, h) \\
+\>\>CopyArea(temp\_win, parent\_component.get\_parent\_win(), 0, 0, w, h, x, y) \\
+\>\>WClose(temp\_win) \\
+\>\>temp\_win := \&null \\
+\>end \\
 \ \\
-\>   \# Support a "palette" attrib \\
-\>   method set\_one(attr, val) \\
-\>   \ \ \ case attr of \{ \\
-\>   \ \ \ \ \ \ "palette" :
-set\_palette(val) \\
-\>   \ \ \ \ \ \ default : self.MenuComponent.set\_one(attr, val) \\
-\>   \ \ \ \ \ \ \} \\
-\>   end \\
+\>\# Support a "palette" attrib \\
+\>method set\_one(attr, val) \\
+\>\>case attr of \{ \\
+\>\>\>"palette" : set\_palette(val) \\
+\>\>\>default : self.MenuComponent.set\_one(attr, val) \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   initially(a[]) \\
-\>   \ \ \ self.SubMenu.initially() \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Set the image to appear on the Menu above ours. We could design a tiny \\
-\>   \ \ \ \# icon and use that instead of the standard arrow if we wished. \\
-\>   \ \ \ \# Call set\_fields to support the attrib style constructor. \\
-\>   \ \ \ \#  \\
-\>   \ \ \ set\_img\_right(img\_style("arrow\_right")) \\
-\>   \ \ \ set\_fields(a) \\
+\>initially(a[]) \\
+\>\>self.SubMenu.initially() \\
+\>\>\# \\
+\>\>\# Set the image to appear on the Menu above ours. We could design a tiny \\
+\>\>\# icon and use that instead of the standard arrow if we wished. \\
+\>\>\# Call set\_fields to support the attrib style constructor. \\
+\>\>\#  \\
+\>\>set\_img\_right(img\_style("arrow\_right")) \\
+\>\>set\_fields(a) \\
 end \\
 \ \\
 \# \\
 \# Test class dialog. \\
 \# \\
 class TestPalette : Dialog(palette) \\
-\>   method on\_palette(ev) \\
-\>   \ \ \ write("Colour selected : "
-{\textbar}{\textbar} palette.get\_colour()) \\
-\>   end \\
+\>method on\_palette(ev) \\
+\>\>write("Colour selected : " {\textbar}{\textbar} palette.get\_colour()) \\
+\>end \\
 \ \\
-\>   method on\_anything(ev) \\
-\>   \ \ \ write("Anything item selected") \\
-\>   end \\
+\>method on\_anything(ev) \\
+\>\>write("Anything item selected") \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ local menu\_bar, menu, text\_menu\_item, close \\
-\>   \ \ \ attrib("size=400,200") \\
+\>method component\_setup() \\
+\>\>local menu\_bar, menu, text\_menu\_item, close \\
+\\
+\>\>attrib("size=400,200") \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Create a MenuBar which includes our palette as a sub-menu \\
-\>   \ \ \ menu\_bar := MenuBar("pos=0,0") \\
-\>   \ \ \ menu := Menu("label=Test") \\
-\>   \ \ \ text\_menu\_item := TextMenuItem("label=Anything") \\
-\>   \ \ \ text\_menu\_item.connect(self, "on\_anything", ACTION\_EVENT) \\
-\>   \ \ \ menu.add(text\_menu\_item) \\
+\>\>\# \\
+\>\>\# Create a MenuBar which includes our palette as a sub-menu \\
+\>\>\# \\
+\>\>menu\_bar := MenuBar("pos=0,0") \\
+\>\>menu := Menu("label=Test") \\
+\>\>text\_menu\_item := TextMenuItem("label=Anything") \\
+\>\>text\_menu\_item.connect(self, "on\_anything", ACTION\_EVENT) \\
+\>\>menu.add(text\_menu\_item) \\
 \ \\
-\>   \ \ \ palette := Palette("label=Test menu", \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "palette=red,green,yellow,black,white,purple,gray,blue,pink") \\
-\>   \ \ \ palette.connect(self, "on\_palette", ACTION\_EVENT) \\
-\>   \ \ \ menu.add(palette) \\
-\>   \ \ \ menu\_bar.add(menu) \\
-\>   \ \ \ add(menu\_bar) \\
+\>\>palette := Palette("label=Test menu", \\
+\>\>\>\>\>\>\>\ "palette=red,green,yellow,black,white,purple,gray,blue,pink") \\
+\>\>palette.connect(self, "on\_palette", ACTION\_EVENT) \\
+\>\>menu.add(palette) \\
+\>\>menu\_bar.add(menu) \\
+\>\>add(menu\_bar) \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Add a close button.\\
-\>   \ \ \ close := TextButton("pos=50\%,66\%", "align=c,c", "label=Close") \\
-\>   \ \ \ close.connect(self, "dispose", ACTION\_EVENT) \\
-\>   \ \ \ add(close) \\
-\>   end \\
+\>\>\# \\
+\>\>\# Add a close button.\\
+\>\>close := TextButton("pos=50\%,66\%", "align=c,c", "label=Close") \\
+\>\>close.connect(self, "dispose", ACTION\_EVENT) \\
+\>\>add(close) \\
+\>end \\
 end \\
 \ \\
 procedure main() \\
-\>   TestPalette().show\_modal() \\
+\>TestPalette().show\_modal() \\
 end
 }
 
@@ -1749,10 +1629,9 @@ is handled with a simple ticker:
 
 \iconcode{
 class FirstTicker : Ticker() \\
-\>   method tick() \\
-\>   \ \ \ write("Doing something in
-FirstTicker") \\
-\>   end \\
+\>method tick() \\
+\>\>write("Doing something in FirstTicker") \\
+\>end \\
 end
 }
 
@@ -1818,151 +1697,123 @@ import gui \\
 \# and display them in a dialog. \\
 \# \\
 class Sieve : Dialog(prime\_ce, interval, count\_label, prime\_label,  \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ rate\_label, start, stop) \\
+\>\>\>\>\>\>rate\_label, start, stop) \\
 \ \\
-\>   \# \\
-\>   \# Bring the label and ticker into line with the interval slider. \\
-\>   \# If the ticker is running, retime it. \\
-\>   \# \\
-\>   method synch\_interval() \\
-\>   \ \ \ rate\_label.set\_label(interval.get\_value()
-{\textbar}{\textbar} " ms") \\
-\>   \ \ \ if is\_ticking() then retime\_ticker(interval.get\_value()) \\
-\>   end \\
+\>\# \\
+\>\# Bring the label and ticker into line with the interval slider. \\
+\>\# If the ticker is running, retime it. \\
+\>\# \\
+\>method synch\_interval() \\
+\>\>rate\_label.set\_label(interval.get\_value() {\textbar}{\textbar} " ms") \\
+\>\>if is\_ticking() then retime\_ticker(interval.get\_value()) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Toggle the grey state of the start/stop buttons. \\
-\>   \# \\
-\>   method toggle\_buttons() \\
-\>   \ \ \ start.toggle\_is\_shaded() \\
-\>   \ \ \ stop.toggle\_is\_shaded() \\
-\>   end \\
+\>\# \\
+\>\# Toggle the grey state of the start/stop buttons. \\
+\>\# \\
+\>method toggle\_buttons() \\
+\>\>start.toggle\_is\_shaded() \\
+\>\>stop.toggle\_is\_shaded() \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# When the start button is pressed, toggle the grey state and start the ticker. \\
-\>   \# \\
-\>   method on\_start() \\
-\>   \ \ \ toggle\_buttons() \\
-\>   \ \ \ set\_ticker(interval.get\_value()) \\
-\>   end \\
+\>\# \\
+\>\# When the start button is pressed, toggle the grey state and start the ticker. \\
+\>\# \\
+\>method on\_start() \\
+\>\>toggle\_buttons() \\
+\>\>set\_ticker(interval.get\_value()) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# When the stop button is pressed, toggle the grey state and stop the ticker. \\
-\>   \#  \\
-\>   method on\_stop() \\
-\>   \ \ \ toggle\_buttons() \\
-\>   \ \ \ stop\_ticker() \\
-\>   end \\
+\>\# \\
+\>\# When the stop button is pressed, toggle the grey state and stop the ticker. \\
+\>\#  \\
+\>method on\_stop() \\
+\>\>toggle\_buttons() \\
+\>\>stop\_ticker() \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# The tick method, which is invoked regularly by the toolkit. \\
-\>   \# It just invokes the co-expression to display the next prime. \\
-\>   \# \\
-\>   method tick() \\
-\>   \ \ \ @prime\_ce \\
-\>   end \\
+\>\# \\
+\>\# The tick method, which is invoked regularly by the toolkit. \\
+\>\# It just invokes the co-expression to display the next prime. \\
+\>\# \\
+\>method tick() \\
+\>\>@prime\_ce \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# This method consitutes the co-expression body. \\
-\>   \# \\
-\>   method primes() \\
-\>   \ \ \ local prime\_candidate, non\_prime\_set := set(), prime\_count := 0 \\
+\>\# \\
+\>\# This method consitutes the co-expression body. \\
+\>\# \\
+\>method primes() \\
+\>\>local prime\_candidate, non\_prime\_set := set(), prime\_count := 0 \\
 \ \\
-\>   \ \ \ every prime\_candidate := 2 to \ PRIME\_LIMIT do \{ \\
-\>   \ \ \ \ \ \ if not member(non\_prime\_set, prime\_candidate) then
-\{ \\
-\>   \ \ \ \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \ \ \ \# Update the UI. \\
-\>   \ \ \ \ \ \ \ \ \ count\_label.set\_label(prime\_count +:= 1) \\
-\>   \ \ \ \ \ \ \ \ \ prime\_label.set\_label(prime\_candidate) \\
-\>   \ \ \ \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \ \ \ \# Update the non-prime set. \\
-\>   \ \ \ \ \ \ \ \ \ every insert(non\_prime\_set,\\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ 2 * prime\_candidate to PRIME\_LIMIT by prime\_candidate) \\
-\>   \ \ \ \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \ \ \ \# Suspend the co-expression until the next tick. \\
-\>   \ \ \ \ \ \ \ \ \ @\&source \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\>every prime\_candidate := 2 to \ PRIME\_LIMIT do \{ \\
+\>\>\>if not member(non\_prime\_set, prime\_candidate) then \{ \\
+\>\>\>\>\# \\
+\>\>\>\>\# Update the UI. \\
+\>\>\>\>count\_label.set\_label(prime\_count +:= 1) \\
+\>\>\>\>prime\_label.set\_label(prime\_candidate) \\
+\>\>\>\>\# \\
+\>\>\>\>\# Update the non-prime set. \\
+\>\>\>\>every insert(non\_prime\_set,\\
+\>\>\>\>\>2 * prime\_candidate to PRIME\_LIMIT by prime\_candidate) \\
+\>\>\>\>\# \\
+\>\>\>\>\# Suspend the co-expression until the next tick. \\
+\>\>\>\>@\&source \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ local prime\_border, rate, buttons, b \\
+\>method component\_setup() \\
+\>\>local prime\_border, rate, buttons, b \\
 \ \\
-\>   \ \ \ attrib("size=325,200",
-"label=Sieve") \\
-\>   \ \ \ connect(self, "dispose",
-CLOSE\_BUTTON\_EVENT) \\
+\>\>attrib("size=325,200", "label=Sieve") \\
+\>\>connect(self, "dispose", CLOSE\_BUTTON\_EVENT) \\
 \ \\
-\>   \ \ \ prime\_border :=
-Border("pos=20,20",
-"size=100\%-40,78") \\
-\>   \ \ \ prime\_border.set\_title(Label("pos=10,0",
-"label=Primes")) \\
-\>   \ \ \ prime\_ce := create primes() \\
+\>\>prime\_border := Border("pos=20,20", "size=100\%-40,78") \\
+\>\>prime\_border.set\_title(Label("pos=10,0", "label=Primes")) \\
+\>\>prime\_ce := create primes() \\
 \ \\
-\>   \ \ \ prime\_border.add(Label("pos=20,18",
-"label=Prime:")) \\
-\>   \ \ \ count\_label :=
-Label("pos=77,18",
-"size=40") \\
-\>   \ \ \ count\_label.set\_label("") \\
-\>   \ \ \ prime\_border.add(count\_label) \\
-\>   \ \ \ prime\_border.add(Label("pos=20,40",
-"label=Value:")) \\
-\>   \ \ \ prime\_label :=
-Label("pos=77,40",
-"size=40") \\
-\>   \ \ \ prime\_label.set\_label("") \\
-\>   \ \ \ prime\_border.add(prime\_label) \\
+\>\>prime\_border.add(Label("pos=20,18", "label=Prime:")) \\
+\>\>count\_label := Label("pos=77,18", "size=40") \\
+\>\>count\_label.set\_label("") \\
+\>\>prime\_border.add(count\_label) \\
+\>\>prime\_border.add(Label("pos=20,40", "label=Value:")) \\
+\>\>prime\_label := Label("pos=77,40", "size=40") \\
+\>\>prime\_label.set\_label("") \\
+\>\>prime\_border.add(prime\_label) \\
 \ \\
-\>   \ \ \ add(prime\_border) \\
+\>\>add(prime\_border) \\
 \ \\
-\>   \ \ \ rate := Panel("pos=20,112",
-"size=100\%-40,30") \\
-\>   \ \ \ rate.add(Label("pos=0,50\%",
-"size=45",
-"align=l,c",
-"label=Rate:")) \\
-\>   \ \ \ interval := Slider("pos=45,50\%", "size=100\%-90", "align=l,c", \\
-
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "range=20,2020", "is\_horizontal=t") \\
-\>   \ \ \ interval.set\_value(1000) \\
-\>   \ \ \ interval.connect(self,
-"synch\_interval", SLIDER\_DRAGGED\_EVENT) \\
-\>   \ \ \ rate.add(interval) \\
+\>\>rate := Panel("pos=20,112", "size=100\%-40,30") \\
+\>\>rate.add(Label("pos=0,50\%", "size=45", "align=l,c", "label=Rate:")) \\
+\>\>interval := Slider("pos=45,50\%", "size=100\%-90", "align=l,c", \\
+\>\>\>\>\>\>\>"range=20,2020", "is\_horizontal=t") \\
+\>\>interval.set\_value(1000) \\
+\>\>interval.connect(self, "synch\_interval", SLIDER\_DRAGGED\_EVENT) \\
+\>\>rate.add(interval) \\
 \ \\
-\>   \ \ \ rate\_label := Label("pos=100\%,50\%", "size=45", "align=r,c", \\
-\>\>\>\>"internal\_alignment=r") \\
-\>   \ \ \ rate.add(rate\_label) \\
-\>   \ \ \ synch\_interval() \\
-\>   \ \ \ add(rate) \\
+\>\>rate\_label := Label("pos=100\%,50\%", "size=45", "align=r,c", \\
+\>\>\>\>\>\>\>\>\ "internal\_alignment=r") \\
+\>\>rate.add(rate\_label) \\
+\>\>synch\_interval() \\
+\>\>add(rate) \\
 \ \\
-\>   \ \ \ buttons := Panel("pos=50\%,158",
-"size=161,25",
-"align=c,t") \\
-\>   \ \ \ start := TextButton("pos=0,0",
-"label=Start") \\
-\>   \ \ \ start.connect(self, "on\_start",
-ACTION\_EVENT) \\
-\>   \ \ \ buttons.add(start) \\
-\>   \ \ \ stop := TextButton("pos=58,0",
-"label=Stop",
-"is\_shaded=t") \\
-\>   \ \ \ stop.connect(self, "on\_stop",
-ACTION\_EVENT) \\
-\>   \ \ \ buttons.add(stop) \\
-\>   \ \ \ b := TextButton("pos=108,0",
-"label=Quit") \\
-\>   \ \ \ b.connect(self, "dispose",
-ACTION\_EVENT) \\
-\>   \ \ \ buttons.add(b) \\
-\>   \ \ \ add(buttons) \\
-\>   end \\
+\>\>buttons := Panel("pos=50\%,158", "size=161,25", "align=c,t") \\
+\>\>start := TextButton("pos=0,0", "label=Start") \\
+\>\>start.connect(self, "on\_start", ACTION\_EVENT) \\
+\>\>buttons.add(start) \\
+\>\>stop := TextButton("pos=58,0", "label=Stop", "is\_shaded=t") \\
+\>\>stop.connect(self, "on\_stop", ACTION\_EVENT) \\
+\>\>buttons.add(stop) \\
+\>\>b := TextButton("pos=108,0", "label=Quit") \\
+\>\>b.connect(self, "dispose", ACTION\_EVENT) \\
+\>\>buttons.add(b) \\
+\>\>add(buttons) \\
+\>end \\
 end \\
 \ \\
 procedure main() \\
-\>   Sieve().show\_modal() \\
+\>Sieve().show\_modal() \\
 end
 }
 
@@ -1997,7 +1848,7 @@ Then, listen for changes by listening for a
 \texttt{SELECTION\_CHANGED\_EVENT} to be fired :
 
 \iconcode{
-\>   comp.connect(self, "handle\_selection", SELECTION\_CHANGED\_EVENT)}
+\>comp.connect(self, "handle\_selection", SELECTION\_CHANGED\_EVENT)}
 
 When such an event does occur, the current selections can be retrieved
 in one of two ways. \ Either by getting the indexes of the selections
@@ -2049,12 +1900,12 @@ menus for adding/deleting elements.
 \end{center}
 
 {\sffamily\bfseries Figure 18-10:}
-{\sffamily Drag and drop}
+{\sffamily Drag and Drop}
 
 \bigskip
 
 {\sffamily\bfseries Listing 18-10}
-{\sffamily\bfseries The Drag and drop Program}
+{\sffamily\bfseries The Drag and Drop Program}
 
 \iconcode{
 import gui \\
@@ -2064,287 +1915,279 @@ import gui \\
 \# A DndHandler for the list \\
 \# \\
 class ListDndHandler : SelectableScrollAreaDndHandler() \\
-\>   \# \\
-\>   \# A drop has occurred; we succeed iff we accept it \\
-\>   \# \\
-\>   method can\_drop(d) \\
-\>   \ \ \ local l, ll \\
-\>   \ \ \ if l := parent.get\_highlight() then \{ \\
-\>   \ \ \ \ \ \ if d.get\_source() === parent then \# Move within the list itself \\
-\>   \ \ \ \ \ \ \ \ \ parent.move\_rows(parent.get\_gesture\_selections(), l) \\
-\>   \ \ \ \ \ \ else \{ \\
-\>   \ \ \ \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \ \ \ \# Copy from tree to list. d.get\_content() gives \\
-\>   \ \ \ \ \ \ \ \ \ \# a list of the nodes being dragged. \\
-\>   \ \ \ \ \ \ \ \ \ ll := [ ] \\
-\>   \ \ \ \ \ \ \ \ \ every el := !d.get\_content() do \# Don't drag folders. \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ if /el.is\_folder\_flag then put(ll, el.get\_label()) \\
-\>   \ \ \ \ \ \ \ \ \ parent.insert\_rows(ll, l) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ return \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# A drop has occurred; we succeed iff we accept it \\
+\>\# \\
+\>method can\_drop(d) \\
+\>\>local l, ll \\
+\\
+\>\>if l := parent.get\_highlight() then \{ \\
+\>\>\>if d.get\_source() === parent then \# Move within the list itself \\
+\>\>\>\>parent.move\_rows(parent.get\_gesture\_selections(), l) \\
+\>\>\>else \{ \\
+\>\>\>\>\# \\
+\>\>\>\>\# Copy from tree to list. d.get\_content() gives \\
+\>\>\>\>\# a list of the nodes being dragged. \\
+\>\>\>\>ll := [ ] \\
+\>\>\>\>every el := !d.get\_content() do \# Don't drag folders. \\
+\>\>\>\>\>if /el.is\_folder\_flag then put(ll, el.get\_label()) \\
+\>\>\>\>parent.insert\_rows(ll, l) \\
+\>\>\>\>\} \\
+\>\>\>return \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# This is invoked after a successful operation when the \\
-\>   \# list was the source. \ If the destination (c)
-wasn't the \\
-\>   \# list, then we must delete the rows from the list. \\
-\>   \# \\
-\>   method end\_drag(d, c) \\
-\>   \ \ \ if c \~{}=== parent then \\
-\>   \ \ \ \ \ \ parent.delete\_rows(parent.get\_gesture\_selections()) \\
-\>   end \\
+\>\# \\
+\>\# This is invoked after a successful operation when the \\
+\>\# list was the source. \ If the destination (c) wasn't the \\
+\>\# list, then we must delete the rows from the list. \\
+\>\# \\
+\>method end\_drag(d, c) \\
+\>\>if c \~{}=== parent then \\
+\>\>\>parent.delete\_rows(parent.get\_gesture\_selections()) \\
+\>end \\
 end \\
 \ \\
 \# \\
 \# A DndHandler for the tree \\
 \# \\
 class TreeDndHandler : SelectableScrollAreaDndHandler() \\
-\>   \# \\
-\>   \# Called during a drag event. We succeed iff the user is dragging over \\
-\>   \# a row (this is handled by the parent) AND the thing we're over is a folder. \\
-\>   \# \\
-\>   method drag\_event(d) \\
-\>   \ \ \ if SelectableScrollAreaDndHandler.drag\_event(d) then \\
-\>   \ \ \ \ \ \ return
-{\textbackslash}(parent.object\_get\_highlight().is\_folder\_flag) \\
-\>   end \\
+\>\# \\
+\>\# Called during a drag event. We succeed iff the user is dragging over \\
+\>\# a row (this is handled by the parent) AND the thing we're over is a folder. \\
+\>\# \\
+\>method drag\_event(d) \\
+\>\>if SelectableScrollAreaDndHandler.drag\_event(d) then \\
+\>\>\>return {\textbackslash}(parent.object\_get\_highlight().is\_folder\_flag) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# A drop has occurred; we succeed iff we accept it. \\
-\>   \# Only consider a drop on a folder. \\
-\>   \# \\
-\>   method can\_drop(d) \\
-\>   \ \ \ local s, other, n, el \\
-\>   \ \ \ if other := parent.object\_get\_highlight() \&
-{\textbackslash}other.is\_folder\_flag then \{ \\
-\>   \ \ \ \ \ \ if d.get\_source() === parent then \{ \\
-\>   \ \ \ \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \ \ \ \# If parent is the drop source, then we have a dnd
-                          from within \\
-\>   \ \ \ \ \ \ \ \ \ \# the tree. So, we just move the nodes. \\
-\>   \ \ \ \ \ \ \ \ \ \# d.get\_content() will be a list of the nodes
-that were dragged. \\
-\>   \ \ \ \ \ \ \ \ \ every el := !d.get\_content() do \{ \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ if el.get\_parent\_node().delete\_node(el)
-then \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ other.add(el) \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ \} else \{ \\
-\>   \ \ \ \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \ \ \ \# Drop from list. \ In this case d.get\_content() will be a list of strings. \\
-\>   \ \ \ \ \ \ \ \ \ every el := !d.get\_content() do \{ \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ n := TreeNode() \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ n.set\_label(el) \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ other.add(n) \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \# Notify the tree that the node data structure has altered. \\
-\>   \ \ \ \ \ \ parent.tree\_structure\_changed() \\
-\>   \ \ \ \ \ \ return \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# A drop has occurred; we succeed iff we accept it. \\
+\>\# Only consider a drop on a folder. \\
+\>\# \\
+\>method can\_drop(d) \\
+\>\>local s, other, n, el \\
+\\
+\>\>if other := parent.object\_get\_highlight() \& {\textbackslash}other.is\_folder\_flag then \{ \\
+\>\>\>if d.get\_source() === parent then \{ \\
+\>\>\>\>\# \\
+\>\>\>\>\# If parent is the drop source, then we have a dnd from within \\
+\>\>\>\>\# the tree. So, we just move the nodes. \\
+\>\>\>\>\# d.get\_content() will be a list of the nodes that were dragged. \\
+\>\>\>\>\# \\
+\>\>\>\>every el := !d.get\_content() do \{ \\
+\>\>\>\>\>if el.get\_parent\_node().delete\_node(el) then \\
+\>\>\>\>\>\>other.add(el) \\
+\>\>\>\>\>\} \\
+\>\>\>\>\} \\
+\>\>\>else \{ \\
+\>\>\>\>\# \\
+\>\>\>\>\# Drop from list. \ In this case d.get\_content() will be a list of strings. \\
+\>\>\>\>every el := !d.get\_content() do \{ \\
+\>\>\>\>\>n := TreeNode() \\
+\>\>\>\>\>n.set\_label(el) \\
+\>\>\>\>\>other.add(n) \\
+\>\>\>\>\>\} \\
+\>\>\>\>\} \\
+\>\>\>\# \\
+\>\>\>\# Notify the tree that the node data structure has altered. \\
+\>\>\>parent.tree\_structure\_changed() \\
+\>\>\>return \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# This is invoked after a successful operation when the tree was the source.\\
-\>   \# If the destination (c) wasn't the tree, we must delete the nodes from the tree. \\
-\>   \# \\
-\>   method end\_drag(d, c) \\
-\>   \ \ \ if c \~{}=== parent then \{ \\
-\>   \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \# Delete all the nodes which will have been dragged. \\
-\>   \ \ \ \ \ \ every n := !parent.object\_get\_gesture\_selections() do \\
-\>   \ \ \ \ \ \ \ \ \ if /n.is\_folder\_flag then \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ n.get\_parent\_node().delete\_node(n) \\
-\>   \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \# Notify the tree that the node data structure has altered. \\
-\>   \ \ \ \ \ \ parent.tree\_structure\_changed() \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# This is invoked after a successful operation when the tree was the source.\\
+\>\# If the destination (c) wasn't the tree, we must delete the nodes from the tree. \\
+\>\# \\
+\>method end\_drag(d, c) \\
+\>\>if c \~{}=== parent then \{ \\
+\>\>\>\# \\
+\>\>\>\# Delete all the nodes which will have been dragged. \\
+\>\>\>every n := !parent.object\_get\_gesture\_selections() do \\
+\>\>\>\>if /n.is\_folder\_flag then \\
+\>\>\>\>\>n.get\_parent\_node().delete\_node(n) \\
+\>\>\>\# \\
+\>\>\>\# Notify the tree that the node data structure has altered. \\
+\>\>\>parent.tree\_structure\_changed() \\
+\>\>\>\} \\
+\>end \\
 end \\
 \ \\
 \# \\
-\# We use a custom Node subclass to also store an
-"is\_folder\_flag" flag. \\
+\# We use a custom Node subclass to also store an "is\_folder\_flag" flag. \\
 \# \\
 class TreeNode : Node(is\_folder\_flag) \\
 initially \\
-\>   self.Node.initially() \\
-\>   if {\textbackslash}is\_folder\_flag then \\
-\>   \ \ \ set\_bmps([img\_style("closed\_folder"), \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ img\_style("closed\_folder"),
-img\_style("closed\_folder")]) \\
+\>self.Node.initially() \\
+\>if {\textbackslash}is\_folder\_flag then \\
+\>\>set\_bmps([img\_style("closed\_folder"), \\
+\>\>\>\>\>\ img\_style("closed\_folder"), img\_style("closed\_folder")]) \\
 end \\
 \ \\
 \# \\
 \# The main dialog. \\
 \# \\
 class DNDTest : Dialog(tree, lst, tree\_popup, list\_popup, new\_folder\_menu\_item,  \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ delete\_node\_menu\_item, delete\_rows\_menu\_item) \\
+\>\>\>\>\>\>\>delete\_node\_menu\_item, delete\_rows\_menu\_item) \\
 \ \\
-\>   \# \\
-\>   \# Delete nodes handler \\
-\>   \# \\
-\>   method on\_delete\_node() \\
-\>   \ \ \ local n, i, l \\
+\>\# \\
+\>\# Delete nodes handler \\
+\>\# \\
+\>method on\_delete\_node() \\
+\>\>local n, i, l \\
 \ \\
-\>   \ \ \ every n := !(tree.object\_get\_gesture\_selections()) do \\
-\>   \ \ \ \ \ \ n.get\_parent\_node().delete\_node(n) \\
+\>\>every n := !(tree.object\_get\_gesture\_selections()) do \\
+\>\>\>n.get\_parent\_node().delete\_node(n) \\
 \ \\
-\>   \ \ \ tree.tree\_structure\_changed() \# Notify tree of the change.\\
-\>   end \\
+\>\>tree.tree\_structure\_changed() \# Notify tree of the change.\\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Create a new folder \\
-\>   \# \\
-\>   method on\_new\_folder() \\
-\>   \ \ \ local n, o \\
+\>\# \\
+\>\# Create a new folder \\
+\>\# \\
+\>method on\_new\_folder() \\
+\>\>local n, o \\
 \ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Simply add a new node under the cursor, and notify the \\
-\>   \ \ \ \# tree that the data structure changed. \\
-\>   \ \ \ \# \\
-\>   \ \ \ if o := tree.object\_get\_cursor() then \{ \\
-\>   \ \ \ \ \ \ n := TreeNode(1) \\
-\>   \ \ \ \ \ \ n.set\_label("New
-folder") \\
-\>   \ \ \ \ \ \ o.add(n) \\
-\>   \ \ \ \ \ \ tree.tree\_structure\_changed() \\
-\>   \ \ \ \ \ \ \} \\
-\>   end \\
+\>\>\# \\
+\>\>\# Simply add a new node under the cursor, and notify the \\
+\>\>\# tree that the data structure changed. \\
+\>\>\# \\
+\>\>if o := tree.object\_get\_cursor() then \{ \\
+\>\>\>n := TreeNode(1) \\
+\>\>\>n.set\_label("New folder") \\
+\>\>\>o.add(n) \\
+\>\>\>tree.tree\_structure\_changed() \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Delete rows from the list \\
-\>   \# \\
-\>   method on\_delete\_rows() \\
-\>   \ \ \ lst.delete\_rows(lst.get\_gesture\_selections()) \\
-\>   end \\
+\>\# \\
+\>\# Delete rows from the list \\
+\>\# \\
+\>method on\_delete\_rows() \\
+\>\>lst.delete\_rows(lst.get\_gesture\_selections()) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Add some rows to the list, at the cursor position, or at \\
-\>   \# the top if there is no cursor. \\
-\>   \# \\
-\>   method on\_new\_rows() \\
-\>   \ \ \ lst.insert\_rows(["new1",
-"new2",
-"new3"], lst.get\_cursor() {\textbar} 1) \\
-\>   end \\
+\>\# \\
+\>\# Add some rows to the list, at the cursor position, or at \\
+\>\# the top if there is no cursor. \\
+\>\# \\
+\>method on\_new\_rows() \\
+\>\>lst.insert\_rows(["new1", "new2", "new3"], lst.get\_cursor() {\textbar} 1) \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# Helper method to create a tree structure. \\
-\>   \# \\
-\>   method create\_tree() \\
-\>   \ \ \ local r := TreeNode(1), n \\
-\>   \ \ \ r.set\_label("root") \\
+\>\# \\
+\>\# Helper method to create a tree structure. \\
+\>\# \\
+\>method create\_tree() \\
+\>\>local r := TreeNode(1), n \\
+\\
+\>\>r.set\_label("root") \\
 \ \\
-\>   \ \ \ every s := ("red" {\textbar}
-"green" {\textbar}
-"blue" {\textbar}
-"yellow") do \{ \\
-\>   \ \ \ \ \ \ n := TreeNode(1) \\
-\>   \ \ \ \ \ \ n.set\_label(s) \\
-\>   \ \ \ \ \ \ r.add(n) \\
-\>   \ \ \ \ \ \ every t := 1 to 5 do \{ \\
-\>   \ \ \ \ \ \ \ \ \ o := TreeNode() \\
-\>   \ \ \ \ \ \ \ \ \ o.set\_label(s {\textbar}{\textbar}
-"-" {\textbar}{\textbar}t) \\
-\>   \ \ \ \ \ \ \ \ \ n.add(o) \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ return r \\
-\>   end \\
+\>\>every s := ("red" {\textbar} "green" {\textbar} "blue" {\textbar} "yellow") do \{ \\
+\>\>\>n := TreeNode(1) \\
+\>\>\>n.set\_label(s) \\
+\>\>\>r.add(n) \\
+\>\>\>every t := 1 to 5 do \{ \\
+\>\>\>\>o := TreeNode() \\
+\>\>\>\>o.set\_label(s {\textbar}{\textbar} "-" {\textbar}{\textbar}t) \\
+\>\>\>\>n.add(o) \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>\>return r \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# A selection-up event on the tree \\
-\>   \# \\
-\>   method on\_tree\_release(ev) \\
-\>   \ \ \ local n \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# If the Icon event was a right mouse release, display the popup at the cursor. \\
-\>   \ \ \ if ev.get\_param() === \&rrelease then \{ \\
-\>   \ \ \ \ \ \ n := tree.object\_get\_cursor() {\textbar} fail \\
-\>   \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \# Adjust the shading depending on the node type. \\
-\>   \ \ \ \ \ \ if /n.is\_folder\_flag then \\
-\>   \ \ \ \ \ \ \ \ \ new\_folder\_menu\_item.set\_is\_shaded() \\
-\>   \ \ \ \ \ \ else \\
-\>   \ \ \ \ \ \ \ \ \ new\_folder\_menu\_item.clear\_is\_shaded() \\
-\>   \ \ \ \ \ \ if n === tree.get\_root\_node() then \\
-\>   \ \ \ \ \ \ \ \ \ delete\_node\_menu\_item.set\_is\_shaded() \\
-\>   \ \ \ \ \ \ else \\
-\>   \ \ \ \ \ \ \ \ \ delete\_node\_menu\_item.clear\_is\_shaded() \\
-\>   \ \ \ \ \ \ tree\_popup.popup() \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\# \\
+\>\# A selection-up event on the tree \\
+\>\# \\
+\>method on\_tree\_release(ev) \\
+\>\>local n \\
+\\
+\>\>\# \\
+\>\>\# If the Icon event was a right mouse release, display the popup at the cursor. \\
+\>\>\# \\
+\>\>if ev.get\_param() === \&rrelease then \{ \\
+\>\>\>n := tree.object\_get\_cursor() {\textbar} fail \\
+\>\>\>\# \\
+\>\>\>\# Adjust the shading depending on the node type. \\
+\>\>\>\# \\
+\>\>\>if /n.is\_folder\_flag then \\
+\>\>\>\>new\_folder\_menu\_item.set\_is\_shaded() \\
+\>\>\>else \\
+\>\>\>\>new\_folder\_menu\_item.clear\_is\_shaded() \\
+\>\>\>if n === tree.get\_root\_node() then \\
+\>\>\>\>delete\_node\_menu\_item.set\_is\_shaded() \\
+\>\>\>else \\
+\>\>\>\>delete\_node\_menu\_item.clear\_is\_shaded() \\
+\>\>\>tree\_popup.popup() \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   \# \\
-\>   \# A mouse release event on the list \\
-\>   \# \\
-\>   method on\_list\_release(ev) \\
-\>   \ \ \ if ev.get\_param() === \&rrelease then \{ \\
-\>   \ \ \ \ \ \ \# \\
-\>   \ \ \ \ \ \ \# If some rows to delete... \\
-\>   \ \ \ \ \ \ if lst.get\_gesture\_selections() then \\
-\>   \ \ \ \ \ \ \ \ \ delete\_rows\_menu\_item.clear\_is\_shaded() \\
-\>   \ \ \ \ \ \ else \\
-\>   \ \ \ \ \ \ \ \ \ delete\_rows\_menu\_item.set\_is\_shaded() \\
+\>\# \\
+\>\# A mouse release event on the list \\
+\>\# \\
+\>method on\_list\_release(ev) \\
+\>\>if ev.get\_param() === \&rrelease then \{ \\
+\>\>\>\# \\
+\>\>\>\# If some rows to delete... \\
+\>\>\>\# \\
+\>\>\>if lst.get\_gesture\_selections() then \\
+\>\>\>\>delete\_rows\_menu\_item.clear\_is\_shaded() \\
+\>\>\>else \\
+\>\>\>\>delete\_rows\_menu\_item.set\_is\_shaded() \\
 \ \\
-\>   \ \ \ \ \ \ list\_popup.popup() \\
-\>   \ \ \ \} \\
-\>   end \\
+\>\>\>list\_popup.popup() \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ local m, quit, mi \\
-\>   \ \ \ attrib("size=350,295", "resize=on") \\
-\>   \ \ \ connect(self, "dispose", CLOSE\_BUTTON\_EVENT) \\
-\>   \ \ \ tree := Tree("pos=50\%-10,10", "size=50\%-20,100\%-70", \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "align=r,t", "select\_many",
-"show\_root\_handles=f") \\
-\>   \ \ \ tree.set\_root\_node(create\_tree()) \\
-\>   \ \ \ tree.set\_dnd\_handler(TreeDndHandler(tree)) \\
-\>   \ \ \ tree.connect(self, "on\_tree\_release", MOUSE\_RELEASE\_EVENT) \\
-\>   \ \ \ add(tree) \\
-\>   \ \ \ quit := TextButton("pos=50\%,100\%-40", "align=c,t", "label=Quit") \\
-\>   \ \ \ quit.connect(self, "dispose", ACTION\_EVENT) \\
-\>   \ \ \ add(quit) \\
-\>   \ \ \ \# Create a TextList, with some arbitrary content. \\
-\>   \ \ \ lst := TextList("pos=50\%+10,10", "size=50\%-20,100\%-70",
-"select\_many", \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "contents=one,two,three,four,five,six,seven,eight,nine,ten,eleven,\_ \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ twelve,thirteen,fourteen,fifteen,sixteen,red,blue,green") \\
-\>   \ \ \ lst.connect(self, "on\_list\_release", MOUSE\_RELEASE\_EVENT) \\
-\>   \ \ \ lst.set\_dnd\_handler(ListDndHandler(lst)) \\
-\>   \ \ \ add(lst) \\
-\>   \ \ \ tree\_popup := PopupMenu() \\
-\>   \ \ \ m := Menu() \\
-\>   \ \ \ tree\_popup.set\_menu(m) \\
-\>   \ \ \ delete\_node\_menu\_item := TextMenuItem("label=Delete") \\
-\>   \ \ \ delete\_node\_menu\_item.connect(self, "on\_delete\_node",
-                                            ACTION\_EVENT) \\
-\>   \ \ \ m.add(delete\_node\_menu\_item) \\
-\>   \ \ \ new\_folder\_menu\_item := TextMenuItem("label=New folder") \\
-\>   \ \ \ new\_folder\_menu\_item.connect(self, "on\_new\_folder",
-                                           ACTION\_EVENT) \\
-\>   \ \ \ m.add(new\_folder\_menu\_item) \\
-\>   \ \ \ add(tree\_popup) \\
-\>   \ \ \ list\_popup := PopupMenu() \\
-\>   \ \ \ m := Menu() \\
-\>   \ \ \ list\_popup.set\_menu(m) \\
-\>   \ \ \ delete\_rows\_menu\_item := TextMenuItem("label=Delete") \\
-\>   \ \ \ delete\_rows\_menu\_item.connect(self, "on\_delete\_rows",
-                                            ACTION\_EVENT) \\
-\>   \ \ \ m.add(delete\_rows\_menu\_item) \\
-\>   \ \ \ mi := TextMenuItem("label=Insert rows") \\
-\>   \ \ \ mi.connect(self, "on\_new\_rows", ACTION\_EVENT) \\
-\>   \ \ \ m.add(mi) \\
-\>   \ \ \ add(list\_popup) \\
-\>   end \\
+\>method component\_setup() \\
+\>\>local m, quit, mi \\
+\\
+\>\>attrib("size=350,295", "resize=on") \\
+\>\>connect(self, "dispose", CLOSE\_BUTTON\_EVENT) \\
+\>\>tree := Tree("pos=50\%-10,10", "size=50\%-20,100\%-70", \\
+\>\>\>\>\>\ \ \ "align=r,t", "select\_many", "show\_root\_handles=f") \\
+\>\>tree.set\_root\_node(create\_tree()) \\
+\>\>tree.set\_dnd\_handler(TreeDndHandler(tree)) \\
+\>\>tree.connect(self, "on\_tree\_release", MOUSE\_RELEASE\_EVENT) \\
+\>\>add(tree) \\
+\>\>quit := TextButton("pos=50\%,100\%-40", "align=c,t", "label=Quit") \\
+\>\>quit.connect(self, "dispose", ACTION\_EVENT) \\
+\>\>add(quit) \\
+\>\>\# \\
+\>\>\# Create a TextList, with some arbitrary content. \\
+\>\>\# \\
+\>\>lst := TextList("pos=50\%+10,10", "size=50\%-20,100\%-70", "select\_many", \\
+\>\>\>\>\>\>\ "contents=one,two,three,four,five,six,seven,eight,nine,ten,eleven,\_ \\
+\>\>\>\>\>\>\ \ twelve,thirteen,fourteen,fifteen,sixteen,red,blue,green") \\
+\>\>lst.connect(self, "on\_list\_release", MOUSE\_RELEASE\_EVENT) \\
+\>\>lst.set\_dnd\_handler(ListDndHandler(lst)) \\
+\>\>add(lst) \\
+\>\>tree\_popup := PopupMenu() \\
+\>\>m := Menu() \\
+\>\>tree\_popup.set\_menu(m) \\
+\>\>delete\_node\_menu\_item := TextMenuItem("label=Delete") \\
+\>\>delete\_node\_menu\_item.connect(self, "on\_delete\_node", ACTION\_EVENT) \\
+\>\>m.add(delete\_node\_menu\_item) \\
+\>\>new\_folder\_menu\_item := TextMenuItem("label=New folder") \\
+\>\>new\_folder\_menu\_item.connect(self, "on\_new\_folder", ACTION\_EVENT) \\
+\>\>m.add(new\_folder\_menu\_item) \\
+\>\>add(tree\_popup) \\
+\>\>list\_popup := PopupMenu() \\
+\>\>m := Menu() \\
+\>\>list\_popup.set\_menu(m) \\
+\>\>delete\_rows\_menu\_item := TextMenuItem("label=Delete") \\
+\>\>delete\_rows\_menu\_item.connect(self, "on\_delete\_rows", ACTION\_EVENT) \\
+\>\>m.add(delete\_rows\_menu\_item) \\
+\>\>mi := TextMenuItem("label=Insert rows") \\
+\>\>mi.connect(self, "on\_new\_rows", ACTION\_EVENT) \\
+\>\>m.add(mi) \\
+\>\>add(list\_popup) \\
+\>end \\
 end \\
 \ \\
 procedure main() \\
-\>   DNDTest().show\_modal() \\
+\>DNDTest().show\_modal() \\
 end
 }
 
@@ -2366,86 +2209,85 @@ easily supported by following the following structure:
 
 \iconcode{
 class AnyDialog : Dialog(a\_variable) \\
-\>   method set\_a\_variable(x) \\
-\>   \ \ \ a\_variable := x \\
-\>   end \\
-\>   ... \\
-\>   method set\_one(attr, val) \\
-\>   \ \ \ case attr of \{ \\
-\>   \ \ \ \ \ \ "a\_variable" : \\
-\>   \ \ \ \ \ \ \ \ \ set\_a\_variable(string\_val(attr, val)) \\
-\>   \ \ \ \ \ \ default: self.Dialog.set\_one(attr, val) \\
-\>   \ \ \ \} \\
-\>   end \\
+\>method set\_a\_variable(x) \\
+\>\>a\_variable := x \\
+\>end \\
+\>... \\
+\>method set\_one(attr, val) \\
+\>\>case attr of \{ \\
+\>\>\>"a\_variable" : \\
+\>\>\>\>set\_a\_variable(string\_val(attr, val)) \\
+\>\>\>default : self.Dialog.set\_one(attr, val) \\
+\>\>\} \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ \# Initialize Components, possibly depending upon the value of a\_variable \\
-\>   \ \ \ ... \\
-\>   \ \ \ \# Configure the window itself... \\
-\>   \ \ \ attrib("size=300,200") \\
-\>   end \\
+\>method component\_setup() \\
+\>\>\# Initialize Components, possibly depending upon the value of a\_variable \\
+\>\>... \\
+\>\>\# Configure the window itself... \\
+\>\>attrib("size=300,200") \\
+\>end \\
 \ \\
-\>   initially(a[]) \\
-\>   \ \ \ self.Dialog.initially() \\
-\>   \ \ \ a\_variable := "default value" \\
-\>   \ \ \ set\_fields(a) \\
+\>initially(a[]) \\
+\>\>self.Dialog.initially() \\
+\>\>a\_variable := "default value" \\
+\>\>set\_fields(a) \\
 end
 }
 
 You then use the following code in the calling program:
 
 \iconcode{
-\>   d := AnyDialog() \\
-\>   d.set\_a\_variable("something")
+\>d := AnyDialog() \\
+\>d.set\_a\_variable("something")
 }
 
 or
 
 \iconcode{
-\>   d :=
-AnyDialog("a\_variable=something")}
+\>d :=
+AnyDialog("a\_variable=something")
+}
 
 or just
 
 \iconcode{
-\>   d := AnyDialog()}
+\>d := AnyDialog()
+}
 
 \noindent to use the default for \texttt{a\_variable}. \ Furthermore, the standard
 dialog attributes can still be used as you would expect :
 
 \iconcode{
-\>   d :=
-AnyDialog("a\_variable=something",
-"font=times",
-"bg=green",
-"fg=red")}
+\>d := AnyDialog("a\_variable=something", "font=times", "bg=green", "fg=red")
+}
 
 Subclassing can follow the same pattern. For example:
 
 \iconcode{
 class AnotherDialog : AnyDialog(another\_variable) \\
-\>   method set\_another\_variable(x) \\
-\>   \ \ \ another\_variable := x \\
-\>   end \\
-\>   ... \\
-\>   method set\_one(attr, val) \\
-\>   \ \ \ case attr of \{ \\
-\>   \ \ \ \ \ \ "another\_variable" : \\
-\>   \ \ \ \ \ \ \ \ \ set\_another\_variable(string\_val(attr, val)) \\
-\>   \ \ \ \ \ \ default: self.AnyDialog.set\_one(attr, val) \\
-\>   \ \ \ \} \\
-\>   end \\
+\>method set\_another\_variable(x) \\
+\>\>another\_variable := x \\
+\>end \\
+\>... \\
+\>method set\_one(attr, val) \\
+\>\>case attr of \{ \\
+\>\>\>"another\_variable" : \\
+\>\>\>\>set\_another\_variable(string\_val(attr, val)) \\
+\>\>\>default : self.AnyDialog.set\_one(attr, val) \\
+\>\>\>\} \\
+\>end \\
 \ \\
-\>   method component\_setup() \\
-\>   \ \ \ self.AnyDialog.component\_setup() \\
-\>   \ \ \ ... \\
-\>   end \\
+\>method component\_setup() \\
+\>\>self.AnyDialog.component\_setup() \\
+\>\>... \\
+\>end \\
 \ \\
-\>   initially(a[]) \\
-\>   \ \ \ self.AnyDialog.initially() \\
-\>   \ \ \ another\_variable := "default
+\>initially(a[]) \\
+\>\>self.AnyDialog.initially() \\
+\>\>another\_variable := "default
 value" \\
-\>   \ \ \ set\_fields(a) \\
+\>\>set\_fields(a) \\
 end
 }
 
@@ -2490,7 +2332,8 @@ To create a dialog window using Ivib, start the program with the name of
 a new source file. For example:
 
 \iconcode{
-\>   \ \ ivib myprog.icn}
+\>ivib myprog.icn
+}
 
 The Ivib window will appear with a blank
 "canvas" area, which represents the dialog
@@ -2536,9 +2379,12 @@ the attribute value respectively; for example try adding
 
 \bigskip
 
-Note that the button changes its background to pale blue too. Each
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+The button changes its background to pale blue too. Each
 object has its own attributes that it can set to override the dialog
-attributes. Click on the button and press Alt-D to bring up the
+attributes.}\medskip
+
+Click on the button and press Alt-D to bring up the
 button's configuration dialog again. Now click on the
 Attribs tab of this dialog and set the background color to white, for
 example. Then click okay and you will see that the
@@ -2571,7 +2417,8 @@ really human-readable. If the program is called, for example,
 \texttt{myprog.icn}, then this can be compiled with
 
 \iconcode{
-\>   unicon myprog}
+\>unicon myprog
+}
 
 \noindent
 to give an executable file \texttt{myprog} that, when run, will produce
@@ -2594,20 +2441,26 @@ and map some attribute of the first selected object to the others;
 hence the distinction.
 
 To move an object, select it by clicking on it with the left mouse
-button, and then drag it. Note that dragging an object even by one
+button, and then drag it.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+Dragging an object even by one
 pixel will set the X or Y position to an absolute figure, disturbing
 any carefully set up percentage specification! Because this can be
 irritating when done accidentally, the X and/or Y position may be fixed
 in the dialog so that it cannot be moved in that plane. Alternatively,
 when selecting an object that you do not intend to move, use the right
-mouse button instead.
+mouse button instead.}\medskip
 
 To resize an object, select it and then click on one of the corners. The
 mouse cursor will change to a resize cursor and the corner may be
-dragged. Note that, like the position specification, resizing an object
+dragged.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+Like the position specification, resizing an object
 will set the size to an absolute number and will also reset the
 "use default" option. Again, this can be
-avoided by fixing the width and/or height in the object's dialog box.
+avoided by fixing the width and/or height in the object's dialog box.}\medskip
 
 \subsection*{Dialog configuration}
 
@@ -2745,9 +2598,11 @@ appears by the entry. When the dialog exits, this
 items to the current pane, drag and drop them into it. The whole
 of the item must be in the pane, and a confirmation message appears to
 indicate that the item has been added to the container. To take it out
-of the container, drag it out of the pane. Note that the selected
+of the container, drag it out of the pane.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily The selected
 pane is the one that is configured to be initially at the front when
-the dialog is opened.
+the dialog is opened.}\medskip
 
 \paragraph{MenuButton}
 The \texttt{MenuButton} component is a menu system with one root
@@ -2787,8 +2642,10 @@ the dialog being created. They are accessed either via the toolbar,
 the Selection menu, or the Edit menu.
 
 \paragraph{Delete}
-The Delete function simply deletes all the selected objects; note that
-deleting a container also deletes all the objects inside it.
+The Delete function simply deletes all the selected objects.
+
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+Deleting a container also deletes all the objects inside it.}\medskip
 
 \paragraph{Undo and Redo}
 The Undo and Redo functions undo and redo changes. The size of the

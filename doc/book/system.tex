@@ -146,13 +146,10 @@ removed. To remove an entire directory including its contents:
 
 \iconcode{
 procedure deldir(s) \\
-\>   f := open(s) \\
-\>   every remove( s {\textbar}{\textbar}
-"/" {\textbar}{\textbar}
-("." \~{}==
-(".." \~{}== !f))) \\
-\>   close(f) \\
-\>   remove(s) \\
+\>f := open(s) \\
+\>every remove( s {\textbar}{\textbar} "/" {\textbar}{\textbar} ("." \~{}== (".." \~{}== !f))) \\
+\>close(f) \\
+\>remove(s) \\
 end
 }
 
@@ -182,27 +179,24 @@ as command line arguments?
 
 \iconcode{
 link printf \\
+\\
 procedure main(args) \\
-\>   every name := !args do \{ \\
-\>   \ \ \ f := open(name) {\textbar} stop(\&errortext, name) \\
-\>   \ \ \ L := list() \\
-\>   \ \ \ while line := read(f) do \\
-\>   \ \ \ \ \ \ push(L, line) \\
-\>   \ \ \ every write(format(stat(n := !sort(L)), n)) \\
-\>   \ \ \ \} \\
+\>every name := !args do \{ \\
+\>\>f := open(name) {\textbar} stop(\&errortext, name) \\
+\>\>L := list() \\
+\>\>while line := read(f) do \\
+\>\>\>push(L, line) \\
+\>\>every write(format(stat(n := !sort(L)), n)) \\
+\>\>\} \\
 end \\
+\\
 procedure format(p, name) \\
-\ \ \ s := sprintf("\%-7d \%-5d \%s \%-4d \%-9d \%-9d
-\%-8d \%s \%s",  \\
-
-\ \ \ \ \ \ \ \ \ \ p.ino, p.blocks, p.mode, p.nlink, p.uid, p.gid,
-p.size, \\
-
-\ \ \ \ \ \ \ \ \ \ ctime(p.mtime)[5:17], name) \\
-\>   if p.mode[1] == "l" then \\
-\>   \ \ \ s {\textbar}{\textbar}:= " -{\textgreater}
-" {\textbar}{\textbar} {\textbackslash}(p.symlink) \\
-\>   return s \\
+\>s := sprintf("\%-7d \%-5d \%s \%-4d \%-9d \%-9d \%-8d \%s \%s",  \\
+\>\>\>\>\ \ p.ino, p.blocks, p.mode, p.nlink, p.uid, p.gid, p.size, \\
+\>\>\>\>\ \ ctime(p.mtime)[5:17], name) \\
+\>if p.mode[1] == "l" then \\
+\>\>s {\textbar}{\textbar}:= " -{\textgreater} " {\textbar}{\textbar} {\textbackslash}(p.symlink) \\
+\>return s \\
 end
 }
 
@@ -264,7 +258,8 @@ programs may be prevented from reading (or especially writing) the
 file. Programs can cooperate by using file locks:
 
 \iconcode{
-flock(filename, "x")}
+flock(filename, "x")
+}
 
 \noindent
 The first call to \texttt{flock()} creates a lock, and subsequent
@@ -290,7 +285,8 @@ preprocessor, described in Appendix A. To include \texttt{posix.icn} in
 a program, add this line at the top of your program:
 
 \iconcode{
-\$include "posix.icn"}
+\$include "posix.icn"
+}
 
 When a system call \index{fail!system call}fails, the integer keyword
 \texttt{\&errno} indicates the error that occurred. As seen earlier, a
@@ -335,21 +331,21 @@ printing out a message and then runs the system default handler:
 
 \iconcode{
 global oldhandler \\
-\>   ... \\
-\>   trap("SIGFPE", sig\_ignore) \\
-\>   oldhandler := signal("SIGSEGV",
-handler) \\
-\>   ... \\
-\ \ \ \# restore the old handler \\
-\>   trap("SIGSEGV", oldhandler) \\
+\\
+\>... \\
+\>trap("SIGFPE", sig\_ignore) \\
+\>oldhandler := signal("SIGSEGV", handler) \\
+\>... \\
+\>\# restore the old handler \\
+\>trap("SIGSEGV", oldhandler) \\
 end \\
 \ \\
-procedure sig\_ignore(s); end
-\ \\
+procedure sig\_ignore(s); end\ \\
+\\
 procedure handler(s) \\
-\>   write(\&errout, "Got signal ", s) \\
-\>   ({\textbackslash}oldhandler)(s) \\
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# propagate the signal \\
+\>write(\&errout, "Got signal ", s) \\
+\>({\textbackslash}oldhandler)(s) \\
+\>\>\>\>\>\>\# propagate the signal \\
 end
 }
 
@@ -387,7 +383,7 @@ command-line systems like the Unix shells or the MS-DOS command prompt,
 you may have used redirection:
 
 \iconcode{
-\ \ \ prog {\textless} file1
+prog {\textless} file1
 }
 
 \noindent
@@ -396,7 +392,7 @@ supported in the command string passed to \texttt{system()}, as
 in the following \texttt{system()} call:
 
 \iconcode{
-\>   system("prog {\textless} file1")
+system("prog {\textless} file1")
 }
 
 Pipes to and from the current program are nicely handled by the
@@ -414,12 +410,11 @@ on the first. Here's how to hook up a pipe between two
 programs:
 
 \iconcode{
-\>   L := pipe() {\textbar}
-stop("Couldn't get pipe: ", \&errortext) \\
-\>   system("prog1 \&", , L[2]) \\
-\>   system("prog2 \&", L[1]) \\
-\>   close(L[1]) \\
-\>   close(L[2])
+\>L := pipe() {\textbar} stop("Couldn't get pipe: ", \&errortext) \\
+\>system("prog1 \&", , L[2]) \\
+\>system("prog2 \&", L[1]) \\
+\>close(L[1]) \\
+\>close(L[2])
 }
 
 \subsection*{Process information}
@@ -440,7 +435,8 @@ A parent process may want to be notified when any of its children quit
 string of the form
 
 \iconcode{
-pid:status:arg:core}
+pid:status:arg:core
+}
 
 The \texttt{":core"} will only be present if
 the system created a core file for the process. The status can be any
@@ -481,14 +477,13 @@ expires, an empty list is returned. If no timeout is given, the program
 waits indefinitely for input on one of the files.
 
 \iconcode{
-while *(L := select(f1, f2, f3, timeout)) = 0 do \\
-\> handle\_timeout() \\
-(\&errno = 0) {\textbar} stop("Select
- \index{expression failure}failed: ", \&errortext) \\
-every f := !L do \{ \\
-\> \# Dispatch reads pending on f \\
-\> ... \\
-\> \}
+\>while *(L := select(f1, f2, f3, timeout)) = 0 do \\
+\>\>handle\_timeout() \\
+\>(\&errno = 0) {\textbar} stop("Select \index{expression failure}failed: ", \&errortext) \\
+\>every f := !L do \{ \\
+\>\>\# Dispatch reads pending on f \\
+\>\> ... \\
+\>\>\}
 }
 
 When using \texttt{select()} to process input from multiple files, you
@@ -499,8 +494,8 @@ code, which waits for input from either a file (or network connection)
 or a window designated by keyword \texttt{\&window}:
 
 \iconcode{
-\ \ \ while L := select(f, \&window) do \\
-\ \ \ \ \ \ if !L === f then c := read(f)
+\>while L := select(f, \&window) do \\
+\>\>if !L === f then c := read(f)
 }
 
 Just because \texttt{select()} has returned doesn't
@@ -551,7 +546,7 @@ filename for Unix domain sockets. If the address contains no host name
 and therefore starts with \texttt{":"}, the
 socket is opened on the same machine. The value returned by
 \texttt{open()} is a file that can be used in \texttt{select()} and
-related system functions, as well as normal reading and writing. 
+related system functions, as well as normal reading and writing.
 
 A \index{client}client uses mode
 \texttt{"n"} with \texttt{open()} to open a
@@ -560,29 +555,20 @@ connection to a TCP server. Here is a simple version of the Internet
 
 \iconcode{
 procedure main(argv) \\
-\>   local fserv := getserv("finger")
-{\textbar} \\
-\>   \ \ \ stop("Couldn't get service:
-", \&errortext) \\
-\>   name := argv[1] \\
-\>   host := "" \\
-\>   argv[1] ? \{ \\
-\>   \ \ \ name := tab(find("@")) \&
-="@" \& host := tab(0) \\
-\>   \ \ \ \} \\
-\>   if *host {\textgreater} 0 then
-write("[", host,
-"]") \\
-\>   f := open(host {\textbar}{\textbar}
-":" {\textbar}{\textbar} fserv.port,
-"n") {\textbar} \\
-\>   \ \ \ stop("Couldn't open
-connection: ", \&errortext) \\
+\>local fserv := getserv("finger") {\textbar} \\
+\>\>stop("Couldn't get service: ", \&errortext) \\
+\\
+\>name := argv[1] \\
+\>host := "" \\
+\>argv[1] ? \{ \\
+\>\>name := tab(find("@")) \& ="@" \& host := tab(0) \\
+\>\>\} \\
+\>if *host {\textgreater} 0 then write("[", host, "]") \\
+\>f := open(host {\textbar}{\textbar} ":" {\textbar}{\textbar} fserv.port, "n") {\textbar} \\
+\>\>stop("Couldn't open connection: ", \&errortext) \\
 \ \\
-\>   write(f, name) {\textbar}
-stop("Couldn't write: ",
-\&errortext) \\
-\>   while write(read(f)) \\
+\>write(f, name) {\textbar} stop("Couldn't write: ", \&errortext) \\
+\>while write(read(f)) \\
 end
 }
 
@@ -603,14 +589,11 @@ simple TCP server that listens on port 1888:
 
 \iconcode{
 procedure main() \\
-\>   while f := open(":1888",
-"na") do \{ \\
-\>   \ \ \ system("myserverd -servicerequest
-\&", f, f) \\
-\>   \ \ \ close(f) \\
-\>   \ \ \ \} \\
-\>   (\&errno = 0) {\textbar} stop("Open failed:
-", \&errortext) \\
+\>while f := open(":1888", "na") do \{ \\
+\>\>system("myserverd -servicerequest \&", f, f) \\
+\>\>close(f) \\
+\>\>\} \\
+\>(\&errno = 0) {\textbar} stop("Open failed: ", \&errortext) \\
 end
 }
 
@@ -660,10 +643,10 @@ at.
 
 \iconcode{
 procedure main(argv) \\
-\>   n := open(argv[1],"n") | \\
-\>\>      stop("can't connect to ", argv[1]|"missing host") \\
-\>   write("connected to: ", image(n)[6:-1]) \\
-\>   write("using: ", gethost(n)) \\
+\>n := open(argv[1], "n") | \\
+\>\>stop("can't connect to ", argv[1] {\textbar} "missing host") \\
+\>write("connected to: ", image(n)[6:-1]) \\
+\>write("using: ", gethost(n)) \\
 end
 }
 
@@ -718,13 +701,12 @@ then it constructs a record having the address the message came from
 and the message in it. The server uses the address to send the reply.
 
 \iconcode{
-\ \ \ f := open(":1025",
-"nua") \\
- \ \ while r := receive(f) do \{ \\
-\ \ \ \ \ \ \# Process the request in r.msg \\
-\ \ \ \ \ \ ... \\
-\ \ \ \ \ \ send(r.addr, reply) \\
-\ \ \ \ \ \ \}
+\>f := open(":1025", "nua") \\
+\>while r := receive(f) do \{ \\
+\>\>\# Process the request in r.msg \\
+\>\>... \\
+\>\>send(r.addr, reply) \\
+\>\>\}
 }
 
 The record returned by \texttt{receive()} has two fields: the
@@ -743,22 +725,16 @@ service information to a particular network protocol, in this case UDP.
 
 \iconcode{
 procedure main(args) \\
-\>   (*args = 1) {\textbar} stop("Usage: rdate
-host") \\
-\>   host := args[1] \\
-\>   s := getserv("daytime",
-"udp") \\
-\>   f :=
-open(host{\textbar}{\textbar}":"{\textbar}{\textbar}s.port,
-"nu") {\textbar} \\
-\>   \ \ \ stop("Open failed: ",
-\&errortext) \\
-\>   writes(f, " ") \\
-\>   if *select(f, 5000) = 0 then \\
-\>   \ \ \ stop("Connection timed out.") \\
-\>   r := receive(f) \\
-\>   write("Time on ", host,
-" is ", r.msg) \\
+\>(*args = 1) {\textbar} stop("Usage: rdate host") \\
+\>host := args[1] \\
+\>s := getserv("daytime", "udp") \\
+\>f := open(host {\textbar}{\textbar} ":" {\textbar}{\textbar} s.port, "nu") {\textbar} \\
+\>\>stop("Open failed: ", \&errortext) \\
+\>writes(f, " ") \\
+\>if *select(f, 5000) = 0 then \\
+\>\>stop("Connection timed out.") \\
+\>r := receive(f) \\
+\>write("Time on ", host, " is ", r.msg) \\
 end
 }
 
@@ -805,13 +781,12 @@ The Icon Program Library module \texttt{basename} is used to extract
 the filename from the URI.
 
 \iconcode{
-link basename}
-
-\iconcode{
+link basename\\
+\\
 procedure main(argv) \\
-\>   f1 := open(argv[1],"m") \\
-\>   f2 := open(basename(argv[1]),"w") \\
-\>   while write(f2, read(f1)) \\
+\>f1 := open(argv[1], "m") \\
+\>f2 := open(basename(argv[1]), "w") \\
+\>while write(f2, read(f1)) \\
 end
 }
 
@@ -864,27 +839,16 @@ message is from as well as the subject line.
 
 \iconcode{
 procedure main(argv) \\
-\>   user := argv[1] {\textbar}
-getenv("USER") {\textbar}
-stop("no user") \\
-\>   passwd := argv[2] {\textbar}
-getenv("PASSWD") {\textbar}
-stop("no password") \\
-\>   server := argv[3] {\textbar}
-getenv("MAILHOST") {\textbar}
-"mailhost" \\
-\>   conn :=
-open("pop://"{\textbar}{\textbar}user{\textbar}{\textbar}":"{\textbar}{\textbar}passwd{\textbar}{\textbar}"@"{\textbar}{\textbar}server,
-"m") {\textbar} \\
-\>   \ \ \ stop("couldn't connect to
-the POP server ", server) \\
-\>   every msg := !conn do msg ? \\
-\>   \ \ \ while line :=
-tab(find("{\textbackslash}n")) do \\
-\>   \ \ \ \ \ \ if =("From: "
-{\textbar} "Subject: ") then
-write(line) \\
-\>   close(conn) \\
+\>user := argv[1] {\textbar} getenv("USER") {\textbar} stop("no user") \\
+\>passwd := argv[2] {\textbar} getenv("PASSWD") {\textbar} stop("no password") \\
+\>server := argv[3] {\textbar} getenv("MAILHOST") {\textbar} "mailhost" \\
+\>conn := open("pop://" {\textbar}{\textbar} user {\textbar}{\textbar} ":" {\textbar}{\textbar}
+passwd {\textbar}{\textbar} "@" {\textbar}{\textbar} server, "m") {\textbar} \\
+\>\>stop("couldn't connect to the POP server ", server) \\
+\>every msg := !conn do msg ? \\
+\>\>while line := tab(find("{\textbackslash}n")) do \\
+\>\>\>if =("From: " {\textbar} "Subject: ") then write(line) \\
+\>close(conn) \\
 end
 }
 
@@ -902,7 +866,7 @@ dynamically as needed.
 
 The tasking facilities allow Unicon programs to load, execute,
 communicate with, and control one another, all within a single
-instantiation of the Unicon interpreter. 
+instantiation of the Unicon interpreter.
 
 Although Unicon programs can use the tasking facilities to load and
 execute any number of other programs within the same interpreter space,
@@ -923,14 +887,14 @@ external files or pipes.
 At the language level, the tasking facilities include several
 built-in functions and keywords, but no new types, declarations, or
 control structures. Several existing functions have been extended to
-offer additional support for the multi-tasking environment. 
-Separate memory allocation regions are established for each task. 
+offer additional support for the multi-tasking environment.
+Separate memory allocation regions are established for each task.
 
 \subsection*{Preliminary terminology}
 
 Before describing the task model, a few definitions are needed. These
 definitions pertain to regions of memory referenced by programs during
-execution. 
+execution.
 
 A \textit{name space} is a mapping from a set of program source-code
 identifiers to a set of associated memory locations [Abelson85]. Icon
@@ -942,7 +906,7 @@ individual invocation of the procedure.
 When a co-expression is created, a new local name space is allocated for
 the currently executing procedure, and the current values of the local
 variables are copied into the new name space for subsequent use by the
-co-expression. 
+co-expression.
 
 An Icon program has an associated \textit{program state} consisting of
 the memory associated with global and static name spaces, keywords, and
@@ -950,7 +914,7 @@ dynamic memory regions. Similarly, a co-expression has an associated
 \textit{co-expression state} consisting of an evaluation stack that
 contains the memory used to implement one or more local name spaces.
 Co-expressions in an Icon program share access to the program state and
-can use it to communicate. 
+can use it to communicate.
 
 \subsection*{Tasks as extended co-expressions}
 
@@ -970,10 +934,11 @@ user level in terms of co-expression activations.
 
 \subsection*{Task creation}
 
-A task can create other tasks. The function 
+A task can create other tasks. The function
 
 \iconcode{
-load(s, L, f1, f2, f3, i1, i2, i3)}
+load(s, L, f1, f2, f3, i1, i2, i3)
+}
 
 \noindent loads an icode file \cite{Gris86} specified by the file name
 \textrm{s}, creates a task for it and returns a co-expression corresponding to
@@ -1007,7 +972,7 @@ default to 65000, while {\texttt{i3 }}defaults to
 20000 (the defaults may be changed by the environment variables
 {\texttt{BLKSIZE}},
 {\texttt{STRSIZ}}\texttt{E}, and
-{\texttt{MSTKSIZE}}). 
+{\texttt{MSTKSIZE}}).
 
 \subsection*{Running other programs}
 
@@ -1019,7 +984,7 @@ executing its main procedure. Unless it suspends or activates
 {\texttt{\&source}}, the child task runs to
 completion, after which control is returned to the parent. Chapter 5
 presents an alternative means of executing a child with which the
-parent retains control over the child as it executes. 
+parent retains control over the child as it executes.
 
 This default behavior is illustrated by the program
 \texttt{seqload}, which loads and executes each
@@ -1034,24 +999,25 @@ are then executed one-by-one by the co-expression activation operator,
 nothing special about this example except the semantics of the
 {\texttt{load()}} function and the independent
 execution environment (separate global variables, heaps, and so forth),
-that {\texttt{load()}} provides to each task. 
+that {\texttt{load()}} provides to each task.
 
 \iconcode{
 \# seqload.icn \\
 procedure main(arguments) \\
-\>   every @load(!arguments) \\
+\>every @load(!arguments) \\
 end
 }
 
 For example, if three Icon programs whose executable files are named
-translate, assemble, and link are to be run in succession, the command 
+translate, assemble, and link are to be run in succession, the command
 
 \iconcode{
-{\texttt{seqload translate assemble link}}}
+seqload translate assemble link
+}
 
 \noindent
 executes the three programs without reloading the interpreter for each
-program. 
+program.
 
 \subsection*{Data access}
 
@@ -1066,15 +1032,15 @@ out in reverse order.
 \iconcode{
 \# parent.icn \\
 procedure main() \\
-\>   L := @ load("child") \\
-\>   while write(pull(L)) \\
+\>L := @ load("child") \\
+\>while write(pull(L)) \\
 end \\
 \ \\
 \# child.icn \\
 procedure main() \\
-\>   L := [ ] \\
-\>   while put(L, read()) \\
-\>   return L \\
+\>L := [ ] \\
+\>while put(L, read()) \\
+\>return L \\
 end
 }
 
@@ -1088,12 +1054,12 @@ supplies them to the child program as its command-line arguments
 the first list element and sort elements, respectively):
 
 \iconcode{
-	procedure main(arguments) \\
-\>	   @load(pop(arguments), sort(arguments)) \\
-	end
+procedure main(arguments) \\
+\>@load(pop(arguments), sort(arguments)) \\
+end
 }
 
-Argument lists allow more sophisticated data transfers; the {\tt seqload} 
+Argument lists allow more sophisticated data transfers; the {\tt seqload}
 example presented earlier can be extended to transmit arbitrary
 structures between programs using argument lists in the following
 manner.  As in {\tt seqload}, each string naming an executable Icon
@@ -1104,11 +1070,11 @@ that is returned by one of the programs is assigned to local variable
 argument to {\tt load()}.
 
 \iconcode{
-     \# seqload2.icn \\
-     procedure main(arguments) \\
-\>	every program := !arguments do \\
-\>\>	   L := @load(program, L) \\
-     end
+\# seqload2.icn \\
+procedure main(arguments) \\
+\>every program := !arguments do \\
+\>\>L := @load(program, L) \\
+end
 }
 
 The net effect of {\tt seqload2.icn} is similar to a UNIX pipe, with
@@ -1143,14 +1109,14 @@ useful in inspecting values, especially at intermediate points during
 the monitored execution of a TP.
 
 \iconcode{
-     \# seqload3.icn \\
-     procedure main(arguments) \\
-\>	every arg := !arguments do \{ \\
-\>\>	   Task := load(arg) \\
-\>\>	   variable(\"Parent\", Task) := \&main \\
-\>\>	   @Task \\
-\>\>	   \} \\
-	end
+\# seqload3.icn \\
+procedure main(arguments) \\
+\>every arg := !arguments do \{ \\
+\>\>Task := load(arg) \\
+\>\>variable(\"Parent\", Task) := \&main \\
+\>\>@Task \\
+\>\>\} \\
+end
 }
 
 In addition to extending existing functions for monitoring,
@@ -1169,19 +1135,18 @@ values can produce more than one result from a given call.
 \begin{tabular}{|ll|} \hline
 {\bf\tt cofail(C)}      & transmit failure to {\tt C}. \\
 {\bf\tt fieldnames(r)}  & generate fieldnames of record {\tt r}. \\
-{\bf\tt globalnames(C)} & generate the names of {\tt C}'s global
-variables. \\
+{\bf\tt globalnames(C)} & generate the names of {\tt C}'s global variables. \\
 {\bf\tt keyword(s, C)} & produces keyword {\tt s} in {\tt C}. \\
 	& Keywords are special global variables that have \\
 	& special semantics in certain language facilities.\\
-{\bf\tt localnames(C,i)} & generates the names of {\tt C}'s local variables,\\
+{\bf\tt localnames(C, i)} & generates the names of {\tt C}'s local variables,\\
 	& {\tt i} calls up from the current procedure call. \\
-{\bf\tt paramnames(C,i)} & generates the names of {\tt C}'s parameters. \\
-{\bf\tt staticnames(C,i)} & generates the names of {\tt C}'s static variables. \\
+{\bf\tt paramnames(C, i)} & generates the names of {\tt C}'s parameters. \\
+{\bf\tt staticnames(C, i)} & generates the names of {\tt C}'s static variables. \\
 {\bf\tt structure(C)} & generates the values in {\tt C}'s block
 region, or heap. \\
 	 & The heap holds structure types such as lists and tables. \\
-{\bf\tt variable(s,C,i)} & produces variable named {\tt s}, interpreted {\tt i} levels\\
+{\bf\tt variable(s, C, i)} & produces variable named {\tt s}, interpreted {\tt i} levels\\
 	& up within {\tt C}'s procedure stack. \\
 \hline
 \end{tabular}
@@ -1236,20 +1201,21 @@ main procedure that exports a reference to {\texttt{calc()}} for sharing:
 \iconcode{
 \# calc.icn \\
 procedure calc(args...) \\
-\>   \# code for calc \\
-\>   \# (may call other routines in calc.icn if there are any) \\
+\>\# code for calc \\
+\>\# (may call other routines in calc.icn if there are any) \\
 end \\
 \ \\
 procedure main() \\
-\>   \# initialization code, if any \\
-\>   return calc \\
+\>\# initialization code, if any \\
+\>return calc \\
 end
 }
 
-Note that a module exporting shared procedures can also have global
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
+A module exporting shared procedures can also have global
 variables (possibly initialized from other command-line arguments).
 Shared modules can export other values besides procedures using the
-same mechanism.
+same mechanism.}\medskip
 
 The parent task that loads the various shared library clients implements
 a procedural encapsulation ({\texttt{loadlib()}} in
@@ -1259,18 +1225,19 @@ procedure for each shared routine. Routines that are already loaded are
 returned to requesting tasks after a simple Icon table lookup. Whenever
 a routine is requested that has not been loaded, the
 {\texttt{load()}} function is called and the shared
-library activated. 
+library activated.
 
 \iconcode{
 procedure main(arguments) \\
-\>   @load("client",put(arguments,loadlib)) \\
+\>@load("client", put(arguments, loadlib)) \\
 end \\
 \ \\
 procedure loadlib(s, C) \\
-\>   static sharedlib \\
-\>   initial sharedlib := table() \\
-\>   sharedlib[s] := @load(s) \\
-\>   variable(s, C) := sharedlib[s] \\
+\>static sharedlib \\
+\\
+\>initial sharedlib := table() \\
+\>sharedlib[s] := @load(s) \\
+\>variable(s, C) := sharedlib[s] \\
 end
 }
 
@@ -1281,11 +1248,11 @@ library loader:
 \iconcode{
 global loadlib \\
 global calc \\
+\\
 procedure main(arguments) \\
-\>   if /loadlib then stop("no shared libraries
-present") \\
-\>   loadlib("calc", \&current) \\
-\>   \# ... remainder of program may call shared calc \\
+\>if /loadlib then stop("no shared libraries present") \\
+\>loadlib("calc", \&current) \\
+\>\# ... remainder of program may call shared calc \\
 end
 }
 

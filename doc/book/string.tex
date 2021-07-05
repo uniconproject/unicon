@@ -93,7 +93,8 @@ As mentioned in Chapter 1, strings can be compared with string
 \texttt{==}.
 
 \iconcode{
-if line[1] == "\#" then ...}
+if line[1] == "\#" then ...
+}
 
 If you find you are writing many such tests, the string processing you
 are doing may be more cleanly handled using the string scanning
@@ -109,7 +110,8 @@ cset. A \index{cset literal}cset literal is represented with single
 quotes:
 
 \iconcode{
-c := 'aeiou'}
+c := 'aeiou'
+}
 
 Since characters can only occur once in a cset, duplicates in a cset
 literal are ignored; for example,
@@ -123,12 +125,14 @@ Therefore to see if a string is composed of all the vowels and no
 consonants:
 
 \iconcode{
-if cset(s) == 'aeiou' then ...}
+if cset(s) == 'aeiou' then ...
+}
 
 Or, to find the number of distinct characters in a string:
 
 \iconcode{
-n := *cset(s)}
+n := *cset(s)
+}
 
 The \texttt{!} operator generates the members of a cset in sorted order;
 this is also useful in some situations.
@@ -161,7 +165,7 @@ included in literals. The escape codes are summarized in Table 3-1.
 {\sffamily\bfseries
 Table 3-1
 
-Escape Codes and Characters 
+Escape Codes and Characters
 }
 \end{center}
 
@@ -235,7 +239,8 @@ variables \texttt{\&subject} and \texttt{\&pos}. Scanning environments
 are created by an expression of the form
 
 \iconcode{
-\textit{s} ? \textit{expr}}
+\textit{s} ? \textit{expr}
+}
 
 The binary \texttt{?} operator sets the subject to its left argument and
 initializes the position to 1; then it executes the expression on the
@@ -254,9 +259,9 @@ fails. Here is a simple example:
 
 \iconcode{
 text ? \{ \\
-\>   while move(1) do \\
-\>   \ \ \ write(move(1)) \\
-\>   \}
+\>while move(1) do \\
+\>\>write(move(1)) \\
+\>\}
 }
 
 This code writes out every other character of the string in variable
@@ -283,14 +288,14 @@ input:
 
 \iconcode{
 procedure getword() \\
-local wchar, line \\
-\>   wchar := \&letters ++ \&digits ++
-'{\textbackslash}'-' \\
-\>   while line := read() do \\
-\>   \ \ \ line ? while tab(upto(wchar)) do \{ \\
-\>   \ \ \ \ \ \ word := tab(many(wchar)) \\
-\>   \ \ \ \ \ \ suspend word \\
-\>   \ \ \ \ \ \ \} \\
+\>local wchar, line \\
+\\
+\>wchar := \&letters ++ \&digits ++ '{\textbackslash}'-' \\
+\>while line := read() do \\
+\>\>line ? while tab(upto(wchar)) do \{ \\
+\>\>\>word := tab(many(wchar)) \\
+\>\>\>suspend word \\
+\>\>\>\} \\
 end
 }
 
@@ -322,8 +327,7 @@ this, add these two lines to the beginning of the procedure:
 
 \iconcode{
 static wchar \\
-initial wchar := \&letters ++ \&digits ++
-'{\textbackslash}'-'
+initial wchar := \&letters ++ \&digits ++ '{\textbackslash}'-'
 }
 
 The \index{match(s)}\texttt{match(s)} function takes a string argument
@@ -332,8 +336,8 @@ subject. If it succeeds, it produces the position at the end of the
 matched substring. This expression
 
 \iconcode{
-if tab(match("-")) then sign := -1 else sign
-:= 1}
+if tab(match("-")) then sign := -1 else sign := 1
+}
 
 \noindent
 looks to see if there is a minus sign at the current position; if one is
@@ -372,8 +376,7 @@ character solves this problem:
 
 \iconcode{
 procedure isbalanced(s) \\
-\>   return (s {\textbar}{\textbar} " ") ?
-(bal() = *s+1) \\
+\>return (s {\textbar}{\textbar} " ") ? (bal() = *s+1) \\
 end
 }
 
@@ -394,7 +397,7 @@ The following one line procedure does the trick:
 
 \iconcode{
 procedure complete(prefix, filenames) \\
-\>   suspend match(prefix, p := !filenames) \& p \\
+\>suspend match(prefix, p := !filenames) \& p \\
 end
 }
 
@@ -414,7 +417,7 @@ from the same position in the string:
 \iconcode{
 s ? (="0x" \& tab(many(\&digits ++
 'abcdefABCDEF'))) {\textbar} \\
-\>   tab(many(\&digits))
+\>tab(many(\&digits))
 }
 
 This expression will match either a hexadecimal string in the format
@@ -430,13 +433,12 @@ beginning of the string and fails. Unicon then evaluates the expression
 \texttt{"0"}); therefore the entire
 expression succeeds and leaves \texttt{\&pos} at 2.
 
-{\sffamily\bfseries
-Warning}
-
+\medskip\noindent{\sffamily\bfseries \bf Warning:}
+{\sffamily
 Be careful when using \texttt{tab()} or \texttt{move()} in a
 surrounding expression that can fail! The fact that \texttt{tab()}
 and \texttt{move()} reset \texttt{\&pos} upon expression
-failure causes confusion and bugs when it happens accidentally.
+failure causes confusion and bugs when it happens accidentally.}\medskip
 
 \subsection*{Concordance Example}
 
@@ -446,7 +448,7 @@ Here is a program to read a file, and generate a
 of the lines on which it occurs. Short words like
 \texttt{"the"} aren't
 interesting, so the program only counts words longer than three
-characters. 
+characters.
 
 \bigskip
 
@@ -455,46 +457,40 @@ characters.
 
 \iconcode{
 procedure main(args) \\
-\>   (*args = 1) {\textbar} stop("Need a
-file!") \\
-\>   f := open(args[1]) {\textbar}
-stop("Couldn't open ",
-args[1]) \\
-\>   wordlist := table() \\
-\>   lineno := 0 \\
+\>(*args = 1) {\textbar} stop("Need a file!") \\
+\>f := open(args[1]) {\textbar} stop("Couldn't open ", args[1]) \\
+\>wordlist := table() \\
+\>lineno := 0 \\
 \ \\
-\>   while line := map(read(f)) do \{ \\
-\>   \ \ \ lineno +:= 1 \\
-\>   \ \ \ every word := getword(line) do  \\
-\>   \ \ \ \ \ \ if *word {\textgreater} 3 then \{ \\
-\>   \ \ \ \ \ \ \ \ \ \# if word isn't in the table, 
-	set entry to empty list \\
-\>   \ \ \ \ \ \ \ \ \ /wordlist[word] := list() \\
-\>   \ \ \ \ \ \ \ \ \ put(wordlist[word], lineno) \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   L := sort(wordlist) \\
-\>   every l := !L do \{ \\
-\>   \ \ \ writes(l[1],
-"{\textbackslash}t") \\
-\>   \ \ \ linelist := "" \\
-\>   \ \ \ \# Collect line numbers into a string \\
-\>   \ \ \ every linelist {\textbar}{\textbar}:= (!l[2]
-{\textbar}{\textbar} ", ") \\
-\>   \ \ \ \# trim the final ", " \\
-\>   \ \ \ write(linelist[1:-2]) \\
-\>   \ \ \ \} \\
+\>while line := map(read(f)) do \{ \\
+\>\>lineno +:= 1 \\
+\>\>every word := getword(line) do  \\
+\>\>\>if *word {\textgreater} 3 then \{ \\
+\>\>\>\>\# if word isn't in the table, set entry to empty list \\
+\>\>\>\>/wordlist[word] := list() \\
+\>\>\>\>put(wordlist[word], lineno) \\
+\>\>\>\>\} \\
+\>\>\} \\
+\>L := sort(wordlist) \\
+\>every l := !L do \{ \\
+\>\>writes(l[1], "{\textbackslash}t") \\
+\>\>linelist := "" \\
+\>\>\# Collect line numbers into a string \\
+\>\>every linelist {\textbar}{\textbar}:= (!l[2] {\textbar}{\textbar} ", ") \\
+\>\>\# trim the final ", " \\
+\>\>write(linelist[1:-2]) \\
+\>\>\} \\
 end \\
 \ \\
 procedure getword(s) \\
-\>   s ? while tab(upto(\&letters)) do \{ \\
-\>   \ \ \ word := tab(many(\&letters)) \\
-\>   \ \ \ suspend word \\
-\>   \ \ \ \} \\
+\>s ? while tab(upto(\&letters)) do \{ \\
+\>\>word := tab(many(\&letters)) \\
+\>\>suspend word \\
+\>\>\} \\
 end
 }
 
-\noindent If we run this program on this input: 
+\noindent If we run this program on this input:
 
 \iconcode{
 Half a league, half a league, \\
@@ -503,7 +499,7 @@ All in the valley of Death \\
 Rode the six hundred.
 }
 
-\noindent the program writes this output: 
+\noindent the program writes this output:
 
 \iconcode{
 death \ \ 3 \\
@@ -564,13 +560,13 @@ following are examples of regular expressions.
 \bigskip
 
 \begin{tabular}{|l|l|} \hline
-regular expression	& is a pattern that... \\ \hline
-\texttt{$<$abc$>$}	& matches abc \\
-\texttt{$<$a$|$b$|$c$>$}& matches a or b or c \\
-\texttt{$<$[a-c]$>$}	& matches a or b or c \\
-\texttt{$<$ab?c$>$}	& matches a followed optionally by b followed by c \\
-\texttt{$<$ab*c$>$}	& matches a followed by 0 or more b's followed by c \\
-\texttt{$<$a*b*c*$>$}	& matches a's followed by b's followed by c's \\ \hline
+{\bf regular expression} & {\bf is a pattern that...} \\ \hline
+\texttt{$<$abc$>$} & matches abc \\
+\texttt{$<$a$|$b$|$c$>$} & matches a or b or c \\
+\texttt{$<$[a-c]$>$} & matches a or b or c \\
+\texttt{$<$ab?c$>$} & matches a followed optionally by b followed by c \\
+\texttt{$<$ab*c$>$} & matches a followed by 0 or more b's followed by c \\
+\texttt{$<$a*b*c*$>$} & matches a's followed by b's followed by c's \\ \hline
 \end{tabular}
 
 \subsection{Pattern Composition}
@@ -586,7 +582,7 @@ are not easily written as regular expressions.
 \bigskip
 
 \begin{tabular}{|l|l|} \hline
-composer & constructs a pattern that... \\ \hline
+{\bf composer} & {\bf constructs a pattern that...} \\ \hline
 \texttt{p1 {\textbar\textbar} p2} & matches if pattern p1 is followed by pattern p2 \\
 \texttt{p1 .{\textbar} p2} & matches if pattern p1 or pattern p2 matches \\
 \texttt{p -$>$ v}   & assigns s to v if an entire pattern match succeeds \\
@@ -609,12 +605,9 @@ composer & constructs a pattern that... \\ \hline
 \texttt{Rem()}    & matches the remainder of the string \\
 \texttt{Span(c)}  & matches 1 or more characters in cset c, as many as possible \\
 \texttt{Succeed()}& causes the entire pattern match to succeed immediately \\
-\texttt{Tab(i)}   & matches from the current position to position i, moving to
-	   that location \\
-\texttt{Rpos(i)}  & sets the position i characters from the right end of the
-	   string \\
-\texttt{Rtab(i)}  & matches from the current position to i
-	   characters from the right end. \\ \hline
+\texttt{Tab(i)}   & matches from the current position to position i, moving to that location \\
+\texttt{Rpos(i)}  & sets the position i characters from the right end of the string \\
+\texttt{Rtab(i)}  & matches from the current position to i characters from the right end. \\ \hline
 \end{tabular}
 
 \bigskip
@@ -692,33 +685,34 @@ by a regular expression.
 \iconcode{
 link regexp \\
 procedure main(av) \\
-\>   local f, re, repl \\
-\>   every (f{\textbar}re{\textbar}repl) := pop(av) \\
-\>   f := open(f) {\textbar} stop("can't open file named: ", f) \\
-\>   while line := read(f) do \\
-\>   \ \ \ write(re\_sub(line, re, repl)) \\
+\>local f, re, repl \\
+\\
+\>every (f {\textbar} re{\textbar} repl) := pop(av) \\
+\>f := open(f) {\textbar} stop("can't open file named: ", f) \\
+\>while line := read(f) do \\
+\>\>write(re\_sub(line, re, repl)) \\
 end \\
+\\
 procedure re\_sub(str, re, repl) \\
-\>   result := "" \\
-\>   str ? \{ \\
-\>   \ \ \ while j := ReFind(re) do \{ \\
-\>   \ \ \ \ \ \ result {\textbar}{\textbar}:= tab(j)
-{\textbar}{\textbar} repl \\
-\>   \ \ \ \ \ \ tab(ReMatch(re)) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ result {\textbar}{\textbar}:= tab(0) \\
-\>   \ \ \ \} \\
-\>   return result \\
+\>result := "" \\
+\>str ? \{ \\
+\>\>while j := ReFind(re) do \{ \\
+\>\>\>result {\textbar}{\textbar}:= tab(j) {\textbar}{\textbar} repl \\
+\>\>\>tab(ReMatch(re)) \\
+\>\>\>\} \\
+\>\>result {\textbar}{\textbar}:= tab(0) \\
+\>\>\} \\
+\>return result \\
 end
 }
 
 To replace all occurrences of
 \texttt{"read{\textbar}write"} with
-\texttt{"IO operation"} you could type 
+\texttt{"IO operation"} you could type
 
 \iconcode{
-igrep mypaper.txt "read{\textbar}write"
-"IO Operation"}
+igrep mypaper.txt "read{\textbar}write" "IO Operation"
+}
 
 Since the program has access to the pattern matching operation at a
 finer grain, more complex operations are possible, this
@@ -751,8 +745,8 @@ rules or \textit{productions}. Here is an example:
 
 \iconcode{
 S -{\textgreater} S S \\
-\>   {\textbar} ( S ) \\
-\>   {\textbar} ( )
+\>{\textbar} ( S ) \\
+\>{\textbar} ( )
 }
 
 This grammar has three productions. There are two kinds of symbols,
@@ -772,7 +766,7 @@ This grammar matches all strings of balanced parentheses. The string
 \iconcode{
 S -{\textgreater} (S) -{\textgreater} (SS) -{\textgreater} (()S)
 -{\textgreater} (()(S)) -{\textgreater} \\
-\>   \ \ (()(SS)) -{\textgreater} (()(()S)) -{\textgreater} (()(()()))
+\>\ \ (()(SS)) -{\textgreater} (()(()S)) -{\textgreater} (()(()()))
 }
 
 \subsection*{Parsing}
@@ -784,14 +778,14 @@ translater itself is written in.  Iyacc is an industrial strength
 parser generator, derived from the open source "Berkely yacc", that
 generates parsers as .icn source files compatible with Icon and Unicon.
 Iyacc comes with Unicon distributions and is documented in Unicon Technical
-Report 3 at http://unicon.org/utr/utr3.pdf. 
+Report 3 at http://unicon.org/utr/utr3.pdf.
 
 Unicon can parse grammars in a natural way using matching
 functions. A production
 
 \iconcode{
 A -{\textgreater} B a D  \\
-\>   {\textbar} C E b
+\>{\textbar} C E b
 }
 
 \noindent
@@ -799,8 +793,7 @@ can be mapped to this matching function:
 
 \iconcode{
 procedure A() \\
-\>   suspend (B() \& ="a" \& D())
-{\textbar} (C() \& E() \& ="b") \\
+\>suspend (B() \& ="a" \& D()) {\textbar} (C() \& E() \& ="b") \\
 end
 }
 
@@ -856,39 +849,34 @@ this grammar:
 
 \iconcode{
 procedure main() \\
-\>   while line := read() do \\
-\>   \ \ \ if expr(line) == line then write("Success!") \\
-\>   \ \ \ else write("Failure.") \\
+\>while line := read() do \\
+\>\>if expr(line) == line then write("Success!") \\
+\>\>else write("Failure.") \\
 end \\
+\\
 procedure expr(s) \\
-\>   s ? \{ \\
-\>   \ \ \ while t := tab(bal('+'))
-do \{ \\
-\>   \ \ \ \ \ \ term(t) {\textbar} \index{fail}fail ;
-="+" \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ term(tab(0)) {\textbar} fail \\
-\>   \ \ \ \} \\
-\>   return s \\
+\>s ? \{ \\
+\>\>while t := tab(bal('+')) do \{ \\
+\>\>\>term(t) {\textbar} \index{fail}fail ; ="+" \\
+\>\>\>\} \\
+\>\>term(tab(0)) {\textbar} fail \\
+\>\>\} \\
+\>return s \\
 end \\
+\\
 procedure term(s) \\
-\>   s ? \{ \\
-\>   \ \ \ while f := tab(bal('*'))
-do \{ \\
-\>   \ \ \ \ \ \ factor(f) {\textbar} fail ;
-="*" \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ factor(tab(0)) {\textbar} fail \\
-\>   \ \ \ \} \\
-\>   return s \\
+\>s ? \{ \\
+\>\>while f := tab(bal('*')) do \{ \\
+\>\>\>factor(f) {\textbar} fail ; ="*" \\
+\>\>\>\} \\
+\>\>factor(tab(0)) {\textbar} fail \\
+\>\>\} \\
+\>return s \\
 end \\
+\\
 procedure factor(s) \\
-\>   s ? suspend ="a" {\textbar}
-="b" {\textbar}
-="c" {\textbar}  ( ="("
-{\textbar}{\textbar}
-expr(tab(bal(')')))
-{\textbar}{\textbar} =")" ) \\
+\>s ? suspend ="a" {\textbar} ="b" {\textbar} ="c" {\textbar}  ( ="("
+{\textbar}{\textbar} expr(tab(bal(')'))) {\textbar}{\textbar} =")" ) \\
 end
 }
 

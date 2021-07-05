@@ -9,7 +9,7 @@ This chapter describes how to use Unicon to build an entire, somewhat
 complex application with reusable parts. The field of \index{genetic
 algorithms}\textit{genetic algorithms} (GAs) is an exciting application
 domain with lots of opportunities for exploratory programming. When
-you're finished with this chapter, you will 
+you're finished with this chapter, you will
 \begin{itemize}
 \item Understand the basics of genetic algorithms.
 \item See how to build genetic algorithm engine in Unicon.
@@ -30,7 +30,7 @@ representations such as floating-point numbers in GA-related projects.
 That field has typically been given the more general name of
 evolutionary algorithms. GAs have one of the most well-defined
 mathematical foundations in all of evolutionary computation, and are a
-good place to start exploring. 
+good place to start exploring.
 
 John Holland invented the first GAs in the 1960s. His goal was to study
 adaptation as it occurs in nature and then to create computer systems
@@ -54,9 +54,9 @@ exactly the numerical value of an individual. For example, you could
 examine the fitness of this one individual with an exhaustive search:
 
 \iconcode{
-\>   best := 0 \\
-\>   every i := 0 to 2\^{}6 do \\
-\>   \ \ \ best {\textless}:= i
+\>best := 0 \\
+\>every i := 0 to 2\^{}6 do \\
+\>\>best {\textless}:= i
 }
 
 Suppose you only make use of the elements of a population and selection
@@ -66,15 +66,15 @@ fitness of the six by replacing the lowest fitness individual with a
 random one. The code below shows how to implement this idea:
 
 \iconcode{
-\>   maxi := 2\^{}6 \\
-\>   population := [?maxi, ?maxi, ?maxi, ?maxi, ?maxi, ?maxi] \\
-\>   every i := 1 to 100 do \{ \\
-\>   \ \ \ worst := 1 \\
-\>   \ \ \ every i := 1 to 5 do \\
-\>   \ \ \ \ \ \ if population[worst] {\textless}= population[i] then \\
-\>   \ \ \ \ \ \ \ \ \ worst := i \\
-\>   \ \ \ population[i] := ?maxi \\
-\>   \ \ \ \}
+\>maxi := 2\^{}6 \\
+\>population := [?maxi, ?maxi, ?maxi, ?maxi, ?maxi, ?maxi] \\
+\>every i := 1 to 100 do \{ \\
+\>\>worst := 1 \\
+\>\>every i := 1 to 5 do \\
+\>\>\>if population[worst] {\textless}= population[i] then \\
+\>\>\>\>worst := i \\
+\>\>population[i] := ?maxi \\
+\>\>\}
 }
 
 Before modeling mating and mutation, you'll have to
@@ -93,7 +93,7 @@ representation that is easier to use. So, here is a more explicit
 representation of a population:
 
 \iconcode{
-\>   population := ["010111", "000101", "111101", "111011", "111110", "010110"]
+\>population := ["010111", "000101", "111101", "111011", "111110", "010110"]
 }
 
 \subsection*{Fitness}
@@ -116,52 +116,34 @@ this pairing twice. Here is a tournament selection on the above
 population:
 
 \iconcode{
-\>   population[1] := "010111"
-\# 23 winner \\
-\>   population[6] := "010110"
-\# 22 \\
-\>   population[3] := "111101"
-\# 61 winner \\
-\>   population[4] := "111011"
-\# 59 \\
-\>   population[5] := "111110"
-\# 62 winner \\
-\>   population[2] := "000101"
-\# 5
+\>population[1] := "010111" \ \ \ \ \ \# 23 winner \\
+\>population[6] := "010110" \ \ \ \ \ \# 22 \\
+\>population[3] := "111101" \ \ \ \ \ \# 61 winner \\
+\>population[4] := "111011" \ \ \ \ \ \# 59 \\
+\>population[5] := "111110" \ \ \ \ \ \# 62 winner \\
+\>population[2] := "000101" \ \ \ \ \ \# 5
 }
 
 The second round of selections is listed here:
 
 \iconcode{
-\>   population[5] := "111110"
-\# 62 winner \\
-\>   population[6] := "010110"
-\# 22 \\
-\>   population[2] := "000101"
-\# 5 \\
-\>   population[3] := "111101"
-\# 61 winner \\
-\>   population[4] := "111011"
-\# 59 winner \\
-\>   population[1] := "010111"
-\# 23
+\>population[5] := "111110" \ \ \ \ \ \# 62 winner \\
+\>population[6] := "010110" \ \ \ \ \ \# 22 \\
+\>population[2] := "000101" \ \ \ \ \ \# 5 \\
+\>population[3] := "111101" \ \ \ \ \ \# 61 winner \\
+\>population[4] := "111011" \ \ \ \ \ \# 59 winner \\
+\>population[1] := "010111" \ \ \ \ \ \# 23
 }
 
 The end result of tournament selection is listed here:
 
 \iconcode{
-\>   next\_gen[1] := population[1] :=
-"010111" \# 23 \\
-\>   next\_gen[2] := population[3] :=
-"111101" \# 61 \\
-\>   next\_gen[3] := population[5] :=
-"111110" \# 62 \\
-\>   next\_gen[4] := population[5] :=
-"111110" \# 62 \\
-\>   next\_gen[5] := population[3] :=
-"111101" \# 61 \\
-\>   next\_gen[6] := population[4] :=
-"111011" \# 59
+\>next\_gen[1] := population[1] := "010111" \ \ \# 23 \\
+\>next\_gen[2] := population[3] := "111101" \ \ \# 61 \\
+\>next\_gen[3] := population[5] := "111110" \ \ \# 62 \\
+\>next\_gen[4] := population[5] := "111110" \ \ \# 62 \\
+\>next\_gen[5] := population[3] := "111101" \ \ \# 61 \\
+\>next\_gen[6] := population[4] := "111011" \ \ \# 59
 }
 
 Notice how there are two copies of \texttt{population[3]} and
@@ -198,14 +180,12 @@ formed by splicing portions of \texttt{parent1} and \texttt{parent2}
 within the range from \texttt{a} to \texttt{b}.
 
 \iconcode{
-\>   \ \ \ a := ?(lchrom+1) \\
-\>   \ \ \ while ((b := ?(lchrom+1)) = a) \\
-\>   \ \ \ if a {\textgreater} b then a :=: b \\
-\>   \ \ \ ncross +:= 1 \\
-\>   \ \ \ child1 := parent1[1:a] {\textbar}{\textbar} parent2[a:b]
-{\textbar}{\textbar} parent1[b:0] \\
-\>   \ \ \ child2 := parent2[1:a] {\textbar}{\textbar} parent1[a:b]
-{\textbar}{\textbar} parent2[b:0]
+\>a := ?(lchrom+1) \\
+\>while ((b := ?(lchrom+1)) = a) \\
+\>if a {\textgreater} b then a :=: b \\
+\>ncross +:= 1 \\
+\>child1 := parent1[1:a] {\textbar}{\textbar} parent2[a:b] {\textbar}{\textbar} parent1[b:0] \\
+\>child2 := parent2[1:a] {\textbar}{\textbar} parent1[a:b] {\textbar}{\textbar} parent2[b:0]
 }
 
 \subsection*{Mutation}
@@ -216,12 +196,12 @@ each bit of each individual of the population. With a fixed
 probability, flip the value of the bit. This is the basic mechanism for
 injecting completely new information into the population. Almost all of
 that information will be useless, but as the GA evolves it will weed
-out the useless information and keep the useful information. 
+out the useless information and keep the useful information.
 
 \section{The GA Process}
 
 Now that you have a handle on the basic operations, it is time to
-describe the basic GA algorithm for applying these operations. 
+describe the basic GA algorithm for applying these operations.
 
 \ \ 1.\ \ Generate a random population of n individuals each with
 \textit{l}{}-bits.
@@ -252,10 +232,10 @@ from variations on crossover to adjusting the
 mutation and mating rates. Here are some time-tested rules of thumb:
 
 \ \ 1.\ \ Encode the solutions to a problem with as few bits as possible
-but not at the expense of making the encoding very complex. 
+but not at the expense of making the encoding very complex.
 
 \ \ 2.\ \ Let the size of the population be at least twenty but not so
-large that your computer program is intolerably slow. 
+large that your computer program is intolerably slow.
 
 \ \ 3.\ \ Mating rates between 30 percent and 90 percent work for a
 large range of problems.
@@ -324,7 +304,7 @@ the population every generation. Given a binary string \texttt{s},
 
 Class \texttt{ga\_eng} implements the engine. It provides
 two public methods, \texttt{evolve()} and \texttt{set\_params()}, as
-well as eight private methods: 
+well as eight private methods:
 
 \iconcode{
 method evolve() \\
@@ -360,16 +340,17 @@ You might be asking what is a population of \textit{individuals}? \ The
 key pieces of information about an individual are its chromosomes,
 which are represented as a string of zeros and ones. For implementation
 reasons, we bundle the following information for each individual using
-the following Unicon record: 
+the following Unicon record:
 
 \iconcode{
-record individual(chrom, fitness, parent1, parent2, xsite)}
+record individual(chrom, fitness, parent1, parent2, xsite)
+}
 
 This stores the fitness values, the index of two parents, and the
 crossover sites from when the parents were mated.
 
 The class \texttt{ga\_eng} makes use of the following
-\index{instance}instance variables: 
+\index{instance}instance variables:
 
 \begin{itemize}
 \item \texttt{oldpop}, \texttt{newpop} $-$ two populations; selection
@@ -413,17 +394,17 @@ file, and then evolves the population for one generation. The method
 
 \iconcode{
 method evolve() \\
-\>   if /initialized := 1 then \{ \\
-\>\>    gen := 0 \\
-\>\>    init() \\
-\>\>    statistics(oldpop) \\
-\>\>    if {\textbackslash}log\_file then report(oldpop) \\
-\>\>    \} \\
-\>   gen +:= 1 \\
-\>   generation() \\
-\>   statistics(newpop) \\
-\>   if {\textbackslash}log\_file then report(newpop) \\
-\>   oldpop := newpop \\
+\>if /initialized := 1 then \{ \\
+\>\>gen := 0 \\
+\>\>init() \\
+\>\>statistics(oldpop) \\
+\>\>if {\textbackslash}log\_file then report(oldpop) \\
+\>\>\} \\
+\>gen +:= 1 \\
+\>generation() \\
+\>statistics(newpop) \\
+\>if {\textbackslash}log\_file then report(newpop) \\
+\>oldpop := newpop \\
 end
 }
 
@@ -452,23 +433,22 @@ shows the code for the method \texttt{generation()}:
 
 \iconcode{
 method generation() \\
-\>   local j := 1, mate1, mate2, jcross, kids, x, fitness1, fitness2, selected
+\>local j := 1, mate1, mate2, jcross, kids, x, fitness1, fitness2, selected\\
 \\
-\>   newpop \ \ \ := list(popsize) \\
-\>   nmutation := ncross := 0 \\
-\>   selected \ \ := tselect() \\
-\>   repeat \ \{ \\
-\>   \ \ \ mate1 := selected[j] \\
-\>   \ \ \ mate2 := selected[j+1] \\
-\>   \ \ \ kids := crossover2(oldpop[mate1].chrom, oldpop[mate2].chrom ) \\
-\>   \ \ \ fitness1 := fitness\_func(oldpop[mate1].chrom) \\
-\>   \ \ \ fitness2 := fitness\_func(oldpop[mate2].chrom) \\
-\>   \ \ \ newpop[j]:= individual(kids[1], fitness1, mate1, mate2, kids[3]) \\
-\>   \ \ \ newpop[j+1] := individual(kids[2], fitness2, mate1, mate2, kids[3])
-\\
-\>   \ \ \ if j {\textgreater} popsize then break \\
-\>   \ \ \ j +:= 2 \\
-\>   \ \ \ \} \\
+\>newpop\>\>\>\>:= list(popsize) \\
+\>nmutation\>\>\>\>:= ncross := 0 \\
+\>selected\>\>\>\>:= tselect() \\
+\>repeat \ \{ \\
+\>\>mate1 := selected[j] \\
+\>\>mate2 := selected[j+1] \\
+\>\>kids := crossover2(oldpop[mate1].chrom, oldpop[mate2].chrom ) \\
+\>\>fitness1 := fitness\_func(oldpop[mate1].chrom) \\
+\>\>fitness2 := fitness\_func(oldpop[mate2].chrom) \\
+\>\>newpop[j]:= individual(kids[1], fitness1, mate1, mate2, kids[3]) \\
+\>\>newpop[j+1] := individual(kids[2], fitness2, mate1, mate2, kids[3]) \\
+\>\>if j {\textgreater} popsize then break \\
+\>\>j +:= 2 \\
+\>\>\} \\
 end
 }
 
@@ -493,20 +473,19 @@ to use the GA engine for a simple test problem.
 
 \iconcode{
 procedure decode(chrom) \\
-\>   local i := 0 \\
-\>   every !chrom == "1" do i +:= 1 \\
-\>   return i \\
+\>local i := 0 \\
+\\
+\>every !chrom == "1" do i +:= 1 \\
+\>return i \\
 end \\
 \ \\
 \# a simple test of the engine, fitness is based on number of 1 bits in chrom \\
 procedure main() \\
-\>   log\_file \ := open("test\_ga.log",
-"w") {\textbar} stop("cannot open log\_file.log") \\
-\>   ga := ga\_eng(decode, 100, 20, 0.99, 1.0/real(20), log\_file) \\
-\>   every 1 to 100 do ga.evolve() \\
-\>   write(log\_file, "best location ={\textgreater} ", ga.best) \\
-\>   write(log\_file, "best fitness \ ={\textgreater} ",
-           ga.newpop[ga.best].fitness) \\
+\>log\_file \ := open("test\_ga.log", "w") {\textbar} stop("cannot open log\_file.log") \\
+\>ga := ga\_eng(decode, 100, 20, 0.99, 1.0/real(20), log\_file) \\
+\>every 1 to 100 do ga.evolve() \\
+\>write(log\_file, "best location ={\textgreater} ", ga.best) \\
+\>write(log\_file, "best fitness \ ={\textgreater} ", ga.newpop[ga.best].fitness) \\
 end
 }
 
@@ -608,7 +587,7 @@ the color you choose is typically only a very small part of the
 color wheel. Also the color is surrounded by many different colors that
 may be distracting or misleading in your evaluation. When you use the
 same color for the entire background, you get a different sense of the
-color. 
+color.
 
 A second option is to tinker with numeric color codes by hand. Through
 trial and error, by examining a large number of colors you can select
@@ -621,7 +600,7 @@ the color wheel and the tinkering methods. It uses a GA to explore the
 problem space. The program \texttt{cb} first displays sixteen randomly
 generated colors. The fitness of an individual color is based entirely
 on user preference. Using scrollbars, the user ranks the individuals,
-and then hits a breed button to generate a new population of colors. 
+and then hits a breed button to generate a new population of colors.
 
 Scrollbars \texttt{sbar[\textit{i}]} are indexed with
 \texttt{\textit{i}}, where \texttt{\textit{i}} runs from 1 to
@@ -631,11 +610,10 @@ when the tab is lowered the value of scrollbar goes up. The user of
 \texttt{cb} sets higher tabs to indicate higher fitness.
 
 \iconcode{
-\>   every i := 1 to 16 do \{ \\
-\>   \ \ \ f :=
-VGetState(vidgets["sbar"{\textbar}{\textbar}i]) \\
-\>   \ \ \ ga.newpop[i].fitness := 1 - f \\
-\>   \}
+\>every i := 1 to 16 do \{ \\
+\>\>f := VGetState(vidgets["sbar" {\textbar}{\textbar} i]) \\
+\>\>ga.newpop[i].fitness := 1 - f \\
+\>\>\}
 }
 
 Gradually the population evolves from a set of random colors to a set of
@@ -690,7 +668,7 @@ The user can click on the snap shot button to create a GIF image file
 that is a snapshot of the whole screen. If you left click on a color
 region, the color and patterns specification will be displayed in a pop
 window. For the sake of compactness, the colors and patterns are
-represented with hexadecimal strings as opposed to binary strings. 
+represented with hexadecimal strings as opposed to binary strings.
 
 \section{Picking Colors for Text Displays}
 
@@ -718,5 +696,5 @@ are selection, mating, and mutation. Object-oriented techniques enable
 a generic GA engine that can be adapted to a large variety of problems.
 By making the engine very general purpose it is possible to create
 applications with novel properties like using user preferences to set
-the fitness of a color! 
+the fitness of a color!
 

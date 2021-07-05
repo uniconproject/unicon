@@ -88,23 +88,21 @@ for the user to ponder.
 
 \iconcode{
 procedure highscore(game, userid, score, server) \\
-\>   if not find(":", server) then server
-{\textbar}{\textbar}:= ":4578" \\
-\>   f := open(server, "n") {\textbar}
-fail \\
+\>if not find(":", server) then server {\textbar}{\textbar}:= ":4578" \\
+\>f := open(server, "n") {\textbar} fail \\
 \ \\
-\>   \# Send in this game's score \\
-\>   write(f, "HSP{\textbackslash}n", game,
-"{\textbackslash}n", userid,
+\>\# Send in this game's score \\
+\>write(f, "HSP{\textbackslash}n", game, "{\textbackslash}n", userid,
 "{\textbackslash}n", score) {\textbar} \\
-\>   \ \ \ stop("Couldn't write:
-", \&errortext) \\
+\>\>stop("Couldn't write: ", \&errortext) \\
 \ \\
-\>   \# Get the high score list \\
-\>   L := ["High Scores"] \\
-\>   while line := read(f) do put(L, line) \\
-\>   close(f) \\
-\>   return L \\
+\>\# \\
+\>\# Get the high score list \\
+\>L := ["High Scores"] \\
+\>\# \\
+\>while line := read(f) do put(L, line) \\
+\>close(f) \\
+\>return L \\
 end
 }
 
@@ -121,19 +119,15 @@ client and server have to agree on which port the server is using.
 
 \iconcode{
 procedure main(av) \\
-\>   port := 4578 \# a random user-level port \\
-\>   if av[i := 1 to *av] == "-port" then
-        port := integer(av[i+1]) \\
+\>port := 4578 \# a random user-level port \\
+\>if av[i := 1 to *av] == "-port" then port := integer(av[i+1]) \\
 \ \\
-\>   write("Internet Scorecard version
-1.0") \\
-\>   while net := open(":"
-{\textbar}{\textbar} port, "na") \ do \{ \\
-\>   \ \ \ score\_result(net) \\
-\>   \ \ \ close(net) \\
-\>   \ \ \ \} \\
-\>   (\&errno = 0) {\textbar} stop("scored net accept
-failed: ", \&errortext) \\
+\>write("Internet Scorecard version 1.0") \\
+\>while net := open(":" {\textbar}{\textbar} port, "na") \ do \{ \\
+\>\>score\_result(net) \\
+\>\>close(net) \\
+\>\>\} \\
+\>(\&errno = 0) {\textbar} stop("scored net accept failed: ", \&errortext) \\
 end
 }
 
@@ -156,7 +150,7 @@ call to \texttt{select()} is used to guarantee the server receives data within
 the first 1000 milliseconds (1 second). A last security concern is to
 ensure that the "game" filename supplied is
 valid; it must be an existing file in the current directory, not
-something like \texttt{/etc/passwd} for example. 
+something like \texttt{/etc/passwd} for example.
 
 The \texttt{score\_result()} procedure maintains a static table of all
 scores of all games that it knows about. The keys of the table are the
@@ -173,41 +167,35 @@ their use by the server.
 
 \iconcode{
 procedure score\_result(net) \\
-\>   local s := "" \\
-\>   static t, gamenamechars \\
-\>   initial \{ \\
-\>\>    t := table() \\
-\>\>    gamenamechars :=
-\&letters++\&digits++'-\_' \\
-\>\>    \} \\
+\>local s := "" \\
+\>static t, gamenamechars \\
+\\
+\>initial \{ \\
+\>\>t := table() \\
+\>\>gamenamechars := \&letters++\&digits++'-\_' \\
+\>\>\} \\
 \ \\
-\>   select(net, 1000) {\textbar} \{ write(net,
-"timeout"); fail \} \\
-
-\>   (s ||:= ready(net)) ? \{ \\
-\>\>     = "HSP{\textbackslash}n" {\textbar} \{
-write(net, "wrong protocol"); fail \} \\
-\>\>     game := tab(many(gamenamechars)) {\textbar} \{
-                  write(net,"no game?"); fail \} \\
-\>\>     = "{\textbackslash}n" \\
-\>\>     owner := tab(many(gamenamechars)) {\textbar} \{
-                  write(net,"no owner?"); fail \} \\
-\>\>     = "{\textbackslash}n" \\
-\>\>     score := tab(many(\&digits)) {\textbar} \{
-                  write("no score?"); fail \} \\
-\>\>     \} \\
+\>select(net, 1000) {\textbar} \{ write(net, "timeout"); fail \} \\
+\>(s ||:= ready(net)) ? \{ \\
+\>\>="HSP{\textbackslash}n" {\textbar} \{ write(net, "wrong protocol"); fail \} \\
+\>\>game := tab(many(gamenamechars)) {\textbar} \{ write(net,"no game?"); fail \} \\
+\>\>="{\textbackslash}n" \\
+\>\>owner := tab(many(gamenamechars)) {\textbar} \{ write(net,"no owner?"); fail \} \\
+\>\>="{\textbackslash}n" \\
+\>\>score := tab(many(\&digits)) {\textbar} \{ write("no score?"); fail \} \\
+\>\>\} \\
 \ \\
-\>   if t[game] === \&null then \{ \\
-\>\>    if not (f := open(game)) then \{ \\
-\>\>\>     write(net, "No high scores here for ", game) \\
-\>\>\>     fail \\
-\>\>\>     \} \\
-\>\>    t[game] := L := [] \\
-\>\>    while put(L, read(f)) \\
-\>\>    close(f) \\
-\>\>    \} \\
-\>   else \\
-\>   \ \ \ L := t[game]
+\>if t[game] === \&null then \{ \\
+\>\>if not (f := open(game)) then \{ \\
+\>\>\>write(net, "No high scores here for ", game) \\
+\>\>\>fail \\
+\>\>\>\} \\
+\>\>t[game] := L := [] \\
+\>\>while put(L, read(f)) \\
+\>\>close(f) \\
+\>\>\} \\
+\>else \\
+\>\>L := t[game]
 }
 
 The central question is whether the new score makes an entry into the
@@ -220,35 +208,32 @@ score made the high score list, the list is written to its file on
 disk.
 
 \iconcode{
-\>   if score {\textgreater} L[-1] then \{ \\
-\>   \ \ \ L[-2] := owner \\
-\>   \ \ \ L[-1] := score \\
-\>   \ \ \ i := -1 \\
-\>   \ \ \ while L[i] {\textgreater} L[i-2] do \{ \\
-\>   \ \ \ \ \ \ L[i] :=: L[i-2] \\
-\>   \ \ \ \ \ \ L[i-1] :=: L[i-3] \\
-\>   \ \ \ \ \ \ i -:= 2 \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ f := open(game,"w") \\
-\>   \ \ \ every write(f, !L) \\
-\>   \ \ \ close(f) \\
-\>   \ \ \ \}
+\>if score {\textgreater} L[-1] then \{ \\
+\>\>L[-2] := owner \\
+\>\>L[-1] := score \\
+\>\>i := -1 \\
+\>\>while L[i] {\textgreater} L[i-2] do \{ \\
+\>\>\>L[i] :=: L[i-2] \\
+\>\>\>L[i-1] :=: L[i-3] \\
+\>\>\>i -:= 2 \\
+\>\>\>\} \\
+\>\>f := open(game,"w") \\
+\>\>every write(f, !L) \\
+\>\>close(f) \\
+\>\>\}
 }
 
-{\sffamily\bfseries
-Note}
-
-{\sffamily
+\medskip\noindent{\sffamily\bfseries \bf Note:}\ {\sffamily
 List \textit{L} and \textit{t[game]} refer to the same list, so the
 change to L here is seen by the next client that looks at
-\textit{t[game]}.}
+\textit{t[game]}.}\medskip
 
 Lastly, whether the new score made the high score list or not, the high
 score list is written out on the network connection so that the game
 can display it.
 
 \iconcode{
-\>   every write(net, !L) \\
+\>every write(net, !L) \\
 end
 }
 
@@ -288,16 +273,13 @@ are the window's dimensions, and \texttt{net} is the
 Internet connection to the remote machine.
 
 \iconcode{
-link graphics
+link graphics \\
 \ \\
-\$define ps 10 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# The size of the font to
-use \\
-\$define lines 48 \ \ \ \ \ \ \ \ \ \ \ \ \# No. of text lines in the
-window \\
-\$define margin 3 \ \ \ \ \ \ \ \ \ \ \ \ \# Space to leave around the
-margins \\
-\$define START\_PORT 1234
-\$define STOP\_PORT \ 1299
+\$define ps 10\>\>\>\>\>\>\>\>\>\>\# The size of the font to use \\
+\$define lines 48\>\>\>\>\>\>\>\>\>\>\# No. of text lines in the window \\
+\$define margin 3\>\>\>\>\>\>\>\>\>\>\# Space to leave around the margins \\
+\$define START\_PORT 1234 \\
+\$define STOP\_PORT \ 1299 \\
 \ \\
 global vs, cwidth, wheight, wwidth, net
 }
@@ -309,8 +291,8 @@ argument is the user and/or machine to connect to.
 
 \iconcode{
 procedure main(args) \\
-\>   win\_init() \\
-\>   net\_init(args[1] {\textbar} "127.0.0.1")
+\>win\_init() \\
+\>net\_init(args[1] {\textbar} "127.0.0.1")
 }
 
 Before describing the window interaction or subsequent handling of
@@ -326,12 +308,11 @@ waits for the remote party to connect to it.
 
 \iconcode{
 procedure net\_init(host) \\
-\>   host ?:= \{ \\
-\>   \ \ \ if user := tab(find("@")) then move(1) \\
-\>   \ \ \ tab(0) \\
-\>   \ \ \ \} \\
-\>   net :=
-(open\_client{\textbar}open\_server{\textbar}give\_up)(host, user) \\
+\>host ?:= \{ \\
+\>\>if user := tab(find("@")) then move(1) \\
+\>\>tab(0) \\
+\>\>\} \\
+\>net := (open\_client {\textbar} open\_server {\textbar} give\_up)(host, user) \\
 end
 }
 
@@ -347,27 +328,21 @@ the connection if the desired party is found.
 
 \iconcode{
 procedure open\_client(host, user) \\
-\>   port := START\_PORT \\
-\>   if {\textbackslash}user then \{ \\
-\>   \ \ \ while net := open(host {\textbar}{\textbar}
-":" {\textbar}{\textbar} port,
-"n") do \{ \\
-\>   \ \ \ \ \ \ write(net, getenv("USER")
-{\textbar} "anonymous") \\
-\>   \ \ \ \ \ \ if user == read(net) then return net \\
-\>   \ \ \ \ \ \ close(net) \\
-\ \ \ \ \ \ \ \ \ port +:= 1 \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   else \{ \\
-\>   \ \ \ net := open(host {\textbar}{\textbar}
-":" {\textbar}{\textbar} port,
-"n") \\
-\>   \ \ \ write(net, getenv("USER")
-{\textbar} "anonymous") \\
-\>   \ \ \ read(net) \# discard \\
-\>   \ \ \ return net \\
-\>   \ \ \ \} \\
+\>port := START\_PORT \\
+\>if {\textbackslash}user then \{ \\
+\>\>while net := open(host {\textbar}{\textbar} ":" {\textbar}{\textbar} port, "n") do \{ \\
+\>\>\>write(net, getenv("USER") {\textbar} "anonymous") \\
+\>\>\>if user == read(net) then return net \\
+\>\>\>close(net) \\
+\>\>\>port +:= 1 \\
+\>\>\>\} \\
+\>\>\} \\
+\>else \{ \\
+\>\>net := open(host {\textbar}{\textbar} ":" {\textbar}{\textbar} port, "n") \\
+\>\>write(net, getenv("USER") {\textbar} "anonymous") \\
+\>\>read(net) \# discard \\
+\>\>return net \\
+\>\>\} \\
 end
 }
 
@@ -378,30 +353,25 @@ the desired party is calling.
 
 \iconcode{
 procedure open\_server(host, user) \\
-\>   repeat \{ \\
-\ \ \ \ \ \ port := START\_PORT \\
-\>   \ \ \ until net := open(":"
-{\textbar}{\textbar} port, "na") do \{ \\
-\>   \ \ \ \ \ \ port +:= 1 \\
-\>   \ \ \ \ \ \ if port {\textgreater} STOP\_PORT then fail \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ if not (them := read(net)) then \{ \\
-\>   \ \ \ \ \ \ close(net) \\
-\>   \ \ \ \ \ \ next \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ if /user {\textbar} (them == user) then \{ \\
-\>   \ \ \ \ \ \ write(net, getenv("USER")
-{\textbar} "anonymous") \\
-\>   \ \ \ \ \ \ WAttrib("label=talk: accepted call from
-", them) \\
-\>   \ \ \ \ \ \ return net \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ WAttrib("label=talk: rejected call from
-", them) \\
-\>   \ \ \ write(net, getenv("USER")
-{\textbar} "anonymous") \\
-\>   \ \ \ close(net) \\
-\>   \ \ \ \} \\
+\>repeat \{ \\
+\>\>port := START\_PORT \\
+\>\>until net := open(":" {\textbar}{\textbar} port, "na") do \{ \\
+\>\>\>port +:= 1 \\
+\>\>\>if port {\textgreater} STOP\_PORT then fail \\
+\>\>\>\} \\
+\>\>if not (them := read(net)) then \{ \\
+\>\>\>close(net) \\
+\>\>\>next \\
+\>\>\>\} \\
+\>\>if /user {\textbar} (them == user) then \{ \\
+\>\>\>write(net, getenv("USER") {\textbar} "anonymous") \\
+\>\>\>WAttrib("label=talk: accepted call from ", them) \\
+\>\>\>return net \\
+\>\>\>\} \\
+\>\>WAttrib("label=talk: rejected call from ", them) \\
+\>\>write(net, getenv("USER") {\textbar} "anonymous") \\
+\>\>close(net) \\
+\>\>\} \\
 end
 }
 
@@ -445,25 +415,23 @@ characters till you have a complete line, which seems like overkill for
 such a simple application.
 
 \iconcode{
-\>   repeat \{ \\
-\>   \ \ \ *(L := select(net, \&window)){\textgreater}0 {\textbar}
-stop("empty select?") \\
-\>   \ \ \ if L[1] === \&window then \{ \\
-\>   \ \ \ \ \ \ if \&lpress {\textgreater}= integer(e := Event())
-{\textgreater}= \&rdrag then next \\
-\>   \ \ \ \ \ \ if string(e) then \{ \\
-\>   \ \ \ \ \ \ \ \ \ writes(net, e) {\textbar} break \\
-\>   \ \ \ \ \ \ \ \ \ handle\_char(2, e) {\textbar} break \\
-\>   \ \ \ \ \ \ \ \ \ WSync() \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ else \{ \\
-\>   \ \ \ \ \ \ s := reads(net) {\textbar} break \\
-\>   \ \ \ \ \ \ handle\_char(1, s) {\textbar} break \\
-\>   \ \ \ \ \ \ WSync() \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   close(net) \\
+\>repeat \{ \\
+\>\>*(L := select(net, \&window)) {\textgreater} 0 {\textbar} stop("empty select?") \\
+\>\>if L[1] === \&window then \{ \\
+\>\>\>if \&lpress {\textgreater}= integer(e := Event()) {\textgreater}= \&rdrag then next \\
+\>\>\>if string(e) then \{ \\
+\>\>\>\>writes(net, e) {\textbar} break \\
+\>\>\>\>handle\_char(2, e) {\textbar} break \\
+\>\>\>\>WSync() \\
+\>\>\>\>\} \\
+\>\>\>\} \\
+\>\>else \{ \\
+\>\>\>s := reads(net) {\textbar} break \\
+\>\>\>handle\_char(1, s) {\textbar} break \\
+\>\>\>WSync() \\
+\>\>\>\} \\
+\>\>\} \\
+\>close(net) \\
 end
 }
 
@@ -479,36 +447,37 @@ halves of the window are scrolled separately, as needed.
 
 \iconcode{
 procedure handle\_char(w, c) \\
-\>   \# Current horiz. position for each half of the window \\
-\>   static xpos \\
-\>   initial xpos := [margin, margin]
+\>\# Current horiz. position for each half of the window \\
+\>static xpos \\
+\\
+\>initial xpos := [margin, margin]
 \ \\
-\>   if c == "{\textbackslash}\^{}d" then
-fail \ \ \ \ \# EOF \\
+\>if c == "{\textbackslash}\^{}d" then fail \ \ \ \ \# EOF \\
 \ \\
-\>   \# Find the half of the window to use \\
-\>   y\_offset := (w - 1) * wheight/2 \\
+\>\# \\
+\>\# Find the half of the window to use \\
+\>\# \\
+\>y\_offset := (w - 1) * wheight/2 \\
 \ \\
-\>   if c ==
-("{\textbackslash}r"{\textbar}'{\textbackslash}n')
+\>if c == ("{\textbackslash}r" {\textbar} "{\textbackslash}n")
 {\textbar} xpos[w] {\textgreater} wwidth then \{ \\
-\>   \ \ \ ScrollUp(y\_offset+1, wheight/2-1) \\
-\>   \ \ \ xpos[w] := margin \\
-\>   \ \ \ \} \\
-\>   if c ==
-("{\textbackslash}r"{\textbar}'{\textbackslash}n')
-then return \\
-\>   \#handles backspacing on the current line \\
-\>   if c =="{\textbackslash}b" then \{ \\
-\>   \ \ \ if xpos[w] {\textgreater}= margin + cwidth then \{ \\
-\>   \ \ \ \ \ \ EraseArea(xpos[w]-cwidth, y\_offset+1+wheight/2-1-vs,cwidth,vs) \\
-\>   \ \ \ \ \ \ xpos[w] -:= cwidth \\
-\>   \ \ \ \ \ \ return \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-\>   DrawString(xpos[w], wheight/2 + y\_offset - margin, c) \\
-\>   xpos[w] +:= cwidth \\
-\>   return \\
+\>\>ScrollUp(y\_offset+1, wheight/2-1) \\
+\>\>xpos[w] := margin \\
+\>\>\} \\
+\>if c == ("{\textbackslash}r" {\textbar} "{\textbackslash}n") then return \\
+\>\# \\
+\>\#handles backspacing on the current line \\
+\>\# \\
+\>if c == "{\textbackslash}b" then \{ \\
+\>\>if xpos[w] {\textgreater}= margin + cwidth then \{ \\
+\>\>\>EraseArea(xpos[w]-cwidth, y\_offset+1+wheight/2-1-vs, cwidth,vs) \\
+\>\>\>xpos[w] -:= cwidth \\
+\>\>\>return \\
+\>\>\>\} \\
+\>\>\} \\
+\>DrawString(xpos[w], wheight/2 + y\_offset - margin, c) \\
+\>xpos[w] +:= cwidth \\
+\>return \\
 end
 }
 
@@ -519,8 +488,8 @@ at the bottom.
 
 \iconcode{
 procedure ScrollUp(vpos, h) \\
-\>   CopyArea(0, vpos + vs, wwidth, h-vs, 0, vpos) \\
-\>   EraseArea(0, vpos + h - vs, wwidth, vs) \\
+\>CopyArea(0, vpos + vs, wwidth, h-vs, 0, vpos) \\
+\>EraseArea(0, vpos + h - vs, wwidth, vs) \\
 end
 }
 
@@ -533,15 +502,13 @@ gives the vertical space in pixels between lines.
 
 \iconcode{
 procedure win\_init() \\
-\>   WOpen("font=typewriter,"
-{\textbar}{\textbar} ps, "lines="
-{\textbar}{\textbar} lines, "columns=80") \\
-\>   wwidth := WAttrib("width") \\
-\>   wheight := WAttrib("height") \\
-\>   vs := WAttrib("fheight") \\
-\>   cwidth := WAttrib("fwidth") \\
-\>   DrawLine(0, wheight/2, wwidth, wheight/2) \\
-\>   Event() \\
+\>WOpen("font=typewriter," {\textbar}{\textbar} ps, "lines=" {\textbar}{\textbar} lines, "columns=80") \\
+\>wwidth := WAttrib("width") \\
+\>wheight := WAttrib("height") \\
+\>vs := WAttrib("fheight") \\
+\>cwidth := WAttrib("fwidth") \\
+\>DrawLine(0, wheight/2, wwidth, wheight/2) \\
+\>Event() \\
 end
 }
 
@@ -554,10 +521,7 @@ second argument to \texttt{stop()}.
 
 \iconcode{
 procedure give\_up(host, user) \\
-\>   stop("no connection to ",
-({\textbackslash}user {\textbar}{\textbar}
-"@") {\textbar}
-"", host) \\
+\>stop("no connection to ", ({\textbackslash}user {\textbar}{\textbar} "@") {\textbar} "", host) \\
 end
 }
 

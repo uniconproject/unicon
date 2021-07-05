@@ -93,8 +93,7 @@ function creates a new empty table. For example, the lines
 
 \iconcode{
 T := table() \\
-T["hello"] :=
-"goodbye"
+T["hello"] := "goodbye"
 }
 
 \noindent
@@ -133,7 +132,7 @@ Function \index{member()!table}\texttt{member(T, k)} succeeds if
 \index{key()!table}\texttt{key(T)} generates the keys that have
 associated values. The following example prints word counts for the
 input (assuming \texttt{getword()} generates words of
-interest): 
+interest):
 
 \iconcode{
 wordcount := table(0) \\
@@ -184,8 +183,7 @@ enclosing a comma-separated sequence of 0 or more values in square
 nbrackets. For example
 
 \iconcode{
-L := ["linux", 2.0,
-	"unix"]
+L := ["linux", 2.0, "unix"]
 }
 
 \noindent creates a list with three elements, a string, a real number,
@@ -245,10 +243,11 @@ list. For example, the elements of a list can themselves be lists. You
 can create lists like
 
 \iconcode{
-L := [[1, 2, 3], [4, 5, 6], [7, 8, 9]]}
+L := [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+}
 
 \noindent and index them with multiple subscripts. \texttt{L[2][3]} is
-equivalent to \texttt{L[2,3]} and yields the value 6 in this example. 
+equivalent to \texttt{L[2,3]} and yields the value 6 in this example.
 
 Lists also support several common operators. The operator
 \index{list!size (*L)}\texttt{*L} produces the size of list \texttt{L}.
@@ -260,9 +259,9 @@ numbers.
 
 \iconcode{
 procedure sum(L) \\
-\>   total := 0 \\
-\>   every total +:= !L \\
-\>   return total \\
+\>total := 0 \\
+\>every total +:= !L \\
+\>return total \\
 end
 }
 
@@ -292,7 +291,8 @@ the following example. The field names are a comma-separated list of
 identifiers enclosed in parentheses.
 
 \iconcode{
-record complex(re, im)}
+record complex(re, im)
+}
 
 Record \index{instance!record}\textit{instances} are created using a
 constructor procedure with the name of the record type. The
@@ -311,8 +311,7 @@ modify. Here is a demonstration of record operations.
 a := complex(0, 0) \\
 b := complex(1, -1) \\
 if a.re = b.re then write("not likely") \\
-if a["re"] = a[2] then
-write("a.re and a.im are equal")
+if a["re"] = a[2] then write("a.re and a.im are equal")
 }
 
 Unicon provides a mechanism for constructing new record types on the
@@ -320,7 +319,7 @@ fly, described in Chapter 6, as well as the ability to declare classes,
 which are new data types that form the building blocks for
 object-oriented programs, described starting in Chapter 9. Records are
 closely related to classes and objects: they can be considered to be an
-optimized special case of objects that have no methods. \ 
+optimized special case of objects that have no methods. \
 
 \section{Sets}
 
@@ -333,7 +332,8 @@ inserted. As with other structures, the elements may be of any type,
 and may be mixed. For example, the assignment
 
 \iconcode{
-S := set("rock lobster", 'B', 52)}
+S := set("rock lobster", 'B', 52)
+}
 
 \noindent
 creates a set with three members: a string, a cset, and an integer. The
@@ -367,12 +367,12 @@ our version does not require the duplicate lines to be adjacent.
 
 \iconcode{
 procedure main() \\
-\>   S := set() \\
-\>   while line := read() do \\
-\>   \ \ \ if not member(S, line) then \{ \\
-\>   \ \ \ \ \ \ insert(S, line) \\
-\>   \ \ \ \ \ \ write(line) \\
-\>   \ \ \ \ \ \ \} \\
+\>S := set() \\
+\>while line := read() do \\
+\>\>if not member(S, line) then \{ \\
+\>\>\>insert(S, line) \\
+\>\>\>write(line) \\
+\>\>\>\} \\
 end
 }
 
@@ -403,19 +403,20 @@ a recursive function.
 
 \iconcode{
 procedure deepcopy(x) \\
-\>   local y \\
-\>   case type(x) of \{ \\
-\>   "table"{\textbar}"list"{\textbar}"record": \{ \\
-\>   \ \ \ y := copy(x) \\
-\>   \ \ \ every k := key(x) do y[k] := deepcopy(x[k]) \\
-\>   \ \ \ \} \\
-\>   "set": \{ \\
-\>   \ \ \ y := set() \\
-\>   \ \ \ every insert(y, deepcopy(!x)) \\
-\>   \ \ \ \} \\
-\>   default: return x \\
-\>   \} \\
-\>   return y \\
+\>local y \\
+\\
+\>case type(x) of \{ \\
+\>\>"table" {\textbar} "list" {\textbar} "record" : \{ \\
+\>\>\>y := copy(x) \\
+\>\>\>every k := key(x) do y[k] := deepcopy(x[k]) \\
+\>\>\>\} \\
+\>\>"set" : \{ \\
+\>\>\>y := set() \\
+\>\>\>every insert(y, deepcopy(!x)) \\
+\>\>\>\} \\
+\>\>default : return x \\
+\>\>\} \\
+\>return y \\
 end
 }
 
@@ -436,7 +437,7 @@ with records and lists:
 
 \iconcode{
 record node(name, links) \\
-\>   ... \\
+\>... \\
 barney := node("Barney", list()) \\
 betty := node("Betty", list()) \\
 bambam := node("Bam-Bam", [barney, betty])
@@ -465,16 +466,17 @@ performs this task.
 
 \iconcode{
 procedure print\_relatives(n) \\
-local i \\
-static relatives \\
-initial relatives := set() \\
-every i := n {\textbar} !n.links do \{  \\
-\>   \ \ \ if not member(relatives, i.name) then \{  \\
-\>   \ \ \ \ \ \ write(i.name) \\
-\>   \ \ \ \ \ \ insert(relatives, i.name) \\
-\>   \ \ \ \ \ \ print\_relatives(i) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
+\>local i \\
+\>static relatives \\
+\\
+\>initial relatives := set() \\
+\>every i := n {\textbar} !n.links do \{  \\
+\>\>if not member(relatives, i.name) then \{  \\
+\>\>\>write(i.name) \\
+\>\>\>insert(relatives, i.name) \\
+\>\>\>print\_relatives(i) \\
+\>\>\>\} \\
+\>\>\} \\
 end
 }
 
@@ -517,8 +519,9 @@ sparingly, and only where they are appropriate, as is the case here.
 \iconcode{
 link options \\
 global solution, n \\
+\\
 procedure main(args) \\
-local i, opts
+\>local i, opts
 }
 
 The program starts by handling command-line arguments. In Unicon
@@ -542,21 +545,18 @@ this case, procedure \texttt{options()} came from a file
 \texttt{options.icn}) to the program.
 
 \iconcode{
-\>   opts := options(args,"n+") \\
-\>   n := {\textbackslash}opts["n"]
-{\textbar} 6 \\
-\>   if n {\textless}= 0 then stop("-n needs a positive
-numeric parameter")
+\>opts := options(args, "n+") \\
+\>n := {\textbackslash}opts["n"] {\textbar} 6 \\
+\>if n {\textless}= 0 then stop("-n needs a positive numeric parameter")
 }
 
 The value \texttt{n} gives the size for the solution array and also
 appears in a banner:
 
 \iconcode{
-\>   solution := list(n) \ \ \# a list of column solutions \\
-\>   write(n,"-Queens:") \\
-\>   every q(1) \ \ \ \ \ \ \ \ \ \ \ \# start by placing queen in
-first column \\
+\>solution := list(n)\>\>\>\>\>\>\>\# a list of column solutions \\
+\>write(n, "-Queens:") \\
+\>every q(1)\>\>\>\>\>\>\>\# start by placing queen in first column \\
 end
 }
 
@@ -594,13 +594,14 @@ r\_2+c\_2-1}. Figure 2-2 shows some of the
 \# q(c) - place a queen in column c. \\
 \# \\
 procedure q(c) \\
-local r \\
-static up, down, rows \\
-initial \{ \\
-\>   up := list(2*n-1,0) \\
-\>   down := list(2*n-1,0) \\
-\>   rows := list(n,0) \\
-\>   \}
+\>local r \\
+\>static up, down, rows \\
+\\
+\>initial \{ \\
+\>\>up := list(2*n-1,0) \\
+\>\>down := list(2*n-1,0) \\
+\>\>rows := list(n,0) \\
+\>\>\}
 }
 
 The next expression in \texttt{q()} is an \texttt{every} loop that tries
@@ -621,9 +622,8 @@ If these conditions are met, then it is OK to place a queen by assigning
 a 1 to all those arrays in the appropriate position:
 
 \iconcode{
-\>   every 0 = rows[r := 1 to n] = up[n+r-c] = down[r+c-1] \& \\
-\>   \ \ \ rows[r] {\textless}- up[n+r-c] {\textless}- down[r+c-1]
-{\textless}- 1 do \{
+\>every 0 = rows[r := 1 to n] = up[n+r-c] = down[r+c-1] \& \\
+\>\>rows[r] {\textless}- up[n+r-c] {\textless}- down[r+c-1] {\textless}- 1 do \{
 }
 
 For \index{assignment}assignment, instead of \texttt{:=} this expression
@@ -640,10 +640,10 @@ either the program is done (if this was the last column) or else it is
 time to try to place a queen in the next row:
 
 \iconcode{
-\>   \ \ \ solution[c] := r \ \ \ \ \ \ \# record placement. \\
-\>   \ \ \ if c = n then show() \\
-\>   \ \ \ else q(c + 1) \ \ \ \ \ \ \ \ \ \# try to place next queen. \\
-\>   \ \ \ \} \\
+\>\>solution[c] := r\>\>\>\>\>\>\>\# record placement. \\
+\>\>if c = n then show() \\
+\>\>else q(c + 1)\>\>\>\>\>\>\>\# try to place next queen. \\
+\>\>\} \\
 end
 }
 
@@ -662,22 +662,18 @@ to create the chessboard.\textit{ }
 \# show the solution on a chess board. \\
 \# \\
 procedure show() \\
-static count, line, border \\
-initial \{ \\
-\>   count := 0 \\
-\>   line := repl("{\textbar} \ \ ",n)
-{\textbar}{\textbar} "{\textbar}" \\
-\>   border := repl("-{}-{}-{}-",n)
-{\textbar}{\textbar} "-" \\
-\>   \} \\
-\>   write("solution: ", count+:=1,
-"{\textbackslash}n \ ", border) \\
-\>   every line[4*(!solution - 1) + 3] {\textless}-
-"Q" do \{ \\
-\>   \ \ \ write(" \ ", line,
-{\textquotedblleft}{\textbackslash}n \ ", border) \\
-\>   \ \ \ \} \\
-\>   write() \\
+\>static count, line, border \\
+\\
+\>initial \{ \\
+\>\>count := 0 \\
+\>\>line := repl("{\textbar} \ \ ", n) {\textbar}{\textbar} "{\textbar}" \\
+\>\>border := repl("-{}-{}-{}-", n) {\textbar}{\textbar} "-" \\
+\>\>\} \\
+\>write("solution: ", count+:=1, "{\textbackslash}n \ ", border) \\
+\>every line[4*(!solution - 1) + 3] {\textless}- "Q" do \{ \\
+\>\>write(" \ ", line, {\textquotedblleft}{\textbackslash}n \ ", border) \\
+\>\>\} \\
+\>write() \\
 end
 }
 

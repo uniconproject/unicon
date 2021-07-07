@@ -391,7 +391,27 @@ operator{*} ! bang(underef x -> dx)
 end      
 
 
+#ifdef RngLibrary
+
+/* Check we have had a seed if a rng library is loaded.
+ * If not, call putSeed(nil) to warn the library that
+ * initialization is needed.
+ */
+#define CHECKINIT \
+  if ((curtstate->rng != NULL) && (curtstate->hasSeed == 0)) { \
+    if (curtstate->rng->info.api.putSeed(T_Null, 0, NULL) == 0) { \
+      curtstate->hasSeed = 1;                                     \
+    } else {                                                      \
+      fail;                                                       \
+    }                                                             \
+  } 
+#define RandVal ((curtstate->rng != NULL) \
+  ? curtstate->rng->info.api.getRandomFpt() \
+  : (RanScale*(k_random=(RandA*k_random+RandC)&0x7FFFFFFFL)))
+#else
+#define CHECKINIT /* No test needed */
 #define RandVal (RanScale*(k_random=(RandA*k_random+RandC)&0x7FFFFFFFL))
+#endif					/* RngLibrary */                       
 
 "?x - produce a randomly selected element of x."
 
@@ -414,6 +434,7 @@ operator{0,1} ? random(underef x -> dx)
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
 
+         CHECKINIT;
          /*
           * A string from a variable is being banged. Produce a one
           *  character substring trapped variable.
@@ -442,6 +463,7 @@ operator{0,1} ? random(underef x -> dx)
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
 
+            CHECKINIT;
             if ((val = StrLen(dx)) <= 0)
                fail;
             rval = RandVal;
@@ -468,7 +490,7 @@ operator{0,1} ? random(underef x -> dx)
 #if ConcurrentCOMPILER
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
-
+            CHECKINIT;
             if ((val = StrLen(dx)) <= 0)
                fail;
             rval = RandVal;
@@ -494,6 +516,8 @@ operator{0,1} ? random(underef x -> dx)
 #if ConcurrentCOMPILER
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
+
+            CHECKINIT;
             val = BlkD(dx,List)->size;
             if (val <= 0)
                fail;
@@ -559,6 +583,7 @@ operator{0,1} ? random(underef x -> dx)
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
 
+            CHECKINIT;
             bp = BlkLoc(dx);
             val = Blk(bp,Table)->size;
             if (val <= 0)
@@ -604,7 +629,7 @@ operator{0,1} ? random(underef x -> dx)
 #if ConcurrentCOMPILER
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
-
+            CHECKINIT;
             bp = BlkLoc(dx);
             val = Blk(bp,Set)->size;
             if (val <= 0)
@@ -645,6 +670,7 @@ operator{0,1} ? random(underef x -> dx)
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
 
+            CHECKINIT;
             rec = BlkD(dx, Record);
             val = Blk(rec->recdesc,Proc)->nfields;
             if (val <= 0)
@@ -691,6 +717,7 @@ operator{0,1} ? random(underef x -> dx)
 	    CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
 
+            CHECKINIT;
             /*
              * x is an integer, be sure that it's non-negative.
              */

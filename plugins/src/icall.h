@@ -132,9 +132,14 @@
 #define D_Typecode      (F_Nqual | F_Typecode)
 
 /*
- * There is no type T_String: all non-string descriptors have a negative 
+ * There is no type T_String really: all non-string descriptors have a negative 
  * dword field because of F_Nqual (see definition of IconType below).
+ * T_String is used solely in RngTypeFlag (see below); We should probably find a better name.
  */
+#ifdef RngLibrary
+#define T_String	-1	/* string -- for reference; not used (except in RngTypeFlag) */
+#endif                               /* RngLibrary */
+
 #define T_Null           0              /* null value */
 #define T_Integer        1              /* integer */
 #define T_Lrgint         2              /* long integer */
@@ -237,6 +242,49 @@ extern descriptor nulldesc;             /* null descriptor */
 #define IconType(d) ((d).dword>=0 \
   ? 's' \
   : "niIrcfpRL.S.T.....CE.........aA..............................."[(d).dword&63])
+
+#ifdef RngLibrary
+struct rngprops {
+  word stateBits;			/* No of bits in rng state */
+  word typeFlags;			/* Which types are acceptible as a seed */
+  word blockBits;			/* No of bits in the "natural size" of the random output */
+};
+
+/* Routines in the run-time that are called by the rng */
+struct rng_rt_api {
+  word   (*getInitialBits)(void);
+  void * (*getRngState)(void);
+  void   (*putErrorCode)(int);
+};
+
+/* Routines in the rng that are called by the run-time */
+struct rt_rng_api {
+  char * (*getErrorText)(int);
+  double (*getRandomFpt)(void);
+  int    (*getRandomBits)(int, void *);  /* No of bits, output buffer  */
+  int    (*putSeed)(word, word, void *); /* Type, Size, Seed parameter */
+  #if 0
+  /* Not needed after initial load, so no need to remember it */
+  int    (*startRng)(struct rngprops *, struct rng_rt_api *);
+  #endif
+};
+
+/*
+ * Define the acceptable types to PutSeed with RngTypeFlag
+ * e.g.  (RngTypeFlag(T_String) | RngTypeFlag(T_Integer))
+ *    means that PutSeed can accept either a string or an integer as a seed value
+ *
+ * Any type t for which IconType(t) != '.' is a possibility, although some
+ * might be more "adventurous" than others.
+ * Note that T_String takes the place of T_Null in the flags. The run-time passes
+ *  a NULL parameter to putSeed if no initialization has taken place before a call
+ * to getRandomFpt() ( it actually calls putSeed(T_Null, 0, NULL); ).
+ *
+ * Store the acceptable type(s) in the typeFlags word of the structure passed in
+ * the first parameter to startRng().
+ */
+#define RngTypeFlag(t) ((t)==T_String ? 1 : 1 << ((t) & 63))
+#endif                               /* RngLibrary */
 
 #define FileVal(d) (((fileblock *)((d).vword.bptr))->fp)
 #define FileStat(d) (((fileblock *)((d).vword.bptr))->stat)
@@ -508,8 +556,8 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
 
 /*
  * if you are not going to use list operations (pop/push... etc) on the newly
- * created list, then use the array fucntions instead. They create a more
- * effecient form of the list optimized for the int or real data types.
+ * created list, then use the array functions instead. They create a more
+ * efficient form of the list optimized for the int or real data types.
  */
 listblock * mkIlist(int x[], int n);
 listblock * mkRlist(double x[], int n);

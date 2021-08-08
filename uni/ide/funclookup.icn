@@ -1,23 +1,23 @@
 ###############################################################################
-#	File: 	funclookup.icn
+#       File:   funclookup.icn
 #
-#	Subject: look up known functions
-#	
-#	Author: Serendel Macphereson, Shea Newton, Clint Jeffery
+#       Subject: look up known functions
 #
-#	Date: 	Febuarary 25, 2015
+#       Author: Serendel Macphereson, Shea Newton, Clint Jeffery
+#
+#       Date:   Febuarary 25, 2015
 #
 ##############################################################################
 #
-#  This program loads a table with names of built-in functions, collects 
-#  the word under the cursor, looks for it in the table and preforms a 
-#  jump to the function definition in UTR8 if a match, otherwise looks in a 
+#  This program loads a table with names of built-in functions, collects
+#  the word under the cursor, looks for it in the table and preforms a
+#  jump to the function definition in UTR8 if a match, otherwise looks in a
 #  table of user-defined functions generated from the ClassBroswer tree.
 #  If that matches, it jumps to the line number saved in the table.
-#  	
+#
 #  Currently only accessed through right-clicking in the editbox of the IDE
 #
-#   result from--> ide.icn buffertextlist.icn 
+#   result from--> ide.icn buffertextlist.icn
 #
 ###############################################################################
 #  Links: ide.icn buffertextlist.icn
@@ -40,8 +40,8 @@ class known_funcs (built_ins, usr_func_table, reserved_words, keywords)
 	    "copy","cos","cset","ctime",
 	 "dbcolumns","dbdriver","dbkeys","dblimits","dbproduct","dbtables",
 	    "delay","delete","detab","display","dtor",
-	 "entab","errorclear","eventmask","every",
-	    "EvGet","EvSend","exit","exp", 
+	 "entab","errorclear","eventmask",
+	    "EvGet","EvSend","exit","exp",
 	 "fetch","fieldnames","find","flock","flush","function",
 	 "get","getch","getche","getenv","gettimeofday","globalnames","gtime",
 	 "iand","icom","image","insert","integer",
@@ -57,11 +57,11 @@ class known_funcs (built_ins, usr_func_table, reserved_words, keywords)
 	    "reverse","right","rmdir","rtod","runerr",
 	 "seek","select","send","seq","serial","set","setenv",
 	    "signal","sin","sort","sortf","spawn","sql","sqrt",
-	    "stat","staticnames","stop","string","system","sys\_errstr",
+	    "stat","staticnames","stop","string","system",
 	 "tab","table","tan","trap","trim","truncate","trylock","type",
 	 "unlock","upto","utime",
 	 "variable",
-	 "wait","while","write","writes", 
+	 "wait","where","write","writes",
 	 "Active","Alert",
 	 "Bg",
 	 "Clip","Clone","Color","ColorValue","CopyArea","Couple",
@@ -80,16 +80,41 @@ class known_funcs (built_ins, usr_func_table, reserved_words, keywords)
 	    "Pixel","PopMatrix","PushMatrix",
 	    "PushRotate","PushScale","PushTranslate",
 	 "QueryPointer",
-	 "Raise","ReadImage","Refresh","return", "Rotate", 
+	 "Raise","ReadImage","Refresh", "Rotate",
 	 "Scale",
 	 "Texcoord","TextWidth","Texture","Translate",
 	 "Uncouple",
 	 "WAttrib","WDefault","WFlush","WindowContents",
-	    "WriteImage","WSection","WSync"] )
+	    "WriteImage","WSection","WSync",
+	 "Abort","Any","Arb","Arbno",
+	 "Bal","Break","Breakx",
+	 "Fail","Fence",
+	 "Len",
+	 "NotAny","Nspan",
+	 "Pos",
+	 "Rem","Rpos","Rtab",
+	 "Span","Succeed",
+	 "Tab",
+	 "chown","chroot","crypt",
+	 "exec",
+	 "fcntl","fdup","filepair","fork",
+	 "getegid","geteuid","getgid","getgr","gethost",
+	    "getpgrp","getpid","getppid","getpw","getserv","getuid",
+	 "hardlink",
+	 "kill",
+	 "readlink",
+	 "setgid","setgrent","sethostent","setpgrp","setpwent",
+	    "setservent","setuid","symlink","sys_errstr",
+	 "umask",
+	 "wait",
+	 "WinButton","WinColorDialog","WinEditRegion","WinFontDialog",
+	    "WinMenuBar","WinOpenDialog","WinPlayMedia","WinSaveDialog",
+	    "WinScrollBar","WinSelectDialog"])
    end
 
    method load_reserved_words()
       reserved_words := table(
+	 "abstract", "declare unimplemented method",
 	 "break", "exits the enclosing loop",
 	 "by", "specifies the increment used in generating i to j",
 	 "case", "selects code from alternative values",
@@ -252,13 +277,13 @@ class known_funcs (built_ins, usr_func_table, reserved_words, keywords)
       else if member(keywords, var_tocheck) then #if it's a keyword
 	 return ["keyword", keywords[var_tocheck]]
       else return -1
-   end 
+   end
 
    #collect the word under the cursor in the main UI editbox
    # TODO: use actual lexical rules of Unicon to identify the "word"
    method word_under_cursor()
       local x, line, the_word, end_of_word, non_whitespace, editBuffer
-		
+
       editBuffer := ide.CurrentEditBox().get_contents()
       line := editBuffer[ide.CurrentEditBox().cursor_y] | []
       x := ide.CurrentEditBox().cursor_x | []
@@ -272,7 +297,7 @@ class known_funcs (built_ins, usr_func_table, reserved_words, keywords)
 	 #func_lookup(the_word)
 	 return the_word
 	 }
-      else return -1	#not a word
+      else return -1    #not a word
    end
 
 initially

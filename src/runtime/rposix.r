@@ -1258,6 +1258,9 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
    int fd, s, len;
    struct addrinfo *res0, *res;
    struct sockaddr *sa;
+   unsigned int fromlen;
+   struct sockaddr_storage from;
+
 
    if ((s = sock_get(addr)) < 0) {
      char *p;
@@ -1329,24 +1332,20 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 	   return 0;
 	 }
       }
-
-      if (is_udp_or_listener == 2)
-	if (listen(s, SOMAXCONN) < 0)
-	  return 0;
-      /* Save s for future calls to listen */
-      sock_put(addr, s);
-
-      if (is_udp_or_listener)
-	return s;
    }
     
-   {
-     unsigned int fromlen;
-     struct sockaddr_storage from;
-     fromlen = sizeof(from);
-     if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
+   if (is_udp_or_listener == 2)
+     if (listen(s, SOMAXCONN) < 0)
        return 0;
-   }
+   /* Save s for future calls to listen */
+   sock_put(addr, s);
+
+   if (is_udp_or_listener)
+     return s;
+
+   fromlen = sizeof(from);
+   if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
+     return 0;
 
    return fd;
 }

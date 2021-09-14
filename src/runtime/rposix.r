@@ -1270,7 +1270,7 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 
       if ((p=strrchr(addr, ':')) != NULL) {
 	 *p = 0;
-	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener, af_fam);
+	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener == 1, af_fam);
 	 *p = ':';
 
 	 if (!res0)
@@ -1330,13 +1330,14 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 	 }
       }
 
-      if (is_udp_or_listener)
-	return s;
-
-      if (listen(s, SOMAXCONN) < 0)
-	return 0;
+      if (is_udp_or_listener == 2)
+	if (listen(s, SOMAXCONN) < 0)
+	  return 0;
       /* Save s for future calls to listen */
       sock_put(addr, s);
+
+      if (is_udp_or_listener)
+	return s;
    }
     
    {

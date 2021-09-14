@@ -971,7 +971,7 @@ Deliberate Syntax Error
 #endif					/* Graphics || Messaging || ISQL */
 	       /* connect to a port */
       	       DEC_NARTHREADS;
-	       fd = sock_connect(fnamestr, is_udp_or_listener, timeout, af_fam);
+	       fd = sock_connect(fnamestr, is_udp_or_listener == 1, timeout, af_fam);
       	       INC_NARTHREADS_CONTROLLED;
 	    }
 	    /*

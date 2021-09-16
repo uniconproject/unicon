@@ -2307,7 +2307,7 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
    unsigned int fromlen;
    struct sockaddr_in from;
 
-   if ((status & (Fs_Socket | Fs_Messaging | Fs_BPipe
+   if ((status & (Fs_Read | Fs_Socket | Fs_Messaging | Fs_BPipe
 #if UNIX && defined(PseudoPty)
                   | Fs_Pty
 #endif					/* UNIX && PseudoPty */
@@ -3103,7 +3103,7 @@ function{0, 1} ready(f, i)
 */
 
       IntVal(amperErrno) = 0;
-      if (u_read(fd, i, &desc) == 0)
+      if (u_read(fd, i, status, &desc) == 0)
 	 fail;
       return desc;
    }

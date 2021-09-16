@@ -1682,7 +1682,7 @@ function{0,1} reads(f,i)
 
 	 IntVal(amperErrno) = 0;
       	 DEC_NARTHREADS;
-	 if (u_read(fd, i, &s) == 0) { /* EOF, or sets errortext */
+	 if (u_read(fd, i, status, &s) == 0) { /* EOF, or sets errortext */
       	    INC_NARTHREADS_CONTROLLED;
 	    fail;
 	    }

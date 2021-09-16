@@ -1255,7 +1255,7 @@ ip_version(const char *src) {
  */
 int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 {
-   int fd, s, len;
+  int fd, s, len;
    struct addrinfo *res0, *res;
    struct sockaddr *sa;
    unsigned int fromlen;

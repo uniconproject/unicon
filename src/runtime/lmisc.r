@@ -830,7 +830,7 @@ operator{0,1} <@ rcv(x,y)
 	 runerr(1048, y);
 
       IntVal(amperErrno) = 0;
-      if (u_read(fd, i, &desc) == 0)
+      if (u_read(fd, i, status, &desc) == 0)
 	 fail;
       return desc;
       }

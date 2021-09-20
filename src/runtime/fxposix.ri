@@ -2357,6 +2357,7 @@ function{0,1} select(files[nargs])
       tended struct descrip f;
       tended struct b_list *lws = NULL;
       tended struct b_list *lps = NULL;
+      struct hgstate state;
 
 #ifdef Graphics
       /*
@@ -2394,6 +2395,18 @@ function{0,1} select(files[nargs])
 		  }
 	       }
 	    }
+	 else if (is:set(files[k])) {
+	   for (ep = hgfirst(BlkLoc(files[k]), &state); ep != 0;
+		ep = hgnext(BlkLoc(files[k]), &state, ep)) {
+	     f = ep->Selem.setmem;
+	     if (is:file(f) && BlkD(f,File)->status & Fs_Window)
+	       c_put(&d2, &f);
+#if defined(PseudoPty) && defined(MSWindows)
+	     else if (is:file(f) && BlkD(f,File)->status & Fs_Pty)
+	       c_put(&d3, &f);
+#endif					/* PseudoPty */
+	     }
+	   }
 	 }
 #endif					/* Graphics */
 
@@ -2411,15 +2424,7 @@ function{0,1} select(files[nargs])
 
 	 for(k=0;k<nargs;k++) {
 	    /* Traverse the list, build fd_set of sockets */
-	    if (!is:list(files[k])) {
-	       if ((k+1 == nargs) && is:integer(files[k])) {
-		  if (!cnv:C_integer(files[k], timeout)) runerr(101, files[k]);
-		  }
-	       else
-		  if ((rv = set_if_selectable(files+k, &fds, &n)))
-		     runerr(rv, files[k]);
-	       }
-	    else
+	    if (is:list(files[k])) {
 	       for (ep = BlkD(files[k],List)->listhead;
 		    BlkType(ep) == T_Lelem; ep = Blk(ep,Lelem)->listnext) {
 		  for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
@@ -2432,6 +2437,24 @@ function{0,1} select(files[nargs])
 		     }
 	          }
 	    }
+	    else if (is:set(files[k])) {
+	      for (ep = hgfirst(BlkLoc(files[k]), &state); ep != 0;
+		   ep = hgnext(BlkLoc(files[k]), &state, ep)) {
+		f = ep->Selem.setmem;
+		if ((rv = set_if_selectable(&f, &fds, &n)))
+		  runerr(rv, f);
+	        }
+	    }
+	    else {
+	       if ((k+1 == nargs) && is:integer(files[k])) {
+		  if (!cnv:C_integer(files[k], timeout)) runerr(101, files[k]);
+		  }
+	       else
+		  if ((rv = set_if_selectable(files+k, &fds, &n)))
+		     runerr(rv, files[k]);
+	       }
+	    }
+
       
       /* Set the tv struct */
       if (timeout < 0) {
@@ -2536,8 +2559,10 @@ function{0,1} select(files[nargs])
 #endif					/* HAVE_LIBZ */
 	    post_if_ready(&d, files+k, &fds);
 	    }
-         else if (is:integer(files[k])) {/* timeout */}
-	 else {
+         else if (is:integer(files[k])) {
+	   /* timeout */
+	   }
+	 else  if (is:list(files[k])) {
             for (ep = BlkD(files[k],List)->listhead;
 	         BlkType(ep) == T_Lelem;
 	         ep = Blk(ep,Lelem)->listnext) {
@@ -2556,7 +2581,21 @@ function{0,1} select(files[nargs])
 		     }
 	       }
 	    }
-          }
+	 }
+	 else if (is:set(files[k])) {
+	   for (ep = hgfirst(BlkLoc(files[k]), &state); ep != 0;
+		ep = hgnext(BlkLoc(files[k]), &state, ep)) {
+	     f = ep->Selem.setmem;
+	     if (is:file(f)) {
+#if HAVE_LIBZ
+	       if (BlkD(f,File)->status & Fs_Compress) {
+		 runerr(214);
+	         }
+#endif					/* HAVE_LIBZ */
+	       post_if_ready(&d, &f, &fds);
+	       }
+	     }
+	   }
 	 }
 	 /*
 	  * This little gem tries to check if the timeout has elapsed.

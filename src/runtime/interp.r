@@ -1027,16 +1027,10 @@ L_astatic:
 	 case Op_RcvBk:		/* e1 @<< e2 */
 	 case Op_Snd: 		/* e1 @> e2 */
 	 case Op_SndBk:		/* e1 @>> e2 */
-#ifdef Concurrent
 	    Setup_Op(2, e_ocall);
 	    DerefArg(1);
 	    DerefArg(2);
 	    Call_Cond(e_ofail);
-#else					/* Concurrent */
-	    err_msg(183, NULL);
-	    goto efail;
-#endif					/* Concurrent */
-
 
 	 case Op_Asgn:		/* e1 := e2 */
 	    Setup_Op(2, e_ocall);

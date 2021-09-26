@@ -1333,8 +1333,8 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 	 }
       }
    }
-    
-   if (is_udp_or_listener == 2)
+   /* No need to listen on UDP sockets */
+   if (is_udp_or_listener != 1)
      if (listen(s, SOMAXCONN) < 0)
        return 0;
    /* Save s for future calls to listen */

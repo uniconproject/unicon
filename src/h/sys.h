@@ -4,6 +4,9 @@
 
 #ifdef ConsoleWindow
 #undef putc
+#undef printf
+#undef fprintf
+#undef fflush
 #endif					/* ConsoleWindow */
 
 /*

@@ -1,6 +1,7 @@
 /*
  * file: lmisc.r
- *   Contents: [O]create, activate, msg_send, msg_receive
+ *   Contents: [O]create, activate, msg_send, msg_receive, snd, sndbk,
+ *             rcv, rcvbk
  */
 
 /*
@@ -435,7 +436,6 @@ int timeout;
       Fail; /* Unreachable */
 }
 
-
 int msg_send( dccp, dncp, msg, timeout)
 dptr dccp;
 dptr dncp;
@@ -509,6 +509,8 @@ int timeout;
    Return;
 }
 
+#endif					/* Concurrent */
+
 "x@>y - non-blocking send."
 /*
  *  send value x to y . Possible values of y and the corresponding action:
@@ -528,6 +530,7 @@ operator{0,1} @> snd(x,y)
       }
    abstract { return integer }
 
+#ifdef Concurrent
    if is:null(y) then inline {
 #if !ConcurrentCOMPILER
       /*
@@ -543,7 +546,9 @@ operator{0,1} @> snd(x,y)
       L = (BlkD(y, Coexpr))->inbox;
       hp = BlkD(L, List);
       }
-   else if is:list(y) then inline {
+   else
+#endif					/* Concurrent */
+   if is:list(y) then inline {
       L = y;
       hp = BlkD(L, List);
       }
@@ -584,7 +589,8 @@ operator{0,1} @> snd(x,y)
       runerr(118, y)
 
    body{
-      if (hp->size>=hp->max){
+#ifdef Concurrent
+     if (hp->size>=hp->max){
  	 CV_SIGNAL_EMPTYBLK(hp);
 	 fail;
 	 }
@@ -595,6 +601,7 @@ operator{0,1} @> snd(x,y)
  	 CV_SIGNAL_EMPTYBLK(hp);
 	 fail;
 	 }
+#endif					/* Concurrent */
       c_put(&L, &x);
       MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
       CV_SIGNAL_EMPTYBLK(hp);
@@ -615,6 +622,7 @@ operator{0,1} @>> sndbk(x,y)
       }
    abstract { return integer }
 
+#ifdef Concurrent
    if is:null(y) then inline {
 #if !ConcurrentCOMPILER
       /*
@@ -630,7 +638,9 @@ operator{0,1} @>> sndbk(x,y)
       L = (BlkD(y, Coexpr))->inbox;
       hp = BlkD(L, List);
       }
-   else if is:list(y) then inline {
+   else
+#endif					/* Concurrent */
+   if is:list(y) then inline {
       L = y;
       hp = BlkD(L, List);
       }
@@ -675,6 +685,7 @@ operator{0,1} @>> sndbk(x,y)
       runerr(106, y)
 
    body{
+#ifdef Concurrent
       MUTEX_LOCKBLK_CONTROLLED(hp, "snd(): list mutex");
       if (hp->size>=hp->max){
          hp->full++;
@@ -686,6 +697,7 @@ operator{0,1} @>> sndbk(x,y)
 	    }
 	 hp->full--;
       	 }
+#endif					/* Concurrent */
       c_put(&L, &x);
       MUTEX_UNLOCKBLK(hp, "send(): list mutex");
       CV_SIGNAL_EMPTYBLK(hp);
@@ -721,6 +733,7 @@ operator{0,1} <@ rcv(x,y)
       }
    abstract { return any_value }
 
+#ifdef Concurrent
    if !is:null(x) then inline {
       C_integer xval;
       if (!cnv:C_integer(x, xval)) 
@@ -765,7 +778,9 @@ operator{0,1} <@ rcv(x,y)
    else if is:coexpr(y) then inline {
       hp = BlkD(BlkD(y, Coexpr)->outbox, List);
       }
-   else if is:list(y) then inline {
+   else
+#endif					/* Concurrent */
+   if is:list(y) then inline {
       hp = BlkD(y, List);
       }
 #ifdef PosixFns
@@ -853,8 +868,11 @@ operator{0,1} <@ rcv(x,y)
       	 }
       c_get(hp, &d);
       MUTEX_UNLOCKBLK(hp, "rcv(): list+ mutex");
+#ifdef Concurrent
       if (hp->size <= hp->max/50+1)
  	 CV_SIGNAL_FULLBLK(hp);
+#endif					/* Concurrent */
+
       return d;   
       }
 end
@@ -877,6 +895,7 @@ operator{0,1} <<@ rcvbk(x,y)
    if !def:C_integer(x, -1) then
      runerr(101, x)
 
+#ifdef Concurrent
    if is:null(y) then inline {
 #if !ConcurrentCOMPILER
       /*
@@ -890,7 +909,9 @@ operator{0,1} <<@ rcvbk(x,y)
    else if is:coexpr(y) then inline {
       hp = BlkD(BlkD(y, Coexpr)->outbox, List);
       }
-   else if is:list(y) then inline {
+   else
+#endif					/* Concurrent */
+   if is:list(y) then inline {
       hp = BlkD(y, List);
       }
    else if is:file(y) then inline {
@@ -905,9 +926,10 @@ operator{0,1} <<@ rcvbk(x,y)
       /*
        * Make sure the file is open for reading.
        */
-      status = BlkLoc(y)->File.status;
-      if ((status & Fs_Read) == 0)
-      runerr(212, y);
+      /* status = BlkLoc(y)->File.status;
+       * if ((status & Fs_Read) == 0)
+       * runerr(212, y);
+       */
 
 #ifdef PosixFns
       if (status & Fs_Socket) {
@@ -956,6 +978,7 @@ operator{0,1} <<@ rcvbk(x,y)
          case -1 :
    	    MUTEX_LOCKBLK_CONTROLLED(hp, "rcvbk(): list mutex");
    	    if (hp->size==0){
+#ifdef Concurrent
 	       hp->empty++;
                while (hp->size==0){
  	          CV_SIGNAL_FULLBLK(hp);
@@ -964,6 +987,7 @@ operator{0,1} <<@ rcvbk(x,y)
 	       	  INC_NARTHREADS_CONTROLLED;
 		  }
 	       hp->empty--;
+#endif					/* Concurrent */
 	       if (hp->size==0){ /* This shouldn't be the case, but.. */
 	          MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
  	          CV_SIGNAL_FULLBLK(hp);
@@ -972,8 +996,10 @@ operator{0,1} <<@ rcvbk(x,y)
       	       }
    	    c_get(hp, &d);
 	    MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
+#ifdef Concurrent
    	    if (hp->size <= hp->max/50+1) 
  	          CV_SIGNAL_FULLBLK(hp);
+#endif					/* Concurrent */
    	    return d;
 
    	 case 0  :
@@ -990,8 +1016,10 @@ operator{0,1} <<@ rcvbk(x,y)
       	       }
    	    c_get(hp, &d);
 	    MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
+#ifdef Concurrent
 	    if (hp->size <= hp->max/50+1)
  	       CV_SIGNAL_FULLBLK(hp);
+#endif					/* Concurrent */
    	    return d;
 
 	 default :{
@@ -1016,12 +1044,14 @@ operator{0,1} <<@ rcvbk(x,y)
 	       }
 
    	    MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
-   	    if (hp->size==0){ 
+   	    if (hp->size==0){
+#ifdef Concurrent
 	       hp->empty++;
 	       DEC_NARTHREADS;
 	       CV_TIMEDWAIT_EMPTYBLK(hp, ts);
 	       INC_NARTHREADS_CONTROLLED;
 	       hp->empty--;
+#endif					/* Concurrent */
 	       if (hp->size==0){
 	          MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
  	          CV_SIGNAL_FULLBLK(hp);
@@ -1030,9 +1060,10 @@ operator{0,1} <<@ rcvbk(x,y)
       	       }
    	    c_get(hp, &d);
 	    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
-	    if (hp->size <= hp->max/50+1) 
+#ifdef Concurrent
+	    if (hp->size <= hp->max/50+1)
  	       CV_SIGNAL_FULLBLK(hp);
-
+#endif					/* Concurrent */
    	    return d;
 	    } /* default */
 	 } /* switch */
@@ -1040,30 +1071,3 @@ operator{0,1} <<@ rcvbk(x,y)
       fail;   /* make rtt happy! */
       }
 end
-#else					/* Concurrent */
-/* 
- * Should never get into these functions as the VM detects the absence
- * of threads and handles these operators in the interpreter loop.
- * Arguably, they should be runtime errors, not fails.
- */
-operator{0} @> snd(x,y)
-abstract { return empty_type }
-body { fail; }
-end
-
-operator{0} @>> sndbk(x,y)
-abstract { return empty_type }
-body { fail; }
-end
-
-operator{0} <@ rcv(x,y)
-abstract { return empty_type }
-body { fail; }
-end
-
-operator{0} <<@ rcvbk(x,y)
-abstract { return empty_type }
-body { fail; }
-end
-
-#endif					/* Concurrent */

@@ -92,7 +92,7 @@ end
 #
 # This listens for actions to either the menu/button object creation items.
 #
-class ObjectActionListener(main, object_ui)
+class ObjectActionListener(main, object_ui) 
    method on_event(event)
       main.create_in_canvas(object_ui)
    end
@@ -113,7 +113,6 @@ class Main : CommonDialog(
    prefs,                   # Preferences structure
    save,                    # Save file function
    save_as,                 # Save as function
-   unicon_ide,              # Open Unicon IDE
    preferences,             # Current dialog preferences
    check_boxes,             # Checkboxes control dialog
    selections_menu,         # Selections menu
@@ -129,7 +128,7 @@ class Main : CommonDialog(
    new,                     # New canvas function
    orig_canvas_width,       # Variables for re-sizing canvas
    orig_canvas_height,      #
-   tool_area_height,        #
+   tool_area_height,        # 
    prog_preferences,        # Program preferences function
    centre_horiz,            # Centre horizontally command
    grid,                    # Grid command
@@ -143,7 +142,7 @@ class Main : CommonDialog(
    centre_vert,             # Centre vertically command
    popup_component,         # Popup on component
    popup_component_dialog,
-   popup_component_delete,
+   popup_component_delete, 
    popup_component_fix,     # Vertically fix command
    popup_component_unfix,   # Unfix command
    popup_component_save,    # Save component command
@@ -212,7 +211,7 @@ class Main : CommonDialog(
       self.undo_button.set_is_shaded()
    end
 
-   #
+   # 
    # Get undo item
    #
    method get_undo()
@@ -221,7 +220,7 @@ class Main : CommonDialog(
       if *undo_list = 0 then
          clear_undo()
       return res
-   end
+   end 
 
    #
    # Push an undo item
@@ -250,7 +249,7 @@ class Main : CommonDialog(
       self.redo_button.set_is_shaded()
    end
 
-   #
+   # 
    # Get redo item
    #
    method get_redo()
@@ -259,7 +258,7 @@ class Main : CommonDialog(
       if *redo_list = 0 then
          clear_redo()
       return res
-   end
+   end 
 
    #
    # Push an redo item
@@ -279,11 +278,11 @@ class Main : CommonDialog(
       if \self.canvas.modified then
          s ||:= " *"
       self.filename_label.set_label(file_name(s))
-   end
+   end      
 
    #
    # Special custom show to allow a popup during init
-   #
+   #         
    method custom_show(a)
       local s, f, c
       self.args := a
@@ -340,7 +339,7 @@ class Main : CommonDialog(
    end
 
    #
-   # Push a canvas onto undo list.
+   # Push a canvas onto undo list. 
    #
    method push_onto_undo(d)
       #
@@ -538,7 +537,7 @@ class Main : CommonDialog(
       local d, t
 
       if /self.canvas.selected then
-         op_preferences()
+         op_preferences()  
       else {
          t := canvas.dup()
          d := canvas.selected.dialog()
@@ -551,7 +550,7 @@ class Main : CommonDialog(
          }
       }
    end
-
+   
    #
    # Add a new CanvasComponent using the given CanvasComponentUI to
    # create it.
@@ -652,7 +651,7 @@ class Main : CommonDialog(
    end
 
    #
-   # Save as... operation
+   # Save as... operation 
    #
    method op_save_as()
       local fd, s, c
@@ -729,8 +728,8 @@ class Main : CommonDialog(
    #
    method op_about()
       local d
-      d := InfoDialog(["Ivib Version : " || version_number,
-                       "Date : " || version_date,
+      d := InfoDialog(["Ivib Version : " || version_number, 
+                       "Date : " || version_date, 
                        "Author : " || version_author], "About ivib")
       d.show_modeless(self)
 
@@ -895,7 +894,7 @@ class Main : CommonDialog(
       if not(c := lang::decode(s)) then
          return alert_error("Invalid file format")
 
-      d := InfoDialog(["Ivib v1 file successfully loaded.",
+      d := InfoDialog(["Ivib v1 file successfully loaded.", 
                        "",
                        "NB - some manual editing may be needed after",
                        "the file is next saved."],
@@ -972,7 +971,7 @@ class Main : CommonDialog(
              else
                 self.op_save_as()
          }
-      }
+      }      
    end
 
    #
@@ -1017,27 +1016,6 @@ class Main : CommonDialog(
    end
 
    #
-   #  (>'-')>
-   #
-   # Method Open UI
-   #
-   method op_handleUI()
-      local NewL := []
-      if \self.canvas.modified then
-         self.save_if_wanted() | fail
-      if self.canvas.filename==="Untitled" then {
-         system("ui " || \self.canvas.filename, NewL) | uidlog.MsgBox.set_contents(NewL)
-         handle_closefile()
-         handle_openfile( , self.canvas.filename)
-      }
-      else {
-         if not system("ui " || self.canvas.filename) then
-            uidlog.MsgBox.set_contents(["System Failed"])
-      }
-      self.dispose()
-   end
-
-   #
    # Add a new object to the canvas at pos.
    #
    method add_new_object(c)
@@ -1073,9 +1051,6 @@ class Main : CommonDialog(
          "\^w" : op_save_as()
          "\^d" : op_dialog()
          "\^n" : op_new()
-         ###################### (>'-')>
-         "\^i" : op_handleUI()
-         ##############################
          "\^u" : op_select_up()
          "\^s" : if /save.is_shaded_flag then op_save()
          "\^z" : if /undo.is_shaded_flag then op_Undo()
@@ -1165,20 +1140,6 @@ class Main : CommonDialog(
       new.set_accel("n")
       new.set_label_right("Ctrl-n")
       file.add(new)
-
-      #
-      # (>'-')>
-      #
-      # Menu item button for switching to Unicon IDE.
-      #
-      open_UI := TextMenuItem()
-      open_UI.set_label("Unicon IDE")
-      open_UI.set_accel("i")
-      open_UI.set_label_right("Ctrl-i")
-      file.add(open_UI)
-      #
-      #
-      #
 
       prog_preferences := TextMenuItem()
       prog_preferences.set_label("Preferences...")
@@ -1565,7 +1526,6 @@ class Main : CommonDialog(
       popup_dialog_save_component .connect(self, "op_save", ACTION_EVENT)
       save.connect(self, "op_save", ACTION_EVENT)
       prog_preferences.connect(self, "op_prog_preferences", ACTION_EVENT)
-      open_UI.connect(self, "op_handleUI", ACTION_EVENT)
       check_boxes.connect(self, "op_check_boxes", ACTION_EVENT)
       button_groups.connect(self, "op_button_groups", ACTION_EVENT)
       save_as.connect(self, "op_save_as", ACTION_EVENT)
@@ -1632,7 +1592,7 @@ end
 #############################################################################
 #
 # Preferences for program
-#
+#     
 class Preferences : CommonDialog(c, okay, cancel, undo_size)
    method on_okay()
       integer(self.undo_size.get_contents()) | return alert_error("Non-integer undo size")

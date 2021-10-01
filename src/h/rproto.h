@@ -92,7 +92,9 @@ void		 set_gzerrortext(gzFile f);
 
 struct b_cons   *alccons	(union block *);
 
-int		anycmp		(dptr dp1,dptr dp2);
+int		anycmpn		(dptr dp1,dptr dp2);
+int		anycmpt		(dptr dp1,dptr dp2);
+int		anycmp		(dptr dp1,dptr dp2, int sortType);
 #ifdef Arrays
 int		arraytolist	(struct descrip *arr);
 int		cplist2realarray(dptr dp, dptr dp2, word i, word j,
@@ -1153,7 +1155,7 @@ int	kbhit		(void);
 int	nthcmp		(dptr d1,dptr d2);
 void	nxttab		(C_integer *col, dptr *tablst, dptr endlst,
 			   C_integer *last, C_integer *interval);
-int	order		(dptr dp);
+int	order		(dptr dp,int sortType);
 int	pathFind	(char target[], char buf[], int n);
 int	printable	(int c);
 int	ripow		(double r, C_integer n, dptr rslt);
@@ -1162,10 +1164,16 @@ int	sig_rsm		(void);
 struct b_proc *strprc	(dptr s, C_integer arity);
 int	subs_asgn	(dptr dest, const dptr src);
 int	tvmonitored_asgn(dptr dest, const dptr src);
-int	trcmp3		(struct dpair *dp1,struct dpair *dp2);
-int	trefcmp		(dptr d1,dptr d2);
-int	tvalcmp		(dptr d1,dptr d2);
-int	tvcmp4		(struct dpair *dp1,struct dpair *dp2);
+int	trcmp3n		(struct dpair *dp1,struct dpair *dp2);
+int	trcmp3t		(struct dpair *dp1,struct dpair *dp2);
+int	trefcmpn	(dptr d1,dptr d2);
+int	trefcmpt	(dptr d1,dptr d2);
+int	trefcmp		(dptr d1,dptr d2, int sortType);
+int	tvalcmpn	(dptr d1,dptr d2);
+int	tvalcmpt	(dptr d1,dptr d2);
+int	tvalcmp		(dptr d1,dptr d2, int sortType);
+int	tvcmp4n		(struct dpair *dp1,struct dpair *dp2);
+int	tvcmp4t		(struct dpair *dp1,struct dpair *dp2);
 int	tvtbl_asgn	(dptr dest, const dptr src);
 void	varargs		(dptr argp, int nargs, dptr rslt);
 

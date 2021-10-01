@@ -176,14 +176,14 @@ body {
 	       j = bp->Lelem.first + i;
 	       if (j >= bp->Lelem.nslots)
 		  j -= bp->Lelem.nslots;
-	       if (anycmp(bp->Lelem.lslots+j, &dtmp) == Greater)
+	       if (anycmpn(bp->Lelem.lslots+j, &dtmp) == Greater)
 		  dtmp = bp->Lelem.lslots[j];
 	       }
 	    }
 	 }
       }
    else
-      for(i=1;i<argc;i++) if (anycmp(&dtmp, argv+i) < 0) dtmp = argv[i];
+      for(i=1;i<argc;i++) if (anycmpn(&dtmp, argv+i) < 0) dtmp = argv[i];
    return dtmp;
    }
 end
@@ -252,14 +252,14 @@ body {
 	       j = bp->Lelem.first + i;
 	       if (j >= bp->Lelem.nslots)
 		  j -= bp->Lelem.nslots;
-	       if (anycmp(bp->Lelem.lslots+j, &dtmp) == Less)
+	       if (anycmpn(bp->Lelem.lslots+j, &dtmp) == Less)
 		  dtmp = bp->Lelem.lslots[j];
 	       }
 	    }
 	 }
       }
    else
-      for(i=1;i<argc;i++) if (anycmp(&dtmp, argv+i) > 0) dtmp = argv[i];
+      for(i=1;i<argc;i++) if (anycmpn(&dtmp, argv+i) > 0) dtmp = argv[i];
    return dtmp;
    }
 end

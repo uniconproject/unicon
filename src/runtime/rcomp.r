@@ -4,13 +4,35 @@
  */
 
 /*
+ * anycmpn - compare any two objects, treating both integers and reals as
+ *    numeric types.
+ */
+int anycmpn(dp1,dp2)
+   dptr dp1, dp2;
+   {
+   return anycmp(dp1,dp2,SORTN);
+   }
+
+/*
+ * anycmpt - compare any two objects, treating integers and reals as
+ *    different types.
+ */
+int anycmpt(dp1,dp2)
+   dptr dp1, dp2;
+   {
+   return anycmp(dp1,dp2,SORTT);
+   }
+
+/*
  * anycmp - compare any two objects.
  */
 
-int anycmp(dp1,dp2)
+int anycmp(dp1,dp2,sortType)
 dptr dp1, dp2;
+int sortType;
    {
    register int o1, o2;
+   register int t1, t2;
    register long v1, v2, lresult;
    int iresult;
    double rres1, rres2, rresult;
@@ -18,8 +40,8 @@ dptr dp1, dp2;
    /*
     * Get a collating number for dp1 and dp2.
     */
-   o1 = order(dp1);
-   o2 = order(dp2);
+   o1 = order(dp1, sortType);
+   o2 = order(dp2, sortType);
 
    /*
     * If dp1 and dp2 aren't of the same type, compare their collating numbers.
@@ -33,7 +55,21 @@ dptr dp1, dp2;
        */
       return lexcmp(dp1,dp2);
 
-   switch (Type(*dp1)) {
+   t1 = Type(*dp1);
+   if ((o1 == 1) && (o2 == 1)) {	/* numeric */
+      t2 = Type(*dp2);
+      if ((t1 == T_Real) || (t2 == T_Real)) {
+         cnv_c_dbl(dp1, &rres1);
+         cnv_c_dbl(dp2, &rres2);
+         rresult = rres1 - rres2;
+         if (rresult == 0.0)
+            return Equal;
+         return ((rresult > 0.0) ? Greater : Less);
+         }
+      /* If we get here, we can just fall through into the switch... */
+      }
+
+   switch (t1) {
 
 #ifdef LargeInts
 
@@ -214,8 +250,9 @@ dptr dp1, dp2;
  * order(x) - return collating number for object x.
  */
 
-int order(dp)
+int order(dp, sortType)
 dptr dp;
+int sortType;
    {
    if (Qual(*dp))
       return 3; 	     /* string */
@@ -231,7 +268,9 @@ dptr dp;
 #endif					/* LargeInts */
 
       case T_Real:
-	 return 2;
+         /* This determines whether nor integers and reals are sorted together
+          *  or not. */
+         return (sortType == SORTN) ? 1 : 2;
 
       /* string: return 3 (see above) */
 

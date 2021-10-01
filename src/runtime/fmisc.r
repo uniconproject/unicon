@@ -837,7 +837,7 @@ function{1} sort(t, i)
             if (cplist(&t, &result, (word)1, size + 1) == RunError)
 	       runerr(0);
             qsort((char *)Blk(BlkD(result,List)->listhead,Lelem)->lslots,
-               (int)size, sizeof(struct descrip),(QSortFncCast) anycmp);
+               (int)size, sizeof(struct descrip),(QSortFncCast) anycmpn);
 
             Desc_EVValD(BlkLoc(result), E_Lcreate, D_List);
             return result;
@@ -870,7 +870,7 @@ function{1} sort(t, i)
                for (i = 0; i < size; i++)
                   *d1++ = Blk(bp,Record)->fields[i];
                qsort((char *)Blk(lp->listhead,Lelem)->lslots,(int)size,
-                     sizeof(struct descrip),(QSortFncCast)anycmp);
+                     sizeof(struct descrip),(QSortFncCast)anycmpn);
                }
 
             Desc_EVValD(lp, E_Lcreate, D_List);
@@ -890,7 +890,7 @@ function{1} sort(t, i)
 	    size = BlkD(t,Set)->size;
 	    if (size > 1)  /* only need to sort non-trivial sets */
 	       qsort((char *)Blk(BlkD(d,List)->listhead,Lelem)->lslots,
-		     (int)size,sizeof(struct descrip),(QSortFncCast)anycmp);
+		     (int)size,sizeof(struct descrip),(QSortFncCast)anycmpn);
 
             return d;
             }
@@ -981,10 +981,10 @@ function{1} sort(t, i)
                 */
                if (i == 1)
                   qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size,
-                        sizeof(struct descrip), (QSortFncCast)trefcmp);
+                        sizeof(struct descrip), (QSortFncCast)trefcmpn);
                else
                   qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size,
-                        sizeof(struct descrip), (QSortFncCast)tvalcmp);
+                        sizeof(struct descrip), (QSortFncCast)tvalcmpn);
                break;		/* from cases 1 and 2 */
                }
             /*
@@ -1041,10 +1041,10 @@ function{1} sort(t, i)
              */
             if (i == 3)
                qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size / 2,
-                     (2 * sizeof(struct descrip)),(QSortFncCast)trcmp3);
+                     (2 * sizeof(struct descrip)),(QSortFncCast)trcmp3n);
             else
                qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size / 2,
-                     (2 * sizeof(struct descrip)),(QSortFncCast)tvcmp4);
+                     (2 * sizeof(struct descrip)),(QSortFncCast)tvcmp4n);
             break; /* from case 3 or 4 */
                }
 
@@ -1069,12 +1069,33 @@ function{1} sort(t, i)
       }
 end
 
+/**
+ * trefcmpn(d1,d2) - compare two-element lists on first field, treating
+ *    both integers and reals as numeric values.
+ */
+int trefcmpn(d1,d2)
+   dptr d1, d2;
+   {
+   return trefcmp(d1,d2,SORTN);
+   }
+   
+/**
+ * trefcmpt(d1,d2) - compare two-element lists on first field, treating
+ *    both integers and reals as separate types.
+ */
+int trefcmpt(d1,d2)
+   dptr d1, d2;
+   {
+   return trefcmp(d1,d2,SORTT);
+   }
+   
 /*
- * trefcmp(d1,d2) - compare two-element lists on first field.
+ * trefcmp(d1,d2,sortType) - compare two-element lists on first field.
  */
 
-int trefcmp(d1,d2)
+int trefcmp(d1,d2,sortType)
 dptr d1, d2;
+int sortType;
    {
 
 #ifdef DeBug
@@ -1082,16 +1103,40 @@ dptr d1, d2;
       syserr("trefcmp: internal consistency check fails.");
 #endif					/* DeBug */
 
-   return (anycmp(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[0]),
-                  &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[0])));
+   if (sortType == SORTN)
+      return (anycmpn(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[0]),
+                      &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[0])));
+   return (anycmpt(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[0]),
+                   &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[0])));
+   }
+
+/**
+ * tvalcmpn(d1,d2) - compare two-element lists on second field, treating
+ *    both integers and reals as numeric values.
+ */
+int tvalcmpn(d1,d2)
+   dptr d1, d2;
+   {
+   return tvalcmp(d1,d2,SORTN);
+   }
+   
+/**
+ * tvalcmpt(d1,d2) - compare two-element lists on second field, treating
+ *    both integers and reals as separate types.
+ */
+int tvalcmpt(d1,d2)
+   dptr d1, d2;
+   {
+   return tvalcmp(d1,d2,SORTT);
    }
 
 /*
  * tvalcmp(d1,d2) - compare two-element lists on second field.
  */
 
-int tvalcmp(d1,d2)
+int tvalcmp(d1,d2,sortType)
 dptr d1, d2;
+int sortType;
    {
 
 #ifdef DeBug
@@ -1099,31 +1144,47 @@ dptr d1, d2;
       syserr("tvalcmp: internal consistency check fails.");
 #endif					/* DeBug */
 
-   return (anycmp(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[1]),
-      &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[1])));
+   if (sortType == SORTN)
+      return (anycmpn(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[1]),
+                     &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[1])));
+   return (anycmpt(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[1]),
+                   &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[1])));
    }
 
 /*
- * The following two routines are used to compare descriptor pairs in the
+ * The following four routines are used to compare descriptor pairs in the
  *  experimental table sort.
  *
- * trcmp3(dp1,dp2)
+ * trcmp3n(dp1,dp2) and trcmp3t(dp1,dp2)
  */
 
-int trcmp3(dp1,dp2)
+
+int trcmp3n(dp1,dp2)
 struct dpair *dp1,*dp2;
 {
-   return (anycmp(&((*dp1).dr),&((*dp2).dr)));
+   return (anycmpn(&((*dp1).dr),&((*dp2).dr)));
 }
+
+int trcmp3t(dp1,dp2)
+struct dpair *dp1,*dp2;
+{
+   return (anycmpt(&((*dp1).dr),&((*dp2).dr)));
+}
+
 /*
- * tvcmp4(dp1,dp2)
+ * tvcmp4(dp1,dp2) and tvcmp4(dp1,dp2)
  */
 
-int tvcmp4(dp1,dp2)
+int tvcmp4n(dp1,dp2)
 struct dpair *dp1,*dp2;
-
    {
-   return (anycmp(&((*dp1).dv),&((*dp2).dv)));
+   return (anycmpn(&((*dp1).dv),&((*dp2).dv)));
+   }
+
+int tvcmp4t(dp1,dp2)
+struct dpair *dp1,*dp2;
+   {
+   return (anycmpt(&((*dp1).dv),&((*dp2).dv)));
    }
 
 
@@ -1282,7 +1343,7 @@ dptr d1, d2;
 	 /*
 	  *  Both had an nth field.  If they're unequal, that decides.
 	  */
-         rv = anycmp(nth(d1), nth(d2));
+         rv = anycmpn(nth(d1), nth(d2));
          if (rv != 0)
             return rv;
          }
@@ -1291,7 +1352,7 @@ dptr d1, d2;
     * Comparison of nth fields was either impossible or indecisive.
     *  Settle it by comparing the descriptors directly.
     */
-   return anycmp(d1, d2);
+   return anycmpn(d1, d2);
    }
 
 /*

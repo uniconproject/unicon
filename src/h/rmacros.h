@@ -32,6 +32,10 @@
 
 #define Pi 3.14159265358979323846264338327950288419716939937511
 
+/* Allow sorting by numeric value without regard to numeric type or not */
+#define SORTN		0	/* Sort reals and integers together */
+#define SORTT		1       /* Sort reals and integers separately */
+
 /*
  * File status flags in status field of file blocks.
  */

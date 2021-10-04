@@ -60,10 +60,10 @@ be turned on by doing `--enable-FEATURE`, for example, to enable operator overlo
 ```
 --configure --enable-ovld
 ```
-On other aspect to consider is that the configure script is opporuntitic when it comes to turning on features.
+One other aspect to consider is that the configure script is opportunistic when it comes to turning on features.
 Features that are enabled by default will be disabled automatically if they are missing dependencies. If you want
-to change the behavior to make the configure script stop instead of skipping a feature when its dependcies are
-missing, just enable that feature explicitly. For example, if you want to enable https/ssl, do:
+to change the behavior to make the configure script stop with an error instead of skipping a feature when its
+dependencies are missing, just enable that feature explicitly. For example, if you want to enable https/ssl, do:
 ```
 ./configure --enable-ssl
 ```
@@ -78,6 +78,22 @@ For example, on a Debian system
 ```
 sudo apt install build-essential
 ```
+Optionally, you can install development library dependencies to enable more Unicon features.
+Most of these libraries are listed below for common Linux distibutions.
+
+Debian/Ubuntu:
+```
+apt install libgl1-mesa-glx libssl-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev
+            libxft-dev libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev
+	    libfreetype6-dev
+```
+Fedora/Centos (Depending on your Centos version, you may need to replace dnf with yum):
+```
+dnf install libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
+            freetype-devel openal-devel freealut-devel libogg-devel libvorbis-devel
+	    openssl-devel unixODBC-devel libXft-devel
+```
+
 Go into the Unicon directory and run:
 ```
 ./configure

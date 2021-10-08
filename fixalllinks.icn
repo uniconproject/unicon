@@ -1,0 +1,130 @@
+############################################################################
+#
+#	File:     fixalllinks.icn
+#
+#	Subject:  Program to correct link directives in the ucode files.
+#
+#	Author:   Bruce Rennie
+#
+#	Date:     August 12, 2020
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#       This program corrects the link directives in ucode files for all
+#  references to class ucode files. On installation of the system into the
+#  install directories, the ucode files will have the link directives for class
+#  ucode files pointing to the original compilation directories. When copied
+#  to the install directories these need to be changed to reflect the actual
+#  locations. This will normally be run from the Makefile when make Install
+#  is executed.
+#
+#        fixalllinks install.dir
+#
+#       Within the Makefile, the install.dir is $(ULB)
+#
+#
+#
+############################################################################
+#
+#  Links: io, basename, ximage
+#
+############################################################################
+#
+#
+link io, basename, ximage
+
+procedure main(args)
+    local   srcdir,
+            destdir,
+            destdirfs,
+            infilename,
+            outfilename,
+            infs,
+            outfs,
+            fname,
+            bname,
+            line,
+            subdirectories := ["3d", "gui", "ide", "lib", "parser", "udb",
+                               "udb/lib", "udb/dta", "unicon", "unidep",
+                               "unidoc", "xml"],
+            sd,
+            logfile,
+            outline
+
+    #
+    # If no parameter is given print message and exit
+    #
+    destdir := \args[1] | (write("no changes to be done to ucode files") & exit(0))
+    #
+    # we will have a logfile of all changes made to each of the ucode files.
+    # Useful for review if needed
+    #
+    logfile := open("fixucode.log", "w")
+    #
+    # if the last charcater of the destination (install) directory is the directory
+    # specifier, then remove as we will add it as required in the following code
+    #
+    if destdir[-1] == ("/" | "\\") then {
+        destdir[-1] := ""
+    }
+    write(logfile, "destination directory:", destdir)
+    #
+    # we want to be cautious in running this program and make sure that we are
+    # actually dealing with a directory that exists. If the parameter is not a
+    # valid directory, we simply abort.
+    #
+    if chdir(destdir) then {
+        #
+        # within the unicon class directory, there are (at present) 10
+        # sub-directories that need to have the relevant ucode files checked
+        # for fully specified "link" directives. These "link" directives will
+        # be altered to use the specified destination directory as the prefix.
+        #
+        # A new ucode file is written with the updated "link" directives and this
+        # new file will replace the old ucode file. The old ucode file will be
+        # kept with a new suffix.
+        #
+        every sd := !subdirectories do {
+            writes(logfile, "sub-directory:")
+            destdirfs := open(write(logfile, destdir || "/" || sd), "r")
+            while infilename := read(destdirfs) do {
+                if infilename[-2:0] == ".u" then {
+                    writes(logfile, "  ucode file:")
+                    infs := open(write(logfile, destdir || "/" || sd || "/" || infilename), "r")
+                    outfs := open(outfilename := destdir || "/" || sd || "/" || infilename || ".upd", "w")
+                    while line := read(infs) do {
+                        if match("link", line) then {
+                            write(logfile, "   line:", line)
+                            if find("/", line) then {
+                                line ? {
+                                    outline := move(5)
+                                    fname := tail(tab(0))
+                                    bname := basename(fname[1])
+                                    outline ||:= destdir || "/" || (\bname | "") || "/" || (\fname[2] | "")
+                                }
+                                line := outline
+                                write(logfile, "   line:", line)
+                            }
+                        }
+                        write(outfs, line)
+                    }
+                    close(infs)
+                    close(outfs)
+                    if exists(destdir || "/" || sd || "/" || infilename || ".old") then {
+                        remove(destdir || "/" || sd || "/" || infilename || ".old")
+                    }
+                    rename(destdir || "/" || sd || "/" || infilename, destdir || "/" || sd || "/" || infilename || ".old")
+                    rename(outfilename, destdir || "/" || sd || "/" || infilename)
+                }
+            }
+            close(destdirfs)
+        }
+    } else {
+        stop("cannot change to directory \"", destdir, "\"")
+    }
+ end
+

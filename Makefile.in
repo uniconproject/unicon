@@ -312,7 +312,7 @@ install Install:
 	done
 #	update the link directives in the Unicon class ucode files
 	./bin/unicon fixalllinks
-	fixalllinks $(DESTDIR)$(ULB)
+	./fixalllinks $(DESTDIR)$(ULB)
 #       plugins
 	@$(INST) -m 644 plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
 #	docs and man

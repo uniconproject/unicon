@@ -1255,9 +1255,12 @@ ip_version(const char *src) {
  */
 int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 {
-   int fd, s, len;
+  int fd, s, len;
    struct addrinfo *res0, *res;
    struct sockaddr *sa;
+   unsigned int fromlen;
+   struct sockaddr_storage from;
+
 
    if ((s = sock_get(addr)) < 0) {
      char *p;
@@ -1270,7 +1273,7 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 
       if ((p=strrchr(addr, ':')) != NULL) {
 	 *p = 0;
-	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener, af_fam);
+	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener == 1, af_fam);
 	 *p = ':';
 
 	 if (!res0)
@@ -1329,23 +1332,20 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 	   return 0;
 	 }
       }
-
-      if (is_udp_or_listener)
-	return s;
-
-      if (listen(s, SOMAXCONN) < 0)
-	return 0;
-      /* Save s for future calls to listen */
-      sock_put(addr, s);
    }
-    
-   {
-     unsigned int fromlen;
-     struct sockaddr_storage from;
-     fromlen = sizeof(from);
-     if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
+   /* No need to listen on UDP sockets */
+   if (is_udp_or_listener != 1)
+     if (listen(s, SOMAXCONN) < 0)
        return 0;
-   }
+   /* Save s for future calls to listen */
+   sock_put(addr, s);
+
+   if (is_udp_or_listener)
+     return s;
+
+   fromlen = sizeof(from);
+   if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
+     return 0;
 
    return fd;
 }
@@ -2064,9 +2064,7 @@ int sig;
  *
  * returns an allocated string. If EOF then returns 0.
  */
-dptr u_read(fd, n, d)
-int fd, n;
-dptr d;
+dptr u_read(int fd, int n, int fstatus, dptr d)
 {
    int tally = 0, nbytes;
    CURTSTATE();
@@ -2075,7 +2073,10 @@ dptr d;
       /* Allocate n bytes of char space */
       StrLoc(*d) = alcstr(NULL, n);
       StrLen(*d) = 0;
-      tally = recv(fd, StrLoc(*d), n, 0);
+      if (fstatus & Fs_Socket)
+	tally = recv(fd, StrLoc(*d), n, 0);
+      else
+	tally = read(fd, StrLoc(*d), n);
 
       if (tally <= 0) {
 	 strtotal += n;
@@ -2119,37 +2120,50 @@ dptr d;
 	    /* Extend the string */
 	    (void) alcstr(NULL, bufsize);
 tryagain:
-	 tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
 
-	 if (tally < 0) {
-	    /*
-	     * Error on recv().  Some kinds of errors might be recoverable.
-	     */
-	    kk++;
+	 if (fstatus & Fs_Socket) {
+	   tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
+
+	   if (tally < 0) {
+	     /*
+	      * Error on recv().  Some kinds of errors might be recoverable.
+	      */
+	     kk++;
 #if NT
-	    errno = WSAGetLastError();
+	     errno = WSAGetLastError();
 #endif					/* NT */
-	    switch (errno) {
+	     switch (errno) {
 #if NT
-	    case WSAEINTR: case WSAEINPROGRESS:
+	     case WSAEINTR: case WSAEINPROGRESS:
 #else					/* NT */
-	    case EINTR: case EINPROGRESS:
+	     case EINTR: case EINPROGRESS:
 #endif					/* NT */
 	       if (kk < 5) goto tryagain;
 	       break;
-	    default:
+	     default:
 	       strtotal += bufsize;
 	       strfree = StrLoc(*d);
 	       set_errortext(214);
 	       return 0;
-               }
-	    }
+	     }
+	   }
 
-	 if ((i == 0) && (tally == 0)) {
-	    strtotal += bufsize;
-	    strfree = StrLoc(*d);
-	    return 0;
+	   if ((i == 0) && (tally == 0)) {
+	     strtotal += bufsize;
+	     strfree = StrLoc(*d);
+	     return 0;
+	   }
 	 }
+	 else { // not a socket, use read()
+	   tally = read(fd, StrLoc(*d) + i*bufsize, bufsize);
+
+           if ((i == 0) && (tally <= 0)) {
+	     strtotal += bufsize;
+	     strfree = StrLoc(*d);
+	     return 0;
+	   }
+	 }
+
 	 total += tally;
 	 StrLen(*d) = total;
 	 if (tally < bufsize) {

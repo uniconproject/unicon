@@ -1,0 +1,40 @@
+#
+# sort.icn -- test out new sort behavior for sort() and sortf() where
+#     integers and reals are collectivly treated as numerics instead
+#     of as separate types.  Also tests new min() and max() behavior
+#     when operating on lists of numeric values.
+
+record pair(a,b)   # Used to test sortf()
+
+procedure main(A)
+   p := [2.5,1,-0.5,4,2]
+   every writes(!sort(p)," ")
+   write("\n")
+   writes("min!p:max!p : ",min!p," : ", max!p,"\n")
+   write()
+   t := table()
+   t[1] := 2.5
+   t[2] := 1
+   t[3] := -0.5
+   t[0.5] := 2
+   t[3.5] := 4
+   write("Sort table pairs on key:")
+   every p := !sort(t,1) do write(right(p[1],5)," : ",right(p[2],5))
+   write()
+   write("Sort table pairs on value:")
+   every p := !sort(t,2) do write(right(p[1],5)," : ",right(p[2],5))
+   write()
+   writes("Sort table pairs on key into linear list:")
+   every writes((" "||!sort(t,3))|"\n")
+   write()
+   writes("Sort table pairs on value into linear list:")
+   every writes((" "||!sort(t,4))|"\n")
+   write()
+   write("Tests of sortf")
+   write("  Sort by first field of records:")
+   t := [pair(2,2.5),pair(1,-0.5),pair(-1.5,3),pair(1.5,1)]
+   every p := !sortf(t,1) do write(right(p.a,5)," : ",right(p.b,5))
+   write()
+   write("  Sort by second field of records:")
+   every p := !sortf(t,2) do write(right(p.a,5)," : ",right(p.b,5))
+end

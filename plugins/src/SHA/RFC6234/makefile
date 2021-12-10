@@ -4,7 +4,7 @@ All:	shatest
 
 shatest:	shatest.o sha1.o sha224-256.o sha384-512.o usha.o hkdf.o hmac.o
 
-Clean:
+clean::
 	rm -f shatest *.o 
 
 

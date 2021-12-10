@@ -16,7 +16,7 @@ UFLAGS=-s -u -c
 CFDYN2= $(CFDYN)
 
 # plaform independent  plugins
-PCMN=upexample SHA bitman
+PCMN=upexample bitman
 
 # Windows 
 PWIN=

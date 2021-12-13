@@ -17,7 +17,7 @@ RFCDIR = ./RFC6234
 RFC6234Files = $(RFCDIR)/sha1.o $(RFCDIR)/sha224-256.o ./$(RFCDIR)/sha384-512.o \
 			./$(RFCDIR)/usha.o ./$(RFCDIR)/hkdf.o ./$(RFCDIR)/hmac.o
 
-# @Replace: add any additionl (non-standard name) c source file(s) here
+# @Replace: add any additional (non-standard name) c source file(s) here
 COBJ = $(LNAME).o $(RFC6234Files)
 CSRC = $(LNAME).c
 
@@ -38,9 +38,10 @@ $(RFC6234Files):
 	cd $(RFCDIR); $(MAKE)
 
 shaPlugTest: shaPlugTest.icn
-	unicon -s $< -o $@
+	$(TOPDIR)/bin/unicon -s $< -o $@
 
-Clean: clean
+# @Replace: To add plugin specific clean up actions, include a clean:: target
+clean::
 	$(RM) shaPlugTest
 	cd $(RFCDIR); $(MAKE) $@
 

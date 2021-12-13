@@ -16,7 +16,7 @@ UFLAGS=-s -u -c
 CFDYN2= $(CFDYN)
 
 # plaform independent  plugins
-PCMN=upexample
+PCMN=upexample bitman
 
 # Windows 
 PWIN=
@@ -73,3 +73,6 @@ clean:
 	echo $(SO)
 	$(RM) *.u *.o *.$(SO) uniclass.* *~
 	$(RM) ../lib/* */*.u */*.o */*.$(SO) */uniclass.*
+	for p in $(PCMN) $(PWIN) $(PNIX) $(PMOS); do \
+		$(MAKE) -C $$p $@; \
+	done

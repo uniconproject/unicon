@@ -467,7 +467,7 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
 #define ExternAddr(d) ((void *)&(((struct b_external *)(d).vword.bptr)->exdata[0]))
 
 /* Useful when calling malloc() to get enough space for the block header */
-#define ExtHdrSize  ((int)&(((struct b_external *)(0))->exdata[0]))
+#define ExtHdrSize  ((uintptr_t)&(((struct b_external *)(0))->exdata[0]))
 
 /*
   2. Allocations of Icon structures.

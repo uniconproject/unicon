@@ -150,12 +150,12 @@ Source: "uni\gui\guidemos\*.icn"; DestDir: "{app}\uni\gui\guidemos"; Flags: igno
 Source: "uni\gui\guidemos\Makefile"; DestDir: "{app}\uni\gui\guidemos"; Flags: ignoreversion
 
 ; IVIB
-Source: "uni\gui\ivib\*.icn"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
-Source: "uni\gui\ivib\Makefile"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
-Source: "uni\gui\ivib\icon\*.icon"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
-Source: "uni\gui\ivib\icon\*.xpm"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
-Source: "uni\gui\ivib\icon\icon.gif"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
-Source: "uni\gui\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
+Source: "uni\ide\ivib\*.icn"; DestDir: "{app}\uni\ide\ivib"; Flags: ignoreversion
+Source: "uni\ide\ivib\Makefile"; DestDir: "{app}\uni\ide\ivib"; Flags: ignoreversion
+Source: "uni\ide\ivib\icon\*.icon"; DestDir: "{app}\uni\ide\ivib\icon"; Flags: ignoreversion
+Source: "uni\ide\ivib\icon\*.xpm"; DestDir: "{app}\uni\ide\ivib\icon"; Flags: ignoreversion
+Source: "uni\ide\ivib\icon\icon.gif"; DestDir: "{app}\uni\ide\ivib\icon"; Flags: ignoreversion
+Source: "uni\ide\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\ide\ivib\icon"; Flags: ignoreversion
 
 ; The old IVIB 
 ; NOTE: The old ivib was dropped from sources in early 2014.

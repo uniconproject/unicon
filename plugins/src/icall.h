@@ -9,7 +9,7 @@
 #                 Clinton Jeffery, Jafar Al-Gharaibeh,
 #                 Don Ward
 #
-#       Date:     March 21st 2021
+#       Date:     December 16th 2021
 #
 ############################################################################
 #
@@ -279,6 +279,7 @@ typedef struct rtentrypts
    char * (*Alcstr)(char *, word);
    struct b_real * (*Alcreal) (double);
    double (*Getdbl) (dptr);
+   int (*Cnvcstr)(dptr,dptr);
 } rtentryvector;
 
 extern rtentryvector rtfuncs;
@@ -286,6 +287,7 @@ extern rtentryvector rtfuncs;
 #define cnv_int (rtfuncs.Cnvint)
 #define cnv_real (rtfuncs.Cnvreal)
 #define cnv_str (rtfuncs.Cnvstr)
+#define cnv_c_str (rtfuncs.Cnvcstr)
 #define cnv_tstr (rtfuncs.Cnvtstr)
 #define cnv_cset (rtfuncs.Cnvcset)
 #define deref (rtfuncs.Deref)

@@ -212,8 +212,10 @@ fi
 
 # try to add -m32 or -m64
 ARCHFLAG="-m$ARCHBITS"
-AC_CFLAG([$ARCHFLAG],[], [
-			 CPPFLAGS="$CPPFLAGS $ARCHFLAG"
+AC_CFLAG([$ARCHFLAG],[
+			 ARCHFLAG=""
+             ], [
+			 CFLAGS="$CFLAGS $ARCHFLAG"
 			 LDFLAGS="$LDFLAGS $ARCHFLAG"
 			 ASFLAGS="$ASFLAGS $ARCHFLAG"
 			 ] )
@@ -356,6 +358,8 @@ SO=so
 case $unicon_host in
      *linux*)
       LDFLAGS="$LDFLAGS -rdynamic "
+      LDDYN="$LDDYN $ARCHFLAG "
+      CFDYN="$CFDYN $ARCHFLAG "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
         ;;

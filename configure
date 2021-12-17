@@ -4683,7 +4683,7 @@ $as_echo "yes" >&6; }
 
 				CFLAGS="$ac_c_flag_save"
 
-			 CPPFLAGS="$CPPFLAGS $ARCHFLAG"
+			 CFLAGS="$CFLAGS $ARCHFLAG"
 			 LDFLAGS="$LDFLAGS $ARCHFLAG"
 			 ASFLAGS="$ASFLAGS $ARCHFLAG"
 
@@ -4694,7 +4694,7 @@ else
 			CFLAGS="$ac_c_flag_save"
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-
+            ARCHFLAG=""
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -7021,6 +7021,8 @@ SO=so
 case $unicon_host in
      *linux*)
       LDFLAGS="$LDFLAGS -rdynamic "
+      LDDYN="$LDDYN $ARCHFLAG "
+      CFDYN="$CFDYN $ARCHFLAG "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
         ;;

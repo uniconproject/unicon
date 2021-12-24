@@ -30,6 +30,12 @@ TOPDIR=../../..
 # lib relative to top
 TDIR=../..
 
+# Relative to top level
+TOPDIR=../../..
+
+# lib relative to top
+TDIR=../..
+
 include ../Makedefs
 
 default:	 $(LIBD)/$(LNAME).u shaPlugTest

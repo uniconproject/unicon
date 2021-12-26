@@ -639,6 +639,7 @@ XL
 GRAPHICS
 XLIBS
 CXXCPP
+SQLITE
 LIBOBJS
 HTMLDOC
 UDOC
@@ -4694,7 +4695,8 @@ else
 			CFLAGS="$ac_c_flag_save"
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-            ARCHFLAG=""
+			 ARCHFLAG=""
+
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -7619,6 +7621,74 @@ _ACEOF
 
   LIBS="-lndbm $LIBS"
 
+fi
+
+
+# we don't need sqlite to be added to $LIBS, not yet at least
+saved_libs="$LIBS"
+for ac_header in sqlite3.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
+if test "x$ac_cv_header_sqlite3_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SQLITE3_H 1
+_ACEOF
+
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_config in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_config in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_config+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_config ();
+int
+main ()
+{
+return sqlite3_config ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_config=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_config=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_config" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_config" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_config" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+fi
+
+LIBS="$saved_libs"
+
+if test "x$ac_cv_header_sqlite3_h" = "xyes" -a  "x$ac_cv_lib_sqlite3_sqlite3_config" = "xyes"; then
+  SQLITE="sqlite"
+else
+  SQLITE=""
 fi
 
 

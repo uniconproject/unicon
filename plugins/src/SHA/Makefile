@@ -1,13 +1,13 @@
 #-------------------------------------------------------------------------------
-# 
+#
 # This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
 # (LGPL) version 2. The licence may be found in the root directory of the Unicon
 # source directory in the file COPYING.
 #
 #-------------------------------------------------------------------------------
-# Makefile for the bit manipulation plugin
+# Makefile for the secure hash plugin
 #
-# Look for @Replace and change the line(s) that follow(s)  
+# Look for @Replace and change the line(s) that follow(s)
 #
 
 # @Replace: What is the name of this library?
@@ -30,21 +30,18 @@ TOPDIR=../../..
 # lib relative to top
 TDIR=../..
 
-# Relative to top level
-TOPDIR=../../..
-
-# lib relative to top
-TDIR=../..
-
 include ../Makedefs
 
-default:	 $(LIBD)/$(LNAME).u shaPlugTest
+default:	 $(LIBD)/$(LNAME).u
 
 $(RFC6234Files):
 	cd $(RFCDIR); $(MAKE)
 
 shaPlugTest: shaPlugTest.icn
 	$(TOPDIR)/bin/unicon -s $< -o $@
+
+test: shaPlugTest
+	./shaPlugTest All
 
 # @Replace: To add plugin specific clean up actions, include a clean:: target
 clean::

@@ -9,7 +9,7 @@
 #                 Clinton Jeffery, Jafar Al-Gharaibeh,
 #                 Don Ward
 #
-#       Date:     September 2nd 2020
+#       Date:     December 16th 2021
 #
 ############################################################################
 #
@@ -62,6 +62,8 @@
 #   and returning an error code if the argument is wrong:
 #
 #       ArgInteger(i)   check that argv[i] is an integer
+#       ArgNativeInteger(i) check that argv[i] is an integer and not 
+#                           a large integer
 #       ArgReal(i)      check that argv[i] is a real number
 #       ArgString(i)    check that argv[i] is a string
 #       ArgList(i)      check that argv[i] is a list (note that a list
@@ -135,6 +137,7 @@
  */
 #define T_Null           0              /* null value */
 #define T_Integer        1              /* integer */
+#define T_Lrgint         2              /* long integer */
 #define T_Real           3              /* real number */
 #define T_File           5              /* file, including window */
 #define T_Record         7              /* record */
@@ -146,6 +149,7 @@
 
 #define D_Null          (T_Null     | D_Typecode)
 #define D_Integer       (T_Integer  | D_Typecode)
+#define D_Lrgint        ((word)(T_Lrgint | D_Typecode | F_Ptr))
 #ifdef DescriptorDouble
 #define D_Real          (T_Real     | D_Typecode)
 #else                                   /* Descriptor Double */
@@ -170,6 +174,7 @@
 #define Type(d) ((int)((d).dword & TypeMask))
 
 typedef long word;
+typedef unsigned long uword;
 typedef struct descrip {
    word dword;
    union {
@@ -274,6 +279,7 @@ typedef struct rtentrypts
    char * (*Alcstr)(char *, word);
    struct b_real * (*Alcreal) (double);
    double (*Getdbl) (dptr);
+   int (*Cnvcstr)(dptr,dptr);
 } rtentryvector;
 
 extern rtentryvector rtfuncs;
@@ -281,6 +287,7 @@ extern rtentryvector rtfuncs;
 #define cnv_int (rtfuncs.Cnvint)
 #define cnv_real (rtfuncs.Cnvreal)
 #define cnv_str (rtfuncs.Cnvstr)
+#define cnv_c_str (rtfuncs.Cnvcstr)
 #define cnv_tstr (rtfuncs.Cnvtstr)
 #define cnv_cset (rtfuncs.Cnvcset)
 #define deref (rtfuncs.Deref)
@@ -349,6 +356,10 @@ extern rtentryvector rtfuncs;
 */
 
 #define ArgInteger(i) do { if (argc < (i)) FailCode(101); \
+if (!cnv_int(&argv[i],&argv[i])) ArgError(i,101); } while(0)
+
+#define ArgNativeInteger(i) do { if (argc < (i)) FailCode(101); \
+if (argv[i].dword == D_Lrgint) FailCode(101); \
 if (!cnv_int(&argv[i],&argv[i])) ArgError(i,101); } while(0)
 
 #define ArgReal(i) \
@@ -456,7 +467,7 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
 #define ExternAddr(d) ((void *)&(((struct b_external *)(d).vword.bptr)->exdata[0]))
 
 /* Useful when calling malloc() to get enough space for the block header */
-#define ExtHdrSize  ((int)&(((struct b_external *)(0))->exdata[0]))
+#define ExtHdrSize  ((uintptr_t)&(((struct b_external *)(0))->exdata[0]))
 
 /*
   2. Allocations of Icon structures.

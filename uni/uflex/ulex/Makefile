@@ -2,7 +2,7 @@
 # Katie Ray's Project: ulex, March 15, 2003, makefile 
 # Extended by Jeffery. Deprecated and unfinished legacy code.
 #
-CC=cc
+CC=gcc
 CFLAGS= -c -g
 LEX=flex
 YACC=yacc

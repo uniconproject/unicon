@@ -317,9 +317,9 @@ main (argc, argv)
 	  if (return_data.dptr != NULL)
 	    {
 	      key_data = return_data;
-	      printf ("key is  ->%s\n", key_data.dptr);
+	      printf ("key is  ->%.*s\n", key_data.dsize, key_data.dptr);
 	      return_data = gdbm_fetch (gdbm_file, key_data);
-	      printf ("data is ->%s\n\n", return_data.dptr);
+	      printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
 	      free (return_data.dptr);
 	    }
 	  else
@@ -353,9 +353,9 @@ main (argc, argv)
 	  key_data = gdbm_firstkey (gdbm_file);
 	  if (key_data.dptr != NULL)
 	    {
-	      printf ("key is  ->%s\n", key_data.dptr);
+	      printf ("key is  ->%.*s\n", key_data.dsize, key_data.dptr);
 	      return_data = gdbm_fetch (gdbm_file, key_data);
-	      printf ("data is ->%s\n\n", return_data.dptr);
+	      printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
 	      free (return_data.dptr);
 	    }
 	  else
@@ -368,9 +368,9 @@ main (argc, argv)
 	    {
 	      free (key_data.dptr);
 	      key_data = return_data;
-	      printf ("key is  ->%s\n", key_data.dptr);
+	      printf ("key is  ->%.*s\n", key_data.dsize, key_data.dptr);
 	      return_data = gdbm_fetch (gdbm_file, key_data);
-	      printf ("data is ->%s\n\n", return_data.dptr);
+	      printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
 	      free (return_data.dptr);
 	    }
 	  else

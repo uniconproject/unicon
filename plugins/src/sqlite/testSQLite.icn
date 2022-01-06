@@ -1,0 +1,192 @@
+#-------------------------------------------------------------------------------
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+#-------------------------------------------------------------------------------
+# A "confidence test" program for the SQLite interface plugin
+#
+#       Don Ward       December 2021
+#
+# It creates a test database containing one table which has squares, cubes and fourth
+# powers of numbers from one through ten.  Then it checks that the results from the
+# query procedures SQL_As_List, SQL_As_Set, SQL_As_Table etc. are as expected.
+#
+# Using the sqlite3 program to dump the test database produces
+#    PRAGMA foreign_keys=OFF;
+#    BEGIN TRANSACTION;
+#    CREATE TABLE Powers(n INTEGER PRIMARY KEY,n2 INTEGER,n3 INTEGER,n4 INTEGER);
+#    INSERT INTO Powers VALUES(1,1,1,1);
+#    INSERT INTO Powers VALUES(2,4,8,16);
+#    INSERT INTO Powers VALUES(3,9,27,81);
+#    INSERT INTO Powers VALUES(4,16,64,256);
+#    INSERT INTO Powers VALUES(5,25,125,625);
+#    INSERT INTO Powers VALUES(6,36,216,1296);
+#    INSERT INTO Powers VALUES(7,49,343,2401);
+#    INSERT INTO Powers VALUES(8,64,512,4096);
+#    INSERT INTO Powers VALUES(9,81,729,6561);
+#    INSERT INTO Powers VALUES(10,100,1000,10000);
+#    COMMIT;
+#
+#  The tests are not really a check of SQLite's functionality, more that the plugin
+#  interface routines are working correctly. Only the class interface is used (but
+#  that exercises the lower level routines which, in turn, use the C interface
+#  routines to SQLite).
+
+import sqLite
+
+$define UFL &file || ":" || &line
+
+global failures
+
+procedure Fail(mess:string)
+   put(failures, "Test failure " || mess)
+end
+
+procedure main(args)
+   local db
+   local n, n2, n3, n4
+   local sum1, sum2, sum3, sum4
+   local powList, powTable, powSet
+   local r, numbers
+
+   # Check that Fail() works
+   failures := list()
+   Fail(UFL || "just checking")
+   Fail(UFL || "making sure we get two failures")
+   if *failures ~= 2 then stop("Fail procedure problem")
+
+   # Create the test database
+   if /(db := SQLite("testdb")) then stop("Cannot create test database (testdb)")
+   if not db.Exec("CREATE TABLE Powers(_
+                  n INTEGER PRIMARY KEY,_
+                  n2 INTEGER,_
+                  n3 INTEGER,_
+                  n4 INTEGER)") then {
+      stop("Cannot create Powers table")
+   }
+
+   # initialise stuff
+   failures := list()
+   sum1 := sum2 := sum3 := sum4 := 0
+   powSet := set()
+
+   # Populate the test database ...
+   # Calculate squares, cubes and fourth powers from 1 .. 10 and insert them
+   # into the Powers table. Store all the numbers in powSet for later verification.
+   every n := 1 to 10 do {
+      n2 := n*n; n3 := n2*n; n4 := n3*n
+      sum1 +:= n; sum2 +:= n2; sum3 +:= n3; sum4 +:= n4
+      insert(powSet, n, n2, n3, n4)
+
+      if not db.Exec("INSERT INTO Powers(n,n2,n3,n4) VALUES(?,?,?,?)",n,n2,n3,n4) then {
+         stop("Cannot insert row " || n)
+      }
+   }
+
+   # Basic tests for sanity: if any of these fail, there's not much point in going further.
+   if db.isTable("Powers") then {
+      if 10 ~= db.Rows("Powers") then {
+         Fail(UFL || " Rows")
+      } else {
+         if db.Exec("SELECT SUM(n)  FROM Powers") ~= sum1 then Fail(UFL || " sum")
+         if db.Exec("SELECT SUM(n2) FROM Powers") ~= sum2 then Fail(UFL || " sum2")
+         if db.Exec("SELECT SUM(n3) FROM Powers") ~= sum3 then Fail(UFL || " sum3")
+         if db.Exec("SELECT SUM(n4) FROM Powers") ~= sum4 then Fail(UFL || " sum4")
+         if db.isTable("Power") then Fail(UFL || " not isTable")
+      }
+   } else {
+      Fail(UFL || " isTable")
+   }
+
+   if *failures = 0 then { # OK so far ...
+      # Get the numbers as a list (of rows, each row is a record)
+      if not (powList := db.SQL_As_List("SELECT * from Powers")) then Fail(UFL || "SQL_As_List")
+      # We should have a list of ten records
+      if type(powList) == "list" then {
+         if 10 ~= *powList then Fail(UFL || " SQL_As_List size")
+         # Check the values
+         every r := !powList do {
+            if r.n2 ~= (r.n * r.n) then Fail(UFL || " SQL_As_List square "|| n)
+            if r.n3 ~= (r.n * r.n * r.n) then Fail(UFL || " SQL_As_List cube "|| n)
+            if r.n4 ~= (r.n * r.n * r.n * r.n) then Fail(UFL || " SQL_As_List fourth power " || n)
+            if not member(powSet, r.n, r.n2, r.n3, r.n4) then Fail(UFL || " SQL_As_List for " || n)
+         }
+      } else {
+         Fail(UFL || "SQL_As_List type")
+      }
+
+      # Single column queries are returned as list of values, not a list of records containing values.
+      numbers := db.SQL_As_List("SELECT n4 FROM Powers ORDER BY n4 DESC LIMIT 5")
+      if 5 ~= *numbers then Fail(UFL || " SQL_As_List size")
+      every n := 10 to 6 by -1 do {
+         n4 := pop(numbers)
+         if type(n4) ~== "integer" then Fail(UFL || " SQL_As_List type")
+         if n*n*n*n ~= n4 then Fail(UFL || " SQL_As_List value for " || n)
+      }
+
+      # Get all the numbers in the (SQL) Powers table as a set and compare it with powSet
+      numbers := db.SQL_As_Set(
+              "SELECT n from Powers _
+               UNION SELECT n2 FROM Powers _
+               UNION SELECT n3 FROM Powers _
+               UNION SELECT n4 FROM Powers")
+      if type(numbers) ~== "set" then Fail(UFL || " SQL_As_Set")
+      # The set should be the same size and have the same elements as powSet
+      if *numbers ~= *powSet then Fail(UFL || " SQL_As_Set cardinality")
+      every n := !powSet do {
+         if not member(numbers, n) then Fail(UFL || " SQL_As_Set for " || n)
+      }
+      every n := !numbers do {
+         if not member(powSet, n) then Fail(UFL || " SQL_As_Set for " || n)
+      }
+
+      # Get the numbers in a (Unicon) table. The default index is the first field.
+      powTable := db.SQL_As_Table("SELECT n, n2, n3, n4 FROM Powers")
+      if type(powTable) ~== "table" then Fail(UFL || "SQL_AsTable")
+      if 10 ~= *powTable then Fail(UFL || "SQL_AsTable size")
+      every n := key(powTable) do {
+         if n*n ~= powTable[n].n2 then Fail(UFL || "SQL_AsTable square " || n)
+         if n*n*n ~= powTable[n].n3 then Fail(UFL || "SQL_AsTable cube " || n)
+         if n*n*n*n ~= powTable[n].n4 then Fail(UFL || "SQL_AsTable fourth power " || n)
+
+         delete(numbers,powTable[n].n,powTable[n].n2,powTable[n].n3,powTable[n].n4)
+      }
+      if *numbers > 0 then Fail(UFL) # Can't happen(TM)
+
+      # Get a table indexed by the square (second) field
+      powTable := db.SQL_As_Table("SELECT n, n2, n3, n4 FROM Powers", 2)
+      every n := key(powTable) do {
+         if sqrt(n) ~= powTable[n].n then Fail("SQL_AsTable square root" || n)
+      }
+
+      # Get a table indexed by the fourth power
+      powTable := db.SQL_As_Table("SELECT n, n2, n3, n4 FROM Powers", 4)
+      every n := key(powTable) do {
+         if sqrt(sqrt(n)) ~= powTable[n].n then Fail("SQL_AsTable fourth root" || n)
+      }
+
+      # Use SQL_Row to build a list, then compare it with powList
+      numbers := list()
+      every push(numbers, db.SQL_Row("SELECT n AS num, n2 AS square, n3 AS cube, n4 AS fourth _
+                                      FROM Powers ORDER BY num DESC"))
+
+      if 10 ~= *numbers then Fail(UFL || "SQL_Row size")
+      every r := 1 to 10 do {
+         if numbers[r].num ~= powList[r].n then Fail(UFL || "SQL_Row num ", r)
+         if numbers[r].square ~= powList[r].n2 then Fail(UFL || "SQL_Row square ", r)
+         if numbers[r].cube ~= powList[r].n3 then Fail(UFL || "SQL_Row cube ", r)
+         if numbers[r].fourth ~= powList[r].n4 then Fail(UFL || "SQL_Row fourth ", r)
+      }
+   }
+
+   if *failures = 0 then {
+      write("Passed")
+      return                    # success
+   } else {
+      write(*failures, " failure", if *failures > 1 then "s" else "")
+      every write(!failures)
+   }
+   # fail
+end

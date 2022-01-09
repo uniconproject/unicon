@@ -1,12 +1,10 @@
 /*#
 # flexgram.y - iyacc grammar for uflex
 #
-# Katie Ray, Project: ulex, March 15, 2003
-# derived from lexgram.y, which contains a C YACC grammar for ulex
+# derived from lexgram.y, which contains a C YACC grammar for ulex by Katie Ray
 #*/
 
 %{
-# C version includes tree and automata
 global rulenumber
 %}
 
@@ -43,6 +41,8 @@ global rulenumber
 %token NEWLINE
 %token CONCATEXPR
 %token CONCAT
+%token CSETUNION
+%token CSETDIFFERENCE
 
 %%
 
@@ -64,7 +64,7 @@ Newlines:  NEWLINE Newlines
 	| NEWLINE;
 
 Exprs:    Exprs Newlines OneExpr { $$ := alcnode(EXPRTREE, $1, $3) }
-	| OneExpr
+	| OneExpr		 { $$ := $1 }
 	;
 
 OneExpr : Expr ACTION { $$ := alcnode(EXPRESSION, $1, alcleaf(ACTION, yylval.s))}
@@ -72,9 +72,20 @@ OneExpr : Expr ACTION { $$ := alcnode(EXPRESSION, $1, alcleaf(ACTION, yylval.s))
 	| Expr { $$ := alcnode(EXPRESSION, $1, alcleaf(ACTION, "# fail")) }
 	;
 
+Cset    : CSET         { $$ := alcleaf(CSET, yylval.s) }
+| Cset CSETUNION Cset { $$ := $1;
+  write("cset union of ", image(csetfromrecset($1.text)), " and ", image(csetfromrecset($3.text)))
+    $$.text := "[" || string(csetfromrecset($1.text) ++ csetfromrecset($3.text)) || "]"
+     write("resulted in ", image($$.text)) }
+	| Cset CSETDIFFERENCE Cset { $$ := $1;
+  write("cset difference of ", image(csetfromrecset($1.text)), " and ", image(csetfromrecset($3.text)))
+    $$.text := "[" || string(csetfromrecset($1.text) -- csetfromrecset($3.text)) || "]"
+     write("resulted in ", image($$.text)) }
+	;
+
 Expr    : QUOTES       { $$ := alcleaf(QUOTES, yylval.s) }
 	| BACKSLASH    { $$ := alcleaf(BACKSLASH, yylval.s) }
-	| CSET         { $$ := alcleaf(CSET, yylval.s) }
+	| Cset
 	| CHARACTER    { $$ := alcleaf(CHARACTER, yylval.s) }
 	| DOT          { $$ := alcleaf(DOT) }
 	| BeginLine
@@ -122,13 +133,11 @@ Occurrence: Expr CURLBRACKETS {
 
 %%
 
-# extern int yylineno
-
 procedure yyerror(s)
    #
    # Eventually want to use merr for better error messaging.
    #
 
-   write(&errout, s, " on line ", yylineno)
-   return 0
+  write(&errout, s, " on line ", yylineno, " token '", yytext, "'")
+  return 0
 end

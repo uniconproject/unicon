@@ -1,0 +1,315 @@
+procedure uflexskel(f)
+
+fprintf(f, "%s",
+  "#\n_
+   # uflex skeleton.\n_
+   # do not edit by hand, this file is machine-generated\n_
+   #\n_
+    \n_
+   record edge(symbol, destinations)\n_
+   record anode(label, rulenum, edges, epsilon, dot)\n_
+   record automata(start, states, accepting)\n_
+   \n_
+   global yychar, yytext, yyin, yyleng\n_
+   \n_
+   #\n_
+   # matchstrings reads from a specified input file and calls the simulate\n_
+   # function repeatedly on smaller and smaller pieces of the input until\n_
+   # it finds a match. It reports what parts of the input\n_
+   # it could parse and what rule accepted the string.\n_
+   #\n_
+   \n_
+   global stringseq\n\n")
+
+fprintf(f, "%s",
+  "procedure yyulex(aut)\n_
+   local rulenum, readfrom, position, less, currstring, getln\n_
+   local maxrule, maxleng\n_
+   \n_
+   initial {\n_
+      \ \ \ if /yyin then yyin := &input\n_
+      \ \ \ readfrom := yyin\n_
+   \n_
+      \ \ \ stringseq := read(readfrom) || \"\\n\"\n_
+   \n_
+      \ \ \ while getln := read(readfrom) do\n_
+         \ \ \ \ \ \ stringseq ||:= getln || \"\\n\"\n_
+   \n_
+      \ \ \ close(readfrom)\n_
+      \ \ \ }\n_
+   \n_
+   \   repeat {\n_
+   \      if stringseq == \"\" then {\n_
+   \         yychar := -1\n_
+   \         fail\n_
+   \         }\n\n_
+   \      leng := 1\n_
+   \      while i := simulate(aut, stringseq[1:leng+1]) do {\n_
+   \         if i > 0 then {\n_
+   \            maxrule := i\n_
+   \            maxleng := leng\n_
+   \         }\n_
+   \         leng +:= 1\n_
+   \      }\n_
+   \      if \\maxrule then {\n_
+   \         yytext := stringseq[1 : maxleng+1]; yyleng := maxleng\n_
+   \         stringseq := stringseq[maxleng+1:0]\n_
+   \         if yychar := (\semantic_action)[maxrule] () then return yychar\n_
+   \      } else {\n_
+   \         stringseq := stringseq[2:0]\n_
+   \      }\n_
+   \   }\n_
+   end\n\n")
+
+fprintf(f, "%s",
+   "#\n_
+   # simulate(automata, word) determines whether or not the word\n_
+   # would be accepted by the given automata. It gets the possible\n_
+   # destinations at each symbol of the string and then adds on wherever it\n_
+   # could also get if we use any epsilon transitions out of those states.\n_
+   # Then the list of accepting states is compared to the reachable set\n_
+   # of states to determine if the word was accepted and by which rule.\n_
+   #\n_
+   procedure simulate(myaut, word)\n_
+   local first, currstates, acceptcheck, currsymbol, build, rv\n_
+   \   currstates := list(0) # should be set()\n_
+   \   put(currstates, myaut.start) # insert(currstates, myaut.start)\n_
+   \   acceptcheck := copy(myaut.accepting)\n_
+   \   currsymbol := word\n_
+   \   while *currsymbol > 0 do {\n_
+   \      currstates := getdestinations(currstates, currsymbol)\n_
+   \      if *currstates = 0 then\n_
+   \         fail\n_
+   \      currsymbol := currsymbol[2:0]\n_
+   \      }\n_
+   \   while *acceptcheck > 0 do {\n_
+   \      value1 := pop(acceptcheck)\n_
+   \      check2 := copy(currstates)\n_
+   \n_
+   \      while *check2 > 0 do {\n_
+   \         value2 := pop(check2)\n_
+   \n_
+   \         if value1.label = value2.label then {\n_
+   \            if /rv | rv > value1.rulenum then\n_
+   \               rv := value1.rulenum\n_
+   \            }\n_
+   \         }\n_
+   \      }\n_
+   \   if \\yydebug>0 then write(\"simulate() returns \", image(\\rv)|0)\n_
+   \   return \\rv | -(currstates[1].label)\n_
+   end\n\n")
+
+fprintf(f, "%s",
+   "#\n_
+    # like |||:= except no duplicates. Destructive of L1 but not L2\n_
+    #\n_
+    procedure yyunionin(L1, L2)\n_
+    t1 := table()\n_
+    \  every x := !L1 do {\n_
+    \     t1[x.label] := x\n_
+    \     }\n_
+    \  every x := !L2 do {\n_
+    \     if /t1[x.label] then {\n_
+    \        t1[x.label] := x\n_
+    \         put(L1, x)\n_
+    \         }\n_
+    \      }\n_
+    end\n_
+    procedure yyonein(L1, L2)\n_
+    \  if (!L1).label === L2[1].label then fail\n_
+    \  put(L1, L2[1])\n_
+    end\n\n");
+
+fprintf(f, "%s",
+
+  "#\n_
+   # getdestinations uses the current set of states and\n_
+   # simulates one step of automata computation on the given\n_
+   # string and returns the resulting set of destinations\n_
+   #\n_
+   procedure getdestinations(currstates, currsymbol)\n_
+   local result, current, buildresult, reached\n_
+   \n_
+   \   result := list(0)\n_
+   \   if *currstates ~= 0 then {\n_
+   \n_
+   \      buildresult := copy(currstates)\n_
+   \      while *buildresult > 0 do {\n_
+   \          reached := reach(pop(buildresult), currsymbol)\n_
+   \          if *reached>0 then {\n_
+   \             yyunionin(result, reached)\n_
+   \             }\n_
+   \          }\n_
+   \       }\n_
+   \    return result\n_
+   end\n\n")
+
+fprintf(f, "%s",
+  "#\n_
+   # reach returns the list of states that can be reached\n_
+   # on character symbol from the state state.\n_
+   #\n_
+   procedure reach(state, symbol)\n_
+   local edgeset, answer, edgesymbol, bound1, bound2, curredge\n_
+   \n_
+   \   edgeset := copy(state.edges)\n_
+   \   answer := list(0)\n_
+   \n_
+   \   while *edgeset > 0 do {\n_
+   \      curredge := pop(edgeset)\n_
+   \      edgesymbol := copy(curredge.symbol)\n_
+   \      if type(edgesymbol) == \"cset\" then {\n_
+   \         if any(edgesymbol, symbol[1]) then {\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \          }\n_
+   \      }\n_
+   \      else {\n_
+   \      if (edgesymbol[1] == symbol[1] ~== \"[\") |\n_
+   \         (edgesymbol == symbol[1] == \"[\") then # sometimes a [ is just a [\n_
+   \             yyunionin(answer, curredge.destinations)\n_
+   \n_
+   \      else if edgesymbol[1] == \"\\\\\" then {\n_
+   \         if (edgesymbol[2] == \"n\") & (symbol[1] == \"\\n\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"t\") & (symbol[1] == \"\\t\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"r\") & (symbol[1] == \"\\r\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"f\") & (symbol[1] == \"\\f\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"\\\\\") & (symbol[1] == \"\\\\\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         # should handle all escapes here, and error on bogus ones\n_
+   \         else if edgesymbol[2] == symbol[1] then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         } # escape\n\n_
+   \n_
+   \      }\n_
+   \n_
+   \      } # while edgeset > 0\n_
+   \   if *(state.dot)>0 then {\n_
+   \      yyunionin(answer, state.dot)\n_
+   \      }\n_
+   \   return answer\n_
+   end\n\n");
+   
+fprintf(f, "%s",
+   "# \"recset\" == \"regular expression cset\"\n_
+    procedure csetfromrecset(recset)\n_
+    local rv, lastchar, origcset := recset\n_
+   \   if not (recset[1]==\"[\" & recset[-1]==\"]\") then\n_
+   \      stop(\"malformed recset \", image(recset))\n_
+   \   recset := recset[2:-1]\n\n_
+   \   if recset[1]==\"^\" then { # not in this cset, subtract from &cset\n_
+   \      rv := &cset -- csetfromrecset(\"[\"||recset[2:0]||\"]\")\n_
+   \      return rv\n_
+   \      }\n_
+   \   # positive cset construction\n_
+   \   rv := ''\n_
+   \   while *recset>0 do {\n\n_
+   \      if recset[1] == \"-\" & \\lastchar & *recset>1 then\n_
+   \         genrangefrom := lastchar\n_
+   \      else {\n_
+   \         # did not trigger a new range. Process one char\n\n_
+   \         if recset[1] == \"\\\\\" then { # escape\n_
+   \            recset := recset[2:0]\n_
+   \            case recset[1] of {\n_
+   \               \"n\":  recset[1] := \"\\n\"\n_
+   \               \"t\":  recset[1] := \"\\t\"\n_
+   \               \"r\":  recset[1] := \"\\r\"\n_
+   \               \"v\":  recset[1] := \"\\v\"\n_
+   \               \"-\":  recset[1] := \"\\-\"\n_
+   \               \"f\":  recset[1] := \"\\f\"\n_
+   \               \"'\":  recset[1] := \"\\'\"\n_
+   \               \"\\\"\":  recset[1] := \"\\\"\"\n_
+   \               \"\\\\\": recset[1] := \"\\\\\"\n_
+   \               \"0\": {\n_
+   \                  if any('01234567', recset[2]) then {\n_
+   \                     if any('01234567', recset[3]) then {\n_
+   \                        o := char(recset[1]*64+recset[2]*8+recset[3])\n_
+   \                        recset := o || recset[4:0]\n_
+   \                     }\n_
+   \                     else stop(\"argh2 \", image(recset))\n_
+   \                     }\n_
+   \                  else recset[1] := \"\\0\"\n_
+   \               }\n_
+   \               # should handle all escapes here, and error on bogus ones\n_
+   \               default: stop(\"unrecognized escape \", image(recset[1]))\n_
+   \               }\n_
+   \            }\n\n_
+   \         rv ++:= recset[1]\n\n_
+   \         if \\genrangefrom then { #if we have a pending range\n_
+   \            ord1 := ord(genrangefrom)\n_
+   \             ord2 := ord(recset[1])\n_
+   \             while ord1 < ord2 do {\n_
+   \               rv ++:= char(ord1)\n_
+   \               ord1 +:= 1\n_
+   \               }\n_
+   \            genrangefrom := &null\n_
+   \            }\n_
+   \         lastchar := recset[1]\n_
+   \          }\n_
+   \       recset := recset[2:0]\n_
+   \       }\n\n_
+   \   return rv\n_
+    end\n\n");
+
+
+
+
+fprintf(f, "%s",
+   "procedure printautomaton(a)\n_
+   \   write(\"Automaton:\")\n_
+   \   write(\"start: \", image(a.start.label),\n_
+   \         \" for rulenum \", image(a.start.rulenum))\n_
+   \   write(\"states:\")\n_
+   \   every printstate(!a.states)\n_
+   \   writes(\"accepting: \")\n_
+   \   every writes((!a.accepting).label, \" \")\n_
+   \   write()\n_
+   end\n\n");
+
+fprintf(f, "%s",
+   "procedure printstate(state)\n_
+   \   write(\"state \", state.label, \" is for rule #\", state.rulenum)\n_
+   \   if (*state.edges)>0 then {\n_
+   \      writes(\"\\tedges: \"); every printedge(!state.edges); write()\n_
+   \      }\n_
+   \   if *state.epsilon>0 then {\n_
+   \      writes(\"\\tepsilon: \")\n_
+   \      every writes((!state.epsilon).label, \" \"); write()\n_
+   \      }\n_
+   \   if (*state.dot)>0 then {\n_
+   \      writes(\"\\tdot: \")\n_
+   \      every writes((!state.dot).label, \" \"); write()\n_
+   \      }\n_
+   end\n\n");
+
+fprintf(f, "%s",
+   "procedure printedge(edge)\n_
+   \   writes(image(edge.symbol), \" -> \")\n_
+   \   every writes((!edge.destinations).label)\n_
+   \   writes(\"; \")\n_
+   end\n\n");
+
+fprintf(f, "%s",
+   "procedure printstates(states)\n_
+   local statecopy, current\n_
+   \n_
+   \   write(\"printstates size \", *states, \" in entity \", image(states))\n_
+   \   statecopy := copy(states)\n_
+   \n_
+   \   while *statecopy > 1 do {\n_
+   \      current := pop(statecopy)\n_
+   \      write(current.label, \", \")\n_
+   \      }\n_
+   \n_
+   \   if *statecopy > 0 then {\n_
+   \      current := pop(statecopy)\n_
+   \      write(current.label)\n_
+   \      }\n_
+   \    else write(\"state list is empty\")\n_
+   end\n")
+end
+
+

@@ -8,9 +8,13 @@ procedure convert(tr)
    local returnvalue, aut1, aut2, newnode1, newnode2
    local tempstring, getsinglechar, t1, t2, i, listptr, listptr2, elistptr
 
-   if (/root := tr) & \debugtree then {
-      treeprint(tr)
-      exit(0)
+#write(&errout, "convert")
+   if /root := tr then {
+      if  \debugtree then {
+write(&errout, "treeprint")
+         treeprint(tr)
+         exit(0)
+         }
       }
 
    #
@@ -18,7 +22,10 @@ procedure convert(tr)
    # exploiting recursion wherever possible.
    #
 
+  #write(&errout, "convert"||image(tr.label))
+ # if \(tr.text) then printf("text=  %s", image(tr.text))
    case tr.label of {
+ 
    EXPRTREE: {
 	#
 	# This case is handled by converting the two subtrees and then making
@@ -198,6 +205,18 @@ procedure convert(tr)
 	    listptr._next := alcnodelist()
 	    listptr._next.current := newnode2
 
+	    if getsinglechar == "\\" then {
+tempstring := tempstring[2:0]
+echar := tempstring[1]
+write("eureka \\", echar)
+case echar of {
+    "t": getsinglechar := "\t"
+    "n": getsinglechar := "\n"
+    "\\": getsinglechar := "\\"
+    default: stop("unhandled escape in flex string literal \\", tempstring)
+}
+	       }
+
 	    newnode1.edges := [ alcedge(getsinglechar) ]
 	    newnode1.edges[1].destinations := alcnodelist()
 	    newnode1.edges[1].destinations.current := newnode2
@@ -213,6 +232,7 @@ procedure convert(tr)
       }
 
     BACKSLASH: {
+#write("got to BACKSLASH")
 	#
 	# This case is handled by creating a two state automata with the edge
 	# labelled directly with the character that follows the backslash.
@@ -229,6 +249,7 @@ procedure convert(tr)
 	listptr._next.current := newnode2
 
 	tr.text := tr.text[2:0] # skip over \
+#        write(" tr.text "||image(tr.text))
 
 	if tr.text[1] == "n" then tr.text[1] := "\n"
 	else if tr.text[1] == "t" then tr.text[1] := "\t"
@@ -600,4 +621,64 @@ procedure convert(tr)
     }
    stop("failing off the end of convert: ",image(tr), " label ",image(tr.label),
         " text ", image(tr.text), " kids ",image(tr.children))
+end
+
+#
+# What could possibly go wrong with including this procedure from the uflexskel
+# into the uflex program itself, in order to compute some compile-time csets?
+# For one thing, if you make a change here, change it also in uflexskel.icn and
+# vice-versa.
+#
+# "recset" == "regular expression cset"
+procedure csetfromrecset(recset)
+local rv, lastchar, origcset := recset
+   if not (recset[1]=="[" & recset[-1]=="]") then
+      stop("malformed recset ", image(recset))
+   recset := recset[2:-1]
+
+   if recset[1]=="^" then { # not in this cset, subtract from &cset
+      rv := &cset -- csetfromrecset("["||recset[2:0]||"]")
+      return rv
+      }
+   # positive cset construction
+   rv := ''
+   while *recset>0 do {
+
+      if recset[1] == "-" & \lastchar & *recset>1 then
+         genrangefrom := lastchar
+      else {
+         # did not trigger a new range. Process one char
+
+         if recset[1] == "\\" then { # escape
+            recset := recset[2:0]
+            case recset[1] of {
+               "n":  recset[1] := "\n"
+               "t":  recset[1] := "\t"
+               "r":  recset[1] := "\r"
+               "f":  recset[1] := "\f"
+               "'":  recset[1] := "\'"
+               "\"":  recset[1] := "\""
+               "\\": recset[1] := "\\"
+               # should handle all escapes here, and error on bogus ones
+               default: stop("unrecognized escape ", image(recset[1]))
+               }
+            }
+
+         rv ++:= recset[1]
+
+         if \genrangefrom then { #if we have a pending range
+            ord1 := ord(genrangefrom)
+             ord2 := ord(recset[1])
+             while ord1 < ord2 do {
+               rv ++:= char(ord1)
+               ord1 +:= 1
+               }
+            genrangefrom := &null
+            }
+         lastchar := recset[1]
+          }
+       recset := recset[2:0]
+       }
+
+   return rv
 end

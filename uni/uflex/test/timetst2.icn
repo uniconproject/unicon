@@ -1,0 +1,23 @@
+#link uniflex
+#$include "c:\\jeffery\\unicon\\uni\\unicon\\ytab_h.icn"
+global yylineno, yycolno, yyfilename, tokflags
+procedure main(argv)
+   t1 := &time 
+   count := 0
+   if argv[1] == "-p" then { popt := pop(argv) }
+   yyin := open(argv[1]) | stop("can't open ", argv[1]|"no file given")
+   yycolno := 1
+   yylineno := 1
+   yyfilename := argv[1]
+   tokflags := 0
+   if \yylex2 then
+      yylex :=: yylex2
+
+   while \(i := yylex()) > 0 do {
+      if \popt then write(yytext, ": ", i)
+      count +:= 1
+      }
+   close(yyin)
+   t2 := &time
+#   write(&errout, "processed ", count, " tokens in ", t2-t1, "ms")
+end

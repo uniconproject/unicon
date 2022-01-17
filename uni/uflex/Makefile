@@ -8,10 +8,14 @@
 BASE=../..
 include $(BASE)/Makedefs.uni
 
-all: uflex
+PROGRAM = uflex$(EXE)
 
-uflex: flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u automatadfa.u uflexskel.u
+all: $(PROGRAM)
+
+$(PROGRAM): flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u automatadfa.u uflexskel.u
 	$(UNICON) -o uflex flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u convert.u automatadfa.u ulpp.icn
+	@cp $(PROGRAM) ../../bin/
+	@cd test; $(MAKE)
 
 main.u: main.icn
 	$(UNICON) -c main

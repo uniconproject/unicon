@@ -3,54 +3,51 @@
 # Project: uflex
 # Dec 31, 2021
 #
-# Based on Katie Ray's Project: ulex, March 15, 2003. Katie's unfinished
-# C program is preserved in the deprecated legacy directory ulex/
+# Based on Katie Ray's Project: ulex, March 15, 2003.
 #
-CC=gcc
-CFLAGS= -c -g
-LEX=win_flex
-YACC=win_bison -y
+BASE=../..
+include $(BASE)/Makedefs.uni
 
 all: uflex
 
 uflex: flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u automatadfa.u uflexskel.u
-	unicon -o uflex flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u convert.u automatadfa.u ulpp.icn
+	$(UNICON) -o uflex flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u convert.u automatadfa.u ulpp.icn
 
 main.u: main.icn
-	unicon -c main
+	$(UNICON) -c main
 
 flexgram.u: flexgram.icn
-	unicon -c flexgram
+	$(UNICON) -c flexgram
 
 flexgram.icn flexgram_tab.icn: flexgram.y
-	iyacc -i -d flexgram.y
+	$(IYACC) -i -d flexgram.y
 
 uflex-lex.u: uflex-lex.icn
-	unicon -c uflex-lex
+	$(UNICON) -c uflex-lex
 
 ulexskel.u: ulexskel.icn
-	unicon -c ulexskel
+	$(UNICON) -c ulexskel
 
 uflexskel.u: uflexskel.icn
-	unicon -c uflexskel
+	$(UNICON) -c uflexskel
 
 automata.u: automata.icn
-	unicon -c automata
+	$(UNICON) -c automata
 
 automatadfa.u: automatadfa.icn
-	unicon -c automatadfa
+	$(UNICON) -c automatadfa
 
 tree.u: tree.icn
-	unicon -c tree
+	$(UNICON) -c tree
 
 nfa2dfa: nfa2dfa.icn
-	unicon -o nfa2dfa nfa2dfa.icn
+	$(UNICON) -o nfa2dfa nfa2dfa.icn
 
 dfa2auto: dfa2auto.icn 
-	unicon -o dfa2auto dfa2auto.icn	ulexskel
+	$(UNICON) -o dfa2auto dfa2auto.icn ulexskel
 
 convert.u: convert.icn flexgram_tab.icn
-	unicon -c convert
+	$(UNICON) -c convert
 
 clean:
-	rm *.u uflex
+	$(RM) *.u uflex

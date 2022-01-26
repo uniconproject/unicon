@@ -1,0 +1,737 @@
+#-------------------------------------------------------------------------------
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+#-------------------------------------------------------------------------------
+package sqLite
+# ----------------------------------------------------------------------
+# A plugin interface library for SQLite version 3 (https://sqlite.org/index.html)
+#
+#     Don Ward     July 2020
+#
+# The library is in three parts
+#  1)   Low level interface routines to individual SQLite functions.
+#       There are 300 or so SQLite API functions: not all are represented
+#       here, but it's simple to include more.
+# 2)    Higher level routines to return the rows of a query as a Unicon
+#       structure (list, set, table etc. )
+#       N.B. The routines in part 2 make no attempt to deal with SQLITE_BUSY
+#            it's passed back to the caller to deal with.
+# 3)    A simple class that encapsulates an SQLite connection (and handles
+#       SQLITE_BUSY) plus a class built on top of it that provides a
+#       read-only connection to a database.
+#
+# ----------------------------------------------------------------------
+
+$define LIB "sqlite.so"
+$define SQLITE_BUSY 5
+$define SQLITE_ROW  100
+$define SQLITE_DONE 101
+
+# ----------------------------------------------------------------------
+# Part 1: Interface routines
+# ----------------------------------------------------------------------
+# Every interface proc calls SQLi_Init.
+# The first one causes the initial clause to be executed, which
+# initialises the SQLite library. Subsequent calls are a no-op (and
+# mostly won't happen because the interface procs rebind themselves
+# to the version in the C interface library.
+#
+# To get customised behaviour call SQLi_Init with a non-null parameter
+# *before* calling any other SQLi_ routine. Currently this defeats the
+# automatic adjustment of column numbers from 0 based to 1 based.
+# N.B. If you do this, DON'T USE THE ROUTINES IN PART 2 or 3 because
+#      they depend on 1 based column numbering.
+procedure SQLi_Init(p)
+   initial {
+      loadfunc(LIB, "SQLi_Init")(p)
+   }
+   return                       # Success
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_libversion()
+   SQLi_Init()
+   return (SQLi_libversion := loadfunc(LIB, "SQLi_libversion"))()
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_libversion_number()
+   SQLi_Init()
+   return (SQLi_libversion_number := loadfunc(LIB, "SQLi_libversion_number"))()
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_Error(db)
+   static errProc
+   initial {
+      SQLi_Init()
+      errProc := loadfunc(LIB, "SQLi_Error")
+   }
+   return if /db then errProc() else SQLi_errmsg(db)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_errmsg(db)
+   SQLi_Init()
+   return (SQLi_errmsg := loadfunc(LIB, "SQLi_errmsg"))(db)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_open(dbName, dbMode)
+   SQLi_Init()
+   return (SQLi_open := loadfunc(LIB, "SQLi_open"))(dbName,dbMode)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_close(db)
+   SQLi_Init()
+   return (SQLi_close := loadfunc(LIB, "SQLi_close"))(db)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_prepare(db,sql)
+   SQLi_Init()
+   return (SQLi_prepare := loadfunc(LIB, "SQLi_prepare"))(db,sql)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_bind(st, args[])
+   static bindProc
+   initial {
+      SQLi_Init()
+      bindProc := loadfunc(LIB, "SQLi_bind")
+   }
+   push(args,st)
+   return bindProc ! args
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_bindArg(st, num: integer, arg)
+   SQLi_Init()
+   return (SQLi_bindArg := loadfunc(LIB, "SQLi_bindArg"))(st,num,arg)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_finalize(st)
+   SQLi_Init()
+   return (SQLi_finalize := loadfunc(LIB, "SQLi_finalize"))(st)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_step(st, expectBusy: integer: 0)
+   local ans
+   static stepProc
+   initial {
+      SQLi_Init()
+      stepProc := loadfunc(LIB, "SQLi_step")
+   }
+
+   while SQLITE_ROW = (ans := stepProc(st,expectBusy)) do {
+      suspend ans
+   }
+   if ans = 1 then {&dump := 1; stop("Bailing out") }
+   if \ans = (SQLITE_DONE | SQLITE_BUSY) then {
+      if (ans = SQLITE_BUSY) & (expectBusy = 0) then {
+         write(image(&current), " SQLi_step returning BUSY")
+         &dump := 1
+         stop("Bailing out")
+      }
+
+      return ans
+   }
+   fail
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_column_count(st)
+   SQLi_Init()
+   return (SQLi_column_count := loadfunc(LIB, "SQLi_column_count"))(st)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_column_type(st,col)
+   SQLi_Init()
+   return (SQLi_column_type := loadfunc(LIB, "SQLi_column_type"))(st,col)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_column_name(st,col)
+   SQLi_Init()
+   return (SQLi_column_name := loadfunc(LIB, "SQLi_column_name"))(st,col)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_column_string(st,col)
+   SQLi_Init()
+   return (SQLi_column_string := loadfunc(LIB, "SQLi_column_string"))(st,col)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_column_integer(st,col)
+   SQLi_Init()
+   return (SQLi_column_integer := loadfunc(LIB, "SQLi_column_integer"))(st,col)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_column_real(st,col)
+   SQLi_Init()
+   return (SQLi_column_real := loadfunc(LIB, "SQLi_column_real"))(st,col)
+end
+
+# ----------------------------------------------------------------------
+procedure SQLi_column(st,col)
+   SQLi_Init()
+   return (SQLi_column := loadfunc(LIB, "SQLi_column"))(st,col)
+end
+
+# ----------------------------------------------------------------------
+# Part 2: Utility procedures
+# ----------------------------------------------------------------------
+
+# Private procedure to build a row constructor procedure
+# The returned procedure, when called, returns a record whose
+# field names are the column names of the query in psql.
+procedure _RowConstructor(columns, psql)
+   static qnum, mtx
+   local columnNames, col
+   initial { qnum := 0; mtx := mutex() }
+
+   columnNames := []
+   every col := !columns do {
+      put(columnNames, SQLi_column_name(psql,col))
+   }
+   critical mtx: qnum +:= 1
+   push(columnNames, "SQL_" || string(qnum)) # Arbitrary name for the row record
+   return constructor ! columnNames
+end
+
+# ----------------------------------------------------------------------
+# Return a list of rows from a SQL query
+# if there are multiple columns, each row is a record whose fields are the column names
+# e.g. "SELECT k.tag, count(k.tag) AS total, k.name FROM myTable k GROUP BY k.tag;"
+#   will result in a list of records with three fields called
+#   tag, total and name
+# If the query is successful but results in no data, the answer will be an
+# empty record, which is legal albeit slightly odd.
+#
+# If the query has a only one column then the column values will be returned
+# directly rather than as records with a single named field
+procedure SQLi_As_List(db, sql: string, args[])
+   local makeRow, row, ans, psql, columns, col
+   initial { SQLi_Init() }
+
+   if psql := SQLi_prepare(db,sql) then {
+      if 0 < *args then {
+         push(args,psql)
+         if not (SQLi_bind ! args) then fail
+      }
+      ans := []
+      if 1 < (columns := SQLi_column_count(psql)) then {
+         makeRow := _RowConstructor(columns,psql)
+         every SQLITE_ROW = SQLi_step(psql) do {
+            row := makeRow()
+            every col := !columns do row[col] := SQLi_column(psql,col)
+            put(ans,row)
+         }
+      } else {
+         every SQLITE_ROW = SQLi_step(psql) do put(ans, SQLi_column(psql,1))
+      }
+      SQLi_finalize(psql)
+      return ans
+   }
+   # fail
+end
+
+# ----------------------------------------------------------------------
+# As SQLi_As_List, but returns a set (of values or records)
+procedure SQLi_As_Set(db, sql: string, args[])
+   local makeRow, row, ans, psql, columns, col
+   initial { SQLi_Init() }
+
+   if psql := SQLi_prepare(db,sql) then {
+      if 0 < *args then {
+         push(args,psql)
+         if not (SQLi_bind ! args) then fail
+      }
+      ans := set()
+      if 1 < (columns := SQLi_column_count(psql)) then {
+         makeRow := _RowConstructor(columns,psql)
+         every SQLITE_ROW = SQLi_step(psql) do {
+            row := makeRow()
+            every col := !columns do row[col] := SQLi_column(psql,col)
+            insert(ans,row)
+         }
+      } else {
+         every SQLITE_ROW = SQLi_step(psql) do insert(ans, SQLi_column(psql,1))
+      }
+      SQLi_finalize(psql)
+      return ans
+   }
+   # fail
+end
+
+# ----------------------------------------------------------------------
+# like SQLi_As_List, but returns a table (note a Unicon table, not a SQL table).
+# The third parameter is the database column index to use as the key to the table.
+# If the values aren't unique then some elements of the table will be overwritten
+# by subsequent values. Note that SQLi_As_Table always returns a record, even if
+# there is only one column.
+
+procedure SQLi_As_Table(db, sql: string, indexCol: integer: 1, args[])
+   local makeRow, row, ans, psql, columns, col
+   initial { SQLi_Init() }
+
+   if psql := SQLi_prepare(db,sql) then {
+      if 0 < *args then {
+         push(args,psql)
+         if not (SQLi_bind ! args) then fail
+      }
+      makeRow := _RowConstructor(columns := SQLi_column_count(psql),psql)
+      ans := table()
+      every SQLITE_ROW = SQLi_step(psql) do {
+         row := makeRow()
+         every col := !columns do row[col] := SQLi_column(psql,col)
+         ans[row[indexCol]] := row
+      }
+      SQLi_finalize(psql)
+      return ans
+   }
+   # fail
+end
+
+# ----------------------------------------------------------------------
+# return the answers a row at a time
+# Note that calling SQLi_Row fewer times than it has rows to return
+# will leak memory (until the database connection is closed).
+procedure SQLi_Row(db, sql: string, args[])
+   local makeRow, row, psql, columns, col
+   initial { SQLi_Init() }
+
+   if psql := SQLi_prepare(db,sql) then {
+      if 0 < *args then {
+         push(args,psql)
+         if not (SQLi_bind ! args) then fail
+      }
+
+      if 1 < (columns := SQLi_column_count(psql)) then {
+         makeRow := _RowConstructor(columns,psql)
+         every SQLITE_ROW = SQLi_step(psql) do {
+            row := makeRow()
+            every col := !columns do row[col] := SQLi_column(psql,col)
+            suspend row
+         }
+      } else {
+         every SQLITE_ROW = SQLi_step(psql) do { suspend SQLi_column(psql,1) }
+      }
+      SQLi_finalize(psql)
+   }
+   # fail
+end
+
+# ----------------------------------------------------------------------
+# return the answer (if any) from a query that will only give, at most, a single row
+# SQLi_Row() could be used instead, but using SQLi_Exec is clearer and more efficient.
+# Some queries might return no data at all; in this case the row constructor is
+# not needed and the procedure just succeeds (rather than returning a record value).
+procedure SQLi_Exec(db, sql: string, args[])
+   local makeRow, row, psql, columns, col, ans
+   initial { SQLi_Init() }
+
+   if psql := SQLi_prepare(db,sql) then {
+      if 0 < *args then {
+         push(args,psql)
+         if not (SQLi_bind ! args) then fail
+      }
+      if 1 < (columns := SQLi_column_count(psql)) then {
+         makeRow := _RowConstructor(columns,psql)
+      }
+
+      if SQLITE_ROW = (ans := SQLi_step(psql)) then {
+         if columns > 1 then {
+            row := makeRow()
+            every col := !columns do row[col] := SQLi_column(psql,col)
+            SQLi_finalize(psql)
+            return row
+         } else if columns = 1 then {
+            row := SQLi_column(psql,1)
+            SQLi_finalize(psql)
+            return row
+         } else {
+            SQLi_finalize(psql)
+            return
+         }
+      } else if SQLITE_DONE = \ans then {
+         SQLi_finalize(psql)
+         return
+      } else {
+         SQLi_finalize(psql)
+      }
+   }
+   # fail
+end
+
+# ----------------------------------------
+# Could just say
+#     return SQLi_Exec(db, "SELECT count(*) AS ans FROM " || dbTable)
+# but this is slightly more efficient
+procedure SQLi_Rows(db, dbTable: string)
+   local psql, ans
+
+   if psql := SQLi_prepare(db, "SELECT count(*) FROM " || dbTable) then {
+      ans := SQLi_step(psql)
+      if SQLITE_ROW = ans then {
+         ans := SQLi_column(psql, 1)
+         SQLi_finalize(psql)
+         return ans
+      } else {
+         SQLi_finalize(psql)
+         return 0
+      }
+   }
+   # fail
+end
+
+# ----------------------------------------
+# Could also use
+#     0 < *SQLi_As_List(db, "SELECT tbl_name ...")
+# but this is more efficient
+procedure SQLi_isTable(db, dbTable: string)
+   local psql, ans
+
+   if psql := SQLi_prepare(db,
+                           "SELECT tbl_name FROM sqlite_master _
+                           WHERE tbl_name = '" || dbTable || "'") then {
+      ans := SQLi_step(psql)
+      if SQLITE_ROW = ans then {
+         SQLi_finalize(psql)
+         return 1             # success
+      } else {
+         SQLi_finalize(psql)
+       }
+   }
+   # fail
+end
+
+# ----------------------------------------------------------------------
+# Part 3:
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# The SQLite class deals with the SQLITE_BUSY status return and also
+# provides a kind of "poor man's nested transaction support" for the
+# routines in Part 2.
+#
+# Individual routines are wrapped in "BEGIN IMMEDIATE TRANSACTION ... COMMIT"
+# but if BEGIN() is called explicitly the commits are delayed
+# until an explicit matching call of END()
+#
+# Note that once "BEGIN IMMEDIATE TRANSACTION returns successfully, the
+# underlying database access routines guarantee that they will not return
+# SQLITE_BUSY for subsequent calls up to (but not including) the COMMIT.
+#
+# Nested transactions are (sort of) allowed by this design, although the
+# ACID guarantee only applies to the outer transaction. If the outer
+# transaction fails then none of the inner transactions will be
+# committed. Remember they're only nested from our point of view, the
+# SQLite code only ever sees one transaction -- the outermost one.
+#
+# It's best to think carefully before using simultaneous transactions
+# across different threads -- be aware that only the first BEGIN() and the
+# last END() actually result in calls to the underlying database access
+# routines. The safest approach might be to arrange things such that only
+# one thread at a time has an explicit BEGIN() .. END() in progress, or
+# use a separate class instance (which has its own database connection)
+# for each thread.
+#
+# Exec("BEGIN TRANSACTION") will fail immediately; use BEGIN() instead.
+# Don't call Exec("COMMIT") or Exec("ROLLBACK");
+# use END() or ROLLBACK() in their place.
+class SQLite : uso::USO (db, transactions, mtx, waitSecs, cachedErr)
+
+   # ----------------------------------------
+   method api()
+      return [
+              lang::find_method("BEGIN"),
+              lang::find_method("END"),
+              lang::find_method("ROLLBACK"),
+              lang::find_method("Close"),
+              lang::find_method("ErrMsg"),
+              lang::find_method("Exec"),
+              lang::find_method("SQL_Row"),
+              lang::find_method("SQL_As_List"),
+              lang::find_method("SQL_As_Table"),
+              lang::find_method("SQL_As_Set"),
+              lang::find_method("Rows"),
+              lang::find_method("isTable")
+              ]
+   end
+
+   # ----------------------------------------
+   method BEGIN()
+      local start, attempts, ans := SQLITE_BUSY
+      local psql := SQLi_prepare(db, "BEGIN IMMEDIATE TRANSACTION")
+      local nested
+      critical mtx: {
+         nested := transactions # Not used, but appears in a dump
+         if transactions = 0 then {
+            attempts := 0
+            if waitSecs > 0 then start := &now
+            while ans = SQLITE_BUSY do {
+               ans := SQLi_step(psql, 1) # One of two places we use expectBusy
+               if ans = SQLITE_BUSY then {
+                  delay(5 * ?(1 + (attempts+:=1)))
+
+                  if (&now - start) > waitSecs then {
+                     SQLi_finalize(psql)
+                     unlock(mtx)
+                     write(&errout, "BEGIN timed out")
+                     fail
+                  }
+               }
+            }
+            if ans ~= SQLITE_DONE then {
+               SQLi_finalize(psql)
+               write(&errout, "BEGIN failed ", ans)
+               unlock(mtx)
+               fail
+            }
+            transactions := 1
+         } else {
+            transactions +:= 1
+         }
+      } # End  mtx
+      SQLi_finalize(psql)
+      return transactions # Success
+   end
+
+   # ----------------------------------------
+   method END()
+      local start, attempts, ans := SQLITE_BUSY
+      local psql := SQLi_prepare(db, "COMMIT")
+      local nested
+      critical mtx: {
+         nested := transactions # Not used, but appears in a dump
+         if transactions = 1 then {
+            attempts := 0
+            if waitSecs > 0 then start := &now
+            while ans = SQLITE_BUSY do {
+               ans := SQLi_step(psql, 1) # One of two places we use expectBusy
+               if ans = SQLITE_BUSY then {
+                  delay(5 * ?(1 + (attempts+:=1)))
+
+                  if (&now - start) > waitSecs then {
+                     SQLi_finalize(psql)
+                     unlock(mtx)
+                     write(&errout, "END timed out")
+                     fail
+                  }
+               }
+            }
+            if ans ~= SQLITE_DONE then {
+               SQLi_finalize(psql)
+               unlock(mtx)
+               write(&errout, "END failed ", ans)
+               fail
+            }
+            transactions := 0
+         } else {
+            if transactions = 0 then {
+               write(&errout, "END called, but not in a transaction")
+            } else {
+               transactions -:= 1
+            }
+         }
+      } # End  mtx
+      SQLi_finalize(psql)
+      return transactions # Success
+   end
+
+   # ----------------------------------------
+   method ROLLBACK()
+      local ans, psql
+      local nested
+      critical mtx: {
+         nested := transactions # Not used, but appears in a dump
+         write(&errout, "ROLLBACK called, transactions = ", transactions)
+         if psql := SQLi_prepare(db, "ROLLBACK") then {
+            ans := SQLi_step(psql)
+            SQLi_finalize(psql)
+         }
+         transactions := 0;
+      }
+      return \ans
+   end
+
+   # ----------------------------------------
+   # Todo: check if we're in a transaction?
+   method Close()
+      SQLi_close(\db)
+      db := &null
+      return #success
+   end
+
+   # ----------------------------------------
+   method CacheErrMsg(err)
+      cachedErr := err
+      return
+   end
+
+   # ----------------------------------------
+   method ErrMsg()
+      local ans
+      if \cachedErr then {
+         ans := cachedErr
+         cachedErr := &null
+         return ans
+      }
+
+      return SQLi_errmsg(\db)
+   end
+
+   # ----------------------------------------
+   method Exec(sql: string, args[])
+      local ans
+      if BEGIN() then {
+         push(args, sql)
+         push(args, db)
+         if ans := SQLi_Exec ! args then {
+            END(); return ans
+         } else {
+            CacheErrMsg(SQLi_errmsg(db))
+            END()
+         }
+      }
+      # fail
+   end
+
+   # ----------------------------------------
+   method SQL_Row(sql: string, args[])
+      local ans
+      if BEGIN() then {
+         push(args, sql)
+         push(args, db)
+         every ans := (SQLi_Row ! args) do suspend ans
+         END()
+      }
+      # fail
+   end
+
+   # ----------------------------------------
+   method SQL_As_List(sql: string, args[])
+      local ans
+      if BEGIN() then {
+         push(args, sql)
+         push(args, db)
+         if ans := SQLi_As_List ! args then {
+            END(); return ans
+         } else {
+            CacheErrMsg(SQLi_errmsg(db))
+            END()
+         }
+      }
+      # fail
+   end
+
+   # ----------------------------------------
+   method SQL_As_Table(sql: string, indexCol: integer: 1, args[])
+      local ans
+      if BEGIN() then {
+         push(args, indexCol)
+         push(args, sql)
+         push(args, db)
+         if ans := SQLi_As_Table ! args then {
+            END(); return ans
+         } else {
+            CacheErrMsg(SQLi_errmsg(db))
+            END()
+         }
+      }
+      # fail
+   end
+
+   # ----------------------------------------
+   method SQL_As_Set(sql: string, args[])
+      local ans
+      if BEGIN() then {
+         push(args, sql)
+         push(args, db)
+         if ans := SQLi_As_Set ! args then {
+            END(); return ans
+         } else {
+            CacheErrMsg(SQLi_errmsg(db))
+            END()
+         }
+      }
+      # fail
+   end
+
+   # ----------------------------------------
+   method Rows(dbTable: string)
+      local ans
+      if BEGIN() then {
+         if ans := SQLi_Rows(db, dbTable) then {
+            END(); return ans
+         } else {
+            CacheErrMsg(SQLi_errmsg(db))
+            END()
+         }
+      }
+      # fail
+   end
+
+   # ----------------------------------------
+   method isTable(dbTable: string)
+      local ans
+      if BEGIN() then {
+         if ans := SQLi_isTable(db, dbTable) then {
+            END(); return ans
+         } else {
+            CacheErrMsg(SQLi_errmsg(db))
+            END()
+         }
+      }
+      # fail
+   end
+
+   # ----------------------------------------
+   method private_init(waitTime)
+      transactions := 0
+      mtx := mutex()
+      waitSecs := waitTime
+      cachedErr := &null
+   end
+
+   initially(database: string, waitTime: integer: 5)
+      db := SQLi_open(database, "b") # default mode is read/write
+      private_init(waitTime)
+end
+
+# ----------------------------------------------------------------------
+# Open a read only database connection.
+# Because it's read only, we can't have transactions, which require write access.
+class RO_SQLite: SQLite()
+   # ----------------------------------------
+   method BEGIN()
+      return #success
+   end
+
+   # ----------------------------------------
+   method END()
+      return #success
+   end
+
+   # ----------------------------------------
+   method ROLLBACK()
+      write(&errout, "ROLLBACK called on R/O database")
+      fail
+   end
+
+   # ----------------------------------------
+   # N.B. do not call SQLite.initially()
+   initially(database: string, waitTime: integer: 5)
+      db := SQLi_open(database, "r") # read only
+      private_init(waitTime)
+end

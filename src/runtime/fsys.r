@@ -896,13 +896,13 @@ Deliberate Syntax Error
 	    }
 
 	 f = popen(fnamestr, mode);
+         if (NULL == f) {set_errortext(1052); fail;}
 	 if (!strcmp(mode,"r")) {
-	    /* try and read a byte. if we can't treat it as a "bad command" */
+	    /* Try to read a byte. If we can't, treat it as "empty pipe" or "bad command" */
 	    if ((c = getc(f)) == EOF) {
-	       pclose(f);
-	       set_errortext(1050);
-	       fail;
-	       }
+              if (0 == pclose(f)) {set_errortext(1053);} else {set_errortext(1050);}
+              fail;
+            }
 	    else
 	       ungetc(c, f);
 	    }

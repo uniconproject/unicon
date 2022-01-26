@@ -410,6 +410,8 @@ struct errtab errtab[] = {
 
    1050, "command not found",
    1051, "cannot create temporary file",
+   1052, "cannot create pipe",
+   1053, "empty pipe",
 
 #ifdef ISQL
    1100, "ODBC connection expected",

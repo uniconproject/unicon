@@ -1,0 +1,1446 @@
+###########################################################################
+#
+#	File:     ivibtab.icn
+#
+#	Subject:  Unicon IDE's integrated IVIB builder.
+#
+#	Authors:  Jonah Schnettler, Matthew Lane
+#
+#           Contents of this file are adapted from ivib/main.icn,
+#           written by: Robert Parlett (parlett@dial.pipex.com)
+#
+#	Date:     November 8th, 2021
+#
+############################################################################
+#
+#  This program builds the necessary compenents of ivib for IDE
+#  integration. The purpose of this file is to allow the
+#  functionality of ivib to be integrated into ui via a tab set, as
+#  oppose to a dialog window. This allows the integrity of ivib's
+#  stand alone program to remain intact.
+#
+############################################################################
+#
+#  Requires:  graphics, version 2 GUI libraries, and ivib components
+#
+############################################################################
+
+import lang
+import util
+import gui
+
+$include "ivib/version.icn"
+$include "guih.icn"
+
+link "ivib/attribtab", "ivib/basiccanvascomponentui", "ivib/buttongroupset", "ivib/canvas", "ivib/canvasborder", "ivib/canvasborderdialog", "ivib/canvasborderui", "ivib/canvasbutton", "ivib/canvasbuttondialog", "ivib/canvasbuttongroup", "ivib/canvascheckbox", "ivib/canvascheckboxdialog", "ivib/canvascheckboxgroup", "ivib/canvascheckboxmenuedit", "ivib/canvascheckboxmenuitem", "ivib/canvascheckboxui", "ivib/canvascomponent", "ivib/canvascomponentdialog", "ivib/canvascomponentui", "ivib/canvascustom", "ivib/canvascustomdialog", "ivib/canvascustomui", "ivib/canvaseditabletextlist", "ivib/canvaseditabletextlistdialog", "ivib/canvaseditabletextlistui", "ivib/canvaseditlist", "ivib/canvaseditlistdialog", "ivib/canvaseditlistui", "ivib/canvashscrollbarui", "ivib/canvasicon", "ivib/canvasiconbutton", "ivib/canvasiconbuttondialog", "ivib/canvasiconbuttonui", "ivib/canvasicondialog", "ivib/canvasiconui", "ivib/canvasimage", "ivib/canvasimagedialog", "ivib/canvasimageui", "ivib/canvaslabel", "ivib/canvaslabeldialog", "ivib/canvaslabelui", "ivib/canvaslist", "ivib/canvaslistdialog", "ivib/canvaslistui", "ivib/canvasmenu", "ivib/canvasmenubar", "ivib/canvasmenubardialog", "ivib/canvasmenubarui", "ivib/canvasmenubutton", "ivib/canvasmenubuttonui", "ivib/canvasmenucomponent", "ivib/canvasmenucomponentdialog", "ivib/canvasmenuseparator", "ivib/canvasmenuseparatoredit", "ivib/canvasoverlayitem", "ivib/canvasoverlayset", "ivib/canvasoverlaysetdialog", "ivib/canvasoverlaysetui", "ivib/canvaspanel", "ivib/canvaspaneldialog", "ivib/canvaspanelui", "ivib/canvasscrollbar", "ivib/canvasscrollbardialog", "ivib/canvastabitem", "ivib/canvastable", "ivib/canvastablecolumn", "ivib/canvastabledialog", "ivib/canvastableui", "ivib/canvastabset", "ivib/canvastabsetdialog", "ivib/canvastabsetui", "ivib/canvastextbutton", "ivib/canvastextbuttondialog", "ivib/canvastextbuttonui", "ivib/canvastextfield", "ivib/canvastextfielddialog", "ivib/canvastextfieldui", "ivib/canvastextlist", "ivib/canvastextlistdialog", "ivib/canvastextlistui", "ivib/canvastextmenuitem", "ivib/canvastoolbar", "ivib/canvastoolbardialog", "ivib/canvastoolbarui", "ivib/canvasvscrollbarui", "ivib/cdialog", "ivib/checkboxgroupset", "ivib/choicedialog", "ivib/code", "ivib/commondialog", "ivib/componentsort", "ivib/custom", "ivib/eventtab", "ivib/gridelement", "ivib/gridset", "ivib/group", "ivib/groupset", "ivib/groupsetdialog", "ivib/hcomponentsort", "ivib/infodialog", "ivib/ivibmigrate", "ivib/main", "ivib/menucomponentedit", "ivib/menutree", "ivib/menutreenode", "ivib/savechangesdialog", "ivib/utils", "ivib/vcomponentsort", "ivib/version", "ivib/canvashlineui", "ivib/canvasline", "ivib/canvaslinedialog", "ivib/canvasvlineui", "ivib/canvastreeui", "ivib/canvastree", "ivib/canvastreedialog", "ivib/canvaslistspinui", "ivib/canvaslistspin", "ivib/canvaslistspindialog", "ivib/canvasrangespinui", "ivib/canvasrangespin", "ivib/canvasrangespindialog", "ivib/canvashsliderui", "ivib/canvasslider", "ivib/canvassliderdialog", "ivib/canvasvsliderui", "ivib/canvashsizerui", "ivib/canvassizer", "ivib/canvassizerdialog", "ivib/canvasvsizerui"
+
+############################################################################
+#
+# Class for building integrated version of ivib.
+#
+$define CANVAS_SURROUND 30
+#
+class IvibTab : Component(
+   bg,                      # Button group of tool bar buttons
+   canvas,                  # The drawing canvas
+   prefs,                   # Preferences structure
+   preferences,             # Current dialog preferences
+   check_boxes,             # Check boxes control dialog
+   selections_menu,         # Selections menu
+   button_groups,           # Button groups control dialog
+   filename_label,          # Label for current filename
+   info_label,              # Label for other info
+   pos_label,               # Label for positional info
+   undo_list,               # List of canvases for undo command
+   redo_list,               # List of canvases for redo command
+   extra_undo,              # Additional undo for canceling certain commands
+   args,                    # Command line arguments
+   new,                     # New canvas function
+   orig_canvas_width,       # Variables for re-sizing canvas
+   orig_canvas_height,      #
+   tool_area_height,        #
+   prog_preferences,        # Program preferences function
+   centre_horiz,            # Centre horizontally command
+   grid,                    # Grid command
+   reorder,                 # Reorder items command
+   mdelete,                 # Delete items
+   mcopy,                   # Copy item
+   mdialog,                 # Open item dialog box.
+   sel_up,                  # Move selection up
+   undo,                    # Undo
+   redo,                    # Redo
+   centre_vert,             # Centre vertically command
+   popup_component,         # Popup on component
+   popup_component_dialog,
+   popup_component_delete,
+   popup_component_fix,     # Vertically fix command
+   popup_component_unfix,   # Unfix command
+   popup_component_save,    # Save component command
+   popup_dialog,            # Popup on dialog
+   popup_dialog_dialog,     #
+   popup_dialog_save_component,       #
+   popup_dialog_component_load,
+   component_save,
+   component_load,
+   even_horiz,              # Even space horizontally/vertically commands
+   even_vert,
+   even_horiz_container,    # Even space in container
+   even_vert_container,
+   end_to_end_vert,
+   end_to_end_horiz,
+   equalize_widths,         # Equalize widths/heights
+   equalize_heights,
+   copy_attribs,            # Copy attributes
+   align_horiz,             # Align horizontally command
+   align_vert,              # Align vertically command
+   last_icon_dir,
+   last_layout_dir,
+   checkboxgroup_button,    # Toolbar buttons
+   buttongroup_button,
+   delete_button,
+   undo_button,
+   redo_button,
+   centre_horiz_button,
+   centre_vert_button,
+   align_horiz_button,
+   align_vert_button,
+   grid_button,
+   copy_button,
+   last_icn_dir,
+   source		    # source file (list of strings)
+   )
+
+   #
+   #  Handle alert_error from child classes and displays them in Message Box in UI.
+   #  -main.icn handles alert_error by passing the alert_error up to CommonDialog
+   #   where it is handled.
+   #
+   method alert_error(s)
+      uidlog.MsgBox.set_contents("Error at - ", s)
+   end
+
+########################################################
+# Set state for shading of the selection menu option.
+#
+
+   #
+   # Shade buttons/menu relating to selections.
+   #
+   method shade_selection_options()
+      selections_menu.set_is_shaded()
+   end
+
+   #
+   # Clear buttons/menu relating to selections.
+   #
+   method clear_selection_options()
+      selections_menu.clear_is_shaded()
+   end
+
+########################################################
+# Methods for undo and redo functionality.
+#
+
+   #
+   # Clear undo list
+   #
+   method clear_undo()
+      self.undo_list := []
+      self.undo.set_is_shaded()
+      self.undo_button.set_is_shaded()
+   end
+
+   #
+   # Get undo item
+   #
+   method get_undo()
+      local res
+      res := get(undo_list)
+      if *undo_list = 0 then
+         clear_undo()
+      return res
+   end
+
+   #
+   # Push an undo item
+   #
+   method push_undo_list(d)
+      push(undo_list, d)
+      #
+      # Reduce to correct size.
+      #
+      while *undo_list > self.prefs.undo_size do
+         pull(undo_list)
+
+      if *undo_list > 0 then {
+         self.undo.clear_is_shaded()
+         self.undo_button.clear_is_shaded()
+      } else
+         clear_undo()
+   end
+
+   #
+   # Clear redo list
+   #
+   method clear_redo()
+      self.redo_list := []
+      self.redo.set_is_shaded()
+      self.redo_button.set_is_shaded()
+   end
+
+   #
+   # Get redo item
+   #
+   method get_redo()
+      local res
+      res := get(redo_list)
+      if *redo_list = 0 then
+         clear_redo()
+      return res
+   end
+
+   #
+   # Push an redo item
+   #
+   method push_redo_list(d)
+      push(redo_list, d)
+      self.redo.clear_is_shaded()
+      self.redo_button.clear_is_shaded()
+   end
+
+
+   #
+   # Store current canvas in extra_undo variable
+   #
+   method save_extra_undo()
+      self.extra_undo := self.canvas.dup()
+   end
+
+   #
+   # Retrieve from extra_undo
+   #
+   method use_extra_undo()
+      self.undo_to(self.extra_undo)
+   end
+
+   #
+   # Push copy of current canvas onto undo list.
+   #
+   method push_undo()
+      self.push_onto_undo(self.canvas.dup())
+   end
+
+   #
+   # Push a canvas onto undo list.
+   #
+   method push_onto_undo(d)
+      #
+      # Reset redo list
+      #
+      self.clear_redo()
+      self.push_undo_list(d)
+   end
+
+   #
+   # Undo operation.
+   #
+   method op_Undo()
+      local c
+      c := self.get_undo()
+      self.push_redo_list(self.canvas.dup())
+      self.undo_to(c)
+      self.canvas.erase_and_display()
+      self.canvas.update_pos_label()
+      reset_canvas_pos(self.canvas)
+      info_label.set_label("Undone")
+      self.set_filename_label()
+      self.resize()
+   end
+
+   #
+   # Redo operation.
+   #
+   method op_Redo()
+      local c
+      c := self.get_redo()
+      self.push_undo_list(self.canvas.dup())
+      self.undo_to(c)
+      self.canvas.erase_and_display()
+      self.canvas.update_pos_label()
+      reset_canvas_pos(self.canvas)
+      info_label.set_label("Redone")
+      self.set_filename_label()
+      self.resize()
+   end
+
+   #
+   # Replace current canvas with c
+   #
+   method undo_to(c)
+      local i
+      #
+      # Dispose of current canvas
+      #
+      self.canvas.finally()
+
+      if self.parent_dialog.focus === self.canvas then
+         self.parent_dialog.focus := &null
+      every i := 1 to *self.children do
+         if self.children[i] === self.canvas then {
+            self.children[i] := self.canvas := c
+            break
+         }
+
+      #
+      # Setup rest of fields in new canvas.
+      #
+      self.canvas.set_parent(self)
+      self.canvas.init()
+      self.canvas.restore()
+
+      if *self.canvas.selections > 0 then
+         self.clear_selection_options()
+      else
+         self.shade_selection_options()
+
+        return
+      end
+
+########################################################
+# Method to set filename of canvas object.
+#
+
+   #
+   # Set filename_label to reflect current status of canvas.
+   #
+   method set_filename_label()
+      local s
+      s := \self.canvas.filename | "Untitled"
+      if \self.canvas.modified then
+         s ||:= " *"
+      self.filename_label.set_label(file_name(s))
+   end
+
+########################################################
+# Methods for component alignment in canvas.
+#
+
+   #
+   # Centre horizontally operation.
+   #
+   method op_Centre_horiz()
+      canvas.centre_horiz_selections()
+   end
+
+   #
+   # Centre vertically operation.
+   #
+   method op_Centre_vert()
+      canvas.centre_vert_selections()
+   end
+
+   #
+   # Move selection up one level
+   #
+   method op_select_up()
+      canvas.select_up()
+   end
+
+   #
+   # Align horizontally operation.
+   #
+   method op_Align_horiz()
+      canvas.align_horiz_selections()
+   end
+
+   #
+   # Align vertically operation.
+   #
+   method op_Align_vert()
+      canvas.align_vert_selections()
+   end
+
+   #
+   # Grid operation
+   #
+   method op_Grid()
+      canvas.grid_selections()
+   end
+
+   #
+   # Reorder operation
+   #
+   method op_Reorder()
+      canvas.reorder_selections()
+   end
+
+   #
+   # Even space horizontally
+   #
+   method op_even_horiz()
+      canvas.even_selections_horizontally()
+   end
+
+   #
+   # Even space vertically
+   #
+   method op_even_vert()
+      canvas.even_selections_vertically()
+   end
+
+   #
+   # End-to-end horizontally
+   #
+   method op_end_to_end_horiz()
+      canvas.end_to_end_selections_horizontally()
+   end
+
+   #
+   # End-to-end vertically
+   #
+   method op_end_to_end_vert()
+      canvas.end_to_end_selections_vertically()
+   end
+
+   #
+   # Even space horizontally
+   #
+   method op_even_horiz_container()
+      canvas.even_selections_container_horizontally()
+   end
+
+   #
+   # Even space vertically
+   #
+   method op_even_vert_container()
+      canvas.even_selections_container_vertically()
+   end
+
+   #
+   # Equalize widths
+   #
+   method op_equalize_widths()
+      canvas.equalize_width_selections()
+   end
+
+   #
+   # Equalize heights
+   #
+   method op_equalize_heights()
+      canvas.equalize_height_selections()
+   end
+
+   #
+   # Equalize heights
+   #
+   method op_copy_attribs()
+      canvas.copy_attribs()
+   end
+
+########################################################
+# Methods to create components and add them to the
+#  canvas.
+#
+
+   #
+   # Add a new CanvasComponent using the given CanvasComponentUI to
+   # create it.
+   #
+   method create_in_canvas(object_ui)
+      local t
+      self.push_undo()
+      t := object_ui.create_canvas_component(self.canvas)
+      add_new_object(t)
+   end
+
+   #
+   # Create a CheckBoxGroup
+   #
+   method op_CheckBoxGroup()
+      canvas.selections_to_cbg()
+   end
+
+   #
+   # Create a ButtonGroup
+   #
+   method op_ButtonGroup()
+      canvas.selections_to_bg()
+   end
+
+########################################################
+# Methods to for copy, and deletion of components
+# + fixing, and unfixing components position.
+#
+
+   #
+   # Copy the selected objects.
+   #
+   method op_Copy()
+      canvas.copy_selections()
+   end
+
+   #
+   # Delete the selected objects.
+   #
+   method op_Delete()
+      canvas.delete_selections()
+   end
+
+   #
+   # Fix the selected objects
+   #
+   method op_fix()
+      canvas.fix()
+   end
+
+   #
+   # Unfix the selected objects
+   #
+   method op_unfix()
+      canvas.unfix()
+   end
+
+########################################################
+# Methods to create and open dialog windows for canvas
+#  preferences.
+#
+# -These methods have been changed to handle show_modal
+#  appropriately for ivib integration with UI.
+#
+
+   #
+   # Canvas dialog preferences.
+   #
+   method op_preferences()
+      local t, d
+      t := self.canvas.dup()
+      d := canvas.dialog()
+      d.show_modal(self.parent_dialog)
+      if \d.get_okay_result() then {
+         self.push_onto_undo(t)
+         self.canvas.set_modified()
+         self.canvas.erase_and_display()
+         self.canvas.update_pos_label()
+      }
+   end
+
+   #
+   # Dialog (Ctrl-d) function.
+   #
+   method op_dialog()
+      local d, t
+
+      if /self.canvas.selected then
+         op_preferences()
+      else {
+         t := canvas.dup()
+         d := canvas.selected.dialog()
+         d.show_modal(self.parent_dialog)
+         if \d.get_okay_result() then {
+            self.push_onto_undo(t)
+            canvas.set_modified()
+            canvas.invalidate()
+            canvas.update_pos_label()
+         }
+      }
+   end
+
+   #
+   # Program preferences (see dialog below).
+   #
+   method op_prog_preferences()
+      local d
+      d := Preferences(self)
+      d.show_modal(self.parent_dialog)
+   end
+
+   #
+   # CheckBoxGroup dialog.
+   #
+   method op_check_boxes()
+      local t, d
+      t := self.canvas.dup()
+      d := GroupSetDialog(canvas.checkbox_groups)
+      d.show_modal(self.parent_dialog)
+      if \d.get_okay_result() then {
+         self.push_onto_undo(t)
+         self.canvas.set_modified()
+      }
+   end
+
+   #
+   # ButtonGroup dialog.
+   #
+   method op_button_groups()
+      local t, d
+      t := self.canvas.dup()
+      d := GroupSetDialog(canvas.button_groups)
+      d.show_modal(self.parent_dialog)
+      if \d.get_okay_result() then {
+         self.push_onto_undo(t)
+         self.canvas.set_modified()
+      }
+   end
+
+   #
+   #    --Temporarily removed--
+   # Maybe be added to UI if wanted.
+   #
+   # About operation.
+   #
+#   method op_about()
+#      local d
+#      d := InfoDialog(["Ivib Version : " || version_number,
+#                       "Date : " || version_date,
+#                       "Author : " || version_author], "About ivib")
+#      d.show_modeless(self)
+#      return
+#   end
+
+########################################################
+# Method for saving ivib configuration and generating
+# the code for future use.
+#
+# -These methods have been simplified to one save
+#  method since UI handles save.. and saveas..
+#  operations.
+#
+
+   #
+   # Save ivib operation
+   #
+   method op_save_ivib(filename)
+      local c
+      # If file is not new and not modified, then don't save.
+      if /self.canvas.new_file_flag & /self.canvas.modified then {
+         self.info_label.set_label("No changes need to be saved")
+         return
+      }
+      self.source := filename
+
+      #Generate IVIB code for GUI implementation.
+      c := self.canvas.gen_code()
+
+      # Add code to file or fail.
+      if /filename | \self.canvas.new_file_flag then
+         c.output_code(filename) | fail
+      else
+         c.interpose_code(filename) | fail
+
+      # Clear modified and reset filename without "*".
+      self.canvas.clear_modified()
+      self.canvas.set_filename(filename)
+
+      # Set info_label to show what was written.
+      self.info_label.set_label("Wrote " || filename)
+
+      # Clear undo and redo buffor for ivib.
+      self.clear_undo()
+      self.clear_redo()
+   end
+
+########################################################
+# Method for loading canvas, components, and layouts
+# for v1 and v2 of ivib.
+#
+
+   #
+   # Load component operation.
+   #
+   method op_component_load(x, y)
+      local fd, s, f, c, d
+      fd := FileDialog()
+      fd.set_fields(["bg=light gray", "fg=black", "font=serif", "resize=on"])
+      fd.set_directory(\last_layout_dir)
+      fd.show_modal(self.parent_dialog)
+      s := fd.get_result() | fail
+      last_layout_dir := fd.get_directory()
+      f := ::open(s) | return uidlog.MsgBox.set_contents("Couldn't open " || s)
+
+      if not(c := lang::decode(read(f))) then
+         return uidlog.MsgBox.set_contents("Invalid file format")
+
+      self.push_undo()
+
+      c.set_pos(x, y)
+
+      #
+      # Set up the fields recursively by duplicating the uninitialized object.
+      #
+      d := c.dup(self.canvas, self.canvas)
+      d.set_parent(self.canvas)
+      d.init()
+      d.resize()
+      d.firstly()
+
+      #
+      # Now add it to the canvas.
+      #
+      self.canvas.add(d)
+      self.canvas.set_modified()
+      self.invalidate()
+   end
+
+   #
+   # Given a file f, return a Canvas object
+   #
+   method load_canvas(f, fname)
+      local s, cd
+      source := [ ]
+      repeat {
+	 if not (s := read(f)) then {
+	    cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
+	    cd.show_modal()
+	    if not cd.result() then fail
+	    # no ivib layout, need to append
+	    close(f)
+	    if f := open(fname, "w") then {
+	       # write L
+	       every write(f, !source)
+	       # write the empty layout
+	       append_ivib(f)
+	       close(f)
+	       source := [ ]
+	       if f := open(fname) then {
+		  uidlog.MsgBox.set_contents("added an Ivib interface")
+		  next
+		  }
+	       else return uidlog.MsgBox.set_contents("Failed to append layout to " || fname)
+	       }
+	    else
+	       return uidlog.MsgBox.set_contents("No Ivib layout in " || fname)
+	    }
+	 if s == v1_marker then
+	    return load_v1(f, fname)
+	 if s == v2_marker then
+	    return load_v2(f, fname)
+	 put(source, s)
+	 }
+   end
+
+   method load_layout(f, fname)
+      local s, t
+      t := ""
+      while s := read(f) do {
+	 put(source, s)
+         if s[1] == "#" then
+            t ||:= s[2:0]
+         else
+            break
+      }
+      if *t = 0 then
+         return uidlog.MsgBox.set_contents("Misformed Ivib layout in " || fname)
+
+      return t
+   end
+
+   #
+   # Load a v1 format layout.
+   #
+   method load_v1(f, fname)
+      local s, c, d
+
+      s := load_layout(f, fname)
+      s := migrate(s) |  return uidlog.MsgBox.set_contents("Unable to migrate " || s)
+      if not(c := lang::decode(s)) then
+         return uidlog.MsgBox.set_contents("Invalid file format")
+
+      d := InfoDialog(["Ivib v1 file successfully loaded.",
+                       "",
+                       "NB - some manual editing may be needed after",
+                       "the file is next saved."],
+                       "Ivib v1 import",
+                       310,
+                       "Close",
+                       "l")
+      #
+      # The canvas is set as modified - so that the v2 changes can
+      # simply be saved.
+      #
+      c.modified := 1
+      d.show_modal(self.parent_dialog)
+      return c
+   end
+
+   #
+   # Load a v2 format layout.
+   #
+   method load_v2(f, fname)
+      local s, c
+      s := load_layout(f, fname)
+      if not(c := lang::decode(s)) then
+         return uidlog.MsgBox.set_contents("Invalid file format")
+
+      return c
+   end
+
+################################################################
+# Append an (empty/default) ivib interface to a source file that
+# doesn't have one.  f must be a file open for writing, at the
+# end after having written a copy of the non-ivib program.
+#
+# The code here has been modified to add close operation to
+# the window close action event. Also instructions for
+# terminating a program and dispose of a single dialog window
+# have been added as well in comments.
+
+   #
+   # Append gui code to file.
+   #
+   method append_ivib(f)
+   L := ["import gui",
+      "$include \"guih.icn\"",
+      "",
+      "class Untitled : Dialog()",
+      "   method component_setup()",
+      "      self.setup()",
+      "   end",
+      "",
+      "   method end_dialog()",
+      "      #To close overall program use: exit(0)",
+      "      #To close a single dialog window use: dispose()",
+      "   end",
+      "",
+      "   method init_dialog()",
+      "   end",
+      "",
+      "   method setup()",
+      "      self.set_attribs(\"size=644,399\")",
+      "   end",
+      "",
+      "   initially",
+      "      self.Dialog.initially()",
+      "      self.connect(self, \"dispose\", CLOSE_BUTTON_EVENT)",
+      "end",
+      "",
+      "#You can invoke your ivib layout with something like this:",
+      "#procedure main()",
+      "#   local d",
+      "#   d := Untitled()",
+      "#   d.show_modal()",
+      "#end",
+      "",
+      "### Ivib-v2 layout ##",
+      "#class|Canvas|17|Name Table|table|integer|0|1|string|label|integer|1|Su",
+      "#perClass Name|string|Dialog|Import Name|string|gui|Button Groups|class",
+      "#|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|C",
+      "#heckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Ge",
+      "#n Main|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|integer",
+      "#|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min Width|nul",
+      "#l|Min Height|null|Ticker Rate|null|Attribs|list|0|Name|string|Untitled",
+      "#|Width|integer|644|Height|integer|399|Items|list|0|Initial Focus|null|",
+      "#Event Handlers|null|"
+      ]
+   every write(f, !L)
+   end
+
+########################################################
+# Methods for handling new or opening existing files.
+# -These methods are now called by UI's method.
+#
+
+   #
+   # New canvas operation.
+   #
+   method op_new()
+      self.clear_undo()
+      self.clear_redo()
+      self.canvas.finally()
+      self.canvas.new()
+      self.canvas.set_size(orig_canvas_width, orig_canvas_height)
+      self.canvas.set_parent(self)
+      self.canvas.init()
+      self.canvas.restore()
+      self.canvas.erase_and_display()
+      self.canvas.update_pos_label()
+      self.canvas.set_filename("Untitled.icn")
+      popup_dialog_save_component.set_is_shaded()
+      self.canvas.clear_modified()
+   end
+
+   #
+   # Open file operation.
+   #
+   method op_open_file(filename)
+      local f, c
+
+      f := ::open(filename) | return uidlog.MsgBox.set_contents("Couldn't open " || filename)
+      c := load_canvas(f, filename) | fail
+      self.clear_undo()
+      self.clear_redo()
+      reset_canvas_pos(c)
+      c.set_size(c.w, c.h)
+      self.undo_to(c)
+      self.canvas.erase_and_display()
+      self.canvas.update_pos_label()
+      self.canvas.set_filename(filename)
+      popup_dialog_save_component.clear_is_shaded()
+      self.canvas.clear_modified()
+      close(f)
+   end
+
+########################################################
+# Component operations
+#
+
+   #
+   # Popup Dialog to set component load position.
+   #
+   method op_popup_dialog_component_load()
+      op_component_load(popup_dialog.x - canvas.x, popup_dialog.y - canvas.y)
+   end
+
+   #
+   # Load component at position (10, 10)
+   #
+   method op_component_load_10()
+      op_component_load(10, 10)
+   end
+
+   #
+   # Save component
+   #
+   method op_component_save()
+      canvas.component_save()
+   end
+
+   #
+   # Add a new object to the canvas at pos.
+   #
+   method add_new_object(c)
+      static add_count
+      initial
+         add_count := 0
+      c.set_name(self.canvas.get_new_name(c.name))
+      #
+      # Default x, y.  Try to avoid successive adds covering each other.
+      #
+      /c.x_spec := 10 + 7 * (add_count % 4)
+      /c.y_spec := 10 + 7 * (add_count % 4)
+      add_count +:= 1
+      c.set_align("l", "t")
+      c.set_parent_Canvas(self.canvas)
+      c.set_parent(self.canvas)
+      c.init()
+      c.resize()
+      c.firstly()
+      self.canvas.add(c)
+      self.canvas.set_modified()
+      self.canvas.invalidate()
+   end
+
+
+   #
+   # Reset canvas position to avoid canvas shifting problem.
+   #
+   method reset_canvas_pos(canvas)
+      canvas.set_pos(CANVAS_SURROUND, self.tool_area_height + CANVAS_SURROUND)
+      canvas.erase_and_display()
+      self.canvas.update_pos_label()
+      self.resize()
+   end
+
+########################################################
+# Methods for handling configuration files.
+#
+
+   method get_config_file_name()
+      local s
+
+      s := ("" ~== getenv("HOME")) | "."
+
+      return s || "/.ivibrc"
+   end
+
+   method read_config_file()
+      local f
+      if f := ::open(get_config_file_name()) then {
+         if not(self.prefs := lang::decode(read(f))) then {
+            self.prefs := Prefs()
+            return uidlog.MsgBox.set_contents("Invalid config file format")
+         }
+      } else
+         self.prefs := Prefs()
+   end
+
+   method save_config_file()
+      local f
+      f := ::open(get_config_file_name(), "w") | return uidlog.MsgBox.set_contents("Couldn't open config file : " || get_config_file_name())
+
+      write(f, lang::encode(self.prefs))
+
+      close(f)
+      return
+   end
+
+########################################################
+
+   #
+   # Handle dialog events.
+   #
+   method handle_icon_event(ev)
+      case ev.get_param() of {
+         "\r" : op_dialog()
+         "\^o" : op_open_file()
+         "\^d" : op_dialog()
+         "\^n" : op_new()
+         "\^u" : op_select_up()
+         "\^z" : if /undo.is_shaded_flag then op_Undo()
+         "\^y" : if /redo.is_shaded_flag then op_Redo()
+         "\d" : op_Delete()  #swj
+      }
+   end
+
+   #
+   # Push code to UI file tab.
+   # -Gives functionality for ivib's integration with ui.
+   #
+   method op_push_code_to_ui()
+      ide.on_save_btn()
+      ide.updatefile(self.canvas.filename)
+   end
+
+
+
+   initially
+         local c, mb, file, edit, alignment_sub_menu, spacing_sub_menu, copy_sub_menu,
+            uis, objects_menu, tb, ui, listener, mi, ui_button, width, m, height, x, y,
+              push_code_button, blank_window
+
+         self.Component.initially()
+
+         c := Clear(self)
+         self.add(c)
+
+         x := 0
+         y := 25
+
+         mb := MenuBar()
+         mb.set_size(, y)
+         self.add(mb)
+
+         edit := Menu()
+         edit.set_label("Canvas")
+         edit.set_accel("c")
+         mb.add(edit)
+
+         preferences := TextMenuItem()
+         preferences.set_label("Dialog prefs...")
+         preferences.set_accel("d")
+         edit.add(preferences)
+
+         check_boxes := TextMenuItem()
+         check_boxes.set_label("CheckBoxes...")
+         check_boxes.set_accel("c")
+         edit.add(check_boxes)
+
+         button_groups := TextMenuItem()
+         button_groups.set_label("ButtonGroups...")
+         button_groups.set_accel("b")
+         edit.add(button_groups)
+
+         component_load := TextMenuItem()
+         component_load.set_label("Load Component")
+         component_load.set_accel("l")
+         edit.add(component_load)
+
+         undo := TextMenuItem()
+         undo.set_label("Undo")
+         undo.set_accel("u")
+         undo.set_label_right("Ctrl-z")
+         edit.add(undo)
+
+         redo := TextMenuItem()
+         redo.set_label("Redo")
+         redo.set_accel("r")
+         redo.set_label_right("Ctrl-y")
+         edit.add(redo)
+
+         selections_menu := Menu()
+         selections_menu.set_label("Selection")
+         selections_menu.set_accel("s")
+         mb.add(selections_menu)
+
+         alignment_sub_menu := Menu()
+         alignment_sub_menu.set_label("Alignment")
+         alignment_sub_menu.set_accel("a")
+         selections_menu.add(alignment_sub_menu)
+
+         spacing_sub_menu := Menu()
+         spacing_sub_menu.set_label("Spacing")
+         spacing_sub_menu.set_accel("s")
+         selections_menu.add(spacing_sub_menu)
+
+         copy_sub_menu := Menu()
+         copy_sub_menu.set_label("Copy")
+         copy_sub_menu.set_accel("c")
+         selections_menu.add(copy_sub_menu)
+
+         centre_horiz := TextMenuItem()
+         centre_horiz.set_label("Centre horizontally")
+         alignment_sub_menu.add(centre_horiz)
+
+         centre_vert := TextMenuItem()
+         centre_vert.set_label("Centre vertically")
+         alignment_sub_menu.add(centre_vert)
+
+         align_horiz := TextMenuItem()
+         align_horiz.set_label("Align horizontally")
+         alignment_sub_menu.add(align_horiz)
+
+         align_vert := TextMenuItem()
+         align_vert.set_label("Align vertically")
+         alignment_sub_menu.add(align_vert)
+
+         end_to_end_horiz := TextMenuItem()
+         end_to_end_horiz.set_label("End to end horizontally")
+         alignment_sub_menu.add(end_to_end_horiz)
+
+         end_to_end_vert := TextMenuItem()
+         end_to_end_vert.set_label("End to end vertically")
+         alignment_sub_menu.add(end_to_end_vert)
+
+         even_horiz := TextMenuItem()
+         even_horiz.set_label("Even space horizontally")
+         spacing_sub_menu.add(even_horiz)
+
+         even_vert := TextMenuItem()
+         even_vert.set_label("Even space vertically")
+         spacing_sub_menu.add(even_vert)
+
+         even_horiz_container := TextMenuItem()
+         even_horiz_container.set_label("Space horizontally in Container")
+         spacing_sub_menu.add(even_horiz_container)
+
+         even_vert_container := TextMenuItem()
+         even_vert_container.set_label("Space vertically in Container")
+         spacing_sub_menu.add(even_vert_container)
+
+         grid := TextMenuItem()
+         grid.set_label("Grid")
+         spacing_sub_menu.add(grid)
+
+         mcopy := TextMenuItem()
+         mcopy.set_label("Copy selections")
+         copy_sub_menu.add(mcopy)
+
+         equalize_widths := TextMenuItem()
+         equalize_widths.set_label("Equalize widths")
+         copy_sub_menu.add(equalize_widths)
+
+         equalize_heights := TextMenuItem()
+         equalize_heights.set_label("Equalize heights")
+         copy_sub_menu.add(equalize_heights)
+
+         copy_attribs := TextMenuItem()
+         copy_attribs.set_label("Copy attribs")
+         copy_sub_menu.add(copy_attribs)
+
+         reorder := TextMenuItem()
+         reorder.set_label("Reorder")
+         reorder.set_accel("r")
+         selections_menu.add(reorder)
+
+         mdelete := TextMenuItem()
+         mdelete.set_label("Delete")
+         mdelete.set_accel("d")
+         selections_menu.add(mdelete)
+
+         mdialog := TextMenuItem()
+         mdialog.set_label("Dialog")
+         mdialog.set_accel("i")
+         selections_menu.add(mdialog)
+
+         sel_up := TextMenuItem()
+         sel_up.set_label("Select up")
+         sel_up.set_accel("u")
+         sel_up.set_label_right("Ctrl-u")
+         selections_menu.add(sel_up)
+
+         component_save := TextMenuItem()
+         component_save.set_label("Save")
+         component_save.set_accel("s")
+         selections_menu.add(component_save)
+
+         read_config_file()
+
+         uis := [CanvasTextButtonUI(),
+                 CanvasLabelUI(),
+                 CanvasTextFieldUI(),
+                 CanvasBorderUI(),
+                 CanvasIconButtonUI(),
+                 CanvasIconUI(),
+                 CanvasImageUI(),
+                 CanvasCheckBoxUI(),
+                 CanvasMenuBarUI(),
+                 CanvasVScrollBarUI(),
+                 CanvasHScrollBarUI(),
+                 CanvasPanelUI(),
+                 CanvasTabSetUI(),
+                 CanvasMenuButtonUI(),
+                 CanvasOverlaySetUI(),
+                 CanvasTextListUI(),
+                 CanvasEditableTextListUI(),
+                 CanvasListUI(),
+                 CanvasEditListUI(),
+                 CanvasToolBarUI(),
+                 CanvasListSpinUI(),
+                 CanvasRangeSpinUI(),
+                 CanvasHSliderUI(),
+                 CanvasVSliderUI(),
+                 CanvasHLineUI(),
+                 CanvasVLineUI(),
+                 CanvasHSizerUI(),
+                 CanvasVSizerUI(),
+                 CanvasTableUI(),
+                 CanvasCustomUI(),
+                 CanvasTreeUI()
+                 ]
+
+         objects_menu := Menu()
+         objects_menu.set_label("Objects")
+         objects_menu.set_accel("o")
+         mb.add(objects_menu)
+
+         tb := CustomToolBar()
+         tb.set_pos(0, y)
+
+         every ui := !uis do {
+            listener := ObjectActionListener(self, ui)
+            mi := ui.add_to_menu(objects_menu)
+            mi.connect(listener, "on_event", ACTION_EVENT)
+            if ui_button := ui.get_button() then {
+               tb.add_button(ui_button)
+               ui_button.connect(listener, "on_event", ACTION_EVENT)
+            }
+         }
+
+         checkboxgroup_button := IconButton()
+         checkboxgroup_button.set_img(
+                                      $include "ivib/icon/icn22.icon"
+                                      )
+         checkboxgroup_button.set_tooltip("CheckBoxGroup")
+         tb.add_button(checkboxgroup_button)
+
+         buttongroup_button := IconButton()
+         buttongroup_button.set_img(
+                                    $include "ivib/icon/icn23.icon"
+                                    )
+         buttongroup_button.set_tooltip("ButtonGroup")
+         tb.add_button(buttongroup_button)
+
+         delete_button := IconButton()
+         delete_button.set_img(
+                               $include "ivib/icon/icn24.icon"
+                               )
+         delete_button.set_tooltip("Delete")
+         tb.add_button(delete_button)
+
+         undo_button := IconButton()
+         undo_button.set_img(
+                             $include "ivib/icon/icn25.icon"
+                             )
+         undo_button.set_tooltip("Undo")
+         tb.add_button(undo_button)
+
+         redo_button := IconButton()
+         redo_button.set_img(
+                             $include "ivib/icon/icn26.icon"
+                             )
+         redo_button.set_tooltip("Redo")
+         tb.add_button(redo_button)
+
+         centre_horiz_button := IconButton()
+         centre_horiz_button.set_img(
+                               $include "ivib/icon/icn27.icon"
+                               )
+         centre_horiz_button.set_tooltip("Centre Horizontally")
+         tb.add_button(centre_horiz_button)
+
+         centre_vert_button := IconButton()
+         centre_vert_button.set_img(
+                               $include "ivib/icon/icn28.icon"
+                               )
+         centre_vert_button.set_tooltip("Centre Vertically")
+         tb.add_button(centre_vert_button)
+
+         align_horiz_button := IconButton()
+         align_horiz_button.set_img(
+                              $include "ivib/icon/icn29.icon"
+                              )
+         align_horiz_button.set_tooltip("Align Horizontally")
+         tb.add_button(align_horiz_button)
+
+         align_vert_button := IconButton()
+         align_vert_button.set_img(
+                              $include "ivib/icon/icn30.icon"
+                              )
+         align_vert_button.set_tooltip("Align Vertically")
+         tb.add_button(align_vert_button)
+
+         grid_button := IconButton()
+         grid_button.set_img(
+                             $include "ivib/icon/icn31.icon"
+                             )
+         grid_button.set_tooltip("Grid")
+         tb.add_button(grid_button)
+
+         copy_button := IconButton()
+         copy_button.set_img(
+                             $include "ivib/icon/icn32.icon"
+                             )
+         copy_button.set_tooltip("Copy")
+         tb.add_button(copy_button)
+
+         push_code_button := IconButton()
+         push_code_button.set_img(
+                                  $include "ivib/icon/save.icon"
+                                  )
+         push_code_button.set_tooltip("Push_Code")
+         tb.add_button(push_code_button)
+
+         y +:= tb.h_spec + 3
+         width := tb.w_spec
+
+         self.add(tb)
+
+         #
+         # Create the three text labels below the tool bar.
+         #
+         filename_label := Label()
+         filename_label.set_size(150, 25)
+         filename_label.set_draw_border()
+         filename_label.set_pos(0, y)
+         filename_label.set_label("")
+         self.add(filename_label)
+
+         info_label := Label()
+         info_label.set_size("100%-275", 25)
+         info_label.set_draw_border()
+         info_label.set_pos(150, y)
+         info_label.set_label("")
+         self.add(info_label)
+
+         pos_label := Label()
+         pos_label.set_attribs("font=serif,10")
+         pos_label.set_size(125, 25)
+         pos_label.set_draw_border()
+         pos_label.set_pos("100%-125", y)
+         pos_label.set_label("")
+         self.add(pos_label)
+
+         popup_dialog := PopupMenu()
+         m := Menu()
+         popup_dialog.set_menu(m)
+         popup_dialog_dialog := TextMenuItem()
+         popup_dialog_dialog.set_label("Dialog")
+         m.add(popup_dialog_dialog)
+         popup_dialog_save_component := TextMenuItem()
+         popup_dialog_save_component.set_label("Save")
+         popup_dialog_save_component.set_is_shaded()
+         m.add(popup_dialog_save_component)
+         popup_dialog_component_load := TextMenuItem()
+         popup_dialog_component_load.set_label("Load Component")
+         m.add(popup_dialog_component_load)
+
+         self.add(popup_dialog)
+
+         popup_component := PopupMenu()
+         m := Menu()
+         popup_component.set_menu(m)
+         popup_component_dialog := TextMenuItem()
+         popup_component_dialog.set_label("Dialog")
+         m.add(popup_component_dialog)
+
+         popup_component_fix := TextMenuItem()
+         popup_component_fix.set_label("Fix")
+         m.add(popup_component_fix)
+
+         popup_component_unfix := TextMenuItem()
+         popup_component_unfix.set_label("Unfix")
+         m.add(popup_component_unfix)
+
+         popup_component_delete := TextMenuItem()
+         popup_component_delete.set_label("Delete")
+         m.add(popup_component_delete)
+
+         popup_component_save := TextMenuItem()
+         popup_component_save.set_label("Save Component")
+         m.add(popup_component_save)
+
+         self.add(popup_component)
+
+         popup_dialog_component_load.connect(self, "op_popup_dialog_component_load", ACTION_EVENT)
+         component_load.connect(self, "op_component_load_10", ACTION_EVENT)
+         checkboxgroup_button.connect(self, "op_CheckBoxGroup", ACTION_EVENT)
+         buttongroup_button.connect(self, "op_ButtonGroup", ACTION_EVENT)
+         delete_button.connect(self, "op_Delete", ACTION_EVENT)
+         undo_button.connect(self, "op_Undo", ACTION_EVENT)
+         redo_button.connect(self, "op_Redo", ACTION_EVENT)
+         centre_horiz_button.connect(self, "op_Centre_horiz", ACTION_EVENT)
+         centre_vert_button.connect(self, "op_Centre_vert", ACTION_EVENT)
+         align_horiz_button.connect(self, "op_Align_horiz", ACTION_EVENT)
+         align_vert_button.connect(self, "op_Align_vert", ACTION_EVENT)
+         grid_button.connect(self, "op_Grid", ACTION_EVENT)
+         copy_button.connect(self, "op_Copy", ACTION_EVENT)
+         push_code_button.connect(self, "op_push_code_to_ui", ACTION_EVENT)
+         popup_component_fix.connect(self, "op_fix", ACTION_EVENT)
+         popup_component_unfix.connect(self, "op_unfix", ACTION_EVENT)
+         check_boxes.connect(self, "op_check_boxes", ACTION_EVENT)
+         button_groups.connect(self, "op_button_groups", ACTION_EVENT)
+         centre_horiz.connect(self, "op_Centre_horiz", ACTION_EVENT)
+         centre_vert.connect(self, "op_Centre_vert", ACTION_EVENT)
+         align_vert.connect(self, "op_Align_vert", ACTION_EVENT)
+         align_horiz.connect(self, "op_Align_horiz", ACTION_EVENT)
+         even_horiz.connect(self, "op_even_horiz", ACTION_EVENT)
+         even_vert.connect(self, "op_even_vert", ACTION_EVENT)
+         end_to_end_vert.connect(self, "op_end_to_end_vert", ACTION_EVENT)
+         end_to_end_horiz.connect(self, "op_end_to_end_horiz", ACTION_EVENT)
+         even_horiz_container.connect(self, "op_even_horiz_container", ACTION_EVENT)
+         even_vert_container.connect(self, "op_even_vert_container", ACTION_EVENT)
+         equalize_widths.connect(self, "op_equalize_widths", ACTION_EVENT)
+         equalize_heights.connect(self, "op_equalize_heights", ACTION_EVENT)
+         copy_attribs.connect(self, "op_copy_attribs", ACTION_EVENT)
+         grid.connect(self, "op_Grid", ACTION_EVENT)
+         reorder.connect(self, "op_Reorder", ACTION_EVENT)
+         popup_dialog_dialog.connect(self, "op_preferences", ACTION_EVENT)
+         preferences.connect(self, "op_preferences", ACTION_EVENT)
+         mdialog.connect(self, "op_dialog", ACTION_EVENT)
+         sel_up.connect(self, "op_select_up", ACTION_EVENT)
+         popup_component_dialog.connect(self, "op_dialog", ACTION_EVENT)
+         component_save.connect(self, "op_component_save", ACTION_EVENT)
+         popup_component_save.connect(self, "op_component_save", ACTION_EVENT)
+         mcopy.connect(self, "op_Copy", ACTION_EVENT)
+         redo.connect(self, "op_Redo", ACTION_EVENT)
+         undo.connect(self, "op_Undo", ACTION_EVENT)
+         popup_component_delete.connect(self, "op_Delete", ACTION_EVENT)
+         mdelete.connect(self, "op_Delete", ACTION_EVENT)
+
+         self.tool_area_height := y + 25
+
+         self.set_attribs("label=Unicon IDE")
+
+         #
+         # Set up the Canvas object.
+         #
+         canvas := Canvas()
+         canvas.set_pos(CANVAS_SURROUND, self.tool_area_height + CANVAS_SURROUND)
+         #orig_canvas_width := width - 2 * CANVAS_SURROUND
+         #orig_canvas_height := height - self.tool_area_height - 2 * CANVAS_SURROUND
+         blank_window := open("u_ide_blank", "g", "canvas=hidden")
+         orig_canvas_height := WAttrib(blank_window, "displayheight") - 600
+         orig_canvas_width := WAttrib(blank_window, "displaywidth") - 1220
+         canvas.set_size(orig_canvas_width, orig_canvas_height)
+
+         self.add(canvas)
+
+         #
+         # Initialize the undo/redo lists.
+         #
+         self.clear_undo()
+         self.clear_redo()
+
+         #self.shade_selection_options()
+
+         connect(self, "handle_icon_event", ICON_EVENT)
+end

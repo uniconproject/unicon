@@ -16,7 +16,7 @@
 #  To do:
 #	keyboard shortcuts
 #	multiple edit regions.
-#	
+#
 ############################################################################
 #
 #  Requires:  graphics, version 2 GUI libraries, and ivib
@@ -29,11 +29,15 @@
 
 import gui
 $include "guih.icn"
+
 link mainbar
 link getpaths
 link classbrowser
-link enqueue, preferences
+link enqueue, preferences               #>#
 link stddlg
+
+# Add link for new file to build IvibTab
+link ivibtab
 
 $ifdef _MS_WINDOWS_NT
 $define SL "\\"
@@ -48,8 +52,14 @@ $endif
 link unigram, idol, tree, preproce, unilex, unicon, yyerror
 
 global linebreak, uidlog, browser, browserversion, docpath, UIDE_VERS,
-       is_MSWindows, PATHSEP, env, win_position,
+       is_MSWindows, PATHSEP, env, win_position, ivib_maindialog,       #ivib_maindialog required global variable for ivib's code.icn.
        fontname
+
+#####
+# Required version markers for ivib to generate its code according to which version of ivib is currently in use.
+# For new versions, just add new maker here and set it in the initially() below.
+###
+global v1_marker, v2_marker
 
 #$define lpr "enscript -b \" \" -1 -Plex3normal"
 ##$define HELP_PATH "help"
@@ -61,11 +71,92 @@ class UIDE : Dialog(
    startfile,
    pnlToolbar, menubar,
    MsgBox, EditBox, PtyBox,
-   FileTabSet,ClassTabSet, DevTabSet,
-   FileBrowser,
-   tab_item_1, tab_item_2, tab_item_3, tab_item_4,
+   FileTabSet,ClassTabSet, DevTabSet, IvibTabSet,
+   FileBrowser, ivib_maindialog,
+   tab_item_1, tab_item_2, tab_item_3, tab_item_4, tab_item_5,
    ui_Preferences
    )
+
+#Having this here makes the artifact situation with the tooltips worse.
+#Per Jonah, specifying where the labels come from may help.
+#Relying on the method from Dialog for now.
+   #
+   # Nearly the same as inherited by Dialog.
+   # Putting it here so that we could override it later.
+   # Show the tooltip at the given x,y position.
+   #
+   # @param obj   maybe which component's tooltip we are showing right now.
+   #
+#   method show_tooltip(x, y, obj)
+#      local cw, ww, wh, fh
+#      local lines, multiline, numlines
+#
+#      ww := WAttrib(self.win, "width")
+#      wh := WAttrib(self.win, "height")
+#      if not (cw := Clone(self.cwin, "bg=pale yellow", "font=sans,14", "fg=black")) then
+#	 # try again with default font
+#	 if not (cw := Clone(self.cwin, "bg=pale yellow", "fg=black")) then
+#	    if not (cw := Clone(self.cwin, "bg=pale yellow", "fg=black",
+#				"font=-misc-fixed-medium-r-semicondensed--13-100-100-100-c-60-iso8859-1")) then
+#	       fail
+#      fh := WAttrib(cw, "fheight")
+#
+#      if find("\n", obj.tooltip) then multiline := 1
+#
+#      lines := []
+#      # Find the widest line, and calculate how many lines.
+#      numlines := 1
+#      tooltip_w := 0
+#      obj.tooltip ? {
+#	 while line := tab(find("\n")) do {
+#	    put(lines, line)
+#	    ="\n"
+#	    numlines +:= 1
+#	    tooltip_w <:= TextWidth(line) + 4
+#	    }
+#	 if line := tab(0) & *line > 0 then {
+#	    put(lines, line)
+#	    tooltip_w <:= TextWidth(line) + 4
+#	    }
+#	 }
+#      tooltip_h := fh*numlines +  6
+#
+#      tooltip_x := x + 8
+#      if tooltip_x + tooltip_w > ww then
+#         tooltip_x := 0 <= ww - tooltip_w
+#
+#      tooltip_y := y + 8   #self.y + self.h + 3
+#      if tooltip_y + tooltip_h > wh then
+#         tooltip_y := 0 <= wh - tooltip_h
+#
+#      tooltip_win := WOpen("canvas=hidden", "size=" ||
+#				tooltip_w || "," || tooltip_h)
+#      CopyArea(cwin, tooltip_win, tooltip_x, tooltip_y, tooltip_w, tooltip_h,
+#		     0, 0)
+#      EraseRectangle(cw, tooltip_x, tooltip_y, tooltip_w, tooltip_h)
+#      Rectangle(cw, tooltip_x, tooltip_y, tooltip_w, tooltip_h)
+#
+#      every i := 1 to *lines do {
+#	 center_string(cw, tooltip_x + tooltip_w / 2,
+#		       tooltip_y + 3 + fh * (i-1) + fh/2, lines[i], obj.accel)
+#	 }
+#      Uncouple(cw)
+#   end
+
+#This method works fine with resize() but using Dialog otherwise.
+#Per Jonah, might need to specify where the labels are.
+   #
+   # Nearly the same as inherited by Dialog, except for the resize.
+   # Duplicating to fix the artifacts on tooltips.
+   # Hide the tooltip label.
+   # @p
+#   method hide_tooltip()
+#      CopyArea(self.tooltip_win, cwin, 0, 0, self.tooltip_w+50, self.tooltip_h, self.tooltip_x, self.tooltip_y)
+#      WClose(self.tooltip_win)
+#      self.tooltip_win := &null
+#      #Removing resize so that it doesn't keep flashing.
+#      #self.resize()
+#   end
 
    # as inherited from Dialog, except non-fatal if the requested font fails.
    method open_win()
@@ -195,8 +286,8 @@ class UIDE : Dialog(
       menubar.set_font()
       # queue up an lpress to set the initial focus to the editor buffer
       if \win then {
-	 Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
-	 }
+	       Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
+	    }
    end
 
 # Proposed function key bindings. Still under construction.
@@ -212,7 +303,7 @@ class UIDE : Dialog(
 #  F7	Step		set watchpt
 #  F8	Next		set breakpt
 #  F9	Make		Run	    Compileonly Run/debug
-#  F10	Main menu		
+#  F10	Main menu
 #  F11	runtime msgs	project dlg inspect
 #  F12	compiler msgs	toggle ivib
 # alt-x = exit
@@ -223,19 +314,19 @@ class UIDE : Dialog(
    #
    method on_function_key(ev)
       case ev.param of {
-	 Key_F1:   ide_key_file_menu()
-	 Key_F2:   ide_key_help_menu()
-	 Key_F3:   ide_handle_save()
-	 Key_F4:   ide_handle_open()
-	 Key_F5:   ide_prev_tab()
-	 Key_F6:   ide_next_tab()
-	 Key_F7:   ""#ide_handle_compile()
-	 Key_F8:   ""#ide_handle_run()
-	 Key_F9:    ""
-	 Key_F10:   ""
-	 Key_F11:   ""
-	 Key_F12:  ide_handle_exit()
-	 }
+	                Key_F1:   ide_key_file_menu()
+	                Key_F2:   ide_key_help_menu()
+	                Key_F3:   ide_handle_save()
+	                Key_F4:   ide_handle_open()
+	                Key_F5:   ide_prev_tab()
+	                Key_F6:   ide_next_tab()
+	                Key_F7:   ""#ide_handle_compile()
+	                Key_F8:   ""#ide_handle_run()
+	                Key_F9:    ""
+	                Key_F10:   ""
+	                Key_F11:   ""
+	                Key_F12:  ide_handle_exit()
+	     }
    end
 
    #
@@ -347,8 +438,8 @@ class UIDE : Dialog(
       self.min_width := 645
       self.min_height := 485
       self.set_attribs("size="||width||","||height, "pos="||win_position,
-		       "bg=pale gray",
-		       "label=Unicon IDE", "font=mono,16", "resize=on")
+                       "bg=pale gray", "label=Unicon IDE", "font=mono,16",
+		                   "resize=on")
 
       DevTabSet := TabSet()
       DevTabSet.set_pos("0", "100%-110")
@@ -365,7 +456,7 @@ class UIDE : Dialog(
 
       PtyBox := ShellETL()
       PtyBox.set_pos("2", "2")
-      PtyBox.set_size("100%-4", "100%-4") 
+      PtyBox.set_size("100%-4", "100%-4")
       PtyBox.set_draw_border()
       PtyBox.set_attribs("bg=yellowish white", "font="||fontname)
       PtyBox.set_contents([""])
@@ -386,7 +477,7 @@ class UIDE : Dialog(
       DevTabSet.add(tab_item_4)
       DevTabSet.connect(self, "change", SELECTION_CHANGED_EVENT)
       self.add(DevTabSet)
-      
+
       FileTabSet := BufferTabSet()
       FileTabSet.set_pos("150", "9%")
       FileTabSet.set_size("100%-150", "100%-160")
@@ -396,7 +487,7 @@ class UIDE : Dialog(
       FileTabSet.add(tab_item_2)
       FileTabSet.set_which_one(tab_item_2)
       self.add(FileTabSet)
-      
+
       ClassTabSet := BufferTabSet()
       ClassTabSet.set_pos("0", "9%")
       ClassTabSet.set_size("150", "100%-160")
@@ -412,7 +503,25 @@ class UIDE : Dialog(
       ClassTabSet.add(tab_item_3)
       ClassTabSet.set_which_one(tab_item_3)
       self.add(ClassTabSet)
-      
+
+      #
+      # Build Ivib components to be added to IvibTabSet.
+      #
+      IvibTabSet := BufferTabSet()
+      IvibTabSet.set_pos("0", "110%")
+      IvibTabSet.set_size("0", "0")
+      tab_item_5 := BufferTabItem()
+      tab_item_5.set_label("IVIB")
+      ivib_maindialog := IvibTab()
+      ivib_maindialog.set_pos("2", "2")
+      ivib_maindialog.set_size("100%-4", "100%-4")
+      ivib_maindialog.set_draw_border()
+      ivib_maindialog.set_attribs("bg=white")
+      tab_item_5.add(ivib_maindialog)
+      IvibTabSet.add(tab_item_5)
+      IvibTabSet.set_which_one(tab_item_5)
+      self.add(IvibTabSet)
+
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
       pnlToolbar.set_size("100%", "4.5%")
@@ -424,8 +533,12 @@ class UIDE : Dialog(
 initially(initfile)
    self.Dialog.initially()
 
+   # Initialize version markers for ivib.
+   v1_marker := "### Ivib layout ###"
+   v2_marker := "### Ivib-v2 layout ##"
+
    # contains the main ide functions
-   ide := IDE(FileTabSet, ClassTabSet, FileBrowser)
+   ide := IDE(FileTabSet, ClassTabSet, IvibTabSet, FileBrowser, ivib_maindialog)
    uidlog := self
    menubar := Mainbar(UProject())
    startfile := initfile
@@ -516,7 +629,7 @@ end
 #Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Compo
 #nent|1|Children|list|1|class|CanvasTabItem|28|Parent Canvas|1|Name|str
 #ing|tab_item_2|Class Name|string|TabItem|Import Name|string|gui|X Fix|
-#null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X 
+#null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X
 #Spec|integer|0|Y Spec|integer|0|W Spec|string|100%|H Spec|string|100%|
 #X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|nu
 #ll|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handl
@@ -546,7 +659,7 @@ end
 #Children|list|1|class|CanvasTree|29|Parent Canvas|1|Name|string|FileBr
 #owser|Class Name|string|ClassBrowser|Import Name|string|gui|X Fix|null
 #|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec
-#|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4|X 
+#|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4|X
 #Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null
 #|Draw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|Acc
 #el|null|Event Handlers|list|0|Class Variable|integer|1|Parent Componen

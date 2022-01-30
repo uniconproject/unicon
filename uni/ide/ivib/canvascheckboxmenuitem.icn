@@ -20,7 +20,7 @@ class CanvasCheckBoxMenuItem : CanvasMenuComponent : CheckBoxMenuItem()
    method gen_code(c)
       (\self.parent_check_box_group).gen_code(c)
       self.CanvasMenuComponent.gen_code(c)
-      if not((/self.parent_check_box_group & self.img_up == img_style("box_up") & self.img_down == img_style("box_down")) | 
+      if not((/self.parent_check_box_group & self.img_up == img_style("box_up") & self.img_down == img_style("box_down")) |
              (\self.parent_check_box_group & self.img_up == img_style("diamond_up") & self.img_down == img_style("diamond_down"))) then
          c.line(name || ".set_imgs(" || image(self.img_up) || ", " || image(self.img_down) || ")")
       if \self.label_right then
@@ -36,7 +36,7 @@ class CanvasCheckBoxMenuItem : CanvasMenuComponent : CheckBoxMenuItem()
             c.line(self.parent_check_box_group.name || ".set_which_one(" || name || ")")
          else
             c.line(name || ".set_is_checked()")
-      }         
+      }
    end
 
    #
@@ -63,7 +63,7 @@ class CanvasCheckBoxMenuItem : CanvasMenuComponent : CheckBoxMenuItem()
       if \self.is_checked_flag then {
          if /c.parent_check_box_group then
             c.set_is_checked()
-      }         
+      }
       return c
    end
 
@@ -79,7 +79,7 @@ class CanvasCheckBoxMenuItem : CanvasMenuComponent : CheckBoxMenuItem()
          if \c.parent_check_box_group then
             c.parent_check_box_group.which_one := c
          c.set_is_checked()
-      }         
+      }
       return c
    end
 
@@ -87,7 +87,7 @@ class CanvasCheckBoxMenuItem : CanvasMenuComponent : CheckBoxMenuItem()
    # Return the I/O template.
    #
    method get_template()
-      return self.CanvasMenuComponent.get_template() ||| 
+      return self.CanvasMenuComponent.get_template() |||
          [["Img Up", "img_up"],
           ["Img Down", "img_down"],
           ["Is Checked Flag", "is_checked_flag"],

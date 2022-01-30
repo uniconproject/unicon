@@ -37,8 +37,8 @@ class Mainbar(
    select_all, users_guide_menu, command_reference_menu,
    about_menu, text_menu_item_3, text_menu_item_4,undo,
    view_window_all, view_window_files, view_window_filesclassbrowser,
-   view_window_filesmsgs, window_submenu,menu_bar_1, projectname,
-   projecttype, make_compile_unicon, runProject, makeClean,
+   view_window_filesmsgs, view_window_filesivib, window_submenu,menu_bar_1,
+   projectname, projecttype, make_compile_unicon, runProject, makeClean,
    makeCleanAll, menu_separator, menu_separator2, connect_menu,
    disconnect_menu, menu_act, pswd_menu, avt_menu, face_menu, reg_menu,
    users_guide_file, language_ref, fileOpened,
@@ -431,7 +431,7 @@ $endif
       handle_help("doc/unicon/utr11.html",
 		  "http://unicon.org/utr/utr11.html")
    end
-      
+
    #
    # Launch online help, if we are online.
    #
@@ -536,6 +536,9 @@ $endif
    #
    # View Setup Code
    #
+   ##
+   ## Ivib Integration added Ivib Tab reset position and size according to view selected.
+   ##
    method on_view_window_all(ev)
       local pos_y, size_y
       pos_y := 8+tb_adj||"%"
@@ -547,12 +550,15 @@ $endif
       uidlog.FileTabSet.set_size("85%", size_y)
       uidlog.ClassTabSet.set_pos("0", pos_y)
       uidlog.ClassTabSet.set_size("15%", size_y)
+      uidlog.IvibTabSet.set_pos("0", "110%")
       uidlog.MsgBox.set_pos("2", "2")
       uidlog.MsgBox.set_size("100%-4", "100%-4")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
       uidlog.FileBrowser.set_pos("2", "2")
       uidlog.FileBrowser.set_size("100%-4", "100%-4")
+      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
+      uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
@@ -568,9 +574,12 @@ $endif
       uidlog.DevTabSet.set_size("0", "0")
       uidlog.FileTabSet.set_pos("0", pos_y)
       uidlog.FileTabSet.set_size("100%", size_y)
+      uidlog.IvibTabSet.set_pos("0", "110%")
       uidlog.ClassTabSet.set_pos("0", "110%")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
+      uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
@@ -587,15 +596,44 @@ $endif
       uidlog.FileTabSet.set_pos("0", pos_y)
       uidlog.FileTabSet.set_size("100%", size_y)
       uidlog.ClassTabSet.set_pos("0", "110%")
+      uidlog.IvibTabSet.set_pos("0", "110%")
       uidlog.MsgBox.set_pos("2", "2")
       uidlog.MsgBox.set_size("100%-4", "100%-4")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
+      uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
       uidlog.pnlToolbar.resize()
    end
+
+   #
+   #  This is the view for File tab and Ivib Tab.
+   #
+   method on_view_window_filesivib(ev)
+      local pos_y, size_y
+      pos_y := 8+tb_adj||"%"
+      size_y := 92-tb_adj||"%"
+      cur_ide_win_setup := "view_window_filesivib"
+      uidlog.DevTabSet.set_pos("0", "110%")
+      uidlog.DevTabSet.set_size("0", "0")
+      uidlog.IvibTabSet.set_pos("0", pos_y)
+      uidlog.IvibTabSet.set_size("50%", size_y)
+      uidlog.FileTabSet.set_pos("50%", pos_y)
+      uidlog.FileTabSet.set_size("50%", size_y)
+      uidlog.ClassTabSet.set_pos("0", "110%")
+      uidlog.EditBox.set_pos("2", "2")
+      uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
+      uidlog.DevTabSet.resize()
+      uidlog.IvibTabSet.resize()
+      uidlog.FileTabSet.resize()
+      uidlog.ClassTabSet.resize()
+      uidlog.pnlToolbar.resize()
+   end
+
 
    method on_view_window_filesclassbrowser(ev)
       local pos_y, size_y
@@ -608,19 +646,26 @@ $endif
       uidlog.FileTabSet.set_size("85%", size_y)
       uidlog.ClassTabSet.set_pos("0", pos_y)
       uidlog.ClassTabSet.set_size("15%", size_y)
+      uidlog.IvibTabSet.set_pos("0", "110%")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
+      uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
       uidlog.pnlToolbar.resize()
    end
 
+   #
+   #  Added Ivib/File view to possible cases.
+   #
    method update_view_window(ev)
       case cur_ide_win_setup of {
 	 "view_window_all" : on_view_window_all(ev)
 	 "view_window_files" : on_view_window_files(ev)
 	 "view_window_filesmsgs" : on_view_window_filesmsgs(ev)
+   "view_window_filesivib" : on_view_window_filesivib(ev)
 	 "view_window_filesclassbrowser" : on_view_window_filesclassbrowser(ev)
 	 default : write("ERROR")
 	 }
@@ -1042,6 +1087,15 @@ $endif
       view_window_filesmsgs.connect(self, "on_view_window_filesmsgs", ACTION_EVENT)
       view_window_filesmsgs.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       window_submenu.add(view_window_filesmsgs)
+#
+# Added View option Ivib/File to menubar.
+#
+      view_window_filesivib := TextMenuItem()
+      view_window_filesivib.set_label("Files/IVIB")
+      view_window_filesivib.connect(self, "on_view_window_filesivib", ACTION_EVENT)
+      view_window_filesivib.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`````>>`````>~~>`````>>`````>~~>>>>>>>>>>>>>>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+      window_submenu.add(view_window_filesivib)
+
       view_window_filesclassbrowser := TextMenuItem()
       view_window_filesclassbrowser.set_label("Files/Class Browser")
       view_window_filesclassbrowser.connect(self, "on_view_window_filesclassbrowser", ACTION_EVENT)
@@ -1197,7 +1251,7 @@ $endif
       debuggIt := TextMenuItem()
       debuggIt.set_label("Debug program")
       debuggIt.connect(self, "on_debuggIt", ACTION_EVENT)
-      menu_10.add(debuggIt)   
+      menu_10.add(debuggIt)
       menu_bar_1.add(menu_10)
       menu_12 := Menu()
       menu_12.set_label("Project")

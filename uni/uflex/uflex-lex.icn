@@ -19,7 +19,12 @@ global yyfilename, outfilename, outfile
 global whiteflag
 
 procedure yylex()
+static printable
 local nextchar, foutfile
+
+initial {
+    printable := &letters++&digits++'\'_'
+}
 
    yylval := yylextoken()
 
@@ -36,40 +41,64 @@ repeat {
 	   fprintf(&errout, "couldn't write to ulex.tmp; exiting\n")
 	   exit(1)
 	   }
-	fprintf(foutfile, "\n\n")
+	fprintf(foutfile, "\n")
 	fprintf(foutfile, "$line %d \"%s\"\n", yylineno, yyfilename)
 
 	while nextchar := yyinput() do {
-	   fprintf(foutfile,"%c",nextchar)
+	    if nextchar === "\^m" then {
+		write("hmmmm"); nextchar := yyinput();
+		if nextchar === "\n" then write(foutfile)
+		else writes(foutfile, "\^m", nextchar)
+	    }
+	   writes(foutfile,nextchar)
 	   }
 
 	close(foutfile)
 	return 0
 	}
 
-   else if yytext := (="[" || (="^"|"")) then {
+   else if yytext := (="[" || (="^"|"")) then { # cset processing
       while not (yytext ||:= ="]") do {
+       
+	 # character class expressions (predefined csets)
+         if ="[:alnum:]" then yytext ||:= string(&letters++&digits)
+         else if ="[:cntrl:]" then yytext ||:= "\\1-\\32"
+         else if ="[:lower:]" then yytext ||:= string(&lcase)
+         else if ="[:space:]" then yytext ||:= " \\t\\f\\v\\n\\r"
+         else if ="[:alpha:]" then yytext ||:= string(&letters)
+         else if ="[:digit:]" then yytext ||:= string(&digits)
+         else if ="[:print:]" then yytext ||:= "\\24-\\176"
+         else if ="[:upper:]" then yytext ||:= string(&ucase)
+         else if ="[:blank:]" then yytext ||:= " \\t"
+         else if ="[:graph:]" then yytext ||:= "\\24-\\37\\41-\\176"
+         else if ="[:punct:]" then yytext ||:= "\\24-\\37\\41-\\57\\72-\\100\\133-\\140\\173-\\176"
+         else if ="[:xdigit:]" then yytext ||:= string('abcdefABCDEF'++&digits)
          # any thing but ] or \ is a regular cset member
-         if yytext ||:= tab(any(&cset -- ']\\')) then { }
+         else if yytext ||:= tab(any(&cset -- ']\\')) then { }
          # generalize to handle all escapes legal in flex:
-         else if yytext ||:= (="\\" || tab(any('tn'))) then { }
-         else {
-            fprintf(&errout, "%s:%d: lexical error, broken cset regex '%s'\n",
-		    yyfilename, yylineno, yytext)
+         else if yytext ||:= (="\\" || tab(any('tnrfv\"\\-01234567'))) then { }
+         else { 
+            fprintf(&errout, "%s:%d: lexical error, broken cset2 regex '%s'\n",
+	 	    yyfilename, yylineno, yytext)
             return 0
             }
          }
 
       yylval.s := yytext
+#write("CSET ", yylval.s)
       return token(CSET)
       }
-   else if yytext := ="." then { return token(DOT) }
-   else if yytext := ="\"" then {
+   else if yytext := ="." then {
+       yylval.s := yytext := "[^\\n]"
+       return token(CSET)
+#       return token(DOT)
+ }
+   else if yytext := ="\"" then { #string literal
       while not (yytext ||:= ="\"") do {
          # any thing but " or \ is a regular string character
          if yytext ||:= tab(any(&cset -- '"\\')) then { }
          # generalize to handle all escapes legal in flex:
-         else if yytext ||:= (="\\" || tab(any('tn'))) then { }
+         else if yytext ||:= (="\\" || tab(any('tnrf\"\\'))) then { }
          else {
             fprintf(&errout, "%s:%d: lexical error, broken string %s\n",
 		    yyfilename, yylineno, yytext)
@@ -78,7 +107,19 @@ repeat {
          }
 
       yylval.s := yytext
+#write("yeah, we matched QUOTES: ", yytext)
       return token(QUOTES)
+      }
+   else if yytext := (="\\" || tab(any('01234567'))) then {
+      yytext ||:= tab(any('01234567'))
+      yytext ||:= tab(any('01234567'))
+      yylval.s := yytext
+      return token(BACKSLASH)
+      }
+   else if yytext := (="\\x" || tab(any('ABCDEFabcdef'++&digits))) then {
+      yytext ||:= tab(any('ABCDEFabcdef'++&digits))
+      yylval.s := yytext
+      return token(BACKSLASH)
       }
    else if yytext := (="\\" || tab(any(&cset--'\n'))) then {
       yylval.s := yytext
@@ -90,14 +131,43 @@ repeat {
    else if yytext := ="*" then { return token(ZEROORMORE) }
    else if yytext := ="+" then { return token(ONEORMORE) }
    else if yytext := ="|" then { return token(OR) }
-   else if yytext := ="(" then { return token(PARENTHESES) }
+   else if yytext := ="(" then {
+      if yytext ||:= ="?" then { # special flex things
+         case c := move(1) of {
+            "i": { # regex option i
+               stop("unimplemented regex option i")
+            }
+            "s": { # regex option s
+               stop("unimplemented regex option s")
+            }
+            "x": { # regex option x
+               stop("unimplemented regex option x")
+            }
+            "-": { # negated regex option
+               stop("unimplemented negated regex option -...")
+            }
+            "#": { # flex comment
+               yytext ||:= c
+               while yytext[-1] ~== ")" do {
+                  if c := move(1) then yytext ||:= c
+                  else { stop("unclosed comment") }
+                  }
+#write("ate a comment: ", yytext)
+               yytext := ""
+               }
+            }
+         }
+      else
+      return token(PARENTHESES)
+      }
    else if yytext := =")" then { return token(CLOSEPARENTHESES) }
    else if yytext := ="/"  then { return token(FORWARDSLASH) }
 
-   else if yytext := ((="{" ||
-		      tab(many(&digits)) ||
-		      ="," ||
-		      tab(many(&digits)) || ="}") |
+   else if yytext := ="{+}" then { return token(CSETUNION) }
+   else if yytext := ="{-}" then { return token(CSETDIFFERENCE) }
+   else if yytext := ((="{" || tab(many(&digits)) || ="," ||
+                               tab(many(&digits)) || ="}") |
+			(="{" || tab(any(&digits)) || =",}") |
 			(="{" || tab(any(&digits)) || ="}")) then {
       yylval.s = yytext
       return token(CURLBRACKETS)
@@ -105,11 +175,14 @@ repeat {
    else if yytext := ="{" then {
       grab_semantic_action()
       yylval.s := yytext
+#write("action ", yytext)
       return token(ACTION)
       }
-   else if yytext := tab(any('\'a-zA-Z0-9_')) then {
-      yylval.s = yytext
+   else if yytext := tab(any(printable)) then { # ordinary letters match selves
+     if /yylval.s then {
+      yylval.s := yytext
       return token(CHARACTER)
+     } #swj
       }
 
    else if yytext := ="\n" then {
@@ -130,12 +203,15 @@ repeat {
       }
    else if yytext := move(1) then {
       if whiteflag ~= 0 then return 1
-      else fprintf(&errout, "%s:%d: lexical error on token '%s'\n",
+      else { fprintf(&errout, "%s:%d: lexical error on token '%s'\n",
 		    yyfilename, yylineno, yytext)
+	     return 0
+	 }
       }
-
+   else { # couldn't move(1), must be EOF
+      return 0
+      }
    }
-
 end
 
 
@@ -155,7 +231,6 @@ procedure grab_semantic_action()
 	   fprintf(&errout,"bad/unfinished semantic action\n");
 	   exit(-1);
 	   }
-
         if nextchar == "\"" & slash = 0 then {
            quotemode := 1 - quotemode
 	   }

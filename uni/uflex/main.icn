@@ -1,18 +1,27 @@
 # uflex main module
 # from a main.c written by Katie Ray
 
+$define VERSION "0.41"
+
 link printf
 
 global yyin, yyfilename, yylineno
-global outfilename, outfile, debugtoken, debugtree, debugautomaton, begintext
+global outfilename, outfile, debugtoken, debugtree, debugautomaton, begintext, debugdfa
 
 procedure main(argv)
    local ppcmdline, len
    local i, nextchar, nextchar2, arg := 1, pp := 1
+  # yydebug := debugtoken := debugtree := debugautomaton := debugdfa := 1
+  # yydebug  := debugtree := debugautomaton := 1
+   yydebug := 0
    yylineno := 1
+   debugdfa := 1 # on by default
    rulenumber := 1
    whiteflag := 0
    outfilename := "lex.yy.icn"
+
+   if *argv=0 then stop("usage: uflex [-nopp|-token|-tree|-automaton] file")
+   if argv[arg] == "-version" then stop("uflex ", VERSION)
 
    if argv[arg] == "-nopp" then {
       pp := 0
@@ -28,6 +37,14 @@ procedure main(argv)
       }
    if argv[arg] == "-automaton" then {
       debugautomaton := 1
+      arg +:= 1
+      }
+   if argv[arg] == "-nfa" then {
+      debugdfa := &null
+      arg +:= 1
+      }
+   if argv[arg] == "-dfa" then {
+      debugdfa := 1
       arg +:= 1
       }
 
@@ -58,12 +75,32 @@ procedure main(argv)
       }
 
    yyfilename := argv[arg]
-   printf("uflex 0.3 invoked on %s\n", yyfilename)
+   if (not find(".l", yyfilename)) & stat(yyfilename||".l") then
+       yyfilename ||:= ".l"
+   printf("uflex " || VERSION || " invoked on %s\n", yyfilename)
+   if not stat(yyfilename) then {
+     stop("file ",yyfilename," not found")
+     }
    if pp ~= 0 then {
-      ppcmdline := sprintf("ulpp < %s", yyfilename)
-      if ppcmdline[-2:0] ~== ".l" then
-	 ppcmdline ||:= ".l"
-      yyin := open(ppcmdline, "p")
+#      ppcmdline := sprintf("ulpp < %s > %s.tmp", yyfilename, yyfilename)
+#      if ppcmdline[-2:0] ~== ".l" then
+#	 ppcmdline ||:= ".l"
+#write(&errout, "opening preprocessor via ", ppcmdline)
+#      system(ppcmdline)
+#write(&errout, "system finished")
+#system("type " || yyfilename || ".tmp")
+#write(&errout, "system finished")
+
+       ulppfin := open(yyfilename)
+       if (L := ulpp()) & (f := open(yyfilename || ".tmp", "w")) then {
+	   every xxx := !L do {
+               write(f,xxx)
+	   }
+	   close(f)
+       }
+
+      if not (yyin := open(yyfilename || ".tmp", "r")) then write("open failed")
+      else ulppfname := yyfilename || ".tmp"
       }
    else {
       yyin := open(yyfilename, "r")
@@ -76,7 +113,7 @@ procedure main(argv)
       }
    else {
 $ifdef NOTDEF
-      printf("ulex: opened %s\n", pp ? ppcmdline : yyfilename)
+      printf("uflex: opened %s\n", if pp~=0 then ppcmdline else yyfilename)
 $endif
       }
 
@@ -99,10 +136,12 @@ $endif
       nextchar := nextchar2
       if not (nextchar2 := reads(yyin,1)) then {
 	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+	 exit(-1)
 	 }
       if nextchar2 == ("\n" | "\^m") then
 	 yylineno +:= 1
       }
+
 
    if nextchar2 == "{" then {
       grab_upto_percents()
@@ -122,7 +161,6 @@ $endif
       }
    else {
       i := yyparse()
-
       if i ~=== 0 then {
          fprintf(&errout, "errors in %s\n", yyfilename)
          exit(1)
@@ -130,33 +168,36 @@ $endif
       }
    }
 
-   # assumed that ulex.tmp was written by yylex(),
-   if /outfile then {
-      if not (outfile := open(outfilename, "a")) then {
+   close(yyin)
+   remove(\ulppfname)
+
+   #
+   # copy out remainder, up to EOF, into output file, IF THERE IS ANY.
+   #
+   if yyin := open("ulex.tmp","r") then {
+
+      # ulex.tmp was written by yylex() when it saw a closing %%.
+      # Now we need to append the rest.
+     if \outfile then { close(outfile); outfile := &null }
+     if /outfile then {
+       if not (outfile := open(outfilename, "a")) then {
          write(&errout, "cannot open ",image(outfilename)," for writing")
          exit(-1)
          }
-      }
-   #
-   # copy out remainder, up to EOF, into output file.
-   #
-   if not (yyin := open("ulex.tmp","r")) then {
-      fprintf(&errout, "cannot open ulex.tmp for reading\n")
-      exit(-1)
-      }
-   while ((nextchar := reads(yyin,1)) & (nextchar ~== "%")) do
-      writes(outfile, nextchar)
-   if nextchar == "%" then nextchar := reads(yyin,1)
-   if nextchar == "%" then nextchar := reads(yyin,1)
+       }
 
-   while nextchar := reads(yyin,1) do {
-      writes(outfile, nextchar)
+#      while ((nextchar := reads(yyin,1)) & (nextchar ~== "%")) do
+#         writes(outfile, nextchar)
+#      if nextchar == "%" then nextchar := reads(yyin,1)
+#      if nextchar == "%" then nextchar := reads(yyin,1)
+      while nextchar := reads(yyin,1) do {
+         writes(outfile, nextchar)
+         }
+      close(yyin)
       }
+
    close(\outfile)
-   close(yyin)
    remove("ulex.tmp")
-
-
    write("No errors")
    return 0
 end

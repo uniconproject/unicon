@@ -25,6 +25,7 @@ nographics: xml
 	cd unidep; $(MAKE)
 	cd util; $(MAKE)
 	cd unidoc; $(MAKE)
+	cd uflex; $(MAKE)
 
 udbtools:
 	cd udb; $(MAKE) tools

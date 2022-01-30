@@ -486,7 +486,9 @@ int n;
 #else					/* KbhitPoll || KbhitIoctl */
    t.tv_sec = n / 1000;
    t.tv_usec = (n % 1000) * 1000;
+   DEC_NARTHREADS;
    select(1, NULL, NULL, NULL, &t);
+   INC_NARTHREADS_CONTROLLED;
 #endif					/* KbhitPoll || KbhitIoctl */
    return Succeeded;
    }
@@ -494,7 +496,9 @@ int n;
 
 #if MSDOS
 #if NT
+   DEC_NARTHREADS;
    Sleep(n);
+   INC_NARTHREADS_CONTROLLED;
    return Succeeded;
 #else					/* NT */
    return Failed;
@@ -503,7 +507,9 @@ int n;
 
 #if MACINTOSH
    void MacDelay(int n);
+   DEC_NARTHREADS;
    MacDelay(n);
+   INC_NARTHREADS_CONTROLLED;
    return Succeeded;
 #endif					/* MACINTOSH */
 

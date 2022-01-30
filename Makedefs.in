@@ -16,8 +16,8 @@ CC = @CC@
 
 RTDIR=$(TOPDIR)/rt
 
-CFLAGS = @CFLAGS@ -I../../rt/include
-LDFLAGS= -L../../rt/lib @LDFLAGS@
+CFLAGS = @CFLAGS@ -I$(RTDIR)/include
+LDFLAGS= -L$(RTDIR)/lib @LDFLAGS@
 LIBS= @LIBS@
 CPPFLAGS = @CPPFLAGS@
 
@@ -25,12 +25,12 @@ JV_LDFLAGS = @JV_LDFLAGS@
 GL_CFLAGS = @GL_CFLAGS@
 GL_LDFLAGS = @GL_LDFLAGS@
 
-CFDYN = @CFDYN@
-LDDYN = @LDDYN@
+CFDYN = @CFDYN@ -I$(RTDIR)/include
+LDDYN = -L$(RTDIR)/lib @LDDYN@
 
 SO = @SO@
 RLINK = @RLINK@ -L../../bin
-RLIBS = -L../../rt/lib -ltp -lgdbm -lucommon $(LIBS) -lm  @RLIBS@
+RLIBS = -L$(RTDIR)/lib -ltp -lgdbm -lucommon $(LIBS) -lm  @RLIBS@
 
 XLIBS = @XLIBS@
 XPMDEFS = -DZPIPE

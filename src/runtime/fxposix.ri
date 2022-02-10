@@ -2507,15 +2507,19 @@ function{0,1} select(files[nargs])
 #endif					/* PseudoPty && MSWindows */
 
       if (n) {
-         if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
+        DEC_NARTHREADS;
+        if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
+          INC_NARTHREADS_CONTROLLED;
 #if NT
-	    IntVal(amperErrno) = WSAGetLastError();
+          IntVal(amperErrno) = WSAGetLastError();
 #else
-	    set_syserrortext(errno);
+          set_syserrortext(errno);
 #endif
-	    if (IntVal(amperErrno) != 0)
-	       fail;
-	    }
+          if (IntVal(amperErrno) != 0)
+            fail;
+        } else {
+          INC_NARTHREADS_CONTROLLED;
+        }
 
 #ifdef Graphics
 	 pollevent();

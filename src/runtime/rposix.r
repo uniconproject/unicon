@@ -1344,8 +1344,9 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
      return s;
 
    fromlen = sizeof(from);
-   if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
-     return 0;
+   DEC_NARTHREADS;
+   if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0) fd = 0;
+   INC_NARTHREADS_CONTROLLED;
 
    return fd;
 }

@@ -2321,8 +2321,11 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
        */
       if (status & Fs_Listen) {
 	 fromlen = sizeof(from);
-	 if ((fd = accept(fd, (struct sockaddr *)&from, &fromlen)) < 0)
-	    return;
+	 DEC_NARTHREADS;
+	 fd = accept(fd, (struct sockaddr *)&from, &fromlen);
+	 INC_NARTHREADS_CONTROLLED;
+	 if (fd < 0)
+	   return;
 	 BlkD(*f,File)->fd.fd = fd;
 	 BlkLoc(*f)->File.status = Fs_Socket | Fs_Read | Fs_Write;
 	 }

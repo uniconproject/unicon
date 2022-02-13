@@ -503,3 +503,12 @@ procedure ClosePool()
     }
     return #success
 end
+
+#--------------------------------------------------------------------------------
+# Thread-local storage
+procedure TLS(var)
+   local thr; static TT        # A table of tables indexed by thread id
+   initial TT := mutex(table())
+   /TT[thr:=serial()] := table()
+   return TT[thr][var]
+end

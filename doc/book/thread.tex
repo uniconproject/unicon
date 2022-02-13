@@ -1492,6 +1492,41 @@ that could, perhaps, be added --- cancellation of a task, place a task at the
 front of the queue, rather than the rear --- but these are left as an exercise
 for the reader who needs them.
 
+\subsection*{Thread-local storage}
+It is notable that thread--local storage can be implemented in Unicon without
+any special support from the runtime system. The \texttt{threads} package
+contains a \texttt{TLS}  procedure that can be invoked on either side of an assignment
+operator to store and recover thread-local values. A plausible implementation of
+\texttt{TLS} would be
+\iconcode{
+procedure TLS(var) \\
+\ \ \ local thr, tls \\
+\ \ \ static mtx, TT \ \ \ \        \# A table of tables indexed by thread id \\
+\ \ \ initial \{\ mtx := mutex(); TT := table()\  \}\\
+\\
+\ \ \ thr := serial()\\
+\ \ \ critical mtx: tls := if not member(TT,thr) then TT[thr] := table() else TT[thr]\\
+\ \ \ return tls[var]\\
+end
+}
+\noindent
+In fact, the implementation of \texttt{TLS} is
+\iconcode{
+procedure TLS(var)\\
+\ \ \ local thr; static TT\ \ \ \ \# A table of tables indexed by thread id\\
+\ \ \ initial TT := mutex(table())\\
+\ \ \ /TT[thr:=serial()] := table()\\
+\ \ \ return TT[thr][var]\\
+end
+}
+\noindent
+which takes full advantage of the automatic locking and unlocking features
+discussed earlier (and is approximately 50\% faster).
+Note that TLS is a misnomer: it actually implements {\em co-expression} local
+storage but, unless you are writing a multi-threading program that also uses
+co-expressions within each thread, the distinction is unlikely to matter.
+
+
 \section{Practical examples using threads and messages}
 This section starts with a discussion of an early version of a program that
 forms part of an indexing system for \LaTeX\ files, which are the source for a

@@ -20,13 +20,13 @@ class Dialog : Component(
    is_open,                 # Flag indicates whether window is open
    owning_dialog,
    child_dialogs,
-   focus,                   # Component with current focus            
+   focus,                   # Component with current focus
    unique_flag,             # Flag indicates whether in unique processing mode
    re_process_flag,         # Flag indicates whether to distribute last
                             # Icon event during unique mode
    buffer_win,              # Buffer window for double buffering
-   min_width,               # Minimum size of window.                
-   min_height,              #                  
+   min_width,               # Minimum size of window.
+   min_height,              #
    click_count,             # Variables controlling multiple clicks
    double_click_delay,
    repeat_delay,            # Repeat event delays
@@ -46,7 +46,7 @@ class Dialog : Component(
    invokes,
    all_valid,
    tooltip_ticker,
-   tooltip_last_obj, 
+   tooltip_last_obj,
    tooltip_state,
    tooltip_start_time,
    tooltip_end_time,
@@ -163,7 +163,7 @@ class Dialog : Component(
    end
 
    #
-   # Displays the dialog as a modeless dialog.  This 
+   # Displays the dialog as a modeless dialog.  This
    # means that window events are processed by this dialog
    # and other open dialogs concurrently.  The call to
    # {show_modeless()} opens the dialog and returns immediately.
@@ -212,7 +212,7 @@ class Dialog : Component(
 
    method resize_win(w, h)
       WAttrib(self.win, "size=" || w || "," || h)
-      Enqueue(self.win, &resize)      
+      Enqueue(self.win, &resize)
    end
 
    method init()
@@ -315,7 +315,7 @@ class Dialog : Component(
    #
    # This empty method may be overridden to add components to the
    # dialog.  Alternatively, components may be added in the dialog's
-   # {initially} method. 
+   # {initially} method.
    #
    method component_setup()
 
@@ -338,7 +338,7 @@ class Dialog : Component(
 
       if (not self.open_win()) &
 	 ((not match("font=",attribs[i:=1 to *\attribs])) |
-	    ((attribs[i] := 
+	    ((attribs[i] :=
   "font=-misc-fixed-medium-r-semicondensed--13-100-100-100-c-60-iso8859-1") &
 	     (not self.open_win()))) then
 	 fatal("couldn't open/show window")
@@ -417,7 +417,7 @@ $endif
       }
 
       if /self.unique_flag & /self.re_process_flag then {
-         if /self.curr_drag then 
+         if /self.curr_drag then
             check_dnd(e)
 
          if \self.curr_drag then
@@ -546,11 +546,11 @@ $endif
 	    put(lines, line)
 	    ="\n"
 	    numlines +:= 1
-	    tooltip_w <:= TextWidth(line) + 4
+	    tooltip_w <:= TextWidth(line) + 20
 	    }
 	 if line := tab(0) & *line > 0 then {
 	    put(lines, line)
-	    tooltip_w <:= TextWidth(line) + 4
+	    tooltip_w <:= TextWidth(line) + 20
 	    }
 	 }
       tooltip_h := fh*numlines +  6
@@ -571,7 +571,7 @@ $endif
       Rectangle(cw, tooltip_x, tooltip_y, tooltip_w, tooltip_h)
 
       every i := 1 to *lines do {
-	 center_string(cw, tooltip_x + tooltip_w / 2, 
+	 center_string(cw, tooltip_x + tooltip_w / 2,
 		       tooltip_y + 3 + fh * (i-1) + fh/2, lines[i], obj.accel)
 	 }
       Uncouple(cw)
@@ -652,7 +652,7 @@ $endif
       x1 := WAttrib(self.win, "pointerx")
       y1 := WAttrib(self.win, "pointery")
       every c := self.generate_components() do {
-         if \c.tooltip & c.is_unhidden() & c.in_region(x1, y1) then 
+         if \c.tooltip & c.is_unhidden() & c.in_region(x1, y1) then
             return c
       }
    end
@@ -671,7 +671,7 @@ $endif
 
       ps := find_pointer_component()
 
-      if (ps ~=== self.pointer_component) | 
+      if (ps ~=== self.pointer_component) |
          ((\ps).pointer ~== WAttrib(self.win, "pointer")) then {
          if \self.pointer_component then
             restore_pointer()
@@ -738,7 +738,7 @@ $endif
             (abs(&x - self.drag_gesture_x) > 3 |
              abs(&y - self.drag_gesture_y) > 3 ) then {
                 # Try to begin a drag.
-                self.curr_drag := self.invoke_can_drag(e) 
+                self.curr_drag := self.invoke_can_drag(e)
                 self.tried_drag := 1
                 if \self.curr_drag then {
                    change_pointer("exchange")
@@ -749,7 +749,7 @@ $endif
    end
 
    #
-   # Process a resize 
+   # Process a resize
    # @p
    method handle_resize(e)
       local nw, nh
@@ -918,7 +918,7 @@ $endif
          "repeat_rate" : set_repeat_rate(int_val(attr, val))
          "min_size" : set_min_size!int_vals(attr, val)
          #
-         # For a dialog, interpret pos and size as Icon attributes, not set_pos 
+         # For a dialog, interpret pos and size as Icon attributes, not set_pos
          # and set_size method invocations.
          #
          "pos" | "size" : set_attribs(as_attrib(attr, val))
@@ -969,7 +969,7 @@ $endif
    end
 
    #<p>
-   #  Change the expected location of the dialog relative to the 
+   #  Change the expected location of the dialog relative to the
    #  upper-left corner of the display.  Position specifications
    #  can be given in either absolute pixels or as a percentages
    #  of total range.  See comments for <tt>Component.set_pos()</tt>

@@ -258,13 +258,13 @@ class Mainbar(
       projectname := ide.ProjectSave()
 
       if \projectname then {
-	 pname := file_name(projectname)
-	 filedirectory := projectname[1:(*projectname - *pname)]
+	       pname := file_name(projectname)
+	       filedirectory := projectname[1:(*projectname - *pname)]
 
-	 newUPro := UProject(pname,filedirectory)
+	       newUPro := UProject(pname,filedirectory)
 
-	 newUPro.show_modal()
-	 }
+	       newUPro.show_modal()
+	    }
       projecttype := "Unicon"
       projectCreated := "TRUE"
       uidlog.tab_item_1.set_label("Messages: (Project Mode)")
@@ -557,7 +557,6 @@ $endif
       uidlog.EditBox.set_size("100%-4", "100%-4")
       uidlog.FileBrowser.set_pos("2", "2")
       uidlog.FileBrowser.set_size("100%-4", "100%-4")
-      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
       uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
@@ -578,7 +577,6 @@ $endif
       uidlog.ClassTabSet.set_pos("0", "110%")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
       uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
@@ -601,7 +599,6 @@ $endif
       uidlog.MsgBox.set_size("100%-4", "100%-4")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
       uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
@@ -609,9 +606,6 @@ $endif
       uidlog.pnlToolbar.resize()
    end
 
-   #
-   #  This is the view for File tab and Ivib Tab.
-   #
    method on_view_window_filesivib(ev)
       local pos_y, size_y
       pos_y := 8+tb_adj||"%"
@@ -619,21 +613,21 @@ $endif
       cur_ide_win_setup := "view_window_filesivib"
       uidlog.DevTabSet.set_pos("0", "110%")
       uidlog.DevTabSet.set_size("0", "0")
-      uidlog.IvibTabSet.set_pos("0", pos_y)
+      uidlog.IvibTabSet.set_pos("50%", pos_y)
       uidlog.IvibTabSet.set_size("50%", size_y)
-      uidlog.FileTabSet.set_pos("50%", pos_y)
+      uidlog.FileTabSet.set_pos("0", pos_y)
       uidlog.FileTabSet.set_size("50%", size_y)
       uidlog.ClassTabSet.set_pos("0", "110%")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
-      uidlog.DevTabSet.resize()
+      uidlog.ivib_maindialog.canvas.resize()
       uidlog.IvibTabSet.resize()
+      uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
       uidlog.pnlToolbar.resize()
+      uidlog.ivib_maindialog.canvas.resize()
    end
-
 
    method on_view_window_filesclassbrowser(ev)
       local pos_y, size_y
@@ -649,7 +643,6 @@ $endif
       uidlog.IvibTabSet.set_pos("0", "110%")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.ivib_maindialog.reset_canvas_pos(uidlog.ivib_maindialog.canvas)
       uidlog.IvibTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
@@ -657,9 +650,6 @@ $endif
       uidlog.pnlToolbar.resize()
    end
 
-   #
-   #  Added Ivib/File view to possible cases.
-   #
    method update_view_window(ev)
       case cur_ide_win_setup of {
 	 "view_window_all" : on_view_window_all(ev)

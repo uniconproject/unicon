@@ -33,10 +33,8 @@ $include "guih.icn"
 link mainbar
 link getpaths
 link classbrowser
-link enqueue, preferences               #>#
+link enqueue, preferences
 link stddlg
-
-# Add link for new file to build IvibTab
 link ivibtab
 
 $ifdef _MS_WINDOWS_NT
@@ -52,7 +50,7 @@ $endif
 link unigram, idol, tree, preproce, unilex, unicon, yyerror
 
 global linebreak, uidlog, browser, browserversion, docpath, UIDE_VERS,
-       is_MSWindows, PATHSEP, env, win_position, ivib_maindialog,       #ivib_maindialog required global variable for ivib's code.icn.
+       is_MSWindows, PATHSEP, env, win_position, ivib_maindialog,
        fontname
 
 #####
@@ -71,7 +69,7 @@ class UIDE : Dialog(
    startfile,
    pnlToolbar, menubar,
    MsgBox, EditBox, PtyBox,
-   FileTabSet,ClassTabSet, DevTabSet, IvibTabSet,
+   FileTabSet,ClassTabSet, DevTabSet, IvibTabPanel,
    FileBrowser, ivib_maindialog,
    tab_item_1, tab_item_2, tab_item_3, tab_item_4, tab_item_5,
    ui_Preferences
@@ -424,22 +422,18 @@ class UIDE : Dialog(
       self.add(ClassTabSet)
 
       #
-      # Build Ivib components to be added to IvibTabSet.
+      # Build Ivib components to be added to IvibTabPanel.
       #
-      IvibTabSet := BufferTabSet()
-      IvibTabSet.set_pos("0", "110%")
-      IvibTabSet.set_size("0", "0")
-      tab_item_5 := BufferTabItem()
-      tab_item_5.set_label("IVIB")
+      IvibTabPanel := Panel()
+      IvibTabPanel.set_pos("0", "110%")
+      IvibTabPanel.set_size("0", "0")
       ivib_maindialog := IvibTab()
       ivib_maindialog.set_pos("2", "2")
       ivib_maindialog.set_size("100%-4", "100%-4")
       ivib_maindialog.set_draw_border()
       ivib_maindialog.set_attribs("bg=white")
-      tab_item_5.add(ivib_maindialog)
-      IvibTabSet.add(tab_item_5)
-      IvibTabSet.set_which_one(tab_item_5)
-      self.add(IvibTabSet)
+      IvibTabPanel.add(ivib_maindialog)
+      self.add(IvibTabPanel)
 
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
@@ -457,7 +451,7 @@ initially(initfile)
    v2_marker := "### Ivib-v2 layout ##"
 
    # contains the main ide functions
-   ide := IDE(FileTabSet, ClassTabSet, IvibTabSet, FileBrowser, ivib_maindialog)
+   ide := IDE(FileTabSet, ClassTabSet, IvibTabPanel, FileBrowser, ivib_maindialog)
    uidlog := self
    menubar := Mainbar(UProject())
    startfile := initfile

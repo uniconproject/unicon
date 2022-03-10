@@ -178,7 +178,7 @@ class IDE (
       uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
 				    uidlog.FileTabSet.which_one.filename, 0)
       uidlog.FileTabSet.resize()
-      uidlog.IvibTabSet.resize()
+      uidlog.IvibTabPanel.resize()
       uidlog.ivib_maindialog.canvas.resize()
       uidlog.menubar.set_font()
    end
@@ -402,7 +402,7 @@ class IDE (
       uidlog.ClassTabSet.set_which_one(uidlog.ClassTabSet.which_one)
       uidlog.DevTabSet.set_which_one(uidlog.DevTabSet.which_one)
       uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.get_which_one())
-      uidlog.IvibTabSet.set_which_one(uidlog.IvibTabSet.get_which_one())
+      #uidlog.IvibTabPanel.set_which_one(uidlog.IvibTabPanel.get_which_one())   ----------------------
       uidlog.pnlToolbar.display()
       uidlog.resize()
       uidlog.set_focus(CurrentEditBox())
@@ -1144,6 +1144,10 @@ $endif
       uidlog.menubar.on_view_window_filesmsgs(ev)
    end
 
+   method on_viewfilesivib_btn(ev)
+      uidlog.menubar.on_view_window_filesivib(ev)
+   end
+
    method on_viewfilesclassbrowser_btn(ev)
       uidlog.menubar.on_view_window_filesclassbrowser(ev)
    end
@@ -1409,7 +1413,7 @@ $endif
    #
    method Toolbar(pnlToolbar)
       local save_btn, saveas_btn, makeexe_btn, run_btn
-      local viewfilesmsgs_btn, viewall_btn, viewfiles_btn, viewfilesbrowser_btn
+      local viewfilesmsgs_btn, viewall_btn, viewfiles_btn, viewfilesbrowser_btn, viewfilesivib_btn
 
       new_btn := IconButton()
       new_btn.set_pos("0.5%", "5%")
@@ -1549,8 +1553,17 @@ $endif
       viewfilesmsgs_btn.clear_toggles()
       viewfilesmsgs_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewfilesmsgs_btn)
+      viewfilesivib_btn := IconButton()
+      viewfilesivib_btn.set_pos("52.5%", "5%")
+      viewfilesivib_btn.set_size("4.5%", "90%")
+      viewfilesivib_btn.set_draw_border()
+      viewfilesivib_btn.set_tooltip("View Files/IVIB")
+      viewfilesivib_btn.connect(self, "on_viewfilesivib_btn", ACTION_EVENT)
+      viewfilesivib_btn.clear_toggles()
+      viewfilesivib_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`````>>`````>~~>`````>>`````>~~>>>>>>>>>>>>>>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+      uidlog.pnlToolbar.add(viewfilesivib_btn)
       viewfilesbrowser_btn := IconButton()
-      viewfilesbrowser_btn.set_pos("52.5%", "5%")
+      viewfilesbrowser_btn.set_pos("56.5%", "5%")
       viewfilesbrowser_btn.set_size("4.5%", "90%")
       viewfilesbrowser_btn.set_draw_border()
       viewfilesbrowser_btn.set_tooltip("View Files/Class Browser")
@@ -1559,7 +1572,7 @@ $endif
       viewfilesbrowser_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewfilesbrowser_btn)
       procedure_btn := IconButton()
-      procedure_btn.set_pos("56.5%", "5%")
+      procedure_btn.set_pos("60.5%", "5%")
       procedure_btn.set_size("4.5%", "90%")
       procedure_btn.set_draw_border()
       procedure_btn.set_tooltip("Insert Procedure")
@@ -1568,7 +1581,7 @@ $endif
       procedure_btn.set_img("16,c1,~~wwww~~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~~wwwwssss~~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~~ssssnnnn~~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~~nnnn~~")
       uidlog.pnlToolbar.add(procedure_btn)
       class_btn := IconButton()
-      class_btn.set_pos("60.5%", "5%")
+      class_btn.set_pos("64.5%", "5%")
       class_btn.set_size("4.5%", "90%")
       class_btn.set_draw_border()
       class_btn.set_tooltip("Insert Class")
@@ -1577,7 +1590,7 @@ $endif
       class_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~wwwww~~~~~yy~~~wjjjjjw~~~yLLy~~wjjjjjw~~~yLLy~~wjjjsssss~~yy~~~wjjsFFS++s~~~~~~wjjsFFS++s~~~~~~~wwsSS+nnnnn~~~~~~~s++nAANaan~~~qq~s++nAANaan~~qDDq~ssnNNaaan~~qDDq~~~naaaaan~~~qq~uu~naaaaan~~~~~uHHu~nnnnn~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~")
       uidlog.pnlToolbar.add(class_btn)
       method_btn := IconButton()
-      method_btn.set_pos("64.5%", "5%")
+      method_btn.set_pos("68.5%", "5%")
       method_btn.set_size("4.5%", "90%")
       method_btn.set_draw_border()
       method_btn.set_tooltip("Insert Method")
@@ -1586,7 +1599,7 @@ $endif
       method_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~yy~~~~~~~~~~~~~yLLy~~~~~~~~~~~~yLLy~~~~~~~~~~~~~yy~~~~~qq~~~~~~~~~~~~~qDDq~~~~~~~~~~~~qDDq~~~~~~~~~~~~~qq~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~uu~~~~~~~~~~~~~uHHu~~~~~~~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(method_btn)
       makeexe_btn := IconButton()
-      makeexe_btn.set_pos("68.5%", "5%")
+      makeexe_btn.set_pos("72.5%", "5%")
       makeexe_btn.set_size("4.5%", "90%")
       makeexe_btn.set_draw_border()
       makeexe_btn.set_tooltip("Compile")
@@ -1595,7 +1608,7 @@ $endif
       makeexe_btn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~~3444444444444430~~34JJJJJJJJJJJJ30~~34JJJJJJ60606030~~3433333333333330~~3466666666666630~~3466666666666630~~3460060606006630~~3460660606066630~~3460066066006630~~3460660606066630~~3460060606006630~~3466666666666630~~3466666666666630~~3333333333333330~~0000000000000000~~~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(makeexe_btn)
       run_btn := IconButton()
-      run_btn.set_pos("72.5%", "5%")
+      run_btn.set_pos("76.5%", "5%")
       run_btn.set_size("4.5%", "90%")
       run_btn.set_draw_border()
       run_btn.set_tooltip("Run")

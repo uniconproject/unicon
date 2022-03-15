@@ -15,7 +15,7 @@ int rngAsgnState(struct threadstate *ts, struct descrip v)
    * if v is an intArray and the first element is the RNG id and the size
    * is right, assign the rest of the array to the Rng State, otherwise refuse.
    */
-  if ((Type(v) == T_List) &&
+  if ((is:list(v)) &&
       (v.vword.bptr->List.size == elems) &&
       (v.vword.bptr->List.listhead->Intarray.title == T_Intarray) &&
       (v.vword.bptr->List.listhead->Intarray.a[0] == ts->rng->info.id))

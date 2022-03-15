@@ -2706,13 +2706,14 @@ function{0,1} rngbits(n)
            if (n == 0 ) n = curtstate->rng->info.property.blockBits;
 
            elems = (((n+7)/8 + sizeof(word) - 1)/sizeof(word));
-           Protect(ap = (struct b_intarray *) alcintarray(elems), runerr(0));
+           reserve(Blocks, sizeof(struct b_list) + sizeof(struct b_intarray) + (elems - 1)* sizeof(word));
+           Protect(ap = (struct b_intarray *) alcintarray(elems), runerr(307));
            if (0 > curtstate->rng->info.api.getRandomBits(n, &(ap->a[0]))) {
              fail;
            }
 
            result.dword = D_List;
-           result.vword.bptr = (union block *)alclisthdr(elems, (union block *) ap);
+           Protect(result.vword.bptr = (union block *)alclisthdr(elems, (union block *) ap),runerr(307));
            return result;
          }
        }
@@ -2760,7 +2761,7 @@ function{0,1} rngbitstring(n)
 
            if ( 0 < curtstate->rng->info.api.getRandomBits(n, bitbuff)) {
              /* Allocate a string of the required size for the answer */
-             Protect(StrLoc(result) = alcstr(NULL, n), runerr(0));
+             Protect(StrLoc(result) = alcstr(NULL, n), runerr(306));
            
              /* Populate result with '0' and '1' characters.
               * The bits are in the natural left to right reading order,

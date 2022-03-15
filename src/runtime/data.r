@@ -271,8 +271,6 @@ struct descrip rngIconName;
 struct b_cons *rngLibs;         /* chain of loaded libraries */
 #endif                                  /* RngLibrary */
 
-
-
 /*
  * Run-time error numbers and text.
  */
@@ -424,12 +422,12 @@ struct errtab errtab[] = {
     * for anything else. If any RNG wants more than 5 error messages,
     * add some more boilerplate messages to the above.
     */
-   
+
    750, "Library not loaded",
    751, "Function not found in PRNG library",
    752, "startRng() failed",
 
-#endif					/* RngLibrary */
+#endif                                  /* RngLibrary */
 
 #ifdef PosixFns
    1040, "socket error",

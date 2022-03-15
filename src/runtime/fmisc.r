@@ -2518,7 +2518,7 @@ void *getRngState( void)
     }
   }
   return NULL;
-}  
+}
 
 extern struct errtab errtab[];      /* error numbers and messages */
 
@@ -2560,7 +2560,7 @@ void pstr(struct descrip str)
   for (n=StrLen(str), tmps= StrLoc(str); n > 0; --n,++tmps) fprintf(stderr,"%c",*tmps);
 #else
   fprintf(stderr, "%.*s", (int)StrLen(str), StrLoc(str));
-#endif  
+#endif
 }
 
 /* Can be called directly from the debugger, if needed */
@@ -2583,7 +2583,7 @@ void dbgplibchain(struct b_cons *p, int level)
 #if 0
       fprintf(stderr,"\n     startRng     %p", lib->info.api.startRng);
 #endif
-  
+
     }
   }
   fprintf(stderr,"\n");
@@ -2706,13 +2706,14 @@ function{0,1} rngbits(n)
            if (n == 0 ) n = curtstate->rng->info.property.blockBits;
 
            elems = (((n+7)/8 + sizeof(word) - 1)/sizeof(word));
-           Protect(ap = (struct b_intarray *) alcintarray(elems), runerr(0));
+           reserve(Blocks, sizeof(struct b_list) + sizeof(struct b_intarray) + (elems - 1)* sizeof(word));
+           Protect(ap = (struct b_intarray *) alcintarray(elems), runerr(307));
            if (0 > curtstate->rng->info.api.getRandomBits(n, &(ap->a[0]))) {
              fail;
            }
 
            result.dword = D_List;
-           result.vword.bptr = (union block *)alclisthdr(elems, (union block *) ap);
+           Protect(result.vword.bptr = (union block *)alclisthdr(elems, (union block *) ap),runerr(307));
            return result;
          }
        }
@@ -2731,15 +2732,26 @@ function{0,1} rngbitstring(n)
    abstract { return string ++ empty_type}
    body {
      CURTSTATE();
-     
+
      if (curtstate->rng != NULL) {
        if (n == 0 ) n = curtstate->rng->info.property.blockBits;
-       
+
        if (!curtstate->rng->info.api.getRandomBits) {
          fail;  /*  getRandomBits not present*/
        } else {
-         char bitbuff[(n+7)/8];
-         word bytes, byte, bits, b;
+         /* If we allocate a buffer based on the requested number of bits, a
+          * malicious invocation could cause stack overflow. But using a buffer
+          * that is far too small leads to multiple calls to the underlying
+          * getRandomBits() routine (and if the number of bits requested is not
+          * a multiple of the natural size of the PRNG, some bits may be
+          * discarded).  The natural size is likely to be a multiple of 8, with
+          * the likely number being one of (16,24,32,48,64,128).  The least
+          * common multiple is 384 so a 48 byte buffer is a reasonably good
+          * compromise between a small buffer of a defined size and keeping down
+          * the number of calls to the underlying PRNG.
+          */
+         char bitbuff[48]; /* 48 bytes (384 bits) is the sweet spot */
+         word bytes, byte, bits, b, maxbits, blkbits;
          char *bstr;
 
          /* Check the rng has been initialized */
@@ -2756,30 +2768,39 @@ function{0,1} rngbitstring(n)
          if (n < 0) {
            fail; /* Asking for characters and specifying no buffer needed */
          } else {
-           if (n == 0 ) n = curtstate->rng->info.property.blockBits;
+           blkbits = curtstate->rng->info.property.blockBits;
+           if (n == 0 ) n = blkbits;
 
-           if ( 0 < curtstate->rng->info.api.getRandomBits(n, bitbuff)) {
-             /* Allocate a string of the required size for the answer */
-             Protect(StrLoc(result) = alcstr(NULL, n), runerr(0));
-           
-             /* Populate result with '0' and '1' characters.
-              * The bits are in the natural left to right reading order,
-              * i.e. the least significant bit is at the _end_ of the string.
-              */
-             bstr = n + StrLoc(result);
-             bits = 0; bytes = 0;
-             while( bits < n ) {
-               byte = bitbuff[bytes++];
-               for (b = 0; b < 8; b++) {
-                 *--bstr = (byte & 1 ? '1' : '0');
-                 byte >>= 1;
-                 if (++bits >= n) break;
+           /* What is the largest multiple of blkbits that fits in our buffer? */
+           maxbits = ((sizeof(bitbuff) * 8)/blkbits)*blkbits;
+
+           /* Allocate a string of the required size for the answer */
+           Protect(StrLoc(result) = alcstr(NULL, n), runerr(306));
+
+           /* Populate result with '0' and '1' characters.
+            * The bits are in the natural left to right reading order,
+            * i.e. the least significant bit is at the _end_ of the string.
+            */
+           bstr = n + StrLoc(result);
+           bits = 0; bytes = sizeof(bitbuff) + 1;
+           while( bits < n ) {
+             if (bytes >= sizeof(bitbuff)) { /* get the next lot of bits */
+               if ( 0 < curtstate->rng->info.api.getRandomBits(Min(n - bits, maxbits), bitbuff)) {
+                 bytes = 0;
+               } else {
+                 fail; /* getRandomBits failed */
                }
              }
-             StrLen(result) = n;
-           } else {
-             fail; /* getRandomBits failed */
+
+             byte = bitbuff[bytes++];
+             for (b = 0; b < 8; b++) {
+               *--bstr = (byte & 1 ? '1' : '0');
+               byte >>= 1;
+               if (++bits >= n) break;
+             }
            }
+
+           StrLen(result) = n;
          }
        }
      } else {
@@ -2801,7 +2822,7 @@ void * tryLoad(struct descrip *name, const char *format, char *path)
   if (path != NULL) {
     int pn = strlen(path);
     strncpy(filename, path, pn);
-    snprintf(filename + pn, MaxPath, format, n, StrLoc(*name));
+    snprintf(filename + pn, MaxPath - pn, format, n, StrLoc(*name));
   } else {
     snprintf(filename, MaxPath, format, n, StrLoc(*name));
   }
@@ -2811,6 +2832,15 @@ void * tryLoad(struct descrip *name, const char *format, char *path)
 
 
 "loadrng(lib) - with no args, return the current library, else load the rng library"
+
+/* Convenience macro to save typing.
+ * The main thread locks MTX_RNG_CHAIN twice (to protect the assignment
+ * to rngDefInfo at the end of the routine) so, in the body of the routine,
+ * if an early exit is needed the number of unlocks varies, depending on
+ * whether it's the main thread.
+ */
+
+#define UNLOCK_RNG_CHAIN MUTEX_UNLOCKID(MTX_RNG_CHAIN) ; if (isMain) MUTEX_UNLOCKID(MTX_RNG_CHAIN)
 
 function{0,1} loadrng(argv[argc])
 abstract { return string ++ empty_type}
@@ -2836,24 +2866,26 @@ body {
     currId = (curtstate->rng != NULL) ? curtstate->rng->info.id : rngIconId;
 
     /* Has rng library changed? (Ignore possibility of hash collision) */
-    if (currId != newId) { 
+    if (currId != newId) {
       if ((StrLen(dtmp) == 7) && (newId == rngIconId)) {
         /* Revert to built-in rngIcon */
         curtstate->rng = NULL;
         curtstate->Kywd_ran = zerodesc;
         IntVal(curtstate->Kywd_ran) = getrandom(); /* Reinitialize */
       } else {
+        int isMain = (IS_TS_MAIN(curtstate->c->status) ? 1 : 0);
 #ifndef Arrays
         /* The rng state is stored as an array of integers */
         #error RngLibrary option requires Arrays
 #endif
-
         /* Try to load the new library */
         /* Assume it isn't already loaded, so we will need */
         /* a new entry in the chain of loaded libraries    */
         Protect(reserve(Blocks, sizeof(struct b_cons) + sizeof(struct rnglibchain)), runerr(0));
-        
+
         MUTEX_LOCKID(MTX_RNG_CHAIN);
+        if (isMain) MUTEX_LOCKID(MTX_RNG_CHAIN); /* Double lock to protect rngDefInfo assignment at end */
+
         /* Is it already loaded? */
         for (rl = rngLibs; rl != NULL; rl = (struct b_cons *) rl->next) {
           rngp = (struct rnglibchain *) rl->data;
@@ -2861,7 +2893,7 @@ body {
         }
 
         if (rl == NULL) {
-          /* Not found: load the new library. 
+          /* Not found: load the new library.
            * Try the following (where Unicon/ is wherever the distribution is installed)
            *    ./name
            *    ./name.so
@@ -2872,9 +2904,12 @@ body {
            */
           /* TODO: incorporate Windows naming conventions */
           void *handle = NULL;
- 
-          if (StrLen(dtmp) + strlen("lib.so") >= MaxPath) runerr(1022, dtmp);
-          
+
+          if (StrLen(dtmp) + strlen("lib.so") >= MaxPath) {
+            UNLOCK_RNG_CHAIN;
+            runerr(1022, dtmp);
+          }
+
           handle = tryLoad(&dtmp, "%.*s", NULL); /* Try just the supplied string <name> */
           if (!handle) handle = tryLoad(&dtmp, "%.*s.so", NULL);    /* Try <name>.so    */
           if (!handle) handle = tryLoad(&dtmp, "lib%.*s.so", NULL); /* Try lib<name>.so */
@@ -2884,14 +2919,17 @@ body {
             int n;
             if (findonpath(UNICONX, path, MaxPath)) {
               n = strlen(path);
-              if (StrLen(dtmp) + n - strlen(UNICONX) + strlen("../lib/unicon/plugins/lib/") > MaxPath)
+              if (StrLen(dtmp) + n - strlen(UNICONX) + strlen("../lib/unicon/plugins/lib/") > MaxPath) {
+                UNLOCK_RNG_CHAIN;
                 runerr(1022, dtmp);
+              }
 
               snprintf(path+n-strlen(UNICONX), MaxPath - n, "../lib/unicon/plugins/lib/");
               handle = tryLoad(&dtmp, "%.*s", path); /* Try path/<name>  */
               if (!handle) handle = tryLoad(&dtmp, "%.*s.so", path);    /* Try path/<name>.so */
               if (!handle) handle = tryLoad(&dtmp, "lib%.*s.so", path); /* Try path/lib<name>.so */
               if (!handle) {
+                UNLOCK_RNG_CHAIN;
                 runerr(750, dtmp);
               }
             }
@@ -2899,6 +2937,7 @@ body {
 #endif /* UNIX */
           if (!handle) {
             fprintf(stderr, "%s", dlerror()); fflush(stderr);
+            UNLOCK_RNG_CHAIN;
             runerr(750, dtmp);
           } else {
             char * (*getErrorText)(int);
@@ -2913,24 +2952,28 @@ body {
             if (!startRng) {
               AsgnCStr(fname, "startRng");
               errno = 0;
+              UNLOCK_RNG_CHAIN;
               runerr(751, fname); /* Can't find startRng */
             }
 
             putSeed = (int (*)(word, word, void *)) dlsym(handle, "putSeed");
             if (!putSeed) {
               AsgnCStr(fname, "putSeed");
+              UNLOCK_RNG_CHAIN;
               runerr(751, fname); /* Can't find putSeed */
             }
 
             getRandomFpt = (double (*)()) dlsym(handle, "getRandomFpt");
             if (!getRandomFpt) {
               AsgnCStr(fname, "getRandomFpt");
+              UNLOCK_RNG_CHAIN;
               runerr(751, fname); /* can't find getRandomFpt */
             }
 
             getErrorText = (char * (*)(int)) dlsym(handle, "getErrorText");
             if (!getErrorText) {
               AsgnCStr(fname, "getErrorText");
+              UNLOCK_RNG_CHAIN;
               runerr(751, fname); /* Can't find getErrorText */
             }
 
@@ -2938,7 +2981,7 @@ body {
             getRandomBits = (int (*)(int, void *)) dlsym(handle, "getRandomBits");
             /* getRandomInt is optional: don't complain if it isn't here */
             getRandomInt = (word (*)()) dlsym(handle, "getRandomInt");
-            
+
             /* put the new library onto the chain*/
             rngp = (struct rnglibchain *) alcext(sizeof(struct rnglibchain));
             rngp->info.id = newId;
@@ -2962,6 +3005,7 @@ body {
               api.putErrorCode = putErrorCode;
 
               if (0 != (startRng)(&rngp->info.property, &api)) {
+                UNLOCK_RNG_CHAIN;
                 runerr(752, dtmp);
               }
             }
@@ -2973,9 +3017,12 @@ body {
           int elems = 1 + (((rngp->info.property.stateBits + 7)/8 + sizeof(word) - 1)/sizeof(word));
           int bsize = sizeof(struct b_intarray) + (elems-1) * sizeof(word);
           struct descrip d;
- 
 
-          if (!reserve(Blocks, (word)(sizeof(sizeof(struct b_list) + bsize)))) runerr(0);
+
+          if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) {
+            UNLOCK_RNG_CHAIN;
+            runerr(0);
+          }
           d.vword.bptr = (union block *) alclisthdr(elems, (union block *)alcintarray(elems));
           d.dword = D_Intarray | F_RngState | F_Var;
           /* Clear the rng's state */
@@ -2984,7 +3031,7 @@ body {
           d.vword.bptr->List.listhead->Intarray.a[0] = rngp->info.id;
           curtstate->Kywd_ran = d;
         }
-            
+
         curtstate->rng = rngp;
         curtstate->hasSeed = 0; /* Not (yet) initialized with a starting seed */
 
@@ -2996,14 +3043,16 @@ body {
       /* Note that existing threads (e.g. in a thread pool) will not change. */
       if (IS_TS_MAIN(curtstate->c->status)) {
         rngDefInfo = curtstate->rng;
+        MUTEX_UNLOCKID(MTX_RNG_CHAIN); /* remove second lock */
       }
-      
+
     }
     return (curtstate->rng != NULL) ? curtstate->rng->info.name : rngIconName;
   }
 }
 end
-#endif					/* RngLibrary */ 
+#undef UNLOCK_RNG_CHAIN
+#endif					/* RngLibrary */
 
 #ifdef Concurrent
 

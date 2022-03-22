@@ -15,8 +15,6 @@
 include ../../Makedefs
 
 .PHONY: Pure clean install test
-RNGLIBS=1
-GSLRNG=1
 
 default: all_prngs
 

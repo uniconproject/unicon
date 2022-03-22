@@ -18,10 +18,6 @@
 
 #ifdef LoadFunc
 
-#ifndef RTLD_LAZY       /* normally from <dlfcn.h> */
-#define RTLD_LAZY 1
-#endif                                  /* RTLD_LAZY */
-
 #if NT
 void *dlopen(char *name, int flag)
 { /* LoadLibrary */

@@ -92,6 +92,17 @@ void             set_gzerrortext(gzFile f);
 
 struct b_cons   *alccons        (union block *);
 
+#ifdef RngLibrary
+struct b_external *alcext(uword size);
+void * tryLoad(struct descrip *name, const char *format, char *path);
+void *getRngState( void);
+void putErrorCode(int n);
+int rngAsgnState(struct threadstate *ts, struct descrip v);
+/* These are for debugging and will eventually disapear */
+void pstr(struct descrip str);
+void dbgplibchain(struct b_cons *p, int level);
+#endif                                  /* RngLibrary */
+
 int             anycmp          (dptr dp1,dptr dp2);
 int             anycmpBase      (dptr dp1,dptr dp2,int sortType);
 #ifdef Arrays

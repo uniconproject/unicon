@@ -635,6 +635,22 @@ struct b_cons *alccons(union block *data)
    return rv;
 }
 
+#ifdef RngLibrary
+/*
+ * Allocate an external block.
+ * size is the number of bytes of extra data required.
+ */
+struct b_external *alcext(uword size)
+{
+   struct b_external *rv;
+   uword bsize = (size + sizeof(struct b_external) - sizeof(rv->exdata));
+   CURTSTATE();
+   AlcBlk(rv, b_external, T_External, bsize);
+   rv->blksize = bsize;
+   return rv;
+}
+#endif					/* RngLibrary */
+
 /*
  * allocate just a list header block.  internal use only (alc*array family).
  */

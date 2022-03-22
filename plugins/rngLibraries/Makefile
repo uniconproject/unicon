@@ -14,7 +14,9 @@
 ################################################################################
 include ../../Makedefs
 
-.PHONY: Pure clean install test
+.PHONY: Pure clean install test testPrograms ConfidenceTest
+
+TESTPROGS = rngConfidence rngPutGet speedtest
 
 default: all_prngs
 
@@ -35,7 +37,7 @@ ifdef GSLRNG
 endif
 endif
 
-test: all_prngs
+test: all_prngs testPrograms
 ifdef RNGLIBS
 	$(MAKE) -C rngIconEx test
 	$(MAKE) -C rngRbt test
@@ -43,7 +45,22 @@ ifdef RNGLIBS
 ifdef GSLRNG
 	$(MAKE) -C rngGSL test
 endif
+	./rngConfidence >/dev/null
 endif
+
+testPrograms: $(TESTPROGS)
+
+rngConfidence: rngConfidence.icn
+	unicon -s $^ -o $@
+
+ConfidenceTest: rngConfidence
+	./rngConfidence >/dev/null
+
+rngPutGet: rngPutGet.icn
+	unicon -s $^ -o $@
+
+speedtest: speedtest.icn
+	unicon -s $^ -o $@
 
 
 install: all_prngs
@@ -52,10 +69,14 @@ clean:
 	$(MAKE) -C rngIconEx clean
 	$(MAKE) -C rngRbt clean
 	$(MAKE) -C rngRlx clean
+	$(MAKE) -C rngGSL clean
+	rm -f $(TESTPROGS)
 
 Pure:
 	$(MAKE) -C rngIconEx Pure
 	$(MAKE) -C rngRbt Pure
 	$(MAKE) -C rngRlx Pure
+	$(MAKE) -C rngGSL clean
+	rm -f $(TESTPROGS)
 
 

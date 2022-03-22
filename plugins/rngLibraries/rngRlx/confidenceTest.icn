@@ -1,0 +1,136 @@
+# --------------------------------------------------------------------------------
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+# --------------------------------------------------------------------------------
+# A confidence test for the rngLib implementation of Ranlux++
+#
+#     Don Ward
+#     March 2022
+#
+#
+# It is based on this code, which is a short confidence test of ranlux++ (written
+# in C++ ) from
+#    https://github.com/hahnjo/ranluxpp/blob/main/test/RanluxppEngine.cpp
+# ----------------------------------------------------------------------
+# #include <RanluxppEngine.h>
+#
+# #include "gtest/gtest.h"
+#
+# TEST(RanluxppEngine, compare) {
+#   RanluxppEngine rng(314159265);
+#
+#   // The following values were obtained without skipping.
+#
+#   EXPECT_EQ(rng.IntRndm(), 39378223178113);
+#   EXPECT_EQ(rng.Rndm(), 0.57072241146576274673);
+#
+#   // Skip ahead in block.
+#   rng.Skip(8);
+#   EXPECT_EQ(rng.IntRndm(), 52221857391813);
+#   EXPECT_EQ(rng.Rndm(), 0.16812543081078956675);
+#
+#   // The next call needs to advance the state.
+#   EXPECT_EQ(rng.IntRndm(), 185005245121693);
+#   EXPECT_EQ(rng.Rndm(), 0.28403302782895423206);
+#
+#   // Skip ahead to start of next block.
+#   rng.Skip(10);
+#   EXPECT_EQ(rng.IntRndm(), 89237874214503);
+#   EXPECT_EQ(rng.Rndm(), 0.79969842495805920635);
+#
+#   // Skip ahead across blocks.
+#   rng.Skip(42);
+#   EXPECT_EQ(rng.IntRndm(), 49145148745150);
+#   EXPECT_EQ(rng.Rndm(), 0.74670661284082484599);
+# }
+# ----------------------------------------------------------------------
+#
+# The rngbits() function can be used to generate integer values directly from
+# the underlying generator and also to skip ahead
+# 
+# A 48 bit ranlux integer may be obtained by
+#    answer := rngbits(48)
+#    answer := iand(shift(answer[1],-16), 16RFFFFFFFFFFFF)
+# and skipping ahead can be simulated by calling rngbits() with a negative parameter
+
+
+global failures
+
+procedure main()
+   local discard
+
+   failures := 0
+
+#----    RanluxppEngine rng(314159265);
+   loadrng("rngRlx++")
+   &random := 314159265
+
+#----    // The following values were obtained without skipping.
+#----
+#----    EXPECT_EQ(rng.IntRndm(), 39378223178113);
+#----    EXPECT_EQ(rng.Rndm(), 0.57072241146576274673);
+   EXPECT_EQ(Top48(rngbits(48)[1]), 39378223178113)
+   EXPECT_EQ(?0, 0.57072241146576274673)
+
+#----    // Skip ahead in block.
+#----    Skip(rng, 8);
+   discard := rngbits(48*8)
+#----    EXPECT_EQ(rng.IntRndm(), 52221857391813);
+#----    EXPECT_EQ(rng.Rndm(), 0.16812543081078956675);
+   EXPECT_EQ(Top48(rngbits(48)[1]), 52221857391813)
+   EXPECT_EQ(?0, 0.16812543081078956675);
+
+#----    // The next call needs to advance the state.
+#----    EXPECT_EQ(rng.IntRndm(), 185005245121693);
+#----    EXPECT_EQ(rng.Rndm(), 0.28403302782895423206);
+   EXPECT_EQ(Top48(rngbits(48)[1]), 185005245121693)
+   EXPECT_EQ(?0,  0.28403302782895423206)
+
+#----    // Skip ahead to start of next block.
+#----    Skip(rng, 10);
+   discard := rngbits(48*10)
+#----    EXPECT_EQ(IntRndm(rng), 89237874214503);
+#----    EXPECT_EQ(Rndm(rng), 0.79969842495805920635);
+   EXPECT_EQ(Top48(rngbits(48)[1]), 89237874214503)
+   EXPECT_EQ(?0, 0.79969842495805920635)
+
+#----    // Skip ahead across blocks.
+#----    Skip(rng, 42);
+   rngbits(-48*42)    # Nothing is returned if the parameter is negative.
+#----    EXPECT_EQ(rng.IntRndm(), 49145148745150);
+#----    EXPECT_EQ(rng.Rndm(), 0.74670661284082484599);
+   EXPECT_EQ(Top48(rngbits(48)[1]), 49145148745150)
+   EXPECT_EQ(?0, 0.74670661284082484599)
+
+
+   if failures > 0 then {
+      write(&errout, failures, if failures > 1 then " tests failed" else " test failed")
+   } else {
+      write("All tests passed")
+   }
+
+end
+
+# ----------------------------------------------------------------------
+#  Provide a simple equivalent to gtest's EXPECT_EQ
+procedure EXPECT_EQ(answer, target)
+   if answer == target then {
+      return                    # success
+   } else {
+      write(&errout, "Expected ", target, " got ", answer)
+      failures +:= 1
+   }
+   # fail
+end
+
+# ----------------------------------------------------------------------
+# Return the top 48 bits of a 64 bit integer (which is where rngbits(48)
+# places the value).
+procedure Top48(x)
+   return iand(ishift(x, -16), 16RFFFFFFFFFFFF)
+end
+
+

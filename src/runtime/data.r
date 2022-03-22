@@ -255,6 +255,24 @@ unsigned char allchars[256] = {
    240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,
 };
 
+
+/*
+ * Definitions for loadable RNGs
+ *    rngDefInfo starts at "rngIcon" but may be changed by the main thread.
+ *    rngIconInfo is the default values for "rngIcon" and never changes thereafter
+ *                which gives an easy test for whether the RNG is the default.
+ *    New threads start with whatever is in rngDefInfo.
+ *    Each library's properties is stored in rngLibs.
+ */
+#ifdef RngLibrary
+struct rnglibchain *rngDefInfo;     /* Default properties of RNG */
+word rngIconId;
+struct descrip rngIconName;
+struct b_cons *rngLibs;         /* chain of loaded libraries */
+#endif                                  /* RngLibrary */
+
+
+
 /*
  * Run-time error numbers and text.
  */

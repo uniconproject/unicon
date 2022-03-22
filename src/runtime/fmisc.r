@@ -2892,14 +2892,14 @@ body {
               if (!handle) handle = tryLoad(&dtmp, "%.*s.so", path);    /* Try path/<name>.so */
               if (!handle) handle = tryLoad(&dtmp, "lib%.*s.so", path); /* Try path/lib<name>.so */
               if (!handle) {
-                runerr(800, dtmp);
+                runerr(750, dtmp);
               }
             }
           }
 #endif /* UNIX */
           if (!handle) {
             fprintf(stderr, "%s", dlerror()); fflush(stderr);
-            runerr(800, dtmp);
+            runerr(750, dtmp);
           } else {
             char * (*getErrorText)(int);
             double (*getRandomFpt)(void);
@@ -2913,25 +2913,25 @@ body {
             if (!startRng) {
               AsgnCStr(fname, "startRng");
               errno = 0;
-              runerr(801, fname); /* Can't find startRng */
+              runerr(751, fname); /* Can't find startRng */
             }
 
             putSeed = (int (*)(word, word, void *)) dlsym(handle, "putSeed");
             if (!putSeed) {
               AsgnCStr(fname, "putSeed");
-              runerr(801, fname); /* Can't find putSeed */
+              runerr(751, fname); /* Can't find putSeed */
             }
 
             getRandomFpt = (double (*)()) dlsym(handle, "getRandomFpt");
             if (!getRandomFpt) {
               AsgnCStr(fname, "getRandomFpt");
-              runerr(801, fname); /* can't find getRandomFpt */
+              runerr(751, fname); /* can't find getRandomFpt */
             }
 
             getErrorText = (char * (*)(int)) dlsym(handle, "getErrorText");
             if (!getErrorText) {
               AsgnCStr(fname, "getErrorText");
-              runerr(801, fname); /* Can't find getErrorText */
+              runerr(751, fname); /* Can't find getErrorText */
             }
 
             /* getRandomBits is optional: don't complain if it isn't here */
@@ -2962,7 +2962,7 @@ body {
               api.putErrorCode = putErrorCode;
 
               if (0 != (startRng)(&rngp->info.property, &api)) {
-                runerr(802, dtmp);
+                runerr(752, dtmp);
               }
             }
           }

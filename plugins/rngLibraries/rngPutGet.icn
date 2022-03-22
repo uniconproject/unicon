@@ -1,0 +1,135 @@
+################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+################################################################################
+#
+#    A simple test to save and restore &random
+#    usage:  rngPutGet file rngLib n
+#
+#    If the file exists, &random will be restored from it, otherwise &random
+#    will be written to the newly created file.
+#    In each case, the next n random values will be printed out
+#
+#    A simple test is
+#      ./rngPutGet testfile rngRbt 1000 > op1
+#      ./rngPutGet testfile rngRbt 1000 > op2
+#      diff op1 op2
+#
+#    It can also be used to test the assignment of one rng's state to another.
+#
+#
+#    Don Ward
+#    August 2019
+#
+################################################################################
+
+procedure main(args)
+$ifndef _RNG_LIBRARY
+   write(&errout, "RNG libraries are not available")
+$else
+   local rngFile, rngLib, n
+
+   if *args ~= 3 then usage()
+
+    rngLib := args[2]
+   n := args[3]
+
+   loadrng(rngLib)              # load the chosen generator
+   &error := -1
+
+   if rngFile := open(args[1],"r") then {
+      if not (getRngState(rngFile)) then {      # read from the file and set &random
+         exit()
+      }
+   } else {
+      if rngFile := open(args[1],"c") then {
+         every 1 to n do {?0}   # run the generator for a while
+         putRngState(rngFile)   # write &random to the file
+      } else {
+         write(&errout, "Cannot create ", rngFile)
+         exit()
+      }
+   }
+   # write the next n values in the random sequence
+   every 1 to n do write(?0)
+
+$endif
+end
+
+# --------------------------------------------------------------------------------
+# Write the Rng state to a file. For every rng (except rngIcon) the state is an
+# integer array. The format of the file is
+#    rngName
+#    n (no of state elements)
+#    state[1]
+#    state[2]
+#    ...
+#    state[n]
+# when the default rng is in use, the format is
+#    rngIcon
+#    value of &random
+
+procedure putRngState(rngFile)
+   local rng := loadrng()
+   local state, n
+
+   write(rngFile, rng)          # write the name of the generator
+   if rng == "rngIcon" then {
+      write(rngFile, &random)   # write the state
+   } else {
+      state := &random
+      write(rngFile, *state)    # write the number of state elements
+      every n := 1 to *state do write(rngFile, state[n]) # and each element
+   }
+end
+
+# --------------------------------------------------------------------------------
+# Read the Rng state from a file and assign it to &random
+procedure getRngState(rngFile)
+   local rng
+   local state, n
+
+   rng := read(rngFile)
+   # We don't check that rng == loadrng() to allow the testing
+   # of assigning states from another generator.
+
+   if rng == "rngIcon" then {
+      state := integer(read(rngFile))
+      &random := state
+   } else {
+      n := integer(read(rngFile))
+      state := array(n, 0)
+      every n := 1 to *state do {
+         state[n] := integer(read(rngFile))
+      }
+
+      # This will fail if the state from one generator is assigned to another.
+      if not (&random := state) then {
+         write("*** assignment to &random failed ***")
+         write("The error was \"", &errortext, "\"")
+         fail
+      }
+   }
+   return  # success
+end
+
+# --------------------------------------------------------------------------------
+procedure usage()
+   every write(&errout, ![
+       "rngPutGet file rng n",
+       "",
+       "If the file does not exist,  the generator specified in the second param",
+       "is loaded, run for n iterations, then the state is stored in the file.",
+       "After that the generator is run for another n iterations, each result is",
+       "printed to the standard output.",
+       "",
+       "If the file does exist, the generator is loaded and its state restored",
+       "the file. Then the generator is run for n iterations, each each result is",
+       "printed to the standard output."
+       ])
+
+   exit()
+end

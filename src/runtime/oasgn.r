@@ -2,6 +2,37 @@
  * File: oasgn.r
  */
 
+#ifdef RngLibrary
+int rngAsgnState(struct threadstate *ts, struct descrip v)
+{
+  word elems;
+
+  if (ts->rng == NULL) return 0; /* No rng is loaded (shouldn't happen) */
+
+  elems = 1 + (((ts->rng->info.property.stateBits + 7)/8 + sizeof(word) - 1)/sizeof(word));
+
+  /* 
+   * if v is an intArray and the first element is the RNG id and the size
+   * is right, assign the rest of the array to the Rng State, otherwise refuse.
+   */
+  if ((Type(v) == T_List) &&
+      (v.vword.bptr->List.size == elems) &&
+      (v.vword.bptr->List.listhead->Intarray.title == T_Intarray) &&
+      (v.vword.bptr->List.listhead->Intarray.a[0] == ts->rng->info.id))
+    {
+    /* Copy the array into the rng state */
+/*dbg*    fprintf(stderr, "Overwriting rng state vector\n"); fflush(stderr); */
+      memcpy(&(ts->Kywd_ran.vword.bptr->List.listhead->Intarray.a[0]),
+             &(v.vword.bptr->List.listhead->Intarray.a[0]),
+             elems * sizeof(word));
+      ts->hasSeed = 1;
+      return 1;
+    }
+  return 0;                     /* No assignment */
+}
+
+#endif					/* RngLibrary */
+
 /*
  * Asgn - perform an assignment when the destination descriptor might
  *  be within a block.
@@ -144,18 +175,100 @@
             store[type(x)] = type(y)
             }
          inline {
-#ifdef Arrays
-            if ( Offset(x)>0 ) {
-               /* don't know actual title, don't use checking BlkD macro */
-               if (BlkLoc(x)->Realarray.title==T_Realarray){
-                  double yy;
-                  if (cnv:C_double(y, yy)){
-                     *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
-                     }
-                  else{ /* y is not real, try to convert the realarray to list*/
-                     tended struct b_list *xlist= BlkD(x, Realarray)->listp;
-                     tended struct descrip dlist;
-                     word i;
+#ifdef RngLibrary
+#ifdef DescriptorDouble
+            double r;
+#endif					/* DescriptorDouble */
+            CURTSTATE();
+            if (CHECK_FLAG(x.dword, F_RngState)) {
+              /* This is an assignment to &random */
+              /* Check if it's for the state or a new seed */
+              if (!rngAsgnState(curtstate, y)) { /* New Seed */
+               int seeded = 0;
+                /* Check the type of y is acceptable to the RNG */
+                /* Special check for strings and arrays */
+                if (is:string(y)) {
+                  if (CHECK_FLAG(curtstate->rng->info.property.typeFlags, RngTypeFlag(T_String))) {
+                    seeded = curtstate->rng->info.api.putSeed(T_String, StrLen(y), (char *) StrLoc(y));
+                  } else {
+                    runerr(113, y);
+                  }
+                } else if (is:list(y)) {
+                   if (CHECK_FLAG(curtstate->rng->info.property.typeFlags, RngTypeFlag(T_Intarray)) &&
+                      (y.vword.bptr->List.listhead->Intarray.title == T_Intarray)) {
+                    seeded = curtstate->rng->info.api.putSeed(T_Intarray,
+                                                     y.vword.bptr->List.size * sizeof(word),
+                                                     &(y.vword.bptr->List.listhead->Intarray.a[0]));
+                  } else if (CHECK_FLAG(curtstate->rng->info.property.typeFlags, RngTypeFlag(T_Realarray)) &&
+                      (y.vword.bptr->List.listhead->Intarray.title == T_Realarray)) {
+                    seeded = curtstate->rng->info.api.putSeed(T_Realarray,
+                                                     y.vword.bptr->List.size * sizeof(double),
+                                                     &(y.vword.bptr->List.listhead->Realarray.a[0]));
+                  } else if (CHECK_FLAG(curtstate->rng->info.property.typeFlags, RngTypeFlag(T_List))) {
+                    /* They really want a list ... good luck with that */
+                    seeded = curtstate->rng->info.api.putSeed(T_List, 0, &(y.vword.bptr->List));
+                  } else {
+                    runerr(113,y);
+                  }
+                } else {
+                  if (CHECK_FLAG(curtstate->rng->info.property.typeFlags, RngTypeFlag(Type(y)))) {
+                    if (Pointer(y)) {
+                      seeded = curtstate->rng->info.api.putSeed(Type(y),0 ,VarLoc(y));
+                    } else {
+#ifdef DescriptorDouble
+                      /* If it's not a string (or an array) and it's not a pointer */
+                      /* it must either be an integer or a real      */
+                      if (Type(y) == T_Integer) {
+                        seeded = curtstate->rng->info.api.putSeed(T_Integer, sizeof(IntVal(y)), &IntVal(y));
+                      } else {
+#if 0
+                        /* ????????????
+                         * This causes rtt to complain
+                         *   rtt: file oasgn.r, line 170, warning: dx may be modified  
+                         *   	iconc does not handle conversion of modified parameter
+                         *   rtt: file oasgn.r, line 152, warning: dx may be modified  
+                         *   	iconc does not handle conversion of modified parameter
+                         *   rtt: file oasgn.r, line 170, warning: dy may be modified  
+                         *      iconc does not handle conversion of modified parameter
+                         *   rtt: file oasgn.r, line 152, warning: dy may be modified  
+                         *      iconc does not handle conversion of modified parameter
+                         */
+                        GetReal(&y,r);
+#else
+                        r = RealVal(y);
+#endif
+                        seeded = curtstate->rng->info.api.putSeed(T_Real, sizeof(r), &r);
+                      }
+#else
+                      /* If it's not a string (or an array) or a pointer, it must be an integer */
+                      seeded = curtstate->rng->info.api.putSeed(T_Integer, sizeof(IntVal(y)), &IntVal(y));
+#endif					/* DescriptorDouble */
+                    }
+                  } else {
+                    runerr(113, y);
+                  }
+                }
+                /* Mark the rng as "initialized" */
+                if (seeded == 0) {
+                  curtstate->hasSeed = 1;
+                } else {
+                  fail;
+                }
+              }
+            } else 
+#endif					/* RngLibrary */
+#ifdef Arrays 
+	    if ( Offset(x)>0 ) {
+	       /* don't know actual title, don't use checking BlkD macro */
+	       if (BlkLoc(x)->Realarray.title==T_Realarray){
+		  double yy;
+		  if (cnv:C_double(y, yy)){
+		     *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
+		     }
+		  else{ /* y is not real, try to convert the realarray to list*/
+		     tended struct b_list *xlist= BlkD(x, Realarray)->listp;
+		     tended struct descrip dlist;
+		     word i;
 
                      i = (Offset(x)*sizeof(word)-sizeof(struct b_realarray)
                         +sizeof(double)) / sizeof(double);

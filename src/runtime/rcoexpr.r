@@ -916,8 +916,15 @@ void init_threads()
 
    nmutexes = NUM_STATIC_MUTEXES;
 
+#ifdef RngLibrary
+   for(i=0; i<NUM_STATIC_MUTEXES-2; i++)
+      MUTEX_INITID(i, NULL);
+   /* recursive mutex for PRNG chain */
+   MUTEX_INITID( MTX_RNG_CHAIN , &rmtx_attr);
+#else
    for(i=0; i<NUM_STATIC_MUTEXES-1; i++)
       MUTEX_INITID(i, NULL);
+#endif                                  /* RngLibrary */
 
    /* recursive mutex for initial clause */
    MUTEX_INITID( MTX_INITIAL, &rmtx_attr);

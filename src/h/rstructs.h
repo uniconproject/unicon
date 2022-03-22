@@ -511,6 +511,69 @@ union numeric {                 /* long integers or real numbers */
    #endif                               /* LargeInts */
    };
 
+#ifdef RngLibrary
+
+/*
+ * Define the acceptable types to PutSeed with RngTypeFlag
+ * e.g.  (RngTypeFlag(T_String) | RngTypeFlag(T_Integer))
+ *    means that PutSeed can accept either a string or an integer as a seed value
+ *
+ * Any type t for which IconType(t) != '.' is a possibility, although some
+ * might be more "adventurous" than others.
+ * Note that T_String takes the place of T_Null in the flags. The run-time passes
+ *  a NULL parameter to putSeed if no initialization has taken place before a call
+ * to getRandomFpt() ( it actually calls putSeed(T_Null, 0, NULL); ).
+ *
+ * Store the acceptable type(s) in the typeFlags word of the structure passed in
+ * the first parameter to startRng().
+ */
+#define RngTypeFlag(t) ((t)==T_String ? 1 : 1 << ((t) & 63))
+
+struct rngprops {
+  word stateBits;			/* No of bits in rng state */
+  word typeFlags;			/* Which types are acceptible as a seed */
+  word blockBits;			/* No of bits in the "natural size" of the random output */
+};
+
+/* Routines in the run-time that are called by the rng */
+struct rng_rt_api {
+  word   (*getInitialBits)(void);
+  void * (*getRngState)(void);
+  void   (*putErrorCode)(int);
+};
+
+/* Routines in the rng that are called by the run-time */
+struct rt_rng_api {
+  char * (*getErrorText)(int);
+  double (*getRandomFpt)(void);
+  word   (*getRandomInt)(void);
+  int    (*getRandomBits)(int, void *);  /* No of bits, output buffer  */
+  int    (*putSeed)(word, word, void *); /* Type, Size, Seed parameter */
+  #if 0
+  /* Not needed after initial load, so no need to remember it */
+  int    (*startRng)(struct rngprops *, struct rng_rt_api *);
+  #endif
+};
+
+struct rnginfo {
+  word id;					/* Hash of rng name */
+  struct descrip name;		/* Name of rng library */
+  struct rngprops property;	/* rng properties */
+  struct rt_rng_api api;
+};
+
+/* The chain of loaded rng libraries             */
+/* The first two fields mimic struct b_exernal   */
+/* They are linked together with b_cons elements */
+struct rnglibchain {
+   word title;			    /*   T_External */
+   word blksize;		    /*   size of block */
+   struct rnginfo info;
+};
+
+
+#endif					/* RngLibrary */
+
 /*
  * We want to support pthreads eventually even under COMPILER.
  * Towards that end, threadstate defined for both COMPILER and VM,
@@ -580,6 +643,10 @@ struct threadstate {
    struct descrip Kywd_pos;         /* TLS */
    struct descrip ksub;             /* TLS */
    struct descrip Kywd_ran;        /*  TLS  */
+#ifdef RngLibrary
+   struct rnglibchain *rng;		    /* TLS */
+   int hasSeed;						/* non zero if initialized */
+#endif					/* RngLibrary */
 #ifdef PatternType
    int  K_patindex;                /* TLS */
 #endif                                 /* PatternType */

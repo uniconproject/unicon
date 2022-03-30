@@ -37,6 +37,34 @@ link ide, mainbar
 
 ############################################################################
 #
+# Unicon's Ivib specific toolbar.
+#
+class IvibToolBar : ToolBar(x1, y1, img_w, img_h, bg)
+   method add_button(t)
+      if /img_w then {
+         img_w := t.img_w
+         img_h := t.img_h
+         set_size(16 * img_w, 2 * img_h)
+      }
+      t.set_pos(x1, y1)
+      t.set_no_keyboard()
+      bg.add(t)
+      self.add(t)
+      x1 +:= img_w
+      if *get_children() == 16 then {
+         y1 +:= img_h
+         x1 := 0
+      }
+   end
+
+   initially()
+      self.ToolBar.initially()
+      x1 := y1 := 0
+      bg := ButtonGroup()
+end
+
+############################################################################
+#
 # Class for building integrated version of ivib.
 #
 $define CANVAS_SURROUND 30
@@ -108,7 +136,8 @@ class IvibTab : Component(
    grid_button,
    copy_button,
    last_icn_dir,
-   source		    # source file (list of strings)
+   source,		    # source file (list of strings)
+   ask_append
    )
 
    #
@@ -696,35 +725,38 @@ class IvibTab : Component(
    method load_canvas(f, fname)
       local s, cd
       source := [ ]
-      repeat {
-	 if not (s := read(f)) then {
-	    cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
-	    cd.show_modal()
-	    if not cd.result() then fail
-	    # no ivib layout, need to append
-	    close(f)
-	    if f := open(fname, "w") then {
-	       # write L
-	       every write(f, !source)
-	       # write the empty layout
-	       append_ivib(f)
-	       close(f)
-	       source := [ ]
-	       if f := open(fname) then {
-		  uidlog.MsgBox.set_contents("added an Ivib interface")
-		  next
-		  }
-	       else return uidlog.MsgBox.set_contents("Failed to append layout to " || fname)
+      if /ask_append then repeat {
+	       if not (s := read(f)) then {
+	          cd := ChoiceDialog("No Ivib layout, append one?")
+	          cd.show_modal()
+	          if not cd.result() then {
+               ask_append := 1
+               fail
+            }
+	          # no ivib layout, need to append
+	          close(f)
+	          if f := open(fname, "w") then {
+	             # write L
+	             every write(f, !source)
+	             # write the empty layout
+	             append_ivib(f)
+	             close(f)
+	             source := [ ]
+	             if f := open(fname) then {
+		              uidlog.MsgBox.set_contents("added an Ivib interface")
+		              next
+		           }
+	             else return uidlog.MsgBox.set_contents("Failed to append layout to " || fname)
+	          }
+	          else
+	             return uidlog.MsgBox.set_contents("No Ivib layout in " || fname)
 	       }
-	    else
-	       return uidlog.MsgBox.set_contents("No Ivib layout in " || fname)
+	       if s == v1_marker then
+	          return load_v1(f, fname)
+	       if s == v2_marker then
+	          return load_v2(f, fname)
+	       put(source, s)
 	    }
-	 if s == v1_marker then
-	    return load_v1(f, fname)
-	 if s == v2_marker then
-	    return load_v2(f, fname)
-	 put(source, s)
-	 }
    end
 
    method load_layout(f, fname)
@@ -1005,8 +1037,10 @@ class IvibTab : Component(
    # -Gives functionality for ivib's integration with ui.
    #
    method op_push_code_to_ui()
-      ide.on_save_btn()
-      ide.updatefile(self.canvas.filename)
+      ask_append := &null
+      op_save_ivib(self.canvas.filename)
+      if /self.canvas.filename then ide.updatefile(uidlog.FileTabSet.get_which_one().filename)
+      else ide.updatefile(self.canvas.filename)
    end
 
 
@@ -1065,7 +1099,7 @@ class IvibTab : Component(
                  CanvasTreeUI()
                  ]
 
-         tb := CustomToolBar()
+         tb := IvibToolBar()
          tb.set_pos(0, 0)
          tb.set_size("50%", "9%")
 

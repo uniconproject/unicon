@@ -245,7 +245,7 @@ class IDE (
          }
       }
       # Check for modifications in ivib tab.
-      if \uidlog.ivib_maindialog.canvas.modified then save_file(c)
+      if /uidlog.ivib_maindialog.canvas.modified || \uidlog.ivib_maindialog.canvas.new_file_flag then save_file(c)
    end
 
    method on_saveas_btn(ev)
@@ -380,7 +380,6 @@ class IDE (
       close(ufile)
 
       uidlog.ivib_maindialog.op_save_ivib(c.filename)
-
 
       \uidlog.MsgBox.set_contents([c.label || " saved."])
 
@@ -1363,7 +1362,8 @@ $endif
    #
    method updatefile(filename)
       local found, nchars, ufile, line, c
-      handle_closefile()
+      if /uidlog.FileTabSet.get_which_one() then handle_openfile( , "scratch")
+      handle_closefile(filename)
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
          uidlog.MsgBox.set_contents(["Error - file name missing"])
          handle_openfile( , filename)
@@ -1403,6 +1403,15 @@ $endif
       CurrentTabItem().filedirectory := filename[1:-*CurrentTabItem().filename]
       uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
           uidlog.FileTabSet.which_one.filename, 0)
+      if \uidlog.FileTabSet.get_which_one().filename then {
+         if \uidlog.FileTabSet.get_which_one().filedirectory then {
+            currentFile := uidlog.FileTabSet.get_which_one().filedirectory || uidlog.FileTabSet.get_which_one().filename
+         } else {
+            currentFile := uidlog.FileTabSet.get_which_one().filename
+         }
+         uidlog.ivib_maindialog.op_open_file(currentFile)
+         uidlog.ivib_maindialog.canvas.restore()
+      }
       uidlog.FileTabSet.resize()
       uidlog.menubar.set_font()
    end

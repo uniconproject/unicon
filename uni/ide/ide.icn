@@ -210,7 +210,7 @@ class IDE (
       if \decision == "Cancel" then return "Cancel"
       if \decision == "Save" then on_save_btn(, c)
 
-      if *uidlog.FileTabSet.children = 1 then exit(0)
+      if *uidlog.FileTabSet.children = 1 then new_tabitem( , 0, "Untitled.icn", "", CurrentTabItem().filedirectory)
 
       if /modified then { # close a non-modified buffer (no * suffix)
          uidlog.FileTabSet.remove(c)
@@ -1361,14 +1361,13 @@ $endif
    # Update file method: Update IDE file to show changes from ivib.
    #
    method updatefile(filename)
-      local found, nchars, ufile, line, c
-      if /uidlog.FileTabSet.get_which_one() then handle_openfile( , "scratch")
-      handle_closefile(filename)
+      local found, nchars, ufile, line, c, currentFile
+      handle_closefile()
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
          uidlog.MsgBox.set_contents(["Error - file name missing"])
-         handle_openfile( , filename)
+         filename := CurrentTabItem().filename
          }
-      if  filename[-2:0]==(".*") then filename := filename[1:-2]
+      if filename[-2:0]==(".*") then filename := filename[1:-2]
       tab_label := file_name(filename)
       found := 1
       file_contents := []
@@ -1379,7 +1378,6 @@ $endif
         put(file_contents, line)
         nchars +:= *line + 1
         }
-
     # We don't have a file open with the same name, so
     # add a new tab with the file name
       if not member(opened_files_set, filename) then {
@@ -1403,11 +1401,11 @@ $endif
       CurrentTabItem().filedirectory := filename[1:-*CurrentTabItem().filename]
       uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
           uidlog.FileTabSet.which_one.filename, 0)
-      if \uidlog.FileTabSet.get_which_one().filename then {
-         if \uidlog.FileTabSet.get_which_one().filedirectory then {
-            currentFile := uidlog.FileTabSet.get_which_one().filedirectory || uidlog.FileTabSet.get_which_one().filename
+      if \CurrentTabItem().filename then {
+         if \CurrentTabItem().filedirectory then {
+            currentFile := CurrentTabItem().filedirectory || CurrentTabItem().filename
          } else {
-            currentFile := uidlog.FileTabSet.get_which_one().filename
+            currentFile := CurrentTabItem().filename
          }
          uidlog.ivib_maindialog.op_open_file(currentFile)
          uidlog.ivib_maindialog.canvas.restore()

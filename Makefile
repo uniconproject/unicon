@@ -50,21 +50,17 @@ config: configure
 
 help:
 	@echo
-	@echo Unicon Build Instructions:
+	@echo "Unicon Build Instructions:"
 	@echo
-	@echo Platform
-	@echo "  UNIX:"
-	@echo "      Run \"./configure\""
+	@echo "   Run the following configure and make commands"
+	@echo
+	@echo "  UNIX/macOS:"
+	@echo "        ./configure"
+	@echo "        make"
 	@echo
 	@echo "  Windows:"
-	@echo "      MSVC: Run \"nmake NT-Configure\" or \"nmake W-Configure\"."
-	@echo "      GCC : Run \"make NT-Configure-GCC\" or \"make W-Configure-GCC\"."
-	@echo "            For a fully-automated build Run \"make WUnicon\" ."
-	@echo "            Autoconf:"
-	@echo "            sh configure --build=i686-w64-mingw32 when building 32-bit"
-	@echo "            sh configure --build=x86_64-w64-mingw32 when building 64-bit"
-	@echo ""
-	@echo "All: after configuration, run \"make (or nmake) Unicon\"."
+	@echo "        sh configure --build=x86_64-w64-mingw32"
+	@echo "        make"
 	@echo
 
 ##################################################################
@@ -81,21 +77,6 @@ allsrc: Makedefs update_rev
 
 # needed especially for MacOS
 .PHONY: Configure
-
-# Configure the code for a specific system.
-
-V-Configure:	config/unix/$(name)/status
-	$(MAKE) Pure >/dev/null
-	-cd src/lib/voice; $(MAKE)
-	cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
-	sh ./configure --disable-graphics CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
-
-VX-Configure:	config/unix/$(name)/status
-	$(MAKE) Pure >/dev/null
-	-cd src/lib/voice; $(MAKE)
-	cd config/unix; $(MAKE) Setup-Graphics name=$(name)
-	sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
-	@echo Remember to add unicon/bin to your path
 
 WUnicon32:
 	sh configure --host=i686-w64-mingw32
@@ -114,13 +95,6 @@ winbin WinInstaller:
 	@echo "#define PATCHSTR \"$(PATCHSTR)\"" >> config/win32/gcc/unicon_version.iss
 	$(INNOSETUP) config/win32/gcc/unicon.iss
 
-NT-Configure:
-	cmd /C "cd config\win32\msvc && config"
-	@echo Now remember to add unicon/bin to your path
-
-W-Configure:
-	cmd /C "cd config\win32\msvc && w-config"
-	@echo Now remember to add unicon/bin to your path
 
 ##################################################################
 #
@@ -148,7 +122,7 @@ build:
 # Get the status information for a specific system.
 
 Status:
-		@cat config/unix/$(name)/status
+		@cat unicon-config.log
 
 ##################################################################
 #

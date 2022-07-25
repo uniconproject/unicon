@@ -2204,7 +2204,7 @@ associated with db.
 {\bf delay(i) : null } \hfill {\bf delay for i milliseconds}
 
 \noindent
-\index{delay(i)}\texttt{delay(i)} pauses the program for at least
+\index{delay(i)}\texttt{delay(i)} pauses the current thread for at least
 \texttt{i} milliseconds. Runtime error 101 occurs if \texttt{i}
 is a large integer.
 
@@ -2586,6 +2586,7 @@ or of \texttt{i1} and \texttt{i2}.
 table \texttt{T}. \texttt{key(L)} generates the indices from 1 to
 \texttt{*L} in list \texttt{L}. \texttt{key(R)} generates the string
 field names of record \texttt{R}.
+\texttt{key(D)} generates the string key values of a DBM database \texttt{D}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{keyword}
@@ -2881,7 +2882,11 @@ untranslated mode\\
 
 Directories may only be opened for reading, and produce the names of all
 files, one per line. Pipes may be opened for reading or writing, but
-not both.
+not both. \texttt{open()} fails if the pipe is open for reading and
+the command line given by \texttt{s1} produces no output:
+\texttt{\&errornumber} may be used to distinguish between a successful
+command that produces no output and a command that returns a non zero
+(unsucessful) exit code.
 
 When opening a network socket: the first argument \texttt{s1} is the
 name of the socket to connect. If \texttt{s1} is of the form
@@ -3250,7 +3255,8 @@ occurs if the value to be generated is a large integer.
 \noindent
 \index{serial(x)}\texttt{serial(x)} returns the serial number for
 structure \texttt{x}, if it has one. Serial numbers uniquely identify
-structure values.
+structure values. \texttt{serial()} returns the serial number of the
+current co-expression (or thread).
 
 \bigskip\hrule\vspace{0.1cm}
 \index{set}
@@ -4848,7 +4854,7 @@ platform dependent.
 124 \ \ \ \ \ \ \ table expected\\
 125 \ \ \ \ \ \ \ list, record, or set expected\\
 126 \ \ \ \ \ \ \ list or record expected\\
-127 \ \ \ \ \ \ \ invalid type to pattern operation\\
+127 \ \ \ \ \ \ \ pattern expected\\
 128 \ \ \ \ \ \ \ unevaluated variable or function call expected\\
 129 \ \ \ \ \ \ \ unable to convert unevaluated variable to pattern\\
 130 \ \ \ \ \ \ \ incorrect number of arguments\\
@@ -4862,6 +4868,7 @@ platform dependent.
 146 \ \ \ \ \ \ \ incorrect number of arguments to drawing
 function\\
 147 \ \ \ \ \ \ \ window attribute cannot be read or written as requested\\
+148 \ \ \ \ \ \ \ graphics is not enabled in this virtual machine\\
 150 \ \ \ \ \ \ \ drawing a 3D object while in 2D mode\\
 151 \ \ \ \ \ \ \ pushed/popped too many matrices\\
 152 \ \ \ \ \ \ \ modelview or projection expected\\
@@ -4875,6 +4882,7 @@ function\\
 unevaluated expression\\
 164 \ \ \ \ \ \ \ unsupported unevaluated expression\\
 165 \ \ \ \ \ \ \ null pattern argument where name was expected\\
+166 \ \ \ \ \ \ \ unable to produce pattern image, possible malformed pattern\\
 %%----------------------------------------
 %% These codes are not in unicon/src/runtime/data.r or are different
 %% 160 \ \ \ \ \ \ \ cannot open file\\
@@ -4899,7 +4907,7 @@ unevaluated expression\\
 171 \ \ \ \ \ \ \ UDP socket expected\\
 172 \ \ \ \ \ \ \ signal handler procedure must take one argument\\
 173 \ \ \ \ \ \ \ cannot open directory for writing\\
-174 \ \ \ \ \ \ \ invalid file operation on directory or database\\
+174 \ \ \ \ \ \ \ invalid file operation\\
 175 \ \ \ \ \ \ \ network connection expected\\
 180 \ \ \ \ \ \ \ invalid mutex\\
 181 \ \ \ \ \ \ \ invalid condition variable\\
@@ -4912,6 +4920,7 @@ the same time\\
 is not yet supported\\
 %%----------------------------------------
 190 \ \ \ \ \ \ \ dbm database expected\\
+191 \ \ \ \ \ \ \ cannot open dbm database\\
 201 \ \ \ \ \ \ \ division by zero\\
 202 \ \ \ \ \ \ \ remaindering by zero\\
 203 \ \ \ \ \ \ \ integer overflow\\
@@ -4930,6 +4939,7 @@ length\\
 215 \ \ \ \ \ \ \ attempt to refresh \&main\\
 216 \ \ \ \ \ \ \ external function not found\\
 217 \ \ \ \ \ \ \ unsafe inter-program variable assignment\\
+218 \ \ \ \ \ \ \ invalid file name\\
 301 \ \ \ \ \ \ \ evaluation stack overflow\\
 302 \ \ \ \ \ \ \ memory violation\\
 303 \ \ \ \ \ \ \ inadequate space for evaluation stack\\
@@ -4954,6 +4964,11 @@ length\\
 1046 \ \ \ \ \ \ \ invalid permission string for umask\\
 1047 \ \ \ \ \ \ \ invalid protocol name\\
 1048 \ \ \ \ \ \ \ low-level read or select mixed with buffered read\\
+1049 \ \ \ \ \ \ \ nonexistent service or services database error\\
+1050 \ \ \ \ \ \ \ command not found\\
+1051 \ \ \ \ \ \ \ cannot create temporary file\\
+1052 \ \ \ \ \ \ \ cannot create pipe\\
+1053 \ \ \ \ \ \ \ empty pipe\\
 1100 \ \ \ \ \ \ \ ODBC connection expected\\
 1200 \ \ \ \ \ \ \ system error (see \&errno)\\
 1201 \ \ \ \ \ \ \ malformed URL\\

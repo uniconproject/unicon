@@ -2,16 +2,31 @@
 # ulpp.icn -- ulex preprocessor
 #
 # lex regular expression macros are not supported in the C implementation
-# of ulex... this substitute might work for simple cases.
+# of ulex... this substitute will work for simple cases.
 #
+global ulppfin, jflex
+$ifdef MAIN
 procedure main()
+   ulppfin := &input
+   L := ulpp()
+   every write(!L)
+end
+$endif
+
+procedure ulpp()
    L := []
    macros := table()
+   perpers_needed := 1
    seen_perper := seen_percur := 0
-   every line := !&input do {
+   every line := !ulppfin do {
       if match("%%", line) then {
 	 seen_perper +:= 1
 	 }
+      else if match("%int", line) then {
+	 if L[-1] == "%%" then pull(L)
+         perpers_needed := 2
+	 next
+         }
       else if match("%{", line) then {
 	 seen_percur +:= 1
 	 }
@@ -19,10 +34,15 @@ procedure main()
 	 if seen_percur<1 then stop("malformed .l file in: ", image(line))
 	 seen_percur -:= 1
 	 }
-      else if seen_perper = 0 then {
+      else if seen_perper = perpers_needed-1 then {
+write
 	 if seen_percur = 0 then {
 	    line ? {
 	       if nam := tab(many(&letters++&digits)) then {
+                  if ="=" then {
+                     if /jflex := 1 then
+                        write(&errout, "jflex compatibility mode")
+                     }
 		  tab(many(' \t'))
 		  if def := tab(0) then {
                      def := trim(def, ' \t')
@@ -34,7 +54,7 @@ procedure main()
 	       }
 	    }
 	 }
-      else if seen_perper = 1 then {
+      else if seen_perper = perpers_needed then {
 	 while i := find("{", line) &
 	       match(k := key(macros),line,i+1) &
 	       line[i+*k+1]=="}" do {
@@ -42,6 +62,8 @@ procedure main()
 	    }
 	 }
       put(L, line)
+#write(&errout, "putting ", image(line))
       }
-   every write(!L)
+   return L
+#write(&errout, "ulpp finished")
 end

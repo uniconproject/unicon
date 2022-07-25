@@ -25,6 +25,7 @@ nographics: xml
 	cd unidep; $(MAKE)
 	cd util; $(MAKE)
 	cd unidoc; $(MAKE)
+	cd uflex; $(MAKE)
 
 udbtools:
 	cd udb; $(MAKE) tools
@@ -34,7 +35,6 @@ uniprogs:
 
 gui: nographics
 	cd gui; $(MAKE)
-	cd gui/ivib; $(MAKE)
 
 graphics: gui
 	cd ide; $(MAKE)
@@ -46,7 +46,6 @@ clean Clean Pure:
 	cd udb && $(MAKE) cleantools
 	cd lib && $(MAKE) clean
 	cd gui && $(MAKE) clean
-	cd gui/ivib && $(MAKE) clean
 	cd xml && $(MAKE) clean
 	cd parser && $(MAKE) clean
 	cd unidep && $(MAKE) clean

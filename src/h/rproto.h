@@ -93,6 +93,7 @@ void		 set_gzerrortext(gzFile f);
 struct b_cons   *alccons	(union block *);
 
 int		anycmp		(dptr dp1,dptr dp2);
+int		anycmpBase	(dptr dp1,dptr dp2,int sortType);
 #ifdef Arrays
 int		arraytolist	(struct descrip *arr);
 int		cplist2realarray(dptr dp, dptr dp2, word i, word j,
@@ -1153,7 +1154,7 @@ int	kbhit		(void);
 int	nthcmp		(dptr d1,dptr d2);
 void	nxttab		(C_integer *col, dptr *tablst, dptr endlst,
 			   C_integer *last, C_integer *interval);
-int	order		(dptr dp);
+int	order		(dptr dp, int sortType);
 int	pathFind	(char target[], char buf[], int n);
 int	printable	(int c);
 int	ripow		(double r, C_integer n, dptr rslt);

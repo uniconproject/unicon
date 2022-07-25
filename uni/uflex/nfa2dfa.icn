@@ -1,0 +1,491 @@
+record edge(symbol, destinations)
+# record edgelist(current, _next)
+record anode(label, rulenum, edges, epsilon, dot, semaction)
+record anodelist(current, _next)
+record automata(start, states, accepting)
+global dfa
+
+
+procedure main(argv)
+local lst := []
+local s := ""
+local dfa := table()
+local nfa_tble := table()
+local ec_tble := table()
+local dfastates := table() # new states for dfa first col
+local marked_state := set()
+local dfstates_sort := []
+local fname := ""
+
+   if *argv=0 then stop("Need  file")
+   fname :=  argv[1]
+   write(fname)
+  
+   fd := open(fname,"r") 
+
+   if /fd then {
+     write(" Could not open  "||fname)
+     exit(1)
+   }
+   
+   lst := []
+   while s := read(fd) do {
+      put(lst,s)
+   }
+   close(fd)
+
+   get_nfa(nfa_tble,lst)
+
+   lst := []
+   nfa_sort := sort(nfa_tble)
+   write(" NFA INPUT ")
+   #every j := key(nfa_tble)  do {
+   every j := 1 to *nfa_sort do {
+       lst := nfa_sort[j][2]
+       writes(nfa_sort[j][1]||" ")
+       every k := 1 to *lst do 
+         writes(lst[k]||" ")
+       write()
+   }
+   
+   num_inputs := *lst - 1 # number of inputs is number of elts in lst -epsilon
+   
+   epsilon_closure(nfa_tble,nfa_sort,ec_tble)
+   ec_lst :=[]
+   ec_lst := sort(ec_tble)
+   write(" E Closure ")
+   every j := 1 to *ec_lst do {
+     #write(ec_tble[j][1]||"  key ")
+     write("e-closure ("||ec_lst[j][1]||") "||ec_lst[j][2])
+   }
+   
+   
+   #every x := key(ec_tble) do
+   #   write("e-closure("||x||" "||ec_tble[x])
+   #write("state1 "||ec_tble["A"])
+   dfa_states := []
+   put(dfa_states,ec_tble["A"])
+   newstate := ""
+
+   write("num_inputs "||num_inputs)
+   
+   newstate := ec_tble["A"]  # start with e-closure (A)
+   insert(dfastates,1,newstate)  # unique state
+   more_states := 1
+   k := 0
+   while more_states > 0 do {
+      k := k + 1
+      newstate := check_marked_states(dfastates,marked_state)
+      #write("MAIN Starting on NEW State "||newstate)
+      
+           
+      moverc := ""
+      rowlst := []
+      put(rowlst,newstate)
+      every input_col := 1 to num_inputs do {  # Go across (horizantal ) inputs
+         moverc :=  get_move(newstate,nfa_tble,ec_tble,input_col,dfastates,marked_state)
+         put(rowlst,moverc)
+      }
+      
+      insert(dfa,k,rowlst)
+      insert(marked_state,newstate)
+      
+      #every x := key(dfastates) do 
+      #   write(x||" "||dfastates[x])
+      if *dfastates = *marked_state then  {
+          write(" DONE WITH MARKED STATES")
+          more_states := 0
+      }
+      #if newstate == "BLANK STATE" then {
+      #   more_states := 0
+      #  write(" DONE WITH MARKED STATES newstate is blank")
+      #   break
+      #}
+      if k > *nfa_sort + 1 then {
+         more := 0
+         break
+      }
+      
+   }
+   every j := 1 to *ec_lst do {
+     #write(ec_tble[j][1]||"  key ")
+     write("e-closure ("||ec_lst[j][1]||") "||ec_lst[j][2])
+   }
+   # Rewrite for output
+   write(" NFA ")
+   every j := 1 to *nfa_sort do {
+       lst := nfa_sort[j][2]
+       writes(nfa_sort[j][1]||" ")
+       every k := 1 to *lst do 
+         writes(lst[k]||" ")
+       write()
+   }
+   write(" DFA ")
+   dfat := sort(dfa)  #Sort by state 1,2,3,4
+   #lst := dfat[1][2]    # key is state 1,2,3  
+   writes("stelst := [")
+   every j := 1 to *dfat do {
+      lst := dfat[j][2]  # second item in list is list of nodes = row
+      if trim(lst[1]) ~== "" then
+         writes(lst[1]||", ")  # first item is the DFA state of alpha chars
+   }
+   write("]")
+   #
+   
+     
+
+   write(" DFA FOR INPUT FILE")
+   every j := 1 to *dfat do {
+       lst := dfat[j][2]
+       #writes(dfat[j][1]||"\t")
+       every k := 1 to *lst do {
+         if lst[k] == "" then lst[k] := "-"
+         writes(lst[k]||"\t")
+       }
+       write()
+   }
+
+   # Added to print out numeric values
+   write(" NUMERIC DFA Calculations ")
+    slst2 := ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+   "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","#","$","!","@","%","*","+"]
+   outf := table()
+   every j := 1 to *slst2 do
+      insert(outf,slst2[j],j-1)
+   
+   every j := 1 to *ec_lst do {
+     #write(ec_tble[j][1]||"  key ")
+     s2 := "{"
+     s := ec_lst[j][2]
+     every m := 1 to *s do { 
+        if member(outf,s[m])  then 
+            s2 := s2 || outf[s[m]] ||","
+      }
+      s2 := s2[1:-1]  || "}"
+      s1 := outf[ec_lst[j][1]]  
+     write("e-closure ("||s1||") "||s2)
+   }
+   
+   
+   writes("stelst := [")
+   every j := 1 to *dfat do {
+      lst := dfat[j][2]  # second item in list is list of nodes = row
+      if trim(lst[1]) ~== "" then {
+         s2 := "{"
+         s := lst[1]
+         every m := 1 to *s do { 
+            if member(outf,s[m])  then 
+              s2 := s2 || outf[s[m]] ||","
+         }
+         s2 := s2[1:-1]  || "}"
+         writes(s2||", ")  # first item is the DFA state of alpha chars
+      }
+   }
+   write("]")
+
+
+
+
+
+   every j := 1 to *dfat do {
+       lst := dfat[j][2]
+       every k := 1 to *lst do {
+         s := lst[k]
+         if s == "" then s := "-"
+         else {
+            s2 := "{"
+            every m := 1 to *s do { 
+               if member(outf,s[m])  then 
+                 s2 := s2 || outf[s[m]] ||","
+            }
+            s2 := s2[1:-1]  || "}"
+         }
+         writes(s2||"\t")
+       }
+       write()
+   }
+
+
+
+
+   outfilename := "mydfa.txt"
+   if not (fd := open(outfilename, "w")) then {
+      fprintf(stderr, "Unable to open output file %s\n", outfilename)
+      exit(1)
+      }
+   writes(fd,"stelst := [")
+   every j := 1 to *dfat do {
+      lst := dfat[j][2]  # second item in list is list of nodes = row
+      if trim(lst[1]) ~== "" then
+         writes(fd,image(lst[1])||", ")  # first item is the DFA state of alpha chars
+   }
+   write(fd,"]")
+    write(fd," DFA FOR INPUT FILE")
+   every j := 1 to *dfat do {
+       lst := dfat[j][2]
+       #writes(dfat[j][1]||"\t")
+       every k := 1 to *lst do {
+         if lst[k] == "" then lst[k] := "-"
+         writes(fd,lst[k]||"\t")
+       }
+       write(fd)
+   }
+   close(fd)
+   
+   return
+   
+   
+end
+procedure check_marked_states(dfastates,marked_state)
+local dfastates_sort := []
+local state1 := ""
+#write(" In check - dfastates")
+#every x := key(dfastates) do {
+#   writes("key "||x||" "||dfastates[x]||" | ")
+#}
+#write()
+
+
+ms := []
+ms := sort(marked_state)
+
+#write(" marked states")
+#every j := 1 to *ms do
+#   writes(ms[j]||" ")
+#write()
+# have to get the actual state - second item in list
+dfastates_sort := sort(dfastates)
+every n := 1 to *dfastates_sort do {
+   state1 := dfastates_sort[n][2]
+   #writes("state1 "||state1||" ")
+   if not member(marked_state,state1) then {
+      write("RETURNING NEW UNMARKED state1 "||state1)
+      return state1
+   }
+   #write()
+ }
+ write("BLANK STATE ")
+ return ""
+end
+#_______________________________________________________________
+procedure  get_move(newstate,nfa_tble,ec_tble,input_col,dfastates,marked_state)
+local slst := ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+   "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","#","$","!","@","%","*","+"]
+local state_table2 := table()
+local nextstate := ""
+local linelst := []
+local stateset := set()
+local eps_on_move := ""
+
+# make a list to map state numbers to alphabet
+every j := 1 to *slst do {
+  insert(state_table2,1,slst[j])
+}
+
+
+#write(" in get move ",newstate)
+every j := 1 to *newstate do 
+    insert(stateset,newstate[j])
+
+# create set of sorted states for newstate
+stateset := sort(stateset)
+
+nfa_num_states := *nfa_tble  # input table
+
+
+#  get move 
+ink := []
+#every input_col := 1 to num_inputs do {  # Go across (horizantal ) inputs
+#write("input_col "||input_col||"sz stateset "||*stateset)
+   # find inputs not = blank every j  := 1 to nfa_num_states do {
+   # We are going down vertical the nfatable for a given input
+   # We only need to put letter(stateset[k]) in the table to lookup 
+   
+   
+   
+   every k := 1 to *stateset do {
+         letter := stateset[k]
+         #col := state_table2[letter]
+         line := nfa_tble[letter]  
+         move1 :=  line[input_col]
+         if move1 ~== "-" then {
+            write("NON Empty row letter "||letter||" move on input: "||input_col||" cell ="||move1)
+            # GET eps 
+            eps_on_move := ""
+            eps_on_move := get_epsclosure_on_move(move1,ec_tble)
+            write("eps_on_move "||eps_on_move)
+            
+            nextstate := nextstate || eps_on_move
+         }
+             
+   }  # go down nfa tablefor everyy state 
+     
+  #writes("DONE for input: "||input_col||" "||newstate||" :"||nextstate||" ")
+  stateset := set()
+  every k := 1 to *nextstate do {
+     insert(stateset,nextstate[k])
+  }
+  stateset := sort(stateset)
+  nextstate := ""
+  every j := 1 to *stateset do
+     nextstate := nextstate || stateset[j]
+
+  sz := *dfastates
+  #write("in MOVE nextstate: "||nextstate)
+
+  #if not member(dfastates,nextstate)  then {
+  if not member(marked_state,nextstate) then {
+     insert(dfastates,sz+1,nextstate) # unique state
+  }  # go across input s 
+
+return nextstate
+  
+
+
+end
+procedure get_epsclosure_on_move(move1,ec_tble)
+local newstate := ""
+
+
+ec := []
+ec := sort(ec_tble)
+#every j := 1 to *ec do {   write(ec[j][1]||" "||ec[j][2])}
+every j := 1 to *move1 do {
+      
+   if member(ec_tble,move1[j])  then {
+      newstate := newstate || ec_tble[move1[j]]
+   }
+   else {
+      write("Missing state transition ")
+      exit(0)
+   }
+}
+
+return newstate
+
+end
+procedure epsilon_closure(nfa_tble,nfa_sort,ec_tble)
+local lst := []
+local epos := 0
+local ecset := set()
+local ec := ""
+local startnode := ""
+local more := ""
+#write("in eps ")
+epos := *(nfa_sort[1][2]) 
+#write("in ec epos="||epos)
+
+every j := 1 to *nfa_sort do {
+   ecset := set()
+   lst := nfa_sort[j][2]
+   startnode := nfa_sort[j][1]
+   ec := lst[epos]
+   write("STARTNODE "||startnode||" "||ec)
+   if ec == "-" then {  # 
+      insert(ec_tble,nfa_sort[j][1],nfa_sort[j][1])
+   }
+   else {
+      ecset := set()
+      every c := 1 to *ec do  { # ec is the first e-closure for state
+         insert(ecset,ec[c])
+      }
+      insert(ecset,startnode)  # 
+      delete(ecset,"-")
+      eclst := sort(ecset)
+      ec := ""
+      every k := 1 to *eclst do  
+         ec := ec || eclst[k]
+      #s := ec
+      lst := []
+      neweps := ""
+      node := ""
+      more := 1
+      doneset := set()
+      while more = 1 do  { # get and put on eclst to get all states
+         if *eclst = 0 then 
+            more := 0
+         else {
+            node := get(eclst)
+            lst := []
+            if node ~== "-" then {
+              lst := nfa_tble[node]
+              neweps := lst[epos]
+              every m := 1 to *neweps do {
+               if not member(doneset,neweps[m]) then 
+                 put(eclst,neweps[m])
+              }
+              eclst := set(eclst)  # remove duplicates
+              delete(eclst,"-")
+              eclst := sort(eclst)
+              every m := 1 to *eclst do 
+                 writes(eclst[m]||" ")
+              write()
+               #eclst := sort(eclst)
+              ec := ec || node
+              lst := []
+              every m := 1 to *ec do 
+                 put(lst,ec[m])
+              doneset := set(lst)
+              #write(" ec "||ec)
+            }
+         }
+      }  # while more 
+      write(" DONe with "||startnode||" "||ec) 
+      s := ec
+      ec_string := ""
+      lst := []
+      every k := 1 to *ec do
+         put(lst,ec[k])
+      ec := set(lst)
+      #delete(ec,"-")
+      ec := sort(ec)   # lst
+      ec_string  := ""
+      every k := 1 to *ec do # 
+         ec_string  := ec_string || ec[k]
+      write(j||" "||startnode||" SSSS "||ec_string)
+      insert(ec_tble,startnode,ec_string)
+      
+
+   }  # else ~= "-" NOT terminal e-closure 
+   
+ }  #every j := 1 to *nfa_sort 
+
+
+end
+
+procedure  get_nfa(nfa_tble,lst)
+local slst := ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+   "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","#","$","!","@","%","*","+"]
+local linelst := []
+   every j := 1 to *lst do {
+     #write("=="||lst[j])
+    s := lst[j]
+    if trim(s) ~== "" then {
+      linelst := get_words(s)
+      insert(nfa_tble,slst[j],linelst)
+    }
+
+     #write(lst[j])
+   }
+
+
+end
+#_______________________________________________________________________
+procedure get_words(s)
+local alnum,lst,word
+alnum := &letters ++ &digits ++ "-"
+lst := []
+word := ""
+    
+   s ? {
+      while tab(upto(alnum)) do {
+	   word := tab(many(alnum))
+         #write("WD "||word)
+         put(lst,word)
+        }
+      }
+
+   return lst
+ 
+end
+

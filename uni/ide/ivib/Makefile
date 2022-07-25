@@ -69,7 +69,7 @@ canvasrangespinui.u canvasrangespin.u canvasrangespindialog.u \
 canvashsliderui.u  canvasslider.u  canvassliderdialog.u  canvasvsliderui.u \
 canvashsizerui.u  canvassizer.u  canvassizerdialog.u  canvasvsizerui.u
 
-.PHONY: all clean deps
+.PHONY: all clean deps icons cleanicons
 
 all: ivib$(EXE)
 
@@ -85,7 +85,6 @@ ivib$(EXE): $(UFILES)
 	$(UNICON) $(DASHG) -o ivib linkfiles.icn
 	$(CP) ivib$(EXE) $(BIN)
 
-.PHONY: icons cleanicons
 icons: $(ICONS)
 
 cleanicons:

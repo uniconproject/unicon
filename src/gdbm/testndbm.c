@@ -155,8 +155,8 @@ main (argc, argv)
 	  if (key_data.dptr != NULL)
 	    {
 	      return_data = dbm_fetch (dbm_file, key_data);
-	      printf ("key is ->%s\n", key_data.dptr);
-	      printf ("data is ->%s\n\n", return_data.dptr);
+	      printf ("key is ->%.*s\n", key_data.dsize, key_data.dptr);
+	      printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
 	    }
 	  else
 	    printf ("No such item found.\n\n");
@@ -168,8 +168,8 @@ main (argc, argv)
 	  if (key_data.dptr != NULL)
 	    {
 	      return_data = dbm_fetch (dbm_file, key_data);
-	      printf ("key is ->%s\n", key_data.dptr);
-	      printf ("data is ->%s\n\n", return_data.dptr);
+	      printf ("key is ->%.*s\n", key_data.dsize, key_data.dptr);
+	      printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
 	    }
 	  else
 	    printf ("No such item found.\n\n");

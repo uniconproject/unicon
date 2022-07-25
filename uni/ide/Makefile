@@ -23,6 +23,12 @@ OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u \
 	online.u about.u is_binary.u ptyDispatcher.u shelletl.u funclookup.u\
 
+.PHONY: ivib
+
+all: ivib ui
+
+ivib:
+	cd ivib && $(MAKE)
 
 ui:	$(OBJ)
 	$(UC) $(DASHG) -o ui $(OBJ)
@@ -111,3 +117,4 @@ ui.exe: ui
 
 clean :
 	$(RM) *.u uniclass.dir uniclass.pag uniclass.db ui$(EXE)
+	cd ivib && $(MAKE) clean

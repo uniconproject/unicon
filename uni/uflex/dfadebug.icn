@@ -1,0 +1,334 @@
+#
+# NFA trans table for (a|b)*abb
+#state a  b  epsilon
+#  0   -  -  1,7
+#  1   -  -  2,4
+#  2   3  -  -
+#  3   -  -  6
+#  4   -  5  -
+#  5   -  -  6
+#  6   -  -  1,7
+#  7   8  -  -
+#  8   -  9  -
+#  9   -  10 -
+# 
+# New DFA Transition Table Dtran Pg 120 Red Dragon Book
+# for (a|b)*abb
+#e-closure (0) {0,1,2,4,7}
+#e-closure (1) {1,2,4}
+#e-closure (2) {2}
+#e-closure (3) {1,2,3,4,6,7}
+#e-closure (4) {4}
+#e-closure (5) {1,2,4,5,6,7}
+#e-closure (6) {1,2,4,6,7}
+#e-closure (7) {7}
+#e-closure (8) {8}
+#e-closure (9) {9}
+#e-closure (10) {10}
+#statelistlst := [{0,1,2,4,7}, {1,2,3,4,6,7,8}, {1,2,4,5,6,7}, {1,2,4,5,6,7,9}, {1,2,4,5,6,7,10} ]
+#  
+# set STATES            input a      input b
+#{0,1,2,4,7}       {1,2,3,4,6,7,8} {1,2,4,5,6,7}
+#{1,2,3,4,6,7,8}   {1,2,3,4,6,7,8} {1,2,4,5,6,7,9}
+#{1,2,4,5,6,7}     {1,2,3,4,6,7,8} {1,2,4,5,6,7}
+#{1,2,4,5,6,7,9}   {1,2,3,4,6,7,8} {1,2,4,5,6,7,10}
+#{1,2,4,5,6,7,10}  {1,2,3,4,6,7,8} {1,2,4,5,6,7}
+#_____________________________________________________________
+
+#____________________________________________________________________
+procedure print_debug_input_row(input_row)
+   write("____________________________________________________________")
+   write("PRINT NFA TABLE print_debug_input_row  sz "||*input_row)
+   
+   every j := 1 to *input_row do {
+      writes(j||" "||image(input_row[j][2])||" : "||image(input_row[j][1])||" ")
+      #write(j||" "||image(input_row[j][1])||" , ")
+   }
+   write()
+end#____________________________________________________________________
+procedure print_debug_dfa_staterule(staterule,ruletble)
+local lst := []
+   write("____________________________________________________________")
+   write("SORTED STATERULES print_debug_dfa_staterule")
+   lst := sort(staterule)
+   every j := 1 to *lst do {
+      accept_state := lst[j][1]
+      rule := lst[j][2]
+      write("DFA accept state: ",accept_state," rule ",rule,"  action ",ruletble[rule])
+      
+   }
+end
+procedure print_debug_nfa_acceptlst(nfa_acceptlst)
+   write("____________________________________________________________")
+   write("NFA ACCEPT LIST   print_debug_nfa_acceptlst")
+   every j := 1 to *nfa_acceptlst do {
+      write("nfa state ",nfa_acceptlst[j][1]," rule# ",nfa_acceptlst[j][2]," rule action ",nfa_acceptlst[j][3])
+   }
+end
+procedure print_debug_dfa_accepting(states)
+   write("____________________________________________________________")
+   write("DFA2AUTO MYAUTOMATA.ACCEPTING DFA STATES  print_debug_dfa_accepting")
+   while \states do {
+      state := states.current
+      write("dfa state "||state.label," rule# ",state.rulenum," action: ",state.semaction)
+	   states := states._next
+   }
+end
+   
+#__________________________________________________________________
+procedure print_debug_ec_tble(ec_tble)
+local e_clst := []
+local lst := []
+   write("____________________________________________________________")
+   write(" EC TABLE  print_debug_ec_tble")
+   e_clst := sort(ec_tble)
+   every j := 1 to *e_clst do {
+      writes("e-closure (", e_clst[j][1] ||" ) : ")
+      lst := e_clst[j][2]
+      #every m := 1 to *lst do
+      #   writes(lst[m])
+      writes(" ")
+      every writes(!lst)
+      write()
+   }
+
+end
+#_______________________________________________________________________
+procedure print_debug_eclosure(input_row,symbolsdest,statecol)
+local nlst :=  []
+   nlst := copy(input_row)  # 
+
+   put(nlst,["@#$",*nlst])
+   write("____________________________________________________________")
+   write("Debug Eclosure NFA Table print_debug_eclosure")
+   lst := []
+   every j := 1 to *nlst do 
+        writes(image(nlst[j][1])||" , ")
+   write()
+   every j := 1 to *statecol do {  # Go down col ofstates
+      row := statecol[j]
+      writes(row||" -> ")
+      every k := 1 to *nlst do {  # nlst is list of inputs accross
+          key2 := row||":"||nlst[k][1]
+          if member(symbolsdest,key2) then {
+             lst := symbolsdest[key2]
+             every m := 1 to *lst do 
+                writes(lst[m]||" ")
+          }
+          else writes(" - ")
+      }
+      write()
+   }
+end
+#_________________________________________________________________________
+
+#__________________________________________________________________
+procedure print_debug_dfa_state_names(dfastateset)
+local stlst := []
+   write("____________________________________________________________")
+   write("DFA names & NFA states print_debug_dfa_state_names")
+   stlst := sort(dfastateset) # sort by position 
+   every j := 1 to *stlst do {
+      writes("NEWDFA STATE# :"||stlst[j][1]||" nfa states: ")
+      lst := stlst[j][2]
+      every k := 1 to *lst do 
+        writes(lst[k]||",")
+      write("----")
+   }
+end
+#_______________________________________________________________
+# USE THIS TO PRINT DFA AUTOMATA in list format
+#
+#____________________________________________________________________________
+procedure print_debugdfa_instatelist(myautomata,statelist,dfastateset)
+local alcnodelist, p, node
+   write("____________________________________________________________")
+   write("DEBUG DFA IN STATE (print_debugdfa_instatelist) *statelist STATELIST"||*statelist)
+   every p := 1 to *statelist do {
+     anlist := statelist[p]
+     node := anlist.current
+     if p + 1 <= *statelist then { 
+       anlist2 := statelist[p+1]
+       node2 := anlist.current
+       statelist[p]._next := node2
+     }
+     write(p||" Start  node: "||image(node.label)," rule #:",node.rulenum," ")
+     every m := 1 to *node.edges do {
+            dfaedge := node.edges[m]
+            writes("  input (edge) "||dfaedge.symbol||" ")
+            writes("  destination state :"||dfaedge.destinations.label||" ")
+            write()
+      }
+   }
+   write()
+   write(" FINAL STATELIST for createicon ")
+  #     Finished DFA
+  # "[ \\t]" "[0-9]" "[^\\n]" "[a-zA-Z]"
+  # 0123579 78      56      10      34
+  #  78      78
+  #  56              56
+  #  10
+  #  34                              34
+
+   p := 1
+   while p <= *statelist do {
+      anlist := statelist[p]
+      state := anlist.current
+      write("State :",image(state.label)," "," Rule #",image(state.rulenum),"dot ",image(state.dot)," semction ",image(semaction))
+      #record anode(label, rulenum, edges, epsilon, dot, semaction)
+      write("_________________________________")
+	   write(" STATE #"||state.label," rule # "||image(state.rulenum)," action "||image(state.semaction))
+
+	   if nodemember(state.label, myautomata.accepting) then 
+         write("accepting")
+      else write("")
+      
+      edges := state.edges
+      write(" from ",state.label," ")
+      every edge := !\edges do {
+         if edge.symbol~=="\n"then {
+            writes(" edge sym "||image(edge.symbol))
+            #put(symbols1,edge.symbol)
+         }
+         else writes("\\n")
+         writes(" --> ")
+	      #writes("   ", if edge.symbol~=="\n"then edge.symbol else "\\n",
+         #      " -> ")
+         
+	      states2 := edge.destinations
+	      if \states2 then {
+	         writes("new state2 ", states2.label, " ")
+            if \states2.rulenum then {
+               writes(" rule ",states2.rulenum)
+               
+            }
+            if \states2.semaction then {
+               writes(" semaction ",states2.semaction)
+               
+            }
+            #states2 := states2._next
+	      }
+	      write()
+	   }  # every edge
+      write("-----------")
+      p := p + 1
+   }
+
+
+end
+
+
+#________________________________________________________________________
+# OBSOLETE - tables too big
+procedure print_debug_nfa_table(nfastatescell,input_row,statecol)
+local nfa := []
+local nlst := []
+local col := ""
+local startst := 1
+local  endst := ""
+local lst := []
+
+   
+   write("____________________________________________________________")
+   write("PRINT NFA TABLE print_debug_nfa_table")
+   
+   every j := 1 to *input_row do {
+      writes(j||" "||image(input_row[j][2])||" : "||image(input_row[j][1])||" ")
+      #write(j||" "||image(input_row[j][1])||" , ")
+   }
+   write()
+   # fill NFA transition list  with non blank states
+   nfa := []
+   every j := 1 to *statecol do {
+      nlst := []
+      every k := 1 to *input_row + 1 do 
+         put(nlst,"-")
+      put(nfa,nlst)
+   }
+   # Use data in nfastatescell table with key: state || ":" ||  symbol
+   # probably should put symbols in order from .l file
+   every j := 1 to *statecol do {
+      state := statecol[j]
+      every k := 1 to *input_row do {  # fill symbols accross
+         input := input_row[k][1]
+         endst := ""
+         if member(nfastatescell,state||":"||input) then {  
+             lst  := nfastatescell[state||":"||input]
+            every m := 1 to *lst do
+               endst := endst || lst[m] || " " #Print out list of states in nfa cell
+            nfa[j][k]  := endst 
+       }
+      }
+      # Get list of states in last col of nfastatescell state||":@#$"
+      if member(nfastatescell,state||":@#$")  then {
+         lst  := nfastatescell[state||":@#$"]
+          every m := 1 to *lst do
+            endst := endst || lst[m] || " "
+         nfa[j][*input_row+1]  := endst 
+       }
+   }  # every statecol
+
+   # will need to make e unique symbol that is not valid in .l file
+   
+   write("NFA Transition table  DEBUG")
+   every j := 1 to *input_row do {
+      #writes(image(input_row[j][1])||" "||input_row[j][2])
+      writes(image(input_row[j][1])||" , ")
+   }
+   writes("eps")
+   write()
+   every j := 1 to *nfa do {
+       state := statecol[j]
+       writes(state||" ")
+       every k := 1 to *(nfa[j])  do {
+           writes(nfa[j][k]||"  ")
+        }
+        write()
+   }
+   
+end
+# OBSOLETE tables too big
+#______________________________________________________________________
+procedure print_debugdfa_table(dfastatescell,dfastateset,input_row)
+local stlst := []
+   # print dfa
+   # dfastateset table contains dfa  newstate number and list (set) of nfa states forthat state
+   # dfastateset is the first col of DFA listing the start state
+   write("____________________________________________________________")
+   write("DFA_TABLE  print_debugdfa_table ")
+   dfa := []
+   stlst := []
+   stlst := sort(dfastateset) # sort by position 
+   every j := 1 to *stlst do {
+      writes("NEWDFA STATE# :"||stlst[j][1]||" nfa states: ")
+      lst := stlst[j][2]
+      every k := 1 to *lst do 
+        writes(lst[k])
+      write("----")
+   }
+   dfa := []
+  # print for  debug 
+  write("NEW DFA ")
+  every j := 1 to *input_row do 
+     writes(image(input_row[j][1])||" ")
+  write()
+  # Go down stlst 
+  every j := 1 to *stlst  do {
+     lst := stlst[j][2]  # stlst key is position j & state is stlst[j][2]
+     every writes(!lst)
+     writes("\t")
+     every k := 1 to *input_row do {
+        key2 :=  j || ":" || k
+        if member(dfastatescell,key2) then {
+           lst := dfastatescell[key2]
+           every writes(!lst)
+           writes("\t")
+        }
+        else
+           writes(" - "||"\t")
+     }
+     write()
+  }
+
+   
+end

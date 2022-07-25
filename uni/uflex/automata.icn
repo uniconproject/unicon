@@ -81,6 +81,12 @@ procedure createicon(myautomata)
       exit(1)
       }
 
+   # -dfa option - convert to dfa using automatadfa.icn
+   if \debugdfa then {
+       states2dfatable(myautomata, outfile)
+       return
+   }
+
    #
    # write out the standard skeleton automata code
    #
@@ -164,9 +170,14 @@ procedure createicon(myautomata)
 	 if edge.symbol == "\n" then
 	    fprintf(outfile, "   tempedge.symbol := \"\\n\"\n")
 	 else {
-	    fprintf(outfile, "   tempedge.symbol := \"%s\"\n",
-		    edge.symbol)
-	    }
+            if ((edge.symbol[1] == "[") & (*edge.symbol> 1))  then  
+	      fprintf(outfile, "   tempedge.symbol := csetfromrecset(\"%s\")\n",
+                  escapify(edge.symbol))
+	    else fprintf(outfile, "   tempedge.symbol := \"%s\"\n",
+              escapify(edge.symbol))
+	  }
+	     
+	
 
 	 fprintf(outfile, "   tempedge.destinations := []\n")
 
@@ -226,4 +237,50 @@ procedure nodemember(nodelabel, nodelist)
 	 return 1
       traverse := traverse._next
       }
+end
+
+# Escape things that appeared in Lex source code for
+# semantic preservation within a Unicon string literal.
+# Should do all legal lex escapes, many of which are
+# identical in a Unicon string literal.  Maybe applied
+# at present only to single-characters by themselves,
+# and entire square bracket cset [].
+# Escapify rules might be different in [] re-csets
+# might also want to to flex octal, hex, and nul here
+procedure escapify(s)
+   if *s > 1 then {
+      if s[1] == "\\" then {
+	 # a flex in-cset escape should not result in
+	 # extra piling-up of backslashes, etc. On the other hand,
+	 # a flex escape eaten by Unicon string literal syntax will
+	 # not be the escaped thing at the other end that is needed.
+	 case s[2] of {
+         "a": { return "\\\\a" || escapify(s[3:0]) }
+         "b": { return "\\\\b" || escapify(s[3:0]) }
+         "f": { return "\\\\f" || escapify(s[3:0]) }
+         "n": { return "\\\\n" || escapify(s[3:0]) }
+         "r": { return "\\\\r" || escapify(s[3:0]) }
+         "t": { return "\\\\t" || escapify(s[3:0]) }
+         "v": { return "\\\\v" || escapify(s[3:0]) }
+         "\"": { return "\\\"" || escapify(s[3:0]) }
+         "\\": { return "\\\\\\\\" || escapify(s[3:0]) }
+         }
+         }
+      return escapify(s[1])||escapify(s[2:0])
+      }
+   case s of  {
+      "\a": { return "\\a"; }
+      "\b": { return "\\b"; }
+      "\f": { return "\\f"; }
+      "\n": { return "\\n"; }
+      "\r": { return "\\r"; }
+      "\t": { return "\\t"; }
+      "\v": { return "\\v"; }
+      "\"": { return "\\\""; }
+      "\\": { return "\\\\"; }
+#      default: {
+	  # by default \\X means X, literally, as in \*
+#      }
+      }
+   return s;
 end

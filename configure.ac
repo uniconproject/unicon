@@ -212,8 +212,10 @@ fi
 
 # try to add -m32 or -m64
 ARCHFLAG="-m$ARCHBITS"
-AC_CFLAG([$ARCHFLAG],[], [
-			 CPPFLAGS="$CPPFLAGS $ARCHFLAG"
+AC_CFLAG([$ARCHFLAG],[
+			 ARCHFLAG=""
+             ], [
+			 CFLAGS="$CFLAGS $ARCHFLAG"
 			 LDFLAGS="$LDFLAGS $ARCHFLAG"
 			 ASFLAGS="$ASFLAGS $ARCHFLAG"
 			 ] )
@@ -356,6 +358,8 @@ SO=so
 case $unicon_host in
      *linux*)
       LDFLAGS="$LDFLAGS -rdynamic "
+      LDDYN="$LDDYN $ARCHFLAG "
+      CFDYN="$CFDYN $ARCHFLAG "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
         ;;
@@ -540,6 +544,19 @@ AC_REPLACE_FUNCS(getopt)
 AC_FUNC_FORK()
 AC_CHECK_LIB(dbm,main)
 AC_CHECK_LIB(ndbm,main)
+
+# we don't need sqlite to be added to $LIBS, not yet at least
+saved_libs="$LIBS"
+AC_CHECK_HEADERS([sqlite3.h])
+AC_CHECK_LIB(sqlite3, sqlite3_config)
+LIBS="$saved_libs"
+
+if test "x$ac_cv_header_sqlite3_h" = "xyes" -a  "x$ac_cv_lib_sqlite3_sqlite3_config" = "xyes"; then
+  SQLITE="sqlite"
+else
+  SQLITE=""
+fi
+AC_SUBST(SQLITE)
 
 AC_SEARCH_LIBS([getaddrinfo],[socket],
 	[AC_DEFINE([HAVE_GETADDRINFO], [1], [getaddinfo])])

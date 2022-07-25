@@ -96,9 +96,10 @@ function{0,1} loadfunc(filename,funcname)
          }
 
       /*
-       * If not found, look in our plugins/lib directroty
-       * We are assuming that the plugins directory is one
-       * level up from iconx which should be on the path.
+       * If not found, look in our plugins/lib directory
+       * We are assuming that the plugins directory is either one
+       * level up from iconx (which should be on the path) or it
+       * is in the installed location.
        * TODO: this code is used at least in one other place
        *       (keyword.r), so it should be pulled into a util
        *       function.
@@ -109,8 +110,14 @@ function{0,1} loadfunc(filename,funcname)
 	 char path[MaxPath];
 	 if (findonpath(UNICONX, path, MaxPath)) {
 	    int n = strlen(path);
+            /* Try the "not installed" location */
 	    snprintf(path+n-strlen(UNICONX), MaxPath - n, "../plugins/lib/%s", filename );
 	    handle = dlopen(path, RTLD_LAZY);	/* get the handle */
+            if (!handle) {
+              /* Try the "installed" location */
+              snprintf(path+n-strlen(UNICONX), MaxPath - n, "../lib/unicon/plugins/lib/%s", filename );
+              handle = dlopen(path, RTLD_LAZY);	/* get the handle */
+            }
 	    }
          }
 #endif					/* UNIX */
@@ -138,11 +145,13 @@ function{0,1} loadfunc(filename,funcname)
 	    char * (*Alcstr)(char *, word);
 	    struct b_real * (*Alcreal) (double);
 	    double (*Getdbl) (dptr);
+	    int (*Cnvcstr)(dptr,dptr);
 	    } rtentryvector;
 #undef cnv_int_0
        	 rtentryvector.Cnvint = cnv_int;
          rtentryvector.Cnvreal = cnv_real;
 	 rtentryvector.Cnvstr = cnv_str;
+	 rtentryvector.Cnvcstr = cnv_c_str;
 	 rtentryvector.Cnvtstr = cnv_tstr;
 	 rtentryvector.Cnvcset = cnv_cset;
 	 rtentryvector.Deref = deref;

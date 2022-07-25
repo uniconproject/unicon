@@ -21,6 +21,7 @@ contexts:
     - include: preprocessor
     - include: numbers
     - include: strings
+    - include: charsets
     - include: operators
 
   reserved:
@@ -29,11 +30,25 @@ contexts:
     # strings in YAML. When using single quoted strings, only single quotes
     # need to be escaped: this is done by using two single quotes next to each
     # other.
-    - match: '\b(abstract|all|break|by|case|class|create|critical|default|do|else|end|every|fail|global|if|import|initial|initially|invocable|link|local|method|next|not|of|package|procedure|record|repeat|return|static|suspend|then|thread|to|type||until|while|write)\b'
+    - match: '(?x)\b(
+          abstract|all|break|by|case|class|create|critical|
+          default|do|else|end|every|fail|global|if|import|initial|initially|invocable|
+          link|local|method|next|not|of|package|procedure|record|repeat|return|
+          static|suspend|then|thread|to|type||until|while|write
+        )\b'
       scope: keyword.control.unicon
 
   keywords:
-    - match: '\b&allocated|&ascii|&clock|&col|&collections|&column|&control|&cset|&current|&date|&dateline|&digits|&dump|&e|&errno|&error|&errornumber|&errortext|&errorvalue|&errout|&eventcode|&eventsource|&eventvalue|&fail|&features|&file|&host|&input|&interval|&lcase|&ldrag|&letters|&level|&line|&lpress|&lrelease|&main|&mdrag|&meta|&mpress|&mrelease|&now|&null|&output|&phi|&pi|&pick|&pos|&progname|&random|&rdrag|&regions|&resize|&row|&rpress|&rrelease|&shift|&source|&storage|&subject|&time|&trace|&ucase|&version|&window|&x|&y\b'
+    - match: '(?x)(&(
+          allocated|ascii|clock|col|collections|column|control|cset|current|
+          date|dateline|digits|dump|
+          errno|error|errornumber|errortext|errorvalue|errout|eventcode|eventsource|eventvalue|e|
+          fail|features|file|host|input|interval|
+          lcase|ldrag|letters|level|line|lpress|lrelease|
+          main|mdrag|meta|mpress|mrelease|now|null|output|
+          phi|pi|pick|pos|progname|random|rdrag|regions|resize|row|rpress|rrelease|
+          shift|source|storage|subject|time|trace|ucase|version|window|x|y
+        ))\b'
       scope: keyword.control.unicon
 
   preprocessor:
@@ -41,31 +56,47 @@ contexts:
       scope: punctuation.definition.comment.unicon
       push:
         # This is an anonymous context push for brevity.
-        - meta_scope: comment.line.double-slash.unicon
+        - meta_scope: meta.preprocessor.unicon comment.line.dollar.unicon
         - match: $\n?
           pop: true
 
   operators:
-    - match: '\b::|\:\=|\?\?|\?|!|\*|\\|\/|\.|=|\|\?|@|\|\|\||\?\?|\$\b'
-      scope: keyword.control.unicon
+    - match: '\b::|\:\=|\?\?|\?|!|\*|\/|%|\+|-|\^|\\|\.|=|\|\?|@|\|\|\||\?\?|\$\b'
+      scope: keyword.operator.unicon
 
   numbers:
     - match: '\b(-)?[0-9.]+\b'
       scope: constant.numeric.unicon
 
+  escapes:
+    - match: '\\(x[0-9a-fA-F]{2}|[0-7]{3}|\^[a-z]|.)'
+      scope: constant.character.escape.unicon
+
   strings:
-    # Strings begin and end with quotes, and use backslashes as an escape
-    # character.
+    # Strings begin and end with double quotes,
+    # and use backslashes as an escape character.
     - match: '"'
       scope: punctuation.definition.string.begin.unicon
-      push: inside_string
-
-  inside_string:
+      push: strings_inside
+  strings_inside:
     - meta_include_prototype: false
     - meta_scope: string.quoted.double.unicon
-    - match: '\.'
-      scope: constant.character.escape.unicon
+    - include: escapes
     - match: '"'
+      scope: punctuation.definition.string.end.unicon
+      pop: true
+
+  charsets:
+    # Character sets begin and end with single quotes,
+    # and use backslashes as an escape character.
+    - match: ''''
+      scope: punctuation.definition.string.begin.unicon
+      push: charsets_inside
+  charsets_inside:
+    - meta_include_prototype: false
+    - meta_scope: string.quoted.single.unicon
+    - include: escapes
+    - match: ''''
       scope: punctuation.definition.string.end.unicon
       pop: true
 
@@ -75,6 +106,6 @@ contexts:
       scope: punctuation.definition.comment.unicon
       push:
         # This is an anonymous context push for brevity.
-        - meta_scope: comment.line.double-slash.unicon
+        - meta_scope: comment.line.number-sign.unicon
         - match: $\n?
           pop: true

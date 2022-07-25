@@ -25,5 +25,4 @@ include ../Makedefs
 
 default:	 $(LIBD)/$(LNAME).u
 
-Clean: clean
-# @Replace: Add plugin specific clean up actions here.
+# @Replace: To add plugin specific clean up actions, include a clean:: target

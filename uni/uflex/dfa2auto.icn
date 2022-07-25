@@ -1,0 +1,807 @@
+
+#################################
+link printf
+
+record edge(symbol, destinations)
+# record edgelist(current, _next)
+record anode(label, rulenum, edges, epsilon, dot, semaction)
+record anodelist(current, _next)
+record automata(start, states, accepting)
+global dfa
+global stelst 
+
+
+procedure alcedge(sym)
+   return edge(sym)
+end
+
+procedure alcanode(lab)
+   local a := anode(lab)
+   a.rulenum := 0
+   return a
+end
+
+procedure alcnodelist()
+   return anodelist()
+end
+
+procedure alcautomata()
+   return automata()
+end
+
+#
+# label all states in an automaton with an increasing numeric sequence.
+#
+procedure labelaut(aut)
+   local statelist := aut.states
+   local lab := 0
+
+#   every i := 1 to *statelist do {
+#      statelist[i].label := lab
+   while \statelist do {
+      statelist.current.label := lab
+      statelist := statelist._next
+      lab +:= 1
+      }
+end
+
+
+procedure main(argv)
+local lst := []
+local s := ""
+local dfa := table()
+local dfa_tble := table()
+local ec_tble := table()
+local dfastates := table() # new states for dfa first col
+local marked_state := set()
+local dfstates_sort := []
+local fname := ""
+local inputlst := []
+local input_symbols := table()
+local states := []
+local slst := ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+   "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","#","$","!","@","%","*","+"]
+local state_table2 := table()
+local rules := []
+local ruletble := table()
+local accepting := []
+local hcaccepts := []
+local fd
+
+
+ if *argv=0 then stop("Need  file")
+   fname :=  argv[1]
+   write(fname)
+  
+   fd := open(fname,"r") 
+
+   if /fd then {
+     write(" Could not open  "||fname)
+     exit(1)
+   }
+   # make a list to map state numbers to alphabet
+   every j := 1 to *slst do {
+       insert(state_table2,1,slst[j])
+   }
+
+   lst := []
+   while s := read(fd) do {
+      put(lst,s)
+   }
+   close(fd)
+
+staterule := table()
+
+#state:10  K  rule: 1 action: { return "digit"; }
+#state:14  O  rule: 2 action: { return  "lineinc "; }
+#state:20  U  rule: 3 action: { return "FALSE"; }
+#state:24  Y  rule: 4 action: { return "for"; }
+#state:27  b  rule: 5 action: { return "if"; }
+#state:31  f  rule: 6 action: { return "int"; }
+#state:33  h  rule: 7 action: { return "left paren"; }
+#state:36  k  rule: 8 action: { return "comment";}
+#state:38  m  rule: 9 action: {  return "whitespace"; }
+#state:40  o  rule: 10 action: {   return "unrecognized character"; }
+insert(ruletble, 1 , "{ return \"digit\"; }")
+insert(ruletble, 2 , "{ return  \"lineinc \"; }")
+insert(ruletble, 3 , "{ return \"FALSE\"; }")
+insert(ruletble, 4 , "{ return \"for\"; }")
+insert(ruletble, 5 , "{ return \"if\"; }")
+insert(ruletble, 6 , "{ return \"int\"; }")
+insert(ruletble, 7 , "{ return \"left paren\"; }")
+insert(ruletble, 8 , "{ return \"comment\";}")
+insert(ruletble, 9 , "{  return \"whitespace\"; }")
+insert(ruletble, 10 , "{   return \"unrecognized character\"; }")
+   insert(staterule, 6 , 1 )  # K
+   insert(staterule, 2 , 2 )  # O
+   insert(staterule, 20, 3)  # U
+   insert(staterule, 17 , 4 )  # Y
+   insert(staterule, 14 , 5 )  # b
+   insert(staterule, 18 , 6 )  # f
+   insert(staterule, 3 , 7 )  # h
+   insert(staterule, 11 , 8 )  # k
+   insert(staterule, 5, 9 )  # m
+   insert(staterule, 7 , 10 )  # o
+   # numstates :=  41
+# numsymbol :=  17
+inputlst := [ "\n" , "(" , "*",  "/" , "[ \\t\\r\\f]" , "[0-9]" , "[^\\n]" ,  "a" ,  "e" ,  "f" ,  "i" ,  "l" ,  "n" ,  "o" ,  "r" ,  "s" ,  "t" ]
+  #               1                2 3  4   5   6  7   8   9  10  11 12 13   14  15  16  7  8 9  20
+ #stelst := [ABCDEFGHIJLNPVZcgiln, O, h, j, lm, JK, o, QW, ad, MN, k, R, X,   b, e,   S, Y, f, T, U]
+ stelst := ["ABCDEFGHIJLNPVZcgiln", "O", "h", "j", "lm", "JK", "o", "QW", "ad", "MN", "k", "R", "X", "b", "e", "S", "Y",  "f", "T", "U"]
+ 
+ accepting := []
+ nlsit := []
+ num_accept := *staterule
+  
+ # ACCEPTING   
+ accnode := [] 
+ lst := []
+ every j := key(staterule)  do 
+   write(image(j)||" "||image(staterule[j]))
+ if member(staterule,&null) then
+     delete(staterule,&null)
+
+ lst := sort(staterule)
+ 
+ # make num states nodes and store in accnode
+ 
+ every j := 1 to *lst do {
+   accept_state := lst[j][1]
+   rule := lst[j][2]
+   node := anode(accept_state,rule,[],"","",ruletble[rule])
+   write(image(node.label)," ",image(ruletble[rule]))
+   put(accnode,node)
+ }
+ every j := 1 to *accnode do {
+   node1 := accnode[j]
+   write(image(node1.label))
+}
+ 
+    #node := anode(j,j,[],"","dot",ruletble[j])
+    #node1 := anode(2,2,[],"","dot",ruletble[2])
+    #node2 := anode(3,7,[],"","dot",ruletble[7])
+    #node3 := anode(5,9,[],"","dot",ruletble[9])
+    #node4 := anode(6,1,[],"","dot",ruletble[1])
+    #node5 := anode(7,10,[],"","dot",ruletble[10])
+    #node6 := anode(11,8,[],"","dot",ruletble[8])
+    #node7 := anode(14,5,[],"","dot",ruletble[5])
+    #node8 := anode(17,4,[],"","dot",ruletble[4])
+    #node9 := anode(18,6,[],"","dot",ruletble[6])
+    #node10 := anode(20,3,[],"","dot",ruletble[3])
+    
+    accepting := []
+    node0 := anode(0,0,[],"","","")
+
+    # keep first node in accepting        
+    alst1 := anodelist(anode,anodelist)
+    alst1.current := accnode[1]
+    mynode  := accnode[1]
+    #mynode := alst1.current
+    write(" mynd "||image(mynode.label))
+    
+    put(accepting,alst1)
+
+    every j := 2 to *staterule do {
+       newnodelst := anodelist(anode,anodelist)
+       newnodelst.current := accnode[j]
+       alst1._next := newnodelst
+       put(accepting,alst1)
+       alst1 := newnodelst
+    }
+    
+    #alst2 := anodelist(anode,anodelist)
+    #alst2.current := node2
+    #alst._next := alst2
+    #put(accepting,alst2)
+
+    #alst3 := anodelist(anode,anodelist)
+    #alst3.current := node3
+    #alst2._next := alst3
+    #put(accepting,alst3)
+
+    #alst4 := anodelist(anode,anodelist)
+    #alst4.current := node4
+    #alst3._next := alst4
+    #put(accepting,alst4)
+
+    #alst5 := anodelist(anode,anodelist)
+    #alst5.current := node5
+    #alst4._next := alst5
+    #put(accepting,alst5)
+
+    #alst6 := anodelist(anode,anodelist)
+    #alst6.current := node6
+    #alst5._next := alst6
+    #put(accepting,alst6)
+
+    #alst7 := anodelist(anode,anodelist)
+    #alst7.current := node7
+    #alst6._next := alst7
+    #put(accepting,alst7)
+
+    #alst8 := anodelist(anode,anodelist)
+    #alst8.current := node8
+    #alst7._next := alst8
+    #put(accepting,alst8)
+
+    #alst9 := anodelist(anode,anodelist)
+    #alst9.current := node9
+    #alst8._next := alst9
+    #put(accepting,alst9)
+
+    #alst10 := anodelist(anode,anodelist)
+    #alst10.current := node10
+    #alst9._next := alst10
+    #put(accepting,alst10)
+    
+    # add end null node
+    j :=  *staterule + 1
+    last  := anodelist(anode,anodelist)
+    last.current := node0
+     k := j-1
+     alst1._next := last
+     last._next := &null
+     put(accepting,last)
+    
+
+
+    #put(accepting,alst7)
+
+    #node2 := anode(3,3,[],"","dot",ruletble[3])
+        
+    
+    
+    write(" LINKED LIST OF accepted states")
+    
+
+    
+   write(" LINKED LIST ")
+   alst := accepting[1]
+    while \alst do  {
+         #writes(j)
+         mynode := alst.current
+         write(mynode.label)
+         write(j||" node "||image(mynode.label)," ",image(mynode.rulenum)," saction "||image(mynode.semaction))
+         alst := alst._next
+   }
+   write("END  LINKED LIST ")
+
+  #accepts := []
+return
+  
+  
+write("ACCEPPPTTT ")
+alst := accepting[1]
+every j := 1 to 5 do {
+  if nodemember(j,alst) then 
+       write(" j "||j||"accepting")
+  else 
+     write(j||" NOt accepted ")
+}
+myautomata := automata(start, states, accepting)    
+myautomata.accepting := alst
+
+
+
+   get_dfa(inputlst,dfa_tble,lst)
+   slst := []
+   write("Input Lst from automata "||*inputlst)
+    
+   every j := 1 to *inputlst do {  # only one line j is always 1
+      write(j||" "||image(inputlst[j]))
+   }
+   write()
+  
+   every j := 1 to *inputlst do {
+      insert(input_symbols,j,inputlst[j])
+   
+   }
+   
+   lst := []
+   dfa_sort := sort(dfa_tble)
+   write(" DFA INPUT ")
+   #every j := key(dfa_tble)  do {
+   every j := 1 to *dfa_sort do {
+       lst := dfa_sort[j][2]
+       writes(dfa_sort[j][1]||" ")
+       every k := 1 to *lst do 
+         writes(lst[k]||" ")
+       write()
+   }
+   num_inputs := *lst - 1 # number of inputs is number of elts in lst -epsilon
+   write(num_inputs)
+   
+ #states := dfa_aut.states
+ statelist := []
+ states := []
+
+   start := dfa_sort[1][1]
+   write("start "||start)
+   states := []
+   
+   #put(states, currstate := anode(%d, %d, [], [], []))\n",
+	#     states.current.label, states.current.rulenum)
+   # go across the table and get cell nextstate for input[k]
+
+	every j := 1 to *dfa_sort do {
+       lst := dfa_sort[j][2]
+       start_node := dfa_sort[j][1] 
+       write(j||"node "||j||" "||dfa_sort[j][1]||" ")
+       
+       edgelst := []
+       
+       # go down the row of inputs 
+       every k := 1 to *lst do {
+         # lst[k] is state in cell 
+         # input at k+1  position is input symbol
+         #edges := state.edges
+         #dfaedge := edge
+         if lst[k] ~== "-" then {
+           #edge.symbol := input[lst[k]])
+           dfaedge := edge("",[])
+           dfaedge.symbol := input_symbols[k]  # k is start 
+           nextstate := lst[k]
+           newnode := anode(nextstate,0,[],"","dot","")
+           if member(staterule,nextstate) then {
+              rule1 := staterule[nextstate]
+              myaction := ruletble[rule1]
+              newnode.rulenum := rule1 
+              newnode.semaction := myaction
+           }
+           
+           #record anode(label, rulenum, edges, epsilon, dot, semaction)
+           #newnode := anode(lst[k],staterule[lst[k]],[],"","dot",myaction)
+           dfaedge.destinations := newnode
+           put(edgelst,dfaedge)
+         }
+               
+      }
+
+      if member(staterule,start_node) then {
+        rule1 := staterule[start_node]
+        myaction := ruletble[rule1]
+      }
+      else {
+         rule1 := 0
+         myaction := ""
+      }
+      node := anode(start_node,rule1,edgelst,"","dot",myaction)
+
+      if j = 1 then {
+         start := node
+         myautomata.start := start
+      }
+        
+      write(j||" node "||image(node.label)," ",image(node.rulenum)," sz edlst ",*edgelst,image(node.semaction))
+      put(states,node)
+      
+      anlist := anodelist([],[])
+      anlist.current := node
+      put(statelist,anlist)
+      #write("edgelist ")
+      #every m := 1 to *node.edges do {
+      #      dfaedge := node.edges[m]
+      #      writes(dfaedge.symbol)
+      #   }
+      # write()
+      
+      
+      
+
+       
+   }
+   write(" ENDDDD *states "||*states)
+   lst := []
+   
+   
+ #  anlist := statelist[p]
+ #  states := anlist.current
+   write("states "||*states)
+   every j := 1 to *states do {
+      node := states[j]
+
+      
+      #write(node.label)
+      writes(j||" node "||image(node.label)," rulen: ",node.rulenum," ")
+      
+      
+      every m := 1 to *node.edges do {
+            dfaedge := node.edges[m]
+            writes("input "||dfaedge.symbol||" ")
+            writes("destination :"||dfaedge.destinations.label||" ")
+            write()
+         }
+       
+      #write(image(dfaedge.symbol))
+      #       writes(image(dfaedge.symbol))
+      # write(edge.symbol,edge.destinations)
+       
+
+   }
+   write()
+   #}
+   write(" NEW ")
+   write("*statelist STATELIST"||*statelist)
+   every p := 1 to *statelist do {
+   
+
+     anlist := statelist[p]
+     node := anlist.current
+     if p + 1 <= *statelist then { 
+       anlist2 := statelist[p+1]
+       node2 := anlist.current
+       statelist[p]._next := node2
+     }
+        
+      #write(node.label)
+      writes(p||" node "||image(node.label)," rule n",node.rulenum," ")
+      every m := 1 to *node.edges do {
+            dfaedge := node.edges[m]
+            writes("input "||dfaedge.symbol||" ")
+            writes("destination :"||dfaedge.destinations.label||" ")
+            write()
+         }
+   }
+   write()
+   write(" FINAL STATELIST for createicon ")
+
+    p := 1
+    while p <= *statelist do {
+      anlist := statelist[p]
+      state := anlist.current
+        
+      
+      #write("State :",image(state.label)," "," Rule #",image(state.rulenum),"dot ",image(state.dot)," semction ",image(semaction))
+      #record anode(label, rulenum, edges, epsilon, dot, semaction)
+      #if  member(state_table2,state.label) then
+      #   write("member "||state_table2[state.label])
+
+      write("_________________________________")
+	   write(" STATE #"||state.label," rule # "||image(state.rulenum)," action "||image(state.semaction))
+
+	   if nodemember(state.label, myautomata.accepting) then 
+         write("accepting")
+      else write("")
+      
+      edges := state.edges
+      write(" from ",state.label," ")
+      every edge := !\edges do {
+         if edge.symbol~=="\n"then {
+            writes(" edge sym "||image(edge.symbol))
+            #put(symbols1,edge.symbol)
+
+            
+         }
+         else writes("\\n")
+         writes(" --> ")
+	      #writes("   ", if edge.symbol~=="\n"then edge.symbol else "\\n",
+         #      " -> ")
+         
+	      states2 := edge.destinations
+	      if \states2 then {
+	         writes("new state2 ", states2.label, " ")
+            if \states2.rulenum then {
+               writes(" rule ",states2.rulenum)
+               
+            }
+            if \states2.semaction then {
+               writes(" semaction ",states2.semaction)
+               
+            }
+            #states2 := states2._next
+	      }
+	      write()
+	   }  # every edge
+      
+      write("-----------")
+
+
+      state := statelist[p]._next
+      p := p + 1
+      }
+      
+   write(" bef createicon ")
+   node := myautomata.start
+   write(node.label)
+   createicon(myautomata,statelist)  
+      
+	return
+   autdfa := 
+	autdfa.states := alcnodelist()
+	returnvalue.states.current := returnvalue.start
+
+	returnvalue.states._next := aut1.states
+	listptr := aut1.states
+
+	while \(listptr._next) do
+	  listptr := listptr._next
+   
+   
+   
+   
+end
+
+#_______________________________________________________________
+
+
+procedure  get_dfa(inputlst,dfa_tble,lst)
+local slst := ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V"]
+local linelst := []
+   s := ""
+   s := lst[1]
+   
+   if trim(s) ~== "" then {
+      linelst := get_words(s)
+      put(inputlst,linelst)
+    }
+    s :=""
+    node := ""
+   every j := 2 to *lst do {
+     #write("=="||lst[j])
+    s := lst[j]
+   
+    if trim(s) ~== "" then {
+      linelst := get_words(s)
+      node := get(linelst)
+      #insert(dfa_tble,slst[j-1],linelst)
+      insert(dfa_tble,node,linelst)
+    }
+
+     #write(lst[j])
+   }
+
+
+end
+#_______________________________________________________________________
+procedure get_words(s)
+local alnum,lst,word
+local slst := []
+
+local tablet := table()
+#alnum := &letters ++ &digits ++ "-"
+alnum := &ascii -- " " -- "\t"
+lst := []
+#stelst := ["ABCDEFGHIJLNPVZcgiln", "O", "h", "z", "j", "lm", "JK", "o", "QW", "ad", "MN", "k", "R", "X", "b", "e", "S", "Y",  "f", "T", "U"]
+
+
+
+write(s)
+every j := 1 to *stelst do {
+   insert(tablet,stelst[j],j)
+   #write(" STE LST "||stelst[j]," ",j   )
+}
+word := ""
+    
+   s ? {
+      while tab(upto(alnum)) do {
+	   word := tab(many(alnum))
+         #write("WD "||word)
+         if member(tablet,word)  then {
+            #write(" w "||word)
+            word := tablet[word]
+            
+         }
+         put(lst,word)
+        }
+      }
+
+   return lst
+ 
+end
+
+###################################################################################################################################
+procedure nodemember(nodelabel, nodelist)
+   local traverse := nodelist
+
+   while \traverse do {
+      if traverse.current.label == nodelabel then
+	 return 1
+      traverse := traverse._next
+      }
+end
+#procedure createicon(myautomata)
+procedure createicon(myautomata,statelist)
+   local state, states, states2, edges, edge, maxrulenum := 0, i, action
+
+   
+   local outfilename := "C:\\Users\\Susie\\unicon\\uni\\ulex\\ch3\\myicn.icn"
+
+write(&errout, "in createicon")  
+  # if \debugautomaton then {
+  #    printautomata(myautomata)
+  #    write(&errout, "done printing  createicon")
+  #    exit(0)
+  #    }
+
+   if not (outfile := open(outfilename, "w")) then {
+      fprintf(stderr, "Unable to open output file %s\n", outfilename)
+      exit(1)
+      }
+
+   #
+   # write out the standard skeleton automata code
+   #
+   ulexskel(outfile)
+
+   if \begintext then {
+      fprintf(outfile, "%s\n", begintext)
+      }
+
+   fprintf(outfile,
+	   "global semantic_action\n\n_
+	   procedure yylex()\n_
+	   static myautomata\n_
+	   local currstate, state2, tempedge\n\n_
+	   \   myautomata := automata()\n\n_
+	   \   myautomata.states := []\n_
+	   \   myautomata.accepting := []\n")
+
+   #states := myautomata.states
+   p := 1
+   while p <= *statelist do {
+      states := statelist[p]
+      state := states.current
+   
+      #while \states do {
+      #   state := states.current
+      fprintf(outfile,
+	 "   put(myautomata.states, currstate := anode(%d, %d, [], [], []))\n",
+	      states.current.label, states.current.rulenum)
+
+      if state.label == myautomata.start.label then
+        fprintf(outfile, "   myautomata.start := currstate\n")
+
+      if nodemember(state.label, myautomata.accepting) then {
+	     fprintf(outfile, "   put(myautomata.accepting, currstate)\n")
+	   if state.rulenum > maxrulenum then
+	       maxrulenum := state.rulenum
+	   }
+
+      fprintf(outfile, "\n")
+      states := statelist[p]._next
+      p := p + 1
+      #states := states._next
+   }
+
+   #states := myautomata.states
+    p := 1
+   while p <= *statelist do {
+      states := statelist[p]
+      state := states.current
+      
+   
+     #while \states do {
+     #   state := states.current
+      fprintf(outfile,
+	      "   currstate := pop(myautomata.states)\n_
+	      \   put(myautomata.states, currstate)\n\n_
+	      \   while currstate.label ~= %d do {\n_
+	      \      currstate := pop(myautomata.states)\n_
+	      \      put(myautomata.states, currstate)\n      }\n_
+	      \   state2 := currstate\n\n",
+	      state.label)
+      states2 := state.epsilon
+
+     while 1 = 0 do {
+     # while \states2 do {
+	  fprintf(outfile,
+		 "   currstate := pop(myautomata.states)\n_
+		 \   put(myautomata.states, currstate)\n\n_
+		 \   while currstate.label ~= %d do {\n_
+		 \      currstate := pop(myautomata.states)\n_
+		 \      put(myautomata.states, currstate)\n      }\n_
+		 \   put(state2.epsilon, currstate)\n\n",
+		 states2.current.label)
+
+	  states2 := states2._next
+	 }
+
+    states2 := state.dot
+    while 1 = 0 do {
+    #while \states2 do {
+	 fprintf(outfile,
+		 "   currstate := pop(myautomata.states)\n_
+		 \   put(myautomata.states, currstate)\n\n_
+		 \   while currstate.label ~= %d do {\n_
+		 \      currstate := pop(myautomata.states)\n_
+		 \      put(myautomata.states, currstate)\n      }\n_
+		 \   put(state2.dot, currstate)\n\n",
+		 states2.current.label)
+	 states2 := states2._next
+	 }
+
+   edges := state.edges
+   every edge := !\edges do {
+	 fprintf(outfile, "   tempedge := edge()\n")
+
+	 if edge.symbol == "\n" then
+	    fprintf(outfile, "   tempedge.symbol := \"\\n\"\n")
+	 else {
+         if ((edge.symbol[1] == "[") & (*edge.symbol> 1))  then  
+	        fprintf(outfile, "   tempedge.symbol := csetfromrecset(\"%s\")\n",
+                  escapify(edge.symbol))
+	    else fprintf(outfile, "   tempedge.symbol := \"%s\"\n",
+              escapify(edge.symbol))
+	  }
+	     
+	
+
+	 fprintf(outfile, "   tempedge.destinations := []\n")
+
+	 states2 := edge.destinations
+    
+	 #while \states2 do {
+	    fprintf(outfile, "   currstate := pop(myautomata.states)\n_
+		    \   put(myautomata.states, currstate)\n\n_
+		    \   while currstate.label ~= %d do {\n_
+		    \      currstate := pop(myautomata.states)\n_
+		    \      put(myautomata.states, currstate)\n      }\n_
+		    \   put(tempedge.destinations, currstate)\n\n_
+		    \   put(state2.edges, tempedge)\n",
+		    states2.label)
+          #states2.current.label)
+	    #states2 := states2._next
+	  #}
+
+
+   }  # every edge
+	 
+      states := statelist[p]._next
+      p := p + 1
+      #states := states._next
+   }
+   #swj
+    fprintf(outfile,
+	   "   init_semantic_actions()\n\n_
+	   \   return yyulex(myautomata)\n\n_
+	   end\n\n_
+	   procedure init_semantic_actions()\n\n_
+	   \   semantic_action := table()\n")
+
+
+    #fprintf(outfile,
+	 #  "   init_semantic_actions()\n\n_
+    #  \   printautomaton(myautomata)\n\n_
+	 #  \   return yyulex(myautomata)\n\n_
+	 #  end\n\n_
+	 #  procedure init_semantic_actions()\n\n_
+	 #  \   semantic_action := table()\n")
+
+   action := list(maxrulenum+1, 0)
+   
+   every i := 1 to maxrulenum do {
+      fprintf(outfile, "   semantic_action[%d] := semantic_action_%d\n", i, i)
+      }
+
+
+   
+
+   fprintf(outfile, "\nend\n\n")
+
+   states := myautomata.accepting
+   while \states do {
+      state := states.current
+      if action[state.rulenum] == 0 then {
+	     fprintf(outfile,
+		 "procedure semantic_action_%d()\n_
+		 \   %s\n_
+		 end\n\n",
+		 state.rulenum,
+		 state.semaction)
+	 action[state.rulenum] := 1
+	 }
+    states := states._next
+   }
+end
+procedure escapify(s)
+   case s of  {
+      "\n": { return "\\n"; }
+      "\t": { return "\\t"; }
+      "\r": { return "\\r"; }
+      "\f": { return "\\f"; }
+      "\"": { return "\\\""; }
+      "\\": { return "\\\\"; }
+      }
+   return s;
+end
+

@@ -31,7 +31,7 @@ default_target: allsrc
 	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
 
-.PHONY: plugins update_rev doc
+.PHONY: plugins update_rev doc config help
 
 Makedefs: Makedefs.in configure
 	sh configure

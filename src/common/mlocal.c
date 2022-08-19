@@ -519,6 +519,8 @@ void get_arch(char *arch){
   s = "x86";
 #elif defined(_M_ARM) || defined(__arm) || defined(__arm__) || defined(__aarch32__) || defined(__aarch64__)
   s = "arm";
+#elif defined(__riscv)
+  s = "riscv";
 #elif defined(__mips)
   s = "mips";
 #elif defined(__powerpc)

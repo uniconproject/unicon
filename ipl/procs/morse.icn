@@ -1,16 +1,19 @@
 ############################################################################
 #
-#	File:     morse.icn
+#   File:     morse.icn
 #
-#	Subject:  Procedures to convert string to Morse code
+#   Subject:  Procedures to convert string to Morse code (and back)
 #
-#	Author:   Ralph E. Griswold, modified by Rich Morin
+#   Author:   Ralph E. Griswold, modified by Rich Morin and Don Ward
 #
-#	Date:     June 26, 1990
+#   Date:     June 26, 1990
+#             October 2022       (additions by Don Ward)
 #
 ############################################################################
 #
-#   This file is in the public domain.
+#   The original icon morse() implementation (now called morse_v0()) is in
+#   the public domain. All other code in the file is covered by Unicon's
+#   default licence. See COPYING in the top level directory.
 #
 ############################################################################
 #
@@ -21,7 +24,7 @@
 #
 ############################################################################
 
-procedure morse(s)
+procedure morse_v0(s)
    local i, c, t, x
    static code, key1, key2
 
@@ -47,4 +50,151 @@ procedure morse(s)
       else
          x ||:= "<" || c || "> "
    return x
+end
+
+############################## End of Icon code ############################
+
+############################################################################
+#
+# This is a re-implementation of the routine above which, compared to
+# its predecessor:
+#     handles more punctuation characters,
+#     has a reverse mapping from Morse to text,
+#     fails if a character that cannot be encoded is encountered,
+#     is about twice as fast,
+#     is easier to understand and extend.
+#
+############################################################################
+
+# ----------------------------------------------------------------------
+# translate s into Morse code
+# For compatibility with morse_v0(), words are separated by five spaces.
+procedure morse(s)
+   local c, ans
+   static T2M                   # Text to Morse
+   initial { T2M := buildMorseCode() }
+
+   ans := ""
+   every c := !map(s) do {
+      if member(T2M, c) then {
+         ans ||:= T2M[c]
+      } else if c == " " then {
+         # Separate words with five spaces (including the inter-character space)
+         ans ||:= "    "
+      } else fail
+   }
+   return ans
+end
+
+# ----------------------------------------------------------------------
+# Translate a Morse string into characters (i.e. reverse Morse)
+procedure remorse(ms)
+   local c, ans, len
+   static longest, M2T          # Morse to text
+   initial {
+      ans := buildMorseCode()   # get a temporary reference to T2M
+      M2T := table()
+      # Build the reverse map from Morse code to text and calculate the maximum length.
+      longest := 0
+      every c := key(ans) do { M2T[ans[c]] := c; longest <:= *ans[c] }
+   }
+
+   # Morse characters in M2T have a single trailing space -- the separator.
+   # Make a special case if the entire string has no trailing space (which
+   # would otherwise cause a failure on the last character).
+   if ms[-1] ~== " " then ms ||:= " "
+
+   ans := ""
+   ms ? {
+      while &pos < *ms do {
+         # be tolerant of shorter word spaces
+         if =("    " | "   " | "  " | " ") then {
+            ans ||:= " "; next      # word space
+         }
+
+         # Note that the character separator means that min([: *keyM2T) :]) = 2
+         every len := 2 to longest do {
+            if member(M2T, c := move(len)) then { ans ||:= M2T[c]; break next }
+         }
+         fail                       # no match found
+      }
+   }
+   return ans
+end
+
+# ----------------------------------------------------------------------
+# Set up the mapping table for translating text to Morse code
+procedure buildMorseCode()
+   static T2M
+
+   initial {
+      T2M := table()
+
+      # Build the Morse character set.
+      #
+      # Note the inter-character space is included.  This makes forwards translation
+      # slightly quicker (because the space separator does not have to be explicitly
+      # concatenated). It also makes reverse translation faster because we do not need
+      # to search for the longest match first, which means that common characters (the
+      # shortest) are found sooner.
+
+      T2M["a"] := ".- "
+      T2M["b"] := "-... "
+      T2M["c"] := "-.-. "
+      T2M["d"] := "-.. "
+      T2M["e"] := ". "
+      T2M["f"] := "..-. "
+      T2M["g"] := "--. "
+      T2M["h"] := ".... "
+      T2M["i"] := ".. "
+      T2M["j"] := ".--- "
+      T2M["k"] := "-.- "
+      T2M["l"] := ".-.. "
+      T2M["m"] := "-- "
+      T2M["n"] := "-. "
+      T2M["o"] := "--- "
+      T2M["p"] := ".--. "
+      T2M["q"] := "--.- "
+      T2M["r"] := ".-. "
+      T2M["s"] := "... "
+      T2M["t"] := "- "
+      T2M["u"] := "..- "
+      T2M["v"] := "...- "
+      T2M["w"] := ".-- "
+      T2M["x"] := "-..- "
+      T2M["y"] := "-.-- "
+      T2M["z"] := "--.. "
+
+      T2M["1"] := ".---- "
+      T2M["2"] := "..--- "
+      T2M["3"] := "...-- "
+      T2M["4"] := "....- "
+      T2M["5"] := "..... "
+      T2M["6"] := "-.... "
+      T2M["7"] := "--... "
+      T2M["8"] := "---.. "
+      T2M["9"] := "----. "
+      T2M["0"] := "----- "
+
+      T2M["@"] := ".--.-. "
+      T2M["."] := ".-.-.- "
+      T2M[","] := "--..-- "
+      T2M["?"] := "..--.. "
+      T2M["'"] := ".----. "
+      T2M["!"] := "-.-.-- "      # Heathkit version of "!"
+      T2M["/"] := "-..-. "
+      T2M["("] := "-.--. "
+      T2M[")"] := "-.--.- "
+      T2M["&"] := ".-... "
+      T2M[":"] := "---... "
+      T2M[";"] := "-.-.-. "
+      T2M["="] := "-...- "
+      T2M["+"] := ".-.-. "
+      T2M["-"] := "-....- "
+      T2M["_"] := "..--.- "
+      T2M["\""] := ".-..-. "
+      T2M["$"] := "...-..- "
+   }
+
+   return T2M
 end

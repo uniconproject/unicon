@@ -10,6 +10,7 @@
  * Author  :    Don Ward
  * Date    :    March 2021
  *
+ *              August 2022    Added ushift
  *
  * These routines are the equivalent of the Unicon built-in functions
  * except they never produce a large integer and there is no special
@@ -23,6 +24,7 @@
  *    bits     enquiry and bit extraction
  *    bit      single bit extraction
  *    brot     bit rotation
+ *    ushift   unsigned bitwise shift
  *
  * bit(x,n) works the same way as string indexing (but indexing bits instead
  * of characters, including negative indices meaning "from the end").
@@ -110,6 +112,37 @@ int bshift(UARGS)    /* bitwise shift */
     n = -n;
     if (n < NBITS) {
       RetInteger(IntegerVal(argv[1]) >> n);
+    } else {
+      RetInteger(0);
+    }
+  }
+}
+
+/* ---------------------------------------- */
+RTEX
+int ushift(UARGS)    /* unsigned bitwise shift */
+{
+  word n;
+  if (argc != 2) Fail;
+  ArgNativeInteger(1);
+  ArgNativeInteger(2);
+
+  /* If the amount to shift is >= wordsize, the result is undefined. */
+  /* In that case we return a zero value. */
+  n = IntegerVal(argv[2]);
+  if (n == 0) {
+    RetInteger(IntegerVal(argv[1]));
+  } else if (n > 0) {
+    if (n < NBITS) {
+      RetInteger(IntegerVal(argv[1]) << n);
+    } else {
+      RetInteger(0);
+    }
+  } else {
+    n = -n;
+    if (n < NBITS) {
+      uword uv = (uword)IntegerVal(argv[1]);
+      RetInteger(uv >> n);
     } else {
       RetInteger(0);
     }

@@ -27,6 +27,11 @@ case $host_cpu in
 	ARCHBITS="64"
 	AC_DEFINE([ARM], [1], [ARM platform])
         ;;
+     *riscv64*)
+        unicon_cpu="riscv_64"
+	ARCHBITS="64"
+	AC_DEFINE([RISCV], [1], [RISC-V platform])
+        ;;
      *i386* | *i686*)
         unicon_cpu="x86_32"
 	ARCHBITS="32"

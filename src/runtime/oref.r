@@ -152,6 +152,49 @@ operator{*} ! bang(underef x -> dx)
             BlkLoc(dx)->File.status |= Fs_Reading;
             status = BlkLoc(dx)->File.status;
 
+#ifdef PosixFns
+	    if (status & Fs_Socket) {
+	      SOCKET ws = (SOCKET) BlkD(dx,File)->fd.fd;;
+	      for (;;) {
+		StrLen(result) = 0;
+		do {
+		  DEC_NARTHREADS;
+		  if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
+		    /* EOF is no error */
+		    INC_NARTHREADS_CONTROLLED;
+		    fail;
+		  }
+		  INC_NARTHREADS_CONTROLLED;
+		  if (slen == -3) {
+		    /* sock_getstrg sets errornumber/text */
+		    fail;
+		  }
+		  if (slen == 1 && *sbuf == '\n')
+		    break;
+		  rlen = slen < 0 ? (word)MaxReadStr : slen;
+
+		  Protect(reserve(Strings, rlen), runerr(0));
+		  if (StrLen(result) > 0 && !InRange(strbase,StrLoc(result),strfree)) {
+		    Protect(reserve(Strings, StrLen(result)+rlen), runerr(0));
+		    Protect((StrLoc(result) = alcstr(StrLoc(result),StrLen(result))), runerr(0));
+		  }
+
+		  Protect(sptr = alcstr(sbuf,rlen), runerr(0));
+		  if (StrLen(result) == 0)
+		    StrLoc(result) = sptr;
+		  StrLen(result) += rlen;
+		  if (StrLoc(result) [ StrLen(result) - 1 ] == '\n') {
+		    StrLen(result)--; break;
+		  }
+		  else { /* no newline to trim; EOF? */
+		  }
+		}
+		while (slen > 0);
+		suspend result;
+	      }
+	    }
+#endif			/* PosixFns */
+
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
 	       struct MFile *mf = (struct MFile *)fd;
@@ -284,7 +327,7 @@ operator{*} ! bang(underef x -> dx)
 
 		  Protect(reserve(Strings, rlen), runerr(0));
 #if ConcurrentCOMPILER
-	    CURTSTATE();
+		  CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
 		  if (!InRange(strbase,StrLoc(result),strfree)) {
 		     Protect(reserve(Strings, StrLen(result)+rlen), runerr(0));

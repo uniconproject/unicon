@@ -78,6 +78,8 @@ procedure main()
    object_test(t2,"Unicon escapes & control characters test")
    escapeseq_test("Unicon escape & control sequence test")
 
+   schema_test()
+
 end
 
 procedure json_unicon_encoding_tests()
@@ -113,6 +115,7 @@ $endif
    object_test(c,"Unicon cset encoding test")
    object_test(r,"Unicon record encoding test")
    object_test(C,"Unicon class encoding test")
+
 end
 
 procedure escapeseq_test(s)
@@ -242,4 +245,99 @@ procedure objects_equal(x,y)
          }
       }  
    return
+end
+
+
+procedure schema_test()
+
+good :=
+"{ _
+  \"firstName\": \"John\", _
+  \"lastName\": \"Doe\", _
+  \"age\": 22, _
+  \"car\" : \"mazda\", _
+  \"children\" : [\"Alice\", \"Rayya\"] _
+}"
+
+# age out of range
+bad1 :=
+"{ _
+  \"firstName\": \"John\", _
+  \"lastName\": \"Doe\", _
+  \"age\": -2, _
+}"
+
+
+#lastName is required
+bad2 :=
+"{ _
+  \"firstName\": \"John\", _
+}"
+
+
+# jeep is out of range
+bad3 :=
+"{ _
+  \"firstName\": \"John\", _
+  \"lastName\": \"Doe\", _
+  \"car\" : \"jeep\" _
+}"
+
+# children names must be unique
+bad4 :=
+"{ _
+  \"firstName\": \"John\", _
+  \"lastName\": \"Doe\", _
+  \"children\" : [\"Alice\", \"Rayya\", \"Rayya\"] _
+}"
+
+
+schema :=
+"{ _
+  \"title\": \"Person\", _
+  \"type\": \"object\", _
+  \"required\" : [\"firstName\", \"lastName\"], _
+  \"properties\": { _
+    \"firstName\": { _
+      \"type\": \"string\", _
+    }, _
+    \"lastName\": { _
+      \"type\": \"string\", _
+    }, _
+    \"age\": { _
+      \"type\": \"integer\", _
+      \"minimum\": 0 _
+    }, _
+    \"children\": { _
+      \"type\": \"array\", _
+      \"uniqueItems\": true, _
+      \"items\": { _
+        \"type\": \"string\" _
+      } _
+    }, _
+    \"car\": { _
+      \"type\": \"string\", _
+      \"enum\": [\"ford\", \"mazda\"] _
+    } _
+  } _
+}"
+
+
+  write("schema tests:")
+
+   v := jss_validate(good, schema)
+   write("schema test valid:", if v=="" then  "SUCCESS" else "FAILURE " )
+
+   v := jss_validate(bad1, schema)
+   write("schema test invalid:", if v~=="" then  "SUCCESS" else "FAILURE " )
+
+   v := jss_validate(bad2, schema)
+   write("schema test invalid:", if v~=="" then  "SUCCESS" else "FAILURE " )
+
+   v := jss_validate(bad3, schema)
+   write("schema test invalid:", if v~=="" then  "SUCCESS" else "FAILURE " )
+
+   v := jss_validate(bad4, schema)
+   write("schema test invalid:", if v~=="" then  "SUCCESS" else "FAILURE " )
+
 end

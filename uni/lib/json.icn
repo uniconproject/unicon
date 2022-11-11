@@ -10,6 +10,9 @@
 #
 # Error handling object
 #
+
+package json
+
 class ErrorHandler(filename, 
                    lineno, 
                    error,
@@ -238,12 +241,30 @@ procedure utoj(x,strict,error)
 end
 
 #
+# Same as utoj(), except that this function only produces standard JSON data
+# without adding Unicon data structure meta data
+#
+procedure tojson(x,strict,error)
+   local j;
+   jerror := ErrorHandler(error,strict)
+
+   if j := _utoj(x,jerror,"r") then
+      return j
+
+   jerror.get_err()
+end
+
+
+#
 # Given a Unicon structure, produce a JSON equivalent if possible.
+#
+# If raw is not &null, then a standard JSON data is produced without
+# adding Unicon data structure meta data
 #
 # TODO: Check for fails that need error messages
 #
-procedure _utoj(u,jerror)
-   local s, tmp
+procedure _utoj(u,jerror, raw)
+   local s, tmp, first
    case type(u) of {
       "null": return type(u)
       "string": {
@@ -254,38 +275,50 @@ procedure _utoj(u,jerror)
       "integer" | "real": return image(u)
       "list": {
          s := "["
-         if *u > 0 then s ||:= _utoj(u[1],jerror)
+         if *u > 0 then s ||:= _utoj(u[1],jerror, raw)
          every i := 2 to *u do {
-	    s ||:= ("," || _utoj(u[i],jerror)) | fail
+	    s ||:= ("," || _utoj(u[i],jerror, raw)) | fail
             }
          s ||:= "]"
          return s
          }
       "set": { # {"__uniset__":[...]}
-         s := "{\"__uniset__\":["; i := 1
-
+         if \raw then
+            s := "["
+         else
+            s := "{\"__uniset__\":["
+         i := 1
          every x := !u do {
             if i>1 then s ||:= ","
-	    s ||:= _utoj(x,jerror) | fail
+	    s ||:= _utoj(x,jerror, raw) | fail
             i +:= 1
             }
-         s ||:= "]}"
+         if \raw then
+            s := "]"
+         else
+            s ||:= "]}"
          return s
          }
       "cset": { # {"__unicset__":"..."}
-         return "{\"__unicset__\":"||jsonify_string(string(u),jerror)||"}"
+         if \raw then
+            s := jsonify_string(string(u),jerror)
+         else
+            return "{\"__unicset__\":"||jsonify_string(string(u),jerror)||"}"
          }
       "table": { # {"__unitable__":1, ...}
-         s := "{\"__unitable__\":1"
+         if \raw then
+            s := "{"
+         else
+            s := "{\"__unitable__\":1"
          every k := key(u) do {
 	    if s[-1] ~== "{" then s ||:= ","
             if type(k) == "string" then 
-               s ||:= jsonify_string(k,jerror)||":"|| _utoj(u[k],jerror) | fail
+               s ||:= jsonify_string(k,jerror, raw)||":"|| _utoj(u[k],jerror, raw) | fail
             else {
                if \(jerror.strict) then 
-                  s ||:= "\""||image(k)||"\":"||_utoj(u[k],jerror) | fail
+                  s ||:= "\""||image(k)||"\":"||_utoj(u[k],jerror, raw) | fail
                else
-                  s ||:= _utoj(k,jerror)||":"||_utoj(u[k],jerror) | fail
+                  s ||:= _utoj(k,jerror)||":"||_utoj(u[k],jerror, raw) | fail
                }
             }
          s ||:= "}"
@@ -294,21 +327,36 @@ procedure _utoj(u,jerror)
       default: {
          # Class - {"__uniclass__":"ClassName", ...}
          if match("object ", tmp := image(u)) then {
-            s := "{\"__uniclass__\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
+            if \raw then
+               s := "{"
+            else
+               s := "{\"__uniclass__\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
+            first := &null
             every k := key(u) do {
                if k == ("__s" | "__m") then next
                if type(k) ~== "string" then fail
-	       s ||:=","||jsonify_string(k,jerror)||":"||_utoj(u[k],jerror)|fail
+               if \raw & /first then
+                  s ||:= jsonify_string(k,jerror)||":"||_utoj(u[k],jerror, raw)|fail
+               else
+                  s ||:= ","||jsonify_string(k,jerror)||":"||_utoj(u[k],jerror, raw)|fail
                }
             s ||:= "}"
             return s
             }
          # Record - {"__unirecord__":"RecordName", ...}
          else if match("record ", tmp := image(u)) then {
-            s := "{\"__unirecord__\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
+            if \raw then
+               s := "{"
+            else
+               s := "{\"__unirecord__\":\""||tmp[8:upto("_",tmp)\1|0]||"\""
+            first := &null
             every k := key(u) do {
                if type(k) ~== "string" then fail
-	       s ||:=","||jsonify_string(k,jerror)||":"||_utoj(u[k],jerror)|fail
+               if \raw & /first then
+                  s ||:= jsonify_string(k,jerror)||":"||_utoj(u[k],jerror, raw)|fail
+               else
+                  s ||:= ","||jsonify_string(k,jerror)||":"||_utoj(u[k],jerror, raw)|fail
+               first := 1
                }
             s ||:= "}"
             return s
@@ -403,7 +451,7 @@ procedure jsonify_string(s,jerror)
          # Handle escaped characters
          else ns ||:= \(T_Esc[c]) | c
          } # end while
-      } 
+      }
    return "\""||ns||"\""
 end
 

@@ -117,7 +117,7 @@ procedure main(argv)
 end
 $endif
 
-#
+#<p>
 # Takes a string s that will be interpreted as JSON data.
 # If the conversion fails, jtou() attempts to use s as a
 # filename. If it fails, then the function fails.
@@ -130,7 +130,7 @@ $endif
 # <[param strict - Flag for specifing strict JSON syntax (non-null)]>
 # <[param mode - Specifies explicit string, "s", or file, "f", handling]>
 # <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
-#
+#</p>
 procedure jtou(s,strict,mode,error)
    local file, j, u, tok_gen, jerror, errout
    j := ""
@@ -221,15 +221,16 @@ procedure jtouf(s,strict,error)
    jerror.get_err()
 end
 
-#
-# It is insane to propose a single function as the primary API for the
-# entire library, so here it is.
+#<p>
 #
 # Given a Unicon structure, produce a JSON equivalent if possible.
-#
-# An optional second parameter, error, as a file handle will specify 
-# where to print an error message in the event of a error
-#
+# This function add meta data to the output to aid in reconstructing
+# the original Unicon structure. 
+# <[param x - a Unicon structure]>
+# <[param strict - Flag for specifing strict JSON syntax (non-null)]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+# <[return a string; a JSON encoding of the structure including Unicon meta data>
+#</p>
 procedure utoj(x,strict,error)
    local j;
    jerror := ErrorHandler(error,strict)
@@ -240,10 +241,16 @@ procedure utoj(x,strict,error)
    jerror.get_err()
 end
 
-#
+#<p>
 # Same as utoj(), except that this function only produces standard JSON data
 # without adding Unicon data structure meta data
 #
+# <[param x - a Unicon structure]>
+# <[param strict - Flag for specifing strict JSON syntax (non-null)]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+# <[return a string in JSON format>
+#</p>
+
 procedure tojson(x,strict,error)
    local j;
    jerror := ErrorHandler(error,strict)
@@ -991,3 +998,323 @@ end
 ########################
 # END PARSER FUNCTIONS #
 ########################
+
+procedure json_value_true(x)
+   string(x) & (x == "__true__") & return
+end
+
+procedure json_value_false(x)
+   string(x) & (x == "__false__") & return
+end
+
+########################
+#
+#
+# Schema validation
+# Implemets a subset of the rfc at:
+#   https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-validation-01
+#
+# The current implentation covers structural validation as follows:
+#
+# - Validation Keywords for Any Instance Type
+#   * type
+#   * enum
+#   * const
+#
+# - Validation Keywords for Numeric Instances (number and integer)
+#   * multipleOf
+#   * maximum
+#   * exclusiveMaximum
+#   * minimum
+#   * exclusiveMinimum
+#
+# - Validation Keywords for Strings
+#   * maxLength
+#   * minLength
+#   * pattern
+#
+# - Validation Keywords for Arrays
+#   * maxItems
+#   * minItems
+#   * uniqueItems
+#   * maxContains
+#   * minContains
+#
+# - Validation Keywords for Objects
+#   * maxProperties
+#   * minProperties
+#   * required
+#   * dependentRequired
+#
+
+link fullimag
+
+
+#<p>
+# validate a json file using a json schema
+# <[param jfname - the name of the json File]>
+# <[param sfname - the name of the json Schema File]>
+#</p>
+#
+procedure jsf_validate(jfname, sfname, strict, error)
+   local json_date, json_schema
+
+   #jerror := ErrorHandler(error,strict)
+
+   json_data   := jtou(jfname , "f", strict, error)
+   json_schema := jtou(sfname , "f", strict, error)
+
+   return _jsvalidation(json_data, json_schema, json_schema)
+end
+
+procedure jss_validate(data, schema, strict, error)
+   local json_date, json_schema
+
+   #jerror := ErrorHandler(error,strict)
+
+   json_data   := jtou(data , "s", strict, error)
+   json_schema := jtou(schema , "s", strict, error)
+
+   return _jsvalidation(json_data, json_schema, json_schema)
+end
+
+#<p>
+# 
+# Validate a specific value only at the current level given a schema of that value.
+#
+# <[param x is the table]>
+# <[param val is the name of the value of a property]>
+# 
+# <[returns "" if the valid otherwise returns the error string]>
+#
+#</p>
+
+procedure validate_property(x, val)
+   local z, c, cr, i, const, enum, minimum, maxLength, minLength,
+      req, prop, exclusiveMaximum, multipleOf, maxProperties,
+      minProperties, dependentRequired
+   z := ""
+   case x["type"] of {
+
+      # - Validation Keywords for Any Instance Type
+      #   * type
+      #   * enum
+      #   * const
+      #
+
+      "object" :{
+         # - Validation Keywords for Objects
+         #   * maxProperties
+         #   * minProperties
+         #   * required
+         #   * dependentRequired
+         #
+         if type(val) ~== "table" then {
+            return "expected object type, got: " || val
+            }
+         if type(req := x["required"]) == "list" then {
+            i := 1
+            cr := 0
+            while i <= *req do {
+               c := 0
+               every prop := key(val) do{
+                  if prop ~== req[i] then c := c + 1
+                  if prop == req[i] then cr := cr + 1
+                  }
+               if cr = *req then break
+                  if c =  *val then  z := "required properies missing"
+               i := i + 1
+               }
+            return z
+            }
+
+         if integer(minProperties := x["minProperties"]) then
+            if *val < minProperties then
+               return fullimage(val) || " is too small. Must be greater than or equal to " || minProperties || " properties."
+
+         if integer(maxProperties := x["maxProperties"]) then
+            if *val > maxProperties then
+               return fullimage(val) || " is too big. Must be less than or equal to " || maxProperties || " properties."
+
+         # TODO
+         enum := x["enum"]
+         const := x["const"]
+         dependentRequired := x["dependentRequired"]
+
+         return z
+         }
+
+      "array": {
+         # - Validation Keywords for Arrays
+         #   * maxItems
+         #   * minItems
+         #   * uniqueItems
+         #   * maxContains
+         #   * minContains
+         #
+         if type(val) ~== "list" then
+            return "expected array type, got: " || image(val)
+
+         if integer(minItems := x["minItems"]) then
+            if *val < minItems then
+               return fullimage(val) || " is too small. Must have at least " || minItems || " items."
+
+         if integer(maxItems := x["maxItems"]) then
+            if *val > maxItems then
+               return fullimage(val) || " is too big. Must have at most " || maxItems || " items."
+
+         if json_value_true(x["uniqueItems"]) & *val ~= *set(val) then {
+            return fullimage(val) || " must have unique items"
+            }
+
+         # TODO
+         enum := x["enum"]
+         const := x["const"]
+         maxContains := x["maxContains"]
+         minContains := x["minContains"]
+
+         }
+
+      "string": {
+         # - Validation Keywords for Strings
+         #   * maxLength
+         #   * minLength
+         #   * pattern
+         #
+         if type(val) ~== "string" then {
+            return "expected string type, got: " || val
+            }
+         else{
+
+            if type(enum := x["enum"]) == "list" then
+               if not member(set(enum), val) then
+                  return val || " is out of range, allowed values are: " || fullimage(enum)
+
+            if string(const := x["const"]) then
+               if const ~== val then
+                  return val || " is not equal to the constant: " || const
+
+            if integer(maxLength := x["maxLength"]) then
+               if *val > maxLength then
+                  return val || " is too big. Must be less than or equal to " || maxLength || " characters."
+
+            if integer(minLength := x["minLength"]) then
+               if *val < minLength then
+                  return val || " is too small. Must be greater than or equal to " || minLength || " characters."
+
+            # TODO
+	    pattern := x["pattern"]
+            return z
+            }
+         }
+
+      "integer" | "number" :{
+         # - Validation Keywords for Numeric Instances (number and integer)
+         #   * multipleOf
+         #   * maximum
+         #   * exclusiveMaximum
+         #   * minimum
+         #   * exclusiveMinimum
+         #
+
+         if type(val) ~== "integer" & x["type"] == "integer" then {
+            return "expected integer type, got: " || val
+            }
+         else if type(val) ~== "real" & x["type"] == "number" then{
+            return "expected a number, got " || val
+            }
+         else {
+
+            if type(enum := x["enum"]) == "list" then
+               if not member(set(enum), val) then
+                  return val || " is out of range, allowed values are: " || fullimage(enum)
+
+            if string(const := x["const"]) then
+               if const ~= val then
+                  return val || " is not equal to the constant: " || const
+
+            if integer(multipleOf := x["multipleOf"]) then
+               if val % mulitpleOf ~= 0 then
+                  return val || " must be a multiple of: " || multipleOf
+
+            if integer(maximum := x["maximum"]) then
+               if val > maximum then
+                  return val || " is greater than the maximum: " || maximum
+
+            if integer(exclusiveMaximum := x["exclusiveMaximum"]) then
+               if val >= exlusiveMaximum then
+                  return val || " is greater than or equal to the exclusiveMaximum: " || exclusiveMaximum
+
+            if integer(minimum := x["minimum"]) then
+               if val < minimum then
+                 return val || " is less than the minimum: " || minimum
+
+            if integer(exclusiveMinimum := x["exclusiveMinimum"]) then
+               if val <= exclusiveMinimum then
+                  return val || " is less than the exclusiveMinimum: " || exclusiveMinimum
+            }
+         return z
+         }
+
+      "&null" :{
+         return "additional properties? " || x["type"]
+         }
+
+      default: return z
+      }
+end
+
+#<p>
+# helper function
+# <[param obj name of the object]>
+# <[param sch name of  the schema file]>
+# <[param schRoot name of the schema file once more]>
+# The procedure _jsvalidation recusively goes into the object file and the corresponding level of the Schema file.
+# In each level the procedure  gets the value of each propertiy in the object file and calls the  validate_property() procedure.
+# with the value and the corresponding schema property.
+#
+# <[returns "" when valid, or the error string]>
+#
+#</p>
+
+procedure _jsvalidation(obj, sch, schRoot)
+   if type(obj) == "table" then {
+      pf := validate_property(sch, obj)
+      if pf ~== "" then return pf
+      every k := key(obj) do {
+         if type(obj[k]) == "table" then{
+            pf := validate_property(sch["properties"][k], obj[k])
+            if pf ~== "" then return pf
+            _jsvalidation(obj[k], sch["properties"][k], schRoot)
+            }
+
+         else if type(obj[k]) == "list" then{
+            pf := validate_property(sch["properties"][k], obj[k])
+            if pf ~== "" then return pf
+            inc := 1
+            every key(obj[k]) do {
+               if type(obj[k][inc]) == "table" then {
+                  if key(sch["properties"][k]["items"]) == "$ref" then {
+                     refitem  := sch["properties"][k]["items"]["$ref"]
+                     refitem ? {
+                        if ="#/$defs/" | ="#/definitions/" then
+                           {
+                              refitem := tab(0)
+                              check := _jsvalidation(obj[k][inc], schRoot["$defs"][refitem], schRoot)
+                              if check ~== "" then return check
+                              inc := inc + 1
+                              }
+			}
+                     }
+                  }
+               }
+            } 
+         else{
+            pf := validate_property(sch["properties"][k], obj[k])
+            if pf ~== "" then return pf
+            }
+         }
+      }
+   return ""
+end
+

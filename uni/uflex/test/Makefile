@@ -37,13 +37,15 @@ nummain.u: nummain.icn
 timetst2.u: timetst2.icn
 	$(UNICON) $(UFLAGS) -c timetst2
 
-nnws nnws.tst: timetst2.u nnws.l Makefile
+ # nnws nnws.tst: timetst2.u nnws.l Makefile
+nnws.tst: timetst2.u nnws.l Makefile
 	../uflex nnws
 	$(UNICON) -s nnws timetst2.u
 	./nnws -p dorrie.in > local/nnws.out
 	@if diff --strip-trailing-cr local/nnws.out stand/nnws.std ; then echo "++++++++++++++++++++ Passed"; else echo "-------------------- Failed"; fi
 
-j0 j0.tst: javalex.l j0.icn Makefile
+ # j0 j0.tst: javalex.l j0.icn Makefile
+j0.tst: javalex.l j0.icn Makefile
 	../uflex javalex
 	$(UNICON) -s j0 javalex
 	./j0 hello.java > local/j0.out

@@ -9,7 +9,7 @@
 #                 Clinton Jeffery, Jafar Al-Gharaibeh,
 #                 Don Ward
 #
-#       Date:     December 16th 2021
+#       Date:     December 14th 2022
 #
 ############################################################################
 #
@@ -104,7 +104,23 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <stdint.h>
 
+/*
+ * If uintptr_t is provided by the implementation it is the best choice
+ * for defining the type of uword. If not, we have to guess which integer
+ * type fits a pointer (and that guess is not 100% reliable) so we
+ * implement a runtime check that the sizes match. See ICALL_PTR_CHECK below.
+ */
+#ifdef UINTPTR_MAX
+#if UINTPTR_MAX < 65536UL
+#define WordSize 16
+#elif UINTPTR_MAX < 4294967296UL
+#define WordSize 32
+#else 
+#define WordSize 64
+#endif
+#else                              /* UINTPTR_MAX */
 #if INT_MAX == 32767
 #define WordSize 16
 #elif LONG_MAX == 2147483647L
@@ -112,6 +128,7 @@
 #else
 #define WordSize 64
 #endif
+#endif                              /* UINTPTR_MAX */
 
 #if !defined(NoDescriptorDouble) && (WordSize == 64)
 #define DescriptorDouble
@@ -173,8 +190,14 @@
 #define TypeMask        63      /* type mask */
 #define Type(d) ((int)((d).dword & TypeMask))
 
+#ifdef UINTPTR_MAX
+typedef intptr_t word;
+typedef uintptr_t uword;
+#else                               /* UINTPTR_MAX */
 typedef long word;
 typedef unsigned long uword;
+#endif                              /* UINTPTR_MAX */
+
 typedef struct descrip {
    word dword;
    union {
@@ -350,37 +373,51 @@ extern rtentryvector rtfuncs;
   To understand the details, see the functions cnv_int(), cnv_real(), cnv_str()
   in runtime/cnv.r.  They convert a source descriptor "s" to a destination
   descriptor "d", and return 1 on success and 0 on failure.
-  Instead of the following macros one could use the functions cnv_c_int(),
-  cnv_c_dbl(), cnv_c_str() (see runtime/cnv.r), plus error checking.
 
+  It's possible, but unlikely, that a conforming C99 implementation will not
+  provide intptr_t and uintptr_t (because they are optional).
+  In that case, we need to check at runtime that word and int * are the same size.
+  We can't do it in the preprocessor because
+     #if sizeof(word) == sizeof(int *)
+  is not legal.
+  And, if we get really lucky, the optimiser will remove the check because
+  it's (hopefully) tautologous.
 */
+#undef ICALL_PTR_CHECK
+#ifdef UINTPTR_MAX
+/* If uintptr_t is provided by the implementation, no runtime check is needed */
+#define ICALL_PTR_CHECK
+#else                              /* UINTPTR_MAX */
+/* Error code 217 is "unsafe inter-program variable assignment". */
+#define ICALL_PTR_CHECK if (sizeof(word) != sizeof(int *)) FailCode(217)
+#endif                             /* UINTPTR_MAX */
 
-#define ArgInteger(i) do { if (argc < (i)) FailCode(101); \
+#define ArgInteger(i) do { ICALL_PTR_CHECK; if (argc < (i)) FailCode(101); \
 if (!cnv_int(&argv[i],&argv[i])) ArgError(i,101); } while(0)
 
-#define ArgNativeInteger(i) do { if (argc < (i)) FailCode(101); \
+#define ArgNativeInteger(i) do { ICALL_PTR_CHECK; if (argc < (i)) FailCode(101); \
 if (argv[i].dword == D_Lrgint) FailCode(101); \
 if (!cnv_int(&argv[i],&argv[i])) ArgError(i,101); } while(0)
 
 #define ArgReal(i) \
-do {if (argc < (i))  FailCode(102); \
+  do {ICALL_PTR_CHECK; if (argc < (i))  FailCode(102);        \
     if (!cnv_real(&argv[i],&argv[i])) ArgError(i,102); \
    } while(0);
 
 #define ArgString(i) \
-do {if (argc < (i))  FailCode(103); \
+  do {ICALL_PTR_CHECK; if (argc < (i))  FailCode(103);       \
     if (!cnv_str(&argv[i],&argv[i])) ArgError(i,103); \
    } while(0);
 
 #define ArgList(i) \
-do {if (argc < (i))  FailCode(101); \
+  do {ICALL_PTR_CHECK; if (argc < (i))  FailCode(101);   \
     if (argv[i].dword != D_List) ArgError(i,108); \
    } while(0);
 
 #define ListLen(d)      ((d).vword.bptr->List.size)
 
 #define ArgExternal(i) \
-  do {if (argc < (i)) FailCode(101); \
+  do {ICALL_PTR_CHECK; if (argc < (i)) FailCode(101);           \
       if( argv[i].dword != D_External) ArgError(i, 123); \
   } while(0);
 

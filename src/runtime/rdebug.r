@@ -1228,7 +1228,7 @@ void heaperr(char *msg, union block *p, int t)
 #endif					/* DebugHeap */
 
 
-#ifdef DEVMODE
+#ifdef DEVELOPMODE
 /*----------------------------------------------------------------------
  * This is a home for code that is only intended to be present when
  * the --enable-devmode option has been supplied to configure.
@@ -1279,4 +1279,4 @@ body {
 }
 end
 
-#endif                  /* DEVMODE */
+#endif                  /* DEVELOPMODE */

@@ -1,0 +1,207 @@
+package ulsp
+
+import json
+
+class CompletionHandler(
+	workspace,
+	params
+)
+
+	method setVariables(new_workspace, new_params)
+		workspace := new_workspace
+		params := new_params
+	end
+
+	method run()
+		local _context, line, character, results_table, results
+		
+		line := params["position"]["line"]
+		character := params["position"]["character"]
+
+		_context := getContext(line, character, workspace.temp_file)
+
+		results_table := table()
+		results_table["isComplete"] :=  "__true__"
+		results_table["items"] := []
+
+		case _context of {
+			"inside comment" : {
+				results_table["items"] := []
+			}
+			"after dot operator" : {
+				desired_line := getDesiredLine(line, workspace.temp_file)	
+				objectName := getObjectName(desired_line, character) 
+				workspace.buildObjectCompletionItems(results_table, objectName)
+			}
+			default : { 
+				buildDefaultCompletionItems(results_table, workspace)
+			}
+		}
+
+		results := tojson(results_table)
+		return results
+
+
+	end
+
+
+	method getObjectName(line, character)
+		identifiers := &letters ++ &digits ++ '_' ++ '-'
+
+		line ? {
+			temp := tab(character + 1)
+			while c := move(-1) do {
+				if (c ** identifiers) ~== c then { 
+					break
+				}
+			}
+
+			if ="." then {
+				move(-1)
+
+				while c := move(-1) do {
+					if (c ** identifiers) ~== c then { 
+						move(1)
+						break
+					}
+				}
+				objectName := tab(upto("."))
+				return objectName
+				
+			}
+		}
+
+	end
+
+	method getDesiredLine(line, file)
+		f := open(file)
+		every !line do read(f)
+		desired_line := read(f)
+		return desired_line
+	end
+
+	method getContext(line, character, file)
+
+		desired_line := getDesiredLine(line, file)
+
+		#-----------------------------------------------#
+		#----------- Case "start of file" --------------#
+		#-----------------------------------------------#
+
+		if desired_line = &null then return &null
+
+		#-----------------------------------------------#
+		#----------- Case "inside comment" -------------#
+		#-----------------------------------------------#
+
+		desired_line ? {
+			while (&pos < character) do {
+				ch := move(1)
+				if ch == "#" then return "inside comment"
+			}
+		}
+
+		#-----------------------------------------------#
+		#-------- Case "after dot operator" ------------#
+		#-----------------------------------------------#
+
+		if objectName := getObjectName(desired_line, character) then 
+			return "after dot operator"  
+
+		#-----------------------------------------------#
+		#---------------- Default case -----------------#
+		#-----------------------------------------------#
+
+
+		
+	end
+
+	method addBuiltInFunctionsCompletionItems(results_table)
+
+		every _function := !workspace.getBuiltInFunctions() do {
+			put(results_table["items"], table("label", _function, "kind", 3))
+		}
+
+	end
+
+	method addActionWordsCompletionItems(results_table)
+
+		every _actionWord := !workspace.getActionWords() do {
+			put(results_table["items"], table("label", _actionWord))
+		}
+
+	end
+
+	method addDeclarativeExpressionsCompletionItems(results_table)
+
+		every _declarativeExpression := !workspace.getDeclarativeExpressions() do {
+			put(results_table["items"], table("label", _declarativeExpression))
+		}
+
+	end
+
+	method addSyntaxReservedWordsCompletionItems(results_table)
+
+		every _syntaxReservedWord := !workspace.getSyntaxReservedWords() do {
+			put(results_table["items"], table("label", _syntaxReservedWord))
+		}
+
+	end
+
+	method addKeywordsCompletionItems(results_table)
+
+		every _keyword := !workspace.getKeywords() do {
+			put(results_table["items"], table("label", _keyword, "kind", 14))
+		}
+
+	end
+
+	method addPreprocessorCompletionItems(results_table)
+
+		every _preprocessor := !workspace.getPreprocessors() do {
+			put(results_table["items"], table("label", _preprocessor))
+		}
+
+	end
+
+	method addWorkspaceProcedures(results_table, workspace)
+
+		every _internalProcedure := !workspace.getInternalProcedures() do {
+			put(results_table["items"], table("label", _internalProcedure, "kind", 3))
+		}
+		every _linkedProcedure := !workspace.getLinkedProcedures() do {
+			put(results_table["items"], table("label", _linkedProcedure, "kind", 3))
+		}
+		every _importedProcedure := !workspace.getImportedProcedures() do {
+			put(results_table["items"], table("label", _importedProcedure, "kind", 3))
+		}
+
+	end
+
+	method addWordspaceClasses(results_table, workspace)
+		
+		every _internalClass := !workspace.getInternalClasses() do {
+			put(results_table["items"], table("label", _internalClass, "kind", 3))
+		}
+		every _linkedClass := !workspace.getLinkedClasses() do {
+			put(results_table["items"], table("label", _linkedClass, "kind", 3))
+		}
+		every _importedClass := !workspace.getImportedClasses() do {
+			put(results_table["items"], table("label", _importedClass, "kind", 3))
+		}
+
+	end
+
+	method buildDefaultCompletionItems(results_table, workspace)
+		addActionWordsCompletionItems(results_table)
+		addBuiltInFunctionsCompletionItems(results_table)
+		addDeclarativeExpressionsCompletionItems(results_table)
+		addKeywordsCompletionItems(results_table)
+		addPreprocessorCompletionItems(results_table)
+		addSyntaxReservedWordsCompletionItems(results_table)
+		addWordspaceClasses(results_table, workspace)
+		addWorkspaceProcedures(results_table, workspace)
+	end
+
+
+end

@@ -195,6 +195,15 @@
    Feature(1, "_OVLD", "operator overloading")
 #endif					/* OVLD */
 
-#ifdef DEVMODE
+#ifdef DEVELOPMODE
+   /*
+    * DEVELOPMODE used to be called DEVMODE and caused (amongst other things)
+    * the preprocessor to define _DEVMODE as a predefined symbol.
+    * Unfortunately, DEVMODE is used by the Windows UCRT run time and the clash of
+    * symbols causes a build failure when Unicon is configured with --enable-devmode
+    * So, in the Unicon run time system, DEVMODE has been renamed to DEVELOPMODE.
+    * The name of the preprocessor defined symbol and the configure option
+    * are unchanged to avoid breaking existing usage.
+    */
    Feature(1, "_DEVMODE", "developer mode")
-#endif					/* DEVMODE */
+#endif					/* DEVELOPMODE */

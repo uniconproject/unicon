@@ -253,7 +253,7 @@ fi
 if test x"$devmode" = x"yes" ; then
   debug=yes
   warn=yes
-  AC_DEFINE([DEVMODE], [1], [Developer Mode])
+  AC_DEFINE([DEVELOPMODE], [1], [Developer Mode])
 fi
 
 if test x"$debugheap" = x"yes" ; then

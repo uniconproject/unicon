@@ -1590,18 +1590,20 @@ int wmap(wbp w)
 
    /*
     * Get PBuffer for offscreen rendering (OpenGL rendering only)
+    * TODO: migrate to use  framebuffer objects instead,
+    * PBuffers are deprecated in OpenGL 3.0 and not available on MacOS
     */
-   {
-   int pbufattrs[] = {GLX_PBUFFER_WIDTH, DisplayWidth(stddpy, wd->screen),
-                      GLX_PBUFFER_HEIGHT, DisplayHeight(stddpy, wd->screen),
-                      GLX_PRESERVED_CONTENTS, True,
-                      None};
-   ws->pbuf = glXCreatePbuffer(stddpy, wd->configs[0],pbufattrs);
-   if (ws->pbuf == (GLXPixmap)NULL) {
-      /* consider freeing window binding/resources */
-      set_errortext(144);
-      return Failed;
-      }
+   if (wc->rendermode == UGL2D) {
+     int pbufattrs[] = {GLX_PBUFFER_WIDTH, DisplayWidth(stddpy, wd->screen),
+			GLX_PBUFFER_HEIGHT, DisplayHeight(stddpy, wd->screen),
+			GLX_PRESERVED_CONTENTS, True,
+			None};
+     ws->pbuf = glXCreatePbuffer(stddpy, wd->configs[0],pbufattrs);
+     if (ws->pbuf == (GLXPixmap)NULL) {
+       /* consider freeing window binding/resources */
+       set_errortext(144);
+       return Failed;
+     }
    }
 
    /*

@@ -264,18 +264,24 @@ int get_fd(struct descrip file, unsigned int errmask)
 
    if (errmask && !(status & errmask))
       return -2;
-   else
 
 #if NT
 #define fileno _fileno
 #endif					/* NT */
 
-      if (status & Fs_Socket)
-	 return BlkD(file,File)->fd.fd;
-      else if (status & Fs_Messaging)
-	 return tp_fileno(BlkD(file,File)->fd.mf->tp);
+   if (status & Fs_Socket) {
+#if HAVE_LIBSSL
+      if(status & Fs_Encrypt)
+         return SSL_get_fd(BlkD(file,File)->fd.ssl);
       else
-	 return fileno(BlkD(file,File)->fd.fp);
+#endif					/* LIBSSL */
+	 return BlkD(file,File)->fd.fd;
+      }
+
+   if (status & Fs_Messaging)
+      return tp_fileno(BlkD(file,File)->fd.mf->tp);
+
+   return fileno(BlkD(file,File)->fd.fp);
 }
 
 
@@ -1576,6 +1582,173 @@ int fd;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
 }
 
+
+#if HAVE_LIBSSL
+
+#define TLS_SERVER 1
+#define TLS_CLIENT 2
+SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
+
+   SSL_CTX *ctx;
+   //      if (status & Fs_Encrypt) {
+   tended char *tmps, *val;
+   tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *password=NULL;
+   tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
+   static int SSL_is_initialized = 0;
+   C_integer timeout = 0, timeout_set = 0;
+   int a;
+
+   /* Check attributes */
+   for (a=0; a<n; a++) {
+     if (is:null(attr[a])) {
+       attr[a] = emptystr;
+     }
+     else if (a==0 && cnv:C_integer(attr[a], timeout)) {
+       timeout_set = 1;
+     }
+     else if (cnv:C_string(attr[a], tmps)) {
+
+       if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+	 set_errortext_with_val(1217, tmps);
+	 return NULL;
+       }
+
+       val = strchr(tmps,'=');
+       if (val != NULL) {
+	 *val = '\0';
+	 val++;
+	 if (strlen(val) == 0) {
+	   set_errortext_with_val(1217, tmps);
+	   return NULL;
+	 }
+	 //printf("attr: %s=%s\n", tmps, val);
+	 if (strcmp(tmps, "cert") == 0) {
+	   certFile = val;
+	 }
+	 else if (strcmp(tmps, "key") == 0) {
+	   keyFile = val;
+	 }
+	 else if (strcmp(tmps, "password") == 0) {
+	   password = val;
+	 }
+	 else if (strcmp(tmps, "caFile") == 0) {
+	   ca_file = val;
+	 }
+	 else if (strcmp(tmps, "caDir") == 0) {
+	   ca_dir = val;
+	 }
+	 else if (strcmp(tmps, "caStore") == 0) {
+	   ca_store = val;
+	 }
+	 else if (strcmp(tmps, "ciphers") == 0) {
+	   ciphers = val;
+	 }
+	 else  {
+	   set_errortext_with_val(1302, tmps);
+	   return NULL;
+	 }
+       }
+       else  {
+	   set_errortext_with_val(1302, tmps);
+	   return NULL;
+	 }
+     }
+     else {
+	   set_errortext(1302);
+	   return NULL;
+	 }
+    }
+
+   if (!SSL_is_initialized) {
+     SSL_library_init();
+     OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
+     SSL_load_error_strings();   /* load all error messages */
+     SSL_is_initialized = 1;
+   }
+
+   /* the compiler wants "const", but rtt doesn't know it, just pass it through */
+#passthru const SSL_METHOD *method;
+
+   if (type == TLS_SERVER)
+     method = TLS_server_method();
+   else
+     method = TLS_client_method();
+
+   ctx = SSL_CTX_new(method);   /* create new context from method */
+   if (ctx == NULL) {
+     set_ssl_context_errortext(1301, NULL);
+     return NULL;
+   }
+
+   if (ciphers != NULL) {
+     // all ciphers string: "ALL:eNULL"
+     if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
+       set_ssl_context_errortext(1306, ciphers);
+       return NULL;
+     }
+   }
+
+
+   if (ca_file != NULL || ca_dir != NULL) {
+     if (SSL_CTX_load_verify_locations(ctx, ca_file, ca_dir) != 1) {
+       set_ssl_context_errortext(1305, ca_file);
+       return NULL;
+     }
+   }
+
+   /*
+   if (ca_dir != NULL) {
+     if (SSL_CTX_set_default_verify_dir(ctx);SSL_CTX_load_verify_dir(ctx, ca_dir) != 1) {
+       set_ssl_context_errortext(0, "ca dir");
+       return NULL;
+     }
+   }
+
+     if (ca_store != NULL) {
+        if (SSL_CTX_load_verify_store(ctx,ca_store) <= 0) {
+           set_ssl_context_errortext(0, "ca dir");
+           return NULL;
+         }
+         SSL_CTX_set_default_verify_store(ctx);
+     }
+   */
+
+   if (SSL_CTX_set_default_verify_paths(ctx) != 1) {
+       set_ssl_context_errortext(1305, "verify paths");
+       return NULL;
+   }
+
+   if (certFile != NULL) {
+     /* set the local certificate from CertFile */
+     if (SSL_CTX_use_certificate_file(ctx, certFile, SSL_FILETYPE_PEM) <= 0) {
+       set_ssl_context_errortext(1304, certFile);
+       return NULL;
+     }
+   }
+
+   /* set the private key from KeyFile (may be the same as CertFile) */
+   if (password != NULL) {
+     // doesn't fail
+     SSL_CTX_set_default_passwd_cb_userdata(ctx, password);
+
+   }
+   if (keyFile != NULL && SSL_CTX_use_PrivateKey_file(ctx, keyFile, SSL_FILETYPE_PEM) <= 0) {
+     set_ssl_context_errortext(1303, keyFile);
+     return NULL;
+   }
+   /* verify that the private key matches the cert */
+   if (keyFile != NULL) {
+     if (!SSL_CTX_check_private_key(ctx)) {
+       set_ssl_context_errortext(0, NULL);
+       return NULL;
+     }
+   }
+
+   return ctx;
+}
+#endif					/* LIBSSL */
+
+
 #if !NT
 dptr make_pwd(pw, result)
 struct passwd *pw;
@@ -2065,17 +2238,31 @@ int sig;
  *
  * returns an allocated string. If EOF then returns 0.
  */
-dptr u_read(int fd, int n, int fstatus, dptr d)
+dptr u_read(dptr f, int n, int fstatus, dptr d)
 {
-   int tally = 0, nbytes;
+   int fd, tally = 0, nbytes;
    CURTSTATE();
+
+   if ((fd = get_fd(*f, 0)) < 0)
+     ReturnErrNum(174, f);
+
+   IntVal(amperErrno) = 0;
 
    if (n > 0) {
       /* Allocate n bytes of char space */
       StrLoc(*d) = alcstr(NULL, n);
       StrLen(*d) = 0;
-      if (fstatus & Fs_Socket)
-	tally = recv(fd, StrLoc(*d), n, 0);
+      if (fstatus & Fs_Socket) {
+#if HAVE_LIBSSL
+	if (fstatus & Fs_Encrypt) {
+	   tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d), n);
+	   if (tally == 0) //call SSL_get_error()
+	     printf("this is baaaaaad\n");
+	   }
+	else
+#endif					/* LIBSSL */
+	  tally = recv(fd, StrLoc(*d), n, 0);
+      }
       else
 	tally = read(fd, StrLoc(*d), n);
 
@@ -2123,37 +2310,46 @@ dptr u_read(int fd, int n, int fstatus, dptr d)
 tryagain:
 
 	 if (fstatus & Fs_Socket) {
-	   tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
+#if HAVE_LIBSSL
+	   if (fstatus & Fs_Encrypt) {
+	      tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d) +  i*bufsize, bufsize);
+	      // TODO: if (tally == 0) call SSL_get_error()
+	   }
+	   else {
+#endif					/* LIBSSL */
+	     tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
 
-	   if (tally < 0) {
-	     /*
-	      * Error on recv().  Some kinds of errors might be recoverable.
-	      */
-	     kk++;
+	      if (tally < 0) {
+		 /*
+		  * Error on recv().  Some kinds of errors might be recoverable.
+		  */
+		kk++;
 #if NT
-	     errno = WSAGetLastError();
+		errno = WSAGetLastError();
 #endif					/* NT */
-	     switch (errno) {
+		switch (errno) {
 #if NT
-	     case WSAEINTR: case WSAEINPROGRESS:
+		case WSAEINTR: case WSAEINPROGRESS:
 #else					/* NT */
-	     case EINTR: case EINPROGRESS:
+		case EINTR: case EINPROGRESS:
 #endif					/* NT */
-	       if (kk < 5) goto tryagain;
-	       break;
-	     default:
-	       strtotal += bufsize;
-	       strfree = StrLoc(*d);
-	       set_errortext(214);
-	       return 0;
-	     }
+		  if (kk < 5) goto tryagain;
+		  break;
+		default:
+		  strtotal += bufsize;
+		  strfree = StrLoc(*d);
+		  set_errortext(214);
+		  return 0;
+		}
+	      } /* tally < 0 */
+	      if ((i == 0) && (tally == 0)) {
+		strtotal += bufsize;
+		strfree = StrLoc(*d);
+		return 0;
+	      }
+#if HAVE_LIBSSL
 	   }
-
-	   if ((i == 0) && (tally == 0)) {
-	     strtotal += bufsize;
-	     strfree = StrLoc(*d);
-	     return 0;
-	   }
+#endif					/* LIBSSL */
 	 }
 	 else { // not a socket, use read()
 	   tally = read(fd, StrLoc(*d) + i*bufsize, bufsize);

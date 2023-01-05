@@ -838,14 +838,10 @@ operator{0,1} <@ rcv(x,y)
 	}
 #endif					/* PseudoPty */
 
-      if ((fd = get_fd(y, 0)) < 0)
-	 runerr(174, y);
-
       if (status & Fs_Buff)
 	 runerr(1048, y);
 
-      IntVal(amperErrno) = 0;
-      if (u_read(fd, i, status, &desc) == 0)
+      if (u_read(&y, i, status, &desc) == 0)
 	 fail;
       return desc;
       }

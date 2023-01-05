@@ -1229,7 +1229,7 @@ int sock_write			(int f, char *s, int n);
 struct descrip register_sig	(int sig, struct descrip handler);
 void signal_dispatcher		(int sig);
 int get_fd			(struct descrip, unsigned int errmask);
-dptr u_read			(int fd, int n, int fstatus, dptr d);
+dptr u_read			(dptr f, int n, int fstatus, dptr d);
 void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
 int set_if_selectable		(struct descrip *f, fd_set *fdsp, int *n);
 void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
@@ -1359,3 +1359,12 @@ int checkTypeInt (dptr da1, dptr da2, word n );
 #endif					/* DescripAmpAllocated */
 
 char * getenv_var(const char *name);
+
+#if HAVE_LIBSSL
+#define TLS_SERVER 1
+#define TLS_CLIENT 2
+SSL_CTX* create_ssl_context(dptr attr, int n, int type);
+void set_ssl_connection_errortext(SSL *ssl, int err);
+void set_ssl_context_errortext(int err, char* errtext);
+void set_errortext_with_val(int i, char* errval);
+#endif					/* HAVE_LIBSSL */

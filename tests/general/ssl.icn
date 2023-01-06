@@ -1,13 +1,17 @@
 procedure report_error(msg)
-   writes(msg)
+   static region
+   initial region:=mutex()
 
-   writes(" Error ")
-   if writes((&errornumber | (0 ~= &errno))) then
-      writes(": ")
+   critical region: {
+      writes(msg)
+      writes(" Error ")
+      if writes((&errornumber | (0 ~= &errno))) then
+         writes(": ")
 
-   writes(&errortext)
-   writes( " - ", &errorvalue)
-   return
+      writes(&errortext)
+      writes( " - ", &errorvalue)
+      }
+      return
 end
 
 class Server(addrport, mode, opt, rounds)
@@ -18,12 +22,13 @@ class Server(addrport, mode, opt, rounds)
           sock := tcp_socket(addrport) # block and wait to accept a new connection
           if \sock then 
              tcp_session(sock)
+          delay(50)
          }
    end
 
    method tcp_socket()
       local s
-      write("Open a tcp server socket(",mode,")")
+      write("\nOpen a tcp server socket(",mode,")")
       s := open ! opt |
          (report_error("\nserver open()") & fail)
       return s
@@ -47,8 +52,9 @@ class Server(addrport, mode, opt, rounds)
       addrport := p
       mode := m
        case mode of {
-        "nae": rounds := 3 &
-           opt := [addrport, mode, "key=./data/unicon-server.key", "cert=./data/unicon-server.crt", "caFile=./data/unicon-ca.crt" ]
+        "nae": rounds := 12&
+           opt := [addrport, mode, "key=./data/unicon-server.key", "cert=./data/unicon-server.crt", 
+                   "caFile=./data/unicon-ca.crt", "minProto=TLS1.2" ]
          default: rounds := 1 &  opt := [addrport, mode]
          }
 end
@@ -74,7 +80,7 @@ class TCPClient(addrport, sock, mode, opt)
    end
 
    method run()
-      write("Open a tcp client socket(",mode,")")
+      write("\nOpen a tcp client socket(",mode,")")
       sock := (open ! opt) |
          (report_error("\nclient open()") & fail)
 
@@ -92,6 +98,9 @@ class TCPClient(addrport, sock, mode, opt)
          "Client Cert" : opt := [addrport, "ne", 5000,
                            "key=./data/unicon-client.key", "cert=./data/unicon-client.crt", "caFile=./data/unicon-ca.crt" ]
          "TLS" : opt := [addrport, "ne", 5000]
+         "TLS1.3" : opt := [addrport, "ne", 5000, "minProto=TLS1.3"]
+         "TLS1.2" : opt := [addrport, "ne", 5000, "minProto=TLS1.2", "maxProto=TLS1.2"]
+         "TLS1.1" : opt := [addrport, "ne", 5000, "maxProto=TLS1.1"]
          default:  opt := [addrport, "n", 5000]
          }
 end
@@ -106,11 +115,11 @@ procedure main(args)
    write("Running TCP socket test with no TLS ")
    port := "localhost:" || (30000 + ?10000) # generate a random port
 
-   writes("TCP Server: ")
+   writes("TCP Server:")
    thread Server(port, "na").run()
    delay(200)
 
-   writes("TCP Client: ")
+   writes("TCP Client:")
    TCPClient(port, "n").run()
 
    # test secure sockets
@@ -121,11 +130,10 @@ procedure main(args)
 
    delay(200)
 
-   write("\nRunning 3 clients to the TLS server")
-   write("\tclient 1: no TLS\n\tclient 2: TLS\n\tclient 3: TLS and client key/cert")
+   write("\nRunning test clients to the TLS server")
 
-   every test := "No TLS" | "TLS" | "Client Cert" do {
-      delay(200)
+   every test := "No TLS" | "TLS" | "TLS1.3" | "TLS1.2" | "TLS1.1" | "Client Cert" do {
+      delay(250)
       write("\nClient: ", test)
       TCPClient(port, test).run()
       }

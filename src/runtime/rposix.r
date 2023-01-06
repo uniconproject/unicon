@@ -1585,8 +1585,6 @@ int fd;
 
 #if HAVE_LIBSSL
 
-#define TLS_SERVER 1
-#define TLS_CLIENT 2
 SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
    SSL_CTX *ctx;
@@ -1594,8 +1592,10 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    tended char *tmps, *val;
    tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *password=NULL;
    tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
+   tended char *min_proto=NULL, *max_proto=NULL;
    static int SSL_is_initialized = 0;
    C_integer timeout = 0, timeout_set = 0;
+   int count;
    int a;
 
    /* Check attributes */
@@ -1622,27 +1622,24 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	   return NULL;
 	 }
 	 //printf("attr: %s=%s\n", tmps, val);
-	 if (strcmp(tmps, "cert") == 0) {
+	 if (strcmp(tmps, "cert") == 0)
 	   certFile = val;
-	 }
-	 else if (strcmp(tmps, "key") == 0) {
+	 else if (strcmp(tmps, "key") == 0)
 	   keyFile = val;
-	 }
-	 else if (strcmp(tmps, "password") == 0) {
+	 else if (strcmp(tmps, "password") == 0)
 	   password = val;
-	 }
-	 else if (strcmp(tmps, "caFile") == 0) {
+	 else if (strcmp(tmps, "caFile") == 0)
 	   ca_file = val;
-	 }
-	 else if (strcmp(tmps, "caDir") == 0) {
+	 else if (strcmp(tmps, "caDir") == 0)
 	   ca_dir = val;
-	 }
-	 else if (strcmp(tmps, "caStore") == 0) {
+	 else if (strcmp(tmps, "caStore") == 0)
 	   ca_store = val;
-	 }
-	 else if (strcmp(tmps, "ciphers") == 0) {
+	 else if (strcmp(tmps, "ciphers") == 0)
 	   ciphers = val;
-	 }
+	 else if (strcmp(tmps, "minProto") == 0)
+	   min_proto = val;
+	 else if (strcmp(tmps, "maxProto") == 0)
+	   max_proto = val;
 	 else  {
 	   set_errortext_with_val(1302, tmps);
 	   return NULL;
@@ -1669,10 +1666,12 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    /* the compiler wants "const", but rtt doesn't know it, just pass it through */
 #passthru const SSL_METHOD *method;
 
-   if (type == TLS_SERVER)
-     method = TLS_server_method();
-   else
-     method = TLS_client_method();
+   switch (type) {
+   case TLS_SERVER: method = TLS_server_method(); break;
+   case TLS_CLIENT: method = TLS_client_method(); break;
+   case DTLS_SERVER: method = DTLS_server_method(); break;
+   case DTLS_CLIENT: method = DTLS_client_method(); break;
+   }
 
    ctx = SSL_CTX_new(method);   /* create new context from method */
    if (ctx == NULL) {
@@ -1681,13 +1680,56 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    }
 
    if (ciphers != NULL) {
-     // all ciphers string: "ALL:eNULL"
+     // all ciphers string: "ALL"
      if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
        set_ssl_context_errortext(1306, ciphers);
        return NULL;
      }
    }
 
+   count = 2;
+   do {
+      char *proto;
+      if (count == 2)
+	proto = min_proto;
+      else
+	proto = max_proto;
+
+      if (proto != NULL) {
+	// supported versions are SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION,
+	// TLS1_2_VERSION, TLS1_3_VERSION for TLS and DTLS1_VERSION, DTLS1_2_VERSION for DTLS.
+	int ver;
+	if (strcmp(proto, "TLS1.3") == 0)
+	  ver = TLS1_3_VERSION;
+	else if (strcmp(proto, "TLS1.2") == 0)
+	  ver = TLS1_2_VERSION;
+	else if (strcmp(proto, "TLS1.1") == 0)
+	  ver = TLS1_1_VERSION;
+	else if (strcmp(proto, "TLS1.0") == 0)
+	  ver = TLS1_VERSION;
+	else if (strcmp(proto, "SSL3.0") == 0)
+	  ver = SSL3_VERSION;
+	else if (strcmp(proto, "DTLS1.2") == 0)
+	  ver = DTLS1_2_VERSION;
+	else if (strcmp(proto, "DTLS1.0") == 0)
+	  ver = DTLS1_VERSION;
+	else {
+	  set_ssl_context_errortext(1308, proto);
+	  return NULL;
+	}
+
+	if (count == 2) {
+	  if (SSL_CTX_set_min_proto_version(ctx, ver) != 1) {
+	    set_ssl_context_errortext(1301, proto);
+	    return NULL;
+	  }
+	}
+	else if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
+	  set_ssl_context_errortext(1301, proto);
+	  return NULL;
+	}
+      }
+   } while (--count>0);
 
    if (ca_file != NULL || ca_dir != NULL) {
      if (SSL_CTX_load_verify_locations(ctx, ca_file, ca_dir) != 1) {

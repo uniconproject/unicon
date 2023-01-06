@@ -447,6 +447,7 @@ struct errtab errtab[] = {
    1305, "certificate authority error",
    1306, "cipher error",
    1307, "private key and certificate mismatch",
+   1308, "uknown protocol",
 
 #endif					/* HAVE_LIBSSL */
 

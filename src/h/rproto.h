@@ -1363,6 +1363,9 @@ char * getenv_var(const char *name);
 #if HAVE_LIBSSL
 #define TLS_SERVER 1
 #define TLS_CLIENT 2
+#define DTLS_SERVER 3
+#define DTLS_CLIENT 4
+
 SSL_CTX* create_ssl_context(dptr attr, int n, int type);
 void set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);

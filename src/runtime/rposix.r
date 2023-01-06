@@ -1666,12 +1666,22 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    /* the compiler wants "const", but rtt doesn't know it, just pass it through */
 #passthru const SSL_METHOD *method;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+   switch (type) {
+   case TLS_SERVER: method = SSLv23_server_method(); break;
+   case TLS_CLIENT: method = SSLv23_client_method(); break;
+   case DTLS_SERVER: method = DTLS_server_method(); break;
+   case DTLS_CLIENT: method = DTLS_client_method(); break;
+   }
+#else
    switch (type) {
    case TLS_SERVER: method = TLS_server_method(); break;
    case TLS_CLIENT: method = TLS_client_method(); break;
    case DTLS_SERVER: method = DTLS_server_method(); break;
    case DTLS_CLIENT: method = DTLS_client_method(); break;
    }
+
+#endif
 
    ctx = SSL_CTX_new(method);   /* create new context from method */
    if (ctx == NULL) {

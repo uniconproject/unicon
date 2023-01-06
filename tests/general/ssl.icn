@@ -8,7 +8,10 @@ procedure report_error(msg)
       if writes((&errornumber | (0 ~= &errno))) then
          writes(": ")
 
-      writes(&errortext)
+      # don't report connection errors from openssl since they
+      # are platform dependent and can't be used with automated testing.
+      if (&errornumber ~= 1) then
+         writes(&errortext)
       writes( " - ", &errorvalue)
       }
       return

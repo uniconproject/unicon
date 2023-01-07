@@ -1706,12 +1706,15 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	proto = max_proto;
 
       if (proto != NULL) {
-	// supported versions are SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION,
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	set_ssl_context_errortext(1308, proto);
+	return NULL;
+#else
+        // supported versions are SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION,
 	// TLS1_2_VERSION, TLS1_3_VERSION for TLS and DTLS1_VERSION, DTLS1_2_VERSION for DTLS.
 	int ver;
-	if (strcmp(proto, "TLS1.3") == 0)
-	  ver = TLS1_3_VERSION;
-	else if (strcmp(proto, "TLS1.2") == 0)
+	if (strcmp(proto, "TLS1.2") == 0)
 	  ver = TLS1_2_VERSION;
 	else if (strcmp(proto, "TLS1.1") == 0)
 	  ver = TLS1_1_VERSION;
@@ -1723,7 +1726,9 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	  ver = DTLS1_2_VERSION;
 	else if (strcmp(proto, "DTLS1.0") == 0)
 	  ver = DTLS1_VERSION;
-	else {
+        else if (strcmp(proto, "TLS1.3") == 0)
+          ver = TLS1_3_VERSION;
+        else {
 	  set_ssl_context_errortext(1308, proto);
 	  return NULL;
 	}
@@ -1738,7 +1743,8 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	  set_ssl_context_errortext(1301, proto);
 	  return NULL;
 	}
-      }
+#endif
+        }
    } while (--count>0);
 
    if (ca_file != NULL || ca_dir != NULL) {

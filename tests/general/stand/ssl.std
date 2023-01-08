@@ -1,67 +1,92 @@
-Running TCP socket test with no TLS 
-TCP Server:
-Open a tcp server socket(na)
-TCP Client:
-Open a tcp client socket(n)
+Basic socket Test
+
+Open a tcp server for test: No TLS
+
+Open a tcp client socket for test: No TLS
 test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
 test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
 test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK
 
-Running a server with a TLS socket
+Encrypted sockets test
 
-Open a tcp server socket(nae)
+Open a tcp server for test: TLS
 
-Running test clients to the TLS server
-
-Client: No TLS
-
-Open a tcp client socket(No TLS)
+Open a tcp client socket for test: No TLS
 test> client:"Unicon" =>    
 
 client ready():  Error 214: input/output error
-server open() Error 1: 
-Open a tcp server socket(nae)
+server open() Error 1: wrong version number
+Open a tcp server for test: TLS
 
-Client: TLS
+Open a tcp client socket for test: TLS No CA
 
-Open a tcp client socket(TLS)
+client open() Error 1: certificate verify failed
+server open() Error 1: tlsv1 alert unknown ca
+Open a tcp server for test: TLS
+
+Open a tcp client socket for test: TLS No Verify
 test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
 test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
 test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK
 
-Open a tcp server socket(nae)
+Open a tcp server for test: TLS
 
-Client: TLS1.3
-
-Open a tcp client socket(TLS1.3)
+Open a tcp client socket for test: TLS With CA
 test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
 test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
 test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK
 
-Open a tcp server socket(nae)
+TLS versions test
 
-Client: TLS1.2
+Open a tcp server for test: TLS Versions
 
-Open a tcp client socket(TLS1.2)
+Open a tcp client socket for test: TLS1.1
+
+client open() Error 1: tlsv1 alert protocol version
+server open() Error 1: unsupported protocol
+Open a tcp server for test: TLS Versions
+
+Open a tcp client socket for test: TLS1.2
 test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
 test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
 test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK
 
-Open a tcp server socket(nae)
+Open a tcp server for test: TLS Versions
 
-Client: TLS1.1
-
-Open a tcp client socket(TLS1.1)
-
-client open() Error 1: 
-server open() Error 1: 
-Open a tcp server socket(nae)
-
-Client: Client Cert
-
-Open a tcp client socket(Client Cert)
+Open a tcp client socket for test: TLS1.3
 test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
 test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
 test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK
 
-Open a tcp server socket(nae)
+Client authentication test
+
+Open a tcp server for test: Client Auth
+
+Open a tcp client socket for test: TLS No Cert
+test> client:"Unicon" =>     client: ""        Failed
+test> client:"Is" =>         client: ""        Failed
+test> client:"Awesome" =>    client: ""        Failed
+
+server open() Error 1: peer did not return a certificate
+Open a tcp server for test: Client Auth
+
+Open a tcp client socket for test: Client Auth
+test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
+test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
+test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK
+
+Ciphers test
+
+Open a tcp server for test: AES256
+
+Open a tcp client socket for test: AES128
+test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
+test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
+test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK
+
+Open a tcp server for test: AES256
+
+Open a tcp client socket for test: AES256
+test> client:"Unicon" =>    server:"Unicon" =>   client: "Unicon"  OK
+test> client:"Is" =>        server:"Is" =>       client: "Is"      OK
+test> client:"Awesome" =>   server:"Awesome" =>  client: "Awesome" OK

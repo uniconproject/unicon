@@ -31,7 +31,7 @@ class Server(addrport, mode, opt, rounds)
 
    method tcp_socket()
       local s
-      write("\nOpen a tcp server socket(",mode,")")
+      write("\nOpen a tcp server for test: ", mode)
       s := open ! opt |
          (report_error("\nserver open()") & fail)
       return s
@@ -54,11 +54,36 @@ class Server(addrport, mode, opt, rounds)
    initially(p, m)
       addrport := p
       mode := m
-       case mode of {
-        "nae": rounds := 12&
-           opt := [addrport, mode, "key=./data/unicon-server.key", "cert=./data/unicon-server.crt", 
-                   "caFile=./data/unicon-ca.crt", "minProto=TLS1.2" ]
-         default: rounds := 1 &  opt := [addrport, mode]
+
+      key := "key=./data/unicon-server.key"
+      cert := "cert=./data/unicon-server.crt"
+      ca := "caFile=./data/unicon-ca.crt"
+      case mode of {
+         "TLS": {
+           rounds := 4
+           opt := [addrport, "nae", key, cert, ca]
+           }
+        "TLS Versions": {
+           rounds := 3;
+           opt := [addrport, "nae", key, cert, ca, "minProto=TLS1.2"]
+           }
+
+        "Client Auth": {
+           rounds := 2;
+           opt := [addrport, "nae", key, cert, ca, "verifyPeer=yes"]
+           }
+
+         "AES256" : {
+            rounds := 2
+            opt := [addrport, "nae", 5000, key, cert, ca, "ciphers=AES256"]
+            }
+
+        "No TLS": {
+           rounds := 1
+           opt := [addrport, "na"]
+           }
+
+         default:  stop("server: what mode :", mode)
          }
 end
 
@@ -83,7 +108,7 @@ class TCPClient(addrport, sock, mode, opt)
    end
 
    method run()
-      write("\nOpen a tcp client socket(",mode,")")
+      write("\nOpen a tcp client socket for test: ", mode)
       sock := (open ! opt) |
          (report_error("\nclient open()") & fail)
 
@@ -97,14 +122,27 @@ class TCPClient(addrport, sock, mode, opt)
    initially(p, m)
       addrport := p
       mode := m
+      key := "key=./data/unicon-client.key"
+      cert := "cert=./data/unicon-client.crt"
+      ca := "caFile=./data/unicon-ca.crt"
+
       case mode of {
-         "Client Cert" : opt := [addrport, "ne", 5000,
-                           "key=./data/unicon-client.key", "cert=./data/unicon-client.crt", "caFile=./data/unicon-ca.crt" ]
-         "TLS" : opt := [addrport, "ne", 5000]
-         "TLS1.3" : opt := [addrport, "ne", 5000, "minProto=TLS1.3"]
-         "TLS1.2" : opt := [addrport, "ne", 5000, "minProto=TLS1.2", "maxProto=TLS1.2"]
-         "TLS1.1" : opt := [addrport, "ne", 5000, "maxProto=TLS1.1"]
-         default:  opt := [addrport, "n", 5000]
+
+         "No TLS":  opt := [addrport, "n", 5000]
+
+         "TLS No CA" : opt := [addrport, "ne", 5000]
+         "TLS No Verify" : opt := [addrport, "ne", 5000, "verifyPeer=no"]
+         "TLS" | "TLS No Cert" | "TLS With CA" : opt := [addrport, "ne", 5000, ca]
+
+         "TLS1.1" : opt := [addrport, "ne", 5000, ca, "maxProto=TLS1.1"]
+         "TLS1.2" : opt := [addrport, "ne", 5000, ca, "minProto=TLS1.2", "maxProto=TLS1.2"]
+         "TLS1.3" : opt := [addrport, "ne", 5000, ca, "minProto=TLS1.3"]
+
+         "Client Auth" : opt := [addrport, "ne", 5000, key, cert, ca ]
+
+         "AES128" | "AES256" : opt := [addrport, "ne", 5000, ca, "ciphers="||mode]
+
+         default:  stop("client: what mode :", mode)
          }
 end
 
@@ -114,32 +152,61 @@ procedure main(args)
    if not (&features == "secure sockets layer encryption") then
       stop("This program requires secure sockets layer encryption.")
 
-   # test TCP first
-   write("Running TCP socket test with no TLS ")
+   #----------------------
+   write("Basic socket Test")
    port := "localhost:" || (30000 + ?10000) # generate a random port
 
-   writes("TCP Server:")
-   thread Server(port, "na").run()
+   thread Server(port, "No TLS").run()
    delay(200)
+   TCPClient(port, "No TLS").run()
 
-   writes("TCP Client:")
-   TCPClient(port, "n").run()
-
-   # test secure sockets
+   #----------------------
+   write("\nEncrypted sockets test")
    port := "localhost:" || (30000 + ?10000) # generate a random port
 
-   write("\nRunning a server with a TLS socket")
-   thread Server(port, "nae").run()
-
+   thread Server(port, "TLS").run()
    delay(200)
-
-   write("\nRunning test clients to the TLS server")
-
-   every test := "No TLS" | "TLS" | "TLS1.3" | "TLS1.2" | "TLS1.1" | "Client Cert" do {
+   every test := "No TLS" | "TLS No CA" | "TLS No Verify" | "TLS With CA" do {
       delay(250)
-      write("\nClient: ", test)
       TCPClient(port, test).run()
       }
+   delay(200)
+
+   #----------------------
+   write("\nTLS versions test")
+   port := "localhost:" || (30000 + ?10000) # generate a random port
+
+   thread Server(port, "TLS Versions").run()
+   delay(200)
+   every test := "TLS1.1" | "TLS1.2" | "TLS1.3" do {
+      delay(250)
+      TCPClient(port, test).run()
+      }
+   delay(200)
+
+   #----------------------
+   write("\nClient authentication test")
+   port := "localhost:" || (30000 + ?10000) # generate a random port
+
+   thread Server(port, "Client Auth").run()
+   delay(200)
+   every test := "TLS No Cert" | "Client Auth" do {
+      delay(250)
+      TCPClient(port, test).run()
+      }
+
+
+   #----------------------
+   write("\nCiphers test")
+   port := "localhost:" || (30000 + ?10000) # generate a random port
+
+   thread Server(port, "AES256").run()
+   delay(200)
+   every test := "AES128" | "AES256" do {
+      delay(250)
+      TCPClient(port, test).run()
+      }
+
 
    delay(200)
 end

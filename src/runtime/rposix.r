@@ -1592,7 +1592,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    tended char *tmps, *val;
    tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *password=NULL;
    tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
-   tended char *min_proto=NULL, *max_proto=NULL;
+   tended char *min_proto=NULL, *max_proto=NULL, *verifyPeer=NULL;
    static int SSL_is_initialized = 0;
    C_integer timeout = 0, timeout_set = 0;
    int count;
@@ -1640,6 +1640,8 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	   min_proto = val;
 	 else if (strcmp(tmps, "maxProto") == 0)
 	   max_proto = val;
+	 else if (strcmp(tmps, "verifyPeer") == 0)
+	   verifyPeer = val;
 	 else  {
 	   set_errortext_with_val(1302, tmps);
 	   return NULL;
@@ -1689,12 +1691,12 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
      return NULL;
    }
 
-   if (ciphers != NULL) {
-     // all ciphers string: "ALL"
-     if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
-       set_ssl_context_errortext(1306, ciphers);
-       return NULL;
-     }
+   if (ciphers == NULL)
+     ciphers = "HIGH";
+   // all ciphers string: "ALL"
+   if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
+     set_ssl_context_errortext(1306, ciphers);
+     return NULL;
    }
 
    count = 2;
@@ -1706,8 +1708,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	proto = max_proto;
 
       if (proto != NULL) {
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 	set_ssl_context_errortext(1308, proto);
 	return NULL;
 #else
@@ -1744,7 +1745,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	  return NULL;
 	}
 #endif
-        }
+      }
    } while (--count>0);
 
    if (ca_file != NULL || ca_dir != NULL) {
@@ -1753,6 +1754,25 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
        return NULL;
      }
    }
+   if (verifyPeer == NULL) {
+     if ((type == TLS_CLIENT) || (type == DTLS_CLIENT)) {
+       // cannot fail
+       SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
+     }
+   } else {
+     if (strcmp(verifyPeer, "yes") == 0) {
+       if ((type == TLS_CLIENT) || (type == DTLS_CLIENT))
+	 SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
+       else
+	 SSL_CTX_set_verify(ctx,  SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,  NULL);
+     } else if (strcmp(verifyPeer, "no") != 0) {
+       set_errortext_with_val(1302, verifyPeer);
+       return NULL;
+       }
+   }
+
+   //SSL_CTX_set_verify_depth(ctx, 4);
+
 
    /*
    if (ca_dir != NULL) {

@@ -102,7 +102,7 @@ void set_ssl_context_errortext(int err, char* errval)
      }
    }
    else
-     set_errortext(1216);
+     set_errortext(1301);
 
 
 }

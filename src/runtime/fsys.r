@@ -1284,10 +1284,6 @@ function{0,1} read(f)
       char sbuf[MaxReadStr];
       tended struct descrip s;
       FILE *fp;
-#ifdef PosixFns
-      SOCKET ws;
-#endif					/* PosixFns */
-
       k_errornumber = 0;
       IntVal(amperErrno) = 0;
 
@@ -1310,9 +1306,8 @@ function{0,1} read(f)
        if (status & Fs_Socket) {
 	  StrLen(s) = 0;
           do {
-	     ws = (SOCKET)BlkD(f,File)->fd.fd;
       	     DEC_NARTHREADS;
-	     if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
+	     if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
 	        /* EOF is no error */
       	        INC_NARTHREADS_CONTROLLED;
 	        fail;
@@ -1555,7 +1550,6 @@ function{0,1} reads(f,i)
       register word slen, rlen;
       register char *sptr;
       char sbuf[MaxReadStr];
-      SOCKET ws;
       uword bytesread = 0;
       uword Maxread = 0;
       long tally, nbytes;
@@ -1654,7 +1648,6 @@ function{0,1} reads(f,i)
 	    StrLen(s) = 0;
 	    Maxread = (i <= MaxReadStr)? i : MaxReadStr;
 	    do {
-	       ws = (SOCKET)BlkD(f,File)->fd.fd;
 	       if (bytesread > 0) {
 		  if (i - bytesread <= MaxReadStr)
 		     Maxread = i - bytesread;
@@ -1662,7 +1655,7 @@ function{0,1} reads(f,i)
 		     Maxread = MaxReadStr;
 		  }
       	       DEC_NARTHREADS;
-	       if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
+	       if ((slen = sock_getstrg(sbuf, Maxread, &f)) == -1) {
 		    /*IntVal(amperErrno) = errno; */
       	            INC_NARTHREADS_CONTROLLED;
 		    if (bytesread == 0)

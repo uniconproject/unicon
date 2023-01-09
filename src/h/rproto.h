@@ -1201,7 +1201,7 @@ dptr make_group			(struct group *pw, dptr result);
 dptr rec_structor		(char *s);
 dptr rec_structor3d		(int type);
 int sock_connect		(char *s, int udp, int timeout, int af_fam);
-int sock_getstrg		(char *buf, int maxi, SOCKET fd);
+int sock_getstrg		(char *buf, int maxi, dptr file);
 int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);
 int get_uid			(char *name);
@@ -1367,7 +1367,7 @@ char * getenv_var(const char *name);
 #define DTLS_CLIENT 4
 
 SSL_CTX* create_ssl_context(dptr attr, int n, int type);
-void set_ssl_connection_errortext(SSL *ssl, int err);
+int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
 void set_errortext_with_val(int i, char* errval);
 #endif					/* HAVE_LIBSSL */

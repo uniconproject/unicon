@@ -12,15 +12,27 @@
  * characters are read.  Returns the length of the line, not counting
  * the newline.  Returns -1 if EOF, and -3 if a socket error occurs.
  */
-int sock_getstrg(buf, maxi, fd)
+int sock_getstrg(buf, maxi, file)
 register char *buf;
 int maxi;
-SOCKET fd;
+dptr file;
    {
    int r = 0, i=0;
    char *stmp=NULL;
-  
-   if ((r=recv(fd, buf, maxi, MSG_PEEK))==SOCKET_ERROR) {
+
+#if HAVE_LIBSSL
+   if (BlkD(*file, File)->status & Fs_Encrypt) {
+     r = SSL_peek(BlkD(*file, File)->fd.ssl, buf, maxi);
+     if (r == 0) {
+       if (set_ssl_connection_errortext(BlkD(*file, File)->fd.ssl, r) == SSL_ERROR_ZERO_RETURN)
+	 return -1;
+       else
+	 return -3;
+     }
+   }
+   else
+#endif					/* LIBSSL */
+   if ((r=recv((SOCKET)BlkD(*file,File)->fd.fd, buf, maxi, MSG_PEEK))==SOCKET_ERROR) {
 #if NT
       i = WSAGetLastError();
       if (i == WSAESHUTDOWN)   
@@ -30,7 +42,10 @@ SOCKET fd;
       set_syserrortext(errno);
 #endif					/* NT */
       return -3;
-      }
+   }
+
+
+
    if (r == 0) return -1;
    
    stmp = buf;
@@ -47,9 +62,22 @@ SOCKET fd;
       }
    else  
       i = r;
-   if ((r=recv(fd, buf, i, 0)) == SOCKET_ERROR) {
+
+#if HAVE_LIBSSL
+   if (BlkD(*file, File)->status & Fs_Encrypt) {
+     r = SSL_read(BlkD(*file,File)->fd.ssl, buf, i);
+     if (r == 0) {
+       if (set_ssl_connection_errortext(BlkD(*file,File)->fd.ssl, r) == SSL_ERROR_ZERO_RETURN)
+	 return -1;
+       else
+	 return -3;
+     }
+   }
+   else
+#endif					/* LIBSSL */
+   if ((r=recv((SOCKET)BlkD(*file,File)->fd.fd, buf, i, 0)) == SOCKET_ERROR) {
 #if NT
-      if (WSAGetLastError() == WSAESHUTDOWN)
+     if (WSAGetLastError() == WSAESHUTDOWN)
 	 return -1;
 #endif					/* NT */
       set_errortext(1040);

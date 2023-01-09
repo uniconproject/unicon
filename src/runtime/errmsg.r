@@ -107,7 +107,7 @@ void set_ssl_context_errortext(int err, char* errval)
 
 }
 
-void set_ssl_connection_errortext(SSL *ssl, int err)
+int set_ssl_connection_errortext(SSL *ssl, int err)
 {
    int buflen;
    char* buf;
@@ -131,10 +131,11 @@ void set_ssl_connection_errortext(SSL *ssl, int err)
      }
      else {
        set_syserrortext(errno);
-       return;
+       return err;
      }
 
      break;
+   case SSL_ERROR_ZERO_RETURN : return err; /* EOF */
    case SSL_ERROR_SSL         : snprintf(buf2, 32 ,"SSL_ERROR_SSL"); break;
    default                    : snprintf(buf2, 32 ,"SSL_ERROR_OTHER"); break;
    }
@@ -157,6 +158,8 @@ void set_ssl_connection_errortext(SSL *ssl, int err)
      strcpy(StrLoc(k_errortext), buf);
      StrLen(k_errortext) = buflen;
    }
+
+   return err;
 }
 #endif				/* HAVE_LIBSSL */
 

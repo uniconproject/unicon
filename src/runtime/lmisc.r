@@ -931,9 +931,8 @@ operator{0,1} <<@ rcvbk(x,y)
       if (status & Fs_Socket) {
          StrLen(s) = 0;
          do {
-	    ws = (SOCKET)BlkD(y,File)->fd.fd;
       	    DEC_NARTHREADS;
-	    if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
+	    if ((slen = sock_getstrg(sbuf, MaxReadStr, &y)) == -1) {
 	       /*IntVal(amperErrno) = errno; */
       	       INC_NARTHREADS_CONTROLLED;
 	       fail;

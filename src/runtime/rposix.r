@@ -1593,6 +1593,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *password=NULL;
    tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
    tended char *min_proto=NULL, *max_proto=NULL, *verifyPeer=NULL;
+   int old_ssl_flags=0;
    static int SSL_is_initialized = 0;
    C_integer timeout = 0, timeout_set = 0;
    int count;
@@ -1668,22 +1669,19 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    /* the compiler wants "const", but rtt doesn't know it, just pass it through */
 #passthru const SSL_METHOD *method;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
    switch (type) {
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
    case TLS_SERVER: method = SSLv23_server_method(); break;
    case TLS_CLIENT: method = SSLv23_client_method(); break;
-   case DTLS_SERVER: method = DTLS_server_method(); break;
-   case DTLS_CLIENT: method = DTLS_client_method(); break;
-   }
 #else
-   switch (type) {
    case TLS_SERVER: method = TLS_server_method(); break;
    case TLS_CLIENT: method = TLS_client_method(); break;
+#endif
+
    case DTLS_SERVER: method = DTLS_server_method(); break;
    case DTLS_CLIENT: method = DTLS_client_method(); break;
    }
-
-#endif
 
    ctx = SSL_CTX_new(method);   /* create new context from method */
    if (ctx == NULL) {
@@ -1700,6 +1698,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    }
 
    count = 2;
+   old_ssl_flags = 0;
    do {
       char *proto;
       if (count == 2)
@@ -1708,43 +1707,77 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	proto = max_proto;
 
       if (proto != NULL) {
-#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-	set_ssl_context_errortext(1308, proto);
-	return NULL;
-#else
         // supported versions are SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION,
 	// TLS1_2_VERSION, TLS1_3_VERSION for TLS and DTLS1_VERSION, DTLS1_2_VERSION for DTLS.
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#define TLS1_VERSION 10
+#define TLS1_1_VERSION 11
+#define TLS1_2_VERSION 12
+#define TLS1_3_VERSION 13
+
+#define DTLS1_VERSION 20
+#define DTLS1_2_VERSION 22
+
+#endif
 	int ver;
-	if (strcmp(proto, "TLS1.2") == 0)
+        if (strcmp(proto, "TLS1.3") == 0)
+          ver = TLS1_3_VERSION;
+	else if (strcmp(proto, "TLS1.2") == 0)
 	  ver = TLS1_2_VERSION;
 	else if (strcmp(proto, "TLS1.1") == 0)
 	  ver = TLS1_1_VERSION;
 	else if (strcmp(proto, "TLS1.0") == 0)
 	  ver = TLS1_VERSION;
-	else if (strcmp(proto, "SSL3.0") == 0)
-	  ver = SSL3_VERSION;
+	/*	else if (strcmp(proto, "SSL3.0") == 0)
+		ver = SSL3_VERSION; */
 	else if (strcmp(proto, "DTLS1.2") == 0)
 	  ver = DTLS1_2_VERSION;
 	else if (strcmp(proto, "DTLS1.0") == 0)
 	  ver = DTLS1_VERSION;
-        else if (strcmp(proto, "TLS1.3") == 0)
-          ver = TLS1_3_VERSION;
         else {
 	  set_ssl_context_errortext(1308, proto);
 	  return NULL;
 	}
 
+
 	if (count == 2) {
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+	  switch (ver) {
+	  case TLS1_2_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
+	      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+	  case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 |
+	      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+	  default:
+	    set_ssl_context_errortext(1308, proto);
+	    return NULL;
+	  }
+	  SSL_CTX_set_options(ctx, old_ssl_flags);
+#else
 	  if (SSL_CTX_set_min_proto_version(ctx, ver) != 1) {
 	    set_ssl_context_errortext(1301, proto);
 	    return NULL;
 	  }
-	}
-	else if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
-	  set_ssl_context_errortext(1301, proto);
-	  return NULL;
-	}
 #endif
+	}
+	else {
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+	  switch (ver) {
+	  case TLS1_2_VERSION: break;
+	  case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_2; break;
+	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2; break;
+	  default:
+	    set_ssl_context_errortext(1308, proto);
+	    return NULL;
+	    }
+	  SSL_CTX_set_options(ctx, old_ssl_flags);
+#else
+	  if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
+	    set_ssl_context_errortext(1301, proto);
+	    return NULL;
+	  }
+#endif
+	}
       }
    } while (--count>0);
 

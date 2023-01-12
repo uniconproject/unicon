@@ -2314,6 +2314,13 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
 					)) == 0)
       return;
 
+#if FIXME_HAVE_LIBSSL
+   if ((status & Fs_Socket) && (status & Fs_Encrypt)) {
+     if (SSL_has_pending(BlkD(*f, File)->fd.ssl) == 0 )
+       return;
+   }
+#endif					/* LIBSSL */
+
    fd = get_fd(*f, Fs_Read|Fs_Socket|Fs_Messaging);
    if ((fd != -1) && FD_ISSET(fd, fdsp)) {
       /*

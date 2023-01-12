@@ -32,8 +32,8 @@ class Server(addrport, mode, opt, rounds)
    method tcp_socket()
       local s
       write("\nOpen a tcp server for test: ", mode)
-      s := open ! opt |
-         (report_error("\nserver open()") & fail)
+      s := open ! opt | fail
+         #(report_error("\nserver open()") & fail)
       return s
    end
 
@@ -65,7 +65,7 @@ class Server(addrport, mode, opt, rounds)
            }
         "TLS Versions": {
            rounds := 3;
-           opt := [addrport, "nae", key, cert, ca, "minProto=TLS1.2"]
+           opt := [addrport, "nae", key, cert, ca, "minProto=TLS1.1"]
            }
 
         "Client Auth": {
@@ -75,7 +75,7 @@ class Server(addrport, mode, opt, rounds)
 
          "AES256" : {
             rounds := 2
-            opt := [addrport, "nae", 5000, key, cert, ca, "ciphers=AES256"]
+            opt := [addrport, "nae", 2000, key, cert, ca, "ciphers=AES256"]
             }
 
         "No TLS": {
@@ -93,7 +93,10 @@ class TCPClient(addrport, sock, mode, opt)
       writes(left("test> client:" || image(msg) || " => ", 28))
 
       writes(sock, msg) | (report_error("\n\nwrite(sock) Failed") & failed)
-      if *select(sock) > 0 then
+      L := select(sock, 2000)
+      #write("got *L=", *L)
+
+      if *L > 0 then {
          if msg_reply := ready(sock) then {
             writes(" client: ")
             if msg == msg_reply then 
@@ -104,6 +107,9 @@ class TCPClient(addrport, sock, mode, opt)
             return
             }
          else  (report_error("\n\nclient ready(): ") & fail)
+         }
+      else
+         write("select(): ", &errno, " timeout")
       return
    end
 
@@ -136,7 +142,7 @@ class TCPClient(addrport, sock, mode, opt)
 
          "TLS1.1" : opt := [addrport, "ne", 5000, ca, "maxProto=TLS1.1"]
          "TLS1.2" : opt := [addrport, "ne", 5000, ca, "minProto=TLS1.2", "maxProto=TLS1.2"]
-         "TLS1.3" : opt := [addrport, "ne", 5000, ca, "minProto=TLS1.3"]
+         "TLS1.0" : opt := [addrport, "ne", 5000, ca, "maxProto=TLS1.0"]
 
          "Client Auth" : opt := [addrport, "ne", 5000, key, cert, ca ]
 
@@ -178,7 +184,7 @@ procedure main(args)
 
    thread Server(port, "TLS Versions").run()
    delay(200)
-   every test := "TLS1.1" | "TLS1.2" | "TLS1.3" do {
+   every test := "TLS1.0" | "TLS1.1" | "TLS1.2" do {
       delay(250)
       TCPClient(port, test).run()
       }

@@ -1671,7 +1671,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
    switch (type) {
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if !defined(MacOS) && OPENSSL_VERSION_NUMBER < 0x10100000L
    case TLS_SERVER: method = SSLv23_server_method(); break;
    case TLS_CLIENT: method = SSLv23_client_method(); break;
 #else

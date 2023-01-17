@@ -1590,7 +1590,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    SSL_CTX *ctx;
    //      if (status & Fs_Encrypt) {
    tended char *tmps, *val;
-   tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *password=NULL;
+   tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *ciphers13=NULL, *password=NULL;
    tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
    tended char *min_proto=NULL, *max_proto=NULL, *verifyPeer=NULL;
    int old_ssl_flags=0;
@@ -1637,6 +1637,8 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	   ca_store = val;
 	 else if (strcmp(tmps, "ciphers") == 0)
 	   ciphers = val;
+	 else if (strcmp(tmps, "ciphers1.3") == 0)
+	   ciphers13 = val;
 	 else if (strcmp(tmps, "minProto") == 0)
 	   min_proto = val;
 	 else if (strcmp(tmps, "maxProto") == 0)
@@ -1692,10 +1694,21 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    if (ciphers == NULL)
      ciphers = "HIGH";
    // all ciphers string: "ALL"
+   // For TLS 1.2 and below
    if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
      set_ssl_context_errortext(1306, ciphers);
      return NULL;
    }
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+   if (ciphers13 != NULL) {
+     // For TLS 1.3
+     if (SSL_CTX_set_ciphersuites(ctx, ciphers13) != 1) {
+       set_ssl_context_errortext(1306, ciphers);
+       return NULL;
+     }
+   }
+#endif
 
    count = 2;
    old_ssl_flags = 0;

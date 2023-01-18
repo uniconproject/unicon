@@ -15,7 +15,7 @@ link getpaths
 #
 global fin,fout,fLine,alpha,alphadot,white,nonwhite,nonalpha,reserved
 global classes,comp,exec,strict,links,imports,loud,compiles,ct,tmpcount
-global yyfilename
+global yyfilename, iconc_import
 
 procedure reinitialize()
    classes  := taque()
@@ -192,6 +192,7 @@ class Package : declaration(files, dir, classes)
       return s
    end
    method writespec()
+   if \iconc_import then return
    if \name & (f := open(env,"d")) then {
       insert(f, name, String())
       close(f)
@@ -377,6 +378,7 @@ class Class : declaration (supers,
     write(f,,")")
   end
   method WriteSpec() # write the specification of a class
+    if \iconc_import then return # Do not write anything during the iconc import phase
     f := open(env,"d") | {
        write(&errout, "can't open class database ", image(env),
 	     " to write spec for ",self.name)

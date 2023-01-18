@@ -45,7 +45,7 @@ global iconc, iconc_links, iconc_parsed, iconc_imports
 global iconc_posixloc, iconc_parsed_posix, iconc_perifile_idx
 global iconc_fd	# if iconc is used, add the -fd option (off by default)
 global no_iconc_fs # don't add -fs by default, if iconc is used
-
+global iconc_import # suppress writing to uniclass files if \iconc_import
 link basename, io, paths
 
 $define MERRADDRESS "jeffery@cs.nmt.edu"
@@ -363,6 +363,7 @@ procedure initialize()
    if widollog := getenv("WIDOLLOG") then flog := open(flogname,"w")
    uni_predefs := predefs()
    sysinitialize()
+   iconc_import := &null
 end
 
 procedure unicon_usage(continue_flag)
@@ -729,6 +730,7 @@ procedure unicon(argv)
    # each of said files once.
    #
    if \iconc then {
+      iconc_import := 1   # suppress writing to uniclass databases
       locallinks := table()
       localimports := table()
       while (*iconc_links > 0) | (*iconc_imports > 0) do {
@@ -813,6 +815,7 @@ procedure unicon(argv)
          }
       if /iconc_parsed_posix then
          iconc_yyparse(iconc_posixloc, tmpfnames)
+      iconc_import := &null     # Allow writing to uniclass databases
       }
 
    if \iconc & (*tmpfnames > 0) & (\rv = errors = yynerrs = 0) then {

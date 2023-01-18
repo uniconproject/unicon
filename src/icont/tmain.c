@@ -278,6 +278,7 @@ void iconx(int argc, char** argv){
    int main(int argc, char **argv)
    {
    int nolink = 0;			/* suppress linking? */
+   int keeptmp = 0;			/* suppress removal of temporary files */
    int errors = 0;			/* translator and linker errors */
    char **tfiles, **tptr;		/* list of files to translate */
    char **lfiles, **lptr;		/* list of files to link */
@@ -314,8 +315,8 @@ void iconx(int argc, char** argv){
    /*
     * Process options. NOTE: Keep Usage definition in sync with getopt() call.
     */
-   #define Usage "[-cBstuEG] [-f s] [-l logfile] [-o ofile] [-v i]"	/* omit -e from doc */
-   while ((c = getopt(argc,argv, "cBe:f:l:o:O:stuGv:ELZ")) != EOF)
+   #define Usage "[-cBstuEGK] [-f s] [-l logfile] [-o ofile] [-v i]"	/* omit -e from doc */
+   while ((c = getopt(argc,argv, "cBe:f:l:o:O:stuGv:ELKZ")) != EOF)
       switch (c) {
 	 case 'B':
 	    bundleiconx = 1;
@@ -392,6 +393,9 @@ void iconx(int argc, char** argv){
 #endif					/* ConsoleWindow */
          case 'r':			/* Ignore: compiler only */
             break;
+         case 'K':
+           keeptmp = 1;			/* -K: Keep temporary files */
+           break;
          case 's':			/* -s: suppress informative messages */
             silent = 1;
             verbose = 0;
@@ -704,8 +708,10 @@ void iconx(int argc, char** argv){
     *  Execute the linked program if so requested and if there were no errors.
     */
 
-   for (rptr = rfiles; *rptr; rptr++)	/* delete intermediate files */
-      remove(*rptr);
+   if (0 == keeptmp) {
+     for (rptr = rfiles; *rptr; rptr++)	/* delete intermediate files */
+       remove(*rptr);
+   }
    if (errors > 0) {			/* exit if linker errors seen */
       char errbuf[32];
       remove(ofile);

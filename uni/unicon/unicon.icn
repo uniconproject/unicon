@@ -30,6 +30,7 @@
 # LISTS  : links = names of external icon code to link to
 #          imports = names of external classes to import
 #
+
 global parsingErrors, returnErrorsFlag, dbg, fset
 
 global fin,flog,flogname,fLine,alpha,alphadot,white,nonwhite,nonalpha
@@ -235,7 +236,7 @@ procedure iconc_importref_resolve(ref)
    initial {
       sep := PATHCHAR
       ipaths := ipaths_get()
-      }
+   }
 
    # write("iconc_importref_resolve(" || ref || ")...")
    rslt := []
@@ -369,7 +370,7 @@ end
 procedure unicon_usage(continue_flag)
    local f, msg
    if \continue_flag then f := iwrite else f := istop
-   msg := "Usage: unicon [-cBCstuEGyZMhK] [-Dsym=val] [-f[adelns]...] [-o ofile]\n   _
+   msg := "Usage: unicon [-cBCstuEGyZMhRK] [-Dsym=val] [-f[adelns]...] [-o ofile]\n   _
 	    [-nofs] [-help] [-version] [-features] [-v i] file... [-x args]"
    f(msg)
 end
@@ -398,7 +399,7 @@ procedure unicon_help()
    "   -x args     : execute immediately",
    "   -y          : parse (syntax check) only, do not compile",
    "   -Z          : compress icode",
-   "   -K           : keep tmpfiles",
+   "   -K          : keep tmpfiles",
    "   -h          : display this information"
    ] )
    istop()
@@ -547,6 +548,9 @@ procedure unicon(argv)
                   silent := 1
                   icontopt ||:= "-s "
                   ilinkopt ||:= "-s "
+                  }
+               "-K"      : {
+                  icontopt ||:= "-K "
                   }
                "-log"  : {
                   if (i=1) | (argv[i-1] ~=== "-log") then {

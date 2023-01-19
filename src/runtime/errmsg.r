@@ -141,13 +141,13 @@ int set_ssl_connection_errortext(SSL *ssl, int err)
    }
 
 
-#ifdef DEVMODE_BEBUG
+#ifdef DEVMODE_DEBUG
    {
      char buf3[1024];
      ERR_error_string_n(ERR_get_error(), buf3 , 1024);
      printf("\n%s\n", buf3);
    }
-#endif				/* EVMODE */
+#endif				/* DEVMODE_DEBUG */
 
    buf = (char *) ERR_reason_error_string(ERR_get_error());
    if (buf == NULL)

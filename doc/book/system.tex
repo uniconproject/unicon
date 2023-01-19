@@ -772,6 +772,35 @@ use a standard Internet protocol, you should check first to see if the
 protocol is built-in to the language as part of the messaging
 facilities, described in the next section.
 
+\subsection*{Secure Sockets}
+
+Unicon offers secure sockets to encrypt data when using the TPC/UDP protocols.
+
+Example server code:
+\iconcode{
+procedure main() \\
+\>   sock := open("localhost:6600", "nae", "key=server.key",
+\"cert=server.crt", "ca=ca.crt")  | stop(&errortext) \\
+\>   select(sock) # wait for input\\
+\>   msg := ready(sock) \\
+\>   write("Message from client:", msg) \\
+\>   writes(sock, msg)  # echo back the same message to the client\\
+\>   close(sock) \\
+end
+}
+
+Example client code:
+\iconcode{
+procedure main() \\
+\>   sock := open("localhost:6600", "ne") | stop(&errortext) \\
+\>   writes(sock, "Hello SSL Socket") \\
+\>   select(sock)  # wait for input\\
+\>   msg := ready(sock) \\
+\>   write("Message from server:", msg) \\
+\>   close(sock) \\
+end
+}
+
 \section{Messaging Facilities}
 
 Unicon's \index{messaging}messaging facilities provide

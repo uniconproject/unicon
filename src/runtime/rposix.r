@@ -1585,6 +1585,12 @@ int fd;
 
 #if HAVE_LIBSSL
 
+/*
+ *  Create and initialize an SSL context
+ *     attr: attribute array passed to open()
+ *     n   : size of the array
+ *    type : connection type TLS/DTLS Server/Client
+ */
 SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
    SSL_CTX *ctx;
@@ -1599,7 +1605,9 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    int count;
    int a;
 
-   /* Check attributes */
+   /*
+    * Loop through and check the  attributes
+    */
    for (a=0; a<n; a++) {
      if (is:null(attr[a])) {
        attr[a] = emptystr;
@@ -1608,18 +1616,26 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
        timeout_set = 1;
      }
      else if (cnv:C_string(attr[a], tmps)) {
-
+       /*
+	* quick santiy check, reject any attribute
+	*  - under 3 characters
+	*  - starts or ends with '='
+	*/
        if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
-	 set_errortext_with_val(1217, tmps);
+	 set_errortext_with_val(1302, tmps);
 	 return NULL;
        }
 
+       /*
+	* split the attribute at the '=' sign
+	* attrib name up to '=', val is whatever comes after '='
+	*/
        val = strchr(tmps,'=');
        if (val != NULL) {
 	 *val = '\0';
 	 val++;
 	 if (strlen(val) == 0) {
-	   set_errortext_with_val(1217, tmps);
+	   set_errortext_with_val(1302, tmps);
 	   return NULL;
 	 }
 	 //printf("attr: %s=%s\n", tmps, val);
@@ -1629,7 +1645,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	   keyFile = val;
 	 else if (strcmp(tmps, "password") == 0)
 	   password = val;
-	 else if (strcmp(tmps, "caFile") == 0)
+	 else if (strcmp(tmps, "ca") == 0)
 	   ca_file = val;
 	 else if (strcmp(tmps, "caDir") == 0)
 	   ca_dir = val;
@@ -1661,6 +1677,10 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	 }
     }
 
+   /*
+    * initialize OpenSSL library
+    * TODO: make this thread safe.
+    */
    if (!SSL_is_initialized) {
      SSL_library_init();
      OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
@@ -1691,12 +1711,18 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
      return NULL;
    }
 
+   /*
+    * cipher suites list for TLS 1.3 is differet hence we have ciphers and ciphers1.3.
+    * Let us make the default "High" security for TLS1.2 and earlier.
+    * TLS1.3 cihpher suite list is short and is already strong
+    */
    if (ciphers == NULL)
      ciphers = "HIGH";
    // all ciphers string: "ALL"
    // For TLS 1.2 and below
    if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
      set_ssl_context_errortext(1306, ciphers);
+     SSL_CTX_free(ctx);
      return NULL;
    }
 
@@ -1705,6 +1731,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
      // For TLS 1.3
      if (SSL_CTX_set_ciphersuites(ctx, ciphers13) != 1) {
        set_ssl_context_errortext(1306, ciphers);
+       SSL_CTX_free(ctx);
        return NULL;
      }
    }
@@ -1749,9 +1776,17 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	  ver = DTLS1_VERSION;
         else {
 	  set_ssl_context_errortext(1308, proto);
+	  SSL_CTX_free(ctx);
 	  return NULL;
 	}
 
+	/*
+	 * Set min/max acceptable protocol
+	 * OpenSSL 1.1 and after supports and easy way to set min/max
+	 * but we have to "manully" do it for earlier versions
+	 * Notice that only TLS protocols are considered,
+	 * SSL protocls are already old and deprecated
+	 */
 
 	if (count == 2) {
 #if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
@@ -1763,12 +1798,14 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
 	  default:
 	    set_ssl_context_errortext(1308, proto);
+	    SSL_CTX_free(ctx);
 	    return NULL;
 	  }
 	  SSL_CTX_set_options(ctx, old_ssl_flags);
 #else
 	  if (SSL_CTX_set_min_proto_version(ctx, ver) != 1) {
 	    set_ssl_context_errortext(1301, proto);
+	    SSL_CTX_free(ctx);
 	    return NULL;
 	  }
 #endif
@@ -1781,12 +1818,14 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2; break;
 	  default:
 	    set_ssl_context_errortext(1308, proto);
+	    SSL_CTX_free(ctx);
 	    return NULL;
 	    }
 	  SSL_CTX_set_options(ctx, old_ssl_flags);
 #else
 	  if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
 	    set_ssl_context_errortext(1301, proto);
+	    SSL_CTX_free(ctx);
 	    return NULL;
 	  }
 #endif
@@ -1797,6 +1836,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    if (ca_file != NULL || ca_dir != NULL) {
      if (SSL_CTX_load_verify_locations(ctx, ca_file, ca_dir) != 1) {
        set_ssl_context_errortext(1305, ca_file);
+       SSL_CTX_free(ctx);
        return NULL;
      }
    }
@@ -1813,6 +1853,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 	 SSL_CTX_set_verify(ctx,  SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,  NULL);
      } else if (strcmp(verifyPeer, "no") != 0) {
        set_errortext_with_val(1302, verifyPeer);
+       SSL_CTX_free(ctx);
        return NULL;
        }
    }
@@ -1839,6 +1880,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
    if (SSL_CTX_set_default_verify_paths(ctx) != 1) {
        set_ssl_context_errortext(1305, "verify paths");
+       SSL_CTX_free(ctx);
        return NULL;
    }
 
@@ -1846,6 +1888,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
      /* set the local certificate from CertFile */
      if (SSL_CTX_use_certificate_file(ctx, certFile, SSL_FILETYPE_PEM) <= 0) {
        set_ssl_context_errortext(1304, certFile);
+       SSL_CTX_free(ctx);
        return NULL;
      }
    }
@@ -1858,12 +1901,14 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    }
    if (keyFile != NULL && SSL_CTX_use_PrivateKey_file(ctx, keyFile, SSL_FILETYPE_PEM) <= 0) {
      set_ssl_context_errortext(1303, keyFile);
+     SSL_CTX_free(ctx);
      return NULL;
    }
    /* verify that the private key matches the cert */
    if (keyFile != NULL) {
      if (!SSL_CTX_check_private_key(ctx)) {
        set_ssl_context_errortext(0, NULL);
+       SSL_CTX_free(ctx);
        return NULL;
      }
    }

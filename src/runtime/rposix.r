@@ -264,18 +264,24 @@ int get_fd(struct descrip file, unsigned int errmask)
 
    if (errmask && !(status & errmask))
       return -2;
-   else
 
 #if NT
 #define fileno _fileno
 #endif					/* NT */
 
-      if (status & Fs_Socket)
-	 return BlkD(file,File)->fd.fd;
-      else if (status & Fs_Messaging)
-	 return tp_fileno(BlkD(file,File)->fd.mf->tp);
+   if (status & Fs_Socket) {
+#if HAVE_LIBSSL
+      if(status & Fs_Encrypt)
+         return SSL_get_fd(BlkD(file,File)->fd.ssl);
       else
-	 return fileno(BlkD(file,File)->fd.fp);
+#endif					/* LIBSSL */
+	 return BlkD(file,File)->fd.fd;
+      }
+
+   if (status & Fs_Messaging)
+      return tp_fileno(BlkD(file,File)->fd.mf->tp);
+
+   return fileno(BlkD(file,File)->fd.fp);
 }
 
 
@@ -1576,6 +1582,342 @@ int fd;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
 }
 
+
+#if HAVE_LIBSSL
+
+/*
+ *  Create and initialize an SSL context
+ *     attr: attribute array passed to open()
+ *     n   : size of the array
+ *    type : connection type TLS/DTLS Server/Client
+ */
+SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
+
+   SSL_CTX *ctx;
+   //      if (status & Fs_Encrypt) {
+   tended char *tmps, *val;
+   tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *ciphers13=NULL, *password=NULL;
+   tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
+   tended char *min_proto=NULL, *max_proto=NULL, *verifyPeer=NULL;
+   int old_ssl_flags=0;
+   static int SSL_is_initialized = 0;
+   C_integer timeout = 0, timeout_set = 0;
+   int count;
+   int a;
+
+   /*
+    * Loop through and check the  attributes
+    */
+   for (a=0; a<n; a++) {
+     if (is:null(attr[a])) {
+       attr[a] = emptystr;
+     }
+     else if (a==0 && cnv:C_integer(attr[a], timeout)) {
+       timeout_set = 1;
+     }
+     else if (cnv:C_string(attr[a], tmps)) {
+       /*
+	* quick santiy check, reject any attribute
+	*  - under 3 characters
+	*  - starts or ends with '='
+	*/
+       if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+	 set_errortext_with_val(1302, tmps);
+	 return NULL;
+       }
+
+       /*
+	* split the attribute at the '=' sign
+	* attrib name up to '=', val is whatever comes after '='
+	*/
+       val = strchr(tmps,'=');
+       if (val != NULL) {
+	 *val = '\0';
+	 val++;
+	 if (strlen(val) == 0) {
+	   set_errortext_with_val(1302, tmps);
+	   return NULL;
+	 }
+	 //printf("attr: %s=%s\n", tmps, val);
+	 if (strcmp(tmps, "cert") == 0)
+	   certFile = val;
+	 else if (strcmp(tmps, "key") == 0)
+	   keyFile = val;
+	 else if (strcmp(tmps, "password") == 0)
+	   password = val;
+	 else if (strcmp(tmps, "ca") == 0)
+	   ca_file = val;
+	 else if (strcmp(tmps, "caDir") == 0)
+	   ca_dir = val;
+	 else if (strcmp(tmps, "caStore") == 0)
+	   ca_store = val;
+	 else if (strcmp(tmps, "ciphers") == 0)
+	   ciphers = val;
+	 else if (strcmp(tmps, "ciphers1.3") == 0)
+	   ciphers13 = val;
+	 else if (strcmp(tmps, "minProto") == 0)
+	   min_proto = val;
+	 else if (strcmp(tmps, "maxProto") == 0)
+	   max_proto = val;
+	 else if (strcmp(tmps, "verifyPeer") == 0)
+	   verifyPeer = val;
+	 else  {
+	   set_errortext_with_val(1302, tmps);
+	   return NULL;
+	 }
+       }
+       else  {
+	   set_errortext_with_val(1302, tmps);
+	   return NULL;
+	 }
+     }
+     else {
+	   set_errortext(1302);
+	   return NULL;
+	 }
+    }
+
+   /*
+    * initialize OpenSSL library
+    * TODO: make this thread safe.
+    */
+   if (!SSL_is_initialized) {
+     SSL_library_init();
+     OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
+     SSL_load_error_strings();   /* load all error messages */
+     SSL_is_initialized = 1;
+   }
+
+   /* the compiler wants "const", but rtt doesn't know it, just pass it through */
+#passthru const SSL_METHOD *method;
+
+   switch (type) {
+
+#if !defined(MacOS) && OPENSSL_VERSION_NUMBER < 0x10100000L
+   case TLS_SERVER: method = SSLv23_server_method(); break;
+   case TLS_CLIENT: method = SSLv23_client_method(); break;
+#else
+   case TLS_SERVER: method = TLS_server_method(); break;
+   case TLS_CLIENT: method = TLS_client_method(); break;
+#endif
+
+   case DTLS_SERVER: method = DTLS_server_method(); break;
+   case DTLS_CLIENT: method = DTLS_client_method(); break;
+   }
+
+   ctx = SSL_CTX_new(method);   /* create new context from method */
+   if (ctx == NULL) {
+     set_ssl_context_errortext(1301, NULL);
+     return NULL;
+   }
+
+   /*
+    * cipher suites list for TLS 1.3 is differet hence we have ciphers and ciphers1.3.
+    * Let us make the default "High" security for TLS1.2 and earlier.
+    * TLS1.3 cihpher suite list is short and is already strong
+    */
+   if (ciphers == NULL)
+     ciphers = "HIGH";
+   // all ciphers string: "ALL"
+   // For TLS 1.2 and below
+   if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
+     set_ssl_context_errortext(1306, ciphers);
+     SSL_CTX_free(ctx);
+     return NULL;
+   }
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+   if (ciphers13 != NULL) {
+     // For TLS 1.3
+     if (SSL_CTX_set_ciphersuites(ctx, ciphers13) != 1) {
+       set_ssl_context_errortext(1306, ciphers);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+#endif
+
+   count = 2;
+   old_ssl_flags = 0;
+   do {
+      char *proto;
+      if (count == 2)
+	proto = min_proto;
+      else
+	proto = max_proto;
+
+      if (proto != NULL) {
+        // supported versions are SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION,
+	// TLS1_2_VERSION, TLS1_3_VERSION for TLS and DTLS1_VERSION, DTLS1_2_VERSION for DTLS.
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#define TLS1_VERSION 10
+#define TLS1_1_VERSION 11
+#define TLS1_2_VERSION 12
+#define TLS1_3_VERSION 13
+
+#define DTLS1_VERSION 20
+#define DTLS1_2_VERSION 22
+
+#endif
+	int ver;
+        if (strcmp(proto, "TLS1.3") == 0)
+          ver = TLS1_3_VERSION;
+	else if (strcmp(proto, "TLS1.2") == 0)
+	  ver = TLS1_2_VERSION;
+	else if (strcmp(proto, "TLS1.1") == 0)
+	  ver = TLS1_1_VERSION;
+	else if (strcmp(proto, "TLS1.0") == 0)
+	  ver = TLS1_VERSION;
+	/*	else if (strcmp(proto, "SSL3.0") == 0)
+		ver = SSL3_VERSION; */
+	else if (strcmp(proto, "DTLS1.2") == 0)
+	  ver = DTLS1_2_VERSION;
+	else if (strcmp(proto, "DTLS1.0") == 0)
+	  ver = DTLS1_VERSION;
+        else {
+	  set_ssl_context_errortext(1308, proto);
+	  SSL_CTX_free(ctx);
+	  return NULL;
+	}
+
+	/*
+	 * Set min/max acceptable protocol
+	 * OpenSSL 1.1 and after supports and easy way to set min/max
+	 * but we have to "manully" do it for earlier versions
+	 * Notice that only TLS protocols are considered,
+	 * SSL protocls are already old and deprecated
+	 */
+
+	if (count == 2) {
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+	  switch (ver) {
+	  case TLS1_2_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
+	      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+	  case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 |
+	      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+	  default:
+	    set_ssl_context_errortext(1308, proto);
+	    SSL_CTX_free(ctx);
+	    return NULL;
+	  }
+	  SSL_CTX_set_options(ctx, old_ssl_flags);
+#else
+	  if (SSL_CTX_set_min_proto_version(ctx, ver) != 1) {
+	    set_ssl_context_errortext(1301, proto);
+	    SSL_CTX_free(ctx);
+	    return NULL;
+	  }
+#endif
+	}
+	else {
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+	  switch (ver) {
+	  case TLS1_2_VERSION: break;
+	  case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_2; break;
+	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2; break;
+	  default:
+	    set_ssl_context_errortext(1308, proto);
+	    SSL_CTX_free(ctx);
+	    return NULL;
+	    }
+	  SSL_CTX_set_options(ctx, old_ssl_flags);
+#else
+	  if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
+	    set_ssl_context_errortext(1301, proto);
+	    SSL_CTX_free(ctx);
+	    return NULL;
+	  }
+#endif
+	}
+      }
+   } while (--count>0);
+
+   if (ca_file != NULL || ca_dir != NULL) {
+     if (SSL_CTX_load_verify_locations(ctx, ca_file, ca_dir) != 1) {
+       set_ssl_context_errortext(1305, ca_file);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+   if (verifyPeer == NULL) {
+     if ((type == TLS_CLIENT) || (type == DTLS_CLIENT)) {
+       // cannot fail
+       SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
+     }
+   } else {
+     if (strcmp(verifyPeer, "yes") == 0) {
+       if ((type == TLS_CLIENT) || (type == DTLS_CLIENT))
+	 SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
+       else
+	 SSL_CTX_set_verify(ctx,  SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,  NULL);
+     } else if (strcmp(verifyPeer, "no") != 0) {
+       set_errortext_with_val(1302, verifyPeer);
+       SSL_CTX_free(ctx);
+       return NULL;
+       }
+   }
+
+   //SSL_CTX_set_verify_depth(ctx, 4);
+
+
+   /*
+   if (ca_dir != NULL) {
+     if (SSL_CTX_set_default_verify_dir(ctx);SSL_CTX_load_verify_dir(ctx, ca_dir) != 1) {
+       set_ssl_context_errortext(0, "ca dir");
+       return NULL;
+     }
+   }
+
+     if (ca_store != NULL) {
+        if (SSL_CTX_load_verify_store(ctx,ca_store) <= 0) {
+           set_ssl_context_errortext(0, "ca dir");
+           return NULL;
+         }
+         SSL_CTX_set_default_verify_store(ctx);
+     }
+   */
+
+   if (SSL_CTX_set_default_verify_paths(ctx) != 1) {
+       set_ssl_context_errortext(1305, "verify paths");
+       SSL_CTX_free(ctx);
+       return NULL;
+   }
+
+   if (certFile != NULL) {
+     /* set the local certificate from CertFile */
+     if (SSL_CTX_use_certificate_file(ctx, certFile, SSL_FILETYPE_PEM) <= 0) {
+       set_ssl_context_errortext(1304, certFile);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+
+   /* set the private key from KeyFile (may be the same as CertFile) */
+   if (password != NULL) {
+     // doesn't fail
+     SSL_CTX_set_default_passwd_cb_userdata(ctx, password);
+
+   }
+   if (keyFile != NULL && SSL_CTX_use_PrivateKey_file(ctx, keyFile, SSL_FILETYPE_PEM) <= 0) {
+     set_ssl_context_errortext(1303, keyFile);
+     SSL_CTX_free(ctx);
+     return NULL;
+   }
+   /* verify that the private key matches the cert */
+   if (keyFile != NULL) {
+     if (!SSL_CTX_check_private_key(ctx)) {
+       set_ssl_context_errortext(0, NULL);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+
+   return ctx;
+}
+#endif					/* LIBSSL */
+
+
 #if !NT
 dptr make_pwd(pw, result)
 struct passwd *pw;
@@ -2065,17 +2407,31 @@ int sig;
  *
  * returns an allocated string. If EOF then returns 0.
  */
-dptr u_read(int fd, int n, int fstatus, dptr d)
+dptr u_read(dptr f, int n, int fstatus, dptr d)
 {
-   int tally = 0, nbytes;
+   int fd, tally = 0, nbytes;
    CURTSTATE();
+
+   if ((fd = get_fd(*f, 0)) < 0)
+     ReturnErrNum(174, f);
+
+   IntVal(amperErrno) = 0;
 
    if (n > 0) {
       /* Allocate n bytes of char space */
       StrLoc(*d) = alcstr(NULL, n);
       StrLen(*d) = 0;
-      if (fstatus & Fs_Socket)
-	tally = recv(fd, StrLoc(*d), n, 0);
+      if (fstatus & Fs_Socket) {
+#if HAVE_LIBSSL
+	if (fstatus & Fs_Encrypt) {
+	   tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d), n);
+	   if (tally == 0)
+	     set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
+	   }
+	else
+#endif					/* LIBSSL */
+	  tally = recv(fd, StrLoc(*d), n, 0);
+      }
       else
 	tally = read(fd, StrLoc(*d), n);
 
@@ -2123,37 +2479,47 @@ dptr u_read(int fd, int n, int fstatus, dptr d)
 tryagain:
 
 	 if (fstatus & Fs_Socket) {
-	   tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
+#if HAVE_LIBSSL
+	   if (fstatus & Fs_Encrypt) {
+	      tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d) +  i*bufsize, bufsize);
+	      if (tally == 0)
+		set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
+	   }
+	   else {
+#endif					/* LIBSSL */
+	     tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
 
-	   if (tally < 0) {
-	     /*
-	      * Error on recv().  Some kinds of errors might be recoverable.
-	      */
-	     kk++;
+	      if (tally < 0) {
+		 /*
+		  * Error on recv().  Some kinds of errors might be recoverable.
+		  */
+		kk++;
 #if NT
-	     errno = WSAGetLastError();
+		errno = WSAGetLastError();
 #endif					/* NT */
-	     switch (errno) {
+		switch (errno) {
 #if NT
-	     case WSAEINTR: case WSAEINPROGRESS:
+		case WSAEINTR: case WSAEINPROGRESS:
 #else					/* NT */
-	     case EINTR: case EINPROGRESS:
+		case EINTR: case EINPROGRESS:
 #endif					/* NT */
-	       if (kk < 5) goto tryagain;
-	       break;
-	     default:
-	       strtotal += bufsize;
-	       strfree = StrLoc(*d);
-	       set_errortext(214);
-	       return 0;
-	     }
+		  if (kk < 5) goto tryagain;
+		  break;
+		default:
+		  strtotal += bufsize;
+		  strfree = StrLoc(*d);
+		  set_errortext(214);
+		  return 0;
+		}
+	      } /* tally < 0 */
+	      if ((i == 0) && (tally == 0)) {
+		strtotal += bufsize;
+		strfree = StrLoc(*d);
+		return 0;
+	      }
+#if HAVE_LIBSSL
 	   }
-
-	   if ((i == 0) && (tally == 0)) {
-	     strtotal += bufsize;
-	     strfree = StrLoc(*d);
-	     return 0;
-	   }
+#endif					/* LIBSSL */
 	 }
 	 else { // not a socket, use read()
 	   tally = read(fd, StrLoc(*d) + i*bufsize, bufsize);

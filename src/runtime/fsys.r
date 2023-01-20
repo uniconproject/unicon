@@ -60,6 +60,16 @@ function{0,1} close(f)
 
 #ifdef PosixFns
       if (BlkD(f,File)->status & Fs_Socket) {
+#if HAVE_LIBSSL
+	if(status & Fs_Encrypt) {
+	   int fd;
+	   fd = SSL_get_fd(BlkD(f,File)->fd.ssl);
+	   SSL_shutdown(BlkLoc(f)->File.fd.ssl);
+           SSL_CTX_free(SSL_get_SSL_CTX(BlkLoc(f)->File.fd.ssl));
+	   SSL_free(BlkLoc(f)->File.fd.ssl);
+	   BlkLoc(f)->File.fd.fd = fd;
+           }
+#endif					/* LIBSSL */
 	 BlkLoc(f)->File.status = 0;
 	 StrLoc(BlkLoc(f)->File.fname) = "closed socket";
 	 StrLen(BlkLoc(f)->File.fname) = 13;
@@ -384,6 +394,12 @@ Deliberate Syntax Error
 
       for (i = 0; i < slen; i++) {
 	 switch (*s++) {
+	    case 'e':
+	    case 'E':
+#if HAVE_LIBSSL
+	       status |= Fs_Encrypt;
+#endif					/* HAVE_LIBSSL */
+	       continue;
 	    case 'a':
 	    case 'A':
 	       status |= Fs_Write|Fs_Append;
@@ -899,6 +915,7 @@ Deliberate Syntax Error
          if (NULL == f) {set_errortext(1052); fail;}
 	 if (!strcmp(mode,"r")) {
 	    /* Try to read a byte. If we can't, treat it as "empty pipe" or "bad command" */
+
 	    if ((c = getc(f)) == EOF) {
               if (0 == pclose(f)) {set_errortext(1053);} else {set_errortext(1050);}
               fail;
@@ -936,12 +953,15 @@ Deliberate Syntax Error
          /*add new code here*/
          f = (FILE *)gzopen(fnamestr, mode);
          }
-      else 
+      else
 #endif					/* HAVE_LIBZ */
 
 
 #ifdef PosixFns
       {
+#if HAVE_LIBSSL
+	SSL *ssl;
+#endif					/* HAVE_LIBSSL */
 	 if (status & Fs_Socket) {
 	    if (is_ipv4 && is_ipv6)
 	       af_fam = AF_UNSPEC;
@@ -953,16 +973,67 @@ Deliberate Syntax Error
 	       af_fam = AF_UNSPEC;
 
 	    /* The only allowed values for flags are "n" and "na" */
-	    if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen))
+	    if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen
+#if HAVE_LIBSSL
+			  |Fs_Encrypt
+#endif					/* HAVE_LIBSSL */
+))
 	       runerr(209, spec);
 	    if (status & Fs_Append) {
+#if HAVE_LIBSSL
+	       SSL_CTX *ctx;
+	       if(status & Fs_Encrypt) {
+		  ctx = create_ssl_context(attr, n, TLS_SERVER);
+		  if (ctx == NULL) {
+		    // errortext is already set
+		    fail;
+		  }
+	       }
+#endif					/* HAVE_LIBSSL */
+
 	       /* "na" => listen for connections */
       	       DEC_NARTHREADS;
 	       fd = sock_listen(fnamestr, is_udp_or_listener, af_fam);
-      	       INC_NARTHREADS_CONTROLLED;
+	       INC_NARTHREADS_CONTROLLED;
+
+#if HAVE_LIBSSL
+	       if(fd > 0 && status & Fs_Encrypt) {
+		 int err;
+		 ssl = SSL_new(ctx);
+		  if (ssl == NULL) {
+		    set_ssl_context_errortext(0, NULL);
+		    close(fd);
+		    SSL_CTX_free(ctx);
+		    fail;
+		  }
+		  SSL_set_fd(ssl, fd);
+		  err = SSL_accept(ssl);
+
+		  /*Check for error in accept.*/
+		  if (err<1) {
+		    set_ssl_connection_errortext(ssl, err);
+		    close(fd);
+		    SSL_free(ssl);
+		    SSL_CTX_free(ctx);
+		    fail;
+		  }
+
+	       }
+#endif					/* HAVE_LIBSSL */
 	       }
 	    else {
 	       C_integer timeout = 0;
+#if HAVE_LIBSSL
+	       SSL_CTX *ctx;
+	       if(status & Fs_Encrypt) {
+		  ctx = create_ssl_context(attr, n, TLS_CLIENT);
+		  if (ctx == NULL) {
+		    // errortext is already set
+		    fail;
+		  }
+	       }
+#endif					/* HAVE_LIBSSL */
+
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
 	       if (n > 0 && !is:null(attr[0])) {
                   if (!cnv:C_integer(attr[0], timeout))
@@ -973,17 +1044,42 @@ Deliberate Syntax Error
       	       DEC_NARTHREADS;
 	       fd = sock_connect(fnamestr, is_udp_or_listener == 1, timeout, af_fam);
       	       INC_NARTHREADS_CONTROLLED;
+#if HAVE_LIBSSL
+	       if(fd > 0 && status & Fs_Encrypt){
+		  int err;
+		  ssl = SSL_new(ctx);
+		  if (ssl == NULL) {
+		    set_ssl_context_errortext(0, NULL);
+		    close(fd);
+		    SSL_CTX_free(ctx);
+		    fail;
+		  }
+		  SSL_set_fd(ssl, fd);
+		  err = SSL_connect(ssl);
+
+		  /*Check for error in connect.*/
+		  if (err<1) {
+		    set_ssl_connection_errortext(ssl, err);
+		    close(fd);
+		    SSL_free(ssl);
+		    SSL_CTX_free(ctx);
+		    fail;
+		  }
+	       }
+#endif					/* HAVE_LIBSSL */
+
+
 	    }
 	    /*
 	     * read/reads is not allowed on a listener socket, only select
 	     * read/reads is not allowed on a UDP socket, only receive
 	     */
 	    if (is_udp_or_listener == 2)
-	       status = Fs_Socket | Fs_Listen;
+	       status |= Fs_Socket | Fs_Listen;
 	    else if (is_udp_or_listener == 1)
-	       status = Fs_Socket | Fs_Write;
+	       status |= Fs_Socket | Fs_Write;
 	    else
-	       status = Fs_Socket | Fs_Read | Fs_Write;
+	       status |= Fs_Socket | Fs_Read | Fs_Write;
 
 	    if (!fd) {
 	       set_syserrortext(errno);
@@ -998,7 +1094,14 @@ Deliberate Syntax Error
 	    StrLen(filename) = strlen(fnamestr)+1;
 	    StrLoc(filename) = fnamestr;
 	    Protect(fl = alcfile(0, status, &filename), runerr(0));
-	    fl->fd.fd = fd;
+
+#if HAVE_LIBSSL
+	    if (status & Fs_Encrypt)
+	       fl->fd.ssl = ssl;
+	    else
+#endif					/* HAVE_LIBSSL */
+	      fl->fd.fd = fd;
+
 	    return file(fl);
 	    }
 	 else if (stat(fnamestr, &st) < 0) {
@@ -1158,7 +1261,6 @@ end
 
 
 "read(f) - read line on file f."
-
 function{0,1} read(f)
    /*
     * Default f to &input.
@@ -1182,10 +1284,6 @@ function{0,1} read(f)
       char sbuf[MaxReadStr];
       tended struct descrip s;
       FILE *fp;
-#ifdef PosixFns
-      SOCKET ws;
-#endif					/* PosixFns */
-
       k_errornumber = 0;
       IntVal(amperErrno) = 0;
 
@@ -1208,9 +1306,8 @@ function{0,1} read(f)
        if (status & Fs_Socket) {
 	  StrLen(s) = 0;
           do {
-	     ws = (SOCKET)BlkD(f,File)->fd.fd;
       	     DEC_NARTHREADS;
-	     if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
+	     if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
 	        /* EOF is no error */
       	        INC_NARTHREADS_CONTROLLED;
 	        fail;
@@ -1453,7 +1550,6 @@ function{0,1} reads(f,i)
       register word slen, rlen;
       register char *sptr;
       char sbuf[MaxReadStr];
-      SOCKET ws;
       uword bytesread = 0;
       uword Maxread = 0;
       long tally, nbytes;
@@ -1552,7 +1648,6 @@ function{0,1} reads(f,i)
 	    StrLen(s) = 0;
 	    Maxread = (i <= MaxReadStr)? i : MaxReadStr;
 	    do {
-	       ws = (SOCKET)BlkD(f,File)->fd.fd;
 	       if (bytesread > 0) {
 		  if (i - bytesread <= MaxReadStr)
 		     Maxread = i - bytesread;
@@ -1560,7 +1655,7 @@ function{0,1} reads(f,i)
 		     Maxread = MaxReadStr;
 		  }
       	       DEC_NARTHREADS;
-	       if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
+	       if ((slen = sock_getstrg(sbuf, Maxread, &f)) == -1) {
 		    /*IntVal(amperErrno) = errno; */
       	            INC_NARTHREADS_CONTROLLED;
 		    if (bytesread == 0)
@@ -1674,15 +1769,8 @@ function{0,1} reads(f,i)
       /* Remember, sockets are always unbuffered */
       if ((status & Fs_Unbuf) && !(status & Fs_BPipe)) {
 	 /* We do one read(2) call here to avoid interactions with stdio */
-
-	 int fd;
-
-	 if ((fd = get_fd(f, 0)) < 0)
-	    runerr(174, f);
-
-	 IntVal(amperErrno) = 0;
       	 DEC_NARTHREADS;
-	 if (u_read(fd, i, status, &s) == 0) { /* EOF, or sets errortext */
+	 if (u_read(&f, i, status, &s) == 0) { /* EOF, or sets errortext */
       	    INC_NARTHREADS_CONTROLLED;
 	    fail;
 	    }
@@ -1970,7 +2058,6 @@ function{0,1} seek(f,o)
       return f;
       }
 end
-
 
 #ifdef PosixFns
 "system() - create a new process, optionally mapping its stdin/stdout/stderr."
@@ -2962,8 +3049,13 @@ function {1} name(x[nargs])
 
 #ifdef PosixFns
 		     if (status & Fs_Socket) {
-
-			if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
+#if HAVE_LIBSSL
+			if(status & Fs_Encrypt) {
+			  SSL_write(f.ssl, StrLoc(t), StrLen(t));
+			}
+			else{
+#endif					/* HAVE_LIBSSL */
+			  if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
         	  	   MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
 			   syserr("sock_write failed in stop()");
@@ -2972,6 +3064,9 @@ function {1} name(x[nargs])
 			   fail;
 #endif
 			   }
+#if HAVE_LIBSSL
+			}
+#endif					/* HAVE_LIBSSL */
 		     } else {
 #endif					/* PosixFns */
 		     if (putstr(f.fp, &t) == Failed)

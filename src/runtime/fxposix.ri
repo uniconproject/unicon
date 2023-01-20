@@ -2316,6 +2316,13 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
 					)) == 0)
       return;
 
+#if FIXME_HAVE_LIBSSL
+   if ((status & Fs_Socket) && (status & Fs_Encrypt)) {
+     if (SSL_has_pending(BlkD(*f, File)->fd.ssl) == 0 )
+       return;
+   }
+#endif					/* LIBSSL */
+
    fd = get_fd(*f, Fs_Read|Fs_Socket|Fs_Messaging);
    if ((fd != -1) && FD_ISSET(fd, fdsp)) {
       /*
@@ -3129,8 +3136,8 @@ function{0, 1} ready(f, i)
 #if NT
             status = ReadFile(pt->master_read, sbuf, i, &tb, NULL);
 #else
-	tb = read(pt->master_fd, sbuf, i);
-        status = (tb != -1);
+	    tb = read(pt->master_fd, sbuf, i);
+	    status = (tb != -1);
 #endif
 	    if (!status) fail;
             StrLoc(desc) = sbuf;
@@ -3141,17 +3148,10 @@ function{0, 1} ready(f, i)
 	}
 #endif					/* PseudoPty */
 
-      if ((fd = get_fd(f, 0)) < 0)
-	 runerr(174, f);
-
       if (status & Fs_Buff)
 	 runerr(1048, f);
-/* this looks bogus
-      BlkLoc(f)->File.status = status;
-*/
 
-      IntVal(amperErrno) = 0;
-      if (u_read(fd, i, status, &desc) == 0)
+      if (u_read(&f, i, status, &desc) == 0)
 	 fail;
       return desc;
    }

@@ -838,14 +838,10 @@ operator{0,1} <@ rcv(x,y)
 	}
 #endif					/* PseudoPty */
 
-      if ((fd = get_fd(y, 0)) < 0)
-	 runerr(174, y);
-
       if (status & Fs_Buff)
 	 runerr(1048, y);
 
-      IntVal(amperErrno) = 0;
-      if (u_read(fd, i, status, &desc) == 0)
+      if (u_read(&y, i, status, &desc) == 0)
 	 fail;
       return desc;
       }
@@ -935,9 +931,8 @@ operator{0,1} <<@ rcvbk(x,y)
       if (status & Fs_Socket) {
          StrLen(s) = 0;
          do {
-	    ws = (SOCKET)BlkD(y,File)->fd.fd;
       	    DEC_NARTHREADS;
-	    if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
+	    if ((slen = sock_getstrg(sbuf, MaxReadStr, &y)) == -1) {
 	       /*IntVal(amperErrno) = errno; */
       	       INC_NARTHREADS_CONTROLLED;
 	       fail;

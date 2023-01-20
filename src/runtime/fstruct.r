@@ -1267,15 +1267,20 @@ function{0,1} member(s, x[n])
             int res, argc;
             register uword hn;
 
+	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Set), "member(): lock set");
+
 	    for(argc=0; argc<n; argc++) {
 	       EVValD(&s, E_Smember);
 	       EVValD(x+argc, E_Sval);
 
 	       hn = hash(x+argc);
 	       memb(BlkLoc(s), x+argc, hn, &res);
-	       if (res==0)
+	       if (res==0) {
+		  MUTEX_UNLOCKBLK(BlkD(s, Set), "member(): unlock set");
 		  fail;
+	          }
 	       }
+	    MUTEX_UNLOCKBLK(BlkD(s, Set), "member(): unlock set");
 	    return x[n-1];
             }
          }
@@ -1287,15 +1292,20 @@ function{0,1} member(s, x[n])
             int res, argc;
             register uword hn;
 
+	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Table), "member(): lock table");
+
 	    for(argc=0; argc<n; argc++) {
 	       EVValD(&s, E_Tmember);
 	       EVValD(x+argc, E_Tsub);
 
 	       hn = hash(x+argc);
 	       memb(BlkLoc(s), x+argc, hn, &res);
-	       if (res == 0)
+	       if (res == 0) {
+		  MUTEX_UNLOCKBLK(BlkD(s, Table), "member(): unlock table");
 		  fail;
+	          }
 	       }
+	    MUTEX_UNLOCKBLK(BlkD(s, Table), "member(): unlock table");
 	    return x[n-1];
             }
          }
@@ -1306,12 +1316,21 @@ function{0,1} member(s, x[n])
 	 inline {
 	    int argc, size;
 	    C_integer cnv_x;
+
+	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, List), "member(): lock list");
 	    size = BlkD(s,List)->size;
 	    for(argc=0; argc<n; argc++) {
-	       if (!(cnv:C_integer(x[argc], cnv_x))) fail;
+	       if (!(cnv:C_integer(x[argc], cnv_x))) {
+		  MUTEX_UNLOCKBLK(BlkD(s, List), "member(): unlock list");
+		  fail;
+	        }
 	       cnv_x = cvpos(cnv_x, size);
-	       if ((cnv_x == CvtFail) || (cnv_x > size)) fail;
+	       if ((cnv_x == CvtFail) || (cnv_x > size)) {
+		  MUTEX_UNLOCKBLK(BlkD(s, List), "member(): unlock list");
+		  fail;
+	          }
 	       }
+	    MUTEX_UNLOCKBLK(BlkD(s, List), "member(): unlock list");
 	    return x[n-1];
 	    }
 	 }

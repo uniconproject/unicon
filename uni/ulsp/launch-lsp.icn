@@ -1,0 +1,55 @@
+#############################################################################################
+#                                        Main.icn                                           #
+#############################################################################################
+# Authors: Mark Stowell, Jonah Schnettler
+# Description:
+#   -Entry point to unicon language server.
+#   -Gathers and validates port number passed as argument to executable
+#   -Instantiates Server class and calls run() to start server on validated port number.
+#
+import ulsp
+link options
+link basename
+
+procedure usage()
+
+	prog := basename(&progname)
+	write("Usage: ", prog, " [options]\n")
+	write(prog, " is an implementation of the language server protocol.")
+	write("You are handling the socket parameters/options for your IDE incorrectly.")
+        write("Check your IDE different IDEs for the correct LSP server invocation.")
+	write("\nOptions:")
+	write("\t --socket <PORT> : set the lsp server port")
+	write("\t -h : show this help\n")
+	exit(-1)
+
+end
+
+procedure validate_args(args)
+
+	opts := options(args, "--socket:")
+	if *opts = 0 then usage()
+	port := \opts["-socket"] | usage()
+	port := opts["-socket"]
+	return port
+
+end
+
+
+procedure main(args)
+
+	port := validate_args(args) | stop("Error: invalid args/port number.")
+
+	if &features == "MacOs" then
+		port := "localhost:" || port
+	else
+		port := ":" || port
+
+	sc := Server(port)
+	sc.run()
+
+end
+
+
+
+

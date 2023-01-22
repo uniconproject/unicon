@@ -10,6 +10,7 @@
 #include "ccode.h"
 #include "cproto.h"
 #include "ca.h"
+#include "../h/auto.h"
 
 /*
  * Prototypes.
@@ -214,7 +215,9 @@ char *filename;
       ppdef("_LARGE_INTEGERS", (char *)NULL);
    ppdef("_MULTITASKING", (char *)NULL);	/* never defined in compiler */
    ppdef("_EVENT_MONITOR", (char *)NULL);
+#ifdef NoConcurrentCOMPILER
    ppdef("_CONCURRENT", (char *)NULL);
+#endif
    ppdef("_OVLD", (char *)NULL);
    ppdef("_MEMORY_MONITOR", (char *)NULL);
    ppdef("_VISUALIZATION", (char *)NULL);

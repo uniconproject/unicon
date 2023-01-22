@@ -138,7 +138,7 @@ keyword{1} current
       return coexpr
       }
    inline {
-#if 1 /* proposed !ConcurrentCOMPILER */
+#if !ConcurrentCOMPILER
       /* should be separate &current for each thread */
       CURTSTATE();
 #endif					/* !ConcurrentCOMPILER */

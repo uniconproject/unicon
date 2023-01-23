@@ -15,104 +15,112 @@ import UniDoc
 
 
 class LSPDB(
-	package_db,
-	built_in_functions,           # List containing all native function names
-    action_words,                 # List containing the action words (subset of reserved words)
-    declarative_expressions,      # List containing the declarative expressions (subset of reserved words)
-    syntax_reserved_words,        # List containing the syntax reserved words (subset of reserved words)
-    keywords,                     # List containing all keywords
-    preprocessors                 # List containing all preprocessors
-)
+   package_db,
+   built_in_functions,           # List containing all native function names
+   action_words,                 # List containing the action words (subset of reserved words)
+   declarative_expressions,      # List containing the declarative expressions (subset of reserved words)
+   syntax_reserved_words,        # List containing the syntax reserved words (subset of reserved words)
+   keywords,                     # List containing all keywords
+   preprocessors                 # List containing all preprocessors
+   )
 		
 		
-	method build()	
-		build_package_db()
-		built_in_functions := [:function():]
-		action_words := ["break", "case", "create", "critical", "every", "fail", "if", "initial", "initially", "next", "not", "repeat", "return", "suspend", "thread", "to", "until", "while"]
-		declarative_expressions := ["abstract", "class", "global", "import", "invocable", "link", "local", "method", "package", "procedure", "record", "static"]
-		syntax_reserved_words := ["all", "by", "default", "do", "end", "else", "of", "then"]
-		keywords := ["&allocated", "&ascii", "&clock", "&col", "&collections", "&column", "&control", "&cset", "&current", "&date", "&dateline", "&digits", "&dump", "&e", "&errno", "&error", "&errornumber", "&errortext", "&errorvalue", "&errout", "&eventcode", "&eventsource", "&eventvalue", "&fail", "&features", "&file", "&host", "&input", "&interval", "&lcase", "&ldrag", "&letters", "&level", "&line", "&lpress", "&lrelease", "&main", "&mdrag", "&meta", "&mpress", "&mreleasee", "&now", "&null", "&output", "&phi", "&pi", "&pick", "&pos", "&progname", "&random", "&rdrag", "&regions", "&resize", "&row", "&rpress", "&rrelease", "&shift", "&source", "&storage", "&subject", "&time", "&trace", "&ucase", "&version", "&window", "&x", "&y"]
-		preprocessors := ["$define", "$else", "$endif", "$error", "$ifdef", "$ifndef", "$include", "$line", "$undef", "#line"]
+   method build()	
+      build_package_db()
+      built_in_functions := [:function():]
+
+      action_words := ["break", "case", "create", "critical", "every", "fail", "if",
+                       "initial", "initially", "next", "not", "repeat", "return",
+                       "suspend", "thread", "to", "until", "while"]
+
+      declarative_expressions := ["abstract", "class", "global", "import", "invocable",
+                                  "link", "local", "method", "package", "procedure",
+                                  "record", "static"]
+      syntax_reserved_words := ["all", "by", "default", "do", "end", "else", "of", "then"]
+
+      keywords := ["&allocated", "&ascii", "&clock", "&col", "&collections", "&column",
+                   "&control", "&cset", "&current", "&date", "&dateline", "&digits", "&dump",
+                   "&e", "&errno", "&error", "&errornumber", "&errortext", "&errorvalue",
+                   "&errout", "&eventcode", "&eventsource", "&eventvalue", "&fail",
+                   "&features", "&file", "&host", "&input", "&interval", "&lcase", "&ldrag",
+                   "&letters", "&level", "&line", "&lpress", "&lrelease", "&main", "&mdrag",
+                   "&meta", "&mpress", "&mreleasee", "&now", "&null", "&output", "&phi", "&pi",
+                   "&pick", "&pos", "&progname", "&random", "&rdrag", "&regions", "&resize",
+                   "&row", "&rpress", "&rrelease", "&shift", "&source", "&storage", "&subject",
+                   "&time", "&trace", "&ucase", "&version", "&window", "&x", "&y"]
+
+		preprocessors := ["$define", "$else", "$endif", "$error", "$ifdef", "$ifndef",
+                                  "$include", "$line", "$undef", "#line"]
 	end
 
     method build_package_db()
+       paths := []
+       put(paths, "../3d")
+       put(paths, "../gui")
+       #put(paths, "../parser")
+       put(paths, "../xml")
+       put(paths, "../lib")
+       put(paths, "../ipl/procs")
+       put(paths, "../unidoc")
+
+       package_db := table()
+       every path := !paths do build_by_path(path)
+    end
+
+    method build_by_path(path)
+       local idoc
+       idoc := UniAll()
+
+       idoc.setSourcePath(path)
+       idoc.processFile(path)
+
+       x := idoc.packages
+
+       every pack := !x do {
+          if /package_db[pack.getName()] then {
+             package_db[pack.getName()] := table()
+             package_db[pack.getName()]["files"] := table()
+             }
+
+          every file_in_pack := pack.getFiles().get() do {
+             file_without_ext := &null
+             file_in_pack.getName() ? {
+                file_without_ext := tab(upto("."))
+                }
+
+             package_db[pack.getName()]["files"][file_without_ext] := table()
+             if /package_db[pack.getName()]["files"][file_without_ext]["imports"] then package_db[pack.getName()]["files"][file_without_ext]["imports"] := [] 
+             every import_in_file := file_in_pack.getImports().get() do {
+                put(package_db[pack.getName()]["files"][file_without_ext]["imports"], import_in_file.getName())
+                }
 
 
-	    paths := []
-	    put(paths, "../3d")
-		put(paths, "../gui")
-		#put(paths, "../parser")
-		put(paths, "../xml")
-		put(paths, "../lib")
-		put(paths, "../ipl/procs")
-		put(paths, "../unidoc")
+             if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := []
+             every procedure_in_file := file_in_pack.getProcedures().get() do {
+                put(package_db[pack.getName()]["files"][file_without_ext]["procedures"], procedure_in_file.getName())
+                }
 
-		package_db := table()
-		every path := !paths do build_by_path(path)
-
-
-	end
-
-	method build_by_path(path)
-
-		local idoc
-
-		idoc := UniAll()
-
-		idoc.setSourcePath(path)
-		idoc.processFile(path)
-
-		x := idoc.packages
-
-		every pack := !x do {
-			
-			if /package_db[pack.getName()] then {
-				package_db[pack.getName()] := table()
-				package_db[pack.getName()]["files"] := table()
-			}
-
-			every file_in_pack := pack.getFiles().get() do {
-
-				file_without_ext := &null
-				file_in_pack.getName() ? {
-					file_without_ext := tab(upto("."))
-				}
-				
-				package_db[pack.getName()]["files"][file_without_ext] := table()
+             if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()
+             every class_in_file := file_in_pack.getClasses().get() do {
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()] := table()
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := []
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"] := []
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["superclass"] := []
 
 
-				if /package_db[pack.getName()]["files"][file_without_ext]["imports"] then package_db[pack.getName()]["files"][file_without_ext]["imports"] := [] 
-				every import_in_file := file_in_pack.getImports().get() do {
-					put(package_db[pack.getName()]["files"][file_without_ext]["imports"], import_in_file.getName())
-				}
-
-
-				if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := []
-				every procedure_in_file := file_in_pack.getProcedures().get() do {
-					put(package_db[pack.getName()]["files"][file_without_ext]["procedures"], procedure_in_file.getName())
-				}
-
-				if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()
-				every class_in_file := file_in_pack.getClasses().get() do {
-					package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()] := table()
-					package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := []
-					package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
-					package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"] := []
-					package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["superclass"] := []
-
-
-					every method_in_class := class_in_file.getMethods().get() do {
-						put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"], method_in_class.getName())
-					}
-					every class_param := class_in_file.getParams().get() do {
-						put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], class_param.getName())
-					}
-					every class_comment := class_in_file.getComments().get() do {
-						put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
-					}
-				}
-			}
-		}
-	end
+                every method_in_class := class_in_file.getMethods().get() do {
+                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"], method_in_class.getName())
+                   }
+                every class_param := class_in_file.getParams().get() do {
+                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], class_param.getName())
+                   }
+                every class_comment := class_in_file.getComments().get() do {
+                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
+                   }
+                }
+             }
+          }
+    end
 
 end

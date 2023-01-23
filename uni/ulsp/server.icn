@@ -24,84 +24,81 @@ import json
 #import UniDoc
 
 class Server(
-	port,                         # Port number acquired from args on start up of server
-	sock,                         # Socket connection for communication with client 
-	openFiles,                    # File container for open files
-	completionHandler,            # Instance of CompletionHandler class for handling completion requests
-    lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
-)
+   port,                         # Port number acquired from args on start up of server
+   sock,                         # Socket connection for communication with client 
+   openFiles,                    # File container for open files
+   completionHandler,            # Instance of CompletionHandler class for handling completion requests
+   lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
+   )
 
+   method run()
+      local request_body, jsontable, request_method, request_params, request_id
 
-	method run()
-	
-		local request_body, jsontable, request_method, request_params, request_id
+      repeat {
 
-		repeat {
+         request_body := get_request(sock)
+         jsontable := jtou(request_body)
 
-			request_body := get_request(sock)
-			jsontable := jtou(request_body)
+         request_method := jsontable["method"]
+         request_params := jsontable["params"]
+         request_id := jsontable["id"]
 
-			request_method := jsontable["method"]
-			request_params := jsontable["params"]
-			request_id := jsontable["id"]
+         write("-----------------------------------------")
+         write(request_method)
+         write("-----------------------------------------")
 
-			write("-----------------------------------------")
-			write(request_method)
-			write("-----------------------------------------")
+         case request_method of {
+            "initialize" : initialize(request_id)
+            "textDocument/didOpen" : didOpen(request_params)
+            "textDocument/didClose" : didClose(request_params)
+            "textDocument/didChange" : didChange(request_params)
+            "textDocument/completion" : completion(request_id, request_params)
+            "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
+            "$/cancelRequest" : cancelRequest(request_id)
+            default: { write("Don't know what to do with: ", request_method) }
+            }
+         }
 
-			case request_method of {
-				"initialize" : initialize(request_id)
-				"textDocument/didOpen" : didOpen(request_params)
-				"textDocument/didClose" : didClose(request_params)
-				"textDocument/didChange" : didChange(request_params)
-				"textDocument/completion" : completion(request_id, request_params)
-				"textDocument/declaration" : write("Don't know what to do with go to declaration request.")
-				"$/cancelRequest" : cancelRequest(request_id)
-				default: { write("Don't know what to do with: ", request_method) }
-			}
-		}
-
-	end
+   end
 	
 #################################################################################
 #                               Get Request                                     #
 #################################################################################
 
-	method get_request(sock)
+   method get_request(sock)
+      local request_body, msg
 
-		local request_body, msg
+      while /request_body | request_body == "" do {
 
-		while /request_body | request_body == "" do {
+         # Block and get message on socket
+         select(sock)
+         msg := ready(sock)
 
-			# Block and get message on socket
-			select(sock)
-			msg := ready(sock)
+         # Handling socket reading anomoly: header alone or header + request_body
+         msg ? {
+            tab(find("Content-Length:") + 15)
+            len := integer(tab(many(&digits)))
+            tab(upto("\r\n\r\n") + 4)
+            if pos(0) then {
+               request_body := ready(sock, len)
+               }
+            else
+               request_body := tab(0)
+            }
+         }
 
-			# Handling socket reading anomoly: header alone or header + request_body
-			msg ? {
-				tab(find("Content-Length:") + 15)
-				len := integer(tab(many(&digits)))
-				tab(upto("\r\n\r\n") + 4)
-				if pos(0) then {
-						request_body := ready(sock, len)
-				}
-				else
-					request_body := tab(0)
-			}
-		}
-
-		return request_body
-	end
+      return request_body
+   end
 
 #################################################################################
 #                               Build Response                                  #
 #################################################################################
 
-	method build_response(id, results)
-		responseBody := "{\"jsonrpc\":\"2.0\",\"id\":"||id||",\"result\":"||results||"}"
-		responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
-		return responseHeader || responseBody
-	end
+   method build_response(id, results)
+      responseBody := "{\"jsonrpc\":\"2.0\",\"id\":"||id||",\"result\":"||results||"}"
+      responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
+      return responseHeader || responseBody
+   end
 
 
 #################################################################################
@@ -120,66 +117,73 @@ class Server(
 # As you add more capabilities to the language server (i.e. hover, go to declaration, etc.) add these to the results string below.
 # Follow the LSP specifications on how to add a particular capability to your initialize string.
 
-	method initialize(request_id)
-		local results, res
+   method initialize(request_id)
+      local results, res
 
-		results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelp\":{\"contextSupport\":true}}}"
+      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelp\":{\"contextSupport\":true}}}"
 
-		res := build_response(request_id, results)
-		write(res)
-		writes(sock, res)
-	end
+      res := build_response(request_id, results)
+      write(res)
+      writes(sock, res)
+   end
 
 ########################################################
 #                textDocument/didOpen                  #
 ########################################################
 
-	method didOpen(request_params)
-		if \(uri := request_params["textDocument"]["uri"]) then {
-			file := uri[8:0]
-			if f := open(file) then {
-				initial_file_contents := reads(f, -1)
-				close(f)
-			}
-		}
-		openFiles[\uri] := Workspace(uri[8:0], lsp_database)
-		workspace_object := openFiles[\uri]
-		workspace_object.updateTempFile(initial_file_contents)
+   method didOpen(request_params)
+      local fname, uri, f
+      if \(uri := request_params["textDocument"]["uri"]) then {
+      # uri: file://<PATH>
+      uri ? {
+         ="file://" | write(&errout, "unexpected uri:", uri)
+         fname := tab(0)
+         }
 
-	end
+      if f := open(fname) then {
+         initial_file_contents := reads(f, -1)
+         close(f)
+         }
+      }
+      
+      openFiles[\uri] := Workspace(fname, lsp_database)
+      workspace_object := openFiles[\uri]
+      workspace_object.updateTempFile(initial_file_contents)
+
+   end
 
 ########################################################
 #                textDocument/didClose                 #
 ########################################################
 
-	method didClose(request_params)
-		uri := request_params["textDocument"]["uri"]
-		delete(openFiles, \uri)
-	end
+   method didClose(request_params)
+      uri := request_params["textDocument"]["uri"]
+      delete(openFiles, \uri)
+   end
 
 ########################################################
 #                textDocument/didChange                #
 ########################################################
 
-	method didChange(request_params)
-		uri := request_params["textDocument"]["uri"]
-		file_contents := request_params["contentChanges"][1]["text"]
-		workspace_object := openFiles[\uri]
-		workspace_object.updateTempFile(file_contents)
-	end
+   method didChange(request_params)
+      uri := request_params["textDocument"]["uri"]
+      file_contents := request_params["contentChanges"][1]["text"]
+      workspace_object := openFiles[\uri]
+      workspace_object.updateTempFile(file_contents)
+   end
 
 ########################################################
 #                textDocument/completion               #
 ########################################################
 
-	method completion(request_id, request_params)
-		uri := request_params["textDocument"]["uri"]
-		workspace_object := openFiles[\uri]
-		completionHandler.setVariables(workspace_object, request_params)
-		result := completionHandler.run()
-		res := build_response(request_id, result)
-		writes(sock, res)
-	end
+   method completion(request_id, request_params)
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      completionHandler.setVariables(workspace_object, request_params)
+      result := completionHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
 	
 ########################################################
 #                textDocument/declaration              #
@@ -195,19 +199,27 @@ class Server(
 # Handling cancel requests:
 #	kill thread associated with request_id
 
-	method cancelRequest(request_id)
-		write("We received a cancel request. We need to implement this still...")
-	end
+   method cancelRequest(request_id)
+      write("We received a cancel request. We need to implement this still...")
+   end
 
-	initially
-		sock := open(port, "n") | stop("open(",server,") ERROR: ", &errortext)
-		if /sock then stop("timeout")
+   initially
 
-		openFiles := table()
-		lsp_database := LSPDB()
-		lsp_database.build()
+       every 1 to 5 do
+          if sock := open(port, "n") then 
+             break
+          else {
+             write("open(",port,") ERROR: ", &errortext)
+             delay(1000)
+             }
 
-		completionHandler := CompletionHandler()
+       if /sock then stop("failed to connect to ",port)
+
+       openFiles := table()
+       lsp_database := LSPDB()
+       lsp_database.build()
+
+       completionHandler := CompletionHandler()
 
 end
 

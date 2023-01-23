@@ -708,7 +708,7 @@ class UniAll : Object (files, packages,
         curFile.addProcedure(proced)
         curPackage.addProcedure(proced)
         curComments := Comments()
-        token := f.nextToken()
+        token := f.nextToken() | fail
         if token.Type() == "UniDoc::LParen" then {
             token := f.nextToken()
             }
@@ -739,7 +739,7 @@ class UniAll : Object (files, packages,
             }
     
         if not f.EOS() then {
-            token := f.nextToken()
+            token := f.nextToken() | fail
             if token.Type() == "UniDoc::Comment" then {
                 proced.addComment(token.value)
                 }

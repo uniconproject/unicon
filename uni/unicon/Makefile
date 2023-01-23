@@ -3,10 +3,10 @@ include $(BASE)/Makedefs.uni
 
 export PATH:=$(BIN):$(PATH)
 
-U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u ca.u
+U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u ca.u nocc.u
 
 # Don't delete unigram.u and idol.u, needed for bootstrapping
-UDEL= unicon.u unilex.u tree.u preproce.u unix.u tokens.u yyerror.u main.u cfy.u ca.u
+UDEL= unicon.u unilex.u tree.u preproce.u unix.u tokens.u yyerror.u main.u cfy.u ca.u nocc.u
 
 UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn tokens.icn yyerror.icn main.icn cfy.icn ca.icn
 
@@ -15,12 +15,12 @@ UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn
 LIBFILES= ../lib/unilex.u ../lib/tree.u
 
 all: unicon $(WUNICONTARGET)
-unicon $(UNICONEXE): $(U) $(LIBFILES)
+unicon $(UNICONEXE): nocc.icn $(U) $(LIBFILES)
 	$(ICONT) $(U)
 	$(CP) unicon$(EXE) $(BIN)
 
 # A windows-specific build option
-wunicon $(WUNICONEXE): $(U)
+wunicon $(WUNICONEXE): nocc.icn $(U)
 	$(ICONT) -G -o wunicon$(EXE) $(U)
 	$(CP) wunicon$(EXE) $(BIN)
 
@@ -28,6 +28,17 @@ wunicon $(WUNICONEXE): $(U)
 
 unicon.u : unicon.icn
 	$(ICONT) $(UFLAGS) -c unicon
+
+nocc.u : nocc.icn nocchelper$(EXE)
+	$(ICONT) $(UFLAGS) -c nocc
+
+nocc.icn : nocchelper$(EXE)
+	./nocchelper$(EXE) > nocc.icn
+
+nocchelper$(EXE) : nocchelper.c
+# The explicit action helps Windows make do the right thing.
+# Use gcc explicitly because Makedefs.uni does not have a definition of $(CC).
+	gcc $^ -o $@
 
 ../lib/unilex.u: unilex.u
 	$(CP) unilex.u ../lib
@@ -97,4 +108,4 @@ unix.u: unix.icn
 #
 
 clean Clean:
-	$(RM) unicon$(EXE) wunicon$(EXE) uniclass.dir uniclass.pag uniclass.db $(UDEL)
+	$(RM) unicon$(EXE) wunicon$(EXE) uniclass.dir uniclass.pag uniclass.db $(UDEL) nocchelper$(EXE) nocc.icn

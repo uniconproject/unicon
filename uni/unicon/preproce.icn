@@ -58,6 +58,7 @@ procedure predefs()
 	    "co-expressions":"_CO_EXPRESSIONS"
 	    "native coswitch":"_NATIVECOSWITCH"
 	    "concurrent threads":"_CONCURRENT"
+            "concurrent threads, compiler subset":"_CONCURRENT"
 	    "console window":"_CONSOLE_WINDOW"
 	    "dynamic loading":"_DYNAMIC_LOADING"
 # "" environment variables
@@ -103,8 +104,8 @@ $endif
 #      t["_COMPILED"] := "1"  # see test preproc.icn
 #       ^ requires &features to have "compiled" when a prog is compiled
       # at present, iconc implies various features will be absent...
-      every delete(t, "_CONCURRENT" | "_EVENT_MONITOR" |
-		      "_MULTITASKING"| "_OVLD")
+      every delete(t, "_EVENT_MONITOR" | "_MULTITASKING"| "_OVLD")
+      if NoConcurrentCOMPILER() then delete(t,"_CONCURRENT")
       if not member(fset,"l") then  delete(t,"_LARGE_INTEGERS") # no -fl
       }
     return t

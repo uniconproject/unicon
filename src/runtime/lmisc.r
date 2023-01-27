@@ -919,11 +919,13 @@ operator{0,1} <<@ rcvbk(x,y)
 #ifdef PosixFns
       SOCKET ws;
 #endif					/* PosixFns */
+
+      status = BlkLoc(y)->File.status;
+
       /*
        * Make sure the file is open for reading.
        */
-      /* status = BlkLoc(y)->File.status;
-       * if ((status & Fs_Read) == 0)
+      /* if ((status & Fs_Read) == 0)
        * runerr(212, y);
        */
 

@@ -154,12 +154,11 @@ operator{*} ! bang(underef x -> dx)
 
 #ifdef PosixFns
 	    if (status & Fs_Socket) {
-	      SOCKET ws = (SOCKET) BlkD(dx,File)->fd.fd;;
 	      for (;;) {
 		StrLen(result) = 0;
 		do {
 		  DEC_NARTHREADS;
-		  if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
+		  if ((slen = sock_getstrg(sbuf, MaxReadStr, &dx)) == -1) {
 		    /* EOF is no error */
 		    INC_NARTHREADS_CONTROLLED;
 		    fail;

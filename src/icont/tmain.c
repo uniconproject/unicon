@@ -7,6 +7,8 @@
 #include "tproto.h"
 #include "tglobals.h"
 
+#include <stdlib.h>
+
 #if NT
    extern FILE *pathOpen(char *, char *);
 #endif
@@ -14,7 +16,7 @@
 #ifdef MSWindows
 
 #ifdef Concurrent
-int is_concurrent; 
+extern int is_concurrent; 
 #endif					/* Concurrent */
 
    #ifdef NTConsole
@@ -236,10 +238,10 @@ void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstan
 
 #endif
 
-HINSTANCE mswinInstance;
-int ncmdShow;
+extern HINSTANCE mswinInstance;
+extern int ncmdShow;
 
-jmp_buf mark_sj;
+extern jmp_buf mark_sj;
 
 #if 0
 int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,

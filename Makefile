@@ -28,8 +28,14 @@ default_target: allsrc
 	bin/unicon -features >> unicon-features.log
 	@echo ======================================== >> unicon-features.log
 	@cat unicon-features.log
+ifeq ($(MSYSTEM),UCRT64)
+	@echo "To finish, do either \"make WinPatch\" or \"make install\""
+	@echo "   make WinPatch completes the installation in situ."
+	@echo "   make install copies Unicon into a system location."
+	@echo "In either case, you should add the location of the installed binaries to your path."
+else
 	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
-
+endif
 
 .PHONY: plugins update_rev doc config help
 
@@ -204,9 +210,9 @@ UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc unicont uniconx uniconc udb uprof unidep unidoc \
-	ui ivib patchstr iyacc rt.a rt.h
-
+Tbins=unicon$(EXE) icont$(EXE) iconx$(EXE) iconc$(EXE) unicont$(EXE) uniconx$(EXE) \
+      uniconc$(EXE) udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) \
+      patchstr$(EXE) iyacc$(EXE) rt.a rt.h
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
 IPLdirs=lib incl gincl mincl procs
@@ -245,13 +251,13 @@ install Install:
 	@for f in $(Tbins); do \
 	  if test -f "bin/$$f"; then \
 	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
-	    if test "$$f" = $(UNICONT) ; then \
+	    if test "$$f" = $(UNICONT)$(EXE) ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/$(UNICONX) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
-	    elif test "$$f" = $(UNICONWT) ; then \
+	    elif test "$$f" = $(UNICONWT)$(EXE) ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/$(UNICONWX) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
-	    elif test "$$f" != "patchstr" ; then \
+	    elif test "$$f" != $(PATCHSTRX) ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
             fi; \
@@ -282,6 +288,28 @@ install Install:
 	@$(INST) -m 644 README.md $(DESTDIR)$(docdir)
 	@echo "Installing $(DESTDIR)$(docdir) ..."
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)
+
+ifeq ($(MSYSTEM),UCRT64)
+# Patch binaries in situ for a Windows UCRT64 Build using the full path to the build directory
+# "/x/path/to/buildir"  --> "x:\path\to\buildir"
+WINBUILD=`pwd -W | sed -e 's%^/\([a-zA-Z]\)/%\1:/%' -e 's%/%\\\\%g'`
+WinPatch:
+	@for f in $(Tbins); do \
+          if test -f "bin/$$f"; then \
+            echo "Patching $$f"; \
+            if test "$$f" = $(UNICONT)$(EXE) ; then \
+               $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin\\$(UNICONX) || true; \
+               $(PATCHSTR) -DPatchUnirotHere bin/$$f $(WINBUILD)\\plugins\\lib || true;  \
+            elif test "$$f" = $(UNICONWT)$(EXE) ; then \
+               $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin/$(UNICONWX) || true; \
+               $(PATCHSTR) -DPatchUnirotHere bin/$$f $(WINBUILD)\\plugins\\lib || true;  \
+            elif test "$$f" != $(PATCHSTRX) ; then \
+               $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin || true; \
+               $(PATCHSTR) -DPatchUnirotHere bin/$$f $(WINBUILD)\\plugins\\lib || true;  \
+             fi; \
+           fi; \
+        done
+endif
 
 # Bundle up for binary distribution.
 PKGDIR=$(PKG_TARNAME).$(PKG_VERSION)

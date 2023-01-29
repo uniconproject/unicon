@@ -114,6 +114,13 @@ explicitly set the compiler as follows:
 ```
 
 ### Windows
+There are two possibilities depending on the choice of the C runtime library.  You can choose
+the legacy Microsoft Visual C++ Runtime (MSVCRT), which runs on all versions of Windows, or the
+newer Universal C Runtime (UCRT64), which is used by Visual Studio but is only available by default
+on Windows 10 and newer. Starting from version 13.3, binary distributions of Unicon for Windows
+will be built with UCRT64.
+
+MSVCRT:
 
 - Download and run [mingw-get-setup.exe](https://sourceforge.net/projects/mingw/files/Installer/)
 
@@ -144,6 +151,37 @@ The option `x86_64-w64-mingw32` ensures the build is 64-bit. After the script fi
 make
 ```
 
+UCRT64:
+
+- Download and run the installer from https://www.msys2.org/. At the time of writing it is called
+  `msys2-x86_64-20230127.exe` but it may be updated from that version.
+
+-  Go through the installation process to get a UCRT64 environment.
+-  Using the UCRT64 shell, Install tools required for the build:
+```
+pacman -S mingw-w64-ucrt-x86_64-gcc
+pacman -S mingw-w64-ucrt-x86_64-diffutils
+pacman -S make
+pacman -S git
+```
+-  Clone the Unicon repository:
+```
+git clone --config core.autocrlf=input https://github.com/uniconproject/unicon
+```
+  The option `--config core.autocrlf=input` avoids problems with different conventions
+  for the end of line character.
+
+-  Configure Unicon:
+```
+./configure --build=x86_64-w64-mingw32
+```
+The option `x86_64-w64-mingw32` ensures the build is 64-bit. After the script finishes do:
+```
+make
+```
+  
+
+  
 Help
 ----
 

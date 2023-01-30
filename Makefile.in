@@ -299,13 +299,10 @@ WinPatch:
             echo "Patching $$f"; \
             if test "$$f" = $(UNICONT)$(EXE) ; then \
                $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin\\$(UNICONX) || true; \
-               $(PATCHSTR) -DPatchUnirotHere bin/$$f $(WINBUILD)\\plugins\\lib || true;  \
             elif test "$$f" = $(UNICONWT)$(EXE) ; then \
-               $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin/$(UNICONWX) || true; \
-               $(PATCHSTR) -DPatchUnirotHere bin/$$f $(WINBUILD)\\plugins\\lib || true;  \
+               $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin\\$(UNICONWX) || true; \
             elif test "$$f" != $(PATCHSTRX) ; then \
-               $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin || true; \
-               $(PATCHSTR) -DPatchUnirotHere bin/$$f $(WINBUILD)\\plugins\\lib || true;  \
+               $(PATCHSTR) -DPatchStringHere bin/$$f $(WINBUILD)\\bin\\ || true; \
              fi; \
            fi; \
         done

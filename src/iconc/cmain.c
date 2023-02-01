@@ -123,6 +123,7 @@ char **argv;
    char *hfile = NULL;			/* name of C file - include */
    char *ofile = NULL;			/* name of executable result */
    char *efile = NULL;			/* stderr file */
+   int keeptmp = 0;			/* Do not remove cfile and hfile */
 
    char *db_name = "rt.db";		/* data base name */
    char *incl_file = "rt.h";		/* header file name */
@@ -191,8 +192,9 @@ char **argv;
          }
          if (opts[n][0] != '-') {
            break;               /* stop at first non option */
-         } else { /* See if we have -help or -version */
-           if (0 == strncmp("-help", opts[n], 5)) {
+         } else { /* See if we have -help --help or -version */
+           if ((0 == strncmp("-help", opts[n], 5)) ||
+               (0 == strncmp("--help", opts[n], 6))) {
              printf("Usage: %s [-cEgmstTuU] [-help] [-version] [-C comp]\n", progname);
              printf("       [-e efile] [-f[adelns]] [-n[acest]] [-o ofile]\n");
              printf("       [-p opt] [-r path] [-v i] [-w[bf]] file ... [-x args]\n");
@@ -217,6 +219,7 @@ char **argv;
              printf("     -nt       :   disable type inference\n");
              printf("   -p opt      : pass opt through to C compiler (or linker)\n");
              printf("   -r path     : path is the location of the runtime system\n");
+             printf("   -K          : keep temporary files\n");
              printf("   -s          : work silently\n");
              printf("   -t          : turn on tracing\n");
              printf("   -T          : type trace only\n");
@@ -242,7 +245,7 @@ char **argv;
    /*
     * Process options.
     */
-   while ((c = getopt(argc,argv,"A:C:EL:S:TU:ce:f:gmn:o:p:r:stuv:w:x")) != EOF)
+   while ((c = getopt(argc,argv,"A:C:EL:S:KTU:ce:f:gmn:o:p:r:stuv:w:x")) != EOF)
       switch (c) {
          case 'A': /* here come the perifiles... */
             ca_init(optarg, argc, argv);
@@ -260,6 +263,9 @@ char **argv;
             break;
          case 'S': /* Ignore: interpreter only */
             break;
+         case 'K':
+           keeptmp = 1;
+           break;
          case 'T':
             just_type_trace = 1;
             break;
@@ -612,10 +618,12 @@ Deliberate Syntax Error
        * Finish by removing C files.
        */
       fprintf(stderr,"Succeeded\n");
-      rmfile(cfile);
-      rmfile(hfile);
-      rmfile(makename(buf,TargetDir,cfile,ObjSuffix));
+      if (0 == keeptmp) {
+        rmfile(cfile);
+        rmfile(hfile);
+        rmfile(makename(buf,TargetDir,cfile,ObjSuffix));
       }
+   }
 #ifdef IconcLogAllocations
    alc_stats();
 #endif					/* IconcLogAllocations */

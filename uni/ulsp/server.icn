@@ -53,6 +53,7 @@ class Server(
             "textDocument/didClose" : didClose(request_params)
             "textDocument/didChange" : didChange(request_params)
             "textDocument/completion" : completion(request_id, request_params)
+            "textDocument/signatureHelp" : write(ximage(request_params))
             "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
             "$/cancelRequest" : cancelRequest(request_id)
             default: { write("Don't know what to do with: ", request_method) }
@@ -120,7 +121,7 @@ class Server(
    method initialize(request_id)
       local results, res
 
-      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelp\":{\"contextSupport\":true}}}"
+      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelpProvider\":{\"contextSupport\":true,\"triggerCharacters\":\"(\"}}}"
 
       res := build_response(request_id, results)
       write(res)

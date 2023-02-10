@@ -28,6 +28,7 @@ class Server(
    sock,                         # Socket connection for communication with client 
    openFiles,                    # File container for open files
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
+   signatureHandler,
    lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
    )
 
@@ -53,9 +54,9 @@ class Server(
             "textDocument/didClose" : didClose(request_params)
             "textDocument/didChange" : didChange(request_params)
             "textDocument/completion" : completion(request_id, request_params)
-            "textDocument/signatureHelp" : write(ximage(request_params))
             "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
             "$/cancelRequest" : cancelRequest(request_id)
+            "textDocument/signatureHelp" : signatureHelp(request_params)
             default: { write("Don't know what to do with: ", request_method) }
             }
          }
@@ -204,6 +205,17 @@ class Server(
       write("We received a cancel request. We need to implement this still...")
    end
 
+########################################################
+#              textDocument/signatureHelp              #
+########################################################
+
+   method signatureHelp(request_params)
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      signatureHandler.setVariables(workspace_object, request_params)
+      result := signatureHandler.run()
+   end
+
    initially
 
        every 1 to 5 do
@@ -221,6 +233,7 @@ class Server(
        lsp_database.build()
 
        completionHandler := CompletionHandler()
+       signatureHandler := SignatureHandler()
 
 end
 

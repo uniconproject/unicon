@@ -56,7 +56,7 @@ class Server(
             "textDocument/completion" : completion(request_id, request_params)
             "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
             "$/cancelRequest" : cancelRequest(request_id)
-            "textDocument/signatureHelp" : signatureHelp(request_params)
+            "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
             default: { write("Don't know what to do with: ", request_method) }
             }
          }
@@ -209,7 +209,7 @@ class Server(
 #              textDocument/signatureHelp              #
 ########################################################
 
-   method signatureHelp(request_params)
+   method signatureHelp(request_id, request_params)
       uri := request_params["textDocument"]["uri"]
       workspace_object := openFiles[\uri]
       signatureHandler.setVariables(workspace_object, request_params)

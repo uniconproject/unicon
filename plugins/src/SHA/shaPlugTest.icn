@@ -99,6 +99,9 @@ procedure doTest(test)
    local sh
    local failcount := failures   # get initial failure count
    local mySet, myTable, myThread
+$ifdef _PATTERNS
+   local myPattern
+$endif
    local SHA1abc := "A9993E364706816ABA3E25717850C26C9CD0D89D"
    local SHA1Null := "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709"
    local ans
@@ -218,8 +221,15 @@ procedure doTest(test)
          mySet := set(1,2,3)
          myTable := table()
          myTable[42] := 42
+$ifdef _PATTERNS
+         myPattern := <abc*>
+$endif
 
-         Verify{ "Create illegal parameter types", \mySet & \myThread & \myTable }
+         Verify{ "Create illegal parameter types", \mySet & 
+$ifdef _PATTERNS
+                   \myPattern & (type(myPattern) == "pattern") &
+$endif
+                   \myThread & \myTable }
 
          sh := SecureHash("SHA1"); Verify{"SecureHash initialisation", \sh}
 
@@ -229,6 +239,9 @@ procedure doTest(test)
          Verify{"Thread parameter", not sh.Sha(myThread) }
          Verify{"Table parameter", not sh.Sha(myTable) }
          Verify{"Set parameter", not sh.Sha(mySet) }
+$ifdef _PATTERNS
+         Verify{"Pattern parameter", not sh.Sha(myPattern) }
+$endif
 
          # The underlying SHA routines shouldn't have been called by any of the above
          # so it should still be "open for business". Sha should produce a hash of the

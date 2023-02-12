@@ -13,7 +13,55 @@ class SignatureHandler(
    end
 
    method run()
-        write(ximage(params))
-        write("Hello!!!")
+      local line, character, methodName
+
+      line := params["position"]["line"]
+      character := params["position"]["character"]
+
+      _context := getContext(line, character, workspace.temp_file)
+
+      if _context == "valid" then {
+         methodName := getMethod(line, character, workspace.temp_file)
+         write(methodName)
+         }
+   end
+
+   method getContext(line, character, file)
+      desired_line := getDesiredLine(line, file)
+
+      desired_line ? {
+         while (&pos < character) do {
+            ch := move(1)
+            if ch == "#" then return "inside comment"
+            }
+         }
+
+      desired_line ? {
+         &pos := character
+         if move(-1) == " " then
+            return "space before"
+         }
+      
+      return "valid"
+   end
+
+   method getMethod(line, character, file)
+      desired_line := getDesiredLine(line, file)
+
+      desired_line ? {
+         &pos := character
+
+         until desired_line[&pos] == " " | desired_line[&pos] == "."  | &pos = 1 do move(-1)
+         if desired_line[&pos] == " " | desired_line[&pos] == "." then move(1)
+
+         return tab(upto("("))
+      }
+   end
+
+   method getDesiredLine(line, file)
+      f := open(file)
+      every !line do read(f)
+      desired_line := read(f)
+      return desired_line
    end
 end

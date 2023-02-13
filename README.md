@@ -20,7 +20,7 @@ or
 ```
 git clone git://git.code.sf.net/p/unicon/unicon
 ```
-
+On Windows systems it is advised to add the `--config core.autocrlf=input` option to the `git` command.
 `git` is available on linux via the standard package managers, for example on a Debian system
 
 ```
@@ -120,6 +120,43 @@ newer Universal C Runtime (UCRT64), which is used by Visual Studio but is only a
 on Windows 10 and newer. Starting from version 13.3, binary distributions of Unicon for Windows
 will be built with UCRT64.
 
+UCRT64:
+
+- Download and run the installer from https://www.msys2.org/. At the time of writing it is called
+  `msys2-x86_64-20230127.exe` but it may be updated from that version.
+
+-  Go through the installation process to get a UCRT64 environment.
+-  Using the UCRT64 shell, Install tools required for the build:
+```
+pacman -S mingw-w64-ucrt-x86_64-gcc
+pacman -S mingw-w64-ucrt-x86_64-diffutils
+pacman -S make
+pacman -S git
+```
+- Install the optional libraries for a full build (Unicon will build without them but some features
+will be absent).
+```
+pacman -S mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libpng mingw-w64-x86_64-openssl
+```
+
+- Clone the Unicon repository:
+```
+git clone --config core.autocrlf=input https://github.com/uniconproject/unicon
+```
+  The option `--config core.autocrlf=input` avoids problems with different conventions
+  for the end of line character.
+
+-  Configure Unicon:
+```
+./configure --build=x86_64-w64-mingw32
+```
+The option `x86_64-w64-mingw32` ensures the build is 64-bit. After the script finishes do:
+```
+make
+```
+Note that, although the build environment is UCRT64, the resulting Unicon binaries may be run from
+the standard Windows command line `cmd` terminal.
+
 MSVCRT:
 
 - Download and run [mingw-get-setup.exe](https://sourceforge.net/projects/mingw/files/Installer/)
@@ -134,6 +171,8 @@ Note that you maybe missing the tool "make". TDM MinGW comes with a "make" that 
 That file can be found under the insallation directory of MinGW64 inside the bin directory.
 create a copy of that file and name it "make.exe" before continuing.
 
+- Clone the Unicon repository (same options as UCRT64).
+
 After that you can use the standard Windows command line `cmd` terminal to build Unicon.
 ```
 sh configure
@@ -145,35 +184,6 @@ make WUnicon64
 Which is a shortcut for running:
 ```
 sh configure --build=x86_64-w64-mingw32
-```
-The option `x86_64-w64-mingw32` ensures the build is 64-bit. After the script finishes do:
-```
-make
-```
-
-UCRT64:
-
-- Download and run the installer from https://www.msys2.org/. At the time of writing it is called
-  `msys2-x86_64-20230127.exe` but it may be updated from that version.
-
--  Go through the installation process to get a UCRT64 environment.
--  Using the UCRT64 shell, Install tools required for the build:
-```
-pacman -S mingw-w64-ucrt-x86_64-gcc
-pacman -S mingw-w64-ucrt-x86_64-diffutils
-pacman -S make
-pacman -S git
-```
--  Clone the Unicon repository:
-```
-git clone --config core.autocrlf=input https://github.com/uniconproject/unicon
-```
-  The option `--config core.autocrlf=input` avoids problems with different conventions
-  for the end of line character.
-
--  Configure Unicon:
-```
-./configure --build=x86_64-w64-mingw32
 ```
 The option `x86_64-w64-mingw32` ensures the build is 64-bit. After the script finishes do:
 ```

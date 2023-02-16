@@ -13,38 +13,73 @@ class SignatureHandler(
    end
 
    method run()
-      local line, character, methodName
+      local line, character, methodName, internal_params
 
+      # Collect line and character position #
       line := params["position"]["line"]
       character := params["position"]["character"]
 
-      _context := getContext(line, character, workspace.temp_file)
 
-      if _context == "valid" then {
+      # Collect context information (inside comment, space before, object before, no object before) #
+      _context := getContext(line, character, workspace.temp_file)
+      \_context | fail
+
+      # Observe context #
+      write(_context)
+
+      # If object before, collect object information #
+      if _context == "object before" then {
          methodName := getMethod(line, character, workspace.temp_file)
-         write(methodName)
+         objectName := getObject(line, character, workspace.temp_file)
+      } 
+
+      # If no object before, treat as method inside class, internal procedure, or built-in-funtion (eventually) #
+      else { 
+         if _context == "no object before" then {
+            methodName := getMethod(line, character, workspace.temp_file)
+            internal_classes := workspace.getInternalClasses()
+
+            # Only checking to see if method is in an internal class currently #
+            every _class := workspace.getFile().getClasses().get() do {
+               if member(internal_classes[_class.getName()]["methods"], methodName) then {
+                  write(methodName || ", is part of " || _class.getName() || ", and has params: \n")
+                  write(ximage(internal_classes[_class.getName()]["methods"][methodName]["params"]))
+               }
+            }
          }
+      }
    end
 
+   # Retriving context #
    method getContext(line, character, file)
       desired_line := getDesiredLine(line, file)
+
+      \desired_line | fail
 
       desired_line ? {
          while (&pos < character) do {
             ch := move(1)
-            if ch == "#" then return "inside comment"
+            if ch == "#" then 
+               return "inside comment"
             }
          }
 
       desired_line ? {
          &pos := character
-         if move(-1) == " " then
+         if move(-1) == " " then 
             return "space before"
          }
       
-      return "valid"
+      desired_line ? {
+         &pos := character
+         until desired_line[&pos] == " " | desired_line[&pos] == "." | &pos = 1 do move(-1)
+         if desired_line[&pos] == "." & desired_line[&pos -1] ~== " " then 
+            return "object before"
+      }
+      return "no object before"
    end
 
+   # Retriving method name #
    method getMethod(line, character, file)
       desired_line := getDesiredLine(line, file)
 
@@ -58,6 +93,21 @@ class SignatureHandler(
       }
    end
 
+   # Retriving object name #
+   method getObject(line, character, file)
+      desired_line := getDesiredLine(line, file)
+
+      desired_line ? {
+         &pos := character
+
+         until desired_line[&pos] == " " | &pos = 1 do move(-1)
+         if desired_line[&pos] == " " then move(1)
+
+         return tab(upto("."))
+      }
+   end
+
+   # Returning line from temp file as string #
    method getDesiredLine(line, file)
       f := open(file)
       every !line do read(f)

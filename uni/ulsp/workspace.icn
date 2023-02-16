@@ -162,9 +162,14 @@ class Workspace(
        every _class := getFile().getClasses().get() do {
           internal_classes[_class.getName()] := table()
             
-          internal_classes[_class.getName()]["methods"] := []
+          internal_classes[_class.getName()]["methods"] := table()
           every _method := _class.getMethods().get() do {
-             put(internal_classes[_class.getName()]["methods"], _method.getName())
+             internal_classes[_class.getName()]["methods"][_method.getName()] := table()
+
+             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []
+             every _param := _method.getParams().get() do {
+               put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], _param.getName())
+               }
              }
           internal_classes[_class.getName()]["attributes"] := []
           every _attribute := _class.getParams().get() do {
@@ -280,7 +285,7 @@ class Workspace(
        className := objects[objectName]
 
        if member(linked_classes, className) then {
-          every class_method := !linked_classes[className]["methods"] do {
+          every class_method := key(linked_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
           every class_attribute := !linked_classes[className]["attributes"] do {
@@ -288,7 +293,7 @@ class Workspace(
              }
           }
        if member(imported_classes, className) then {
-          every class_method := !imported_classes[className]["methods"] do {
+          every class_method := key(imported_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
           every class_attribute := !imported_classes[className]["attributes"] do {
@@ -296,7 +301,7 @@ class Workspace(
              }
           }
        if member(internal_classes, className) then {
-          every class_method := !internal_classes[className]["methods"] do {
+          every class_method := key(internal_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
           every class_attribute := !internal_classes[className]["attributes"] do {

@@ -214,6 +214,8 @@ class Server(
       workspace_object := openFiles[\uri]
       signatureHandler.setVariables(workspace_object, request_params)
       result := signatureHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
    end
 
    initially

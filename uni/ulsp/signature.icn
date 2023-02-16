@@ -13,7 +13,7 @@ class SignatureHandler(
    end
 
    method run()
-      local line, character, methodName, internal_params
+      local line, character, methodName, results_table
 
       # Collect line and character position #
       line := params["position"]["line"]
@@ -27,27 +27,67 @@ class SignatureHandler(
       # Observe context #
       write(_context)
 
-      # If object before, collect object information #
-      if _context == "object before" then {
-         methodName := getMethod(line, character, workspace.temp_file)
-         objectName := getObject(line, character, workspace.temp_file)
-      } 
+      # Create initial return table#
+      results_table := table()
+      results_table["signatures"] := []
 
-      # If no object before, treat as method inside class, internal procedure, or built-in-funtion (eventually) #
-      else { 
-         if _context == "no object before" then {
+      case _context of {
+
+         # If object before, collect object information #
+         "object before" : {
             methodName := getMethod(line, character, workspace.temp_file)
-            internal_classes := workspace.getInternalClasses()
+            objectName := getObject(line, character, workspace.temp_file)
+         } 
 
-            # Only checking to see if method is in an internal class currently #
-            every _class := workspace.getFile().getClasses().get() do {
-               if member(internal_classes[_class.getName()]["methods"], methodName) then {
-                  write(methodName || ", is part of " || _class.getName() || ", and has params: \n")
-                  write(ximage(internal_classes[_class.getName()]["methods"][methodName]["params"]))
+         # If no object before, treat as method inside class, internal procedure, or built-in-funtion (eventually) #
+         "no object before" : { 
+            if _context == "no object before" then {
+
+               methodName := getMethod(line, character, workspace.temp_file)
+               internal_classes := workspace.getInternalClasses()
+
+               # Only checking to see if method is in an internal class currently #
+               every _class := workspace.getFile().getClasses().get() do {
+                  if member(internal_classes[_class.getName()]["methods"], methodName) then {
+
+                     # Create a valid signature #
+                     signature := createSignature(methodName, internal_classes[_class.getName()]["methods"][methodName])
+
+                     # Put method params in result table #
+                     put(results_table["signatures"], table("label", signature, "parameters", []))
+                     every paramName := !internal_classes[_class.getName()]["methods"][methodName]["params"] do 
+                        put(results_table["signatures"][1]["parameters"], table("label", paramName))
+
+                     # Observe results_table #
+                     write(ximage(results_table))
+                  }
                }
             }
          }
       }
+
+      # Convert and return finished table #
+      results := tojson(results_table)
+      return results
+   end
+
+   # Create a valid signature #
+   method createSignature(function, functionTable)
+      local signature, counter
+
+      counter := 0
+
+      signature := function || "("
+      every paramName := !functionTable["params"] do {
+         if counter < *functionTable["params"] - 1 then
+            signature ||:= paramName || ", "
+         else
+            signature ||:= paramName
+         counter +:= 1
+         }
+      signature ||:= ")"
+
+      return signature
    end
 
    # Retriving context #

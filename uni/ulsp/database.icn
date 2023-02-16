@@ -103,14 +103,19 @@ class LSPDB(
              if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()
              every class_in_file := file_in_pack.getClasses().get() do {
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()] := table()
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := []
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := table()
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"] := []
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["superclass"] := []
 
 
                 every method_in_class := class_in_file.getMethods().get() do {
-                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"], method_in_class.getName())
+                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class] := table()
+
+                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class]["params"] := table()
+                   every param_in_method := method_in_class.getParams().get() do {
+                     put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class]["params"], param_in_method.getName())
+                     }
                    }
                 every class_param := class_in_file.getParams().get() do {
                    put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], class_param.getName())

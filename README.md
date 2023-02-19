@@ -112,6 +112,9 @@ explicitly set the compiler as follows:
 ```
 ./configure CC=clang CXX=clang++
 ```
+If you want access to the graphics facilities of Unicon, you also need to download
+and install the XQuartz package from https://www.xquartz.org/.
+
 
 ### Windows
 There are two possibilities depending on the choice of the C runtime library.  You can choose
@@ -128,15 +131,13 @@ UCRT64:
 -  Go through the installation process to get a UCRT64 environment.
 -  Using the UCRT64 shell, Install tools required for the build:
 ```
-pacman -S mingw-w64-ucrt-x86_64-gcc
-pacman -S mingw-w64-ucrt-x86_64-diffutils
-pacman -S make
-pacman -S git
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-diffutils
+pacman -S make git
 ```
 - Install the optional libraries for a full build (Unicon will build without them but some features
 will be absent).
 ```
-pacman -S mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libpng mingw-w64-x86_64-openssl
+pacman -S mingw-w64-ucrt-x86_64-openssl  mingw-w64-ucrt-x86_64-libpng mingw-w64-ucrt-x86_64-libjpeg-turbo 
 ```
 
 - Clone the Unicon repository:
@@ -154,8 +155,8 @@ The option `x86_64-w64-mingw32` ensures the build is 64-bit. After the script fi
 ```
 make
 ```
-Note that, although the build environment is UCRT64, the resulting Unicon binaries may be run from
-the standard Windows command line `cmd` terminal.
+Note that, although the build environment is UCRT64, the resulting Unicon binaries may also be
+run from the standard Windows command line `cmd` terminal.
 
 MSVCRT:
 

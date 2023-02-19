@@ -36,7 +36,7 @@
 #include <io.h>
 
 typedef struct _FINDFILE_TAG {
-   long			handle;
+   intptr_t		handle;
    struct _finddata_t	fileinfo;
    } FINDDATA_T;
 

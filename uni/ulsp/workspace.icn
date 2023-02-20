@@ -166,9 +166,11 @@ class Workspace(
           every _method := _class.getMethods().get() do {
              internal_classes[_class.getName()]["methods"][_method.getName()] := table()
 
-             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []
+             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := table()      
              every _param := _method.getParams().get() do {
-               put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], _param.getName())
+               internal_classes[_class.getName()]["methods"][_method.getName()]["params"][_param.getName()] := table()
+               internal_classes[_class.getName()]["methods"][_method.getName()]["params"][_param.getName()]["type"] := _param.getTypeValue()
+               internal_classes[_class.getName()]["methods"][_method.getName()]["params"][_param.getName()]["default"] := _param.getDefValue()
                }
              }
           internal_classes[_class.getName()]["attributes"] := []

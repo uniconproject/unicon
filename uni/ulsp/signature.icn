@@ -27,7 +27,7 @@ class SignatureHandler(
       # Observe context #
       write(_context)
 
-      # Create initial return table#
+      # Create initial return table #
       results_table := table()
       results_table["signatures"] := []
 
@@ -41,26 +41,26 @@ class SignatureHandler(
 
          # If no object before, treat as method inside class, internal procedure, or built-in-funtion (eventually) #
          "no object before" : { 
-            if _context == "no object before" then {
+            methodName := getMethod(line, character, workspace.temp_file)
+            internal_classes := workspace.getInternalClasses()
 
-               methodName := getMethod(line, character, workspace.temp_file)
-               internal_classes := workspace.getInternalClasses()
+            # Only checking to see if method is in an internal class currently #
+            every _class := workspace.getFile().getClasses().get() do {
+               if member(internal_classes[_class.getName()]["methods"], methodName) then {
 
-               # Only checking to see if method is in an internal class currently #
-               every _class := workspace.getFile().getClasses().get() do {
-                  if member(internal_classes[_class.getName()]["methods"], methodName) then {
+                  # Create a valid signature #
+                  signature := createSignature(methodName, internal_classes[_class.getName()]["methods"][methodName])
 
-                     # Create a valid signature #
-                     signature := createSignature(methodName, internal_classes[_class.getName()]["methods"][methodName])
+                  write(ximage(internal_classes[_class.getName()]["methods"][methodName]))
+                  write(signature)
 
-                     # Put method params in result table #
-                     put(results_table["signatures"], table("label", signature, "parameters", []))
-                     every paramName := !internal_classes[_class.getName()]["methods"][methodName]["params"] do 
-                        put(results_table["signatures"][1]["parameters"], table("label", paramName))
+                  # Put method params in result table #
+                  put(results_table["signatures"], table("label", signature, "parameters", []))
+                  every paramName := key(internal_classes[_class.getName()]["methods"][methodName]["params"]) do 
+                     put(results_table["signatures"][1]["parameters"], table("label", paramName))
 
-                     # Observe results_table #
-                     write(ximage(results_table))
-                  }
+                  # Observe results_table #
+                  write(ximage(results_table["signatures"]))
                }
             }
          }
@@ -78,13 +78,35 @@ class SignatureHandler(
       counter := 0
 
       signature := function || "("
-      every paramName := !functionTable["params"] do {
-         if counter < *functionTable["params"] - 1 then
-            signature ||:= paramName || ", "
-         else
-            signature ||:= paramName
+
+      every paramName := key(functionTable["params"]) do {
+         if member(functionTable["params"][paramName], "type") & member(functionTable["params"][paramName], "default") then {
+            if counter < *functionTable["params"] - 1 then
+               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"] || ":" || functionTable["params"][paramName]["default"] || ", "
+            else
+               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"] || ":" || functionTable["params"][paramName]["default"]
+            }
+         else if member(functionTable["params"][paramName], "type") then {
+            if counter < *functionTable["params"] - 1 then
+               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"] || ", "
+            else
+               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"]
+            }
+         else if member(functionTable["params"][paramName], "default") then {
+            if counter < *functionTable["params"] - 1 then
+               signature ||:= paramName || ":" || functionTable["params"][paramName]["default"] || ", "
+            else
+               signature ||:= paramName || ":" || functionTable["params"][paramName]["default"]
+            }
+         else {
+            if counter < *functionTable["params"] - 1 then
+               signature ||:= paramName || ", "
+            else
+               signature ||:= paramName
+            }
          counter +:= 1
          }
+
       signature ||:= ")"
 
       return signature

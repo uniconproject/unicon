@@ -14,16 +14,32 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: windows-2019,  name: 'Windows_64-bit',  opt: '' }
+        -  { os: windows-latest,  name: 'Windows_64-bit',  opt: '' }
         #-  { os: windows-latest,  name: 'Windows_32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
 
-    - name: Install dependencies
-      run: |
-        choco install openssl
-        choco install libjpeg-turbo
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-diffutils
+          mingw-w64-ucrt-x86_64-openssl
+          mingw-w64-ucrt-x86_64-libpng
+          mingw-w64-ucrt-x86_64-libjpeg-turbo
+          make
+          git
+
+    - run: git config --global core.autocrlf input
+      shell: bash
+
+    - name: Checkout
+      uses: actions/checkout@v3
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -56,7 +72,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |

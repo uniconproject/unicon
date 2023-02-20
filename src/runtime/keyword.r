@@ -201,14 +201,11 @@ keyword{2} dateline
       int tz_sec, offset_hrs;
       CURTSTATVAR();
 
+#ifdef _UCRT
+      _tzset();
+#endif
       time(&t);
       ct = localtime(&t);
-
-#if defined(SUN) || NT || defined(HAVE_TIMEZONE)
-      tz_sec = timezone;
-#else
-      tz_sec = ct->tm_gmtoff;
-#endif
 
       if ((hour = ct->tm_hour) >= 12) {
          merid = "pm";
@@ -226,9 +223,29 @@ keyword{2} dateline
       Protect(tmp = alcstr(sbuf, i), runerr(0));
       suspend string(i, tmp);
 
+#ifdef _UCRT
+      _get_timezone(&tz_sec);
+#elif defined(SUN) || NT || defined(HAVE_TIMEZONE)
+      tz_sec = timezone;
+#else
+      tz_sec = ct->tm_gmtoff;
+#endif
+
       offset_hrs = tz_sec/3600;
       if (ct->tm_isdst) offset_hrs--;
-#if defined(SUN) || NT || defined(HAVE_TZNAME)
+#ifdef _UCRT
+      {
+	size_t tzNameSize = -1;
+	_get_tzname(&tzNameSize, NULL, 0, (ct->tm_isdst ? 1 : 0));
+	if (tzNameSize > 0) {
+	  char tzNameBuf[tzNameSize];
+	  _get_tzname(&tzNameSize, &tzNameBuf[0],tzNameSize, (ct->tm_isdst ? 1 : 0));
+	  sprintf(sbuf, "UTC%+d %s", offset_hrs, &tzNameBuff[0]);
+	} else {
+	  sprintf(sbuf, "UTC%+d (unknown timezone)", offset_hrs);
+	}
+      }
+#elif defined(SUN) || NT || defined(HAVE_TZNAME)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_isdst?tzname[1]:tzname[0]);
 #else if defined(HAVE_STRUCT_TM_TM_ZONE)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);

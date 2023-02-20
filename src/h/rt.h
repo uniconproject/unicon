@@ -35,4 +35,10 @@
 #include "../h/rexterns.h"
 #include "../h/rproto.h"
 
+#ifdef _UCRT    /* Building on Windows using the Universal C Runtime */
+#include <io.h>
+#include "../h/filepat.h"
+#endif                                  /* _UCRT */
+
+
 #endif					/* RT_DOT_H */

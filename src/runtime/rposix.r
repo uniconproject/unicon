@@ -194,7 +194,7 @@ stringint signalnames[] = {
 
 #if NT
 WORD wVersionRequested = MAKEWORD( 2, 0 );
-WSADATA wsaData;
+extern WSADATA wsaData;
 int werr;
 int WINSOCK_INITIAL=0;
 

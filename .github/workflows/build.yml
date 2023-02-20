@@ -1,5 +1,8 @@
 name: Build
+
+# Controls when the action will run.
 on:
+# Triggers the workflow on push or pull request events for the specified branches.
   push:
     branches:
       - ci
@@ -13,20 +16,75 @@ on:
     paths-ignore:
     - 'docs/**'
 
+  # Allow running this workflow manually from the Actions tab.
+  workflow_dispatch:
+
 jobs:
-  WMBuild:
+  Windows:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
       matrix:
         cfg:
-        -  { os: windows-2019,  name: 'Windows 64-bit',  opt: '' }
-        -  { os: macos-latest,    name: 'macOS',           opt: 'CC=clang CXX=clang++' }
+        -  { os: windows-latest,  name: 'Windows 64-bit',  opt: '' }
         #-  { os: windows-latest,  name: 'Windows 32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-diffutils
+          mingw-w64-ucrt-x86_64-openssl
+          mingw-w64-ucrt-x86_64-libpng
+          mingw-w64-ucrt-x86_64-libjpeg-turbo
+          make
+          git
+
+    - run: git config --global core.autocrlf input
+      shell: bash
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure
+      run: sh configure  ${{ matrix.cfg.opt }}
+
+    - name: Make
+      run: make
+
+    - name: HtmlDoc
+      run: make htmldoc
+
+    - name: Test
+      run: make Test
+
+    - name: TestReport
+      run: make -C tests Report
+
+    - name: Summary
+      run: |
+        cat unicon-config.log
+        cat unicon-features.log
+
+  macOS:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
+    strategy:
+      matrix:
+        cfg:
+        -  { os: macos-latest,    name: 'macOS',           opt: 'CC=clang CXX=clang++' }
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -98,7 +156,7 @@ jobs:
             esac
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Configure
       run: ./configure
@@ -136,7 +194,7 @@ jobs:
         -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |
@@ -187,7 +245,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |

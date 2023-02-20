@@ -84,7 +84,7 @@ static word heap[255*1024*1024]; /* Make sure sizeof(heap) fits in 32 bits */
  * To get column numbers starting from 0, rather than 1, call this procedure
  * with a non null parameter before calling any other SQLi_ proc
  */
-int SQLi_Init(int argc, descriptor argv[])
+RTEX int SQLi_Init(int argc, descriptor argv[])
 {
 
   /* ToDo: add other customisations? */
@@ -113,18 +113,18 @@ int SQLi_Init(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_libversion(int argc, descriptor argv[])
+RTEX int SQLi_libversion(int argc, descriptor argv[])
 {
   RetConstString((char *)sqlite3_libversion());
 }
 
 /*------------------------------------------------------------*/
-int SQLi_libversion_number(int argc, descriptor argv[])
+RTEX int SQLi_libversion_number(int argc, descriptor argv[])
 {
   RetInteger(sqlite3_libversion_number());
 }
 
-int SQLi_errmsg(int argc, descriptor argv[])
+RTEX int SQLi_errmsg(int argc, descriptor argv[])
 {
   sqlite3 **sqlDB;
 
@@ -135,13 +135,13 @@ int SQLi_errmsg(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_Error(int argc, descriptor argv[])
+RTEX int SQLi_Error(int argc, descriptor argv[])
 {
   RetString((char *)sqlite3_errstr(sqlAns));
 }
 
 /*------------------------------------------------------------*/
-int SQLi_open(int argc, descriptor argv[])
+RTEX int SQLi_open(int argc, descriptor argv[])
 {
   sql3ExtDb *sqlDB;
 
@@ -166,7 +166,7 @@ int SQLi_open(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_close(int argc, descriptor argv[])
+RTEX int SQLi_close(int argc, descriptor argv[])
 {
   sqlite3 **sqlDB;
   ArgExternal(1);               /* The database handle */
@@ -178,7 +178,7 @@ int SQLi_close(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_prepare(int argc, descriptor argv[])
+RTEX int SQLi_prepare(int argc, descriptor argv[])
 {
   sqlite3 **sqlDB;
   char *sqlText;
@@ -207,7 +207,7 @@ int SQLi_prepare(int argc, descriptor argv[])
 }
 /*------------------------------------------------------------*/
 /* Bind a single parameter to the specified column            */
-int SQLi_bindArg(int argc, descriptor argv[])
+RTEX int SQLi_bindArg(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
   int col;
@@ -280,7 +280,7 @@ int SQLi_bindArg(int argc, descriptor argv[])
 
 /*------------------------------------------------------------*/
 /* Bind a series of parameters starting from column 1         */
-int SQLi_bind(int argc, descriptor argv[])
+RTEX int SQLi_bind(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
 
@@ -360,7 +360,7 @@ int SQLi_bind(int argc, descriptor argv[])
 
 
 /*------------------------------------------------------------*/
-int SQLi_step(int argc, descriptor argv[])
+RTEX int SQLi_step(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
 
@@ -381,7 +381,7 @@ int SQLi_step(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_finalize(int argc, descriptor argv[])
+RTEX int SQLi_finalize(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
 
@@ -398,7 +398,7 @@ int SQLi_finalize(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_column_count(int argc, descriptor argv[])
+RTEX int SQLi_column_count(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
 
@@ -409,7 +409,7 @@ int SQLi_column_count(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_column_type(int argc, descriptor argv[])
+RTEX int SQLi_column_type(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
   long col;
@@ -424,7 +424,7 @@ int SQLi_column_type(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_column_name(int argc, descriptor argv[])
+RTEX int SQLi_column_name(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
   long col;
@@ -441,7 +441,7 @@ int SQLi_column_name(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_column_string(int argc, descriptor argv[])
+RTEX int SQLi_column_string(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
   long col;
@@ -458,7 +458,7 @@ int SQLi_column_string(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_column_integer(int argc, descriptor argv[])
+RTEX int SQLi_column_integer(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
   long col;
@@ -473,7 +473,7 @@ int SQLi_column_integer(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_column_real(int argc, descriptor argv[])
+RTEX int SQLi_column_real(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
   long col;
@@ -488,7 +488,7 @@ int SQLi_column_real(int argc, descriptor argv[])
 }
 
 /*------------------------------------------------------------*/
-int SQLi_column(int argc, descriptor argv[])
+RTEX int SQLi_column(int argc, descriptor argv[])
 {
   sqlite3_stmt **sqlStmnt;
   long col;

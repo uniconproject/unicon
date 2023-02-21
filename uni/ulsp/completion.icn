@@ -37,6 +37,8 @@ class CompletionHandler(
             buildDefaultCompletionItems(results_table, workspace)
             }
          }
+      
+      write(ximage(results_table))
 
       results := tojson(results_table)
       return results
@@ -144,13 +146,13 @@ class CompletionHandler(
    end
 
    method addWorkspaceProcedures(results_table, workspace)
-      every _internalProcedure := !workspace.getInternalProcedures() do {
+      every _internalProcedure := key(workspace.getInternalProcedures()) do {
          put(results_table["items"], table("label", _internalProcedure, "kind", 3))
          }
-      every _linkedProcedure := !workspace.getLinkedProcedures() do {
+      every _linkedProcedure := key(workspace.getLinkedProcedures()) do {
          put(results_table["items"], table("label", _linkedProcedure, "kind", 3))
          }
-      every _importedProcedure := !workspace.getImportedProcedures() do {
+      every _importedProcedure := key(workspace.getImportedProcedures()) do {
          put(results_table["items"], table("label", _importedProcedure, "kind", 3))
          }
    end

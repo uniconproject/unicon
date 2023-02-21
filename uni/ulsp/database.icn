@@ -106,9 +106,16 @@ class LSPDB(
                 }
 
 
-             if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := []
+             if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := table()
              every procedure_in_file := file_in_pack.getProcedures().get() do {
-                put(package_db[pack.getName()]["files"][file_without_ext]["procedures"], procedure_in_file.getName())
+                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
+
+                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := table()
+                every param_in_procedure := procedure_in_file.getParams().get() do {
+                     package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"][param_in_procedure.getName()] := table()
+                     package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"][param_in_procedure.getName()]["type"] := param_in_procedure.getTypeValue()
+                     package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"][param_in_procedure.getName()]["default"] := param_in_procedure.getDefValue()
+                  }
                 }
 
              if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()

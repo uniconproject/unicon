@@ -109,7 +109,17 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setInternalProcedures()
-       internal_procedures := getFile().getProcedureNames()
+       internal_procedures := table()
+       every _procedure := getFile().getProcedures().get() do {
+         internal_procedures[_procedure.getName()] := table()
+
+         internal_procedures[_procedure.getName()]["params"] := table()
+         every _param := _procedure.getParams().get() do {
+            internal_procedures[_procedure.getName()]["params"][_param.getName()] := table()
+            internal_procedures[_procedure.getName()]["params"][_param.getName()]["type"] := _param.getTypeValue()
+            internal_procedures[_procedure.getName()]["params"][_param.getName()]["default"] := _param.getDefValue()
+         }
+       }
     end
 
 
@@ -122,10 +132,10 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setLinkedProcedures()
-       linked_procedures := []
+       linked_procedures := table()
        every _link := !links do {
-          every _procedure := !lsp_database.package_db["(main)"]["files"][_link]["procedures"] do {
-             put(linked_procedures, _procedure)
+          every _key := key(lsp_database.package_db["(main)"]["files"][_link]["procedures"]) do {
+             linked_procedures[_key] := lsp_database.package_db["(main)"]["files"][_link]["procedures"][_key]
              }
           }
     end
@@ -139,11 +149,11 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setImportedProcedures()
-       imported_procedures := []
+       imported_procedures := table()
        every _import := !imports do {
           every file_in_pack := !lsp_database.package_db[_import]["files"] do {
-             every _procedure := !file_in_pack["procedures"] do {
-                put(imported_procedures, _procedure)
+             every _key := key(file_in_pack["procedures"]) do {
+                imported_procedures[_key] := file_in_pack["procedures"][_key]
                 }
              }
           }

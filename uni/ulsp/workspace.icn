@@ -124,7 +124,7 @@ class Workspace(
     method setLinkedProcedures()
        linked_procedures := []
        every _link := !links do {
-          every _procedure := !lsp_database["(main)"]["files"][_link]["procedures"] do {
+          every _procedure := !lsp_database.package_db["(main)"]["files"][_link]["procedures"] do {
              put(linked_procedures, _procedure)
              }
           }
@@ -141,7 +141,7 @@ class Workspace(
     method setImportedProcedures()
        imported_procedures := []
        every _import := !imports do {
-          every file_in_pack := !lsp_database[_import]["files"] do {
+          every file_in_pack := !lsp_database.package_db[_import]["files"] do {
              every _procedure := !file_in_pack["procedures"] do {
                 put(imported_procedures, _procedure)
                 }
@@ -191,8 +191,8 @@ class Workspace(
     method setLinkedClasses()
        linked_classes := table()
        every _link := !links do {
-          every _key := key(lsp_database["(main)"]["files"][_link]["classes"]) do {
-             linked_classes[_key] := lsp_database["(main)"]["files"][_link]["classes"][_key]
+          every _key := key(lsp_database.package_db["(main)"]["files"][_link]["classes"]) do {
+             linked_classes[_key] := lsp_database.package_db["(main)"]["files"][_link]["classes"][_key]
              }
           }
     end
@@ -208,7 +208,7 @@ class Workspace(
     method setImportedClasses()
        imported_classes := table()
        every _import := !imports do {
-          every file_in_pack := !lsp_database[_import]["files"] do {
+          every file_in_pack := !lsp_database.package_db[_import]["files"] do {
              every _key := key(file_in_pack["classes"]) do {
                 imported_classes[_key] := file_in_pack["classes"][_key]
                 }

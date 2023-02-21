@@ -24,9 +24,6 @@ class SignatureHandler(
       _context := getContext(line, character, workspace.temp_file)
       \_context | fail
 
-      # Observe context #
-      write(_context)
-
       # Create initial return table #
       results_table := table()
       results_table["signatures"] := []
@@ -35,9 +32,50 @@ class SignatureHandler(
 
          # If object before, collect object information #
          "object before" : {
+
             methodName := getMethod(line, character, workspace.temp_file)
             objectName := getObject(line, character, workspace.temp_file)
-         } 
+            objects := workspace.getObjects()
+            className := objects[objectName]
+
+            linked_classes := workspace.getLinkedClasses()
+            imported_classes := workspace.getImportedClasses()
+            internal_classes := workspace.getInternalClasses()
+
+            if member(linked_classes, className) then {
+               if member(linked_classes[className]["methods"], methodName) then {
+
+               signature := createSignature(methodName, linked_classes[className]["methods"][methodName])
+               put(results_table["signatures"], table("label", signature, "parameters", []))
+
+               every paramName := key(linked_classes[className]["methods"][methodName]["params"]) do 
+                  put(results_table["signatures"][1]["parameters"], table("label", paramName))
+
+                  }
+               } 
+            else if member(imported_classes, className) then {
+               if member(imported_classes[className]["methods"], methodName) then {
+
+               signature := createSignature(methodName, imported_classes[className]["methods"][methodName])
+               put(results_table["signatures"], table("label", signature, "parameters", []))
+
+               every paramName := key(imported_classes[className]["methods"][methodName]["params"]) do 
+                  put(results_table["signatures"][1]["parameters"], table("label", paramName))
+
+                  }
+               }
+            else if member(internal_classes, className) then {
+               if member(internal_classes[className]["methods"], methodName) then {
+
+               signature := createSignature(methodName, internal_classes[className]["methods"][methodName])
+               put(results_table["signatures"], table("label", signature, "parameters", []))
+
+               every paramName := key(internal_classes[className]["methods"][methodName]["params"]) do 
+                  put(results_table["signatures"][1]["parameters"], table("label", paramName))
+
+                  }
+               }
+            } 
 
          # If no object before, treat as method inside class, internal procedure, or built-in-funtion (eventually) #
          "no object before" : { 

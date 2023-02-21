@@ -13,7 +13,6 @@ package ulsp
 
 import UniDoc
 
-
 class LSPDB(
    package_db,
    built_in_functions,           # List containing all native function names
@@ -54,14 +53,25 @@ class LSPDB(
 	end
 
     method build_package_db()
+
+       dirPath := getenv("FPATH")
+       dirPath ? {
+         tab(upto("/"))
+         dirPath := tab(-3)
+       }
+       
        paths := []
-       put(paths, "../3d")
-       put(paths, "../gui")
-       #put(paths, "../parser")
-       put(paths, "../xml")
-       put(paths, "../lib")
-       put(paths, "../ipl/procs")
-       put(paths, "../unidoc")
+
+       put(paths, dirPath || "ipl/procs")
+
+       dirPath ||:= "uni/"
+
+       put(paths, dirPath || "3d")
+       put(paths, dirPath || "gui")
+       #put(paths, dirPath || "parser")
+       put(paths, dirPath || "xml")
+       put(paths, dirPath || "lib")
+       put(paths, dirPath || "unidoc")
 
        package_db := table()
        every path := !paths do build_by_path(path)
@@ -77,6 +87,7 @@ class LSPDB(
        x := idoc.packages
 
        every pack := !x do {
+
           if /package_db[pack.getName()] then {
              package_db[pack.getName()] := table()
              package_db[pack.getName()]["files"] := table()
@@ -110,11 +121,13 @@ class LSPDB(
 
 
                 every method_in_class := class_in_file.getMethods().get() do {
-                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class] := table()
+                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()] := table()
 
-                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class]["params"] := table()
+                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := table()
                    every param_in_method := method_in_class.getParams().get() do {
-                     put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class]["params"], param_in_method.getName())
+                     package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"][param_in_method.getName()] := table()
+                     package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"][param_in_method.getName()]["type"] := param_in_method.getTypeValue()
+                     package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"][param_in_method.getName()]["default"] := param_in_method.getDefValue()
                      }
                    }
                 every class_param := class_in_file.getParams().get() do {

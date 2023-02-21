@@ -156,15 +156,21 @@ class CompletionHandler(
    end
 
    method addWordspaceClasses(results_table, workspace)
-      every _internalClass := !workspace.getInternalClasses() do {
-         put(results_table["items"], table("label", _internalClass, "kind", 3))
+      every _internalClass := key(workspace.getInternalClasses()) do {
+         put(results_table["items"], table("label", _internalClass, "kind", 4))
          }
-      every _linkedClass := !workspace.getLinkedClasses() do {
-         put(results_table["items"], table("label", _linkedClass, "kind", 3))
+      every _linkedClass := key(workspace.getLinkedClasses()) do {
+         put(results_table["items"], table("label", _linkedClass, "kind", 4))
          }
-      every _importedClass := !workspace.getImportedClasses() do {
-         put(results_table["items"], table("label", _importedClass, "kind", 3))
+      every _importedClass := key(workspace.getImportedClasses()) do {
+         put(results_table["items"], table("label", _importedClass, "kind", 4))
          }
+   end
+
+   method addInternalObjects(results_table, workspace)
+      every _object := key(workspace.getObjects()) do {
+         put(results_table["items"], table("label", _object, "kind", 6))
+      }
    end
 
    method buildDefaultCompletionItems(results_table, workspace)
@@ -176,5 +182,6 @@ class CompletionHandler(
       addSyntaxReservedWordsCompletionItems(results_table)
       addWordspaceClasses(results_table, workspace)
       addWorkspaceProcedures(results_table, workspace)
+      addInternalObjects(results_table, workspace)
    end
 end

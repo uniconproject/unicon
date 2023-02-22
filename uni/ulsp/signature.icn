@@ -13,7 +13,7 @@ class SignatureHandler(
    end
 
    method run()
-      local line, character, methodName, results_table
+      local line, character, functionName, results_table
 
       # Collect line and character position #
       line := params["position"]["line"]
@@ -33,70 +33,62 @@ class SignatureHandler(
          # If object before, collect object information #
          "object before" : {
 
-            methodName := getMethod(line, character, workspace.temp_file)
+            functionName := getFunction(line, character, workspace.temp_file)
             objectName := getObject(line, character, workspace.temp_file)
-            objects := workspace.getObjects()
-            className := objects[objectName]
 
             linked_classes := workspace.getLinkedClasses()
             imported_classes := workspace.getImportedClasses()
             internal_classes := workspace.getInternalClasses()
 
-            if member(linked_classes, className) then {
-               if member(linked_classes[className]["methods"], methodName) then {
+            objects := workspace.getObjects()
+            className := objects[objectName]
 
-               signature := createSignature(methodName, linked_classes[className]["methods"][methodName])
-               put(results_table["signatures"], table("label", signature, "parameters", []))
-
-               every paramName := key(linked_classes[className]["methods"][methodName]["params"]) do 
-                  put(results_table["signatures"][1]["parameters"], table("label", paramName))
-
-                  }
-               } 
-            else if member(imported_classes, className) then {
-               if member(imported_classes[className]["methods"], methodName) then {
-
-               signature := createSignature(methodName, imported_classes[className]["methods"][methodName])
-               put(results_table["signatures"], table("label", signature, "parameters", []))
-
-               every paramName := key(imported_classes[className]["methods"][methodName]["params"]) do 
-                  put(results_table["signatures"][1]["parameters"], table("label", paramName))
-
-                  }
-               }
-            else if member(internal_classes, className) then {
-               if member(internal_classes[className]["methods"], methodName) then {
-
-               signature := createSignature(methodName, internal_classes[className]["methods"][methodName])
-               put(results_table["signatures"], table("label", signature, "parameters", []))
-
-               every paramName := key(internal_classes[className]["methods"][methodName]["params"]) do 
-                  put(results_table["signatures"][1]["parameters"], table("label", paramName))
-
-                  }
-               }
+            # Check if function is a method of a linked class #
+            if member(linked_classes, className) & member(linked_classes[className]["methods"], functionName) then {
+               updateResults(functionName, linked_classes[className]["methods"][functionName], results_table)
             } 
 
-         # If no object before, treat as method inside class, internal procedure, or built-in-funtion (eventually) #
+            # Check if function is a method of an imported class #
+            else if member(imported_classes, className) & member(imported_classes[className]["methods"], functionName) then {
+               updateResults(functionName, imported_classes[className]["methods"][functionName], results_table)
+            }
+
+            # Check if function is a method of an internal class #
+            else if member(internal_classes, className) & member(internal_classes[className]["methods"], functionName) then {
+               updateResults(functionName, internal_classes[className]["methods"][functionName], results_table)
+            }
+         } 
+
+         # If no object before, treat as method inside class, procedures, or built-in-funtion (eventually) #
          "no object before" : { 
-            methodName := getMethod(line, character, workspace.temp_file)
+
+            functionName := getFunction(line, character, workspace.temp_file)
+
             internal_classes := workspace.getInternalClasses()
+            linked_procedures := workspace.getLinkedProcedures()
+            imported_procedures := workspace.getImportedProcedures()
+            internal_procedures := workspace.getInternalProcedures()
 
-            # Only checking to see if method is in an internal class currently #
-            every _class := workspace.getFile().getClasses().get() do {
-               if member(internal_classes[_class.getName()]["methods"], methodName) then {
-
-                  # Create a valid signature #
-                  signature := createSignature(methodName, internal_classes[_class.getName()]["methods"][methodName])
-
-                  # Put method params in result table #
-                  put(results_table["signatures"], table("label", signature, "parameters", []))
-                  every paramName := key(internal_classes[_class.getName()]["methods"][methodName]["params"]) do 
-                     put(results_table["signatures"][1]["parameters"], table("label", paramName))
-
-                  # Observe results_table #
-                  write(ximage(results_table["signatures"]))
+            # Check if function is part of an internal class #
+            every className := key(internal_classes) do {
+               if member(internal_classes[className]["methods"], functionName) then {
+                  updateResults(functionName, internal_classes[className]["methods"][functionName], results_table)
                }
+            }
+            
+            # Check if function is a linked procedure #
+            if member(linked_procedures, functionName) then {
+               updateResults(functionName, linked_procedures[functionName], results_table)
+            }
+
+            # Check if function is an imported procedure #
+            if member(imported_procedures, functionName) then {
+               updateResults(functionName, imported_procedures[functionName], results_table)
+            }
+
+            # Check if function is an internal procedure #
+            if member(internal_procedures, functionName) then {
+               updateResults(functionName, internal_procedures[functionName], results_table)
             }
          }
       }
@@ -106,12 +98,24 @@ class SignatureHandler(
       return results
    end
 
+   # Update the results table #
+   method updateResults(function, functionTable, results_table)
+      local signature
+      
+      # Create a valid signature #
+      signature := createSignature(function, functionTable)
+
+      # Put method params in result table #
+      put(results_table["signatures"], table("label", signature, "parameters", []))
+      every paramName := key(functionTable["params"]) do 
+         put(results_table["signatures"][1]["parameters"], table("label", paramName))
+   end
+
    # Create a valid signature #
    method createSignature(function, functionTable)
       local signature, counter
 
       counter := 0
-
       signature := function || "("
 
       every paramName := key(functionTable["params"]) do {
@@ -177,7 +181,7 @@ class SignatureHandler(
    end
 
    # Retriving method name #
-   method getMethod(line, character, file)
+   method getFunction(line, character, file)
       desired_line := getDesiredLine(line, file)
 
       desired_line ? {

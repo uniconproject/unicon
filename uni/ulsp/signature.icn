@@ -119,32 +119,12 @@ class SignatureHandler(
       signature := function || "("
 
       every paramName := key(functionTable["params"]) do {
-         if member(functionTable["params"][paramName], "type") & member(functionTable["params"][paramName], "default") then {
-            if counter < *functionTable["params"] - 1 then
-               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"] || ":" || functionTable["params"][paramName]["default"] || ", "
-            else
-               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"] || ":" || functionTable["params"][paramName]["default"]
-            }
-         else if member(functionTable["params"][paramName], "type") then {
-            if counter < *functionTable["params"] - 1 then
-               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"] || ", "
-            else
-               signature ||:= paramName || ":" || functionTable["params"][paramName]["type"]
-            }
-         else if member(functionTable["params"][paramName], "default") then {
-            if counter < *functionTable["params"] - 1 then
-               signature ||:= paramName || ":" || functionTable["params"][paramName]["default"] || ", "
-            else
-               signature ||:= paramName || ":" || functionTable["params"][paramName]["default"]
-            }
-         else {
-            if counter < *functionTable["params"] - 1 then
-               signature ||:= paramName || ", "
-            else
-               signature ||:= paramName
-            }
+         signature ||:= paramName
+         if \functionTable["params"][paramName]["type"] then signature ||:= ":" || functionTable["params"][paramName]["type"]
+         if \functionTable["params"][paramName]["default"] then signature ||:= ":" || functionTable["params"][paramName]["default"]
          counter +:= 1
-         }
+         if counter < *functionTable["params"] then signature ||:= ", "   
+      }
 
       signature ||:= ")"
 

@@ -956,3 +956,145 @@ An OverlaySet is a set of OverlayItems.
 \texttt{set\_which\_one(x)} sets the currently displayed OverlayItem;
 default is the first.\\
 \texttt{add(c:OverlayItem)} adds the given OverlayItem to the OverlaySet.
+
+\section{Plugins}
+\index{Plugins}
+A Unicon plugin is a dynamically loaded library of routines that are
+encapsulated by a class, which provides access to the external routines (often
+written in another language) plus a simple facility to enumerate the routines
+that are available. The external routines may be part of the source code of the
+plugin or in a separately compiled library that is acquired and installed from
+elsewhere. At the minimum, a plugin provides a translation layer that converts
+the arguments to the routines from their Unicon representation into something
+compatible with the calling conventions of the external implementation language;
+but usually the plugin also ``adds value'' by providing a more Unicon-like way
+of accessing the underlying routines.
+
+\subsection{Bitman}
+\index{Bitman plugin}
+The \texttt{Bitman} plugin provides low level bit manipulation routines that are
+the equivalent of the built-in functions (\texttt{iand}, \texttt{ior},
+\texttt{ishift} etc.). The salient differences -- and the reason for their
+existence -- between the \texttt{Bitman} methods and the built-in functions is
+that the \texttt{Bitman} methods never produce a large integer, are confined to
+the natural word length of the machine (so the results are not portable between
+32-bit and 64-bit implementations) and, except for bit shifting, do not make a
+special case of the sign bit.  \texttt{Bitman} also provides some bit level
+enquiry and extraction methods that use a similar addressing convention to
+string indexing (indexing bits instead of characters).
+
+The methods provided by the plugin are
+\begin{center}
+\begin{xtabular}{|m{0.5in}|m{2.5in}|m{0.5in}|}
+    \hline
+    \texttt{band}   & bitwise AND              & (\texttt{iand})\\
+    \texttt{bcom}   & bitwise one's complement & (\texttt{icom})\\
+    \texttt{bit}    & (single) bit extraction  &\\
+    \texttt{bits}   & enquiry and multi-bit extraction &\\
+    \texttt{bor}    & bitwise inclusive OR     & (\texttt{ior})\\
+    \texttt{brot}   & bit rotation             &\\
+    \texttt{bshift} & bitwise shift            & (\texttt{ishift})\\
+    \texttt{bxor}   & bitwise exclusive OR     & (\texttt{ixor})\\
+    \texttt{ushift} & unsigned bitwise shift   &\\
+    \texttt{test}   & confidence testing       &\\
+    \hline
+\end{xtabular}
+\end{center}
+The actual bit manipulation code (written in C) is part of the source code for
+the plugin: no external libraries are required. The \texttt{Bitman} class has no
+attributes, so the constructor function has no parameters.
+\bigskip\hrule\vspace{0.1cm}
+\index{band}
+\noindent
+{\bf band(i, i) : integer } \hfill {\bf bitwise and}
+
+\noindent
+\index{bitwise and}\texttt{band(i1, i2)} produces the bitwise AND of
+\texttt{i1} and \texttt{i2}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{bcom}
+\noindent
+{\bf bcom(i) : integer } \hfill {\bf bitwise complement}
+
+\noindent
+\texttt{bcom(i)} produces the bitwise complement (one's
+complement) of \texttt{i}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{bit}\index{bit extraction}
+\noindent
+{\bf bit(i, i) : integer ? } \hfill {\bf single bit extraction}
+
+\noindent
+\texttt{bit(i,n)} returns the value of the \texttt{n}$^{th}$
+bit of \texttt{i}. The indexing works the same way as strings:\\
+\texttt{bit(i,1)} is the least significant bit of \texttt{i}.\\
+\texttt{bit(i,0)} is the most significant bit of \texttt{i}.\\
+\noindent If \texttt{n} is negative, indexing is from the most significant end,
+otherwise it is from the least significant end.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{bits}\index{multi-bit extraction}
+\noindent
+{\bf bits(i, i, i) : integer ? } \hfill {\bf multi-bit extraction}
+
+\noindent
+\texttt{bits(i,n,m)} returns the value of the \texttt{n}$^{th}$ to the
+\texttt{m}$^{th}$ bit of \texttt{i}. The value is shifted down to the
+least significant end of the machine word. The bits are {\em not\/} reversed if
+\verb|m < n|.
+
+\noindent \texttt{bits()} returns the number of bits in a word -- usually 32 or 64.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{brot}
+\noindent
+{\bf brot(i, i) : integer } \hfill {\bf bitwise rotation}
+
+\noindent
+\index{bit rotation}\texttt{brot(i, j)} produces the value obtained by
+rotating \texttt{i} by \texttt{j} bit positions.
+If \texttt{j} is positive, the rotation is to the left;
+if \texttt{j} is negative, the rotation is to the right.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{bor}
+\noindent
+{\bf bor(i, i) : integer } \hfill {\bf bitwise or}
+
+\noindent
+\index{bitwise or}\texttt{bor(i1, i2)} produces the bitwise OR of
+\texttt{i1} and \texttt{i2}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{bshift}
+\noindent
+{\bf bshift(i, i) : integer } \hfill {\bf signed bitwise shift}
+
+\noindent
+\index{signed shift}\texttt{bshift(i, j)} produces the value obtained by
+shifting \texttt{i} by \texttt{j} bit positions.
+If \texttt{j} is positive, the shift is to the left, and vacated bit
+positions are filled with zeros.
+If \texttt{j} is negative, the shift is to the right with sign extension. 
+
+\bigskip\hrule\vspace{0.1cm}
+\index{ushift}
+\noindent
+{\bf ushift(i, i) : integer } \hfill {\bf unsigned bitwise shift}
+
+\noindent
+\index{unsigned shift}\texttt{ushift(i, j)} produces the value obtained by
+shifting \texttt{i} by \texttt{j} bit positions.
+The shift is to the left, if \texttt{j} is positive, or to the right if
+\texttt{j} is negative.  Vacated bit positions are filled with zeros.
+
+
+%-------------------- To Do --------------------
+%\subsection{SecureHash}
+\label{SecureHash Plugin}
+\label{SecureHashClass}
+%\subsection{SQLite}
+\label{SQLite Plugin}
+\label{SQLiteClass}

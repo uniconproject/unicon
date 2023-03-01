@@ -624,7 +624,7 @@ CheckBox must be added to both the CheckBoxGroup and the dialog box.
 \texttt{set\_by\_flag(i)} sets the CheckBox which is down according to the
 integer i. If i = 1 then the first CheckBox is down, if i = 2 the
 second is down, etc for i = 4, 8, 16.\\
-\texttt{get\_by\_flag()} returns an integer in the range 1, 2, 4, 8 ... 
+\texttt{get\_by\_flag()} returns an integer in the range 1, 2, 4, 8 ...
 depending upon whether the first, second, third etc CheckBox is down.
 
 \texttt{add(c:CheckBox)} adds c to the CheckBoxGroup.
@@ -1077,7 +1077,7 @@ if \texttt{j} is negative, the rotation is to the right.
 shifting \texttt{i} by \texttt{j} bit positions.
 If \texttt{j} is positive, the shift is to the left, and vacated bit
 positions are filled with zeros.
-If \texttt{j} is negative, the shift is to the right with sign extension. 
+If \texttt{j} is negative, the shift is to the right with sign extension.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{ushift}
@@ -1090,11 +1090,214 @@ shifting \texttt{i} by \texttt{j} bit positions.
 The shift is to the left, if \texttt{j} is positive, or to the right if
 \texttt{j} is negative.  Vacated bit positions are filled with zeros.
 
+\subsection{SecureHash}
+\index{SecureHash plugin}
+The \texttt{SecureHash} plugin provides access to an implementation of the
+RFC6324 secure hash routines. This is an extract from the description:
+\begin{quote}
+{\small
+  This file implements the Secure Hash Algorithms
+  as defined in the U.S. National Institute of Standards
+  and Technology Federal Information Processing Standards
+  Publication (FIPS PUB) 180-3 published in October 2008
+  and formerly defined in its predecessors, FIPS PUB 180-1
+  and FIP PUB 180-2.
+
+  A combined document showing all algorithms is available at\\
+  http://csrc.nist.gov/publications/fips/fips180-3/fips180-3\_final.pdf
+
+  The five hashes are defined in these sizes:\\
+  \begin{xtabular}{m{1.0in}m{3.0in}}
+      \texttt{SHA-1}       &    20 byte / 160 bit\\
+     \texttt{SHA-224}     &    28 byte / 224 bit\\
+     \texttt{SHA-256}     &    32 byte / 256 bit\\
+     \texttt{SHA-384}     &    48 byte / 384 bit\\
+     \texttt{SHA-512}     &    64 byte / 512 bit\\
+   \end{xtabular}
+}
+\end{quote}
+
+\noindent Modified versions of the RFC6324 routines -- to make them thread-safe
+-- are included in the source code of the plugin: no external libraries are
+required.
+
+Access to the hashing routines is provided at two levels
+\begin{itemize}
+  \item The higher (and most convenient) level is provided by the
+    \texttt{SecureHash} class using the \texttt{Sha} method.
+  \item At the lower level, the individual RFC6324 routines may be accessed
+    directly, without using the \texttt{SecureHash} class, via the interface
+    procedures provided by the plugin.
+\end{itemize}
+
+\noindent
+Parameters to \texttt{Sha} may be strings, csets, open files, numbers, records or lists.\\
+   String parameters are ``fed to the underlying hash routines'' ({\em fttuhr});\\
+   if the parameter is a cset, each character in the set is {\em fttuhr\/};\\
+   if the parameter is an open file, each line of the file is read and {\em fttuhr\/};\\
+   if the parameter is a number, it is converted to a string and {\em fttuhr\/}.\\
+\noindent
+\texttt{Sha} applies itself recursively to list or record parameters (depth
+first traversal). So records and lists may contain strings, csets, open files,
+numbers, records or lists. \texttt{Sha} is tolerant of null parameters and empty
+strings, csets, files or lists; they have no effect on the final hash value.
+
+Sets and Tables are not allowed as parameters to \texttt{Sha} because their order of
+enumeration is not defined. Any other type (thread, co-expression, window ...)
+is also disallowed by fiat, with one exception: A procedure value%
+\footnote{
+A procedure value is a convenient way to steer the operation of the
+\texttt{Sha} routine because it cannot be confused with any data to be added to
+the hash value.}%
+, using special ``command procedures'', may be used to signal that \texttt{Sha}
+should take some special action as follows:
+\begin{itemize}
+  \item
+    The procedure \texttt{More} is allowed as the final parameter. Normally the
+    \texttt{Sha} method returns the secure hash of all its parameters, but if
+    the final parameter is the procedure \texttt{More}, subsequent calls to
+    \texttt{Sha} will continue the hashing operation.
+    Note the style is
+\iconcode{ Sha( ... , More ) }
+\noindent rather than
+\iconcode{
+  Sha( ... , More() )
+}
+\noindent although the latter has been made to work as a ``concession to ease of use''.
+
+\item
+  The procedures \texttt{Final1} ... \texttt{Final7} may be used to signal that
+  the final parameter to \texttt{Sha} is not a whole octet, only the specified
+  number of bits are to be included in the hash. These procedures are only
+  allowed just before the final parameter.  Where the final number of bits is
+  calculated, the \texttt{Final(expr)} procedure may be
+  used. \verb|0 <= expr <= 8|. (There is a \texttt{Final0} procedure, but using
+  it explicitly would be slightly odd, since it will cause the final parameter
+  to be ignored. There is also a \texttt{Final8} procedure which causes all of
+  the final parameter to be included. These procedures are intended for use by
+  the \texttt{Final} procedure).
+
+\item
+  The \texttt{Raw} procedure switches the default output from a string of
+  hexadecimal characters to a string of half the length containing the actual
+  bits returned by the RFC6234 result procedure. It may be placed anywhere in
+  the list of parameters.
+\end{itemize}
+
+Note that \texttt{Sha(number)} will return a secure hash of the string
+representation of the number, not a hash of the underlying bits. If a hash of
+the bits is required, the only way to do it is to convert the number to a string
+of the correct length (and endianness) without altering the value of the bits
+-- Unicon strings may contain characters with all values from 0 to 255 -- this
+also applies to the lower level \texttt{sha\_Input} procedure
+
+Once \texttt{Sha} has produced a hash value (or failed) it will automatically
+reset the underlying hash routines the next time it is called.
+
+The \texttt{SecureHash} class is not thread-safe. \WarningNotThreadSafe
+Using a shared \texttt{SecureHash} object in different threads without mutual
+exclusion is unlikely to produce predictable results. Using a
+\texttt{SecureHash} object that is private to each thread {\em is\/} safe
+because the underlying hash routines are thread-safe.
+
+The class is initialized with an optional string parameter that determines the
+hash algorithm. Valid strings are \texttt{"SHA1"}, \texttt{"SHA224"},
+\texttt{"SHA256"}, \texttt{"SHA384"} or \texttt{"SHA512"}.  The default is
+\texttt{"SHA512"}.
+
+
+The methods of the \texttt{SecureHash} class are:
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Reset}
+\noindent
+{\bf Reset(s : "SHA512") : ? } \hfill {\bf Reset Secure Hash}
+
+\noindent
+\index{Reset()}\texttt{Reset(s)} re-initializes the secure hash instance.  The
+optional parameter specifies the algorithm to use and must be one of \texttt{"SHA1"},
+\texttt{"SHA224"}, \texttt{"SHA256"}, \texttt{"SHA384"} or \texttt{"SHA512"}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Sha}
+\noindent
+{\bf Sha(any?, ...) : string ? } \hfill {\bf Secure Hash}
+
+\noindent
+\index{Sha()}\texttt{Sha(...)} returns the secure hash value of its
+arguments, which are of the types discussed above.
+
+\bigskip
+The interface procedures of the \texttt{SecureHash} plugin are:
+
+\bigskip\hrule\vspace{0.1cm}
+\index{shaFunction}
+\noindent
+{\bf shaFunction(s?) : string ? } \hfill {\bf Set/Get default Hash function}
+
+\noindent
+\index{shaFunction()}
+\texttt{shaFunction(h)} sets the default hash algorithm.  Valid strings are
+\texttt{"SHA1"}, \texttt{"SHA224"}, \texttt{"SHA256"}, \texttt{"SHA384"} or
+\texttt{"SHA512"}.  \texttt{shaFunction()} returns the name of the current
+default algorithm.  The procedure is not thread-safe. \WarningNotThreadSafe
+
+\bigskip\hrule\vspace{0.1cm}
+\index{sha_Reset}
+\noindent
+{\bf sha\_Reset(s) : ctx ? } \hfill {\bf Initialize Secure Hash}
+
+\noindent
+\index{sha_Reset()}
+\texttt{sha\_Reset(h)} initializes and returns an opaque context value that
+should be fed into the other interface procedures. \texttt{h} determines the
+hash algorithm. Valid strings are \texttt{"SHA1"}, \texttt{"SHA224"},
+\texttt{"SHA256"}, \texttt{"SHA384"} or \texttt{"SHA512"}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{sha_Input}
+\noindent
+{\bf sha\_Input(ctx, s) : ? } \hfill {\bf Hash String}
+
+\noindent
+\index{sha_Input()}
+\texttt{sha\_Input(x, s)} Adds the secure hash of \texttt{s} to the hash value
+stored in \texttt{x}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{sha_FinalBits}
+\noindent
+{\bf sha\_FinalBits(ctx, c, i) : ? } \hfill {\bf Hash the final partial octet}
+
+\noindent
+\index{sha_FinalBits()}
+\texttt{sha\_FinalBits(x, c, n)} Adds the secure hash of the most significant
+\texttt{n} bits of \texttt{c} to the hash value stored in \texttt{x}.
+\verb|1 <= n <= 7|
+
+\bigskip\hrule\vspace{0.1cm}
+\index{sha_RawResult}
+\noindent
+{\bf sha\_RawResult(ctx) : string ? } \hfill {\bf Return the raw hash value}
+
+\noindent
+\index{sha_RawResult()}
+\texttt{sha\_RawResult(x)} returns the final hash value in the exact form
+returned by the RFC6324 hash routines. The returned string will be a binary
+string and may contain any character value from \texttt{char(0)} to
+\texttt{char(255)}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{sha_Result}
+\noindent
+{\bf sha\_Result(ctx) : string ? } \hfill {\bf Return the hash value}
+
+\noindent
+\index{sha_Result()}
+\texttt{sha\_Result(x)} returns the final hash value converted to a string of
+hexadecimal characters.
 
 %-------------------- To Do --------------------
-%\subsection{SecureHash}
-\label{SecureHash Plugin}
-\label{SecureHashClass}
 %\subsection{SQLite}
-\label{SQLite Plugin}
-\label{SQLiteClass}
+%\label{SQLite Plugin}
+%\label{SQLiteClass}

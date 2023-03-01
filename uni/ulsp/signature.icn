@@ -13,12 +13,11 @@ class SignatureHandler(
    end
 
    method run()
-      local line, character, functionName, results_table
+      local line, character, functionName, results_table, activeParam
 
       # Collect line and character position #
       line := params["position"]["line"]
       character := params["position"]["character"]
-
 
       # Collect context information (inside comment, space before, object before, no object before) #
       _context := getContext(line, character, workspace.temp_file)
@@ -93,22 +92,65 @@ class SignatureHandler(
          }
       }
 
+      activeParam := 0
+
+      # Finding active parameter (if there is one) #
+      if params["context"]["isRetrigger"] == "__true__" & \params["context"]["activeSignatureHelp"]["signatures"][1]["label"] then {
+         current_sig := params["context"]["activeSignatureHelp"]["signatures"][1]["label"]
+         activeParam := getActiveParameter(line, character, workspace.temp_file, current_sig)
+         results_table["signatures"][1]["activeParameter"] := activeParam
+      }
+      
       # Convert and return finished table #
       results := tojson(results_table)
       return results
    end
 
+   # Finding the active parameter #
+   method getActiveParameter(line, character, file, current_sig)
+      local sig_function, desired_line, param_num
+
+      param_num := 0
+
+      desired_line := getDesiredLine(line, file)
+
+      current_sig ? {
+         sig_function := tab(upto("("))
+      }
+
+      desired_line ? {
+         &pos := character
+         every 1 to *desired_line do { 
+            if desired_line[&pos] == "," then param_num +:= 1
+            if desired_line[&pos] == "(" then {
+               initial_pos := &pos
+               
+               until desired_line[&pos] == " " | desired_line[&pos] == "."  | &pos = 1 do move(-1)
+               if desired_line[&pos] == " " | desired_line[&pos] == "." then move(1)
+
+               if tab(initial_pos) == sig_function then break
+            }
+            move(-1)
+         }
+      }
+
+      write(desired_line)
+      write(param_num)
+
+      return param_num
+   end
+
    # Update the results table #
    method updateResults(function, functionTable, results_table)
       local signature
-      
+
       # Create a valid signature #
       signature := createSignature(function, functionTable)
 
       # Put method params in result table #
       put(results_table["signatures"], table("label", signature, "parameters", []))
-      every paramName := key(functionTable["params"]) do 
-         put(results_table["signatures"][1]["parameters"], table("label", paramName))
+      every param_table := !functionTable["params"] do 
+         put(results_table["signatures"][1]["parameters"], table("label", param_table["name"]))
    end
 
    # Create a valid signature #
@@ -118,10 +160,10 @@ class SignatureHandler(
       counter := 0
       signature := function || "("
 
-      every paramName := key(functionTable["params"]) do {
-         signature ||:= paramName
-         if \functionTable["params"][paramName]["type"] then signature ||:= ":" || functionTable["params"][paramName]["type"]
-         if \functionTable["params"][paramName]["default"] then signature ||:= ":" || functionTable["params"][paramName]["default"]
+      every param_table := !functionTable["params"] do {
+         signature ||:= param_table["name"]
+         if \param_table["type"] then signature ||:= ":" || param_table["type"]
+         if \param_table["default"] then signature ||:= ":" || param_table["default"]
          counter +:= 1
          if counter < *functionTable["params"] then signature ||:= ", "   
       }
@@ -160,7 +202,7 @@ class SignatureHandler(
       return "no object before"
    end
 
-   # Retriving method name #
+   # Retriving function name #
    method getFunction(line, character, file)
       desired_line := getDesiredLine(line, file)
 
@@ -170,7 +212,9 @@ class SignatureHandler(
          until desired_line[&pos] == " " | desired_line[&pos] == "."  | &pos = 1 do move(-1)
          if desired_line[&pos] == " " | desired_line[&pos] == "." then move(1)
 
-         return tab(upto("("))
+         _function := tab(upto("("))
+
+         return _function
       }
    end
 

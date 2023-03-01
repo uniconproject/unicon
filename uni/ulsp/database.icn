@@ -110,11 +110,15 @@ class LSPDB(
              every procedure_in_file := file_in_pack.getProcedures().get() do {
                 package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
 
-                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := table()
+                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := []
                 every param_in_procedure := procedure_in_file.getParams().get() do {
-                     package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"][param_in_procedure.getName()] := table()
-                     package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"][param_in_procedure.getName()]["type"] := param_in_procedure.getTypeValue()
-                     package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"][param_in_procedure.getName()]["default"] := param_in_procedure.getDefValue()
+                     paramName := param_in_procedure.getName()
+                     paramType := param_in_procedure.getTypeValue()
+                     paramDef := param_in_procedure.getDefValue()
+                     put(package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"], table(
+                        "name", paramName, 
+                        "type", paramType, 
+                        "default", paramDef))
                   }
                 }
 
@@ -130,11 +134,15 @@ class LSPDB(
                 every method_in_class := class_in_file.getMethods().get() do {
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()] := table()
 
-                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := table()
+                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
                    every param_in_method := method_in_class.getParams().get() do {
-                     package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"][param_in_method.getName()] := table()
-                     package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"][param_in_method.getName()]["type"] := param_in_method.getTypeValue()
-                     package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"][param_in_method.getName()]["default"] := param_in_method.getDefValue()
+                     paramName := param_in_method.getName()
+                     paramType := param_in_method.getTypeValue()
+                     paramDef := param_in_method.getDefValue()
+                     put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"], table(
+                        "name", paramName, 
+                        "type", paramType, 
+                        "default", paramDef))
                      }
                    }
                 every class_param := class_in_file.getParams().get() do {

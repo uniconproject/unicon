@@ -41,10 +41,23 @@ class Workspace(
    )
 
    method getFile()
+      #static methodAccesses
       local temp_idoc
+      #initial methodAccesses := 1
+
       temp_idoc := UniAll()
       temp_idoc.setSourcePath(uri)
       temp_idoc.processFile(uri)
+
+      #if methodAccesses <= 4 then {
+      #   temp_idoc.setSourcePath(uri)
+      #   temp_idoc.processFile(uri)
+      #   methodAccesses +:= 1
+      #}
+      #else {
+      #   temp_idoc.setSourcePath(temp_file)
+      #   temp_idoc.processFile(temp_file)
+      #}
 
       files := temp_idoc.getAllFiles()
       return files[1]
@@ -113,11 +126,15 @@ class Workspace(
        every _procedure := getFile().getProcedures().get() do {
          internal_procedures[_procedure.getName()] := table()
 
-         internal_procedures[_procedure.getName()]["params"] := table()
+         internal_procedures[_procedure.getName()]["params"] := []
          every _param := _procedure.getParams().get() do {
-            internal_procedures[_procedure.getName()]["params"][_param.getName()] := table()
-            internal_procedures[_procedure.getName()]["params"][_param.getName()]["type"] := _param.getTypeValue()
-            internal_procedures[_procedure.getName()]["params"][_param.getName()]["default"] := _param.getDefValue()
+            paramName := _param.getName()
+            paramType := _param.getTypeValue()
+            paramDef := _param.getDefValue()
+            put(internal_procedures[_procedure.getName()]["params"], table(
+               "name", paramName, 
+               "type", paramType, 
+               "default", paramDef))
          }
        }
     end
@@ -150,7 +167,7 @@ class Workspace(
 
     method setImportedProcedures()
        imported_procedures := table()
-       every _import := !imports do {
+         every _import := !imports do {
           every file_in_pack := !lsp_database.package_db[_import]["files"] do {
              every _key := key(file_in_pack["procedures"]) do {
                 imported_procedures[_key] := file_in_pack["procedures"][_key]
@@ -176,11 +193,15 @@ class Workspace(
           every _method := _class.getMethods().get() do {
              internal_classes[_class.getName()]["methods"][_method.getName()] := table()
 
-             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := table()      
+             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []     
              every _param := _method.getParams().get() do {
-               internal_classes[_class.getName()]["methods"][_method.getName()]["params"][_param.getName()] := table()
-               internal_classes[_class.getName()]["methods"][_method.getName()]["params"][_param.getName()]["type"] := _param.getTypeValue()
-               internal_classes[_class.getName()]["methods"][_method.getName()]["params"][_param.getName()]["default"] := _param.getDefValue()
+               paramName := _param.getName()
+               paramType := _param.getTypeValue()
+               paramDef := _param.getDefValue()
+               put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], table(
+                  "name", paramName, 
+                  "type", paramType, 
+                  "default", paramDef))
                }
              }
           internal_classes[_class.getName()]["attributes"] := []
@@ -217,13 +238,13 @@ class Workspace(
 
     method setImportedClasses()
        imported_classes := table()
-       every _import := !imports do {
-          every file_in_pack := !lsp_database.package_db[_import]["files"] do {
-             every _key := key(file_in_pack["classes"]) do {
-                imported_classes[_key] := file_in_pack["classes"][_key]
-                }
-             }
-          }
+         every _import := !imports do {
+            every file_in_pack := !lsp_database.package_db[_import]["files"] do {
+               every _key := key(file_in_pack["classes"]) do {
+                  imported_classes[_key] := file_in_pack["classes"][_key]
+               }
+            }
+         }
     end
 
     method getImportedClasses()

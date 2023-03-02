@@ -151,6 +151,7 @@ class Server(
       openFiles[\uri] := Workspace(fname, lsp_database)
       workspace_object := openFiles[\uri]
       workspace_object.updateTempFile(initial_file_contents)
+      workspace_object.updateWorkspace()
 
    end
 
@@ -171,7 +172,9 @@ class Server(
       uri := request_params["textDocument"]["uri"]
       file_contents := request_params["contentChanges"][1]["text"]
       workspace_object := openFiles[\uri]
+      workspace_object.setFile()
       workspace_object.updateTempFile(file_contents)
+      workspace_object.updateWorkspace()
    end
 
 ########################################################

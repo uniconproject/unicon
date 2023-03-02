@@ -24,6 +24,10 @@ link io
 import json
 import UniDoc
 
+import lang
+import util
+import parser
+
 class Workspace(
    uri,
    lsp_database,
@@ -37,32 +41,36 @@ class Workspace(
    linked_procedures,
    linked_classes,
    imported_procedures,
-   imported_classes
+   imported_classes,
+   m_uni_file
    )
 
-   method getFile()
-      #static methodAccesses
-      local temp_idoc
-      #initial methodAccesses := 1
-
-      temp_idoc := UniAll()
-      temp_idoc.setSourcePath(uri)
-      temp_idoc.processFile(uri)
-
-      #if methodAccesses <= 4 then {
-      #   temp_idoc.setSourcePath(uri)
-      #   temp_idoc.processFile(uri)
-      #   methodAccesses +:= 1
-      #}
-      #else {
-      #   temp_idoc.setSourcePath(temp_file)
-      #   temp_idoc.processFile(temp_file)
-      #}
-
-      files := temp_idoc.getAllFiles()
-      return files[1]
+   method updateWorkspace()
+      setLinks()
+      setImports()
+      setInternalProcedures()
+      setLinkedProcedures()
+      setImportedProcedures()
+      setInternalClasses()
+      setLinkedClasses()
+      setImportedClasses()
+      setObjects()
    end
 
+   method setFile()
+      local temp_idoc
+      
+      temp_idoc := UniAll()
+      if \temp_file then temp_idoc.setSourcePath(temp_file) else temp_idoc.setSourcePath(uri)
+      if \temp_file then temp_idoc.processFile(temp_file) else temp_idoc.processFile(uri)
+
+      files := temp_idoc.getAllFiles()
+      m_uni_file := files[1]
+   end
+
+   method getFile()
+      return m_uni_file
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Temp file (create, update) -----------------------------------------------------
@@ -70,6 +78,7 @@ class Workspace(
    
     method createTempFile()
        temp_file := tempname()
+       temp_file := temp_file || "_temp.icn"
     end
 
     method updateTempFile(file_contents)
@@ -88,8 +97,8 @@ class Workspace(
 
 
     method setLinks()
-       links_w_ext := getFile().getLinkNames()
        links := []
+       links_w_ext := getFile().getLinkNames()
        every link_w_ext := !links_w_ext do {
           temp := reverse(link_w_ext)
           temp ? {
@@ -347,15 +356,7 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     initially
+        setFile()
         createTempFile()
-        setLinks()
-        setImports()
-        setInternalProcedures()
-        setLinkedProcedures()
-        setImportedProcedures()
-        setInternalClasses()
-        setLinkedClasses()
-        setImportedClasses()
-        setObjects()
 
 end

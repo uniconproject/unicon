@@ -19,13 +19,13 @@ class SignatureHandler(
       line := params["position"]["line"]
       character := params["position"]["character"]
 
-      # Collect context information (inside comment, space before, object before, no object before) #
-      _context := getContext(line, character, workspace.temp_file)
-      \_context | fail
-
       # Create initial return table #
       results_table := table()
       results_table["signatures"] := []
+
+      # Collect context information (inside comment, space before, object before, no object before) #
+      _context := getContext(line, character, workspace.temp_file)
+      \_context | return createResults(results_table)
 
       case _context of {
 
@@ -95,7 +95,7 @@ class SignatureHandler(
       activeParam := 0
 
       # Finding active parameter (if there is one) #
-      if params["context"]["isRetrigger"] == "__true__" & \params["context"]["activeSignatureHelp"]["signatures"][1]["label"] then {
+      if params["context"]["isRetrigger"] == "__true__" & \params["context"]["activeSignatureHelp"] then {
          current_sig := params["context"]["activeSignatureHelp"]["signatures"][1]["label"]
          activeParam := getActiveParameter(line, character, workspace.temp_file, current_sig)
          results_table["signatures"][1]["activeParameter"] := activeParam
@@ -104,6 +104,10 @@ class SignatureHandler(
       # (>^-^)> *hug*
 
       # Convert and return finished table #
+      return createResults(results_table)
+   end
+
+   method createResults(results_table)
       results := tojson(results_table)
       return results
    end
@@ -122,16 +126,18 @@ class SignatureHandler(
 
       desired_line ? {
          &pos := character
-         every 1 to *desired_line do { 
+         repeat { 
             if desired_line[&pos] == "," then param_num +:= 1
             if desired_line[&pos] == "(" then {
                initial_pos := &pos
                
-               until desired_line[&pos] == " " | desired_line[&pos] == "."  | &pos = 1 do move(-1)
-               if desired_line[&pos] == " " | desired_line[&pos] == "." then move(1)
+               until desired_line[&pos - 1] == " " | desired_line[&pos - 1] == "."  | &pos = 1 do {
+                  move(-1)
+               }
 
                if tab(initial_pos) == sig_function then break
             }
+            if &pos = 1 then break
             move(-1)
          }
       }
@@ -183,7 +189,7 @@ class SignatureHandler(
 
       desired_line ? {
          while (&pos < character) do {
-            ch := move(1)
+            ch := move(1) | break
             if ch == "#" then 
                return "inside comment"
             }
@@ -197,7 +203,9 @@ class SignatureHandler(
       
       desired_line ? {
          &pos := character
-         until desired_line[&pos] == " " | desired_line[&pos] == "." | &pos = 1 do move(-1)
+         until desired_line[&pos] == " " | desired_line[&pos] == "." | &pos = 1 do {
+            move(-1)
+         }
          if desired_line[&pos] == "." & desired_line[&pos -1] ~== " " then 
             return "object before"
       }
@@ -211,7 +219,9 @@ class SignatureHandler(
       desired_line ? {
          &pos := character
 
-         until desired_line[&pos] == " " | desired_line[&pos] == "."  | &pos = 1 do move(-1)
+         until desired_line[&pos] == " " | desired_line[&pos] == "."  | &pos = 1 do {
+            move(-1)
+         }
          if desired_line[&pos] == " " | desired_line[&pos] == "." then move(1)
 
          _function := tab(upto("("))
@@ -227,7 +237,9 @@ class SignatureHandler(
       desired_line ? {
          &pos := character
 
-         until desired_line[&pos] == " " | &pos = 1 do move(-1)
+         until desired_line[&pos] == " " | &pos = 1 do {
+            move(-1)
+         }
          if desired_line[&pos] == " " then move(1)
 
          return tab(upto("."))

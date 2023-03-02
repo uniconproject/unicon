@@ -105,9 +105,12 @@ class Workspace(
              move(4)
              _link := tab(0)
              _link := reverse(_link)
-             }
-          put(links, _link)
           }
+          every _package := key(lsp_database.package_db) do {
+            if member(lsp_database.package_db[_package]["files"], _link) then
+               put(links, _link)
+          }
+       }
     end
 
     method getLinks()
@@ -119,7 +122,11 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setImports()    	
-       imports := getFile().getImportNames()
+       imports := []
+         every _import := !getFile().getImportNames() do {
+            if member(lsp_database.package_db, _import) then
+               put(imports, _import)
+         }
     end
 
     method getImports()

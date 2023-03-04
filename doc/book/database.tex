@@ -11,7 +11,8 @@ provides direct support, enabling you to:
 \begin{itemize}
 \item Read and write memory-based structures to data files.
 \item Use DBM databases as a persistent table data type.
-\item Manipulate SQL databases through the ODBC connection mechanism.
+\item Manipulate SQL databases through the ODBC connection mechanism
+  or the SQLite plugin.
 \end{itemize}
 
 \section{Language Support for Databases}
@@ -275,8 +276,51 @@ C.J. Date and Hugh Darwen's \textit{A Guide to the SQL Standard}.
 
 \subsection*{Database architectures and ODBC}
 
-\index{ODBC}SQL databases are accessed through an underlying Open
-DataBase Connectivity (ODBC) transport mechanism. This mechanism allows
+\index{ODBC}
+\index{SQLite}
+Unicon provides two complementary ways to access an SQL database: via the
+Open Database Connectivity mechanism (ODBC) or using the the SQLite
+plugin. There is no choice if an existing database is being accessed --
+the SQLite plugin cannot be used to access an ODBC database and the ODBC
+mechanism cannot access an SQLite database. But if the database is being
+created from scratch, some thought should be given to which option to
+use. This extract (from \texttt{https://sqlite.org}) summarizes the
+different approaches.
+\begin{quote}
+ {\sl
+ SQLite is not directly comparable to client/server SQL database engines
+ such as MySQL, Oracle, PostgreSQL, or SQL Server since SQLite is trying
+ to solve a different problem.
+
+ Client/server SQL database engines strive to implement a shared
+ repository of enterprise data. They emphasize scalability, concurrency,
+ centralization, and control. SQLite strives to provide local data
+ storage for individual applications and devices. SQLite emphasizes
+ economy, efficiency, reliability, independence, and simplicity.
+ }
+\end{quote}
+In essence, SQLite is aimed more at replacing a system using conventional files
+for persistent storage than competing with an enterprise level database.
+
+An ODBC database is more difficult to set up, but may be used from
+several machines simultaneously. Apart from the SQLite library itself,
+an SQLite database needs no extra software to set it up but is hosted
+on a single machine (although access to it can be multiplexed using
+Unicon's networking features); it may also reside in memory, providing
+the advantages of a memory based database with the power and
+flexibility of SQL.
+
+An ODBC database may be accessed using Unicon's standard functions, which
+work in the same way on DBM and SQL databases, making migration
+particularly easy. The SQLite plugin only provides access via SQL which
+means that more of the SQL language must be mastered by the programmer in
+order to get a working application. The advantage (compared to the ODBC
+based method) is that the {\em full\/} SQL language may be used: for example,
+the workaround discussed on page \pageref{NestedSQL} to use nested
+\texttt{SELECT} queries is not required.
+
+Accessing an SQL database through an underlying Open
+DataBase Connectivity transport mechanism allows
 the programmer to ignore the underlying architecture. Hiding this
 complexity from application programmers is important. The database
 architecture may vary from a single process accessing a local database,
@@ -361,7 +405,7 @@ Once you have the ODBC software set up,
 writing the Unicon client program to connect to your database is
 straightforward.
 
-\subsection*{Opening a SQL database}
+\subsection*{Opening an ODBC SQL database}
 
 To connect to a SQL database, call \texttt{open()} with mode
 \texttt{"o"}. This establishes a session with a data source. The
@@ -399,7 +443,7 @@ consisting of a set of rows corresponding to the current query, and a
 first opened, the selection consists of a null set containing no rows
 and no columns.
 
-\subsection*{Querying and modifying a SQL database}
+\subsection*{Querying and modifying an ODBC SQL database}
 
 Subsequent queries to the database can be made by calling
 \texttt{sql(db, sqlcmd)}. The \index{sql()}\texttt{sql()} function sets
@@ -519,7 +563,7 @@ by strings, and strings are used to insert such values into SQL
 databases. Strings are also used to represent out-of-range values when
 reading SQL columns into Unicon.
 
-\subsection*{More SQL database functions}
+\subsection*{More ODBC SQL database functions}
 
 SQL databases are feature-rich enough to warrant a suite
 of functions in addition to those they
@@ -540,7 +584,97 @@ in a table. These functions return their results as
 a record or list of records whose field names and descriptions
 are given in Appendix A.
 
-\section{Tips and Tricks for SQL Database Applications}
+\subsection*{Opening an SQLite database}
+The ODBC infrastructure described above is not neccessary when using SQLite.
+To connect to or create an SQLite database, declare an instance of the
+\texttt{SQLite} class with a parameter of the filename that contains the
+database.
+
+\iconcode{
+  db := SQLite("myDatabase.sqlite")
+}
+\noindent
+Object oriented programming, together with Unicon's classes, is discussed
+later in part two of this book. For now, \texttt{db} is a variable that
+can be used to access the {\em methods\/} of the class that in turn allow
+read and write access to the database using SQL. In contrast to an ODBC
+database, no username or password is needed.  If the given filename does
+not exist, an empty SQLite database will be created.
+
+The \texttt{SQLite} class is described in appendix C of this book on page
+\pageref{SQLiteClass}.
+
+\subsection*{Querying and modifying a SQLite database}
+
+The \texttt{SQLite} class has several methods for querying and modifying
+the database. They all have a first parameter which is the SQL statement
+to execute, followed by optional extra parameters. The simplest is
+\texttt{Exec} which is designed for SQL queries that return a single row
+of data or, perhaps, no data at all.
+\iconcode{
+  people := db.Exec("SELECT count(*) FROM employees")
+}
+\noindent
+will return the number of rows in the employees table (in this case no
+extra parameters are needed). A simple example of a query that uses values
+from the calling program would be
+\iconcode{
+  people := db.Exec("SELECT count(*) FROM jobs WHERE payrate > ?", x)
+}
+\noindent
+which returns the number of people who are paid more than \texttt{x}.
+The \texttt{?} acts as a place holder for the value to be used.
+Each \texttt{?} in the query refers to the next parameter. To use a
+parameter more than once, append the positional value of the parameter
+(e.g. use \texttt{?3} to refer to the third parameter in the argument
+list).  There are some traps when using positional parameters and it is
+best to either not use them at all in a query or make sure that every
+placeholder has an explicit positional value.
+
+To print out the name and job title of every employee
+\iconcode{
+  every e := db.SQL\_Row("SELECT name, title FROM employees \_ \\
+  \>\> JOIN jobs ON employees.id = jobs.id") do write(e.name, " ", e.title)
+}
+\noindent
+The \texttt{SQL\_Row} method returns the value of each row returned by the
+query as a record whose fields are the names used in the SQL query.
+The \texttt{SQLite} class also has methods that return all of the rows of
+a query at once in the appropriate Unicon type:
+\texttt{SQL\_As\_List} returns the rows in a list.
+\texttt{SQL\_As\_Table} returns them in a (Unicon) table and
+\texttt{SQL\_As\_Set} returns them in a set.
+
+To add new employees (assuming they are in a list of records called
+\texttt{newcomers})
+\iconcode{
+db.BEGIN()\\
+\>    id := 1 + db.EXEC("SELECT max(id) FROM employees")\\
+\>    every  newbie := !newcomers do \{\\
+\>\>    db.Exec("INSERT INTO employees (id, name, phone) VALUES(?,?,?)",\\
+\>\>\>id, newbie.name, newbie.phone)\\
+\>\>    db.Exec(INSERT INTO jobs (id, payrate, is\_salaried, title)  VALUES(?,?,?,?)",\\
+\>\>\>id, newbie.pay, newbie.salaried, newbie.jobtitle)\\
+\>\>  id+:=1\\
+\>\}\\
+db.END()
+}
+\noindent
+Using \texttt{BEGIN} and \texttt{END} ensures that either all of the
+updates are performed or (in case of a failure) none of them. It will also
+ensure that any other application using the database will pause until the
+transaction is complete, so an inconsistent view of the data will be
+avoided.  See appendix C for more details.
+
+\subsection*{Closing an SQLite database}
+It is easy to develop the habit of relying on the Unicon system to close
+any files that have been left open on program termination, even though it
+is not recommended to do so. {\em This will not work\/} on SQLite
+databases because the connection to the database is not a Unicon
+file. All connections should be closed explicitly by using the
+\texttt{Close} method.
+
+\section{Tips and Tricks for ODBC SQL Database Applications}
 
 In addition to the complexity of learning SQL itself, SQL database
 applications have a characteristic flavor which may or may not seem
@@ -558,7 +692,8 @@ transmitted faster than many smaller tuples.
 
 \subsection*{Use multiple connections to nest queries}
 
-It is common to use more than one table at once. Some times this is
+\label{NestedSQL}
+It is common to use more than one table at once. Sometimes this is
 using SQL's \texttt{JOIN} operation, but sometimes it
 is not. If you try to nest a second query inside a first one, you will
 quickly find that on a given connection, only one \texttt{SELECT} and
@@ -591,6 +726,11 @@ while r := fetch(db) do \{ \\
 \>   while r2 := fetch(db2) do write(r2.foo) \\
 \>   \}
 }
+
+An alternative, if the situation allows it, is to use the \texttt{SQLite} plugin
+which {\em does \/}allow nested queries (but note that the two approaches cannot
+be mixed -- you must {\em either \/}use ODBC {\em or \/} \texttt{SQLite}, and
+the best time to make that decision is at the start of development).
 
 \subsection*{Dynamic records}
 

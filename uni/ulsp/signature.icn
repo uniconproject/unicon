@@ -95,6 +95,7 @@ class SignatureHandler(
       activeParam := 0
 
       # Finding active parameter (if there is one) #
+      write(ximage(params))
       if params["context"]["isRetrigger"] == "__true__" & \params["context"]["activeSignatureHelp"] then {
          current_sig := params["context"]["activeSignatureHelp"]["signatures"][1]["label"]
          activeParam := getActiveParameter(line, character, workspace.temp_file, current_sig)
@@ -156,7 +157,7 @@ class SignatureHandler(
       signature := createSignature(function, functionTable)
 
       # Put method params in result table #
-      put(results_table["signatures"], table("label", signature, "parameters", []))
+      put(results_table["signatures"], table("label", signature, "parameters", [], "documentation", functionTable["comments"]))
       every param_table := !functionTable["params"] do 
          put(results_table["signatures"][1]["parameters"], table("label", param_table["name"]))
    end
@@ -177,6 +178,8 @@ class SignatureHandler(
       }
 
       signature ||:= ")"
+ 
+      
 
       return signature
    end

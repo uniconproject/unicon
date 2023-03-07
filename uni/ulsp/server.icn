@@ -36,28 +36,28 @@ class Server(
       local request_body, jsontable, request_method, request_params, request_id
 
       repeat {
+         every request_body := get_request(sock) do {
+            jsontable := jtou(request_body)
 
-         request_body := get_request(sock)
-         jsontable := jtou(request_body)
+            request_method := jsontable["method"]
+            request_params := jsontable["params"]
+            request_id := jsontable["id"]
 
-         request_method := jsontable["method"]
-         request_params := jsontable["params"]
-         request_id := jsontable["id"]
+            write("-----------------------------------------")
+            write(request_method)
+            write("-----------------------------------------")
 
-         write("-----------------------------------------")
-         write(request_method)
-         write("-----------------------------------------")
-
-         case request_method of {
-            "initialize" : initialize(request_id)
-            "textDocument/didOpen" : didOpen(request_params)
-            "textDocument/didClose" : didClose(request_params)
-            "textDocument/didChange" : didChange(request_params)
-            "textDocument/completion" : completion(request_id, request_params)
-            "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
-            "$/cancelRequest" : cancelRequest(request_id)
-            "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
-            default: { write("Don't know what to do with: ", request_method) }
+            case request_method of {
+               "initialize" : initialize(request_id)
+               "textDocument/didOpen" : didOpen(request_params)
+               "textDocument/didClose" : didClose(request_params)
+               "textDocument/didChange" : didChange(request_params)
+               "textDocument/completion" : completion(request_id, request_params)
+               "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
+               "$/cancelRequest" : cancelRequest(request_id)
+               "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
+               default: { write("Don't know what to do with: ", request_method) }
+               }
             }
          }
 
@@ -77,19 +77,21 @@ class Server(
          msg := ready(sock)
 
          # Handling socket reading anomoly: header alone or header + request_body
-         msg ? {
-            tab(find("Content-Length:") + 15)
-            len := integer(tab(many(&digits)))
-            tab(upto("\r\n\r\n") + 4)
-            if pos(0) then {
-               request_body := ready(sock, len)
+         while msg ~== "" do {
+            msg ? {
+               tab(find("Content-Length:") + 16)
+               len := integer(tab(many(&digits)))
+               tab(upto("\r\n\r\n") + 4)
+               if pos(0) then {
+                  request_body := ready(sock, len)
+                  }
+               else
+                  request_body := move(len)
+                  msg := tab(0)
                }
-            else
-               request_body := tab(0)
+               suspend request_body
             }
          }
-
-      return request_body
    end
 
 #################################################################################
@@ -239,6 +241,5 @@ class Server(
 
        completionHandler := CompletionHandler()
        signatureHandler := SignatureHandler()
-
 end
 

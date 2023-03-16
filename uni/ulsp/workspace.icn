@@ -210,19 +210,19 @@ class Workspace(
              internal_classes[_class.getName()]["methods"][_method.getName()] := table()
              # internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := "" #
 
-             # put(internal_classes[_class.getName()]["methods"][_method.getName()]["comments"], _method.getComments()) #
-             # write(ximage(internal_classes[_class.getName()]["methods"][_method.getName()]["comments"])) #
-
-             number_of_lines := _method.getComments().get().size()
+             
              fullComment:= ""
-             counter := 1
+             skip := 0
              every _comment := _method.getComments().get() do {
                every _line := _comment.get() do {
-                  if (counter ~== 1  && counter ~== number_of_lines) then {
+                  (find("<p>", _line) > 0) | skip +:= 1
+                  (find("</p>", _line) > 0) | skip +:= 1
+
+                  if !(skip == 1) then {
                      fullComment ||:= _line || " "
                      write(_line)
                   }
-                  counter +:= 1
+                  skip := 0
                }
              } 
             internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := fullComment

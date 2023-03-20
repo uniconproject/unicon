@@ -111,6 +111,20 @@ class LSPDB(
                 package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
 
                 package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := []
+                
+                number_of_lines := procedure_in_file.getComments().get().size()
+                     fullComment:= ""
+                     counter := 1
+                     every _comment := procedure_in_file.getComments().get() do {
+                        every _line := _comment.get() do {
+                           if (counter ~== 1  && counter ~== number_of_lines) then {
+                              fullComment ||:= _line || " "
+                           }
+                           counter +:= 1
+                        }
+                     } 
+                     package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["comments"] := fullComment
+
                 every param_in_procedure := procedure_in_file.getParams().get() do {
                      paramName := param_in_procedure.getName()
                      paramType := param_in_procedure.getTypeValue()
@@ -137,17 +151,19 @@ class LSPDB(
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
 
 
-                   number_of_lines := method_in_class.getComments().get().size()
                    fullComment:= ""
-                   counter := 1
                    every _comment := method_in_class.getComments().get() do {
-                      every _line := _comment.get() do {
-                         if (counter ~== 1  && counter ~== number_of_lines) then {
+                   every _line := _comment.get() do {
+                           _line := replace(_line, "<p>", "")
+                           _line := replace(_line, "</p>", "")
+                           _line := replace(_line, "<b>", "")
+                           _line := replace(_line, "</b>", "")
+                           _line := replace(_line, "<i>", "")
+                           _line := replace(_line, "</i>", "")
                             fullComment ||:= _line || " "
-                         }
-                         counter +:= 1
+        
                       }
-                   } 
+                   }  
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["comments"] := fullComment
 
                    every param_in_method := method_in_class.getParams().get() do {

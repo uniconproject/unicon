@@ -24,9 +24,9 @@ class LSPDB(
    )
 		
 		
-   method build()	
+   method build()
+      build_bnf()
       build_package_db()
-      built_in_functions := [:function():]
 
       action_words := ["break", "case", "create", "critical", "every", "fail", "if",
                        "initial", "initially", "next", "not", "repeat", "return",
@@ -51,6 +51,40 @@ class LSPDB(
 		preprocessors := ["$define", "$else", "$endif", "$error", "$ifdef", "$ifndef",
                                   "$include", "$line", "$undef", "#line"]
 	end
+
+   method build_bnf()
+      local idoc, dirPath, source_table
+      idoc := UniAll()
+      built_in_functions := table()
+
+      dirPath := getenv("FPATH")
+      dirPath ? {
+         tab(upto("/"))
+         dirPath := tab(-3)
+      }
+      dirPath ||:= "uni/ulsp/unicon_built_in_functions.icn"
+
+      idoc.setSourcePath(dirPath)
+      idoc.processFile(dirPath)
+
+      source_file := idoc.getAllFiles()[1]
+
+      every _procedure := source_file.getProcedures().get() do {
+         built_in_functions[_procedure.getName()] := table()
+         
+         built_in_functions[_procedure.getName()]["params"] := []
+         every param_in_procedure := _procedure.getParams().get() do {
+            paramName := param_in_procedure.getName()
+            paramType := param_in_procedure.getTypeValue()
+            paramDef := param_in_procedure.getDefValue()
+            put(built_in_functions[_procedure.getName()]["params"], table(
+               "name", paramName, 
+               "type", paramType, 
+               "default", paramDef))
+         }
+      }
+
+   end
 
     method build_package_db()
 
@@ -137,8 +171,8 @@ class LSPDB(
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
                    every param_in_method := method_in_class.getParams().get() do {
                      paramName := param_in_method.getName()
-                     paramType := param_in_method.getTypeValue()
-                     paramDef := param_in_method.getDefValue()
+                     paramType := param_in_method.getTypeValue() | continue
+                     paramDef := param_in_method.getDefValue() | continue
                      put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"], table(
                         "name", paramName, 
                         "type", paramType, 

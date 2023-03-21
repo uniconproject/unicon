@@ -23,6 +23,8 @@ class SignatureHandler(
       # Create initial return table #
       results_table := table()
       results_table["signatures"] := []
+      results_table["activeSignature"] := &null
+      results_table["activeParameter"] := &null
 
       # Extract desired line #
       desired_line := getDesiredLine(line, workspace.temp_file)
@@ -33,6 +35,17 @@ class SignatureHandler(
          handleActiveSignature(params, results_table, desired_line, character)
          return createResults(results_table)
       }
+
+      # Handle a new signature #
+      handleNewSignature(desired_line, character, results_table)
+      
+      # Convert and return finished table #
+      return createResults(results_table)
+   end
+
+   # Handle a new signature #
+   method handleNewSignature(desired_line, character, results_table)
+   local _context
 
       # Collect context information (inside comment, space before, object before, no object before) #
       _context := getContext(desired_line, character)
@@ -60,12 +73,12 @@ class SignatureHandler(
             } 
 
             # Check if function is a method of an imported class #
-            else if member(imported_classes, className) & member(imported_classes[className]["methods"], functionName) then {
+            if member(imported_classes, className) & member(imported_classes[className]["methods"], functionName) then {
                updateResults(functionName, imported_classes[className]["methods"][functionName], results_table)
             }
 
             # Check if function is a method of an internal class #
-            else if member(internal_classes, className) & member(internal_classes[className]["methods"], functionName) then {
+            if member(internal_classes, className) & member(internal_classes[className]["methods"], functionName) then {
                updateResults(functionName, internal_classes[className]["methods"][functionName], results_table)
             }
          } 
@@ -75,10 +88,16 @@ class SignatureHandler(
 
             functionName := getFunction(desired_line, character)
 
+            built_in_functions := workspace.getBuiltInFunctions()
             internal_classes := workspace.getInternalClasses()
             linked_procedures := workspace.getLinkedProcedures()
             imported_procedures := workspace.getImportedProcedures()
             internal_procedures := workspace.getInternalProcedures()
+
+            # Check if function is a built in function #
+            if member(built_in_functions, functionName) then {
+               updateResults(functionName, built_in_functions[functionName], results_table)
+            }
 
             # Check if function is part of an internal class #
             every className := key(internal_classes) do {
@@ -103,9 +122,6 @@ class SignatureHandler(
             }
          }
       }
-      
-      # Convert and return finished table #
-      return createResults(results_table)
    end
 
    # Handle an active signature #
@@ -135,9 +151,9 @@ class SignatureHandler(
          fail
       }
 
-      current_sig := params["context"]["activeSignatureHelp"]["signatures"][1]["label"]
-      current_params := params["context"]["activeSignatureHelp"]["signatures"][1]["parameters"]
-      put(results_table["signatures"], table("label", current_sig, "parameters", current_params, "activeParameter", activeParam))
+      results_table["signatures"] := params["context"]["activeSignatureHelp"]["signatures"]
+      results_table["activeSignature"] := params["context"]["activeSignatureHelp"]["activeSignature"]
+      results_table["activeParameter"] := activeParam
    end
 
    # Convert results to json #
@@ -148,15 +164,17 @@ class SignatureHandler(
 
    # Update the results table #
    method updateResults(function, functionTable, results_table)
-      local signature
+      local signature, param_list := []
 
       # Create a valid signature #
       signature := createSignature(function, functionTable)
 
-      # Put method params in result table #
-      put(results_table["signatures"], table("label", signature, "parameters", []))
+      # Format parameters #
       every param_table := !functionTable["params"] do 
-         put(results_table["signatures"][1]["parameters"], table("label", param_table["name"]))
+         put(param_list, table("label", param_table["name"]))
+
+      # Update results #
+      put(results_table["signatures"], table("label", signature, "parameters", param_list))
    end
 
    # Create a valid signature #
@@ -179,7 +197,7 @@ class SignatureHandler(
       return signature
    end
 
-   # Retriving context #
+   # Retrive context #
    method getContext(line, character)
 
       line ? {
@@ -203,7 +221,7 @@ class SignatureHandler(
       return "no object before"
    end
 
-   # Retriving function name #
+   # Retrive function name #
    method getFunction(line, character)
       identifiers := &letters ++ &digits ++ '_' ++ '-'
 
@@ -222,7 +240,7 @@ class SignatureHandler(
       }
    end
 
-   # Retriving object name #
+   # Retrive object name #
    method getObject(line, character)
       identifiers := &letters ++ &digits ++ '_' ++ '-'
 
@@ -248,7 +266,7 @@ class SignatureHandler(
          }
    end
 
-   # Returning line from temp file as string #
+   # Return line from temp file as string #
    method getDesiredLine(line, file)
       f := open(file)
       every !line do read(f)

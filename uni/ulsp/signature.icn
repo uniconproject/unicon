@@ -146,22 +146,38 @@ class SignatureHandler(
 
       # Handle any new signatures #
       if line[character] == "(" then {
+         new_signatures |||:= handleNewSignature(line, character, results_table)
+      }
 
-         new_signatures := handleNewSignature(line, character, results_table)
-
-         # Remove any duplicate signatures #
-         position := 1
-         every new_signature := !new_signatures do {
-            every signature := !signatures do {
-               if new_signature["label"] == signature["label"] & *new_signature["parameters"] = *signature["parameters"] then 
-                  delete(new_signatures, position)
+      # Handle any new signatures while back tracking #
+      if line[character + 1] == ")" then {
+         line ? {
+            &pos := character
+            depth := 0
+            until line[&pos] == "(" & depth = 0 do {
+               if line[&pos] == ")" then depth +:= 1
+               else if line[&pos] == "(" then depth -:= 1
+               if &pos = 1 then break
+               move(-1)
             }
-            position +:= 1
-         }
 
-         every new_signature := !new_signatures do {
-            put(signatures, new_signature)
+            new_signatures |||:= handleNewSignature(line, &pos, results_table)
          }
+      }
+
+      # Remove any duplicate signatures #
+      position := 1
+      every new_signature := !new_signatures do {
+         every signature := !signatures do {
+            if new_signature["label"] == signature["label"] & *new_signature["parameters"] = *signature["parameters"] then 
+               delete(new_signatures, position)
+         }
+         position +:= 1
+      }
+
+      # Add new signatures #
+      every new_signature := !new_signatures do {
+         put(signatures, new_signature)
       }
 
       # Set every signatures active parameter to 0 #

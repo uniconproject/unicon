@@ -1,0 +1,69 @@
+package ulsp
+
+import json
+
+class HoverHandler(
+    workspace,
+    params
+    )
+
+    method setVariables(new_workspace, new_params)
+        workspace := new_workspace
+        params := new_params
+    end
+
+    method run()
+    local line, character, desired_line, hover_item, signatureHandler,  results_table
+
+        line := params["position"]["line"]
+        character := params["position"]["character"]
+        desired_line := getDesiredLine(line, workspace.temp_file)
+
+        signatureHandler := SignatureHandler()
+
+        _context := getContext(desired_line, character)
+
+        hover_item := getHoverItem(desired_line, character)
+
+        test_result := table("contents", hover_item)
+        return tojson(test_result)
+    end
+
+    method getContext(line, character)
+
+        line ? {
+            while (&pos < character) do {
+                ch := move(1) | break
+                if ch == "#" then 
+                return "comment"
+            }
+        }
+
+        return "default"
+   end
+
+    method getHoverItem(line, character)
+    local identifiers
+
+        identifiers := &letters ++ &digits ++ '_' ++ '-'
+
+        line ? {
+            &pos := character
+
+            while c := move(-1) do {
+                if (c ** identifiers) ~== c then break
+            }
+
+            if &pos ~= 1 then move(1)
+
+            return tab(many(identifiers))
+        }
+    end
+
+    method getDesiredLine(line, file)
+        f := open(file)
+        every !line do read(f)
+        desired_line := read(f)
+        return desired_line
+    end
+end

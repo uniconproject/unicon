@@ -29,6 +29,7 @@ class Server(
    openFiles,                    # File container for open files
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
    signatureHandler,
+   hoverHandler,
    lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
    )
 
@@ -53,9 +54,10 @@ class Server(
                "textDocument/didClose" : didClose(request_params)
                "textDocument/didChange" : didChange(request_params)
                "textDocument/completion" : completion(request_id, request_params)
+               "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
+               "textDocument/hover" : hoverHelp(request_id, request_params)
                "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
                "$/cancelRequest" : cancelRequest(request_id)
-               "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
                default: { write("Don't know what to do with: ", request_method) }
                }
             }
@@ -124,7 +126,7 @@ class Server(
    method initialize(request_id)
       local results, res
 
-      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelpProvider\":{\"contextSupport\":true,\"triggerCharacters\":\"(\"}}}"
+      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelpProvider\":{\"contextSupport\":true,\"triggerCharacters\":\"(\"},\"hoverProvider\":true}}"
 
       res := build_response(request_id, results)
       write(res)
@@ -191,7 +193,33 @@ class Server(
       res := build_response(request_id, result)
       writes(sock, res)
    end
-	
+
+########################################################
+#              textDocument/signatureHelp              #
+########################################################
+
+   method signatureHelp(request_id, request_params)
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      signatureHandler.setVariables(workspace_object, request_params)
+      result := signatureHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
+########################################################
+#              textDocument/hover                      #
+########################################################
+
+   method hoverHelp(request_id, request_params)
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      hoverHandler.setVariables(workspace_object, request_params)
+      result := hoverHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
 ########################################################
 #                textDocument/declaration              #
 ########################################################
@@ -208,19 +236,6 @@ class Server(
 
    method cancelRequest(request_id)
       write("We received a cancel request. We need to implement this still...")
-   end
-
-########################################################
-#              textDocument/signatureHelp              #
-########################################################
-
-   method signatureHelp(request_id, request_params)
-      uri := request_params["textDocument"]["uri"]
-      workspace_object := openFiles[\uri]
-      signatureHandler.setVariables(workspace_object, request_params)
-      result := signatureHandler.run()
-      res := build_response(request_id, result)
-      writes(sock, res)
    end
 
    initially
@@ -241,5 +256,6 @@ class Server(
 
        completionHandler := CompletionHandler()
        signatureHandler := SignatureHandler()
+       hoverHandler := HoverHandler()
 end
 

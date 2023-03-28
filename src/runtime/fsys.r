@@ -1007,7 +1007,9 @@ Deliberate Syntax Error
 		    fail;
 		  }
 		  SSL_set_fd(ssl, fd);
+		  DEC_NARTHREADS;
 		  err = SSL_accept(ssl);
+		  INC_NARTHREADS_CONTROLLED;
 
 		  /*Check for error in accept.*/
 		  if (err<1) {

@@ -165,11 +165,20 @@ class CompletionHandler(
       every _importedClass := key(workspace.getImportedClasses()) do {
          put(results_table["items"], table("label", _importedClass, "kind", 4))
          }
+      every _packageClass := key(workspace.getPackageClasses()) do {
+         put(results_table["items"], table("label", _packageClass, "kind", 4))
+         }
    end
 
    method addInternalObjects(results_table, workspace)
       every _object := key(workspace.getObjects()) do {
          put(results_table["items"], table("label", _object, "kind", 6))
+      }
+   end
+
+   method addInternalVariables(results_table, workspace)
+      every _variable := key(workspace.getVariables()) do {
+         put(results_table["items"], table("label", _variable, "kind", 6))
       }
    end
 
@@ -183,5 +192,6 @@ class CompletionHandler(
       addWordspaceClasses(results_table, workspace)
       addWorkspaceProcedures(results_table, workspace)
       addInternalObjects(results_table, workspace)
+      addInternalVariables(results_table, workspace)
    end
 end

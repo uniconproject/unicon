@@ -1,6 +1,7 @@
 package ulsp
 
 import json
+link regexp
 
 class HoverHandler(
     workspace,
@@ -13,7 +14,9 @@ class HoverHandler(
     end
 
     method run()
-    local line, character, desired_line, hover_item, signatureHandler,  results_table
+    local line, character, desired_line, hover_item, signatureHandler, results_table
+
+        results_table := table()
 
         line := params["position"]["line"]
         character := params["position"]["character"]
@@ -23,21 +26,80 @@ class HoverHandler(
 
         _context := getContext(desired_line, character)
 
-        hover_item := getHoverItem(desired_line, character)
+        hover_item := \getHoverItem(desired_line, character) | return tojson(results_table)
 
-        test_result := table("contents", hover_item)
-        return tojson(test_result)
+        results_table["contents"] := "(" || _context || ") " || hover_item
+        return tojson(results_table)
     end
 
     method getContext(line, character)
+    local identifiers, line_num, procedure_name, method_name, class_name
+
+        identifiers := &letters ++ &digits ++ '_' ++ '-'
 
         line ? {
+
             while (&pos < character) do {
                 ch := move(1) | break
-                if ch == "#" then 
-                return "comment"
+                if ch == "#" then return "comment"
             }
+
+            &pos := character
+            tab(many(identifiers))
+            if line[&pos] == "(" then return "function"
         }
+
+        line_num := params["position"]["line"]
+
+        until line_num = 0 do {
+            desired_line := getDesiredLine(line_num, workspace.temp_file)
+            if ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) then {
+                desired_line ? {
+                    tab(many(' \t'))
+                    move(9)
+                    tab(many(' \t'))
+                    procedure_name := tab(many(identifiers))
+                }
+
+                num_params := *workspace.internal_procedures[procedure_name]["params"]
+                every param := workspace.internal_procedures[procedure_name]["params"][1 to num_params] do {
+                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                }
+                break
+            }
+            else if ReMatch("^[\ \t]*method[\ \t]+", desired_line) then {
+                desired_line ? {
+                    tab(many(' \t'))
+                    move(6)
+                    tab(many(' \t'))
+                    method_name := tab(many(identifiers))
+                }
+                line_num -:= 1
+                until line_num = 0 do {
+                    desired_line := getDesiredLine(line_num, workspace.temp_file)
+                    if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
+                        desired_line ? {
+                            tab(many(' \t'))
+                            move(5)
+                            tab(many(' \t'))
+                            class_name := tab(many(identifiers))
+                        }
+                        break
+                    }
+                    line_num -:= 1
+                }
+
+                num_params := *workspace.internal_classes[class_name]["methods"][method_name]["params"]
+                every param := workspace.internal_classes[class_name]["methods"][method_name]["params"][1 to num_params] do {
+                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                }
+                break
+            }
+            line_num -:= 1
+        }
+
+        if member(workspace.objects, getHoverItem(line, character)) then return "object"
+        if member(workspace.variables, getHoverItem(line, character)) then return "variable"
 
         return "default"
    end
@@ -46,6 +108,7 @@ class HoverHandler(
     local identifiers
 
         identifiers := &letters ++ &digits ++ '_' ++ '-'
+        if (line[character] ** identifiers) ~== line[character] then fail
 
         line ? {
             &pos := character

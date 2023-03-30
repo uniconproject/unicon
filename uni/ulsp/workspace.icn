@@ -35,26 +35,32 @@ class Workspace(
    #   file_contents,
    links,
    imports,
+   _package,
    objects,
+   variables,
    internal_procedures,
    internal_classes,
    linked_procedures,
    linked_classes,
    imported_procedures,
    imported_classes,
+   package_classes,
    m_uni_file
    )
 
    method updateWorkspace()
       setLinks()
       setImports()
+      setPackage()
       setInternalProcedures()
       setLinkedProcedures()
       setImportedProcedures()
       setInternalClasses()
       setLinkedClasses()
       setImportedClasses()
+      setPackageClasses()
       setObjects()
+      setVariables()
    end
 
    method setFile()
@@ -106,8 +112,8 @@ class Workspace(
              _link := tab(0)
              _link := reverse(_link)
           }
-          every _package := key(lsp_database.package_db) do {
-            if member(lsp_database.package_db[_package]["files"], _link) then
+          every pack := key(lsp_database.package_db) do {
+            if member(lsp_database.package_db[pack]["files"], _link) then
                put(links, _link)
           }
        }
@@ -131,6 +137,20 @@ class Workspace(
 
     method getImports()
        return imports
+    end
+
+# -------------------------------------------------------------------------------------------------
+# ---------------- Package (get, set, update) -----------------------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+    method setPackage() 
+       if member(lsp_database.package_db, getFile().getPackageName()) then {
+          _package := getFile().getPackageName()
+       }
+    end
+
+    method getPackage()
+       return _package
     end
 
 # -------------------------------------------------------------------------------------------------
@@ -268,6 +288,23 @@ class Workspace(
     end
 
 # -------------------------------------------------------------------------------------------------
+# ---------------- Package Classes (get, set, update) --------------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+    method setPackageClasses()
+       package_classes := table()
+            every file_in_pack := !lsp_database.package_db[_package]["files"] do {
+               every _key := key(file_in_pack["classes"]) do {
+                  package_classes[_key] := file_in_pack["classes"][_key]
+               }
+            }
+    end
+
+    method getPackageClasses()
+       return package_classes
+    end
+
+# -------------------------------------------------------------------------------------------------
 # ---------------- Objects (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
@@ -283,9 +320,9 @@ class Workspace(
                 move(2)
                 tab(many(' \t'))
                 className := tab(upto("\("))
-                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) then {
+                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
                    objects[objectName] := className
-                   }
+                   } 
                 }
              }
           }
@@ -293,6 +330,34 @@ class Workspace(
 
     method getObjects()
        return objects
+    end
+
+# -------------------------------------------------------------------------------------------------
+# ---------------- Variables (get, set, update) -----------------------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+    method setVariables()
+       variables := table()
+       f := open(uri)
+       while _line := read(f) do {
+          if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", _line) then {
+             _line ? {
+                tab(many(' \t'))
+                variableName := tab(many(&digits ++ &letters ++ '-' ++ '_'))
+                tab(many(' \t'))
+                move(2)
+                tab(many(' \t'))
+                _content := tab(*_line + 1)
+                if not member(objects, variableName) then {
+                   variables[variableName] := _content
+                   }
+                }
+             }
+          }
+    end
+
+    method getVariables()
+       return variables
     end
 
 # -------------------------------------------------------------------------------------------------

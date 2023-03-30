@@ -214,10 +214,13 @@ class Workspace(
              every _comment := _method.getComments().get() do {
                every _line := _comment.get() do {
             
-                  if ((find("<p>", _line) > -999) | (find("</p>", _line) > -999)) then write("Has <p> or </p>")
+                  if ((find("<p>", _line) > -999) | (find("</p>", _line) > -999)) then placeholder := 0
                   else {  
+                     _line := replace(_line, "<b>", "")
+                     _line := replace(_line, "</b>", "")
+                     _line := replace(_line, "<i>", "")
+                     _line := replace(_line, "</i>", "")
                      fullComment ||:= _line || " "
-                     write(_line)
                   }
                
                }

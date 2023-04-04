@@ -394,7 +394,656 @@ string and may contain any character value from \texttt{char(0)} to
 \texttt{sha\_Result(x)} returns the final hash value converted to a string of
 hexadecimal characters.
 
-%-------------------- To Do --------------------
-%\subsection{SQLite}
-%\label{SQLite Plugin}
-%\label{SQLiteClass}
+\subsection{SQLite}
+\label{SQLitePlugin}
+The \texttt{SQLite} plugin provides access to version 3 of the SQLite database
+engine. The SQLite software must be downloaded from
+\url{https://sqlite.org/download.html} (or from a mirror or a distribution specific
+site) and installed: the plugin does not provide it.
+
+SQLite is a {\em transactional\/} database: all reads and writes take place
+within a transaction -- either explicitly started by the application, or
+implicitly by SQLite itself -- and a transaction is {\em atomic\/}; either all
+of the modifications in the transaction succeed or none of them do.  SQLite
+supports many readers but only one writer at a time. To resolve conflicts
+between incompatible access requirements, requests are queued. Sometimes the
+error \texttt{SQLITE\_BUSY} is returned to signal that the database is in use
+and to try again later.  See \url{https://sqlite.org/transactional.html} and
+\url{https://sqlite.org/lang_transaction.html} for more details.
+
+\medskip
+\index{SQLite Plugin}
+The plugin gives access at three levels:
+\begin{enumerate}
+\item
+  The highest level is a simple class, built on the routines in level 2, that
+  encapsulates an SQLite database connection (and, to a large extent, handles
+  \texttt{SQLITE\_BUSY}).  SQLite is transactional but SQLite transactions may
+  not be nested. The class provides limited support for what {\em appears\/} to
+  be nested transactions allowing calls to start and finish a transaction to be
+  nested%
+  \footnote{
+   Methods like \texttt{SQL\_As\_List} use transactions
+   internally to guarantee the consistency of the answer.
+  }-- which allows routines that use a transaction to be called from other
+  routines that themselves use a transaction. In reality, there is only ever one
+  (the outermost) transaction.
+
+  There is also a derived class (\texttt{RO\_SQLite})that provides a
+  ``read-only'' interface, which allows reading from the database but
+  prohibits its alteration.
+\item
+  The next level consists of utility procedures that use the lowest level routines
+  to return the rows of an SQL query as a Unicon data structure (list, set,
+  table). This level makes no attempt to deal with \texttt{SQLITE\_BUSY},
+  passing that error back to the caller to be dealt with there.
+\item
+  The lowest level provides access to the SQLite API. There are almost 300
+  routines in the API and, at present, this level only provides access to the
+  routines that are used by the higher levels of the plugin. However, given
+  the examples provided here, it is comparatively easy to extend this level to
+  provide a routine that is missing.
+\end{enumerate}
+
+The thread safety of the \texttt{SQLite} plugin is a complicated question.
+In summary, the external SQLite library itself {\em is\/} thread-safe but the
+plugin is not; \WarningNotThreadSafe however, it can be used in a thread-safe
+manner with a little extra effort.  See below (page \pageref{SQLite_ThreadSafety})
+for more detail.
+
+\subsubsection{The \texttt{SQLite} class}
+\label{SQLiteClass}
+The class is initialized with a string parameter that is the file name of the
+database together with an optional timeout parameter -- discussed below on page
+\pageref{SQLite_Timeout}  -- the default is 5 seconds.
+
+\noindent
+A simple example of the use of the \texttt{SQLite} class may be found in the
+\texttt{testSQLite.icn} file that accompanies the source code of the plugin.
+Using the class methods, the program creates a simple database of squares, cubes
+and fourth powers of the numbers from one to ten. It then checks the values
+returned by other methods of the class.
+
+\noindent
+The methods of the \texttt{SQLite} class are:
+\bigskip\hrule\vspace{0.1cm}
+\index{BEGIN}
+\noindent
+{\bf BEGIN() : ? } \hfill {\bf Start a database transaction}
+
+\noindent
+\texttt{BEGIN()} declares the start of an SQLite transaction: alterations to
+the database between \texttt{BEGIN()} and \texttt{END()} will either {\em
+  all\/} succeed or, none of them will succeed. Calls to \texttt{BEGIN} may
+be nested for convenience but note that SQLite does not support nested
+transactions: from the point of view of the database software there is only
+ever one transaction -- the nested transactions are a fiction provided by the
+\texttt{SQLite} class so that functions which, in isolation, call for a
+transaction may be conveniently amalgamated into a single overall transaction.
+After a successful call of \texttt{BEGIN} the \texttt{SQLITE\_BUSY} status will
+not be returned by any SQLite routine up to (but not including) the
+corresponding call of \texttt{END}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{END}
+\noindent
+{\bf END() : ? } \hfill {\bf Complete a database transaction}
+
+\noindent
+\texttt{END()} declares the end of an SQLite transaction. If the call
+succeeds, all modifications to the database after the call of the
+corresponding call to \texttt{BEGIN} will have succeeded.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{ROLLBACK}
+\noindent
+{\bf ROLLBACK() : ? } \hfill {\bf Abandon a database transaction}
+
+\noindent
+\texttt{ROLLBACK()} declares the end of an SQLite transaction. If the call
+succeeds, all modifications to the database after the call of the
+outermost call to \texttt{BEGIN} will have been undone and the state of
+the database will be as it was just before the call to \texttt{BEGIN}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Close}
+\noindent
+{\bf Close() : } \hfill {\bf Close a database}
+
+\noindent
+\texttt{Close()} closes a database connection and recovers resources. If
+\texttt{Close} is called during a transaction, the transaction is automatically
+rolled back. It is important to call \texttt{Close} before exiting the program:
+do not rely on the Unicon system to close the connection for you.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Exec}
+\noindent
+{\bf Exec(s, ...) : row|val? } \hfill {\bf Execute SQL}
+
+\noindent
+\texttt{Exec(sql)} prepares the SQL query in \texttt{sql} and then uses the
+SQLite library to execute it. The query should return, at most, one row of data.
+If the query asks for more than one value the values will be returned in a
+record whose field names are the names used in the query. A query that asks for a
+single value results in that value being returned directly (rather than a record
+with a single field). A query that results in no data being returned will either
+succeed or fail.  \texttt{Exec(sql, p1, p2 ...)}  will bind the parameters to
+the query before execution.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{thing}
+\noindent
+{\bf ErrMsg() : string } \hfill {\bf Return the most recent error message}
+
+\noindent
+\texttt{ErrMsg()} returns a string (in English) that describes the most recent
+error detected by the SQLite database routines.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{isTable}
+\noindent
+{\bf isTable(s) :  ? } \hfill {\bf Test if a SQL table exists}
+
+\noindent
+\texttt{isTable(t)} succeeds if the SQL table \texttt{t} exists in the database.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Rows}
+\noindent
+{\bf Rows(s) : integer ? } \hfill {\bf Count rows in a SQL table}
+
+\noindent
+\texttt{Rows(t)} returns the number of rows in the SQL table \texttt{t}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQL_Row}
+\noindent
+{\bf SQL\_Row(s, ... ) : row * } \hfill {\bf Get data from a query}
+
+\noindent
+\texttt{SQL\_Row(sql, ...)} prepares the query in \texttt{sql} and then returns
+the data one row at a time. The data is in the same form as \texttt{Exec} -- a
+record with named fields or a single value.  Note that calling \texttt{SQL\_Row}
+fewer times than there are available rows will leak memory until the database
+connection is closed.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQL_As_List}
+\noindent
+{\bf SQL\_As\_List(s, ...) : list ? } \hfill {\bf Return query data as a list}
+
+\noindent
+\texttt{SQL\_As\_List(sql, ...)}  prepares the query in \texttt{sql} and returns
+the results in a list. The list elements will either be records with named
+fields or single values (same format as \texttt{Exec}).
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQL_As_Set}
+\noindent
+{\bf SQL\_As\_Set(s, ...) : set ? } \hfill {\bf Return query data as a set}
+
+\noindent
+\texttt{SQL\_As\_Set(sql, ...)}  prepares the query in \texttt{sql} and returns
+the results in a set. The set elements will either be records with named
+fields or single values (same format as \texttt{Exec}).
+Note that queries that return a single value will have duplicates removed but
+queries that return a record won't because all records are unique, even if the
+fields have identical values.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQL_As_Table}
+\noindent
+{\bf SQL\_As\_Table(s, i : 1, ...) : table ? } \hfill {\bf Return query data as a table}
+
+\noindent
+\texttt{SQL\_As\_Table(sql, n, ...)}  prepares the query in \texttt{sql} and
+returns the results in a Unicon table whose keys are taken from column \texttt{n} of
+the query data. The table element values will always be records, even if the
+data rows have only one value (and will include the indexing column value). If
+the indexing column has duplicate values then later rows will overwrite earlier
+rows with the same key.
+
+\subsubsection{Thread safety of the \texttt{SQLite} class}
+\label{SQLite_ThreadSafety}
+The main reason that the \texttt{SQLite} class is not thread-safe is down to how
+\WarningNotThreadSafe it handles transactions. SQLite itself supports multiple
+simultaneous read transactions coming from separate database connections,
+possibly in separate threads or processes, but only one simultaneous write
+transaction. Each instance of the \texttt{SQLite} class counts how many
+\texttt{BEGIN} methods are active on its connection and only isues a
+\texttt{BEGIN IMMEDIATE TRANSACTION} statement for the outermost (first) call
+and only issues a \texttt{COMMIT} statement when the outermost \texttt{END}
+method is called.  If the instance is shared between threads then it is easy for
+this count to become confused, leading to a \texttt{COMMIT} statement being
+executed at an inappropriate point.
+
+To avoid this, use a separate instance of the class in each thread. Doing so
+avoids most (but not all) problems. If concurrent access is made to the database
+from separate threads then it is possible that the \texttt{SQLITE\_BUSY} error
+is returned.  The \texttt{BEGIN} and \texttt{END} methods handle this by
+delaying for a short time and retrying but they will fail if the total time
+taken is more than the wait time specified in the initialization of the
+\label{SQLite_Timeout}
+class. Hence a program that uses concurrent access and has transactions that
+might take a long time must be prepared to deal with the failure.
+
+An alternative design which avoids these problems is to use a single database
+access thread to serialize all SQL queries and to use Unicon's message passing
+facilities to send queries and receive answers.  If there is a mixture of read
+and write requests the reduction in parallelism (compared with one class
+instance per thread) is not as drastic as it appears because the reduction in
+parallel queries has {\em already\/} occurred due to the way the \texttt{SQLite}
+class uses transactions -- each method uses \texttt{BEGIN} and \texttt{END}
+internally to make sure that methods like \texttt{SQL\_As\_List} return a
+consistent set of data and don't fail in the middle of constructing the list.
+However, if most of the queries are read only, this design will reduce the number
+of concurrent queries dramatically (to one).
+
+There is, in essence, an unfortunate trade-off between performance and
+convenience: for maximum throughput the only way is to eschew the
+\texttt{SQLite} class, use the utility procedures or the low level interface
+routines explicitly, do as much as possible in parallel and deal with
+\texttt{SQLITE\_BUSY} wherever it occcurs.  In practice, the \texttt{SQLite}
+class performs tolerably well and it is only those applications that demand the
+best performance and the highest possible level of parallel access to the
+database that may feel the need to replace it. In those circumstances, it
+might also be fruitful to reconsider the use of an interpreted language.
+
+\subsubsection{The \texttt{SQLite} utility procedures}
+There is a deliberate similarity in names between the methods of the
+\texttt{SQLite} class and the utility procedures used by them. The functionality
+is largely the same with the significant exception that the utility procedures
+make no attempt to handle \texttt{SQLITE\_BUSY} -- that error is passed back
+to the caller to be dealt with there. In many cases, the class method just
+wraps the utility procedure it uses in \texttt{BEGIN} \ldots \texttt{END} calls.
+
+The utility procedures of the \texttt{SQLite} plugin are:
+\bigskip\hrule\vspace{0.1cm}
+\index{SQLi_isTable}
+\noindent
+{\bf SQLi\_isTable(s) :  ? } \hfill {\bf Test if a SQL table exists}
+
+\noindent
+\texttt{SQLi\_isTable(t)} succeeds if the SQL table \texttt{t} exists in the database.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQLi_Rows}
+\noindent
+{\bf SQLi\_Rows(s) : integer ? } \hfill {\bf Count rows in a SQL table}
+
+\noindent
+\texttt{SQLi\_Rows(t)} returns the number of rows in the SQL table \texttt{t}.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQLi_Exec}
+\noindent
+{\bf SQLi\_Exec(s, ...) : row|val? } \hfill {\bf Execute SQL}
+
+\noindent
+\texttt{SQLi\_Exec(sql)} prepares the SQL query in \texttt{sql} and then uses
+the SQLite library to execute it. The query should return, at most, one row of
+data.  If the query asks for more than one value the values will be returned in
+a record whose field names are the names used in the query. A query that asks for a
+single value results in that value being returned directly (rather than a record
+with a single field). A query that results in no data being returned will either
+succeed or fail.  \texttt{SQLi\_Exec(sql, p1, p2 ...)}  will bind the parameters
+to the query before execution.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQLi_Row}
+\noindent
+{\bf SQLi\_Row(s, ... ) : row * } \hfill {\bf Get data from a query}
+
+\noindent
+\texttt{SQLi\_Row(sql, ...)} prepares the query in \texttt{sql} and then returns
+the data one row at a time. The data is in the same form as \texttt{SQLi\_Exec} -- a
+record with named fields or a single value.  Note that calling \texttt{SQLi\_Row}
+fewer times than there are available rows will leak memory until the database
+connection is closed.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQLi_As_List}
+\noindent
+{\bf SQLi\_As\_List(s, ...) : list ? } \hfill {\bf Return query data as a list}
+
+\noindent
+\texttt{SQLi\_As\_List(sql, ...)}  prepares the query in \texttt{sql} and returns
+the results in a list. The list elements will either be records with named
+fields or single values (same format as \texttt{SQLi\_Exec}).
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQLi_As_Set}
+\noindent
+{\bf SQLi\_As\_Set(s, ...) : set ? } \hfill {\bf Return query data as a set}
+
+\noindent
+\texttt{SQLi\_As\_Set(sql, ...)}  prepares the query in \texttt{sql} and returns
+the results in a set. The set elements will either be records with named
+fields or single values (same format as \texttt{SQLi\_Exec}).
+Note that queries that return a single value will have duplicates removed but
+queries that return a record won't because all records are unique, even if the
+fields have identical values.
+
+\bigskip\hrule\vspace{0.1cm}
+\index{SQLi_As_Table}
+\noindent
+{\bf SQLi\_As\_Table(s, i : 1, ...) : table ? } \hfill {\bf Return query data as a table}
+
+\noindent
+\texttt{SQLi\_As\_Table(sql, n, ...)}  prepares the query in \texttt{sql} and
+returns the results in a Unicon table whose keys are taken from column
+\texttt{n} of the query data. The table element values will always be records,
+even if the data rows have only one value (and will include the indexing column
+value). If the indexing column has duplicate values then later rows will
+overwrite earlier rows with the same key.
+\subsubsection{The \texttt{SQLite} interface routines}
+
+The plugin uses a small subset of the three hundred or so routines in the SQLite
+API. There is comprehensive documentation on each of the individual routines
+provided by the \texttt{SQLite} library at
+\url{https://www.sqlite.org/docs.html} and no attempt is made to reproduce that
+material here.  Each of the interface procedures provided by the plugin checks
+that the supplied parameters are of the correct type, converts them from their
+Unicon representation into something that conforms to the \texttt{C} calling
+convention and passes them down to the underlying SQLite library routine.
+
+It is anticpated that most users will not call these routines directly; instead,
+preferring to use the \texttt{SQLite} class interface or the higher level
+utility procedures of the plugin.
+
+\medskip
+\noindent
+\tablehead{%
+  \hline
+  Interface procedure & SQlite routine & Notes\\
+  \hline
+}%
+\tabletail{%
+  \hline
+  \multicolumn{3}{|r|}{\small continued \ldots}\\
+  \hline
+}%
+\tablelasttail{\hline}%
+\begin{xtabular}{|>{\small\texttt\bgroup}m{1.8in}<{\egroup}%
+    >{\small\texttt\bgroup}m{1.5in}<{\egroup}%
+    |>{\small\bgroup}p{3.2in}<{\egroup}|}
+  SQLi\_Init(x?) : & sqlite3\_config &
+  This procedure should be called before any other interface routine. If the
+  parameter is null, column numbers will start at one. If non-null they will
+  start at zero. The higher level routines and the \texttt{SQlite} class
+  assume that the column numbers start at one.\smallskip\\
+  %
+  \hline
+  SQLi\_libversion() : s & sqlite3\_libversion &
+  Returns the version of the SQLite library as a string.\\
+  %
+  SQli\_libversion\_number() : i & sqlite3\_libversion\_number &
+  Returns the version of the SQLite library as an integer.\\
+  %
+  \hline
+  SQLi\_open(s, s?) : ctx? & sqlite3\_open\_V2 &
+  Open (or create) the database named by the first parameter. The second
+  parameter is \texttt{"b"} for read/write access and anything else for
+  read-only access.\\
+  %
+  \hline
+  SQLi\_close(ctx) : & sqlite3\_close\_V2 &
+  Close the database connection.
+  It is important to call \texttt{SQLi\_close} before exiting the program:
+  do not rely on the Unicon system to close the connection for you.\\
+   %
+  \hline
+  SQLi\_prepare(ctx, s) :sqst? & sqlite3\_prepare\_V2 &
+  Compile (prepare for execution) the SQL statement \texttt{s}.\\
+  %
+  \hline
+  SQLi\_bindArg(sqst, i, x) : ? &
+  \begin{tabular}{l}
+    sqlite3\_bind\_null\\
+    sqlite3\_bind\_int64\\
+    sqlite3\_bind\_double\\
+    sqlite3\_bind\_text\\
+  \end{tabular}
+  &
+  Bind a single parameter \texttt{x} to the column specified by
+  \texttt{i}. \texttt{x} may be null, integer, real or a string.\\
+  %
+  \hline
+  SQLi\_bind(sqst, x, ...) : ? &
+  \begin{tabular}{l}
+    sqlite3\_bind\_null\\
+    sqlite3\_bind\_int64\\
+    sqlite3\_bind\_double\\
+    sqlite3\_bind\_text\\
+  \end{tabular}
+  &
+  Bind parameters, starting at the first column.
+  Each parameter may be null, integer, real or a string.\\
+  %
+  \hline
+  SQLi\_step(sqst, i: 0) : ?  & sqlite3\_step &
+  Evaluate (execute) the prepared statement. A status return of
+  \texttt{SQLITE\_BUSY} will cause the program to stop unless \texttt{i} is non
+  zero.\\
+  %
+  \hline
+  SQLi\_errmsg(ctx) : s & sqlite3\_errmsg &
+  Return the most recent error message.\\
+  %
+  %\hline
+  SQLi\_Error(i) : s & sqlite3\_errstr &
+  \texttt{SQLi\_Error(n)} returns the error message associated with the return
+  status \texttt{n}.\\
+  %
+  \hline
+  SQLi\_column\_count(sqst) : i & sqlite3\_column\_count &
+  Return the number of columns in the result set returned by the prepared statement.\\
+  %
+  \hline
+  SQLi\_column\_type(sqst, i) : i & sqlite3\_column\_type &
+  Return the data type code of the specified column in the result set returned by
+  the prepared statement.\\
+  %
+  \hline
+  SQLi\_column\_name(sqst, i) : s & sqlite3\_column\_name &
+  Return the assigned name of the specified column in the result set returned by
+  the prepared statement.\\
+  %
+  \hline
+  SQLi\_column\_string(sqst, i) : s & sqlite3\_column\_text &
+  Return the value of the specified column as a string.\\
+  %
+  \hline
+  SQLi\_column\_integer(sqst, i) : i & sqlite3\_column\_int64 &
+  Return the value of the specified column as an integer.\\
+  %
+  \hline
+  SQLi\_column\_real(sqst, i) : r & sqlite3\_column\_double &
+  Return the value of the specified column as a real number.\\
+  %
+  \hline
+  SQLi\_column(sqst, i) : x &
+    \begin{tabular}{l}
+    sqlite3\_column\_type\\
+    sqlite3\_column\_int64\\
+    sqlite3\_column\_double\\
+    sqlite3\_column\_text\\
+    \end{tabular} &
+    Return the value of the specified column as specified by its data type code.\\
+  %
+  \hline
+  SQLi\_finalize(sqst) & sqlite3\_finalize &
+  Recover resources from a prepared SQL statement after execution.\\
+  \multicolumn{3}{|p{6.5in}|}{\small
+    Although the SQLite documentation is generally not repeated here, it is
+    worth emphasizing this extract:
+    \begin{quote}
+    The application must finalize every prepared statement in order to avoid
+    resource leaks. It is a grievous error for the application to try to use a
+    prepared statement after it has been finalized. Any use of a prepared
+    statement after it has been finalized can result in undefined and
+    undesirable behavior such as segfaults and heap corruption.
+    \end{quote}
+  }\\
+  \hline
+\end{xtabular}
+% Be considerate of other uses of xtabular later on in the book that might not
+% expect these macros to have anything in them.
+\tablefirsthead{}%
+\tablehead{}%
+\tabletail{}%
+\tablelasttail{}%
+%
+%================================================================================
+%
+% This material (from PR#329, which was withdrawn) is preserved here in the hope
+% that it will be useful if the SQLite plugin makes the transition from an
+% experimental addition into the main part of the book.
+%
+% N.B. At that time, the material may require revision.
+%
+% (1) ---------- Replace these lines in 6.3 Database Architectures and ODBC
+% - \index{ODBC}SQL databases are accessed through an underlying Open
+% - DataBase Connectivity (ODBC) transport mechanism. This mechanism allows
+% ---------- with the following
+%% \index{ODBC}
+%% \index{SQLite}
+%% Unicon provides two complementary ways to access an SQL database: via the
+%% Open Database Connectivity mechanism (ODBC) or using the the SQLite
+%% plugin. There is no choice if an existing database is being accessed --
+%% the SQLite plugin cannot be used to access an ODBC database and the ODBC
+%% mechanism cannot access an SQLite database. But if the database is being
+%% created from scratch, some thought should be given to which option to
+%% use. This extract (from \texttt{https://sqlite.org}) summarizes the
+%% different approaches.
+%% \begin{quote}
+%%  {\sl
+%%  SQLite is not directly comparable to client/server SQL database engines
+%%  such as MySQL, Oracle, PostgreSQL, or SQL Server since SQLite is trying
+%%  to solve a different problem.
+%%
+%%  Client/server SQL database engines strive to implement a shared
+%%  repository of enterprise data. They emphasize scalability, concurrency,
+%%  centralization, and control. SQLite strives to provide local data
+%%  storage for individual applications and devices. SQLite emphasizes
+%%  economy, efficiency, reliability, independence, and simplicity.
+%%  }
+%% \end{quote}
+%% In essence, SQLite is aimed more at replacing a system using conventional files
+%% for persistent storage than competing with an enterprise level database.
+%%
+%% An ODBC database is more difficult to set up, but may be used from
+%% several machines simultaneously. Apart from the SQLite library itself,
+%% an SQLite database needs no extra software to set it up but is hosted
+%% on a single machine (although access to it can be multiplexed using
+%% Unicon's networking features); it may also reside in memory, providing
+%% the advantages of a memory based database with the power and
+%% flexibility of SQL.
+%%
+%% An ODBC database may be accessed using Unicon's standard functions, which
+%% work in the same way on DBM and SQL databases, making migration
+%% particularly easy. The SQLite plugin only provides access via SQL which
+%% means that more of the SQL language must be mastered by the programmer in
+%% order to get a working application. The advantage (compared to the ODBC
+%% based method) is that the {\em full\/} SQL language may be used: for example,
+%% the workaround discussed on page \pageref{NestedSQL} to use nested
+%% \texttt{SELECT} queries is not required.
+%%
+%% Accessing an SQL database through an underlying Open
+%% DataBase Connectivity transport mechanism allows
+%%---------- End of replacement text ----------
+%
+% (2) ---------- Addition to the end of 6.4 SQL Databases ----------
+%% \subsection*{Opening an SQLite database}
+%% The ODBC infrastructure described above is not neccessary when using SQLite.
+%% To connect to or create an SQLite database, declare an instance of the
+%% \texttt{SQLite} class with a parameter of the filename that contains the
+%% database.
+%%
+%% \iconcode{
+%%   db := SQLite("myDatabase.sqlite")
+%% }
+%% \noindent
+%% Object oriented programming, together with Unicon's classes, is discussed
+%% later in part two of this book. For now, \texttt{db} is a variable that
+%% can be used to access the {\em methods\/} of the class that in turn allow
+%% read and write access to the database using SQL. In contrast to an ODBC
+%% database, no username or password is needed.  If the given filename does
+%% not exist, an empty SQLite database will be created.
+%%
+%% The \texttt{SQLite} class is described in appendix C of this book on page
+%% \pageref{SQLiteClass}.
+%%
+%% \subsection*{Querying and modifying a SQLite database}
+%%
+%% The \texttt{SQLite} class has several methods for querying and modifying
+%% the database. They all have a first parameter which is the SQL statement
+%% to execute, followed by optional extra parameters. The simplest is
+%% \texttt{Exec} which is designed for SQL queries that return a single row
+%% of data or, perhaps, no data at all.
+%% \iconcode{
+%%   people := db.Exec("SELECT count(*) FROM employees")
+%% }
+%% \noindent
+%% will return the number of rows in the employees table (in this case no
+%% extra parameters are needed). A simple example of a query that uses values
+%% from the calling program would be
+%% \iconcode{
+%%   people := db.Exec("SELECT count(*) FROM jobs WHERE payrate > ?", x)
+%% }
+%% \noindent
+%% which returns the number of people who are paid more than \texttt{x}.
+%% The \texttt{?} acts as a place holder for the value to be used.
+%% Each \texttt{?} in the query refers to the next parameter. To use a
+%% parameter more than once, append the positional value of the parameter
+%% (e.g. use \texttt{?3} to refer to the third parameter in the argument
+%% list).  There are some traps when using positional parameters and it is
+%% best to either not use them at all in a query or make sure that every
+%% placeholder has an explicit positional value.
+%%
+%% To print out the name and job title of every employee
+%% \iconcode{
+%%   every e := db.SQL\_Row("SELECT name, title FROM employees \_ \\
+%%   \>\> JOIN jobs ON employees.id = jobs.id") do write(e.name, " ", e.title)
+%% }
+%% \noindent
+%% The \texttt{SQL\_Row} method returns the value of each row returned by the
+%% query as a record whose fields are the names used in the SQL query.
+%% The \texttt{SQLite} class also has methods that return all of the rows of
+%% a query at once in the appropriate Unicon type:
+%% \texttt{SQL\_As\_List} returns the rows in a list.
+%% \texttt{SQL\_As\_Table} returns them in a (Unicon) table and
+%% \texttt{SQL\_As\_Set} returns them in a set.
+%%
+%% To add new employees (assuming they are in a list of records called
+%% \texttt{newcomers})
+%% \iconcode{
+%% db.BEGIN()\\
+%% \>    id := 1 + db.EXEC("SELECT max(id) FROM employees")\\
+%% \>    every  newbie := !newcomers do \{\\
+%% \>\>    db.Exec("INSERT INTO employees (id, name, phone) VALUES(?,?,?)",\\
+%% \>\>\>id, newbie.name, newbie.phone)\\
+%% \>\>    db.Exec(INSERT INTO jobs (id, payrate, is\_salaried, title)  VALUES(?,?,?,?)",\\
+%% \>\>\>id, newbie.pay, newbie.salaried, newbie.jobtitle)\\
+%% \>\>  id+:=1\\
+%% \>\}\\
+%% db.END()
+%% }
+%% \noindent
+%% Using \texttt{BEGIN} and \texttt{END} ensures that either all of the
+%% updates are performed or (in case of a failure) none of them. It will also
+%% ensure that any other application using the database will pause until the
+%% transaction is complete, so an inconsistent view of the data will be
+%% avoided.  See appendix C for more details.
+
+%% \subsection*{Closing an SQLite database}
+%% It is easy to develop the habit of relying on the Unicon system to close
+%% any files that have been left open on program termination, even though it
+%% is not recommended to do so. {\em This will not work\/} on SQLite
+%% databases because the connection to the database is not a Unicon
+%% file. All connections should be closed explicitly by using the
+%% \texttt{Close} method.
+%%
+%----------------------------------------------------------------------
+

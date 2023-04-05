@@ -1,0 +1,143 @@
+package ulsp
+
+import json
+link regexp
+
+class HoverHandler(
+    workspace,
+    params 
+    )
+
+    method setVariables(new_workspace, new_params)
+        workspace := new_workspace
+        params := new_params
+    end
+
+    method run()
+    local line, character, desired_line, hover_item, signatureHandler, results_table
+
+        results_table := table()
+
+        line := params["position"]["line"]
+        character := params["position"]["character"]
+        desired_line := getDesiredLine(line, workspace.temp_file)
+
+        signatureHandler := SignatureHandler()
+
+        hover_item := \getHoverItem(desired_line, character) | return tojson(results_table)
+        _context := \getContext(desired_line, character) | return tojson(results_table)
+
+        results_table["contents"] := "(" || _context || ") " || hover_item
+        return tojson(results_table)
+    end
+
+    method getContext(line, character)
+    local identifiers, line_num, procedure_name, method_name, class_name
+
+        identifiers := &letters ++ &digits ++ '_' ++ '-'
+
+        line ? {
+
+            single_quote := 0
+            double_quote := 0
+            while (&pos < character) do {
+                ch := move(1) | break
+                if ch == "\'" then single_quote +:= 1
+                if ch == "\"" then double_quote +:= 1
+                if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then fail
+            } 
+
+            &pos := character
+            tab(many(identifiers))
+            if line[&pos] == "(" then {
+                _item := getHoverItem(line, character)
+                if member(workspace.linked_classes, _item) | member(workspace.imported_classes, _item) | member(workspace.internal_classes, _item) | member(workspace.package_classes, _item) then
+                    return "constructor"
+                return "function"
+            }
+        }
+
+        line_num := params["position"]["line"]
+
+        until line_num = 0 do {
+            desired_line := getDesiredLine(line_num, workspace.temp_file)
+            if ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) then {
+                desired_line ? {
+                    tab(many(' \t'))
+                    move(9)
+                    tab(many(' \t'))
+                    procedure_name := tab(many(identifiers))
+                }
+
+                num_params := *workspace.internal_procedures[procedure_name]["params"]
+                every param := workspace.internal_procedures[procedure_name]["params"][1 to num_params] do {
+                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                }
+                break
+            }
+            else if ReMatch("^[\ \t]*method[\ \t]+", desired_line) then {
+                desired_line ? {
+                    tab(many(' \t'))
+                    move(6)
+                    tab(many(' \t'))
+                    method_name := tab(many(identifiers))
+                }
+                line_num -:= 1
+                until line_num = 0 do {
+                    desired_line := getDesiredLine(line_num, workspace.temp_file)
+                    if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
+                        desired_line ? {
+                            tab(many(' \t'))
+                            move(5)
+                            tab(many(' \t'))
+                            class_name := tab(many(identifiers))
+                        }
+                        break
+                    }
+                    line_num -:= 1
+                }
+
+                num_params := *workspace.internal_classes[class_name]["methods"][method_name]["params"]
+                every param := workspace.internal_classes[class_name]["methods"][method_name]["params"][1 to num_params] do {
+                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                }
+
+                num_attributes := *workspace.internal_classes[class_name]["attributes"]
+                every _attribute := workspace.internal_classes[class_name]["attributes"][1 to num_attributes] do {
+                    if _attribute["name"] == getHoverItem(line, character) then return "attribute"
+                }
+                break
+            }
+            line_num -:= 1
+        }
+
+        if member(workspace.objects, getHoverItem(line, character)) then return "object"
+        if member(workspace.variables, getHoverItem(line, character)) then return "variable"
+   end
+
+    method getHoverItem(line, character)
+    local identifiers
+
+        identifiers := &letters ++ &digits ++ '_' ++ '-'
+        if (line[character] ** identifiers) ~== line[character] then fail
+
+        line ? {
+            &pos := character
+
+            while c := move(-1) do {
+                if (c ** identifiers) ~== c then break
+            }
+
+            if &pos ~= 1 then move(1)
+
+            return tab(many(identifiers))
+        }
+    end
+
+    method getDesiredLine(line, file)
+        f := open(file)
+        every !line do read(f)
+        desired_line := read(f)
+        return desired_line
+    end
+end

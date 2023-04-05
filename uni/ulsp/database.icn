@@ -24,10 +24,9 @@ class LSPDB(
    )
 		
 		
-   method build()	
+   method build()
+      build_bnf()
       build_package_db()
-      built_in_functions := [:function():]
-      
 
       action_words := ["break", "case", "create", "critical", "every", "fail", "if",
                        "initial", "initially", "next", "not", "repeat", "return",
@@ -53,6 +52,40 @@ class LSPDB(
                                   "$include", "$line", "$undef", "#line"]
 	end
 
+   method build_bnf()
+      local idoc, dirPath, source_table
+      idoc := UniAll()
+      built_in_functions := table()
+
+      dirPath := getenv("FPATH")
+      dirPath ? {
+         tab(upto("/"))
+         dirPath := tab(-3)
+      }
+      dirPath ||:= "uni/ulsp/unicon_built_in_functions.icn"
+
+      idoc.setSourcePath(dirPath)
+      idoc.processFile(dirPath)
+
+      source_file := idoc.getAllFiles()[1]
+
+      every _procedure := source_file.getProcedures().get() do {
+         built_in_functions[_procedure.getName()] := table()
+         
+         built_in_functions[_procedure.getName()]["params"] := []
+         every param_in_procedure := _procedure.getParams().get() do {
+            paramName := param_in_procedure.getName()
+            paramType := param_in_procedure.getTypeValue()
+            paramDef := param_in_procedure.getDefValue()
+            put(built_in_functions[_procedure.getName()]["params"], table(
+               "name", paramName, 
+               "type", paramType, 
+               "default", paramDef))
+         }
+      }
+
+   end
+
     method build_package_db()
 
        dirPath := getenv("FPATH")
@@ -73,6 +106,7 @@ class LSPDB(
        put(paths, dirPath || "xml")
        put(paths, dirPath || "lib")
        put(paths, dirPath || "unidoc")
+       put(paths, dirPath || "ulsp")
 
        package_db := table()
        every path := !paths do build_by_path(path)
@@ -199,8 +233,15 @@ class LSPDB(
                      
                    }
                 every class_param := class_in_file.getParams().get() do {
-                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], class_param.getName())
+                   paramName := class_param.getName()
+                   paramType := class_param.getTypeValue() | continue
+                   paramDef := class_param.getDefValue() | continue
+                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], table(
+                      "name", paramName, 
+                      "type", paramType, 
+                      "default", paramDef))
                    }
+                   
                 every class_comment := class_in_file.getComments().get() do {
                    put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
                    }

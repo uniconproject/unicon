@@ -145,8 +145,8 @@ class Workspace(
          internal_procedures[_procedure.getName()]["params"] := []
          every _param := _procedure.getParams().get() do {
             paramName := _param.getName()
-            paramType := _param.getTypeValue()
-            paramDef := _param.getDefValue()
+            paramType := _param.getTypeValue() | continue
+            paramDef := _param.getDefValue() | continue
             put(internal_procedures[_procedure.getName()]["params"], table(
                "name", paramName, 
                "type", paramType, 
@@ -211,27 +211,45 @@ class Workspace(
 
 
              fullComment:= ""
-             every _comment := _method.getComments().get() do {
-               every _line := _comment.get() do {
-            
-                  if ((find("<p>", _line) > -999) | (find("</p>", _line) > -999)) then placeholder := 0
-                  else {  
-                     _line := replace(_line, "<b>", "")
-                     _line := replace(_line, "</b>", "")
-                     _line := replace(_line, "<i>", "")
-                     _line := replace(_line, "</i>", "")
-                     fullComment ||:= _line || " "
+                   tabCharacter := "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+                   every _comment := _method.getComments().get() do {
+                     paramCounter := 0
+                     every _line := _comment.get() do {   
+                           _line := replace(_line, "\\n", "\\\\n")              
+                           if ((find("<[", _line)) | (find("]>", _line))) then {  
+                              if (find("param", _line)) then {
+                                 if(paramCounter == 0) then 
+                                    _line := replace(_line, "param", "\n Parameters:  \n " || tabCharacter)
+                                 else 
+                                    _line := replace(_line, "param", "\n " || tabCharacter)                                
+                              } 
+                              else if (find("returns", _line)) then 
+                                 _line := replace(_line, "returns", "\n Returns:  \n " || tabCharacter)             
+                              else if (find("fails", _line)) then 
+                                 _line := replace(_line, "fails", "\n Fails:  \n " || tabCharacter)
+                              else if (find("generates", _line)) then
+                                 _line := replace(_line, "generates", "\n Generates:  \n " || tabCharacter)
+                              else
+                                 _line := _line
+                              paramCounter +:= 1  
+                           }
+                           _line := replacem(_line, "<p>", "", "</p>", "")
+                           _line := replacem(_line, "<i>", "_", "</i>", "_")
+                           _line := replacem(_line, "<b>", "**", "</b>", "**")
+                           _line := replacem(_line, "<tt>", "`", "</tt>", "`")
+                           _line := replace(_line, "\"", "\\\"")
+                           _line := replace(_line, "<[", "")
+                           _line := replace(_line, "]>", "")
+                           fullComment ||:= _line
+                     }
                   }
-               
-               }
-             } 
             internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := fullComment
 
              internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []     
              every _param := _method.getParams().get() do {
                paramName := _param.getName()
-               paramType := _param.getTypeValue()
-               paramDef := _param.getDefValue()
+               paramType := _param.getTypeValue() | continue
+               paramDef := _param.getDefValue() | continue
                put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], table(
                   "name", paramName, 
                   "type", paramType, 

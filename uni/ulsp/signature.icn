@@ -110,6 +110,8 @@ class SignatureHandler(
 
    method createResults(results_table)
       results := tojson(results_table)
+      write(ximage(results_table))
+      write(results)
       return results
    end
 
@@ -155,6 +157,8 @@ class SignatureHandler(
 
       # Create a valid signature #
       signature := createSignature(function, functionTable)
+      signature := replace(signature, "\"", "\\\"")
+      signature := replace(signature, "\\n", "\\\\n") 
 
       # Put method params in result table #
       write(ximage(results_table))
@@ -169,6 +173,7 @@ class SignatureHandler(
 
       counter := 0
       signature := function || "("
+      
 
       every param_table := !functionTable["params"] do {
          signature ||:= param_table["name"]
@@ -180,6 +185,7 @@ class SignatureHandler(
 
       signature ||:= ")"
  
+      write(ximage(functionTable["params"]))
       write(functionTable["comments"])
 
       return signature

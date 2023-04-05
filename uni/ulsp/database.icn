@@ -181,8 +181,15 @@ class LSPDB(
                      }
                    }
                 every class_param := class_in_file.getParams().get() do {
-                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], class_param.getName())
+                   paramName := class_param.getName()
+                   paramType := class_param.getTypeValue() | continue
+                   paramDef := class_param.getDefValue() | continue
+                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], table(
+                      "name", paramName, 
+                      "type", paramType, 
+                      "default", paramDef))
                    }
+                   
                 every class_comment := class_in_file.getComments().get() do {
                    put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
                    }

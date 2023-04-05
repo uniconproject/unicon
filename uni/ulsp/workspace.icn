@@ -240,9 +240,16 @@ class Workspace(
                   "default", paramDef))
                }
              }
+
           internal_classes[_class.getName()]["attributes"] := []
-          every _attribute := _class.getParams().get() do {
-             put(internal_classes[_class.getName()]["attributes"], _attribute.getName())
+          every _param := _class.getParams().get() do {
+             paramName := _param.getName()
+             paramType := _param.getTypeValue() | continue
+             paramDef := _param.getDefValue() | continue
+             put(internal_classes[_class.getName()]["attributes"], table(
+                "name", paramName, 
+                "type", paramType, 
+                "default", paramDef))
              }
           }
     end
@@ -401,24 +408,24 @@ class Workspace(
           every class_method := key(linked_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
-          every class_attribute := !linked_classes[className]["attributes"] do {
-             put(results_table["items"], table("label", class_attribute, "kind", 5))
+          every class_attribute := linked_classes[className]["attributes"][1 to *linked_classes[className]["attributes"]] do {
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
              }
           }
        if member(imported_classes, className) then {
           every class_method := key(imported_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
-          every class_attribute := !imported_classes[className]["attributes"] do {
-             put(results_table["items"], table("label", class_attribute, "kind", 5))
+          every class_attribute := imported_classes[className]["attributes"][1 to *imported_classes[className]["attributes"]] do {
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
              }
           }
        if member(internal_classes, className) then {
           every class_method := key(internal_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
-          every class_attribute := !internal_classes[className]["attributes"] do {
-             put(results_table["items"], table("label", class_attribute, "kind", 5))                
+          every class_attribute := internal_classes[className]["attributes"][1 to *internal_classes[className]["attributes"]] do {
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))                
              }
           }
     end

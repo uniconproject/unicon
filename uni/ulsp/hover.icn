@@ -5,7 +5,7 @@ link regexp
 
 class HoverHandler(
     workspace,
-    params
+    params 
     )
 
     method setVariables(new_workspace, new_params)
@@ -24,9 +24,8 @@ class HoverHandler(
 
         signatureHandler := SignatureHandler()
 
-        _context := getContext(desired_line, character)
-
         hover_item := \getHoverItem(desired_line, character) | return tojson(results_table)
+        _context := \getContext(desired_line, character) | return tojson(results_table)
 
         results_table["contents"] := "(" || _context || ") " || hover_item
         return tojson(results_table)
@@ -39,14 +38,23 @@ class HoverHandler(
 
         line ? {
 
+            single_quote := 0
+            double_quote := 0
             while (&pos < character) do {
                 ch := move(1) | break
-                if ch == "#" then return "comment"
-            }
+                if ch == "\'" then single_quote +:= 1
+                if ch == "\"" then double_quote +:= 1
+                if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then fail
+            } 
 
             &pos := character
             tab(many(identifiers))
-            if line[&pos] == "(" then return "function"
+            if line[&pos] == "(" then {
+                _item := getHoverItem(line, character)
+                if member(workspace.linked_classes, _item) | member(workspace.imported_classes, _item) | member(workspace.internal_classes, _item) | member(workspace.package_classes, _item) then
+                    return "constructor"
+                return "function"
+            }
         }
 
         line_num := params["position"]["line"]
@@ -93,6 +101,11 @@ class HoverHandler(
                 every param := workspace.internal_classes[class_name]["methods"][method_name]["params"][1 to num_params] do {
                     if param["name"] == getHoverItem(line, character) then return "parameter"
                 }
+
+                num_attributes := *workspace.internal_classes[class_name]["attributes"]
+                every _attribute := workspace.internal_classes[class_name]["attributes"][1 to num_attributes] do {
+                    if _attribute["name"] == getHoverItem(line, character) then return "attribute"
+                }
                 break
             }
             line_num -:= 1
@@ -100,8 +113,6 @@ class HoverHandler(
 
         if member(workspace.objects, getHoverItem(line, character)) then return "object"
         if member(workspace.variables, getHoverItem(line, character)) then return "variable"
-
-        return "default"
    end
 
     method getHoverItem(line, character)

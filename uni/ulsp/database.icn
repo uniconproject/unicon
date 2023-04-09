@@ -185,7 +185,12 @@ class LSPDB(
 
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
 
-                   fullComment:= ""
+                   paramComment:= ""
+                   returnComment := ""
+                   failsComment := ""
+                   genComment := ""
+                   normalComment := ""
+                   currentType := 0
                    tabCharacter := "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
                    every _comment := method_in_class.getComments().get() do {
                      paramCounter := 0
@@ -196,30 +201,48 @@ class LSPDB(
                                  if(paramCounter == 0) then 
                                     _line := replace(_line, "param", "\n Parameters:  \n " || tabCharacter)
                                  else 
-                                    _line := replace(_line, "param", "\n " || tabCharacter)                                
+                                    _line := replace(_line, "param", "\n " || tabCharacter)   
+
+                                 paramComment ||:= _line  
+                                 currentType := 1                           
                               } 
-                              else if (find("returns", _line)) then 
-                                 _line := replace(_line, "returns", "\n Returns:  \n " || tabCharacter)             
-                              else if (find("fails", _line)) then 
+                              else if (find("returns", _line)) then {
+                                 _line := replace(_line, "returns", "\n Returns:  \n " || tabCharacter) 
+                                 returnComment ||:= _line  
+                                 currentType := 2   
+                              }       
+                              else if (find("fails", _line)) then {
                                  _line := replace(_line, "fails", "\n Fails:  \n " || tabCharacter)
-                              else if (find("generates", _line)) then
+                                 failsComment ||:= _line
+                                 currentType := 3
+                              }
+                              else if (find("generates", _line)) then {
                                  _line := replace(_line, "generates", "\n Generates:  \n " || tabCharacter)
+                                 genComment ||:= _line
+                                 currentType := 4
+                              }
                               else
-                                 _line := _line
+                                 if currentType == 1 then paramComment ||:= _line
+                                 else if currentType == 2 then returnComment ||:= _line
+                                 else if currentType == 3 then failsComment ||:= _line
+                                 else if currentType == 4 then genComment ||:= _line
+                                 
                               paramCounter +:= 1  
                            }
-                           _line := replacem(_line, "<p>", "", "</p>", "")
-                           _line := replacem(_line, "<i>", "_", "</i>", "_")
-                           _line := replacem(_line, "<b>", "**", "</b>", "**")
-                           _line := replacem(_line, "<tt>", "`", "</tt>", "`")
-                           _line := replace(_line, "\"", "\\\"")
-                           _line := replace(_line, "<[", "")
-                           _line := replace(_line, "]>", "")
-                           fullComment ||:= _line
+                           else  
+                              normalComment ||:= _line
                      }
-                  }  
-
-                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["comments"] := fullComment
+                     
+                  }
+             fullComment := normalComment || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment
+             fullComment := replacem(fullComment, "<p>", "", "</p>", "")
+             fullComment := replacem(fullComment, "<i>", "_", "</i>", "_")
+             fullComment := replacem(fullComment, "<b>", "**", "</b>", "**")
+             fullComment := replacem(fullComment, "<tt>", "`", "</tt>", "`")
+             fullComment := replace(fullComment, "\"", "\\\"")
+             fullComment := replace(fullComment, "<[", "")
+             fullComment := replace(fullComment, "]>", "")
+             package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["comments"] := fullComment
 
                    every param_in_method := method_in_class.getParams().get() do {
                      paramName := param_in_method.getName()

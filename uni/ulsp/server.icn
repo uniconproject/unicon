@@ -62,7 +62,6 @@ class Server(
                }
             }
          }
-
    end
 	
 #################################################################################
@@ -174,7 +173,19 @@ class Server(
 ########################################################
 
    method didChange(request_params)
-      local uri, file_contents, workspace_object
+      local fname, uri, f, file_contents, workspace_object
+         if \(uri := request_params["textDocument"]["uri"]) then {
+         # uri: file://<PATH>
+         uri ? {
+            ="file://" | write(&errout, "unexpected uri:", uri)
+            fname := tab(0)
+            }
+
+         if f := open(fname) then {
+            initial_file_contents := reads(f, -1)
+            close(f)
+            }
+         }
       uri := request_params["textDocument"]["uri"]
       file_contents := request_params["contentChanges"][1]["text"]
       workspace_object := openFiles[\uri]

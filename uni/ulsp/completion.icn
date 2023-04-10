@@ -15,10 +15,12 @@ class CompletionHandler(
    method run()
       local _context, line, character, results_table, results, desired_line, objectName
 		
-      line := params["position"]["line"]
-      character := params["position"]["character"]
-
-      _context := getContext(line, character, workspace.temp_file)
+      line := params["position"]["line"] + 1
+      character := params["position"]["character"] + 1
+      
+      context := workspace.getContext(line, character)
+      desired_line := context.line
+      _context := getContext(desired_line, character, workspace.file_contents)
 
       results_table := table()
       results_table["isComplete"] :=  "__true__"
@@ -29,7 +31,6 @@ class CompletionHandler(
             results_table["items"] := []
             }
          "after dot operator" : {
-            desired_line := getDesiredLine(line, workspace.temp_file)	
             objectName := getObjectName(desired_line, character) 
             workspace.buildObjectCompletionItems(results_table, objectName)
             }
@@ -46,7 +47,7 @@ class CompletionHandler(
    method getObjectName(line, character)
       local temp, c, objectName
       line ? {
-         temp := tab(character + 1)
+         temp := tab(character)
          while c := move(-1) do {
             if (c ** identifiers) ~== c then { 
                break
@@ -67,17 +68,8 @@ class CompletionHandler(
          }
    end
 
-   method getDesiredLine(line, file)
-      local f, desired_line
-      f := open(file)
-      every !line do read(f)
-      desired_line := read(f)
-      return desired_line
-   end
-
-   method getContext(line, character, file)
-      local desired_line, ch, objectName
-      desired_line := getDesiredLine(line, file)
+   method getContext(desired_line, character, file)
+      local ch, objectName
 
       #-----------------------------------------------#
       #----------- Case "start of file" --------------#

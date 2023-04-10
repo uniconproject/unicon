@@ -48,7 +48,9 @@ class Workspace(
    imported_procedures,
    imported_classes,
    package_classes,
-   m_uni_file
+   m_uni_file,
+   temp_idoc,
+   context
    )
 
    method updateWorkspace()
@@ -69,11 +71,10 @@ class Workspace(
 
    method setFile()
       local files
-      local temp_idoc
       
       temp_idoc := UniAll()
-      if \temp_file then temp_idoc.setSourcePath(temp_file) else temp_idoc.setSourcePath(uri)
-      if \temp_file then temp_idoc.processFile(temp_file) else temp_idoc.processFile(uri)
+      temp_idoc.setSourcePath(uri)
+      temp_idoc.processFile(uri)
 
       files := temp_idoc.getAllFiles()
       m_uni_file := files[1]
@@ -83,20 +84,11 @@ class Workspace(
       return m_uni_file
    end
 
-# -------------------------------------------------------------------------------------------------
-# ---------------- Temp file (create, update) -----------------------------------------------------
-# -------------------------------------------------------------------------------------------------
-   
-    method createTempFile()
-       temp_file := tempname()
-       temp_file := temp_file || "_temp.icn"
-    end
-
-    method updateTempFile(file_contents)
-       local f
-       f := open(temp_file, "w") | fail
-       writes(f, file_contents)        
-       close(f)
+    method updateUniDoc(uri, contents)
+       temp_idoc.processFile(uri, contents)
+       file_contents := contents
+       files := temp_idoc.getAllFiles()
+       m_uni_file := files[1]
     end
 
     method deleteTempFile()
@@ -349,27 +341,27 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 # ---------------- Objects (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
-
     method setObjects()
-       local f, _line, objectName, className
        objects := table()
-       f := open(temp_file)
-       while _line := read(f) do {
+       lineNum := 1
+       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
           if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
              _line ? {
                 tab(many(' \t'))
-                objectName := tab(many(identifiers))
+                objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))
                 tab(many(' \t'))
                 move(2)
                 tab(many(' \t'))
                 className := tab(upto("\("))
-                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
+                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) then {
                    objects[objectName] := className
-                   } 
+                   }
                 }
              }
+             lineNum +:= 1
           }
     end
+
 
     method getObjects()
        return objects
@@ -383,8 +375,8 @@ class Workspace(
        local f, _line, variableName, _content, globalName
        variables := table()
        global_variables := table()
-       f := open(temp_file)
-       while _line := read(f) do {
+       lineNum := 1
+       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
           if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", _line) then {
              _line ? {
                 tab(many(' \t'))
@@ -423,6 +415,7 @@ class Workspace(
                 global_variables[globalName] := ""
              }
           }
+          lineNum +:= 1
        }
     end
 
@@ -505,13 +498,19 @@ class Workspace(
           }
     end
 
+    method getContext(lineNum, charNum)
+      if (/context | (context.isNewContext(lineNum, charNum))) then {
+         context := Context(temp_idoc, uri, lineNum, charNum)
+      }
+      return context
+    end
+
 # -------------------------------------------------------------------------------------------------
 # ---------------- initially ----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
     initially
         setFile()
-        createTempFile()
         identifiers := &letters ++ &digits ++ '_' ++ '-'
 
 end
@@ -636,4 +635,29 @@ procedure makeComment(_function)
        fullComment := replace(fullComment, "]>", "")
 
        return fullComment
+end
+
+class Context(uniAll, uri, line, lineNum, charNum)
+   method getDesiredLine(lineNum)
+      line := uniAll.getUniFileLine(uri, lineNum)
+   end
+
+   method isNewContext(lineNumber, charNumber)
+      if lineNum ~= lineNumber then {
+         newContext := "Yes"
+      } else if charNum ~= charNumber then {
+         newContext := "Yes"
+      } else {
+         newContext := &null
+      }
+
+      return newContext
+   end
+
+   initially(uniAll, uri, lineNum, charNum)
+      self.uniAll := uniAll
+      self.uri := uri
+      self.lineNum := lineNum
+      self.charNum := charNum
+      line := getDesiredLine(lineNum)
 end

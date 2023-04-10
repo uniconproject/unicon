@@ -19,9 +19,10 @@ class HoverHandler(
 
         results_table := table()
 
-        line := params["position"]["line"]
+        line := params["position"]["line"] + 1
         character := params["position"]["character"]
-        desired_line := getDesiredLine(line, workspace.temp_file)
+        context := workspace.getContext(line, character)
+        desired_line := context.line
 
         signatureHandler := SignatureHandler()
         signatureHandler.setVariables(workspace)
@@ -81,10 +82,12 @@ class HoverHandler(
 
                 # If item is method of the class it's inside of then return method
                 line_num := params["position"]["line"]
-                desired_line := getDesiredLine(line_num, workspace.temp_file)
-                until ReMatch("^[\ \t]*class[\ \t]+", desired_line) |
+                context := workspace.getContext(line_num, character)
+                desired_line := context.line
+                until ReMatch("^[\ \t]*class[\ \t]+", desired_line) | 
                     ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) | line_num = 0 do {
-                        desired_line := getDesiredLine(line_num, workspace.temp_file)
+                        context := workspace.getContext(line_num, character)
+                        desired_line := context.line
                         if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
                             desired_line ? {
                                 tab(many(' \t'))
@@ -122,8 +125,8 @@ class HoverHandler(
 
         # Process for determining if item is parameter
         until line_num = 0 do {
-            desired_line := getDesiredLine(line_num, workspace.temp_file)
-
+            context := workspace.getContext(line_num, character)
+            desired_line := context.line
             # If item is param of next closest procedure then return param
             if ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) then {
                 desired_line ? {
@@ -150,7 +153,8 @@ class HoverHandler(
                 }
                 line_num -:= 1
                 until line_num = 0 do {
-                    desired_line := getDesiredLine(line_num, workspace.temp_file)
+                    context := workspace.getContext(line_num, character)
+                    desired_line := context.line
                     if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
                         desired_line ? {
                             tab(many(' \t'))
@@ -203,13 +207,5 @@ class HoverHandler(
 
             return tab(many(identifiers))
         }
-    end
-
-    method getDesiredLine(line, file)
-        local f, desired_line
-        f := open(file)
-        every !line do read(f)
-        desired_line := read(f)
-        return desired_line
     end
 end

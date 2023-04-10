@@ -17,16 +17,17 @@ class SignatureHandler(
       local line, character, functionName, results_table, desired_line
 
       # Collect line and character position #
-      line := params["position"]["line"]
-      character := params["position"]["character"]	
+      line := params["position"]["line"] + 1
+      character := params["position"]["character"]
 
       # Create initial return table #
       results_table := table()
       results_table["signatures"] := []
       results_table["activeSignature"] := &null
 
-      # Extract desired line #
-      desired_line := getDesiredLine(line, workspace.temp_file)
+     # Collect context information (inside comment, space before, object before, no object before) #
+      context := workspace.getContext(line, character)
+      desired_line := context.line
       \desired_line | return createResults(results_table)
 
       # Handle an active signature #

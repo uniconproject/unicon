@@ -13,6 +13,7 @@ link basename
 link ximage
 
 procedure usage()
+   local prog
    prog := basename(&progname)
    write("Usage: ", prog, " [options]\n")
    write(prog, " is an implementation of the language server protocol.")
@@ -25,6 +26,7 @@ procedure usage()
 end
 
 procedure validate_args(args)
+   local opts, port
    opts := options(args, "--socket:")
    if *opts = 0 then usage()
    port := \opts["-socket"] | usage()
@@ -34,6 +36,7 @@ end
 
 
 procedure main(args)
+   local port
    #write("args: ", ximage(args))
    port := validate_args(args) | stop("Error: invalid args/port number.")
 

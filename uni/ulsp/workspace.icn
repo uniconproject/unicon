@@ -18,11 +18,16 @@
 
 package ulsp
 
-
 link regexp
 link io
 import json
 import UniDoc
+
+import lang
+import util
+import parser
+
+global identifiers
 
 class Workspace(
    uri,
@@ -31,25 +36,52 @@ class Workspace(
    #   file_contents,
    links,
    imports,
+   _package,
    objects,
+   variables,
+   global_variables,
    internal_procedures,
    internal_classes,
    linked_procedures,
+   package_procedures,
    linked_classes,
    imported_procedures,
-   imported_classes
+   imported_classes,
+   package_classes,
+   m_uni_file
    )
 
-   method getFile()
-      local temp_idoc
-      temp_idoc := UniAll()
-      temp_idoc.setSourcePath(uri)
-      temp_idoc.processFile(uri)
-
-      files := temp_idoc.getAllFiles()
-      return files[1]
+   method updateWorkspace()
+      setLinks()
+      setImports()
+      setPackage()
+      setInternalProcedures()
+      setLinkedProcedures()
+      setImportedProcedures()
+      setPackageProcedures()
+      setInternalClasses()
+      setLinkedClasses()
+      setImportedClasses()
+      setPackageClasses()
+      setObjects()
+      setVariables()
    end
 
+   method setFile()
+      local files
+      local temp_idoc
+      
+      temp_idoc := UniAll()
+      if \temp_file then temp_idoc.setSourcePath(temp_file) else temp_idoc.setSourcePath(uri)
+      if \temp_file then temp_idoc.processFile(temp_file) else temp_idoc.processFile(uri)
+
+      files := temp_idoc.getAllFiles()
+      m_uni_file := files[1]
+   end
+
+   method getFile()
+      return m_uni_file
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Temp file (create, update) -----------------------------------------------------
@@ -57,9 +89,11 @@ class Workspace(
    
     method createTempFile()
        temp_file := tempname()
+       temp_file := temp_file || "_temp.icn"
     end
 
     method updateTempFile(file_contents)
+       local f
        f := open(temp_file, "w") | fail
        writes(f, file_contents)        
        close(f)
@@ -75,17 +109,21 @@ class Workspace(
 
 
     method setLinks()
-       links_w_ext := getFile().getLinkNames()
+       local links_w_ext, link_w_ext, temp, _link, pack
        links := []
+       links_w_ext := getFile().getLinkNames()
        every link_w_ext := !links_w_ext do {
           temp := reverse(link_w_ext)
           temp ? {
              move(4)
              _link := tab(0)
              _link := reverse(_link)
-             }
-          put(links, _link)
           }
+          every pack := key(lsp_database.package_db) do {
+            if member(lsp_database.package_db[pack]["files"], _link) then
+               put(links, _link)
+          }
+       }
     end
 
     method getLinks()
@@ -96,8 +134,13 @@ class Workspace(
 # ---------------- Imports (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setImports()    	
-       imports := getFile().getImportNames()
+    method setImports()   
+       local _import 	
+       imports := []
+         every _import := !getFile().getImportNames() do {
+            if member(lsp_database.package_db, _import) then
+               put(imports, _import)
+         }
     end
 
     method getImports()
@@ -105,11 +148,40 @@ class Workspace(
     end
 
 # -------------------------------------------------------------------------------------------------
+# ---------------- Package (get, set, update) -----------------------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+    method setPackage() 
+       if member(lsp_database.package_db, getFile().getPackageName()) then {
+          _package := getFile().getPackageName()
+       }
+    end
+
+    method getPackage()
+       return _package
+    end
+
+# -------------------------------------------------------------------------------------------------
 # ---------------- Internal Procedures (get, set, update) -----------------------------------------
 # -------------------------------------------------------------------------------------------------
 
     method setInternalProcedures()
-       internal_procedures := getFile().getProcedureNames()
+       local _procedure, _param, paramName, paramType, paramDef
+       internal_procedures := table()
+       every _procedure := getFile().getProcedures().get() do {
+         internal_procedures[_procedure.getName()] := table()
+
+         internal_procedures[_procedure.getName()]["params"] := []
+         every _param := _procedure.getParams().get() do {
+            paramName := _param.getName()
+            paramType := _param.getTypeValue() | continue
+            paramDef := _param.getDefValue() | continue
+            put(internal_procedures[_procedure.getName()]["params"], table(
+               "name", paramName, 
+               "type", paramType, 
+               "default", paramDef))
+         }
+       }
     end
 
 
@@ -122,10 +194,11 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setLinkedProcedures()
-       linked_procedures := []
+       local _link, _key
+       linked_procedures := table()
        every _link := !links do {
-          every _procedure := !lsp_database["(main)"]["files"][_link]["procedures"] do {
-             put(linked_procedures, _procedure)
+          every _key := key(lsp_database.package_db["(main)"]["files"][_link]["procedures"]) do {
+             linked_procedures[_key] := lsp_database.package_db["(main)"]["files"][_link]["procedures"][_key]
              }
           }
     end
@@ -139,11 +212,12 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setImportedProcedures()
-       imported_procedures := []
-       every _import := !imports do {
-          every file_in_pack := !lsp_database[_import]["files"] do {
-             every _procedure := !file_in_pack["procedures"] do {
-                put(imported_procedures, _procedure)
+       local _import, file_in_pack, _key
+       imported_procedures := table()
+         every _import := !imports do {
+          every file_in_pack := !lsp_database.package_db[_import]["files"] do {
+             every _key := key(file_in_pack["procedures"]) do {
+                imported_procedures[_key] := file_in_pack["procedures"][_key]
                 }
              }
           }
@@ -154,21 +228,60 @@ class Workspace(
     end
 
 # -------------------------------------------------------------------------------------------------
+# ---------------- Package Procedures (get, set, update) -----------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+    method setPackageProcedures()
+       local file_in_pack, _key
+       package_procedures := table()
+       every file_in_pack := !lsp_database.package_db[_package]["files"] do {
+          every _key := key(file_in_pack["procedures"]) do {
+             package_procedures[_key] := file_in_pack["procedures"][_key]
+          }
+       }
+    end
+
+    method getPackageProcedures()
+       return package_procedures
+    end
+
+# -------------------------------------------------------------------------------------------------
 # ---------------- Internal Classes (get, set, update) --------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
     method setInternalClasses()
+       local _class, _method, _param, paramName, paramType, paramDef
        internal_classes := table()
        every _class := getFile().getClasses().get() do {
           internal_classes[_class.getName()] := table()
             
-          internal_classes[_class.getName()]["methods"] := []
+          internal_classes[_class.getName()]["methods"] := table()
           every _method := _class.getMethods().get() do {
-             put(internal_classes[_class.getName()]["methods"], _method.getName())
+             internal_classes[_class.getName()]["methods"][_method.getName()] := table()
+
+             internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := makeComment(_method)
+
+             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []     
+             every _param := _method.getParams().get() do {
+               paramName := _param.getName()
+               paramType := _param.getTypeValue() | continue
+               paramDef := _param.getDefValue() | continue
+               put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], table(
+                  "name", paramName, 
+                  "type", paramType, 
+                  "default", paramDef))
+               }
              }
+
           internal_classes[_class.getName()]["attributes"] := []
-          every _attribute := _class.getParams().get() do {
-             put(internal_classes[_class.getName()]["attributes"], _attribute.getName())
+          every _param := _class.getParams().get() do {
+             paramName := _param.getName()
+             paramType := _param.getTypeValue() | continue
+             paramDef := _param.getDefValue() | continue
+             put(internal_classes[_class.getName()]["attributes"], table(
+                "name", paramName, 
+                "type", paramType, 
+                "default", paramDef))
              }
           }
     end
@@ -182,10 +295,11 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
    
     method setLinkedClasses()
+       local _link, _key
        linked_classes := table()
        every _link := !links do {
-          every _key := key(lsp_database["(main)"]["files"][_link]["classes"]) do {
-             linked_classes[_key] := lsp_database["(main)"]["files"][_link]["classes"][_key]
+          every _key := key(lsp_database.package_db["(main)"]["files"][_link]["classes"]) do {
+             linked_classes[_key] := lsp_database.package_db["(main)"]["files"][_link]["classes"][_key]
              }
           }
     end
@@ -199,14 +313,15 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setImportedClasses()
+       local _import, file_in_pack, _key
        imported_classes := table()
-       every _import := !imports do {
-          every file_in_pack := !lsp_database[_import]["files"] do {
-             every _key := key(file_in_pack["classes"]) do {
-                imported_classes[_key] := file_in_pack["classes"][_key]
-                }
-             }
-          }
+         every _import := !imports do {
+            every file_in_pack := !lsp_database.package_db[_import]["files"] do {
+               every _key := key(file_in_pack["classes"]) do {
+                  imported_classes[_key] := file_in_pack["classes"][_key]
+               }
+            }
+         }
     end
 
     method getImportedClasses()
@@ -214,32 +329,109 @@ class Workspace(
     end
 
 # -------------------------------------------------------------------------------------------------
+# ---------------- Package Classes (get, set, update) --------------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+    method setPackageClasses()
+       local file_in_pack, _key
+       package_classes := table()
+            every file_in_pack := !lsp_database.package_db[_package]["files"] do {
+               every _key := key(file_in_pack["classes"]) do {
+                  package_classes[_key] := file_in_pack["classes"][_key]
+               }
+            }
+    end
+
+    method getPackageClasses()
+       return package_classes
+    end
+
+# -------------------------------------------------------------------------------------------------
 # ---------------- Objects (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
     method setObjects()
+       local f, _line, objectName, className
        objects := table()
-       f := open(uri)
+       f := open(temp_file)
        while _line := read(f) do {
           if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
              _line ? {
                 tab(many(' \t'))
-                objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))
+                objectName := tab(many(identifiers))
                 tab(many(' \t'))
                 move(2)
                 tab(many(' \t'))
                 className := tab(upto("\("))
-                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) then {
+                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
                    objects[objectName] := className
-                   }
+                   } 
                 }
              }
           }
-       write(ximage(objects))
     end
 
     method getObjects()
        return objects
+    end
+
+# -------------------------------------------------------------------------------------------------
+# ---------------- Variables (get, set, update) -----------------------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+    method setVariables()
+       local f, _line, variableName, _content, globalName
+       variables := table()
+       global_variables := table()
+       f := open(temp_file)
+       while _line := read(f) do {
+          if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", _line) then {
+             _line ? {
+                tab(many(' \t'))
+                variableName := tab(many(identifiers))
+                tab(many(' \t'))
+                move(2)
+                tab(many(' \t'))
+                _content := tab(*_line + 1)
+                if not member(objects, variableName) then {
+                   variables[variableName] := _content
+                }
+             }
+          }
+          #if ReMatch("^[\ \t]*local", _line) then {
+          #   _line ? {
+          #      tab(many(' \t'))
+          #      move(5)
+          #      tab(many(' \t'))
+          #      until &pos >= *_line do {
+          #         temp_pos := &pos
+          #         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", tab(upto(,))) then {
+          #            &pos := temp_pos
+          #            variableName := tab(many(identifiers))
+          #            variables[variableName] := "local declare"
+          #            tab(upto(,))
+          #         }
+          #      }
+          #   }
+          #}
+          if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then {
+             _line ? {
+                tab(many(' \t'))
+                move(6)
+                tab(many(' \t'))
+                globalName := tab(many(identifiers))
+                global_variables[globalName] := ""
+             }
+          }
+       }
+    end
+
+    method getVariables()
+       return variables
+    end
+
+    method getGlobalVariables()
+       return global_variables
     end
 
 # -------------------------------------------------------------------------------------------------
@@ -276,31 +468,39 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method buildObjectCompletionItems(results_table, objectName)
-        
+       local className, class_method, class_attribute
        className := objects[objectName]
 
        if member(linked_classes, className) then {
-          every class_method := !linked_classes[className]["methods"] do {
+          every class_method := key(linked_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
-          every class_attribute := !linked_classes[className]["attributes"] do {
-             put(results_table["items"], table("label", class_attribute, "kind", 5))
+          every class_attribute := linked_classes[className]["attributes"][1 to *linked_classes[className]["attributes"]] do {
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
              }
           }
        if member(imported_classes, className) then {
-          every class_method := !imported_classes[className]["methods"] do {
+          every class_method := key(imported_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
-          every class_attribute := !imported_classes[className]["attributes"] do {
-             put(results_table["items"], table("label", class_attribute, "kind", 5))
+          every class_attribute := imported_classes[className]["attributes"][1 to *imported_classes[className]["attributes"]] do {
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
              }
           }
        if member(internal_classes, className) then {
-          every class_method := !internal_classes[className]["methods"] do {
+          every class_method := key(internal_classes[className]["methods"]) do {
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
-          every class_attribute := !internal_classes[className]["attributes"] do {
-             put(results_table["items"], table("label", class_attribute, "kind", 5))                
+          every class_attribute := internal_classes[className]["attributes"][1 to *internal_classes[className]["attributes"]] do {
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))                
+             }
+          }
+       if member(package_classes, className) then {
+          every class_method := key(package_classes[className]["methods"]) do {
+             put(results_table["items"], table("label", class_method, "kind", 2))
+             }
+          every class_attribute := package_classes[className]["attributes"][1 to *package_classes[className]["attributes"]] do {
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))                
              }
           }
     end
@@ -310,15 +510,8 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     initially
+        setFile()
         createTempFile()
-        setLinks()
-        setImports()
-        setInternalProcedures()
-        setLinkedProcedures()
-        setImportedProcedures()
-        setInternalClasses()
-        setLinkedClasses()
-        setImportedClasses()
-        setObjects()
+        identifiers := &letters ++ &digits ++ '_' ++ '-'
 
 end

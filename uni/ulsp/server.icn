@@ -28,6 +28,8 @@ class Server(
    sock,                         # Socket connection for communication with client 
    openFiles,                    # File container for open files
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
+   signatureHandler,
+   hoverHandler,
    lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
    )
 
@@ -35,27 +37,29 @@ class Server(
       local request_body, jsontable, request_method, request_params, request_id
 
       repeat {
+         every request_body := get_request(sock) do {
+            jsontable := jtou(request_body)
 
-         request_body := get_request(sock)
-         jsontable := jtou(request_body)
+            request_method := jsontable["method"]
+            request_params := jsontable["params"]
+            request_id := jsontable["id"]
 
-         request_method := jsontable["method"]
-         request_params := jsontable["params"]
-         request_id := jsontable["id"]
+            write("-----------------------------------------")
+            write(request_method)
+            write("-----------------------------------------")
 
-         write("-----------------------------------------")
-         write(request_method)
-         write("-----------------------------------------")
-
-         case request_method of {
-            "initialize" : initialize(request_id)
-            "textDocument/didOpen" : didOpen(request_params)
-            "textDocument/didClose" : didClose(request_params)
-            "textDocument/didChange" : didChange(request_params)
-            "textDocument/completion" : completion(request_id, request_params)
-            "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
-            "$/cancelRequest" : cancelRequest(request_id)
-            default: { write("Don't know what to do with: ", request_method) }
+            case request_method of {
+               "initialize" : initialize(request_id)
+               "textDocument/didOpen" : didOpen(request_params)
+               "textDocument/didClose" : didClose(request_params)
+               "textDocument/didChange" : didChange(request_params)
+               "textDocument/completion" : completion(request_id, request_params)
+               "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
+               "textDocument/hover" : hoverHelp(request_id, request_params)
+               "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
+               "$/cancelRequest" : cancelRequest(request_id)
+               default: { write("Don't know what to do with: ", request_method) }
+               }
             }
          }
 
@@ -66,7 +70,7 @@ class Server(
 #################################################################################
 
    method get_request(sock)
-      local request_body, msg
+      local request_body, msg, len
 
       while /request_body | request_body == "" do {
 
@@ -75,19 +79,21 @@ class Server(
          msg := ready(sock)
 
          # Handling socket reading anomoly: header alone or header + request_body
-         msg ? {
-            tab(find("Content-Length:") + 15)
-            len := integer(tab(many(&digits)))
-            tab(upto("\r\n\r\n") + 4)
-            if pos(0) then {
-               request_body := ready(sock, len)
+         while msg ~== "" do {
+            msg ? {
+               tab(find("Content-Length:") + 16)
+               len := integer(tab(many(&digits)))
+               tab(upto("\r\n\r\n") + 4)
+               if pos(0) then {
+                  request_body := ready(sock, len)
+                  }
+               else
+                  request_body := move(len)
+                  msg := tab(0)
                }
-            else
-               request_body := tab(0)
+               suspend request_body
             }
          }
-
-      return request_body
    end
 
 #################################################################################
@@ -95,6 +101,7 @@ class Server(
 #################################################################################
 
    method build_response(id, results)
+      local responseBody, responseHeader
       responseBody := "{\"jsonrpc\":\"2.0\",\"id\":"||id||",\"result\":"||results||"}"
       responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
       return responseHeader || responseBody
@@ -119,8 +126,7 @@ class Server(
 
    method initialize(request_id)
       local results, res
-
-      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelp\":{\"contextSupport\":true}}}"
+      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelpProvider\":{\"contextSupport\":true,\"triggerCharacters\":\"(\"},\"hoverProvider\":true}}"
 
       res := build_response(request_id, results)
       write(res)
@@ -132,7 +138,7 @@ class Server(
 ########################################################
 
    method didOpen(request_params)
-      local fname, uri, f
+      local fname, uri, f, initial_file_contents, workspace_object
       if \(uri := request_params["textDocument"]["uri"]) then {
       # uri: file://<PATH>
       uri ? {
@@ -149,6 +155,7 @@ class Server(
       openFiles[\uri] := Workspace(fname, lsp_database)
       workspace_object := openFiles[\uri]
       workspace_object.updateTempFile(initial_file_contents)
+      workspace_object.updateWorkspace()
 
    end
 
@@ -157,6 +164,7 @@ class Server(
 ########################################################
 
    method didClose(request_params)
+      local uri
       uri := request_params["textDocument"]["uri"]
       delete(openFiles, \uri)
    end
@@ -166,10 +174,13 @@ class Server(
 ########################################################
 
    method didChange(request_params)
+      local uri, file_contents, workspace_object
       uri := request_params["textDocument"]["uri"]
       file_contents := request_params["contentChanges"][1]["text"]
       workspace_object := openFiles[\uri]
+      workspace_object.setFile()
       workspace_object.updateTempFile(file_contents)
+      workspace_object.updateWorkspace()
    end
 
 ########################################################
@@ -177,6 +188,7 @@ class Server(
 ########################################################
 
    method completion(request_id, request_params)
+      local uri, workspace_object, result, res
       uri := request_params["textDocument"]["uri"]
       workspace_object := openFiles[\uri]
       completionHandler.setVariables(workspace_object, request_params)
@@ -184,7 +196,35 @@ class Server(
       res := build_response(request_id, result)
       writes(sock, res)
    end
-	
+
+########################################################
+#              textDocument/signatureHelp              #
+########################################################
+
+   method signatureHelp(request_id, request_params)
+      local uri, workspace_object, result, res
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      signatureHandler.setVariables(workspace_object, request_params)
+      result := signatureHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
+########################################################
+#              textDocument/hover                      #
+########################################################
+
+   method hoverHelp(request_id, request_params)
+      local uri, workspace_object, result, res
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      hoverHandler.setVariables(workspace_object, request_params)
+      result := hoverHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
 ########################################################
 #                textDocument/declaration              #
 ########################################################
@@ -220,6 +260,7 @@ class Server(
        lsp_database.build()
 
        completionHandler := CompletionHandler()
-
+       signatureHandler := SignatureHandler()
+       hoverHandler := HoverHandler()
 end
 

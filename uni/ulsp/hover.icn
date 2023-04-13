@@ -1,0 +1,208 @@
+package ulsp
+
+import json
+link regexp
+link ximage
+
+class HoverHandler(
+    workspace,
+    params 
+    )
+ 
+    method setVariables(new_workspace, new_params)
+        workspace := new_workspace
+        params := new_params
+    end
+
+    method run()
+        local line, character, desired_line, hover_item, signatureHandler, sig_table, results_table, _context
+
+        results_table := table()
+
+        line := params["position"]["line"]
+        character := params["position"]["character"]
+        desired_line := getDesiredLine(line, workspace.temp_file)
+
+        signatureHandler := SignatureHandler()
+        signatureHandler.setVariables(workspace)
+
+        hover_item := \getHoverItem(desired_line, character) | return tojson(results_table)
+        _context := \getContext(desired_line, character) | return tojson(results_table)
+
+        if _context == "function" | _context == "built-in-function" | _context == "method" | _context == "procedure" then {
+            sig_table := signatureHandler.handleNewSignature(desired_line, character)
+
+            hover_item := sig_table[1]["label"]
+        }
+
+        results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " || hover_item)
+        return tojson(results_table)
+    end
+
+    method getContext(line, character)
+        local line_num, procedure_name, method_name, class_name, single_quote, double_quote, ch, _item, c, desired_line,
+            num_params, param, num_attributes, _attribute
+        
+        # Begin initial string scanning
+        line ? {
+
+            # Check if position is within a comment
+            single_quote := 0
+            double_quote := 0
+            while (&pos < character) do {
+                ch := move(1) | break
+                if ch == "\'" then single_quote +:= 1
+                if ch == "\"" then double_quote +:= 1
+                if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then fail 
+            } 
+
+            # If item is a function then find the type
+            &pos := character
+            tab(many(identifiers))
+            if line[&pos] == "(" then {
+                _item := getHoverItem(line, character)
+
+                # If item has . before then return method
+                while c := move(-1) do {
+                    if (c ** identifiers) ~== c then { 
+                        break
+                    }
+                }
+                if line[&pos] == "." then {
+                    return "method"
+                }
+
+                # If item is method of the class it's inside of then return method
+                line_num := params["position"]["line"]
+                desired_line := getDesiredLine(line_num, workspace.temp_file)
+                until ReMatch("^[\ \t]*class[\ \t]+", desired_line) | 
+                    ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) | line_num = 0 do {
+                        desired_line := getDesiredLine(line_num, workspace.temp_file)
+                        if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
+                            desired_line ? {
+                                tab(many(' \t'))
+                                move(5)
+                                tab(many(' \t'))
+                                class_name := tab(many(identifiers))
+                            }
+
+                            if member(workspace.internal_classes[class_name]["methods"], _item) then
+                               return "method"
+                        }
+                        line_num -:= 1
+                }
+
+                # If item is an associated class then return constructor
+                if member(workspace.linked_classes, _item) | member(workspace.imported_classes, _item) | 
+                    member(workspace.internal_classes, _item) | member(workspace.package_classes, _item) then
+                        return "constructor"
+
+                # If item is an associated procedure then return procedure
+                if member(workspace.linked_procedures, _item) | member(workspace.imported_procedures, _item) | 
+                    member(workspace.internal_procedures, _item) | member(workspace.package_procedures, _item) then
+                        return "procedure"
+                
+                # If item is a built-in-function then return built-in-function
+                if member(workspace.getBuiltInFunctions(), _item) then
+                    return "built-in-function"
+
+                # If all else fails
+                return "unknown"
+            }
+        }
+
+        line_num := params["position"]["line"]
+
+        # Process for determining if item is parameter
+        until line_num = 0 do {
+            desired_line := getDesiredLine(line_num, workspace.temp_file)
+
+            # If item is param of next closest procedure then return param
+            if ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) then {
+                desired_line ? {
+                    tab(many(' \t'))
+                    move(9)
+                    tab(many(' \t'))
+                    procedure_name := tab(many(identifiers))
+                }
+
+                num_params := *workspace.internal_procedures[procedure_name]["params"]
+                every param := workspace.internal_procedures[procedure_name]["params"][1 to num_params] do {
+                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                }
+                break
+            }
+
+            # If item is param of next closest method then return param
+            else if ReMatch("^[\ \t]*method[\ \t]+", desired_line) then {
+                desired_line ? {
+                    tab(many(' \t'))
+                    move(6)
+                    tab(many(' \t'))
+                    method_name := tab(many(identifiers))
+                }
+                line_num -:= 1
+                until line_num = 0 do {
+                    desired_line := getDesiredLine(line_num, workspace.temp_file)
+                    if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
+                        desired_line ? {
+                            tab(many(' \t'))
+                            move(5)
+                            tab(many(' \t'))
+                            class_name := tab(many(identifiers))
+                        }
+                        break
+                    }
+                    line_num -:= 1
+                }
+
+                num_params := *workspace.internal_classes[class_name]["methods"][method_name]["params"]
+                every param := workspace.internal_classes[class_name]["methods"][method_name]["params"][1 to num_params] do {
+                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                }
+
+                # If item is an attribute (class parameter) then return class parameter
+                num_attributes := *workspace.internal_classes[class_name]["attributes"]
+                every _attribute := workspace.internal_classes[class_name]["attributes"][1 to num_attributes] do {
+                    if _attribute["name"] == getHoverItem(line, character) then return "class parameter"
+                }
+                break
+            }
+            line_num -:= 1
+        }
+
+        line_num := params["position"]["line"]
+
+        # If item is a member of global variables then return global
+        if member(workspace.global_variables, getHoverItem(line, character)) then return "global"
+
+        # If item is an associated variable or object then return variable or object respectively
+        if member(workspace.objects, getHoverItem(line, character)) then return "object"
+        if member(workspace.variables, getHoverItem(line, character)) then return "variable"
+    end
+
+    method getHoverItem(line, character)
+        local c
+        if (line[character] ** identifiers) ~== line[character] then fail
+
+        line ? {
+            &pos := character
+
+            while c := move(-1) do {
+                if (c ** identifiers) ~== c then break
+            }
+
+            if &pos ~= 1 then move(1)
+
+            return tab(many(identifiers))
+        }
+    end
+
+    method getDesiredLine(line, file)
+        local f, desired_line
+        f := open(file)
+        every !line do read(f)
+        desired_line := read(f)
+        return desired_line
+    end
+end

@@ -24,11 +24,11 @@ import lang
 #   a format suitable for output (e.g. an HTML document), but only if the
 #   call <b>setSaveSrc("yes")</b> is made on this class.
 # </p>
-class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, f, fName,
-                       insideFlag, debug, saveSrc, cBuf)
+class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
+                       insideFlag, debug, saveSrc, cBuf, lineNum)
 
     # <p>
-    # Turn on/off debugging.  Turning on (by using a non-null value
+    # Turn on/off debugging.  Turning on by using a non-null value
     #   for <b>dbg</b> produces <i>lots</i> of output!
     # </p>
     method setDebug(dbg)
@@ -201,8 +201,8 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, f, fName,
     method readline()
         static WS
         initial WS := ' \t'
-    
-        while line := lTrim(buffer || Read(f), ' \t') do {
+        lineNum +:= 1
+        while line := lTrim(buffer || Read(lineNum), ' \t') do {
             setBuffer(line)
             line := ""
             buffer ? {
@@ -244,7 +244,9 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, f, fName,
                         }
                     }
                 }
+                lineNum +:= 1
             }
+            
     
         if *buffer > 0 then {
             line := buffer
@@ -258,11 +260,8 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, f, fName,
     # Read in a line of source code.  Add it to the source code buffer and
     # return it.
     # </p>
-    method Read(f)
-        if line := read(f) then {
-            if \saveSrc then (\cBuf).add(line)
-            return line
-            }
+    method Read(lineNum)
+        if \cBuf then return cBuf.Get(lineNum) | fail
     end
 
     # <p>
@@ -309,8 +308,7 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, f, fName,
     # Close this file.
     # </p>
     method close()
-        cBuf := &null
-        ::close(f)
+        write("This method is no longer used")
     end
 
     # <p>
@@ -327,18 +325,41 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, f, fName,
             }
     end
 
+    # <p>
+    # Update Method to update file object (take a string)
+    # </p>
+    method updateContent(contents)
+        cBuf := CodeBuf()
+        setSaveSrc("yes")
+        lineNum := 0
+        # String scanning to populate something that is storing all the file contents when the file is closed 
+        contents ? {
+                while  curLine := tab(upto('\n') | 0) do {
+                    cBuf.add(curLine) 
+                    ="\n" | break
+                }          
+            }
+    end 
+    
+    method getFromFile(f)
+        cBuf := CodeBuf()
+        while line := read(f) do cBuf.add(line)
+        close(f)
+    end
+
     # <b>Fails if cannot open <tt>fName</tt> for reading.</b>
     initially (fileName, path)
         /path := ""
         fName := delSuffix(fileName,".icn")||".icn"
         f := open(path||fName) | fail
+        getFromFile(f)
         clearBuffer()
         line := ""
         # the only keywords we care about, everything else is noise...
         iKeySet := ::set(["link", "procedure", "end", "global", "record"])
         uKeySet := ::set(["package", "import", "class", "method", "initially"])
         oldTokens := []
-        cBuf := CodeBuf()
+        lineNum := 0
 end
 
 #<p>
@@ -348,7 +369,7 @@ end
 # text symbols that might interfere with the conversion.  The normal
 # conversion class is UniHTML, which produces HTML.
 #</p>
-class CodeBuf : Object (buffer)
+class CodeBuf : Object (buffer, rawBuf)
 
     #<p>
     # Generate the source code lines that have been buffered up.
@@ -364,6 +385,7 @@ class CodeBuf : Object (buffer)
     #</p>
     method add(line)
        put(buffer, (UniDoc::protectLine(line) | line)||"\n")
+       put(rawBuf, line)
     end
 
     #<p>
@@ -377,6 +399,16 @@ class CodeBuf : Object (buffer)
         put(buffer, \last)
     end
 
+    method clearCBuf()
+        buffer := []
+        rawBuf := []
+    end
+
+    method Get(i)
+        return rawBuf[i] | fail
+    end
+
     initially ()
         buffer    := []
+        rawBuf    := []
 end

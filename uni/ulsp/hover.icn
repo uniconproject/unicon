@@ -6,9 +6,9 @@ link ximage
 
 class HoverHandler(
     workspace,
-    params 
+    params
     )
- 
+
     method setVariables(new_workspace, new_params)
         workspace := new_workspace
         params := new_params
@@ -35,14 +35,18 @@ class HoverHandler(
             hover_item := sig_table[1]["label"]
         }
 
-        results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " || hover_item)
+
+        write("Hello from hover.icn!")
+        write(ximage(sig_table[1]["documentation"]["value"]))
+        results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " ||
+            hover_item || "\n \n --- \n \n" || sig_table[1]["documentation"]["value"])
         return tojson(results_table)
     end
 
     method getContext(line, character)
         local line_num, procedure_name, method_name, class_name, single_quote, double_quote, ch, _item, c, desired_line,
             num_params, param, num_attributes, _attribute
-        
+
         # Begin initial string scanning
         line ? {
 
@@ -53,8 +57,8 @@ class HoverHandler(
                 ch := move(1) | break
                 if ch == "\'" then single_quote +:= 1
                 if ch == "\"" then double_quote +:= 1
-                if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then fail 
-            } 
+                if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then fail
+            }
 
             # If item is a function then find the type
             &pos := character
@@ -64,7 +68,7 @@ class HoverHandler(
 
                 # If item has . before then return method
                 while c := move(-1) do {
-                    if (c ** identifiers) ~== c then { 
+                    if (c ** identifiers) ~== c then {
                         break
                     }
                 }
@@ -75,7 +79,7 @@ class HoverHandler(
                 # If item is method of the class it's inside of then return method
                 line_num := params["position"]["line"]
                 desired_line := getDesiredLine(line_num, workspace.temp_file)
-                until ReMatch("^[\ \t]*class[\ \t]+", desired_line) | 
+                until ReMatch("^[\ \t]*class[\ \t]+", desired_line) |
                     ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) | line_num = 0 do {
                         desired_line := getDesiredLine(line_num, workspace.temp_file)
                         if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
@@ -93,15 +97,15 @@ class HoverHandler(
                 }
 
                 # If item is an associated class then return constructor
-                if member(workspace.linked_classes, _item) | member(workspace.imported_classes, _item) | 
+                if member(workspace.linked_classes, _item) | member(workspace.imported_classes, _item) |
                     member(workspace.internal_classes, _item) | member(workspace.package_classes, _item) then
                         return "constructor"
 
                 # If item is an associated procedure then return procedure
-                if member(workspace.linked_procedures, _item) | member(workspace.imported_procedures, _item) | 
+                if member(workspace.linked_procedures, _item) | member(workspace.imported_procedures, _item) |
                     member(workspace.internal_procedures, _item) | member(workspace.package_procedures, _item) then
                         return "procedure"
-                
+
                 # If item is a built-in-function then return built-in-function
                 if member(workspace.getBuiltInFunctions(), _item) then
                     return "built-in-function"

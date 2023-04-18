@@ -189,10 +189,12 @@ class Workspace(
        local _link, _key
        linked_procedures := table()
        every _link := !links do {
+         if _link ~=== "class" then {
           every _key := key(lsp_database.package_db["(main)"]["files"][_link]["procedures"]) do {
              linked_procedures[_key] := lsp_database.package_db["(main)"]["files"][_link]["procedures"][_key]
              }
           }
+       }
     end
 
     method getLinkedProcedures()
@@ -290,10 +292,12 @@ class Workspace(
        local _link, _key
        linked_classes := table()
        every _link := !links do {
+         if _link ~=== "class" then {
           every _key := key(lsp_database.package_db["(main)"]["files"][_link]["classes"]) do {
              linked_classes[_key] := lsp_database.package_db["(main)"]["files"][_link]["classes"][_key]
              }
           }
+       }
     end
 
     method getLinkedClasses()
@@ -498,6 +502,20 @@ class Workspace(
           }
     end
 
+     method getPackages()
+       return lsp_database.package_db
+    end
+
+    method getFileNames()
+       local pack, _file, _files
+       _files := []
+       every pack := key(lsp_database.package_db) do {
+            every _file := key(lsp_database.package_db[pack]["files"]) do
+               put(_files, _file)
+       }
+       return _files
+    end
+
     method getContext(lineNum, charNum)
       if (/context | (context.isNewContext(lineNum, charNum))) then {
          context := Context(temp_idoc, uri, lineNum, charNum)
@@ -637,9 +655,112 @@ procedure makeComment(_function)
        return fullComment
 end
 
-class Context(uniAll, uri, line, lineNum, charNum)
+class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase)
    method getDesiredLine(lineNum)
       line := uniAll.getUniFileLine(uri, lineNum)
+   end
+
+   # Retrive object name #
+   method getObjectName()
+      local temp, c, name
+      line ? {
+         temp := tab(charNum)
+         while c := move(-1) do {
+            if (c ** identifiers) ~== c then { 
+               break
+                  }
+            }
+
+         if ="." then {
+            move(-1)
+            while c := move(-1) do {
+               if (c ** identifiers) ~== c then { 
+                  move(1)
+                  break
+                     }
+               }
+            name := tab(upto("."))
+            return name
+            }
+         }
+   end
+
+   # Retrive method name #
+   method getMethodName()
+      local temp, c, _method
+      line ? {
+         temp := tab(charNum)
+         while c := move(-1) do {
+            if (c ** identifiers) ~== c then { 
+               break
+            }
+         }
+
+         if &pos ~= 1 then move(1)
+
+         _method := tab(upto("("))
+         return _method
+      }
+   end
+
+   method findContext()
+      local ch
+
+      #-----------------------------------------------#
+      #----------- Case "start of file" --------------#
+      #-----------------------------------------------#
+
+      \line | fail
+
+      #-----------------------------------------------#
+      #-------- Case "after package or import" -------#
+      #-----------------------------------------------#
+
+      #if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then
+
+      if ReMatch("^[\ \t]*package[\ \t]+", line) | ReMatch("^[\ \t]*import[\ \t]+", line) then {
+         write("Inside context package")
+         return "package"
+      }
+
+      #-----------------------------------------------#
+      #-------- Case "after link" --------------------#
+      #-----------------------------------------------#
+
+      if ReMatch("^[\ \t]*link[\ \t]+", line) then {
+         write("Inside context link")
+         return "link"
+      }
+
+      #-----------------------------------------------#
+      #----------- Case "inside comment" -------------#
+      #-----------------------------------------------#
+
+      line ? {
+         while (&pos < charNum) do {
+            ch := move(1) | break
+            if ch == "#" then return "comment"
+            }
+         }
+
+      #-----------------------------------------------#
+      #-------- Case "object" ------------#
+      #-----------------------------------------------#
+
+      if objectName := getObjectName() then {
+         methodName := getMethodName()
+         return "object"  
+      }
+      #-----------------------------------------------#
+      #-------- Case "method" ------------#
+      #-----------------------------------------------#
+
+      if methodName := getMethodName() then 
+         return "method" 
+
+      #-----------------------------------------------#
+      #---------------- Default case -----------------#
+      #-----------------------------------------------#
    end
 
    method isNewContext(lineNumber, charNumber)
@@ -654,10 +775,15 @@ class Context(uniAll, uri, line, lineNum, charNum)
       return newContext
    end
 
+   method getCase()
+      return contextCase
+   end
+
    initially(uniAll, uri, lineNum, charNum)
       self.uniAll := uniAll
       self.uri := uri
       self.lineNum := lineNum
       self.charNum := charNum
       line := getDesiredLine(lineNum)
+      contextCase := findContext()
 end

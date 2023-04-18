@@ -13,27 +13,32 @@ class CompletionHandler(
    end
 
    method run()
-      local _context, line, character, results_table, results, desired_line, objectName
+      local _context, line, character, results_table, results, desired_line, objectName, context
 		
       line := params["position"]["line"] + 1
       character := params["position"]["character"] + 1
       
       context := workspace.getContext(line, character)
       desired_line := context.line
-      _context := getContext(desired_line, character, workspace.file_contents)
+      _context := context.getCase()
 
       results_table := table()
       results_table["isComplete"] :=  "__true__"
       results_table["items"] := []
 
       case _context of {
-         "inside comment" : {
+         "comment" : {
             results_table["items"] := []
             }
-         "after dot operator" : {
-            objectName := getObjectName(desired_line, character) 
-            workspace.buildObjectCompletionItems(results_table, objectName)
+         "object" : {
+            workspace.buildObjectCompletionItems(results_table, context.objectName)
             }
+         "package" : {
+            addPackageCompletionItems(results_table)
+         }
+         "link" : {
+            addFileCompletionItems(results_table)
+         }
          default : { 
             buildDefaultCompletionItems(results_table, workspace)
             }
@@ -41,63 +46,6 @@ class CompletionHandler(
 
       results := tojson(results_table)
       return results
-   end
-
-
-   method getObjectName(line, character)
-      local temp, c, objectName
-      line ? {
-         temp := tab(character)
-         while c := move(-1) do {
-            if (c ** identifiers) ~== c then { 
-               break
-                  }
-            }
-
-         if ="." then {
-            move(-1)
-            while c := move(-1) do {
-               if (c ** identifiers) ~== c then { 
-                  move(1)
-                  break
-                     }
-               }
-            objectName := tab(upto("."))
-            return objectName
-            }
-         }
-   end
-
-   method getContext(desired_line, character, file)
-      local ch, objectName
-
-      #-----------------------------------------------#
-      #----------- Case "start of file" --------------#
-      #-----------------------------------------------#
-
-      \desired_line | fail
-
-      #-----------------------------------------------#
-      #----------- Case "inside comment" -------------#
-      #-----------------------------------------------#
-
-      desired_line ? {
-         while (&pos < character) do {
-            ch := move(1) | break
-            if ch == "#" then return "inside comment"
-            }
-         }
-
-      #-----------------------------------------------#
-      #-------- Case "after dot operator" ------------#
-      #-----------------------------------------------#
-
-      if objectName := getObjectName(desired_line, character) then 
-         return "after dot operator"  
-
-      #-----------------------------------------------#
-      #---------------- Default case -----------------#
-      #-----------------------------------------------#
    end
 
    method addBuiltInFunctionsCompletionItems(results_table)
@@ -199,5 +147,20 @@ class CompletionHandler(
       addWorkspaceProcedures(results_table, workspace)
       addInternalObjects(results_table, workspace)
       addInternalVariables(results_table, workspace)
+   end
+
+   method addFileCompletionItems(results_table)
+      local _file
+      every _file := !workspace.getFileNames() do {
+         put(results_table["items"], table("label", _file, "kind", 17))
+      }
+   end
+
+   method addPackageCompletionItems(results_table)
+      local _package
+      every _package := key(workspace.getPackages()) do {
+         if _package === "(main)" then next
+         put(results_table["items"], table("label", _package, "kind", 12))
+      }
    end
 end

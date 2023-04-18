@@ -15,28 +15,30 @@ class HoverHandler(
     end
 
     method run()
-        local line, character, desired_line, hover_item, signatureHandler, sig_table, results_table, _context
+        local line, character, desired_line, hover_item, signatureHandler, sig_table, results_table, _context, context
 
         results_table := table()
 
         line := params["position"]["line"] + 1
-        character := params["position"]["character"]
+        character := params["position"]["character"] + 1
+
         context := workspace.getContext(line, character)
         desired_line := context.line
+        character := context.charNum
 
         signatureHandler := SignatureHandler()
         signatureHandler.setVariables(workspace)
 
         hover_item := \getHoverItem(desired_line, character) | return tojson(results_table)
-        _context := \getContext(desired_line, character) | return tojson(results_table)
+        _context := \getContext(context) | return tojson(results_table)
 
-        if _context == "function" | _context == "built-in-function" | _context == "method" | _context == "procedure" then {
-            sig_table := signatureHandler.handleNewSignature(desired_line, character)
-
-            hover_item := sig_table[1]["label"]
+        if _context == "function" | _context == "built-in-function" | _context == "method" | 
+            _context == "procedure" | _context == "constructor" then {
+                sig_table := signatureHandler.handleNewSignature(context)
+                hover_item := sig_table[1]["label"]
         }
 
-        if \sig_table then {
+        if \sig_table & member(sig_table[1], "documentation") then {
             results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " ||
                 hover_item || "\n \n --- \n \n" || sig_table[1]["documentation"]["value"])
         }
@@ -47,9 +49,12 @@ class HoverHandler(
         return tojson(results_table)
     end
 
-    method getContext(line, character)
+    method getContext(context)
         local line_num, procedure_name, method_name, class_name, single_quote, double_quote, ch, _item, c, desired_line,
-            num_params, param, num_attributes, _attribute
+            num_params, param, num_attributes, _attribute, line, character
+
+        line := context.line
+        character := context.charNum
 
         # Begin initial string scanning
         line ? {
@@ -81,13 +86,19 @@ class HoverHandler(
                 }
 
                 # If item is method of the class it's inside of then return method
-                line_num := params["position"]["line"]
+                line_num := params["position"]["line"] + 1
+                
                 context := workspace.getContext(line_num, character)
                 desired_line := context.line
-                until ReMatch("^[\ \t]*class[\ \t]+", desired_line) | 
+                character := context.charNum
+
+                until ReMatch("^[\ \t]*class[\ \t]+", desired_line) |
                     ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) | line_num = 0 do {
+
                         context := workspace.getContext(line_num, character)
                         desired_line := context.line
+                        character := context.charNum
+
                         if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
                             desired_line ? {
                                 tab(many(' \t'))
@@ -121,12 +132,14 @@ class HoverHandler(
             }
         }
 
-        line_num := params["position"]["line"]
+        line_num := params["position"]["line"] + 1
 
         # Process for determining if item is parameter
-        until line_num = 0 do {
+        until line_num = 1 do {
             context := workspace.getContext(line_num, character)
             desired_line := context.line
+            character := context.charNum
+
             # If item is param of next closest procedure then return param
             if ReMatch("^[\ \t]*procedure[\ \t]+", desired_line) then {
                 desired_line ? {
@@ -136,9 +149,11 @@ class HoverHandler(
                     procedure_name := tab(many(identifiers))
                 }
 
-                num_params := *workspace.internal_procedures[procedure_name]["params"]
-                every param := workspace.internal_procedures[procedure_name]["params"][1 to num_params] do {
-                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                if member(workspace.internal_procedures, procedure_name) then {
+                    num_params := *workspace.internal_procedures[procedure_name]["params"]
+                    every param := workspace.internal_procedures[procedure_name]["params"][1 to num_params] do {
+                        if param["name"] == getHoverItem(line, character) then return "parameter"
+                    }
                 }
                 break
             }
@@ -152,9 +167,12 @@ class HoverHandler(
                     method_name := tab(many(identifiers))
                 }
                 line_num -:= 1
-                until line_num = 0 do {
+                until line_num = 1 do {
+                    
                     context := workspace.getContext(line_num, character)
                     desired_line := context.line
+                    character := context.charNum
+
                     if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
                         desired_line ? {
                             tab(many(' \t'))
@@ -167,22 +185,42 @@ class HoverHandler(
                     line_num -:= 1
                 }
 
-                num_params := *workspace.internal_classes[class_name]["methods"][method_name]["params"]
-                every param := workspace.internal_classes[class_name]["methods"][method_name]["params"][1 to num_params] do {
-                    if param["name"] == getHoverItem(line, character) then return "parameter"
+                if member(workspace.internal_classes, class_name) & member(workspace.internal_classes[class_name]["methods"], method_name) then {
+                    num_params := *workspace.internal_classes[class_name]["methods"][method_name]["params"]
+                    every param := workspace.internal_classes[class_name]["methods"][method_name]["params"][1 to num_params] do {
+                        if param["name"] == getHoverItem(line, character) then return "parameter"
+                    }
                 }
 
                 # If item is an attribute (class parameter) then return class parameter
-                num_attributes := *workspace.internal_classes[class_name]["attributes"]
-                every _attribute := workspace.internal_classes[class_name]["attributes"][1 to num_attributes] do {
-                    if _attribute["name"] == getHoverItem(line, character) then return "class parameter"
+                if member(workspace.internal_classes, class_name) then {
+                    num_attributes := *workspace.internal_classes[class_name]["attributes"]
+                    every _attribute := workspace.internal_classes[class_name]["attributes"][1 to num_attributes] do {
+                        if _attribute["name"] == getHoverItem(line, character) then return "class parameter"
+                    }
                 }
                 break
+            }
+
+            else if ReMatch("^[\ \t]*class[\ \t]+", desired_line) then {
+                desired_line ? {
+                    tab(many(' \t'))
+                    move(5)
+                    tab(many(' \t'))
+                    class_name := tab(many(identifiers))
+                }
+                
+                if member(workspace.internal_classes, class_name) then {
+                    num_attributes := *workspace.internal_classes[class_name]["attributes"]
+                    every _attribute := workspace.internal_classes[class_name]["attributes"][1 to num_attributes] do {
+                        if _attribute["name"] == getHoverItem(line, character) then return "class parameter"
+                    }
+                }
             }
             line_num -:= 1
         }
 
-        line_num := params["position"]["line"]
+        line_num := params["position"]["line"] + 1
 
         # If item is a member of global variables then return global
         if member(workspace.global_variables, getHoverItem(line, character)) then return "global"

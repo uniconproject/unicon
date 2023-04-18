@@ -35,11 +35,14 @@ class HoverHandler(
             hover_item := sig_table[1]["label"]
         }
 
+        if \sig_table then {
+            results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " ||
+                hover_item || "\n \n --- \n \n" || sig_table[1]["documentation"]["value"])
+        }
+        else {
+            results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " || hover_item )
+        }
 
-        write("Hello from hover.icn!")
-        write(ximage(sig_table[1]["documentation"]["value"]))
-        results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " ||
-            hover_item || "\n \n --- \n \n" || sig_table[1]["documentation"]["value"])
         return tojson(results_table)
     end
 

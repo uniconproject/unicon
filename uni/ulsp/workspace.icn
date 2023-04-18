@@ -515,3 +515,125 @@ class Workspace(
         identifiers := &letters ++ &digits ++ '_' ++ '-'
 
 end
+
+# Creates a working comments
+procedure makeComment(_function)
+
+                paramComment:= ""
+                returnComment := ""
+                failsComment := ""
+                genComment := ""
+                normalComment := ""
+                firstTen := ""
+                currentType := 0
+                insideComment := 0
+                tabCharacter := "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+                every _comment := _function.getComments().get() do {
+                     paramCounter := 0
+                     returnCounter := 0
+                     failsCounter := 0
+                     genCounter := 0
+                     every _line := _comment.get() do {
+                           _line := replace(_line, "\\n", "\\\\n")
+
+                           if((find("<[", _line))) then
+                               insideComment := 1
+                           if((find("]>", _line))) then
+                               insideComment := 0
+
+                           if((find("<[", _line)) | (find("]>", _line))) then {
+
+                              if(find("param", _line)) then
+                                  paramPos := find("param", _line)
+                              else
+                                  paramPos := 9999
+
+                              if (find("returns", _line)) then
+                                  returnsPos := find("returns", _line)
+                              else
+                                  returnsPos := 9999
+
+                              if (find("fails", _line)) then
+                                  failsPos := find("fails", _line)
+                              else
+                                  failsPos := 9999
+
+                              if (find("generates", _line)) then
+                                  genPos := find("generates", _line)
+                              else
+                                  genPos := 9999
+
+                              firstKey := min(paramPos, returnsPos, failsPos, genPos)
+
+                              if ((find("param", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+                                 if(paramCounter == 0) then {
+                                    _line := replace(_line, "param", "\n Parameters:  \n " || tabCharacter)
+                                    paramCounter +:= 1
+                                 }
+                                 else
+                                    _line := replace(_line, "param", "\n " || tabCharacter)
+
+                                 paramComment ||:= _line
+                                 currentType := 1
+                              }
+                              else if ((find("returns", _line[firstKey:firstKey+7]) & (find("<[", _line)))) then {
+                                 if(returnCounter == 0) then {
+                                    _line := replace(_line, "returns", "\n Returns:  \n " || tabCharacter)
+                                    returnCounter +:= 1
+                                 }
+                                 else
+                                    _line := replace(_line, "returns", "\n " || tabCharacter)
+
+                                 returnComment ||:= _line
+                                 currentType := 2
+                              }
+                              else if ((find("fails", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+                                 if(failsCounter == 0) then {
+                                    _line := replace(_line, "fails", "\n Fails:  \n " || tabCharacter)
+                                    failsCounter +:= 1
+                                 }
+                                 else
+                                    _line := replace(_line, "fails", "\n " || tabCharacter)
+
+                                 failsComment ||:= _line
+                                 currentType := 3
+                              }
+                              else if ((find("generates", _line[firstKey:firstKey+9]) & (find("<[", _line)))) then {
+                                 if(genCounter == 0) then {
+                                    _line := replace(_line, "generates", "\n Generates:  \n " || tabCharacter)
+                                    genCounter +:= 1
+                                 }
+                                 else
+                                    _line := replace(_line, "generates", "\n " || tabCharacter)
+
+                                 genComment ||:= _line
+                                 currentType := 4
+                              }
+                              else
+                                    if currentType = 1 then paramComment ||:= _line
+                                    else if currentType = 2 then returnComment ||:= _line
+                                    else if currentType = 3 then failsComment ||:= _line
+                                    else if currentType = 4 then genComment ||:= _line
+                           }
+                           else if (insideComment = 1) then {
+                               if currentType = 1 then paramComment ||:= _line
+                               else if currentType = 2 then returnComment ||:= _line
+                               else if currentType = 3 then failsComment ||:= _line
+                               else if currentType = 4 then genComment ||:= _line
+                           }
+                           else
+                               normalComment ||:= _line
+             }
+
+          }
+       fullComment := normalComment || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment
+       fullComment := replacem(fullComment, "<p>", "", "</p>", "")
+       fullComment := replacem(fullComment, "<i>", "_", "</i>", "_")
+       fullComment := replacem(fullComment, "<b>", "**", "</b>", "**")
+       fullComment := replacem(fullComment, "<tt>", "`", "</tt>", "`")
+       fullComment := replace(fullComment, "\"", "\\\"")
+       fullComment := replace(fullComment, "<[", "")
+       fullComment := replace(fullComment, "]>", "")
+
+       return fullComment
+end

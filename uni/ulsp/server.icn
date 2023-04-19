@@ -243,6 +243,19 @@ class Server(
       write("We received a cancel request. We need to implement this still...")
    end
 
+########################################################
+#              textDocument/signatureHelp              #
+########################################################
+
+   method signatureHelp(request_id, request_params)
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      signatureHandler.setVariables(workspace_object, request_params)
+      result := signatureHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
    initially
 
        every 1 to 5 do

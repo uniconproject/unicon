@@ -85,8 +85,8 @@ class LSPDB(
          built_in_functions[_procedure.getName()]["params"] := []
          every param_in_procedure := _procedure.getParams().get() do {
             paramName := param_in_procedure.getName()
-            paramType := param_in_procedure.getTypeValue()
-            paramDef := param_in_procedure.getDefValue()
+            paramType := param_in_procedure.getTypeValue() | &null
+            paramDef := param_in_procedure.getDefValue() | &null
             put(built_in_functions[_procedure.getName()]["params"], table(
                "name", paramName,
                "type", paramType,
@@ -122,8 +122,9 @@ class LSPDB(
     end
 
     method build_by_path(path)
-       local idoc, x, pack, file_in_pack, file_without_ext, import_in_file, procedure_in_file, param_in_procedure,
-          paramName, paramType, paramDef, class_in_file, method_in_class, param_in_method, class_param, class_comment
+       local idoc, x, pack, file_in_pack, file_without_ext, import_in_file, procedure_in_file, param_in_procedure, 
+          paramName, paramType, paramDef, class_in_file, method_in_class, param_in_method, class_param, class_comment,
+          constructor_param
        idoc := UniAll()
 
        idoc.setSourcePath(path)
@@ -153,15 +154,13 @@ class LSPDB(
              if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := table()
              every procedure_in_file := file_in_pack.getProcedures().get() do {
                 package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
-
-                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := []
-
                 package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["comments"] := makeComment(procedure_in_file)
 
+                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := []
                 every param_in_procedure := procedure_in_file.getParams().get() do {
                      paramName := param_in_procedure.getName()
-                     paramType := param_in_procedure.getTypeValue()
-                     paramDef := param_in_procedure.getDefValue()
+                     paramType := param_in_procedure.getTypeValue() | &null
+                     paramDef := param_in_procedure.getDefValue() | &null
                      put(package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"], table(
                         "name", paramName,
                         "type", paramType,
@@ -176,7 +175,10 @@ class LSPDB(
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"] := []
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["superclass"] := []
-
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"] := table()
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["name"] := class_in_file.getConstructor().getName()
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["comments"] := makeComment(class_in_file)
+                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"] := []
 
                 every method_in_class := class_in_file.getMethods().get() do {
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()] := table()
@@ -186,8 +188,8 @@ class LSPDB(
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
                    every param_in_method := method_in_class.getParams().get() do {
                      paramName := param_in_method.getName()
-                     paramType := param_in_method.getTypeValue() | continue
-                     paramDef := param_in_method.getDefValue() | continue
+                     paramType := param_in_method.getTypeValue() | &null
+                     paramDef := param_in_method.getDefValue() | &null
                      put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"], table(
                         "name", paramName,
                         "type", paramType,
@@ -197,14 +199,24 @@ class LSPDB(
                    }
                 every class_param := class_in_file.getParams().get() do {
                    paramName := class_param.getName()
-                   paramType := class_param.getTypeValue() | continue
-                   paramDef := class_param.getDefValue() | continue
+                   paramType := class_param.getTypeValue() | &null
+                   paramDef := class_param.getDefValue() | &null
                    put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], table(
                       "name", paramName,
                       "type", paramType,
                       "default", paramDef))
                    }
-
+               
+                every constructor_param := class_in_file.getConstructor().getParams().get() do {
+                   paramName := constructor_param.getName()
+                   paramType := constructor_param.getTypeValue() | &null
+                   paramDef := constructor_param.getDefValue() | &null
+                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"], table(
+                      "name", paramName,
+                      "type", paramType,
+                      "default", paramDef))
+                   }
+                   
                 every class_comment := class_in_file.getComments().get() do {
                    put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
                    }

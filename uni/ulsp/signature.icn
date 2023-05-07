@@ -36,8 +36,11 @@ class SignatureHandler(
          return createResults(results_table)
       }
 
+      # If any signatures still active #
+      handleActiveSignature("reset")
+
       # Handle a new signature #
-      handleNewSignature(context,results_table)
+      handleNewSignature(context, results_table)
       
       # Convert and return finished table #
       return createResults(results_table)
@@ -51,11 +54,15 @@ class SignatureHandler(
 
       # Collect context information (inside comment, space before, object before, no object before) #
       _context := context.getCase()
+      line := context.line
+      charNum := context.charNum
 
       /triggerCharLoc := charNum
 
-      line := context.line
-      charNum := context.charNum
+      linked_classes := workspace.getLinkedClasses()
+      imported_classes := workspace.getImportedClasses()
+      internal_classes := workspace.getInternalClasses()
+      package_classes := workspace.getPackageClasses()
 
       case _context of {
 
@@ -64,12 +71,6 @@ class SignatureHandler(
 
             objectName := context.objectName
             methodName := context.methodName
-            write("methodName")
-
-            linked_classes := workspace.getLinkedClasses()
-            imported_classes := workspace.getImportedClasses()
-            internal_classes := workspace.getInternalClasses()
-            package_classes := workspace.getPackageClasses()
 
             objects := workspace.getObjects()
             className := objects[objectName]
@@ -99,15 +100,12 @@ class SignatureHandler(
          default : {
 
             methodName := context.methodName
-            write(methodName)
 
             built_in_functions := workspace.getBuiltInFunctions()
-            internal_classes := workspace.getInternalClasses()
             linked_procedures := workspace.getLinkedProcedures()
             imported_procedures := workspace.getImportedProcedures()
             internal_procedures := workspace.getInternalProcedures()
             package_procedures := workspace.getPackageProcedures()
-            
 
             # Check if function is an internal procedure #
             if member(internal_procedures, methodName) then {
@@ -140,8 +138,25 @@ class SignatureHandler(
                   put(sig_tables, updateResults(methodName, internal_classes[className]["methods"][methodName], results_table))
                }
             }
+
+            # Check if function is a constructor #
+            if member(linked_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, linked_classes[methodName], results_table))
+            }
+            if member(imported_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, imported_classes[methodName], results_table))
+            }
+            if member(internal_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, internal_classes[methodName], results_table))
+            }
+            if member(package_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, package_classes[methodName], results_table))
+            }
          }
       }
+
+      if \params & params["context"]["isRetrigger"] == "__false__" then
+         handleActiveSignature(params, results_table, context)
 
       return sig_tables
    end
@@ -151,11 +166,14 @@ class SignatureHandler(
       local depth := 0, new_signatures := [], position, signature, new_signature, i, temp, line, charNum
       static signatures
       initial signatures := []
-      line := context.line
-      charNum := context.charNum
 
+      if \context then {
+         line := context.line
+         charNum := context.charNum
+      }
+      
       # Check if cursor position is before trigger character #
-      if /triggerCharLoc | (charNum < triggerCharLoc) then {
+      if string(params) == "reset" | /triggerCharLoc | (charNum < triggerCharLoc) then {
          triggerCharLoc := &null
          signatures := []
          fail
@@ -163,8 +181,9 @@ class SignatureHandler(
 
       # If first call, put initial signature in signatures #
       if *signatures = 0 then {
-         every signature := !params["context"]["activeSignatureHelp"]["signatures"] do
+         every signature := !results_table["signatures"] do
             put(signatures, signature)
+         fail
       }
 
       # Handle any new signatures #
@@ -214,7 +233,7 @@ class SignatureHandler(
       # Determine depth and active parameter for each active signature # 
       line ? {
          &pos := triggerCharLoc
-         until &pos = character do {
+         until &pos = charNum do {
             move(1)
             if line[&pos] == "(" then {
                depth +:= 1
@@ -256,6 +275,11 @@ class SignatureHandler(
    # Update the results table #
    method updateResults(function, functionTable, results_table)
       local signature, param_list := [], signature_table, param_table
+
+      if \functionTable["constructor"] then {
+         functionTable := functionTable["constructor"]
+         function := functionTable["name"]
+      }
 
       # Create a valid signature #
       signature := createSignature(function, functionTable)

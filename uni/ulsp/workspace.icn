@@ -85,6 +85,7 @@ class Workspace(
    end
 
     method updateUniDoc(uri, contents)
+       local files
        temp_idoc.processFile(uri, contents)
        file_contents := contents
        files := temp_idoc.getAllFiles()
@@ -166,8 +167,8 @@ class Workspace(
          internal_procedures[_procedure.getName()]["params"] := []
          every _param := _procedure.getParams().get() do {
             paramName := _param.getName()
-            paramType := _param.getTypeValue() | continue
-            paramDef := _param.getDefValue() | continue
+            paramType := _param.getTypeValue() | &null
+            paramDef := _param.getDefValue() | &null
             put(internal_procedures[_procedure.getName()]["params"], table(
                "name", paramName, 
                "type", paramType, 
@@ -244,7 +245,7 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setInternalClasses()
-       local _class, _method, _param, paramName, paramType, paramDef
+       local _class, _method, _param, paramName, paramType, paramDef, constructor_param
        internal_classes := table()
        every _class := getFile().getClasses().get() do {
           internal_classes[_class.getName()] := table()
@@ -252,14 +253,13 @@ class Workspace(
           internal_classes[_class.getName()]["methods"] := table()
           every _method := _class.getMethods().get() do {
              internal_classes[_class.getName()]["methods"][_method.getName()] := table()
-
              internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := makeComment(_method)
 
              internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []     
              every _param := _method.getParams().get() do {
                paramName := _param.getName()
-               paramType := _param.getTypeValue() | continue
-               paramDef := _param.getDefValue() | continue
+               paramType := _param.getTypeValue() | &null
+               paramDef := _param.getDefValue() | &null
                put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], table(
                   "name", paramName, 
                   "type", paramType, 
@@ -270,11 +270,25 @@ class Workspace(
           internal_classes[_class.getName()]["attributes"] := []
           every _param := _class.getParams().get() do {
              paramName := _param.getName()
-             paramType := _param.getTypeValue() | continue
-             paramDef := _param.getDefValue() | continue
+             paramType := _param.getTypeValue() | &null
+             paramDef := _param.getDefValue() | &null
              put(internal_classes[_class.getName()]["attributes"], table(
                 "name", paramName, 
                 "type", paramType, 
+                "default", paramDef))
+             }
+
+          internal_classes[_class.getName()]["constructor"] := table()
+          internal_classes[_class.getName()]["constructor"]["name"] := _class.getConstructor().getName()
+          internal_classes[_class.getName()]["constructor"]["comments"] := makeComment(_class)
+          internal_classes[_class.getName()]["constructor"]["params"] := []
+          every constructor_param := _class.getConstructor().getParams().get() do {
+             paramName := constructor_param.getName()
+             paramType := constructor_param.getTypeValue() | &null
+             paramDef := constructor_param.getDefValue() | &null
+             put(internal_classes[_class.getName()]["constructor"]["params"], table(
+                "name", paramName,
+                "type", paramType,
                 "default", paramDef))
              }
           }
@@ -346,6 +360,7 @@ class Workspace(
 # ---------------- Objects (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
     method setObjects()
+       local lineNum, _line, objectName, className
        objects := table()
        lineNum := 1
        while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
@@ -357,7 +372,7 @@ class Workspace(
                 move(2)
                 tab(many(' \t'))
                 className := tab(upto("\("))
-                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) then {
+                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
                    objects[objectName] := className
                    }
                 }
@@ -376,7 +391,7 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setVariables()
-       local f, _line, variableName, _content, globalName
+       local f, _line, variableName, _content, globalName, lineNum
        variables := table()
        global_variables := table()
        lineNum := 1
@@ -497,7 +512,7 @@ class Workspace(
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
           every class_attribute := package_classes[className]["attributes"][1 to *package_classes[className]["attributes"]] do {
-             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))                
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
              }
           }
     end
@@ -533,9 +548,151 @@ class Workspace(
 
 end
 
+class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase)
+   method getDesiredLine(lineNum)
+      line := uniAll.getUniFileLine(uri, lineNum)
+   end
+
+   # Retrive object name #
+   method getObjectName()
+      local temp, c, name
+      line ? {
+         temp := tab(charNum)
+         while c := move(-1) do {
+            if (c ** identifiers) ~== c then { 
+               break
+                  }
+            }
+
+         if ="." then {
+            move(-1)
+            while c := move(-1) do {
+               if (c ** identifiers) ~== c then { 
+                  move(1)
+                  break
+                     }
+               }
+            name := tab(upto("."))
+            return name
+            }
+         }
+   end
+
+   # Retrive method name #
+   method getMethodName()
+      local temp, c, _method
+      line ? {
+         temp := tab(charNum)
+         while c := move(-1) do {
+            if (c ** identifiers) ~== c then { 
+               break
+            }
+         }
+
+         if &pos ~= 1 then move(1)
+
+         _method := tab(upto("("))
+         return _method
+      }
+   end
+
+   method findContext()
+      local objectName, single_quote, double_quote, ch
+
+      #-----------------------------------------------#
+      #----------- Case "start of file" --------------#
+      #-----------------------------------------------#
+
+      \line | fail
+
+      #-----------------------------------------------#
+      #-------- Case "after package or import" -------#
+      #-----------------------------------------------#
+
+      #if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then
+
+      if ReMatch("^[\ \t]*package[\ \t]+", line) | ReMatch("^[\ \t]*import[\ \t]+", line) then {
+         write("Inside context package")
+         return "package"
+      }
+
+      #-----------------------------------------------#
+      #-------- Case "after link" --------------------#
+      #-----------------------------------------------#
+
+      if ReMatch("^[\ \t]*link[\ \t]+", line) then {
+         write("Inside context link")
+         return "link"
+      }
+
+      #-----------------------------------------------#
+      #----------- Case "inside comment" -------------#
+      #-----------------------------------------------#
+
+      line ? {
+         single_quote := 0
+         double_quote := 0
+         while (&pos < charNum) do {
+            ch := move(1) | break
+            if ch == "\'" then single_quote +:= 1
+            if ch == "\"" then double_quote +:= 1
+            if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then return "comment"
+         }
+      } 
+
+      #-----------------------------------------------#
+      #-------- Case "object" ------------#
+      #-----------------------------------------------#
+
+      if objectName := getObjectName() then {
+         self.objectName := objectName
+         self.methodName := getMethodName()
+         return "object"  
+      }
+      #-----------------------------------------------#
+      #-------- Case "method" ------------#
+      #-----------------------------------------------#
+
+      if methodName := getMethodName() then 
+         self.methodName := getMethodName()
+         return "method" 
+
+      #-----------------------------------------------#
+      #---------------- Default case -----------------#
+      #-----------------------------------------------#
+   end
+
+   method isNewContext(lineNumber, charNumber)
+      local newContext
+      if lineNum ~= lineNumber then {
+         newContext := "Yes"
+      } else if charNum ~= charNumber then {
+         newContext := "Yes"
+      } else {
+         newContext := &null
+      }
+
+      return newContext
+   end
+
+   method getCase()
+      return contextCase
+   end
+
+   initially(uniAll, uri, lineNum, charNum)
+      self.uniAll := uniAll
+      self.uri := uri
+      self.lineNum := lineNum
+      self.charNum := charNum
+      line := getDesiredLine(lineNum)
+      contextCase := findContext()
+end
+
 # Creates a working comments
 procedure makeComment(_function)
-
+   local paramComment, returnComment, failsComment, genComment, normalComment, firstTen, currentType, insideComment,
+      tabCharacter, _comment, paramCounter, returnCounter, failsCounter, genCounter, _line, paramPos, returnsPos,
+      failsPos, genPos, firstKey, fullComment
                 paramComment:= ""
                 returnComment := ""
                 failsComment := ""
@@ -653,137 +810,4 @@ procedure makeComment(_function)
        fullComment := replace(fullComment, "]>", "")
 
        return fullComment
-end
-
-class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase)
-   method getDesiredLine(lineNum)
-      line := uniAll.getUniFileLine(uri, lineNum)
-   end
-
-   # Retrive object name #
-   method getObjectName()
-      local temp, c, name
-      line ? {
-         temp := tab(charNum)
-         while c := move(-1) do {
-            if (c ** identifiers) ~== c then { 
-               break
-                  }
-            }
-
-         if ="." then {
-            move(-1)
-            while c := move(-1) do {
-               if (c ** identifiers) ~== c then { 
-                  move(1)
-                  break
-                     }
-               }
-            name := tab(upto("."))
-            return name
-            }
-         }
-   end
-
-   # Retrive method name #
-   method getMethodName()
-      local temp, c, _method
-      line ? {
-         temp := tab(charNum)
-         while c := move(-1) do {
-            if (c ** identifiers) ~== c then { 
-               break
-            }
-         }
-
-         if &pos ~= 1 then move(1)
-
-         _method := tab(upto("("))
-         return _method
-      }
-   end
-
-   method findContext()
-      local ch
-
-      #-----------------------------------------------#
-      #----------- Case "start of file" --------------#
-      #-----------------------------------------------#
-
-      \line | fail
-
-      #-----------------------------------------------#
-      #-------- Case "after package or import" -------#
-      #-----------------------------------------------#
-
-      #if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then
-
-      if ReMatch("^[\ \t]*package[\ \t]+", line) | ReMatch("^[\ \t]*import[\ \t]+", line) then {
-         write("Inside context package")
-         return "package"
-      }
-
-      #-----------------------------------------------#
-      #-------- Case "after link" --------------------#
-      #-----------------------------------------------#
-
-      if ReMatch("^[\ \t]*link[\ \t]+", line) then {
-         write("Inside context link")
-         return "link"
-      }
-
-      #-----------------------------------------------#
-      #----------- Case "inside comment" -------------#
-      #-----------------------------------------------#
-
-      line ? {
-         while (&pos < charNum) do {
-            ch := move(1) | break
-            if ch == "#" then return "comment"
-            }
-         }
-
-      #-----------------------------------------------#
-      #-------- Case "object" ------------#
-      #-----------------------------------------------#
-
-      if objectName := getObjectName() then {
-         methodName := getMethodName()
-         return "object"  
-      }
-      #-----------------------------------------------#
-      #-------- Case "method" ------------#
-      #-----------------------------------------------#
-
-      if methodName := getMethodName() then 
-         return "method" 
-
-      #-----------------------------------------------#
-      #---------------- Default case -----------------#
-      #-----------------------------------------------#
-   end
-
-   method isNewContext(lineNumber, charNumber)
-      if lineNum ~= lineNumber then {
-         newContext := "Yes"
-      } else if charNum ~= charNumber then {
-         newContext := "Yes"
-      } else {
-         newContext := &null
-      }
-
-      return newContext
-   end
-
-   method getCase()
-      return contextCase
-   end
-
-   initially(uniAll, uri, lineNum, charNum)
-      self.uniAll := uniAll
-      self.uri := uri
-      self.lineNum := lineNum
-      self.charNum := charNum
-      line := getDesiredLine(lineNum)
-      contextCase := findContext()
 end

@@ -32,7 +32,7 @@ global fixName
 class UniAll : Object (files, packages, 
                       curFile, curClass, curPackage, curComments, fileHead,
                       uniFile, resolveFlag, targetDir, saveSrcFlag,
-                      importSet, linkSet, badFiles, sourcePath)
+                      importSet, linkSet, badFiles, sourcePath, uniFilez)
 
     # <p>
     # Set the level of entity resolution.  If <b>flag</b> is <b>&null</b>,
@@ -151,8 +151,7 @@ class UniAll : Object (files, packages,
     # If the argument is a directory, then all files suffixed with ".icn"
     # within that directory are processed.
     # </p>
-    method processFile(fName)
-
+    method processFile(fName, contents)
         if /fName | (*fName = 0) then fail
 
         if stat(fName||"/") then {   # Handle source files in directory
@@ -160,13 +159,21 @@ class UniAll : Object (files, packages,
            return
            }
 
-        fName := delSuffix(fName,".icn")||".icn"
+        fName := delSuffix(fName, ".icn") || ".icn"
+
         uniFile := UniFile(fName) |
                    UniFile(fName, genDirs(\sourcePath)) | {
                    insert(badFiles, fName)
                    fail
-                   }
-        if f := addFile(fName) then {
+                   } 
+
+        if \contents then {
+            if \uniFile := uniFilez[fName] then {
+                uniFile.updateContent(contents) | continue
+                classifyLines(uniFile)
+                uniFilez[fName] := uniFile
+            }
+        } else if f := addFile(fName) then {
             uniFile.setSaveSrc(saveSrcFlag)
             fileHead := "yes"
             curClass := &null
@@ -180,9 +187,10 @@ class UniAll : Object (files, packages,
             if uniFile.hasSource() then {
                 UniDoc::writeSrcFile(targetDir, uniFile)
                 }
-            uniFile.close()
-            }
 
+            uniFilez[fName] := uniFile
+            }
+        
         # See if we need to resolve imports and links...
         
         if \resolveFlag then {     # Yep...
@@ -200,8 +208,18 @@ class UniAll : Object (files, packages,
                 }
 
             }
-            
 
+            
+    end
+
+    #<p>
+    #    Given the name of a file and line number, retrieve the specific
+    #    line directly from the raw buffer inside UniFile.
+    #</p>
+    method getUniFileLine(fName, lineNum)
+        if (*/fName) = 0 then fail
+        fName := delSuffix(fName, ".icn") || ".icn"
+        if uniFile := \uniFilez[fName] then return uniFile.Read(lineNum)
     end
 
     #<p>
@@ -283,27 +301,29 @@ class UniAll : Object (files, packages,
     # Parse a file, building an internal representation.
     # </p>
     # <i>This is intended for internal use only!</i>
-    method classifyLines(f)
-        while classify(f)
+    method classifyLines(uniFile)
+        while classify(uniFile)
     end
 
     # <p>
     #  Classify the type of an input line based on tokens produced
-    #  during parsing of the file <b>f</b>.
+    #  during parsing of the file <b>uniFile</b>.
     # </p>
     # <i>This is intended for internal use only!</i>
-    method classify(f)
+    method classify(uniFile)
         local token
 
-        token := f.nextToken() | fail
+        token := uniFile.nextToken() | fail
+
+        #write("token = " || ximage(token))
     
         case token.Type() of {
-            "UniDoc::BlankLine" : processBlank(f)
-            "UniDoc::Comment"   : processComment(f, token.value)
-            "UniDoc::Keyword"   : processKeyword(f, token.value)
+            "UniDoc::BlankLine" : processBlank(uniFile)
+            "UniDoc::Comment"   : processComment(uniFile, token.value)
+            "UniDoc::Keyword"   : processKeyword(uniFile, token.value)
             }
     
-        f.clearLine()
+        uniFile.clearLine()
         return
     end
     
@@ -928,7 +948,6 @@ class UniAll : Object (files, packages,
     # </p>
     method getAllRecords()
         local ctab, p, g, clist
-
         ctab := table()
         every p := !files do {
             every g := p.getRecords().get() do {
@@ -1102,6 +1121,7 @@ class UniAll : Object (files, packages,
         linkSet                := ::set()
         lName                  := delSuffix(lName, ".icn")||".icn"
         badFiles               := ::set()
+        uniFilez               := table()
 end
 
 # <p>

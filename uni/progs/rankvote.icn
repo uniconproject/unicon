@@ -1,13 +1,10 @@
 #<p>
 # Implement ranked choice voting.
 #</p>
-#<p>
-#  Author: Steve Wampler (sbw@tapestry.tucson.az.us)
-#  This file is in the public domain.
-#</p>
 
 import util
 link printf	     # For sprintf
+link ximage
 
 global ballots,      # Individual ballots
        totalVotes,   # Total votes for first candidate on each ballot, per round
@@ -44,7 +41,7 @@ end
 #   Display a help message.
 #</p>
 procedure helpMesg()
-   write(&errout, "Usage: rankvote [--help] [--verbose] [ballotfile...]")
+   write(&errout, "Usage: rankvote [--verbose] [ballotfile...]")
    write(&errout, "   reads ballots from &input if no ballotfiles listed")
 end
 
@@ -110,18 +107,20 @@ procedure removeCandidate(worst)
 end
 
 #<p>
-#  Break a tie for the worst remaining candidate.
+#  Break a tie for the worst remaining candidate.  Factor in that some
+#  ballots may not include all candidates.
 #</p>
 procedure tieBreak()
    if Args().getOpt("verbose") then write("\tGoing to tie breaker!")
    tb := table()
    every c := !results do {
       cVotes := 0
-      every b := !ballots do
-         every i := 1 to *b do if b[i] == c[1] then cVotes +:= i
-      tb[c[1]] := cVotes
+      every b := !ballots do {
+         every i := 1 to *b do if b[i] == c[1] then cVotes +:= (*b+1)-i
+         }
+      tb[c[1]] := cVotes   # 0 if candidate c not on ballot b
       }
-   worst := sort(tb,2)[-1]
+   worst := sort(tb,2)[1]
    every i := 1 to *results do
       if worst[1] == results[i][1] then break removeCandidate(results[i])
 end

@@ -4,11 +4,11 @@
 
 import util
 link printf	     # For sprintf
-link ximage
 
 global ballots,      # Individual ballots
        totalVotes,   # Total votes for first candidate on each ballot, per round
-       results       # How each round turned out
+       results,      # How each round turned out
+       maxcands      # Most candidates on any ballot (needed in tie-breaks)
 
 #<p>
 #  Read in ranked-choice ballots where each ballot is a single line with the
@@ -53,8 +53,11 @@ end
 #  <[param f - file containing ballots, already opened]>
 #</p>
 procedure readBallots(f)
-   initial ballots := []
-   every put(ballots, parseCSV(!f,','))
+   initial {
+      ballots := []
+      maxcands := 0
+      }
+   every put(ballots, b := parseCSV(!f,',')) do maxcands <:= *b
    return
 end
 
@@ -77,7 +80,7 @@ procedure computeRanks()
    curRanking := table()
    totalVotes := 0
    # Start by tallying counts for all first choices
-   every b := !ballots do {
+   every *(b := !ballots) > 0 do {   # Ignore empty ballots
       every c := !b do /curRanking[c] := 0  # Pass all candidates through
       curRanking[b[1]] +:= 1
       totalVotes +:= 1
@@ -116,7 +119,7 @@ procedure tieBreak()
    every c := !results do {
       cVotes := 0
       every b := !ballots do {
-         every i := 1 to *b do if b[i] == c[1] then cVotes +:= (*b+1)-i
+         every i := 1 to *b do if b[i] == c[1] then cVotes +:= (maxcands+1)-i
          }
       tb[c[1]] := cVotes   # 0 if candidate c not on ballot b
       }

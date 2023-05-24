@@ -438,6 +438,17 @@ struct errtab errtab[] = {
 #ifdef HAVE_LIBSSL
    1214, "cannot find certificate store (set SSL_CERT_FILE or SSL_CERT_DIR)",
    1215, "cannot verify peer's certificate",
+
+   1300, "SSL error",
+   1301, "SSL context error",
+   1302, "bad ssl attribute",
+   1303, "private key error",
+   1304, "certificate error",
+   1305, "certificate authority error",
+   1306, "cipher error",
+   1307, "private key and certificate mismatch",
+   1308, "unknown protocol",
+
 #endif					/* HAVE_LIBSSL */
 
 #endif                                  /* Messaging */

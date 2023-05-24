@@ -71,15 +71,15 @@ char *rt_path = "../src/h/rt.h";
  * End of operating-system specific code.
  */
 
-static char *ostr = "AECPD:I:U:O:d:cir:st:x";
+static char *ostr = "AKECPD:I:U:O:d:cir:st:x";
 
 #if EBCDIC
 static char *options =
-   "<-A> <-E> <-C> <-P> <-c> <-O copts> <-s> <-Dname<=<text>>> <-Uname> <-Ipath> <-dfile>\n    \
+   "<-A> <-E> <-C> <-P> <-K> <-c> <-O copts> <-s> <-Dname<=<text>>> <-Uname> <-Ipath> <-dfile>\n    \
 <-rpath> <-tname> <-x> <files>";
 #else                                   /* EBCDIC */
 static char *options =
-   "[-A] [-E] [-C] [-P] [-c] [-O copts] [-s] [-Dname[=[text]]] [-Uname] [-Ipath] [-dfile]\n    \
+   "[-A] [-E] [-C] [-P] [-K] [-c] [-O copts] [-s] [-Dname[=[text]]] [-Uname] [-Ipath] [-dfile]\n    \
 [-rpath] [-tname] [-x] [files]";
 #endif                                  /* EBCDIC */
 
@@ -239,6 +239,7 @@ char **argv;
    int nopts;
    char buf[MaxFileName];		/* file name construction buffer */
    struct fileparts *fp;
+   int keeptmp = 0;
 
    /*
     * See if the location of include files has been patched into the
@@ -286,6 +287,9 @@ char **argv;
             pp_only = 1;
             if (whsp_image == NoSpelling)
                whsp_image = NoComment;
+            break;
+     case 'K':              /* Do not remove files */
+            keeptmp = 1;
             break;
 	 case 'C':  /* retain spelling of white space, only effective with -E */
             whsp_image = FullImage;
@@ -468,7 +472,8 @@ char **argv;
 
    /*
     * If -c was used, go ahead and invoke a C compiler on curlst_string.
-    * If the compile did not report an error, remove the .c files afterwards.
+    * If the compile did not report an error, remove the .c files afterwards
+    * unless the keeptmp option is present.
     * Note that the remove command is at present hardwired to "rm"; for
     * greater portability (e.g. Windows) perhaps it should be rewritten to
     * a loop of C library remove() calls.
@@ -481,10 +486,12 @@ char **argv;
       sprintf(ccomp_line, "%s -c %s%s", CComp, ccomp_opts, curlst_string);
       if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
       if (system(ccomp_line)) return EXIT_FAILURE;
-      sprintf(ccomp_line, "%s%s", "rm", curlst_string);
-      if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
-      if (system(ccomp_line)) return EXIT_FAILURE;
+      if (0 == keeptmp) { 
+        sprintf(ccomp_line, "%s%s", "rm", curlst_string);
+        if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
+        if (system(ccomp_line)) return EXIT_FAILURE;
       }
+   }
 
    return EXIT_SUCCESS;
    }

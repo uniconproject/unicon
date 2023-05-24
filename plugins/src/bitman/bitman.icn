@@ -13,6 +13,7 @@ package Bitman
 # Author  :    Don Ward
 # Date    :    March 2021
 #
+#              August 2022    Added ushift
 #
 # These routines are the equivalent of the Unicon built-in functions
 # except they never produce a large integer and there is no special
@@ -26,6 +27,7 @@ package Bitman
 #    bits     enquiry and bit extraction
 #    bit      single bit extraction
 #    brot     bit rotation
+#    ushift   unsigned bitwise shift
 #
 # bit(x,n) works the same way as string indexing (but indexing bits instead
 # of characters, including negative indices meaning "from the end").
@@ -81,12 +83,21 @@ class Bitman : uso::USO()
    end
 
    # ----------------------------------------
-   # shift
+   # (signed) shift
    method bshift(v1:integer, v2:integer)
       static Cbshift
       initial Cbshift := loadfunc("bitman.so", "bshift")
 
       return \Cbshift(v1,v2)
+   end
+
+   # ----------------------------------------
+   # (unsigned) shift
+   method ushift(v1:integer, v2:integer)
+      static Cushift
+      initial Cushift := loadfunc("bitman.so", "ushift")
+
+      return \Cushift(v1,v2)
    end
 
    # ----------------------------------------
@@ -130,6 +141,7 @@ class Bitman : uso::USO()
               lang::find_method("band"),
               lang::find_method("bcom"),
               lang::find_method("bshift"),
+              lang::find_method("ushift"),
               lang::find_method("bit"),
               lang::find_method("bits"),
               lang::find_method("brot"),
@@ -151,6 +163,7 @@ $define FAIL_TEST put(failures, "Test failure at " || &file || ":"  || &line)
       if not band(1,1) then FAIL_TEST
       if not bcom(1,1) then FAIL_TEST
       if not bshift(1,1) then FAIL_TEST
+      if not ushift(1,1) then FAIL_TEST
       if not bit(1,1) then FAIL_TEST
       if not bits(1,1,2) then FAIL_TEST
 
@@ -163,10 +176,12 @@ $define FAIL_TEST put(failures, "Test failure at " || &file || ":"  || &line)
       if bcom(42) ~= -43 then FAIL_TEST
       if bshift(16R42,4) ~= 16R420 then FAIL_TEST
       if bshift(16R678, -8) ~= 6 then FAIL_TEST
-      if (bit(16R123456,2) ~= 1) ||
-         (bit(16R123456,3) ~= 1) ||
-         (bit(16R123456,4) ~= 0) ||
-         (bit(16R123456,5) ~= 1)  then FAIL_TEST
+      if ushift(16R42,4) ~= 16R420 then FAIL_TEST
+      if ushift(-1, -1) <= 0 then FAIL_TEST
+      if bit(16R123456,2) ~= 1 then FAIL_TEST
+      if bit(16R123456,3) ~= 1 then FAIL_TEST
+      if bit(16R123456,4) ~= 0 then FAIL_TEST
+      if bit(16R123456,5) ~= 1 then FAIL_TEST
       if bits(16R123456,1,5) ~= 6 then FAIL_TEST
       if bits(16R123456,5,1) ~= 6 then FAIL_TEST
       if bits(16R12345678,30,33) ~= 0 then FAIL_TEST

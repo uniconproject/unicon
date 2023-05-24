@@ -772,6 +772,36 @@ use a standard Internet protocol, you should check first to see if the
 protocol is built-in to the language as part of the messaging
 facilities, described in the next section.
 
+\subsection*{Secure Sockets}
+
+Unicon offers secure sockets to encrypt data when using the TCP/UDP protocols.
+
+Example server code:
+\iconcode{
+procedure main() \\
+\>   sock := open("localhost:6600", "nae", "key=server.key",
+\"cert=server.crt", "ca=ca.crt")  | \\
+\>\>\>\>stop(\&errortext) \\
+\>   select(sock) \# wait for input\\
+\>   msg := ready(sock) \\
+\>   write("Message from client:", msg) \\
+\>   writes(sock, msg)  \# echo back the same message to the client\\
+\>   close(sock) \\
+end
+}
+
+Example client code:
+\iconcode{
+procedure main() \\
+\>   sock := open("localhost:6600", "ne") | stop(\&errortext) \\
+\>   writes(sock, "Hello SSL Socket") \\
+\>   select(sock)  \# wait for input\\
+\>   msg := ready(sock) \\
+\>   write("Message from server:", msg) \\
+\>   close(sock) \\
+end
+}
+
 \section{Messaging Facilities}
 
 Unicon's \index{messaging}messaging facilities provide
@@ -858,7 +888,7 @@ messages are buffered in such a way that message removal on the server
 occurs when the connection is explicitly and successfully closed.
 
 Here's a simple program that illustrates the use of
-msesaging to get email from a POP server. It gets messages from the
+messaging to get email from a POP server. It gets messages from the
 server without deleting them and, for every message, prints out who the
 message is from as well as the subject line.
 

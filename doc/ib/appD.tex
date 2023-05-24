@@ -1324,12 +1324,12 @@ a value, a core dump is produced if an Icon program terminates as a result of
 \texttt{ICONCORE} when making modifications to Icon. For an extended debugging
 session, it may be convenient to set \texttt{dodump} in \textfn{runtime/init.r} to 1.
 
-\subsection{Extra help in \texttt{DEVMODE} (Unicon)}
-When Unicon is built with \texttt{DEVMODE} enabled there are some extra
+\subsection{Extra help in \texttt{DEVELOPMODE} (Unicon)}
+When Unicon is built with \texttt{DEVELOPMODE} enabled there are some extra
 facilities that are provided to help with debugging.
 \subsubsection{Breakpoints in the Unicon program}
 It is difficult (when debugging the runtime system) to arrange for a breakpoint
-to occur at a particular location in the Unicon program. In \texttt{DEVMODE}
+to occur at a particular location in the Unicon program. In \texttt{DEVELOPMODE}
 there is a new standard function, which is callable from Unicon, named
 \texttt{dbgbreak}. Writing something like the code fragment below will
 cause a debugger breakpoint at the desired moment -- provided the debugger is
@@ -1341,7 +1341,9 @@ instructed to place a break point at the function called \texttt{Zdbgbrk}.
 \end{iconcode}
 Note that use of \texttt{dbgbrk} should always be protected by
 \texttt{\$ifdef \_DEVMODE} because the function is only defined when
-\texttt{DEVMODE} is enabled.
+\texttt{DEVELOPMODE} is enabled. \texttt{DEVELOPMODE} used to be called \texttt{DEVMODE}
+but it was renamed because it clashed with the use of the same identifier in the Windows
+UCRT runtime library.
 \subsubsection{Identifying the current Unicon line}
 The position in the Unicon program can always be established by looking into the
 runtime system with the debugger. A couple of functions make this process

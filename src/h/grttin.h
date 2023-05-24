@@ -317,6 +317,10 @@ typedef int time_t;
 typedef int DIR;
 #endif					/* PosixFns */
 
+#if HAVE_LIBSSL
+typedef int SSL_CTX, SSL;
+#endif					/* LIBSSL */
+
 #ifdef Concurrent
        typedef int pthread_key_t, sigset_t;
 #endif					/* Concurrent */

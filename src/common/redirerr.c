@@ -24,7 +24,9 @@ char *p;
 #endif					/* MVS || VM */
 
 #if MSDOS || VMS
-   #if NT
+   #ifdef _UCRT
+     if (_dup2(fileno(stdout), fileno(stderr))) return 0;
+   #elif NT
       /*
        * Don't like doing this, but it seems to work.
        */
@@ -33,7 +35,7 @@ char *p;
       stderr->_file = stdout->_file;
    #else				/* NT */
       if (dup2(fileno(stdout),fileno(stderr)))
-	retrun 0;
+	return 0;
    #endif				/* NT */
 #endif					/* MSDOS || ... */
 

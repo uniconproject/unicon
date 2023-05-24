@@ -1,10 +1,8 @@
-AC_PREREQ(2.57)
+AC_PREREQ([2.69])
 LT_PREREQ(2.4.6)
 
 m4_define([unicon_version],[m4_esyscmd_s([config/scripts/version.sh "version"])])
-AC_INIT([Unicon],[unicon_version],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
-
-#AC_INIT([Unicon],[13.2],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
+AC_INIT([Unicon],[unicon_version],[jeffery@unicon.org],[unicon],[http://www.unicon.org])
 
 AC_CANONICAL_HOST
 
@@ -26,6 +24,11 @@ case $host_cpu in
         unicon_cpu="arm_64"
 	ARCHBITS="64"
 	AC_DEFINE([ARM], [1], [ARM platform])
+        ;;
+     *riscv64*)
+        unicon_cpu="riscv_64"
+	ARCHBITS="64"
+	AC_DEFINE([RISCV], [1], [RISC-V platform])
         ;;
      *i386* | *i686*)
         unicon_cpu="x86_32"
@@ -248,7 +251,7 @@ fi
 if test x"$devmode" = x"yes" ; then
   debug=yes
   warn=yes
-  AC_DEFINE([DEVMODE], [1], [Developer Mode])
+  AC_DEFINE([DEVELOPMODE], [1], [Developer Mode])
 fi
 
 if test x"$debugheap" = x"yes" ; then
@@ -303,7 +306,7 @@ fi
 #  WERROR="-Werror"
 #fi
 
-#AC_GNU_SOURCE
+#AC_USE_SYSTEM_EXTENSIONS
 
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
 AC_PROG_CC
@@ -322,7 +325,7 @@ AC_CHECK_SIZEOF(long int)
 AC_CHECK_SIZEOF(long long int)
 AC_CHECK_SIZEOF(int *)
 
-AC_WORDS_BIGENDIAN
+AC_C_BIGENDIAN
 AC_C_CONST
 AC_TYPE_SIZE_T
 AC_FUNC_ALLOCA

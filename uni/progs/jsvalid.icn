@@ -1,0 +1,61 @@
+#
+############################################################################
+#
+#      File: jsvalid.icn 
+#    
+#
+#      Subject: This program takes two JSON files (one JSON object file, and one JSON Schema file)
+#      and compares the two files to make sure the JSON Object File conforms to the JSON Schema file. 
+#		  		
+#		
+#      Author: Hunter Thomas, John Haag, and Zachary Kovalenko
+#
+#      Date: April 2021     
+#
+############################################################################
+
+link basename
+link options
+link io
+
+import json
+
+
+procedure usage()
+    prog := basename(&progname)
+    write("Usage: ", prog, " [options]\n")
+    write(prog, " is a unicon utility for validating a json file given its schema")
+    write("Options:")
+    write("\t -f, file   : json filename")
+    write("\t -s, schema : json schema file, default to <basename file>.schema.json")
+    write("\t -h, help   : show this help\n")
+    exit(-1)
+end
+
+procedure main(args)
+   local opts, jfname, sfname, ext
+   # : means that an input is required
+   opts := options(args, "-h -help --help -s: -schema: -f: -file:")
+
+   if *opts = 0 then
+      usage()
+
+   # get the json file name, if it is not provided, error out.
+   jfname :=  \opts["f" | "file"] | usage()
+
+   # get the schema file
+
+   if not (sfname :=  \opts["s" | "schema"]) then {
+      # default to <fname-noext>.schema.json
+      ext :=  suffix(jfname) # split the name from the extension
+      sfname := ext[1] || ".schema." || ext[2]
+      }
+
+   exists(jfname) | stop("error: json file doesn't exist: ", jfname)
+   exists(sfname) | stop("error: schema file doesn't exist: ", sfname)
+
+   v := jsf_validate(jfname, sfname)
+
+   if v == "" then write("valid") else write(v)
+end
+

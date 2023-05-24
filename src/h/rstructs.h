@@ -139,6 +139,9 @@ union f {
 #ifdef PseudoPty
      struct ptstruct *pt;
 #endif					/* PseudoPty */
+#if HAVE_LIBSSL
+    SSL *ssl;
+#endif					/* HAVE_LIBSSL */
    int fd;        /*   other int-based file descriptor */
    };
 

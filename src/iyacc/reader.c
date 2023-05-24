@@ -76,6 +76,14 @@ void get_line(void)
     {
 	line[i]  =  c;
 	if (c == '\n') { cptr = line; return; }
+
+	if(iflag && (i>=2) &&
+	   (line[i-2]=='$') && (line[i-1]=='$') && (line[i] == '=')) {
+	   /* add a colon to make $$= into $$:= on Icon/Unicon */
+           line[i] = ':';
+	   ungetc(c, f);
+	   }
+
 	if (++i >= linesize)
 	{
 	    linesize += LINESIZE;

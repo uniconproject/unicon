@@ -238,9 +238,8 @@ char *findonpath(char *name, char *buf, size_t len) {
 #if NT
 /* X_OK flag not reliable, just check whether the file exists */
 #define access _access
-#ifndef X_OK
-#define X_OK 00
-#endif
+#undef X_OK
+#define X_OK F_OK
 #endif					/* NT */
       if (access(buf, X_OK) == 0)
          return buf;
@@ -519,6 +518,8 @@ void get_arch(char *arch){
   s = "x86";
 #elif defined(_M_ARM) || defined(__arm) || defined(__arm__) || defined(__aarch32__) || defined(__aarch64__)
   s = "arm";
+#elif defined(__riscv)
+  s = "riscv";
 #elif defined(__mips)
   s = "mips";
 #elif defined(__powerpc)

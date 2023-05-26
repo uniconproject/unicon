@@ -89,18 +89,19 @@ procedure computeRanks()
 end
 
 #<p>
-#  Find the worst remaining candidate and remove it.
+#  Find the remaining candidate with the fewest first-place votes and
+#  remove them.
 #  Handles tie breaks.
 #</p>
 procedure removeWorst()
    worst := results[1]
    worst2 := results[2]  # Needed to check for ties...		
    if percentVote(worst) < percentVote(worst2) then removeCandidate(worst)
-   else tieBreak()
+   else tieBreak(worst1,worst2)
 end
 
 #<p>
-#  Remove a candidate (always the worst one, of course!)
+#  Remove a candidate (always one with the fewest first-place votes, of course!)
 #  <[param worst - worst candidate as a list [name,number of votes for first]>
 #</p>
 procedure removeCandidate(worst)
@@ -110,13 +111,14 @@ procedure removeCandidate(worst)
 end
 
 #<p>
-#  Break a tie for the worst remaining candidate.  Factor in that some
-#  ballots may not include all candidates.
+#  Break a tie for the worst remaining candidate by removing the candidate
+#  that has the lowest cummulative ranking.  Factor in that some ballots may
+#  not include all candidates.
 #</p>
-procedure tieBreak()
+procedure tieBreak(A[])
    if Args().getOpt("verbose") then write("\tGoing to tie breaker!")
    tb := table()
-   every c := !results do {
+   every c := \!A do {
       cVotes := 0
       every b := !ballots do {
          every i := 1 to *b do if b[i] == c[1] then cVotes +:= (maxcands+1)-i
@@ -129,7 +131,8 @@ procedure tieBreak()
 end
 
 #<p>
-#  Compute the percent of votes a candidates in the current round.
+#  Compute the percent of first-place votes a candidate has in the current
+#  round.
 #  <[param candidate - a candidate as a list [name,number of votes for first]>.
 #  <[returns percent of total votes that the candidate has]>
 #</p>

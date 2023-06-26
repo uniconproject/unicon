@@ -30,7 +30,6 @@ default_target: allsrc
 	@cat unicon-features.log
 	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
-
 .PHONY: plugins update_rev doc config help
 
 Makedefs: Makedefs.in configure
@@ -62,6 +61,7 @@ help:
 	@echo "        sh configure --build=x86_64-w64-mingw32"
 	@echo "        make"
 	@echo
+	@echo " The --help option of configure gives details of build options"
 
 ##################################################################
 #
@@ -204,9 +204,9 @@ UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc unicont uniconx uniconc udb uprof unidep unidoc \
-	ui ivib patchstr iyacc rt.a rt.h
-
+Tbins=unicon$(EXE) icont$(EXE) iconx$(EXE) iconc$(EXE) unicont$(EXE) uniconx$(EXE) \
+      uniconc$(EXE) udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) \
+      patchstr$(EXE) iyacc$(EXE) rt.a rt.h
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
 IPLdirs=lib incl gincl mincl procs
@@ -245,13 +245,13 @@ install Install:
 	@for f in $(Tbins); do \
 	  if test -f "bin/$$f"; then \
 	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
-	    if test "$$f" = $(UNICONT) ; then \
+	    if test "$$f" = $(UNICONT)$(EXE) ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/$(UNICONX) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
-	    elif test "$$f" = $(UNICONWT) ; then \
+	    elif test "$$f" = $(UNICONWT)$(EXE) ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/$(UNICONWX) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
-	    elif test "$$f" != "patchstr" ; then \
+	    elif test "$$f" != $(PATCHSTRX) ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
             fi; \

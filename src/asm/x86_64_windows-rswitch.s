@@ -6,12 +6,7 @@
 # See http://www.amd64.org/ for information about AMD64 programming.
 #
 
-        .file       "rswitch64.s"
-
-        .section    .rdata
-.LC0:   .string     "new_context() returned in coswitch"
-	
-        .globl      coswitch
+        .file       "x86_64_windows-rswitch.s"
         .text
         .globl      coswitch
 	
@@ -33,6 +28,7 @@ coswitch:
 .L1:    xorl    %ecx, %ecx         # Call new_context((int) 0, (ptr) 0)
         xorl    %edx, %edx         # (Implicitly zero-extended to 64 bits)
         call    new_context@PLT
-        leaq    .LC0(%rbp), %rcx   # Call syserr(...)
+        leaq    .LC0(%rip), %rcx   # Call syserr(...)
         movl    $0, %eax
         jmp     syserr@PLT
+.LC0:   .string     "new_context() returned in coswitch"

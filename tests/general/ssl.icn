@@ -1,0 +1,207 @@
+global interactive
+
+procedure report_error(msg)
+   static region
+   initial region:=mutex()
+
+   \interactive | return
+
+   critical region: {
+      writes(msg)
+      writes(" Error ")
+      if writes((&errornumber | (0 ~= &errno))) then
+         writes(": ")
+
+      writes(&errortext)
+      writes( " - ", &errorvalue)
+      }
+   return
+end
+
+class Server(addrport, mode, opt, rounds)
+   method run()
+      local sock
+      every !rounds do {
+          sock := &null
+          sock := tcp_socket(addrport) # block and wait to accept a new connection
+          if \sock then 
+             tcp_session(sock)
+          delay(50)
+         }
+   end
+
+   method tcp_socket()
+      local s
+      /interactive |  write("\nOpen a tcp server for test: ", mode)
+      s := open ! opt | fail
+         #(report_error("\nserver open()") & fail)
+      return s
+   end
+
+   method tcp_session(sock)
+      repeat {
+         if *select(sock) > 0 then {
+            if (msg := ready(sock)) && msg ~=== "" then {
+               /interactive | writes(left("server:" || image(msg) || " => ", 20))
+               writes(sock, msg)       # echo back to the client
+               }
+            else {  # We see activity on the socket but nothing to read, assume client has closed the socket
+               close(sock)
+               break # done, break out of the loop
+            }
+         }
+      }
+   end
+   initially(p, m)
+      addrport := p
+      mode := m
+
+      key := "key=./data/unicon-server.key"
+      cert := "cert=./data/unicon-server.crt"
+      ca := "ca=./data/unicon-ca.crt"
+      case mode of {
+         "TLS": {
+           rounds := 4
+           opt := [addrport, "nae", key, cert, ca]
+           }
+        "TLS1.1 Min": {
+           rounds := 3;
+           opt := [addrport, "nae", key, cert, ca, "minProto=TLS1.1"]
+           }
+
+        "Client Auth": {
+           rounds := 2;
+           opt := [addrport, "nae", key, cert, ca, "verifyPeer=yes"]
+           }
+
+         "AES256" : {
+            rounds := 2
+            opt := [addrport, "nae", 2000, key, cert, ca, "ciphers=AES256", "maxProto=TLS1.2",
+                    "ciphers1.3=TLS_AES_256_GCM_SHA384"]
+            }
+
+        "No TLS": {
+           rounds := 1
+           opt := [addrport, "na"]
+           }
+
+         default:  stop("server: what mode :", mode)
+         }
+end
+
+class TCPClient(addrport, sock, mode, opt)
+   method test(msg)
+      local msg_reply
+      /interactive | writes(left("test> client:" || image(msg) || " => ", 28))
+
+      writes(sock, msg) | (report_error("\n\nwrite(sock) Failed") & failed)
+      L := select(sock, 2000)
+      #write("got *L=", *L)
+
+      if *L > 0 then {
+         if msg_reply := ready(sock) then {
+            /interactive | writes(" client: ")
+            if msg == msg_reply then {
+               /interactive | write(left(image(msg_reply), 10), "OK")
+               return
+               }
+            else {
+               /interactive | write(left(image(msg_reply),10), "Failed")
+               fail
+               }
+
+            }
+         else  (report_error("\n\nclient ready(): ") & fail)
+         }
+      else
+         /interactive | write("select(): ", &errno, " timeout")
+      return
+   end
+
+   method run()
+      /interactive | write("\nOpen a tcp client socket for test: ", mode)
+      sock := (open ! opt) |
+         (report_error("\nclient open()") & fail)
+
+      if test("Unicon") &
+         test("Is") &
+         test("Awesome") then {
+            close(sock)
+            return
+            }
+      else
+         close(sock)
+   end
+
+   initially(p, m)
+      addrport := p
+      mode := m
+      key := "key=./data/unicon-client.key"
+      cert := "cert=./data/unicon-client.crt"
+      ca := "ca=./data/unicon-ca.crt"
+
+      case mode of {
+
+         "No TLS":  opt := [addrport, "n", 5000]
+
+         "TLS No CA" : opt := [addrport, "ne", 5000]
+         "TLS No Verify" : opt := [addrport, "ne", 5000, "verifyPeer=no"]
+         "TLS" | "TLS No Cert" | "TLS With CA" : opt := [addrport, "ne", 5000, ca]
+
+         "TLS1.1" : opt := [addrport, "ne", 5000, ca, "maxProto=TLS1.1"]
+         "TLS1.2" : opt := [addrport, "ne", 5000, ca, "minProto=TLS1.2", "maxProto=TLS1.2"]
+         "TLS1.0" : opt := [addrport, "ne", 5000, ca, "maxProto=TLS1.0"]
+
+         "Client Auth" : opt := [addrport, "ne", 5000, key, cert, ca ]
+
+         "AES128" : opt := [addrport, "ne", 5000, ca, "ciphers=AES128", "ciphers1.3=TLS_AES_128_GCM_SHA256"]
+         "AES256" : opt := [addrport, "ne", 5000, ca, "ciphers=AES256", "ciphers1.3=TLS_AES_256_GCM_SHA384"]
+
+         default:  stop("client: what mode :", mode)
+         }
+end
+
+# for each test, we run a server in the given mode, then we launch one or more
+# client tests. The expected result for each client (pass or fail) is passed with the test
+procedure ssltest(title, server_mode, client_modes)
+   write("\n Test ", title, ": ")
+   port := "localhost:" || (30000 + ?10000) # generate a random port
+
+   thread Server(port, server_mode).run()
+   delay(200)
+   every test := !client_modes do {
+      writes("\t", left(test[1], 15), ": ")
+      delay(250)
+      if TCPClient(port, test[1]).run() then
+         result := "Pass"
+      else
+         result := "Fail"
+
+      write(if result == test[2] then "Pass" else "Fail")
+      }
+
+   delay(200)
+end
+
+procedure main(args)
+
+   if not (&features == "secure sockets layer encryption") then
+      stop("This program requires secure sockets layer encryption.")
+
+   interactive := args[1]
+
+   ssltest("Basic socket", "No TLS",
+           [["No TLS", "Pass"]])
+
+   ssltest("Encrypted sockets", "TLS",
+           [["No TLS", "Fail"], ["TLS No CA", "Fail"], ["TLS No Verify", "Pass"], ["TLS With CA", "Pass"]])
+
+   ssltest("TLS versions", "TLS1.1 Min",
+           [["TLS1.0", "Fail"], ["TLS1.1", "Pass"], ["TLS1.2", "Pass"]])
+
+   ssltest("Client authentication", "Client Auth",
+           [["TLS No Cert", "Fail"], ["Client Auth", "Pass"]])
+
+   ssltest("Ciphers", "AES256",
+           [["AES128", "Fail"], ["AES256", "Pass" ]])
+end

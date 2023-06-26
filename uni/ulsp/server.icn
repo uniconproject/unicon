@@ -1,0 +1,266 @@
+# Date of creation: 
+#    12/8/22
+#
+# Date last updated:
+#    12/9/22
+#
+# Author(s): 
+#    Mark Stowell, 
+#    Jonah Schnettler
+# 
+# Description: 
+#
+#
+#
+#
+#
+
+
+package ulsp
+
+link ximage
+link strings
+import json
+#import UniDoc
+
+class Server(
+   port,                         # Port number acquired from args on start up of server
+   sock,                         # Socket connection for communication with client 
+   openFiles,                    # File container for open files
+   completionHandler,            # Instance of CompletionHandler class for handling completion requests
+   signatureHandler,
+   hoverHandler,
+   lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
+   )
+
+   method run()
+      local request_body, jsontable, request_method, request_params, request_id
+
+      repeat {
+         every request_body := get_request(sock) do {
+            jsontable := jtou(request_body)
+
+            request_method := jsontable["method"]
+            request_params := jsontable["params"]
+            request_id := jsontable["id"]
+
+            write("-----------------------------------------")
+            write(request_method)
+            write("-----------------------------------------")
+
+            case request_method of {
+               "initialize" : initialize(request_id)
+               "textDocument/didOpen" : didOpen(request_params)
+               "textDocument/didClose" : didClose(request_params)
+               "textDocument/didChange" : didChange(request_params)
+               "textDocument/completion" : completion(request_id, request_params)
+               "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
+               "textDocument/hover" : hoverHelp(request_id, request_params)
+               "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
+               "$/cancelRequest" : cancelRequest(request_id)
+               default: { write("Don't know what to do with: ", request_method) }
+               }
+            }
+         }
+
+   end
+	
+#################################################################################
+#                               Get Request                                     #
+#################################################################################
+
+   method get_request(sock)
+      local request_body, msg, len
+
+      while /request_body | request_body == "" do {
+
+         # Block and get message on socket
+         select(sock)
+         msg := ready(sock)
+
+         # Handling socket reading anomoly: header alone or header + request_body
+         while msg ~== "" do {
+            msg ? {
+               tab(find("Content-Length:") + 16)
+               len := integer(tab(many(&digits)))
+               tab(upto("\r\n\r\n") + 4)
+               if pos(0) then {
+                  request_body := ready(sock, len)
+                  }
+               else
+                  request_body := move(len)
+                  msg := tab(0)
+               }
+               suspend request_body
+            }
+         }
+   end
+
+#################################################################################
+#                               Build Response                                  #
+#################################################################################
+
+   method build_response(id, results)
+      local responseBody, responseHeader
+      responseBody := "{\"jsonrpc\":\"2.0\",\"id\":"||id||",\"result\":"||results||"}"
+      responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
+      return responseHeader || responseBody
+   end
+
+
+#################################################################################
+#                     Response / notification Section                           #
+#################################################################################
+
+# This is the section for processing notifications and handling responses to requests.
+# For future additions (capabilities), add an additional comment/code block similar to what is seen below.
+# In addition to adding a procedure or block of code to process/handle the notification/request, be sure to add to the case statement in the loop.
+
+
+########################################################
+#                     initialize                       #
+########################################################
+
+# As you add more capabilities to the language server (i.e. hover, go to declaration, etc.) add these to the results string below.
+# Follow the LSP specifications on how to add a particular capability to your initialize string.
+
+   method initialize(request_id)
+      local results, res
+      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelpProvider\":{\"contextSupport\":true,\"triggerCharacters\":\"(\"},\"hoverProvider\":true}}"
+
+      res := build_response(request_id, results)
+      write(res)
+      writes(sock, res)
+   end
+
+########################################################
+#                textDocument/didOpen                  #
+########################################################
+
+   method didOpen(request_params)
+      local fname, uri, f, initial_file_contents, workspace_object
+      if \(uri := request_params["textDocument"]["uri"]) then {
+      # uri: file://<PATH>
+      uri ? {
+         ="file://" | write(&errout, "unexpected uri:", uri)
+         fname := tab(0)
+         }
+
+      if f := open(fname) then {
+         initial_file_contents := reads(f, -1)
+         close(f)
+         }
+      }
+      
+      openFiles[\uri] := Workspace(fname, lsp_database)
+      workspace_object := openFiles[\uri]
+      workspace_object.updateTempFile(initial_file_contents)
+      workspace_object.updateWorkspace()
+
+   end
+
+########################################################
+#                textDocument/didClose                 #
+########################################################
+
+   method didClose(request_params)
+      local uri
+      uri := request_params["textDocument"]["uri"]
+      delete(openFiles, \uri)
+   end
+
+########################################################
+#                textDocument/didChange                #
+########################################################
+
+   method didChange(request_params)
+      local uri, file_contents, workspace_object
+      uri := request_params["textDocument"]["uri"]
+      file_contents := request_params["contentChanges"][1]["text"]
+      workspace_object := openFiles[\uri]
+      workspace_object.setFile()
+      workspace_object.updateTempFile(file_contents)
+      workspace_object.updateWorkspace()
+   end
+
+########################################################
+#                textDocument/completion               #
+########################################################
+
+   method completion(request_id, request_params)
+      local uri, workspace_object, result, res
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      completionHandler.setVariables(workspace_object, request_params)
+      result := completionHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
+########################################################
+#              textDocument/signatureHelp              #
+########################################################
+
+   method signatureHelp(request_id, request_params)
+      local uri, workspace_object, result, res
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      signatureHandler.setVariables(workspace_object, request_params)
+      result := signatureHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
+########################################################
+#              textDocument/hover                      #
+########################################################
+
+   method hoverHelp(request_id, request_params)
+      local uri, workspace_object, result, res
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      hoverHandler.setVariables(workspace_object, request_params)
+      result := hoverHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
+
+########################################################
+#                textDocument/declaration              #
+########################################################
+
+
+########################################################
+#                  $/cancelRequest                     #
+########################################################
+# TODO:
+# 	One thread for communication
+# 	Spin up thread(s) for processing requests and tie request_id to thread
+# Handling cancel requests:
+#	kill thread associated with request_id
+
+   method cancelRequest(request_id)
+      write("We received a cancel request. We need to implement this still...")
+   end
+
+   initially
+
+       every 1 to 5 do
+          if sock := open(port, "n") then 
+             break
+          else {
+             write("open(",port,") ERROR: ", &errortext)
+             delay(1000)
+             }
+
+       if /sock then stop("failed to connect to ",port)
+
+       openFiles := table()
+       lsp_database := LSPDB()
+       lsp_database.build()
+
+       completionHandler := CompletionHandler()
+       signatureHandler := SignatureHandler()
+       hoverHandler := HoverHandler()
+end
+

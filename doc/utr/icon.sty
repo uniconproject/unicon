@@ -31,7 +31,13 @@
 %\declare@font[1.18]{bigcourier}{m}{n}{pcrr}
 %\makeatother
 %\renewcommand{\"}[0]{{\family{bigcourier}\selectfont\symbol{34}}}
-\makeatletter\countdef\@maxtab=30\makeatother
+%
+% The number of tab stops is given by the difference between \@firsttab and \@maxtab
+% (and the value of \@firsttab varies, depending on how many packages have been loaded before LaTeX).
+% So this assignment doesn't always work because it's assigning an absolute value to \@maxtab.
+%      \makeatletter\countdef\@maxtab=30\makeatother
+% Add another 20 tab stops to \@maxtab
+\makeatletter\count255=\the\@maxtab\advance\count255 by 20 \chardef\@maxtab=\the\count255\makeatother%
 \renewcommand{\"}[0]{{\tt "}}
 \tolerance=1000 \small\normalsize
 \newcommand{\iconcode}[1]{{\tt%

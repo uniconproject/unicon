@@ -846,7 +846,7 @@ neregex3:  IDENT
 		    $2.s := " " || $2.s
 		    }
 	         }
-		 else write("[ followed by ", type($2), " so not checking for space")
+		 else { /* write("[ followed by ", type($2), " so not checking for space") */}
 	      }
 	| LBRACK CARET brackchars RBRACK { $$ := node("notany", $1, $2, $3, $4) }
 	| BACKSLASH neregex { $$ := node("escape", $1, $2) }

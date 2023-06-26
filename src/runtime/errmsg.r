@@ -22,6 +22,33 @@ void set_errortext(int i)
          }
 }
 
+
+/*
+ * set &errornumber and &errortext to a given (run-time error) number
+ */
+void set_errortext_with_val(int i, char* errval)
+{
+   register struct errtab *p;
+   CURTSTATE();
+   k_errornumber = i;
+
+   if (errval != NULL) {
+     int buflen = strlen(errval);
+     if ((StrLoc(k_errorvalue) = alcstr(NULL, buflen)) != NULL) {
+       strcpy(StrLoc(k_errorvalue), errval);
+       have_errval = 1;
+       StrLen(k_errorvalue) = buflen;
+     }
+   }
+
+   MakeStr("", 0, &k_errortext);
+   for (p = errtab; p->err_no > 0; p++)
+      if (p->err_no == i) {
+         MakeStr(p->errmsg,strlen(p->errmsg),&k_errortext);
+         break;
+         }
+}
+
 #ifdef HAVE_GETADDRINFO
 /*
  * set &errornumber and &errortext based on error values from getaddrinfo() and getnameinfo().
@@ -40,6 +67,101 @@ void set_gaierrortext(int i)
    }
 }
 #endif				/* HAVE_GETADDRINFO */
+
+#if HAVE_LIBSSL
+/*
+ * set &errornumber and &errortext based on error values from openssl.
+ */
+void set_ssl_context_errortext(int err, char* errval)
+{
+   int buflen = 0;
+   char* sslerr;
+   CURTSTATE();
+
+   if (err != 0)
+     k_errornumber = err;
+   else
+     k_errornumber = 1301;
+
+   if (errval != NULL) {
+     buflen = strlen(errval);
+     if ((StrLoc(k_errorvalue) = alcstr(NULL, buflen)) != NULL) {
+       strcpy(StrLoc(k_errorvalue), errval);
+       have_errval = 1;
+       StrLen(k_errorvalue) = buflen;
+     }
+   }
+
+   sslerr = (char *) ERR_reason_error_string(ERR_get_error());
+
+   if (sslerr != NULL) {
+     buflen = strlen(sslerr);
+     if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
+       strcpy(StrLoc(k_errortext), sslerr);
+       StrLen(k_errortext) = buflen;
+     }
+   }
+   else
+     set_errortext(1301);
+
+
+}
+
+int set_ssl_connection_errortext(SSL *ssl, int err)
+{
+   int buflen;
+   char* buf;
+   char buf2[32];
+   CURTSTATE();
+
+   err = SSL_get_error(ssl, err);
+   k_errornumber = err;
+   switch (err) {
+   case SSL_ERROR_WANT_WRITE  : snprintf(buf2, 32, "SSL_ERROR_WANT_WRITE"); break;
+   case SSL_ERROR_WANT_READ   : snprintf(buf2, 32 ,"SSL_ERROR_WANT_READ"); break;
+   case SSL_ERROR_WANT_ACCEPT : snprintf(buf2, 32 ,"SSL_ERROR_WANT_ACCEPT"); break;
+   case SSL_ERROR_WANT_CONNECT: snprintf(buf2, 32 ,"SSL_ERROR_WANT_CONNECT"); break;
+   case SSL_ERROR_SYSCALL     :
+     if (errno == 0) {
+       /*
+	* OpenSSL bug: an enexpcted EOF from peer, see:
+	* https://www.openssl.org/docs/man1.1.1/man3/SSL_get_error.html
+	*/
+       snprintf(buf2, 32 ,"unexpected EOF from peer");
+     }
+     else {
+       set_syserrortext(errno);
+       return err;
+     }
+
+     break;
+   case SSL_ERROR_ZERO_RETURN : return err; /* EOF */
+   case SSL_ERROR_SSL         : snprintf(buf2, 32 ,"SSL_ERROR_SSL"); break;
+   default                    : snprintf(buf2, 32 ,"SSL_ERROR_OTHER"); break;
+   }
+
+
+#ifdef DEVMODE_DEBUG
+   {
+     char buf3[1024];
+     ERR_error_string_n(ERR_get_error(), buf3 , 1024);
+     printf("\n%s\n", buf3);
+   }
+#endif				/* DEVMODE_DEBUG */
+
+   buf = (char *) ERR_reason_error_string(ERR_get_error());
+   if (buf == NULL)
+     buf = buf2;
+
+   buflen = strlen(buf);
+   if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
+     strcpy(StrLoc(k_errortext), buf);
+     StrLen(k_errortext) = buflen;
+   }
+
+   return err;
+}
+#endif				/* HAVE_LIBSSL */
 
 /*
  * set &errno and &errortext based on a system call failure that set errno.

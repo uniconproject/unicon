@@ -324,9 +324,7 @@
 #endif					/* NT */
 #endif					/* LoadFunc */
 
-#if WildCards
-   #include "../h/filepat.h"
-#endif					/* WildCards */
+#include "../h/filepat.h"
 
 #ifdef Dbm
 #include <ndbm.h>

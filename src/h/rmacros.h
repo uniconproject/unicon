@@ -64,6 +64,11 @@
    #define Fs_Unbuf     040000
    #define Fs_Listen   0100000
    #define Fs_BPipe    0200000		/* bidirectional pipe */
+
+#if HAVE_LIBSSL
+  #define Fs_Encrypt   0200000000      /* encrypted sockets */
+#endif
+
 #endif					/* PosixFns */
 
 #ifdef ISQL

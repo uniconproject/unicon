@@ -36,7 +36,7 @@
 #include <io.h>
 
 typedef struct _FINDFILE_TAG {
-   long			handle;
+   intptr_t		handle;
    struct _finddata_t	fileinfo;
    } FINDDATA_T;
 
@@ -64,5 +64,12 @@ typedef struct _find_t FINDDATA_T;
 #if PORT
 Deliberate Syntax Error                 /* Give it some thought */
 #endif                                  /* PORT */
+#else					/* WildCards */
+typedef struct _NotWild { char *name; } FINDDATA_T;
+#define FINDFIRST(pattern, pfd)	((pfd)->name = (pattern))
+#define FINDNEXT(pfd)	( 0 )
+#define FILENAME(pfd)	( (pfd)->name )
+#define FINDCLOSE(pfd)	( (void) 0 )
+
 #endif					/* WildCards */
 #endif

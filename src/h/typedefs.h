@@ -10,22 +10,23 @@ typedef unsigned int DIGIT;
  */
 
 /*
- * Set up typedefs and related definitions depending on whether or not
- * ints and pointers are the same size.
+ * Establish typedefs for word and uword.
+ * intptr_t cannot be used because it is defined in stdint.h (rtt does not
+ * process system include files) so establish the size explicitly using the
+ * definitions in auto.h planted by the configure script..
  */
-
-#if IntBits != WordBits
-#ifdef LongLongWord
-   typedef long long int word;
-   typedef unsigned long long int uword;
-   #else
-   typedef long int word;
-   typedef unsigned long int uword;
-   #endif
-#else					/* IntBits != WordBits */
+#if (SIZEOF_INT == SIZEOF_INT_P)
    typedef int word;
    typedef unsigned int uword;
-#endif					/* IntBits != WordBits */
+#elif (SIZEOF_LONG_INT == SIZEOF_INT_P)
+   typedef long int word;
+   typedef unsigned long int uword;
+#elif defined(SIZEOF_LONG_LONG_INT) && (SIZEOF_LONG_LONG_INT == SIZEOF_INT_P)
+   typedef long long int word;
+   typedef unsigned long long int uword;
+#else
+   #error Cannot determine suitable typedefs for word and uword
+#endif
 
    typedef void *pointer;
    typedef AllocType msize;

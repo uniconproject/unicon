@@ -32,7 +32,7 @@ terrain.u: terrain.icn basicobject3d.u
 mesh.u: mesh.icn basicanimationobject3d.u
 
 zip:
-	 zip lib3d.zip makefile *.icn
+	 zip lib3d.zip Makefile *.icn
 
 clean:
 	$(RM) $(UFILES)  uniclass.dir uniclass.pag uniclass.db

@@ -35,7 +35,7 @@ static enum SHAversion shaft = SHA512;           /* It stands for SHA function t
 /* Interface to USHAReset(context, shaFunction)                                     */
 /* Translates the unicon string shaFunction to the corresponding enum constant      */
 /* and supplies a context to be initialised wrapped up in a T_External block.       */
-int sha_Reset(int argc, descriptor argv[])
+RTEX int sha_Reset(int argc, descriptor argv[])
 {
   struct b_external *eb;
   int ebSize;
@@ -85,7 +85,7 @@ int sha_Reset(int argc, descriptor argv[])
 
 /* -------------------------------------------------------------------------------- */
 /* Interface to USHAInput(context, string)                                          */
-int sha_Input(int argc, descriptor argv[])
+RTEX int sha_Input(int argc, descriptor argv[])
 {
   USHAContext *context;
 #ifdef SHA_TRACING
@@ -111,7 +111,7 @@ int sha_Input(int argc, descriptor argv[])
 /* -------------------------------------------------------------------------------- */
 /* Interface to USHAResult(context)                                                 */
 /* returns the result as a string of hexadecimal characters                         */
-int sha_Result(int argc, descriptor argv[])
+RTEX int sha_Result(int argc, descriptor argv[])
 {
   USHAContext *context;
 
@@ -160,7 +160,7 @@ int sha_Result(int argc, descriptor argv[])
 /* -------------------------------------------------------------------------------- */
 /* Interface to USHAResult(context)                                                 */
 /* returns the raw bits (as characters) rather than a hex string                    */
-int sha_RawResult(int argc, descriptor argv[])
+RTEX int sha_RawResult(int argc, descriptor argv[])
 {
   USHAContext *context;
 
@@ -197,7 +197,7 @@ int sha_RawResult(int argc, descriptor argv[])
 
 /* -------------------------------------------------------------------------------- */
 /* Interface to USHAFinalBits(context, bits, bit_count)                             */
-int sha_FinalBits(int argc, descriptor argv[])
+RTEX int sha_FinalBits(int argc, descriptor argv[])
 {
   USHAContext *context;
 #ifdef SHA_TRACING
@@ -228,7 +228,7 @@ int sha_FinalBits(int argc, descriptor argv[])
  * No params: returns one of "SHA1", "SHA224", "SHA256", "SHA384", "SHA512"
  * If a parameter is supplied it sets the algorithm to one of the above.
  */
-int ShaFunction(int argc, descriptor argv[])
+RTEX int ShaFunction(int argc, descriptor argv[])
 {
 #ifdef SHA_TRACING
   fprintf(stderr, "ShaFunction\n");

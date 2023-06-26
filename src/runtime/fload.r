@@ -103,7 +103,6 @@ function{0,1} loadfunc(filename,funcname)
        * TODO: this code is used at least in one other place
        *       (keyword.r), so it should be pulled into a util
        *       function.
-       * TODO: fix on Windows
        */
 #if UNIX
       if (!handle) {
@@ -121,6 +120,71 @@ function{0,1} loadfunc(filename,funcname)
 	    }
          }
 #endif					/* UNIX */
+#if NT
+      /*
+       * Replicate the UNIX logic above but with the added complications
+       * of converting / to \ and trying lib.dll if lib.so doesn't work.
+       */
+      if (!handle) {
+        char path[MaxPath];
+        if (findonpath(UNICONX, path, MaxPath)) {
+          int n = strlen(path);
+          /* step backwards over the name of the executable (which ends in.exe) */
+          while ((n > 0) && (path[n] != '\\') && (path[n] != '/')) --n;
+          ++n;
+          { /* Convert solidus to backslash */
+            int slash;
+            for (slash = 0; slash <= n; ++slash) {
+              if (path[slash] == '/') path[slash] = '\\';
+            }
+          }
+          /* Try the "not installed" location */
+          snprintf(path+n, MaxPath - n, "..\\plugins\\lib\\%s", filename );
+          handle = dlopen(path, RTLD_LAZY);
+          if (!handle) { /* Try the "installed" location */
+            snprintf(path+n, MaxPath - n,
+                     "..\\lib\\unicon\\plugins\\lib\\%s", filename );
+            handle = dlopen(path, RTLD_LAZY);
+            if (!handle) { /* Repeat the whole process with .dll instead of .so */
+              int ext = strlen(filename);
+              if ((ext > 3) 
+                  && (filename[--ext] == 'o')
+                  && (filename[--ext] == 's')
+                  && (filename[--ext] == '.')) {
+                char dllname[ext+4];
+                /*
+                 * gcc is clever enough to warn
+                 *    "specified bound depends on the length of the source argument"
+                 * but not clever enough to realise the length of the destination
+                 * is always big enough for it to fit (because it also depends on
+                 * the length of the source argument).
+                 */
+#pragma GCC diagnostic push
+                /*
+                 * Why am I using _Pragma( ... )?
+                 * Because #pragma ... doesn't suppress the warning
+                 */
+_Pragma("GCC diagnostic ignored \"-Wstringop-overflow=0\"");
+                strncpy(dllname, filename, ext+1);
+#pragma GCC diagnostic pop
+                dllname[ext+1] = 'd'; dllname[ext+2] = 'l'; dllname[ext+3] = 'l';
+                dllname[ext+4] = '\0';
+                handle = dlopen(dllname, RTLD_LAZY);
+                if (!handle) { /* Try the "not installed" location */
+                  snprintf(path+n, MaxPath - n, "..\\plugins\\lib\\%s", dllname);
+                  handle = dlopen(path, RTLD_LAZY);
+                  if (!handle) { /* Try the "installed" location */
+                    snprintf(path+n, MaxPath - n, 
+                             "..\\lib\\unicon\\plugins\\lib\\%s", dllname);
+                    handle = dlopen(path, RTLD_LAZY);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+#endif                                  /* NT */
 
       /*
        * if handle has an "init" function, call it.
@@ -185,8 +249,13 @@ function{0,1} loadfunc(filename,funcname)
          fprintf(stderr, "\nloadfunc(\"%s\",\"%s\"): dl error\n",
             filename, funcname);
 #else						/* COMPILER && NT */
-         fprintf(stderr, "\nloadfunc(\"%s\",\"%s\"): %s\n",
-            filename, funcname, dlerror());
+         if (!handle) {
+           fprintf(stderr, "\nloadfunc(\"%s\",\"%s\"): cannot open file\n",
+                   filename, funcname);
+         } else {
+           fprintf(stderr, "\nloadfunc(\"%s\",\"%s\"): %s\n",
+                   filename, funcname, dlerror());
+         }
 #endif						/* COMPILER && NT*/
          MUTEX_UNLOCKID(MTX_CURFILE_HANDLE);
          runerr(216);

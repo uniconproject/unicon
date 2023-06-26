@@ -69,7 +69,13 @@ AC_DEFUN([do_lib_check],
 [
 if test  x$2 != "x"
 then
-	save_flags([-I$2/include -I$2], [-L$2/lib], [])
+	save_flags([-I$2/include], [-L$2/lib], [])
+	cv_libthislib_h=yes
+	AC_CHECK_HEADERS([$3], [], [cv_libthislib_h=no], [])
+	if test x$cv_libthislib_h == xno ;  then
+	   restore_flags()
+	   save_flags([-I$2], [-L$2], [])
+	fi
 else
 	save_flags([], [], [])
 fi

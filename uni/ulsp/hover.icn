@@ -32,7 +32,7 @@ class HoverHandler(
         hover_item := \getHoverItem(desired_line, character) | return tojson(results_table)
         _context := \getContext(context) | return tojson(results_table)
 
-        if _context == "function" | _context == "built-in-function" | _context == "method" | 
+        if _context == "function" | _context == "built-in-function" | _context == "method" |
             _context == "procedure" | _context == "constructor" then {
                 sig_table := signatureHandler.handleNewSignature(context)
                 hover_item := sig_table[1]["label"]
@@ -87,7 +87,7 @@ class HoverHandler(
 
                 # If item is method of the class it's inside of then return method
                 line_num := params["position"]["line"] + 1
-                
+
                 context := workspace.getContext(line_num, character)
                 desired_line := context.line
                 character := context.charNum
@@ -168,7 +168,7 @@ class HoverHandler(
                 }
                 line_num -:= 1
                 until line_num = 1 do {
-                    
+
                     context := workspace.getContext(line_num, character)
                     desired_line := context.line
                     character := context.charNum
@@ -209,7 +209,7 @@ class HoverHandler(
                     tab(many(' \t'))
                     class_name := tab(many(identifiers))
                 }
-                
+
                 if member(workspace.internal_classes, class_name) then {
                     num_attributes := *workspace.internal_classes[class_name]["attributes"]
                     every _attribute := workspace.internal_classes[class_name]["attributes"][1 to num_attributes] do {

@@ -14,10 +14,10 @@ class CompletionHandler(
 
    method run()
       local _context, line, character, results_table, results, desired_line, objectName, context
-		
+
       line := params["position"]["line"] + 1
       character := params["position"]["character"] + 1
-      
+
       context := workspace.getContext(line, character)
       desired_line := context.line
       _context := context.getCase()
@@ -39,7 +39,7 @@ class CompletionHandler(
          "link" : {
             addFileCompletionItems(results_table)
          }
-         default : { 
+         default : {
             buildDefaultCompletionItems(results_table, workspace)
             }
          }
@@ -105,7 +105,7 @@ class CompletionHandler(
          put(results_table["items"], table("label", _packageProcedure, "kind", 3))
          }
    end
- 
+
    method addWordspaceClasses(results_table, workspace)
       local _internalClass, _linkedClass, _importedClass, _packageClass
       every _internalClass := key(workspace.getInternalClasses()) do {

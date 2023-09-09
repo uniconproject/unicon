@@ -122,7 +122,7 @@ class LSPDB(
     end
 
     method build_by_path(path)
-       local idoc, x, pack, file_in_pack, file_without_ext, import_in_file, procedure_in_file, param_in_procedure, 
+       local idoc, x, pack, file_in_pack, file_without_ext, import_in_file, procedure_in_file, param_in_procedure,
           paramName, paramType, paramDef, class_in_file, method_in_class, param_in_method, class_param, class_comment,
           constructor_param
        idoc := UniAll()
@@ -206,7 +206,7 @@ class LSPDB(
                       "type", paramType,
                       "default", paramDef))
                    }
-               
+
                 every constructor_param := class_in_file.getConstructor().getParams().get() do {
                    paramName := constructor_param.getName()
                    paramType := constructor_param.getTypeValue() | &null
@@ -216,7 +216,7 @@ class LSPDB(
                       "type", paramType,
                       "default", paramDef))
                    }
-                   
+
                 every class_comment := class_in_file.getComments().get() do {
                    put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
                    }

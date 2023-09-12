@@ -2,9 +2,9 @@
 # ---------------------- Workspace Class ----------------------------------
 # -------------------------------------------------------------------------
 #
-# Description: 
+# Description:
 #    -Contains all items related to a particular opened workspace file.
-#    -This includes: 
+#    -This includes:
 #       -The uri of the file
 #       -The contents of the file (synchronized contents coming from client - updating in textDocument/didChange)
 #       -links used in the file.
@@ -48,7 +48,9 @@ class Workspace(
    imported_procedures,
    imported_classes,
    package_classes,
-   m_uni_file
+   m_uni_file,
+   temp_idoc,
+   context
    )
 
    method updateWorkspace()
@@ -69,11 +71,10 @@ class Workspace(
 
    method setFile()
       local files
-      local temp_idoc
-      
+
       temp_idoc := UniAll()
-      if \temp_file then temp_idoc.setSourcePath(temp_file) else temp_idoc.setSourcePath(uri)
-      if \temp_file then temp_idoc.processFile(temp_file) else temp_idoc.processFile(uri)
+      temp_idoc.setSourcePath(uri)
+      temp_idoc.processFile(uri)
 
       files := temp_idoc.getAllFiles()
       m_uni_file := files[1]
@@ -83,20 +84,12 @@ class Workspace(
       return m_uni_file
    end
 
-# -------------------------------------------------------------------------------------------------
-# ---------------- Temp file (create, update) -----------------------------------------------------
-# -------------------------------------------------------------------------------------------------
-   
-    method createTempFile()
-       temp_file := tempname()
-       temp_file := temp_file || "_temp.icn"
-    end
-
-    method updateTempFile(file_contents)
-       local f
-       f := open(temp_file, "w") | fail
-       writes(f, file_contents)        
-       close(f)
+    method updateUniDoc(uri, contents)
+       local files, file_contents
+       temp_idoc.processFile(uri, contents)
+       file_contents := contents
+       files := temp_idoc.getAllFiles()
+       m_uni_file := files[1]
     end
 
     method deleteTempFile()
@@ -134,8 +127,8 @@ class Workspace(
 # ---------------- Imports (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setImports()   
-       local _import 	
+    method setImports()
+       local _import
        imports := []
          every _import := !getFile().getImportNames() do {
             if member(lsp_database.package_db, _import) then
@@ -151,7 +144,7 @@ class Workspace(
 # ---------------- Package (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setPackage() 
+    method setPackage()
        if member(lsp_database.package_db, getFile().getPackageName()) then {
           _package := getFile().getPackageName()
        }
@@ -170,15 +163,16 @@ class Workspace(
        internal_procedures := table()
        every _procedure := getFile().getProcedures().get() do {
          internal_procedures[_procedure.getName()] := table()
+         internal_procedures[_procedure.getName()]["comments"] := makeComment(_procedure)
 
          internal_procedures[_procedure.getName()]["params"] := []
          every _param := _procedure.getParams().get() do {
             paramName := _param.getName()
-            paramType := _param.getTypeValue() | continue
-            paramDef := _param.getDefValue() | continue
+            paramType := _param.getTypeValue() | &null
+            paramDef := _param.getDefValue() | &null
             put(internal_procedures[_procedure.getName()]["params"], table(
-               "name", paramName, 
-               "type", paramType, 
+               "name", paramName,
+               "type", paramType,
                "default", paramDef))
          }
        }
@@ -197,10 +191,12 @@ class Workspace(
        local _link, _key
        linked_procedures := table()
        every _link := !links do {
+         if _link ~=== "class" then {
           every _key := key(lsp_database.package_db["(main)"]["files"][_link]["procedures"]) do {
              linked_procedures[_key] := lsp_database.package_db["(main)"]["files"][_link]["procedures"][_key]
              }
           }
+       }
     end
 
     method getLinkedProcedures()
@@ -250,25 +246,24 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setInternalClasses()
-       local _class, _method, _param, paramName, paramType, paramDef
+       local _class, _method, _param, paramName, paramType, paramDef, constructor_param
        internal_classes := table()
        every _class := getFile().getClasses().get() do {
           internal_classes[_class.getName()] := table()
-            
+
           internal_classes[_class.getName()]["methods"] := table()
           every _method := _class.getMethods().get() do {
              internal_classes[_class.getName()]["methods"][_method.getName()] := table()
-
              internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := makeComment(_method)
 
-             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []     
+             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []
              every _param := _method.getParams().get() do {
                paramName := _param.getName()
-               paramType := _param.getTypeValue() | continue
-               paramDef := _param.getDefValue() | continue
+               paramType := _param.getTypeValue() | &null
+               paramDef := _param.getDefValue() | &null
                put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], table(
-                  "name", paramName, 
-                  "type", paramType, 
+                  "name", paramName,
+                  "type", paramType,
                   "default", paramDef))
                }
              }
@@ -276,11 +271,25 @@ class Workspace(
           internal_classes[_class.getName()]["attributes"] := []
           every _param := _class.getParams().get() do {
              paramName := _param.getName()
-             paramType := _param.getTypeValue() | continue
-             paramDef := _param.getDefValue() | continue
+             paramType := _param.getTypeValue() | &null
+             paramDef := _param.getDefValue() | &null
              put(internal_classes[_class.getName()]["attributes"], table(
-                "name", paramName, 
-                "type", paramType, 
+                "name", paramName,
+                "type", paramType,
+                "default", paramDef))
+             }
+
+          internal_classes[_class.getName()]["constructor"] := table()
+          internal_classes[_class.getName()]["constructor"]["name"] := _class.getConstructor().getName()
+          internal_classes[_class.getName()]["constructor"]["comments"] := makeComment(_class)
+          internal_classes[_class.getName()]["constructor"]["params"] := []
+          every constructor_param := _class.getConstructor().getParams().get() do {
+             paramName := constructor_param.getName()
+             paramType := constructor_param.getTypeValue() | &null
+             paramDef := constructor_param.getDefValue() | &null
+             put(internal_classes[_class.getName()]["constructor"]["params"], table(
+                "name", paramName,
+                "type", paramType,
                 "default", paramDef))
              }
           }
@@ -293,15 +302,17 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 # ---------------- Linked Classes (get, set, update) ----------------------------------------------
 # -------------------------------------------------------------------------------------------------
-   
+
     method setLinkedClasses()
        local _link, _key
        linked_classes := table()
        every _link := !links do {
+         if _link ~=== "class" then {
           every _key := key(lsp_database.package_db["(main)"]["files"][_link]["classes"]) do {
              linked_classes[_key] := lsp_database.package_db["(main)"]["files"][_link]["classes"][_key]
              }
           }
+       }
     end
 
     method getLinkedClasses()
@@ -349,27 +360,28 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 # ---------------- Objects (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
-
     method setObjects()
-       local f, _line, objectName, className
+       local lineNum, _line, objectName, className
        objects := table()
-       f := open(temp_file)
-       while _line := read(f) do {
+       lineNum := 1
+       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
           if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
              _line ? {
                 tab(many(' \t'))
-                objectName := tab(many(identifiers))
+                objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))
                 tab(many(' \t'))
                 move(2)
                 tab(many(' \t'))
                 className := tab(upto("\("))
                 if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
                    objects[objectName] := className
-                   } 
+                   }
                 }
              }
+             lineNum +:= 1
           }
     end
+
 
     method getObjects()
        return objects
@@ -380,11 +392,11 @@ class Workspace(
 # -------------------------------------------------------------------------------------------------
 
     method setVariables()
-       local f, _line, variableName, _content, globalName
+       local f, _line, variableName, _content, globalName, lineNum
        variables := table()
        global_variables := table()
-       f := open(temp_file)
-       while _line := read(f) do {
+       lineNum := 1
+       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
           if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", _line) then {
              _line ? {
                 tab(many(' \t'))
@@ -423,6 +435,7 @@ class Workspace(
                 global_variables[globalName] := ""
              }
           }
+          lineNum +:= 1
        }
     end
 
@@ -492,7 +505,7 @@ class Workspace(
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
           every class_attribute := internal_classes[className]["attributes"][1 to *internal_classes[className]["attributes"]] do {
-             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))                
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
              }
           }
        if member(package_classes, className) then {
@@ -500,9 +513,30 @@ class Workspace(
              put(results_table["items"], table("label", class_method, "kind", 2))
              }
           every class_attribute := package_classes[className]["attributes"][1 to *package_classes[className]["attributes"]] do {
-             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))                
+             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
              }
           }
+    end
+
+     method getPackages()
+       return lsp_database.package_db
+    end
+
+    method getFileNames()
+       local pack, _file, _files
+       _files := []
+       every pack := key(lsp_database.package_db) do {
+            every _file := key(lsp_database.package_db[pack]["files"]) do
+               put(_files, _file)
+       }
+       return _files
+    end
+
+    method getContext(lineNum, charNum)
+      if (/context | (context.isNewContext(lineNum, charNum))) then {
+         context := Context(temp_idoc, uri, lineNum, charNum)
+      }
+      return context
     end
 
 # -------------------------------------------------------------------------------------------------
@@ -511,129 +545,280 @@ class Workspace(
 
     initially
         setFile()
-        createTempFile()
         identifiers := &letters ++ &digits ++ '_' ++ '-'
 
 end
 
+class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase)
+   method getDesiredLine(lineNum)
+      line := uniAll.getUniFileLine(uri, lineNum)
+   end
+
+   # Retrive object name #
+   method getObjectName()
+      local temp, c, name
+      line ? {
+         temp := tab(charNum)
+         while c := move(-1) do {
+            if (c ** identifiers) ~== c then {
+               break
+                  }
+            }
+
+         if ="." then {
+            move(-1)
+            while c := move(-1) do {
+               if (c ** identifiers) ~== c then {
+                  move(1)
+                  break
+                     }
+               }
+            name := tab(upto("."))
+            return name
+            }
+         }
+   end
+
+   # Retrive method name #
+   method getMethodName()
+      local temp, c, _method
+      line ? {
+         temp := tab(charNum)
+         while c := move(-1) do {
+            if (c ** identifiers) ~== c then {
+               break
+            }
+         }
+
+         if &pos ~= 1 then move(1)
+
+         _method := tab(upto("("))
+         return _method
+      }
+   end
+
+   method findContext()
+      local objectName, single_quote, double_quote, ch
+
+      #-----------------------------------------------#
+      #----------- Case "start of file" --------------#
+      #-----------------------------------------------#
+
+      \line | fail
+
+      #-----------------------------------------------#
+      #-------- Case "after package or import" -------#
+      #-----------------------------------------------#
+
+      #if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then
+
+      if ReMatch("^[\ \t]*package[\ \t]+", line) | ReMatch("^[\ \t]*import[\ \t]+", line) then {
+         write("Inside context package")
+         return "package"
+      }
+
+      #-----------------------------------------------#
+      #-------- Case "after link" --------------------#
+      #-----------------------------------------------#
+
+      if ReMatch("^[\ \t]*link[\ \t]+", line) then {
+         write("Inside context link")
+         return "link"
+      }
+
+      #-----------------------------------------------#
+      #----------- Case "inside comment" -------------#
+      #-----------------------------------------------#
+
+      line ? {
+         single_quote := 0
+         double_quote := 0
+         while (&pos < charNum) do {
+            ch := move(1) | break
+            if ch == "\'" then single_quote +:= 1
+            if ch == "\"" then double_quote +:= 1
+            if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then return "comment"
+         }
+      }
+
+      #-----------------------------------------------#
+      #-------- Case "object" ------------#
+      #-----------------------------------------------#
+
+      if objectName := getObjectName() then {
+         self.objectName := objectName
+         self.methodName := getMethodName()
+         return "object"
+      }
+      #-----------------------------------------------#
+      #-------- Case "method" ------------#
+      #-----------------------------------------------#
+
+      if methodName := getMethodName() then
+         self.methodName := getMethodName()
+         return "method"
+
+      #-----------------------------------------------#
+      #---------------- Default case -----------------#
+      #-----------------------------------------------#
+   end
+
+   method isNewContext(lineNumber, charNumber)
+      local newContext
+      if lineNum ~= lineNumber then {
+         newContext := "Yes"
+      } else if charNum ~= charNumber then {
+         newContext := "Yes"
+      } else {
+         newContext := &null
+      }
+
+      return newContext
+   end
+
+   method getCase()
+      return contextCase
+   end
+
+   initially(uniAll, uri, lineNum, charNum)
+      self.uniAll := uniAll
+      self.uri := uri
+      self.lineNum := lineNum
+      self.charNum := charNum
+      line := getDesiredLine(lineNum)
+      contextCase := findContext()
+end
+
 # Creates a working comments
 procedure makeComment(_function)
+   local paramComment, returnComment, failsComment, genComment, normalComment, firstTen, currentType, insideComment,
+      tabCharacter, _comment, paramCounter, returnCounter, failsCounter, genCounter, _line, paramPos, returnsPos,
+      failsPos, genPos, firstKey, fullComment, paramList, _param, paramName
+      paramComment:= ""
+      returnComment := ""
+      failsComment := ""
+      genComment := ""
+      normalComment := ""
+      firstTen := ""
+      currentType := 0
+      insideComment := 0
+      tabCharacter := "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+      paramList := []
 
-                paramComment:= ""
-                returnComment := ""
-                failsComment := ""
-                genComment := ""
-                normalComment := ""
-                firstTen := ""
-                currentType := 0
-                insideComment := 0
-                tabCharacter := "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-                every _comment := _function.getComments().get() do {
-                     paramCounter := 0
-                     returnCounter := 0
-                     failsCounter := 0
-                     genCounter := 0
-                     every _line := _comment.get() do {
-                           _line := replace(_line, "\\n", "\\\\n")
+      every _param := _function.getParams().get() do {
+         paramName := _param.getName()
+         put(paramList, paramName)
+      }
 
-                           if((find("<[", _line))) then
-                               insideComment := 1
-                           if((find("]>", _line))) then
-                               insideComment := 0
+      every _comment := _function.getComments().get() do {
+         paramCounter := 1
+         returnCounter := 0
+         failsCounter := 0
+         genCounter := 0
+         every _line := _comment.get() do {
+            _line := replace(_line, "\\n", "\\\\n")
 
-                           if((find("<[", _line)) | (find("]>", _line))) then {
+            if((find("<[", _line))) then
+               insideComment := 1
+            if((find("]>", _line))) then
+               insideComment := 0
 
-                              if(find("param", _line)) then
-                                  paramPos := find("param", _line)
-                              else
-                                  paramPos := 9999
+            if((find("<[", _line)) | (find("]>", _line))) then {
 
-                              if (find("returns", _line)) then
-                                  returnsPos := find("returns", _line)
-                              else
-                                  returnsPos := 9999
+               if(find("param", _line)) then
+                  paramPos := find("param", _line)
+               else
+                  paramPos := 9999
 
-                              if (find("fails", _line)) then
-                                  failsPos := find("fails", _line)
-                              else
-                                  failsPos := 9999
+               if (find("returns", _line)) then
+                  returnsPos := find("returns", _line)
+               else
+                  returnsPos := 9999
 
-                              if (find("generates", _line)) then
-                                  genPos := find("generates", _line)
-                              else
-                                  genPos := 9999
+               if (find("fails", _line)) then
+                  failsPos := find("fails", _line)
+               else
+                  failsPos := 9999
 
-                              firstKey := min(paramPos, returnsPos, failsPos, genPos)
+               if (find("generates", _line)) then
+                  genPos := find("generates", _line)
+               else
+                  genPos := 9999
 
-                              if ((find("param", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
-                                 if(paramCounter == 0) then {
-                                    _line := replace(_line, "param", "\n Parameters:  \n " || tabCharacter)
-                                    paramCounter +:= 1
-                                 }
-                                 else
-                                    _line := replace(_line, "param", "\n " || tabCharacter)
+               firstKey := min(paramPos, returnsPos, failsPos, genPos)
 
-                                 paramComment ||:= _line
-                                 currentType := 1
-                              }
-                              else if ((find("returns", _line[firstKey:firstKey+7]) & (find("<[", _line)))) then {
-                                 if(returnCounter == 0) then {
-                                    _line := replace(_line, "returns", "\n Returns:  \n " || tabCharacter)
-                                    returnCounter +:= 1
-                                 }
-                                 else
-                                    _line := replace(_line, "returns", "\n " || tabCharacter)
+               if ((find("param", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+                  if \paramList then
+                     _line := _line[1:firstKey+6] || "*" || _line[firstKey+6:firstKey+6+*paramList[paramCounter]] || "*:" || _line[firstKey+6+*paramList[paramCounter]:*_line+1]
 
-                                 returnComment ||:= _line
-                                 currentType := 2
-                              }
-                              else if ((find("fails", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
-                                 if(failsCounter == 0) then {
-                                    _line := replace(_line, "fails", "\n Fails:  \n " || tabCharacter)
-                                    failsCounter +:= 1
-                                 }
-                                 else
-                                    _line := replace(_line, "fails", "\n " || tabCharacter)
+                  if(paramCounter == 1) then
+                     _line := replace(_line, "param", "\n **Parameters:**  \n \\\\>" || tabCharacter)
+                  else
+                     _line := replace(_line, "param", "\n \\\\>" || tabCharacter)
 
-                                 failsComment ||:= _line
-                                 currentType := 3
-                              }
-                              else if ((find("generates", _line[firstKey:firstKey+9]) & (find("<[", _line)))) then {
-                                 if(genCounter == 0) then {
-                                    _line := replace(_line, "generates", "\n Generates:  \n " || tabCharacter)
-                                    genCounter +:= 1
-                                 }
-                                 else
-                                    _line := replace(_line, "generates", "\n " || tabCharacter)
 
-                                 genComment ||:= _line
-                                 currentType := 4
-                              }
-                              else
-                                    if currentType = 1 then paramComment ||:= _line
-                                    else if currentType = 2 then returnComment ||:= _line
-                                    else if currentType = 3 then failsComment ||:= _line
-                                    else if currentType = 4 then genComment ||:= _line
-                           }
-                           else if (insideComment = 1) then {
-                               if currentType = 1 then paramComment ||:= _line
-                               else if currentType = 2 then returnComment ||:= _line
-                               else if currentType = 3 then failsComment ||:= _line
-                               else if currentType = 4 then genComment ||:= _line
-                           }
-                           else
-                               normalComment ||:= _line
-             }
+                  paramCounter +:= 1
+                  paramComment ||:= _line
+                  currentType := 1
+               }
+               else if ((find("returns", _line[firstKey:firstKey+7]) & (find("<[", _line)))) then {
+                  if(returnCounter == 0) then {
+                     _line := replace(_line, "returns", "\n **Returns:**  \n " || tabCharacter)
+                     returnCounter +:= 1
+                  }
+                  else
+                     _line := replace(_line, "returns", "\n " || tabCharacter)
 
-          }
-       fullComment := normalComment || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment
-       fullComment := replacem(fullComment, "<p>", "", "</p>", "")
-       fullComment := replacem(fullComment, "<i>", "_", "</i>", "_")
-       fullComment := replacem(fullComment, "<b>", "**", "</b>", "**")
-       fullComment := replacem(fullComment, "<tt>", "`", "</tt>", "`")
-       fullComment := replace(fullComment, "\"", "\\\"")
-       fullComment := replace(fullComment, "<[", "")
-       fullComment := replace(fullComment, "]>", "")
+                  returnComment ||:= _line
+                  currentType := 2
+               }
+               else if ((find("fails", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+                  if(failsCounter == 0) then {
+                     _line := replace(_line, "fails", "\n **Fails:**  \n " || tabCharacter)
+                     failsCounter +:= 1
+                  }
+                  else
+                     _line := replace(_line, "fails", "\n " || tabCharacter)
 
-       return fullComment
+                  failsComment ||:= _line
+                  currentType := 3
+               }
+               else if ((find("generates", _line[firstKey:firstKey+9]) & (find("<[", _line)))) then {
+                  if(genCounter == 0) then {
+                     _line := replace(_line, "generates", "\n **Generates:**  \n " || tabCharacter)
+                     genCounter +:= 1
+                  }
+                  else
+                     _line := replace(_line, "generates", "\n " || tabCharacter)
+
+                  genComment ||:= _line
+                  currentType := 4
+               }
+               else
+                  if currentType = 1 then paramComment ||:= _line
+                  else if currentType = 2 then returnComment ||:= _line
+                  else if currentType = 3 then failsComment ||:= _line
+                  else if currentType = 4 then genComment ||:= _line
+            }
+            else if (insideComment = 1) then {
+               if currentType = 1 then paramComment ||:= _line
+               else if currentType = 2 then returnComment ||:= _line
+               else if currentType = 3 then failsComment ||:= _line
+               else if currentType = 4 then genComment ||:= _line
+            }
+            else
+               normalComment ||:= _line
+            }
+         }
+
+      fullComment := normalComment || "\n \n --- \n \n" || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment
+      fullComment := replacem(fullComment, "<p>", "", "</p>", "")
+      fullComment := replacem(fullComment, "<i>", "_", "</i>", "_")
+      fullComment := replacem(fullComment, "<b>", "**", "</b>", "**")
+      fullComment := replacem(fullComment, "<tt>", "`", "</tt>", "`")
+      fullComment := replace(fullComment, "\"", "\\\"")
+      fullComment := replace(fullComment, "<[", "")
+      fullComment := replace(fullComment, "]>", "")
+
+      return fullComment
 end

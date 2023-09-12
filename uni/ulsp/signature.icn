@@ -14,140 +14,181 @@ class SignatureHandler(
    end
 
    method run()
-      local line, character, functionName, results_table, desired_line
+      local line, character, methodName, results_table, desired_line, context
 
       # Collect line and character position #
-      line := params["position"]["line"]
-      character := params["position"]["character"]	
+      line := params["position"]["line"] + 1
+      character := params["position"]["character"]
 
       # Create initial return table #
       results_table := table()
       results_table["signatures"] := []
       results_table["activeSignature"] := &null
 
-      # Extract desired line #
-      desired_line := getDesiredLine(line, workspace.temp_file)
+     # Collect context information (inside comment, space before, object before, no object before) #
+      context := workspace.getContext(line, character)
+      desired_line := context.line
       \desired_line | return createResults(results_table)
 
       # Handle an active signature #
       if \params["context"]["activeSignatureHelp"] then {
-         handleActiveSignature(params, results_table, desired_line, character)
+         handleActiveSignature(params, results_table, context)
          return createResults(results_table)
       }
 
+      # If any signatures still active #
+      handleActiveSignature("reset")
+
       # Handle a new signature #
-      handleNewSignature(desired_line, character, results_table)
-      
+      handleNewSignature(context, results_table)
+
+      # Remove duplicate signatures #
+      listPos := 1
+      every sig_table := !results_table["signatures"] do {
+         c := 0
+         every every_other_sig_table := !results_table["signatures"] do {
+            sig_table["label"] ? {
+               if match(every_other_sig_table["label"]) then {
+                  c +:= 1
+               }
+            }
+         }
+         if c > 1 then delete(results_table["signatures"], listPos)
+         listPos +:= 1
+      }
+
       # Convert and return finished table #
       return createResults(results_table)
    end
 
    # Handle a new signature #
-   method handleNewSignature(desired_line, character, results_table)
-      local _context, sig_tables := [], functionName, objectName, linked_classes, imported_classes,
-         internal_classes, package_classes, objects, className, built_in_functions, linked_procedures, 
-         imported_procedures, internal_procedures, package_procedures
+   method handleNewSignature(context, results_table)
+      local _context, sig_tables := [], methodName, objectName, linked_classes, imported_classes,
+         internal_classes, package_classes, objects, className, built_in_functions, linked_procedures,
+         imported_procedures, internal_procedures, package_procedures, line, charNum
 
       # Collect context information (inside comment, space before, object before, no object before) #
-      _context := getContext(desired_line, character)
+      _context := context.getCase()
+      line := context.line
+      charNum := context.charNum
 
-      /triggerCharLoc := character
+      /triggerCharLoc := charNum
+
+      linked_classes := workspace.getLinkedClasses()
+      imported_classes := workspace.getImportedClasses()
+      internal_classes := workspace.getInternalClasses()
+      package_classes := workspace.getPackageClasses()
 
       case _context of {
 
          # If object before, collect object information #
-         "object before" : {
+         "object" : {
 
-            functionName := getFunction(desired_line, character)
-            objectName := getObject(desired_line, character)
-
-            linked_classes := workspace.getLinkedClasses()
-            imported_classes := workspace.getImportedClasses()
-            internal_classes := workspace.getInternalClasses()
-            package_classes := workspace.getPackageClasses()
+            objectName := context.objectName
+            methodName := context.methodName
 
             objects := workspace.getObjects()
             className := objects[objectName]
 
             # Check if function is a method of a linked class #
-            if member(linked_classes, className) & member(linked_classes[className]["methods"], functionName) then {
-               put(sig_tables, updateResults(functionName, linked_classes[className]["methods"][functionName], results_table))
-            } 
+            if member(linked_classes, className) & member(linked_classes[className]["methods"], methodName) then {
+               put(sig_tables, updateResults(methodName, linked_classes[className]["methods"][methodName], results_table))
+            }
 
             # Check if function is a method of an imported class #
-            if member(imported_classes, className) & member(imported_classes[className]["methods"], functionName) then {
-               put(sig_tables, updateResults(functionName, imported_classes[className]["methods"][functionName], results_table))
+            if member(imported_classes, className) & member(imported_classes[className]["methods"], methodName) then {
+               put(sig_tables, updateResults(methodName, imported_classes[className]["methods"][methodName], results_table))
             }
 
             # Check if function is a method of an internal class #
-            if member(internal_classes, className) & member(internal_classes[className]["methods"], functionName) then {
-               put(sig_tables, updateResults(functionName, internal_classes[className]["methods"][functionName], results_table))
+            if member(internal_classes, className) & member(internal_classes[className]["methods"], methodName) then {
+               put(sig_tables, updateResults(methodName, internal_classes[className]["methods"][methodName], results_table))
             }
 
             # Check if function is a method of a package class #
-            if member(package_classes, className) & member(package_classes[className]["methods"], functionName) then {
-               put(sig_tables, updateResults(functionName, package_classes[className]["methods"][functionName], results_table))
+            if member(package_classes, className) & member(package_classes[className]["methods"], methodName) then {
+               put(sig_tables, updateResults(methodName, package_classes[className]["methods"][methodName], results_table))
             }
-         } 
+         }
 
-         # If no object before, treat as method inside class, procedures, or built-in-funtion (eventually) #
-         "no object before" : { 
+         # If no object before, treat as method inside class, procedures, or built-in-funtion #
+         default : {
 
-            functionName := getFunction(desired_line, character)
+            methodName := context.methodName
 
             built_in_functions := workspace.getBuiltInFunctions()
-            internal_classes := workspace.getInternalClasses()
             linked_procedures := workspace.getLinkedProcedures()
             imported_procedures := workspace.getImportedProcedures()
             internal_procedures := workspace.getInternalProcedures()
             package_procedures := workspace.getPackageProcedures()
-            
 
             # Check if function is an internal procedure #
-            if member(internal_procedures, functionName) then {
-               put(sig_tables, updateResults(functionName, internal_procedures[functionName], results_table))
+            if member(internal_procedures, methodName) then {
+               put(sig_tables, updateResults(methodName, internal_procedures[methodName], results_table))
             }
 
             # Check if function is a package procedure #
-            if member(package_procedures, functionName) then {
-               put(sig_tables, updateResults(functionName, package_procedures[functionName], results_table))
+            if member(package_procedures, methodName) then {
+               put(sig_tables, updateResults(methodName, package_procedures[methodName], results_table))
             }
 
             # Check if function is a linked procedure #
-            if member(linked_procedures, functionName) then {
-               put(sig_tables, updateResults(functionName, linked_procedures[functionName], results_table))
+            if member(linked_procedures, methodName) then {
+               put(sig_tables, updateResults(methodName, linked_procedures[methodName], results_table))
             }
 
             # Check if function is an imported procedure #
-            if member(imported_procedures, functionName) then {
-               put(sig_tables, updateResults(functionName, imported_procedures[functionName], results_table))
+            if member(imported_procedures, methodName) then {
+               put(sig_tables, updateResults(methodName, imported_procedures[methodName], results_table))
             }
 
             # Check if function is a built in function #
-            if member(built_in_functions, functionName) then {
-               put(sig_tables, updateResults(functionName, built_in_functions[functionName], results_table))
+            if member(built_in_functions, methodName) then {
+               put(sig_tables, updateResults(methodName, built_in_functions[methodName], results_table))
             }
 
             # Check if function is part of an internal class #
             every className := key(internal_classes) do {
-               if member(internal_classes[className]["methods"], functionName) then {
-                  put(sig_tables, updateResults(functionName, internal_classes[className]["methods"][functionName], results_table))
+               if member(internal_classes[className]["methods"], methodName) then {
+                  put(sig_tables, updateResults(methodName, internal_classes[className]["methods"][methodName], results_table))
                }
+            }
+
+            # Check if function is a constructor #
+            if member(linked_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, linked_classes[methodName], results_table))
+            }
+            if member(imported_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, imported_classes[methodName], results_table))
+            }
+            if member(internal_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, internal_classes[methodName], results_table))
+            }
+            if member(package_classes, methodName) then {
+               put(sig_tables, updateResults(methodName, package_classes[methodName], results_table))
             }
          }
       }
+
+      if \params & params["context"]["isRetrigger"] == "__false__" then
+         handleActiveSignature(params, results_table, context)
 
       return sig_tables
    end
 
    # Handle an active signature #
-   method handleActiveSignature(params, results_table, line, character)
-      local depth := 0, new_signatures := [], position, signature, new_signature, i, temp
+   method handleActiveSignature(params, results_table, context)
+      local depth := 0, new_signatures := [], position, signature, new_signature, i, temp, line, charNum
       static signatures
       initial signatures := []
 
+      if \context then {
+         line := context.line
+         charNum := context.charNum
+      }
+
       # Check if cursor position is before trigger character #
-      if /triggerCharLoc | (character < triggerCharLoc) then {
+      if string(params) == "reset" | /triggerCharLoc | (charNum < triggerCharLoc) then {
          triggerCharLoc := &null
          signatures := []
          fail
@@ -155,19 +196,20 @@ class SignatureHandler(
 
       # If first call, put initial signature in signatures #
       if *signatures = 0 then {
-         every signature := !params["context"]["activeSignatureHelp"]["signatures"] do
+         every signature := !results_table["signatures"] do
             put(signatures, signature)
+         fail
       }
 
       # Handle any new signatures #
-      if line[character] == "(" then {
-         new_signatures |||:= handleNewSignature(line, character, results_table)
+      if line[charNum] == "(" then {
+         new_signatures |||:= handleNewSignature(context, results_table)
       }
 
       # Handle any new signatures while back tracking #
-      if line[character + 1] == ")" then {
+      if line[charNum + 1] == ")" then {
          line ? {
-            &pos := character
+            &pos := charNum
             depth := 0
             until line[&pos] == "(" & depth = 0 do {
                if line[&pos] == ")" then depth +:= 1
@@ -176,7 +218,8 @@ class SignatureHandler(
                move(-1)
             }
 
-            new_signatures |||:= handleNewSignature(line, &pos, results_table)
+            temp_context := workspace.getContext(params["position"]["line"] + 1, &pos)
+            new_signatures |||:= handleNewSignature(temp_context, results_table)
          }
       }
 
@@ -184,8 +227,8 @@ class SignatureHandler(
       position := 1
       every new_signature := !new_signatures do {
          every signature := !signatures do {
-            if new_signature["label"] == signature["label"] & 
-               *new_signature["parameters"] = *signature["parameters"] then 
+            if new_signature["label"] == signature["label"] &
+               *new_signature["parameters"] = *signature["parameters"] then
                   delete(new_signatures, position)
          }
          position +:= 1
@@ -203,10 +246,10 @@ class SignatureHandler(
          signatures[i] := temp
       }
 
-      # Determine depth and active parameter for each active signature # 
+      # Determine depth and active parameter for each active signature #
       line ? {
          &pos := triggerCharLoc
-         until &pos = character do {
+         until &pos = charNum do {
             move(1)
             if line[&pos] == "(" then {
                depth +:= 1
@@ -249,21 +292,26 @@ class SignatureHandler(
    method updateResults(function, functionTable, results_table)
       local signature, param_list := [], signature_table, param_table
 
+      if \functionTable["constructor"] then {
+         functionTable := functionTable["constructor"]
+         function := functionTable["name"]
+      }
+
       # Create a valid signature #
       signature := createSignature(function, functionTable)
       signature := replace(signature, "\"", "\\\"")
-      signature := replace(signature, "\\n", "\\\\n") 
+      signature := replace(signature, "\\n", "\\\\n")
 
       # Format parameters #
-      every param_table := !functionTable["params"] do 
+      every param_table := !functionTable["params"] do
          put(param_list, table("label", param_table["name"]))
 
-      if \functionTable["comments"] then 
+      if \functionTable["comments"] then
          signature_table := table("label", signature, "parameters", param_list, "activeParameter", 0,
             "documentation", table("kind", "markdown", "value", functionTable["comments"]))
       else
          signature_table := table("label", signature, "parameters", param_list, "activeParameter", 0)
-      
+
       # Update results #
       if \results_table then put(results_table["signatures"], signature_table)
       return signature_table
@@ -281,82 +329,11 @@ class SignatureHandler(
          if \param_table["type"] then signature ||:= ":" || param_table["type"]
          if \param_table["default"] then signature ||:= ":" || param_table["default"]
          counter +:= 1
-         if counter < *functionTable["params"] then signature ||:= ", "   
+         if counter < *functionTable["params"] then signature ||:= ", "
       }
 
       signature ||:= ")"
 
       return signature
-   end
-
-   # Retrive context #
-   method getContext(line, character)
-      local objectName
-      line ? {
-         if find("#", tab(character)) then return "inside comment"
-      }
-      line ? {
-         &pos := character
-         if line[&pos] == "(" & move(-1) == " " then 
-            return "space before"
-         }
-      
-      line ? {
-         if objectName := getObject(line, character) then 
-            return "object before"  
-      }
-      return "no object before"
-   end
-
-   # Retrive function name #
-   method getFunction(line, character)
-      local temp, c, _function
-      line ? {
-         temp := tab(character)
-         while c := move(-1) do {
-            if (c ** identifiers) ~== c then { 
-               break
-            }
-         }
-
-         if &pos ~= 1 then move(1)
-
-         _function := tab(upto("("))
-         return _function
-      }
-   end
-
-   # Retrive object name #
-   method getObject(line, character)
-      local temp, c, objectName
-      line ? {
-         temp := tab(character)
-         while c := move(-1) do {
-            if (c ** identifiers) ~== c then { 
-               break
-                  }
-            }
-
-         if ="." then {
-            move(-1)
-            while c := move(-1) do {
-               if (c ** identifiers) ~== c then { 
-                  move(1)
-                  break
-                     }
-               }
-            objectName := tab(upto("."))
-            return objectName
-            }
-         }
-   end
-
-   # Return line from temp file as string #
-   method getDesiredLine(line, file)
-      local f, desired_line
-      f := open(file)
-      every !line do read(f)
-      desired_line := read(f)
-      return desired_line
    end
 end

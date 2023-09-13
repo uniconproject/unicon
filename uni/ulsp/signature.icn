@@ -14,7 +14,7 @@ class SignatureHandler(
    end
 
    method run()
-      local line, character, methodName, results_table, desired_line, context
+      local line, character, methodName, results_table, desired_line, context, listPos, sig_table, c, every_other_sig_table
 
       # Collect line and character position #
       line := params["position"]["line"] + 1
@@ -178,7 +178,7 @@ class SignatureHandler(
 
    # Handle an active signature #
    method handleActiveSignature(params, results_table, context)
-      local depth := 0, new_signatures := [], position, signature, new_signature, i, temp, line, charNum
+      local depth := 0, new_signatures := [], position, signature, new_signature, i, temp, line, charNum, temp_context
       static signatures
       initial signatures := []
 

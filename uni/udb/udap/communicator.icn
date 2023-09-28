@@ -1,0 +1,271 @@
+package udap
+
+link findre
+import json
+
+class Communicator(udb, udbSock, tpSock, dapcomSock, filePath, tpArgs)
+
+    # Attempt to start udb if not already active and connect to it.
+    # Returns "success" if successful and an appropriate error string if otherwise.
+    method start_debugger(port)
+        local udbPath, dir, result
+
+        udbPath := find_debugger()
+        if /udbPath then return "udap could not find udb"
+
+        udb := system(udbPath || " -adapter " || port, &null, &null, &null, "nowait")
+            
+        udbSock := open_sock(port)
+        if /udbSock then return "udap failed to open udbSock: " || port
+
+        tpSock := open_sock(port + 10)
+        if /tpSock then return "udap failed to open tpSock: " || port + 10
+
+        return "success"
+    end
+
+    # Send a termination signal to udb.
+    method end_debugger()
+        kill(\udb, 9)
+    end
+
+    # Returns udb's absolute path.
+    method find_debugger()
+        return pathfind("udb")
+    end
+
+    # Returns a list of tables containing stack trace information.
+    # A table of with key "type" set to "crash" is returned if udb experiences an error.
+    method stack_trace()
+        local udbResTable, udbResTableList, frames := [], __1
+        udbResTableList := [: udb_input("bt", 1) :] | []
+
+        every udbResTable := !udbResTableList do {
+            if member(udbResTable, "type") then {
+                if udbResTable["type"] == "frame" then {
+                    udbResTable["name"] := replace(udbResTable["name"], "\"", "\\\"")
+                    udbResTable["consoleMsg"] := replace(udbResTable["consoleMsg"], "\"", "\\\"")
+                    put(frames, udbResTable)
+                }
+                if udbResTable["type"] == "crash" then return udbResTable
+            }
+        }
+
+        return frames
+    end
+
+    # Returns a list of tables containing scope information.
+    # A table of with key "type" set to "crash" is returned if udb experiences an error.
+    method get_scopes(frame)
+        local udbResTableList, udbResTable, scopes, __1, __2
+        scopes := []
+
+        udbResTableList := [: udb_input("frame " || frame, 1) :] ||| [: udb_input("print -" ||  !"glsp", 1) :] | []
+
+        if *udbResTableList ~= 0 then { 
+            every udbResTable := !udbResTableList do {
+                if member(udbResTable, "type") then {
+                    if member(udbResTable, "variables") then {
+                        if udbResTable["type"] == "globals" & *udbResTable["variables"] > 0 then {
+                            put(scopes, table("name", "Globals", "variablesReference", 1))
+                        }
+                        if udbResTable["type"] == "locals" & *udbResTable["variables"] > 0 then {
+                            put(scopes, table("name", "Locals", "variablesReference", 2))
+                        }
+                        if udbResTable["type"] == "statics" & *udbResTable["variables"] > 0 then {
+                            put(scopes, table("name", "Statics", "variablesReference", 3))
+                        }
+                        if udbResTable["type"] == "params" & *udbResTable["variables"] > 0 then {
+                            put(scopes, table("name", "Parameters", "variablesReference", 4))
+                        }
+                    }
+                    if udbResTable["type"] == "crash" then return udbResTable
+                }
+            }
+        }
+
+        return scopes
+    end
+
+    # Returns a list of tables containing variable information.
+    # A table of with key "type" set to "crash" is returned if udb experiences an error.
+    method get_variables(variablesReference)
+        local udbResTable, udbResTableList, variables, cmd, i, __1
+
+        variables := []
+
+        cmd := "print -" || "glsp"[variablesReference]
+
+        udbResTableList := [: udb_input(cmd, 1) :] | []
+
+        every udbResTable := !udbResTableList do {
+            if member(udbResTable, "type") then {
+                if member(udbResTable, "variables") then {
+                    if udbResTable["type"] == "globals" | "locals" | "statics" | "params" then {
+                        variables := udbResTable["variables"]
+                    }
+                }
+                if udbResTable["type"] == "crash" then return udbResTable
+            }
+        }
+
+        every variable := !variables do {
+            variable["value"] := replace(variable["value"], "\"", "\\\"")
+            variable["type"] := replace(variable["type"], "\"", "\\\"")
+            variable["variablesReference"] := 0
+        }
+
+        return variables
+    end
+
+    # Generator that suspends all udb commands needed for loading debuggee.
+    method load_cmds()
+        local dir, procs
+        
+        filePath ? dir := tab(findre("\/[^\/]+$"))
+        suspend "dir args " || dir
+
+        if procs := find_debugger() then {
+            procs ? procs := tab(findre("unicon") + 6)
+            procs ||:= "/ipl/procs"
+            suspend "dir args " || procs
+        }
+
+        if \tpArgs then
+            suspend "load " || filePath || " " || tpArgs
+        else
+            suspend "load " || filePath
+    end
+
+    # Sets the file path of the debuggee.
+    method set_filepath(fpath)
+        filePath := fpath
+    end
+
+    # Attempts to open a specified port. Returns communication source if successful.
+    method open_sock(port)
+        local sock
+        if /port then return "udb communication port not declared"
+
+        every !5 do
+            if sock := open(":" || port, "na") then
+                return sock
+            else
+                delay(1000)
+
+        write("udap failed to open port: " || port)
+    end
+
+    # Disconnects from udb.
+    method disconnect_udbsock()
+        close(\udbSock)
+        udbSock := &null
+    end
+
+    # Attempts to read udb socket output.
+    # Returns what was read or fails if reading isn't possible.
+    # If 'wait' is not null, process will wait a maximum of 5 seconds for udb to respond.
+    # 'wait' should be not null if udap needs a response from udb.
+    method udb_output(wait)
+        local msg, i, seg, failsafe
+        \udbSock | fail
+        failsafe := 0
+        msg := ""
+        
+        if /wait then {
+            while *select(udbSock, 200) > 0 do {
+                if failsafe > 50 then fail
+                seg := ready(udbSock)
+                if /seg then fail
+                msg ||:= seg
+                failsafe +:= 1
+            }
+        }
+        else {
+            if *select(udbSock, 5000) > 0 then {
+                seg := ready(udbSock)
+                if /seg then fail
+                msg ||:= seg
+            }
+            while *select(udbSock, 200) > 0 do {
+                if failsafe > 50 then fail
+                seg := ready(udbSock)
+                if /seg then fail
+                msg ||:= seg
+                failsafe +:= 1
+            }
+        }
+
+        write("udb -> udap: " || msg)
+        return msg
+    end
+
+    # Sends udb a command as 'exp' and returns what was output.
+    # A table of with key "type" set to "crash" is returned if udb experiences an error or if reading isn't possible.
+    # If 'wait' is not null, process will wait a maximum of 5 seconds for udb to respond.
+    # 'wait' should be not null if udap needs a response from udb.
+    # Will always return a crash table if a crash has happened unless if a call with 'resetError' not null has been executed.
+    method udb_input(exp, wait, resetError)
+        local udbRes, resultTable
+        static errorCalled
+        initial errorCalled := &null
+
+        if \resetError then {
+            errorCalled := &null
+            fail
+        }
+
+        if \errorCalled then return errorCalled
+
+        write("udap -> udb: " || exp)
+        write(udbSock, exp)
+        udbRes := udb_output(wait)
+
+        if /udbRes then {
+            resultTable := ["type": "crash"; "errornumber": 1040; "errortext": "socket error"]
+            errorCalled := resultTable
+            return resultTable
+        }
+
+        if udbRes ~== "" then {
+            every resultTable := jtou(udbRes) do {
+                if member(resultTable, "type") then 
+                    if resultTable["type"] == "crash" then
+                        errorCalled := resultTable
+                suspend resultTable
+            }
+        }
+    end
+
+    # Returns the communcation source used to communicate with udb.
+    method get_communication_source()
+        if \udbSock then return udbSock
+    end
+
+    # Attempts to set breakpoints given DAP setBreakpoints request as 'arguments'.
+    # Gives a "verified" key to each breakpoint table and sets it based on if the breakpoint was successfully set or not.
+    # A table of with key "type" set to "crash" is returned if udb experiences an error.
+    method set_breakpoints(arguments)
+        local breakpoints, bp, line, cond, udbResTable, udbResTableList, i, __1
+
+        udb_input("clear break", 1)
+
+        breakpoints := arguments["breakpoints"]
+
+        every bp := !breakpoints do {
+            line := bp["line"]
+            cond := bp["condition"]
+
+            udbResTableList := [: udb_input("b " || arguments["source"]["name"] || ":" || line, 1) :] | []
+            
+            if *udbResTableList ~= 0 then {
+                every udbResTable := !udbResTableList do {
+                    if member(udbResTable, "type") then 
+                        if udbResTable["type"] == "crash" then return udbResTable
+                    bp["verified"] := udbResTable["success"]
+                }
+            }
+            else bp["verified"] := "__false__"
+        }
+    end
+end

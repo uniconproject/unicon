@@ -1,0 +1,573 @@
+package udap
+
+link ximage
+link strings
+import json
+global seq, lastUdbCmd, waitingForTerminal, requestQueue, stop_debuggee_dapcom_communication
+
+class Server(port, sock, communicator, shellProcessId, clientDetails, currentRequestBody, udbError)
+
+   # Main loop udap process.
+   method run()
+      local request_body, jsontable, request_seq, request_command, request_arguments, cmd
+
+      repeat {
+         every request_body := get_request(sock) do {
+            if \waitingForTerminal then {
+               if jtou(request_body)["command"] ~== "runInTerminal" then {
+                  push(requestQueue, request_body)
+                  next
+               }
+               else {
+                  waitingForTerminal := &null
+                  process_request(request_body)
+                  every cmd := communicator.load_cmds() do udb_input(cmd)
+                  every request_body := pop(requestQueue) do process_request(request_body)
+               }
+            }
+            else {
+               process_request(request_body)
+            }
+         }
+      }
+   end
+
+   # Given a DAP client request body, process that request.
+   method process_request(request_body)
+      local jsontable, request_seq, request_command, request_arguments, response_body
+
+      jsontable := jtou(request_body)
+
+      if jsontable["type"] == "request" then currentRequestBody := jsontable
+
+      request_seq := jsontable["seq"]
+      request_command := jsontable["command"]
+      request_arguments := jsontable["arguments"]
+      response_body := jsontable["body"]
+
+      write("client -> udap: " || request_body)
+
+      case request_command of {
+         "initialize": { initialize(request_seq, request_command, request_arguments) }
+         "launch" : { launch(request_seq, request_command, request_arguments) }
+         "setBreakpoints" : { set_breakpoints(request_seq, request_command, request_arguments) }
+         "configurationDone" : { udb_input("run", 1); if /udbError then acknowledge(request_seq, request_command) }
+         "threads" : { threads(request_seq, request_command) }
+         "continue" : { udb_input("cont", 1); if /udbError then acknowledge(request_seq, request_command) }
+         "next" : { udb_input("next", 1); if /udbError then acknowledge(request_seq, request_command) }
+         "stepIn" : { udb_input("step", 1); if /udbError then acknowledge(request_seq, request_command) }
+         "stepOut" : { udb_input("return", 1); if /udbError then acknowledge(request_seq, request_command) }
+         "stackTrace" : { stackTrace(request_seq, request_command, request_arguments) }
+         "scopes" : { scopes(request_seq, request_command, request_arguments) }
+         "variables" : { variables(request_seq, request_command, request_arguments) }
+         "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
+         "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"] }
+         "evaluate" : { evaluate(request_seq, request_command, request_arguments) }
+         default: { write("Don't know what to do with: ", request_command) }
+      }
+   end
+
+#################################################################################
+#                               Get Request                                     #
+#################################################################################
+
+   # Attempt to read messages from client given a socket and returns each message as a generator.
+   method get_request(sock)
+      local request_body, msg, len
+
+      while /request_body | request_body == "" do {
+
+         # Even while waiting for request, listen to udb
+         if \communicator.udbSock then {
+            select([sock, communicator.udbSock])
+            udb_listen()
+         }
+         else select(sock)
+         
+         msg := ready(sock)
+
+         # Handling socket reading anomoly: header alone or header + request_body
+         while msg ~== "" do {
+            msg ? {
+               tab(find("Content-Length:") + 16)
+               len := integer(tab(many(&digits)))
+               tab(upto("\r\n\r\n") + 4)
+               if pos(0) then {
+                  request_body := ready(sock, len)
+               }
+               else {
+                  request_body := move(len)
+                  msg := tab(0)
+               }
+            }
+            suspend request_body
+         }
+      }
+   end
+
+#################################################################################
+#                               Build Response                                  #
+#################################################################################
+
+   # Create and return a response for client in json format.
+   method build_response(request_seq, success, request_command, body, message)
+      local responseTable, responseBody, responseHeader
+
+      responseTable := [
+         "seq": seq;
+         "type": "response";
+         "request_seq": request_seq;
+         "success": success;
+         "command": request_command
+      ]
+      responseTable["message"] := \message
+      responseTable["body"] := \body
+
+      responseBody := tojson(responseTable)
+      responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
+
+      write("udap -> client: " || responseBody)
+
+      seq +:= 1
+
+      return responseHeader || responseBody
+   end
+
+#################################################################################
+#                               Build Request                                   #
+#################################################################################
+
+   # Create and return a request for client in json format.
+   method build_request(command, arguments)
+      local requestTable, requestBody, requestHeader
+
+      requestTable := [
+         "seq": seq;
+         "type": "request";
+         "command": command
+      ]
+      requestTable["arguments"] := \arguments
+
+      requestBody := tojson(requestTable)
+      requestHeader := "Content-Length:" || *requestBody || "\r\n\r\n"
+
+      write("udap -> client: " || requestBody)
+
+      seq +:= 1
+
+      return requestHeader || requestBody
+   end
+
+#################################################################################
+#                               Build Event                                     #
+#################################################################################
+
+   # Create and return an event for client in json format.
+   method build_event(event, body)
+      local eventTable, eventBody, eventHeader
+
+      eventTable := [
+         "seq": seq;
+         "type": "event";
+         "event": event
+      ]
+      eventTable["body"] := \body
+
+      eventBody := tojson(eventTable)
+      eventHeader := "Content-Length:" || *eventBody || "\r\n\r\n"
+
+      write("udap -> client: " || eventBody)
+
+      seq +:= 1
+
+      return eventHeader || eventBody
+   end
+
+########################################################
+#                     initialize                       #
+########################################################
+
+   # Handles all the things required from a client "initialize" request.
+   method initialize(request_seq, request_command, request_arguments)
+      local capabilitiesTable, res, udbPort, startRes, event, req
+
+      clientDetails := \request_arguments
+
+      port ? {
+         move()
+         udbPort := tab(0)
+      }
+      udbPort := integer(udbPort)
+      udbPort +:= 10
+
+      startRes := communicator.start_debugger(udbPort)
+      if startRes ~== "success" then {
+         res := build_response(request_seq, "__false__", request_command, &null, startRes)
+         writes(sock, res)
+         disconnect(startRes)
+      }
+
+      capabilitiesTable := [
+         "supportsConfigurationDoneRequest": "__true__"
+      ]
+
+      res := build_response(request_seq, "__true__", request_command, capabilitiesTable)
+      writes(sock, res)
+
+      event := build_event("initialized")
+      writes(sock, event)
+   end
+
+########################################################
+#                     launch                           #
+########################################################
+
+   # Handles all the things required from a client "launch" request.
+   method launch(request_seq, request_command, request_arguments)
+      local res, initEvent, pth, event, dapPort
+
+      pth := request_arguments["program"]
+      pth ? {
+         pth := tab(find(".icn"))
+      }
+      communicator.set_filepath(pth)
+
+      if member(request_arguments, "args") then {
+         communicator.tpArgs := request_arguments["args"]
+      }
+
+      port ? {
+         move()
+         dapPort := tab(0)
+      }
+      dapPort := integer(dapPort) + 30
+
+      event := build_request("runInTerminal",
+         table("kind", "integrated", "cwd", "", "title", "udbTerminal", "args",[ "dapcom " || dapPort ] ,
+               "argsCanBeInterpretedByShell", "__true__"))
+      writes(sock, event)
+      waitingForTerminal := 1
+
+      communicator.dapcomSock := communicator.open_sock(dapPort)
+      if /communicator.dapcomSock then {
+         res := build_response(request_seq, "__false__", request_command, &null, "udap failed to open dapcomSock: " || port + 10)
+         writes(sock, res)
+         return
+      }
+
+      res := build_response(request_seq, "__true__", request_command)
+      writes(sock, res)
+   end
+
+########################################################
+#                     set breakpoints                  #
+########################################################
+
+   # Handles all the things required from a client "setBreakpoints" request.
+   method set_breakpoints(request_seq, request_command, request_arguments)
+      local res, breakpointTable, breakpoint, resTable
+
+      breakpointTable := [
+         "breakpoints": request_arguments["breakpoints"]
+      ]
+
+      resTable := communicator.set_breakpoints(request_arguments)
+
+      if type(\resTable) == "table" then {
+         if member(resTable, "type") then
+            if resTable["type"] == "crash" then
+               handle_error(resTable)
+      }
+      else {
+         res := build_response(request_seq, "__true__", request_command, breakpointTable)
+         writes(sock, res)
+      }
+   end
+
+########################################################
+#                       threads                        #
+########################################################
+
+   # Handles all the things required from a client "threads" request.
+   method threads(request_seq, request_command)
+      local res, threadsTable
+
+      threadsTable := [
+         "threads": [table("id", 1, "name", "main")]
+      ]
+
+      res := build_response(request_seq, "__true__", request_command, threadsTable)
+      writes(sock, res)
+   end
+
+########################################################
+#                       stackTrace                     #
+########################################################
+
+   # Handles all the things required from a client "stackTrace" request.
+   method stackTrace(request_seq, request_command, request_arguments)
+      local res, stackList
+
+      stackList := communicator.stack_trace()
+
+      if type(stackList) == "table" then {
+         if member(stackList, "type") then
+            if stackList["type"] == "crash" then
+               handle_error(stackList)
+      }
+      else {
+         res := build_response(request_seq, "__true__", request_command, table("stackFrames", stackList))
+         writes(sock, res)
+      }
+   end   
+
+########################################################
+#                       scopes                         #
+########################################################
+
+   # Handles all the things required from a client "scopes" request.
+   method scopes(request_seq, request_command, request_arguments)
+      local res, scopes
+
+      scopes := communicator.get_scopes(request_arguments["frameId"])
+
+      if type(scopes) == "table" then {
+         if member(scopes, "type") then
+            if scopes["type"] == "crash" then
+               handle_error(scopes)
+      }
+      else {
+         res := build_response(request_seq, "__true__", request_command, table("scopes", scopes))
+         writes(sock, res)
+      }
+   end   
+
+########################################################
+#                       variables                      #
+########################################################
+
+   # Handles all the things required from a client "variables" request.
+   method variables(request_seq, request_command, request_arguments)
+      local res, variables
+
+      variables := communicator.get_variables(request_arguments["variablesReference"])
+
+      if type(variables) == "table" then {
+         if member(variables, "type") then
+            if variables["type"] == "crash" then
+               handle_error(variables)
+      }
+      else {
+         res := build_response(request_seq, "__true__", request_command, table("variables", variables))
+         writes(sock, res)
+      }
+   end   
+
+########################################################
+#                     acknowledge                      #
+########################################################
+
+   # Default response for request that only requires an acknowledgement.
+   method acknowledge(request_seq, request_command)
+      local res
+
+      res := build_response(request_seq, "__true__", request_command)
+      writes(sock, res)
+   end
+
+########################################################
+#                     udb_listen                       #
+########################################################
+
+   # Reads udb's communication socket and processes any output collected.
+   method udb_listen()
+      local outputTable, udbRes
+
+      udbRes := communicator.udb_output()
+      if \udbRes ~== "" then {
+         every outputTable := jtou(udbRes) do {
+            process_udb_output_table(outputTable)
+         }
+      }
+   end
+
+########################################################
+#                       udb_input                      #
+########################################################
+
+   # Sends udb a command as 'expression' and processes any output collected.
+   # If 'wait' is not null, process will wait a maximum of 5 seconds for udb to respond.
+   # 'wait' should be not null if udap needs a response from udb.
+   method udb_input(expression, wait)
+      local outputTable
+      every outputTable := communicator.udb_input(expression, wait) do {
+         process_udb_output_table(outputTable)
+      }
+   end
+
+########################################################
+#              process_udb_output_table                #
+########################################################
+
+   # Given a udb output table as 'outputTable', process that table.
+   method process_udb_output_table(outputTable)
+      local udbRes := "", event
+
+      udbRes := replacem(\outputTable["consoleMsg"], "\\\\\\\"", "\\\"", "\\\\\"", "\\\"",  "\"", "\\\"")
+
+      /outputTable["type"] := "console"
+      if not (outputTable["type"] == ("exited" | "stderr" | "crash")) then {
+         event := build_event("output", table("category", "console", "output", udbRes))
+         writes(sock, event)
+         if outputTable["type"] == "breakpoint" then {
+            event := build_event("stopped", table(
+               "reason", "breakpoint", 
+               "description", udbRes, 
+               "hitBreakpointIds", [outputTable["id"]],
+               "threadId", 1))
+            writes(sock, event)
+         }
+         else if outputTable["type"] == "step" then {
+            event := build_event("stopped", table(
+               "reason", "step",
+               "threadId", 1))
+            writes(sock, event)
+         }
+      }
+      else if outputTable["type"] == "stderr" then {
+         event := build_event("output", table("category", "stderr", "output", udbRes))
+         writes(sock, event)
+         event := build_event("stopped", table(
+            "reason", "exception", 
+            "description", udbRes,
+            "text", udbRes,
+            "threadId", 1))
+         writes(sock, event)
+      }
+      else if outputTable["type"] == "exited" then {
+         event := build_event("exited", table("exitCode", outputTable["exitCode"]))
+         writes(sock, event)
+      }
+      else if outputTable["type"] == "crash" then {
+         handle_error(outputTable)
+         return
+      }
+      if \outputTable["requireResponse"] then {
+         event := build_event("output", table("category", "console", "output", "[answered Y; input not from terminal]\n"))
+         writes(sock, event)
+         udb_input("Y")
+      }
+   end
+
+########################################################
+#                       evaluate                       #
+########################################################
+
+   # Handles all the things required from a client "evaluate" request.
+   method evaluate(request_seq, request_command, request_arguments)
+      local res, expression, result := "", isEvalExp
+
+      expression := request_arguments["expression"]
+      expression ? {
+         if tab(match("-exec ")) then {
+            expression := tab()
+            lastUdbCmd := expression
+         }
+         else if expression ~== "" then {
+            expression := "p "||expression
+         }
+         else if \lastUdbCmd then {
+            expression := lastUdbCmd
+         }
+      }
+
+      udb_input(expression)
+   end
+
+########################################################
+#                     handle_error                     #
+########################################################
+
+   # Handle a udb output table of "type" set to "crash".
+   method handle_error(outputTable)
+      local errorText, errorMessageTable, res, event
+
+      udbError := "__true__"
+
+      errorText := "Unicon Debugger experienced an error during " || currentRequestBody["command"] || " request. "
+      if \outputTable then {
+         errorText ||:= "Error number: " || outputTable["errornumber"] || ". "
+         if member(outputTable, "errortext") then errorText ||:= "Error text: " || outputTable["errortext"] || ". "
+         if member(outputTable, "errorvalue") then errorText ||:= "Error value: " || outputTable["errorvalue"] || ". "
+      }
+      errorText ||:= "Closing Unicon Debugger."
+
+      errorMessageTable := table("format", errorText, "showUser", "__true__")
+      if \outputTable then errorMessageTable["id"] := outputTable["errornumber"]
+      else errorMessageTable["id"] := 0
+
+      res := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"], table("error", errorMessageTable))
+      writes(sock, res)
+
+      event := build_event("terminated")
+      writes(sock, event)
+   end
+
+   # Enable communication between dapcom and debugee.
+   method debuggee_dapcom_communication()
+      local resList, res
+      while /stop_debuggee_dapcom_communication do {
+         if \communicator then {
+            resList := select([\communicator.tpSock, \communicator.dapcomSock]) | next
+            every res := !resList do {
+               case res of {
+                  communicator.tpSock: writes(communicator.dapcomSock, ready(communicator.tpSock))
+                  communicator.dapcomSock: writes(communicator.tpSock, ready(communicator.dapcomSock))
+               }
+            }
+         }
+      }
+   end
+
+########################################################
+#                     disconnect                       #
+########################################################
+
+   # Disconnect from client and udb and startup as a fresh session.
+   method disconnect()
+      communicator.disconnect_udbsock()
+      communicator.end_debugger()
+      communicator.udb_input(&null, &null, 1)
+      kill(\shellProcessId, 9)
+      close(\sock)
+      stop_debuggee_dapcom_communication := "__true__"
+      startup()
+   end
+
+   # Attempt to open communication port for client and set default class parameters.
+   method startup()
+      every 1 to 5 do
+         if sock := open(port, "na") then {
+            break
+         }
+         else {
+            write("open(",port,") ERROR: ", &errortext)
+            delay(1000)
+         }
+
+      if /sock then stop("failed to connect to ",port)
+
+      stop_debuggee_dapcom_communication := &null
+      thread debuggee_dapcom_communication()
+
+      communicator := Communicator()
+
+      seq := 1
+      udbError := &null
+      lastUdbCmd := ""
+      requestQueue := []
+   end
+
+   initially
+      startup()
+end

@@ -543,7 +543,7 @@
 #define T_Realarray	30      /* real array */
 #define T_Cons		31	/* generic link list element */
 
-#define MaxType		32	/* maximum type number */
+#define MaxType		31	/* maximum type number */
 
 /*
  * Definitions for keywords.

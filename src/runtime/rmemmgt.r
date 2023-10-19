@@ -2086,12 +2086,44 @@ static void vrfySetPhase(int expected, int new)
 {
   vrfyCheckPhase(expected);
   vrfyPhase = new;
-  vrfyLog("GC Phase = %ld", vrfyPhase);
+  /* If no detailed checks are being made don't log the GC phase */
+  if (0 != (vrfy << ((8 * sizeof(vrfy)) - MaxType))) vrfyLog("GC Phase = %ld", vrfyPhase);
 }
 
 static void vrfyStart()
 {
   if (vrfy == 0) return;
+  /*
+   * Make a log entry showing the Unicon file and line number that caused this GC.
+   */
+  {
+    vlogmessage fl;
+#if COMPILER
+#else
+    CURTSTATE();
+#endif                     /* COMPILER */
+    /*
+     * We have a limited capacity for each message, so make sure it fits by
+     * allowing 5 chars for the line number and the remainder for the file name.
+     * Using length specifiers would be good, but they aren't in C99 so we'll
+     * have to make do with snprintf and literal length specs.
+     *
+     * 57 + 5 = 62 which leaves room for " " and "\0"
+     * The moral of this story is "Don't have file names longer than 57 characters
+     * and don't have Unicon source files longer than 99999 lines".
+     */
+    snprintf(fl, sizeof(vlogmessage), "%.57s %.5d",
+#if COMPILER  
+             file_name, line_num
+#else
+             findfile(curtstate->c->es_ipc.opnd),
+             findline(curtstate->c->es_ipc.opnd)
+#endif                     /* COMPILER */
+             );
+
+    vrfyLog("%.64s",fl);
+
+   }
   ++vrfyStarts;
   vrfyRegion(PRE_GC);
   vrfySetPhase(PRE_GC, IN_GC);
@@ -2241,9 +2273,15 @@ static void vrfyRegion(int expected)
           vrfyCrash("Current region is corrupted");
         }
 
-        /* Check the chains to other regions for plausibility */
+        /*
+         * Check the chains to other regions for plausibility.
+         * Minimise the log output if no detailed checks are being made. In that case
+         * the log buffer will only contain the Unicon file and line number that caused a GC.
+         * If the output of vrfyPrintLog() is captured, a simple Unicon program will display
+         * the locations that are most frequently the cause of GC.
+         */
         if (br->prev) {
-          vrfyLog("Checking region prev chain");
+          if (0 != (vrfy << ((8 * sizeof(vrfy)) - MaxType))) vrfyLog("Checking region prev chain");
           while (br->prev) {
             if BAD_PTR(br->prev) {
                 vrfyCrash("Bad Pointer = %p -> %p", br, br->prev);
@@ -2254,7 +2292,7 @@ static void vrfyRegion(int expected)
 
         br = curblock;
         if (br->next) {
-          vrfyLog("Checking region next chain");
+          if (0 != (vrfy << ((8 * sizeof(vrfy)) - MaxType))) vrfyLog("Checking region next chain");
           while (br->next) {
             if BAD_PTR(br->next) {
                 vrfyCrash("Bad Pointer = %p -> %p", br, br->next);
@@ -2265,7 +2303,7 @@ static void vrfyRegion(int expected)
 #ifdef Concurrent
         br = curblock;
         if (br->Tprev) {
-          vrfyLog("Checking region Tprev chain");
+          if (0 != (vrfy << ((8 * sizeof(vrfy)) - MaxType))) vrfyLog("Checking region Tprev chain");
           while (br->Tprev) {
             if BAD_PTR(br->Tprev) {
                 vrfyCrash("Bad Pointer = %p -> %p", br, br->Tprev);
@@ -2275,7 +2313,7 @@ static void vrfyRegion(int expected)
         }
         br = curblock;
         if (br->Tnext) {
-          vrfyLog("Checking region Tnext chain");
+          if (0 != (vrfy << ((8 * sizeof(vrfy)) - MaxType))) vrfyLog("Checking region Tnext chain");
           while (br->Tnext) {
             if BAD_PTR(br->Tnext) {
                 vrfyCrash("Bad Pointer = %p -> %p", br, br->Tnext);
@@ -2286,7 +2324,7 @@ static void vrfyRegion(int expected)
 #endif                /* Concurrent */
         br = curblock;
         if (br->Gprev) {
-          vrfyLog("Checking region Gprev chain");
+          if (0 != (vrfy << ((8 * sizeof(vrfy)) - MaxType))) vrfyLog("Checking region Gprev chain");
           while (br->Gprev) {
             if BAD_PTR(br->Gprev) {
                 vrfyCrash("Bad Pointer = %p -> %p", br, br->Gprev);
@@ -2296,7 +2334,7 @@ static void vrfyRegion(int expected)
         }
         br = curblock;
         if (br->Gnext) {
-          vrfyLog("Checking region Gnext chain");
+          if (0 != (vrfy << ((8 * sizeof(vrfy) - MaxType)))) vrfyLog("Checking region Gnext chain");
           while (br->Gnext) {
             if BAD_PTR(br->Gnext) {
                 vrfyCrash("Bad Pointer = %p -> %p", br, br->Gnext);

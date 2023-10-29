@@ -7,6 +7,9 @@
 $include "evdefs.icn"
 $include "defaults.icn"
 
+import json
+link ximage
+
 #
 # This class is used to handle the current debugging state of UDB 
 #
@@ -38,26 +41,83 @@ class State(
    srcFile,         # an instance of the SourceFile class
    icode,           # an instance of the Icode class
    coState,         # an instance of CoexpState class
-   cmdHistory       # list keeps all of the UDB's cmd Session History
+   cmdHistory,      # list keeps all of the UDB's cmd Session History
+   mode,
+   sock,
+   progSock
    )
 
 #
 # prints a message out into a console, message box, and so
 #
 method Write(Msg)
+   if /Msg then
+      Msg := Message
+   
+   if \mode == "-adapter" then {
+      if type(Msg) == "table" then {
+         if member(Msg, "code") then
+            Msg["code"] := replacem(\Msg["code"], "\"", "\\\"")
+         if member(Msg, "name") then
+            Msg["name"] := replacem(\Msg["name"], "\"", "\\\"")
+         if member(Msg, "consoleMsg") then
+            Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
+         Msg["state"] := State
+         write(sock, utoj(Msg))
+      }
+      else {
+         output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
+         write(sock, utoj(output))
+      }
+   }
+   else {
+      if type(Msg) == "table" then
+         Msg := Msg["consoleMsg"]
+      write(Msg)
+   }
 
-   /Msg := Message
-   write(Msg)
    Message := ""
+end
+
+method stateRead()
+local msg := ""
+   if \mode == "-adapter" then {
+      return read(sock)
+   }
+   else {
+      return read()
+   }
 end
 
 #
 # prints a message out into a console, message box, and so
 #
 method Writes(Msg)
+   if /Msg then
+      Msg := Message
+   
+   if \mode == "-adapter" then {
+      if type(Msg) == "table" then {
+         if member(Msg, "code") then
+            Msg["code"] := replacem(\Msg["code"], "\"", "\\\"")
+         if member(Msg, "name") then
+            Msg["name"] := replacem(\Msg["name"], "\"", "\\\"")
+         if member(Msg, "consoleMsg") then
+            Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
+         Msg["state"] := State
+         writes(sock, utoj(Msg))
+      }
+      else {
+         output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
+         writes(sock, utoj(output))
+      }
+   }
+   else {
+      if type(Msg) == "table" then
+         Msg := Msg["consoleMsg"]
+      writes(Msg)
+   }
 
-   /Msg := Message
-   writes(Msg)
    Message := ""
 end
 
@@ -231,7 +291,7 @@ end
 # Returns if debugging data needs to be reinitialized, otherwise fails
 #
 method initializeState(tp)
-   local x, src, found, missing, plural:="", missing_files, reset := 0
+   local x, src, found, missing, plural:="", missing_files, reset := 0, resultTable := table()
 
    # This is only when the TP is passed at the start of udb, i.e: ./udb test
    # in either case the ErrorCode will be initialized
@@ -253,13 +313,18 @@ method initializeState(tp)
          Message  :="\n   The current program's debugging session is active."
          Message||:="\n   The session will be terminated in order to load "
          Message||:="\n   a program. Proceed (Y/n)?: "
-         Writes(Message)
+         resultTable["consoleMsg"] := Message
+         resultTable["requireResponse"] := "__true__"
+         Writes(resultTable)
 
-         until (ans := read()) == (""|"y"|"n"|"Y"|"N"|"yes"|"no"|"Yes"|"No") do
-            write("\n   Invalid input, please try again (Y/n): ")
+         until isYesNo(ans := stateRead()) do {
+            resultTable["consoleMsg"] := "\n   Invalid input, please try again (Y/n): "
+            resultTable["requireResponse"] := "__true__"
+            Writes(resultTable)
+         }
 
          # no, don't load 
-         if ans == ("n"|"N"|"no"|"No") then {
+         if isNo(ans) then {
             State := SKIP
             fail
             }
@@ -322,7 +387,9 @@ $endif
             else{
                Message ||:= "\n   Can not get the Source File Names_
                            \n   Type \"help\" for assistance."
-               Write(Message)
+               resultTable["consoleMsg"] := Message
+               resultTable["type"] := "stderr"
+               Write(resultTable)
                State := NONE
                fail
                }
@@ -330,12 +397,16 @@ $endif
          else {
             Message ||:= "\n   Could not access \"" || TP[1] ||"\""||
                          "\n   Type \"help\" for assistance."
-            Write(Message)
+            resultTable["consoleMsg"] := Message
+            resultTable["type"] := "stderr"
+            Write(resultTable)
             State := NONE
             fail
             }
          }
-      Write(Message)
+      resultTable := table()
+      resultTable["consoleMsg"] := Message
+      Write(resultTable)
       return
       }
 end
@@ -402,10 +473,12 @@ method Fresh()
 end
 
 method runtimeErrorMsg()
-   local msg
+   local msg, resultTable := table()
    msg := "\n   That action cannot be performed right now. " ||
           "\n   The program has experienced an error."
-   write(msg)
+   resultTable["consoleMsg"] := msg
+   resultTable["type"] := "stderr"
+   Write(resultTable)
 end
 
 #
@@ -458,4 +531,19 @@ initially()
    eventMask       := cset(E_Error || E_Exit || E_Signal ||
 			   E_CoCreate || E_Coact || E_Cofail || E_Coret)
    Fresh()
+end
+
+procedure isYes(val)
+   if match(map(val), ""|"yes") then return
+   else fail
+end
+
+procedure isNo(val)
+   if match(map(val), "no") then return
+   else fail
+end
+
+procedure isYesNo(val)
+   if match(map(val), ""|"yes"|"no") then return
+   else fail
 end

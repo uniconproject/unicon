@@ -21,12 +21,23 @@ class Session(
 # Here where the udb Session starts on
 #
 method startSession()
-   local arg, t
+   local arg, t, failed
+   local resultTable := table()
 
    #-- it may need to be in EvInit() for the sake of re-run
    &eventsource := &null
+   
+   if \DState.mode == "-adapter" then
+      EvInit(DState.TP, DState.progSock, DState.progSock, DState.progSock) | { failed := "__true__" }
+   else
+      EvInit(DState.TP) | { failed := "__true__" }
 
-   EvInit(DState.TP) | stop("cant start evinit on " || DState.TP[1])
+   if \failed then {
+      DState.State := END
+      declare_exit("cant start evinit on " || DState.TP[1], 1)
+      fail
+   }
+   
    Message :="   Starting program: "
    every arg := !DState.TP do Message ||:=" "||arg
    Message ||:="\n"
@@ -44,7 +55,7 @@ method startSession()
          if DState.State = PAUSE then {
             if DState.RunCode = SIGNAL then {
                Message := "\n   "||DState.TP[1]||" program received a signal "||
-                          &eventvalue||"."
+                        &eventvalue||"."
                DState.Write(Message)
                }
             # suspends the loop and go back to udb_Console() for a new cmd.
@@ -66,10 +77,16 @@ method startSession()
    #write("====================================")
    #--- Test
 
-  DState.State := END
-  Message := "\n   "||DState.TP[1]||" program exited normally."
-  DState.Write(Message)
-  return
+   DState.State := END
+   declare_exit("\n   "||DState.TP[1]||" program exited normally.", 0)
+return
+end
+
+method declare_exit(msg, code)
+   local resTable
+   Message := msg
+   resTable := ["consoleMsg": msg; "type": "exited"; "exitCode": code]
+   DState.Write(resTable)
 end
 
 #
@@ -201,48 +218,53 @@ end
 #
 method cmdRun(cmd)
    local i, ans, args
+   local resultTable := table()
      
    if DState.State = (LOAD | END | PAUSE) then {
       # run - use args from 'load' 
       if *cmd = 1 then {
          args := DState.TP
-         }
+      }
       # run args - overwrite args from 'load'
       else if *cmd >= 2 then {
          args := [DState.TP[1]]
          every i:=2 to *cmd do put(args, cmd[i])
-         }
+      }
       DState.TP := args
  
       if DState.State = PAUSE then{
          Message  :="\n   The program being debugged has been started already."
          Message||:="\n   Start it from the beginning? (Y/n)?: "
-         DState.Writes(Message)
+         resultTable["consoleMsg"] := Message
+         resultTable["requireResponse"] := "__true__"
+         DState.Writes(resultTable)
          # rerun
-         if *(ans:=read())=0 | not(ans[1] == ("n"|"N")) then {
+         if *(ans:=DState.stateRead())=0 | not(ans[1] == ("n"|"N")) then {
             Debug.Watch.resetWatchInfo()
             Debug.Trace.resetTraceInfo()
             DState.Update(RERUN)
-            } 
+         } 
          else{
             DState.State := SKIP
             return
-            }
-         } 
+         }
+      } 
       # run (like normal)
-      else{
+      else {
          DState.Update(RUN)
          if DState.RunCount >= 1 then{
             Debug.Watch.resetWatchInfo()
             Debug.Trace.resetTraceInfo()
-            }             
-         }
+         }             
       }
-   else{
+   }
+   else {
       DState.State := ERROR
       Message   := "\n   No program to RUN, load program first_
                     \n   Type \"help\" for assistance"
-      DState.Write(Message)
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
    }
 end
 
@@ -250,15 +272,19 @@ end
 # Allows you to quit the program.
 #
 method cmdQuit()
-   local ans
+   local ans, msg
+   local resultTable := table()
 
    # check whether a program is running or not, Paused, etc??????
    # do not exit directlly if the program is in the running state
    if DState.State = (RUN | PAUSE) then{
-      DState.Writes("\n   The program \""|| 
+      msg := "\n   The program \""|| 
                           DState.srcFile.exeName ||
-                          "\" is running.  Exit anyhow (Y/n)?: ")
-      if (not (ans:=read())) | (*ans=0) | (map(ans[1]) == "y") then {
+                          "\" is running.  Exit anyhow (Y/n)?: "
+      resultTable["consoleMsg"] := msg
+      resultTable["requireResponse"] := "__true__"
+      DState.Writes(resultTable)
+      if (not (ans:=DState.stateRead())) | (*ans=0) | (map(ans[1]) == "y") then {
          DState.State := QUIT
 	 }
       else

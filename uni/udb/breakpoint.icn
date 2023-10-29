@@ -32,28 +32,27 @@ class BreakPoint(
 # Check the Monitored file for a breakpoint
 #
 method checkBreakpoint()
-   local  cur_file, cur_line, L, bp, id
-
+   local  cur_file, cur_line, L, bp, id, bpTable
    cur_file := keyword("file", MONITORED)
    if member(breakPoints, cur_file) then {
       cur_line := keyword("line", MONITORED)
       L := breakPoints[cur_file]
-      every bp := !L do
-	 if cur_line = bp.line & bp.state = ENABLED &
-	    id := isBreakExist(cur_file,cur_line) &
+      every bp := !L do {
+         if cur_line = bp.line & bp.state = ENABLED &
+            id := isBreakExist(cur_file,cur_line) &
             (/bp.coexp | bp.coexp.id == DState.coState.curr.id)
-            then {
-            
-	    DState.State := PAUSE
-	    # this delete will help "next" and "step" operate well
-	    # jut remove the the breakMask set from the valueMask
-	    # table temporarly until the continue command comes on
-	    delete(DState.valueMask,E_Line)
-            msg := constructBpMsg(bp, 1) # 1 -> shows source code. add a flag?
-	    DState.Write(msg)
-	    return
-	    }
+         then {
+            DState.State := PAUSE
+            # this delete will help "next" and "step" operate well
+            # jut remove the the breakMask set from the valueMask
+            # table temporarly until the continue command comes on
+            delete(DState.valueMask,E_Line)
+            bpTable := constructBpMsg(bp, 1) # 1 -> shows source code. add a flag?
+            DState.Write(bpTable)
+            return
+         }
       }
+   }
 end
 
 #
@@ -76,20 +75,31 @@ end
 #
 method constructBpMsg(bp, verbose)
    local breakpoint := "", coexp := "", src_code := ""
+   local bpTable := table()
    
    if /bp then return "" # null breakpoint?
    
    breakpoint ||:= "\n   Breakpoint #"|| bp.id || 
                    " (" || getBreakState(bp.state) || ") at " ||
                    bp.fname || ":" || bp.line 
+   bpTable["id"] := bp.id
+   bpTable["state"] := getBreakState(bp.state)
+   bpTable["source"] := bp.fname
+   bpTable["line"] := bp.line
+   bpTable["type"] := "breakpoint"
 
-   if \verbose then 
+   if \verbose then {
       src_code ||:= "\n     " || bp.line || ": " || bp.code
+      bpTable["code"] := bp.code
+   }
 
-   if \bp.coexp then
-      coexp ||:= " coexp " || bp.coexp.id 
+   if \bp.coexp then {
+      coexp ||:= " coexp " || bp.coexp.id
+      bpTable["coexp"] := bp.coexp.id
+   }
 
-   return breakpoint || coexp || src_code
+   bpTable["consoleMsg"] := breakpoint || coexp || src_code
+   return bpTable
 end
 
 #
@@ -97,47 +107,64 @@ end
 #
 method printBreakInfo(cmd)
    local x, L, bp, name
+   local resultTable := table("cmd", cmd, "breakpoints", list())
 
    if type(cmd) == "list" then name := cmd[3]
    msg := ""
    if /name then {
       every x := key(breakPoints) do {
-	 L := breakPoints[x]
-	 every bp := !L do {
-            msg ||:= constructBpMsg(bp)
-            }
-	 }
+         L := breakPoints[x]
+         every bp := !L do {
+            bpTable := constructBpMsg(bp)
+            msg ||:= bpTable["consoleMsg"]
+            push(resultTable["breakpoints"], bpTable)
+         }
       }
+   }
    else {
       if integer(name) then {
-	 every x := key(breakPoints) do {
-	    L := breakPoints[x]
-	    every bp := !L do {
-	       if name = bp.id then {
-                  msg := constructBpMsg(bp)
-	          break break
-	          }
-	       }
-	    msg||:="\n   Breakpoint #"||name||" is not available."
-	    }
-	 }
+	      every x := key(breakPoints) do {
+            L := breakPoints[x]
+            every bp := !L do {
+               if name = bp.id then {
+                  bpTable := constructBpMsg(bp)
+                  msg ||:= bpTable["consoleMsg"]
+                  push(resultTable["breakpoints"], bpTable)
+                  break break
+               }
+            }
+            msg||:="\n   Breakpoint #"||name||" is not available."
+            push(resultTable["breakpoints"], bpTable)
+	      }
+	   }
       else {
-	 if not find(".icn",name) then name ||:= ".icn"
-	 if DState.srcFile.isSrcFile(name) then {
-	    if L:=breakPoints[name] & type(L) == "list" then {
-	       every bp := !L do
-                  msg ||:= constructBpMsg(bp)
-	       }
-	    else
-	       msg := "\n   No breakpoints available in "||name
-	    }
-	 else
-	    msg := "\n   Source file \""||name||"\" is not in the binary !!!"
-	 }
+         if not find(".icn",name) then name ||:= ".icn"
+         if DState.srcFile.isSrcFile(name) then {
+            if L:=breakPoints[name] & type(L) == "list" then {
+               every bp := !L do {
+                  bpTable := constructBpMsg(bp)
+                  msg ||:= bpTable["consoleMsg"]
+                  push(resultTable["breakpoints"], bpTable)
+               }
+            }
+            else {
+               msg := "\n   No breakpoints available in "||name
+               setResultTable(resultTable, "No breakpoints available in " || name, "__true__")
+            }
+         }
+         else {
+            msg := "\n   Source file \""||name||"\" is not in the binary !!!"
+            setResultTable(resultTable, "Source file " ||name|| " not in binary", "__false__")
+            resultTable["reason"] := "failed"
+         }
       }
-   if *msg = 0 then
+   }
+   setResultTable(resultTable, &null, &null, msg)
+   if *msg = 0 then {
       msg := "\n   No breakpoints available."
-   DState.Write(msg)
+      setResultTable(resultTable, "No breakpoints available", "__true__", msg)
+   }
+   DState.Write(resultTable)
 end
 
 #
@@ -145,6 +172,7 @@ end
 #
 method isBreakExist(fname, line, breakpoint)
    local L, bp, coexp
+   local resultTable := table("cmd", cmd)
 
    if member(breakPoints, fname) then {
       L := breakPoints[fname]
@@ -159,10 +187,12 @@ method isBreakExist(fname, line, breakpoint)
                if (\coexp & (/bp.coexp | bp.coexp.id ~= coexp.id)) |
                   (/coexp & \bp.coexp) then {
                   # ask if breakpoint should be replaced
-                  msg := constructBpMsg(bp) || " already exists. "
+                  msg := constructBpMsg(bp)["consoleMsg"] || " already exists. "
                   msg ||:= "\n   Do you really want to replace it (Y/n)?: "
-                  DState.Writes(msg)
-                  if read() == (""|"y"|"Y"|"yes"|"YES") then {
+                  setResultTable(resultTable, &null, &null, msg)
+                  resultTable["requireResponse"] := "__true__"
+                  DState.Writes(resultTable)
+                  if map(DState.stateRead()) == ("y" | "yes" | "") then {
                      # replace breakpoint id
                      breakpoint.id := bp.id
                      count -:= 1
@@ -217,6 +247,7 @@ end
 
 method parse_colon_arg(arg)
    local arg_list, num_colon, s
+   local resultTable := table()
 
    arg_list := []
    num_colon := 0
@@ -234,14 +265,16 @@ method parse_colon_arg(arg)
             while c := (move(1) == ":") do {
                num_colon +:= 1
                if num_colon > 2 then {
-	          DState.State := ERROR
-           	  msg   :="\n   \""||DState.cmdHistory[1]||
-                          "\" is not a known command"||
-         	          "\n   Try \"help\" or \"help break\" for assistance."
-	      	  DState.Write(msg)
+                  DState.State := ERROR
+                  msg   :="\n   \""||DState.cmdHistory[1]||
+                              "\" is not a known command"||
+                           "\n   Try \"help\" or \"help break\" for assistance."
+
+                  setResultTable(resultTable, DState.cmdHistory[1]||" is not a known command", "__false__", msg)
+	      	      DState.Write(resultTable)
                   fail
-                  }
                }
+            }
             # append word argument 
             put(arg_list,s)
             s := ""
@@ -267,13 +300,17 @@ end
 method cmdBreak(cmd)
    local code, line, fname, cname, pkgname, arg, break_point, i
    local coexp, num_colon, arg_list
+   local resultTable := table("cmd", cmd)
    msg := ""
    if not (DState.State = (LOAD | PAUSE)) then {
       DState.State := ERROR
       msg := "\n   No Program is Loaded_
 	      \n   Type \"help\" for assistance"
-      DState.Write(msg)
-      return
+      setResultTable(resultTable, "No program loaded", &null, msg)
+      resultTable["verified"] := "__false__"
+      resultTable["reason"] := "failed"
+
+      DState.Write(resultTable)
       }
    DState.State := SKIP
 
@@ -289,7 +326,8 @@ method cmdBreak(cmd)
 	 DState.State := ERROR
          msg := "\n   "||cmd[-2]||" "||cmd[-1]||" does not exist."||
 	        "\n   Use command \"coexp\" to view activated co-expressions."
-         DState.Write(msg)
+         setResultTable(resultTable, "coexp error??", "__false__", msg)
+         DState.Write(resultTable)
          fail
          }
       until pull(cmd) == "coexp" # pull [coexp N] off list
@@ -316,7 +354,8 @@ method cmdBreak(cmd)
                DState.State := ERROR
                msg := "\n   Could not find procedure \""||arg||"\""
                       "\n   Please try again"
-               DState.Write(msg)
+               setResultTable(resultTable, "Could not find procedure " ||arg, "__false__", msg)
+               DState.Write(resultTable)
                fail
                }
             }
@@ -337,7 +376,8 @@ method cmdBreak(cmd)
          if temp := integer(arg) then line := temp 
          else {
             msg := "\n   Expected \""||arg||"\" to be a line number." ||
-                   "\n   Please try again." 
+                   "\n   Please try again."
+            setResultTable(resultTable, "Expected " ||arg|| " to be a line number", "__false__", msg)
             }
          }
       # break class::method | break package::procedure 
@@ -354,7 +394,8 @@ method cmdBreak(cmd)
          else {
             msg := "\n   Could not find \""||arg_list[1]||"::"||arg||
                    "\".\n   Please try again."
-            DState.Write(msg)
+            setResultTable(resultTable, "Could not find "||arg_list[1]||"::"||arg, "__false__", msg)
+            DState.Write(resultTable)
             fail
             }
          }
@@ -365,24 +406,25 @@ method cmdBreak(cmd)
          cname := arg_list[3] 
          arg := arg_list[5] 
 
-         if temp := DState.srcFile.findPkgClassMethod(pkgname, cname, arg) 
-            then {
+         if temp := DState.srcFile.findPkgClassMethod(pkgname, cname, arg) then {
             fname := temp[1]
             line := temp[2]
-            }
+         }
          else {
             msg := "\n   Could not find \""||pkgname||"::"||arg||"::"||arg||
                    "\".\n   Please try again."
-            DState.Write(msg)
+            setResultTable(resultTable, "Could not find "||pkgname||"::"||arg||"::"||arg, "__false__", msg)
+            DState.Write(resultTable)
             fail
-            }
          }
+      }
       # invalid syntax
       else {
          DState.State := ERROR
          msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
          msg ||:="\n   Try \"help\" or \"help break\" for assistance."
-         DState.Write(msg)
+         setResultTable(resultTable, DState.cmdHistory[1]|| " is not a known command", "__false__", msg)
+         DState.Write(resultTable)
          return
          }
       }
@@ -396,7 +438,8 @@ method cmdBreak(cmd)
       DState.State := ERROR
       msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
       msg ||:="\n   Try \"help\" or \"help break\" for assistance."
-      DState.Write(msg)
+      setResultTable(resultTable, DState.cmdHistory[1]|| " is not a known command", "__false__", msg)
+      DState.Write(resultTable)
       return
       }
   
@@ -412,17 +455,25 @@ method cmdBreak(cmd)
    if \break_point & \break_point.line then {
       line := break_point.line
       if not isBreakExist(fname, line, break_point) then {
-	 addBreakPoint(fname, break_point)
-         msg ||:= constructBpMsg(break_point)
-	 }
-      DState.Write(msg)
+         addBreakPoint(fname, break_point)
+         bpTable := constructBpMsg(break_point)
+         msg ||:= bpTable["consoleMsg"]
+         resultTable["breakpoint"] := bpTable
+         setResultTable(resultTable, &null, "__true__")
+      }
+      else {
+         setResultTable(resultTable, "Breakpoint already exists", "__false__")
+      }
+      setResultTable(resultTable, &null, &null, msg)
+      DState.Write(resultTable)
       return
       }
    else {
       msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
       msg ||:="\n   Try \"help\" or \"help break\" for assistance."
-      DState.Write(msg)
-      }
+      setResultTable(resultTable, DState.cmdHistory[1]|| " is not a known command", "__false__", msg)
+      DState.Write(resultTable)
+   }
 end
 
 #
@@ -430,6 +481,7 @@ end
 #
 method clearAllBreakpoints()
     local x, size := 0
+    local resultTable := table()
 
     size := *breakPoints
     if size > 0 then {
@@ -437,11 +489,17 @@ method clearAllBreakpoints()
        every x := key(breakPoints) do
 	  delete(breakPoints, x)
        msg := "\n   All breakpoints are cleared; ("||size||" total)."
+       setResultTable(resultTable, &null, "__true__")
+       resultTable["size"] := size
        count := 0
        }
-    else
+    else {
        msg := "\n   No breakpoints are available to be cleared."
-    DState.Write(msg)
+       setResultTable(resultTable, "No breakpoints available", "__false__")
+      }
+   
+    setResultTable(resultTable, &null, &null, msg)
+    DState.Write(resultTable)
     return
 end
 
@@ -450,6 +508,7 @@ end
 #
 method cmdClear(cmd)
    local line, fname, arg, id, i, size:=0
+   local resultTable := table("cmd", cmd)
 
    # clears all of the preset breakpoints
    # 'clear break'
@@ -471,7 +530,8 @@ method cmdClear(cmd)
             DState.State := ERROR
             msg := "\n   Could not find procedure \""||arg||"\""
                    "\n   Please try again"
-            DState.Write(msg)
+            setResultTable(resultTable, "Could not find procedure "||arg, "__false__", msg)
+            DState.Write(resultTable)
             fail
             }
          }
@@ -494,9 +554,10 @@ method cmdClear(cmd)
       DState.State := ERROR
       msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
       msg ||:="\n   Try \"help\" or \"help break\" for assistance."
-      DState.Write(msg)
+      setResultTable(resultTable, DState.cmdHistory[1]|| " is not a known command", "__false__", msg)
+      DState.Write(resultTable)
       return
-      }
+   }
 
    if \fname then {
       if not find(".icn", fname) then
@@ -508,12 +569,16 @@ method cmdClear(cmd)
       msg  :="\n   Deleted breakpoint #"||id||" at : file "||fname||
              ", line "||line ||"."
       msg||:="\n   Source code:"||DState.srcFile.getSrcLine(fname, line)
+      setResultTable(resultTable, "Deleted breakpoint #"||id|| " at : file "||fname||", line "||line, "__true__")
       }
    else {
       msg :="\n   No breakpoint at : file "||fname||", line "||line ||"."
       msg||:="\n   Source code: "||DState.srcFile.getSrcLine(fname, line)
+      setResultTable(resultTable, "No breakpoint at : file "||fname||", line "||line, "__false__")
+      resultTable["reason"] := "failed"
       }
-   DState.Write(msg)
+   setResultTable(resultTable, &null, &null, msg)
+   DState.Write(resultTable)
 end
 
 #
@@ -521,52 +586,62 @@ end
 #
 method cmdDelete(cmd)
    local id, x, L, i, j:=0
+   local resultTable := table("cmd", cmd)
 
    if not cmd[3] then {
       every x := key(breakPoints) do {
-	 L := breakPoints[x]
-	 every i := 1 to *L do {
-	    if L[i].state ~= DELETED then {
-	       L[i].state := DELETED
-	       j +:= 1
-	       }
-	    }
-	 }
-      if j > 0 then
-	 msg := "\n   All breakpoints are deleted; ("||j||" in total)."
-      else
-	 msg := "\n   No breakpoints are available to be deleted."
-      DState.Write(msg)
-      return
+         L := breakPoints[x]
+         every bp := !L do {
+            if bp.state ~= DELETED then {
+               bp.state := DELETED
+               j +:= 1
+            }
+         }
       }
+      if j > 0 then {
+         msg := "\n   All breakpoints are deleted; ("||j||" in total)."
+         setResultTable(resultTable, "All breakpoints are deleted; ("||j||" in total)", "__true__")
+      }
+      else {
+         msg := "\n   No breakpoints are available to be deleted."
+         setResultTable(resultTable, "No breakpoint are available to be deleted", "__false__")
+      }
+      setResultTable(resultTable, &null, &null, msg)
+      DState.Write(resultTable)
+      return
+   }
    else if id := integer(cmd[3]) then {
       every x := key(breakPoints) do {
-	 L := breakPoints[x]
-	 every i := 1 to *L do {
-	    if L[i].id = id then
-	       if L[i].state ~= DELETED then {
-	          L[i].state := DELETED
-	          msg := "\n   Breakpoint #"||id||" is deleted."
-	          DState.Write(msg)
-	          return
-	          }
-	       else {
-	          msg := "\n   Breakpoint #"||id||" is already deleted."
-	          DState.Write(msg)
-	          fail
-	         }
-	    }
-	 }
-      msg := "\n   Breakpoint #"||id||" is not available."
-      DState.Write(msg)
-      fail
+         L := breakPoints[x]
+         every bp := !L do {
+            if bp.id = id then
+               if bp.state ~= DELETED then {
+                  bp.state := DELETED
+                  msg := "\n   Breakpoint #"||id||" is deleted."
+                  setResultTable(resultTable, "Breakpoint #"||id||" is deleted", "__true__", msg)
+                  DState.Write(resultTable)
+                  return
+               }
+               else {
+                  msg := "\n   Breakpoint #"||id||" is already deleted."
+                  setResultTable(resultTable, "Breakpoint #"||id||" is already deleted", "__false__", msg)
+                  DState.Write(resultTable)
+                  fail
+               }
+         }
       }
+   msg := "\n   Breakpoint #"||id||" is not available."
+   setResultTable(resultTable, "Breakpoint #"||id||" is not available", "__false__", msg)
+   DState.Write(resultTable)
+   fail
+   }
    else {
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
 	   "\n   Try \"help\" for assistance."
-      DState.Write(msg)
+      setResultTable(resultTable, "Undefined Command: "||DState.cmdHistory[1], "__false__", msg)
+      DState.Write(resultTable)
       fail
-      }
+   }
 end
 
 #
@@ -574,55 +649,69 @@ end
 #
 method cmdEnable(cmd)
    local id, x, L, i, j:=0
+   local resultTable := table()
 
    # Enables all the preset breakpoints
    # enable break
    if not cmd[3] then {
       every x := key(breakPoints) do {
-	 L := breakPoints[x]
-	 every i := 1 to *L do
-	    if L[i].state = DISABLED then {
-	       L[i].state := ENABLED
-	       j +:= 1
-	       }
-	 }
-      if j > 0 then
-	 msg := "\n   All breakpoints are enabled; ("||j||" total)."
-      else
-	 msg := "\n   No disabled breakpoints are available to be enabled."
-      DState.Write(msg)
-      return
+         L := breakPoints[x]
+         every bp := !L do {
+            if bp.state = DISABLED then {
+               bp.state := ENABLED
+               j +:= 1
+            }
+         }
       }
+      if j > 0 then {
+         msg := "\n   All breakpoints are enabled; ("||j||" total)."
+         setResultTable(resultTable, "All breakpoints are enabled; ("||j||" total)", "__true__")
+      }
+      else {
+         msg := "\n   No disabled breakpoints are available to be enabled."
+         setResultTable(resultTable, "No disabled breakpoints are available to be enabled", "__false__")
+      }
+      setResultTable(resultTable, &null, &null, msg)
+      DState.Write(resultTable)
+      return
+   }
    else if id := integer(cmd[3]) then {
       every x := key(breakPoints) do {
-	 L := breakPoints[x]
-	 every i := 1 to *L do {
-	    if L[i].id = id then
-	       if L[i].state = DISABLED then {
-	          L[i].state := ENABLED
-	          msg := "\n   Breakpoint #"||id||" is enabled."
-	          DState.Write(msg)
-	          return
-	          }
-	       else {
-	          if L[i].state = ENABLED then
-	             msg:="\n   Breakpoint #"||id||" is already enabled."
-	          else
-	             msg:="\n   Breakpoint #"||id||" is deleted;_
-	                   it cannot be enabled."
-	          DState.Write(msg)
-	          fail
-	         }
+         L := breakPoints[x]
+         every bp := !L do {
+            if bp.id = id then
+               if bp.state = DISABLED then {
+                  bp.state := ENABLED
+                  msg := "\n   Breakpoint #"||id||" is enabled."
+                  setResultTable(resultTable, "Breakpoint #"||id||" is enabled", "__true__", msg)
+                  DState.Write(resultTable)
+                  return
+               }
+               else {
+                  if bp.state = ENABLED then {
+                     msg:="\n   Breakpoint #"||id||" is already enabled."
+                     setResultTable(resultTable, "Breakpoint #"||id||" is already enabled")
+                  }
+                  else {
+                     msg:="\n   Breakpoint #"||id||" is deleted; it cannot be enabled."
+                     setResultTable(resultTable, "Breakpoint #"||id||" is deleted; it cannot be enabled")
+                  }
+                  setResultTable(resultTable, &null, "__false__", msg)
+                  DState.Write(resultTable)
+                  fail
+               }
 	    }
 	 }
       msg := "\n   Breakpoint #"||id||" is not available."
-      DState.Write(msg)
+      setResultTable(resultTable, "Breakpoint #"||id||" is not available", "__false__", msg)
+      DState.Write(resultTable)
       fail
       }
    else {
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
 	   "\n   Try \"help\" for assistance."
-      DState.Write(msg)
+      setResultTable(resultTable, "Undefined Command: "||DState.cmdHistory[1], "__false__", msg)
+      DState.Write(resultTable)
       fail
       }
 end
@@ -636,52 +725,64 @@ method cmdDisable(cmd)
    if not cmd[3] then {
       every x := key(breakPoints) do {
 	 L := breakPoints[x]
-	 every i := 1 to *L do
-	    if L[i].state := ENABLED then {
-	       L[i].state := DISABLED
+	 every bp := !L do
+	    if bp.state := ENABLED then {
+	       bp.state := DISABLED
 	       j +:= 1
-	       }
-	 }
-      if j > 0 then
-	 msg := "\n   All breakpoints are disabled; ("||j||" total)."
-      else
-	 msg := "\n   No enabled breakpoints are available to be disabled."
-      DState.Write(msg)
-      return
-      }
-   else if id := integer(cmd[3]) then {
-      every x := key(breakPoints) do {
-	 L := breakPoints[x]
-	 every i := 1 to *L do {
-	    if L[i].id = id then {
-	       if L[i].state = ENABLED then {
-	          L[i].state := DISABLED
-	          msg := "\n   Breakpoint #"||id||" is disabled."
-	          DState.Write(msg)
-	          return
-	          }
-	       else {
-	          if L[i].state = DISABLED then
-	             msg:="\n   Breakpoint #"||id||" is already disabled."
-	          else
-	             msg:="\n   Breakpoint #"||id||" is deleted;_
-	                   it cannot be disabled."
-	          DState.Write(msg)
-	          fail
-	         }
-	       }
 	    }
 	 }
-      msg := "\n   Breakpoint #"||id||" is not available."
-      DState.Write(msg)
-      fail
+      if j > 0 then {
+         msg := "\n   All breakpoints are disabled; ("||j||" total)."
+         setResultTable(resultTable, "All breakpoints are disabled; ("||j||" total)", "__true__")
       }
+      else {
+         msg := "\n   No enabled breakpoints are available to be disabled."
+         setResultTable(resultTable, "No enabled breakpoint are available to be disabled", "__false__")
+      }
+      setResultTable(resultTable, &null, &null, msg)
+      DState.Write(resultTable)
+      return
+   }
+   else if id := integer(cmd[3]) then {
+      every x := key(breakPoints) do {
+         L := breakPoints[x]
+         every bp := !L do {
+            if bp.id = id then {
+               if bp.state = ENABLED then {
+                  bp.state := DISABLED
+                  msg := "\n   Breakpoint #"||id||" is disabled."
+                  setResultTable(resultTable, "Breakpoint #"||id||" is disabled", "__true__", msg)
+                  DState.Write(resultTable)
+                  return
+               }
+               else {
+                  if bp.state = DISABLED then {
+                     msg:="\n   Breakpoint #"||id||" is already disabled."
+                     setResultTable(resultTable, "Breakpoint #"||id||" is already disabled")
+                  }
+                  else {
+                     msg:="\n   Breakpoint #"||id||" is deleted; it cannot be disabled."
+                     setResultTable(resultTable, "Breakpoint #"||id||" is deleted; it cannot be disabled")
+                  }
+                  setResultTable(resultTable, &null, "__false__", msg)
+                  DState.Write(resultTable)
+                  fail
+               }
+            }
+         }
+      }
+      msg := "\n   Breakpoint #"||id||" is not available."
+      setResultTable(resultTable, &null, "__false__", msg)
+      DState.Write(resultTable)
+      fail
+   }
    else {
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
 	   "\n   Try \"help\" for assistance."
-      DState.Write(msg)
+      setResultTable(resultTable, "Undefined Command: "||cmdHistory[1], "__false__", msg)
+      DState.Write(resultTable)
       fail
-      }
+   }
 end
 
 method resetBreakpoints()
@@ -695,6 +796,12 @@ method resetBreakpoints()
        count := 0
        }
     return
+end
+
+method setResultTable(resTable, message, success, consoleMsg)
+   if \message then resTable["message"] := message
+   if \success then resTable["success"] := success
+   if \consoleMsg then resTable["consoleMsg"] := consoleMsg
 end
 
 #

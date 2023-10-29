@@ -259,7 +259,7 @@ end
 # it notfies the user that there is no more watching
 #
 method showEndTraceInfo(name)
-   local r, i
+   local r, i, resultTable := table()
 
    DState.State := PAUSE
    DState.RunCode := WATCH
@@ -275,8 +275,10 @@ method showEndTraceInfo(name)
    else
       msg := ""
    msg ||:="\n   Do you want to display old trace info (Y|n)? : "
-   DState.Writes(msg)
-   if read() == (""|"y"|"Y"|"yes"|"YES") then {
+   resultTable["consoleMsg"] := msg
+   resultTable["requireResponse"] := "__true__"
+   DState.Writes(resultTable)
+   if DState.stateRead() == (""|"y"|"Y"|"yes"|"YES") then {
       if traceBehavior[name].hitMax > 0 then { 
          msg :="\n   --------------------------------------------------"
          every i := 1 to *traceBehavior[name].traceList do {
@@ -543,7 +545,7 @@ end
 # build Variable(s) and/or Behavior(s) tracer  
 #
 method cmdTrace(cmd)
-   local name, coexp
+   local name, coexp, resultTable := table()
 
    if DState.isValidCommand(cmd) then {
       if *cmd >= 2 & resolveTraceInfo(cmd) then {
@@ -566,8 +568,10 @@ method cmdTrace(cmd)
                   " already exist: " ||name
             msg ||:="\n   previous command is : "||traceBehavior[name].cmd
             msg ||:="\n   Do you really want to replace it (Y/n)? : "
-            DState.Writes(msg)
-            if read() == (""|"y"|"Y"|"yes"|"YES") then {
+            resultTable["consoleMsg"] := msg
+            resultTable["requireResponse"] := "__true__"
+            DState.Writes(resultTable)
+            if DState.stateRead() == (""|"y"|"Y"|"yes"|"YES") then {
                msg :="\n   previous command has been replaced."
                DState.Write(msg)
                addTracepoint(name, cmd, coexp)

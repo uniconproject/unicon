@@ -19,7 +19,7 @@ class Console : Session(
    ENTER,      # The enter key
    BkSp,       # The Back Space key
    badKeys,    # A set of all other control keys
-   mode		# Either &null (normal) or "-line"; test with \ or /
+   mode        # Either &null (normal), "-line", or "-adapter"
    )
 
 #
@@ -61,8 +61,8 @@ method get_Line()
    writes(PROMPT)
 
    # if line mode, read a whole line the old fashioned way, skip this function
-   if \mode == "-line" then
-      return read() | "quit"
+   if \mode == "-line" | \mode == "-adapter" then
+      return DState.stateRead() | "quit"
 
    # normal mode, read the line interactively
    repeat {
@@ -160,8 +160,8 @@ end
 # Here where we start a UDB Console Session and have
 # most of the user control debugging interface
 #
-method startConsole(argv)
-   local ans, cmd, old_State := NONE, funame
+method startConsole(argv, sock, progSock)
+   local ans, cmd, old_State := NONE, funame, port, errorTable
 
    # check whether we are on Solaris, and if so, default to cooked input
    if funame := open("uname","p") then {
@@ -169,8 +169,19 @@ method startConsole(argv)
       close(funame)
       }
    if argv[1] == "-line" then { mode := pop(argv); udb_no_more_flag := 1 }
+   else if argv[1] == "-adapter" then { 
+      mode := pop(argv) 
+
+      # Don't let DState try and initialize a port number
+      pop(argv)
+      
+      DState.sock := sock
+      DState.progSock := progSock
+      udb_no_more_flag := 1 
+   }
    else if argv[1] == "-noline" then { mode := &null; pop(argv) }
 
+   DState.mode := mode
    DState.initializeState(argv)
 
    # main interface loop
@@ -212,6 +223,14 @@ $endif
              old_State := DState.State
              # user interaction loop during debug
              while DState.State ~= RUN do {
+               if \DState.mode == "-adapter" then {
+                  if \&errornumber then {
+                     errorTable := table("type", "crash", "errornumber", &errornumber)
+                     errorTable["errortext"] := \&errortext 
+                     errorTable["errorvalue"] := \&errorvalue
+                     DState.Write(errorTable)
+                  }
+               }
                case DState.State of {
                  RELOAD |
                  END | 
@@ -268,7 +287,10 @@ $endif
                # update current symbol table before user input       
                DState.srcFile.updateCurrSymtab(DState.coState)
 
-               if cmd := get_CommandLine() then parse_Command(cmd)
+               if cmd := get_CommandLine() then {
+                  if cmd[1] == "reset" then return "reset"
+                  else parse_Command(cmd)
+               }
                else                             DState.State := SKIP
              }# end of while
           }#end of every
@@ -297,7 +319,10 @@ $endif
           }
      } # end case DState.State
     old_State := DState.State
-    if cmd := get_CommandLine() then parse_Command(cmd)
+    if cmd := get_CommandLine() then {
+      if cmd[1] == "reset" then return "reset"
+      else parse_Command(cmd)
+   }
     else                             DState.State := SKIP
    }# end while DState.State
 end

@@ -186,7 +186,7 @@ method cmdAssert(cmd)
       msg   :="\n   An assertion is found in virtual location"
       msg ||:="\n   Do you want to replace it with the new one (Y|n):"
       DState.Writes(msg)
-      if (not (ans:=read())) | (*ans=0) | not(ans[1] == ("n"|"N")) then{
+      if (not (ans:=DState.stateRead())) | (*ans=0) | not(ans[1] == ("n"|"N")) then{
          assertTable[loc] := obj
          put(assertList,loc)#assertList[-1] := loc
          fname := line := code := &null

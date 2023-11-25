@@ -198,9 +198,12 @@ struct b_file *fbp;
 	 }
 #endif					/* NT */
       errno = 0;
+      DEC_NARTHREADS;
       if ((c = fgetc(fd)) == '\n') {	/* \n terminates line */
+         INC_NARTHREADS_CONTROLLED;
 	 break;
          }
+      INC_NARTHREADS_CONTROLLED;
 
       if (c == '\r' && (fbp->status & Fs_Untrans) == 0) {
 	 /* \r terminates line in translated mode */

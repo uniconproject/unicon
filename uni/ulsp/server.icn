@@ -1,14 +1,14 @@
-# Date of creation: 
+# Date of creation:
 #    12/8/22
 #
 # Date last updated:
 #    12/9/22
 #
-# Author(s): 
-#    Mark Stowell, 
+# Author(s):
+#    Mark Stowell,
 #    Jonah Schnettler
-# 
-# Description: 
+#
+# Description:
 #
 #
 #
@@ -25,7 +25,7 @@ import json
 
 class Server(
    port,                         # Port number acquired from args on start up of server
-   sock,                         # Socket connection for communication with client 
+   sock,                         # Socket connection for communication with client
    openFiles,                    # File container for open files
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
    signatureHandler,
@@ -62,9 +62,8 @@ class Server(
                }
             }
          }
-
    end
-	
+
 #################################################################################
 #                               Get Request                                     #
 #################################################################################
@@ -151,10 +150,10 @@ class Server(
          close(f)
          }
       }
-      
+
       openFiles[\uri] := Workspace(fname, lsp_database)
       workspace_object := openFiles[\uri]
-      workspace_object.updateTempFile(initial_file_contents)
+      workspace_object.setFile()
       workspace_object.updateWorkspace()
 
    end
@@ -174,12 +173,23 @@ class Server(
 ########################################################
 
    method didChange(request_params)
-      local uri, file_contents, workspace_object
+      local fname, uri, f, file_contents, workspace_object, initial_file_contents
+         if \(uri := request_params["textDocument"]["uri"]) then {
+         # uri: file://<PATH>
+         uri ? {
+            ="file://" | write(&errout, "unexpected uri:", uri)
+            fname := tab(0)
+            }
+
+         if f := open(fname) then {
+            initial_file_contents := reads(f, -1)
+            close(f)
+            }
+         }
       uri := request_params["textDocument"]["uri"]
       file_contents := request_params["contentChanges"][1]["text"]
       workspace_object := openFiles[\uri]
-      workspace_object.setFile()
-      workspace_object.updateTempFile(file_contents)
+      workspace_object.updateUniDoc(fname, file_contents)
       workspace_object.updateWorkspace()
    end
 
@@ -246,7 +256,7 @@ class Server(
    initially
 
        every 1 to 5 do
-          if sock := open(port, "n") then 
+          if sock := open(port, "n") then
              break
           else {
              write("open(",port,") ERROR: ", &errortext)

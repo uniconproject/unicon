@@ -1,0 +1,55 @@
+#-------------------------------------------------------------------------------
+#
+# This file is released under the terms of the GNU GENERAL PUBLIC LICENSE
+# (GPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+#-------------------------------------------------------------------------------
+# Analyse output from the heap verifier to show which locations in the
+# Unicon program caused the greatest number of garbage collections.
+#
+#      Don Ward      October 2023
+#
+# To get the output as clean as possible, set the environmnent variable VRFY to a
+# non-zero value that does not have any bit set below bit number MaxType (defined in
+# rmacros.h). Set a break point on the function Zdbgbrk and call dbgbrk() at a
+# convenient point in the Unicon program. Then capture the result of executing
+# vfryPrintLog(0) in the debugger.
+#
+# Each line should be something like
+# [ buffer line] file_name line_number
+# e.g.
+# [   116] myprog.icn 00263
+# [   117] myprog.icn 00263
+# [   118] another.icn 00403
+# [   119] another.icn 00403
+# [   120] myprog.icn 00399
+# [   121] myprog.icn 00399
+# [   122] myprog.icn 00263
+# [   123] myprog.icn 00263
+# etc.
+#
+# For any of this to work, Unicon must be built with
+#     --enable-devmode and --enable-verifyheap
+#-------------------------------------------------------------------------------
+
+procedure main(args)
+   local f, fn, ft, line, fns, ans, n
+
+   every fn := !args do {
+      if f := open(fn) then write(repl("-",10), " ", fn) else { write("cannot open ", fn); next }
+      # Build the frequency table
+      ft := table(0)
+      every line := !f do {
+         # skip over the buffer line number to the start of the file name
+         if fns := find("] ", line) then ft[line[fns+2:0]] +:= 1
+      }
+      ans := sort(ft,2)
+      # Write out the counts in descending order (i.e. largest count first)
+      every n := *ans to 1 by -1 do {
+         write(ans[n][1], "  ", ans[n][2])
+      }
+      close(f)
+   }
+end
+

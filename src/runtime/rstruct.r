@@ -611,9 +611,7 @@ union block *bp;
 #endif
    if (ps->hdir[HSegs-1] != NULL)
       return;				/* can't split further */
-#ifdef VerifyHeap
-   vrfyLog("Growing Set/Table at %p (id %ld)", ps, ps->id);
-#endif                  /* VerifyHeap */
+
    newslots = ps->mask + 1;
    EVVal((word)newslots, E_HashSlots);
    Protect(newseg = alcsegment(newslots), return);

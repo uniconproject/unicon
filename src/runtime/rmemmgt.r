@@ -2468,13 +2468,15 @@ static void vrfy_Intarray(struct b_intarray *b)
                   b, b->listp);
       } else {
         struct b_list *hdr = &(b->listp->List);
+        word blksize;
         if (&(hdr->listhead->Intarray) != b) {
         vrfyCrash("Intarray at %p: hdr (%p) bad head ptr (%p)",
                   b, b->listp, hdr->listhead);
         }
-        if (b->blksize != (hdr->size*sizeof(b->a[0]))) {
+        blksize = sizeof(struct b_intarray) + (hdr->size - 1)*sizeof(b->a[0]);
+        if (b->blksize != blksize) {
           vrfyCrash("Intarray at %p: wrong size (%ld) should be %ld",
-                    b, b->blksize, (hdr->size*sizeof(b->a[0])));
+                    b, b->blksize, blksize);
         }
       }
       if (vrfyOpCtrl & (1<<T_Intarray)) vrfyLog("Intarray at %p verified", b);
@@ -2494,13 +2496,15 @@ static void vrfy_Realarray(struct b_realarray *b)
                   b, b->listp);
       } else {
         struct b_list *hdr = &(b->listp->List);
+        word blksize;
         if (&(hdr->listhead->Realarray) != b) {
           vrfyCrash("Realarray at %p: hdr (%p) bad head ptr (%p)",
                     b, b->listp, hdr->listhead);
         }
-        if (b->blksize != (hdr->size*sizeof(b->a[0]))) {
+        blksize = sizeof(struct b_realarray) + (hdr->size - 1)*sizeof(b->a[0]);
+        if (b->blksize != blksize) {
           vrfyCrash("Realarray at %p: wrong size (%ld) should be %ld",
-                    b, b->blksize, (hdr->size*sizeof(b->a[0])));
+                    b, b->blksize, blksize);
         }
       }
       if (vrfyOpCtrl & (1<<T_Realarray)) vrfyLog("Realarray at %p verified", b);

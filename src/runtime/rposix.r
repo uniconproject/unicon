@@ -2425,7 +2425,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
 #if HAVE_LIBSSL
 	if (fstatus & Fs_Encrypt) {
 	   tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d), n);
-	   if (tally == 0)
+	   if (tally <= 0)
 	     set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
 	   }
 	else
@@ -2482,8 +2482,12 @@ tryagain:
 #if HAVE_LIBSSL
 	   if (fstatus & Fs_Encrypt) {
 	      tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d) +  i*bufsize, bufsize);
-	      if (tally == 0)
+	      if (tally <= 0) {
 		set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
+		strtotal += bufsize;
+		strfree = StrLoc(*d);
+		return 0;
+              }
 	   }
 	   else {
 #endif					/* LIBSSL */

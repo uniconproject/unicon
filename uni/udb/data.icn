@@ -22,64 +22,128 @@ class Data(
 # prints all of Global Variables state in some level
 #
 method printGlobals(level)
-   local x, i, CMonitored := DState.coState.target.val, output := []
+   local x, i, CMonitored := DState.coState.target.val, output := [], globalsTable, variableTable
 
    /level := DState.coState.target.curr_frame 
+   globalsTable := table()
+   globalsTable["type"] := "globals"
 
-   put(output,"\n   Global variables:")
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      put(output,"\n   Global variables:")
+
    every x := !DState.srcFile.getCurrGlobals() do {
       i := variable(x, CMonitored, keyword("level",CMonitored))
+      if /DState.mode | \DState.mode ~== "-adapter" then
          put(output,"     "||x||" = "||image(i)||" : "|| type(i))
+      else {
+         variableTable := table("name", x, "value", image(i), "type", type(i))
+         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
+         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
+         put(output, variableTable)
       }
-   more(output)
+   }
+
+   globalsTable["variables"] := output
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      more(output)
+   else
+      DState.Write(globalsTable)
 end
 
 #
 # prints all Local Variables for some Level
 #
 method printLocals(level)
-   local x, i, CMonitored := DState.coState.target.val, output := []
+   local x, i, CMonitored := DState.coState.target.val, output := [], localsTable, variableTable
 
-   /level := DState.coState.target.curr_frame 
+   /level := DState.coState.target.curr_frame
+   localsTable := table()
+   localsTable["type"] := "locals"
 
-   put(output,"\n   Local variables:")
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      put(output,"\n   Local variables:")
+
    every x := !DState.srcFile.getCurrLocals() do {
       i := variable(x, CMonitored, level)
-      put(output,"     "||x||" = "||image(i)||" : "|| type(i))
+      if /DState.mode | \DState.mode ~== "-adapter" then
+         put(output,"     "||x||" = "||image(i)||" : "|| type(i))
+      else {
+         variableTable := table("name", x, "value", image(i), "type", type(i))
+         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
+         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
+         put(output, variableTable)
       }
-   more(output)
+   }
+
+   localsTable["variables"] := output
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      more(output)
+   else
+      DState.Write(localsTable)
 end
 
 #
 # prints all Local Variables for some Level
 #
 method printStatics(level)
-   local x, i, CMonitored := DState.coState.target.val, output := []
+   local x, i, CMonitored := DState.coState.target.val, output := [], staticsTable, variableTable
 
    /level := DState.coState.target.curr_frame 
+   staticsTable := table()
+   staticsTable["type"] := "statics"
 
-   put(output,"\n   Static variables:")
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      put(output,"\n   Static variables:")
+
    every x := !DState.srcFile.getCurrStatics() do {
       i := variable(x, CMonitored, level)
-      put(output,"     "||x||" = "||image(i)||" : "|| type(i))
+      if /DState.mode | \DState.mode ~== "-adapter" then
+         put(output,"     "||x||" = "||image(i)||" : "|| type(i))
+      else {
+         variableTable := table("name", x, "value", image(i), "type", type(i))
+         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
+         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
+         put(output, variableTable)
       }
-   more(output)
+   }
+   
+   staticsTable["variables"] := output
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      more(output)
+   else
+      DState.Write(staticsTable)
 end
 
 #
 # prints all Formal Parameters for some Level
 #
 method printParams(level)
-   local x, i, CMonitored := DState.coState.target.val, output := []
+   local x, i, CMonitored := DState.coState.target.val, output := [], paramsTable, variableTable
 
-   /level := DState.coState.target.curr_frame
+   /level := DState.coState.target.curr_frame 
+   paramsTable := table()
+   paramsTable["type"] := "params"
 
-   put(output,"\n   Parameters:")
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      put(output,"\n   Parameters:")
+
    every x := !DState.srcFile.getCurrParams() do {
       i := variable(x, CMonitored, level)
-      put(output,"     "||x||" = "||image(i)||" : "|| type(i))
+      if /DState.mode | \DState.mode ~== "-adapter" then
+         put(output,"     "||x||" = "||image(i)||" : "|| type(i))
+      else {
+         variableTable := table("name", x, "value", image(i), "type", type(i))
+         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
+         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
+         put(output, variableTable)
       }
-   more(output)
+   }
+
+   paramsTable["variables"] := output
+   if /DState.mode | \DState.mode ~== "-adapter" then
+      more(output)
+   else
+      DState.Write(paramsTable)
 end
 
 #

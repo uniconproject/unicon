@@ -10,6 +10,10 @@ OBJ=launch-lsp.u workspace.u database.u server.u completion.u signature.u hover.
 
 export IPATH=$(UNI)/unidoc
 
+.PHONY: all
+
+all: $(prog)
+
 $(prog): $(OBJ)
 	$(UC) $(DASHG) -o $(prog) $(OBJ)
 	$(CP) $(prog)$(EXE) ../../bin

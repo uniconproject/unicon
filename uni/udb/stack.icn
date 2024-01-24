@@ -32,14 +32,18 @@ end
 # used by cmdPrint, cmdFrame, cmdUp, cmdDown
 #
 method printFrame(frame, detail:1)
-   local x, i, level, p:="(", pname
+   local x, i, level, p:="(", pname, frameTable
    local pfile:="", pline:="", CMonitored := DState.coState.target.val
+
+   frameTable := table()
+   frameTable["type"] := "frame"
 
    # something funky is going on with &level I believe...
    level := keyword("level", CMonitored) - 1
 
    if 0 <= frame <= level then {
       Message := "   #"|| frame
+      frameTable["id"] := frame
 
       # check for proc() failure in lieu of &level being reliable
       if not (pname := image(proc(CMonitored, frame))) then fail
@@ -57,6 +61,7 @@ method printFrame(frame, detail:1)
 
       p:= p[1:-2]
       Message ||:= p ||")"
+      frameTable["name"] := pname || p || ")"
 
       # work around that is valid when the source file of the debuggee is
       # loaded and the name of the procedure is not anywhere in another class
@@ -73,16 +78,24 @@ method printFrame(frame, detail:1)
          #DState.srcFile.getProcLine(pname,pfile) | "?"
          }
       Message ||:= " at "|| pfile ||":"||pline
+
+      frameTable["line"] := integer(pline)
+      frameTable["column"] := 0
+      frameTable["source"] := table("name", pfile, "path", DState.srcFile.findDirectory(pfile) || "/" || pfile, "presentationHint", "normal")
+      frameTable["success"] := "__true__"
+      frameTable["consoleMsg"] := Message
       }
    else {
       Message := "\n   The \""||frame ||"\" is not a valid frame number_
                   \n   valid frames are (0 <= frame_num <= "||level||")."
+      frameTable["consoleMsg"] := Message
+      frameTable["success"] := "__false__"
 
       # in lieu of &level reliability
-      DState.Write(Message)
+      DState.Write(frameTable)
       fail
       }
-   DState.Write(Message)
+   DState.Write(frameTable)
    return
 end
 
@@ -220,13 +233,13 @@ method cmdBacktrace(cmd)
       level := keyword("level", CMonitored) - 1
       if *cmd = 1 then {
          BaseFrame := 0
-         while BaseFrame < level do {
+         while BaseFrame <= level do {
             printFrames(BaseFrame, BaseFrame + MaxFrame)
             BaseFrame +:= MaxFrame + 1
             if BaseFrame < level then {
                Message:= "---Type <return> to continue, or q <return> to quit---"
                DState.Writes(Message)
-               if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
+               if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break 
                }
             } 
          }
@@ -255,7 +268,7 @@ method cmdBacktrace(cmd)
                   Message  := "---Type <return> to continue, _
                               or q <return> to quit---"
                   DState.Writes(Message)
-                  if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
+                  if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break 
                   }
                }
             }

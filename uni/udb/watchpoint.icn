@@ -433,7 +433,7 @@ method showEndWatchInfo(var)
       msg := ""
    msg ||:="\n   Do you want to display previous info (Y|n)? : " 
    DState.Writes(msg)
-   if *(ans := read()) = 0 | ans == ("y"|"Y"|"yes"|"YES") then {
+   if *(ans := DState.stateRead()) = 0 | ans == ("y"|"Y"|"yes"|"YES") then {
       if varInfo[var].hitMax > 0 then { 
          msg :="\n   --------------------------------------------------"
          every i := 1 to *varInfo[var].traceList do {
@@ -659,7 +659,7 @@ end
 # used to set a general watchpoint on some program variable
 #
 method cmdWatch(cmd)
-   local ans, coexp
+   local ans, coexp, resultTable := table()
    
    if not isOKcmdWatch() then fail
    
@@ -706,8 +706,10 @@ method cmdWatch(cmd)
          msg :="\n   Watchpoint #"||varInfo[var].id||" already exist: "||var
          msg ||:="\n   previous command is : "||varInfo[var].cmd
          msg ||:="\n   Do you really want to replace it (Y/n)? : "
-         DState.Writes(msg)
-         if *(ans:=read())=0 | ans == ("y"|"Y"|"yes"|"YES") then {
+         resultTable["consoleMsg"] := msg
+         resultTable["requireResponse"] := "__true__"
+         DState.Writes(resultTable)
+         if *(ans:=DState.stateRead())=0 | ans == ("y"|"Y"|"yes"|"YES") then {
             delete(DState.watchReadMask, var)
             delete(DState.watchChangeMask, var)
             msg :="\n   previous command has been replaced."

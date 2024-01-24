@@ -304,12 +304,6 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
         return buffer := s
     end
 
-    # <p>
-    # Close this file.
-    # </p>
-    method close()
-        write("This method is no longer used")
-    end
 
     # <p>
     # Is a word a keyword?
@@ -341,10 +335,9 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
             }
     end 
     
-    method getFromFile(f)
+    method readFile(f)
         cBuf := CodeBuf()
         while line := read(f) do cBuf.add(line)
-        close(f)
     end
 
     # <b>Fails if cannot open <tt>fName</tt> for reading.</b>
@@ -352,7 +345,8 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
         /path := ""
         fName := delSuffix(fileName,".icn")||".icn"
         f := open(path||fName) | fail
-        getFromFile(f)
+        readFile(f)
+        close(f)
         clearBuffer()
         line := ""
         # the only keywords we care about, everything else is noise...

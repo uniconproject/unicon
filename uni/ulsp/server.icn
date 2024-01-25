@@ -124,12 +124,23 @@ class Server(
 # Follow the LSP specifications on how to add a particular capability to your initialize string.
 
    method initialize(request_id)
-      local results, res
-      results := "{\"capabilities\":{\"completionProvider\":{\"resolveProvider\":true},\"textDocumentSync\":1,\"signatureHelpProvider\":{\"contextSupport\":true,\"triggerCharacters\":\"(\"},\"hoverProvider\":true}}"
+      local capabilitiesTable, result
 
-      res := build_response(request_id, results)
-      write(res)
-      writes(sock, res)
+      capabilitiesTable := ["capabilities": [
+         "completionProvider": [
+            "triggerCharacters": [".", ":"]
+         ];
+         "textDocumentSync": 1;
+         "signatureHelpProvider": [
+            "contextSupport": "__true__";
+            "triggerCharacters": ["("]
+         ];
+         "hoverProvider": "__true__"
+      ]]
+
+      result := build_response(request_id, tojson(capabilitiesTable))
+      write(result)
+      writes(sock, result)
    end
 
 ########################################################

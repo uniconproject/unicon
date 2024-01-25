@@ -29,10 +29,16 @@ class CompletionHandler(
       case _context of {
          "comment" : {
             results_table["items"] := []
-            }
+         }
+         "string" : {
+            results_table["items"] := []
+         }
          "object" : {
             workspace.buildObjectCompletionItems(results_table, context.objectName)
-            }
+         }
+         "packdualcolon" : {
+            workspace.buildPackageConstructorItems(results_table, context.packageName)
+         }
          "package" : {
             addPackageCompletionItems(results_table)
          }
@@ -41,8 +47,8 @@ class CompletionHandler(
          }
          default : {
             buildDefaultCompletionItems(results_table, workspace)
-            }
          }
+      }
 
       results := tojson(results_table)
       return results

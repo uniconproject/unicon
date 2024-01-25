@@ -518,6 +518,17 @@ class Workspace(
           }
     end
 
+   method buildPackageConstructorItems(results_table, packageName)
+      if member(lsp_database.package_db, packageName) then {
+         every _file := key(lsp_database.package_db[packageName]["files"]) do {
+            every _class := key(lsp_database.package_db[packageName]["files"][_file]["classes"]) do {
+               _constructor := lsp_database.package_db[packageName]["files"][_file]["classes"][_class]["constructor"]
+               put(results_table["items"], table("label", _constructor["name"], "kind", 4))
+            }
+         }
+      }
+   end
+
      method getPackages()
        return lsp_database.package_db
     end
@@ -549,7 +560,7 @@ class Workspace(
 
 end
 
-class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase)
+class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase, packageName)
    method getDesiredLine(lineNum)
       line := uniAll.getUniFileLine(uri, lineNum)
    end
@@ -598,7 +609,7 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
    end
 
    method findContext()
-      local objectName, single_quote, double_quote, ch
+      local objectName, single_quote, double_quote, ch, backslash_count, temppos, c
 
       #-----------------------------------------------#
       #----------- Case "start of file" --------------#
@@ -627,17 +638,54 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       }
 
       #-----------------------------------------------#
-      #----------- Case "inside comment" -------------#
+      #------- Case "inside comment or string" -------#
       #-----------------------------------------------#
 
       line ? {
          single_quote := 0
          double_quote := 0
+         backslash_count := 0
          while (&pos < charNum) do {
             ch := move(1) | break
-            if ch == "\'" then single_quote +:= 1
-            if ch == "\"" then double_quote +:= 1
-            if (ch == "#") & ((single_quote % 2) = 0 & (double_quote % 2) = 0) then return "comment"
+            if ch == "\'" then {
+               temppos := &pos
+               move(-1)
+               while move(-1) == "\\" do backslash_count +:= 1
+               if (backslash_count % 2) = 0 then single_quote +:= 1
+               backslash_count := 0
+               &pos := temppos
+            }
+            if ch == "\"" then {
+               temppos := &pos
+               move(-1)
+               while move(-1) == "\\" do backslash_count +:= 1
+               if (backslash_count % 2) = 0 then double_quote +:= 1
+               backslash_count := 0
+               &pos := temppos
+            }
+            if (ch == "#") & ((single_quote % 2) = 0) & ((double_quote % 2) = 0) then return "comment"
+         }
+         if ((single_quote % 2) ~= 0 | (double_quote % 2) ~= 0) then return "string"
+      }
+
+      #-----------------------------------------------#
+      #--------- Case "package dual colon" -----------#
+      #-----------------------------------------------#
+
+      line ? {
+         tab(charNum)
+         move(-2)
+         if move() == ":" & move() == ":" then {
+            move(-2)
+            temppos := &pos
+            while c := move(-1) do {
+               if (c ** identifiers) ~== c then {
+                  break
+               }
+            }
+            if &pos ~= 1 then move(1)
+            packageName := tab(temppos)
+            return "packdualcolon"
          }
       }
 

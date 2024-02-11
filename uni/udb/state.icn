@@ -43,8 +43,8 @@ class State(
    coState,         # an instance of CoexpState class
    cmdHistory,      # list keeps all of the UDB's cmd Session History
    mode,
-   sock,
-   progSock
+   progSock,
+   udap
    )
 
 #
@@ -63,11 +63,14 @@ method Write(Msg)
          if member(Msg, "consoleMsg") then
             Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
          Msg["state"] := State
-         write(sock, utoj(Msg))
+         # write(sock, utoj(Msg))
+         udap.processResult(utoj(Msg))
       }
       else {
          output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
-         write(sock, utoj(output))
+         # write(sock, utoj(output))
+         write("\nprocess result called\n")
+         udap.processResult(utoj(output))
       }
    }
    else {
@@ -81,8 +84,9 @@ end
 
 method stateRead()
 local msg := ""
+   write("udb reading...")
    if \mode == "-adapter" then {
-      return read(sock)
+      return udap.getNextCommand()
    }
    else {
       return read()
@@ -105,11 +109,13 @@ method Writes(Msg)
          if member(Msg, "consoleMsg") then
             Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
          Msg["state"] := State
-         writes(sock, utoj(Msg))
+         #writes(sock, utoj(Msg))
+         udap.processResult(utoj(Msg))
       }
       else {
          output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
-         writes(sock, utoj(output))
+         #writes(sock, utoj(output))
+         udap.processResult(utoj(output))
       }
    }
    else {

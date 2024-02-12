@@ -144,11 +144,20 @@ class Workspace(
 # ---------------- Package (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setPackage()
-       if member(lsp_database.package_db, getFile().getPackageName()) then {
-          _package := getFile().getPackageName()
-       }
-    end
+   method setPackage()
+      local file_loc
+      if \getFile().getPackageName() then {
+         _package := getFile().getPackageName()
+         if not member(lsp_database.package_db, _package) then {
+            uri ? {
+               &pos := 0
+               until uri[&pos] == "\/" | &pos = 1 do move(-1)
+               file_loc := tab(1)
+            }
+            lsp_database.build_by_path(file_loc)
+         }
+      }
+   end
 
     method getPackage()
        return _package
@@ -233,15 +242,17 @@ class Workspace(
 # ---------------- Package Procedures (get, set, update) -----------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setPackageProcedures()
-       local file_in_pack, _key
-       package_procedures := table()
-       every file_in_pack := !lsp_database.package_db[_package]["files"] do {
-          every _key := key(file_in_pack["procedures"]) do {
-             package_procedures[_key] := file_in_pack["procedures"][_key]
-          }
-       }
-    end
+   method setPackageProcedures()
+      local file_in_pack, _key
+      package_procedures := table()
+      if member(lsp_database.package_db, _package) then {
+         every file_in_pack := !lsp_database.package_db[_package]["files"] do {
+            every _key := key(file_in_pack["procedures"]) do {
+               package_procedures[_key] := file_in_pack["procedures"][_key]
+            }
+         }
+      }
+   end
 
     method getPackageProcedures()
        return package_procedures
@@ -355,15 +366,17 @@ class Workspace(
 # ---------------- Package Classes (get, set, update) --------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setPackageClasses()
-       local file_in_pack, _key
-       package_classes := table()
-            every file_in_pack := !lsp_database.package_db[_package]["files"] do {
-               every _key := key(file_in_pack["classes"]) do {
-                  package_classes[_key] := file_in_pack["classes"][_key]
-               }
+   method setPackageClasses()
+      local file_in_pack, _key
+      package_classes := table()
+      if member(lsp_database.package_db, _package) then {
+         every file_in_pack := !lsp_database.package_db[_package]["files"] do {
+            every _key := key(file_in_pack["classes"]) do {
+               package_classes[_key] := file_in_pack["classes"][_key]
             }
-    end
+         }
+      }
+   end
 
     method getPackageClasses()
        return package_classes

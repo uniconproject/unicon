@@ -15,12 +15,7 @@ procedure main(argv)
    if not (&features == "multiple programs") then
       stop("udb requires multiple programs feature to be enabled.")
 
-   #if argv[1] == "-adapter" then {
-   #   trap("SIGTERM", sig_ignore)
-   #   &error := -1
-   #   sock := connect_sock(argv[2])
-   #}
-
+   #&error := -1
    trap("SIGINT",  sig_ignore)
    trap("SIGPIPE", sig_ignore)
 
@@ -29,35 +24,11 @@ procedure main(argv)
       &eventsource := &null
       tempargv := copy(argv)
 
-      if argv[1] == "-adapter" then {
-         if \progSock then close(progSock)
-         #progSock := open_sock(argv[2] + 10)
-      }
       udb := Console()
-      res := udb.startConsole(tempargv, argv[2])
+      res := udb.startConsole(tempargv)
    }
 
    write("\n   Thank you for using UDB.\n   Goodbye !!!")
-end
-
-procedure open_sock(port)
-   local sock
-   if /port then stop("No port declared")
-   port := (if &features == "MacOS" then "127.0.0.1" else "") || ":" || port
-
-   every 1 to 5 do {
-      if sock := open(port, "na") then {
-         write("udb open(",port,") SUCCESS")
-         break
-      }
-      else {
-         write("udb open(",port,") ERROR: ", &errortext)
-         delay(1000)
-      }
-   }
-   if /sock then stop("udb failed to connect to port: ",port)
-
-   return sock
 end
 
 procedure sig_ignore(non)

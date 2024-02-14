@@ -43,7 +43,6 @@ class State(
    coState,         # an instance of CoexpState class
    cmdHistory,      # list keeps all of the UDB's cmd Session History
    mode,
-   progSock,
    udap
    )
 
@@ -64,13 +63,13 @@ method Write(Msg)
             Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
          Msg["state"] := State
          # write(sock, utoj(Msg))
-         udap.processResult(utoj(Msg))
+         udap.processResult(Msg)
       }
       else {
          output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
          # write(sock, utoj(output))
          write("\nprocess result called\n")
-         udap.processResult(utoj(output))
+         udap.processResult(output)
       }
    }
    else {
@@ -110,12 +109,12 @@ method Writes(Msg)
             Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
          Msg["state"] := State
          #writes(sock, utoj(Msg))
-         udap.processResult(utoj(Msg))
+         udap.processResult(Msg)
       }
       else {
          output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
          #writes(sock, utoj(output))
-         udap.processResult(utoj(output))
+         udap.processResult(output)
       }
    }
    else {

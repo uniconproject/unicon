@@ -4,10 +4,11 @@ link findre
 import json
 global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue
 
-class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, currentRequestBody, udbError, tpArgs)
+class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, currentRequestBody, udbError, tpArgs, bpSuccess, numBreakpoints, numScopes, scopesList)
 
    # Process a result from udb in table or list form.
    method processResult(res)
+   local response
       write("udb -> udap:\n"|| ximage(res))
       \res | fail
 
@@ -270,15 +271,14 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
          "breakpoints": request_arguments["breakpoints"]
       ]
 
-      write("\nsuspend /\n")
-
       put(cmdQueue, "clear break")
+      numBreakpoints +:= 1
 
       every bp := !request_arguments["breakpoints"] do {
          line := bp["line"]
          cond := bp["condition"]
-         write("\nsuspend b\n")
          put(cmdQueue, "b " || request_arguments["source"]["name"] || ":" || line)
+         numBreakpoints +:= 1
       }
    end
 
@@ -299,6 +299,7 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
    # Handles all the things required from a client "stackTrace" request.
    method stackTrace(request_seq, request_command, request_arguments)
+      put(cmdQueue, "bt")
       # Implement single threaded varient
       # Send output to process_udb_output_table
 
@@ -310,6 +311,8 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
    # Handles all the things required from a client "scopes" request.
    method scopes(request_seq, request_command, request_arguments)
+      put(cmdQueue, "frame "||request_arguments["frameId"])
+      every put(cmdQueue, "print -"||!"glsp")
       # Implement single threaded varient
       # Send output to process_udb_output_table
 
@@ -321,6 +324,7 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
    # Handles all the things required from a client "variables" request.
    method variables(request_seq, request_command, request_arguments)
+      put(cmdQueue, "print -" || "glsp"[request_arguments["variablesReference"]])
       # Implement single threaded varient
       # Send output to process_udb_output_table
 
@@ -341,7 +345,9 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
    # Given a udb output table as 'outputTable', process that table.
    # EVERYTHING that udb outputs should go through this method.
    method process_udb_output_table(outputTable)
-      local udbRes := "", event
+      local udbRes := "", event, curCmd
+
+      curCmd := (\currentRequestBody)["command"] | "none"
 
       udbRes := outputTable["consoleMsg"]
 
@@ -364,6 +370,13 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
                "reason": "step";
                "threadId": 1])
             writes(sock, event)
+         }
+
+         case curCmd of {
+            "setBreakpoints": processBreakpointResult(outputTable)
+            "stackTrace": processStackTraceResult(outputTable)
+            "scopes": processScopesResult(outputTable)
+            "variables": processVariablesResult(outputTable)
          }
       }
       else if outputTable["type"] == "stderr" then {
@@ -396,7 +409,107 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
          # Maybe we put "Y" at the head of cmdQueue?
          # Returning "Y" from this method won't do anything currently.
-         return "Y"
+         # return "Y"
+         push(cmdQueue, "Y")
+      }
+   end
+
+   method processBreakpointResult(res)
+      if \res["success"] == "__false__" then {
+         response := build_response(request_seq, "__false__", request_command)
+         writes(sock, response)
+         return
+      }
+
+      bpSuccess +:= 1
+      if bpSuccess == numBreakpoints then {
+         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+         writes(sock, response)
+
+         bpSuccess := 0
+      }
+   end
+
+   method processStackTraceResult(res)
+   local response, frames := []
+      if \res["success"] == "__false__" then {
+         response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+         writes(sock, response)
+         return
+      }
+
+      if member(res, "type") then {
+         if res["type"] == "frame" then {
+            res["name"] := replace(res["name"], "\"", "\\\"")
+            res["consoleMsg"] := replace(res["consoleMsg"], "\"", "\\\"")
+            put(frames, res)
+
+            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("stackFrames", frames))
+            writes(sock, response)
+         }
+      }
+   end
+
+   method processScopesResult(res)
+   local response
+      if \res["success"] == "__false__" then {
+         response := build_response(request_seq, "__false__", request_command)
+         writes(sock, response)
+         return
+      }
+
+      if member(res, "type") then {
+         if member(res, "variables") then {
+            numScopes +:= 1
+            if res["type"] == "globals" & *res["variables"] > 0 then {
+                  put(scopesList, table("name", "Globals", "variablesReference", 1))
+            }
+            if res["type"] == "locals" & *res["variables"] > 0 then {
+                  put(scopesList, table("name", "Locals", "variablesReference", 2))
+            }
+            if res["type"] == "statics" & *res["variables"] > 0 then {
+                  put(scopesList, table("name", "Statics", "variablesReference", 3))
+            }
+            if res["type"] == "params" & *res["variables"] > 0 then {
+                  put(scopesList, table("name", "Parameters", "variablesReference", 4))
+            }
+         }
+         else if res["type"] == "frame" then {
+            if res["success"] == "__true__" then numScopes +:= 1
+         }
+      }
+      if numScopes = 5 then {
+         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("scopes", scopesList))
+         writes(sock, response)
+
+         numScopes := 0
+      }
+      
+   end
+
+   method processVariablesResult(res)
+   local response, variables, var
+      if \res["success"] == "__false__" then {
+         response := build_response(request_seq, "__false__", request_command)
+         writes(sock, response)
+         return
+      }
+
+      if member(res, "type") then {
+         if member(res, "variables") then {
+            if res["type"] == "globals" | "locals" | "statics" | "params" then {
+               variables := res["variables"]
+
+               every var := !variables do {
+                  var["value"] := replace(var["value"], "\"", "\\\"")
+                  var["type"] := replace(var["type"], "\"", "\\\"")
+                  var["variablesReference"] := 0
+               }
+
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("variables", variables))
+               writes(sock, response)
+            }
+         }
       }
    end
 
@@ -420,7 +533,7 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
       # Same thing here, maybe we put this as the head of cmdQueue.
       # Returning won't do anything.
-      return expression
+      put(cmdQueue, expression)
    end
 
    # Handle a udb output table of "type" set to "crash".
@@ -485,6 +598,10 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
       lastUdbCmd := ""
       requestQueue := []
       cmdQueue := []
+      numBreakpoints := 0
+      bpSuccess := 0
+      scopesList := []
+      numScopes := 0
    end
 
    initially

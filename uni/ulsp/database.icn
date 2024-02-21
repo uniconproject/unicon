@@ -116,8 +116,6 @@ class LSPDB(
        put(paths, dirPath || "xml")
        put(paths, dirPath || "lib")
        put(paths, dirPath || "unidoc")
-       put(paths, dirPath || "ulsp")
-       put(paths, dirPath || "udb/udap")
 
        every path := !paths do build_by_path(path)
     end
@@ -154,6 +152,7 @@ class LSPDB(
 
              if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := table()
              every procedure_in_file := file_in_pack.getProcedures().get() do {
+                procedure_in_file.setSrcFile(file_in_pack.getName())
                 package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
                 package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["comments"] := makeComment(procedure_in_file)
 
@@ -171,6 +170,7 @@ class LSPDB(
 
              if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()
              every class_in_file := file_in_pack.getClasses().get() do {
+                class_in_file.setSrcFile(file_in_pack.getName())
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()] := table()
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := table()
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
@@ -182,6 +182,7 @@ class LSPDB(
                 package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"] := []
 
                 every method_in_class := class_in_file.getMethods().get() do {
+                   method_in_class.setSrcFile(file_in_pack.getName())
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()] := table()
 
                    package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["comments"] := makeComment(method_in_class)

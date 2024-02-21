@@ -144,11 +144,20 @@ class Workspace(
 # ---------------- Package (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setPackage()
-       if member(lsp_database.package_db, getFile().getPackageName()) then {
-          _package := getFile().getPackageName()
-       }
-    end
+   method setPackage()
+      local file_loc
+      if \getFile().getPackageName() then {
+         _package := getFile().getPackageName()
+         if not member(lsp_database.package_db, _package) then {
+            uri ? {
+               &pos := 0
+               until uri[&pos] == "\/" | &pos = 1 do move(-1)
+               file_loc := tab(1)
+            }
+            lsp_database.build_by_path(file_loc)
+         }
+      }
+   end
 
     method getPackage()
        return _package
@@ -187,17 +196,23 @@ class Workspace(
 # ---------------- Linked Procedures (get, set, update) -------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setLinkedProcedures()
-       local _link, _key
-       linked_procedures := table()
-       every _link := !links do {
+   method setLinkedProcedures()
+      local _link, _key, _package
+      linked_procedures := table()
+      every _link := !links do {
          if _link ~=== "class" then {
-          every _key := key(lsp_database.package_db["(main)"]["files"][_link]["procedures"]) do {
-             linked_procedures[_key] := lsp_database.package_db["(main)"]["files"][_link]["procedures"][_key]
-             }
-          }
-       }
-    end
+            every _package := key(lsp_database.package_db) do {
+               if member(lsp_database.package_db[_package]["files"], _link) then {
+                  if member(lsp_database.package_db[_package]["files"][_link], "procedures") then {
+                     every _key := key(lsp_database.package_db[_package]["files"][_link]["procedures"]) do {
+                        linked_procedures[_key] := lsp_database.package_db[_package]["files"][_link]["procedures"][_key]
+                     }
+                  }
+               }
+            }
+         }
+      }
+   end
 
     method getLinkedProcedures()
        return linked_procedures
@@ -227,15 +242,17 @@ class Workspace(
 # ---------------- Package Procedures (get, set, update) -----------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setPackageProcedures()
-       local file_in_pack, _key
-       package_procedures := table()
-       every file_in_pack := !lsp_database.package_db[_package]["files"] do {
-          every _key := key(file_in_pack["procedures"]) do {
-             package_procedures[_key] := file_in_pack["procedures"][_key]
-          }
-       }
-    end
+   method setPackageProcedures()
+      local file_in_pack, _key
+      package_procedures := table()
+      if member(lsp_database.package_db, _package) then {
+         every file_in_pack := !lsp_database.package_db[_package]["files"] do {
+            every _key := key(file_in_pack["procedures"]) do {
+               package_procedures[_key] := file_in_pack["procedures"][_key]
+            }
+         }
+      }
+   end
 
     method getPackageProcedures()
        return package_procedures
@@ -303,17 +320,23 @@ class Workspace(
 # ---------------- Linked Classes (get, set, update) ----------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setLinkedClasses()
-       local _link, _key
-       linked_classes := table()
-       every _link := !links do {
+   method setLinkedClasses()
+      local _link, _key, _package
+      linked_classes := table()
+      every _link := !links do {
          if _link ~=== "class" then {
-          every _key := key(lsp_database.package_db["(main)"]["files"][_link]["classes"]) do {
-             linked_classes[_key] := lsp_database.package_db["(main)"]["files"][_link]["classes"][_key]
-             }
-          }
-       }
-    end
+            every _package := key(lsp_database.package_db) do {
+               if member(lsp_database.package_db[_package]["files"], _link) then {
+                  if member(lsp_database.package_db[_package]["files"][_link], "classes") then {
+                     every _key := key(lsp_database.package_db[_package]["files"][_link]["classes"]) do {
+                        linked_procedures[_key] := lsp_database.package_db[_package]["files"][_link]["classes"][_key]
+                     }
+                  }
+               }
+            }
+         }
+      }
+   end
 
     method getLinkedClasses()
         return linked_classes
@@ -343,15 +366,17 @@ class Workspace(
 # ---------------- Package Classes (get, set, update) --------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setPackageClasses()
-       local file_in_pack, _key
-       package_classes := table()
-            every file_in_pack := !lsp_database.package_db[_package]["files"] do {
-               every _key := key(file_in_pack["classes"]) do {
-                  package_classes[_key] := file_in_pack["classes"][_key]
-               }
+   method setPackageClasses()
+      local file_in_pack, _key
+      package_classes := table()
+      if member(lsp_database.package_db, _package) then {
+         every file_in_pack := !lsp_database.package_db[_package]["files"] do {
+            every _key := key(file_in_pack["classes"]) do {
+               package_classes[_key] := file_in_pack["classes"][_key]
             }
-    end
+         }
+      }
+   end
 
     method getPackageClasses()
        return package_classes
@@ -519,6 +544,7 @@ class Workspace(
     end
 
    method buildPackageConstructorItems(results_table, packageName)
+      local _file, _class, _constructor
       if member(lsp_database.package_db, packageName) then {
          every _file := key(lsp_database.package_db[packageName]["files"]) do {
             every _class := key(lsp_database.package_db[packageName]["files"][_file]["classes"]) do {
@@ -624,7 +650,6 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       #if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then
 
       if ReMatch("^[\ \t]*package[\ \t]+", line) | ReMatch("^[\ \t]*import[\ \t]+", line) then {
-         write("Inside context package")
          return "package"
       }
 
@@ -633,7 +658,6 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       #-----------------------------------------------#
 
       if ReMatch("^[\ \t]*link[\ \t]+", line) then {
-         write("Inside context link")
          return "link"
       }
 
@@ -741,11 +765,12 @@ end
 procedure makeComment(_function)
    local paramComment, returnComment, failsComment, genComment, normalComment, firstTen, currentType, insideComment,
       tabCharacter, _comment, paramCounter, returnCounter, failsCounter, genCounter, _line, paramPos, returnsPos,
-      failsPos, genPos, firstKey, fullComment, paramList, _param, paramName
+      failsPos, genPos, firstKey, fullComment, paramList, _param, paramName, sourceComment, srcFile
       paramComment:= ""
       returnComment := ""
       failsComment := ""
       genComment := ""
+      sourceComment := ""
       normalComment := ""
       firstTen := ""
       currentType := 0
@@ -854,12 +879,18 @@ procedure makeComment(_function)
                else if currentType = 3 then failsComment ||:= _line
                else if currentType = 4 then genComment ||:= _line
             }
+            else if ReMatch("^[\ ]*Source: ", _line) then {
+               sourceComment := replace(_line, "Source:", "\n **Source:**")
+            }
             else
                normalComment ||:= _line
-            }
          }
+      }
 
-      fullComment := normalComment || "\n \n --- \n \n" || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment
+      if srcFile := _function.getSrcFile() & sourceComment == "" then
+         sourceComment := "\n **Source:** " || srcFile
+
+      fullComment := normalComment || "\n \n --- \n \n" || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment || " " || sourceComment
       fullComment := replacem(fullComment, "<p>", "", "</p>", "")
       fullComment := replacem(fullComment, "<i>", "_", "</i>", "_")
       fullComment := replacem(fullComment, "<b>", "**", "</b>", "**")

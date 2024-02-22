@@ -577,19 +577,25 @@ void coclean(struct b_coexpr *cp) {
 
   if (!IS_TS_THREAD(cp->status) || cp->alive==-1){
     CURTSTATE();
-    cp->alive = -1;         /* signal thread to exit */
+
 #ifdef Concurrent
-    if (cp->id==curtstate->c->id){
-      /* 
-       * If the thread is cleaning itself, exit, what about tls chain? 
-       */
-      cp->have_thread = 0;
-#ifndef NO_COEXPR_SEMAPHORE_FIX
-      if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-#endif                  /* NO_COEXPR_SEMAPHORE_FIX */
-      pthread_exit(0);
-    }
+      if (cp == curtstate->c) {
+         /*
+         * If the thread is cleaning itself, exit, what about tls chain?
+         */
+         cp->alive = -1;         /* signal thread to exit */
+         cp->have_thread = 0;
+   #ifndef NO_COEXPR_SEMAPHORE_FIX
+         if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
+   #endif                  /* NO_COEXPR_SEMAPHORE_FIX */
+         pthread_exit(0);
+      } else if (cp->id == 1 && cp->id == curtstate->c->id) {
+         /* FIXME: Main thread, should just return? */
+         return;
+      }
 #endif                  /* Concurrent */
+
+    cp->alive = -1;         /* signal thread to exit */
     if (cp->have_thread){
       sem_post(cp->semp);       /* unblock it */
       THREAD_JOIN(cp->thread, NULL);    /* wait for thread to exit */

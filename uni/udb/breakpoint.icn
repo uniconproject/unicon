@@ -300,7 +300,7 @@ end
 method cmdBreak(cmd)
    local code, line, fname, cname, pkgname, arg, break_point, i
    local coexp, num_colon, arg_list
-   local resultTable := table("cmd", cmd)
+   local resultTable := table("cmd", cmd, "type", "setBreakpoint")
    msg := ""
    if not (DState.State = (LOAD | PAUSE)) then {
       DState.State := ERROR
@@ -481,7 +481,7 @@ end
 #
 method clearAllBreakpoints()
     local x, size := 0
-    local resultTable := table()
+    local resultTable := table("type", "clearAllBreakpoints")
 
     size := *breakPoints
     if size > 0 then {
@@ -508,7 +508,7 @@ end
 #
 method cmdClear(cmd)
    local line, fname, arg, id, i, size:=0, foundBreakpoint
-   local resultTable := table("cmd", cmd)
+   local resultTable := table("cmd", cmd, "type", "clearBreakpoint")
 
    # clears all of the preset breakpoints
    # 'clear break'

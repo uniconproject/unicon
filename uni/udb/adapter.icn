@@ -4,7 +4,22 @@ link findre
 import json
 global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue
 
-class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, currentRequestBody, udbError, tpArgs, bpSuccess, numBreakpoints, numScopes, scopesList)
+class Adapter(
+   port,
+   sock,
+   dapcomSock,
+   filePath,
+   shellProcessId,
+   clientDetails,
+   currentRequestBody,
+   udbError,
+   tpArgs,
+   bpSuccess,
+   numBreakpoints,
+   breakpointList,
+   numScopes,
+   scopesList
+   )
 
    # Process a result from udb in table or list form.
    method processResult(res)
@@ -22,12 +37,13 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
    # Get the next command in cmdQueue.
    method getNextCommand()
-      local request_body, jsontable, request_seq, request_command, request_arguments, cmd
-      write(ximage(cmdQueue))
+      local request_body, request_seq, request_command, request_arguments, cmdElement, cmd, cmd_request
 
       repeat {
          if *cmdQueue ~= 0 then {
-            cmd := pop(cmdQueue)
+            cmdElement := pop(cmdQueue)
+            currentRequestBody := cmdElement["request"]
+            cmd := cmdElement["command"]
             write("udb command: "||cmd||"\n")
             return cmd
          }
@@ -54,61 +70,69 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
       }
    end
 
+   method put_cmdQueue(cmd, request_body)
+   local cmdElement := table()
+      cmdElement["command"] := cmd
+      cmdElement["request"] := \request_body
+      put(cmdQueue, cmdElement)
+   end
+
+   method push_cmdQueue(cmd, request_body)
+   local cmdElement := table()
+      cmdElement["command"] := cmd
+      cmdElement["request"] := \request_body
+      push(cmdQueue, cmdElement)
+   end
+
    # Put commands necessary for loading target program into cmdQueue.
    method load_cmds()
       local dir, procs, cmd
 
-      write("\nbefore load")
-      write(ximage(cmdQueue))
-
       filePath ? dir := tab(findre("\/[^\/]+$"))
-         put(cmdQueue, "dir args " || dir)
+         put_cmdQueue("dir args " || dir)
 
       if procs := pathfind("udb") then {
          procs ? procs := tab(findre("unicon") + 6)
          procs ||:= "/ipl/procs"
-         put(cmdQueue, "dir args " || procs)
+         put_cmdQueue("dir args " || procs)
       }
 
       if \tpArgs then
-         put(cmdQueue, "load " || filePath || " " || tpArgs)
+         put_cmdQueue("load " || filePath || " " || tpArgs)
       else
-         put(cmdQueue, "load " || filePath)
-      write(ximage(cmdQueue))
+         put_cmdQueue("load " || filePath)
 
     end
 
    # Given a DAP client request body, process that request.
-   method process_request(request_body)
-      local jsontable, request_seq, request_command, request_arguments, response_body
+   method process_request(request_json)
+      local request_body, request_seq, request_command, request_arguments, response_body
 
-      jsontable := jtou(request_body)
+      request_body := jtou(request_json)
 
-      if jsontable["type"] == "request" then currentRequestBody := jsontable
+      request_seq := request_body["seq"]
+      request_command := request_body["command"]
+      request_arguments := request_body["arguments"]
+      response_body := request_body["body"]
 
-      request_seq := jsontable["seq"]
-      request_command := jsontable["command"]
-      request_arguments := jsontable["arguments"]
-      response_body := jsontable["body"]
-
-      write("client -> udap: " || request_body||"\n")
+      write("client -> udap: " || request_json||"\n")
 
       case request_command of {
          "initialize": { initialize(request_seq, request_command, request_arguments) }
          "launch" : { launch(request_seq, request_command, request_arguments) }
-         "setBreakpoints" : { set_breakpoints(request_seq, request_command, request_arguments) }
-         "configurationDone" : { put(cmdQueue, "run"); if /udbError then acknowledge(request_seq, request_command) }
+         "setBreakpoints" : { set_breakpoints(request_body, request_seq, request_command, request_arguments) }
+         "configurationDone" : { put_cmdQueue("run", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "threads" : { threads(request_seq, request_command) }
-         "continue" : { put(cmdQueue, "cont"); if /udbError then acknowledge(request_seq, request_command) }
-         "next" : { put(cmdQueue, "next"); if /udbError then acknowledge(request_seq, request_command) }
-         "stepIn" : { put(cmdQueue, "step"); if /udbError then acknowledge(request_seq, request_command) }
-         "stepOut" : { put(cmdQueue, "return"); if /udbError then acknowledge(request_seq, request_command) }
-         "stackTrace" : { stackTrace(request_seq, request_command, request_arguments) }
-         "scopes" : { scopes(request_seq, request_command, request_arguments) }
-         "variables" : { variables(request_seq, request_command, request_arguments) }
+         "continue" : { put_cmdQueue("cont", request_body); if /udbError then acknowledge(request_seq, request_command) }
+         "next" : { put_cmdQueue("next", request_body); if /udbError then acknowledge(request_seq, request_command) }
+         "stepIn" : { put_cmdQueue("step", request_body); if /udbError then acknowledge(request_seq, request_command) }
+         "stepOut" : { put_cmdQueue("return", request_body); if /udbError then acknowledge(request_seq, request_command) }
+         "stackTrace" : { put_cmdQueue("bt", request_body)}
+         "scopes" : { every put_cmdQueue(!push([: "print -"||!"glsp" :], "frame "||request_arguments["frameId"]), request_body) }
+         "variables" : { put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body) }
          "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
          "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"] }
-         "evaluate" : { evaluate(request_seq, request_command, request_arguments) }
+         "evaluate" : { evaluate(request_body, request_seq, request_command, request_arguments) }
          default: { write("Don't know what to do with: ", request_command) }
       }
    end
@@ -215,7 +239,8 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
       clientDetails := \request_arguments
 
       capabilitiesTable := [
-         "supportsConfigurationDoneRequest": "__true__"
+         "supportsConfigurationDoneRequest": "__true__";
+         "supportsValueFormattingOptions": "__true__"
       ]
 
       res := build_response(request_seq, "__true__", request_command, capabilitiesTable)
@@ -264,20 +289,20 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
    end
 
    # Handles all the things required from a client "setBreakpoints" request.
-   method set_breakpoints(request_seq, request_command, request_arguments)
+   method set_breakpoints(request_body, request_seq, request_command, request_arguments)
       local res, breakpointTable, breakpoint, resTable
 
       breakpointTable := [
          "breakpoints": request_arguments["breakpoints"]
       ]
 
-      put(cmdQueue, "clear break")
+      put_cmdQueue("clear break", request_body)
       numBreakpoints +:= 1
 
       every bp := !request_arguments["breakpoints"] do {
          line := bp["line"]
          cond := bp["condition"]
-         put(cmdQueue, "b " || request_arguments["source"]["name"] || ":" || line)
+         put_cmdQueue("b " || request_arguments["source"]["name"] || ":" || line, request_body)
          numBreakpoints +:= 1
       }
    end
@@ -295,43 +320,6 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
       res := build_response(request_seq, "__true__", request_command, threadsTable)
       writes(sock, res)
-   end
-
-   # Handles all the things required from a client "stackTrace" request.
-   method stackTrace(request_seq, request_command, request_arguments)
-      put(cmdQueue, "bt")
-      # Implement single threaded varient
-      # Send output to process_udb_output_table
-
-      #stackList := communicator.stack_trace()
-
-      #res := build_response(request_seq, "__true__", request_command, table("stackFrames", stackList))
-      #writes(sock, res)
-   end
-
-   # Handles all the things required from a client "scopes" request.
-   method scopes(request_seq, request_command, request_arguments)
-      put(cmdQueue, "frame "||request_arguments["frameId"])
-      every put(cmdQueue, "print -"||!"glsp")
-      # Implement single threaded varient
-      # Send output to process_udb_output_table
-
-      #scopes := communicator.get_scopes(request_arguments["frameId"])
-
-      #res := build_response(request_seq, "__true__", request_command, table("scopes", scopes))
-      #writes(sock, res)
-   end
-
-   # Handles all the things required from a client "variables" request.
-   method variables(request_seq, request_command, request_arguments)
-      put(cmdQueue, "print -" || "glsp"[request_arguments["variablesReference"]])
-      # Implement single threaded varient
-      # Send output to process_udb_output_table
-
-      #variables := communicator.get_variables(request_arguments["variablesReference"])
-
-      #res := build_response(request_seq, "__true__", request_command, table("variables", variables))
-      #writes(sock, res)
    end
 
    # Default response for request that only requires an acknowledgement.
@@ -377,6 +365,7 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
             "stackTrace": processStackTraceResult(outputTable)
             "scopes": processScopesResult(outputTable)
             "variables": processVariablesResult(outputTable)
+            "evaluate": processEvaluateResult(outputTable)
          }
       }
       else if outputTable["type"] == "stderr" then {
@@ -410,11 +399,12 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
          # Maybe we put "Y" at the head of cmdQueue?
          # Returning "Y" from this method won't do anything currently.
          # return "Y"
-         push(cmdQueue, "Y")
+         push_cmdQueue("Y")
       }
    end
 
    method processBreakpointResult(res)
+   local body
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
          writes(sock, response)
@@ -422,11 +412,24 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
       }
 
       bpSuccess +:= 1
+      if res["type"] == "setBreakpoint" then {
+         bp := [
+            "id": res["breakpoint"]["id"];
+            "line": res["breakpoint"]["line"];
+            "verified": "__true__";
+            "source": [
+               "path": filePath||".icn"
+            ]
+         ]
+         push(breakpointList, bp)
+      }
       if bpSuccess == numBreakpoints then {
-         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+         body := table("breakpoints", breakpointList)
+         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
          writes(sock, response)
 
          bpSuccess := 0
+         breakpointList := []
       }
    end
 
@@ -483,6 +486,7 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
          writes(sock, response)
 
          numScopes := 0
+         scopesList := []
       }
       
    end
@@ -513,8 +517,56 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
       }
    end
 
+   method processEvaluateResult(res)
+   local event, body, response
+      if res["type"] == "assignVar" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "result": res["value"];
+               "variablesReference": 0
+            ]
+            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+            writes(sock, response)
+         }
+      }
+      else if res["type"] == "setBreakpoint" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "reason": "new";
+               "breakpoint": [
+                  "id": res["breakpoint"]["id"];
+                  "line": res["breakpoint"]["line"];
+                  "verified": "__true__";
+                  "source": [
+                     "path": filePath||".icn"
+                  ]
+               ]
+            ]
+            event := build_event("breakpoint", body)
+            writes(sock, event)
+         }
+      }
+      else if res["type"] == "clearBreakpoint" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "reason": "removed";
+               "breakpoint": [
+                  "id": res["breakpoint"]["id"];
+                  "line": res["breakpoint"]["line"];
+                  "verified": "__true__";
+                  "source": [
+                     "path": filePath||".icn"
+                  ]
+               ]
+            ]
+            event := build_event("breakpoint", body)
+            writes(sock, event)
+         }
+      }
+   end
+
    # Handles all the things required from a client "evaluate" request.
-   method evaluate(request_seq, request_command, request_arguments)
+   method evaluate(request_body, request_seq, request_command, request_arguments)
       local res, expression, result := "", isEvalExp
 
       expression := request_arguments["expression"]
@@ -533,7 +585,8 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
 
       # Same thing here, maybe we put this as the head of cmdQueue.
       # Returning won't do anything.
-      put(cmdQueue, expression)
+      put_cmdQueue("frame "||request_arguments["frameId"], request_body)
+      put_cmdQueue(expression, request_body)
    end
 
    # Handle a udb output table of "type" set to "crash".
@@ -566,10 +619,8 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
       kill(\shellProcessId, 9)
       # End communication with client
       close(\sock)
-      # Stop trying to communicate target program and dapcom
-      stop_debuggee_dapcom_communication := "__true__"
       # Restart session
-      startup()
+      put_cmdQueue("reset")
    end
 
    # Open a port as a server and block until client connect.
@@ -599,6 +650,7 @@ class Adapter(port, sock, dapcomSock, filePath, shellProcessId, clientDetails, c
       requestQueue := []
       cmdQueue := []
       numBreakpoints := 0
+      breakpointList := []
       bpSuccess := 0
       scopesList := []
       numScopes := 0

@@ -73,8 +73,11 @@ method Write(Msg)
       }
    }
    else {
-      if type(Msg) == "table" then
+      if type(Msg) == "table" then {
+         write(ximage(tojson(Msg)))
          Msg := Msg["consoleMsg"]
+      }
+         
       write(Msg)
    }
 
@@ -83,8 +86,8 @@ end
 
 method stateRead()
 local msg := ""
-   write("udb reading...")
    if \mode == "-adapter" then {
+      write("udb reading...")
       return udap.getNextCommand()
    }
    else {
@@ -118,8 +121,10 @@ method Writes(Msg)
       }
    }
    else {
-      if type(Msg) == "table" then
+      if type(Msg) == "table" then {
+         writes(ximage(tojson(Msg)))
          Msg := Msg["consoleMsg"]
+      }
       writes(Msg)
    }
 

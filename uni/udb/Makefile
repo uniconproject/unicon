@@ -143,7 +143,7 @@ clean:
 	cd $(LIB); $(MAKE) clean
 	cd $(DTA); $(MAKE) clean
 	$(DEL) ../../bin/$(EXEs) 
-	cd lib; $(MAKE) cleany
+	cd lib; $(MAKE) clean
 
 cleantools:
 	cd $(LIB); $(MAKE) cleantools

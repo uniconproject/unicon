@@ -37,8 +37,6 @@ method printGlobals(level)
          put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       else {
          variableTable := table("name", x, "value", image(i), "type", type(i))
-         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
-         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
          put(output, variableTable)
       }
    }
@@ -69,8 +67,6 @@ method printLocals(level)
          put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       else {
          variableTable := table("name", x, "value", image(i), "type", type(i))
-         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
-         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
          put(output, variableTable)
       }
    }
@@ -101,8 +97,6 @@ method printStatics(level)
          put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       else {
          variableTable := table("name", x, "value", image(i), "type", type(i))
-         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
-         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
          put(output, variableTable)
       }
    }
@@ -133,8 +127,6 @@ method printParams(level)
          put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       else {
          variableTable := table("name", x, "value", image(i), "type", type(i))
-         variableTable["value"] := replace(variableTable["value"], "\"", "\\\"")
-         variableTable["type"] := replace(variableTable["type"], "\"", "\\\"")
          put(output, variableTable)
       }
    }
@@ -544,7 +536,7 @@ end
 # sets a variable value according to the user input
 #
 method assignVar(Lexpr, Rexpr, level)
-   local lhs, lvar , rvalue, x, lexpr:="", rexpr:=""
+   local lhs, lvar , rvalue, x, lexpr:="", rexpr:="", outputTable := table()
 
    every x := !Lexpr do lexpr ||:= x
    every x := !Rexpr do rexpr ||:= x
@@ -552,7 +544,10 @@ method assignVar(Lexpr, Rexpr, level)
    lhs := parsePrintExpression(Lexpr)
    if *lhs = 0 then {
       Message :="\n   The expression \""||lexpr||"\" is unknown."
-      DState.Write(Message)
+      outputTable["consoleMsg"] := Message
+      outputTable["success"] := "__false__"
+      outputTable["type"] := "assignVar"
+      DState.Write(outputTable)
       return
       }
 
@@ -563,7 +558,12 @@ method assignVar(Lexpr, Rexpr, level)
          Message := "\n   "||lvar||" = "||image(var_ref)
          }
       }
-   DState.Write(Message)
+   outputTable["consoleMsg"] := Message
+   outputTable["var"] := lvar
+   outputTable["value"] := var_ref
+   outputTable["success"] := "__true__"
+   outputTable["type"] := "assignVar"
+   DState.Write(outputTable)
 end
 
 #

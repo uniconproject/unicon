@@ -1,0 +1,550 @@
+#################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+# --------------------------------------------------------------------------------
+# Tests for the Fixed Point arithmetic Class
+#
+# Author    Don Ward
+#           February 2024
+#
+# This program makes heavy use of the verify PDCO.
+#   verify { label, test } executes the test expression inside the verify routine
+#   and keeps a count of successes and failures. It is thread safe, (although
+#   threads are not used in this program).
+#   expectFail expects failure (which counts as a success).
+#
+#   quiet = 0      Output the result of each test (plus pass/fail counts)
+#   quiet = 1      Output any tests that fail plus pass/fail counts at the end
+#   quiet = 2      No output; just a count of failures (if any)
+#   The default value is 1.
+# --------------------------------------------------------------------------------
+
+# The blank line before this is significant (to unidoc): it means the comments above
+# appear in unidoc's  description of the file.
+
+# Define a macro that hides stuff from unidoc (unidoc's parser doesn't run the
+# macroprocessor, so it sees a line beginning with a token it doesn't recognise
+# and ignores the line).
+$define HIDE
+
+import testing, math
+link ximage
+
+HIDE global T                   # Testing instance.
+
+# Variables for values that are used in subsequent T.verify predicates
+HIDE global r,u,v,w,x,y,z
+
+# Run all tests
+procedure runTests(args  # The first argument controls the value of quiet
+               )
+   T := tester("Fixed Point Tests", \args[1] | 1, &output)
+   T.start()
+   T.verify {"initial settings", (T.passes = 0) & (T.fails = 0) } # Must be the first test (obvs)
+
+   test_initialisation()
+   test_toString()
+   test_rounding_part1()
+   test_precision()
+   test_rounding()
+   test_trunc()
+   test_scale()
+
+   # Initialise some values used in subsequent tests
+   u := FxPt(0 - 25RFaceBook)
+   v := FxPt(39).scale(50)   # big   3900000000000000000000000000000000000000000000000000
+   w := FxPt(42).scale(50)   # big   4200000000000000000000000000000000000000000000000000
+   x := FxPt(42).scale(-50)  # small 0.00000000000000000000000000000000000000000000000042
+   y := FxPt(39).scale(-50)  # small 0.00000000000000000000000000000000000000000000000039
+   z := FxPt(0)
+
+   test_subtraction()
+   test_addition()
+   test_multiplication()
+   test_reciprocal()
+   test_division()
+   test_immutable()
+   test_other()
+$ifdef _OVLD
+   if T.fails = 0 then  test_infix()
+$endif
+
+   T.finish()
+   exit(T.fails)
+end
+
+HIDE global IEEE_precisionReal
+HIDE global IEEE_precisionString
+HIDE global Nilakantha_999
+
+procedure test_initialisation()
+
+   if T.quiet < 1 then write("---------- Initialisation ----------")
+   x := FxPt(99)
+   y := FxPt(99)
+   T.verify {"x is not y", x ~=== y }
+   T.verify {"x = x",      \x & x.eq(x) & x.v = 99 & x.p = 0}
+   T.verify {"x = 99",     x.eq(99) }
+   T.verify {"x = y",      \y & x.eq(y)}
+   x.v := 100
+   T.verify {"eq 1",       x.ne(y) & not x.eq(y)}
+   x.v := y.v
+   T.verify {"eq 2",       x.eq(y) & not x.ne(y) }
+   x.p +:= 1
+   T.verify {"eq 3",       x.ne(y) & not x.eq(y) }
+   if T.fails > 0 then stop("eq() is broken ... cannot continue")
+
+   T.verify { "Default value", x := FxPt()          & \x & x.eq(0) }
+   T.verify { "42",            x := FxPt(42)        & \x & x.eq(42)}
+   T.verify { "\"42\"",        x := FxPt("42")      & \x & x.eq(42)}
+   T.verify { "1E5",           x := FxPt(1E5)       & \x & x.eq(100000)}
+   T.verify { "\"1E5\"",       x := FxPt("1E5")     & \x & x.eq(100000)}
+   T.verify { "5K",            x := FxPt(5K)        & \x & x.eq(5 * 1024) }
+   T.verify { "\"5K\"",        x := FxPt("5K")      & \x & x.eq(5 * 1024) }
+   T.verify { "-42",           x := FxPt(-42)       & \x & x.eq(-42) }
+   T.verify { "\"-42\"",       y := FxPt("-42")     & \y & ((y.v) = x.v) & ((y.p) = x.p) }
+   T.verify { "-1E5",          x := FxPt(-1E5)      & \x & x.eq(-100000) }
+   T.verify { "\"-1E5\"",      x := FxPt("-1E5")    & \x & x.eq(-100000) }
+   T.verify { "-5K",           x := FxPt(-5K)       & \x & x.eq(-5 * 1024) }
+   T.verify { "\"-5K\"",       x := FxPt("-5K")     & \x & x.eq(-5 * 1024) }
+   T.verify { "16RFACE",       x := FxPt(16RFACE)   & \x & x.eq(64206) }
+   T.verify { "\"16RFACE\"",   x := FxPt("16RFACE") & \x & x.eq(64206) &
+              64206 = (14 + 16*(12 + 16*(10 + 16*15))) }
+   #                   E        C        A       F
+end
+
+
+# Test the conversion from FxPt to a string value
+procedure test_toString()
+   local n
+   local flxChars := '-.0123456789' # Floating/Fixed point chars without exponent
+
+   if T.quiet < 1 then write("---------- to_String ----------")
+   T.verify { "1.23456789",     x := FxPt(1.23456789)    & \x & x.toString() == "1.23456789" }
+   T.verify { "\"1.23456789\"", x := FxPt("1.23456789")  & \x & x.toString() == "1.23456789" }
+   T.verify { "-1.23456789",    x := FxPt(-1.23456789)   & \x & x.toString() == "-1.23456789" }
+   T.verify { "\"-1.23456789\"",x := FxPt("-1.23456789") & \x & x.toString() == "-1.23456789" }
+   T.verify { "Places = 6",     *(FxPt(1).round(6).toString()) = 8 }     # 1.000000
+   T.verify { "Places = 150",   *(FxPt(1).round(150).toString()) = 152 } # 1.000000 ....
+   T.verify { "No exponent (1)",
+              FxPt(-12345E-45).toString() ? { tab(many(flxChars)) & pos(0) } }
+   T.verify { "No exponent (2)",
+              FxPt(9.87654321E+45).toString() ? {tab(many(flxChars)) & pos(0) } }
+   T.verify { "Trailing Zeros +ve",
+              (FxPt(12345).round(50).toString() ? {="12345." & (n := *tab(many('0'))) & pos(0) }) &
+               \n = 50 }
+   T.expectFail { "Trailing Zeros -ve [should fail!] ",
+              (FxPt(-12345).round(-50).toString() ? {="-12345" & (n := *tab(many('0'))) & pos(0) }) &
+               \n = 50 }
+   T.verify { "No radix integers",
+              FxPt("25RFaceBook").toString() ? { tab(many(flxChars)) & pos(0) } }
+   T.verify { "No suffix",FxPt("25M").toString() ? { tab(many(flxChars)) & pos(0) } }
+
+   x := FxPt(z := "12345678901234567891234567890.12345678901234567891234567890123456789")
+   T.verify { "All digits are present", x.toString() ? { tab(many(flxChars)) & &pos = *z+1 & pos(0) } }
+   T.verify { "No loss of precision", x.eq(x.toString()) }
+end
+
+procedure test_rounding_part1()
+   T.verify { "Same digits",
+              cset(FxPt(1.2345).toString()) === cset(FxPt(12.345).toString()) ===
+              cset(FxPt(123.45).toString()) === cset(FxPt(1234.5).toString()) }
+   T.verify { "Places = 6 ",  FxPt(1.2345).round(6).eq(FxPt(1.2345)) }
+   T.verify { "Places = 5 ",  FxPt(1.2345).round(5).eq(FxPt(1.2345)) }
+   T.verify { "Places = 4 ",  FxPt(1.2345).round(4).eq(FxPt(1.2345)) }
+   T.verify { "Places = 3 ",  FxPt(1.2345).round(3).eq(FxPt(1.235)) }
+   T.verify { "Places = 2 ",  FxPt(1.2345).round(2).eq(FxPt(1.23)) }
+   T.verify { "Places = 1 ",  FxPt(1.2345).round(1).eq(FxPt(1.2)) }
+   T.verify { "Places = 0 ",  FxPt(1.2345).round(0).eq(FxPt(1)) }
+
+   T.expectFail { "Places = -1 ", FxPt(1.2345).round(-1) }
+   T.expectFail { "Places = -2 ", FxPt(1.2345).round(-2) }
+   # check that round() adds zeros at the end (if required)
+   T.verify { "Add trailing zeros (0)", FxPt(1.2345).round(4).toString() == "1.2345" }
+   T.verify { "Add trailing zeros (1)", FxPt(1.2345).round(5).toString() == "1.23450" }
+   T.verify { "Add trailing zeros (2)", FxPt(1.2345).round(6).toString() == "1.234500" }
+   T.verify { "0.0....", FxPt(0).round(10).toString() == "0.0000000000" }
+end
+
+# Establish the number of digits in an IEEE floating point number
+# and demonstrate that an FxPt instance can have many more.
+procedure test_precision()
+   local fpstr, n
+
+   if T.quiet < 1 then write("---------- Precision ----------")
+
+   # double precision floating point (IEEE 754-2008) can represent a significand
+   # with almost 16 (actual value 15.95) decimal digits
+   #
+   # Find where the precison limit is
+   every n := 1 to 20 do {
+      x := FxPt(fpstr := "1." || repl("5",n))
+      if x.toString() ~== string(real(fpstr)) then break;
+   }
+   # write("n = ", n, " FxPt(\"", fpstr, "\") = ", x.toString(), " real = ", real(fpstr))
+   IEEE_precisionReal := real(IEEE_precisionString := fpstr)
+   # Allow a bit of leeway in case 15.95 digits is pessimistic (.e. maybe it's sometimes more)
+   T.verify {"IEEE Floating pt. digits ", 15 <= n <= 17 }
+   T.verify {"IEEE precision ", abs(x.sub(IEEE_precisionReal).toString()) < 1E-15 }
+   if T.quiet <1 then write("IEEE digits < ", n , "  (1.555... = ", IEEE_precisionReal, ")" )
+
+   # Demonstrate we have plenty of spare precision
+   x := FxPt("1." || repl("5",101))
+   y := FxPt("1." || repl("5",100))
+   # Assume that sub() works -- we get to test it more fully later
+   T.verify { "Precison > 100 digits", 0.0 < abs(real(x.sub(y).toString())) <= 5E-100 }
+
+   # Demonstrate scaling of values
+   x := FxPt("1.2345")
+   T.verify {"Scale +10", x.scale(10).eq(FxPt("12345"||repl("0",6))) }
+   T.verify {"Scale -10", x.scale(-10).eq(FxPt("0."||repl("0",9)||"12345")) }
+end
+
+procedure test_rounding()
+   local s,n
+
+   if T.quiet < 1 then write("---------- Rounding ----------")
+   v := FxPt("1." || repl("5",30))     #  1.555...
+   u := FxPt("-1." || repl("5",30))    # -1.5555...
+   w := FxPt("1.4" || repl("9",29))    #  1.4999....
+   x := FxPt("-1.4" || repl("9",29))   # -1.4999...
+   T.verify {"Round(1.5..., 0)", v.round(0).eq(2) }
+   T.verify {"Round(-1.5..., 0)", u.round(0).eq(-2) }
+   every n := 1 to 25 do T.verify {"Round(1.4999... ," || n ||")", w.round(n).eq(1.5) }
+   every n := 1 to 25 do T.verify {"Round(1.5555... ," || n ||")",
+                                    v.round(n).eq("1." || repl(5, n-1) || 6) }
+   every n := 1 to 25 do T.verify {"Round(-1.4999... ," || n ||")", x.round(n).eq(-1.5) }
+   every n := 1 to 25 do T.verify {"Round(-1.5555... ," || n ||")",
+                                    u.round(n).eq("-1." || repl(5, n-1) || 6) }
+   s := "420000000000"
+   T.verify {"Nothing to round (+ve)", FxPt(s).round(6).eq(s) }
+   s := "-" || s
+   T.verify {"Nothing to round (-ve)", FxPt(s).round(6).eq(s) }
+   every n := 40 to 1 by -1 do { if w.round(n).ne(w) then break }
+   T.verify {"Nothing to round (1)", n = 29 }
+   every n := 40 to 1 by -1 do { if x.round(n).ne(x) then break }
+   T.verify {"Nothing to round (2)", n = 29 }
+
+   # test rounding by non-integer (but legal) types
+   T.verify {"Rounding  (real) (1)",  w.round(3.1).toString() == "1.500" }
+   T.verify {"Rounding  (real) (2)",  x.round(3.1).toString() == "-1.500" }
+   # The parameter to round is not itself rounded
+   T.verify {"Rounding  (real) (3)",  x.round(3).eq(x.round(3.999999)) }
+   T.verify {"Rounding  (real) (4)",  x.round(3.0000000001).eq(x.round(3.999999999)) }
+   T.verify {"Rounding  (string)",    x.round(3.5).eq(x.round(FxPt("3.5").toString())) }
+   T.verify {"Rounding  (FxPt)",      x.round(3.5).eq(x.round(FxPt("3.5"))) }
+end
+
+procedure test_trunc()
+   if T.quiet < 1 then write("---------- trunc ----------")
+   x := FxPt("987.654")
+   T.expectFail {"trunc()", x.trunc() }
+   T.expectFail {"trunc(-1)", x.trunc(-1) }
+end
+
+procedure test_scale()
+   if T.quiet < 1 then write("---------- scale ----------")
+   x := FxPt("987.654")
+   T.verify { "Scale 0 places",  x.scale(0).eq(x) & (x.scale(0).toString() == "987.654") }
+   T.verify { "Scale +1 place",  x.scale(1).toString() == "9876.54" }
+   T.verify { "Scale 4 places",  x.scale(4).toString() == "9876540" }
+   T.verify { "Scale -1 place",  x.scale(-1).toString() == "98.7654" }
+   T.verify { "Scale -3 places", x.scale(-3).toString() == "0.987654" }
+   T.verify { "Scale -5 places", x.scale(-5).toString() == "0.00987654" }
+   T.verify { "Scale 10 places (1)", FxPt(1E-10).scale(10).toString() == "1" }
+   T.verify { "Scale 10 places (2)", FxPt("1.000E-10").scale(10).toString() == "1.000" }
+end
+
+procedure test_subtraction()
+   if T.quiet < 1 then write("---------- Subtraction ----------")
+   T.verify { "negation (big)",    z.sub(w).lt(0) }
+   T.verify { "negation (small)",  z.sub(x).lt(0) }
+   T.verify { "x - x = 0 (big)",   w.sub(w).eq(z) }
+   T.verify { "x - x = 0 (small)", x.sub(x).eq(z) }
+   T.verify { "FaceBook negative", u.lt(0) }
+   T.verify { "0 - (-x) > 0",      z.sub(u).gt(0) }
+   T.verify { "x - 0 = x",         u.sub(z).eq(u) }
+end
+
+procedure test_addition()
+   if T.quiet < 1 then write("---------- Addition ----------")
+   T.verify { "x + 0 == x (small)",     x .add(0).eq(x) }
+   T.verify { "x + 0 == x (big)",       w.add(0).eq(w) }
+   # similar magnitudes
+   T.verify {"add commutes (small)",    x.add(y).eq(y.add(x)) }
+   T.verify {"add commutes (big)",      w.add(v).eq(v.add(w)) }
+   # dissimilar magnitudes
+   T.verify {"add commutes",            w.add(x).eq(x.add(w)) }
+   # very small numbers added to very large numbers make a difference
+   T.verify {"big + small",             w.add(x).ne(w) }
+   # and the difference is exact
+   T.verify {"big + small - small (1)", w.add(x).sub(x).eq(w) }
+   T.verify {"small + big - big (1)",   x.add(w).sub(w).eq(x) }
+
+   # if comparing strings, we have to remove any non significant trailing zeros)
+   T.verify {"big + small - small (2)", w.add(x).sub(x).trim0().toString() == w.toString() }
+   T.verify {"small + big - big (2)",   x.add(w).sub(w).trim0().toString() == x.trim0().toString() }
+   T.verify {"42 + 39 = 81 (small)",    x.add(y).eq(FxPt(81).scale(-50)) }
+   T.verify {"42 + 39 = 81 (big)",      w.add(v).eq(FxPt(81).scale(50))}
+   T.verify {"x < x + small",           x.lt(x.add(w)) }
+   T.verify {"x = x + small - small",   x.eq(x.add(w).sub(w)) }
+   T.verify {"x + small > x",           x.add(w).gt(x) }
+   T.verify {"x <= x",                  x.le(x) }
+   T.verify {"x >= x",                  x.ge(x) }
+end
+
+procedure test_multiplication()
+   if T.quiet < 1 then write("---------- Multiplication ----------")
+   T.verify {"mul commutes (small)",    x.mul(y).eq(y.mul(x)) }
+   T.verify {"mul commutes (big)",      v.mul(w).eq(w.mul(v)) }
+   T.verify {"x * 0 = 0 (small)",       x.mul(z).eq(z) }
+   T.verify {"x * 0 = 0 (big)",         v.mul(z).eq(z) }
+   T.verify {"x * 1 = x (small)",       x.mul(1).eq(x) }
+   T.verify {"x * 1 = x (big)",         v.mul(1).eq(v) }
+   T.verify {"x * -1 * -1 = x (big)",   v.mul(-1).mul(-1).eq(v) }
+   T.verify {"x * -1 * -1 = x (small)", x.mul(-1).mul(-1).eq(x) }
+   T.verify {"42 * 39 = 1638 (small)",  x.mul(y).eq(FxPt(1638).scale(-100)) }
+   T.verify {"42 * 39 = 1638 (big)",    v.mul(w).eq(FxPt(1638).scale(100)) }
+   T.verify {"big(42) * small(39) = 1638", w.mul(y).eq(FxPt(1638)) }
+   T.verify {"small(42) * big(39) = 1638", x.mul(v).eq(FxPt(1638)) }
+end
+
+procedure test_reciprocal()
+   local third, half, one, ans, total, n
+
+   if T.quiet < 1 then write("---------- Reciprocal ----------")
+   one := FxPt(1)
+   third := FxPt(3).reciprocal(50)
+   half  := FxPt(2).reciprocal(50)
+   T.verify {"IEEE 1/3 has no exponent", string(1./3) ? (="0." & tab(many('3')) & pos(0)) }
+   T.verify {"1/3 has more digits than IEEE 1./3", (10 + *string(1./3)) < *third.toString()}
+   T.verify {"1/3 = 0.33333... ",      third.toString() ? (="0." & tab(many('3')) & pos(0)) }
+   T.verify {"1/3 + 1/3 + 1/3",        third.add(third).add(third).lt(one) }
+   T.verify {"Round(1/3 + 1/3 + 1/3)", third.add(third).add(third).round(49).eq(one) }
+   T.verify {"1/2 + 1/2",              half.add(half).eq(one) }
+   T.verify {"1/3 * 3 is almost 1",    (ans := one.sub(third.mul(3))).le(1E-49) & ans.gt(0) }
+   T.verify {"1/2 * 2 = 1",            half.mul(2).eq(one) }
+   T.verify {"(-1/3) + 1/3 = 0 (1)",   FxPt(-3).reciprocal(49).add(third).gt(0) }
+   T.verify {"(-1/3) + 1/3 = 0 (2)",   FxPt(-3).reciprocal(50).add(third).eq(0) }
+   T.verify {"(-1/3) + 1/3 = 0 (3)",   FxPt(-3).reciprocal(51).add(third).le(0) }
+
+   # Mercator's series  1 - 1/2 + 1/3 - 1/4 + 1/5  ... -> ln(2)
+   total := FxPt(1)
+   every n := 2 to 1000 do {
+      r := FxPt(n).reciprocal(50)
+      total := if 0 = n%2 then total.sub(r) else total.add(r) # -1/2 + 1/3 - 1/4 + 1/5 ...
+   }
+   ans := total.sub(log(2))
+   if ans.lt(0) then ans := FxPt(0).sub(ans)
+   T.verify {"Mercator's series", ans.toString() <= 1E-3 } # Not very impressive convergence
+end
+
+HIDE # If multiplication works and reciprocal works, we don't need to test very much
+procedure test_division()
+   local n, error, four, five, six
+
+   if T.quiet < 1 then write("---------- Division ----------")
+   four := FxPt(4)
+   five := FxPt(5)
+   six  := FxPt(6)
+
+   T.verify {"(5/6)*(6/5) = 1",    five.div(six).mul(six.div(five)).round(50).eq(1) }
+   T.verify {"(-5/6)*(6/-5) = 1",  FxPt(-5).div(six).mul(six.div(-5)).round(50).eq(1) }
+   T.verify {"(5/-6)*(6/-5) = 1",  five.div(-6).mul(six.div(-5)).round(50).eq(1) }
+
+   # This test takes 99.9% of the run time; disable it if you're repeatedly running tests
+   # by uncommenting the next line.
+   # return
+
+   # Using Nilakantha's series for Pi = 3 + 4/(2+3+4) - 4/(4+5+6) + 4/(6+7+8) - 4(8+9+10) + ...
+   four := FxPt(4)
+   x := FxPt(3)
+   every n := 1 to 10000 do {
+      z := FxPt(n*2).mul(n*2+1).mul(n*2+2)
+      y := four.div(z)
+      x := if (n%2)=1 then x.add(y) else x.sub(y)
+      if n = 999 then Nilakantha_999 := x # Used later on in the infix tests
+    }
+   T.verify{"Partial result", \Nilakantha_999.ne(x) }
+   error := FxPt(&pi).sub(x)
+   if error.le(0) then error.mul(-1)
+   T.verify {"Nilankantha's series", error.gt(0) & error.lt(1E-12) }
+end
+
+# Check that no operation changes the original
+procedure test_immutable()
+   local orig
+   if T.quiet < 1 then write("---------- Immutable values ----------")
+
+   v := x := FxPt(666.6)
+   orig := copy(x)
+   T.verify {"Immutable - (1)",  r := x.sub(1) & x.eq(orig) & v === x }
+   T.verify {"Immutable + (1)",  r := x.add(1) & x.eq(orig) & v === x }
+   T.verify {"Immutable * (1)",  r := x.mul(2) & x.eq(orig) & v === x }
+   T.verify {"Immutable / (1)",  r := x.div(2) & x.eq(orig) & v === x }
+   T.verify {"Immutable round()",r := (x.round(0)) & x.eq(orig) & v === x }
+   T.verify {"Immutable scale()",r := (x.scale(1)) & x.eq(orig) & v === x }
+   T.verify {"Immutable trunc()",r := (x.trunc(0)) & x.eq(orig) & v === x }
+   T.verify {"Immutable eq",     r := (x.eq(666.6))& x.eq(orig) & v === x }
+   T.verify {"Immutable ne",     r := (x.ne(667))  & x.eq(orig) & v === x }
+   T.verify {"Immutable le",     r := (x.le(667))  & x.eq(orig) & v === x }
+   T.verify {"Immutable lt",     r := (x.lt(667))  & x.eq(orig) & v === x }
+   T.verify {"Immutable ge",     r := (x.ge(665))  & x.eq(orig) & v === x }
+   T.verify {"Immutable gt",     r := (x.gt(665))  & x.eq(orig) & v === x }
+
+$ifdef _OVLD
+   T.verify {"Immutable - (2)",  r := (x - 1)  & x = orig & v === x }
+   T.verify {"Immutable - (3)",  r := (-x)     & x = orig & v === x }
+   T.verify {"Immutable + (2)",  r := (x + 1)  & x = orig & v === x }
+   T.verify {"Immutable + (3)",  r := +x       & x = orig & v === x }
+   T.verify {"Immutable * (2)",  r := (x * 2)  & x = orig & v === x }
+   T.verify {"Immutable / (2)",  r := (x / 2)  & x = orig & v === x }
+
+   T.verify {"Immutable =",      r := (x=666.6)    & x = orig & v === x }
+   T.verify {"Immutable ~=",     r := (x~=667)     & x = orig & v === x }
+   T.verify {"Immutable <=",     r := (x<=667)     & x = orig & v === x }
+   T.verify {"Immutable <",      r := (x<667)      & x = orig & v === x }
+   T.verify {"Immutable >=",     r := (x>=665)     & x = orig & v === x }
+   T.verify {"Immutable >",      r := (x>665)      & x = orig & v === x }
+$endif
+end
+
+HIDE record ABC (a,b,c)   # An example of a record type
+
+# Not called: used to construct a thread value (used in testing "other values")
+procedure hypersomnia ()
+   repeat { delay(100000) }
+end
+
+# Check that non numeric types fail
+procedure test_other()
+   local TV, label, bp           # stands for Bad Parameter
+   x := FxPt("1001.1001")
+   if T.quiet < 1 then write("---------- Other types ----------")
+
+   # Note that the tests aren't done in this order.
+   # It depends on how the labels are hashed inside TV
+   TV := [
+         "Null"          : &null
+         "Empty List"    : list()
+         "Empty Set"     : set()
+         "Empty Cset"    : ''
+         "Empty Table"   : table()
+         "List"          : list(1,2,3)
+         "Set"           : set(1,2,3)
+         "Cset"          : 'abc'
+         "Table"         : table(1,2)
+         "Record"        : ABC(1,2,3)
+         "Procedure"     : test_other
+         "Std function"  : cos
+         "Thread"        : thread hypersomnia()
+         "Co-expr"       : create stop()
+         "Pattern"       : <abc>
+         ]
+
+   every label := key(TV) do {
+      bp := TV[label]
+      # FxPt(&null) is OK, other values in TV are not.
+      T.expectFail { "FxPt() -- " || label, FxPt(\bp).valid() }
+
+      T.expectFail { "round -- "  || label, x.round(bp) }
+      T.expectFail { "trunc -- "  || label, x.trunc(bp) }
+      T.expectFail { "scale -- "  || label, x.scale(bp) }
+      T.expectFail { "add -- "    || label, x.add(bp) }
+      T.expectFail { "sub -- "    || label, x.sub(bp) }
+      T.expectFail { "mul -- "    || label, x.mul(bp) }
+      T.expectFail { "div -- "    || label, x.div(bp) }
+      T.expectFail { "eq -- "     || label, x.eq(bp) }
+      T.expectFail { "ne -- "     || label, x.ne(bp) }
+      T.expectFail { "gt -- "     || label, x.gt(bp) }
+      T.expectFail { "lt -- "     || label, x.lt(bp) }
+      T.expectFail { "le -- "     || label, x.le(bp) }
+      T.expectFail { "ge -- "     || label, x.ge(bp) }
+$ifdef _OVLD
+      T.expectFail { "= -- "      || label, x = bp  }
+      T.expectFail { "~= -- "     || label, x ~= bp }
+      T.expectFail { ">  -- "     || label, x > bp  }
+      T.expectFail { "<  -- "     || label, x < bp  }
+      T.expectFail { "<= -- "     || label, x <= bp }
+      T.expectFail { ">= -- "     || label, x >= bp }
+$endif
+   }
+
+end
+
+$ifdef _OVLD
+# Test the overloaded operators (if Unicon is built with --enable-OVLD )
+procedure test_infix()
+   local four, n
+
+   if T.quiet < 1 then write("---------- infix Operators ----------")
+   v := FxPt(987654321.9876543210987654321)
+   u := v.add(1) # Use add (which we've already tested) rather than (v + 1)
+
+   T.verify {"binary =",      (v = v) & not (v = u) }
+   T.verify {"binary ~=",     (u ~= v) & not (u ~= u) }
+   T.verify {"binary + (1)",  u = (u + 0) }
+   T.verify {"binary + (2)",  u = (v + 1) }
+   T.verify {"binary > ",     (u > v) & not (u > u) }
+   T.verify {"binary < ",     (v < u) & not (v < v) }
+   T.verify {"binary <= (1)", v <= v }
+   T.verify {"binary <= (2)", v <= u  & not (u <= v) }
+   T.verify {"binary >= (1)", v >= v }
+   T.verify {"binary >= (2)", u >= v  & not (v >= u) }
+   T.verify {"binary ~= (1)", v ~= u }
+   T.expectFail {"binary ~= (2)", v ~= v }
+   T.verify {"binary - (1) ", (u - 1) = v }
+   T.verify {"binary - (2) ", (u - u) = 0 }
+   T.verify {"unary - ",      (u + (-u)) = 0 }
+
+   T.verify {":= ",    (w := v) & (w === v) }     # We'd rather this was not true (unfortunately there
+   w := 0                                         # is no overloaded assignment operator to alter it)
+   T.verify {"unary +", (w := +v) & (\w ~=== v) } # but unary plus is an easy workaround
+   T.verify {"unary + preserves value", w = v }
+   T.verify {"binary +",(v+1) = u }
+
+   T.verify {"2nd operand is returned (1)", type(v > 0) == "integer" }
+   T.verify {"2nd operand is returned (2)", type(v >= 0) == "integer" }
+   T.verify {"2nd operand is returned (3)", type(v < 1E20) == "real" }
+   T.verify {"2nd operand is returned (4)", type(v <= 1E20) == "real" }
+   T.verify {"2nd operand is returned (5)", type(v ~= 0) == "integer" }
+   w := v - v
+   T.verify {"2nd operand is returned (6)", type(w = 0.0) == "real" }
+   w := v + 0.5
+   T.verify {"v < w < u",   v < w < u }   # In these tests the 2nd operand (of type FxPt)
+   T.verify {"u > w > v",   u > w > v }   # must be being returned,
+   T.verify {"v <= w <= u", v <= w <= u } # otherwise things would go quite
+   T.verify {"u >= w >= v", u >= w >= v } # badly wrong.
+
+   if \Nilakantha_999 then {
+      # Calculate Nilakantha's series for Pi = 3 + 4/(2+3+4) - 4/(4+5+6) + 4/(6+7+8) - 4(8+9+10) + ...
+      # using infix operators
+      four := FxPt(4)
+      x := FxPt(3)
+      every n := 1 to 10000 do {
+         y := four / (FxPt(n*2) * (n*2+1) * (n*2+2))
+         x := if (n%2)=1 then x+y else x-y
+         if n = 999 then {
+            T.verify {"Nilakantha 999",  x = Nilakantha_999 }
+            break;
+         }
+      }
+   }
+end
+$endif
+
+# Useful for temporarily tracing things
+# e.g. Trace { tryMyStuff(), tryMoreStuff() }
+# or (if debug needed but not tracing)
+#      Trace { &trace := 0, myDebug := 1, tryMyStuff(), myDebug := &null }
+# etc.
+procedure Trace(args)
+   local _trace := &trace
+   &trace := -1
+   every @!args
+   &trace := _trace
+   return
+end

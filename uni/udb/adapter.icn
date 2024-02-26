@@ -434,7 +434,9 @@ class Adapter(
    end
 
    method processStackTraceResult(res)
-   local response, frames := []
+      local response
+      static frames := []
+
       if \res["success"] == "__false__" then {
          response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
          writes(sock, response)
@@ -444,11 +446,13 @@ class Adapter(
       if member(res, "type") then {
          if res["type"] == "frame" then {
             res["name"] := replace(res["name"], "\"", "\\\"")
-            res["consoleMsg"] := replace(res["consoleMsg"], "\"", "\\\"")
             put(frames, res)
 
-            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("stackFrames", frames))
-            writes(sock, response)
+            if *frames = res["levels"] then {
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("stackFrames", frames))
+               writes(sock, response)
+               frames := []
+            }
          }
       }
    end

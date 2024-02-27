@@ -122,6 +122,7 @@ end
 #
 method checkStep()
    local cur_line, cur_file
+   static no_src_file := &null
 
    cur_file := keyword("file", MONITORED)
    cur_line := keyword("line", MONITORED)
@@ -146,10 +147,21 @@ method checkStep()
       }
    else if step_count = 1 then {
       if cur_file == "__faux.icn" then {
-	 DState.State := RUN
-	 DState.RunCode := STEP
-	 return
-	 }
+         DState.State := RUN
+         DState.RunCode := STEP
+         return
+      }
+      else if not member(DState.srcFile.fileText, cur_file) then {
+         DState.State := RUN
+         DState.RunCode := STEP
+         if /no_src_file then no_src_file := "\n   udb was unable to locate source file: " || cur_file || "\n   Returning."
+         return
+      }
+
+      if \no_src_file then {
+         DState.Write(no_src_file)
+         no_src_file := &null
+      }
 
       step_count -:= 1
 

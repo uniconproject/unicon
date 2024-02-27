@@ -92,7 +92,7 @@ end
 #
 # This listens for actions to either the menu/button object creation items.
 #
-class ObjectActionListener(main, object_ui) 
+class ObjectActionListener(main, object_ui)
    method on_event(event)
       main.create_in_canvas(object_ui)
    end
@@ -104,7 +104,8 @@ end
 #
 $define CANVAS_SURROUND 30
 #
-class Main : CommonDialog(
+class Main : CommonDialog (
+   my_ui,                   # Was this opened from UI?
    quit,                    # Quit function
    about,                   # Program version info
    bg,                      # Button group of tool bar buttons
@@ -128,7 +129,7 @@ class Main : CommonDialog(
    new,                     # New canvas function
    orig_canvas_width,       # Variables for re-sizing canvas
    orig_canvas_height,      #
-   tool_area_height,        # 
+   tool_area_height,        #
    prog_preferences,        # Program preferences function
    centre_horiz,            # Centre horizontally command
    grid,                    # Grid command
@@ -142,7 +143,7 @@ class Main : CommonDialog(
    centre_vert,             # Centre vertically command
    popup_component,         # Popup on component
    popup_component_dialog,
-   popup_component_delete, 
+   popup_component_delete,
    popup_component_fix,     # Vertically fix command
    popup_component_unfix,   # Unfix command
    popup_component_save,    # Save component command
@@ -211,7 +212,7 @@ class Main : CommonDialog(
       self.undo_button.set_is_shaded()
    end
 
-   # 
+   #
    # Get undo item
    #
    method get_undo()
@@ -220,7 +221,7 @@ class Main : CommonDialog(
       if *undo_list = 0 then
          clear_undo()
       return res
-   end 
+   end
 
    #
    # Push an undo item
@@ -249,7 +250,7 @@ class Main : CommonDialog(
       self.redo_button.set_is_shaded()
    end
 
-   # 
+   #
    # Get redo item
    #
    method get_redo()
@@ -258,7 +259,7 @@ class Main : CommonDialog(
       if *redo_list = 0 then
          clear_redo()
       return res
-   end 
+   end
 
    #
    # Push an redo item
@@ -278,11 +279,11 @@ class Main : CommonDialog(
       if \self.canvas.modified then
          s ||:= " *"
       self.filename_label.set_label(file_name(s))
-   end      
+   end
 
    #
    # Special custom show to allow a popup during init
-   #         
+   #
    method custom_show(a)
       local s, f, c
       self.args := a
@@ -339,7 +340,7 @@ class Main : CommonDialog(
    end
 
    #
-   # Push a canvas onto undo list. 
+   # Push a canvas onto undo list.
    #
    method push_onto_undo(d)
       #
@@ -537,7 +538,7 @@ class Main : CommonDialog(
       local d, t
 
       if /self.canvas.selected then
-         op_preferences()  
+         op_preferences()
       else {
          t := canvas.dup()
          d := canvas.selected.dialog()
@@ -550,7 +551,7 @@ class Main : CommonDialog(
          }
       }
    end
-   
+
    #
    # Add a new CanvasComponent using the given CanvasComponentUI to
    # create it.
@@ -651,7 +652,7 @@ class Main : CommonDialog(
    end
 
    #
-   # Save as... operation 
+   # Save as... operation
    #
    method op_save_as()
       local fd, s, c
@@ -707,7 +708,11 @@ class Main : CommonDialog(
          #
          # Set modified flag of all in undo/redo buffer
          every (!self.undo_list | !self.redo_list).modified := 1
-      } else {
+         #If opened from UI tell UI to reload file.
+         if \my_ui then
+              my_ui.updatefile(self.canvas.filename)
+         }
+         else {
          c := self.canvas.gen_code()
          c.output_code(self.canvas.filename) | fail
          self.canvas.clear_modified()
@@ -719,6 +724,10 @@ class Main : CommonDialog(
          # Clear new flag of all in undo/redo buffer
          every (!self.undo_list | !self.redo_list).new_file_flag := &null
          self.canvas.new_file_flag := &null
+         #If opened from UI tell UI to reload file.
+         if \my_ui then {
+                my_ui.updatefile(self.canvas.filename)
+         }
       }
       return
    end
@@ -728,8 +737,8 @@ class Main : CommonDialog(
    #
    method op_about()
       local d
-      d := InfoDialog(["Ivib Version : " || version_number, 
-                       "Date : " || version_date, 
+      d := InfoDialog(["Ivib Version : " || version_number,
+                       "Date : " || version_date,
                        "Author : " || version_author], "About ivib")
       d.show_modeless(self)
 
@@ -832,6 +841,8 @@ class Main : CommonDialog(
       "   end",
       "",
       "   method end_dialog()",
+      "      #To close overall program use: exit(0)",
+      "      #To close a single dialog window use: dispose()",
       "   end",
       "",
       "   method init_dialog()",
@@ -843,6 +854,7 @@ class Main : CommonDialog(
       "",
       "   initially",
       "      self.Dialog.initially()",
+      "      self.connect(self, \"dispose\", CLOSE_BUTTON_EVENT)",
       "end",
       "",
       "#You can invoke your ivib layout with something like this:",
@@ -894,7 +906,7 @@ class Main : CommonDialog(
       if not(c := lang::decode(s)) then
          return alert_error("Invalid file format")
 
-      d := InfoDialog(["Ivib v1 file successfully loaded.", 
+      d := InfoDialog(["Ivib v1 file successfully loaded.",
                        "",
                        "NB - some manual editing may be needed after",
                        "the file is next saved."],
@@ -971,7 +983,7 @@ class Main : CommonDialog(
              else
                 self.op_save_as()
          }
-      }      
+      }
    end
 
    #
@@ -1051,6 +1063,7 @@ class Main : CommonDialog(
          "\^w" : op_save_as()
          "\^d" : op_dialog()
          "\^n" : op_new()
+         "\^i" : op_handleUI()
          "\^u" : op_select_up()
          "\^s" : if /save.is_shaded_flag then op_save()
          "\^z" : if /undo.is_shaded_flag then op_Undo()
@@ -1100,10 +1113,11 @@ class Main : CommonDialog(
       self.add(c)
 
       x := 0
-      y := 25
+      y := -45
 
       mb := MenuBar()
-      mb.set_size(, y)
+      mb.set_size(, 25)
+      mb.set_pos(0, y)
       self.add(mb)
 
       set_tooltip_start_delay(0)
@@ -1140,6 +1154,15 @@ class Main : CommonDialog(
       new.set_accel("n")
       new.set_label_right("Ctrl-n")
       file.add(new)
+
+      #
+      # Menu item button for switching to Unicon IDE.
+      #
+      open_UI := TextMenuItem()
+      open_UI.set_label("Unicon IDE")
+      open_UI.set_accel("i")
+      open_UI.set_label_right("Ctrl-i")
+      file.add(open_UI)
 
       prog_preferences := TextMenuItem()
       prog_preferences.set_label("Preferences...")
@@ -1341,7 +1364,7 @@ class Main : CommonDialog(
       mb.add(objects_menu)
 
       tb := CustomToolBar()
-      tb.set_pos(0, y)
+      tb.set_pos(0, y+25)
 
       every ui := !uis do {
          listener := ObjectActionListener(self, ui)
@@ -1441,21 +1464,21 @@ class Main : CommonDialog(
       button_name_label := Label()
       button_name_label.set_size(150, 25)
       button_name_label.set_draw_border()
-      button_name_label.set_pos(0, y)
+      button_name_label.set_pos(0, y+25)
       button_name_label.set_label("")
       self.add(button_name_label)
 
       filename_label := Label()
       filename_label.set_size(150, 25)
       filename_label.set_draw_border()
-      filename_label.set_pos(150, y)
+      filename_label.set_pos(150, y+25)
       filename_label.set_label("")
       self.add(filename_label)
 
       info_label := Label()
       info_label.set_size("100%-425", 25)
       info_label.set_draw_border()
-      info_label.set_pos(300, y)
+      info_label.set_pos(300, y+25)
       info_label.set_label("")
       self.add(info_label)
 
@@ -1463,7 +1486,7 @@ class Main : CommonDialog(
       pos_label.set_attribs("font=serif,10")
       pos_label.set_size(125, 25)
       pos_label.set_draw_border()
-      pos_label.set_pos("100%-125", y)
+      pos_label.set_pos("100%-125", y+25)
       pos_label.set_label("")
       self.add(pos_label)
 
@@ -1562,10 +1585,10 @@ class Main : CommonDialog(
       mdelete.connect(self, "op_Delete", ACTION_EVENT)
       self.connect(self, "op_quit", CLOSE_BUTTON_EVENT)
 
-      self.tool_area_height := y + 25
+      self.tool_area_height := y + 50
 
       height := 600
-      self.set_attribs("label=Ivib", "size=" || width || "," || height)
+      self.set_attribs("label=Ivib", "size=" || width || "," || height + 50)
       self.set_min_size(width, height)
 
       #
@@ -1592,7 +1615,7 @@ end
 #############################################################################
 #
 # Preferences for program
-#     
+#
 class Preferences : CommonDialog(c, okay, cancel, undo_size)
    method on_okay()
       integer(self.undo_size.get_contents()) | return alert_error("Non-integer undo size")

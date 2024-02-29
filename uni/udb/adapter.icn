@@ -12,6 +12,7 @@ class Adapter(
    shellProcessId,
    clientDetails,
    currentRequestBody,
+   showResult,
    udbError,
    tpArgs,
    bpSuccess,
@@ -42,7 +43,9 @@ class Adapter(
       repeat {
          if *cmdQueue ~= 0 then {
             cmdElement := pop(cmdQueue)
+            write(ximage(cmdElement))
             currentRequestBody := cmdElement["request"]
+            showResult := cmdElement["showResult"]
             cmd := cmdElement["command"]
             write("udb command: "||cmd||"\n")
             return cmd
@@ -70,17 +73,19 @@ class Adapter(
       }
    end
 
-   method put_cmdQueue(cmd, request_body)
-   local cmdElement := table()
+   method put_cmdQueue(cmd, requestBody, hideResult)
+   local cmdElement := table(), showResult
       cmdElement["command"] := cmd
-      cmdElement["request"] := \request_body
+      cmdElement["request"] := \requestBody
+      if /hideResult then cmdElement["showResult"] := "__true__"
       put(cmdQueue, cmdElement)
    end
 
-   method push_cmdQueue(cmd, request_body)
-   local cmdElement := table()
+   method push_cmdQueue(cmd, requestBody, hideResult)
+   local cmdElement := table(), showResult
       cmdElement["command"] := cmd
-      cmdElement["request"] := \request_body
+      cmdElement["request"] := \requestBody
+      if /hideResult then cmdElement["showResult"] := "__true__"
       push(cmdQueue, cmdElement)
    end
 
@@ -122,14 +127,15 @@ class Adapter(
          "launch" : { launch(request_seq, request_command, request_arguments) }
          "setBreakpoints" : { set_breakpoints(request_body, request_seq, request_command, request_arguments) }
          "configurationDone" : { put_cmdQueue("run", request_body); if /udbError then acknowledge(request_seq, request_command) }
-         "threads" : { threads(request_seq, request_command) }
+         "threads" : { threads(request_seq, request_command, 1) }
          "continue" : { put_cmdQueue("cont", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "next" : { put_cmdQueue("next", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "stepIn" : { put_cmdQueue("step", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "stepOut" : { put_cmdQueue("return", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "stackTrace" : { put_cmdQueue("bt", request_body)}
-         "scopes" : { every put_cmdQueue(!push([: "print -"||!"glsp" :], "frame "||request_arguments["frameId"]), request_body) }
-         "variables" : { put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body) }
+         "scopes" : { put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1);
+                     every put_cmdQueue(![: "print -"||!"glsp" :], request_body, 1) }
+         "variables" : { put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1) }
          "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
          "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"] }
          "evaluate" : { evaluate(request_body, request_seq, request_command, request_arguments) }
@@ -239,8 +245,7 @@ class Adapter(
       clientDetails := \request_arguments
 
       capabilitiesTable := [
-         "supportsConfigurationDoneRequest": "__true__";
-         "supportsValueFormattingOptions": "__true__"
+         "supportsConfigurationDoneRequest": "__true__"
       ]
 
       res := build_response(request_seq, "__true__", request_command, capabilitiesTable)
@@ -333,18 +338,14 @@ class Adapter(
    # Given a udb output table as 'outputTable', process that table.
    # EVERYTHING that udb outputs should go through this method.
    method process_udb_output_table(outputTable)
-      local udbRes := "", event, curCmd
+      local udbRes := "", event, curCmd, body
 
       curCmd := (\currentRequestBody)["command"] | "none"
 
       udbRes := outputTable["consoleMsg"]
 
       /outputTable["type"] := "console"
-      if not (outputTable["type"] == ("exited" | "stderr" | "crash")) then {
-         event := build_event("output", [
-            "category": "console";
-            "output": udbRes])
-         writes(sock, event)
+      if not (outputTable["type"] == ("exited" | "stderr" | "crash" )) then {
          if outputTable["type"] == "breakpoint" then {
             event := build_event("stopped", [
                "reason": "breakpoint";
@@ -359,7 +360,13 @@ class Adapter(
                "threadId": 1])
             writes(sock, event)
          }
-
+         if \showResult & outputTable["type"] ~== "assignVar" then {
+            body := [
+               "category": "console";
+               "output": udbRes]
+            event := build_event("output", body)
+            writes(sock, event)
+         }
          case curCmd of {
             "setBreakpoints": processBreakpointResult(outputTable)
             "stackTrace": processStackTraceResult(outputTable)
@@ -526,11 +533,17 @@ class Adapter(
       if res["type"] == "assignVar" then {
          if res["success"] == "__true__" then {
             body := [
+               "category": "console";
+               "output": res["consoleMsg"];
                "result": res["value"];
-               "variablesReference": 0
-            ]
-            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+               "variablesReference": 0]
+            event := build_event("output", body)
+            writes(sock, event)
+            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
             writes(sock, response)
+         }
+         else {
+            write("assignVar unsuccessful")
          }
       }
       else if res["type"] == "setBreakpoint" then {
@@ -549,6 +562,9 @@ class Adapter(
             event := build_event("breakpoint", body)
             writes(sock, event)
          }
+         else {
+            write("setBreakpoint unsuccessful")
+         }
       }
       else if res["type"] == "clearBreakpoint" then {
          if res["success"] == "__true__" then {
@@ -565,6 +581,9 @@ class Adapter(
             ]
             event := build_event("breakpoint", body)
             writes(sock, event)
+         }
+         else {
+            write("clearBreakpoint unsuccessful")
          }
       }
    end
@@ -589,7 +608,7 @@ class Adapter(
 
       # Same thing here, maybe we put this as the head of cmdQueue.
       # Returning won't do anything.
-      put_cmdQueue("frame "||request_arguments["frameId"], request_body)
+      put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
       put_cmdQueue(expression, request_body)
    end
 
@@ -650,6 +669,7 @@ class Adapter(
 
       seq := 1
       udbError := &null
+      showResult := &null
       lastUdbCmd := ""
       requestQueue := []
       cmdQueue := []

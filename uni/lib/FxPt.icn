@@ -1,0 +1,642 @@
+#################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+# --------------------------------------------------------------------------------
+# A class that provides Fixed Point arithmetic
+#
+# Authors   Steve Wampler and Don Ward
+#           February 2024
+#
+# Steve wrote the original ("proof of concept") code.
+# Don extended it and provided testing code.
+# And then, together, we cleaned it up.
+#
+# There are two classes
+#    FxPt:       Allow a more convenient interface that enables numeric
+#                values to take part in Fixed Point arithmetic.
+#                This class also implements operator overloading (if enabled).
+#    _FxPt:      Provide Fixed Point arithmetic and other operations
+#                between _FxPt objects.
+# The intention is that most code will use the FxPt class and should not
+# need to access the _FxPt class directly.
+#
+# --------------------------------------------------------------------------------
+
+package math
+
+# Hide stuff from unidoc
+$define HIDE
+# Internal definitions
+HIDE record VP(value,places)   # Used to return two values from a procedure
+$ifdef FXPT_DEBUG
+HIDE global FxPt_Debug         # Control over debugging code
+$endif
+
+#<p>
+#  A fixed point number representation that supports overloading the
+#  basic numeric operators ("<tt>+</tt>","<tt>-</tt>",
+#  "<tt>*</tt>","<tt>/</tt>")  and comparison operators
+#  (<tt>=</tt>, <tt>~=</tt>, <tt>&lt</tt>, <tt>&lt=</tt>, etc.)
+# to work with fixed point numbers.<br>
+#
+#  Note that Unicon's operator overloading implementation requires
+#  that the <i>left</i> operand be of the overloaded type.
+#  That is, <tt>FxPt("2.001")+3</tt> works but <tt>3+FxPt("2.001")</tt>
+#  doesn't.<br>
+#  <b>Operator overloading only works with Unicon configured with
+#  the <tt>--enable-ovld</tt> flag.  However, this class provides
+#  methods that can be invoked directly, as in: <tt>FxPt("3").add(4)</tt></b>
+#</p>
+class FxPt: _FxPt()
+
+   #<p>
+   # Add this and another fixed-point value or number
+   # <[returns sum of the two values as a FxPt]>
+   #</p>
+   method add(fp   # fixed-point value or number
+             )
+       return FxPt(self$_FxPt.add(_toFxPt(fp)))
+   end
+
+   #<p>
+   # Subtract another fixed-point value or number from this FxPt.
+   # <[returns difference of the two values as a FxPt]>
+   #</p>
+   method sub(fp   # fixed-point or number
+             )
+      return FxPt(self$_FxPt.sub(_toFxPt(fp)))
+   end
+
+   #<p>
+   # Multiply this and another fixed-point value or number
+   # <[returns product of the two values as a FxPt]>
+   #</p>
+   method mul(fp   # fixed-point or number
+             )
+      return FxPt(self$_FxPt.mul(_toFxPt(fp)))
+   end
+
+   #<p>
+   # Divide another fixed-point value or number from this FxPt.
+   # <[returns result of the division as a FxPt]>
+   #</p>
+   method div(fp       # fixed-point of number
+             )
+      return FxPt(self$_FxPt.div(_toFxPt(fp)))
+   end
+
+   #<p>
+   # Is this FxPt equal to another fixed-point value or number?
+   # <[returns success if two values are equal]>
+   # <[fails otherwise]>
+   #</p>
+   method eq(fp  # fixed-point or number
+            )
+       return self$_FxPt.eq(_toFxPt(fp))
+   end
+
+   #<p>
+   # Does this FxPt differ from another fixed-point value or number?
+   # <[returns success if two values have different values]>
+   # <[fails if they are the same value]>
+   #</p>
+   method ne(fp  # fixed-point or number
+            )
+       return self$_FxPt.ne(_toFxPt(fp))
+   end
+
+   #<p>
+   # Is this FxPt greater than another fixed-point value or number?
+   # <[returns success if this FxPt is greater than the parameter]>
+   # <[fails otherwise]>
+   #</p>
+   method gt(fp   # fixed-point or number
+            )
+      return self$_FxPt.gt(_toFxPt(fp))
+   end
+
+   #<p>
+   # Is this FxPt less than another fixed-point value or number?
+   # <[returns success if this FxPt is less than the parameter]>
+   # <[fails otherwise]>
+   #</p>
+   method lt(fp   # fixed-point or number
+            )
+      return self$_FxPt.lt(_toFxPt(fp))
+   end
+
+   #<p>
+   # Is this FxPt less than or equal to another fixed-point value or number?
+   # <[returns success if this FxPt is less than or equal to the parameter]>
+   # <[fails otherwise]>
+   #</p>
+   method le(fp   # fixed-point or number
+            )
+      return self$_FxPt.le(_toFxPt(fp))
+   end
+
+   #<p>
+   # Is this FxPt greater than or equal to another fixed-point value or number?
+   # <[returns success if this FxPt is greater than or equal to the parameter]>
+   # <[fails otherwise]>
+   #</p>
+   method ge(fp   # fixed-point or number
+            )
+      return self$_FxPt.ge(_toFxPt(fp))
+   end
+
+   #<p>
+   # Test to insure this FxPt has a valid value.
+   # <[returns this FxPt if its value is valid]>
+   # <[fails otherwise]>
+   #</p>
+   method valid()
+      if \v & \p then return self
+      # otherwise fail
+   end
+
+   #<p>
+   # Scale by 10^(p-p1).
+   # <[returns a copy of this FxPt scaled by 10^(p-p1)]>
+   # <[fails of p1 cannot be converted to an integer]>
+   #</p>
+   method scale(p1  # scale factor
+               )
+$ifdef FXPT_DEBUG
+      dbgPV { "Scaling", toString(), "to", p-p1, "places" }
+$endif          # FXPT_DEBUG
+      if p1 := _toInt(p1) then return FxPt(_FxPt(v, p-p1))
+      # fail
+   end
+
+   #<p>
+   # Use Newton-Raphson to converge on the reciprocal from an initial
+   # estimate. We use floating point to "guess" the starting value,
+   # which looks like cheating, but isn't really.
+   # <[returns 1/v]>
+   #</p>
+   method reciprocal(places # places for accuracy
+                    )
+      return FxPt(_reciprocal(places))
+   end
+
+   #<p>
+   # Round away from zero to p1 decimal places.
+   # <[returns a copy of this FxPt rounded to p1 decimal places]>
+   # <[fails of p1 cannot be converted to an integer]>
+   #</p>
+   method round(p1  # rounding precision
+               )
+      return FxPt(self$_FxPt.round(_toInt(p1)))
+   end
+
+   #<p>
+   # Truncate toward zero to p1 decimal places.
+   # <[returns a copy of this FxPt rounded to p1 decimal places]>
+   # <[fails of p1 cannot be converted to an integer]>
+   #</p>
+   method trunc(p1  # truncate toward zero to p1 decimal places
+               )
+      return FxPt(self$_FxPt.trunc(_toInt(p1)))
+   end
+
+   #<p>
+   # Remove trailing zeros and reduce number of places.
+   # <[returns a copy of this FxPt trimmed of trailing zeros]>k
+   # <[fails of result is not an integer]>
+   #</p>
+   method trim0()  # remove trailing zeros (and reduce p)
+      local vs := string(v)
+      local ts := trim(vs,'0')
+
+      return FxPt(_FxPt(integer(ts), p - (*vs - *ts)))
+   end
+
+HIDE # --------Overloaded Infix operators and internal methods----------
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __add__(fp)
+      return FxPt(self$_FxPt.add(_toFxPt(fp)))
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __minus__(fp)
+      return FxPt(self$_FxPt.sub(_toFxPt(fp)))
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __mult__(fp)
+      return FxPt(self$_FxPt.mul(_toFxPt(fp)))
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method __div__(fp, places)
+      return FxPt(self$_FxPt.div(_toFxPt(fp), places))
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+    method  __numeq__(fp)
+       if self$_FxPt.eq(_toFxPt(fp)) then return fp
+    end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __numne__(fp)
+      if self$_FxPt.ne(_toFxPt(fp)) then return fp
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __numgt__(fp)
+     if self$_FxPt.gt(_toFxPt(fp)) then return fp
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __numlt__(fp)
+      if self$_FxPt.lt(_toFxPt(fp)) then return fp
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __numle__(fp)
+      if self$_FxPt.le(_toFxPt(fp)) then return fp
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method  __numge__(fp)
+      if self$_FxPt.ge(_toFxPt(fp)) then return fp
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method __neg__()
+      # BUG!  If not inside a package the code compiles and works.
+      #       But inside a package, the compiler complains about undeclared identifier FxPt
+      #       and fails at runtime because zero is &null.
+      # static zero := FxPt(0)
+      static zero
+      initial {zero :=  FxPt(0) }
+      return zero.sub(self)
+   end
+
+   #<p>
+   #  Internal method for operator overloading.
+   #</p>
+   method __number__()
+      return copy(self)
+   end
+
+   #<p>
+   # Internal method to convert a numeric parameter to a FxPt instance
+   #</p>
+   method _toFxPt(fp)
+      case type(fp) of {
+         "integer" | "real" :             return FxPt(fp)
+         "string" : if numeric(fp) then   return FxPt(fp)
+         "FxPt__state" | "_FxPt__state" |
+         "math__FxPt__state" | "math___FxPt__state" : return fp
+      }
+      # Otherwise fail
+      end
+
+   #<p>
+   # Internal method to convert to an integer (or fail)
+   #</p>
+   method _toInt(p1)
+      # listing the allowable types is easier: everything else fails
+      case type(\p1) of {
+         "integer": { return p1 }
+         "real"   : { return integer(p1)}
+         "string" : { return \integer(p1)}
+         "FxPt__state" | "_FxPt__state" | "math__FxPt__state" | "math___FxPt__state"
+                  : { return p1.trunc(0).v }
+      }
+      # fail
+   end
+
+   # <p> <tt>FxPt</tt> objects may be created in one of four ways:<br>
+   # <table>
+   # <tr>
+   # <td> Numeric literals </td>
+   # <td> Any literal denoting an integer or real value, including decimal integer
+   #      literals (with or without sign and suffix), radix integer literals,
+   #      as well as real decimal literals and real exponent literals.
+   #      Large integer values are also allowed.
+   # </td>
+   # </tr>
+   # <td>String values </td>
+   # <td> Any string that can be converted to a numeric value: the allowable formats
+   #      are the same as above.
+   # </td>
+   # </tr>
+   # <tr>
+   # <td> <tt>FxPt</tt> objects</td>
+   # <td>An existing <tt>FxPt</tt> object may be used to provide the initial value.</td>
+   # </tr>
+   # <tr><td> <tt>&null</tt></td>
+   # <td> The default value (no parameter) is <tt>0</tt>.
+   # </td></tr>
+   # </table>
+   # </p>
+   # <p>
+   # Floating point values are limited to the precision of the underlying representation
+   # (about 15 decimal digits with IEEE double precision) whereas integers and strings can
+   # supply a far greater number of digits. Try
+   # <code>     write((FxPt(1).div(3).sub(FxPt(1.0/3.0))).toString())   </code>
+   # to see the difference. You may write <tt>FxPt(42.000123456789123456789123456789)</tt>
+   # but the resulting fixed point object will not have anywhere near that many digits.
+   # </p>
+   # <p>
+   # The advantage of using a string value is that the number of places may be specified
+   # explicitly with trailing zeros:  <tt>FxPt("123.4")</tt> and <tt>FxPt("123.400")</tt>
+   # both specify the same external value but differ in the position of the fixed point.
+   # <br> Using a string avoids an extra <tt>round</tt> operation.
+   # <tt>FxPt("123.400")</tt> is equivalent to <tt>FxPt(123.4).round(3)</tt>.
+   # </p>
+   # <p> Initialisation by providing other types will cause a "failure". Unfortunately,
+   # Unicon's <tt>initially</tt> methods cannot specify success or failure directly;
+   # from the perspective of the caller they always succeed. The <tt>valid</tt> method
+   # may be used to test for a successful initialisation.
+   # <pre><code>
+   #    if FxPt([1,2,3]).valid() then {
+   #       write("lists are allowed")
+   #    else {
+   #       write("lists are NOT allowed")
+   #    }
+   # </code></pre>
+   # Use of a <tt>FxPt</tt> object that is not valid will cause a run time error at the
+   # point of use.
+   # </p>
+   initially (s)  # value to convert to fixed-point
+      local vp, places
+      static ragits := &digits ++ &letters  # short for radix digits
+
+      /s := 0
+      /places := 0
+      case (type(s)) of {
+         "string": {
+            if s ? # look for radix integer or integer with KMGTP sufffix
+                   # note there is no attempt to check the ragits correspond to the radix value
+               ((*tab(many(&digits)) > 0)  & tab(any('rR')) &
+                (*tab(many(ragits)) > 0) & pos(0) ) |
+               (tab(any('+-') | 1) & (*tab(many(&digits)) > 0) & tab(any('KMGTP')) & pos(0))
+            then { # Hand it to numeric to sort out -- numeric can fail, if you're unlucky
+               self$_FxPt.initially(\(numeric(s)), places) | { v := p := &null}
+            } else { # try for a conventional integer or floating point number
+               if vp := _cnvfpt(s) then {
+                  self$_FxPt.initially(vp.value, vp.places)
+               } else {
+                  v := p := &null    # Construct an "invalid" instance
+               }
+            }
+         }
+         "integer": {
+            self$_FxPt.initially(s, places)
+         }
+         "real": { # Convert to a digit string plus places (removing any exponent).
+            vp := _cnvfpt(string(s)) | stop( "unknown Fpt format ", s)
+            self$_FxPt.initially(vp.value, vp.places)
+            }
+         "math___FxPt__state" |
+         "_FxPt__state" : { # A _FxPt object is being passed in, convert it
+            self$_FxPt.initially(s.v, s.p)
+            }
+         "math__FxPt__state" |
+         "FxPt__state" : { # A FxPt object is being passed in, clone it
+            self$_FxPt.initially(s.v, s.p)
+         }
+         default: {
+            v := p := &null     # Construct an "invalid" instance
+         }
+      }
+end
+
+#<p>
+# A fixed point arithmetic class that provides operations on _FxPt objects.
+# <b>Internal use only.</b>
+#</p>
+class _FxPt(v, # value as an integer
+            p  # number of decimal places in value
+           )
+
+   method toString()    # convert this fixed-point to a string representation
+      # Conversion to a string could be expensive. Only do it once.
+      local vs := string(v), sv # (sign of v)
+      if p = 0 then return vs
+      if vs[1] == "-" then { sv := "-"; vs := vs[2:0] } else { sv := "" }
+      if p > 0 then {
+         return (sv ||
+                 if *vs > p
+                 then vs ?  tab(-p) || "." || tab(0)
+                 else "0." || repl("0", p - *vs) || vs
+                )
+      } else {
+         return sv || vs || repl("0", -p)
+      }
+   end
+
+   method add(fp)   # add this and another fixed-point
+      if p > fp.p then return _FxPt(v+(fp.v||repl("0",p-fp.p)),p)
+      else return _FxPt(fp.v+(v||repl("0",fp.p-p)),fp.p)
+   end
+
+   method sub(fp)   # subtract another fixed-point from this
+      if p > fp.p then return _FxPt(v-(fp.v||repl("0",p-fp.p)),p)
+      else return _FxPt((v||repl("0",fp.p-p))-fp.v,fp.p)
+   end
+
+   method mul(fp)   # multiply this and another fixed-point
+      return _FxPt(v*fp.v,p+fp.p)
+   end
+
+   # Use Newton-Raphson to converge on the reciprocal from an initial
+   # estimate. We use floating point to "guess" the starting value,
+   # which looks like cheating, but isn't really.
+   method _reciprocal(places)
+      local vp, x
+      static two
+      # start with 10 decimal places
+      initial {two := _FxPt(20000000000,10)}
+      vp := _cnvfpt(1.0/real(self.toString()))
+      x := _FxPt(vp.value,vp.places)
+$ifdef FXPT_DEBUG
+      dbgPV{ "Estimate = ", x.toString() }
+$endif          # FXPT_DEBUG
+      /places := 200 # We have to stop somewhere
+      while x.p < places do {
+         x := x.mul(two.sub(x.mul(self))) # Xn+1 = Xn(2-V0*Xn)
+$ifdef FXPT_DEBUG
+         dbgPV{ "iteration  ", x.toString() }
+$endif          # FXPT_DEBUG
+      }
+      return x.round(x.p > places) | x
+   end
+
+   method div(fp, places)   # divide this by fp
+      return self.mul(fp._reciprocal(places))
+   end
+
+   method round(p1)  # round away from zero to p1 decimal places
+      local v1
+$ifdef FXPT_DEBUG
+      dbgPV { "Rounding", toString(), "to", p1, "places" }
+$endif          # FXPT_DEBUG
+      if p1 >= 0 then {
+         if p1 = p then {return self} # Nothing to do
+         if p1 > p then { # Same external value, more decimal places
+            return _FxPt(integer(v * 10^(p1-p)), p1)
+         }
+         else {
+            v ? {
+               v1 := tab(p1-p)
+               if *v1 = 0 then return _FxPt(0,p1)
+               if move(1) >= 5 then { if v > 0 then v1 +:=1 else v1 -:=1 }
+               return _FxPt(integer(v1), p1)
+            }
+         }
+      }
+      # fail
+   end
+
+   method trunc(p1)  # truncate toward zero to p1 decimal places
+      local v1
+$ifdef FXPT_DEBUG
+      dbgPV { "Truncating", toString(), "to", p1, "places" }
+$endif          # FXPT_DEBUG
+       if p1 >= 0 then {
+        if p1 = p then {return self} # Nothing to do
+         if p1 > p then {
+            return _FxPt(integer(v * 10^(p1-p)), p1)
+         }
+         else {
+            v ? {
+               v1 := tab(p1-p)
+               if *v1 = 0 then return _FxPt(0,p1)
+               return _FxPt(integer(v1), p1)
+            }
+         }
+      }
+      # fail
+   end
+
+   # Internal method: compare self with fp (return -1, 0, 1  for <, =, >)
+   method _cmp(fp)
+      local myV, fpV
+      if fp.p = p then { # easy
+         myV := integer(v); fpV := integer(fp.v)
+       } else {
+         if p > fp.p then {
+            myV := integer(v); fpV := integer(fp.v||repl("0",p-fp.p))
+         } else {
+            myV := integer(v || repl("0",fp.p-p)); fpV := integer(fp.v)
+         }
+      }
+      return if myV < fpV then -1 else if myV > fpV then 1 else 0
+   end
+
+   method eq(fp)  # self = fp?
+      return 0 = _cmp(fp)
+   end
+
+   method ne(fp)  # self ~= fp?
+      return 0 ~= _cmp(fp)
+   end
+
+   method gt(fp)  # self < fp?
+      return 1 = _cmp(fp)
+   end
+
+   method lt(fp)  # self > fp?
+      return -1 = _cmp(fp)
+   end
+
+   method le(fp)  # self <= fp?
+      return not gt(fp)
+   end
+
+   method ge(fp)  # self >= fp?
+      return not lt(fp)
+   end
+
+   #<p>
+   # Internal method to convert a numeric string (integer or floating point)
+   # into a digit string plus number of decimal places
+   #</p>
+   method _cnvfpt(fstr)
+      local value, places, exponent, p1
+
+      fstr ? {
+         value := if = "-" then "-" else ""
+         value ||:= tab(many(&digits)) | ""
+         if = "." then { # After decimal point
+            p1 := &pos
+            value ||:= tab(many(&digits))
+         }
+
+         if tab(any('eE')) then { # After Exponent
+            places := (&pos - \p1 - 1) | 0
+            exponent := integer(tab(0))
+         } else { # No exponent
+            places := (&pos - \p1) | 0
+            exponent := 0
+         }
+         if /exponent | not pos(0) then fail
+      }
+
+      if places > exponent then {
+         value ||:= repl("0",  0 < (exponent - places)) | ""
+      }
+      places -:= exponent
+      return VP(value,places)
+   end
+
+$ifdef FXPT_DEBUG
+   # Debugging: use with {}  e.g. dbgPV{ "The values are", v1, "and", v2 }
+   method dbgPV(args)
+      local trace := &trace
+      &trace := 0
+      if \FxPt_Debug then {
+         writes("v = ", (\v | "&null"), " p = ", (\p | "&null"), "   ")
+         every writes(" ", @(!args))
+         write()
+      }
+      &trace := trace
+   end
+$endif          # FXPT_DEBUG
+
+   initially (v1,p1)
+       v := \v1 | 0
+       p := \p1 | 0
+end
+
+$ifdef FXPT_DEBUG
+# Wrap one or more expressions in debug-on ... debug-off
+procedure FxPtDebug(args)
+   local fxptd := FxPt_Debug
+   FxPt_Debug := 1
+   every @!args
+   FxPt_Debug := fxptd
+   return
+end
+$endif          # FXPT_DEBUG

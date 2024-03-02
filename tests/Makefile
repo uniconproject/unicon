@@ -5,7 +5,7 @@ E=/bin/echo
 # define UC if it is not defined already
 UC?=../bin/unicon
 
-TESTS=general posix thread pattern mt
+TESTS=general posix thread pattern mt unicon
 
 #  The default is to run all tests, using icont.
 

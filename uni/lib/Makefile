@@ -6,7 +6,7 @@ include $(BASE)/Makedefs.uni
 UFILES=gui.u file_dlg.u db.u \
  address.u base64handler.u basicclasscoding.u class.u classcoding.u \
  cltable.u comparator.u complex.u compoundedit.u contentdisposition.u contenttype.u \
- cvsuser.u cvsutil.u decode.u encode.u encodinghandler.u error.u format.u \
+ cvsuser.u cvsutil.u decode.u encode.u encodinghandler.u error.u format.u FxPt.u \
  fcn_util.u group.u httpclient.u json.u langprocs.u listener.u \
  mailbox.u mailmisc.u mapbytes.u message.u messagehandler.u method.u \
  money.u msg.u multipart.u multiparthandler.u netclient.u noophandler.u object.u \

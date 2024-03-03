@@ -398,6 +398,14 @@ class Adapter(
             "text": udbRes;
             "threadId": 1])
          writes(sock, event)
+         cmdQueue := []
+         # If error happened before execution even started, abort immediately
+         if member(outputTable, "state") then {
+            if outputTable["state"] = 0 then {
+               event := build_event("terminated")
+               writes(sock, event)
+            }
+         }
       }
       else if outputTable["type"] == "exited" then {
          event := build_event("exited", [

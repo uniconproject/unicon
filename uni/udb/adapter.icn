@@ -186,7 +186,15 @@ class Adapter(
       responseTable["message"] := \message
       responseTable["body"] := \body
 
-      responseBody := tojson(responseTable)
+      responseBody := tojson(responseTable) | tojson([
+         "seq": seq;
+         "type": "response";
+         "request_seq": request_seq;
+         "success": "__false__";
+         "command": request_command;
+         "message": "Failed to convert response to json."
+         ])
+
       responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
 
       write("udap -> client: " || responseBody)
@@ -228,7 +236,11 @@ class Adapter(
       ]
       eventTable["body"] := \body
 
-      eventBody := tojson(eventTable)
+      eventBody := tojson(eventTable) | tojson([
+         "seq": seq;
+         "type": "event";
+         "event": event
+         ])
       eventHeader := "Content-Length:" || *eventBody || "\r\n\r\n"
 
       write("udap -> client: " || eventBody)

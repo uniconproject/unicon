@@ -627,6 +627,7 @@ end
 #
 method getFileTotalLines(fname)
    /fname := keyword("file", MONITORED) | procMainFile
+   if not member(fileText, fname) then fail
    if lines := *(\fileText[fname]) then return lines
 end
 
@@ -634,6 +635,7 @@ end
 # returns an image of the current source line
 #
 method getSrcLine(filename, lineno)
+   if not member(fileText, \filename) then fail
    if \(code := fileText[\filename][\lineno]) then return code
 end
 
@@ -644,6 +646,7 @@ method getSrcCode(fname)
    local text, line, code := []
 
    if /fname then fname := keyword("file", MONITORED)
+   if not member(fileText, fname) then fail
 
    if \(text := fileText[fname]) then {
       every line := 1 to *text do 

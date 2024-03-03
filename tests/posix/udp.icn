@@ -1,9 +1,9 @@
 $include "posix.icn"
 
 procedure main() 
-
+   port:=":1072"
    if fork() == 0 then {
-      f := open(":1072", "nua") 
+      f := open(port, "nua")
  
       if r := receive(f) then { 
           # Process the request in r.msg - in the case of the time 
@@ -14,7 +14,10 @@ procedure main()
    }
 
    delay(100)
-   f := open(":1072", "nu") |
+   if (&features == "MacOS") then
+      port := "localhost" || port
+
+   f := open(port, "nu") |
       stop("Open failed: ", sys_errstr(&errno))
 
    write(f, "")

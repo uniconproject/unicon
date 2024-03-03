@@ -29,7 +29,7 @@ $(IGNORE):
 	else ./$@ > local/$@.out 2>&1; fi || true
 	-@echo "Expect/ignore these differences in $@:"
 	-@diff stand/$@.std local/$@.out; \
-	@if [ $$? -eq 0 ] ; then echo "OK"; \
+	if [ $$? -eq 0 ] ; then echo "OK"; \
 	else echo "[Test $@] Ignored"; fi || true
 	-@rm $@$(EXE)
 
@@ -63,8 +63,11 @@ endif
 	diff --suppress-common-lines -wy stand/$@.wstd local/$@.out > $@.diff; fi \
 	else diff -wq stand/$@.std local/$@.out >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "OK"; \
+	else \
+	if grep -qi "This Program Requires" local/$@.out; then cat local/$@.out; \
 	else echo "Failed"; \
 	diff --suppress-common-lines -wy stand/$@.std local/$@.out > $@.diff; fi \
+	fi; \
 	fi || true
 	-@rm $@$(EXE)
 

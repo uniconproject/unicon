@@ -2,12 +2,12 @@
 $include "posix.icn"
 
 procedure main()
-
+   sock := "revsock" || (?900 + 100)
    if fork() ~== 0 then {
       # parent
       delay(1000)
-      f := open("revsock", "n") | stop("Couldn't connect: ",
-				       sys_errstr(&errno))
+      f := open(sock, "n") |
+         stop("Couldn't connect: ",  sys_errstr(&errno))
 
       write(f, "hello, world!")
       write(read(f))
@@ -18,15 +18,18 @@ procedure main()
    }
 
    # child
-   if f := open("revsock", "na") then {
+   if f := open(sock, "na") then {
       if fork() = 0 then {
-	 handle(f)
-	 close(f)
-	 exit(0)
+         handle(f)
+         close(f)
+         exit(0)
       }
       close(f)
-
-      system("rm revsock")
+      if (&features == "MacOS") then
+         # workaround a bug on MacOS where the name is one character shorter
+         system("rm " || sock[1:-1])
+      else
+         system("rm " || sock)
    }
    (&errno = 0) | stop("Couldn't accept: ", sys_errstr(&errno))
 end

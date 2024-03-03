@@ -620,7 +620,8 @@ class Adapter(
 
       # Same thing here, maybe we put this as the head of cmdQueue.
       # Returning won't do anything.
-      put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
+      if member(request_arguments, "frameId") then
+         put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
       put_cmdQueue(expression, request_body)
    end
 

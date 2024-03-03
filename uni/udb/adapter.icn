@@ -93,8 +93,10 @@ class Adapter(
    method load_cmds()
       local dir, procs, cmd
 
-      filePath ? dir := tab(findre("\/[^\/]+$"))
-         put_cmdQueue("dir args " || dir)
+      filePath ? {
+         if dir := tab(findre("\/[^\/]+$")) then
+            put_cmdQueue("dir args " || dir)
+      }
 
       if procs := pathfind("udb") then {
          procs ? procs := tab(findre("unicon") + 6)
@@ -276,7 +278,7 @@ class Adapter(
          tab(match("^\"\\"))
          pth := tab(find(".icn"))
       }
-      filePath := pth
+      filePath := \pth | request_arguments["program"]
 
       if member(request_arguments, "args") then {
          tpArgs := request_arguments["args"]

@@ -18,6 +18,9 @@ class Adapter(
    bpSuccess,
    numBreakpoints,
    breakpointList,
+   wpSuccess,
+   numWatchpoints,
+   watchpointList,
    numScopes,
    scopesList
    )
@@ -38,7 +41,7 @@ class Adapter(
 
    # Get the next command in cmdQueue.
    method getNextCommand()
-      local request_body, request_seq, request_command, request_arguments, cmdElement, cmd, cmd_request
+      local request_body, request_seq, request_command, request_arguments, cmdElement, cmd, req
 
       repeat {
          if *cmdQueue ~= 0 then {
@@ -56,6 +59,7 @@ class Adapter(
                   if jtou(request_body)["command"] ~== "runInTerminal" then {
                      write("put "||jtou(request_body)["command"])
                      put(requestQueue, request_body)
+                     write(ximage(requestQueue))
                      next
                   }
                   else {
@@ -63,8 +67,12 @@ class Adapter(
                      process_request(request_body)
                      load_cmds()
 
-                     while *requestQueue > 0 do
-                        process_request(pop(requestQueue))
+                     while req := \pop(requestQueue) do {
+                        write("###############")
+                        write(ximage(requestQueue))
+                        write("\npopped "||jtou(req)["command"]|"\n")
+                        process_request(req)
+                     }
                   }
             }
             else {
@@ -129,13 +137,15 @@ class Adapter(
          "initialize": { initialize(request_seq, request_command, request_arguments) }
          "launch" : { launch(request_seq, request_command, request_arguments) }
          "setBreakpoints" : { set_breakpoints(request_body, request_seq, request_command, request_arguments) }
+         "setDataBreakpoints" : { set_watchpoints(request_body, request_seq, request_command, request_arguments) }
+         "dataBreakpointInfo" : { watchpoint_info(request_body, request_seq, request_command, request_arguments)}
          "configurationDone" : { put_cmdQueue("run", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "threads" : { threads(request_seq, request_command, 1) }
          "continue" : { put_cmdQueue("cont", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "next" : { put_cmdQueue("next", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "stepIn" : { put_cmdQueue("step", request_body); if /udbError then acknowledge(request_seq, request_command) }
          "stepOut" : { put_cmdQueue("return", request_body); if /udbError then acknowledge(request_seq, request_command) }
-         "stackTrace" : { put_cmdQueue("bt", request_body)}
+         "stackTrace" : { put_cmdQueue("bt", request_body, 1)}
          "scopes" : { put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1);
                      every put_cmdQueue(![: "print -"||!"glsp" :], request_body, 1) }
          "variables" : { put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1) }
@@ -260,7 +270,9 @@ class Adapter(
       clientDetails := \request_arguments
 
       capabilitiesTable := [
-         "supportsConfigurationDoneRequest": "__true__"
+         "supportsConfigurationDoneRequest": "__true__";
+         # "supportsFunctionBreakpoints": "__true__";
+         "supportsDataBreakpoints" : "__true__"
       ]
 
       res := build_response(request_seq, "__true__", request_command, capabilitiesTable)
@@ -310,7 +322,7 @@ class Adapter(
 
    # Handles all the things required from a client "setBreakpoints" request.
    method set_breakpoints(request_body, request_seq, request_command, request_arguments)
-      local pth, filename, line
+      local pth, filename
 
       if member(request_arguments["source"], "path") then
          pth := request_arguments["source"]["path"]
@@ -326,14 +338,12 @@ class Adapter(
          filename := tab(0)
       }
 
-      put_cmdQueue("clear break " || filename || " all", request_body)
+      put_cmdQueue("clear break " || filename || " all", request_body, 1)
       numBreakpoints +:= 1
       
       if member(request_arguments, "breakpoints") then {
          every bp := !request_arguments["breakpoints"] do {
-            line := bp["line"]
-            cond := bp["condition"]
-            put_cmdQueue("b " || filename || ":" || line, request_body)
+            put_cmdQueue("b " || filename || ":" || bp["line"], request_body)
             numBreakpoints +:= 1
          }
       }
@@ -348,6 +358,33 @@ class Adapter(
          writes(sock, res)
          return
       }
+   end
+
+   method set_watchpoints(request_body, request_seq, request_command, request_arguments)
+      watchpoints := request_arguments["breakpoints"]
+
+      put_cmdQueue("clear watch", request_body)
+      numWatchpoints +:= 1
+
+      every wp := !watchpoints do {
+         if \wp["frameId"] then put_cmdQueue("frame "||wp["frameId"], 1)
+         put_cmdQueue("vwatch "||wp["dataId"])
+         numWatchpoints +:= 1
+      }
+
+   end
+
+   method watchpoint_info(request_body, request_seq, request_command, request_arguments)
+   local res, body
+      write(ximage(request_body))
+
+      body := [
+         "dataId": request_arguments["name"]; # should be id that udb uses, not sure how that should be retrieved
+         "description": "description here"
+      ]
+
+      res := build_response(request_seq, "__true__", request_command, body)
+      writes(sock, res)
    end
 
    # Handles all the things required from a client "threads" request.
@@ -398,6 +435,12 @@ class Adapter(
                "threadId": 1])
             writes(sock, event)
          }
+         else if outputTable["type"] == "watchpoint" then {
+            event := build_event("stopped", [
+               "reason": "data breakpoint";
+               "threadId": 1])
+            writes(sock, event)
+         }
          if \showResult & outputTable["type"] ~== "assignVar" then {
             body := [
                "category": "console";
@@ -407,6 +450,7 @@ class Adapter(
          }
          case curCmd of {
             "setBreakpoints": processBreakpointResult(outputTable)
+            "setDataBreakpoints": processWatchpointResult(outputTable)
             "stackTrace": processStackTraceResult(outputTable)
             "scopes": processScopesResult(outputTable)
             "variables": processVariablesResult(outputTable)
@@ -448,10 +492,11 @@ class Adapter(
             "category": "console";
             "output": "[answered Y; input not from terminal]\n"])
          writes(sock, event)
-
-         # Maybe we put "Y" at the head of cmdQueue?
-         # Returning "Y" from this method won't do anything currently.
-         # return "Y"
+         write("\n\n%%%%%%%%%%%%%\n\n")
+         write(curCmd)
+         write(ximage(outputTable))
+         write("*********")
+         write(outputTable["requireResponse"])
          push_cmdQueue("Y")
       }
    end
@@ -483,6 +528,37 @@ class Adapter(
 
          bpSuccess := 0
          breakpointList := []
+      }
+   end
+
+   method processWatchpointResult(res)
+      if \res["success"] == "__false__" then {
+         response := build_response(request_seq, "__false__", request_command)
+         writes(sock, response)
+         return
+      }
+
+      wpSuccess +:= 1
+      if res["type"] == "addWatch" then {
+         wp := [
+            "reason": "new";
+            "breakpoint": [
+               "id": res["id"];
+               "verified": "__true__";
+               "source": [
+                  "path": filePath||".icn"
+               ]
+            ]
+         ]
+         push(watchpointList, wp)
+      }
+      if wpSuccess == numWatchpoints then {
+         body := table("breakpoints", watchpointList)
+         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+         writes(sock, response)
+
+         wpSuccess := 0
+         watchpointList := []
       }
    end
 
@@ -637,26 +713,28 @@ class Adapter(
    # Handles all the things required from a client "evaluate" request.
    method evaluate(request_body, request_seq, request_command, request_arguments)
       local res, expression, result := "", isEvalExp
+      if request_arguments["context"] == "repl" then {
+         expression := request_arguments["expression"]
+         expression ? {
+            if tab(match("-exec ")) then {
+               expression := tab()
+               lastUdbCmd := expression
+            }
+            else if expression ~== "" then {
+               expression := "p "||expression
+            }
+            else if \lastUdbCmd then {
+               expression := lastUdbCmd
+            }
+         }
 
-      expression := request_arguments["expression"]
-      expression ? {
-         if tab(match("-exec ")) then {
-            expression := tab()
-            lastUdbCmd := expression
-         }
-         else if expression ~== "" then {
-            expression := "p "||expression
-         }
-         else if \lastUdbCmd then {
-            expression := lastUdbCmd
-         }
+         if member(request_arguments, "frameId") then
+            put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
+         put_cmdQueue(expression, request_body)
       }
-
-      # Same thing here, maybe we put this as the head of cmdQueue.
-      # Returning won't do anything.
-      if member(request_arguments, "frameId") then
-         put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
-      put_cmdQueue(expression, request_body)
+      else if request_arguments["context"] == "watch" then {
+         
+      }
    end
 
    # Handle a udb output table of "type" set to "crash".
@@ -723,6 +801,9 @@ class Adapter(
       numBreakpoints := 0
       breakpointList := []
       bpSuccess := 0
+      numWatchpoints := 0
+      watchpointsList := []
+      wpSuccess := 0
       scopesList := []
       numScopes := 0
    end

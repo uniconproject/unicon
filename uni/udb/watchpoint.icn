@@ -359,7 +359,7 @@ end
 # Prints the watched var info whenever it reaches a condition or state
 #
 method printInfo(var)
-   local cur_file, cur_line, i, j, ans, r, trace
+   local cur_file, cur_line, i, j, ans, r, trace, resultTable := table("type", "watchpoint")
 
    varInfo[var].hitCount +:= 1
    cur_file := keyword("file",MONITORED)
@@ -400,7 +400,8 @@ method printInfo(var)
    msg||:="\n   "||cur_line||":"||
           DState.srcFile.getSrcLine(cur_file, cur_line)
 
-   DState.Write(msg)
+   resultTable["consoleMsg"] := msg
+   DState.Write(resultTable)
 
    # whem hitMax reaches the end, it should notify the user.
    if \varInfo[var].hitMax then {
@@ -415,7 +416,7 @@ end
 # it notfies the user that there is no more watching
 #
 method showEndWatchInfo(var)
-   local ans, r, i
+   local ans, r, i, resultTable := table()
 
    DState.State := PAUSE
    DState.RunCode := WATCH
@@ -432,7 +433,9 @@ method showEndWatchInfo(var)
    else
       msg := ""
    msg ||:="\n   Do you want to display previous info (Y|n)? : "
-   DState.Writes(msg)
+   resultTable["consoleMsg"] := msg
+   resultTable["requireResponse"] := "__true__"
+   DState.Write(resultTable)
    if *(ans := DState.stateRead()) = 0 | ans == ("y"|"Y"|"yes"|"YES") then {
       if varInfo[var].hitMax > 0 then {
          msg :="\n   --------------------------------------------------"
@@ -622,7 +625,7 @@ end
 # watchType = (WASSIGN | WVALUECHANGE | WTYPECHANGE | WREAD)
 #
 method addWatchpoint(coexp)
-   local old_id
+   local old_id, resultTable := table("type", "addWatch")
 
    if watchType = WREAD then insert(DState.watchReadMask, var)
    else                      insert(DState.watchChangeMask, var)
@@ -651,7 +654,13 @@ method addWatchpoint(coexp)
       msg ||:= " coexp " || coexp.id
    msg ||:="; "||getWatchTypeName(varInfo[var])
 
-   DState.Write(msg)
+   resultTable["consoleMsg"] := msg
+   resultTable["success"] := "__true__"
+   resultTable["id"] := varInfo[var].id
+   resultTable["var"] := var
+   resultTable["oldId"] := \oldId
+
+   DState.Write(resultTable)
 end
 
 #
@@ -851,7 +860,7 @@ end
 # clears all watchpoints
 #
 method cmdClear(cmd)
-   local x, i := 0, id
+   local x, i := 0, id, resultTable := table("type", "clearWatchpoint")
 
    # clears all watchpoints (all types)
    if *cmd = 2 then {
@@ -865,10 +874,12 @@ method cmdClear(cmd)
          if i > 0 then {
             msg := "\n   All watchpoints are cleared; ("||i||" total)."
             self.id := 0
-            }
+         }
          else
             msg := "\n   No watchpoints are available to be cleared."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       else {
          setWatchType(cmd[2], WASSIGN)
@@ -878,15 +889,17 @@ method cmdClear(cmd)
                delete(DState.watchChangeMask, x)
                delete(DState.watchReadMask, x)
                i +:= 1
-               }
             }
+         }
          if i > 0 then
             msg:="\n   All Watchpoints of type "||cmd[2]||
                  " are cleared; ("||i||" total)."
          else
             msg:="\n   No Watchpoints of type "||cmd[2]||
                  " are available to clear."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       }
    else if id := integer(cmd[3]) then {
@@ -898,26 +911,32 @@ method cmdClear(cmd)
             # decrement wp number?
             #self.id -:= 1
             msg:="\n   Watchpoints #"||id||" is cleared"
-            DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
             return
-            }
          }
-      msg:="\n   Watchpoints # "||id|| " is not available to be cleared."
-      DState.Write(msg)
       }
+      msg:="\n   Watchpoints # "||id|| " is not available to be cleared."
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
+   }
    else {
       DState.State := ERROR
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
            "\n   Try \"help\" for assistance."
-      DState.Write(msg)
-      }
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
+   }
 end
 
 #
 # It deletes pre-set breakpoints
 #
 method cmdDelete(cmd)
-   local x, i := 0, id
+   local x, i := 0, id, resultTable := table("type", "clearWatch")
 
    # deletes all watchpoints (all types)
    if *cmd = 2 then {
@@ -928,13 +947,15 @@ method cmdDelete(cmd)
                delete(DState.watchChangeMask, x)
                delete(DState.watchReadMask, x)
                i +:= 1
-               }
             }
+         }
          if i > 0 then
             msg := "\n   All watchpoints are deleted; ("||i||" total)."
          else
             msg := "\n   No watchpoints are available to delete."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       else {
          setWatchType(cmd[2], WASSIGN)
@@ -945,15 +966,17 @@ method cmdDelete(cmd)
                delete(DState.watchChangeMask, x)
                delete(DState.watchReadMask, x)
                i +:= 1
-               }
             }
+         }
          if i > 0 then
             msg:="\n   All Watchpoints of type "||cmd[2]||
                  " are deleted; ("||i||" total)."
          else
             msg:="\n   No Watchpoints of type "||cmd[2]||
                  " are available to delete."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       }
    else if id := integer(cmd[3]) then {
@@ -964,32 +987,40 @@ method cmdDelete(cmd)
                delete(DState.watchChangeMask, x)
                delete(DState.watchReadMask, x)
                msg:="\n   Watchpoints #"||id||" is deleted"
-               DState.Write(msg)
+               resultTable["consoleMsg"] := msg
+               resultTable["success"] := "__true__"
+               DState.Write(resultTable)
                return
-               }
+            }
             else {
                msg := "\n   Watchpoint #"||id||" is already deleted."
-               DState.Write(msg)
+               resultTable["consoleMsg"] := msg
+               resultTable["success"] := "__true__"
+               DState.Write(resultTable)
                fail
                }
             }
          }
       msg:="\n   Watchpoints # "||id|| " is not available to be deleted."
-      DState.Write(msg)
-      }
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
+   }
    else {
       DState.State := ERROR
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
            "\n   Try \"help\" for assistance."
-      DState.Write(msg)
-      }
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
+   }
 end
 
 #
 # It deletes pre-set breakpoints
 #
 method cmdEnable(cmd)
-   local x, i := 0, id
+   local x, i := 0, id, resultTable := table("type", "enableWatch")
 
    # enables all watchpoints (all types)
    if *cmd = 2 then {
@@ -1004,7 +1035,9 @@ method cmdEnable(cmd)
             msg:="\n   All disabled watchpoints are enabled; ("||i||" total)."
          else
             msg:="\n   No disabled watchpoints are available to enable."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       else {
          setWatchType(cmd[2], WASSIGN)
@@ -1021,7 +1054,9 @@ method cmdEnable(cmd)
          else
             msg:="\n   No disabled watchpoints of type "||cmd[2]||
                  " are available to enable."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       }
    else if id := integer(cmd[3]) then {
@@ -1030,29 +1065,42 @@ method cmdEnable(cmd)
             if varInfo[x].state = DISABLED then {
                varInfo[x].state := ENABLED
                msg:="\n   Watchpoints #"||id||" is enabled"
-               DState.Write(msg)
+               resultTable["consoleMsg"] := msg
+               resultTable["success"] := "__true__"
+               resultTable["id"] := id
+               DState.Write(resultTable)
                return
-               }
+            }
             else {
                msg := "\n   Watchpoint #"||id||" is "
-               if varInfo[x].state = ENABLED then
-                  msg := "already enabled."
-               else
-                  msg := "deleted; it cannot be enabled."
-               DState.Write(msg)
-               fail
+               if varInfo[x].state = ENABLED then {
+                  msg ||:= "already enabled."
+                  resultTable["success"] := "__true__"
                }
+
+               else {
+                  msg ||:= "deleted; it cannot be enabled."
+                  resultTable["success"] := "__false__"
+               }
+               resultTable["consoleMsg"] := msg
+               DState.Write(resultTable)
+               fail
             }
          }
-      msg:="\n   Watchpoints # "||id|| " is not available to be enabled."
-      DState.Write(msg)
       }
+      msg:="\n   Watchpoints # "||id|| " is not available to be enabled."
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
+   }
    else {
       DState.State := ERROR
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
            "\n   Try \"help\" for assistance."
-      DState.Write(msg)
-      }
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
+   }
 end
 
 #
@@ -1074,7 +1122,9 @@ method cmdDisable(cmd)
             msg:="\n   All enabled watchpoints are disabled; ("||i||" total)."
          else
             msg:="\n   No enabled watchpoints are available to disable."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       else {
          setWatchType(cmd[2], WASSIGN)
@@ -1091,7 +1141,9 @@ method cmdDisable(cmd)
          else
             msg:="\n   No enabled watchpoints of type "||cmd[2]||
                  " are available to disable."
-         DState.Write(msg)
+            resultTable["consoleMsg"] := msg
+            resultTable["success"] := "__true__"
+            DState.Write(resultTable)
          }
       }
    else if id := integer(cmd[3]) then {
@@ -1100,29 +1152,42 @@ method cmdDisable(cmd)
             if varInfo[x].state = ENABLED then {
                varInfo[x].state := DISABLED
                msg:="\n   Watchpoints #"||id||" is disabled"
-               DState.Write(msg)
+               resultTable["consoleMsg"] := msg
+               resultTable["success"] := "__true__"
+               resultTable["id"] := id
+               DState.Write(resultTable)
                return
-               }
+            }
             else {
                msg := "\n   Watchpoint #"||id||" is "
-               if varInfo[x].state = DISABLED then
+               if varInfo[x].state = DISABLED then {
                   msg ||:= "already disabled."
-               else
-                  msg ||:="deleted; it cannot be disabled."
-               DState.Write(msg)
-               fail
+                  resultTable["success"] := "__true__"
                }
+
+               else {
+                  msg ||:="deleted; it cannot be disabled."
+                  resultTable["success"] := "__false__"
+               }
+               resultTable["consoleMsg"] := msg
+               DState.Write(resultTable)
+               fail
             }
          }
-      msg:="\n   Watchpoints # "||id|| " is not available to be disabled."
-      DState.Write(msg)
+         msg:="\n   Watchpoints # "||id|| " is not available to be disabled."
+         resultTable["consoleMsg"] := msg
+         resultTable["success"] := "__false__"
+         DState.Write(resultTable)
       }
+   }
    else {
       DState.State := ERROR
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
            "\n   Try \"help\" for assistance."
-      DState.Write(msg)
-      }
+      resultTable["consoleMsg"] := msg
+      resultTable["success"] := "__false__"
+      DState.Write(resultTable)
+   }
 end
 
 #

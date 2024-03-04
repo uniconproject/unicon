@@ -21,7 +21,7 @@
  * lines have to be very long in order to accommodate very large gdbm
  * entries; can get around this by reformatting the unicon output later.
  */
-#define MaxLineLen (4095) 
+#define MaxLineLen (4095)
 
 #define caf_is_peri(c)		((c)->flgs & F_Peri)
 #define caf_is_parsed(c)	((c)->flgs & F_Prsd)
@@ -259,7 +259,7 @@ ca_init(fname, argc, argv)
     */
    for (;;) {
       if (fgets(buf_, MaxLineLen, f) == NULL) {
-         printf("ca-init: premature eof?\n"); 
+         printf("ca-init: premature eof?\n");
          break;
          }
       switch (*buf_) {
@@ -328,7 +328,7 @@ ca_invk_add(fname, node)
    struct prc * prc;
    struct invk * invk;
    extern struct pentry * proc_lst;
- 
+
    id = 0;
    n = node->n_field[1].n_ptr;
    switch (n->n_type) {
@@ -365,7 +365,7 @@ ca_mark_parsed(fname)
       return -1;
       }
    caf_set_parsed(caf);
-   return 0; 
+   return 0;
 }
 
 int looking_for_main;
@@ -645,9 +645,9 @@ is_ctor(name)
    char * name;
 {
    char buf[256];
-   
+
    strcpy(buf, name);
-   strcat(buf, "__mdw_inst_mdw");
+   strcat(buf, "__state");
    if (prc_lkup(buf, NULL))
       return name;
    return 0;
@@ -796,7 +796,7 @@ prc_lkup(name, pcaf)
       if (strcmp(name, bkt->prc->name) == 0)
          break;
       bkt = bkt->next;
-      }   
+      }
    if (bkt && pcaf)
       *pcaf = bkt->caf;
    return bkt ? bkt->prc : NULL;
@@ -934,7 +934,7 @@ read_caf_class(void)
    int len;
    char * p;
    struct cls * cls;
- 
+
    /* read the name of a class defined in the current caf */
    for (p=buf_; *p && *p != ':'; p++)
       ;
@@ -956,7 +956,7 @@ read_caf_import(void)
    struct imp * imp;
 
    /* read an import of the cur caf */
-   imp = alloc(sizeof(struct imp));         
+   imp = alloc(sizeof(struct imp));
    for (p=buf_; *p && *p != ':'; p++)
       ;
    len = strlen(++p);
@@ -996,17 +996,17 @@ read_caf_name(void)
    char * q;
    struct caf * caf;
 
-   /* read a caf's fname */ 
+   /* read a caf's fname */
    caf = alloc(sizeof(struct caf));
    for (p=buf_; *p && *p != ':'; p++)
       ;
    for(q=++p; *q && *q != ' '; q++)
       ;
-   len = q - p; 
+   len = q - p;
    caf->fname = alloc(sizeof(char) * (len + 1));
    strncpy(caf->fname, p, len);
    caf->fname[len] = 0;
-   /* read a caf's alias */ 
+   /* read a caf's alias */
    while (*q == ' ')
       q++;
    len = strlen(q);
@@ -1014,13 +1014,13 @@ read_caf_name(void)
    strcpy(caf->alias, q);
    caf->alias[len - 1] = 0; /* clobber cr */
 
-   /* init rest of caf */ 
+   /* init rest of caf */
    caf->flgs = 0;
    caf->lnks = NULL;
    caf->imps = NULL;
    caf->prcs = NULL;
    caf->clss = NULL;
-   /* enqueue the caf */ 
+   /* enqueue the caf */
    caf->next = cafs;
    cafs = caf;
 }
@@ -1071,7 +1071,7 @@ read_caf_proc(void)
    bkt->caf = cafs;
    h = name_hash(prc->name);
    bkt->next = htbl[h];
-   htbl[h] = bkt; 
+   htbl[h] = bkt;
 }
 
 static
@@ -1161,7 +1161,7 @@ resolve_invk(caf, prc, invk, cafs, prcs)
    for (cls=caf->clss; cls; cls=cls->next) {
       sprintf(buf, "%s_%s", cls->name, invk->name);
       /*printf("  mthd: %s\n", buf);*/
-      prcs[n] = prc_lkup(buf, &cafs[n]); 
+      prcs[n] = prc_lkup(buf, &cafs[n]);
       if (prcs[n]) {
          /*printf("    matched\n");*/
          caf_parse(cafs[n], buf);
@@ -1221,7 +1221,7 @@ resolve_invks(caf, prc)
    struct invk * invk;
    struct caf * cafs[32];
    struct prc * prcs[32];
-   
+
    for (invk=prc->invks; invk; invk=invk->next) {
       if (invk_is_resolved(invk))
          continue;

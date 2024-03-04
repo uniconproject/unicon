@@ -53,7 +53,7 @@ adjust_class_recs(recs)
    struct rentry * rmeth;
 
    for (rinst=recs; rinst; rinst=rinst->next) {
-      if ((p = strstr(rinst->name, "__mdw_inst_mdw")) == NULL)
+      if ((p = strstr(rinst->name, "__state")) == NULL)
          continue;
       for (rmeth=rinst->next; rmeth; rmeth=rmeth->next) {
          if ((q = strstr(rmeth->name, "__methods")) == NULL)

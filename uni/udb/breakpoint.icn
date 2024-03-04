@@ -507,7 +507,7 @@ end
 # It clears pre-set breakpoints
 #
 method cmdClear(cmd)
-   local line, fname, arg, id, i, size:=0
+   local line, fname, arg, id, i, size:=0, foundBreakpoint
    local resultTable := table("cmd", cmd)
 
    # clears all of the preset breakpoints
@@ -545,11 +545,29 @@ method cmdClear(cmd)
 	 fname := DState.srcFile.procMainFile
          }
       }
-   # 'break file line'
+   # 'break file line' | 'break file all' 
    else if *cmd = 4 then {
-      fname := cmd[3]
-      line := arg := cmd[4]
+      if DState.srcFile.isSrcFile(cmd[3]) | DState.srcFile.isSrcFile(cmd[3] || ".icn") then
+         fname := cmd[3]
+      else {
+         DState.State := ERROR
+         msg := "\n   Could not find file \""||cmd[3]||"\""
+                "\n   Please try again"
+         setResultTable(resultTable, "Could not find file "||cmd[3], "__false__", msg)
+         DState.Write(resultTable)
+         fail
       }
+      if integer(cmd[4]) then
+         line := arg := cmd[4]
+      else if not match(map(cmd[4]), "all") then {
+         DState.State := ERROR
+         msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
+         msg ||:="\n   Try \"help\" or \"help break\" for assistance."
+         setResultTable(resultTable, DState.cmdHistory[1]|| " is not a known command", "__false__", msg)
+         DState.Write(resultTable)
+         return
+      }
+   }
    else {
       DState.State := ERROR
       msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
@@ -564,21 +582,48 @@ method cmdClear(cmd)
 	 fname ||:= ".icn"
       }
 
+   if \line then {
+      attemptBreakpointDelete(resultTable, fname, line, 1)
+   }
+   else {
+      every i := 1 to *DState.srcFile.fileText[fname] do {
+         if attemptBreakpointDelete(resultTable, fname, i) then
+            foundBreakpoint := 1
+      }
+      if /foundBreakpoint then {
+         msg :="\n   No breakpoints found in file: "||fname||"."
+         setResultTable(resultTable, "No breakpoints found in file: "||fname||".", "__false__")
+         resultTable["reason"] := "failed"
+         setResultTable(resultTable, &null, &null, msg)
+         DState.Write(resultTable)
+      }
+   }
+end
+
+method attemptBreakpointDelete(resultTable, fname, line, displayNotFound)
    if (id := isBreakExist(fname, line)) then {
       deleteBreakPoint(fname, line)
       msg  :="\n   Deleted breakpoint #"||id||" at : file "||fname||
              ", line "||line ||"."
       msg||:="\n   Source code:"||DState.srcFile.getSrcLine(fname, line)
       setResultTable(resultTable, "Deleted breakpoint #"||id|| " at : file "||fname||", line "||line, "__true__")
-      }
-   else {
+      resultTable["breakpoint"] := [
+         "id": id;
+         "line": line
+      ]
+      setResultTable(resultTable, &null, &null, msg)
+      DState.Write(resultTable)
+      return
+   }
+   else if \displayNotFound then {
       msg :="\n   No breakpoint at : file "||fname||", line "||line ||"."
       msg||:="\n   Source code: "||DState.srcFile.getSrcLine(fname, line)
       setResultTable(resultTable, "No breakpoint at : file "||fname||", line "||line, "__false__")
       resultTable["reason"] := "failed"
-      }
-   setResultTable(resultTable, &null, &null, msg)
-   DState.Write(resultTable)
+      setResultTable(resultTable, &null, &null, msg)
+      DState.Write(resultTable)
+   }
+   fail
 end
 
 #

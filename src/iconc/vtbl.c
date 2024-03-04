@@ -53,11 +53,11 @@ vtbl_get(gentry)
    buf = NULL;
 
    if ((p = strstr(gentry->name, "__methods")) ||
-      (p = strstr(gentry->name, "__mdw_inst_mdw"))) {
+      (p = strstr(gentry->name, "__state"))) {
       buf = alloc(sizeof(char)*(strlen(gentry->name)));
       strncpy(buf, gentry->name, p - gentry->name);
       buf[p - gentry->name] = 0;
-      strcat(buf, "__oprec"); 
+      strcat(buf, "__oprec");
       }
 
    if (buf == NULL)

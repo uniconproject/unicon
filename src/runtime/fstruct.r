@@ -661,9 +661,12 @@ function{1} insert(s, x[n])
          runerr(122, s);
       }
 end
-
+
+/*
+ * Use the same definition for both for now.
+ */
 #if COMPILER
-#define ClsInstSuffix "__mdw_inst_mdw"
+#define ClsInstSuffix "__state"
 #else
 #define ClsInstSuffix "__state"
 #endif /* COMPILER */

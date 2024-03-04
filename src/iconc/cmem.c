@@ -82,7 +82,7 @@ init_proc(name)
    p->statics = NULL;
    p->ret_flag = DoesRet | DoesFail | DoesSusp; /* start out pessimistic */
    p->arg_lst = 0;
-   p->lhash = 
+   p->lhash =
      (struct lentry **)alloc((unsigned int)((LHSize)*sizeof(struct lentry *)));
    for (i = 0; i < LHSize; i++)
       p->lhash[i] = NULL;
@@ -103,7 +103,7 @@ rec_is_obj(name)
 
    if ((len = strlen(name)) < 15)
       return 0;
-   if (strcmp("__mdw_inst_mdw", (char *)(name + len - 14)) == 0)
+   if (strcmp("__state", (char *)(name + len - 7)) == 0)
       return 1;
    return 0;
 }

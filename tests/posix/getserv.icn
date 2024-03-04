@@ -3,16 +3,15 @@ $include "posix.icn"
 
 procedure main()
 
-   s := getserv("daytime") | stop("Couldn't get service \"daytime\"")
+   s := getserv("ntp") | stop("Couldn't get service \"daytime\"")
    sdump(s)
-   port := 22
+   port := s.port
    s := getserv(port) | stop("Couldn't get service for port ", port)
    sdump(s)
 
 end
 
 procedure sdump(s)
-   writes(s.name, "\t\t", s.port, "/", s.proto)
-   writes("\t\t#", s.aliases)
-   write()
+   writes(left(s.name, 10), left(s.port || "/" || s.proto, 10))
+   write("[", s.aliases, "]")
 end

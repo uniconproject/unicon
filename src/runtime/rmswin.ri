@@ -1674,9 +1674,13 @@ HFONT mkfont(char *s, char is_3D)
        * This is a legal Icon font spec.
        * Check first for special "standard" family names.
        */
-      if (!strcmp(family, "mono") || !strcmp(family, "fixed")) {
-	 stdfam = "Lucida Sans"; /* Lucida Console? */
+      if (!strcmp(family, "mono")) {
+	 stdfam = "Lucida Console";
 	 flags |= FONTFLAG_MONO + FONTFLAG_SANS;
+	 }
+      else if ( !strcmp(family, "fixed")) {
+	 stdfam = "Lucida Sans";
+	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
 	 }
       else if (!strcmp(family, "typewriter")) {
 	 stdfam = "Courier New"; /* was "courier" */

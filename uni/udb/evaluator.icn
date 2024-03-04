@@ -152,7 +152,7 @@ end
 # Handles UDB's E_Error Events and prints the RunTime error Messages
 #
 method handle_Error()
-   local cur_line, cur_file, cur_p, src
+   local cur_line, cur_file, cur_p, src, resultTable := table()
 
    DState.State   := PAUSE
    #DState.State   := END
@@ -167,7 +167,9 @@ method handle_Error()
    Message ||:="\n"||DState.srcFile.getSrcLine(cur_file, cur_line)
    Message ||:="\n"||repl("-", keyword("column",MONITORED))||"^"
    Message ||:="\n"||keyword("errortext",MONITORED)
-   DState.Write(Message)
+   resultTable["consoleMsg"] := Message
+   resultTable["type"] := "stderr"
+   DState.Write(resultTable)
 end
 
 #

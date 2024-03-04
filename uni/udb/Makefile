@@ -7,6 +7,7 @@ CLEAN   = clean
 cflags  = $(UFLAGS) -c 
 ldflags = -u
 
+.PHONY: all udap
 #
 # Add dependency on system include "evdefs.icn" because it is really sad
 # if udb gets broken.
@@ -39,7 +40,10 @@ DTA        = dta
 DTA_UFILES = $(DTA)/atomic_agent.u $(DTA)/temporals.u
 
 
-all: Libfiles Assertions $(EXEs) 
+all: Libfiles Assertions udap $(EXEs)
+
+udap:
+	cd udap; $(MAKE)
 
 Libfiles:
 	cd $(LIB); $(MAKE)
@@ -134,6 +138,7 @@ clean:
 	cd $(DTA); $(MAKE) clean
 	$(DEL) ../../bin/$(EXEs) 
 	cd lib; $(MAKE) clean
+	cd udap; $(MAKE) clean
 
 cleantools:
 	cd $(LIB); $(MAKE) cleantools

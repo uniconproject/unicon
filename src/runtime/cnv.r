@@ -653,10 +653,11 @@ cnv_tstr_macro(cnv_tstr,0,0,0,0,0)
 void f(dptr s, dptr d)
    {
    /*
-    * no allocation is done, so nothing need be tended.
+    * deref() can alloc, bp and v need to be tended.
+    * ep is initiliazed and used with no allocation in between, it is safe.
     */
-   register union block *bp;
-   struct descrip v;
+   tended union block *bp;
+   tended struct descrip v;
    register union block **ep;
    int res;
 
@@ -674,7 +675,7 @@ void f(dptr s, dptr d)
           *  the string.
           */
          bp = BlkLoc(*s);
-	 deref(&Blk(bp,Tvsubs)->ssvar, &v);
+         deref(&Blk(bp,Tvsubs)->ssvar, &v);
          if (!is:string(v))
             fatalerr(103, &v);
          if (Blk(bp,Tvsubs)->sspos + Blk(bp,Tvsubs)->sslen - 1 > StrLen(v))

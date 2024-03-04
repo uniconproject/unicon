@@ -63,7 +63,8 @@ class Adapter(
                      process_request(request_body)
                      load_cmds()
 
-                     every process_request(pop(requestQueue))
+                     while *requestQueue > 0 do
+                        process_request(pop(requestQueue))
                   }
             }
             else {
@@ -309,20 +310,43 @@ class Adapter(
 
    # Handles all the things required from a client "setBreakpoints" request.
    method set_breakpoints(request_body, request_seq, request_command, request_arguments)
-      local res, breakpointTable, breakpoint, resTable
+      local pth, filename, line
 
-      breakpointTable := [
-         "breakpoints": request_arguments["breakpoints"]
-      ]
+      if member(request_arguments["source"], "path") then
+         pth := request_arguments["source"]["path"]
+      else {
+         res := build_response(request_seq, "__false__", request_command, &null, "SetBreakpoints source.path not given.")
+         writes(sock, res)
+         return
+      }
 
-      put_cmdQueue("clear break", request_body)
+      pth ? {
+         tab(findre("\/[^\/]+$"))
+         move()
+         filename := tab(0)
+      }
+
+      put_cmdQueue("clear break " || filename || " all", request_body)
       numBreakpoints +:= 1
-
-      every bp := !request_arguments["breakpoints"] do {
-         line := bp["line"]
-         cond := bp["condition"]
-         put_cmdQueue("b " || request_arguments["source"]["name"] || ":" || line, request_body)
-         numBreakpoints +:= 1
+      
+      if member(request_arguments, "breakpoints") then {
+         every bp := !request_arguments["breakpoints"] do {
+            line := bp["line"]
+            cond := bp["condition"]
+            put_cmdQueue("b " || filename || ":" || line, request_body)
+            numBreakpoints +:= 1
+         }
+      }
+      else if member(request_arguments, "lines") then {
+         every line := !request_arguments["lines"] do {
+            put_cmdQueue("b " || filename || ":" || line, request_body)
+            numBreakpoints +:= 1
+         }
+      }
+      else {
+         res := build_response(request_seq, "__false__", request_command, &null, "SetBreakpoints breakpoints not specified")
+         writes(sock, res)
+         return
       }
    end
 
@@ -435,7 +459,7 @@ class Adapter(
    method processBreakpointResult(res)
    local body
       if \res["success"] == "__false__" then {
-         response := build_response(request_seq, "__false__", request_command)
+         response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
          writes(sock, response)
          return
       }

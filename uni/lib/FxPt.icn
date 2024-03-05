@@ -83,9 +83,10 @@ class FxPt: _FxPt()
    # Divide another fixed-point value or number from this FxPt.
    # <[returns result of the division as a FxPt]>
    #</p>
-   method div(fp       # fixed-point of number
+   method div(fp,      # fixed-point of number
+              places   # places
              )
-      return FxPt(self$_FxPt.div(_toFxPt(fp)))
+      return FxPt(self$_FxPt.div(_toFxPt(fp), places))
    end
 
    #<p>
@@ -494,7 +495,8 @@ $endif          # FXPT_DEBUG
    end
 
    method div(fp, places)   # divide this by fp
-      return self.mul(fp._reciprocal(places))
+      /places := 200 # We have to stop somewhere
+      return self.mul(fp._reciprocal(places+1)).round(places)
    end
 
    method round(p1)  # round away from zero to p1 decimal places

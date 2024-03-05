@@ -551,6 +551,7 @@ procedure unicon(argv)
                   }
                "-K"      : {
                   icontopt ||:= "-K "
+                  keeptmp := 1
                   }
                "-log"  : {
                   if (i=1) | (argv[i-1] ~=== "-log") then {
@@ -599,7 +600,6 @@ procedure unicon(argv)
                      }
                   }
                "-y": parseonly := 1
-               "-K": keeptmp := 1
                "-yydbg": parseonly := yydbg := 1
                "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "
                "-v" : {
@@ -849,8 +849,7 @@ procedure unicon(argv)
 
       rv := mysystem(cmd)
 
-      # comment out if you want to look at tmp files...
-      # maybe add a command line argument to retain these someday.
+      # remove temporary files unless asked not to (by -K)
       /keeptmp & every remove(!tmpfnames || "-iconc")
       /keeptmp & every remove(!tmpfnames)
       /keeptmp & remove(\ mw_tmpname)

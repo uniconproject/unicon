@@ -1,5 +1,15 @@
 #  Top Level Makefile for Unicon
 #
+# Changes made 8 October 2021 include
+#	1).	addition of additional directories for Unicon class ucode file to the
+#		variable Udirs
+#	2). addition of the compilation and execution of the program fixalllinks
+#		after the installation of the Unicon system into the current system
+#
+# There is an undefined variable DESTDIR which can be passed in from the
+# surrounding environment. This is used in the build process for the Debian
+# package build system
+#
 
 TOPDIR=.
 
@@ -207,7 +217,7 @@ Tbins=unicon$(EXE) icont$(EXE) iconx$(EXE) iconc$(EXE) unicont$(EXE) uniconx$(EX
       uniconc$(EXE) udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) \
       patchstr$(EXE) iyacc$(EXE) rt.a rt.h
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
-Udirs=lib 3d gui unidoc unidep xml parser
+Udirs=lib 3d gui ide unidoc unidep xml parser udb udb/dta udb/lib unicon
 IPLdirs=lib incl gincl mincl procs
 RTdirs=lib include include/uri
 
@@ -273,6 +283,9 @@ install Install:
 	  echo "Installing uni/$$d to $(DESTDIR)$(ULB)/$$d ..."; \
 	  $(INST) -m 644 uni/$$d/*.* $(DESTDIR)$(ULB)/$$d; \
 	done
+#	update the link directives in the Unicon class ucode files
+	./bin/unicon fixalllinks
+	./fixalllinks $(DESTDIR)$(ULB)
 #       plugins
 	@$(INST) -m 644 plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
 #	docs and man

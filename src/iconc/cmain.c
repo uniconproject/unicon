@@ -467,11 +467,11 @@ Deliberate Syntax Error
          addlib(argv[optind]);		/* assume linker option */
 #endif					/* UNIX ... */
 
-#if MACINTOSH || MSDOS || MVS || VM || VMS
+#if MSDOS || MVS || VM || VMS
       /*
        * Linker options on command line not supported.
        */
-#endif					/* MACINTOSH || ... */
+#endif					/* MSDOS || ... */
 
 /*
  * End of operating-system specific code.
@@ -511,12 +511,12 @@ Deliberate Syntax Error
             addlib(argv[optind]);
 #endif					/* UNIX ... */
 
-#if MACINTOSH || MSDOS || MVS || VM || VMS
+#if MSDOS || MVS || VM || VMS
             /*
              * Pass no files to the linker.
              */
             quitf("bad argument %s",argv[optind]);
-#endif					/* MACINTOSH || ... */
+#endif					/* MSDOS || ... */
 
 /*
  * End of operating-system specific code.
@@ -703,10 +703,6 @@ char *ofile, *efile, **args;
    /* something is needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if MACINTOSH
-      fprintf(stderr,"-x not supported\n"); fflush(stderr);
-#endif					/* MACINTOSH */
 
 #if MSDOS
 #if MICROSOFT || TURBO

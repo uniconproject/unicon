@@ -22,10 +22,6 @@
    Feature(1, "_CMS", "CMS")
 #endif					/* VM */
 
-#if MACINTOSH
-   Feature(1, "_MACINTOSH", "Macintosh")
-#endif					/* MACINTOSH */
-
 #ifdef MacOS
    Feature(1, "_MACOS", "MacOS")
 #endif					/* MacOS */

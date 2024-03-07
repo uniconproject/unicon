@@ -332,9 +332,9 @@ function{0,1} open(fname, spec)
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MSDOS || MVS || VM
+#if MSDOS || MVS || VM
    /* nothing is needed */
-#endif					/* MACINTOSH || ... */
+#endif					/* MSDOS || ... */
 
 #ifdef PosixFns
       int is_udp_or_listener = 0;	/* UDP = 1, listener = 2 */
@@ -638,14 +638,6 @@ Deliberate Syntax Error
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write))
 	 mode[1] = '+';
 #endif					/* UNIX || VMS */
-
-#if MACINTOSH
-      if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
-         mode[1] = '+';
-         if ((status & Fs_Untrans) != 0) mode[2] = 'b';
-         }
-      else if ((status & Fs_Untrans) != 0) mode[1] = 'b';
-#endif					/* MACINTOSH */
 
 #if MSDOS
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
@@ -3185,9 +3177,9 @@ function{0,1} chdir(s)
 #if PORT
    Deliberate Syntax Error
 #endif                                  /* PORT */
-#if MACINTOSH || MVS || VM
+#if MVS || VM
       runerr(121);
-#endif                                  /* MACINTOSH ... */
+#endif                                  /* MVS || VM */
 #if MSDOS || UNIX || VMS || NT
 
       char path[PATH_MAX];

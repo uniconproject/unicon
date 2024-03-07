@@ -805,11 +805,6 @@ char *ofile, *efile, **args;
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH
-      fprintf(stderr,"-x not supported\n");
-      fflush(stderr);
-#endif					/* MACINTOSH */
-
 #if MSDOS
       /* No special handling is needed for an .exe files, since iconx
        * recognizes it from the extension andfrom internal .exe data.

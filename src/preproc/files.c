@@ -18,13 +18,6 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* VM || MVS */
 
-#if MACINTOSH
-char *FileNameMacToUnix(char *fn);
-char *FileNameUnixToMac(char *fn);
-char *FileNameMacConvert(char *(*func)(char *),char *fn);
-#define IsRelPath(fname) (fname[0] != '/')
-#endif					/* MACINTOSH */
-
 #if MSDOS
 #if MICROSOFT
    /* nothing is needed */
@@ -79,10 +72,6 @@ Deliberate Syntax Error
    /* something may be needed */
 Deliberate Syntax Error
 #endif					/* VM || MVS */
-
-#if MACINTOSH
-   fname = FileNameMacConvert(FileNameMacToUnix,fname);
-#endif					/* MACINTOSH */
 
 #if MSDOS
    char *s;
@@ -170,25 +159,11 @@ int system;
                      if (*s == '/')
                         end_prfx = s;
                   if (end_prfx != NULL) 
-#if MACINTOSH
-		     /*
-		      * For Mac-style names, don't include the file
-		      * separator character in the prefix.
-		      */
-                     for (s = cs->fname; s < end_prfx; ++s)
-#else					/* MACINTOSH */
-                     for (s = cs->fname; s <= end_prfx; ++s)
-#endif					/* MACINTOSH */
-                        AppChar(*sbuf, *s);
+                  for (s = cs->fname; s <= end_prfx; ++s)
+                     AppChar(*sbuf, *s);
                   for (s = fname; *s != '\0'; ++s)
                      AppChar(*sbuf, *s);
                   path = str_install(sbuf);
-#if MACINTOSH
-		  /*
-		   * Convert UNIX-style path to Mac-style.
-		   */
-		  path = FileNameMacConvert(FileNameUnixToMac,path);
-#endif					/* MACINTOSH */
                   f = fopen(path, "r");
                   }
                }
@@ -207,12 +182,6 @@ int system;
          for (s = fname; *s != '\0'; ++s)
             AppChar(*sbuf, *s);
          path = str_install(sbuf);
-#if MACINTOSH
-	 /*
-	  * Convert UNIX-style path to Mac-style.
-	  */
-	 path = FileNameMacConvert(FileNameUnixToMac,path);
-#endif					/* MACINTOSH */
          f = fopen(path, "r");
          ++prefix;
          }
@@ -300,10 +269,10 @@ Deliberate Syntax Error
       }
 #endif					/* VMS */
 
-#if VM || MVS || MACINTOSH
+#if VM || MVS
    /* probably needs something */
 Deliberate Syntax Error
-#endif					/* VM || MVS || ... */
+#endif					/* VM || MVS */
 
 #if MSDOS
 
@@ -458,9 +427,9 @@ Deliberate Syntax Error
 
 #endif					/* MSDOS */
 
-#if UNIX || VMS || MACINTOSH
+#if UNIX || VMS
    /* nothing is needed */
-#endif					/* UNIX || VMS || MACINTOSH */
+#endif					/* UNIX || VMS */
 
 /*
  * End of operating-system specific code.
@@ -491,10 +460,6 @@ Deliberate Syntax Error
    /* something might be needed */
 Deliberate Syntax Error
 #endif					/* VM || MVS */
-
-#if MACINTOSH
-   s1 = FileNameMacConvert(FileNameMacToUnix,s);
-#endif					/* MACINTOSH */
 
 #if MSDOS
          /*
@@ -589,9 +554,9 @@ Deliberate Syntax Error
 
 #endif					/* MSDOS */
 
-#if UNIX || MACINTOSH
+#if UNIX
    incl_search[n_paths - 1] = sysdir;
-#endif					/* UNIX || MACINTOSH */
+#endif					/* UNIX */
 
 /*
  * End of operating-system specific code.

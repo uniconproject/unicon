@@ -536,14 +536,6 @@ int n;
 #endif					/* NT */
 #endif					/* MSDOS */
 
-#if MACINTOSH
-   void MacDelay(int n);
-   DEC_NARTHREADS;
-   MacDelay(n);
-   INC_NARTHREADS_CONTROLLED;
-   return Succeeded;
-#endif					/* MACINTOSH */
-
 #if PORT || MVS || VM
    return Failed;
 #endif					/* PORT || ... */

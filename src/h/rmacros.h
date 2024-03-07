@@ -824,9 +824,9 @@
       Deliberate Syntax Error
    #endif				/* PORT */
    
-   #if MACINTOSH || MVS || UNIX || VM || VMS
+   #if MVS || UNIX || VM || VMS
       #define PushAVal(x) PushVal(x)
-   #endif				/* MACINTOSH ... */
+   #endif				/* MVS ... VMS */
    
    #if MSDOS
          #define PushAVal(x)  {sp++; \

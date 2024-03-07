@@ -210,10 +210,6 @@
    #define PORT 0
 #endif					/* PORT */
 
-#ifndef MACINTOSH
-   #define MACINTOSH 0
-#endif					/* MACINTOSH */
-
 #ifndef MSDOS
    #define MSDOS 0
 #endif					/* MSDOS */
@@ -1026,3 +1022,7 @@ Deliberate Syntax Error
 #if defined(CRAY) || defined (CRAY_STACK)
 #error The CRAY configuration option is no longer supported (since 7 Mar 2024)
 #endif					/* CRAY */
+
+#if defined(MACINTOSH)
+#error The MACINTOSH configuration option is no longer supported (since 7 Mar 2024)
+#endif					/* MACINTOSH */

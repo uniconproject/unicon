@@ -1045,9 +1045,7 @@ int i;
       pollevent();
       }
 
-#if !MACINTOSH
-   #undef exit
-#endif					/* MACINTOSH */
+#undef exit
    exit(i);
 }
 

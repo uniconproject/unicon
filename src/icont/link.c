@@ -33,9 +33,9 @@ void	setexe	(char *fname);
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || VM || VMS
+#if VM || VMS
    /* nothing to do */
-#endif					/* MACINTOSH || ... */
+#endif					/* VM || VMS */
 
 #if MSDOS
    extern char pathToIconDOS[];
@@ -199,9 +199,9 @@ char *outname;
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MVS || UNIX || VM || VMS
+#if MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* MACINTOSH || ... */
+#endif					/* MVS || ... */
 
 #if MSDOS
    #if MICROSOFT || TURBO

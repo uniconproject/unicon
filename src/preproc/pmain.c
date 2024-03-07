@@ -16,14 +16,6 @@ static char *options =
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH
-static char *ostr = "CPD:I:U:o:";
-static char *options = 
-   "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-ofile] [files]";
-   /* may need more options */
-Deliberate Syntax Error
-#endif					/* MACINTOSH */
-
 #if MSDOS
 #if MICROSOFT
    /* this really isn't right for anything but Microsoft */
@@ -118,11 +110,6 @@ char **argv;
    /* may need something */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if MACINTOSH
-   /* may need something */
-Deliberate Syntax Error
-#endif					/* MACINTOSH */
 
 #if MSDOS
 #if MICROSOFT

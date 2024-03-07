@@ -29,9 +29,9 @@ FILE		*pathOpen       (char *fname, char *mode);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MVS || VM || UNIX || VMS
+#if MVS || VM || UNIX || VMS
    /* nothing needed */
-#endif					/* MACINTOSH ... */
+#endif					/* MVS ... VMS */
 
 /*
  * End of operating-system specific code.
@@ -1142,7 +1142,7 @@ btinit:
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || UNIX || VMS
+#if UNIX || VMS
    if (noerrbuf)
       setbuf(stderr, NULL);
    else {
@@ -1153,7 +1153,7 @@ Deliberate Syntax Error
 	 fatalerr(305, NULL);
       setbuf(stderr, buf);
       }
-#endif					/* MACINTOSH ... */
+#endif					/* UNIX || VMS */
 
 #if MSDOS
    if (noerrbuf)
@@ -1260,9 +1260,9 @@ void envset()
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
+#if MSDOS || MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* MACINTOSH || ... */
+#endif					/* MSDOS || ... */
 
 /*
  * End of operating-system specific code.
@@ -1279,10 +1279,6 @@ Deliberate Syntax Error
    /* can't handle */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if MACINTOSH
-   /* can't handle */
-#endif					/* MACINTOSH */
 
 #if MSDOS
 #if TURBO

@@ -2,10 +2,6 @@
 
 /*#include "../h/filepat.h"		?* added for filepat change */
 
-#if MACINTOSH
-#include <console.h>
-#endif					/* MACINTOSH */
-
 /*
  * prototypes for static functions.
  */
@@ -41,11 +37,6 @@ char *src_file_nm;
    /* something is needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if MACINTOSH
-char *grttin_path = "::h:grttin.h";
-char *rt_path = "::h:rt.h";
-#endif					/* MACINTOSH */
 
 #if MSDOS
 char *grttin_path = "..\\src\\h\\grttin.h";
@@ -265,10 +256,6 @@ char **argv;
    whsp_image = NoSpelling;
    line_cntrl = 1;
 
-#if MACINTOSH
-   argc = ccommand(&argv);
-#endif					/* MACINTOSH */
-
    /*
     * opt_lst and opt_args are the options and corresponding arguments
     *  that are passed along to the preprocessor initialization routine.
@@ -341,10 +328,6 @@ char **argv;
          default:
             show_usage();
          }
-
-#if MACINTOSH
-   iconx_flg = 1;     /* Produce interpreter code */
-#endif					/* MACINTOSH */
 
 #ifdef Rttx
    if (!iconx_flg) {

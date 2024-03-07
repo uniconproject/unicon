@@ -7,7 +7,7 @@
 #undef printf
 #undef fprintf
 #undef fflush
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 /*
  * Universal (Standard ANSI C) includes.
@@ -27,19 +27,19 @@
    #ifdef ConsoleWindow
       #undef exit
       #define exit c_exit
-   #endif				/* Console Window */
+   #endif                               /* Console Window */
 
 /*
  * Operating-system-dependent includes.
  */
 #if PORT
    Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #ifdef ISQL
   #undef Type
   #undef Precision
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
 #if MSDOS
    #undef Type
@@ -51,44 +51,44 @@
    /* Mingw GCC 4.8.1 idiotically #define's stat. We need that name intact. */
 #ifdef stat
    #undef stat
-#endif					/* stat */
+#endif                                  /* stat */
    #include <dirent.h>
    #ifndef OLD_NTGCC
    /* The new GCC needs locking.h but the old one doesn't*/
    #include <sys/locking.h>
-   #endif				/* OLD_NTGCC */
-#endif					/* NTGCC */
+   #endif                               /* OLD_NTGCC */
+#endif                                  /* NTGCC */
 #ifdef MSVC
    #include <direct.h>
-#endif					/* MSVC */
+#endif                                  /* MSVC */
    #ifdef MSWindows
       #define int_PASCAL int PASCAL
       #define LRESULT_CALLBACK LRESULT CALLBACK
       #define BOOL_CALLBACK BOOL CALLBACK
       #ifdef PosixFns
 
-      /* 
+      /*
        * Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean"
-       * uncomment the "boolean" lines below if you have this issue. 
+       * uncomment the "boolean" lines below if you have this issue.
        */
       /* #define boolean bolean */
       #include <winsock2.h>
       /* #undef boolean */
       #include<ws2tcpip.h>
-      #else					/* PosixFns */
+      #else                                     /* PosixFns */
       #include <windows.h>
-      #endif					/* PosixFns */
+      #endif                                    /* PosixFns */
       #include <mmsystem.h>
       #include <process.h>
-   #else					/* MSWindows */
+   #else                                        /* MSWindows */
       #if NT
       #ifndef PATH_MAX
       #define PATH_MAX 512
-      #endif					/* PATH_MAX */
+      #endif                                    /* PATH_MAX */
       #ifdef PosixFns
-      /* 
+      /*
        * Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean"
-       * uncomment the "boolean" lines below if you have this issue. 
+       * uncomment the "boolean" lines below if you have this issue.
        */
       /* #define boolean bolean */
       #include <winsock2.h>
@@ -98,10 +98,10 @@
          #if defined(ISQL) || defined(Audio)
            #include <windows.h>
            #include <mmsystem.h>
-         #endif					/* ISQL */
-      #endif					/* PosixFns */
-      #endif					/* NT */
-   #endif				/* MSWindows */
+         #endif                                 /* ISQL */
+      #endif                                    /* PosixFns */
+      #endif                                    /* NT */
+   #endif                               /* MSWindows */
    #include <setjmp.h>
    #define Type(d) (int)((d).dword & TypeMask)
    #undef lst1
@@ -109,7 +109,7 @@
 
    /*MinGW32 needs these defined*/
    #ifndef EWOULDBLOCK
-      
+
       #define EWOULDBLOCK             WSAEWOULDBLOCK
       #define EINPROGRESS             WSAEINPROGRESS
       #define EALREADY                WSAEALREADY
@@ -145,9 +145,9 @@
       #define EDQUOT                  WSAEDQUOT
       #define ESTALE                  WSAESTALE
       #define EREMOTE                 WSAEREMOTE
-#endif						/* EWOULDBLOCK */
-   
-#endif					/* MSDOS */
+#endif                                          /* EWOULDBLOCK */
+
+#endif                                  /* MSDOS */
 
 #if UNIX
    #include <dirent.h>
@@ -162,10 +162,10 @@
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
    #include <sys/resource.h>
-#endif					/* HAVE_SYS_RESOURCE_H */
+#endif                                  /* HAVE_SYS_RESOURCE_H */
 #ifdef HAVE_SYS_FILE_H
    #include <sys/file.h>
-#endif					/* HAVE_FILE_H */
+#endif                                  /* HAVE_FILE_H */
    #include <termios.h>
    #include <poll.h>
    #ifdef SysSelectH
@@ -173,27 +173,27 @@
    #endif
 #if defined(PseudoPty) || defined(Audio)
    #include <fcntl.h>
-#endif					/* PseudoPty || Audio */
+#endif                                  /* PseudoPty || Audio */
 #ifdef Audio
    #include <sys/ioctl.h>
    #include <linux/soundcard.h>
    #include <pthread.h>
-#endif					/* Audio */
-#endif					/* UNIX */
+#endif                                  /* Audio */
+#endif                                  /* UNIX */
 
 #ifdef HAVE_LIBPTHREAD
 #if !UNIX || !defined(Audio)
 #include <pthread.h>
-#endif					/* PthreadCoswitch & ! Audio */
+#endif                                  /* PthreadCoswitch & ! Audio */
 #include <semaphore.h>
-#endif					/* HAVE_LIBPTHREAD */
+#endif                                  /* HAVE_LIBPTHREAD */
 
 #if VMS
    #include <types.h>
    #include <dvidef>
    #include <iodef>
    #include <stsdef.h>
-#endif					/* VMS */
+#endif                                  /* VMS */
 
 #include <stdarg.h>
 /*
@@ -206,7 +206,7 @@
    #define printf Consoleprintf
    #define fprintf Consolefprintf
    #define fflush Consolefflush
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 #ifdef XWindows
    /*
@@ -222,11 +222,11 @@
 
       #ifdef HAVE_LIBXPM
          #include "../xpm/xpm.h"
-      #endif				/* HAVE_LIBXPM */
+      #endif                            /* HAVE_LIBXPM */
 
       #undef UNIX
       #define UNIX 0
-   #else				/* VMS */
+   #else                                /* VMS */
       #undef VMS
 
 #ifdef Redhat71
@@ -239,13 +239,13 @@
 #ifdef X_NOT_STDC_ENV
 #undef X_NOT_STDC_ENV
 #endif
-#endif					/* Redhat71 */
+#endif                                  /* Redhat71 */
 
       #ifdef HAVE_LIBXPM
          #include "../xpm/xpm.h"
-      #else				/* HAVE_LIBXPM */
+      #else                             /* HAVE_LIBXPM */
          #include <X11/Xlib.h>
-      #endif				/* HAVE_LIBXPM */
+      #endif                            /* HAVE_LIBXPM */
 
       #include <X11/Xutil.h>
       #include <X11/Xos.h>
@@ -253,9 +253,9 @@
 
       #undef VMS
       #define VMS 0
-   #endif				/* VMS */
+   #endif                               /* VMS */
 
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
 /*
  * Include this after Xlib stuff, jmorecfg.h expects this.
@@ -275,21 +275,21 @@
 
 /* avoid warnings over duplicate definition of HAVE_STDLIB_H in jpeglib.h */
 #undef HAVE_STDLIB_H
-#endif					/* NTGCC */
+#endif                                  /* NTGCC */
 
 #include "jpeglib.h"
 #include "jerror.h"
 #ifndef HAVE_LIBPNG
 #include <setjmp.h>
-#endif					/* HAVE_LIBPNG */
+#endif                                  /* HAVE_LIBPNG */
 /* we do not use their definitions of GLOBAL, LOCAL, or OF; we use our own */
 #ifdef NTGCC
 #undef boolean
-#endif					/* NTGCC */
+#endif                                  /* NTGCC */
 #undef GLOBAL
 #undef LOCAL
 #undef OF
-#endif					/* HAVE_LIBJPEG */
+#endif                                  /* HAVE_LIBJPEG */
 
 #define VanquishReturn(s) return s;
 
@@ -299,24 +299,24 @@
 #ifndef HostStr
    #if !VMS && !Windows
       #include <sys/utsname.h>
-   #endif				/* !VMS && !Windows*/
-#endif					/* HostStr */
+   #endif                               /* !VMS && !Windows*/
+#endif                                  /* HostStr */
 
 #ifdef LoadFunc
 #if NT
    void *dlopen(char *, int); /* LoadLibrary */
    void *dlsym(void *, char *sym); /* GetProcAddress */
    int dlclose(void *); /* FreeLibrary */
-#else					/* NT */
+#else                                   /* NT */
    #include <dlfcn.h>
-#endif					/* NT */
-#endif					/* LoadFunc */
+#endif                                  /* NT */
+#endif                                  /* LoadFunc */
 
 #include "../h/filepat.h"
 
 #ifdef Dbm
 #include <ndbm.h>
-#endif					/* Dbm */
+#endif                                  /* Dbm */
 
 #ifdef ISQL
 #ifndef BOOL
@@ -331,13 +331,13 @@
 #undef BOOL
 
 #ifdef DebugHeap
-#define Type(d)		(int)((((d).dword & F_Typecode) ? ((int)((d).dword & TypeMask)) : (heaperr("descriptor type error",BlkLoc(d),(d).dword), -1)))
+#define Type(d)         (int)((((d).dword & F_Typecode) ? ((int)((d).dword & TypeMask)) : (heaperr("descriptor type error",BlkLoc(d),(d).dword), -1)))
 #else
 #define Type(d) (int)((d).dword & TypeMask)
 #endif
   #define Precision 16
 
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
 #ifdef Messaging
 # include <tp.h>
@@ -346,24 +346,24 @@
 #ifdef ConsoleWindow
 #undef putc
 #define putc Consoleputc
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 #if HAVE_LIBGL
 #include <GL/gl.h>
 #ifdef XWindows
 #include <GL/glx.h>
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 #include <GL/glu.h>
 #if HAVE_LIBFREETYPE
    #include <ft2build.h>
    #include FT_FREETYPE_H
-   #define PNG_SKIP_SETJMP_CHECK	/* 
-					 * Fixes compile error for Ubuntu 16.04:
-					 * 'expected [...] before __pngconf.h in
-					 * libpng already includes setjmp.h'
-					 */
-#endif					/* HAVE_LIBFREETYPE */
-#endif					/* HAVE_LIBGL */
+   #define PNG_SKIP_SETJMP_CHECK        /*
+                                         * Fixes compile error for Ubuntu 16.04:
+                                         * 'expected [...] before __pngconf.h in
+                                         * libpng already includes setjmp.h'
+                                         */
+#endif                                  /* HAVE_LIBFREETYPE */
+#endif                                  /* HAVE_LIBGL */
 
 #if HAVE_LIBZ
 #  ifdef STDC
@@ -388,53 +388,53 @@
 #include <zlib.h>
 #endif
 
-#else					/* HAVE_LIBPNG */
+#else                                   /* HAVE_LIBPNG */
 
 #include <zlib.h>
-#endif					/* HAVE_LIBPNG */
+#endif                                  /* HAVE_LIBPNG */
 
 #ifndef VMS
 #define VMS 0
 #endif
 
-#else					/* HAVE_LIBZ */
+#else                                   /* HAVE_LIBZ */
 
 /* If you claim to have libpng, but you don't have libz, that's no good */
 #if HAVE_LIBPNG
 /*#include <png.h>*/
-#endif					/* HAVE_LIBPNG */
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBPNG */
+#endif                                  /* HAVE_LIBZ */
 
 #ifdef HAVE_VOICE
 #include "../lib/voice/jvoip.h"
-#endif					/* HAVE_VOICE */
+#endif                                  /* HAVE_VOICE */
 
 #ifdef HAVE_LIBOPENAL
 #if HAVE_ALTYPES
-	#include <AL/altypes.h>
-	#include <AL/alexttypes.h>
-#endif					/* HAVE_ALTYPES */
-	#include <AL/al.h>
-	#include <AL/alc.h>
-	#include <AL/alext.h>
+        #include <AL/altypes.h>
+        #include <AL/alexttypes.h>
+#endif                                  /* HAVE_ALTYPES */
+        #include <AL/al.h>
+        #include <AL/alc.h>
+        #include <AL/alext.h>
 /*
  * 10/2008: alut.h is a legacy header. Putting this in to see what breaks.
  */
 #if HAVE_ALUT
-	#include <AL/alut.h>
+        #include <AL/alut.h>
 #endif
-#endif					/* HAVE_LIBOPENAL */
+#endif                                  /* HAVE_LIBOPENAL */
 
 /* Ogg Vorbis */
 #ifdef HAVE_LIBOGG
-	#include <vorbis/codec.h>
-	#include <vorbis/vorbisfile.h>
-#endif					/* HAVE_LIBOGG */
+        #include <vorbis/codec.h>
+        #include <vorbis/vorbisfile.h>
+#endif                                  /* HAVE_LIBOGG */
 
 /* OpenCL */
 #ifdef HAVE_LIBCL
-	#include <CL/cl.h>
-#endif					/* HAVE_LIBCL */
+        #include <CL/cl.h>
+#endif                                  /* HAVE_LIBCL */
 
 #ifdef HAVE_LIBSSL
 /* openssl thinks we are a VMS system when VMS=0 */
@@ -451,4 +451,4 @@
 #define VMS 0
 #endif
 
-#endif					/* HAVE_LIBSSL */
+#endif                                  /* HAVE_LIBSSL */

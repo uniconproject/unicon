@@ -1,5 +1,5 @@
 /*
- * Group of include files for translators, etc. 
+ * Group of include files for translators, etc.
  */
 
 #include "../h/define.h"
@@ -7,11 +7,11 @@
 
 #if CSET2V2
    #include <io.h>
-#endif					/* CSet/2 ver 2 */
+#endif                                  /* CSet/2 ver 2 */
 
-#if !VMS && !UNIX && !Windows	 /* don't need path.h */
+#if !VMS && !UNIX && !Windows    /* don't need path.h */
    #include "../h/path.h"
-#endif					/* !VMS && !UNIX */
+#endif                                  /* !VMS && !UNIX */
 
 #include "../h/sys.h"
 #include "../h/typedefs.h"
@@ -21,7 +21,7 @@
 
 #ifdef HAVE_GETADDRINFO
 #undef HAVE_GETADDRINFO
-#endif 
+#endif
 
 #if NT && defined(ConsoleWindow)
    #include "../h/rmacros.h"
@@ -29,12 +29,12 @@
    #include "../h/graphics.h"
    #include "../h/rexterns.h"
    #include "../h/rproto.h"
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 #ifdef IconcLogAllocations
 extern void * _alloc(unsigned int, char *, int);
 #define alloc(n) (_alloc((n),__FILE__,__LINE__))
-#endif					/* IconcLogAllocations */
+#endif                                  /* IconcLogAllocations */
 
 /* squelch redef of "OF" and "Type" - avoid gcc warning */
 #ifdef OF

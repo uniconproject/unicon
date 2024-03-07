@@ -75,4 +75,4 @@ static char esctab[] = {
    0,   1,   2,   3,     4,     5,     6,     7,
    8,   9,   0xfa,   0xfb,  0xfc,  0xfd,  0xfe,  0xff,
    };
-#endif              			/* EBCDIC */
+#endif                                  /* EBCDIC */

@@ -2,7 +2,7 @@
  * typdefs for the run-time system.
  */
 
-typedef int ALIGN;		/* pick most stringent type for alignment */
+typedef int ALIGN;              /* pick most stringent type for alignment */
 typedef unsigned int DIGIT;
 
 /*
@@ -54,14 +54,14 @@ typedef int (*continuation) (void);
  * (Both of these are initialized to NULL by Icon 9.4.1 or later.)
  */
 //typedef struct context **cstate;
-#endif					/* PthreadCoswitch */
+#endif                                  /* PthreadCoswitch */
 
 #if !COMPILER
 
    /*
     * Typedefs for the interpreter.
     */
-   
+
    /*
     * Icode consists of operators and arguments.  Operators are small integers,
     *  while arguments may be pointers.  To conserve space in icode files on
@@ -78,32 +78,32 @@ typedef int (*continuation) (void);
     * For the moment, the dubious coding is isolated under control of the
     *  size of integers.
     */
-   
+
    #if IntBits != WordBits
-   
+
       typedef union {
          int *op;
          word *opnd;
          } inst;
-      
-      #else				/* IntBits != WordBits */
-      
+
+      #else                             /* IntBits != WordBits */
+
       typedef union {
          word *op;
          word *opnd;
          } inst;
-      
-   #endif				/* IntBits != WordBits */
-      
-#endif					/* COMPILER */
+
+   #endif                               /* IntBits != WordBits */
+
+#endif                                  /* COMPILER */
 
 typedef enum TRuntime_Status_states {
-  RTSTATUS_NORMAL=0,	/* Normal operation       */
-  RTSTATUS_GC,		/* Garbage collection     */
-  RTSTATUS_SIGNAL,	/* Normal Signal Handling */
-  RTSTATUS_EXIT,	/* Normal Shutdown        */
-  RTSTATUS_RUNERROR,	/* Runtime Error shutdown */
-  RTSTATUS_SYSERROR,	/* System Error shutdown  */
-  RTSTATUS_HARDERROR	/* Hardware Error shutdown, triggered by signals
-			   SIGBUS, SIGFPE, SIGILL, and SIGSEGV */
+  RTSTATUS_NORMAL=0,    /* Normal operation       */
+  RTSTATUS_GC,          /* Garbage collection     */
+  RTSTATUS_SIGNAL,      /* Normal Signal Handling */
+  RTSTATUS_EXIT,        /* Normal Shutdown        */
+  RTSTATUS_RUNERROR,    /* Runtime Error shutdown */
+  RTSTATUS_SYSERROR,    /* System Error shutdown  */
+  RTSTATUS_HARDERROR    /* Hardware Error shutdown, triggered by signals
+                           SIGBUS, SIGFPE, SIGILL, and SIGSEGV */
   } TRuntime_Status;

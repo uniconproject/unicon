@@ -49,17 +49,10 @@ void	setexe	(char *fname);
 #endif					/* MVS */
 
 #if UNIX
-   #ifdef CRAY
-      #define word word_fubar
+   #ifndef XWindows
       #include <sys/types.h>
-      #include <sys/stat.h>
-      #undef word
-   #else				/* CRAY */
-      #ifndef XWindows
-         #include <sys/types.h>
-      #endif				/* XWindows */
-      #include <sys/stat.h>
-   #endif				/* CRAY */
+   #endif				/* XWindows */
+   #include <sys/stat.h>
 #endif					/* UNIX */
 
 /*

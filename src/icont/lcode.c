@@ -494,12 +494,7 @@ static void setfile()
       fnmtbl = (struct ipc_fname *) trealloc(fnmtbl, &fnmfree,
          &fnmsize, sizeof(struct ipc_fname), 1, "file name table");
 
-#ifdef CRAY
-   fnmfree->ipc_saved = pc/8;
-#else					/* CRAY */
    fnmfree->ipc_saved = pc;
-#endif					/* CRAY */
-
    fnmfree->fname = getrest();
    fnmfree++;
    newline();
@@ -553,12 +548,7 @@ char *name;
       labels[lab] = WordSize - pc;	/* add to front of reference chain */
       }
    else					/* output relative offset */
-
-#ifdef CRAY
-      outword((labels[lab] - (pc + WordSize))/8);
-#else					/* CRAY */
-      outword(labels[lab] - (pc + WordSize));
-#endif					/* CRAY */
+     outword(labels[lab] - (pc + WordSize));
    }
 
 static void lemitn(op, n, name)
@@ -585,12 +575,7 @@ word loc;
 char *name;
    {
    misalign();
-
-#ifdef CRAY
-   loc = (loc - pc - 16)/8;
-#else					/* CRAY */
    loc -= pc + ((IntBits/ByteBits) + WordSize);
-#endif					/* CRAY */
 
 #ifdef DeBugLinker
    if (Dflag) {
@@ -1848,12 +1833,7 @@ int lab;
    if (p > 0)
       quit("multiply defined label in ucode");
    while (p < 0) {		/* follow reference chain */
-
-#ifdef CRAY
-      r = (pc - (WordSize - p))/8;	/* compute relative offset */
-#else					/* CRAY */
       r = pc - (WordSize - p);	/* compute relative offset */
-#endif					/* CRAY */
       q = codep - (pc + p);	/* point to word with address */
       cp = (char *) &p;		/* address of integer p       */
       cr = (char *) &r;		/* address of integer r       */

@@ -1017,3 +1017,12 @@ Deliberate Syntax Error
 			   sizeof(word) - 1) / sizeof(word))
 
 #endif					/* UNICON_CONFIG_H */
+
+/*
+ * Ensure configurations that are no longer supported cannot be built by accident.
+ * The date gives a clue to the last commit where the configuration was supported.
+ */
+
+#if defined(CRAY) || defined (CRAY_STACK)
+#error The CRAY configuration option is no longer supported (since 7 Mar 2024)
+#endif					/* CRAY */

@@ -827,11 +827,7 @@ L_areal:
 	       }
 	    else
 #endif					/* MultiProgram */
-#ifdef CRAY
-	       opnd = (word)(strcons + GetWord);
-#else					/* CRAY */
-	       opnd = (word)strcons + GetWord;
-#endif					/* CRAY */
+          opnd = (word)strcons + GetWord;
 
 #ifdef Concurrent
 	    PutInstr(Op_Astr, opnd, 2);

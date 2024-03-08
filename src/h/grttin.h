@@ -394,15 +394,6 @@ typedef int va_list, siptr;
    #endif                               /* HAVE_LIBFREETYPE */
    #endif                               /* GraphicsGL */
 
-   #ifdef MacGraph
-      typedef int Str255, Point, StandardFileReply, SFTypeList, Ptr, PixMap;
-      typedef int Boolean, Rect, PolyHandle, EventRecord, wsp, MouseInfoType;
-      typedef int Handle, MenuHandle, OSErr, WindowPtr, GWorldFlags;
-      typedef int PaletteHandle, BitMap, RgnHandle, QDErr, GWorldPtr;
-      typedef int GrafPtr, GDHandle, PixMapHandle, OSType, FInfo;
-      typedef int IOParam, DialogPtr, ControlHandle, StringHandle, Size;
-   #endif                               /* MacGraph */
-
    #ifdef XWindows
       typedef int Atom, Time, XSelectionEvent, XErrorEvent, XErrorHandler;
       typedef int XGCValues, XColor, XFontStruct, XWindowAttributes, XEvent;

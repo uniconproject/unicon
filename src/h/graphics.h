@@ -4,10 +4,6 @@
 
 #define MAXDISPLAYNAME  128
 
-#ifdef MacGraph
-   #include "::h:macgraph.h"
-#endif                                  /* MacGraph */
-
 #ifdef XWindows
    #include "../h/xwin.h"
 #endif                                  /* XWindows */
@@ -241,12 +237,6 @@ typedef struct _wfont {
   char          type;
   int           size;
   void          *fonts;
-#ifdef MacGraph
-  short     fontNum;
-  Style     fontStyle;
-  int       fontSize;
-  FontInfo  fInfo;                      /* I-173 */
-#endif                                  /* MacGraph */
 #ifdef XWindows
   char        * name;                   /* name for WAttrib and fontsearch */
   int           ascent;                 /* font dimensions */
@@ -321,25 +311,6 @@ struct imgmem {
 #define TCH2 0377                       /* alternate transparent character */
 #define PCH1 ' '                        /* punctuation character */
 #define PCH2 ','                        /* punctuation character */
-
-
-#ifdef MacGraph
-typedef struct _wctype {
-   Pattern bkPat;
-   Pattern fillPat;
-   Point pnLoc;
-   Point pnSize;
-   short pnMode;
-   Pattern pnPat;
-   short txFont;
-   Style txFace;
-   short txMode;
-   short txSize;
-   Fixed spExtra;
-   RGBColor fgColor;
-   RGBColor bgColor;
-} ContextType, *ContextPtrType;
-#endif                                  /* MacGraph */
 
 
 /*
@@ -460,9 +431,6 @@ typedef struct _wcontext {
   int           leading;                /* inter-line leading */
 #endif                                  /* GraphicsGL */
 
-#ifdef MacGraph
-  ContextPtrType   contextPtr;
-#endif                                  /* MacGraph */
   wdp           display;
 #ifdef XWindows
   GC            gc;                     /* X graphics context */
@@ -598,19 +566,6 @@ typedef struct _wstate {
   struct descrip filep, listp;          /* icon values for this window */
   struct wbind_list *children;
   struct _wbinding *parent;
-#ifdef MacGraph
-  WindowPtr theWindow;      /* pointer to the window */
-  PicHandle windowPic;      /* handle to backing pixmap */
-  GWorldPtr offScreenGWorld;  /* offscreen graphics world */
-  CGrafPtr   origPort;
-  GDHandle  origDev;
-  PixMapHandle offScreenPMHandle;
-  Rect      sourceRect;
-  Rect      destRect;
-  Rect      GWorldRect;
-  Boolean   lockOK;
-  Boolean   visible;
-#endif                                  /* MacGraph */
   wdp           display;
 
 #ifdef GraphicsGL
@@ -707,20 +662,6 @@ struct wbind_list {
   struct _wbinding *child;
   struct wbind_list *next;
 };
-
-#ifdef MacGraph
-typedef struct
-   {
-   Boolean wasDown;
-   uword when;
-   Point where;
-   int whichButton;
-   int modKey;
-   wsp ws;
-   } MouseInfoType;
-#endif                                  /* MacGraph */
-
-
 
 /*
  * Gamma Correction value to compensate for nonlinear monitor color response

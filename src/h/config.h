@@ -428,14 +428,7 @@
       #define ConsoleWindow 1
    #endif                               /* NTConsole */
    #endif                                       /* MSWindows */
-
-   #ifdef MacGraph
-   #undef Graphics
-   #define Graphics 1
-   #endif                                       /* MacGraph */
 #endif
-
-
 
 #ifdef Graphics
    #ifndef NoXpmFormat
@@ -446,10 +439,8 @@
    #endif                               /* NoXpmFormat */
 
    #ifndef MSWindows
-         #ifndef MacGraph
-            #undef XWindows
-            #define XWindows 1
-         #endif                         /* MacGraph */
+         #undef XWindows
+         #define XWindows 1
    #endif                               /* MSWindows */
 
    #undef LineCodes
@@ -1026,3 +1017,7 @@ Deliberate Syntax Error
 #if defined(MACINTOSH)
 #error The MACINTOSH configuration option is no longer supported (since 7 Mar 2024)
 #endif                                  /* MACINTOSH */
+
+#if defined(MacGraph)
+#error The MacGraph configuration option is no longer supported (since 8 Mar 2024)
+#endif                                  /* MacGraph */

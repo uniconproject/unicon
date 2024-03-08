@@ -668,45 +668,6 @@ int checkOpenConsole( FILE *w, char *s );
       int   Consolefflush       (FILE *file);
    #endif                               /* ConsoleWindow */
 
-   #ifdef MacGraph
-      /*
-       * Implementation routines specific to Macintosh
-       */
-      void hidecrsr (wsp ws);
-      void showcrsr (wsp ws);
-      void UpdateCursorPos(wsp ws, wcp wc);
-      void GetEvents (void);
-      void DoEvent (EventRecord *eventPtr);
-      void DoMouseUp (EventRecord *eventPtr);
-      void DoMouseDown (EventRecord *eventPtr);
-      void DoGrowWindow (EventRecord *eventPtr, WindowPtr whichWindow);
-      void GetLocUpdateRgn (WindowPtr whichWindow, RgnHandle localRgn);
-      void DoKey (EventRecord *eventPtr, WindowPtr whichWindow);
-      void EventLoop(void);
-      void HandleMenuChoice (long menuChoice);
-      void HandleAppleChoice (short item);
-      void HandleFileChoice (short item);
-      void HandleOptionsChoice (short item);
-      void DoUpdate (EventRecord *eventPtr);
-      void DoActivate (WindowPtr whichWindow, Boolean becomingActive);
-      void RedrawWindow (WindowPtr whichWindow);
-      const int ParseCmdLineStr (char *s, char *t, char **argv);
-      pascal OSErr SetDialogDefaultItem (DialogPtr theDialog, short newItem) =
-         { 0x303C, 0x0304, 0xAA68 };
-      pascal OSErr SetDialogCancelItem (DialogPtr theDialog, short newItem) =
-         { 0x303C, 0x0305, 0xAA68 };
-      pascal OSErr SetDialogTracksCursor (DialogPtr theDialog, Boolean tracks) =
-         { 0x303C, 0x0306, 0xAA68 };
-
-      void drawarcs(wbinding *wb, XArc *arcs, int narcs);
-      void drawlines(wbinding *wb, XPoint *points, int npoints);
-      void drawpoints(wbinding *wb, XPoint *points, int npoints);
-      void drawrectangles(wbp wb, XRectangle *recs, int nrecs);
-      void drawsegments(wbinding *wb, XSegment *segs, int nsegs);
-      void fillarcs(wbp wb, XArc *arcs, int narcs);
-      void fillpolygon(wbp wb, XPoint *pts, int npts);
-   #endif                               /* MacGraph */
-
    #ifdef XWindows
       /*
        * Implementation routines specific to X-Windows

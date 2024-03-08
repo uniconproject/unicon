@@ -44,7 +44,7 @@ global warnings
 #
 global iconc, iconc_links, iconc_parsed, iconc_imports
 global iconc_posixloc, iconc_parsed_posix, iconc_perifile_idx
-global iconc_fd	# if iconc is used, add the -fd option (off by default)
+global iconc_fd # if iconc is used, add the -fd option (off by default)
 global no_iconc_fs # don't add -fs by default, if iconc is used
 global iconc_import # suppress writing to uniclass files if \iconc_import
 link basename, io, paths
@@ -76,7 +76,7 @@ procedure iwrite(args[])
       }
   if \flog then {
       if args[1] === &errout then
-	  pop(args)
+          pop(args)
       push(args, flog)
       write ! args
   }
@@ -91,7 +91,7 @@ procedure iwrites(args[])
 
    if \flog then {
        if args[1] === &errout then
-	   pop(args)
+           pop(args)
        push(args, flog)
        writes ! args
    }
@@ -108,11 +108,11 @@ procedure iconc_make_exename_opt(args)
    while i <= *args do {
       arg := args[i]
       if arg == "-v" then {
-	 i +:= 2
-	 next
-	 }
+         i +:= 2
+         next
+         }
       else if arg[1] == "-" then {
-	 i +:= 1
+         i +:= 1
          next
          }
       cmpnts := suffix(arg)
@@ -288,8 +288,8 @@ procedure iconc_yyparse(fname, tmplist)
       yyin ||:= "\n"
    if preproc_err_count > 0 then {
       every pe := !parsingErrors do {
-	 write(&errout, pe.errorMessage)
-	 }
+         write(&errout, pe.errorMessage)
+         }
       stop()      # force error exit (abruptly)
       }
    yylex_reinit()
@@ -371,7 +371,7 @@ procedure unicon_usage(continue_flag)
    local f, msg
    if \continue_flag then f := iwrite else f := istop
    msg := "Usage: unicon [-cBCstuEGyZMhRK] [-Dsym=val] [-f[adelns]...] [-o ofile]\n   _
-	    [-nofs] [-help] [-version] [-features] [-v i] file... [-x args]"
+            [-nofs] [-help] [-version] [-features] [-v i] file... [-x args]"
    f(msg)
 end
 
@@ -429,7 +429,7 @@ procedure handle_C(arg)
    if comp === -1 then {
       istop("conflicting requests for -c and -C")
       }
-   
+
    iconc := 1
    if *arg > 2 then
       tmpopt := "-U" || arg[3:0] || " "
@@ -491,7 +491,7 @@ procedure unicon(argv)
       cmd, wilog, flog2, locallinks, localimports, k,
       files, n, local_name, v, mw_tmpname, rv, pe
 
-   fset:='s'  # doing -fs by default now 
+   fset:='s'  # doing -fs by default now
 # before initialize, set global option vars:
    comp := 0
    every !argv ?
@@ -527,15 +527,15 @@ procedure unicon(argv)
          skip := &null
          next
          }
-      
+
       if argv[i][1] == "-" & *argv[i]>1 then {
-	 if match("-D", argv[i]) then # symbols
+         if match("-D", argv[i]) then # symbols
             handle_D(argv[i])
          else if match ("-C", argv[i]) then{ # iconc
             handle_C(argv[i])
             parseonly := 1
-            }            
-	 else
+            }
+         else
             case argv[i] of {
                "-c"   : {
                   sysok := &null
@@ -572,16 +572,16 @@ procedure unicon(argv)
                   return 0
                   }
                "-x"      : { xec := i; break } # exit the every loop
-	       #
-	       # Really, -e should redirect *our* stderr output, and then
-	       # tell the icont invocation to append its stderr output.
-	       #
-	       "-e"      : {
-		  if (i=1) | (argv[i-1]) ~=== "-e" then {
-		     icontopt ||:= "-e " || quotes(argv[i+1])
-		     argv[i+1] := "-e"
-		     }
-		  }
+               #
+               # Really, -e should redirect *our* stderr output, and then
+               # tell the icont invocation to append its stderr output.
+               #
+               "-e"      : {
+                  if (i=1) | (argv[i-1]) ~=== "-e" then {
+                     icontopt ||:= "-e " || quotes(argv[i+1])
+                     argv[i+1] := "-e"
+                     }
+                  }
                "-o"      : {
                   if (i=1) | (argv[i-1] ~=== "-o") then {
                      exename := " -o " || quotes(argv[i+1]) || " "
@@ -591,7 +591,7 @@ procedure unicon(argv)
                "-O": optimize := 1
                # -I and -L: add argv[i+1] to LPATH or IPATH, respectively
                "-I"|"-L": {
-                  if argv[i] == "-I" then thepath := "LPATH" else thepath := "IPATH" 
+                  if argv[i] == "-I" then thepath := "LPATH" else thepath := "IPATH"
                   if (i=1) | (argv[i-1] ~=== argv[i]) then {
                      tmp_s := argv[i+1]
                      argv[i+1] := argv[i]
@@ -606,12 +606,12 @@ procedure unicon(argv)
                   if i = *argv then
                      stop("missing verbosity value after -v")
 
-		  varg := (integer(argv[i+1]) || " ") |
-		     stop("bad verbosity value: ", image(argv[i+1]))
+                  varg := (integer(argv[i+1]) || " ") |
+                     stop("bad verbosity value: ", image(argv[i+1]))
 
-		  icontopt ||:= argv[i] || varg
-		  ilinkopt ||:= argv[i] || varg
-                  
+                  icontopt ||:= argv[i] || varg
+                  ilinkopt ||:= argv[i] || varg
+
                   if integer(argv[i+1]) = 0 then
                      silent := 1
 
@@ -624,10 +624,10 @@ procedure unicon(argv)
                   }
                "-v1"|"-v2"|"-v3" : {
                   ilinkopt ||:= argv[i] || " "
-                  icontopt ||:= argv[i] || " "                  
+                  icontopt ||:= argv[i] || " "
                   }
-               
-	       "-nofs": no_iconc_fs := 1
+
+               "-nofs": no_iconc_fs := 1
                "-M" : merrflag := 1
                "-r" : returnErrorsFlag := 1
                "-h" | "-help" | "--help" | "-?": unicon_help()
@@ -635,90 +635,90 @@ procedure unicon(argv)
                } # case
          }
       else {   #the argument isn't an option
-	 yyfilename := argv[i] | stop("usage: unicon file")
-	 if yyfilename == "-" then yyfilename := "_stdin.icn"
+         yyfilename := argv[i] | stop("usage: unicon file")
+         if yyfilename == "-" then yyfilename := "_stdin.icn"
 
-	 if not (map(yyfilename[find(".", yyfilename)+1 : 0])== ("icn"|"u"|"u1"|"u2")) then
-	    yyfilename ||:= ".icn"
+         if not (map(yyfilename[find(".", yyfilename)+1 : 0])== ("icn"|"u"|"u1"|"u2")) then
+            yyfilename ||:= ".icn"
 
-	 # do not translate .u files
-	 if map(yyfilename[find(".", yyfilename)+1 : 0]) == ("u"|"u1"|"u2") then {
-	     linkline ||:= " " || quotes(yyfilename)
+         # do not translate .u files
+         if map(yyfilename[find(".", yyfilename)+1 : 0]) == ("u"|"u1"|"u2") then {
+             linkline ||:= " " || quotes(yyfilename)
              if \iconc then {
                 insert(iconc_links, yyfilename)
                 }
-	     next
-	 }
-	 else {
-	    # we are gonna translate, and if we link, we remove the .u
-	    ucodefile := basename(yyfilename, ".icn") || ".u"
-	    linkline ||:= " " || quotes(ucodefile)
-	    /translateducode := []
-	    put(translateducode, ucodefile)
-	    }
+             next
+         }
+         else {
+            # we are gonna translate, and if we link, we remove the .u
+            ucodefile := basename(yyfilename, ".icn") || ".u"
+            linkline ||:= " " || quotes(ucodefile)
+            /translateducode := []
+            put(translateducode, ucodefile)
+            }
          if \iconc then {
             # mark this file as parsed
             insert(iconc_parsed, get_abs_file_name(yyfilename))
-	    }
+            }
 
-	 outfilename := yyfilename
-	 yyin := ""
-	 every yyin ||:= preprocessor(yyfilename, uni_predefs) do yyin ||:= "\n"
-	 if preproc_err_count > 0 then {
-	    every pe := !parsingErrors do {
-	       write(&errout, pe.errorMessage)
-	       }
-	    stop()      # force error exit (abruptly)
-	    }
-	 yylex_reinit()
-	 cmd := selecticont()
+         outfilename := yyfilename
+         yyin := ""
+         every yyin ||:= preprocessor(yyfilename, uni_predefs) do yyin ||:= "\n"
+         if preproc_err_count > 0 then {
+            every pe := !parsingErrors do {
+               write(&errout, pe.errorMessage)
+               }
+            stop()      # force error exit (abruptly)
+            }
+         yylex_reinit()
+         cmd := selecticont()
          if &features=="MS Windows NT" & &features=="console window" then{
             wilog := tempname("uni",".tmp",,)
-	    cmd ||:= " -l "|| wilog
-	    }
-	 cmd ||:= " -c "||icontopt||" -O "|| quotes(yyfilename) ||" "
-	 if /yydbg then {
-	    tmpname := tempname("uni",,,5)
-	    yyout := open(tmpname, "w") |
-	       stop("can't open temporary file ",tmpname," for writing")
+            cmd ||:= " -l "|| wilog
+            }
+         cmd ||:= " -c "||icontopt||" -O "|| quotes(yyfilename) ||" "
+         if /yydbg then {
+            tmpname := tempname("uni",,,5)
+            yyout := open(tmpname, "w") |
+               stop("can't open temporary file ",tmpname," for writing")
             put(tmpfnames, tmpname)
-            ca_assoc(yyfilename, tmpname) 
-	    }
-	 else yyout := &output
+            ca_assoc(yyfilename, tmpname)
+            }
+         else yyout := &output
 
-	 write(yyout, "#line 0 \"", yyfilename, "\"")
-	 iwrites(&errout, "Parsing ", yyfilename ,": ")
-	 rv := yyparse()
-	 if not (*\parsingErrors > 0) then iwrite(&errout)
-	 else {
-	    every pe := !parsingErrors do {
-	       iwrite(&errout, pe.errorMessage)
-	       }
-	    }
-	 if /yydbg then
-	    close(yyout)
-	 if (rv = errors = 0) & (not (*\parsingErrors > 0)) & /parseonly then {
-	     rv := mysystem(cmd || tmpname)
-	     if rv ~=== 0 then yynerrs +:= 1
-	     if &features=="MS Windows NT" & &features=="console window" then {
-		# copy icont log to our console
-		every 1 to 5 do {
-		    if flog2 := open(wilog) then {
-			while iwrite(&errout, read(flog2))
-			close(flog2)
-			/keeptmp & remove(wilog) | write(&errout, wilog, " - wilog B not removed.")
-			break
-		    }
-		    delay(1000)
-		}
-	    }
-	 }
+         write(yyout, "#line 0 \"", yyfilename, "\"")
+         iwrites(&errout, "Parsing ", yyfilename ,": ")
+         rv := yyparse()
+         if not (*\parsingErrors > 0) then iwrite(&errout)
+         else {
+            every pe := !parsingErrors do {
+               iwrite(&errout, pe.errorMessage)
+               }
+            }
+         if /yydbg then
+            close(yyout)
+         if (rv = errors = 0) & (not (*\parsingErrors > 0)) & /parseonly then {
+             rv := mysystem(cmd || tmpname)
+             if rv ~=== 0 then yynerrs +:= 1
+             if &features=="MS Windows NT" & &features=="console window" then {
+                # copy icont log to our console
+                every 1 to 5 do {
+                    if flog2 := open(wilog) then {
+                        while iwrite(&errout, read(flog2))
+                        close(flog2)
+                        /keeptmp & remove(wilog) | write(&errout, wilog, " - wilog B not removed.")
+                        break
+                    }
+                    delay(1000)
+                }
+            }
+         }
 
          if /iconc then {
             /keeptmp & /tmpname | remove(tmpname) |
-	    iwrite(&errout,"remove ", image(tmpname), " fails")
+            iwrite(&errout,"remove ", image(tmpname), " fails")
             }
-	 reinitialize()
+         reinitialize()
          }    # the argument doesn't start with "-"
       } # every argument
 
@@ -727,7 +727,7 @@ procedure unicon(argv)
       unicon_usage()
       }
 
-  
+
    #
    # If this output is intended for consumption by iconc, suck in
    # all files associated with link-refs and import-refs, and yyparse
@@ -858,14 +858,14 @@ procedure unicon(argv)
          errors +:= 1
 
       if errors = 0 & \xec then {
-	 if cmd := \exename then {
-	    if match("-o ", cmd) then cmd[1:4] := ""
-	    if not (any('/\\', cmd) | (cmd[any(&letters,cmd)]==":")) then
-	       cmd := "./" || cmd
-	    every cmd ||:= " " || argv[xec+1 to *argv]
-	    rv := system(cmd)
-	    }
-	 }
+         if cmd := \exename then {
+            if match("-o ", cmd) then cmd[1:4] := ""
+            if not (any('/\\', cmd) | (cmd[any(&letters,cmd)]==":")) then
+               cmd := "./" || cmd
+            every cmd ||:= " " || argv[xec+1 to *argv]
+            rv := system(cmd)
+            }
+         }
       }
    else
 
@@ -983,7 +983,7 @@ end
 
 procedure writelink(dir, s)
    if \iconc then {
-      # do not generate linkrefs in 
+      # do not generate linkrefs in
       # code that will be sent to iconc...
       return
       }
@@ -1041,7 +1041,7 @@ local cmd, dash_s
       #
       # if we find binaries via path search, use them; otherwise
       # try for binaries directory via &progname.  Won't be very
-      # successful 
+      # successful
       #
       cmd := ((&features ? (="Binaries at " & tab(0))) |
               (&progname ? tab(find("unicon"))) | "")

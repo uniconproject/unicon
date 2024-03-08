@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	Name:	lump.icn
+#       Name:   lump.icn
 #
-#	Title:	Lump separately-compiled Icon sources
+#       Title:  Lump separately-compiled Icon sources
 #
-#	Author:	Clinton L. Jeffery
+#       Author:         Clinton L. Jeffery
 #
-#	Date:	September 8, 1990
+#       Date:   September 8, 1990
 #
 ############################################################################
 #
@@ -22,20 +22,20 @@ procedure main(args)
     fout := open("LUMP.icn","w") | stop("can't open LUMP")
     if *args=0 then lump(&input)
     else {
-	every i := 1 to *args do {
-	    fin := open(args[i],"r") | stop("can't open ",args[i])
-	    lump(fin)
-	    close(fin)
-	}
+        every i := 1 to *args do {
+            fin := open(args[i],"r") | stop("can't open ",args[i])
+            lump(fin)
+            close(fin)
+        }
     }
     close(fout)
 end
 
 procedure lump(f)
     every line := !f do {
-	if match("link",line) then {
-	    source(line[5:0])
-	} else write(fout,line)
+        if match("link",line) then {
+            source(line[5:0])
+        } else write(fout,line)
     }
 end
 

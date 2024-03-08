@@ -6,7 +6,7 @@
 /*  IMPORTANT NOTE:  Because of the way RTL works, this file should not
  *  contain any includes of system files, as in
  *
- *	include <foo>
+ *      include <foo>
  *
  *  Instead, such includes should be placed in h/sys.h.
  */
@@ -19,7 +19,7 @@
 #if PORT
    /* place for anything system-specific */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if NT
    char *internal_cmds[] = {
@@ -31,7 +31,7 @@ Deliberate Syntax Error
 int is_internal(char *s)
 {
    int i = 0;
-   char cmd[12], *cmdp, *s_ptr, *p; 
+   char cmd[12], *cmdp, *s_ptr, *p;
 
    if ( p = strchr(s, ' ')){
       cmdp=cmd; s_ptr=s;
@@ -42,7 +42,7 @@ int is_internal(char *s)
       }
    else
       cmdp=s;
-    
+
    while (internal_cmds[i]) {
       if (! strcmp(cmdp, internal_cmds[i])) return 1;
       i++;
@@ -51,17 +51,17 @@ int is_internal(char *s)
 }
 #endif                                  /* NT */
 
-
+
 /*********************************** MSDOS ***********************************/
 
 #if MSDOS
 
 #if TURBO
 extern unsigned _stklen = 16 * 1024;
-#endif					/* TURBO */
+#endif                                  /* TURBO */
 
-#endif					/* MSDOS */
-
+#endif                                  /* MSDOS */
+
 /*********************************** UNIX ***********************************/
 
 #if UNIX
@@ -75,8 +75,8 @@ extern unsigned _stklen = 16 * 1024;
  * Reduced code size by using variables pr and pnr instead of array refs.
  */
 
-#if ! defined __NR_vfork && defined __UCLIBC_HAS_MMU__ 
-#define vfork fork	
+#if ! defined __NR_vfork && defined __UCLIBC_HAS_MMU__
+#define vfork fork
 #endif
 
 struct filepid {
@@ -108,9 +108,9 @@ void clear_all_filepids(){
 
    while (temp) {
       if (temp->status == Fs_BPipe)
-      	 kill(temp->pid, SIGPIPE);
+         kill(temp->pid, SIGPIPE);
       else
-	 kill(temp->pid, EOF);
+         kill(temp->pid, EOF);
 
       temp2 = temp;
       temp = temp->next;
@@ -128,37 +128,37 @@ FILE *popen (const char *command, const char *mode)
    reading = (mode[0] == 'r');
    if ((!reading && (mode[0] != 'w')) || mode[1]) {
 #if 0
-	__set_errno(EINVAL);			/* Invalid mode arg. */
+        __set_errno(EINVAL);                    /* Invalid mode arg. */
 #else
-	errno = EINVAL;
+        errno = EINVAL;
 #endif
       }
    else if (pipe(pipe_fd) == 0) {
-	pr = pipe_fd[reading];
-	pnr = pipe_fd[1-reading];
-	if ((fp = fdopen(pnr, mode)) != NULL) {
-		if ((pid = vfork()) == 0) {	/* vfork -- child */
-			close(pnr);
-			close(reading);
-			if (pr != reading) {
-				dup2(pr, reading);
-				close(pr);
-			}
-			execl("/bin/sh", "sh", "-c", command, (char *) 0);
-			_exit(255);		/* execl failed! */
-		} else {			/* vfork -- parent or failed */
-			close(pr);
-			if (pid > 0) {	/* vfork -- parent */
-			   push_filepid(pid, fp, Fs_Pipe);
-			   return fp;
-			} else {		/* vfork -- failed! */
-			   fclose(fp);
-			}
-		}
-	} else {				/* fdopen failed */
-		close(pr);
-		close(pnr);
-	}
+        pr = pipe_fd[reading];
+        pnr = pipe_fd[1-reading];
+        if ((fp = fdopen(pnr, mode)) != NULL) {
+                if ((pid = vfork()) == 0) {     /* vfork -- child */
+                        close(pnr);
+                        close(reading);
+                        if (pr != reading) {
+                                dup2(pr, reading);
+                                close(pr);
+                        }
+                        execl("/bin/sh", "sh", "-c", command, (char *) 0);
+                        _exit(255);             /* execl failed! */
+                } else {                        /* vfork -- parent or failed */
+                        close(pr);
+                        if (pid > 0) {  /* vfork -- parent */
+                           push_filepid(pid, fp, Fs_Pipe);
+                           return fp;
+                        } else {                /* vfork -- failed! */
+                           fclose(fp);
+                        }
+                }
+        } else {                                /* fdopen failed */
+                close(pr);
+                close(pnr);
+        }
    }
    return NULL;
 }
@@ -167,42 +167,42 @@ int pclose(FILE *fd)
 {
    struct filepid *temp, *temp2, *tail = NULL;
    int pid;
-	int waitstat;
-	if (fclose(fd) != 0) {
-		return EOF;
-	}
+        int waitstat;
+        if (fclose(fd) != 0) {
+                return EOF;
+        }
         MUTEX_LOCKID(MTX_ROOT_FILEPIDS);
-	temp = root_of_all_filepids;
-	while (temp) {
-	   if (temp->f == fd) {
-	      pid = temp->pid;
-	      if (temp->status == Fs_BPipe)
-	      	 kill(pid, SIGPIPE);
-	      else
-	      	 kill(pid, EOF);
-	      if (pid==waitpid(pid, &waitstat, 0 )){ /* we are good */
-		 if ((temp2 = temp->next)) {
-		    *temp = *(temp->next);
-		    free(temp2);
-		    }
-		 else if (temp == root_of_all_filepids) {
-		    free(temp);
-		    root_of_all_filepids = NULL;
-		    }
-		 else if (tail && tail->next==temp) {
-		    tail->next = temp->next;
-		    free(temp);
-		    }
-	         MUTEX_UNLOCKID(MTX_ROOT_FILEPIDS);
-		 return waitstat;
-		 }
-	      }
-	   tail = temp;
-	   temp = temp->next;
-	   }
+        temp = root_of_all_filepids;
+        while (temp) {
+           if (temp->f == fd) {
+              pid = temp->pid;
+              if (temp->status == Fs_BPipe)
+                 kill(pid, SIGPIPE);
+              else
+                 kill(pid, EOF);
+              if (pid==waitpid(pid, &waitstat, 0 )){ /* we are good */
+                 if ((temp2 = temp->next)) {
+                    *temp = *(temp->next);
+                    free(temp2);
+                    }
+                 else if (temp == root_of_all_filepids) {
+                    free(temp);
+                    root_of_all_filepids = NULL;
+                    }
+                 else if (tail && tail->next==temp) {
+                    tail->next = temp->next;
+                    free(temp);
+                    }
+                 MUTEX_UNLOCKID(MTX_ROOT_FILEPIDS);
+                 return waitstat;
+                 }
+              }
+           tail = temp;
+           temp = temp->next;
+           }
         MUTEX_UNLOCKID(MTX_ROOT_FILEPIDS);
-	wait(&waitstat );
-	return waitstat;
+        wait(&waitstat );
+        return waitstat;
 }
 #endif
 
@@ -225,8 +225,8 @@ int pclose(FILE *fd)
 
 int rchar(int with_echo);
 
-int getch(void)		{ return rchar(0); }
-int getche(void)	{ return rchar(1); }
+int getch(void)         { return rchar(0); }
+int getche(void)        { return rchar(1); }
 
 int rchar(int with_echo)
 {
@@ -234,7 +234,7 @@ int rchar(int with_echo)
    char c;
    int n;
 
-   tcgetattr(STDIN, &otty);		/* get current tty attributes */
+   tcgetattr(STDIN, &otty);             /* get current tty attributes */
 
    tty = otty;
    tty.c_lflag &= ~ICANON;
@@ -242,15 +242,15 @@ int rchar(int with_echo)
       tty.c_lflag |= ECHO;
    else
       tty.c_lflag &= ~ECHO;
-   tcsetattr(STDIN, TCSANOW, &tty);	/* set temporary attributes */
+   tcsetattr(STDIN, TCSANOW, &tty);     /* set temporary attributes */
 
    checkpollevent();
 
-   n = read(STDIN, &c, 1);		/* read one char from stdin */
- 
-   tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
+   n = read(STDIN, &c, 1);              /* read one char from stdin */
 
-   if (n == 1)				/* if read succeeded */
+   tcsetattr(STDIN, TCSANOW, &otty);    /* reset tty to original state */
+
+   if (n == 1)                          /* if read succeeded */
       return c & 0xFF;
    else
       return -1;
@@ -266,28 +266,28 @@ int kbhit(void)
    unsigned i;
    ioctl(0, FIONREAD, &i);
    return i != 0;
-#else					/* KbhitIoctl */
+#else                                   /* KbhitIoctl */
    struct termios otty, tty;
    fd_set fds;
    struct timeval tv;
    int rv;
 
-   tcgetattr(STDIN, &otty);		/* get current tty attributes */
+   tcgetattr(STDIN, &otty);             /* get current tty attributes */
 
    tty = otty;
-   tty.c_lflag &= ~ICANON;		/* disable input batching */
-   tcsetattr(STDIN, TCSANOW, &tty);	/* set attribute temporarily */
+   tty.c_lflag &= ~ICANON;              /* disable input batching */
+   tcsetattr(STDIN, TCSANOW, &tty);     /* set attribute temporarily */
 
-   FD_ZERO(&fds);			/* initialize fd struct */
-   FD_SET(STDIN, &fds);			/* set STDIN bit */
-   tv.tv_sec = tv.tv_usec = 0;		/* set immediate return */
+   FD_ZERO(&fds);                       /* initialize fd struct */
+   FD_SET(STDIN, &fds);                 /* set STDIN bit */
+   tv.tv_sec = tv.tv_usec = 0;          /* set immediate return */
    rv = select(STDIN + 1, &fds, NULL, NULL, &tv);
 
-   tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
+   tcsetattr(STDIN, TCSANOW, &otty);    /* reset tty to original state */
 
    if (rv == -1) return 0;
    if (FD_ISSET(0, &fds)) return 1;
-#endif					/* KbhitIoctl */
+#endif                                  /* KbhitIoctl */
 
    return 0;
 }
@@ -302,22 +302,22 @@ int kbhit_ms(int n)
    struct pollfd fd_stdin;
    int rv;
 
-   tcgetattr(STDIN, &otty);		/* get current tty attributes */
+   tcgetattr(STDIN, &otty);             /* get current tty attributes */
 
    tty = otty;
-   tty.c_lflag &= ~ICANON;		/* disable input batching */
-   tcsetattr(STDIN, TCSANOW, &tty);	/* set attribute temporarily */
+   tty.c_lflag &= ~ICANON;              /* disable input batching */
+   tcsetattr(STDIN, TCSANOW, &tty);     /* set attribute temporarily */
 
    fd_stdin.fd = fileno(stdin);
    fd_stdin.events = POLLIN;
 
    rv = poll(&fd_stdin, 1, n);
 
-   tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
-   return rv == 1;				/* return result */
+   tcsetattr(STDIN, TCSANOW, &otty);    /* reset tty to original state */
+   return rv == 1;                              /* return result */
 }
 
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 /*********************************** VMS ***********************************/
 
@@ -349,25 +349,25 @@ typedef struct _descr {
 } descriptor;
 
 typedef struct _pipe {
-   long pid;			/* process id of child */
-   long status;			/* exit status of child */
-   long flags;			/* LIB$SPAWN flags */
-   int channel;			/* MBX channel number */
-   int efn;			/* Event flag to wait for */
-   char mode;			/* the open mode */
-   FILE *fptr;			/* file pointer (for fun) */
-   unsigned running : 1;	/* 1 if child is running */
+   long pid;                    /* process id of child */
+   long status;                 /* exit status of child */
+   long flags;                  /* LIB$SPAWN flags */
+   int channel;                 /* MBX channel number */
+   int efn;                     /* Event flag to wait for */
+   char mode;                   /* the open mode */
+   FILE *fptr;                  /* file pointer (for fun) */
+   unsigned running : 1;        /* 1 if child is running */
 } Pipe;
 
-Pipe _pipes[_NFILE];		/* one for every open file */
+Pipe _pipes[_NFILE];            /* one for every open file */
 
-#define NOWAIT		1
-#define NOCLISYM	2
-#define NOLOGNAM	4
-#define NOKEYPAD	8
-#define NOTIFY		16
-#define NOCONTROL	32
-#define SFLAGS	(NOWAIT|NOKEYPAD|NOCONTROL)
+#define NOWAIT          1
+#define NOCLISYM        2
+#define NOLOGNAM        4
+#define NOKEYPAD        8
+#define NOTIFY          16
+#define NOCONTROL       32
+#define SFLAGS  (NOWAIT|NOKEYPAD|NOCONTROL)
 
 /*
  * delay_vms - delay for n milliseconds
@@ -389,21 +389,21 @@ int n;
  * popen - open a pipe command
  * Last modified 2-Apr-86/chj
  *
- *	popen("command", mode)
+ *      popen("command", mode)
  */
 
 FILE *popen(cmd, mode)
 char *cmd;
 char *mode;
 {
-   FILE *pfile;			/* the Pfile */
-   Pipe *pd;			/* _pipe database */
-   descriptor mbxname;		/* name of mailbox */
-   descriptor command;		/* command string descriptor */
-   descriptor nl;		/* null device descriptor */
-   char mname[65];		/* mailbox name string */
-   int chan;			/* mailbox channel number */
-   int status;			/* system service status */
+   FILE *pfile;                 /* the Pfile */
+   Pipe *pd;                    /* _pipe database */
+   descriptor mbxname;          /* name of mailbox */
+   descriptor command;          /* command string descriptor */
+   descriptor nl;               /* null device descriptor */
+   char mname[65];              /* mailbox name string */
+   int chan;                    /* mailbox channel number */
+   int status;                  /* system service status */
    int efn;
    struct {
       short len;
@@ -444,7 +444,7 @@ char *mode;
       return (0);
    }
    /* Save file information now */
-   pd = &_pipes[fileno(pfile)];	/* get Pipe pointer */
+   pd = &_pipes[fileno(pfile)]; /* get Pipe pointer */
    pd->mode = _tolower(mode[0]);
    pd->fptr = pfile;
    pd->pid = pd->status = pd->running = 0;
@@ -457,8 +457,8 @@ char *mode;
    command.length = strlen(cmd);
    command.ptr = cmd;
    status = LIB_SPAWN(&command,
-      (pd->mode == 'r') ? 0 : &mbxname,	/* input file */
-      (pd->mode == 'r') ? &mbxname : 0,	/* output file */
+      (pd->mode == 'r') ? 0 : &mbxname, /* input file */
+      (pd->mode == 'r') ? &mbxname : 0, /* output file */
       &pd->flags, 0, &pd->pid, &pd->status, &pd->efn, 0, 0, 0, 0);
    if (!(status & 1)) {
       LIB_FREE_EF(&efn);
@@ -469,7 +469,7 @@ char *mode;
    }
    return (pfile);
 }
-
+
 /*
  * pclose - close a pipe
  * Last modified 2-Apr-86/chj
@@ -485,7 +485,7 @@ FILE *pfile;
    pd = fileno(pfile) ? &_pipes[fileno(pfile)] : 0;
    if (pd == NULL)
       return (-1);
-   fflush(pd->fptr);			/* flush buffers */
+   fflush(pd->fptr);                    /* flush buffers */
    fstatus = fclose(pfile);
    if (pd->mode == 'w') {
       status = SYS_QIOW(0, pd->channel, IO__WRITEOF, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -496,12 +496,12 @@ FILE *pfile;
    pd->running = 0;
    return (fstatus);
 }
-
+
 /*
  * redirect(&argc,argv,nfargs) - redirect standard I/O
- *    int *argc		number of command arguments (from call to main)
- *    char *argv[]	command argument list (from call to main)
- *    int nfargs	number of filename arguments to process
+ *    int *argc         number of command arguments (from call to main)
+ *    char *argv[]      command argument list (from call to main)
+ *    int nfargs        number of filename arguments to process
  *
  * argc and argv will be adjusted by redirect.
  *
@@ -513,9 +513,9 @@ FILE *pfile;
  * Files are redirected based on syntax or position of command arguments.
  * Arguments of the following forms always redirect a file:
  *
- *    <file	redirects standard input to read the given file
- *    >file	redirects standard output to write to the given file
- *    >>file	redirects standard output to append to the given file
+ *    <file     redirects standard input to read the given file
+ *    >file     redirects standard output to write to the given file
+ *    >>file    redirects standard output to append to the given file
  *
  * It is often useful to allow alternate input and output files as the
  * first two command arguments without requiring the <file and >file
@@ -541,36 +541,36 @@ char *argv[];
    int i;
 
    i = 1;
-   while (i < *argc)  {		/* for every command argument... */
-      switch (argv[i][0])  {		/* check first character */
-         case '<':			/* <file redirects stdin */
+   while (i < *argc)  {         /* for every command argument... */
+      switch (argv[i][0])  {            /* check first character */
+         case '<':                      /* <file redirects stdin */
             filearg(argc,argv,i,1,stdin,"r");
             break;
-         case '>':			/* >file or >>file redirects stdout */
+         case '>':                      /* >file or >>file redirects stdout */
             if (argv[i][1] == '>')
                filearg(argc,argv,i,2,stdout,"a");
             else
                filearg(argc,argv,i,1,stdout,"w");
             break;
-         default:			/* not recognized, go on to next arg */
+         default:                       /* not recognized, go on to next arg */
             i++;
       }
    }
-   if (nfargs >= 1 && *argc > 1)	/* if positional redirection & 1 arg */
-      filearg(argc,argv,1,0,stdin,"r");	/* then redirect stdin */
-   if (nfargs >= 2 && *argc > 1)	/* likewise for 2nd arg if wanted */
+   if (nfargs >= 1 && *argc > 1)        /* if positional redirection & 1 arg */
+      filearg(argc,argv,1,0,stdin,"r"); /* then redirect stdin */
+   if (nfargs >= 2 && *argc > 1)        /* likewise for 2nd arg if wanted */
       filearg(argc,argv,1,0,stdout,"w");/* redirect stdout */
 }
 
 
 
 /* filearg(&argc,argv,n,i,fp,mode) - redirect and remove file argument
- *    int *argc		number of command arguments (from call to main)
- *    char *argv[]	command argument list (from call to main)
- *    int n		argv entry to use as file name and then delete
- *    int i		first character of file name to use (skip '<' etc.)
- *    FILE *fp		file pointer for file to reopen (typically stdin etc.)
- *    char mode[]	file access mode (see freopen spec)
+ *    int *argc         number of command arguments (from call to main)
+ *    char *argv[]      command argument list (from call to main)
+ *    int n             argv entry to use as file name and then delete
+ *    int i             first character of file name to use (skip '<' etc.)
+ *    FILE *fp          file pointer for file to reopen (typically stdin etc.)
+ *    char mode[]       file access mode (see freopen spec)
  */
 
 filearg(argc,argv,n,i,fp,mode)
@@ -578,17 +578,17 @@ int *argc, n, i;
 char *argv[], mode[];
 FILE *fp;
 {
-   if (strcmp(argv[n]+i,"-"))		/* alter file if arg not "-" */
+   if (strcmp(argv[n]+i,"-"))           /* alter file if arg not "-" */
       fp = freopen(argv[n]+i,mode,fp);
-   if (fp == NULL)  {			/* abort on error */
+   if (fp == NULL)  {                   /* abort on error */
       fprintf(stderr,"%%can't open %s",argv[n]+i);
       exit(EXIT_FAILURE);
    }
-   for ( ;  n < *argc;  n++)		/* move down following arguments */
+   for ( ;  n < *argc;  n++)            /* move down following arguments */
       argv[n] = argv[n+1];
-   *argc = *argc - 1;			/* decrement argument count */
+   *argc = *argc - 1;                   /* decrement argument count */
 }
-
+
 #ifdef KeyboardFncs
 
 short channel;
@@ -612,14 +612,14 @@ int echo_on;
       char_available = 0;
       if (echo_on)
          SYS_QIOW(2, channel, IO__WRITEVBLK, 0, 0, 0, &char_typed, 1,
-		  0, 32, 0, 0);
+                  0, 32, 0, 0);
       goto return_char;
       }
    if (echo_on)
       SYS_QIOW(1, channel, IO__TTYREADALL, 0, 0, 0, &char_typed, 1, 0, 0, 0, 0);
    else
       SYS_QIOW(1, channel, IO__TTYREADALL | IO_M_NOECHO, 0, 0, 0,
-	       &char_typed, 1, 0, 0, 0, 0);
+               &char_typed, 1, 0, 0, 0, 0);
 
 return_char:
    if (char_typed == '\003' && kill(getpid(), SIGINT) == -1) {
@@ -659,11 +659,11 @@ int kbhit()
    return char_available;
 }
 
-#endif					/* KeyboardFncs */
+#endif                                  /* KeyboardFncs */
 
-#endif					/* VMS */
+#endif                                  /* VMS */
 /*
  * End of operating-system specific code.
  */
 
-/* static char xjunk;			/* avoid empty module */
+/* static char xjunk;                   /* avoid empty module */

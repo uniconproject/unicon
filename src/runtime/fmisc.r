@@ -7,7 +7,7 @@
  */
 #if !COMPILER
 #include "../h/opdefs.h"
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
 
 "args(x,i) - produce number of arguments for procedure x."
 
@@ -23,11 +23,11 @@ function{0,1} args(x,i)
       abstract { return integer }
       inline {
 #ifdef MultiProgram
-	 return C_integer BlkD(x,Coexpr)->program->tstate->Xnargs;
+         return C_integer BlkD(x,Coexpr)->program->tstate->Xnargs;
 #else
-	 fail;
-#endif					/* MultiProgram */
-	 }
+         fail;
+#endif                                  /* MultiProgram */
+         }
       }
    else if !cnv:integer(i) then
       runerr(103, i)
@@ -35,16 +35,16 @@ function{0,1} args(x,i)
       abstract { return any_value }
       inline {
 #ifdef MultiProgram
-	 int c_i = IntVal(i);
-	 if ((c_i <= 0) || (c_i > BlkD(x,Coexpr)->program->tstate->Xnargs)) fail;
-	 return BlkD(x,Coexpr)->program->tstate->Xargp[IntVal(i)];
+         int c_i = IntVal(i);
+         if ((c_i <= 0) || (c_i > BlkD(x,Coexpr)->program->tstate->Xnargs)) fail;
+         return BlkD(x,Coexpr)->program->tstate->Xargp[IntVal(i)];
 #else
-	 fail;
-#endif					/* MultiProgram */
-	 }
+         fail;
+#endif                                  /* MultiProgram */
+         }
       }
 end
-
+
 #if !COMPILER
 #ifdef ExternalFunctions
 
@@ -73,25 +73,25 @@ function{1} callout(x[nargs])
        *  the name of the routine as part of the convention of calling
        *  routines with an argc/argv technique.
        */
-      signal = -1;			/* presume successful completiong */
+      signal = -1;                      /* presume successful completiong */
       retval = extcall(x, nargs, &signal);
       if (signal >= 0) {
          if (retval == NULL)
             runerr(signal);
          else
-            runerr(signal, *retval); 
+            runerr(signal, *retval);
          }
       if (retval != NULL) {
          return *retval;
          }
-      else 
+      else
          fail;
       }
 end
 
-#endif 					/* ExternalFunctions */
-#endif					/* !COMPILER */
-
+#endif                                  /* ExternalFunctions */
+#endif                                  /* !COMPILER */
+
 
 "char(i) - produce a string consisting of character i."
 
@@ -110,7 +110,7 @@ function{1} char(i)
       return string(1, (char *)&allchars[FromAscii(i) & 0xFF]);
       }
 end
-
+
 
 "collect(i1,i2) - call garbage collector to ensure i2 bytes in region i1."
 " no longer works."
@@ -118,7 +118,7 @@ end
 function{1} collect(region, bytes)
 
    if !def:C_integer(region, (C_integer)0) then
-      runerr(101, region) 
+      runerr(101, region)
    if !def:C_integer(bytes, (C_integer)0) then
       runerr(101, bytes)
 
@@ -132,34 +132,34 @@ function{1} collect(region, bytes)
          errorfail;
          }
       switch (region) {
-	 case 0:
-	    DO_COLLECT(0);
-	    break;
-	 case Static:
-	    DO_COLLECT(Static);			 /* i2 ignored if i1==Static */
-	    break;
-	 case Strings:
-	    if (DiffPtrs(strend,strfree) >= bytes){
-	       DO_COLLECT(Strings);		/* force unneeded collection */
-	       }
-	    else if (!reserve(Strings, bytes))	/* collect & reserve bytes */
+         case 0:
+            DO_COLLECT(0);
+            break;
+         case Static:
+            DO_COLLECT(Static);                  /* i2 ignored if i1==Static */
+            break;
+         case Strings:
+            if (DiffPtrs(strend,strfree) >= bytes){
+               DO_COLLECT(Strings);             /* force unneeded collection */
+               }
+            else if (!reserve(Strings, bytes))  /* collect & reserve bytes */
                fail;
-	    break;
-	 case Blocks:
-	    if (DiffPtrs(blkend,blkfree) >= bytes){
-	       DO_COLLECT(Blocks);		/* force unneeded collection */
-	       }
-	    else if (!reserve(Blocks, bytes))	/* collect & reserve bytes */
+            break;
+         case Blocks:
+            if (DiffPtrs(blkend,blkfree) >= bytes){
+               DO_COLLECT(Blocks);              /* force unneeded collection */
+               }
+            else if (!reserve(Blocks, bytes))   /* collect & reserve bytes */
                fail;
-	    break;
-	 default:
+            break;
+         default:
             irunerr(205, region);
             errorfail;
          }
       return nulldesc;
       }
 end
-
+
 
 "copy(x) - make a copy of object x."
 
@@ -178,14 +178,14 @@ function{1} copy(x)
       coexpr:
 #ifdef PatternType
       pattern:
-#endif					/* PatternType */
+#endif                                  /* PatternType */
          inline {
             /*
              * Copy the null value, integers, long integers, reals, files,
-             *	csets, procedures, and such by copying the descriptor.
-             *	Note that for integers, this results in the assignment
-             *	of a value, for the other types, a pointer is directed to
-             *	a data block.
+             *  csets, procedures, and such by copying the descriptor.
+             *  Note that for integers, this results in the assignment
+             *  of a value, for the other types, a pointer is directed to
+             *  a data block.
              */
             return x;
             }
@@ -196,29 +196,29 @@ function{1} copy(x)
              * Pass the buck to cplist to copy a list.
              */
 #ifdef Arrays
-	 if (BlkD(x,List)->listtail!=NULL){
-#endif					/* Arrays */
+         if (BlkD(x,List)->listtail!=NULL){
+#endif                                  /* Arrays */
             if (cplist(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
-	       runerr(0);
+               runerr(0);
 #ifdef Arrays
-	       }
-	 else if ( BlkType(BlkD(x,List)->listhead)==T_Realarray){
-	    if (cprealarray(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
-	       runerr(0);
-	    }
-	 else /*if ( BlkType(BlkD(x,List)->listhead)==T_Intarray)*/{
-	    if (cpintarray(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
-	       runerr(0);
-	    }
-#endif					/* Arrays */
+               }
+         else if ( BlkType(BlkD(x,List)->listhead)==T_Realarray){
+            if (cprealarray(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
+               runerr(0);
+            }
+         else /*if ( BlkType(BlkD(x,List)->listhead)==T_Intarray)*/{
+            if (cpintarray(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
+               runerr(0);
+            }
+#endif                                  /* Arrays */
             return result;
             }
       table: {
          body {
-	    if (cptable(&x, &result, BlkD(x,Table)->size) == RunError) {
-	       runerr(0);
-	       }
-	    return result;
+            if (cptable(&x, &result, BlkD(x,Table)->size) == RunError) {
+               runerr(0);
+               }
+            return result;
             }
          }
 
@@ -229,7 +229,7 @@ function{1} copy(x)
              */
             if (cpset(&x, &result, BlkD(x,Set)->size) == RunError)
                runerr(0);
-	    return result;
+            return result;
             }
          }
 
@@ -246,7 +246,7 @@ function{1} copy(x)
 
             /*
              * Allocate space for the new record and copy the old
-             *	one into it.
+             *  one into it.
              */
             old_rec = BlkD(x, Record);
             i = Blk(old_rec->recdesc,Proc)->nfields;
@@ -257,7 +257,7 @@ function{1} copy(x)
             d2 = old_rec->fields;
             while (i--)
                *d1++ = *d2++;
-	    Desc_EVValD(new_rec, E_Rcreate, D_Record);
+            Desc_EVValD(new_rec, E_Rcreate, D_Record);
             return record(new_rec);
             }
          }
@@ -273,22 +273,22 @@ function{1} copy(x)
              * then allocate new block and copy the data.
              */
             op = BlkLoc(x);
-            n = (op->externl.blksize - (sizeof(struct b_external) - 
+            n = (op->externl.blksize - (sizeof(struct b_external) -
                  sizeof(word))) / sizeof(word);
             Protect(bp = (union block *)alcextrnl(n), runerr(0));
             while (n--)
                bp->externl.exdata[n] = op->externl.exdata[n];
             result.dword = D_External;
             BlkLoc(result) = bp;
-	    return result;
+            return result;
             }
          else
-#endif					/* Never */
+#endif                                  /* Never */
             runerr(123,x);
          }
          }
 end
-
+
 
 "display(i,f) - display local variables of i most recent"
 " procedure activations, plus global variables."
@@ -304,19 +304,19 @@ function{1} display(i,f,c)
        struct threadstate *curtstate =
                    (struct threadstate *) pthread_getspecific(tstate_key);
        struct b_coexpr *curtstate_ce = curtstate->c;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
       }
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 function{1} display(i,f)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    if !def:C_integer(i,(C_integer)k_level) then
       runerr(101, i)
 
    if is:null(f) then
        inline {
-	  f.dword = D_File;
-	  BlkLoc(f) = (union block *)&k_errout;
+          f.dword = D_File;
+          BlkLoc(f) = (union block *)&k_errout;
           }
    else if !is:file(f) then
       runerr(105, f)
@@ -327,7 +327,7 @@ function{1} display(i,f)
       else if (BlkLoc(c) != BlkLoc(k_current))
          ce = (struct b_coexpr *)BlkLoc(c);
       }
-#endif						/* MultiProgram */
+#endif                                          /* MultiProgram */
 
    abstract {
       return null
@@ -345,7 +345,7 @@ function{1} display(i,f)
       /*
        * Produce error if file cannot be written.
        */
-      if ((BlkD(f,File)->status & Fs_Write) == 0) 
+      if ((BlkD(f,File)->status & Fs_Write) == 0)
          runerr(213, f);
 
       std_f = BlkD(f,File)->fd.fp;
@@ -364,31 +364,31 @@ function{1} display(i,f)
       if (IS_TS_THREAD(BlkD(k_current,Coexpr)->status))
          fprintf(std_f,"thread_%ld(%ld)\n\n",
             (long)BlkD(k_current,Coexpr)->id,
-	    (long)BlkD(k_current,Coexpr)->size);
+            (long)BlkD(k_current,Coexpr)->size);
       else
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
          fprintf(std_f,"co-expression_%ld(%ld)\n\n",
             (long)BlkD(k_current,Coexpr)->id,
-	    (long)BlkD(k_current,Coexpr)->size);
+            (long)BlkD(k_current,Coexpr)->size);
 
       fflush(std_f);
 #ifdef MultiProgram
       if (ce) {
          savedprog = curpstate;
-	 if ((ce->es_pfp == NULL) || (ce->es_argp == NULL)) fail;
-	 ENTERPSTATE(ce->program);
+         if ((ce->es_pfp == NULL) || (ce->es_argp == NULL)) fail;
+         ENTERPSTATE(ce->program);
          r = xdisp(ce->es_pfp, ce->es_argp, (int)i, std_f);
-	 ENTERPSTATE(savedprog);
+         ENTERPSTATE(savedprog);
        }
       else
-#endif						/* MultiProgram */
+#endif                                          /* MultiProgram */
          r = xdisp(pfp, glbl_argp, (int)i, std_f);
       if (r == Failed)
          runerr(305);
       return nulldesc;
       }
 end
-
+
 
 "errorclear() - clear error condition."
 
@@ -405,7 +405,7 @@ function{1} errorclear()
       return nulldesc;
       }
 end
-
+
 #if !COMPILER
 
 "function() - generate the names of the functions."
@@ -419,13 +419,13 @@ function{*} function()
       CURTSTATVAR();
 
       for (i = 0; i<pnsize; i++) {
-	 suspend string(strlen(pntab[i].pstrep), pntab[i].pstrep);
+         suspend string(strlen(pntab[i].pstrep), pntab[i].pstrep);
          }
       fail;
       }
 end
-#endif					/* !COMPILER */
-
+#endif                                  /* !COMPILER */
+
 
 /*
  * the bitwise operators are identical enough to be expansions
@@ -452,7 +452,7 @@ function{1} func_name(i,j)
          big_ ## c_op(i,j);
          }
       else
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
       return C_integer IntVal(i) c_op IntVal(j);
       }
 end
@@ -486,7 +486,7 @@ end
 bitop(iand, bitand, "AND")          /* iand(i,j) bitwise "and" of i and j */
 bitop(ior,  bitor, "inclusive OR")  /* ior(i,j) bitwise "or" of i and j */
 bitop(ixor, bitxor, "exclusive OR") /* ixor(i,j) bitwise "xor" of i and j */
-
+
 
 "icom(i) - produce bitwise complement (one's complement) of i."
 
@@ -512,16 +512,16 @@ function{1} icom(i)
          return result;
          }
       else
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
       return C_integer ~IntVal(i);
       }
 end
-
+
 
 #ifdef PatternType
 
 function{1} pindex_image(x, i)
-   if ! cnv:C_integer(i) then 
+   if ! cnv:C_integer(i) then
       runerr(101, i);
 
    abstract {
@@ -532,20 +532,20 @@ function{1} pindex_image(x, i)
    tended union block * bp;
    register union block * ep;
 
-   if(! cnv_pattern(&x, &x)) 
+   if(! cnv_pattern(&x, &x))
       runerr(127, x);
 
    bp = BlkLoc(x);
-   ep = Blk(bp, Pattern)->pe; 
+   ep = Blk(bp, Pattern)->pe;
 
-   if (pattern_image(ep, -1, &result, 0, i, -1) == RunError) 
+   if (pattern_image(ep, -1, &result, 0, i, -1) == RunError)
       runerr(166, x);
    return result;
    }
 end
 
-#endif                                  /* PatternType */ 
-
+#endif                                  /* PatternType */
+
 "image(x) - return string image of object x."
 /*
  *  All the interesting work happens in getimage()
@@ -568,12 +568,12 @@ function{1} image(x)
       }
 #else
       if (getimage(&x,&result) == RunError)
-	 runerr(0);
+         runerr(0);
 #endif
       return result;
       }
 end
-
+
 
 "ishift(i,j) - produce i shifted j bit positions (left if j<0, right if j>0)."
 
@@ -588,7 +588,7 @@ function{1} ishift(i,j)
       return integer
       }
    body {
-      uword ci;			 /* shift in 0s, even if negative */
+      uword ci;                  /* shift in 0s, even if negative */
       C_integer cj;
 #ifdef LargeInts
       if (Type(j) == T_Lrgint)
@@ -600,10 +600,10 @@ function{1} ishift(i,j)
             runerr(0);
          return result;
          }
-#else					/* LargeInts */
+#else                                   /* LargeInts */
       ci = (uword)IntVal(i);
       cj = IntVal(j);
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
       /*
        * Check for a shift of WordSize or greater; handle specially because
        *  this is beyond C's defined behavior.  Otherwise shift as requested.
@@ -617,10 +617,10 @@ function{1} ishift(i,j)
       if (IntVal(i) >= 0)
          return C_integer ci >> -cj;
       /*else*/
-         return C_integer ~(~ci >> -cj);	/* sign extending shift */
+         return C_integer ~(~ci >> -cj);        /* sign extending shift */
       }
 end
-
+
 
 "ord(s) - produce integer ordinal (value) of single character."
 
@@ -636,7 +636,7 @@ function{1} ord(s)
       return C_integer ToAscii(*StrLoc(s) & 0xFF);
       }
 end
-
+
 
 "name(v) - return the name of a variable."
 
@@ -645,9 +645,9 @@ function{1} name(underef v, c)
    declare {
       struct progstate *prog, *savedprog;
       }
-#else						/* MultiProgram */
+#else                                           /* MultiProgram */
 function{1} name(underef v)
-#endif						/* MultiProgram */
+#endif                                          /* MultiProgram */
    /*
     * v must be a variable
     */
@@ -678,19 +678,19 @@ function{1} name(underef v)
          }
 
       ENTERPSTATE(prog);
-#endif						/* MultiProgram */
-      i = get_name(&v, &result);		/* return val ? #%#% */
+#endif                                          /* MultiProgram */
+      i = get_name(&v, &result);                /* return val ? #%#% */
 
 #ifdef MultiProgram
       ENTERPSTATE(savedprog);
-#endif						/* MultiProgram */
+#endif                                          /* MultiProgram */
 
       if (i == RunError)
          runerr(0);
       return result;
       }
 end
-
+
 
 "runerr(i,x) - produce runtime error i with value x."
 
@@ -713,7 +713,7 @@ function{} runerr(i,x[n])
          runerr((int)i, x[0]);
       }
 end
-
+
 "seq(i, j) - generate i, i+j, i+2*j, ... ."
 
 function{1,*} seq(from, by)
@@ -767,12 +767,12 @@ function{1,*} seq(from, by)
       r_args[0].dword = D_Proc;
       r_args[0].vword.bptr = (union block *)&Bseq;
       }
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
       runerr(203);
       }
 end
-
+
 "serial(x) - return serial number of structure."
 
 function {0,1} serial(x)
@@ -798,26 +798,26 @@ function {0,1} serial(x)
          }
       null: inline {
 #if !ConcurrentCOMPILER
-      	 CURTSTATE();
+         CURTSTATE();
 #endif                                     /* ConcurrentCOMPILER */
          return C_integer BlkD(k_current,Coexpr)->id;
          }
 #ifdef Graphics
       file:   inline {
-	 if (BlkD(x,File)->status & Fs_Window) {
-	    wsp ws = BlkD(x,File)->fd.wb->window;
-	    return C_integer ws->serial;
-	    }
-	 else {
-	    fail;
-	    }
+         if (BlkD(x,File)->status & Fs_Window) {
+            wsp ws = BlkD(x,File)->fd.wb->window;
+            return C_integer ws->serial;
+            }
+         else {
+            fail;
+            }
          }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
       default:
          inline { fail; }
       }
 end
-
+
 "sort(x,i) - sort structure x by method i (for tables)"
 
 function{1} sort(t, i)
@@ -835,7 +835,7 @@ function{1} sort(t, i)
              */
             size = BlkD(t,List)->size;
             if (cplist(&t, &result, (word)1, size + 1) == RunError)
-	       runerr(0);
+               runerr(0);
             qsort((char *)Blk(BlkD(result,List)->listhead,Lelem)->lslots,
                (int)size, sizeof(struct descrip),(QSortFncCast) anycmp);
 
@@ -883,14 +883,14 @@ function{1} sort(t, i)
             return new list(store[type(t).set_elem])
             }
          body {
-	    register word size;
-	    tended struct descrip d;
-	    cnv_list(&t, &d); /* can't fail, already know t is a set */
+            register word size;
+            tended struct descrip d;
+            cnv_list(&t, &d); /* can't fail, already know t is a set */
 
-	    size = BlkD(t,Set)->size;
-	    if (size > 1)  /* only need to sort non-trivial sets */
-	       qsort((char *)Blk(BlkD(d,List)->listhead,Lelem)->lslots,
-		     (int)size,sizeof(struct descrip),(QSortFncCast)anycmp);
+            size = BlkD(t,Set)->size;
+            if (size > 1)  /* only need to sort non-trivial sets */
+               qsort((char *)Blk(BlkD(d,List)->listhead,Lelem)->lslots,
+                     (int)size,sizeof(struct descrip),(QSortFncCast)anycmp);
 
             return d;
             }
@@ -907,10 +907,10 @@ function{1} sort(t, i)
             register dptr d1;
             register word size;
             register int j, k, n;
-	    tended struct b_table *bp;
+            tended struct b_table *bp;
             tended struct b_list *lp, *tp;
             tended union block *ep;
-	    tended struct b_slots *seg;
+            tended struct b_slots *seg;
 
             switch ((int)i) {
 
@@ -919,7 +919,7 @@ function{1} sort(t, i)
              */
                case 1:
                case 2:
-		      {
+                      {
                /*
                 * The list resulting from the sort will have as many elements
                 *  as the table has, so get that value and also make a valid
@@ -927,23 +927,23 @@ function{1} sort(t, i)
                 */
                size = BlkD(t,Table)->size;
 
-	       /*
-		* Make sure, now, that there's enough room for all the
-		*  allocations we're going to need.
-		*/
-	       if (!reserve(Blocks, (word)(sizeof(struct b_list)
-		  + sizeof(struct b_lelem) + (size - 1) * sizeof(struct descrip)
-		  + size * sizeof(struct b_list)
-		  + size * (sizeof(struct b_lelem) + sizeof(struct descrip)))))
-		  runerr(0);
+               /*
+                * Make sure, now, that there's enough room for all the
+                *  allocations we're going to need.
+                */
+               if (!reserve(Blocks, (word)(sizeof(struct b_list)
+                  + sizeof(struct b_lelem) + (size - 1) * sizeof(struct descrip)
+                  + size * sizeof(struct b_list)
+                  + size * (sizeof(struct b_lelem) + sizeof(struct descrip)))))
+                  runerr(0);
                /*
                 * Point bp at the table header block of the table to be sorted
                 *  and point lp at a newly allocated list
                 *  that will hold the the result of sorting the table.
-		*
-		* alclist_raw normally cannot be used if more allocations
-		* may occur before the list is initialized. The reason it is
-		* OK here is because of the reserve().
+                *
+                * alclist_raw normally cannot be used if more allocations
+                * may occur before the list is initialized. The reason it is
+                * OK here is because of the reserve().
                 */
                bp = (struct b_table *)BlkLoc(t);
                Protect(lp = alclist_raw(size, size), runerr(0));
@@ -962,12 +962,12 @@ function{1} sort(t, i)
                 *  list of two-element lists is complete, but unsorted.
                 */
 
-               n = 0;				/* list index */
+               n = 0;                           /* list index */
                for (j = 0; j < HSegs && (seg = bp->hdir[j]) != NULL; j++)
                   for (k = segsize[j] - 1; k >= 0; k--)
                      for (ep= seg->hslots[k];
-			  BlkType(ep) == T_Telem;
-			  ep = Blk(ep,Telem)->clink){
+                          BlkType(ep) == T_Telem;
+                          ep = Blk(ep,Telem)->clink){
                         Protect(tp = alclist_raw(2, 2), runerr(0));
                         Blk(tp->listhead,Lelem)->lslots[0]=Blk(ep,Telem)->tref;
                         Blk(tp->listhead,Lelem)->lslots[1]=Blk(ep,Telem)->tval;
@@ -985,7 +985,7 @@ function{1} sort(t, i)
                else
                   qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size,
                         sizeof(struct descrip), (QSortFncCast)tvalcmp);
-               break;		/* from cases 1 and 2 */
+               break;           /* from cases 1 and 2 */
                }
             /*
              * Cases 3 and 4 were introduced in Version 5.10.
@@ -1030,8 +1030,8 @@ function{1} sort(t, i)
             for (j = 0; j < HSegs && (seg = bp->hdir[j]) != NULL; j++)
                for (k = segsize[j] - 1; k >= 0; k--)
                   for (ep = seg->hslots[k];
-		       BlkType(ep) == T_Telem;
-		       ep = Blk(ep,Telem)->clink) {
+                       BlkType(ep) == T_Telem;
+                       ep = Blk(ep,Telem)->clink) {
                      *d1++ = Blk(ep,Telem)->tref;
                      *d1++ = Blk(ep,Telem)->tval;
                      }
@@ -1065,10 +1065,10 @@ function{1} sort(t, i)
          }
 
       default:
-         runerr(115, t);		/* structure expected */
+         runerr(115, t);                /* structure expected */
       }
 end
-
+
 /*
  * trefcmp(d1,d2) - compare two-element lists on first field.
  */
@@ -1080,7 +1080,7 @@ dptr d1, d2;
 #ifdef DeBug
    if (d1->dword != D_List || d2->dword != D_List)
       syserr("trefcmp: internal consistency check fails.");
-#endif					/* DeBug */
+#endif                                  /* DeBug */
 
    return (anycmp(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[0]),
                   &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[0])));
@@ -1097,7 +1097,7 @@ dptr d1, d2;
 #ifdef DeBug
    if (d1->dword != D_List || d2->dword != D_List)
       syserr("tvalcmp: internal consistency check fails.");
-#endif					/* DeBug */
+#endif                                  /* DeBug */
 
    return (anycmp(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[1]),
       &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[1])));
@@ -1125,7 +1125,7 @@ struct dpair *dp1,*dp2;
    {
    return (anycmp(&((*dp1).dv),&((*dp2).dv)));
    }
-
+
 
 "sortf(x,i) - sort list or set x on field i of each member"
 
@@ -1251,14 +1251,14 @@ function{1} sortf(t, i)
          }
 
       default:
-         runerr(125, t);	/* list, record, or set expected */
+         runerr(125, t);        /* list, record, or set expected */
       }
 end
-
+
 /*
  * nthcmp(d1,d2) - compare two descriptors on their nth fields.
  */
-word sort_field;		/* field number, set by sort function */
+word sort_field;                /* field number, set by sort function */
 static dptr nth (dptr d);
 
 int nthcmp(d1,d2)
@@ -1270,18 +1270,18 @@ dptr d1, d2;
    t1 = Type(*d1);
    t2 = Type(*d2);
    if (t1 == t2 && (t1 == T_Record || t1 == T_List)) {
-      e1 = nth(d1);		/* get nth field, or NULL if none such */
+      e1 = nth(d1);             /* get nth field, or NULL if none such */
       e2 = nth(d2);
       if (e1 == NULL) {
          if (e2 != NULL)
-            return -1;		/* no-nth-field is < any nth field */
+            return -1;          /* no-nth-field is < any nth field */
          }
       else if (e2 == NULL)
-	 return 1;		/* any nth field is > no-nth-field */
+         return 1;              /* any nth field is > no-nth-field */
       else {
-	 /*
-	  *  Both had an nth field.  If they're unequal, that decides.
-	  */
+         /*
+          *  Both had an nth field.  If they're unequal, that decides.
+          */
          rv = anycmp(nth(d1), nth(d2));
          if (rv != 0)
             return rv;
@@ -1342,7 +1342,7 @@ dptr d;
       }
    return rv;
    }
-
+
 
 "type(x) - return type of x as a string."
 
@@ -1357,37 +1357,37 @@ function{1} type(x)
       real:     inline { return C_string "real";      }
       cset:     inline { return C_string "cset";      }
       file:
-	 inline {
+         inline {
 #ifdef Graphics
-	    if (BlkD(x,File)->status & Fs_Window)
-	       return C_string "window";
-#endif					/* Graphics */
-	    return C_string "file";
-	    }
+            if (BlkD(x,File)->status & Fs_Window)
+               return C_string "window";
+#endif                                  /* Graphics */
+            return C_string "file";
+            }
       proc:     inline { return C_string "procedure"; }
       list:     inline { return C_string "list";      }
       table:    inline { return C_string "table";     }
       set:      inline { return C_string "set";       }
       record:   inline { return Blk(BlkD(x,Record)->recdesc,Proc)->recname; }
-      coexpr:   inline { 
+      coexpr:   inline {
 #ifdef Concurrent
-      		   if (IS_TS_THREAD(BlkD(x, Coexpr)->status))
-      		      return C_string "thread"; 
-#endif					/* Concurrent */
-      		   return C_string "co-expression"; 
-		   }
+                   if (IS_TS_THREAD(BlkD(x, Coexpr)->status))
+                      return C_string "thread";
+#endif                                  /* Concurrent */
+                   return C_string "co-expression";
+                   }
 #ifdef PatternType
       pattern:     inline { return C_string "pattern"; }
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 #ifdef EventMon
-      tvmonitored:  
+      tvmonitored:
          body {
              if (is:string(*(VarLoc(BlkD(x,Tvmonitored)->tv))))
                 return C_string "foreign-local-string";
-             else switch(Type(*(VarLoc(BlkD(x,Tvmonitored)->tv)))) { 
+             else switch(Type(*(VarLoc(BlkD(x,Tvmonitored)->tv)))) {
                 case T_Null:   { return C_string "foreign-local-null";     }
-		case T_Integer:{ return C_string "foreign-local-integer";  }
+                case T_Integer:{ return C_string "foreign-local-integer";  }
                 case T_Real:   { return C_string "foreign-local-real";     }
                 case T_Cset:   { return C_string "foreign-local-cset";     }
                 case T_File:   { return C_string "foreign-local-file";     }
@@ -1397,15 +1397,15 @@ function{1} type(x)
                 case T_Set:    { return C_string "foreign-local-set";      }
                 case T_Record: { return C_string "foreign-local-record";   }
                 case T_Coexpr: { return C_string "foreign-local-co-expression";}
-		default:       { return C_string "foreign-local-??";       }
-		}
-	     /*
-	      * won't get here; this silences a bogus rtt warning, but some
-	      * C compilers may be smart enough to notice and complain.
-	      */
-	     fail;
+                default:       { return C_string "foreign-local-??";       }
+                }
+             /*
+              * won't get here; this silences a bogus rtt warning, but some
+              * C compilers may be smart enough to notice and complain.
+              */
+             fail;
              }
-#endif					/* EventMon */
+#endif                                  /* EventMon */
       default:
          inline {
 #if !COMPILER
@@ -1413,21 +1413,21 @@ function{1} type(x)
                return C_string "external";
                }
             else
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
                runerr(123,x);
-	    }
+            }
       }
 end
-
+
 
 "variable(s) - find the variable with name s and return a"
 " variable descriptor which points to its value."
 
 #ifdef MultiProgram
 function{0,1} variable(s,c,i,trap_local)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 function{0,1} variable(s)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    if !cnv:C_string(s) then
       runerr(103, s)
@@ -1437,7 +1437,7 @@ function{0,1} variable(s)
       runerr(101,i)
    if !def:C_integer(trap_local,0) then
       runerr(101,trap_local)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    abstract {
       return variable
@@ -1449,7 +1449,7 @@ function{0,1} variable(s)
       struct progstate *prog, *savedprog=NULL;
       struct pf_marker *tmp_pfp;
       dptr tmp_argp;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       CURTSTATE_AND_CE();
 
 #ifdef MultiProgram
@@ -1465,58 +1465,58 @@ function{0,1} variable(s)
       tmp_argp = glbl_argp;
       if (is:null(c)) c = k_current;
       else if (!is:coexpr(c)){
-	 runerr(118, c);
-	 }
+         runerr(118, c);
+         }
       else if (BlkLoc(c) != BlkLoc(k_current)) {
-	 /*
-	  * Save global variables needed by getvar() and temporarily set them
-	  * to the "context" where getvar() will work. 
-	  */
-	 savedprog = curpstate;
-	 prog = BlkD(c,Coexpr)->program;
-	 pfp = BlkD(c,Coexpr)->es_pfp;
-	 glbl_argp = BlkD(c,Coexpr)->es_argp;
-	 ENTERPSTATE(prog);
-	 }
+         /*
+          * Save global variables needed by getvar() and temporarily set them
+          * to the "context" where getvar() will work.
+          */
+         savedprog = curpstate;
+         prog = BlkD(c,Coexpr)->program;
+         pfp = BlkD(c,Coexpr)->es_pfp;
+         glbl_argp = BlkD(c,Coexpr)->es_argp;
+         ENTERPSTATE(prog);
+         }
 
       while (i--) {
-	 if (pfp == NULL) {
-	    pfp = tmp_pfp;
-	    glbl_argp = tmp_argp;
-	    if (savedprog)
-	       ENTERPSTATE(savedprog);
-	    fail;
-	    }
-	 pfp = pfp->pf_pfp;
+         if (pfp == NULL) {
+            pfp = tmp_pfp;
+            glbl_argp = tmp_argp;
+            if (savedprog)
+               ENTERPSTATE(savedprog);
+            fail;
+            }
+         pfp = pfp->pf_pfp;
          }
       if (pfp)
-	 glbl_argp = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
+         glbl_argp = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
       else glbl_argp = NULL;
-#endif						/* MultiProgram */
+#endif                                          /* MultiProgram */
 
       rv = getvar(s, &result);
-   
+
 #ifdef MultiProgram
       if (savedprog)
-	 ENTERPSTATE(savedprog);
+         ENTERPSTATE(savedprog);
       pfp = tmp_pfp;
       glbl_argp = tmp_argp;
 
       if ((rv == LocalName) || (rv == StaticName)) {
 
 #ifdef MonitoredTrappedVar
-	    if (trap_local) {
+            if (trap_local) {
                result.dword = D_Tvmonitored;
-               VarLoc(result) = 
+               VarLoc(result) =
                   (dptr) alctvmonitored(&result, BlkD(c,Coexpr)->actv_count);
-	       }
-	    else
+               }
+            else
 #endif                                         /* MonitoredTrappedVar */
-	       if (BlkLoc(c) != BlkLoc(k_current)) {
-		  Deref(result);
-		  }
-	    }
-#endif						/* MultiProgram */
+               if (BlkLoc(c) != BlkLoc(k_current)) {
+                  Deref(result);
+                  }
+            }
+#endif                                          /* MultiProgram */
 
       if (rv != Failed)
          return result;
@@ -1524,7 +1524,7 @@ function{0,1} variable(s)
          fail;
       }
 end
-
+
 
 "fieldnames(r) - generate the fieldnames of record r"
 
@@ -1537,7 +1537,7 @@ function{*} fieldnames(r)
       int i, sz = Blk(BlkD(r,Record)->recdesc,Proc)->nfields;
       CURTSTATVAR();
       for(i=0;i<sz;i++)
-	 suspend Blk(BlkD(r,Record)->recdesc,Proc)->lnames[i];
+         suspend Blk(BlkD(r,Record)->recdesc,Proc)->lnames[i];
       fail;
       }
 end
@@ -1551,18 +1551,18 @@ function{0,1} cofail(CE)
    if is:null(CE) then
       body {
 #ifdef CoExpr
-	 struct b_coexpr *ce;
-	 CURTSTATE();
-	 ce = topact(BlkD(k_current,Coexpr));
-	 if (ce != NULL) {
-	    CE.dword = D_Coexpr;
-	    BlkLoc(CE) = (union block *)ce;
-	    }
-	 else runerr(118,CE);
-#else					/* CoExpr */
-	runerr(118, CE);
-#endif					/* CoExpr */
-	 }
+         struct b_coexpr *ce;
+         CURTSTATE();
+         ce = topact(BlkD(k_current,Coexpr));
+         if (ce != NULL) {
+            CE.dword = D_Coexpr;
+            BlkLoc(CE) = (union block *)ce;
+            }
+         else runerr(118,CE);
+#else                                   /* CoExpr */
+        runerr(118, CE);
+#endif                                  /* CoExpr */
+         }
    else if !is:coexpr(CE) then
       runerr(118,CE)
    body {
@@ -1570,13 +1570,13 @@ function{0,1} cofail(CE)
       struct b_coexpr *ncp = BlkD(CE, Coexpr);
       if (co_chng(ncp, NULL, &result, A_Cofail, 1) == A_Cofail) fail;
       return result;
-#else					/* CoExpr */
+#else                                   /* CoExpr */
       runerr(118, CE);
-#endif					/* CoExpr */
+#endif                                  /* CoExpr */
       }
 end
 
-
+
 #ifdef MultiProgram
 
 "localnames(ce,i) - produce the names of local variables"
@@ -1597,8 +1597,8 @@ function{*} localnames(ce,i)
       struct b_proc *cproc = BlkD(ce, Proc);
       np = abs((int)cproc->nparam);
       for(j = 0; j < cproc->ndynam; j++) {
-	 result = cproc->lnames[j + np];
-	 suspend result;
+         result = cproc->lnames[j + np];
+         suspend result;
          }
       fail;
       }
@@ -1617,7 +1617,7 @@ function{*} localnames(ce,i)
       struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
 
       if (thePfp == NULL) fail;
-      
+
       /*
        * Produce error if i is negative
        */
@@ -1627,23 +1627,23 @@ function{*} localnames(ce,i)
          }
 
       while (i--) {
-	 thePfp = thePfp->pf_pfp;
-	 if (thePfp == NULL) fail;
+         thePfp = thePfp->pf_pfp;
+         if (thePfp == NULL) fail;
          }
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
       cproc = BlkD(arg[0], Proc);
       np = abs((int)cproc->nparam);
       for(j = 0; j < cproc->ndynam; j++) {
-	 result = cproc->lnames[j + np];
-	 suspend result;
+         result = cproc->lnames[j + np];
+         suspend result;
          }
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
       fail;
       }
 end
 
-
+
 
 "staticnames(ce,i) - produce the names of static variables"
 " in the current procedure activation in ce"
@@ -1666,12 +1666,12 @@ function{*} staticnames(ce,i)
    we_have_proc:
       ndynam = cproc->ndynam;
       if(ndynam < 0) { /* C function */
-	 runerr(118,ce);
-	 }
+         runerr(118,ce);
+         }
       absnparam = abs((int)cproc->nparam);
       for(j = 0; j < cproc->nstatic; j++) {
-	 result = cproc->lnames[j + absnparam + ndynam];
-	 suspend result;
+         result = cproc->lnames[j + absnparam + ndynam];
+         suspend result;
          }
       fail;
       }
@@ -1697,14 +1697,14 @@ function{*} staticnames(ce,i)
          }
 
       while (i--) {
-	 thePfp = thePfp->pf_pfp;
-	 if (thePfp == NULL) fail;
+         thePfp = thePfp->pf_pfp;
+         if (thePfp == NULL) fail;
          }
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
       cproc = BlkD(arg[0], Proc);
       goto we_have_proc;
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
       fail;
       }
 end
@@ -1729,8 +1729,8 @@ function{1,*} paramnames(ce,i)
       /* do built-ins (ndynam < 0) have readable parameter names? maybe not.*/
       np = abs((int)cproc->nparam);
       for(j = 0; j < np; j++) {
-	 result = cproc->lnames[j];
-	 suspend result;
+         result = cproc->lnames[j];
+         suspend result;
          }
       fail;
       }
@@ -1759,18 +1759,18 @@ function{1,*} paramnames(ce,i)
          }
 
       while (i--) {
-	 thePfp = thePfp->pf_pfp;
-	 if (thePfp == NULL) fail;
+         thePfp = thePfp->pf_pfp;
+         if (thePfp == NULL) fail;
          }
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
       cproc = BlkD(arg[0], Proc);
       np = abs((int)cproc->nparam);
       for(j = 0; j < np; j++) {
-	 result = cproc->lnames[j];
-	 suspend result;
+         result = cproc->lnames[j];
+         suspend result;
          }
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
       fail;
       }
 end
@@ -1780,7 +1780,7 @@ end
 " a program corresponding to string s as a co-expression."
 
 function{1} load(s,arglist,infile,outfile,errfile,
-		 blocksize, stringsize, stacksize)
+                 blocksize, stringsize, stacksize)
    declare {
       tended char *loadstring;
       C_integer _bs_, _ss_, _stk_;
@@ -1828,7 +1828,7 @@ function{1} load(s,arglist,infile,outfile,errfile,
       *tipc.op++ = Op_Agoto;
       *tipc.opnd = (word)lterm;
 
-      prog_name = loadstring;			/* set up for &progname */
+      prog_name = loadstring;                   /* set up for &progname */
 
       /*
        * arglist must be a list
@@ -1840,32 +1840,32 @@ function{1} load(s,arglist,infile,outfile,errfile,
        * input, output, and error must be files
        */
       if (is:null(infile))
-	 theInput = &(curpstate->K_input);
+         theInput = &(curpstate->K_input);
       else {
-	 if (!is:file(infile))
-	    runerr(105,infile);
-	 else theInput = &(BlkLoc(infile)->File);
+         if (!is:file(infile))
+            runerr(105,infile);
+         else theInput = &(BlkLoc(infile)->File);
          }
       if (is:null(outfile))
-	 theOutput = &(curpstate->K_output);
+         theOutput = &(curpstate->K_output);
       else {
-	 if (!is:file(outfile))
-	    runerr(105,outfile);
-	 else theOutput = &(BlkLoc(outfile)->File);
+         if (!is:file(outfile))
+            runerr(105,outfile);
+         else theOutput = &(BlkLoc(outfile)->File);
          }
       if (is:null(errfile))
-	 theError = &(curpstate->K_errout);
+         theError = &(curpstate->K_errout);
       else {
-	 if (!is:file(errfile))
-	    runerr(105,errfile);
-	 else theError = &(BlkLoc(errfile)->File); /* could check harder */
+         if (!is:file(errfile))
+            runerr(105,errfile);
+         else theError = &(BlkLoc(errfile)->File); /* could check harder */
          }
 
       stack_tmp =
-	(word *)(sblkp = loadicode(loadstring,theInput,theOutput,theError,
-				   _bs_,_ss_,_stk_));
+        (word *)(sblkp = loadicode(loadstring,theInput,theOutput,theError,
+                                   _bs_,_ss_,_stk_));
       if(!stack_tmp) {
-	 fail;
+         fail;
          }
       pstate = sblkp->program;
       pstate->parent = curpstate;
@@ -1884,17 +1884,17 @@ function{1} load(s,arglist,infile,outfile,errfile,
          ((word)((char *)sblkp + (mstksize - (sizeof(*sblkp)+sizeof(struct progstate)+
             pstate->hsize))/2)
             &~((word)WordSize*StackAlign-1));
-#else					/* UpStack */
+#else                                   /* UpStack */
       sblkp->cstate[0] =
-	((word)((char *)sblkp + mstksize - WordSize + sizeof(struct progstate) +
+        ((word)((char *)sblkp + mstksize - WordSize + sizeof(struct progstate) +
            pstate->hsize)
            &~((word)WordSize*StackAlign-1));
-#endif					/* UpStack */
+#endif                                  /* UpStack */
 
       sblkp->es_argp = NULL;
       sblkp->es_gfp = NULL;
       pstate->Mainhead->freshblk = nulldesc;/* &main has no refresh block. */
-					/*  This really is a bug. */
+                                        /*  This really is a bug. */
 
       /*
        * Set up expression frame marker to contain execution of the
@@ -1904,9 +1904,9 @@ function{1} load(s,arglist,infile,outfile,errfile,
       newefp = (struct ef_marker *)(sp+1);
 #if IntBits != WordBits
       newefp->ef_failure.op = (int *)lterm;
-#else					/* IntBits != WordBits */
+#else                                   /* IntBits != WordBits */
       newefp->ef_failure.op = lterm;
-#endif					/* IntBits != WordBits */
+#endif                                  /* IntBits != WordBits */
 
       newefp->ef_gfp = 0;
       newefp->ef_efp = 0;
@@ -1931,11 +1931,11 @@ function{1} load(s,arglist,infile,outfile,errfile,
        */
       if (!is:null(arglist)) {
          PushDesc(arglist);
-	 pstate->tstate->Glbl_argp = (dptr)(sp - 1);
+         pstate->tstate->Glbl_argp = (dptr)(sp - 1);
          }
       else {
          PushNull;
-	 pstate->tstate->Glbl_argp = (dptr)(sp - 1);
+         pstate->tstate->Glbl_argp = (dptr)(sp - 1);
          {
          dptr tmpargp = (dptr) (sp - 1);
          Ollist(0, tmpargp);
@@ -1951,7 +1951,7 @@ function{1} load(s,arglist,infile,outfile,errfile,
       return result;
       }
 end
-
+
 
 "parent(ce) - given a ce, return &main for that ce's parent"
 
@@ -1971,11 +1971,11 @@ function{1} parent(ce)
 
       result.dword = D_Coexpr;
       BlkLoc(result) =
-	(union block *)(BlkD(ce,Coexpr)->program->parent->Mainhead);
+        (union block *)(BlkD(ce,Coexpr)->program->parent->Mainhead);
       return result;
       }
 end
-
+
 #ifdef MultiProgram
 
 "eventmask(ce,cs) - given a ce, get or set that program's event mask"
@@ -1996,23 +1996,23 @@ function{1} eventmask(ce,cs,vmask)
          return cset
          }
       body {
-	 struct progstate *p = BlkD(ce,Coexpr)->program;
-	 if (BlkLoc(cs) != BlkLoc(p->eventmask)) {
-	    p->eventmask = cs;
-	    assign_event_functions(p, cs);
-	    }
+         struct progstate *p = BlkD(ce,Coexpr)->program;
+         if (BlkLoc(cs) != BlkLoc(p->eventmask)) {
+            p->eventmask = cs;
+            assign_event_functions(p, cs);
+            }
 
-	 if (!is:null(vmask)) {
+         if (!is:null(vmask)) {
             if (!is:table(vmask)) runerr(124,vmask);
-	    BlkD(ce,Coexpr)->program->valuemask = vmask;
-	    }
+            BlkD(ce,Coexpr)->program->valuemask = vmask;
+            }
          return cs;
          }
       }
 end
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
-
+
 
 "globalnames(ce) - produce the names of identifiers global to ce"
 
@@ -2021,7 +2021,7 @@ function{*} globalnames(ce)
    declare {
       struct progstate *ps;
       }
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
    abstract {
       return string
       }
@@ -2030,17 +2030,17 @@ function{*} globalnames(ce)
    else if is:coexpr(ce) then
       inline { ps = BlkD(ce,Coexpr)->program; }
    else runerr(118,ce)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
    if not (is:null(ce) || is:coexpr(ce)) runerr(118, ce)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
    body {
       struct descrip *dp;
       CURTSTATVAR();
 #ifdef MultiProgram
       for (dp = ps->Gnames; dp != ps->Egnames; dp++) {
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
       for (dp = gnames; dp != egnames; dp++) {
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
          suspend *dp;
          }
       fail;
@@ -2079,25 +2079,25 @@ function{*} keyword(keyname,ce,i)
       /* set prog to ce's program. */
       /* try &eventsource if available, then &current, then search */
       if (!is:null(curpstate->eventsource) &&
-	  (ptmp = BlkD(curpstate->eventsource,Coexpr)->program) &&
-	  InRange(ptmp->Code, w, ptmp->Ecode)) {
-	     d = curpstate->eventsource;
-	     }
+          (ptmp = BlkD(curpstate->eventsource,Coexpr)->program) &&
+          InRange(ptmp->Code, w, ptmp->Ecode)) {
+             d = curpstate->eventsource;
+             }
       else if (InRange(curpstate->Code, w, curpstate->Ecode)) {
              d = k_current;
-	     }
+             }
       else { /* search for program in which (procedure) ce is located */
-	 struct progstate *p;
-	 d = nulldesc;
-	 for (p = &rootpstate; p != NULL; p = p->next) {
-	    if (InRange(p->Code, w, p->Ecode)) {
-	       d.dword = D_Coexpr;
-	       d.vword.bptr = (union block *)p->Mainhead;
-	       break;
-	       }
-	    }
-	 if (is:null(d)) runerr(118, ce);
-	 }
+         struct progstate *p;
+         d = nulldesc;
+         for (p = &rootpstate; p != NULL; p = p->next) {
+            if (InRange(p->Code, w, p->Ecode)) {
+               d.dword = D_Coexpr;
+               d.vword.bptr = (union block *)p->Mainhead;
+               break;
+               }
+            }
+         if (is:null(d)) runerr(118, ce);
+         }
       }
    else runerr(118, ce)
    inline {
@@ -2128,13 +2128,13 @@ static stringint siKeywords[] = {
 #ifdef Concurrent
       struct threadstate *tstate;
       if (BlkD(d,Coexpr)->tstate)
-      	 tstate = BlkD(d,Coexpr)->tstate;
+         tstate = BlkD(d,Coexpr)->tstate;
       else
-	 tstate = p->tstate;
-	    
-#else					/* Concurrent */
+         tstate = p->tstate;
+
+#else                                   /* Concurrent */
       struct threadstate *tstate = p->tstate;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
       if (kname[0] == '&') kname++;
 
@@ -2144,19 +2144,19 @@ static stringint siKeywords[] = {
       /* It will be plug-and-chug to move to this implementation. */
       switch(k) {
       case K_ALLOCATED:
-	 fprintf(stderr, "keyword called on &allocated\n");
-	 fflush(stderr);
-	 break;
+         fprintf(stderr, "keyword called on &allocated\n");
+         fflush(stderr);
+         break;
       /* ... */
       case K_LINE:
-	 fprintf(stderr, "keyword called on &line\n");
-	 fflush(stderr);
-	 break;
+         fprintf(stderr, "keyword called on &line\n");
+         fflush(stderr);
+         break;
       /* ... */
       default:
-	 fprintf(stderr, "keyword called on ??\n");
-	 fflush(stderr);
-	 }
+         fprintf(stderr, "keyword called on ??\n");
+         fflush(stderr);
+         }
 #endif
 
       if (strcmp(kname,"allocated") == 0) {
@@ -2190,260 +2190,260 @@ static stringint siKeywords[] = {
       }
       else if (strcmp(kname,"tallocated") == 0) {
 #ifdef Concurrent
-	 /*
-	  * Preliminary version just reports space used in current regions.
-	  */
-	 suspend C_integer (tstate->Curstring->free - tstate->Curstring->base) +
-	    (tstate->Curblock->free - tstate->Curblock->base);
-	 suspend C_integer (tstate->Curstring->free - tstate->Curstring->base);
-	 suspend C_integer (tstate->Curblock->free - tstate->Curblock->base);
-#endif					/* Concurrent */
-	 fail;
-	 }
+         /*
+          * Preliminary version just reports space used in current regions.
+          */
+         suspend C_integer (tstate->Curstring->free - tstate->Curstring->base) +
+            (tstate->Curblock->free - tstate->Curblock->base);
+         suspend C_integer (tstate->Curstring->free - tstate->Curstring->base);
+         suspend C_integer (tstate->Curblock->free - tstate->Curblock->base);
+#endif                                  /* Concurrent */
+         fail;
+         }
       else if (strcmp(kname,"collections") == 0) {
-	 suspend C_integer p->colltot;
-	 suspend C_integer p->collstat;
-	 suspend C_integer p->collstr;
-	 return  C_integer p->collblk;
-	 }
+         suspend C_integer p->colltot;
+         suspend C_integer p->collstat;
+         suspend C_integer p->collstr;
+         return  C_integer p->collblk;
+         }
       else if (strcmp(kname,"column") == 0) {
-	 struct progstate *savedp = curpstate;
-	 int col;
-	 ENTERPSTATE(p);
-	 col = findcol(BlkD(d,Coexpr)->es_ipc.opnd);
+         struct progstate *savedp = curpstate;
+         int col;
+         ENTERPSTATE(p);
+         col = findcol(BlkD(d,Coexpr)->es_ipc.opnd);
          if (col == 0){ /* fixing returned column zero */
-	    col = findcol(BlkD(d,Coexpr)->es_oldipc.opnd);
+            col = findcol(BlkD(d,Coexpr)->es_oldipc.opnd);
             }
-	 ENTERPSTATE(savedp);
-	 return C_integer col;
-	 }
+         ENTERPSTATE(savedp);
+         return C_integer col;
+         }
       else if (strcmp(kname,"current") == 0) {
-	 return tstate->K_current;
-	 }
+         return tstate->K_current;
+         }
       else if (strcmp(kname,"error") == 0) {
-	 return kywdint(&(p->Kywd_err));
-	 }
+         return kywdint(&(p->Kywd_err));
+         }
       else if (strcmp(kname,"errornumber") == 0) {
-	 return C_integer tstate->K_errornumber;
-	 }
+         return C_integer tstate->K_errornumber;
+         }
       else if (strcmp(kname,"errortext") == 0) {
-	 return tstate->K_errortext;
-	 }
+         return tstate->K_errortext;
+         }
       else if (strcmp(kname,"errorvalue") == 0) {
-	 return tstate->K_errorvalue;
-	 }
+         return tstate->K_errorvalue;
+         }
 #ifdef PatternType
       else if (strcmp(kname,"patindex") == 0) {
          return C_integer tstate->K_patindex;
          }
-#endif					/* PatternType */
+#endif                                  /* PatternType */
       else if (strcmp(kname,"errout") == 0) {
-	 return file(&(p->K_errout));
-	 }
+         return file(&(p->K_errout));
+         }
       else if (strcmp(kname,"eventcode") == 0) {
-	 return kywdevent(&(p->eventcode));
-	 }
+         return kywdevent(&(p->eventcode));
+         }
       else if (strcmp(kname,"eventcount") == 0) {
-	 return kywdevent(&(p->eventcount));
-	 }
+         return kywdevent(&(p->eventcount));
+         }
       else if (strcmp(kname,"eventsource") == 0) {
-	 return kywdevent(&(p->eventsource));
-	 }
+         return kywdevent(&(p->eventsource));
+         }
       else if (strcmp(kname,"eventvalue") == 0) {
-	 return kywdevent(&(p->eventval));
-	 }
+         return kywdevent(&(p->eventval));
+         }
       else if (strcmp(kname,"file") == 0) {
-	 struct progstate *savedp = curpstate;
-	 struct descrip s;
+         struct progstate *savedp = curpstate;
+         struct descrip s;
          word * ipc_opnd;
-	 if (is:proc(ce)) {
-	    struct b_proc *proc = BlkD(ce,Proc);
-	    StrLoc(s) = findfile_p((word *)proc->entryp.icode, p);
-	    if (!strcmp(StrLoc(s), "?")) {
-	       fail;
-	       }
-	    else {
-	       StrLen(s) = strlen(StrLoc(s));
-	       return s;
-	       }
-	    }
-         else /* remaining cases are keyword("file",ce,...) */
-	 if (i > 0){
-            ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
-	    ENTERPSTATE(p);
-	    StrLoc(s) = findfile(ipc_opnd);
-	    StrLen(s) = strlen(StrLoc(s));
+         if (is:proc(ce)) {
+            struct b_proc *proc = BlkD(ce,Proc);
+            StrLoc(s) = findfile_p((word *)proc->entryp.icode, p);
+            if (!strcmp(StrLoc(s), "?")) {
+               fail;
+               }
+            else {
+               StrLen(s) = strlen(StrLoc(s));
+               return s;
+               }
             }
-         else{
-	    ENTERPSTATE(p);
-	    StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
-	    StrLen(s) = strlen(StrLoc(s));
-            } 
-	 ENTERPSTATE(savedp);
-	 if (!strcmp(StrLoc(s),"?")) fail;
-	 return s;
-	 }
-      else if (strcmp(kname,"input") == 0) {
-	 return file(&(p->K_input));
-	 }
-      else if (strcmp(kname,"level") == 0) {
-	 return C_integer tstate->K_level;
-	 }
-      else if (strcmp(kname,"line") == 0) {
-	 struct progstate *savedp = curpstate;
-	 int ln;
-         word * ipc_opnd;
-	 if (is:proc(ce)) {
-	    struct b_proc *proc = BlkD(ce,Proc);
-	    int i;
-	    i = findline_p((word *)proc->entryp.icode, p);
-	    if (i == 0) {
-	       fail;
-	       }
-	    else {
-	       return C_integer i;
-	       }
-	    }
-	 else /* remaining cases are keyword("line",ce,...) */
+         else /* remaining cases are keyword("file",ce,...) */
          if (i > 0){
             ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
-	    ENTERPSTATE(p);
+            ENTERPSTATE(p);
+            StrLoc(s) = findfile(ipc_opnd);
+            StrLen(s) = strlen(StrLoc(s));
+            }
+         else{
+            ENTERPSTATE(p);
+            StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
+            StrLen(s) = strlen(StrLoc(s));
+            }
+         ENTERPSTATE(savedp);
+         if (!strcmp(StrLoc(s),"?")) fail;
+         return s;
+         }
+      else if (strcmp(kname,"input") == 0) {
+         return file(&(p->K_input));
+         }
+      else if (strcmp(kname,"level") == 0) {
+         return C_integer tstate->K_level;
+         }
+      else if (strcmp(kname,"line") == 0) {
+         struct progstate *savedp = curpstate;
+         int ln;
+         word * ipc_opnd;
+         if (is:proc(ce)) {
+            struct b_proc *proc = BlkD(ce,Proc);
+            int i;
+            i = findline_p((word *)proc->entryp.icode, p);
+            if (i == 0) {
+               fail;
+               }
+            else {
+               return C_integer i;
+               }
+            }
+         else /* remaining cases are keyword("line",ce,...) */
+         if (i > 0){
+            ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
+            ENTERPSTATE(p);
             ln = findline(ipc_opnd);
             }
          else{
-	    ENTERPSTATE(p);
-	    ln = findline(BlkD(d,Coexpr)->es_ipc.opnd);
+            ENTERPSTATE(p);
+            ln = findline(BlkD(d,Coexpr)->es_ipc.opnd);
             if (ln == 0){ /* fixing returned line zero */
-	       ln = findline(BlkD(d,Coexpr)->es_oldipc.opnd);
+               ln = findline(BlkD(d,Coexpr)->es_oldipc.opnd);
                }
-            }  
-	 ENTERPSTATE(savedp);
-	 return C_integer ln;
-	 }
+            }
+         ENTERPSTATE(savedp);
+         return C_integer ln;
+         }
       else if (strcmp(kname,"syntax") == 0) {
          struct progstate *savedp = curpstate;
-	 int syn;
-	 ENTERPSTATE(p);
-	 syn = findsyntax(BlkD(d,Coexpr)->es_ipc.opnd);
-	 ENTERPSTATE(savedp);
-	 return C_integer syn;
-         } 
+         int syn;
+         ENTERPSTATE(p);
+         syn = findsyntax(BlkD(d,Coexpr)->es_ipc.opnd);
+         ENTERPSTATE(savedp);
+         return C_integer syn;
+         }
       else if (strcmp(kname,"main") == 0) {
-	 return p->K_main;
-	 }
+         return p->K_main;
+         }
       else if (strcmp(kname,"output") == 0) {
-	 return file(&(p->K_output));
-	 }
+         return file(&(p->K_output));
+         }
       else if (strcmp(kname,"pos") == 0) {
-	 return kywdpos(&(tstate->Kywd_pos));
-	 }
+         return kywdpos(&(tstate->Kywd_pos));
+         }
       else if (strcmp(kname,"progname") == 0) {
-	 return kywdstr(&(p->Kywd_prog));
-	 }
+         return kywdstr(&(p->Kywd_prog));
+         }
       else if (strcmp(kname,"random") == 0) {
-	 return kywdint(&(tstate->Kywd_ran));
-	 }
+         return kywdint(&(tstate->Kywd_ran));
+         }
       else if (strcmp(kname,"regions") == 0) {
          word allRegions = 0;
          struct region *rp;
 
          suspend C_integer 0;
-	 for (rp = p->stringregion; rp; rp = rp->next)
-	    allRegions += DiffPtrs(rp->end,rp->base);
-	 for (rp = p->stringregion->prev; rp; rp = rp->prev)
-	    allRegions += DiffPtrs(rp->end,rp->base);
-	 suspend C_integer allRegions;
+         for (rp = p->stringregion; rp; rp = rp->next)
+            allRegions += DiffPtrs(rp->end,rp->base);
+         for (rp = p->stringregion->prev; rp; rp = rp->prev)
+            allRegions += DiffPtrs(rp->end,rp->base);
+         suspend C_integer allRegions;
 
-	 allRegions = 0;
-	 for (rp = p->blockregion; rp; rp = rp->next)
-	    allRegions += DiffPtrs(rp->end,rp->base);
-	 for (rp = p->blockregion->prev; rp; rp = rp->prev)
-	    allRegions += DiffPtrs(rp->end,rp->base);
-	 return C_integer allRegions;
-	 }
+         allRegions = 0;
+         for (rp = p->blockregion; rp; rp = rp->next)
+            allRegions += DiffPtrs(rp->end,rp->base);
+         for (rp = p->blockregion->prev; rp; rp = rp->prev)
+            allRegions += DiffPtrs(rp->end,rp->base);
+         return C_integer allRegions;
+         }
       else if (strcmp(kname,"source") == 0) {
 #ifdef CoExpr
-	 return coexpr(topact(
-			   BlkD(tstate->K_current,Coexpr)));
-#else					/* CoExpr */
-	fail;
-#endif					/* CoExpr */
+         return coexpr(topact(
+                           BlkD(tstate->K_current,Coexpr)));
+#else                                   /* CoExpr */
+        fail;
+#endif                                  /* CoExpr */
 /*
-	 if (BlkLoc(d)->coexpr.es_actstk)
-	    return coexpr(topact((struct b_coexpr *)BlkLoc(d)));
-	 else return BlkLoc(d)->coexpr.program->parent->K_main;
+         if (BlkLoc(d)->coexpr.es_actstk)
+            return coexpr(topact((struct b_coexpr *)BlkLoc(d)));
+         else return BlkLoc(d)->coexpr.program->parent->K_main;
 */
-	 }
+         }
       else if (strcmp(kname,"storage") == 0) {
-	 word allRegions = 0;
-	 struct region *rp;
-	 suspend C_integer 0;
-	 for (rp = p->stringregion; rp; rp = rp->next)
-	    allRegions += DiffPtrs(rp->free,rp->base);
-	 for (rp = p->stringregion->prev; rp; rp = rp->prev)
-	    allRegions += DiffPtrs(rp->free,rp->base);
-	 suspend C_integer allRegions;
+         word allRegions = 0;
+         struct region *rp;
+         suspend C_integer 0;
+         for (rp = p->stringregion; rp; rp = rp->next)
+            allRegions += DiffPtrs(rp->free,rp->base);
+         for (rp = p->stringregion->prev; rp; rp = rp->prev)
+            allRegions += DiffPtrs(rp->free,rp->base);
+         suspend C_integer allRegions;
 
-	 allRegions = 0;
-	 for (rp = p->blockregion; rp; rp = rp->next)
-	    allRegions += DiffPtrs(rp->free,rp->base);
-	 for (rp = p->blockregion->prev; rp; rp = rp->prev)
-	    allRegions += DiffPtrs(rp->free,rp->base);
-	 return C_integer allRegions;
-	 }
+         allRegions = 0;
+         for (rp = p->blockregion; rp; rp = rp->next)
+            allRegions += DiffPtrs(rp->free,rp->base);
+         for (rp = p->blockregion->prev; rp; rp = rp->prev)
+            allRegions += DiffPtrs(rp->free,rp->base);
+         return C_integer allRegions;
+         }
       else if (strcmp(kname,"subject") == 0) {
-	 return kywdsubj(&(tstate->ksub));
-	 }
+         return kywdsubj(&(tstate->ksub));
+         }
       else if (strcmp(kname,"time") == 0) {
-	 /*
-	  * &time in this program = total time - time spent in other programs
-	  */
-	 if (p != curpstate)
-	    return C_integer p->Kywd_time_out - p->Kywd_time_elsewhere;
-	 else
-	    return C_integer millisec() - p->Kywd_time_elsewhere;
-	 }
+         /*
+          * &time in this program = total time - time spent in other programs
+          */
+         if (p != curpstate)
+            return C_integer p->Kywd_time_out - p->Kywd_time_elsewhere;
+         else
+            return C_integer millisec() - p->Kywd_time_elsewhere;
+         }
       else if (strcmp(kname,"trace") == 0) {
-	 return kywdint(&(p->Kywd_trc));
-	 }
+         return kywdint(&(p->Kywd_trc));
+         }
 #ifdef Graphics
       else if (strcmp(kname,"window") == 0) {
-	 return kywdwin(&(p->Kywd_xwin[XKey_Window]));
-	 }
+         return kywdwin(&(p->Kywd_xwin[XKey_Window]));
+         }
       else if (strcmp(kname,"col") == 0) {
-	 return kywdint(&(p->AmperCol));
-	 }
+         return kywdint(&(p->AmperCol));
+         }
       else if (strcmp(kname,"row") == 0) {
-	 return kywdint(&(p->AmperRow));
-	 }
+         return kywdint(&(p->AmperRow));
+         }
       else if (strcmp(kname,"x") == 0) {
-	 return kywdint(&(p->AmperX));
-	 }
+         return kywdint(&(p->AmperX));
+         }
       else if (strcmp(kname,"y") == 0) {
-	 return kywdint(&(p->AmperY));
-	 }
+         return kywdint(&(p->AmperY));
+         }
       else if (strcmp(kname,"interval") == 0) {
-	 return kywdint(&(p->AmperInterval));
-	 }
+         return kywdint(&(p->AmperInterval));
+         }
       else if (strcmp(kname,"control") == 0) {
-	 if (p->Xmod_Control)
-	    return nulldesc;
-	 else
-	     fail;
-	 }
+         if (p->Xmod_Control)
+            return nulldesc;
+         else
+             fail;
+         }
       else if (strcmp(kname,"shift") == 0) {
-	 if (p->Xmod_Shift)
-	    return nulldesc;
-	 else
-	     fail;
-	 }
+         if (p->Xmod_Shift)
+            return nulldesc;
+         else
+             fail;
+         }
       else if (strcmp(kname,"meta") == 0) {
-	 if (p->Xmod_Meta)
-	    return nulldesc;
-	 else
-	     fail;
-	 }
-#endif					/* Graphics */
+         if (p->Xmod_Meta)
+            return nulldesc;
+         else
+             fail;
+         }
+#endif                                  /* Graphics */
       runerr(205, keyname);
       }
 end
@@ -2471,11 +2471,11 @@ function {*} structure(x)
       theregion = curblock;
 #endif
       for(rp = theregion; rp; rp = rp->next) {
-	 bp = rp->base;
-	 free = rp->free;
-	 while (bp < free) {
-	    type = BlkType(bp);
-	    switch (type) {
+         bp = rp->base;
+         free = rp->free;
+         while (bp < free) {
+            type = BlkType(bp);
+            switch (type) {
             case T_List:
             case T_Set:
             case T_Table:
@@ -2484,16 +2484,16 @@ function {*} structure(x)
                descr.dword = type | F_Ptr | D_Typecode;
                suspend descr;
                }
-	       }
-	    bp += BlkSize(bp);
-	    }
-	 }
+               }
+            bp += BlkSize(bp);
+            }
+         }
       for(rp = theregion->prev; rp; rp = rp->prev) {
-	 bp = rp->base;
-	 free = rp->free;
-	 while (bp < free) {
-	    type = BlkType(bp);
-	    switch (type) {
+         bp = rp->base;
+         free = rp->free;
+         while (bp < free) {
+            type = BlkType(bp);
+            switch (type) {
             case T_List:
             case T_Set:
             case T_Table:
@@ -2502,16 +2502,16 @@ function {*} structure(x)
                descr.dword = type | F_Ptr | D_Typecode;
                suspend descr;
                }
-	       }
-	    bp += BlkSize(bp);
-	    }
-	 }
+               }
+            bp += BlkSize(bp);
+            }
+         }
       fail;
       }
 end
 
 
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #ifdef Concurrent
 
@@ -2519,27 +2519,27 @@ end
  * These symbols should match those in uni/lib/threadh.icn
  */
 
-#define OFF		0
-#define ON		1
+#define OFF             0
+#define ON              1
 
-#define INBOX		1000
-#define OUTBOX		1001
-#define INBOX_SIZE	1002
-#define OUTBOX_SIZE	1003
-#define INBOX_LIMIT	1004
-#define OUTBOX_LIMIT	1005
-#define INBOX_CV_FULL	1006
-#define INBOX_CV_EMPTY	1007
-#define OUTBOX_CV_FULL	1008
-#define OUTBOX_CV_EMPTY	1009
+#define INBOX           1000
+#define OUTBOX          1001
+#define INBOX_SIZE      1002
+#define OUTBOX_SIZE     1003
+#define INBOX_LIMIT     1004
+#define OUTBOX_LIMIT    1005
+#define INBOX_CV_FULL   1006
+#define INBOX_CV_EMPTY  1007
+#define OUTBOX_CV_FULL  1008
+#define OUTBOX_CV_EMPTY 1009
 
-#define CHANNEL_SIZE	1010
-#define CHANNEL_LIMIT	1011
+#define CHANNEL_SIZE    1010
+#define CHANNEL_LIMIT   1011
 
-#define MUTEX		1050
-#define CV		1051
-#define CV_FULL		1052
-#define CV_EMPTY	1053
+#define MUTEX           1050
+#define CV              1051
+#define CV_FULL         1052
+#define CV_EMPTY        1053
 
 
 #define GETCVMUTEXID(x,y){ \
@@ -2582,17 +2582,17 @@ word get_cv(word mtx){
       condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t *));
       condvarsmtxs=realloc(condvarsmtxs, maxcondvars * WordSize);
       if (condvars==NULL || condvarsmtxs==NULL)
-	     syserr("get_cv(): out of memory for condition variables!");
+             syserr("get_cv(): out of memory for condition variables!");
       RESUME_THREADS();
       }
 
    condvars[ncondvars] = malloc(sizeof(pthread_cond_t)); \
    pthread_cond_init(condvars[ncondvars], NULL);
-   if(mtx<0) 
+   if(mtx<0)
       condvarsmtxs[ncondvars]=get_mutex(&rmtx_attr);
    else
       condvarsmtxs[ncondvars]=mtx;
-      
+
    n = ncondvars++;
    MUTEX_UNLOCKID(MTX_CONDVARS);
    return n;
@@ -2605,23 +2605,23 @@ function{1} condvar(x)
       abstract { return list }
       inline{
          tended struct b_list *hp = BlkD(x, List);
-      	 TURN_ON_CONCURRENT();
-      	 CV_INITBLK(hp);
-      	 return x;
-      	 }
+         TURN_ON_CONCURRENT();
+         CV_INITBLK(hp);
+         return x;
+         }
       }
    else if def:C_integer(x,-1) then{
       abstract { return integer }
-      inline { 
-	    	TURN_ON_CONCURRENT();
-      		if (x>0)
-      	         return C_integer -2 - get_cv(x-1); 
-	       else
-	         return C_integer -2 - get_cv(x);
-	     }
+      inline {
+                TURN_ON_CONCURRENT();
+                if (x>0)
+                 return C_integer -2 - get_cv(x-1);
+               else
+                 return C_integer -2 - get_cv(x);
+             }
       }
    else runerr(180,x)
-   
+
 end
 
 "signal(x, y) - signal the condition variable x y times. Default y is 1, y=0 means broadcast"
@@ -2631,20 +2631,20 @@ function{0,1} signal(x, y)
    if is:coexpr(x) then {
       abstract { return coexpr }
       body {
- 	 /*
-	  * Transmit whatever is needed to wake it up.
-	  */
+         /*
+          * Transmit whatever is needed to wake it up.
+          */
 #ifdef PthreadCoswitch
-	 if (BlkD(x, Coexpr)->alive == 0)
-	    fail;
+         if (BlkD(x, Coexpr)->alive == 0)
+            fail;
 
-	 sem_post(BlkD(x, Coexpr)->semp);
+         sem_post(BlkD(x, Coexpr)->semp);
 
-	 return x;
+         return x;
 #else
-	 fail;
-#endif					/* PthreadCoswitch */
-	 }
+         fail;
+#endif                                  /* PthreadCoswitch */
+         }
       }
    else {
    if !cnv:C_integer(x) then
@@ -2658,19 +2658,19 @@ function{0,1} signal(x, y)
       int rv;
       word i, x1 = -x-2;
        if (x1<0 || x1>=ncondvars)
-      	 irunerr(181, x);
+         irunerr(181, x);
       if (Y == 0) {
-	 if ((rv=pthread_cond_broadcast(condvars[x1])) != 0) {
-	    }
-	 }
+         if ((rv=pthread_cond_broadcast(condvars[x1])) != 0) {
+            }
+         }
       else
       for (i=0; i < Y; i++)
       if ((rv=pthread_cond_signal(condvars[x1])) != 0){
-	 char cvwf[64];
-	 sprintf(cvwf, "condition variable wait failure %d\n", rv);
-      	 syserr(cvwf);
-      	 exit(-1);
-      	 }
+         char cvwf[64];
+         sprintf(cvwf, "condition variable wait failure %d\n", rv);
+         syserr(cvwf);
+         exit(-1);
+         }
       return C_integer 1;
       }
    }
@@ -2685,9 +2685,9 @@ function{1} mutex(x, y)
        abstract { return integer }
        inline {
          if (!is:null(y))
-      	    runerr(180, x);
-      	 TURN_ON_CONCURRENT();
-	 return C_integer get_mutex(&rmtx_attr)+1;
+            runerr(180, x);
+         TURN_ON_CONCURRENT();
+         return C_integer get_mutex(&rmtx_attr)+1;
          }
         }
      set:
@@ -2698,57 +2698,57 @@ function{1} mutex(x, y)
         type_case y of {
            null:{
               inline {
-	    	 if ((BlkMask(x))->shared)
-		    runerr(184, x);
-      	 	 TURN_ON_CONCURRENT();
-	         MUTEX_INITBLK(BlkMask(x));
-	         return x;
-	         }
-	      }
-	   integer: {
-   	      if !cnv:C_integer(y) then runerr(180, y);
+                 if ((BlkMask(x))->shared)
+                    runerr(184, x);
+                 TURN_ON_CONCURRENT();
+                 MUTEX_INITBLK(BlkMask(x));
+                 return x;
+                 }
+              }
+           integer: {
+              if !cnv:C_integer(y) then runerr(180, y);
               inline {
-      	         word y1;
-      	 	 TURN_ON_CONCURRENT();
-		 GETMUTEXID(y, y1);
+                 word y1;
+                 TURN_ON_CONCURRENT();
+                 GETMUTEXID(y, y1);
 
-	    	 if ((BlkMask(x))->shared)
-		    runerr(184, x);
+                 if ((BlkMask(x))->shared)
+                    runerr(184, x);
 
-	         MUTEX_INITBLKID(BlkMask(x), y1);
-	         return x;
-	         }
-	      }
+                 MUTEX_INITBLKID(BlkMask(x), y1);
+                 return x;
+                 }
+              }
            file:{
               inline {
-	    	 if ((BlkMask(x))->shared)
-		    runerr(184, x);
-      	 	 TURN_ON_CONCURRENT();
-	         MUTEX_INITBLKID(BlkMask(x), BlkD(y, File)->mutexid);
+                 if ((BlkMask(x))->shared)
+                    runerr(184, x);
+                 TURN_ON_CONCURRENT();
+                 MUTEX_INITBLKID(BlkMask(x), BlkD(y, File)->mutexid);
                  return x;
-	         }
-	      }
+                 }
+              }
            set:
            table:
            record:
            list:{
               inline {
-	         struct b_mask *bp = BlkMask(y);
-      	 	 TURN_ON_CONCURRENT();
-	    	 if (!bp->shared)
-		    MUTEX_INITBLK(bp);
+                 struct b_mask *bp = BlkMask(y);
+                 TURN_ON_CONCURRENT();
+                 if (!bp->shared)
+                    MUTEX_INITBLK(bp);
 
-	    	 if ((BlkMask(x))->shared)
-		    runerr(184, x);
+                 if ((BlkMask(x))->shared)
+                    runerr(184, x);
 
-	         MUTEX_INITBLKID(BlkMask(x), bp->mutexid);
+                 MUTEX_INITBLKID(BlkMask(x), bp->mutexid);
                  return x;
-	         }
-	      }
+                 }
+              }
            default:
                runerr(122, x)
-	   }
-	 }
+           }
+         }
      default:
          runerr(122, x)
      }
@@ -2778,20 +2778,20 @@ function{1} lock(x)
       record:
       list:{
          inline {
-	    struct b_mask *bp = BlkMask(x);
-	    if (bp->shared){
-	       MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, "lock(struct)");
+            struct b_mask *bp = BlkMask(x);
+            if (bp->shared){
+               MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, "lock(struct)");
                return x;
-	       }
-	    runerr(180, x);
-	    }
-	 }
+               }
+            runerr(180, x);
+            }
+         }
       file:{
          inline {
-	    MUTEX_LOCKID_CONTROLLED(BlkD(x, File)->mutexid);
+            MUTEX_LOCKID_CONTROLLED(BlkD(x, File)->mutexid);
             return x;
-	    }
-	 }
+            }
+         }
      default:
          runerr(180, x)
      }
@@ -2817,24 +2817,24 @@ function{0,1} trylock(x)
       record:
       list:{
          body {
-    	 struct b_mask *bp = BlkMask(x);
-	    if (bp->shared){
-	       int rv = 0;
-      	       MUTEX_TRYLOCKBLK(bp, rv, "trylock(structure) function");
-      	       if (rv == 0) return x;
-      	       fail;
-	       }
-	    runerr(180, x);
-	    }
-	}
+         struct b_mask *bp = BlkMask(x);
+            if (bp->shared){
+               int rv = 0;
+               MUTEX_TRYLOCKBLK(bp, rv, "trylock(structure) function");
+               if (rv == 0) return x;
+               fail;
+               }
+            runerr(180, x);
+            }
+        }
       file:{
          inline {
             int rv;
             MUTEX_TRYLOCKID(BlkD(x, File)->mutexid, rv);
             if (rv == 0) return x;
             fail;
-	    }
-	 }
+            }
+         }
      default:
          runerr(180, x)
      }
@@ -2859,20 +2859,20 @@ function{1} unlock(x)
       record:
       list:{
          body {
-	    struct b_mask *bp = BlkMask(x);
-	    if (bp->shared){
-	       MUTEX_UNLOCKBLK_NOCHK(bp, "unlock(structure) function");
+            struct b_mask *bp = BlkMask(x);
+            if (bp->shared){
+               MUTEX_UNLOCKBLK_NOCHK(bp, "unlock(structure) function");
                return x;
-	       }
-	    runerr(180, x);
-	    }
-	 }
+               }
+            runerr(180, x);
+            }
+         }
       file:{
          inline {
-	    MUTEX_UNLOCKID(BlkD(x, File)->mutexid);
+            MUTEX_UNLOCKID(BlkD(x, File)->mutexid);
             return x;
-	    }
-	 }
+            }
+         }
      default:
          runerr(180, x)
      }
@@ -2902,147 +2902,147 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
    if is:coexpr(x) then {
       abstract { return coexpr }
       body {
-	 struct b_coexpr *cp = BlkD(x, Coexpr);
-	 int i;
+         struct b_coexpr *cp = BlkD(x, Coexpr);
+         int i;
 
 #if !ConcurrentCOMPILER
-	 if (!is:null(curpstate->eventmask)) {
-	    fprintf(stderr,
-		    "monitoring of concurrent programs is not yet supported.");
-	    runerr(183, x);
-	    }
+         if (!is:null(curpstate->eventmask)) {
+            fprintf(stderr,
+                    "monitoring of concurrent programs is not yet supported.");
+            runerr(183, x);
+            }
 #endif                                   /* ConcurrentCOMPILER */
-      	 TURN_ON_CONCURRENT();
+         TURN_ON_CONCURRENT();
 #if ConcurrentCOMPILER || defined(SoftThreads)
-	 CURTSTATE();
+         CURTSTATE();
 #endif                                   /* ConcurrentCOMPILER */
 
-	 if (IS_TS_THREAD(cp->status)) return x;
+         if (IS_TS_THREAD(cp->status)) return x;
 
 #ifdef SoftThreads
        if (isoft) {
-       	  if (IS_TS_SOFTTHREAD(cp->status)) return x;
+          if (IS_TS_SOFTTHREAD(cp->status)) return x;
           if (curtstate->sthrd_size+1>=SOFT_THREADS_SIZE) /* for now */
-	     syserr("now space for soft threads");
-  	  curtstate->sthrds[curtstate->sthrd_size++] = cp;
-	  SET_FLAG(cp->status, Ts_SoftThread);
-	  SET_FLAG(cp->status, Ts_Thread);
-	  cp->parent = curtstate->c;
-	  curtstate->c->sthrd_tick /= 10;
-	 /*
-    	  *  Set the parent of the new thread.
-    	  */
-/*   	  if (cp->es_actstk == NULL)
-      	     Protect(cp->es_actstk = alcactiv(),runerr(0,x));
+             syserr("now space for soft threads");
+          curtstate->sthrds[curtstate->sthrd_size++] = cp;
+          SET_FLAG(cp->status, Ts_SoftThread);
+          SET_FLAG(cp->status, Ts_Thread);
+          cp->parent = curtstate->c;
+          curtstate->c->sthrd_tick /= 10;
+         /*
+          *  Set the parent of the new thread.
+          */
+/*        if (cp->es_actstk == NULL)
+             Protect(cp->es_actstk = alcactiv(),runerr(0,x));
 
-   	  if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
-      	     runerr(0,x);
-*/	     
-  	  return x;
-	  }
-#endif 					/* SoftThreads */ 
+          if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
+             runerr(0,x);
+*/
+          return x;
+          }
+#endif                                  /* SoftThreads */
 
 #ifdef PthreadCoswitch
-	 if (cp->alive == 1) {
-	    /*
-	     * The co-expression has already been Activated!
-	     * spawning an active co-expression is not yet supported
-	     */
-	     runerr(185, x);
-	    }
-#endif					/* PthreadCoswitch */
+         if (cp->alive == 1) {
+            /*
+             * The co-expression has already been Activated!
+             * spawning an active co-expression is not yet supported
+             */
+             runerr(185, x);
+            }
+#endif                                  /* PthreadCoswitch */
 
          if (!_bs_)
-	    _bs_ = rootblock.size/10 ;
-	 else if (_bs_ < MinAbrSize) 
-	    _bs_ = MinAbrSize;
+            _bs_ = rootblock.size/10 ;
+         else if (_bs_ < MinAbrSize)
+            _bs_ = MinAbrSize;
 
-	 if (!_ss_)
-  	    _ss_ = rootstring.size/10;
-	 else if (_ss_ < MinStrSpace) 
-	    _ss_ = MinStrSpace;
+         if (!_ss_)
+            _ss_ = rootstring.size/10;
+         else if (_ss_ < MinStrSpace)
+            _ss_ = MinStrSpace;
 
-	 cp->ini_blksize = _bs_;
-	 cp->ini_ssize = _ss_;
-	
-	 /*
-	  * Loop until I aquire the mutex.
-	  */
-	 do {
-	    MUTEX_TRYLOCKID(MTX_THREADCONTROL, i);
-	    if (i==EBUSY) {
-	       /*
-		* Check to see if another thread has already requested a GC.
-		* OR: another thread is in a critical region and locked
-		* MTX_THREADCONTROL.
-		*/
-	       if (thread_call) {
-		  /* I'm part of the GC party now! Sleeping!!*/
-		  thread_control(TC_ANSWERCALL);
-		  }
-	       else
-		  idelay(1);
-	       }
-	 } while (i);
+         cp->ini_blksize = _bs_;
+         cp->ini_ssize = _ss_;
 
-	 if (cp->alive == 0) {
-	    /*
-	     * Activate thread x for the first time.
-	     */
-	    CREATE_CE_THREAD(cp, _stks_, "spawn()");
-	    }
+         /*
+          * Loop until I aquire the mutex.
+          */
+         do {
+            MUTEX_TRYLOCKID(MTX_THREADCONTROL, i);
+            if (i==EBUSY) {
+               /*
+                * Check to see if another thread has already requested a GC.
+                * OR: another thread is in a critical region and locked
+                * MTX_THREADCONTROL.
+                */
+               if (thread_call) {
+                  /* I'm part of the GC party now! Sleeping!!*/
+                  thread_control(TC_ANSWERCALL);
+                  }
+               else
+                  idelay(1);
+               }
+         } while (i);
 
-	 /*
-	  * Turn on Thread, Async... flags
-	  */
+         if (cp->alive == 0) {
+            /*
+             * Activate thread x for the first time.
+             */
+            CREATE_CE_THREAD(cp, _stks_, "spawn()");
+            }
+
+         /*
+          * Turn on Thread, Async... flags
+          */
          SET_FLAG(cp->status, Ts_Thread);
          SET_FLAG(cp->status, Ts_Async);
 
-	 /*
-	  * assign the correct "call" level to the new thread.
-	  */
-	 /* cp->tstate->K_level = k_level+1;*/
+         /*
+          * assign the correct "call" level to the new thread.
+          */
+         /* cp->tstate->K_level = k_level+1;*/
 
-	 /*
-	  * Activate co-expression x, having changed it to Asynchronous.
-    	  *  but firt Set the activator/parent of the new thread.
-    	  */
-   	  if (cp->es_actstk == NULL)
-      	     Protect(cp->es_actstk = alcactiv(),runerr(0,x));
+         /*
+          * Activate co-expression x, having changed it to Asynchronous.
+          *  but firt Set the activator/parent of the new thread.
+          */
+          if (cp->es_actstk == NULL)
+             Protect(cp->es_actstk = alcactiv(),runerr(0,x));
 
-   	  if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
-      	     runerr(0,x);
+          if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
+             runerr(0,x);
 
-	 /*
-	  * wake the new thread up.
-	  */
-	 sem_post(cp->semp);
+         /*
+          * wake the new thread up.
+          */
+         sem_post(cp->semp);
 
-	 /*
-	  * Increment the counter of the Async running threads.
-	  */
-	 INC_LOCKID(NARthreads, MTX_NARTHREADS);
-	 MUTEX_UNLOCKID(MTX_THREADCONTROL);
+         /*
+          * Increment the counter of the Async running threads.
+          */
+         INC_LOCKID(NARthreads, MTX_NARTHREADS);
+         MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
 #if ConcurrentCOMPILER
-	 if (improbable) fail;
+         if (improbable) fail;
 #endif                                  /* ConcurrentCOMPILER*/
-	 return x;
-	 }
+         return x;
+         }
       }
    else if is:proc(x) then {
      abstract { return coexpr }
      body {
-	tended struct descrip d;
-	d = nulldesc;
-      	TURN_ON_CONCURRENT();
-	/*
-	 * Create a thread, similar to creating a (pthreads-based)
-	 * co-expression, except with the Cs_Concurrent flag on.
-	 * Build the icode to call Invoke on procedure x.
-	 */
-	return d;
-	}
+        tended struct descrip d;
+        d = nulldesc;
+        TURN_ON_CONCURRENT();
+        /*
+         * Create a thread, similar to creating a (pthreads-based)
+         * co-expression, except with the Cs_Concurrent flag on.
+         * Build the icode to call Invoke on procedure x.
+         */
+        return d;
+        }
      }
   else { runerr(106,x)
      }
@@ -3060,7 +3060,7 @@ function{1} Attrib(argv[argc])
        * TODO: Generalize Attrib() to accept data of other types
        * such as arrays, and query/change their attributes.
        */
-   
+
       struct b_coexpr *ccp;
       struct b_list *hp;
       word base=0, q, n;
@@ -3068,94 +3068,94 @@ function{1} Attrib(argv[argc])
       if (argc == 0) runerr(130, nulldesc);
 
       if (is:coexpr(argv[0])) {
-      	 if (argc == 1) runerr(130, nulldesc);
+         if (argc == 1) runerr(130, nulldesc);
          ccp = BlkD(argv[0], Coexpr);
-	 base = 1;
-      	 }
+         base = 1;
+         }
       else if (is:list(argv[0])) {
-      	 if (argc == 1) runerr(130, nulldesc);
-	 base = 1;
-	 hp = BlkD(argv[0], List);
-	 if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
-	 if (argc-base==1){
-	    switch (q) {
-	       case CHANNEL_SIZE:
-	          return C_integer hp->size;
-	          break;
-	       case CHANNEL_LIMIT:
-	          return C_integer hp->max;
-	          break;
-	       default: runerr(101, argv[base]);
-	       }
-	    }
+         if (argc == 1) runerr(130, nulldesc);
+         base = 1;
+         hp = BlkD(argv[0], List);
+         if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
+         if (argc-base==1){
+            switch (q) {
+               case CHANNEL_SIZE:
+                  return C_integer hp->size;
+                  break;
+               case CHANNEL_LIMIT:
+                  return C_integer hp->max;
+                  break;
+               default: runerr(101, argv[base]);
+               }
+            }
 
          if ((argc-base) != 2) runerr(130, nulldesc);
-	 if (!cnv:C_integer(argv[base+1], n)) runerr(101, argv[base+1]);
+         if (!cnv:C_integer(argv[base+1], n)) runerr(101, argv[base+1]);
 
-	 switch (q) {
-	    case CHANNEL_LIMIT:
-	       return C_integer (hp->max = n);
-	       break;
-	    default: runerr(101, argv[base]);
-	    }
+         switch (q) {
+            case CHANNEL_LIMIT:
+               return C_integer (hp->max = n);
+               break;
+            default: runerr(101, argv[base]);
+            }
 
          fail;
-	       
-      	 } /* if is list*/
+
+         } /* if is list*/
       else {
-      	 CURTSTATE();
+         CURTSTATE();
          ccp = BlkD(k_current, Coexpr);
-	 base = 0;
-      	 }
+         base = 0;
+         }
 
       if (argc-base==1){ /* for now, it is a query, and the only form suported */
          if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
-	 switch (q) {
-	    case INBOX_SIZE:
-	       return C_integer BlkD(ccp->inbox, List)->size;
-	       break;
-	    case OUTBOX_SIZE:
-	       return C_integer BlkD(ccp->outbox, List)->size;
-	       break;
-	    case INBOX_LIMIT:
-	       return C_integer BlkD(ccp->inbox, List)->max;
-	       break;
-	    case OUTBOX_LIMIT:
-	       return C_integer BlkD(ccp->outbox, List)->max;
-	       break;
-	    default: runerr(101, argv[base]);
-	    }
+         switch (q) {
+            case INBOX_SIZE:
+               return C_integer BlkD(ccp->inbox, List)->size;
+               break;
+            case OUTBOX_SIZE:
+               return C_integer BlkD(ccp->outbox, List)->size;
+               break;
+            case INBOX_LIMIT:
+               return C_integer BlkD(ccp->inbox, List)->max;
+               break;
+            case OUTBOX_LIMIT:
+               return C_integer BlkD(ccp->outbox, List)->max;
+               break;
+            default: runerr(101, argv[base]);
+            }
          }
 
       /* must have pairs of attribute and their values to continue */
       if ((argc-base)%2 != 0) runerr(130, nulldesc);
 
       for (; base < argc; base+=2){
-      	 if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
-	 if (!cnv:C_integer(argv[base+1], n)) runerr(101, argv[base+1]);
-	 switch (q) {
-	    case INBOX_SIZE:
-	       return C_integer (BlkD(ccp->inbox, List)->size = n);
-	       break;
-	    case OUTBOX_SIZE:
-	       return C_integer (BlkD(ccp->outbox, List)->size = n);
-	       break;
-	    case INBOX_LIMIT:
-	       return C_integer (BlkD(ccp->inbox, List)->max = n);
-	       break;
-	    case OUTBOX_LIMIT:
-	       return C_integer (BlkD(ccp->outbox, List)->max = n);
-	       break;
-	    default: runerr(101, argv[base]);
-	    }
-	 }
+         if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
+         if (!cnv:C_integer(argv[base+1], n)) runerr(101, argv[base+1]);
+         switch (q) {
+            case INBOX_SIZE:
+               return C_integer (BlkD(ccp->inbox, List)->size = n);
+               break;
+            case OUTBOX_SIZE:
+               return C_integer (BlkD(ccp->outbox, List)->size = n);
+               break;
+            case INBOX_LIMIT:
+               return C_integer (BlkD(ccp->inbox, List)->max = n);
+               break;
+            case OUTBOX_LIMIT:
+               return C_integer (BlkD(ccp->outbox, List)->max = n);
+               break;
+            default: runerr(101, argv[base]);
+            }
+         }
 
       fail;
       } /* body*/
 end
 
 
-#else					/* Concurrent */
+#else                                   /* Concurrent */
 
 MissingFuncV(mutex)
 MissingFuncV(lock)
@@ -3165,7 +3165,7 @@ MissingFuncV(condvar)
 MissingFuncV(spawn)
 MissingFuncV(signal)
 MissingFuncV(Attrib)
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
 #ifdef HAVE_LIBCL
 
@@ -3177,7 +3177,7 @@ MissingFuncV(Attrib)
 #define CL_DEVICE_VERSION                           0x102F
 #define CL_DEVICE_VENDOR                            0x102C
 #define CL_DRIVER_VERSION                           0x102D
- 
+
 
 "opencl(argv[]) - get devices info and their attributes"
 
@@ -3187,7 +3187,7 @@ function{1} opencl(argv[argc])
       }
    body {
 /*
- * Code borrowed from: 
+ * Code borrowed from:
  * http://dhruba.name/2012/08/14/opencl-cookbook-listing-all-devices-and-their-critical-attributes
  */
     int i, j;
@@ -3205,7 +3205,7 @@ function{1} opencl(argv[argc])
     clGetPlatformIDs(0, NULL, &platformCount);
     platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
     clGetPlatformIDs(platformCount, platforms, NULL);
-   
+
    printf("platfom count=%d\n", platformCount);
 
     for (i = 0; i < platformCount; i++) {
@@ -3217,7 +3217,7 @@ function{1} opencl(argv[argc])
         /* for each device print critical attributes */
         for (j = 0; j < deviceCount; j++) {
 
-	    /* print device name */
+            /* print device name */
             clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 0, NULL, &valueSize);
             value = (char*) malloc(valueSize);
             clGetDeviceInfo(devices[j], CL_DEVICE_NAME, valueSize, value, NULL);
@@ -3261,4 +3261,4 @@ function{1} opencl(argv[argc])
 } /* body*/
 end
 
-#endif					/* HAVE_LIBCL */
+#endif                                  /* HAVE_LIBCL */

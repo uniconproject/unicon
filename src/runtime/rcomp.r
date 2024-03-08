@@ -3,7 +3,7 @@
  *  Contents: anycmp, equiv, lexcmp
  */
 
-#define SORTN 1	/* Treat integers and reals collectively */
+#define SORTN 1 /* Treat integers and reals collectively */
 #define SORTT 2 /* Treat integers and reals separately */
 
 /*
@@ -45,7 +45,7 @@ int sortType;
       return lexcmp(dp1,dp2);
 
    t1 = Type(*dp1);
-   if ((o1 == 1) && (o2 == 1)) {	/* numeric */
+   if ((o1 == 1) && (o2 == 1)) {        /* numeric */
       t2 = Type(*dp2);
       if ((t1 == T_Real) || (t2 == T_Real)) {
          cnv_c_dbl(dp1, &rres1);
@@ -63,7 +63,7 @@ int sortType;
 #ifdef LargeInts
 
       case T_Integer:
-	 if (Type(*dp2) != T_Lrgint) {
+         if (Type(*dp2) != T_Lrgint) {
             v1 = IntVal(*dp1);
             v2 = IntVal(*dp2);
             if (v1 < v2)
@@ -73,15 +73,15 @@ int sortType;
             else
                return Greater;
             }
-	 /* if dp2 is a Lrgint, flow into next case */
+         /* if dp2 is a Lrgint, flow into next case */
 
       case T_Lrgint:
-	 lresult = bigcmp(dp1, dp2);
-	 if (lresult == 0)
-	    return Equal;
-	 return ((lresult > 0) ? Greater : Less);
+         lresult = bigcmp(dp1, dp2);
+         if (lresult == 0)
+            return Equal;
+         return ((lresult > 0) ? Greater : Less);
 
-#else					/* LargeInts */
+#else                                   /* LargeInts */
 
       case T_Integer:
          v1 = IntVal(*dp1);
@@ -93,7 +93,7 @@ int sortType;
          else
             return Greater;
 
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
       case T_Coexpr:
          /*
@@ -106,42 +106,42 @@ int sortType;
 
       case T_Cset:
          return csetcmp((unsigned int *)BlkD(*dp1,Cset)->bits,
-			(unsigned int *)BlkD(*dp2,Cset)->bits);
+                        (unsigned int *)BlkD(*dp2,Cset)->bits);
 
       case T_File:
          /*
           * Collate on file name or window label.
           */
-	 {
-	 dptr ps1 = &(BlkD(*dp1,File)->fname);
-	 dptr ps2 = &(BlkD(*dp2,File)->fname);
+         {
+         dptr ps1 = &(BlkD(*dp1,File)->fname);
+         dptr ps2 = &(BlkD(*dp2,File)->fname);
 #ifdef Graphics
-	 struct descrip s1, s2; /* live only long enough to lexcmp them */
-	 if (BlkLoc(*dp1)->File.status & Fs_Window) {
-	    wbp w = BlkLoc(*dp1)->File.fd.wb;
-	    if (w->window) {
-	       StrLoc(s1) = w->window->windowlabel;
-	       StrLen(s1) = strlen(StrLoc(s1));
+         struct descrip s1, s2; /* live only long enough to lexcmp them */
+         if (BlkLoc(*dp1)->File.status & Fs_Window) {
+            wbp w = BlkLoc(*dp1)->File.fd.wb;
+            if (w->window) {
+               StrLoc(s1) = w->window->windowlabel;
+               StrLen(s1) = strlen(StrLoc(s1));
                }
-	    else {
-	       StrLoc(s1) = "";
-	       StrLen(s1) = 0;
-               } 
-	    ps1 = &s1;
-	    }
-	 if (BlkLoc(*dp2)->File.status & Fs_Window) {
-	    wbp w = BlkLoc(*dp2)->File.fd.wb;
-	    if (w->window) {
-	       StrLoc(s2) = w->window->windowlabel;
-	       StrLen(s2) = strlen(StrLoc(s2));
+            else {
+               StrLoc(s1) = "";
+               StrLen(s1) = 0;
                }
-	    else {
-	       StrLoc(s2) = "";
-	       StrLen(s2) = 0;
+            ps1 = &s1;
+            }
+         if (BlkLoc(*dp2)->File.status & Fs_Window) {
+            wbp w = BlkLoc(*dp2)->File.fd.wb;
+            if (w->window) {
+               StrLoc(s2) = w->window->windowlabel;
+               StrLen(s2) = strlen(StrLoc(s2));
                }
-	    ps2 = &s2;
-	    }
-#endif					/* Graphics */
+            else {
+               StrLoc(s2) = "";
+               StrLen(s2) = 0;
+               }
+            ps2 = &s2;
+            }
+#endif                                  /* Graphics */
          return lexcmp(ps1, ps2);
          }
 
@@ -168,9 +168,9 @@ int sortType;
          GetReal(dp1,rres1);
          GetReal(dp2,rres2);
          rresult = rres1 - rres2;
-	 if (rresult == 0.0)
-	    return Equal;
-	 return ((rresult > 0.0) ? Greater : Less);
+         if (rresult == 0.0)
+            return Equal;
+         return ((rresult > 0.0) ? Greater : Less);
 
       case T_Record:
          /*
@@ -180,7 +180,7 @@ int sortType;
             &(BlkD(*dp2,Record)->recdesc->Proc.pname));
          if (iresult == Equal) {
             lresult = (BlkD(*dp1,Record)->id - BlkD(*dp2,Record)->id);
-            if (lresult > 0)	/* coded this way because of code-generation */
+            if (lresult > 0)    /* coded this way because of code-generation */
                return Greater;  /* bug in MSC++ 7.0A;  do not change. */
             else if (lresult < 0)
                return Less;
@@ -216,25 +216,25 @@ int sortType;
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
       case T_External:
-	 /*
+         /*
           * Collate these values according to the relative positions of
           *  their blocks in the heap.
-	  */
+          */
          lresult = ((word)BlkLoc(*dp1) - (word)BlkLoc(*dp2));
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);
 
       default:
-	 syserr("anycmp: unknown datatype.");
-	 /*NOTREACHED*/
-	 return 0;  /* avoid gcc warning */
+         syserr("anycmp: unknown datatype.");
+         /*NOTREACHED*/
+         return 0;  /* avoid gcc warning */
       }
    }
-
+
 /*
  * order(x) - return collating number for object x.
  */
@@ -244,53 +244,53 @@ dptr dp;
 int sortType;
    {
    if (Qual(*dp))
-      return 3; 	     /* string */
+      return 3;              /* string */
    switch (Type(*dp)) {
       case T_Null:
-	 return 0;
+         return 0;
       case T_Integer:
-	 return 1;
+         return 1;
 
 #ifdef LargeInts
       case T_Lrgint:
-	 return 1;
-#endif					/* LargeInts */
+         return 1;
+#endif                                  /* LargeInts */
 
       case T_Real:
          /* Treat integers and reals collectively or separately? */
-	 return sortType;
+         return sortType;
 
       /* string: return 3 (see above) */
 
       case T_Cset:
-	 return 4;
+         return 4;
       case T_File:
-	 return 5;
+         return 5;
       case T_Coexpr:
-	 return 6;
+         return 6;
       case T_Proc:
-	 return 7;
+         return 7;
       case T_List:
-	 return 8;
+         return 8;
       case T_Set:
-	 return 9;
+         return 9;
       case T_Table:
-	 return 10;
+         return 10;
       case T_Record:
-	 return 11;
+         return 11;
 #ifdef PatternType
       case T_Pattern:
-	return 12;
-#endif					/* PatternType */
+        return 12;
+#endif                                  /* PatternType */
       case T_External:
          return 13;
       default:
-	 syserr("order: unknown datatype.");
-	 /*NOTREACHED*/
-	 return 0;  /* avoid gcc warning */
+         syserr("order: unknown datatype.");
+         /*NOTREACHED*/
+         return 0;  /* avoid gcc warning */
       }
    }
-
+
 /*
  * equiv - test equivalence of two objects.
  */
@@ -319,50 +319,50 @@ dptr dp1, dp2;
       if ((i = StrLen(*dp1)) == StrLen(*dp2)) {
 
 
-	 s1 = StrLoc(*dp1);
-	 s2 = StrLoc(*dp2);
-	 result = 1;
-	 while (i--)
-	   if (*s1++ != *s2++) {
-	      result = 0;
-	      break;
-	      }
+         s1 = StrLoc(*dp1);
+         s2 = StrLoc(*dp2);
+         result = 1;
+         while (i--)
+           if (*s1++ != *s2++) {
+              result = 0;
+              break;
+              }
 
-	 }
+         }
       }
    else if (dp1->dword == dp2->dword)
       switch (Type(*dp1)) {
-	 /*
-	  * For integers and reals, just compare the values.
-	  */
-	 case T_Integer:
-	    result = (IntVal(*dp1) == IntVal(*dp2));
-	    break;
+         /*
+          * For integers and reals, just compare the values.
+          */
+         case T_Integer:
+            result = (IntVal(*dp1) == IntVal(*dp2));
+            break;
 
 #ifdef LargeInts
-	 case T_Lrgint:
-	    result = (bigcmp(dp1, dp2) == 0);
-	    break;
-#endif					/* LargeInts */
+         case T_Lrgint:
+            result = (bigcmp(dp1, dp2) == 0);
+            break;
+#endif                                  /* LargeInts */
 
 
-	 case T_Real:
+         case T_Real:
             GetReal(dp1, rres1);
             GetReal(dp2, rres2);
             result = (rres1 == rres2);
-	    break;
+            break;
 
-	 case T_Cset:
-	    /*
-	     * Compare the bit arrays of the csets.
-	     */
-	    result = 1;
-	    for (i = 0; i < CsetSize; i++)
-	       if (BlkD(*dp1,Cset)->bits[i] != BlkD(*dp2,Cset)->bits[i]) {
-		  result = 0;
-		  break;
-		  }
-	 }
+         case T_Cset:
+            /*
+             * Compare the bit arrays of the csets.
+             */
+            result = 1;
+            for (i = 0; i < CsetSize; i++)
+               if (BlkD(*dp1,Cset)->bits[i] != BlkD(*dp2,Cset)->bits[i]) {
+                  result = 0;
+                  break;
+                  }
+         }
    else
       /*
        * dp1 and dp2 are of different types, so they can't be
@@ -372,7 +372,7 @@ dptr dp1, dp2;
 
    return result;
    }
-
+
 /*
  * lexcmp - lexically compare two strings.
  */
@@ -419,7 +419,7 @@ dptr dp1, dp2;
       return Less;
 
    }
-
+
 /*
  * csetcmp - compare two cset bit arrays.
  *  The order defined by this function is identical to the lexical order of
@@ -448,52 +448,52 @@ unsigned int *cs1, *cs2;
     */
    for (cs_end = cs1 + CsetSize; cs1 < cs_end; cs1++, cs2++)
       if (*cs1 != *cs2) {
-	 /*
-	  * Let n be the position at which the bits first differ within
-	  *  the word.  Set nbit to some integer for which the nth bit
-	  *  is the first bit in the word that is one.  Note here and in the
-	  *  following, that bits go from right to left within a word, so
-	  *  the _first_ bit is the _rightmost_ bit.
-	  */
-	 nbit = *cs1 ^ *cs2;
+         /*
+          * Let n be the position at which the bits first differ within
+          *  the word.  Set nbit to some integer for which the nth bit
+          *  is the first bit in the word that is one.  Note here and in the
+          *  following, that bits go from right to left within a word, so
+          *  the _first_ bit is the _rightmost_ bit.
+          */
+         nbit = *cs1 ^ *cs2;
 
-	 /* Set mask to an integer that has all zeros in bit positions
-	  *  upto and including position n, and all ones in bit positions
-	  *  _after_ bit position n.
-	  */
-	 for (mask = (unsigned)MaxLong << 1; !(~mask & nbit); mask <<= 1);
+         /* Set mask to an integer that has all zeros in bit positions
+          *  upto and including position n, and all ones in bit positions
+          *  _after_ bit position n.
+          */
+         for (mask = (unsigned)MaxLong << 1; !(~mask & nbit); mask <<= 1);
 
-	 /*
-	  * nbit & ~mask contains zeros everywhere except position n, which
-	  *  is a one, so *cs2 & (nbit & ~mask) is non-zero iff the nth bit
-	  *  of *cs2 is one.
-	  */
-	 if (*cs2 & (nbit & ~mask)) {
-	    /*
-	     * If there are bits set in cs1 after bit position n in the
-	     *  current word, then cs1 is lexically greater than cs2.
-	     */
-	    if (*cs1 & mask) return Greater;
-	    while (++cs1 < cs_end)
-	       if (*cs1) return Greater;
+         /*
+          * nbit & ~mask contains zeros everywhere except position n, which
+          *  is a one, so *cs2 & (nbit & ~mask) is non-zero iff the nth bit
+          *  of *cs2 is one.
+          */
+         if (*cs2 & (nbit & ~mask)) {
+            /*
+             * If there are bits set in cs1 after bit position n in the
+             *  current word, then cs1 is lexically greater than cs2.
+             */
+            if (*cs1 & mask) return Greater;
+            while (++cs1 < cs_end)
+               if (*cs1) return Greater;
 
-	    /*
-	     * Otherwise cs1 is a proper prefix of cs2 and is therefore
-	     *  lexically less.
-	     */
-	     return Less;
-	     }
+            /*
+             * Otherwise cs1 is a proper prefix of cs2 and is therefore
+             *  lexically less.
+             */
+             return Less;
+             }
 
-	 /*
-	  * If the nth bit of *cs2 isn't one, then the nth bit of cs1
-	  *  must be one.  Just reverse the logic for the previous
-	  *  case.
-	  */
-	 if (*cs2 & mask) return Less;
-	 cs_end = cs2 + (cs_end - cs1);
-	 while (++cs2 < cs_end)
-	    if (*cs2) return Less;
-	 return Greater;
-	 }
+         /*
+          * If the nth bit of *cs2 isn't one, then the nth bit of cs1
+          *  must be one.  Just reverse the logic for the previous
+          *  case.
+          */
+         if (*cs2 & mask) return Less;
+         cs_end = cs2 + (cs_end - cs1);
+         while (++cs2 < cs_end)
+            if (*cs2) return Less;
+         return Greater;
+         }
    return Equal;
    }

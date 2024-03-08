@@ -11,15 +11,15 @@ dptr processFuncCallList(struct b_list *list);
 dptr processMethodCallList(struct b_list *list);
 #ifndef MultiProgram
 int internal_match(char * pat_sub, int Length, int Pat_S, struct descrip op,
-		   struct b_pelem * pattern, int *Start, int *Stop,
-		   int initial_cursor, int Anchored_Mode);
-#endif					/* MultiProgram */
+                   struct b_pelem * pattern, int *Start, int *Stop,
+                   int initial_cursor, int Anchored_Mode);
+#endif                                  /* MultiProgram */
 
 struct b_pelem EOP = {T_Pelem, PC_EOP,(union block *)NULL, 0, 0, {D_Null,0}};
 struct b_pattern emptypattern = { T_Pattern, 0, 0, (union block *)&EOP };
 
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
-      	    		  int pattern_code, int index, struct descrip param)
+                          int pattern_code, int index, struct descrip param)
 {
    tended struct b_pelem *lpnext = pnext;
    tended struct descrip lparam = param;
@@ -28,9 +28,9 @@ union block *pattern_make(int stck_size, struct b_pelem * pnext,
    bp = (union block *)alcpattern(stck_size);
 #if COMPILER
    pelem = alcpelem(pattern_code);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    pelem = alcpelem(pattern_code, ipc.opnd);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    pelem->pthen = (union block *) lpnext;
    pelem->parameter = lparam;
    pelem->index = index;
@@ -54,7 +54,7 @@ union block *pattern_make_pelem(int stck_size, struct b_pelem * pe)
 }
 
 union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
-			struct descrip param)
+                        struct descrip param)
 {
    struct b_pelem *pelem;
    union block * bp;
@@ -62,9 +62,9 @@ union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
    tended struct descrip lparam = param;
 #if COMPILER
    bp = (union block *)alcpelem(pattern_code);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    bp = (union block *)alcpelem(pattern_code, ipc.opnd);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    pelem  = (struct b_pelem *)bp;
    pelem->pthen =(union block *) lpnext;
    pelem->parameter = lparam;
@@ -79,9 +79,9 @@ union block *pelem_copy(struct b_pelem * p2copy)
    tended struct b_pelem *lp2copy = p2copy;
 #if COMPILER
    bp = (union block *)alcpelem(lp2copy->pcode);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    bp = (union block *)alcpelem(lp2copy->pcode, lp2copy->origin_ipc);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    pelem  = (struct b_pelem *)bp;
    pelem->pthen = lp2copy->pthen;
    pelem->parameter = lp2copy->parameter;
@@ -114,7 +114,7 @@ void Record_PE (struct b_pelem * E, struct b_pelem *RA[])
       RA[E->index] = E;
       Record_PE ((struct b_pelem *)E->pthen, RA);
       if (Has_Alt(E->pcode))
-	 Record_PE ((struct b_pelem *)BlkLoc(E->parameter),RA);
+         Record_PE ((struct b_pelem *)BlkLoc(E->parameter),RA);
       }
 }
 
@@ -170,82 +170,82 @@ struct b_list *ResolveList(struct b_list *lp)
       /* dptr pvar;  No longer used -- see below */
       if (is:string(elsrc->lslots[i])) {
          /*
-	  * if a string constant, drop double quotes,
-	  * else lookup using getvar()
-	  */
-	 cnv:C_string(elsrc->lslots[i], varname);
-	 if (StrLen(elsrc->lslots[i])>0) {
-	    complement = 0;
-	    if (strcspn(varname, "~") == 0) {
-	       /* resolve complement */
-	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 1;
-	       cnv:C_string(elsrc->lslots[i], varname);
-	       complement = 1;
-	       }
+          * if a string constant, drop double quotes,
+          * else lookup using getvar()
+          */
+         cnv:C_string(elsrc->lslots[i], varname);
+         if (StrLen(elsrc->lslots[i])>0) {
+            complement = 0;
+            if (strcspn(varname, "~") == 0) {
+               /* resolve complement */
+               StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+               StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 1;
+               cnv:C_string(elsrc->lslots[i], varname);
+               complement = 1;
+               }
 
-	    if (strcspn(varname, "\"") == 0) {
-	       /* drop the quotes, pass string contents */
-	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
-	       cnv:string(elsrc->lslots[i], elsrc->lslots[i]);
-	       }
-	    else if (strcspn(varname, "\'") == 0) { 
-	       /* drop the quotes, but pass string as a cset */
-	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
-	       cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
-	       }
-	    else if (strcspn(varname, "&") == 0) {
-	       if (getkeyword(varname, &parm) == Failed) {
-		  AsgnCStr(proc, varname);
-		  ReturnErrVal(160, proc, NULL);
-		  }
-	       cnv:cset(parm, elsrc->lslots[i]);
-	       if(complement) {
-		  Protect(cp = alccset(), ReturnErrNum(307, NULL));
-		  cpx = (struct b_cset *)BlkD(elsrc->lslots[i], Cset);
-		  for (b = 0; b < CsetSize; b++) 
-		     cp->bits[b] = ~cpx->bits[b];
-		  elsrc->lslots[i].vword.bptr = (union block *)cp;
-		  }
-	       }
-	    else if (strcspn(varname, "1234567890") == 0) {
-	       cnv:integer(elsrc->lslots[i], elsrc->lslots[i]);
-	       }
-	    else {
-	       if (getvar(varname, &parm) == Failed) {
-		  AsgnCStr(parm, varname);
-		  ReturnErrVal(160, parm, NULL);
-		  }
-	       /* pvar = VarLoc(parm); */
-	       elsrc->lslots[i] = parm; /* = *pvar too aggressive */
+            if (strcspn(varname, "\"") == 0) {
+               /* drop the quotes, pass string contents */
+               StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+               StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+               cnv:string(elsrc->lslots[i], elsrc->lslots[i]);
+               }
+            else if (strcspn(varname, "\'") == 0) {
+               /* drop the quotes, but pass string as a cset */
+               StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+               StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+               cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
+               }
+            else if (strcspn(varname, "&") == 0) {
+               if (getkeyword(varname, &parm) == Failed) {
+                  AsgnCStr(proc, varname);
+                  ReturnErrVal(160, proc, NULL);
+                  }
+               cnv:cset(parm, elsrc->lslots[i]);
+               if(complement) {
+                  Protect(cp = alccset(), ReturnErrNum(307, NULL));
+                  cpx = (struct b_cset *)BlkD(elsrc->lslots[i], Cset);
+                  for (b = 0; b < CsetSize; b++)
+                     cp->bits[b] = ~cpx->bits[b];
+                  elsrc->lslots[i].vword.bptr = (union block *)cp;
+                  }
+               }
+            else if (strcspn(varname, "1234567890") == 0) {
+               cnv:integer(elsrc->lslots[i], elsrc->lslots[i]);
+               }
+            else {
+               if (getvar(varname, &parm) == Failed) {
+                  AsgnCStr(parm, varname);
+                  ReturnErrVal(160, parm, NULL);
+                  }
+               /* pvar = VarLoc(parm); */
+               elsrc->lslots[i] = parm; /* = *pvar too aggressive */
 
-	       if (complement) {
-		  Protect(cp = alccset(), ReturnErrNum(307, NULL));
-		  cpx = (struct b_cset *)StrLoc(elsrc->lslots[i]);
-		  for (b = 0; b < CsetSize; b++) 
-		     cp->bits[b] = ~cpx->bits[b];
-		  elsrc->lslots[i].vword.bptr = (union block *)cp;
-		  }
-	       }
-	    parm = elsrc->lslots[i];
-	    }
-	 else {
-	    ReturnErrNum(164, NULL);
-	    }
-	 }
+               if (complement) {
+                  Protect(cp = alccset(), ReturnErrNum(307, NULL));
+                  cpx = (struct b_cset *)StrLoc(elsrc->lslots[i]);
+                  for (b = 0; b < CsetSize; b++)
+                     cp->bits[b] = ~cpx->bits[b];
+                  elsrc->lslots[i].vword.bptr = (union block *)cp;
+                  }
+               }
+            parm = elsrc->lslots[i];
+            }
+         else {
+            ReturnErrNum(164, NULL);
+            }
+         }
       else if (is:list(elsrc->lslots[i])) {
-	 /* recursively visit sublists, do same stuff */
-	 lptemp = (struct b_list *)BlkD(elsrc->lslots[i], List);
-	 parm.dword = D_List;
-	 if ((parm.vword.bptr = (union block *)ResolveList(lptemp)) == NULL)
-	    return NULL;
-	 }
-      else { 
-	 /* cset, integer constant, ... */
-	 parm = elsrc->lslots[i];
-	 }
+         /* recursively visit sublists, do same stuff */
+         lptemp = (struct b_list *)BlkD(elsrc->lslots[i], List);
+         parm.dword = D_List;
+         if ((parm.vword.bptr = (union block *)ResolveList(lptemp)) == NULL)
+            return NULL;
+         }
+      else {
+         /* cset, integer constant, ... */
+         parm = elsrc->lslots[i];
+         }
       eldest->lslots[i] = parm;
       }
    return lpdest;
@@ -273,7 +273,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
       int J;
       int RefLen = P->index + 1;
       if (!reserve(Blocks, RefLen * sizeof(struct b_pelem)))
-	 ReturnErrNum(307, NULL);
+         ReturnErrNum(307, NULL);
 
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Copy = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
@@ -284,98 +284,98 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
        * Now copy all nodes
        */
       for(J = 1; J < RefLen; J++)
-	 Copy[J] = (struct b_pelem *)pelem_copy(Refs[J]);
+         Copy[J] = (struct b_pelem *)pelem_copy(Refs[J]);
 
       /*
        * Adjust all internal references
        */
       for(J = 1; J < RefLen; J++) {
-	 E = Copy[J];
-	 /*
-	  * Adjust successor pointer to point to copy
-	  */
-	 if (E->pthen !=(union block *) &EOP)
-	    E->pthen =(union block *)
-	       Copy[((struct b_pelem *)(E->pthen))->index];
-	 /*
-	  * Adjust Alt pointer if there is one to point to copy
-	  */
-	 if (Has_Alt(E->pcode) &&
-	     ((struct b_pelem *)(BlkLoc(E->parameter)) != &EOP))
-	    (BlkLoc(E->parameter)) = (union block *)
-	       Copy[((struct b_pelem *)(BlkLoc(E->parameter)))->index];
-	 /*
-	  * Resolve references
-	  */
-	 switch(E->pcode){
-	 case PC_Pos_NP:
-	 case PC_Len_NP:
-	 case PC_RPos_NP: 
-	 case PC_RTab_NP:
-	 case PC_Tab_NP: 
-	 case PC_Any_VP:
-	 case PC_Break_VP:
-	 case PC_BreakX_VP:
-	 case PC_NotAny_VP:
-	 case PC_NSpan_VP:
-	 case PC_Span_VP:
-	 case PC_Assign_OnM:
-	 case PC_Assign_Imm: 
-	 case PC_Rpat:{
-	    tended char * varname;				
-	    if (is:list(E->parameter)) {
-	       /*
-		* we know our list
-		* it has only 2 elements object variable name and field name
-		* so we dont perform all the sanity checks
-		*/
-	       tended struct b_lelem *ep;
-	       tended struct b_record *rp;
-	       tended struct b_list *lp = (struct b_list *)BlkLoc(E->parameter);
-	       ep = (struct b_lelem *)lp->listhead;
-	       if (is:string(ep->lslots[0])) {
-	          cnv:C_string(ep->lslots[0],varname);
-		  if (getvar(varname, &ep->lslots[0])== Failed) {
-		     AsgnCStr(ep->lslots[0], varname);
-		     ReturnErrVal(160, ep->lslots[0], NULL);
-		     }
-		  }
-	       }
-	    else {
-	       if (is:string(E->parameter)){
-	          cnv:C_string(E->parameter, varname);
-		  DEBUGF(2, (stdout, "Looking up variable name = %s\n",
-				   varname));
-		  if (getvar(varname,&E->parameter)== Failed) {
-		     AsgnCStr(E->parameter, varname);
-		     ReturnErrVal(160, E->parameter, NULL);
-		     }
-		  }
-	       }
-	    break;
-	    }
-	 case PC_Pos_NF:
-	 case PC_Len_NF:
-	 case PC_RPos_NF:
-	 case PC_RTab_NF:
-	 case PC_Tab_NF:
-	 case PC_Any_VF:
-	 case PC_Break_VF:
-	 case PC_BreakX_VF:
-	 case PC_NotAny_VF:
-	 case PC_NSpan_VF:
-	 case PC_Span_VF:
-	 case PC_Pred_Func:
-	 case PC_String_VF:{
-	    tended struct b_list *lpsrc;
-	    tended struct b_list *lpdest;
-	    lpsrc = (struct b_list *)BlkD(E->parameter, List);    
-	    if ((lpdest = ResolveList(lpsrc)) == NULL)
-	       return NULL;
-	    E->parameter.dword = D_List;
-	    E->parameter.vword.bptr = (union block *) lpdest;
-	    }
-	 }
+         E = Copy[J];
+         /*
+          * Adjust successor pointer to point to copy
+          */
+         if (E->pthen !=(union block *) &EOP)
+            E->pthen =(union block *)
+               Copy[((struct b_pelem *)(E->pthen))->index];
+         /*
+          * Adjust Alt pointer if there is one to point to copy
+          */
+         if (Has_Alt(E->pcode) &&
+             ((struct b_pelem *)(BlkLoc(E->parameter)) != &EOP))
+            (BlkLoc(E->parameter)) = (union block *)
+               Copy[((struct b_pelem *)(BlkLoc(E->parameter)))->index];
+         /*
+          * Resolve references
+          */
+         switch(E->pcode){
+         case PC_Pos_NP:
+         case PC_Len_NP:
+         case PC_RPos_NP:
+         case PC_RTab_NP:
+         case PC_Tab_NP:
+         case PC_Any_VP:
+         case PC_Break_VP:
+         case PC_BreakX_VP:
+         case PC_NotAny_VP:
+         case PC_NSpan_VP:
+         case PC_Span_VP:
+         case PC_Assign_OnM:
+         case PC_Assign_Imm:
+         case PC_Rpat:{
+            tended char * varname;
+            if (is:list(E->parameter)) {
+               /*
+                * we know our list
+                * it has only 2 elements object variable name and field name
+                * so we dont perform all the sanity checks
+                */
+               tended struct b_lelem *ep;
+               tended struct b_record *rp;
+               tended struct b_list *lp = (struct b_list *)BlkLoc(E->parameter);
+               ep = (struct b_lelem *)lp->listhead;
+               if (is:string(ep->lslots[0])) {
+                  cnv:C_string(ep->lslots[0],varname);
+                  if (getvar(varname, &ep->lslots[0])== Failed) {
+                     AsgnCStr(ep->lslots[0], varname);
+                     ReturnErrVal(160, ep->lslots[0], NULL);
+                     }
+                  }
+               }
+            else {
+               if (is:string(E->parameter)){
+                  cnv:C_string(E->parameter, varname);
+                  DEBUGF(2, (stdout, "Looking up variable name = %s\n",
+                                   varname));
+                  if (getvar(varname,&E->parameter)== Failed) {
+                     AsgnCStr(E->parameter, varname);
+                     ReturnErrVal(160, E->parameter, NULL);
+                     }
+                  }
+               }
+            break;
+            }
+         case PC_Pos_NF:
+         case PC_Len_NF:
+         case PC_RPos_NF:
+         case PC_RTab_NF:
+         case PC_Tab_NF:
+         case PC_Any_VF:
+         case PC_Break_VF:
+         case PC_BreakX_VF:
+         case PC_NotAny_VF:
+         case PC_NSpan_VF:
+         case PC_Span_VF:
+         case PC_Pred_Func:
+         case PC_String_VF:{
+            tended struct b_list *lpsrc;
+            tended struct b_list *lpdest;
+            lpsrc = (struct b_list *)BlkD(E->parameter, List);
+            if ((lpdest = ResolveList(lpsrc)) == NULL)
+               return NULL;
+            E->parameter.dword = D_List;
+            E->parameter.vword.bptr = (union block *) lpdest;
+            }
+         }
       }
    E =  Copy[tP->index];
    free(Refs);
@@ -408,25 +408,25 @@ struct b_pelem * Copy(struct b_pelem * P)
 
       /* Now copy all nodes */
       for(J = 1; J < RefLen; J++)
-	 Copy[J] = (struct b_pelem *)pelem_copy(Refs[J]);
+         Copy[J] = (struct b_pelem *)pelem_copy(Refs[J]);
       /* Adjust all internal references */
       for(J = 1; J < RefLen; J++){
-	 E = Copy[J];
-	 /*
-	  * Adjust successor pointer to point to copy
-	  */
-	 if (E->pthen !=(union block *) &EOP)
-	    E->pthen =(union block *)
-	       Copy[((struct b_pelem *)(E->pthen))->index];
+         E = Copy[J];
+         /*
+          * Adjust successor pointer to point to copy
+          */
+         if (E->pthen !=(union block *) &EOP)
+            E->pthen =(union block *)
+               Copy[((struct b_pelem *)(E->pthen))->index];
 
-	 /*
-	  * Adjust Alt pointer if there is one to point to copy
-	  */
-	 if (Has_Alt(E->pcode) &&
-	     ((struct b_pelem *)(BlkLoc(E->parameter)) != &EOP))
-	    (BlkLoc(E->parameter)) = (union block *)Copy[((struct b_pelem *)
-					(BlkLoc(E->parameter)))->index];
-	 }
+         /*
+          * Adjust Alt pointer if there is one to point to copy
+          */
+         if (Has_Alt(E->pcode) &&
+             ((struct b_pelem *)(BlkLoc(E->parameter)) != &EOP))
+            (BlkLoc(E->parameter)) = (union block *)Copy[((struct b_pelem *)
+                                        (BlkLoc(E->parameter)))->index];
+         }
       E =  Copy[P->index];
       free(Refs);
       free(Copy);
@@ -456,21 +456,21 @@ struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
       Refs=(struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Record_PE(lpe, Refs);
       for (J = 1; J < RefLen;J++) {
-	 P = Refs[J];
-	 P->index += rpe->index;
-	 if (P->pcode == PC_Arbno_Y){
-	    IntVal(P->parameter) += Incr;
-	    }
-	 if ((struct b_pelem *)P->pthen == &EOP)
-	    P->pthen = (union block *)rpe;
-	 if (Has_Alt(P->pcode) &&
-	     (BlkLoc(P->parameter) == (union block *)&EOP)) {
-	    tended struct descrip param;
-	    param.dword = D_Pelem;
-	    param.vword.bptr = (union block *) rpe;
-	    P->parameter = param;
-	    }
-	 }
+         P = Refs[J];
+         P->index += rpe->index;
+         if (P->pcode == PC_Arbno_Y){
+            IntVal(P->parameter) += Incr;
+            }
+         if ((struct b_pelem *)P->pthen == &EOP)
+            P->pthen = (union block *)rpe;
+         if (Has_Alt(P->pcode) &&
+             (BlkLoc(P->parameter) == (union block *)&EOP)) {
+            tended struct descrip param;
+            param.dword = D_Pelem;
+            param.vword.bptr = (union block *) rpe;
+            P->parameter = param;
+            }
+         }
       free(Refs);
       return lpe;
       }
@@ -496,7 +496,7 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
 {
    struct descrip key; /* not tended because its always an int */
    tended struct b_pattern *tpat;
-   tended struct descrip val;    
+   tended struct descrip val;
    int res;
    uword hn;
    struct b_telem *te; /* not tended because no gc between def and uses */
@@ -514,14 +514,14 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
       }
    else { /* we have a table check if the pattern is already resolved */
       if ((pfp->pattern_cache)->title != T_Table) {
-	 syserr("corrupt pattern_cache\n");
-	 }
+         syserr("corrupt pattern_cache\n");
+         }
 
       pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
       if (res != 0) { /*the element is in the table*/
-	 te = (struct b_telem *) *pd;
-	 return (struct b_pelem *)BlkLoc(te->tval);
-	 }
+         te = (struct b_telem *) *pd;
+         return (struct b_pelem *)BlkLoc(te->tval);
+         }
       }
    /* if it is not in table, first resolve references */
    if ((phead = ResolveReferences(&(tpat->pe->Pelem))) == NULL) return NULL;
@@ -553,16 +553,16 @@ function {*} pattern_match(underef psub -> dpsub, pat)
     */
    if is:variable(psub) && is:string(dpsub) then {
       abstract {
-	 return new tvsubs(type(psub))
-	 }
+         return new tvsubs(type(psub))
+         }
       inline {
-	 use_trap = 1;
-	 }
+         use_trap = 1;
+         }
       }
    else if cnv:tmp_string(dpsub) then
       abstract {
-	 return string
-	 }
+         return string
+         }
    else
       runerr(114, dpsub);
 
@@ -573,8 +573,8 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       int subject_len;
 #if !ConcurrentCOMPILER
       CURTSTATE();
-#endif					/* ConcurrentCOMPILER */
-    
+#endif                                  /* ConcurrentCOMPILER */
+
       DEBUGF(20,(stdout, "(729)begin pattern_match()\n"));
       /*
        * Assign new values to &subject/&pos to execute a match.
@@ -586,50 +586,50 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       subject_len = StrLen(k_subject);
 
       if (! cnv_pattern(&pat, &pat)) {
-	 runerr(127, pat);
-	 }
+         runerr(127, pat);
+         }
 
       if ((phead = ResolvePattern((struct b_pattern *)BlkLoc(pat))) == NULL) runerr(0);
 
       while ((k_pos >= 0) &&
-	     internal_match(StrLoc(k_subject), subject_len, ((struct b_pattern *)BlkLoc(pat))->stck_size,
-			   pat,  phead, &start, &stop, k_pos, 0)
-	     ){
-	 /* check if psub no longer refers to what k_subject holds.
-	  * if so, we can't suspend a trapped variable reference to it.
-	  */
-	 if ((use_trap == 1) &&
-	     (StrLoc(*(psub.vword.descptr)) == StrLoc(k_subject)) &&
-	     (StrLen(*(psub.vword.descptr)) == StrLen(k_subject)) ) {
+             internal_match(StrLoc(k_subject), subject_len, ((struct b_pattern *)BlkLoc(pat))->stck_size,
+                           pat,  phead, &start, &stop, k_pos, 0)
+             ){
+         /* check if psub no longer refers to what k_subject holds.
+          * if so, we can't suspend a trapped variable reference to it.
+          */
+         if ((use_trap == 1) &&
+             (StrLoc(*(psub.vword.descptr)) == StrLoc(k_subject)) &&
+             (StrLen(*(psub.vword.descptr)) == StrLen(k_subject)) ) {
 
-	    /* if it is &subject, we can't make a tvsubs from it. */
-	    if (psub.vword.descptr == &k_subject) {
-	       suspend string(stop - start, StrLoc(dpsub)+ start);
-	       }
-	    else {
-	       suspend tvsubs(&psub, start+1,stop - start);
-	       }
-	    }
-	 else {
-	    suspend string(stop - start, StrLoc(dpsub)+ start);
-	    }
-	 /* Deref again, in case psub was altered. */ 
-	 deref(&psub,&dpsub);
+            /* if it is &subject, we can't make a tvsubs from it. */
+            if (psub.vword.descptr == &k_subject) {
+               suspend string(stop - start, StrLoc(dpsub)+ start);
+               }
+            else {
+               suspend tvsubs(&psub, start+1,stop - start);
+               }
+            }
+         else {
+            suspend string(stop - start, StrLoc(dpsub)+ start);
+            }
+         /* Deref again, in case psub was altered. */
+         deref(&psub,&dpsub);
  k_subject = dpsub;
-	 /*
-	  * Someone has monkeyed with the string we are scanning.
-	  * Update &pos, and check that it remains in bounds.
-	  * This interpretation -- that a longer string means
-	  * move pos forward and shorter means move the pos
-	  * backward, is somewhat dubious but could be useful.
-	  */
-	 if (subject_len != StrLen(dpsub)) {
-	    k_pos += StrLen(dpsub) - subject_len;
-	    subject_len = StrLen(dpsub);
-	    if (k_pos < 1) k_pos = 1;
-	    else if (k_pos > StrLen(dpsub)+1) k_pos = StrLen(dpsub);
-	    EVVal(k_pos, E_Spos);
-	    }
+         /*
+          * Someone has monkeyed with the string we are scanning.
+          * Update &pos, and check that it remains in bounds.
+          * This interpretation -- that a longer string means
+          * move pos forward and shorter means move the pos
+          * backward, is somewhat dubious but could be useful.
+          */
+         if (subject_len != StrLen(dpsub)) {
+            k_pos += StrLen(dpsub) - subject_len;
+            subject_len = StrLen(dpsub);
+            if (k_pos < 1) k_pos = 1;
+            else if (k_pos > StrLen(dpsub)+1) k_pos = StrLen(dpsub);
+            EVVal(k_pos, E_Spos);
+            }
          }
       fail;
       }
@@ -663,9 +663,9 @@ int f(dptr s, dptr p)
    default: {
       tended union block *bp = NULL;
       if (!cnv:string(*s, *s)) {
-	 EVValD(s, e_fconv);
-	 return 0;
-	 }
+         EVValD(s, e_fconv);
+         return 0;
+         }
       bp = pattern_make(0, &EOP,PC_String,1, *s);
       EVVal(PC_String, e_patcode);
       p->dword = D_Pattern;
@@ -680,9 +680,9 @@ int f(dptr s, dptr p)
 #ifdef MultiProgram
 cnv_pattern_macro(cnv_pattern_0,0,0,0,0,0,0)
 cnv_pattern_macro(cnv_pattern_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv,E_PatCode)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cnv_pattern_macro(cnv_pattern,0,0,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  *
@@ -712,15 +712,15 @@ static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Record_PE(Pat, Refs);
       for (J = 1; J < RefLen;J++){
-	 P = Refs[J];
-	 if ((struct b_pelem *)P->pthen == &EOP)
-	    P->pthen = (union block *)Succ;
-	 if (Has_Alt(P->pcode) &&
-	     ((struct b_pelem *)BlkLoc(P->parameter) == &EOP)){
-	    P->parameter.dword = D_Pelem;
-	    P->parameter.vword.bptr = (union block *) Succ;
-	    }
-	 }
+         P = Refs[J];
+         if ((struct b_pelem *)P->pthen == &EOP)
+            P->pthen = (union block *)Succ;
+         if (Has_Alt(P->pcode) &&
+             ((struct b_pelem *)BlkLoc(P->parameter) == &EOP)){
+            P->parameter.dword = D_Pelem;
+            P->parameter.vword.bptr = (union block *) Succ;
+            }
+         }
       free(Refs);
       }
 }
@@ -729,7 +729,7 @@ static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
  * Bracket
  */
 struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
-			    struct b_pelem * A)
+                            struct b_pelem * A)
 {
    if (P == &EOP) {
       E->pthen =  (union block *)A;
@@ -748,37 +748,37 @@ struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 #begdef ConvertPatternArgumentCset(arg, bp, ptype)
    type_case arg of {
       pattern: {
-	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
-	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
-	 switch(pe->pcode) {
-	 case PC_Rpat: {
-	    bp = pattern_make(0, &EOP,ptype ## _VP,1, pe->parameter);
+         struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
+         tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
+         switch(pe->pcode) {
+         case PC_Rpat: {
+            bp = pattern_make(0, &EOP,ptype ## _VP,1, pe->parameter);
             EVVal(ptype ## _VP, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_Func:
-	 case PC_String_VF: {
-	    bp = pattern_make(0, &EOP,ptype ## _VF,1, pe->parameter);
-	    EVVal(ptype ## _VF, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_MF:
-	 case PC_String_MF: {
-	    bp = pattern_make(0, &EOP,ptype ## _MF,1, pe->parameter);
-	    EVVal(ptype ## _MF, E_PatCode);
-	    break;
-	    }
-	 default: {
-	    runerr(127);
-	    }
-	    }
-	 }
+            break;
+            }
+         case PC_Pred_Func:
+         case PC_String_VF: {
+            bp = pattern_make(0, &EOP,ptype ## _VF,1, pe->parameter);
+            EVVal(ptype ## _VF, E_PatCode);
+            break;
+            }
+         case PC_Pred_MF:
+         case PC_String_MF: {
+            bp = pattern_make(0, &EOP,ptype ## _MF,1, pe->parameter);
+            EVVal(ptype ## _MF, E_PatCode);
+            break;
+            }
+         default: {
+            runerr(127);
+            }
+            }
+         }
       default: {
-	 if (!cnv_cset(&arg, &arg))
-	    runerr(104, arg);
-	 bp = pattern_make(0, &EOP, ptype ## _CS,1, arg);
+         if (!cnv_cset(&arg, &arg))
+            runerr(104, arg);
+         bp = pattern_make(0, &EOP, ptype ## _CS,1, arg);
          EVVal(ptype ## _CS, E_PatCode);
-	 }
+         }
    }
 #enddef
 
@@ -862,42 +862,42 @@ function {1} Breakx(char_set)
       struct b_pelem *peBreakx;
       type_case char_set of {
       pattern: {
-	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(char_set);
-	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
+         struct b_pattern *pat = (struct b_pattern *)BlkLoc(char_set);
+         tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
 
-	 switch(pe->pcode){
-	 case PC_Rpat:{
-	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VP, 3,
-						    pe->parameter);
-	    EVVal(PC_BreakX_VP, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_Func:
-	 case PC_String_VF: {
-	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VF, 3,
-						    pe->parameter);
-	    EVVal(PC_BreakX_VF, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_MF:
-	 case PC_String_MF: {
-	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_MF, 3,
-						    pe->parameter);
-	    EVVal(PC_BreakX_MF, E_PatCode);
-	    break;
-	    }
-	 default: {
-	    runerr(128);
-	    }
-	    }
-	 }
+         switch(pe->pcode){
+         case PC_Rpat:{
+            peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VP, 3,
+                                                    pe->parameter);
+            EVVal(PC_BreakX_VP, E_PatCode);
+            break;
+            }
+         case PC_Pred_Func:
+         case PC_String_VF: {
+            peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VF, 3,
+                                                    pe->parameter);
+            EVVal(PC_BreakX_VF, E_PatCode);
+            break;
+            }
+         case PC_Pred_MF:
+         case PC_String_MF: {
+            peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_MF, 3,
+                                                    pe->parameter);
+            EVVal(PC_BreakX_MF, E_PatCode);
+            break;
+            }
+         default: {
+            runerr(128);
+            }
+            }
+         }
       default: {
-	 if (!cnv_cset(&char_set, &char_set))
-	    runerr(104, char_set);
-	 peBreakx = (struct b_pelem *)pelem_make(NULL,PC_BreakX_CS,3,char_set);
-	 EVVal(PC_BreakX_CS, E_PatCode);
-	 }
-	 }
+         if (!cnv_cset(&char_set, &char_set))
+            runerr(104, char_set);
+         peBreakx = (struct b_pelem *)pelem_make(NULL,PC_BreakX_CS,3,char_set);
+         EVVal(PC_BreakX_CS, E_PatCode);
+         }
+         }
       bp = (union block *)breakx_make(peBreakx);
       return pattern(bp);
       }
@@ -921,49 +921,49 @@ end
       }
    if is:pattern(arg) then body {
          union block *bp;
-	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
-	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
-	 switch(pe->pcode){
-	 case PC_Rpat: {
-	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NP,
-					      1, pe->parameter);
+         struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
+         tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
+         switch(pe->pcode){
+         case PC_Rpat: {
+            bp =  (union block *)pattern_make(0, &EOP,ptype ## _NP,
+                                              1, pe->parameter);
             EVVal(ptype ## _NP, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_Func:
-	 case PC_String_VF: {
-	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NF,
-					      1, pe->parameter);
+            break;
+            }
+         case PC_Pred_Func:
+         case PC_String_VF: {
+            bp =  (union block *)pattern_make(0, &EOP,ptype ## _NF,
+                                              1, pe->parameter);
             EVVal(ptype ## _NF, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_MF:
-	 case PC_String_MF: {
-	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NMF,
-					      1, pe->parameter);
+            break;
+            }
+         case PC_Pred_MF:
+         case PC_String_MF: {
+            bp =  (union block *)pattern_make(0, &EOP,ptype ## _NMF,
+                                              1, pe->parameter);
             EVVal(ptype ## _NMF, E_PatCode);
-	    break;
-	    }
-	 default: {
-	    runerr(128);
-	    }
-	    }
+            break;
+            }
+         default: {
+            runerr(128);
+            }
+            }
       return pattern(bp);
       }
    else if cnv:integer(arg) then body {
       union block *bp;
 #if negflag
       if (IntVal(arg) <= 0) {
-	 IntVal(arg) = -IntVal(arg);
-	 bp =  (union block *)pattern_make(0, &EOP, negintptype ## _Nat,1, arg);
-	 EVVal(negintptype ## _Nat, E_PatCode);
+         IntVal(arg) = -IntVal(arg);
+         bp =  (union block *)pattern_make(0, &EOP, negintptype ## _Nat,1, arg);
+         EVVal(negintptype ## _Nat, E_PatCode);
          }
       else
 #endif
-	 {
-	 bp =  (union block *)pattern_make(0, &EOP, ptype ## _Nat,1, arg);
-	 EVVal(ptype ## _Nat, E_PatCode);
-	 }
+         {
+         bp =  (union block *)pattern_make(0, &EOP, ptype ## _Nat,1, arg);
+         EVVal(ptype ## _Nat, E_PatCode);
+         }
       return pattern(bp);
       }
    else runerr(102, arg)
@@ -1056,91 +1056,91 @@ function {1} Arbno(ARBPAT)
       if (!cnv_pattern(&ARBPAT, &ARBPAT)) runerr(127, ARBPAT);
 
       if (pattype == 1) {
-	 P =  (struct b_pattern *)BlkLoc(ARBPAT);
-	 X = Arbno_Simple((struct b_pelem *)P->pe);
-	 bp = pattern_make_pelem(0,X);
-	 EVVal(PC_Arbno_S, E_PatCode);
-	 return pattern(bp);
-	 }
+         P =  (struct b_pattern *)BlkLoc(ARBPAT);
+         X = Arbno_Simple((struct b_pelem *)P->pe);
+         bp = pattern_make_pelem(0,X);
+         EVVal(PC_Arbno_S, E_PatCode);
+         return pattern(bp);
+         }
       else {
-	 tended struct b_pelem *Pat;
-	 P =  (struct b_pattern *)BlkLoc(ARBPAT);
-	 Pat = Copy((struct b_pelem *)P->pe);
-	 if ((P->stck_size == 0) && OK_For_Simple_Arbno(Pat->pcode)) {
-	    /*
-	     *
-	     * Arbno_Simple
-	     *
-	     *
-	     *      +-------------+
-	     *      |             ^
-	     *      V             |
-	     *    +---+           |
-	     *    | S |---->      |
-	     *    +---+           |
-	     *      .             |
-	     *      .             |
-	     *    +---+           |
-	     *    | P |---------->+
-	     *    +---+
-	     *
-	     *  The node numbering of the constituent pattern P is not
-	     *  affected. The S node has a node number of P.Index + 1.
-	     *
-	     *  Note that we know that P cannot be EOP, because a null
-	     *  pattern does not meet the requirements for simple Arbno.
-	     */
-	    X = Arbno_Simple(Pat);
-	    bp = pattern_make_pelem(1,X);
-	    EVVal(PC_Arbno_S, E_PatCode);
-	    return pattern(bp);
-	    }
-	 else {
-	    /*
-	     *  This is the complex case, either the pattern makes stack
-	     *  entries or it is possible for the pattern to match the null
-	     *  string (more accurately, we don't know that this is not the
-	     * case).
-	     *
-	     *      +--------------------------+
-	     *      |                          ^
-	     *      V                          |
-	     *    +---+                        |
-	     *    | X |---->                   |
-	     *    +---+                        |
-	     *      .                          |
-	     *      .                          |
-	     *    +---+     +---+     +---+    |
-	     *    | E |---->| P |---->| Y |--->+
-	     *    +---+     +---+     +---+
-	     *
-	     * The node numbering of the constituent pattern P is not
-	     * affected. Where N is the number of nodes in P, the Y node is
-	     * numbered N + 1, the E node is N + 2, and the X node is N + 3.
-	     */
-	    tended struct b_pelem * E;
-	    tended struct b_pelem * Y;
-	    tended struct b_pelem *EPY;
-	    tended struct descrip var;
-	    E =  (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,
-					      0,nulldesc);
-	    var.dword = D_Pelem;
-	    BlkLoc(var) =  (union block *)E;
-	    X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var);
-	    EVVal(PC_Arbno_X, E_PatCode);
-	    var.dword = D_Integer;
-	    IntVal(var) = P->stck_size + 3;
-	    Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var);
-	    EVVal(PC_Arbno_X, E_PatCode);
-	    EPY = Bracket (E, Pat, Y);
-	    var.dword = D_Pelem;
-	    BlkLoc(var) =  (union block *)EPY;
-	    X->parameter = var;
-	    X->index = EPY->index + 1;
-	    bp = pattern_make_pelem(P->stck_size,X);
-	    return pattern(bp);
-	    }
-	 }
+         tended struct b_pelem *Pat;
+         P =  (struct b_pattern *)BlkLoc(ARBPAT);
+         Pat = Copy((struct b_pelem *)P->pe);
+         if ((P->stck_size == 0) && OK_For_Simple_Arbno(Pat->pcode)) {
+            /*
+             *
+             * Arbno_Simple
+             *
+             *
+             *      +-------------+
+             *      |             ^
+             *      V             |
+             *    +---+           |
+             *    | S |---->      |
+             *    +---+           |
+             *      .             |
+             *      .             |
+             *    +---+           |
+             *    | P |---------->+
+             *    +---+
+             *
+             *  The node numbering of the constituent pattern P is not
+             *  affected. The S node has a node number of P.Index + 1.
+             *
+             *  Note that we know that P cannot be EOP, because a null
+             *  pattern does not meet the requirements for simple Arbno.
+             */
+            X = Arbno_Simple(Pat);
+            bp = pattern_make_pelem(1,X);
+            EVVal(PC_Arbno_S, E_PatCode);
+            return pattern(bp);
+            }
+         else {
+            /*
+             *  This is the complex case, either the pattern makes stack
+             *  entries or it is possible for the pattern to match the null
+             *  string (more accurately, we don't know that this is not the
+             * case).
+             *
+             *      +--------------------------+
+             *      |                          ^
+             *      V                          |
+             *    +---+                        |
+             *    | X |---->                   |
+             *    +---+                        |
+             *      .                          |
+             *      .                          |
+             *    +---+     +---+     +---+    |
+             *    | E |---->| P |---->| Y |--->+
+             *    +---+     +---+     +---+
+             *
+             * The node numbering of the constituent pattern P is not
+             * affected. Where N is the number of nodes in P, the Y node is
+             * numbered N + 1, the E node is N + 2, and the X node is N + 3.
+             */
+            tended struct b_pelem * E;
+            tended struct b_pelem * Y;
+            tended struct b_pelem *EPY;
+            tended struct descrip var;
+            E =  (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,
+                                              0,nulldesc);
+            var.dword = D_Pelem;
+            BlkLoc(var) =  (union block *)E;
+            X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var);
+            EVVal(PC_Arbno_X, E_PatCode);
+            var.dword = D_Integer;
+            IntVal(var) = P->stck_size + 3;
+            Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var);
+            EVVal(PC_Arbno_X, E_PatCode);
+            EPY = Bracket (E, Pat, Y);
+            var.dword = D_Pelem;
+            BlkLoc(var) =  (union block *)EPY;
+            X->parameter = var;
+            X->index = EPY->index + 1;
+            bp = pattern_make_pelem(P->stck_size,X);
+            return pattern(bp);
+            }
+         }
       }
 end
 
@@ -1261,7 +1261,7 @@ function {1} pattern_concat(L, R)
       lpattern = (struct b_pattern *)BlkLoc(L);
       rpattern = (struct b_pattern *)BlkLoc(R);
       pe = Concat(Copy((struct b_pelem *)lpattern->pe),
-		  Copy((struct b_pelem *)rpattern->pe), rpattern->stck_size);
+                  Copy((struct b_pelem *)rpattern->pe), rpattern->stck_size);
       bp = pattern_make_pelem(lpattern->stck_size + rpattern->stck_size,pe);
       return pattern(bp);
       }
@@ -1270,14 +1270,14 @@ end
 struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
 {
    tended struct b_pelem *lpe = L;
-   tended struct b_pelem *rpe = R; 
+   tended struct b_pelem *rpe = R;
    tended struct descrip param;
    param.dword = D_Pelem;
    param.vword.bptr = (union block *)rpe;
    EVVal(PC_Alt, E_PatCode);
    if (lpe == &EOP) {
       return (struct b_pelem *)pelem_make(&EOP, (word)PC_Alt,
-					  (word)rpe->index + 1, param);
+                                          (word)rpe->index + 1, param);
       }
    /*
     *  If the left pattern is non-null, then build a reference vector
@@ -1296,9 +1296,9 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Record_PE(lpe, Refs);
       for (J = 1; J < RefLen;J++){
-	 P = Refs[J];
-	 P->index += rpe->index;
-	 }
+         P = Refs[J];
+         P->index += rpe->index;
+         }
       return (struct b_pelem *)pelem_make(lpe, PC_Alt, lpe->index + 1, param);
       }
 }
@@ -1318,15 +1318,15 @@ function{1} pattern_alternate (LPAT, RPAT )
       union block *bp;
 
       if (!cnv_pattern(&LPAT, &LPAT))
-	 runerr(127, LPAT);
+         runerr(127, LPAT);
       if (!cnv_pattern(&RPAT, &RPAT))
-	 runerr(127, RPAT);
+         runerr(127, RPAT);
 
       lpattern = (struct b_pattern *)BlkLoc(LPAT);
       rpattern = (struct b_pattern *)BlkLoc(RPAT);
       pe = Alternate(Copy((struct b_pelem *)lpattern->pe),
-		     Copy((struct b_pelem *)rpattern->pe)
-		     );
+                     Copy((struct b_pelem *)rpattern->pe)
+                     );
       bp =pattern_make_pelem(MAX(lpattern->stck_size, rpattern->stck_size),pe);
       return pattern(bp);
       }
@@ -1542,14 +1542,14 @@ emacs *          Stack_Base := Stack (Stack_Base).Cursor;
 #define StackNode(i) (Stack->next->Lelem.lslots[i].vword.bptr)
 
 #begdef Pop_Region()
-if (Stack_Ptr == Stack_Base) { 
+if (Stack_Ptr == Stack_Base) {
    EVVal(0, E_PatPop);
    Stack_Ptr = Stack_Base - 2;
    Stack_Base = StackCursor(Stack_Ptr + 2);
    Stack->next->Lelem.nused -= 2;
 }
 else {
-   EVVal(1, E_PatPop); 
+   EVVal(1, E_PatPop);
    Stack_Ptr++;
    StackCursor(Stack_Ptr) = Stack_Base;
    StackNode(Stack_Ptr) = (union block *)&CP_R_Restore;
@@ -1569,7 +1569,7 @@ else {
  */
 
 #begdef Push(Node)
-EVVal(0, E_PatPush); 
+EVVal(0, E_PatPush);
 Stack_Ptr++;
 StackCursor(Stack_Ptr) = k_pos - 1;
 StackNode(Stack_Ptr)   = (union block *)Node;
@@ -1589,7 +1589,7 @@ Stack->next->Lelem.nused++;
  *    end Push_Region;
  */
 #begdef Push_Region()
-EVVal(1, E_PatPush); 
+EVVal(1, E_PatPush);
 Stack_Ptr = Stack_Ptr + 2;
 StackCursor(Stack_Ptr) = Stack_Base;
 StackNode(Stack_Ptr)   = (union block *)&CP_R_Remove;
@@ -1637,9 +1637,9 @@ if (is:list(Node->parameter)) {
    nfields = bptr->Proc.nfields;
    for (i=0;i<nfields;i++) {
       if ((StrLen(fieldptr) == StrLen(bptr->Proc.lnames[i])) &&
-	  !strncmp(StrLoc(fieldptr),
-		   StrLoc(bptr->Proc.lnames[i]),StrLen(fieldptr)))
-	 break;
+          !strncmp(StrLoc(fieldptr),
+                   StrLoc(bptr->Proc.lnames[i]),StrLen(fieldptr)))
+         break;
       }
    if (i<nfields)
       fnum = i;
@@ -1657,8 +1657,8 @@ else {
    if (is:string(Node->parameter)) {
       cnv:C_string(Node->parameter, varnam);
       if (getvar(varnam, &varref) == Failed) {
-	 fatalerr(160, &(Node->parameter));
-	 }
+         fatalerr(160, &(Node->parameter));
+         }
       deref(&varref, &var);
       pvar = VarLoc(varref);
       EVValD(&var, E_PatVal);
@@ -1695,10 +1695,10 @@ int isMethod(struct b_lelem *ep){
    else fatalerr(107, &(ep->lslots[0]));
    for( i = 0; i < bptr->Proc.nfields;i++) {
       if ((StrLoc(bptr->Proc.lnames[i]) != NULL) &&
-	  !strcmp(StrLoc(bptr->Proc.lnames[i]), "__m")) {
-	 found__m = i;
-	 break;
-	 }
+          !strcmp(StrLoc(bptr->Proc.lnames[i]), "__m")) {
+         found__m = i;
+         break;
+         }
       }/* for ... nfields */
    return found__m;
    }
@@ -1724,32 +1724,32 @@ dptr processFuncCallList(struct b_list *lp)
    DEBUGF(25,(stdout, "nargs %d\n", nargs));
    for (i = 1; i < ep->nused; i++) {
       if(i == 1 && is:list(ep->lslots[i])) {
-	 /*check for method call else function call*/
-	 DEBUGF(25,(stdout, "is a list\n"));
-	 if(isMethod(ep) >= 0) {
-	    rv = processMethodCallList(BlkD(ep->lslots[i], List));
-	    }
-	 else {
-	    rv = processFuncCallList(BlkD(ep->lslots[i], List));
-	    }
-	 if (rv == 0) { free(procargs); return 0; }
-	 procargs[i - 1] = *rv;
-	 }
+         /*check for method call else function call*/
+         DEBUGF(25,(stdout, "is a list\n"));
+         if(isMethod(ep) >= 0) {
+            rv = processMethodCallList(BlkD(ep->lslots[i], List));
+            }
+         else {
+            rv = processFuncCallList(BlkD(ep->lslots[i], List));
+            }
+         if (rv == 0) { free(procargs); return 0; }
+         procargs[i - 1] = *rv;
+         }
       else if (is:variable(ep->lslots[i])) {
-	 DEBUGF(25,(stdout, "replacing var %16lx : %16lx\n", 
-		  ep->lslots[i].dword,
-		  (long)ep->lslots[i].vword.bptr));
-	 procargs[i - 1] = *(ep->lslots[i].vword.descptr);
-	 }
-      else {	
-	 procargs[i - 1] = ep->lslots[i];
-	 DEBUGF(25,(stdout, "nargs %d arg %d val %16lx : %16lx\n",
-		  nargs, i-1, procargs[i-1].dword, (long)procargs
-		  [i-1].vword.bptr));
+         DEBUGF(25,(stdout, "replacing var %16lx : %16lx\n",
+                  ep->lslots[i].dword,
+                  (long)ep->lslots[i].vword.bptr));
+         procargs[i - 1] = *(ep->lslots[i].vword.descptr);
+         }
+      else {
+         procargs[i - 1] = ep->lslots[i];
+         DEBUGF(25,(stdout, "nargs %d arg %d val %16lx : %16lx\n",
+                  nargs, i-1, procargs[i-1].dword, (long)procargs
+                  [i-1].vword.bptr));
          }
       }
    DEBUGF(25,(stdout, "proc %16lx : %16lx\n", proc.dword,
-	  (unsigned long int)proc.vword.bptr));
+          (unsigned long int)proc.vword.bptr));
    DEBUGF(25,(stdout, "nargs %d\n", nargs));
    call_result = (dptr)calliconproc(proc,procargs,nargs);
    free(procargs);
@@ -1816,9 +1816,9 @@ dptr processMethodCallList(struct b_list *lp)
    nfields = bptr->Proc.nfields;
    for (i=0; i<nfields; i++) {
       if ((StrLen(methodptr) == StrLen(bptr->Proc.lnames[i])) &&
-	  !strncmp(StrLoc(methodptr),
-		   StrLoc(bptr->Proc.lnames[i]),StrLen(methodptr)))
-	 break;
+          !strncmp(StrLoc(methodptr),
+                   StrLoc(bptr->Proc.lnames[i]),StrLen(methodptr)))
+         break;
       }
    if (i<nfields)
       fnum = i;
@@ -1831,54 +1831,54 @@ dptr processMethodCallList(struct b_list *lp)
    procargs[0] = self;
    for (i = 2; i < ep->nused; i++) {
       if(is:list(ep->lslots[i])) {
-	 /* check for method call else function call*/
-	 if(isMethod((struct b_lelem *)(BlkD(ep->lslots[i],List)->listhead)) >= 0) {
-	    /* slot is a method */
-	    rv = processMethodCallList(BlkD(ep->lslots[i], List));
-	    }
-	 else {
-	    /* slot is a procedure */
-	    rv = processFuncCallList(BlkD(ep->lslots[i], List));
-	    }
-	 if (rv == 0) {
-	    return 0;
-	    }
-	 procargs[i - 1] = *rv;
-	 }
+         /* check for method call else function call*/
+         if(isMethod((struct b_lelem *)(BlkD(ep->lslots[i],List)->listhead)) >= 0) {
+            /* slot is a method */
+            rv = processMethodCallList(BlkD(ep->lslots[i], List));
+            }
+         else {
+            /* slot is a procedure */
+            rv = processFuncCallList(BlkD(ep->lslots[i], List));
+            }
+         if (rv == 0) {
+            return 0;
+            }
+         procargs[i - 1] = *rv;
+         }
       else if (is:variable(ep->lslots[i])) {
-	 procargs[i - 1] = *(ep->lslots[i].vword.descptr);
-	 }
+         procargs[i - 1] = *(ep->lslots[i].vword.descptr);
+         }
       else if (cnv:integer(ep->lslots[i], argmnt)) {
-	 procargs[i - 1] = argmnt;
-	 }
+         procargs[i - 1] = argmnt;
+         }
       else if (is:string(ep->lslots[i])) { /* "string" needs interpreting */
          if ((StrLen(ep->lslots[i])>0) && StrLoc(ep->lslots[i])[0]=='\"') {
-	    procargs[i - 1] = ep->lslots[i];
-	    StrLoc(procargs[i-1])++;
-	    StrLen(procargs[i-1]) -= 2;
-	    }
+            procargs[i - 1] = ep->lslots[i];
+            StrLoc(procargs[i-1])++;
+            StrLen(procargs[i-1]) -= 2;
+            }
          else if ((StrLen(ep->lslots[i])>0) && StrLoc(ep->lslots[i])[0]=='\''){
-	    procargs[i - 1] = ep->lslots[i];
-	    StrLoc(procargs[i-1])++;
-	    StrLen(procargs[i-1]) -= 2;
-	    cnv:cset(procargs[i-1], procargs[i-1]);
-	    }
+            procargs[i - 1] = ep->lslots[i];
+            StrLoc(procargs[i-1])++;
+            StrLen(procargs[i-1]) -= 2;
+            cnv:cset(procargs[i-1], procargs[i-1]);
+            }
          else {
             tended char * varname;
-	    tended char * varstring;
-	    tended struct descrip parm;
+            tended char * varstring;
+            tended struct descrip parm;
             cnv:C_string(ep->lslots[i], varname);
-	    /*
-	     * We are evaluating a parameter in a variable name.
-	     * Probably needs more thought than getvar().
-	     */
-	    if (getvar(varname, &parm) == Failed) {
-	       AsgnCStr(parm, varname);
-	       ReturnErrVal(160, parm, NULL);
-	       }
-	    deref(&parm,&(procargs[i-1]));
+            /*
+             * We are evaluating a parameter in a variable name.
+             * Probably needs more thought than getvar().
+             */
+            if (getvar(varname, &parm) == Failed) {
+               AsgnCStr(parm, varname);
+               ReturnErrVal(160, parm, NULL);
+               }
+            deref(&parm,&(procargs[i-1]));
             }
-	 }
+         }
       }
    call_result = (dptr)calliconproc(proc,procargs,nargs-1);
    return call_result;
@@ -1931,11 +1931,11 @@ else {
 /*
  * internal_match() - primary pattern match engine.
  */
-int f(char * pat_sub, int Length, int Pat_S, struct descrip op, 
-		   struct b_pelem * pat, int *Start, int *Stop,
-		   int initial_cursor,
-		   int Anchored_Mode
-		   )
+int f(char * pat_sub, int Length, int Pat_S, struct descrip op,
+                   struct b_pelem * pat, int *Start, int *Stop,
+                   int initial_cursor,
+                   int Anchored_Mode
+                   )
 {
    int i, Stack_Ptr, Stack_Base;
    int Assign_OnM = 0, Region_Level = 0;
@@ -1945,9 +1945,9 @@ int f(char * pat_sub, int Length, int Pat_S, struct descrip op,
    tended struct b_pelem * Node;
 #if COMPILER
    tended struct b_pelem * PE_Unanchored;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    tended struct b_pelem * PE_Unanchored;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
    /*
     * And now for something weird.  A pattern stack, allocated on the stack,
@@ -1973,16 +1973,16 @@ int f(char * pat_sub, int Length, int Pat_S, struct descrip op,
       struct descrip lslots[Stack_Size];
       } bsle;
    struct b_cons bcons;
-   
+
    EVValD(&op, E_PatAttempt);
-   
+
    tpattern = pat;
    Node = NULL;
 #if COMPILER
    PE_Unanchored = alcpelem(PC_Unanchored);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    PE_Unanchored = alcpelem(PC_Unanchored, ipc.opnd);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    PE_Unanchored->pthen = (union block *)tpattern;
    PE_Unanchored->parameter = nulldesc;
 
@@ -2004,10 +2004,10 @@ int f(char * pat_sub, int Length, int Pat_S, struct descrip op,
    bcons.next = (union block *)&bsle;
 
    Stack = &bcons;
- 
+
    DEBUGF(2, (stdout,
-	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %ld\n",
-	      Length,pat_sub,Length, k_pos));
+          "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %ld\n",
+              Length,pat_sub,Length, k_pos));
 
    if (tpattern == NULL) {
       fatalerr(162, NULL);
@@ -2069,39 +2069,39 @@ Match_Succeed:
    StrLen(evalue) = *Stop - *Start;
    StrLoc(evalue) = pat_sub + *Start;
    EVValD(&evalue, e_patmatch);
-#endif					/* e_patmatch */
+#endif                                  /* e_patmatch */
    DEBUGF(2,(stdout, "first matched character index =%d\n", *Start));
    DEBUGF(2,(stdout, "last matched character index =%d\n" ,*Stop));
    if (Assign_OnM) {
       int S;
       for ( S = Stack_Init; S <= Stack_Ptr; S++) {
-	 if (StackNode(S) == (union block *)&CP_Assign){
-	    int Inner_Base = StackCursor(S + 1);
-	    int Special_Entry =  Inner_Base - 1;
-	    tended struct b_pelem * Node_OnM = StackNode(Special_Entry);
-	    int Start = StackCursor(Special_Entry);
-	    int Stop = StackCursor(S);
-	    GetVarFromNodeParameter(Node_OnM);
-	    if (Node_OnM->pcode == PC_Assign_OnM){
-	       if (var.dword == D_File) {
-		  struct b_file *f;
-		  f = (struct b_file *)BlkLoc(var);
-		  fwrite(pat_sub + Start, 1, Stop - Start, f->fd.fp);
-		  fputc('\n', f->fd.fp);
-		  fflush(f->fd.fp);
-		  }
-	       else {
-		  EVVar(&varref, e_assign);
+         if (StackNode(S) == (union block *)&CP_Assign){
+            int Inner_Base = StackCursor(S + 1);
+            int Special_Entry =  Inner_Base - 1;
+            tended struct b_pelem * Node_OnM = StackNode(Special_Entry);
+            int Start = StackCursor(Special_Entry);
+            int Stop = StackCursor(S);
+            GetVarFromNodeParameter(Node_OnM);
+            if (Node_OnM->pcode == PC_Assign_OnM){
+               if (var.dword == D_File) {
+                  struct b_file *f;
+                  f = (struct b_file *)BlkLoc(var);
+                  fwrite(pat_sub + Start, 1, Stop - Start, f->fd.fp);
+                  fputc('\n', f->fd.fp);
+                  fflush(f->fd.fp);
+                  }
+               else {
+                  EVVar(&varref, e_assign);
                   StrLen(*pvar) = Stop - Start;
                   StrLoc(*pvar) = pat_sub + Start;
-		  EVValD(pvar, e_value);
-		  }
-	       }
-	    else {
-	       syserr("logic error in internal_match");
-	       }
-	    }
-	 }
+                  EVValD(pvar, e_value);
+                  }
+               }
+            else {
+               syserr("logic error in internal_match");
+               }
+            }
+         }
       }
    return 1;
 Node_Fail:
@@ -2192,7 +2192,7 @@ Node_Succeed:
    case PC_String_VF:
       EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PC_String_VF,PT_VF,&(mycurpstate->parent->eventval)),/*noop*/);
       break;
-   case PC_String_MF: 
+   case PC_String_MF:
       EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PC_String_MF,PT_VF,&(mycurpstate->parent->eventval)),/*noop*/);
       break;
    case PC_Pred_MF: case PC_Any_MF: case PC_Break_MF: case PC_BreakX_MF:
@@ -2202,7 +2202,7 @@ Node_Succeed:
       EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,-1,PT_MF,&(mycurpstate->parent->eventval)),/*noop*/);
       break;
       }
-#endif					/* e_patarg */
+#endif                                  /* e_patarg */
 
 #if !COMPILER
    k_patindex = Node->index;
@@ -2221,59 +2221,59 @@ Node_Succeed:
    case PC_Any_CS:{
       DEBUGF(20,(stdout,"Matching Any\n"));
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)){
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       break;
       }
    case PC_Any_VP:{
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Any unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 fatalerr(104, &var);
-	 }
+         fatalerr(104, &var);
+         }
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       break;
       }
    case PC_Any_VF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Any unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       break;
       }
    case PC_Any_MF: {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Any unevaluated method call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       break;
       }
 
@@ -2293,14 +2293,14 @@ Node_Succeed:
    case PC_Arb_Y : {
       DEBUGF(20,(stdout, "extending Arb"));
       if (k_pos <= Length){
-	 k_pos++;
-	 Push (Node);
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos++;
+         Push (Node);
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       break;
       }
       /*
@@ -2333,7 +2333,7 @@ Node_Succeed:
    case PC_Arbno_Y : {
       int  Null_Match = 0;
       if ((k_pos - 1) == StackCursor(Stack_Base - 1))
-	 Null_Match = 1;
+         Null_Match = 1;
       DEBUGF(20,(stdout,"extending Arbno"));
       Pop_Region();
 
@@ -2341,9 +2341,9 @@ Node_Succeed:
        *   If arbno extension matched null, then immediately fail
        */
       if (Null_Match){
-	 DEBUGF(20,(stdout,"Arbno extension matched null, so fails"));
-	 goto Node_Fail;
-	 }
+         DEBUGF(20,(stdout,"Arbno extension matched null, so fails"));
+         goto Node_Fail;
+         }
       /*
        *   Here we must do a stack check to make sure enough stack
        *   is left. This check will happen once for each instance of
@@ -2352,8 +2352,8 @@ Node_Succeed:
        *   for the Arbno with one instance and the successor pattern
        */
       if (Stack_Ptr + IntVal(Node->parameter) >= Stack_Size){
-	 fatalerr(309, NULL);
-	 }
+         fatalerr(309, NULL);
+         }
       goto Node_Succeed;
       }
       /*
@@ -2371,19 +2371,19 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout, "executing immediate assignment\n"));
       if (var.dword == D_File) {
-	 struct b_file *f;
-	 f = (struct b_file *)BlkLoc(var);
-	 fwrite(pat_sub + StackCursor(Stack_Base - 1), 1,
-		(k_pos - 1) - StackCursor(Stack_Base - 1), f->fd.fp);
-	 fputc('\n', f->fd.fp);
-	 fflush(f->fd.fp);
-	 }
+         struct b_file *f;
+         f = (struct b_file *)BlkLoc(var);
+         fwrite(pat_sub + StackCursor(Stack_Base - 1), 1,
+                (k_pos - 1) - StackCursor(Stack_Base - 1), f->fd.fp);
+         fputc('\n', f->fd.fp);
+         fflush(f->fd.fp);
+         }
       else {
-	 EVVar(&varref, E_Assign);
+         EVVar(&varref, E_Assign);
          StrLen(*pvar) = (k_pos - 1) - StackCursor(Stack_Base - 1);
          StrLoc(*pvar) = pat_sub + StackCursor(Stack_Base - 1);
-	 EVValD(pvar, E_Value);
-	 }
+         EVValD(pvar, E_Value);
+         }
       Pop_Region();
       goto Node_Succeed;
       }
@@ -2410,43 +2410,43 @@ Node_Succeed:
    case PC_Bal : {
       DEBUGF(2,(stdout,"matching or extending Bal\n"));
       if (((k_pos - 1) >= Length) || pat_sub[k_pos - 1] == ')')
-	 goto Node_Fail;
+         goto Node_Fail;
       else if (pat_sub[k_pos - 1] == '('){
-	 int Paren_Count = 1;
-	 DEBUGF(2,(stdout,
-		   "Paren_Count = %d  Pos = %ld\n", Paren_Count, k_pos));
-	 while(1) {
-	    k_pos++;
-	    if ((k_pos - 1) >= Length) {
-	       goto Node_Fail;
-	       }
-	    else if (pat_sub[k_pos - 1] == '(' ){
-	       Paren_Count++;
-	       DEBUGF(2,(stdout,
-			 " Found ( Paren_Count = %d  Pos = %ld\n",
-			 Paren_Count,k_pos));
-	       }
-	    else if (pat_sub[k_pos - 1] == ')'){
-	       Paren_Count--;
-	       DEBUGF(2,(stdout,
-			 "Found ) Paren_Count = %d  Pos = %ld\n",
-			 Paren_Count,k_pos));
-	       }
-	    if (Paren_Count == 0) {
-	       DEBUGF(2,(stdout,
-			 "Paren_Count = %d  Pos = %ld\n",
-			 Paren_Count,k_pos));
-	       break;
-	       }
-	    }
-	 }
-	k_pos++;
-	Push (Node);
-	DEBUGF(2,(stdout,
-		  "matching or extending Bal succeeded, Pos = %ld\n",
-		  k_pos));
+         int Paren_Count = 1;
+         DEBUGF(2,(stdout,
+                   "Paren_Count = %d  Pos = %ld\n", Paren_Count, k_pos));
+         while(1) {
+            k_pos++;
+            if ((k_pos - 1) >= Length) {
+               goto Node_Fail;
+               }
+            else if (pat_sub[k_pos - 1] == '(' ){
+               Paren_Count++;
+               DEBUGF(2,(stdout,
+                         " Found ( Paren_Count = %d  Pos = %ld\n",
+                         Paren_Count,k_pos));
+               }
+            else if (pat_sub[k_pos - 1] == ')'){
+               Paren_Count--;
+               DEBUGF(2,(stdout,
+                         "Found ) Paren_Count = %d  Pos = %ld\n",
+                         Paren_Count,k_pos));
+               }
+            if (Paren_Count == 0) {
+               DEBUGF(2,(stdout,
+                         "Paren_Count = %d  Pos = %ld\n",
+                         Paren_Count,k_pos));
+               break;
+               }
+            }
+         }
+        k_pos++;
+        Push (Node);
+        DEBUGF(2,(stdout,
+                  "matching or extending Bal succeeded, Pos = %ld\n",
+                  k_pos));
         EVVal(k_pos, e_spos);
-	goto Node_Succeed;
+        goto Node_Succeed;
     }
 
       /*
@@ -2455,19 +2455,19 @@ Node_Succeed:
    case PC_Break_CS : {
       int start_kpos = k_pos;
       DEBUGF(20,(stdout, "matching Break\n"));
-      while( k_pos <= Length ){	
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
-	    if (k_pos != start_kpos)
-	       EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+      while( k_pos <= Length ){
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
+            if (k_pos != start_kpos)
+               EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       /* probably discarded, but if Break() failed, k_pos didn't change. */
       if (k_pos != start_kpos)
-	 k_pos = start_kpos;
+         k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
@@ -2476,20 +2476,20 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Break unevaluated variable\n"));
       if (!cnv_cset(&var,&var)){
-	 fatalerr(104, &var);
-	 }
+         fatalerr(104, &var);
+         }
       while( k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
-	    if (k_pos != start_kpos)
-	       EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
+            if (k_pos != start_kpos)
+               EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       if (k_pos != start_kpos)
-	 k_pos = start_kpos;
+         k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
@@ -2498,19 +2498,19 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Break unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while (k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    if (k_pos != start_kpos)
-	       EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+            if (k_pos != start_kpos)
+               EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       if (k_pos != start_kpos)
-	 k_pos = start_kpos;
+         k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
@@ -2520,20 +2520,20 @@ Node_Succeed:
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Break unevaluated method call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while( k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    if (k_pos != start_kpos)
-	       EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+            if (k_pos != start_kpos)
+               EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       /* if a Break has failed, should &pos have changed at all? */
       if (k_pos != start_kpos)
-	 k_pos = start_kpos;
+         k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
@@ -2546,14 +2546,14 @@ Node_Succeed:
    case PC_BreakX_CS: {
       DEBUGF(20,(stdout, "matching Breakx\n"));
       while( k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
@@ -2562,18 +2562,18 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Breakx unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 fatalerr(104, &var);
-	 }
+         fatalerr(104, &var);
+         }
 
       while (k_pos <= Length) {
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
@@ -2582,16 +2582,16 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Breakx unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while (k_pos <= Length) {
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
@@ -2600,16 +2600,16 @@ Node_Succeed:
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Breakx unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while (k_pos <= Length) {
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    k_pos++;
-	    }
-	 }
+         if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            k_pos++;
+            }
+         }
       EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
@@ -2688,36 +2688,36 @@ Node_Succeed:
          goto Node_Fail;
       else {
          if(is:string(cresult)) {
-	    int LV_Len = StrLen(cresult);
-	    DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
-	    if ((Length - (k_pos - 1) >= LV_Len )
-	        && !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
-	       k_pos += LV_Len;
-	       EVVal(k_pos, e_spos);
-	       goto Node_Succeed;
-	       }
-	    else {
-	       goto Node_Fail;
-	       }
-	    }
-	  goto Node_Succeed; 
-	  }
-      break; 
+            int LV_Len = StrLen(cresult);
+            DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
+            if ((Length - (k_pos - 1) >= LV_Len )
+                && !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
+               k_pos += LV_Len;
+               EVVal(k_pos, e_spos);
+               goto Node_Succeed;
+               }
+            else {
+               goto Node_Fail;
+               }
+            }
+          goto Node_Succeed;
+          }
+      break;
       }
-      
+
    case PC_Len_Nat: {
       DEBUGF(20,(stdout, "matching Len Nat\n"));
-      /* 
+      /*
        * k_pos is 1-based. k_pos + Len should be allowed, as a legal value,
        * to go up to Length+1.  Greater than Length+1 it is out of range.
        */
       if (k_pos + IntVal(Node->parameter) > Length+1) {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       else {
-	 k_pos += IntVal(Node->parameter);
-	 EVVal(k_pos, e_spos);
-	 }
+         k_pos += IntVal(Node->parameter);
+         EVVal(k_pos, e_spos);
+         }
       goto Node_Succeed;
       break;
       }
@@ -2725,16 +2725,16 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Len unevaluated variable\n"));
       if (!cnv_int(&var,&var)) {
-	 fatalerr(101, &var);
-	 }
+         fatalerr(101, &var);
+         }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (k_pos + IntVal(var) > Length+1) {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       else {
-	 k_pos += IntVal(var);
-	 EVVal(k_pos, e_spos);
-	 }
+         k_pos += IntVal(var);
+         EVVal(k_pos, e_spos);
+         }
       goto Node_Succeed;
       break;
       }
@@ -2743,11 +2743,11 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if (k_pos + IntVal(cresult) > Length+1) {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       k_pos += IntVal(cresult);
       EVVal(k_pos, e_spos);
       goto Node_Succeed;
@@ -2758,11 +2758,11 @@ Node_Succeed:
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if (k_pos + IntVal(cresult) > Length+1) {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       k_pos += IntVal(cresult);
       EVVal(k_pos, e_spos);
       goto Node_Succeed;
@@ -2772,66 +2772,66 @@ Node_Succeed:
    case PC_NotAny_CS : {
       DEBUGF(20,(stdout, "matching NotAny\n"));
       if ((k_pos <= Length) &&
-	  !Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+          !Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_NotAny_VP : {
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching NotAny unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 fatalerr(104, &var);
-	 }
+         fatalerr(104, &var);
+         }
       DEBUGF(20,(stdout, "matching NotAny_VP\n"));
       if ((k_pos <= Length) &&
-	  !Testb(ToAscii(pat_sub[k_pos - 1]), var)){
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+          !Testb(ToAscii(pat_sub[k_pos - 1]), var)){
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_NotAny_VF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching NotAny unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       DEBUGF(20,(stdout, "matching NotAny\n"));
       if ((k_pos <= Length) &&
-	  !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+          !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
-      
+
    case PC_NotAny_MF : {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching NotAny unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       DEBUGF(20,(stdout, "matching NotAny\n"));
       if ((k_pos <= Length) &&
-	  !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
-	 k_pos++;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+          !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
+         k_pos++;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
       /*
@@ -2841,50 +2841,50 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       type_case var of {
       string: {
-	 int LV_Len = StrLen(var);
-	 DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
-	 if ((Length - (k_pos - 1) >= LV_Len )
-	     && !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)){
-	    k_pos += LV_Len;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 break;
-	 }
+         int LV_Len = StrLen(var);
+         DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
+         if ((Length - (k_pos - 1) >= LV_Len )
+             && !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)){
+            k_pos += LV_Len;
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            goto Node_Fail;
+            }
+         break;
+         }
 
       cset: {
-	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
-	 if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
-	    k_pos++;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 break;
-	 }
+         DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
+         if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
+            k_pos++;
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            goto Node_Fail;
+            }
+         break;
+         }
       pattern: {
-	 DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
-	 StackNode(Stack_Ptr + 1) = Node->pthen;
-	 Push_Region();
-	 if (Stack_Ptr +
-	     ((struct b_pattern *)BlkLoc(var))->stck_size >= Stack_Size) {
-	    fatalerr(309, NULL);
-	    }
-	 else {
-	    Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(var))->pe;
-	    goto Match;
-	    }
-	 break;
-	 }
+         DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
+         StackNode(Stack_Ptr + 1) = Node->pthen;
+         Push_Region();
+         if (Stack_Ptr +
+             ((struct b_pattern *)BlkLoc(var))->stck_size >= Stack_Size) {
+            fatalerr(309, NULL);
+            }
+         else {
+            Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(var))->pe;
+            goto Match;
+            }
+         break;
+         }
       default: {
-	 fatalerr(161, NULL);
-	 }
-	 }
+         fatalerr(161, NULL);
+         }
+         }
       }
 
       /*
@@ -2892,50 +2892,50 @@ Node_Succeed:
        */
    case PC_Pos_Nat: {
       if (k_pos == IntVal(Node->parameter))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_Pos_NP:{
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Pos unevaluated variable\n"));
       if (!cnv_int(&var,&var)) {
-	 fatalerr(101, &var);
-	 }
+         fatalerr(101, &var);
+         }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (k_pos == IntVal(var))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_Pos_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if (k_pos == IntVal(cresult))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_Pos_NMF: {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if (k_pos == IntVal(cresult))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
       /*
@@ -2943,63 +2943,63 @@ Node_Succeed:
        */
    case  PC_Tab_Nat: {
       if (IntVal(Node->parameter) - 1 <= Length){
-	 k_pos = IntVal(Node->parameter);
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = IntVal(Node->parameter);
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_Tab_NP: {
       GetVarFromNodeParameter(Node);
       if (!cnv_int(&var,&var)) {
-	 fatalerr(101, &var);
-	 }
+         fatalerr(101, &var);
+         }
       if (IntVal(var) - 1 <= Length) {
-	 k_pos = IntVal(var);
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = IntVal(var);
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_Tab_NF: {
       GetResultFromFuncCall();
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if (IntVal(cresult) - 1 <= Length) {
-	 k_pos = IntVal(cresult);
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = IntVal(cresult);
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
-      
+
    case  PC_Tab_NMF: {
       GetResultFromMethodCall();
       if (call_result == 0) {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       else {
-	 if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	    fatalerr(101, &cresult);
-	 cresult.dword = D_Integer;
-	 }
+         if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
+            fatalerr(101, &cresult);
+         cresult.dword = D_Integer;
+         }
       if (IntVal(cresult) - 1 <= Length) {
-	 k_pos = IntVal(cresult);
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = IntVal(cresult);
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
       /*
@@ -3016,50 +3016,50 @@ Node_Succeed:
        */
    case PC_RPos_Nat: {
       if ((k_pos - 1) == (Length - IntVal(Node->parameter)))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_RPos_NP: {
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Rpos unevaluated variable\n"));
       if (!cnv_int(&var,&var)){
-	 fatalerr(101, &var);
-	 }
+         fatalerr(101, &var);
+         }
       DEBUGF(20,(stdout, "matching Len\n"));
       if ((k_pos - 1) == (Length - IntVal(var)))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_RPos_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching RPos unevaluated function call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if ((k_pos - 1) == (Length - IntVal(cresult)))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case PC_RPos_NMF: {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching RPos unevaluated function call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if ((k_pos - 1) == (Length - IntVal(cresult)))
-	 goto Node_Succeed;
+         goto Node_Succeed;
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
       /*
@@ -3067,62 +3067,62 @@ Node_Succeed:
        */
    case  PC_RTab_Nat: {
       if ((0<=IntVal(Node->parameter)) & (IntVal(Node->parameter) <= Length)) {
-	 k_pos = Length - IntVal(Node->parameter) + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = Length - IntVal(Node->parameter) + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_RTab_NP: {
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching RTab unevaluated variable\n"));
       if (!cnv_int(&var,&var)){
-	 fatalerr(101, &var);
-	 }
+         fatalerr(101, &var);
+         }
       DEBUGF(20,(stdout, "matching Len\n"));
       if ((0<=IntVal(var)) & (IntVal(var) <= Length)) {
-	 k_pos = Length - IntVal(var) + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = Length - IntVal(var) + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_RTab_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching RTab unevaluated function call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
-	 k_pos = Length - IntVal(cresult) + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = Length - IntVal(cresult) + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
-      
+
    case  PC_RTab_NMF: {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching RTab unevaluated method call\n"));
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	 fatalerr(101, &cresult);
+         fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
-	 k_pos = Length - IntVal(cresult) + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = Length - IntVal(cresult) + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
       /*
@@ -3162,7 +3162,7 @@ Node_Succeed:
        */
    case  PC_R_Restore : {
       DEBUGF(20,(stdout,
-		 "failure, search for alternatives in nested pattern\n"));
+                 "failure, search for alternatives in nested pattern\n"));
       Region_Level = Region_Level + 1;
       Stack_Base = k_pos - 1;
       goto Node_Fail;
@@ -3182,15 +3182,15 @@ Node_Succeed:
       int P = k_pos - 1;
       DEBUGF(20,(stdout,"Matching Span_CS\n"));
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),Node->parameter))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_Span_VP : {
@@ -3198,19 +3198,19 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Span unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 fatalerr(104, &var);
-	 }
+         fatalerr(104, &var);
+         }
       DEBUGF(20,(stdout,"Matching Span_VP\n"));
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),var))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_Span_VF: {
@@ -3218,46 +3218,46 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Span_VF unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
-      
+
    case  PC_Span_MF: {
       int P = k_pos - 1;
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Span_MF unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_NSpan_CS : {
       int P = k_pos - 1;
       DEBUGF(20,(stdout,"Matching NSpan_CS\n"));
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),Node->parameter))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         }
       goto Node_Succeed;
       }
 
@@ -3266,15 +3266,15 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching NSpan unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 fatalerr(104, &var);
-	 }
+         fatalerr(104, &var);
+         }
       DEBUGF(20,(stdout,"Matching NSpan_VP\n"));
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),var))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         }
       goto Node_Succeed;
       }
 
@@ -3283,28 +3283,28 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching NSpan_VF unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         }
       goto Node_Succeed;
       }
-      
+
    case  PC_NSpan_MF: {
       int P = k_pos - 1;
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching NSpan_MF unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
+         fatalerr(104, &cresult);
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
-	 P++;
+         P++;
       if (P != (k_pos - 1)) {
-	 k_pos = P + 1;
-	 EVVal(k_pos, e_spos);
-	 }
+         k_pos = P + 1;
+         EVVal(k_pos, e_spos);
+         }
       goto Node_Succeed;
       }
 
@@ -3312,14 +3312,14 @@ Node_Succeed:
       int LV_Len = StrLen(Node->parameter);
       DEBUGF(20,(stdout,"Matching String \"%*s\" against %s, Length %d Pos %ld Len %d\n", LV_Len, StrLoc(Node->parameter), pat_sub, Length, k_pos, LV_Len));
       if ((Length - (k_pos - 1) >= LV_Len) &&
-	  !strncmp(pat_sub + (k_pos - 1), StrLoc(Node->parameter), LV_Len)) {
-	 k_pos += LV_Len;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+          !strncmp(pat_sub + (k_pos - 1), StrLoc(Node->parameter), LV_Len)) {
+         k_pos += LV_Len;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
    case  PC_String_VP : {
@@ -3328,14 +3328,14 @@ Node_Succeed:
       LV_Len = StrLen(var);
       DEBUGF(20,(stdout,"Matching String\n"));
       if ((Length -(k_pos - 1) >= LV_Len) &&
-	  !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)) {
-	 k_pos += LV_Len;
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+          !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)) {
+         k_pos += LV_Len;
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       else {
-	 goto Node_Fail;
-	 }
+         goto Node_Fail;
+         }
       }
 
       /*
@@ -3343,18 +3343,18 @@ Node_Succeed:
    case  PC_String_VF: {
       GetResultFromFuncCall();
       if (cnv_str(&cresult,&cresult)) {
-	 int LV_Len = StrLen(cresult);
-	 DEBUGF(20,(stdout,"Matching String\n"));
-	 if ((Length - (k_pos - 1) >= LV_Len) &&
-	     !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
-	    k_pos += LV_Len;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 }
+         int LV_Len = StrLen(cresult);
+         DEBUGF(20,(stdout,"Matching String\n"));
+         if ((Length - (k_pos - 1) >= LV_Len) &&
+             !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
+            k_pos += LV_Len;
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            goto Node_Fail;
+            }
+         }
       /* should instead probably be a runtime error */
       goto Node_Succeed;
       }
@@ -3362,18 +3362,18 @@ Node_Succeed:
    case PC_String_MF: {
       GetResultFromMethodCall();
       if (cnv_str(&cresult,&cresult)) {
-	 int LV_Len = StrLen(cresult);
-	 DEBUGF(20,(stdout,"Matching String\n"));
-	 if ((Length - (k_pos - 1) >= LV_Len) &&
-	     !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
-	    k_pos += LV_Len;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 }
+         int LV_Len = StrLen(cresult);
+         DEBUGF(20,(stdout,"Matching String\n"));
+         if ((Length - (k_pos - 1) >= LV_Len) &&
+             !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
+            k_pos += LV_Len;
+            EVVal(k_pos, e_spos);
+            goto Node_Succeed;
+            }
+         else {
+            goto Node_Fail;
+            }
+         }
       /* should instead probably be a runtime error */
       goto Node_Succeed;
       }
@@ -3390,14 +3390,14 @@ Node_Succeed:
    case PC_Unanchored : {
       /* --  All done if we tried every position  */
       if (k_pos >= Length )
-	 goto Match_Fail;
+         goto Match_Fail;
       /* --  Otherwise extend the anchor point, and restack ourself */
       else{
-	 k_pos++;
-	 Push (Node);
-	 EVVal(k_pos, e_spos);
-	 goto Node_Succeed;
-	 }
+         k_pos++;
+         Push (Node);
+         EVVal(k_pos, e_spos);
+         goto Node_Succeed;
+         }
       }
 
       /*
@@ -3405,17 +3405,17 @@ Node_Succeed:
        */
    case  PC_EOP: {
       if (Stack_Base == Stack_Init) {
-	 goto Match_Succeed;
-	 }
+         goto Match_Succeed;
+         }
       /*
        *   End of recursive inner match. See separate section on
        *   handing of recursive pattern matches for details.
        */
       else {
-	 Node = (struct b_pelem *)StackNode(Stack_Base - 1);
-	 Pop_Region();
-	 goto Match;
-	 }
+         Node = (struct b_pelem *)StackNode(Stack_Base - 1);
+         Pop_Region();
+         goto Match;
+         }
       }
       }
    {
@@ -3429,9 +3429,9 @@ Node_Succeed:
 #ifdef MultiProgram
 internal_match_macro(internal_match_0,0,0,0,0,0,0,0,0,0)
 internal_match_macro(internal_match_1,E_PatFail,E_PatMatch,E_PatArg,E_PelemAttempt,E_PelemMatch,E_PelemFail,E_Assign,E_Value,E_Spos)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 internal_match_macro(internal_match,0,0,0,0,0,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /* keep this at the end so the #undef Fail affects no-one else */
 #undef Fail
@@ -3446,4 +3446,4 @@ function {1} Fail()
       }
 end
 
-#endif					/* PatternType */
+#endif                                  /* PatternType */

@@ -6,9 +6,9 @@
 
 #passthru #ifndef __QUICKDRAW__
 struct RGBColor {
-	unsigned short	red;		/*magnitude of red component*/
-	unsigned short	green;		/*magnitude of green component*/
-	unsigned short	blue;		/*magnitude of blue component*/
+        unsigned short  red;            /*magnitude of red component*/
+        unsigned short  green;          /*magnitude of green component*/
+        unsigned short  blue;           /*magnitude of blue component*/
 };
 typedef struct RGBColor RGBColor, *RGBColorPtr, **RGBColorHdl;
 #passthru #endif
@@ -23,17 +23,17 @@ extern long gNumColors;
 /*
  * Prototypes
  */
-int	CreateWindow	(wbp wb);
-int	seticonicstate	(wbp w, char *s);
-void	unsetclip	(wbp w);
-int	seticonpos	(wbp w, char *s);
-int    	setdisplay	(wbp w, char *s);
+int     CreateWindow    (wbp wb);
+int     seticonicstate  (wbp w, char *s);
+void    unsetclip       (wbp w);
+int     seticonpos      (wbp w, char *s);
+int     setdisplay      (wbp w, char *s);
 
 /*
  * allocates a window binding, a context and a state, then calls
  * CreateWindow to draw the window on screen
  */
- 
+
 FILE *wopen(name, lp, attr, n, err_index)
 char *name;
 struct b_list *lp;
@@ -52,24 +52,24 @@ int n, *err_index;
    tended struct descrip attrrslt;
 
    tlp = lp;
-   
-   for(i=0;i<n;i++) 
+
+   for(i=0;i<n;i++)
       {
       if (is:string(attr[i]) &&
-	  (StrLen(attr[i])>8) &&
-	  !strncmp("display=",StrLoc(attr[i]),8)) 
-	     {
+          (StrLen(attr[i])>8) &&
+          !strncmp("display=",StrLoc(attr[i]),8))
+             {
          strncpy(dispchrs,StrLoc(attr[i])+8,StrLen(attr[i])-8);
          dispchrs [ StrLen(attr[i])-8 ] = '\0';
-	 display = dispchrs;
+         display = dispchrs;
          }
       }
 
-   
+
    /*
     * Allocate a binding, a state and a context
     */
-    
+
    Protect(wb = alc_wbinding(), return NULL);
    Protect(wb->window = alc_winstate(), { free_binding(wb); return NULL; });
    Protect(wb->context = alc_context(wb), { free_binding(wb); return NULL; });
@@ -86,7 +86,7 @@ int n, *err_index;
    ws->posy = 60;
    ws->posx = 20;
    ws->visible = kVisible;
-   
+
    /*
     * some window attributes
     */
@@ -100,20 +100,20 @@ int n, *err_index;
        * write the attribute,
        *  except "display=" attribute, which is done earlier
        */
-      if((StrLen(attr[i])<9)||strncmp(StrLoc(attr[i]),"display=",8)) 
+      if((StrLen(attr[i])<9)||strncmp(StrLoc(attr[i]),"display=",8))
          {
-	     switch (wattrib((wbp) wb, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt, answer)) 
-	        {
-	        case RunError:
-	           *err_index = i;
-	           return NULL;
-	        case Failed:
-	           free_binding((wbp)wb);
-	           return NULL;
-	        }
-	     }
+             switch (wattrib((wbp) wb, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt, answer))
+                {
+                case RunError:
+                   *err_index = i;
+                   return NULL;
+                case Failed:
+                   free_binding((wbp)wb);
+                   return NULL;
+                }
+             }
       }
-      
+
 
    /* set window color according to context */
 
@@ -124,24 +124,24 @@ int n, *err_index;
 /*
  * Creates a window and shows it on screen
  */
- 
+
 int CreateWindow(wbp wb)
    {
    Rect winRect;
    QDErr errGWorld;
    STDLOCALS (wb);
 
-   
+
 
    /*
     * create the window
     */
-    
-   SetRect (&winRect, 
-            ws->posx, ws->posy, 
-            (ws->posx)+(ws->width), 
+
+   SetRect (&winRect,
+            ws->posx, ws->posy,
+            (ws->posx)+(ws->width),
             (ws->posy)+(ws->height));
-   
+
    ws->theWindow = NewCWindow (nil,
                               &winRect,
                               "\pUntitled",
@@ -150,7 +150,7 @@ int CreateWindow(wbp wb)
                               kMoveToFront,
                               kHasGoAway,
                               kNilRefCon);
-  
+
    /*
     *  creating offscreen graphics world
     */
@@ -192,7 +192,7 @@ int x, y, width, height, x2, y2;
 
    SetRect (&sourceRect, x, y, x+width, y+height);
    SetRect (&destRect, x2, y2, x2+width, y2+width);
-   
+
    CopyBits (&(((GrafPtr)(wb1->window->theWindow))->portBits),
              &(((GrafPtr)(wb2->window->theWindow))->portBits),
              &sourceRect, &destRect, srcCopy, nil);
@@ -223,7 +223,7 @@ int x, y, width, height;
 {
   Rect r;
   STDLOCALS (wb);
-  
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
   SetRect (&r, x - 1,
@@ -231,8 +231,8 @@ int x, y, width, height;
                (width == 0) ? (ws->posx + ws->width) : (x - 1 + width),
                (height == 0) ? (ws->posy + ws->height) : (y - 1 + height) );
   EraseRect (&r);
-  
-/*   */  
+
+/*   */
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   EraseRect (&r);
@@ -312,15 +312,15 @@ int i;
 {
    RGBColor c;
    STDLOCALS (wb);
-   
+
    if (-i > gNumColors) return Failed;
    GetEntryColor (gPal, -i-1, &c);
    wc->contextPtr->fgColor = c;
-   
+
    SetPort (ws->theWindow);
    PmForeColor (-i - 1);
 
-/*   */  
+/*   */
    GetGWorld (&(ws->origPort), &(ws->origDev));
    SetGWorld (ws->offScreenGWorld, nil);
    ws->lockOK = LockPixels (ws->offScreenPMHandle);
@@ -340,11 +340,11 @@ int i;
 {
    RGBColor c;
    STDLOCALS (wb);
-   
+
    if (-i > gNumColors) return Failed;
    GetEntryColor (gPal, -i-1, &c);
    wc->contextPtr->bgColor = c;
-   
+
    SetPort (ws->theWindow);
    PmBackColor (-i - 1);
 }
@@ -356,13 +356,13 @@ char *s;
    long  r, g, b;
    RGBColor c;
    STDLOCALS (wb);
-   
+
    if (parsecolor (NULL, s, &r, &g, &b) == Succeeded) {
       RED (c) = r;
       GREEN (c) = g;
       BLUE (c) = b;
       wc->contextPtr->fgColor = c;
-      
+
       SetPort (ws->theWindow);
       RGBForeColor (&c);
 
@@ -376,8 +376,8 @@ char *s;
       }
    else
       return Failed;
-      
-   return Succeeded; 
+
+   return Succeeded;
 }
 
 int setbg(wb,s)
@@ -387,7 +387,7 @@ char *s;
    long r, g, b;
    RGBColor c;
    STDLOCALS (wb);
-   
+
    if (parsecolor (NULL, s, &r, &g, &b) == Succeeded) {
       RED (c) = r;
       GREEN (c) = g;
@@ -398,8 +398,8 @@ char *s;
       }
    else
       return Failed;
-      
-   return Succeeded; 
+
+   return Succeeded;
 }
 
 int nativecolor(w, s, r, g, b)
@@ -438,7 +438,7 @@ char *s;
 {
    RGBColor c;
    STDLOCALS (wb);
-   
+
    SetPort (ws->theWindow);
    GetCPixel (x, y, &c);
    *rv = ((c.red << 8) + c.green) << 8 + c.blue;
@@ -468,7 +468,7 @@ char *answer;
  */
 #passthru #if (DMAXCOLORS > 256)
 #passthru   Deliberate Syntax error
-#passthru #endif				/* DMAXCOLORS */
+#passthru #endif                                /* DMAXCOLORS */
 
 int getimstr(w, x, y, width, height, paltbl, data)
 wbp w;
@@ -489,7 +489,7 @@ wbp wb;
 char *s;
 {
    STDLOCALS (wb);
-   
+
    if (ws->theWindow == (WindowPtr) (NULL))
       sprintf (s, "absent");
    else
@@ -516,7 +516,7 @@ char *s;
    STDLOCALS(wb);
 
    if (!strcmp(s, "iconic")) {
-      return Failed;					/* not supported */
+      return Failed;                                    /* not supported */
       }
    else if (!strcmp(s, "normal")) {
            ws->visible = kVisible;
@@ -526,7 +526,7 @@ char *s;
               }
            }
    else if (!strcmp(s, "maximal")) {
-           return Failed;				/* not supported */
+           return Failed;                               /* not supported */
            }
    else if (!strcmp(s, "hidden")) {
            ws->visible = kInvisible;
@@ -645,7 +645,7 @@ int mute_index;
    RGBColor c;
    char *tmp = malloc (28);
    STDLOCALS (wb);
-      
+
    if (-mute_index > gNumColors) return NULL;
    GetEntryColor (gPal, -mute_index - 1, &c);
    sprintf(tmp, "%d", mute_index);
@@ -661,7 +661,7 @@ char *s;
    long  r, g, b;
    RGBColor c;
    STDLOCALS (wb);
-   
+
    if (parsecolor (NULL, s, &r, &g, &b) != Succeeded )
       return Failed;
    c.red = r;
@@ -670,12 +670,12 @@ char *s;
    AnimateEntry (ws->theWindow, -i - 1, &c);
    ActivatePalette (ws->theWindow);
 
-/*  
+/*
    ws->lockOK = LockPixels (ws->offScreenPMHandle);
    AnimateEntry ((WindowPtr)(ws->offScreenGWorld), -i-1, &c);
    ActivatePalette ((WindowPtr)(ws->offScreenGWorld));
    UnlockPixels (ws->offScreenPMHandle);
- */ 
+ */
    return Succeeded;
 }
 
@@ -700,7 +700,7 @@ int *retval;
    {
    STDLOCALS(wb);
 
-   
+
    gNumColors++;
    if (gNumColors == 1) {
       gPal = NewPalette (gNumColors, nil, pmAnimated, kZeroTolerance);
@@ -710,7 +710,7 @@ int *retval;
       SetEntryUsage (gPal, gNumColors-1, pmAnimated, kZeroTolerance);
       }
    SetPalette (ws->theWindow, gPal, true);
-   
+
 /*   */
    ws->lockOK = LockPixels (ws->offScreenPMHandle);
    SetPalette((WindowPtr)(ws->offScreenGWorld), gPal, true);
@@ -718,9 +718,9 @@ int *retval;
 /*   */
 
    /* set the color */
-   
+
    if (argc > 0) {
-      if (argc != 1) 
+      if (argc != 1)
          return RunError;
       else
          if (argv[0].dword == D_Integer) {
@@ -740,13 +740,13 @@ int *retval;
             }
       SetEntryColor (gPal, gNumColors-1, &c);
       ActivatePalette (ws->theWindow);
-/*      
+/*
       ws->lockOK = LockPixels (ws->offScreenPMHandle);
       ActivatePalette ((WindowPtr)(ws->offScreenGWorld));
       UnlockPixels (ws->offScreenPMHandle);
  */
       }
-      
+
       *retval = -gNumColors;
       return Succeeded;
    }
@@ -755,9 +755,9 @@ int *retval;
 int setleading(wb, i)
 wbp wb;
 int i;
-{  
+{
    STDLOCALS(wb);
-   
+
    if (i<0) return Failed;
    wc->font->fInfo.leading = i;
    return Succeeded;
@@ -771,7 +771,7 @@ wbp wb;
 LONG linewid;
 {
    STDLOCALS(wb);
-   
+
    if (linewid < 0) return Failed;
    wc->contextPtr->pnSize.h = linewid;
    wc->contextPtr->pnSize.v = linewid;
@@ -804,7 +804,7 @@ XPoint *pp;
 {
    Point mousePt;
    STDLOCALS (wb);
-   
+
    SetPort (ws->theWindow);
    GetMouse (&mousePt);
    pp->x = mousePt.h;
@@ -853,7 +853,7 @@ wbp wb;
 {
    Rect r;
    STDLOCALS(wb);
-   
+
    SetRect (&r, wc->clipx, wc->clipy, wc->clipx+wc->clipw, wc->clipy+wc->cliph);
    SetPort (ws->theWindow);
    ClipRect (&r);
@@ -863,15 +863,15 @@ void unsetclip(w)
 wbp  w;
 {
 }
- 
-int	allowresize(w, on)
+
+int     allowresize(w, on)
 wbp  w;
 int  on;
 {
    return 0;
 }
 
-int	setgamma(w, gamma)
+int     setgamma(w, gamma)
 wbp  w;
 double  gamma;
 {
@@ -888,7 +888,7 @@ char *val;
 }
 
 /*
- * setcursor() - 
+ * setcursor() -
  */
 int setcursor(w, on)
 wbp w;
@@ -919,7 +919,7 @@ char **s;
 {
    short theFontNum;
    STDLOCALS(wb);
-   
+
    GetFNum (CtoPstr (*s), &theFontNum);
    wc->contextPtr->txFont = theFontNum;
    return Succeeded;
@@ -978,7 +978,7 @@ int wclose(wb)
 wbp wb;
 {
    STDLOCALS (wb);
-   
+
    DisposeWindow (ws->theWindow);
    DisposeGWorld (ws->offScreenGWorld);
 }
@@ -1017,12 +1017,12 @@ int x, y;
    /* can't change cursor location, Inside Mac, Imaging: 8-4 */
 }
 
-int walert(w, volume) 
+int walert(w, volume)
 wbp w;
 long volume;
 {
    long oldVol;
-   
+
    GetDefaultOutputVolume(&oldVol);
    SetDefaultOutputVolume(volume);
    SysBeep (30);
@@ -1043,6 +1043,6 @@ wsp GetActiveWindow(void)
 {
 }
 
-#else					/* Graphics */
-/* static char junk;		/* avoid empty module */
-#endif					/* Graphics */
+#else                                   /* Graphics */
+/* static char junk;            /* avoid empty module */
+#endif                                  /* Graphics */

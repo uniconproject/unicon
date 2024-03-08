@@ -25,29 +25,29 @@ dptr file;
      r = SSL_peek(BlkD(*file, File)->fd.ssl, buf, maxi);
      if (r <= 0) {
        if (set_ssl_connection_errortext(BlkD(*file, File)->fd.ssl, r) == SSL_ERROR_ZERO_RETURN)
-	 return -1;
+         return -1;
        else
-	 return -3;
+         return -3;
      }
    }
    else
-#endif					/* LIBSSL */
+#endif                                  /* LIBSSL */
    if ((r=recv((SOCKET)BlkD(*file,File)->fd.fd, buf, maxi, MSG_PEEK))==SOCKET_ERROR) {
 #if NT
       i = WSAGetLastError();
-      if (i == WSAESHUTDOWN)   
-	 return -1;
+      if (i == WSAESHUTDOWN)
+         return -1;
       set_errortext(1040); /* could use i to do better */
-#else					/* NT */
+#else                                   /* NT */
       set_syserrortext(errno);
-#endif					/* NT */
+#endif                                  /* NT */
       return -3;
    }
 
 
 
    if (r == 0) return -1;
-   
+
    stmp = buf;
    while (stmp - buf < r) {
       if (*stmp == '\n') break;
@@ -56,11 +56,11 @@ dptr file;
 
    if (stmp - buf < r) {
       if(stmp == buf)
-	 i = stmp - buf + 1;
+         i = stmp - buf + 1;
       else
-	 i = stmp - buf;
+         i = stmp - buf;
       }
-   else  
+   else
       i = r;
 
 #if HAVE_LIBSSL
@@ -68,30 +68,30 @@ dptr file;
      r = SSL_read(BlkD(*file,File)->fd.ssl, buf, i);
      if (r <= 0) {
        if (set_ssl_connection_errortext(BlkD(*file,File)->fd.ssl, r) == SSL_ERROR_ZERO_RETURN)
-	 return -1;
+         return -1;
        else
-	 return -3;
+         return -3;
      }
    }
    else
-#endif					/* LIBSSL */
+#endif                                  /* LIBSSL */
    if ((r=recv((SOCKET)BlkD(*file,File)->fd.fd, buf, i, 0)) == SOCKET_ERROR) {
 #if NT
      if (WSAGetLastError() == WSAESHUTDOWN)
-	 return -1;
-#endif					/* NT */
+         return -1;
+#endif                                  /* NT */
       set_errortext(1040);
       return -3;
       }
    return r;
    }
-#endif					/* NT */
-
+#endif                                  /* NT */
+
 #if NT
 #if !defined(NTGCC)
 #define pclose _pclose
-#endif					/* !NTGCC */
-#endif					/* NT */
+#endif                                  /* !NTGCC */
+#endif                                  /* NT */
 
 /*
  * getstrg - read a line into buf from file fbp.  At most maxi characters
@@ -114,49 +114,49 @@ struct b_file *fbp;
     */
    static char savedbuf[BUFSIZ];
    static int nsaved = 0;
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #ifdef Messaging
    if (fbp->status & Fs_Messaging) {
       struct MFile* mf = (struct MFile *)fd;
 
       if (strcmp(mf->tp->uri.scheme, "pop") == 0) {
-	 return -1;
-	 }
+         return -1;
+         }
 
       if (MFIN(mf, WRITING)) {
-	 Mstartreading(mf);
-	 }
+         Mstartreading(mf);
+         }
       if (!MFIN(mf, READING)) {
-	 return -1;
-	 }
+         return -1;
+         }
       l = tp_readln(mf->tp, buf, maxi);
       if (l <= 0) {
-	 tp_free(mf->tp);
-	 MFSTATE(mf, CLOSED);
-	 return -1;
-	 }
+         tp_free(mf->tp);
+         MFSTATE(mf, CLOSED);
+         return -1;
+         }
       if (buf[l-1] == '\n') {
-	 l--;
-	 }
+         l--;
+         }
       else if ((buf[l-1] == '\0') && (l==maxi)) {
-	 return -2;
-	 }
+         return -2;
+         }
       if ((!(fbp->status & Fs_Untrans)) && (buf[l-1] == '\r')) {
-	 l--;
-	 }
+         l--;
+         }
       return l;
       }
 #endif                                  /* Messaging */
 
 #ifdef XWindows
    wflushall();
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 #if NT
    if (fbp->status & Fs_Pipe) {
       if (feof(fd) || (fgets(buf, maxi, fd) == NULL)) {
          pclose(fd);
-	 fbp->status = Fs_Pipe;
+         fbp->status = Fs_Pipe;
          return -1;
          }
       l = strlen(buf);
@@ -164,11 +164,11 @@ struct b_file *fbp;
       if (l>0 && buf[l-1] == '\r' && (fbp->status & Fs_Untrans) == 0) l--;
       if (feof(fd)) {
          pclose(fd);
-	 fbp->status = 0;
+         fbp->status = 0;
          }
       return l;
       }
-#endif					/* NT */
+#endif                                  /* NT */
 
    l = 0;
 
@@ -179,112 +179,112 @@ struct b_file *fbp;
       l = nsaved;
       buf += l;
    }
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
    while (1) {
 
 #ifdef Graphics
       /* insert non-blocking read/code to service windows here */
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #if NT
       if (fbp->status & Fs_Pipe) {
-	 if (feof(fd)) {
-	    pclose(fd);
-	    fbp->status = 0;
-	    if (l>0) return 1;
-	    else return -1;
-	    }
-	 }
-#endif					/* NT */
+         if (feof(fd)) {
+            pclose(fd);
+            fbp->status = 0;
+            if (l>0) return 1;
+            else return -1;
+            }
+         }
+#endif                                  /* NT */
       errno = 0;
       DEC_NARTHREADS;
-      if ((c = fgetc(fd)) == '\n') {	/* \n terminates line */
+      if ((c = fgetc(fd)) == '\n') {    /* \n terminates line */
          INC_NARTHREADS_CONTROLLED;
-	 break;
+         break;
          }
       INC_NARTHREADS_CONTROLLED;
 
       if (c == '\r' && (fbp->status & Fs_Untrans) == 0) {
-	 /* \r terminates line in translated mode */
+         /* \r terminates line in translated mode */
 #if NT
    if (fbp->status & Fs_Pipe) {
       if (feof(fd)) {
          pclose(fd);
-	 fbp->status = 0;
+         fbp->status = 0;
          if (l>0) return 1;
          else return -1;
          }
       }
-#endif					/* NT */
-	 if ((c = fgetc(fd)) != '\n')	/* consume following \n */
-	     ungetc(c, fd);		/* (put back if not \n) */
-	 break;
-	 }
+#endif                                  /* NT */
+         if ((c = fgetc(fd)) != '\n')   /* consume following \n */
+             ungetc(c, fd);             /* (put back if not \n) */
+         break;
+         }
 #if NT
    if (fbp->status & Fs_Pipe) {
       if (feof(fd)) {
          pclose(fd);
-	 fbp->status = 0;
+         fbp->status = 0;
          if (l>0) return 1;
          else return -1;
          }
       }
-#endif					/* NT */
+#endif                                  /* NT */
       if (c == EOF) {
 #if NT
          if (fbp->status & Fs_Pipe) {
             pclose(fd);
-	    fbp->status = 0;
+            fbp->status = 0;
             }
-#endif					/* NT */
+#endif                                  /* NT */
 
 #ifdef PosixFns
-	 /*
-	  * If errno is EAGAIN, we will not return any chars just yet.
-	  */
-	 if (errno == EAGAIN 
+         /*
+          * If errno is EAGAIN, we will not return any chars just yet.
+          */
+         if (errno == EAGAIN
 #if !NT
-	    || errno == EWOULDBLOCK
+            || errno == EWOULDBLOCK
 #endif
-	 ) {
-	    return -1;
-	 }
-#endif					/* PosixFns */
+         ) {
+            return -1;
+         }
+#endif                                  /* PosixFns */
 
-	 if (l > 0) {
+         if (l > 0) {
 #if defined(PosixFns) && !defined(Concurrent)
-	    /* Clear the saved chars buffer */
-	    nsaved = 0;
-#endif					/* PosixFns && !Concurrent */
-	    return l;
-	    } 
-	 else {
-	    return -1;
-	    }
-	 }
+            /* Clear the saved chars buffer */
+            nsaved = 0;
+#endif                                  /* PosixFns && !Concurrent */
+            return l;
+            }
+         else {
+            return -1;
+            }
+         }
       if (++l > maxi) {
-	 ungetc(c, fd);
+         ungetc(c, fd);
 #if defined(PosixFns) && !defined(Concurrent)
-	 /* Clear the saved chars buffer */
-	 nsaved = 0;
-#endif					/* PosixFns && !Concurrent */
-	 return -2;
-	 }
+         /* Clear the saved chars buffer */
+         nsaved = 0;
+#endif                                  /* PosixFns && !Concurrent */
+         return -2;
+         }
 #if defined(PosixFns) && !defined(Concurrent)
       savedbuf[nsaved++] = c;
-#endif					/* PosixFns && !Concurrent */
+#endif                                  /* PosixFns && !Concurrent */
       *buf++ = c;
       }
 
 #if defined(PosixFns) && !defined(Concurrent)
    /* We can clear the saved static buffer */
    nsaved = 0;
-#endif					/* PosixFns && !Concurrent */
+#endif                                  /* PosixFns && !Concurrent */
 
    return l;
    }
-
+
 /*
  * iconhost - return some sort of host name into the buffer pointed at
  *  by hostname.  This code accommodates several different host name
@@ -299,7 +299,7 @@ char *hostname;
     * The string constant HostStr contains the host name.
     */
    strcpy(hostname,HostStr);
-#elif VMS				/* HostStr */
+#elif VMS                               /* HostStr */
    /*
     * VMS has its own special logic.
     */
@@ -309,7 +309,7 @@ char *hostname;
     else
       h=hbuf;
    strcpy(hostname,h);
-#else					/* HostStr */
+#else                                   /* HostStr */
    {
    /*
     * Use the uname system call.  (POSIX)
@@ -318,10 +318,10 @@ char *hostname;
    uname(&utsn);
    strcpy(hostname,utsn.nodename);
    }
-#endif					/* HostStr */
+#endif                                  /* HostStr */
 
    }
-
+
 /*
  * Read a long string in shorter parts. (Standard read may not handle
  *  long strings.)
@@ -342,34 +342,34 @@ word len;
     * after a wlongread().  We work around it here by fseeking after fread.
     */
    word pos = ftell(fd);
-#endif					/* NT */
+#endif                                  /* NT */
 
 #ifdef XWindows
    if (isatty(fileno(fd))) wflushall();
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
    while (len > 0) {
       n = fread(ts, width, (int)((len < MaxIn) ? len : MaxIn), fd);
       if (n <= 0) {
 #if NT
          fseek(fd, pos + tally, SEEK_SET);
-#endif					/* NT */
+#endif                                  /* NT */
          return tally;
-	 }
+         }
       tally += n;
       ts += n;
       len -= n;
       }
 #if NT
    fseek(fd, pos + tally, SEEK_SET);
-#endif					/* NT */
+#endif                                  /* NT */
    return tally;
    }
-
+
 
 #if HAVE_LIBZ
 /*
- * Read a long string in shorter parts from a compressed file. 
+ * Read a long string in shorter parts from a compressed file.
  * (Standard read may not handle long strings.)
  */
 word gzlongread(s,width,len,fd)
@@ -393,34 +393,34 @@ FILE *fd;
     * be turned on if it is asked for explicitly.
     */
    word pos = ftell(fd);
-#endif					/* NT_FIXFTELL */
+#endif                                  /* NT_FIXFTELL */
 
 #if defined(XWindows) && !defined(MacOS)
    if (isatty(fileno(fd))) wflushall();
-#endif					/* XWindows && !MacOS */
+#endif                                  /* XWindows && !MacOS */
 
    while (len > 0) {
       n = gzread(fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));
       if (n <= 0) {
 #ifdef NT_FIXFTELL
          gzseek(fd, pos + tally, SEEK_SET);
-#endif					/* NT_FIXFTELL */
+#endif                                  /* NT_FIXFTELL */
          return tally;
-	 }
+         }
       tally += n;
       ts += n;
       len -= n;
       }
 #ifdef NT_FIXFTELL
    gzseek(fd, pos + tally, SEEK_SET);
-#endif					/* NT_FIXFTELL */
+#endif                                  /* NT_FIXFTELL */
    return tally;
    }
 
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBZ */
 
 
-
+
 /*
  * Print string referenced by descriptor d. Note, d must not move during
  *   a garbage collection.
@@ -453,12 +453,12 @@ dptr d;
       else
          return Failed;
    }
-#else					/* VMS */
+#else                                   /* VMS */
    if (longwrite(s,l,f) < 0)
       return Failed;
    else
       return Succeeded;
-#endif					/* VMS */
+#endif                                  /* VMS */
    }
 
 /*
@@ -475,9 +475,9 @@ int iselect(int fd, int t)
    FD_ZERO(&fds);
    FD_SET(fd, &fds);
    return select(fd+1, &fds, NULL, NULL, &tv);
-#else					/* PosixFns */
+#else                                   /* PosixFns */
    return -1;
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
    }
 
@@ -492,11 +492,11 @@ int n;
    if (n < 0){  /* delay < 0 = block the current thread */
       CURTSTATE();
       DEC_NARTHREADS;
-      sem_wait(curtstate->c->semp);		/* block this thread */
+      sem_wait(curtstate->c->semp);             /* block this thread */
       INC_NARTHREADS_CONTROLLED;
-      return Succeeded; 
+      return Succeeded;
       }
-#endif					/* Concurrent */        
+#endif                                  /* Concurrent */
 
 /*
  * The following code is operating-system dependent [@fsys.01].
@@ -504,7 +504,7 @@ int n;
 #if VMS
    delay_vms(n);
    return Succeeded;
-#endif					/* VMS */
+#endif                                  /* VMS */
 
 #if UNIX
    {
@@ -514,16 +514,16 @@ int n;
    fd_stdin.fd = fileno(stdin);
    fd_stdin.events = POLLIN;
    poll(&fd_stdin, 1, n);
-#else					/* KbhitPoll || KbhitIoctl */
+#else                                   /* KbhitPoll || KbhitIoctl */
    t.tv_sec = n / 1000;
    t.tv_usec = (n % 1000) * 1000;
    DEC_NARTHREADS;
    select(1, NULL, NULL, NULL, &t);
    INC_NARTHREADS_CONTROLLED;
-#endif					/* KbhitPoll || KbhitIoctl */
+#endif                                  /* KbhitPoll || KbhitIoctl */
    return Succeeded;
    }
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 #if MSDOS
 #if NT
@@ -531,14 +531,14 @@ int n;
    Sleep(n);
    INC_NARTHREADS_CONTROLLED;
    return Succeeded;
-#else					/* NT */
+#else                                   /* NT */
    return Failed;
-#endif					/* NT */
-#endif					/* MSDOS */
+#endif                                  /* NT */
+#endif                                  /* MSDOS */
 
 #if PORT || MVS || VM
    return Failed;
-#endif					/* PORT || ... */
+#endif                                  /* PORT || ... */
 
    /*
     * End of operating-system dependent code.
@@ -547,8 +547,8 @@ int n;
 
 #ifdef Network
 
-/* 
- * parsing the url, separate scheme, host, port, path parts 
+/*
+ * parsing the url, separate scheme, host, port, path parts
  * the function calling it allocate space for variables scheme,
  * host, port, and path.
 */
@@ -562,7 +562,7 @@ void parse_url(char *url, char *scheme, char *host, char *port, char *path)
    int NOHOST = 0;
 
    /* All operations on turl so as not to mess contents of url */
-  
+
    strcpy(turl, url);
 
    delim = "://";
@@ -570,19 +570,19 @@ void parse_url(char *url, char *scheme, char *host, char *port, char *path)
    if ((colon = strstr(turl, delim)) == NULL) {
       if ( *turl == '/' ) {
          strcpy(scheme, "file");
-	 NOHOST = 1;
-	 t = turl + 1;
+         NOHOST = 1;
+         t = turl + 1;
       }
       else {
-	 strcpy(scheme, "http");
-	 t = turl;
+         strcpy(scheme, "http");
+         t = turl;
       }
-   } 
+   }
    else {
       *colon = '\0';
       strcpy(scheme, turl);
       if ( strcasecmp(scheme, "file") == 0 )
-	 NOHOST = 1;
+         NOHOST = 1;
       t = colon + strlen(delim);
    }
 
@@ -592,24 +592,24 @@ void parse_url(char *url, char *scheme, char *host, char *port, char *path)
       /* If there isn't even one slash, the path must be empty */
       if ( NOHOST == 0 ) {
          strcpy(host, t);
-	 strcpy(path, "/");
+         strcpy(path, "/");
       }
       else {
-	 host = NULL; 
-	 strcpy(path, "/");
-	 strcat(path, t);
+         host = NULL;
+         strcpy(path, "/");
+         strcat(path, t);
       }
-   } 
+   }
    else {
-      if ( NOHOST == 0 ) {		
+      if ( NOHOST == 0 ) {
          strcpy(path, slash);
-	 *slash = '\0';	/* Terminate host name */
-	 strcpy(host, t);
+         *slash = '\0'; /* Terminate host name */
+         strcpy(host, t);
       }
       else {
-	 strcpy(path, "/");
-	 strcat(path, t);
-	 host = NULL;
+         strcpy(path, "/");
+         strcat(path, t);
+         host = NULL;
       }
    }
 
@@ -617,17 +617,17 @@ void parse_url(char *url, char *scheme, char *host, char *port, char *path)
 
    if ( NOHOST == 0 ) {
       if ((colon = strchr(host, ':')) == NULL)
-	 strcpy(port, "http");
+         strcpy(port, "http");
       else {
-	 *colon = '\0';
-	 if (isdigit(colon[1]))
-	   strcpy(port, colon + 1);
-	 else {
-	    /*
-	     * : with no number following (site:/file) denotes the default port
-	     */
-	    strcpy(scheme, "http");
-	    }
+         *colon = '\0';
+         if (isdigit(colon[1]))
+           strcpy(port, colon + 1);
+         else {
+            /*
+             * : with no number following (site:/file) denotes the default port
+             */
+            strcpy(scheme, "http");
+            }
       }
    }
 }
@@ -637,14 +637,14 @@ void myhandler(int i)
 fprintf(stderr, "I am handling things by not handling them\n");
 }
 
-/* 
+/*
  * urlopen opens a local file or a remote file depending on the url input.
  * It checks the http_proxy environment variable. If it is set, then sending
  * the request to the proxy server for the remote file, otherwise, only support
  * sending the http request to the remote http server for retrieving the file
  * at the remote site.
  */
- 
+
 int urlopen(char *url, int flag, struct netfd *retval)
 {
    char request[MAXPATHLEN + 35];
@@ -667,16 +667,16 @@ int urlopen(char *url, int flag, struct netfd *retval)
 
 #ifdef DEBUG
       fprintf(stderr, "URL scheme = %s\n", scheme);
-      fprintf(stderr, "URL host = %s\n", host); 
+      fprintf(stderr, "URL host = %s\n", host);
       fprintf(stderr, "URL port = %s\n", port);
       fprintf(stderr, "URL path = %s\n", path);
 #endif
 
       if (strcasecmp(scheme, "http") != 0 && strcasecmp(scheme, "file") != 0) {
          fprintf(stderr, "httpget cannot operate on %s URLs without a proxy\n", scheme);
-	 return -1; 
+         return -1;
       }
-   } 
+   }
    else {
       parse_url(proxy, scheme, host, port, path);
    }
@@ -685,64 +685,64 @@ int urlopen(char *url, int flag, struct netfd *retval)
       /* Find out the IP address */
       res0 = uni_getaddrinfo(host, port, SOCK_STREAM, AF_INET);
       if (!res0)
-	return NULL;
+        return NULL;
 
       s = -1;
       for (res = res0; res; res = res->ai_next) {
-	s = socket(res->ai_family, res->ai_socktype,
-		   res->ai_protocol);
-	if (s >= 0)
-	  break;  /* okay we got one */
+        s = socket(res->ai_family, res->ai_socktype,
+                   res->ai_protocol);
+        if (s >= 0)
+          break;  /* okay we got one */
       }
 
       if (s < 0) {
-	// failed to create a socket to any of the resloved names
-	freeaddrinfo(res0);
-	set_syserrortext(errno);
-	return -3;
+        // failed to create a socket to any of the resloved names
+        freeaddrinfo(res0);
+        set_syserrortext(errno);
+        return -3;
       }
-  
+
       signal(SIGALRM, myhandler);
       alarm(5);
       if (connect(s, res->ai_addr, res->ai_addrlen) == -1) {
          alarm(0);
-	 if (errno != EINTR) { /* if not just a timeout, print an error */
-	    freeaddrinfo(res0);
-	    set_syserrortext(errno);
-	    //perror("httpget: connect()");
-	    }
-	 close(s);
-	 s = -1;
-	 return -4;
+         if (errno != EINTR) { /* if not just a timeout, print an error */
+            freeaddrinfo(res0);
+            set_syserrortext(errno);
+            //perror("httpget: connect()");
+            }
+         close(s);
+         s = -1;
+         return -4;
       }
       alarm(0);
 
       if (proxy) {
-	 if ( flag == BODY_ONLY ) sprintf(request, "GET %s\r\n", url);
-	 else if ( flag == HEADER_ONLY )
+         if ( flag == BODY_ONLY ) sprintf(request, "GET %s\r\n", url);
+         else if ( flag == HEADER_ONLY )
             sprintf(request, "HEAD %s HTTP/1.0\r\n", url);
-      } 
+      }
       else {
-	 if ( flag == BODY_ONLY ) sprintf(request, "GET %s\r\n", path);
-	 else if ( flag == HEADER_ONLY )
-	    sprintf(request, "HEAD %s HTTP/1.0\r\n", path);
+         if ( flag == BODY_ONLY ) sprintf(request, "GET %s\r\n", path);
+         else if ( flag == HEADER_ONLY )
+            sprintf(request, "HEAD %s HTTP/1.0\r\n", path);
       }
 
       strcat(request, "Accept: */*\r\n\r\n");
-  
+
       write(s, request, strlen(request));
 
       retval->flag = HTTP_FLAG;
    }
    else {
       if ( (s = open(path, O_RDONLY)) == -1 ) {
-         fprintf(stderr, "file open error: %s\n", strerror(errno));	
+         fprintf(stderr, "file open error: %s\n", strerror(errno));
          return -5;
       }
-      retval->flag = FILE_FLAG;	
+      retval->flag = FILE_FLAG;
    }
 
-   retval->s = s; 
+   retval->s = s;
 
    return 0; /* success */
 }
@@ -761,7 +761,7 @@ FILE * netopen(char *url, char *type)
 
    if ( (retval = urlopen(url, BODY_ONLY, &temp)) < 0 ) {
       fprintf(stderr, "netopen: urlopen(%s) failed with error code: %d\n", url,
-		  retval);
+                  retval);
       return NULL;
    }
 
@@ -783,9 +783,9 @@ FILE *socketopen(char *url, char *type)
    struct addrinfo *res0, *res;
 
    strcpy(turl, url);
- 
+
 /* parsing the url to get host name and port number */
- 
+
    if ( (colon = strchr(turl, ':')) != NULL ) {
       *colon = '\0';
       host = colon + 1;
@@ -799,7 +799,7 @@ FILE *socketopen(char *url, char *type)
       *colon = '\0';
       port = colon + 1;
    }
-   else 
+   else
       port = "http";
 
    /* Find out the IP address */
@@ -810,7 +810,7 @@ FILE *socketopen(char *url, char *type)
    s = -1;
    for (res = res0; res; res = res->ai_next) {
      s = socket(res->ai_family, res->ai_socktype,
-		res->ai_protocol);
+                res->ai_protocol);
      if (s >= 0)
        break;  /* okay we got one */
    }
@@ -822,22 +822,22 @@ FILE *socketopen(char *url, char *type)
      return NULL;
    }
 
- 
+
    if (connect(s, res->ai_addr, res->ai_addrlen) == -1) {
       freeaddrinfo(res0);
       set_syserrortext(errno);
-      return NULL; 
+      return NULL;
    }
 
    freeaddrinfo(res0);
    fp = fdopen(s, "r+");
-        
+
    return (fp);
-}        
+}
 
 
 /*
- *  parse the http header information 
+ *  parse the http header information
 */
 
 void parse_token (char *s, struct http_stat *buf)
@@ -853,7 +853,7 @@ void parse_token (char *s, struct http_stat *buf)
    if (isspace(*tmp)) tmp++; /* past space past : */
    if (tmp[strlen(tmp)-1] == '\015') /* truncate trailing carriage return */
       tmp[strlen(tmp)-1] = '\0';
-	
+
    if ( strcasecmp (s, "server") == 0 ) {
       buf->server = strdup(tmp);
       }
@@ -869,12 +869,12 @@ void parse_token (char *s, struct http_stat *buf)
       buf->exp_date = strdup(tmp);
    else if ( strcasecmp(s, "content-length") == 0 )
       buf->length = atoi(tmp);
-   else 
+   else
       {};
-/*  fprintf(stderr, "This info is not collected: %s\n", s);	*/
+/*  fprintf(stderr, "This info is not collected: %s\n", s);     */
 }
 
-/* 
+/*
  * parsing the status line of the http return header.
 */
 
@@ -882,7 +882,7 @@ void parse_statline ( char *s, struct http_stat *buf)
 {
    char *tmp;
    int scode;
-	
+
    tmp = strchr (s, ' ');
    tmp ++;
    scode = atoi (tmp);
@@ -890,17 +890,17 @@ void parse_statline ( char *s, struct http_stat *buf)
    switch ( scode ) {
       case 200:
          buf->scode = OK;
-	 break;
+         break;
       case 201:
-	buf->scode = CREATED;   
-	break;
+        buf->scode = CREATED;
+        break;
       case 202:
          buf->scode = ACCEPTED;
          break;
       case 204:
          buf->scode = NOCONTENT;
          break;
-      case 301: 
+      case 301:
          buf->scode = MV_PERM;
          break;
       case 302:
@@ -915,7 +915,7 @@ void parse_statline ( char *s, struct http_stat *buf)
       case 401:
          buf->scode = UNAUTH;
          break;
-      case 403: 
+      case 403:
          buf->scode = FORB;
          break;
       case 404:
@@ -930,7 +930,7 @@ void parse_statline ( char *s, struct http_stat *buf)
       case 502:
          buf->scode = BADGATE;
          break;
-      case 503:	
+      case 503:
          buf->scode = UNAVAIL;
          break;
       default:
@@ -939,10 +939,10 @@ void parse_statline ( char *s, struct http_stat *buf)
    }
 }
 
-/*	
+/*
      Upon successful completion a value of 0 is returned.  Other-
      wise, a negative value is returned and errno is set to indicate
-     the error. 
+     the error.
 */
 
 int hstat (int sd, struct http_stat *buf )
@@ -970,15 +970,15 @@ int hstat (int sd, struct http_stat *buf )
          if ( (str = malloc(bytes) ) == NULL ) {
             fprintf(stderr, "malloc fail: %s \n", strerror(errno));
             return -1;
-	 }
+         }
          strcat (str, temp);
       }
       else {
          if ( (str = realloc (str, strlen(str)+bytes+1) ) == NULL ) {
             fprintf(stderr, "realloc fail: %s \n", strerror(errno));
-	    return -2;
-	 }
-	 strcat (str, temp);
+            return -2;
+         }
+         strcat (str, temp);
       }
    }
 
@@ -988,23 +988,23 @@ int hstat (int sd, struct http_stat *buf )
       /* fprintf(stderr, "empty header, %d bytes\n", bytes); */
       return  -3;
    }
-   else 
+   else
       parse_statline (ptr, buf);
 
    while ( (ptr = strtok (NULL, "\n")) != NULL )
-      parse_token (ptr, buf); 
+      parse_token (ptr, buf);
 
    free(str);
    return 0;
 }
 
-/* 
+/*
      Upon successful completion a value of 0 is returned.  Other-
      wise, a value of -1 is returned and errno is set to indicate
      the error. The file status information is saved in the structure
      buf.
 */
- 
+
 int netstatus (char *url, struct netstat *buf)
 {
    struct netfd temp;
@@ -1013,26 +1013,26 @@ int netstatus (char *url, struct netstat *buf)
 
    if ( (rel = urlopen(url, HEADER_ONLY, &temp)) < 0 ) {
       fprintf(stderr, "netstatus: urlopen(%s) failed with return value: %d\n",
-		url, rel) ; 
+                url, rel) ;
       return -1;
    }
 
    switch (temp.flag) {
-      case FILE_FLAG: 
+      case FILE_FLAG:
          buf->flag = FILE_FLAG;
-	 retval = fstat (temp.s, &(buf->u.fbuf) );
-	 break;	
+         retval = fstat (temp.s, &(buf->u.fbuf) );
+         break;
 
       case HTTP_FLAG:
          buf->flag = HTTP_FLAG;
-	 retval = hstat (temp.s, &(buf->u.hbuf) );
-	 break;			
+         retval = hstat (temp.s, &(buf->u.hbuf) );
+         break;
    }
 
    close (temp.s);
    return retval;
 }
-#endif					/* Network */
+#endif                                  /* Network */
 
 #if NT
 #ifdef Dbm
@@ -1052,7 +1052,7 @@ int link(char *s1, char *s2)
    fclose(f2);
    return 0;
 }
-#endif					/* Dbm */
+#endif                                  /* Dbm */
 
 struct b_cons *LstTmpFiles;
 void closetmpfiles()
@@ -1060,9 +1060,9 @@ void closetmpfiles()
    while (LstTmpFiles) {
       struct b_file *fp = Blk(LstTmpFiles->data,File);
       if (fp->status & (Fs_Read | Fs_Write)) {
-	 fclose(fp->fd.fp);
-	 fp->status = 0;
-	 }
+         fclose(fp->fd.fp);
+         fp->status = 0;
+         }
       remove(StrLoc(fp->fname));
       LstTmpFiles = (struct b_cons *)(LstTmpFiles->next);
       }
@@ -1086,9 +1086,9 @@ FILE *mstmpfile()
    free(temp);
    return f;
 }
-#endif					/* NT */
+#endif                                  /* NT */
 
-// FIXME: This is no longer needed on Windows with recent APIs 
+// FIXME: This is no longer needed on Windows with recent APIs
 #ifdef DROPNTGCC
 /* libc replacement functions for win32.
 
@@ -1202,7 +1202,7 @@ FILE *popen (const char* cmd, const char *mode)
       tmpsize=strlen(tmpbuf);
     else
       tmpsize=0;
-       
+
     new_cmd = malloc(tmpsize+4+strlen(cmd)+1);
     sprintf(new_cmd, "%s /c %s",tmpbuf, cmd);
     free(app_name);
@@ -1234,8 +1234,8 @@ FILE *popen (const char* cmd, const char *mode)
     si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 
-    if (DuplicateHandle(current_pid, father_out, 
-                        current_pid, &father_out_dup, 
+    if (DuplicateHandle(current_pid, father_out,
+                        current_pid, &father_out_dup,
                         0, FALSE, DUPLICATE_SAME_ACCESS) == FALSE) {
       return NULL;
     }
@@ -1253,8 +1253,8 @@ FILE *popen (const char* cmd, const char *mode)
     si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     si.hStdOutput = child_out;
     si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-    if (DuplicateHandle(current_pid, father_in, 
-                        current_pid, &father_in_dup, 
+    if (DuplicateHandle(current_pid, father_in,
+                        current_pid, &father_in_dup,
                         0, FALSE, DUPLICATE_SAME_ACCESS) == FALSE) {
       fprintf(stderr, "popen: error DuplicateHandle father_in\n");
       return NULL;
@@ -1282,7 +1282,7 @@ FILE *popen (const char* cmd, const char *mode)
                   ) == FALSE) {
     return NULL;
   }
-  
+
    /* Only the process handle is needed */
   if (CloseHandle(pi.hThread) == FALSE) {
     fprintf(stderr, "popen: error closing thread handle\n");
@@ -1339,8 +1339,8 @@ int pclose (FILE * f)
   long exit_code;
 
   /* Look for f is the access key in the linked list */
-  for (q = NULL, p = _popen_list; 
-       p != &_z && p->f != f; 
+  for (q = NULL, p = _popen_list;
+       p != &_z && p->f != f;
        q = p, p = p->next);
 
   if (p == &_z) {
@@ -1376,10 +1376,10 @@ int pclose (FILE * f)
   else
     _popen_list = p->next;
   free(p);
-    
+
   return exit_code;
 }
-#endif					/* defined(OLD_NTGCC) && (__GNUC__ < 3) */
+#endif                                  /* defined(OLD_NTGCC) && (__GNUC__ < 3) */
 #endif
 
 #ifdef PseudoPty
@@ -1392,14 +1392,14 @@ void ptclose(struct ptstruct *ptStruct)
 #if NT
    CloseHandle(ptStruct->master_read);
    CloseHandle(ptStruct->master_write);
-#else					/* NT */
+#else                                   /* NT */
    /* close the master and slave file descriptors */
    close(ptStruct->master_fd);
    close(ptStruct->slave_fd);
    /* terminate the child process */
    waitpid(ptStruct->slave_pid,&status,WNOHANG);
    kill(ptStruct->slave_pid,SIGKILL);
-#endif					/* NT */
+#endif                                  /* NT */
    /* free the space allocated for the structure */
    free(ptStruct);
    return;
@@ -1412,7 +1412,7 @@ struct ptstruct *ptopen(char *command)
    char **av;
 #if defined(MacOS) || defined(FreeBSD)
    char *tmps;
-#endif					/* MacOS || FreeBSD */
+#endif                                  /* MacOS || FreeBSD */
 #if NT
    HANDLE hOutputReadMaster,hOutputRead,hOutputWrite;
    HANDLE hInputWriteMaster,hInputRead,hInputWrite;
@@ -1421,7 +1421,7 @@ struct ptstruct *ptopen(char *command)
    SECURITY_ATTRIBUTES sa;
    PROCESS_INFORMATION pi;
    STARTUPINFO si;
-#endif					/* NT */
+#endif                                  /* NT */
 
    /* allocating new ptstruct */
    struct ptstruct *newPtStruct =
@@ -1430,7 +1430,7 @@ struct ptstruct *ptopen(char *command)
       EXITERROR(newPtStruct);
       }
    strcpy(newPtStruct->slave_command, command);
-  
+
    CmdParamToArgv(command, &av, 0);
    /*
     * Maybe need to conduct a path search for av[0], augment
@@ -1462,25 +1462,25 @@ struct ptstruct *ptopen(char *command)
 
    /* Launch the process that you want to redirect */
    if (!CreateProcess(NULL,newPtStruct->slave_command,NULL,NULL,TRUE,
-		      CREATE_NEW_CONSOLE,NULL,NULL,&si,&pi)) {
+                      CREATE_NEW_CONSOLE,NULL,NULL,&si,&pi)) {
       EXITERROR(newPtStruct);
       }
 
    /* Set global child process handle to cause threads to exit. */
    newPtStruct->slave_pid = pi.hProcess;
 
-#else					/* NT */
+#else                                   /* NT */
 
   /* open master pty file descriptor */
 #ifdef SUN
    if((newPtStruct->master_fd=open("/dev/ptmx",O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
-#else					/* SUN */
+#else                                   /* SUN */
    if((newPtStruct->master_fd=posix_openpt(O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
-#endif					/* SUN */
+#endif                                  /* SUN */
 
    /* change permissions of slave pty to correspond with the master pty */
    if(grantpt(newPtStruct->master_fd) == -1) {
@@ -1498,23 +1498,23 @@ struct ptstruct *ptopen(char *command)
     */
 #ifdef SUN
    if(ttyname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
-	              sizeof(newPtStruct->slave_filename)) != 0) {
-#else					/* SUN */
+                      sizeof(newPtStruct->slave_filename)) != 0) {
+#else                                   /* SUN */
 #if defined(MacOS) || defined(FreeBSD)
    if (((tmps = ptsname(newPtStruct->master_fd)) == NULL) ||
       (strlen(tmps) > sizeof(newPtStruct->slave_filename)-1) ||
       (!strcpy(newPtStruct->slave_filename, tmps))){
-#else					/* MacOS || FreeBSD */
+#else                                   /* MacOS || FreeBSD */
    if(ptsname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
-		sizeof(newPtStruct->slave_filename)) != 0) {
-#endif					/* MacOS || FreeBSD */
-#endif					/* SUN */
+                sizeof(newPtStruct->slave_filename)) != 0) {
+#endif                                  /* MacOS || FreeBSD */
+#endif                                  /* SUN */
       EXITERROR(newPtStruct);
       }
 
    /* finally open the slave pty file descriptor */
    if((newPtStruct->slave_fd=open(newPtStruct->slave_filename,
-				  O_RDWR)) == -1) {
+                                  O_RDWR)) == -1) {
       EXITERROR(newPtStruct);
       }
 
@@ -1525,25 +1525,25 @@ struct ptstruct *ptopen(char *command)
    else if(newPtStruct->slave_pid == 0) {
       /* create a session id and make this process the process group leader */
       if(setsid() == -1) /* was setpgid */
-	 EXITERROR(newPtStruct);
+         EXITERROR(newPtStruct);
       /*
        * dup standard file descriptors to be associated with pseudo terminal */
       if(dup2(newPtStruct->slave_fd,0) == -1) {
-	 EXITERROR(newPtStruct);
-	 }
+         EXITERROR(newPtStruct);
+         }
       if(dup2(newPtStruct->slave_fd,1) == -1) {
-	 EXITERROR(newPtStruct);
-	 }
+         EXITERROR(newPtStruct);
+         }
       if(dup2(newPtStruct->slave_fd,2) == -1) {
-	 EXITERROR(newPtStruct);
-	 }
+         EXITERROR(newPtStruct);
+         }
 
       /* attempt to execute the command slave process */
       if(execve(av[0], av, NULL) == -1) {
          EXITERROR(newPtStruct);
          }
       }
-#endif					/* NT */
+#endif                                  /* NT */
 
   return newPtStruct;
 #undef EXITERROR
@@ -1558,7 +1558,7 @@ struct ptstruct *ptopen(char *command)
  * error reporting.
  */
 int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
-	      unsigned long waittime, int longread)
+              unsigned long waittime, int longread)
    {
    int tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
 #if NT
@@ -1574,7 +1574,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
       }
 
 #if !NT
-  
+
    /* clear the buffer */
    memset(buffer, '\0', bufsiz);
 
@@ -1586,7 +1586,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 
    /* set the wait file descriptor for use with select */
    wait_fd = ptStruct->master_fd+1;
-  
+
    /* set file descriptor sets for reading with select */
    FD_ZERO(&rd_set);
    if (ptStruct->master_fd > -1) {
@@ -1600,78 +1600,78 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
    * if select returns without any errors and
    * if the characters are available to read from input ...
    */
-#endif					/* NT */
+#endif                                  /* NT */
 
 #if NT
    /* clear the buffer */
    ZeroMemory(buffer,bufsiz);
    if(WaitForSingleObject(ptStruct->master_read,waittime) != WAIT_FAILED) {
-#else					/* NT */
+#else                                   /* NT */
 
    if((ret=select(wait_fd,&rd_set,NULL,NULL,timeoutp)) > 0
       && FD_ISSET(ptStruct->master_fd,&rd_set) ) {
 
-#endif					/* NT */
+#endif                                  /* NT */
 
       while(!premstop && tot_bytes_read < bufsiz) {
 
-	 /*
-	  * Read a byte. See if we have a newline.  Probably needs to
-	  * be rewritten to try for multiple bytes.
-	  */
+         /*
+          * Read a byte. See if we have a newline.  Probably needs to
+          * be rewritten to try for multiple bytes.
+          */
 #if NT
-	 if ((ret=ReadFile(ptStruct->master_read,&buffer[i],1,
-			  &bytes_read,NULL)) != 0) {
-#else					/* NT */
-	 if ((bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
-#endif					/* NT */
+         if ((ret=ReadFile(ptStruct->master_read,&buffer[i],1,
+                          &bytes_read,NULL)) != 0) {
+#else                                   /* NT */
+         if ((bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
+#endif                                  /* NT */
 
-	     if(!longread && buffer[i] == '\n') {
-		if (buffer[i-1] == '\r') {
-		   tot_bytes_read--;
-		   }
-		premstop=1;
-		}
-	     tot_bytes_read += bytes_read;
-	     i++;
+             if(!longread && buffer[i] == '\n') {
+                if (buffer[i-1] == '\r') {
+                   tot_bytes_read--;
+                   }
+                premstop=1;
+                }
+             tot_bytes_read += bytes_read;
+             i++;
 
 #if NT
-#else					/* NT */
-	     FD_ZERO(&rd_set);
-	     FD_SET(ptStruct->master_fd,&rd_set);
-#endif					/* NT */
+#else                                   /* NT */
+             FD_ZERO(&rd_set);
+             FD_SET(ptStruct->master_fd,&rd_set);
+#endif                                  /* NT */
 
-	     } /* if bytes read */
-	 else {
+             } /* if bytes read */
+         else {
 #if NT
-	    /*
-	     * Handle ReadFile() != 0 here. Use GetLastError().
-	     * Do we ever retry? Is ERROR_IO_PENDING possible?
-	     */
-	    break;
-#else					/* NT */
-	    /*
-	     * Negative read() is an error; 0 just means wait for more.
-	     * But even if negative, we might just need to try again.
-	     */
-	    if ((bytes_read < 0) && (errno != EAGAIN)) {
-	       /* non-continuing error */
-	       break;
-	       }
-	    usleep(5000);
-	    continue;
-#endif					/* NT */
-	    }
-	 } /* while */
-	 } /* if we had input before timeout */
+            /*
+             * Handle ReadFile() != 0 here. Use GetLastError().
+             * Do we ever retry? Is ERROR_IO_PENDING possible?
+             */
+            break;
+#else                                   /* NT */
+            /*
+             * Negative read() is an error; 0 just means wait for more.
+             * But even if negative, we might just need to try again.
+             */
+            if ((bytes_read < 0) && (errno != EAGAIN)) {
+               /* non-continuing error */
+               break;
+               }
+            usleep(5000);
+            continue;
+#endif                                  /* NT */
+            }
+         } /* while */
+         } /* if we had input before timeout */
 #if NT
       else ret = -1;
       if (ret == 0)
-	 ret = -1;
-#else					/* NT */
+         ret = -1;
+#else                                   /* NT */
 else {
    }
-#endif					/* NT */
+#endif                                  /* NT */
 
 
    /* if some bytes were read than return the number read */
@@ -1697,13 +1697,13 @@ int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct, struct t
 
   if(buffer == NULL | ptStruct == NULL | timeout == NULL)
     return -1;
-  
+
   /* set the wait file descriptor for use with select */
   wait_fd = ptStruct->master_fd+1;
- 
+
   /* clear the buffer */
   memset(buffer,0,sizeof(buffer));
-  
+
   /* set file descriptor sets for reading with select */
   FD_ZERO(&rd_set);
   if(ptStruct->master_fd > -1)
@@ -1713,14 +1713,14 @@ int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct, struct t
   /* if select returns without any errors then ... */
   /* if the characters are availabe to read from input ... */
   while((sel_ret=select(wait_fd,&rd_set,NULL,NULL,timeout)) > 0
-	&& FD_ISSET(ptStruct->master_fd,&rd_set)
-	&& bytes_read < bufsiz 
-	&& (ret=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
-	bytes_read += ret;
-	i++;
-	FD_ZERO(&rd_set);
-	FD_SET(ptStruct->master_fd,&rd_set);
-  } 
+        && FD_ISSET(ptStruct->master_fd,&rd_set)
+        && bytes_read < bufsiz
+        && (ret=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
+        bytes_read += ret;
+        i++;
+        FD_ZERO(&rd_set);
+        FD_SET(ptStruct->master_fd,&rd_set);
+  }
   if(bytes_read > 0) {
     return bytes_read;
   } else if(bytes_read == 0 && !FD_ISSET(ptStruct->master_fd,&rd_set)) {
@@ -1736,23 +1736,23 @@ int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct)
 #if 0
   fd_set rd_set;
   int bytes_read=0, ret=0, wait_fd, i=0;
-  
+
   /*   size_t max_read_bytes=sizeof(char)*256; */
   /* if ptystruct pointer is NULL than return with error code */
   if(ptStruct == NULL)
     return -1;
-  
+
   /* set the wait file descriptor for use with select */
   wait_fd = ptStruct->master_fd+1;
 
   /* clear the buffer */
   memset(buffer,0,sizeof(buffer));
-  
+
   /* set file descriptor sets for reading with select */
   FD_ZERO(&rd_set);
-  if(ptStruct->master_fd > -1) 
+  if(ptStruct->master_fd > -1)
     FD_SET(ptStruct->master_fd,&rd_set);
-   
+
   /* if select returns without any errors then ... */
   if(select(wait_fd,&rd_set,NULL,NULL,NULL) > 0) {
     /* if the characters are availabe to read from input ... */
@@ -1761,20 +1761,20 @@ int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct)
       /* 1) none are available */
       /* 2) the maximum buffer size has been reached */
       /* 3) a newline has been read */
-      while((ret=read(ptStruct->master_fd,&buffer[i],1)) > 0 
-	    && (bytes_read+=ret) < nelem) 
-	i++;
+      while((ret=read(ptStruct->master_fd,&buffer[i],1)) > 0
+            && (bytes_read+=ret) < nelem)
+        i++;
 
       /* if there was an error then return an error code */
       if( ret < 0)
-	ret = -1; /* -1 indicates error reading from slave */
-      else 
-	ret = bytes_read;
+        ret = -1; /* -1 indicates error reading from slave */
+      else
+        ret = bytes_read;
     } else {
       /* select timed out */
       ret = -2;
     }
-  } else 
+  } else
     ret = -1; /* error occurred from select */
   return ret;
 #endif
@@ -1792,9 +1792,9 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
    if ( (WaitForSingleObject(ptStruct->master_write,0) == WAIT_FAILED) ||
        (!WriteFile(ptStruct->master_write,buffer,bufsize,&bytes_written,NULL)))
       ret = -1;
-   else 
+   else
       ret = bytes_written;
-#else					/* NT */
+#else                                   /* NT */
 
    {
    fd_set wd_set;
@@ -1802,10 +1802,10 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
 
    timeout.tv_sec=0L;
    timeout.tv_usec=0L;
-  
+
    /* set file descriptors for writing with select */
    FD_ZERO(&wd_set);
-   if(ptStruct->master_fd > -1) 
+   if(ptStruct->master_fd > -1)
       FD_SET(ptStruct->master_fd,&wd_set);
    else
       return -3; /* invalid output file descriptor - return error */
@@ -1813,22 +1813,22 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
    if ((sel_ret=select(ptStruct->master_fd+1,NULL,&wd_set,NULL,&timeout)) > 0){
       /* if the file descriptor is ready to write to ... */
       if(FD_ISSET(ptStruct->master_fd,&wd_set)) {
-	 if((bytes_written=write(ptStruct->master_fd,buffer,bufsize)) < 0) 
-	    ret = -1; /* -1 indicates error writing to file descriptor */
-	 else 
-	    ret=bytes_written;
-	 }
+         if((bytes_written=write(ptStruct->master_fd,buffer,bufsize)) < 0)
+            ret = -1; /* -1 indicates error writing to file descriptor */
+         else
+            ret=bytes_written;
+         }
       else {
-	 /* select timed out */
-	 ret = 0; /* was -2 */
-	 }
+         /* select timed out */
+         ret = 0; /* was -2 */
+         }
       }
    else {
       ret = sel_ret; /* return value returned by select */
       }
    }
 
-#endif					/* NT */
+#endif                                  /* NT */
   return ret;
 }
 
@@ -1858,7 +1858,7 @@ int ptflush(struct ptstruct *ptStruct)
   return -1;
 }
 
-#endif					/* PseudoPty */
+#endif                                  /* PseudoPty */
 
 FILE *finredir, *fouredir, *ferredir;
 
@@ -1873,38 +1873,38 @@ void detectRedirection()
 #passthru #if (__GNUC__==4) && (__GNUC_MINOR__>7)
 #passthru #define stat _stat64i32
 #passthru #endif
-#endif					/* NTGCC && WordBits==32*/
+#endif                                  /* NTGCC && WordBits==32*/
    struct stat sb;
    /*
     * Look at the standard file handles and attempt to detect
     * redirection.
     */
    if (fstat(fileno(stdin), &sb) == 0) {
-      if (sb.st_mode & S_IFCHR) {		/* stdin is a device */
-	 }
-      if (sb.st_mode & S_IFREG) {		/* stdin is a regular file */
-	 }
+      if (sb.st_mode & S_IFCHR) {               /* stdin is a device */
+         }
+      if (sb.st_mode & S_IFREG) {               /* stdin is a regular file */
+         }
       /* stdin is of size sb.st_size */
       if (sb.st_size > 0) {
          ConsoleFlags |= StdInRedirect;
-	 }
+         }
       }
-   else {					/* unable to identify stdin */
+   else {                                       /* unable to identify stdin */
       }
 
    if (fstat(fileno(stdout), &sb) == 0) {
-      if (sb.st_mode & S_IFCHR) {		/* stdout is a device */
-	 }
-      if (sb.st_mode & S_IFREG) {		/* stdout is a regular file */
-	 }
+      if (sb.st_mode & S_IFCHR) {               /* stdout is a device */
+         }
+      if (sb.st_mode & S_IFREG) {               /* stdout is a regular file */
+         }
       /* stdout is of size sb.st_size */
       if (sb.st_size == 0)
          ConsoleFlags |= StdOutRedirect;
       }
-   else {					/* unable to identify stdout */
+   else {                                       /* unable to identify stdout */
      }
 }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 /*
  * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
@@ -1925,108 +1925,108 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 #ifdef Graphics
    if (dequote)
       detectRedirection();
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
    while (*t2) {
       while (*t2 && isspace(*t2)) t2++;
       switch (*t2) {
-	 case '\0': break;
+         case '\0': break;
 #ifdef Graphics
-	 /*
-	  * perform file redirection; this is for MS Windows
-	  * and other situations where Wiconx is launched from
-	  * a shell that does not process < and > characters.
-	  */
-	 case '<': case '>': {
-	    FILE *f;
-	    char c, buf[128], *t3;
-	    if (dequote == 0) goto skipredirect;
-	    c = *t2++;
-	    while (*t2 && isspace(*t2)) t2++;
-	    t3 = buf;
-	    while (*t2 && !isspace(*t2)) *t3++ = *t2++;
-	    *t3 = '\0';
-	    if (c == '<')
-	       f = fopen(buf, "r");
-	    else
-	       f = fopen(buf, "w");
-	    if (f == NULL) {
-	       fprintf(stderr, "system error: unable to redirect i/o");
-	       c_exit(-1);
-	       }
-	    if (c == '<') {
-	       finredir = f;
-	       ConsoleFlags |= StdInRedirect;
-	       }
-	    else {
-	       fouredir = f;
-	       ConsoleFlags |= StdOutRedirect;
-	       }
-	    break;
-	    }
-#endif					/* Graphics */
-	 case '"': {
-	    char *t3, c = '\0';
-	    if (dequote) t3 = ++t2;			/* skip " */
-	    else t3 = t2++;
+         /*
+          * perform file redirection; this is for MS Windows
+          * and other situations where Wiconx is launched from
+          * a shell that does not process < and > characters.
+          */
+         case '<': case '>': {
+            FILE *f;
+            char c, buf[128], *t3;
+            if (dequote == 0) goto skipredirect;
+            c = *t2++;
+            while (*t2 && isspace(*t2)) t2++;
+            t3 = buf;
+            while (*t2 && !isspace(*t2)) *t3++ = *t2++;
+            *t3 = '\0';
+            if (c == '<')
+               f = fopen(buf, "r");
+            else
+               f = fopen(buf, "w");
+            if (f == NULL) {
+               fprintf(stderr, "system error: unable to redirect i/o");
+               c_exit(-1);
+               }
+            if (c == '<') {
+               finredir = f;
+               ConsoleFlags |= StdInRedirect;
+               }
+            else {
+               fouredir = f;
+               ConsoleFlags |= StdOutRedirect;
+               }
+            break;
+            }
+#endif                                  /* Graphics */
+         case '"': {
+            char *t3, c = '\0';
+            if (dequote) t3 = ++t2;                     /* skip " */
+            else t3 = t2++;
 
             while (*t2 && (*t2 != '"')) t2++;
-	    if (*t2 && !dequote) t2++;
+            if (*t2 && !dequote) t2++;
             if ((c = *t2)) {
-	       *t2++ = '\0';
-	       }
-	    *avp = realloc(*avp, (rv + 2) * sizeof (char *));
-	    (*avp)[rv++] = salloc(t3);
+               *t2++ = '\0';
+               }
+            *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+            (*avp)[rv++] = salloc(t3);
             (*avp)[rv] = NULL;
-	    if(!dequote && c) *--t2 = c;
+            if(!dequote && c) *--t2 = c;
 
-	    break;
-	    }
+            break;
+            }
          default: {
 #if NT
             FINDDATA_T fd;
-#endif					/* NT */
-	    char *t3;
+#endif                                  /* NT */
+            char *t3;
 #ifdef Graphics
 skipredirect:
-#endif					/* Graphics */
-	    t3 = t2;
+#endif                                  /* Graphics */
+            t3 = t2;
             while (*t2 && !isspace(*t2)) t2++;
-	    if (*t2)
-	       *t2++ = '\0';
+            if (*t2)
+               *t2++ = '\0';
             strcpy(tmp, t3);
 
 #if NT
-	    if (!strcmp(tmp, ">") || !FINDFIRST(tmp, &fd)) {
+            if (!strcmp(tmp, ">") || !FINDFIRST(tmp, &fd)) {
 #endif
 
 
-	       *avp = realloc(*avp, (rv + 2) * sizeof (char *));
-	       (*avp)[rv++] = salloc(t3);
+               *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+               (*avp)[rv++] = salloc(t3);
                (*avp)[rv] = NULL;
 #if NT
                }
-	    else {
-   	       char dir[MaxPath];
+            else {
+               char dir[MaxPath];
                int end;
                strcpy(dir, t3);
-	       do {
-	          end = strlen(dir)-1;
-	          while (end >= 0 && dir[end] != '\\' && dir[end] != '/' &&
-			dir[end] != ':') {
+               do {
+                  end = strlen(dir)-1;
+                  while (end >= 0 && dir[end] != '\\' && dir[end] != '/' &&
+                        dir[end] != ':') {
                      dir[end] = '\0';
-		     end--;
-	             }
-		  strcat(dir, FILENAME(&fd));
-	          *avp = realloc(*avp, (rv + 2) * sizeof (char *));
-	          (*avp)[rv++] = salloc(dir);
+                     end--;
+                     }
+                  strcat(dir, FILENAME(&fd));
+                  *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+                  (*avp)[rv++] = salloc(dir);
                   (*avp)[rv] = NULL;
-	          } while (FINDNEXT(&fd));
-	       FINDCLOSE(&fd);
-	       }
-#endif					/* NT */
+                  } while (FINDNEXT(&fd));
+               FINDCLOSE(&fd);
+               }
+#endif                                  /* NT */
             break;
-	    }
+            }
          }
       }
    free(t);
@@ -2046,55 +2046,55 @@ __findenv(const char *name, int *offset);
 
 int getenv_r(const char *name, char *buf, size_t len)
 {
-	int offset;
-	char *result;
-	int rv = -1;
+        int offset;
+        char *result;
+        int rv = -1;
 
-	pthread_rwlock_rdlock(&__environ_lock);
-	result = __findenv(name, &offset);
-	if (result == NULL) {
-		errno = ENOENT;
-		goto out;
-	}
-	if (strlen(result) >= len) {
-		errno = ERANGE;
-		goto out;
-	   }
-	strncpy(buf, result, len);
-	rv = 0;
+        pthread_rwlock_rdlock(&__environ_lock);
+        result = __findenv(name, &offset);
+        if (result == NULL) {
+                errno = ENOENT;
+                goto out;
+        }
+        if (strlen(result) >= len) {
+                errno = ERANGE;
+                goto out;
+           }
+        strncpy(buf, result, len);
+        rv = 0;
 out:
-	pthread_rwlock_unlock(&__environ_lock);
-	return rv;
+        pthread_rwlock_unlock(&__environ_lock);
+        return rv;
 }
 
 /*
  * __findenv --
- *	Returns pointer to value associated with name, if any, else NULL.
- *	Sets offset to be the offset of the name/value combination in the
- *	environmental array, for use by setenv(3) and unsetenv(3).
- *	Explicitly removes '=' in argument name.
+ *      Returns pointer to value associated with name, if any, else NULL.
+ *      Sets offset to be the offset of the name/value combination in the
+ *      environmental array, for use by setenv(3) and unsetenv(3).
+ *      Explicitly removes '=' in argument name.
  *
- *	This routine *should* be a static; don't use it.
+ *      This routine *should* be a static; don't use it.
  */
 char *
 __findenv(const char *name, int *offset)
 {
-	size_t len;
-	const char *np;
-	char **p, *c;
+        size_t len;
+        const char *np;
+        char **p, *c;
 
-	if (name == NULL || environ == NULL)
-		return NULL;
-	for (np = name; *np && *np != '='; ++np)
-		continue;
-	len = np - name;
-	for (p = environ; (c = *p) != NULL; ++p)
-		if (strncmp(c, name, len) == 0 && c[len] == '=') {
-			*offset = p - environ;
-			return c + len + 1;
-		}
-	*offset = p - environ;
-	return NULL;
+        if (name == NULL || environ == NULL)
+                return NULL;
+        for (np = name; *np && *np != '='; ++np)
+                continue;
+        len = np - name;
+        for (p = environ; (c = *p) != NULL; ++p)
+                if (strncmp(c, name, len) == 0 && c[len] == '=') {
+                        *offset = p - environ;
+                        return c + len + 1;
+                }
+        *offset = p - environ;
+        return NULL;
 }
 
 #else
@@ -2104,9 +2104,9 @@ getenv_r(const char *name, char *buf, size_t len)
    char *buf2 = getenv(name);
    if (buf2) {
       if (strlen(buf2) >= len) {
-	 errno = ERANGE;
-	 return -1;
-	 }
+         errno = ERANGE;
+         return -1;
+         }
       errno = 0;
       strcpy(buf, buf2);
       return 0;
@@ -2117,4 +2117,4 @@ getenv_r(const char *name, char *buf, size_t len)
       }
 }
 
-#endif					/* HAVE_LIBPTHREAD */
+#endif                                  /* HAVE_LIBPTHREAD */

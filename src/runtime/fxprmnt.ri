@@ -32,9 +32,9 @@ function {1} XAnimateFrame(argv[argc])
        * 1 or more pixmaps must be included
        */
       while(warg < argc && is:file(argv[warg]) &&
-	    (BlkLoc(argv[warg])->file.status & Fs_Window)) {
+            (BlkLoc(argv[warg])->file.status & Fs_Window)) {
          npixmaps++;
-	 warg++;
+         warg++;
          }
       if (!npixmaps) runerr(140);
 
@@ -50,21 +50,21 @@ function {1} XAnimateFrame(argv[argc])
             closed = 1;               /* duplicate the next to last point */
             x[0] = IntVal(argv[argc-4]);
             y[0] = IntVal(argv[argc-3]);
-	    x[0] += _w_->dx;
-	    y[0] += _w_->dy;
+            x[0] += _w_->dx;
+            y[0] += _w_->dy;
             }
          else if (argc > 1) {        /* duplicate the first point */
             x[0] = IntVal(argv[warg]);
             y[0] = IntVal(argv[warg+1]);
-	    x[0] += _w_->dx;
-	    y[0] += _w_->dy;
+            x[0] += _w_->dx;
+            y[0] += _w_->dy;
             }
          for (i = 0, j = 1; i < n; i++, j++) {
-	    int base = warg + i * 2;
-	   
+            int base = warg + i * 2;
+
             if (j == MAXXOBJS) {
                animate(_w_, &(argv[warg-npixmaps]), npixmaps,
-		       x, y, MAXXOBJS, delay);
+                       x, y, MAXXOBJS, delay);
                x[0] = x[j-3];
                y[0] = y[j-3];         /* duplicate the last three points */
                x[1] = x[j-2];         /*  for the next call, to insure   */
@@ -75,8 +75,8 @@ function {1} XAnimateFrame(argv[argc])
                }
             CnvCInteger(argv[base], x[j]);
             CnvCInteger(argv[base + 1], y[j]);
-	    x[j] += _w_->dx;
-	    y[j] += _w_->dy;
+            x[j] += _w_->dx;
+            y[j] += _w_->dy;
             }
          if (closed) {                /* duplicate the second point */
             x[j] = x[2];

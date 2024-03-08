@@ -64,7 +64,7 @@ int cnv_c_dbl(dptr s, double *d)
          if (Type(*s) == T_Lrgint)
             return bigtoreal(s, d);
          else
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
             *d = IntVal(*s);
 
@@ -93,9 +93,9 @@ int cnv_c_dbl(dptr s, double *d)
 #ifdef LargeInts
       case T_Lrgint:
          result.dword = D_Lrgint;
-	 BlkLoc(result) = (union block *)numrc.big;
+         BlkLoc(result) = (union block *)numrc.big;
          return bigtoreal(&result, d);
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
       case T_Real:
          *d = numrc.real;
@@ -112,7 +112,7 @@ int cnv_c_int(s, d)
 dptr s;
 C_integer *d;
    {
-   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
+   struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    union numeric numrc;
    char sbuf[MaxCvtLen];
 
@@ -123,7 +123,7 @@ C_integer *d;
          if (Type(*s) == T_Lrgint) {
             return 0;
             }
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
          *d = IntVal(*s);
          return 1;
@@ -156,7 +156,7 @@ C_integer *d;
       case T_Integer: {
          *d = numrc.integer;
          return 1;
-	 }
+         }
       case T_Real: {
          double dbl = numrc.real;
          if (dbl > MaxLong || dbl < MinLong) {
@@ -243,7 +243,7 @@ int f(dptr s, dptr d)
       l = StrLen(str);
       while(l--) {
          Setb(*s1, *d);
-	 s1++;
+         s1++;
          }
       EVValD(d, e_sconv);
       return 1;
@@ -258,9 +258,9 @@ int f(dptr s, dptr d)
 #ifdef MultiProgram
 cnv_cset_macro(cnv_cset_0,0,0,0,0,0)
 cnv_cset_macro(cnv_cset_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cnv_cset_macro(cnv_cset,0,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * cnv_ec_int - cnv:(exact)C_integer(*s, *d), convert to an exact C integer
@@ -269,7 +269,7 @@ int cnv_ec_int(s, d)
 dptr s;
 C_integer *d;
    {
-   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
+   struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    union numeric numrc;
    char sbuf[MaxCvtLen];
 
@@ -280,7 +280,7 @@ C_integer *d;
          if (Type(*s) == T_Lrgint) {
             return 0;
             }
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
          *d = IntVal(*s);
          return 1;
          }
@@ -314,7 +314,7 @@ C_integer *d;
 int cnv_eint(s, d)
 dptr s, d;
    {
-   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
+   struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    char sbuf[MaxCvtLen];
    union numeric numrc;
 
@@ -341,14 +341,14 @@ dptr s, d;
    switch (ston(s, &numrc)) {
       case T_Integer:
          MakeInt(numrc.integer, d);
-	 return 1;
+         return 1;
 
 #ifdef LargeInts
       case T_Lrgint:
          d->dword = D_Lrgint;
-	 BlkLoc(*d) = (union block *)numrc.big;
+         BlkLoc(*d) = (union block *)numrc.big;
          return 1;
-#endif				/* LargeInts */
+#endif                          /* LargeInts */
 
       default:
          return 0;
@@ -362,7 +362,7 @@ dptr s, d;
 int f(s, d)
 dptr s, d;
    {
-   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
+   struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    char sbuf[MaxCvtLen];
    union numeric numrc;
 
@@ -389,11 +389,11 @@ dptr s, d;
                EVValD(s, e_fconv);
                return 0;
                }
-#else					/* LargeInts */
+#else                                   /* LargeInts */
             EVValD(s, e_fconv);
             return 0;
-#endif					/* LargeInts */
-	    }
+#endif                                  /* LargeInts */
+            }
          MakeInt((word)dbl,d);
          EVValD(d, e_sconv);
          return 1;
@@ -419,10 +419,10 @@ dptr s, d;
 #ifdef LargeInts
       case T_Lrgint:
          d->dword = D_Lrgint;
-	 BlkLoc(*d) = (union block *)numrc.big;
+         BlkLoc(*d) = (union block *)numrc.big;
          EVValD(d, e_sconv);
-	 return 1;
-#endif					/* LargeInts */
+         return 1;
+#endif                                  /* LargeInts */
 
       case T_Integer:
          MakeInt(numrc.integer,d);
@@ -434,11 +434,11 @@ dptr s, d;
 
 #ifdef LargeInts
 #ifdef DescriptorDouble
-	    s->vword.realval = dbl;
+            s->vword.realval = dbl;
 #else
             BlkLoc(*s) = (union block *)alcreal(dbl);
 #endif
-	    s->dword = D_Real;
+            s->dword = D_Real;
             if (realtobig(s, d) == Succeeded) {
                EVValD(d, e_sconv);
                return 1;
@@ -447,11 +447,11 @@ dptr s, d;
                EVValD(s, e_fconv);
                return 0;
                }
-#else					/* LargeInts */
+#else                                   /* LargeInts */
             EVValD(s, e_fconv);
             return 0;
-#endif					/* LargeInts */
-	    }
+#endif                                  /* LargeInts */
+            }
          MakeInt((word)dbl,d);
          EVValD(d, e_sconv);
          return 1;
@@ -467,9 +467,9 @@ dptr s, d;
 #passthru #undef cnv_int
 cnv_int_macro(cnv_int,0,0,0,0,0)
 cnv_int_macro(cnv_int_1,E_Aconv,E_Tconv,E_Nconv,E_Fconv,E_Sconv)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cnv_int_macro(cnv_int,0,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #begdef cnv_real_macro(f,e_aconv,e_tconv,e_sconv,e_fconv)
 /*
@@ -485,9 +485,9 @@ int f(dptr s, dptr d)
    if (cnv_c_dbl(s, &dbl)) {
 #ifdef DescriptorDouble
       d->vword.realval = dbl;
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
       Protect(BlkLoc(*d) = (union block *)alcreal(dbl), fatalerr(0,NULL));
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
       d->dword = D_Real;
       EVValD(d, e_sconv);
       return 1;
@@ -502,9 +502,9 @@ int f(dptr s, dptr d)
 #passthru #undef cnv_real
 cnv_real_macro(cnv_real,0,0,0,0)
 cnv_real_macro(cnv_real_1,E_Aconv,E_Tconv,E_Sconv,E_Fconv)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cnv_real_macro(cnv_real,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 
 #begdef cnv_str_macro(f, e_aconv, e_tconv, e_nconv, e_sconf, e_fconv)
@@ -528,13 +528,13 @@ int f(dptr s, dptr d)
 
 #ifdef LargeInts
          if (Type(*s) == T_Lrgint) {
-	    bigtos(s,d);
-	    }
+            bigtos(s,d);
+            }
          else
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
          itos(IntVal(*s), d, sbuf);
-	 }
+         }
       real: {
          double res;
          GetReal(s, res);
@@ -542,7 +542,7 @@ int f(dptr s, dptr d)
          }
       cset: {
          cstos(BlkD(*s,Cset)->bits, d, sbuf);
-	 }
+         }
       default: {
          EVValD(s, e_fconv);
          return 0;
@@ -558,9 +558,9 @@ int f(dptr s, dptr d)
 #passthru #undef cnv_str
 cnv_str_macro(cnv_str,0,0,0,0,0)
 cnv_str_macro(cnv_str_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cnv_str_macro(cnv_str,0,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #begdef cnv_tcset_macro(f, e_aconv, e_tconv, e_nconv, e_sconv, e_fconv)
 /*
@@ -587,7 +587,7 @@ int f(struct b_cset *cbuf, dptr s, dptr d)
       return 1;
       }
    if (tmp_str(sbuf, s, &tmpstr)) {
-      for (l = 0; l < CsetSize; l++) 
+      for (l = 0; l < CsetSize; l++)
           cbuf->bits[l] = 0;
       d->dword = D_Cset;
       BlkLoc(*d) = (union block *)cbuf;
@@ -595,7 +595,7 @@ int f(struct b_cset *cbuf, dptr s, dptr d)
       l = StrLen(tmpstr);
       while(l--) {
          Setb(*s1, *d);
-	 s1++;
+         s1++;
          }
       EVValD(d, e_sconv);
       return 1;
@@ -610,9 +610,9 @@ int f(struct b_cset *cbuf, dptr s, dptr d)
 #ifdef MultiProgram
 cnv_tcset_macro(cnv_tcset_0,0,0,0,0,0)
 cnv_tcset_macro(cnv_tcset_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cnv_tcset_macro(cnv_tcset,0,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #begdef cnv_tstr_macro(f,e_aconv,e_tconv,e_nconv,e_sconv,e_fconv)
 /*
@@ -642,9 +642,9 @@ int f(char *sbuf, dptr s, dptr d)
 #ifdef MultiProgram
 cnv_tstr_macro(cnv_tstr_0,0,0,0,0,0)
 cnv_tstr_macro(cnv_tstr_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cnv_tstr_macro(cnv_tstr,0,0,0,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #begdef deref_macro(f, e_deref)
 /*
@@ -693,34 +693,34 @@ void f(dptr s, dptr d)
           * Look up the element in the table.
           */
          bp = BlkLoc(*s);
-	 if (BlkType(Blk(bp,Tvtbl)->clink) == T_File) {
-	    int status = Blk(Blk(bp,Tvtbl)->clink,File)->status;
+         if (BlkType(Blk(bp,Tvtbl)->clink) == T_File) {
+            int status = Blk(Blk(bp,Tvtbl)->clink,File)->status;
 #ifdef Dbm
-	    if (status & Fs_Dbm) {
-	       DBM *db;
-	       datum key, content;
-	       db = (DBM *)Blk(Blk(bp,Tvtbl)->clink,File)->fd.fp;
-	       if (!cnv:string(bp->Tvtbl.tref, bp->Tvtbl.tref)) { /* key */
-		  fatalerr(103, &(bp->Tvtbl.tref));
-		  }
-	       key.dptr = StrLoc(Blk(bp,Tvtbl)->tref);
-	       key.dsize = StrLen(Blk(bp,Tvtbl)->tref);
-	       content = dbm_fetch(db, key);
-	       if (content.dptr == NULL) *d = nulldesc;
-	       else {
-		  StrLoc(*d) = alcstr(content.dptr, content.dsize);
-		  Protect(StrLoc(*d),fatalerr(103, s));
-		  StrLen(*d) = content.dsize;
-		  }
-	       return;
-	       }
-	    else
-#endif					/* Dbm */
-	       fatalerr(103, s);
-	       }
+            if (status & Fs_Dbm) {
+               DBM *db;
+               datum key, content;
+               db = (DBM *)Blk(Blk(bp,Tvtbl)->clink,File)->fd.fp;
+               if (!cnv:string(bp->Tvtbl.tref, bp->Tvtbl.tref)) { /* key */
+                  fatalerr(103, &(bp->Tvtbl.tref));
+                  }
+               key.dptr = StrLoc(Blk(bp,Tvtbl)->tref);
+               key.dsize = StrLen(Blk(bp,Tvtbl)->tref);
+               content = dbm_fetch(db, key);
+               if (content.dptr == NULL) *d = nulldesc;
+               else {
+                  StrLoc(*d) = alcstr(content.dptr, content.dsize);
+                  Protect(StrLoc(*d),fatalerr(103, s));
+                  StrLen(*d) = content.dsize;
+                  }
+               return;
+               }
+            else
+#endif                                  /* Dbm */
+               fatalerr(103, s);
+               }
          ep = memb(bp->Tvtbl.clink,&(bp->Tvtbl.tref), bp->Tvtbl.hashnum, &res);
          if (res == 1)
-            *d = Blk((*ep),Telem)->tval;		/* found; use value */
+            *d = Blk((*ep),Telem)->tval;                /* found; use value */
          else
             *d = Blk(Blk(bp,Tvtbl)->clink,Table)->defvalue;  /* use default */
          }
@@ -736,31 +736,31 @@ void f(dptr s, dptr d)
       tvmonitored:{
 #ifdef EventMon
          *d = *(VarLoc(BlkD(*s,Tvmonitored)->tv));
-#endif					/* EventMon */
+#endif                                  /* EventMon */
          }
 
       default: {
 #ifdef Arrays
-	 if (Offset(*s) > 0) {
-	    if (BlkLoc(*s)->Realarray.title == T_Realarray) {
+         if (Offset(*s) > 0) {
+            if (BlkLoc(*s)->Realarray.title == T_Realarray) {
 #ifdef DescriptorDouble
-	       d->vword.realval = *(double *)((word *)VarLoc(*s) + Offset(*s));
-#else					/* DescriptorDouble */
-	       d->vword.bptr =
-		  (union block *) alcreal(*(double *)((word *)VarLoc(*s) +
-						      Offset(*s)));
-#endif					/* DescriptorDouble */
-	       d->dword = D_Real;
-	    }
-	    else if (BlkLoc(*s)->Intarray.title == T_Intarray) {
-	       d->vword.integr = (word) *((word *)(VarLoc(*s)) +  Offset(*s)) ;
-	       d->dword = D_Integer;
-	    }
-	    else
-	       *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
-	 }
-	 else
-#endif					/* Arrays */
+               d->vword.realval = *(double *)((word *)VarLoc(*s) + Offset(*s));
+#else                                   /* DescriptorDouble */
+               d->vword.bptr =
+                  (union block *) alcreal(*(double *)((word *)VarLoc(*s) +
+                                                      Offset(*s)));
+#endif                                  /* DescriptorDouble */
+               d->dword = D_Real;
+            }
+            else if (BlkLoc(*s)->Intarray.title == T_Intarray) {
+               d->vword.integr = (word) *((word *)(VarLoc(*s)) +  Offset(*s)) ;
+               d->dword = D_Integer;
+            }
+            else
+               *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
+         }
+         else
+#endif                                  /* Arrays */
 
          /*
           * An ordinary variable is being dereferenced.
@@ -775,21 +775,21 @@ void f(dptr s, dptr d)
 #ifdef MultiProgram
 deref_macro(deref_0,0)
 deref_macro(deref_1,E_Deref)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 deref_macro(deref,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * getdbl - return as a double the value inside a real block.
  */
-double getdbl(dp) 
+double getdbl(dp)
 dptr dp;
    {
    double d;
    GetReal(dp, d);
    return d;
    }
-
+
 /*
  * tmp_str - Convert to temporary string.
  */
@@ -805,13 +805,13 @@ dptr d;
 
 #ifdef LargeInts
          if (Type(*s) == T_Lrgint) {
-	    bigtos(s,d);
-	    }
+            bigtos(s,d);
+            }
          else
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
          itos(IntVal(*s), d, sbuf);
-	 }
+         }
       real: {
          double res;
          GetReal(s, res);
@@ -824,9 +824,9 @@ dptr d;
       }
    return 1;
    }
-
+
 /*
- * dp_pnmcmp - do a string comparison of a descriptor to the procedure 
+ * dp_pnmcmp - do a string comparison of a descriptor to the procedure
  *   name in a pstrnm struct; used in call to qsearch().
  */
 int dp_pnmcmp(pne,dp)
@@ -838,7 +838,7 @@ struct descrip *dp;
    StrLoc(d) = pne->pstrep;
    return lexcmp(&d,dp);
 }
-
+
 /*
  * bi_strprc - convert a string to a (built-in) function or operator.
  */
@@ -847,7 +847,7 @@ struct b_proc *bi_strprc(dptr s, C_integer arity)
    C_integer i;
 #if !COMPILER
    struct pstrnm *pp;
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
 
    if (!StrLen(*s))
       return NULL;
@@ -858,9 +858,9 @@ struct b_proc *bi_strprc(dptr s, C_integer arity)
     */
    if (!isalpha(*StrLoc(*s))) {
       for (i = 0; i < op_tbl_sz; ++i)
-	 if (eq(s, &op_tbl[i].pname) && (arity == op_tbl[i].nparam ||
-					 op_tbl[i].nparam == -1))
-	    return &op_tbl[i];
+         if (eq(s, &op_tbl[i].pname) && (arity == op_tbl[i].nparam ||
+                                         op_tbl[i].nparam == -1))
+            return &op_tbl[i];
       return NULL;
       }
 
@@ -870,13 +870,13 @@ struct b_proc *bi_strprc(dptr s, C_integer arity)
 #if COMPILER
    for (i = 0; i < n_globals; ++i)
       if (eq(s, &gnames[i]))
-	 return builtins[i];  /* may be null */
-#else					/* COMPILER */
+         return builtins[i];  /* may be null */
+#else                                   /* COMPILER */
    pp = (struct pstrnm *)qsearch((char *)s,(char *)pntab,pnsize,
-				 sizeof(struct pstrnm),dp_pnmcmp);
+                                 sizeof(struct pstrnm),dp_pnmcmp);
    if (pp!=NULL)
       return (struct b_proc *)pp->pblock;
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
 
    return NULL;
    }
@@ -897,11 +897,11 @@ struct b_proc *strprc(dptr s, C_integer arity)
             return BlkD(globals[i], Proc);
          else
             return NULL;
-	 }
+         }
       }
    return bi_strprc(s,arity);
    }
-
+
 /*
  * Service routines
  */
@@ -925,28 +925,28 @@ char *s;
    *p = '\0';
    if (num >= 0L)
       do {
-	 *--p = ival % 10L + '0';
-	 ival /= 10L;
-	 } while (ival != 0L);
+         *--p = ival % 10L + '0';
+         ival /= 10L;
+         } while (ival != 0L);
    else {
       if (ival == MinLong) {
-	 p -= strlen(MaxNegInt);
-	 strcpy(p, MaxNegInt);
+         p -= strlen(MaxNegInt);
+         strcpy(p, MaxNegInt);
          }
       else {
-	ival = -ival;
-	do {
-	   *--p = '0' + (ival % 10L);
-	   ival /= 10L;
-	   } while (ival != 0L);
-	*--p = '-';
-	}
+        ival = -ival;
+        do {
+           *--p = '0' + (ival % 10L);
+           ival /= 10L;
+           } while (ival != 0L);
+        *--p = '-';
+        }
       }
 
    StrLen(*dp) = s + MaxCvtLen - 1 - p;
    StrLoc(*dp) = p;
    }
-
+
 
 /*
  * ston - convert a string to a numeric quantity if possible.
@@ -961,20 +961,20 @@ union numeric *result;
    {
    register char *s = StrLoc(*sptr), *end_s;
    register int c;
-   int realflag = 0;	/* indicates a real number */
+   int realflag = 0;    /* indicates a real number */
    char msign = '+';    /* sign of mantissa */
    char esign = '+';    /* sign of exponent */
    double mantissa = 0; /* scaled mantissa with no fractional part */
-   word lresult = 0;	/* integer result */
-   int scale = 0;	/* number of decimal places to shift mantissa */
-   int digits = 0;	/* total number of digits seen */
-   int sdigits = 0;	/* number of significant digits seen */
-   int exponent = 0;	/* exponent part of real number */
-   double fiveto;	/* holds 5^scale */
-   double power;	/* holds successive squares of 5 to compute fiveto */
+   word lresult = 0;    /* integer result */
+   int scale = 0;       /* number of decimal places to shift mantissa */
+   int digits = 0;      /* total number of digits seen */
+   int sdigits = 0;     /* number of significant digits seen */
+   int exponent = 0;    /* exponent part of real number */
+   double fiveto;       /* holds 5^scale */
+   double power;        /* holds successive squares of 5 to compute fiveto */
    int err_no;
    char *ssave;         /* holds original ptr for bigradix */
-   int suffix = 0;	/* number of times to multiply 1024 into the result */
+   int suffix = 0;      /* number of times to multiply 1024 into the result */
 
    if (StrLen(*sptr) == 0)
       return CvtFail;
@@ -999,18 +999,18 @@ union numeric *result;
       }
    else if (c == '&') {
       if ((StrLen(*sptr) == 3) && (s[0] == 'p') && (s[1] == 'i')) {
-	 result->real = Pi;
-	 return T_Real;
-	 }
+         result->real = Pi;
+         return T_Real;
+         }
       else if ((StrLen(*sptr) == 2) && (s[0] == 'e')) {
-	 result->real = 2.71828182845904523536028747135266249775724709369996;
-	 return T_Real;
-	 }
+         result->real = 2.71828182845904523536028747135266249775724709369996;
+         return T_Real;
+         }
       if ((StrLen(*sptr) == 4) && (s[0] == 'p') &&
-	  (s[1] == 'h') && (s[2] == 'i')) {
-	 result->real = 1.618033988749894848204586834365638117720309180;
-	 return T_Real;
-	 }
+          (s[1] == 'h') && (s[2] == 'i')) {
+         result->real = 1.618033988749894848204586834365638117720309180;
+         return T_Real;
+         }
       else return CvtFail;
       }
 
@@ -1022,13 +1022,13 @@ union numeric *result;
    while (isdigit(c)) {
       digits++;
       if (mantissa < Big) {
-	 mantissa = mantissa * 10 + (c - '0');
+         mantissa = mantissa * 10 + (c - '0');
          lresult = lresult * 10 + (c - '0');
-	 if (mantissa > 0.0)
-	    sdigits++;
-	 }
+         if (mantissa > 0.0)
+            sdigits++;
+         }
       else
-	 scale++;
+         scale++;
       c = (s < end_s) ? *s++ : ' ';
       }
 
@@ -1041,9 +1041,9 @@ union numeric *result;
       rv = bigradix((int)msign, (int)mantissa, s, end_s, result);
       if (rv == RunError)
          fatalerr(0, NULL);
-#else					/* LargeInts */
+#else                                   /* LargeInts */
       rv = radix((int)msign, (int)mantissa, s, end_s, result);
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
       return rv;
       }
 
@@ -1054,16 +1054,16 @@ union numeric *result;
       realflag++;
       c = (s < end_s) ? *s++ : ' ';
       while (isdigit(c)) {
-	 digits++;
-	 if (mantissa < Big) {
-	    mantissa = mantissa * 10 + (c - '0');
-	    lresult = lresult * 10 + (c - '0');
-	    scale--;
-	    if (mantissa > 0.0)
-	       sdigits++;
-	    }
+         digits++;
+         if (mantissa < Big) {
+            mantissa = mantissa * 10 + (c - '0');
+            lresult = lresult * 10 + (c - '0');
+            scale--;
+            if (mantissa > 0.0)
+               sdigits++;
+            }
          c = (s < end_s) ? *s++ : ' ';
-	 }
+         }
       }
 
    /*
@@ -1085,16 +1085,16 @@ union numeric *result;
       realflag++;
       c = (s < end_s) ? *s++ : ' ';
       if (c == '+' || c == '-') {
-	 esign = c;
+         esign = c;
          c = (s < end_s) ? *s++ : ' ';
-	 }
+         }
       if (!isdigit(c))
-	 return CvtFail;
+         return CvtFail;
       while (isdigit(c)) {
-	 exponent = exponent * 10 + (c - '0');
-	 if (exponent > 308) return CvtFail;
+         exponent = exponent * 10 + (c - '0');
+         if (exponent > 308) return CvtFail;
          c = (s < end_s) ? *s++ : ' ';
-	 }
+         }
       scale += (esign == '+') ? exponent : -exponent;
       }
       }
@@ -1129,7 +1129,7 @@ union numeric *result;
     */
 #if COMPILER
    if (largeints)
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
       if (!realflag) {
          int rv;
          rv = bigradix((int)msign, 10, ssave, end_s, result);
@@ -1137,10 +1137,10 @@ union numeric *result;
             fatalerr(0, NULL);
          return rv;
          }
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
    if (!realflag)
-      return CvtFail;		/* don't promote to real if integer format */
+      return CvtFail;           /* don't promote to real if integer format */
 
    /*
     * Rough tests for overflow and underflow.
@@ -1163,10 +1163,10 @@ union numeric *result;
    power = 5.0;
    for (;;) {
       if (exponent & 01)
-	 fiveto *= power;
+         fiveto *= power;
       exponent >>= 1;
       if (exponent == 0)
-	 break;
+         break;
       power *= power;
       }
    if (scale > 0)
@@ -1210,7 +1210,7 @@ union numeric *result;
    while (isalnum(c)) {
       c = tonum(c);
       if (c >= r)
-	 return CvtFail;
+         return CvtFail;
       num = num * r + c;
       c = (s < end_s) ? *s++ : ' ';
       }
@@ -1229,9 +1229,9 @@ union numeric *result;
 
    return T_Integer;
    }
-#endif					/* COMPILER || !(defined LargeInts) */
+#endif                                  /* COMPILER || !(defined LargeInts) */
 
-
+
 /*
  * cvpos - convert position to strictly positive position
  *  given length.
@@ -1261,7 +1261,7 @@ register word len;
       return p;
    return (len + p + 1);
    }
-
+
 double dblZero = 0.0;
 
 /*
@@ -1273,26 +1273,26 @@ double n;
 dptr dp;
 char *s;
    {
-   s++; 				/* leave room for leading zero */
+   s++;                                 /* leave room for leading zero */
    sprintf(s, "%.*g", Precision, n + dblZero);   /* format, avoiding -0 */
 
    /*
     * Now clean up possible messes.
     */
-   while (*s == ' ')			/* delete leading blanks */
+   while (*s == ' ')                    /* delete leading blanks */
       s++;
-   if (*s == '.') {			/* prefix 0 to initial period */
+   if (*s == '.') {                     /* prefix 0 to initial period */
       s--;
       *s = '0';
       }
    else if (!strchr(s, '.') && !strchr(s,'e') && !strchr(s,'E'))
-         strcat(s, ".0");		/* if no decimal point or exp. */
-   if (s[strlen(s) - 1] == '.')		/* if decimal point is at end ... */
+         strcat(s, ".0");               /* if no decimal point or exp. */
+   if (s[strlen(s) - 1] == '.')         /* if decimal point is at end ... */
       strcat(s, "0");
    StrLen(*dp) = strlen(s);
    StrLoc(*dp) = s;
    }
-
+
 /*
  * cstos - convert the cset bit array pointed at by cs into a string using
  *  s as a buffer and making a descriptor for the resulting string.
@@ -1310,9 +1310,9 @@ char *s;
    p = s;
    for (i = 0; i < CsetSize; i++) {
       if (cs[i])
-	 for (j=i*IntBits, w=cs[i]; w; j++, w >>= 1)
-	    if (w & 01)
-	       *p++ = FromAscii((char)j);
+         for (j=i*IntBits, w=cs[i]; w; j++, w >>= 1)
+            if (w & 01)
+               *p++ = FromAscii((char)j);
       }
    *p = '\0';
 
@@ -1346,9 +1346,9 @@ int cnv_list(dptr s, dptr d)
    if (size > 0) {  /* only need to copy values for non-empty sets */
       d1 = Blk(lp->listhead,Lelem)->lslots;
       for (j=0; j < HSegs && (seg= BlkPH(bp,Table,hdir)[j])!=NULL;j++)
-	 for (k = segsize[j] - 1; k >= 0; k--)
-	    for (ep= seg->hslots[k]; ep!=NULL;ep=BlkPE(ep,Telem,clink))
-	       *d1++ = BlkPE(ep,Selem,setmem);
+         for (k = segsize[j] - 1; k >= 0; k--)
+            for (ep= seg->hslots[k]; ep!=NULL;ep=BlkPE(ep,Telem,clink))
+               *d1++ = BlkPE(ep,Selem,setmem);
       }
 
    Desc_EVValD(lp, E_Lcreate, D_List);

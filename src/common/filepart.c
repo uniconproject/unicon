@@ -30,11 +30,6 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    #define FileSep '/'
 #endif					/* MSDOS */
 
-#if MACINTOSH
-   #define Prefix ":"
-   #define FileSep ':'
-#endif					/* MACINTOSH */
-
 #if MVS
    #define Prefix ""
    #define FileSep '('

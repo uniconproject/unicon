@@ -2974,10 +2974,6 @@ Deliberate Syntax Error
    return (isascii(c) && isprint(c));
 #endif					/* MSDOS ... */
 
-#if MACINTOSH
-   return isprint(c);
-#endif					/* MACINTOSH */
-
 #if MVS || VM
    return isprint(c);
 #endif                                  /* MVS || VM */

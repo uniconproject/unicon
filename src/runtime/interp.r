@@ -35,9 +35,9 @@ static void vanq_proc (struct ef_marker *efp_v, struct gf_marker *gfp_v);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
+#if MSDOS || MVS || UNIX || VM || VMS
    /* nothing needed */
-#endif					/* MACINTOSH || ... */
+#endif					/* MSDOS|| ... */
 
 /*
  * End of operating-system specific code.
@@ -355,9 +355,9 @@ deliberate syntax error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MVS || UNIX || VM || VMS
+#if MVS || UNIX || VM || VMS
 #define PushAVal(x) PushVal(x)
-#endif					/* MACINTOSH || ... */
+#endif					/* MSDOS || ... */
 
 #if MSDOS
 #define PushAVal(x) {rsp++; \
@@ -2439,9 +2439,9 @@ interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MVS || VM || VMS
+#if MVS || VM || VMS
    /* not included */
-#endif					/* MACINTOSH || ... */
+#endif					/* MVS || ... */
 
 #if DEBUG_INTERP
 void stkdump(op)

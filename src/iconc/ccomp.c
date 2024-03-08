@@ -32,7 +32,7 @@ Deliberate Syntax Error
 #endif
 #endif
 
-#if UNIX || MACINTOSH || MVS || VM
+#if UNIX || MVS || VM
 #define ExeFlag "-o"
 #define LinkLibs " -lm"
 #endif						/* UNIX ... */
@@ -79,7 +79,7 @@ char *libname;
 Deliberate Syntax Error
 #endif						/* PORT */
 
-#if UNIX || MACINTOSH || MSDOS || MVS || VM
+#if UNIX || MSDOS || MVS || VM
    l->libname = libname;
    l->nm_sz = strlen(libname);
 #endif						/* UNIX ... */
@@ -123,7 +123,7 @@ rmv_ccomp_opts(opts)
    char * q;
    char * rslt;
 
-#if PORT || MACINTOSH || MSDOS || MVS || VM || VMS
+#if PORT || MSDOS || MVS || VM || VMS
    /* something may be needed */
    fprintf(stderr, "warning: option \"-nO\" unsupported on this platform.\n");
    return opts;
@@ -214,7 +214,7 @@ char *exename;
  *  time as the number of libraries grew, it became a maintenance problem.
  */
 
-#if PORT || MACINTOSH || MVS || VM
+#if PORT || MVS || VM
    /* something may be needed */
 Deliberate Syntax Error
 #endif						/* PORT || ... */

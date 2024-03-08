@@ -36,18 +36,6 @@
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH
-   #ifdef MacGraph
-      #include <console.h>
-      #include <AppleEvents.h>
-      #include <GestaltEqu.h>
-      #include <fp.h>
-      #include <QDOffscreen.h>
-      #include <Palettes.h>
-      #include <Quickdraw.h>
-   #endif				/* MacGraph */
-#endif					/* MACINTOSH */
-
 #ifdef ISQL
   #undef Type
   #undef Precision

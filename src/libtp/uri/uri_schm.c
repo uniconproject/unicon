@@ -15,4 +15,4 @@ extern SCHEME scPOP;
 extern SCHEME scMAILTO;
 
 SCHEME *schemes[] = { &scFinger, &scFTP, &scHTTP, &scHTTPS,
-		      &scPOP, &scMAILTO, 0 };
+                      &scPOP, &scMAILTO, 0 };

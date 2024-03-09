@@ -68,7 +68,7 @@ int inet_pton(int family, const char* s, void* addr)
 
     return 0;
   }
-  
+
   errno = EAFNOSUPPORT;
   return -1;
 }
@@ -112,8 +112,8 @@ ssize_t _tpsends(Tpdisc_t* disc, char* fmt, ...)
     while (*fmt != '%' && *fmt != '\0') {
       buf[nbuf++] = *fmt++;
       if (nbuf >= sizeof(buf)) {
-	nbuf = sizeof(buf) - 1; /* paranoia */
-	break; /* flush the buffer */
+        nbuf = sizeof(buf) - 1; /* paranoia */
+        break; /* flush the buffer */
       }
     }
 
@@ -123,35 +123,35 @@ ssize_t _tpsends(Tpdisc_t* disc, char* fmt, ...)
 
     if (*fmt == '\0') break;
     if (*fmt == '%')  fmt++;
-    switch (*fmt) 
+    switch (*fmt)
     {
       case 'c':
-	c = va_arg(ap, int);
-	nsent += disc->writef(&c, 1, disc);
-	break;
-	
-      case 'd':
-	l = va_arg(ap, long);
-	nbuf = snprintf(buf, sizeof(buf), "%ld", l);
-	nsent += disc->writef(buf, nbuf, disc);
-	break;
+        c = va_arg(ap, int);
+        nsent += disc->writef(&c, 1, disc);
+        break;
 
-      case 's': 
-	s = va_arg(ap, char*);
-	nsent += disc->writef(s, strlen(s), disc);
-	break;
+      case 'd':
+        l = va_arg(ap, long);
+        nbuf = snprintf(buf, sizeof(buf), "%ld", l);
+        nsent += disc->writef(buf, nbuf, disc);
+        break;
+
+      case 's':
+        s = va_arg(ap, char*);
+        nsent += disc->writef(s, strlen(s), disc);
+        break;
 
       case '%':
-	nsent += disc->writef("%", 1, disc);
-	break;
+        nsent += disc->writef("%", 1, disc);
+        break;
 
       case '\0':
-	return nsent;
+        return nsent;
 
       default:
-	buf[0] = '%';
-	buf[1] = *fmt;
-	nsent += disc->writef(buf, 2, disc);
+        buf[0] = '%';
+        buf[1] = *fmt;
+        nsent += disc->writef(buf, 2, disc);
     }
     fmt++;
   }
@@ -197,7 +197,7 @@ char* _tptrimnewline(char* s)
  * -
  * Copyright (c) 1983, 1990, 1993
  *    The Regents of the University of California.  All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -213,7 +213,7 @@ char* _tptrimnewline(char* s)
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -227,14 +227,14 @@ char* _tptrimnewline(char* s)
  * SUCH DAMAGE.
  * -
  * Portions Copyright (c) 1993 by Digital Equipment Corporation.
- * 
+ *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies, and that
  * the name of Digital Equipment Corporation not be used in advertising or
  * publicity pertaining to distribution of the document or software without
  * specific, written prior permission.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
  * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
@@ -357,11 +357,11 @@ char *_tpstrcasestr(char *s, char *find)
    if ((c = *find++) != 0) {
       len = strlen(find);
       do {
-	 do {
-	    if ((sc = *s++) == 0)
-	       return (NULL);
-	    } while (tolower(sc) != tolower(c));
-	 } while (strncasecmp(s, find, len) != 0);
+         do {
+            if ((sc = *s++) == 0)
+               return (NULL);
+            } while (tolower(sc) != tolower(c));
+         } while (strncasecmp(s, find, len) != 0);
       s--;
       }
    return ((char *)s);

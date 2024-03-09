@@ -41,14 +41,14 @@ int exception(int e, void* obj, Tpdisc_t* disc)
       perror(url);
     }
     else {
-      switch (e) 
+      switch (e)
       {
-	case TP_EHOST:
-	  fputs(url, stderr); fputs(": Unknown host\n", stderr);
-	  break;
+        case TP_EHOST:
+          fputs(url, stderr); fputs(": Unknown host\n", stderr);
+          break;
 
-	default:
-	  fputs(url, stderr); fputs(": Error connecting\n", stderr);
+        default:
+          fputs(url, stderr); fputs(": Error connecting\n", stderr);
       }
     }
     exit(1);
@@ -96,4 +96,4 @@ int main(int argc, char **argv)
   return 0;
 }
 
-  
+

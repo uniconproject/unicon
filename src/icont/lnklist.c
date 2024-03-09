@@ -42,7 +42,7 @@ int n;
    p->iv_link = invkls;
    invkls = p;
    }
-
+
 /*
  * alclfile allocates an lfile structure for the named file, fills
  *  in the name and returns a pointer to it.
@@ -60,7 +60,7 @@ char *name;
    p->lf_name = salloc(name);
    return p;
    }
-
+
 /*
  * addlfile creates an lfile structure for the named file and add it to the
  *  end of the list of files (lfiles) to generate link instructions for.

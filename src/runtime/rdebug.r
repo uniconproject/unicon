@@ -11,11 +11,11 @@ static int     keyref    (union block *bp, dptr dp);
 static void showline  (char *f, int l);
 static void showlevel (register int n);
 #if !COMPILER
-static void ttrace	(FILE *f);
-#endif					/* !COMPILER */
+static void ttrace      (FILE *f);
+#endif                                  /* !COMPILER */
 static void xtrace
    (struct b_proc *bp, word nargs, dptr arg, int pline, char *pfile, FILE *logfile);
-
+
 /*
  * tracebk - print a trace of procedure calls.
  */
@@ -23,22 +23,22 @@ void tracebk(lcl_pfp, argp, logfptr)
 
 #if COMPILER
 struct p_frame *lcl_pfp;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 struct pf_marker *lcl_pfp;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
 dptr argp;
-FILE *logfptr; 
+FILE *logfptr;
    {
    struct b_proc *cproc;
 #if COMPILER
    struct debug *debug;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    long depth = 0, iteration = 0;
    struct pf_marker *origpfp;
    dptr arg;
    inst cipc;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    CURTSTATE_AND_CE();
 
 #if COMPILER
@@ -49,7 +49,7 @@ FILE *logfptr;
    cproc = debug->proc;
    xtrace(cproc, (word)abs((int)cproc->nparam), argp, debug->old_line,
       debug->old_fname, logfptr);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    origpfp = pfp;
    /*
     * Chain back through the procedure frame markers, looking for the
@@ -68,35 +68,35 @@ FILE *logfptr;
 
    while (pfp) {
       arg = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
-      cproc = (struct b_proc *)BlkLoc(arg[0]);    
+      cproc = (struct b_proc *)BlkLoc(arg[0]);
       /*
        * The ipc in the procedure frame points after the "invoke n".
        */
       cipc = pfp->pf_ipc;
       --cipc.opnd;
       --cipc.op;
-      
+
       xtrace(cproc, pfp->pf_nargs, &arg[0], findline(cipc.opnd),
         findfile(cipc.opnd), logfptr);
-	
+
       /*
        * On the last call, show both the call and the offending expression.
        */
       if (pfp == origpfp) {
-	 if(logfptr != NULL)
-	    ttrace(logfptr); 
-	 ttrace(stderr); 
-	 if (logfptr != NULL)
-	    fprintf(logfptr, "\n\n\n"); 
+         if(logfptr != NULL)
+            ttrace(logfptr);
+         ttrace(stderr);
+         if (logfptr != NULL)
+            fprintf(logfptr, "\n\n\n");
          break;
          }
- 
+
       pfp = (struct pf_marker *)(pfp->pf_efp);
       iteration++;
       }
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    }
-
+
 /*
  * xtrace - procedure *bp is being called with nargs arguments, the first
  *  of which is at arg; produce a trace message.
@@ -107,64 +107,64 @@ word nargs;
 dptr arg;
 int pline;
 char *pfile;
-FILE *logfile; 
+FILE *logfile;
    {
 
    fprintf(stderr, "   ");
    if (logfile != NULL)
-      fprintf(logfile, "   "); 
+      fprintf(logfile, "   ");
    if (bp == NULL) {
       fprintf(stderr, "????");
       if (logfile != NULL)
-	 fprintf(logfile, "????");
+         fprintf(logfile, "????");
       }
    else {
 
 #if COMPILER
       putstr(stderr, &(bp->pname));
-#else					/* COMPILER */
+#else                                   /* COMPILER */
       if (arg[0].dword == D_Proc) {
-	 putstr(stderr, &(bp->pname));
-	 if (logfile != NULL)
-	    putstr(logfile, &(bp->pname));
-	 }
+         putstr(stderr, &(bp->pname));
+         if (logfile != NULL)
+            putstr(logfile, &(bp->pname));
+         }
       else {
-	 outimage(stderr, arg, 0);
-	 if(logfile != NULL)
-	    outimage(logfile, arg, 0);
-	 }
+         outimage(stderr, arg, 0);
+         if(logfile != NULL)
+            outimage(logfile, arg, 0);
+         }
       arg++;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
       putc('(', stderr);
       if (logfile != NULL)
-	 putc('(', logfile); 
+         putc('(', logfile);
       while (nargs--) {
-	 if (logfile != NULL)
-	    outimage(logfile, arg, 0);
-	 outimage(stderr, arg++, 0);
-	 if (nargs) {
+         if (logfile != NULL)
+            outimage(logfile, arg, 0);
+         outimage(stderr, arg++, 0);
+         if (nargs) {
             putc(',', stderr);
-	    if (logfile != NULL)
-	       putc(',', logfile);
-	    }
-	 }
+            if (logfile != NULL)
+               putc(',', logfile);
+            }
+         }
       putc(')', stderr);
       if (logfile != NULL)
-         putc(')', logfile); 
+         putc(')', logfile);
       }
 
    if (pline != 0) {
       fprintf(stderr, " from line %d in %s", pline, pfile);
       if (logfile != NULL)
-	 fprintf(logfile, " from line %d in %s", pline, pfile);
+         fprintf(logfile, " from line %d in %s", pline, pfile);
       }
    putc('\n', stderr);
    if (logfile != NULL)
-     putc('\n', logfile); 
+     putc('\n', logfile);
    fflush(stderr);
    }
-
+
 
 /*
  * get_name -- function to get print name of variable.
@@ -176,7 +176,7 @@ int get_name(dptr dp1,dptr dp0)
    dptr arg1;                           /* 1st parameter */
    dptr loc1;                           /* 1st local */
    struct b_proc *proc;                 /* address of procedure block */
-   char sbuf[100];			/* buffer; might be too small */
+   char sbuf[100];                      /* buffer; might be too small */
    char *s, *s2;
    word i, j, k;
    int t;
@@ -185,11 +185,11 @@ int get_name(dptr dp1,dptr dp0)
    arg1 = glbl_argp;
    loc1 = pfp->t.d;
    proc = PFDebug(*pfp)->proc;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    arg1 = &glbl_argp[1];
    loc1 = pfp->pf_locals;
    proc = BlkD(*glbl_argp,Proc);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
    type_case *dp1 of {
       tvsubs: {
@@ -200,19 +200,19 @@ int get_name(dptr dp1,dptr dp0)
          k = StrLen(*dp0);
          j = strlen(sbuf);
 
-	 /*
-	  * allocate space for both the name and the subscript image,
-	  *  and then copy both parts into the allocated space
-	  */
-	 Protect(s = alcstr(NULL, k + j), return RunError);
-	 s2 = StrLoc(*dp0);
-	 StrLoc(*dp0) = s;
+         /*
+          * allocate space for both the name and the subscript image,
+          *  and then copy both parts into the allocated space
+          */
+         Protect(s = alcstr(NULL, k + j), return RunError);
+         s2 = StrLoc(*dp0);
+         StrLoc(*dp0) = s;
          StrLen(*dp0) = j + k;
-	 for (i = 0; i < k; i++)
-	    *s++ = *s2++;
-	 s2 = sbuf;
-	 for (i = 0; i < j; i++)
-	    *s++ = *s2++;
+         for (i = 0; i < k; i++)
+            *s++ = *s2++;
+         s2 = sbuf;
+         for (i = 0; i < j; i++)
+            *s++ = *s2++;
          }
 
       tvtbl: {
@@ -236,7 +236,7 @@ int get_name(dptr dp1,dptr dp0)
             StrLen(*dp0) = 7;
             StrLoc(*dp0) = "&ftrace";
             }
-#endif					/* FncTrace */
+#endif                                  /* FncTrace */
 
          else if (VarLoc(*dp1) == &kywd_dmp) {
             StrLen(*dp0) = 5;
@@ -251,7 +251,7 @@ int get_name(dptr dp1,dptr dp0)
             StrLen(*dp0) = 6;
             StrLoc(*dp0) = "&errno";
             }
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 #ifdef Graphics
          else if (VarLoc(*dp1) == &amperCol) {
             StrLen(*dp0) = 4;
@@ -273,10 +273,10 @@ int get_name(dptr dp1,dptr dp0)
             StrLen(*dp0) = 9;
             StrLoc(*dp0) = "&interval";
             }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
          else
             syserr("name: unknown integer keyword variable");
-            
+
       kywdevent:
 #ifdef MultiProgram
          if (VarLoc(*dp1) == &curpstate->eventsource) {
@@ -292,9 +292,9 @@ int get_name(dptr dp1,dptr dp0)
             StrLoc(*dp0) = "&eventcode";
             }
          else
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
             syserr("name: unknown event keyword variable");
-            
+
       kywdwin: {
          StrLen(*dp0) = 7;
          StrLoc(*dp0) = "&window";
@@ -319,50 +319,50 @@ int get_name(dptr dp1,dptr dp0)
          if (Offset(*dp1) == 0) {
             /*
              * Must(?) be a named variable.
-	     * (When used internally, could be reference to nameless
-	     * temporary stack variables as occurs for string scanning).
+             * (When used internally, could be reference to nameless
+             * temporary stack variables as occurs for string scanning).
              */
-            dp = VarLoc(*dp1);		 /* get address of variable */
+            dp = VarLoc(*dp1);           /* get address of variable */
             if (InRange(globals,dp,eglobals)) {
-               *dp0 = gnames[dp - globals]; 		/* global */
-	       return GlobalName;
-	       }
+               *dp0 = gnames[dp - globals];             /* global */
+               return GlobalName;
+               }
             else if (InRange(statics,dp,estatics)) {
-               i = dp - statics - proc->fstatic;	/* static */
+               i = dp - statics - proc->fstatic;        /* static */
                if (i < 0 || i >= proc->nstatic)
                   syserr("name: unreferencable static variable");
                i += abs((int)proc->nparam) + abs((int)proc->ndynam);
                *dp0 = proc->lnames[i];
-	       return StaticName;
+               return StaticName;
                }
             else if (InRange(arg1, dp, &arg1[abs((int)proc->nparam)])) {
                *dp0 = proc->lnames[dp - arg1];          /* argument */
-	       return ParamName;
-	       }
+               return ParamName;
+               }
             else if (InRange(loc1, dp, &loc1[proc->ndynam])) {
                *dp0 = proc->lnames[dp - loc1 + abs((int)proc->nparam)];
-	       return LocalName;
+               return LocalName;
                }
             else {
-	       StrLen(*dp0) = 6;
-	       StrLoc(*dp0) = "(temp)";
-	       return Failed;
+               StrLen(*dp0) = 6;
+               StrLoc(*dp0) = "(temp)";
+               return Failed;
 /*               syserr("name: cannot determine variable name"); */
-	       }
+               }
             }
          else {
-	    if (is:string(*dp1) || (!is:variable(*dp1))) {  /* non-variable! */
-	       StrLen(*dp0) = 14;
-	       StrLoc(*dp0) = "(non-variable)";
-	       return Failed;
-	       }
+            if (is:string(*dp1) || (!is:variable(*dp1))) {  /* non-variable! */
+               StrLen(*dp0) = 14;
+               StrLoc(*dp0) = "(non-variable)";
+               return Failed;
+               }
             /*
              * Must be an element of a structure.
              */
             blkptr = (union block *)VarLoc(*dp1);
             varptr = (dptr)((word *)VarLoc(*dp1) + Offset(*dp1));
             switch ((int)BlkType(blkptr)) {
-               case T_Lelem: 		/* list */
+               case T_Lelem:            /* list */
                   i = varptr - &Blk(blkptr,Lelem)->lslots[blkptr->Lelem.first] + 1;
                   if (i < 1)
                      i += blkptr->Lelem.nslots;
@@ -371,33 +371,33 @@ int get_name(dptr dp1,dptr dp0)
                      i += blkptr->Lelem.nused;
                      }
                   sprintf(sbuf,"list_%ld[%ld]",
-			  (long)Blk(Blk(blkptr,Lelem)->listprev,List)->id, (long)i);
+                          (long)Blk(Blk(blkptr,Lelem)->listprev,List)->id, (long)i);
                   i = strlen(sbuf);
                   Protect(StrLoc(*dp0) = alcstr(sbuf,i), return RunError);
                   StrLen(*dp0) = i;
                   break;
-               case T_Record: 		/* record */
+               case T_Record:           /* record */
                   i = varptr - Blk(blkptr,Record)->fields;
                   proc = &blkptr->Record.recdesc->Proc;
 
                   sprintf(sbuf,"record %s_%ld.%s", StrLoc(proc->recname),
-			  (long)(Blk(blkptr,Record)->id),
-			  StrLoc(proc->lnames[i]));
+                          (long)(Blk(blkptr,Record)->id),
+                          StrLoc(proc->lnames[i]));
 
                   i = strlen(sbuf);
                   Protect(StrLoc(*dp0) = alcstr(sbuf,i), return RunError);
                   StrLen(*dp0) = i;
                   break;
-               case T_Telem: 		/* table */
+               case T_Telem:            /* table */
                   t = keyref(blkptr,dp0);
                   if (t == RunError)
                       return RunError;
                   break;
-               default:		/* none of the above */
+               default:         /* none of the above */
 #ifdef MultiProgram
-		  StrLen(*dp0) = 8;
-		  StrLoc(*dp0) = "(struct)";
-		  return Failed;
+                  StrLen(*dp0) = 8;
+                  StrLoc(*dp0) = "(struct)";
+                  return Failed;
 #else
                   syserr("name: invalid structure reference");
 #endif                                  /* MultiProgram */
@@ -407,7 +407,7 @@ int get_name(dptr dp1,dptr dp0)
       }
    return Succeeded;
    }
-
+
 #if COMPILER
 #begdef PTraceSetup()
    struct b_proc *proc;
@@ -420,7 +420,7 @@ int get_name(dptr dp1,dptr dp0)
    proc = PFDebug(*pfp)->proc; /* get address of procedure block */
    putstr(stderr, &proc->pname);
 #enddef
- 
+
 /*
  * ctrace - a procedure is being called; produce a trace message.
  */
@@ -443,7 +443,7 @@ void ctrace()
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 /*
  * rtrace - a procedure is returning; produce a trace message.
  */
@@ -457,7 +457,7 @@ void rtrace()
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 /*
  * failtrace - procedure named s is failing; produce a trace message.
  */
@@ -469,7 +469,7 @@ void failtrace()
    fprintf(stderr, " failed\n");
    fflush(stderr);
    }
-
+
 /*
  * strace - a procedure is suspending; produce a trace message.
  */
@@ -483,7 +483,7 @@ void strace()
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 /*
  * atrace - a procedure is being resumed; produce a trace message.
  */
@@ -494,8 +494,8 @@ void atrace()
    fprintf(stderr, " resumed\n");
    fflush(stderr);
    }
-#endif					/* COMPILER */
-
+#endif                                  /* COMPILER */
+
 /*
  * keyref(bp,dp) -- print name of subscripted table
  */
@@ -504,11 +504,11 @@ static int keyref(bp, dp)
    dptr dp;
    {
    char *s, *s2;
-   char sbuf[256];			/* buffer; might be too small */
+   char sbuf[256];                      /* buffer; might be too small */
    int len;
 
    if (getimage(&((bp->Telem.tref)),dp) == RunError)
-      return RunError;	
+      return RunError;
 
    /*
     * Allocate space, and copy the image surrounded by "table_n[" and "]"
@@ -525,7 +525,7 @@ static int keyref(bp, dp)
       sprintf(sbuf, "dbmfile(%s)[", StrLoc(Blk(bp,File)->fname));
       }
    else
-#endif					/* Dbm */
+#endif                                  /* Dbm */
       sprintf(sbuf, "table_%ld[", (long)(Blk(bp,Table)->id));
    { char * dest = sbuf + strlen(sbuf);
    strncpy(dest, s2, len);
@@ -538,7 +538,7 @@ static int keyref(bp, dp)
    StrLen(*dp) = len;
    return Succeeded;
    }
-
+
 #ifdef CoExpr
 /*
  * cotrace -- a co-expression context switch; produce a trace message.
@@ -553,7 +553,7 @@ dptr valloc;
 
 #if !COMPILER
    inst t_ipc;
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
    CURTSTATE_AND_CE();
 
    --k_trace;
@@ -561,7 +561,7 @@ dptr valloc;
 #if COMPILER
    showline(ccp->file_name, ccp->line_num);
    proc = PFDebug(*ccp->es_pfp)->proc;     /* get address of procedure block */
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 
    /*
     * Compute the ipc of the instruction causing the context switch.
@@ -569,7 +569,7 @@ dptr valloc;
    t_ipc.op = ipc.op - 1;
    showline(findfile(t_ipc.opnd), findline(t_ipc.opnd));
    proc = BlkD(*glbl_argp, Proc);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
    showlevel(k_level);
    putstr(stderr, &proc->pname);
@@ -578,7 +578,7 @@ dptr valloc;
    if (IS_TS_THREAD(ccp->status))
       fprintf(stderr,"; thread_%ld ", (long)ccp->id);
    else
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
       fprintf(stderr,"; co-expression_%ld ", (long)ccp->id);
 
    switch (swtch_typ) {
@@ -601,13 +601,13 @@ dptr valloc;
    if (IS_TS_THREAD(ncp->status))
       fprintf(stderr,"thread_%ld", (long)ncp->id);
    else
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
       fprintf(stderr,"co-expression_%ld\n", (long)ncp->id);
 
    fflush(stderr);
    }
-#endif					/* CoExpr */
-
+#endif                                  /* CoExpr */
+
 /*
  * showline - print file and line number information.
  */
@@ -621,9 +621,9 @@ int l;
 
 #if MVS
    while (i > 22) {
-#else					/* MVS */
+#else                                   /* MVS */
    while (i > 13) {
-#endif					/* MVS */
+#endif                                  /* MVS */
       f++;
       i--;
       }
@@ -633,14 +633,14 @@ int l;
       fprintf(stderr, "%-22s: %4d  ",f, l);
    else
       fprintf(stderr, "                      :      ");
-#else					/* MVS */
+#else                                   /* MVS */
       fprintf(stderr, "%-13s: %4d  ",f, l);
    else
       fprintf(stderr, "             :       ");
-#endif					/* MVS */
+#endif                                  /* MVS */
 
    }
-
+
 /*
  * showlevel - print "| " n times.
  */
@@ -659,25 +659,25 @@ register int n;
 
 
 #ifndef MultiProgram
-extern struct descrip value_tmp;		/* argument of Op_Apply */
-#endif						/* MultiProgram */
+extern struct descrip value_tmp;                /* argument of Op_Apply */
+#endif                                          /* MultiProgram */
 extern struct b_proc *opblks[];
 
-
+
 /*
  * ttrace - show offending expression.
  */
 static void ttrace(f)
-FILE *f; 
+FILE *f;
    {
    struct b_proc *bp;
    word nargs;
-   dptr reset; 
+   dptr reset;
    CURTSTATE_AND_CE();
 
    fprintf(f, "   ");
 
-   reset = xargp; 
+   reset = xargp;
 
    switch ((int)lastop) {
 
@@ -688,11 +688,11 @@ FILE *f;
       case Op_Invoke:
          nargs = xnargs;
          if (xargp[0].dword == D_Proc) {
-	    bp = BlkD(*xargp, Proc);
-	    if (bp)
+            bp = BlkD(*xargp, Proc);
+            if (bp)
             putstr(f, &(bp->pname));
-	    else fprintf(f,"???");
-	    }
+            else fprintf(f,"???");
+            }
          else
             outimage(f, xargp, 0);
          putc('(', f);
@@ -720,19 +720,19 @@ FILE *f;
 
 #if EBCDIC != 1
          putc('[', f);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
          putc('$', f);
          putc('<', f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
          outimage(f, ++xargp, 0);
 
 #if EBCDIC != 1
          putc(']', f);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
          putc('$', f);
          putc('>', f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
          putc('}', f);
          break;
@@ -743,10 +743,10 @@ FILE *f;
 
 #if EBCDIC != 1
          putc('[', f);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
          putc('$', f);
          putc('<', f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
          outimage(f, ++xargp, 0);
          putc(':', f);
@@ -754,10 +754,10 @@ FILE *f;
 
 #if EBCDIC != 1
          putc(']', f);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
          putc('$', f);
          putc('>', f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
          putc('}', f);
          break;
@@ -790,12 +790,12 @@ FILE *f;
          putc('{', f);
          outimage(f, ++xargp, 0);
          fprintf(f, " . ");
-	 ++xargp;
-	 if (IntVal(*xargp) < 0 && fnames-efnames < IntVal(*xargp))
+         ++xargp;
+         if (IntVal(*xargp) < 0 && fnames-efnames < IntVal(*xargp))
             fprintf(f, "%s", StrLoc(efnames[IntVal(*xargp)]));
-	 else if (0 <= IntVal(*xargp) && IntVal(*xargp) < efnames - fnames)
+         else if (0 <= IntVal(*xargp) && IntVal(*xargp) < efnames - fnames)
             fprintf(f, "%s", StrLoc(fnames[IntVal(*xargp)]));
-	 else
+         else
             fprintf(f, "field");
 
          putc('}', f);
@@ -810,16 +810,16 @@ FILE *f;
 
 #if EBCDIC != 1
          fprintf(f,"[ ... ]");
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
          fputs("$< ... $>", f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
          break;
 
-   
+
       default:
 
          bp = opblks[lastop];
-	 if (!bp) break;
+         if (!bp) break;
          nargs = abs((int)bp->nparam);
          putc('{', f);
          if (lastop == Op_Bang || lastop == Op_Random)
@@ -829,22 +829,22 @@ FILE *f;
             putc(' ', f);
             putstr(f, &(bp->pname));
             putc(' ', f);
-   	    }
+            }
          else
 oneop:
          putstr(f, &(bp->pname));
          outimage(f, ++xargp, 0);
          putc('}', f);
       }
-	 
+
    if (ipc.opnd != NULL)
       fprintf(f, " from line %d in %s", findline(ipc.opnd),
          findfile(ipc.opnd));
    putc('\n', f);
-   xargp = reset; 
+   xargp = reset;
    fflush(f);
    }
-
+
 
 /*
  * ctrace - procedure named s is being called with nargs arguments, the first
@@ -870,7 +870,7 @@ dptr arg;
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 /*
  * rtrace - procedure named s is returning *rval; produce a trace message.
  */
@@ -894,7 +894,7 @@ dptr rval;
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 /*
  * failtrace - procedure named s is failing; produce a trace message.
  */
@@ -916,7 +916,7 @@ dptr dp;
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 /*
  * strace - procedure named s is suspending *rval; produce a trace message.
  */
@@ -940,7 +940,7 @@ dptr rval;
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 /*
  * atrace - procedure named s is being resumed; produce a trace message.
  */
@@ -962,7 +962,7 @@ dptr dp;
    putc('\n', stderr);
    fflush(stderr);
    }
-
+
 #ifdef CoExpr
 /*
  * coacttrace -- co-expression is being activated; produce a trace message.
@@ -988,7 +988,7 @@ struct b_coexpr *ncp;
    if (IS_TS_THREAD(ccp->status))
       fprintf(stderr,"; thread_%ld : ", (long)ccp->id);
    else
-#endif	
+#endif
       fprintf(stderr,"; co-expression_%ld : ", (long)ccp->id);
 
    outimage(stderr, (dptr)(sp - 3), 0);
@@ -997,12 +997,12 @@ struct b_coexpr *ncp;
    if (IS_TS_THREAD(ncp->status))
       fprintf(stderr," @ thread_%ld\n", (long)ncp->id);
    else
-#endif	
+#endif
       fprintf(stderr," @ co-expression_%ld\n", (long)ncp->id);
 
    fflush(stderr);
    }
-
+
 /*
  * corettrace -- return from co-expression; produce a trace message.
  */
@@ -1027,7 +1027,7 @@ struct b_coexpr *ncp;
    if (IS_TS_THREAD(ccp->status))
       fprintf(stderr,"; thread_%ld returned ", (long)ccp->id);
    else
-#endif	
+#endif
       fprintf(stderr,"; co-expression_%ld returned ", (long)ccp->id);
 
    outimage(stderr, (dptr)(&ncp->es_sp[-3]), 0);
@@ -1036,12 +1036,12 @@ struct b_coexpr *ncp;
    if (IS_TS_THREAD(ncp->status))
       fprintf(stderr," to thread_%ld\n", (long)ncp->id);
    else
-#endif	
+#endif
       fprintf(stderr," to co-expression_%ld\n", (long)ncp->id);
 
    fflush(stderr);
    }
-
+
 /*
  * cofailtrace -- failure return from co-expression; produce a trace message.
  */
@@ -1065,24 +1065,24 @@ struct b_coexpr *ncp;
 #ifdef Concurrent
    if (IS_TS_THREAD(ccp->status) && IS_TS_THREAD(ncp->status))
       fprintf(stderr,"; thread_%ld failed to thread_%ld\n",
-      			(long)ccp->id, (long)ncp->id);
+                        (long)ccp->id, (long)ncp->id);
    else
    if (IS_TS_THREAD(ccp->status) && !IS_TS_THREAD(ncp->status))
       fprintf(stderr,"; thread_%ld failed to co-expression_%ld\n",
-      			(long)ccp->id, (long)ncp->id);
+                        (long)ccp->id, (long)ncp->id);
    else
    if (!IS_TS_THREAD(ccp->status) && IS_TS_THREAD(ncp->status))
       fprintf(stderr,"; coexpression_%ld failed to thread_%ld\n",
-      			(long)ccp->id, (long)ncp->id);
+                        (long)ccp->id, (long)ncp->id);
    else
-#endif	
+#endif
       fprintf(stderr,"; co-expression_%ld failed to co-expression_%ld\n",
-      			(long)ccp->id, (long)ncp->id);
+                        (long)ccp->id, (long)ncp->id);
    fflush(stderr);
    }
-#endif					/* CoExpr */
-#endif					/* !COMPILER */
-
+#endif                                  /* CoExpr */
+#endif                                  /* !COMPILER */
+
 /*
  * Service routine to display variables in given number of
  *  procedure calls to file f.
@@ -1091,9 +1091,9 @@ struct b_coexpr *ncp;
 int xdisp(fp,dp,count,f)
 #if COMPILER
    struct p_frame *fp;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    struct pf_marker *fp;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    register dptr dp;
    int count;
    FILE *f;
@@ -1103,19 +1103,19 @@ int xdisp(fp,dp,count,f)
    struct b_proc *bp;
    word nglobals, *indices;
 
-   while (count--) {		/* go back through 'count' frames */
+   while (count--) {            /* go back through 'count' frames */
       if (fp == NULL)
          break;       /* needed because &level is wrong in co-expressions */
 
 #if COMPILER
-      bp = PFDebug(*fp)->proc;	/* get address of procedure block */
-#else					/* COMPILER */
+      bp = PFDebug(*fp)->proc;  /* get address of procedure block */
+#else                                   /* COMPILER */
       bp = BlkD(*dp, Proc); /* get addr of procedure block */
       dp++;
       /*
        * #%#% was: no post-increment here, but *pre*increment dp below
        */
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
       /*
        * Print procedure name.
@@ -1141,9 +1141,9 @@ int xdisp(fp,dp,count,f)
        */
 #if COMPILER
       dp = fp->t.d;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
       dp = &fp->pf_locals[0];
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
       for (n = bp->ndynam; n > 0; n--) {
          fprintf(f, "   ");
          putstr(f, np);
@@ -1169,10 +1169,10 @@ int xdisp(fp,dp,count,f)
 #if COMPILER
       dp = fp->old_argp;
       fp = fp->old_pfp;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
       dp = fp->pf_argp;
       fp = fp->pf_pfp;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
       }
 
    /*
@@ -1181,9 +1181,9 @@ int xdisp(fp,dp,count,f)
 
 #if COMPILER
    nglobals = n_globals;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    nglobals = eglobals - globals;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
    indices = (word *)malloc((msize)nglobals * sizeof(word));
    if (indices == NULL)
@@ -1216,7 +1216,7 @@ char *pi, *pj;
    register word j = *(word *)pj;
    return lexcmp(&gnames[i], &gnames[j]);
    }
-
+
 
 #ifdef DebugHeap
 void heaperr(char *msg, union block *p, int t)
@@ -1225,7 +1225,7 @@ void heaperr(char *msg, union block *p, int t)
    sprintf(buf, "%s : %p : %ld / %d\n",msg,p,ValidPtr(p)?p->File.title:-1,t);
    syserr(buf);
 }
-#endif					/* DebugHeap */
+#endif                                  /* DebugHeap */
 
 
 #ifdef DEVELOPMODE
@@ -1259,7 +1259,7 @@ void dbgUTrace()
 {
   CURTSTATE_AND_CE();
   tracebk(pfp, glbl_argp, NULL);
-} 
+}
 
 /* This function may be used in test code where the criterion for a
  * break point is complex (it may be easier easier to write C code and

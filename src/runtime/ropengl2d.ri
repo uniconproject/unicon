@@ -2,12 +2,12 @@
  * ropengl2d.ri - OpenGL-specific runtime file for the 2D graphics facilities.
  *
  * For easier searching:
- * 
+ *
  * (1) OpenGL 2D utility functions
- * (2) Drawing functions 
- * (3) Context attribute functions 
- * (4) Window management functions (platform independent) 
- * (5) Window management functions (platform specific) 
+ * (2) Drawing functions
+ * (3) Context attribute functions
+ * (4) Window management functions (platform independent)
+ * (5) Window management functions (platform specific)
  */
 
 /*
@@ -18,7 +18,7 @@
 /*
  * Macros
  */
-/* 
+/*
  * Make sure {desc} and {ap} are tended.
  * Would like to move to rmacros.h, but gets compilation error. Problem
  * with Protect() macro.
@@ -37,32 +37,32 @@
 
 #define DEFAULTFONTNAME "mono"
 
-/* 
- * debugging prototypes 
+/*
+ * debugging prototypes
  */
 void print_arc(struct b_record *rp, const char *s);
-void print_pixmap(unsigned char *pixmap, int nbytes, int width, int height, 
+void print_pixmap(unsigned char *pixmap, int nbytes, int width, int height,
    char *s);
 void print_bitmap(unsigned char *bitmap, int width, int height, char *s);
 void printlist2d(wsp ws);
 char *getDLiteminfo2d(struct b_record *rp);
 
-/* 
- * prototypes 
+/*
+ * prototypes
  */
 struct b_record *getlastlistitem(wbp w, int intcode);
-void bitmap_to_pixmap(unsigned char *bitmap, int width, int height, 
+void bitmap_to_pixmap(unsigned char *bitmap, int width, int height,
    unsigned char *pixmap, int invert, int bitorder);
-int traverselist2d(wbp w, struct b_lelem *bp, int start, int end, int used, 
+int traverselist2d(wbp w, struct b_lelem *bp, int start, int end, int used,
    word k);
 
-struct b_list *segment_line(wbp w, int num, struct b_realarray * ap2, 
+struct b_list *segment_line(wbp w, int num, struct b_realarray * ap2,
    double *v2, word n2);
 
 static wfp loadfont(wdp wd, char *s, int len);
 char *find_fontfile(char *family, int flags);
 
-int write_xbm(char *filename, int width, int height, unsigned char *pixmap, 
+int write_xbm(char *filename, int width, int height, unsigned char *pixmap,
    unsigned char bg[4]);
 int write_xpm(char *filename, int width, int height, unsigned char *pixmap);
 char *load_xbm(char *filename, unsigned int *width, unsigned int *height);
@@ -82,7 +82,7 @@ void print_bitmap(unsigned char *bitmap, int width, int height, char *s)
    bmwidth = width/8 + 1;
 
    for (iy=height-1; iy>=0; iy--) {
-      for (ix=0; ix<width; ix++) { 
+      for (ix=0; ix<width; ix++) {
          bitmask = 1 << (7 - ix%8);
          if (bitmap[iy*bmwidth+ix/8] & bitmask)
             glprintf("1 ");
@@ -92,11 +92,11 @@ void print_bitmap(unsigned char *bitmap, int width, int height, char *s)
       glprintf("\n");
       }
    }
-#else					/* GL2D_DEBUG */
+#else                                   /* GL2D_DEBUG */
 void print_bitmap(unsigned char *bitmap, int width, int height, char *s)
    {
    }
-#endif					/* GL2D_DEBUG */
+#endif                                  /* GL2D_DEBUG */
 
 #ifdef GL2D_DEBUG
 void print_arc(struct b_record *rp, const char *s)
@@ -106,7 +106,7 @@ void print_arc(struct b_record *rp, const char *s)
    struct b_proc *pp;
 
    if (rp == NULL) {
-      glprintf("rp is NULL\n"); 
+      glprintf("rp is NULL\n");
       return;
       }
 
@@ -127,7 +127,7 @@ void print_arc(struct b_record *rp, const char *s)
                   StrLoc(rp->fields[0]),rp->id,StrLoc(pp->lnames[2]),v1,\
                   StrLoc(pp->lnames[3]),v2,StrLoc(pp->lnames[4]),v3,\
                   StrLoc(pp->lnames[5]),v4,StrLoc(pp->lnames[6]),v5);
-         break; 
+         break;
       case GL2D_FILLARC:
       case GL2D_DRAWARC:
          GetReal(&(rp->fields[2]),v1);
@@ -141,19 +141,19 @@ void print_arc(struct b_record *rp, const char *s)
                   v1,StrLoc(pp->lnames[3]),v2,StrLoc(pp->lnames[4]),v3,\
                   StrLoc(pp->lnames[5]),v4,StrLoc(pp->lnames[6]),v5,\
                   StrLoc(pp->lnames[7]),v6);
-         break; 
+         break;
       default:
          glprintf("got code %d\n",tmp);
       }
    }
-#else					/* GL2D_DEBUG */
+#else                                   /* GL2D_DEBUG */
 void print_arc(struct b_record *rp, const char *s)
    {
    }
-#endif					/* GL2D_DEBUG */
+#endif                                  /* GL2D_DEBUG */
 
 #ifdef GL2D_DEBUG
-void print_pixmap(unsigned char *pixmap, int nbytes, int width, int height, 
+void print_pixmap(unsigned char *pixmap, int nbytes, int width, int height,
    char *s)
    {
    int i, j, rwidth;
@@ -174,19 +174,19 @@ void print_pixmap(unsigned char *pixmap, int nbytes, int width, int height,
       glprintf("\n");
       }
    }
-#else					/* GL2D_DEBUG */
-void print_pixmap(unsigned char *pixmap, int nbytes, int width, int height, 
+#else                                   /* GL2D_DEBUG */
+void print_pixmap(unsigned char *pixmap, int nbytes, int width, int height,
    char *s)
    {
    }
-#endif					/* GL2D_DEBUG */
+#endif                                  /* GL2D_DEBUG */
 
 #ifdef GL2D_DEBUG
-void printlist2d(wsp ws) 
+void printlist2d(wsp ws)
    {
    if (is:list(ws->funclist2d)) {
-      struct b_lelem *bp; 
-      struct b_list *lp; 
+      struct b_lelem *bp;
+      struct b_list *lp;
       word i, size, used, k;
 
       lp = BlkD(ws->funclist2d, List);
@@ -194,7 +194,7 @@ void printlist2d(wsp ws)
 
       bp = (struct b_lelem *)BlkD(ws->funclist2d, List)->listhead;
 
-      if (bp->nused<=0) { 
+      if (bp->nused<=0) {
          bp = (struct b_lelem *) bp->listnext;
          lp->listhead = (union block *) bp;
          bp->listprev = (union block *) lp;
@@ -205,13 +205,13 @@ void printlist2d(wsp ws)
       for (i = 0; i < size; i++) {
          struct b_record *rp;
          struct descrip desc;
-         
+
          desc = bp->lslots[k++];
          used--;
          if (used <= 0) {
             bp = (struct b_lelem *) bp->listnext;
-            k = bp->first; 
-            used = bp->nused; 
+            k = bp->first;
+            used = bp->nused;
             }
          if (!is:record(desc)) {
             glprintf("item %ld is not a record\n",i);
@@ -220,14 +220,14 @@ void printlist2d(wsp ws)
 
          rp = BlkD(desc, Record);
          glprintf("(%ld) %s\n",i,getDLiteminfo2d(rp));
-         } 
+         }
       }
    }
-#else					/* GL2D_DEBUG */
-void printlist2d(wsp ws) 
+#else                                   /* GL2D_DEBUG */
+void printlist2d(wsp ws)
    {
    }
-#endif					/* GL2D_DEBUG */
+#endif                                  /* GL2D_DEBUG */
 
 
 /*
@@ -263,7 +263,7 @@ char *getDLiteminfo2d(struct b_record *rp)
       int intcode;
       char *recname;
       double v1, v2, v3, v4, v5, v6;
- 
+
       if (!rp->recdesc || Blk(rp->recdesc,Proc)->nfields < 2) return NULL;
 
       recname = StrLoc(Blk(rp->recdesc,Proc)->recname);
@@ -370,7 +370,7 @@ char *getDLiteminfo2d(struct b_record *rp)
 
          case GL2D_FG:
          case GL2D_BG:
-            if (is:null(rp->fields[2])) 
+            if (is:null(rp->fields[2]))
                sprintf(buf,"[%s] r: %ld, g: %ld, b: %ld, a: %ld", recname,
                        IntVal(rp->fields[3]),IntVal(rp->fields[4]),
                        IntVal(rp->fields[5]),IntVal(rp->fields[6]));
@@ -428,21 +428,21 @@ char *getDLiteminfo2d(struct b_record *rp)
          }
       }
    return buf;
-   } 
-#else					/* GL2D_DEBUG */
-char *getDLiteminfo2d(struct b_record *rp) 
+   }
+#else                                   /* GL2D_DEBUG */
+char *getDLiteminfo2d(struct b_record *rp)
    {
      return NULL; /* Avoid clang: "non-void function does not return a value" */
    }
-#endif					/* GL2D_DEBUG */
+#endif                                  /* GL2D_DEBUG */
 
-
+
 
 /***********************************
  * (1) OpenGL 2D utility functions *
  ***********************************/
 
-
+
 
 int create_display_list2d(wbp w, int size)
    {
@@ -456,7 +456,7 @@ int create_display_list2d(wbp w, int size)
    return Succeeded;
    }
 
-
+
 /*
  * Returns a record constructor for a 2d graphics primitive. Used to allocate
  * a new 2d graphics object.
@@ -467,7 +467,7 @@ dptr rec_structor2d(int type)
 
    /* Graphic primitives */
    static struct descrip gl2d_blimage = {D_Null};
-   static struct descrip gl2d_readimage = {D_Null}; 
+   static struct descrip gl2d_readimage = {D_Null};
    static struct descrip gl2d_strimage = {D_Null};
    static struct descrip gl2d_drawstring = {D_Null};
    static struct descrip gl2d_wwrite = {D_Null};
@@ -486,7 +486,7 @@ dptr rec_structor2d(int type)
    static struct descrip gl2d_drawrectangle = {D_Null};
 
    /*
-    * (Context) Attribute assignment 
+    * (Context) Attribute assignment
     */
    static struct descrip gl2d_fg = {D_Null};
    static struct descrip gl2d_bg = {D_Null};
@@ -508,16 +508,16 @@ dptr rec_structor2d(int type)
     * record field names - the following are fixed:
     *
     * field[0] - function name: "name"
-    * field[1] - function code: "code" 
+    * field[1] - function code: "code"
     */
    static char *gl2d_blimage_fields[] = {
       "x", "y", "width", "height", "__s", "__ch", "__texid", "__index"
       };
    static char *gl2d_readimage_fields[] = {
-      "x", "y", "width", "height", "__is_pixmap", "__pixmap", "__texid", 
+      "x", "y", "width", "height", "__is_pixmap", "__pixmap", "__texid",
       "__index"
       };
-   static char *gl2d_strimage_fields[] = {"x", "y", "width", "height", 
+   static char *gl2d_strimage_fields[] = {"x", "y", "width", "height",
       "__pixmap", "__texid", "__index"
       };
    static char *gl2d_drawstring_fields[] = {"x", "y", "s"};
@@ -533,23 +533,23 @@ dptr rec_structor2d(int type)
    static char *gl2d_drawsegment_fields[] = {"__v", "__coords", "__vseg"};
    static char *gl2d_drawpoint_fields[] = {"__v", "__coords"};
    static char *gl2d_drawcircle_fields[] = {
-      "__v", "x", "y", "r", "theta", "alpha", "__x", "__y", "__r", "__theta", 
+      "__v", "x", "y", "r", "theta", "alpha", "__x", "__y", "__r", "__theta",
       "__alpha", "__vseg"
       };
    static char *gl2d_fillcircle_fields[] = {
-      "__v", "x", "y", "r", "theta", "alpha", "__x", "__y", "__r", "__theta", 
+      "__v", "x", "y", "r", "theta", "alpha", "__x", "__y", "__r", "__theta",
       "__alpha"
       };
    static char *gl2d_drawarc_fields[] = {
-      "__v", "x", "y", "width", "height", "theta", "alpha", "__x", "__y", 
+      "__v", "x", "y", "width", "height", "theta", "alpha", "__x", "__y",
       "__width", "__height", "__theta", "__alpha", "__vseg"
       };
    static char *gl2d_fillarc_fields[] = {
-      "__v", "x", "y", "width", "height", "theta", "alpha", "__x", "__y", 
+      "__v", "x", "y", "width", "height", "theta", "alpha", "__x", "__y",
       "__width", "__height", "__theta", "__alpha"
       };
    static char *gl2d_drawrectangle_fields[] = {
-      "__v", "x", "y", "width", "height", "__x", "__y", "__width", "__height", 
+      "__v", "x", "y", "width", "height", "__x", "__y", "__width", "__height",
       "__vseg"
       };
    static char *gl2d_fillrectangle_fields[] = {
@@ -561,20 +561,20 @@ dptr rec_structor2d(int type)
     */
    static char *gl2d_fg_fields[] = {"index", "r", "g", "b", "a"};
    static char *gl2d_bg_fields[] = {"index", "r", "g", "b", "a"};
-   static char *gl2d_reverse_fields[] = {NULL};     
-   static char *gl2d_gamma_fields[] = {"val"}; 
-   static char *gl2d_drawop_fields[] = {"s"}; 
-   static char *gl2d_font_fields[] = {"s"}; 
-   static char *gl2d_leading_fields[] = {"val"}; 
-   static char *gl2d_linewidth_fields[] = {"val"}; 
-   static char *gl2d_linestyle_fields[] = {"s"}; 
-   static char *gl2d_fillstyle_fields[] = {"s"}; 
+   static char *gl2d_reverse_fields[] = {NULL};
+   static char *gl2d_gamma_fields[] = {"val"};
+   static char *gl2d_drawop_fields[] = {"s"};
+   static char *gl2d_font_fields[] = {"s"};
+   static char *gl2d_leading_fields[] = {"val"};
+   static char *gl2d_linewidth_fields[] = {"val"};
+   static char *gl2d_linestyle_fields[] = {"s"};
+   static char *gl2d_fillstyle_fields[] = {"s"};
    static char *gl2d_pattern_fields[] = {
       "s", "__s", "__width", "__height", "__texid", "__index"
       };
-   static char *gl2d_clip_fields[] = {"x", "y", "width", "height"}; 
-   static char *gl2d_dx_fields[] = {"val", "__val"}; 
-   static char *gl2d_dy_fields[] = {"val", "__val"}; 
+   static char *gl2d_clip_fields[] = {"x", "y", "width", "height"};
+   static char *gl2d_dx_fields[] = {"val", "__val"};
+   static char *gl2d_dy_fields[] = {"val", "__val"};
 
    /*
     * Initialize all constructors
@@ -585,37 +585,37 @@ dptr rec_structor2d(int type)
       /*
        * Primitives
        */
-      Protect(rec_structor2dinit(&gl2d_blimage, "gl2d_blimage", 10, 
+      Protect(rec_structor2dinit(&gl2d_blimage, "gl2d_blimage", 10,
                                  gl2d_blimage_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_readimage, "gl2d_readimage", 10, 
+      Protect(rec_structor2dinit(&gl2d_readimage, "gl2d_readimage", 10,
                                  gl2d_readimage_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_strimage, "gl2d_strimage", 9, 
+      Protect(rec_structor2dinit(&gl2d_strimage, "gl2d_strimage", 9,
                                  gl2d_strimage_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawstring, "gl2d_drawstring", 5, 
+      Protect(rec_structor2dinit(&gl2d_drawstring, "gl2d_drawstring", 5,
                                  gl2d_drawstring_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_wwrite, "gl2d_wwrite", 5, 
+      Protect(rec_structor2dinit(&gl2d_wwrite, "gl2d_wwrite", 5,
                                  gl2d_wwrite_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_copyarea, "gl2d_copyarea", 11, 
+      Protect(rec_structor2dinit(&gl2d_copyarea, "gl2d_copyarea", 11,
                                  gl2d_copyarea_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_erasearea, "gl2d_erasearea", 6, 
+      Protect(rec_structor2dinit(&gl2d_erasearea, "gl2d_erasearea", 6,
                                  gl2d_erasearea_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_fillpolygon, "gl2d_fillpolygon", 5, 
+      Protect(rec_structor2dinit(&gl2d_fillpolygon, "gl2d_fillpolygon", 5,
                                  gl2d_fillpolygon_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawpolygon, "gl2d_drawpolygon", 5, 
+      Protect(rec_structor2dinit(&gl2d_drawpolygon, "gl2d_drawpolygon", 5,
                                  gl2d_drawpolygon_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawline, "gl2d_drawline", 5, 
+      Protect(rec_structor2dinit(&gl2d_drawline, "gl2d_drawline", 5,
                                  gl2d_drawline_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawsegment, "gl2d_drawsegment", 5, 
+      Protect(rec_structor2dinit(&gl2d_drawsegment, "gl2d_drawsegment", 5,
                                  gl2d_drawsegment_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawpoint, "gl2d_drawpoint", 4, 
+      Protect(rec_structor2dinit(&gl2d_drawpoint, "gl2d_drawpoint", 4,
                                  gl2d_drawpoint_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawcircle, "gl2d_drawcircle", 14, 
+      Protect(rec_structor2dinit(&gl2d_drawcircle, "gl2d_drawcircle", 14,
                                  gl2d_drawcircle_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_fillcircle, "gl2d_fillcircle", 13, 
+      Protect(rec_structor2dinit(&gl2d_fillcircle, "gl2d_fillcircle", 13,
                                  gl2d_fillcircle_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawarc, "gl2d_drawarc", 16, 
+      Protect(rec_structor2dinit(&gl2d_drawarc, "gl2d_drawarc", 16,
                                  gl2d_drawarc_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_fillarc, "gl2d_fillarc", 15, 
+      Protect(rec_structor2dinit(&gl2d_fillarc, "gl2d_fillarc", 15,
                                  gl2d_fillarc_fields), return NULL);
       Protect(rec_structor2dinit(&gl2d_drawrectangle, "gl2d_drawrectangle", 12,
                                  gl2d_drawrectangle_fields), return NULL);
@@ -623,35 +623,35 @@ dptr rec_structor2d(int type)
                                  gl2d_fillrectangle_fields), return NULL);
 
       /*
-       * Attributes 
+       * Attributes
        */
-      Protect(rec_structor2dinit(&gl2d_fg, "gl2d_fg", 7, gl2d_fg_fields), 
+      Protect(rec_structor2dinit(&gl2d_fg, "gl2d_fg", 7, gl2d_fg_fields),
                                  return NULL);
-      Protect(rec_structor2dinit(&gl2d_bg, "gl2d_bg", 7, gl2d_bg_fields), 
+      Protect(rec_structor2dinit(&gl2d_bg, "gl2d_bg", 7, gl2d_bg_fields),
                                  return NULL);
-      Protect(rec_structor2dinit(&gl2d_reverse, "gl2d_reverse", 2, 
+      Protect(rec_structor2dinit(&gl2d_reverse, "gl2d_reverse", 2,
                                  gl2d_reverse_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_gamma, "gl2d_gamma", 3, 
+      Protect(rec_structor2dinit(&gl2d_gamma, "gl2d_gamma", 3,
                                  gl2d_gamma_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_drawop, "gl2d_drawop", 3, 
+      Protect(rec_structor2dinit(&gl2d_drawop, "gl2d_drawop", 3,
                                  gl2d_drawop_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_font, "gl2d_font", 3, gl2d_font_fields), 
+      Protect(rec_structor2dinit(&gl2d_font, "gl2d_font", 3, gl2d_font_fields),
                                  return NULL);
-      Protect(rec_structor2dinit(&gl2d_leading, "gl2d_leading", 3, 
+      Protect(rec_structor2dinit(&gl2d_leading, "gl2d_leading", 3,
                                  gl2d_leading_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_linewidth, "gl2d_linewidth", 3, 
+      Protect(rec_structor2dinit(&gl2d_linewidth, "gl2d_linewidth", 3,
                                  gl2d_linewidth_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_linestyle, "gl2d_linestyle", 3, 
+      Protect(rec_structor2dinit(&gl2d_linestyle, "gl2d_linestyle", 3,
                                  gl2d_linestyle_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_fillstyle, "gl2d_fillstyle", 3, 
+      Protect(rec_structor2dinit(&gl2d_fillstyle, "gl2d_fillstyle", 3,
                                  gl2d_fillstyle_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_pattern, "gl2d_pattern", 8, 
+      Protect(rec_structor2dinit(&gl2d_pattern, "gl2d_pattern", 8,
                                  gl2d_pattern_fields), return NULL);
-      Protect(rec_structor2dinit(&gl2d_clip, "gl2d_clip", 6, gl2d_clip_fields), 
+      Protect(rec_structor2dinit(&gl2d_clip, "gl2d_clip", 6, gl2d_clip_fields),
                                  return NULL);
-      Protect(rec_structor2dinit(&gl2d_dx, "gl2d_dx", 4, gl2d_dx_fields), 
+      Protect(rec_structor2dinit(&gl2d_dx, "gl2d_dx", 4, gl2d_dx_fields),
                                  return NULL);
-      Protect(rec_structor2dinit(&gl2d_dy, "gl2d_dy", 4, gl2d_dy_fields), 
+      Protect(rec_structor2dinit(&gl2d_dy, "gl2d_dy", 4, gl2d_dy_fields),
                                  return NULL);
       }
 
@@ -695,7 +695,7 @@ dptr rec_structor2d(int type)
          return &gl2d_fillrectangle;
 
       /*
-       * Attributes 
+       * Attributes
        */
       case GL2D_FG: /* Fg()/WAttrib() */
          return &gl2d_fg;
@@ -731,7 +731,7 @@ dptr rec_structor2d(int type)
       }
    }
 
-
+
 
 dptr rec_structor2dinit(dptr dp, char *name, int nfields, char *field_names[])
    {
@@ -754,13 +754,13 @@ dptr rec_structor2dinit(dptr dp, char *name, int nfields, char *field_names[])
    return dp;
    }
 
-
+
 
 /*
- * Called by traversefunclist2d(). Traverses any contiguous subset of a 
+ * Called by traversefunclist2d(). Traverses any contiguous subset of a
  * Unicon list.
  */
-int traverselist2d(wbp w, struct b_lelem *bp, int start, int end, int used, 
+int traverselist2d(wbp w, struct b_lelem *bp, int start, int end, int used,
    word k)
    {
    tended struct b_lelem *bp_t = bp;
@@ -845,10 +845,10 @@ int traverselist2d(wbp w, struct b_lelem *bp, int start, int end, int used,
             rv = setdrawop2d(w,rp);
             break;
           case GL2D_FONT:
-            rv = setfont2d(w,rp); 
+            rv = setfont2d(w,rp);
             break;
          case GL2D_LEADING:
-            rv = setleading2d(w,rp); 
+            rv = setleading2d(w,rp);
             break;
           case GL2D_LINEWIDTH:
             rv = setlinewidth2d(w,rp);
@@ -905,7 +905,7 @@ int traversefunclist2d(wbp w)
    if (elements <= 0) return Succeeded;
    bp = (struct b_lelem *) hp->listhead;
 
-   if (bp->nused<=0) { 
+   if (bp->nused<=0) {
       /* get rid of useless lelem block */
       bp = (struct b_lelem *) bp->listnext;
       hp->listhead = (union block *) bp;
@@ -918,8 +918,8 @@ int traversefunclist2d(wbp w)
     * Traverse the list while keeping an eye out for EraseArea
     */
    if (ws->is_3D) { /* integrated 2d/3d mode traversal */
-      struct descrip desc; 
-      struct b_record *rp; 
+      struct descrip desc;
+      struct b_record *rp;
       wcp wcr = &(ws->wcrender);
       word last_k = k;
       int last_used = used, last_i;
@@ -948,12 +948,12 @@ int traversefunclist2d(wbp w)
 
          if (intcode == GL2D_ERASEAREA) {
 
-            /* 
+            /*
              * Draw area to be erased into stencil buffer
              */
             erasearea2d(w, rp);
 
-            /* 
+            /*
              * Setup stencil buffer and render context to traverse all
              * contiguous non-erasearea display list records before this
              */
@@ -964,13 +964,13 @@ int traversefunclist2d(wbp w)
             rv = traverselist2d(w, last_bp, last_i, i, last_used, last_k);
             if (rv != Succeeded) return rv;
 
-            /* 
+            /*
              * Set stencil buffer states back to default and save the current
              * render context state and position in display list
              */
             ws->stencil_mask = 0;
             DefaultStencilFunc(w);
-            copy_2dcontext(&last_wc, wcr); 
+            copy_2dcontext(&last_wc, wcr);
             last_k = k;
             last_i = i+1;
             last_used = used;
@@ -978,7 +978,7 @@ int traversefunclist2d(wbp w)
             }
          else if (i == elements-1 && last_i < i) {
 
-            /* 
+            /*
              * Traverse the remaining non-erasearea elements of the list
              */
             copy_2dcontext(wcr, &last_wc);
@@ -1005,10 +1005,10 @@ int traversefunclist2d(wbp w)
                   rv = setdrawop2d(w,rp);
                   break;
                case GL2D_FONT:
-                  rv = setfont2d(w,rp); 
+                  rv = setfont2d(w,rp);
                   break;
                case GL2D_LEADING:
-                  rv = setleading2d(w,rp); 
+                  rv = setleading2d(w,rp);
                   break;
                case GL2D_LINEWIDTH:
                   rv = setlinewidth2d(w,rp);
@@ -1049,7 +1049,7 @@ int traversefunclist2d(wbp w)
    return Succeeded;
    }
 
-
+
 
 /*
  * Find the last display list item from the 2d display list
@@ -1064,38 +1064,38 @@ struct b_record *getlastlistitem(wbp w, int intcode)
    struct descrip *dptr;
    struct b_record *rp;
    word i, first;
-   
-   dl = BlkD(w->window->funclist2d,List); 
+
+   dl = BlkD(w->window->funclist2d,List);
    lastlelem = Blk(dl->listtail,Lelem);
 
-   first = lastlelem->first; 
+   first = lastlelem->first;
    i = lastlelem->nused - 1;
    if (first)
       i += lastlelem->first;
 
    /* check type of last list element */
-   dptr = &(lastlelem->lslots[i]); 
+   dptr = &(lastlelem->lslots[i]);
    if (dptr && is:record(*dptr)) {
-      rp = BlkD((*dptr), Record); 
+      rp = BlkD((*dptr), Record);
       if (IntVal(rp->fields[1]) == intcode)
          return rp;
       }
    return NULL;
    }
 
-
+
 
 /*
  * Currently only applied to the 2d facilites.
- * Takes a diff of relevent context attributes. If any differ, create a 
+ * Takes a diff of relevent context attributes. If any differ, create a
  * display list item for each and apply the relevent Unicon and OpenGL
  * state changes.
  *
  * For now, implement a brute-force approach. Create an efficient
  * algorithm after proof-of-concept
  *
- * The second parameter {intcode} is only for context attribute 
- * item creation functions (to stop unwanted recursion). 
+ * The second parameter {intcode} is only for context attribute
+ * item creation functions (to stop unwanted recursion).
  * Otherwise 0 is passed.
  */
 int updaterendercontext(wbp w, int intcode)
@@ -1116,26 +1116,26 @@ int updaterendercontext(wbp w, int intcode)
 
    /* apply drawop */
    if (intcode != GL2D_DRAWOP && wcr->drawop != wc->drawop) {
-      if (wc->drawop == GL2D_DRAWOP_REVERSE) 
+      if (wc->drawop == GL2D_DRAWOP_REVERSE)
          s = "reverse";
-      else 
+      else
          s = "copy";
       if (gl_setdrawop(w, s) == RunError) {
-         return RunError; 
+         return RunError;
          }
       }
 
    /* apply fg */
    if (intcode != GL2D_FG && !ColorEqual(wcr->glfg,wc->glfg)) {
       if (gl_color(w, GL2D_FG, 0, wc->glfg.name) == RunError) {
-         return RunError; 
+         return RunError;
          }
       }
 
    /* apply bg */
    if (intcode != GL2D_BG && !ColorEqual(wcr->glbg,wc->glbg)) {
       if (gl_color(w, GL2D_BG, 0, wc->glbg.name) == RunError) {
-         return RunError; 
+         return RunError;
          }
       }
 
@@ -1154,7 +1154,7 @@ int updaterendercontext(wbp w, int intcode)
       }
 
    /* apply font */
-   if (intcode != GL2D_FONT && wc->font != wcr->font) { 
+   if (intcode != GL2D_FONT && wc->font != wcr->font) {
       if (wc->font) {
          if (gl_setfont(w, &(wc->font->name)) == RunError)
             return RunError;
@@ -1174,18 +1174,18 @@ int updaterendercontext(wbp w, int intcode)
    /* apply fillstyle */
    if (intcode != GL2D_FILLSTYLE && wcr->fillstyle != wc->fillstyle) {
       switch (wc->fillstyle) {
-         case GL2D_FILL_SOLID: 
-            s = "solid";  
+         case GL2D_FILL_SOLID:
+            s = "solid";
             break;
-         case GL2D_FILL_MASKED: 
-            s = "masked";  
+         case GL2D_FILL_MASKED:
+            s = "masked";
             break;
-         case GL2D_FILL_TEXTURED: 
-            s = "textured";  
+         case GL2D_FILL_TEXTURED:
+            s = "textured";
             break;
          default:
             syserr("invalid fillstyle");
-         }  
+         }
       if (gl_setfillstyle(w, s) == RunError) {
          return RunError;
          }
@@ -1194,24 +1194,24 @@ int updaterendercontext(wbp w, int intcode)
    /* apply linestyle */
    if (intcode != GL2D_LINESTYLE && wcr->linestyle != wc->linestyle) {
       switch (wc->linestyle) {
-         case GL2D_LINE_SOLID: 
-            s = "solid";  
+         case GL2D_LINE_SOLID:
+            s = "solid";
             break;
-         case GL2D_LINE_DASHED: 
-            s = "dashed";  
+         case GL2D_LINE_DASHED:
+            s = "dashed";
             break;
-         case GL2D_LINE_STRIPED: 
-            s = "striped";  
+         case GL2D_LINE_STRIPED:
+            s = "striped";
             break;
          default:
             syserr("invalid linestyle");
-         }  
+         }
       if (gl_setlinestyle(w, s) == RunError) {
          return RunError;
          }
       }
 
-   /* 
+   /*
     * apply pattern - {patternname} should never be NULL
     */
    if (intcode != GL2D_PATTERN && strcmp(wc->patternname,wcr->patternname)) {
@@ -1242,7 +1242,7 @@ int updaterendercontext(wbp w, int intcode)
       }
 
    /* apply clipping - just generalize for all four components */
-   if (intcode != GL2D_CLIP && 
+   if (intcode != GL2D_CLIP &&
        (wcr->clipx != wc->clipx || wcr->clipy != wc->clipy ||
         wcr->clipw != wc->clipw || wcr->cliph != wc->cliph)) {
       if (gl_setclip(w) == RunError) {
@@ -1266,23 +1266,23 @@ int updaterendercontext(wbp w, int intcode)
    }
 
 
-
+
 
 /*
  * Function for setting the OpenGL capabilities needed for the Unicon
  * 2D facilities
  */
-int init_2dcanvas(wbp w) 
+int init_2dcanvas(wbp w)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
 
    /* byte alignment for OpenGL bitmaps/pixmaps */
-   glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
-   glPixelStorei(GL_PACK_ALIGNMENT, 1); 
+   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+   glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-   glPixelTransferi(GL_INDEX_SHIFT, 0); 
-   glPixelTransferi(GL_INDEX_OFFSET, 0); 
+   glPixelTransferi(GL_INDEX_SHIFT, 0);
+   glPixelTransferi(GL_INDEX_OFFSET, 0);
 
    /*
     * Fg/Bg colors - gamma/reverse are implicit (see SetDrawopColorState())
@@ -1290,7 +1290,7 @@ int init_2dcanvas(wbp w)
    setcolor2d(w, NULL, GL2D_FG);
    setcolor2d(w, NULL, GL2D_BG);
 
-   /* 
+   /*
     * Drawops
     */
    glLogicOp(GL2D_DRAWOP_REVERSE);
@@ -1300,7 +1300,7 @@ int init_2dcanvas(wbp w)
     * Linewidth - linestyle/fillstyle are implicit (see drawgeometry2d())
     */
    ApplyLinewidth(wcr->linewidth);
-   
+
    /*
     * Patterns
     */
@@ -1323,12 +1323,12 @@ int init_2dcanvas(wbp w)
    return Succeeded;
    }
 
-
+
 
 /*
  * Remember to call MakeCurrent() before calling this function
  */
-int init_canvas(wbp w) 
+int init_canvas(wbp w)
    {
    wsp ws = w->window;
    wcp wc = w->context;
@@ -1336,7 +1336,7 @@ int init_canvas(wbp w)
 
    /*
     * Copy default context state to render context and default
-    * context state 
+    * context state
     */
    ws->lastwcserial = wc->serial;
    ws->wcdef.display = ws->wcrender.display = wd;
@@ -1347,14 +1347,14 @@ int init_canvas(wbp w)
    ws->busy_flag = 0;
 
    /*
-    * Init specific mode states 
+    * Init specific mode states
     *
     * Need to check to make sure changes made to init_3dcanvas() did not
     * change behavior
     */
    init_2dcanvas(w);
    if (ws->is_3D)
-      init_3dcanvas(w); 
+      init_3dcanvas(w);
 
    /* Init all-encompassing mode states */
    glClearDepth(1.0);
@@ -1386,12 +1386,12 @@ int init_canvas(wbp w)
    }
 
 
-
 
-/* 
+
+/*
  * Can make this a macro
  */
-int init_2dcontext(wcp wc) 
+int init_2dcontext(wcp wc)
    {
    wdp wd = wc->display;
    wfp *wfptr = &(wd->glfonts);
@@ -1405,7 +1405,7 @@ int init_2dcontext(wcp wc)
 #ifdef XWindows
    wc->glfg.c = wd->colors[0].c;
    wd->colors[0].refcount++;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
    /* default bg is white */
    SetColor(wc->glbg, 65535, 65535, 65535, 65535, 0);
@@ -1413,7 +1413,7 @@ int init_2dcontext(wcp wc)
 #ifdef XWindows
    wc->glbg.c = wd->colors[1].c;
    wd->colors[1].refcount++;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
    wc->rgbmode = 2;
    wc->gamma = wd->gamma;
@@ -1460,9 +1460,9 @@ int init_2dcontext(wcp wc)
    }
 
 
-
 
-int copy_2dcontext(wcp wcdest, wcp wcsrc) 
+
+int copy_2dcontext(wcp wcdest, wcp wcsrc)
    {
    wcdest->rendermode = wcsrc->rendermode;
    wcdest->alpha = wcsrc->alpha;
@@ -1472,20 +1472,20 @@ int copy_2dcontext(wcp wcdest, wcp wcsrc)
 #ifdef XWindows
    wcdest->glfg.c = wcsrc->glfg.c;
    wcdest->glbg.c = wcsrc->glbg.c;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
    wcdest->drawop = wcsrc->drawop;
    wcdest->gamma = wcsrc->gamma;
    wcdest->reverse = wcsrc->reverse;
 
    if (wcsrc->font) {
-      if (wcdest->font) 
+      if (wcdest->font)
          wcdest->font->refcount--;
       wcdest->font = wcsrc->font;
       wcdest->font->refcount++;
       wcdest->leading = wcsrc->leading;
       }
-     
+
    if (wcdest->patternname) {
       if (strcmp(wcdest->patternname,wcsrc->patternname)) {
          free(wcdest->patternname);
@@ -1510,13 +1510,13 @@ int copy_2dcontext(wcp wcdest, wcp wcsrc)
    return Succeeded;
    }
 
-
+
 
 /*
  * Allocates {ntex} OpenGL textures. If more than one are requested, the
  * index returned is the first of the requested array.
  */
-int get_tex_index(wdp wd, unsigned int ntex) 
+int get_tex_index(wdp wd, unsigned int ntex)
    {
    int rv;
    /* Max # is dependent on GLuint (65536), but reserve a fraction */
@@ -1562,22 +1562,22 @@ int delete_first_tex(wdp wd, unsigned int ndel)
    a = wd->texIds;
    j = ntex - ndel;
 
-   glDeleteTextures(ndel, a); 
+   glDeleteTextures(ndel, a);
    wd->numTexIds = j;
 
    for (i = 0; i < ndel; i++) {
       if (j < ntex) {
-         a[i] = a[j]; 
+         a[i] = a[j];
          a[j++] = 0;
          }
       else
-         a[i] = 0; 
+         a[i] = 0;
       }
    return Succeeded;
    }
 
 /*
- * Frees the last {ntex} (OpenGL) resources in the texture array 
+ * Frees the last {ntex} (OpenGL) resources in the texture array
  */
 int delete_last_tex(wdp wd, unsigned int ndel)
    {
@@ -1590,22 +1590,22 @@ int delete_last_tex(wdp wd, unsigned int ndel)
    a = wd->texIds;
    j = ntex - ndel;
 
-   glDeleteTextures(ndel, &(a[j])); 
+   glDeleteTextures(ndel, &(a[j]));
    wd->numTexIds = j;
-  
+
    for (i = ntex; i > j; i--)
       a[i-1] = 0;
 
    return Succeeded;
    }
 
-
+
 
 /*
  * Convert bitmap to a pixmap (RGBA). This is a helper function for using
  * an alpha-based pixmap for texture alpha testing.
  *
- * {n} dictates the number of bytes per bit in the conversion. 
+ * {n} dictates the number of bytes per bit in the conversion.
  * {invert} dictates  whether the bitmap is inverted across the y-axis. If
  * {bitmap} is OpenGL formatted, then no inversion is necessary.
  * {bitorder} specifies whether to read bits from {bitmap} as high-to-low
@@ -1617,7 +1617,7 @@ int delete_last_tex(wdp wd, unsigned int ndel)
 #define INVERT 1
 #define LOW_TO_HIGH 0
 #define HIGH_TO_LOW 1
-void bitmap_to_pixmap(unsigned char *bitmap, int width, int height, 
+void bitmap_to_pixmap(unsigned char *bitmap, int width, int height,
    unsigned char *pixmap, int invert, int bitorder)
    {
    int i, ix, iy, bmwidth;
@@ -1634,7 +1634,7 @@ void bitmap_to_pixmap(unsigned char *bitmap, int width, int height,
       unsigned char byte, c;
       unsigned int m;
       int index;
-      if (invert) 
+      if (invert)
          index = n*((height-(iy+1))*width);
       else
          index = n*(iy*width);
@@ -1658,9 +1658,9 @@ void bitmap_to_pixmap(unsigned char *bitmap, int width, int height,
       }
    }
 
-
 
-struct b_list *segment_line(wbp w, int num, struct b_realarray *ap2, 
+
+struct b_list *segment_line(wbp w, int num, struct b_realarray *ap2,
    double *v2, word n2)
    {
    wsp ws = (w)->window;
@@ -1676,7 +1676,7 @@ struct b_list *segment_line(wbp w, int num, struct b_realarray *ap2,
       return NULL;
       }
 
-   if (ap2_t) v2 = ap2_t->a; 
+   if (ap2_t) v2 = ap2_t->a;
 
    dx = wcr->dx;
    dy = wcr->dy;
@@ -1694,14 +1694,14 @@ struct b_list *segment_line(wbp w, int num, struct b_realarray *ap2,
          /* last vertex, add it to the segmented array */
          nseg += 2;
          }
-      }	
+      }
 
    /* Alloc segmented array */
    nseg++; /* +1 for drawcode */
    AlcRealarrayList(desc, apseg, nseg, NULL);
    vseg = apseg->a;
    vseg[0] = GL_LINES;
-   if (ap2_t) v2 = ap2_t->a; 
+   if (ap2_t) v2 = ap2_t->a;
 
    /* Calculate points and place them on real array */
    for (i = 0, j = 1; i < n2; i+=num) {
@@ -1711,7 +1711,7 @@ struct b_list *segment_line(wbp w, int num, struct b_realarray *ap2,
          double deltax, deltay, theta;
          deltax = v2[i+2]-v2[i];
          deltay = v2[i+3]-v2[i+1];
-         theta = atan2(deltay, deltax);	
+         theta = atan2(deltay, deltax);
 
          /* maybe use macros to make this faster */
          len = sqrt(deltax*deltax + deltay*deltay);
@@ -1732,13 +1732,13 @@ struct b_list *segment_line(wbp w, int num, struct b_realarray *ap2,
          vseg[j+1] = GLWORLDCOORD_RENDER_Y(w, v2[i+1]+dy);
          j+=2;
          }
-      }	
+      }
    return (struct b_list *)BlkLoc(desc);
-   } 
+   }
 
 
 /*
- * Allocates and calculates coordinates for all geometric 
+ * Allocates and calculates coordinates for all geometric
  * primitives (polygons, circles, arcs, rectangles, lines, points,
  * line segments). Incorporates fillstyle for the primitives which
  * are filled.
@@ -1808,7 +1808,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
       /*
        * These primitives are not allowed to be updated by the
        * user because they would incur N comparisons each time
-       * they are rendered. 
+       * they are rendered.
        */
       case GL2D_DRAWPOLYGON:
       case GL2D_DRAWLINE:
@@ -1825,7 +1825,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
    /*
     * Recalculate coordinates if necessary
     */
-   if (!is:list(rp->fields[2]) || recalc || ws->resize || RecalcTranslation(w)) 
+   if (!is:list(rp->fields[2]) || recalc || ws->resize || RecalcTranslation(w))
       {
       switch (intcode) {
          case GL2D_FILLCIRCLE:
@@ -1890,19 +1890,19 @@ int drawgeometry2d(wbp w, struct b_record *rp)
                is_complete = 0;
                drawcode = GL_LINE_STRIP;
                }
-            if (fill) drawcode = GL_POLYGON;   
-  
-            /* calculate values */ 
+            if (fill) drawcode = GL_POLYGON;
+
+            /* calculate values */
             dtheta = 2*Pi/(RINGS*r);
             n = 2*ceil(alpha/dtheta) + 1; /* +1 for drawcode */
-            if (!is_complete && fill) /* for partial filled circled */ 
+            if (!is_complete && fill) /* for partial filled circled */
                n += 2;
             start = theta;
             end = theta + alpha;
 
             if (!is:list(rp->fields[2]) || n != BlkD(rp->fields[2], List)->size)
                AlcRealarrayList(rp_t->fields[2], ap, n, RunError);
-            else 
+            else
                ap = (struct b_realarray *)BlkD(rp->fields[2],List)->listhead;
 
             /*
@@ -1912,7 +1912,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
                nseg = 2*ceil(((n-1)/2)/SKIP) + 1; /* +1 for drawcode */
                switch (intcode) {
                   case GL2D_DRAWCIRCLE:
-                     if (!is:list(rp_t->fields[13]) || 
+                     if (!is:list(rp_t->fields[13]) ||
                         nseg != BlkD(rp_t->fields[13], List)->size)
                         {
                         AlcRealarrayList(rp_t->fields[13], apseg, nseg, RunError);
@@ -1923,7 +1923,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
                         }
                      break;
                   case GL2D_DRAWARC:
-                     if (!is:list(rp_t->fields[15]) || 
+                     if (!is:list(rp_t->fields[15]) ||
                         nseg != BlkD(rp_t->fields[15], List)->size)
                         {
                         AlcRealarrayList(rp_t->fields[15],apseg,nseg,RunError);
@@ -1934,16 +1934,16 @@ int drawgeometry2d(wbp w, struct b_record *rp)
                         }
                      break;
                   }
-               vseg = apseg->a; 
+               vseg = apseg->a;
                vseg[0] = GL_LINES;
                }
 
             i = 0;
             v = ap->a; /* assign here to avoid tending issues */
             v[i++] = drawcode;
-            if (!is_complete && fill) { /* for partial filled circled */ 
+            if (!is_complete && fill) { /* for partial filled circled */
                v[i++] = wx;
-               v[i++] = wy; 
+               v[i++] = wy;
                }
 
             /* calculate points */
@@ -1962,7 +1962,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
             /* calculate endpoint specifically */
             v[n-2] = wx + rx*cos(end);
             v[n-1] = wy + ry*sin(-end); /* to imitate X11 rotation */
-            if (!fill) { 
+            if (!fill) {
                vseg[nseg-2] = v[n-2];
                vseg[nseg-1] = v[n-1];
                }
@@ -1980,13 +1980,13 @@ int drawgeometry2d(wbp w, struct b_record *rp)
             GetDouble(rp->fields[6], height);
 
             /* alloc cooked array */
-            if (!is:list(rp->fields[2])) { 
-               if (intcode == GL2D_DRAWRECTANGLE) 
+            if (!is:list(rp->fields[2])) {
+               if (intcode == GL2D_DRAWRECTANGLE)
                   AlcRealarrayList(rp_t->fields[2],ap,8+1,RunError); /* for line loop */
-               else 
+               else
                   AlcRealarrayList(rp_t->fields[2],ap,12+1,RunError); /* for triangles */
                }
-            else 
+            else
                ap = (struct b_realarray *)BlkD(rp_t->fields[2],List)->listhead;
             v = ap->a;
             n = BlkD(rp_t->fields[2], List)->size;
@@ -2014,7 +2014,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
                vtmp[3] = vtmp[5] = y+height; /* y2 */
 
                if ((lp = segment_line(w,2,NULL,vtmp,SIZE)) == NULL) {
-                  return RunError; 
+                  return RunError;
                   }
                BlkLoc(rp_t->fields[11]) = (union block *)lp;
                rp_t->fields[11].dword = D_List;
@@ -2026,13 +2026,13 @@ int drawgeometry2d(wbp w, struct b_record *rp)
             else { /* fill */
                /* (x1,y1)->(x1,y2)->(x2,y1) (x2,y1)->(x1,y2)->(x2,y2) */
                v[0] = GL_TRIANGLES;
-               v[j] = v[j+2] = v[j+8] = GLWORLDCOORD_RENDER_X(w, x); 
-               v[j+1] = v[j+5] = v[j+7] = GLWORLDCOORD_RENDER_Y(w, y); 
-               v[j+4] = v[j+6] = v[j+10] = GLWORLDCOORD_RENDER_X(w, x+width); 
-               v[j+3] = v[j+9] = v[j+11] = GLWORLDCOORD_RENDER_Y(w, y+height); 
+               v[j] = v[j+2] = v[j+8] = GLWORLDCOORD_RENDER_X(w, x);
+               v[j+1] = v[j+5] = v[j+7] = GLWORLDCOORD_RENDER_Y(w, y);
+               v[j+4] = v[j+6] = v[j+10] = GLWORLDCOORD_RENDER_X(w, x+width);
+               v[j+3] = v[j+9] = v[j+11] = GLWORLDCOORD_RENDER_Y(w, y+height);
                }
             break;
-            } 
+            }
 
          case GL2D_FILLPOLYGON:
          case GL2D_DRAWPOINT:
@@ -2057,11 +2057,11 @@ int drawgeometry2d(wbp w, struct b_record *rp)
             switch (intcode) {
                case GL2D_FILLPOLYGON:
                   switch (polytype) {
-                     case POLY_NONCONVEX: 
-                     case POLY_COMPLEX:   
+                     case POLY_NONCONVEX:
+                     case POLY_COMPLEX:
                         drawcode = GL_TRIANGLE_FAN;
                         break;
-                     case POLY_CONVEX: 
+                     case POLY_CONVEX:
                         drawcode = GL_POLYGON;
                         break;
                      }
@@ -2084,17 +2084,17 @@ int drawgeometry2d(wbp w, struct b_record *rp)
             for (i = 1; i < n; i+=2) {
                v[i] = GLWORLDCOORD_RENDER_X(w, v2[i-1]+dx);
                v[i+1] = GLWORLDCOORD_RENDER_Y(w, v2[i]+dy);
-               } 
+               }
 
             if (!fill && intcode != GL2D_DRAWPOINT) { /* segment lines */
-               if (intcode == GL2D_DRAWSEGMENT) 
+               if (intcode == GL2D_DRAWSEGMENT)
                   num = 4;
-               else 
+               else
                   num = 2;
 
                /* pass {ap2->a} instead of {v2} because its tended */
                if ((lp = segment_line(w,num,ap2,NULL,n2)) == NULL) {
-                  return RunError; 
+                  return RunError;
                   }
                BlkLoc(rp_t->fields[4]) = (union block *)lp;
                rp_t->fields[4].dword = D_List;
@@ -2104,7 +2104,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
                v = ap->a; /* in case of GC */
                }
             break;
-            } 
+            }
          default:
             glprintf("Invalid record type\n");
             return Failed;
@@ -2138,7 +2138,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
                break;
             case GL2D_DRAWPOLYGON:
             case GL2D_DRAWLINE:
-            case GL2D_DRAWSEGMENT: 
+            case GL2D_DRAWSEGMENT:
                apseg = (struct b_realarray *)BlkD(rp->fields[4],List)->listhead;
                nseg = BlkD(rp->fields[4], List)->size;
                vseg = apseg->a;
@@ -2155,10 +2155,10 @@ int drawgeometry2d(wbp w, struct b_record *rp)
     * Render primitive
     *
     * Linestyle and fillstyle are accounted for during this time for line
-    * and filled primitives respectively. Points are the only primitive 
+    * and filled primitives respectively. Points are the only primitive
     * that are rendered as is.
     *
-    * NOTE: Transparency won't work when drawop="xor"/"reverse". 
+    * NOTE: Transparency won't work when drawop="xor"/"reverse".
     */
    glPushMatrix();
    glTranslated(0,0,-CNEAR);
@@ -2173,9 +2173,9 @@ int drawgeometry2d(wbp w, struct b_record *rp)
       case GL2D_FILLRECTANGLE:
          /*
           * For complex and nonconvex polygons:
-          * Use a 2-pass stencil algorithm where writing to the color buffer is 
-          * disabled on the first pass to only draw to the stencil buffer. 
-          * Only regions drawn to an odd number of times (1st pass) will have a 
+          * Use a 2-pass stencil algorithm where writing to the color buffer is
+          * disabled on the first pass to only draw to the stencil buffer.
+          * Only regions drawn to an odd number of times (1st pass) will have a
           * '1' will be drawn to on the second pass.
           *
           * http://www.glprogramming.com/red/chapter14.html#name13
@@ -2191,7 +2191,7 @@ int drawgeometry2d(wbp w, struct b_record *rp)
             DisableStencilWrite();
 
             /*
-             * Second pass 
+             * Second pass
              */
             RenderRealarrayFillstyle(w, v, n, GL2D_DRAW_BIT);
             }
@@ -2214,12 +2214,12 @@ int drawgeometry2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 /*
  * Draws a bi-level image using bitmaps.
  */
-int drawblimage2d(wbp w, struct b_record *rp) 
+int drawblimage2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wdp wd = ws->display;
@@ -2239,16 +2239,16 @@ int drawblimage2d(wbp w, struct b_record *rp)
    ch = (char)IntVal(rp->fields[7]);
 
    if (is:integer(rp->fields[8]) && is:integer(rp->fields[9])) {
-      texid = IntVal(rp->fields[8]); 
-      index = IntVal(rp->fields[9]); 
+      texid = IntVal(rp->fields[8]);
+      index = IntVal(rp->fields[9]);
 
-      if (wd->texIds[index] != texid) 
+      if (wd->texIds[index] != texid)
          update = 1;
-      else 
+      else
          UGLBindTexture(GL_TEXTURE_2D, texid);
       }
    else
-      update = 1; 
+      update = 1;
 
    if (update) {
       tended struct b_record *rp_t = rp;
@@ -2261,7 +2261,7 @@ int drawblimage2d(wbp w, struct b_record *rp)
          bmwidth++;
       bytes = bmwidth*height;
 
-      bitmap = (unsigned char *)malloc(bytes); 
+      bitmap = (unsigned char *)malloc(bytes);
       if (!bitmap) return RunError;
 
       /*
@@ -2279,28 +2279,28 @@ int drawblimage2d(wbp w, struct b_record *rp)
       m = msk1;
       while (len--) {
          if (isxdigit(c = *s++)) {         /* if hexadecimal character */
-   	    if (!isdigit(c))               /* fix bottom 4 bits if necessary */
-	       c += 9;
-	    while (m > 0) {                /* set (usually) 4 pixel values */
-	       --ix;
+            if (!isdigit(c))               /* fix bottom 4 bits if necessary */
+               c += 9;
+            while (m > 0) {                /* set (usually) 4 pixel values */
+               --ix;
                index = ix/8 + bmwidth*(height-(iy+1));
                shift = 7 - ix % 8;
-	       if (c & m) {
+               if (c & m) {
                   bitmap[index] |= 1 << shift; /* set */
-	          }
-	       else { 
+                  }
+               else {
                   bitmap[index] &= ~(1 << shift); /* clear */
-	          }
-	       m >>= 1;
-	       }
-	    if (ix == 0) {                 /* if end of row */
-	       ix = width;
-	       iy++;
-	       m = msk1;
-	       }
-	    else
-	       m = 8;
-	    }
+                  }
+               m >>= 1;
+               }
+            if (ix == 0) {                 /* if end of row */
+               ix = width;
+               iy++;
+               m = msk1;
+               }
+            else
+               m = 8;
+            }
          }
       if (ix > 0) {                        /* pad final row if incomplete */
          while (ix < width) {
@@ -2316,13 +2316,13 @@ int drawblimage2d(wbp w, struct b_record *rp)
       index = get_tex_index(wd, 1);
       texptr = &(wd->texIds[index]);
       InitTexture2d(texptr);
-      UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, 
-                    GL_UNSIGNED_BYTE, tmp, RunError); 
+      UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
+                    GL_UNSIGNED_BYTE, tmp, RunError);
       free(tmp);
       free(bitmap);
 
-      MakeInt(*texptr, &(rp->fields[8])); 
-      MakeInt(index, &(rp->fields[9])); 
+      MakeInt(*texptr, &(rp->fields[8]));
+      MakeInt(index, &(rp->fields[9]));
       }
 
    AddDxDy(w, x, y, width, height);
@@ -2330,19 +2330,19 @@ int drawblimage2d(wbp w, struct b_record *rp)
    if (ch == TCH1) /* transparent background */
       RenderTexturedBitmapRect(w,x,y,width,height,width,height,-CNEAR,
                                TRANSP_BG);
-   else 
+   else
       RenderTexturedBitmapRect(w,x,y,width,height,width,height,-CNEAR,FILL_BG);
    UGLBindTexture(GL_TEXTURE_2D, 0); /* unbind */
    return Succeeded;
    }
 
-
+
 
 
 /*
  * Draw an image loaded from a file
  */
-int drawreadimage2d(wbp w, struct b_record *rp) 
+int drawreadimage2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wdp wd = ws->display;
@@ -2360,8 +2360,8 @@ int drawreadimage2d(wbp w, struct b_record *rp)
    is_pixmap = IntVal(rp->fields[6]);
 
    if (is:integer(rp->fields[8]) && is:integer(rp->fields[9])) {
-      texid = IntVal(rp->fields[8]); 
-      index = IntVal(rp->fields[9]); 
+      texid = IntVal(rp->fields[8]);
+      index = IntVal(rp->fields[9]);
 
       if (wd->texIds[index] != texid)
          update = 1;
@@ -2369,8 +2369,8 @@ int drawreadimage2d(wbp w, struct b_record *rp)
          UGLBindTexture(GL_TEXTURE_2D, texid);
       }
    else
-      update = 1; 
-  
+      update = 1;
+
    if (update) {
       unsigned int *texptr;
 
@@ -2381,7 +2381,7 @@ int drawreadimage2d(wbp w, struct b_record *rp)
 
       if (is_pixmap) {
          UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB,
-                       GL_UNSIGNED_BYTE, img, RunError); 
+                       GL_UNSIGNED_BYTE, img, RunError);
          }
       else {
          unsigned char *tmp;
@@ -2389,14 +2389,14 @@ int drawreadimage2d(wbp w, struct b_record *rp)
          tmp = malloc(4*width*height);
          if (!tmp) return RunError;
          bitmap_to_pixmap(img, width, height, tmp, DONT_INVERT, HIGH_TO_LOW);
-         UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, 
+         UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0,
                        GL_RGBA, GL_UNSIGNED_BYTE, tmp, RunError);
          free(tmp);
          }
 
-      MakeInt(texid = *texptr, &(rp->fields[8])); 
-      MakeInt(index, &(rp->fields[9])); 
-      } 
+      MakeInt(texid = *texptr, &(rp->fields[8]));
+      MakeInt(index, &(rp->fields[9]));
+      }
 
    AddDxDy(w, x, y, width, height);
 
@@ -2404,7 +2404,7 @@ int drawreadimage2d(wbp w, struct b_record *rp)
       RenderTexturedRect(w, x, y, width, height, width, height, -CNEAR);
       }
    else { /* bitmap */
-      RenderTexturedBitmapRect(w, x, y, width, height, width, height, -CNEAR, 
+      RenderTexturedBitmapRect(w, x, y, width, height, width, height, -CNEAR,
                                TRANSP_BG);
       }
 
@@ -2412,9 +2412,9 @@ int drawreadimage2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
 
-int drawstrimage2d(wbp w, struct b_record *rp) 
+
+int drawstrimage2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wdp wd = ws->display;
@@ -2433,7 +2433,7 @@ int drawstrimage2d(wbp w, struct b_record *rp)
    if (is:integer(rp->fields[7]) && is:integer(rp->fields[8])) {
       texid = IntVal(rp->fields[7]);
       index = IntVal(rp->fields[8]);
-      if (wd->texIds[index] != texid) 
+      if (wd->texIds[index] != texid)
          update = 1;
       else
          UGLBindTexture(GL_TEXTURE_2D, texid);
@@ -2441,20 +2441,20 @@ int drawstrimage2d(wbp w, struct b_record *rp)
    else {
       update = 1;
       }
-   
+
    /* (re)allocate texture */
    if (update) {
       unsigned int *texptr;
 
-      pixmap = (unsigned char *)StrLoc(rp->fields[6]); 
+      pixmap = (unsigned char *)StrLoc(rp->fields[6]);
       index = get_tex_index(wd, 1);
       texptr = &(wd->texIds[index]);
       InitTexture2d(texptr);
-      UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, 
-                    GL_UNSIGNED_BYTE, pixmap, RunError); 
+      UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
+                    GL_UNSIGNED_BYTE, pixmap, RunError);
 
-      MakeInt(texid = *texptr, &(rp->fields[7])); 
-      MakeInt(index, &(rp->fields[8])); 
+      MakeInt(texid = *texptr, &(rp->fields[7]));
+      MakeInt(index, &(rp->fields[8]));
       }
 
    AddDxDy(w, x, y, width, height);
@@ -2463,16 +2463,16 @@ int drawstrimage2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
 
-int drawstring2d(wbp w, struct b_record *rp) 
+
+int drawstring2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
    int len, fill, rv;
    double x, y;
    char *s;
- 
+
    if (!rp) return Failed;
 
    switch (IntVal(rp->fields[1])) {
@@ -2504,11 +2504,11 @@ int drawstring2d(wbp w, struct b_record *rp)
       }
    }
 
-
+
 
 /*
  * Uses FreeType to create the text pixmap. Creates the display list
- * entry and calls drawstring2d() to render the text pixmap. 
+ * entry and calls drawstring2d() to render the text pixmap.
  *
  * It appears that the RC or XY position specifies the bottom left corner
  * of the text block to be drawn.
@@ -2524,7 +2524,7 @@ int drawstring2d(wbp w, struct b_record *rp)
 /*
  * (x,y) specifies the lower-left hand corner of the string.
  */
-int drawstringhelper(wbp w, double x, double y, double z, char *s, int len, 
+int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
    int fill, int draw)
    {
    wsp ws = w->window;
@@ -2536,9 +2536,9 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
    char *ptr = s;
    FT_Face face = wf->face;
 
-   fheight = FT_FHEIGHT(face); 
+   fheight = FT_FHEIGHT(face);
    fdescent = FT_DESCENT(face);
-   penx = startx = x; 
+   penx = startx = x;
    peny = y + fdescent; /* center vertically around global font baseline */
    textwidth = 0;
 
@@ -2570,14 +2570,14 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
             }
 
          /* get glyph bitmap dimensions */
-         glyph = wf->face->glyph; 
+         glyph = wf->face->glyph;
          ftbitmap = glyph->bitmap;
          bitmap = ftbitmap.buffer;
          bmwidth = ftbitmap.pitch; /* # of bytes per row (incl. padding) */
          if (bmwidth < 0) bmwidth = -bmwidth;
 
-         sym->height = ftbitmap.rows; 
-         sym->width = 8*bmwidth; 
+         sym->height = ftbitmap.rows;
+         sym->width = 8*bmwidth;
          sym->advance = glyph->advance.x >> 6;
          sym->top_bearing = glyph->bitmap_top;
          sym->left_bearing = glyph->bitmap_left;
@@ -2589,7 +2589,7 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
          bitmap_to_pixmap(bitmap, sym->width, sym->height, sym->pixmap, INVERT,
                           HIGH_TO_LOW);
          }
-       
+
       if (draw) {
          double x1, y1;
 
@@ -2600,8 +2600,8 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
             sym->index = get_tex_index(wd, 1);
             texptr = &(wd->texIds[sym->index]);
             InitTexture2d(texptr);
-            UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, sym->width, 
-                          sym->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 
+            UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, sym->width,
+                          sym->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                           sym->pixmap, RunError);
             sym->texid = *texptr;
             }
@@ -2610,9 +2610,9 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
             }
 
          /*
-          * Draw to stencil buffer 
-          * 
-          * Position character (low left corner) by using the left and top 
+          * Draw to stencil buffer
+          *
+          * Position character (low left corner) by using the left and top
           * bearing values. See FreeType glyph metrics.
           */
          x1 = penx + sym->left_bearing;
@@ -2646,19 +2646,19 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
    return textwidth;
    }
 
-#else					/* HAVE_LIBFREETYPE */
+#else                                   /* HAVE_LIBFREETYPE */
 
-int drawstringhelper(wbp w, double x, double y, double z, char *s, int len, 
+int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
    int fill, int draw)
    {
    return Failed;
    }
 
-#endif					/* HAVE_LIBFREETYPE */
+#endif                                  /* HAVE_LIBFREETYPE */
 
-
 
-/* 
+
+/*
  * 2d CopyArea() semantics (!ws->is_3D)
  *    Copies all pixels (same as legacy semantics)
  *
@@ -2668,7 +2668,7 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
 #define OffscreenPixel(ws, x, y, ix, iy) \
    ((real_iy+y < 0 || real_iy+y > (ws)->height || ix+x < 0 ||\
     ix+x > (ws)->width))
-int copyarea2d(wbp w2, struct b_record *rp) 
+int copyarea2d(wbp w2, struct b_record *rp)
    {
    wbp w, tmp1, tmp2;
    wsp ws2 = w2->window, ws;
@@ -2720,23 +2720,23 @@ int copyarea2d(wbp w2, struct b_record *rp)
       index = (unsigned int)IntVal(rp->fields[10]);
 
       if (w) {
-         wd = w->window->display; 
+         wd = w->window->display;
          }
       else {
          /* Since window is closed, the binding has been freed */
          rp->fields[2] = nulldesc;
 
          /*
-          * if window is closed, assume same display 
+          * if window is closed, assume same display
           * TODO: expand to encompass different displays
-          */ 
-         wd = ws2->display; 
+          */
+         wd = ws2->display;
          }
 
       /* check if texture is still alive */
-      if (wd->texIds[index] == texid) 
-         UGLBindTexture(GL_TEXTURE_2D, texid); 
-      else 
+      if (wd->texIds[index] == texid)
+         UGLBindTexture(GL_TEXTURE_2D, texid);
+      else
          update = 1;
       }
    else if (w) {
@@ -2761,7 +2761,7 @@ int copyarea2d(wbp w2, struct b_record *rp)
 
       ws = w->window;
 
-      /* 
+      /*
        * Get area from source window
        */
       MakeCurrent(w);
@@ -2769,14 +2769,14 @@ int copyarea2d(wbp w2, struct b_record *rp)
 
       /* check for out-of-bounds rectangle */
       if ((x+width > ws->width || x < 0) || (y+height > ws->height || y < 0)) {
-         outofbounds = 1; 
+         outofbounds = 1;
          }
 
-      px = x; 
+      px = x;
       py = ws->height - (y + height); /* correct for OpenGL conventions */
 
       /* get color buffer */
-      size = width*height; 
+      size = width*height;
       pixmap = (unsigned char *)malloc(4*size);
       if (!pixmap) return RunError;
       glReadPixels(px,py,width,height,GL_RGBA,GL_UNSIGNED_BYTE,pixmap);
@@ -2792,11 +2792,11 @@ int copyarea2d(wbp w2, struct b_record *rp)
             for (ix = 0; ix < width; ix++) {
                /* make off-screen pixels transparent */
                if (outofbounds && OffscreenPixel(ws,x,y,ix,real_iy)) {
-                  pixmap[4*(iy*width+ix)+3] = 0; 
+                  pixmap[4*(iy*width+ix)+3] = 0;
                   }
                /* make 3D pixels transparent */
                else if (depth[iy*width+ix] != 0) {
-                  pixmap[4*(iy*width+ix)+3] = 0; 
+                  pixmap[4*(iy*width+ix)+3] = 0;
                   }
                }
             }
@@ -2824,8 +2824,8 @@ int copyarea2d(wbp w2, struct b_record *rp)
       index = get_tex_index(wd, 1);
       texptr = &(wd->texIds[index]);
       InitTexture2d(texptr);
-      UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, 
-                    GL_UNSIGNED_BYTE, pixmap, RunError); 
+      UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
+                    GL_UNSIGNED_BYTE, pixmap, RunError);
       free(pixmap);
 
       /* Update field values */
@@ -2840,20 +2840,20 @@ int copyarea2d(wbp w2, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 /*
  * 2D semantics (!ws->is_3D):
  *    Erases everything in the specified area
- * 2D/3D semantics (ws->is_3D): 
+ * 2D/3D semantics (ws->is_3D):
  *    Erases only 2D/HUD pixels in the specified area. This is done with
- *    a unique traversal algorithm in traversefunclist2d(). 
+ *    a unique traversal algorithm in traversefunclist2d().
  */
-int erasearea2d(wbp w, struct b_record *rp) 
+int erasearea2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    double x, y, width, height;
- 
+
    if (!rp) return Failed;
 
    GetDouble(rp->fields[2], x);
@@ -2867,7 +2867,7 @@ int erasearea2d(wbp w, struct b_record *rp)
       /* this should only run during a 3d's windows traversal redraw */
       glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
       glDepthMask(GL_FALSE);
-      EnableStencilWrite(GL2D_ERASE_BIT,0xFF,GL_ZERO); 
+      EnableStencilWrite(GL2D_ERASE_BIT,0xFF,GL_ZERO);
       RenderFilledRect(x, y, width, height, -CNEAR);
       DisableStencilWrite();
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -2876,7 +2876,7 @@ int erasearea2d(wbp w, struct b_record *rp)
    else {
       /*
        * Draw bg color to the far plane of the viewing volumes. This
-       * erases all primitives in the rectangular area. 3d primitives 
+       * erases all primitives in the rectangular area. 3d primitives
        * are drawn after 2d primitives to make this work
        */
       SetDrawopColorState(w, wcr->drawop, BG);
@@ -2890,18 +2890,18 @@ int erasearea2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 /*
  * Attributes
  */
 
-
+
 
 /*
  * Sets the render context's fg/bg to the appropriate values using
  * display list items.
- * SetDrawopColorState() actually sets the OpenGL color states. 
+ * SetDrawopColorState() actually sets the OpenGL color states.
  */
 int setcolor2d(wbp w, struct b_record *rp, int type)
    {
@@ -2909,22 +2909,22 @@ int setcolor2d(wbp w, struct b_record *rp, int type)
    wcp wcr = &(ws->wcrender);
    int index, intcode;
    unsigned int r, g, b, a;
-  
+
    /*
     * No display list entry, so use the current render context color
-    * specified by type. 
+    * specified by type.
     */
    if (!rp) {
       switch (intcode = type) {
-         case GL2D_FG: 
+         case GL2D_FG:
             GetColorUS(w, wcr->glfg, r, g, b, a);
             index = wcr->glfg.id;
             break;
-         case GL2D_BG: 
+         case GL2D_BG:
             GetColorUS(w, wcr->glbg, r, g, b, a);
             index = wcr->glbg.id;
             break;
-         default: 
+         default:
             glprintf("incorrect record type\n");
             return Failed;
          }
@@ -2937,13 +2937,13 @@ int setcolor2d(wbp w, struct b_record *rp, int type)
          GetInt(rp->fields[2], index);
          if (find_mutable(w, index) == NULL) {
             glprintf("Mutable color not found\n");
-            return Failed; 
+            return Failed;
             }
          r = g = b = a = 0;
          }
       /* non-mutable color */
       else {
-         index = 0; 
+         index = 0;
          GetInt(rp->fields[3], r);
          GetInt(rp->fields[4], g);
          GetInt(rp->fields[5], b);
@@ -2952,11 +2952,11 @@ int setcolor2d(wbp w, struct b_record *rp, int type)
       }
 
    if (intcode == GL2D_FG) {
-      SetColor(wcr->glfg, r, g, b, a, index); 
-      SetDrawopColorState(w, wcr->drawop, FG); 
+      SetColor(wcr->glfg, r, g, b, a, index);
+      SetDrawopColorState(w, wcr->drawop, FG);
       }
    else if (intcode == GL2D_BG) {
-      SetColor(wcr->glbg, r, g, b, a, index); 
+      SetColor(wcr->glbg, r, g, b, a, index);
       if (wcr->reverse || wcr->drawop == GL2D_DRAWOP_REVERSE)
          SetDrawopColorState(w, wcr->drawop, FG);
       }
@@ -2964,11 +2964,11 @@ int setcolor2d(wbp w, struct b_record *rp, int type)
    return Succeeded;
    }
 
-
+
 
 /*
  * Sets the current fg color to the fg color xor'd with the bg color
- * if drawop="reverse". 
+ * if drawop="reverse".
  *
  * Need to take into consideration mutable colors and the implications
  * for updating the fg color when in drawop="reverse"
@@ -2991,14 +2991,14 @@ int setdrawop2d(wbp w, struct b_record *rp)
          }
       }
    else {
-      wcr->drawop = wc->drawop; 
+      wcr->drawop = wc->drawop;
       }
 
    ApplyDrawop(w, wcr->drawop);
    return Succeeded;
    }
 
-int setgamma2d(wbp w, struct b_record *rp) 
+int setgamma2d(wbp w, struct b_record *rp)
    {
    if (!rp) return Failed;
    GetReal(&(rp->fields[2]), w->window->wcrender.gamma);
@@ -3009,10 +3009,10 @@ int setgamma2d(wbp w, struct b_record *rp)
 /*
  * Toggles "reverse" attribute
  */
-int togglefgbg2d(wbp w) 
+int togglefgbg2d(wbp w)
    {
    wcp wcr = &(w->window->wcrender);
-  
+
    wcr->reverse = !(wcr->reverse);
 
    /* set OpenGL color state using render context */
@@ -3020,7 +3020,7 @@ int togglefgbg2d(wbp w)
    return Succeeded;
    }
 
-int setfont2d(wbp w, struct b_record *rp) 
+int setfont2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
@@ -3037,19 +3037,19 @@ int setfont2d(wbp w, struct b_record *rp)
    if (!wf)
       return Failed;
 
-   /* update render context */  
-   if (wcr->font) 
-      wcr->font->refcount--; 
+   /* update render context */
+   if (wcr->font)
+      wcr->font->refcount--;
    wcr->font = wf;
    wcr->leading = FT_FHEIGHT(wf->face);
-   wcr->font->refcount--; 
+   wcr->font->refcount--;
 
-   return Succeeded; 
+   return Succeeded;
    }
 
-
 
-int setleading2d(wbp w, struct b_record *rp) 
+
+int setleading2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
@@ -3059,7 +3059,7 @@ int setleading2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 int setlinewidth2d(wbp w, struct b_record *rp)
    {
@@ -3071,7 +3071,7 @@ int setlinewidth2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 int setlinestyle2d(wbp w, struct b_record *rp)
    {
@@ -3096,7 +3096,7 @@ int setlinestyle2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 int setfillstyle2d(wbp w, struct b_record *rp)
    {
@@ -3106,7 +3106,7 @@ int setfillstyle2d(wbp w, struct b_record *rp)
    int len;
 
    if (!rp) return Failed;
-   
+
    GetStr(rp->fields[2], s, len);
    if (!strncmp(s, "solid", len)) {
       wcr->fillstyle = GL2D_FILL_SOLID;
@@ -3121,9 +3121,9 @@ int setfillstyle2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
 
-int setpattern2d(wbp w, struct b_record *rp) 
+
+int setpattern2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
@@ -3141,18 +3141,18 @@ int setpattern2d(wbp w, struct b_record *rp)
       update = (slen <= s1len) ? strncmp(s, s1, slen) : strncmp(s, s1, s1len);
       if (update) {
          /*
-          * TODO: If a texture id is already active (and is not a std pattern), 
+          * TODO: If a texture id is already active (and is not a std pattern),
           * load a new texture into it
           */
-         MakeStr(s, slen, &(rp->fields[3])); 
+         MakeStr(s, slen, &(rp->fields[3]));
          }
-      else { 
+      else {
          if (is:integer(rp->fields[6]) && is:integer(rp->fields[7])) {
             texid = (unsigned int) IntVal(rp->fields[6]);
             index = (unsigned int) IntVal(rp->fields[7]);
 
             /* Check if non-std pattern needs to be reallocated */
-            if (index && texid != wd->texIds[index]) { 
+            if (index && texid != wd->texIds[index]) {
                update = 1;
                }
             else {
@@ -3174,7 +3174,7 @@ int setpattern2d(wbp w, struct b_record *rp)
 
    if (update) {
       /*
-       * Allocate texture 
+       * Allocate texture
        */
       int size;
       int i, j;
@@ -3192,7 +3192,7 @@ int setpattern2d(wbp w, struct b_record *rp)
          nbits = MAXXOBJS;
          switch (parsepattern(s, slen, &width, &nbits, bits)) {
             case Failed:
-   	       return Failed;
+               return Failed;
             case RunError:
                return RunError;
             }
@@ -3216,7 +3216,7 @@ int setpattern2d(wbp w, struct b_record *rp)
           */
          nbits = width = 8;
          if (wd->stdPatTexIds[symbol] > 0) {
-            texid = wd->stdPatTexIds[symbol]; 
+            texid = wd->stdPatTexIds[symbol];
             }
          else {
             for(i = 0; i < 8; i++) {
@@ -3228,11 +3228,11 @@ int setpattern2d(wbp w, struct b_record *rp)
          }
 
       if (!texptr) { /* stdpat already allocated */
-         UGLBindTexture(GL_TEXTURE_2D, texid); 
+         UGLBindTexture(GL_TEXTURE_2D, texid);
          }
       else {
          /*
-          * Convert from bits to bytes. 
+          * Convert from bits to bytes.
           *
           * Need to invert the pattern across the y-axis since OpenGL reads
           * from the lower left corner first (bottom to top, left to right)
@@ -3247,8 +3247,8 @@ int setpattern2d(wbp w, struct b_record *rp)
           * Generate a texture based off the pattern (img)
           */
          InitTexture2d(texptr);
-         UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, nbits, 0, 
-                       GL_RGBA, GL_UNSIGNED_BYTE, img, RunError); 
+         UGLTexImage2D(wd, GL_TEXTURE_2D, 0, GL_RGBA8, width, nbits, 0,
+                       GL_RGBA, GL_UNSIGNED_BYTE, img, RunError);
          free(img);
          }
 
@@ -3256,16 +3256,16 @@ int setpattern2d(wbp w, struct b_record *rp)
        * Update record fields
        */
       if (rp) {
-         MakeInt(width, &(rp->fields[4])); 
-         MakeInt(nbits, &(rp->fields[5])); 
+         MakeInt(width, &(rp->fields[4]));
+         MakeInt(nbits, &(rp->fields[5]));
          if (texptr)
             MakeInt(*texptr, &(rp->fields[6]));
          else
             MakeInt(texid, &(rp->fields[6]));
          /*
-          * Index of 0 indicates it is a std pattern, otherwise it is the index 
+          * Index of 0 indicates it is a std pattern, otherwise it is the index
           * into the general texture id array (wd->texIds)
-          */ 
+          */
          MakeInt(index, &(rp->fields[7]));
          }
       }
@@ -3301,23 +3301,23 @@ int setpattern2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 /*
- * Uses scissor test to implement 2D clipping. 
+ * Uses scissor test to implement 2D clipping.
  */
-int setclip2d(wbp w, struct b_record *rp) 
+int setclip2d(wbp w, struct b_record *rp)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
    int clipx, clipy, clipw, cliph;
 
    if (rp == NULL) {
-      clipx = wcr->clipx; 
-      clipy = wcr->clipy; 
-      clipw = wcr->clipw; 
-      cliph = wcr->cliph; 
-      } 
+      clipx = wcr->clipx;
+      clipy = wcr->clipy;
+      clipw = wcr->clipw;
+      cliph = wcr->cliph;
+      }
    else {
       GetInt(rp->fields[2], clipx);
       GetInt(rp->fields[3], clipy);
@@ -3329,14 +3329,14 @@ int setclip2d(wbp w, struct b_record *rp)
       wcr->clipy = clipy;
       wcr->clipw = clipw;
       wcr->cliph = cliph;
-      } 
+      }
 
    /* clipping disabled */
    if (clipx == 0 && clipy == 0 && clipw == -1 && cliph == -1) {
       if (glIsEnabled(GL_SCISSOR_TEST) == GL_TRUE)
          glDisable(GL_SCISSOR_TEST);
       }
-   else { 
+   else {
       if (glIsEnabled(GL_SCISSOR_TEST) == GL_FALSE)
          glEnable(GL_SCISSOR_TEST);
 
@@ -3348,7 +3348,7 @@ int setclip2d(wbp w, struct b_record *rp)
    return Succeeded;
    }
 
-
+
 
 int setdx2d(wbp w, struct b_record *rp)
    {
@@ -3357,15 +3357,15 @@ int setdx2d(wbp w, struct b_record *rp)
 
    GetInt(rp->fields[2], wcr->dx);
    if (wcr->dx != IntVal(rp->fields[3])) {
-      ws->dx_flag = 1; 
-      IntVal(rp->fields[3]) = wcr->dx; 
+      ws->dx_flag = 1;
+      IntVal(rp->fields[3]) = wcr->dx;
       }
-   else 
+   else
       ws->dx_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int setdy2d(wbp w, struct b_record *rp)
    {
@@ -3374,29 +3374,29 @@ int setdy2d(wbp w, struct b_record *rp)
 
    GetInt(rp->fields[2], wcr->dy);
    if (wcr->dy != IntVal(rp->fields[3])) {
-      ws->dy_flag = 1; 
-      IntVal(rp->fields[3]) = wcr->dy; 
+      ws->dy_flag = 1;
+      IntVal(rp->fields[3]) = wcr->dy;
       }
    else
-      ws->dy_flag = 0;   
+      ws->dy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 /******************************************************
  * (2) Drawing functions (creates display list entry) *
  ******************************************************/
 
-/* 
- * Draw a bi-level image (1-bit-per-pixel, encoded as a string) image. 
+/*
+ * Draw a bi-level image (1-bit-per-pixel, encoded as a string) image.
  * Used in DrawImage(). Creates and stores bitmap record. The origin (x,y)
- * of the bi-level image is in the upper left-hand corner. 
+ * of the bi-level image is in the upper left-hand corner.
  *
  * Pixel value of 1 corresponds to fg color, 0 to bg color.
  */
 
-int gl_blimage(wbp w, int x, int y, int width, int height, int ch, 
+int gl_blimage(wbp w, int x, int y, int width, int height, int ch,
    unsigned char *s, word len)
    {
    wsp ws = w->window;
@@ -3447,7 +3447,7 @@ int gl_blimage(wbp w, int x, int y, int width, int height, int ch,
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
@@ -3455,7 +3455,7 @@ int gl_blimage(wbp w, int x, int y, int width, int height, int ch,
    }
 
 
-
+
 
 /*
  * Called by ReadImage(). Read an image from file and draw it at (x,y).
@@ -3505,13 +3505,13 @@ int gl_readimage(wbp w, char *filename, int x, int y, int *status)
    glDisable(GL_LIGHTING);
    rv = drawreadimage2d(w, rp);
    glEnable(GL_LIGHTING);
-   if (rv != Succeeded) 
+   if (rv != Succeeded)
       return rv;
 
    c_put(&(ws->funclist2d), &f);
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
@@ -3519,7 +3519,7 @@ int gl_readimage(wbp w, char *filename, int x, int y, int *status)
    return Succeeded;
    }
 
-
+
 
 /*
  * Macro for strimage to use in place of XPutPixel(). (clr) is of type
@@ -3582,12 +3582,12 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
 
    /* encode rgb values for each pixel */
    size = width*height;
-   Protect(pixmap = alcstr(NULL,4*size), return RunError); 
+   Protect(pixmap = alcstr(NULL,4*size), return RunError);
 
    /* store pre-cooked image value */
-   MakeStr(pixmap, 4*size, &(rp->fields[6])); 
-   rp->fields[7] = nulldesc; 
-   rp->fields[8] = nulldesc; 
+   MakeStr(pixmap, 4*size, &(rp->fields[6]));
+   rp->fields[7] = nulldesc;
+   rp->fields[8] = nulldesc;
 
    /*
     * String (s) specifies a color within palette entry (e). The RGB
@@ -3604,20 +3604,20 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
       while (len--) {
          c = *s++;
          v = e[c].valid;
-         if (v) { 				/* put char if valid */
+         if (v) {                               /* put char if valid */
             PutPixelPixmapEncodeGamma(w,pixmap,width,height,ix,iy,e[c].clr);
             }
 
          /* keep track of transparent pixels */
          if (e[c].transpt) {
-            pixmap[4*((height-1-iy)*width+ix)+3] = 0; 
+            pixmap[4*((height-1-iy)*width+ix)+3] = 0;
             }
          else
-            pixmap[4*((height-1-iy)*width+ix)+3] = alpha; 
+            pixmap[4*((height-1-iy)*width+ix)+3] = alpha;
 
-         if (v || e[c].transpt) { 	/* advance if valid or transparent */
+         if (v || e[c].transpt) {       /* advance if valid or transparent */
             if (++ix >= width) {
-               ix = 0;			/* reset for new row */
+               ix = 0;                  /* reset for new row */
                iy++;
                }
             }
@@ -3641,7 +3641,7 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
             PutPixelPixmap(w,pixmap,width,height,ix,iy,clr);
 
             /* keep track of non-transparent pixels */
-            pixmap[4*((height-1-iy)*width+ix)+3] = alpha; 
+            pixmap[4*((height-1-iy)*width+ix)+3] = alpha;
             ix++;
             }
          iy++;
@@ -3655,7 +3655,7 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
@@ -3663,13 +3663,13 @@ int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e,
    return 0; /* OpenGL doesn't need to allocate colors... */
    }
 
-
+
 
 /*
  * Draws text at (x,y) without background fill. Affected by translational
  * coordinates and not affect by cursor position.
  */
-int gl_drawstrng(wbp w, int x, int y, char *s, int len) 
+int gl_drawstrng(wbp w, int x, int y, char *s, int len)
    {
    wsp ws = w->window;
    wcp wcr = &(ws->wcrender);
@@ -3695,7 +3695,7 @@ int gl_drawstrng(wbp w, int x, int y, char *s, int len)
    MakeInt(intcode, &(rp->fields[1]));
    MakeInt(x - wcr->dx, &(rp->fields[2]));
    MakeInt(y - wcr->dy, &(rp->fields[3]));
-   
+
    Protect(str = alcstr(s, len), return RunError);
    MakeStr(str, len, &(rp->fields[4]));
 
@@ -3711,7 +3711,7 @@ int gl_drawstrng(wbp w, int x, int y, char *s, int len)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
@@ -3719,7 +3719,7 @@ int gl_drawstrng(wbp w, int x, int y, char *s, int len)
    return Succeeded;
    }
 
-
+
 
 /*
  * Draws text at (ws->posx,ws->posy) with background fill around the bounding
@@ -3767,7 +3767,7 @@ int gl_xdis(wbp w, char *s, int len)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
@@ -3775,14 +3775,14 @@ int gl_xdis(wbp w, char *s, int len)
    return Succeeded;
    }
 
-
+
 
 /*
  * Need to discuss semantics - if CopyArea() (no args), should it still
  * be a pixmap image, or should the display list be copied? It seems like
  * the former would be faster for a large display list.
  */
-int gl_copyArea(wbp w1, wbp w2, int x, int y, int width, int height, int x2, 
+int gl_copyArea(wbp w1, wbp w2, int x, int y, int width, int height, int x2,
    int y2)
    {
    wsp ws1 = w1->window, ws2 = w2->window;
@@ -3810,19 +3810,19 @@ int gl_copyArea(wbp w1, wbp w2, int x, int y, int width, int height, int x2,
          }
 
       /*
-       * Now that the display list is gone, make the current render 
-       * context the default context. 
+       * Now that the display list is gone, make the current render
+       * context the default context.
        * the window with the new context.
        */
       copy_2dcontext(&(ws2->wcdef), &(ws2->wcrender));
       }
 
    RemoveDxDy(w1, x, y, width, height);
-   /* 
-    * Hard to know if (x,y) of (0,0) is a default, or has been dx/dy 
+   /*
+    * Hard to know if (x,y) of (0,0) is a default, or has been dx/dy
     * corrected. For now, assume that (0,0) is a default.
     */
-   RemoveDxDy(w2, x2, y2, width, height); 
+   RemoveDxDy(w2, x2, y2, width, height);
 
    Get2dRecordConstr(constr, intcode);
    nfields = (int)BlkD(*constr,Proc)->nfields;
@@ -3850,20 +3850,20 @@ int gl_copyArea(wbp w1, wbp w2, int x, int y, int width, int height, int x2,
       return rv;
       }
 
-   /* put on display list of window to be drawn to */ 
+   /* put on display list of window to be drawn to */
    c_put(&(ws2->funclist2d), &f);
 
    /* redraw so changes are seen onscreen */
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w2);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws2->redraw_flag |= 1;
    ws2->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int gl_eraseArea(wbp w, int x, int y, int width, int height)
    {
@@ -3892,8 +3892,8 @@ int gl_eraseArea(wbp w, int x, int y, int width, int height)
          }
 
       /*
-       * Now that the display list is gone, make the current render 
-       * context the default context 
+       * Now that the display list is gone, make the current render
+       * context the default context
        */
       copy_2dcontext(&(ws->wcdef), &(ws->wcrender));
       ClearScreenToColor(w, BG);
@@ -3938,21 +3938,21 @@ int gl_eraseArea(wbp w, int x, int y, int width, int height)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
 
-int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill) 
+
+int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
    {
    wsp ws = w->window;
    static struct descrip *fillarc_constr, *drawarc_constr;
    static struct descrip *fillcirc_constr, *drawcirc_constr;
-   tended struct descrip f; 
+   tended struct descrip f;
    tended struct b_record *rp;
    tended struct b_realarray *ap;
    int nfillarc, ndrawarc, nfillcirc, ndrawcirc;
@@ -3967,15 +3967,15 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
    CheckRendermode(w);
 
    /* initialize constructors - have same number of fields */
-   Get2dRecordConstr(fillarc_constr, GL2D_FILLARC); 
+   Get2dRecordConstr(fillarc_constr, GL2D_FILLARC);
    nfillarc = (int) BlkD(*fillarc_constr, Proc)->nfields;
-   Get2dRecordConstr(drawarc_constr, GL2D_DRAWARC); 
+   Get2dRecordConstr(drawarc_constr, GL2D_DRAWARC);
    ndrawarc = (int) BlkD(*drawarc_constr, Proc)->nfields;
-   Get2dRecordConstr(fillcirc_constr, GL2D_FILLCIRCLE); 
+   Get2dRecordConstr(fillcirc_constr, GL2D_FILLCIRCLE);
    nfillcirc = (int) BlkD(*fillcirc_constr, Proc)->nfields;
-   Get2dRecordConstr(drawcirc_constr, GL2D_DRAWCIRCLE); 
+   Get2dRecordConstr(drawcirc_constr, GL2D_DRAWCIRCLE);
    ndrawcirc = (int) BlkD(*drawcirc_constr, Proc)->nfields;
- 
+
    glDisable(GL_LIGHTING);
    for (i = 0; i < n; i++) {
       x = arcs[i].x;
@@ -3987,7 +3987,7 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
 
       if (circle) {
          if (fill) {
-            Protect(rp = alcrecd(nfillcirc, BlkLoc(*fillcirc_constr)), 
+            Protect(rp = alcrecd(nfillcirc, BlkLoc(*fillcirc_constr)),
                     return RunError);
             f.dword = D_Record;
             BlkLoc(f) = (union block *)rp;
@@ -3996,7 +3996,7 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
             MakeInt(GL2D_FILLCIRCLE, &(rp->fields[1]));
             }
          else {
-            Protect(rp = alcrecd(ndrawcirc, BlkLoc(*drawcirc_constr)), 
+            Protect(rp = alcrecd(ndrawcirc, BlkLoc(*drawcirc_constr)),
                     return RunError);
             f.dword = D_Record;
             BlkLoc(f) = (union block *)rp;
@@ -4012,20 +4012,20 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
          y += r - w->context->dy;
 
          rp->fields[2] = nulldesc;
-         MakeInt(x, &(rp->fields[3])); 
+         MakeInt(x, &(rp->fields[3]));
          MakeInt(y, &(rp->fields[4]));
-         MakeRealAlc(r, &(rp->fields[5])); 
-         MakeRealAlc(theta, &(rp->fields[6])); 
+         MakeRealAlc(r, &(rp->fields[5]));
+         MakeRealAlc(theta, &(rp->fields[6]));
          MakeRealAlc(alpha, &(rp->fields[7]));
-         MakeInt(x, &(rp->fields[8])); 
+         MakeInt(x, &(rp->fields[8]));
          MakeInt(y, &(rp->fields[9]));
-         MakeRealAlc(r, &(rp->fields[10])); 
-         MakeRealAlc(theta, &(rp->fields[11])); 
+         MakeRealAlc(r, &(rp->fields[10]));
+         MakeRealAlc(theta, &(rp->fields[11]));
          MakeRealAlc(alpha, &(rp->fields[12]));
          }
       else { /* arc */
          if (fill) {
-            Protect(rp = alcrecd(nfillarc, BlkLoc(*fillarc_constr)), 
+            Protect(rp = alcrecd(nfillarc, BlkLoc(*fillarc_constr)),
                     return RunError);
             f.dword = D_Record;
             BlkLoc(f) = (union block *)rp;
@@ -4034,7 +4034,7 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
             MakeInt(GL2D_FILLARC, &(rp->fields[1]));
             }
          else {
-            Protect(rp = alcrecd(ndrawarc, BlkLoc(*drawarc_constr)), 
+            Protect(rp = alcrecd(ndrawarc, BlkLoc(*drawarc_constr)),
                     return RunError);
             f.dword = D_Record;
             BlkLoc(f) = (union block *)rp;
@@ -4048,18 +4048,18 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
          RemoveDxDy(w, x, y, width, height);
 
          rp->fields[2] = nulldesc;
-         MakeInt(x, &(rp->fields[3])); 
-         MakeInt(y, &(rp->fields[4])); 
-         MakeInt(width, &(rp->fields[5])); 
-         MakeInt(height, &(rp->fields[6])); 
-         MakeRealAlc(theta, &(rp->fields[7])); 
-         MakeRealAlc(alpha, &(rp->fields[8])); 
-         MakeInt(x, &(rp->fields[9])); 
-         MakeInt(y, &(rp->fields[10])); 
-         MakeInt(width, &(rp->fields[11])); 
-         MakeInt(height, &(rp->fields[12])); 
-         MakeRealAlc(theta, &(rp->fields[13])); 
-         MakeRealAlc(alpha, &(rp->fields[14])); 
+         MakeInt(x, &(rp->fields[3]));
+         MakeInt(y, &(rp->fields[4]));
+         MakeInt(width, &(rp->fields[5]));
+         MakeInt(height, &(rp->fields[6]));
+         MakeRealAlc(theta, &(rp->fields[7]));
+         MakeRealAlc(alpha, &(rp->fields[8]));
+         MakeInt(x, &(rp->fields[9]));
+         MakeInt(y, &(rp->fields[10]));
+         MakeInt(width, &(rp->fields[11]));
+         MakeInt(height, &(rp->fields[12]));
+         MakeRealAlc(theta, &(rp->fields[13]));
+         MakeRealAlc(alpha, &(rp->fields[14]));
          }
 
       drawgeometry2d(w, rp);
@@ -4069,28 +4069,28 @@ int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int gl_fillcircles(wbp w, XArc *arcs, int n)
    {
-   return gl_arcs(w, arcs, n, 1, 1); 
-   } 
+   return gl_arcs(w, arcs, n, 1, 1);
+   }
 
-
+
 
 int gl_drawcircles(wbp w, XArc *arcs, int n)
    {
-   return gl_arcs(w, arcs, n, 1, 0); 
-   } 
+   return gl_arcs(w, arcs, n, 1, 0);
+   }
 
-
+
 
 /*
  * Creates a display list item
@@ -4100,7 +4100,7 @@ int gl_fillarcs(wbp w, XArc *arcs, int n)
    return gl_arcs(w, arcs, n, 0, 1);
    }
 
-
+
 
 /*
  * Creates a display list item
@@ -4110,7 +4110,7 @@ int gl_drawarcs(wbp w, XArc *arcs, int n)
    return gl_arcs(w, arcs, n, 0, 0);
    }
 
-
+
 
 int gl_rectangles(wbp w, XRectangle *recs, int n, int fill)
    {
@@ -4126,9 +4126,9 @@ int gl_rectangles(wbp w, XRectangle *recs, int n, int fill)
    UpdateRenderContext(w, 0);
    CheckRendermode(w);
 
-   Get2dRecordConstr(fill_constr, GL2D_FILLRECTANGLE); 
+   Get2dRecordConstr(fill_constr, GL2D_FILLRECTANGLE);
    nfill = (int) BlkD(*fill_constr, Proc)->nfields;
-   Get2dRecordConstr(draw_constr, GL2D_DRAWRECTANGLE); 
+   Get2dRecordConstr(draw_constr, GL2D_DRAWRECTANGLE);
    ndraw = (int) BlkD(*draw_constr, Proc)->nfields;
 
    glDisable(GL_LIGHTING);
@@ -4150,7 +4150,7 @@ int gl_rectangles(wbp w, XRectangle *recs, int n, int fill)
          Protect(rp = alcrecd(ndraw,BlkLoc(*draw_constr)), return RunError);
          f.dword = D_Record;
          BlkLoc(f) = (union block *)rp;
- 
+
          MakeStr("DrawRectangle",13,&(rp->fields[0]));
          MakeInt(GL2D_DRAWRECTANGLE, &(rp->fields[1]));
          rp->fields[11] = nulldesc;
@@ -4177,37 +4177,37 @@ int gl_rectangles(wbp w, XRectangle *recs, int n, int fill)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int gl_fillrectangles(wbp w, XRectangle *recs, int n)
    {
    return gl_rectangles(w, recs, n, 1);
    }
 
-
+
 
 int gl_drawrectangles(wbp w, XRectangle *recs, int n)
    {
    return gl_rectangles(w, recs, n, 0);
    }
 
-
+
 
 /*
- * 
+ *
  * For DrawLine() and DrawPolygon() and DrawCurve().
  *
  * NOTE: Calls to DrawCurve() create GL2D_DRAWLINE primitives. It would
  * be possible to remedy this by changing the internal 2D API (drawlines())
  * to be able to determine the primitive type. However, a curve is still a
- * line primitive; so let GL2D_DRAWLINE encompasses DrawLine() and 
+ * line primitive; so let GL2D_DRAWLINE encompasses DrawLine() and
  * DrawCurve().
  */
 int gl_drawlines(wbp w, XPoint *points, int n)
@@ -4233,15 +4233,15 @@ int gl_drawlines(wbp w, XPoint *points, int n)
    Get2dRecordConstr(line_constr, GL2D_DRAWLINE);
    Get2dRecordConstr(poly_constr, GL2D_DRAWPOLYGON);
    nfields = (int)BlkD(*line_constr,Proc)->nfields; /* same # fields for both */
-  
-   /* create primitive */ 
+
+   /* create primitive */
    if (points[0].x == points[n-1].x && points[0].y == points[n-1].y) {
       Protect(rp = alcrecd(nfields,BlkLoc(*poly_constr)), return RunError);
       f.dword = D_Record;
       BlkLoc(f) = (union block *)rp;
       MakeStr("DrawPolygon",11,&(rp->fields[0]));
       MakeInt(intcode, &(rp->fields[1]));
-      } 
+      }
    else {
       Protect(rp = alcrecd(nfields,BlkLoc(*line_constr)), return RunError);
       f.dword = D_Record;
@@ -4254,9 +4254,9 @@ int gl_drawlines(wbp w, XPoint *points, int n)
 
    /* get coordinates */
    for (i=0; i<n; i++) {
-      ap->a[2*i] = points[i].x - dx; 
-      ap->a[2*i+1] = points[i].y - dy; 
-      } 
+      ap->a[2*i] = points[i].x - dx;
+      ap->a[2*i+1] = points[i].y - dy;
+      }
 
    /* add to display list */
    glDisable(GL_LIGHTING);
@@ -4267,7 +4267,7 @@ int gl_drawlines(wbp w, XPoint *points, int n)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
@@ -4275,7 +4275,7 @@ int gl_drawlines(wbp w, XPoint *points, int n)
    return Succeeded;
    }
 
-
+
 
 int gl_drawpoints(wbp w, XPoint *points, int n)
    {
@@ -4299,8 +4299,8 @@ int gl_drawpoints(wbp w, XPoint *points, int n)
 
    Get2dRecordConstr(constr, intcode);
    nfields = (int)BlkD(*constr,Proc)->nfields;
-  
-   /* create primitive */ 
+
+   /* create primitive */
    Protect(rp = alcrecd(nfields,BlkLoc(*constr)), return RunError);
    f.dword = D_Record;
    BlkLoc(f) = (union block *)rp;
@@ -4309,14 +4309,14 @@ int gl_drawpoints(wbp w, XPoint *points, int n)
    MakeInt(intcode, &(rp->fields[1]));
    rp->fields[2] = nulldesc;
 
-   /* alloc realarray */ 
+   /* alloc realarray */
    AlcRealarrayList(rp->fields[3], ap, size, RunError);
 
    /* get coordinates */
    for (i=0; i<n; i++) {
-      ap->a[2*i] = points[i].x - dx; 
-      ap->a[2*i+1] = points[i].y - dy; 
-      } 
+      ap->a[2*i] = points[i].x - dx;
+      ap->a[2*i+1] = points[i].y - dy;
+      }
 
       glDisable(GL_LIGHTING);
       drawgeometry2d(w, rp);
@@ -4327,14 +4327,14 @@ int gl_drawpoints(wbp w, XPoint *points, int n)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int gl_drawsegments(wbp w, XSegment *segs, int n)
    {
@@ -4358,8 +4358,8 @@ int gl_drawsegments(wbp w, XSegment *segs, int n)
 
    Get2dRecordConstr(constr, intcode);
    nfields = (int)BlkD(*constr,Proc)->nfields;
-  
-   /* create primitive */ 
+
+   /* create primitive */
    Protect(rp = alcrecd(nfields,BlkLoc(*constr)), return RunError);
    f.dword = D_Record;
    BlkLoc(f) = (union block *)rp;
@@ -4368,17 +4368,17 @@ int gl_drawsegments(wbp w, XSegment *segs, int n)
    MakeInt(intcode, &(rp->fields[1]));
    rp->fields[2] = nulldesc;
 
-   /* alloc realarray */ 
+   /* alloc realarray */
    AlcRealarrayList(rp->fields[3], ap, size, RunError);
    rp->fields[4] = nulldesc;
 
    /* get coordinates */
    for (i=0; i<n; i++) {
-      ap->a[4*i] = segs[i].x1 - dx; 
-      ap->a[4*i+1] = segs[i].y1 - dy; 
-      ap->a[4*i+2] = segs[i].x2 - dx; 
-      ap->a[4*i+3] = segs[i].y2 - dy; 
-      } 
+      ap->a[4*i] = segs[i].x1 - dx;
+      ap->a[4*i+1] = segs[i].y1 - dy;
+      ap->a[4*i+2] = segs[i].x2 - dx;
+      ap->a[4*i+3] = segs[i].y2 - dy;
+      }
 
       glDisable(GL_LIGHTING);
       drawgeometry2d(w, rp);
@@ -4389,23 +4389,23 @@ int gl_drawsegments(wbp w, XSegment *segs, int n)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 /*
  * Based off of algorithm provided by Rory Daulton:
  *   https://stackoverflow.com/questions/471962/how-do-i-efficiently-determine-if-a-polygon-is-convex-non-convex-or-complex/45372025#45372025
  *
  * Takes a set of order points and determines whether a polygon is complex,
- * convex, or nonconvex (based on XFillPolygon() conventions). 
+ * convex, or nonconvex (based on XFillPolygon() conventions).
  * Returns Failed if not a polygon, otherwise returns a status code
- * of either complex (self-intersecting), convex, or nonconvex. 
+ * of either complex (self-intersecting), convex, or nonconvex.
  * #define's can be found in src/h/opengl.h
  */
 int polygon_type(XPoint *points, int n)
@@ -4432,7 +4432,7 @@ int polygon_type(XPoint *points, int n)
       prev_y = curr_y;
 
       /* check to see if last point completes the polygon */
-      if (i == n && (prev_x != points[0].x || prev_y != points[0].y)) { 
+      if (i == n && (prev_x != points[0].x || prev_y != points[0].y)) {
          curr_x = points[0].x;
          curr_y = points[0].y;
          }
@@ -4465,7 +4465,7 @@ int polygon_type(XPoint *points, int n)
    return POLY_CONVEX;
    }
 
-
+
 
 int gl_fillpolygon(wbp w, XPoint *points, int n)
    {
@@ -4493,8 +4493,8 @@ int gl_fillpolygon(wbp w, XPoint *points, int n)
 
    Get2dRecordConstr(constr, intcode);
    nfields = (int)BlkD(*constr,Proc)->nfields;
-  
-   /* create primitive */ 
+
+   /* create primitive */
    Protect(rp = alcrecd(nfields,BlkLoc(*constr)), return RunError);
    f.dword = D_Record;
    BlkLoc(f) = (union block *)rp;
@@ -4506,15 +4506,15 @@ int gl_fillpolygon(wbp w, XPoint *points, int n)
    /*
     * alloc realarray - add an extra pair of vertices so the polygon
     * is complete
-    */ 
+    */
    AlcRealarrayList(rp->fields[3], ap, size, RunError);
    MakeInt(polytype, &(rp->fields[4]));
 
    /* get coordinates */
    for (i=0; i<n; i++) {
-      ap->a[2*i] = points[i].x - dx; 
-      ap->a[2*i+1] = points[i].y - dy; 
-      } 
+      ap->a[2*i] = points[i].x - dx;
+      ap->a[2*i+1] = points[i].y - dy;
+      }
 
    glDisable(GL_LIGHTING);
    drawgeometry2d(w, rp);
@@ -4524,7 +4524,7 @@ int gl_fillpolygon(wbp w, XPoint *points, int n)
 
 #ifdef GL2D_IMMEDIATE_RENDER
    FlushWindow(w);
-#endif	/* GL2D_IMMEDIATE_RENDER */
+#endif  /* GL2D_IMMEDIATE_RENDER */
 
    ws->redraw_flag |= 1;
    ws->busy_flag = 0;
@@ -4532,18 +4532,18 @@ int gl_fillpolygon(wbp w, XPoint *points, int n)
    return Succeeded;
    }
 
-
+
 
 /*************************************************
  * Image-related functions (not on display list) *
  *************************************************/
 
-
+
 
 /*
  * Write the RGB array (pixmap) to an XBM file specified by (filename)
  */
-int write_xbm(char *filename, int width, int height, unsigned char *pixmap, 
+int write_xbm(char *filename, int width, int height, unsigned char *pixmap,
    unsigned char bg[4])
    {
    int ix, iy;
@@ -4572,14 +4572,14 @@ int write_xbm(char *filename, int width, int height, unsigned char *pixmap,
    fwrite(buf, strlen(buf), 1, fout);
    sprintf(buf,"#define %s_height %d\n", name, width);
    fwrite(buf, strlen(buf), 1, fout);
-  
+
    /*
-    * write the static array definition 
+    * write the static array definition
     */
    sprintf(buf,"static unsigned char %s_bits[] = {\n", name);
    fwrite(buf, strlen(buf), 1, fout);
 
-   /* 
+   /*
     * The upper left pixel in the XBM bitmap is specified by the lowest bit
     * of the first pixel in the static array
     */
@@ -4592,7 +4592,7 @@ int write_xbm(char *filename, int width, int height, unsigned char *pixmap,
             byte = 0;
             }
          else m <<= 1;
-       
+
          /* pixel is bg color, set to '0' */
          if (pixmap[index] == bg[0] && pixmap[index+1] == bg[1] &&
              pixmap[index+2] == bg[2]) {
@@ -4600,7 +4600,7 @@ int write_xbm(char *filename, int width, int height, unsigned char *pixmap,
             }
          /* set bit to '1' */
          else {
-            byte |= m; 
+            byte |= m;
             }
 
          /* got a byte, write to file */
@@ -4621,12 +4621,12 @@ int write_xbm(char *filename, int width, int height, unsigned char *pixmap,
    buf[1] = ';';
    buf[2] = '\0';
    fwrite(buf, 2, 1, fout);
-   fclose(fout); 
-   
+   fclose(fout);
+
    return Succeeded;
    }
 
-
+
 
 /*
  * Write the image at (x, y) to filename as a XPM file
@@ -4644,22 +4644,22 @@ int write_xpm(char *filename, int width, int height, unsigned char *pixmap)
 
    /*
     * Cannot use control characters (0-31 + 127), double quote (34), or
-    * blackslash (47). So the maximum number of chars supported is currently 
+    * blackslash (47). So the maximum number of chars supported is currently
     * 128-(33+2) = 93.
     */
    const int chars_avail = 93;
    const unsigned char chars[] = {
-      0x20, 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 
+      0x20, 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C,
       0x2D, 0x2E, 0x2F,
-      0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 
+      0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B,
       0x3C, 0x3D, 0x3E, 0x3F,
-      0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 
+      0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B,
       0x4C, 0x4D, 0x4E, 0x4F,
-      0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 
+      0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B,
       0x5C, 0x5D, 0x5E, 0x5F,
-      0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 
+      0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B,
       0x6C, 0x6D, 0x6E, 0x6F,
-      0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 
+      0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B,
       0x7C, 0x7D, 0x7E
       };
 
@@ -4694,11 +4694,11 @@ int write_xpm(char *filename, int width, int height, unsigned char *pixmap)
          for (i = 0; i < ncolors; i++) {
             if (clist[i].r == pixmap[index] && clist[i].g == pixmap[index+1] &&
                 clist[i].b == pixmap[index+2]) {
-               found = 1; 
+               found = 1;
                cindex = i;
                break;
                }
-            } 
+            }
 
          /* add color if not found */
          if (!found) {
@@ -4713,7 +4713,7 @@ int write_xpm(char *filename, int width, int height, unsigned char *pixmap)
             clist[ncolors].b = pixmap[index+2];
             cindex = ncolors++;
             }
-         codes[iy*width+ix] = cindex; 
+         codes[iy*width+ix] = cindex;
          }
       }
 
@@ -4742,21 +4742,21 @@ int write_xpm(char *filename, int width, int height, unsigned char *pixmap)
       }
 
 
-   /* 
+   /*
     * write the static array definition
     */
    sprintf(buf, "/* XPM */\nstatic char * %s[] = {\n", name);
    fwrite(buf, strlen(buf), 1, fout);
 
    /*
-    * encode values 
+    * encode values
     */
    sprintf(buf,"/* width height ncolors chars_per_pixel */\n\"%d %d %d %d\",\n",
            width, height, ncolors, chars_per_pixel);
    fwrite(buf, strlen(buf), 1, fout);
 
    /*
-    * encode colors with RGB hex code 
+    * encode colors with RGB hex code
     */
    sprintf(buf,"/* colors */\n");
    fwrite(buf, strlen(buf), 1, fout);
@@ -4765,16 +4765,16 @@ int write_xpm(char *filename, int width, int height, unsigned char *pixmap)
       for (j = chars_per_pixel-1; j >= 0; j--) {
          tmp[j] = chars[charcode % chars_avail];
          charcode /= chars_avail;
-         } 
+         }
       tmp[chars_per_pixel] = '\0';
-      
-      sprintf(buf, "\"%s c #%02x%02x%02x\",\n", tmp, clist[i].r, clist[i].g, 
+
+      sprintf(buf, "\"%s c #%02x%02x%02x\",\n", tmp, clist[i].r, clist[i].g,
               clist[i].b);
       fwrite(buf, strlen(buf), 1, fout);
       }
 
    /*
-    * encode pixels 
+    * encode pixels
     */
    sprintf(buf, "/* pixels */\n\"");
    fwrite(buf, strlen(buf), 1, fout);
@@ -4799,13 +4799,13 @@ int write_xpm(char *filename, int width, int height, unsigned char *pixmap)
    buf[2] = '\0';
    fwrite(buf, 2, 1, fout);
 
-   fclose(fout); 
-   free(s); 
+   fclose(fout);
+   free(s);
 
    return Succeeded;
    }
 
-
+
 
 /*
  * Given an XBM file, return a bitmap if valid, NULL if not
@@ -4828,23 +4828,23 @@ char *load_xbm(char *filename, unsigned int *width, unsigned int *height)
    /*
     * Parse #defines
     *
-    * This is assuming it goes in the order: 
+    * This is assuming it goes in the order:
     * width height [hotspotx hotspoty]
     */
    rv = fscanf(f, "#define %s %d \n", tmp, &wid);
    if (rv < 2) {
       fclose(f);
-      return NULL; 
+      return NULL;
       }
    rv = fscanf(f, "#define %s %d \n", tmp, &ht);
    if (rv < 2) {
       fclose(f);
-      return NULL; 
+      return NULL;
       }
 
    if (wid < 0 || ht < 0) {
       fclose(f);
-      return NULL; 
+      return NULL;
       }
 
    /* optional hotspot */
@@ -4857,13 +4857,13 @@ char *load_xbm(char *filename, unsigned int *width, unsigned int *height)
       while ((rv = fgetc(f)) != '{') {
          if (rv == EOF) {
             fclose(f);
-            return NULL; 
-            } 
+            return NULL;
+            }
          }
       }
    if (rv < 1) {
       fclose(f);
-      return NULL; 
+      return NULL;
       }
 
    /*
@@ -4883,20 +4883,20 @@ char *load_xbm(char *filename, unsigned int *width, unsigned int *height)
          int byte, rev_byte;
 
          rv = fscanf(f, " 0x%x, ", &byte);
-         if (rv < 1) 
+         if (rv < 1)
             rv = fscanf(f, " 0x%x ", &byte);
 
          if (rv < 1) {
             glprintf("failed to scan, only scanned %d items out of 2\n",rv);
             fclose(f);
             free(bitmap);
-            return NULL; 
+            return NULL;
             }
 
          /*
           * XBM file readers read starting from the top left corner from
           * low to high bits. OpenGL starts at the bottom left corner and
-          * reads from high to low bits. 
+          * reads from high to low bits.
           */
          rev_byte = 0;
          for (i = 1, j = 0x80; i & 0xFF; i <<= 1, j >>= 1) {
@@ -4913,7 +4913,7 @@ char *load_xbm(char *filename, unsigned int *width, unsigned int *height)
          free(bitmap);
          fclose(f);
          return NULL;
-         } 
+         }
       }
    while ( (rv = fgetc(f)) != ';' ) {
       if (rv == EOF) {
@@ -4921,7 +4921,7 @@ char *load_xbm(char *filename, unsigned int *width, unsigned int *height)
          free(bitmap);
          fclose(f);
          return NULL;
-         } 
+         }
       }
 
    fclose(f);
@@ -4931,7 +4931,7 @@ char *load_xbm(char *filename, unsigned int *width, unsigned int *height)
    return bitmap;
    }
 
-
+
 
 /*
  * Given an XPM file, return a pixmap if valid, NULL if not
@@ -4958,7 +4958,7 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
       }
 
    rv = fscanf(f," /* width height ncolors chars_per_pixel */");
-   rv = fscanf(f, " \" %d %d %d %d \", \n", &wid, &ht, &ncolors, 
+   rv = fscanf(f, " \" %d %d %d %d \", \n", &wid, &ht, &ncolors,
                &chars_per_pixel);
    if (rv < 4 || chars_per_pixel < 1 || wid < 1 || ht < 1 || ncolors < 1) {
       fclose(f);
@@ -4970,7 +4970,7 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
     * Allocate structures needed for colors
     */
    size = 3*ht*wid;
-   Protect(pixmap = alcstr(NULL, size+1), return NULL); 
+   Protect(pixmap = alcstr(NULL, size+1), return NULL);
    pixmap[size] = 0;
 
    clist = (struct color *)malloc(ncolors*sizeof(struct color));
@@ -4997,8 +4997,8 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
    for (i = 0; i < ncolors; i++) {
       chars[i] = (char *)malloc(chars_per_pixel+1);
       if (!chars[i]) {
-         for (j = 0; j < i; j++) 
-            free(chars[j]); 
+         for (j = 0; j < i; j++)
+            free(chars[j]);
          free(chars);
          free(clist);
          free(buf);
@@ -5007,7 +5007,7 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
          }
       }
 
-   /* 
+   /*
     * Get colors
     *
     * format: "pixel_chars type color_val"
@@ -5017,8 +5017,8 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
       char *ptr;
       while ((rv = fgetc(f)) != '\"') {
          if (rv == EOF) {
-            for (j = 0; j < ncolors; j++) 
-               free(chars[j]); 
+            for (j = 0; j < ncolors; j++)
+               free(chars[j]);
             free(chars);
             free(clist);
             free(buf);
@@ -5028,9 +5028,9 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
          }
       /* get the pixel chars */
       if (fgets(chars[i], chars_per_pixel+1, f) == NULL) {
-         /* premature EOF */ 
-         for (j = 0; j < ncolors; j++) 
-            free(chars[j]); 
+         /* premature EOF */
+         for (j = 0; j < ncolors; j++)
+            free(chars[j]);
          free(chars);
          free(clist);
          free(buf);
@@ -5040,9 +5040,9 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
 
       /* get type */
       if (fscanf(f, " %s", type) == EOF) {
-         /* premature EOF */ 
-         for (j = 0; j < ncolors; j++) 
-            free(chars[j]); 
+         /* premature EOF */
+         for (j = 0; j < ncolors; j++)
+            free(chars[j]);
          free(chars);
          free(clist);
          free(buf);
@@ -5053,7 +5053,7 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
          case 'c':
             rv = fscanf(f, " %s\",", spec);
             if (rv) { /* find terminating double quote */
-               ptr = strchr(spec, '\"'); 
+               ptr = strchr(spec, '\"');
                if (ptr) *ptr = '\0';
                }
             break;
@@ -5064,11 +5064,11 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
             rv = 0;
             break;
          }
-     
-      /* get color value */ 
+
+      /* get color value */
       if (rv < 1 || parsecolor(w, spec, &r, &g, &b, &a) != Succeeded) {
-         for (j = 0; j < ncolors; j++) 
-            free(chars[j]); 
+         for (j = 0; j < ncolors; j++)
+            free(chars[j]);
          free(chars);
          free(clist);
          free(buf);
@@ -5082,15 +5082,15 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
       clist[i].a = a;
       }
 
-   /* 
+   /*
     * Get pixels
     */
    rv = fscanf(f," /* pixels */"); /* optional */
    for (iy = 0; iy < ht; iy++) {
       while ((rv = fgetc(f)) == ' ' || rv == '\n');
       if (rv != '\"' || !fgets(buf, wid*chars_per_pixel+1, f)) {
-         for (j = 0; j < ncolors; j++) 
-            free(chars[j]); 
+         for (j = 0; j < ncolors; j++)
+            free(chars[j]);
          free(chars);
          free(clist);
          free(buf);
@@ -5105,42 +5105,42 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
          int index = 3*((ht-iy-1)*wid + ix);
          for (i = 0; i < ncolors; i++) {
             if (!strncmp(chars[i],&buf[ix*chars_per_pixel],chars_per_pixel)) {
-               AssignRGB(&(pixmap[index]),clist[i].r >> 8,clist[i].g >> 8, 
+               AssignRGB(&(pixmap[index]),clist[i].r >> 8,clist[i].g >> 8,
                          clist[i].b >> 8);
                break;
-               }    
-            }         
+               }
+            }
          }
       }
 
    while ((rv = fgetc(f)) != '}' ) {
       if (rv == EOF) {
          glprintf("missing '}'\n");
-         for (j = 0; j < ncolors; j++) 
-            free(chars[j]); 
+         for (j = 0; j < ncolors; j++)
+            free(chars[j]);
          free(chars);
          free(clist);
          free(buf);
          fclose(f);
          return NULL;
-         } 
+         }
       }
    while ((rv = fgetc(f)) != ';' ) {
       if (rv == EOF) {
          glprintf("missing '}'\n");
-         for (j = 0; j < ncolors; j++) 
-            free(chars[j]); 
+         for (j = 0; j < ncolors; j++)
+            free(chars[j]);
          free(chars);
          free(clist);
          free(buf);
          fclose(f);
          return NULL;
-         } 
+         }
       }
 
    fclose(f);
-   for (j = 0; j < ncolors; j++) 
-      free(chars[j]); 
+   for (j = 0; j < ncolors; j++)
+      free(chars[j]);
    free(chars);
    free(clist);
    free(buf);
@@ -5150,17 +5150,17 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
    return pixmap;
    }
 
-
+
 
 
 /*
  * dumpimage -- write an image to a disk file in an X format.
  *
  * Accepts only .xpm and .xbm file names, returning NoCvt for anything else.
- * 
+ *
  * To make things simpler, read image as RGB format (for write_x*m())
  */
-int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y, 
+int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
    unsigned int width, unsigned int height)
    {
    int slen;
@@ -5173,15 +5173,15 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
 
    tmp = (unsigned char *)malloc(3*height*width);
    if (!tmp) return RunError;
- 
-   /* 
-    * Read pixel data into (tmp) 
+
+   /*
+    * Read pixel data into (tmp)
     */
    px = x;
    py = ws->height - y - height;
    MakeCurrent(w);
 
-   glReadPixels(px,py,width,height,GL_RGB,GL_UNSIGNED_BYTE,tmp);    
+   glReadPixels(px,py,width,height,GL_RGB,GL_UNSIGNED_BYTE,tmp);
 
    /*
     * Check for bilevel XBM (X BitMap) format.
@@ -5189,7 +5189,7 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
    slen = strlen(filename);
    if ((slen > 4) &&
       (!strcmp(".xbm", filename + slen - 4) ||
-       !strcmp(".XBM", filename + slen - 4)))  
+       !strcmp(".XBM", filename + slen - 4)))
       {
       GetContextColorUS(w, BG, bgs[0], bgs[1], bgs[2], bgs[3]);
       EncodeGammaUSToUC_V4(bg, bgs, wc->gamma);
@@ -5200,9 +5200,9 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
     * Check for XPM (color X PixMap) format.
     */
    else if (((slen > 4) &&
-	    (!strcmp(".xpm", filename + slen - 4) ||
-	     !strcmp(".XPM", filename + slen - 4))) ||
-	    ((slen > 6) && !strcmp(".xpm.Z", filename + slen - 6)))
+            (!strcmp(".xpm", filename + slen - 4) ||
+             !strcmp(".XPM", filename + slen - 4))) ||
+            ((slen > 6) && !strcmp(".xpm.Z", filename + slen - 6)))
       {
       rv = write_xpm(filename, width, height, tmp);
       }
@@ -5212,7 +5212,7 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
    }
 
 
-
+
 
 
 /*
@@ -5224,17 +5224,17 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
  */
 #passthru #if (DMAXCOLORS > 256)
 #passthru   Deliberate Syntax error
-#passthru #endif				/* DMAXCOLORS */
+#passthru #endif                                /* DMAXCOLORS */
 
 /*
  * getimstr(w, x, y, width, height, ptbl, data) -- get image as a string.
  *
  * Stores the specified subimage in data, one pixel per byte, and sets
  * entries in ptbl corresponding to the pixel values that were used.
- * 
+ *
  * This function is used to write BMP files
  */
-int gl_getimstr(wbp w, int x, int y, int width, int height, 
+int gl_getimstr(wbp w, int x, int y, int width, int height,
    struct palentry *ptbl, unsigned char *data)
    {
    wsp ws = w->window;
@@ -5244,9 +5244,9 @@ int gl_getimstr(wbp w, int x, int y, int width, int height,
 
    tmp = (unsigned short *)malloc(3*height*width*sizeof(unsigned short));
    if (!tmp) return RunError;
- 
-   /* 
-    * Read pixel data into (tmp). For some reason BMP files reverse 
+
+   /*
+    * Read pixel data into (tmp). For some reason BMP files reverse
     * the R & B pixels somehow. Anyways, using BGR format and treating it
     * like RGB works somehow.
     */
@@ -5254,10 +5254,10 @@ int gl_getimstr(wbp w, int x, int y, int width, int height,
    py = ws->height - y - height;
    MakeCurrent(w);
 
-   glReadPixels(px,py,width,height,GL_RGB,GL_UNSIGNED_SHORT,tmp);    
+   glReadPixels(px,py,width,height,GL_RGB,GL_UNSIGNED_SHORT,tmp);
 
    /*
-    * Go through each pixel and see how many colors are used. If there are over 
+    * Go through each pixel and see how many colors are used. If there are over
     * DMAXCOLORS, then fail for now.
     *
     * Don't encode gamma for this
@@ -5267,18 +5267,18 @@ int gl_getimstr(wbp w, int x, int y, int width, int height,
       for (ix = 0; ix < width; ix++) {
          int found, index, cindex;
 
-         /* look through palentry to see if we have the color */ 
+         /* look through palentry to see if we have the color */
          index = 3*((height-(iy+1))*width+ix);
          found = 0;
          for (i = 0; i < ncolors; i++) {
-            if (ptbl[i].clr.red == tmp[index] && 
+            if (ptbl[i].clr.red == tmp[index] &&
                 ptbl[i].clr.green == tmp[index+1] &&
                 ptbl[i].clr.blue == tmp[index+2])
                {
-               found = 1;  
+               found = 1;
                cindex = i;
                break;
-               }  
+               }
             }
 
          /* store color if not found */
@@ -5286,13 +5286,13 @@ int gl_getimstr(wbp w, int x, int y, int width, int height,
             /* too many colors, failure or runerror? */
             if (ncolors >= DMAXCOLORS) {
                free(tmp);
-               return Failed; 
+               return Failed;
                }
             ptbl[ncolors].clr.red = tmp[index];
             ptbl[ncolors].clr.green = tmp[index+1];
             ptbl[ncolors].clr.blue = tmp[index+2];
             cindex = ncolors++;
-            } 
+            }
 
          /* put color in data */
          data[iy*width+ix] = cindex;
@@ -5302,7 +5302,7 @@ int gl_getimstr(wbp w, int x, int y, int width, int height,
    return 1;
    }
 
-
+
 
 /*
  * getimstr24 -- get an image as a string of RGB tuples.
@@ -5310,7 +5310,7 @@ int gl_getimstr(wbp w, int x, int y, int width, int height,
  * Stores the specified subimage in data, three bytes per pixel.
  * Used for writing PNG files
  */
-int gl_getimstr24(wbp w, int x, int y, int width, int height, 
+int gl_getimstr24(wbp w, int x, int y, int width, int height,
    unsigned char *data)
    {
    wsp ws = w->window;
@@ -5319,16 +5319,16 @@ int gl_getimstr24(wbp w, int x, int y, int width, int height,
 
    tmp = (unsigned char *)malloc(3*height*width);
    if (!tmp) return RunError;
- 
+
    /* read pixel data into (tmp) */
    px = x;
    py = ws->height - y - height;
    MakeCurrent(w);
 
-   glReadPixels(px,py,width,height,GL_RGB,GL_UNSIGNED_BYTE,tmp);    
+   glReadPixels(px,py,width,height,GL_RGB,GL_UNSIGNED_BYTE,tmp);
 
-   /* 
-    * Since Unicon (top left) and OpenGL (bottom left) window origins differ, 
+   /*
+    * Since Unicon (top left) and OpenGL (bottom left) window origins differ,
     * flip the rows
     */
    row_size = 3*width;
@@ -5337,13 +5337,13 @@ int gl_getimstr24(wbp w, int x, int y, int width, int height,
       }
 
    /* define out of bound pixels as background color */
-   if (x < 0 || x + width >= ws->width || 
+   if (x < 0 || x + width >= ws->width ||
        y < 0 || y + height >= ws->height) {
       unsigned char bg[4];
       GetContextColorUC(w, BG, bg[0], bg[1], bg[2], bg[3]);
 
-      for (ix=0; ix < width; ix++) { 
-         for (iy=0; iy < height; iy++) { 
+      for (ix=0; ix < width; ix++) {
+         for (iy=0; iy < height; iy++) {
             if (x+ix < 0 || x+ix >= ws->width ||
                 y+iy < 0 || y+iy >= ws->height) {
                index = 3*((height-iy-1)*width+ix);
@@ -5356,10 +5356,10 @@ int gl_getimstr24(wbp w, int x, int y, int width, int height,
    return 1;
    }
 
-
+
 
 /*
- * Grabs a pixmap of a rectangular area from the OpenGL buffer. 
+ * Grabs a pixmap of a rectangular area from the OpenGL buffer.
  * So far, the getpixel*() class of functions will not be able to
  * suspend accurate pixel values if there are any additional drawing
  * operations between suspensions.
@@ -5375,7 +5375,7 @@ int gl_getpixel_init(wbp w, struct imgmem *imem)
    if (imem->width <= 0 || imem->height <= 0) {
 #ifdef XWindows
       imem->im = NULL;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
       return Succeeded;
       }
    width = imem->width;
@@ -5384,7 +5384,7 @@ int gl_getpixel_init(wbp w, struct imgmem *imem)
    py = w->window->height - imem->y - height;
    size = width*height*4;
    imem->pixmap = (unsigned short *)malloc(size*sizeof(unsigned short));
-   if (imem->pixmap == NULL) 
+   if (imem->pixmap == NULL)
       return RunError;
 
    MakeCurrent(w);
@@ -5400,7 +5400,7 @@ int gl_getpixel_init(wbp w, struct imgmem *imem)
    return Succeeded;
    }
 
-
+
 
 int gl_getpixel_term(wbp w, struct imgmem *imem)
    {
@@ -5409,7 +5409,7 @@ int gl_getpixel_term(wbp w, struct imgmem *imem)
    return Succeeded;
    }
 
-
+
 
 int gl_getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem)
    {
@@ -5437,57 +5437,57 @@ int gl_getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem)
    return Succeeded;
    }
 
-
+
 
 /*
- * Load an image, currently only looking for XBM/XPM files 
+ * Load an image, currently only looking for XBM/XPM files
  */
-char *gl_loadimage(wbp w, char *filename, unsigned int *height, 
+char *gl_loadimage(wbp w, char *filename, unsigned int *height,
    unsigned int *width, int atorigin, int *is_pixmap)
    {
    char *rv;
 
    if (!strcmp(".xbm", filename + strlen(filename) - 4)) {
       *is_pixmap = 0;
-      rv = load_xbm(filename, width, height); 
+      rv = load_xbm(filename, width, height);
       }
    else if (!strcmp(".xpm", filename + strlen(filename) - 4) ||
-	    !strcmp(".xpm.Z", filename + strlen(filename) - 6)) {
+            !strcmp(".xpm.Z", filename + strlen(filename) - 6)) {
       *is_pixmap = 1;
-      rv = load_xpm(w, filename, width, height);      
+      rv = load_xpm(w, filename, width, height);
       }
    /* try both */
    else {
       *is_pixmap = 0;
-      rv = load_xbm(filename, width, height); 
+      rv = load_xbm(filename, width, height);
       if (!rv) {
          *is_pixmap = 1;
-         rv = load_xpm(w, filename, width, height);      
+         rv = load_xpm(w, filename, width, height);
          }
       }
    return rv;
    }
-
+
 
 /***********************************
  * (3) Context attribute functions *
  ***********************************/
 
-
+
 
 void gl_getbg(wbp w, char *s)
    {
    sprintf(s, "%s", w->context->glbg.name);
    }
 
-
+
 
 void gl_getfg(wbp w, char *s)
    {
    sprintf(s, "%s", w->context->glfg.name);
    }
 
-
+
 
 void gl_getdrawop(wbp w, char *answer)
    {
@@ -5498,24 +5498,24 @@ void gl_getdrawop(wbp w, char *answer)
    sprintf(answer, "%s", s);
    }
 
-
+
 
 void gl_getlinestyle(wbp w, char *s)
    {
    wcp wc = w->context;
    sprintf(s,"%s",
-	   (wc->linestyle==GL2D_LINE_SOLID)?"solid":
-	   ((wc->linestyle==GL2D_LINE_DASHED)?"dashed":"striped"));
+           (wc->linestyle==GL2D_LINE_SOLID)?"solid":
+           ((wc->linestyle==GL2D_LINE_DASHED)?"dashed":"striped"));
    }
 
-
+
 
 void gl_getfntnam(wbp w, char *s)
    {
    sprintf(s,"%s", w->context->font->name);
    }
 
-
+
 
 char *gl_get_mutable_name(wbp w, int mute_index)
    {
@@ -5523,13 +5523,13 @@ char *gl_get_mutable_name(wbp w, int mute_index)
    char *colorname;
 
    if (!(mclr = find_mutable(w, mute_index)))
-      return NULL;   
+      return NULL;
 
    colorname = mclr->name;
    return colorname;
    }
 
-
+
 
 int gl_set_mutable(wbp w, int mute_index, char *s)
    {
@@ -5552,7 +5552,7 @@ int gl_set_mutable(wbp w, int mute_index, char *s)
    return Succeeded;
    }
 
-
+
 
 struct color *find_mutable(wbp w, int index)
    {
@@ -5562,19 +5562,19 @@ struct color *find_mutable(wbp w, int index)
    if (wd->numMclrs > 0 || index < 0) {
       if (!wd->mclrs) {
          glprintf("mutable colors linked list improper linking\n");
-         return NULL; 
+         return NULL;
          }
       for (mclr=wd->mclrs; mclr; mclr = mclr->next) {
-         if (mclr->id == index) 
+         if (mclr->id == index)
             return mclr;
          }
       }
    return NULL;
    }
 
-
 
-struct color *alc_mutable_color(wbp w) 
+
+struct color *alc_mutable_color(wbp w)
    {
    wdp wd = w->window->display;
    struct color **head, *new;
@@ -5582,10 +5582,10 @@ struct color *alc_mutable_color(wbp w)
    new = (struct color *)calloc(1,sizeof(struct color));
    if (!new) {
       glprintf("failed allocating mutable color\n");
-      return NULL; 
+      return NULL;
       }
 
-   wd->numMclrs++; 
+   wd->numMclrs++;
    new->id = -(++(wd->muteIdCount)); /* negative index for mutables */
 
    /* link to the front of list */
@@ -5599,10 +5599,10 @@ struct color *alc_mutable_color(wbp w)
       *head = new;
       }
 
-   return new; 
+   return new;
    }
 
-
+
 
 void gl_free_mutable(wbp w, int mute_index)
    {
@@ -5610,8 +5610,8 @@ void gl_free_mutable(wbp w, int mute_index)
    struct color *mclr;
 
    /* try to find mutable */
-   if (!(mclr = find_mutable(w, mute_index))) 
-      return; 
+   if (!(mclr = find_mutable(w, mute_index)))
+      return;
 
    /* unlink */
    if (mclr->prev)
@@ -5631,17 +5631,17 @@ void gl_free_mutable(wbp w, int mute_index)
       }
    }
 
-
+
 
 void free_mutables(wdp wd) {
    struct color *mclr, *del;
 
    mclr = wd->mclrs;
    while (mclr) {
-      del = mclr;      
+      del = mclr;
       mclr = mclr->next;
-      
-      /* unlink */ 
+
+      /* unlink */
       if (mclr) {
          mclr->prev = NULL;
          del->next = NULL;
@@ -5652,7 +5652,7 @@ void free_mutables(wdp wd) {
    wd->muteIdCount = wd->numMclrs = 0;
    }
 
-
+
 
 /*
  * Should a mutable color even have a display list entry?
@@ -5674,11 +5674,11 @@ int gl_mutable_color(wbp w, dptr argv, int warg, int *rv)
        * Check for mutable color id as arg
        */
       else if (is:integer(argv[0])) {/* check for color cell */
-	 if ((id = IntVal(argv[0])) >= 0)
-	    return Failed;        /* must be negative */
+         if ((id = IntVal(argv[0])) >= 0)
+            return Failed;        /* must be negative */
 
          /*
-          * check to see if it's a valid mutable color 
+          * check to see if it's a valid mutable color
           */
          if (!(mclr = find_mutable(w, id)))
             return Failed; /* not a valid color */
@@ -5688,35 +5688,35 @@ int gl_mutable_color(wbp w, dptr argv, int warg, int *rv)
          g = mclr->g;
          b = mclr->b;
          a = mclr->a;
-	 }
+         }
 
-      /* 
+      /*
        * String specification
        */
       else {
-	 if (!cnv:C_string(argv[0],str)) {
-	    ReturnErrVal(103,argv[0], RunError);
-	    }
+         if (!cnv:C_string(argv[0],str)) {
+            ReturnErrVal(103,argv[0], RunError);
+            }
          if (parsecolor(w, str, &r, &g, &b, &a) != Succeeded) {
-	    return Failed;                   /* invalid color specification */
-	    }
-	 }
+            return Failed;                   /* invalid color specification */
+            }
+         }
       }
    else {
       return Failed;
       }
 
-   /*  
+   /*
     * Allocate a mutable color
     */
-   if (!(mclr = alc_mutable_color(w))) 
+   if (!(mclr = alc_mutable_color(w)))
       return Failed;
    SetColor(*mclr, r, g, b, a, mclr->id);
    *rv = mclr->id; /* store return value */
    return Succeeded;
    }
 
-
+
 
 /*
  * Allocates a display list record for fg/bg color.
@@ -5750,7 +5750,7 @@ int gl_color(wbp w, int intcode, int mindex, char *s)
    /* normal color with color specification */
    else if (s != NULL) {
       if (parsecolor(w, s, &r, &g, &b, &a) != Succeeded) {
-         /* What to do if unable to parse color spec? */ 
+         /* What to do if unable to parse color spec? */
          glprintf("unable to parse color specification '%s'\n",s);
          return Failed;
          }
@@ -5765,13 +5765,13 @@ int gl_color(wbp w, int intcode, int mindex, char *s)
    /* Set context color */
    if (!ws->updateRC) {
       switch (intcode) {
-         case GL2D_FG: 
+         case GL2D_FG:
             SetColor(wc->glfg, r, g, b, a, index);
             break;
-         case GL2D_BG: 
+         case GL2D_BG:
             SetColor(wc->glbg, r, g, b, a, index);
             break;
-         default: 
+         default:
             glprintf("incorrect color record type\n");
             return Failed;
          }
@@ -5811,8 +5811,8 @@ int gl_color(wbp w, int intcode, int mindex, char *s)
    /*
     * Store attributes
     */
-   MakeStr(name, 2, &(rp->fields[0])); 
-   MakeInt(intcode, &(rp->fields[1])); 
+   MakeStr(name, 2, &(rp->fields[0]));
+   MakeInt(intcode, &(rp->fields[1]));
    if (!is_mutable) {
       rp->fields[2] = nulldesc;
       MakeInt(r, &(rp->fields[3]));
@@ -5823,10 +5823,10 @@ int gl_color(wbp w, int intcode, int mindex, char *s)
    else {
       MakeInt(mindex, &(rp->fields[2]));
 /*
-      rp->fields[3] = nulldesc; 
-      rp->fields[4] = nulldesc; 
-      rp->fields[5] = nulldesc; 
-      rp->fields[6] = nulldesc; 
+      rp->fields[3] = nulldesc;
+      rp->fields[4] = nulldesc;
+      rp->fields[5] = nulldesc;
+      rp->fields[6] = nulldesc;
 */
       }
 
@@ -5843,7 +5843,7 @@ int gl_color(wbp w, int intcode, int mindex, char *s)
    return Succeeded;
    }
 
-
+
 
 int gl_setbgrgb(wbp w, int r, int g, int b)
    {
@@ -5852,7 +5852,7 @@ int gl_setbgrgb(wbp w, int r, int g, int b)
    return gl_setbg(w, sbuf1);
    }
 
-
+
 
 int gl_setfgrgb(wbp w, int r, int g, int b)
    {
@@ -5861,7 +5861,7 @@ int gl_setfgrgb(wbp w, int r, int g, int b)
    return gl_setfg(w, sbuf1);
    }
 
-
+
 
 /*
  * For setting a color to a mutable color using its negative integer
@@ -5875,13 +5875,13 @@ int gl_isetbg(wbp w, int mindex)
 
    if (!(mclr = find_mutable(w, mindex))) {
       /* Failed to find a mutable, what to do? */
-      return Failed; 
+      return Failed;
       }
 
    return gl_color(w, GL2D_BG, mindex, NULL);
    }
 
-
+
 
 /*
  * For setting a color to a mutable color using its negative integer
@@ -5895,13 +5895,13 @@ int gl_isetfg(wbp w, int mindex)
 
    if (!(mclr = find_mutable(w, mindex))) {
       /* Failed to find a mutable, what to do? */
-      return Failed; 
+      return Failed;
       }
 
    return gl_color(w, GL2D_FG, mindex, NULL);
    }
 
-
+
 
 
 /*
@@ -5912,7 +5912,7 @@ int gl_setbg(wbp w, char *s)
    return gl_color(w, GL2D_BG, 0, s); /* not mutable */
    }
 
-
+
 
 /*
  * Creates a display list item
@@ -5923,7 +5923,7 @@ int gl_setfg(wbp w, char *s)
    }
 
 
-
+
 
 int gl_toggle_fgbg(wbp w)
    {
@@ -5937,12 +5937,12 @@ int gl_toggle_fgbg(wbp w)
 
    if (!ws->updateRC) {
       ISREVERSE(w) ? CLRREVERSE(w) : SETREVERSE(w); /* for legacy impl. */
-      if (wc->reverse) wc->reverse = 0; 
+      if (wc->reverse) wc->reverse = 0;
       else wc->reverse = 1;
       }
 
-   if (ws->initAttrs) 
-      return Succeeded; 
+   if (ws->initAttrs)
+      return Succeeded;
 
    ws->busy_flag = 1;
    MakeCurrent(w);
@@ -5959,13 +5959,13 @@ int gl_toggle_fgbg(wbp w)
    MakeInt(intcode, &(rp->fields[1]));
 
    togglefgbg2d(w);
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
 
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int gl_setgamma(wbp w, double gamma)
    {
@@ -5977,10 +5977,10 @@ int gl_setgamma(wbp w, double gamma)
    const int intcode = GL2D_GAMMA;
    int nfields;
 
-   if (!ws->updateRC) 
+   if (!ws->updateRC)
       wc->gamma = gamma;
 
-   if (ws->initAttrs) 
+   if (ws->initAttrs)
       return Succeeded;
 
    ws->busy_flag = 1;
@@ -5999,19 +5999,19 @@ int gl_setgamma(wbp w, double gamma)
    MakeRealAlc(gamma, &(rp->fields[2]));
 
    setgamma2d(w,rp);
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
 
    ws->busy_flag = 0;
 
    return Succeeded;
    }
-
+
 
 /*
  * Context attributes set before call to this function
  */
 int gl_setclip(wbp w)
-{   
+{
    wsp ws = w->window;
    wcp wc = w->context;
    tended struct descrip f;
@@ -6020,7 +6020,7 @@ int gl_setclip(wbp w)
    const int intcode = GL2D_CLIP;
    int nfields, rv;
    int clipx, clipy, clipw, cliph;
-   
+
 
 
    /* context attributes already set in wattrib() */
@@ -6060,20 +6060,20 @@ int gl_setclip(wbp w)
       ws->busy_flag = 0;
       return rv;
       }
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
 
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int gl_unsetclip(wbp w)
    {
    return gl_setclip(w);
    }
 
-
+
 
 int gl_SetPattern(wbp w, char *name, int len)
    {
@@ -6091,7 +6091,7 @@ int gl_SetPattern(wbp w, char *name, int len)
    /*
     * Update pattern name
     */
-   if (!ws->updateRC) { 
+   if (!ws->updateRC) {
       if (wc->patternname != NULL)
          free(wc->patternname);
       wc->patternname = malloc(len+1);
@@ -6135,21 +6135,21 @@ int gl_SetPattern(wbp w, char *name, int len)
       case RunError:
          ws->busy_flag = 0;
          ReturnErrNum(145, RunError);
-	 }
- 
-   c_put(&(w->window->funclist2d), &f); 
+         }
+
+   c_put(&(w->window->funclist2d), &f);
    ws->busy_flag = 0;
 
    return Succeeded;
    }
    }
 
-
+
 
 /*
  * Context attribute set in rwindow.r before the call to this function
  */
-int gl_setdx(wbp w) 
+int gl_setdx(wbp w)
    {
    wsp ws = w->window;
    wcp wc = w->context;
@@ -6179,18 +6179,18 @@ int gl_setdx(wbp w)
    MakeInt(wc->dx, &(rp->fields[3]));
 
    setdx2d(w,rp);
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
    ws->busy_flag = 0;
 
    return Succeeded;
    }
 
-
+
 
 /*
  * Context attribute set in rwindow.r before the call to this function
  */
-int gl_setdy(wbp w) 
+int gl_setdy(wbp w)
    {
    wsp ws = w->window;
    wcp wc = w->context;
@@ -6220,12 +6220,12 @@ int gl_setdy(wbp w)
 
    setdy2d(w,rp);
 
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
    ws->busy_flag = 0;
    return Succeeded;
    }
 
-
+
 
 int gl_setdrawop(wbp w, char *s)
    {
@@ -6241,18 +6241,18 @@ int gl_setdrawop(wbp w, char *s)
 
    /* "reverse" */
    if (!ws->updateRC) {
-      if (!strcmp(s,"reverse") || !strcmp(s,"xor")) 
+      if (!strcmp(s,"reverse") || !strcmp(s,"xor"))
          wc->drawop = GL2D_DRAWOP_REVERSE;
-      else if (!strcmp(s,"copy")) 
+      else if (!strcmp(s,"copy"))
          wc->drawop = GL2D_DRAWOP_COPY;
       /* consider both invalid strings and unsupported drawops as failure */
-      else 
+      else
          return Failed;
       }
 
    MakeCurrent(w);
 
-   if (ws->initAttrs) 
+   if (ws->initAttrs)
       return Succeeded;
 
    ws->busy_flag = 1;
@@ -6277,7 +6277,7 @@ int gl_setdrawop(wbp w, char *s)
    return Succeeded;
    }
 
-
+
 
 /*
  * Sets the fillstyle for the current context and render context.
@@ -6285,7 +6285,7 @@ int gl_setdrawop(wbp w, char *s)
  * By default, the OpenGL implementation will use the clipping
  * plane of the stencil function. Only when the fillstyle is set
  * to a mode other than "solid" and a drawing operation on applicable
- * primitives is about to be performed, is the OpenGL stencil state 
+ * primitives is about to be performed, is the OpenGL stencil state
  * changed to accommodate it. After the drawing operation is completed,
  * the stencil state is restored to default (clipping only).
  */
@@ -6305,11 +6305,11 @@ int gl_setfillstyle(wbp w, char *s)
     * and "opaquepatterned"?
     */
    if (!ws->updateRC) {
-      if (!strcmp(s, "solid")) 
+      if (!strcmp(s, "solid"))
          wc->fillstyle = GL2D_FILL_SOLID;
-      else if (!strcmp(s, "masked")) 
+      else if (!strcmp(s, "masked"))
          wc->fillstyle = GL2D_FILL_MASKED;
-      else if (!strcmp(s, "textured")) 
+      else if (!strcmp(s, "textured"))
          wc->fillstyle = GL2D_FILL_TEXTURED;
       else return Failed;
       }
@@ -6334,13 +6334,13 @@ int gl_setfillstyle(wbp w, char *s)
    MakeStr(s_op, len, &(rp->fields[2]));
 
    setfillstyle2d(w,rp);
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
    ws->busy_flag = 0;
 
    return Succeeded;
    }
 
-
+
 
 int gl_setlinestyle(wbp w, char *s)
    {
@@ -6358,11 +6358,11 @@ int gl_setlinestyle(wbp w, char *s)
       return Failed;
 
    if (!ws->updateRC) {
-      if (!strcmp(s, "solid")) 
+      if (!strcmp(s, "solid"))
          wc->linestyle = GL2D_LINE_SOLID;
-      else if (!strcmp(s, "dashed")) 
+      else if (!strcmp(s, "dashed"))
          wc->linestyle = GL2D_LINE_DASHED;
-      else if (!strcmp(s, "striped")) 
+      else if (!strcmp(s, "striped"))
          wc->linestyle = GL2D_LINE_STRIPED;
       else return Failed;
       }
@@ -6387,13 +6387,13 @@ int gl_setlinestyle(wbp w, char *s)
    MakeStr(s_op, len, &(rp->fields[2]));
 
    setlinestyle2d(w,rp);
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
    ws->busy_flag = 0;
 
    return Succeeded;
    }
 
-
+
 
 /* setlinewidth() in ropengl.ri */
 int gl_setlinewidth(wbp w, LONG linewidth)
@@ -6406,17 +6406,17 @@ int gl_setlinewidth(wbp w, LONG linewidth)
    const int intcode = GL2D_LINEWIDTH;
    int nfields;
 
-   if (!ws->updateRC) 
+   if (!ws->updateRC)
       wc->linewidth = linewidth;
 
-   if (ws->initAttrs) 
-      return Succeeded; 
+   if (ws->initAttrs)
+      return Succeeded;
 
    ws->busy_flag = 1;
    MakeCurrent(w);
    UpdateRenderContext(w, intcode);
 
-   Get2dRecordConstr(constr, intcode); 
+   Get2dRecordConstr(constr, intcode);
 
    nfields = (int)BlkD(*constr,Proc)->nfields;
    Protect(rp = alcrecd(nfields,BlkLoc(*constr)), return RunError);
@@ -6428,13 +6428,13 @@ int gl_setlinewidth(wbp w, LONG linewidth)
    MakeInt(linewidth, &(rp->fields[2]));
 
    setlinewidth2d(w,rp);
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
    ws->busy_flag = 0;
 
    return Succeeded;
    }
 
-
+
 
 int gl_setfont(wbp w, char **s)
    {
@@ -6456,14 +6456,14 @@ int gl_setfont(wbp w, char **s)
       return Failed;
 
    if (!ws->updateRC) {
-      if (wc->font) 
-         wc->font->refcount--; 
-      wc->font = wf;      
+      if (wc->font)
+         wc->font->refcount--;
+      wc->font = wf;
       wc->leading = FT_FHEIGHT(wf->face);
       wc->font->refcount++;
       }
 
-   if (ws->initAttrs) 
+   if (ws->initAttrs)
       return Succeeded;
 
    ws->busy_flag = 1;
@@ -6478,25 +6478,25 @@ int gl_setfont(wbp w, char **s)
 
    MakeStr("Font", 4, &(rp->fields[0]));
    MakeInt(intcode, &(rp->fields[1]));
- 
+
    Protect(name = alcstr(*s,len), return RunError);
    MakeStr(name, len, &(rp->fields[2]));
 
-   /* update render context */  
-   if (wcr->font) 
-      wcr->font->refcount--; 
+   /* update render context */
+   if (wcr->font)
+      wcr->font->refcount--;
    wcr->font = wf;
    wcr->leading = FT_FHEIGHT(wf->face);
-   wcr->font->refcount--; 
+   wcr->font->refcount--;
 
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
 
    ws->busy_flag = 0;
 
    return Succeeded;
    }
 
-
+
 
 /*
  * Allocate font (s) in the display attached to (w).
@@ -6511,7 +6511,7 @@ wfp gl_alc_font(wbp w, char **s, int len)
    wfp rv;
 
    /* what to do if empty string? */
-   if (*s == NULL) 
+   if (*s == NULL)
       return NULL;
 
    /*
@@ -6541,7 +6541,7 @@ wfp gl_alc_font(wbp w, char **s, int len)
     * link the font into this displays fontlist (but not at the head!)
     */
    if (!(*wfptr)) {
-      *wfptr = rv; 
+      *wfptr = rv;
       }
    else {
       rv->next = (*wfptr)->next;
@@ -6552,7 +6552,7 @@ wfp gl_alc_font(wbp w, char **s, int len)
    return rv;
    }
 
-
+
 
 /*
  * This function may deal with Unicon strings. As such, use (len) to ensure
@@ -6582,13 +6582,13 @@ static wfp loadfont(wdp wd, char *s, int len)
    if (rv) {
       glprintf("Error %d occurred during FT library initialization\n",rv);
       return NULL;
-      } 
+      }
 
    /*
     * Try to convert (s) to a font spec
     *
     * a spec can start with "fc:" to indicate that it's in fontconfig
-    * format. 
+    * format.
     */
    if (len >= 3 && !strncmp(s, "fc:", 3))
        s += 3;
@@ -6602,18 +6602,18 @@ static wfp loadfont(wdp wd, char *s, int len)
     * Use fontconfig or something to find closest available font
     * file.
     */
-   fname = find_fontfile(family, flags); 
+   fname = find_fontfile(family, flags);
    if (!fname) { /* failed to find file or approx font file */
       free(wf);
       return NULL;
       }
 
    /*
-    * Load font 
-    * 
+    * Load font
+    *
     * Start by looking at first font (0). The loop will continue
     * if there are more fonts and the first font didn't match the
-    * requested font 
+    * requested font
     *
     * Maybe should keep track of a "best" font.
     *
@@ -6622,19 +6622,19 @@ static wfp loadfont(wdp wd, char *s, int len)
     *       'family[,styles],size'
     */
    for (i = 0, num_faces = 1; i < num_faces; i++) {
-      rv = FT_New_Face(wf->library, fname, i, &(wf->face)); 
+      rv = FT_New_Face(wf->library, fname, i, &(wf->face));
       if (rv == FT_Err_Unknown_File_Format) {
          glprintf("Font file format is not supported\n");
          free(wf);
          if (fname) free(fname);
-         return NULL; 
-         } 
+         return NULL;
+         }
       else if (rv) {
          glprintf("Error %d occurred loading font file\n",rv);
          free(wf);
          if (fname) free(fname);
-         return NULL; 
-         } 
+         return NULL;
+         }
 
       /*
        * Bits 0-15 contain the index of the current face. 0 if
@@ -6645,15 +6645,15 @@ static wfp loadfont(wdp wd, char *s, int len)
       /*
        * Check family name
        */
-      strcpy(buf, wf->face->family_name); 
+      strcpy(buf, wf->face->family_name);
       s = buf;
       do { /* make case insensitive */
          int c = *s;
          if (c >= 65 && c <= 90) {
-            *s -= ((int)'a' - (int)'A'); 
-            } 
+            *s -= ((int)'a' - (int)'A');
+            }
       } while (*s++);
- 
+
       /* if match, we're done */
       if (!strcmp(buf, family)) {
          break;
@@ -6662,23 +6662,23 @@ static wfp loadfont(wdp wd, char *s, int len)
 
    /*
     * Size not specified, pick a size that makes the default font height
-    * 13 
+    * 13
     */
-   if (size == -1) 
+   if (size == -1)
       size = 10;
 
-   rv = FT_Set_Pixel_Sizes(wf->face, 
-			  0, /* char width in pixels */
-			  size); /* char height in pixels */
+   rv = FT_Set_Pixel_Sizes(wf->face,
+                          0, /* char width in pixels */
+                          size); /* char height in pixels */
    if (rv) {
       glprintf("Failed to set character size, error code: %d\n",rv);
       free(wf);
       if (fname) free(fname);
-      return NULL; 
+      return NULL;
       }
 
    /*
-    * Calculate Unicon font attributes 
+    * Calculate Unicon font attributes
     */
    wf->size = size; /* in pixels */
    wf->ascent = FT_ASCENT(wf->face);
@@ -6690,20 +6690,20 @@ static wfp loadfont(wdp wd, char *s, int len)
     * If no unicode charmap, get one
     * NOTE: desired platform id & encoding id are known
     *
-    * platform_id - 0 (Apple), 1 (Macintosh), 2 (ISO), 3 (MS), 4 (CUSTOM), 
+    * platform_id - 0 (Apple), 1 (Macintosh), 2 (ISO), 3 (MS), 4 (CUSTOM),
     *               5 (Adobe)
     *
     * For now, use (1,0), i.e., Macintosh platform_id, Apple roman encoding id.
-    * According to FT documentation, most TrueType fonts support this 
+    * According to FT documentation, most TrueType fonts support this
     * platform/encoding combination.... I suppose we'll see if it's true.
-    */ 
+    */
 
    platform_id = 1; /* TT_PLATFORM_MACINTOSH */
    encoding_id = 0; /* TT_MAC_ID_ROMAN */
    cmap_index = -1;
    for (i = 0; i < wf->face->num_charmaps; i++) {
       if (wf->face->charmaps[i]->platform_id == platform_id &&
-          wf->face->charmaps[i]->encoding_id == encoding_id) 
+          wf->face->charmaps[i]->encoding_id == encoding_id)
          {
          cmap_index = i;
          break;
@@ -6715,7 +6715,7 @@ static wfp loadfont(wdp wd, char *s, int len)
        * Check FT headers for the correct encoding type. FT_ENCODING_BIG5
        * was the encoding used in the tutorial example.
        */
-      rv = FT_Select_Charmap(wf->face, FT_ENCODING_BIG5); 
+      rv = FT_Select_Charmap(wf->face, FT_ENCODING_BIG5);
       if (rv) {
          glprintf("failed to get charmap, error code %d\n", rv);
          if (fname) free(fname);
@@ -6726,7 +6726,7 @@ static wfp loadfont(wdp wd, char *s, int len)
    else {
       /* now, select the charmap for the face object */
       rv = FT_Set_Charmap(wf->face, wf->face->charmaps[i]);
-      if (rv) { 
+      if (rv) {
          glprintf("failed to get charmap, error code %d\n", rv);
          if (fname) free(fname);
          free(wf);
@@ -6735,26 +6735,26 @@ static wfp loadfont(wdp wd, char *s, int len)
       }
 
    for (i = 0; i < 256; i++) {
-      wf->chars[i].pixmap = NULL; 
-      wf->chars[i].texid = wf->chars[i].index = 0; 
+      wf->chars[i].pixmap = NULL;
+      wf->chars[i].texid = wf->chars[i].index = 0;
       }
 
    if (fname) free(fname);
    return wf;
    }
-#else 					/* HAVE_LIBFREETYPE */
+#else                                   /* HAVE_LIBFREETYPE */
 
 static wfp loadfont(wdp wd, char *s, int len)
    {
    return NULL;
    }
 
-#endif 					/* HAVE_LIBFREETYPE */
+#endif                                  /* HAVE_LIBFREETYPE */
 
-
+
 
 /*
- * Macros for readable font typechecking 
+ * Macros for readable font typechecking
  */
 
 /* Font weight */
@@ -6772,8 +6772,8 @@ static wfp loadfont(wdp wd, char *s, int len)
 #define IS_FONT_WIDE(flag) (flag & FONTFLAG_WIDE)
 
 /* Font slant */
-#define IS_FONT_ROMAN(flag) (flag & FONTFLAG_ROMAN) 
-#define IS_FONT_ITALIC(flag) (flag & FONTFLAG_ITALIC) 
+#define IS_FONT_ROMAN(flag) (flag & FONTFLAG_ROMAN)
+#define IS_FONT_ITALIC(flag) (flag & FONTFLAG_ITALIC)
 #define IS_FONT_OBLIQUE(flag) (flag & FONTFLAG_OBLIQUE)
 
 /* Font spacing */
@@ -6796,11 +6796,11 @@ char *find_fontfile(char *family, int flags) {
    static char fontdir[MAX_LEN];
    char *fname = NULL, *abspath, *ptr;
    int len;
-#ifdef MSWindows 
+#ifdef MSWindows
    const char PS = '\\';
-#else					/* MSWindows */
+#else                                   /* MSWindows */
    const char PS = '/';
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
 
    /*
     * Check if {family} is a .ttf or .oft. Return the filename if so.
@@ -6811,7 +6811,7 @@ char *find_fontfile(char *family, int flags) {
       if (access(family, F_OK) != -1) {
          abspath = strdup(family);
          if (!abspath) return NULL;
-         return abspath; 
+         return abspath;
          }
       }
 
@@ -6822,7 +6822,7 @@ char *find_fontfile(char *family, int flags) {
       /* NOTE: findonpath() does not support '~' */
       if (!findonpath(UNICONX_EXE, fontdir, MAX_LEN)) {
          fprintf(stderr,"could not find iconx on path\n");
-         return NULL; 
+         return NULL;
          }
 
       /*
@@ -6863,14 +6863,14 @@ char *find_fontfile(char *family, int flags) {
 
    /*
     * Otherwise the family name is the name of a font - use a decision tree
-    * 
+    *
     * The goal is to return a font if a font name is specified, so the
-    * decision tree generalizes heavily. If there are issues, change the 
+    * decision tree generalizes heavily. If there are issues, change the
     * logic manually for each font.
     */
    else { /* default? */
       if (!strcmp(family, "avant garde") || !strcmp(family, "avantgarde")) {
-         if (IS_FONT_DEMI(flags)) { 
+         if (IS_FONT_DEMI(flags)) {
             /* AvantGarde-DemiOblique - urwgo4.ttf */
             if (IS_FONT_ITALIC(flags) || IS_FONT_OBLIQUE(flags)) {
                fname = "urwgo4.ttf";
@@ -6923,7 +6923,7 @@ char *find_fontfile(char *family, int flags) {
             /* Courier-BoldOblique - nimbu29.ttf */
             if (IS_FONT_OBLIQUE(flags) || IS_FONT_ITALIC(flags)) {
                fname = "nimbu29.ttf";
-               } 
+               }
             /* Courier-Bold - nimbu27.ttf */
             else {
                fname = "nimbu27.ttf";
@@ -6932,7 +6932,7 @@ char *find_fontfile(char *family, int flags) {
          /* Courier-Oblique - nimbu28.ttf */
          else if (IS_FONT_OBLIQUE(flags) || IS_FONT_ITALIC(flags)) {
             fname = "nimbu28.ttf";
-            } 
+            }
          /* default: Courier - nimbu26.ttf */
          else {
             fname = "nimbu26.ttf";
@@ -6990,21 +6990,21 @@ char *find_fontfile(char *family, int flags) {
          if (IS_FONT_BOLD(flags)) {
             /* Palatino-BoldItalic - urwpa33.ttf */
             if (IS_FONT_ITALIC(flags) || IS_FONT_OBLIQUE(flags)) {
-               fname = "urwpa33.ttf"; 
+               fname = "urwpa33.ttf";
                }
             /* Palatino-Bold - urwpa31.ttf */
             else {
-               fname = "urwpa31.ttf"; 
+               fname = "urwpa31.ttf";
                }
             }
          else {
             /* Palatino-Italic - urwpa32.ttf */
             if (IS_FONT_ITALIC(flags) || IS_FONT_OBLIQUE(flags)) {
-               fname = "urwpa32.ttf"; 
+               fname = "urwpa32.ttf";
                }
             /* Palatino-Roman - urwpa30.ttf */
             else {
-               fname = "urwpa30.ttf"; 
+               fname = "urwpa30.ttf";
                }
             }
          }
@@ -7013,21 +7013,21 @@ char *find_fontfile(char *family, int flags) {
          if (IS_FONT_BOLD(flags)) {
             /* NewCenturySchlbk-BoldItalic - centu12.ttf */
             if (IS_FONT_ITALIC(flags) || IS_FONT_OBLIQUE(flags)) {
-               fname = "centu12.ttf"; 
+               fname = "centu12.ttf";
                }
             /* NewCenturySchlbk-Bold - centu10.ttf */
             else {
-               fname = "centu10.ttf"; 
+               fname = "centu10.ttf";
                }
             }
          else {
             /* NewCenturySchlbk-Italic - centu11.ttf */
             if (IS_FONT_ITALIC(flags) || IS_FONT_OBLIQUE(flags)) {
-               fname = "centu11.ttf"; 
+               fname = "centu11.ttf";
                }
             /* NewCenturySchlbk-Roman - centu9.ttf */
             else {
-               fname = "centu9.ttf"; 
+               fname = "centu9.ttf";
                }
             }
          }
@@ -7036,21 +7036,21 @@ char *find_fontfile(char *family, int flags) {
           if (IS_FONT_BOLD(flags)) {
             /* Times-BoldItalic - nimbu25.ttf */
             if (IS_FONT_ITALIC(flags) || IS_FONT_OBLIQUE(flags)) {
-               fname = "nimbu25.ttf"; 
+               fname = "nimbu25.ttf";
                }
             /* Times-Bold - nimbu23.ttf */
             else {
-               fname = "nimbu23.ttf"; 
+               fname = "nimbu23.ttf";
                }
             }
          else {
             /* Times-Italic - nimbu24.ttf */
             if (IS_FONT_ITALIC(flags) || IS_FONT_OBLIQUE(flags)) {
-               fname = "nimbu24.ttf"; 
+               fname = "nimbu24.ttf";
                }
             /* Times-Roman - nimbu22.ttf */
             else {
-               fname = "nimbu22.ttf"; 
+               fname = "nimbu22.ttf";
                }
             }
          }
@@ -7062,18 +7062,18 @@ char *find_fontfile(char *family, int flags) {
          fname = "stand34.ttf";
          }
       else {
-         /* 
+         /*
           * How should this be dealt with? For now, just let Font()/Wattrib()
           * fail. This is a TODO item.
           */
          fprintf(stderr,"font '%s' not supported\n", family);
          return NULL;
-         } 
+         }
       }
 
    /*
     * Pseudo LUT for default Unicon font types. This is only used if
-    * a specific font name was not given. 
+    * a specific font name was not given.
     *
     * For now, it covers basic cases. Should add extra cases to cover
     * extremes of font attributes Unicon users could pass, e.g. "normal",
@@ -7082,7 +7082,7 @@ char *find_fontfile(char *family, int flags) {
     */
    if (!fname) {
       switch (flags & 0x1FFFF) { /* ignore charsets & font attrs */
-         /* 
+         /*
           * Unicon "mono" fonts (fixed width sans serif)
           *
           * Testing out SourceCodePro
@@ -7103,12 +7103,12 @@ char *find_fontfile(char *family, int flags) {
             fname = "SourceCodePro-BoldIt.ttf";
             break;
 
-         /* 
+         /*
           * Unicon "typewriter" fonts (fixed width serif)
           */
 
          /* Courier - nimbu26.ttf */
-         case FONTFLAG_MONO | FONTFLAG_SERIF: 
+         case FONTFLAG_MONO | FONTFLAG_SERIF:
             fname = "nimbu26.ttf";
             break;
 
@@ -7128,7 +7128,7 @@ char *find_fontfile(char *family, int flags) {
             break;
 
 
-         /* 
+         /*
           * Unicon "sans" fonts (proportional width sans serif)
           */
 
@@ -7148,7 +7148,7 @@ char *find_fontfile(char *family, int flags) {
             break;
 
          /* Helvetica-BoldOblique - numbu17.ttf */
-         case FONTFLAG_PROPORTIONAL | FONTFLAG_SANS | FONTFLAG_BOLD | 
+         case FONTFLAG_PROPORTIONAL | FONTFLAG_SANS | FONTFLAG_BOLD |
               FONTFLAG_OBLIQUE:
             fname = "nimbu17.ttf";
             break;
@@ -7176,7 +7176,7 @@ char *find_fontfile(char *family, int flags) {
             fname = "nimbu21.ttf";
             break;
 
-         /* 
+         /*
           * Unicon "serif" fonts (proportional width serif)
           */
 
@@ -7231,7 +7231,7 @@ char *find_fontfile(char *family, int flags) {
    return abspath;
    }
 
-
+
 
 int gl_setleading(wbp w, int leading)
    {
@@ -7243,10 +7243,10 @@ int gl_setleading(wbp w, int leading)
    const int intcode = GL2D_LEADING;
    int nfields;
 
-   if (!ws->updateRC) 
+   if (!ws->updateRC)
       wc->leading = leading;
 
-   if (ws->initAttrs) 
+   if (ws->initAttrs)
       return Succeeded;
 
    ws->busy_flag = 1;
@@ -7262,23 +7262,23 @@ int gl_setleading(wbp w, int leading)
    MakeStr("Leading", 7, &(rp->fields[0]));
    MakeInt(intcode, &(rp->fields[1]));
    MakeInt(leading, &(rp->fields[2]));
- 
+
    wcr->leading = leading;
 
-   c_put(&(w->window->funclist2d), &f); 
+   c_put(&(w->window->funclist2d), &f);
 
    ws->busy_flag = 0;
 
    return Succeeded;
    }
 
-
+
 
 /**********************************************************
  * (4) Window management functions (platform independent) *
  **********************************************************/
 
-
+
 
 int gl_allowresize(wbp w, int on)
    {
@@ -7289,7 +7289,7 @@ int gl_allowresize(wbp w, int on)
    return Succeeded;
    }
 
-
+
 
 wcp gl_clone_context(wbp w)
    {
@@ -7304,7 +7304,7 @@ wcp gl_clone_context(wbp w)
    return rv;
    }
 
-
+
 
 /*
  * initialize child window w from parent window wp
@@ -7317,7 +7317,7 @@ char gl_child_window_stuff(wbp w, wbp wp, int child_window)
 
    is_3d = (child_window==CHILD_WIN3D)? 1 : 0;
    /*
-    * New canvas, so allocate display lists before attribute 
+    * New canvas, so allocate display lists before attribute
     * initialization
     */
    if (is_3d) {
@@ -7330,13 +7330,13 @@ char gl_child_window_stuff(wbp w, wbp wp, int child_window)
    /* preserve certain parent attributes */
 #ifdef XWindows
    w->window->iconic = wp->window->iconic;
-#endif 					/* XWindows */
+#endif                                  /* XWindows */
    w->window->buffermode = wp->window->buffermode;
- 
+
    return 1;
    }
 
-
+
 
 int gl_rebind(wbp w, wbp w2)
    {
@@ -7345,7 +7345,7 @@ int gl_rebind(wbp w, wbp w2)
    return Succeeded;
    }
 
-
+
 
 /*
  * OpenGL implementation doesn't use Pixmaps
@@ -7355,7 +7355,7 @@ int gl_resizePixmap(wbp w, int width, int height)
    return Succeeded;
    }
 
-
+
 
 int gl_setcursor(wbp w, int on)
    {
@@ -7366,7 +7366,7 @@ int gl_setcursor(wbp w, int on)
    return Succeeded;
    }
 
-
+
 
 /*
  * Used in macros in fsys.r... what to do?
@@ -7400,11 +7400,11 @@ int gl_wputc(int ci, wbp w)
           */
          over = ws->y + GL_DESCENT(w) - height;
          if (over > 0) {
-	    ws->y -= over;
+            ws->y -= over;
             /*
              * Copy from (0, over) to (0, 0) with dimensions of (width X height)
              */
-	    gl_copyArea(w, w, 0, over, width, height+over, 0, 0);
+            gl_copyArea(w, w, 0, over, width, height+over, 0, 0);
             }
          break;
          }
@@ -7463,7 +7463,7 @@ int gl_wputc(int ci, wbp w)
    return 1;
    }
 
-
+
 
 
 
@@ -7472,7 +7472,7 @@ int gl_wputc(int ci, wbp w)
  *******************************************************/
 
 
-
+
 
 /*
  * allocate a context.  Can't be called until w has a display and window.
@@ -7480,7 +7480,7 @@ int gl_wputc(int ci, wbp w)
 wcp gl_alc_context(wbp w)
    {
    wcp wc;
- 
+
    wc = alc_context(w); /* platform-specific init */
    if (!wc) return NULL;
 
@@ -7492,7 +7492,7 @@ wcp gl_alc_context(wbp w)
    }
 
 
-
+
 
 /*
  * allocate a display on machine s
@@ -7529,7 +7529,7 @@ wdp gl_alc_display(char *s)
    return wd;
    }
 
-
+
 
 /*
  * allocate a window state structure
@@ -7542,14 +7542,14 @@ wsp gl_alc_winstate()
 #ifdef XWindows
    ws->pix = (Pixmap) NULL; /* OpenGL impl. doesn't use backing store */
    ws->ctx = (GLXContext) NULL;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
    ws->is_gl = 1;
-   ws->buffermode = UGL_IMMEDIATE; 
-   ws->rendermode = UGL2D; 
+   ws->buffermode = UGL_IMMEDIATE;
+   ws->rendermode = UGL2D;
 
    /* 2d initialization */
-   ws->lastwcserial = -1; 
+   ws->lastwcserial = -1;
    ws->updateRC = 0;
    ws->initAttrs = 0;
    ws->resize = 0;
@@ -7573,14 +7573,14 @@ wsp gl_alc_winstate()
    }
 
 
-
+
 
 void gl_free_context(wcp wc)
    {
    return free_context(wc);
    }
 
-
+
 
 /*
  * free a display
@@ -7596,7 +7596,7 @@ void gl_free_display(wdp wd)
        * Free all 2d facility textures
        */
       for (i = 0; i < 16; i++) {
-         if (wd->stdPatTexIds[i]) 
+         if (wd->stdPatTexIds[i])
             glDeleteTextures(1, &(wd->stdPatTexIds[i]));
          wd->stdPatTexIds[i] = 0;
          }
@@ -7622,42 +7622,42 @@ void gl_free_display(wdp wd)
                wf->chars[i].pixmap = NULL;
                }
             }
-         wf = wf->next; 
+         wf = wf->next;
          }
       wd->glfonts = NULL;
-#endif					/* HAVE_LIBFREETYPE */
+#endif                                  /* HAVE_LIBFREETYPE */
       }
 #ifdef XWindows
    /* Why doesn't Windows need to allocate a display? */
    free_display(wd);
-#endif					/* XWindows */
+#endif                                  /* XWindows */
    }
 
-
+
 
 int gl_free_window(wsp ws)
    {
    return free_window(ws);
    }
 
-
+
 
 /*
- * OpenGL doesn't need to allocate many colors, but this might come in handy 
+ * OpenGL doesn't need to allocate many colors, but this might come in handy
  */
 void gl_freecolor(wbp w, char *s)
    {
    return freecolor(w, s);
    }
 
-
+
 
 int gl_do_config(wbp w, int status)
    {
    return do_config(w, status);
    }
 
-
+
 
 /*
  * from rxwin.ri
@@ -7668,10 +7668,10 @@ void gl_getcanvas(wbp w, char *s)
    }
 
 
-
+
 
 /*
- * from rxwin.ri... 
+ * from rxwin.ri...
  */
 int gl_getdefault(wbp w, char *prog, char *opt, char *answer)
    {
@@ -7679,7 +7679,7 @@ int gl_getdefault(wbp w, char *prog, char *opt, char *answer)
    }
 
 
-
+
 
 void gl_getdisplay(wbp w, char *s)
    {
@@ -7687,21 +7687,21 @@ void gl_getdisplay(wbp w, char *s)
    }
 
 
-
+
 
 void gl_geticonic(wbp w, char *s)
    {
    return geticonic(w, s);
    }
 
-
+
 
 int gl_geticonpos(wbp w, char *s)
    {
    return geticonpos(w, s);
    }
 
-
+
 
 
 void gl_getpointername(wbp w, char *s)
@@ -7709,27 +7709,27 @@ void gl_getpointername(wbp w, char *s)
    return getpointername(w, s);
    }
 
-
+
 
 int gl_getpos(wbp w)
    {
    return getpos(w);
    }
 
-
+
 
 int gl_getvisual(wbp w, char *s)
    {
    return getvisual(w, s);
    }
 
-
+
 
 int gl_nativecolor(wbp w, char *s, long *r, long *g, long *b)
    {
    return nativecolor(w, s, r, g, b);
    }
-
+
 
 
 int gl_lowerWindow(wbp w)
@@ -7737,70 +7737,70 @@ int gl_lowerWindow(wbp w)
    return lowerWindow(w);
    }
 
-
+
 
 int gl_raiseWindow(wbp w)
    {
-   return raiseWindow(w); 
+   return raiseWindow(w);
    }
 
-
+
 
 int gl_setcanvas(wbp w, char *s)
    {
    return setcanvas(w, s);
    }
 
-
+
 
 int gl_setdisplay(wbp w, char *s)
    {
    return setdisplay(w, s);
    }
 
-
+
 
 int gl_seticonicstate(wbp w, char *s)
    {
    return seticonicstate(w, s);
    }
 
-
+
 
 int gl_seticonimage(wbp w, dptr dp)
    {
    return seticonimage(w, dp);
    }
 
-
+
 
 int gl_seticonlabel(wbp w, char *s)
    {
    return seticonlabel(w, s);
    }
 
-
+
 
 int gl_seticonpos(wbp w, char *s)
    {
    return seticonpos(w, s);
    }
 
-
+
 
 int gl_setimage(wbp w, char *s)
    {
    return setimage(w, s);
    }
 
-
+
 
 int gl_setpointer(wbp w, char *s)
    {
    return setpointer(w, s);
    }
 
-
+
 
 int gl_setwidth(wbp w, SHORT new_width)
    {
@@ -7808,21 +7808,21 @@ int gl_setwidth(wbp w, SHORT new_width)
    }
 
 
-
+
 
 int gl_setheight(wbp w, SHORT new_height)
    {
    return setheight(w, new_height);
    }
 
-
+
 
 int gl_setgeometry(wbp w, char *s)
    {
    return setgeometry(w, s);
    }
 
-
+
 
 
 int gl_setwindowlabel(wbp w, char *s)
@@ -7830,57 +7830,57 @@ int gl_setwindowlabel(wbp w, char *s)
    return setwindowlabel(w, s);
    }
 
-
+
 
 int gl_query_pointer(wbp w, XPoint *xp)
    {
    return query_pointer(w, xp);
    }
 
-
+
 
 int gl_query_rootpointer(XPoint *xp)
    {
    return query_rootpointer(xp);
    }
 
-
+
 int gl_walert(wbp w, int volume)
    {
    return walert(w, volume);
    }
 
-
+
 
 void gl_warpPointer(wbp w, int x, int y)
    {
    return warpPointer(w, x, y);
    }
 
-
+
 
 int gl_wclose(wbp w)
    {
    return wclose(w);
    }
 
-
+
 
 void gl_wflush(wbp w)
    {
    return wflush(w);
    }
 
-
+
 
 #ifdef XWindows
 void gl_wflushall()
    {
    return wflushall();
    }
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
-
+
 
 int gl_wgetq(wbp w, dptr res, int t)
    {
@@ -7899,27 +7899,27 @@ int gl_wgetq(wbp w, dptr res, int t)
    return wgetq(w, res, t);
    }
 
-
+
 
 FILE *gl_wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int is_3d)
    {
-   return wopen(name, lp, attr,  n, err_index, is_3d, 1); 
+   return wopen(name, lp, attr,  n, err_index, is_3d, 1);
    }
 
-
+
 
 int gl_wmap(wbp w)
    {
 #ifdef XWindows
-   return wmap(w); 
-#else					/* XWindows */
+   return wmap(w);
+#else                                   /* XWindows */
    /* placeholder until implemented in MSWin and OSX */
-   return my_wmap(w); 
-#endif					/* XWindows */
+   return my_wmap(w);
+#endif                                  /* XWindows */
 
    }
 
-
+
 
 void gl_wsync(wbp w)
    {

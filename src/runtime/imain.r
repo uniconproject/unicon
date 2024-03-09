@@ -14,13 +14,13 @@
       pointer stkadr;
       word stkint;
    } stkword;
-#endif				/* MSDOS */
+#endif                          /* MSDOS */
 
 
 /*
  * Prototypes.
  */
-void	icon_setup	(int argc, char **argv, int *ip);
+void    icon_setup      (int argc, char **argv, int *ip);
 
 #ifdef MacGraph
 void MacMain (int argc, char **argv);
@@ -28,7 +28,7 @@ void ToolBoxInit (void);
 void MenuBarInit (void);
 void MouseInfoInit (void);
 int GetArgs (char **argv);
-#endif					/* MacGraph */
+#endif                                  /* MacGraph */
 
 /*
  * The following code is operating-system dependent [@imain.01].  Declarations
@@ -38,11 +38,11 @@ int GetArgs (char **argv);
 #if PORT
    /* probably needs something more */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS || MVS || VM || UNIX || VMS
    /* nothing needed */
-#endif					/* MSDOS || ... */
+#endif                                  /* MSDOS || ... */
 
 /*
  * End of operating-system specific code.
@@ -55,9 +55,9 @@ extern int set_up;
  */
 
 #ifndef MultiProgram
-int n_globals = 0;			/* number of globals */
-int n_statics = 0;			/* number of statics */
-#endif					/* MultiProgram */
+int n_globals = 0;                      /* number of globals */
+int n_statics = 0;                      /* number of statics */
+#endif                                  /* MultiProgram */
 
 /*
  * Initial icode sequence. This is used to invoke the main procedure with one
@@ -66,7 +66,7 @@ int n_statics = 0;			/* number of statics */
 word istart[4];
 int mterm = Op_Quit;
 
-
+
 
 
 #if NT
@@ -80,7 +80,7 @@ int mterm = Op_Quit;
 #endif
 
 
-#if NT				/* MSWindows */
+#if NT                          /* MSWindows */
 #if WildCards
 void ExpandArgv(int *argcp, char ***avp)
 {
@@ -94,7 +94,7 @@ void ExpandArgv(int *argcp, char ***avp)
       if (strchr(argv[j], '*') || strchr(argv[j], '?')) {
          if (FINDFIRST(argv[j], &fd)) {
             while (FINDNEXT(&fd)) newargc++;
-	    FINDCLOSE(&fd);
+            FINDCLOSE(&fd);
             }
          }
       }
@@ -131,8 +131,8 @@ void ExpandArgv(int *argcp, char ***avp)
    *avp = newargv;
    *argcp = newargc;
 }
-#endif					/* WildCards */
-#endif					/* NT */
+#endif                                  /* WildCards */
+#endif                                  /* NT */
 
 #ifdef MacGraph
 MouseInfoType gMouseInfo;
@@ -143,17 +143,17 @@ char *cmlArgs;
 StringHandle textHandle;
 
 void MacMain (int argc, char **argv)
-#else					/* MacGraph */
+#else                                   /* MacGraph */
 #ifdef DLLICONX
 #passthru void __declspec(dllexport) iconx_entry(int argc, char **argv)
-#else					/* DLLICONX */
+#else                                   /* DLLICONX */
 #ifdef INTMAIN
 int main(int argc, char **argv)
 #else
 void main(int argc, char **argv)
-#endif					/* INTMAIN */
-#endif					/* DLLICONX */
-#endif					/* MacGraph */
+#endif                                  /* INTMAIN */
+#endif                                  /* DLLICONX */
+#endif                                  /* MacGraph */
    {
    int i, slen;
 
@@ -162,15 +162,15 @@ void main(int argc, char **argv)
 #ifndef HAVE_KEYWORD__THREAD
    struct threadstate *curtstate;
    pthread_key_create(&tstate_key, NULL);
-#endif					/* HAVE_KEYWORD__THREAD */
+#endif                                  /* HAVE_KEYWORD__THREAD */
    rt_status = RTSTATUS_NORMAL;
    init_threads();
    global_curtstate = &roottstate;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
 #if WildCards && NT
    ExpandArgv(&argc, &argv);
-#endif					/* WildCards && NT */
+#endif                                  /* WildCards && NT */
 
 #ifdef MultiProgram
    /*
@@ -183,28 +183,28 @@ void main(int argc, char **argv)
    int i=0, j = 1, k = 1;
    if ((p = getenv("MTENV")) != NULL) {
       for(i=0;p[i];i++)
-	 if (p[i] == ' ')
-	    j++;
+         if (p[i] == ' ')
+            j++;
       new_argv = (char **)malloc((argc + j) * sizeof(char *));
       new_argv[0] = argv[0];
       for (i=0; p[i]; ) {
-	 new_argv[k++] = p+i;
-	 while (p[i] && (p[i] != ' '))
-	    i++;
-	 if (p[i] == ' ')
-	    p[i++] = '\0';
-	 }
+         new_argv[k++] = p+i;
+         while (p[i] && (p[i] != ' '))
+            i++;
+         if (p[i] == ' ')
+            p[i++] = '\0';
+         }
       for(i=1;i<argc;i++)
-	 new_argv[k++] = argv[i];
+         new_argv[k++] = argv[i];
       argc += j;
       argv = new_argv;
       }
    }
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
-#ifndef Concurrent   
+#ifndef Concurrent
  ipc.opnd = NULL;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
 #if UNIX
    /*
@@ -215,12 +215,12 @@ void main(int argc, char **argv)
       char *q = relfile(argv[0], "/..");
       char *buf = malloc((p?strlen(p):1) + (q?strlen(q):1) + 8);
       if (buf) {
-	 sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
-	 putenv(buf);
-	 /* buf is part of the environment; don't free it. */
-	 }
+         sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
+         putenv(buf);
+         /* buf is part of the environment; don't free it. */
+         }
       }
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
    /*
     * Setup Icon interface.  It's done this way to avoid duplication
@@ -236,7 +236,7 @@ void main(int argc, char **argv)
       i++;
       }
 
-   while (i--) {			/* skip option arguments */
+   while (i--) {                        /* skip option arguments */
       argc--;
       argv++;
       }
@@ -246,20 +246,20 @@ void main(int argc, char **argv)
       }
 
    /*
-    * Call icon_init with the name of the icode file to execute.	[[I?]]
+    * Call icon_init with the name of the icode file to execute.        [[I?]]
     */
    icon_init(argv[1], &argc, argv);
-   
+
 #ifdef MultiProgram
    curtstate = &roottstate;
-#ifdef Concurrent   
+#ifdef Concurrent
    curtstate_ce = curtstate->c;
-#endif					/* Concurrent */
-#endif					/* MultiProgram */
+#endif                                  /* Concurrent */
+#endif                                  /* MultiProgram */
 
 #ifdef Messaging
    errno = 0;
-#endif					/* Messaging */
+#endif                                  /* Messaging */
 
 
 #ifdef NativeObjects
@@ -290,9 +290,9 @@ void main(int argc, char **argv)
 {
 #ifdef StackCheck
     unsigned *temp_stackend=BlkD(k_current,Coexpr)->es_stackend, *temp_sp=sp;
-#else					/* StackCheck */
+#else                                   /* StackCheck */
     unsigned *temp_stackend=stackend, *temp_sp=sp;
-#endif					/* StackCheck */
+#endif                                  /* StackCheck */
     inst temp_ipc=ipc;
     struct gf_marker *temp_gfp=gfp;
     struct ef_marker *temp_efp=efp;
@@ -328,10 +328,10 @@ void main(int argc, char **argv)
 #ifdef StackCheck
           BlkD(k_current,Coexpr)->es_stackend = BlkD(k_current,Coexpr)->es_stack + mstksize/WordSize;
           sp = BlkD(k_current,Coexpr)->es_stack + Wsizeof(struct b_coexpr);
-#else					/* StackCheck */
-	  stackend = stack + mstksize/WordSize;
-	  sp = stack + Wsizeof(struct b_coexpr);
-#endif					/* StackCheck */
+#else                                   /* StackCheck */
+          stackend = stack + mstksize/WordSize;
+          sp = stack + Wsizeof(struct b_coexpr);
+#endif                                  /* StackCheck */
 
           ipc.opnd = istart;
           *ipc.op++ = Op_Noop;
@@ -358,39 +358,39 @@ void main(int argc, char **argv)
           PushDesc(globals[i]);
 #ifdef TSTATARG
           interp(0,(dptr)NULL, CURTSTATARG);           /*      [[I?]] */
-#else 		 	   	  	 /* TSTATARG */
+#else                                    /* TSTATARG */
           interp(0,(dptr)NULL);                        /*      [[I?]] */
-#endif 		 	   	  	 /* TSTATARG */
-	  /*
-	   * Now we have <classname>__oprec pointing at method vector.
-	   * Copy it in  __m field of record constructor block
-	   */
+#endif                                   /* TSTATARG */
+          /*
+           * Now we have <classname>__oprec pointing at method vector.
+           * Copy it in  __m field of record constructor block
+           */
 
-	  strcat(classname,"__state");
-	  for(j=0; j < numberof_globals; ++j) {
-	     union block *bptr=globals[j].vword.bptr;
-	     if((globals[j].dword == D_Proc) && (-3 == bptr->proc.ndynam) &&
-		(0==strcmp(classname,bptr->proc.pname.vword.sptr))) {
-		*strstr(classname,"__state")=0;
-		strcat(classname,"__oprec");
+          strcat(classname,"__state");
+          for(j=0; j < numberof_globals; ++j) {
+             union block *bptr=globals[j].vword.bptr;
+             if((globals[j].dword == D_Proc) && (-3 == bptr->proc.ndynam) &&
+                (0==strcmp(classname,bptr->proc.pname.vword.sptr))) {
+                *strstr(classname,"__state")=0;
+                strcat(classname,"__oprec");
 
-		for(k=0;k < numberof_globals;++k) {
-		   if(strcmp(classname,gnames[k].vword.sptr)==0) {
-		      bptr->proc.lnames[bptr->proc.nparam]=globals[k];
-		      j = numberof_globals; /* exit outer for-loop */
-		      break;
-		      }
-		   }
-		}
+                for(k=0;k < numberof_globals;++k) {
+                   if(strcmp(classname,gnames[k].vword.sptr)==0) {
+                      bptr->proc.lnames[bptr->proc.nparam]=globals[k];
+                      j = numberof_globals; /* exit outer for-loop */
+                      break;
+                      }
+                   }
+                }
              }
-	  }
+          }
        }
 
 #ifdef StackCheck
     BlkD(k_current,Coexpr)->es_stackend=temp_stackend;
-#else					/* StackCheck */
+#else                                   /* StackCheck */
     stackend=temp_stackend;
-#endif					/* StackCheck */
+#endif                                  /* StackCheck */
     sp=temp_sp;
     ipc=temp_ipc;
     gfp=temp_gfp;
@@ -400,24 +400,24 @@ void main(int argc, char **argv)
     glbl_argp = temp_glbl_argp;
     set_up=temp_set_up;
     }
-#endif					/* NativeObjects */
+#endif                                  /* NativeObjects */
 
 
    /*
     *  Point sp at word after b_coexpr block for &main, point ipc at initial
-    *	icode segment, and clear the gfp.
+    *   icode segment, and clear the gfp.
     */
 #ifdef StackCheck
    BlkD(k_current,Coexpr)->es_stackend = BlkD(k_current,Coexpr)->es_stack + mstksize/WordSize;
    sp = BlkD(k_current,Coexpr)->es_stack + Wsizeof(struct b_coexpr);
-#else					/* StackCheck */
+#else                                   /* StackCheck */
    stackend = stack + mstksize/WordSize;
    sp = stack + Wsizeof(struct b_coexpr);
-#endif					/* StackCheck */
+#endif                                  /* StackCheck */
 
    ipc.opnd = istart;
-   *ipc.op++ = Op_Noop;  /* aligns Invoke's operand */	/*	[[I?]] */
-   *ipc.op++ = Op_Invoke;				/*	[[I?]] */
+   *ipc.op++ = Op_Noop;  /* aligns Invoke's operand */  /*      [[I?]] */
+   *ipc.op++ = Op_Invoke;                               /*      [[I?]] */
    *ipc.opnd++ = 1;
    *ipc.op = Op_Quit;
    ipc.opnd = istart;
@@ -480,25 +480,25 @@ void main(int argc, char **argv)
    sp = (word *)glbl_argp + 1;
    glbl_argp = 0;
 
-   set_up = 1;			/* post fact that iconx is initialized */
+   set_up = 1;                  /* post fact that iconx is initialized */
 
    /*
     * Start things rolling by calling interp.  This call to interp
-    *  returns only if an Op_Quit is executed.	If this happens,
+    *  returns only if an Op_Quit is executed.  If this happens,
     *  c_exit() is called to wrap things up.
     */
 #ifdef TSTATARG
    interp(0,(dptr)NULL, CURTSTATARG);           /*      [[I?]] */
-#else 		 	   	  	 /* TSTATARG */
+#else                                    /* TSTATARG */
    interp(0,(dptr)NULL);                        /*      [[I?]] */
-#endif 		 	   	  	 /* TSTATARG */
+#endif                                   /* TSTATARG */
 
    c_exit(EXIT_SUCCESS);
 #ifdef INTMAIN
    return 0;
 #endif
 }
-
+
 /*
  * icon_setup - handle interpreter command line options.
  */
@@ -510,9 +510,9 @@ int *ip;
 
 #ifdef TallyOpt
    extern int tallyopt;
-#endif					/* TallyOpt */
+#endif                                  /* TallyOpt */
 
-   *ip = 0;			/* number of arguments processed */
+   *ip = 0;                     /* number of arguments processed */
 
 #ifdef ExecImages
    if (dumped) {
@@ -530,7 +530,7 @@ int *ip;
       argc++;
       (*ip)--;
       }
-#endif					/* ExecImages */
+#endif                                  /* ExecImages */
 
    /*
     * if we didn't start with *iconx[.exe], backup one
@@ -567,7 +567,7 @@ int *ip;
    maxilevel = 0;
    maxplevel = 0;
    maxsp = 0;
-#endif					/* MaxLevel */
+#endif                                  /* MaxLevel */
 
 /*
  * Handle command line options.
@@ -577,72 +577,72 @@ int *ip;
       switch ( optletter ) {
 
 #ifdef TallyOpt
-	/*
-	 * Set tallying flag if -T option given
-	 */
-	case 'T':
-	    tallyopt = 1;
-	    break;
-#endif					/* TallyOpt */
+        /*
+         * Set tallying flag if -T option given
+         */
+        case 'T':
+            tallyopt = 1;
+            break;
+#endif                                  /* TallyOpt */
 
-	/*
-	 * Perform version check and exit if -V option given
-	 */
-	case 'V': {
-	    extern int versioncheck_only;
-	    versioncheck_only = 1;
-	    }
-	    break;
+        /*
+         * Perform version check and exit if -V option given
+         */
+        case 'V': {
+            extern int versioncheck_only;
+            versioncheck_only = 1;
+            }
+            break;
 
-	 /* -l: IDE whole-console-session logfile */
-	 /* -L: runtime error messaging logfile */
-	 case 'l': case 'L': {
-	    extern char *logopt; 
-	    char *p;
-	    if ( *(argv[1]+2) != '\0' )
-	       p = argv[1]+2;
-	    else {
-	       argv++;
-	       argc--;
+         /* -l: IDE whole-console-session logfile */
+         /* -L: runtime error messaging logfile */
+         case 'l': case 'L': {
+            extern char *logopt;
+            char *p;
+            if ( *(argv[1]+2) != '\0' )
+               p = argv[1]+2;
+            else {
+               argv++;
+               argc--;
                (*ip)++;
-	       p = argv[1];
-	       if ( !p )
-		  error(NULL, "no file name given for logfile");
-	       }
-	    if(optletter == 'l') {
-	       openlog(p);
-	       if (!flog)
-		  syserr("Unable to open logfile\n");
-	       }
-	    else { /* -L */
-	       logopt = p;
-	       }
-	    break;
-	    }
-	    
+               p = argv[1];
+               if ( !p )
+                  error(NULL, "no file name given for logfile");
+               }
+            if(optletter == 'l') {
+               openlog(p);
+               if (!flog)
+                  syserr("Unable to open logfile\n");
+               }
+            else { /* -L */
+               logopt = p;
+               }
+            break;
+            }
+
       /*
        * Set stderr to new file if -e option is given.
        */
-	 case 'e': {
-	    char *p;
-	    if ( *(argv[1]+2) != '\0' )
-	       p = argv[1]+2;
-	    else {
-	       argv++;
-	       argc--;
+         case 'e': {
+            char *p;
+            if ( *(argv[1]+2) != '\0' )
+               p = argv[1]+2;
+            else {
+               argv++;
+               argc--;
                (*ip)++;
-	       p = argv[1];
-	       if ( !p )
-		  error(NULL, "no file name given for redirection of &errout");
-	       }
+               p = argv[1];
+               if ( !p )
+                  error(NULL, "no file name given for redirection of &errout");
+               }
             if (!redirerr(p))
                syserr("Unable to redirect &errout\n");
-	    break;
-	    }
+            break;
+            }
         }
-	argc--;
+        argc--;
         (*ip)++;
-	argv++;
+        argv++;
       }
    }
 
@@ -653,9 +653,9 @@ int *ip;
 #ifdef MultiProgram
    void resolve(pstate)
    struct progstate *pstate;
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
    void resolve()
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    {
    register word i, j;
@@ -664,11 +664,11 @@ int *ip;
    #ifdef MultiProgram
       register struct progstate *savedstate = curpstate;
       CURTSTATE();
-      if (pstate){ 
-	curpstate = pstate;
-	curtstate = pstate->tstate;
+      if (pstate){
+        curpstate = pstate;
+        curtstate = pstate->tstate;
         }
-   #endif					/* MultiProgram */
+   #endif                                       /* MultiProgram */
 
    /*
     * Relocate the names of the global variables.
@@ -695,11 +695,11 @@ int *ip;
       if (i < 0) {
          /*
           * globals[j] points to a built-in function; call (bi_)strprc
-	  *  to look it up by name in the interpreter's table of built-in
-	  *  functions.
+          *  to look it up by name in the interpreter's table of built-in
+          *  functions.
           */
-	 if((BlkLoc(globals[j])= (union block *)bi_strprc(gnames+j,0)) == NULL)
-            globals[j] = nulldesc;		/* undefined, set to &null */
+         if((BlkLoc(globals[j])= (union block *)bi_strprc(gnames+j,0)) == NULL)
+            globals[j] = nulldesc;              /* undefined, set to &null */
          }
       else {
 
@@ -718,22 +718,22 @@ int *ip;
 
          if ((pp->ndynam == -2) || (pp->ndynam == -3)) {
             /*
-             * This procedure is a record constructor.	Make its entry point
-             *	be the entry point of Omkrec().
+             * This procedure is a record constructor.  Make its entry point
+             *  be the entry point of Omkrec().
              */
             pp->entryp.ccode = Omkrec;
 
-	    /*
-	     * Initialize field names
-	     */
+            /*
+             * Initialize field names
+             */
             for (i = 0; i < pp->nfields; i++)
                StrLoc(pp->lnames[i]) = strcons + (uword)StrLoc(pp->lnames[i]);
 
-	    }
+            }
          else {
             /*
              * This is an Icon procedure.  Relocate the entry point and
-             *	the names of the parameters, locals, and static variables.
+             *  the names of the parameters, locals, and static variables.
              */
             pp->entryp.icode = code + pp->entryp.ioff;
             for (i = 0; i < abs((int)pp->nparam)+pp->ndynam+pp->nstatic; i++)
@@ -753,7 +753,7 @@ int *ip;
    curpstate = savedstate;
    curtstate = curpstate->tstate;
    (void) curtstate;  /* silence "not used" compiler warning */
-#endif						/* MultiProgram */
+#endif                                          /* MultiProgram */
    }
 
 /*
@@ -768,40 +768,40 @@ void xmfree()
    register struct astkblk *abp, *xabp;
    CURTSTATE();
 
-   if (mainhead == NULL) return;	/* already xmfreed */
-   free((pointer)mainhead->es_actstk);	/* activation block for &main */
+   if (mainhead == NULL) return;        /* already xmfreed */
+   free((pointer)mainhead->es_actstk);  /* activation block for &main */
    mainhead->es_actstk = NULL;
 #ifdef StackCheck
-   free((pointer)mainhead->es_stack);	/* interpreter stack */
+   free((pointer)mainhead->es_stack);   /* interpreter stack */
    mainhead->es_stack = NULL;
-#else					/* StackCheck */
-   free((pointer)stack);		/* interpreter stack */
+#else                                   /* StackCheck */
+   free((pointer)stack);                /* interpreter stack */
    stack = NULL;
-#endif					/* StackCheck */
+#endif                                  /* StackCheck */
    mainhead = NULL;
 
-   free((pointer)code);			/* icode */
+   free((pointer)code);                 /* icode */
    code = NULL;
    /*
     * more is needed to free chains of heaps, also a multithread version
     * of this function may be needed someday.
     */
    if (strbase)
-      free((pointer)strbase);		/* allocated string region */
+      free((pointer)strbase);           /* allocated string region */
    strbase = NULL;
    if (blkbase)
-      free((pointer)blkbase);		/* allocated block region */
+      free((pointer)blkbase);           /* allocated block region */
    blkbase = NULL;
 #ifndef MultiProgram
    if (curstring != &rootstring)
-      free((pointer)curstring);		/* string region */
+      free((pointer)curstring);         /* string region */
    curstring = NULL;
    if (curblock != &rootblock)
-      free((pointer)curblock);		/* allocated block region */
+      free((pointer)curblock);          /* allocated block region */
    curblock = NULL;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
    if (quallist)
-      free((pointer)quallist);		/* qualifier list */
+      free((pointer)quallist);          /* qualifier list */
    quallist = NULL;
 
    /*
@@ -820,23 +820,23 @@ void xmfree()
         *  code provides for more than one.
         */
       for (abp = xep->es_actstk; abp; ) {
-	 xabp = abp;
-	 abp = abp->astk_nxt;
-	 free((pointer)xabp);
-	 }
+         xabp = abp;
+         abp = abp->astk_nxt;
+         free((pointer)xabp);
+         }
 
 #ifdef Concurrent
-	 /*
-	  * do we need to kill a thread before we free its pointer here
-	  */
-#endif					/* Concurrent */
+         /*
+          * do we need to kill a thread before we free its pointer here
+          */
+#endif                                  /* Concurrent */
 
       free((pointer)xep);
       stklist = NULL;
       }
    MUTEX_UNLOCKID(MTX_STKLIST);
    }
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
 
 #if NT
 
@@ -864,12 +864,12 @@ char *ArgvToCmdline(char **argv)
       char *qq = mytmp;
       while (qq=strchr(qq, '/')) *qq='\\';
       if (strchr(mytmp, ' ')) {
-	 int j = strlen(mytmp);
-	 mytmp[j+2] = '\0';
-	 mytmp[j+1] = '"';
-	 for( ; j > 0 ; j--) mytmp[j] = mytmp[j-1];
-	 mytmp[0] = '"';
-	 }
+         int j = strlen(mytmp);
+         mytmp[j+2] = '\0';
+         mytmp[j+1] = '"';
+         for( ; j > 0 ; j--) mytmp[j] = mytmp[j-1];
+         mytmp[0] = '"';
+         }
       }
    len += strlen(mytmp);
    if (len > 1023) mytmp = realloc(mytmp, len+1);
@@ -881,7 +881,7 @@ char *ArgvToCmdline(char **argv)
    }
    return mytmp;
 }
-#endif					/* NT */
+#endif                                  /* NT */
 
 
 #ifdef MacGraph
@@ -940,4 +940,4 @@ void main ()
 
    EventLoop ();
 }
-#endif					/* MacGraph */
+#endif                                  /* MacGraph */

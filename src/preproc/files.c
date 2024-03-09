@@ -98,7 +98,7 @@ Deliberate Syntax Error
    next_char = NULL;
    fill_cbuf();
    }
-
+
 /*
  * source - Open the file named fname or use stdin if fname is "-". fname
  *  is the first file from which to read input (that is, the outermost file).
@@ -116,7 +116,7 @@ char *fname;
       file_src(fname, f);
       }
    }
-
+
 /*
  * include - open the file named fname and make it the current input file. 
  */
@@ -228,7 +228,7 @@ int system;
       errt2(trigger, "cannot open include file ", fname);
    file_src(path, f);
    }
-
+
 /*
  * init_files - Initialize this module, setting up the search path for
  *  system header files.

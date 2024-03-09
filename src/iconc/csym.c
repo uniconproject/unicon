@@ -51,7 +51,7 @@ int op_tbl_sz;
 struct pentry *proc_lst = NULL; /* procedure list */
 struct rentry *rec_lst = NULL;  /* record list */
 
-
+
 /*
  *instl_p - install procedure or record in global symbol table, returning
  *  the symbol table entry.
@@ -158,7 +158,7 @@ install(name, flag)
          tsyserr("install: unrecognized symbol table flag.");
       }
 }
-
+
 /*
  * dcl_loc - handle declaration of a local identifier.
  */
@@ -179,7 +179,7 @@ struct lentry *next;
       tfatal("dcl_loc: inconsistent redeclaration", name);
    return lp;
    }
-
+
 /*
  * putloc - make a local symbol table entry and return pointer to it.
  */
@@ -198,7 +198,7 @@ struct lentry *putloc(char *id,int id_type)
       }
    return ptr;
    }
-
+
 /*
  * putglob makes a global symbol table entry and returns a pointer to it.
  */
@@ -214,7 +214,7 @@ static struct gentry *putglob(char *id, int id_type)
       }
    return ptr;
    }
-
+
 /*
  * putlit makes a constant symbol table entry and returns a pointer to it.
  */
@@ -230,7 +230,7 @@ struct centry *putlit(char *image, int littype, int len)
       }
    return ptr;
    }
-
+
 /*
  * llookup looks up id in local symbol table and returns pointer to
  *  to it if found or NULL if not present.
@@ -245,7 +245,7 @@ static struct lentry *llookup(char *id)
       ptr = ptr->blink;
    return ptr;
    }
-
+
 /*
  * flookup looks up id in flobal symbol table and returns pointer to
  *  to it if found or NULL if not present.
@@ -260,7 +260,7 @@ struct fentry *flookup(char *id)
       }
    return ptr;
    }
-
+
 /*
  * glookup looks up id in global symbol table and returns pointer to
  *  to it if found or NULL if not present.
@@ -275,7 +275,7 @@ struct gentry *glookup(char *id)
       }
    return ptr;
    }
-
+
 /*
  * clookup looks up id in constant symbol table and returns pointer to
  *  to it if found or NULL if not present.
@@ -290,7 +290,7 @@ static struct centry *clookup(char *image, int flag)
 
    return ptr;
    }
-
+
 #ifdef DeBug
 /*
  * symdump - dump symbol tables.
@@ -369,7 +369,7 @@ void ldump(struct lentry **lhash)
          }
    fflush(stderr);
    }
-
+
 /*
  * gdump displays global symbol table to stderr.
  */
@@ -390,7 +390,7 @@ void gdump()
          }
    fflush(stderr);
    }
-
+
 /*
  * cdump displays constant symbol table to stderr.
  */
@@ -411,7 +411,7 @@ void cdump()
          }
    fflush(stderr);
    }
-
+
 /*
  * fdump displays field symbol table to stderr.
  */
@@ -434,7 +434,7 @@ void fdump()
          }
    fflush(stderr);
    }
-
+
 /*
  * prt_flds - print a list of fields stored in reverse order.
  */
@@ -463,7 +463,7 @@ void rdump()
       }
    }
 #endif					/* DeBug */
-
+
 /*
  * alcloc allocates a local symbol table entry, fills in fields with
  *  specified values and returns pointer to new entry.  
@@ -509,7 +509,7 @@ static struct gentry *alcglob(struct gentry *blink, char *name, int flag)
    gp->flag = flag;
    return gp;
    }
-
+
 /*
  * alclit allocates a constant symbol table entry, fills in fields with
  *  specified values and returns pointer to new entry.  

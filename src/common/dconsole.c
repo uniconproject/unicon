@@ -296,7 +296,7 @@ void initalloc(word codesize)
       tfatal("insufficient memory for block region", NULL);
    blkend = blkbase + abrsize;
    }
-
+
 
 void err_msg(n, v)
 int n;

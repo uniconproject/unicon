@@ -25,7 +25,7 @@ static long log_and        (struct token **tp, struct token *trigger);
 static long log_or         (struct token **tp, struct token *trigger);
 
 #include "../preproc/pproto.h"
-
+
 /*
  * <primary> ::= <identifier>
  *               defined <identifier>
@@ -242,7 +242,7 @@ struct token *trigger;
    /*NOTREACHED*/
    return 0;  /* avoid gcc warning */
    }
-
+
 /*
  * <unary> ::= <primary> |
  *             '+' <unary> |
@@ -271,7 +271,7 @@ struct token *trigger;
          return primary(tp, trigger);
       }
    }
-
+
 /*
  * <multiplicative> ::= <unary> |
  *                      <multiplicative> '*' <unary> |
@@ -311,7 +311,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <additive> ::= <multiplicative> |
  *                <additive> '+' <multiplicative> |
@@ -337,7 +337,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <shift> ::= <additive> |
  *             <shift> '<<' <additive> |
@@ -363,7 +363,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <relation> ::= <shift> |
  *                <relation> '<' <shift> |
@@ -401,7 +401,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <equality> ::= <relation> |
  *                <equality> '==' <relation> |
@@ -427,7 +427,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <and> ::= <equality> |
  *           <and> '&' <equality>
@@ -446,7 +446,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <excl_or> ::= <and> |
  *               <excl_or> '^' <and>
@@ -465,7 +465,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <incl_or> ::= <excl_or> |
  *               <incl_or> '|' <excl_or>
@@ -484,7 +484,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <log_and> ::= <incl_or> |
  *               <log_and> '&&' <incl_or>
@@ -503,7 +503,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <log_or> ::= <log_and> |
  *              <log_or> '||' <log_and>
@@ -522,7 +522,7 @@ struct token *trigger;
       }
    return e1;
    }
-
+
 /*
  * <conditional> ::= <log_or> |
  *                   <log_or> '?' <conditional> ':' <conditional>
@@ -546,7 +546,7 @@ struct token *trigger;
    else
       return e1;
    }
-
+
 /*
  * eval - get the tokens for a conditional and evaluate it to 0 or 1.
  *  trigger is the preprocessing directive that triggered the evaluation;

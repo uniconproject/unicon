@@ -79,7 +79,7 @@ adjust_class_recs(recs)
          }
       }
 }
-
+
 
 static
 void
@@ -195,7 +195,7 @@ int trans(char *argv0)
 
    return __merr_errors;
    }
-
+
 /*
  * translate one file.
  */
@@ -240,7 +240,7 @@ char *filename;
    else
       yyparse();				/* Parse the input */
    }
-
+
 /*
  * writecheck - check the return code from a stdio output operation
  *
@@ -253,7 +253,7 @@ void writecheck(rc)
       quit("unable to write to icode file");
    }
 */
-
+
 /*
  * lnkdcl - find file locally or on LPATH and add to source list.
  */
@@ -272,7 +272,7 @@ char *name;
    else
       tfatal("cannot resolve reference to file name", name);
       }
-
+
 
 void src_file(name, srclist)
 char *name;

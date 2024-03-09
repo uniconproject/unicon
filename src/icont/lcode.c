@@ -71,7 +71,7 @@ word pc = 0;		/* simulated program counter */
 #define CodeCheck(n) if ((word)codep + (n) > (word)((word)codeb + maxcode))\
                      codeb = (char *) trealloc(codeb, &codep, &maxcode, 1,\
                        (n), "code buffer");
-
+
 /*
  * gencode - read .u1 file, resolve variable references, and generate icode.
  *  Basic process is to read each line in the file and take some action
@@ -499,7 +499,7 @@ static void setfile()
    fnmfree++;
    newline();
    }
-
+
 /*
  *  lemit - emit opcode.
  *  lemitl - emit opcode with reference to program label.
@@ -812,7 +812,7 @@ int nargs, ndyn, nstat, fstat;
          }
       }
    }
-
+
 #ifdef OVLD
 /*
  * This table contains the method names that allow us to do operator
@@ -1657,7 +1657,7 @@ void gentables()
       fprintf(stderr, "  total      %7ld\n", (long)tsize);
       }
    }
-
+
 /*
  * align() outputs zeroes as padding until pc is a multiple of WordSize.
  */
@@ -1679,7 +1679,7 @@ static void misalign()
    if ((pc + IntBits/ByteBits) % WordSize != 0)
       lemit(Op_Noop, "noop [pad]");
    }
-
+
 /*
  * intout(i) outputs i as an int that is used by the runtime system
  *  IntBits/ByteBits bytes must be moved from &word[0] to &codep[0].
@@ -1736,7 +1736,7 @@ static void shortout(short oint)
    }
 #endif					/* FieldTableCompression */
 
-
+
 /*
  * wordout(i) outputs i as a word that is used by the runtime system
  *  WordSize bytes must be moved from &oword[0] to &codep[0].
@@ -1759,7 +1759,7 @@ word oword;
    codep += WordSize;
    pc += WordSize;
    }
-
+
 /*
  * outblock(a,i) output i bytes starting at address a.
  */
@@ -1772,7 +1772,7 @@ int count;
    while (count--)
       *codep++ = *addr++;
    }
-
+
 #ifdef DeBugLinker
 /*
  * dumpblock(a,i) dump contents of i bytes at address a, used only
@@ -1791,7 +1791,7 @@ int count;
    putc('\n',dbgfile);
    }
 #endif					/* DeBugLinker */
-
+
 /*
  * flushcode - write buffered code to the output file.
  */
@@ -1802,7 +1802,7 @@ static void flushcode()
          quit("cannot write icode file");
    codep = codeb;
    }
-
+
 /*
  * clearlab - clear label table to all zeroes.
  */
@@ -1813,7 +1813,7 @@ static void clearlab()
    for (i = 0; i < maxlabels; i++)
       labels[i] = 0;
    }
-
+
 /*
  * backpatch - fill in all forward references to lab.
  */
@@ -1844,7 +1844,7 @@ int lab;
       }
    labels[lab] = pc;
    }
-
+
 #ifdef DeBugLinker
 void idump(s)		/* dump code region */
    char *s;

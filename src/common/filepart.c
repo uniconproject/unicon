@@ -60,7 +60,7 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
 #ifndef PathSep
    #define PathSep " ;"
 #endif					/* PathSep */
-
+
 static char *last_vetted_path;
 static char *vetted_PathSep;
 void vet_the_PathSep(char *s)
@@ -183,7 +183,7 @@ char *buf, *dir, *name, *extn;
    else
       return NULL;
    }
-
+
 /*
  * fparse - break a file name down into component parts.
  * Result is a pointer to a struct of static pointers good until the next call.
@@ -245,7 +245,7 @@ char *s;
 
    return &fp;
    }
-
+
 /*
  * makename - make a file name, optionally substituting a new dir and/or ext
  */
@@ -269,7 +269,7 @@ char *dest, *d, *name, *e;
 
    return dest;
    }
-
+
 /*
  * smatch - case-insensitive string match - returns nonzero if they match
  */

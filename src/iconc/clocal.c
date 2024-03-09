@@ -12,7 +12,7 @@
 /* place to put anything system specific */
 Deliberate Syntax Error
 #endif					/* PORT */
-
+
 #if MSDOS
 
 #if MICROSOFT
@@ -33,7 +33,7 @@ extern unsigned _stklen = 8192;
 #endif					/* TURBO */
 
 #endif					/* MSDOS */
-
+
 
 /*
  * End of operating-system specific code.

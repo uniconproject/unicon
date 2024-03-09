@@ -13,19 +13,19 @@
 
 #ifdef DosFncs
 #include "fxmsdos.ri"
-#endif					/* DosFncs */
+#endif                                  /* DosFncs */
 
 #ifdef PosixFns
 #include "fxposix.ri"
-#endif					/* POSIX interface functions */
+#endif                                  /* POSIX interface functions */
 
 /*
  * Always include - defines dummy functions if audio is not supported.
  */
 #include "fxaudio.ri"
-	
+
 #ifdef PatternType
 #include "fxpattrn.ri"
-#endif					/* (Snobol-style) Pattern data type */
+#endif                                  /* (Snobol-style) Pattern data type */
 
-/* static char junk;			/* avoid empty module */
+/* static char junk;                    /* avoid empty module */

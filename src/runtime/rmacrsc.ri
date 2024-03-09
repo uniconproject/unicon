@@ -18,15 +18,15 @@ wcp alc_context(wbp w)
 
    GRFX_ALLOC(wc, _wcontext);
    GRFX_LINK(wc, wcntxts);
-   
+
    /* set default values */
-   
+
    wc->contextPtr = malloc(sizeof ContextType);
    SETCONTEXTDEFAULT(wc->contextPtr);
-   
+
    return wc;
    }
-   
+
 /*
  * allocate a window state structure
  */
@@ -34,9 +34,9 @@ wsp alc_winstate()
    {
    int i;
    wsp ws;
-   
+
    GRFX_ALLOC(ws, _wstate);
-   ws->bits = 1024;				/* echo ON; others OFF */
+   ws->bits = 1024;                             /* echo ON; others OFF */
    ws->filep = nulldesc;
    ws->listp = nulldesc;
    GRFX_LINK(ws, wstates);
@@ -49,26 +49,26 @@ wsp alc_winstate()
 int free_window(wsp ws)
    {
    ws->refcount--;
-   if(ws->refcount == 0) 
+   if(ws->refcount == 0)
       {
-      if (ws->theWindow != nil) 
+      if (ws->theWindow != nil)
          {
-	      CloseWindow (ws->theWindow);
-	      DisposeWindow (ws->theWindow);
-	     }
+              CloseWindow (ws->theWindow);
+              DisposeWindow (ws->theWindow);
+             }
       GRFX_UNLINK(ws, wstates);
       }
    return 0;
    }
-   
-   
+
+
 /*
  * free a window context
  */
 void free_context(wcp wc)
    {
    wc->refcount--;
-   if(wc->refcount == 0) 
+   if(wc->refcount == 0)
       {
       GRFX_UNLINK(wc, wcntxts);
       }
@@ -80,13 +80,13 @@ void free_context(wcp wc)
 void drawstrng(wbp wb, int x, int y, char *str, int slen)
 {
   STDLOCALS (wb);
-    
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
   MoveTo (x, y);
   DrawText (str, 0, slen);
-  
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   MoveTo (x, y);
@@ -108,7 +108,7 @@ void getfntnam (wbp wb, char *answer)
 {
    Str255 fName;
    STDLOCALS(wb);
-   
+
    GetFontName (wc->contextPtr->txFont, fName);
    answer = PtoCstr (fName);
 }
@@ -150,7 +150,7 @@ wbp wb;
    wc->dy = wc2->dy;
    wc->fillstyle = wc2->fillstyle;
    wc->drawop = wc2->drawop;
-   
+
    return wc;
 }
 
@@ -165,26 +165,26 @@ void drawrectangles(wbp wb, XRectangle *recs, int nrecs)
   int i;
   Rect r;
   STDLOCALS (wb);
-    
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
-  for (i = 0; i < nrecs; i++) 
+  for (i = 0; i < nrecs; i++)
     {
     SetRect (&r, recs[i].x - 1,
-                 recs[i].y - 1, 
-                 recs[i].x - 1 + recs[i].width,            
+                 recs[i].y - 1,
+                 recs[i].x - 1 + recs[i].width,
                  recs[i].y - 1 + recs[i].height);
     FrameRect (&r);
     }
-    
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
-  for (i = 0; i < nrecs; i++) 
+  for (i = 0; i < nrecs; i++)
     {
     SetRect (&r, recs[i].x - 1,
-                 recs[i].y - 1, 
-                 recs[i].x - 1 + recs[i].width,            
+                 recs[i].y - 1,
+                 recs[i].x - 1 + recs[i].width,
                  recs[i].y - 1 + recs[i].height);
     FrameRect (&r);
     }
@@ -194,23 +194,23 @@ void drawrectangles(wbp wb, XRectangle *recs, int nrecs)
 }
 
 /*
- * drawpoints() - 
+ * drawpoints() -
  *  Parameters - the window binding for output, an array of points (assumed
  *               to be fixed up for bitmap) and the number of points
  */
-void drawpoints(wbinding *wb, XPoint *points, int npoints) 
+void drawpoints(wbinding *wb, XPoint *points, int npoints)
 {
    int i;
    STDLOCALS (wb);
-  
+
    SetPort (ws->theWindow);
    COPYCONTEXT(wc->contextPtr);
    for (i = 0; i < npoints; i++) {
       MoveTo (points[i].x-1, points[i].y-1);
       LineTo (points[i].x-1, points[i].y-1);
       }
-   
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < npoints; i++) {
@@ -223,13 +223,13 @@ void drawpoints(wbinding *wb, XPoint *points, int npoints)
 }
 
 /*
- * drawlines - 
+ * drawlines -
  */
 void drawlines(wbinding *wb, XPoint *points, int npoints)
 {
   int i;
   STDLOCALS (wb);
-    
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < (npoints - 1); i++)
@@ -237,8 +237,8 @@ void drawlines(wbinding *wb, XPoint *points, int npoints)
     MoveTo (points[i].x - 1, points[i].y - 1);
     LineTo (points[i+1].x - 1, points[i+1].y - 1);
     }
-  
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < (npoints - 1); i++)
@@ -254,11 +254,11 @@ void drawlines(wbinding *wb, XPoint *points, int npoints)
 /*
  * drawsegments() -
  */
-void drawsegments(wbinding *wb, XSegment *segs, int nsegs) 
+void drawsegments(wbinding *wb, XSegment *segs, int nsegs)
 {
   int i;
   STDLOCALS (wb);
-    
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < nsegs; i++)
@@ -266,8 +266,8 @@ void drawsegments(wbinding *wb, XSegment *segs, int nsegs)
     MoveTo (segs[i].x1 - 1, segs[i].y1 - 1);
     LineTo (segs[i].x2 - 1, segs[i].y2 - 1);
     }
-    
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < nsegs; i++)
@@ -288,7 +288,7 @@ void drawarcs(wbinding *wb, XArc *arcs, int narcs)
   int i;
   Rect r;
   STDLOCALS (wb);
-  
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < narcs; i++)
@@ -300,8 +300,8 @@ void drawarcs(wbinding *wb, XArc *arcs, int narcs)
     /* converts xarc spec to mac arc apec then pass it to FrameArc */
     FrameArc (&r, (360 - arcs[i].angle1*64 + 90), arcs[i].angle2*64 * -1);
     }
-    
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < narcs; i++)
@@ -320,12 +320,12 @@ void drawarcs(wbinding *wb, XArc *arcs, int narcs)
 /*
  * fillarcs
  */
-void fillarcs(wbp wb, XArc *arcs, int narcs) 
+void fillarcs(wbp wb, XArc *arcs, int narcs)
 {
   int i;
   Rect r;
   STDLOCALS (wb);
-  
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < narcs; i++)
@@ -338,8 +338,8 @@ void fillarcs(wbp wb, XArc *arcs, int narcs)
     FillArc (&r, (360 - arcs[i].angle1*64 + 90), arcs[i].angle2*64 * -1,
        &wc->contextPtr->fillPat);
     }
-    
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   for (i = 0; i < narcs; i++)
@@ -373,54 +373,54 @@ void fillpolygon(wbp wb, XPoint *pts, int npts)
     }
   MoveTo (pts[0].x, pts[0].y);
   ClosePoly ();
-  
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
   FillPoly (myPoly, &wc->contextPtr->fillPat);
 
-/*begin quote*/  
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
   FillPoly (myPoly, &wc->contextPtr->fillPat);
   UnlockPixels (ws->offScreenPMHandle);
   SetGWorld (ws->origPort, ws->origDev);
 /*end quote*/
-  
-  KillPoly (myPoly); 
+
+  KillPoly (myPoly);
 }
 
 /*
  * fillrectangles
  *  Parameters - the window binding for output, an array of rectangle
  *               structures (assumed to be fixed up for the bitmap),
- *               a count of the number of structures -> the number of 
- *               rectangles 
+ *               a count of the number of structures -> the number of
+ *               rectangles
  */
 void fillrectangles(wbp wb, XRectangle *recs, int nrecs)
 {
   int i;
   Rect r;
   STDLOCALS (wb);
-    
+
   SetPort (ws->theWindow);
   COPYCONTEXT (wc->contextPtr);
-  for (i = 0; i < nrecs; i++) 
+  for (i = 0; i < nrecs; i++)
     {
     SetRect (&r, recs[i].x - 1,
-                 recs[i].y - 1, 
-                 recs[i].x - 1 + recs[i].width,            
+                 recs[i].y - 1,
+                 recs[i].x - 1 + recs[i].width,
                  recs[i].y - 1 + recs[i].height);
     PaintRect (&r);
     }
-    
-/*begin quote*/  
+
+/*begin quote*/
   PREPAREGWORLD (ws);
   COPYCONTEXT (wc->contextPtr);
-  for (i = 0; i < nrecs; i++) 
+  for (i = 0; i < nrecs; i++)
     {
     SetRect (&r, recs[i].x - 1,
-                 recs[i].y - 1, 
-                 recs[i].x - 1 + recs[i].width,            
+                 recs[i].y - 1,
+                 recs[i].x - 1 + recs[i].width,
                  recs[i].y - 1 + recs[i].height);
     PaintRect (&r);
     }
@@ -442,10 +442,10 @@ int SetPattern (wbp w, char *name, int len)
 {
 }
 
-/* 
+/*
  * Event processing
  */
- 
+
 int pollevent ()
 {
     GetEvents ();
@@ -459,7 +459,7 @@ void GetEvents ()
    struct descrip d;
    int eventCode = 0;
    Point newMouseLoc;
-   
+
    done = false;
    while (!done) {
       if (WaitNextEvent (everyEvent, &event, kSleep, nil))
@@ -484,14 +484,14 @@ void GetEvents ()
                      }
                   MakeInt (eventCode, &d);
                   qevent (gMouseInfo.ws, &d,
-                          gMouseInfo.where.h, gMouseInfo.where.v, 
+                          gMouseInfo.where.h, gMouseInfo.where.v,
                           gMouseInfo.when, gMouseInfo.modKey);
-                  }					/* if (newMouseLoc ...) */
-               }					/* if (StillDown ...) */
+                  }                                     /* if (newMouseLoc ...) */
+               }                                        /* if (StillDown ...) */
             else {
                gMouseInfo.wasDown = false;
                }
-            }					/* if (wasDown ...) */
+            }                                   /* if (wasDown ...) */
          done = true;
          }
       }
@@ -501,29 +501,29 @@ void DoEvent (EventRecord *eventPtr)
 {
    char theChar;
    Boolean becomingActive;
-  
+
    switch (eventPtr->what) {
       case mouseDown:
          DoMouseDown (eventPtr);
          break;
-      
+
       case mouseUp:
          DoMouseUp (eventPtr);
          break;
-         
+
       case autoKey:
       case keyDown:
          theChar = eventPtr->message & charCodeMask;
-         if ( (eventPtr->modifiers & cmdKey) != 0) 
+         if ( (eventPtr->modifiers & cmdKey) != 0)
             HandleMenuChoice (MenuKey (theChar));
          else
             DoKey (eventPtr, FrontWindow ());
          break;
-      
+
       case updateEvt:
          DoUpdate (eventPtr);
          break;
-      
+
       case activateEvt:
          becomingActive = ( (eventPtr->modifiers & activeFlag) == activeFlag);
          DoActivate ( (WindowPtr)eventPtr->message, becomingActive);
@@ -540,7 +540,7 @@ void DoMouseUp (EventRecord *eventPtr)
    struct descrip d;
    wbp         wb;
    wsp         ws;
-   
+
    thePart = FindWindow (eventPtr->where, &whichWindow);
    if (thePart == inContent) {
       SelectWindow (whichWindow);
@@ -551,22 +551,22 @@ void DoMouseUp (EventRecord *eventPtr)
       if ( ((eventPtr->modifiers & optionKey) ==0) && ((eventPtr->modifiers & cmdKey) == 0) )
          eventCode = MOUSELEFTUP;
       MakeInt(eventCode,&d);
-      
+
       if ((eventPtr->modifiers & controlKey)!=0) modKey |= ControlMask;
       if ((eventPtr->modifiers & shiftKey)!=0) modKey |= ShiftMask;
       if ((eventPtr->modifiers & optionKey)!=0) modKey |= Mod1Mask;
-      
+
       for (wb = wbndngs; wb; wb = wb->next) {
          ws = wb->window;
          if (ws->theWindow == whichWindow) {
             qevent(ws, &d,
-                   eventPtr->where.h, eventPtr->where.v, 
+                   eventPtr->where.h, eventPtr->where.v,
                    (uword)(eventPtr->when), modKey);
             }
          }
       }
 }
-      
+
 void DoMouseDown (EventRecord *eventPtr)
 {
    WindowPtr   whichWindow;
@@ -578,63 +578,63 @@ void DoMouseDown (EventRecord *eventPtr)
    wbp         wb;
    wsp         ws;
    Point       newMouseLoc;
-   
+
    thePart = FindWindow (eventPtr->where, &whichWindow);
    switch (thePart) {
       case inGoAway:
          DisposeWindow (whichWindow);
          break;
-            
+
       case inMenuBar:
          menuChoice = MenuSelect (eventPtr->where);
          HandleMenuChoice (menuChoice);
          break;
-    
+
       case inSysWindow:
          SystemClick (eventPtr, whichWindow);
          break;
-      
+
       case inDrag:
          DragWindow (whichWindow, eventPtr->where, &qd.screenBits.bounds);
          break;
-         
+
       case inGrow:
          DoGrowWindow (eventPtr, whichWindow);
          break;
-      
+
       case inContent:
          SelectWindow (whichWindow);
          SetPort (whichWindow);
          GlobalToLocal (&eventPtr->where);
-         
+
          /* left  = click
             mid   = option-click
             right = command-click */
-            
+
          if ( ((eventPtr->modifiers & cmdKey) != 0) && ((eventPtr->modifiers & optionKey) ==0) )
             eventCode = MOUSERIGHT;
          if ( ((eventPtr->modifiers & optionKey) !=0) && ((eventPtr->modifiers & cmdKey) == 0) )
             eventCode = MOUSEMID;
          if ( ((eventPtr->modifiers & optionKey) ==0) && ((eventPtr->modifiers & cmdKey) == 0) )
             eventCode = MOUSELEFT;
-         
+
          MakeInt(eventCode,&d);
-         
+
          if ((eventPtr->modifiers & controlKey)!=0) modKey |= ControlMask;
          if ((eventPtr->modifiers & shiftKey)!=0) modKey |= ShiftMask;
          if ((eventPtr->modifiers & optionKey)!=0) modKey |= Mod1Mask;
-         
+
          for (wb = wbndngs; wb; wb = wb->next) {
             ws = wb->window;
             if (ws->theWindow == whichWindow) {
                qevent(ws, &d,
-                        eventPtr->where.h, eventPtr->where.v, 
+                        eventPtr->where.h, eventPtr->where.v,
                         (uword)(eventPtr->when), modKey);
                gMouseInfo.ws = ws;
                break;
                }
             }
-         
+
          gMouseInfo.wasDown = true;
          gMouseInfo.when = (uword)(eventPtr->when);
          gMouseInfo.where = eventPtr->where;
@@ -644,30 +644,30 @@ void DoMouseDown (EventRecord *eventPtr)
 }
 
 void DoKey (EventRecord *eventPtr, WindowPtr whichWindow)
-{  
+{
    char theChar;
    int  modKey = 0;
    wbp  wb;
    wsp  ws;
    struct descrip d;
-   
+
    if (whichWindow == nil) return;
-   
+
    modKey = 0;
    theChar = eventPtr->message & charCodeMask;
    StrLen(d) = 1;
    StrLoc(d) = (char *)&allchars[theChar];
-   
+
    if ((eventPtr->modifiers & controlKey)!=0) modKey |= ControlMask;
    if ((eventPtr->modifiers & shiftKey)!=0) modKey |= ShiftMask;
    if ((eventPtr->modifiers & optionKey)!=0) modKey |= Mod1Mask;
-   
+
    for (wb = wbndngs; wb; wb = wb->next) {
       ws = wb->window;
       if (ws->theWindow == whichWindow) {
          qevent(ws, &d,
-	        wb->context->contextPtr->pnLoc.h,
-		wb->context->contextPtr->pnLoc.v,
+                wb->context->contextPtr->pnLoc.h,
+                wb->context->contextPtr->pnLoc.v,
                 (uword)(eventPtr->when), modKey);
          }
       }
@@ -681,7 +681,7 @@ void DoGrowWindow (EventRecord *eventPtr, WindowPtr whichWindow)
    wsp ws;
    wcp wc;
    RgnHandle locUpdateRgn;
-   
+
    SetRect (&limitRect, kMinDocSize, kMinDocSize, kMaxDocSize, kMaxDocSize);
    growSize = GrowWindow (whichWindow, eventPtr->where, &limitRect);
 
@@ -689,12 +689,12 @@ void DoGrowWindow (EventRecord *eventPtr, WindowPtr whichWindow)
       for (wb = wbndngs; wb; wb = wb->next) {
          ws = wb->window;
          wc = wb->context;
-         if (ws->theWindow == whichWindow) { 
+         if (ws->theWindow == whichWindow) {
             SizeWindow (whichWindow, LoWord(growSize), HiWord(growSize), true);
             InvalRect (&(ws->theWindow->portRect));
             return;
             }
-         } 
+         }
       }
 }
 
@@ -708,11 +708,11 @@ void HandleMenuChoice (long menuChoice)
 {
    short menu;
    short item;
-   
+
    if (menuChoice != 0) {
       menu = HiWord (menuChoice);
       item = LoWord (menuChoice);
-      
+
       switch (menu) {
          case kAppleMenu:
             HandleAppleChoice (item);
@@ -733,7 +733,7 @@ void HandleAppleChoice (short item)
    MenuHandle  appleMenu;
    Str255      accName;
    short       accNumber;
-   
+
    switch (item) {
       case kAboutMItem:
          SysBeep (20);
@@ -758,7 +758,7 @@ void HandleFileChoice (short item)
    char buf[256];
    char *tmpStr;
    MenuHandle menu;
-   
+
    switch (item) {
       case kQuitMItem:
          abort ();
@@ -782,7 +782,7 @@ void HandleFileChoice (short item)
             }
          else
             break;
-         
+
          tmpStr = malloc (strlen ("ICONX ") + strlen (fileName) + 1 + strlen (cmlArgs) + 1);
          strcpy (tmpStr, "ICONX ");
          strcat (tmpStr, fileName);
@@ -790,7 +790,7 @@ void HandleFileChoice (short item)
          strcat (tmpStr, cmlArgs);
          sprintf (buf, "%#s", tmpStr);
          argc = ParseCmdLineStr (buf, tmpStr, argv);
-         
+
          MacMain (argc, argv);
          break;
       }
@@ -809,7 +809,7 @@ void HandleOptionsChoice (short item)
    Rect itemRect;
    char *tmpStr;
    Str255 itemText;
-   
+
    switch (item) {
       case kRInMItem:
          typeList[0] = 'TEXT';
@@ -840,16 +840,16 @@ void HandleOptionsChoice (short item)
 
          GetDItem (dialog, kArgStringField, &itemType, &textItemHandle, &itemRect);
          GetDItem (dialog, ok, &itemType, &okItemHandle, &itemRect);
-         
+
          textHandle = GetString (kStringID);
          HLock ((Handle) textHandle);
          SetIText (textItemHandle, *textHandle);
          HUnlock ((Handle) textHandle);
          SelIText (dialog, kArgStringField, 0, 32767);
-            
+
          ShowWindow (dialog);
          SetPort (dialog);
-         
+
          SetDialogDefaultItem (dialog, ok);
          SetDialogCancelItem (dialog, cancel);
          SetDialogTracksCursor (dialog, true);
@@ -865,14 +865,14 @@ void HandleOptionsChoice (short item)
             }
          if (itemHit == ok) {
             GetIText (textItemHandle, itemText);
-            
+
             SetHandleSize ((Handle) textHandle, (Size) (itemText[0] + 1));
             HLock ((Handle) textHandle);
             GetIText (textItemHandle, *textHandle);
             HUnlock ((Handle) textHandle);
             ChangedResource ((Handle) textHandle);
             WriteResource ((Handle) textHandle);
-            
+
             tmpStr = PtoCstr (itemText);
             cmlArgs = malloc (strlen (tmpStr) + 1);
             strcpy (cmlArgs, tmpStr);
@@ -884,11 +884,11 @@ void HandleOptionsChoice (short item)
          break;
       }
 }
-      
+
 void DoUpdate (EventRecord *eventPtr)
 {
    WindowPtr  whichWindow;
-   
+
    whichWindow = (WindowPtr)eventPtr->message;
 
    BeginUpdate (whichWindow);
@@ -906,7 +906,7 @@ void RedrawWindow (WindowPtr whichWindow)
    wcp wc;
    wbp wb;
    GWorldFlags updateOK;
-   
+
    for (wb = wbndngs; wb; wb = wb->next) {
       ws = wb->window;
       wc = wb->context;
@@ -927,31 +927,31 @@ void RedrawWindow (WindowPtr whichWindow)
 
 static int ParseCmdLineStr(char *s, char *t, char **argv)
 {
-	int c, quote = 0, argc = 0;
-		
-	while (c = *s++) {
-		if (c == ' ')
-			continue;
-		if (argc < kNARGS)
-			argv[argc++] = t;
-		do {
-			if (c == '\\' && *s)
-				c = *s++;
-			else if (c == '"' || c == '\'') {
-				if (!quote) {
-					quote = c;
-					continue;
-				}
-				if (c == quote) {
-					quote = 0;
-					continue;
-				}
-			}
-			*t++ = c;
-		} while (*s && ((c = *s++) != ' ' || quote));
-		*t++ = 0;
-	}
-	return(argc);
+        int c, quote = 0, argc = 0;
+
+        while (c = *s++) {
+                if (c == ' ')
+                        continue;
+                if (argc < kNARGS)
+                        argv[argc++] = t;
+                do {
+                        if (c == '\\' && *s)
+                                c = *s++;
+                        else if (c == '"' || c == '\'') {
+                                if (!quote) {
+                                        quote = c;
+                                        continue;
+                                }
+                                if (c == quote) {
+                                        quote = 0;
+                                        continue;
+                                }
+                        }
+                        *t++ = c;
+                } while (*s && ((c = *s++) != ' ' || quote));
+                *t++ = 0;
+        }
+        return(argc);
 }
 
 /*

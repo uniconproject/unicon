@@ -25,7 +25,7 @@ wdp wdsplys;
 
 #ifdef ConsoleWindow
 extern void closelog();
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 void wfreersc();
 void SetDCPixelFormat(HDC h);
 int alc_rgb(wbp w, SysColor rgb);
@@ -57,7 +57,7 @@ HPALETTE palette;
 int numColors = 0;
 
 char szAppName[] = "Icon";
-
+
 /*
  * pattern symbols
  */
@@ -116,7 +116,7 @@ stringint siLineTypes[] = {
   {"solid",             PS_SOLID},
   {"striped",           PS_DOT}
 };
-
+
 HINSTANCE mswinInstance;
 int ncmdShow;
 
@@ -261,7 +261,7 @@ int mswinsystem(char *s)
     */
       argc = CmdParamToArgv(s, &argv, 0);
       if (argv[0][0] == '\"') strcpy(cmd, argv[0]+1);
-	else strcpy(cmd, argv[0]);
+        else strcpy(cmd, argv[0]);
       if (cmd[strlen(cmd)-1] == '\"') cmd[strlen(cmd)-1] = '\0';
 
       rv = _spawnvp(_P_WAIT, cmd, (const char* const*) argv);
@@ -289,7 +289,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    tended struct descrip attrrslt;
    HDC hdc, hdc2, hdc3;
    DWORD winstyles = 0;
-   TEXTMETRIC	metrics;
+   TEXTMETRIC   metrics;
    LOGPALETTE logpal[4]; /* really 1 + space for an extra palette entry */
    HBRUSH brush;
    HBITMAP oldpix, oldpix2;
@@ -315,7 +315,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       *err_idx = -2;
       return NULL;
       }
-   
+
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *) tlp;
    ws->width = ws->height = 0;
@@ -325,27 +325,27 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    if (is_3d) {
       /* create an empty list for list of function calls */
       if (create_display_list(w, 40000) == Failed) {
-	 *err_idx = -2;
-	 return NULL;
-	 }
+         *err_idx = -2;
+         return NULL;
+         }
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    /*
     * process the passed in attributes - by calling wattrib
     */
    for(i = 0; i < n; i++)
       switch (wattrib(w, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt,
-			answer)) {
+                        answer)) {
       case Failed:
-	 wclose(w); /* suspicious; didn't get it opened OK */
-	 set_errortext(145);
-	 *err_idx = -1;
-	 return NULL;
+         wclose(w); /* suspicious; didn't get it opened OK */
+         set_errortext(145);
+         *err_idx = -1;
+         return NULL;
       case RunError:
-	 *err_idx = i;
-	 return NULL;
-	 }
+         *err_idx = i;
+         return NULL;
+         }
 
    /*
     * set the title, defaulting to the "filename" supplied to open()
@@ -369,11 +369,11 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       winstyles |= WS_VISIBLE;
 */
    ws->iconwin = CreateWindow( UNICONX, ws->windowlabel,
-		   winstyles,
-		   ws->posx, ws->posy,
-		   ws->width == 0 ? 400 : ws->width + BORDWIDTH,
-		   ws->height == 0 ? 400: ws->height + BORDHEIGHT + 1,
-		   NULL, NULL, mswinInstance, NULL);
+                   winstyles,
+                   ws->posx, ws->posy,
+                   ws->width == 0 ? 400 : ws->width + BORDWIDTH,
+                   ws->height == 0 ? 400: ws->height + BORDHEIGHT + 1,
+                   NULL, NULL, mswinInstance, NULL);
    hdc = GetDC(ws->iconwin);
    if ((GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) && (numColors == 0)){
       /* This window is on a device that supports palettes */
@@ -418,10 +418,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       if (!ws->width) ws->width = FWIDTH(w) * 80;
       if (!ws->height) ws->height = FHEIGHT(w) * 12;
       SetWindowPos(ws->iconwin, ws->iconwin,
-		   ws->posx,
-		   ws->posy,
-		   ws->width + BORDWIDTH, ws->height + BORDHEIGHT + 1,
-		   SWP_NOZORDER);
+                   ws->posx,
+                   ws->posy,
+                   ws->width + BORDWIDTH, ws->height + BORDHEIGHT + 1,
+                   SWP_NOZORDER);
       }
    if (!ws->pix) {
       hdc = GetDC(ws->iconwin);
@@ -447,7 +447,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       create3Dcontext(w);
       ReleaseDC(ws->iconwin, hdc);
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    if (!ISTOBEHIDDEN(ws)) {
       ws->win = ws->iconwin;
@@ -486,9 +486,9 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       if (palette) {
          SelectPalette(hdc, palette, FALSE);
          SelectPalette(hdc2, palette, FALSE);
-	 RealizePalette(hdc);
-	 RealizePalette(hdc2);
-	 }
+         RealizePalette(hdc);
+         RealizePalette(hdc2);
+         }
       brush = CreateBrushIndirect(&(wc->bgbrush));
       if (ws->win)
          FillRect(hdc, &rec, brush);
@@ -500,17 +500,17 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
 
       imd = &ws->initimage;
       if (imd->width) {
-	 r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
-		      imd->data, (word)imd->width * (word)imd->height, 0);
-	 if (imd->paltbl)
-	    free((pointer)imd->paltbl);
-	 free((pointer)imd->data);
-	 imd->width = 0;
-	 if (r < 0) {
-	    *err_idx = -1; /* review. when does strimage fail? */
-	    return 0;
-	    }
-	 }
+         r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
+                      imd->data, (word)imd->width * (word)imd->height, 0);
+         if (imd->paltbl)
+            free((pointer)imd->paltbl);
+         free((pointer)imd->data);
+         imd->width = 0;
+         if (r < 0) {
+            *err_idx = -1; /* review. when does strimage fail? */
+            return 0;
+            }
+         }
       }
    if (ws->win)
       UpdateWindow(ws->win);
@@ -528,7 +528,7 @@ int handle_config(wbp w, UINT msg, WPARAM wp, LPARAM lp)
       if (ws->win) {
          SetWindowText(ws->win, ws->iconlabel);
          ws->win = NULL;
-	 }
+         }
       return 1;
       }
 
@@ -558,13 +558,13 @@ int handle_config(wbp w, UINT msg, WPARAM wp, LPARAM lp)
    if(ws->is_3D) {
       HDC tmpdc = GetDC(ws->iconwin);
       double tb = 0.125 * ws->height / ws->width;
-#ifdef GraphicsGL 
+#ifdef GraphicsGL
       wglMakeCurrent(tmpdc, w->window->ctx);
       SetWindowSize(w);
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       ReleaseDC(ws->iconwin, tmpdc);
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
    if (! resizePixmap(w, ws->width, ws->height)) return 0;
    if (!ISEXPOSED(w)) {
       SETEXPOSED(w);
@@ -606,8 +606,8 @@ void handle_child(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
       }
    case EN_SETFOCUS: case EN_KILLFOCUS: case EN_CHANGE: case EN_UPDATE:
    case EN_ERRSPACE: case EN_MAXTEXT: case EN_HSCROLL: case EN_VSCROLL: {
-	return;
-      }      
+        return;
+      }
    default: { /* scrollbar */
       x = y = msg;
       }
@@ -692,11 +692,11 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
    switch(msg) {
    case WM_MOUSEMOVE: /* only called if one of these three cases is true */
       if (MK_LBUTTON & wp)
-	 eventcode = MOUSELEFTDRAG;
+         eventcode = MOUSELEFTDRAG;
       else if (MK_RBUTTON & wp)
-	 eventcode = MOUSERIGHTDRAG;
+         eventcode = MOUSERIGHTDRAG;
       else if (MK_MBUTTON & wp)
-	 eventcode = MOUSEMIDDRAG;
+         eventcode = MOUSEMIDDRAG;
       else eventcode = MOUSEMOVED;
       break;
    case WM_LBUTTONDOWN: {
@@ -704,8 +704,8 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
       pt.y = y;
       win = ChildWindowFromPoint(ws->win,pt);
       if ((win!=NULL) && (win != GetFocus())) {
-	 SetFocus(win);
-	 }
+         SetFocus(win);
+         }
       }
       eventcode = MOUSELEFT;
       break;
@@ -759,10 +759,10 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       wfreersc();
 #ifdef ConsoleWindow
       closelog();
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
       }
    else if (!wb) {
-      /* 
+      /*
        * doesn't look like its for one of our windows, pass it to
        * DefWindowProc and hope for the best.
        */
@@ -783,46 +783,46 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
          ReleaseDC(hwnd, hdc);
          }
       else {
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
       hdc = BeginPaint(hwnd, &ps);
       GetClientRect(hwnd, &rect);
       if (IsIconic(hwnd)) {
          HBRUSH hb = CreateBrushIndirect(&(wb->context->brush));
-	 FrameRect(hdc, &rect, hb);
-	 DeleteObject(hb);
-	 DrawText(hdc, "Iconx", 5, &rect, DT_WORDBREAK);
-	 }
+         FrameRect(hdc, &rect, hb);
+         DeleteObject(hb);
+         DrawText(hdc, "Iconx", 5, &rect, DT_WORDBREAK);
+         }
       else {
          HBITMAP oldpix;
-	 hdc2 = CreateCompatibleDC(hdc);
-	 oldpix = SelectObject(hdc2, ws->pix);
-	 BitBlt(hdc, rect.left, rect.top,
-		rect.right - rect.left + 1, rect.bottom - rect.top + 1,
-		hdc2, rect.left, rect.top, SRCCOPY);
+         hdc2 = CreateCompatibleDC(hdc);
+         oldpix = SelectObject(hdc2, ws->pix);
+         BitBlt(hdc, rect.left, rect.top,
+                rect.right - rect.left + 1, rect.bottom - rect.top + 1,
+                hdc2, rect.left, rect.top, SRCCOPY);
          SelectObject(hdc2, oldpix);
-	 DeleteDC(hdc2);
-	 }
+         DeleteDC(hdc2);
+         }
       EndPaint(hwnd, &ps);
 #ifdef Graphics3D
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
       return 0;
    case WM_MOUSEMOVE:
       if (ws->curcursor)
          SetCursor(ws->curcursor);
       if ((ws->inputmask & PointerMotionMask) ||
-	  ((MK_LBUTTON | MK_RBUTTON | MK_MBUTTON) & wp))
-	 handle_mouse(wb,msg,wp,lp);
+          ((MK_LBUTTON | MK_RBUTTON | MK_MBUTTON) & wp))
+         handle_mouse(wb,msg,wp,lp);
       return 0;
    case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: case WM_MBUTTONDOWN:
       handle_mouse(wb,msg,wp,lp);
 #ifdef Graphics3D
       if (wb->context->rendermode == UGL3D && wb->context->app_use_selection3D){
-	  wb->context->selectionrendermode = 1;
-	  redraw3D(wb);
-	  wb->context->selectionrendermode = 0;
-	  }
-#endif					/* Graphics3D */
+          wb->context->selectionrendermode = 1;
+          redraw3D(wb);
+          wb->context->selectionrendermode = 0;
+          }
+#endif                                  /* Graphics3D */
       return 0;
    case WM_LBUTTONUP:   case WM_RBUTTONUP:   case WM_MBUTTONUP:
       handle_mouse(wb,msg,wp,lp);
@@ -830,43 +830,43 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 #ifndef NoMouseWheel
    case WM_MOUSEWHEEL:
       if (1 /* ws->inputmask & MouseWheelMask */) {
-	 /* generate a SCROLLUP or SCROLLDOWN */
-	 short wp1 = LOWORD(wp), wp2 = HIWORD(wp);
+         /* generate a SCROLLUP or SCROLLDOWN */
+         short wp1 = LOWORD(wp), wp2 = HIWORD(wp);
 
          if (wp2 > 0) { /* page ups */
-	    do {
-	       handle_mouse(wb, WM_MOUSEWHEEL, wp, lp);
-	       wp2 -= 120;
+            do {
+               handle_mouse(wb, WM_MOUSEWHEEL, wp, lp);
+               wp2 -= 120;
                } while (wp2 > 0);
             }
          else { /* page downs */
-	    do {
-	       handle_mouse(wb, WM_MOUSEWHEEL, wp, lp);
-	       wp2 += 120;
+            do {
+               handle_mouse(wb, WM_MOUSEWHEEL, wp, lp);
+               wp2 += 120;
                } while (wp2 < 0);
             }
          }
       else {
-	 /* convert this into a pgup or pgdn */
-	 short wp1 = LOWORD(wp), wp2 = HIWORD(wp);
+         /* convert this into a pgup or pgdn */
+         short wp1 = LOWORD(wp), wp2 = HIWORD(wp);
 
          if (wp2 > 0) { /* page ups */
-	    while (wp2 > 0) {
-	       handle_keypress(wb, WM_KEYDOWN, VK_PRIOR, lp, 0);
-	       handle_keypress(wb, WM_KEYUP, VK_PRIOR, lp, 0);
-	       wp2 -= 120;
+            while (wp2 > 0) {
+               handle_keypress(wb, WM_KEYDOWN, VK_PRIOR, lp, 0);
+               handle_keypress(wb, WM_KEYUP, VK_PRIOR, lp, 0);
+               wp2 -= 120;
                }
             }
          else { /* page downs */
-	    while (wp2 < 0) {
-	       handle_keypress(wb, WM_KEYDOWN/*msg*/, VK_NEXT, lp, 0);
-	       handle_keypress(wb, WM_KEYUP/*msg*/, VK_NEXT, lp, 0);
-	       wp2 += 120;
+            while (wp2 < 0) {
+               handle_keypress(wb, WM_KEYDOWN/*msg*/, VK_NEXT, lp, 0);
+               handle_keypress(wb, WM_KEYUP/*msg*/, VK_NEXT, lp, 0);
+               wp2 += 120;
                }
             }
          }
       return 0;
-#endif					/* WM_MOUSEWHEEL */
+#endif                                  /* WM_MOUSEWHEEL */
    case WM_KEYUP:
       if (ws->inputmask & KeyReleaseMask) handle_keypress(wb, msg, wp, lp, 0);
       return 0;
@@ -880,11 +880,11 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       case VK_INSERT: case VK_SELECT: case VK_PRINT:
       case VK_EXECUTE: case VK_SNAPSHOT: case VK_HELP: case VK_SEPARATOR:
       case VK_CLEAR: case VK_PAUSE: case VK_SCROLL:
-	 handle_keypress(wb, msg, wp, lp, 0);
-	 return 0;
+         handle_keypress(wb, msg, wp, lp, 0);
+         return 0;
       case VK_DELETE:
-	 handle_keypress(wb, WM_CHAR, '\177', lp, 0);
-	 return 0;
+         handle_keypress(wb, WM_CHAR, '\177', lp, 0);
+         return 0;
       default:
          if (ws->inputmask & KeyReleaseMask) {
             handle_keypress(wb, msg, wp, lp, 0);
@@ -902,14 +902,14 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       case VK_INSERT: case VK_DELETE: case VK_SELECT: case VK_PRINT:
       case VK_EXECUTE: case VK_SNAPSHOT: case VK_HELP: case VK_SEPARATOR:
       case VK_CLEAR: case VK_PAUSE:
-	 handle_keypress(wb, msg, wp, lp, 1);
-	 return 0;
+         handle_keypress(wb, msg, wp, lp, 1);
+         return 0;
       default:
          if (ws->inputmask & KeyReleaseMask) {
             handle_keypress(wb, msg, wp, lp, 0);
             return 0;
             }
-	}
+        }
       break;
    case WM_CHAR:
       handle_keypress(wb, msg, wp, lp, 0);
@@ -928,7 +928,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       for(n=0; n < ws->nChildren && ws->child[n].win != (HWND)(word)(short)LOWORD (lp); n++){
          }
       if (n == ws->nChildren) break;
-      i = GetScrollPos(ws->child[n].win, SB_CTL);      
+      i = GetScrollPos(ws->child[n].win, SB_CTL);
       GetScrollRange(ws->child[n].win, SB_CTL, &imin, &imax);
       switch (LOWORD(wp)) {
       case SB_PAGEDOWN :
@@ -936,16 +936,16 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       case SB_LINEDOWN :
          if (i < imax) {
             SetScrollPos(ws->child[n].win, SB_CTL,
-	       GetScrollPos(ws->child[n].win, SB_CTL) + 1, TRUE);
-	    }
+               GetScrollPos(ws->child[n].win, SB_CTL) + 1, TRUE);
+            }
          break;
       case SB_PAGEUP :
          break;
       case SB_LINEUP :
          if (i > imin) {
             SetScrollPos(ws->child[n].win, SB_CTL,
-	       GetScrollPos(ws->child[n].win, SB_CTL) - 1, TRUE);
-	    }
+               GetScrollPos(ws->child[n].win, SB_CTL) - 1, TRUE);
+            }
          break;
       case SB_TOP :
          SetScrollPos(ws->child[n].win, SB_CTL, imin, TRUE);
@@ -964,7 +964,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       default : /* potentially a problem here */
          break;
       }
-      i = GetScrollPos(ws->child[n].win, SB_CTL);      
+      i = GetScrollPos(ws->child[n].win, SB_CTL);
       handle_child(wb, i, n+1, -1);
       break;
    case WM_COMMAND:
@@ -994,22 +994,22 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             ws->savedcursor = SetCursor(ws->curcursor);
          else (void) SetCursor(ws->curcursor);
          if (ISCURSORON(wb)) {
-	    CreateCaret(ws->iconwin, NULL, FWIDTH(wb), FHEIGHT(wb));
-	    SetCaretPos(ws->x, ws->y - ASCENT(wb));
-	    SetCaretBlinkTime(500);
-	    ShowCaret(ws->iconwin);
-	    ws->hasCaret = 1;
+            CreateCaret(ws->iconwin, NULL, FWIDTH(wb), FHEIGHT(wb));
+            SetCaretPos(ws->x, ws->y - ASCENT(wb));
+            SetCaretBlinkTime(500);
+            ShowCaret(ws->iconwin);
+            ws->hasCaret = 1;
             }
-	 }
+         }
       break;
    case WM_GETMINMAXINFO: {
       MINMAXINFO *mmi = (MINMAXINFO *)lp;
       if (! ISRESIZABLE(wb)) {
-	 mmi->ptMinTrackSize.x = mmi->ptMaxTrackSize.x =
-	    ws->width + BORDWIDTH;
-	 mmi->ptMinTrackSize.y = mmi->ptMaxTrackSize.y =
-	    ws->height + BORDHEIGHT + 1;
-	 }
+         mmi->ptMinTrackSize.x = mmi->ptMaxTrackSize.x =
+            ws->width + BORDWIDTH;
+         mmi->ptMinTrackSize.y = mmi->ptMaxTrackSize.y =
+            ws->height + BORDHEIGHT + 1;
+         }
       return 0;
       }
    case WM_KILLFOCUS:
@@ -1023,22 +1023,22 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       if (ws->focusChild)
          SetFocus(ws->focusChild);
       else if (ISCURSORON(wb)) {
-	 CreateCaret(ws->iconwin, NULL, FWIDTH(wb), FHEIGHT(wb));
-	 SetCaretPos(ws->x, ws->y - ASCENT(wb));
-	 SetCaretBlinkTime(500);
-	 ShowCaret(ws->iconwin);
-	 ws->hasCaret = 1;
+         CreateCaret(ws->iconwin, NULL, FWIDTH(wb), FHEIGHT(wb));
+         SetCaretPos(ws->x, ws->y - ASCENT(wb));
+         SetCaretBlinkTime(500);
+         ShowCaret(ws->iconwin);
+         ws->hasCaret = 1;
          }
       break;
    case WM_CLOSE: {
         if (ws->inputmask & WindowClosureMask) {
-	   struct descrip d;
-	   MakeInt(WINDOWCLOSED, &d);
-	   qevent(ws, &d, 0, 0, 0, 0);
-	   return 0;
-	   }
-	break;
-	}
+           struct descrip d;
+           MakeInt(WINDOWCLOSED, &d);
+           qevent(ws, &d, 0, 0, 0, 0);
+           return 0;
+           }
+        break;
+        }
 
    /* case WM_QUIT is handled prior to the switch*/
    case WM_DESTROY: {
@@ -1047,30 +1047,30 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       struct wbind_list *wbl, *t, *b;
 
       if (ws->win == hwnd)
-	 ws->win = NULL;
+         ws->win = NULL;
       if (ws->iconwin == hwnd)
-	 ws->iconwin = NULL;
+         ws->iconwin = NULL;
       SETCLOSED((wbp)wb);
 
       while (w->window->children) {
-	 tmp_wb = w->window->children->child;
-	 wbl = w->window->children;
-	 w->window->children = w->window->children->next;
-	 tmp_wb->refcount--;
-	 tmp_wb->window->parent=NULL;
-	 w->refcount--;
-	 tmp_wb->window->win = (HWND) 0;
-	 /* added next line */
-	 SETCLOSED(tmp_wb);
-	 wbl->next=NULL;
-	 free(wbl);
-	 }
+         tmp_wb = w->window->children->child;
+         wbl = w->window->children;
+         w->window->children = w->window->children->next;
+         tmp_wb->refcount--;
+         tmp_wb->window->parent=NULL;
+         w->refcount--;
+         tmp_wb->window->win = (HWND) 0;
+         /* added next line */
+         SETCLOSED(tmp_wb);
+         wbl->next=NULL;
+         free(wbl);
+         }
       p = w->window->parent;
       if (p) {
         t = p->window->children;
         b = NULL;
         while (t) {
-	  if (t->child->window==w->window) {
+          if (t->child->window==w->window) {
             if (b==NULL)
                p->window->children = t->next;
             else b->next = t->next;
@@ -1091,30 +1091,30 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
           * if the application can handle window closure events, do 1
           */
          if (ws->inputmask & WindowClosureMask) {
-	    struct descrip d;
+            struct descrip d;
             MakeInt(WINDOWCLOSED, &d);
-	    qevent(ws ,&d, 0, 0, 0, 0);
+            qevent(ws ,&d, 0, 0, 0, 0);
             }
          else { /* terminate on unhandled unexpected window closure */
 #ifdef ConsoleWindow
             closelog();
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 #ifdef Graphics3D
             if(ws->is_3D) {
-#ifdef GraphicsGL 
+#ifdef GraphicsGL
                wglMakeCurrent(0, NULL);
                wglDeleteContext(wb->window->ctx);
                wb->window->ctx = NULL;
-#endif						/* GraphicsGL */
+#endif                                          /* GraphicsGL */
                }
-#endif					/* Graphics3D */
-	    PostQuitMessage(0);
-	    return 0;
-	    }
+#endif                                  /* Graphics3D */
+            PostQuitMessage(0);
+            return 0;
+            }
          }
       else if (ws->refcount < 0) { /* window was closed by program */
          ws->refcount = -ws->refcount;
-	 }
+         }
       if (BlkLoc(lastEventWin))
          BlkD(lastEventWin,File)->status &= ~(Fs_Write);
 
@@ -1122,7 +1122,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       if (ConsoleBinding && (ws == ((wbp)ConsoleBinding)->window)) {
          ConsoleBinding = 0;
          }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
       }
       break;
    case MM_MCINOTIFY:
@@ -1143,15 +1143,15 @@ int wclose(wbp w)
    wcp wc = w->context;
    struct wbind_list *wbl, *t, *b;
    int i;
-   
+
    if (pollevent() == -1) return -1;
    while (w->window->children) {
       tmp_wb = w->window->children->child;
       wbl = w->window->children;
 #ifdef Graphics3D
       if(tmp_wb->window->is_3D)
-	 release_3d_resources(tmp_wb);
-#endif						/* Graphics3D */      
+         release_3d_resources(tmp_wb);
+#endif                                          /* Graphics3D */
       w->window->children = w->window->children->next;
       tmp_wb->refcount--;
       tmp_wb->window->parent=NULL;
@@ -1167,7 +1167,7 @@ int wclose(wbp w)
       t = p->window->children;
       b = NULL;
       while (t) {
-	 if (t->child->window==w->window) {
+         if (t->child->window==w->window) {
            if (b==NULL)
                p->window->children = t->next;
            else b->next = t->next;
@@ -1179,16 +1179,16 @@ int wclose(wbp w)
        }
        b=t;
        t = t->next;
-     }   
+     }
      w->window->parent=NULL;
      p->refcount--;
    }
-   
+
 #ifdef Graphics3D
    if (w->window->is_3D)
       release_3d_resources(w);
-#endif						/* Graphics3D */
- 
+#endif                                          /* Graphics3D */
+
    ws->inputmask &= ~WindowClosureMask;
 
    if (ws->win && ws->refcount > 1) {
@@ -1200,14 +1200,14 @@ int wclose(wbp w)
       ws->refcount = -ws->refcount;
       DestroyWindow(ws->win);
       while (ws->win)
-	 if (pollevent() == -1) return -1;
+         if (pollevent() == -1) return -1;
       }
    else {
       free_binding(w);
       }
    return 1;
    }
-
+
 
 int pollevent()
    {
@@ -1218,7 +1218,7 @@ int pollevent()
    int isbusy;
    MUTEX_TRYLOCKID(MTX_POLLEVENT, isbusy);
    if (isbusy) return POLL_INTERVAL;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
    /* some while PeekMessage loops here, maybe one per window ? */
    while (PeekMessage(&m, NULL, 0, 0, PM_NOREMOVE)) {
@@ -1226,10 +1226,10 @@ int pollevent()
       TranslateMessage(&m);
       DispatchMessage(&m);
       }
-   MUTEX_UNLOCKID(MTX_POLLEVENT);      
+   MUTEX_UNLOCKID(MTX_POLLEVENT);
    return POLL_INTERVAL;
    }
-
+
 /*
  * write some text to both the window and the pixmap
  */
@@ -1295,7 +1295,7 @@ int wputc(int ci, wbp w)
    if ((FILE *)w == stdout || (FILE *)w == stderr || (FILE *)w == ConsoleBinding) {
       if (flog) fputc(ci, flog);
       }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 #ifdef ScrollingConsoleWin
    char c2[3], *catenation;
@@ -1305,49 +1305,49 @@ int wputc(int ci, wbp w)
         geteditregion(ws->child, &result);
 
       while (StrLen(result) + 2 > 32700) {
-	/* remove a line from the beginning of the buffer */
+        /* remove a line from the beginning of the buffer */
 
-	 while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
-	    StrLoc(result) ++;
-	    StrLen(result) --;
-	    }
-	 if (StrLen(result) > 0) {
-	    StrLoc(result)++; StrLen(result)--;
-	    }
-	 }
-	reserve(Strings, StrLen(result) + 3);
-	catenation = alcstr(StrLoc(result), StrLen(result));
-	if (c == '\n') { c2[0] = '\r'; c2[1] = '\n'; c2[2] = '\0'; }
-	else { c2[0] = c; c2[1] = '\0'; }
+         while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
+            StrLoc(result) ++;
+            StrLen(result) --;
+            }
+         if (StrLen(result) > 0) {
+            StrLoc(result)++; StrLen(result)--;
+            }
+         }
+        reserve(Strings, StrLen(result) + 3);
+        catenation = alcstr(StrLoc(result), StrLen(result));
+        if (c == '\n') { c2[0] = '\r'; c2[1] = '\n'; c2[2] = '\0'; }
+        else { c2[0] = c; c2[1] = '\0'; }
         alcstr(c2, strlen(c2)+1);
-	seteditregion(w->window->child, catenation);
-	setchildselection(w->window, w->window->child,
-			  StrLen(result), StrLen(result)+strlen(c2));
-	return 0;
+        seteditregion(w->window->child, catenation);
+        setchildselection(w->window, w->window->child,
+                          StrLen(result), StrLen(result)+strlen(c2));
+        return 0;
 }
-#endif					/* ScrollingConsoleWin */
+#endif                                  /* ScrollingConsoleWin */
 
    switch (c) {
    case '\n':
       ws->y += LEADING(w);
       if (ws->y + DESCENT(w) > ws->height) {
-	 RECT r;
-	 STDLOCALS(w);
-	 ws->y -= LEADING(w);
-	 y_plus_descent = ws->y + DESCENT(w);
-	 BitBlt(pixdc, 0, 0, ws->width, y_plus_descent,
-		pixdc, 0, LEADING(w), SRCCOPY);
-	 r.left = 0;
-	 r.top = y_plus_descent - FHEIGHT(w);
-	 r.right = ws->width;
-	 r.bottom = ws->height;
+         RECT r;
+         STDLOCALS(w);
+         ws->y -= LEADING(w);
+         y_plus_descent = ws->y + DESCENT(w);
+         BitBlt(pixdc, 0, 0, ws->width, y_plus_descent,
+                pixdc, 0, LEADING(w), SRCCOPY);
+         r.left = 0;
+         r.top = y_plus_descent - FHEIGHT(w);
+         r.right = ws->width;
+         r.bottom = ws->height;
          hb = CreateBrushIndirect(&(wc->bgbrush));
-	 FillRect(pixdc, &r, hb);
-	 DeleteObject(hb);
-	 if (stdwin)
-	    BitBlt(stddc, 0, 0, ws->width, ws->height, pixdc, 0, 0, SRCCOPY);
-	 FREE_STDLOCALS(w);
-	 }
+         FillRect(pixdc, &r, hb);
+         DeleteObject(hb);
+         if (stdwin)
+            BitBlt(stddc, 0, 0, ws->width, ws->height, pixdc, 0, 0, SRCCOPY);
+         FREE_STDLOCALS(w);
+         }
       /* intended fall-through */
     case '\r':
       /*
@@ -1364,7 +1364,7 @@ int wputc(int ci, wbp w)
    case '\177':
    case '\010': {
       int i = 0, pre_x;
- 
+
       /*
        * Start with the last character queued up.
        */
@@ -1373,8 +1373,8 @@ int wputc(int ci, wbp w)
        * Trot back to the control-H itself.
        */
       while ((i>-EQUEUELEN) && (EVQUESUB(w,i) != c)) {
-	 i--;
-	 }
+         i--;
+         }
       if (i == -EQUEUELEN) break;
       /*
        * Go past the control-H.
@@ -1384,8 +1384,8 @@ int wputc(int ci, wbp w)
        * Go back through any number of control-H's from prior lifetimes.
        */
       while((i > -EQUEUELEN) && !isprint(EVQUESUB(w,i))) {
-	 i--;
-	 }
+         i--;
+         }
       if (i == -EQUEUELEN) break;
 
       /*
@@ -1404,8 +1404,8 @@ int wputc(int ci, wbp w)
        */
       i = ws->x;
       while(ws->x < pre_x) {
-	 xdis(w, " ",1);
-	 }
+         xdis(w, " ",1);
+         }
       ws->x = i;
       break;
       }
@@ -1423,7 +1423,7 @@ int wputc(int ci, wbp w)
    UpdateCursorPos(ws,wc);
    return 0;
    }
-
+
 /*
  * wgetq - get event from pending queue
  */
@@ -1443,23 +1443,23 @@ int wgetq(wbp w, dptr res, int t)
        * grab the built up queue
        */
       if (!EVQUEEMPTY(ws)) {
-	 EVQUEGET(ws, *res);
-	 if (ws->hasCaret && ws->iconwin) {
+         EVQUEGET(ws, *res);
+         if (ws->hasCaret && ws->iconwin) {
             HideCaret(ws->iconwin);
             DestroyCaret();
             ws->hasCaret = 0;
             }
-	 return 1;
-	 }
+         return 1;
+         }
       if (!(ws->iconwin)) {
          return -1;
          }
       if (ISCURSORON(w) && ws->hasCaret == 0) {
-	 CreateCaret(ws->iconwin, NULL, FWIDTH(w), FHEIGHT(w));
-	 SetCaretPos(ws->x, ws->y - ASCENT(w));
-	 SetCaretBlinkTime(500);
+         CreateCaret(ws->iconwin, NULL, FWIDTH(w), FHEIGHT(w));
+         SetCaretPos(ws->x, ws->y - ASCENT(w));
+         SetCaretBlinkTime(500);
          ShowCaret(ws->iconwin);
-	 ws->hasCaret = 1;
+         ws->hasCaret = 1;
          }
       i++;
       if (GetMessage(&m, NULL, 0, 0) == 0) longjmp(mark_sj, -1);
@@ -1467,7 +1467,7 @@ int wgetq(wbp w, dptr res, int t)
       DispatchMessage(&m);
       }
    }
-
+
 /*
  * determine the new size of the client
  */
@@ -1511,7 +1511,7 @@ char *geo;
       }
    return Succeeded;
    }
-
+
 int setcanvas(w,s)
 wbp w;
 char *s;
@@ -1554,7 +1554,7 @@ char *val;
    int height;
    return Failed;
    }
-
+
 int seticonlabel(w, val)
 wbp w;
 char *val;
@@ -1658,8 +1658,8 @@ HFONT findfont(char *family, int size, int flags, int ansi)
    else spacing = DEFAULT_PITCH;
 
    return CreateFont(size, 0, 0, 0, weight, slant, 0, 0, charset,
-		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-		spacing, family);
+                OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                spacing, family);
 }
 
 HFONT mkfont(char *s, char is_3D)
@@ -1675,94 +1675,94 @@ HFONT mkfont(char *s, char is_3D)
        * Check first for special "standard" family names.
        */
       if (!strcmp(family, "mono")) {
-	 stdfam = "Lucida Console";
-	 flags |= FONTFLAG_MONO + FONTFLAG_SANS;
-	 }
+         stdfam = "Lucida Console";
+         flags |= FONTFLAG_MONO + FONTFLAG_SANS;
+         }
       else if ( !strcmp(family, "fixed")) {
-	 stdfam = "Lucida Sans";
-	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
-	 }
+         stdfam = "Lucida Sans";
+         flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
+         }
       else if (!strcmp(family, "typewriter")) {
-	 stdfam = "Courier New"; /* was "courier" */
-	 flags |= FONTFLAG_MONO + FONTFLAG_SERIF;
-	 }
+         stdfam = "Courier New"; /* was "courier" */
+         flags |= FONTFLAG_MONO + FONTFLAG_SERIF;
+         }
       else if (!strcmp(family, "sans")) {
-	 stdfam = "Arial"; /* was "swiss" */
-	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
-	 }
+         stdfam = "Arial"; /* was "swiss" */
+         flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
+         }
       else if (!strcmp(family, "serif")) {
-	 stdfam = "Times New Roman";
-	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SERIF;
-	 }
+         stdfam = "Times New Roman";
+         flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SERIF;
+         }
       else stdfam = NULL;
       if (is_3D) {
-	if (stdfam) {
-	   if (strcmp(stdfam, "Lucida Sans")==0) {
-	      strcpy(fn, "lsans");
-	      if (flags & FONTFLAG_BOLD) strcat(fn,"d");
-	      if (flags & FONTFLAG_ITALIC) strcat(fn,"i");
-	   }
-	   else if (strcmp(stdfam, "Arial")==0) { 
-	      strcpy(fn,"arial");
-	      if (flags & FONTFLAG_NORMAL) strcat(fn,"N");
-	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
-		strcat(fn, "b");
-	      else if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_NORMAL)))
-		strcat(fn,"b");
-	      else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
-	      if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
-	      }
-	   else if (strcmp(stdfam, "Times New Roman")==0) { 
-	      strcpy(fn,"times");
- 	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
-		strcat(fn, "b");
-	      else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
-	      if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
+        if (stdfam) {
+           if (strcmp(stdfam, "Lucida Sans")==0) {
+              strcpy(fn, "lsans");
+              if (flags & FONTFLAG_BOLD) strcat(fn,"d");
+              if (flags & FONTFLAG_ITALIC) strcat(fn,"i");
+           }
+           else if (strcmp(stdfam, "Arial")==0) {
+              strcpy(fn,"arial");
+              if (flags & FONTFLAG_NORMAL) strcat(fn,"N");
+              if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+                strcat(fn, "b");
+              else if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_NORMAL)))
+                strcat(fn,"b");
+              else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
+              if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
               }
-	   else if (strcmp(stdfam, "Courier New")==0) {
-	      strcpy(fn,"cour");
- 	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
-		strcat(fn, "b");
-	      else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
-	      if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
+           else if (strcmp(stdfam, "Times New Roman")==0) {
+              strcpy(fn,"times");
+              if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+                strcat(fn, "b");
+              else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
+              if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
               }
-	   strcat(fn, ".ttf");
-	   }
-	else {
-	   strcpy(fn,family);
-	   if (flags & (FONTFLAG_BOLD+FONTFLAG_ITALIC)) strcat(fn, "BI");
-	   else if (flags & FONTFLAG_BOLD) strcat(fn, "BD");
-	   else if (flags & FONTFLAG_ITALIC) strcat(fn, "I");
-	   strcat(fn, ".ttf");
+           else if (strcmp(stdfam, "Courier New")==0) {
+              strcpy(fn,"cour");
+              if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+                strcat(fn, "b");
+              else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
+              if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
+              }
+           strcat(fn, ".ttf");
+           }
+        else {
+           strcpy(fn,family);
+           if (flags & (FONTFLAG_BOLD+FONTFLAG_ITALIC)) strcat(fn, "BI");
+           else if (flags & FONTFLAG_BOLD) strcat(fn, "BD");
+           else if (flags & FONTFLAG_ITALIC) strcat(fn, "I");
+           strcat(fn, ".ttf");
            }
 #if 0
         curr_font = srch_3dfont(fn, size, tp);
-	if (!curr_font) {
-	  add_3dfont(fn, size, tp);
-	  curr_font = end_font;
+        if (!curr_font) {
+          add_3dfont(fn, size, tp);
+          curr_font = end_font;
           }
 #endif
       }
       if (stdfam) {
-	 /*
-	  * Standard name: first try preferred family, then generalize.
-	  * ICONFONT can be NULL, in which case Windows chooses.
-	  */
-	 char *icnfnt, fnt[256];
-	 icnfnt = fnt;
-	 hf = findfont(stdfam, size, flags, 1);
-	 if (hf == NULL){
-	    if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
-	         icnfnt=NULL;
-	    hf = findfont(icnfnt, size, flags, 1);
-	    }
-	 }
+         /*
+          * Standard name: first try preferred family, then generalize.
+          * ICONFONT can be NULL, in which case Windows chooses.
+          */
+         char *icnfnt, fnt[256];
+         icnfnt = fnt;
+         hf = findfont(stdfam, size, flags, 1);
+         if (hf == NULL){
+            if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
+                 icnfnt=NULL;
+            hf = findfont(icnfnt, size, flags, 1);
+            }
+         }
       else {
-	 /*
-	  * Any other name: must match as specified.
-	  */
-	 hf = findfont(family, size, flags, 0);
-	 }
+         /*
+          * Any other name: must match as specified.
+          */
+         hf = findfont(family, size, flags, 0);
+         }
       }
    return hf;
 }
@@ -1777,13 +1777,13 @@ char **s;
    wsp ws = w->window;
    wcp wc = w->context;
    HFONT hf, oldfont;
-   TEXTMETRIC	metrics;
+   TEXTMETRIC   metrics;
    HDC tmpdc;
 
    hf = mkfont(*s, 0);
    if (hf != NULL) {
       if (wc->font->font)
-	 DeleteObject(wc->font->font);
+         DeleteObject(wc->font->font);
       wc->font->font = hf;
       if (wc->font->name)
          free(wc->font->name);
@@ -1818,7 +1818,7 @@ wbp w, w2;
    w->context = w2->context;
    return Succeeded;
    }
-
+
 void setclip(w)
 wbp w;
    {
@@ -1827,8 +1827,8 @@ wbp w;
       DeleteObject(wc->cliprgn);
    if (wc->clipw >= 0)
       wc->cliprgn = CreateRectRgn(wc->clipx, wc->clipy,
-				  wc->clipx + wc->clipw,
-				  wc->clipy + wc->cliph);
+                                  wc->clipx + wc->clipw,
+                                  wc->clipy + wc->cliph);
    else
       wc->cliprgn = NULL;
    }
@@ -1857,7 +1857,7 @@ int raiseWindow(wbp w)
       SetWindowPos(ws->win, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
    return Succeeded;
    }
-
+
 int nativecolor(w, s, r, g, b)
 wbp w;
 char *s;
@@ -1879,7 +1879,7 @@ SysColor mscolor(wbp w, long r, long g, long b)
    blue  = 65535L * pow(b / 65535.0, invgamma);
    return RGB(red >> 8, green >> 8, blue >> 8);
 }
-
+
 /*
  * Set the context's fill style by name.
  */
@@ -1896,25 +1896,25 @@ char *s;
    else {
       if (!strcmp(s, "masked")
       || !strcmp(s, "stippled") || !strcmp(s, "patterned")) {
-	 wc->brush.lbStyle = wc->fillstyle = BS_PATTERN;
-	 wc->brush.lbColor = PALCLR(wc->fg);
-	 wc->brush.lbHatch = (word)wc->pattern;
+         wc->brush.lbStyle = wc->fillstyle = BS_PATTERN;
+         wc->brush.lbColor = PALCLR(wc->fg);
+         wc->brush.lbHatch = (word)wc->pattern;
          wc->bkmode = TRANSPARENT;
-	 }
+         }
       else if (!strcmp(s, "textured")
       || !strcmp(s, "opaquestippled") || !strcmp(s, "opaquepatterned")) {
-	 wc->brush.lbStyle = wc->fillstyle = BS_PATTERN;
-	 wc->brush.lbColor = PALCLR(wc->fg);
-	 wc->brush.lbHatch = (word)wc->pattern;
+         wc->brush.lbStyle = wc->fillstyle = BS_PATTERN;
+         wc->brush.lbColor = PALCLR(wc->fg);
+         wc->brush.lbHatch = (word)wc->pattern;
          wc->bkmode = OPAQUE;
-	 }
+         }
       else {
-	 return RunError;
-	 }
+         return RunError;
+         }
       }
    return Succeeded;
    }
-
+
 /*
  * Set the context's line style by name.
  */
@@ -1944,7 +1944,7 @@ int setlinewidth(wbp w, LONG linewid)
       wc->bgpen.lopnWidth.x = wc->bgpen.lopnWidth.y = linewid;
    return Succeeded;
    }
-
+
 
 /*
  * Set the foreground to draw in a mutable color
@@ -1984,7 +1984,7 @@ int i;
    return ISXORREVERSE(w) ? resetfg(w) : Succeeded;
    }
 
-
+
 int getdepthDC(HDC dc)
 {
    return GetDeviceCaps(dc, BITSPIXEL) * GetDeviceCaps(dc, PLANES);
@@ -2028,35 +2028,35 @@ int alc_rgb(wbp w, SysColor rgb)
    if (palette) {
       for (i=0; i < numColors; i++) {
          if (rgb == scp[i].c && scp[i].type == CLR_SHARED) break;
-	 }
+         }
       if (i == numColors) {
          SUSPEND_THREADS();
          if (i == numColors) {
             numColors++;
-	    if (ResizePalette(palette, numColors) == 0) {
-	       numColors--;
-	       return Failed;
+            if (ResizePalette(palette, numColors) == 0) {
+               numColors--;
+               return Failed;
                }
             scp = realloc(scp, numColors * sizeof(struct wcolor));
             if (scp == NULL) { numColors--; return Failed; }
-	    scp[numColors - 1].c = rgb;
-	    scp[numColors - 1].type = CLR_SHARED;
-	    sprintf(scp[numColors - 1].name, "%d,%d,%d",
+            scp[numColors - 1].c = rgb;
+            scp[numColors - 1].type = CLR_SHARED;
+            sprintf(scp[numColors - 1].name, "%d,%d,%d",
                  RED(rgb), GREEN(rgb), BLUE(rgb));
             lp.palNumEntries = 1;
-	    lp.palVersion = 0x300;
-	    lp.palPalEntry[0].peFlags = 0;
-	    lp.palPalEntry[0].peRed = RED(rgb);
-	    lp.palPalEntry[0].peGreen = GREEN(rgb);
-	    lp.palPalEntry[0].peBlue = BLUE(rgb);
+            lp.palVersion = 0x300;
+            lp.palPalEntry[0].peFlags = 0;
+            lp.palPalEntry[0].peRed = RED(rgb);
+            lp.palPalEntry[0].peGreen = GREEN(rgb);
+            lp.palPalEntry[0].peBlue = BLUE(rgb);
             SetPaletteEntries(palette, numColors - 1, 1, lp.palPalEntry);
-	    hdc = GetDC(ws->iconwin);
-	    SelectPalette(hdc, palette, FALSE);
-	    RealizePalette(hdc);
-	    ReleaseDC(ws->iconwin, hdc);
-	    }
+            hdc = GetDC(ws->iconwin);
+            SelectPalette(hdc, palette, FALSE);
+            RealizePalette(hdc);
+            ReleaseDC(ws->iconwin, hdc);
+            }
          RESUME_THREADS();
-	 }
+         }
       }
    return Succeeded;
 }
@@ -2075,13 +2075,13 @@ int setfg(wbp w, char *val)
       else if (strcmp(wc->fgname, val)) {
          free(wc->fgname);
          wc->fgname = salloc(val);
-	 }
+         }
       wc->brush.lbColor =
-	 PALCLR(ISXORREVERSE(w) ? ((wc->fg ^ wc->bg) & 0x00FFFFFF) : wc->fg);
+         PALCLR(ISXORREVERSE(w) ? ((wc->fg ^ wc->bg) & 0x00FFFFFF) : wc->fg);
       wc->pen.lopnColor = wc->brush.lbColor;
       wc->brush.lbStyle = wc->fillstyle;
       if (wc->fillstyle == BS_PATTERN)
-	 wc->brush.lbHatch = (word)wc->pattern;
+         wc->brush.lbHatch = (word)wc->pattern;
       return Succeeded;
       }
    return Failed;
@@ -2101,7 +2101,7 @@ int setbg(wbp w, char *val)
       else if (strcmp(wc->bgname, val)) {
          free(wc->bgname);
          wc->bgname = salloc(val);
-	 }
+         }
       wc->bgpen.lopnColor = PALCLR(wc->bg);
       wc->bgbrush.lbStyle = BS_SOLID;
       wc->bgbrush.lbColor = PALCLR(wc->bg);
@@ -2162,7 +2162,7 @@ char *val;
    /* should restore savedcursor when pointer moves outside our window */
    return Succeeded;
    }
-
+
 /*
  * setdrawop() - set the drawing operation
  */
@@ -2173,16 +2173,16 @@ char *val;
    wcp wc = w->context;
    if (!strcmp(val,"reverse")) {
       if (!ISXORREVERSE(w)) {
-	 SETXORREVERSE(w);
+         SETXORREVERSE(w);
          wc->drawop = R2_XORPEN;
          resetfg(w);
-	 }
+         }
       }
    else {
       if (ISXORREVERSE(w)) {
-	 CLRXORREVERSE(w);
+         CLRXORREVERSE(w);
          resetfg(w);
-	 }
+         }
       wc->drawop = si_s2i(drawops,val);
       if (wc->drawop == -1) { wc->drawop = R2_COPYPEN; return RunError; }
       }
@@ -2201,7 +2201,7 @@ int setimage(wbp w, char *val)
    wsp ws = w->window;
    int status;
    ws->initialPix = loadimage(w, val, &(ws->width), &(ws->height),
-			  0, &status);
+                          0, &status);
    if (ws->initialPix == (HBITMAP) NULL) return Failed;
    return Succeeded;
    }
@@ -2214,7 +2214,7 @@ int i;
    wc->leading = i;
    return Succeeded;
    }
-
+
 void toggle_fgbg(w)
 wbp w;
    {
@@ -2232,7 +2232,7 @@ wbp w;
    wc->brush = wc->bgbrush;
    wc->bgbrush = tbrush;
    }
-
+
 int getvisual(w, answer)
 wbp w;
 char *answer;
@@ -2274,7 +2274,7 @@ char *answer;
       }
    else strcpy(answer, "unknown");
    }
-
+
 void getfntnam(w, answer)
 wbp w;
 char *answer;
@@ -2306,7 +2306,7 @@ char *answer;
    if (s) sprintf(answer, "%s", s);
    else strcpy(answer, "unknown");
    }
-
+
 void geticonic(w, answer)
 wbp w;
 char *answer;
@@ -2327,7 +2327,7 @@ char *answer;
       }
    else sprintf(answer,"hidden");
    }
-
+
 int geticonpos(w, val)
 wbp w;
 char *val;
@@ -2403,13 +2403,13 @@ int x, y, width, height, x2, y2;
       FillRect(pixdc, &r, hb);
       }
    else {
-	 /*
-	  * Check for source partially offscreen, but copy first and
-	  * fill later in case the source and destination overlap.
-	  */
-	 lpad = rpad = tpad = bpad = 0;
-         if (x < 0) {			/* source extends past left edge */
-	    lpad = -x;
+         /*
+          * Check for source partially offscreen, but copy first and
+          * fill later in case the source and destination overlap.
+          */
+         lpad = rpad = tpad = bpad = 0;
+         if (x < 0) {                   /* source extends past left edge */
+            lpad = -x;
             width -= lpad;
             x2 += lpad;
             x = 0;
@@ -2418,8 +2418,8 @@ int x, y, width, height, x2, y2;
             rpad = x + width - ws1->pixwidth;
             width -= rpad;
             }
-         if (y < 0) {			/* source extends above top edge */
-	    tpad = -y;
+         if (y < 0) {                   /* source extends above top edge */
+            tpad = -y;
             height -= tpad;
             y2 += tpad;
             y = 0;
@@ -2432,42 +2432,42 @@ int x, y, width, height, x2, y2;
          BitBlt(stddc, x2, y2, width, height, srcpixdc, x, y, SRCCOPY);
       BitBlt(pixdc, x2, y2, width, height, srcpixdc, x, y, SRCCOPY);
 
-	 if (lpad > 0) {
+         if (lpad > 0) {
             r.left = x2-lpad;
-	    r.top = y2-tpad;
-	    r.right = r.left + lpad;
-	    r.bottom = r.top + tpad+height+bpad;
+            r.top = y2-tpad;
+            r.right = r.left + lpad;
+            r.bottom = r.top + tpad+height+bpad;
             if (stdwin)
                FillRect(stddc, &r, hb);
             FillRect(pixdc, &r, hb);
             }
-	 if (rpad > 0) {
+         if (rpad > 0) {
             r.left = x2+width;
-	    r.top = y2-tpad;
-	    r.right = r.left + rpad;
-	    r.bottom = r.top + tpad+height+bpad;
+            r.top = y2-tpad;
+            r.right = r.left + rpad;
+            r.bottom = r.top + tpad+height+bpad;
             if (stdwin)
                FillRect(stddc, &r, hb);
             FillRect(pixdc, &r, hb);
-	    }
-	 if (tpad > 0) {
-	    r.left = x2;
-	    r.top = y2-tpad;
-	    r.right = r.left + width;
-	    r.bottom = r.top + tpad;
+            }
+         if (tpad > 0) {
+            r.left = x2;
+            r.top = y2-tpad;
+            r.right = r.left + width;
+            r.bottom = r.top + tpad;
             if (stdwin)
                FillRect(stddc, &r, hb);
             FillRect(pixdc, &r, hb);
-	    }
-	 if (bpad > 0) {
-	    r.left = x2;
-	    r.top = y2+height;
-	    r.right = r.left + width;
-	    r.bottom = r.top + bpad;
+            }
+         if (bpad > 0) {
+            r.left = x2;
+            r.top = y2+height;
+            r.right = r.left + width;
+            r.bottom = r.top + bpad;
             if (stdwin)
                FillRect(stddc, &r, hb);
             FillRect(pixdc, &r, hb);
-	    }
+            }
       }
 
    /*
@@ -2482,7 +2482,7 @@ int x, y, width, height, x2, y2;
    FREE_STDLOCALS(w2);
    return Succeeded;
    }
-
+
 int getdefault(w, prog, opt, answer)
 wbp w;
 char *prog, *opt, *answer;
@@ -2522,30 +2522,30 @@ word len;
    m = msk1;
    while (len--) {
       if (isxdigit(c = *s++)) {         /* if hexadecimal character */
-	 if (!isdigit(c))               /* fix bottom 4 bits if necessary */
-	    c += 9;
-	 while (m > 0) {                /* set (usually) 4 pixel values */
-	    --ix;
-	    if (c & m) {
-	       SetPixel(pixdc, ix, iy, palfg);
-	       }
-	    else if (ch != TCH1) {      /* if zeroes aren't transparent */
-	       SetPixel(pixdc, ix, iy, palbg);
-	       }
-	    m >>= 1;
-	    }
-	 if (ix == 0) {                 /* if end of row */
-	    ix = width;
-	    iy++;
-	    m = msk1;
-	    }
-	 else
-	    m = 8;
-	 }
+         if (!isdigit(c))               /* fix bottom 4 bits if necessary */
+            c += 9;
+         while (m > 0) {                /* set (usually) 4 pixel values */
+            --ix;
+            if (c & m) {
+               SetPixel(pixdc, ix, iy, palfg);
+               }
+            else if (ch != TCH1) {      /* if zeroes aren't transparent */
+               SetPixel(pixdc, ix, iy, palbg);
+               }
+            m >>= 1;
+            }
+         if (ix == 0) {                 /* if end of row */
+            ix = width;
+            iy++;
+            m = msk1;
+            }
+         else
+            m = 8;
+         }
       }
    if (ix > 0)                          /* pad final row if incomplete */
       while (ix < width)
-	 SetPixel(pixdc, ix++, iy, palbg);
+         SetPixel(pixdc, ix++, iy, palbg);
 
    /*
     * Put it on the screen.
@@ -2585,7 +2585,7 @@ int on_icon;
       FREE_STDLOCALS(w);
       return -1;
       }
-   
+
    bmih = &(bmi->bmiHeader);
    palbg = PALCLR(wc->bg);
    if (on_icon) {
@@ -2605,21 +2605,21 @@ int on_icon;
       if (e[c].transpt) anytransparent++;
       if (e[c].used && e[c].valid) {
          bmih->biClrImportant++;
-	 clrlist[c] = mscolor(w, e[c].clr.red, e[c].clr.green, e[c].clr.blue);
-	 bmi->bmiColors[c].rgbBlue = BLUE(clrlist[c]);
-	 bmi->bmiColors[c].rgbRed = RED(clrlist[c]);
-	 bmi->bmiColors[c].rgbGreen = GREEN(clrlist[c]);
+         clrlist[c] = mscolor(w, e[c].clr.red, e[c].clr.green, e[c].clr.blue);
+         bmi->bmiColors[c].rgbBlue = BLUE(clrlist[c]);
+         bmi->bmiColors[c].rgbRed = RED(clrlist[c]);
+         bmi->bmiColors[c].rgbGreen = GREEN(clrlist[c]);
          if (alc_rgb(w, clrlist[c]) == Failed) {
             free(bmi);
             FREE_STDLOCALS(w);
             return -1;
             }
-	 clrlist[c] = PALCLR(clrlist[c]);
-	 }
+         clrlist[c] = PALCLR(clrlist[c]);
+         }
       else {
-	 bmi->bmiColors[c].rgbBlue = BLUE(wc->bg);
-	 bmi->bmiColors[c].rgbRed = RED(wc->bg);
-	 bmi->bmiColors[c].rgbGreen = GREEN(wc->bg);
+         bmi->bmiColors[c].rgbBlue = BLUE(wc->bg);
+         bmi->bmiColors[c].rgbRed = RED(wc->bg);
+         bmi->bmiColors[c].rgbGreen = GREEN(wc->bg);
          }
       }
 
@@ -2656,35 +2656,35 @@ int on_icon;
       free(buf2);
          }
       else {
-	 buf2 = s;
+         buf2 = s;
          bmih->biClrUsed = 0;
          bmih->biHeight = -height;
          bmih->biBitCount = 24;
 #if 0
 
 /*
- *       Microsoft expcects BGR format by default but we store images in RGB. 
- *	 the default behavior can be changed by using the user-defined bit mask
- *	 for each of the color components as shown below when 
- *	 bmih->biCompression = BI_BITFIELDS; //instead of (BI_RGB)
- * 	 but that works only with 32 bit colors (belowbmih->biBitCount = 32) 
- *	 not 24. For now, we are storing images in BGR before feeding 
- *	 them to MS API!
+ *       Microsoft expcects BGR format by default but we store images in RGB.
+ *       the default behavior can be changed by using the user-defined bit mask
+ *       for each of the color components as shown below when
+ *       bmih->biCompression = BI_BITFIELDS; //instead of (BI_RGB)
+ *       but that works only with 32 bit colors (belowbmih->biBitCount = 32)
+ *       not 24. For now, we are storing images in BGR before feeding
+ *       them to MS API!
  */
-	 bmi->bmiColors[0].rgbBlue = 0xFF;
-	 bmi->bmiColors[0].rgbGreen = 0x00;
-	 bmi->bmiColors[0].rgbRed = 0x00;
-	 bmi->bmiColors[0].rgbReserved = 0x00;
+         bmi->bmiColors[0].rgbBlue = 0xFF;
+         bmi->bmiColors[0].rgbGreen = 0x00;
+         bmi->bmiColors[0].rgbRed = 0x00;
+         bmi->bmiColors[0].rgbReserved = 0x00;
 
-	 bmi->bmiColors[1].rgbBlue = 0x00;
-	 bmi->bmiColors[1].rgbGreen = 0xFF;
-	 bmi->bmiColors[1].rgbRed = 0x00;
-	 bmi->bmiColors[1].rgbReserved = 0x00;
+         bmi->bmiColors[1].rgbBlue = 0x00;
+         bmi->bmiColors[1].rgbGreen = 0xFF;
+         bmi->bmiColors[1].rgbRed = 0x00;
+         bmi->bmiColors[1].rgbReserved = 0x00;
 
-	 bmi->bmiColors[2].rgbBlue = 0x00;
-	 bmi->bmiColors[2].rgbGreen = 0x00;
-	 bmi->bmiColors[2].rgbRed = 0xFF;
-	 bmi->bmiColors[2].rgbReserved = 0x00;
+         bmi->bmiColors[2].rgbBlue = 0x00;
+         bmi->bmiColors[2].rgbGreen = 0x00;
+         bmi->bmiColors[2].rgbRed = 0xFF;
+         bmi->bmiColors[2].rgbReserved = 0x00;
 #endif
          temppix=CreateDIBitmap(pixdc, bmih, CBM_INIT, buf2, bmi, DIB_RGB_COLORS);
         }
@@ -2709,18 +2709,18 @@ int on_icon;
          c = *s++;
          v = e[c].valid;
          if (v) {                         /* put char if valid */
-	    xc = SetPixel(pixdc, ix, iy, clrlist[c]);
-	    }
+            xc = SetPixel(pixdc, ix, iy, clrlist[c]);
+            }
          if (v || e[c].transpt) {        /* advance if valid or transparent */
-	    if (++ix >= tmpw) {
-	       ix = x;                             /* reset for new row */
-	       iy++;
-	       }
-	    }
+            if (++ix >= tmpw) {
+               ix = x;                             /* reset for new row */
+               iy++;
+               }
+            }
          }
       if (ix > 0)                          /* pad final row if incomplete */
          while (ix < width)
-	    SetPixel(pixdc, x+ix++, y+iy, palbg);
+            SetPixel(pixdc, x+ix++, y+iy, palbg);
       }
 
    free(bmi);
@@ -2733,12 +2733,12 @@ int on_icon;
       }
    else {
       if (ws->win)
-	 BitBlt(stddc, x, y, width, height, pixdc, x, y, SRCCOPY);
+         BitBlt(stddc, x, y, width, height, pixdc, x, y, SRCCOPY);
       }
    FREE_STDLOCALS(w);
    return 0;
    }
-
+
 /*
  * imqsearch(key,base,nel) - binary search hardwired for images
  *
@@ -2801,30 +2801,30 @@ unsigned char *data;
 #if 0
       /* want to do pollevent here, but can't inside a STDLOCALS declaration */
       if (y & 1) { /* how often to process window events? */
-	 pollevent();
-	 }
+         pollevent();
+         }
 #endif
       for (x = xx; x < wd; x++) {
-	 px = GetPixel(pixdc, x, y);
-	 if (px != lastpx) {
-	    lastpx = px;
-	    lp = imqsearch(px, clist, ncolors);
-	    if (*lp != px) {
-	       i = ncolors++;
+         px = GetPixel(pixdc, x, y);
+         if (px != lastpx) {
+            lastpx = px;
+            lp = imqsearch(px, clist, ncolors);
+            if (*lp != px) {
+               i = ncolors++;
                if (ncolors >= nclist) {
-		  nclist = nclist * 1.5;
-		  clist = realloc(clist, nclist * sizeof (SysColor));
-	          if (!clist) return 0;
-		  lp = imqsearch(px, clist, ncolors);
-		  }
-	       while (clist + i != lp) {
-		  clist[i] = clist[i-1];
-		  i--;
-		  }
-	       clist[i] = px;
-	       }
-	    }
-	 }
+                  nclist = nclist * 1.5;
+                  clist = realloc(clist, nclist * sizeof (SysColor));
+                  if (!clist) return 0;
+                  lp = imqsearch(px, clist, ncolors);
+                  }
+               while (clist + i != lp) {
+                  clist[i] = clist[i-1];
+                  i--;
+                  }
+               clist[i] = px;
+               }
+            }
+         }
       }
 
    /*
@@ -2842,31 +2842,31 @@ unsigned char *data;
 #if 0
       /* want to do pollevent here, but can't inside a STDLOCALS declaration */
       if (y & 1 == 0) {
-	 pollevent();
-	 }
+         pollevent();
+         }
 #endif
       for (x = xx; x < width; x++) {
-	 px = GetPixel(pixdc, x, y);
-	 if (px != lastpx) {
-	    lastpx = px;
-	    lp = imqsearch(px, clist, ncolors);
-	    if (*lp == px)
-	       i = lp - clist;
-	    else {
-	       FREE_STDLOCALS(w);
-	       free(clist);
-	       return 0;
-	       }
-	    }
-	 *data++ = i;
-	 if (!paltbl[i].used) {
-	    paltbl[i].used = 1;
-	    paltbl[i].clr.red = RED(px) * 257;
-	    paltbl[i].clr.green = GREEN(px) * 257;
-	    paltbl[i].clr.blue = BLUE(px) * 257;
-	    paltbl[i].valid = 1;
-	    }
-	 }
+         px = GetPixel(pixdc, x, y);
+         if (px != lastpx) {
+            lastpx = px;
+            lp = imqsearch(px, clist, ncolors);
+            if (*lp == px)
+               i = lp - clist;
+            else {
+               FREE_STDLOCALS(w);
+               free(clist);
+               return 0;
+               }
+            }
+         *data++ = i;
+         if (!paltbl[i].used) {
+            paltbl[i].used = 1;
+            paltbl[i].clr.red = RED(px) * 257;
+            paltbl[i].clr.green = GREEN(px) * 257;
+            paltbl[i].clr.blue = BLUE(px) * 257;
+            paltbl[i].valid = 1;
+            }
+         }
       }
    free(clist);
    FREE_STDLOCALS(w);
@@ -2890,20 +2890,20 @@ unsigned char *data;
 #if 0
       /* want to do pollevent here, but can't inside a STDLOCALS declaration */
       if (y & 1 == 0) {
-	 pollevent();
-	 }
+         pollevent();
+         }
 #endif
       for (x = xx; x < wd; x++) {
-	 px = GetPixel(pixdc, x, y);
-	 *data++ = RED(px);
-	 *data++ = GREEN(px);
-	 *data++ = BLUE(px);
-	 }
+         px = GetPixel(pixdc, x, y);
+         *data++ = RED(px);
+         *data++ = GREEN(px);
+         *data++ = BLUE(px);
+         }
       }
    FREE_STDLOCALS(w);
    return 1;
    }
-
+
 int readimage(w, filename, x, y, status)
 wbp w;
 char *filename;
@@ -2944,7 +2944,7 @@ int x, y, *status;
    }
    }
 
-
+
 
 /*
  * Initialize client for producing pixels from a window, or in this case,
@@ -2972,7 +2972,7 @@ struct imgmem *imem;
    for(i = imem->y; i < y2; i++)
       for(j = imem->x; j < x2; j++) {
          if ((*p++ = GetPixel(pixdc, j, i)) == (COLORREF)-1L) {
-	    free(imem->crp);
+            free(imem->crp);
             SelectObject(pixdc, oldpix);
             FREE_STDLOCALS(w);
             return Failed;
@@ -2999,10 +2999,10 @@ int getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem)
    COLORREF cr = imem->crp[(y-imem->y) * imem->width + (x-imem->x)];
    *rv = 1;
    sprintf(s, "%ld,%ld,%ld",
-	   (long)RED(cr)*257L, (long)GREEN(cr)*257L, (long)BLUE(cr)*257L);
+           (long)RED(cr)*257L, (long)GREEN(cr)*257L, (long)BLUE(cr)*257L);
    return Succeeded;
    }
-
+
 int query_pointer(w, pp)
 wbp w;
 XPoint *pp;
@@ -3033,13 +3033,13 @@ dptr dp;
    wsp ws = w->window;
    return Succeeded;
    }
-
+
 /*
  * dumpimage -- write an image to a disk file.
  *  At present, there are no MS Windows-specific image file formats.
  */
 int dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
-	      unsigned int width, unsigned int height)
+              unsigned int width, unsigned int height)
    {
    return NoCvt;
    }
@@ -3049,17 +3049,17 @@ int dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
  * loadimage. At present, there are no MS Windows-specific image formats.
  */
 HBITMAP loadimage(wbp w, char *filename, unsigned int *width,
-		  unsigned int *height, int atorigin, int *status)
+                  unsigned int *height, int atorigin, int *status)
    {
    return NULL;
    }
-
+
 
 char *get_mutable_name(wbp w, int mute_index)
    {
    char *tmp;
    PALETTEENTRY pe;
-   
+
    if (-mute_index > numColors || scp[-mute_index].type != CLR_MUTABLE) {
       return NULL;
       }
@@ -3091,7 +3091,7 @@ int set_mutable(wbp w, int i, char *s)
    pe.peGreen = g >> 8;
    pe.peBlue = b >> 8;
    pe.peFlags = PC_RESERVED;
-   raiseWindow(w);	/* mutable won't mutate if window isn't active */
+   raiseWindow(w);      /* mutable won't mutate if window isn't active */
 #if 1
    AnimatePalette(palette, -i, 1, &pe);
    rv = SetPaletteEntries(palette, -i, 1, &pe);
@@ -3148,33 +3148,33 @@ int mutable_color(wbp w, dptr argv, int argc, int *retval)
        * old-style check for C integer
        */
       else if (argv[0].dword == D_Integer) {/* check for color cell */
-	 if (IntVal(argv[0]) >= 0) {
+         if (IntVal(argv[0]) >= 0) {
             FREE_STDLOCALS(w);
-	    return Failed;        /* must be negative */
+            return Failed;        /* must be negative */
             }
-	 if (GetPaletteEntries(palette, -IntVal(argv[0]),
-	    1, lp.palPalEntry) == 0) {
+         if (GetPaletteEntries(palette, -IntVal(argv[0]),
+            1, lp.palPalEntry) == 0) {
             FREE_STDLOCALS(w);
             return RunError;
             }
-	 /* convert to linear color? */
-	 }
+         /* convert to linear color? */
+         }
       else {
-	 if (!cnv:C_string(argv[0],str)) {
+         if (!cnv:C_string(argv[0],str)) {
             FREE_STDLOCALS(w);
-	    ReturnErrVal(103,argv[0], RunError);
-	    }
-	 if (parsecolor(w, str, &r, &g, &b, &a) != Succeeded) {
-	    /* reduce logical palette size and count */
+            ReturnErrVal(103,argv[0], RunError);
+            }
+         if (parsecolor(w, str, &r, &g, &b, &a) != Succeeded) {
+            /* reduce logical palette size and count */
             FREE_STDLOCALS(w);
-	    numColors--;
+            numColors--;
             ResizePalette(palette, numColors);
-	    return Failed;                   /* invalid color specification */
-	    }
-	 lp.palPalEntry[0].peRed = r >> 8;
-	 lp.palPalEntry[0].peGreen = g >> 8;
-	 lp.palPalEntry[0].peBlue = b >> 8;
-	 }
+            return Failed;                   /* invalid color specification */
+            }
+         lp.palPalEntry[0].peRed = r >> 8;
+         lp.palPalEntry[0].peGreen = g >> 8;
+         lp.palPalEntry[0].peBlue = b >> 8;
+         }
       lp.palNumEntries = 1;
       lp.palVersion = 0x300;
       lp.palPalEntry[0].peFlags = PC_RESERVED;
@@ -3218,7 +3218,7 @@ void drawarcs(wbp wb, XArc *arcs, int narcs)
       right = arc->x + arc->width + 1;
       bottom = arc->y + arc->height + 1;
       if (ws->win)
-	 Arc(stddc, arc->x, arc->y, right, bottom, x1, y1, x2, y2);
+         Arc(stddc, arc->x, arc->y, right, bottom, x1, y1, x2, y2);
       Arc(pixdc, arc->x, arc->y, right, bottom, x1, y1, x2, y2);
       }
    if (stdwin) SelectObject(stddc, oldpen);
@@ -3227,7 +3227,7 @@ void drawarcs(wbp wb, XArc *arcs, int narcs)
    FREE_STDLOCALS(wb);
    return;
    }
-
+
 
 /*
  * drawlines - Support routine for DrawLine
@@ -3252,10 +3252,10 @@ void drawlines(wbinding *wb, XPoint *points, int npoints)
    FREE_STDLOCALS(wb);
    return;
    }
-
+
 
 /*
- * drawpoints() - 
+ * drawpoints() -
  *  Parameters - the window binding for output, an array of points (assumed
  *               to be fixed up for bitmap) and the number of points
  */
@@ -3297,8 +3297,8 @@ void drawsegments(wbinding *wb, XSegment *segs, int nsegs)
    if (stdwin) {
       SetBkMode(stddc, wc->bkmode);
       for (i = 0; i < nsegs; i++) {
-	 Polyline(stddc, (POINT *)(segs+i), 2);
-	 }
+         Polyline(stddc, (POINT *)(segs+i), 2);
+         }
       }
    SetBkMode(pixdc, wc->bkmode);
    for (i = 0; i < nsegs; i++) {
@@ -3310,7 +3310,7 @@ void drawsegments(wbinding *wb, XSegment *segs, int nsegs)
    FREE_STDLOCALS(wb);
    return;
    }
-
+
 
 int allowresize(w, on)
 wbp w;
@@ -3354,7 +3354,7 @@ char *getselection(wbp w, char *buf)
          }
       }
    FREE_STDLOCALS(w);
- 
+
   return rv;
 }
 
@@ -3385,13 +3385,13 @@ int setselection(wbp w, dptr val)
          SetClipboardData(CF_TEXT, hGlobalMemory);
          CloseClipboard();
          FREE_STDLOCALS(w);
-	 return Succeeded;
+         return Succeeded;
          }
       }
    FREE_STDLOCALS(w);
    return Failed;
 }
-
+
 /*
  * drawstrng()
  */
@@ -3417,12 +3417,12 @@ void drawstrng(wbinding *wb, int x, int y, char *s, int slen)
    FREE_STDLOCALS(wb);
    return;
    }
-
+
 
 /*
  * fillarcs
  */
-void fillarcs(wbp wb, XArc *arcs, int narcs) 
+void fillarcs(wbp wb, XArc *arcs, int narcs)
    {
    register XArc *arc = arcs;
    int i, diff, bheight;
@@ -3448,38 +3448,38 @@ void fillarcs(wbp wb, XArc *arcs, int narcs)
           * from SDK reference: Ellipse() draws up to but not including
           * the right and bottom coordinates.  Add +1 to compensate.
           */
-	 if (stdwin) 
-	    Ellipse(stddc, arc->x, arc->y, 
-		    arc->x + arc->width + 1, arc->y + arc->height + 1);
-	 Ellipse(pixdc, arc->x, arc->y, 
-		 arc->x + arc->width + 1, arc->y + arc->height + 1);
-	 }
+         if (stdwin)
+            Ellipse(stddc, arc->x, arc->y,
+                    arc->x + arc->width + 1, arc->y + arc->height + 1);
+         Ellipse(pixdc, arc->x, arc->y,
+                 arc->x + arc->width + 1, arc->y + arc->height + 1);
+         }
       else {
-	 arc->angle1 = -arc->angle1 - arc->angle2;
-	 pts[0].x = arc->x + (arc->width>>1);
-	 pts[0].y = arc->y + (arc->height>>1);
-	 pts[1].x = arc->x + (arc->width>>1) +
+         arc->angle1 = -arc->angle1 - arc->angle2;
+         pts[0].x = arc->x + (arc->width>>1);
+         pts[0].y = arc->y + (arc->height>>1);
+         pts[1].x = arc->x + (arc->width>>1) +
             (int)(((arc->width + 1)>>1) * cos(arc->angle1));
-	 pts[1].y = arc->y + (arc->height>>1) -
+         pts[1].y = arc->y + (arc->height>>1) -
             (int)(((arc->height )>>1) * sin(arc->angle1));
-	 pts[2].x = arc->x + (arc->width>> 1) +
+         pts[2].x = arc->x + (arc->width>> 1) +
             (int)(((arc->width + 1)>>1) * cos(arc->angle1+arc->angle2));
-	 pts[2].y = arc->y + (arc->height>>1) -
+         pts[2].y = arc->y + (arc->height>>1) -
             (int)(((arc->height )>>1) * sin(arc->angle1+arc->angle2));
-	 if ((pts[1].x == pts[2].x) && (pts[1].y == pts[2].y)) {
-	    /* extent of 0 will be misinterpreted by windows as 2pi */
-	    }
-	 else {
-	    if (stdwin) {
-	       Pie(stddc, arc->x, arc->y,
-		   arc->x + arc->width + 1, arc->y + arc->height + 1,
-		   pts[1].x, pts[1].y, pts[2].x, pts[2].y);
-	       }
-	    Pie(pixdc, arc->x, arc->y,
-		arc->x + arc->width + 1, arc->y + arc->height + 1,
-		pts[1].x, pts[1].y, pts[2].x, pts[2].y);
-	    }
-	 }
+         if ((pts[1].x == pts[2].x) && (pts[1].y == pts[2].y)) {
+            /* extent of 0 will be misinterpreted by windows as 2pi */
+            }
+         else {
+            if (stdwin) {
+               Pie(stddc, arc->x, arc->y,
+                   arc->x + arc->width + 1, arc->y + arc->height + 1,
+                   pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+               }
+            Pie(pixdc, arc->x, arc->y,
+                arc->x + arc->width + 1, arc->y + arc->height + 1,
+                pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+            }
+         }
       }
    if (stdwin) SelectObject(stddc, oldpen);
    SelectObject(pixdc, oldpen2);
@@ -3631,7 +3631,7 @@ void fillpolygon(wbp w, XPoint *pts, int npts)
 
 LONG NumWindows = 0;
 
-
+
 /*
  * Allocate a display on machine s.  A "display" originated on X Windows as
  * a structure to remember a network connection to an X server, and handles
@@ -3651,7 +3651,7 @@ wdp alc_display(char *s)
    for(wd = wdsplys; wd; wd = wd->next)
       if (!strcmp(wd->name,s)) {
          wd->refcount++;
-	 return wd;
+         return wd;
          }
 
    GRFX_ALLOC(wd, _wdisplay);
@@ -3667,7 +3667,7 @@ wdp alc_display(char *s)
    strcpy(wd->name,s);
 #ifdef Graphics3D
    wd->stex = NULL;
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    /* gradually move common/shared resources into "display". e.g. fonts? */
 
@@ -3686,10 +3686,10 @@ wbp w;
    CURTSTATE();
 
    GRFX_ALLOC(wc, _wcontext);
-   
+
    if (getenv_r("ICONFONT", icnfnt, 255 ) == 0)
      icnfnt = fnt;
-   
+
    wc->serial = ++context_serial;
    wc->display = w->window->display;
    wc->bkmode = OPAQUE;        /* at present, only used in line drawing */
@@ -3714,10 +3714,10 @@ wbp w;
    wc->font = (wfp)alloc(sizeof (struct _wfont));
    wc->font->name = salloc("fixed");
    wc->font->font = CreateFont(16,0,0,0,FW_NORMAL,0,0,0,
-	 ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
-	 OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
-	 DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
-	 icnfnt);
+         ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
+         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
+         DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
+         icnfnt);
 
    wc->font->charwidth = 8; /* looks like a bug */
    wc->leading = 16;
@@ -3725,7 +3725,7 @@ wbp w;
    GRFX_LINK(wc, wcntxts);
    return wc;
    }
-
+
 /*
  * allocate a context, cloning attributes from an existing context
  */
@@ -3740,10 +3740,10 @@ wbp w;
    CURTSTATE();
 
    GRFX_ALLOC(wc, _wcontext);
-   
+
    if (getenv_r("ICONFONT", fnt, 255 ) == 0)
      icnfnt=fnt;
-   
+
    wc->serial = ++context_serial;
 
    tmp.window = ws;
@@ -3757,8 +3757,8 @@ wbp w;
    wc->cliph = wc2->cliph;
    if (wc2->cliprgn)
       wc->cliprgn = CreateRectRgn(wc->clipx,wc->clipy,
-			wc->clipx+wc->clipw,
-			wc->clipy+wc->cliph);
+                        wc->clipx+wc->clipw,
+                        wc->clipy+wc->cliph);
    wc->dx = wc2->dx;
    wc->dy = wc2->dy;
    wc->bits = wc2->bits;
@@ -3793,10 +3793,10 @@ wbp w;
    wc->font = (wfp)alloc(sizeof (struct _wfont));
    wc->font->name = salloc("fixed");
    wc->font->font = CreateFont(13,0,0,0,FW_NORMAL,0,0,0,
-	 ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
-	 OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
-	 DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
-	 icnfnt);
+         ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
+         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
+         DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
+         icnfnt);
    wc->leading = wc2->leading;
    setfont(&tmp, &(wc2->font->name));
 
@@ -3821,12 +3821,12 @@ wbp w;
       ReleaseDC(ws->iconwin, hdc);
 #endif
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    GRFX_LINK(wc, wcntxts);
    return wc;
    }
-
+
 /*
  * allocate a window state structure
  */
@@ -3835,7 +3835,7 @@ wsp alc_winstate()
    int i;
    wsp ws;
    CURTSTATE();
-   
+
    GRFX_ALLOC(ws, _wstate);
    ws->serial = ++canvas_serial;
    ws->bits = 1024;                             /* echo ON; others OFF */
@@ -3847,7 +3847,7 @@ wsp alc_winstate()
 #ifdef Graphics3D
    ws->type = REAL_WSTATE;
    ws->texindex = -1;
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
    GRFX_LINK(ws, wstates);
    return ws;
    }
@@ -3862,42 +3862,42 @@ wsp ws;
    ws->refcount--;
    if(ws->refcount == 0) {
       if (ws->win) /* && IsWindowVisible(ws->win))*/
-	 DestroyWindow(ws->win);
+         DestroyWindow(ws->win);
 /*      ws->win = 0;*/
       if (ws->iconwin && ws->iconwin != ws->win) {
          if (IsWindowVisible(ws->iconwin))
-	    DestroyWindow(ws->iconwin);
+            DestroyWindow(ws->iconwin);
          else DestroyWindow(ws->iconwin);
-	 }
+         }
 /*      ws->iconwin = 0;*/
 /*      while (ws->win)
-	 if (pollevent() == -1) return -1;
+         if (pollevent() == -1) return -1;
 */
       if (ws->windowlabel) { free(ws->windowlabel); ws->windowlabel=0;}
       if (ws->iconlabel) {free(ws->iconlabel); ws->iconlabel=0;}
       if (ws->pix)
-	 DeleteObject(ws->pix);
+         DeleteObject(ws->pix);
       ws->pix = 0;
       if (ws->iconpix)
-	 DeleteObject(ws->iconpix);
+         DeleteObject(ws->iconpix);
       ws->iconpix = 0;
       if (ws->initialPix)
-	 DeleteObject(ws->initialPix);
+         DeleteObject(ws->initialPix);
       ws->initialPix = 0;
       /* need to enumerate and specifically free each string */
       if (ws->menuMap) {
-	 for(i=0;i<ws->nmMapElems;i++) free(ws->menuMap[i]);
+         for(i=0;i<ws->nmMapElems;i++) free(ws->menuMap[i]);
          free(ws->menuMap);
          ws->menuMap = 0;
-	 }
+         }
       free(ws->cursorname);
       if (ws->child) {
          for(i=0;i<ws->nChildren;i++) {
             free(ws->child[i].id);
             if (ws->child[i].font) DeleteObject(ws->child[i].font);
-	    }
+            }
          free(ws->child);
-	 }
+         }
       ws->child = 0;
       GRFX_UNLINK(ws, wstates);
       }
@@ -3913,27 +3913,27 @@ wcp wc;
    wc->refcount--;
    if(wc->refcount == 0) {
       if (wc->cliprgn)
-	 DeleteObject(wc->cliprgn);
+         DeleteObject(wc->cliprgn);
       wc->cliprgn = 0;
       if (wc->pattern)
-	 DeleteObject(wc->pattern);
+         DeleteObject(wc->pattern);
       wc->pattern = 0;
       if (wc->patternname)
-	 free(wc->patternname);
+         free(wc->patternname);
       wc->patternname = 0;
       if (wc->fgname) free(wc->fgname);
       wc->fgname = 0;
       if (wc->bgname) free(wc->bgname);
       wc->bgname = 0;
       if (wc->font) {
-	 if (wc->font->font)
-	    DeleteObject(wc->font->font);
-	 wc->font->font = 0;
-	 if (wc->font->name)
-	    free(wc->font->name);
-	 wc->font->name = 0;
-	 free(wc->font);
-	 }
+         if (wc->font->font)
+            DeleteObject(wc->font->font);
+         wc->font->font = 0;
+         if (wc->font->name)
+            free(wc->font->name);
+         wc->font->name = 0;
+         free(wc->font);
+         }
       wc->font = 0;
       GRFX_UNLINK(wc, wcntxts);
       }
@@ -3989,7 +3989,7 @@ int len;
    wc->patternname = malloc(len+1);
    strncpy(wc->patternname, name, len);
    wc->patternname[len] = '\0';
-   
+
    /*
     * If the pattern starts with a number it is a width , bits encoding
     */
@@ -3997,10 +3997,10 @@ int len;
       nbits = MAXXOBJS;
       switch (parsepattern(name, len, &width, &nbits, bits)) {
       case Failed:
-	 return Failed;
+         return Failed;
       case RunError:
-	 ReturnErrNum(145, RunError);
-	 }
+         ReturnErrNum(145, RunError);
+         }
       if (w->window->iconwin == NULL) return Succeeded;
       return SetPatternBits(w, width, bits, nbits);
       }
@@ -4011,18 +4011,18 @@ int len;
    if ((symbol = si_s2i(siPatternSyms, wc->patternname)) >= 0) {
       if (w->window->iconwin == NULL) return Succeeded;
       for(i = 0; i < 8; i++) {
-	 v = reversebits(~(patbits[symbol * 8 + i]));
-	 *buf++ = v;
-	 }
+         v = reversebits(~(patbits[symbol * 8 + i]));
+         *buf++ = v;
+         }
       p = CreateBitmapFromData(data);
       if (wc->pattern)
-	 DeleteObject(wc->pattern);
+         DeleteObject(wc->pattern);
       wc->pattern = p;
       if (wc->fillstyle == BS_PATTERN) {
-	 wc->brush.lbStyle = BS_PATTERN;
-	 wc->brush.lbColor = PALCLR(wc->fg);
-	 wc->brush.lbHatch = (word)p;
-	 }     
+         wc->brush.lbStyle = BS_PATTERN;
+         wc->brush.lbColor = PALCLR(wc->fg);
+         wc->brush.lbHatch = (word)p;
+         }
       return Succeeded;
       }
    ReturnErrNum(145, RunError);
@@ -4065,15 +4065,15 @@ int nbits;
    if (width == 8) {
       for(i = 0; i < nbits; i++) {
          v = bits[i];
-	 *buf++ = reversebits(~v);
-	 }
+         *buf++ = reversebits(~v);
+         }
       }
    else if (width == 4) {
       for(k=0; k < 2; k++) /* do twice to get 8 rows */
       for(i = 0; i < nbits; i++) {
          v = widenbits(bits[i]);
-	 *buf++ = reversebits(~v);
-	 }
+         *buf++ = reversebits(~v);
+         }
       }
    else return Failed;
 
@@ -4085,7 +4085,7 @@ int nbits;
       wc->brush.lbStyle = BS_PATTERN;
       wc->brush.lbColor = PALCLR(wc->fg);
       wc->brush.lbHatch = (word)p;
-      }     
+      }
    return Succeeded;
    }
 
@@ -4120,7 +4120,7 @@ wbp w;
    resizePixmap(w, ws->width, ws->height);
    return Succeeded;
    }
-
+
 
 int do_config(w, status)
 wbp w;
@@ -4138,61 +4138,61 @@ int status;
    if (ws->win) {
       pollevent();
       if (status == 3) {
-	 if (ws->parent)
-	   SetWindowPos(ws->win, ws->win, posx, posy, wid, ht, 
-			SWP_NOZORDER|SWP_NOACTIVATE);
-         else 
-	   SetWindowPos(ws->win, ws->win, posx, posy,
-		      wid + BORDWIDTH, ht + BORDHEIGHT + 1,
-			SWP_NOZORDER|SWP_NOACTIVATE);
-	 }
+         if (ws->parent)
+           SetWindowPos(ws->win, ws->win, posx, posy, wid, ht,
+                        SWP_NOZORDER|SWP_NOACTIVATE);
+         else
+           SetWindowPos(ws->win, ws->win, posx, posy,
+                      wid + BORDWIDTH, ht + BORDHEIGHT + 1,
+                        SWP_NOZORDER|SWP_NOACTIVATE);
+         }
       else if (status == 2) {
-	 if (ws->parent)
-	    SetWindowPos(ws->win, ws->win, 0, 0, wid, ht, 
-			 SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
-         else 
-	   SetWindowPos(ws->win, ws->win, 0, 0,
-		      wid + BORDWIDTH, ht + BORDHEIGHT + 1,
-		      SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+         if (ws->parent)
+            SetWindowPos(ws->win, ws->win, 0, 0, wid, ht,
+                         SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+         else
+           SetWindowPos(ws->win, ws->win, 0, 0,
+                      wid + BORDWIDTH, ht + BORDHEIGHT + 1,
+                      SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
          }
       else if (status == 1)
-	 if (ws->parent)
-	    SetWindowPos(ws->win, ws->win, posx, posy, 0, 0,
-			 SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
+         if (ws->parent)
+            SetWindowPos(ws->win, ws->win, posx, posy, 0, 0,
+                         SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
          else
-	   SetWindowPos(ws->win, ws->win,
-		      posx,
-		      posy,
-		      0, 0, SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
+           SetWindowPos(ws->win, ws->win,
+                      posx,
+                      posy,
+                      0, 0, SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
       }
    else if (ws->iconwin) {
       if (status == 3) {
-	 if (ws->parent)
-	    SetWindowPos(ws->iconwin, ws->iconwin, posx, posy, wid, ht,
-			 SWP_NOZORDER|SWP_NOACTIVATE);
-         else 
-	   SetWindowPos(ws->iconwin, ws->iconwin,
-		      posx,
-		      posy,
-		      wid, ht, SWP_NOZORDER|SWP_NOACTIVATE);
-	 }
+         if (ws->parent)
+            SetWindowPos(ws->iconwin, ws->iconwin, posx, posy, wid, ht,
+                         SWP_NOZORDER|SWP_NOACTIVATE);
+         else
+           SetWindowPos(ws->iconwin, ws->iconwin,
+                      posx,
+                      posy,
+                      wid, ht, SWP_NOZORDER|SWP_NOACTIVATE);
+         }
       else if (status == 2) {
-	 if (ws->parent)
-	    SetWindowPos(ws->iconwin, ws->iconwin, 0, 0, wid, ht, 
-			 SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
-         else 
-	   SetWindowPos(ws->iconwin, ws->iconwin, 0, 0,
-		      wid, ht, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+         if (ws->parent)
+            SetWindowPos(ws->iconwin, ws->iconwin, 0, 0, wid, ht,
+                         SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+         else
+           SetWindowPos(ws->iconwin, ws->iconwin, 0, 0,
+                      wid, ht, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
          }
       else if (status == 1)
-	 if (ws->parent)
-	    SetWindowPos(ws->iconwin, ws->iconwin, posx, posy, 0, 0,
-			 SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
-         else 
-	    SetWindowPos(ws->iconwin, ws->iconwin,
-		      posx,
-		      posy,
-		      0, 0, SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
+         if (ws->parent)
+            SetWindowPos(ws->iconwin, ws->iconwin, posx, posy, 0, 0,
+                         SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
+         else
+            SetWindowPos(ws->iconwin, ws->iconwin,
+                      posx,
+                      posy,
+                      0, 0, SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
       }
 #ifdef Graphics3D
    if (ws->is_3D) {
@@ -4201,7 +4201,7 @@ int status;
 #endif
    return Succeeded;
    }
-
+
 DWORD playMIDIfile(HWND hWndNotify, LPSTR s)
 {
    uword wDeviceID;
@@ -4214,8 +4214,8 @@ DWORD playMIDIfile(HWND hWndNotify, LPSTR s)
    mciOpenParms.lpstrDeviceType = "sequencer";
    mciOpenParms.lpstrElementName = s;
    if (dwReturn = mciSendCommand((uword)NULL, MCI_OPEN,
-				 MCI_OPEN_TYPE | MCI_OPEN_ELEMENT,
-				 (uword)(LPVOID) &mciOpenParms)) {
+                                 MCI_OPEN_TYPE | MCI_OPEN_ELEMENT,
+                                 (uword)(LPVOID) &mciOpenParms)) {
       return dwReturn;
       }
    wDeviceID = mciOpenParms.wDeviceID;
@@ -4223,13 +4223,13 @@ DWORD playMIDIfile(HWND hWndNotify, LPSTR s)
    /* attempt to select the MIDI mapper */
    mciSeqSetParms.dwPort = MIDI_MAPPER;
    if (dwReturn = mciSendCommand(wDeviceID, MCI_SET, MCI_SEQ_SET_PORT,
-				 (uword)(LPVOID) &mciSeqSetParms)) {
+                                 (uword)(LPVOID) &mciSeqSetParms)) {
       /* could not select the MIDI mapper; play anyway */
       }
 
    mciPlayParms.dwCallback = (uword) hWndNotify;
    if (dwReturn = mciSendCommand(wDeviceID, MCI_PLAY, MCI_NOTIFY,
-    				 (uword)(LPVOID) &mciPlayParms)) {
+                                 (uword)(LPVOID) &mciPlayParms)) {
       mciSendCommand(wDeviceID, MCI_CLOSE, 0, (uword)NULL);
       return dwReturn;
       }
@@ -4258,7 +4258,7 @@ int playmedia(wbp w, char *s)
       }
    return Failed;
 }
-
+
 /*
  * UpdateCursorPos
  */
@@ -4328,11 +4328,11 @@ int resizePixmap(wbp w, int width, int height)
       FillRect(hdc, &rect, hb);
    }
 
-   if (ws->pix) 
+   if (ws->pix)
       if (ws->parent)
-	 BitBlt(hdc3, 0, 0, x, y, hdc2, 0, 0, SRCCOPY);
-      else 
-	 BitBlt(hdc3, 0, 0, x - 2, y - 1, hdc2, 0, 0, SRCCOPY);
+         BitBlt(hdc3, 0, 0, x, y, hdc2, 0, 0, SRCCOPY);
+      else
+         BitBlt(hdc3, 0, 0, x - 2, y - 1, hdc2, 0, 0, SRCCOPY);
    if (ws->win)
       BitBlt(hdc, 0, 0, ws->pixwidth, ws->pixheight, hdc3, 0, 0, SRCCOPY);
    SelectObject(hdc3, oldpix2);
@@ -4366,7 +4366,7 @@ void SetDCPixelFormat(HDC h)
    iFormat = ChoosePixelFormat( h, &pfd );
    SetPixelFormat( h, iFormat, &pfd );
 }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
 /*
  * CreateWinDC - create a device context for drawing on the window
@@ -4396,9 +4396,9 @@ HDC CreateWinDC(wbp w)
    if (w->context->rendermode == UGL3D) {
 #ifdef GraphicsGL
       wglMakeCurrent (hdc, w->window->ctx);
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    return hdc;
    }
@@ -4444,8 +4444,8 @@ int setinputmask(wbp w, char *val)
       }
    if (strchr(val,'t')) {
       if (!(ws->inputmask | TouchInputMask)) {
-	 ws->inputmask |= TouchInputMask;
-	 }
+         ws->inputmask |= TouchInputMask;
+         }
       }
    else {
       ws->inputmask &= ~TouchInputMask;
@@ -4522,7 +4522,7 @@ int textWidth(wbp w, char *s, int n)
    ReleaseDC(ws->iconwin, stddc);
    return rv;
    }
-
+
 void warpPointer(w, x, y)
 wbp w;
 int x, y;
@@ -4578,9 +4578,9 @@ void makebutton(wsp ws, childcontrol *cc, char *s)
    cc->font = 0;
    cc->id = salloc(s);
    cc->win = CreateWindow("button", cc->id,
-	         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		 0, 0, 0, 0, ws->iconwin, (HMENU) (uword) ws->nChildren, mswinInstance,
-		 NULL);
+                 WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+                 0, 0, 0, 0, ws->iconwin, (HMENU) (uword) ws->nChildren, mswinInstance,
+                 NULL);
 }
 
 void makescrollbar(wsp ws, childcontrol *cc, char *s, int i1, int i2)
@@ -4590,7 +4590,7 @@ void makescrollbar(wsp ws, childcontrol *cc, char *s, int i1, int i2)
    cc->font = 0;
    cc->win = CreateWindow("scrollbar", cc->id,
             WS_CHILD | WS_VISIBLE | SBS_VERT, 0, 0, 0, 0,
-	    ws->iconwin, (HMENU)(uword)ws->nChildren, mswinInstance, NULL);
+            ws->iconwin, (HMENU)(uword)ws->nChildren, mswinInstance, NULL);
    SetScrollRange(cc->win, SB_CTL, i1, i2, FALSE);
 }
 
@@ -4653,11 +4653,11 @@ void makeeditregion(wbp w, childcontrol *cc, char *s)
    cc->type = CHILD_EDIT;
    cc->id = salloc(s);
    cc->win = CreateWindow("edit", NULL,
-		WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL |
-		WS_BORDER | ES_LEFT | ES_MULTILINE |
-		ES_AUTOHSCROLL | ES_AUTOVSCROLL,
-		0, 0, 0, 0, ws->iconwin,
-		(HMENU) (uword) ws->nChildren, mswinInstance, NULL);
+                WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL |
+                WS_BORDER | ES_LEFT | ES_MULTILINE |
+                ES_AUTOHSCROLL | ES_AUTOVSCROLL,
+                0, 0, 0, 0, ws->iconwin,
+                (HMENU) (uword) ws->nChildren, mswinInstance, NULL);
    setchildfont(cc, w->context->font->name);
 }
 
@@ -4715,7 +4715,7 @@ void seteditregion(childcontrol *cc, char *s2)
 
 
 void movechild(childcontrol *cc,
-	       C_integer x, C_integer y, C_integer width, C_integer height)
+               C_integer x, C_integer y, C_integer width, C_integer height)
 {
    MoveWindow(cc->win, x, y, width, height, TRUE);
 }
@@ -4790,12 +4790,12 @@ int nativefontdialog(wbp w, char *buf, int flags, int fheight, char *colr)
       }
 
    if (flags & FONTFLAG_BOLD) lf.lfWeight = FW_BOLD;
-   else 
+   else
       lf.lfWeight = FW_DONTCARE;
    if (flags & FONTFLAG_ITALIC) lf.lfItalic = 1;
    lf.lfUnderline = lf.lfStrikeOut = 0;
-   lf.lfCharSet = 
-	 ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET);
+   lf.lfCharSet =
+         ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET);
    lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
    lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
    lf.lfQuality = DEFAULT_QUALITY;
@@ -4822,9 +4822,9 @@ int nativefontdialog(wbp w, char *buf, int flags, int fheight, char *colr)
    sprintf(buf, "%s,%d%s%s", lf.lfFaceName,
            ((lf.lfHeight > 0) ? lf.lfHeight : -lf.lfHeight),
            (lf.lfItalic ? ",italic" : ""),
-	   ((lf.lfWeight > 500) ? ",bold" : ""));
+           ((lf.lfWeight > 500) ? ",bold" : ""));
    sprintf(colr,"%d,%d,%d",
-	   RED(cf.rgbColors),GREEN(cf.rgbColors),BLUE(cf.rgbColors));
+           RED(cf.rgbColors),GREEN(cf.rgbColors),BLUE(cf.rgbColors));
    return Succeeded;
 }
 
@@ -4849,7 +4849,7 @@ char *nativecolordialog(wbp w, long r, long g, long b, char *buf)
    sprintf(buf, "%d,%d,%d", (RED(cc.rgbResult)<<8) | 0xFF,
       (GREEN(cc.rgbResult) << 8) | 0xFF,
       (BLUE(cc.rgbResult) << 8) | 0xFF);
-   return buf;   
+   return buf;
 }
 
 
@@ -4907,11 +4907,11 @@ char *nativeselectdialog(wbp w, struct b_list *L, char *s)
     else if (okflag) okflag = MB_OK;
 
    j = MessageBox((ws->focusChild ? ws->focusChild :
-		  (ws->win ? ws->win : ws->iconwin)),
+                  (ws->win ? ws->win : ws->iconwin)),
            s, " ",
           okflag | yesnoflag | retryflag
-          | (strchr(s, '!') ? MB_ICONEXCLAMATION : 
-	     (strchr(s, '?') ? MB_ICONQUESTION : MB_ICONASTERISK)));
+          | (strchr(s, '!') ? MB_ICONEXCLAMATION :
+             (strchr(s, '?') ? MB_ICONQUESTION : MB_ICONASTERISK)));
 
    switch (j) {
    case IDOK: return "Okay";
@@ -4926,11 +4926,11 @@ char *nativeselectdialog(wbp w, struct b_list *L, char *s)
 OPENFILENAME ofn;
 
 char *nativefiledialog(wbp w,
-			char *s1, /* title */
-			char *s2, /* default/initial file */
-			char *s3, /* filter */
-			char *s4, /* directory */
-			int i, int j, int saveflag)
+                        char *s1, /* title */
+                        char *s2, /* default/initial file */
+                        char *s3, /* filter */
+                        char *s4, /* directory */
+                        int i, int j, int saveflag)
 {
    char buf[256], buf2[256], buf3[256];
    char *stmp;
@@ -4963,7 +4963,7 @@ char *nativefiledialog(wbp w,
    while(strchr(s2, '\\')) s2 = strchr(s2, '\\') + 1;
    if (strchr(s2,'.')){
       int len = strlen(ofn.lpstrFile);
-      return alcstr(ofn.lpstrFile, len+1);  
+      return alcstr(ofn.lpstrFile, len+1);
       }
 
    /*
@@ -5006,7 +5006,7 @@ char my_wmap(wbp w)
 #ifdef MSWindows
    HDC hdc, hdc2, hdc3;
    DWORD winstyles = 0;
-   TEXTMETRIC	metrics;
+   TEXTMETRIC   metrics;
    LOGPALETTE logpal[4]; /* really 1 + space for an extra palette entry */
    HBRUSH brush;
    HBITMAP oldpix, oldpix2;
@@ -5043,14 +5043,14 @@ char my_wmap(wbp w)
    winstyles=WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 
    ws->iconwin = CreateWindow( "ChildWClass", NULL,
-		   winstyles,
-		   ws->posx, ws->posy,
-		   ws->width == 0 ? 400 : ws->width,
-		   ws->height == 0 ? 400: ws->height,
-			       /*		   NULL, NULL, mswinInstance, NULL); */
-		   ws->parent->window->win,
-			      (HMENU) (uword) ws->no,
-			      mswinInstance, NULL);
+                   winstyles,
+                   ws->posx, ws->posy,
+                   ws->width == 0 ? 400 : ws->width,
+                   ws->height == 0 ? 400: ws->height,
+                               /*                  NULL, NULL, mswinInstance, NULL); */
+                   ws->parent->window->win,
+                              (HMENU) (uword) ws->no,
+                              mswinInstance, NULL);
    hdc = GetDC(ws->iconwin);
    if ((GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) && (numColors == 0)){
       /* This window is on a device that supports palettes */
@@ -5095,10 +5095,10 @@ char my_wmap(wbp w)
       if (!ws->width) ws->width = FWIDTH(w) * 80;
       if (!ws->height) ws->height = FHEIGHT(w) * 12;
       SetWindowPos(ws->iconwin, ws->iconwin,
-		   ws->posx,
-		   ws->posy,
-		   ws->width, ws->height,
-		   SWP_NOZORDER);
+                   ws->posx,
+                   ws->posy,
+                   ws->width, ws->height,
+                   SWP_NOZORDER);
       }
    if (!ws->pix) {
       hdc = GetDC(ws->iconwin);
@@ -5121,10 +5121,10 @@ char my_wmap(wbp w)
 #ifdef GraphicsGL
       ws->ctx = wglCreateContext (hdc);
       wglMakeCurrent (hdc, ws->ctx);
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       ReleaseDC(ws->iconwin, hdc);
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    if (!ISTOBEHIDDEN(ws)) {
       ws->win = ws->iconwin;
@@ -5162,9 +5162,9 @@ char my_wmap(wbp w)
       if (palette) {
          SelectPalette(hdc, palette, FALSE);
          SelectPalette(hdc2, palette, FALSE);
-	 RealizePalette(hdc);
-	 RealizePalette(hdc2);
-	 }
+         RealizePalette(hdc);
+         RealizePalette(hdc2);
+         }
       brush = CreateBrushIndirect(&(wc->bgbrush));
       if (ws->win)
          FillRect(hdc, &rec, brush);
@@ -5176,30 +5176,30 @@ char my_wmap(wbp w)
 
       imd = &ws->initimage;
       if (imd->width) {
-	 r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
-		      imd->data, (word)imd->width * (word)imd->height, 0);
-	 if (imd->paltbl)
-	    free((pointer)imd->paltbl);
-	 free((pointer)imd->data);
-	 imd->width = 0;
-	 if (r < 0) {
-	    return 0;
-	    }
-	 }
+         r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
+                      imd->data, (word)imd->width * (word)imd->height, 0);
+         if (imd->paltbl)
+            free((pointer)imd->paltbl);
+         free((pointer)imd->data);
+         imd->width = 0;
+         if (r < 0) {
+            return 0;
+            }
+         }
       }
    if (ws->win)
       UpdateWindow(ws->win);
 #ifdef Graphics3D
 {
    int child_window = 0;
-   if (ws->is_3D)	
+   if (ws->is_3D)
       child_window = CHILD_WIN3D;
    else if (ws->type >= CHILD_WIN3D)
-       	  child_window = CHILD_WIN3D;
+          child_window = CHILD_WIN3D;
 
    if (child_window == CHILD_WIN3D){
       /* set up the appropriate 3D states; initialize canvas */
-      if (init_3dcanvas(w) == Failed) 
+      if (init_3dcanvas(w) == Failed)
          return 0;
    }
 }
@@ -5214,10 +5214,10 @@ void makecurrent(wbp w)
    HDC stddc = GetDC(w->window->iconwin);
 #ifdef GraphicsGL
    wglMakeCurrent(stddc, w->window->ctx);
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    ReleaseDC(w->window->iconwin, stddc);
 }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
 /*
  * sync to the server (noop)
@@ -5238,9 +5238,9 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
 #ifdef Graphics3D
       wc.style |= CS_OWNDC;
 #endif
-#else					/* NT */
+#else                                   /* NT */
       wc.style = 0;
-#endif					/* NT */
+#endif                                  /* NT */
       wc.lpfnWndProc = WndProc;
       wc.cbClsExtra = 0;
       wc.cbWndExtra = 0;
@@ -5256,9 +5256,9 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
 
 #ifdef INTMAIN
 int iconx(int argc, char **argv);
-#else					/* INTMAIN */
+#else                                   /* INTMAIN */
 void iconx(int argc, char **argv);
-#endif					/* INTMAIN */
+#endif                                  /* INTMAIN */
 
 jmp_buf mark_sj;
 
@@ -5282,11 +5282,11 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    xmfree();
 #ifdef NTGCC
    _exit(0);
-#endif					/* NTGCC */
+#endif                                  /* NTGCC */
    return 0;
 }
 #define main iconx
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
 
 
 #ifdef PosixFns
@@ -5312,38 +5312,38 @@ struct b_list *findactivepty(struct b_list *lps)
     */
    for ( ; BlkType(ep) == T_Lelem; ep = ep->Lelem.listnext) {
       for (i = 0; i < ep->Lelem.nused; i++) {
-	 union block *bp;
-	 int status;
-	 DWORD tb;
-	 j = ep->Lelem.first + i;
-	 if (j >= ep->Lelem.nslots)
-	    j -= ep->Lelem.nslots;
-	 
+         union block *bp;
+         int status;
+         DWORD tb;
+         j = ep->Lelem.first + i;
+         if (j >= ep->Lelem.nslots)
+            j -= ep->Lelem.nslots;
+
          if (!(is:file(ep->Lelem.lslots[j])))
             syserr("internal error #1 calling findactivepty()");
          if (!(status = BlkLoc(ep->Lelem.lslots[j])->File.status))
             syserr("internal error #2 calling findactivepty()");
          if (! (status & Fs_Pty)) {
             syserr("internal error #3 calling findactivepty()");
-	    }
+            }
          if (!(status & Fs_Read)) {
             /* a closed window was found on the list, ignore it */
-	    continue;
-	    }
-	 bp = BlkLoc(ep->Lelem.lslots[j]);
-	 pt = bp->File.fd.pt;
-	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
-		&& (tb>0)) {
-	    if (is:null(d)) {
-	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
-	       d.dword = D_List;
-	       }
-	    c_put(&d, &(ep->Lelem.lslots[j]));
-	    }
-	 }
+            continue;
+            }
+         bp = BlkLoc(ep->Lelem.lslots[j]);
+         pt = bp->File.fd.pt;
+         if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
+                && (tb>0)) {
+            if (is:null(d)) {
+               BlkLoc(d) = (union block *)alclist(0, MinListSlots);
+               d.dword = D_List;
+               }
+            c_put(&d, &(ep->Lelem.lslots[j]));
+            }
+         }
       }
    if (is:null(d)) return NULL;
    return (struct b_list *)BlkLoc(d);
 }
-#endif					/* defined(PseudoPty) && defined(MSWindows) */
-#endif PosixFns			 	/* PosixFns */
+#endif                                  /* defined(PseudoPty) && defined(MSWindows) */
+#endif PosixFns                         /* PosixFns */

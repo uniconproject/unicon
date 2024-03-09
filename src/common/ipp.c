@@ -116,7 +116,7 @@ char *lpath;				/* LPATH for finding source files */
 static int ifdepth;			/* depth of $if nesting */
 
 extern int __merr_errors, nocode;		/* provided by icont, iconc */
-
+
 /*
  * ppinit(fname, inclpath, m4) -- initialize preprocessor to read from fname.
  *
@@ -239,7 +239,7 @@ void ppecho()
    while ((c = ppch()) != EOF)
       putchar(c);
    }
-
+
 /*
  * ppch() -- get preprocessed character.
  */
@@ -392,7 +392,7 @@ int ppch()
          }
       }
    }
-
+
 /*
  * rline(fp) -- read arbitrarily long line and return pointer.
  *
@@ -446,7 +446,7 @@ FILE *fp;
       n = LINE_SIZE_INCR;
       }
    }
-
+
 /*
  * pushdef(d) -- insert definition into the input stream.
  */
@@ -484,7 +484,7 @@ long lno;
    bnxt = tbuf;
    bstop = blim = tbuf + strlen(tbuf);
    }
-
+
 /*
  * ppdir(s) -- handle preprocessing directive.
  *
@@ -550,7 +550,7 @@ char *s;
    pfatal("explicit $error", s);		/* issue msg with text */
    return NULL;
    }
-
+
 /*
  * define(s) -- handle $define directive.
  */
@@ -600,7 +600,7 @@ char *s;
    dlookup(name, -1, (char *)NULL);
    return NULL;
    }
-
+
 /*
  * include(s) -- handle $include directive.
  */
@@ -658,7 +658,7 @@ char *s;
    pushline(curfile->fname, curfile->lno);
    return NULL;
    }
-
+
 /*
  * ifdef(s), ifndef(s) -- conditional processing if s is/isn't defined.
  */
@@ -722,7 +722,7 @@ char *s;
    ifdepth--;
    return NULL;
    }
-
+
 /*
  * skipcode(doelse,report) -- skip code to $else (doelse=1) or $endif (=0).
  *
@@ -787,7 +787,7 @@ int doelse, report;
     *  At EOF, just return; main loop will report unterminated $if.
     */
    }
-
+
 /*
  * Token scanning functions.
  */
@@ -910,7 +910,7 @@ char *dst, *src;
    *dst = '\0';
    return lim + 1;
    }
-
+
 /*
  * dlookup(name, len, val) look up entry in definition table.
  *

@@ -16,7 +16,7 @@ char *s;
     while(*s++) l++;
     return l;
 }
-
+
 /* Shell sort with some enhancements from Knuth.. */
 
 void lqsort( base, nel, width, cmp )
@@ -48,7 +48,7 @@ int (*cmp)();
            }
 }
 #endif					/* IntBits == 16 */
-
+
 /* 
  * Write a long string in int-sized chunks.
  */

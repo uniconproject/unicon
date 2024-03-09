@@ -127,7 +127,7 @@ static int good_char[128] = {
    1  /*  |   */,   1  /*  }   */,   1  /*  ~   */,   0  /*  \d  */
    };
 #endif					/* EBCDIC */
-
+
 /*
  * init_lex - initialize lexical analyzer.
  */
@@ -232,7 +232,7 @@ void init_lex()
          }
       }
    }
-
+
 /*
  * int_suffix - we have reached the end of what seems to be an integer
  *  constant. check for a valid suffix.
@@ -266,7 +266,7 @@ char *s;
       errt2(yylval.t, "invalid integer constant: ", yylval.t->image);
    return tok_id;
    }
-
+
 /*
  * yylex - lexical analyzer, called by yacc-generated parser.
  */

@@ -38,7 +38,7 @@
          s2 = blank;
    /* } must be supplied */
 #enddef
-
+
 
 "center(s1,i,s2) - pad s1 on left and right with s2 to length i."
 
@@ -117,7 +117,7 @@ function{1} center(s1,n,s2)
       return string(n, sbuf);
       } }
 end
-
+
 
 "detab(s,i,...) - replace tabs with spaces, with stops at columns indicated."
 
@@ -144,9 +144,9 @@ function{1} detab(s,i[n])
       reserve(Strings, StrLen(s) * 8);
 
       for (j=0; j<n; j++) {
-	 if (!cnv:integer(i[j],i[j]))
+         if (!cnv:integer(i[j],i[j]))
             runerr(101,i[j]);
-	 if ((j>0) && IntVal(i[j])<=IntVal(i[j-1]))
+         if ((j>0) && IntVal(i[j])<=IntVal(i[j-1]))
             runerr(210, i[j]);
 
          }
@@ -213,15 +213,15 @@ function{1} detab(s,i[n])
       if (is_expanded)
          return result;
       else {
-	 long n = DiffPtrs(StrLoc(result),strfree); /* note deallocation */
-	 EVStrAlc(n);
-	 strtotal += n;
-         strfree = StrLoc(result);		/* reset the free pointer */
-         return s;				/* return original string */
+         long n = DiffPtrs(StrLoc(result),strfree); /* note deallocation */
+         EVStrAlc(n);
+         strtotal += n;
+         strfree = StrLoc(result);              /* reset the free pointer */
+         return s;                              /* return original string */
          }
       }
 end
-
+
 
 
 "entab(s,i,...) - replace spaces with tabs, with stops at columns indicated."
@@ -244,10 +244,10 @@ function{1} entab(s,i[n])
       CURTSTATE();
 
       for (j=0; j<n; j++) {
-	 if (!cnv:integer(i[j],i[j]))
+         if (!cnv:integer(i[j],i[j]))
             runerr(101,i[j]);
 
-	 if ((j>0) && IntVal(i[j])<=IntVal(i[j-1]))
+         if ((j>0) && IntVal(i[j])<=IntVal(i[j-1]))
             runerr(210, i[j]);
          }
 
@@ -303,22 +303,22 @@ function{1} entab(s,i[n])
                   nt1 = nt;
                   nxttab(&nt1, &tablst, endlst, &last, &interval);
                   if (nt1 > target) {
-                     col++;	/* keep space to avoid 1-col tab then spaces */
+                     col++;     /* keep space to avoid 1-col tab then spaces */
                      nt = nt1;
                      }
                   else
-                     out--;	/* back up to begin tabbing */
+                     out--;     /* back up to begin tabbing */
                   }
                else
-                  out--;	/* back up to begin tabbing */
+                  out--;        /* back up to begin tabbing */
                while (nt <= target)  {
                   inserted = 1;
-                  *out++ = '\t';	/* put tabs to tab positions */
+                  *out++ = '\t';        /* put tabs to tab positions */
                   col = nt;
                   nxttab(&nt, &tablst, endlst, &last, &interval);
                   }
                while (col++ < target)
-                  *out++ = ' ';		/* complete gap with spaces */
+                  *out++ = ' ';         /* complete gap with spaces */
                }
             col = target;
             break;
@@ -332,24 +332,24 @@ function{1} entab(s,i[n])
        *  original string (and reset strfree) to conserve memory.
        */
       if (inserted) {
-	 long n;
+         long n;
          StrLen(result) = DiffPtrs(out,StrLoc(result));
-	 n = DiffPtrs(out,strfree);		/* note the deallocation */
-	 EVStrAlc(n);
-	 strtotal += n;
-         strfree = out;				/* give back unused space */
-         return result;				/* return new string */
+         n = DiffPtrs(out,strfree);             /* note the deallocation */
+         EVStrAlc(n);
+         strtotal += n;
+         strfree = out;                         /* give back unused space */
+         return result;                         /* return new string */
          }
       else {
-	 long n = DiffPtrs(StrLoc(result),strfree); /* note the deallocation */
-	 EVStrAlc(n);
-	 strtotal += n;
-         strfree = StrLoc(result);		/* reset free pointer */
-         return s;				/* return original string */
-	 }
+         long n = DiffPtrs(StrLoc(result),strfree); /* note the deallocation */
+         EVStrAlc(n);
+         strtotal += n;
+         strfree = StrLoc(result);              /* reset free pointer */
+         return s;                              /* return original string */
+         }
       }
 end
-
+
 /*
  * nxttab -- helper routine for entab and detab, returns next tab
  *   beyond col
@@ -378,7 +378,7 @@ C_integer *interval;
    else
       *col = IntVal((*tablst)[0]);
    }
-
+
 
 "left(s1,i,s2) - pad s1 on right with s2 to length i."
 
@@ -390,7 +390,7 @@ function{1} left(s1,n,s2)
        * just construct a descriptor.
        */
       if (n <= StrLen(s1)) {
-	 return string(n, StrLoc(s1));
+         return string(n, StrLoc(s1));
          }
 
       /*
@@ -426,7 +426,7 @@ function{1} left(s1,n,s2)
       return string(n, sbuf);
       }
 end
-
+
 
 /*
  * What we know about map:
@@ -450,7 +450,7 @@ function{1} map(s1,s2,s3)
       runerr(103,s2)
    if !def:string(s3, lcase) then
       runerr(103,s3)
-#endif						/* COMPILER */
+#endif                                          /* COMPILER */
 
    abstract {
       return string
@@ -461,7 +461,7 @@ function{1} map(s1,s2,s3)
       register char *str1, *str2, *str3;
 #ifndef Concurrent
       static char maptab[256];
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
       CURTSTATE();
 
 #if !COMPILER
@@ -474,18 +474,18 @@ function{1} map(s1,s2,s3)
        * Short-cut conversions of &lcase and &ucase.
        */
       else {
-	 struct descrip _k_lcase_, _k_ucase_;
-	 Klcase(&_k_lcase_);
-	 Kucase(&_k_ucase_);
-	 if (s2.dword == D_Cset) {
-	    if (BlkLoc(s2) == BlkLoc(_k_lcase_)) {
-	       s2 = lcase;
-	       }
-	    else if (BlkLoc(s2) == BlkLoc(_k_ucase_)) {
-	       s2 = ucase;
-	       }
-	    }
-	 }
+         struct descrip _k_lcase_, _k_ucase_;
+         Klcase(&_k_lcase_);
+         Kucase(&_k_ucase_);
+         if (s2.dword == D_Cset) {
+            if (BlkLoc(s2) == BlkLoc(_k_lcase_)) {
+               s2 = lcase;
+               }
+            else if (BlkLoc(s2) == BlkLoc(_k_ucase_)) {
+               s2 = ucase;
+               }
+            }
+         }
 
       if (is:null(s3))
          s3 = lcase;
@@ -493,19 +493,19 @@ function{1} map(s1,s2,s3)
        * Short-cut conversions of &lcase and &ucase.
        */
       else {
-	 struct descrip _k_lcase_, _k_ucase_;
-	 Klcase(&_k_lcase_);
-	 Kucase(&_k_ucase_);
-	 if (s3.dword == D_Cset) {
-	    if (BlkLoc(s3) == BlkLoc(_k_lcase_)) {
-	       s3 = lcase;
-	       }
-	    else if (BlkLoc(s3) == BlkLoc(_k_ucase_)) {
-	       s3 = ucase;
-	       }
-	    }
-	 }
-#endif					/* !COMPILER */
+         struct descrip _k_lcase_, _k_ucase_;
+         Klcase(&_k_lcase_);
+         Kucase(&_k_ucase_);
+         if (s3.dword == D_Cset) {
+            if (BlkLoc(s3) == BlkLoc(_k_lcase_)) {
+               s3 = lcase;
+               }
+            else if (BlkLoc(s3) == BlkLoc(_k_ucase_)) {
+               s3 = ucase;
+               }
+            }
+         }
+#endif                                  /* !COMPILER */
 
       /*
        * If s2 and s3 are the same as for the last call of map,
@@ -521,7 +521,7 @@ function{1} map(s1,s2,s3)
             runerr(103,s2);
          if (!cnv:string(s3,s3))
             runerr(103,s3);
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
          /*
           * s2 and s3 must be of the same length
           */
@@ -547,12 +547,12 @@ function{1} map(s1,s2,s3)
       slen = StrLen(s1);
 
       if (slen == 0) {
-	 return emptystr;
-	 }
+         return emptystr;
+         }
       else if (slen == 1) {
-	 char c = maptab[*(StrLoc(s1)) & 0xFF];
-	 return string(1, (char *)&allchars[FromAscii(c) & 0xFF]);
-	 }
+         char c = maptab[*(StrLoc(s1)) & 0xFF];
+         return string(1, (char *)&allchars[FromAscii(c) & 0xFF]);
+         }
 
       /*
        * The result is a string the size of s1; create the result
@@ -573,7 +573,7 @@ function{1} map(s1,s2,s3)
       return result;
       }
 end
-
+
 
 "repl(s,i) - concatenate i copies of string s."
 
@@ -588,20 +588,20 @@ function{1} repl(s,n)
    if is:list(s) then {
       abstract { return type(s) }
       body {
-	 register struct b_list *bp1;
-	 register struct b_lelem *lp1;
-	 word i, size1, size2;
-	 size1 = BlkD(s,List)->size;
-	 size2 = size1 * n;
-	 Protect(bp1 = (struct b_list *)alclist_raw(size2, size2), runerr(0));
-	 lp1 = (struct b_lelem *) (bp1->listhead);
+         register struct b_list *bp1;
+         register struct b_lelem *lp1;
+         word i, size1, size2;
+         size1 = BlkD(s,List)->size;
+         size2 = size1 * n;
+         Protect(bp1 = (struct b_list *)alclist_raw(size2, size2), runerr(0));
+         lp1 = (struct b_lelem *) (bp1->listhead);
 
-	 for(i=0; i<n; i++) {
-	    cpslots(&s, lp1->lslots + i*size1, (word)1, size1+1);
-	    }
-	 BlkLoc(s) = (union block *)bp1;
-	 return s;
-	 }
+         for(i=0; i<n; i++) {
+            cpslots(&s, lp1->lslots + i*size1, (word)1, size1+1);
+            }
+         BlkLoc(s) = (union block *)bp1;
+         return s;
+         }
       }
 
    else if cnv:string(s) then {
@@ -660,7 +660,7 @@ function{1} repl(s,n)
 }
 else runerr(103,s)
 end
-
+
 
 "reverse(s) - reverse string s."
 
@@ -671,17 +671,17 @@ function{1} reverse(x)
          return type(x)
          }
       body {
-	 int i=0, size = BlkD(x,List)->size;
-	 struct descrip temp;
-	 dptr dp;
-	 cplist(&x, &result, 1, size+1);
-	 dp = Blk(BlkD(result,List)->listhead,Lelem)->lslots;
-	 while (i<size-1) {
-	    temp = dp[i]; dp[i] = dp[size-1]; dp[size-1] = temp;
-	    i++; size--;
-	    }
-	 return result;
-	 }
+         int i=0, size = BlkD(x,List)->size;
+         struct descrip temp;
+         dptr dp;
+         cplist(&x, &result, 1, size+1);
+         dp = Blk(BlkD(result,List)->listhead,Lelem)->lslots;
+         while (i<size-1) {
+            temp = dp[i]; dp[i] = dp[size-1]; dp[size-1] = temp;
+            i++; size--;
+            }
+         return result;
+         }
       }
    else {
 
@@ -718,7 +718,7 @@ function{1} reverse(x)
       }
 }
 end
-
+
 
 "right(s1,i,s2) - pad s1 on left with s2 to length i."
 
@@ -729,7 +729,7 @@ function{1} right(s1,n,s2)
        * just construct a descriptor.
        */
       if (n <= StrLen(s1)) {
-	 return string(n, StrLoc(s1) + StrLen(s1) - n);
+         return string(n, StrLoc(s1) + StrLen(s1) - n);
          }
 
       /*
@@ -765,7 +765,7 @@ function{1} right(s1,n,s2)
       return string(n, sbuf);
       }
 end
-
+
 
 "trim(s,c) - trim trailing characters in c from s."
 

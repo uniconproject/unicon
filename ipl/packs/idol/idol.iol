@@ -50,7 +50,7 @@ procedure gencode()
   if *compiles>0 then return cdicont(compiles)
   else return
 end
-
+
 #
 # a class defining objects resulting from parsing lines of the form
 # tag name ( field1 , field2, ... )
@@ -74,7 +74,7 @@ class declaration(public name,fields,tag)
       ((self.fields := classFields())$parse(tab(find(")"))))
     ) | halt("declaration/read can't parse decl ",decl)
   end
-
+
   #
   # write a declaration; at the moment, only used by records
   #
@@ -90,7 +90,7 @@ class declaration(public name,fields,tag)
 initially
   if \self.name then self$read(self.name)
 end
-
+
 #
 # A class for ordinary Icon global declarations
 #
@@ -161,7 +161,7 @@ class constdcl : vardecl()
     }
   end
 end
-
+
 #
 # class body manages a list of strings holding the code for
 # procedures/methods/classes
@@ -203,7 +203,7 @@ class body(fn,ln,vars,text)
     if t := \self.text then suspend !self.text
   end
 end
-
+
 #
 # a class defining operations on classes
 #
@@ -251,7 +251,7 @@ class class : declaration (supers,methods,text,imethods,ifields,glob)
     }
     halt("class/read syntax error: eof inside a class definition")
   end
-
+
   #
   # Miscellaneous methods on classes
   #
@@ -319,7 +319,7 @@ class class : declaration (supers,methods,text,imethods,ifields,glob)
     write(f,"end")
     close(f)
   end
-
+
   #
   # write out the Icon code for this class' explicit methods
   # and its "nested global" declarations (procedures, records, etc.)
@@ -377,7 +377,7 @@ class class : declaration (supers,methods,text,imethods,ifields,glob)
     writes(f,"global ",self.name,"__oprec")
     every writes(f,", ", $!self.supers,"__oprec")
     write(f)
-
+
     #
     # write the constructor procedure.
     # This is a long involved process starting with writing the declaration.
@@ -438,7 +438,7 @@ class class : declaration (supers,methods,text,imethods,ifields,glob)
     #
     write(f,"  return idol_object(self,",self.name,"__oprec)\n",
 	    "end\n")
-    
+    
     #
     # write out class initializer procedure to initialize my operation record
     #
@@ -485,7 +485,7 @@ class class : declaration (supers,methods,text,imethods,ifields,glob)
     close(f)
 
   end
-
+
   #
   # resolve -- primary inheritance resolution utility
   #
@@ -527,7 +527,7 @@ class class : declaration (supers,methods,text,imethods,ifields,glob)
     }
   end
 end
-
+
 #
 # a class defining operations on methods and procedures
 #
@@ -558,7 +558,7 @@ class method : declaration (class,text)
     self.text := &null			# after writing out text, forget it!
   end
 end
-
+
 #
 # a class corresponding to an Icon table, with special treatment of empties
 #
@@ -600,7 +600,7 @@ class taque : Table (l)
     suspend self$Table.foreach()
   end
 end
-
+
 #
 # support for taques found as lists of ids separated by punctuation
 # constructor called with (separation char, source string)
@@ -625,7 +625,7 @@ class idTaque : taque(punc)
     return out[1:-1]
   end
 end
-
+
 #
 # parameter lists in which the final argument may have a trailing []
 #
@@ -679,7 +679,7 @@ class classFields : argList(publics)
 initially
   self.punc := ","
 end
-
+
 #
 # procedure to read a single Idol source file
 #
@@ -737,7 +737,7 @@ procedure readinput(name,phase,ct2)
     }
     close(fin)
 end
-
+
 #
 # filter the input translating $ references
 # (also eats comments and trims lines)

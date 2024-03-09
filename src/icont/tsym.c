@@ -33,7 +33,7 @@ void	gdump	(void);
 void	ldump	(void);
 #endif					/* DeBugTrans */
 
-
+
 /*
  * Keyword table.
  */
@@ -48,7 +48,7 @@ static struct keyent keytab[] = {
 #include "../h/kdefs.h"
    NULL, -1
 };
-
+
 /*
  * loc_init - clear the local and constant symbol tables.
  */
@@ -85,7 +85,7 @@ void loc_init()
    cfirst = NULL;
    clast = NULL;
    }
-
+
 /*
  * install - put an identifier into the global or local symbol table.
  *  The basic idea here is to look in the right table and install
@@ -139,7 +139,7 @@ int flag, argcnt;
          tsyserr("install: unrecognized symbol table flag.");
       }
    }
-
+
 /*
  * putloc - make a local symbol table entry and return the index
  *  of the entry in lhash.  alcloc does the work if there is a collision.
@@ -155,7 +155,7 @@ int putloc(char *id, int id_type)
       }
    return ptr->l_index;
    }
-
+
 /*
  * putglob makes a global symbol table entry. alcglob does the work if there
  *  is a collision.
@@ -170,7 +170,7 @@ static void putglob(char *id, int id_type, int n_args)
       ghash[ghasher(id)] = alcglob(ptr, id, id_type, n_args);
       }
    }
-
+
 /*
  * putlit makes a constant symbol table entry and returns the table "index"
  *  of the constant.  alclit does the work if there is a collision.
@@ -186,7 +186,7 @@ int putlit(char *id, int idtype, int len)
       }
    return ptr->c_index;
    }
-
+
 /*
  * llookup looks up id in local symbol table and returns pointer to
  *  to it if found or NULL if not present.
@@ -201,7 +201,7 @@ static struct tlentry *llookup(char *id)
       ptr = ptr->l_blink;
    return ptr;
    }
-
+
 /*
  * glookup looks up id in global symbol table and returns pointer to
  *  to it if found or NULL if not present.
@@ -216,7 +216,7 @@ static struct tgentry *glookup(char *id)
       }
    return ptr;
    }
-
+
 /*
  * clookup looks up id in constant symbol table and returns pointer to
  *  to it if found or NULL if not present.
@@ -229,7 +229,7 @@ static struct tcentry *clookup(char *id, int flag)
 
    return ptr;
    }
-
+
 /*
  * klookup looks up keyword named by id in keyword table and returns
  *  its number (keyid).
@@ -244,7 +244,7 @@ int klookup(char *id)
 
    return 0;
    }
-
+
 #ifdef DeBugTrans
 /*
  * ldump displays local symbol table to stdout.
@@ -269,7 +269,7 @@ void ldump()
    fflush(stderr);
 
    }
-
+
 /*
  * gdump displays global symbol table to stdout.
  */
@@ -293,7 +293,7 @@ void gdump()
 		gptr->g_flag, gptr->g_nargs);
    fflush(stderr);
    }
-
+
 /*
  * cdump displays constant symbol table to stdout.
  */
@@ -317,7 +317,7 @@ void cdump()
    fflush(stderr);
    }
 #endif					/* DeBugTrans */
-
+
 /*
  * alcloc allocates a local symbol table entry, fills in fields with
  *  specified values and returns the new entry.  
@@ -374,7 +374,7 @@ int flag, nargs;
    glast = gp;
    return gp;
    }
-
+
 /*
  * alclit allocates a constant symbol table entry, fills in fields with
  *  specified values and returns the new entry.  
@@ -403,7 +403,7 @@ int len, flag;
    clast = cp;
    return cp;
    }
-
+
 /*
  * lout dumps local symbol table to fd, which is a .u1 file.
  */
@@ -416,7 +416,7 @@ FILE *fd;
       writecheck(fprintf(fd, "\tlocal\t%d,%06o,%s\n",
          lp->l_index, lp->l_flag, lp->l_name));
    }
-
+
 /*
  * constout dumps constant symbol table to fd, which is a .u1 file.
  */
@@ -443,7 +443,7 @@ FILE *fd;
          }
       }
    }
-
+
 /*
  * rout dumps a record declaration for name to file fd, which is a .u2 file.
  */
@@ -462,7 +462,7 @@ char *name;
    for (lp = lfirst; lp != NULL; lp = lp->l_next)
       writecheck(fprintf(fd, "\t%d,%s\n", lp->l_index, lp->l_name));
    }
-
+
 /*
  * gout writes various items to fd, which is a .u2 file.  These items
  *  include: implicit status, tracing activation, link directives,

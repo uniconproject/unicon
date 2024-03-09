@@ -23,8 +23,8 @@ SQLHENV ISQLEnv=NULL;           /* global environment variable */
 #define COL_LEN SQL_MAX_COLUMN_NAME_LEN+1
 
 /* hate long names... */
-#define FSTATUS(f) BlkD(f,File)->status		/* file status */
-#define FDESC(f)   BlkD(f,File)->fd.sqlf		/* ISQLFile * */
+#define FSTATUS(f) BlkD(f,File)->status                 /* file status */
+#define FDESC(f)   BlkD(f,File)->fd.sqlf                /* ISQLFile * */
 
 
 /*-- functions implementation --*/
@@ -42,13 +42,13 @@ function{0,1} dbcolumns(f,table_name)
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
     static struct b_proc *proc;
-    
+
     /* list declarations */
     tended struct descrip L;
     tended struct b_list *hp;
-    
+
     struct ISQLFile *fp;
-    
+
     /* result set data buffers */
 
     SQLCHAR szCatalog[STR_LEN], szSchema[STR_LEN];
@@ -56,21 +56,21 @@ function{0,1} dbcolumns(f,table_name)
     SQLCHAR szTypeName[STR_LEN], szRemarks[REM_LEN];
 #ifdef MSWIN64
     SQLLEN ColumnSize, BufferLength;
-#else					/* MSWIN64 */
+#else                                   /* MSWIN64 */
     SQLINTEGER ColumnSize, BufferLength;
-#endif					/* MSWIN64 */
+#endif                                  /* MSWIN64 */
     SQLSMALLINT DataType, DecimalDigits, NumPrecRadix, Nullable;
-   
+
     SQLRETURN retcode;
-    
+
     /* buffers for bytes available to return */
 
     SQL_LENORIND cbCatalog, cbSchema, cbTableName, cbColumnName;
     SQL_LENORIND cbDataType, cbTypeName, cbColumnSize, cbBufferLength;
     SQL_LENORIND cbDecimalDigits, cbNumPrecRadix, cbNullable, cbRemarks;
-    
+
     HSTMT hstmt;
-    
+
 #ifdef MacOS
     static struct descrip colnames[12];
     static int cnm=0;  /* FIXME: thread unsafe  */
@@ -100,14 +100,14 @@ function{0,1} dbcolumns(f,table_name)
        AsgnCStr(colnames[cnm], "remarks");
        cnm++;
        };
-#else					/* MacOS */
+#else                                   /* MacOS */
     static struct descrip colnames[12] = {
        {7,(word)"catalog"}, {6,(word)"schema"}, {9,(word)"tablename"},
        {7,(word)"colname"}, {8,(word)"datatype"}, {8,(word)"typename"},
        {7,(word)"colsize"}, {6,(word)"buflen"}, {9,(word)"decdigits"},
        {12,(word)"numprecradix"}, {8,(word)"nullable"}, {7,(word)"remarks"}
        };
-#endif					/* MacOS */
+#endif                                  /* MacOS */
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -125,7 +125,7 @@ function{0,1} dbcolumns(f,table_name)
       fail;
     }
 
-    retcode=SQLColumns(hstmt,      
+    retcode=SQLColumns(hstmt,
                        NULL, 0,                /* all catalogs */
                        NULL, 0,                /* all schemas */
                        (SQLCHAR *) StrLoc(table_name), StrLen(table_name), /* table */
@@ -135,7 +135,7 @@ function{0,1} dbcolumns(f,table_name)
       odbcerror(fp, COLUMNS_ERR);
       fail;
     }
-        
+
     /* bind columns in result set to buffer (ODBC 3.x) */
 
     SQLBindCol(hstmt, 1, SQL_C_CHAR, szCatalog, STR_LEN, &cbCatalog);
@@ -150,9 +150,9 @@ function{0,1} dbcolumns(f,table_name)
     SQLBindCol(hstmt, 10, SQL_C_SSHORT, &NumPrecRadix, 0, &cbNumPrecRadix);
     SQLBindCol(hstmt, 11, SQL_C_SSHORT, &Nullable, 0, &cbNullable);
     SQLBindCol(hstmt, 12, SQL_C_CHAR, szRemarks, REM_LEN, &cbRemarks);
-      
+
     /* create empty list */
-    
+
     if ((hp=alclist(0, MinListSlots)) == NULL) fail;
     L.dword=D_List;
     L.vword.bptr=(union block *) hp;
@@ -179,12 +179,12 @@ function{0,1} dbcolumns(f,table_name)
 
       /* TABLE_NAME (varchar not NULL) */
       StrLoc(r->fields[2])=cbTableName>0?alcstr((char *) szTableName, cbTableName):"";
-      StrLen(r->fields[2])=cbTableName>0?cbTableName:0;                     
+      StrLen(r->fields[2])=cbTableName>0?cbTableName:0;
 
       /* COLUMN_NAME (varchar not NULL) */
       StrLoc(r->fields[3])=cbColumnName>0?alcstr((char *) szColumnName, cbColumnName):"";
-      StrLen(r->fields[3])=cbColumnName>0?cbColumnName:0;                     
-              
+      StrLen(r->fields[3])=cbColumnName>0?cbColumnName:0;
+
       /* DATA_TYPE (Smallint not NULL) */
       MakeInt(DataType, &(r->fields[4]));
 
@@ -200,7 +200,7 @@ function{0,1} dbcolumns(f,table_name)
 
       /* DECIMAL_DIGITS (Smallint) */
       MakeInt(DecimalDigits, &(r->fields[8]));
-      
+
       /* NUM_PREC_RADIX (Smallint) */
       MakeInt(NumPrecRadix, &(r->fields[9]));
 
@@ -216,7 +216,7 @@ function{0,1} dbcolumns(f,table_name)
 
       c_put(&L, &R);
     }
-      
+
     if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) { /* release statement */
       odbcerror(fp, FREE_STMT_ERR);
       fail;
@@ -229,12 +229,12 @@ end
 function {0,1} dbdriver(f)
   if !is:file(f) then
     runerr(105, f);
-    
+
   abstract {
     return record
   }
-  
-  body {  
+
+  body {
     SWORD len;
     UWORD result;
     static struct b_proc *proc;
@@ -251,10 +251,10 @@ function {0,1} dbdriver(f)
     static int  sql_parm[DBDRVNCOLS]={SQL_DRIVER_NAME, SQL_DRIVER_VER,
          SQL_DRIVER_ODBC_VER, SQL_ACTIVE_CONNECTIONS, SQL_ACTIVE_STATEMENTS,
          SQL_DATA_SOURCE_NAME};
-         
+
     /* SQLGetInfo() result is a string */
     static int  is_str[DBDRVNCOLS]={1,1,1,0,0,1};
-                               
+
     /* unicon field names */
 #ifdef MacOS
     static struct descrip colnames[6];
@@ -273,12 +273,12 @@ function {0,1} dbdriver(f)
        AsgnCStr(colnames[cnm], "dsn");
        cnm++;
        }
-#else					/* MacOS */
+#else                                   /* MacOS */
     static struct descrip colnames[6]={
        {4,(word)"name"}, {3,(word)"ver"}, {7,(word)"odbcver"},
        {11,(word)"connections"}, {10,(word)"statements"}, {3,(word)"dsn"}};
-#endif					/* MacOS */
-                               
+#endif                                  /* MacOS */
+
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* not an ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
       }
@@ -303,7 +303,7 @@ function {0,1} dbdriver(f)
       }
       else { /* result is a number */
         SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i],
-		   (PTR)&result, sizeof(result), NULL);
+                   (PTR)&result, sizeof(result), NULL);
         MakeInt(result, &(r->fields[3]));
       }
     }
@@ -333,9 +333,9 @@ function{1} dbkeys(f, table_name)
     /* list declarations */
     tended struct descrip L;
     tended struct b_list *hp;
-    
+
     struct ISQLFile *fp;
-    
+
     UCHAR szPkCol[COL_LEN];   /* primary key column     */
 
     SQL_LENORIND cbPkCol, cbKeySeq;
@@ -353,17 +353,17 @@ function{1} dbkeys(f, table_name)
        AsgnCStr(colnames[cnm], "seq");
        cnm++;
        }
-#else					/* MacOS */
+#else                                   /* MacOS */
     static struct descrip colnames[2]={{3,(word)"col"}, {3,(word)"seq"}};
-#endif					/* MacOS */
-    
+#endif                                  /* MacOS */
+
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC mode */
       runerr(NOT_ODBC_FILE_ERR, f);
     }
 
     fp=FDESC(f); /* file descriptor */
     fp->proc = NULL;
-      
+
     if (is:null(table_name) && (fp->tablename != NULL)) {
        MakeStr(fp->tablename, strlen(fp->tablename), &table_name);
        }
@@ -377,7 +377,7 @@ function{1} dbkeys(f, table_name)
     SQLBindCol(hstmt, 4, SQL_C_CHAR, szPkCol, COL_LEN, &cbPkCol);
     SQLBindCol(hstmt, 5, SQL_C_SSHORT, &iKeySeq, TAB_LEN, &cbKeySeq);
 
-    retcode=SQLPrimaryKeys(hstmt,      
+    retcode=SQLPrimaryKeys(hstmt,
                            NULL, 0,                 /* all catalogs */
                            NULL, 0,                 /* all schemas */
                            (SQLCHAR *) StrLoc(table_name), StrLen(table_name)); /* table */
@@ -386,9 +386,9 @@ function{1} dbkeys(f, table_name)
       odbcerror(fp, PRIMARY_KEYS_ERR);
       fail;
     }
-   
+
     /* create empty list */
-    
+
     if ((hp=alclist(0, MinListSlots)) == NULL) fail;
     L.dword=D_List;
     L.vword.bptr=(union block *) hp;
@@ -396,7 +396,7 @@ function{1} dbkeys(f, table_name)
     /* create record fields definition */
     if (proc == NULL)
        proc=dynrecord(&rectypename, colnames, DBKEYSNCOLS);
-    
+
 
     /* populate list with column info */
 
@@ -410,10 +410,10 @@ function{1} dbkeys(f, table_name)
       StrLoc(r->fields[0])=cbPkCol>0?alcstr((char *) szPkCol, cbPkCol):"";
       StrLen(r->fields[0])=cbPkCol>0?cbPkCol:0;
       if (StrLoc(r->fields[0]) == NULL) runerr(306);
-          
+
       /* key sequence (integer) */
       MakeInt(iKeySeq, &(r->fields[1]));
-        
+
       c_put(&L, &R);
     }
 
@@ -431,12 +431,12 @@ end
 function {0,1} dblimits(f)
   if !is:file(f) then
     runerr(105, f);
-    
+
   abstract {
     return record
   }
-  
-  body {  
+
+  body {
     SWORD len;
     UWORD result;
     struct ISQLFile *fp;
@@ -446,7 +446,7 @@ function {0,1} dblimits(f)
     static struct b_proc *proc;
     char sbuf[256];
     short i;
-    
+
     static int sql_parm[DBLIMITSNCOLS]={SQL_MAX_BINARY_LITERAL_LEN,
         SQL_MAX_CHAR_LITERAL_LEN, SQL_MAX_COLUMN_NAME_LEN,
         SQL_MAX_COLUMNS_IN_GROUP_BY, SQL_MAX_COLUMNS_IN_ORDER_BY,
@@ -459,7 +459,7 @@ function {0,1} dblimits(f)
         SQL_MAX_USER_NAME_LEN};
 
     static int is_str[DBLIMITSNCOLS]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0};
-    
+
 #ifdef MacOS
     static struct descrip colnames[19];
     static int cnm=0;  /* FIXME: thread unsafe  */
@@ -503,7 +503,7 @@ function {0,1} dblimits(f)
        AsgnCStr(colnames[cnm], "maxusernamelen");
        cnm++;
        }
-#else					/* MacOS */
+#else                                   /* MacOS */
     static struct descrip colnames[19]={{12,(word)"maxbinlitlen"},
          {13,(word)"maxcharlitlen"}, {13,(word)"maxcolnamelen"},
          {14,(word)"maxgroupbycols"}, {14,(word)"maxorderbycols"},
@@ -514,7 +514,7 @@ function {0,1} dblimits(f)
          {10,(word)"maxrowsize"}, {14,(word)"maxrowsizelong"},
          {10,(word)"maxstmtlen"}, {13,(word)"maxtblnamelen"},
          {13,(word)"maxselecttbls"}, {14,(word)"maxusernamelen"}};
-#endif					/* MacOS */
+#endif                                  /* MacOS */
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* not an ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -553,15 +553,15 @@ end
 function {0,1} dbproduct(f)
    if !is:file(f) then
       runerr(105, f);
-    
+
    abstract {
       return record
       }
-  
+
    body {
       SWORD len;
       struct ISQLFile *fp;
-      char sbuf[256];    
+      char sbuf[256];
 
       /* record structures */
       tended struct descrip R;
@@ -574,11 +574,11 @@ function {0,1} dbproduct(f)
       static struct descrip colnames[2];
       static int cnm=0;  /* FIXME: thread unsafe  */
       if (!cnm) {
-	 AsgnCStr(colnames[cnm], "name");
+         AsgnCStr(colnames[cnm], "name");
          cnm++;
-	 AsgnCStr(colnames[cnm], "ver");
+         AsgnCStr(colnames[cnm], "ver");
          cnm++;
-	 }
+         }
 #else
       static struct descrip colnames[]={{4,(word)"name"}, {3,(word)"ver"}};
 #endif
@@ -618,17 +618,17 @@ function{0,1} sql(f, query)
   }
 
   body {
-    
+
     int rc;
 
     struct ISQLFile *fp;
-  
-    if (!Qual(query)) runerr(103, query);          
+
+    if (!Qual(query)) runerr(103, query);
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
     }
-    
+
     fp=FDESC(f);
     fp->proc = NULL;
 
@@ -660,49 +660,49 @@ function{0,1} dbtables(f)
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
     static struct b_proc *proc;
-    
+
     /* file declarations */
     struct ISQLFile *fp;
-    
+
     /* list declarations */
     tended struct descrip L;
     tended struct b_list *hp;
-    
+
     /* result set data buffers */
 
     SQLCHAR szTblQualif[STR_LEN], szTblOwner[STR_LEN];
     SQLCHAR szTblName[STR_LEN], szTblType[STR_LEN];
     SQLCHAR szRemarks[REM_LEN];
-   
+
     SQLRETURN retcode;
 
     /* buffers for bytes available to return */
 
     SQL_LENORIND cbQualif, cbOwner, cbName, cbType, cbRemarks;
-    
+
     HSTMT hstmt;
-    
+
 #ifdef MacOS
       static struct descrip colnames[5];
       static int cnm=0; /* FIXME: thread unsafe  */
       if (!cnm) {
-	 AsgnCStr(colnames[cnm], "qualifier");
-	 cnm++;
-	 AsgnCStr(colnames[cnm], "owner");
-	 cnm++;
-	 AsgnCStr(colnames[cnm], "name");
-	 cnm++;
-	 AsgnCStr(colnames[cnm], "type");
-	 cnm++;
-	 AsgnCStr(colnames[cnm], "remarks");
-	 cnm++;
-	 }
-#else					/* MacOS */
+         AsgnCStr(colnames[cnm], "qualifier");
+         cnm++;
+         AsgnCStr(colnames[cnm], "owner");
+         cnm++;
+         AsgnCStr(colnames[cnm], "name");
+         cnm++;
+         AsgnCStr(colnames[cnm], "type");
+         cnm++;
+         AsgnCStr(colnames[cnm], "remarks");
+         cnm++;
+         }
+#else                                   /* MacOS */
     static struct descrip colnames[5]={
       {9,(word)"qualifier"}, {5,(word)"owner"}, {4,(word)"name"},
       {4,(word)"type"}, {7,(word)"remarks"}
     };
-#endif					/* MacOS */
+#endif                                  /* MacOS */
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -721,18 +721,18 @@ function{0,1} dbtables(f)
     if (retcode!=SQL_SUCCESS) {
       odbcerror(fp, TABLES_ERR);
       fail;
-    }    
-     
+    }
+
     /* bind columns in result set to buffer (ODBC 2.x) */
-    
+
     SQLBindCol(hstmt, 1, SQL_C_CHAR, szTblQualif, STR_LEN, &cbQualif);
     SQLBindCol(hstmt, 2, SQL_C_CHAR, szTblOwner, STR_LEN, &cbOwner);
     SQLBindCol(hstmt, 3, SQL_C_CHAR, szTblName, STR_LEN, &cbName);
     SQLBindCol(hstmt, 4, SQL_C_SSHORT, szTblType, 0, &cbType);
     SQLBindCol(hstmt, 5, SQL_C_CHAR, szRemarks, STR_LEN, &cbRemarks);
-        
+
     /* create empty list */
-    
+
     if ((hp=alclist(0, MinListSlots)) == NULL) fail;
     L.dword=D_List;
     L.vword.bptr=(union block *) hp;
@@ -740,7 +740,7 @@ function{0,1} dbtables(f)
     /* create record type */
     if (proc == NULL)
        proc=dynrecord(&rectypename, colnames, DBTBLNCOLS);
-    
+
     while (SQLFetch(hstmt)==SQL_SUCCESS) {
       /* allocate record */
       r = alcrecd(DBTBLNCOLS, (union block *)proc);
@@ -763,10 +763,10 @@ function{0,1} dbtables(f)
       StrLoc(r->fields[4])=cbRemarks>0?alcstr((char *) szRemarks,cbRemarks):"";
       if (StrLoc(r->fields[4]) == NULL) runerr(306);
       StrLen(r->fields[4])=cbRemarks>0?cbRemarks:0;
-      
+
       c_put(&L, &R);
     }
-    
+
     if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) {
       odbcerror(fp, FREE_STMT_ERR);
       fail;
@@ -776,7 +776,7 @@ function{0,1} dbtables(f)
   }
 end
 
-#else					/* ISQL */
+#else                                   /* ISQL */
 MissingFunc2(dbcolumns)
 MissingFunc1(dbdriver)
 MissingFunc2(dbkeys)
@@ -784,4 +784,4 @@ MissingFunc1(dblimits)
 MissingFunc1(dbproduct)
 MissingFunc2(sql)
 MissingFunc1(dbtables)
-#endif					/* ISQL */
+#endif                                  /* ISQL */

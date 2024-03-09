@@ -9,7 +9,7 @@ int lookup_texture_byname(wbp w, char *name, int len, int type, int curtex);
 int texture(int width, int height, GLubyte *tex, int texmode);
 int texture_24img(wbp w, struct imgdata im);
 int textureimg(wbp w, int width, int height,
-		struct palentry *e, unsigned char *s, word len);
+                struct palentry *e, unsigned char *s, word len);
 int init_3dcontext(wcp wc);
 
 int traversefunclist(wbp w);
@@ -44,9 +44,9 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
     if (setglXVisual(wd) == 0)
        return NULL;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
-   /* 
+   /*
     * Even for 2D opengl mode, make is_3d = 1. That way, there is a good way
     * to distinguish between opengl 2D mode vs X Windows 2D
     */
@@ -87,7 +87,7 @@ int init_3dcanvas(wbp  w)
       wc->display->maxstex = INITTEXTURENUM;
 
       wc->display->stex =
-	 (struct _wtexture *) malloc(INITTEXTURENUM*sizeof(struct _wtexture));
+         (struct _wtexture *) malloc(INITTEXTURENUM*sizeof(struct _wtexture));
       if (wc->display->stex == NULL) return Failed;
 
       if (init_texnames(w->context) == Failed) return Failed ;
@@ -135,7 +135,7 @@ int make_enough_texture_space(wdp wd)
    if (wd->ntextures >= wd->maxstex) {
       SUSPEND_THREADS();
 
-      /* 
+      /*
        * Allocate space and create new opengl texture names
        */
       if (wd->ntextures >= wd->maxstex) {
@@ -146,25 +146,25 @@ int make_enough_texture_space(wdp wd)
             }
          glGenTextures(wd->maxstex, texName);
 
-    	 newmax = wd->maxstex * 2;
+         newmax = wd->maxstex * 2;
 
-	 /*
-	  * Expand the texture storage and copy the new OpenGL names into place
-	  */
-      	 wd->stex = realloc(wd->stex, sizeof(struct _wtexture) * newmax);
-     	 if (wd->stex == NULL) {
+         /*
+          * Expand the texture storage and copy the new OpenGL names into place
+          */
+         wd->stex = realloc(wd->stex, sizeof(struct _wtexture) * newmax);
+         if (wd->stex == NULL) {
            RESUME_THREADS();
-	   free(texName);
-       	   return Failed;
-	   }
+           free(texName);
+           return Failed;
+           }
          for (i=wd->maxstex; i<newmax; i++)
             wd->stex[i].texName = texName[i-wd->maxstex];
 
          wd->maxstex = newmax;
 
-      	 RESUME_THREADS();
-      	 free(texName);
-      	 }
+         RESUME_THREADS();
+         free(texName);
+         }
       }
    return Succeeded;
 }
@@ -175,11 +175,11 @@ int init_texnames(wcp wc)
    GLuint texNames[INITTEXTURENUM];
    int i;
 
-   if (wd->stex == NULL) 
+   if (wd->stex == NULL)
       return Failed;
- 
+
    glGenTextures(INITTEXTURENUM, texNames);
- 
+
    for (i=0; i<INITTEXTURENUM; i++){
       wd->stex[i].texName = texNames[i];
 }
@@ -231,7 +231,7 @@ void calcNormal( double* v0, double* v1, double *v2, double* n )
 }
 
 int setnormals(double *norm){
- 
+
   return 0;
 }
 
@@ -252,7 +252,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
    wcp wc = w->context;
 
    MakeCurrent(w);
-   
+
    /* each vertex has an x-coordinate and a y-coordinate */
    if (dim == 2){
       /* must reset the current normal vector */
@@ -275,7 +275,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glEnd();
            }
          else {
-	    double *atex=wc->texcoords->a;
+            double *atex=wc->texcoords->a;
             /*
              * There must be at least the same number of texture coordinate
              * pairs as there are vertices. If not, fail.
@@ -299,129 +299,129 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
       double *vnorm;
 /*      int vcount;
       int normcount;
-*/      
+*/
       /*prepare normals for normals auto mode*/
-      if(wc->normode==1){ 
+      if(wc->normode==1){
          /*vnorm = malloc (num*sizeof(double));*
-/*	 if (type==GL_TRIANGLES || type==GL_TRIANGLE_FAN || type ==GL_TRIANGLE_STRIP)
-	   vcount=3;
-	 else if (type==GL_QUADS || type==GL_QUAD_STRIP)
-	   vcount = 4;
-	 else  if (type==GL_POLYGON)
-	   vcount = 3;
-	 normcount = num - num % (vcount);
- */	if (num>9){
-	  calcNormal(&v[0], &v[3], &v[6], n );
-	  }
-	  glNormal3dv(n);
-	  
+/*       if (type==GL_TRIANGLES || type==GL_TRIANGLE_FAN || type ==GL_TRIANGLE_STRIP)
+           vcount=3;
+         else if (type==GL_QUADS || type==GL_QUAD_STRIP)
+           vcount = 4;
+         else  if (type==GL_POLYGON)
+           vcount = 3;
+         normcount = num - num % (vcount);
+ */     if (num>9){
+          calcNormal(&v[0], &v[3], &v[6], n );
+          }
+          glNormal3dv(n);
+
          /*for (i = 0; i < num; i = i+3){
-	    vnorm[i] = n[0];
-	    vnorm[i+1] = n[1];
-	    vnorm[i+2] = n[2];
-	   }
-	   */
-	}
+            vnorm[i] = n[0];
+            vnorm[i+1] = n[1];
+            vnorm[i+2] = n[2];
+           }
+           */
+        }
       else if(wc->normode==2){ /* normals are supplied by the user*/
-	  if (num > wc->numnormals) return Failed;
-	  vnorm = wc->normals->a;
-	  }
+          if (num > wc->numnormals) return Failed;
+          vnorm = wc->normals->a;
+          }
       else
-	/* must reset the current normal vector */
-	glNormal3dv(n);
-      
+        /* must reset the current normal vector */
+        glNormal3dv(n);
+
       if (!wc->texmode) {
-	  if(wc->normode==2){
-	    glBegin(type);
-	    for (i = 0; i < num; i = i+3){
-	       glNormal3dv(&vnorm[i]);
-	       glVertex3dv(&v[i]);
-	       }
-	    glEnd();
-	    }
-	 else{
-	    glBegin(type);
-	    for (i = 0; i < num; i = i+3)
-	       glVertex3dv(&v[i]);
-	    glEnd();
-	    }
-	}
+          if(wc->normode==2){
+            glBegin(type);
+            for (i = 0; i < num; i = i+3){
+               glNormal3dv(&vnorm[i]);
+               glVertex3dv(&v[i]);
+               }
+            glEnd();
+            }
+         else{
+            glBegin(type);
+            for (i = 0; i < num; i = i+3)
+               glVertex3dv(&v[i]);
+            glEnd();
+            }
+        }
       else {
 
-	 /* opengl should generate the texture coordinate */
+         /* opengl should generate the texture coordinate */
          if (wc->autogen){
 
             glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
             glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 
-	    if(wc->normode==2){
-	       glBegin(type);
-	       for (i = 0; i < num; i = i+3){
-		  glNormal3dv(&(vnorm[i]));
-		  glVertex3dv(&v[i]);
-		  }
-	       glEnd();
-	       }
-	    else{
-	       glBegin(type);
-	       for (i = 0; i < num; i = i+3)
-		  glVertex3dv(&v[i]);
-	       glEnd();
-	       }
+            if(wc->normode==2){
+               glBegin(type);
+               for (i = 0; i < num; i = i+3){
+                  glNormal3dv(&(vnorm[i]));
+                  glVertex3dv(&v[i]);
+                  }
+               glEnd();
+               }
+            else{
+               glBegin(type);
+               for (i = 0; i < num; i = i+3)
+                  glVertex3dv(&v[i]);
+               glEnd();
+               }
            }
          else {
             /*
-	     * If there are not the same number of texture coordinate pairs
-	     * as there are vertices, fail.
-	     */
+             * If there are not the same number of texture coordinate pairs
+             * as there are vertices, fail.
+             */
             if (num/3 > wc->numtexcoords/2)
               return Failed;
-	    j = 0;
-	    if(wc->normode==2){
-	      /*
-	       glEnableClientState(GL_VERTEX_ARRAY);
-	       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	       glEnableClientState(GL_NORMAL_ARRAY);
-	       glVertexPointer(3, GL_DOUBLE, 0, v);
-	       glNormalPointer(GL_DOUBLE, 0, vnorm);
-	       glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords->a);
-	       glDrawArrays(type, 0, num);
-	       glDisableClientState(GL_VERTEX_ARRAY);
-	       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	       glDisableClientState(GL_NORMAL_ARRAY);
-	       */
-	       glBegin(type);
-	       for (i = 0; i < num; i = i+3){
-		  glNormal3dv(&(vnorm[i]));
-		  glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
-		  j = j + 2;
-		  glVertex3dv(&v[i]);
-		  }
-	       glEnd();
-	       
-	       }
-	    else {
-	      /*
-	       glEnableClientState(GL_VERTEX_ARRAY);
-	       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	       glVertexPointer(3, GL_DOUBLE, 0, v);
-	       glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords->a);
-	       glDrawArrays(type, 0, num);
-	       glDisableClientState(GL_VERTEX_ARRAY);
-	       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	       */
+            j = 0;
+            if(wc->normode==2){
+              /*
+               glEnableClientState(GL_VERTEX_ARRAY);
+               glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+               glEnableClientState(GL_NORMAL_ARRAY);
+               glVertexPointer(3, GL_DOUBLE, 0, v);
+               glNormalPointer(GL_DOUBLE, 0, vnorm);
+               glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords->a);
+               glDrawArrays(type, 0, num);
+               glDisableClientState(GL_VERTEX_ARRAY);
+               glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+               glDisableClientState(GL_NORMAL_ARRAY);
+               */
+               glBegin(type);
+               for (i = 0; i < num; i = i+3){
+                  glNormal3dv(&(vnorm[i]));
+                  glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
+                  j = j + 2;
+                  glVertex3dv(&v[i]);
+                  }
+               glEnd();
 
-	       glBegin(type);
-	       for (i = 0; i < num; i = i+3){
-		  glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
-		  j = j + 2;
-		  glVertex3dv(&v[i]);
-		  }
-	       glEnd();
-	       }
+               }
+            else {
+              /*
+               glEnableClientState(GL_VERTEX_ARRAY);
+               glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+               glVertexPointer(3, GL_DOUBLE, 0, v);
+               glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords->a);
+               glDrawArrays(type, 0, num);
+               glDisableClientState(GL_VERTEX_ARRAY);
+               glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+               */
+
+               glBegin(type);
+               for (i = 0; i < num; i = i+3){
+                  glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
+                  j = j + 2;
+                  glVertex3dv(&v[i]);
+                  }
+               glEnd();
+               }
          }
       }
-      
+
    }
    /* each vertex is of the form (x, y, z, w) */
    if (dim == 4){
@@ -441,11 +441,11 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
               glVertex4d(v[i], v[i+1], v[i+2], v[i+3]);
             glEnd();
            }
-	 else {
-	    /*
-	     * fail if the number of vertices is more than
-	     * the number of texture coordinate pairs
-	     */
+         else {
+            /*
+             * fail if the number of vertices is more than
+             * the number of texture coordinate pairs
+             */
             if (num/4 > wc->numtexcoords/2)
                return Failed;
             glBegin(type);
@@ -464,7 +464,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 
 /* helper function to draw a torus */
 void torus(double radius1, double radius2, double x,double y, double z,
-	   int slices, int rings, int gen)
+           int slices, int rings, int gen)
 {
    int i, j;
    GLfloat theta, phi, theta1;
@@ -484,7 +484,7 @@ void torus(double radius1, double radius2, double x,double y, double z,
 
 #ifndef M_PI
 #define M_PI        3.14159265358979323846264338327950288419716939937511
-#endif					/* M_PI */
+#endif                                  /* M_PI */
 
    /* rotate to make the torus look nicer */
    glRotatef(130.0, 1.0, 0.0, 0.0);
@@ -542,11 +542,11 @@ void cube(double length, double x, double y, double z, int gen)
    glTranslatef(x, y, z);
 
 /*   static GLfloat v[8][3] = {
-      {-1.0, -1.0,  1.0}, 
+      {-1.0, -1.0,  1.0},
       { 1.0, -1.0,  1.0},
       { 1.0,  1.0,  1.0},
       {-1.0,  1.0,  1.0},
-      { 1.0, -1.0, -1.0}, 
+      { 1.0, -1.0, -1.0},
       {-1.0, -1.0, -1.0},
       {-1.0,  1.0, -1.0},
       { 1.0,  1.0, -1.0},
@@ -564,31 +564,31 @@ void cube(double length, double x, double y, double z, int gen)
       glDisable(GL_TEXTURE_GEN_S);
       glDisable(GL_TEXTURE_GEN_T);
       for (i = 0; i <=5 ; i++) {
-	 glBegin(GL_QUADS);
-	 glNormal3fv(&n[i][0]);
-	 glTexCoord2f(0.0, 0.0);
-	 glVertex3fv(&v[faces[i][0]][0]);
-	 glTexCoord2f(1.0, 0.0);
-	 glVertex3fv(&v[faces[i][1]][0]);
-	 glTexCoord2f(1.0, 1.0);
-	 glVertex3fv(&v[faces[i][2]][0]);
-	 glTexCoord2f(0.0, 1.0);
-	 glVertex3fv(&v[faces[i][3]][0]);
-	 glEnd();
-	 }
+         glBegin(GL_QUADS);
+         glNormal3fv(&n[i][0]);
+         glTexCoord2f(0.0, 0.0);
+         glVertex3fv(&v[faces[i][0]][0]);
+         glTexCoord2f(1.0, 0.0);
+         glVertex3fv(&v[faces[i][1]][0]);
+         glTexCoord2f(1.0, 1.0);
+         glVertex3fv(&v[faces[i][2]][0]);
+         glTexCoord2f(0.0, 1.0);
+         glVertex3fv(&v[faces[i][3]][0]);
+         glEnd();
+         }
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
       }
    else {
       for (i = 5; i >= 0; i--) {
-	 glBegin(GL_QUADS);
-	 glNormal3fv(&n[i][0]);
-	 glVertex3fv(&v[faces[i][0]][0]);
-	 glVertex3fv(&v[faces[i][1]][0]);
-	 glVertex3fv(&v[faces[i][2]][0]);
-	 glVertex3fv(&v[faces[i][3]][0]);
-	 glEnd();
-	 }
+         glBegin(GL_QUADS);
+         glNormal3fv(&n[i][0]);
+         glVertex3fv(&v[faces[i][0]][0]);
+         glVertex3fv(&v[faces[i][1]][0]);
+         glVertex3fv(&v[faces[i][2]][0]);
+         glVertex3fv(&v[faces[i][3]][0]);
+         glEnd();
+         }
       }
    glPopMatrix();
 }
@@ -716,8 +716,8 @@ int popmatrix()
       if (params2 > 1)
          glPopMatrix();
       else{
-	 /*printf(" PROJECTION MODE ... POP is failing...!! %d \n", params2 );*/
-	 return Failed;
+         /*printf(" PROJECTION MODE ... POP is failing...!! %d \n", params2 );*/
+         return Failed;
       }
       }
 
@@ -728,11 +728,11 @@ int popmatrix()
        * matrix on the stack. if not return Failed
        */
       glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
-	 if (params2 > 1)
-	    glPopMatrix();
-    	 else {
-	    /*printf(" MODELVIEW------- MODE ... POP is failing...!! %d \n", params2 );*/
-	    return Failed;
+         if (params2 > 1)
+            glPopMatrix();
+         else {
+            /*printf(" MODELVIEW------- MODE ... POP is failing...!! %d \n", params2 );*/
+            return Failed;
             }
       }
    return Succeeded;
@@ -757,8 +757,8 @@ int pushmatrix()
          glPushMatrix();
          }
       else{
-	 /*printf(" PROJECTION MODE ... PUUUUUUUUUUUUSH is failing...!! %d \n", params2 );*/
-	 return Failed;
+         /*printf(" PROJECTION MODE ... PUUUUUUUUUUUUSH is failing...!! %d \n", params2 );*/
+         return Failed;
       }
       }
 
@@ -768,10 +768,10 @@ int pushmatrix()
        */
       glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
       if (params2 < 32)
-	 glPushMatrix();
+         glPushMatrix();
       else{
-	 /*printf(" MODELVIEW------- MODE ... PUUUUUUUUUUUUSH is failing...!! %d \n", params2 );*/
-	 return Failed;
+         /*printf(" MODELVIEW------- MODE ... PUUUUUUUUUUUUSH is failing...!! %d \n", params2 );*/
+         return Failed;
       }
       }
    return Succeeded;
@@ -816,7 +816,7 @@ int redraw3D(wbp w)
 #ifdef GraphicsGL
    copy_2dcontext(&(ws->wcrender), &(ws->wcdef));
    init_2dcanvas(w);
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    if (ws->is_3D)
       wc->dim = 3;
 
@@ -832,7 +832,7 @@ int redraw3D(wbp w)
       glLoadIdentity();
       glPushMatrix();
       gluLookAt(ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx, ws->eyediry,
-		ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
+                ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
       if (ws->is_3D) {
          glMaterialfv(GL_FRONT, GL_AMBIENT, deflt_ambient);
          glMaterialfv(GL_FRONT, GL_DIFFUSE, deflt_diffuse);
@@ -840,26 +840,26 @@ int redraw3D(wbp w)
          glMaterialfv(GL_FRONT, GL_EMISSION, deflt_emission);
          glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
          if (!wc->autogen) {
-   	    glEnable(GL_TEXTURE_GEN_S);
-	    glEnable(GL_TEXTURE_GEN_T);
-	    wc->autogen = 1;
-	    }
-	 }
+            glEnable(GL_TEXTURE_GEN_S);
+            glEnable(GL_TEXTURE_GEN_T);
+            wc->autogen = 1;
+            }
+         }
 
 /*
       if (wc->texmode) {
-	 glDisable(GL_TEXTURE_2D);
-	 wc->texmode = 0;
-	 }
+         glDisable(GL_TEXTURE_2D);
+         wc->texmode = 0;
+         }
 */
 
       if (traversefunctionlist(w) == Failed) {
          ws->busy_flag = 0;
-	 return Failed;
-	 }
+         return Failed;
+         }
       glPopMatrix();
       }
-   else {	/* GL_SELECT mode  */
+   else {       /* GL_SELECT mode  */
       GLint viewport[4];
       GLuint        selectionbuf[1024];        /* selection buffer */
       GLint        selectionhits=0;           /* number of hits   */
@@ -883,7 +883,7 @@ int redraw3D(wbp w)
       glPushMatrix();
       glLoadIdentity();
       gluLookAt(ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx, ws->eyediry,
- 	        ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
+                ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
 
       /* switch to GL_SELECT render mode  */
 
@@ -891,7 +891,7 @@ int redraw3D(wbp w)
       glRenderMode(GL_SELECT);
       glInitNames();
 
-	 /* render the scene in GL_SELECT render mode */
+         /* render the scene in GL_SELECT render mode */
       if (traversefunctionlist(w) == Failed) {
           ws->busy_flag = 0;
           return Failed;
@@ -902,13 +902,13 @@ int redraw3D(wbp w)
 
       if (selectionhits < 0) {
          ws->busy_flag = 0;
-	 return Failed;
+         return Failed;
          }
       else if (selectionhits > 256) { /* too many hits? maybe nonsense then. */
          ws->busy_flag = 0;
-	 return Failed;
-	 }
-      else if (selectionhits != 0) { /* > 0, hits were found */ 
+         return Failed;
+         }
+      else if (selectionhits != 0) { /* > 0, hits were found */
          GLuint name, numnames, z1, z_buf[256];
          tended struct b_list *namelist;
          tended struct descrip selectednameslist;
@@ -917,81 +917,81 @@ int redraw3D(wbp w)
 
          if ((namelist = alclist(0, MinListSlots)) == NULL) {
             ws->busy_flag = 0;
-	    return Failed;
-	    }
+            return Failed;
+            }
          selectednameslist.dword = D_List;
          selectednameslist.vword.bptr = (union block*) namelist;
 
-	 /*
-	  * First pass over the selection buffer to collect and sort z values.
-	  */
+         /*
+          * First pass over the selection buffer to collect and sort z values.
+          */
          bufp = selectionbuf;
          for(j = 0; j < selectionhits; j++){
-	    if (bufp - selectionbuf > 1024 - 4) {
-	       /* Reading this would go past the end of the selection buffer. */
-	       selectionhits = j;
-	       break;
-	       }
-       	    numnames = *bufp++;
- 	    z_buf[j] = *bufp++;
-	    bufp++;           /* skip z2 */
-	    bufp+=numnames;   /* skip names */
+            if (bufp - selectionbuf > 1024 - 4) {
+               /* Reading this would go past the end of the selection buffer. */
+               selectionhits = j;
+               break;
+               }
+            numnames = *bufp++;
+            z_buf[j] = *bufp++;
+            bufp++;           /* skip z2 */
+            bufp+=numnames;   /* skip names */
             }
 
-	 qsort(z_buf,selectionhits, sizeof(GLuint), compare_GLuint);
+         qsort(z_buf,selectionhits, sizeof(GLuint), compare_GLuint);
 
          /* second pass : get the data  */
          savedhits=0;
          while (savedhits<selectionhits){
             bufp = selectionbuf;
             for(j = 0; j < selectionhits; j++){
-	       numnames = *bufp++;
-	       z1 = *bufp++;
-	       bufp++; /* skip z2 */
+               numnames = *bufp++;
+               z1 = *bufp++;
+               bufp++; /* skip z2 */
 
-	       if (z1 == 1 || z1>z_buf[savedhits]) {
-		  bufp+=numnames;   /* skip names */
-		  continue;
-		  }
-	       else {
-		  tended char *tmpname;
-		  tended struct descrip the_newselectedname;
-		  int numnam=numnames, memsize=0;
-		  GLuint *bufp2 = bufp;
-		  /*
-		   * z is 2 locations back. set it to 1 so that
-		   * it will be skipped next time
-		   */
-		  *(bufp-2)=1;
-		  savedhits++;
-		  while (numnam--) {
-		     int i = *bufp2++;
-		     if ((0 <= i) && (i < wc->selectionnamecount))
-			memsize += strlen(wc->selectionnamelist[i])+1;
-		     }
+               if (z1 == 1 || z1>z_buf[savedhits]) {
+                  bufp+=numnames;   /* skip names */
+                  continue;
+                  }
+               else {
+                  tended char *tmpname;
+                  tended struct descrip the_newselectedname;
+                  int numnam=numnames, memsize=0;
+                  GLuint *bufp2 = bufp;
+                  /*
+                   * z is 2 locations back. set it to 1 so that
+                   * it will be skipped next time
+                   */
+                  *(bufp-2)=1;
+                  savedhits++;
+                  while (numnam--) {
+                     int i = *bufp2++;
+                     if ((0 <= i) && (i < wc->selectionnamecount))
+                        memsize += strlen(wc->selectionnamelist[i])+1;
+                     }
 
-	          Protect(tmpname = alcstr(NULL, memsize), return RunError);
-	          tmpname[0] = '\0';
+                  Protect(tmpname = alcstr(NULL, memsize), return RunError);
+                  tmpname[0] = '\0';
 
-		  while (numnames) {
-		     name = *bufp++;
-		     --numnames;
-		     /*
-		      * Name being unsigned, it will never be negative,
-		      * but it may be out of range.
-		      */
-		     if (name < wc->selectionnamecount) {
-			strcat(tmpname, wc->selectionnamelist[name]);
-			if (numnames)strcat(tmpname, "-");
-			}
+                  while (numnames) {
+                     name = *bufp++;
+                     --numnames;
+                     /*
+                      * Name being unsigned, it will never be negative,
+                      * but it may be out of range.
+                      */
+                     if (name < wc->selectionnamecount) {
+                        strcat(tmpname, wc->selectionnamelist[name]);
+                        if (numnames)strcat(tmpname, "-");
+                        }
                      } /* while */
 
                   if ( strlen(tmpname) > 0 ){
-		     newnameadded=1;
+                     newnameadded=1;
                      MakeStr(tmpname, strlen(tmpname), &the_newselectedname);
-   	             c_put(&selectednameslist, &the_newselectedname);
-   	             }
-   	          }/* else*/
+                     c_put(&selectednameslist, &the_newselectedname);
+                     }
+                  }/* else*/
                } /*  for j  */
             } /* savedhits */
 
@@ -1045,23 +1045,23 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
    used = bp->nused;
    for (j=0; j < n; j++){
       if (j >= (m-1)) {
-	 d = bp->lslots[i];
+         d = bp->lslots[i];
          if (!cnv:real(d, d)) return 0;
-	 bp->lslots[i] = d;
+         bp->lslots[i] = d;
 #ifdef DescriptorDouble
-	 a[j-(m-1)] = d.vword.realval;
-#else					/* DescriptorDouble */
-	 a[j-(m-1)] = BlkD(d, Real)->realval;
-#endif					/* DescriptorDouble */
-	 }
+         a[j-(m-1)] = d.vword.realval;
+#else                                   /* DescriptorDouble */
+         a[j-(m-1)] = BlkD(d, Real)->realval;
+#endif                                  /* DescriptorDouble */
+         }
       if (used <= 1){
-	 bp = (struct b_lelem *) bp->listnext;
+         bp = (struct b_lelem *) bp->listnext;
          used = bp->nused;
          i = bp->first;
          }
       else {
-	 if (i++ >= bp->nslots) i = 0;
-	 used--;
+         if (i++ >= bp->nslots) i = 0;
+         used--;
          }
       }
    return 1;
@@ -1070,8 +1070,8 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 /*
  * Traverse the 2d and 3d display lists to redraw the scene.
  * Optimizations should be added to determine whether a display list is
- * empty and should be skipped. 
- * 
+ * empty and should be skipped.
+ *
  * The order of operations on matrix transfomations seems to be reversed,
  * hence why glLoadIdentity() is called before drawing the 2d scene.
  * The HUD should be drawn from the modelview matrix resulting from
@@ -1083,7 +1083,7 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
  * Draw 3d first and 2d last to preserve the back-to-front rendering for
  * transparency.
  */
-int traversefunctionlist(wbp w) 
+int traversefunctionlist(wbp w)
    {
    wsp ws = w->window;
    int rendermode = ws->rendermode;
@@ -1094,7 +1094,7 @@ int traversefunctionlist(wbp w)
 
       if (traversefunclist(w) == Failed) { /* 3d */
          ApplyRendermode(w, rendermode);
-         return Failed; 
+         return Failed;
          }
       }
 
@@ -1107,7 +1107,7 @@ int traversefunctionlist(wbp w)
 
       if (traversefunclist2d(w) == Failed) { /* 2d */
          ApplyRendermode(w, rendermode);
-         return Failed; 
+         return Failed;
          }
       glPopMatrix();
       glEnable(GL_LIGHTING);
@@ -1120,7 +1120,7 @@ int traversefunctionlist(wbp w)
 
    /* update screen */
    FlushWindow(w);
-   return Succeeded; 
+   return Succeeded;
    }
 
 /*
@@ -1167,155 +1167,155 @@ int traversefunclist(wbp w)
    for (i=0; i< elements; i++) {
 
       if (count>2) { /* skip forward as much as possible */
-	 int asmuchaspossible = count-1;
-	 if (used <= asmuchaspossible) asmuchaspossible = used-1;
-	 if (asmuchaspossible >1) {
-	    used -= asmuchaspossible;
-	    k = (k+asmuchaspossible) % (bp->nslots);
-	    count -= asmuchaspossible;
-	    i += asmuchaspossible;
-	    }
-	 }
+         int asmuchaspossible = count-1;
+         if (used <= asmuchaspossible) asmuchaspossible = used-1;
+         if (asmuchaspossible >1) {
+            used -= asmuchaspossible;
+            k = (k+asmuchaspossible) % (bp->nslots);
+            count -= asmuchaspossible;
+            i += asmuchaspossible;
+            }
+         }
       flist = bp->lslots[k];
       k++;
       used--;
       if (k>=bp->nslots) k=0;
 
       if (used<=0) {
-  	 bp = (struct b_lelem *) bp->listnext;
-	 used = bp->nused;
+         bp = (struct b_lelem *) bp->listnext;
+         used = bp->nused;
          k = bp->first;
          }
 
       if (count) {
          count--;
          continue;
-	 }
+         }
 
       if (v != v2) free(v);
       v = v2;
       vsize = 256;
 
       if (is:record(flist)) {
-	 rp = BlkD(flist, Record);
-	 fname = rp->fields[0];
+         rp = BlkD(flist, Record);
+         fname = rp->fields[0];
 
          tmp = IntVal(rp->fields[1]);
-	 if (tmp == -1) {
-	    return Failed; /* probably should runerr on this */
-	    }
-	 for (j=0; j < (tmp&15); j++) {
-	    var1 = rp->fields[j+2];
-	    if (!cnv:C_double(var1, v[j])) goto free_v_and_fail;
-	    }
+         if (tmp == -1) {
+            return Failed; /* probably should runerr on this */
+            }
+         for (j=0; j < (tmp&15); j++) {
+            var1 = rp->fields[j+2];
+            if (!cnv:C_double(var1, v[j])) goto free_v_and_fail;
+            }
 
-	 switch(tmp & ~0xf) {
-	 case REDRAW_TORUS:
-	    torus(v[3], v[4], v[0], v[1], v[2],
-		 wc->slices,				/*  slices  */
-		 wc->rings,				/*  rings   */
-		(wc->texmode?wc->autogen:0));
-	    break;
-	 case REDRAW_CUBE:
-	    cube(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
-	    break;
-	 case REDRAW_SPHERE:
-	    sphere(v[3], v[0], v[1], v[2],
-		 wc->slices,				/*  slices  */
-		 wc->rings,				/*  rings   */
-		(wc->texmode?wc->autogen:0));
-	    break;
-	 case REDRAW_CYLINDER:
-	    cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
-		 wc->slices,				/*  slices  */
-		 wc->rings,				/*  rings   */
-		(wc->texmode?wc->autogen:0));
-	    break;
-	 case REDRAW_DISK:
-	    disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
-		 wc->slices,				/*  slices  */
-		 wc->rings,				/*  rings   */
-		(wc->texmode?wc->autogen:0));
-	    break;
-	 case REDRAW_ROTATE:
-	    glRotated(v[3], v[0], v[1], v[2]);
-	    break;
-	 case REDRAW_TRANSLATE:
-	    glTranslated(v[0], v[1], v[2]);
-	    break;
-	 case REDRAW_SCALE:
-	    glScaled(v[0], v[1], v[2]);
-	    break;
-	 case REDRAW_POPMATRIX:
-	    if (popmatrix() != Succeeded) goto free_v_and_fail;
-	    break;
-	 case REDRAW_PUSHMATRIX:
-	    if (pushmatrix() != Succeeded) goto free_v_and_fail;
-	    break;
-	 case REDRAW_IDENTITY:
-	    glLoadIdentity();
-	    break;
-	 case REDRAW_MATRIXMODE:
-	    if (!cnv:C_string(rp->fields[2], temp)) goto free_v_and_fail;
-	    if (!strcmp("modelview", temp)) glMatrixMode(GL_MODELVIEW);
-	    else if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
-	    break;
-	 case REDRAW_TEXTURE:
-	    /*
-	     * lookup the name of the texture and bind it
+         switch(tmp & ~0xf) {
+         case REDRAW_TORUS:
+            torus(v[3], v[4], v[0], v[1], v[2],
+                 wc->slices,                            /*  slices  */
+                 wc->rings,                             /*  rings   */
+                (wc->texmode?wc->autogen:0));
+            break;
+         case REDRAW_CUBE:
+            cube(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+            break;
+         case REDRAW_SPHERE:
+            sphere(v[3], v[0], v[1], v[2],
+                 wc->slices,                            /*  slices  */
+                 wc->rings,                             /*  rings   */
+                (wc->texmode?wc->autogen:0));
+            break;
+         case REDRAW_CYLINDER:
+            cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
+                 wc->slices,                            /*  slices  */
+                 wc->rings,                             /*  rings   */
+                (wc->texmode?wc->autogen:0));
+            break;
+         case REDRAW_DISK:
+            disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
+                 wc->slices,                            /*  slices  */
+                 wc->rings,                             /*  rings   */
+                (wc->texmode?wc->autogen:0));
+            break;
+         case REDRAW_ROTATE:
+            glRotated(v[3], v[0], v[1], v[2]);
+            break;
+         case REDRAW_TRANSLATE:
+            glTranslated(v[0], v[1], v[2]);
+            break;
+         case REDRAW_SCALE:
+            glScaled(v[0], v[1], v[2]);
+            break;
+         case REDRAW_POPMATRIX:
+            if (popmatrix() != Succeeded) goto free_v_and_fail;
+            break;
+         case REDRAW_PUSHMATRIX:
+            if (pushmatrix() != Succeeded) goto free_v_and_fail;
+            break;
+         case REDRAW_IDENTITY:
+            glLoadIdentity();
+            break;
+         case REDRAW_MATRIXMODE:
+            if (!cnv:C_string(rp->fields[2], temp)) goto free_v_and_fail;
+            if (!strcmp("modelview", temp)) glMatrixMode(GL_MODELVIEW);
+            else if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
+            break;
+         case REDRAW_TEXTURE:
+            /*
+             * lookup the name of the texture and bind it
              * the objects using glBindTexture()
-	     */
-	    if (!cnv:C_integer(rp->fields[2], num)) {
-	       goto free_v_and_fail;
-	       }
-	    glBindTexture(GL_TEXTURE_2D, wc->display->stex[num].texName);
-	    if (wc->texmode)
-	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
-	    break;
+             */
+            if (!cnv:C_integer(rp->fields[2], num)) {
+               goto free_v_and_fail;
+               }
+            glBindTexture(GL_TEXTURE_2D, wc->display->stex[num].texName);
+            if (wc->texmode)
+               glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
+            break;
          case REDRAW_FONT3D:
 #if HAVE_LIBFTGL
-	    curr_font = (wfont *) IntVal(rp->fields[2]);
-#endif					/* HAVE_LIBFTGL */
-	    break;
+            curr_font = (wfont *) IntVal(rp->fields[2]);
+#endif                                  /* HAVE_LIBFTGL */
+            break;
          case REDRAW_DRAWSTRING3D:
 #if HAVE_LIBFTGL
-	    if (!cnv:C_double(rp->fields[2], v[0])) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], v[1])) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], v[2])) goto free_v_and_fail;
-	    if (!cnv:C_string(rp->fields[5], s)) goto free_v_and_fail;
-	    drawstrng3d(w,v[0],v[1],v[2],s);
-#endif					/* HAVE_LIBFTGL */
+            if (!cnv:C_double(rp->fields[2], v[0])) goto free_v_and_fail;
+            if (!cnv:C_double(rp->fields[3], v[1])) goto free_v_and_fail;
+            if (!cnv:C_double(rp->fields[4], v[2])) goto free_v_and_fail;
+            if (!cnv:C_string(rp->fields[5], s)) goto free_v_and_fail;
+            drawstrng3d(w,v[0],v[1],v[2],s);
+#endif                                  /* HAVE_LIBFTGL */
             break;
          case REDRAW_MARK: {
-	    struct descrip d = BlkLoc(flist)->Record.fields[3];
+            struct descrip d = BlkLoc(flist)->Record.fields[3];
             if (is:integer(d) && IntVal(d)==1) {
-	       count = IntVal(BlkLoc(flist)->Record.fields[4]);
+               count = IntVal(BlkLoc(flist)->Record.fields[4]);
                }
             else count=0;
 
-	   if (!count && wc->selectionenabled && wc->selectionrendermode ){
-	      GLuint int_code = IntVal(BlkLoc(flist)->Record.fields[5]);
+           if (!count && wc->selectionenabled && wc->selectionrendermode ){
+              GLuint int_code = IntVal(BlkLoc(flist)->Record.fields[5]);
               glPushName(int_code);
               }
-	    }
-	    break;
-	 case REDRAW_ENDMARK:
-	    if (wc->selectionenabled && wc->selectionrendermode)
-		    glPopName();
-	    break;
-	 case REDRAW_MESHMODE:
+            }
+            break;
+         case REDRAW_ENDMARK:
+            if (wc->selectionenabled && wc->selectionrendermode)
+                    glPopName();
+            break;
+         case REDRAW_MESHMODE:
             if (!cnv:C_integer(rp->fields[2], num)) goto free_v_and_fail;
             w->context->meshmode = num;
             break;
-	 default:
-	    fprintf(stderr,"invalid displaylist entry '%s'\n",
-		    (is:string(fname) ? StrLoc(fname) : "(corrupted)"));
+         default:
+            fprintf(stderr,"invalid displaylist entry '%s'\n",
+                    (is:string(fname) ? StrLoc(fname) : "(corrupted)"));
             goto free_v_and_fail;
-	    }
-	 continue;
-	 }
+            }
+         continue;
+         }
       else if (is:list(flist)) {
-	 funclist = (struct b_list*)flist.vword.bptr;
+         funclist = (struct b_list*)flist.vword.bptr;
          if (funclist->size<=1) continue;
          bp1 = (struct b_lelem *) funclist->listhead;
          if (bp1->nused<=0) {
@@ -1330,30 +1330,30 @@ int traversefunclist(wbp w)
          used1 = bp1->nused-1;
          if (used1<=0) {
             bp1 = (struct b_lelem *) bp1->listnext;
-	    k1 = bp1->first;
+            k1 = bp1->first;
             funclist->listhead = (union block *) bp1;
             bp1->listprev = (union block *) funclist;
          }
-	 if (! is:integer(bp1->lslots[k1])) { /* should check for large int! */
-	    return RunError;
-	    }
+         if (! is:integer(bp1->lslots[k1])) { /* should check for large int! */
+            return RunError;
+            }
          tmp = IntVal(bp1->lslots[k1]);
 
 /* OK, at this point, k1 has been preset to refer to the int code */
 
-	 if (funclist->size-1 > vsize) {
-	    if (v == v2)
-	       v = calloc(funclist->size, sizeof (double));
-	    else {
-	       v = realloc(v, funclist->size * sizeof (double));
-	       }
-	    vsize = funclist->size-1;
-	    if (v == NULL) return RunError;
-	    }
+         if (funclist->size-1 > vsize) {
+            if (v == v2)
+               v = calloc(funclist->size, sizeof (double));
+            else {
+               v = realloc(v, funclist->size * sizeof (double));
+               }
+            vsize = funclist->size-1;
+            if (v == NULL) return RunError;
+            }
 
          switch(tmp & ~0xf) {
          case REDRAW_FG:
-	    /* Fg() or WAttrib("fg=...") */
+            /* Fg() or WAttrib("fg=...") */
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
                used1 = bp1->nused;
@@ -1366,7 +1366,7 @@ int traversefunclist(wbp w)
 
             d = bp1->lslots[k1];
             if (!cnv:C_string(d, temp))
-	       return Failed;
+               return Failed;
 
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
@@ -1380,7 +1380,7 @@ int traversefunclist(wbp w)
 
             d = bp1->lslots[k1];
             if (!cnv:C_integer(d, r))
-	       return Failed;
+               return Failed;
 
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
@@ -1394,7 +1394,7 @@ int traversefunclist(wbp w)
 
             d = bp1->lslots[k1];
             if (!cnv:C_integer(d, g))
-	       return Failed;
+               return Failed;
 
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
@@ -1408,7 +1408,7 @@ int traversefunclist(wbp w)
 
             d = bp1->lslots[k1];
             if (!cnv:C_integer(d, b))
-	       return Failed;
+               return Failed;
 
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
@@ -1422,19 +1422,19 @@ int traversefunclist(wbp w)
 
             d = bp1->lslots[k1];
             if (!cnv:C_integer(d, a))
-	       return Failed;
+               return Failed;
 
-	    if(!determinematerial(temp, r, g, b, a)) {
-		/*
-        		if(!determinematerial(funclist)) {
-		*/
+            if(!determinematerial(temp, r, g, b, a)) {
+                /*
+                        if(!determinematerial(funclist)) {
+                */
                free_v_and_fail:
-	       if (v != v2) free(v);
-	          return Failed;
-	       }
-	    break;
+               if (v != v2) free(v);
+                  return Failed;
+               }
+            break;
          case REDRAW_DIM:
-	    /* WAttrib("dim=...") */
+            /* WAttrib("dim=...") */
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
                used1 = bp1->nused;
@@ -1446,12 +1446,12 @@ int traversefunclist(wbp w)
             }
             var1 = bp1->lslots[k1];
 
-    	    if ((!cnv:C_integer(var1, dim))||(dim<1)||(dim>3))
-	       goto free_v_and_fail;
+            if ((!cnv:C_integer(var1, dim))||(dim<1)||(dim>3))
+               goto free_v_and_fail;
             wc->dim = dim;
-	    break;
+            break;
          case REDRAW_LINEWIDTH:
-	    /* WAttrib("linewidth=...") */
+            /* WAttrib("linewidth=...") */
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
                used1 = bp1->nused;
@@ -1464,16 +1464,16 @@ int traversefunclist(wbp w)
             var1 = bp1->lslots[k1];
 
             if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
-	       setlinewidth(w, num);
+               setlinewidth(w, num);
                glLineWidth(num);
-	    break;
+            break;
          case REDRAW_PICK:
-	    /* WAttrib("pick=...") */
+            /* WAttrib("pick=...") */
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
                used1 = bp1->nused;
                k1 = bp1->first;
-	       }
+               }
             else {
                if (k1++>=bp1->nslots) k1=0;
                used1--;
@@ -1482,10 +1482,10 @@ int traversefunclist(wbp w)
 
             if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 
-	    wc->selectionenabled = num;
-	    break;
+            wc->selectionenabled = num;
+            break;
          case REDRAW_TEXMODE:
-	    /* WAttrib("texmode=...") */
+            /* WAttrib("texmode=...") */
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
                used1 = bp1->nused;
@@ -1502,7 +1502,7 @@ int traversefunclist(wbp w)
             /* texturing is on */
             if (num) {
                if (wc->texmode == 0)
-	          glEnable(GL_TEXTURE_2D);
+                  glEnable(GL_TEXTURE_2D);
 
                wc->texmode = num;
                }
@@ -1511,75 +1511,75 @@ int traversefunclist(wbp w)
                if (wc->texmode != 0)
                   glDisable(GL_TEXTURE_2D);
                wc->texmode = 0;
-	       }
-	    break;
-	 case REDRAW_SLICES:
-	    /* WAttrib("slices=...") */
+               }
+            break;
+         case REDRAW_SLICES:
+            /* WAttrib("slices=...") */
             if (used1<=1) {
-	       bp1=(struct b_lelem *) bp1->listnext;
-	       used1 = bp1->nused;
-	       k1 = bp1->first;
-	    }
-	    else {
-	       if (k1++>=bp1->nslots) k1=0;
-	       used1--;
-	    }
-	    var1 = bp1->lslots[k1];
-	    
-	    if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
-	    
-	    /* make sure slice is more than 0, otherwise just ignore */
+               bp1=(struct b_lelem *) bp1->listnext;
+               used1 = bp1->nused;
+               k1 = bp1->first;
+            }
+            else {
+               if (k1++>=bp1->nslots) k1=0;
+               used1--;
+            }
+            var1 = bp1->lslots[k1];
+
+            if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
+
+            /* make sure slice is more than 0, otherwise just ignore */
             if (num>0)
-	       wc->slices = num;
-	    break;
-	 case REDRAW_RINGS:
-	    /* WAttrib("rings=...") */
+               wc->slices = num;
+            break;
+         case REDRAW_RINGS:
+            /* WAttrib("rings=...") */
             if (used1<=1) {
-	       bp1=(struct b_lelem *) bp1->listnext;
-	       used1 = bp1->nused;
-	       k1 = bp1->first;
-	    }
-	    else {
-	       if (k1++>=bp1->nslots) k1=0;
-	       used1--;
-	    }
-	    var1 = bp1->lslots[k1];
-	    
-	    if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
-	    
-	    /* make sure rings is more than 0, otherwise just ignore */
+               bp1=(struct b_lelem *) bp1->listnext;
+               used1 = bp1->nused;
+               k1 = bp1->first;
+            }
+            else {
+               if (k1++>=bp1->nslots) k1=0;
+               used1--;
+            }
+            var1 = bp1->lslots[k1];
+
+            if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
+
+            /* make sure rings is more than 0, otherwise just ignore */
             if (num>0)
-	       wc->rings = num;
-	    break;
-	 case REDRAW_NORMODE:
-	    /* WAttrib("normode=...") */
+               wc->rings = num;
+            break;
+         case REDRAW_NORMODE:
+            /* WAttrib("normode=...") */
             if (used1<=1) {
-	       bp1=(struct b_lelem *) bp1->listnext;
-	       used1 = bp1->nused;
-	       k1 = bp1->first;
-	    }
-	    else {
-	       if (k1++>=bp1->nslots) k1=0;
-	       used1--;
-	    }
-	    var1 = bp1->lslots[k1];
-	    
-	    if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
-	    
-	    /* normals is off */
+               bp1=(struct b_lelem *) bp1->listnext;
+               used1 = bp1->nused;
+               k1 = bp1->first;
+            }
+            else {
+               if (k1++>=bp1->nslots) k1=0;
+               used1--;
+            }
+            var1 = bp1->lslots[k1];
+
+            if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
+
+            /* normals is off */
             if (num==0)
-	       wc->normode = 0;
-	    /* normals is on */
+               wc->normode = 0;
+            /* normals is on */
             else if (num==2)
-	       wc->normode = 2;
-	    /* default is auto*/
+               wc->normode = 2;
+            /* default is auto*/
             else
-	       wc->normode = 1;
-	    break;
+               wc->normode = 1;
+            break;
          case REDRAW_TEXCOORD:      /* Texcoord() or WAttrib("texcoord=...") */
             /*
-	     * first element tells us if opengl generates texture coordinates
-	     */
+             * first element tells us if opengl generates texture coordinates
+             */
             if (used1<=1) {
                bp1=(struct b_lelem *) bp1->listnext;
                used1 = bp1->nused;
@@ -1601,83 +1601,83 @@ int traversefunclist(wbp w)
 
             /* there is a list of texture coordinates to use */
             else {
-	       struct b_realarray *ap;
+               struct b_realarray *ap;
                glDisable(GL_TEXTURE_GEN_S);
                glDisable(GL_TEXTURE_GEN_T);
                wc->autogen = 0;
-	       
+
                   if (used1 <= 1){
-	             bp1 = (struct b_lelem *) bp1->listnext;
+                     bp1 = (struct b_lelem *) bp1->listnext;
                      used1 = bp1->nused;
                      k1 = bp1->first;
                      }
                   else {
-	             if (k1++ >= bp1->nslots) k1 = 0;
-	             used1--;
+                     if (k1++ >= bp1->nslots) k1 = 0;
+                     used1--;
                      }
 
                   if (used1>0) {
-	             d = bp1->lslots[k1];
-		     ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		     if (ap->title != T_Realarray) {
-			fprintf(stderr,"traversefunctionlist/Texcoord: "
-				"real array expected\n");
-			return Failed;
-			}
-		     wc->numtexcoords = BlkD(d, List)->size;
-		     wc->texcoords = ap;
+                     d = bp1->lslots[k1];
+                     ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                     if (ap->title != T_Realarray) {
+                        fprintf(stderr,"traversefunctionlist/Texcoord: "
+                                "real array expected\n");
+                        return Failed;
+                        }
+                     wc->numtexcoords = BlkD(d, List)->size;
+                     wc->texcoords = ap;
                      }
                }
-	    break;
+            break;
          case REDRAW_NORMALS:     /* Normals() */
             /* there is a list of normal coordinates to use */
                if (used1 <= 1){
-	          bp1 = (struct b_lelem *) bp1->listnext;
+                  bp1 = (struct b_lelem *) bp1->listnext;
                   used1 = bp1->nused;
                   k1 = bp1->first;
                   }
                else {
-	          if (k1++ >= bp1->nslots) k1 = 0;
-	          used1--;
+                  if (k1++ >= bp1->nslots) k1 = 0;
+                  used1--;
                   }
 
                if (used1>0) {
-		  struct b_realarray *ap;
-	          d = bp1->lslots[k1];
-		  ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		  if (ap->title!=T_Realarray){
-		     printf("REDRAW_NORMALS: NOT a real Array!!..\n");
-		     return Failed;
-		     }
-		  wc->numnormals = BlkD(d, List)->size;
-		  wc->normals = ap;
+                  struct b_realarray *ap;
+                  d = bp1->lslots[k1];
+                  ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                  if (ap->title!=T_Realarray){
+                     printf("REDRAW_NORMALS: NOT a real Array!!..\n");
+                     return Failed;
+                     }
+                  wc->numnormals = BlkD(d, List)->size;
+                  wc->normals = ap;
                   }
-	    break;
+            break;
          case REDRAW_MULTMATRIX:      /* MultMatrix() */
                /* check if we have a list of size 16 */
                   if (used1 <= 1){
-	             bp1 = (struct b_lelem *) bp1->listnext;
+                     bp1 = (struct b_lelem *) bp1->listnext;
                      used1 = bp1->nused;
                      k1 = bp1->first;
                      }
                   else {
-	             if (k1++ >= bp1->nslots) k1 = 0;
-	             used1--;
+                     if (k1++ >= bp1->nslots) k1 = 0;
+                     used1--;
                      }
 
                   if (used1>0) {
-		      struct b_realarray *ap;
-		      d = bp1->lslots[k1];
-		      ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		      if (ap->title!=T_Realarray){
-			printf("REDRAW_MULTMATRIX: NOT a real Array!!..\n");
-			return Failed;
-		      }
+                      struct b_realarray *ap;
+                      d = bp1->lslots[k1];
+                      ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                      if (ap->title!=T_Realarray){
+                        printf("REDRAW_MULTMATRIX: NOT a real Array!!..\n");
+                        return Failed;
+                      }
 #if HAVE_LIBGL
-		      glMultMatrixd((GLdouble *)ap->a);
-#endif					/* HAVE_LIBGL */
+                      glMultMatrixd((GLdouble *)ap->a);
+#endif                                  /* HAVE_LIBGL */
                      } /*used1>0 */
-	    break;
+            break;
          case REDRAW_POLYGON:      /* DrawPolygon() */
             /* element in position 1 is the dim attribute */
                if (used1<=1) {
@@ -1691,17 +1691,17 @@ int traversefunclist(wbp w)
                   }
 
                if (used1>0) {
-		 struct b_realarray *ap;
-		 d = bp1->lslots[k1];
-		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		 if (ap->title!=T_Realarray){
-		   printf("REDRAW_POLYGON: NOT a real Array!!..\n");
-		   return Failed;
-		 }
-		 /* call drawpoly with meshmode to get something polygonish */
-		 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
-	       } /*used1>0 */
-	    break;
+                 struct b_realarray *ap;
+                 d = bp1->lslots[k1];
+                 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                 if (ap->title!=T_Realarray){
+                   printf("REDRAW_POLYGON: NOT a real Array!!..\n");
+                   return Failed;
+                 }
+                 /* call drawpoly with meshmode to get something polygonish */
+                 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
+               } /*used1>0 */
+            break;
          case REDRAW_FILLPOLYGON:      /* FillPolygon() */
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
@@ -1712,19 +1712,19 @@ int traversefunclist(wbp w)
                   if (k1++>=bp1->nslots) k1=0;
                   used1--;
                   }
-               
+
                if (used1>0) {
-		 struct b_realarray *ap;
-		 d = bp1->lslots[k1];
-		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		 if (ap->title!=T_Realarray){
-		   printf("REDRAW_FILLPOLYGON: NOT a real Array!!..\n");
-		   return Failed;
-		 }
-		 /* call drawpoly with meshmode to get something polygonish */
-		 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
-	       } /*used1>0 */
-	    break;
+                 struct b_realarray *ap;
+                 d = bp1->lslots[k1];
+                 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                 if (ap->title!=T_Realarray){
+                   printf("REDRAW_FILLPOLYGON: NOT a real Array!!..\n");
+                   return Failed;
+                 }
+                 /* call drawpoly with meshmode to get something polygonish */
+                 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
+               } /*used1>0 */
+            break;
          case REDRAW_SEGMENT:      /* DrawSegment() */
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
@@ -1735,19 +1735,19 @@ int traversefunclist(wbp w)
                   if (k1++>=bp1->nslots) k1=0;
                   used1--;
                }
-               
+
                if (used1>0) {
-		 struct b_realarray *ap;
-		 d = bp1->lslots[k1];
-		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		 if (ap->title!=T_Realarray){
-		   printf("REDRAW_SEGMENT: NOT a real Array!!..\n");
-		   return Failed;
-		 }
-		 /* call drawpoly with GL_LINES to get segments */
-		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINES, wc->dim);
-	       } /*used1>0 */
-	    break;
+                 struct b_realarray *ap;
+                 d = bp1->lslots[k1];
+                 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                 if (ap->title!=T_Realarray){
+                   printf("REDRAW_SEGMENT: NOT a real Array!!..\n");
+                   return Failed;
+                 }
+                 /* call drawpoly with GL_LINES to get segments */
+                 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINES, wc->dim);
+               } /*used1>0 */
+            break;
          case REDRAW_LINE:       /* DrawLine() */
                if (used1<=0) {
                   bp1=(struct b_lelem *) bp1->listnext;
@@ -1759,18 +1759,18 @@ int traversefunclist(wbp w)
                   used1--;
                   }
 
-	       if (used1>0) {
-		 struct b_realarray *ap;
-		 d = bp1->lslots[k1];
-		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		 if (ap->title!=T_Realarray){
-		   printf("REDRAW_LINE: NOT a real Array!!..\n");
-		   return Failed;
-		 }
-		 /* call drawpoly with GL_LINE_STRIP to get lines */
-		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINE_STRIP, wc->dim);
-	       } /*used1>0 */
-	    break;
+               if (used1>0) {
+                 struct b_realarray *ap;
+                 d = bp1->lslots[k1];
+                 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                 if (ap->title!=T_Realarray){
+                   printf("REDRAW_LINE: NOT a real Array!!..\n");
+                   return Failed;
+                 }
+                 /* call drawpoly with GL_LINE_STRIP to get lines */
+                 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINE_STRIP, wc->dim);
+               } /*used1>0 */
+            break;
          case REDRAW_POINT:       /* DrawPoint() */
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
@@ -1781,27 +1781,27 @@ int traversefunclist(wbp w)
                   if (k1++>=bp1->nslots) k1=0;
                   used1--;
                   }
-	       if (used1>0) {
-		 struct b_realarray *ap;
-		 d = bp1->lslots[k1];
-		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-		 if (ap->title!=T_Realarray){
-		   printf("REDRAW_POINT: NOT a real Array!!..\n");
-		   return Failed;
-		 }
-		 /* call drawpoly with GL_POINTS to get points */
-		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_POINTS, wc->dim);
-	       } /*used1>0 */
-	    break;
+               if (used1>0) {
+                 struct b_realarray *ap;
+                 d = bp1->lslots[k1];
+                 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+                 if (ap->title!=T_Realarray){
+                   printf("REDRAW_POINT: NOT a real Array!!..\n");
+                   return Failed;
+                 }
+                 /* call drawpoly with GL_POINTS to get points */
+                 drawpoly(w, ap->a, BlkD(d, List)->size , GL_POINTS, wc->dim);
+               } /*used1>0 */
+            break;
          default:
-      	    fprintf(stderr,"invalid displaylist entry '%s'\n",
-	       (is:string(fname) ? StrLoc(fname) : "(corrupted)"));
-	       goto free_v_and_fail;
-	 } /* switch tmp */
+            fprintf(stderr,"invalid displaylist entry '%s'\n",
+               (is:string(fname) ? StrLoc(fname) : "(corrupted)"));
+               goto free_v_and_fail;
+         } /* switch tmp */
          } /* else if is:list  */
       else {
-	 return Failed;
-	 }
+         return Failed;
+         }
       }
 
    if (v!=v2) free(v);
@@ -1934,8 +1934,8 @@ int setmaterials(wbp w, char* s)
 
       /* create a list element for each material property */
       if (create3Dlisthdr(&f, "Fg", 7)!=Succeeded)
-	return RunError;
-      
+        return RunError;
+
      /*
       * parse the string to determine the material property and its value
       */
@@ -1943,7 +1943,7 @@ int setmaterials(wbp w, char* s)
       while(s[i] && isalpha(s[i])) {
          sbuf1[k] = s[i];
          i++; k++;
-	 }
+         }
       sbuf1[k] = '\0';
 
       /* ambient */
@@ -1953,7 +1953,7 @@ int setmaterials(wbp w, char* s)
          while(s[i] != '\0' && s[i] != ';') {
             sbuf2[j] = s[i];
             i++; j++;
-	    }
+            }
          sbuf2[j] = '\0';
          /* determine the icon color */
          if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)== Failed)
@@ -1967,47 +1967,47 @@ int setmaterials(wbp w, char* s)
          glMaterialfv(GL_FRONT, GL_AMBIENT, color);
          MakeStr("ambient", 7, &material);
          c_put(&f, &material);
-	   }
+           }
 
       /* diffuse */
       else if(!strcmp(sbuf1, "diffuse")) {
-	 while(isspace(s[i])) i++;
-	 if(s[i] == '\0') return Failed;
-	 while(s[i] != '\0' && s[i] != ';') {
-	    sbuf2[j] = s[i];
-	    i++; j++;
-	    }
-	 sbuf2[j] = '\0';
+         while(isspace(s[i])) i++;
+         if(s[i] == '\0') return Failed;
+         while(s[i] != '\0' && s[i] != ';') {
+            sbuf2[j] = s[i];
+            i++; j++;
+            }
+         sbuf2[j] = '\0';
 
          /* determine the appropriate icon color */
-	 if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)==Failed)
+         if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)==Failed)
             return Failed;
 
          /* convert values to floats between 0.0 and 1.0 */
-	 color[0] = rd/(GLfloat)65535;
-	 color[1] = gr/(GLfloat)65535;
-	 color[2] = bl/(GLfloat)65535;
-	 color[3] = al/(GLfloat)65535;
+         color[0] = rd/(GLfloat)65535;
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = al/(GLfloat)65535;
 
          /* set the property */
-	 glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
-	 MakeStr("diffuse", 7, &material);
-	 c_put(&f, &material);
-	 }
+         glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+         MakeStr("diffuse", 7, &material);
+         c_put(&f, &material);
+         }
 
       /* specular */
       else if (!strcmp(sbuf1, "specular")) {
          while(isspace(s[i])) i++;
          if(s[i] == '\0') return Failed;
          while(s[i] != '\0' && s[i] != ';') {
-	    sbuf2[j] = s[i];
-	    i++; j++;
-	    }
-	 sbuf2[j] = '\0';
+            sbuf2[j] = s[i];
+            i++; j++;
+            }
+         sbuf2[j] = '\0';
 
          /*
-	  * determine the icon color and convert to a float between 0.0 and 1.0
-	  */
+          * determine the icon color and convert to a float between 0.0 and 1.0
+          */
          if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
             return Failed;
          color[0] = rd/(GLfloat)65535;
@@ -2019,67 +2019,67 @@ int setmaterials(wbp w, char* s)
          glMaterialfv(GL_FRONT, GL_SPECULAR, color);
          MakeStr("specular", 8, &material);
          c_put(&f, &material);
-	 }
+         }
 
       /* shininess */
       else if(!strcmp(sbuf1, "shininess")) {
-	 while(isspace(s[i])) i++;
-	 if(s[i] == '\0') return Failed;
-	 while(s[i] != '\0' && s[i] != ';') {
-	    sbuf2[j] = s[i];
-	    i++; j++;
-	    }
-	 sbuf2[j] = '\0';
+         while(isspace(s[i])) i++;
+         if(s[i] == '\0') return Failed;
+         while(s[i] != '\0' && s[i] != ';') {
+            sbuf2[j] = s[i];
+            i++; j++;
+            }
+         sbuf2[j] = '\0';
 
-	 /* set the shininess */
-	 shine = atof(sbuf2);
-	 glMaterialf(GL_FRONT, GL_SHININESS, shine);
+         /* set the shininess */
+         shine = atof(sbuf2);
+         glMaterialf(GL_FRONT, GL_SHININESS, shine);
          MakeStr("shininess", 9, &material);
-	 c_put(&f, &material);
-	 rd = shine;
-	 gr = 0;
-	 bl = 0;
-	 }
+         c_put(&f, &material);
+         rd = shine;
+         gr = 0;
+         bl = 0;
+         }
       /* emission */
       else if(!strcmp(sbuf1, "emission")) {
-	 while(isspace(s[i])) i++;
-	 if(s[i] == '\0') return Failed;
-	 while(s[i] != '\0' && s[i] != ';') {
-	    sbuf2[j] = s[i];
-	    i++; j++;
-	    }
-	 sbuf2[j] = '\0';
+         while(isspace(s[i])) i++;
+         if(s[i] == '\0') return Failed;
+         while(s[i] != '\0' && s[i] != ';') {
+            sbuf2[j] = s[i];
+            i++; j++;
+            }
+         sbuf2[j] = '\0';
 
-	 /*
-	  * determine r, g, b and convert them to floats between 0.0 and 1.0
-	  */
-	 if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
-	    return Failed;
-	 color[0] = rd/(GLfloat)65535;
-	 color[1] = gr/(GLfloat)65535;
-	 color[2] = bl/(GLfloat)65535;
-	 color[3] = al/(GLfloat)65535;
+         /*
+          * determine r, g, b and convert them to floats between 0.0 and 1.0
+          */
+         if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
+            return Failed;
+         color[0] = rd/(GLfloat)65535;
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = al/(GLfloat)65535;
 
-	 /* set the emission color */
-	 glMaterialfv(GL_FRONT, GL_EMISSION, color);
+         /* set the emission color */
+         glMaterialfv(GL_FRONT, GL_EMISSION, color);
          MakeStr("emission", 8, &material);
-	 c_put(&f, &material);
-	 }
+         c_put(&f, &material);
+         }
 
       /* otherwise set the current foreground color; treat as diffuse */
       else {
-	 if(setfg(w, s) == Failed) return Failed;
+         if(setfg(w, s) == Failed) return Failed;
          if(parsecolor(w, s, &rd, &gr, &bl, &al)==Failed)
             return Failed;
-	 i = strlen(s);
-	 color[0] = rd/(GLfloat)65535;
-	 color[1] = gr/(GLfloat)65535;
-	 color[2] = bl/(GLfloat)65535;
-	 color[3] = al/(GLfloat)65535;
- 	 glColor4f(color[0], color[1], color[2], color[3]);
-	 glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+         i = strlen(s);
+         color[0] = rd/(GLfloat)65535;
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = al/(GLfloat)65535;
+         glColor4f(color[0], color[1], color[2], color[3]);
+         glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
          MakeStr("diffuse", 7, &material);
-	 c_put(&f, &material);
+         c_put(&f, &material);
          }
 
       /* put material property values on the list */
@@ -2134,7 +2134,7 @@ int setlight(wbp w, char* s, int light)
       /* query opengl to make sure the light is not already off */
       glGetBooleanv(light, &params);
       if (params)
-	 glDisable(light);
+         glDisable(light);
       s2 = s2 + 3;
       if(*s2 != ',' && *s2 != '\0') return Failed;
       if(*s2 == ',') s2++;
@@ -2153,11 +2153,11 @@ int setlight(wbp w, char* s, int light)
             }
          s3[i] = '\0';
          /*
-	  * Determine the r, g, b values. Convert from an integer between
-	  * 0 and 65535 to a float between 0.0 and 1.0
-	  */
+          * Determine the r, g, b values. Convert from an integer between
+          * 0 and 65535 to a float between 0.0 and 1.0
+          */
          if(parsecolor(w, s3, &rd, &gr, &bl, &al) ==Failed)
-	      return Failed;
+              return Failed;
 
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
@@ -2167,8 +2167,8 @@ int setlight(wbp w, char* s, int light)
          /* set the ambient light value */
          glLightfv(light, GL_AMBIENT, color);
          s2 = s2 + i;
-	 if(*s2 != ';' && *s2 != '\0') return Failed;
-	 if(*s2 != '\0') s2++;
+         if(*s2 != ';' && *s2 != '\0') return Failed;
+         if(*s2 != '\0') s2++;
          }
 
       /* set the diffuse lighting values */
@@ -2184,7 +2184,7 @@ int setlight(wbp w, char* s, int light)
          /* convert the icon r, g, b values to floats
             between 0.0 and 1.0 */
          if(parsecolor(w, s3, &rd, &gr, &bl,&al) == Failed)
-	      return Failed;
+              return Failed;
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
          color[2] = bl/(GLfloat)65535;
@@ -2193,8 +2193,8 @@ int setlight(wbp w, char* s, int light)
          /* set the diffuse value of the light */
          glLightfv(light, GL_DIFFUSE, color);
          s2 = s2 + i;
-	 if (*s2 != ';' && *s2 != '\0') return Failed;
-	 if (*s2 != '\0') s2++;
+         if (*s2 != ';' && *s2 != '\0') return Failed;
+         if (*s2 != '\0') s2++;
          }
       /* set the specular lighting values */
       if (!strncmp(s2, "specular", 8)) {
@@ -2207,7 +2207,7 @@ int setlight(wbp w, char* s, int light)
             }
          s3[i] = '\0';
          /* convert to appropriate values */
-	 if (parsecolor(w, s3, &rd, &gr, &bl, &al) == Failed)
+         if (parsecolor(w, s3, &rd, &gr, &bl, &al) == Failed)
             return Failed;
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
@@ -2215,29 +2215,29 @@ int setlight(wbp w, char* s, int light)
          color[3] = al/(GLfloat)65535;
          glLightfv(light, GL_SPECULAR, color);
          s2 = s2 + i;
-	 if (*s2 != ';' && *s2 != '\0') return Failed;
-	 if (*s2 != '\0') s2++;
+         if (*s2 != ';' && *s2 != '\0') return Failed;
+         if (*s2 != '\0') s2++;
          }
       /* set the positon of the light */
-	if (!strncmp(s2, "position", 8)) {
+        if (!strncmp(s2, "position", 8)) {
          s2 = s2 + 8;
-	   for (j = 0; j < 2; j++) {
-	   while (isspace(*s2)) s2++;
+           for (j = 0; j < 2; j++) {
+           while (isspace(*s2)) s2++;
            i = 0;
-	   if (*s2 == '\0') return Failed;
-	   while (s2[i] != '\0' && s2[i] != ',') {
+           if (*s2 == '\0') return Failed;
+           while (s2[i] != '\0' && s2[i] != ',') {
               s3[i] = s2[i];
               i++;
               }
            s3[i] = '\0';
            color[j] = atof(s3);
            s2 = s2 + i;
-	   if (*s2 != ',') return Failed;
+           if (*s2 != ',') return Failed;
            s2++;
            }
-	 while (isspace(*s2)) s2++;
-	 if (*s2 == '\0') return Failed;
-	 while (s2[i] != '\0' && s2[i] != ';') {
+         while (isspace(*s2)) s2++;
+         if (*s2 == '\0') return Failed;
+         while (s2[i] != '\0' && s2[i] != ';') {
             s3[i] = s2[i];
             i++;
             }
@@ -2245,8 +2245,8 @@ int setlight(wbp w, char* s, int light)
          color[2] = atof(s3);
          color[3] = 0.0;
          s2 = s2  + i;
-	 if (*s2 != ';' && *s2 != '\0') return Failed;
-	 if (*s2 != '\0') s2++;
+         if (*s2 != ';' && *s2 != '\0') return Failed;
+         if (*s2 != '\0') s2++;
          glLightfv(light, GL_POSITION, color);
          }
       }
@@ -2285,15 +2285,15 @@ void applyAutomaticTextureCoords(int enable)
 {
    if (enable) {
       if (!glIsEnabled(GL_TEXTURE_GEN_S))
-	 glEnable(GL_TEXTURE_GEN_S);
+         glEnable(GL_TEXTURE_GEN_S);
       if (!glIsEnabled(GL_TEXTURE_GEN_T))
-	 glEnable(GL_TEXTURE_GEN_T);
+         glEnable(GL_TEXTURE_GEN_T);
       }
    else {
       if (glIsEnabled(GL_TEXTURE_GEN_S))
-	 glDisable(GL_TEXTURE_GEN_S);
+         glDisable(GL_TEXTURE_GEN_S);
       if (glIsEnabled(GL_TEXTURE_GEN_T))
-	 glDisable(GL_TEXTURE_GEN_T);
+         glDisable(GL_TEXTURE_GEN_T);
       }
 }
 
@@ -2341,14 +2341,14 @@ int settexcoords(wbp w, char* s)
       c_put(&f, &mode);
       j = w->context->numtexcoords = 0;
       w->context->autogen = 0;
-      
+
       /* must turn off automatic texture generation */
       if (glIsEnabled(GL_TEXTURE_GEN_S))
          glDisable(GL_TEXTURE_GEN_S);
       if (glIsEnabled(GL_TEXTURE_GEN_T))
          glDisable(GL_TEXTURE_GEN_T);
       /* parse string */
-      /* The first pass counts the # of texcoords */ 
+      /* The first pass counts the # of texcoords */
       while(*s2 != '\0') {
          while(*s2 != ',' && *s2 != '\0' ) {
             s3[i] = *s2;
@@ -2356,10 +2356,10 @@ int settexcoords(wbp w, char* s)
            }
          s3[i]='\0';
          j++;
-	 if (*s2 == ',') {
-	    s2++;
-	    i=0;
-	    }
+         if (*s2 == ',') {
+            s2++;
+            i=0;
+            }
          else break;
          }
 
@@ -2382,16 +2382,16 @@ int settexcoords(wbp w, char* s)
          s3[i]='\0';
          ap->a[j] = r = atof(s3);
          j++;
-	 if (*s2 == ',') {
-	    s2++;
-	    i=0;
-	    }
+         if (*s2 == ',') {
+            s2++;
+            i=0;
+            }
          else break;
          }
 
       /* Number of texture coordinates must be even */
       if (j % 2)
-	 return RunError;
+         return RunError;
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;
       c_put(&(w->window->funclist), &f);
@@ -2415,20 +2415,20 @@ int imagestr(wbp w, char* str)
    /* Extract the Width and skip the following comma.*/
 
    s = (unsigned char *)str;
-   z = s + strlen(str);		/* end+1 of string */
+   z = s + strlen(str);         /* end+1 of string */
    width = 0;
-   while (s < z && *s == ' ')	/* skip blanks */
+   while (s < z && *s == ' ')   /* skip blanks */
       s++;
-   while (s < z && isdigit(*s))	/* scan number */
+   while (s < z && isdigit(*s)) /* scan number */
       width = 10 * width + *s++ - '0';
-   while (s < z && *s == ' ')	/* skip blanks */
+   while (s < z && *s == ' ')   /* skip blanks */
       s++;
    if (width == 0 || *s++ != ',') /* skip comma */
       return Failed;
-   while (s < z && *s == ' ')	/* skip blanks */
+   while (s < z && *s == ' ')   /* skip blanks */
       s++;
-   if (s >= z)			     /* if end of string */
-	 return Failed;
+   if (s >= z)                       /* if end of string */
+         return Failed;
 
  /* Check for a bilevel format */
    if ((c = *s) == '#' || c == '~') {
@@ -2436,36 +2436,36 @@ int imagestr(wbp w, char* str)
       nchars = 0;
       for (t = s; t < z; t++)
          if (isxdigit(*t))
-            nchars++;	         /* count hex digits */
+            nchars++;            /* count hex digits */
          else if (*t != PCH1 && *t != PCH2)
-            return Failed;	  /* illegal punctuation */
+            return Failed;        /* illegal punctuation */
       if (nchars == 0)
          return Failed;
-      row = (width + 3) / 4;	/* digits per row */
+      row = (width + 3) / 4;    /* digits per row */
       if (nchars % row != 0)
          return Failed;
       height = nchars / row;
 
       i = bltex(w, width, height, c, (char *)s, (word)(z - s));
       if (i == Succeeded)
-	   return Succeeded;
+           return Succeeded;
       else
-	   return Failed;
+           return Failed;
       }
 
 
  /* Extract the palette name and skip its comma.*/
-   c = *s++;		     /* save initial character */
+   c = *s++;                 /* save initial character */
    p = 0;
    while (s < z && isdigit(*s))    /* scan digits */
       p = 10 * p + *s++ - '0';
-   while (s < z && *s == ' ')	  /* skip blanks */
-	 s++;
+   while (s < z && *s == ' ')     /* skip blanks */
+         s++;
    if (s >= z || p == 0 || *s++ != ',')/* skip comma */
       return Failed;
-   if (c == 'g' && p >= 2 && p <= 256)	/* validate grayscale number */
+   if (c == 'g' && p >= 2 && p <= 256)  /* validate grayscale number */
       p = -p;
-   else if (c != 'c' || p < 1 || p > 6)	/* validate color number */
+   else if (c != 'c' || p < 1 || p > 6) /* validate color number */
       return Failed;
 
    /* Scan the image to see which colors are needed. */
@@ -2479,14 +2479,14 @@ int imagestr(wbp w, char* str)
       c = *t;
       e[c].used = 1;
       if (e[c].valid || e[c].transpt)
-         nchars++;	/* valid color, or transparent */
+         nchars++;      /* valid color, or transparent */
       else if (c != PCH1 && c != PCH2)
          return Failed;
       }
    if (nchars == 0)
-      return Failed;			/* empty image */
+      return Failed;                    /* empty image */
    if (nchars % width != 0){
-      return Failed;			/* not rectangular */
+      return Failed;                    /* not rectangular */
       }
 
    /* Create the texture */
@@ -2546,7 +2546,7 @@ int fileimage(wbp w, char* filename)
    }
 
    if (i == Succeeded)
-	 return Succeeded;
+         return Succeeded;
    else
       return Failed;
 }
@@ -2565,7 +2565,7 @@ int textureimg(wbp w, int width, int height,
    GLubyte *tex = (GLubyte *)malloc(height * width * 4 + 1);
    if (tex == NULL)
       return Failed;
-     
+
    MakeCurrent(w);
 
    /*
@@ -2578,32 +2578,32 @@ int textureimg(wbp w, int width, int height,
       v = e[c].valid;
       if (v) {
          /* r,g,b component must be between 0 and 256 */
-	   tex[(iy*width+ix)*3+0] = e[c].clr.red/256;
-	   tex[(iy*width+ix)*3+1] = e[c].clr.green/256;
- 	   tex[(iy*width+ix)*3+2] = e[c].clr.blue/256;
+           tex[(iy*width+ix)*3+0] = e[c].clr.red/256;
+           tex[(iy*width+ix)*3+1] = e[c].clr.green/256;
+           tex[(iy*width+ix)*3+2] = e[c].clr.blue/256;
         }
-      if (v || e[c].transpt) {		/* advance if valid or transparent */
-	   if (e[c].transpt) { /* if transparent use background color */
+      if (v || e[c].transpt) {          /* advance if valid or transparent */
+           if (e[c].transpt) { /* if transparent use background color */
             tex[(iy*width+ix)*3+0] = (GLint)RED(w->context->bg);
             tex[(iy*width+ix)*3+1] = (GLint)GREEN(w->context->bg);
- 
+
            tex[(iy*width+ix)*3+2] = (GLint)BLUE(w->context->bg);
          }
          if (++ix >= width) {
             ix = 0;
-	  	/* reset for new row */
+                /* reset for new row */
             iy--;
             }
          }
       }
-      if (ix > 0) {	/* pad final row if incomplete */
+      if (ix > 0) {     /* pad final row if incomplete */
          while (ix < width) {
             tex[(iy*width+ix)*3+0] = (GLint)RED(w->context->bg);
             tex[(iy*width+ix)*3+1] = (GLint)GREEN(w->context->bg);
             tex[(iy*width+ix)*3+2] = (GLint)BLUE(w->context->bg);
             ix++;
            }
-	 }
+         }
 
    /* set the texture */
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
@@ -2645,28 +2645,28 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
          if (!isdigit(c))
             c += 9;
          while (m > 0) {
-	    --ix;
-	    if (c & m){
-	       r = (GLint)RED(w->context->fg);
-	       g = (GLint)GREEN(w->context->fg);
- 	       b = (GLint)BLUE(w->context->fg);
+            --ix;
+            if (c & m){
+               r = (GLint)RED(w->context->fg);
+               g = (GLint)GREEN(w->context->fg);
+               b = (GLint)BLUE(w->context->fg);
                l = (iy*width+ix)*3;
-               tex[l] = r;	/* [ix][iy][0] */
-               tex[l+1] = g;	/* [ix][iy][1] */
-               tex[l+2] = b;	/* [ix][iy][2] */
+               tex[l] = r;      /* [ix][iy][0] */
+               tex[l+1] = g;    /* [ix][iy][1] */
+               tex[l+2] = b;    /* [ix][iy][2] */
             }
-	    else if (ch != TCH1) {
-    	       r = (GLint)RED(w->context->bg);
-	       g = (GLint)GREEN(w->context->bg);
-  	       b = (GLint)BLUE(w->context->bg);
+            else if (ch != TCH1) {
+               r = (GLint)RED(w->context->bg);
+               g = (GLint)GREEN(w->context->bg);
+               b = (GLint)BLUE(w->context->bg);
                l = (iy*width+ix)*3;
-               tex[l] = r;	/* [iy][ix][0] */
-               tex[l+1] = g;	/* [iy][ix][1] */
-               tex[l+2] = b;	/* [iy][ix][2] */
+               tex[l] = r;      /* [iy][ix][0] */
+               tex[l+1] = g;    /* [iy][ix][1] */
+               tex[l+2] = b;    /* [iy][ix][2] */
             }
             m >>= 1;
           }
-         if (ix == 0) {	    /* if end of row */
+         if (ix == 0) {     /* if end of row */
             ix = width;
             iy--;
             m = msk1;
@@ -2675,15 +2675,15 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
             m = 8;
          }
       }
-   if (ix > 0)				/* pad final row if incomplete */
+   if (ix > 0)                          /* pad final row if incomplete */
       while (ix < width){
          r = (GLint)RED(w->context->bg);
          g = (GLint)GREEN(w->context->bg);
          b = (GLint)BLUE(w->context->bg);
          l = (iy*width+ix)*3;
-         tex[l] = r;	/* [iy][ix][0] */
-         tex[l+1] = g;	/* [iy][ix][1] */
-         tex[l+2] = b;	/* [iy][ix][2] */
+         tex[l] = r;    /* [iy][ix][0] */
+         tex[l+1] = g;  /* [iy][ix][1] */
+         tex[l+2] = b;  /* [iy][ix][2] */
          ix++;
        }
 
@@ -2712,7 +2712,7 @@ int texture(int width, int height, GLubyte *tex, int texmode)
       tex2 = (GLubyte *) malloc(neww * newh * 3);
       if (tex2 == NULL) return Failed;
       rv = gluScaleImage(GL_RGB, width, height, GL_UNSIGNED_BYTE, tex,
-			 neww, newh, GL_UNSIGNED_BYTE, tex2);
+                         neww, newh, GL_UNSIGNED_BYTE, tex2);
       if (rv) { free(tex2); return Failed; }
       width = neww;
       height = newh;
@@ -2720,7 +2720,7 @@ int texture(int width, int height, GLubyte *tex, int texmode)
    else tex2 = tex;
 
    glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB,
-		GL_UNSIGNED_BYTE, tex2);
+                GL_UNSIGNED_BYTE, tex2);
 
    if (tex2 != tex) free(tex2);
 
@@ -2744,7 +2744,7 @@ int texture1(int width, int height, GLubyte *tex, int texmode)
       tex2 = (GLubyte *) malloc(neww * newh * 3);
       if (tex2 == NULL) return Failed;
       rv = gluScaleImage(GL_RGB, width, height, GL_UNSIGNED_BYTE, tex,
-			 neww, newh, GL_UNSIGNED_BYTE, tex2);
+                         neww, newh, GL_UNSIGNED_BYTE, tex2);
       if (rv) { free(tex2); return Failed; }
       width = neww;
       height = newh;
@@ -2777,7 +2777,7 @@ int translate(wbp w, dptr argv, int i, dptr f)
 
    if (!constr)
       if (!(constr = rec_structor3d(GL3D_TRANSLATE)))
-	 syserr("failed to create opengl record constructor");
+         syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
    /*
@@ -2821,7 +2821,7 @@ int rotate(wbp w, dptr argv, int i, dptr f)
 
    if (!constr)
       if (!(constr = rec_structor3d(GL3D_ROTATE)))
-	 syserr("failed to create opengl record constructor");
+         syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
    /* convert parameters and perform the rotation */
@@ -2865,7 +2865,7 @@ int scale(wbp w, dptr argv, int i, dptr f)
 
    if (!constr)
       if (!(constr = rec_structor3d(GL3D_SCALE)))
-	 syserr("failed to create opengl record constructor");
+         syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
    /*
@@ -2918,19 +2918,19 @@ int lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
    while (i<wd->ntextures) {
       wt = &(wd->stex[i]);
       if (wt->textype == ttype) {
-	 switch (ttype) {
-	 case 1: /* file */
-	    if ((StrLen(wt->d) == len) && strncmp(StrLoc(wt->d),name,len)==0) {
-	       wc->curtexture = i;
-	       return i;
-	       }
-	    break;
-	 case 2: /* window */
-	    break;
-	 case 3: /* string */
-	    break;
-	    }
-	 }
+         switch (ttype) {
+         case 1: /* file */
+            if ((StrLen(wt->d) == len) && strncmp(StrLoc(wt->d),name,len)==0) {
+               wc->curtexture = i;
+               return i;
+               }
+            break;
+         case 2: /* window */
+            break;
+         case 3: /* string */
+            break;
+            }
+         }
       i++;
       }
 
@@ -2993,20 +2993,20 @@ int texture_24img(wbp w, struct imgdata im)
 #ifdef XWindows
    l =  (height-1) * width * 3;
    for(j=0; j < height; j++){
-	for(i=0; i < width; i++) {
+        for(i=0; i < width; i++) {
            tex[l] = t[0]; tex[l+1] = t[1]; tex[l+2] = t[2];
-	   l = l + 3; t += 3;
-	   }
-   	l -= wd3x2;
-	}
-#else					/* XWindows */
+           l = l + 3; t += 3;
+           }
+        l -= wd3x2;
+        }
+#else                                   /* XWindows */
    {
    word l, wd3x2=width*3*2, wh3=width*height*3;
    for(l=0; l < wh3; l+=3, t+=3) {
       tex[l] = t[0]; tex[l+1] = t[1]; tex[l+2] = t[2];
       }
    }
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
    /* set the texture */
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
@@ -3035,9 +3035,9 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
    static char *full_name = NULL;
 #if NT
    struct _stat sb;
-#else					/* NT */
+#else                                   /* NT */
    struct stat sb;
-#endif					/* NT */
+#endif                                  /* NT */
 
    int len_full_name=0, len_path=0, len_font;
 
@@ -3052,7 +3052,7 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
       findonpath("unicon", full_name, 255);
       q = full_name + strlen(full_name);
       while (q > full_name && q[-1] != '/')
-	 q--;
+         q--;
       *q = '\0';
       }
    len_path = strlen(path);
@@ -3071,7 +3071,7 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
       }
 
    xx=cpp_drawstring3d(x*64,y*64,z*64,s,p,curr_font->type, curr_font->size,
-		       &(curr_font->fonts));
+                       &(curr_font->fonts));
 
    switch (xx) {
    case 1: fprintf(stderr, "Error:file does not support point size\n"); break;
@@ -3081,9 +3081,9 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
 
    free(p);
    return ((xx==0)?Succeeded:Failed);
-#else					/* HAVE_LIBFTGL */
+#else                                   /* HAVE_LIBFTGL */
    return Failed;
-#endif					/* HAVE_LIBFTGL */
+#endif                                  /* HAVE_LIBFTGL */
 }
 
 int add_3dfont(char *fname, int fsize, char ftype)
@@ -3101,12 +3101,12 @@ int add_3dfont(char *fname, int fsize, char ftype)
      }
    end_font->name = (char *) strdup(fname);
    if (!end_font->name)
-	return 0;
+        return 0;
    end_font->size = fsize;
    end_font->type = ftype;
    end_font->fonts = 0;
    end_font->next = 0;
-#endif					/* HAVE_LIBFTGL */
+#endif                                  /* HAVE_LIBFTGL */
    return 1;
 }
 
@@ -3117,11 +3117,11 @@ srch_3dfont(char *fname, int fsize, char ftype)
    wfp g = start_font;
    while (g) {
       if (!strcmp(g->name, fname) && g->size==fsize && g->type==ftype) {
-	 return g;
-	 }
+         return g;
+         }
       g = g->next;
       }
-#endif					/* HAVE_LIBFTGL */
+#endif                                  /* HAVE_LIBFTGL */
   return 0;
 }
 
@@ -3188,11 +3188,11 @@ int setselectionmode(wbp w, char* s)
      return RunError;
 
    if (!strcmp("on", s))
-	   wc->selectionenabled = 1;
+           wc->selectionenabled = 1;
    else if (!strcmp("off", s))
-	   wc->selectionenabled = 0;
+           wc->selectionenabled = 0;
    else
-	   return RunError;
+           return RunError;
 
    wc->app_use_selection3D = 1;
 
@@ -3212,32 +3212,32 @@ int setselectionmode(wbp w, char* s)
 #define SWAPINT(x, y) do{ int t=x; x=y; y=t; }while(0)
 
 #define CLIPENDS(a, b, start, finish) do {\
- 	if (a<start) a=start; if (b>finish) b=finish; } while(0)
+        if (a<start) a=start; if (b>finish) b=finish; } while(0)
 
 #define FCLIPENDS(a, b, start, finish, flag1, flag2) do {\
-	if (a<start) { a=start;  flag1=1;} else flag1=0; \
-	if (b>finish){ b=finish; flag2=1;} else flag2=0;} while (0)
+        if (a<start) { a=start;  flag1=1;} else flag1=0; \
+        if (b>finish){ b=finish; flag2=1;} else flag2=0;} while (0)
 
 
 #ifdef XWindows
 #define MKCURRENT3D(w3d) \
    glXMakeCurrent(w3d->window->display->display, w3d->window->win, w3d->window->ctx);
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
 #ifdef MSWindows
 #define MKCURRENT3D(w3d){ \
    HDC stddc = CreateWinDC(w3d); \
    wglMakeCurrent(stddc, w3d->window->ctx); \
    ReleaseDC(w3d->window->iconwin, stddc);}
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
 
 #define TEXUPDATE(win, wc, texhand, tex, wd, ht) \
       if (wc->buffermode) { \
-      	  wc->curtexture = texhand; \
-      	  MakeCurrent(wc->display->stex[texhand].w); \
-	  glBindTexture(GL_TEXTURE_2D, wc->display->stex[texhand].texName); \
-	  texture1(wd, ht, tex, \
-	    wc->display->stex[texhand].w->context->texmode); }
+          wc->curtexture = texhand; \
+          MakeCurrent(wc->display->stex[texhand].w); \
+          glBindTexture(GL_TEXTURE_2D, wc->display->stex[texhand].texName); \
+          texture1(wd, ht, tex, \
+            wc->display->stex[texhand].w->context->texmode); }
 
 
 int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
@@ -3248,7 +3248,7 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
    int cred, cgreen, cblue;
    int wd3, wd, ht, yy, xx, l, yb, yt, xl, xr,
         dx, dy, ee, tx, clip1, clip2, y0, x0,
-	top, rit, pixelshift;
+        top, rit, pixelshift;
    GLubyte *tex;
 
    cred = (GLint) RED(wc->fg);
@@ -3269,9 +3269,9 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
       wd3 = wd * 3;
       l = wd3 * (ht-y1-1) + x1 * 3;
       for (yy = y1; yy <= y2; yy++) {
-	 tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
-	 l -= wd3;
-	 }
+         tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+         l -= wd3;
+         }
       }
    else if (y2==y1){
       if (y2 < 0 || y2 >= wd) return Failed;
@@ -3282,106 +3282,106 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
       wd3 = wd * 3;
       l = wd3 * (ht-y1-1) + x1 * 3;
       for (xx = x1; xx <= x2; xx++) {
-	 tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
-	 l += 3;
-	 }
+         tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+         l += 3;
+         }
       }
    else {  /* All other lines */
       steep = abs(y2 - y1) > abs(x2 - x1);
       if (steep) {
          SWAPINT(x1, y1);
-      	 SWAPINT(x2, y2);
-      	 top = wd - 1; rit = ht -1; 
+         SWAPINT(x2, y2);
+         top = wd - 1; rit = ht -1;
          }
       else{ top = ht-1; rit = wd-1;  }
 
-      if (x1 > x2) { SWAPINT(x1, x2); SWAPINT(y1, y2);} 
+      if (x1 > x2) { SWAPINT(x1, x2); SWAPINT(y1, y2);}
 
       dx = x2 - x1;
       ee  = 0;
       y0 = y1;
       x0 = x1;
       if (y1 < y2){
-      	 ystep = 1;
-      	 if (steep)
-	    { wd3 = wd * -3; tx=3;} 
-	 else 
-	    { wd3 = wd * -3; tx=3;}
-      	 dy = y2 - y1;
-      	 FCLIPENDS(y1, y2, 0, top, yb, yt);
-      	 if INVISIBLE(y1, y2, 0, top) return Failed;
-      	 if (yb){
-      	    clip1 = (0-y0)* dx/(ystep*dy) + x0;
-      	    if (clip1<0) clip1=0;
+         ystep = 1;
+         if (steep)
+            { wd3 = wd * -3; tx=3;}
+         else
+            { wd3 = wd * -3; tx=3;}
+         dy = y2 - y1;
+         FCLIPENDS(y1, y2, 0, top, yb, yt);
+         if INVISIBLE(y1, y2, 0, top) return Failed;
+         if (yb){
+            clip1 = (0-y0)* dx/(ystep*dy) + x0;
+            if (clip1<0) clip1=0;
             }
-      	 else clip1=0;
+         else clip1=0;
 
-      	 if (yt){
+         if (yt){
             clip2 = (top-y0)* dx/(ystep*dy) + x0;
             if(clip2>rit) clip2=rit;
             }
-      	 else clip2=rit;
+         else clip2=rit;
 
-      	 if (y2==y1) return Failed;
-      	 FCLIPENDS(x1, x2, clip1, clip2, xl, xr);
-      	 if INVISIBLE(x1, x2, 0, rit) return Failed;
+         if (y2==y1) return Failed;
+         FCLIPENDS(x1, x2, clip1, clip2, xl, xr);
+         if INVISIBLE(x1, x2, 0, rit) return Failed;
 
-      	 if (xl){
-      	    clip1 = (0-x0)* (ystep*dy)/dx + y0;
-      	    if(clip1<0 || clip1>top) clip1=0;
+         if (xl){
+            clip1 = (0-x0)* (ystep*dy)/dx + y0;
+            if(clip1<0 || clip1>top) clip1=0;
             }
-	 else clip1=0;
+         else clip1=0;
 
-      	 if (xr){
-      	    clip2 = (rit-x0)* (ystep*dy)/dx + y0;
-      	    if(clip2<0 || clip2>top) clip2=top;
+         if (xr){
+            clip2 = (rit-x0)* (ystep*dy)/dx + y0;
+            if(clip2<0 || clip2>top) clip2=top;
             }
-	 else clip2=top;
+         else clip2=top;
 
-	 CLIPENDS(y1, y2, clip1, clip2);
-      	 if INVISIBLE(y1, y2, 0, top) return Failed;	
+         CLIPENDS(y1, y2, clip1, clip2);
+         if INVISIBLE(y1, y2, 0, top) return Failed;
 
          }
       else{ /* y1 > y2 */
          ystep = -1;
-      	 if (steep)
-	    { wd3 = wd * -3; tx=-3;} 
-	 else 
-	    { wd3 = wd * 3; tx=3;}
-      	 dy = y1 - y2;
-      	 FCLIPENDS(y2, y1, 0, top, yb, yt);
-      	 if INVISIBLE(y2, y1, 0, top) return Failed;
-      	 if (yb){
-      	    clip2 = (0-y0)* dx/(ystep*dy) + x0;
-      	    if(clip2>rit) clip2=rit;
+         if (steep)
+            { wd3 = wd * -3; tx=-3;}
+         else
+            { wd3 = wd * 3; tx=3;}
+         dy = y1 - y2;
+         FCLIPENDS(y2, y1, 0, top, yb, yt);
+         if INVISIBLE(y2, y1, 0, top) return Failed;
+         if (yb){
+            clip2 = (0-y0)* dx/(ystep*dy) + x0;
+            if(clip2>rit) clip2=rit;
             }
-      	 else clip2=rit;
+         else clip2=rit;
 
-      	 if (yt){
+         if (yt){
             clip1 = (top-y0)* dx/(ystep*dy) + x0;
             if(clip1<0)clip1=0;
             }
-      	 else clip1=0;
+         else clip1=0;
 
-      	 if (y2==y1) return Failed;
-      	 FCLIPENDS(x1, x2, clip1, clip2, xl, xr);
-      	 if INVISIBLE(x1, x2, 0, rit) return Failed;
+         if (y2==y1) return Failed;
+         FCLIPENDS(x1, x2, clip1, clip2, xl, xr);
+         if INVISIBLE(x1, x2, 0, rit) return Failed;
 
-      	 if (xl){
-      	    clip1 = (0-x0)* (ystep*dy)/dx + y0;
-      	    if(clip1<0 || clip1>top) clip1=top;
+         if (xl){
+            clip1 = (0-x0)* (ystep*dy)/dx + y0;
+            if(clip1<0 || clip1>top) clip1=top;
             }
-	 else clip1=top;
+         else clip1=top;
 
-      	 if (xr){
-      	    clip2 = (rit-x0)* (ystep*dy)/dx + y0;
-      	    if(clip2<0 || clip2>top) clip2=0;
+         if (xr){
+            clip2 = (rit-x0)* (ystep*dy)/dx + y0;
+            if(clip2<0 || clip2>top) clip2=0;
             }
-	 else clip2=0;
+         else clip2=0;
 
-	 CLIPENDS(y2, y1, clip2, clip1);
-      	 if INVISIBLE(y2, y1, 0, top) return Failed;
-	   
+         CLIPENDS(y2, y1, clip2, clip1);
+         if INVISIBLE(y2, y1, 0, top) return Failed;
+
          }
 
       dx = x2 - x1;
@@ -3398,9 +3398,9 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
 
       for (xx=x1; xx<=x2; xx++) {
          tex[l] = cred; tex[l+1] = cgreen; tex[l+2] = cblue;
-      	 ee += dy;
-      	 if (2 * ee >= dx) { l+=wd3+tx; ee -= dx; }
-      	 else l += pixelshift;
+         ee += dy;
+         if (2 * ee >= dx) { l+=wd3+tx; ee -= dx; }
+         else l += pixelshift;
          }
    }
 
@@ -3416,7 +3416,7 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
    int wd3, wd, ht, yy, xx, l;
    GLubyte *tex;
    int skipTop=0, skipBottom=0, skipLeft=0, skipRight=0,
-       flipx=0, flipy=0; 
+       flipx=0, flipy=0;
 
    cred = (GLint) RED(wc->fg);
    cgreen = (GLint) GREEN(wc->fg);
@@ -3432,20 +3432,20 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
 
    if (x+width<0 || x>wd || y+height<0 || y>ht) return Failed;
 
-   if (x<0){ 
-      width+=x; x=0; 
+   if (x<0){
+      width+=x; x=0;
       if (flipx) skipRight=1; else skipLeft=1;
       }
-   if (x+width >= wd ) { 
-      width=wd-x-1; 
+   if (x+width >= wd ) {
+      width=wd-x-1;
       if (flipx) skipLeft=1; else skipRight=1;
       }
-   if (y<0){ 
-      height+=y; y=0; 
+   if (y<0){
+      height+=y; y=0;
       if (flipy) skipTop=1; else skipBottom=1;
       }
    if (y+height >= ht ) {
-      height=ht-y-1; 
+      height=ht-y-1;
       if (flipy)  skipBottom=1; else skipTop=1;
       }
 
@@ -3458,9 +3458,9 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
    if (!skipBottom){
       l =  wd3 * (ht - y-1) + x * 3;
       for (xx = x; xx <= x2; xx++) {
-       	  l = l + 3;
-       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
-       	  }
+          l = l + 3;
+          tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+          }
        }
 
    /* Horizontal 2 */
@@ -3468,26 +3468,26 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
    if (!skipTop){
       l =  wd3 * (ht - y2-1) + x * 3;
       for (xx = x; xx <= x2; xx++) {
-       	  l = l + 3;
-       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
-       	  }
+          l = l + 3;
+          tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+          }
       }
 
    /* verticals 1 & 2 */
    if (!skipLeft){
       l =  wd3 * (ht-y - 1) + x * 3;
       for (yy = y; yy <= y2; yy++) {
-       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
-       	  l -=  wd3;
-       	  }
+          tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+          l -=  wd3;
+          }
       }
 
    if (!skipRight){
       l =  wd3 * (ht-y - 1) + x * 3 + width * 3;
       for (yy = y; yy <= y2; yy++) {
-       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
-       	  l -=  wd3;
-       	  }
+          tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+          l -=  wd3;
+          }
       }
 
    TEXUPDATE(w, wc, texhandle, tex, wd, ht);
@@ -3542,12 +3542,12 @@ int TexFillRect(wbp w, int texh, int x, int y, int width, int height, int isfg)
    for (yy=y; yy<y2; yy++){
        l =  wd3 * (ht-yy - 1) + x * 3;
        for (xx = x; xx < x2; xx++) {
-       	   tex[l] = cred;
-       	   tex[l+1]=cgreen;
-       	   tex[l+2]=cblue;
-       	   l = l + 3;
-       	   }
-	}
+           tex[l] = cred;
+           tex[l+1]=cgreen;
+           tex[l+2]=cblue;
+           l = l + 3;
+           }
+        }
    TEXUPDATE(w, wc, texh, tex, wd, ht);
    return Succeeded;
 }
@@ -3566,7 +3566,7 @@ int TexDrawPoint(wbp w, int texhandle, int x, int y)
    wd  = wc->display->stex[texhandle].width;
    ht  = wc->display->stex[texhandle].height;
 
-   if (x<0 || x>=wd || y<0 || y>=ht) 
+   if (x<0 || x>=wd || y<0 || y>=ht)
       return Failed;
 
    l = 3 * (x + wd * (ht-y - 1));
@@ -3604,11 +3604,11 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 
    for (i=0; i<imd->height; i++) {
       for (j=0; j<imd->width; j++) {
-	 tex[l] = (GLubyte) *s++;
-	 tex[l+1] = (GLubyte) *s++;
-	 tex[l+2] = (GLubyte) *s++;
-	 l+=3;
-	 }
+         tex[l] = (GLubyte) *s++;
+         tex[l+1] = (GLubyte) *s++;
+         tex[l+2] = (GLubyte) *s++;
+         l+=3;
+         }
       l += nextLineOffset;
       }
 
@@ -3617,8 +3617,8 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 }
 
 int copyareaTexToTex(wbp w, int texhandle, int dest_texhandle,
-		     int x, int y, int width, int height, /* box to copy */
-		     int xt, int yt)    /* dest loc */
+                     int x, int y, int width, int height, /* box to copy */
+                     int xt, int yt)    /* dest loc */
 {
    wdp wd = w->window->display;
    GLubyte *src = wd->stex[texhandle].tex;
@@ -3638,28 +3638,28 @@ int copyareaTexToTex(wbp w, int texhandle, int dest_texhandle,
       srcl = (srcht-y-j-1)*tws3 + x * 3;
       dstl = (txh-yt-j-1)*twd3 + xt * 3;
       for(i=0; i < width; i++) {
-	 b = src[srcl];
+         b = src[srcl];
            dest[dstl] =b;
            dest[dstl+1] = src[srcl+1];
            dest[dstl+2] = src[srcl+2];
-	   srcl += 3;
-	   dstl += 3;
-	   }
-	}
+           srcl += 3;
+           dstl += 3;
+           }
+        }
 
    MakeCurrent(w);
    glBindTexture(GL_TEXTURE_2D,
-		 wd->stex[dest_texhandle].texName);
+                 wd->stex[dest_texhandle].texName);
    texture(wd->stex[dest_texhandle].width,
-	   wd->stex[dest_texhandle].height,
-	   wd->stex[dest_texhandle].tex,
-	   w->context->texmode
-	   );
+           wd->stex[dest_texhandle].height,
+           wd->stex[dest_texhandle].tex,
+           w->context->texmode
+           );
    return Succeeded;
 }
 
 /* copy from a 2D window to a texture */
-int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,  
+int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
     int width, int height, int xt, int yt, int txw, int txh)
 {
    struct imgmem imem;
@@ -3673,7 +3673,7 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
    XColor clrcell;
 /*   wclrp cp, lastcp = wd->colors; */
    TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(vis->red_mask, vis->green_mask,vis->blue_mask);
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
    imem.x = x;
    imem.y = y;
@@ -3686,75 +3686,75 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
    twd3 = txw * 3;
 
 #ifdef XWindows
-   if(vis->class==TrueColor){ 
+   if(vis->class==TrueColor){
 
       for(j=0; j < height; j++){
-   	l = (txh-1-yt-j)*twd3 + xt * 3;
-	for(i=0; i < width; i++) {
-	   c =  XGetPixel(imem.im, i, j);
+        l = (txh-1-yt-j)*twd3 + xt * 3;
+        for(i=0; i < width; i++) {
+           c =  XGetPixel(imem.im, i, j);
            tex[l] = TRUECOLOR_GET_RGB_RED(c);
            tex[l+1] = TRUECOLOR_GET_RGB_GREEN(c);
            tex[l+2] = TRUECOLOR_GET_RGB_BLUE(c);
-	   l = l + 3;
-	   }
-	}
+           l = l + 3;
+           }
+        }
       return Succeeded;
       }
 #endif
 
    for(j=0; j < height; j++){
-   	l = (yt+j)*twd3 + xt * 3;
-	for(i=0; i < width; i++) {
+        l = (yt+j)*twd3 + xt * 3;
+        for(i=0; i < width; i++) {
 #ifdef XWindows
-	   clrcell.pixel = XGetPixel(imem.im, i, j);
-/*	   rv = 0xff000000;
-	   if  (lastcp->c == c){
-	      tex[l] = lastcp ->r>>8;
-	      tex[l+1] = lastcp->g>>8;
-	      tex[l+2] = lastcp->b>>8;
-	      l = l + 3;
-	      continue;
-	      }
-	   else
-	      for (cp = wd->colors ; cp < wd->colors + wd->numColors; cp++) {
-		 if (cp->c == c) {
-		    lastcp = cp;
-		    tex[l] = cp->r>>8;
-		    tex[l+1] = cp->g>>8;
-		    tex[l+2] = cp->b>>8;
-		    l = l + 3;
-		    continue;
-		    }
-		 }
-	   if (rv == 0xff000000) {
+           clrcell.pixel = XGetPixel(imem.im, i, j);
+/*         rv = 0xff000000;
+           if  (lastcp->c == c){
+              tex[l] = lastcp ->r>>8;
+              tex[l+1] = lastcp->g>>8;
+              tex[l+2] = lastcp->b>>8;
+              l = l + 3;
+              continue;
+              }
+           else
+              for (cp = wd->colors ; cp < wd->colors + wd->numColors; cp++) {
+                 if (cp->c == c) {
+                    lastcp = cp;
+                    tex[l] = cp->r>>8;
+                    tex[l+1] = cp->g>>8;
+                    tex[l+2] = cp->b>>8;
+                    l = l + 3;
+                    continue;
+                    }
+                 }
+           if (rv == 0xff000000) {
 */
-	      XQueryColor(stddpy, wd->cmap, &clrcell);
-	      clr = lcolor(w2d, clrcell);
+              XQueryColor(stddpy, wd->cmap, &clrcell);
+              clr = lcolor(w2d, clrcell);
               tex[l] = clr.red>>8;
               tex[l+1] = clr.green>>8;
               tex[l+2] = clr.blue>>8;
-	      l = l + 3;
-/*	      } */
+              l = l + 3;
+/*            } */
 #else
-	   {
-	   char *s2, strout[50];
-	   long rv;
+           {
+           char *s2, strout[50];
+           long rv;
 
-	   if (getpixel(w2d, i, height-j-1, &rv, strout, &imem) == Failed)
+           if (getpixel(w2d, i, height-j-1, &rv, strout, &imem) == Failed)
                return Failed;
 
            s2 = strout;
            /* parse string to get pixel values */
-	   while(isspace(*s2)) s2++;
+           while(isspace(*s2)) s2++;
            tex[l] = atoi(s2)/256;
-  	   while(isdigit(*s2)) s2++;
-   	   s2++;
+           while(isdigit(*s2)) s2++;
+           s2++;
            tex[l+1] = atoi(s2)/256;
-   	   while (isdigit(*s2)) s2++;
-  	   s2++;
+           while (isdigit(*s2)) s2++;
+           s2++;
            tex[l+2] = atoi(s2)/256;
-	   l = l + 3;
-	   }
+           l = l + 3;
+           }
 #endif
         }
       }
@@ -3765,7 +3765,7 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
  * Copy from a 3D window to a texture. As written here, it comes out
  * in four-byte RGBA format, and we copy just the RGB part over.
  */
-int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,  
+int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,
     int width, int height, int xt, int yt, int txw, int txh)
 {
    int i, j, twd3, l, m;
@@ -3777,31 +3777,31 @@ int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,
    /* change the current context to w2's context */
 #ifdef XWindows
    glXMakeCurrent(w3d->window->display->display, w3d->window->win, w3d->window->ctx);
-   glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height, 
-   		 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
-#endif					/* XWindows */
+   glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height,
+                 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
+#endif                                  /* XWindows */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w3d);
    wglMakeCurrent(stddc, w3d->window->ctx);
-   glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height, 
-   		 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
+   glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height,
+                 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
    ReleaseDC(w3d->window->iconwin, stddc);
    }
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
    twd3 = txw * 3;
 
    m=0;
       for(j=0; j < height; j++){
-   	l = (yt+j)* twd3 + xt * 3;
-	for(i=0; i < width; i++) {
+        l = (yt+j)* twd3 + xt * 3;
+        for(i=0; i < width; i++) {
            tex[l] =  tex2[m];
            tex[l+1] =  tex2[m+1];
            tex[l+2] =  tex2[m+2];
-	   l = l + 3;
-	   m = m +4;
-	   }
-	}    
+           l = l + 3;
+           m = m +4;
+           }
+        }
    free(tex2);
    return Succeeded;
 }
@@ -3825,8 +3825,8 @@ int texwindow2D(wbp w, wbp w2d)
    if (tex == NULL)
       return Failed;
 
-   copyareaToTex2D(w2d, tex, 0, 0, ws->width, ws->height, 
-   		      0, 0, ws->width, ws->height);
+   copyareaToTex2D(w2d, tex, 0, 0, ws->width, ws->height,
+                      0, 0, ws->width, ws->height);
 
    /* apply the texture */
 
@@ -3857,7 +3857,7 @@ int texwindow3D(wbp w1, wbp w2)
    int i;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
    if (tex == NULL)
-      return Failed;   
+      return Failed;
 
    /* change the current context to w2's context */
 #ifdef XWindows
@@ -3866,7 +3866,7 @@ int texwindow3D(wbp w1, wbp w2)
    glXMakeCurrent(w1s->display->display, w1s->win, w1s->ctx);
    glBindTexture(GL_TEXTURE_2D, w1c->display->stex[w1c->curtexture].texName);
     i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w2);
@@ -3876,11 +3876,11 @@ int texwindow3D(wbp w1, wbp w2)
    stddc = CreateWinDC(w1);
    wglMakeCurrent(stddc, w1s->ctx);
    glBindTexture(GL_TEXTURE_2D,
-		 w1c->display->stex[w1c->curtexture].texName);
+                 w1c->display->stex[w1c->curtexture].texName);
    i = texture(width, height, (GLubyte *)tex, w1c->texmode);
    ReleaseDC(w1->window->iconwin, stddc);
    }
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
     if (i == Succeeded) {
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
@@ -3898,12 +3898,12 @@ int texwindow3D(wbp w1, wbp w2)
  * TexCopyArea copies source image data into a destination texture.
  */
 int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width,
-    		 int height, int xt, int yt, int width2, int height2)
+                 int height, int xt, int yt, int width2, int height2)
 {
    wcp wc=w2->context;
    int wd, ht, wwd, wht;
    GLubyte *tex;
- 
+
    wwd =  (int)w->window->width;
    wht =  (int)w->window->height;
    tex = wc->display->stex[texhandle].tex;
@@ -3919,7 +3919,7 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width,
    if (xt+width<0 || xt>=wd || yt+height<0 || yt>=ht) return Failed;
 
    if (x<0){ width+=x; x=0;}
-   if (xt<0){width+=xt; xt=0;} 
+   if (xt<0){width+=xt; xt=0;}
    if (y<0){ height+=y; y=0;}
    if (yt<0){ height+=yt; yt=0;}
 
@@ -3935,14 +3935,14 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width,
       y = wht-y - height;
       yt = ht-yt - height;
       if (copyareaToTex3D(w, tex, x, y, width, height, xt, yt, wd, ht)==Failed)
-      	 return Failed;
+         return Failed;
       }
    else{
       if (copyareaToTex2D(w, tex, x, y, width, height, xt, yt, wd, ht)==Failed)
-      	 return Failed;
+         return Failed;
       }
 
-   TEXUPDATE(w2, wc, texhandle, tex, wd, ht);   
+   TEXUPDATE(w2, wc, texhandle, tex, wd, ht);
    return Succeeded;
 }
 
@@ -3964,10 +3964,10 @@ void swapbuffers(wbp w, int flush)
    /*
     * Hidden state uses unmapped windows. From experimentation, it
     * seems that the front buffer in double buffering mode is undefined when
-    * the window is unmapped. 
+    * the window is unmapped.
     */
    if (ws->win != (Window) NULL && ws->iconic != HiddenState)
-#endif					/* XWindows */
+#endif                                  /* XWindows */
       {
       MakeCurrent(w);
       glXSwapBuffers(ws->display->display, ws->win); /* implcit flush */
@@ -3980,8 +3980,8 @@ void swapbuffers(wbp w, int flush)
  */
 void erasetocolor(int r,int g,int b)
 {
-   glClearColor(r/(GLfloat)256,	g/(GLfloat)256, b/(GLfloat)256, 0.0);
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+   glClearColor(r/(GLfloat)256, g/(GLfloat)256, b/(GLfloat)256, 0.0);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 /*
@@ -4005,12 +4005,12 @@ int create3Dcontext(wbp w)
    HDC hdc = CreateWinDC(w);
    ws->ctx = wglCreateContext (hdc);
    wglMakeCurrent (hdc, ws->ctx);
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
 #ifdef XWindows
    ws->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
-   if (ws->ctx == NULL) 
+   if (ws->ctx == NULL)
       return Failed;
    glXMakeCurrent(wd->display, w->window->win, ws->ctx);
-#endif					/* XWindows */
+#endif                                  /* XWindows */
    return Succeeded;
 }

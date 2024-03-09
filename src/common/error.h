@@ -70,7 +70,7 @@ nodeptr lval;
    __merr_errors++;
    nocode++;
    }
-
+
 /*
  * mapterm finds a printable string for the given token type
  *  and value.
@@ -96,7 +96,7 @@ nodeptr val;
    return "???";
    }
 #endif					/* SEPARATE_YYERROR */
-
+
 /*
  * tfatal produces the translator error messages s1 and s2 (if nonnull).  The
  *  location of the error is found in tok_loc.
@@ -131,7 +131,7 @@ void tfatal(char *s1, char *s2)
    __merr_errors++;
    nocode++;
    }
-
+
 /*
  * nfatal produces the error messages s1 and s2 (if nonnull), and associates
  *  it with source location of node.
@@ -152,7 +152,7 @@ char *s1, *s2;
    __merr_errors++;
    nocode++;
    }
-
+
 
 /*
  * twarn produces s1 and s2 (if nonnull) as translator warning messages.
@@ -173,7 +173,7 @@ char *s1, *s2;
 #endif
    }
 
-
+
 /*
  * tsyserr is called for fatal errors.  The message s is produced and the
  *  translator exits.
@@ -189,7 +189,7 @@ char *s;
 
    exit(EXIT_FAILURE);
    }
-
+
 /*
  * quit - immediate exit with error message
  */
@@ -199,7 +199,7 @@ char *msg;
    {
    quitf(msg,"");
    }
-
+
 /*
  * quitf - immediate exit with message format and argument
  */

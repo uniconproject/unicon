@@ -77,7 +77,7 @@ struct lfile *llfiles = NULL;		/* List of files to link */
 int colmno = 0;				/* current source column number */
 int lineno = 0;				/* current source line number */
 int fatals = 0;				/* number of errors encountered */
-
+
 /*
  * cannotopen() - quitf with a detailed errno-based message
  */
@@ -108,7 +108,7 @@ void cannotopen(char *defaultmsg, char *filnam)
    quitf(msgbuf,filnam);
 }
 
-
+
 /*
  *  ilink - link a number of files, returning error count
  */
@@ -448,7 +448,7 @@ char *outname;
    setexe(outname);
    return 0;
    }
-
+
 #ifdef ConsoleWindow
    extern FILE *flog;
 #endif					/* ConsoleWindow */
@@ -476,7 +476,7 @@ char *s1, *s2, *s3;
    fprintf(stderr, "\"%s\": %s%s\n", s1, s2, s3);
    fflush(stderr);
    }
-
+
 /*
  * lfatal - issue a fatal linker error message.
  */
@@ -501,7 +501,7 @@ char *s1, *s2;
       fprintf(stderr, "Line %d # : ", lineno);
    fprintf(stderr, "\"%s\": %s\n", s1, s2);
    }
-
+
 /*
  * setexe - mark the output file as executable
  */

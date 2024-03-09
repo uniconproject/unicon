@@ -13,7 +13,7 @@
 /* place to put anything system specific */
 Deliberate Syntax Error
 #endif					/* PORT */
-
+
 #if MSDOS
 
 #if MICROSOFT

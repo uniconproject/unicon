@@ -13,7 +13,7 @@ struct b_proc Bnoproc;
 struct b_iproc mt_llist = {
    6, (sizeof(struct b_proc) - sizeof(struct descrip)), Ollist,
    0, -1,  0, 0, {sizeof( "[...]")-1, "[...]"}};
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * External declarations for function blocks.
@@ -38,11 +38,11 @@ extern struct b_proc Bfield;
 extern struct b_proc Blimit;
 extern struct b_proc Bllist;
 
- 
+
 
 
 struct b_proc *opblks[] = {
-	NULL,
+        NULL,
 #define OpDef(p,n,s,u) Cat(&B,p),
 #include "../h/odefs.h"
 #undef OpDef
@@ -85,13 +85,13 @@ struct pstrnm pntab[] = {
 #undef FncDef
 #undef FncDefV
 
-	0,		 0
-	};
+        0,               0
+        };
 
 int pnsize = (sizeof(pntab) / sizeof(struct pstrnm)) - 1;
 
-#endif					/* COMPILER */
-
+#endif                                  /* COMPILER */
+
 /*
  * Structures for built-in values.  Parts of some of these structures are
  *  initialized later. Since some C compilers cannot handle any partial
@@ -106,9 +106,9 @@ struct b_cset  blankcs = {
    1,
 #if !EBCDIC
    cset_display(0, 0, 01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#else					/* EBCDIC */
+#else                                   /* EBCDIC */
    cset_display(0, 0, 0, 0, 01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#endif					/* EBCDIC */
+#endif                                  /* EBCDIC */
    };
 
 /*
@@ -119,9 +119,9 @@ struct b_cset  lparcs = {
    1,
 #if !EBCDIC
    cset_display(0, 0, 0400, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#else					/* EBCDIC */
+#else                                   /* EBCDIC */
    cset_display(0, 0, 0, 0, 0x2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#endif					/* EBCDIC */
+#endif                                  /* EBCDIC */
    };
 
 /*
@@ -132,9 +132,9 @@ struct b_cset  rparcs = {
    1,
 #if !EBCDIC
    cset_display(0, 0, 01000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#else					/* EBCDIC */
+#else                                   /* EBCDIC */
    cset_display(0, 0, 0, 0, 0, 0x2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#endif					/* EBCDIC */
+#endif                                  /* EBCDIC */
    };
 
 /*
@@ -157,11 +157,11 @@ struct b_cset k_letters = {T_Cset, 52,
    };
 struct b_cset k_ascii = {T_Cset, 128,
    cset_display(0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-		0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0)
+                0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0)
     };
 struct b_cset k_cset = {T_Cset, 256,
    cset_display(0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-		0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff)
+                0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff)
    };
 
 /*
@@ -170,50 +170,50 @@ struct b_cset k_cset = {T_Cset, 256,
 
 #ifndef MultiProgram
 /* input: is an Fs_Window if consolewindow; not doing that here anymore, add it to OpenConsole() */
-struct b_file  k_errout = {T_File, NULL, Fs_Write};	/* &errout */
-struct b_file  k_input = {T_File, NULL, Fs_Read};	/* &input */
-struct b_file  k_output = {T_File, NULL, Fs_Write};	/* &output */
-#endif					/* MultiProgram */
+struct b_file  k_errout = {T_File, NULL, Fs_Write};     /* &errout */
+struct b_file  k_input = {T_File, NULL, Fs_Read};       /* &input */
+struct b_file  k_output = {T_File, NULL, Fs_Write};     /* &output */
+#endif                                  /* MultiProgram */
 
 /*
  * Keyword variables.
  */
 #ifndef MultiProgram
 struct descrip kywd_err = {D_Integer};  /* &error */
-struct descrip kywd_prog;		/* &progname */
-struct descrip kywd_trc = {D_Integer};	/* &trace */
-struct descrip k_eventcode = {D_Null};	/* &eventcode */
+struct descrip kywd_prog;               /* &progname */
+struct descrip kywd_trc = {D_Integer};  /* &trace */
+struct descrip k_eventcode = {D_Null};  /* &eventcode */
 struct descrip k_eventsource = {D_Null};/* &eventsource */
-struct descrip k_eventvalue = {D_Null};	/* &eventvalue */
+struct descrip k_eventvalue = {D_Null}; /* &eventvalue */
 #if !ConcurrentCOMPILER
-struct descrip k_subject; 		/* &subject */
-struct descrip kywd_ran = {D_Integer};	/* &random */
-struct descrip kywd_pos = {D_Integer};	/* &pos */
+struct descrip k_subject;               /* &subject */
+struct descrip kywd_ran = {D_Integer};  /* &random */
+struct descrip kywd_pos = {D_Integer};  /* &pos */
 #endif                                  /* ConcurrentCOMPILER */
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #ifdef FncTrace
-struct descrip kywd_ftrc = {D_Integer};	/* &ftrace */
-#endif					/* FncTrace */
+struct descrip kywd_ftrc = {D_Integer}; /* &ftrace */
+#endif                                  /* FncTrace */
 
-struct descrip kywd_dmp = {D_Integer};	/* &dump */
+struct descrip kywd_dmp = {D_Integer};  /* &dump */
 
 struct descrip nullptr =
    {((word)(F_Ptr | F_Nqual))};        /* descriptor with null block pointer */
-struct descrip trashcan;		/* descriptor that is never read */
+struct descrip trashcan;                /* descriptor that is never read */
 
 /*
  * Various constant descriptors.
  */
 
-struct descrip blank; 			/* one-character blank string */
-struct descrip emptystr; 		/* zero-length empty string */
-struct descrip lcase;			/* string of lowercase letters */
-struct descrip letr;			/* "r" */
-struct descrip nulldesc = {D_Null};	/* null value */
-struct descrip onedesc = {D_Integer};	/* integer 1 */
-struct descrip ucase;			/* string of uppercase letters */
-struct descrip zerodesc = {D_Integer};	/* integer 0 */
+struct descrip blank;                   /* one-character blank string */
+struct descrip emptystr;                /* zero-length empty string */
+struct descrip lcase;                   /* string of lowercase letters */
+struct descrip letr;                    /* "r" */
+struct descrip nulldesc = {D_Null};     /* null value */
+struct descrip onedesc = {D_Integer};   /* integer 1 */
+struct descrip ucase;                   /* string of uppercase letters */
+struct descrip zerodesc = {D_Integer};  /* integer 0 */
 
 #ifdef MultiProgram
 /*
@@ -223,14 +223,14 @@ struct descrip csetdesc = {D_Cset};
 struct descrip eventdesc;
 #ifdef DescriptorDouble
 struct descrip rzerodesc = {D_Real, 0.0};
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
 struct descrip rzerodesc = {D_Real};
 /*
  *  Real block needed for event monitoring.
  */
 struct b_real realzero = {T_Real, 0.0};
-#endif					/* DescriptorDouble */
-#endif					/* MultiProgram */
+#endif                                  /* DescriptorDouble */
+#endif                                  /* MultiProgram */
 
 /*
  * An array of all characters for use in making one-character strings.
@@ -254,7 +254,7 @@ unsigned char allchars[256] = {
    224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,
    240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,
 };
-
+
 /*
  * Run-time error numbers and text.
  */
@@ -289,7 +289,7 @@ struct errtab errtab[] = {
    127, "pattern expected",
    128, "unevaluated variable or function call expected",
    129, "unable to convert unevaluated variable to pattern",
-#endif					/* PatternType */
+#endif                                  /* PatternType */
    130, "incorrect number of arguments",
    131, "string is not a class name",
 /*#ifdef Graphics*/
@@ -302,7 +302,7 @@ struct errtab errtab[] = {
    146, "incorrect number of arguments to drawing function",
    147, "window attribute cannot be read or written as requested",
    148, "graphics is not enabled in this virtual machine",
-/*#endif*/					/* Graphics */
+/*#endif*/                                      /* Graphics */
 
 /*#ifdef Graphics3D*/
    150,  "drawing a 3D object while in 2D mode",
@@ -310,9 +310,9 @@ struct errtab errtab[] = {
    152,  "modelview or projection expected",
    153,  "texture not in correct format",
    154,  "must have an even number of texture coordinates",
-/*#else*/					/* Graphics3D */
+/*#else*/                                       /* Graphics3D */
    155,  "3D graphics is not enabled in this virtual machine",
-/*#endif*/					/* Graphics3D */
+/*#endif*/                                      /* Graphics3D */
 
 #ifdef PatternType
    160,  "nonexistent variable name",
@@ -322,7 +322,7 @@ struct errtab errtab[] = {
    164,  "unsupported unevaluated expression",
    165,  "null pattern argument where name was expected",
    166,  "unable to produce pattern image, possible malformed pattern",
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 #ifdef PosixFns
    /*
@@ -335,7 +335,7 @@ struct errtab errtab[] = {
    173, "cannot open directory for writing",
    174, "invalid file operation",
    175, "network connection expected",
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #ifdef Concurrent
    180, "invalid mutex",
@@ -344,12 +344,12 @@ struct errtab errtab[] = {
    183, "concurrent threads are not enabled in this virtual machine",
    184, "structure cannot have more than one mutex at the same time",
    185, "converting an active co-expression to a thread is not yet supported",
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
 #ifdef Dbm
    190, "dbm database expected",
    191, "cannot open dbm database",
-#endif					/* Dbm */
+#endif                                  /* Dbm */
 
    201, "division by zero",
    202, "remaindering by zero",
@@ -380,23 +380,23 @@ struct errtab errtab[] = {
    308, "system stack overflow in co-expression",
 #ifdef PatternType
    309, "pattern stack overflow",
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 #if IntBits == 16
    316, "interpreter stack too large",
    318, "co-expression stack too large",
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */
 
 #ifndef CoExpr
    401, "co-expressions not implemented",
-#endif					/* CoExpr */
+#endif                                  /* CoExpr */
    402, "program not compiled with debugging option",
 
-   500, "program malfunction",		/* for use by runerr() */
-   600, "vidget usage error",		/* yeah! */
+   500, "program malfunction",          /* for use by runerr() */
+   600, "vidget usage error",           /* yeah! */
 
 #ifdef PosixFns
-   1040, "socket error",		 
+   1040, "socket error",
    1041, "cannot initialize network library",
    1042, "fdup of closed file",
    1043, "invalid signal",
@@ -406,7 +406,7 @@ struct errtab errtab[] = {
    1047, "invalid protocol name",
    1048, "low-level read or select mixed with buffered read",
    1049, "nonexistent service or services database error",
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
    1050, "command not found",
    1051, "cannot create temporary file",
@@ -415,7 +415,7 @@ struct errtab errtab[] = {
 
 #ifdef ISQL
    1100, "ODBC connection expected",
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
 #ifdef Messaging
    1200, "system error (see errno)",
@@ -449,7 +449,7 @@ struct errtab errtab[] = {
    1307, "private key and certificate mismatch",
    1308, "unknown protocol",
 
-#endif					/* HAVE_LIBSSL */
+#endif                                  /* HAVE_LIBSSL */
 
 #endif                                  /* Messaging */
 
@@ -457,7 +457,7 @@ struct errtab errtab[] = {
  * End of operating-system specific code.
  */
 
-   0,	""
+   0,   ""
    };
 
 /*
@@ -475,7 +475,7 @@ struct errtab errtab[] = {
  */
 
 int (*optab[])() = {
-	err,
+        err,
 #define OpDef(p,n,s,u) Cat(O,p),
 #include "../h/odefs.h"
 #undef OpDef
@@ -507,4 +507,4 @@ int (*keytab[])() = {
 #define KDef(p,n) Cat(K,p),
 #include "../h/kdefs.h"
    };
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */

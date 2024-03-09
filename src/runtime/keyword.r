@@ -24,30 +24,30 @@ keyword{4} allocated
       uword strtot=0;
 #if !ConcurrentCOMPILER
       /* plausible to omit as there is only one program, and maybe globals
-	 in lieu of curpstate. But...
+         in lieu of curpstate. But...
        */
       CURTSTATVAR();
-#endif					/* ConcurrentCOMPILER */
+#endif                                  /* ConcurrentCOMPILER */
       MUTEX_LOCKID(MTX_TLS_CHAIN);
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
-      tstate = curpstate->tstate; 
+      tstate = curpstate->tstate;
       do {
-	 blktot += tstate->blocktotal;
-	 strtot += tstate->stringtotal;
-	 tstate = tstate->next;
-	 } while (tstate!=NULL);
+         blktot += tstate->blocktotal;
+         strtot += tstate->stringtotal;
+         tstate = tstate->next;
+         } while (tstate!=NULL);
       MUTEX_UNLOCKID(MTX_TLS_CHAIN);
       suspend C_integer stattotal + strtot + blktot;
       suspend C_integer stattotal;
       suspend C_integer strtot;
       return  C_integer blktot;
-#else					/* Concurrent */
+#else                                   /* Concurrent */
       suspend C_integer stattotal + strtotal + blktotal;
       suspend C_integer stattotal;
       suspend C_integer strtotal;
       return  C_integer blktotal;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
       }
 end
 
@@ -64,15 +64,15 @@ keyword{2} clock
 #if !ConcurrentCOMPILER
       /* why on earth would &clock need a curtstate? */
       CURTSTATVAR();
-#endif					/* ConcurrentCOMPILER */
+#endif                                  /* ConcurrentCOMPILER */
       time(&t);
       ct = localtime(&t);
 
 #if defined(SUN) || NT || defined(HAVE_TIMEZONE)
       tz_sec = timezone;
-#else					/* HAVE_TIMEZONE */
+#else                                   /* HAVE_TIMEZONE */
       tz_sec = ct->tm_gmtoff;
-#endif					/* HAVE_TIMEZONE */
+#endif                                  /* HAVE_TIMEZONE */
 
       sprintf(sbuf,"%02d:%02d:%02d", ct->tm_hour, ct->tm_min, ct->tm_sec);
       Protect(tmp = alcstr(sbuf,(word)8), runerr(0));
@@ -107,7 +107,7 @@ keyword{4} collections
 #if !ConcurrentCOMPILER
       /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATVAR();
-#endif					/* ConcurrentCOMPILER */
+#endif                                  /* ConcurrentCOMPILER */
       suspend C_integer coll_tot;
       suspend C_integer coll_stat;
       suspend C_integer coll_str;
@@ -127,10 +127,10 @@ keyword{1} column
       return C_integer findcol(ipc.opnd);
 #else
       fail;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       }
 end
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
 
 "&current - the currently active co-expression"
 keyword{1} current
@@ -141,7 +141,7 @@ keyword{1} current
 #if !ConcurrentCOMPILER
       /* should be separate &current for each thread */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
       return k_current;
       }
 end
@@ -235,15 +235,15 @@ keyword{2} dateline
       if (ct->tm_isdst) offset_hrs--;
 #ifdef _UCRT
       {
-	size_t tzNameSize = -1;
-	_get_tzname(&tzNameSize, NULL, 0, (ct->tm_isdst ? 1 : 0));
-	if (tzNameSize > 0) {
-	  char tzNameBuf[tzNameSize];
-	  _get_tzname(&tzNameSize, &tzNameBuf[0],tzNameSize, (ct->tm_isdst ? 1 : 0));
-	  sprintf(sbuf, "UTC%+d %s", offset_hrs, &tzNameBuff[0]);
-	} else {
-	  sprintf(sbuf, "UTC%+d (unknown timezone)", offset_hrs);
-	}
+        size_t tzNameSize = -1;
+        _get_tzname(&tzNameSize, NULL, 0, (ct->tm_isdst ? 1 : 0));
+        if (tzNameSize > 0) {
+          char tzNameBuf[tzNameSize];
+          _get_tzname(&tzNameSize, &tzNameBuf[0],tzNameSize, (ct->tm_isdst ? 1 : 0));
+          sprintf(sbuf, "UTC%+d %s", offset_hrs, &tzNameBuff[0]);
+        } else {
+          sprintf(sbuf, "UTC%+d (unknown timezone)", offset_hrs);
+        }
       }
 #elif defined(SUN) || NT || defined(HAVE_TZNAME)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_isdst?tzname[1]:tzname[0]);
@@ -288,7 +288,7 @@ keyword{0,1} errornumber
 #if !ConcurrentCOMPILER
       /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
       if (k_errornumber == 0)
          fail;
       return C_integer k_errornumber;
@@ -304,9 +304,9 @@ keyword{0,1} errortext
 #if !ConcurrentCOMPILER
       /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
       if (((k_errornumber == 0) && IntVal(amperErrno)==0) ||
-	  (StrLoc(k_errortext) == NULL))
+          (StrLoc(k_errortext) == NULL))
          return nulldesc; // fail or return an empty string?
       return k_errortext;
       }
@@ -321,10 +321,10 @@ keyword{0,1} errorvalue
 #if !ConcurrentCOMPILER
       /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
       if (have_errval) {
          return k_errorvalue;
-	 }
+         }
       else
          fail;
       }
@@ -389,67 +389,67 @@ keyword{1,*} features
    body {
 #ifdef RefPath
       char *refpath = RefPath;
-#else					/* RefPath */
+#else                                   /* RefPath */
       char *refpath = "";
-#endif					/* RefPath */
+#endif                                  /* RefPath */
 
       CURTSTATVAR();
 
       if ((int)strlen(patchpath) > 18) refpath = patchpath+18;
       else if (strlen(refpath)==0) {
-	 struct stat buffer;
-	 char *iconx;
-	 int xnamelen;
+         struct stat buffer;
+         char *iconx;
+         int xnamelen;
 
-	 iconx = relfile(StrLoc(kywd_prog), "/../" UNICONX_EXE);
-	 xnamelen = strlen(UNICONX_EXE); /* "iconx.exe" */
+         iconx = relfile(StrLoc(kywd_prog), "/../" UNICONX_EXE);
+         xnamelen = strlen(UNICONX_EXE); /* "iconx.exe" */
 
-	 // check if we have iconx on a path relative to us
-	 if ((stat(iconx,&buffer)) == 0) {
-	    refpath = patchpath+18;
-	    strcpy(refpath, iconx);
-	    patchpath[strlen(patchpath)-xnamelen] = '\0';
-	    }
+         // check if we have iconx on a path relative to us
+         if ((stat(iconx,&buffer)) == 0) {
+            refpath = patchpath+18;
+            strcpy(refpath, iconx);
+            patchpath[strlen(patchpath)-xnamelen] = '\0';
+            }
          }
       else {
 #if MSDOS
-	 if (pathFind(UNICONX_EXE, patchpath+18, MaxPath)) {
-	    refpath = patchpath+18;
-	    patchpath[strlen(patchpath)-strlen(UNICONX_EXE)] = '\0';
-	    }
-#endif					/* MSDOS */
-#if UNIX
-	 if (findonpath(UNICONX, patchpath+18, MaxPath)) {
-	    refpath = patchpath+18;
-	    patchpath[strlen(patchpath)-strlen(UNICONX)] = '\0';
-	    }
-	 else {
-	    int c;
-	    FILE *f = fopen(StrLoc(kywd_prog), "r");
-	    if (f != NULL) {
-	       /*
-		* look for iconx in our icode file (could also try the dir
-		* containing &progname). Should fix to look rather at argv[0]
-		* or save iconx path from icode when icode is loaded.
-		*/
-	       while ((c = getc(f)) && (c != EOF) && (c != '\n'));
-	       refpath = patchpath+18;
-	       if (fscanf(f, "IXBIN=%s\n", refpath) != 1) refpath = "";
-	       fclose(f);
-	       }
-	    else {
-	       fprintf(stderr,"&features: can't open '%s' to look for iconx\n",
-		       StrLoc(kywd_prog));
-	       }
+         if (pathFind(UNICONX_EXE, patchpath+18, MaxPath)) {
+            refpath = patchpath+18;
+            patchpath[strlen(patchpath)-strlen(UNICONX_EXE)] = '\0';
             }
-#endif					/* UNIX */
-	 }
+#endif                                  /* MSDOS */
+#if UNIX
+         if (findonpath(UNICONX, patchpath+18, MaxPath)) {
+            refpath = patchpath+18;
+            patchpath[strlen(patchpath)-strlen(UNICONX)] = '\0';
+            }
+         else {
+            int c;
+            FILE *f = fopen(StrLoc(kywd_prog), "r");
+            if (f != NULL) {
+               /*
+                * look for iconx in our icode file (could also try the dir
+                * containing &progname). Should fix to look rather at argv[0]
+                * or save iconx path from icode when icode is loaded.
+                */
+               while ((c = getc(f)) && (c != EOF) && (c != '\n'));
+               refpath = patchpath+18;
+               if (fscanf(f, "IXBIN=%s\n", refpath) != 1) refpath = "";
+               fclose(f);
+               }
+            else {
+               fprintf(stderr,"&features: can't open '%s' to look for iconx\n",
+                       StrLoc(kywd_prog));
+               }
+            }
+#endif                                  /* UNIX */
+         }
 
 #if COMPILER
 #define Feature(guard,sym,kwval) if ((guard) && (kwval)) suspend C_string kwval;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 #define Feature(guard,sym,kwval) if (kwval) suspend C_string kwval;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
 #include "../h/feature.h"
 
@@ -460,86 +460,86 @@ keyword{1,*} features
 }
 
 {
-	char *s = alcstr(NULL, 44);
+        char *s = alcstr(NULL, 44);
 #if NT
         unsigned long long int l = physicalmemorysize();
-#else					        /* NT */
-        unsigned long l = physicalmemorysize();	
-#endif		      	  			/* NT */	
+#else                                           /* NT */
+        unsigned long l = physicalmemorysize();
+#endif                                          /* NT */
         if (l > 0) {
-#if NT 
+#if NT
            sprintf(s, "Physical memory: %llu bytes", l);
-#else	   	       		 	       /* NT */
+#else                                          /* NT */
            sprintf(s, "Physical memory: %lu bytes", l);
-#endif					       /* NT */ 	  
-           suspend C_string s;	     
+#endif                                         /* NT */
+           suspend C_string s;
            }
 }
 
 #ifdef REPO_REVISION
 {
          char *s = alcstr(NULL, strlen(REPO_REVISION) + strlen("Revision ") + 1);
-	 sprintf(s, "Revision %s", REPO_REVISION);
-	 suspend C_string s;
+         sprintf(s, "Revision %s", REPO_REVISION);
+         suspend C_string s;
 }
-#endif					/* REPO_REVISION */
+#endif                                  /* REPO_REVISION */
 
 {
 void get_arch(char *);
-	 char *s = alcstr(NULL, 20);
-	 get_arch(s);
-	 suspend C_string s;
+         char *s = alcstr(NULL, 20);
+         get_arch(s);
+         suspend C_string s;
 }
 
 {
          char *s = alcstr(NULL, 20);
-	 if (num_cpu_cores > 0) {
-	    sprintf(s, "CPU cores %d", num_cpu_cores );
-	    suspend C_string s;
-	    }
+         if (num_cpu_cores > 0) {
+            sprintf(s, "CPU cores %d", num_cpu_cores );
+            suspend C_string s;
+            }
 }
 
 #if defined(MSWindows) && defined(SM_DIGITIZER)
       {
       int value = GetSystemMetrics(SM_DIGITIZER);
       if (value & NID_READY){ /* stack ready */
-	 if (value  & NID_MULTI_INPUT){ /* digitizer is multitouch */ 
-	    suspend C_string "Multitouch input";
-	    }
-	 else if (value & (NID_INTEGRATED_TOUCH|NID_EXTERNAL_TOUCH)){
-	    suspend C_string "Touch input";
-	    }
-	 else if (value & (NID_INTEGRATED_PEN|NID_EXTERNAL_PEN)){
-	    suspend C_string "Pen input";
-	    }
+         if (value  & NID_MULTI_INPUT){ /* digitizer is multitouch */
+            suspend C_string "Multitouch input";
+            }
+         else if (value & (NID_INTEGRATED_TOUCH|NID_EXTERNAL_TOUCH)){
+            suspend C_string "Touch input";
+            }
+         else if (value & (NID_INTEGRATED_PEN|NID_EXTERNAL_PEN)){
+            suspend C_string "Pen input";
+            }
          }
 }
-#endif					/* MSWindows && SM_DIGITIZER */
+#endif                                  /* MSWindows && SM_DIGITIZER */
 
       if (refpath && strlen(refpath) > 0) {
-	 char *s;
-	 if (!strcmp(refpath+strlen(refpath)-strlen(UNICONX_EXE), UNICONX_EXE)) {
-	    refpath[strlen(refpath)-strlen(UNICONX_EXE)] = '\0';
-	    /*
-	     * Trim prefix letters in front of iconx, if any
-	     */
-	    while ((strlen(refpath)>0) && isalpha(refpath[strlen(refpath)-1]))
-	       refpath[strlen(refpath)-1] = '\0';
-	    }
+         char *s;
+         if (!strcmp(refpath+strlen(refpath)-strlen(UNICONX_EXE), UNICONX_EXE)) {
+            refpath[strlen(refpath)-strlen(UNICONX_EXE)] = '\0';
+            /*
+             * Trim prefix letters in front of iconx, if any
+             */
+            while ((strlen(refpath)>0) && isalpha(refpath[strlen(refpath)-1]))
+               refpath[strlen(refpath)-1] = '\0';
+            }
 
-	 s = alcstr(NULL, strlen(refpath) + strlen("Binaries at ") + 1);
-	 strcpy(s, "Binaries at ");
-	 strcat(s, refpath);
-	 suspend C_string s;
-	 }
+         s = alcstr(NULL, strlen(refpath) + strlen("Binaries at ") + 1);
+         strcpy(s, "Binaries at ");
+         strcat(s, refpath);
+         suspend C_string s;
+         }
 
       if ((int)strlen(uniroot) > 18) {
-	 char *s;
-	 s = alcstr(NULL, strlen(uniroot+18) + strlen("Libraries at ") + 1);
-	 strcpy(s, "Libraries at ");
-	 strcat(s, uniroot+18);
+         char *s;
+         s = alcstr(NULL, strlen(uniroot+18) + strlen("Libraries at ") + 1);
+         strcpy(s, "Libraries at ");
+         strcat(s, uniroot+18);
          suspend C_string s;
-	 }
+         }
 
       fail;
       }
@@ -558,17 +558,17 @@ keyword{1} file
        * reporting location of current thread.
        */
       CURTSTATE_AND_CE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
 #if COMPILER
       if (line_info)
          return C_string file_name;
       else
          runerr(402);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
       s = findfile(ipc.opnd);
       if (!strcmp(s,"?")) fail;
       return C_string s;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
       }
 end
 
@@ -620,11 +620,11 @@ keyword{1} level
        */
 #if !ConcurrentCOMPILER
       CURTSTATE();
-#endif					/* ConcurrentCOMPILER */
+#endif                                  /* ConcurrentCOMPILER */
 #if COMPILER
       if (!debug_info)
          runerr(402);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
       return C_integer k_level;
       }
 end
@@ -641,15 +641,15 @@ keyword{1} line
        * reporting location of current thread.
        */
       CURTSTATE_AND_CE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
 #if COMPILER
       if (line_info)
          return C_integer line_num;
       else
          runerr(402);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
       return C_integer findline(ipc.opnd);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
       }
 end
 
@@ -706,7 +706,7 @@ keyword{0,*} pick
       struct descrip name;
 #if !ConcurrentCOMPILER
       CURTSTATVAR();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
 
       if (is:null(lastEventWin)) runerr(140, lastEventWin);
       if (is:null(amperPick)) fail;
@@ -722,7 +722,7 @@ keyword{0,*} pick
       fail;
       }
 end
-#else					/* Graphics3D */
+#else                                   /* Graphics3D */
 keyword{0} pick
    abstract {
       return empty_type
@@ -731,7 +731,7 @@ keyword{0} pick
       fail;
       }
 end
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
 
 "&pos - a variable containing the current focus in string scanning."
@@ -744,7 +744,7 @@ keyword{1} pos
       /* there are not multiple programs, but don't threads have separate
        * copies of &pos? */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
       return kywdpos(&kywd_pos);
       }
 end
@@ -768,7 +768,7 @@ keyword{1} random
 #if !ConcurrentCOMPILER
       /* plausible to omit is there is only one program, one seed */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
       return kywdint(&kywd_ran);
       }
 end
@@ -786,27 +786,27 @@ keyword{3} regions
        * in order to talk to curstring, etc.
        */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
 
-      suspend C_integer 0;		/* static region */
+      suspend C_integer 0;              /* static region */
 
       MUTEX_LOCKID(MTX_STRHEAP);
       allRegions = DiffPtrs(strend,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
-	 allRegions += DiffPtrs(rp->end,rp->base);
+         allRegions += DiffPtrs(rp->end,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
-	 allRegions += DiffPtrs(rp->end,rp->base);
+         allRegions += DiffPtrs(rp->end,rp->base);
       MUTEX_UNLOCKID(MTX_STRHEAP);
-      suspend C_integer allRegions;	/* string region */
+      suspend C_integer allRegions;     /* string region */
 
       MUTEX_LOCKID(MTX_BLKHEAP);
       allRegions = DiffPtrs(blkend,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
-	 allRegions += DiffPtrs(rp->end,rp->base);
+         allRegions += DiffPtrs(rp->end,rp->base);
       for (rp = curblock->prev; rp; rp = rp->prev)
-	 allRegions += DiffPtrs(rp->end,rp->base);
+         allRegions += DiffPtrs(rp->end,rp->base);
       MUTEX_UNLOCKID(MTX_BLKHEAP);
-      return C_integer allRegions;	/* block region */
+      return C_integer allRegions;      /* block region */
       }
 end
 
@@ -823,9 +823,9 @@ keyword{1} source
       /* proposed #endif !ConcurrentCOMPILER */
 #ifndef CoExpr
       return k_main;
-#else					/* CoExpr */
+#else                                   /* CoExpr */
       return coexpr(topact(BlkD(k_current,Coexpr)));
-#endif					/* CoExpr */
+#endif                                  /* CoExpr */
       }
 end
 
@@ -840,25 +840,25 @@ keyword{3} storage
 /* proposed if !ConcurrentCOMPILER rejected to omit curtstate */
       CURTSTATE();
 
-      suspend C_integer 0;		/* static region */
-  
+      suspend C_integer 0;              /* static region */
+
       MUTEX_LOCKID(MTX_STRHEAP);
       allRegions = DiffPtrs(strfree,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
-	 allRegions += DiffPtrs(rp->free,rp->base);
+         allRegions += DiffPtrs(rp->free,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
-	 allRegions += DiffPtrs(rp->free,rp->base);
+         allRegions += DiffPtrs(rp->free,rp->base);
       MUTEX_UNLOCKID(MTX_STRHEAP);
-      suspend C_integer allRegions;	/* string region */
-  
+      suspend C_integer allRegions;     /* string region */
+
       MUTEX_LOCKID(MTX_BLKHEAP);
       allRegions = DiffPtrs(blkfree,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
-	 allRegions += DiffPtrs(rp->free,rp->base);
+         allRegions += DiffPtrs(rp->free,rp->base);
       for (rp = curblock->prev; rp; rp = rp->prev)
-	 allRegions += DiffPtrs(rp->free,rp->base);
+         allRegions += DiffPtrs(rp->free,rp->base);
       MUTEX_UNLOCKID(MTX_BLKHEAP);
-      return C_integer allRegions;	/* block region */
+      return C_integer allRegions;      /* block region */
       }
 end
 
@@ -888,9 +888,9 @@ keyword{1} time
        * &time in this program = total time - time spent in other programs
        */
       return C_integer millisec() - curpstate->Kywd_time_elsewhere;
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
       return C_integer millisec();
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       }
 end
 
@@ -943,7 +943,7 @@ keyword{1} errno
        * so we should probably dismantle this !ConcurrentCOMPILER directive.
        */
       CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
       return kywdint(&amperErrno);
       }
 #else /* PosixFns */
@@ -954,7 +954,7 @@ end
 
 #ifndef MultiProgram
 struct descrip kywd_xwin[2] = {{D_Null}};
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 "&window - variable containing the current graphics rendering context."
 #ifdef Graphics
@@ -966,7 +966,7 @@ keyword{1} window
       return kywdwin(kywd_xwin + XKey_Window);
       }
 end
-#else					/* Graphics */
+#else                                   /* Graphics */
 keyword{0} window
    abstract {
       return empty_type
@@ -975,65 +975,65 @@ keyword{0} window
       fail;
       }
 end
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #ifdef Graphics
 "&col - mouse horizontal position in text columns."
 keyword{1} col
    abstract { return kywdint }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else return kywdint(&amperCol); }
+            else return kywdint(&amperCol); }
 end
 
 "&row - mouse vertical position in text rows."
 keyword{1} row
    abstract { return kywdint }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else return kywdint(&amperRow); }
+            else return kywdint(&amperRow); }
 end
 
 "&x - mouse horizontal position."
 keyword{1} x
    abstract { return kywdint }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else return kywdint(&amperX); }
+            else return kywdint(&amperX); }
 end
 
 "&y - mouse vertical position."
 keyword{1} y
    abstract { return kywdint }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else return kywdint(&amperY); }
+            else return kywdint(&amperY); }
 end
 
 "&interval - milliseconds since previous event."
 keyword{1} interval
    abstract { return kywdint }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else return kywdint(&amperInterval); }
+            else return kywdint(&amperInterval); }
 end
 
 "&control - null if control key was down on last X event, else failure"
 keyword{0,1} control
    abstract { return null }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else if (xmod_control) return nulldesc; else fail; }
+            else if (xmod_control) return nulldesc; else fail; }
 end
 
 "&shift - null if shift key was down on last X event, else failure"
 keyword{0,1} shift
    abstract { return null }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else if (xmod_shift) return nulldesc; else fail; }
+            else if (xmod_shift) return nulldesc; else fail; }
 end
 
 "&meta - null if meta key was down on last X event, else failure"
 keyword{0,1} meta
    abstract { return null }
    inline { if (is:null(lastEventWin)) runerr(140, lastEventWin);
-	    else if (xmod_meta) return nulldesc; else fail; }
+            else if (xmod_meta) return nulldesc; else fail; }
 end
-#else					/* Graphics */
+#else                                   /* Graphics */
 "&col - mouse horizontal position in text columns."
 keyword{0} col
    abstract { return empty_type }
@@ -1081,7 +1081,7 @@ keyword{0} meta
    abstract { return empty_type }
    inline { fail; }
 end
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 "&lpress - left button press."
 keyword{1} lpress
@@ -1136,7 +1136,7 @@ constant '\
 \xa3\xa4\xa5\xa6\xa7\xa8\xa9\xad\xbd\xc0\xc1\xc2\xc3\xc4\xc5\xc6\
 \xc7\xc8\xc9\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xe0\xe2\xe3\
 \xe4\xe5\xe6\xe7\xe8\xe9\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9'
-#else					/* EBCDIC == 1 */
+#else                                   /* EBCDIC == 1 */
 constant '\
 \000\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\
 \020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037\
@@ -1146,7 +1146,7 @@ constant '\
 \120\121\122\123\124\125\126\127\130\131\132\133\134\135\136\137\
 \140\141\142\143\144\145\146\147\150\151\152\153\154\155\156\157\
 \160\161\162\163\164\165\166\167\170\171\172\173\174\175\176\177'
-#endif					/* EBCDIC == 1 */
+#endif                                  /* EBCDIC == 1 */
 end
 
 "&cset - a cset consisting of all the 256 characters."

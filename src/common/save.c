@@ -6,7 +6,7 @@
 
 #ifdef ExecImages
 
-
+
 /*
  * save(s) -- for generic BSD systems.
  */
@@ -62,7 +62,7 @@ int ef;
    return hdr.a_data;
 }
 #endif					/* GenericBSD */
-
+
 /*
  * save(s) -- for Sun Workstations.
  */

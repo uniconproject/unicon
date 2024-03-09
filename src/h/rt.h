@@ -1,4 +1,4 @@
-#ifndef RT_H	/* only include once */
+#ifndef RT_H    /* only include once */
 #define RT_H 1
 
 /*
@@ -18,15 +18,15 @@
 
 #ifdef Graphics
    #include "../h/graphics.h"
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #ifdef Audio
    #include "../h/audio.h"
-#endif					/* Audio */
+#endif                                  /* Audio */
 
 #ifdef PosixFns
 #include "../h/posix.h"
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #ifdef Messaging
 #include "../h/messagin.h"
@@ -41,4 +41,4 @@
 #endif                                  /* _UCRT */
 
 
-#endif					/* RT_DOT_H */
+#endif                                  /* RT_DOT_H */

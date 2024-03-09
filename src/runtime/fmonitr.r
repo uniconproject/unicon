@@ -25,11 +25,11 @@ function{0,1} EvSend(x,y,ce)
       struct progstate *dest = NULL;
 
       if (is:null(x)) {
-	 x = curpstate->eventcode;
-	 if (is:null(y)) y = curpstate->eventval;
-	 }
+         x = curpstate->eventcode;
+         if (is:null(y)) y = curpstate->eventval;
+         }
       if (is:null(ce) && is:coexpr(curpstate->parentdesc))
-	 ce = curpstate->parentdesc;
+         ce = curpstate->parentdesc;
       else if (!is:coexpr(ce)) runerr(118,ce);
       dest = BlkD(ce,Coexpr)->program;
       dest->eventcode = x;
@@ -39,7 +39,7 @@ function{0,1} EvSend(x,y,ce)
       return result;
       }
 end
-
+
 void assign_event_functions(struct progstate *p, struct descrip cs)
 {
    p->eventmask = cs;
@@ -58,7 +58,7 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
 #ifdef LargeInts
    p->Alcbignum =
       ((Testb((word)ToAscii(E_Lrgint),cs)) ? alcbignum_1:alcbignum_0);
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
    p->Alccset =
       ((Testb((word)ToAscii(E_Cset), cs)) ? alccset_1 : alccset_0);
 #undef alcfile
@@ -71,12 +71,12 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
        ((Testb((word)ToAscii(E_Pattern), cs)) ? alcpattern_1 : alcpattern_0);
    p->Alcpelem =
        ((Testb((word)ToAscii(E_Pelem), cs)) ? alcpelem_1 : alcpelem_0);
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 #undef alcreal
 #ifndef DescriptorDouble
    p->Alcreal =
       ((Testb((word)ToAscii(E_Real), cs)) ? alcreal_1 : alcreal);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
    p->Alcrecd =
       ((Testb((word)ToAscii(E_Record), cs)) ? alcrecd_1 : alcrecd_0);
    p->Alcrefresh =
@@ -100,15 +100,15 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
     */
    p->EVstralc =
       (((Testb((word)ToAscii(E_String), cs)) ||
-	(Testb((word)ToAscii(E_StrDeAlc), cs)))
+        (Testb((word)ToAscii(E_StrDeAlc), cs)))
        ? EVStrAlc_1 : EVStrAlc_0);
    p->Alchash =
       (((Testb((word)ToAscii(E_Table), cs)) ||
-	(Testb((word)ToAscii(E_Set), cs)))
+        (Testb((word)ToAscii(E_Set), cs)))
        ? alchash_1 : alchash_0);
    p->Reserve =
       (((Testb((word)ToAscii(E_TenureString), cs)) ||
-	(Testb((word)ToAscii(E_TenureBlock), cs)))
+        (Testb((word)ToAscii(E_TenureBlock), cs)))
        ? reserve_1 : reserve_0);
 
    /*
@@ -141,7 +141,7 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       p->Cnvtstr = cnv_tstr_1;
 #ifdef PatternTypexb
       p->Cnvpattern = cnv_pattern_1;
-#endif					/* PatternType */
+#endif                                  /* PatternType */
       }
    else {
       p->Cnvcset = cnv_cset_0;
@@ -155,10 +155,10 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       p->Cnvtstr = cnv_tstr_0;
 #ifdef PatternType
       if (Testb((word)ToAscii(E_PatCode), cs))
-	 p->Cnvpattern = cnv_pattern_1;
+         p->Cnvpattern = cnv_pattern_1;
       else
-	 p->Cnvpattern = cnv_pattern_0;
-#endif					/* PatternType */
+         p->Cnvpattern = cnv_pattern_0;
+#endif                                  /* PatternType */
       }
 
 #ifdef PatternType
@@ -178,8 +178,8 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       p->Internalmatch = internal_match_1;
       }
    else p->Internalmatch = internal_match_0;
-#endif					/* PatternType */
-   
+#endif                                  /* PatternType */
+
 
    /*
     * interp() is the monster case:
@@ -190,7 +190,7 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
    if (
 #if WordBits == 64
        *(((uword *)cs.vword.bptr->Cset.bits)+2)
-#else					/* WordBits == 64 */
+#else                                   /* WordBits == 64 */
        Testb((word)ToAscii(E_Intcall), cs) ||
        Testb((word)ToAscii(E_Stack), cs) ||
        Testb((word)ToAscii(E_Fsusp), cs) ||
@@ -225,7 +225,7 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
        Testb((word)ToAscii(E_Operand), cs) ||
        Testb((word)ToAscii(E_Syntax), cs) ||
        Testb((word)ToAscii(E_Cstack), cs)
-#endif					/* WordBits == 64 */
+#endif                                  /* WordBits == 64 */
        ) {
       p->Interp = interp_1;
       }
@@ -258,9 +258,9 @@ function{0,1} EvGet(cs,vmask,flag)
       struct progstate *p = NULL;
 
 #ifdef Concurrent
-       if (is_concurrent) 
-       	  is_concurrent = 0;
-#endif Concurrent			/* Concurrent */ 
+       if (is_concurrent)
+          is_concurrent = 0;
+#endif Concurrent                       /* Concurrent */
 
       /*
        * Be sure an eventsource is available
@@ -275,80 +275,80 @@ function{0,1} EvGet(cs,vmask,flag)
        */
       p = BlkD(curpstate->eventsource,Coexpr)->program;
       if (p->parent == curpstate) {
-	 if (BlkLoc(p->eventmask) != BlkLoc(cs)) {
-	    assign_event_functions(p, cs);
-	    }
-	 }
+         if (BlkLoc(p->eventmask) != BlkLoc(cs)) {
+            assign_event_functions(p, cs);
+            }
+         }
 
 #ifdef Graphics
       if (Testb((word)ToAscii(E_MXevent), cs) &&
-	  is:file(kywd_xwin[XKey_Window])) {
-	 wbp _w_ = BlkD(kywd_xwin[XKey_Window],File)->fd.wb;
+          is:file(kywd_xwin[XKey_Window])) {
+         wbp _w_ = BlkD(kywd_xwin[XKey_Window],File)->fd.wb;
 #ifdef GraphicsGL
-	 if (_w_->window->is_gl)
-	    gl_wsync(_w_);
-	 else
-#endif					/* GraphicsGL */
-	 wsync(_w_);
-	 pollctr = pollevent();
-	 if (pollctr == -1)
-	    fatalerr(141, NULL);
-	 if (BlkD(_w_->window->listp,List)->size > 0) {
-	    register int c;
-	    c = wgetevent(_w_, &curpstate->eventval, -1);
-	    if (c == 0) {
-	       StrLen(curpstate->eventcode) = 1;
-	       StrLoc(curpstate->eventcode) =
-		  (char *)&allchars[FromAscii(E_MXevent) & 0xFF];
-	       return curpstate->eventcode;
-	       }
-	    else if (c == -1)
-	       runerr(141);
-	    else
-	       runerr(143);
-	    }
-	 }
-#endif					/* Graphics */
+         if (_w_->window->is_gl)
+            gl_wsync(_w_);
+         else
+#endif                                  /* GraphicsGL */
+         wsync(_w_);
+         pollctr = pollevent();
+         if (pollctr == -1)
+            fatalerr(141, NULL);
+         if (BlkD(_w_->window->listp,List)->size > 0) {
+            register int c;
+            c = wgetevent(_w_, &curpstate->eventval, -1);
+            if (c == 0) {
+               StrLen(curpstate->eventcode) = 1;
+               StrLoc(curpstate->eventcode) =
+                  (char *)&allchars[FromAscii(E_MXevent) & 0xFF];
+               return curpstate->eventcode;
+               }
+            else if (c == -1)
+               runerr(141);
+            else
+               runerr(143);
+            }
+         }
+#endif                                  /* Graphics */
 
       /*
        * Loop until we read an event allowed.
        */
       while (1) {
-	 int rv;
+         int rv;
          /*
           * Activate the event source to produce the next event.
           */
-	 dummy = cs;
-	 if ((rv=mt_activate(&dummy, &curpstate->eventcode,
-			 BlkD(curpstate->eventsource, Coexpr))) == A_Cofail)
-	    fail;
-	 /*
-	  * why would we ever need to dereference &eventcode?
-	  */
-	 /* deref(&curpstate->eventcode, &curpstate->eventcode); */
-	 if (!is:string(curpstate->eventcode) ||
-	     StrLen(curpstate->eventcode) != 1) {
-	    /*
-	     * this event is out-of-band data; return or reject it
-	     * depending on whether flag is null.
-	     */
-	    if (!is:null(flag))
-	       return curpstate->eventcode;
-	    else continue;
-	    }
+         dummy = cs;
+         if ((rv=mt_activate(&dummy, &curpstate->eventcode,
+                         BlkD(curpstate->eventsource, Coexpr))) == A_Cofail)
+            fail;
+         /*
+          * why would we ever need to dereference &eventcode?
+          */
+         /* deref(&curpstate->eventcode, &curpstate->eventcode); */
+         if (!is:string(curpstate->eventcode) ||
+             StrLen(curpstate->eventcode) != 1) {
+            /*
+             * this event is out-of-band data; return or reject it
+             * depending on whether flag is null.
+             */
+            if (!is:null(flag))
+               return curpstate->eventcode;
+            else continue;
+            }
 
 #if E_Cofail || E_Coret
-	 switch(*StrLoc(curpstate->eventcode)) {
-	 case E_Cofail: case E_Coret: {
-	    if (BlkD(curpstate->eventsource,Coexpr)->id == 1) {
-	       fail;
-	       }
-	    }
-	    }
-#endif					/* E_Cofail || E_Coret */
+         switch(*StrLoc(curpstate->eventcode)) {
+         case E_Cofail: case E_Coret: {
+            if (BlkD(curpstate->eventsource,Coexpr)->id == 1) {
+               fail;
+               }
+            }
+            }
+#endif                                  /* E_Cofail || E_Coret */
 
-	 return curpstate->eventcode;
-	 }
+         return curpstate->eventcode;
+         }
       }
 end
 
@@ -364,10 +364,10 @@ function{*} istate(ce,attrib)
       word *ipc_opnd;
 
       if (!cnv:C_string(attrib, field))
-	 runerr(103,attrib);
- 
+         runerr(103,attrib);
+
       if (!is:null(ce)){
-	 if (is:coexpr(ce)){
+         if (is:coexpr(ce)){
             if (!strcmp(field, "count"))
                return C_integer (word) BlkD(ce,Coexpr)->actv_count;
             if (!strcmp(field, "ilevel"))
@@ -386,36 +386,36 @@ function{*} istate(ce,attrib)
                return C_integer (word) BlkD(ce,Coexpr)->es_efp;
             else if (!strcmp(field, "gfp"))
                return C_integer (word) BlkD(ce,Coexpr)->es_gfp;
-            else fail;   
-            }   
-	 else  
-	    runerr(118, ce);
-	 }
+            else fail;
+            }
+         else
+            runerr(118, ce);
+         }
       fail;
       }
 end
 
-
 
-char typech[MaxType+1];	/* output character for each type */
 
-int noMTevents;			/* don't produce events in EVAsgn */
+char typech[MaxType+1]; /* output character for each type */
+
+int noMTevents;                 /* don't produce events in EVAsgn */
 
 #if HAVE_PROFIL
-union { 			/* clock ticker -- keep in sync w/ interp.r */
-   unsigned short s[16];	/* four counters */
-   unsigned long l[8];		/* two longs are easier to check */
+union {                         /* clock ticker -- keep in sync w/ interp.r */
+   unsigned short s[16];        /* four counters */
+   unsigned long l[8];          /* two longs are easier to check */
 } ticker;
-unsigned long oldtick;		/* previous sum of the two longs */
-#endif					/* HAVE_PROFIL */
+unsigned long oldtick;          /* previous sum of the two longs */
+#endif                                  /* HAVE_PROFIL */
 
 #if UNIX
 /*
  * Global state used by EVTick()
  */
 word oldsum = 0;
-#endif					/* UNIX */
-
+#endif                                  /* UNIX */
+
 
 static char scopechars[] = "+:^-";
 
@@ -442,9 +442,9 @@ void EVVariable(dptr dx, int eventcode)
 
 #if COMPILER
    procname = &(PFDebug(*pfp)->proc->pname);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    procname = &(BlkD(*glbl_argp,Proc)->pname);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    /*
     * call get_name, allocating out of the monitor if necessary.
     */
@@ -457,24 +457,24 @@ void EVVariable(dptr dx, int eventcode)
 
    if (i == GlobalName) {
       if (reserve(Strings, StrLen(parent->eventval) + 1) == NULL) {
-	 fprintf(stderr, "failed to reserve %ld bytes for global\n",
-		 (long)(StrLen(parent->eventval)+1));
-	 syserr("monitoring out-of-memory error");
-	 }
+         fprintf(stderr, "failed to reserve %ld bytes for global\n",
+                 (long)(StrLen(parent->eventval)+1));
+         syserr("monitoring out-of-memory error");
+         }
       StrLoc(parent->eventval) =
-	 alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
+         alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
       alcstr("+",1);
       StrLen(parent->eventval)++;
       }
    else if ((i == StaticName) || (i == LocalName) || (i == ParamName)) {
       if (!reserve(Strings, StrLen(parent->eventval) + StrLen(*procname) + 1)) {
-	 fprintf(stderr,"failed to reserve %ld bytes for %d, %ld+%ld\n",
-		(long)(StrLen(parent->eventval)+StrLen(*procname)+1), i,
-		 (long)StrLen(parent->eventval), (long)StrLen(*procname));
-	 syserr("monitoring out-of-memory error");
-	 }
+         fprintf(stderr,"failed to reserve %ld bytes for %d, %ld+%ld\n",
+                (long)(StrLen(parent->eventval)+StrLen(*procname)+1), i,
+                 (long)StrLen(parent->eventval), (long)StrLen(*procname));
+         syserr("monitoring out-of-memory error");
+         }
       StrLoc(parent->eventval) =
-	 alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
+         alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
       alcstr(scopechars+i,1);
       alcstr(StrLoc(*procname), StrLen(*procname));
       StrLen(parent->eventval) += StrLen(*procname) + 1;
@@ -501,11 +501,11 @@ void EVVariable(dptr dx, int eventcode)
    MUTEX_UNLOCKID(MTX_NOMTEVENTS);
    if (!is:null(curpstate->valuemask) &&
        (invaluemask(curpstate, eventcode, &(parent->eventval)) != Succeeded))
-	 return;
+         return;
    actparent(eventcode);
 }
 
-
+
 /*
  *  EVInit() - initialization.
  */
@@ -520,28 +520,28 @@ void EVInit()
     */
 
    for (i = 0; i <= MaxType; i++)
-      typech[i] = '?';	/* initialize with error character */
+      typech[i] = '?';  /* initialize with error character */
 
 #ifdef LargeInts
-   typech[T_Lrgint]  = E_Lrgint;	/* long integer */
-#endif					/* LargeInts */
+   typech[T_Lrgint]  = E_Lrgint;        /* long integer */
+#endif                                  /* LargeInts */
 
-   typech[T_Real]    = E_Real;		/* real number */
-   typech[T_Cset]    = E_Cset;		/* cset */
-   typech[T_File]    = E_File;		/* file block */
-   typech[T_Record]  = E_Record;	/* record block */
-   typech[T_Tvsubs]  = E_Tvsubs;	/* substring trapped variable */
-   typech[T_External]= E_External;	/* external block */
-   typech[T_List]    = E_List;		/* list header block */
-   typech[T_Lelem]   = E_Lelem;		/* list element block */
-   typech[T_Table]   = E_Table;		/* table header block */
-   typech[T_Telem]   = E_Telem;		/* table element block */
-   typech[T_Tvtbl]   = E_Tvtbl;		/* table elem trapped variable*/
-   typech[T_Set]     = E_Set;		/* set header block */
-   typech[T_Selem]   = E_Selem;		/* set element block */
-   typech[T_Slots]   = E_Slots;		/* set/table hash slots */
-   typech[T_Coexpr]  = E_Coexpr;	/* co-expression block (static) */
-   typech[T_Refresh] = E_Refresh;	/* co-expression refresh block */
+   typech[T_Real]    = E_Real;          /* real number */
+   typech[T_Cset]    = E_Cset;          /* cset */
+   typech[T_File]    = E_File;          /* file block */
+   typech[T_Record]  = E_Record;        /* record block */
+   typech[T_Tvsubs]  = E_Tvsubs;        /* substring trapped variable */
+   typech[T_External]= E_External;      /* external block */
+   typech[T_List]    = E_List;          /* list header block */
+   typech[T_Lelem]   = E_Lelem;         /* list element block */
+   typech[T_Table]   = E_Table;         /* table header block */
+   typech[T_Telem]   = E_Telem;         /* table element block */
+   typech[T_Tvtbl]   = E_Tvtbl;         /* table elem trapped variable*/
+   typech[T_Set]     = E_Set;           /* set header block */
+   typech[T_Selem]   = E_Selem;         /* set element block */
+   typech[T_Slots]   = E_Slots;         /* set/table hash slots */
+   typech[T_Coexpr]  = E_Coexpr;        /* co-expression block (static) */
+   typech[T_Refresh] = E_Refresh;       /* co-expression refresh block */
 
 
    /*
@@ -572,15 +572,15 @@ void EVInit()
 #if HAVE_PROFIL
 #ifdef PROFIL_CHAR_P
    profil((char *)(ticker.s), sizeof(ticker.s), (long) EVInit & ~0x3FFFF, 2);
-#else					/* PROFIL_CHAR_P */
+#else                                   /* PROFIL_CHAR_P */
    profil((unsigned short *)(ticker.s), sizeof(ticker.s),
-	  (long) EVInit & ~0x3FFFF, 2);
-#endif					/* PROFIL_CHAR_P */
-#endif					/* HAVE_PROFIL */
-#endif					/* UNIX */
+          (long) EVInit & ~0x3FFFF, 2);
+#endif                                  /* PROFIL_CHAR_P */
+#endif                                  /* HAVE_PROFIL */
+#endif                                  /* UNIX */
 
    }
-
+
 /*
  * mmrefresh() - redraw screen, initially or after garbage collection.
  */
@@ -598,12 +598,12 @@ void mmrefresh()
   if (!is:null(curpstate->eventmask) &&
        Testb((word)ToAscii(E_EndCollect), curpstate->eventmask)) {
       for (p = blkbase; p < blkfree; p += n) {
-	 n = BlkSize(p);
+         n = BlkSize(p);
 #if E_Lrgint || E_Real || E_Cset || E_File || E_Record || E_Tvsubs || E_External || E_List || E_Lelem || E_Table || E_Telem || E_Tvtbl || E_Set || E_Selem || E_Slots || E_Coexpr || E_Refresh
-	 RealEVVal(n, typech[(int)BlkType(p)],/*noop*/,/*noop*/);/* block reg.*/
-#endif					/* instrument allocation events */
-	 }
-      EVVal(DiffPtrs(strfree, strbase), E_String);	/* string region */
+         RealEVVal(n, typech[(int)BlkType(p)],/*noop*/,/*noop*/);/* block reg.*/
+#endif                                  /* instrument allocation events */
+         }
+      EVVal(DiffPtrs(strfree, strbase), E_String);      /* string region */
       }
    }
 
@@ -632,6 +632,6 @@ void EVStrAlc_1(word n)
 int t_errornumber, t_have_val;
 struct descrip t_errorvalue;
 
-#else					/* MultiProgram */
-/* static char xjunk;			/* avoid empty module */
-#endif					/* MultiProgram */
+#else                                   /* MultiProgram */
+/* static char xjunk;                   /* avoid empty module */
+#endif                                  /* MultiProgram */

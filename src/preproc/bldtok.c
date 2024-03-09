@@ -57,7 +57,7 @@ static struct rsrvd_wrd pp_rsrvd[] = {
    {"error",   PpError},
    {"pragma",  PpPragma},
    {NULL, Invalid}};
-
+
 /*
  * init_tok - initialize tokenizer.
  */
@@ -79,7 +79,7 @@ void init_tok()
       one_tok = new_token(PpNumber, spec_str("1"), "", 0);
       }
    }
-
+
 /*
  * pp_tok_id - see if s in the name of a preprocessing directive.
  */
@@ -92,7 +92,7 @@ char *s;
       ;
    return rw->tok_id;
    }
-
+
 /*
  * chk_eq_sign - look ahead to next character to see if it is an equal sign.
  *  It is used for processing -D options.
@@ -106,7 +106,7 @@ int chk_eq_sign()
    else
       return 0;
    }
-
+
 /*
  * chck_wh_sp - If the input is at white space, construct a white space token
  *  and return it, otherwise return NULL. This function also helps keeps track
@@ -261,7 +261,7 @@ struct char_src *cs;
       }
    return t;
    }
-
+
 /*
  * pp_number - Create a token for a preprocessing number (See ANSI C Standard
  *  for the syntax of such a number).
@@ -292,7 +292,7 @@ static struct token *pp_number()
          }
       }
    }
-
+
 /*
  * char_str - construct a token for a character constant or string literal.
  */
@@ -322,7 +322,7 @@ int tok_id;
    AdvChar();
    return new_token(tok_id, str_install(&tknize_sbuf), fname, line);
    }
-
+
 /*
  * hdr_tok - create a token for an #include header. The delimiter may be
  *  > or ".
@@ -350,7 +350,7 @@ struct char_src *cs;
    AdvChar();
    return new_token(tok_id, str_install(&tknize_sbuf), fname, line);
    }
-
+
 /*
  * tokenize - return the next token from the character source on the top
  *  of the source stack.

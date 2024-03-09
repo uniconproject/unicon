@@ -9,25 +9,25 @@
 #ifdef Concurrent
 static struct region *findgap(struct region *curr_private, word nbytes, int region);
 #define INIT_SHARED(blk) blk->shared = 0
-#else 					/* Concurrent */
-static struct region *findgap	(struct region *curr, word nbytes);
+#else                                   /* Concurrent */
+static struct region *findgap   (struct region *curr, word nbytes);
 #define INIT_SHARED(blk)
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
 
 extern word alcnum;
 
 #ifndef MultiProgram
-word coexp_ser = 2;	/* serial numbers for co-expressions; &main is 1 */
-word list_ser = 1;	/* serial numbers for lists */
+word coexp_ser = 2;     /* serial numbers for co-expressions; &main is 1 */
+word list_ser = 1;      /* serial numbers for lists */
 word intern_list_ser=-1;/* serial numbers for lists used internally by the RT system */
 #ifdef PatternType
-word pat_ser = 1;	/* serial numbers for patterns */
-#endif					/* PatternType */
-word set_ser = 1;	/* serial numbers for sets */
-word table_ser = 1;	/* serial numbers for tables */
-#endif					/* MultiProgram */
+word pat_ser = 1;       /* serial numbers for patterns */
+#endif                                  /* PatternType */
+word set_ser = 1;       /* serial numbers for sets */
+word table_ser = 1;     /* serial numbers for tables */
+#endif                                  /* MultiProgram */
 
-
+
 /*
  * AlcBlk - allocate a block.
  */
@@ -74,7 +74,7 @@ word table_ser = 1;	/* serial numbers for tables */
    var->blksize = size;
    }
 #enddef
-
+
 /*
  * alcactiv - allocate a co-expression activation block.
  */
@@ -101,7 +101,7 @@ struct astkblk *alcactiv()
    abp->arec[0].activator = NULL;
    return abp;
    }
-
+
 #ifdef LargeInts
 #begdef alcbignum_macro(f,e_lrgint)
 /*
@@ -128,11 +128,11 @@ struct b_bignum *f(word n)
 #ifdef MultiProgram
 alcbignum_macro(alcbignum_0,0)
 alcbignum_macro(alcbignum_1,E_Lrgint)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcbignum_macro(alcbignum,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
 #ifdef Concurrent
 int alcce_q(dptr q, int size){
@@ -153,35 +153,35 @@ int alcce_queues(struct b_coexpr *ep){
    ep->outbox = nulldesc;
    ep->cequeue = nulldesc;
    ep->handdata = NULL;
- 
+
   /*
    * Initialize sender/receiver queues.
    *
-   * Make sure we have enough memory for all queues all at once to avoid 
+   * Make sure we have enough memory for all queues all at once to avoid
    * multiple GC if we are at the end of a region.
    */
 
    if (!reserve(Blocks, (word)(
-		sizeof(struct b_list) * 3 + 
-		sizeof(struct b_lelem) * 3 +
-		(CE_INBOX_SIZE + CE_OUTBOX_SIZE + CE_CEQUEUE_SIZE) * sizeof(struct descrip)))
-		)
-       		return Failed;
+                sizeof(struct b_list) * 3 +
+                sizeof(struct b_lelem) * 3 +
+                (CE_INBOX_SIZE + CE_OUTBOX_SIZE + CE_CEQUEUE_SIZE) * sizeof(struct descrip)))
+                )
+                return Failed;
 
    if (alcce_q(&(ep->outbox), 1024) == Failed)
       return Failed;
    if (alcce_q(&(ep->inbox), 1024) == Failed)
       return Failed;
    if (alcce_q(&(ep->cequeue), 64) == Failed)
-      return Failed;   
-   
+      return Failed;
+
    ep->handdata = NULL;
    INIT_SHARED(ep);
-   
+
    return Succeeded;
 }
 
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
 
 /*
@@ -234,9 +234,9 @@ struct b_coexpr *alccoexp()
 
 #ifdef NativeCoswitch
    ep->status = 0;
-#else					/* NativeCoswitch */
+#else                                   /* NativeCoswitch */
    ep->status = Ts_Posix;
-#endif					/* NativeCoswitch */
+#endif                                  /* NativeCoswitch */
 
 
    /* need to look at concurrent initialization for COMPILER and !COMPILER
@@ -246,7 +246,7 @@ struct b_coexpr *alccoexp()
 
    if (alcce_queues(ep) == Failed)
       ReturnErrNum(307, NULL);
-   
+
    ep->ini_blksize = rootblock.size/100;
    if (ep->ini_blksize < MinAbrSize)
       ep->ini_blksize = MinAbrSize;
@@ -257,7 +257,7 @@ struct b_coexpr *alccoexp()
 
 #endif             /* Concurrent */
 
-   ep->es_tend = NULL;	
+   ep->es_tend = NULL;
 
 #ifdef PthreadCoswitch
 {
@@ -267,7 +267,7 @@ struct b_coexpr *alccoexp()
    ep->alive = 0;
 
 }
-#endif					/* PthreadCoswitch */
+#endif                                  /* PthreadCoswitch */
 
    MUTEX_LOCKID(MTX_STKLIST);
    ep->nextstk = stklist;
@@ -276,7 +276,7 @@ struct b_coexpr *alccoexp()
    INIT_SHARED(ep);
    return ep;
    }
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 #ifdef MultiProgram
 /*
  * If this is a new program being loaded, an icodesize>0 gives the
@@ -286,9 +286,9 @@ struct b_coexpr *alccoexp()
  */
 struct b_coexpr *alccoexp(icodesize, stacksize)
 long icodesize, stacksize;
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 struct b_coexpr *alccoexp()
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    {
    struct b_coexpr *ep = NULL;
@@ -306,11 +306,11 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 #ifdef MultiProgram
    if (icodesize > 0) {
       ep = (struct b_coexpr *)
-	calloc(1, (msize)(stacksize + icodesize + sizeof(struct progstate) +
-			  sizeof(struct b_coexpr)));
+        calloc(1, (msize)(stacksize + icodesize + sizeof(struct progstate) +
+                          sizeof(struct b_coexpr)));
       }
    else
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
      ep = (struct b_coexpr *)malloc((msize)stksize);
 
    /*
@@ -322,10 +322,10 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 #ifdef MultiProgram
       if (icodesize>0) {
          ep = (struct b_coexpr *)
-	    malloc((msize)(mstksize+icodesize+sizeof(struct progstate)));
+            malloc((msize)(mstksize+icodesize+sizeof(struct progstate)));
          }
       else
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
          ep = (struct b_coexpr *)malloc((msize)stksize);
       }
    if (ep == NULL){
@@ -333,7 +333,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
       ReturnErrNum(305, NULL);
       }
 
-   alcnum++;		/* increment allocation count since last g.c. */
+   alcnum++;            /* increment allocation count since last g.c. */
 
    MUTEX_UNLOCKID(MTX_ALCNUM);
 
@@ -348,20 +348,20 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 
 #ifdef NativeCoswitch
    ep->status = 0;
-#else					/* NativeCoswitch */
+#else                                   /* NativeCoswitch */
    ep->status = Ts_Posix;
-#endif					/* NativeCoswitch */
+#endif                                  /* NativeCoswitch */
 
    if (icodesize > 0)
       ep->id = 1;
    else{
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       MUTEX_LOCKID(MTX_COEXP_SER);
       ep->id = coexp_ser++;
       MUTEX_UNLOCKID(MTX_COEXP_SER);
 #ifdef MultiProgram
    }
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #ifdef Concurrent
    ep->Lastop = 0;
@@ -384,7 +384,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 
    if (ep->ini_ssize < MinStrSpace)
       ep->ini_ssize = MinStrSpace;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
       ep->es_tend = NULL;
 
@@ -397,7 +397,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
      ep->program->tstate = &ep->program->maintstate;
      }
    else ep->program = curpstate;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #ifdef PthreadCoswitch
 {
@@ -412,14 +412,14 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
       ep->tstate = ep->program->tstate;
       }
    else
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       {
-      ep->tstate = NULL; 
+      ep->tstate = NULL;
       ep->isProghead = 0;
       }
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 }
-#endif					/* PthreadCoswitch */
+#endif                                  /* PthreadCoswitch */
 
    MUTEX_LOCKID(MTX_STKLIST);
    ep->nextstk = stklist;
@@ -428,9 +428,9 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 
    return ep;
    }
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
-
+
 #begdef alccset_macro(f, e_cset)
 /*
  * alccset - allocate a cset in the block region.
@@ -457,11 +457,11 @@ struct b_cset *f()
 #ifdef MultiProgram
 alccset_macro(alccset_0,0)
 alccset_macro(alccset_1,E_Cset)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alccset_macro(alccset,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
-
+
 #begdef alcfile_macro(f, e_file)
 /*
  * alcfile - allocate a file block in the block region.
@@ -479,7 +479,7 @@ struct b_file *f(FILE *fd, int status, dptr name)
    blk->fname = tname;
 #ifdef Concurrent
    blk->mutexid = get_mutex(&rmtx_attr);
-#endif					/* Concurrent */  
+#endif                                  /* Concurrent */
 
    return blk;
    }
@@ -489,10 +489,10 @@ struct b_file *f(FILE *fd, int status, dptr name)
 #passthru #undef alcfile
 alcfile_macro(alcfile,0)
 alcfile_macro(alcfile_1,E_File)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcfile_macro(alcfile,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alchash_macro(f, e_table, e_set)
 /*
  * alchash - allocate a hashed structure (set or table header) in the block
@@ -513,7 +513,7 @@ union block *f(int tcode)
       ps->id = table_ser++;
       MUTEX_UNLOCKID(MTX_TABLE_SER);
       }
-   else {	/* tcode == T_Set */
+   else {       /* tcode == T_Set */
       EVVal(sizeof(struct b_set), e_set);
       AlcFixBlk(ps, b_set, T_Set);
       MUTEX_LOCKID(MTX_SET_SER);
@@ -532,10 +532,10 @@ union block *f(int tcode)
 #ifdef MultiProgram
 alchash_macro(alchash_0,0,0)
 alchash_macro(alchash_1,E_Table,E_Set)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alchash_macro(alchash,0,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alcsegment_macro(f,e_slots)
 /*
  * alcsegment - allocate a slot block in the block region.
@@ -560,10 +560,10 @@ struct b_slots *f(word nslots)
 #ifdef MultiProgram
 alcsegment_macro(alcsegment_0,0)
 alcsegment_macro(alcsegment_1,E_Slots)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcsegment_macro(alcsegment,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 
 #ifdef PatternType
 
@@ -573,7 +573,7 @@ struct b_pattern *f(word stck_size)
 {
    register struct b_pattern *pheader;
    CURTSTATE();
-   
+
    EVVal(sizeof (struct b_pattern), e_pattern);
    AlcFixBlk(pheader, b_pattern, T_Pattern)
    pheader->stck_size = stck_size;
@@ -588,29 +588,29 @@ struct b_pattern *f(word stck_size)
 #ifdef MultiProgram
 alcpattern_macro(alcpattern_0,0,0)
 alcpattern_macro(alcpattern_1,E_Pattern,E_Pelem)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcpattern_macro(alcpattern,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 
 #begdef alcpelem_macro(f, e_pelem)
 
 #if COMPILER
 struct b_pelem *f( word patterncode)
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 struct b_pelem *f( word patterncode, word *o_ipc)
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 {
    register struct b_pelem *pelem;
    CURTSTATE();
-   
+
    EVVal(sizeof (struct b_pelem), e_pelem);
    AlcFixBlk(pelem, b_pelem, T_Pelem)
    pelem->pcode = patterncode;
    pelem->pthen = NULL;
 #if !COMPILER
    pelem->origin_ipc = o_ipc;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    pelem->parameter = nulldesc;
    return pelem;
    }
@@ -619,12 +619,12 @@ struct b_pelem *f( word patterncode, word *o_ipc)
 #ifdef MultiProgram
 alcpelem_macro(alcpelem_0,0)
 alcpelem_macro(alcpelem_1,E_Pelem)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcpelem_macro(alcpelem,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 struct b_cons *alccons(union block *data)
 {
@@ -654,7 +654,7 @@ struct b_list *alclisthdr(uword size, union block *bptr)
    INIT_SHARED(blk);
 #ifdef Arrays
    ( (struct b_realarray *) bptr)->listp = (union block *)blk;
-#endif					/* Arrays */
+#endif                                  /* Arrays */
    return blk;
 }
 
@@ -689,15 +689,15 @@ struct b_list *f(uword size, uword nslots)
    if (size != -1)
       blk->id = list_ser++;
    else{
-      /* 
-       * size -1 is used to indicate an RT list, 
+      /*
+       * size -1 is used to indicate an RT list,
        * reset size to 0 and use the "special" serial number
        */
       size = 0;
       blk->id = intern_list_ser--;
       }
    MUTEX_UNLOCKID(MTX_LIST_SER);
-   blk->size = size;     
+   blk->size = size;
    INIT_SHARED(blk);
 
    blk->listhead = blk->listtail = (union block *)lblk;
@@ -719,9 +719,9 @@ struct b_list *f(uword size, uword nslots)
 #passthru #undef alclist_raw
 alclist_raw_macro(alclist_raw,0,0)
 alclist_raw_macro(alclist_raw_1,E_List,E_Lelem)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alclist_raw_macro(alclist_raw,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #begdef alclist_macro(f,e_list,e_lelem)
 
@@ -740,9 +740,9 @@ struct b_list *f(uword size, uword nslots)
    MUTEX_LOCKID(MTX_LIST_SER);
    if (size != -1)
       blk->id = list_ser++;
-   else{ 
-      /* 
-       * size -1 is used to indicate an RT list, 
+   else{
+      /*
+       * size -1 is used to indicate an RT list,
        * reset size to 0 and use the "special" serial number
        */
       size = 0;
@@ -769,10 +769,10 @@ struct b_list *f(uword size, uword nslots)
 #ifdef MultiProgram
 alclist_macro(alclist_0,0,0)
 alclist_macro(alclist_1,E_List,E_Lelem)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alclist_macro(alclist,0,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alclstb_macro(f,t_lelem)
 /*
  * alclstb - allocate a list element block in the block region.
@@ -802,10 +802,10 @@ struct b_lelem *f(uword nslots, uword first, uword nused)
 #ifdef MultiProgram
 alclstb_macro(alclstb_0,0)
 alclstb_macro(alclstb_1,E_Lelem)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alclstb_macro(alclstb,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alcreal_macro(f,e_real)
 /*
  * alcreal - allocate a real value in the block region.
@@ -840,11 +840,11 @@ struct b_real *f(double val)
 #passthru #undef alcreal
 alcreal_macro(alcreal,0)
 alcreal_macro(alcreal_1,E_Real)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcreal_macro(alcreal,0)
-#endif					/* MultiProgram */
-#endif					/* DescriptorDouble */
-
+#endif                                  /* MultiProgram */
+#endif                                  /* DescriptorDouble */
+
 #begdef alcrecd_macro(f,e_record)
 /*
  * alcrecd - allocate record with nflds fields in the block region.
@@ -869,10 +869,10 @@ struct b_record *f(int nflds, union block *recptr)
 #ifdef MultiProgram
 alcrecd_macro(alcrecd_0,0)
 alcrecd_macro(alcrecd_1,E_Record)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcrecd_macro(alcrecd,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 /*
  * alcrefresh - allocate a co-expression refresh block.
  */
@@ -894,7 +894,7 @@ int wrk_sz;
    blk->wrk_size = wrk_sz;
    return blk;
    }
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 #begdef alcrefresh_macro(f,e_refresh)
 
 struct b_refresh *f(word *entryx, int na, int nl)
@@ -913,11 +913,11 @@ struct b_refresh *f(word *entryx, int na, int nl)
 #ifdef MultiProgram
 alcrefresh_macro(alcrefresh_0,0)
 alcrefresh_macro(alcrefresh_1,E_Refresh)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcrefresh_macro(alcrefresh,0)
-#endif					/* MultiProgram */
-#endif					/* COMPILER */
-
+#endif                                  /* MultiProgram */
+#endif                                  /* COMPILER */
+
 #begdef alcselem_macro(f,e_selem)
 /*
  * alcselem - allocate a set element block.
@@ -939,10 +939,10 @@ struct b_selem *f(dptr mbr,uword hn)
 #ifdef MultiProgram
 alcselem_macro(alcselem_0,0)
 alcselem_macro(alcselem_1,E_Selem)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcselem_macro(alcselem,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alcstr_macro(f,e_string)
 /*
  * alcstr - allocate a string in the string space.
@@ -961,7 +961,7 @@ char *f(register char *s, register word slen)
       EVVal(slen, e_string);
       s = StrLoc(ts);
       }
-#endif					/* e_string */
+#endif                                  /* e_string */
 
    /*
     * Make sure there is enough room in the string space.
@@ -986,12 +986,12 @@ char *f(register char *s, register word slen)
    ofree = d = strfree;
    if (s) {
       if (slen >= 4) {
-	 memcpy(d, s, slen);
-	 d+= slen;
-	 }
+         memcpy(d, s, slen);
+         d+= slen;
+         }
       else
-	 while (slen-- > 0)
-	    *d++ = *s++;
+         while (slen-- > 0)
+            *d++ = *s++;
       }
    else
       d += slen;
@@ -1005,10 +1005,10 @@ char *f(register char *s, register word slen)
 #passthru #undef alcstr
 alcstr_macro(alcstr,0)
 alcstr_macro(alcstr_1,E_String)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcstr_macro(alcstr,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alcsubs_macro(f, e_tvsubs)
 /*
  * alcsubs - allocate a substring trapped variable in the block region.
@@ -1031,10 +1031,10 @@ struct b_tvsubs *f(word len, word pos, dptr var)
 #ifdef MultiProgram
 alcsubs_macro(alcsubs_0,0)
 alcsubs_macro(alcsubs_1,E_Tvsubs)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alcsubs_macro(alcsubs,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alctelem_macro(f, e_telem)
 /*
  * alctelem - allocate a table element block in the block region.
@@ -1057,10 +1057,10 @@ struct b_telem *f()
 #ifdef MultiProgram
 alctelem_macro(alctelem_0,0)
 alctelem_macro(alctelem_1,E_Telem)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alctelem_macro(alctelem,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef alctvtbl_macro(f,e_tvtbl)
 /*
  * alctvtbl - allocate a table element trapped variable block in the block
@@ -1085,9 +1085,9 @@ struct b_tvtbl *f(register dptr tbl, register dptr ref, uword hashnum)
 #ifdef MultiProgram
 alctvtbl_macro(alctvtbl_0,0)
 alctvtbl_macro(alctvtbl_1,E_Tvtbl)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 alctvtbl_macro(alctvtbl,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #ifdef EventMon
 #begdef alctvmonitored_macro(f)
@@ -1105,13 +1105,13 @@ struct b_tvmonitored *f(register dptr tv, word count)
    blk->tv = vref;
    blk->cur_actv = count;
    return blk;
-   } 
+   }
 #enddef
 
 alctvmonitored_macro(alctvmonitored)
-#endif					/* EventMon */
+#endif                                  /* EventMon */
 
-
+
 #begdef deallocate_macro(f,e_blkdealc)
 /*
  * deallocate - return a block to the heap.
@@ -1125,14 +1125,14 @@ void f (union block *bp)
    CURTSTATE();
 #ifdef Concurrent   /*   DO WE NEED THIS ? WE HAVE PRIVATE HEAPS NOW  */
    return;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
    nbytes = BlkSize(bp);
    for (rp = curblock; rp; rp = rp->next)
       if ((char *)bp + nbytes == rp->free)
          break;
    if (!rp)
       for (rp = curblock->prev; rp; rp = rp->prev)
-	 if ((char *)bp + nbytes == rp->free)
+         if ((char *)bp + nbytes == rp->free)
             break;
    if (!rp)
       syserr ("deallocation botch");
@@ -1145,10 +1145,10 @@ void f (union block *bp)
 #ifdef MultiProgram
 deallocate_macro(deallocate_0,0)
 deallocate_macro(deallocate_1,E_BlkDeAlc)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 deallocate_macro(deallocate,0)
-#endif					/* MultiProgram */
-
+#endif                                  /* MultiProgram */
+
 #begdef reserve_macro(f,e_tenurestring,e_tenureblock)
 /*
  * reserve -- ensure space in either string or block region.
@@ -1178,12 +1178,12 @@ char *f(int region, word nbytes)
       pcurr = &curtstring;
    else
       pcurr = &curtblock;
-#else 					/* Concurrent */
+#else                                   /* Concurrent */
    if (region == Strings)
       pcurr = &curstring;
    else
       pcurr = &curblock;
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
 
    curr_private = *pcurr;
 
@@ -1196,11 +1196,11 @@ char *f(int region, word nbytes)
 /* check all regions on chain */
 #ifdef Concurrent
    if ((rp = findgap(curr_private, nbytes, region)) != 0)
-#else 					/* Concurrent */
+#else                                   /* Concurrent */
    if ((rp = findgap(curr_private, nbytes)) != 0)
-#endif 					/* Concurrent */   
+#endif                                  /* Concurrent */
       {
-      *pcurr = rp;			/* switch regions */
+      *pcurr = rp;                      /* switch regions */
       return rp->free;
       }
 
@@ -1210,7 +1210,7 @@ char *f(int region, word nbytes)
     */
    while (curr_private->next)
       curr_private = curr_private->next;
-      
+
    /*
     * Need to collect garbage.  To reduce thrashing, set a minimum requirement
     *  of 10% of the size of the newest region, and collect regions until that
@@ -1221,13 +1221,13 @@ char *f(int region, word nbytes)
       want = nbytes;
 
    for (rp = curr_private; rp; rp = rp->prev)
-      if (rp->size >= want) {	/* if large enough to possibly succeed */
+      if (rp->size >= want) {   /* if large enough to possibly succeed */
          *pcurr = rp;
          collect(region);
          if (DiffPtrs(rp->end,rp->free) >= want)
             return rp->free;
          }
-#else 					/* Concurrent */
+#else                                   /* Concurrent */
 
    want = (curr_private->size / 100) * memcushion;
    if (want < nbytes)
@@ -1255,19 +1255,19 @@ char *f(int region, word nbytes)
       /* if large enough to possibly succeed */
       if (rp->size >= want && rp->size>=curr_private->size/2) {
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
-      	 *pcurr = curr_private;
+         *pcurr = curr_private;
          collect(region);
          if (DiffPtrs( curr_private->end, curr_private->free) >= want){
             RESUME_THREADS();
             return curr_private->free;
             }
          }
-   
+
    /*
     * GC has failed so far to free enough memory, wake up all threads for now.
-    */   
-   RESUME_THREADS(); 
- #endif 					/* Concurrent */   
+    */
+   RESUME_THREADS();
+ #endif                                         /* Concurrent */
 
    /*
     * That didn't work.  Allocate a new region with a size based on the
@@ -1279,7 +1279,7 @@ char *f(int region, word nbytes)
       newsize = nbytes + memcushion;
    if (newsize < MinAbrSize)
       newsize = MinAbrSize;
-     
+
    if ((rp = newregion(nbytes, newsize)) != 0) {
 #ifdef Concurrent
       /* a new region is allocated, swap the current private
@@ -1287,14 +1287,14 @@ char *f(int region, word nbytes)
        */
       if (region == Strings){
          MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
-      	 swap2publicheap(curr_private, NULL, &public_stringregion);
+         swap2publicheap(curr_private, NULL, &public_stringregion);
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
-	 }
+         }
       else{
          MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
-      	 swap2publicheap(curr_private, NULL, &public_blockregion);
+         swap2publicheap(curr_private, NULL, &public_blockregion);
          MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
-	 }
+         }
 
       /*
        * Set "curr_private" to point to newest region.
@@ -1302,7 +1302,7 @@ char *f(int region, word nbytes)
       MUTEX_LOCKID(mtx_heap);
       while (curr_private->next)
          curr_private = curr_private->next;
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
       rp->prev = curr_private;
       rp->next = NULL;
       curr_private->next = rp;
@@ -1328,7 +1328,7 @@ char *f(int region, word nbytes)
             }
          }
       }
-#endif					/* e_tenurestring || e_tenureblock */
+#endif                                  /* e_tenurestring || e_tenureblock */
     return rp->free;
       }
 
@@ -1341,7 +1341,7 @@ char *f(int region, word nbytes)
 #ifdef Concurrent
    //   fprintf(stderr, " !!! Low memory!! Trying all options !!!\n ");
    /* look in the public heaps, */
-   SUSPEND_THREADS(); 
+   SUSPEND_THREADS();
 
    /* public heaps might have got updated, resync, no need to lock!  */
    if (region == Strings)
@@ -1350,21 +1350,21 @@ char *f(int region, word nbytes)
       p_publicheap = &public_blockregion;
 
    for (rp = *p_publicheap; rp; rp = rp->Tnext)
-      if (rp->size >= want) {		/* if not collected earlier */
+      if (rp->size >= want) {           /* if not collected earlier */
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
          *pcurr = curr_private;
          collect(region);
          if (DiffPtrs(curr_private->end,curr_private->free) >= want){
-   	    RESUME_THREADS(); 
+            RESUME_THREADS();
             return curr_private->free;
             }
          }
-   RESUME_THREADS(); 
+   RESUME_THREADS();
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
-   
-#else 					/* Concurrent */
+
+#else                                   /* Concurrent */
    for (rp = curr_private; rp; rp = rp->prev)
-      if (rp->size >= want) {		/* if not collected earlier */
+      if (rp->size >= want) {           /* if not collected earlier */
          *pcurr = rp;
          collect(region);
          if (DiffPtrs(rp->end,rp->free) >= want)
@@ -1372,7 +1372,7 @@ char *f(int region, word nbytes)
          }
 
    if ((rp = findgap(curr_private, nbytes)) != 0)
-#endif 					/* Concurrent */   
+#endif                                  /* Concurrent */
    {
       *pcurr = rp;
       return rp->free;
@@ -1393,9 +1393,9 @@ char *f(int region, word nbytes)
 #ifdef MultiProgram
 reserve_macro(reserve_0,0,0)
 reserve_macro(reserve_1,E_TenureString,E_TenureBlock)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 reserve_macro(reserve,0,0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 
 #ifdef Concurrent
@@ -1415,38 +1415,38 @@ struct region **p_public; /* pointer to the head of the list*/
       curr_private->Tprev = curr_public->Tprev;
 
       if (curr_public->Tnext){
-	curr_private->Tnext->Tprev = curr_private;
-	curr_public->Tnext = NULL;
-	if (curr_public->Tprev){ /* middle node*/
-	  curr_private->Tprev->Tnext = curr_private;
-	  curr_public->Tprev = NULL;
-	  }
-	else
-	  *p_public = curr_private;
-	}
+        curr_private->Tnext->Tprev = curr_private;
+        curr_public->Tnext = NULL;
+        if (curr_public->Tprev){ /* middle node*/
+          curr_private->Tprev->Tnext = curr_private;
+          curr_public->Tprev = NULL;
+          }
+        else
+          *p_public = curr_private;
+        }
       else if (curr_public->Tprev){
-	curr_private->Tprev->Tnext = curr_private;
-	curr_public->Tprev = NULL;
-	}
+        curr_private->Tprev->Tnext = curr_private;
+        curr_public->Tprev = NULL;
+        }
       else
-	*p_public = curr_private;
-     } 
-    else { /* NO SWAP: some thread is giving up his heap. 
-    	      Just insert curr_private into the public heap. */
-	curr_private->Tprev=NULL;
-	if (*p_public==NULL)
-	   curr_private->Tnext=NULL;
-	else{
-	   curr_private->Tnext=*p_public;
-	   curr_private->Tnext->Tprev=curr_private;
-	   }
-   	*p_public=curr_private;
-	return NULL;
+        *p_public = curr_private;
+     }
+    else { /* NO SWAP: some thread is giving up his heap.
+              Just insert curr_private into the public heap. */
+        curr_private->Tprev=NULL;
+        if (*p_public==NULL)
+           curr_private->Tnext=NULL;
+        else{
+           curr_private->Tnext=*p_public;
+           curr_private->Tnext->Tprev=curr_private;
+           }
+        *p_public=curr_private;
+        return NULL;
       }
-   
+
    return curr_public;
   }
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
 
 /*
  * findgap - search region chain for a region having at least nbytes available
@@ -1456,22 +1456,22 @@ static struct region *findgap(curr_private, nbytes, region)
 struct region *curr_private;
 word nbytes;
 int region;
-#else 					/* Concurrent */
+#else                                   /* Concurrent */
 static struct region *findgap(curr, nbytes)
 struct region *curr;
 word nbytes;
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
    {
    struct region *rp;
-   
+
 #ifdef Concurrent
    if (region == Strings){
       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
       for (rp = public_stringregion; rp; rp = rp->Tnext)
          if (DiffPtrs(rp->end, rp->free) >= nbytes && rp->size>=curr_private->size/2)
             break;
-         
-      if (rp) 
+
+      if (rp)
          rp=swap2publicheap(curr_private, rp, &public_stringregion);
       MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
       }
@@ -1480,14 +1480,14 @@ word nbytes;
       for (rp = public_blockregion; rp; rp = rp->Tnext)
          if (DiffPtrs(rp->end, rp->free) >= nbytes && rp->size>=curr_private->size/2)
             break;
-         
-      if (rp) 
+
+      if (rp)
          rp=swap2publicheap(curr_private, rp, &public_blockregion);
       MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
       }
 
    return rp;
-#else 					/* Concurrent */
+#else                                   /* Concurrent */
 /* With ThreadHeap, skip this, we know we are at the front of the list */
    for (rp = curr; rp; rp = rp->prev)
       if (DiffPtrs(rp->end, rp->free) >= nbytes)
@@ -1496,9 +1496,9 @@ word nbytes;
       if (DiffPtrs(rp->end, rp->free) >= nbytes)
          return rp;
    return NULL;
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
    }
-
+
 /*
  * newregion - try to malloc a new region and tenure the old one,
  *  backing off if the requested size fails.
@@ -1514,7 +1514,7 @@ word nbytes,stdsize;
       return NULL;
    if ((uword)stdsize > (uword)MaxBlock)
       stdsize = (uword)MaxBlock;
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */
 
    if ((uword)nbytes > minSize)
       minSize = (uword)nbytes;
@@ -1525,10 +1525,10 @@ word nbytes,stdsize;
 #if IntBits == 16
       if ((rp->size < nbytes) && (nbytes < (unsigned int)MaxBlock))
          rp->size = Min(nbytes+stdsize,(unsigned int)MaxBlock);
-#else					/* IntBits == 16 */
+#else                                   /* IntBits == 16 */
       if (rp->size < nbytes)
          rp->size = Max(nbytes+stdsize, nbytes);
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */
 
       do {
          rp->free = rp->base = (char *)AllocReg(rp->size);
@@ -1536,9 +1536,9 @@ word nbytes,stdsize;
             rp->end = rp->base + rp->size;
             rp->next = rp->prev = NULL;
 #ifdef Concurrent
-	    rp->Tnext=NULL;
-	    rp->Tprev=NULL;
-#endif 					/* Concurrent */   
+            rp->Tnext=NULL;
+            rp->Tprev=NULL;
+#endif                                  /* Concurrent */
             return rp;
             }
          rp->size = (rp->size + nbytes)/2 - 1;
@@ -1577,4 +1577,4 @@ struct b_realarray *alcrealarray(uword n)
    return blk;
 }
 
-#endif					/* Arrays */
+#endif                                  /* Arrays */

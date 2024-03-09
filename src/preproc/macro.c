@@ -23,7 +23,7 @@ static int               *cpy_image   (struct token *t, int *s);
 #define MacTblSz 149
 #define MHash(x) (((unsigned int)(uword) (x)) % MacTblSz)
 
-static struct macro *m_table[MacTblSz];	/* hash table of macros */
+static struct macro *m_table[MacTblSz]; /* hash table of macros */
 
 int max_recurse;
 
@@ -180,11 +180,11 @@ void init_macro()
  * m_install - install a macro.
  */
 void m_install(mname, category, multi_line, prmlst, body)
-struct token *mname;	/* name of macro */
-int multi_line;		/* flag indicating if this is a multi-line macro */
-int category;		/* # parms, or NoArgs if it is object-like macro */
-struct id_lst *prmlst;	/* parameter list */
-struct tok_lst *body;	/* replacement list */
+struct token *mname;    /* name of macro */
+int multi_line;         /* flag indicating if this is a multi-line macro */
+int category;           /* # parms, or NoArgs if it is object-like macro */
+struct id_lst *prmlst;  /* parameter list */
+struct tok_lst *body;   /* replacement list */
    {
    struct macro **mpp;
    char *s;
@@ -307,7 +307,7 @@ struct str_buf *sbuf;
    {
    register char *s;
 
-   for (s = ldelim; *s != '\0'; ++s) 
+   for (s = ldelim; *s != '\0'; ++s)
       AppChar(*sbuf, *s);
 
    for (s = image; *s != '\0'; ++s) {
@@ -316,7 +316,7 @@ struct str_buf *sbuf;
       AppChar(*sbuf, *s);
       }
 
-   for (s = rdelim; *s != '\0'; ++s) 
+   for (s = rdelim; *s != '\0'; ++s)
       AppChar(*sbuf, *s);
    }
 
@@ -332,13 +332,13 @@ struct mac_expand *me;
    struct str_buf *sbuf;
    char *s;
    int indx;
-   
+
    /*
     * Get the next token from the macro body. It must be a macro parameter;
     *  retrieve the raw tokens for the corresponding argument.
     */
    if (me->rest_bdy == NULL)
-      errt1(trigger, "the # operator must have an argument"); 
+      errt1(trigger, "the # operator must have an argument");
    t = me->rest_bdy->t;
    me->rest_bdy = me->rest_bdy->next;
    if (t->tok_id == Identifier)
@@ -346,7 +346,7 @@ struct mac_expand *me;
    else
       indx = -1;
    if (indx == -1)
-      errt1(t, "the # operator may only be applied to a macro argument"); 
+      errt1(t, "the # operator may only be applied to a macro argument");
    arg = me->args[indx];
 
    /*
@@ -540,7 +540,7 @@ struct token *paste()
       (int)strlen(t->image) + (int)strlen(t1->image) + 7);
    push_src(CharSrc, &ref);
    s = cpy_image(t, ref.cs->char_buf);
-   s = cpy_image(t1, s); 
+   s = cpy_image(t1, s);
    *s = EOF;
 
    /*

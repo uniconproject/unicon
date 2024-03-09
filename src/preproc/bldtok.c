@@ -217,7 +217,7 @@ struct char_src *cs;
             AdvChar();
             if (whsp_image == FullImage)
                AppChar(tknize_sbuf, c1);
-	    c1 = *next_char;
+            c1 = *next_char;
             }
 
          /*
@@ -413,7 +413,7 @@ struct token *tokenize()
                }
             else
                free_t(t1);  /* discard white space */
-	    }
+            }
          c = *next_char;
          if (islower(c) || isupper(c) || c == '_') {
             /*
@@ -442,7 +442,7 @@ struct token *tokenize()
                         errt1(t2, "file name missing from #include");
                      else
                         free_t(t2);
-		     }
+                     }
                   c = *next_char;
                   if (c == '"')
                      cs->tok_sav = hdr_tok('"', StrLit, cs);
@@ -500,7 +500,7 @@ struct token *tokenize()
       AppChar(tknize_sbuf, c);
       return pp_number();
       }
-  
+
    /*
     * Check for character constant.
     */
@@ -545,7 +545,7 @@ struct token *tokenize()
             }
          else
             return new_token('.', str_install(&tknize_sbuf), fname, line);
- 
+
       case '+':
          c = *next_char;
          if (c == '+') {
@@ -566,7 +566,7 @@ struct token *tokenize()
             }
          else
             return new_token('+', str_install(&tknize_sbuf), fname, line);
- 
+
       case '-':
          c = *next_char;
          if (c == '>') {
@@ -596,7 +596,7 @@ struct token *tokenize()
             }
          else
             return new_token('-', str_install(&tknize_sbuf), fname, line);
- 
+
       case '<':
          c = *next_char;
          if (c == '<') {
@@ -627,7 +627,7 @@ struct token *tokenize()
             }
          else
             return new_token('<', str_install(&tknize_sbuf), fname, line);
- 
+
       case '>':
          c = *next_char;
          if (c == '>') {
@@ -658,7 +658,7 @@ struct token *tokenize()
             }
          else
             return new_token('>', str_install(&tknize_sbuf), fname, line);
- 
+
       case '=':
          if (*next_char == '=') {
             /*
@@ -670,7 +670,7 @@ struct token *tokenize()
             }
          else
             return new_token('=', str_install(&tknize_sbuf), fname, line);
- 
+
       case '!':
          if (*next_char == '=') {
             /*
@@ -682,7 +682,7 @@ struct token *tokenize()
             }
          else
             return new_token('!', str_install(&tknize_sbuf), fname, line);
- 
+
       case '&':
          c = *next_char;
          if (c == '&') {
@@ -703,7 +703,7 @@ struct token *tokenize()
             }
          else
             return new_token('&', str_install(&tknize_sbuf), fname, line);
- 
+
       case '|':
          c = *next_char;
          if (c == '|') {
@@ -724,7 +724,7 @@ struct token *tokenize()
             }
          else
             return new_token('|', str_install(&tknize_sbuf), fname, line);
- 
+
       case '*':
          if (*next_char == '=') {
             /*
@@ -748,7 +748,7 @@ struct token *tokenize()
             }
          else
             return new_token('/', str_install(&tknize_sbuf), fname, line);
- 
+
       case '%':
          if (*next_char == '=') {
             /*
@@ -760,7 +760,7 @@ struct token *tokenize()
             }
          else
             return new_token('%', str_install(&tknize_sbuf), fname, line);
- 
+
       case '^':
          if (*next_char == '=') {
             /*
@@ -772,7 +772,7 @@ struct token *tokenize()
             }
          else
             return new_token('^', str_install(&tknize_sbuf), fname, line);
- 
+
       case '#':
          /*
           * Token pasting or stringizing operator.
@@ -797,7 +797,7 @@ struct token *tokenize()
                " preprocessing expression must not cross directive boundary");
             else
                free_t(t2);
-	    }
+            }
          return t1;
 
       default:

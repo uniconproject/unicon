@@ -18,7 +18,7 @@ static int     op_cmp    (const void *p1, const void *p2);
 static void prt_dpnd  (FILE *db);
 static void prt_impls (FILE *db, char *sect, struct implement **tbl,
                        int num, struct implement **sort_ary,
-		       int (*com)(const void *,const void *));
+                       int (*com)(const void *,const void *));
 static int     prt_c_fl  (FILE *db, struct cfile *clst, int line_left);
 static int     put_case  (FILE *db, struct il_code *il);
 static void put_ilc   (FILE *db, struct il_c *ilc);
@@ -32,28 +32,28 @@ static int     set_impl  (struct token *name, struct implement **tbl,
 static void set_prms  (struct implement *ptr);
 static int     src_cmp   (const void *p1, const void *p2);
 
-static struct implement *bhash[IHSize];	/* hash area for built-in func table */
+static struct implement *bhash[IHSize]; /* hash area for built-in func table */
 static struct implement *ohash[IHSize]; /* hash area for operator table */
-static struct implement *khash[IHSize];	/* hash area for keyword table */
+static struct implement *khash[IHSize]; /* hash area for keyword table */
 
-static struct srcfile *dhash[DHSize];	/* hash area for file dependencies */
+static struct srcfile *dhash[DHSize];   /* hash area for file dependencies */
 
-static int num_fnc;		/* number of function in data base */
-static int num_op = 0;		/* number of operators in data base */
-static int num_key;		/* number of keywords in data base */
-static int num_src = 0;		/* number of source files in dependencies */
+static int num_fnc;             /* number of function in data base */
+static int num_op = 0;          /* number of operators in data base */
+static int num_key;             /* number of keywords in data base */
+static int num_src = 0;         /* number of source files in dependencies */
 
-static char fnc_pre[2];		/* next prefix available for functions */
-static char op_pre[2];		/* next prefix available for operators */
-static char key_pre[2];		/* next prefix available for keywords */
+static char fnc_pre[2];         /* next prefix available for functions */
+static char op_pre[2];          /* next prefix available for operators */
+static char key_pre[2];         /* next prefix available for keywords */
 
-static long min_rs;		/* min result sequence of current operation */
-static long max_rs;		/* max result sequence of current operation */
-static int rsm_rs;		/* '+' at end of result sequencce of cur. oper. */
+static long min_rs;             /* min result sequence of current operation */
+static long max_rs;             /* max result sequence of current operation */
+static int rsm_rs;              /* '+' at end of result sequencce of cur. oper. */
 
-static int newdb = 0;		/* flag: this is a new data base */
-struct token *comment;		/* comment associated with current operation */
-struct implement *cur_impl;	/* data base entry for current operation */
+static int newdb = 0;           /* flag: this is a new data base */
+struct token *comment;          /* comment associated with current operation */
+struct implement *cur_impl;     /* data base entry for current operation */
 
 /*
  * loaddb - load data base.
@@ -164,7 +164,7 @@ char *pre;
 
    pre[0] = '0';
    pre[1] = '0';
-   for (hashval = 0; hashval < IHSize; ++hashval) 
+   for (hashval = 0; hashval < IHSize; ++hashval)
       for (ptr = tbl[hashval]; ptr != NULL; ptr = ptr->blink) {
          empty = 0;
          /*
@@ -247,13 +247,13 @@ char *dbname;
 #ifdef Rttx
    fprintf(stdout, "rtt was compiled to only support the intepreter, use -x\n");
    exit(EXIT_FAILURE);
-#else					/* Rttx */
+#else                                   /* Rttx */
    FILE *db;
    struct implement **sort_ary;
    int ary_sz;
    int i;
 
- 
+
 #if MVS
    /*
     * Avoid problems with MVS line length restrictions.
@@ -313,7 +313,7 @@ char *dbname;
    prt_dpnd(db);
    if (fclose(db) != 0)
      err2("cannot close ", dbname);
-#endif					/* Rttx */
+#endif                                  /* Rttx */
    }
 
 #ifndef Rttx
@@ -322,8 +322,8 @@ char *dbname;
  *   of the operation tables.
  */
 static void prt_impls(FILE *db, char *sect, struct implement **tbl, int num,
-		      struct implement **sort_ary,
-		      int (*cmp)(const void *, const void *))
+                      struct implement **sort_ary,
+                      int (*cmp)(const void *, const void *))
    {
    int i;
    int j;
@@ -421,7 +421,7 @@ static void prt_impls(FILE *db, char *sect, struct implement **tbl, int num,
        *  statement. The number of tended variables is printed followed
        *  by an entry for each variable. Each entry consists of the
        *  type of the declaration
-       * 
+       *
        *     struct descrip  -> desc
        *     char *          -> str
        *     struct b_xxx *  -> blkptr b_xxx
@@ -548,7 +548,7 @@ struct il_code *il;
          fprintf(db, "%d ", num_cases);
          indx = 1;
          for (i = 0; i < num_cases; ++i) {
-	    fprintf(db, "\n%ld ", (long)il->u[indx++].n); /* selection # */
+            fprintf(db, "\n%ld ", (long)il->u[indx++].n); /* selection # */
             put_inlin(db, il->u[indx++].fld);        /* action */
             }
          fprintf(db, "\n");
@@ -655,7 +655,7 @@ struct il_code *il;
          /*
           * A variable.
           */
-	 fprintf(db, "%ld ", (long)il->u[0].n);    /* symbol table index */
+         fprintf(db, "%ld ", (long)il->u[0].n);    /* symbol table index */
          break;
       case IL_Subscr:
          /*
@@ -667,7 +667,7 @@ struct il_code *il;
          break;
       case IL_Block:
          /*
-          * A block of in-line code. 
+          * A block of in-line code.
           */
          fprintf(db, "block ");
          if (il->u[0].n)
@@ -871,13 +871,13 @@ int typcd;
    else {
       switch (typcd) {
          case TypAny:
-            fprintf(db, "a ");	   /* any_value */
+            fprintf(db, "a ");     /* any_value */
             break;
          case TypEmpty:
-            fprintf(db, "e ");	   /* empty_type */
+            fprintf(db, "e ");     /* empty_type */
             break;
          case TypVar:
-            fprintf(db, "v ");	   /* variable */
+            fprintf(db, "v ");     /* variable */
             break;
          case TypCInt:
             fprintf(db, "ci ");    /* C_integer */
@@ -967,7 +967,7 @@ struct il_c *ilc;
             fprintf(db, "$efail ");  /* errorfail statement */
             break;
          case ILC_Goto:
-	    fprintf(db, "$goto %ld ", (long)ilc->n);  /* goto label */
+            fprintf(db, "$goto %ld ", (long)ilc->n);  /* goto label */
             break;
          case ILC_CGto:
             fprintf(db, "$cgoto ");            /* conditional goto */
@@ -975,7 +975,7 @@ struct il_c *ilc;
             fprintf(db, "%ld ", (long)ilc->n);        /* label */
             break;
          case ILC_Lbl:
-	    fprintf(db, "$lbl %ld ", (long)ilc->n);   /* label */
+            fprintf(db, "$lbl %ld ", (long)ilc->n);   /* label */
             break;
          case ILC_LBrc:
             fprintf(db, "${ ");                /* start of C block with dcls */
@@ -1018,9 +1018,9 @@ struct il_c *ilc;
 static void ret_flag(FILE *db, int flag, int may_fthru)
    {
    fprintf(db, "%c%c%c%c%s ", ((flag & DoesFail)?'f':'_'),
-	   ((flag & DoesRet)?'r':'_'), ((flag & DoesSusp)?'s':'_'),
-	   ((flag & DoesEFail)?'e':'_'),
-	   (may_fthru?((flag & DoesFThru)?"t":"_"):""));
+           ((flag & DoesRet)?'r':'_'), ((flag & DoesSusp)?'s':'_'),
+           ((flag & DoesEFail)?'e':'_'),
+           (may_fthru?((flag & DoesFThru)?"t":"_"):""));
   }
 
 /*
@@ -1158,7 +1158,7 @@ int line_left;
    fprintf(db, "%s ", clst->name);
    return line_left - len;
    }
-#endif					/* Rttx */
+#endif                                  /* Rttx */
 
 extern char *fulllst_string;
 
@@ -1183,9 +1183,9 @@ void full_lst()
              */
             fp = fparse(clst->name);
 
-	    fulllst_string = realloc(fulllst_string, strlen(fulllst_string) +
-				     strlen(fp->name) + 6);
-	    sprintf(fulllst_string + strlen(fulllst_string)," %s.o",fp->name);
+            fulllst_string = realloc(fulllst_string, strlen(fulllst_string) +
+                                     strlen(fp->name) + 6);
+            sprintf(fulllst_string + strlen(fulllst_string)," %s.o",fp->name);
             }
    }
 
@@ -1363,7 +1363,7 @@ struct token *name;
       ++num_op;
       }
 
-   /* 
+   /*
     * Put the entry and operation type in global variables for
     *  later access.
     */

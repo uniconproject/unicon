@@ -89,7 +89,7 @@ static int good_char[256] = {
    0  /* \374 */,   0  /* \375 */,   0  /* \376 */,   0  /* \377 */,
    };
 
-#else					/* EBCDIC */
+#else                                   /* EBCDIC */
 
 #define GoodChar(c) ((c) < 127 && good_char[c])
 static int good_char[128] = {
@@ -126,7 +126,7 @@ static int good_char[128] = {
    0  /*  x   */,   0  /*  y   */,   0  /*  z   */,   1  /*  {   */,
    1  /*  |   */,   1  /*  }   */,   1  /*  ~   */,   0  /*  \d  */
    };
-#endif					/* EBCDIC */
+#endif                                  /* EBCDIC */
 
 /*
  * init_lex - initialize lexical analyzer.

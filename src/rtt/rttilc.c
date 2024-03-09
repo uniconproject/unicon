@@ -34,7 +34,7 @@ static void ilc_walk  (struct node *n, int may_mod, int const_cast);
 static void init_ilc  (void);
 static void insrt_str (void);
 static void new_ilc   (int il_c_type);
-static	struct	il_c	*sep_ilc	(char *s1,struct node *n,char *s2);
+static  struct  il_c    *sep_ilc        (char *s1,struct node *n,char *s2);
 
 #define SBufSz 256
 
@@ -155,7 +155,7 @@ struct node *dcltor;
       case BinryNd:
          if (dcltor->tok->tok_id == ')') {
             /*
-             * Function declaration. 
+             * Function declaration.
              */
             add_ptr(dcltor->u[0].child);
             prt_str("(", IndentInc);
@@ -429,7 +429,7 @@ int may_mod;
          ilc_cur->s = "d";
       }
    else switch (sym->id_type) {
-      case TndDesc: 
+      case TndDesc:
          /*
           * variable declared: tended struct descrip ...
           */
@@ -459,7 +459,7 @@ int may_mod;
              */
             ilc_str("(*(struct ");
             ilc_str(sym->u.tnd_var.blk_name);
-            ilc_str("**)&"); 
+            ilc_str("**)&");
             }
          new_ilc(ILC_Tend);
          ilc_cur->n = sym->t_indx;  /* index into tended variables */
@@ -779,7 +779,7 @@ int const_cast;
                 * Convert "do s while (c);" loop into a conditional goto and
                 *  label. Establish labels for break and continue statements
                 *  within s.
-                */ 
+                */
                brk_sav = brk_lbl;
                cont_sav = cont_lbl;
                cont_lbl = lbl_num++;
@@ -1324,7 +1324,7 @@ word lbl;
    insert_nl = 1;
    line_ref = NULL;
    }
-#endif					/* Rttx */
+#endif                                  /* Rttx */
 
 /*
  * chkabsret - make sure a previous abstract return statement
@@ -1371,7 +1371,7 @@ int ilc;
       /*
        * Simple list of type-qualifier elements - concatenate them.
        */
-      just_type(typ->u[0].child, indent, ilc); 
+      just_type(typ->u[0].child, indent, ilc);
       just_type(typ->u[1].child, indent, ilc);
       }
    else if (typ->nd_id == PrimryNd) {
@@ -1389,7 +1389,7 @@ int ilc;
 #ifndef Rttx
             if (ilc)
                ilc_walk(typ, 0, 0);
-#endif					/* Rttx */
+#endif                                  /* Rttx */
          }
       }
    else {
@@ -1397,6 +1397,6 @@ int ilc;
 #ifndef Rttx
       if (ilc)
          ilc_walk(typ, 0, 0);
-#endif					/* Rttx */
+#endif                                  /* Rttx */
       }
    }

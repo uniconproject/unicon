@@ -44,7 +44,7 @@ struct node *node2(int id, struct token *tok, struct node *n1, struct node *n2)
  * node3 - create a syntax tree node with three children.
  */
 struct node *node3(int id, struct token *tok,
-		   struct node *n1, struct node *n2, struct node *n3)
+                   struct node *n1, struct node *n2, struct node *n3)
    {
    struct node *n = NewNode(3);
    n->nd_id = id;
@@ -59,7 +59,7 @@ struct node *node3(int id, struct token *tok,
  * node4 - create a syntax tree node with four children.
  */
 struct node *node4(int id, struct token *tok, struct node *n1,
-		   struct node *n2, struct node *n3, struct node *n4)
+                   struct node *n2, struct node *n3, struct node *n4)
    {
    struct node *n = NewNode(4);
    n->nd_id = id;
@@ -82,7 +82,7 @@ struct node *sym_node(struct token *tok)
    struct node *n;
 
    sym = sym_lkup(tok->image);
-   if (sym != NULL) { 
+   if (sym != NULL) {
       n = NewNode(1);
       n->nd_id = SymNd;
       n->tok = tok;
@@ -120,9 +120,9 @@ struct node *comp_nd(struct token *tok, struct node *dcls, struct node *stmts)
  * arith_nd - create a node for an arith_case statement.
  */
 struct node *arith_nd(struct token *tok, struct node *p1, struct node *p2,
-		      struct node *c_int, struct node *ci_act,
-		      struct node *intgr, struct node *i_act,
-		      struct node *dbl, struct node *d_act)
+                      struct node *c_int, struct node *ci_act,
+                      struct node *intgr, struct node *i_act,
+                      struct node *dbl, struct node *d_act)
    {
    struct node *n;
 
@@ -162,7 +162,7 @@ struct node *dest_node(struct token *tok)
    int typcd;
 
    n = sym_node(tok);
-   typcd = n->u[0].sym->u.typ_indx; 
+   typcd = n->u[0].sym->u.typ_indx;
    if (typcd != int_typ && typcd != str_typ && typcd != cset_typ &&
       typcd != real_typ)
       errt2(tok, "cannot convert to ", tok->image);

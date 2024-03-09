@@ -22,14 +22,6 @@
  */
 void    icon_setup      (int argc, char **argv, int *ip);
 
-#ifdef MacGraph
-void MacMain (int argc, char **argv);
-void ToolBoxInit (void);
-void MenuBarInit (void);
-void MouseInfoInit (void);
-int GetArgs (char **argv);
-#endif                                  /* MacGraph */
-
 /*
  * The following code is operating-system dependent [@imain.01].  Declarations
  *   that are system-dependent.
@@ -134,16 +126,6 @@ void ExpandArgv(int *argcp, char ***avp)
 #endif                                  /* WildCards */
 #endif                                  /* NT */
 
-#ifdef MacGraph
-MouseInfoType gMouseInfo;
-PaletteHandle gPal;
-long gNumColors;
-Boolean gDone;
-char *cmlArgs;
-StringHandle textHandle;
-
-void MacMain (int argc, char **argv)
-#else                                   /* MacGraph */
 #ifdef DLLICONX
 #passthru void __declspec(dllexport) iconx_entry(int argc, char **argv)
 #else                                   /* DLLICONX */
@@ -153,7 +135,6 @@ int main(int argc, char **argv)
 void main(int argc, char **argv)
 #endif                                  /* INTMAIN */
 #endif                                  /* DLLICONX */
-#endif                                  /* MacGraph */
    {
    int i, slen;
 
@@ -882,62 +863,3 @@ char *ArgvToCmdline(char **argv)
    return mytmp;
 }
 #endif                                  /* NT */
-
-
-#ifdef MacGraph
-void MouseInfoInit (void)
-{
-   gMouseInfo.wasDown = false;
-}
-
-void ToolBoxInit (void)
-{
-   InitGraf (&qd.thePort);
-   InitFonts ();
-   InitWindows ();
-   InitMenus ();
-   TEInit ();
-   InitDialogs (nil);
-   InitCursor ();
-}
-
-void MenuBarInit (void)
-{
-   Handle         menuBar;
-   MenuHandle     menu;
-   OSErr          myErr;
-   long           feature;
-
-   menuBar = GetNewMBar (kMenuBar);
-   SetMenuBar (menuBar);
-
-   menu = GetMHandle (kAppleMenu);
-   AddResMenu (menu, 'DRVR');
-
-   DrawMenuBar ();
-}
-
-void EventLoop ( void )
-{
-   EventRecord event, *eventPtr;
-   char theChar;
-
-   gDone = false;
-   while ( gDone == false )
-   {
-      if ( WaitNextEvent ( everyEvent, &event, kSleep, nil ) )
-         DoEvent ( &event );
-   }
-}
-
-void main ()
-{
-   atexit (EventLoop);
-   ToolBoxInit ();
-   MenuBarInit ();
-   MouseInfoInit ();
-   cmlArgs = "";
-
-   EventLoop ();
-}
-#endif                                  /* MacGraph */

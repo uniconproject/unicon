@@ -10,40 +10,40 @@
  * Prototypes.
  */
 
-static struct	lfile *alclfile	(char *name);
+static struct   lfile *alclfile (char *name);
 
 void dumplfiles(void);
 
 #ifdef MultipleRuns
-   static void	freelfile	(struct lfile *p);
-#endif					/* MultipleRuns */
+   static void  freelfile       (struct lfile *p);
+#endif                                  /* MultipleRuns */
 
 /*
  * Memory initialization
  */
 
-struct gentry **lghash;		/* hash area for global table */
-struct ientry **lihash;		/* hash area for identifier table */
-struct fentry **lfhash;		/* hash area for field table */
+struct gentry **lghash;         /* hash area for global table */
+struct ientry **lihash;         /* hash area for identifier table */
+struct fentry **lfhash;         /* hash area for field table */
 
-struct lentry *lltable;		/* local table */
-struct centry *lctable;		/* constant table */
-struct ipc_fname *fnmtbl;	/* table associating ipc with file name */
-struct ipc_line *lntable;	/* table associating ipc with line number */
+struct lentry *lltable;         /* local table */
+struct centry *lctable;         /* constant table */
+struct ipc_fname *fnmtbl;       /* table associating ipc with file name */
+struct ipc_line *lntable;       /* table associating ipc with line number */
 
-char *lsspace;			/* string space */
-word *labels;			/* label table */
-char *codeb;			/* generated code space */
+char *lsspace;                  /* string space */
+word *labels;                   /* label table */
+char *codeb;                    /* generated code space */
 
-struct ipc_fname *fnmfree;	/* free pointer for ipc/file name table */
-struct ipc_line *lnfree;	/* free pointer for ipc/line number table */
-word lsfree;			/* free index for string space */
-char *codep;			/* free pointer for code space */
+struct ipc_fname *fnmfree;      /* free pointer for ipc/file name table */
+struct ipc_line *lnfree;        /* free pointer for ipc/line number table */
+word lsfree;                    /* free index for string space */
+char *codep;                    /* free pointer for code space */
 
-struct fentry *lffirst;		/* first field table entry */
-struct fentry *lflast;		/* last field table entry */
-struct gentry *lgfirst;		/* first global table entry */
-struct gentry *lglast;		/* last global table entry */
+struct fentry *lffirst;         /* first field table entry */
+struct fentry *lflast;          /* last field table entry */
+struct gentry *lgfirst;         /* first global table entry */
+struct gentry *lglast;          /* last global table entry */
 
 #ifdef MultipleRuns
    extern word pc;
@@ -51,7 +51,7 @@ struct gentry *lglast;		/* last global table entry */
    extern int nlflag;
    extern int lstatics;
    extern int nfields;
-#endif					/* MultipleRuns */
+#endif                                  /* MultipleRuns */
 
 /*
  * linit - scan the command line arguments and initialize data structures.
@@ -62,7 +62,7 @@ void linit()
    struct ientry **ip;
    struct fentry **fp;
 
-   llfiles = NULL;		/* Zero queue of files to link. */
+   llfiles = NULL;              /* Zero queue of files to link. */
 
    /*
     * Allocate the various data structures that are used by the linker.
@@ -104,15 +104,15 @@ void linit()
    /*
     * Initializations required for repeated program runs.
     */
-   pc = 0;				/* In lcode.c	*/
-   nrecords = 0;			/* In lglob.c	*/
-   lineno = 0;				/* In link.c	*/
-   colmno = 0;				/* In link.c	*/
-   fatals = 0;				/* In link.c	*/
-   nlflag = 0;				/* In llex.c	*/
-   lstatics = 0;			/* In lsym.c	*/
-   nfields = 0;				/* In lsym.c	*/
-#endif					/* MultipleRuns */
+   pc = 0;                              /* In lcode.c   */
+   nrecords = 0;                        /* In lglob.c   */
+   lineno = 0;                          /* In link.c    */
+   colmno = 0;                          /* In link.c    */
+   fatals = 0;                          /* In link.c    */
+   nlflag = 0;                          /* In llex.c    */
+   lstatics = 0;                        /* In lsym.c    */
+   nfields = 0;                         /* In lsym.c    */
+#endif                                  /* MultipleRuns */
 
    /*
     * Install "main" as a global variable in order to insure that it
@@ -137,7 +137,7 @@ void dumplfiles()
        fprintf(stderr,"'%s'\n",p->lf_name);
    fflush(stderr);
    }
-#endif					/* DeBugLinker */
+#endif                                  /* DeBugLinker */
 
 /*
  * alsolink - create an lfile structure for the named file and add it to the
@@ -183,14 +183,14 @@ char *name;
 
    if (getcwd(file2, PATH_MAX)) {
       if (file2[strlen(file2)-1] != '/')
-	 strcat(file2, "/");
+         strcat(file2, "/");
       strcat(file2, file);
       strcpy(file, file2);
       }
 
    if (*currentdir) chdir(currentdir);
    }
-#endif				/* Unix */
+#endif                          /* Unix */
 
 #if MSDOS
    if (file[0] == '\\' || file[0] == '/' ||
@@ -201,8 +201,8 @@ char *name;
      char file2[MaxFileName];
      if (getcwd(file2, PATH_MAX)) {
        if (file2[strlen(file2)-1] != '/' &&
-	   file2[strlen(file2)-1] != '\\' )
-	 strcat(file2, "/");
+           file2[strlen(file2)-1] != '\\' )
+         strcat(file2, "/");
        strcat(file2, file);
        strcpy(file, file2);
         }
@@ -225,7 +225,7 @@ char *name;
       char *q = p;
 
       while (*p) {
-          if (*p == '/' && *(p+1) == '.' && 
+          if (*p == '/' && *(p+1) == '.' &&
               *(p+2) == '.' && *(p+3) == '/') {
               p += 3;
               if (q > file) {
@@ -233,7 +233,7 @@ char *name;
                   while (q > file && *q != '/')
                       --q;
               }
-          } else if (*p == '/' && *(p+1) == '.' && 
+          } else if (*p == '/' && *(p+1) == '.' &&
                      *(p+2) == '/') {
               p += 2;
           } else
@@ -242,8 +242,8 @@ char *name;
       *q = 0;
    }
 
-#endif					/* MSDOS */
-#endif					/* 0 */
+#endif                                  /* MSDOS */
+#endif                                  /* 0 */
 
    add_linked_file(file);
 
@@ -264,7 +264,7 @@ int lookup_linked_uid(char *uid)
 
 
 /*
- * check if the file was already linked to (return 0), 
+ * check if the file was already linked to (return 0),
  * if not add it to the list (return 1)
  */
 
@@ -334,7 +334,7 @@ struct lfile *p;
    free((char *)p->lf_name);
    free((char *) p);
    }
-#endif					/* MultipleRuns */
+#endif                                  /* MultipleRuns */
 
 /*
  * lmfree - free memory used by the linker
@@ -388,6 +388,6 @@ void lmfree()
       freelfile(lf);
       }
    llfiles = NULL;
-#endif					/* MultipleRuns */
+#endif                                  /* MultipleRuns */
 
    }

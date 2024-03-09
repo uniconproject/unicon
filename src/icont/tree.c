@@ -115,7 +115,7 @@ nodeptr a, lb, e, rb;
    if (e->n_type == N_Elist) {
       t2 = int_leaf(lb->n_type, lb, (int)lb->n_field[0].n_val);
       t = tree5(N_Binop, t2, t2, buildarray(a,lb,e->n_field[0].n_ptr,rb),
-		e->n_field[1].n_ptr);
+                e->n_field[1].n_ptr);
       free(e);
       }
    else

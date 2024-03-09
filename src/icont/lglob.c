@@ -12,10 +12,10 @@
  * Prototypes.
  */
 
-static void	scanfile	(char *filename);
-static void	reference	(struct gentry *gp);
+static void     scanfile        (char *filename);
+static void     reference       (struct gentry *gp);
 
-int nrecords = 0;		/* number of records in program */
+int nrecords = 0;               /* number of records in program */
 
 /*
  * readglob reads the global information from infile (.u2) and merges it with
@@ -34,7 +34,7 @@ int readglob(struct lfile *lf)
 
    if (getopc(&name) != Op_Version)
       quitf("ucode file %s has no version identification",inname);
-   id = getid();		/* get version number of ucode */
+   id = getid();                /* get version number of ucode */
    newline();
    if (strcmp(&lsspace[id],UVersion)) {
       if (!silent) {
@@ -48,7 +48,7 @@ int readglob(struct lfile *lf)
          fprintf(flog,"\tucode version: %s\n",&lsspace[id]);
          fprintf(flog,"\texpected version: %s\n",UVersion);
          }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
       exit(EXIT_FAILURE);
 
@@ -56,7 +56,7 @@ int readglob(struct lfile *lf)
    if ((op=getopc(&name)) != Op_Uid)
      goto skipOP;
 
-   id = getid();		/* get version number of ucode */
+   id = getid();                /* get version number of ucode */
    if (lookup_linked_uid(&lsspace[id])) {
      /* found it already, don't claim ownership of it and in fact, nuke our filename so we don't duplicate */
      /*if (lf->lf_name)
@@ -76,9 +76,9 @@ int readglob(struct lfile *lf)
 
    while ((op = getopc(&name)) != EOF) {
 skipOP: switch (op) {
-         case Op_Record:	/* a record declaration */
-            id = getid();	/* record name */
-            n = getdec();	/* number of fields */
+         case Op_Record:        /* a record declaration */
+            id = getid();       /* record name */
+            n = getdec();       /* number of fields */
             newline();
             gp = glocate(id);
             /*
@@ -88,7 +88,7 @@ skipOP: switch (op) {
              */
             if (gp == NULL || (gp->g_flag & ~F_Global) == 0) {
                gp = putglobal(id, F_Record, n, ++nrecords);
-               while (n--) {	/* loop reading field numbers and names */
+               while (n--) {    /* loop reading field numbers and names */
                   k = getdec();
                   putfield(getid(), gp, k);
                   newline();
@@ -101,26 +101,26 @@ skipOP: switch (op) {
                }
             break;
 
-         case Op_Impl:		/* undeclared identifiers should be noted */
+         case Op_Impl:          /* undeclared identifiers should be noted */
             if (getopc(&name) == Op_Local)
                implicit = 0;
             else
                implicit = F_ImpError;
             break;
 
-         case Op_Trace:		/* turn on tracing */
+         case Op_Trace:         /* turn on tracing */
             trace = -1;
             break;
 
-         case Op_Global:	/* global variable declarations */
-            n = getdec();	/* number of global declarations */
+         case Op_Global:        /* global variable declarations */
+            n = getdec();       /* number of global declarations */
             newline();
-            while (n--) {	/* process each declaration */
-               getdec();	/* throw away sequence number */
-               k = getoct();	/* get flags */
+            while (n--) {       /* process each declaration */
+               getdec();        /* throw away sequence number */
+               k = getoct();    /* get flags */
                if (k & F_Proc)
                   k |= implicit;
-               id = getid();	/* get variable name */
+               id = getid();    /* get variable name */
                gp = glocate(id);
                /*
                 * Check for conflicting declarations and install the
@@ -134,20 +134,20 @@ skipOP: switch (op) {
                }
             break;
 
-         case Op_Invocable:	/* "invocable" declaration */
-            id = getid();	/* get name */
+         case Op_Invocable:     /* "invocable" declaration */
+            id = getid();       /* get name */
             if (lsspace[id] == '0')
-               strinv = 1;	/* name of "0" means "invocable all" */
+               strinv = 1;      /* name of "0" means "invocable all" */
             else
                addinvk(&lsspace[id], 2);
             newline();
             break;
 
-         case Op_Link:		/* link the named file */
-	    k = getrest();
-            name = &lsspace[k];	/* get the name */
+         case Op_Link:          /* link the named file */
+            k = getrest();
+            name = &lsspace[k]; /* get the name */
 
-	    alsolink(name);	/*  put it on the list of files to link */
+            alsolink(name);     /*  put it on the list of files to link */
 
             newline();
             break;
@@ -181,10 +181,10 @@ void scanrefs()
    lfls = llfiles;
    while ((lf = getlfile(&lfls)) != 0) {
       if (lf->lf_name)
-	 scanfile(lf->lf_name);
+         scanfile(lf->lf_name);
       /* else this was a redundant reference found during .u1 processing */
    }
-   lstatics = 0;			/* discard accumulated statics */
+   lstatics = 0;                        /* discard accumulated statics */
 
    /*
     * Mark every global as unreferenced.
@@ -215,14 +215,14 @@ void scanrefs()
    gpp = &lgfirst;
    while ((gp = *gpp) != NULL) {
       if (gp->g_refs != NULL) {
-         free((char *)gp->g_refs);		/* free the reference list */
+         free((char *)gp->g_refs);              /* free the reference list */
          gp->g_refs = NULL;
          }
       if (gp->g_flag & F_Unref) {
          /*
           *  Global is not referenced anywhere.
           */
-         gp->g_index = gp->g_procid = -1;	/* flag as unused */
+         gp->g_index = gp->g_procid = -1;       /* flag as unused */
          if (verbose >= 3) {
             if (gp->g_flag & F_Proc)
                t = "procedure";
@@ -231,13 +231,13 @@ void scanrefs()
             else
                t = "global   ";
             if (!(gp->g_flag & F_Builtin)) {
-	       if (!silent)
+               if (!silent)
                  fprintf(stderr, "  discarding %s %s\n", t, &lsspace[gp->g_name]);
 #ifdef ConsoleWindow
-	       if (flog != NULL)
+               if (flog != NULL)
                   fprintf(flog, "  discarding %s %s\n", t, &lsspace[gp->g_name]);
-#endif					/* ConsoleWindow */
-	       }
+#endif                                  /* ConsoleWindow */
+               }
             }
          *gpp = gp->g_next;
          }
@@ -251,19 +251,19 @@ void scanrefs()
 
 #if NT
 #ifndef NTGCC
-	 /*
-	  * NT distinguishes between graphics and non-graphics VM's.
-	  * If this is a graphics application we want the graphics VM.
-	  * All graphics functions start with a capital letter.
-	  */
-	 if (!Gflag &&
-	     (gp->g_flag & F_Builtin) &&
-	     isupper((&lsspace[gp->g_name])[0]) &&
-	     strcmp("EvGet", &lsspace[gp->g_name])) {
-	    Gflag = 1;
-	    }
-#endif					/* NTGCC */
-#endif					/* NT */
+         /*
+          * NT distinguishes between graphics and non-graphics VM's.
+          * If this is a graphics application we want the graphics VM.
+          * All graphics functions start with a capital letter.
+          */
+         if (!Gflag &&
+             (gp->g_flag & F_Builtin) &&
+             isupper((&lsspace[gp->g_name])[0]) &&
+             strcmp("EvGet", &lsspace[gp->g_name])) {
+            Gflag = 1;
+            }
+#endif                                  /* NTGCC */
+#endif                                  /* NT */
          gpp = &gp->g_next;
          }
       }
@@ -276,7 +276,7 @@ void scanrefs()
    fpp = &lffirst;
    while ((fp = *fpp) != NULL) {
       for (rp = fp->f_rlist; rp != NULL; rp = rp->r_link)
-         if (rp->r_gp->g_procid > 0)	/* if record was referenced */
+         if (rp->r_gp->g_procid > 0)    /* if record was referenced */
             break;
       if (rp == NULL) {
          /*
@@ -355,26 +355,26 @@ char *filename;
 
    #if MVS || VM
       infile = fopen(inname, ReadBinary);
-      if (infile != NULL)		/* discard the extra blank we had */
-         (void)getc(infile);		/* to write to make it non-empty  */
-   #else				/* MVS || VM */
+      if (infile != NULL)               /* discard the extra blank we had */
+         (void)getc(infile);            /* to write to make it non-empty  */
+   #else                                /* MVS || VM */
       infile = fopen(inname, ReadText);
-   #endif				/* MVS || VM */
+   #endif                               /* MVS || VM */
 
    if (infile == NULL) {
       int c;
       makename(inname, SourceDir, filename, USuffix);
       infile = fopen(inname, ReadText);
       if (infile == NULL)
-	 quitf("cannot open .u or .u1 for %s", inname);
+         quitf("cannot open .u or .u1 for %s", inname);
       /*
        * skip past the control-L
        */
       while ((c = getc(infile)) != EOF)
-	 if (c == '\014') {
-	    getc(infile);
-	    break;
-	    }
+         if (c == '\014') {
+            getc(infile);
+            break;
+            }
       }
 
    if (infile == NULL)

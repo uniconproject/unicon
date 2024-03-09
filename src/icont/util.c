@@ -88,7 +88,7 @@ char *tbl_name;     /* name of the table */
           quitf("out of memory for %s", tbl_name);
        }
     }
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */
 
    if (tblfree != NULL)
       free_offset = DiffPtrs(*(char **)tblfree,  (char *)table);
@@ -137,7 +137,7 @@ unsigned int n;
    return b;
    }
 
-/* 
+/*
  * used by the new pesudo Op_Synt and the E_Syntax
  */
 #define MaxSyntax 17
@@ -145,19 +145,19 @@ unsigned int n;
 char *Syntax[]={
       "any",        /* any unidentified syntax */
       "case",       /* entering case expr      */
-      "endcase",    /* exiting case expr       */  
+      "endcase",    /* exiting case expr       */
       "if",         /* entering if expr        */
       "endif",      /* exiting if expr         */
       "ifelse",     /* entering if/else expr   */
       "endifelse",  /* exiting if/else expr    */
       "while",      /* entering while loop     */
-      "endwhile",   /* exiting while loop      */ 
+      "endwhile",   /* exiting while loop      */
       "every",      /* entering every loop     */
       "endevery",   /* exiting every loop      */
       "until",      /* entering until loop     */
       "enduntil",   /* exiting until loop      */
-      "repeat",     /* entering repeat loop    */ 
-      "endrepeat",  /* exiting repeat loop     */ 
+      "repeat",     /* entering repeat loop    */
+      "endrepeat",  /* exiting repeat loop     */
       "suspend",    /* entering suspend loop   */
       "endsuspend"  /* exiting suspend loop    */
   };
@@ -168,6 +168,6 @@ char *s;
     for(i=0; i < MaxSyntax ; i++){
       if (strcmp(Syntax[i],s) == 0)
           return i;
-     } 
+     }
     return 0;
-} 
+}

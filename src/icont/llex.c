@@ -7,11 +7,11 @@
 #include "tglobals.h"
 #include "opcode.h"
 
-int nlflag = 0;		/* newline last seen */
+int nlflag = 0;         /* newline last seen */
 
 #if !EBCDIC
-   #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
-#endif					/* !EBCDIC */
+   #define tonum(c)     (isdigit(c) ? (c - '0') : ((c & 037) + 9))
+#endif                                  /* !EBCDIC */
 
 #if !EBCDIC
 /*
@@ -47,12 +47,12 @@ int getopc(char **id)
    *id = s;
    return 0;
    }
-#else					/* !EBCDIC */
+#else                                   /* !EBCDIC */
 /*
  * getopc - get an opcode from infile, return the opcode number (via
  * sequential search of opcode table) and point id at the name of the opcode.
  */
- 
+
 int getopc(id)
 char **id;
    {
@@ -60,7 +60,7 @@ char **id;
    register struct opentry *p;
    register int test;
    word indx;
- 
+
    indx = getstr();
    if (indx == -1)
       return EOF;
@@ -75,7 +75,7 @@ char **id;
    *id = s;
    return 0;
    }
-#endif					/* !EBCDIC */
+#endif                                  /* !EBCDIC */
 
 /*
  * getid - get an identifier from infile, put it in the identifier
@@ -103,8 +103,8 @@ word getstr()
    while ((c = getc(infile)) == ' ' || c == '\t' || c == '\r') ;
    if (c == EOF)
       return -1;
-   if (c == '\014') {		/* ^L sentinel between .u2 and .u1 portions */
-      c = getc(infile);		/* discard following newline */
+   if (c == '\014') {           /* ^L sentinel between .u2 and .u1 portions */
+      c = getc(infile);         /* discard following newline */
       if (c == '\r') c = getc(infile); /* optional carriage return */
       return -1;
       }
@@ -182,7 +182,7 @@ int getdec()
       }
    nlflag = (c == '\n');
    rv = n * sign;
-   return rv;					/* some compilers ... */
+   return rv;                                   /* some compilers ... */
    }
 
 /*
@@ -224,14 +224,14 @@ word getint(j,wp)
    if (lsfree + j >= stsize)
       lsspace = (char *)trealloc(lsspace, NULL, &stsize, 1, j, "string space");
    indx = lsfree;
-   
+
    while ((c = getc(infile)) >= '0' && c <= '9') {
       lsspace[indx++] = c;
       result = result * 10 + (c - '0');
       lresult = lresult * 10 + (c - '0');
       if (result >= MaxLong) {
-         over = 1;			/* flag overflow */
-         result = 0;			/* reset to avoid fp exception */
+         over = 1;                      /* flag overflow */
+         result = 0;                    /* reset to avoid fp exception */
          }
       }
    if (c == 'r' || c == 'R') {
@@ -249,19 +249,19 @@ word getint(j,wp)
          result = result * radix + c;
          lresult = lresult * iradix + c;
          if (result >= MaxLong) {
-            over = 1;			/* flag overflow */
-            result = 0;			/* reset to avoid fp exception */
+            over = 1;                   /* flag overflow */
+            result = 0;                 /* reset to avoid fp exception */
             }
          }
       }
    nlflag = (c == '\n');
    if (!over) {
-      return lresult;			/* integer is small enough */
+      return lresult;                   /* integer is small enough */
    }
-   else {				/* integer is too large */
+   else {                               /* integer is too large */
       lsspace[indx++] = '\0';
       *wp = putident((int)(indx - lsfree), 1); /* convert integer to string */
-      return -1;			/* indicate integer is too big */
+      return -1;                        /* indicate integer is too big */
       }
    }
 

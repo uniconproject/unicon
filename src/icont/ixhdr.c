@@ -17,12 +17,12 @@
  * Prototypes.
  */
 
-static	void	doiconx		(char **s, char *t);
-static	void	hsyserr		(char *av, char *file);
+static  void    doiconx         (char **s, char *t);
+static  void    hsyserr         (char *av, char *file);
 
 #if IntBits == 16
-#undef strlen			/* short versions used here */
-#endif					/* IntBits == 16 */
+#undef strlen                   /* short versions used here */
+#endif                                  /* IntBits == 16 */
 
 static char patchpath[MaxPath+18] = "%PatchStringHere->";
 static char *refpath = RefPath;
@@ -44,9 +44,9 @@ char **argv;
    if (getuid() != geteuid() || getgid() != getegid())
       hsyserr(argv[0], ": cannot run an Icon program setuid/setgid");
 
-   name = argv[0];			/* name of icode file */
+   name = argv[0];                      /* name of icode file */
 
-   do 
+   do
       argvx[argc+1] = argv[argc];
    while (argc--);
    argv = argvx;
@@ -89,32 +89,32 @@ char *file;
 
    if ((int)strlen(patchpath) > 18)
       strcpy(hardpath, patchpath+18);
-#endif					/* HardWiredPaths */
+#endif                                  /* HardWiredPaths */
 
    argv[1] = file;
 
    if (((argv[0] = getenv("ICONX")) != NULL && argv[0][0] != '\0') ||
        ((argv[0] = getenv("UNICONX")) != NULL && argv[0][0] != '\0')) {
-      execv(argv[0], argv);		/* exec file specified by $ICONX */
+      execv(argv[0], argv);             /* exec file specified by $ICONX */
       hsyserr("cannot execute $ICONX: ", argv[0]);
       }
 
 #ifdef HardWiredPaths
-   argv[0] = hardpath;			/* try predefined file */
+   argv[0] = hardpath;                  /* try predefined file */
    execv(hardpath, argv);
-#endif					/* HardWiredPaths */
- 
+#endif                                  /* HardWiredPaths */
+
    if (findcmd(xcmd, UNICONX, "PATH")) {
       argv[0] = xcmd;
-      execv(xcmd, argv);	/* if no path, search path for "iconx" */
+      execv(xcmd, argv);        /* if no path, search path for "iconx" */
       hsyserr("cannot execute ", xcmd);
       }
 
 #ifdef HardWiredPaths
    hsyserr("cannot execute ", hardpath);
-#else					/* HardWiredPaths */
+#else                                   /* HardWiredPaths */
    hsyserr("cannot find " UNICONX, "");
-#endif					/* HardWiredPaths */
+#endif                                  /* HardWiredPaths */
    }
 
 /*
@@ -143,35 +143,35 @@ char *s1, *s2;
  * returned.  If the command isn't found 0 is returned.
  */
 
-int	findcmd(cmd,cnam,pvar)
+int     findcmd(cmd,cnam,pvar)
 register
-char	*cmd,
-	*cnam,
-	*pvar;
+char    *cmd,
+        *cnam,
+        *pvar;
 {
-	register
-	char	*path;
+        register
+        char    *path;
 
-	char	pbuf[1024],
-		*getdir(),
-		*getenv();
+        char    pbuf[1024],
+                *getdir(),
+                *getenv();
 
-/*	if the environment variable isn't defined give up */
-	if (! (path = getenv(pvar))) return 0;
+/*      if the environment variable isn't defined give up */
+        if (! (path = getenv(pvar))) return 0;
 
-/*	copy the path to a temporary path buffer and point at the buffer
- *	(this is necessary because we can diddle its contents in getdir) */
-	strcpy(pbuf,path);
-	path = pbuf;
+/*      copy the path to a temporary path buffer and point at the buffer
+ *      (this is necessary because we can diddle its contents in getdir) */
+        strcpy(pbuf,path);
+        path = pbuf;
 
-/*	loop through all the path variable directories and check for
- *	the command in each */
-	while (path = getdir(cmd,path)) {
-		strcat(cmd,cnam);
-		if (chkcmd(cmd)) return 1;
-	}
+/*      loop through all the path variable directories and check for
+ *      the command in each */
+        while (path = getdir(cmd,path)) {
+                strcat(cmd,cnam);
+                if (chkcmd(cmd)) return 1;
+        }
 
-	return 0;
+        return 0;
 }
 
 /*
@@ -181,43 +181,43 @@ char	*cmd,
  * that the entire string can be scanned by the calling function.
  */
 
-char	*getdir(dir,path)
+char    *getdir(dir,path)
 register
-char	*dir,	/* the command directory buffer */
-	*path;	/* the string of directories */
+char    *dir,   /* the command directory buffer */
+        *path;  /* the string of directories */
 {
-	register
-	char	*dp;	/* the original directory pointer */
+        register
+        char    *dp;    /* the original directory pointer */
 
-/*	if there is nothing left return null */
-	if (! *path) return (char *) 0;
+/*      if there is nothing left return null */
+        if (! *path) return (char *) 0;
 
-/*	save the original directory pointer */
-	dp = dir;
+/*      save the original directory pointer */
+        dp = dir;
 
-/*	copy up to the next separator or the end of path */
-	while (*path && *path != ':') *dir++ = *path++;
+/*      copy up to the next separator or the end of path */
+        while (*path && *path != ':') *dir++ = *path++;
 
-/*	if dir is still empty use a dot (the current directory */
-	if (dp == dir) *dir++ = '.';
+/*      if dir is still empty use a dot (the current directory */
+        if (dp == dir) *dir++ = '.';
 
-/*	if the directory isn't terminated with a slash tack one on */
-	if (*(dir-1) != '/') *dir++ = '/';
+/*      if the directory isn't terminated with a slash tack one on */
+        if (*(dir-1) != '/') *dir++ = '/';
 
-/*	null terminate the directory */
-	*dir = 0;
+/*      null terminate the directory */
+        *dir = 0;
 
-/*	if there's still a colon in path */
-	if (*path) {
+/*      if there's still a colon in path */
+        if (*path) {
 
-/*		if there's something after the colon skip the colon */
-		if (*(path+1)) path++;
+/*              if there's something after the colon skip the colon */
+                if (*(path+1)) path++;
 
-/*		otherwise terminate path with a dot (the current directory) */
-		else *path = '.';
-	}
+/*              otherwise terminate path with a dot (the current directory) */
+                else *path = '.';
+        }
 
-	return path;
+        return path;
 }
 
 /*
@@ -225,53 +225,53 @@ char	*dir,	/* the command directory buffer */
  * executable.
  */
 
-#ifndef	S_IFMT		/* defined in <sys/stat.h> */
+#ifndef S_IFMT          /* defined in <sys/stat.h> */
 #include <sys/types.h>
 #include <sys/stat.h>
-#endif					/* S_IFMT */
+#endif                                  /* S_IFMT */
 
-int	chkcmd(file)
+int     chkcmd(file)
 register
-char	*file;
+char    *file;
 {
-	register
-	unsigned
-	short	gid, uid;
+        register
+        unsigned
+        short   gid, uid;
 
-	struct	stat s;
+        struct  stat s;
 
-/*	if the file can't be "stat"ed fail */
-	if (stat(file,&s) < 0) return 0;
+/*      if the file can't be "stat"ed fail */
+        if (stat(file,&s) < 0) return 0;
 
-/*	get the effective group and user ids for this user */
-	gid = getegid();
-	uid = geteuid();
+/*      get the effective group and user ids for this user */
+        gid = getegid();
+        uid = geteuid();
 
-/*	if this is a "regular" file AND */
-	if ((s.st_mode & 0100000) &&
+/*      if this is a "regular" file AND */
+        if ((s.st_mode & 0100000) &&
 
-/*	the execute bit is set for "other" and the group id and user id
- *	don't match OR */
-	   (((s.st_mode & 0000001) && s.st_gid != gid && s.st_uid != uid) ||
+/*      the execute bit is set for "other" and the group id and user id
+ *      don't match OR */
+           (((s.st_mode & 0000001) && s.st_gid != gid && s.st_uid != uid) ||
 
-/*	the execute bit is set for "group" and the group id matches and
- *	the user id doesn't OR */
-	    ((s.st_mode & 0000010) && s.st_gid == gid && s.st_uid != uid) ||
+/*      the execute bit is set for "group" and the group id matches and
+ *      the user id doesn't OR */
+            ((s.st_mode & 0000010) && s.st_gid == gid && s.st_uid != uid) ||
 
-/*	the execute bit is set for "user" and the user id matches THEN */
-	    ((s.st_mode & 0000100) && s.st_uid == uid)))
+/*      the execute bit is set for "user" and the user id matches THEN */
+            ((s.st_mode & 0000100) && s.st_uid == uid)))
 
-/*		succeed */
-		return 1;
+/*              succeed */
+                return 1;
 
-/*	otherwise fail */
-	return 0;
+/*      otherwise fail */
+        return 0;
 }
 
-#else					/* Header */
+#else                                   /* Header */
 main() {}
-#endif					/* Header */
+#endif                                  /* Header */
 
-#else					/* UNIX */
+#else                                   /* UNIX */
 main() {}
-#endif					/* UNIX */
+#endif                                  /* UNIX */

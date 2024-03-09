@@ -9,7 +9,7 @@
 /*
  * Prototype.
  */
-static	struct lfile *alclfile	(char *name);
+static  struct lfile *alclfile  (char *name);
 
 struct lfile *lfiles;
 struct invkl *invkls;
@@ -24,16 +24,16 @@ int n;
    {
    struct invkl *p;
 
-   if (n == 1) {			/* if identifier, must be "all" */
+   if (n == 1) {                        /* if identifier, must be "all" */
       if (strcmp(name,"all") != 0) {
          tfatal("invalid operand to invocable", name);
          return;
          }
       else
-         name = "0";			/* "0" represents "all" */
+         name = "0";                    /* "0" represents "all" */
       }
    else if (!isalpha(name[1]) && (name[1] != '_'))
-      return;				/* if operator, ignore */
+      return;                           /* if operator, ignore */
 
    p = (struct invkl *) alloc(sizeof(struct invkl));
    if (!p)
@@ -51,7 +51,7 @@ static struct lfile *alclfile(name)
 char *name;
    {
    struct lfile *p;
-   
+
    p = (struct lfile *) alloc(sizeof(struct lfile));
    if (!p)
       tsyserr("not enough memory for file list");
@@ -69,7 +69,7 @@ void addlfile(name)
 char *name;
 {
    struct lfile *nlf, *p;
-   
+
    nlf = alclfile(name);
    if (lfiles == NULL) {
       lfiles = nlf;

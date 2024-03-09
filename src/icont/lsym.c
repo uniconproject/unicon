@@ -10,22 +10,22 @@
  * Prototypes.
  */
 
-static struct 	fentry *alcfhead
+static struct   fentry *alcfhead
    (struct fentry *blink,word name, int fid, struct rentry *rlist);
-static struct 	rentry *alcfrec	
+static struct   rentry *alcfrec
    (struct rentry *link,struct gentry *gp, int fnum);
-static struct 	gentry *alcglobal
+static struct   gentry *alcglobal
    (struct gentry *blink, word name, int flag,int nargs,int procid);
-static struct 	ientry *alcident	(char *nam,int len);
+static struct   ientry *alcident        (char *nam,int len);
 
-int dynoff;			/* stack offset counter for locals */
-int argoff;			/* stack offset counter for arguments */
-int static1;			/* first static in procedure */
-int lstatics = 0;		/* static variable counter */
+int dynoff;                     /* stack offset counter for locals */
+int argoff;                     /* stack offset counter for arguments */
+int static1;                    /* first static in procedure */
+int lstatics = 0;               /* static variable counter */
 
-int nlocal;			/* number of locals in local table */
-int nconst;			/* number of constants in constant table */
-int nfields = 0;		/* number of fields in field table */
+int nlocal;                     /* number of locals in local table */
+int nconst;                     /* number of constants in constant table */
+int nfields = 0;                /* number of fields in field table */
 
 /*
  * instid - copy the string s to the start of the string free space
@@ -87,7 +87,7 @@ int len, install;
    /*
     * If the identifier hasn't been installed, install it.
     */
-   if ((ip = lihash[hash]) != NULL) {	 /* collision */
+   if ((ip = lihash[hash]) != NULL) {    /* collision */
       for (;;) { /* work down i_blink chain until id is found or the
                      end of the chain is reached */
          if (l == ip->i_length && lexeql(l, s, &lsspace[ip->i_name]))
@@ -174,35 +174,35 @@ void putlocal(int n, word id, int flags, int imperror, word procname)
    lp = &lltable[n];
    lp->l_name = id;
    lp->l_flag = flags;
-   if (flags == 0) {				/* undeclared */
-      if ((p.gp = glocate(id)) != NULL) {	/* check global */
+   if (flags == 0) {                            /* undeclared */
+      if ((p.gp = glocate(id)) != NULL) {       /* check global */
          lp->l_flag = F_Global;
          lp->l_val.global = p.gp;
          }
 
-      else if ((p.bn = blocate(id)) != 0) {	/* check for function */
+      else if ((p.bn = blocate(id)) != 0) {     /* check for function */
          lp->l_flag = F_Builtin | F_Global;
          lp->l_val.global = putglobal(id, F_Builtin | F_Proc, -1, p.bn);
          }
 
-      else {					/* implicit local */
+      else {                                    /* implicit local */
          if (imperror)
-            lwarn(&lsspace[id], "undeclared identifier, procedure ", 
+            lwarn(&lsspace[id], "undeclared identifier, procedure ",
                &lsspace[procname]);
          lp->l_flag = F_Dynamic;
          lp->l_val.offset = ++dynoff;
          }
       }
-   else if (flags & F_Global) {			/* global variable */
+   else if (flags & F_Global) {                 /* global variable */
       if ((p.gp = glocate(id)) == NULL)
          quit("putlocal: global not in global table");
       lp->l_val.global = p.gp;
       }
-   else if (flags & F_Argument)			/* procedure argument */
+   else if (flags & F_Argument)                 /* procedure argument */
       lp->l_val.offset = ++argoff;
-   else if (flags & F_Dynamic)			/* local dynamic */
+   else if (flags & F_Dynamic)                  /* local dynamic */
       lp->l_val.offset = ++dynoff;
-   else if (flags & F_Static)			/* local static */
+   else if (flags & F_Static)                   /* local static */
       lp->l_val.staticid = ++lstatics;
    else
       quit("putlocal: unknown flags");
@@ -216,7 +216,7 @@ struct gentry *putglobal(word id, int flags, int nargs, int procid)
    register struct gentry *p;
 
    flags |= F_Global;
-   if ((p = glocate(id)) == NULL) {	/* add to head of hash chain */
+   if ((p = glocate(id)) == NULL) {     /* add to head of hash chain */
       p = lghash[ghasher(id)];
       lghash[ghasher(id)] = alcglobal(p, id, flags, nargs, procid);
       return lghash[ghasher(id)];
@@ -257,23 +257,23 @@ union xval *valp;
       p->c_val.sval = valp->sval;
       p->c_length = len;
       }
-   else	if (flags & F_RealLit)
+   else if (flags & F_RealLit)
 
 #ifdef Double
 /* access real values one word at a time */
-    {  int *rp, *rq;	
+    {  int *rp, *rq;
        rp = (int *) &(p->c_val.rval);
        rq = (int *) &(valp->rval);
        *rp++ = *rq++;
        *rp   = *rq;
     }
-#else					/* Double */
+#else                                   /* Double */
       p->c_val.rval = valp->rval;
-#endif					/* Double */
+#endif                                  /* Double */
 
    else
       fprintf(stderr, "putconst: bad flags: %06o %011" LINTFRMT  "o\n",
-	      flags, valp->ival);
+              flags, valp->ival);
    }
 
 /*
@@ -289,7 +289,7 @@ int fnum;
    word hash;
 
    fp = flocate(fname);
-   if (fp == NULL) {		/* create a field entry */
+   if (fp == NULL) {            /* create a field entry */
       nfields++;
       hash = fhasher(fname);
       fp = lfhash[hash];
@@ -297,12 +297,12 @@ int fnum;
          gp, fnum));
       return;
       }
-   rp = fp->f_rlist;				/* found field entry; */
-   if (rp->r_gp->g_procid > gp->g_procid) {	/* find spot in record list */
+   rp = fp->f_rlist;                            /* found field entry; */
+   if (rp->r_gp->g_procid > gp->g_procid) {     /* find spot in record list */
       fp->f_rlist = alcfrec(rp, gp, fnum);
       return;
       }
-   while (rp->r_gp->g_procid < gp->g_procid) {	/* keep record list ascending */
+   while (rp->r_gp->g_procid < gp->g_procid) {  /* keep record list ascending */
       if (rp->r_link == NULL) {
          rp->r_link = alcfrec((struct rentry *)NULL, gp, fnum);
          return;

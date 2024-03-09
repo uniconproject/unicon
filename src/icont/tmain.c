@@ -16,29 +16,29 @@
 #ifdef MSWindows
 
 #ifdef Concurrent
-extern int is_concurrent; 
-#endif					/* Concurrent */
+extern int is_concurrent;
+#endif                                  /* Concurrent */
 
    #ifdef NTConsole
       #define int_PASCAL int PASCAL
       #define LRESULT_CALLBACK LRESULT CALLBACK
       #include <windows.h>
       #include "../h/filepat.h"
-   #endif				/* NTConsole */
-#endif					/* MSWindows */
+   #endif                               /* NTConsole */
+#endif                                  /* MSWindows */
 
 #if WildCards
    #ifndef ConsoleWindow
 /*      #include "../h/filepat.h" */
-   #endif				/* ConsoleWindow */
-#endif					/* WildCards */
+   #endif                               /* ConsoleWindow */
+#endif                                  /* WildCards */
 
 /*
  * Prototypes.
  */
 
-static	void	execute	(char *ofile,char *efile,char * *args);
-static	void	usage (void);
+static  void    execute (char *ofile,char *efile,char * *args);
+static  void    usage (void);
 char *libpath (char *prog, char *envname);
 
 /*
@@ -48,15 +48,15 @@ char *libpath (char *prog, char *envname);
 
 #if PORT
    Deliberate syntax error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MVS || UNIX || VM || VMS
    /* nothing is needed */
-#endif					/* MVS || ... */
+#endif                                  /* MVS || ... */
 
 #if MSDOS
    char pathToIconDOS[129];
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
 /*
  * End of operating-system specific code.
@@ -64,27 +64,27 @@ char *libpath (char *prog, char *envname);
 
 #if IntBits == 16
    #ifdef strlen
-   #undef strlen			/* pre-defined in some contexts */
-   #endif				/* strlen */
-#endif					/* Intbits == 16 */
+   #undef strlen                        /* pre-defined in some contexts */
+   #endif                               /* strlen */
+#endif                                  /* Intbits == 16 */
 
 /*
  *  Define global variables.
  */
 
-char *pofile = NULL;			/* piped input file name */
+char *pofile = NULL;                    /* piped input file name */
 int bundleiconx = 0;
 
 /*
  * getopt() variables
  */
-extern int optind;		/* index into parent argv vector */
-extern int optopt;		/* character checked for validity */
-extern char *optarg;		/* argument associated with option */
+extern int optind;              /* index into parent argv vector */
+extern int optopt;              /* character checked for validity */
+extern char *optarg;            /* argument associated with option */
 
 #ifdef ConsoleWindow
    int ConsolePause = 1;
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 
 
@@ -132,7 +132,7 @@ void expand_proj(int *argc, char ***argv)
    fclose(f);
    for( ; j < ac; j++, k++) (*argv)[k] = av[j];
 }
-#endif					/* NT || ConsoleWindow */
+#endif                                  /* NT || ConsoleWindow */
 
 #ifndef NTConsole
 #ifdef MSWindows
@@ -157,48 +157,48 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    while (*t2) {
       while (*t2 && isspace(*t2)) t2++;
       switch (*t2) {
-	 case '\0': break;
-	 case '"': {
-	    char *t3 = ++t2;			/* skip " */
+         case '\0': break;
+         case '"': {
+            char *t3 = ++t2;                    /* skip " */
             while (*t2 && (*t2 != '"')) t2++;
             if (*t2)
-	       *t2++ = '\0';
-	    *avp = realloc(*avp, (rv + 2) * sizeof (char *));
-	    (*avp)[rv++] = salloc(t3);
+               *t2++ = '\0';
+            *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+            (*avp)[rv++] = salloc(t3);
             (*avp)[rv] = NULL;
-	    break;
-	    }
+            break;
+            }
          default: {
             FINDDATA_T fd;
-	    char *t3 = t2;
+            char *t3 = t2;
             while (*t2 && !isspace(*t2)) t2++;
-	    if (*t2)
-	       *t2++ = '\0';
+            if (*t2)
+               *t2++ = '\0';
             strcpy(tmp, t3);
-	    if (!FINDFIRST(tmp, &fd)) {
-	       *avp = realloc(*avp, (rv + 2) * sizeof (char *));
-	       (*avp)[rv++] = salloc(t3);
+            if (!FINDFIRST(tmp, &fd)) {
+               *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+               (*avp)[rv++] = salloc(t3);
                (*avp)[rv] = NULL;
                }
-	    else {
+            else {
                int end;
                strcpy(dir, t3);
-	       do {
-	          end = strlen(dir)-1;
-	          while (end >= 0 && dir[end] != '\\' && dir[end] != '/' &&
-			dir[end] != ':') {
+               do {
+                  end = strlen(dir)-1;
+                  while (end >= 0 && dir[end] != '\\' && dir[end] != '/' &&
+                        dir[end] != ':') {
                      dir[end] = '\0';
-		     end--;
-	             }
-		  strcat(dir, FILENAME(&fd));
-	          *avp = realloc(*avp, (rv + 2) * sizeof (char *));
-	          (*avp)[rv++] = salloc(dir);
+                     end--;
+                     }
+                  strcat(dir, FILENAME(&fd));
+                  *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+                  (*avp)[rv++] = salloc(dir);
                   (*avp)[rv] = NULL;
-	          } while (FINDNEXT(&fd));
-	       FINDCLOSE(&fd);
-	       }
+                  } while (FINDNEXT(&fd));
+               FINDCLOSE(&fd);
+               }
             break;
-	    }
+            }
          }
       }
    free(t);
@@ -206,7 +206,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    }
 
 
-LRESULT_CALLBACK WndProc	(HWND, UINT, WPARAM, LPARAM);
+LRESULT_CALLBACK WndProc        (HWND, UINT, WPARAM, LPARAM);
 
 #if 0
 void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstance)
@@ -216,14 +216,14 @@ void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstan
    if (!hPrevInstance) {
 #if NT
       wc.style = CS_HREDRAW | CS_VREDRAW;
-#else					/* NT */
+#else                                   /* NT */
       wc.style = 0;
-#endif					/* NT */
+#endif                                  /* NT */
 #ifdef NTConsole
       wc.lpfnWndProc = DefWindowProc;
-#else					/* NTConsole */
+#else                                   /* NTConsole */
       wc.lpfnWndProc = WndProc;
-#endif					/* NTConsole */
+#endif                                  /* NTConsole */
       wc.cbClsExtra = 0;
       wc.cbWndExtra = 0;
       wc.hInstance  = hInstance;
@@ -269,8 +269,8 @@ void iconx(int argc, char** argv){
 #endif
 
 #define main icont
-#endif					/* MSWindows */
-#endif					/* NTConsole */
+#endif                                  /* MSWindows */
+#endif                                  /* NTConsole */
 
 
 /*
@@ -279,14 +279,14 @@ void iconx(int argc, char** argv){
 
    int main(int argc, char **argv)
    {
-   int nolink = 0;			/* suppress linking? */
-   int keeptmp = 0;			/* suppress removal of temporary files */
-   int errors = 0;			/* translator and linker errors */
-   char **tfiles, **tptr;		/* list of files to translate */
-   char **lfiles, **lptr;		/* list of files to link */
-   char **rfiles, **rptr;		/* list of files to remove */
-   char *efile = NULL;			/* stderr file */
-   char buf[MaxFileName];		/* file name construction buffer */
+   int nolink = 0;                      /* suppress linking? */
+   int keeptmp = 0;                     /* suppress removal of temporary files */
+   int errors = 0;                      /* translator and linker errors */
+   char **tfiles, **tptr;               /* list of files to translate */
+   char **lfiles, **lptr;               /* list of files to link */
+   char **rfiles, **rptr;               /* list of files to remove */
+   char *efile = NULL;                  /* stderr file */
+   char buf[MaxFileName];               /* file name construction buffer */
    int c, n;
    char ch;
    struct fileparts *fp;
@@ -294,7 +294,7 @@ void iconx(int argc, char** argv){
 #if WildCards
    FINDDATA_T fd;
    int j;
-#endif					/* WildCards */
+#endif                                  /* WildCards */
 
    if ((int)strlen(patchpath) > 18)
       iconxloc = patchpath+18; /* use stated iconx path if patched */
@@ -302,125 +302,125 @@ void iconx(int argc, char** argv){
 #if NT
    #ifdef NTConsole
      iconxloc = relfile(argv[0], "/../" UNICONX_EXE);
-   #else				/* NTConsole */
+   #else                                /* NTConsole */
      iconxloc = relfile(argv[0], "/../" UNICONWX_EXE);
-   #endif				/* NTConsole */
-#else					/* NT */
+   #endif                               /* NTConsole */
+#else                                   /* NT */
      iconxloc = relfile(argv[0], "/../" UNICONX);
-#endif					/* NT */
+#endif                                  /* NT */
    }
 
 #ifdef ConsoleWindow
    expand_proj(&argc, &argv);
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
    /*
     * Process options. NOTE: Keep Usage definition in sync with getopt() call.
     */
-   #define Usage "[-cBstuEGK] [-f s] [-l logfile] [-o ofile] [-v i]"	/* omit -e from doc */
+   #define Usage "[-cBstuEGK] [-f s] [-l logfile] [-o ofile] [-v i]"    /* omit -e from doc */
    while ((c = getopt(argc,argv, "cBe:f:l:o:O:stuGv:ELKZ")) != EOF)
       switch (c) {
-	 case 'B':
-	    bundleiconx = 1;
+         case 'B':
+            bundleiconx = 1;
             break;
-         case 'C':			/* Ignore: compiler only */
+         case 'C':                      /* Ignore: compiler only */
             break;
-         case 'E':			/* -E: preprocess only */
-	    pponly = 1;
-	    nolink = 1;
+         case 'E':                      /* -E: preprocess only */
+            pponly = 1;
+            nolink = 1;
             break;
 
-         case 'L':			/* -L: enable linker debugging */
+         case 'L':                      /* -L: enable linker debugging */
 
 #ifdef DeBugLinker
             Dflag = 1;
-#endif					/* DeBugLinker */
+#endif                                  /* DeBugLinker */
 
             break;
 
-	 case 'G':			/* -G: enable graphics */
-	    Gflag = 1;
-	    break;
+         case 'G':                      /* -G: enable graphics */
+            Gflag = 1;
+            break;
 
-         case 'S':			/* -S */
+         case 'S':                      /* -S */
             fprintf(stderr, "Warning, -S option is obsolete\n");
             break;
 
 #if MSDOS
-         case 'X':			/* -X */
+         case 'X':                      /* -X */
             makeExe = 1;
             break;
-         case 'I':			/* -C */
+         case 'I':                      /* -C */
             makeExe = 0;
             break;
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
          case 'V':
-	    printf("%s\n", Version);
-	    exit(0);
-	    break;
-         case 'c':			/* -c: compile only (no linking) */
+            printf("%s\n", Version);
+            exit(0);
+            break;
+         case 'c':                      /* -c: compile only (no linking) */
             nolink = 1;
             break;
-	 case 'l':
-	    openlog(optarg);
-	    break;
-         case 'e':			/* -e file: redirect stderr */
+         case 'l':
+            openlog(optarg);
+            break;
+         case 'e':                      /* -e file: redirect stderr */
             efile = optarg;
             break;
-         case 'f':			/* -f features: enable features */
+         case 'f':                      /* -f features: enable features */
             if (strchr(optarg, 's') || strchr(optarg, 'a'))
-               strinv = 1;		/* this is the only icont feature */
+               strinv = 1;              /* this is the only icont feature */
             break;
 
-         case 'm':			/* -m: preprocess using m4(1) [UNIX] */
+         case 'm':                      /* -m: preprocess using m4(1) [UNIX] */
             m4pre = 1;
             break;
 
-         case 'n':			/* Ignore: compiler only */
+         case 'n':                      /* Ignore: compiler only */
             break;
 
-         case 'o':			/* -o file: name output file */
+         case 'o':                      /* -o file: name output file */
             ofile = optarg;
             break;
 
-         case 'O':			/* -O file: name input file */
+         case 'O':                      /* -O file: name input file */
             pofile = optarg;
             break;
 
 #ifdef ConsoleWindow
-	 case 'q':
- 	    ConsolePause = 0;
-	    break;
-#endif					/* ConsoleWindow */
-         case 'r':			/* Ignore: compiler only */
+         case 'q':
+            ConsolePause = 0;
+            break;
+#endif                                  /* ConsoleWindow */
+         case 'r':                      /* Ignore: compiler only */
             break;
          case 'K':
-           keeptmp = 1;			/* -K: Keep temporary files */
+           keeptmp = 1;                 /* -K: Keep temporary files */
            break;
-         case 's':			/* -s: suppress informative messages */
+         case 's':                      /* -s: suppress informative messages */
             silent = 1;
             verbose = 0;
             break;
-         case 't':			/* -t: turn on procedure tracing */
+         case 't':                      /* -t: turn on procedure tracing */
             trace = -1;
             break;
-         case 'u':			/* -u: warn about undeclared ids */
+         case 'u':                      /* -u: warn about undeclared ids */
             uwarn = 1;
             break;
-         case 'v':			/* -v n: set verbosity level */
+         case 'v':                      /* -v n: set verbosity level */
             if (sscanf(optarg, "%d%c", &verbose, &ch) != 1)
                quitf("bad operand to -v option: %s",optarg);
             if (verbose == 0)
                silent = 1;
             break;
          case 'Z':
-	    /* add flag to say "don't compress". noop unless HAVE_LIBZ */
-	    Zflag = 0;
-	    break;
+            /* add flag to say "don't compress". noop unless HAVE_LIBZ */
+            Zflag = 0;
+            break;
 
          default:
-         case 'x':			/* -x illegal until after file list */
+         case 'x':                      /* -x illegal until after file list */
             usage();
          }
 
@@ -456,7 +456,7 @@ void iconx(int argc, char** argv){
       FINDCLOSE(&fd);
       }
    }
-#endif					/* WildCards */
+#endif                                  /* WildCards */
 
    tptr = tfiles = (char **)alloc((unsigned int)(n * sizeof(char *)));
    lptr = lfiles = (char **)alloc((unsigned int)(n * sizeof(char *)));
@@ -466,65 +466,65 @@ void iconx(int argc, char** argv){
     * Scan file name arguments.
     */
    while (optind < argc)  {
-      if (strcmp(argv[optind],"-x") == 0)	/* stop at -x */
+      if (strcmp(argv[optind],"-x") == 0)       /* stop at -x */
          break;
       else if (strcmp(argv[optind],"-") == 0) {
 
-	 if (pofile != NULL) {
-	    *tptr++ = "-";
-	    fp = fparse(pofile);
-	    makename(buf, TargetDir, pofile, USuffix);
-	    *lptr++ = *rptr++ = salloc(buf);
-	    }
-	 else {
-	    *tptr++ = "-";				/* "-" means standard input */
-	    *lptr++ = *rptr++ = "stdin.u";
-	    }
+         if (pofile != NULL) {
+            *tptr++ = "-";
+            fp = fparse(pofile);
+            makename(buf, TargetDir, pofile, USuffix);
+            *lptr++ = *rptr++ = salloc(buf);
+            }
+         else {
+            *tptr++ = "-";                              /* "-" means standard input */
+            *lptr++ = *rptr++ = "stdin.u";
+            }
          }
       else if (pofile != NULL) {
-	    fp = fparse(pofile);
+            fp = fparse(pofile);
             if (*fp->ext == '\0' || smatch(fp->ext, SourceSuffix)) {
                makename(buf,SourceDir,argv[optind], "");
-               *tptr++ = salloc(buf);		/* translate the .icn file */
-	    }
-	    makename(buf, TargetDir, pofile, USuffix);
-	    *lptr++ = *rptr++ = salloc(buf);
+               *tptr++ = salloc(buf);           /* translate the .icn file */
+            }
+            makename(buf, TargetDir, pofile, USuffix);
+            *lptr++ = *rptr++ = salloc(buf);
          }
       else {
 #if WildCards
-	 char tmp[MaxPath], dir[MaxPath];
+         char tmp[MaxPath], dir[MaxPath];
          int matches = 0;
 
-	 fp = fparse(argv[optind]);
-	 /* Save because *fp will get overwritten frequently */
-	 strcpy(dir, fp->dir);
-	 if (*fp->ext == '\0')
-	    makename(tmp,NULL,argv[optind], SourceSuffix);
-	 else
-	    strcpy(tmp, argv[optind]);
+         fp = fparse(argv[optind]);
+         /* Save because *fp will get overwritten frequently */
+         strcpy(dir, fp->dir);
+         if (*fp->ext == '\0')
+            makename(tmp,NULL,argv[optind], SourceSuffix);
+         else
+            strcpy(tmp, argv[optind]);
 
-	 if (strchr(tmp, '*') || strchr(tmp, '?')) {
-	    if (!FINDFIRST(tmp, &fd)) {
-	       fprintf(stderr, "File %s: no match\n", tmp);
-	       fflush(stderr);
-	       }
-	    else matches = 1;
-	    }
+         if (strchr(tmp, '*') || strchr(tmp, '?')) {
+            if (!FINDFIRST(tmp, &fd)) {
+               fprintf(stderr, "File %s: no match\n", tmp);
+               fflush(stderr);
+               }
+            else matches = 1;
+            }
          do {
-	 if (matches) {
-	    makename(tmp,dir,FILENAME(&fd),NULL);
-	    argv[optind] = tmp;
-	    }
-#endif					/* WildCards */
-         fp = fparse(argv[optind]);		/* parse file name */
+         if (matches) {
+            makename(tmp,dir,FILENAME(&fd),NULL);
+            argv[optind] = tmp;
+            }
+#endif                                  /* WildCards */
+         fp = fparse(argv[optind]);             /* parse file name */
          if (*fp->ext == '\0' || smatch(fp->ext, SourceSuffix)) {
             makename(buf,SourceDir,argv[optind], SourceSuffix);
 #if VMS
-	    strcat(buf, fp->version);
-#endif					/* VMS */
-            *tptr++ = salloc(buf);		/* translate the .icn file */
+            strcat(buf, fp->version);
+#endif                                  /* VMS */
+            *tptr++ = salloc(buf);              /* translate the .icn file */
             makename(buf,TargetDir,argv[optind],USuffix);
-            *lptr++ = *rptr++ = salloc(buf);	/* link & remove .u */
+            *lptr++ = *rptr++ = salloc(buf);    /* link & remove .u */
             }
          else if (smatch(fp->ext,U1Suffix) || smatch(fp->ext,U2Suffix)
                || smatch(fp->ext,USuffix)) {
@@ -534,27 +534,27 @@ void iconx(int argc, char** argv){
          else
             quitf("bad argument %s",argv[optind]);
 #if WildCards
-	 if (!matches)
-	    break;
+         if (!matches)
+            break;
          } while (FINDNEXT(&fd));
-	 if (matches)
-	 FINDCLOSE(&fd);
-#endif					/* WildCards */
+         if (matches)
+         FINDCLOSE(&fd);
+#endif                                  /* WildCards */
          }
       optind++;
       }
 
-   *tptr = *lptr = *rptr = NULL;	/* terminate filename lists */
+   *tptr = *lptr = *rptr = NULL;        /* terminate filename lists */
 
    if (lptr == lfiles)
-      usage();				/* error -- no files named */
+      usage();                          /* error -- no files named */
 
    /*
     * Initialize globals.
     */
-   initglob();				/* general global initialization */
+   initglob();                          /* general global initialization */
 
-   ipath = libpath(argv[0], "IPATH");	/* set library search paths */
+   ipath = libpath(argv[0], "IPATH");   /* set library search paths */
    lpath = libpath(argv[0], "LPATH");
 
    /*
@@ -564,15 +564,15 @@ void iconx(int argc, char** argv){
       if (!pponly)
          report("Translating");
       errors = trans(tfiles);
-      if (errors > 0) {			/* exit if errors seen */
+      if (errors > 0) {                 /* exit if errors seen */
          exit(EXIT_FAILURE);
-	 }
+         }
       }
 
    /*
     * Link .u files to make an executable.
     */
-   if (nolink) {			/* exit if no linking wanted */
+   if (nolink) {                        /* exit if no linking wanted */
       exit(EXIT_SUCCESS);
       }
 
@@ -591,18 +591,18 @@ void iconx(int argc, char** argv){
    }
 #else                                   /* MSDOS */
 
-   if (ofile == NULL)  {		/* if no -o file, synthesize a name */
+   if (ofile == NULL)  {                /* if no -o file, synthesize a name */
       ofile = salloc(makename(buf,TargetDir,lfiles[0],IcodeSuffix));
-   } else {				/* add extension in necessary */
+   } else {                             /* add extension in necessary */
       fp = fparse(ofile);
       if (*fp->ext == '\0' && *IcodeSuffix != '\0') /* if no ext given */
          ofile = salloc(makename(buf,NULL,ofile,IcodeSuffix));
    }
 
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
    report("Linking");
-   errors = ilink(lfiles,ofile);	/* link .u files to make icode file */
+   errors = ilink(lfiles,ofile);        /* link .u files to make icode file */
 
 #if HAVE_LIBZ
    /*
@@ -612,14 +612,14 @@ void iconx(int argc, char** argv){
    if (Zflag) {
 #if NT
 #define stat _stat
-#endif					/* NT */
+#endif                                  /* NT */
       struct stat buf;
       int i = stat(ofile, &buf);
       if (i==0 && buf.st_size > 1000000 && file_comp(ofile)) {
-	 report("error during icode compression\n");
-	 }
+         report("error during icode compression\n");
+         }
       }
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBZ */
 
 #if NT
    if (!bundleiconx)
@@ -645,65 +645,65 @@ void iconx(int argc, char** argv){
        * i.e, wicont already has wiconx
        */
       if (Gflag) {
-	char *p;
-	char tmp2[MaxPath + 80];
-	strncpy(tmp2, iconxloc, MaxPath);
-	if (((p = strrchr(tmp2, '\\')) != 0)) {
-	  p++;
-	  *p = '\0';
-	  strcat(tmp2, UNICONWX_EXE);
-	  iconx = tmp2;
-	}
+        char *p;
+        char tmp2[MaxPath + 80];
+        strncpy(tmp2, iconxloc, MaxPath);
+        if (((p = strrchr(tmp2, '\\')) != 0)) {
+          p++;
+          *p = '\0';
+          strcat(tmp2, UNICONWX_EXE);
+          iconx = tmp2;
+        }
       }
-#endif					/* NT && NTConsole */
+#endif                                  /* NT && NTConsole */
 
       if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
-	if (Gflag) {
-	  iconx2 = UNICONWX_EXE;
-	}
-	else {
-	  iconx2 = UNICONX_EXE;
-	}
+        if (Gflag) {
+          iconx2 = UNICONWX_EXE;
+        }
+        else {
+          iconx2 = UNICONX_EXE;
+        }
 
        /*
        * Try to find iconx on the PATH or the current working directory
        */
-	if ((f = pathOpen(iconx2, ReadBinary)) == NULL) {
-	  sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx2);
-	  report(mesg);
-	  errors++;
-	}
+        if ((f = pathOpen(iconx2, ReadBinary)) == NULL) {
+          sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx2);
+          report(mesg);
+          errors++;
+        }
       }
 
       if (f != NULL ){
-	 if ((f2 = fopen(ofile, WriteBinary)) == NULL) {
-	    sprintf(mesg,"Could not write to %s to build .exe\n",
-		    ofile);
-	    report(mesg);
-	    }
-	 else {
-	    while ((c = fgetc(f)) != EOF) {
-	       fputc(c, f2);
-	       }
-	    fclose(f);
-	    if ((f = fopen(tmp, ReadBinary)) == NULL) {
-	       sprintf(mesg,"Could not read %s in order to append to .exe\n",
-		       tmp);
-	       report(mesg);
-	       errors++;
-	       }
-	    else {
-	       while ((c = fgetc(f)) != EOF) {
-		  fputc(c, f2);
-		  }
-	       fclose(f);
-	       }
-	    fclose(f2);
-	    setexe(ofile);
-	    unlink(tmp);
-	    }
-	 }
-	 }
+         if ((f2 = fopen(ofile, WriteBinary)) == NULL) {
+            sprintf(mesg,"Could not write to %s to build .exe\n",
+                    ofile);
+            report(mesg);
+            }
+         else {
+            while ((c = fgetc(f)) != EOF) {
+               fputc(c, f2);
+               }
+            fclose(f);
+            if ((f = fopen(tmp, ReadBinary)) == NULL) {
+               sprintf(mesg,"Could not read %s in order to append to .exe\n",
+                       tmp);
+               report(mesg);
+               errors++;
+               }
+            else {
+               while ((c = fgetc(f)) != EOF) {
+                  fputc(c, f2);
+                  }
+               fclose(f);
+               }
+            fclose(f2);
+            setexe(ofile);
+            unlink(tmp);
+            }
+         }
+         }
 
    /*
     * Finish by removing intermediate files.
@@ -711,22 +711,22 @@ void iconx(int argc, char** argv){
     */
 
    if (0 == keeptmp) {
-     for (rptr = rfiles; *rptr; rptr++)	/* delete intermediate files */
+     for (rptr = rfiles; *rptr; rptr++) /* delete intermediate files */
        remove(*rptr);
    }
-   if (errors > 0) {			/* exit if linker errors seen */
+   if (errors > 0) {                    /* exit if linker errors seen */
       char errbuf[32];
       remove(ofile);
       sprintf(errbuf, "%d errors\n", errors);
       report(errbuf);
       if (flog)
-	 closelog();
+         closelog();
       exit(EXIT_FAILURE);
       }
 #ifdef ConsoleWindow
    else
       report("No errors\n");
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
    if (optind < argc)  {
       report("Executing");
@@ -752,19 +752,19 @@ char *ofile, *efile, **args;
    int n;
    char **argv, **p;
 
-   for (n = 0; args[n] != NULL; n++)	/* count arguments */
+   for (n = 0; args[n] != NULL; n++)    /* count arguments */
       ;
    p = argv = (char **)alloc((unsigned int)((n + strlen(UNICONX) + 1) * sizeof(char *)));
 
-#if !UNIX	/* exec the file, not iconx; stderr already redirected  */
-   *p++ = iconxloc;			/* set iconx pathname */
-   if (efile != NULL) {			/* if -e given, copy it */
+#if !UNIX       /* exec the file, not iconx; stderr already redirected  */
+   *p++ = iconxloc;                     /* set iconx pathname */
+   if (efile != NULL) {                 /* if -e given, copy it */
       *p++ = "-e";
       *p++ = efile;
       }
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
-   *p++ = ofile;			/* pass icode file name */
+   *p++ = ofile;                        /* pass icode file name */
 
 #ifdef MSWindows
 #ifndef NTConsole
@@ -779,7 +779,7 @@ char *ofile, *efile, **args;
       }
    strcat(cmdline, ofile);
    strcat(cmdline, " ");
-   while ((tmp = *args++) != NULL) {	/* copy args into argument vector */
+   while ((tmp = *args++) != NULL) {    /* copy args into argument vector */
       strcat(cmdline, tmp);
       strcat(cmdline, " ");
    }
@@ -787,8 +787,8 @@ char *ofile, *efile, **args;
    WinExec(cmdline, SW_SHOW);
    return;
    }
-#endif					/* NTConsole */
-#endif					/* MSWindows */
+#endif                                  /* NTConsole */
+#endif                                  /* MSWindows */
 
    while ((*p++ = *args++) != 0)      /* copy args into argument vector */
       ;
@@ -803,17 +803,17 @@ char *ofile, *efile, **args;
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
       /* No special handling is needed for an .exe files, since iconx
        * recognizes it from the extension andfrom internal .exe data.
        */
 #if MICROSOFT || TURBO
-      execvp(iconxloc,argv);	/* execute with path search */
-#endif					/* MICROSOFT || ... */
+      execvp(iconxloc,argv);    /* execute with path search */
+#endif                                  /* MICROSOFT || ... */
 
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
 #if MVS || VM
       fprintf(stderr,"-x not supported\n");
@@ -828,21 +828,21 @@ Deliberate Syntax Error
       if (efile != NULL) {
          close(fileno(stderr));
          if (strcmp(efile, "-") == 0){
-	    if (dup(fileno(stdout) == -1)){
-	       perror("execute(): could not dup stdout:");
-	       exit(EXIT_FAILURE);
-	       }
-	    }
-	 else if (freopen(efile, "w", stderr) == NULL)
-	      quitf("could not redirect stderr to %s\n", efile);
+            if (dup(fileno(stdout) == -1)){
+               perror("execute(): could not dup stdout:");
+               exit(EXIT_FAILURE);
+               }
+            }
+         else if (freopen(efile, "w", stderr) == NULL)
+              quitf("could not redirect stderr to %s\n", efile);
          }
       execv(ofile, argv);
       quitf("could not execute %s", ofile);
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 #if VMS
       execv(iconxloc,argv);
-#endif					/* VMS */
+#endif                                  /* VMS */
 
 /*
  * End of operating-system specific code.
@@ -874,6 +874,6 @@ static void usage()
    fprintf(stderr,"usage: %s %s file ... <-x args>\n", progname, Usage);
 #else
    fprintf(stderr,"usage: %s %s file ... [-x args]\n", progname, Usage);
-#endif					/* MVS || VM */
+#endif                                  /* MVS || VM */
    exit(EXIT_FAILURE);
    }

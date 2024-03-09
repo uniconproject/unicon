@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -42,12 +42,12 @@ gdbm_delete (dbf, key)
      gdbm_file_info *dbf;
      datum key;
 {
-  int elem_loc;		/* The location in the current hash bucket. */
-  int last_loc;		/* Last location emptied by the delete.  */
-  int home;		/* Home position of an item. */
+  int elem_loc;         /* The location in the current hash bucket. */
+  int last_loc;         /* Last location emptied by the delete.  */
+  int home;             /* Home position of an item. */
   bucket_element elem;  /* The element to be deleted. */
-  char *find_data;	/* Return pointer from findkey. */
-  word_t hash_val;	/* Returned by findkey. */
+  char *find_data;      /* Return pointer from findkey. */
+  word_t hash_val;      /* Returned by findkey. */
   off_t free_adr;       /* Temporary stroage for address and size. */
   int   free_size;
 
@@ -80,18 +80,18 @@ gdbm_delete (dbf, key)
   last_loc = elem_loc;
   elem_loc = (elem_loc + 1) % dbf->header->bucket_elems;
   while (elem_loc != last_loc
-	 && dbf->bucket->h_table[elem_loc].hash_value != -1)
+         && dbf->bucket->h_table[elem_loc].hash_value != -1)
     {
       home = dbf->bucket->h_table[elem_loc].hash_value
-	     % dbf->header->bucket_elems;
+             % dbf->header->bucket_elems;
       if ( (last_loc < elem_loc && (home <= last_loc || home > elem_loc))
-	  || (last_loc > elem_loc && home <= last_loc && home > elem_loc))
-	
-	{
-	  dbf->bucket->h_table[last_loc] = dbf->bucket->h_table[elem_loc];
-	  dbf->bucket->h_table[elem_loc].hash_value = -1;
-	  last_loc = elem_loc;
-	}
+          || (last_loc > elem_loc && home <= last_loc && home > elem_loc))
+
+        {
+          dbf->bucket->h_table[last_loc] = dbf->bucket->h_table[elem_loc];
+          dbf->bucket->h_table[elem_loc].hash_value = -1;
+          last_loc = elem_loc;
+        }
       elem_loc = (elem_loc + 1) % dbf->header->bucket_elems;
     }
 
@@ -115,5 +115,5 @@ gdbm_delete (dbf, key)
 
   /* Do the writes. */
   _gdbm_end_update (dbf);
-  return 0;  
+  return 0;
 }

@@ -33,8 +33,8 @@
 /* The data and key structure.  This structure is defined for compatibility. */
 
 typedef struct {
-	char *dptr;
-	int   dsize;
+        char *dptr;
+        int   dsize;
       } datum;
 
 
@@ -46,34 +46,34 @@ typedef struct {
 
 /* The following structure is the element of the avaliable table.  */
 typedef struct {
-  	int   av_size;		/* The size of the available block. */
-	off_t  av_adr;		/* The file address of the available block. */
+        int   av_size;          /* The size of the available block. */
+        off_t  av_adr;          /* The file address of the available block. */
       } avail_elem;
 
 /* This is the actual table. The in-memory images of the avail blocks are
    allocated by malloc using a calculated size.  */
 typedef struct {
-	int   size;		/* The number of avail elements in the table.*/
-	int   count;		/* The number of entries in the table. */
-	off_t next_block;	/* The file address of the next avail block. */
-	avail_elem av_table[1]; /* The table.  Make it look like an array.  */
+        int   size;             /* The number of avail elements in the table.*/
+        int   count;            /* The number of entries in the table. */
+        off_t next_block;       /* The file address of the next avail block. */
+        avail_elem av_table[1]; /* The table.  Make it look like an array.  */
       } avail_block;
 
 /* The dbm file header keeps track of the current location of the hash
    directory and the free space in the file.  */
 
 typedef struct {
-	word_t header_magic;  /* 0x13579ace to make sure the header is good. */
-	int   block_size;    /* The  optimal i/o blocksize from stat. */
-	off_t dir;	     /* File address of hash directory table. */
-	int   dir_size;	     /* Size in bytes of the table.  */
-	int   dir_bits;	     /* The number of address bits used in the table.*/
-	int   bucket_size;   /* Size in bytes of a hash bucket struct. */
-	int   bucket_elems;  /* Number of elements in a hash bucket. */
-	off_t next_block;    /* The next unallocated block address. */
-	avail_block avail;   /* This must be last because of the psuedo
-				array in avail.  This avail grows to fill
-				the entire block. */
+        word_t header_magic;  /* 0x13579ace to make sure the header is good. */
+        int   block_size;    /* The  optimal i/o blocksize from stat. */
+        off_t dir;           /* File address of hash directory table. */
+        int   dir_size;      /* Size in bytes of the table.  */
+        int   dir_bits;      /* The number of address bits used in the table.*/
+        int   bucket_size;   /* Size in bytes of a hash bucket struct. */
+        int   bucket_elems;  /* Number of elements in a hash bucket. */
+        off_t next_block;    /* The next unallocated block address. */
+        avail_block avail;   /* This must be last because of the psuedo
+                                array in avail.  This avail grows to fill
+                                the entire block. */
       }  gdbm_file_header;
 
 
@@ -84,12 +84,12 @@ typedef struct {
    key. */
 
 typedef struct {
-	word_t hash_value;	/* The complete 31 bit value. */
-	char  key_start[SMALL];	/* Up to the first SMALL bytes of the key.  */
-	off_t data_pointer;	/* The file address of the key record. The
-				   data record directly follows the key.  */
-	int   key_size;		/* Size of key data in the file. */
-	int   data_size;	/* Size of associated data in the file. */
+        word_t hash_value;      /* The complete 31 bit value. */
+        char  key_start[SMALL]; /* Up to the first SMALL bytes of the key.  */
+        off_t data_pointer;     /* The file address of the key record. The
+                                   data record directly follows the key.  */
+        int   key_size;         /* Size of key data in the file. */
+        int   data_size;        /* Size of associated data in the file. */
       } bucket_element;
 
 
@@ -106,11 +106,11 @@ typedef struct {
    BUCKET_AVAIL avail elements with the bucket. */
 
 typedef struct {
-        int   av_count;		   /* The number of bucket_avail entries. */
+        int   av_count;            /* The number of bucket_avail entries. */
         avail_elem bucket_avail[BUCKET_AVAIL];  /* Distributed avail. */
-	int   bucket_bits;	   /* The number of bits used to get here. */
-	int   count;		   /* The number of element buckets full. */
-	bucket_element h_table[1]; /* The table.  Make it look like an array.*/
+        int   bucket_bits;         /* The number of bits used to get here. */
+        int   count;               /* The number of element buckets full. */
+        bucket_element h_table[1]; /* The table.  Make it look like an array.*/
       } hash_bucket;
 
 /* We want to keep from reading buckets as much as possible.  The following is
@@ -126,17 +126,17 @@ typedef struct {
 
 typedef struct {
         word_t hash_val;
-	int   data_size;
-	int   key_size;
-	char *dptr;
-	int   elem_loc;
+        int   data_size;
+        int   key_size;
+        char *dptr;
+        int   elem_loc;
       }  data_cache_elem;
 
 typedef struct {
         hash_bucket *   ca_bucket;
-	off_t           ca_adr;
-	char		ca_changed;   /* Data in the bucket changed. */
-	data_cache_elem ca_data;
+        off_t           ca_adr;
+        char            ca_changed;   /* Data in the bucket changed. */
+        data_cache_elem ca_data;
       } cache_elem;
 
 
@@ -146,52 +146,52 @@ typedef struct {
    time by one program. */
 
 typedef struct {
-	/* Global variables and pointers to dynamic variables used by gdbm.  */
+        /* Global variables and pointers to dynamic variables used by gdbm.  */
 
-  	/* The file name. */
-	char *name;
+        /* The file name. */
+        char *name;
 
-	/* The reader/writer status. */
-	int read_write;
+        /* The reader/writer status. */
+        int read_write;
 
-	/* Fast_write is set to 1 if no fsyncs are to be done. */
-	int fast_write;
+        /* Fast_write is set to 1 if no fsyncs are to be done. */
+        int fast_write;
 
-	/* The fatal error handling routine. */
-	void (*fatal_err) ();
+        /* The fatal error handling routine. */
+        void (*fatal_err) ();
 
-	/* The gdbm file descriptor which is set in gdbm_open.  */
-	int  desc;
+        /* The gdbm file descriptor which is set in gdbm_open.  */
+        int  desc;
 
-	/* The file header holds information about the database. */
-	gdbm_file_header *header;
+        /* The file header holds information about the database. */
+        gdbm_file_header *header;
 
-	/* The hash table directory from extendible hashing.  See Fagin et al, 
-	   ACM Trans on Database Systems, Vol 4, No 3. Sept 1979, 315-344 */
-	off_t *dir;
+        /* The hash table directory from extendible hashing.  See Fagin et al,
+           ACM Trans on Database Systems, Vol 4, No 3. Sept 1979, 315-344 */
+        off_t *dir;
 
-	/* The bucket cache. */
-	cache_elem *bucket_cache;
-	int cache_size;
-	int last_read;
+        /* The bucket cache. */
+        cache_elem *bucket_cache;
+        int cache_size;
+        int last_read;
 
-	/* Points to the current hash bucket in the cache. */
-	hash_bucket *bucket;
+        /* Points to the current hash bucket in the cache. */
+        hash_bucket *bucket;
 
-	/* The directory entry used to get the current hash bucket. */
-	word_t bucket_dir;
+        /* The directory entry used to get the current hash bucket. */
+        word_t bucket_dir;
 
-	/* Pointer to the current bucket's cache entry. */
-	cache_elem *cache_entry;
+        /* Pointer to the current bucket's cache entry. */
+        cache_elem *cache_entry;
 
 
-	/* Bookkeeping of things that need to be written back at the
-	   end of an update. */
-	char  header_changed;
-	char  directory_changed;
-	char  bucket_changed;
-	char  second_changed;
-	
+        /* Bookkeeping of things that need to be written back at the
+           end of an update. */
+        char  header_changed;
+        char  directory_changed;
+        char  bucket_changed;
+        char  second_changed;
+
       } gdbm_file_info;
 
 /* Now define all the routines in use. */

@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 ************************************************************************/
 
 
@@ -51,12 +51,12 @@ rename (old_name, new_name)
      char* old_name;
      char* new_name;
 {
-  if (unlink (new_name) != 0)   
+  if (unlink (new_name) != 0)
     return -1;
 
   if (link (old_name, new_name) != 0)
     return -1;
-  
+
   unlink (old_name);
   return 0;
 
@@ -77,12 +77,12 @@ gdbm_reorganize (dbf)
      gdbm_file_info *dbf;
 
 {
-  gdbm_file_info *new_dbf;		/* The new file. */
-  char *new_name;			/* A temporary name. */
-  int  len;				/* Used in new_name construction. */
-  datum key, nextkey, data;		/* For the sequential sweep. */
-  struct stat fileinfo;			/* Information about the file. */
-  int  index;				/* Use in moving the bucket cache. */
+  gdbm_file_info *new_dbf;              /* The new file. */
+  char *new_name;                       /* A temporary name. */
+  int  len;                             /* Used in new_name construction. */
+  datum key, nextkey, data;             /* For the sequential sweep. */
+  struct stat fileinfo;                 /* Information about the file. */
+  int  index;                           /* Use in moving the bucket cache. */
 
 
   /* Readers can not reorganize! */
@@ -91,7 +91,7 @@ gdbm_reorganize (dbf)
       gdbm_errno = GDBM_READER_CANT_REORGANIZE;
       return -1;
     }
-  
+
   /* Initialize the gdbm_errno variable. */
   gdbm_errno = GDBM_NO_ERROR;
 
@@ -118,8 +118,8 @@ gdbm_reorganize (dbf)
      unless we create a complete copy of the database. */
   fstat (dbf->desc, &fileinfo);
   new_dbf = gdbm_open (new_name, dbf->header->block_size,
-		       GDBM_WRCREAT | GDBM_FAST,
-		       fileinfo.st_mode, dbf->fatal_err);
+                       GDBM_WRCREAT | GDBM_FAST,
+                       fileinfo.st_mode, dbf->fatal_err);
 
   if (new_dbf == NULL)
     {
@@ -127,7 +127,7 @@ gdbm_reorganize (dbf)
       return -1;
     }
 
-  
+
   /* For each item in the old database, add an entry in the new. */
   key = gdbm_firstkey (dbf);
 
@@ -135,24 +135,24 @@ gdbm_reorganize (dbf)
     {
       data = gdbm_fetch (dbf, key);
       if (data.dptr != NULL)
- 	{
-	  /* Add the data to the new file. */
-	  if (gdbm_store (new_dbf, key, data, GDBM_INSERT) != 0)
-	    {
-	      gdbm_close (new_dbf);
-	      gdbm_errno = GDBM_REORGANIZE_FAILED;
-	      unlink (new_name);
-	      return -1;
-	    }
- 	}
+        {
+          /* Add the data to the new file. */
+          if (gdbm_store (new_dbf, key, data, GDBM_INSERT) != 0)
+            {
+              gdbm_close (new_dbf);
+              gdbm_errno = GDBM_REORGANIZE_FAILED;
+              unlink (new_name);
+              return -1;
+            }
+        }
       else
- 	{
-	  /* ERROR! Abort and don't finish reorganize. */
-	  gdbm_close (new_dbf);
-	  gdbm_errno = GDBM_REORGANIZE_FAILED;
-	  unlink (new_name);
-	  return -1;
- 	}
+        {
+          /* ERROR! Abort and don't finish reorganize. */
+          gdbm_close (new_dbf);
+          gdbm_errno = GDBM_REORGANIZE_FAILED;
+          unlink (new_name);
+          return -1;
+        }
       nextkey = gdbm_nextkey (dbf, key);
       free (key.dptr);
       free (data.dptr);
@@ -182,9 +182,9 @@ gdbm_reorganize (dbf)
   if (dbf->bucket_cache != NULL) {
     for (index = 0; index < dbf->cache_size; index++) {
       if (dbf->bucket_cache[index].ca_bucket != NULL)
-	free (dbf->bucket_cache[index].ca_bucket);
+        free (dbf->bucket_cache[index].ca_bucket);
       if (dbf->bucket_cache[index].ca_data.dptr != NULL)
-	free (dbf->bucket_cache[index].ca_data.dptr);
+        free (dbf->bucket_cache[index].ca_data.dptr);
     }
     free (dbf->bucket_cache);
   }
@@ -201,7 +201,7 @@ gdbm_reorganize (dbf)
   dbf->directory_changed = new_dbf->directory_changed;
   dbf->bucket_changed    = new_dbf->bucket_changed;
   dbf->second_changed    = new_dbf->second_changed;
-      
+
   free (new_dbf);
 
   /* Make sure the new database is all on disk. */

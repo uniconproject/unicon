@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -47,10 +47,10 @@ gdbm_fetch (dbf, key)
      gdbm_file_info *dbf;
      datum key;
 {
-  datum  return_val;		/* The return value. */
-  int    elem_loc;		/* The location in the bucket. */
-  char  *find_data;		/* Returned from find_key. */
-  word_t   hash_val;		/* Returned from find_key. */
+  datum  return_val;            /* The return value. */
+  int    elem_loc;              /* The location in the bucket. */
+  char  *find_data;             /* Returned from find_key. */
+  word_t   hash_val;            /* Returned from find_key. */
 
   /* Set the default return value. */
   return_val.dptr  = NULL;
@@ -68,9 +68,9 @@ gdbm_fetch (dbf, key)
       /* This is the item.  Return the associated data. */
       return_val.dsize = dbf->bucket->h_table[elem_loc].data_size;
       if (return_val.dsize == 0)
-	return_val.dptr = (char *) malloc (1);
+        return_val.dptr = (char *) malloc (1);
       else
-	return_val.dptr = (char *) malloc (return_val.dsize);
+        return_val.dptr = (char *) malloc (return_val.dsize);
       if (return_val.dptr == NULL) _gdbm_fatal (dbf, "malloc error");
       bcopy (find_data, return_val.dptr, return_val.dsize);
     }

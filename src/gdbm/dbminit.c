@@ -24,7 +24,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -54,9 +54,9 @@ int
 dbminit (file)
      char *file;
 {
-  char* pag_file;	    /* Used to construct "file.pag". */
-  char* dir_file;	    /* Used to construct "file.dir". */
-  struct stat dir_stat;	    /* Stat information for "file.dir". */
+  char* pag_file;           /* Used to construct "file.pag". */
+  char* dir_file;           /* Used to construct "file.dir". */
+  struct stat dir_stat;     /* Stat information for "file.dir". */
 
 
   /* Prepare the correct names of "file.pag" and "file.dir". */
@@ -78,13 +78,13 @@ dbminit (file)
   if (_gdbm_file == NULL)
     {
       _gdbm_file = gdbm_open (pag_file, 0, GDBM_READER, 0, NULL);
-  
+
       /* Did we successfully open the file? */
       if (_gdbm_file == NULL)
-	{
-	  gdbm_errno = GDBM_FILE_OPEN_ERROR;
-	  return -1;
-	}
+        {
+          gdbm_errno = GDBM_FILE_OPEN_ERROR;
+          return -1;
+        }
     }
 
   /* If the database is new, link "file.dir" to "file.pag". This is done
@@ -92,24 +92,24 @@ dbminit (file)
   if (stat (dir_file, &dir_stat) == 0)
     {
       if (dir_stat.st_size == 0)
-	if (unlink (dir_file) != 0 || link (pag_file, dir_file) != 0)
-	  {
-	    gdbm_errno = GDBM_FILE_OPEN_ERROR;
-	    gdbm_close (_gdbm_file);
-	    return -1;
-	  }
+        if (unlink (dir_file) != 0 || link (pag_file, dir_file) != 0)
+          {
+            gdbm_errno = GDBM_FILE_OPEN_ERROR;
+            gdbm_close (_gdbm_file);
+            return -1;
+          }
     }
   else
     {
       /* Since we can't stat it, we assume it is not there and try
          to link the dir_file to the pag_file. */
       if (link (pag_file, dir_file) != 0)
-	{
-	  gdbm_errno = GDBM_FILE_OPEN_ERROR;
-	  gdbm_close (_gdbm_file);
-	  return -1;
-	}
+        {
+          gdbm_errno = GDBM_FILE_OPEN_ERROR;
+          gdbm_close (_gdbm_file);
+          return -1;
+        }
     }
-	    
+
   return 0;
 }

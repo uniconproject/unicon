@@ -65,7 +65,7 @@ static struct tvent ** tvtbl = 0;
 #if NT && !defined(NTGCC)
 /* keyword inline does not work on MSVC */
 #define inline
-#endif					/* NT && !NTGCC */
+#endif                                  /* NT && !NTGCC */
 
 static inline vord * alcbits(void);
 static inline struct tvent * alcent(void);
@@ -247,7 +247,7 @@ tv_bits_cpy(dst, src, nbits)
    int nvords;
 
    if (dst->ent == src->ent)
-      return; 
+      return;
    nvords = NumVords(nbits);
    tmpent->raw_hash = dst->ent->raw_hash;
    tmpent->raw_hash -= (ull)dst->ent->bits[0];
@@ -433,7 +433,7 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
    n_ents_per_pool = n_tvtbl_bkts << 1;
    n_vects_per_pool = n_ents_per_pool;
    n_auras_per_pool = n_vects_per_pool;
-   
+
    if (verbose > 3)
       fprintf(stdout, "n-tvs-per-pool: %d n-ents-per-pool: %d n-vects-per-pool:"
          " %d n-auras-per-pool: %d\n", n_tvs_per_pool, n_ents_per_pool,
@@ -698,7 +698,7 @@ tv_rng_get(tv, bgn, end, numset)
          if (bgn++ >= end)
             break;
          /*
-          * removed vord dependency 
+          * removed vord dependency
           *
          if (msk == VordHighBitMask)
             break;
@@ -1137,7 +1137,7 @@ insert(ent, bkt)
       }
    e->next = ent;
    ent->next = 0;
-   return ent; 
+   return ent;
 }
 
 static

@@ -16,15 +16,15 @@
  */
 
 static struct gentry    *alcglob  (struct gentry *blink,
-				    char *name,int flag);
+                                    char *name,int flag);
 static struct fentry    *alcfld   (struct fentry *blink, char *name,
-				    struct par_rec *rp);
-static struct centry    *alclit	  (struct centry *blink,
-				    char *image, int len,int flag);
-static struct lentry    *alcloc	  (struct lentry *blink,
-				    char *name,int flag);
+                                    struct par_rec *rp);
+static struct centry    *alclit   (struct centry *blink,
+                                    char *image, int len,int flag);
+static struct lentry    *alcloc   (struct lentry *blink,
+                                    char *name,int flag);
 static struct par_rec   *alcprec  (struct rentry *rec, int offset,
-				    struct par_rec *next);
+                                    struct par_rec *next);
 static struct centry    *clookup  (char *image,int flag);
 static struct lentry    *dcl_loc  (char *id, int id_type,
                                     struct lentry *next);
@@ -63,15 +63,15 @@ int flag;
    struct gentry *gp;
 
    flag |= F_Global;
-   if ((gp = glookup(name)) == NULL) 
+   if ((gp = glookup(name)) == NULL)
       gp = putglob(name, flag);
    else if ((gp->flag & (~F_Global)) == 0) {
-      /* 
+      /*
        * superfluous global declaration for record or proc
        */
       gp->flag |= flag;
       }
-   else			/* the user can't make up his mind */
+   else                 /* the user can't make up his mind */
       tfatal("instl_p: inconsistent redeclaration", name);
    return gp;
    }
@@ -96,7 +96,7 @@ install(name, flag)
    int foffset;
 
    switch (flag) {
-      case F_Global:	/* a variable in a global declaration */
+      case F_Global:    /* a variable in a global declaration */
          if ((gp = glookup(name)) == NULL)
             putglob(name, flag);
          else
@@ -107,19 +107,19 @@ install(name, flag)
          }
          break;
 
-      case F_Static:	/* static declaration */
+      case F_Static:    /* static declaration */
          ++proc_lst->nstatic;
          lp = dcl_loc(name, flag, proc_lst->statics);
          proc_lst->statics = lp;
          break;
 
-      case F_Dynamic:	/* local declaration */
+      case F_Dynamic:   /* local declaration */
          ++proc_lst->ndynam;
          lp = dcl_loc(name, flag, proc_lst->dynams);
          proc_lst->dynams = lp;
          break;
 
-      case F_Argument:	/* formal parameter */
+      case F_Argument:  /* formal parameter */
          ++proc_lst->nargs;
          if (proc_lst->nargs > max_prm)
             max_prm = proc_lst->nargs;
@@ -175,7 +175,7 @@ struct lentry *next;
       }
    else if (lp->flag == flag) /* previously declared as same type */
       twarn("redeclared identifier", name);
-   else		/* previously declared as different type */
+   else         /* previously declared as different type */
       tfatal("dcl_loc: inconsistent redeclaration", name);
    return lp;
    }
@@ -189,7 +189,7 @@ struct lentry *putloc(char *id,int id_type)
    register struct lentry **lhash;
    unsigned hashval;
 
-   if ((ptr = llookup(id)) == NULL) {	/* add to head of hash chain */
+   if ((ptr = llookup(id)) == NULL) {   /* add to head of hash chain */
       lhash = proc_lst->lhash;
       hashval = LHasher(id);
       ptr = alcloc(lhash[hashval], id, id_type);
@@ -207,7 +207,7 @@ static struct gentry *putglob(char *id, int id_type)
    register struct gentry *ptr;
    register unsigned hashval;
 
-   if ((ptr = glookup(id)) == NULL) {	 /* add to head of hash chain */
+   if ((ptr = glookup(id)) == NULL) {    /* add to head of hash chain */
       hashval = GHasher(id);
       ptr = alcglob(ghash[hashval], id, id_type);
       ghash[hashval] = ptr;
@@ -385,7 +385,7 @@ void gdump()
    for (i = 0; i < GHSize; i++)
       for (gptr = ghash[i]; gptr != NULL; gptr = gptr->blink) {
          fprintf(stderr," %8x %20s   %4d ", gptr,
-		gptr->name, gptr->nargs);
+                gptr->name, gptr->nargs);
          prt_flgs(gptr->flag);
          }
    fflush(stderr);
@@ -462,11 +462,11 @@ void rdump()
       fprintf(stderr, "\n");
       }
    }
-#endif					/* DeBug */
+#endif                                  /* DeBug */
 
 /*
  * alcloc allocates a local symbol table entry, fills in fields with
- *  specified values and returns pointer to new entry.  
+ *  specified values and returns pointer to new entry.
  */
 static struct lentry *alcloc(struct lentry *blink, char *name, int flag)
    {
@@ -481,10 +481,10 @@ static struct lentry *alcloc(struct lentry *blink, char *name, int flag)
 
 /*
  * alcfld allocates a field symbol table entry, fills in the entry with
- *  specified values and returns pointer to new entry.  
+ *  specified values and returns pointer to new entry.
  */
 static struct fentry *alcfld(struct fentry *blink, char *name,
-			     struct par_rec *rp)
+                             struct par_rec *rp)
    {
    register struct fentry *fp;
 
@@ -497,7 +497,7 @@ static struct fentry *alcfld(struct fentry *blink, char *name,
 
 /*
  * alcglob allocates a global symbol table entry, fills in fields with
- *  specified values and returns pointer to new entry.  
+ *  specified values and returns pointer to new entry.
  */
 static struct gentry *alcglob(struct gentry *blink, char *name, int flag)
    {
@@ -512,10 +512,10 @@ static struct gentry *alcglob(struct gentry *blink, char *name, int flag)
 
 /*
  * alclit allocates a constant symbol table entry, fills in fields with
- *  specified values and returns pointer to new entry.  
+ *  specified values and returns pointer to new entry.
  */
 static struct centry *alclit(struct centry *blink, char *image,
-			     int len, int flag)
+                             int len, int flag)
    {
    register struct centry *cp;
 
@@ -539,7 +539,7 @@ static struct centry *alclit(struct centry *blink, char *image,
  * alcprec allocates an entry for the parent record list for a field.
  */
 static struct par_rec *alcprec(struct rentry *rec, int offset,
-			       struct par_rec *next)
+                               struct par_rec *next)
    {
    register struct par_rec *rp;
 
@@ -567,12 +567,12 @@ void resolve(struct pentry *proc)
       lp = lhash[i];
       while (lp != NULL) {
          id = lp->name;
-         if (lp->flag == 0) {				/* undeclared */
-            if ((gp = try_gbl(id)) != NULL) {		/* check global */
+         if (lp->flag == 0) {                           /* undeclared */
+            if ((gp = try_gbl(id)) != NULL) {           /* check global */
                lp->flag = F_Global;
                lp->val.global = gp;
                }
-            else {					/* implicit local */
+            else {                                      /* implicit local */
                if (uwarn) {
                   fprintf(stderr, "%s undeclared identifier, procedure %s\n",
                      id, proc->name);
@@ -641,12 +641,12 @@ void invoc_grp(char *grp)
 void invocbl(nodeptr op, int arity)
    {
    struct strinv *si;
-   
+
    si = NewStruct(strinv);
    si->op = op;
    si->arity = arity;
    si->next = strinvlst;
-   strinvlst = si;  
+   strinvlst = si;
    }
 
 /*
@@ -765,7 +765,7 @@ static void opstrinv(struct implement *ip)
    int nargs;
    int n;
 
-   if (ip == NULL || ip->iconc_flgs & InStrTbl) 
+   if (ip == NULL || ip->iconc_flgs & InStrTbl)
       return;
 
    /*

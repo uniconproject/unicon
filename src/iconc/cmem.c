@@ -9,15 +9,15 @@
 #include "ccode.h"
 #include "cproto.h"
 
-struct centry *chash[CHSize];		/* hash area for constant table */
-struct fentry *fhash[FHSize];		/* hash area for field table */
-struct gentry *ghash[GHSize];		/* hash area for global table */
+struct centry *chash[CHSize];           /* hash area for constant table */
+struct fentry *fhash[FHSize];           /* hash area for field table */
+struct gentry *ghash[GHSize];           /* hash area for global table */
 
-struct implement *bhash[IHSize];	/* hash area for built-in functions */
-struct implement *khash[IHSize];	/* hash area for keywords */
-struct implement *ohash[IHSize];	/* hash area for operators */
+struct implement *bhash[IHSize];        /* hash area for built-in functions */
+struct implement *khash[IHSize];        /* hash area for keywords */
+struct implement *ohash[IHSize];        /* hash area for operators */
 
-struct implement *spec_op[NumSpecOp];	/* table of ops with special syntax */
+struct implement *spec_op[NumSpecOp];   /* table of ops with special syntax */
 
 char pre[PrfxSz] = {'0', '0', '0'};     /* initial function name prefix */
 
@@ -242,4 +242,4 @@ _alloc(n, fname, line)
    rslt = alloc_original(n);
    return rslt;
 }
-#endif					/* IconcLogAllocations */
+#endif                                  /* IconcLogAllocations */

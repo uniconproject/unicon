@@ -11,7 +11,7 @@
 #if PORT
 /* place to put anything system specific */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
 
@@ -22,21 +22,21 @@ pointer xmalloc(n)
    {
    return calloc((size_t)n,sizeof(char));
    }
-#endif					/* MICROSOFT */
+#endif                                  /* MICROSOFT */
 
 #if MICROSOFT
 int _stack = (8 * 1024);
-#endif					/* MICROSOFT */
+#endif                                  /* MICROSOFT */
 
 #if TURBO
 extern unsigned _stklen = 8192;
-#endif					/* TURBO */
+#endif                                  /* TURBO */
 
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
 
 /*
  * End of operating-system specific code.
  */
 
-char *tjunk;			/* avoid empty module */
+char *tjunk;                    /* avoid empty module */

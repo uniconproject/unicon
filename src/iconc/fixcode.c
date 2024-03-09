@@ -78,7 +78,7 @@ struct c_fnc *fnc;
             if (cd1->next != NULL)
                cd1->next->prev = cd1;
             --calledcont->ref_cnt;
-            continue;	/* move on to next call */
+            continue;   /* move on to next call */
             }
          else if (contbody->cd_id == C_CallSig && contbody->next == NULL) {
             /*
@@ -103,7 +103,7 @@ struct c_fnc *fnc;
                      cd1 = sig_cd(ret_sig, fnc);
                   call->SigActs = new_sgact(sa->sig, cd1, call->SigActs);
                   }
-               continue;	/* move on to next call */
+               continue;        /* move on to next call */
                }
             else if (contbody->OperName == NULL) {
                /*
@@ -129,7 +129,7 @@ struct c_fnc *fnc;
                         call->SigActs = new_sgact(sa->sig, sig_cd(ret_sig, fnc),
                            call->SigActs);
                      }
-                  continue;	/* move on to next call */
+                  continue;     /* move on to next call */
                   }
                }
             }
@@ -187,7 +187,7 @@ struct c_fnc *fnc;
                         sa->cd->SigRef= cd->next->SigRef;
                         ++sa->cd->SigRef->ref_cnt;
                         break;
-                     default: 
+                     default:
                         no_break = 0;
                      }
                   }

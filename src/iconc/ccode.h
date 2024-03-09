@@ -66,63 +66,63 @@ struct val_loc {
  *  corresponding field access expressions.
  */
 #define Rslt        fld[0].vloc    /* place to put result of expression */
-#define Cont        fld[1].fnc	   /* continuation function or null */
+#define Cont        fld[1].fnc     /* continuation function or null */
 
 #define C_Null      0              /* no code */
 
-#define C_NamedVar  1		   /* reference to a named variable */
+#define C_NamedVar  1              /* reference to a named variable */
 /* uses Rslt */
 #define NamedVar    fld[1].nvar
 
-#define C_CallSig   2		   /* call and handling of returned signal */
+#define C_CallSig   2              /* call and handling of returned signal */
 #define OperName    fld[0].oper_nm /* run-time routine name or null */
 /* uses Cont */
 #define Flags       fld[2].n       /* flag: NeedCont, ForeignSig */
-#define ArgLst      fld[3].cd	   /* argument list */
-#define ContFail    fld[4].cd	   /* label/signal to goto/return on failure */
-#define SigActs     fld[5].sa	   /* actions to take for returned signals */
-#define NextCall    fld[6].cd	   /* for chaining calls within a continuation*/
+#define ArgLst      fld[3].cd      /* argument list */
+#define ContFail    fld[4].cd      /* label/signal to goto/return on failure */
+#define SigActs     fld[5].sa      /* actions to take for returned signals */
+#define NextCall    fld[6].cd      /* for chaining calls within a continuation*/
 #define NeedCont    1              /* pass NULL continuation if Cont == NULL */
 #define ForeignSig  2              /* may get foreign signal from a suspend */
 
-#define C_RetSig    3 		   /* return signal */
+#define C_RetSig    3              /* return signal */
 #define SigRef      fld[0].sigref  /* pointer to func's reference to signal */
 
-#define C_Goto      4		   /* goto label */
+#define C_Goto      4              /* goto label */
 #define Lbl         fld[0].cd      /* label */
 
-#define C_Label     5		   /* statment label "Ln:" and signal "n" */
-#define Container   fld[0].fnc	   /* continuation containing label */
-#define SeqNum      fld[1].n	   /* sequence number, n */
-#define Desc        fld[2].s	   /* description of how label/signal is used */
-#define RefCnt      fld[3].n	   /* reference count for label */
+#define C_Label     5              /* statment label "Ln:" and signal "n" */
+#define Container   fld[0].fnc     /* continuation containing label */
+#define SeqNum      fld[1].n       /* sequence number, n */
+#define Desc        fld[2].s       /* description of how label/signal is used */
+#define RefCnt      fld[3].n       /* reference count for label */
 #define LabFlg      fld[4].n       /* flag: FncPtrd, BndSig */
-#define FncPrtd     1		   /*   function sig_n has been printed */
-#define Bounding    2		   /*   this is a bounding label */
+#define FncPrtd     1              /*   function sig_n has been printed */
+#define Bounding    2              /*   this is a bounding label */
 
-#define C_Lit      6 		   /* literal (integer, real, string, cset) */
+#define C_Lit      6               /* literal (integer, real, string, cset) */
 /* uses Rslt */
 #define Literal    fld[1].lit
 
-#define C_Resume   7		   /* resume signal */
-#define C_Continue 8 		   /* continue signal */
-#define C_FallThru 9		   /* fall through signal */
-#define C_PFail    10		   /* procedure failure */
-#define C_PRet     11		   /* procedure return (result already set) */
-#define C_PSusp    12		   /* procedure suspend */
-#define C_Break    13		   /* break out of signal handling switch */
+#define C_Resume   7               /* resume signal */
+#define C_Continue 8               /* continue signal */
+#define C_FallThru 9               /* fall through signal */
+#define C_PFail    10              /* procedure failure */
+#define C_PRet     11              /* procedure return (result already set) */
+#define C_PSusp    12              /* procedure suspend */
+#define C_Break    13              /* break out of signal handling switch */
 #define C_LBrack   14              /* '{' */
 #define C_RBrack   15              /* '}' */
 
 #define C_Create   16              /* call of create() for create expression */
 /* uses Rslt */
 /* uses Cont */
-#define NTemps      fld[2].n	   /* number of temporary descriptors needed */
-#define WrkSize     fld[3].n	   /* size of non-descriptor work area */
-#define NextCreat   fld[4].cd	   /* for chaining creates in a continuation */
+#define NTemps      fld[2].n       /* number of temporary descriptors needed */
+#define WrkSize     fld[3].n       /* size of non-descriptor work area */
+#define NextCreat   fld[4].cd      /* for chaining creates in a continuation */
 
 
-#define C_If       17		   /* conditional (goto or return) */
+#define C_If       17              /* conditional (goto or return) */
 #define Cond       fld[0].cd       /* condition */
 #define ThenStmt   fld[1].cd       /* what to do if condition is true */
 
@@ -187,7 +187,7 @@ struct code {
 struct c_fnc {
    char prefix[PrfxSz+1];   /* function prefix */
    char frm_prfx[PrfxSz+1]; /* procedure frame prefix */
-   int flag;	            /* CF_* flags */
+   int flag;                /* CF_* flags */
    struct code cd;          /* start of code sequence */
    struct code *cursor;     /* place to insert more code into sequence */
    struct code *call_lst;   /* functions called by this function */
@@ -226,11 +226,11 @@ struct op_symentry {
     struct val_loc *loc;
     };
 
-extern int num_tmp;		/* number of temporary descriptor variables */
-extern int num_itmp;		/* number of temporary C integer variables */
-extern int num_dtmp;		/* number of temporary C double variables */
-extern int num_sbuf;		/* number of string buffers */
-extern int num_cbuf;		/* number of cset buffers */
+extern int num_tmp;             /* number of temporary descriptor variables */
+extern int num_itmp;            /* number of temporary C integer variables */
+extern int num_dtmp;            /* number of temporary C double variables */
+extern int num_sbuf;            /* number of string buffers */
+extern int num_cbuf;            /* number of cset buffers */
 
 extern struct code *bound_sig;  /* bounding signal for current procedure */
 
@@ -246,7 +246,7 @@ extern struct val_loc ignore;    /* no values, just something to point at */
 extern struct c_fnc *cur_fnc;    /* C function currently being built */
 extern struct code *on_failure;  /* place to go on failure */
 
-extern int lbl_seq_num;		/* next label sequence number */
+extern int lbl_seq_num;         /* next label sequence number */
 
 extern char pre[PrfxSz];        /* next unused prefix */
 

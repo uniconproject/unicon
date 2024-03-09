@@ -6,6 +6,6 @@
 
 #ifdef Graphics
 
-#else					/* Graphics */
-/* static char junk;		/* avoid empty module */
-#endif					/* Graphics */
+#else                                   /* Graphics */
+/* static char junk;            /* avoid empty module */
+#endif                                  /* Graphics */

@@ -19,15 +19,15 @@ function{1} funcname(x)
       }
    inline {
       double y;
-      pre		/* Pre math-operation range checking */
+      pre               /* Pre math-operation range checking */
       errno = 0;
       y = ccode(x);
-      post		/* Post math-operation C library error detection */
+      post              /* Post math-operation C library error detection */
       return C_double y;
       }
 end
 #enddef
-
+
 
 #define aroundone if (x < -1.0 || x > 1.0) {drunerr(205, x); errorfail;}
 #define positive  if (x < 0)               {drunerr(205, x); errorfail;}
@@ -56,7 +56,7 @@ MathOp(sqrt,sqrt, " - square root of x.", positive, edom)
 MathOp(dtor,DTOR, " - convert x from degrees to radians.", ; , ;)
 MathOp(rtod,RTOD, " - convert x from radians to degrees.", ; , ;)
 
-
+
 
 "atan(r1,r2) -- r1, r2  in radians; if r2 is present, produces atan2(r1,r2)."
 
@@ -78,7 +78,7 @@ function{1} atan(x,y)
       return C_double atan2(x,y);
       }
 end
-
+
 
 "log(r1,r2) - logarithm of r1 to base r2."
 
@@ -107,8 +107,8 @@ function{1} log(x,b)
 #ifndef Concurrent
          static double lastbase = 0.0;
          static double divisor;
-#endif					/* Concurrent */
-	 CURTSTATE();
+#endif                                  /* Concurrent */
+         CURTSTATE();
 
          if (b <= 1.0) {
             drunerr(205, b);
@@ -118,9 +118,9 @@ function{1} log(x,b)
             divisor = log(b);
             lastbase = b;
             }
-	 x = log(x) / divisor;
+         x = log(x) / divisor;
          return C_double x;
-         }  
+         }
       }
 end
 
@@ -137,50 +137,50 @@ body {
    dtmp = argv[0];
    if (argc == 1) {
       if (is:list(dtmp)) {
-	 int i, j, size;
-	 union block *bp;
-	 size = BlkD(dtmp,List)->size;
-	 if (size==0) fail;
+         int i, j, size;
+         union block *bp;
+         size = BlkD(dtmp,List)->size;
+         if (size==0) fail;
 #ifdef Arrays
-	 if (BlkD(dtmp,List)->listtail == NULL) {
-	    bp = BlkD(dtmp,List)->listhead;
-	    if (bp->Intarray.title == T_Intarray) {
-	       word mymax = bp->Intarray.a[0];
-	       for(i = 1; i < size; i++)
-		  if (bp->Intarray.a[i] > mymax) mymax = bp->Intarray.a[i];
-	       return C_integer mymax;
-	       }
-	    else {
-	       double mymax = bp->Realarray.a[0];
-	       for(i = 1; i < size; i++)
-		  if (bp->Realarray.a[i] > mymax) mymax = bp->Realarray.a[i];
-	       dtmp.dword = D_Real;
+         if (BlkD(dtmp,List)->listtail == NULL) {
+            bp = BlkD(dtmp,List)->listhead;
+            if (bp->Intarray.title == T_Intarray) {
+               word mymax = bp->Intarray.a[0];
+               for(i = 1; i < size; i++)
+                  if (bp->Intarray.a[i] > mymax) mymax = bp->Intarray.a[i];
+               return C_integer mymax;
+               }
+            else {
+               double mymax = bp->Realarray.a[0];
+               for(i = 1; i < size; i++)
+                  if (bp->Realarray.a[i] > mymax) mymax = bp->Realarray.a[i];
+               dtmp.dword = D_Real;
 #ifdef DescriptorDouble
-	       dtmp.vword.realval = mymax;
-#else					/* DescriptorDouble */
-	       dtmp.vword.bptr = (union block *)alcreal(mymax);
-#endif					/* DescriptorDouble */
-	       return dtmp;
-	       }
-	    }
+               dtmp.vword.realval = mymax;
+#else                                   /* DescriptorDouble */
+               dtmp.vword.bptr = (union block *)alcreal(mymax);
+#endif                                  /* DescriptorDouble */
+               return dtmp;
+               }
+            }
 
 #endif
-	 /*
-	  * normal max(L), walk through list elements
-	  */
-	 bp = dtmp.vword.bptr;
-	 dtmp = nulldesc; /* the minimal value */
-	 for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
-	      bp = Blk(bp,Lelem)->listnext) {
-	    for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
-	       j = bp->Lelem.first + i;
-	       if (j >= bp->Lelem.nslots)
-		  j -= bp->Lelem.nslots;
-	       if (anycmp(bp->Lelem.lslots+j, &dtmp) == Greater)
-		  dtmp = bp->Lelem.lslots[j];
-	       }
-	    }
-	 }
+         /*
+          * normal max(L), walk through list elements
+          */
+         bp = dtmp.vword.bptr;
+         dtmp = nulldesc; /* the minimal value */
+         for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
+              bp = Blk(bp,Lelem)->listnext) {
+            for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
+               j = bp->Lelem.first + i;
+               if (j >= bp->Lelem.nslots)
+                  j -= bp->Lelem.nslots;
+               if (anycmp(bp->Lelem.lslots+j, &dtmp) == Greater)
+                  dtmp = bp->Lelem.lslots[j];
+               }
+            }
+         }
       }
    else
       for(i=1;i<argc;i++) if (anycmp(&dtmp, argv+i) < 0) dtmp = argv[i];
@@ -202,61 +202,61 @@ body {
    dtmp = argv[0];
    if (argc == 1) {
       if (is:list(dtmp)) {
-	 int i, j, size;
-	 union block *bp;
-	 size = BlkD(dtmp,List)->size;
-	 if (size==0) fail;
+         int i, j, size;
+         union block *bp;
+         size = BlkD(dtmp,List)->size;
+         if (size==0) fail;
 #ifdef Arrays
-	 if (BlkD(dtmp,List)->listtail == NULL) {
-	    bp = BlkD(dtmp,List)->listhead;
-	    if (bp->Intarray.title == T_Intarray) {
-	       word mymin = bp->Intarray.a[0];
-	       for(i = 1; i < size; i++)
-		  if (bp->Intarray.a[i] < mymin) mymin = bp->Intarray.a[i];
-	       return C_integer mymin;
-	       }
-	    else {
-	       double mymin = bp->Realarray.a[0];
-	       for(i = 1; i < size; i++)
-		  if (bp->Realarray.a[i] < mymin) mymin = bp->Realarray.a[i];
-	       dtmp.dword = D_Real;
+         if (BlkD(dtmp,List)->listtail == NULL) {
+            bp = BlkD(dtmp,List)->listhead;
+            if (bp->Intarray.title == T_Intarray) {
+               word mymin = bp->Intarray.a[0];
+               for(i = 1; i < size; i++)
+                  if (bp->Intarray.a[i] < mymin) mymin = bp->Intarray.a[i];
+               return C_integer mymin;
+               }
+            else {
+               double mymin = bp->Realarray.a[0];
+               for(i = 1; i < size; i++)
+                  if (bp->Realarray.a[i] < mymin) mymin = bp->Realarray.a[i];
+               dtmp.dword = D_Real;
 #ifdef DescriptorDouble
-	       dtmp.vword.realval = mymin;
-#else					/* DescriptorDouble */
-	       dtmp.vword.bptr = (union block *)alcreal(mymin);
-#endif					/* DescriptorDouble */
-	       return dtmp;
-	       }
-	    }
+               dtmp.vword.realval = mymin;
+#else                                   /* DescriptorDouble */
+               dtmp.vword.bptr = (union block *)alcreal(mymin);
+#endif                                  /* DescriptorDouble */
+               return dtmp;
+               }
+            }
 
 #endif
-	 /*
-	  * normal min(L), walk through list elements
-	  */
-	 bp = dtmp.vword.bptr;
-	 dtmp = nulldesc;
-	 for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
-	      bp = Blk(bp,Lelem)->listnext) {
-	    for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
-	       j = bp->Lelem.first + i;
-	       if (j >= bp->Lelem.nslots)
-		  j -= bp->Lelem.nslots;
-		  dtmp = bp->Lelem.lslots[j]; /* the minimal value for now */
-		  break;break;
-	       }
-	    }
-	    
-	 for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
-	      bp = Blk(bp,Lelem)->listnext) {
-	    for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
-	       j = bp->Lelem.first + i;
-	       if (j >= bp->Lelem.nslots)
-		  j -= bp->Lelem.nslots;
-	       if (anycmp(bp->Lelem.lslots+j, &dtmp) == Less)
-		  dtmp = bp->Lelem.lslots[j];
-	       }
-	    }
-	 }
+         /*
+          * normal min(L), walk through list elements
+          */
+         bp = dtmp.vword.bptr;
+         dtmp = nulldesc;
+         for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
+              bp = Blk(bp,Lelem)->listnext) {
+            for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
+               j = bp->Lelem.first + i;
+               if (j >= bp->Lelem.nslots)
+                  j -= bp->Lelem.nslots;
+                  dtmp = bp->Lelem.lslots[j]; /* the minimal value for now */
+                  break;break;
+               }
+            }
+
+         for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
+              bp = Blk(bp,Lelem)->listnext) {
+            for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
+               j = bp->Lelem.first + i;
+               if (j >= bp->Lelem.nslots)
+                  j -= bp->Lelem.nslots;
+               if (anycmp(bp->Lelem.lslots+j, &dtmp) == Less)
+                  dtmp = bp->Lelem.lslots[j];
+               }
+            }
+         }
       }
    else
       for(i=1;i<argc;i++) if (anycmp(&dtmp, argv+i) > 0) dtmp = argv[i];

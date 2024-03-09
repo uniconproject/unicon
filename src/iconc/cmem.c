@@ -23,7 +23,7 @@ char pre[PrfxSz] = {'0', '0', '0'};     /* initial function name prefix */
 
 extern struct str_buf lex_sbuf;
 
-
+
 /*
  * init - initialize memory for the translator
  */

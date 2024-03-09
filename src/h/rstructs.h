@@ -10,30 +10,30 @@
  * Run-time error numbers and text.
  */
 struct errtab {
-   int err_no;			/* error number */
-   char *errmsg;		/* error message */
+   int err_no;                  /* error number */
+   char *errmsg;                /* error message */
    };
 
 /*
  * Descriptor
  */
 
-struct descrip {		/* descriptor */
-   word dword;			/*   type field */
+struct descrip {                /* descriptor */
+   word dword;                  /*   type field */
    union {
-      word integr;		/*   integer value */
+      word integr;              /*   integer value */
 #ifdef DescriptorDouble
       double realval;
-#endif				/*   DescriptorDouble */
-      char *sptr;		/*   pointer to character string */
-      union block *bptr;	/*   pointer to a block */
-      dptr descptr;		/*   pointer to a descriptor */
+#endif                          /*   DescriptorDouble */
+      char *sptr;               /*   pointer to character string */
+      union block *bptr;        /*   pointer to a block */
+      dptr descptr;             /*   pointer to a descriptor */
       } vword;
    };
 
 struct sdescrip {
-   word length;			/*   length of string */
-   char *string;		/*   pointer to string */
+   word length;                 /*   length of string */
+   char *string;                /*   pointer to string */
    };
 
 struct si_ {
@@ -52,48 +52,48 @@ struct b_proc_list {
 };
 
 #ifdef LargeInts
-struct b_bignum {		/* large integer block */
-   word title;			/*   T_Lrgint */
-   word blksize;		/*   block size */
-   word msd, lsd;		/*   most and least significant digits */
-   int sign;			/*   sign; 0 positive, 1 negative */
-   DIGIT digits[1];		/*   digits */
+struct b_bignum {               /* large integer block */
+   word title;                  /*   T_Lrgint */
+   word blksize;                /*   block size */
+   word msd, lsd;               /*   most and least significant digits */
+   int sign;                    /*   sign; 0 positive, 1 negative */
+   DIGIT digits[1];             /*   digits */
    };
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
 #ifndef DescriptorDouble
-struct b_real {			/* real block */
-   word title;			/*   T_Real */
-   double realval;		/*   value */
+struct b_real {                 /* real block */
+   word title;                  /*   T_Real */
+   double realval;              /*   value */
    };
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
 
-struct b_cset {			/* cset block */
-   word title;			/*   T_Cset */
-   word size;			/*   size of cset */
-   unsigned int bits[CsetSize];		/*   array of bits */
+struct b_cset {                 /* cset block */
+   word title;                  /*   T_Cset */
+   word size;                   /*   size of cset */
+   unsigned int bits[CsetSize];         /*   array of bits */
    };
 
 #ifdef Unicode
- /* 
-  * Unicode string block 
+ /*
+  * Unicode string block
   */
-struct b_unistr { 
+struct b_unistr {
    word title;                       /* T_UniStr */
    word size;                        /* size in unicode character units, returned by *s */
    word lcidx_used;                  /* cache: last unicode character index used  */
    word lbidx_used;                  /* cache: last byte index used */
-   char bsize;                       /* The number of characters in each cbindex block below, 
-				      * k=1, 2,...,32 
-				      */
-   char encoding;                    /* In case we go beyound UTF-8, for now this field will 
-				      * always be set to 1. 0 represents "pure" ASCII
-				      */
+   char bsize;                       /* The number of characters in each cbindex block below,
+                                      * k=1, 2,...,32
+                                      */
+   char encoding;                    /* In case we go beyound UTF-8, for now this field will
+                                      * always be set to 1. 0 represents "pure" ASCII
+                                      */
    /* char ielemsize; */             /* index element size, maybe inferrable from size */
    char reserved[6];                 /* explicit alighnment to 8-byte */
    union cbindex {                   /* mapping of characters to their byte indicies in sd below */
-   char c[16];                       /* for short strings, this in-place table will be used */  
-   struct sdescrip sdb	             /* if size>16, allocate indexes in string region */
+   char c[16];                       /* for short strings, this in-place table will be used */
+   struct sdescrip sdb               /* if size>16, allocate indexes in string region */
    } u;
 
    /*
@@ -102,8 +102,8 @@ struct b_unistr {
    struct sdescrip sd;
  };
 
- /* 
-  * Unicode cset block 
+ /*
+  * Unicode cset block
   */
 struct b_unicset {
    word title;
@@ -113,7 +113,7 @@ struct b_unicset {
    union block *cset;
    union block *set;
    };
-#endif				/* Unicode */
+#endif                          /* Unicode */
 
 /*
  * This union was pulled out of struct b_file and made non-anonymous
@@ -138,21 +138,21 @@ union f {
 #endif               /* Audio */
 #ifdef PseudoPty
      struct ptstruct *pt;
-#endif					/* PseudoPty */
+#endif                                  /* PseudoPty */
 #if HAVE_LIBSSL
     SSL *ssl;
-#endif					/* HAVE_LIBSSL */
+#endif                                  /* HAVE_LIBSSL */
    int fd;        /*   other int-based file descriptor */
    };
 
-struct b_file {			/* file block */
-   word title;			/*   T_File */
+struct b_file {                 /* file block */
+   word title;                  /*   T_File */
    union f fd;
-   word status;			/*   file status */
+   word status;                 /*   file status */
 #ifdef Concurrent
    word mutexid;
-#endif				/* Concurrent */
-   struct descrip fname;	/*   file name (string qualifier) */
+#endif                          /* Concurrent */
+   struct descrip fname;        /*   file name (string qualifier) */
    };
 
 #ifdef ISQL
@@ -162,12 +162,12 @@ struct b_file {			/* file block */
     char *query;                /* SQL query buffer */
     long qsize;                 /* SQL query buffer size */
     char *tablename;
-    struct b_proc *proc;	/* current record constructor procedure */
+    struct b_proc *proc;        /* current record constructor procedure */
     int refcount;
     struct ISQLFile *previous, *next; /* links, so we can find & free these*/
   };
 
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
 #ifdef Messaging
 struct MFile {                  /* messaging file abstraction */
@@ -185,194 +185,194 @@ struct Mpoplist {
    };
 #endif                                  /* Messaging */
 
-struct b_lelem {		/* list-element block */
-   word title;			/*   T_Lelem */
-   word blksize;		/*   size of block */
-   union block *listprev;	/*   previous list-element block */
-   union block *listnext;	/*   next list-element block */
-   word nslots;			/*   total number of slots */
-   word first;			/*   index of first used slot */
-   word nused;			/*   number of used slots */
-   struct descrip lslots[1];	/*   array of slots */
+struct b_lelem {                /* list-element block */
+   word title;                  /*   T_Lelem */
+   word blksize;                /*   size of block */
+   union block *listprev;       /*   previous list-element block */
+   union block *listnext;       /*   next list-element block */
+   word nslots;                 /*   total number of slots */
+   word first;                  /*   index of first used slot */
+   word nused;                  /*   number of used slots */
+   struct descrip lslots[1];    /*   array of slots */
    };
 
-struct b_list {			/* list-header block */
-   word title;			/*   T_List */
-   word size;			/*   current list size */
-   word id;			/*   identification number */
+struct b_list {                 /* list-header block */
+   word title;                  /*   T_List */
+   word size;                   /*   current list size */
+   word id;                     /*   identification number */
 #ifdef Concurrent
    word shared;
    word mutexid;
    word max, full, empty ;
    word cvfull, cvempty;
-#endif				/* Concurrent */
-   union block *listhead;	/*   pointer to first list-element block */
-   union block *listtail;	/*   pointer to last list-element block */
+#endif                          /* Concurrent */
+   union block *listhead;       /*   pointer to first list-element block */
+   union block *listtail;       /*   pointer to last list-element block */
    };
 
 struct b_intarray {
-   word title;			/* T_Intarray */
-   word blksize;		/* size of block */
-   union block *listp;		/* pointer to the list block */
-   union block *dims;		/* dimension sizes, NULL for 1D */
-   word a[1];			/* true array size == size, above */
+   word title;                  /* T_Intarray */
+   word blksize;                /* size of block */
+   union block *listp;          /* pointer to the list block */
+   union block *dims;           /* dimension sizes, NULL for 1D */
+   word a[1];                   /* true array size == size, above */
    };
 
 struct b_realarray {
-   word title;			/* T_Realarray */
-   word blksize;		/* size of block */
-   union block *listp;		/* pointer to the list block */
-   union block *dims;		/* dimension sizes, NULL for 1D */
-   double a[1];			/* true array size == size, above */
+   word title;                  /* T_Realarray */
+   word blksize;                /* size of block */
+   union block *listp;          /* pointer to the list block */
+   union block *dims;           /* dimension sizes, NULL for 1D */
+   double a[1];                 /* true array size == size, above */
    };
 
-struct b_mask {			/* mask block, used to access fields across blocks */
-   word title;			/*   T_Table, T_Set, T_List or, T_Record */
-   word size;			/*   size */
-   word id;			/*   identification number */
+struct b_mask {                 /* mask block, used to access fields across blocks */
+   word title;                  /*   T_Table, T_Set, T_List or, T_Record */
+   word size;                   /*   size */
+   word id;                     /*   identification number */
 #ifdef Concurrent
    word shared;
    word mutexid;
-#endif				/* Concurrent */
+#endif                          /* Concurrent */
    };
 
 
-struct b_proc {			/* procedure block */
-   word title;			/*   T_Proc */
-   word blksize;		/*   size of block */
+struct b_proc {                 /* procedure block */
+   word title;                  /*   T_Proc */
+   word blksize;                /*   size of block */
 
    #if COMPILER
       int (*ccode)();
-   #else				/* COMPILER */
-      union {			/*   entry points for */
-         int (*ccode)();	/*     C routines */
-         uword ioff;		/*     and icode as offset */
-         pointer icode;		/*     and icode as absolute pointer */
+   #else                                /* COMPILER */
+      union {                   /*   entry points for */
+         int (*ccode)();        /*     C routines */
+         uword ioff;            /*     and icode as offset */
+         pointer icode;         /*     and icode as absolute pointer */
          } entryp;
-   #endif				/* COMPILER */
+   #endif                               /* COMPILER */
 
-   word nparam;			/*   number of parameters */
-   word ndynam;			/*   number of dynamic locals */
-   word nstatic;		/*   number of static locals */
-   word fstatic;		/*   index (in global table) of first static */
-   struct descrip pname;	/*   procedure name (string qualifier) */
-   struct descrip lnames[1];	/*   list of local names (qualifiers) */
+   word nparam;                 /*   number of parameters */
+   word ndynam;                 /*   number of dynamic locals */
+   word nstatic;                /*   number of static locals */
+   word fstatic;                /*   index (in global table) of first static */
+   struct descrip pname;        /*   procedure name (string qualifier) */
+   struct descrip lnames[1];    /*   list of local names (qualifiers) */
    };
 
-struct b_record {		/* record block */
-   word title;			/*   T_Record */
-   word blksize;		/*   size of block */
-   word id;			/*   identification number */
+struct b_record {               /* record block */
+   word title;                  /*   T_Record */
+   word blksize;                /*   size of block */
+   word id;                     /*   identification number */
 #ifdef Concurrent
    word shared;
    word mutexid;
-#endif				/* Concurrent */
-   union block *recdesc;	/*   pointer to record constructor */
-   struct descrip fields[1];	/*   fields */
+#endif                          /* Concurrent */
+   union block *recdesc;        /*   pointer to record constructor */
+   struct descrip fields[1];    /*   fields */
    };
 
 /*
  * Alternate uses for procedure block fields, applied to records.
  */
-#define nfields	nparam		/* number of fields */
-#define recnum nstatic		/* record number */
-#define recid fstatic		/* record serial number */
-#define recname	pname		/* record name */
+#define nfields nparam          /* number of fields */
+#define recnum nstatic          /* record number */
+#define recid fstatic           /* record serial number */
+#define recname pname           /* record name */
 
-struct b_selem {		/* set-element block */
-   word title;			/*   T_Selem */
-   union block *clink;		/*   hash chain link */
-   uword hashnum;		/*   hash number */
-   struct descrip setmem;	/*   the element */
+struct b_selem {                /* set-element block */
+   word title;                  /*   T_Selem */
+   union block *clink;          /*   hash chain link */
+   uword hashnum;               /*   hash number */
+   struct descrip setmem;       /*   the element */
    };
 
 /*
  * A set header must be a proper prefix of a table header,
  *  and a set element must be a proper prefix of a table element.
  */
-struct b_set {			/* set-header block */
-   word title;			/*   T_Set */
-   word size;			/*   size of the set */
-   word id;			/*   identification number */
+struct b_set {                  /* set-header block */
+   word title;                  /*   T_Set */
+   word size;                   /*   size of the set */
+   word id;                     /*   identification number */
 #ifdef Concurrent
    word shared;
    word mutexid;
-#endif				/* Concurrent */
-   word mask;			/*   mask for slot num, equals n slots - 1 */
-   struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
+#endif                          /* Concurrent */
+   word mask;                   /*   mask for slot num, equals n slots - 1 */
+   struct b_slots *hdir[HSegs]; /*   directory of hash slot segments */
    };
 
-struct b_table {		/* table-header block */
-   word title;			/*   T_Table */
-   word size;			/*   current table size */
-   word id;			/*   identification number */
+struct b_table {                /* table-header block */
+   word title;                  /*   T_Table */
+   word size;                   /*   current table size */
+   word id;                     /*   identification number */
 #ifdef Concurrent
    word shared;
    word mutexid;
-#endif				/* Concurrent */
-   word mask;			/*   mask for slot num, equals n slots - 1 */
-   struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
-   struct descrip defvalue;	/*   default table element value */
+#endif                          /* Concurrent */
+   word mask;                   /*   mask for slot num, equals n slots - 1 */
+   struct b_slots *hdir[HSegs]; /*   directory of hash slot segments */
+   struct descrip defvalue;     /*   default table element value */
    };
 
-struct b_slots {		/* set/table hash slots */
-   word title;			/*   T_Slots */
-   word blksize;		/*   size of block */
-   union block *hslots[HSlots];	/*   array of slots (HSlots * 2^n entries) */
+struct b_slots {                /* set/table hash slots */
+   word title;                  /*   T_Slots */
+   word blksize;                /*   size of block */
+   union block *hslots[HSlots]; /*   array of slots (HSlots * 2^n entries) */
    };
 
-struct b_telem {		/* table-element block */
-   word title;			/*   T_Telem */
-   union block *clink;		/*   hash chain link */
-   uword hashnum;		/*   for ordering chain */
-   struct descrip tref;		/*   entry value */
-   struct descrip tval;		/*   assigned value */
+struct b_telem {                /* table-element block */
+   word title;                  /*   T_Telem */
+   union block *clink;          /*   hash chain link */
+   uword hashnum;               /*   for ordering chain */
+   struct descrip tref;         /*   entry value */
+   struct descrip tval;         /*   assigned value */
    };
 
-struct b_tvsubs {		/* substring trapped variable block */
-   word title;			/*   T_Tvsubs */
-   word sslen;			/*   length of substring */
-   word sspos;			/*   position of substring */
-   struct descrip ssvar;	/*   variable that substring is from */
+struct b_tvsubs {               /* substring trapped variable block */
+   word title;                  /*   T_Tvsubs */
+   word sslen;                  /*   length of substring */
+   word sspos;                  /*   position of substring */
+   struct descrip ssvar;        /*   variable that substring is from */
    };
 
-struct b_tvtbl {		/* table element trapped variable block */
-   word title;			/*   T_Tvtbl */
-   union block *clink;		/*   pointer to table header block */
-   uword hashnum;		/*   hash number */
-   struct descrip tref;		/*   entry value */
+struct b_tvtbl {                /* table element trapped variable block */
+   word title;                  /*   T_Tvtbl */
+   union block *clink;          /*   pointer to table header block */
+   uword hashnum;               /*   hash number */
+   struct descrip tref;         /*   entry value */
    };
 
 #ifdef EventMon
 struct b_tvmonitored {          /* Monitored variable block */
    word title;                  /*   T_Tvmonitored */
-   word cur_actv;		/*   current co-expression activation */
+   word cur_actv;               /*   current co-expression activation */
    struct descrip tv;           /*   the variable in the other program */
    };
-#endif				/* EventMon */
+#endif                          /* EventMon */
 
-struct b_external {		/* external block */
-   word title;			/*   T_External */
-   word blksize;		/*   size of block */
-   word exdata[1];		/*   words of external data */
+struct b_external {             /* external block */
+   word title;                  /*   T_External */
+   word blksize;                /*   size of block */
+   word exdata[1];              /*   words of external data */
    };
 
-struct astkblk {		  /* co-expression activator-stack block */
-   int nactivators;		  /*   number of valid activator entries in
-				   *    this block */
-   struct astkblk *astk_nxt;	  /*   next activator block */
-   struct actrec {		  /*   activator record */
-      word acount;		  /*     number of calls by this activator */
+struct astkblk {                  /* co-expression activator-stack block */
+   int nactivators;               /*   number of valid activator entries in
+                                   *    this block */
+   struct astkblk *astk_nxt;      /*   next activator block */
+   struct actrec {                /*   activator record */
+      word acount;                /*     number of calls by this activator */
       struct b_coexpr *activator; /*     the activator itself */
       } arec[ActStkBlkEnts];
    };
 
 #ifdef PatternType
 struct b_pattern {            /*Pattern header block*/
-    word title;             /*T_Pattern*/  
+    word title;             /*T_Pattern*/
     word id;
     word stck_size;         /* size of stack for pattern history during match*/
-    union block * pe;		/*   pattern element */
+    union block * pe;           /*   pattern element */
 };
 
 struct b_pelem {                      /* Pattern element block */
@@ -380,19 +380,19 @@ struct b_pelem {                      /* Pattern element block */
     word pcode;                     /* Indicates Pattern type*/
     union block * pthen;            /*  Pointer to succeeding pointer element*/
     word index;                     /* posn of pattern elem in pointer chain
-				     * (used in image) */
+                                     * (used in image) */
     word *origin_ipc;               /* where elem was constructed
-				     * (used in debugging) */
-    struct descrip parameter;		/*   parameter */    
+                                     * (used in debugging) */
+    struct descrip parameter;           /*   parameter */
 };
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 /*
  * The following "generic link list" structure type is useful for
  * at least the Windows temp file list.
  */
 struct b_cons {
-   word title;			/* T_Cons */
+   word title;                  /* T_Cons */
    union block *data;
    union block *next;
    };
@@ -401,12 +401,12 @@ struct b_cons {
 /*
  * Structure for keeping set/table generator state across a suspension.
  */
-struct hgstate {		/* hashed-structure generator state */
-   int segnum;			/* current segment number */
-   word slotnum;		/* current slot number */
-   word tmask;			/* structure mask before suspension */
-   word sgmask[HSegs];		/* mask in use when the segment was created */
-   uword sghash[HSegs];		/* hashnum in process when seg was created */
+struct hgstate {                /* hashed-structure generator state */
+   int segnum;                  /* current segment number */
+   word slotnum;                /* current slot number */
+   word tmask;                  /* structure mask before suspension */
+   word sgmask[HSegs];          /* mask in use when the segment was created */
+   uword sghash[HSegs];         /* hashnum in process when seg was created */
    };
 
 
@@ -438,15 +438,15 @@ struct dpair {
  * string and block regions.
  */
 struct region {
-   word  size;				/* allocated region size in bytes */
-   char *base;				/* start of region */
-   char *end;				/* end of region */
-   char *free;				/* free pointer */
-   struct region *prev, *next;		/* forms a linked list of regions */
-#ifdef Concurrent   
-   struct region *Tprev, *Tnext;	/* forms a linked list of public regions. i.e not owned by any thread */
-#endif					/* Concurrent */
-   struct region *Gprev, *Gnext;	/* global (all programs) lists */
+   word  size;                          /* allocated region size in bytes */
+   char *base;                          /* start of region */
+   char *end;                           /* end of region */
+   char *free;                          /* free pointer */
+   struct region *prev, *next;          /* forms a linked list of regions */
+#ifdef Concurrent
+   struct region *Tprev, *Tnext;        /* forms a linked list of public regions. i.e not owned by any thread */
+#endif                                  /* Concurrent */
+   struct region *Gprev, *Gnext;        /* global (all programs) lists */
    };
 
 #ifdef Double
@@ -456,7 +456,7 @@ struct region {
    struct size_dbl {
        char s[sizeof(double)];
        };
-#endif					/* Double */
+#endif                                  /* Double */
 
 
 #if COMPILER
@@ -475,10 +475,10 @@ struct region {
       continuation succ_cont;
 #ifdef PatternType
       struct b_table *pattern_cache; /* cache variable refs used in a pattern */
-#endif					/* PatternType */
+#endif                                  /* PatternType */
       struct tend_desc t;
       };
-   #endif				/* COMPILER */
+   #endif                               /* COMPILER */
 
 /*
  * when debugging is enabled a debug struct is placed after the tended
@@ -490,12 +490,12 @@ struct debug {
    int old_line;
    };
 
-union numeric {			/* long integers or real numbers */
+union numeric {                 /* long integers or real numbers */
    word integer;
    double real;
    #ifdef LargeInts
       struct b_bignum *big;
-   #endif				/* LargeInts */
+   #endif                               /* LargeInts */
    };
 
 /*
@@ -504,33 +504,33 @@ union numeric {			/* long integers or real numbers */
  * but a lot of fields are VM-only.
  */
 struct threadstate {
-  
-  /* 
-   * the threadstate is tied not only to a thread, but also to 
+
+  /*
+   * the threadstate is tied not only to a thread, but also to
    * a coexpression (for now!), since there is a one to one mapping
-   * between a co-expressn and it is corresponding thread 
+   * between a co-expressn and it is corresponding thread
    * Note: (c is also equavelent to ctx->c)
    */
-    
+
   struct b_coexpr *c;
 
 #if ConcurrentCOMPILER
   continuation Coexpr_fnc;     /* function containing co-expression code */
-#endif					/* ConcurrentCOMPILER */
-   
+#endif                                  /* ConcurrentCOMPILER */
+
 #ifdef Concurrent
    pthread_t tid;
    int Pollctr;
-   
+
    /* used in fmath.r, log() */
    double Lastbase;
    double Divisor;
-   
+
    /* used in fstr.r, map() */
    struct descrip Maps2;
    struct descrip Maps3;
    char Maptab[256];
-   
+
    /* used in rposix.r */
    word *Callproc;
    word Callproc_Ibuf[100];
@@ -538,41 +538,41 @@ struct threadstate {
 #ifdef PosixFns
    char Savedbuf[BUFSIZ];
    int Nsaved;
-#endif					/* PosixFns */
-#endif					/* Concurrent */
+#endif                                  /* PosixFns */
+#endif                                  /* Concurrent */
    /* signal mask? etc. */
 
    /*
     * VM-specific per-thread variables.
     */
 #if !COMPILER
-#ifndef Concurrent 
+#ifndef Concurrent
    word Lastop;
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
    struct descrip Value_tmp;      /* TLS  */
    dptr Xargp;                    /* TLS  */
    word Xnargs;                   /* TLS  */
-/* struct ef_marker *Efp;	* Expression frame pointer */
-/* struct gf_marker *Gfp;	* Generator frame pointer */
-/* struct pf_marker *Pfp;	* procedure frame pointer */
-/* inst Ipc;			* Interpreter program counter */
+/* struct ef_marker *Efp;       * Expression frame pointer */
+/* struct gf_marker *Gfp;       * Generator frame pointer */
+/* struct pf_marker *Pfp;       * procedure frame pointer */
+/* inst Ipc;                    * Interpreter program counter */
 /* inst Oldipc;                  * the previous ipc, fix returned line zero */
-/* word *Sp;		* Stack pointer */
-/* int Ilevel;			* Depth of recursion in interp() */
-   word *Stack;				/* Interpreter stack */
-   word *Stackend; 			/* End of interpreter stack */
-#endif					/* !COMPILER */
-   dptr Glbl_argp; /*TLS*/			/* global argp */
+/* word *Sp;            * Stack pointer */
+/* int Ilevel;                  * Depth of recursion in interp() */
+   word *Stack;                         /* Interpreter stack */
+   word *Stackend;                      /* End of interpreter stack */
+#endif                                  /* !COMPILER */
+   dptr Glbl_argp; /*TLS*/                      /* global argp */
 
    struct descrip Kywd_pos;         /* TLS */
    struct descrip ksub;             /* TLS */
    struct descrip Kywd_ran;        /*  TLS  */
 #ifdef PatternType
    int  K_patindex;                /* TLS */
-#endif                                 /* PatternType */ 
+#endif                                 /* PatternType */
 
 
-   dptr Field_argp;			/* TLS -- see comment in imisc.r */
+   dptr Field_argp;                     /* TLS -- see comment in imisc.r */
 
    struct descrip K_current;      /* TLS  */
    int K_errornumber;             /* TLS  */
@@ -586,25 +586,25 @@ struct threadstate {
 
 #ifdef PosixFns
    struct descrip AmperErrno;  /* TLS */
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
   word Line_num,   /* line number for current execution point */
     Column, Lastline, Lastcol; /*TLS*/
 
   /*  struct tend_desc *Tend;  * chain of tended descriptors */
 
-  struct descrip Eret_tmp;	/* eret value during unwinding */
-  
+  struct descrip Eret_tmp;      /* eret value during unwinding */
+
 #ifdef Concurrent
   struct region *Curstring;    /*  separate regions vs shared      */
   struct region *Curblock;     /*     same above     */
 #ifdef DescripAmpAllocated
-  struct descrip stringtotal;			/* cumulative total allocation */
-  struct descrip blocktotal;			/* cumulative total allocation */
-#else					/* DescripAmpAllocated */
-  uword stringtotal;			/* cumulative total allocation */
-  uword blocktotal;			/* cumulative total allocation */
-#endif					/* DescripAmpAllocated */
+  struct descrip stringtotal;                   /* cumulative total allocation */
+  struct descrip blocktotal;                    /* cumulative total allocation */
+#else                                   /* DescripAmpAllocated */
+  uword stringtotal;                    /* cumulative total allocation */
+  uword blocktotal;                     /* cumulative total allocation */
+#endif                                  /* DescripAmpAllocated */
 
 #ifdef SoftThreads
   int sthrd_tick;
@@ -612,8 +612,8 @@ struct threadstate {
   int sthrd_cur;
   struct b_coexpr * sthrds[SOFT_THREADS_SIZE];
   struct b_coexpr * owner; /* the co-expression where the thread spawned */
-#endif 					/* SoftThreads */ 
-#endif 					/* Concurrent */
+#endif                                  /* SoftThreads */
+#endif                                  /* Concurrent */
 
 #ifdef MultiProgram
   struct progstate *pstate;
@@ -624,7 +624,7 @@ struct threadstate {
  * Structure for chaining threadstate structs.
  * The first node will be for the main thread, it  will be always the first.
  * New nodes will be added to the end of the chain, setting roottstate->prev
- * to point to the last node will make it easy to add at the end. The chain 
+ * to point to the last node will make it easy to add at the end. The chain
  * is circular in one direction, backward, but not forward.
  */
   struct threadstate *prev;
@@ -642,13 +642,13 @@ struct threadstate {
  *  source program location.
  */
 struct ipc_fname {
-   word ipc_saved;	/* offset of instruction into code region */
-   word fname;		/* offset of file name into string region */
+   word ipc_saved;      /* offset of instruction into code region */
+   word fname;          /* offset of file name into string region */
    };
 
 struct ipc_line {
-   word ipc_saved;	/* offset of instruction into code region */
-   int line;		/* line number */
+   word ipc_saved;      /* offset of instruction into code region */
+   int line;            /* line number */
    };
 
 #ifdef MultiProgram
@@ -657,21 +657,21 @@ struct ipc_line {
  * many global structures.
  */
 struct progstate {
-   long hsize;				/* size of icode, 0 = C|Python|... */
-	/* hsize is a constant defined at load time, MT safe */
+   long hsize;                          /* size of icode, 0 = C|Python|... */
+        /* hsize is a constant defined at load time, MT safe */
    struct progstate *parent;
-	/* parent is a constant defined at load time, MT safe */
+        /* parent is a constant defined at load time, MT safe */
    struct progstate *next;
-	/* next is a link list, seldom used, needs mutex */
-   struct descrip parentdesc;		/* implicit "&parent" */
-	/* parentdesc is a constant defined at load time, MT safe */
-   struct descrip eventmask;		/* implicit "&eventmask" */
-	/* eventmask is read-only (to me), MT safe */
-   struct descrip eventcount;		/* implicit "&eventcount" */
+        /* next is a link list, seldom used, needs mutex */
+   struct descrip parentdesc;           /* implicit "&parent" */
+        /* parentdesc is a constant defined at load time, MT safe */
+   struct descrip eventmask;            /* implicit "&eventmask" */
+        /* eventmask is read-only (to me), MT safe */
+   struct descrip eventcount;           /* implicit "&eventcount" */
    struct descrip valuemask;
-   struct descrip eventcode;		/* &eventcode */
-   struct descrip eventval;		/* &eventval */
-   struct descrip eventsource;		/* &eventsource */
+   struct descrip eventcode;            /* &eventcode */
+   struct descrip eventval;             /* &eventval */
+   struct descrip eventsource;          /* &eventsource */
 
 
    /* Systems don't have more than, oh, about 50 signals, eh?
@@ -683,7 +683,7 @@ struct progstate {
     * trapped variable keywords' values
     */
    struct descrip Kywd_err;          /* Probably mutex. not important now */
-   struct descrip Kywd_prog;   
+   struct descrip Kywd_prog;
 
    struct descrip Kywd_trc;         /* leave global for now   */
    struct b_coexpr *Mainhead;
@@ -697,7 +697,7 @@ struct progstate {
       short *Ftabsp, *Fosp;
       int *Fo;
       char *Bm;
-   #endif				/* FieldTableCompression */
+   #endif                               /* FieldTableCompression */
    dptr Fnames, Efnames;
    dptr Globals, Eglobals;
    dptr Gnames, Egnames;
@@ -711,42 +711,42 @@ struct progstate {
 
    #ifdef Graphics
       struct descrip AmperX, AmperY, AmperRow, AmperCol;/* &x, &y, &row, &col */
-      struct descrip AmperInterval;			/* &interval */
-      struct descrip LastEventWin;			/* last Event() win */
+      struct descrip AmperInterval;                     /* &interval */
+      struct descrip LastEventWin;                      /* last Event() win */
       int LastEvFWidth;
       int LastEvLeading;
       int LastEvAscent;
-      uword PrevTimeStamp;				/* previous timestamp */
-      uword Xmod_Control, Xmod_Shift, Xmod_Meta;	/* control,shift,meta */
-      struct descrip Kywd_xwin[2];			/* &window + ... */
+      uword PrevTimeStamp;                              /* previous timestamp */
+      uword Xmod_Control, Xmod_Shift, Xmod_Meta;        /* control,shift,meta */
+      struct descrip Kywd_xwin[2];                      /* &window + ... */
 
    #ifdef Graphics3D
-      struct descrip AmperPick;				/* &pick */
-   #endif				/* Graphics3D */
-   #endif				/* Graphics */
-   
+      struct descrip AmperPick;                         /* &pick */
+   #endif                               /* Graphics3D */
+   #endif                               /* Graphics */
 
 
-   word Coexp_ser;			/* this program's serial numbers */
+
+   word Coexp_ser;                      /* this program's serial numbers */
    word List_ser;
    word Intern_list_ser;
-#ifdef PatternType   
+#ifdef PatternType
    word Pat_ser;
-#endif					/* PatternType */
+#endif                                  /* PatternType */
    word Set_ser;
    word Table_ser;
 
-   word Kywd_time_elsewhere;		/* ???? TLS vs global  &time spent in other programs */
-   word Kywd_time_out;			/* ????  TLS vs global &time at last program switch out */
+   word Kywd_time_elsewhere;            /* ???? TLS vs global  &time spent in other programs */
+   word Kywd_time_out;                  /* ????  TLS vs global &time at last program switch out */
 
 #ifdef Concurrent
    word mutexid_stringtotal;
    word mutexid_blocktotal;
    word mutexid_coll;
-   
+
    struct region *Public_stringregion;         /*  separate regions vs shared */
    struct region *Public_blockregion;          /*     same above     */
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
    struct region *stringregion;         /*  separate regions vs shared      */
    struct region *blockregion;          /*     same above     */
@@ -754,17 +754,17 @@ struct progstate {
   /* in case we have separate heaps, i.e ThreadHeap is defined
    * total here will be only for "dead" threads */
 #ifdef DescripAmpAllocated
-   struct descrip stringtotal;			/* cumulative total allocation */
-   struct descrip blocktotal;			/* cumulative total allocation */
-#else					/* DescripAmpAllocated */
-   uword stringtotal;			/* cumulative total allocation */
-   uword blocktotal;			/* cumulative total allocation */
-#endif					/* DescripAmpAllocated */
+   struct descrip stringtotal;                  /* cumulative total allocation */
+   struct descrip blocktotal;                   /* cumulative total allocation */
+#else                                   /* DescripAmpAllocated */
+   uword stringtotal;                   /* cumulative total allocation */
+   uword blocktotal;                    /* cumulative total allocation */
+#endif                                  /* DescripAmpAllocated */
 
-   word colltot;			/*  m      total number of collections */
-   word collstat;			/*  u      number of static collect requests */
-   word collstr;			/*  t      number of string collect requests */
-   word collblk;			/*  ex     number of block collect requests */
+   word colltot;                        /*  m      total number of collections */
+   word collstat;                       /*  u      number of static collect requests */
+   word collstr;                        /*  t      number of string collect requests */
+   word collblk;                        /*  ex     number of block collect requests */
 
    struct descrip K_main;
    struct b_file K_errout;
@@ -782,19 +782,19 @@ struct progstate {
    /*
     * Function Instrumentation Fields.
     */
-#ifdef Arrays   
+#ifdef Arrays
    int (*Cprealarray)(dptr, dptr, word, word);
    int (*Cpintarray)(dptr, dptr, word, word);
-#endif					/* Arrays */
+#endif                                  /* Arrays */
    int (*Cplist)(dptr, dptr, word, word);
    int (*Cpset)(dptr, dptr, word);
    int (*Cptable)(dptr, dptr, word);
    void (*EVstralc)(word);
 #ifdef TSTATARG
    int (*Interp)(int,dptr, struct threadstate*);
-#else 		 	   	  	 /* TSTATARG */
+#else                                    /* TSTATARG */
    int (*Interp)(int,dptr);
-#endif 		 	   	  	 /* TSTATARG */
+#endif                                   /* TSTATARG */
    int (*Cnvcset)(dptr,dptr);
    int (*Cnvint)(dptr,dptr);
    int (*Cnvreal)(dptr,dptr);
@@ -812,14 +812,14 @@ struct progstate {
    struct b_pelem * (*Alcpelem)(word, word *);
    int (*Cnvpattern)(dptr,dptr);
    int (*Internalmatch)(char*,int,int,struct descrip,
-		       struct b_pelem*,int*,int*,int,int);
-#endif					/* PatternType */
+                       struct b_pelem*,int*,int*,int,int);
+#endif                                  /* PatternType */
    struct b_list *(*Alclist_raw)(uword,uword);
    struct b_list *(*Alclist)(uword,uword);
    struct b_lelem *(*Alclstb)(uword,uword,uword);
 #ifndef DescriptorDouble
    struct b_real *(*Alcreal)(double);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
    struct b_record *(*Alcrecd)(int, union block *);
    struct b_refresh *(*Alcrefresh)(word *, int, int);
    struct b_selem *(*Alcselem)(dptr, uword);
@@ -832,43 +832,43 @@ struct progstate {
    char * (*Reserve)(int, word);
 
    struct threadstate *tstate, maintstate;
-  
+
    };
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * Frame markers
  */
-struct ef_marker {		/* expression frame marker */
-   inst ef_failure;		/*   failure ipc */
-   struct ef_marker *ef_efp;	/*   efp */
-   struct gf_marker *ef_gfp;	/*   gfp */
-   word ef_ilevel;		/*   ilevel */
+struct ef_marker {              /* expression frame marker */
+   inst ef_failure;             /*   failure ipc */
+   struct ef_marker *ef_efp;    /*   efp */
+   struct gf_marker *ef_gfp;    /*   gfp */
+   word ef_ilevel;              /*   ilevel */
    };
 
-struct pf_marker {		/* procedure frame marker */
-   word pf_nargs;		/*   number of arguments */
-   struct pf_marker *pf_pfp;	/*   saved pfp */
-   struct ef_marker *pf_efp;	/*   saved efp */
-   struct gf_marker *pf_gfp;	/*   saved gfp */
-   dptr pf_argp;		/*   saved argp */
-   inst pf_ipc;			/*   saved ipc */
-   word pf_ilevel;		/*   saved ilevel */
-   dptr pf_scan;		/*   saved scanning environment */
+struct pf_marker {              /* procedure frame marker */
+   word pf_nargs;               /*   number of arguments */
+   struct pf_marker *pf_pfp;    /*   saved pfp */
+   struct ef_marker *pf_efp;    /*   saved efp */
+   struct gf_marker *pf_gfp;    /*   saved gfp */
+   dptr pf_argp;                /*   saved argp */
+   inst pf_ipc;                 /*   saved ipc */
+   word pf_ilevel;              /*   saved ilevel */
+   dptr pf_scan;                /*   saved scanning environment */
 #ifdef PatternType
     struct b_table *pattern_cache; /* used to cache the variable references used in a pattern*/
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
-   struct descrip pf_locals[1];	/*   descriptors for locals */
+   struct descrip pf_locals[1]; /*   descriptors for locals */
    };
 
-struct gf_marker {		/* generator frame marker */
-   word gf_gentype;		/*   type */
-   struct ef_marker *gf_efp;	/*   efp */
-   struct gf_marker *gf_gfp;	/*   gfp */
-   inst gf_ipc;			/*   ipc */
-   struct pf_marker *gf_pfp;	/*   pfp */
-   dptr gf_argp;		/*   argp */
+struct gf_marker {              /* generator frame marker */
+   word gf_gentype;             /*   type */
+   struct ef_marker *gf_efp;    /*   efp */
+   struct gf_marker *gf_gfp;    /*   gfp */
+   inst gf_ipc;                 /*   ipc */
+   struct pf_marker *gf_pfp;    /*   pfp */
+   dptr gf_argp;                /*   argp */
    };
 
 /*
@@ -877,39 +877,39 @@ struct gf_marker {		/* generator frame marker */
  *  The first five members here *must* be identical to those for
  *  gf_marker.
  */
-struct gf_smallmarker {		/* generator frame marker */
-   word gf_gentype;		/*   type */
-   struct ef_marker *gf_efp;	/*   efp */
-   struct gf_marker *gf_gfp;	/*   gfp */
-   inst gf_ipc;			/*   ipc */
+struct gf_smallmarker {         /* generator frame marker */
+   word gf_gentype;             /*   type */
+   struct ef_marker *gf_efp;    /*   efp */
+   struct gf_marker *gf_gfp;    /*   gfp */
+   inst gf_ipc;                 /*   ipc */
    };
 
 /*
  * b_iproc blocks are used to statically initialize information about
- *  functions.	They are identical to b_proc blocks except for
+ *  functions.  They are identical to b_proc blocks except for
  *  the pname field which is a sdescrip (simple/string descriptor) instead
  *  of a descrip.  This is done because unions cannot be initialized.
  */
-	
-struct b_iproc {		/* procedure block */
-   word ip_title;		/*   T_Proc */
-   word ip_blksize;		/*   size of block */
-   int (*ip_entryp)();		/*   entry point (code) */
-   word ip_nparam;		/*   number of parameters */
-   word ip_ndynam;		/*   number of dynamic locals */
-   word ip_nstatic;		/*   number of static locals */
-   word ip_fstatic;		/*   index (in global table) of first static */
 
-   struct sdescrip ip_pname;	/*   procedure name (string qualifier) */
-   struct descrip ip_lnames[1];	/*   list of local names (qualifiers) */
+struct b_iproc {                /* procedure block */
+   word ip_title;               /*   T_Proc */
+   word ip_blksize;             /*   size of block */
+   int (*ip_entryp)();          /*   entry point (code) */
+   word ip_nparam;              /*   number of parameters */
+   word ip_ndynam;              /*   number of dynamic locals */
+   word ip_nstatic;             /*   number of static locals */
+   word ip_fstatic;             /*   index (in global table) of first static */
+
+   struct sdescrip ip_pname;    /*   procedure name (string qualifier) */
+   struct descrip ip_lnames[1]; /*   list of local names (qualifiers) */
    };
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
-struct b_coexpr {		/* co-expression stack block */
-   word title;			/*   T_Coexpr */
-   word size;			/*   number of results produced */
-   word id;			/*   identification number */
-   word status;			/*   status (native/posix, sync/async, 	etc) */
+struct b_coexpr {               /* co-expression stack block */
+   word title;                  /*   T_Coexpr */
+   word size;                   /*   number of results produced */
+   word id;                     /*   identification number */
+   word status;                 /*   status (native/posix, sync/async,  etc) */
 #ifdef Concurrent
    word shared;
    word mutexid;
@@ -921,90 +921,90 @@ struct b_coexpr {		/* co-expression stack block */
 #ifdef SoftThreads
   int sthrd_tick;
   struct b_coexpr * parent;
-#endif 					/* SoftThreads */ 
+#endif                                  /* SoftThreads */
 
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 #ifdef EventMon
    word actv_count;             /*   number of times activated using EvGet() */
-#endif				/* EventMon */
-   struct b_coexpr *nextstk;	/*   pointer to next allocated stack */
-   struct tend_desc *es_tend;	/*   current tended pointer */
-   dptr es_argp;		/*   current argument pointer */
-   dptr tvalloc;		/*   where to place transmitted value */
-   struct descrip freshblk;	/*   refresh block pointer */
-   struct astkblk *es_actstk;	/*   pointer to activation stack structure */
+#endif                          /* EventMon */
+   struct b_coexpr *nextstk;    /*   pointer to next allocated stack */
+   struct tend_desc *es_tend;   /*   current tended pointer */
+   dptr es_argp;                /*   current argument pointer */
+   dptr tvalloc;                /*   where to place transmitted value */
+   struct descrip freshblk;     /*   refresh block pointer */
+   struct astkblk *es_actstk;   /*   pointer to activation stack structure */
    int coexp_act;               /*   used to pass signal across activations */
                                 /*   back to whomever activates, if they care */
 #if COMPILER
-   continuation fnc;		/*   function containing co-expression code */
-   struct p_frame *es_pfp;	/*   current procedure frame pointer */
-   char *file_name;		/*   current file name */
-   word line_num;		/*   current line_number */
-/* see p_frame pf below */ 
-#else					/* COMPILER */
-   struct pf_marker *es_pfp;	/*   current pfp */
-   struct ef_marker *es_efp;	/*   efp */
-   struct gf_marker *es_gfp;	/*   gfp */
-   inst es_ipc;			/*   ipc */
+   continuation fnc;            /*   function containing co-expression code */
+   struct p_frame *es_pfp;      /*   current procedure frame pointer */
+   char *file_name;             /*   current file name */
+   word line_num;               /*   current line_number */
+/* see p_frame pf below */
+#else                                   /* COMPILER */
+   struct pf_marker *es_pfp;    /*   current pfp */
+   struct ef_marker *es_efp;    /*   efp */
+   struct gf_marker *es_gfp;    /*   gfp */
+   inst es_ipc;                 /*   ipc */
    inst es_oldipc;              /*   oldipc */
-   word es_ilevel;		/*   interpreter level */
-   word *es_sp;			/*   sp */
-   word *es_stack;		/*   beginning of interpreter stack */
-   word *es_stackend;		/*   end of interpreter stack */
+   word es_ilevel;              /*   interpreter level */
+   word *es_sp;                 /*   sp */
+   word *es_stack;              /*   beginning of interpreter stack */
+   word *es_stackend;           /*   end of interpreter stack */
    word Lastop;
-   
+
    #ifdef MultiProgram
       struct progstate *program;
-   #endif				/* MultiProgram */
-#endif					/* COMPILER */
+   #endif                               /* MultiProgram */
+#endif                                  /* COMPILER */
 
 #ifdef PthreadCoswitch
 /* from the Icon pthreads-based co-expression implementation. */
-   pthread_t thread;	/* thread ID (thread handle) */
-   sem_t sema;		/* synchronization semaphore (if unnamed) */
-   sem_t *semp;		/* pointer to semaphore */
-   int alive;		/* set zero when thread is to die */
+   pthread_t thread;    /* thread ID (thread handle) */
+   sem_t sema;          /* synchronization semaphore (if unnamed) */
+   sem_t *semp;         /* pointer to semaphore */
+   int alive;           /* set zero when thread is to die */
 
-   int tmplevel; 
+   int tmplevel;
    int have_thread;
 #ifdef Concurrent
    struct threadstate *tstate;
    int isProghead;
-#endif	 				/* Concurrent */
-#endif					/* PthreadCoswitch */
+#endif                                  /* Concurrent */
+#endif                                  /* PthreadCoswitch */
 
-     word cstate[CStateSize];	/*   C state information (registers, etc.) */
+     word cstate[CStateSize];   /*   C state information (registers, etc.) */
 #if COMPILER
    struct p_frame pf;           /*   initial procedure frame */
-#endif 
+#endif
 /* WARNING:   pf ^ _must_ be the LAST item in b_coexpr
- * es_pfp points ^ HERE, so 
+ * es_pfp points ^ HERE, so
  * the new pframes will be put _right_ after this!
  * anything you add after pf will be _clobbered_
  * ref: rcoexpr.r: sblkp->es_pfp = &sblkp->pf;
- * ref: rstructs.h, 2001 version 
+ * ref: rstructs.h, 2001 version
  */
    }; /* b_coexpr */
 
-struct b_refresh {		/* co-expression refresh block */
-   word title;			/*   T_Refresh */
-   word blksize;		/*   size of block */
-   word nlocals;		/*   number of local variables */
+struct b_refresh {              /* co-expression refresh block */
+   word title;                  /*   T_Refresh */
+   word blksize;                /*   size of block */
+   word nlocals;                /*   number of local variables */
 #if COMPILER
-   word nargs;			/*   number of arguments */
+   word nargs;                  /*   number of arguments */
    word ntemps;                 /*   number of temporary descriptors */
-   word wrk_size;		/*   size of non-descriptor work area */
-#else					/* COMPILER */
-   word *ep;			/*   entry point */
-   struct pf_marker pfmkr;	/*   marker for enclosing procedure */
-#endif					/* COMPILER */
-   struct descrip elems[1];	/*   args and locals (VM: including Arg0) */
+   word wrk_size;               /*   size of non-descriptor work area */
+#else                                   /* COMPILER */
+   word *ep;                    /*   entry point */
+   struct pf_marker pfmkr;      /*   marker for enclosing procedure */
+#endif                                  /* COMPILER */
+   struct descrip elems[1];     /*   args and locals (VM: including Arg0) */
    };
 
-union block {			/* general block */
+union block {                   /* general block */
 #ifndef DescriptorDouble
    struct b_real Real;
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
    struct b_cset Cset;
    struct b_file File;
    struct b_proc Proc;
@@ -1019,7 +1019,7 @@ union block {			/* general block */
    struct b_tvtbl Tvtbl;
 #ifdef EventMon
    struct b_tvmonitored Tvmonitored;
-#endif					/* EventMon */
+#endif                                  /* EventMon */
    struct b_refresh Refresh;
    struct b_coexpr Coexpr;
    struct b_external External;
@@ -1028,14 +1028,14 @@ union block {			/* general block */
 #ifdef PatternType
    struct b_pattern Pattern;
    struct b_pelem Pelem;
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 #ifdef LargeInts
    struct b_bignum Lrgint;
-#endif				/* LargeInts */
+#endif                          /* LargeInts */
 #ifdef Arrays
    struct b_intarray Intarray;
    struct b_realarray Realarray;
-#endif					/* Arrays */
+#endif                                  /* Arrays */
    struct b_mask Mask;
    };
 
@@ -1044,12 +1044,12 @@ struct ptstruct {
 #if NT
    HANDLE master_read, master_write;
    HANDLE slave_pid;
-#else					/* WIN32 */
-   int master_fd, slave_fd;		/* master, slave pty file descriptor */
-   pid_t slave_pid;			/* process id of slave  */
-#endif					/* WIN32 */
-     
+#else                                   /* WIN32 */
+   int master_fd, slave_fd;             /* master, slave pty file descriptor */
+   pid_t slave_pid;                     /* process id of slave  */
+#endif                                  /* WIN32 */
+
    char slave_filename[256];/* pty slave filename associated with master pty */
    char slave_command[256]; /* name of executable associated with slave */
 };
-#endif					/* PseudoPty */
+#endif                                  /* PseudoPty */

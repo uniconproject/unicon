@@ -12,7 +12,7 @@ extern int optind;
 
 extern char *ofile;
 
-
+
 /*
  * Information about Icon functions.
  */
@@ -34,7 +34,7 @@ char *ftable[] = {
    };
 
 int ftbsize = sizeof(ftable)/sizeof(char *);
-
+
 /*
  * tcalloc - allocate and zero m*n bytes
  */
@@ -47,7 +47,7 @@ unsigned int m, n;
       quit("out of memory");
    return a;
    }
-
+
 struct freedchunk {
    char *p;
    struct freedchunk *next;
@@ -123,7 +123,7 @@ char *tbl_name;     /* name of the table */
 
    return (pointer)new_tbl;
    }
-
+
 
 /*
  * round2 - round an integer up to the next power of 2.

@@ -12,7 +12,7 @@ int nlflag = 0;		/* newline last seen */
 #if !EBCDIC
    #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
 #endif					/* !EBCDIC */
-
+
 #if !EBCDIC
 /*
  * getopc - get an opcode from infile, return the opcode number (via
@@ -76,7 +76,7 @@ char **id;
    return 0;
    }
 #endif					/* !EBCDIC */
-
+
 /*
  * getid - get an identifier from infile, put it in the identifier
  *  table, and return a index to it.
@@ -90,7 +90,7 @@ word getid()
       return EOF;
    return putident((int)strlen(&lsspace[indx])+1, 1);
    }
-
+
 /*
  * getstr - get an identifier from infile and return an index to it.
  */
@@ -129,7 +129,7 @@ word getstr()
    nlflag = (c == '\n');
    return lsfree;
    }
-
+
 /*
  * getrest - get the rest of the line from infile, put it in the identifier
  *  table, and return its index in the string space.
@@ -159,7 +159,7 @@ word getrest()
    nlflag = (c == '\n');
    return putident((int)(indx - lsfree), 1);
    }
-
+
 /*
  * getdec - get a decimal integer from infile, and return it.
  */
@@ -184,7 +184,7 @@ int getdec()
    rv = n * sign;
    return rv;					/* some compilers ... */
    }
-
+
 /*
  * getoct - get an octal number from infile, and return it.
  */
@@ -203,7 +203,7 @@ int getoct()
    nlflag = (c == '\n');
    return n;
    }
-
+
 /*
  *  Get integer, but if it's too large for a long, put the string via wp
  *   and return -1.
@@ -264,7 +264,7 @@ word getint(j,wp)
       return -1;			/* indicate integer is too big */
       }
    }
-
+
 /*
  * getreal - get an Icon real number from infile, and return it.
  */
@@ -318,7 +318,7 @@ double getreal()
    nlflag = (c == '\n');
    return n;
    }
-
+
 /*
  * getlab - get a label ("L" followed by a number) from infile,
  *  and return the number.
@@ -334,7 +334,7 @@ int getlab()
    nlflag = (c == '\n');
    return 0;
    }
-
+
 /*
  * getstrlit - get a string literal from infile, as a string
  *  of octal bytes, and return its index into the string table.
@@ -355,7 +355,7 @@ register int l;
    lsspace[indx++] = '\0';
    return putident((int)(indx-lsfree), 1);
    }
-
+
 /*
  * newline - skip to next line.
  */

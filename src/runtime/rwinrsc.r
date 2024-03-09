@@ -15,14 +15,14 @@ wcp wcntxts = NULL;
 wsp wstates = NULL;
 wbp wbndngs = NULL;
 int win_highwater = -1;
-
+
 #ifdef MacGraph
 #include "rmacrsc.ri"
-#endif					/* MacGraph */
+#endif                                  /* MacGraph */
 
 #ifdef XWindows
 #include "rxrsc.ri"
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
 /*
  * allocate a window binding structure
@@ -36,7 +36,7 @@ wbp alc_wbinding()
    GRFX_LINK(w, wbndngs);
    return w;
    }
-
+
 /*
  * free a window binding.
  */
@@ -51,7 +51,7 @@ wbp w;
          if (w->context) gl_free_context(w->context);
          }
       else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       {
       if (w->window) free_window(w->window);
       if (w->context) free_context(w->context);
@@ -60,6 +60,6 @@ wbp w;
       }
    }
 
-#else					/* Graphics */
-/* static char junk;			/* avoid empty module */
-#endif					/* Graphics */
+#else                                   /* Graphics */
+/* static char junk;                    /* avoid empty module */
+#endif                                  /* Graphics */

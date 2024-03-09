@@ -1,7 +1,7 @@
 /*
  * File: rmisc.r
  *  Contents: eq, getkeyword, getvar, hash, outimage,
- *  qtos, pushact, popact, topact, [dumpact], 
+ *  qtos, pushact, popact, topact, [dumpact],
  *  findline, findipc, findfile, doimage, getimage
  *  findsyntax, hitsyntax
  *  printable, retderef, sig_rsm, cmd_line, varargs.
@@ -12,32 +12,32 @@
 /*
  * Prototypes.
  */
-static void	listimage       (FILE *f,struct b_list *lp, int noimage);
-static void	printimage	(FILE *f,int c,int q);
-static char *	csname		(dptr dp);
+static void     listimage       (FILE *f,struct b_list *lp, int noimage);
+static void     printimage      (FILE *f,int c,int q);
+static char *   csname          (dptr dp);
 static int construct_funcimage(union block *pe, int aicode, int bpcode, dptr result, int index);
-int        find_cindex(union block *l, union block *r); 
+int        find_cindex(union block *l, union block *r);
 
-
-/* 
+
+/*
  * eq - compare two Icon strings for equality
  */
 int eq(d1, d2)
 dptr d1, d2;
 {
-	char *s1, *s2;
-	int i;
+        char *s1, *s2;
+        int i;
 
-	if (StrLen(*d1) != StrLen(*d2))
-	   return 0;
-	s1 = StrLoc(*d1);
-	s2 = StrLoc(*d2);
-	for (i = 0; i < StrLen(*d1); i++)
-	   if (*s1++ != *s2++) 
-	      return 0;
-	return 1;
+        if (StrLen(*d1) != StrLen(*d2))
+           return 0;
+        s1 = StrLoc(*d1);
+        s2 = StrLoc(*d2);
+        for (i = 0; i < StrLen(*d1); i++)
+           if (*s1++ != *s2++)
+              return 0;
+        return 1;
 }
-
+
 #ifdef PatternType
 /*
  * getkeyword() - return a descriptor with current value of non-variable
@@ -54,43 +54,43 @@ int getkeyword(char *s, dptr vp)
       switch(*s++) {
       case 'a':
          if (!strcmp(s, "scii")) {
-	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_ascii;
-	    return Succeeded;
-	    }
+            vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_ascii;
+            return Succeeded;
+            }
          break;
       case 'c':
          if (!strcmp(s, "set")) {
-	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_cset;
-	    return Succeeded;
-	    }
+            vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_cset;
+            return Succeeded;
+            }
          break;
       case 'd':
          if (!strcmp(s, "igits")) {
-	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_digits;
-	    return Succeeded;
-	    }
+            vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_digits;
+            return Succeeded;
+            }
          break;
       case 'l':
          if (!strcmp(s, "etters")) {
-	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_letters;
-	    return Succeeded;
-	    }
+            vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_letters;
+            return Succeeded;
+            }
          else if (!strcmp(s, "case")) {
-	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_lcase;
-	    return Succeeded;
-	    }
+            vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_lcase;
+            return Succeeded;
+            }
          break;
       case 'u':
          if (!strcmp(s, "case")) {
-	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_ucase;
-	    return Succeeded;
-	    }
+            vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_ucase;
+            return Succeeded;
+            }
          break;
          }
       }
    return Failed;
    }
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 /*
  * Get variable descriptor from name.  Returns the (integer-encoded) scope
@@ -107,27 +107,27 @@ int getvar(s,vp)
    struct b_proc *bp;
 #if COMPILER
    struct descrip sdp;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    struct pf_marker *fp;
 #endif
    CURTSTATE_AND_CE();
 
 #if COMPILER
-   if (!debug_info) 
+   if (!debug_info)
       fatalerr(402,NULL);
 
    StrLoc(sdp) = s;
    StrLen(sdp) = strlen(s);
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    fp = pfp;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
    /*
     * Is it a keyword that's a variable?
     */
    if (*s == '&') {
 
-      if (strcmp(s,"&error") == 0) {	/* must put basic one first */
+      if (strcmp(s,"&error") == 0) {    /* must put basic one first */
          vp->dword = D_Kywdint;
          VarLoc(*vp) = &kywd_err;
          return Succeeded;
@@ -138,7 +138,7 @@ int getvar(s,vp)
          VarLoc(*vp) = &amperErrno;
          return Succeeded;
          }
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
       else if (strcmp(s,"&pos") == 0) {
          vp->dword = D_Kywdpos;
          VarLoc(*vp) = &kywd_pos;
@@ -171,7 +171,7 @@ int getvar(s,vp)
          VarLoc(*vp) = &kywd_ftrc;
          return Succeeded;
          }
-#endif					/* FncTrace */
+#endif                                  /* FncTrace */
 
       else if (strcmp(s,"&dump") == 0) {
          vp->dword = D_Kywdint;
@@ -184,7 +184,7 @@ int getvar(s,vp)
          VarLoc(*vp) = &(kywd_xwin[XKey_Window]);
          return Succeeded;
          }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #ifdef MultiProgram
       else if (strcmp(s,"&eventvalue") == 0) {
@@ -202,7 +202,7 @@ int getvar(s,vp)
          VarLoc(*vp) = (dptr)&(curpstate->eventcode);
          return Succeeded;
          }
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
       else return Failed;
       }
@@ -212,7 +212,7 @@ int getvar(s,vp)
     *  parameters, and static names in each Icon procedure frame on the
     *  stack. If not found among the locals, check the global variables.
     *  If a variable with name is found, variable() returns a variable
-    *  descriptor that points to the corresponding value descriptor. 
+    *  descriptor that points to the corresponding value descriptor.
     *  If no such variable exits, it fails.
     */
 
@@ -223,31 +223,31 @@ int getvar(s,vp)
     */
    if (pfp == NULL)
       goto glbvars;
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
 
    dp = glbl_argp;
 #if COMPILER
    bp = PFDebug(*pfp)->proc;  /* get address of procedure block */
-#else					/* COMPILER */
-   bp = &(BlkLoc(*dp)->Proc);		/* get address of procedure block */
+#else                                   /* COMPILER */
+   bp = &(BlkLoc(*dp)->Proc);           /* get address of procedure block */
 
    if (bp->title != T_Proc) {
       if (value_tmp.dword == D_Proc) {
-	 bp = (struct b_proc *)BlkLoc(value_tmp);
-	 }
+         bp = (struct b_proc *)BlkLoc(value_tmp);
+         }
       }
-#endif					/* COMPILER */
-   
-   np = bp->lnames;		/* Check the formal parameter names. */
+#endif                                  /* COMPILER */
+
+   np = bp->lnames;             /* Check the formal parameter names. */
 
    for (i = abs((int)bp->nparam); i > 0; i--) {
 #if COMPILER
       if (eq(&sdp, np) == 1) {
-#else					/* COMPILER */
+#else                                   /* COMPILER */
       dp++;
 
       if (strcmp(s,StrLoc(*np)) == 0) {
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
          vp->dword = D_Var;
          VarLoc(*vp) = (dptr)dp;
          return ParamName;
@@ -255,25 +255,25 @@ int getvar(s,vp)
       np++;
 #if COMPILER
       dp++;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
       }
 
 #if COMPILER
    dp = &pfp->t.d[0];
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    dp = &fp->pf_locals[0];
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
    for (i = (int)bp->ndynam; i > 0; i--) { /* Check the local dynamic names. */
 #if COMPILER
          if (eq(&sdp, np)) {
-#else					/* COMPILER */
-	 if (strcmp(s,StrLoc(*np)) == 0) {
-#endif					/* COMPILER */
+#else                                   /* COMPILER */
+         if (strcmp(s,StrLoc(*np)) == 0) {
+#endif                                  /* COMPILER */
             vp->dword = D_Var;
             VarLoc(*vp) = (dptr)dp;
             return LocalName;
-	    }
+            }
          np++;
          dp++;
          }
@@ -282,13 +282,13 @@ int getvar(s,vp)
    for (i = (int)bp->nstatic; i > 0; i--) {
 #if COMPILER
          if (eq(&sdp, np)) {
-#else					/* COMPILER */
+#else                                   /* COMPILER */
          if (strcmp(s,StrLoc(*np)) == 0) {
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
             vp->dword = D_Var;
             VarLoc(*vp) = (dptr)dp;
             return StaticName;
-	    }
+            }
          np++;
          dp++;
          }
@@ -301,9 +301,9 @@ int getvar(s,vp)
          return GlobalName;
          }
       }
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 glbvars:
-   dp = globals;	/* Check the global variable names. */
+   dp = globals;        /* Check the global variable names. */
    np = gnames;
    while (dp < eglobals) {
       if (strcmp(s,StrLoc(*np)) == 0) {
@@ -314,10 +314,10 @@ glbvars:
       np++;
       dp++;
       }
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    return Failed;
    }
-
+
 /*
  * hash - compute hash value of arbitrary object for table and set accessing.
  */
@@ -366,30 +366,30 @@ dptr dp;
       case 0:   break;
       default:
 
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
 
-	 s += n - 20;
+         s += n - 20;
 
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 i ^= (i << 7)^(*s++)^(i >> 3);
-	 i ^= ~(i << 11)^(*s++)^(i >> 5);
-	 }
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         i ^= (i << 7)^(*s++)^(i >> 3);
+         i ^= ~(i << 11)^(*s++)^(i >> 5);
+         }
       i += n;
       }
 
@@ -398,9 +398,9 @@ dptr dp;
       switch (Type(*dp)) {
          /*
           * The hash value of an integer is itself times eight times the golden
-	  *  ratio.  We do this calculation in fixed point.  We don't just use
-	  *  the integer itself, for that would give bad results with sets
-	  *  having entries that are multiples of a power of two.
+          *  ratio.  We do this calculation in fixed point.  We don't just use
+          *  the integer itself, for that would give bad results with sets
+          *  having entries that are multiples of a power of two.
           */
          case T_Integer:
             i = (13255 * (uword)IntVal(*dp)) >> 10;
@@ -411,23 +411,23 @@ dptr dp;
           * The hash value of a bignum is based on its length and its
           *  most and least significant digits.
           */
-	 case T_Lrgint:
-	    {
-	    struct b_bignum *b = BlkD(*dp, Lrgint);
+         case T_Lrgint:
+            {
+            struct b_bignum *b = BlkD(*dp, Lrgint);
 
-	    i = ((b->lsd - b->msd) << 16) ^ 
-		(b->digits[b->msd] << 8) ^ b->digits[b->lsd];
-	    }
-	    break;
-#endif					/* LargeInts */
+            i = ((b->lsd - b->msd) << 16) ^
+                (b->digits[b->msd] << 8) ^ b->digits[b->lsd];
+            }
+            break;
+#endif                                  /* LargeInts */
 
          /*
           * The hash value of a real number is itself times a constant,
           *  converted to an unsigned integer.  The intent is to scramble
-	  *  the bits well, in the case of integral values, and to scale up
-	  *  fractional values so they don't all land in the same bin.
-	  *  The constant below is 32749 / 29, the quotient of two primes,
-	  *  and was observed to work well in empirical testing.
+          *  the bits well, in the case of integral values, and to scale up
+          *  fractional values so they don't all land in the same bin.
+          *  The constant below is 32749 / 29, the quotient of two primes,
+          *  and was observed to work well in empirical testing.
           */
          case T_Real:
             GetReal(dp,r);
@@ -443,9 +443,9 @@ dptr dp;
             bitarr = BlkD(*dp,Cset)->bits + CsetSize - 1;
             for (j = 0; j < CsetSize; j++) {
                i += *bitarr--;
-               i *= 37;			/* better distribution */
+               i *= 37;                 /* better distribution */
                }
-            i %= 1048583;		/* scramble the bits */
+            i %= 1048583;               /* scramble the bits */
             break;
 
          /*
@@ -467,10 +467,10 @@ dptr dp;
          case T_Record:
             i = (13255 * BlkD(*dp,Record)->id) >> 10;
             break;
- 
-	 case T_Proc:
-	    dp = &(BlkD(*dp,Proc)->pname);
-	    goto hashstring;
+
+         case T_Proc:
+            dp = &(BlkD(*dp,Proc)->pname);
+            goto hashstring;
 
          default:
             /*
@@ -485,9 +485,9 @@ dptr dp;
    return i;
    }
 
-
-#define StringLimit	16		/* limit on length of imaged string */
-#define ListLimit	 6		/* limit on list items in image */
+
+#define StringLimit     16              /* limit on length of imaged string */
+#define ListLimit        6              /* limit on list items in image */
 
 /*
  * outimage - print image of *dp on file f.  If noimage is nonzero,
@@ -535,12 +535,12 @@ int noimage;
          if (Type(*dp) == T_Lrgint)
             bigprint(f, dp);
          else
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 #ifdef LongLongWord
             fprintf(f, "%lld", (word)IntVal(*dp));
-#else					/* LongLongWord */
+#else                                   /* LongLongWord */
             fprintf(f, "%ld", (long)IntVal(*dp));
-#endif					/* LongLongWord */
+#endif                                  /* LongLongWord */
 
       real: {
          char s[30];
@@ -553,12 +553,12 @@ int noimage;
 
       cset: {
          /*
-	  * Check for a predefined cset; use keyword name if found.
-	  */
-	 if ((csn = csname(dp)) != NULL) {
-	    fprintf(f, "%s", csn);
-	    return;
-	    }
+          * Check for a predefined cset; use keyword name if found.
+          */
+         if ((csn = csname(dp)) != NULL) {
+            fprintf(f, "%s", csn);
+            return;
+            }
          /*
           * Use printimage to print each character in the cset.  Follow
           *  with "..." if the cset contains more than StringLimit
@@ -593,55 +593,55 @@ int noimage;
             /*
              * The file isn't a special one, just print "file(name)".
              */
-	    i = StrLen(BlkD(*dp,File)->fname);
-	    s = StrLoc(BlkLoc(*dp)->File.fname);
+            i = StrLen(BlkD(*dp,File)->fname);
+            s = StrLoc(BlkLoc(*dp)->File.fname);
 #ifdef PosixFns
-	    if (BlkLoc(*dp)->File.status & Fs_Socket) {
-	       fprintf(f, "inet(");
+            if (BlkLoc(*dp)->File.status & Fs_Socket) {
+               fprintf(f, "inet(");
                }
             else
-	    if (BlkLoc(*dp)->File.status & Fs_Directory) {
-	       fprintf(f, "directory(");
+            if (BlkLoc(*dp)->File.status & Fs_Directory) {
+               fprintf(f, "directory(");
                }
-	    else
+            else
 #endif
 #ifdef Dbm
-	    if(BlkLoc(*dp)->File.status & Fs_Dbm) {
-	       fprintf(f, "dbmfile(");
+            if(BlkLoc(*dp)->File.status & Fs_Dbm) {
+               fprintf(f, "dbmfile(");
                }
-	    else
+            else
 #endif
 #ifdef Graphics
-	    if (BlkLoc(*dp)->File.status & Fs_Window) {
-	       if ((BlkLoc(*dp)->File.status != Fs_Window) && /* window open?*/
-		  (s = BlkLoc(*dp)->File.fd.wb->window->windowlabel)) {
-		  i = strlen(s);
-	          fprintf(f, "window_%d:%d(",
-		       BlkLoc(*dp)->File.fd.wb->window->serial,
-		       BlkLoc(*dp)->File.fd.wb->context->serial
-		       );
-		  }
-	       else {
-		  i = 0;
-	          fprintf(f, "window_-1:-1(");
-		 }
-	       }
-	    else
-#endif					/* Graphics */
+            if (BlkLoc(*dp)->File.status & Fs_Window) {
+               if ((BlkLoc(*dp)->File.status != Fs_Window) && /* window open?*/
+                  (s = BlkLoc(*dp)->File.fd.wb->window->windowlabel)) {
+                  i = strlen(s);
+                  fprintf(f, "window_%d:%d(",
+                       BlkLoc(*dp)->File.fd.wb->window->serial,
+                       BlkLoc(*dp)->File.fd.wb->context->serial
+                       );
+                  }
+               else {
+                  i = 0;
+                  fprintf(f, "window_-1:-1(");
+                 }
+               }
+            else
+#endif                                  /* Graphics */
 #ifdef Messaging
             if (BlkD(*dp,File)->status & Fs_Messaging) {
-	       struct MFile *mf = BlkLoc(*dp)->File.fd.mf;
-	       fprintf(f, "message(");
-	       if (mf && mf->resp && mf->resp->msg != NULL) {
-		  fprintf(f, "[%d:%s]", mf->resp->sc, mf->resp->msg);
-		  }
-	       }
-	    else
+               struct MFile *mf = BlkLoc(*dp)->File.fd.mf;
+               fprintf(f, "message(");
+               if (mf && mf->resp && mf->resp->msg != NULL) {
+                  fprintf(f, "[%d:%s]", mf->resp->sc, mf->resp->msg);
+                  }
+               }
+            else
 #endif                                  /* Messaging */
-	       fprintf(f, "file(");
-	    while (i-- > 0)
-	       printimage(f, *s++, '\0');
-	    putc(')', f);
+               fprintf(f, "file(");
+            while (i-- > 0)
+               printimage(f, *s++, '\0');
+            putc(')', f);
             }
          }
 
@@ -662,7 +662,7 @@ int noimage;
             default:  type = "procedure"; break;
             case -1:  type = "function"; break;
             case -2:  type = "record constructor"; break;
-	    case -3:  type = "class constructor"; break;
+            case -3:  type = "class constructor"; break;
             }
          fprintf(f, "%s ", type);
          while (i-- > 0)
@@ -685,15 +685,15 @@ int noimage;
          }
 
       set: {
-	/*
+        /*
          * print "set_m(n)" where n is the cardinality of the set
          */
-	fprintf(f,"set_%ld(%ld)",(long)BlkD(*dp,Set)->id,
+        fprintf(f,"set_%ld(%ld)",(long)BlkD(*dp,Set)->id,
            (long)BlkLoc(*dp)->Set.size);
         }
 
       record: {
-	 int is_obj = 0;
+         int is_obj = 0;
          /*
           * If noimage is nonzero, print "record(n)" where n is the
           *  number of fields in the record.  If noimage is zero, print
@@ -704,56 +704,56 @@ int noimage;
          s = StrLoc(bp->Record.recdesc->Proc.recname);
          j = Blk(Blk(bp,Record)->recdesc,Proc)->nfields;
 
-	 if((j>0) && (bp == (Blk(bp,Record)->fields[0]).vword.bptr) &&
-	    !strcmp(StrLoc(Blk(Blk(bp,Record)->recdesc,Proc)->lnames[0]),
-		    "__s")) {
-	    char *__stateloc;
-	    is_obj = 1;
-	    if ((__stateloc = strstr(s, "__state")) != NULL) {
-	       while (s != __stateloc) {
-		  printimage(f, *s++, '\0'); i--; }
-	       s += 7; i -= 7;
-	       }
-	    while (i-- > 0)
-	       printimage(f, *s++, '\0');
-	    }
-	 else {
-	    fprintf(f, "record ");
+         if((j>0) && (bp == (Blk(bp,Record)->fields[0]).vword.bptr) &&
+            !strcmp(StrLoc(Blk(Blk(bp,Record)->recdesc,Proc)->lnames[0]),
+                    "__s")) {
+            char *__stateloc;
+            is_obj = 1;
+            if ((__stateloc = strstr(s, "__state")) != NULL) {
+               while (s != __stateloc) {
+                  printimage(f, *s++, '\0'); i--; }
+               s += 7; i -= 7;
+               }
+            while (i-- > 0)
+               printimage(f, *s++, '\0');
+            }
+         else {
+            fprintf(f, "record ");
          while (i-- > 0)
             printimage(f, *s++, '\0');
-	    }
+            }
          fprintf(f, "_%ld", (long)Blk(bp,Record)->id);
 
-	 if (f != stderr) {
-	    if (j <= 0)
-	       fprintf(f, "()");
-	    else if (noimage > 0)
-	       fprintf(f, "(%ld)", (long)j);
-	    else {
-	       putc('(', f);
-	       if (is_obj) i = 2; else
-		  i = 0;
-	       /* if we have any fields at all... */
-	       if (i < j) {
-		  for (;;) {
-		     outimage(f, &Blk(bp,Record)->fields[i], noimage + 1);
-		     if (++i >= j)
-			break;
-		     putc(',', f);
-		     }
-		  }
-	       putc(')', f);
-	       }
-	    }
-	 }
+         if (f != stderr) {
+            if (j <= 0)
+               fprintf(f, "()");
+            else if (noimage > 0)
+               fprintf(f, "(%ld)", (long)j);
+            else {
+               putc('(', f);
+               if (is_obj) i = 2; else
+                  i = 0;
+               /* if we have any fields at all... */
+               if (i < j) {
+                  for (;;) {
+                     outimage(f, &Blk(bp,Record)->fields[i], noimage + 1);
+                     if (++i >= j)
+                        break;
+                     putc(',', f);
+                     }
+                  }
+               putc(')', f);
+               }
+            }
+         }
 
       coexpr: {
          struct b_coexpr *cp = BlkD(*dp, Coexpr);
 #ifdef Concurrent
          if (IS_TS_THREAD(cp->status))
             fprintf(f, "thread_%ld(%ld)", (long) cp->id, (long) cp->size);
-   	 else
-#endif					/* Concurrent */
+         else
+#endif                                  /* Concurrent */
             fprintf(f, "co-expression_%ld(%ld)", (long) cp->id, (long) cp->size);
          }
 
@@ -761,11 +761,11 @@ int noimage;
          /*
           * Produce "v[i+:j] = value" where v is the image of the variable
           *  containing the substring, i is starting position of the substring
-          *  j is the length, and value is the string v[i+:j].	If the length
+          *  j is the length, and value is the string v[i+:j].  If the length
           *  (j) is one, just produce "v[i] = value".
           */
          bp = BlkLoc(*dp);
-	 dp = VarLoc(Blk(bp,Tvsubs)->ssvar);
+         dp = VarLoc(Blk(bp,Tvsubs)->ssvar);
          if (is:kywdsubj(bp->Tvsubs.ssvar)) {
             fprintf(f, "&subject");
             fflush(f);
@@ -779,19 +779,19 @@ int noimage;
 
 #if EBCDIC != 1
             fprintf(f, "[%ld]", (long)Blk(bp,Tvsubs)->sspos);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
 
             fprintf(f, "$<%ld$>", (long)Blk(bp,Tvsubs)->sspos);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
          else
 
 #if EBCDIC != 1
             fprintf(f, "[%ld+:%ld]", (long)Blk(bp,Tvsubs)->sspos,
 
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
             fprintf(f, "$<%ld+:%ld$>", (long)Blk(bp,Tvsubs)->sspos,
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
                (long)Blk(bp,Tvsubs)->sslen);
 
@@ -812,29 +812,29 @@ int noimage;
           */
          bp = BlkLoc(*dp);
 #ifdef Dbm
-	 if (BlkType(bp) == T_File)
-	    tdp.dword = D_File;
-	 else
-#endif					/* Dbm */
-	    tdp.dword = D_Table;
-	 BlkLoc(tdp) = Blk(bp,Tvtbl)->clink;
-	 outimage(f, &tdp, noimage);
+         if (BlkType(bp) == T_File)
+            tdp.dword = D_File;
+         else
+#endif                                  /* Dbm */
+            tdp.dword = D_Table;
+         BlkLoc(tdp) = Blk(bp,Tvtbl)->clink;
+         outimage(f, &tdp, noimage);
 
 #if EBCDIC != 1
          putc('[', f);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
          putc('$', f);
          putc('<', f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
          outimage(f, &(bp->Tvtbl.tref), noimage);
 
 #if EBCDIC != 1
          putc(']', f);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
          putc('$', f);
          putc('>', f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
          }
 
       kywdint: {
@@ -846,7 +846,7 @@ int noimage;
 #ifdef FncTrace
          else if (VarLoc(*dp) == &kywd_ftrc)
             fprintf(f, "&ftrace = ");
-#endif					/* FncTrace */
+#endif                                  /* FncTrace */
 
          else if (VarLoc(*dp) == &kywd_dmp)
             fprintf(f, "&dump = ");
@@ -863,7 +863,7 @@ int noimage;
             fprintf(f, "&eventcode = ");
          else if (VarLoc(*dp) == &curpstate->eventval)
             fprintf(f, "&eventval = ");
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
          outimage(f, VarLoc(*dp), noimage);
          }
 
@@ -885,33 +885,33 @@ int noimage;
          outimage(f, VarLoc(*dp), noimage);
          }
 
-      default: { 
+      default: {
          if (is:variable(*dp)) {
             /*
-             * *d is a variable.  Print "variable =", dereference it, and 
+             * *d is a variable.  Print "variable =", dereference it, and
              *  call outimage to handle the value.
              */
             fprintf(f, "(variable = "); fflush(f);
 
-	    /* weird special cases for arrays, which are the only "variable"
-	     * descriptors that do not point at a variable descriptor.
-	     */
-	    if (Offset(*dp) &&
-		(((struct b_intarray *)VarLoc(*dp))->title == T_Intarray)) {
-	       fprintf(f, "%ld",(long)
-		       ((struct b_intarray *)VarLoc(*dp))->a[Offset(*dp)-4]);
-	       }
-	    else if (Offset(*dp) &&
-		     (((struct b_realarray *)VarLoc(*dp))->title==T_Realarray)){
-	       char s[30];
-	       struct descrip rd;
-	       rtos(((struct b_realarray *)VarLoc(*dp))->a[Offset(*dp)-4], &rd, s);
-	       fprintf(f, "%s", StrLoc(rd));
-	       }
-	    else {
-	       dp = (dptr)((word *)VarLoc(*dp) + Offset(*dp));
-	       outimage(f, dp, noimage);
-	       }
+            /* weird special cases for arrays, which are the only "variable"
+             * descriptors that do not point at a variable descriptor.
+             */
+            if (Offset(*dp) &&
+                (((struct b_intarray *)VarLoc(*dp))->title == T_Intarray)) {
+               fprintf(f, "%ld",(long)
+                       ((struct b_intarray *)VarLoc(*dp))->a[Offset(*dp)-4]);
+               }
+            else if (Offset(*dp) &&
+                     (((struct b_realarray *)VarLoc(*dp))->title==T_Realarray)){
+               char s[30];
+               struct descrip rd;
+               rtos(((struct b_realarray *)VarLoc(*dp))->a[Offset(*dp)-4], &rd, s);
+               fprintf(f, "%s", StrLoc(rd));
+               }
+            else {
+               dp = (dptr)((word *)VarLoc(*dp) + Offset(*dp));
+               outimage(f, dp, noimage);
+               }
             putc(')', f);
             }
          else if (Type(*dp) == T_External)
@@ -923,7 +923,7 @@ int noimage;
          }
       }
    }
-
+
 /*
  * printimage - print character c on file f using escape conventions
  *  if c is unprintable, '\', or equal to q.
@@ -957,34 +957,34 @@ int c, q;
       }
 
    /*
-    * c is some sort of unprintable character.	If it one of the common
+    * c is some sort of unprintable character.  If it one of the common
     *  ones, produce a special representation for it, otherwise, produce
     *  its hex value.
     */
    switch (c) {
-      case '\b':			/* backspace */
+      case '\b':                        /* backspace */
          fprintf(f, "\\b");
          return;
 
 #if !EBCDIC
-      case '\177':			/* delete */
-#else					/* !EBCDIC */
+      case '\177':                      /* delete */
+#else                                   /* !EBCDIC */
       case '\x07':
-#endif					/* !EBCDIC */
+#endif                                  /* !EBCDIC */
 
          fprintf(f, "\\d");
          return;
 #if !EBCDIC
-      case '\33':			/* escape */
-#else					/* !EBCDIC */
+      case '\33':                       /* escape */
+#else                                   /* !EBCDIC */
       case '\x27':
-#endif					/* !EBCDIC */
+#endif                                  /* !EBCDIC */
          fprintf(f, "\\e");
          return;
-      case '\f':			/* form feed */
+      case '\f':                        /* form feed */
          fprintf(f, "\\f");
          return;
-      case LineFeed:			/* new line */
+      case LineFeed:                    /* new line */
          fprintf(f, "\\n");
          return;
 
@@ -992,23 +992,23 @@ int c, q;
       case '\x25':                      /* EBCDIC line feed */
          fprintf(f, "\\l");
          return;
-#endif					/* EBCDIC == 1 */
+#endif                                  /* EBCDIC == 1 */
 
-      case CarriageReturn:		/* carriage return */
+      case CarriageReturn:              /* carriage return */
          fprintf(f, "\\r");
          return;
-      case '\t':			/* horizontal tab */
+      case '\t':                        /* horizontal tab */
          fprintf(f, "\\t");
          return;
-      case '\13':			/* vertical tab */
+      case '\13':                       /* vertical tab */
          fprintf(f, "\\v");
          return;
-      default:				/* hex escape sequence */
+      default:                          /* hex escape sequence */
          fprintf(f, "\\x%02x", ToAscii(c & 0xff));
          return;
       }
    }
-
+
 /*
  * listimage - print an image of a list.
  */
@@ -1020,7 +1020,7 @@ int noimage;
    {
    register word i, j;
    word size, count;
-   
+
    size = lp->size;
 
    if (noimage > 0 && size > 0) {
@@ -1039,94 +1039,94 @@ int noimage;
 
 #if EBCDIC != 1
    fprintf(f, "list_%ld = [", (long)lp->id);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
    fprintf(f, "list_%ld = $<", (long)lp->id);
-#endif				/* EBCDIC != 1 */
+#endif                          /* EBCDIC != 1 */
 
-   if (lp->listtail!=NULL){   
-      register struct b_lelem *bp = (struct b_lelem *) lp->listhead;   
+   if (lp->listtail!=NULL){
+      register struct b_lelem *bp = (struct b_lelem *) lp->listhead;
       count = 1;
       i = 0;
       if (size > 0) {
-	 for (;;) {
-	    if (++i > bp->nused) {
-	       i = 1;
-	       bp = (struct b_lelem *) bp->listnext;
-	       }
-	    if (count <= ListLimit/2 || count > size - ListLimit/2) {
-	       j = bp->first + i - 1;
-	       if (j >= bp->nslots)
-		  j -= bp->nslots;
-	       outimage(f, &bp->lslots[j], noimage+1);
-	       if (count >= size)
-		  break;
-	       putc(',', f);
-	       }
-	    else if (count == ListLimit/2 + 1)
-	       fprintf(f, "...,");
-	    count++;
-	    }
-	 }
+         for (;;) {
+            if (++i > bp->nused) {
+               i = 1;
+               bp = (struct b_lelem *) bp->listnext;
+               }
+            if (count <= ListLimit/2 || count > size - ListLimit/2) {
+               j = bp->first + i - 1;
+               if (j >= bp->nslots)
+                  j -= bp->nslots;
+               outimage(f, &bp->lslots[j], noimage+1);
+               if (count >= size)
+                  break;
+               putc(',', f);
+               }
+            else if (count == ListLimit/2 + 1)
+               fprintf(f, "...,");
+            count++;
+            }
+         }
       }
-#ifdef Arrays      
+#ifdef Arrays
    else if (BlkType(lp->listhead) ==T_Realarray){
       tended struct descrip d;
 #ifndef DescriptorDouble
       tended struct b_real *rblk = alcreal(0.0);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
       /* probably need to worry about the following pointer*/
       register struct b_realarray *ap = (struct b_realarray *) lp->listhead;
-      
+
 #ifdef DescriptorDouble
       d.vword.realval = 0.0;
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
       d.vword.bptr = (union block *) rblk;
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
       d.dword = D_Real;
-      
+
       for (i=0;i<size;i++) {
-	 if (i < ListLimit/2 || i >= size - ListLimit/2) {
+         if (i < ListLimit/2 || i >= size - ListLimit/2) {
 #ifdef DescriptorDouble
-	    d.vword.realval = ap->a[i];
-#else					/* DescriptorDouble */
-	    rblk->realval = ap->a[i];
-#endif					/* DescriptorDouble */
-	    outimage(f, &d , noimage+1);
-	    if (i < size-1)
-	       putc(',', f);
-	    }
-	 else if (i == ListLimit/2){
-	    fprintf(f, "...,");
-	    i=size-ListLimit/2-1;
-	    }
-	 } /* for*/
+            d.vword.realval = ap->a[i];
+#else                                   /* DescriptorDouble */
+            rblk->realval = ap->a[i];
+#endif                                  /* DescriptorDouble */
+            outimage(f, &d , noimage+1);
+            if (i < size-1)
+               putc(',', f);
+            }
+         else if (i == ListLimit/2){
+            fprintf(f, "...,");
+            i=size-ListLimit/2-1;
+            }
+         } /* for*/
       }
    else if (BlkType(lp->listhead) ==T_Intarray){
       register struct b_intarray *ap = (struct b_intarray *) lp->listhead;
 
       for (i=0;i<size;i++) {
-	 if (i < ListLimit/2 || i >= size - ListLimit/2) {
-	    fprintf(f, "%ld" , (long int) (ap->a[i]));
-	    if (i < size-1)
-	       putc(',', f);
-	    }
-	 else if (i == ListLimit/2){
-	    fprintf(f, "...,");
-	    i=size-ListLimit/2-1;
-	    }
-	 } /* for */
+         if (i < ListLimit/2 || i >= size - ListLimit/2) {
+            fprintf(f, "%ld" , (long int) (ap->a[i]));
+            if (i < size-1)
+               putc(',', f);
+            }
+         else if (i == ListLimit/2){
+            fprintf(f, "...,");
+            i=size-ListLimit/2-1;
+            }
+         } /* for */
       }
-#endif						/* Arrays */
+#endif                                          /* Arrays */
 
 #if EBCDIC != 1
    putc(']', f);
-#else					/* EBCDIC != 1 */
+#else                                   /* EBCDIC != 1 */
    putc('$', f);
    putc('>', f);
-#endif					/* EBCDIC != 1 */
+#endif                                  /* EBCDIC != 1 */
 
    }
-
+
 /*
  * qsearch(key,base,nel,width,compar) - binary search
  *
@@ -1147,19 +1147,19 @@ int (*compar)();
     l = 0;
     u = nel - 1;
     while (l <= u) {
-	m = (l + u) / 2;
-	a = (char *) ((char *) base + width * m);
-	r = compar (a, key);
-	if (r < 0)
-	    l = m + 1;
-	else if (r > 0)
-	    u = m - 1;
-	else
-	    return a;
+        m = (l + u) / 2;
+        a = (char *) ((char *) base + width * m);
+        r = compar (a, key);
+        if (r < 0)
+            l = m + 1;
+        else if (r > 0)
+            u = m - 1;
+        else
+            return a;
     }
     return 0;
 }
-
+
 #if !COMPILER
 /*
  * qtos - convert a qualified string named by *dp to a C-style string.
@@ -1196,8 +1196,8 @@ char *sbuf;
       }
    return Succeeded;
    }
-#endif					/* !COMPILER */
-
+#endif                                  /* !COMPILER */
+
 #ifdef CoExpr
 /*
  * pushact - push actvtr on the activator stack of ce
@@ -1209,7 +1209,7 @@ int pushact(struct b_coexpr *ce, struct b_coexpr *actvtr)
 
 #ifdef MultiProgram
    if (ce->program != actvtr->program) return Succeeded;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
    /*
     * If the last activator is the same as this one, just increment
     *  its count.
@@ -1238,8 +1238,8 @@ int pushact(struct b_coexpr *ce, struct b_coexpr *actvtr)
 
    return Succeeded;
 }
-#endif					/* CoExpr */
-
+#endif                                  /* CoExpr */
+
 /*
  * popact - pop the most recent activator from the activator stack of ce
  *  and return it.
@@ -1270,11 +1270,11 @@ struct b_coexpr *popact(struct b_coexpr *ce)
    if ((abp->nactivators == 0)
 #if !COMPILER
         && (abp->astk_nxt
-#ifdef MultiProgram 
-	|| !(curpstate->parent)
-#endif					/* MultiProgram */
-	)
-#endif					/* COMPILER */
+#ifdef MultiProgram
+        || !(curpstate->parent)
+#endif                                  /* MultiProgram */
+        )
+#endif                                  /* COMPILER */
       ) {
       oabp = abp;
       ce->es_actstk = abp = abp->astk_nxt;
@@ -1284,24 +1284,24 @@ struct b_coexpr *popact(struct b_coexpr *ce)
    if (abp == NULL || abp->nactivators == 0) {
 #ifdef MultiProgram
       if (curpstate->parent) {
-	 return BlkD(curpstate->parent->K_main, Coexpr);
-	 }
+         return BlkD(curpstate->parent->K_main, Coexpr);
+         }
       else
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       {
 
 #ifdef Concurrent
        /*
         * if this is a thread it should exist
         * coclean calls pthread_exit() in this case.
-    	*/
-   	if (IS_TS_THREAD(ce->status)){
-      	#ifdef CoClean
- 	   coclean(ce);
-        #endif				/* CoClean */
+        */
+        if (IS_TS_THREAD(ce->status)){
+        #ifdef CoClean
+           coclean(ce);
+        #endif                          /* CoClean */
            }
-#endif					/* Concurrent */
-	 syserr("empty activator stack\n");
+#endif                                  /* Concurrent */
+         syserr("empty activator stack\n");
       }
    }
 
@@ -1323,12 +1323,12 @@ struct b_coexpr *popact(struct b_coexpr *ce)
 
    return actvtr;
 
-#else					/* CoExpr */
+#else                                   /* CoExpr */
     syserr("popact() called, but co-expressions not implemented");
-#endif					/* CoExpr */
+#endif                                  /* CoExpr */
 
 }
-
+
 #ifdef CoExpr
 /*
  * topact - return the most recent activator of ce.
@@ -1339,9 +1339,9 @@ struct b_coexpr *ce;
    struct astkblk *abp = ce->es_actstk;
    CURTSTATE();
 
-#ifdef MultiProgram 
+#ifdef MultiProgram
    if (ce->program == curtstate->c->program){
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       if (abp->nactivators == 0)
          abp = abp->astk_nxt;
       return abp->arec[abp->nactivators-1].activator;
@@ -1349,9 +1349,9 @@ struct b_coexpr *ce;
        }
     else
        return abp->arec[0].activator;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 }
-
+
 #ifdef DeBugIconx
 /*
  * dumpact - dump an activator stack
@@ -1375,17 +1375,17 @@ struct b_coexpr *ce;
          if (IS_TS_THREAD(arp->activator->status))
             fprintf(stderr, "thread_%ld(%d)\n", (long)(arp->activator->id),
             arp->acount);
-   	 else
-#endif					/* Concurrent */
+         else
+#endif                                  /* Concurrent */
             fprintf(stderr, "co-expression_%ld(%d)\n", (long)(arp->activator->id),
             arp->acount);
          }
       abp = abp->astk_nxt;
       }
 }
-#endif					/* DeBugIconx */
-#endif					/* CoExpr */
-
+#endif                                  /* DeBugIconx */
+#endif                                  /* CoExpr */
+
 #if !COMPILER
 
 /*
@@ -1414,8 +1414,8 @@ int findloc(word *ipc_in)
    uword size;
    struct ipc_line *base;
 
-   static int two = 2;	/* some compilers generate bad code for division
-			   by a constant that is a power of two ... */
+   static int two = 2;  /* some compilers generate bad code for division
+                           by a constant that is a power of two ... */
 
    if (!InRange(code,ipc_in,endcode))
       return 0;
@@ -1471,7 +1471,7 @@ int findline_p(word *ipc_in, struct progstate *p)
 {
   return findloc_p(ipc_in, p) & 65535;
 }
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * findipc - find the first ipc associated with a source-code line number.
@@ -1481,8 +1481,8 @@ int findipc(int line)
    uword size;
    struct ipc_line *base;
 
-   static int two = 2;	/* some compilers generate bad code for division
-			   by a constant that is a power of two ... */
+   static int two = 2;  /* some compilers generate bad code for division
+                           by a constant that is a power of two ... */
 
    base = ilines;
    size = DiffPtrs((char *)elines,(char *)ilines) / sizeof(struct ipc_line *);
@@ -1497,7 +1497,7 @@ int findipc(int line)
    return base->ipc_saved;
 }
 
-
+
 /*
  * findoldipc - find the first ipc associated with a procedure frame level.
  */
@@ -1516,9 +1516,9 @@ int level;
       fp = pfp;
 
    i = ce->program->tstate->K_level;
-   if (i<level) 
+   if (i<level)
       return (word*)0;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    /* follow upwards, i levels */
    while (level) {
@@ -1547,8 +1547,8 @@ word *ipc_in;
    uword size;
    struct ipc_line *base;
 
-   static int two = 2;	/* some compilers generate bad code for division
-			   by a constant that is a power of two ... */
+   static int two = 2;  /* some compilers generate bad code for division
+                           by a constant that is a power of two ... */
 
    if (!InRange(code,ipc_in,endcode))
       return 0;
@@ -1612,9 +1612,9 @@ char *findfile_p(word *ipc_in, struct progstate *prog)
    /*NOTREACHED*/
    return 0;  /* avoid compiler warning */
 }
-#endif					/* MultiProgram */
-#endif					/* !COMPILER */
-
+#endif                                  /* MultiProgram */
+#endif                                  /* !COMPILER */
+
 /*
  * doimage(c,q) - allocate character c in string space, with escape
  *  conventions if c is unprintable, '\', or equal to q.
@@ -1652,33 +1652,33 @@ int c, q;
       }
 
    /*
-    * c is some sort of unprintable character.	If it is one of the common
+    * c is some sort of unprintable character.  If it is one of the common
     *  ones, produce a special representation for it, otherwise, produce
     *  its hex value.
     */
    switch (c) {
-      case '\b':			/*	   backspace	*/
+      case '\b':                        /*         backspace    */
          Protect(alcstr("\\b", (word)(2)), return RunError);
          return 2;
 
 #if !EBCDIC
-      case '\177':			/*      delete	  */
-#else					/* !EBCDIC */
-      case '\x07':			/*      delete    */
-#endif					/* !EBCDIC */
+      case '\177':                      /*      delete    */
+#else                                   /* !EBCDIC */
+      case '\x07':                      /*      delete    */
+#endif                                  /* !EBCDIC */
 
          Protect(alcstr("\\d", (word)(2)), return RunError);
          return 2;
 
 #if !EBCDIC
-      case '\33':			/*	    escape	 */
-#else					/* !EBCDIC */
-      case '\x27':			/*          escape       */
-#endif					/* !EBCDIC */
+      case '\33':                       /*          escape       */
+#else                                   /* !EBCDIC */
+      case '\x27':                      /*          escape       */
+#endif                                  /* !EBCDIC */
 
          Protect(alcstr("\\e", (word)(2)), return RunError);
          return 2;
-      case '\f':			/*	   form feed	*/
+      case '\f':                        /*         form feed    */
          Protect(alcstr("\\f", (word)(2)), return RunError);
          return 2;
 
@@ -1686,27 +1686,27 @@ int c, q;
       case '\x25':                      /* EBCDIC line feed */
          Protect(alcstr("\\l", (word)(2)), return RunError);
          return 2;
-#endif					/* EBCDIC */
+#endif                                  /* EBCDIC */
 
-      case LineFeed:			/*	   new line	*/
+      case LineFeed:                    /*         new line     */
          Protect(alcstr("\\n", (word)(2)), return RunError);
          return 2;
-      case CarriageReturn:		/*	   return	*/
+      case CarriageReturn:              /*         return       */
          Protect(alcstr("\\r", (word)(2)), return RunError);
          return 2;
-      case '\t':			/*	   horizontal tab     */
+      case '\t':                        /*         horizontal tab     */
          Protect(alcstr("\\t", (word)(2)), return RunError);
          return 2;
-      case '\13':			/*	    vertical tab     */
+      case '\13':                       /*          vertical tab     */
          Protect(alcstr("\\v", (word)(2)), return RunError);
          return 2;
-      default:				/*	  hex escape sequence  */
+      default:                          /*        hex escape sequence  */
          sprintf(cbuf, "\\x%02x", ToAscii(c & 0xff));
          Protect(alcstr(cbuf, (word)(4)), return RunError);
          return 4;
       }
    }
-
+
 #ifdef PatternType
 
 /*
@@ -1717,7 +1717,7 @@ int c, q;
  * prevent duplication). prev_index stores the index of the last Arbno_S
  * so we know where to halt the image recursion (avoids infinite loops)
  */
-int pattern_image(union block *pe, int prev_index, dptr result, 
+int pattern_image(union block *pe, int prev_index, dptr result,
                   int peCount, int pe_index, int stop_index)
    {
    tended union block * ep = pe;
@@ -1726,85 +1726,85 @@ int pattern_image(union block *pe, int prev_index, dptr result,
    tended struct descrip right;
    tended struct descrip left;
    tended struct descrip arg;
-   int index_image = 0; 
+   int index_image = 0;
    if (ep != NULL) {
 
        if(Blk(ep, Pelem)->index == pe_index)
-          index_image = 1; 
+          index_image = 1;
 
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
              int common_index = -1;
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
-        
+
              /* Find the common index of the two sides (if there is something
               * that follow the left hand alternation)
-              */ 
+              */
 
              if(Blk(ep, Pelem)->pthen != NULL)
-                common_index = find_cindex(Blk(ep, Pelem)->pthen, r); 
-        
+                common_index = find_cindex(Blk(ep, Pelem)->pthen, r);
+
              /* Traverse through the two sides until you get to the most
               * recent common indexed element (if it exists)
-              */ 
+              */
 
              if ((pattern_image(Blk(ep,Pelem)->pthen, prev_index, &left,
-				peCount, pe_index, common_index)) == RunError) 
-	        return RunError;
+                                peCount, pe_index, common_index)) == RunError)
+                return RunError;
 
-             if ((pattern_image(r, prev_index, &right, peCount, pe_index, 
+             if ((pattern_image(r, prev_index, &right, peCount, pe_index,
                                 common_index)) == RunError)
-	        return RunError;
-        
-             if(construct_image(&left, bi_pat(PI_ALT), &right, result) 
-                                == RunError)
-	        return RunError;
+                return RunError;
 
-             construct_image(bi_pat(PI_FPAREN), result, 
+             if(construct_image(&left, bi_pat(PI_ALT), &right, result)
+                                == RunError)
+                return RunError;
+
+             construct_image(bi_pat(PI_FPAREN), result,
                              bi_pat(PI_BPAREN), result);
 
              /* if the most recent common element existed traverse to that
               * on the left so we can include it in our print
-              */ 
+              */
 
              if(common_index != -1){
                 while(Blk(Blk(ep, Pelem)->pthen, Pelem)->index != common_index)
                    ep = Blk(ep,Pelem)->pthen;
-                } 
+                }
 
              break;
-             } 
+             }
           case PC_Any_MF   :
           case PC_Break_MF :
           case PC_NotAny_MF:
           case PC_NSpan_MF :
-          case PC_Span_MF  : 
+          case PC_Span_MF  :
           case PC_Len_NMF  :
           case PC_Pos_NMF  :
           case PC_RPos_NMF :
           case PC_Tab_NMF  :
           case PC_RTab_NMF : {
-	     if ((construct_funcimage(ep, PT_MF, Blk(ep, Pelem)->pcode, 
+             if ((construct_funcimage(ep, PT_MF, Blk(ep, Pelem)->pcode,
                             result, index_image)) == RunError) return RunError;
-	     peCount++;
-	     break;
+             peCount++;
+             break;
              }
           case PC_Any_VF   :
           case PC_Break_VF :
           case PC_NotAny_VF:
           case PC_NSpan_VF :
           case PC_Span_VF  :
-          case PC_Len_NF   : 
+          case PC_Len_NF   :
           case PC_Pos_NF   :
           case PC_RPos_NF  :
           case PC_Tab_NF   :
           case PC_RTab_NF  : {
-	     if ((construct_funcimage(ep, PT_VF, Blk(ep, Pelem)->pcode, 
+             if ((construct_funcimage(ep, PT_VF, Blk(ep, Pelem)->pcode,
                             result, index_image)) == RunError) return RunError;
-	     peCount++;
-	     break;
-	     }
+             peCount++;
+             break;
+             }
           case PC_Any_VP   :
           case PC_Break_VP :
           case PC_NotAny_VP:
@@ -1815,31 +1815,31 @@ int pattern_image(union block *pe, int prev_index, dptr result,
           case PC_RPos_NP  :
           case PC_Tab_NP   :
           case PC_RTab_NP  : {
-	     if ((construct_funcimage(ep, PT_VP, Blk(ep, Pelem)->pcode, 
+             if ((construct_funcimage(ep, PT_VP, Blk(ep, Pelem)->pcode,
                             result, index_image)) == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
-          case PC_Any_CS   : 
+             peCount++;
+             break;
+             }
+          case PC_Any_CS   :
           case PC_Break_CS :
           case PC_NotAny_CS:
-          case PC_NSpan_CS : 
+          case PC_NSpan_CS :
           case PC_Span_CS  :
           case PC_Len_Nat  :
           case PC_Pos_Nat  :
           case PC_RPos_Nat :
           case PC_Tab_Nat  :
           case PC_RTab_Nat : {
-	     if ((construct_funcimage(ep, PT_EVAL, Blk(ep, Pelem)->pcode, 
+             if ((construct_funcimage(ep, PT_EVAL, Blk(ep, Pelem)->pcode,
                             result, index_image)) == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
+             peCount++;
+             break;
+             }
           case PC_BreakX_VF:
           case PC_BreakX_VP:
           case PC_BreakX_MF:
           case PC_BreakX_CS: {
-             int image_case; 
+             int image_case;
 
              if (Blk(ep, Pelem)->pcode == PC_BreakX_VF)
                 image_case = PT_VF;
@@ -1848,99 +1848,99 @@ int pattern_image(union block *pe, int prev_index, dptr result,
              else if(Blk(ep, Pelem)->pcode == PC_BreakX_MF)
                 image_case = PT_MF;
              else /* if(Blk(ep, Pelem)->pcode == PC_BreakX_CS)  <-- must always be true */
-                image_case = PT_EVAL; 
+                image_case = PT_EVAL;
 
-	     if (construct_funcimage(ep, image_case, Blk(ep, Pelem)->pcode, 
+             if (construct_funcimage(ep, image_case, Blk(ep, Pelem)->pcode,
                              result, index_image) == RunError) return RunError;
-	     peCount++;
-	     ep = Blk(ep,Pelem)->pthen; 
-             if(Blk(ep, Pelem)->index + 1 == pe_index) 
-                construct_image(bi_pat(PI_FBRACE), result, 
+             peCount++;
+             ep = Blk(ep,Pelem)->pthen;
+             if(Blk(ep, Pelem)->index + 1 == pe_index)
+                construct_image(bi_pat(PI_FBRACE), result,
                                 bi_pat(PI_BBRACE), result);
-	     break;
+             break;
              }
           case PC_Arbno_S: {
              union block *arb;
-             int last_index = Blk(ep, Pelem)->index; 
+             int last_index = Blk(ep, Pelem)->index;
 
              if (Blk(ep, Pelem)->index == prev_index) {
-		*result = *bi_pat(PI_EMPTY);
+                *result = *bi_pat(PI_EMPTY);
                 return Succeeded;
-		}
+                }
              arb = (union block *) BlkLoc(Blk(ep,Pelem)->parameter);
-             if (pattern_image((union block *)arb, last_index, result, 0, pe_index, 
+             if (pattern_image((union block *)arb, last_index, result, 0, pe_index,
                                stop_index) == RunError) return RunError;
-             if (construct_image(bi_pat(PF_Arbno), result, bi_pat(PI_BPAREN), 
+             if (construct_image(bi_pat(PF_Arbno), result, bi_pat(PI_BPAREN),
                                  result) == RunError) return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
-	     peCount++;   
-	     break;         
-             }             
+             peCount++;
+             break;
+             }
           case PC_Arbno_X: {
              union block *arb;
-             struct b_pelem *arbParam; 
+             struct b_pelem *arbParam;
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                if (pattern_image(arb, prev_index, result, 0, pe_index, stop_index) 
+                if (pattern_image(arb, prev_index, result, 0, pe_index, stop_index)
                     == RunError) return RunError;
                 if (construct_image(bi_pat(PF_Arbno), result,
-		   		bi_pat(PI_BPAREN), result) == RunError)
-		   return RunError;
+                                bi_pat(PI_BPAREN), result) == RunError)
+                   return RunError;
                 if (index_image == 1)
                    if (construct_image(bi_pat(PI_FBRACE), result,
-                                       bi_pat(PI_BBRACE), result) == RunError) 
+                                       bi_pat(PI_BBRACE), result) == RunError)
                                        return RunError;
                 }
              else {
                 syserr("PC_Arbno_X whose param is not a PC_R_Enter");
-                } 
-	     peCount++;
-	     break;
-             } 
+                }
+             peCount++;
+             break;
+             }
           case PC_String_VF:
           case PC_Pred_Func: {
-             int pcode = Blk(ep, Pelem)->pcode; 
+             int pcode = Blk(ep, Pelem)->pcode;
              arg = Blk(ep,Pelem)->parameter;
              if ((arg_image(arg, pcode, PT_VF, result)) == RunError) {
-		return RunError;
-		}
+                return RunError;
+                }
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE),
                                     result) == RunError) return RunError;
-	     peCount++;
-	     break;
+             peCount++;
+             break;
              }
           case PC_String_MF:
           case PC_Pred_MF: {
-             int pcode = Blk(ep, Pelem)->pcode; 
+             int pcode = Blk(ep, Pelem)->pcode;
              arg = Blk(ep,Pelem)->parameter;
-             if ((arg_image(arg, pcode, PT_MF, result)) == RunError) 
+             if ((arg_image(arg, pcode, PT_MF, result)) == RunError)
                 return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)                                     ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
+             peCount++;
+             break;
              }
           case PC_Arb_X: {
              struct b_pelem * arbY;
              AsgnCStr(*result, "Arb()");
              arbY = BlkD(Blk(ep, Pelem)->parameter, Pelem);
-             if(arbY->index == pe_index) index_image = 1; 
+             if(arbY->index == pe_index) index_image = 1;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
-	     }
-          case PC_Assign_Imm: 
+             peCount++;
+             break;
+             }
+          case PC_Assign_Imm:
           case PC_Assign_OnM: {
-	     /*
-	      * consider Resolved patterns. do we need to check
-	      * if parameter is a string, or a variable?
-	      */
+             /*
+              * consider Resolved patterns. do we need to check
+              * if parameter is a string, or a variable?
+              */
              tended struct descrip op;
 
              if (index_image == 1){
@@ -1949,38 +1949,38 @@ int pattern_image(union block *pe, int prev_index, dptr result,
                 else
                    AsgnCStr(op, ") [=> ");
 
-                if ((construct_image(bi_pat(PI_EMPTY), &op, 
-                           &(Blk(ep,Pelem)->parameter), result)) ==  RunError) 
+                if ((construct_image(bi_pat(PI_EMPTY), &op,
+                           &(Blk(ep,Pelem)->parameter), result)) ==  RunError)
                            return RunError;
-                if ((construct_image(result, bi_pat(PI_BBRACE), 
-                                     bi_pat(PI_EMPTY), result)) ==  RunError) 
+                if ((construct_image(result, bi_pat(PI_BBRACE),
+                                     bi_pat(PI_EMPTY), result)) ==  RunError)
                            return RunError;
                 }
              else{
 
                 if(Blk(ep, Pelem)->pcode == PC_Assign_OnM)
                    AsgnCStr(op, ") -> ");
-                else 
-                   AsgnCStr(op, ") => "); 
- 
-                if ((construct_image(&op, &(Blk(ep,Pelem)->parameter), 
+                else
+                   AsgnCStr(op, ") => ");
+
+                if ((construct_image(&op, &(Blk(ep,Pelem)->parameter),
                                      bi_pat(PI_EMPTY), result)) ==
-		    RunError) return RunError;
-                   }             
-	     peCount++;
-	     break;
+                    RunError) return RunError;
+                   }
+             peCount++;
+             break;
              }
           case PC_Setcur: {
              AsgnCStr(image, " .> ");
              if ((construct_image(bi_pat(PI_EMPTY), &image,
-				     &(Blk(ep,Pelem)->parameter), result)) ==
-		 RunError) return RunError;
+                                     &(Blk(ep,Pelem)->parameter), result)) ==
+                 RunError) return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
-	     }
+             peCount++;
+             break;
+             }
           case PC_Bal    :
           case PC_Abort  :
           case PC_Fail   :
@@ -1994,61 +1994,61 @@ int pattern_image(union block *pe, int prev_index, dptr result,
              else if(Blk(ep, Pelem)->pcode == PC_Fence)
                 AsgnCStr(*result, "Fence()");
              else if(Blk(ep, Pelem)->pcode == PC_Fail)
-                AsgnCStr(*result, "Fail()"); 
+                AsgnCStr(*result, "Fail()");
              else if(Blk(ep, Pelem)->pcode == PC_Abort)
                 AsgnCStr(*result, "Abort()");
              else if(Blk(ep, Pelem)->pcode == PC_Bal)
-                AsgnCStr(*result, "Bal()"); 
+                AsgnCStr(*result, "Bal()");
 
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
+             peCount++;
+             break;
              }
           case PC_Rpat: {
              arg = Blk(ep,Pelem)->parameter;
-             if ((arg_image(arg, -1, PT_VP, result)) == RunError) 
+             if ((arg_image(arg, -1, PT_VP, result)) == RunError)
                 return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
+             peCount++;
+             break;
              }
           case PC_String: {
              arg = Blk(ep,Pelem)->parameter;
              if ((construct_image(bi_pat(PI_QUOTE), &arg,
-				     bi_pat(PI_QUOTE), result)) == RunError)
-		                        return RunError;
+                                     bi_pat(PI_QUOTE), result)) == RunError)
+                                        return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
+             peCount++;
+             break;
              }
-	  case PC_BreakX_X: {          
+          case PC_BreakX_X: {
              *result = *bi_pat(PI_EMPTY);
-	     break;
+             break;
              }
           case PC_R_Enter: {
              *result = *bi_pat(PI_FPAREN);
-	     break;
+             break;
              }
           case PC_EOP: {
-	    *result = emptystr;
-	    break;
+            *result = emptystr;
+            break;
           }
           default: {
-	    char buf[128];
-	    if (Blk(ep,Pelem)->title != T_Pelem)
-	      sprintf(buf, "pattern_image: bad pattern element, title %" LINTFRMT "d\n",
-		      Blk(ep,Pelem)->title);
-	    else
-	      sprintf(buf, "pattern_image: bad pattern element code %" LINTFRMT "d\n",
-		      Blk(ep,Pelem)->pcode);
-	    syserr(buf);
-	    }
+            char buf[128];
+            if (Blk(ep,Pelem)->title != T_Pelem)
+              sprintf(buf, "pattern_image: bad pattern element, title %" LINTFRMT "d\n",
+                      Blk(ep,Pelem)->title);
+            else
+              sprintf(buf, "pattern_image: bad pattern element code %" LINTFRMT "d\n",
+                      Blk(ep,Pelem)->pcode);
+            syserr(buf);
+            }
          }
       }
    else {
@@ -2059,74 +2059,74 @@ int pattern_image(union block *pe, int prev_index, dptr result,
     /* This serves to add the implied concatenation. This checks
      * for ->, =>, .>, PC_EOP, Arbno_S's, Arbno_Y's because all of those
      * don't have implied concatenation here. Also peCount checks to see
-     * if we are at the beginning of the pattern and if we are then it 
-     * also ignores the implied concatenation. 
-     */ 
+     * if we are at the beginning of the pattern and if we are then it
+     * also ignores the implied concatenation.
+     */
 
    if ((ep = Blk(ep,Pelem)->pthen) != NULL) {
 
-      if(Blk(ep, Pelem)->pcode == PC_Arbno_Y  || 
+      if(Blk(ep, Pelem)->pcode == PC_Arbno_Y  ||
          Blk(ep, Pelem)->pcode == PC_EOP      ||
          Blk(ep, Pelem)->index == prev_index  ||
          Blk(ep, Pelem)->index == stop_index)
-          return Succeeded;  
+          return Succeeded;
 
       if ((Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
-	   Blk(ep,Pelem)->pcode != PC_Assign_OnM &&
+           Blk(ep,Pelem)->pcode != PC_Assign_OnM &&
            Blk(ep,Pelem)->pcode != PC_Setcur) ||
-	   ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)) {
-	  if ((StrLen(*result)>0) ||
-	      ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)){
-	     if ((pattern_image(ep, prev_index, &image, peCount, pe_index, 
+           ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)) {
+          if ((StrLen(*result)>0) ||
+              ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)){
+             if ((pattern_image(ep, prev_index, &image, peCount, pe_index,
                   stop_index)) == RunError) return RunError;
-             if(strcmp(StrLoc(*result), "(") != 0) 
-	        return construct_image(result, bi_pat(PI_CONCAT), &image, result);
+             if(strcmp(StrLoc(*result), "(") != 0)
+                return construct_image(result, bi_pat(PI_CONCAT), &image, result);
              else
- 	        return construct_image(result, bi_pat(PI_EMPTY), &image, result);
-	     }
-	  else return pattern_image(ep,prev_index,result,peCount,pe_index, 
+                return construct_image(result, bi_pat(PI_EMPTY), &image, result);
+             }
+          else return pattern_image(ep,prev_index,result,peCount,pe_index,
                                     stop_index);
           }
        else {
-	  if ((pattern_image(ep, prev_index, &image, peCount, pe_index, 
+          if ((pattern_image(ep, prev_index, &image, peCount, pe_index,
                stop_index)) == RunError) return RunError;
           return construct_image(bi_pat(PI_EMPTY), result, &image, result);
           }
        }
    return Succeeded;
    }
-
 
-/* Construct image for Pattern Function Parameters */ 
+
+/* Construct image for Pattern Function Parameters */
 
 int arg_image(struct descrip arg, int pcode,  int type, dptr result)
    {
-   tended struct descrip param = arg;  
-   
+   tended struct descrip param = arg;
+
    if(!is:list(param)) {
-      if(type == PT_EVAL) {   /*Parameter is a string, cset, int */ 
-         type_case param of { /* or unevaluated variable */ 
+      if(type == PT_EVAL) {   /*Parameter is a string, cset, int */
+         type_case param of { /* or unevaluated variable */
             string: {
                return construct_image(bi_pat(PI_QUOTE), &param,
-				      bi_pat(PI_QUOTE), result);
+                                      bi_pat(PI_QUOTE), result);
                }
             cset: {
-	       getimage(&param, result); 
-               return construct_image(bi_pat(PI_EMPTY), result, 
-	       	       bi_pat(PI_EMPTY), result);
+               getimage(&param, result);
+               return construct_image(bi_pat(PI_EMPTY), result,
+                       bi_pat(PI_EMPTY), result);
                }
             integer: {
-               getimage(&param, result); 
+               getimage(&param, result);
                return Succeeded;
                }
             default: {
-	       syserr("unexpected type in a PT_EVAL");
+               syserr("unexpected type in a PT_EVAL");
             }
             }
-	 }
+         }
       else {
          return construct_image(bi_pat(PI_BQUOTE), &param,  /*uneval var */
-		         	 bi_pat(PI_BQUOTE), result);
+                                 bi_pat(PI_BQUOTE), result);
          }
       }
    else {
@@ -2136,120 +2136,120 @@ int arg_image(struct descrip arg, int pcode,  int type, dptr result)
 
       if(!is:string(le->lslots[le->first]))
          get_name(&le->lslots[le->first], result);
-      else   
-	 AsgnCStr(*result, StrLoc(le->lslots[le->first]));
+      else
+         AsgnCStr(*result, StrLoc(le->lslots[le->first]));
 
       switch(type) {
-      case PT_VP: { /*Parameter image is unevaluated class member */ 
+      case PT_VP: { /*Parameter image is unevaluated class member */
          do {
             if (construct_image(result, bi_pat(PI_PERIOD),
-				&(le->lslots[leCurrent]), result) ==
-		RunError) return RunError;
+                                &(le->lslots[leCurrent]), result) ==
+                RunError) return RunError;
             leCurrent++;
-	    }
-	 while (leCurrent != le->nslots);
-	 return construct_image(bi_pat(PI_BQUOTE), result, 
+            }
+         while (leCurrent != le->nslots);
+         return construct_image(bi_pat(PI_BQUOTE), result,
                                 bi_pat(PI_BQUOTE), result);
-	 }
-       case PT_MF: { /*Parameter image is unevaluated method function */ 
+         }
+       case PT_MF: { /*Parameter image is unevaluated method function */
          if (construct_image(result, bi_pat(PI_PERIOD),
-			     &(le->lslots[leCurrent]), result) == RunError)
-	    return RunError;
+                             &(le->lslots[leCurrent]), result) == RunError)
+            return RunError;
          leCurrent++;
          break;
          }
        case PT_VF: {
-           /* Parameter image is unevaluated variable function */ 
+           /* Parameter image is unevaluated variable function */
          break;
          }
        default: {
-	 syserr("unknown pcode in arg_image()");
+         syserr("unknown pcode in arg_image()");
          break;
          }
          }
 
-	 /* There are no parameters for this function/method */ 
+         /* There are no parameters for this function/method */
 
-       if((type != PT_MF && (le->nslots == 1)) || 
+       if((type != PT_MF && (le->nslots == 1)) ||
          ((type == PT_MF) && (le->nslots == 2))) {
 
-          if (construct_image(result, bi_pat(PI_FPAREN), 
+          if (construct_image(result, bi_pat(PI_FPAREN),
                       bi_pat(PI_BPAREN), result) == RunError)
-	     return RunError;
+             return RunError;
 
-          /* if double back quote */ 
+          /* if double back quote */
 
-          if (pcode == PC_String_VF || pcode == PC_String_MF) 
+          if (pcode == PC_String_VF || pcode == PC_String_MF)
              construct_image(bi_pat(PI_BQUOTE), result,
-                             bi_pat(PI_BQUOTE), result); 
+                             bi_pat(PI_BQUOTE), result);
 
           return construct_image(bi_pat(PI_BQUOTE), result,
-				 bi_pat(PI_BQUOTE), result);
-	  }
+                                 bi_pat(PI_BQUOTE), result);
+          }
 
-        /* Attach front paren and first argument */ 
-        /* If string then we are working with resolved copy */ 
+        /* Attach front paren and first argument */
+        /* If string then we are working with resolved copy */
 
        if (cnv:string(le->lslots[leCurrent], arg))
-          AsgnCStr(arg, StrLoc(le->lslots[leCurrent])); 
+          AsgnCStr(arg, StrLoc(le->lslots[leCurrent]));
        else if (is:variable(le->lslots[leCurrent]))
           get_name(&le->lslots[leCurrent], &arg);
-       else return RunError; 
+       else return RunError;
 
        if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==
               RunError) return RunError;
 
        /*if (!is:string(le->lslots[leCurrent])) {
           get_name(&le->lslots[leCurrent], &arg);
-	  if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==
-	      RunError)
-	     return RunError;
-	  }
+          if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==
+              RunError)
+             return RunError;
+          }
        else {
-	  if (construct_image(result, bi_pat(PI_FPAREN),
-			      &(le->lslots[leCurrent]), result) == RunError)
-	     return RunError;
-	  }*/  
+          if (construct_image(result, bi_pat(PI_FPAREN),
+                              &(le->lslots[leCurrent]), result) == RunError)
+             return RunError;
+          }*/
 
-	  /* attach rest of parameters for uneval method/function */ 
+          /* attach rest of parameters for uneval method/function */
 
        leCurrent++;
-       if (((type != PT_MF) && (le->nslots != 2)) || 
+       if (((type != PT_MF) && (le->nslots != 2)) ||
            ((type == PT_MF) && (le->nslots != 3))) {
           do {
-	     if(is:string(le->lslots[leCurrent]))
+             if(is:string(le->lslots[leCurrent]))
                 AsgnCStr(arg, StrLoc(le->lslots[leCurrent]));
              else if(is:variable(le->lslots[leCurrent]))
-	        get_name(&le->lslots[leCurrent], &arg);
-             if((construct_image(result, bi_pat(PI_COMMA), &arg, 
-	      		    result)) == RunError) return RunError;
+                get_name(&le->lslots[leCurrent], &arg);
+             if((construct_image(result, bi_pat(PI_COMMA), &arg,
+                            result)) == RunError) return RunError;
              /*else {
-		if (construct_image(result, bi_pat(PI_COMMA),
-				&(le->lslots[leCurrent]), result) == RunError)
-		return RunError;
-		}*/ 
-	     leCurrent++;
-	     }
-	  while (leCurrent != le->nslots);
+                if (construct_image(result, bi_pat(PI_COMMA),
+                                &(le->lslots[leCurrent]), result) == RunError)
+                return RunError;
+                }*/
+             leCurrent++;
+             }
+          while (leCurrent != le->nslots);
           }
        if (construct_image(bi_pat(PI_EMPTY), result,
-			       bi_pat(PI_BPAREN), result) == RunError)
-	  return RunError;
+                               bi_pat(PI_BPAREN), result) == RunError)
+          return RunError;
 
-       /* if double back quote */ 
+       /* if double back quote */
 
-       if (pcode == PC_String_VF || pcode == PC_String_MF) 
+       if (pcode == PC_String_VF || pcode == PC_String_MF)
           construct_image(bi_pat(PI_BQUOTE), result,
-                          bi_pat(PI_BQUOTE), result); 
+                          bi_pat(PI_BQUOTE), result);
 
        if (construct_image(bi_pat(PI_BQUOTE), result,
-			   bi_pat(PI_BQUOTE), result) == RunError)
+                           bi_pat(PI_BQUOTE), result) == RunError)
           return RunError;
 
        return Succeeded;
        }
    }
-
+
 /*
  * bi_pat() - returns a pointer to a string descriptor pattern image for
  * built-in pattern functions and operators. This subsumes get_patimage()
@@ -2261,34 +2261,34 @@ dptr bi_pat(int what)
    if (!StrLen(patimag[0])) {
       MUTEX_LOCKID(MTX_PATIMG_FUNCARR);
       if (!StrLen(patimag[0])) {
-	 AsgnCStr(patimag[PF_Any], "Any(");
-	 AsgnCStr(patimag[PF_Break], "Break(");
-	 AsgnCStr(patimag[PF_BreakX], "Breakx(");
-	 AsgnCStr(patimag[PF_NotAny], "NotAny(");
-	 AsgnCStr(patimag[PF_NSpan], "NSpan(");
-	 AsgnCStr(patimag[PF_Span], "Span(");
-	 AsgnCStr(patimag[PF_Len], "Len(");
-	 AsgnCStr(patimag[PF_Pos], "Pos(");
-	 AsgnCStr(patimag[PF_RPos], "Rpos(");
-	 AsgnCStr(patimag[PF_Tab], "Tab(");
-	 AsgnCStr(patimag[PF_RTab], "Rtab(");
-	 AsgnCStr(patimag[PF_Arbno], "Arbno(");
-	 AsgnCStr(patimag[PI_EMPTY], "");
-	 AsgnCStr(patimag[PI_FPAREN], "(");
-	 AsgnCStr(patimag[PI_BPAREN], ")");
+         AsgnCStr(patimag[PF_Any], "Any(");
+         AsgnCStr(patimag[PF_Break], "Break(");
+         AsgnCStr(patimag[PF_BreakX], "Breakx(");
+         AsgnCStr(patimag[PF_NotAny], "NotAny(");
+         AsgnCStr(patimag[PF_NSpan], "NSpan(");
+         AsgnCStr(patimag[PF_Span], "Span(");
+         AsgnCStr(patimag[PF_Len], "Len(");
+         AsgnCStr(patimag[PF_Pos], "Pos(");
+         AsgnCStr(patimag[PF_RPos], "Rpos(");
+         AsgnCStr(patimag[PF_Tab], "Tab(");
+         AsgnCStr(patimag[PF_RTab], "Rtab(");
+         AsgnCStr(patimag[PF_Arbno], "Arbno(");
+         AsgnCStr(patimag[PI_EMPTY], "");
+         AsgnCStr(patimag[PI_FPAREN], "(");
+         AsgnCStr(patimag[PI_BPAREN], ")");
          AsgnCStr(patimag[PI_FBRACE], "[");
-         AsgnCStr(patimag[PI_BBRACE], "]"); 
-	 AsgnCStr(patimag[PI_BQUOTE], "`");
-	 AsgnCStr(patimag[PI_QUOTE], "\"");
-	 AsgnCStr(patimag[PI_SQUOTE], "'");
-	 AsgnCStr(patimag[PI_COMMA], ", ");
-	 AsgnCStr(patimag[PI_PERIOD], ".");
-	 AsgnCStr(patimag[PI_CONCAT], " || ");
-	 AsgnCStr(patimag[PI_ALT], " .| ");
-	 AsgnCStr(patimag[PI_ONM], " -> ");
-	 AsgnCStr(patimag[PI_IMM], " => ");
-	 AsgnCStr(patimag[PI_SETCUR], " .> ");
-	 }
+         AsgnCStr(patimag[PI_BBRACE], "]");
+         AsgnCStr(patimag[PI_BQUOTE], "`");
+         AsgnCStr(patimag[PI_QUOTE], "\"");
+         AsgnCStr(patimag[PI_SQUOTE], "'");
+         AsgnCStr(patimag[PI_COMMA], ", ");
+         AsgnCStr(patimag[PI_PERIOD], ".");
+         AsgnCStr(patimag[PI_CONCAT], " || ");
+         AsgnCStr(patimag[PI_ALT], " .| ");
+         AsgnCStr(patimag[PI_ONM], " -> ");
+         AsgnCStr(patimag[PI_IMM], " => ");
+         AsgnCStr(patimag[PI_SETCUR], " .> ");
+         }
       MUTEX_UNLOCKID(MTX_PATIMG_FUNCARR);
       }
 
@@ -2297,8 +2297,8 @@ dptr bi_pat(int what)
       return NULL;
       }
    return patimag + what;
-   } 
-
+   }
+
 /*
  * Construct a concatenation of three strings. Return Succeeded if OK.
  * Arguments MUST point at tended or static string data.
@@ -2314,14 +2314,14 @@ int construct_image(dptr l, dptr s, dptr r, dptr result)
    for(i=0;i<StrLen(*s);i++) *p++ = StrLoc(*s)[i];
    for(i=0;i<StrLen(*r);i++) *p++ = StrLoc(*r)[i];
    MakeStr(str, slen, result);
-   return Succeeded; 
+   return Succeeded;
    }
 
 /*
  * Construct an image for a known built-in pattern function.
  */
 static int construct_funcimage(union block *pe, int aicode,
-				int bpcode, dptr result, int index)
+                                int bpcode, dptr result, int index)
 {
    if (arg_image(Blk(pe,Pelem)->parameter, -1, aicode, result) != Succeeded)
       return RunError;
@@ -2330,109 +2330,109 @@ static int construct_funcimage(union block *pe, int aicode,
       case PC_Any_MF:
       case PC_Any_VF:
       case PC_Any_VP:
-      case PC_Any_CS: { 
+      case PC_Any_CS: {
          bpcode = PF_Any;
-         break; 
-         } 
+         break;
+         }
       case PC_Break_MF:
       case PC_Break_VF:
       case PC_Break_VP:
-      case PC_Break_CS:  { 
+      case PC_Break_CS:  {
          bpcode = PF_Break;
-         break; 
-         } 
+         break;
+         }
       case PC_NotAny_MF:
       case PC_NotAny_VF:
       case PC_NotAny_VP:
-      case PC_NotAny_CS: { 
+      case PC_NotAny_CS: {
          bpcode = PF_NotAny;
-         break; 
-         } 
+         break;
+         }
       case PC_BreakX_MF:
       case PC_BreakX_VF:
       case PC_BreakX_VP:
-      case PC_BreakX_CS: { 
+      case PC_BreakX_CS: {
          bpcode = PF_BreakX;
-         break; 
-         } 
+         break;
+         }
       case PC_Span_MF:
       case PC_Span_VF:
       case PC_Span_VP:
-      case PC_Span_CS: { 
+      case PC_Span_CS: {
          bpcode = PF_Span;
-         break; 
-         } 
+         break;
+         }
       case PC_NSpan_MF:
       case PC_NSpan_VF:
       case PC_NSpan_VP:
-      case PC_NSpan_CS:  { 
+      case PC_NSpan_CS:  {
          bpcode = PF_NSpan;
-         break; 
-         } 
+         break;
+         }
       case PC_Len_NF:
       case PC_Len_NP:
       case PC_Len_NMF:
-      case PC_Len_Nat:  { 
+      case PC_Len_Nat:  {
          bpcode = PF_Len;
-         break; 
-         } 
+         break;
+         }
       case PC_Pos_NF:
       case PC_Pos_NP:
       case PC_Pos_NMF:
-      case PC_Pos_Nat: { 
+      case PC_Pos_Nat: {
          bpcode = PF_Pos;
-         break; 
-         } 
+         break;
+         }
       case PC_RPos_NF:
       case PC_RPos_NP:
       case PC_RPos_NMF:
-      case PC_RPos_Nat:  { 
+      case PC_RPos_Nat:  {
          bpcode = PF_RPos;
-         break; 
-         } 
+         break;
+         }
       case PC_Tab_NF:
       case PC_Tab_NP:
       case PC_Tab_NMF:
-      case PC_Tab_Nat: { 
+      case PC_Tab_Nat: {
          bpcode = PF_Tab;
-         break; 
-         } 
+         break;
+         }
       case PC_RTab_NF:
       case PC_RTab_NP:
       case PC_RTab_NMF:
-      case PC_RTab_Nat: { 
+      case PC_RTab_Nat: {
          bpcode = PF_RTab;
-         break; 
+         break;
          }
       default: {
          return RunError;
          }
       }
-    
-   if (construct_image(bi_pat(bpcode), result, bi_pat(PI_BPAREN), 
+
+   if (construct_image(bi_pat(bpcode), result, bi_pat(PI_BPAREN),
                    result) == RunError) return RunError;
    if (index == 1)
       return construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE),
                              result);
    else
-      return Succeeded; 
+      return Succeeded;
 }
 
 /* Alternations need to find the most recent index that is common
  * to determine where to cut off the image. The function below fills
- * an array with 1's if the index exists in the right pattern. If 
- * the same index exists in the left side then that is the first 
+ * an array with 1's if the index exists in the right pattern. If
+ * the same index exists in the left side then that is the first
  * most common element
- */ 
+ */
 
 int find_cindex(union block *l, union block *r)
-{  
+{
    int pat_size = -1;
-   int * pat_array; 
-   int i; 
-   union block * tmp; 
- 
-   tmp = r; 
+   int * pat_array;
+   int i;
+   union block * tmp;
+
+   tmp = r;
    while(Blk(tmp, Pelem) != NULL){
       if(pat_size < Blk(tmp, Pelem)->index)
          pat_size = Blk(tmp, Pelem)->index;
@@ -2443,7 +2443,7 @@ int find_cindex(union block *l, union block *r)
    while(Blk(tmp, Pelem) != NULL){
       if(pat_size < Blk(tmp, Pelem)->index)
          pat_size = Blk(tmp, Pelem)->index;
-      tmp = Blk(tmp, Pelem)->pthen; 
+      tmp = Blk(tmp, Pelem)->pthen;
       }
 
    pat_array = (int *) malloc((pat_size + 1) * sizeof(int));
@@ -2451,29 +2451,29 @@ int find_cindex(union block *l, union block *r)
    for(i = 0; i < pat_size + 1; i++)
       pat_array[i] = 0;
 
-   while(1){ 
+   while(1){
       pat_array[Blk(r, Pelem)->index] = 1;
-      if((r = Blk(r,Pelem)->pthen) == NULL) 
-         break;  
-      }  
+      if((r = Blk(r,Pelem)->pthen) == NULL)
+         break;
+      }
 
    while(1){
       if(pat_array[Blk(l, Pelem)->index] == 1){
-         free(pat_array); 
+         free(pat_array);
          return Blk(l, Pelem)->index;
          }
       if(Blk(l, Pelem)->pthen)
-         l = Blk(l, Pelem)->pthen; 
-      else break; 
+         l = Blk(l, Pelem)->pthen;
+      else break;
       }
 
-   free(pat_array); 
-   return -1; 
+   free(pat_array);
+   return -1;
 }
 
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
-
+
 /*
  * getimage(dp1,dp2) - return string image of object dp1 in dp2.
  */
@@ -2497,11 +2497,11 @@ dptr dp1, dp2;
           *  doimage with each character in the string, and then putting
           *  a quote at then end. Note that doimage directly "writes"
           * (allocates) into the string region.  (Hence the indentation.)
-	  *  This technique is used several times in this routine.
+          *  This technique is used several times in this routine.
           */
          s = StrLoc(source);
          len = StrLen(source);
-	 Protect (reserve(Strings, (len << 2) + 2), return RunError);
+         Protect (reserve(Strings, (len << 2) + 2), return RunError);
          Protect(t = alcstr("\"", (word)(1)), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = 1;
@@ -2525,25 +2525,25 @@ dptr dp1, dp2;
             struct b_bignum *blk = BlkD(source, Lrgint);
 
             slen = blk->lsd - blk->msd;
-            dlen = slen * NB * 0.3010299956639812 	/* 1 / log2(10) */
+            dlen = slen * NB * 0.3010299956639812       /* 1 / log2(10) */
                + log((double)blk->digits[blk->msd]) * 0.4342944819032518 + 0.5;
-							/* 1 / ln(10) */
+                                                        /* 1 / ln(10) */
             if (dlen >= MaxDigits) {
                sprintf(sbuf,"integer(~10^%ld)",(long)dlen);
-	       len = strlen(sbuf);
+               len = strlen(sbuf);
                Protect(StrLoc(*dp2) = alcstr(sbuf,len), return RunError);
 
 
                StrLen(*dp2) = len;
                }
-	    else bigtos(&source,dp2);
-	    }
+            else bigtos(&source,dp2);
+            }
          else
             cnv: string(source, *dp2);
-#else					/* LargeInts */
+#else                                   /* LargeInts */
          cnv:string(source, *dp2);
-#endif					/* LargeInts */
-	 }
+#endif                                  /* LargeInts */
+         }
 
       real: {
          cnv:string(source, *dp2);
@@ -2551,23 +2551,23 @@ dptr dp1, dp2;
 
       cset: {
          /*
-	  * Check for the value of a predefined cset; use keyword name if found.
-	  */
-	 if ((csn = csname(dp1)) != NULL) {
-	    StrLoc(*dp2) = csn;
-	    StrLen(*dp2) = strlen(csn);
-	    return Succeeded;
-	    }
-	 /*
-	  * Otherwise, describe it in terms of the character membership.
-	  */
+          * Check for the value of a predefined cset; use keyword name if found.
+          */
+         if ((csn = csname(dp1)) != NULL) {
+            StrLoc(*dp2) = csn;
+            StrLen(*dp2) = strlen(csn);
+            return Succeeded;
+            }
+         /*
+          * Otherwise, describe it in terms of the character membership.
+          */
 
-	 i = BlkD(source,Cset)->size;
-	 if (i < 0)
-	    i = cssize(&source);
-	 i = (i << 2) + 2;
-	 if (i > 730) i = 730;
-	 Protect (reserve(Strings, i), return RunError);
+         i = BlkD(source,Cset)->size;
+         if (i < 0)
+            i = cssize(&source);
+         i = (i << 2) + 2;
+         if (i > 730) i = 730;
+         Protect (reserve(Strings, i), return RunError);
 
          Protect(t = alcstr("'", (word)(1)), return RunError);
          StrLoc(*dp2) = t;
@@ -2600,31 +2600,31 @@ dptr dp1, dp2;
          else {
             /*
              * The file is not a standard one; form a string of the form
-             *	file(nm) where nm is the argument originally given to open.
+             *  file(nm) where nm is the argument originally given to open.
              */
-             char namebuf[100];		/* scratch space */
+             char namebuf[100];         /* scratch space */
 #ifdef Graphics
-	    if (BlkD(source,File)->status & Fs_Window) {
-	       if ((BlkLoc(source)->File.status != Fs_Window) &&
-		  (s = BlkLoc(source)->File.fd.wb->window->windowlabel)){
-	          len = strlen(s);
+            if (BlkD(source,File)->status & Fs_Window) {
+               if ((BlkLoc(source)->File.status != Fs_Window) &&
+                  (s = BlkLoc(source)->File.fd.wb->window->windowlabel)){
+                  len = strlen(s);
                   Protect (reserve(Strings, (len << 2) + 16), return RunError);
-	          sprintf(sbuf, "window_%d:%d(", 
-		       BlkLoc(source)->File.fd.wb->window->serial,
-		       BlkLoc(source)->File.fd.wb->context->serial
-		       );
-		  }
-		else {
+                  sprintf(sbuf, "window_%d:%d(",
+                       BlkLoc(source)->File.fd.wb->window->serial,
+                       BlkLoc(source)->File.fd.wb->context->serial
+                       );
+                  }
+                else {
                   len = 0;
                   Protect (reserve(Strings, (len << 2) + 16), return RunError);
-	          sprintf(sbuf, "window_-1:-1(");
+                  sprintf(sbuf, "window_-1:-1(");
                   }
-	       Protect(t = alcstr(sbuf, (word)(strlen(sbuf))), return RunError);
-	       StrLoc(*dp2) = t;
-	       StrLen(*dp2) = strlen(sbuf);
-	       }
-	    else {
-#endif					/* Graphics */
+               Protect(t = alcstr(sbuf, (word)(strlen(sbuf))), return RunError);
+               StrLoc(*dp2) = t;
+               StrLen(*dp2) = strlen(sbuf);
+               }
+            else {
+#endif                                  /* Graphics */
 #ifdef PosixFns
                if (BlkD(source,File)->status & Fs_Socket) {
                    s = namebuf;
@@ -2633,19 +2633,19 @@ dptr dp1, dp2;
                                  namebuf, sizeof(namebuf));
                }
                else {
-#endif 					/* PosixFns */
+#endif                                  /* PosixFns */
                s = StrLoc(BlkD(source,File)->fname);
                len = StrLen(BlkD(source,File)->fname);
 #ifdef PosixFns
                }
-#endif 					/* PosixFns */
+#endif                                  /* PosixFns */
                Protect (reserve(Strings, (len << 2) + 12), return RunError);
-	       Protect(t = alcstr("file(", (word)(5)), return RunError);
-	       StrLoc(*dp2) = t;
-	       StrLen(*dp2) = 5;
+               Protect(t = alcstr("file(", (word)(5)), return RunError);
+               StrLoc(*dp2) = t;
+               StrLen(*dp2) = 5;
 #ifdef Graphics
-	     }
-#endif					/* Graphics */
+             }
+#endif                                  /* Graphics */
             while (len-- > 0)
                StrLen(*dp2) += doimage(*s++, '\0');
             Protect(alcstr(")", (word)(1)), return RunError);
@@ -2659,19 +2659,19 @@ dptr dp1, dp2;
           *  "procedure name"
           *  "function name"
           *  "record constructor name"
-	  *  "class constructor name"
+          *  "class constructor name"
           *
           * Note that the number of dynamic locals is used to determine
           *  what type of "procedure" is at hand.
           */
          len = StrLen(BlkD(source,Proc)->pname);
          s = StrLoc(BlkLoc(source)->Proc.pname);
-	 Protect (reserve(Strings, len + 22), return RunError);
+         Protect (reserve(Strings, len + 22), return RunError);
          switch ((int)BlkLoc(source)->Proc.ndynam) {
             default:  type = "procedure "; outlen = 10; break;
             case -1:  type = "function "; outlen = 9; break;
             case -2:  type = "record constructor "; outlen = 19; break;
-	    case -3:  type = "class constructor "; outlen = 18; break;
+            case -3:  type = "class constructor "; outlen = 18; break;
             }
          Protect(t = alcstr(type, outlen), return RunError);
          StrLoc(*dp2) = t;
@@ -2687,7 +2687,7 @@ dptr dp1, dp2;
           */
          bp = BlkLoc(*dp1);
          sprintf(sbuf, "list_%ld(%ld)", (long)Blk(bp,List)->id,
-		 (long)Blk(bp,List)->size);
+                 (long)Blk(bp,List)->size);
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return RunError);
          StrLoc(*dp2) = t;
@@ -2715,7 +2715,7 @@ dptr dp1, dp2;
           */
          bp = BlkLoc(*dp1);
          sprintf(sbuf, "set_%ld(%ld)", (long)Blk(bp,Set)->id,
-		 (long)Blk(bp,Set)->size);
+                 (long)Blk(bp,Set)->size);
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf,len), return RunError);
          StrLoc(*dp2) = t;
@@ -2723,40 +2723,40 @@ dptr dp1, dp2;
          }
 
       record: {
-	 long size;
+         long size;
          /*
           * Produce:
-          *  "record name_m(n)"	-- under construction
+          *  "record name_m(n)" -- under construction
           * where n is the number of fields.
           */
          bp = BlkLoc(*dp1);
-	 size = (long)bp->Record.recdesc->Proc.nfields;
-	 rnlen = StrLen(Blk(Blk(bp,Record)->recdesc,Proc)->recname);
-	 sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id, size);
-	 len = strlen(sbuf);
-	 Protect (reserve(Strings, 7 + len + rnlen), return RunError);
-	 bp = BlkLoc(*dp1);		/* refresh pointer */
-	 /*
-	  * If we have an object, its size is -2 for __s and __m fields.
-	  * Also, drop the tedious "__state" portion of its recname.
-	  */
-	 if (Blk(Blk(bp,Record)->recdesc, Proc)->ndynam == -3) {
-	    char *los;			/* location of "__state" in recname */
-	    sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id, size-2);
-	    len= strlen(sbuf);
-	    los= strstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),"__state");
-	    if (los == NULL)
-	       syserr("no __state in object's classname");
-	    rnlen = los - StrLoc(Blk(bp,Record)->recdesc->Proc.recname);
-	    Protect(t = alcstr("object ", (word)(7)), return RunError);
-	    }
-	 else {
-	    Protect(t = alcstr("record ", (word)(7)), return RunError);
-	    }
-	 StrLoc(*dp2) = t;
-	 StrLen(*dp2) = 7;
+         size = (long)bp->Record.recdesc->Proc.nfields;
+         rnlen = StrLen(Blk(Blk(bp,Record)->recdesc,Proc)->recname);
+         sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id, size);
+         len = strlen(sbuf);
+         Protect (reserve(Strings, 7 + len + rnlen), return RunError);
+         bp = BlkLoc(*dp1);             /* refresh pointer */
+         /*
+          * If we have an object, its size is -2 for __s and __m fields.
+          * Also, drop the tedious "__state" portion of its recname.
+          */
+         if (Blk(Blk(bp,Record)->recdesc, Proc)->ndynam == -3) {
+            char *los;                  /* location of "__state" in recname */
+            sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id, size-2);
+            len= strlen(sbuf);
+            los= strstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),"__state");
+            if (los == NULL)
+               syserr("no __state in object's classname");
+            rnlen = los - StrLoc(Blk(bp,Record)->recdesc->Proc.recname);
+            Protect(t = alcstr("object ", (word)(7)), return RunError);
+            }
+         else {
+            Protect(t = alcstr("record ", (word)(7)), return RunError);
+            }
+         StrLoc(*dp2) = t;
+         StrLen(*dp2) = 7;
          Protect(alcstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),rnlen),
-	            return RunError);
+                    return RunError);
          StrLen(*dp2) += rnlen;
          Protect(alcstr(sbuf, len), return RunError);
          StrLen(*dp2) += len;
@@ -2769,24 +2769,24 @@ dptr dp1, dp2;
           *  where m is the number of the co-expressions and n is the
           *  number of results that have been produced.
           */
-	 word numchar;
+         word numchar;
 
          sprintf(sbuf, "_%ld(%ld)", (long)BlkD(source,Coexpr)->id,
             (long)BlkLoc(source)->Coexpr.size);
          len = strlen(sbuf);
 #ifdef Concurrent
          if (IS_TS_THREAD(BlkLoc(source)->Coexpr.status)){
-	    numchar = 6;
-	    Protect (reserve(Strings, len + numchar), return RunError);
+            numchar = 6;
+            Protect (reserve(Strings, len + numchar), return RunError);
             Protect(t = alcstr("thread", numchar), return RunError);
-	    }
-   	 else
-#endif					/* Concurrent */
+            }
+         else
+#endif                                  /* Concurrent */
             {
-	    numchar = 13;
-	    Protect (reserve(Strings, len + numchar), return RunError);
+            numchar = 13;
+            Protect (reserve(Strings, len + numchar), return RunError);
             Protect(t = alcstr("co-expression", numchar), return RunError);
-	    }
+            }
 
          StrLoc(*dp2) = t;
          Protect(alcstr(sbuf, len), return RunError);
@@ -2794,55 +2794,55 @@ dptr dp1, dp2;
          }
 
       tvmonitored:{
-         /* 
-          * foreign monitored tapped variable 
+         /*
+          * foreign monitored tapped variable
           */
          Protect(t = alcstr("Trapped_monitored", (word)(17)), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = 17;
-         } 
+         }
 
-#ifdef PatternType		
+#ifdef PatternType
       pattern: {
          /*
           * Produce:
           *  "pattern_m(n)"
           * where n is the current size of the pattern.
           */
-	 register union block *ep;
-	 tended struct descrip pimage;
+         register union block *ep;
+         tended struct descrip pimage;
          bp = BlkLoc(*dp1);
-	 ep = Blk(bp,Pattern)->pe;
-	 
+         ep = Blk(bp,Pattern)->pe;
+
          if (pattern_image(ep, -1, &pimage, 0, -1, -1) == RunError)
-	    ReturnErrVal(166, *dp1, RunError);
+            ReturnErrVal(166, *dp1, RunError);
          t = alcstr(NULL, StrLen(pimage) + 29);
-	 sprintf(t, "pattern_%ld(%ld) = ", (long)(Blk(bp,Pattern)->id),
-	 	        (long)(Blk(ep,Pelem)->index));
-	 len = strlen(t);
-	 { int i;
-	  for(i=0;i<StrLen(pimage);i++) t[len+i] = StrLoc(pimage)[i];
+         sprintf(t, "pattern_%ld(%ld) = ", (long)(Blk(bp,Pattern)->id),
+                        (long)(Blk(ep,Pelem)->index));
+         len = strlen(t);
+         { int i;
+          for(i=0;i<StrLen(pimage);i++) t[len+i] = StrLoc(pimage)[i];
          }
-	 len += StrLen(pimage);
+         len += StrLen(pimage);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = len;
          }
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
       default:
 #ifdef Arrays
-	 if (Type(*dp1) == T_Intarray) {
-	    sprintf(sbuf, "intarray(?)");
-	    len = strlen(sbuf);
-	    Protect(t = alcstr(sbuf, len), return RunError);
-	    StrLoc(*dp2) = t;
-	    StrLen(*dp2) = len;
-	    }
-	 else
-#endif					/* Arrays */
+         if (Type(*dp1) == T_Intarray) {
+            sprintf(sbuf, "intarray(?)");
+            len = strlen(sbuf);
+            Protect(t = alcstr(sbuf, len), return RunError);
+            StrLoc(*dp2) = t;
+            StrLen(*dp2) = len;
+            }
+         else
+#endif                                  /* Arrays */
         if (Type(*dp1) == T_External) {
            /*
-            * For now, just produce "external(n)". 
+            * For now, just produce "external(n)".
             */
            sprintf(sbuf, "external(%ld)",(long)BlkD(*dp1,External)->blksize);
            len = strlen(sbuf);
@@ -2851,12 +2851,12 @@ dptr dp1, dp2;
            StrLen(*dp2) = len;
            }
          else {
-	    ReturnErrVal(123, source, RunError);
+            ReturnErrVal(123, source, RunError);
             }
       }
    return Succeeded;
    }
-
+
 /*
  * csname(dp) -- return the name of a predefined cset matching dp.
  */
@@ -2866,7 +2866,7 @@ dptr dp;
    register int n;
 
    n = BlkD(*dp,Cset)->size;
-   if (n < 0) 
+   if (n < 0)
       n = cssize(dp);
 
 #if EBCDIC != 1
@@ -2876,27 +2876,27 @@ dptr dp;
     */
    if (n == 52) {
       if ((Cset32('a',*dp) & Cset32('A',*dp)) == (0377777777l << CsetOff('a')))
-	 return ("&letters");
+         return ("&letters");
       }
    else if (n < 52) {
       if (n == 26) {
-	 if (Cset32('a',*dp) == (0377777777l << CsetOff('a')))
-	    return ("&lcase");
-	 else if (Cset32('A',*dp) == (0377777777l << CsetOff('A')))
-	    return ("&ucase");
-	 }
+         if (Cset32('a',*dp) == (0377777777l << CsetOff('a')))
+            return ("&lcase");
+         else if (Cset32('A',*dp) == (0377777777l << CsetOff('A')))
+            return ("&ucase");
+         }
       else if (n == 10 && *CsetPtr('0',*dp) == (01777 << CsetOff('0')))
-	 return ("&digits");
+         return ("&digits");
       }
    else /* n > 52 */ {
       if (n == 256)
-	 return "&cset";
+         return "&cset";
       else if (n == 128 && ~0 ==
-	 (Cset32(0,*dp) & Cset32(32,*dp) & Cset32(64,*dp) & Cset32(96,*dp)))
-	    return "&ascii";
+         (Cset32(0,*dp) & Cset32(32,*dp) & Cset32(64,*dp) & Cset32(96,*dp)))
+            return "&ascii";
       }
    return NULL;
-#else						/* EBCDIC != 1 */
+#else                                           /* EBCDIC != 1 */
    /*
     * Check for a cset we recognize using a hardwired decision tree.
     *  In EBCDIC, the neither &lcase nor &ucase is contiguous.
@@ -2905,21 +2905,21 @@ dptr dp;
    if (n == 52) {
       if ((Cset32(0x80,*dp) & Cset32(0xC0,*dp)) == 0x03FE03FE
          && Cset32(0xA0,*dp) & Cset32(0xE0,*dp)) == 0x03FC)
-	    return ("&letters");
+            return ("&letters");
       }
    else if (n < 52) {
       if (n == 26) {
-	 if (Cset32(0x80,*dp) == 0x03FE03FE && Cset32(0xA0,*dp) == 0x03FC)
-	    return ("&lcase");
-	 else if (Cset32(0xC0,*dp) == 0x03FE03FE && Cset32(0xE0,*dp) == 0x03FC)
-	    return ("&ucase");
-	 }
+         if (Cset32(0x80,*dp) == 0x03FE03FE && Cset32(0xA0,*dp) == 0x03FC)
+            return ("&lcase");
+         else if (Cset32(0xC0,*dp) == 0x03FE03FE && Cset32(0xE0,*dp) == 0x03FC)
+            return ("&ucase");
+         }
       else if (n == 10 && *CsetPtr('0',*dp) == (01777 << CsetOff('0')))
  return ("&digits");
       }
    else /* n > 52 */ {
       if (n == 256)
-	 return "&cset";
+         return "&cset";
       else if (n == 128) {
          int i;
          for (i = 0; i < CsetSize; i++)
@@ -2929,9 +2929,9 @@ dptr dp;
          }
       }
    return NULL;
-#endif						/* EBCDIC != 1 */
+#endif                                          /* EBCDIC != 1 */
    }
-
+
 /*
  * cssize(dp) - calculate cset size, store it, and return it
  */
@@ -2947,11 +2947,11 @@ dptr dp;
    n = 0;
    for (i = CsetSize; --i >= 0; )
       for (w = *wp++; w != 0; w >>= 1)
-	 n += (w & 1);
+         n += (w & 1);
    cs->size = n;
    return n;
 }
-
+
 /*
  * printable(c) -- is c a "printable" character?
  */
@@ -2968,11 +2968,11 @@ int c;
 #if PORT
    return isprint(c);
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS || UNIX || VMS
    return (isascii(c) && isprint(c));
-#endif					/* MSDOS ... */
+#endif                                  /* MSDOS ... */
 
 #if MVS || VM
    return isprint(c);
@@ -2982,7 +2982,7 @@ Deliberate Syntax Error
  * End of operating-system specific code.
  */
    }
-
+
 #ifndef AsmOver
 /*
  * add, sub, mul, neg with overflow check
@@ -3026,14 +3026,14 @@ word mul(word a, word b, int *over_flowp)
 {
    if (b != 0) {
       if ((a ^ b) >= 0) {
-	 if (a >= 0 ? a > MaxLong / b : a < MaxLong / b) {
+         if (a >= 0 ? a > MaxLong / b : a < MaxLong / b) {
             *over_flowp = 1;
-	    return 0;
+            return 0;
             }
-	 }
+         }
       else if (b != -1 && (a >= 0 ? a > MinLong / b : a < MinLong / b)) {
          *over_flowp = 1;
-	 return 0;
+         return 0;
          }
       }
 
@@ -3050,23 +3050,23 @@ word mod3(word a, word b, int *over_flowp)
    switch ( b )
    {
       case 0:
-	 *over_flowp = 1; /* Not really an overflow, but definitely an error */
-	 return 0;
+         *over_flowp = 1; /* Not really an overflow, but definitely an error */
+         return 0;
 
       case MinLong:
-	 /* Handle this separately, since -MinLong can overflow */
-	 retval = ( a > MinLong ) ? a : 0;
-	 break;
+         /* Handle this separately, since -MinLong can overflow */
+         retval = ( a > MinLong ) ? a : 0;
+         break;
 
       default:
-	 /* First, we make b positive */
-      	 if ( b < 0 ) b = -b;	
+         /* First, we make b positive */
+         if ( b < 0 ) b = -b;
 
-	 /* Make sure retval should have the same sign as 'a' */
-	 retval = a % b;
-	 if ( ( a < 0 ) && ( retval > 0 ) )
-	    retval -= b;
-	 break;
+         /* Make sure retval should have the same sign as 'a' */
+         retval = a % b;
+         if ( ( a < 0 ) && ( retval > 0 ) )
+            retval -= b;
+         break;
       }
 
    *over_flowp = 0;
@@ -3075,7 +3075,7 @@ word mod3(word a, word b, int *over_flowp)
 
 word div3(word a, word b, int *over_flowp)
 {
-   if ( ( b == 0 ) ||	/* Not really an overflow, but definitely an error */
+   if ( ( b == 0 ) ||   /* Not really an overflow, but definitely an error */
         ( b == -1 && a == MinLong ) ) {
       *over_flowp = 1;
       return 0;
@@ -3096,8 +3096,8 @@ word neg(word a, int *over_flowp)
    *over_flowp = 0;
    return -a;
 }
-#endif					/* AsmOver */
-
+#endif                                  /* AsmOver */
+
 #if COMPILER
 /*
  * sig_rsm - standard success continuation that just signals resumption.
@@ -3107,7 +3107,7 @@ int sig_rsm()
    {
    return A_Resume;
    }
-
+
 /*
  * cmd_line - convert command line arguments into a list of strings.
  */
@@ -3143,7 +3143,7 @@ dptr rslt;
    rslt->dword = D_List;
    rslt->vword.bptr = (union block *) hp;
    }
-
+
 /*
  * varargs - construct list for use in procedures with variable length
  *  argument list.
@@ -3172,8 +3172,8 @@ dptr rslt;
    rslt->dword = D_List;
    rslt->vword.bptr = (union block *) hp;
    }
-#endif					/* COMPILER */
-
+#endif                                  /* COMPILER */
+
 /*
  * retderef - Dereference local variables and substrings of local
  *  string-valued variables. This is used for return, suspend, and
@@ -3219,5 +3219,5 @@ int strncasecmp(char *s1, char *s2, int n)
       }
    return 0;
 }
-#endif					/* NTGCC */
-#endif					/* MSDOS */
+#endif                                  /* NTGCC */
+#endif                                  /* MSDOS */

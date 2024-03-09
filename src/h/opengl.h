@@ -7,16 +7,16 @@
 
 #ifdef GL2D_DEBUG
 #define glprintf(s, ...) printf(stderr,s, ##__VA_ARGS__)
-#else					/* GL2D_DEBUG */
-#define glprintf(s, ...) 
-#endif					/* GL2D_DEBUG */
+#else                                   /* GL2D_DEBUG */
+#define glprintf(s, ...)
+#endif                                  /* GL2D_DEBUG */
 
 /* Definitions for attribute buffermode */
-#define UGL_IMMEDIATE	1
-#define UGL_BUFFERED 	0
+#define UGL_IMMEDIATE   1
+#define UGL_BUFFERED    0
 /* Legacy definitons */
-#define IMMEDIATE3D    	UGL_IMMEDIATE	
-#define BUFFERED3D	UGL_BUFFERED	
+#define IMMEDIATE3D     UGL_IMMEDIATE
+#define BUFFERED3D      UGL_BUFFERED
 
 
 /*
@@ -34,8 +34,8 @@
 #define U3D_POLYGON        GL_POLYGON
 
 #define U2D_LINE_LOOP      GL_LINE_LOOP
-#define U2D_LINE_STRIP	   GL_LINE_STRIP
-#define U2D_POLYGON	   GL_POLYGON
+#define U2D_LINE_STRIP     GL_LINE_STRIP
+#define U2D_POLYGON        GL_POLYGON
 
 /*
  * texture modes.
@@ -47,69 +47,69 @@
 /*
  * Graphical primitive IDs
  */
-#define GL2D_BLIMAGE		9000
-#define GL2D_FILLPOLYGON	9001
-#define GL2D_DRAWPOLYGON	9002
-#define GL2D_DRAWSEGMENT	9003
-#define GL2D_DRAWLINE		9004 
-#define GL2D_DRAWPOINT		9005
-#define GL2D_DRAWCIRCLE		9006
-#define GL2D_FILLCIRCLE		9007
-#define GL2D_DRAWARC		9008
-#define GL2D_FILLARC		9009
-#define GL2D_DRAWRECTANGLE	9010
-#define GL2D_FILLRECTANGLE	9011
-#define GL2D_COPYAREA		9012
-#define GL2D_ERASEAREA		9013
-#define GL2D_STRIMAGE		9014
-#define GL2D_READIMAGE		9015
-#define GL2D_DRAWSTRING		9016
-#define GL2D_WWRITE		9017
+#define GL2D_BLIMAGE            9000
+#define GL2D_FILLPOLYGON        9001
+#define GL2D_DRAWPOLYGON        9002
+#define GL2D_DRAWSEGMENT        9003
+#define GL2D_DRAWLINE           9004
+#define GL2D_DRAWPOINT          9005
+#define GL2D_DRAWCIRCLE         9006
+#define GL2D_FILLCIRCLE         9007
+#define GL2D_DRAWARC            9008
+#define GL2D_FILLARC            9009
+#define GL2D_DRAWRECTANGLE      9010
+#define GL2D_FILLRECTANGLE      9011
+#define GL2D_COPYAREA           9012
+#define GL2D_ERASEAREA          9013
+#define GL2D_STRIMAGE           9014
+#define GL2D_READIMAGE          9015
+#define GL2D_DRAWSTRING         9016
+#define GL2D_WWRITE             9017
 
-/* 
+/*
  * Attribute primitive IDs
  */
 /* colors */
-#define GL2D_FG			9050
-#define GL2D_BG			9051
-#define GL2D_REVERSE		9052
-#define GL2D_GAMMA		9053
-#define GL2D_DRAWOP		9054
+#define GL2D_FG                 9050
+#define GL2D_BG                 9051
+#define GL2D_REVERSE            9052
+#define GL2D_GAMMA              9053
+#define GL2D_DRAWOP             9054
 
 /* fonts */
-#define GL2D_FONT		9055
-#define GL2D_LEADING		9056
+#define GL2D_FONT               9055
+#define GL2D_LEADING            9056
 
 /* lines/fills */
-#define GL2D_LINEWIDTH		9057
-#define GL2D_LINESTYLE		9058
-#define GL2D_FILLSTYLE		9059
-#define GL2D_PATTERN		9060
+#define GL2D_LINEWIDTH          9057
+#define GL2D_LINESTYLE          9058
+#define GL2D_FILLSTYLE          9059
+#define GL2D_PATTERN            9060
 
 /* positioning */
-#define GL2D_CLIP		9061
-#define GL2D_DX			9062
-#define GL2D_DY			9063
+#define GL2D_CLIP               9061
+#define GL2D_DX                 9062
+#define GL2D_DY                 9063
 
 /*
  * line styles
  */
-#define GL2D_LINE_SOLID		0
-#define GL2D_LINE_DASHED	1
-#define GL2D_LINE_STRIPED	2
+#define GL2D_LINE_SOLID         0
+#define GL2D_LINE_DASHED        1
+#define GL2D_LINE_STRIPED       2
 
 /*
  * fill styles
  */
-#define GL2D_FILL_SOLID		0
-#define GL2D_FILL_TEXTURED	1
-#define GL2D_FILL_MASKED	2
+#define GL2D_FILL_SOLID         0
+#define GL2D_FILL_TEXTURED      1
+#define GL2D_FILL_MASKED        2
 
 /*
- * drawops 
+ * drawops
  */
-#define GL2D_DRAWOP_COPY	GL_COPY	
-#define GL2D_DRAWOP_REVERSE	GL_XOR	
+#define GL2D_DRAWOP_COPY        GL_COPY
+#define GL2D_DRAWOP_REVERSE     GL_XOR
 
 
 /*
@@ -123,10 +123,10 @@ typedef struct color {
    char name[6+MAXCOLORNAME];
    unsigned short r, g, b, a;
    /* for referencing a mutable color (negative) */
-   int id; 
+   int id;
 #ifdef XWindows
    unsigned long c; /* X11 color handle */
-#endif 					/* XWindows */
+#endif                                  /* XWindows */
    struct color *prev, *next;
    } *clrp;
 
@@ -136,7 +136,7 @@ typedef struct color {
 struct fontsymbol {
    unsigned char *pixmap;
    int width, height;
-   int advance, top_bearing, left_bearing;  
+   int advance, top_bearing, left_bearing;
    unsigned int texid, index;
    };
 
@@ -161,7 +161,7 @@ struct fontsymbol {
    wd->currCtx = NULL;\
    } while(0)
 
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
 /*
  * TODO: Make MSWindows version check for redundant state changes
@@ -175,7 +175,7 @@ struct fontsymbol {
    } while(0)
 
 #define UnbindCurrent(wd)
-#endif 					/* MSWindows */
+#endif                                  /* MSWindows */
 
 #define FlushWindow(w) do {\
    if ((w)->window->buffermode == UGL_BUFFERED)\
@@ -201,8 +201,8 @@ struct fontsymbol {
    } while(0)
 
 /*
- * General OpenGL error checker that handles nothing. 
- * Currently for debugging 
+ * General OpenGL error checker that handles nothing.
+ * Currently for debugging
  */
 #define CheckGLError(func) do {\
    unsigned int err;\
@@ -220,7 +220,7 @@ struct fontsymbol {
          if (!errcount) {\
             delete_first_tex(wd, (wd)->numTexIds/2);\
             glTexImage2D(target,level,internalfmt,width,height,border,format,\
-		         type,data);\
+                         type,data);\
             }\
          /* if failed already, then let it die */\
          else return retval;\
@@ -231,13 +231,13 @@ struct fontsymbol {
 
 /*
  * There is a floating error in gpxtest.icn for procedure copying
- * It is happening before the entire hidden 
+ * It is happening before the entire hidden
  * window's contents are copied to the main window.
  * TODO: find the error to make sure it doesn't become
- * a future problem. Reminder: set a breakpoint at 
+ * a future problem. Reminder: set a breakpoint at
  * gl_copyArea or copyarea2d to find it.
  *
- * The error is incorrectly diagnosed to be a result of 
+ * The error is incorrectly diagnosed to be a result of
  * glBindTexture, but uncommenting the while loop shows
  * it to be true.
  */
@@ -277,9 +277,9 @@ struct fontsymbol {
       glDrawBuffer(GL_FRONT);\
       }\
    } while(0)
-#else					/* XWindows */
+#else                                   /* XWindows */
 #define ApplyBuffermode(w, mode)
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
 
 /*
@@ -310,7 +310,7 @@ struct fontsymbol {
 
 /*
  * glStencilFunc() with a mask of 0 lets the stencil test pass regardless
- * of what values are in the stencil buffer. Otherwise, it will only let 
+ * of what values are in the stencil buffer. Otherwise, it will only let
  * pixels that are equal to the bits in {mask} pass the stencil test.
  */
 #define SetStencilFunc(w, mask) \
@@ -321,7 +321,7 @@ struct fontsymbol {
  * Miscellaneous
  */
 #define POLY_COMPLEX 1 /* self-intersecting "convex" */
-#define POLY_CONVEX 2 
+#define POLY_CONVEX 2
 #define POLY_NONCONVEX 3
 
 /*
@@ -347,7 +347,7 @@ struct fontsymbol {
    (buf)[1] = g;\
    (buf)[2] = b;\
    } while(0)
- 
+
 #define AssignBGR(buf, r, g, b) do {\
    (buf)[0] = b;\
    (buf)[1] = g;\
@@ -369,7 +369,7 @@ struct fontsymbol {
 /*
  * Helper macro for getting 2d record constructors
  *
- * rec_structor2d() could return NULL if the program runs out of memory. 
+ * rec_structor2d() could return NULL if the program runs out of memory.
  * If it returns NULL with memory to spare, it would be a syserr().
  */
 #define Get2dRecordConstr(constr, code) do {\
@@ -551,7 +551,7 @@ struct fontsymbol {
 
 /*
  * Viewing volume definitions
- */ 
+ */
 //#define CWIDTH 0.25
 //#define CNEAR 0.25
 //#define CFAR 50000.0
@@ -567,8 +567,8 @@ struct fontsymbol {
 #define HALF_CHEIGHT(w) (CHEIGHT(w)/2.0)
 
 /* Projection definitons */
-#define UGL_PERSPECTIVE	0
-#define UGL_ORTHOGONAL	1
+#define UGL_PERSPECTIVE 0
+#define UGL_ORTHOGONAL  1
 
 #define UGLProj(w) do {\
    wsp ws = (w)->window;\
@@ -603,7 +603,7 @@ struct fontsymbol {
    } while(0)
 
 /*
- * Adds dx/dy back in via render context. 
+ * Adds dx/dy back in via render context.
  * Uses rectargs() logic like RemoveDxDy()
  */
 #define AddDxDy(win, x, y, w, h) do {\
@@ -616,7 +616,7 @@ struct fontsymbol {
    } while(0)
 
 /*
- * For translating from pixel (Unicon) to world (OpenGL) coordinates. 
+ * For translating from pixel (Unicon) to world (OpenGL) coordinates.
  * In relation to the camera, the center of the window is (0,0) in world
  * coordinates.
  */
@@ -630,7 +630,7 @@ struct fontsymbol {
  *
  * Any pixel rendering operations must use GLWORLDCOORD_*().
  *
- * Any line rendering operations that use OpenGL defined primitives 
+ * Any line rendering operations that use OpenGL defined primitives
  * (GL_POLYGON, GL_LINES, etc) must use GLWORLDCOORD_RENDER*().
  * OpenGL renders lines with the diamond rule. GLWORLDCOORD_RENDER_*() offsets
  * the pixel value by 0.5 so that it starts in the center of a pixel.
@@ -643,7 +643,7 @@ struct fontsymbol {
 #define GLWORLDCOORD_RENDER_Y(w, py) \
    ((PIXH(w)-(py+0.5))*CLIPH(w)/(double)PIXH(w)-CLIPH(w)/2.0)
 
-/* 
+/*
  * For translating radius in pixels to that of the world coordinate system.
  *
  * The transformation must keep the correct arc-to-window-dimension
@@ -653,13 +653,13 @@ struct fontsymbol {
 #define GLRADIUS_Y(w, pr) ((pr)/PIXH(w)*CLIPH(w))
 
 /*
- * Sets a color {struct color}. 
+ * Sets a color {struct color}.
  *
  * Whenever a color is set, set the X11 color handle to -1 (default).
  *
  * Should the colorname include alpha?
  */
-#ifdef XWindows 
+#ifdef XWindows
 #define SetColor(clr, red, green, blue, alpha, index) do {\
    sprintf((clr).name,"%ld,%ld,%ld",(long)red,(long)green,(long)blue);\
    (clr).r = red;\
@@ -677,7 +677,7 @@ struct fontsymbol {
       (clr).c = -1;\
       /*(clr).pixel = -1;*/\
    } while(0)
-#else					/* XWindows */
+#else                                   /* XWindows */
 #define SetColor(clr, red, green, blue, alpha, index) do {\
    sprintf((clr).name,"%ld,%ld,%ld",(long)red,(long)green,(long)blue);\
    (clr).r = red;\
@@ -686,12 +686,12 @@ struct fontsymbol {
    (clr).a = alpha;\
    (clr).id = index;\
    } while(0)
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 
 /*
  * Gets a color from type {struct color}. Works whether {color}
  * is mutable or not. If it is mutable and it cannot be found,
- * set the color to black (talk to Dr. J about this). 
+ * set the color to black (talk to Dr. J about this).
  *
  * The returned color values are unsigned short (US).
  */
@@ -793,13 +793,13 @@ struct fontsymbol {
 #define UCToGLF(uchar) (GLfloat) ((uchar)/255.0)
 
 /*
- * For gamma encode/decode color operations. 
- * 
+ * For gamma encode/decode color operations.
+ *
  * Unicon color values are in linear color units. All computer screens
  * convert from linear units to sRGB units by using the value gamma. Thus,
  * The Unicon color values (linear) are converted to sRGB space and given
  * to OpenGL (which has no notion of gamma correction, unless using ver. 4+).
- * 
+ *
  * Encoding transforms from linear-to-sRGB space.
  * Decoding transforms from sRGB-to-linear space.
  * Assume that gamma has no effect on transparency (alpha).
@@ -835,7 +835,7 @@ struct fontsymbol {
 
 /*
  * Decodes gamma correction in the form of (unsigned short). Converts
- * to a float to perform correction and converts back to (unsigned 
+ * to a float to perform correction and converts back to (unsigned
  * short).
  */
 #define DecodeGammaUS(ushort, gamma) \
@@ -862,7 +862,7 @@ struct fontsymbol {
 
 /*
  * Sets the color specified by {color} to sRGB space with gamma as the
- * "foreground" (current OpenGL) color. 
+ * "foreground" (current OpenGL) color.
  * {color} must be an array of unsigned short of size 4.
  */
 #define SetColorState(color, gamma) do {\
@@ -877,7 +877,7 @@ struct fontsymbol {
 #define BG 0
 
 /*
- * Gets a context color (fg or bg) depending on the reverse attribute 
+ * Gets a context color (fg or bg) depending on the reverse attribute
  */
 #define GetContextColorUS(w, is_fg, r, g, b, a) do {\
    wcp wcr = &((w)->window->wcrender);\
@@ -914,8 +914,8 @@ struct fontsymbol {
 /*
  * This macro sets the OpenGL color state based on {w}'s render context's
  * reverse and gamma attributes. {Drawop} is specified. {is_fg} specifies
- * whether the render context's fg or bg color is the desired drawing 
- * color. 
+ * whether the render context's fg or bg color is the desired drawing
+ * color.
  */
 #define SetDrawopColorState(w, drawop, is_fg) do {\
    wsp ws = (w)->window;\
@@ -944,8 +944,8 @@ struct fontsymbol {
    SetColorState(color, wcr->gamma);\
    } while(0)
 
-/* 
- * Clear screen to either the fg or bg color. 
+/*
+ * Clear screen to either the fg or bg color.
  * Accounts for gamma and reverse.
  */
 #define ClearScreenToColor(w, is_fg) do {\
@@ -960,10 +960,10 @@ struct fontsymbol {
    } while(0)
 
 /*
- * Rendering macros 
+ * Rendering macros
  */
 
-/* 
+/*
  * The RenderRealarray*() family of macros are for rendering geometric
  * primitives
  */
@@ -1034,8 +1034,8 @@ struct fontsymbol {
 
 /*
  * For the following *Render*Rect() macros:
- * (x1, y1) specifies the top left corner and (x2, y2) specifies the bottom 
- * right corner. The rectangles are rendered to be front facing 
+ * (x1, y1) specifies the top left corner and (x2, y2) specifies the bottom
+ * right corner. The rectangles are rendered to be front facing
  * (counterclockwise).
  * These macros are used for rendering image primitives
  */
@@ -1154,26 +1154,26 @@ struct fontsymbol {
 
 /*
  * Structures
- */ 
+ */
 
 /*
  * For OpenGL, colors need not be allocated. Colors are defined with
- * RGBA values only. Use clamped doubles (0.0 - 1.0) for RGBA since 
+ * RGBA values only. Use clamped doubles (0.0 - 1.0) for RGBA since
  * they are more representative to how colors are interpreted by machines.
  *
- * Negative (id) values indicate a mutable color, otherwise not mutable. 
- */ 
+ * Negative (id) values indicate a mutable color, otherwise not mutable.
+ */
 
 /*
  * Get font size values in terms of pixels (px). Returns integer value.
- * These macros should only be used on a face whose size has been 
+ * These macros should only be used on a face whose size has been
  * initialized.
  *
  * ascender and descender are in 26.6 fixed point units... or not.
  * may be in ems
  *
  * As a design note, why don't we just unify these font macros
- * by using the ascent, descent, maxwidth, and height fields in 
+ * by using the ascent, descent, maxwidth, and height fields in
  * struct _wfont?
  */
 #if HAVE_LIBFREETYPE
@@ -1188,13 +1188,13 @@ struct fontsymbol {
 #define FT_FWIDTH(face) (int)((face)->size->metrics.max_advance >> 6)
 #define FT_FHEIGHT(face) \
    (int)(((face)->size->metrics.ascender-(face)->size->metrics.descender) >> 6)
-#else					/* HAVE_LIBFREETYPE */
+#else                                   /* HAVE_LIBFREETYPE */
 /* placeholders for MSWin and OSX until implemented */
 #define FT_ASCENT(face) 1
 #define FT_DESCENT(face) 1
 #define FT_FWIDTH(face) 1
 #define FT_FHEIGHT(face) 1
-#endif					/* HAVE_LIBFREETYPE */
+#endif                                  /* HAVE_LIBFREETYPE */
 
 /*
  * Macors check for {wc->font->face} for legacy 3D subwindow support.
@@ -1210,20 +1210,20 @@ struct fontsymbol {
 #define GL_FHEIGHT(w) \
    ((w)->context->font->face ? FT_FHEIGHT((w)->context->font->face) : 0)
 
-#else					/* HAVE_LIBFREETYPE */
+#else                                   /* HAVE_LIBFREETYPE */
 
 #define GL_ASCENT(w) ((w)->context->font->ascent)
 #define GL_DESCENT(w) ((w)->context->font->descent)
 /* Once this implementation gets ported to Windows, unify maxwidth/charwidth */
 #ifdef XWindows
 #define GL_FWIDTH(w) ((w)->context->font->maxwidth)
-#endif					/* XWindows */
+#endif                                  /* XWindows */
 #ifdef MSWindows
 #define GL_FWIDTH(w) ((w)->context->font->charwidth)
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
 #define GL_FHEIGHT(w) ((w)->context->font->height)
 
-#endif					/* HAVE_LIBFREETYPE */
+#endif                                  /* HAVE_LIBFREETYPE */
 
 #define GL_LEADING(w) ((w)->context->leading)
 
@@ -1240,7 +1240,7 @@ struct fontsymbol {
    ((w)->context->font->face ? (!GL_FWIDTH(w) ? (x) : ((x) / GL_FWIDTH(w))) : 0)
 #define GL_MAXDESCENDER(w) ((w)->context->font->face ? GL_DESCENT(w) : 0)
 
-#else					/* HAVE_LIBFREETYPE */
+#else                                   /* HAVE_LIBFREETYPE */
 
 #define GL_ROWTOY(w,row) \
    ((w)->context->font ? ((row-1) * GL_LEADING(w) + GL_ASCENT(w)) : 0)
@@ -1253,9 +1253,9 @@ struct fontsymbol {
    ((w)->context->font ? (!GL_FWIDTH(w) ? (x) : ((x) / GL_FWIDTH(w))) : 0)
 #define GL_MAXDESCENDER(w) ((w)->context->font ? GL_DESCENT(w) : 0)
 
-#endif					/* HAVE_LIBFREETYPE */
+#endif                                  /* HAVE_LIBFREETYPE */
 
-/* 
+/*
  * compute text pixel width
  */
 #define GL_TEXTWIDTH(w, s, len) drawstringhelper(w, 0, 0, 0, s, len, 0, 0)

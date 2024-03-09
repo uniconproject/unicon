@@ -26,140 +26,140 @@
 #define ipad(wp)  do ; while (0)
 #endif
 
-/* Signal definitions */ 
-#passthru #if !defined(SIGABRT) 
-#passthru #define SIGABRT 0 
-#passthru #endif 
-#passthru #if !defined(SIGALRM) 
-#passthru #define SIGALRM 0 
-#passthru #endif 
-#passthru #if !defined(SIGBREAK) 
-#passthru #define SIGBREAK 0 
-#passthru #endif 
-#passthru #if !defined(SIGBUS) 
-#passthru #define SIGBUS 0 
-#passthru #endif 
-#passthru #if !defined(SIGCHLD) 
-#passthru #define SIGCHLD 0 
-#passthru #endif 
-#passthru #if !defined(SIGCLD) 
-#passthru #define SIGCLD 0 
-#passthru #endif 
-#passthru #if !defined(SIGCONT) 
-#passthru #define SIGCONT 0 
-#passthru #endif 
-#passthru #if !defined(SIGEMT) 
-#passthru #define SIGEMT 0 
-#passthru #endif 
-#passthru #if !defined(SIGFPE) 
-#passthru #define SIGFPE 0 
-#passthru #endif 
-#passthru #if !defined(SIGFREEZE) 
-#passthru #define SIGFREEZE 0 
-#passthru #endif 
-#passthru #if !defined(SIGHUP) 
-#passthru #define SIGHUP 0 
-#passthru #endif 
-#passthru #if !defined(SIGILL) 
-#passthru #define SIGILL 0 
-#passthru #endif 
-#passthru #if !defined(SIGINT) 
-#passthru #define SIGINT 0 
-#passthru #endif 
-#passthru #if !defined(SIGIO) 
-#passthru #define SIGIO 0 
-#passthru #endif 
-#passthru #if !defined(SIGIOT) 
-#passthru #define SIGIOT 0 
-#passthru #endif 
-#passthru #if !defined(SIGKILL) 
-#passthru #define SIGKILL 0 
-#passthru #endif 
-#passthru #if !defined(SIGLOST) 
-#passthru #define SIGLOST 0 
-#passthru #endif 
-#passthru #if !defined(SIGLWP) 
-#passthru #define SIGLWP 0 
-#passthru #endif 
-#passthru #if !defined(SIGPIPE) 
-#passthru #define SIGPIPE 0 
-#passthru #endif 
-#passthru #if !defined(SIGPOLL) 
-#passthru #define SIGPOLL 0 
-#passthru #endif 
-#passthru #if !defined(SIGPROF) 
-#passthru #define SIGPROF 0 
-#passthru #endif 
-#passthru #if !defined(SIGPWR) 
-#passthru #define SIGPWR 0 
-#passthru #endif 
-#passthru #if !defined(SIGQUIT) 
-#passthru #define SIGQUIT 0 
-#passthru #endif 
-#passthru #if !defined(SIGSEGV) 
-#passthru #define SIGSEGV 0 
-#passthru #endif 
-#passthru #if !defined(SIGSTOP) 
-#passthru #define SIGSTOP 0 
-#passthru #endif 
-#passthru #if !defined(SIGSYS) 
-#passthru #define SIGSYS 0 
-#passthru #endif 
-#passthru #if !defined(SIGTERM) 
-#passthru #define SIGTERM 0 
-#passthru #endif 
-#passthru #if !defined(SIGTHAW) 
-#passthru #define SIGTHAW 0 
-#passthru #endif 
-#passthru #if !defined(SIGTRAP) 
-#passthru #define SIGTRAP 0 
-#passthru #endif 
-#passthru #if !defined(SIGTSTP) 
-#passthru #define SIGTSTP 0 
-#passthru #endif 
-#passthru #if !defined(SIGTTIN) 
-#passthru #define SIGTTIN 0 
-#passthru #endif 
-#passthru #if !defined(SIGTTOU) 
-#passthru #define SIGTTOU 0 
-#passthru #endif 
-#passthru #if !defined(SIGURG) 
-#passthru #define SIGURG 0 
-#passthru #endif 
-#passthru #if !defined(SIGUSR1) 
-#passthru #define SIGUSR1 0 
-#passthru #endif 
-#passthru #if !defined(SIGUSR2) 
-#passthru #define SIGUSR2 0 
-#passthru #endif 
-#passthru #if !defined(SIGVTALRM) 
-#passthru #define SIGVTALRM 0 
-#passthru #endif 
-#passthru #if !defined(SIGWAITING) 
-#passthru #define SIGWAITING 0 
-#passthru #endif 
-#passthru #if !defined(SIGWINCH) 
-#passthru #define SIGWINCH 0 
-#passthru #endif 
-#passthru #if !defined(SIGXCPU) 
-#passthru #define SIGXCPU 0 
-#passthru #endif 
-#passthru #if !defined(SIGXFSZ) 
-#passthru #define SIGXFSZ 0 
-#passthru #endif 
+/* Signal definitions */
+#passthru #if !defined(SIGABRT)
+#passthru #define SIGABRT 0
+#passthru #endif
+#passthru #if !defined(SIGALRM)
+#passthru #define SIGALRM 0
+#passthru #endif
+#passthru #if !defined(SIGBREAK)
+#passthru #define SIGBREAK 0
+#passthru #endif
+#passthru #if !defined(SIGBUS)
+#passthru #define SIGBUS 0
+#passthru #endif
+#passthru #if !defined(SIGCHLD)
+#passthru #define SIGCHLD 0
+#passthru #endif
+#passthru #if !defined(SIGCLD)
+#passthru #define SIGCLD 0
+#passthru #endif
+#passthru #if !defined(SIGCONT)
+#passthru #define SIGCONT 0
+#passthru #endif
+#passthru #if !defined(SIGEMT)
+#passthru #define SIGEMT 0
+#passthru #endif
+#passthru #if !defined(SIGFPE)
+#passthru #define SIGFPE 0
+#passthru #endif
+#passthru #if !defined(SIGFREEZE)
+#passthru #define SIGFREEZE 0
+#passthru #endif
+#passthru #if !defined(SIGHUP)
+#passthru #define SIGHUP 0
+#passthru #endif
+#passthru #if !defined(SIGILL)
+#passthru #define SIGILL 0
+#passthru #endif
+#passthru #if !defined(SIGINT)
+#passthru #define SIGINT 0
+#passthru #endif
+#passthru #if !defined(SIGIO)
+#passthru #define SIGIO 0
+#passthru #endif
+#passthru #if !defined(SIGIOT)
+#passthru #define SIGIOT 0
+#passthru #endif
+#passthru #if !defined(SIGKILL)
+#passthru #define SIGKILL 0
+#passthru #endif
+#passthru #if !defined(SIGLOST)
+#passthru #define SIGLOST 0
+#passthru #endif
+#passthru #if !defined(SIGLWP)
+#passthru #define SIGLWP 0
+#passthru #endif
+#passthru #if !defined(SIGPIPE)
+#passthru #define SIGPIPE 0
+#passthru #endif
+#passthru #if !defined(SIGPOLL)
+#passthru #define SIGPOLL 0
+#passthru #endif
+#passthru #if !defined(SIGPROF)
+#passthru #define SIGPROF 0
+#passthru #endif
+#passthru #if !defined(SIGPWR)
+#passthru #define SIGPWR 0
+#passthru #endif
+#passthru #if !defined(SIGQUIT)
+#passthru #define SIGQUIT 0
+#passthru #endif
+#passthru #if !defined(SIGSEGV)
+#passthru #define SIGSEGV 0
+#passthru #endif
+#passthru #if !defined(SIGSTOP)
+#passthru #define SIGSTOP 0
+#passthru #endif
+#passthru #if !defined(SIGSYS)
+#passthru #define SIGSYS 0
+#passthru #endif
+#passthru #if !defined(SIGTERM)
+#passthru #define SIGTERM 0
+#passthru #endif
+#passthru #if !defined(SIGTHAW)
+#passthru #define SIGTHAW 0
+#passthru #endif
+#passthru #if !defined(SIGTRAP)
+#passthru #define SIGTRAP 0
+#passthru #endif
+#passthru #if !defined(SIGTSTP)
+#passthru #define SIGTSTP 0
+#passthru #endif
+#passthru #if !defined(SIGTTIN)
+#passthru #define SIGTTIN 0
+#passthru #endif
+#passthru #if !defined(SIGTTOU)
+#passthru #define SIGTTOU 0
+#passthru #endif
+#passthru #if !defined(SIGURG)
+#passthru #define SIGURG 0
+#passthru #endif
+#passthru #if !defined(SIGUSR1)
+#passthru #define SIGUSR1 0
+#passthru #endif
+#passthru #if !defined(SIGUSR2)
+#passthru #define SIGUSR2 0
+#passthru #endif
+#passthru #if !defined(SIGVTALRM)
+#passthru #define SIGVTALRM 0
+#passthru #endif
+#passthru #if !defined(SIGWAITING)
+#passthru #define SIGWAITING 0
+#passthru #endif
+#passthru #if !defined(SIGWINCH)
+#passthru #define SIGWINCH 0
+#passthru #endif
+#passthru #if !defined(SIGXCPU)
+#passthru #define SIGXCPU 0
+#passthru #endif
+#passthru #if !defined(SIGXFSZ)
+#passthru #define SIGXFSZ 0
+#passthru #endif
 
 stringint signalnames[] = {
-   { 0,			40 },
-   { "SIGABRT",		SIGABRT },	
+   { 0,                 40 },
+   { "SIGABRT",         SIGABRT },
    { "SIGALRM",         SIGALRM },
    { "SIGBREAK",        SIGBREAK },
    { "SIGBUS",          SIGBUS },
    { "SIGCHLD",         SIGCHLD },
-   { "SIGCLD",		SIGCLD },
+   { "SIGCLD",          SIGCLD },
    { "SIGCONT",         SIGCONT },
    { "SIGEMT",          SIGEMT },
    { "SIGFPE",          SIGFPE },
-   { "SIGFREEZE",	SIGFREEZE },
+   { "SIGFREEZE",       SIGFREEZE },
    { "SIGHUP",          SIGHUP },
    { "SIGILL",          SIGILL },
    { "SIGINT",          SIGINT },
@@ -167,9 +167,9 @@ stringint signalnames[] = {
    { "SIGIOT",          SIGIOT },
    { "SIGKILL",         SIGKILL },
    { "SIGLOST",         SIGLOST },
-   { "SIGLWP",		SIGLWP },
+   { "SIGLWP",          SIGLWP },
    { "SIGPIPE",         SIGPIPE },
-   { "SIGPOLL",		SIGPOLL },
+   { "SIGPOLL",         SIGPOLL },
    { "SIGPROF",         SIGPROF },
    { "SIGPWR",          SIGPWR },
    { "SIGQUIT",         SIGQUIT },
@@ -177,7 +177,7 @@ stringint signalnames[] = {
    { "SIGSTOP",         SIGSTOP },
    { "SIGSYS",          SIGSYS },
    { "SIGTERM",         SIGTERM },
-   { "SIGTHAW",		SIGTHAW },
+   { "SIGTHAW",         SIGTHAW },
    { "SIGTRAP",         SIGTRAP },
    { "SIGTSTP",         SIGTSTP },
    { "SIGTTIN",         SIGTTIN },
@@ -186,7 +186,7 @@ stringint signalnames[] = {
    { "SIGUSR1",         SIGUSR1 },
    { "SIGUSR2",         SIGUSR2 },
    { "SIGVTALRM",       SIGVTALRM },
-   { "SIGWAITING",	SIGWAITING },
+   { "SIGWAITING",      SIGWAITING },
    { "SIGWINCH",        SIGWINCH },
    { "SIGXCPU",         SIGXCPU },
    { "SIGXFSZ",         SIGXFSZ },
@@ -219,7 +219,7 @@ int CleanupWinSocket(void)
    WINSOCK_INITIAL = 0;
    return 1;
 }
-#endif					/* NT */
+#endif                                  /* NT */
 
 /*
  * get_fd() - get file descriptor
@@ -241,41 +241,41 @@ int get_fd(struct descrip file, unsigned int errmask)
 #ifdef Graphics
    if (status & Fs_Window) {
      if (!(status & Fs_Read)) {
-	return -1;
-	}
+        return -1;
+        }
 #ifdef XWindows
      return XConnectionNumber(BlkD(file,File)->fd.wb->
-			      window->display->display);
-#else					/* XWindows */
+                              window->display->display);
+#else                                   /* XWindows */
      return -1;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
      }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #ifdef PseudoPty
    if (status & Fs_Pty) {
 #if NT
       return -1;
-#else					/* NT */
+#else                                   /* NT */
       return BlkD(file,File)->fd.pt->master_fd;
-#endif					/* NT */
+#endif                                  /* NT */
       }
-#endif					/* PseudoPty */
+#endif                                  /* PseudoPty */
 
    if (errmask && !(status & errmask))
       return -2;
 
 #if NT
 #define fileno _fileno
-#endif					/* NT */
+#endif                                  /* NT */
 
    if (status & Fs_Socket) {
 #if HAVE_LIBSSL
       if(status & Fs_Encrypt)
          return SSL_get_fd(BlkD(file,File)->fd.ssl);
       else
-#endif					/* LIBSSL */
-	 return BlkD(file,File)->fd.fd;
+#endif                                  /* LIBSSL */
+         return BlkD(file,File)->fd.fd;
       }
 
    if (status & Fs_Messaging)
@@ -290,13 +290,13 @@ char *name;
 {
 #if NT
    return -1;
-#else					/* NT */
-   struct passwd *pw, pwbuf;      
+#else                                   /* NT */
+   struct passwd *pw, pwbuf;
    char buf[1024];
    if ((getpwnam_r(name, &pwbuf, buf, 1024, &pw)!=0) || (pw == NULL))
       return -1;
    return pw->pw_uid;
-#endif					/* NT */
+#endif                                  /* NT */
 }
 
 int get_gid(name)
@@ -304,13 +304,13 @@ char *name;
 {
 #if NT
    return -1;
-#else					/* NT */
+#else                                   /* NT */
    struct group *gr, grbuf;
    char buf[4096];
    if ((getgrnam_r(name, &grbuf, buf, 4096, &gr)!=0) || (gr == NULL))
       return -1;
    return gr->gr_gid;
-#endif					/* NT */
+#endif                                  /* NT */
 }
 
 static int newmode(mode, oldmode)
@@ -318,7 +318,7 @@ char *mode;
 int oldmode;
 {
    int i;
-   
+
    /* The pattern is [ugoa]*[+-=][rwxRWXstugo]* */
    int which = 0, do_umask;
    char *p = mode, *q, op;
@@ -339,10 +339,10 @@ int oldmode;
 
       mlen = strlen(mode);
       if (mlen != 9 && (mlen != 10 || !strchr("-ldcb|s", mode[0])))
-	 break;
+         break;
 
       if (mlen == 10)
-	 /* We know there's a leading char we're not interested in */
+         /* We know there's a leading char we're not interested in */
          mode++;
 
       strcpy(allperms, "rwxrwxrwx");
@@ -373,27 +373,27 @@ int oldmode;
 
       cmode = 0;
       for(i = 0; i < 9; i++) {
-	 cmode = cmode << 1;
-	 if (mode[i] == '-') {
-	    cmode |= 1;
-	 } else if (mode[i] != allperms[i]) {
-	    cmode = -1;
-	    break;
-	 }
+         cmode = cmode << 1;
+         if (mode[i] == '-') {
+            cmode |= 1;
+         } else if (mode[i] != allperms[i]) {
+            cmode = -1;
+            break;
+         }
       }
       if (cmode < 0)
-	 break;
+         break;
       cmode |= highbits << 9;
       return cmode;
    } while(0);
 
    while ((q = strchr(fields, *p))) {
       if (!*p)
-	 return -2;
+         return -2;
       if (*p == 'a')
-	 which = 7;
+         which = 7;
       else
-	 which |= 1 << (q - fields);
+         which |= 1 << (q - fields);
       p++;
    }
    if (!strchr("+=-", *p))
@@ -401,17 +401,17 @@ int oldmode;
 
    if ((do_umask = (which == 0)))
       which = 7;
-      
+
    op = *p++;
 
    /* We have: which field(s) in "which", an operator in "op" */
 
    if (op == '=') {
       for(i = 0; i < 3; i++)
-	if (which & (1 << i)) {
-	    retmode &= ~(7 << (i*3));
-	    retmode &= ~(1 << (i + 9));
-	}
+        if (which & (1 << i)) {
+            retmode &= ~(7 << (i*3));
+            retmode &= ~(1 << (i + 9));
+        }
       op = '+';
    }
 
@@ -428,40 +428,40 @@ int oldmode;
       case 'g': value = (oldmode & 0070) >> 3; break;
       case 'o': value = oldmode & 0007; break;
       case 's':
-	 if (which & 4)
-	    value = 04000;
-	 if (which & 2)
-	    value |= 02000;
-	 retmode |= value;
-	 continue;
+         if (which & 4)
+            value = 04000;
+         if (which & 2)
+            value |= 02000;
+         retmode |= value;
+         continue;
       case 't':
-	 if (which & 1)
-	    retmode |= 01000;
-	 continue;
+         if (which & 1)
+            retmode |= 01000;
+         continue;
       default:
-	 return -2;
+         return -2;
       }
 
       for(i = 0; i < 3; i++) {
-	 int nvalue;
-	 if (which & (1 << i)) {
-	    if (do_umask) {
+         int nvalue;
+         if (which & (1 << i)) {
+            if (do_umask) {
 #if NT
-	       int u = _umask(0);
-	       _umask(u);
-#else					/* NT */
-	       int u = umask(0);
-	       umask(u);
-#endif					/* NT */	
-	       nvalue = value & ~u;
-	    } else
-	       nvalue = value;
-	    switch (op) {
-	    case '-': retmode &= ~nvalue; break;
-	    case '+': retmode |= nvalue; break;
-	    }
-	 }
-	 value = (value << 3);
+               int u = _umask(0);
+               _umask(u);
+#else                                   /* NT */
+               int u = umask(0);
+               umask(u);
+#endif                                  /* NT */
+               nvalue = value & ~u;
+            } else
+               nvalue = value;
+            switch (op) {
+            case '-': retmode &= ~nvalue; break;
+            case '+': retmode |= nvalue; break;
+            }
+         }
+         value = (value << 3);
       }
    }
 
@@ -481,7 +481,7 @@ char *mode;
 #passthru #if (__GNUC__==4) && (__GNUC_MINOR__>7)
 #passthru #define stat _stat64i32
 #passthru #endif
-#endif					/* NTGCC && WordBits==32*/
+#endif                                  /* NTGCC && WordBits==32*/
    struct stat st;
    if (fstat(fd, &st) < 0)
       return -1;
@@ -514,9 +514,9 @@ char *mode;
 void stat2rec(st, dp, rp)
 #if NT
 struct _stat *st;
-#else					/* NT */
+#else                                   /* NT */
 struct stat *st;
-#endif					/* NT */
+#endif                                  /* NT */
 struct descrip *dp;
 struct b_record **rp;
 {
@@ -525,7 +525,7 @@ struct b_record **rp;
 #if !NT
    struct passwd *pw = NULL, pwbuf;
    struct group *gr = NULL, grbuf;
-#endif					/* !NT */
+#endif                                  /* !NT */
    char buf[4096];
 
    dp->dword = D_Record;
@@ -562,7 +562,7 @@ struct b_record **rp;
    if (st->st_mode & S_IREAD) mode[1] = mode[4] = mode[7] = 'r';
    if (st->st_mode & S_IWRITE) mode[2] = mode[5] = mode[8] = 'w';
    if (st->st_mode & S_IEXEC) mode[3] = mode[6] = mode[9] = 'x';
-#else					/* NT */
+#else                                   /* NT */
    if (S_ISLNK(st->st_mode)) mode[0] = 'l';
    else if (S_ISREG(st->st_mode)) mode[0] = '-';
    else if (S_ISDIR(st->st_mode)) mode[0] = 'd';
@@ -584,14 +584,14 @@ struct b_record **rp;
    if (S_ISUID & st->st_mode) mode[3] = (mode[3] == 'x') ? 's' : 'S';
    if (S_ISGID & st->st_mode) mode[6] = (mode[6] == 'x') ? 's' : 'S';
    if (S_ISVTX & st->st_mode) mode[9] = (mode[9] == 'x') ? 't' : 'T';
-#endif					/* NT */
+#endif                                  /* NT */
 
    StrLoc((*rp)->fields[2]) = alcstr(mode, 10);
    StrLen((*rp)->fields[2]) = 10;
 
 #if NT
    (*rp)->fields[4] = (*rp)->fields[5] = emptystr;
-#else					/* NT */
+#else                                   /* NT */
    /*
     * If we can get the user name, use it. Otherwise use the user id #.
     * getpwuid_r's interface is a fair bit different than getpwuid!
@@ -608,7 +608,7 @@ struct b_record **rp;
       }
    StrLoc((*rp)->fields[4]) = alcstr(user, strlen(user));
    StrLen((*rp)->fields[4]) = strlen(user);
-   
+
    getgrgid_r(st->st_gid, &grbuf, buf, 4096, &gr);
    if (gr == 0){
       sprintf(mode, "%d", st->st_gid);
@@ -619,7 +619,7 @@ struct b_record **rp;
       }
    StrLoc((*rp)->fields[5]) = alcstr(group, strlen(group));
    StrLen((*rp)->fields[5]) = strlen(group);
-#endif					/* NT */
+#endif                                  /* NT */
 
 }
 
@@ -668,7 +668,7 @@ void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp)
    IntVal((*rp)->fields[7]) = (word)usg->ru_nvcsw;
    IntVal((*rp)->fields[8]) = (word)usg->ru_nivcsw;
 }
-#endif						/* NT */
+#endif                                          /* NT */
 
 struct descrip posix_lock = {D_Null};
 struct descrip posix_timeval = {D_Null};
@@ -689,121 +689,121 @@ char *name;
 
    if (!strcmp(name, "posix_lock")) {
       if (is:null(posix_lock)) {
-	 AsgnCStr(s, "posix_lock");
-	 AsgnCStr(fields[0], "value");
-	 AsgnCStr(fields[1], "pid");
-	 posix_lock.dword = D_Proc;
-	 posix_lock.vword.bptr = (union block *)dynrecord(&s, fields, 2);
-	 }
+         AsgnCStr(s, "posix_lock");
+         AsgnCStr(fields[0], "value");
+         AsgnCStr(fields[1], "pid");
+         posix_lock.dword = D_Proc;
+         posix_lock.vword.bptr = (union block *)dynrecord(&s, fields, 2);
+         }
       return &posix_lock;
       }
    else if (!strcmp(name, "posix_message")) {
       if (is:null(posix_message)) {
-	 AsgnCStr(s, "posix_message");
-	 AsgnCStr(fields[0], "addr");
-	 AsgnCStr(fields[1], "msg");
-	 posix_message.dword = D_Proc;
-	 posix_message.vword.bptr = (union block *)dynrecord(&s, fields, 2);
-	 }
+         AsgnCStr(s, "posix_message");
+         AsgnCStr(fields[0], "addr");
+         AsgnCStr(fields[1], "msg");
+         posix_message.dword = D_Proc;
+         posix_message.vword.bptr = (union block *)dynrecord(&s, fields, 2);
+         }
       return &posix_message;
       }
    else if (!strcmp(name, "posix_servent")) {
       if (is:null(posix_servent)) {
-	 AsgnCStr(s, "posix_servent");
-	 AsgnCStr(fields[0], "name");
-	 AsgnCStr(fields[1], "aliases");
-	 AsgnCStr(fields[2], "port");
-	 AsgnCStr(fields[3], "proto");
-	 posix_servent.dword = D_Proc;
-	 posix_servent.vword.bptr = (union block *)dynrecord(&s, fields, 4);
-	 }
+         AsgnCStr(s, "posix_servent");
+         AsgnCStr(fields[0], "name");
+         AsgnCStr(fields[1], "aliases");
+         AsgnCStr(fields[2], "port");
+         AsgnCStr(fields[3], "proto");
+         posix_servent.dword = D_Proc;
+         posix_servent.vword.bptr = (union block *)dynrecord(&s, fields, 4);
+         }
       return &posix_servent;
       }
    else if (!strcmp(name, "posix_hostent")) {
       if (is:null(posix_hostent)) {
-	 AsgnCStr(s, "posix_hostent");
-	 AsgnCStr(fields[0], "name");
-	 AsgnCStr(fields[1], "aliases");
-	 AsgnCStr(fields[2], "addresses");
-	 posix_hostent.dword = D_Proc;
-	 posix_hostent.vword.bptr = (union block *)dynrecord(&s, fields, 3);
-	 }
+         AsgnCStr(s, "posix_hostent");
+         AsgnCStr(fields[0], "name");
+         AsgnCStr(fields[1], "aliases");
+         AsgnCStr(fields[2], "addresses");
+         posix_hostent.dword = D_Proc;
+         posix_hostent.vword.bptr = (union block *)dynrecord(&s, fields, 3);
+         }
       return &posix_hostent;
       }
    else if (!strcmp(name, "posix_timeval")) {
       if (is:null(posix_timeval)) {
-	 AsgnCStr(s, "posix_timeval");
-	 AsgnCStr(fields[0], "sec");
-	 AsgnCStr(fields[1], "usec");
-	 posix_timeval.dword = D_Proc;
-	 posix_timeval.vword.bptr = (union block *)dynrecord(&s, fields, 2);
-	 }
+         AsgnCStr(s, "posix_timeval");
+         AsgnCStr(fields[0], "sec");
+         AsgnCStr(fields[1], "usec");
+         posix_timeval.dword = D_Proc;
+         posix_timeval.vword.bptr = (union block *)dynrecord(&s, fields, 2);
+         }
       return &posix_timeval;
       }
    else if (!strcmp(name, "posix_rusage")) {
       if (is:null(posix_rusage)) {
-	 AsgnCStr(s, "posix_rusage");
-	 AsgnCStr(fields[0], "utime");
-	 AsgnCStr(fields[1], "stime");
-	 AsgnCStr(fields[2], "maxrss");
-	 AsgnCStr(fields[3], "minflt");
-	 AsgnCStr(fields[4], "majflt");
-	 AsgnCStr(fields[5], "inblock");
-	 AsgnCStr(fields[6], "oublock");
-	 AsgnCStr(fields[7], "nvcsw");
-	 AsgnCStr(fields[8], "nivcsw");
-	 posix_rusage.dword = D_Proc;
-	 posix_rusage.vword.bptr = (union block *)dynrecord(&s, fields, 9);
-	 }
+         AsgnCStr(s, "posix_rusage");
+         AsgnCStr(fields[0], "utime");
+         AsgnCStr(fields[1], "stime");
+         AsgnCStr(fields[2], "maxrss");
+         AsgnCStr(fields[3], "minflt");
+         AsgnCStr(fields[4], "majflt");
+         AsgnCStr(fields[5], "inblock");
+         AsgnCStr(fields[6], "oublock");
+         AsgnCStr(fields[7], "nvcsw");
+         AsgnCStr(fields[8], "nivcsw");
+         posix_rusage.dword = D_Proc;
+         posix_rusage.vword.bptr = (union block *)dynrecord(&s, fields, 9);
+         }
       return &posix_rusage;
       }
    else if (!strcmp(name, "posix_group")) {
       if (is:null(posix_group)) {
-	 AsgnCStr(s, "posix_group");
-	 AsgnCStr(fields[0], "name");
-	 AsgnCStr(fields[1], "passwd");
-	 AsgnCStr(fields[2], "gid");
-	 AsgnCStr(fields[3], "members");
-	 posix_group.dword = D_Proc;
-	 posix_group.vword.bptr = (union block *)dynrecord(&s, fields, 4);
-	 }
+         AsgnCStr(s, "posix_group");
+         AsgnCStr(fields[0], "name");
+         AsgnCStr(fields[1], "passwd");
+         AsgnCStr(fields[2], "gid");
+         AsgnCStr(fields[3], "members");
+         posix_group.dword = D_Proc;
+         posix_group.vword.bptr = (union block *)dynrecord(&s, fields, 4);
+         }
       return &posix_group;
       }
    else if (!strcmp(name, "posix_passwd")) {
       if (is:null(posix_passwd)) {
-	 AsgnCStr(s, "posix_passwd");
-	 AsgnCStr(fields[0], "name");
-	 AsgnCStr(fields[1], "passwd");
-	 AsgnCStr(fields[2], "uid");
-	 AsgnCStr(fields[3], "gid");
-	 AsgnCStr(fields[4], "gecos");
-	 AsgnCStr(fields[5], "dir");
-	 AsgnCStr(fields[6], "shell");
-	 posix_passwd.dword = D_Proc;
-	 posix_passwd.vword.bptr = (union block *)dynrecord(&s, fields, 7);
-	 }
+         AsgnCStr(s, "posix_passwd");
+         AsgnCStr(fields[0], "name");
+         AsgnCStr(fields[1], "passwd");
+         AsgnCStr(fields[2], "uid");
+         AsgnCStr(fields[3], "gid");
+         AsgnCStr(fields[4], "gecos");
+         AsgnCStr(fields[5], "dir");
+         AsgnCStr(fields[6], "shell");
+         posix_passwd.dword = D_Proc;
+         posix_passwd.vword.bptr = (union block *)dynrecord(&s, fields, 7);
+         }
       return &posix_passwd;
       }
    else if (!strcmp(name, "posix_stat")) {
       if (is:null(posix_stat)) {
-	 AsgnCStr(s, "posix_stat");
-	 AsgnCStr(fields[0], "dev");
-	 AsgnCStr(fields[1], "ino");
-	 AsgnCStr(fields[2], "mode");
-	 AsgnCStr(fields[3], "nlink");
-	 AsgnCStr(fields[4], "uid");
-	 AsgnCStr(fields[5], "gid");
-	 AsgnCStr(fields[6], "rdev");
-	 AsgnCStr(fields[7], "size");
-	 AsgnCStr(fields[8], "atime");
-	 AsgnCStr(fields[9], "mtime");
-	 AsgnCStr(fields[10], "ctime");
-	 AsgnCStr(fields[11], "blksize");
-	 AsgnCStr(fields[12], "blocks");
-	 AsgnCStr(fields[13], "symlink");
-	 posix_stat.dword = D_Proc;
-	 posix_stat.vword.bptr = (union block *)dynrecord(&s, fields, 14);
-	 }
+         AsgnCStr(s, "posix_stat");
+         AsgnCStr(fields[0], "dev");
+         AsgnCStr(fields[1], "ino");
+         AsgnCStr(fields[2], "mode");
+         AsgnCStr(fields[3], "nlink");
+         AsgnCStr(fields[4], "uid");
+         AsgnCStr(fields[5], "gid");
+         AsgnCStr(fields[6], "rdev");
+         AsgnCStr(fields[7], "size");
+         AsgnCStr(fields[8], "atime");
+         AsgnCStr(fields[9], "mtime");
+         AsgnCStr(fields[10], "ctime");
+         AsgnCStr(fields[11], "blksize");
+         AsgnCStr(fields[12], "blocks");
+         AsgnCStr(fields[13], "symlink");
+         posix_stat.dword = D_Proc;
+         posix_stat.vword.bptr = (union block *)dynrecord(&s, fields, 14);
+         }
       return &posix_stat;
       }
 
@@ -817,20 +817,20 @@ char *name;
          if (is:proc(globals[i]))
             return &globals[i];
          else
-	    return 0;
-	 }
+            return 0;
+         }
 
    return 0;
 }
 
-/* 
+/*
  * Sockets
  *
  * IMPORTANT NOTE: IPv6 (AF_INET6) is NOT implemented.
  *
  * There are two routines that are provided (via open()) - connect (for a
- * client) and listen (for servers). 
- * 
+ * client) and listen (for servers).
+ *
  * Four procedures are not required for starting a TCP server, we combine
  * them. The standard BSD way of doing it is:
  *
@@ -885,27 +885,27 @@ struct addrinfo **saddrs;
 
 #if !defined(MAXHOSTNAMELEN)
 #define MAXHOSTNAMELEN 32
-#endif					/* MAXHOSTNAMELEN */
+#endif                                  /* MAXHOSTNAMELEN */
 
 /*
  * debugging function to dump addrinfo struct
  */
 int dump_addrinfo(struct addrinfo *ai)
 {
-	struct addrinfo *runp;
-	char hostbuf[50], portbuf[10];
-	for (runp = ai; runp != NULL; runp = runp->ai_next) {
-		printf("family: %d, socktype: %d, protocol: %d, ",
-		       runp->ai_family, runp->ai_socktype, runp->ai_protocol);
-		(void) getnameinfo(
-			runp->ai_addr, runp->ai_addrlen,
-			hostbuf, sizeof(hostbuf),
-			portbuf, sizeof(portbuf),
-			NI_NUMERICHOST | NI_NUMERICSERV
-		);
-		printf("host: %s, port: %s\n", hostbuf, portbuf);
-	}
-	return 0;
+        struct addrinfo *runp;
+        char hostbuf[50], portbuf[10];
+        for (runp = ai; runp != NULL; runp = runp->ai_next) {
+                printf("family: %d, socktype: %d, protocol: %d, ",
+                       runp->ai_family, runp->ai_socktype, runp->ai_protocol);
+                (void) getnameinfo(
+                        runp->ai_addr, runp->ai_addrlen,
+                        hostbuf, sizeof(hostbuf),
+                        portbuf, sizeof(portbuf),
+                        NI_NUMERICHOST | NI_NUMERICSERV
+                );
+                printf("host: %s, port: %s\n", hostbuf, portbuf);
+        }
+        return 0;
 }
 
 char* print_sockaddr(struct sockaddr* sa, char* buf, int buflen ) {
@@ -973,10 +973,10 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
     nohost = 1;
 #if NT
   if (!StartupWinSocket()) return 0;
-#endif					/*NT*/
+#endif                                  /*NT*/
 
   INIT_ADDRINFO_HINTS(hints, family, (is_udp? SOCK_DGRAM : SOCK_STREAM),
-		      (nohost?AI_PASSIVE:0), (is_udp?IPPROTO_UDP:IPPROTO_TCP));
+                      (nohost?AI_PASSIVE:0), (is_udp?IPPROTO_UDP:IPPROTO_TCP));
   if ( (rc = getaddrinfo((nohost?NULL:addr), p, &hints, &res0)) != 0) {
     set_gaierrortext(rc);
     return NULL;
@@ -989,7 +989,7 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
 /*
  * Empty handler for connection alarm signals (used for timeouts).
  */
-/* static void on_alarm(int x) 
+/* static void on_alarm(int x)
 {
 }
 */
@@ -1004,7 +1004,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
 #if UNIX
    struct sockaddr_un saddr_un;
    int pathbuf_len = sizeof(saddr_un.sun_path);
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
    errno = 0;
    SAFE_strncpy(fname, fn, sizeof(fname));
@@ -1019,31 +1019,31 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
       *p = ':';
 
       if (!res0)
-	return 0;
+        return 0;
 
       s = -1;
       for (res = res0; res; res = res->ai_next) {
-	s = socket(res->ai_family, res->ai_socktype,
-		   res->ai_protocol);
-	if (s < 0) {
-	  continue;
-	}
+        s = socket(res->ai_family, res->ai_socktype,
+                   res->ai_protocol);
+        if (s < 0) {
+          continue;
+        }
 
-	/*
-	if (connect(s, res->ai_addr, res->ai_addrlen) < 0) {
-	  close(s);
-	  s = -1;
-	  continue;
-	}
-	*/
+        /*
+        if (connect(s, res->ai_addr, res->ai_addrlen) < 0) {
+          close(s);
+          s = -1;
+          continue;
+        }
+        */
 
-	break;  /* okay we got one */
+        break;  /* okay we got one */
       }
 
       if (s < 0) {
-	// failed to create a socket to any of the resloved names
-	freeaddrinfo(res0);
-	return 0;
+        // failed to create a socket to any of the resloved names
+        freeaddrinfo(res0);
+        return 0;
       }
 
       // This is the node we care about, free all other nodes before and after it
@@ -1051,21 +1051,21 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
       sa = saddrinfo->ai_addr;
       len = saddrinfo->ai_addrlen;
       if (saddrinfo == res0){
-	if (saddrinfo->ai_next != NULL){
-	  freeaddrinfo(saddrinfo->ai_next);
-	  saddrinfo->ai_next = NULL;
-	  }
+        if (saddrinfo->ai_next != NULL){
+          freeaddrinfo(saddrinfo->ai_next);
+          saddrinfo->ai_next = NULL;
+          }
       }
       else {
-	for (res = res0; res->ai_next != saddrinfo; res = res->ai_next);
-	res->ai_next = NULL;
-	freeaddrinfo(res0);
+        for (res = res0; res->ai_next != saddrinfo; res = res->ai_next);
+        res->ai_next = NULL;
+        freeaddrinfo(res0);
 
-	res = saddrinfo->ai_next;
-	if (res){
-	  saddrinfo->ai_next = NULL;
-	  freeaddrinfo(res);
-	}
+        res = saddrinfo->ai_next;
+        if (res){
+          saddrinfo->ai_next = NULL;
+          freeaddrinfo(res);
+        }
       }
    }
    else {
@@ -1075,7 +1075,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
 #endif
 #if UNIX
       if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
-	 return 0;
+         return 0;
       saddr_un.sun_family = AF_UNIX;
       strncpy(saddr_un.sun_path, fname, pathbuf_len);
       /* NUL-terminate just in case.... */
@@ -1086,7 +1086,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
       saddr_un.sun_len = len;
 #endif
       sa = (struct sockaddr*) &saddr_un;
-#endif					/* UNIX */
+#endif                                  /* UNIX */
    }
 
    /* We don't connect UDP sockets but always use sendto(2). */
@@ -1094,9 +1094,9 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
       /* save the sockaddr struct */
       saddrs = realloc(saddrs, (s+1) * (sizeof(struct addrinfo *)));
       if (saddrs == NULL) {
-	 close(s);
-	 return 0;
-	 }
+         close(s);
+         return 0;
+         }
       saddrs[s] = saddrinfo;
       return s;
       }
@@ -1115,7 +1115,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
          close(s);
          return 0;
       }
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 #if NT
       /* Turn on non-blocking flag so connect will return immediately. */
       unsigned long imode = 1;
@@ -1124,7 +1124,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
          closesocket(s);
          return 0;
       }
-#endif					/* NT */
+#endif                                  /* NT */
    }
 
    rc = connect(s, sa, len);
@@ -1144,7 +1144,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
          fd_set ws, es;
          struct timeval tv;
          int sc, cc;
-	 unsigned int cclen;
+         unsigned int cclen;
 
          tv.tv_sec = timeout / 1000;
          tv.tv_usec = 1000 * (timeout % 1000);
@@ -1153,11 +1153,11 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
          FD_ZERO(&es);
          FD_SET(s, &es);
          errno = 0;
-         sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);      
+         sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);
          /*
-	  * A result of 0 means timeout; in this case errno will be zero too,
+          * A result of 0 means timeout; in this case errno will be zero too,
           * and that can be used to distinguish from another error condition.
-	  */
+          */
          if (sc <= 0) {
             close(s);
             return 0;
@@ -1168,24 +1168,24 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
          if (getsockopt(s, SOL_SOCKET, SO_ERROR, &cc, &cclen) < 0) {
             close(s);
             return 0;
-         }         
+         }
 
          if (cc != 0) {
             /* There was an error, so set errno and fail */
             errno = cc;
             close(s);
             return 0;
-         }         
+         }
 
          return s;
       }
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 #if NT
       /* Turn off non-blocking flag */
       int connect_err = WSAGetLastError();
       unsigned long imode = 0;
       if (ioctlsocket(s, FIONBIO, &imode) < 0) {
-         errno = WSAGetLastError();      
+         errno = WSAGetLastError();
          closesocket(s);
          return 0;
       }
@@ -1204,11 +1204,11 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
          FD_ZERO(&es);
          FD_SET(s, &es);
          WSASetLastError(0);
-         sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);      
+         sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);
          /* A result of 0 means timeout; in this case WSAGetLastError() will return zero,
             and that can be used to distinguish from another error condition. */
          if (sc <= 0) {
-            errno = WSAGetLastError();      
+            errno = WSAGetLastError();
             closesocket(s);
             return 0;
          }
@@ -1216,21 +1216,21 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
          /* Get the error code of the connect */
          cclen = sizeof(cc);
          if (getsockopt(s, SOL_SOCKET, SO_ERROR, (char*)&cc, &cclen) < 0) {
-            errno = WSAGetLastError();      
+            errno = WSAGetLastError();
             closesocket(s);
             return 0;
-         }         
+         }
 
          if (cc != 0) {
             /* There was an error, so set errno and fail */
             errno = cc;
             closesocket(s);
             return 0;
-         }         
+         }
 
          return s;
       }
-#endif					/* NT */
+#endif                                  /* NT */
    }
 
    if (rc < 0) {
@@ -1278,35 +1278,35 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
       */
 
       if ((p=strrchr(addr, ':')) != NULL) {
-	 *p = 0;
-	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener == 1, af_fam);
-	 *p = ':';
+         *p = 0;
+         res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener == 1, af_fam);
+         *p = ':';
 
-	 if (!res0)
-	    return 0;
+         if (!res0)
+            return 0;
 
-	 s = -1;
-	 for (res = res0; res; res = res->ai_next) {
-	   s = socket(res->ai_family, res->ai_socktype,
-		      res->ai_protocol);
-	   if (s < 0) {
-	     continue;
-	   }
+         s = -1;
+         for (res = res0; res; res = res->ai_next) {
+           s = socket(res->ai_family, res->ai_socktype,
+                      res->ai_protocol);
+           if (s < 0) {
+             continue;
+           }
 
-	   if (bind(s, res->ai_addr, res->ai_addrlen) < 0) {
-	     close(s);
-	     s = -1;
-	     continue;
-	   }
+           if (bind(s, res->ai_addr, res->ai_addrlen) < 0) {
+             close(s);
+             s = -1;
+             continue;
+           }
 
-	   break;  /* okay we got one */
-	 }
+           break;  /* okay we got one */
+         }
 
-	 if (res0)
-	   freeaddrinfo(res0);
-	 if (s < 0) {
-	   return 0;  // failed to bind to any address
-	 }
+         if (res0)
+           freeaddrinfo(res0);
+         if (s < 0) {
+           return 0;  // failed to bind to any address
+         }
 
       }
       else {
@@ -1315,28 +1315,28 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
          return 0;
 #endif
 #if UNIX
-	 struct sockaddr_un saddr_un;
+         struct sockaddr_un saddr_un;
          int pathbuf_len;
 
-	 if ((is_udp_or_listener==1) ||
-	     (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
-	    return 0;
+         if ((is_udp_or_listener==1) ||
+             (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
+            return 0;
 
          pathbuf_len = sizeof(saddr_un.sun_path);
-	 saddr_un.sun_family = AF_UNIX;
-	 strncpy(saddr_un.sun_path, addr, pathbuf_len);
+         saddr_un.sun_family = AF_UNIX;
+         strncpy(saddr_un.sun_path, addr, pathbuf_len);
          saddr_un.sun_path[pathbuf_len - 1] = 0;
          len = sizeof(saddr_un.sun_family) + strlen(saddr_un.sun_path);
 #ifdef BSD_4_4_LITE
          len += sizeof(saddr_un.sun_len);
-	 saddr_un.sun_len = len;
+         saddr_un.sun_len = len;
 #endif
-	 (void) unlink(saddr_un.sun_path);
-	 sa = (struct sockaddr*) &saddr_un;
-#endif					/* UNIX */
-	 if (bind(s, sa, len) < 0) {
-	   return 0;
-	 }
+         (void) unlink(saddr_un.sun_path);
+         sa = (struct sockaddr*) &saddr_un;
+#endif                                  /* UNIX */
+         if (bind(s, sa, len) < 0) {
+           return 0;
+         }
       }
    }
    /* No need to listen on UDP sockets */
@@ -1461,7 +1461,7 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
    s = -1;
    for (res = res0; res; res = res->ai_next) {
      s = socket(res->ai_family, res->ai_socktype,
-		res->ai_protocol);
+                res->ai_protocol);
      if (s >= 0)
        break;  /* okay we got one */
    }
@@ -1499,7 +1499,7 @@ int sock_recv(int s, struct b_record **rp)
 
 #if NT
    if (!StartupWinSocket()) return 0;
-#endif					/* NT */
+#endif                                  /* NT */
 
    if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&s_type, &len) < 0)
       return 0;
@@ -1544,7 +1544,7 @@ int sock_write(int f, char *msg, int n)
 
    if (s_type == SOCK_DGRAM){
       rv = sendto(fd, msg, n, 0,
-		  saddrs[fd]->ai_addr, saddrs[fd]->ai_addrlen);
+                  saddrs[fd]->ai_addr, saddrs[fd]->ai_addrlen);
    }
    else
       rv = send(fd, msg, n, 0);
@@ -1566,7 +1566,7 @@ char *s;
    int i;
    for (i = 0; i < nsock; i++)
       if (strcmp(s, sock_map[i].name) == 0)
-	 return sock_map[i].fd;
+         return sock_map[i].fd;
    return -1;
 }
 
@@ -1617,64 +1617,64 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
      }
      else if (cnv:C_string(attr[a], tmps)) {
        /*
-	* quick santiy check, reject any attribute
-	*  - under 3 characters
-	*  - starts or ends with '='
-	*/
+        * quick santiy check, reject any attribute
+        *  - under 3 characters
+        *  - starts or ends with '='
+        */
        if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
-	 set_errortext_with_val(1302, tmps);
-	 return NULL;
+         set_errortext_with_val(1302, tmps);
+         return NULL;
        }
 
        /*
-	* split the attribute at the '=' sign
-	* attrib name up to '=', val is whatever comes after '='
-	*/
+        * split the attribute at the '=' sign
+        * attrib name up to '=', val is whatever comes after '='
+        */
        val = strchr(tmps,'=');
        if (val != NULL) {
-	 *val = '\0';
-	 val++;
-	 if (strlen(val) == 0) {
-	   set_errortext_with_val(1302, tmps);
-	   return NULL;
-	 }
-	 //printf("attr: %s=%s\n", tmps, val);
-	 if (strcmp(tmps, "cert") == 0)
-	   certFile = val;
-	 else if (strcmp(tmps, "key") == 0)
-	   keyFile = val;
-	 else if (strcmp(tmps, "password") == 0)
-	   password = val;
-	 else if (strcmp(tmps, "ca") == 0)
-	   ca_file = val;
-	 else if (strcmp(tmps, "caDir") == 0)
-	   ca_dir = val;
-	 else if (strcmp(tmps, "caStore") == 0)
-	   ca_store = val;
-	 else if (strcmp(tmps, "ciphers") == 0)
-	   ciphers = val;
-	 else if (strcmp(tmps, "ciphers1.3") == 0)
-	   ciphers13 = val;
-	 else if (strcmp(tmps, "minProto") == 0)
-	   min_proto = val;
-	 else if (strcmp(tmps, "maxProto") == 0)
-	   max_proto = val;
-	 else if (strcmp(tmps, "verifyPeer") == 0)
-	   verifyPeer = val;
-	 else  {
-	   set_errortext_with_val(1302, tmps);
-	   return NULL;
-	 }
+         *val = '\0';
+         val++;
+         if (strlen(val) == 0) {
+           set_errortext_with_val(1302, tmps);
+           return NULL;
+         }
+         //printf("attr: %s=%s\n", tmps, val);
+         if (strcmp(tmps, "cert") == 0)
+           certFile = val;
+         else if (strcmp(tmps, "key") == 0)
+           keyFile = val;
+         else if (strcmp(tmps, "password") == 0)
+           password = val;
+         else if (strcmp(tmps, "ca") == 0)
+           ca_file = val;
+         else if (strcmp(tmps, "caDir") == 0)
+           ca_dir = val;
+         else if (strcmp(tmps, "caStore") == 0)
+           ca_store = val;
+         else if (strcmp(tmps, "ciphers") == 0)
+           ciphers = val;
+         else if (strcmp(tmps, "ciphers1.3") == 0)
+           ciphers13 = val;
+         else if (strcmp(tmps, "minProto") == 0)
+           min_proto = val;
+         else if (strcmp(tmps, "maxProto") == 0)
+           max_proto = val;
+         else if (strcmp(tmps, "verifyPeer") == 0)
+           verifyPeer = val;
+         else  {
+           set_errortext_with_val(1302, tmps);
+           return NULL;
+         }
        }
        else  {
-	   set_errortext_with_val(1302, tmps);
-	   return NULL;
-	 }
+           set_errortext_with_val(1302, tmps);
+           return NULL;
+         }
      }
      else {
-	   set_errortext(1302);
-	   return NULL;
-	 }
+           set_errortext(1302);
+           return NULL;
+         }
     }
 
    /*
@@ -1742,13 +1742,13 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    do {
       char *proto;
       if (count == 2)
-	proto = min_proto;
+        proto = min_proto;
       else
-	proto = max_proto;
+        proto = max_proto;
 
       if (proto != NULL) {
         // supported versions are SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION,
-	// TLS1_2_VERSION, TLS1_3_VERSION for TLS and DTLS1_VERSION, DTLS1_2_VERSION for DTLS.
+        // TLS1_2_VERSION, TLS1_3_VERSION for TLS and DTLS1_VERSION, DTLS1_2_VERSION for DTLS.
 #if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #define TLS1_VERSION 10
 #define TLS1_1_VERSION 11
@@ -1759,77 +1759,77 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 #define DTLS1_2_VERSION 22
 
 #endif
-	int ver;
+        int ver;
         if (strcmp(proto, "TLS1.3") == 0)
           ver = TLS1_3_VERSION;
-	else if (strcmp(proto, "TLS1.2") == 0)
-	  ver = TLS1_2_VERSION;
-	else if (strcmp(proto, "TLS1.1") == 0)
-	  ver = TLS1_1_VERSION;
-	else if (strcmp(proto, "TLS1.0") == 0)
-	  ver = TLS1_VERSION;
-	/*	else if (strcmp(proto, "SSL3.0") == 0)
-		ver = SSL3_VERSION; */
-	else if (strcmp(proto, "DTLS1.2") == 0)
-	  ver = DTLS1_2_VERSION;
-	else if (strcmp(proto, "DTLS1.0") == 0)
-	  ver = DTLS1_VERSION;
+        else if (strcmp(proto, "TLS1.2") == 0)
+          ver = TLS1_2_VERSION;
+        else if (strcmp(proto, "TLS1.1") == 0)
+          ver = TLS1_1_VERSION;
+        else if (strcmp(proto, "TLS1.0") == 0)
+          ver = TLS1_VERSION;
+        /*      else if (strcmp(proto, "SSL3.0") == 0)
+                ver = SSL3_VERSION; */
+        else if (strcmp(proto, "DTLS1.2") == 0)
+          ver = DTLS1_2_VERSION;
+        else if (strcmp(proto, "DTLS1.0") == 0)
+          ver = DTLS1_VERSION;
         else {
-	  set_ssl_context_errortext(1308, proto);
-	  SSL_CTX_free(ctx);
-	  return NULL;
-	}
+          set_ssl_context_errortext(1308, proto);
+          SSL_CTX_free(ctx);
+          return NULL;
+        }
 
-	/*
-	 * Set min/max acceptable protocol
-	 * OpenSSL 1.1 and after supports and easy way to set min/max
-	 * but we have to "manully" do it for earlier versions
-	 * Notice that only TLS protocols are considered,
-	 * SSL protocls are already old and deprecated
-	 */
+        /*
+         * Set min/max acceptable protocol
+         * OpenSSL 1.1 and after supports and easy way to set min/max
+         * but we have to "manully" do it for earlier versions
+         * Notice that only TLS protocols are considered,
+         * SSL protocls are already old and deprecated
+         */
 
-	if (count == 2) {
+        if (count == 2) {
 #if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-	  switch (ver) {
-	  case TLS1_2_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
-	      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
-	  case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 |
-	      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
-	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
-	  default:
-	    set_ssl_context_errortext(1308, proto);
-	    SSL_CTX_free(ctx);
-	    return NULL;
-	  }
-	  SSL_CTX_set_options(ctx, old_ssl_flags);
+          switch (ver) {
+          case TLS1_2_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
+              SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+          case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 |
+              SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+          case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+          default:
+            set_ssl_context_errortext(1308, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+          }
+          SSL_CTX_set_options(ctx, old_ssl_flags);
 #else
-	  if (SSL_CTX_set_min_proto_version(ctx, ver) != 1) {
-	    set_ssl_context_errortext(1301, proto);
-	    SSL_CTX_free(ctx);
-	    return NULL;
-	  }
+          if (SSL_CTX_set_min_proto_version(ctx, ver) != 1) {
+            set_ssl_context_errortext(1301, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+          }
 #endif
-	}
-	else {
+        }
+        else {
 #if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-	  switch (ver) {
-	  case TLS1_2_VERSION: break;
-	  case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_2; break;
-	  case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2; break;
-	  default:
-	    set_ssl_context_errortext(1308, proto);
-	    SSL_CTX_free(ctx);
-	    return NULL;
-	    }
-	  SSL_CTX_set_options(ctx, old_ssl_flags);
+          switch (ver) {
+          case TLS1_2_VERSION: break;
+          case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_2; break;
+          case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2; break;
+          default:
+            set_ssl_context_errortext(1308, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+            }
+          SSL_CTX_set_options(ctx, old_ssl_flags);
 #else
-	  if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
-	    set_ssl_context_errortext(1301, proto);
-	    SSL_CTX_free(ctx);
-	    return NULL;
-	  }
+          if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
+            set_ssl_context_errortext(1301, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+          }
 #endif
-	}
+        }
       }
    } while (--count>0);
 
@@ -1848,9 +1848,9 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    } else {
      if (strcmp(verifyPeer, "yes") == 0) {
        if ((type == TLS_CLIENT) || (type == DTLS_CLIENT))
-	 SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
+         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
        else
-	 SSL_CTX_set_verify(ctx,  SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,  NULL);
+         SSL_CTX_set_verify(ctx,  SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,  NULL);
      } else if (strcmp(verifyPeer, "no") != 0) {
        set_errortext_with_val(1302, verifyPeer);
        SSL_CTX_free(ctx);
@@ -1915,7 +1915,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
    return ctx;
 }
-#endif					/* LIBSSL */
+#endif                                  /* LIBSSL */
 
 
 #if !NT
@@ -1945,7 +1945,7 @@ dptr result;
    String(rp->fields[6], pw->pw_shell);
    return result;
 }
-#endif					/* !NT */
+#endif                                  /* !NT */
 
 void catstrs(char **ptrs, dptr d)
 {
@@ -1957,11 +1957,11 @@ void catstrs(char **ptrs, dptr d)
       nmem++;
 
    StrLoc(*d) = p = alcstr(NULL, nmem*9);
-   
+
    for (i = 0; i < nmem; i++) {
       char *q = ptrs[i];
       while ((*p = *q++))
- 	 p++;
+         p++;
       *p++ = ',';
    }
    if (nmem > 0)
@@ -1995,11 +1995,11 @@ dptr result;
    String(rp->fields[1], gr->gr_passwd);
    rp->fields[2].dword = D_Integer;
    IntVal(rp->fields[2]) = gr->gr_gid;
-   
+
    catstrs(gr->gr_mem, &rp->fields[3]);
    return result;
 }
-#endif					/* !NT */
+#endif                                  /* !NT */
 
 dptr make_serv(s, result)
 struct servent *s;
@@ -2056,7 +2056,7 @@ struct addrinfo *res0;
       String(rp->fields[0], res0->ai_canonname);
    else
       String(rp->fields[0], name);
-      
+
    String(rp->fields[1], name);
 
    /* Retrieve each address and print out the hex bytes */
@@ -2064,7 +2064,7 @@ struct addrinfo *res0;
    for(res = res0; res != NULL ; res = res->ai_next) {
        len += res->ai_addrlen;
    }
-   
+
    StrLoc(rp->fields[2]) = p = alcstr(NULL, len);
 
    for(res = res0; res != NULL ; res = res->ai_next) {
@@ -2074,37 +2074,37 @@ struct addrinfo *res0;
 
     switch (res->ai_family) {
             case AF_INET:
-		a = ntohl(((struct sockaddr_in *) res->ai_addr)->sin_addr.s_addr);
-      		sprintf(p, "%u.%u.%u.%u,", (a & 0xff000000) >> 24,
-	      		(a & 0xff0000) >> 16, (a & 0xff00)>>8, a & 0xff);
+                a = ntohl(((struct sockaddr_in *) res->ai_addr)->sin_addr.s_addr);
+                sprintf(p, "%u.%u.%u.%u,", (a & 0xff000000) >> 24,
+                        (a & 0xff0000) >> 16, (a & 0xff00)>>8, a & 0xff);
 
-      		while(*p) p++;
+                while(*p) p++;
                 break;
 
             case AF_INET6:
 #if NT
 
                 /*
-		 * The buffer length is changed by each call to 
-		 * WSAAddresstoString, So we need to set it for each 
+                 * The buffer length is changed by each call to
+                 * WSAAddresstoString, So we need to set it for each
                  * iteration through the loop for safety
-		 */
+                 */
 
                 ipbuflen = 46;
                 if (WSAAddressToString(((LPSOCKADDR) res->ai_addr),
-		    (DWORD) res->ai_addrlen, NULL,
+                    (DWORD) res->ai_addrlen, NULL,
                     ipstrbuf, (LPDWORD) &ipbuflen)!=0)
-		    ipstrbuf[0]='\0';
+                    ipstrbuf[0]='\0';
 #else
-		if (inet_ntop(AF_INET6, (void *)
-		   &(((struct sockaddr_in6 *) res->ai_addr)->sin6_addr.s6_addr),
-	           ipstrbuf, ipbuflen) == NULL)
-		   ipstrbuf[0]='\0';
+                if (inet_ntop(AF_INET6, (void *)
+                   &(((struct sockaddr_in6 *) res->ai_addr)->sin6_addr.s6_addr),
+                   ipstrbuf, ipbuflen) == NULL)
+                   ipstrbuf[0]='\0';
 #endif
 
-		sprintf(p, "%s,", ipstrbuf);
+                sprintf(p, "%s,", ipstrbuf);
 
-		while(*p) p++;
+                while(*p) p++;
                 break;
 
             default:
@@ -2113,7 +2113,7 @@ struct addrinfo *res0;
         }
 /*
  *   Not Yet used! left here for possible expansions in the future.
- * 
+ *
         printf("\tSocket type: ");
         switch (res->ai_socktype) {
             case 0:
@@ -2165,7 +2165,7 @@ struct addrinfo *res0;
 
    return result;
 }
-#endif					/* HAVE_GETADDRINFO */
+#endif                                  /* HAVE_GETADDRINFO */
 
 dptr make_host(hs, result)
 struct hostent *hs;
@@ -2195,12 +2195,12 @@ struct hostent *hs;
       nmem++;
 
    StrLoc(rp->fields[2]) = p = alcstr(NULL, nmem*16);
-   
+
    addr = (unsigned int *) hs->h_addr_list[0];
    for (i = 0; i < nmem; i++) {
       int a = ntohl(*addr);
       sprintf(p, "%d.%d.%d.%d,", (a & 0xff000000) >> 24,
-	      (a & 0xff0000) >> 16, (a & 0xff00)>>8, a & 0xff);
+              (a & 0xff0000) >> 16, (a & 0xff00)>>8, a & 0xff);
       while(*p) p++;
       addr++;
    }
@@ -2233,12 +2233,12 @@ dptr calliconproc(struct descrip p, dptr args, int nargs)
       return &rv;
    return NULL; /* failure */
 }
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 
 /* No provision for resumption */
 #ifndef Concurrent
 word *callproc, callproc_ibuf[100];
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 dptr calliconproc(struct descrip proc, dptr args, int nargs)
 {
    int i, off, retval;
@@ -2252,9 +2252,9 @@ dptr calliconproc(struct descrip proc, dptr args, int nargs)
 
 #ifdef HP
    bcopy(&ipc, &saved_ipc, sizeof(ipc));
-#else					/* HP */
+#else                                   /* HP */
    saved_ipc = ipc;
-#endif					/* HP */
+#endif                                  /* HP */
 
    wp.opnd = callproc = callproc_ibuf;
    ipad(wp);  *wp.op++ = Op_Mark;   *wp.opnd++ = (2 + nargs+1)*2 * WordSize;
@@ -2280,11 +2280,11 @@ dptr calliconproc(struct descrip proc, dptr args, int nargs)
    sp += (nargs+1)*2;
    ipc.op = (int *)callproc;
 
-#ifdef TSTATARG 
+#ifdef TSTATARG
    retval = interp(0, NULL, CURTSTATARG);
-#else 		 	   	  	 /* TSTATARG */
+#else                                    /* TSTATARG */
    retval = interp(0, NULL);
-#endif 		 	   	  	 /* TSTATARG */
+#endif                                   /* TSTATARG */
 
    /* need to double-check all return codes from interp() */
    if ((retval != A_Resume) && (retval != A_Trapfail)) ret = (dptr)(sp-1);
@@ -2298,7 +2298,7 @@ dptr calliconproc(struct descrip proc, dptr args, int nargs)
 
    return ret;
 }
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
 
 /*
  * Signals and trapping
@@ -2314,7 +2314,7 @@ void init_sighandlers()
    for(i = 0; i < 41; i++)
       handlers[i] = nulldesc;
 }
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 
 void init_sighandlers(pstate)
 struct progstate *pstate;
@@ -2323,7 +2323,7 @@ struct progstate *pstate;
    for(i = 0; i < 41; i++)
       pstate->Handlers[i] = nulldesc;
 }
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 struct descrip register_sig(sig, handler)
 int sig;
@@ -2333,7 +2333,7 @@ struct descrip handler;
 
 #ifdef MultiProgram
    curpstate->signal = 0;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
    MUTEX_LOCKID(MTX_HANDLERS);
    old = handlers[sig];
    handlers[sig] = handler;
@@ -2349,7 +2349,7 @@ int sig;
    proc = handlers[sig];
 #ifdef MultiProgram
    curpstate->signal = 0;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    /*
     * proc is NULL if there is no signal handler for current signal.
@@ -2359,27 +2359,27 @@ int sig;
    if (is:null(proc)) {
 #ifdef MultiProgram
       if ((!is:null(curpstate->eventmask)) &&
-	  Testb((word)ToAscii(E_Signal), curpstate->eventmask)) {
-	 /* if we are in the TP and it has no signal handling 
-	  * report the signal back to its parent
-	  */
-	 curpstate->signal = sig;
-	 return;
-	 }
+          Testb((word)ToAscii(E_Signal), curpstate->eventmask)) {
+         /* if we are in the TP and it has no signal handling
+          * report the signal back to its parent
+          */
+         curpstate->signal = sig;
+         return;
+         }
       else {
-	 /*
-	  * Child has no handler and parent does not want to deal with it.
-	  * Execute the default behavior for this signal.
-	  */
-	 signal(sig, SIG_DFL);
-	 raise(sig);
-	 return;
-	 }
+         /*
+          * Child has no handler and parent does not want to deal with it.
+          * Execute the default behavior for this signal.
+          */
+         signal(sig, SIG_DFL);
+         raise(sig);
+         return;
+         }
 #else
       signal(sig, SIG_DFL);
       raise(sig);
       return;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
       }
 
 #if COMPILER
@@ -2395,8 +2395,8 @@ int sig;
 
      (void) calliconproc(proc, &val, 1);
    }
-#endif					/* COMPILER */
-   
+#endif                                  /* COMPILER */
+
    /* Restore signal just in case (for non-BSD systems) */
    signal(sig, signal_dispatcher);
 }
@@ -2423,22 +2423,22 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
       StrLen(*d) = 0;
       if (fstatus & Fs_Socket) {
 #if HAVE_LIBSSL
-	if (fstatus & Fs_Encrypt) {
-	   tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d), n);
-	   if (tally <= 0)
-	     set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
-	   }
-	else
-#endif					/* LIBSSL */
-	  tally = recv(fd, StrLoc(*d), n, 0);
+        if (fstatus & Fs_Encrypt) {
+           tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d), n);
+           if (tally <= 0)
+             set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
+           }
+        else
+#endif                                  /* LIBSSL */
+          tally = recv(fd, StrLoc(*d), n, 0);
       }
       else
-	tally = read(fd, StrLoc(*d), n);
+        tally = read(fd, StrLoc(*d), n);
 
       if (tally <= 0) {
-	 strtotal += n;
-	 strfree = StrLoc(*d);
-	 return 0;
+         strtotal += n;
+         strfree = StrLoc(*d);
+         return 0;
       }
       StrLen(*d) = tally;
       /*
@@ -2455,97 +2455,97 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
       StrLoc(*d) = strfree;
       StrLen(*d) = 0;
       for(;;) {
-	 int srv, kk=0;
-	 fd_set readset;
-	 struct timeval tv;
-	 FD_ZERO(&readset);
-	 FD_SET(fd, &readset);
-	 tv.tv_sec = tv.tv_usec = 0;
-	 if ((srv = select(fd+1, &readset, NULL, NULL, &tv)) == 0) {
- 	    /* Nothing more is available */
-	    break;
-	    }
-	 else if (srv == -1) {
-	    set_syserrortext(errno);
-	    return 0;
-	    }
+         int srv, kk=0;
+         fd_set readset;
+         struct timeval tv;
+         FD_ZERO(&readset);
+         FD_SET(fd, &readset);
+         tv.tv_sec = tv.tv_usec = 0;
+         if ((srv = select(fd+1, &readset, NULL, NULL, &tv)) == 0) {
+            /* Nothing more is available */
+            break;
+            }
+         else if (srv == -1) {
+            set_syserrortext(errno);
+            return 0;
+            }
 
-	 /* Something is available: allocate another chunk */
-	 if (i == 0)
-	    StrLoc(*d) = alcstr(NULL, bufsize);
-	 else
-	    /* Extend the string */
-	    (void) alcstr(NULL, bufsize);
+         /* Something is available: allocate another chunk */
+         if (i == 0)
+            StrLoc(*d) = alcstr(NULL, bufsize);
+         else
+            /* Extend the string */
+            (void) alcstr(NULL, bufsize);
 tryagain:
 
-	 if (fstatus & Fs_Socket) {
+         if (fstatus & Fs_Socket) {
 #if HAVE_LIBSSL
-	   if (fstatus & Fs_Encrypt) {
-	      tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d) +  i*bufsize, bufsize);
-	      if (tally <= 0) {
-		set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
-		strtotal += bufsize;
-		strfree = StrLoc(*d);
-		return 0;
+           if (fstatus & Fs_Encrypt) {
+              tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d) +  i*bufsize, bufsize);
+              if (tally <= 0) {
+                set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
+                strtotal += bufsize;
+                strfree = StrLoc(*d);
+                return 0;
               }
-	   }
-	   else {
-#endif					/* LIBSSL */
-	     tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
+           }
+           else {
+#endif                                  /* LIBSSL */
+             tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
 
-	      if (tally < 0) {
-		 /*
-		  * Error on recv().  Some kinds of errors might be recoverable.
-		  */
-		kk++;
+              if (tally < 0) {
+                 /*
+                  * Error on recv().  Some kinds of errors might be recoverable.
+                  */
+                kk++;
 #if NT
-		errno = WSAGetLastError();
-#endif					/* NT */
-		switch (errno) {
+                errno = WSAGetLastError();
+#endif                                  /* NT */
+                switch (errno) {
 #if NT
-		case WSAEINTR: case WSAEINPROGRESS:
-#else					/* NT */
-		case EINTR: case EINPROGRESS:
-#endif					/* NT */
-		  if (kk < 5) goto tryagain;
-		  break;
-		default:
-		  strtotal += bufsize;
-		  strfree = StrLoc(*d);
-		  set_errortext(214);
-		  return 0;
-		}
-	      } /* tally < 0 */
-	      if ((i == 0) && (tally == 0)) {
-		strtotal += bufsize;
-		strfree = StrLoc(*d);
-		return 0;
-	      }
+                case WSAEINTR: case WSAEINPROGRESS:
+#else                                   /* NT */
+                case EINTR: case EINPROGRESS:
+#endif                                  /* NT */
+                  if (kk < 5) goto tryagain;
+                  break;
+                default:
+                  strtotal += bufsize;
+                  strfree = StrLoc(*d);
+                  set_errortext(214);
+                  return 0;
+                }
+              } /* tally < 0 */
+              if ((i == 0) && (tally == 0)) {
+                strtotal += bufsize;
+                strfree = StrLoc(*d);
+                return 0;
+              }
 #if HAVE_LIBSSL
-	   }
-#endif					/* LIBSSL */
-	 }
-	 else { // not a socket, use read()
-	   tally = read(fd, StrLoc(*d) + i*bufsize, bufsize);
+           }
+#endif                                  /* LIBSSL */
+         }
+         else { // not a socket, use read()
+           tally = read(fd, StrLoc(*d) + i*bufsize, bufsize);
 
            if ((i == 0) && (tally <= 0)) {
-	     strtotal += bufsize;
-	     strfree = StrLoc(*d);
-	     return 0;
-	   }
-	 }
+             strtotal += bufsize;
+             strfree = StrLoc(*d);
+             return 0;
+           }
+         }
 
-	 total += tally;
-	 StrLen(*d) = total;
-	 if (tally < bufsize) {
-	    /* We're done; return unused storage */
-	    nbytes = DiffPtrs(StrLoc(*d) + total, strfree);
-	    EVStrAlc(nbytes);
-	    strtotal += nbytes;
-	    strfree = StrLoc(*d) + total;
-	    break;
-	 }
-	 i++;
+         total += tally;
+         StrLen(*d) = total;
+         if (tally < bufsize) {
+            /* We're done; return unused storage */
+            nbytes = DiffPtrs(StrLoc(*d) + total, strfree);
+            EVStrAlc(nbytes);
+            strtotal += nbytes;
+            strfree = StrLoc(*d) + total;
+            break;
+         }
+         i++;
       }
    }
    return d;
@@ -2608,36 +2608,36 @@ struct b_list *findactivewindow(struct b_list *lws)
     */
    for ( ; BlkType(ep) == T_Lelem; ep = Blk(ep,Lelem)->listnext) {
       for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
-	 union block *bp;
+         union block *bp;
          wbp w;
          wsp ws;
-	 int status;
-	 j = ep->Lelem.first + i;
-	 if (j >= ep->Lelem.nslots)
-	    j -= ep->Lelem.nslots;
-	 
+         int status;
+         j = ep->Lelem.first + i;
+         if (j >= ep->Lelem.nslots)
+            j -= ep->Lelem.nslots;
+
          if (!(is:file(ep->Lelem.lslots[j]) &&
-	       (status = BlkD(ep->Lelem.lslots[j],File)->status) &&      
-	       (status & Fs_Window)))
+               (status = BlkD(ep->Lelem.lslots[j],File)->status) &&
+               (status & Fs_Window)))
             syserr("internal error calling findactivewindow()");
          if (!(status & Fs_Read)) {
             /* a closed window was found on the list, ignore it */
-	    continue;
-	    }
-	 bp = BlkLoc(ep->Lelem.lslots[j]);
-	 w = Blk(bp,File)->fd.wb;
-	 ws = w->window;
-	 if (BlkD(ws->listp,List)->size > 0) {
-	    if (is:null(d)) {
-	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
-	       d.dword = D_List;
-	       }
-	    c_put(&d, &(Blk(ep,Lelem)->lslots[j]));
-	    }
-	 }
+            continue;
+            }
+         bp = BlkLoc(ep->Lelem.lslots[j]);
+         w = Blk(bp,File)->fd.wb;
+         ws = w->window;
+         if (BlkD(ws->listp,List)->size > 0) {
+            if (is:null(d)) {
+               BlkLoc(d) = (union block *)alclist(0, MinListSlots);
+               d.dword = D_List;
+               }
+            c_put(&d, &(Blk(ep,Lelem)->lslots[j]));
+            }
+         }
       }
    if (is:null(d)) return NULL;
    return BlkD(d, List);
-}   
-#endif					/* Graphics */
-#endif					/* PosixFns */
+}
+#endif                                  /* Graphics */
+#endif                                  /* PosixFns */

@@ -55,7 +55,7 @@
 #define STDLOCALS(wb) wcp wc=(wb)->context;\
                       wsp ws=(wb)->window;\
                       WindowPtr stdwin=ws->theWindow
-   
+
 #define ICONFILENAME(wb) ((wb)->window->iconimage)
 #define ICONLABEL(wb) ((wb)->window->iconlabel)
 #define WINDOWLABEL(wb) ((wb)->window->windowlabel)
@@ -100,7 +100,7 @@
                        TextMode((c)->txMode);\
                        TextSize((c)->txSize);\
                        SpaceExtra((c)->spExtra)
-                         
+
 #define SETCONTEXTDEFAULT(c) memcpy(&((c)->bkPat),&qd.white,sizeof(Pattern));\
                              memcpy(&((c)->fillPat),&qd.black,sizeof(Pattern));\
                              (c)->pnLoc.h=0;(c)->pnLoc.v=0;\
@@ -123,7 +123,7 @@
                            SetGWorld((ws)->offScreenGWorld,nil);\
                            (ws)->offScreenPMHandle=GetGWorldPixMap((ws)->offScreenGWorld);\
                            (ws)->lockOK=LockPixels((ws)->offScreenPMHandle)
-        
+
 #define GWORLD2WINDOW(ws)  (ws)->sourceRect=(ws)->theWindow->portRect;\
                            (ws)->sourceRect.bottom=(ws)->theWindow->portRect.bottom;\
                            (ws)->sourceRect.right=(ws)->theWindow->portRect.right;\
@@ -146,7 +146,7 @@
                              (ws)->eQback = (ws)->eQfront;\
                           }\
                        }
-                       
+
 #define EVQUEEMPTY(ws) (BlkLoc((ws)->listp)->list.size == 0)
 
 /*
@@ -154,7 +154,7 @@
  */
 #ifndef MACGRAPH_H
 #define MACGRAPH_H
- 
+
 #define ControlMask          (1 << 16)
 #define Mod1Mask           (2 << 16)
 #define ShiftMask            (4 << 16)
@@ -165,7 +165,7 @@
  * exception: XTOCOL as defined is 0-based, because that's what its
  * clients seem to need.
  */
- 
+
 #define MARGIN 0
 
 #define ROWTOY(wb,row) ((row-1) * LEADING(wb) + ASCENT(wb) + MARGIN)
@@ -176,29 +176,29 @@
 /*
  * typedef & structs
  */
- 
+
 typedef struct
   {
   long x, y;
   long width, height;
   long angle1, angle2;
   } XArc;
-  
+
 typedef struct
   {
   long x,y;
   } XPoint;
-  
-typedef struct 
+
+typedef struct
    {
    long x1, y1;
    long x2, y2;
    } XSegment;
-   
+
 typedef struct
    {
    long x, y;
    long width, height;
    } XRectangle;
 
-#endif					/* MACGRAPH_H */
+#endif                                  /* MACGRAPH_H */

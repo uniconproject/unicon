@@ -62,7 +62,7 @@ struct creatstk {
    int breaklab;		/* previous value of breaklab */
    };
 static int nextlab;		/* next label allocated by alclab() */
-
+
 /*
  * codegen - traverse tree t, generating code.
  */
@@ -73,7 +73,7 @@ nodeptr t;
    nextlab = 1;
    traverse(t);
    }
-
+
 /*
  * traverse - traverse tree rooted at t and generate code.  This is just
  *  plug and chug code for each of the node types.
@@ -688,7 +688,7 @@ register nodeptr t;
    free(t);
    return n;
    }
-
+
 /*
  * binop emits code for binary operators.  For non-augmented operators,
  *  the name of operator is emitted.  For augmented operators, an "asgn"
@@ -893,7 +893,7 @@ int op;
    emit(name);
    if (asgn)
       emit("asgn");
-
+
    }
 /*
  * unopa and unopb handle code emission for unary operators. unary operator
@@ -940,7 +940,7 @@ nodeptr t;
 	 tsyserr("unopa: undefined unary operator");
       }
    }
-
+
 /*
  * unopb is the back-end code emitter for unary operators.  It emits
  *  the operations represented by the token op.  For tokens representing
@@ -1032,7 +1032,7 @@ int op;
       }
    emit(name);
    }
-
+
 /*
  * setloc emits "filen" and "line" directives for the source location of
  *  node n.  A directive is only emitted if the corresponding value
@@ -1076,7 +1076,7 @@ void tcodeinit()
    lastcol = 0;
    }
 #endif					/* Multiple Runs */
-
+
 /*
  * The emit* routines output ucode to codefile.  The various routines are:
  *
@@ -1118,7 +1118,7 @@ char *s, *a;
    {
    writecheck(fprintf(codefile, "\t%s\t%s\n", s, a));
    }
-
+
 /*
  * alclab allocates n labels and returns the first.  For the interpreter,
  *  labels are restarted at 1 for each procedure, while in the compiler,

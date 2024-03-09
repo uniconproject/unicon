@@ -43,7 +43,7 @@ struct node tok_loc =
    {0, NULL, 0, 0};	/* "model" node containing location of current token */
 
 struct str_buf lex_sbuf;	/* string buffer for lexical analyzer */
-
+
 /*
  * yylex - find the next token in the input stream, and return its token
  *  type and value to the parser.
@@ -246,7 +246,7 @@ ret:
 
    return (t->t_type);
    }
-
+
 #ifdef MultipleRuns
 /*
  * yylexinit - initialize variables for multiple runs
@@ -259,7 +259,7 @@ void yylexinit()
    cc = '\n';
    }
 #endif					/* MultipleRuns */
-
+
 /*
  * getident - gather an identifier beginning with ac.  The character
  *  following identifier goes in cc.
@@ -302,7 +302,7 @@ int *cc;
       return (struct toktab *)T_Ident;
       }
    }
-
+
 /*
  * findres - if the string just copied into the string space by getident
  *  is a reserved word, return a pointer to its entry in the token table.
@@ -333,7 +333,7 @@ static struct toktab *findres()
       }
    return NULL;
    }
-
+
 /*
  * bufcmp - compare a null terminated string to what is in the string buffer.
  */
@@ -351,7 +351,7 @@ char *s;
    else
       return 0;
    }
-
+
 /*
  * getnum - gather a numeric literal starting with ac and put the
  *  character following the literal into *cc.
@@ -445,7 +445,7 @@ int *cc;
    yylval = IntNode(yytext_install(&lex_sbuf));
    return T_Int;
    }
-
+
 /*
  * getstring - gather a string literal starting with ac and place the
  *  character following the literal in *cc.
@@ -526,7 +526,7 @@ int *cc;
       return T_Cset;
       }
    }
-
+
 #if !defined(Iconc)
 
 /*
@@ -551,7 +551,7 @@ static int ctlesc()
 #endif					/* !EBCDIC */
 
    }
-
+
 /*
  * octesc - translate an octal escape -- backslash followed by
  *  one, two, or three octal digits.
@@ -579,7 +579,7 @@ int ac;
    return ToEBCDIC[c & 0377];
 #endif					/* EBCDIC != 2 */
    }
-
+
 /*
  * hexesc - translate a hexadecimal escape -- backslash-x
  *  followed by one or two hexadecimal digits.
@@ -617,7 +617,7 @@ static int hexesc()
    }
 
 #endif					/* !Iconc */
-
+
 /*
  * setlineno - set line number from #line comment, return following char.
  */
@@ -641,7 +641,7 @@ static int setlineno()
       }
    return c;
    }
-
+
 /*
  * setfilenm -	set file name from #line comment, return following char.
  */
@@ -668,7 +668,7 @@ register int c;
       return c;
       }
    }
-
+
 /*
  * nextchar - return the next character in the input.
  *

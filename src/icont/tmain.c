@@ -86,7 +86,7 @@ extern char *optarg;		/* argument associated with option */
    int ConsolePause = 1;
 #endif					/* ConsoleWindow */
 
-
+
 
 #if NT || defined(ConsoleWindow)
 /*
@@ -205,7 +205,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    return rv;
    }
 
-
+
 LRESULT_CALLBACK WndProc	(HWND, UINT, WPARAM, LPARAM);
 
 #if 0
@@ -741,7 +741,7 @@ void iconx(int argc, char** argv){
 
    exit(EXIT_SUCCESS);
    }
-
+
 /*
  * execute - execute iconx to run the icon program
  */
@@ -851,7 +851,7 @@ Deliberate Syntax Error
    quitf("could not run %s",iconxloc);
 
    }
-
+
 void report(s)
 char *s;
    {
@@ -863,7 +863,7 @@ char *s;
       fflush(flog);
       }
    }
-
+
 /*
  * Print an error message if called incorrectly.  The message depends
  *  on the legal options for this system.

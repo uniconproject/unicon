@@ -36,7 +36,7 @@ static char *date_mac = "__DATE__";
 static char *time_mac = "__TIME__";
 static char *rcrs_mac = "__RCRS__";
 static char *defined = "defined";
-
+
 /*
  * m_find - return return location of pointer to where macro belongs in
  *  macro table. If the macro is not in the table, the pointer at the
@@ -52,7 +52,7 @@ char *mname;
       ;
    return mpp;
    }
-
+
 /*
  * eq_id_lst - check to see if two identifier lists contain the same identifiers
  *  in the same order.
@@ -89,7 +89,7 @@ struct tok_lst *lst2;
       return 0;
    return eq_tok_lst(lst1->next, lst2->next);
    }
-
+
 /*
  * init_macro - initialize this module, setting up standard macros.
  */
@@ -175,7 +175,7 @@ void init_macro()
    *mpp = new_macro(rcrs_mac, NoArgs, 0, NULL, new_t_lst(copy_t(one_tok)));
    max_recurse = 1;
    }
-
+
 /*
  * m_install - install a macro.
  */
@@ -225,7 +225,7 @@ struct tok_lst *body;	/* replacement list */
       free_t_lst(body);
       }
    }
-
+
 /*
  * m_delete - delete a macro.
  */
@@ -257,7 +257,7 @@ struct token *mname;
       free_m(mp);
       }
    }
-
+
 /*
  * m_lookup - lookup a macro name. Return pointer to macro, if it is defined;
  *  return NULL, if it is not. This routine sets the definition for macros
@@ -281,7 +281,7 @@ struct macro *m_lookup(struct token *id)
       }
    return m;
    }
-
+
 /*
  * parm_indx - see if a name is a paramter to the given macro.
  */
@@ -295,7 +295,7 @@ static int parm_indx(char *id, struct macro *m)
          return i;
    return -1;
    }
-
+
 /*
  * cpy_str - copy a string into a string buffer, adding delimiters.
  */
@@ -319,7 +319,7 @@ struct str_buf *sbuf;
    for (s = rdelim; *s != '\0'; ++s) 
       AppChar(*sbuf, *s);
    }
-
+
 /*
  * stringize - create a stringized version of a token.
  */
@@ -381,7 +381,7 @@ struct mac_expand *me;
    rel_sbuf(sbuf);
    return t;
    }
-
+
 /*
  * paste_parse - parse an expression involving token pasting operators (and
  *  stringizing operators). Return a list of token lists. Each token list
@@ -446,7 +446,7 @@ struct mac_expand *me;
    else
       return new_plsts(trigger, lst, plst);
    }
-
+
 /*
  * cpy_image - copy the image of a token into a character buffer adding
  *  delimiters if it is a string or character literal.
@@ -491,7 +491,7 @@ int *s;          /* the string buffer can contain EOF */
 
    return s;
    }
-
+
 /*
  * paste - return the next token from a source which pastes tokens. The
  *   source may represent a series of token pasting operators.
@@ -557,7 +557,7 @@ struct token *paste()
 
    return next_tok(); /* first token from pasted images */
    }
-
+
 /*
  * mac_tok - return the next token from a source which is a macro.
  */

@@ -158,7 +158,7 @@ skipOP: switch (op) {
       }
    return 1;
    }
-
+
 /*
  * scanrefs - scan .u1 files for references and mark unreferenced globals.
  *
@@ -339,7 +339,7 @@ void scanrefs()
     */
    free((char *)old);
    }
-
+
 /*
  * scanfile -- scan one file for references.
  */
@@ -424,7 +424,7 @@ char *filename;
 
    fclose(infile);
    }
-
+
 /*
  *
  */

@@ -8,27 +8,27 @@
  */
 #if !ConcurrentCOMPILER
 static continuation coexpr_fnc;
-#endif					/* ConcurrentCOMPILER */
+#endif                                  /* ConcurrentCOMPILER */
 
 #ifdef Concurrent
 void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp);
 void tlschain_remove(struct threadstate *tstate);
 
-#define TRANSFER_KLEVEL(ncp, ccp) do {					\
-    if (IS_TS_SYNC(ncp->status) && ncp->program == ccp->program) {	\
-       if (ncp->tstate)      	 			   		\
-       	  ncp->tstate->K_level = ccp->tstate->K_level;			\
-       else								\
-       	  ncp->tmplevel =  ccp->tstate->K_level;			\
-    	} 		    						\
+#define TRANSFER_KLEVEL(ncp, ccp) do {                                  \
+    if (IS_TS_SYNC(ncp->status) && ncp->program == ccp->program) {      \
+       if (ncp->tstate)                                                 \
+          ncp->tstate->K_level = ccp->tstate->K_level;                  \
+       else                                                             \
+          ncp->tmplevel =  ccp->tstate->K_level;                        \
+        }                                                               \
 } while (0)
-#else					/* Concurrent  */
+#else                                   /* Concurrent  */
 #define TRANSFER_KLEVEL(ncp, ccp)
-#endif					/* Concurrent  */
+#endif                                  /* Concurrent  */
 
 #ifdef PthreadCoswitch
 int pthreadcoswitch(struct b_coexpr *old, struct b_coexpr *new, word ostat, word nstat);
-#endif					/* PthreadCoswitch */
+#endif                                  /* PthreadCoswitch */
 
 /*
  * co_init - use the contents of the refresh block to initialize the
@@ -39,14 +39,14 @@ struct b_coexpr *sblkp;
 {
 #ifndef CoExpr
    syserr("co_init() called, but co-expressions not implemented");
-#else					/* CoExpr */
+#else                                   /* CoExpr */
    register dptr dp, dsp;
    int na, nl, i;
 #if COMPILER
    int nt;
 #else
    register word *newsp;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    /*
     * Get pointer to refresh block.
     */
@@ -71,15 +71,15 @@ struct b_coexpr *sblkp;
    frame_size = sizeof(struct p_frame) + sizeof(struct descrip) * (nl + na +
       nt - 1) + rblkp->wrk_size;
    stack_strt = (word)((char *)&sblkp->pf + frame_size + StackAlign*WordSize);
-#else					/* UpStack */
+#else                                   /* UpStack */
    stack_strt = (word)((char *)sblkp + stksize - WordSize);
-#endif					/* UpStack */
+#endif                                  /* UpStack */
    sblkp->cstate[0] = stack_strt & ~(WordSize * StackAlign - 1);
 
    sblkp->es_argp = &sblkp->pf.t.d[nl + nt];   /* args follow temporaries */
    }
 
-#else					/* COMPILER */
+#else                                   /* COMPILER */
 
    na = (rblkp->pfmkr).pf_nargs + 1; /* number of arguments */
    nl = (int)rblkp->nlocals;         /* number of locals */
@@ -89,7 +89,7 @@ struct b_coexpr *sblkp;
     *  C stack starts at end of stack region on machines with down-growing C
     *  stacks and somewhere in the middle of the region.
     *
-    * The C stack is aligned on a doubleword boundary.	For up-growing
+    * The C stack is aligned on a doubleword boundary.  For up-growing
     *  stacks, the C stack starts in the middle of the stack portion
     *  of the static block.  For down-growing stacks, the C stack starts
     *  at the last word of the static block.
@@ -101,11 +101,11 @@ struct b_coexpr *sblkp;
    sblkp->cstate[0] =
       ((word)((char *)sblkp + (stksize - sizeof(*sblkp))/2)
          &~((word)WordSize*StackAlign-1));
-#else					/* UpStack */
+#else                                   /* UpStack */
    sblkp->cstate[0] =
-	((word)((char *)sblkp + stksize - WordSize)
+        ((word)((char *)sblkp + stksize - WordSize)
            &~((word)WordSize*StackAlign-1));
-#endif					/* UpStack */
+#endif                                  /* UpStack */
 
    sblkp->es_argp = (dptr)newsp;  /* args are first thing on stack */
 #ifdef StackCheck
@@ -113,8 +113,8 @@ struct b_coexpr *sblkp;
    sblkp->es_stackend = (word *)
       ((word)((char *)sblkp + (stksize - sizeof(*sblkp))/2)
          &~((word)WordSize*StackAlign-1));
-#endif					/* StackCheck */
-#endif					/* COMPILER */
+#endif                                  /* StackCheck */
+#endif                                  /* COMPILER */
 
    /*
     * Copy arguments onto new stack.
@@ -136,21 +136,21 @@ struct b_coexpr *sblkp;
    sblkp->pf.t.previous = NULL;
    sblkp->pf.t.num = nl + na + nt;
    sblkp->es_actstk = NULL;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    *((struct pf_marker *)dsp) = rblkp->pfmkr;
    sblkp->es_pfp = (struct pf_marker *)dsp;
 #ifdef PatternType
  if (!is_in_a_block_region((char *)(sblkp->es_pfp->pattern_cache)) ||
      (sblkp->es_pfp->pattern_cache->title != T_Table))
    sblkp->es_pfp->pattern_cache = NULL;
-#endif					/* PatternType */
+#endif                                  /* PatternType */
    sblkp->es_tend = NULL;
    dsp = (dptr)((word *)dsp + Vwsizeof(*pfp));
    sblkp->es_ipc.opnd = rblkp->ep;
    sblkp->es_gfp = 0;
    sblkp->es_efp = 0;
    sblkp->es_ilevel = 0;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    sblkp->tvalloc = NULL;
 
    /*
@@ -158,7 +158,7 @@ struct b_coexpr *sblkp;
     */
 #if COMPILER
    dsp = sblkp->pf.t.d;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
    for (i = 1; i <= nl; i++)
       *dsp++ = *dp++;
 
@@ -168,7 +168,7 @@ struct b_coexpr *sblkp;
     */
    for (i = 1; i <= nt; i++)
       *dsp++ = nulldesc;
-#else					/* COMPILER */
+#else                                   /* COMPILER */
    /*
     * Push two null descriptors on the stack.
     */
@@ -176,9 +176,9 @@ struct b_coexpr *sblkp;
    *dsp++ = nulldesc;
 
    sblkp->es_sp = (word *)dsp - 1;
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
-#endif					/* CoExpr */
+#endif                                  /* CoExpr */
    }
 
 /*
@@ -193,7 +193,7 @@ int first;
 {
 #ifndef CoExpr
    syserr("co_chng() called, but co-expressions not implemented");
-#else        				/* CoExpr */
+#else                                   /* CoExpr */
 
    register struct b_coexpr *ccp;
    CURTSTATE_AND_CE();
@@ -202,8 +202,8 @@ int first;
    ccp = BlkD(k_current, Coexpr);
 
 #ifndef NativeCoswitch
-   /* 
-    * We don't have Native co-expressions. If this is the first 
+   /*
+    * We don't have Native co-expressions. If this is the first
     * activation for ncp create a thread for it.
     */
    if (first == 0)
@@ -217,34 +217,34 @@ int first;
        * A_MTEvent does not generate an event.
        */
       case A_MTEvent:
-	 break;
+         break;
       case A_Coact:
          EVValX(ncp,E_Coact);
-	 if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
-	    curpstate->parent->eventsource.dword = D_Coexpr;
-	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
-	    }
-	 TRANSFER_KLEVEL(ncp, ccp);
-	 break;
+         if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
+            curpstate->parent->eventsource.dword = D_Coexpr;
+            BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
+            }
+         TRANSFER_KLEVEL(ncp, ccp);
+         break;
       case A_Coret:
          EVValX(ncp,E_Coret);
-	 if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
-	    curpstate->parent->eventsource.dword = D_Coexpr;
-	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
-	    }
-	 TRANSFER_KLEVEL(ncp, ccp);
-	 break;
+         if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
+            curpstate->parent->eventsource.dword = D_Coexpr;
+            BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
+            }
+         TRANSFER_KLEVEL(ncp, ccp);
+         break;
       case A_Cofail:
          EVValX(ncp,E_Cofail);
-	 if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
-	    curpstate->parent->eventsource.dword = D_Coexpr;
-	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
-	    }
-	 TRANSFER_KLEVEL(ncp, ccp);
-	 break;
+         if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
+            curpstate->parent->eventsource.dword = D_Coexpr;
+            BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
+            }
+         TRANSFER_KLEVEL(ncp, ccp);
+         break;
       }
-#endif        				/* MultiProgram */
-#endif					/* COMPILER */
+#endif                                  /* MultiProgram */
+#endif                                  /* COMPILER */
 
    /*
     * Determine if we need to transmit a value.
@@ -253,49 +253,49 @@ int first;
 
 #if !COMPILER
       /*
-       * Determine if we need to dereference the transmitted value. 
+       * Determine if we need to dereference the transmitted value.
        */
       if (Var(*valloc))
          retderef(valloc, (word *)glbl_argp, sp);
-#endif					/* COMPILER */
+#endif                                  /* COMPILER */
 
 #ifdef Concurrent
       if (IS_TS_ASYNC(ccp->status) && IS_TS_ASYNC(ncp->status)){
       /*
        * The CE thread is genereating a new value, it should go into the outbox.
-       * ccp is the "k_current" CE. k_current is used to avoid invalid ccp 
-       * because of GC. 
+       * ccp is the "k_current" CE. k_current is used to avoid invalid ccp
+       * because of GC.
        */
-   	 struct b_list *hp;
-      	 MUTEX_LOCKBLK_CONTROLLED(BlkD(ccp->outbox, List), "co_chng(): list mutex");
-      	 hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
-      	 if (hp->size>=hp->max){
+         struct b_list *hp;
+         MUTEX_LOCKBLK_CONTROLLED(BlkD(ccp->outbox, List), "co_chng(): list mutex");
+         hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
+         if (hp->size>=hp->max){
             hp->full++;
             while (hp->size>=hp->max){
- 	       CV_SIGNAL_EMPTYBLK(hp);
-	       DEC_NARTHREADS;
-	       CV_WAIT_FULLBLK(hp);
-	       INC_NARTHREADS_CONTROLLED;
-      	       hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
-	       }
-	    hp->full--;
-      	    }
-         c_put(&(BlkD(k_current,Coexpr)->outbox), valloc);
-      	 MUTEX_UNLOCKBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List), "co_chng(): list mutex");
-      	 CV_SIGNAL_EMPTYBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List));
-   	 if (IS_TS_THREAD(ccp->status) &&
-	    (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
-       	    /*
-             * On return or fail, the thread is done and should exit
-    	     */
-      	 #ifdef CoClean
- 	     coclean(ccp);
-         #endif				/* CoClean */
+               CV_SIGNAL_EMPTYBLK(hp);
+               DEC_NARTHREADS;
+               CV_WAIT_FULLBLK(hp);
+               INC_NARTHREADS_CONTROLLED;
+               hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
+               }
+            hp->full--;
             }
-	 return A_Continue;
+         c_put(&(BlkD(k_current,Coexpr)->outbox), valloc);
+         MUTEX_UNLOCKBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List), "co_chng(): list mutex");
+         CV_SIGNAL_EMPTYBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List));
+         if (IS_TS_THREAD(ccp->status) &&
+            (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
+            /*
+             * On return or fail, the thread is done and should exit
+             */
+         #ifdef CoClean
+             coclean(ccp);
+         #endif                         /* CoClean */
+            }
+         return A_Continue;
       }
       else
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
          if (ncp->tvalloc != NULL)
             *ncp->tvalloc = *valloc;
       }
@@ -303,20 +303,20 @@ int first;
 #ifdef Concurrent
    /*
     * exit if this is a returning/failing thread.
-    * May want to check/fix thread  activator initialization 
+    * May want to check/fix thread  activator initialization
     * depending on desired join semantics.
     * coclean calls pthread_exit() in this case.
     */
    if (IS_TS_THREAD(ccp->status) &&
 #ifdef SoftThreads
        !IS_TS_SOFTTHREAD(ccp->status) &&
-#endif 					/* SoftThreads */ 
+#endif                                  /* SoftThreads */
       (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
       #ifdef CoClean
- 	 coclean(ccp);
-      #endif				/* CoClean */
+         coclean(ccp);
+      #endif                            /* CoClean */
       }
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
    ncp->tvalloc = NULL;
    ccp->tvalloc = rsltloc;
@@ -330,14 +330,14 @@ int first;
       }
 
    if (debug_info)
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
    {
-      if (k_trace 
+      if (k_trace
       #ifdef MultiProgram
-	 &&  (swtch_typ != A_MTEvent)
-      #endif					/* MultiProgram */
+         &&  (swtch_typ != A_MTEvent)
+      #endif                                    /* MultiProgram */
          )
-	 cotrace(ccp, ncp, swtch_typ, valloc);
+         cotrace(ccp, ncp, swtch_typ, valloc);
     }
 
    /*
@@ -348,14 +348,14 @@ int first;
 
 #ifdef Concurrent
 
-#if !COMPILER   
+#if !COMPILER
    if (ccp->program == ncp->program)
-#endif   
+#endif
       if (!IS_TS_ATTACHED(ncp->status)){
          curtstate->c = ncp;
          ncp->tstate = curtstate;
          }
-#else					/* Concurrent */
+#else                                   /* Concurrent */
    ccp->es_pfp = pfp;
    ccp->es_tend = tend;
 
@@ -375,8 +375,8 @@ int first;
    ipc = ncp->es_ipc;
    sp = ncp->es_sp;
    ilevel = ncp->es_ilevel;
-#endif					/* !COMPILER */
-#endif					/* Concurrent */
+#endif                                  /* !COMPILER */
+#endif                                  /* Concurrent */
 
 #if !COMPILER
    /*
@@ -391,8 +391,8 @@ int first;
       curtstate = ncp->tstate;
       global_curtstate = ncp->tstate;
       }
-#endif					/* Concurrent */
-#endif					/* !COMPILER */
+#endif                                  /* Concurrent */
+#endif                                  /* !COMPILER */
 
 
 
@@ -404,16 +404,16 @@ int first;
    }
    #if COMPILER || ConcurrentCOMPILER
    coexpr_fnc = ncp->fnc;
-   #endif				/* COMPILER && !ConcurrentCOMPILER */
+   #endif                               /* COMPILER && !ConcurrentCOMPILER */
 #endif                                  /* NativeCoswitch */
-#else					/* Concurrent */
+#else                                   /* Concurrent */
     glbl_argp = ncp->es_argp;
     BlkLoc(k_current) = (union block *)ncp;
    #if COMPILER && !ConcurrentCOMPILER
    /* ConcurrentCOMPILER moved this into the nctramp trampoline? */
    coexpr_fnc = ncp->fnc;
-   #endif				/* COMPILER && !ConcurrentCOMPILER */
-#endif					/* Concurrent */
+   #endif                               /* COMPILER && !ConcurrentCOMPILER */
+#endif                                  /* Concurrent */
 
 #ifdef MultiProgram
    /*
@@ -421,7 +421,7 @@ int first;
     */
    if (swtch_typ == A_MTEvent)
       swtch_typ = A_Coact;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
    ncp->coexp_act = swtch_typ;
 
@@ -433,7 +433,7 @@ int first;
    /*
     * Time to switch context to the new co-expression.
     * the type of switch depends on whether the new co-expression
-    * has its own attached thread or not or if it is of type 
+    * has its own attached thread or not or if it is of type
     * posix and being activated for the first time
     */
 
@@ -446,11 +446,11 @@ int first;
       pthreadcoswitch(ccp, ncp, ccp->status, ncp->status );
       }
    else
-#endif					/* PthreadCoswitch */
+#endif                                  /* PthreadCoswitch */
    {
       /*
-       * with native coswitch, the OS-level thread is reattaching 
-       * to the new co-expression and will be no longer attached 
+       * with native coswitch, the OS-level thread is reattaching
+       * to the new co-expression and will be no longer attached
        * to the current co-expression
        */
       SET_FLAG(ncp->status, Ts_Attached);
@@ -458,14 +458,14 @@ int first;
       UNSET_FLAG(ccp->status, Ts_Attached);
 #ifdef NativeCoswitch
       coswitch(ccp->cstate, ncp->cstate, first);
-#else					/* NativeCoswitch */
-      /* 
+#else                                   /* NativeCoswitch */
+      /*
        * This should never happen: if pthread and coswitch are not available
        * we would not have coexpressions in the first place,
        * but just to make it clear:
        */
        syserr("coswitch() is required but not implemented");
-#endif					/* NativeCoswitch */
+#endif                                  /* NativeCoswitch */
    }
 
    /*
@@ -477,11 +477,11 @@ int first;
 #ifdef Concurrent
    curtstate =  global_curtstate ? global_curtstate :
       pthread_getspecific(tstate_key);
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
    return BlkD(k_current,Coexpr)->coexp_act;
 
-#endif        				/* CoExpr */
+#endif                                  /* CoExpr */
    }
 
 #ifdef CoExpr
@@ -506,15 +506,15 @@ dptr cargp;
    else
 #if COMPILER
       syserr("new_context() called with no coexpr_fnc defined");
-#else					/* COMPILER */
-#ifdef TSTATARG 
+#else                                   /* COMPILER */
+#ifdef TSTATARG
       interp(fsig, cargp, CURTSTATARG);
-#else 		 	   	  	 /* TSTATARG */
+#else                                    /* TSTATARG */
       interp(fsig, cargp);
-#endif 		 	   	  	 /* TSTATARG */
-#endif					/* COMPILER */
+#endif                                   /* TSTATARG */
+#endif                                  /* COMPILER */
    }
-#else					/* CoExpr */
+#else                                   /* CoExpr */
 /* dummy new_context if co-expressions aren't supported */
 void new_context(fsig,cargp)
 int fsig;
@@ -522,7 +522,7 @@ dptr cargp;
    {
    syserr("new_context() called, but co-expressions not implemented");
    }
-#endif					/* CoExpr */
+#endif                                  /* CoExpr */
 
 
 #ifdef PthreadCoswitch
@@ -541,7 +541,7 @@ dptr cargp;
  */
 
 #if 0
-static int pco_inited = 0;		/* has first-time initialization been done? */
+static int pco_inited = 0;              /* has first-time initialization been done? */
 #endif
 
 /*
@@ -550,16 +550,16 @@ static int pco_inited = 0;		/* has first-time initialization been done? */
 
 int pthreadcoswitch(struct b_coexpr *old, struct b_coexpr *new, word ostat, word nstat)
 {
-   sem_post(new->semp);			/* unblock the new thread */
-   SEM_WAIT(old->semp);			/* block this thread */
+   sem_post(new->semp);                 /* unblock the new thread */
+   SEM_WAIT(old->semp);                 /* block this thread */
 
    if (old->alive<1) {
-      pthread_exit(NULL);		/* if unblocked because unwanted */
+      pthread_exit(NULL);               /* if unblocked because unwanted */
       }
 
    //SYNC_GLOBAL_CURTSTATE();
 
-   return 0;				/* else return to continue running */
+   return 0;                            /* else return to continue running */
    }
 
 /*
@@ -607,7 +607,7 @@ void coclean(struct b_coexpr *cp) {
 #endif                  /* NO_COEXPR_SEMAPHORE_FIX */
       return;
     }
-       
+
   }
   else if (cp->alive==1) { /* the current thread is done, called this to exit */
     /* give up the heaps owned by the thread */
@@ -620,13 +620,13 @@ void coclean(struct b_coexpr *cp) {
       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
       swap2publicheap(strregion, NULL,  &public_stringregion);
       MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
-    }   
+    }
 #endif                  /* Concurrent */
     cp->alive = -8;
     CV_SIGNAL_EMPTYBLK(BlkD(cp->outbox, List));
     CV_SIGNAL_FULLBLK(BlkD(cp->inbox, List));
 
-    DEC_NARTHREADS; 
+    DEC_NARTHREADS;
     cp->alive = -1;
 #ifndef NO_COEXPR_SEMAPHORE_FIX
     if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
@@ -645,8 +645,8 @@ void coclean(struct b_coexpr *cp) {
 #endif                  /* NO_COEXPR_SEMAPHORE_FIX */
 #ifdef Concurrent
   /*
-   * Give up the heaps owned by the old thread, 
-   * only GC thread is running, no need to lock 
+   * Give up the heaps owned by the old thread,
+   * only GC thread is running, no need to lock
    */
   if (CHECK_FLAG(cp->status, Ts_Posix) && blkregion){
     MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
@@ -666,18 +666,18 @@ void coclean(struct b_coexpr *cp) {
  * makesem(cp) -- initialize semaphore in co-expression.
  */
 void makesem(struct b_coexpr *cp) {
-   #ifdef NamedSemaphores		/* if cannot use unnamed semaphores */
+   #ifdef NamedSemaphores               /* if cannot use unnamed semaphores */
       char name[50];
       sprintf(name, "i%ld-%ld.sem", (long)getpid(), (long) cp->id);
       cp->semp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 0);
       if (cp->semp == (sem_t *)SEM_FAILED)
          handle_thread_error(errno, FUNC_SEM_OPEN, "make_sem():cannot create semaphore");
       sem_unlink(name);
-   #else				/* NamedSemaphores */
+   #else                                /* NamedSemaphores */
       if (sem_init(&cp->sema, 0, 0) == -1)
          handle_thread_error(errno, FUNC_SEM_INIT, "make_sem():cannot init semaphore");
       cp->semp = &cp->sema;
-   #endif				/* NamedSemaphores */
+   #endif                               /* NamedSemaphores */
    }
 
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
@@ -688,7 +688,7 @@ struct threadstate * alloc_tstate()
    if (ts == NULL) syserr("alloc_tstate(): Out of memory");
    return ts;
 }
-#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
 
 /*
  * nctramp() -- trampoline for calling new_context(0,0).
@@ -703,20 +703,20 @@ void *nctramp(void *arg)
     struct threadstate *curtstate;
     curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
     pthread_setspecific(tstate_key, (void *) curtstate);
-#endif					/* HAVE_KEYWORD__THREAD */
+#endif                                  /* HAVE_KEYWORD__THREAD */
 
-  /* 
+  /*
    * Mask all allowed signals, the main thread takes care of them
    */
 
-/*  sigfillset(&mask); 
+/*  sigfillset(&mask);
   pthread_sigmask(SIG_BLOCK, &mask, NULL);
 */
    curtstate->c = ce;
 
 #if ConcurrentCOMPILER
-     coexpr_fnc = ce->fnc;    
-#endif					/* ConcurrentCOMPILER */
+     coexpr_fnc = ce->fnc;
+#endif                                  /* ConcurrentCOMPILER */
 
    init_threadstate(curtstate);
    tlschain_add(curtstate, ce);
@@ -739,7 +739,7 @@ void *nctramp(void *arg)
 #if !COMPILER
    stack = ce->es_stack;
    stackend = ce->es_stackend;
-#endif					/* !COMPILER */
+#endif                                  /* !COMPILER */
    glbl_argp = ce->es_argp;
    k_current.dword = D_Coexpr;
    BlkLoc(k_current) = (union block *)ce;
@@ -750,15 +750,15 @@ void *nctramp(void *arg)
    init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize, NULL);
 #endif
 
-#endif					/* Concurrent */
-   SEM_WAIT(ce->semp);			/* wait for signal */
-   new_context(0, 0);			/* call new_context; will not return */
+#endif                                  /* Concurrent */
+   SEM_WAIT(ce->semp);                  /* wait for signal */
+   new_context(0, 0);                   /* call new_context; will not return */
    syserr("new_context returned to nctramp");
    return NULL;
    }
-#endif					/* PthreadCoswitch */
+#endif                                  /* PthreadCoswitch */
 
-#ifdef Concurrent 
+#ifdef Concurrent
 
 pthread_mutexattr_t rmtx_attr;  /* recursive mutex attr ready to be used */
 pthread_t TCthread;
@@ -770,21 +770,21 @@ pthread_cond_t cond_tc;
 sem_t sem_tc;
 #endif /* NamedSemaphores */
 
-/* 
- * sem_tcp points to sem_tc on non Mac systems and to the return 
- * from sem_open() on Macs 
+/*
+ * sem_tcp points to sem_tc on non Mac systems and to the return
+ * from sem_open() on Macs
  */
-sem_t *sem_tcp;	
+sem_t *sem_tcp;
 
 
 pthread_cond_t **condvars;
 word* condvarsmtxs;
 word maxcondvars;
-word ncondvars; 
+word ncondvars;
 
 pthread_mutex_t **mutexes;
 word maxmutexes;
-word nmutexes; 
+word nmutexes;
 
 void init_threads()
 {
@@ -804,7 +804,7 @@ void init_threads()
 
    CV_INIT(&cond_tc, "init_threads()");
 
-#ifdef NamedSemaphores 
+#ifdef NamedSemaphores
    /* Mac OS X has sem_init(), so it is POSIX compliant.
     * Unfortunately, POSIX compliance does not mean it must work, just be there.
     * On OS X, sem_init() always fails, so we use named semaphores instead.
@@ -815,16 +815,16 @@ void init_threads()
    sem_tcp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 1);
    if (sem_tcp == (sem_t *)SEM_FAILED)
       handle_thread_error(errno, FUNC_SEM_OPEN,
-			  "thread_init():cannot create GC semaphore");
+                          "thread_init():cannot create GC semaphore");
 
    /* There's not much we can do if sem_unlink fails, so ignore return value */
    (void) sem_unlink(name);
    }
 #else
-   sem_tcp = &sem_tc; 
+   sem_tcp = &sem_tc;
    if (0 != sem_init(sem_tcp, 0, 1))
       handle_thread_error(errno, FUNC_SEM_INIT,
-			  "thread_init():cannot init GC semaphore");
+                          "thread_init():cannot init GC semaphore");
 #endif /* NamedSemaphores */
 
    maxmutexes = 1024;
@@ -842,7 +842,7 @@ void init_threads()
 
    for(i=0; i<NUM_STATIC_MUTEXES-1; i++)
       MUTEX_INITID(i, NULL);
-   
+
    /* recursive mutex for initial clause */
    MUTEX_INITID( MTX_INITIAL, &rmtx_attr);
 }
@@ -855,10 +855,10 @@ void clean_threads()
     * no args, for example.
     */
 
-  /* 
+  /*
  * IMPORTANT NOTICE:
  * Disable mutex/condvars clean up for now. Leave this to the OS.
- * Some code/libraries think this should be alive, even though we 
+ * Some code/libraries think this should be alive, even though we
  * are doing this at exit time.
  *
  * update ON March 28, 2017: clean cond_tc/sem_tcp was commented out as well
@@ -866,7 +866,7 @@ void clean_threads()
  * the system ins a state of "limbo" causing it to hang in some cases
  */
 
-  
+
   #if 0
    {
         int i;
@@ -874,21 +874,21 @@ void clean_threads()
    pthread_cond_destroy(&cond_tc);
 
    if (sem_tcp)
-      SEM_CLOSE(sem_tcp);		/* close/destroy TC semaphore */
-   
-   /*  keep MTX_SEGVTRAP_N alive	*/
+      SEM_CLOSE(sem_tcp);               /* close/destroy TC semaphore */
+
+   /*  keep MTX_SEGVTRAP_N alive        */
    for(i=1; i<nmutexes; i++){
       pthread_mutex_destroy(mutexes[i]);
       free(mutexes[i]);
       }
 
    pthread_mutexattr_destroy(&rmtx_attr);
-   
+
    for(i=0; i<ncondvars; i++){
       pthread_cond_destroy(condvars[i]);
       free(condvars[i]);
       }
-   
+
    free(condvars);
    free(condvarsmtxs);
    }
@@ -908,7 +908,7 @@ void clean_threads()
  *   3==kill all threads
  */
 void thread_control(action)
-int action; 
+int action;
 {
    static int tc_queue=0;        /* how many threads are waiting for TC */
    static int action_in_progress=TC_NONE;
@@ -916,7 +916,7 @@ int action;
    static word master_thread = 0;
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */
-   struct timeval    tp; 
+   struct timeval    tp;
    static word t_init=0;
    static word first_thread=0;
    static word thrd_t=0;
@@ -929,91 +929,91 @@ int action;
 #endif
 
    CURTSTATE();
-   
+
    switch (action){
       case TC_ANSWERCALL:{
          /*---------------------------------*/
          switch (action_in_progress){
-	    case TC_KILLALLTHREADS:{
-      	       #ifdef CoClean
-     	       coclean(BlkD(k_current, Coexpr));
-	       #else
-      	       DEC_NARTHREADS;
-	       #endif
-      	       pthread_exit(NULL);
-  	       break;
-	       }
-      	    default:{
-      	       /*
-       	        *  Check to see if it is necessary to do GC for the current thread.
-       		*  Hopefully we will force GC to happen if that is the case.
-       		*/
+            case TC_KILLALLTHREADS:{
+               #ifdef CoClean
+               coclean(BlkD(k_current, Coexpr));
+               #else
+               DEC_NARTHREADS;
+               #endif
+               pthread_exit(NULL);
+               break;
+               }
+            default:{
+               /*
+                *  Check to see if it is necessary to do GC for the current thread.
+                *  Hopefully we will force GC to happen if that is the case.
+                */
                if ((curtblock->end - curtblock->free) / (double) curtblock->size < 0.09) {
-	          if (!reserve(Blocks, curtblock->end - curtblock->free + 100))
-	             fprintf(stderr, " Disaster! in thread_control. \n");
-	          return;
-         	  }
+                  if (!reserve(Blocks, curtblock->end - curtblock->free + 100))
+                     fprintf(stderr, " Disaster! in thread_control. \n");
+                  return;
+                  }
 
 
-  	       /* The thread that gets here should block and wait for TC to finish. */
+               /* The thread that gets here should block and wait for TC to finish. */
 
-  	       /*
-   	        * Lock MUTEX_COND_TC mutex and wait on the condition variable cond_gc.
-   		* note that pthread_cond_wait will block the thread and will automatically
-   		* and atomically unlock mutex while it waits. 
-   		*/
+               /*
+                * Lock MUTEX_COND_TC mutex and wait on the condition variable cond_gc.
+                * note that pthread_cond_wait will block the thread and will automatically
+                * and atomically unlock mutex while it waits.
+                */
 
-  	       MUTEX_LOCKID(MTX_COND_TC);
-    	       MUTEX_LOCKID(MTX_NARTHREADS);
-    	       NARthreads--;
-    	       MUTEX_UNLOCKID(MTX_NARTHREADS);
-	       CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
-  	       MUTEX_UNLOCKID(MTX_COND_TC);
+               MUTEX_LOCKID(MTX_COND_TC);
+               MUTEX_LOCKID(MTX_NARTHREADS);
+               NARthreads--;
+               MUTEX_UNLOCKID(MTX_NARTHREADS);
+               CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+               MUTEX_UNLOCKID(MTX_COND_TC);
 
-  	       /* 
-	        * wake up call received! TC is over. increment NARthread 
-	        * and go back to work
-		*/
+               /*
+                * wake up call received! TC is over. increment NARthread
+                * and go back to work
+                */
 
-  	       INC_NARTHREADS_CONTROLLED;
+               INC_NARTHREADS_CONTROLLED;
                return;
 
-	       } /* default */
-	    } /* switch (action_in_progress)  */
-	 break;
+               } /* default */
+            } /* switch (action_in_progress)  */
+         break;
          /*---------------------------------*/
-	 }
+         }
       case TC_WAKEUPCALL:{
          if (tc_queue){  /* Other threads are waiting for TC to take control */
 
-	    /* lock MUTEX_COND_TC mutex and wait on the condition variable 
-	     * cond_gc.
-	     * note that pthread_cond_wait will block the thread and will
-	     * automatically and atomically unlock the mutex while it is 
-	     * blocking the thread. 
-	     */
+            /* lock MUTEX_COND_TC mutex and wait on the condition variable
+             * cond_gc.
+             * note that pthread_cond_wait will block the thread and will
+             * automatically and atomically unlock the mutex while it is
+             * blocking the thread.
+             */
 
-      	    MUTEX_UNLOCKID(MTX_NARTHREADS);
-      	    MUTEX_UNLOCKID(MTX_THREADCONTROL);
+            MUTEX_UNLOCKID(MTX_NARTHREADS);
+            MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
-	    MUTEX_LOCKID(MTX_COND_TC);
-	    /* wake up another TCthread and go to sleep */
-	    sem_post(sem_tcp);
+            MUTEX_LOCKID(MTX_COND_TC);
+            /* wake up another TCthread and go to sleep */
+            sem_post(sem_tcp);
 
-       	    CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+            CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
 
-	    MUTEX_UNLOCKID(MTX_COND_TC);
-	 
-	    /* Another TC thread just woke me up!
-	     * TC is over. Increment NARthreads and return.
-	     */
-	    MUTEX_LOCKID(MTX_NARTHREADS);
-	    NARthreads++;
-	    MUTEX_UNLOCKID(MTX_NARTHREADS);
-	    return;
+            MUTEX_UNLOCKID(MTX_COND_TC);
+
+            /* Another TC thread just woke me up!
+             * TC is over. Increment NARthreads and return.
+             */
+            MUTEX_LOCKID(MTX_NARTHREADS);
+            NARthreads++;
+            MUTEX_UNLOCKID(MTX_NARTHREADS);
+            return;
             }
-         /* 
-          * GC is over, reset GCthread and wakeup all threads. 
+         /*
+          * GC is over, reset GCthread and wakeup all threads.
           * reset (post) sem_gc to be ready for the next GC round
           */
 
@@ -1028,16 +1028,16 @@ int action;
 /* timing for GC, for testing and performance tuning */
 
         gettimeofday(&tp, NULL);
-	tmp =  tp.tv_sec * 1000000 + tp.tv_usec-t_init;
+        tmp =  tp.tv_sec * 1000000 + tp.tv_usec-t_init;
         if (gc_count>0){
-	   tot += tmp;
-    	   printf("========total GC time (ms):%d   av=%d\n", tmp/1000,
-		 		    tot/1000/gc_count);
+           tot += tmp;
+           printf("========total GC time (ms):%d   av=%d\n", tmp/1000,
+                                    tot/1000/gc_count);
            }
-	else
-    	   printf("========total GC time (ms):%d\n", tmp/1000);
+        else
+           printf("========total GC time (ms):%d\n", tmp/1000);
 
-	t_init = 0;
+        t_init = 0;
         first_thread=0;
 #endif
 
@@ -1050,28 +1050,28 @@ int action;
          }
       case TC_STOPALLTHREADS:{
 
-	/*
-	 * First make sure this thread is not requesting this
-	 * in the middle of another request made by the same thread.
-	 * typically this happens if something went bad like 
-	 * a segfault in the middle of an ongoing GC.
-	 * If this is the case, we can safely return.
-	 */
-	if (master_thread == curtstate->c->id)
-	  return;
+        /*
+         * First make sure this thread is not requesting this
+         * in the middle of another request made by the same thread.
+         * typically this happens if something went bad like
+         * a segfault in the middle of an ongoing GC.
+         * If this is the case, we can safely return.
+         */
+        if (master_thread == curtstate->c->id)
+          return;
 
          /*
           * If there is a pending TC request, then block/sleep.
           * Make sure we do not start a GC in the middle of starting
           * a new Async thread. Precaution to avoid problems.
           */
-	
+
          MUTEX_LOCKID(MTX_NARTHREADS);
          NARthreads--;
          tc_queue++;
          MUTEX_UNLOCKID(MTX_NARTHREADS);
 
- 	 /* Allow only one thread to pass at a time!! */
+         /* Allow only one thread to pass at a time!! */
          SEM_WAIT(sem_tcp);
 
 #ifdef GC_TIMING_TUNING
@@ -1082,23 +1082,23 @@ int action;
          gc_count++;
 
         gettimeofday(&tp, NULL);
-    	thrd_t = t_init = tp.tv_sec * 1000000 + tp.tv_usec;
+        thrd_t = t_init = tp.tv_sec * 1000000 + tp.tv_usec;
 
-     	if (lastgc_t!=0){
+        if (lastgc_t!=0){
 
            if (gc_count>0){
-	      tot_lastgc+=thrd_t-lastgc_t;
-	      printf("+++++++++++++\ntime (ms) since last GC: %d    av=%d\n***********\n",
-	   			  (t_init-lastgc_t)/1000, tot_lastgc/1000/gc_count);
-	      }
+              tot_lastgc+=thrd_t-lastgc_t;
+              printf("+++++++++++++\ntime (ms) since last GC: %d    av=%d\n***********\n",
+                                  (t_init-lastgc_t)/1000, tot_lastgc/1000/gc_count);
+              }
            else
-	      printf("+++++++++++++\ntime (ms) since last GC: %d\n***********\n",
-	   			  (t_init-lastgc_t)/1000);
+              printf("+++++++++++++\ntime (ms) since last GC: %d\n***********\n",
+                                  (t_init-lastgc_t)/1000);
           }
 
- 	 lastgc_t=t_init;
+         lastgc_t=t_init;
 
-	}
+        }
 #endif
 
          /* If another TCthread just woke me up, ensure that he is gone to sleep already! */
@@ -1109,27 +1109,27 @@ int action;
 
          TCthread = pthread_self();
          thread_call = 1;
-	 /* NARthreads should reach and stay at zero during TC*/
-	 while (1) {
-	    MUTEX_LOCKID(MTX_NARTHREADS);
-	    if (NARthreads  <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
-	    MUTEX_UNLOCKID(MTX_NARTHREADS);
-	    usleep(50);
-	    }
+         /* NARthreads should reach and stay at zero during TC*/
+         while (1) {
+            MUTEX_LOCKID(MTX_NARTHREADS);
+            if (NARthreads  <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
+            MUTEX_UNLOCKID(MTX_NARTHREADS);
+            usleep(50);
+            }
 
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */
         gettimeofday(&tp, NULL);
-	tmp = tp.tv_sec * 1000000 + tp.tv_usec;
-        if (gc_count>0 && first_thread){	
-	   tot_gcwait +=tmp-t_init;
-	   first_thread=0;
-    	   printf("@@@SUSPEND TIME: time (microsec) I waited to start GC=%d     Av=%d \n", 
-	   		tmp-thrd_t, tot_gcwait/gc_count);
-	   }
-	   else
-    	   printf("SAME GC Cycle:time (microsec) I waited to start GC=%d\n", tmp-thrd_t);
- 	thrd_t = tmp;
+        tmp = tp.tv_sec * 1000000 + tp.tv_usec;
+        if (gc_count>0 && first_thread){
+           tot_gcwait +=tmp-t_init;
+           first_thread=0;
+           printf("@@@SUSPEND TIME: time (microsec) I waited to start GC=%d     Av=%d \n",
+                        tmp-thrd_t, tot_gcwait/gc_count);
+           }
+           else
+           printf("SAME GC Cycle:time (microsec) I waited to start GC=%d\n", tmp-thrd_t);
+        thrd_t = tmp;
 #endif
 
 
@@ -1137,21 +1137,21 @@ int action;
           * Now it is safe to proceed with TC with only the current thread running
           */
          tc_queue--;
-	 master_thread = curtstate->c->id;
+         master_thread = curtstate->c->id;
          return;
          }
       case TC_KILLALLTHREADS:{
-	 /* wait until only this thread is running  */
+         /* wait until only this thread is running  */
          thread_call = 1;
          action_in_progress = action;
-	 while (1) {
-	    if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
-	    usleep(50);
-	    }
+         while (1) {
+            if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
+            usleep(50);
+            }
 
          /*action_in_progress = TC_NONE;*/
-	 master_thread = curtstate->c->id;
-	 return;
+         master_thread = curtstate->c->id;
+         return;
          }
       default:{
 
@@ -1167,7 +1167,7 @@ void howmanyblock()
 {
   int i=0;
   struct region *rp;
-  
+
   printf("here is what I have:\n");
   rp = curpstate->stringregion;
   while (rp){ i++;   rp = rp->Gnext; }
@@ -1200,7 +1200,7 @@ void howmanyblock()
   printf(" local block= %d\n", i);
 }
 #endif                                /* ConcurrentCOMPILER */
-#endif				      /* DEBUG */
+#endif                                /* DEBUG */
 
 void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
 {
@@ -1225,13 +1225,13 @@ void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
 
 void tlschain_remove(struct threadstate *tstate)
 {
-   /* 
-    * This function assumes that MTX_TLS_CHAIN is locked/unlocked 
+   /*
+    * This function assumes that MTX_TLS_CHAIN is locked/unlocked
     * if needed. GCthread doesn't need to lock for example.
     */
 
    if (!tstate || !tstate->prev) return;
- 
+
    tstate->prev->next = tstate->next;
    if (tstate->next)
       tstate->next->prev = tstate->prev;
@@ -1239,28 +1239,28 @@ void tlschain_remove(struct threadstate *tstate)
    /* CurrentCOMPILER has tstate but no pstate */
    curstring->size += tstate->stringtotal;
    curblock->size += tstate->blocktotal;
-#else					/* ConcurrentCOMPILER */
+#else                                   /* ConcurrentCOMPILER */
    rootpstate.stringtotal += tstate->stringtotal;
    rootpstate.blocktotal += tstate->blocktotal;
-#endif					/* ConcurrentCOMPILER */
+#endif                                  /* ConcurrentCOMPILER */
    if (tstate->c && tstate->c->isProghead) return;
-   
+
    free(tstate);
 }
 
 /*
  * reuse_region - search region chain for a region having at least nbytes available
- * updated Mar 8 2017: Relax the requirments to only require the region size 
- *	               to be >= nbytes but not necessarily nbytes/4 >= freebytes.
- *		       The rational is that some of that memory could be reclaimed
- *		       after doing a garbage collection.
+ * updated Mar 8 2017: Relax the requirments to only require the region size
+ *                     to be >= nbytes but not necessarily nbytes/4 >= freebytes.
+ *                     The rational is that some of that memory could be reclaimed
+ *                     after doing a garbage collection.
  */
 static struct region *reuse_region(word nbytes, int region)
 {
   struct region *curr, **pubregion, *pick=NULL;
   word freebytes = nbytes / 4;
   int mtx_id;
-   
+
   if (region == Strings){
     mtx_id = MTX_PUBLICSTRHEAP;
     MUTEX_LOCKID_CONTROLLED(mtx_id);
@@ -1271,21 +1271,21 @@ static struct region *reuse_region(word nbytes, int region)
     MUTEX_LOCKID_CONTROLLED(mtx_id);
     pubregion = &public_blockregion;
   }
-       
+
   for (curr = *pubregion; curr; curr = curr->Tnext) {
     if (curr->size >= nbytes) {
       // find a region that is big enough
       if (!pick)
-	pick = curr;
+        pick = curr;
       if (DiffPtrs(curr->end, curr->free) >= freebytes) {
-	// if the region has "enough" free memory just take it
-	// and end the search
-	pick = curr;
-	break;
+        // if the region has "enough" free memory just take it
+        // and end the search
+        pick = curr;
+        break;
         }
       else if (DiffPtrs(pick->end, pick->free) < DiffPtrs(curr->end, curr->free))
-	// if this region has more free memory, switch to it
-	pick = curr;
+        // if this region has more free memory, switch to it
+        pick = curr;
       }
     }
 
@@ -1294,14 +1294,14 @@ static struct region *reuse_region(word nbytes, int region)
       pick->Tprev->Tnext = pick->Tnext;
     else
       *pubregion = pick->Tnext;
-    
+
     if (pick->Tnext)
       pick->Tnext->Tprev = pick->Tprev;
-    
+
     pick->Tnext= NULL;
     pick->Tprev = NULL;
   }
-      
+
   MUTEX_UNLOCKID(mtx_id);
   return pick;
 }
@@ -1315,15 +1315,15 @@ static struct region *reuse_region(word nbytes, int region)
  * nctramp() you are a new thread in the current program.  Called from
  * initprogram() in init.r, you are a newly loaded program (newp).
  *
- * 
+ *
  */
 #if COMPILER
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
 #else
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
-		     struct progstate *newp)
+                     struct progstate *newp)
 #endif
-{ 
+{
    struct region *rp;
 
 #if !COMPILER
@@ -1352,14 +1352,14 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 #else
       /* attach rp after program's string region on prev/next */
       if (newp->stringregion) {
-	 rp->prev = newp->stringregion;
-	 rp->next = newp->stringregion->next;
-	 if (newp->stringregion->next)
-	    newp->stringregion->next->prev = rp;
-	 newp->stringregion->next = rp;
-	 }
+         rp->prev = newp->stringregion;
+         rp->next = newp->stringregion->next;
+         if (newp->stringregion->next)
+            newp->stringregion->next->prev = rp;
+         newp->stringregion->next = rp;
+         }
       else
-	 newp->stringregion = rp;
+         newp->stringregion = rp;
 #endif
 
       /* attach rp after curstring on Gprev/Gnext. */
@@ -1388,14 +1388,14 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 #else
       /* attach rp after program's block region on prev/next */
       if (newp->blockregion) {
-	 rp->prev = newp->blockregion;
-	 rp->next = newp->blockregion->next;
-	 if (newp->blockregion->next)
-	    newp->blockregion->next->prev = rp;
-	 newp->blockregion->next = rp;
-	 }
+         rp->prev = newp->blockregion;
+         rp->next = newp->blockregion->next;
+         if (newp->blockregion->next)
+            newp->blockregion->next->prev = rp;
+         newp->blockregion->next = rp;
+         }
       else
-	 newp->blockregion = rp;
+         newp->blockregion = rp;
 #endif
 
       /* attach rp after curblock on Gprev/Gnext. */
@@ -1411,7 +1411,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
       syserr(" init_threadheap: insufficient memory for block region");
 }
 
-#endif 					/* Concurrent */
+#endif                                  /* Concurrent */
 
 
 #if HAVE_LIBPTHREAD
@@ -1431,11 +1431,11 @@ void handle_thread_error(int val, int func, char* msg)
       switch(val) {
          case EINVAL:
             fatalerr(180, NULL);
-      	    break;
+            break;
          case EBUSY:
- 	    /* EBUSY is handled somewhere else, we shouldn't get here */
-     	    return;
-	 }
+            /* EBUSY is handled somewhere else, we shouldn't get here */
+            return;
+         }
       break;
 
    case FUNC_MUTEX_INIT:
@@ -1446,13 +1446,13 @@ void handle_thread_error(int val, int func, char* msg)
       fprintf(stderr, "\nDestroy mutex error-%s:", msg);
       switch(val) {
          case EBUSY:
-/*     	    fprintf(stderr, "The implementation has detected an attempt to destroy the object referenced by mutex while it is locked or referenced (for example, while being used in a pthread_cond_wait() or pthread_cond_timedwait()) by another thread.");
+/*          fprintf(stderr, "The implementation has detected an attempt to destroy the object referenced by mutex while it is locked or referenced (for example, while being used in a pthread_cond_wait() or pthread_cond_timedwait()) by another thread.");
 */
-     	    return;
-      	 default:
-	    fprintf(stderr, " pthread function error!\n ");
-      	    return;
-	 }
+            return;
+         default:
+            fprintf(stderr, " pthread function error!\n ");
+            return;
+         }
 
    case FUNC_THREAD_JOIN:
       fprintf(stderr, "\nThread join error-%s:", msg);
@@ -1464,19 +1464,19 @@ void handle_thread_error(int val, int func, char* msg)
          case EAGAIN:
             fprintf(stderr, "Insufficient resources to create another thread, or a system imposed limit on the number of threads was encountered.\n");
 #if 0
-	    {
-	    struct rlimit rlim;
-	    getrlimit(RLIMIT_NPROC, &rlim);
-	    fprintf(stderr," Soft Limit: %u\n Hard Limit: %u\n",
-	       (unsigned int) rlim.rlim_cur, (unsigned int) rlim.rlim_max);
-	    }
+            {
+            struct rlimit rlim;
+            getrlimit(RLIMIT_NPROC, &rlim);
+            fprintf(stderr," Soft Limit: %u\n Hard Limit: %u\n",
+               (unsigned int) rlim.rlim_cur, (unsigned int) rlim.rlim_max);
+            }
 #endif
-      	    break;
-	 }
+            break;
+         }
 
    case FUNC_COND_INIT:
          fprintf(stderr, "cond init error-%s\n ", msg);
-	 break;
+         break;
 
    case FUNC_SEM_OPEN:
       fprintf(stderr, "sem open error-%s\n ", msg);

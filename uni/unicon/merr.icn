@@ -1,15 +1,15 @@
 #
-#	merr.icn 2.0 alpha, an error message generator program.
+#       merr.icn 2.0 alpha, an error message generator program.
 #
-#	Clinton Jeffery, jeffery@cs.uidaho.edu
-#	Sudarshan Gaikaiwari, sudarshan@acm.org
+#       Clinton Jeffery, jeffery@cs.uidaho.edu
+#       Sudarshan Gaikaiwari, sudarshan@acm.org
 #
-#	1/22/2006
+#       1/22/2006
 #
-#	Maintains the mapping from parse states to error messages.
-#	See http://unicon.org/merr/
+#       Maintains the mapping from parse states to error messages.
+#       See http://unicon.org/merr/
 #
-#	To do: add a command line option for an alternative message format.
+#       To do: add a command line option for an alternative message format.
 #
 
 global C, att, bison, byacc, make, compile, ofile, target, yyfn, yyln, yytxt
@@ -23,7 +23,7 @@ procedure main(argv)
 
    if *argv=0 then
       stop("usage: merr [-yYBG] [-W writefn] [-F filenm] [-s make] [-o msgfl]",
-	   "compiler [target] [-N MaxIterations] [-phase1] [-phase2] ")
+           "compiler [target] [-N MaxIterations] [-phase1] [-phase2] ")
    ofile := "yyerror.icn"
    yamfile := "meta.err"
    yyfn := "yyfilename"
@@ -33,49 +33,49 @@ procedure main(argv)
    inclfile := "y.tab.h"
    i := 1
    while i <= *argv do {
-	case argv[i] of {
-	    "-u": { update := [] }
-	    "-y": { C := byacc := 1 }
-	    "-Y": { C := att := "yy_state" }
-	    "-B": { C := bison := "yystate" }
-	    "-W": { i +:= 1; yywritefn := argv[i] }
-	    "-F": { i +:= 1; yyfn := argv[i] }
-	    "--F": { i +:= 1; yyfn := &null }
-	    "-s": { i +:= 1; make := argv[i] }
-	    "-o": { i +:= 1; ofile := argv[i] }
-	    "-C": { i +:= 1; calloc := argv[i] }
-	    #
-	    # -H is where to read token info from in phase 1, while
-	    # -I is what file to write an include for within yyerror.h
-	    #
-	    "-H": { i +:= 1; ytabh := argv[i] }
-	    "-I": { i +:= 1; inclfile := argv[i] }
-	    "--F": { i +:= 1; yyfn := &null }
-	    "-F": { i +:= 1; yyfn := argv[i] }
-	    "-W": { i +:= 1; yywritefn := argv[i] }
-	    "-L": { i +:= 1; yyln := argv[i] }
-	    "-T": { i +:= 1; yytxt := argv[i] }
-	    "-o": { i +:= 1; ofile := argv[i] }
-	    "-G": { genfrag := 1 }
-	    "-N": { i +:= 1; maxiter := argv[i]; write(maxiter) }
-	    "-phase1":{phase := 1}
-	    "-phase2":{phase := 2}
-	    default: {
-	       if /compile := argv[i] then {
-		  if \C then target := "m_err.c" else target := "m_err.icn"
-		  }
-	       else {
-		  target := argv[i]
-	          }
-	    }
-	}
-	i+:= 1
+        case argv[i] of {
+            "-u": { update := [] }
+            "-y": { C := byacc := 1 }
+            "-Y": { C := att := "yy_state" }
+            "-B": { C := bison := "yystate" }
+            "-W": { i +:= 1; yywritefn := argv[i] }
+            "-F": { i +:= 1; yyfn := argv[i] }
+            "--F": { i +:= 1; yyfn := &null }
+            "-s": { i +:= 1; make := argv[i] }
+            "-o": { i +:= 1; ofile := argv[i] }
+            "-C": { i +:= 1; calloc := argv[i] }
+            #
+            # -H is where to read token info from in phase 1, while
+            # -I is what file to write an include for within yyerror.h
+            #
+            "-H": { i +:= 1; ytabh := argv[i] }
+            "-I": { i +:= 1; inclfile := argv[i] }
+            "--F": { i +:= 1; yyfn := &null }
+            "-F": { i +:= 1; yyfn := argv[i] }
+            "-W": { i +:= 1; yywritefn := argv[i] }
+            "-L": { i +:= 1; yyln := argv[i] }
+            "-T": { i +:= 1; yytxt := argv[i] }
+            "-o": { i +:= 1; ofile := argv[i] }
+            "-G": { genfrag := 1 }
+            "-N": { i +:= 1; maxiter := argv[i]; write(maxiter) }
+            "-phase1":{phase := 1}
+            "-phase2":{phase := 2}
+            default: {
+               if /compile := argv[i] then {
+                  if \C then target := "m_err.c" else target := "m_err.icn"
+                  }
+               else {
+                  target := argv[i]
+                  }
+            }
+        }
+        i+:= 1
     }
    if \update then {
       if \C then stop("update only supported on Unicon, so far")
       if fin := open(ofile) then {
-	 while put(update, read(fin))
-	 }
+         while put(update, read(fin))
+         }
       else stop("merr update: can't open ", image(ofile), " for reading")
       }
    if (\genfrag = 1) | \phase=1 then {
@@ -99,143 +99,143 @@ $endif
       fin := open(yamfile) | stop("no ", yamfile)
       # skip down to a %% if there is one; otherwise reset to beginning
       while line := read(fin) do {
-	 if line == "%%" then break
+         if line == "%%" then break
          }
       if line ~=== "%%" then {
-	 close(fin)
-	 fin := open(yamfile) | stop("can't reopen ", yamfile)
+         close(fin)
+         fin := open(yamfile) | stop("can't reopen ", yamfile)
          }
 
       while line := read(fin) do {
-	 prog := []
-	 while not (i := find(":::",line)) do {
-	    put(prog,line)
-	    line := read(fin) | break break
-	    }
-	 if i>1 then put(prog,line[1:i])
-	 msg := line[i+3:0]
-	 msg ?:= (tab(many(' \t')), tab(0))
-	 write(msg)
-	 generr(t, prog, msg)
-	 }
+         prog := []
+         while not (i := find(":::",line)) do {
+            put(prog,line)
+            line := read(fin) | break break
+            }
+         if i>1 then put(prog,line[1:i])
+         msg := line[i+3:0]
+         msg ?:= (tab(many(' \t')), tab(0))
+         write(msg)
+         generr(t, prog, msg)
+         }
       gen(t)
       }
    if \update then {
       if resultf := open(ofile) then {
-	 result := []
-	 while put(result, read(resultf))
-	 close(resultf)
-	 if not (resultf := open(ofile, "w")) then
-	    stop("can't update/write ", image(ofile))
-	 while line := pop(update) do {
-	    write(resultf, line)
-	    if line == "initial {" then break
-	    }
-	 if line ~== "initial {" then
-	    stop("can't update, initial ", image(ofile), " had no initial {")
-	 line := &null
-	 while line := pop(result) do {
-	    if line == "initial {" then break
-	    }
-	 if line ~== "initial {" then
-	    stop("can't update, result ", image(ofile), " had no initial {")
-	 while line := pop(result) do {
-	    write(resultf, line)
-	    if line == "   }" then break
-	    }
-	 if line ~== "   }" then
-	    stop("can't update, result ", image(ofile), " had no ending    }")
-	 line := &null
-	 while line := pop(update) do {
-	    if line == "   }" then break
-	    }	 
-	 if line ~== "   }" then
-	    stop("can't update, initial ", image(ofile), " had no ending    }")
-	 line := &null
-	 while line := pop(update) do write(resultf, line)
-	 close(resultf)
-	 write("updated ", image(ofile))
-	 }
+         result := []
+         while put(result, read(resultf))
+         close(resultf)
+         if not (resultf := open(ofile, "w")) then
+            stop("can't update/write ", image(ofile))
+         while line := pop(update) do {
+            write(resultf, line)
+            if line == "initial {" then break
+            }
+         if line ~== "initial {" then
+            stop("can't update, initial ", image(ofile), " had no initial {")
+         line := &null
+         while line := pop(result) do {
+            if line == "initial {" then break
+            }
+         if line ~== "initial {" then
+            stop("can't update, result ", image(ofile), " had no initial {")
+         while line := pop(result) do {
+            write(resultf, line)
+            if line == "   }" then break
+            }
+         if line ~== "   }" then
+            stop("can't update, result ", image(ofile), " had no ending    }")
+         line := &null
+         while line := pop(update) do {
+            if line == "   }" then break
+            }
+         if line ~== "   }" then
+            stop("can't update, initial ", image(ofile), " had no ending    }")
+         line := &null
+         while line := pop(update) do write(resultf, line)
+         close(resultf)
+         write("updated ", image(ofile))
+         }
       }
 end
 
 procedure gen(t)
     f := open(ofile, "w") | stop("can't write ", image(ofile))
     if \C then {
-	if /byacc then {
-	    if find("/", ofile) then {
-		every i := find("/", ofile)
-		f2 := open(ofile[1:i+1] || "yyerror.h", "w")
-	        }
-	    else
-		f2 := open("yyerror.h", "w")
-	    write(f2, "extern int _yyerror(char *, int);")
-	    write(f2, "#define yyerror(s) _yyerror(s, ", \att | bison, ")")
-	    close(f2)
-	    }
-	maxstate := -1
-	every maxstate <:= key(\t)
-	write(f,"#include <stdio.h>\n")
-	write(f,"int yyerror_isinitialized, yymaxstate = ",maxstate,";")
-	write(f,"struct errtable {\n",
-	        "   int i;\n",
-	        "   union {\n",
-	        "      char *msg;\n",
-	        "      struct errtable *p;\n",
-	        "      } u;\n",
-	        "   } errtab[", if maxstate<0 then 1 else maxstate+1, "];")
+        if /byacc then {
+            if find("/", ofile) then {
+                every i := find("/", ofile)
+                f2 := open(ofile[1:i+1] || "yyerror.h", "w")
+                }
+            else
+                f2 := open("yyerror.h", "w")
+            write(f2, "extern int _yyerror(char *, int);")
+            write(f2, "#define yyerror(s) _yyerror(s, ", \att | bison, ")")
+            close(f2)
+            }
+        maxstate := -1
+        every maxstate <:= key(\t)
+        write(f,"#include <stdio.h>\n")
+        write(f,"int yyerror_isinitialized, yymaxstate = ",maxstate,";")
+        write(f,"struct errtable {\n",
+                "   int i;\n",
+                "   union {\n",
+                "      char *msg;\n",
+                "      struct errtable *p;\n",
+                "      } u;\n",
+                "   } errtab[", if maxstate<0 then 1 else maxstate+1, "];")
 
-	write(f, "void yyerror_init()\n{")
+        write(f, "void yyerror_init()\n{")
 
-	every k := key(\t) do {
-	    write(f, "   errtab[",k,"].i = ", *t[k], ";")
-	    if *t[k] > 1 then {
-		write(f, "   errtab[",k,"].u.p = (struct errtable *)",calloc,
-		      "(1,",*t[k]+1," * sizeof(struct errtable));")
-		write(f, "   errtab[",k,"].u.p[0].u.msg = ",
-		      image(t[k,10000000000]),";")
-		j := 1
-		every k2 := key(t[k]) do {
-		    write(f, "   errtab[", k, "].u.p[", j, "].i = ", k2, ";")
-		    write(f, "   errtab[", k, "].u.p[", j, "].u.msg = ",
-			  image(t[k,k2]), ";")
-		    j +:= 1
-		}
-	    }
-	    else
-		write(f,"   errtab[",k,"].u.msg = ",image(t[k,10000000000]),
-		      ";")
-	}
+        every k := key(\t) do {
+            write(f, "   errtab[",k,"].i = ", *t[k], ";")
+            if *t[k] > 1 then {
+                write(f, "   errtab[",k,"].u.p = (struct errtable *)",calloc,
+                      "(1,",*t[k]+1," * sizeof(struct errtable));")
+                write(f, "   errtab[",k,"].u.p[0].u.msg = ",
+                      image(t[k,10000000000]),";")
+                j := 1
+                every k2 := key(t[k]) do {
+                    write(f, "   errtab[", k, "].u.p[", j, "].i = ", k2, ";")
+                    write(f, "   errtab[", k, "].u.p[", j, "].u.msg = ",
+                          image(t[k,k2]), ";")
+                    j +:= 1
+                }
+            }
+            else
+                write(f,"   errtab[",k,"].u.msg = ",image(t[k,10000000000]),
+                      ";")
+        }
       write(f, "}\n")
 
       write(f,"int __merr_errors;\nextern int yychar;")
       if find("yylval", yyln) then
-	  write(f, "#include \"",inclfile,"\"")
+          write(f, "#include \"",inclfile,"\"")
       else
-	  write(f,"extern int ",yyln,";\n")
+          write(f,"extern int ",yyln,";\n")
       if \yyfn=="yyfilename" then write(f,"extern char *yyfilename;\n")
 # Berkeley and/or AT&T probably need extern char yytext[]; need to check
       if yytxt=="yytext" then write(f,"extern char *yytext;\n")
 
       if \byacc then
           write(f, "extern short *yyssp;\n\n",
-		   "int yyerror(char *s)\n{\n   int state = *yyssp;")
+                   "int yyerror(char *s)\n{\n   int state = *yyssp;")
       else
           write(f, "int _yyerror(char *s, int state)\n{")
       write(f, "   int i;\n",
-	       "   char sbuf[128];")
+               "   char sbuf[128];")
 
       write(f, "   if (! yyerror_isinitialized++) yyerror_init();\n",
                "   if (strstr(s, \"stack\")) return 0;")
 
       write(f, "   if (__merr_errors++ > 10) {\n",
-	       "      ", yywritefn,
-	       "(stderr, \"too many errors, aborting\");\n",
-	       "      exit(__merr_errors); }")
+               "      ", yywritefn,
+               "(stderr, \"too many errors, aborting\");\n",
+               "      exit(__merr_errors); }")
 
       write(f, "   if (",\yyfn,") ",yywritefn,"(stderr, \"%s:\", ",\yyfn,");")
       write(f, "   if ((!strcmp(s, \"syntax error\") || ",
-		       "!strcmp(s,\"parse error\"))&&")
+                       "!strcmp(s,\"parse error\"))&&")
       write(f,"         (state>=0 && state<=yymaxstate)) {")
       write(f,"       if (errtab[state].i==1)")
       write(f, "         s = errtab[state].u.msg;")
@@ -249,28 +249,28 @@ procedure gen(t)
       write(f,"       }")
 
       write(f, "   if (!strcmp(s, \"syntax error\") || ",
-		      "!strcmp(s,\"parse error\")){")
+                      "!strcmp(s,\"parse error\")){")
       write(f, "      sprintf(sbuf,\"%s (%d;%d)\", s, state, yychar);")
       write(f, "      s=sbuf;\n      }")
       write(f, "   ",yywritefn,"(stderr, \"%d: # \\\"%s\\\": %s\\n\", ",
-	    yyln,", ",yytxt,", s);")
+            yyln,", ",yytxt,", s);")
       write(f, "   return 0;")
       write(f, "}")
       }
    else {
       write(f,"procedure yyerror(s)\n",
-	      "static t, __merr_errors\n",
-	      "initial {\n",
-	      "   t := table(table(\"syntax error\"))")
+              "static t, __merr_errors\n",
+              "initial {\n",
+              "   t := table(table(\"syntax error\"))")
       every k := key(\t) do {
-	  if *t[k] > 1 then {
-	      write(f, "   t[",k,"] := table(",image(t[k,10000000000]),")")
-	      every k2 := key(t[k]) do {
-		  write(f, "   t[", k, ",", k2, "] := ", image(t[k,k2]))
-	      }
-	  }
-	  else
-	      write(f,"   t[",k,"] := table(",image(t[k,10000000000]),")")
+          if *t[k] > 1 then {
+              write(f, "   t[",k,"] := table(",image(t[k,10000000000]),")")
+              every k2 := key(t[k]) do {
+                  write(f, "   t[", k, ",", k2, "] := ", image(t[k,k2]))
+              }
+          }
+          else
+              write(f,"   t[",k,"] := table(",image(t[k,10000000000]),")")
       }
       write(f, "   __merr_errors := 0")
       write(f, "   }\n")
@@ -282,7 +282,7 @@ procedure gen(t)
 
       write(f, "   if __merr_errors = 0 then ",yywritefn,"(&errout)")
       write(f, "   else if map(s)== \"stack underflow. aborting...\" ",
-			"then return")
+                        "then return")
       write(f, "   __merr_errors +:= 1")
       write(f, "   if __merr_errors > 10 then")
       write(f, "      ",yywritefn,"(\"too many errors, aborting\") & stop()")
@@ -290,10 +290,10 @@ procedure gen(t)
       write(f, "      s := t[(\\statestk)[1], yychar]")
       write(f, "   if s == \"syntax error\" then {")
       write(f, "      s ||:= \" (\" || (\\statestk)[1] ||\";\"|| ",
-			     "yychar || \")\"")
+                             "yychar || \")\"")
       write(f, "      }")
       write(f, "   ",yywritefn,"(&errout, (\\yyfilename|\"lambda.icn\"), \":\",",yyln,
-			       ", \": # \\\"\", yytext, \"\\\": \", s)")
+                               ", \": # \\\"\", yytext, \"\\\": \", s)")
       write(f, "   return")
       write(f, "end")
 }
@@ -309,7 +309,7 @@ procedure generr(t, prog, msg)
 
     efile := \target | "err.icn"
     f := open(efile,"w") | stop("can't open ", image(efile))
-    every write(f, !prog) 
+    every write(f, !prog)
     close(f)
 $ifdef _MS_WINDOWS_NT
     system("command /C type " || target)
@@ -329,27 +329,27 @@ $endif
 
     f := open("err.out") | stop("can't open err.out")
     while ((line := read(f)) &
-	   (not (line ? (tab(find("(")+1), tab(many(&digits)),
-			=";", tab(many(&digits)), =")"))))
+           (not (line ? (tab(find("(")+1), tab(many(&digits)),
+                        =";", tab(many(&digits)), =")"))))
 
     if (not (\line ? (tab(find("(")+1), tab(many(&digits)),
-			=";", tab(many(&digits)), =")"))) then {
+                        =";", tab(many(&digits)), =")"))) then {
         write("having trouble looking for line in ", image(&subject))
-	close(f)
-	fail
-	}
+        close(f)
+        fail
+        }
 
     line2 := line
     while line ?:= (tab(find(":")+1) & tab(0))
     if *trim(line) = 0 then stop("bad line ", image(line))
     line ? {
-	tab(find("(")+1) | { unknownstate(line2); fail }
-	state := integer(tab(many(&digits))) | {
-	    unknownstate(line2); fail }
-	=";"
-	token := integer(tab(many(&digits))) | {
-	    unknownstate(line2); fail }
-	=")"
+        tab(find("(")+1) | { unknownstate(line2); fail }
+        state := integer(tab(many(&digits))) | {
+            unknownstate(line2); fail }
+        =";"
+        token := integer(tab(many(&digits))) | {
+            unknownstate(line2); fail }
+        =")"
     }
     close(f)
 
@@ -390,17 +390,17 @@ local tabhs
 if phase = 1 then {
    if \C then {
       if \bison then {
-	 tabhs := []
-	 dir := open(".")
-	 while dirn := read(dir) do
-	    if dirn[-6:0] == ".tab.h" then put(tabhs, dirn)
-	 if *tabhs > 1 then {
-	    write("merr: not sure which .tab.h to use out of:\n\t")
-	    every writes(!tabhs, " ")
-	    stop("... aborting.")
-	    }
-	 else if (*tabhs = 0) & /ytabh then stop("merr: no .tab.h for phase1")
-	 /ytabh := tabhs[1]
+         tabhs := []
+         dir := open(".")
+         while dirn := read(dir) do
+            if dirn[-6:0] == ".tab.h" then put(tabhs, dirn)
+         if *tabhs > 1 then {
+            write("merr: not sure which .tab.h to use out of:\n\t")
+            every writes(!tabhs, " ")
+            stop("... aborting.")
+            }
+         else if (*tabhs = 0) & /ytabh then stop("merr: no .tab.h for phase1")
+         /ytabh := tabhs[1]
          }
       /ytabh := "y.tab.h"
       }
@@ -412,11 +412,11 @@ if phase = 1 then {
    identchars := &letters++&digits++'_'
    while line := read(f) do {
       line ? {
-	 if tab(any('#$')) & ((tab(many(' \t'))|"")\1) &
-	     ="define " & (tok:=tab(many(identchars))) then {
-	    write(f2, tok, " = ",map(tok))
+         if tab(any('#$')) & ((tab(many(' \t'))|"")\1) &
+             ="define " & (tok:=tab(many(identchars))) then {
+            write(f2, tok, " = ",map(tok))
             }
-	 }
+         }
       }
    close(f)
    close(f2)
@@ -428,16 +428,16 @@ else if phase = 2 then {
       stop("# Merr2 token samples expected")
    L := []
    while line := read(f) do {
-#	write(line)
-	line ? {
-	 #   write("size " || *line)
-	    if ="%%" then break
-	    if tab(find("= ")+2) & &pos <= *&subject then
-		{
-	#	    write(&pos || " " || tab(0))
-		    put(L, tab(0))
-		}
-	}
+#       write(line)
+        line ? {
+         #   write("size " || *line)
+            if ="%%" then break
+            if tab(find("= ")+2) & &pos <= *&subject then
+                {
+        #           write(&pos || " " || tab(0))
+                    put(L, tab(0))
+                }
+        }
     }
 #    write ("**************Test********************")
 #    every write(generrs(L,1))
@@ -448,15 +448,15 @@ else if phase = 2 then {
     foundsome := 0
     iteration := 1
     repeat {
-	curfoundsome := foundsome
-	write(repl("*",69))
-	generate_errs(L, iteration)
-	legalprefixes := newlegalprefixes
+        curfoundsome := foundsome
+        write(repl("*",69))
+        generate_errs(L, iteration)
+        legalprefixes := newlegalprefixes
         write("iteration ", iteration, " complete, found ", foundsome,
-	      " prefixes ", *legalprefixes)
-	write(repl("*",69))
-	iteration +:= 1
-       	if \maxiter & maxiter < iteration then break
+              " prefixes ", *legalprefixes)
+        write(repl("*",69))
+        iteration +:= 1
+                if \maxiter & maxiter < iteration then break
         if foundsome = curfoundsome & iteration > 2 then break
     }
 }
@@ -479,45 +479,45 @@ initial statesserved := set()
       f3 := open("err.foo")
       Lmsgs := []
       while(msgline := read(f3)) do {
-		write(msgline)
-	 put(Lmsgs, msgline)
+                write(msgline)
+         put(Lmsgs, msgline)
          }
       close(f3)
       # smg to modify
       if find("unexpected end of file"|"No errors"|" \"\":", msgline) then {
-	  write("Legal Prefix : " || msgline)
-	  addprefix(newlegalprefixes, err, msgline)
+          write("Legal Prefix : " || msgline)
+          addprefix(newlegalprefixes, err, msgline)
          }
       else if i = 1 then {
-	  write(err, " not deemed a legal prefix:")
-	  every write("\t", !Lmsgs)
+          write(err, " not deemed a legal prefix:")
+          every write("\t", !Lmsgs)
       }
       if find("syntax error", msgline) then {
-	  msgline ? {
-	      tab(find("syntax error"))
-	      ="syntax error"
-	      if =" (" & stt := integer(tab(many(&digits))) then {
-		  if not member(statesserved, stt) then {
-		     insert(statesserved, stt)
-		     every write(!Lmsgs)
-		     write("Found error ", err , "In state ", image(stt))
-		     f2 := open("meta.err2", "a")
-		     write(f2, err)
-		     write(f2, "::: syntax error")
-		     close(f2)
-		     foundsome +:= 1
-		 }
-	      }
-	  }
-	    }
-	}
+          msgline ? {
+              tab(find("syntax error"))
+              ="syntax error"
+              if =" (" & stt := integer(tab(many(&digits))) then {
+                  if not member(statesserved, stt) then {
+                     insert(statesserved, stt)
+                     every write(!Lmsgs)
+                     write("Found error ", err , "In state ", image(stt))
+                     f2 := open("meta.err2", "a")
+                     write(f2, err)
+                     write(f2, "::: syntax error")
+                     close(f2)
+                     foundsome +:= 1
+                 }
+              }
+          }
+            }
+        }
 end
 
 
 procedure addprefix(newlegalprefixes, err, msg)
    msg ? {
-      tab(find("(") + 1) & stt := integer(tab(many(&digits))) 	  
-      write("In state : ", stt, "Legal prefix = ", err );	  
+      tab(find("(") + 1) & stt := integer(tab(many(&digits)))
+      write("In state : ", stt, "Legal prefix = ", err );
       }
    if newlegalprefixes[stt] == 0 then {
       newlegalprefixes[stt] := err

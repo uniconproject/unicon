@@ -50,7 +50,7 @@ char *s;
 
    return putident(l, 1);
    }
-
+
 /*
  * putident - install the identifier named by the string starting at lsfree
  *  and extending for len bytes.  The installation entails making an
@@ -111,7 +111,7 @@ int len, install;
    lsfree += l;
    return lihash[hash]->i_name;
    }
-
+
 /*
  * lexeql - compare two strings of given length.  Returns non-zero if
  *  equal, zero if not equal.
@@ -125,7 +125,7 @@ register char *s1, *s2;
          return 0;
    return 1;
    }
-
+
 /*
  * alcident - get the next free identifier table entry, and fill it in with
  *  the specified values.
@@ -142,7 +142,7 @@ int len;
    ip->i_length = len;
    return ip;
    }
-
+
 /*
  * locinit -  clear local symbol table.
  */
@@ -154,7 +154,7 @@ void locinit()
    nconst = -1;
    static1 = lstatics;
    }
-
+
 /*
  * putlocal - make a local symbol table entry.
  */
@@ -207,7 +207,7 @@ void putlocal(int n, word id, int flags, int imperror, word procname)
    else
       quit("putlocal: unknown flags");
    }
-
+
 /*
  * putglobal - make a global symbol table entry.
  */
@@ -226,7 +226,7 @@ struct gentry *putglobal(word id, int flags, int nargs, int procid)
    p->g_procid = procid;
    return p;
    }
-
+
 /*
  * putconst - make a constant symbol table entry.
  */
@@ -275,7 +275,7 @@ union xval *valp;
       fprintf(stderr, "putconst: bad flags: %06o %011" LINTFRMT  "o\n",
 	      flags, valp->ival);
    }
-
+
 /*
  * putfield - make a record/field table entry.
  */
@@ -312,7 +312,7 @@ int fnum;
       }
    rp2->r_link = alcfrec(rp, gp, fnum);
    }
-
+
 /*
  * glocate - lookup identifier in global symbol table, return NULL
  *  if not present.
@@ -326,7 +326,7 @@ struct gentry *glocate(word id)
       p = p->g_blink;
    return p;
    }
-
+
 /*
  * flocate - lookup identifier in field table.
  */
@@ -337,7 +337,7 @@ struct fentry *flocate(word id)
       p = p->f_blink;
    return p;
    }
-
+
 /*
  * alcglobal - create a new global symbol table entry.
  */
@@ -368,7 +368,7 @@ int procid;
    lglast = gp;
    return gp;
    }
-
+
 /*
  * alcfhead - allocate a field table header.
  */
@@ -393,7 +393,7 @@ struct rentry *rlist;
    lflast = fp;
    return fp;
    }
-
+
 /*
  * alcfrec - allocate a field table record list element.
  */
@@ -410,7 +410,7 @@ int fnum;
    rp->r_fnum = fnum;
    return rp;
    }
-
+
 /*
  * blocate - search for a function. The search is linear to make
  *  it easier to add/delete functions. If found, returns index+1 for entry.

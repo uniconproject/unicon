@@ -2,23 +2,23 @@
  * mswin.h - macros and types used in the MS Windows graphics interface.
  */
 
-#define DRAWOP_AND			R2_MASKPEN
-#define DRAWOP_ANDINVERTED		R2_MASKNOTPEN
-#define DRAWOP_ANDREVERSE		R2_NOTMASKPEN
-#define DRAWOP_CLEAR			R2_BLACK
-#define DRAWOP_COPY			R2_COPYPEN
-#define DRAWOP_COPYINVERTED		R2_NOTCOPYPEN
-#define DRAWOP_EQUIV			R2_NOTXORPEN
-#define DRAWOP_INVERT			R2_NOT
-#define DRAWOP_NAND			R2_MASKNOTPEN
-#define DRAWOP_NOOP			R2_NOP
-#define DRAWOP_NOR			R2_MERGENOTPEN
-#define DRAWOP_OR			R2_MERGEPEN
-#define DRAWOP_ORINVERTED		R2_MERGEPENNOT
-#define DRAWOP_ORREVERSE		R2_NOTMERGEPEN
-#define DRAWOP_REVERSE			R2_USER1
-#define DRAWOP_SET			R2_WHITE
-#define DRAWOP_XOR			R2_XORPEN
+#define DRAWOP_AND                      R2_MASKPEN
+#define DRAWOP_ANDINVERTED              R2_MASKNOTPEN
+#define DRAWOP_ANDREVERSE               R2_NOTMASKPEN
+#define DRAWOP_CLEAR                    R2_BLACK
+#define DRAWOP_COPY                     R2_COPYPEN
+#define DRAWOP_COPYINVERTED             R2_NOTCOPYPEN
+#define DRAWOP_EQUIV                    R2_NOTXORPEN
+#define DRAWOP_INVERT                   R2_NOT
+#define DRAWOP_NAND                     R2_MASKNOTPEN
+#define DRAWOP_NOOP                     R2_NOP
+#define DRAWOP_NOR                      R2_MERGENOTPEN
+#define DRAWOP_OR                       R2_MERGEPEN
+#define DRAWOP_ORINVERTED               R2_MERGEPENNOT
+#define DRAWOP_ORREVERSE                R2_NOTMERGEPEN
+#define DRAWOP_REVERSE                  R2_USER1
+#define DRAWOP_SET                      R2_WHITE
+#define DRAWOP_XOR                      R2_XORPEN
 
 #define TEXTWIDTH(w,s,n) textWidth(w, s, n)
 #define SCREENDEPTH(w) getdepth(w)
@@ -137,15 +137,15 @@
 
 #define CLR_SHARED          0
 #define CLR_MUTABLE         1
-#define MAXCOLORNAME	40
+#define MAXCOLORNAME    40
 /*
  * color structure, inspired by X code (xwin.h)
  */
 typedef struct wcolor {
-  int		refcount;
-  char		name[6+MAXCOLORNAME];	/* name for WAttrib & WColor reads */
-  SysColor	c;
-  int           type;			/* CLR_SHARED or CLR_MUTABLE */
+  int           refcount;
+  char          name[6+MAXCOLORNAME];   /* name for WAttrib & WColor reads */
+  SysColor      c;
+  int           type;                   /* CLR_SHARED or CLR_MUTABLE */
 } *wclrp;
 
 /*
@@ -183,8 +183,8 @@ typedef struct {
 #define BORDERWIDTH      (GetSystemMetrics(SM_CXBORDER)) /* 1 */
 #define BORDERHEIGHT     (GetSystemMetrics(SM_CYBORDER)) /* 1 */
 #define TITLEHEIGHT      (GetSystemMetrics(SM_CYCAPTION)) /* 20 */
-#define FRAMEWIDTH	 (GetSystemMetrics(SM_CXFRAME))   /* 4 */
-#define FRAMEHEIGHT	 (GetSystemMetrics(SM_CYFRAME))   /* 4 */
+#define FRAMEWIDTH       (GetSystemMetrics(SM_CXFRAME))   /* 4 */
+#define FRAMEHEIGHT      (GetSystemMetrics(SM_CYFRAME))   /* 4 */
 
 #define STDLOCALS(w) \
    wcp wc = (w)->context;\

@@ -25,7 +25,7 @@ int M_open_timeout;
 
 #if NT
 extern int StartupWinSocket(void);
-#endif					/* NT */
+#endif                                  /* NT */
 
 const char* DEFAULT_USER_AGENT = "User-Agent: Unicon Messaging/13.0";
 
@@ -67,7 +67,7 @@ int Mexcept(int e, void* obj, Tpdisc_t* disc)
 }
 
 struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq,
-       		    int status)
+                    int status)
 {
    Tp_t* tp;
    Tpdisc_t* disc;
@@ -83,7 +83,7 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq,
       _tpssl_setparam(disc, status & Fs_Verify);
       }
    else
-#endif					/* HAVE_LIBSSL */
+#endif                                  /* HAVE_LIBSSL */
       disc = tp_newdisc(TpdUnix);
 
 #else
@@ -92,7 +92,7 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq,
 
 #if NT
    if (!StartupWinSocket()) return NULL;
-#endif					/*NT*/
+#endif                                  /*NT*/
 
    tpexcept = disc->exceptf;
    disc->exceptf = Mexcept;
@@ -130,7 +130,7 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq,
    mfile->tp = tp;
    mfile->resp = NULL;
    MFSTATE(mfile, CONNECTING);
-  
+
    if (meth == TpmHTTP) {
       Mhttp(mfile, attr, nattr);
       }
@@ -154,7 +154,7 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq,
 void Mhttp(struct MFile* mf, dptr attr, int nattr)
 {
    int i, l;
-   tended char *s; 
+   tended char *s;
    char *end, *colon;
    char buf[4096];
    char header[8192];
@@ -177,56 +177,56 @@ void Mhttp(struct MFile* mf, dptr attr, int nattr)
    header[0] = '\0';
    for (i=0; i<nattr; i++) {
       if (!cnv:C_string(attr[i], s)) {
-	 abort();
-	 }
+         abort();
+         }
       l = strlen(s);
       end = s+l;
       for (colon=s; colon<end; colon++) {
-	 if (*colon == ':') {
-	    break;
-	    }
-	 }
+         if (*colon == ':') {
+            break;
+            }
+         }
 
       if (colon < end) {
-	 if (hleft <= 0) {
+         if (hleft <= 0) {
 #ifdef MDEBUG
-	    fprintf(stderr, "Warning: Header truncated at: %s\n", s); 
-	    fflush(stderr);
+            fprintf(stderr, "Warning: Header truncated at: %s\n", s);
+            fflush(stderr);
 #endif /* MDEBUG */
-	    break;
-	    }
-	 strncat(header, s, colon - s);
-	 hleft -= (colon - s);
-	 switch (si_cs2i(headers, Mwashs(buf, s, colon - s))) 
-	    {
-	       case -1:
+            break;
+            }
+         strncat(header, s, colon - s);
+         hleft -= (colon - s);
+         switch (si_cs2i(headers, Mwashs(buf, s, colon - s)))
+            {
+               case -1:
 #ifdef MDEBUG
-		  fprintf(stderr, "Unknown header, passing through: %s\n", s);
-		  fflush(stderr);
+                  fprintf(stderr, "Unknown header, passing through: %s\n", s);
+                  fflush(stderr);
 #endif /* MDEBUG */
-		  break;
+                  break;
 
-	       case H_CONTENT_TYPE:
-		  if (strstr(colon, "form")) {
-		     req.type = POST;
-		     }
-		  else {
-		     req.type = PUT;
-		     }
-		  break;
+               case H_CONTENT_TYPE:
+                  if (strstr(colon, "form")) {
+                     req.type = POST;
+                     }
+                  else {
+                     req.type = PUT;
+                     }
+                  break;
 
-	       case H_HOST:
-		  need_host = 0;
-		  break;
+               case H_HOST:
+                  need_host = 0;
+                  break;
 
-	       case H_USER_AGENT:
-		  need_user_agent = 0;
-		  break;
-	       }
-	 }
+               case H_USER_AGENT:
+                  need_user_agent = 0;
+                  break;
+               }
+         }
       else {
-	 Mexcept(1207, NULL, NULL);
-	 }      
+         Mexcept(1207, NULL, NULL);
+         }
 
       /* Append the colon and space */
       Maddtoheader(header, ": ", 2, &hleft);
@@ -237,8 +237,8 @@ void Mhttp(struct MFile* mf, dptr attr, int nattr)
 
    /* Add standard fields */
    if (need_user_agent) {
-      Maddtoheader(header, DEFAULT_USER_AGENT, 
-		   strlen(DEFAULT_USER_AGENT), &hleft);
+      Maddtoheader(header, DEFAULT_USER_AGENT,
+                   strlen(DEFAULT_USER_AGENT), &hleft);
       Maddtoheader(header, "\r\n", 2, &hleft);
       }
 
@@ -247,10 +247,10 @@ void Mhttp(struct MFile* mf, dptr attr, int nattr)
       Maddtoheader(header, mf->tp->uri.host, strlen(mf->tp->uri.host), &hleft);
       /* if the user set the port explicitly then add it to the header */
       if (mf->tp->uri.is_explicit_port != 0 ){
-      	 Maddtoheader(header, ":", 1, &hleft);
-      	 l = sprintf(buf, "%d", mf->tp->uri.port);
-      	 Maddtoheader(header, buf, l, &hleft);
-	 }
+         Maddtoheader(header, ":", 1, &hleft);
+         l = sprintf(buf, "%d", mf->tp->uri.port);
+         Maddtoheader(header, buf, l, &hleft);
+         }
       Maddtoheader(header, "\r\n", 2, &hleft);
       }
 
@@ -265,7 +265,7 @@ void Mpop(struct MFile* mf, dptr attr, int nattr)
 {
    Tprequest_t req = {0};
    unsigned int nmsg;
-   
+
    req.type = STAT;
    mf->resp = tp_sendreq(mf->tp, &req);
    if (mf->resp->sc != 200) {
@@ -303,8 +303,8 @@ int Mpop_delete(struct MFile* mf, unsigned int msgnum)
    for (i=0; i<msgnum; i++) {
       mplCurrent = mplCurrent->next;
       if (mplCurrent->msgnum == 0) {
-	 return -1;
-	 }
+         return -1;
+         }
       }
    svrnum = mplCurrent->msgnum;
    req.args = (char *)buf;
@@ -356,7 +356,7 @@ int Mpop_newlist(struct MFile* mf, unsigned n)
    if (n <= 0) {
       return -1;
       }
-   
+
    /* Initialize the list */
    mf->data = (void *)disc->memf(sizeof(struct Mpoplist), disc);
    mplHead = (struct Mpoplist *)(mf->data);
@@ -399,21 +399,21 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    else {
 #ifdef HAVE_GETHOSTNAME
       if (gethostname(smtpserver, sizeof(smtpserver)) >= 0) {
-	 if (getdomainname(buf, sizeof(buf)) >= 0) {
-	    strncat(smtpserver, ".", 1);
-	    strncat(smtpserver, buf, sizeof(smtpserver)-strlen(smtpserver)-1);
-	    goto got_smtpserver;
-	    }
-	 }
+         if (getdomainname(buf, sizeof(buf)) >= 0) {
+            strncat(smtpserver, ".", 1);
+            strncat(smtpserver, buf, sizeof(smtpserver)-strlen(smtpserver)-1);
+            goto got_smtpserver;
+            }
+         }
 #endif /* HAVE_GETHOSTNAME */
       Mexcept(1209, NULL, NULL);
       return;
       }
-      
+
 #ifdef HAVE_GETHOSTNAME
  got_smtpserver:
  #endif /* HAVE_GETHOSTNAME */
- 
+
    if(getenv_r("UNICON_USERADDRESS", tmpbuf, 255)==0) {
       tmpbuf[255] = '\0';
       strncat(useraddr, tmpbuf, sizeof(useraddr)-1);
@@ -421,22 +421,22 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
       }
    else {
 #if defined(HAVE_GETUID) && defined(HAVE_GETPWUID)
-      struct passwd* pw, pwbuf;      
+      struct passwd* pw, pwbuf;
       char buf[1024];
       if(getpwuid_r(getuid(), &pwbuf, buf, 1024, &pw)==0){
-	 snprintf(useraddr, sizeof(useraddr), "%s@%s", 
-		  pw->pw_name, smtpserver);
-	 goto got_useraddr;
-	 }
+         snprintf(useraddr, sizeof(useraddr), "%s@%s",
+                  pw->pw_name, smtpserver);
+         goto got_useraddr;
+         }
 #endif
       Mexcept(1210, NULL, NULL);
       return;
       }
-      
+
 #if defined(HAVE_GETUID) && defined(HAVE_GETPWUID)
  got_useraddr:
 #endif
- 
+
    mf->tp->uri.host = _tpastrcpy(smtpserver, mf->tp->disc);
    mf->tp->uri.port = 25;
 
@@ -452,23 +452,23 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    resp = tp_sendreq(mf->tp, &req);
    switch (resp->sc) {
       case 250: /* OK */
-	 break;
-	 
+         break;
+
       case 501: /* Argument syntax error */
       case 502: /* Command not implemented */
       case 504: /* Command parameter not implemented */
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       case 421: /* Service not available, closing transmission channel */
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       default:
-	 fprintf(stderr, "Msmtp: unrecognized response to HELO: %d\n", 
-		 resp->sc);
+         fprintf(stderr, "Msmtp: unrecognized response to HELO: %d\n",
+                 resp->sc);
       }
 
    tp_freeresp(mf->tp, resp);
@@ -477,29 +477,29 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    resp = tp_sendreq(mf->tp, &req);
    switch (resp->sc) {
       case 250: /* success */
-	 break;
+         break;
 
       case 451: /* Requested action aborted: local error in processing */
       case 452: /* Requested action not taken: insufficient system storage */
       case 552: /* Requested mail action aborted: exceeded storage allocation */
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       case 500: /* Syntax error, command unrecognized */
       case 501: /* Syntax error in parameters or arguments */
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;	 
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       case 421:
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       default:
-	 fprintf(stderr, "Msmtp: unrecognized response to MAIL: %d\n", 
-		 resp->sc);
+         fprintf(stderr, "Msmtp: unrecognized response to MAIL: %d\n",
+                 resp->sc);
       }
 
    tp_freeresp(mf->tp, resp);
@@ -509,7 +509,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    switch (resp->sc) {
       case 250: /* OK */
       case 251: /* User not local; will forward to <forward-path> */
-	 break;
+         break;
 
       case 450: /* Requested mail action not taken: mailbox unavailable */
       case 451: /* Requested action aborted: local error in processing */
@@ -518,25 +518,25 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
       case 551: /* User not local; please try <forward-path> */
       case 552: /* Requested mail action aborted: exceeded storage allocation */
       case 553: /* Requested action not taken: mailbox name not allowed */
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       case 500: /* Syntax error, command unrecognized */
       case 501: /* Syntax error in parameters or arguments */
       case 503: /* Bad sequence of commands */
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       case 421:
-	 Mclose(mf);
-	 Mexcept(1212, NULL, NULL);
-	 return;
+         Mclose(mf);
+         Mexcept(1212, NULL, NULL);
+         return;
 
       default:
-	 fprintf(stderr, "Msmtp: unrecognized response to MAIL: %d\n", 
-		 resp->sc);
+         fprintf(stderr, "Msmtp: unrecognized response to MAIL: %d\n",
+                 resp->sc);
       }
 
    tp_freeresp(mf->tp, resp);
@@ -548,33 +548,33 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    hleft = sizeof(header);
    for (i=0; i<nattr; i++) {
       if (!cnv:C_string(attr[i], s)) {
-	 abort();
-	 }
+         abort();
+         }
       l = strlen(s);
       end = s+l;
       for (colon=s; colon<end; colon++) {
-	 if (*colon == ':') {
-	    break;
-	    }
-	 }
+         if (*colon == ':') {
+            break;
+            }
+         }
 
       if (colon < end) {
-	 if (hleft <= 0) {
+         if (hleft <= 0) {
 #ifdef MDEBUG
-	    fprintf(stderr, "Warning: Header truncated at: %s\n", s); 
-	    fflush(stderr);
+            fprintf(stderr, "Warning: Header truncated at: %s\n", s);
+            fflush(stderr);
 #endif /* MDEBUG */
-	    break;
-	    }
-	 strncat(header, s, colon - s);
-	 hleft -= (colon - s);
-	 if (si_cs2i(headers, Mwashs(buf, s, colon - s)) == H_FROM) {
-	    need_from = 0;
-	    }
-	 }
+            break;
+            }
+         strncat(header, s, colon - s);
+         hleft -= (colon - s);
+         if (si_cs2i(headers, Mwashs(buf, s, colon - s)) == H_FROM) {
+            need_from = 0;
+            }
+         }
       else {
-	 Mexcept(1207, NULL, NULL);
-	 }      
+         Mexcept(1207, NULL, NULL);
+         }
 
       /* Append the colon and space */
       Maddtoheader(header, ": ", 2, &hleft);
@@ -593,7 +593,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    Maddtoheader(header, "\r\n", 2, &hleft);
    req.header = header;
    tp_begin(mf->tp, &req);
-   MFSTATE(mf, CONNECTED | WRITING);   
+   MFSTATE(mf, CONNECTED | WRITING);
 }
 
 void Mstartreading(struct MFile* mf)
@@ -611,7 +611,7 @@ void Mstartreading(struct MFile* mf)
       Mexceptjmp = 0;
       return;
       }
-  
+
    mf->resp = tp_end(mf->tp);
    MFLEAVE(mf, WRITING);
    MFENTER(mf, READING);
@@ -648,8 +648,8 @@ char *Mwashs(char* dest, char* s, size_t n)
 
    for (i=0; i<n; i++) {
       if (strchr(ws, s[i]) == NULL) {
-	 *p++ = s[i];
-	 }
+         *p++ = s[i];
+         }
       }
    *p = '\0';
 
@@ -661,14 +661,14 @@ char *Maddtoheader(char* header, const char* s, int slen, int* nleft)
    if (*nleft <= 0) {
       return header;
       }
-  
+
    if (slen < *nleft) {
       strncat(header, s, slen);
       }
    else {
       strncat(header, s, *nleft);
       }
-  
+
    *nleft -= slen;
    return header;
 }
@@ -682,8 +682,8 @@ stringint headers[] = {
    { "to",           H_TO           },
    { "user-agent",   H_USER_AGENT   }
 };
-  
-/* 
+
+/*
  * Like si_s2i but not case-sensitive
  */
 static int csicmp(sip1,sip2)
@@ -704,6 +704,6 @@ int si_cs2i(sip,s)
    if (p) return p->i;
    return -1;
 }
-#else					/* Messaging */
-static int nomessaging;		/* avoid empty module */
-#endif					/* Messaging */
+#else                                   /* Messaging */
+static int nomessaging;         /* avoid empty module */
+#endif                                  /* Messaging */

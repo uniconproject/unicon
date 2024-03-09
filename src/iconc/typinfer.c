@@ -745,7 +745,7 @@ printf("hash-mask: %x hash-upper: %x hash-upper-shr: %d hash-shifts: %d\n",
         }
 #endif					/* TypTrc */
    }
-
+
 /*
  * find_new - walk the syntax tree allocating structure types where
  *  operations create new structures.

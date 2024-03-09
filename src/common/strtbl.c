@@ -124,7 +124,7 @@ struct str_buf *sbuf;
    sbuf->endimage = s2;
    sbuf->end = sbuf->strtimage + sbuf->size;
    }
-
+
 /*
  * spec_str - install a special string (null terminated) in the string table.
  */
@@ -153,7 +153,7 @@ char *s;
    str_tbl[h] = se;
    return s;
    }
-
+
 /*
  * str_install - find out if the string at the end of the buffer is in
  *   the string table. If not, put it there. Return a pointer to the
@@ -203,7 +203,7 @@ struct str_buf *sbuf;
    str_tbl[h] = se;
    return se->s;
    }
-
+
 /*
  * streq - compare s1 with s2 for len bytes, and return 1 for equal,
  *  0 for not equal.

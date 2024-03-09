@@ -12,15 +12,15 @@
 #if PORT
    /* nothing to do */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS || MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* MSDOS ... */
+#endif                                  /* MSDOS ... */
 
 #ifdef PosixFns
 extern int errno;
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 /*
  * End of operating-system specific code.
@@ -41,7 +41,7 @@ function{0,1} close(f)
    body {
 #ifdef HAVE_VOICE
       PVSESSION Ptr;
-#endif					/* HAVE_VOICE */
+#endif                                  /* HAVE_VOICE */
       FILE *fp = BlkD(f,File)->fd.fp;
       int status = BlkD(f,File)->status;
       CURTSTATE();
@@ -53,80 +53,80 @@ function{0,1} close(f)
        */
 #ifdef Messaging
       if (status & Fs_Messaging) {
-	 BlkLoc(f)->File.status = 0;
-	 return C_integer Mclose(BlkD(f,File)->fd.mf);
-	 }
+         BlkLoc(f)->File.status = 0;
+         return C_integer Mclose(BlkD(f,File)->fd.mf);
+         }
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
       if (BlkD(f,File)->status & Fs_Socket) {
 #if HAVE_LIBSSL
-	if(status & Fs_Encrypt) {
-	   int fd;
-	   fd = SSL_get_fd(BlkD(f,File)->fd.ssl);
-	   SSL_shutdown(BlkLoc(f)->File.fd.ssl);
+        if(status & Fs_Encrypt) {
+           int fd;
+           fd = SSL_get_fd(BlkD(f,File)->fd.ssl);
+           SSL_shutdown(BlkLoc(f)->File.fd.ssl);
            SSL_CTX_free(SSL_get_SSL_CTX(BlkLoc(f)->File.fd.ssl));
-	   SSL_free(BlkLoc(f)->File.fd.ssl);
-	   BlkLoc(f)->File.fd.fd = fd;
+           SSL_free(BlkLoc(f)->File.fd.ssl);
+           BlkLoc(f)->File.fd.fd = fd;
            }
-#endif					/* LIBSSL */
-	 BlkLoc(f)->File.status = 0;
-	 StrLoc(BlkLoc(f)->File.fname) = "closed socket";
-	 StrLen(BlkLoc(f)->File.fname) = 13;
+#endif                                  /* LIBSSL */
+         BlkLoc(f)->File.status = 0;
+         StrLoc(BlkLoc(f)->File.fname) = "closed socket";
+         StrLen(BlkLoc(f)->File.fname) = 13;
 #if NT
-	 return C_integer closesocket((SOCKET)BlkLoc(f)->File.fd.fd);
-#else					/* NT */
-	 return C_integer close(BlkLoc(f)->File.fd.fd);
-#endif					/* NT */
-	 }
-#endif					/* PosixFns */
+         return C_integer closesocket((SOCKET)BlkLoc(f)->File.fd.fd);
+#else                                   /* NT */
+         return C_integer close(BlkLoc(f)->File.fd.fd);
+#endif                                  /* NT */
+         }
+#endif                                  /* PosixFns */
 
 #ifdef ReadDirectory
 #if !NT || defined(NTGCC)
       if (BlkD(f,File)->status & Fs_Directory) {
-	 BlkLoc(f)->File.status = 0;
-	 closedir((DIR *)fp);
-	 return f;
+         BlkLoc(f)->File.status = 0;
+         closedir((DIR *)fp);
+         return f;
          }
 #endif
-#endif					/* ReadDirectory */
+#endif                                  /* ReadDirectory */
 
 #if HAVE_LIBZ
       if (BlkD(f,File)->status & Fs_Compress) {
-	 int rv;
-	 BlkLoc(f)->File.status = 0;
-	 rv = gzclose((gzFile) fp);
-	 if (rv) {
-	    if (rv == Z_ERRNO) set_syserrortext(errno);
-	    /* could also be Z_STREAM_ERROR or Z_BUF_ERROR */
-	    fail;
-	    }
-	 return C_integer 0;
-	 }
-#endif					/* HAVE_LIBZ */
+         int rv;
+         BlkLoc(f)->File.status = 0;
+         rv = gzclose((gzFile) fp);
+         if (rv) {
+            if (rv == Z_ERRNO) set_syserrortext(errno);
+            /* could also be Z_STREAM_ERROR or Z_BUF_ERROR */
+            fail;
+            }
+         return C_integer 0;
+         }
+#endif                                  /* HAVE_LIBZ */
 
 #ifdef ISQL
       if (BlkD(f,File)->status & Fs_ODBC) {
-	 BlkLoc(f)->File.status = 0;
-	 if (dbclose((struct ISQLFile *)fp)) fail; /* sets errornumber/text*/
-	 return C_integer 0;
-	 }
-#endif					/* ISQL */
+         BlkLoc(f)->File.status = 0;
+         if (dbclose((struct ISQLFile *)fp)) fail; /* sets errornumber/text*/
+         return C_integer 0;
+         }
+#endif                                  /* ISQL */
 
 #ifdef PseudoPty
       if (BlkD(f,File)->status & Fs_Pty) {
-	 ptclose(BlkLoc(f)->File.fd.pt);
-	 return C_integer 0;
-	 }
-#endif					/* PseudoPty */
+         ptclose(BlkLoc(f)->File.fd.pt);
+         return C_integer 0;
+         }
+#endif                                  /* PseudoPty */
 
 #ifdef Dbm
       if (BlkD(f,File)->status & Fs_Dbm) {
-	 BlkLoc(f)->File.status = 0;
-	 dbm_close((DBM *)fp);
-	 return f;
+         BlkLoc(f)->File.status = 0;
+         dbm_close((DBM *)fp);
+         return f;
          }
-#endif					/* Dbm */
+#endif                                  /* Dbm */
 
 
 #ifdef Graphics
@@ -137,37 +137,37 @@ function{0,1} close(f)
       pollctr >>= 1;
       pollctr++;
       if (BlkD(f,File)->status & Fs_Window) {
-	 if (BlkLoc(f)->File.status != Fs_Window) { /* not already closed? */
-	    BlkLoc(f)->File.status = Fs_Window;
-	    SETCLOSED((wbp) fp);
+         if (BlkLoc(f)->File.status != Fs_Window) { /* not already closed? */
+            BlkLoc(f)->File.status = Fs_Window;
+            SETCLOSED((wbp) fp);
 #ifdef GraphicsGL
-	    if (((wbp)fp)->window->is_gl)
-	       gl_wclose((wbp) fp);
-	    else
-#endif					/* GraphicsGL */
-	    wclose((wbp) fp);
-	    }
-	 return f;
-	 }
+            if (((wbp)fp)->window->is_gl)
+               gl_wclose((wbp) fp);
+            else
+#endif                                  /* GraphicsGL */
+            wclose((wbp) fp);
+            }
+         return f;
+         }
       else
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 #ifdef HAVE_VOICE
-	if(BlkD(f,File)->status & Fs_Voice) {
-	/* PVSESSION Ptr; */
-	Ptr = (PVSESSION)BlkLoc(f)->File.fd.fp;
-	CloseVoiceSession(Ptr);
-	return C_integer 1;
-	}
-	else
-#endif					/* HAVE_VOICE */
+        if(BlkD(f,File)->status & Fs_Voice) {
+        /* PVSESSION Ptr; */
+        Ptr = (PVSESSION)BlkLoc(f)->File.fd.fp;
+        CloseVoiceSession(Ptr);
+        return C_integer 1;
+        }
+        else
+#endif                                  /* HAVE_VOICE */
 
 #if NT
 #ifndef NTGCC
-// FIXME: the following two lines are no longer needed with recent APIs 
+// FIXME: the following two lines are no longer needed with recent APIs
 //#define pclose _pclose
 //#define popen _popen
-#endif					/* NTGCC */
-#endif					/* NT */
+#endif                                  /* NTGCC */
+#endif                                  /* NT */
 
 #if UNIX || VMS || NT
       /*
@@ -175,20 +175,20 @@ function{0,1} close(f)
        * should we consider treating Fs_BPipe in the same way?!
        */
       if ((BlkD(f,File)->status & Fs_Pipe) /*|| (BlkD(f,File)->status & Fs_BPipe)*/) {
-	 int rv;
-	 BlkLoc(f)->File.status = 0;
-	 if ((rv = pclose(fp)) == -1) {
-	    IntVal(amperErrno) = errno;
-	    fail;
-	    }
-	 return C_integer((rv >> 8) & 0377);
-	 }
+         int rv;
+         BlkLoc(f)->File.status = 0;
+         if ((rv = pclose(fp)) == -1) {
+            IntVal(amperErrno) = errno;
+            fail;
+            }
+         return C_integer((rv >> 8) & 0377);
+         }
       else
-#endif					/* UNIX || ... */
+#endif                                  /* UNIX || ... */
          if (fclose(fp) != 0) {
-	    IntVal(amperErrno) = errno;
-	    fail;
-	    }
+            IntVal(amperErrno) = errno;
+            fail;
+            }
 
       BlkLoc(f)->File.status = 0;
 
@@ -212,7 +212,7 @@ function{} exit(status)
 #ifdef Concurrent
    /*
     * exit if this is a thread.
-    * May want to check/fix thread  activator initialization 
+    * May want to check/fix thread  activator initialization
     * depending on desired join semantics.
     * coclean calls pthread_exit() in case of threads.
     */
@@ -222,19 +222,19 @@ function{} exit(status)
       * does not preserve the { } that would allow redundancy.
       */
      CURTSTATE();
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
      #ifdef CoClean
      coclean(BlkD(k_current, Coexpr));
-     #endif				/* CoClean */
+     #endif                             /* CoClean */
       }
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
       c_exit((int)status);
 #if !COMPILER
-      fail;				/* avoid spurious warning message */
-#endif					/* COMPILER */
+      fail;                             /* avoid spurious warning message */
+#endif                                  /* COMPILER */
       }
 end
-
+
 
 "getenv(s) - return contents of environment variable s."
 
@@ -252,29 +252,29 @@ function{0,1} getenv(s)
    inline {
       char *p, *sbuf;
       long l;
-      
+
       if ( (sbuf = getenv_var(s)) != NULL) {
-	 l = strlen(sbuf);
-	 Protect(p = alcstr(sbuf,l),runerr(0));
-	 free(sbuf);
-	 return string(l,p);
-	 }
-      else {				/* fail if not in environment */
-	 set_syserrortext(errno);
-	 fail;
-	 }
+         l = strlen(sbuf);
+         Protect(p = alcstr(sbuf,l),runerr(0));
+         free(sbuf);
+         return string(l,p);
+         }
+      else {                            /* fail if not in environment */
+         set_syserrortext(errno);
+         fail;
+         }
       }
 end
-
+
 
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
 "open(s1, s2, ...) - open file named s1 with options s2"
 " and attributes given in trailing arguments."
 function{0,1} open(fname, spec, attr[n])
-#else						/* Graphics */
+#else                                           /* Graphics */
 "open(fname, spec) - open file fname with specification spec."
 function{0,1} open(fname, spec)
-#endif						/* Graphics */
+#endif                                          /* Graphics */
    declare {
       tended struct descrip filename;
       }
@@ -311,12 +311,12 @@ function{0,1} open(fname, spec)
       tended struct b_file *fl;
 #ifdef PosixFns
       struct stat st;
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #ifdef Graphics
       int j, err_index = -1;
       tended struct b_list *hp;
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #ifdef Messaging
       int is_shortreq = 0;
@@ -330,24 +330,24 @@ function{0,1} open(fname, spec)
 
 #if PORT
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS || MVS || VM
    /* nothing is needed */
-#endif					/* MSDOS || ... */
+#endif                                  /* MSDOS || ... */
 
 #ifdef PosixFns
-      int is_udp_or_listener = 0;	/* UDP = 1, listener = 2 */
-#endif					/* PosixFns */
+      int is_udp_or_listener = 0;       /* UDP = 1, listener = 2 */
+#endif                                  /* PosixFns */
 #if defined(PosixFns) || defined(Messaging)
       int is_ipv4 = 0;
       int is_ipv6 = 0;
       int af_fam;
-#endif					/* PosixFns || Messaging */
+#endif                                  /* PosixFns || Messaging */
 
 #if UNIX || VMS || NT
       extern FILE *popen();
-#endif					/* UNIX || VMS || NT */
+#endif                                  /* UNIX || VMS || NT */
 
 /*
  * End of operating-system specific code.
@@ -362,13 +362,13 @@ Deliberate Syntax Error
        * get a C string for the file name
        */
       if (!cnv:C_string(fname, fnamestr))
-	 runerr(103,fname);
+         runerr(103,fname);
 
       /* poison NUL resistance. */
       if (strlen(fnamestr) != StrLen(fname)) {
-	 set_errortext(218);
-	 fail;
-	 }
+         set_errortext(218);
+         fail;
+         }
 
       /*
        * TODO: Preliminary tilde $HOME support. Need to extend to Windows,
@@ -376,12 +376,12 @@ Deliberate Syntax Error
        * about whether further is needed for multi-arg fnamestr e.g. mode "p"
        */
       if (fnamestr[0] == '~') {
-	 if (fnamestr[1] == '/') {
-	    getenv_r("HOME", home_sbuf, 1023);
-	    strcat(home_sbuf, fnamestr+1);
-	    fnamestr = home_sbuf;
-	    }
-	 }
+         if (fnamestr[1] == '/') {
+            getenv_r("HOME", home_sbuf, 1023);
+            strcat(home_sbuf, fnamestr+1);
+            fnamestr = home_sbuf;
+            }
+         }
 
       status = 0;
 
@@ -393,206 +393,206 @@ Deliberate Syntax Error
       slen = StrLen(spec);
 
       for (i = 0; i < slen; i++) {
-	 switch (*s++) {
-	    case 'e':
-	    case 'E':
+         switch (*s++) {
+            case 'e':
+            case 'E':
 #if HAVE_LIBSSL
-	       status |= Fs_Encrypt;
-#endif					/* HAVE_LIBSSL */
-	       continue;
-	    case 'a':
-	    case 'A':
-	       status |= Fs_Write|Fs_Append;
-	       continue;
-	    case 'b':
-	    case 'B':
-	       status |= Fs_Read|Fs_Write;
-	       continue;
-	    case 'c':
-	    case 'C':
-	       status |= Fs_Create|Fs_Write;
-	       continue;
-	    case 'r':
-	    case 'R':
-	       status |= Fs_Read;
-	       continue;
-	    case 'w':
-	    case 'W':
-	       status |= Fs_Write;
-	       continue;
-	    case '-':
-		  do_verify = 0;
-		  continue;
-	    case 's':
-	    case 'S':
+               status |= Fs_Encrypt;
+#endif                                  /* HAVE_LIBSSL */
+               continue;
+            case 'a':
+            case 'A':
+               status |= Fs_Write|Fs_Append;
+               continue;
+            case 'b':
+            case 'B':
+               status |= Fs_Read|Fs_Write;
+               continue;
+            case 'c':
+            case 'C':
+               status |= Fs_Create|Fs_Write;
+               continue;
+            case 'r':
+            case 'R':
+               status |= Fs_Read;
+               continue;
+            case 'w':
+            case 'W':
+               status |= Fs_Write;
+               continue;
+            case '-':
+                  do_verify = 0;
+                  continue;
+            case 's':
+            case 'S':
 #ifdef Messaging
-	       if (status & Fs_Messaging) {
-		  is_shortreq = 1;
-		  continue;
-		  }
+               if (status & Fs_Messaging) {
+                  is_shortreq = 1;
+                  continue;
+                  }
 #endif                                  /* Messaging */
-	       continue;
+               continue;
 
-	    case 't':
-	    case 'T':
-	       status &= ~Fs_Untrans;
-	       continue;
+            case 't':
+            case 'T':
+               status &= ~Fs_Untrans;
+               continue;
 
-	    case '6':
+            case '6':
 #if defined(PosixFns) || defined(Messaging)
-	      is_ipv6 = 1;
-	      continue;
-#endif					/* PosixFns || Messaging */
-	    case '4':
+              is_ipv6 = 1;
+              continue;
+#endif                                  /* PosixFns || Messaging */
+            case '4':
 #if defined(PosixFns) || defined(Messaging)
-	      is_ipv4 = 1;
-	      continue;
-#endif					/* PosixFns || Messaging */
+              is_ipv4 = 1;
+              continue;
+#endif                                  /* PosixFns || Messaging */
 
-	    case 'u':
-	    case 'U':
+            case 'u':
+            case 'U':
 #ifdef PosixFns
-	       is_udp_or_listener = 1;
-#endif					/* PosixFns */
-	       if ((status & Fs_Socket)==0)
-		  status |= Fs_Untrans;
-	       continue;
+               is_udp_or_listener = 1;
+#endif                                  /* PosixFns */
+               if ((status & Fs_Socket)==0)
+                  status |= Fs_Untrans;
+               continue;
 
 #if UNIX || VMS || NT
-	    case 'p':
-	    case 'P':
-	       status |= Fs_Pipe;
-	       continue;
-#endif					/* UNIX ... */
+            case 'p':
+            case 'P':
+               status |= Fs_Pipe;
+               continue;
+#endif                                  /* UNIX ... */
 
-	    case 'x':
-	    case 'X':
-	    case 'g':
-	    case 'G':
+            case 'x':
+            case 'X':
+            case 'g':
+            case 'G':
 #ifdef Graphics
-	       status |= Fs_Window | Fs_Read | Fs_Write;
+               status |= Fs_Window | Fs_Read | Fs_Write;
 #ifdef XWindows
-	       XInitThreads();
-#endif					/* XWindows */
+               XInitThreads();
+#endif                                  /* XWindows */
 #ifdef GraphicsGL
-               /* 
+               /*
                 * For now, having FreeType is a requirement for the OpenGL
-                * 2D and 2D/3D implementation 
+                * 2D and 2D/3D implementation
                 */
 #if HAVE_LIBFREETYPE
-	       /* for enabling OpenGL 2D implementation in a convenient way */
-	       if (!getenv("UNICONGL2D"))
-#endif					/* HAVE_LIBFREETYPE */
-#endif					/* GraphicsGL */
-	       continue;
-#else					/* Graphics */
-	       set_errortext(148);
-	       fail;
-#endif					/* Graphics */
+               /* for enabling OpenGL 2D implementation in a convenient way */
+               if (!getenv("UNICONGL2D"))
+#endif                                  /* HAVE_LIBFREETYPE */
+#endif                                  /* GraphicsGL */
+               continue;
+#else                                   /* Graphics */
+               set_errortext(148);
+               fail;
+#endif                                  /* Graphics */
 #ifdef GraphicsGL
-	       /* OpenGL 2D implementation */
-	       if (status & Fs_Window) {
-		  status |= Fs_WinGL2D;
-		  continue;
-		  }
+               /* OpenGL 2D implementation */
+               if (status & Fs_Window) {
+                  status |= Fs_WinGL2D;
+                  continue;
+                  }
 #else
-	       /* Does it need a specific code? */
-	       set_errortext(1045);
-	       fail;
-#endif					/* GraphicsGL */
-	    case 'l':
-	    case 'L':
+               /* Does it need a specific code? */
+               set_errortext(1045);
+               fail;
+#endif                                  /* GraphicsGL */
+            case 'l':
+            case 'L':
 #ifdef PosixFns
-	       if (status & Fs_Socket) {
-		  status |= Fs_Listen | Fs_Append;
-		  is_udp_or_listener = 2;
-		  continue;
-		  }
-#endif					/* PosixFns */
+               if (status & Fs_Socket) {
+                  status |= Fs_Listen | Fs_Append;
+                  is_udp_or_listener = 2;
+                  continue;
+                  }
+#endif                                  /* PosixFns */
 #ifdef Graphics3D
-	       if (status & Fs_Window) {
-		  status |= Fs_Window3D;
-		  continue;
-		  }
-#else					/* Graphics3D */
-	       set_errortext(1045);
-	       fail;
-#endif					/* Graphics3D */
+               if (status & Fs_Window) {
+                  status |= Fs_Window3D;
+                  continue;
+                  }
+#else                                   /* Graphics3D */
+               set_errortext(1045);
+               fail;
+#endif                                  /* Graphics3D */
 
 
-	    case 'd':
-	    case 'D':
+            case 'd':
+            case 'D':
 #ifdef Dbm
-	       status |= Fs_Dbm;
-	       continue;
+               status |= Fs_Dbm;
+               continue;
 #else
-	       set_errortext(1045);
-	       fail;
-#endif	   				/* DBM */
+               set_errortext(1045);
+               fail;
+#endif                                  /* DBM */
 
-	    case 'm':
-	    case 'M':
+            case 'm':
+            case 'M':
 #ifdef Messaging
-	       status |= Fs_Messaging|Fs_Read|Fs_Write;
-	       continue;
+               status |= Fs_Messaging|Fs_Read|Fs_Write;
+               continue;
 #else
-	       set_errortext(1045);
-	       fail;
+               set_errortext(1045);
+               fail;
 #endif                                  /* Messaging */
 
-	    case 'n':
-	    case 'N':
+            case 'n':
+            case 'N':
 #ifdef PosixFns
-	       status |= Fs_Socket|Fs_Read|Fs_Write|Fs_Unbuf;
-	       continue;
+               status |= Fs_Socket|Fs_Read|Fs_Write|Fs_Unbuf;
+               continue;
 
-#else 					/* PosixFns */
-	       set_errortext(1045);
-	       fail;
-#endif 					/* PosixFns */
+#else                                   /* PosixFns */
+               set_errortext(1045);
+               fail;
+#endif                                  /* PosixFns */
 
 
-	    case 'o':
-	    case 'O':
+            case 'o':
+            case 'O':
 #ifdef ISQL
-	       status |= Fs_ODBC;
-	       continue;
+               status |= Fs_ODBC;
+               continue;
 
-#else 					/* ISQL */
-	       set_errortext(1045);
-	       fail;
-#endif 					/* ISQL */
-	    case 'v':
-	    case 'V':
+#else                                   /* ISQL */
+               set_errortext(1045);
+               fail;
+#endif                                  /* ISQL */
+            case 'v':
+            case 'V':
 #ifdef Messaging
-	       if (status & Fs_Messaging) {
-	          status |= Fs_Verify;
-		  continue;
-		  }
+               if (status & Fs_Messaging) {
+                  status |= Fs_Verify;
+                  continue;
+                  }
 #endif                                  /* Messaging */
 #ifdef HAVE_VOICE
-	       status |= Fs_Voice;
-	       continue;
-#else 					/* HAVE_VOICE */
-	       set_errortext(1045);
-	       fail;
-#endif 					/* HAVE_VOICE */
+               status |= Fs_Voice;
+               continue;
+#else                                   /* HAVE_VOICE */
+               set_errortext(1045);
+               fail;
+#endif                                  /* HAVE_VOICE */
 
             case 'z':
-	    case 'Z':
+            case 'Z':
 
-#if HAVE_LIBZ      
-	       status |= Fs_Compress;
-               continue; 
-#else					/* HAVE_LIBZ */
-	       set_errortext(1045);
-               fail; 
-#endif					/* HAVE_LIBZ */
+#if HAVE_LIBZ
+               status |= Fs_Compress;
+               continue;
+#else                                   /* HAVE_LIBZ */
+               set_errortext(1045);
+               fail;
+#endif                                  /* HAVE_LIBZ */
 
-	    default:
-	       runerr(209, spec);
-	    }
-	 }
+            default:
+               runerr(209, spec);
+            }
+         }
 
       /*
        * Construct a mode field for fopen/popen.
@@ -606,22 +606,22 @@ Deliberate Syntax Error
       /* If we're opening a dbm database, the default is set further down to
          "rw" */
       if (!(status & Fs_Dbm))
-#endif					/* Dbm */
+#endif                                  /* Dbm */
 #ifdef ISQL
       /* If we're opening a sql database, modes are not used */
       if (!(status & Fs_ODBC))
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
-      if ((status & (Fs_Read|Fs_Write)) == 0)	/* default: read only */
-	 status |= Fs_Read;
+      if ((status & (Fs_Read|Fs_Write)) == 0)   /* default: read only */
+         status |= Fs_Read;
       if (status & Fs_Create)
-	 mode[0] = 'w';
+         mode[0] = 'w';
       else if (status & Fs_Append)
-	 mode[0] = 'a';
+         mode[0] = 'a';
       else if (status & Fs_Read)
-	 mode[0] = 'r';
+         mode[0] = 'r';
       else
-	 mode[0] = 'w';
+         mode[0] = 'w';
 
 /*
  * The following code is operating-system dependent [@fsys.05].  Handle open
@@ -630,30 +630,30 @@ Deliberate Syntax Error
 
 #if PORT
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write))
-	 mode[1] = '+';
+         mode[1] = '+';
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if UNIX || VMS
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write))
-	 mode[1] = '+';
-#endif					/* UNIX || VMS */
+         mode[1] = '+';
+#endif                                  /* UNIX || VMS */
 
 #if MSDOS
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
-	 mode[1] = '+';
-	 mode[2] = ((status & Fs_Untrans) != 0) ? 'b' : 't';
-	 }
+         mode[1] = '+';
+         mode[2] = ((status & Fs_Untrans) != 0) ? 'b' : 't';
+         }
       else mode[1] = ((status & Fs_Untrans) != 0) ? 'b' : 't';
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
 #if MVS || VM
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
-	 mode[1] = '+';
-	 mode[2] = ((status & Fs_Untrans) != 0) ? 'b' : 0;
-	 }
+         mode[1] = '+';
+         mode[2] = ((status & Fs_Untrans) != 0) ? 'b' : 0;
+         }
       else mode[1] = ((status & Fs_Untrans) != 0) ? 'b' : 0;
-#endif					/* MVS || VM */
+#endif                                  /* MVS || VM */
 
 /*
  * End of operating-system specific code.
@@ -666,145 +666,145 @@ Deliberate Syntax Error
 
 #ifdef Graphics
       if (status & Fs_Window) {
-	 /*
-	  * allocate an empty event queue for the window
-	  */
-	 Protect(hp = alclist(0, MinListSlots), runerr(0));
+         /*
+          * allocate an empty event queue for the window
+          */
+         Protect(hp = alclist(0, MinListSlots), runerr(0));
 
-	 /*
-	  * loop through attributes, checking validity
-	  */
-	 for (j = 0; j < n; j++) {
-	    if (is:null(attr[j]))
-	       attr[j] = emptystr;
-	    if (!is:string(attr[j]))
-	       runerr(109, attr[j]);
-	    }
+         /*
+          * loop through attributes, checking validity
+          */
+         for (j = 0; j < n; j++) {
+            if (is:null(attr[j]))
+               attr[j] = emptystr;
+            if (!is:string(attr[j]))
+               runerr(109, attr[j]);
+            }
 #ifdef Graphics3D
-	 if (status & Fs_Window3D)
-	    f = gl_wopen(fnamestr, hp, attr, n, &err_index, 1);
+         if (status & Fs_Window3D)
+            f = gl_wopen(fnamestr, hp, attr, n, &err_index, 1);
          else
-#endif					/* Graphics3D */
-#ifdef GraphicsGL 
-	 if (status & Fs_WinGL2D)
-	    f = gl_wopen(fnamestr, hp, attr, n, &err_index, 0);
-	 else
-#endif					/* GraphicsGL */
-	    f = wopen(fnamestr, hp, attr, n, &err_index, 0, 0);
-	 if (f == NULL) {
-	    if (err_index >= 0) runerr(145, attr[err_index]);
-	    else if (err_index == -1) {
-	       /* count on wopen() to set &errortext */
-	       fail;
-	       }
-	    else runerr(305);
-	    }
-	 } else
-#endif					/* Graphics */
+#endif                                  /* Graphics3D */
+#ifdef GraphicsGL
+         if (status & Fs_WinGL2D)
+            f = gl_wopen(fnamestr, hp, attr, n, &err_index, 0);
+         else
+#endif                                  /* GraphicsGL */
+            f = wopen(fnamestr, hp, attr, n, &err_index, 0, 0);
+         if (f == NULL) {
+            if (err_index >= 0) runerr(145, attr[err_index]);
+            else if (err_index == -1) {
+               /* count on wopen() to set &errortext */
+               fail;
+               }
+            else runerr(305);
+            }
+         } else
+#endif                                  /* Graphics */
 
 #ifdef Messaging
-	    if (status & Fs_Messaging) {
+            if (status & Fs_Messaging) {
                C_integer timeout = 0, timeout_set = 0;
-	       extern int Merror;
-	       if (do_verify != 0)
-	       	  status |= Fs_Verify;
-	       if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify)) {
-		  runerr(209, spec);
-		  }
-	       else {
-		  URI *puri;
-		  register int a;
+               extern int Merror;
+               if (do_verify != 0)
+                  status |= Fs_Verify;
+               if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify)) {
+                  runerr(209, spec);
+                  }
+               else {
+                  URI *puri;
+                  register int a;
 
-		  /* Check attributes (stolen from above) */
-		  for (a=0; a<n; a++) {
-		     if (is:null(attr[a])) {
-			attr[a] = emptystr;
-			}
-		     else if (a==0 && cnv:C_integer(attr[a], timeout)) {
-			M_open_timeout = timeout;
-			timeout_set = 1;
-			}
-		     else if (!is:string(attr[a])) {
-			runerr(109, attr[a]);
-			}
+                  /* Check attributes (stolen from above) */
+                  for (a=0; a<n; a++) {
+                     if (is:null(attr[a])) {
+                        attr[a] = emptystr;
+                        }
+                     else if (a==0 && cnv:C_integer(attr[a], timeout)) {
+                        M_open_timeout = timeout;
+                        timeout_set = 1;
+                        }
+                     else if (!is:string(attr[a])) {
+                        runerr(109, attr[a]);
+                        }
 #ifdef MDEBUG
-		     {
-     		     char *tmps;
-		     if (cnv:C_string(attr[a], tmps)) {
-			fprintf(stderr, "header: %s\n", tmps);
-			fflush(stderr);
+                     {
+                     char *tmps;
+                     if (cnv:C_string(attr[a], tmps)) {
+                        fprintf(stderr, "header: %s\n", tmps);
+                        fflush(stderr);
 
-			}
-		     }
-#endif                                  /* MDEBUG */		     
-		     }
+                        }
+                     }
+#endif                                  /* MDEBUG */
+                     }
 
-		  if (is_ipv4 && is_ipv6)
-		    af_fam = AF_UNSPEC;
-		  else if (is_ipv6)
-		    af_fam = AF_INET6;
-		  else if (is_ipv4)
-		    af_fam = AF_INET;
-		  else
-		    af_fam = AF_UNSPEC;
+                  if (is_ipv4 && is_ipv6)
+                    af_fam = AF_UNSPEC;
+                  else if (is_ipv6)
+                    af_fam = AF_INET6;
+                  else if (is_ipv4)
+                    af_fam = AF_INET;
+                  else
+                    af_fam = AF_UNSPEC;
 
-		  /* Try to parse the filename as a URL and set the protocol family */
-		  puri = uri_parse(fnamestr, af_fam);
-		  switch (puri->status) {
-		     case URI_OK:
-			break;
-		     case URI_EMALFORMED:
-			runerr(1201, fname);
-			break;
-		     case URI_ENOUSER:
-			runerr(1202, fname);
-			break;
-		     case URI_EUNKNOWNSCHEME:
-			runerr(1203, fname);
-			break;
-		     case URI_ECHECKERRNO:
-		     default:
+                  /* Try to parse the filename as a URL and set the protocol family */
+                  puri = uri_parse(fnamestr, af_fam);
+                  switch (puri->status) {
+                     case URI_OK:
+                        break;
+                     case URI_EMALFORMED:
+                        runerr(1201, fname);
+                        break;
+                     case URI_ENOUSER:
+                        runerr(1202, fname);
+                        break;
+                     case URI_EUNKNOWNSCHEME:
+                        runerr(1203, fname);
+                        break;
+                     case URI_ECHECKERRNO:
+                     default:
 #ifdef PosixFns
-			if (errno != 0) {
-			   set_syserrortext(errno);
-			   }
+                        if (errno != 0) {
+                           set_syserrortext(errno);
+                           }
 #endif                                  /* PosixFns */
-			runerr(1204, fname);
-		     }
+                        runerr(1204, fname);
+                     }
 
-		  f = (FILE *)Mopen(puri, &attr[timeout_set], n-timeout_set, is_shortreq, status);
-		  if (Merror > 1200) {
-		    uri_free(puri);
-		    runerr(Merror, fname);
-		  }
-		  uri_free(puri);
-		  switch (Merror) {
-		     case 0:
-			break;
-		     case TP_ECONNECT:
-		        set_errortext(1205);
-			fail;
-		     case TP_EHOST:
-			set_errortext(1206);
-			fail;
-		     case TP_ESERVER:
-			runerr(1212, fname);
-			break;
-		     case TP_ETRUST:
-		     	set_errortext(1214);
-			fail;
-		     case TP_EVERIFY:
-		     	set_errortext(1215);
-		     	fail;
-		     case TP_EMEM:
-		     case TP_EOPEN:
-		     default:
-			runerr(1200, fname);
-			break;
-		     }
-		  }
-	       }
-	    else
+                  f = (FILE *)Mopen(puri, &attr[timeout_set], n-timeout_set, is_shortreq, status);
+                  if (Merror > 1200) {
+                    uri_free(puri);
+                    runerr(Merror, fname);
+                  }
+                  uri_free(puri);
+                  switch (Merror) {
+                     case 0:
+                        break;
+                     case TP_ECONNECT:
+                        set_errortext(1205);
+                        fail;
+                     case TP_EHOST:
+                        set_errortext(1206);
+                        fail;
+                     case TP_ESERVER:
+                        runerr(1212, fname);
+                        break;
+                     case TP_ETRUST:
+                        set_errortext(1214);
+                        fail;
+                     case TP_EVERIFY:
+                        set_errortext(1215);
+                        fail;
+                     case TP_EMEM:
+                     case TP_EOPEN:
+                     default:
+                        runerr(1200, fname);
+                        break;
+                     }
+                  }
+               }
+            else
 #endif                                  /* Messaging */
 
 #ifdef ISQL
@@ -813,132 +813,132 @@ Deliberate Syntax Error
       if (!is:string(attr[0])) runerr(103, attr[0]);
       if (!is:string(attr[1])) runerr(103, attr[1]);
       if (n >= 3) {
-	 if (!is:string(attr[2])) runerr(103, attr[2]);
-	 f = isql_open(fnamestr, attr, attr+1, attr+2);
-	 }
+         if (!is:string(attr[2])) runerr(103, attr[2]);
+         f = isql_open(fnamestr, attr, attr+1, attr+2);
+         }
       else { /* n == 2, treat as omitting table; user, password required */
-	 f = isql_open(fnamestr, NULL, attr, attr+1);
-	 }
+         f = isql_open(fnamestr, NULL, attr, attr+1);
+         }
       }
    else
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
 #ifdef HAVE_VOICE
    if (status & Fs_Voice) {
       /* check arguments, number and type */
       /* attr[0] is a destination */
       if (n > 0) {
-	 tended char *tmps; 
-      	
-	 if (is:null(attr[0])) 
-	    attr[0] = emptystr;
-	
-	 if (!is:string(attr[0])) 
-	    runerr(109, attr[0]);
-	
-	 if (cnv:C_string(attr[0], tmps))
-	    f = (FILE*) CreateVoiceSession(fnamestr,tmps);
-	 else {
-	    set_errortext(306);
-	    fail;
-	    }
+         tended char *tmps;
+
+         if (is:null(attr[0]))
+            attr[0] = emptystr;
+
+         if (!is:string(attr[0]))
+            runerr(109, attr[0]);
+
+         if (cnv:C_string(attr[0], tmps))
+            f = (FILE*) CreateVoiceSession(fnamestr,tmps);
+         else {
+            set_errortext(306);
+            fail;
+            }
       }
       else
-      	f = (FILE*) CreateVoiceSession(fnamestr,NULL);
+        f = (FILE*) CreateVoiceSession(fnamestr,NULL);
       }
    else
-#endif					/* HAVE_VOICE */
+#endif                                  /* HAVE_VOICE */
 
       /* a bidirectional pipe can mean only one thing: pseudotty */
       if (status == (Fs_Pipe | Fs_Read | Fs_Write)) {
 #ifdef PseudoPty
-	 status = Fs_Pty | Fs_Read | Fs_Write;
-	 f = (FILE*) ptopen(fnamestr);
+         status = Fs_Pty | Fs_Read | Fs_Write;
+         f = (FILE*) ptopen(fnamestr);
 #else
-	 set_errortext(1045);
-	 fail;
+         set_errortext(1045);
+         fail;
 #endif
-	 }
+         }
       else
 
 #if UNIX || VMS || NT
       if (status & Fs_Pipe) {
-	 tended char *sbuf, *sbuf2, *my_s = NULL;
-	 int c, fnamestrlen = strlen(fnamestr);
-	 if ((status != (Fs_Read|Fs_Pipe)) && (status != (Fs_Write|Fs_Pipe)))
-	    runerr(209, spec);
-	 /*
-	  * fnamestr is a program command line.  Extract its first
-	  * argument (the command) and expand that with a path search.
-	  * FIXME: Windows and DOS, etc. should check current dir (.) FIRST.
-	  */
-	 Protect(reserve(Strings, (fnamestrlen<<1)+PATH_MAX+2), runerr(0));
-	 sbuf = alcstr(fnamestr, fnamestrlen+1);
-	 sbuf[fnamestrlen] = '\0';
-	 /* what if it was a tab, instead of a space character? */
-	 if ((my_s = strchr(sbuf, ' ')) != NULL) *my_s = '\0';
-	 if (!strchr(sbuf,'\\') && !strchr(sbuf, '/')) {
-	    sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen+3);
-	    if (findonpath(sbuf, sbuf2, PATH_MAX) == NULL) {
-	       set_errortext(1050);
-	       fail;
-	       }
-	    fnamestr = sbuf2;
+         tended char *sbuf, *sbuf2, *my_s = NULL;
+         int c, fnamestrlen = strlen(fnamestr);
+         if ((status != (Fs_Read|Fs_Pipe)) && (status != (Fs_Write|Fs_Pipe)))
+            runerr(209, spec);
+         /*
+          * fnamestr is a program command line.  Extract its first
+          * argument (the command) and expand that with a path search.
+          * FIXME: Windows and DOS, etc. should check current dir (.) FIRST.
+          */
+         Protect(reserve(Strings, (fnamestrlen<<1)+PATH_MAX+2), runerr(0));
+         sbuf = alcstr(fnamestr, fnamestrlen+1);
+         sbuf[fnamestrlen] = '\0';
+         /* what if it was a tab, instead of a space character? */
+         if ((my_s = strchr(sbuf, ' ')) != NULL) *my_s = '\0';
+         if (!strchr(sbuf,'\\') && !strchr(sbuf, '/')) {
+            sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen+3);
+            if (findonpath(sbuf, sbuf2, PATH_MAX) == NULL) {
+               set_errortext(1050);
+               fail;
+               }
+            fnamestr = sbuf2;
 #if NT
             /*
-	     * if the path search came up with a space in the command name,
-	     * double quote the command. Maybe relevant for Macs, etc.
-	     */
-	    if (strchr(fnamestr, ' ')) {
-	       char *q = strdup(fnamestr);
-	       strcpy(fnamestr, "\"");
-	       strcat(fnamestr, q);
-	       strcat(fnamestr, "\"");
-	       free(q);
-	       }
-#endif					/* NT */
-	    if (my_s) {
-	       strcat(fnamestr, " ");
-	       strcat(fnamestr, my_s+1);
-	       }
-	    }
+             * if the path search came up with a space in the command name,
+             * double quote the command. Maybe relevant for Macs, etc.
+             */
+            if (strchr(fnamestr, ' ')) {
+               char *q = strdup(fnamestr);
+               strcpy(fnamestr, "\"");
+               strcat(fnamestr, q);
+               strcat(fnamestr, "\"");
+               free(q);
+               }
+#endif                                  /* NT */
+            if (my_s) {
+               strcat(fnamestr, " ");
+               strcat(fnamestr, my_s+1);
+               }
+            }
 
-	 f = popen(fnamestr, mode);
+         f = popen(fnamestr, mode);
          if (NULL == f) {set_errortext(1052); fail;}
-	 if (!strcmp(mode,"r")) {
-	    /* Try to read a byte. If we can't, treat it as "empty pipe" or "bad command" */
+         if (!strcmp(mode,"r")) {
+            /* Try to read a byte. If we can't, treat it as "empty pipe" or "bad command" */
 
-	    if ((c = getc(f)) == EOF) {
+            if ((c = getc(f)) == EOF) {
               if (0 == pclose(f)) {set_errortext(1053);} else {set_errortext(1050);}
               fail;
             }
-	    else
-	       ungetc(c, f);
-	    }
-	 }
+            else
+               ungetc(c, f);
+            }
+         }
       else
-#endif					/* UNIX || ... */
+#endif                                  /* UNIX || ... */
 
 #ifdef Dbm
       if (status & Fs_Dbm) {
-	 int mode;
-	 if ((status & Fs_Read && status & Fs_Write) || status == Fs_Dbm) {
-	    mode = O_RDWR|O_CREAT;
-	    status |= Fs_Read|Fs_Write;
-	 }
-	 else if (status & Fs_Write) {
-	    mode = O_WRONLY|O_CREAT;
-	 }
-	 else
-	   mode = O_RDONLY;
+         int mode;
+         if ((status & Fs_Read && status & Fs_Write) || status == Fs_Dbm) {
+            mode = O_RDWR|O_CREAT;
+            status |= Fs_Read|Fs_Write;
+         }
+         else if (status & Fs_Write) {
+            mode = O_WRONLY|O_CREAT;
+         }
+         else
+           mode = O_RDONLY;
 
-	 if ((f = (FILE *)dbm_open(fnamestr, mode, 0666)) == NULL) {
-	    set_errortext(191);
-	    fail;
-	    }
+         if ((f = (FILE *)dbm_open(fnamestr, mode, 0666)) == NULL) {
+            set_errortext(191);
+            fail;
+            }
       }
       else
-#endif					/* DBM */
+#endif                                  /* DBM */
 
 #if HAVE_LIBZ
       if (status & Fs_Compress) {
@@ -946,292 +946,292 @@ Deliberate Syntax Error
          f = (FILE *)gzopen(fnamestr, mode);
          }
       else
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBZ */
 
 
 #ifdef PosixFns
       {
 #if HAVE_LIBSSL
-	SSL *ssl;
-#endif					/* HAVE_LIBSSL */
-	 if (status & Fs_Socket) {
-	    if (is_ipv4 && is_ipv6)
-	       af_fam = AF_UNSPEC;
-	    else if (is_ipv6)
-	       af_fam = AF_INET6;
-	    else  if (is_ipv4)
-	       af_fam = AF_INET;
-	    else
-	       af_fam = AF_UNSPEC;
+        SSL *ssl;
+#endif                                  /* HAVE_LIBSSL */
+         if (status & Fs_Socket) {
+            if (is_ipv4 && is_ipv6)
+               af_fam = AF_UNSPEC;
+            else if (is_ipv6)
+               af_fam = AF_INET6;
+            else  if (is_ipv4)
+               af_fam = AF_INET;
+            else
+               af_fam = AF_UNSPEC;
 
-	    /* The only allowed values for flags are "n" and "na" */
-	    if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen
+            /* The only allowed values for flags are "n" and "na" */
+            if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen
 #if HAVE_LIBSSL
-			  |Fs_Encrypt
-#endif					/* HAVE_LIBSSL */
+                          |Fs_Encrypt
+#endif                                  /* HAVE_LIBSSL */
 ))
-	       runerr(209, spec);
-	    if (status & Fs_Append) {
+               runerr(209, spec);
+            if (status & Fs_Append) {
 #if HAVE_LIBSSL
-	       SSL_CTX *ctx;
-	       if(status & Fs_Encrypt) {
-		  ctx = create_ssl_context(attr, n, TLS_SERVER);
-		  if (ctx == NULL) {
-		    // errortext is already set
-		    fail;
-		  }
-	       }
-#endif					/* HAVE_LIBSSL */
+               SSL_CTX *ctx;
+               if(status & Fs_Encrypt) {
+                  ctx = create_ssl_context(attr, n, TLS_SERVER);
+                  if (ctx == NULL) {
+                    // errortext is already set
+                    fail;
+                  }
+               }
+#endif                                  /* HAVE_LIBSSL */
 
-	       /* "na" => listen for connections */
-      	       DEC_NARTHREADS;
-	       fd = sock_listen(fnamestr, is_udp_or_listener, af_fam);
-	       INC_NARTHREADS_CONTROLLED;
+               /* "na" => listen for connections */
+               DEC_NARTHREADS;
+               fd = sock_listen(fnamestr, is_udp_or_listener, af_fam);
+               INC_NARTHREADS_CONTROLLED;
 
 #if HAVE_LIBSSL
-	       if(fd > 0 && status & Fs_Encrypt) {
-		 int err;
-		 ssl = SSL_new(ctx);
-		  if (ssl == NULL) {
-		    set_ssl_context_errortext(0, NULL);
-		    close(fd);
-		    SSL_CTX_free(ctx);
-		    fail;
-		  }
-		  SSL_set_fd(ssl, fd);
-		  DEC_NARTHREADS;
-		  err = SSL_accept(ssl);
-		  INC_NARTHREADS_CONTROLLED;
+               if(fd > 0 && status & Fs_Encrypt) {
+                 int err;
+                 ssl = SSL_new(ctx);
+                  if (ssl == NULL) {
+                    set_ssl_context_errortext(0, NULL);
+                    close(fd);
+                    SSL_CTX_free(ctx);
+                    fail;
+                  }
+                  SSL_set_fd(ssl, fd);
+                  DEC_NARTHREADS;
+                  err = SSL_accept(ssl);
+                  INC_NARTHREADS_CONTROLLED;
 
-		  /*Check for error in accept.*/
-		  if (err<1) {
-		    set_ssl_connection_errortext(ssl, err);
-		    close(fd);
-		    SSL_free(ssl);
-		    SSL_CTX_free(ctx);
-		    fail;
-		  }
+                  /*Check for error in accept.*/
+                  if (err<1) {
+                    set_ssl_connection_errortext(ssl, err);
+                    close(fd);
+                    SSL_free(ssl);
+                    SSL_CTX_free(ctx);
+                    fail;
+                  }
 
-	       }
-#endif					/* HAVE_LIBSSL */
-	       }
-	    else {
-	       C_integer timeout = 0;
+               }
+#endif                                  /* HAVE_LIBSSL */
+               }
+            else {
+               C_integer timeout = 0;
 #if HAVE_LIBSSL
-	       SSL_CTX *ctx;
-	       if(status & Fs_Encrypt) {
-		  ctx = create_ssl_context(attr, n, TLS_CLIENT);
-		  if (ctx == NULL) {
-		    // errortext is already set
-		    fail;
-		  }
-	       }
-#endif					/* HAVE_LIBSSL */
+               SSL_CTX *ctx;
+               if(status & Fs_Encrypt) {
+                  ctx = create_ssl_context(attr, n, TLS_CLIENT);
+                  if (ctx == NULL) {
+                    // errortext is already set
+                    fail;
+                  }
+               }
+#endif                                  /* HAVE_LIBSSL */
 
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
-	       if (n > 0 && !is:null(attr[0])) {
+               if (n > 0 && !is:null(attr[0])) {
                   if (!cnv:C_integer(attr[0], timeout))
                      runerr(101, attr[0]);
                }
-#endif					/* Graphics || Messaging || ISQL */
-	       /* connect to a port */
-      	       DEC_NARTHREADS;
-	       fd = sock_connect(fnamestr, is_udp_or_listener == 1, timeout, af_fam);
-      	       INC_NARTHREADS_CONTROLLED;
+#endif                                  /* Graphics || Messaging || ISQL */
+               /* connect to a port */
+               DEC_NARTHREADS;
+               fd = sock_connect(fnamestr, is_udp_or_listener == 1, timeout, af_fam);
+               INC_NARTHREADS_CONTROLLED;
 #if HAVE_LIBSSL
-	       if(fd > 0 && status & Fs_Encrypt){
-		  int err;
-		  ssl = SSL_new(ctx);
-		  if (ssl == NULL) {
-		    set_ssl_context_errortext(0, NULL);
-		    close(fd);
-		    SSL_CTX_free(ctx);
-		    fail;
-		  }
-		  SSL_set_fd(ssl, fd);
-		  err = SSL_connect(ssl);
+               if(fd > 0 && status & Fs_Encrypt){
+                  int err;
+                  ssl = SSL_new(ctx);
+                  if (ssl == NULL) {
+                    set_ssl_context_errortext(0, NULL);
+                    close(fd);
+                    SSL_CTX_free(ctx);
+                    fail;
+                  }
+                  SSL_set_fd(ssl, fd);
+                  err = SSL_connect(ssl);
 
-		  /*Check for error in connect.*/
-		  if (err<1) {
-		    set_ssl_connection_errortext(ssl, err);
-		    close(fd);
-		    SSL_free(ssl);
-		    SSL_CTX_free(ctx);
-		    fail;
-		  }
-	       }
-#endif					/* HAVE_LIBSSL */
+                  /*Check for error in connect.*/
+                  if (err<1) {
+                    set_ssl_connection_errortext(ssl, err);
+                    close(fd);
+                    SSL_free(ssl);
+                    SSL_CTX_free(ctx);
+                    fail;
+                  }
+               }
+#endif                                  /* HAVE_LIBSSL */
 
 
-	    }
-	    /*
-	     * read/reads is not allowed on a listener socket, only select
-	     * read/reads is not allowed on a UDP socket, only receive
-	     */
-	    if (is_udp_or_listener == 2)
-	       status |= Fs_Socket | Fs_Listen;
-	    else if (is_udp_or_listener == 1)
-	       status |= Fs_Socket | Fs_Write;
-	    else
-	       status |= Fs_Socket | Fs_Read | Fs_Write;
+            }
+            /*
+             * read/reads is not allowed on a listener socket, only select
+             * read/reads is not allowed on a UDP socket, only receive
+             */
+            if (is_udp_or_listener == 2)
+               status |= Fs_Socket | Fs_Listen;
+            else if (is_udp_or_listener == 1)
+               status |= Fs_Socket | Fs_Write;
+            else
+               status |= Fs_Socket | Fs_Read | Fs_Write;
 
-	    if (!fd) {
-	       set_syserrortext(errno);
-	       fail;
-	       }
+            if (!fd) {
+               set_syserrortext(errno);
+               fail;
+               }
 
-	    /*
-	     * Although filename is a unicon value, it is used by
-	     * image, which in the case of a socket means sock_name, which
-	     * assumes it is a C string. Preserve its C string-ness.
-	     */
-	    StrLen(filename) = strlen(fnamestr)+1;
-	    StrLoc(filename) = fnamestr;
-	    Protect(fl = alcfile(0, status, &filename), runerr(0));
+            /*
+             * Although filename is a unicon value, it is used by
+             * image, which in the case of a socket means sock_name, which
+             * assumes it is a C string. Preserve its C string-ness.
+             */
+            StrLen(filename) = strlen(fnamestr)+1;
+            StrLoc(filename) = fnamestr;
+            Protect(fl = alcfile(0, status, &filename), runerr(0));
 
 #if HAVE_LIBSSL
-	    if (status & Fs_Encrypt)
-	       fl->fd.ssl = ssl;
-	    else
-#endif					/* HAVE_LIBSSL */
-	      fl->fd.fd = fd;
+            if (status & Fs_Encrypt)
+               fl->fd.ssl = ssl;
+            else
+#endif                                  /* HAVE_LIBSSL */
+              fl->fd.fd = fd;
 
-	    return file(fl);
-	    }
-	 else if (stat(fnamestr, &st) < 0) {
-	    /* stat reported an error; file does not exist */
+            return file(fl);
+            }
+         else if (stat(fnamestr, &st) < 0) {
+            /* stat reported an error; file does not exist */
 
             if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
-	       char tempbuf[1024];
+               char tempbuf[1024];
 #if UNIX
-	       /*
-		* attempted to open a wildcard. used to use ls(1) output.
-		* Now using shell for-loop and echo in order to avoid bad
-		* answers when no match is found.
-		*/
-	       sprintf(tempbuf, "for i in %s; do if [ \"$i\" != \"%s\" ]; then echo \"$i\"; fi; done", fnamestr, fnamestr);
-	       status |= Fs_Pipe;
-	       f = popen(tempbuf, "r");
-#endif					/* UNIX */
+               /*
+                * attempted to open a wildcard. used to use ls(1) output.
+                * Now using shell for-loop and echo in order to avoid bad
+                * answers when no match is found.
+                */
+               sprintf(tempbuf, "for i in %s; do if [ \"$i\" != \"%s\" ]; then echo \"$i\"; fi; done", fnamestr, fnamestr);
+               status |= Fs_Pipe;
+               f = popen(tempbuf, "r");
+#endif                                  /* UNIX */
 #if NT
-		/*
-		 * attempted to open a wildcard, do file completion
-		 */
-		strcpy(tempbuf, fnamestr);
-         	if (*tempbuf) {
-		   struct b_cons *flnk;
-            	   FINDDATA_T fd;
-	    	   if (!FINDFIRST(tempbuf, &fd)) {
-		      set_errortext(218);
-		      fail;
-		      }
-            	   if ((f = mstmpfile()) == NULL) {
-		      set_errortext(1051);
-		      fail;
-		      }
-            	   do {
-               	      fprintf(f, "%s\n", FILENAME(&fd));
-               	      } while (FINDNEXT(&fd));
-            	   FINDCLOSE(&fd);
-            	   fflush(f);
-           	   fseek(f, 0, SEEK_SET);
-		   /*
-		    * yet another special case: the tmpfile must be linked
-		    * in to a list in order to be closed/deleted.
-		    */
-		   StrLen(filename) = strlen(fnamestr);
-		   StrLoc(filename) = fnamestr;
-		   Protect(fl = alcfile(f, status, &filename), runerr(0));
-		   Protect(flnk = alccons((union block *)fl), runerr(0));
-		   flnk->next = (union block *)LstTmpFiles;
-		   LstTmpFiles = flnk;
-		   return file(fl);
-	    	   }
-#endif					/* NT */
-		/*
-		 * Return the resulting file value. Duplicate of code below,
-		 * because rtt does not support goto statements.
-		 */
-		if (f == NULL) {
-		   set_syserrortext(errno);
-		   fail;
-		   }
-		StrLen(filename) = strlen(fnamestr);
-		StrLoc(filename) = fnamestr;
-		Protect(fl = alcfile(f, status, &filename), runerr(0));
+                /*
+                 * attempted to open a wildcard, do file completion
+                 */
+                strcpy(tempbuf, fnamestr);
+                if (*tempbuf) {
+                   struct b_cons *flnk;
+                   FINDDATA_T fd;
+                   if (!FINDFIRST(tempbuf, &fd)) {
+                      set_errortext(218);
+                      fail;
+                      }
+                   if ((f = mstmpfile()) == NULL) {
+                      set_errortext(1051);
+                      fail;
+                      }
+                   do {
+                      fprintf(f, "%s\n", FILENAME(&fd));
+                      } while (FINDNEXT(&fd));
+                   FINDCLOSE(&fd);
+                   fflush(f);
+                   fseek(f, 0, SEEK_SET);
+                   /*
+                    * yet another special case: the tmpfile must be linked
+                    * in to a list in order to be closed/deleted.
+                    */
+                   StrLen(filename) = strlen(fnamestr);
+                   StrLoc(filename) = fnamestr;
+                   Protect(fl = alcfile(f, status, &filename), runerr(0));
+                   Protect(flnk = alccons((union block *)fl), runerr(0));
+                   flnk->next = (union block *)LstTmpFiles;
+                   LstTmpFiles = flnk;
+                   return file(fl);
+                   }
+#endif                                  /* NT */
+                /*
+                 * Return the resulting file value. Duplicate of code below,
+                 * because rtt does not support goto statements.
+                 */
+                if (f == NULL) {
+                   set_syserrortext(errno);
+                   fail;
+                   }
+                StrLen(filename) = strlen(fnamestr);
+                StrLoc(filename) = fnamestr;
+                Protect(fl = alcfile(f, status, &filename), runerr(0));
 #ifdef Graphics
-		/*
-		 * link in the Icon file value so this window can find it
-		 */
-		if (status & Fs_Window) {
-		  linkfiletowindow((wbp)f, fl);
-		  }
-#endif					/* Graphics */
-		return file(fl);
-	    	}
-	    else
-	    if (errno == ENOENT && (status & Fs_Read)) {
-	       set_syserrortext(errno);
-	       fail;
-	       }
-	    else {
-	       f = fopen(fnamestr, mode);
-	       }
-	 }
-	 else {
-	    /*
-	     * check and see if the file was actually a directory
-	     */
-	    if (S_ISDIR(st.st_mode)) {
-	       if (status & Fs_Write)
-		  runerr(173, fname);
-	       else {
+                /*
+                 * link in the Icon file value so this window can find it
+                 */
+                if (status & Fs_Window) {
+                  linkfiletowindow((wbp)f, fl);
+                  }
+#endif                                  /* Graphics */
+                return file(fl);
+                }
+            else
+            if (errno == ENOENT && (status & Fs_Read)) {
+               set_syserrortext(errno);
+               fail;
+               }
+            else {
+               f = fopen(fnamestr, mode);
+               }
+         }
+         else {
+            /*
+             * check and see if the file was actually a directory
+             */
+            if (S_ISDIR(st.st_mode)) {
+               if (status & Fs_Write)
+                  runerr(173, fname);
+               else {
 #if !NT || defined(NTGCC)
-		  f = (FILE *)opendir(fnamestr);
-		  status |= Fs_Directory;
-#else					/* !NT */
-		  char tempbuf[512];
-		  strcpy(tempbuf, fnamestr);
-		  if (tempbuf[strlen(tempbuf)-1] != '\\')
-		     strcat(tempbuf, "\\");
-		  strcat(tempbuf, "*.*");
-		  if (*tempbuf) {
-		     FINDDATA_T fd;
-		     if (!FINDFIRST(tempbuf, &fd)) {
-		        set_errortext(218);
-		        fail;
-		        }
-		     if ((f = mstmpfile()) == NULL) {
-		        set_errortext(1051);
-		        fail;
-		        }
-		     do {
-			fprintf(f, "%s\n", FILENAME(&fd));
-			}
-		     while (FINDNEXT(&fd));
-		     FINDCLOSE(&fd);
-		     fflush(f);
-		     fseek(f, 0, SEEK_SET);
-		     }
-#endif					/* NT */
-		  }
-	       }
-	    else {
-	       f = fopen(fnamestr, mode);
-	       }
-	    }
-	 }
-#else					/* PosixFns */
-  	 f = fopen(fnamestr, mode);
-#endif 					/* PosixFns */
+                  f = (FILE *)opendir(fnamestr);
+                  status |= Fs_Directory;
+#else                                   /* !NT */
+                  char tempbuf[512];
+                  strcpy(tempbuf, fnamestr);
+                  if (tempbuf[strlen(tempbuf)-1] != '\\')
+                     strcat(tempbuf, "\\");
+                  strcat(tempbuf, "*.*");
+                  if (*tempbuf) {
+                     FINDDATA_T fd;
+                     if (!FINDFIRST(tempbuf, &fd)) {
+                        set_errortext(218);
+                        fail;
+                        }
+                     if ((f = mstmpfile()) == NULL) {
+                        set_errortext(1051);
+                        fail;
+                        }
+                     do {
+                        fprintf(f, "%s\n", FILENAME(&fd));
+                        }
+                     while (FINDNEXT(&fd));
+                     FINDCLOSE(&fd);
+                     fflush(f);
+                     fseek(f, 0, SEEK_SET);
+                     }
+#endif                                  /* NT */
+                  }
+               }
+            else {
+               f = fopen(fnamestr, mode);
+               }
+            }
+         }
+#else                                   /* PosixFns */
+         f = fopen(fnamestr, mode);
+#endif                                  /* PosixFns */
 
       /*
        * Fail if the file cannot be opened.
        */
       if (f == NULL) {
-	 set_syserrortext(errno);
-      	 fail;
-	 }
+         set_syserrortext(errno);
+         fail;
+         }
 
       /*
        * Return the resulting file value.
@@ -1246,13 +1246,13 @@ Deliberate Syntax Error
        * link in the Icon file value so this window can find it
        */
       if (status & Fs_Window) {
-	 linkfiletowindow((wbp)f, fl);
-	 }
-#endif					/* Graphics */
+         linkfiletowindow((wbp)f, fl);
+         }
+#endif                                  /* Graphics */
       return file(fl);
       }
 end
-
+
 
 "read(f) - read line on file f."
 function{0,1} read(f)
@@ -1261,9 +1261,9 @@ function{0,1} read(f)
     */
    if is:null(f) then
       inline {
-	 f.dword = D_File;
-	 BlkLoc(f) = (union block *)&k_input;
-	 }
+         f.dword = D_File;
+         BlkLoc(f) = (union block *)&k_input;
+         }
    else if !is:file(f) then
       runerr(105, f)
 
@@ -1288,8 +1288,8 @@ function{0,1} read(f)
       status = BlkLoc(f)->File.status;
       if ((status & Fs_Read) == 0) {
          if (status & Fs_Pipe) fail;
-	 runerr(212, f);
-	 }
+         runerr(212, f);
+         }
 
 /*
  * Should probably move these cases into getstrg() in rsys.r, where
@@ -1298,69 +1298,69 @@ function{0,1} read(f)
 
 #ifdef PosixFns
        if (status & Fs_Socket) {
-	  StrLen(s) = 0;
+          StrLen(s) = 0;
           do {
-      	     DEC_NARTHREADS;
-	     if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
-	        /* EOF is no error */
-      	        INC_NARTHREADS_CONTROLLED;
-	        fail;
-		}
-      	     INC_NARTHREADS_CONTROLLED;
-	     if (slen == -3) {
-	       /* sock_getstrg sets errornumber/text */
-		fail;
-	        }
-	     if (slen == 1 && *sbuf == '\n')
-		break;
-	     rlen = slen < 0 ? (word)MaxReadStr : slen;
+             DEC_NARTHREADS;
+             if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
+                /* EOF is no error */
+                INC_NARTHREADS_CONTROLLED;
+                fail;
+                }
+             INC_NARTHREADS_CONTROLLED;
+             if (slen == -3) {
+               /* sock_getstrg sets errornumber/text */
+                fail;
+                }
+             if (slen == 1 && *sbuf == '\n')
+                break;
+             rlen = slen < 0 ? (word)MaxReadStr : slen;
 
-	     Protect(reserve(Strings, rlen), runerr(0));
-	     if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
-	        Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
-	        Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
-		}
+             Protect(reserve(Strings, rlen), runerr(0));
+             if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
+                Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
+                Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
+                }
 
-	     Protect(sptr = alcstr(sbuf,rlen), runerr(0));
-	     if (StrLen(s) == 0)
-	        StrLoc(s) = sptr;
-	     StrLen(s) += rlen;
-	     if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
-	     else {
-		/* no newline to trim; EOF? */
-		}
-	     }
-	  while (slen > 0);
+             Protect(sptr = alcstr(sbuf,rlen), runerr(0));
+             if (StrLen(s) == 0)
+                StrLoc(s) = sptr;
+             StrLen(s) += rlen;
+             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+             else {
+                /* no newline to trim; EOF? */
+                }
+             }
+          while (slen > 0);
 
          return s;
-	  }
+          }
 
       /*
        * well.... switching from unbuffered to buffered actually works so
        * we will allow it except for sockets.
        */
       if ((status & Fs_Unbuf) && (!(status & Fs_Messaging))) {
-	 if (status & Fs_Socket)
-	    runerr(1048, f);
-	 status &= ~Fs_Unbuf;
+         if (status & Fs_Socket)
+            runerr(1048, f);
+         status &= ~Fs_Unbuf;
 #ifdef Graphics
-	 /* windows never turn on buffering */
-	 if (! (status & Fs_Window))
-#endif					/* Graphics */
-	    status |= Fs_Buff;
-	 BlkLoc(f)->File.status = status;
-	 }
-#endif					/* PosixFns */
+         /* windows never turn on buffering */
+         if (! (status & Fs_Window))
+#endif                                  /* Graphics */
+            status |= Fs_Buff;
+         BlkLoc(f)->File.status = status;
+         }
+#endif                                  /* PosixFns */
 
       /* add more restriction on non-seekable entities. */
       if ((status & Fs_Writing) && !(status & Fs_BPipe)) {
-	 if (fseek(fp, 0L, SEEK_CUR) != 0) {
-	    /* errors, e.g. EBADF not-seekable */
-	    set_syserrortext(errno);
-	    fail;
-	    }
-	 BlkLoc(f)->File.status &= ~Fs_Writing;
-	 }
+         if (fseek(fp, 0L, SEEK_CUR) != 0) {
+            /* errors, e.g. EBADF not-seekable */
+            set_syserrortext(errno);
+            fail;
+            }
+         BlkLoc(f)->File.status &= ~Fs_Writing;
+         }
       BlkLoc(f)->File.status |= Fs_Reading;
 
 #ifdef ConsoleWindow
@@ -1375,7 +1375,7 @@ function{0,1} read(f)
         status = Fs_Window | Fs_Read | Fs_Write;
         }
 
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
       /*
        * Use getstrg to read a line from the file, failing if getstrg
        *  encounters end of file. [[ What about -2?]]
@@ -1385,136 +1385,136 @@ function{0,1} read(f)
       do {
 
 #ifdef Graphics
-	 pollctr >>= 1;
-	 pollctr++;
-	 if (status & Fs_Window) {
-      	    DEC_NARTHREADS;
-	    slen = wgetstrg(sbuf,MaxReadStr,fp);
-      	    INC_NARTHREADS_CONTROLLED;
-	    if (slen == -1)
-	       runerr(141);
-	    else if (slen == -2)
-	       runerr(143);
-	    else if (slen == -3) /* EOF */
+         pollctr >>= 1;
+         pollctr++;
+         if (status & Fs_Window) {
+            DEC_NARTHREADS;
+            slen = wgetstrg(sbuf,MaxReadStr,fp);
+            INC_NARTHREADS_CONTROLLED;
+            if (slen == -1)
+               runerr(141);
+            else if (slen == -2)
+               runerr(143);
+            else if (slen == -3) /* EOF */
                fail;
-	    }
-	 else
-#endif					/* Graphics */
+            }
+         else
+#endif                                  /* Graphics */
 
 #ifdef PosixFns
 #if !NT || defined(NTGCC)
-	  if (status & Fs_Directory) {
-	     struct dirent *d;
-	     char *s, *p=sbuf;
-	     IntVal(amperErrno) = 0;
-	     slen = 0;
-      	     DEC_NARTHREADS;
-	     d = readdir((DIR *)fp);
-      	     INC_NARTHREADS_CONTROLLED;
-	     if (!d) {
-	        set_syserrortext(errno);
-	        fail;
-	     }
-	     s = d->d_name;
-	     while(*s && slen++ < MaxReadStr)
-	        *p++ = *s++;
-	     if (slen == MaxReadStr)
-		slen = -2;
-	  }
-	  else
+          if (status & Fs_Directory) {
+             struct dirent *d;
+             char *s, *p=sbuf;
+             IntVal(amperErrno) = 0;
+             slen = 0;
+             DEC_NARTHREADS;
+             d = readdir((DIR *)fp);
+             INC_NARTHREADS_CONTROLLED;
+             if (!d) {
+                set_syserrortext(errno);
+                fail;
+             }
+             s = d->d_name;
+             while(*s && slen++ < MaxReadStr)
+                *p++ = *s++;
+             if (slen == MaxReadStr)
+                slen = -2;
+          }
+          else
 #endif
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 
 #if HAVE_LIBZ
         /*
-	 * Read a line from a compressed file
-	 */
-	if (status & Fs_Compress) {
-            
+         * Read a line from a compressed file
+         */
+        if (status & Fs_Compress) {
+
             if (gzeof(fp)) fail;
-      	    DEC_NARTHREADS;
+            DEC_NARTHREADS;
             if (gzgets((gzFile)fp,sbuf,MaxReadStr+1) == Z_NULL) {
-      	       INC_NARTHREADS_CONTROLLED;
-	       runerr(214);
+               INC_NARTHREADS_CONTROLLED;
+               runerr(214);
                }
-      	    INC_NARTHREADS_CONTROLLED;
-	    slen = strlen(sbuf);
+            INC_NARTHREADS_CONTROLLED;
+            slen = strlen(sbuf);
 
             if (slen==MaxReadStr && sbuf[slen-1]!='\n') slen = -2;
-	    else if (sbuf[slen-1] == '\n') {
+            else if (sbuf[slen-1] == '\n') {
                sbuf[slen-1] = '\0';
                slen--;
                }
-           
-	    }
-           
-	else 
-#endif					/* HAVE_LIBZ */
+
+            }
+
+        else
+#endif                                  /* HAVE_LIBZ */
 
 #ifdef PseudoPty
-	   if (status & Fs_Pty) {
-/*	      struct timeval timeout;
-	      timeout.tv_sec = 1L;
-	      timeout.tv_usec = 0L; */
-      	      DEC_NARTHREADS;
-	      if ((slen = ptgetstr(sbuf, MaxReadStr, (struct ptstruct *)fp, 0))
-		== -1){
-      		 INC_NARTHREADS_CONTROLLED;
-		 set_errortext(214);
-		 fail;
-		 }
-      	      INC_NARTHREADS_CONTROLLED;
-	      }
-	 else
-#endif					/* PseudoPty */
+           if (status & Fs_Pty) {
+/*            struct timeval timeout;
+              timeout.tv_sec = 1L;
+              timeout.tv_usec = 0L; */
+              DEC_NARTHREADS;
+              if ((slen = ptgetstr(sbuf, MaxReadStr, (struct ptstruct *)fp, 0))
+                == -1){
+                 INC_NARTHREADS_CONTROLLED;
+                 set_errortext(214);
+                 fail;
+                 }
+              INC_NARTHREADS_CONTROLLED;
+              }
+         else
+#endif                                  /* PseudoPty */
 
-	 if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
+         if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
 #ifdef PosixFns
-	    set_syserrortext(errno);
-#endif					/* PosixFns */
-	    fail;
-	    }
+            set_syserrortext(errno);
+#endif                                  /* PosixFns */
+            fail;
+            }
 
-	 /*
-	  * Allocate the string read and make s a descriptor for it.
-	  */
-	 if ((status & Fs_Messaging) && (slen == -2)) rlen = MaxReadStr-1;
-	 else
-	 rlen = slen < 0 ? (word)MaxReadStr : slen;
+         /*
+          * Allocate the string read and make s a descriptor for it.
+          */
+         if ((status & Fs_Messaging) && (slen == -2)) rlen = MaxReadStr-1;
+         else
+         rlen = slen < 0 ? (word)MaxReadStr : slen;
 
-	 Protect(reserve(Strings, rlen), runerr(0));
-	 /*
-	  * If extending our read string bumped us into a new heap...
-	  */
-	 if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
-	    /*
-	     * Copy the prefix into the new heap, followed by the new part.
-	     * Start by reserving enough space for the whole thing.
-	     */
-	    Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
-	    /*
-	     * recast this as a single call to alcstr(NULL, StrLen(s)+rlen)
-	     * followed by two copies.
-	     */
-	     { int i, j;
-	     sptr = alcstr(NULL, StrLen(s)+rlen);
-	     for(i=0; i<StrLen(s); i++) sptr[i] = StrLoc(s)[i];
-	     for(j=0; j<rlen; j++) sptr[i+j] = sbuf[j];
-	     StrLoc(s) = sptr;
-	     }
-	    }
-	 else
-	    Protect(sptr = alcstr(sbuf,rlen), runerr(0));
+         Protect(reserve(Strings, rlen), runerr(0));
+         /*
+          * If extending our read string bumped us into a new heap...
+          */
+         if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
+            /*
+             * Copy the prefix into the new heap, followed by the new part.
+             * Start by reserving enough space for the whole thing.
+             */
+            Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
+            /*
+             * recast this as a single call to alcstr(NULL, StrLen(s)+rlen)
+             * followed by two copies.
+             */
+             { int i, j;
+             sptr = alcstr(NULL, StrLen(s)+rlen);
+             for(i=0; i<StrLen(s); i++) sptr[i] = StrLoc(s)[i];
+             for(j=0; j<rlen; j++) sptr[i+j] = sbuf[j];
+             StrLoc(s) = sptr;
+             }
+            }
+         else
+            Protect(sptr = alcstr(sbuf,rlen), runerr(0));
 
-	 if (StrLen(s) == 0)
-	    StrLoc(s) = sptr;
-	 StrLen(s) += rlen;
-	 } while (slen < 0);
+         if (StrLen(s) == 0)
+            StrLoc(s) = sptr;
+         StrLen(s) += rlen;
+         } while (slen < 0);
       return s;
       }
 end
-
+
 
 "reads(f,i) - read i characters on file f."
 
@@ -1524,9 +1524,9 @@ function{0,1} reads(f,i)
     */
    if is:null(f) then
       inline {
-	 f.dword = D_File;
-	 BlkLoc(f) = (union block *)&k_input;
-	 }
+         f.dword = D_File;
+         BlkLoc(f) = (union block *)&k_input;
+         }
    else if !is:file(f) then
       runerr(105, f)
 
@@ -1555,7 +1555,7 @@ function{0,1} reads(f,i)
 #passthru #if (__GNUC__==4) && (__GNUC_MINOR__>7)
 #passthru #define stat _stat64i32
 #passthru #endif
-#endif					/* NTGCC && WordBits==32*/
+#endif                                  /* NTGCC && WordBits==32*/
       struct stat statbuf;
 
       /*
@@ -1563,140 +1563,140 @@ function{0,1} reads(f,i)
        */
       status = BlkD(f,File)->status;
       if ((status & Fs_Read) == 0)
-	 runerr(212, f);
+         runerr(212, f);
 
 #ifdef Messaging
       if (status & Fs_Messaging) {
-	 struct MFile *mf = BlkLoc(f)->File.fd.mf;
-	 /* Casting to unsigned lets us use reads(f, -1) */
+         struct MFile *mf = BlkLoc(f)->File.fd.mf;
+         /* Casting to unsigned lets us use reads(f, -1) */
 
-	 Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
+         Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
 
-	 StrLoc(s) = NULL;
-	 StrLen(s) = 0;
-	 if (!MFIN(mf, READING)) {
-	    Mstartreading(mf);
-	    }
-	 nbytes = 0;
-	 do {
-	    if (bytesread > 0) {
-	       if (i>=0 && i - bytesread <= MaxReadStr)
-		  Maxread = i - bytesread;
-	       else
-		  Maxread = MaxReadStr;
-	       }
-      	    DEC_NARTHREADS;
-	    slen = tp_read(mf->tp, sbuf, Maxread);
-      	    INC_NARTHREADS_CONTROLLED;
+         StrLoc(s) = NULL;
+         StrLen(s) = 0;
+         if (!MFIN(mf, READING)) {
+            Mstartreading(mf);
+            }
+         nbytes = 0;
+         do {
+            if (bytesread > 0) {
+               if (i>=0 && i - bytesread <= MaxReadStr)
+                  Maxread = i - bytesread;
+               else
+                  Maxread = MaxReadStr;
+               }
+            DEC_NARTHREADS;
+            slen = tp_read(mf->tp, sbuf, Maxread);
+            INC_NARTHREADS_CONTROLLED;
 
-	    if (slen <= 0) {
-	       extern int Merror;
-	       if (Merror >= 1200) {
-		  runerr(Merror, f);
-		  }
-	       if (bytesread == 0)
-		  fail;
-	       else return s;
-	       }
-	    bytesread += slen;
-	    rlen = slen < 0 ? (word)MaxReadStr : slen;
+            if (slen <= 0) {
+               extern int Merror;
+               if (Merror >= 1200) {
+                  runerr(Merror, f);
+                  }
+               if (bytesread == 0)
+                  fail;
+               else return s;
+               }
+            bytesread += slen;
+            rlen = slen < 0 ? (word)MaxReadStr : slen;
 
-	    Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
-	    if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
-	       Protect((StrLoc(s) =
+            Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
+            if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
+               Protect((StrLoc(s) =
                         alcstr(StrLoc(s), StrLen(s))), runerr(0));
-	       }
+               }
 
-	    Protect(sptr = alcstr(sbuf, rlen), runerr(0));
-	    if (StrLen(s) == 0)
-	       StrLoc(s) = sptr;
-	    StrLen(s) += rlen;
+            Protect(sptr = alcstr(sbuf, rlen), runerr(0));
+            if (StrLen(s) == 0)
+               StrLoc(s) = sptr;
+            StrLen(s) += rlen;
 
-	    } while ((i == -1) || (bytesread < i));
+            } while ((i == -1) || (bytesread < i));
 
-	 return s;
-	 }
+         return s;
+         }
 
       else
 #endif                                  /* Messaging */
 
 #ifdef PseudoPty
       if (status & Fs_Pty) {
-	 struct ptstruct *p = (struct ptstruct *)BlkLoc(f)->File.fd.fp;
-	 tended char *s = alcstr(NULL, i);
-      	 DEC_NARTHREADS;
-	 if ((slen = ptlongread(s, i, p)) == -1) {
-      	    INC_NARTHREADS_CONTROLLED;
-	    set_errortext(214);
-	    fail;
-	    }
-      	 INC_NARTHREADS_CONTROLLED;
-	 return string(slen, s);
-	 }
+         struct ptstruct *p = (struct ptstruct *)BlkLoc(f)->File.fd.fp;
+         tended char *s = alcstr(NULL, i);
+         DEC_NARTHREADS;
+         if ((slen = ptlongread(s, i, p)) == -1) {
+            INC_NARTHREADS_CONTROLLED;
+            set_errortext(214);
+            fail;
+            }
+         INC_NARTHREADS_CONTROLLED;
+         return string(slen, s);
+         }
       else
 #endif                                  /* PseudoPty */
 
 
 #ifdef PosixFns
          if (status & Fs_Socket) {
-	    StrLen(s) = 0;
-	    Maxread = (i <= MaxReadStr)? i : MaxReadStr;
-	    do {
-	       if (bytesread > 0) {
-		  if (i - bytesread <= MaxReadStr)
-		     Maxread = i - bytesread;
-		  else
-		     Maxread = MaxReadStr;
-		  }
-      	       DEC_NARTHREADS;
-	       if ((slen = sock_getstrg(sbuf, Maxread, &f)) == -1) {
-		    /*IntVal(amperErrno) = errno; */
-      	            INC_NARTHREADS_CONTROLLED;
-		    if (bytesread == 0)
-		        fail;
-		    else
-		        return s;
-		}
-      	        INC_NARTHREADS_CONTROLLED;
-		if (slen == -3) {
-		    /* sock_getstrg sets errortext */
-		    fail;
-		   }
+            StrLen(s) = 0;
+            Maxread = (i <= MaxReadStr)? i : MaxReadStr;
+            do {
+               if (bytesread > 0) {
+                  if (i - bytesread <= MaxReadStr)
+                     Maxread = i - bytesread;
+                  else
+                     Maxread = MaxReadStr;
+                  }
+               DEC_NARTHREADS;
+               if ((slen = sock_getstrg(sbuf, Maxread, &f)) == -1) {
+                    /*IntVal(amperErrno) = errno; */
+                    INC_NARTHREADS_CONTROLLED;
+                    if (bytesread == 0)
+                        fail;
+                    else
+                        return s;
+                }
+                INC_NARTHREADS_CONTROLLED;
+                if (slen == -3) {
+                    /* sock_getstrg sets errortext */
+                    fail;
+                   }
 
-		if (slen > 0)
-		    bytesread += slen;
-		rlen = slen < 0 ? (word)MaxReadStr : slen;
+                if (slen > 0)
+                    bytesread += slen;
+                rlen = slen < 0 ? (word)MaxReadStr : slen;
 
-		Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
-		if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
-		    Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
-		    Protect((StrLoc(s) =
+                Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
+                if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
+                    Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
+                    Protect((StrLoc(s) =
                         alcstr(StrLoc(s), StrLen(s))), runerr(0));
-		    }
+                    }
 
-		Protect(sptr = alcstr(sbuf, rlen), runerr(0));
-		if (StrLen(s) == 0)
-		    StrLoc(s) = sptr;
-		StrLen(s) += rlen;
-	    } while ((i == -1) || (bytesread < i));
-	    return s;
-	}
+                Protect(sptr = alcstr(sbuf, rlen), runerr(0));
+                if (StrLen(s) == 0)
+                    StrLoc(s) = sptr;
+                StrLen(s) += rlen;
+            } while ((i == -1) || (bytesread < i));
+            return s;
+        }
 
         /* FIXME: This is a hack to fix things for the release. The solution to be
-	 * implemented after release: all I/O is low-level, no stdio. This
-	 * makes the Fs_Buff/Fs_Unbuf go away and select will work -- 
-	 * correctly. */
+         * implemented after release: all I/O is low-level, no stdio. This
+         * makes the Fs_Buff/Fs_Unbuf go away and select will work --
+         * correctly. */
         if (strcmp(StrLoc(BlkD(f,File)->fname), "pipe") != 0) {
-	    status |= Fs_Buff;
-	    BlkLoc(f)->File.status = status;
-	}
-#endif					/* PosixFns */
+            status |= Fs_Buff;
+            BlkLoc(f)->File.status = status;
+        }
+#endif                                  /* PosixFns */
 
       fp = BlkD(f,File)->fd.fp;
       if (status & Fs_Writing) {
-	 fseek(fp, 0L, SEEK_CUR);
-	 BlkLoc(f)->File.status &= ~Fs_Writing;
-	 }
+         fseek(fp, 0L, SEEK_CUR);
+         BlkLoc(f)->File.status &= ~Fs_Writing;
+         }
       BlkLoc(f)->File.status |= Fs_Reading;
 
 #ifdef ConsoleWindow
@@ -1710,7 +1710,7 @@ function{0,1} reads(f,i)
         fp = OpenConsole();
         status = Fs_Read | Fs_Write | Fs_Window;
         }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 #ifdef ReadDirectory
       /*
@@ -1718,60 +1718,60 @@ function{0,1} reads(f,i)
        */
       if ((BlkD(f,File)->status & Fs_Directory) != 0) {
          char *sptr;
-	 struct dirent *de;
-      	 DEC_NARTHREADS;
+         struct dirent *de;
+         DEC_NARTHREADS;
          de = readdir((DIR*) fp);
-      	 INC_NARTHREADS_CONTROLLED;
+         INC_NARTHREADS_CONTROLLED;
          if (de == NULL) {
-	    set_syserrortext(errno);
+            set_syserrortext(errno);
             fail;
-	    }
+            }
          nbytes = strlen(de->d_name);
          if (nbytes > i)
             nbytes = i;
          Protect(sptr = alcstr(de->d_name, nbytes), runerr(0));
          return string(nbytes, sptr);
          }
-#endif					/* ReadDirectory */
+#endif                                  /* ReadDirectory */
 
       /*
        * For ordinary files, reads -1 means the whole file.
        * In all cases, Ignore the 'translation' bit
        */
       if ((i == -1) && ((status & ~Fs_Untrans) == (Fs_Read|Fs_Buff))) {
-	 if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
-	 if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
-	 i = statbuf.st_size;
-	 }
+         if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
+         if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
+         i = statbuf.st_size;
+         }
       /*
        * For suspiciously large reads on normal files, cap at file size.
        */
       else if ((i >= 65535) && ((status & ~Fs_Untrans) == (Fs_Read|Fs_Buff))) {
-	 if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
-	 if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
-	 if (i > statbuf.st_size) i = statbuf.st_size;
-	 }
+         if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
+         if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
+         if (i > statbuf.st_size) i = statbuf.st_size;
+         }
       /*
        * Be sure that a positive number of bytes is to be read.
        */
       else if (i <= 0) {
-	 irunerr(205, i);
-	 errorfail;
-	 }
+         irunerr(205, i);
+         errorfail;
+         }
 
 #ifdef PosixFns
       /* Remember, sockets are always unbuffered */
       if ((status & Fs_Unbuf) && !(status & Fs_BPipe)) {
-	 /* We do one read(2) call here to avoid interactions with stdio */
-      	 DEC_NARTHREADS;
-	 if (u_read(&f, i, status, &s) == 0) { /* EOF, or sets errortext */
-      	    INC_NARTHREADS_CONTROLLED;
-	    fail;
-	    }
-      	 INC_NARTHREADS_CONTROLLED;
-	 return s;
+         /* We do one read(2) call here to avoid interactions with stdio */
+         DEC_NARTHREADS;
+         if (u_read(&f, i, status, &s) == 0) { /* EOF, or sets errortext */
+            INC_NARTHREADS_CONTROLLED;
+            fail;
+            }
+         INC_NARTHREADS_CONTROLLED;
+         return s;
       }
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
       /*
        * For now, assume we can read the full number of bytes.
@@ -1784,47 +1784,47 @@ function{0,1} reads(f,i)
        * Read characters from a compressed file
        */
       if (status & Fs_Compress) {
-	 if (gzeof(fp)) {
-	    fail;
-	    }
-      	 DEC_NARTHREADS;
-	 slen = gzread((gzFile) fp, StrLoc(s), i);
-      	 INC_NARTHREADS_CONTROLLED;
-	 if (slen == 0) {
-	    if (gzeof(fp)) fail;
-	    /* an underlying read error, but gzread() returned 0? */
-	    set_gzerrortext((gzFile) fp);
-	    fail;
-	    }
-	 else if (slen < 0)
-	    runerr(214);
-	 return string(slen, StrLoc(s));
-	 }
-#endif					/* HAVE_LIBZ */
+         if (gzeof(fp)) {
+            fail;
+            }
+         DEC_NARTHREADS;
+         slen = gzread((gzFile) fp, StrLoc(s), i);
+         INC_NARTHREADS_CONTROLLED;
+         if (slen == 0) {
+            if (gzeof(fp)) fail;
+            /* an underlying read error, but gzread() returned 0? */
+            set_gzerrortext((gzFile) fp);
+            fail;
+            }
+         else if (slen < 0)
+            runerr(214);
+         return string(slen, StrLoc(s));
+         }
+#endif                                  /* HAVE_LIBZ */
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
       if (status & Fs_Window) {
-	 tally = wlongread(StrLoc(s),sizeof(char),i,fp);
-	 if (tally == -1)
-	    runerr(141);
-	 else if (tally == -2)
-	    runerr(143);
-	 else if (tally == -3) /* EOF */
+         tally = wlongread(StrLoc(s),sizeof(char),i,fp);
+         if (tally == -1)
+            runerr(141);
+         else if (tally == -2)
+            runerr(143);
+         else if (tally == -3) /* EOF */
             fail;
-	 }
+         }
       else {
-#endif					/* Graphics */
+#endif                                  /* Graphics */
       DEC_NARTHREADS;
       tally = longread(StrLoc(s),sizeof(char),i,fp);
       INC_NARTHREADS_CONTROLLED;
 #ifdef Graphics
       }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
       if (tally == 0) /* EOF */
-	 fail;
+         fail;
       StrLen(s) = tally;
       /*
        * We may not have used the entire amount of storage we reserved.
@@ -1836,7 +1836,7 @@ function{0,1} reads(f,i)
       return s;
       }
 end
-
+
 
 "remove(s) - remove the file named s."
 
@@ -1857,19 +1857,19 @@ function{0,1} remove(s)
 #endif                                     /* ConcurrentCOMPILER */
       if (remove(s) != 0) {
 #ifdef PosixFns
-	 IntVal(amperErrno) = 0;
+         IntVal(amperErrno) = 0;
 #if NT && !defined(MSWIN64)
 #define rmdir _rmdir
-#endif					/* NT */
-	 if (rmdir(s) == 0) return nulldesc;
-#endif					/* PosixFns */
-	 set_syserrortext(errno);
-	 fail;
+#endif                                  /* NT */
+         if (rmdir(s) == 0) return nulldesc;
+#endif                                  /* PosixFns */
+         set_syserrortext(errno);
+         fail;
          }
       return nulldesc;
       }
 end
-
+
 
 "rename(s1,s2) - rename the file named s1 to have the name s2."
 
@@ -1893,12 +1893,12 @@ function{0,1} rename(s1,s2)
       /* try again. Windows is difficult. */
       remove(s2);
       if (rename(s1,s2) == 0) return nulldesc;
-#endif					/* NT */
+#endif                                  /* NT */
       set_syserrortext(errno);
       fail;
       }
 end
-
+
 #ifdef ExecImages
 
 "save(s) - save the run-time system in file s"
@@ -1922,26 +1922,26 @@ function{0,1} save(s)
        * Open the file for the executable image.
        */
       if ((f = creat(s, 0777)) == -1) {
-	 set_errortext(1051);
-	 fail;
-	 }
+         set_errortext(1051);
+         fail;
+         }
       fsz = wrtexec(f);
       /*
        * It happens that most wrtexecs don't check the system call return
        *  codes and thus they'll never return -1.  Nonetheless...
        */
       if (fsz == -1) {
-	 set_errortext(214);
-	 fail;
-	 }
+         set_errortext(214);
+         fail;
+         }
       /*
        * Return the size of the data space.
        */
       return C_integer fsz;
       }
 end
-#endif					/* ExecImages */
-
+#endif                                  /* ExecImages */
+
 
 "seek(f,i) - seek to offset i in file f."
 " [[ What about seek error ? ]] "
@@ -1968,86 +1968,86 @@ function{0,1} seek(f,o)
       FILE *fd;
 #ifdef Graphics
       CURTSTATE();
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
       fd = BlkD(f,File)->fd.fp;
       if (BlkLoc(f)->File.status == 0) {
-	 set_errortext(214);
-	 fail;
-	 }
+         set_errortext(214);
+         fail;
+         }
 
 #ifdef ReadDirectory
       if (BlkLoc(f)->File.status & Fs_Directory) {
-	 set_errortext(174);
-	 fail;
-	 }
-#endif					/* ReadDirectory */
+         set_errortext(174);
+         fail;
+         }
+#endif                                  /* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
       if (BlkD(f,File)->status & Fs_Window) {
-	 set_errortext(174);
-	 fail;
-	 }
-#endif					/* Graphics */
+         set_errortext(174);
+         fail;
+         }
+#endif                                  /* Graphics */
 
 
 #if HAVE_LIBZ
       if (BlkD(f,File)->status & Fs_Compress) {
-	 if (o<0) {
-	    set_errortext(214);
-	    }
-	 if (gzseek(fd, o - 1, SEEK_SET) == -1) {
-	    if (gzeof(fd)) fail;
-	    set_gzerrortext((gzFile) fd);
-	    fail;
-	    }
-	 else
-	    return f;        
-	 }
+         if (o<0) {
+            set_errortext(214);
+            }
+         if (gzseek(fd, o - 1, SEEK_SET) == -1) {
+            if (gzeof(fd)) fail;
+            set_gzerrortext((gzFile) fd);
+            fail;
+            }
+         else
+            return f;
+         }
 #endif                                 /* HAVE_LIBZ */
 
       if (o > 0) {
 /* fseek returns a non-zero value on error for CSET2, not -1 */
 #if CSET2
-	 if (fseek(fd, o - 1, SEEK_SET)) {
+         if (fseek(fd, o - 1, SEEK_SET)) {
 #else
-	 if (fseek(fd, o - 1, SEEK_SET) == -1) {
-#endif					/* CSET2 */
-	    set_syserrortext(errno);
-	    fail;
-	 }
+         if (fseek(fd, o - 1, SEEK_SET) == -1) {
+#endif                                  /* CSET2 */
+            set_syserrortext(errno);
+            fail;
+         }
 
-	 }
+         }
 
       else {
 
 #if CSET2
 /* unreliable seeking from the end in CSet/2 on a text stream, so
    we will fixup seek-from-end to seek-from-beginning */
-	long size;
-	long save_pos;
+        long size;
+        long save_pos;
 
-	/* save the position in case we have to reset it */
-	save_pos = ftell(fd);
-	/* seek to the end and get the file size */
-	fseek(fd, 0, SEEK_END);
-	size = ftell(fd);
-	/* try to accomplish the fixed-up seek */
-	if (fseek(fd, size + o, SEEK_SET)) {
-	   set_syserrortext(errno);
-	   fseek(fd, save_pos, SEEK_SET);/* huh? */
-	   fail;
-	   }  /* End of if - seek failed, reset position */
+        /* save the position in case we have to reset it */
+        save_pos = ftell(fd);
+        /* seek to the end and get the file size */
+        fseek(fd, 0, SEEK_END);
+        size = ftell(fd);
+        /* try to accomplish the fixed-up seek */
+        if (fseek(fd, size + o, SEEK_SET)) {
+           set_syserrortext(errno);
+           fseek(fd, save_pos, SEEK_SET);/* huh? */
+           fail;
+           }  /* End of if - seek failed, reset position */
 #else
-	 if (fseek(fd, o, SEEK_END) == -1) {
-	    set_syserrortext(errno);
-	    fail;
-	    }
-#endif					/* CSET2 */
+         if (fseek(fd, o, SEEK_END) == -1) {
+            set_syserrortext(errno);
+            fail;
+            }
+#endif                                  /* CSET2 */
 
-	 }
+         }
       BlkLoc(f)->File.status &= ~(Fs_Reading | Fs_Writing);
       return f;
       }
@@ -2059,24 +2059,24 @@ end
 function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
    if !is:file(d_stdin) then
       if !is:string(d_stdin) then
-	 if !is:null(d_stdin) then
-	    runerr(105, d_stdin)
+         if !is:null(d_stdin) then
+            runerr(105, d_stdin)
    if !is:file(d_stdout) then
       if !is:string(d_stdout) then
-	 if !is:null(d_stdout) then
-	    runerr(105, d_stdout)
+         if !is:null(d_stdout) then
+            runerr(105, d_stdout)
    if !is:file(d_stderr) then
       if !is:string(d_stderr) then
-	 if !is:null(d_stderr) then
-	    runerr(105, d_stderr)
+         if !is:null(d_stderr) then
+            runerr(105, d_stderr)
    if !is:list(argv) then
       if !is:string(argv) then
          runerr(110, argv)
    if !is:string(mode) then
       if !is:integer(mode) then
-	 if !is:file(mode) then
-	    if !is:null(mode) then
-	       runerr(170, mode)
+         if !is:file(mode) then
+            if !is:null(mode) then
+               runerr(170, mode)
    abstract {
       return null ++ integer
       }
@@ -2087,7 +2087,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       int i, j, n, is_argv_str=0;
       C_integer i_mode=0;
       tended union block *ep;
-	 
+
       /*
        * We are subverting the RTT type system here w.r.t. garbage
        * collection but we're going to be doing an exec() so ...
@@ -2099,144 +2099,144 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 
       /* Decode the mode */
       if (is:integer(mode)) {
-	 if (!cnv:C_integer(mode, i_mode)) runerr(101, mode);
-	 }
+         if (!cnv:C_integer(mode, i_mode)) runerr(101, mode);
+         }
       else if (is:string(mode)) {
-	 tended char *s_mode;
-	 if (!cnv:C_string(mode, s_mode)) runerr(103, mode);
-	 i_mode = (strcmp(s_mode, "nowait") == 0);
-	 }
+         tended char *s_mode;
+         if (!cnv:C_string(mode, s_mode)) runerr(103, mode);
+         i_mode = (strcmp(s_mode, "nowait") == 0);
+         }
 
       if (is:list(argv)) {
          margv = (char **)malloc((BlkD(argv,List)->size+3) * sizeof(char *));
          if (margv == NULL) runerr(305);
-	 n = 0;
-	 /* Traverse the list */
-	 for (ep = BlkD(argv,List)->listhead; BlkType(ep) == T_Lelem;
-	      ep = Blk(ep,Lelem)->listnext) {
-	    for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
-	       dptr f;
-	       j = Blk(ep,Lelem)->first + i;
-	       if (j >= Blk(ep,Lelem)->nslots)
-		  j -= Blk(ep,Lelem)->nslots;
-	       f = &Blk(ep,Lelem)->lslots[j];
+         n = 0;
+         /* Traverse the list */
+         for (ep = BlkD(argv,List)->listhead; BlkType(ep) == T_Lelem;
+              ep = Blk(ep,Lelem)->listnext) {
+            for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+               dptr f;
+               j = Blk(ep,Lelem)->first + i;
+               if (j >= Blk(ep,Lelem)->nslots)
+                  j -= Blk(ep,Lelem)->nslots;
+               f = &Blk(ep,Lelem)->lslots[j];
 
-	       if (!cnv:C_string((*f), p))
-		  runerr(103, *f);
+               if (!cnv:C_string((*f), p))
+                  runerr(103, *f);
 #if NT
-	       if ((n == 0) && is_internal(p)) {
-		  margv[n++] = "cmd"; /* on Win9x this should be command */
-		  margv[n++] = "/C";
-		  margv[n++] = p;
-		  }
-	       else {
-		  margv[n++] = p;
-		  }
+               if ((n == 0) && is_internal(p)) {
+                  margv[n++] = "cmd"; /* on Win9x this should be command */
+                  margv[n++] = "/C";
+                  margv[n++] = p;
+                  }
+               else {
+                  margv[n++] = p;
+                  }
 #else
-		  margv[n++] = p;
+                  margv[n++] = p;
 #endif
 
-	       }
-	    }
-	 margv[n] = 0;
+               }
+            }
+         margv[n] = 0;
          }
       else if (is:string(argv)) {
-	 is_argv_str = 1;
+         is_argv_str = 1;
          cnv:C_string(argv, cmdline);
 #if !NT
-	{
-	 char *s = cmdline;
+        {
+         char *s = cmdline;
 
-	 /*
-	  * If we have a string it may have redirection orders.
-	  * Since execl("/bin/sh"...) doesn't seem to handle those
-	  * redirections for us, figure out how to do them ourselves.
-	  * This is a lame hack. Someone needs to think through
-	  * a general solution and rewrite it.  Worst case (at present)
-	  * that we are planning for is >filename 2>&1.
-	  */
-	 while ((s = strstr(s, ">")) != NULL) {
-	    /*
-	     * If &> or >& then redirect both stdout and stderr.
-	     */
-	    if (((s - cmdline > 0) && s[-1] == '&') || (s[1]=='&')) {
+         /*
+          * If we have a string it may have redirection orders.
+          * Since execl("/bin/sh"...) doesn't seem to handle those
+          * redirections for us, figure out how to do them ourselves.
+          * This is a lame hack. Someone needs to think through
+          * a general solution and rewrite it.  Worst case (at present)
+          * that we are planning for is >filename 2>&1.
+          */
+         while ((s = strstr(s, ">")) != NULL) {
+            /*
+             * If &> or >& then redirect both stdout and stderr.
+             */
+            if (((s - cmdline > 0) && s[-1] == '&') || (s[1]=='&')) {
 
-	       if ((s - cmdline > 0) && s[-1] == '&') { /* &> */
-		  s[-1] = '\0';
-		  s++;
-		  }
-	       else { /* >& */
-		  *s = '\0';
-		  s += 2;
-		  }
+               if ((s - cmdline > 0) && s[-1] == '&') { /* &> */
+                  s[-1] = '\0';
+                  s++;
+                  }
+               else { /* >& */
+                  *s = '\0';
+                  s += 2;
+                  }
 
-	       while (*s == ' ') s++;
-	       StrLoc(d_stdout) = StrLoc(d_stderr) = s;
-	       while (*s) {
-		  if (*s == ' ') {
-		     *s++ = '\0';
-		     break;
-		     }
-		  s++;
-	          }
-	       StrLen(d_stdout) = StrLen(d_stderr) = strlen(StrLoc(d_stdout));
-	       }
-	    else if ((s - cmdline > 0) && s[-1] == '2') { /* 2> */
-	       s[-1] = '\0';
-	       s++;
-	       while (*s == ' ') s++;
-	       StrLoc(d_stderr) = s;
-	       while (*s) {
-		  if (*s == ' ') {
-		     *s++ = '\0';
-		     break;
-		     }
-		  s++;
-		  }
-	       StrLen(d_stderr) = strlen(StrLoc(d_stderr));
-	       if (!strcmp(StrLoc(d_stderr), "&1")) {
-		  d_stderr = d_stdout;
-		  }
-	       }
-	    else if (s[1] == '>') { /* >> */
-	       *s = '\0';
-	       s += 2;				/* skip over >> */
-	       while (*s == ' ') s++;
-	       StrLoc(d_stdout) = s;
-	       while (*s) {
-		  if (*s == ' ') {
-		     *s++ = '\0';
-		     break;
-		     }
-		  s++;
-	          }
-	       StrLen(d_stdout) = strlen(StrLoc(d_stdout));
+               while (*s == ' ') s++;
+               StrLoc(d_stdout) = StrLoc(d_stderr) = s;
+               while (*s) {
+                  if (*s == ' ') {
+                     *s++ = '\0';
+                     break;
+                     }
+                  s++;
+                  }
+               StrLen(d_stdout) = StrLen(d_stderr) = strlen(StrLoc(d_stdout));
+               }
+            else if ((s - cmdline > 0) && s[-1] == '2') { /* 2> */
+               s[-1] = '\0';
+               s++;
+               while (*s == ' ') s++;
+               StrLoc(d_stderr) = s;
+               while (*s) {
+                  if (*s == ' ') {
+                     *s++ = '\0';
+                     break;
+                     }
+                  s++;
+                  }
+               StrLen(d_stderr) = strlen(StrLoc(d_stderr));
+               if (!strcmp(StrLoc(d_stderr), "&1")) {
+                  d_stderr = d_stdout;
+                  }
+               }
+            else if (s[1] == '>') { /* >> */
+               *s = '\0';
+               s += 2;                          /* skip over >> */
+               while (*s == ' ') s++;
+               StrLoc(d_stdout) = s;
+               while (*s) {
+                  if (*s == ' ') {
+                     *s++ = '\0';
+                     break;
+                     }
+                  s++;
+                  }
+               StrLen(d_stdout) = strlen(StrLoc(d_stdout));
 
-	       d_stdout.dword = D_Integer;
-	       d_stdout.vword.integr =
+               d_stdout.dword = D_Integer;
+               d_stdout.vword.integr =
 #if UNIX
-		 open(StrLoc(d_stdout), O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
+                 open(StrLoc(d_stdout), O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
 #endif
 #if NT
-	         _open(StrLoc(d_stdout), O_WRONLY|O_CREAT|O_APPEND, _S_IWRITE|_S_IREAD);
+                 _open(StrLoc(d_stdout), O_WRONLY|O_CREAT|O_APPEND, _S_IWRITE|_S_IREAD);
 #endif
-	       }
-	    else { /* > */
-	       *s = '\0';
-	       s++;
-	       while (*s == ' ') s++;
-	       StrLoc(d_stdout) = s;
-	       while (*s) {
-		  if (*s == ' ') {
-		     *s++ = '\0';
-		     break;
-		     }
-		  s++;
-	          }
-	       StrLen(d_stdout) = strlen(StrLoc(d_stdout));
-	       }
-	    }
-	}
+               }
+            else { /* > */
+               *s = '\0';
+               s++;
+               while (*s == ' ') s++;
+               StrLoc(d_stdout) = s;
+               while (*s) {
+                  if (*s == ' ') {
+                     *s++ = '\0';
+                     break;
+                     }
+                  s++;
+                  }
+               StrLen(d_stdout) = strlen(StrLoc(d_stdout));
+               }
+            }
+        }
 #endif
       }
 
@@ -2245,125 +2245,125 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
        * Open in the parent, fork/exec, close (in the parent).
        */
       if (is:string(d_stdin)) {
-	 tended char *s_stdin;
+         tended char *s_stdin;
          cnv:C_string(d_stdin, s_stdin);
-	 d_stdin.dword = D_Integer;
-	 d_stdin.vword.integr = open(s_stdin, O_RDONLY);
-	 }
+         d_stdin.dword = D_Integer;
+         d_stdin.vword.integr = open(s_stdin, O_RDONLY);
+         }
       if (is:string(d_stdout) && is:string(d_stderr) &&
-	  (StrLen(d_stdout) == StrLen(d_stderr)) &&
-	  !strncmp(StrLoc(d_stdout), StrLoc(d_stderr), StrLen(d_stdout))) {
-	 /* special case: stderr/stdout to same file */
-	 tended char *s_stdouterr;
+          (StrLen(d_stdout) == StrLen(d_stderr)) &&
+          !strncmp(StrLoc(d_stdout), StrLoc(d_stderr), StrLen(d_stdout))) {
+         /* special case: stderr/stdout to same file */
+         tended char *s_stdouterr;
          cnv:C_string(d_stdout, s_stdouterr);
-	 d_stdout.dword = d_stderr.dword = D_Integer;
-	 d_stdout.vword.integr =
+         d_stdout.dword = d_stderr.dword = D_Integer;
+         d_stdout.vword.integr =
 #if UNIX
-	    open(s_stdouterr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+            open(s_stdouterr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
 #endif
 #if NT
-	    _open(s_stdouterr, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
+            _open(s_stdouterr, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
 #endif
 
-	 d_stderr.vword.integr = d_stdout.vword.integr;
-	 }
+         d_stderr.vword.integr = d_stdout.vword.integr;
+         }
       else {
       if (is:string(d_stdout)) {
-	 tended char *s_stdout;
+         tended char *s_stdout;
          cnv:C_string(d_stdout, s_stdout);
-	 d_stdout.dword = D_Integer;
-	 d_stdout.vword.integr =
+         d_stdout.dword = D_Integer;
+         d_stdout.vword.integr =
 #if UNIX
-	    open(s_stdout, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+            open(s_stdout, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
 #endif
 #if NT
-	    _open(s_stdout, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
+            _open(s_stdout, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
 #endif
-	 }
+         }
       if (is:string(d_stderr)) {
-	 tended char *s_stderr;
+         tended char *s_stderr;
          cnv:C_string(d_stderr, s_stderr);
-	 d_stderr.dword = D_Integer;
-	 d_stderr.vword.integr =
+         d_stderr.dword = D_Integer;
+         d_stderr.vword.integr =
 #if UNIX
-	    open(s_stderr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+            open(s_stderr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
 #endif
 #if NT
-	    _open(s_stderr, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
+            _open(s_stderr, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
 #endif
-	 }
+         }
       }
 
 #if !NT
-      /* 
+      /*
        * We don't use system(3) any more since the program is allowed to
        * re-map the files even for foreground execution
        */
 #ifdef HAVE_WORKING_VFORK
       switch (pid = vfork()) {
-#else					/* HAVE_WORKING_VFORK */
+#else                                   /* HAVE_WORKING_VFORK */
       switch (pid = fork()) {
-#endif					/* HAVE_WORKING_VFORK */
+#endif                                  /* HAVE_WORKING_VFORK */
       case 0:
 
-	 dup_fds(&d_stdin, &d_stdout, &d_stderr);
+         dup_fds(&d_stdin, &d_stdout, &d_stderr);
 
-	 if (is_argv_str) {
-	    execl("/bin/sh", "sh", "-c", cmdline, (char *)0);
-	    }
-	 else {
-	    if (execvp(margv[0], margv) == -1) {
-	       free(margv);
-	       }
+         if (is_argv_str) {
+            execl("/bin/sh", "sh", "-c", cmdline, (char *)0);
+            }
+         else {
+            if (execvp(margv[0], margv) == -1) {
+               free(margv);
+               }
             }
 
-	  /*
-	   * If we returned.... this is the child, so failure is no good;
-	   * stop with a runtime error so at least the user will get some
-	   * indication of the problem.
-	   */
-	  IntVal(amperErrno) = errno;
-	  runerr(500);
-	  break;
+          /*
+           * If we returned.... this is the child, so failure is no good;
+           * stop with a runtime error so at least the user will get some
+           * indication of the problem.
+           */
+          IntVal(amperErrno) = errno;
+          runerr(500);
+          break;
       case -1:
          if (margv) free(margv);
-	 set_syserrortext(errno);
-	 fail;
-	 break;
+         set_syserrortext(errno);
+         fail;
+         break;
       default:
 
 #if UNIX && defined(HAVE_WORKING_VFORK)
         if (!is:null(d_stdin) && is:file(d_stdin)){
            if (BlkD(d_stdin,File)->status & Fs_BPipe)
-	      push_filepid(pid, BlkD(d_stdin,File)->fd.fp, Fs_BPipe);
-	   }
+              push_filepid(pid, BlkD(d_stdin,File)->fd.fp, Fs_BPipe);
+           }
 
         if (!is:null(d_stdout) && is:file(d_stdout)){
            if (BlkD(d_stdout,File)->status & Fs_BPipe)
-   	      push_filepid(pid, BlkD(d_stdout,File)->fd.fp, Fs_BPipe);
-	   }
-#endif				/* UNIX && defined(HAVE_WORKING_VFORK) */
+              push_filepid(pid, BlkD(d_stdout,File)->fd.fp, Fs_BPipe);
+           }
+#endif                          /* UNIX && defined(HAVE_WORKING_VFORK) */
 
          if (margv) free(margv);
-	 if (is:integer(d_stdin) &&IntVal(d_stdin)>-1) close(IntVal(d_stdin));
-	 if (is:integer(d_stdout)&&IntVal(d_stdout)>-1) close(IntVal(d_stdout));
-	 if (is:integer(d_stderr) && (IntVal(d_stderr)>-1) &&
-	     ((!is:integer(d_stdout))||(IntVal(d_stdout)!=IntVal(d_stderr))))
-	    close(IntVal(d_stderr));
-	 if (!i_mode) {
-	    int status;
-	    waitpid(pid, &status, 0);
-	    if (WIFEXITED(status))
-	       return C_integer WEXITSTATUS(status);
-	    else
-	       return C_integer status;
-	    
-	    }
-	 else {
-	    return C_integer pid;
+         if (is:integer(d_stdin) &&IntVal(d_stdin)>-1) close(IntVal(d_stdin));
+         if (is:integer(d_stdout)&&IntVal(d_stdout)>-1) close(IntVal(d_stdout));
+         if (is:integer(d_stderr) && (IntVal(d_stderr)>-1) &&
+             ((!is:integer(d_stdout))||(IntVal(d_stdout)!=IntVal(d_stderr))))
+            close(IntVal(d_stderr));
+         if (!i_mode) {
+            int status;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status))
+               return C_integer WEXITSTATUS(status);
+            else
+               return C_integer status;
+
+            }
+         else {
+            return C_integer pid;
             }
       }
-#else					/* NT */
+#else                                   /* NT */
      /*
       * We might want to use CreateProcess and pass the file handles
       * for stdin/stdout/stderr to the child process.  Another candidate
@@ -2371,89 +2371,89 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       */
       if (i_mode) {
          _flushall();
-	 if (is:string(argv)) {
-	    int argc;
-	    char **garbage;
-	    argc = CmdParamToArgv(cmdline, &garbage, 0);
-	    if (is_internal(garbage[0])) {
-	       int jj;
-	       argc += 2;
-	       garbage = realloc(garbage, (sizeof (char *)) * (argc+1));
-	       garbage[argc] = NULL;
-	       for(jj = argc-1; jj >= 2; jj--)
-		  garbage[jj] = garbage[jj-2];
-	       garbage[0] = "cmd";
-	       garbage[1] = "/C";
-	       }
-	    i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], (const char* const*) garbage);
-	    free(garbage);
-	    }
-	 else {
-	    i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], (const char* const*) margv);
-	    free(margv);
+         if (is:string(argv)) {
+            int argc;
+            char **garbage;
+            argc = CmdParamToArgv(cmdline, &garbage, 0);
+            if (is_internal(garbage[0])) {
+               int jj;
+               argc += 2;
+               garbage = realloc(garbage, (sizeof (char *)) * (argc+1));
+               garbage[argc] = NULL;
+               for(jj = argc-1; jj >= 2; jj--)
+                  garbage[jj] = garbage[jj-2];
+               garbage[0] = "cmd";
+               garbage[1] = "/C";
+               }
+            i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], (const char* const*) garbage);
+            free(garbage);
             }
-	 if (i != 0) {
-	    set_syserrortext(errno);
-	    fail;
-	    }
+         else {
+            i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], (const char* const*) margv);
+            free(margv);
+            }
+         if (i != 0) {
+            set_syserrortext(errno);
+            fail;
+            }
          }
       else {
-	    /* Sigh... old "system". Collect all args into a string. */
-	    if (is_argv_str) {
-	       int argc;
-	       char **garbage, *g2;
+            /* Sigh... old "system". Collect all args into a string. */
+            if (is_argv_str) {
+               int argc;
+               char **garbage, *g2;
 extern char *ArgvToCmdline(char **);
-	       argc = CmdParamToArgv(cmdline, &garbage, 0);
-	       if (is_internal(garbage[0])) {
-	       	  int jj;
-	       	  argc += 2;
-	       	  garbage = realloc(garbage, (sizeof (char *)) * (argc+1));
-	       	  garbage[argc] = NULL;
-	       	  for(jj = argc-1; jj >= 2; jj--)
-		     garbage[jj] = garbage[jj-2];
-	       	  garbage[0] = "cmd";
-	       	  garbage[1] = "/C";
-	       	  }
+               argc = CmdParamToArgv(cmdline, &garbage, 0);
+               if (is_internal(garbage[0])) {
+                  int jj;
+                  argc += 2;
+                  garbage = realloc(garbage, (sizeof (char *)) * (argc+1));
+                  garbage[argc] = NULL;
+                  for(jj = argc-1; jj >= 2; jj--)
+                     garbage[jj] = garbage[jj-2];
+                  garbage[0] = "cmd";
+                  garbage[1] = "/C";
+                  }
                g2 = ArgvToCmdline(garbage);
 
 #ifdef MSWindows
-	       i = (C_integer)mswinsystem(g2);
-#else					/* MSWindows */
-	       i = (C_integer)system(g2);
-#endif					/* MSWindows */
-	       free(garbage);
-	       free(g2);
-	       return C_integer i;
-	       }
-	    else {
-	       int i, total = 0, n;
-	       tended char *s;
-	       i = 0;
-	       while (margv[i]) {
-		  total += strlen(margv[i]) + 1;
-		  i++;
-		  }
-	       n = i;
-	       /* We use Icon's allocator, it's the only safe way. */
-	       Protect(s = alcstr(0, total), runerr(0));
-	       p = s;
-	       for (i = 0; i < n; i++) {
-		  strcpy(p, margv[i]);
-		  p += strlen(margv[i]);
-		  *p++ = ' ';
-		  }
+               i = (C_integer)mswinsystem(g2);
+#else                                   /* MSWindows */
+               i = (C_integer)system(g2);
+#endif                                  /* MSWindows */
+               free(garbage);
+               free(g2);
+               return C_integer i;
+               }
+            else {
+               int i, total = 0, n;
+               tended char *s;
+               i = 0;
+               while (margv[i]) {
+                  total += strlen(margv[i]) + 1;
+                  i++;
+                  }
+               n = i;
+               /* We use Icon's allocator, it's the only safe way. */
+               Protect(s = alcstr(0, total), runerr(0));
+               p = s;
+               for (i = 0; i < n; i++) {
+                  strcpy(p, margv[i]);
+                  p += strlen(margv[i]);
+                  *p++ = ' ';
+                  }
                --p;
-	       *p = '\0';
+               *p = '\0';
 #ifdef MSWindows
-	       i = (C_integer)mswinsystem(s);
-#else					/* MSWindows */
-	       i = (C_integer)system(s);
-#endif					/* MSWindows */
-	       free(margv);
-	       return C_integer i;
-	       }
-	    }
-#endif					/* NT */
+               i = (C_integer)mswinsystem(s);
+#else                                   /* MSWindows */
+               i = (C_integer)system(s);
+#endif                                  /* MSWindows */
+               free(margv);
+               return C_integer i;
+               }
+            }
+#endif                                  /* NT */
 
       /*NOTREACHED*/
       return nulldesc;
@@ -2493,29 +2493,29 @@ function{1} system(s, o)
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #if NT
       if (o == 0)   { /* nowait, or 0, for second argument */
          cmdname = strtok(s, " ");
          for(j = 0; j<256; j++)
             if ((args[j] = strtok(NULL, " ")) == NULL)
-	       break;
-	 args[j] = NULL;
+               break;
+         args[j] = NULL;
          _flushall();
          i = (C_integer)_spawnvp(_P_NOWAITO, cmdname, args);
       }
       else
-	 i = mswinsystem(s);
-#else					/*NT*/
+         i = mswinsystem(s);
+#else                                   /*NT*/
       i = (C_integer)system(s);
-#endif					/*NT*/
+#endif                                  /*NT*/
 
       return C_integer i;
       }
 end
-#endif					/* PosixFns */
-
+#endif                                  /* PosixFns */
+
 
 "where(f) - return current offset position in file f."
 
@@ -2534,41 +2534,41 @@ function{0,1} where(f)
       long pos;
 #ifdef Graphics
       CURTSTATE();
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
       fd = BlkD(f,File)->fd.fp;
 
       if (BlkLoc(f)->File.status == 0) {
-	 set_errortext(212);
-	 fail;
-	 }
+         set_errortext(212);
+         fail;
+         }
 
 #ifdef ReadDirectory
       if ((BlkLoc(f)->File.status & Fs_Directory) != 0) {
-	 set_errortext(174);
+         set_errortext(174);
          fail;
-	 }
-#endif					/* ReadDirectory */
+         }
+#endif                                  /* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
       if (BlkLoc(f)->File.status & Fs_Window) {
-	 set_errortext(214);
-	 fail;
-	 }
-#endif					/* Graphics */
+         set_errortext(214);
+         fail;
+         }
+#endif                                  /* Graphics */
 
       pos = ftell(fd) + 1;
       if (pos == 0) {
-	 set_syserrortext(errno);
-	 fail;	/* may only be effective on ANSI systems */
+         set_syserrortext(errno);
+         fail;  /* may only be effective on ANSI systems */
       }
 
       return C_integer pos;
       }
 end
-
+
 /*
  * stop(), write(), and writes() differ in whether they stop the program
  *  and whether they output newlines. The macro GenWrite is used to
@@ -2581,40 +2581,40 @@ end
    inline {
 #if error_out
 #ifdef Concurrent
-	 fblk = &k_errout;
+         fblk = &k_errout;
          MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
       if ((k_errout.status & Fs_Write) == 0){
-	 MUTEX_UNLOCKID(fblk->mutexid);
-	 runerr(213);
-	 }
+         MUTEX_UNLOCKID(fblk->mutexid);
+         runerr(213);
+         }
       else {
 #ifndef ConsoleWindow
-	 f.fp = k_errout.fd.fp;
-#else					/* ConsoleWindow */
+         f.fp = k_errout.fd.fp;
+#else                                   /* ConsoleWindow */
          f.fp=(ConsoleFlags & StdErrRedirect) ? k_errout.fd.fp : OpenConsole();
-#endif					/* ConsoleWindow */
-	 }
-#else					/* error_out */
+#endif                                  /* ConsoleWindow */
+         }
+#else                                   /* error_out */
 #ifdef Concurrent
-	 fblk = &k_output;
+         fblk = &k_output;
          MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
       if ((k_output.status & Fs_Write) == 0){
-	 MUTEX_UNLOCKID(fblk->mutexid);
-	 runerr(213);
-	 }
+         MUTEX_UNLOCKID(fblk->mutexid);
+         runerr(213);
+         }
       else {
 #ifndef ConsoleWindow
-	 f.fp = k_output.fd.fp;
-#else					/* ConsoleWindow */
+         f.fp = k_output.fd.fp;
+#else                                   /* ConsoleWindow */
          f.fp=(ConsoleFlags & StdOutRedirect) ? k_output.fd.fp : OpenConsole();
-#endif					/* ConsoleWindow */
-	 }
-#endif					/* error_out */
+#endif                                  /* ConsoleWindow */
+         }
+#endif                                  /* error_out */
       }
-#enddef					/* DefaultFile */
+#enddef                                 /* DefaultFile */
 
 #begdef Finish(retvalue, nl, terminate)
 #if nl
@@ -2629,18 +2629,18 @@ end
       if (f.wb->window->is_gl)
          gl_wputc('\n', f.wb);
       else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       wputc('\n', f.wb);
       }
    else
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #ifdef PseudoPty
-		     if (status & Fs_Pty) {
-			ptputc('\n', f.pt);
-			}
-		     else
-#endif					/* PseudoPty */
+                     if (status & Fs_Pty) {
+                        ptputc('\n', f.pt);
+                        }
+                     else
+#endif                                  /* PseudoPty */
 
 #if HAVE_LIBZ
    if (status & Fs_Compress) {
@@ -2648,154 +2648,154 @@ end
           runerr(214);
       }
    else
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBZ */
 
 #ifdef Messaging
       if (status & Fs_Messaging) {
-	 struct MFile *mf = f.mf;
-	 extern int Merror;
-	 if (!MFIN(mf, WRITING)){
-	    MUTEX_UNLOCKID(fblk->mutexid);
-	    runerr(213);
-	    }
-	 if (tp_write(mf->tp, "\n", 1) < 0) {
-	 MUTEX_UNLOCKID(fblk->mutexid);
+         struct MFile *mf = f.mf;
+         extern int Merror;
+         if (!MFIN(mf, WRITING)){
+            MUTEX_UNLOCKID(fblk->mutexid);
+            runerr(213);
+            }
+         if (tp_write(mf->tp, "\n", 1) < 0) {
+         MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
-	    syserr("tp_write failed in stop()");
+            syserr("tp_write failed in stop()");
 #else
-	    /* tp_write has failed in write() or writes() */
-	    set_errortext(214);
-	    fail;
+            /* tp_write has failed in write() or writes() */
+            set_errortext(214);
+            fail;
 #endif
-	    }
-	 if (Merror != 0) {
-	    MUTEX_UNLOCKID(fblk->mutexid);
-	    runerr(Merror);
-	    }
-	 }
+            }
+         if (Merror != 0) {
+            MUTEX_UNLOCKID(fblk->mutexid);
+            runerr(Merror);
+            }
+         }
       else
 #endif                                  /* Messaging */
 #ifdef PosixFns
       if (status & Fs_Socket) {
-	 if (sock_write(f.fd, "\n", 1) < 0){
-	    MUTEX_UNLOCKID(fblk->mutexid);
+         if (sock_write(f.fd, "\n", 1) < 0){
+            MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
-	    syserr("sock_write failed in stop()");
+            syserr("sock_write failed in stop()");
 #else
-	    set_syserrortext(errno);
-	    fail;
+            set_syserrortext(errno);
+            fail;
 #endif
-	  }
+          }
          }
       else
-#endif					/* PosixFns */
-	 putc('\n', f.fp);
+#endif                                  /* PosixFns */
+         putc('\n', f.fp);
 
-#endif					/* nl */
+#endif                                  /* nl */
 
    /*
     * Flush the file.
     */
 #ifdef Messaging
    if (!(status & Fs_Messaging)) {
-#endif					/* Messaging */
+#endif                                  /* Messaging */
 #ifdef Graphics
    if (!(status & Fs_Window)) {
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 #ifdef PseudoPty
    if (!(status & Fs_Pty)) {
 #endif
 
 #ifdef PosixFns
       if (!(status & Fs_Socket)) {
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #if HAVE_LIBZ
       if (status & (Fs_Compress
-		    )) {
+                    )) {
 
        /*if (ferror(f)){
-	    MUTEX_UNLOCKID(fblk->mutexid);
-	    runerr(214);
-	    }
+            MUTEX_UNLOCKID(fblk->mutexid);
+            runerr(214);
+            }
          gzflush(f, Z_SYNC_FLUSH);  */
          }
       else{
          if (ferror(f.fp)){
-	    MUTEX_UNLOCKID(fblk->mutexid);
-	    runerr(214);
-	    }
+            MUTEX_UNLOCKID(fblk->mutexid);
+            runerr(214);
+            }
          fflush(f.fp);
       }
-#else					/* HAVE_LIBZ */
+#else                                   /* HAVE_LIBZ */
          if (ferror(f.fp)){
-	    MUTEX_UNLOCKID(fblk->mutexid);
-	    runerr(214);
-	    }
+            MUTEX_UNLOCKID(fblk->mutexid);
+            runerr(214);
+            }
          fflush(f.fp);
-      
-#endif					/* HAVE_LIBZ */
+
+#endif                                  /* HAVE_LIBZ */
 
 #ifdef PosixFns
       }
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #ifdef Graphics
       }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 #ifdef PseudoPty
    }
-#endif					/* PseudoPty */
+#endif                                  /* PseudoPty */
 #ifdef Messaging
    }
-#endif					/* Messaging */
-	    MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Messaging */
+            MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
-	    c_exit(EXIT_FAILURE);
+            c_exit(EXIT_FAILURE);
 #if !COMPILER
             return retvalue;            /* avoid spurious warning message */
-#endif					/* except on the COMPILER... */
-#else					/* terminate */
-	    return retvalue;
-#endif					/* terminate */
-#enddef					/* Finish */
+#endif                                  /* except on the COMPILER... */
+#else                                   /* terminate */
+            return retvalue;
+#endif                                  /* terminate */
+#enddef                                 /* Finish */
 
 #begdef GenWrite(name, nl, terminate)
 
 #name "(a,b,...) - write arguments"
 #if !nl
    " without newline terminator"
-#endif					/* nl */
+#endif                                  /* nl */
 #if terminate
    " (starting on error output) and stop"
-#endif					/* terminate */
+#endif                                  /* terminate */
 "."
 
 #if terminate
 function {} name(x[nargs])
-#else					/* terminate */
+#else                                   /* terminate */
 function {1} name(x[nargs])
-#endif					/* terminate */
+#endif                                  /* terminate */
 
    declare {
       union f f;
 #ifdef Concurrent
       tended struct b_file *fblk = NULL;
-#endif					/* terminate */
+#endif                                  /* terminate */
       word status =
 #if terminate
 #ifndef ConsoleWindow
-	k_errout.status;
-#else					/* ConsoleWindow */
+        k_errout.status;
+#else                                   /* ConsoleWindow */
         (ConsoleFlags & StdErrRedirect) ? k_errout.status : Fs_Read | Fs_Write | Fs_Window;
-#endif					/* ConsoleWindow */
-#else					/* terminate */
+#endif                                  /* ConsoleWindow */
+#else                                   /* terminate */
 #ifndef ConsoleWindow
-	k_output.status;
-#else					/* ConsoleWindow */
+        k_output.status;
+#else                                   /* ConsoleWindow */
         (ConsoleFlags & StdOutRedirect) ? k_output.status : Fs_Read | Fs_Write | Fs_Window;
-#endif					/* ConsoleWindow */
-#endif					/* terminate */
+#endif                                  /* ConsoleWindow */
+#endif                                  /* terminate */
 
       }
 
@@ -2803,185 +2803,185 @@ function {1} name(x[nargs])
    abstract {
       return empty_type
       }
-#endif					/* terminate */
+#endif                                  /* terminate */
 
    len_case nargs of {
       0: {
 #if !terminate
-	 abstract {
-	    return null
-	    }
-#endif					/* terminate */
-	 DefaultFile(terminate)
-	 body {
+         abstract {
+            return null
+            }
+#endif                                  /* terminate */
+         DefaultFile(terminate)
+         body {
 #if ConcurrentCOMPILER
-	    CURTSTATE();
-#endif					/* ConcurrentCOMPILER */
-	    Finish(nulldesc, nl, terminate)
-	    }
-	 }
+            CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
+            Finish(nulldesc, nl, terminate)
+            }
+         }
 
       default: {
 #if !terminate
-	 abstract {
-	    return type(x)
-	    }
-#endif					/* terminate */
-	 /*
-	  * See if we need to start with the default file.
-	  */
-	 if !is:file(x[0]) then
-	    DefaultFile(terminate)
+         abstract {
+            return type(x)
+            }
+#endif                                  /* terminate */
+         /*
+          * See if we need to start with the default file.
+          */
+         if !is:file(x[0]) then
+            DefaultFile(terminate)
 
-	 body {
-	    tended struct descrip t;
-	    register word n;
+         body {
+            tended struct descrip t;
+            register word n;
 
-	    /*
-	     * Loop through the arguments.
-	     */
-	    for (n = 0; n < nargs; n++) {
-	       if (is:file(x[n])) {	/* Current argument is a file */
+            /*
+             * Loop through the arguments.
+             */
+            for (n = 0; n < nargs; n++) {
+               if (is:file(x[n])) {     /* Current argument is a file */
 
 #if nl
-		  /*
-		   * If this is not the first argument, output a newline to the
-		   * current file and flush it.
-		   */
-		  if (n > 0) {
+                  /*
+                   * If this is not the first argument, output a newline to the
+                   * current file and flush it.
+                   */
+                  if (n > 0) {
 
-		     /*
-		      * Append a newline to the file and flush it.
-		      */
+                     /*
+                      * Append a newline to the file and flush it.
+                      */
 #ifdef Graphics
-		     pollctr >>= 1;
-		     pollctr++;
-		     if (status & Fs_Window) {
+                     pollctr >>= 1;
+                     pollctr++;
+                     if (status & Fs_Window) {
 #ifdef GraphicsGL
-			if ((f.wb)->window->is_gl) {
-			   gl_wputc('\n', f.wb);
-			   gl_wflush(f.wb);
-			   }
-			else
-#endif					/* GraphicsGL */
-			wputc('\n', f.wb);
-			wflush(f.wb);
-			}
-		     else {
-#endif					/* Graphics */
+                        if ((f.wb)->window->is_gl) {
+                           gl_wputc('\n', f.wb);
+                           gl_wflush(f.wb);
+                           }
+                        else
+#endif                                  /* GraphicsGL */
+                        wputc('\n', f.wb);
+                        wflush(f.wb);
+                        }
+                     else {
+#endif                                  /* Graphics */
 
 #ifdef PseudoPty
-		     if (status & Fs_Pty) {
-			ptputc('\n', f.pt);
-			}
-		     else
-#endif					/* PseudoPty */
+                     if (status & Fs_Pty) {
+                        ptputc('\n', f.pt);
+                        }
+                     else
+#endif                                  /* PseudoPty */
 
 #if HAVE_LIBZ
                      if (status & Fs_Compress) {
-			if (gzputc(f.fp,'\n')==-1){
-#ifdef Concurrent 
-			   if (fblk)
-			   MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
+                        if (gzputc(f.fp,'\n')==-1){
+#ifdef Concurrent
+                           if (fblk)
+                           MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
                            runerr(214);
-			   }
-/*			gzflush(f.fp,4); */
-			  }
-		     else {
+                           }
+/*                      gzflush(f.fp,4); */
                           }
-#endif					/* HAVE_LIBZ */
+                     else {
+                          }
+#endif                                  /* HAVE_LIBZ */
 
 
 #ifdef Messaging
                         if (status & Fs_Messaging) {
-			   struct MFile *mf = f.mf;
-			   extern int Merror;
-			   if (!MFIN(mf, WRITING)) {
-#ifdef Concurrent 
-			      if (fblk)
-			      MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
-			      runerr(213);
-			      }
-			   if (tp_write(mf->tp, "\n", 1) < 0) {
-#ifdef Concurrent 
-			      if (fblk)
-			      MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
+                           struct MFile *mf = f.mf;
+                           extern int Merror;
+                           if (!MFIN(mf, WRITING)) {
+#ifdef Concurrent
+                              if (fblk)
+                              MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
+                              runerr(213);
+                              }
+                           if (tp_write(mf->tp, "\n", 1) < 0) {
+#ifdef Concurrent
+                              if (fblk)
+                              MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
 #if terminate
-			      syserr("tp_write failed in stop()");
+                              syserr("tp_write failed in stop()");
 #else
-			      set_errortext(214);
-			      fail;
+                              set_errortext(214);
+                              fail;
 #endif
-			      }
-			   if (Merror != 0) {
-#ifdef Concurrent 
-			      if (fblk)
-		    	      MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
-			      runerr(Merror, x[n]);
-			      }
-			   }
-			else
+                              }
+                           if (Merror != 0) {
+#ifdef Concurrent
+                              if (fblk)
+                              MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
+                              runerr(Merror, x[n]);
+                              }
+                           }
+                        else
 #endif                                  /* Messaging */
 #ifdef PosixFns
-			if (status & Fs_Socket) {
-			   if (sock_write(f.fd, "\n", 1) < 0){
-#ifdef Concurrent 
-			      if (fblk)
-			      MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
+                        if (status & Fs_Socket) {
+                           if (sock_write(f.fd, "\n", 1) < 0){
+#ifdef Concurrent
+                              if (fblk)
+                              MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
 #if terminate
-			      syserr("sock_write failed in stop()");
+                              syserr("sock_write failed in stop()");
 #else
-			      set_syserrortext(errno);
-			      fail;
+                              set_syserrortext(errno);
+                              fail;
 #endif
-			     }
-			}
-			else {
-#endif					/* PosixFns */
-			putc('\n', f.fp);
-			if (ferror(f.fp)){
-#ifdef Concurrent 
-			   if (fblk)
-	    		   MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
-			   runerr(214);
-			   }
-			fflush(f.fp);
+                             }
+                        }
+                        else {
+#endif                                  /* PosixFns */
+                        putc('\n', f.fp);
+                        if (ferror(f.fp)){
+#ifdef Concurrent
+                           if (fblk)
+                           MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
+                           runerr(214);
+                           }
+                        fflush(f.fp);
 #ifdef PosixFns
                         }
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 #ifdef Graphics
-			}
-#endif					/* Graphics */
-#ifdef Concurrent 
-		     if (fblk)
-			MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
-		     }
-#endif					/* nl */
+                        }
+#endif                                  /* Graphics */
+#ifdef Concurrent
+                     if (fblk)
+                        MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
+                     }
+#endif                                  /* nl */
 
-		  /*
-		   * Switch the current file to the file named by the current
-		   * argument providing it is a file.
-		   */
-		  status = BlkD(x[n],File)->status;
-		  if ((status & Fs_Write) == 0){
-#ifdef Concurrent 
-		     if (fblk)
-	    	     MUTEX_UNLOCKID(fblk->mutexid);
-#endif					/* Concurrent */
-		     runerr(213, x[n]);
-		     }
-		  f.fp = BlkLoc(x[n])->File.fd.fp;
-#ifdef Concurrent 
-		  fblk = BlkD(x[n], File);
-        	  MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
-#endif					/* Concurrent */
+                  /*
+                   * Switch the current file to the file named by the current
+                   * argument providing it is a file.
+                   */
+                  status = BlkD(x[n],File)->status;
+                  if ((status & Fs_Write) == 0){
+#ifdef Concurrent
+                     if (fblk)
+                     MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
+                     runerr(213, x[n]);
+                     }
+                  f.fp = BlkLoc(x[n])->File.fd.fp;
+#ifdef Concurrent
+                  fblk = BlkD(x[n], File);
+                  MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
+#endif                                  /* Concurrent */
 
 #ifdef ConsoleWindow
                   if ((f.fp == stdout && !(ConsoleFlags & StdOutRedirect)) ||
@@ -2989,102 +2989,102 @@ function {1} name(x[nargs])
                      f.fp = OpenConsole();
                      status = Fs_Read | Fs_Write | Fs_Window;
                      }
-#endif					/* ConsoleWindow */
-		  }
-	       else {
-		  /*
-		   * Convert the argument to a string, defaulting to a empty
-		   *  string.
-		   */
-		  if (!def:tmp_string(x[n],emptystr,t)){
-	    	     MUTEX_UNLOCKID(fblk->mutexid);
-		     runerr(109, x[n]);
-		     }
+#endif                                  /* ConsoleWindow */
+                  }
+               else {
+                  /*
+                   * Convert the argument to a string, defaulting to a empty
+                   *  string.
+                   */
+                  if (!def:tmp_string(x[n],emptystr,t)){
+                     MUTEX_UNLOCKID(fblk->mutexid);
+                     runerr(109, x[n]);
+                     }
 
-		  /*
-		   * Output the string.
-		   */
+                  /*
+                   * Output the string.
+                   */
 #ifdef Graphics
-		  if (status & Fs_Window)
-		     wputstr(f.wb, StrLoc(t), StrLen(t));
-		  else
-#endif					/* Graphics */
+                  if (status & Fs_Window)
+                     wputstr(f.wb, StrLoc(t), StrLen(t));
+                  else
+#endif                                  /* Graphics */
 
 #ifdef PseudoPty
-		  if (status & Fs_Pty)
-		     ptputstr(f.pt, StrLoc(t), StrLen(t));
-		  else
+                  if (status & Fs_Pty)
+                     ptputstr(f.pt, StrLoc(t), StrLen(t));
+                  else
 #endif
 
 #if HAVE_LIBZ
-	          if (status & Fs_Compress){
+                  if (status & Fs_Compress){
                      if (gzputs(f.fp, StrLoc(t))==-1){
-	    	     	MUTEX_UNLOCKID(fblk->mutexid); 
-			runerr(214);
-			}
+                        MUTEX_UNLOCKID(fblk->mutexid);
+                        runerr(214);
+                        }
                      }
-		  else
-#endif					/* HAVE_LIBZ */
+                  else
+#endif                                  /* HAVE_LIBZ */
 
 
 #ifdef Messaging
                      if (status & Fs_Messaging) {
-			struct MFile *mf = f.mf;
-			extern int Merror;
-			Merror = 0;
-			tp_write(mf->tp, StrLoc(t), StrLen(t));
-			if (Merror > 1200) {
-	    		   MUTEX_UNLOCKID(fblk->mutexid);
-			   runerr(Merror);
-			   }
-			}
-		     else
+                        struct MFile *mf = f.mf;
+                        extern int Merror;
+                        Merror = 0;
+                        tp_write(mf->tp, StrLoc(t), StrLen(t));
+                        if (Merror > 1200) {
+                           MUTEX_UNLOCKID(fblk->mutexid);
+                           runerr(Merror);
+                           }
+                        }
+                     else
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
-		     if (status & Fs_Socket) {
+                     if (status & Fs_Socket) {
 #if HAVE_LIBSSL
-			if(status & Fs_Encrypt) {
-			  SSL_write(f.ssl, StrLoc(t), StrLen(t));
-			}
-			else{
-#endif					/* HAVE_LIBSSL */
-			  if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
-        	  	   MUTEX_UNLOCKID(fblk->mutexid);
+                        if(status & Fs_Encrypt) {
+                          SSL_write(f.ssl, StrLoc(t), StrLen(t));
+                        }
+                        else{
+#endif                                  /* HAVE_LIBSSL */
+                          if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
+                           MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
-			   syserr("sock_write failed in stop()");
+                           syserr("sock_write failed in stop()");
 #else
-			   set_syserrortext(errno);
-			   fail;
+                           set_syserrortext(errno);
+                           fail;
 #endif
-			   }
+                           }
 #if HAVE_LIBSSL
-			}
-#endif					/* HAVE_LIBSSL */
-		     } else {
-#endif					/* PosixFns */
-		     if (putstr(f.fp, &t) == Failed)
-			{
-	    		MUTEX_UNLOCKID(fblk->mutexid);
-			runerr(214, x[n]);
-			}
+                        }
+#endif                                  /* HAVE_LIBSSL */
+                     } else {
+#endif                                  /* PosixFns */
+                     if (putstr(f.fp, &t) == Failed)
+                        {
+                        MUTEX_UNLOCKID(fblk->mutexid);
+                        runerr(214, x[n]);
+                        }
 #ifdef PosixFns
-			}
+                        }
 #endif
-		  }
-	       }
+                  }
+               }
 
-	    Finish(x[n-1], nl, terminate)
-	    }
-	 }
+            Finish(x[n-1], nl, terminate)
+            }
+         }
       }
 end
-#enddef					/* GenWrite */
+#enddef                                 /* GenWrite */
 
-GenWrite(stop,	 True,	True)  /* stop(s, ...) - write message and stop */
-GenWrite(write,  True,	False) /* write(s, ...) - write with new-line */
+GenWrite(stop,   True,  True)  /* stop(s, ...) - write message and stop */
+GenWrite(write,  True,  False) /* write(s, ...) - write with new-line */
 GenWrite(writes, False, False) /* writes(s, ...) - write with no new-line */
-
+
 #ifdef KeyboardFncs
 
 "getch() - return a character from console."
@@ -3097,17 +3097,17 @@ function{0,1} getch()
       int i;
 #ifndef ConsoleWindow
       i = getch();
-#else					/* ConsoleWindow */
+#else                                   /* ConsoleWindow */
       struct descrip res;
       if (wgetchne((wbp)OpenConsole(), &res) < 0) fail;
       i = *StrLoc(res);
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
       if (i<0 || i>255)
-	 fail;
+         fail;
       return string(1, (char *)&allchars[FromAscii(i) & 0xFF]);
       }
 end
-
+
 "getche() -- return a character from console with echo."
 
 function{0,1} getche()
@@ -3118,17 +3118,17 @@ function{0,1} getche()
       int i;
 #ifndef ConsoleWindow
       i = getche();
-#else					/* ConsoleWindow */
+#else                                   /* ConsoleWindow */
       struct descrip res;
       if (wgetche((wbp)OpenConsole(), &res) < 0) fail;
       i = *StrLoc(res);
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
       if (i<0 || i>255)
-	 fail;
+         fail;
       return string(1, (char *)&allchars[FromAscii(i) & 0xFF]);
       }
 end
-
+
 
 "kbhit() -- Check to see if there is a keyboard character waiting to be read."
 
@@ -3139,30 +3139,30 @@ function{0,1} kbhit()
    inline {
 #ifndef ConsoleWindow
       if (kbhit())
-	 return nulldesc;
+         return nulldesc;
       else fail;
-#else					/* ConsoleWindow */
+#else                                   /* ConsoleWindow */
      /* make sure we're up-to-date event wise */
      if (ConsoleBinding) {
         pollevent();
         /*
-	 * perhaps should look in the console's icon event list for a keypress;
-	 *  either a string or event > 60k; presently, succeed for all events
-	 */
+         * perhaps should look in the console's icon event list for a keypress;
+         *  either a string or event > 60k; presently, succeed for all events
+         */
         if (BlkD(((wbp)ConsoleBinding)->window->listp,List)->size > 0)
-	   return nulldesc;
+           return nulldesc;
         }
      fail;
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
       }
 end
-#endif					/* KeyboardFncs */
+#endif                                  /* KeyboardFncs */
 
 "chdir(s) - change working directory to s."
 function{0,1} chdir(s)
    if !cnv:string(s) then
        if !is:null(s) then
-	  runerr(103, s)
+          runerr(103, s)
    abstract {
       return string
    }
@@ -3186,32 +3186,32 @@ function{0,1} chdir(s)
       int len;
 
       if (is:string(s)) {
-	 tended char *dir;
-	 cnv:C_string(s, dir);
+         tended char *dir;
+         cnv:C_string(s, dir);
 
-	 /*
-	  * Preliminary tilde $HOME support. Need to extend to Windows,
-	  * and flesh out support for tilde-based syntax.
-	  */
-	 if (strlen(dir)>2 && dir[0] == '~' && dir[1] == '/') {
-	    getenv_r("HOME", path, 1023);
-	    strcat(path, dir+1);
-	    dir = path;
-	    }
+         /*
+          * Preliminary tilde $HOME support. Need to extend to Windows,
+          * and flesh out support for tilde-based syntax.
+          */
+         if (strlen(dir)>2 && dir[0] == '~' && dir[1] == '/') {
+            getenv_r("HOME", path, 1023);
+            strcat(path, dir+1);
+            dir = path;
+            }
 
-	 if (chdir(dir) != 0) {
-	    set_syserrortext(errno);
-	    fail;
-	    }
-	 }
+         if (chdir(dir) != 0) {
+            set_syserrortext(errno);
+            fail;
+            }
+         }
 
 #ifndef PATH_MAX
 #define PATH_MAX 512
-#endif					/* PATH_MAX */
+#endif                                  /* PATH_MAX */
       if (getcwd(path, PATH_MAX) == NULL) {
-	 set_syserrortext(errno);
-	 fail;
-	 }
+         set_syserrortext(errno);
+         fail;
+         }
 
       len = strlen(path);
       Protect(StrLoc(result) = alcstr(path, len), runerr(0));
@@ -3237,8 +3237,8 @@ rv = GetEnvironmentVariable(s, tmp, 1536);
 if (rv > 0) return tmp;
 return NULL;
 }
-#endif					/* NTGCC */
-#endif					/* MSWindows */
+#endif                                  /* NTGCC */
+#endif                                  /* MSWindows */
 
 #ifndef NTGCC
 #undef chdir
@@ -3247,8 +3247,8 @@ int nt_chdir(char *s)
     return chdir(s);
 }
 #endif
-#endif					/* NT */
-
+#endif                                  /* NT */
+
 "delay(i) - delay for i milliseconds."
 
 function{0,1} delay(n)
@@ -3264,17 +3264,17 @@ function{0,1} delay(n)
         fail;
 #ifdef Graphics
 {
-#if !ConcurrentCOMPILER	
+#if !ConcurrentCOMPILER
       CURTSTATE();
 #endif                                     /* ConcurrentCOMPILER */
       pollctr >>= 1;
       pollctr++;
 }
-#endif					/* Graphics */
+#endif                                  /* Graphics */
       return nulldesc;
       }
 end
-
+
 "flush(f) - flush file f."
 
 function{1} flush(f)
@@ -3289,19 +3289,19 @@ function{1} flush(f)
       int status = BlkD(f,File)->status;
 #ifdef Graphics
       CURTSTATE();
-#endif					/* Graphics */
+#endif                                  /* Graphics */
       /*
        * File types for which no flushing is possible, or is a no-op.
        */
-      if (((status & (Fs_Read | Fs_Write)) == 0)	/* if already closed */
+      if (((status & (Fs_Read | Fs_Write)) == 0)        /* if already closed */
 #ifdef ReadDirectory
-	  || (status & Fs_Directory)
-#endif					/* ReadDirectory */
+          || (status & Fs_Directory)
+#endif                                  /* ReadDirectory */
 #ifdef PosixFns
-	  || (status & Fs_Socket)
-#endif					/* PosixFns */
-	  )
-	 return f;
+          || (status & Fs_Socket)
+#endif                                  /* PosixFns */
+          )
+         return f;
 
 #ifdef Graphics
       pollctr >>= 1;
@@ -3309,15 +3309,15 @@ function{1} flush(f)
 
       if (status & Fs_Window) {
 #ifdef GraphicsGL
-	 if (((wbp)fp)->window->is_gl)
-	    gl_wflush((wbp)fp);
-	 else
-#endif					/* GraphicsGL */
-	 wflush((wbp)fp);
-	 }
+         if (((wbp)fp)->window->is_gl)
+            gl_wflush((wbp)fp);
+         else
+#endif                                  /* GraphicsGL */
+         wflush((wbp)fp);
+         }
       else
-#endif					/* Graphics */
-	 fflush(fp);
+#endif                                  /* Graphics */
+         fflush(fp);
 
       /*
        * Return the flushed file.

@@ -62,7 +62,7 @@ char **argv;
    else
       hsyserr(UNICONX ": icode file not found: ", fullpath);
    }
-
+
 /*
  * doiconx(argv, file) - execute iconx, passing file as argv[1].
  *

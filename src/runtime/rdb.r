@@ -56,16 +56,16 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
    if (ISQLEnv==NULL) {
       ISQLEnv=SQL_NULL_HENV;
       if (SQLAllocEnv(&ISQLEnv)!=SQL_SUCCESS) {
-	 odbcerror(fp, ALLOC_ENV_ERR);
+         odbcerror(fp, ALLOC_ENV_ERR);
 isql_open_fail:
          free(fp);
-	 return 0;
-	 }
+         return 0;
+         }
 
 #passthru #if (ODBCVER >= 0x0300)
       SQLSetEnvAttr(ISQLEnv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) SQL_OV_ODBC3,
                     SQL_IS_INTEGER);
-#passthru #endif					/* ODBCVER >= 0x0300 */
+#passthru #endif                                        /* ODBCVER >= 0x0300 */
       }
 
    if (SQLAllocConnect(ISQLEnv, &(fp->hdbc))!=SQL_SUCCESS) {
@@ -74,9 +74,9 @@ isql_open_fail:
       }
 
    if (SQLConnect(fp->hdbc,
-		  (SQLCHAR *) db, (SQLSMALLINT)strlen(db),
-		  (SQLCHAR *) StrLoc(*user), (SQLSMALLINT)StrLen(*user),
-		  (SQLCHAR *) StrLoc(*password), (SQLSMALLINT)StrLen(*password)) ==
+                  (SQLCHAR *) db, (SQLSMALLINT)strlen(db),
+                  (SQLCHAR *) StrLoc(*user), (SQLSMALLINT)StrLen(*user),
+                  (SQLCHAR *) StrLoc(*password), (SQLSMALLINT)StrLen(*password)) ==
        SQL_ERROR){
       odbcerror(fp, CONNECT_ERR);
 failed_connect:
@@ -201,7 +201,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
        * might be a bad idea on some platforms.
        */
       colsz = (long)(int) (colsz & 0xFFFFFFFF);
-#endif					/* WordBits == 64 */
+#endif                                  /* WordBits == 64 */
 
       /*
        * reserve contiguous space for this column
@@ -225,10 +225,10 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
         case SQL_FLOAT:
         case SQL_REAL:
 #ifdef DescriptorDouble
-	  r->fields[p].vword.realval = atof(buff);
-#else					/* DescriptorDouble */
+          r->fields[p].vword.realval = atof(buff);
+#else                                   /* DescriptorDouble */
           BlkLoc(r->fields[p])=(union block *) alcreal(atof(buff));
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
           (r->fields[p]).dword=D_Real;
           break;
 
@@ -254,7 +254,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
              t_errorvalue = nulldesc;
              t_have_val = 0;
              return RunError;
-	     /* used to return Failed for strange types */
+             /* used to return Failed for strange types */
              }
           StrLen(r->fields[p])=colsz>0?colsz:0;
 
@@ -270,17 +270,17 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
             rc=SQLGetData(fp->hstmt, i, SQL_C_CHAR,
                           StrLoc(r->fields[p])+len-1, BUFF_SZ, &colsz);
 #if WordBits == 64
-	    /*
-	     * On Fedora Core 3 AMD64, SQLGetData seems to be filling
-	     * in the least-significant 32-bits of colsz.  This workaround
-	     * might be a bad idea on some platforms.
-	     */
-	    colsz = (long)(int) (colsz & 0xFFFFFFFF);
-#endif					/* WordBits == 64 */
+            /*
+             * On Fedora Core 3 AMD64, SQLGetData seems to be filling
+             * in the least-significant 32-bits of colsz.  This workaround
+             * might be a bad idea on some platforms.
+             */
+            colsz = (long)(int) (colsz & 0xFFFFFFFF);
+#endif                                  /* WordBits == 64 */
             len+=colsz>BUFF_SZ?BUFF_SZ-2:colsz;
-	    }
+            }
           break;
-	  } /* switch */
+          } /* switch */
 }
 
       } /* for */
@@ -311,19 +311,19 @@ void odbcerror(struct ISQLFile *fp, int errornum)
 
    k_errornumber=errornum;
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState, &NativeErr,
-		       (SQLCHAR *) ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
-	      SQL_NO_DATA_FOUND)) {
+                       (SQLCHAR *) ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
+              SQL_NO_DATA_FOUND)) {
       StrLoc(k_errortext) = alcstr(ErrMsg, ErrMsgLen);
       StrLen(k_errortext) = ErrMsgLen;
       }
    else {
       if (errornum - NOT_ODBC_FILE_ERR < sizeof(errmsg)/sizeof(char *))
-	 StrLoc(k_errortext)=errmsg[errornum-NOT_ODBC_FILE_ERR];
+         StrLoc(k_errortext)=errmsg[errornum-NOT_ODBC_FILE_ERR];
       else StrLoc(k_errortext) = "unidentified odbc error";
       StrLen(k_errortext)=strlen(StrLoc(k_errortext));
       }
 }
 
-#else					/* ISQL */
+#else                                   /* ISQL */
 /* static char junk ; */
-#endif					/* ISQL */
+#endif                                  /* ISQL */

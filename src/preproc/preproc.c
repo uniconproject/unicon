@@ -129,7 +129,7 @@ struct token *t;
    tlst->next = src_stack->cond;
    src_stack->cond = tlst;
    }
-
+
 /*
  * end_select - handle #elif, #else, and #endif
  */
@@ -186,7 +186,7 @@ struct token *t;
    free_t(t1);
    return;
    }
-
+
 /*
  * incl_file - handle #include
  */
@@ -285,7 +285,7 @@ struct token *t;
    free_t(file_tok);
    free_t(t);
    }
-
+
 /*
  * define - handle #define and #begdef
  */
@@ -412,7 +412,7 @@ struct token *t;
    m_install(mname, category, multi_line, prmlst, body);
    free_t(mname);
    }
-
+
 /*
  * expand - add expansion of macro to source stack.
  */
@@ -615,7 +615,7 @@ struct token *t;
       }
    free_t(t);
    }
-
+
 /*
  * interp_dir - interpret preprocessing directives and recognize macro calls.
  */
@@ -751,7 +751,7 @@ struct token *interp_dir()
          }
       }
    }
-
+
 
 /*
  * See if compiler used to build the preprocessor recognizes '\a' 
@@ -828,7 +828,7 @@ static struct token *check_bell()
    }
 
 #endif     /*  '\a' == Bell  */
-
+
 /*
  * preproc - return the next fully preprocessed token.
  */

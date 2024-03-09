@@ -21,7 +21,7 @@ struct tgentry *glast;		/* last global table entry */
 
 extern struct str_buf lex_sbuf;
 
-
+
 /*
  * tmalloc - allocate memory for the translator
  */
@@ -34,7 +34,7 @@ void tmalloc()
    init_str();
    init_sbuf(&lex_sbuf);
    }
-
+
 /*
  * meminit - clear tables for use in translating the next file
  */
@@ -61,7 +61,7 @@ void tminit()
    for (cp = chash; cp < &chash[lchsize]; cp++)
       *cp = NULL;
    }
-
+
 /*
  * tmfree - free memory used by the translator
  */

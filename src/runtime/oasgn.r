@@ -38,8 +38,8 @@
            }
          }
       tvmonitored: {
-#ifdef MonitoredTrappedVar 
-        abstract { 
+#ifdef MonitoredTrappedVar
+        abstract {
            store[store[type(x).trpd_monitored]] = type(y)
            }
         inline {
@@ -49,23 +49,23 @@
 #endif                                /* MonitoredTrappedVar */
          }
       kywdevent:
-	 body {
-	    *VarLoc(x) = y;
-	    }
+         body {
+            *VarLoc(x) = y;
+            }
       kywdwin:
-	 body {
+         body {
 #ifdef Graphics
-	    if (is:null(y))
-	       *VarLoc(x) = y;
-	    else {
-	       if ((!is:file(y)) || !(BlkD(y,File)->status & Fs_Window))
-		  runerr(140,y);
-	       *VarLoc(x) = y;
-	       }
-#endif					/* Graphics */
-	    }
-      kywdint: 
-	 {
+            if (is:null(y))
+               *VarLoc(x) = y;
+            else {
+               if ((!is:file(y)) || !(BlkD(y,File)->status & Fs_Window))
+                  runerr(140,y);
+               *VarLoc(x) = y;
+               }
+#endif                                  /* Graphics */
+            }
+      kywdint:
+         {
          /*
           * No side effect in the type realm - keyword x is still an int.
           */
@@ -77,11 +77,11 @@
             IntVal(*VarLoc(x)) = i;
 
 #ifdef Graphics
-	    if (xyrowcol(&x) == -1)
-	       runerr(140,kywd_xwin[XKey_Window]);
-#endif					/* Graphics */
-	    }
-	}
+            if (xyrowcol(&x) == -1)
+               runerr(140,kywd_xwin[XKey_Window]);
+#endif                                  /* Graphics */
+            }
+        }
       kywdpos: {
          /*
           * No side effect in the type realm - &pos is still an int.
@@ -89,26 +89,26 @@
          body {
             C_integer i;
 #ifndef Arrays
-	    CURTSTATE();
-#endif					/* Arrays */
+            CURTSTATE();
+#endif                                  /* Arrays */
             if (!cnv:C_integer(y, i))
                runerr(101, y);
 
 #if defined(MultiProgram) || ConcurrentCOMPILER
-	    /*
-	     * Assuming (ahem) that the address of &subject is the next
-	     * descriptor following &pos, which is true in struct threadstate,
-	     * then we can access it via our reference to &pos, rather than
-	     * needing to lookup the curtstate to find the former global.
-	     */
-	    i = cvpos((long)i, StrLen(*(VarLoc(x)+1)));
-#else					/* MultiProgram || ConcurrentCOMPILER */
+            /*
+             * Assuming (ahem) that the address of &subject is the next
+             * descriptor following &pos, which is true in struct threadstate,
+             * then we can access it via our reference to &pos, rather than
+             * needing to lookup the curtstate to find the former global.
+             */
+            i = cvpos((long)i, StrLen(*(VarLoc(x)+1)));
+#else                                   /* MultiProgram || ConcurrentCOMPILER */
             i = cvpos((long)i, StrLen(k_subject));
-#endif					/* MultiProgram || ConcurrentCOMPILER */
+#endif                                  /* MultiProgram || ConcurrentCOMPILER */
 
             if (i == CvtFail)
                fail;
-	    IntVal(*VarLoc(x)) = i;
+            IntVal(*VarLoc(x)) = i;
 
             EVVal(k_pos, E_Spos);
             }
@@ -122,13 +122,13 @@
             runerr(103, y);
          inline {
 #ifndef Arrays
-	   CURTSTATE();
-#endif					/* Arrays */
+           CURTSTATE();
+#endif                                  /* Arrays */
 #ifdef MultiProgram
-	    IntVal(*(VarLoc(x)-1)) = 1;
-#else					/* MultiProgram */
+            IntVal(*(VarLoc(x)-1)) = 1;
+#else                                   /* MultiProgram */
             k_pos = 1;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
             EVVal(k_pos, E_Spos);
             }
          }
@@ -144,66 +144,66 @@
             store[type(x)] = type(y)
             }
          inline {
-#ifdef Arrays 
-	    if ( Offset(x)>0 ) {
-	       /* don't know actual title, don't use checking BlkD macro */
-	       if (BlkLoc(x)->Realarray.title==T_Realarray){
-		  double yy;
-		  if (cnv:C_double(y, yy)){
-		     *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
-		     }
-		  else{ /* y is not real, try to convert the realarray to list*/
-		     tended struct b_list *xlist= BlkD(x, Realarray)->listp;
-		     tended struct descrip dlist;
-		     word i;
+#ifdef Arrays
+            if ( Offset(x)>0 ) {
+               /* don't know actual title, don't use checking BlkD macro */
+               if (BlkLoc(x)->Realarray.title==T_Realarray){
+                  double yy;
+                  if (cnv:C_double(y, yy)){
+                     *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
+                     }
+                  else{ /* y is not real, try to convert the realarray to list*/
+                     tended struct b_list *xlist= BlkD(x, Realarray)->listp;
+                     tended struct descrip dlist;
+                     word i;
 
-		     i = (Offset(x)*sizeof(word)-sizeof(struct b_realarray)
-			+sizeof(double)) / sizeof(double);
-			
-		     dlist.vword.bptr = (union block *) xlist;
-		     dlist.dword = D_List;		     
-		     if (arraytolist(&dlist)!=Succeeded) fail;
-		     
-		     /* 
-		      * assuming the new list has one lelem block only, 
-		      * i should be in the first block. no need to loop 
-		      * through several blocks
-		      */
+                     i = (Offset(x)*sizeof(word)-sizeof(struct b_realarray)
+                        +sizeof(double)) / sizeof(double);
 
-		     *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
-		     }
-	       }
-	       /* don't know actual title, don't use checking BlkD macro */
-	       else if (BlkLoc(x)->Intarray.title==T_Intarray){
-		  C_integer ii;
-		  if (cnv:(exact)C_integer(y, ii)) 
-		     *((word *)VarLoc(x) + Offset(x)) = ii;
-		  else{ /* y is not integer, try to convert the intarray to list*/
-		     tended struct b_list *xlist= BlkD(x, Intarray)->listp;
-		     tended struct descrip dlist;
-		     word i;
-		     
-		     i = (Offset(x)*sizeof(word)-sizeof(struct b_intarray)+
-			sizeof(word)) / sizeof(word);
-		     
-		     dlist.vword.bptr = (union block *) xlist;
-		     dlist.dword = D_List;		     
-		     if (arraytolist(&dlist)!=Succeeded) fail;
-		     
-		     /* 
-		     * assuming the new list has one lelem block only, 
-		     * i should be in the first block. no need to loop 
-		     * through several blocks
-		     */
+                     dlist.vword.bptr = (union block *) xlist;
+                     dlist.dword = D_List;
+                     if (arraytolist(&dlist)!=Succeeded) fail;
 
-		     *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
-		     }
-		  }
-	       else
-		  Asgn(x, y)
-	    }
-	    else
-#endif					/* Arrays */
+                     /*
+                      * assuming the new list has one lelem block only,
+                      * i should be in the first block. no need to loop
+                      * through several blocks
+                      */
+
+                     *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
+                     }
+               }
+               /* don't know actual title, don't use checking BlkD macro */
+               else if (BlkLoc(x)->Intarray.title==T_Intarray){
+                  C_integer ii;
+                  if (cnv:(exact)C_integer(y, ii))
+                     *((word *)VarLoc(x) + Offset(x)) = ii;
+                  else{ /* y is not integer, try to convert the intarray to list*/
+                     tended struct b_list *xlist= BlkD(x, Intarray)->listp;
+                     tended struct descrip dlist;
+                     word i;
+
+                     i = (Offset(x)*sizeof(word)-sizeof(struct b_intarray)+
+                        sizeof(word)) / sizeof(word);
+
+                     dlist.vword.bptr = (union block *) xlist;
+                     dlist.dword = D_List;
+                     if (arraytolist(&dlist)!=Succeeded) fail;
+
+                     /*
+                     * assuming the new list has one lelem block only,
+                     * i should be in the first block. no need to loop
+                     * through several blocks
+                     */
+
+                     *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
+                     }
+                  }
+               else
+                  Asgn(x, y)
+            }
+            else
+#endif                                  /* Arrays */
 
             Asgn(x, y)
             }
@@ -214,10 +214,10 @@
    body {
       EVValD(&y, E_Value);
       }
-#endif					/* E_Value */
+#endif                                  /* E_Value */
 
 #enddef
-
+
 
 "x := y - assign y to x."
 
@@ -235,8 +235,8 @@ operator{0,1} := asgn(underef x, y)
    inline {
 #ifdef PatternType
       if (is:tvsubs(x)) {
-	 return BlkD(x, Tvsubs)->ssvar;
-	 }
+         return BlkD(x, Tvsubs)->ssvar;
+         }
 #endif
       /*
        * The returned result is the variable to which assignment is being
@@ -245,7 +245,7 @@ operator{0,1} := asgn(underef x, y)
       return x;
       }
 end
-
+
 
 "x <- y - assign y to x."
 " Reverses assignment if resumed."
@@ -271,7 +271,7 @@ operator{0,1+} <- rasgn(underef x -> saved_x, y)
       fail;
       }
 end
-
+
 
 "x <-> y - swap values of x and y."
 " Reverses swap if resumed."
@@ -298,7 +298,7 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
          bp_x = (union block *)BlkD(x,Tvsubs);
          bp_y = (union block *)BlkD(y,Tvsubs);
          if (VarLoc(bp_x->Tvsubs.ssvar) == VarLoc(bp_y->Tvsubs.ssvar) &&
-   	  Offset(bp_x->Tvsubs.ssvar) == Offset(bp_y->Tvsubs.ssvar)) {
+          Offset(bp_x->Tvsubs.ssvar) == Offset(bp_y->Tvsubs.ssvar)) {
             /*
              * x and y are both substrings of the same string, set
              *  adj1 and adj2 for use in locating the substrings after
@@ -311,7 +311,7 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
                adj1 = bp_x->Tvsubs.sslen - bp_y->Tvsubs.sslen;
             else if (bp_y->Tvsubs.sspos > bp_x->Tvsubs.sspos)
                adj2 = bp_y->Tvsubs.sslen - bp_x->Tvsubs.sslen;
-   	    }
+            }
          }
 
    /*
@@ -328,7 +328,7 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
              *  to account for the replacement of Arg1 by Arg2.
              */
             Blk(bp_y, Tvsubs)->sspos += adj2;
-	    }
+            }
          }
 
    /*
@@ -345,7 +345,7 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
              *  of Arg1 to account for the replacement of Arg2 by Arg1.
              */
             Blk(bp_x, Tvsubs)->sspos += adj1;
-	    }
+            }
          }
 
    inline {
@@ -360,7 +360,7 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
       inline {
          if (adj2 != 0) {
            Blk(bp_y, Tvsubs)->sspos -= adj2;
-	   }
+           }
          }
 
    GeneralAsgn(y, dy)
@@ -368,14 +368,14 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
       inline {
          if (adj1 != 0) {
             Blk(bp_x,Tvsubs)->sspos -= adj1;
-	    }
+            }
          }
 
    inline {
       fail;
       }
 end
-
+
 
 "x :=: y - swap values of x and y."
 
@@ -403,7 +403,7 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
          bp_x = (union block *)BlkD(x,Tvsubs);
          bp_y = (union block *)BlkD(y,Tvsubs);
          if (VarLoc(bp_x->Tvsubs.ssvar) == VarLoc(bp_y->Tvsubs.ssvar) &&
-   	  Offset(bp_x->Tvsubs.ssvar) == Offset(bp_y->Tvsubs.ssvar)) {
+          Offset(bp_x->Tvsubs.ssvar) == Offset(bp_y->Tvsubs.ssvar)) {
             /*
              * x and y are both substrings of the same string, set
              *  adj1 and adj2 for use in locating the substrings after
@@ -416,7 +416,7 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
                adj1 = bp_x->Tvsubs.sslen - bp_y->Tvsubs.sslen;
             else if (bp_y->Tvsubs.sspos > bp_x->Tvsubs.sspos)
                adj2 = bp_y->Tvsubs.sslen - bp_x->Tvsubs.sslen;
-   	    }
+            }
          }
 
    /*
@@ -433,7 +433,7 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
              *  to account for the replacement of Arg1 by Arg2.
              */
             Blk(bp_y,Tvsubs)->sspos += adj2;
-	    }
+            }
          }
 
    /*
@@ -450,7 +450,7 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
              *  of Arg1 to account for the replacement of Arg2 by Arg1.
              */
             Blk(bp_x,Tvsubs)->sspos += adj1;
-	    }
+            }
          }
 
    inline {
@@ -506,27 +506,27 @@ const dptr src;
     * First, copy the portion of the substring string to the left of
     *  the substring into the string space.
     */
-   
+
    memcpy(StrLoc(rsltstr), StrLoc(deststr), prelen);
-   
+
    /*
     * Copy the string to be assigned into the string space,
     *  effectively concatenating it.
     */
-   
+
    memcpy(StrLoc(rsltstr)+prelen, StrLoc(srcstr), StrLen(srcstr));
-   
+
    /*
     * Copy the portion of the substring to the right of
     *  the substring into the string space, completing the
     *  result.
     */
-    
-   
+
+
    postlen = StrLen(deststr) - poststrt;
-   
+
    memcpy(StrLoc(rsltstr)+prelen+StrLen(srcstr), StrLoc(deststr)+poststrt, postlen);
-   
+
    /*
     * Perform the assignment and update the trapped variable.
     */
@@ -554,7 +554,7 @@ const dptr src;
    EVVal(tvsub->sslen, E_Ssasgn);
    return Succeeded;
    }
-
+
 /*
  * tvtbl_asgn - perform an assignment to a table element trapped variable,
  *  inserting the element in the table if needed.
@@ -574,41 +574,41 @@ const dptr src;
     * Allocate te now (even if we may not need it)
     * because slot cannot be tended.
     */
-   bp = BlkD(*dest, Tvtbl);	/* Save params to tended vars */
+   bp = BlkD(*dest, Tvtbl);     /* Save params to tended vars */
    tval = *src;
 
    if (BlkType(bp->clink) == T_File) {
       int status = Blk(bp->clink,File)->status;
 #ifdef Dbm
       if (status & Fs_Dbm) {
-	 int rv;
-	 DBM *db;
-	 datum key, content;
-	 db = Blk(bp->clink,File)->fd.dbm;
-	 /*
-	  * we are doing an assignment to a subscripted DBM file, treat same
-	  * as insert().  key is bp->tref, and value is src
-	  */
-	 if (!cnv:string(bp->tref, bp->tref)) { /* key */
-	    ReturnErrVal(103, bp->tref, RunError);
-	    }
-	 if (!cnv:string(tval, tval)) { /* value */
-	    ReturnErrVal(103, tval, RunError);
-	    }
-	 key.dptr = StrLoc(bp->tref);
-	 key.dsize = StrLen(bp->tref);
-	 content.dptr = StrLoc(tval);
-	 content.dsize = StrLen(tval);
-	 if ((rv = dbm_store(db, key, content, DBM_REPLACE)) < 0) {
-	    fprintf(stderr, "dbm_store returned %d\n", rv);
-	    fflush(stderr);
-	    return Failed;
-	    }
-	 return Succeeded;
-	 }
+         int rv;
+         DBM *db;
+         datum key, content;
+         db = Blk(bp->clink,File)->fd.dbm;
+         /*
+          * we are doing an assignment to a subscripted DBM file, treat same
+          * as insert().  key is bp->tref, and value is src
+          */
+         if (!cnv:string(bp->tref, bp->tref)) { /* key */
+            ReturnErrVal(103, bp->tref, RunError);
+            }
+         if (!cnv:string(tval, tval)) { /* value */
+            ReturnErrVal(103, tval, RunError);
+            }
+         key.dptr = StrLoc(bp->tref);
+         key.dsize = StrLen(bp->tref);
+         content.dptr = StrLoc(tval);
+         content.dsize = StrLen(tval);
+         if ((rv = dbm_store(db, key, content, DBM_REPLACE)) < 0) {
+            fprintf(stderr, "dbm_store returned %d\n", rv);
+            fflush(stderr);
+            return Failed;
+            }
+         return Succeeded;
+         }
       else
-#endif					/* Dbm */
-	 return Failed; /* should set runerr instead, or maybe syserr */
+#endif                                  /* Dbm */
+         return Failed; /* should set runerr instead, or maybe syserr */
       }
 
    Protect(te = alctelem(), return RunError);
@@ -639,8 +639,8 @@ const dptr src;
       te->hashnum = bp->hashnum;
       te->tref = bp->tref;
       te->tval = tval;
-      
-      if (TooCrowded(tp))		/* grow hash table if now too full */
+
+      if (TooCrowded(tp))               /* grow hash table if now too full */
          hgrow((union block *)tp);
       }
    return Succeeded;
@@ -648,7 +648,7 @@ const dptr src;
 
 
 #ifdef MonitoredTrappedVar
-/* 
+/*
  * tvmonitored_asgn - perform an assignment to a monitored trapped variable
  *   in the Target Program form the Monitor.
  */

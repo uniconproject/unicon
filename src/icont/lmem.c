@@ -121,7 +121,7 @@ void linit()
     */
    putglobal(instid("main"), F_Global, 0, 0);
    }
-
+
 #ifdef DeBugLinker
 /*
  * dumplfiles - print the list of files to link.  Used for debugging only.
@@ -138,7 +138,7 @@ void dumplfiles()
    fflush(stderr);
    }
 #endif					/* DeBugLinker */
-
+
 /*
  * alsolink - create an lfile structure for the named file and add it to the
  *  end of the list of files (llfiles) to generate link instructions for.
@@ -289,7 +289,7 @@ int add_linked_file(char * file)
    return 1;
 }
 
-
+
 /*
  * getlfile - return a pointer (p) to the lfile structure pointed at by lptr
  *  and move lptr to the lfile structure that p points at.  That is, getlfile
@@ -308,7 +308,7 @@ struct lfile **lptr;
       return p;
       }
    }
-
+
 /*
  * alclfile - allocate an lfile structure for the named file, fill
  *  in the name and return a pointer to it.
@@ -323,7 +323,7 @@ char *name;
    p->lf_name = salloc(name);
    return p;
    }
-
+
 #ifdef MultipleRuns
 /*
  * freelfile - free memory of an lfile structure.
@@ -335,7 +335,7 @@ struct lfile *p;
    free((char *) p);
    }
 #endif					/* MultipleRuns */
-
+
 /*
  * lmfree - free memory used by the linker
  */

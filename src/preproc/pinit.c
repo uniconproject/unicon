@@ -68,7 +68,7 @@ char **opt_args;
    mac_opts(opt_lst, opt_args);     /* process options for predefined macros */
    source(fname);                   /* establish primary source file */
    }
-
+
 /*
  * mac_opts - handle options which affect what predefined macros are in
  *  effect when preprocessing starts. Some of these options may be system
@@ -490,7 +490,7 @@ Deliberate Syntax Error
  */
          }
    }
-
+
 /*
  * str_src - establish a string, given by a character pointer and a length,
  *  as the current source of tokens.

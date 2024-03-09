@@ -10,7 +10,7 @@
 
 #ifndef NoTypeDefs
    #include "../h/typedefs.h"
-#endif					/* NoTypeDefs */
+#endif                                  /* NoTypeDefs */
 
 /*
  * Macros that must be expanded by rtt.
@@ -25,7 +25,7 @@
    int O##nm(nargs,cargp)
    int nargs;
    register dptr cargp;
-#enddef					/* LibDcl */
+#enddef                                 /* LibDcl */
 
 /*
  * Error exit from non top-level routines. Set tentative values for
@@ -39,7 +39,7 @@
    t_have_val = 1;
    return ret_val;
    } while (0)
-#enddef					/* ReturnErrVal */
+#enddef                                 /* ReturnErrVal */
 
 #begdef ReturnErrNum(err_num, ret_val)
    do {
@@ -48,13 +48,13 @@
    t_have_val = 0;
    return ret_val;
    } while (0)
-#enddef					/* ReturnErrNum */
+#enddef                                 /* ReturnErrNum */
 
 /*
  * Code expansions for exits from C code for top-level routines.
  */
-#define Fail		return A_Resume
-#define Return		return A_Continue
+#define Fail            return A_Resume
+#define Return          return A_Continue
 
 /*
  * RunErr encapsulates a call to the function err_msg, followed
@@ -87,13 +87,13 @@
       else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
       MakeInt(value, &(mycurpstate->parent->eventval));
       if (!is:null(mycurpstate->valuemask) &&
-	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
-	 break;
+          (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+         break;
       exint;
       actparent(event);
       entint;
    } while (0)
-#enddef					/* RealEVVal */
+#enddef                                 /* RealEVVal */
 
 #begdef RealEVValD(dp,event,exint,entint)
    do {
@@ -101,13 +101,13 @@
       else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
       mycurpstate->parent->eventval = *(dp);
       if ((!is:null(mycurpstate->valuemask)) &&
-	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
-	 break;
+          (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+         break;
       /* exint; */
       actparent(event);
       /* entint; */
    } while (0)
-#enddef					/* RealEVValD */
+#enddef                                 /* RealEVValD */
 
 
 /* extended version of EVVal, allows for save/restore in add'n to rsp */
@@ -118,17 +118,17 @@
       else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
       MakeInt(value, &(mycurpstate->parent->eventval));
       if (!is:null(mycurpstate->valuemask) &&
-	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
-	 break;
+          (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+         break;
       preact;
       ExInterp_sp;
       actparent(event);
       EntInterp_sp;
       postact;
    } while (0)
-#enddef					/* EVValEx */
+#enddef                                 /* EVValEx */
 
-/* 
+/*
   This workaround was introduced to fix a bug where lastop was getting trashed.
   A proper fix was done by moving lastop to be part of the coexpr struct.
   Should be removed if no longer needed.
@@ -140,27 +140,27 @@
       else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
       mycurpstate->parent->eventval = *(dp);
       if ((!is:null(mycurpstate->valuemask)) &&
-	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
-	 break;
+          (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+         break;
       preact;
       ExInterp_sp;
       actparent(event);
       EntInterp_sp;
       postact;
    } while (0)
-#enddef					/* RealEVValD */
+#enddef                                 /* RealEVValD */
 
 #begdef EVVal(value,event)
 #if event
    RealEVVal(value,event,/*noop*/,/*noop*/)
 #endif
-#enddef					/* EVVal */
+#enddef                                 /* EVVal */
 
 #begdef EVValD(dp,event)
 #if event
    RealEVValD(dp,event,/*noop*/,/*noop*/)
 #endif
-#enddef					/* EVValD */
+#enddef                                 /* EVValD */
 
 #begdef EVValS(ipcopnd,event)           /* Syntax events */
 #if event
@@ -169,8 +169,8 @@
       if (is:null(mycurpstate->eventmask)) break;
       else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
       if (!is:null(mycurpstate->valuemask) &&
-	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
-	 break;
+          (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+         break;
 
       scode = hitsyntax(ipcopnd);
       if (scode == 0) break;
@@ -178,7 +178,7 @@
       actparent(event);
    } while (0)
 #endif
-#enddef					/* EVValS */
+#enddef                                 /* EVValS */
 
 #begdef EVValX(bp,event)
 #if event
@@ -189,12 +189,12 @@
       parent->eventval.dword = D_Coexpr;
       BlkLoc(parent->eventval) = (union block *)(bp);
       if (!is:null(mycurpstate->valuemask) &&
-	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
-	 break;
+          (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+         break;
       actparent(event);
    } while (0)
 #endif
-#enddef					/* EVValX */
+#enddef                                 /* EVValX */
 
 #begdef EVVar(dp, e)
 #if e
@@ -202,7 +202,7 @@
       if (!is:null(mycurpstate->eventmask) &&
          Testb((word)ToAscii(e), mycurpstate->eventmask)) {
             EVVariable(dp, e);
-	    }
+            }
    } while(0)
 #endif
 #enddef
@@ -212,7 +212,7 @@
 #if event
   { RealEVVal(value,event,ExInterp_sp,EntInterp_sp); }
 #endif
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
 #enddef
 
 #begdef InterpEVValD(dp,event)
@@ -220,18 +220,18 @@
 #if event
  { RealEVValD(dp,event,ExInterp_sp,EntInterp_sp); }
 #endif
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
 #enddef
 
 /*
- * Macro for Syntax Monitoring 
- */  
+ * Macro for Syntax Monitoring
+ */
 #begdef InterpEVValS(ipcopnd,event)
 #if !ConcurrentCOMPILER
 #if event
  { ExInterp_sp; EVValS(ipcopnd,event); EntInterp_sp; }
 #endif
-#endif					/* !ConcurrentCOMPILER */
+#endif                                  /* !ConcurrentCOMPILER */
 #enddef
 
 /*
@@ -245,7 +245,7 @@
    EVValD(&eventdesc, code);
    } while (0)
 #endif
-#enddef					/* Desc_EVValD */
+#enddef                                 /* Desc_EVValD */
 
 typedef int pid_t;
 
@@ -256,24 +256,24 @@ typedef int clock_t, time_t, fd_set;
 
 #if WildCards
    typedef int FINDDATA_T;
-#endif					/* WildCards */
+#endif                                  /* WildCards */
 
 #ifdef ReadDirectory
    typedef int DIR;
-#endif					/* ReadDirectory */
+#endif                                  /* ReadDirectory */
 
 #ifdef Messaging
 typedef int size_t;
 typedef long time_t;
-#endif					/* Messaging */
+#endif                                  /* Messaging */
 
 #ifdef FAttrib
 typedef unsigned long mode_t;
-#endif					/* FAttrib */
+#endif                                  /* FAttrib */
 
 #if HAVE_LIBZ
 typedef int gzFile;
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBZ */
 
 #ifdef Messaging
 typedef int MFile;
@@ -294,15 +294,15 @@ typedef int LPSOCKADDR;
 #if 1
 typedef int MEMORYSTATUSEX;
 #endif
-#endif					/* NT */
+#endif                                  /* NT */
 
 #if HAVE_LIBJPEG
 typedef int j_common_ptr, JSAMPARRAY, JSAMPROW;
-#endif					/* HAVE_LIBJPEG */
+#endif                                  /* HAVE_LIBJPEG */
 
 #if HAVE_LIBPNG
-typedef int png_uint_32, png_bytep,  png_bytepp,  png_color_16p, png_structp, png_infop; 
-#endif					/* HAVE_LIBPNG */
+typedef int png_uint_32, png_bytep,  png_bytepp,  png_color_16p, png_structp, png_infop;
+#endif                                  /* HAVE_LIBPNG */
 
 #ifdef PosixFns
 typedef int SOCKET;
@@ -315,19 +315,19 @@ struct timeval {
 };
 typedef int time_t;
 typedef int DIR;
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #if HAVE_LIBSSL
 typedef int SSL_CTX, SSL;
-#endif					/* LIBSSL */
+#endif                                  /* LIBSSL */
 
 #ifdef Concurrent
        typedef int pthread_key_t, sigset_t;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
 #ifdef HAVE_LIBCL
        typedef int cl_uint, cl_platform_id, cl_device_id;
-#endif					/* HAVE_LIBCL */
+#endif                                  /* HAVE_LIBCL */
 
 #ifdef Dbm
 typedef int DBM;
@@ -335,7 +335,7 @@ typedef struct {
    char *dptr;
    int dsize;
 } datum;
-#endif					/* Dbm */
+#endif                                  /* Dbm */
 
 #ifdef ISQL                             /* ODBC */
   typedef int LPSTR, HENV, HDBC, HSTMT, ISQLFile, PTR, SQLPOINTER;
@@ -343,7 +343,7 @@ typedef struct {
   typedef int SQLUSMALLINT, SQLSMALLINT, SQLHSTMT;
 typedef int SQLUINTEGER, SQLRETURN, RETCODE, SQLLEN, SQLULEN;
   typedef int SQLHBDC, SQLHENV, SQLCHAR, SQLINTEGER, SQLLEN; /* 3.0 */
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
 #ifdef Audio
    typedef int AudioStruct, AudioPtr, AudioFile;
@@ -355,22 +355,22 @@ typedef int SQLUINTEGER, SQLRETURN, RETCODE, SQLLEN, SQLULEN;
    typedef int pthread_t, pthread_mutex_t, pthread_attr_t;
    typedef int ALfloat, ALuint, ALint, ALenum, ALvoid, ALboolean, ALsizei;
    typedef int ALubyte, ALchar;
-#endif				/* HAVE_LIBOPENAL */
-#endif				/* Audio */
+#endif                          /* HAVE_LIBOPENAL */
+#endif                          /* Audio */
 
 #if HAVE_OGG
 typedef int OggVorbis_File, vorbis_info;
-#endif					/* HAVE_OGG */
+#endif                                  /* HAVE_OGG */
 
 #ifdef HAVE_VOICE
    typedef int VSESSION, PVSESSION;
-#endif				/* HAVE_VOICE */
+#endif                          /* HAVE_VOICE */
 
 #if defined(HAVE_LIBPTHREAD)
       typedef int pthread_t, pthread_attr_t, pthread_cond_t;
       typedef int pthread_rwlock_t, sem_t;
       typedef int pthread_mutex_t, pthread_mutexattr_t;
-#endif					/* HAVE_LIBPTHREAD */
+#endif                                  /* HAVE_LIBPTHREAD */
 
 # if defined(Graphics) || defined(PosixFns)
 typedef int stringint, inst;
@@ -391,8 +391,8 @@ typedef int va_list, siptr;
    #ifdef HAVE_LIBFREETYPE
    typedef int FT_Library, FT_Face, FT_CharMap, FT_GlyphSlot, FT_Bitmap;
    typedef int FT_Matrix, FT_Vector;
-   #endif				/* HAVE_LIBFREETYPE */
-   #endif 				/* GraphicsGL */
+   #endif                               /* HAVE_LIBFREETYPE */
+   #endif                               /* GraphicsGL */
 
    #ifdef MacGraph
       typedef int Str255, Point, StandardFileReply, SFTypeList, Ptr, PixMap;
@@ -401,7 +401,7 @@ typedef int va_list, siptr;
       typedef int PaletteHandle, BitMap, RgnHandle, QDErr, GWorldPtr;
       typedef int GrafPtr, GDHandle, PixMapHandle, OSType, FInfo;
       typedef int IOParam, DialogPtr, ControlHandle, StringHandle, Size;
-   #endif				/* MacGraph */
+   #endif                               /* MacGraph */
 
    #ifdef XWindows
       typedef int Atom, Time, XSelectionEvent, XErrorEvent, XErrorHandler;
@@ -411,8 +411,8 @@ typedef int va_list, siptr;
       typedef int Colormap, XVisualInfo;
       typedef int *Display, Cursor, GC, Window, Pixmap, Visual, KeySym;
       typedef int WidgetClass, XImage, XpmAttributes, XSetWindowAttributes;
-   #endif				/* XWindows */
-      
+   #endif                               /* XWindows */
+
    #ifdef MSWindows
       typedef int clock_t, jmp_buf, MINMAXINFO, OSVERSIONINFO, BOOL_CALLBACK;
       typedef int int_PASCAL, LRESULT_CALLBACK, MSG, BYTE, WORD;
@@ -428,32 +428,32 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
       #ifdef FAttrib
          typedef unsigned long mode_t;
          typedef int HFILE, OFSTRUCT, FILETIME, SYSTEMTIME;
-      #endif				/* FAttrib */
-   #endif				/* MSWindows */
-   
+      #endif                            /* FAttrib */
+   #endif                               /* MSWindows */
+
    /*
     * Convenience macros to make up for RTL's long-windedness.
     */
    #begdef CnvShortInt(desc, s, max, min, type)
-	{
-	C_integer tmp;
-	if (!cnv:C_integer(desc,tmp) || tmp > max || tmp < min)
-	   runerr(101,desc);
-	s = (type) tmp;
-	}
-   #enddef				/* CnvShortInt */
+        {
+        C_integer tmp;
+        if (!cnv:C_integer(desc,tmp) || tmp > max || tmp < min)
+           runerr(101,desc);
+        s = (type) tmp;
+        }
+   #enddef                              /* CnvShortInt */
    #define CnvCShort(desc, s) CnvShortInt(desc, s, 0x7FFF, -0x8000, short)
    #define CnvCUShort(desc, s) CnvShortInt(desc, s, 0xFFFF, 0, unsigned short)
-   
+
    #define CnvCInteger(d,i) \
      if (!cnv:C_integer(d,i)) runerr(101,d);
-   
+
    #define DefCInteger(d,default,i) \
      if (!def:C_integer(d,default,i)) runerr(101,d);
-   
+
    #define CnvString(din,dout) \
      if (!cnv:string(din,dout)) runerr(103,din);
-   
+
    #define CnvTmpString(din,dout) \
      if (!cnv:tmp_string(din,dout)) runerr(103,din);
 
@@ -469,111 +469,111 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
    #begdef OptWindow(w)
       if (argc>warg && is:file(argv[warg])) {
          if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
-	    runerr(140,argv[warg]);
+            runerr(140,argv[warg]);
          if ((BlkD(argv[warg],File)->status & (Fs_Read|Fs_Write)) == 0)
-	    fail;
+            fail;
          (w) = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
-	 checkOpenConsole((FILE *)(w), NULL);
-#endif					/* ConsoleWindow */
+         checkOpenConsole((FILE *)(w), NULL);
+#endif                                  /* ConsoleWindow */
          if (ISCLOSED(w))
-	    fail;
+            fail;
          warg++;
          }
       else {
          if (!(is:file(kywd_xwin[XKey_Window]) &&
-	      (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
-	    runerr(140,kywd_xwin[XKey_Window]);
+              (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
+            runerr(140,kywd_xwin[XKey_Window]);
          if (!(BlkD(kywd_xwin[XKey_Window],File)->status & (Fs_Read|Fs_Write)))
-	    fail;
+            fail;
          (w) = (wbp)BlkD(kywd_xwin[XKey_Window],File)->fd.fp;
          if (ISCLOSED(w))
-	    fail;
+            fail;
          }
-   #enddef				/* OptWindow */
-   
+   #enddef                              /* OptWindow */
+
    #begdef OptTexWindow(w)
 #ifdef Graphics3D
       if (argc>warg && is:record(argv[warg])) {
-	/* set a boolean flag, use a texture */
-	is_texture=TEXTURE_RECORD;
-	/* Get the Window from Texture record */
-	w = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
+        /* set a boolean flag, use a texture */
+        is_texture=TEXTURE_RECORD;
+        /* Get the Window from Texture record */
+        w = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
         /* Pull out the texture handler */
-	texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
-	/* get the context from the window binding */
-	warg++;
+        texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
+        /* get the context from the window binding */
+        warg++;
       }
       else
-#endif					/* Graphics3D */	
+#endif                                  /* Graphics3D */
       if (argc>warg && is:file(argv[warg])) {
          if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
-	    runerr(140,argv[warg]);
+            runerr(140,argv[warg]);
          if ((BlkD(argv[warg],File)->status & (Fs_Read|Fs_Write)) == 0)
-	    fail;
+            fail;
          (w) = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
-	 checkOpenConsole((FILE *)(w), NULL);
-#endif					/* ConsoleWindow */
+         checkOpenConsole((FILE *)(w), NULL);
+#endif                                  /* ConsoleWindow */
          if (ISCLOSED(w))
-	    fail;
+            fail;
          warg++;
 #ifdef Graphics3D
-	/* set a boolean flag, use a texture */
-	 if (w->window->type == TEXTURE_WSTATE){
-	    is_texture=TEXTURE_WINDOW;
-	    texhandle = w->window->texindex;
-	    }
-#endif					/* Graphics3D */
+        /* set a boolean flag, use a texture */
+         if (w->window->type == TEXTURE_WSTATE){
+            is_texture=TEXTURE_WINDOW;
+            texhandle = w->window->texindex;
+            }
+#endif                                  /* Graphics3D */
 
          }
       else {
          if (!(is:file(kywd_xwin[XKey_Window]) &&
-	      (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
-	    runerr(140,kywd_xwin[XKey_Window]);
+              (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
+            runerr(140,kywd_xwin[XKey_Window]);
          if (!(BlkD(kywd_xwin[XKey_Window],File)->status & (Fs_Read|Fs_Write)))
-	    fail;
+            fail;
          (w) = (wbp)BlkD(kywd_xwin[XKey_Window],File)->fd.fp;
          if (ISCLOSED(w))
-	    fail;
+            fail;
 #ifdef Graphics3D
-	/* set a boolean flag, use a texture */
-	 if (w->window->type == TEXTURE_WSTATE){
-	    is_texture=TEXTURE_WINDOW;
-	    texhandle = w->window->texindex;
-	    }
-#endif					/* Graphics3D */
+        /* set a boolean flag, use a texture */
+         if (w->window->type == TEXTURE_WSTATE){
+            is_texture=TEXTURE_WINDOW;
+            texhandle = w->window->texindex;
+            }
+#endif                                  /* Graphics3D */
          }
    #enddef   /* OptTexWindow */
 
    #begdef ReturnWindow
          if (!warg) return kywd_xwin[XKey_Window];
          else return argv[0]
-   #enddef				/* ReturnWindow */
-   
+   #enddef                              /* ReturnWindow */
+
    #begdef CheckArgMultiple(mult)
    {
      if ((argc-warg) % (mult)) runerr(146);
      n = (argc-warg)/mult;
      if (!n) runerr(146);
    }
-   #enddef				/* CheckArgMultiple */
+   #enddef                              /* CheckArgMultiple */
 
 /*
- * make sure the window is 3D, issue a runtime error if it is not 
+ * make sure the window is 3D, issue a runtime error if it is not
  */
-   #begdef EnsureWindow3D(w)				
+   #begdef EnsureWindow3D(w)
    {
      if (w->context->rendermode == UGL2D) {
        if (warg == 0)
-	 runerr(150, kywd_xwin[XKey_Window]);
+         runerr(150, kywd_xwin[XKey_Window]);
        else
-	 runerr(150, argv[0]);
+         runerr(150, argv[0]);
      }
    }
    #enddef
-   
-#endif					/* Graphics */
+
+#endif                                  /* Graphics */
 
 /*
  * GRFX_ALLOC* family of macros used for static allocations.
@@ -587,8 +587,8 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
       if (var == NULL) ReturnErrNum(305, NULL);
       var->refcount = 1;
    } while(0)
-#enddef				/* GRFX_ALLOC */
-   
+#enddef                         /* GRFX_ALLOC */
+
 #begdef GRFX_LINK(var, chain)
    do {
       var->next = chain;
@@ -596,8 +596,8 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
       if (chain) chain->previous = var;
       chain = var;
    } while(0)
-#enddef				/* GRFX_LINK */
-   
+#enddef                         /* GRFX_LINK */
+
 #begdef GRFX_UNLINK(var, chain)
    do {
       if (var->previous) var->previous->next = var->next;
@@ -605,7 +605,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
       if (var->next) var->next->previous = var->previous;
       free(var);
    } while(0)
-#enddef				/* GRFX_UNLINK */
+#enddef                         /* GRFX_UNLINK */
 
 #ifdef Graphics3D
    typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean, GLenum;
@@ -615,7 +615,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
 #ifdef MSWindows
    typedef int HGLRC, PIXELFORMATDESCRIPTOR;
 #endif
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
 #begdef MissingFunc(funcname)
 "an unavailable function"

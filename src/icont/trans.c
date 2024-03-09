@@ -22,7 +22,7 @@ int nocode;			/* non-zero to suppress code generation */
 int in_line;			/* current input line number */
 int incol;			/* current input column number */
 int peekc;			/* one-character look ahead */
-
+
 /*
  * translate a number of files, returning an error count
  */
@@ -60,7 +60,7 @@ char **ifiles;
 
    return afatals;
    }
-
+
 extern char *pofile;
 /*
  * translate one file.
@@ -188,7 +188,7 @@ char *filename;
       remove(oname1);
       }
    }
-
+
 /*
  * writecheck - check the return code from a stdio output operation
  */

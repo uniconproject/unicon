@@ -131,7 +131,7 @@ struct token *next_tok()
    else
       return t;
    }
-
+
 /*
  * Get the next raw non-white space token, freeing token that the argument
  *  used to point to.
@@ -171,7 +171,7 @@ struct token **tp;
    free_t(*tp);
    *tp = t;
    }
-
+
 /*
  * merge_whsp - merge a sequence of white space tokens into one token,
  *  returning it along with the next token. Whether these are raw or

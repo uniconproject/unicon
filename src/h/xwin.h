@@ -1,37 +1,37 @@
 #ifdef XWindows
 
-#define DRAWOP_AND			GXand
-#define DRAWOP_ANDINVERTED		GXandInverted
-#define DRAWOP_ANDREVERSE		GXandReverse
-#define DRAWOP_CLEAR			GXclear
-#define DRAWOP_COPY			GXcopy
-#define DRAWOP_COPYINVERTED		GXcopyInverted
-#define DRAWOP_EQUIV			GXequiv
-#define DRAWOP_INVERT			GXinvert
-#define DRAWOP_NAND			GXnand
-#define DRAWOP_NOOP			GXnoop
-#define DRAWOP_NOR			GXnor
-#define DRAWOP_OR			GXor
-#define DRAWOP_ORINVERTED		GXorInverted
-#define DRAWOP_ORREVERSE		GXorReverse
-#define DRAWOP_REVERSE			0x10
-#define DRAWOP_SET			GXset
-#define DRAWOP_XOR			GXxor
+#define DRAWOP_AND                      GXand
+#define DRAWOP_ANDINVERTED              GXandInverted
+#define DRAWOP_ANDREVERSE               GXandReverse
+#define DRAWOP_CLEAR                    GXclear
+#define DRAWOP_COPY                     GXcopy
+#define DRAWOP_COPYINVERTED             GXcopyInverted
+#define DRAWOP_EQUIV                    GXequiv
+#define DRAWOP_INVERT                   GXinvert
+#define DRAWOP_NAND                     GXnand
+#define DRAWOP_NOOP                     GXnoop
+#define DRAWOP_NOR                      GXnor
+#define DRAWOP_OR                       GXor
+#define DRAWOP_ORINVERTED               GXorInverted
+#define DRAWOP_ORREVERSE                GXorReverse
+#define DRAWOP_REVERSE                  0x10
+#define DRAWOP_SET                      GXset
+#define DRAWOP_XOR                      GXxor
 
-#define XLFD_Foundry	 1
-#define XLFD_Family	 2
-#define XLFD_Weight	 3
-#define XLFD_Slant	 4
-#define XLFD_SetWidth	 5
-#define XLFD_AddStyle	 6
-#define XLFD_Size	 7
-#define XLFD_PointSize	 8
-#define XLFD_Spacing	11
-#define XLFD_CharSet	13
+#define XLFD_Foundry     1
+#define XLFD_Family      2
+#define XLFD_Weight      3
+#define XLFD_Slant       4
+#define XLFD_SetWidth    5
+#define XLFD_AddStyle    6
+#define XLFD_Size        7
+#define XLFD_PointSize   8
+#define XLFD_Spacing    11
+#define XLFD_CharSet    13
 
 #define TEXTWIDTH(w,s,n) XTextWidth((w)->context->font->fsp, s, n)
 #define SCREENDEPTH(w)\
-	DefaultDepth((w)->window->display->display, w->window->display->screen)
+        DefaultDepth((w)->window->display->display, w->window->display->screen)
 #define ASCENT(w) ((w)->context->font->fsp->ascent)
 #define DESCENT(w) ((w)->context->font->fsp->descent)
 #define LEADING(w) ((w)->context->leading)
@@ -39,9 +39,9 @@
 #define FWIDTH(w) ((w)->context->font->fsp->max_bounds.width)
 #define LINEWIDTH(w) ((w)->context->linewidth)
 #define DISPLAYHEIGHT(w)\
-	DisplayHeight(w->window->display->display, w->window->display->screen)
+        DisplayHeight(w->window->display->display, w->window->display->screen)
 #define DISPLAYWIDTH(w)\
-	DisplayWidth(w->window->display->display, w->window->display->screen)
+        DisplayWidth(w->window->display->display, w->window->display->screen)
 #define FS_SOLID FillSolid
 #define FS_STIPPLE FillStippled
 #define hidecrsr(x) /* noop */
@@ -87,12 +87,12 @@
  * The following constants define limitations in the system, gradually being
  * removed as this code is rewritten to use dynamic allocation.
  */
-#define DMAXCOLORS	256
-#define WMAXCOLORS	256
-#define MAXCOLORNAME	40
+#define DMAXCOLORS      256
+#define WMAXCOLORS      256
+#define MAXCOLORNAME    40
 #define CLR_SHARED          0
 #define CLR_MUTABLE         1
-#define NUMCURSORSYMS	78
+#define NUMCURSORSYMS   78
 
 /*
  * Macros to ease coding in which every X call must be done twice.
@@ -112,27 +112,27 @@
 #define RENDER7(func,v1,v2,v3,v4,v5,v6,v7) {\
    if (stdwin) func(stddpy, stdwin, stdgc, v1, v2, v3, v4, v5, v6, v7); \
    func(stddpy, stdpix, stdgc, v1, v2, v3, v4, v5, v6, v7);}
-
+
 #define MAXDESCENDER(w) (w->context->font->fsp->max_bounds.descent)
 
 /*
  * Macros to perform direct window system calls from graphics routines
  */
 
-#define STDLOCALS_RENDER(w)				\
-   wsp ws = (w)->window;				\
-   GC      stdgc  = (w)->context->gc;			\
-   Display *stddpy = ws->display->display;		\
-   Window  stdwin  = ws->win;				\
+#define STDLOCALS_RENDER(w)                             \
+   wsp ws = (w)->window;                                \
+   GC      stdgc  = (w)->context->gc;                   \
+   Display *stddpy = ws->display->display;              \
+   Window  stdwin  = ws->win;                           \
    Pixmap  stdpix  = ws->pix;
 
-#define STDLOCALS(w)					\
-   wcp wc = (w)->context;				\
-   wsp ws = (w)->window;				\
-   wdp wd = (w)->window->display;			\
-   GC      stdgc  = wc->gc;				\
-   Display *stddpy = wd->display;			\
-   Window  stdwin  = ws->win;				\
+#define STDLOCALS(w)                                    \
+   wcp wc = (w)->context;                               \
+   wsp ws = (w)->window;                                \
+   wdp wd = (w)->window->display;                       \
+   GC      stdgc  = wc->gc;                             \
+   Display *stddpy = wd->display;                       \
+   Window  stdwin  = ws->win;                           \
    Pixmap  stdpix  = ws->pix;
 
 #define drawarcs(w, arcs, narcs) \
@@ -189,19 +189,19 @@
  * containing the current color setting.
  *
  * Note the structure is a simple array with a hash table superimposed
- * 
+ *
  */
 typedef struct wcolor {
-   int		refcount;
-   char		name[6+MAXCOLORNAME];	/* name for WAttrib & WColor reads */
-   unsigned short r, g, b;		/* rgb for colorsearch */
+   int          refcount;
+   char         name[6+MAXCOLORNAME];   /* name for WAttrib & WColor reads */
+   unsigned short r, g, b;              /* rgb for colorsearch */
 #ifdef GraphicsGL
    unsigned short a;
-   int 		id;			/* for mutable color */
-#endif 					/* GraphicsGL */
-   unsigned long	c;		/* X pixel value */
-   int           type;			/* CLR_SHARED or CLR_MUTABLE */
-   int prev, next;			/* hash table bucket prev/next */
+   int          id;                     /* for mutable color */
+#endif                                  /* GraphicsGL */
+   unsigned long        c;              /* X pixel value */
+   int           type;                  /* CLR_SHARED or CLR_MUTABLE */
+   int prev, next;                      /* hash table bucket prev/next */
 } *wclrp;
 
 /*
@@ -219,19 +219,19 @@ typedef struct wcolor {
  * Utility macros to extract RGB color components when dealing with TRUE COLOR visuals.
  */
 
-#define TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask)	\
-   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;	\
-   do {	    	 	   	    	      	       		 		\
-      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask;	\
-      while (!(rmask & 1)) { rshift++; rmask >>= 1; }				\
-      while (rmask & 1) { rbits++; rmask >>= 1; } 				\
-      if (rbits>8) { rshift += rbits-8; rbits = 8; } 				\
-      while (!(gmask & 1)) { gshift++; gmask >>= 1; }				\
-      while (gmask & 1) { gbits++; gmask >>= 1; } 				\
-      if (gbits>8) { gshift += gbits-8; gbits = 8;} 				\
-      while (!(bmask & 1)) { bshift++; bmask >>= 1; }				\
-      while (bmask & 1) { bbits++; bmask >>= 1; }  				\
-      if (bbits>8) { bshift += bbits-8; bbits = 8; }				\
+#define TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask)    \
+   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;       \
+   do {                                                                         \
+      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask;    \
+      while (!(rmask & 1)) { rshift++; rmask >>= 1; }                           \
+      while (rmask & 1) { rbits++; rmask >>= 1; }                               \
+      if (rbits>8) { rshift += rbits-8; rbits = 8; }                            \
+      while (!(gmask & 1)) { gshift++; gmask >>= 1; }                           \
+      while (gmask & 1) { gbits++; gmask >>= 1; }                               \
+      if (gbits>8) { gshift += gbits-8; gbits = 8;}                             \
+      while (!(bmask & 1)) { bshift++; bmask >>= 1; }                           \
+      while (bmask & 1) { bbits++; bmask >>= 1; }                               \
+      if (bbits>8) { bshift += bbits-8; bbits = 8; }                            \
    } while (0)
 
 #define TRUECOLOR_GET_RGB_BYTE(c, cshifts, cbits) (((c >> cshift) & ((1 << cbits)-1)) << (8-cbits))
@@ -239,4 +239,4 @@ typedef struct wcolor {
 #define TRUECOLOR_GET_RGB_GREEN(c) (((c >> gshift) & ((1 << gbits)-1))  << (8-gbits))
 #define TRUECOLOR_GET_RGB_BLUE(c)  (((c >> bshift) & ((1 << bbits)-1))  << (8-bbits))
 
-#endif					/* XWindows */
+#endif                                  /* XWindows */

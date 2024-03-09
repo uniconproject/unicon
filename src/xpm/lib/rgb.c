@@ -45,8 +45,8 @@
 #include "XpmI.h"
 #include <ctype.h>
 
-#ifndef FOR_MSW				/* normal part first, MSW part at
-					 * the end, (huge ifdef!) */
+#ifndef FOR_MSW                         /* normal part first, MSW part at
+                                         * the end, (huge ifdef!) */
 /*
  * Read a rgb text file.  It stores the rgb values (0->65535)
  * and the rgb mnemonics (malloc'ed) into the "rgbn" array.  Returns the
@@ -65,44 +65,44 @@ xpmReadRgbNames(rgb_fname, rgbn)
 
     /* Open the rgb text file.  Abort if error. */
     if ((rgbf = fopen(rgb_fname, "r")) == NULL)
-	return 0;
+        return 0;
 
     /* Loop reading each line in the file. */
     n = 0;
-    rgb = rgbn; 
+    rgb = rgbn;
     /* Quit if rgb text file has too many entries. */
     while (fgets(line, sizeof(line), rgbf) && n < MAX_RGBNAMES) {
 
-	/* Skip silently if line is bad. */
-	items = sscanf(line, "%d %d %d %[^\n]\n", &red, &green, &blue, name);
-	if (items != 4)
-	    continue;
+        /* Skip silently if line is bad. */
+        items = sscanf(line, "%d %d %d %[^\n]\n", &red, &green, &blue, name);
+        if (items != 4)
+            continue;
 
-	/*
-	 * Make sure rgb values are within 0->255 range. Skip silently if
-	 * bad.
-	 */
-	if (red < 0 || red > 0xFF ||
-	    green < 0 || green > 0xFF ||
-	    blue < 0 || blue > 0xFF)
-	    continue;
+        /*
+         * Make sure rgb values are within 0->255 range. Skip silently if
+         * bad.
+         */
+        if (red < 0 || red > 0xFF ||
+            green < 0 || green > 0xFF ||
+            blue < 0 || blue > 0xFF)
+            continue;
 
-	/* Allocate memory for ascii name. If error give up here. */
-	if (!(rgbname = (char *) XpmMalloc(strlen(name) + 1)))
-	    break;
+        /* Allocate memory for ascii name. If error give up here. */
+        if (!(rgbname = (char *) XpmMalloc(strlen(name) + 1)))
+            break;
 
-	/* Copy string to ascii name and lowercase it. */
-	for (s1 = name, s2 = rgbname; *s1; s1++)
-	    *s2++ = tolower(*s1);
-	*s2 = '\0';
+        /* Copy string to ascii name and lowercase it. */
+        for (s1 = name, s2 = rgbname; *s1; s1++)
+            *s2++ = tolower(*s1);
+        *s2 = '\0';
 
-	/* Save the rgb values and ascii name in the array. */
-	rgb->r = red * 257;		/* 65535/255 = 257 */
-	rgb->g = green * 257;
-	rgb->b = blue * 257;
-	rgb->name = rgbname;
-	rgb++;
-	n++;
+        /* Save the rgb values and ascii name in the array. */
+        rgb->r = red * 257;             /* 65535/255 = 257 */
+        rgb->g = green * 257;
+        rgb->b = blue * 257;
+        rgb->name = rgbname;
+        rgb++;
+        n++;
     }
 
     fclose(rgbf);
@@ -116,9 +116,9 @@ xpmReadRgbNames(rgb_fname, rgbn)
  */
 char *
 xpmGetRgbName(rgbn, rgbn_max, red, green, blue)
-    xpmRgbName rgbn[];			/* rgb mnemonics from rgb text file */
-    int rgbn_max;			/* number of rgb mnemonics in table */
-    int red, green, blue;		/* rgb values */
+    xpmRgbName rgbn[];                  /* rgb mnemonics from rgb text file */
+    int rgbn_max;                       /* number of rgb mnemonics in table */
+    int red, green, blue;               /* rgb values */
 
 {
     int i;
@@ -130,8 +130,8 @@ xpmGetRgbName(rgbn, rgbn_max, red, green, blue)
      * using a binary search, or building a hash table, etc...
      */
     for (i = 0, rgb = rgbn; i < rgbn_max; i++, rgb++)
-	if (red == rgb->r && green == rgb->g && blue == rgb->b)
-	    return rgb->name;
+        if (red == rgb->r && green == rgb->g && blue == rgb->b)
+            return rgb->name;
 
     /* if not found return NULL */
     return NULL;
@@ -150,13 +150,13 @@ xpmFreeRgbNames(rgbn, rgbn_max)
     xpmRgbName *rgb;
 
     for (i = 0, rgb = rgbn; i < rgbn_max; i++, rgb++)
-	XpmFree(rgb->name);
+        XpmFree(rgb->name);
 }
 
-#else					/* here comes the MSW part, the
-					 * second part of the  huge ifdef */
+#else                                   /* here comes the MSW part, the
+                                         * second part of the  huge ifdef */
 
-#include "rgbtab.h"			/* hard coded rgb.txt table */
+#include "rgbtab.h"                     /* hard coded rgb.txt table */
 
 int
 xpmReadRgbNames(rgb_fname, rgbn)
@@ -176,10 +176,10 @@ xpmReadRgbNames(rgb_fname, rgbn)
  */
 char *
 xpmGetRgbName(rgbn, rgbn_max, red, green, blue)
-    xpmRgbName rgbn[];			/* rgb mnemonics from rgb text file
-					 * not used */
-    int rgbn_max;			/* not used */
-    int red, green, blue;		/* rgb values */
+    xpmRgbName rgbn[];                  /* rgb mnemonics from rgb text file
+                                         * not used */
+    int rgbn_max;                       /* not used */
+    int red, green, blue;               /* rgb values */
 
 {
     int i;
@@ -187,12 +187,12 @@ xpmGetRgbName(rgbn, rgbn_max, red, green, blue)
 
     i = 0;
     while (i < numTheRGBRecords) {
-	rgbVal = theRGBRecords[i].rgb;
-	if (GetRValue(rgbVal) == red &&
-	    GetGValue(rgbVal) == green &&
-	    GetBValue(rgbVal) == blue)
-	    return (theRGBRecords[i].name);
-	i++;
+        rgbVal = theRGBRecords[i].rgb;
+        if (GetRValue(rgbVal) == red &&
+            GetGValue(rgbVal) == green &&
+            GetBValue(rgbVal) == blue)
+            return (theRGBRecords[i].name);
+        i++;
     }
     return (NULL);
 }
@@ -217,16 +217,16 @@ xpmGetRGBfromName(inname, r, g, b)
      */
     /* so first extract ' ' */
     while (p = strchr(name, ' ')) {
-	while (*(p)) {			/* till eof of string */
-	    *p = *(p + 1);		/* copy to the left */
-	    p++;
-	}
+        while (*(p)) {                  /* till eof of string */
+            *p = *(p + 1);              /* copy to the left */
+            p++;
+        }
     }
     /* fold to lower case */
     p = name;
     while (*p) {
-	*p = tolower(*p);
-	p++;
+        *p = tolower(*p);
+        p++;
     }
 
     /*
@@ -234,26 +234,26 @@ xpmGetRGBfromName(inname, r, g, b)
      * 'duplicate' entries
      */
     if (grey = strstr(name, "grey"))
-	grey[2] = 'a';
+        grey[2] = 'a';
 
     /* binary search */
     left = 0;
     right = numTheRGBRecords - 1;
     do {
-	middle = (left + right) / 2;
-	cmp = xpmstrcasecmp(name, theRGBRecords[middle].name);
-	if (cmp == 0) {
-	    rgbVal = theRGBRecords[middle].rgb;
-	    *r = GetRValue(rgbVal);
-	    *g = GetGValue(rgbVal);
-	    *b = GetBValue(rgbVal);
-	    free(name);
-	    return (1);
-	} else if (cmp < 0) {
-	    right = middle - 1;
-	} else {			/* > 0 */
-	    left = middle + 1;
-	}
+        middle = (left + right) / 2;
+        cmp = xpmstrcasecmp(name, theRGBRecords[middle].name);
+        if (cmp == 0) {
+            rgbVal = theRGBRecords[middle].rgb;
+            *r = GetRValue(rgbVal);
+            *g = GetGValue(rgbVal);
+            *b = GetBValue(rgbVal);
+            free(name);
+            return (1);
+        } else if (cmp < 0) {
+            right = middle - 1;
+        } else {                        /* > 0 */
+            left = middle + 1;
+        }
     } while (left <= right);
 
     /*
@@ -264,7 +264,7 @@ xpmGetRGBfromName(inname, r, g, b)
 
     *r = 255;
     *g = 0;
-    *b = 0;				/* red error pixel */
+    *b = 0;                             /* red error pixel */
 
     free(name);
     return (1);
@@ -279,4 +279,4 @@ xpmFreeRgbNames(rgbn, rgbn_max)
     /* nothing to do */
 }
 
-#endif					/* MSW part */
+#endif                                  /* MSW part */

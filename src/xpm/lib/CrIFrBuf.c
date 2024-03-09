@@ -38,7 +38,7 @@ LFUNC(OpenBuffer, void, (char *buffer, xpmData *mdata));
 
 int
 XpmCreateImageFromBuffer(display, buffer, image_return,
-			 shapeimage_return, attributes)
+                         shapeimage_return, attributes)
     Display *display;
     char *buffer;
     XImage **image_return;
@@ -58,19 +58,19 @@ XpmCreateImageFromBuffer(display, buffer, image_return,
 
     /* create the XImage from the XpmData */
     if (attributes) {
-	xpmInitAttributes(attributes);
-	xpmSetInfoMask(&info, attributes);
-	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-					    image_return, shapeimage_return,
-					    &image, &info, attributes);
+        xpmInitAttributes(attributes);
+        xpmSetInfoMask(&info, attributes);
+        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+                                            image_return, shapeimage_return,
+                                            &image, &info, attributes);
     } else
-	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-					    image_return, shapeimage_return,
-					    &image, NULL, attributes);
+        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+                                            image_return, shapeimage_return,
+                                            &image, NULL, attributes);
     if (attributes) {
-	if (ErrorStatus >= 0)		/* no fatal error */
-	    xpmSetAttributes(attributes, &image, &info);
-	XpmFreeXpmInfo(&info);
+        if (ErrorStatus >= 0)           /* no fatal error */
+            xpmSetAttributes(attributes, &image, &info);
+        XpmFreeXpmInfo(&info);
     }
 
     /* free the XpmImage */

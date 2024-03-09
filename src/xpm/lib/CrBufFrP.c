@@ -36,7 +36,7 @@
 
 int
 XpmCreateBufferFromPixmap(display, buffer_return, pixmap, shapemask,
-			  attributes)
+                          attributes)
     Display *display;
     char **buffer_return;
     Pixmap pixmap;
@@ -51,25 +51,25 @@ XpmCreateBufferFromPixmap(display, buffer_return, pixmap, shapemask,
 
     /* get geometry */
     if (attributes && attributes->valuemask & XpmSize) {
-	width = attributes->width;
-	height = attributes->height;
+        width = attributes->width;
+        height = attributes->height;
     }
     /* get the ximages */
     if (pixmap)
-	xpmCreateImageFromPixmap(display, pixmap, &ximage, &width, &height);
+        xpmCreateImageFromPixmap(display, pixmap, &ximage, &width, &height);
     if (shapemask)
-	xpmCreateImageFromPixmap(display, shapemask, &shapeimage,
-				 &width, &height);
+        xpmCreateImageFromPixmap(display, shapemask, &shapeimage,
+                                 &width, &height);
 
     /* create the buffer */
     ErrorStatus = XpmCreateBufferFromImage(display, buffer_return, ximage,
-					   shapeimage, attributes);
+                                           shapeimage, attributes);
 
     /* destroy the ximages */
     if (ximage)
-	XDestroyImage(ximage);
+        XDestroyImage(ximage);
     if (shapeimage)
-	XDestroyImage(shapeimage);
+        XDestroyImage(shapeimage);
 
     return (ErrorStatus);
 }

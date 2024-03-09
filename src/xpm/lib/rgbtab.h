@@ -40,14 +40,14 @@
 
 typedef struct {
     char *name;
-    COLORREF rgb;			/* it's unsigned long */
+    COLORREF rgb;                       /* it's unsigned long */
 }      rgbRecord;
 
 /*
 #define myRGB(r,g,b) \
-	((unsigned long)r<<16|(unsigned long)g<<8|(unsigned long)b)
+        ((unsigned long)r<<16|(unsigned long)g<<8|(unsigned long)b)
 */
-#define myRGB(r,g,b)	RGB(r,g,b)	/* MSW has this macro */
+#define myRGB(r,g,b)    RGB(r,g,b)      /* MSW has this macro */
 
 
 static rgbRecord theRGBRecords[] =

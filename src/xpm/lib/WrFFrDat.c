@@ -48,7 +48,7 @@ XpmWriteFileFromData(filename, data)
     ErrorStatus = XpmCreateXpmImageFromData(data, &image, &info);
 
     if (ErrorStatus != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     ErrorStatus = XpmWriteFileFromXpmImage(filename, &image, &info);
 

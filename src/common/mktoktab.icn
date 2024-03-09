@@ -138,7 +138,7 @@ procedure main()
    write(toktab,makeres("uvwx"))
    write(toktab,makeres("yz"))
 #  NOTE:  THE EBCDIC PART OF THIS MAY NOT BE CORRECT
-   write(toktab,"#else					/* EBCDIC */")
+   write(toktab,"#else                                  /* EBCDIC */")
    write(toktab,makeres("abcd", 16r81))
    write(toktab,makeres("efgh"))
    write(toktab,makeres("i..."))
@@ -150,7 +150,7 @@ procedure main()
    write(toktab,makeres(".stu"))
    write(toktab,makeres("vwxy"))
    write(toktab,makeres("z"))
-   write(toktab,"#endif					/* EBCDIC */")
+   write(toktab,"#endif                                 /* EBCDIC */")
    write(toktab,"   };")
 
 # Another comment
@@ -175,7 +175,7 @@ procedure main()
    unary_set := set()
    ops := table()
    op_lst := []
-   
+
    while s := read(opfile) do {
       op_linenum +:= 1
       s ? {
@@ -207,7 +207,7 @@ procedure main()
 #                  "unary operators must be single characters: " || op);
                write(&errout, "Warning: ", opfnm, " line ", op_linenum,
                   ": unary operators 'must' be single characters: " || op);
-	       }
+               }
             insert(unary_set, op)
             }
          if \aug & binary == "_" then
@@ -280,7 +280,7 @@ repeat {
 
 end
 
-procedure makeline(token,tokval,flag,count)	# build an output line for token table.
+procedure makeline(token,tokval,flag,count)     # build an output line for token table.
    local line
    line := left("   \"" || token || "\",",22) || left(tokval ||  ",",15)
    flag := flagtable[flag] || ","
@@ -305,7 +305,7 @@ procedure makeres(lets, strt_repr)
          line ||:= "&toktab[" || right(restable[let],2) || "], "
          }
       else line ||:= "NULL,        "
-   line := left(line,55) || "/* " 
+   line := left(line,55) || "/* "
    if integer(repr) then
       line ||:= hex(repr) || "-" || hex((repr +:= *lets) - 1) || " "
    return line || letters || " */"
@@ -410,7 +410,7 @@ procedure build_trie(ops)
           /by_1st_c[c] := []
           put(by_1st_c[c], association(asc.op[2:0], asc.n))
           }
-      else 
+      else
           dflt := asc.n
       }
    by_1st_c := sort(by_1st_c)
@@ -497,7 +497,7 @@ procedure wrt(f, indent, slst[])
 
    exp_indent := indent * 3;
    s1 := repl(" ", exp_indent)
-   while s1 ||:= get(slst) 
+   while s1 ||:= get(slst)
    if (*s1 > 80) then {
       #
       # line too long, find first space before 80th column, and

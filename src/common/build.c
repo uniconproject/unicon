@@ -1,7 +1,7 @@
 /*
- * The ncurses-based build 
+ * The ncurses-based build
  * This program is written to run from the top level directory for Unicon
- * i.e. ./build x86_32_linux | ./build x86_64_linux | ./build x86_64_macos  
+ * i.e. ./build x86_32_linux | ./build x86_64_linux | ./build x86_64_macos
  *
  * Author: Ziad Al-Sharif
  *         zsharif@gmail.com
@@ -14,7 +14,7 @@
 
 #define _ODBC_        0
 #define _2D_X11_      1
-#define _3D_OpenGL_   2 
+#define _3D_OpenGL_   2
 #define _3D_Fonts_    3
 #define _AUDIO_       4
 #define _VoIP_        5
@@ -22,7 +22,7 @@
 #define WIDTH         60
 #define HEIGHT        11
 
-#define MARKED    " [ X ] " /* selected[i] >  0 */  
+#define MARKED    " [ X ] " /* selected[i] >  0 */
 #define UNMARKED  " [   ] " /* selected[i] == 0 */
 #define DISABLED  " [ - ] " /* selected[i] <  0 */
 
@@ -53,7 +53,7 @@ int selected[6];
 int startx = 0;
 int starty = 0;
 
-char *choices[] = { 
+char *choices[] = {
      /*-0-*/  "    --Database (ODBC) Support         ! ",
      /*-1-*/  "    --2D Graphics (X11) Support       ! ",
      /*-2-*/  "      --3D Graphics (OpenGL) Support  ! ",
@@ -106,10 +106,10 @@ void InitMenu()
    initscr();
    clear();
    noecho();
-   cbreak();	/* Line buffering disabled. pass on everything */
+   cbreak();    /* Line buffering disabled. pass on everything */
    startx = (COLS - WIDTH)  / 2;
    starty = (LINES - HEIGHT) / 2;
-     
+
    /* Create three Windows */
    main_win  = create_newwin(HEIGHT+5, WIDTH+10, starty-3, startx-5);
    title_win = create_newwin(3, WIDTH+10, starty-6, startx-5);
@@ -123,7 +123,7 @@ int menu()
    int highlight = 1;
    int choice = 0;
    int i, ch, current;
- 
+
    InitMenu();
 
    print_menu(sub_win, highlight);
@@ -133,60 +133,60 @@ int menu()
       ch = wgetch(sub_win);
       switch(ch){
       case KEY_UP:{
-	 if (highlight == 1)
-	    highlight = n_choices;
-	 else
-	    --highlight;
-	 break;
-	 }
+         if (highlight == 1)
+            highlight = n_choices;
+         else
+            --highlight;
+         break;
+         }
       case KEY_DOWN:{
-	 if (highlight == n_choices)
-	    highlight = 1;
-	 else
-	    ++highlight;
-	 break;
-	 }
+         if (highlight == n_choices)
+            highlight = 1;
+         else
+            ++highlight;
+         break;
+         }
       case ' ':{
-	 current = highlight - 1;
-	 if (selected[current] > 0){
-	    selected[current] = 0;
-	    check_Selections(current);
-	    }  
-	 else if (selected[current] == 0){
-	    selected[current] = 1;
-	    check_Selections(current);
-	    }
-	 break;
-	 }
+         current = highlight - 1;
+         if (selected[current] > 0){
+            selected[current] = 0;
+            check_Selections(current);
+            }
+         else if (selected[current] == 0){
+            selected[current] = 1;
+            check_Selections(current);
+            }
+         break;
+         }
       case 'q':
       case 'Q':
       case 27:{ /* the Esc key   */
-	 /* quit the build process */
-	 ch = getAnswer(1);
-	 if ((ch == 'Y') || (ch=='y'))
-	    choice = highlight;
-	 break;
-	 }
+         /* quit the build process */
+         ch = getAnswer(1);
+         if ((ch == 'Y') || (ch=='y'))
+            choice = highlight;
+         break;
+         }
       case 10:{ /* the Enter key */
-	 ch = getAnswer(2);
-	 if ((ch == 'Y') || (ch=='y')){
-	    choice = highlight;
+         ch = getAnswer(2);
+         if ((ch == 'Y') || (ch=='y')){
+            choice = highlight;
 
-	    rewrite_Auto_h();
-	    rewrite_Makedefs();
+            rewrite_Auto_h();
+            rewrite_Makedefs();
 
-	    endwin();
-	    printf("\n\nmake Unicon \n");
-	    system("make Unicon");
-	    }
-	 break;
-	 }
-	 }
+            endwin();
+            printf("\n\nmake Unicon \n");
+            system("make Unicon");
+            }
+         break;
+         }
+         }
       print_menu(sub_win, highlight);
       analyze_Selections(highlight-1);
 
       if(choice != 0)
-	 break;
+         break;
       }
    delwin(main_win);
    delwin(title_win);
@@ -199,32 +199,32 @@ void check_Selections(int current)
 {
    int i;
 
-   if (current == _2D_X11_){ /* Check for the Graphics Configurations */ 
+   if (current == _2D_X11_){ /* Check for the Graphics Configurations */
       if (!selected[_2D_X11_])
-	 if (selected[_3D_OpenGL_] > 0) selected[_3D_OpenGL_] = 0;
-	 if (selected[_3D_Fonts_] > 0)  selected[_3D_Fonts_]  = 0;
+         if (selected[_3D_OpenGL_] > 0) selected[_3D_OpenGL_] = 0;
+         if (selected[_3D_Fonts_] > 0)  selected[_3D_Fonts_]  = 0;
       }
    else if (current == _3D_OpenGL_){
       /* Check for the 3D Graphics Configurations */
       if ((!selected[_3D_OpenGL_]) && (selected[_3D_Fonts_] > 0))
-	 selected[_3D_Fonts_] = 0;
+         selected[_3D_Fonts_] = 0;
       else if(selected[_3D_OpenGL_])
-	 selected[_2D_X11_] = 1;
+         selected[_2D_X11_] = 1;
       }
    else if (current == _3D_Fonts_){
       /* Check for the 3D Graphics Configurations */
       if (selected[_3D_Fonts_]) {
-	 selected[_3D_OpenGL_] = 1;
-	 selected[_2D_X11_] = 1;
-	 } 
+         selected[_3D_OpenGL_] = 1;
+         selected[_2D_X11_] = 1;
+         }
       }
    else if (current == _AUDIO_){ /* Check for Audio and VoIP Configurations */
       if ((!selected[_AUDIO_]) && (selected[_VoIP_] > 0))
-	 selected[_VoIP_] = 0;
+         selected[_VoIP_] = 0;
       }
    else if (current == _VoIP_){ /* Check for Audio and VoIP Configurations */
       if (selected[_VoIP_])
-	 selected[_AUDIO_] = 1;
+         selected[_AUDIO_] = 1;
       }
 }
 
@@ -232,21 +232,21 @@ void analyze_Selections(int current)
 {
    char temp[200]={"Selections: "};
    int  i, j=0, y, x, l;
- 
+
    if (selected[current] >=0) {
       for(i = 0; i < n_choices; ++i)
-	 if(selected[i] > 0) {
-	    strcat(temp, items[i]);
-	    strcat(temp, ", ");
-	    ++j;
-	    }
+         if(selected[i] > 0) {
+            strcat(temp, items[i]);
+            strcat(temp, ", ");
+            ++j;
+            }
       if (j > 0){
-	 l = strlen(temp)-2;
-	 temp[l]='.';
-	 temp[l+1]='\0';
-	 }
+         l = strlen(temp)-2;
+         temp[l]='.';
+         temp[l+1]='\0';
+         }
       else
-	 strcat(temp, " NONE = Basic.");
+         strcat(temp, " NONE = Basic.");
       }
    else if (selected[current] == -1){
       strcpy(temp, "The ");
@@ -264,7 +264,7 @@ int getAnswer(int which)
 {
    int x;
    char ch, temp[100]={'\0'};
-  
+
    if (which == 1)
       strcat(temp,"Do you really want to quit the build process (Y|N)?:");
    else if (which == 2)
@@ -282,8 +282,8 @@ int getAnswer(int which)
 
 void print_menu(WINDOW *win, int highlight)
 {
-   int x, y, i;	
-    
+   int x, y, i;
+
    /* print the title menu */
    box(title_win, 0, 0);
    mvwprintw(title_win, 1, 17, title);
@@ -308,22 +308,22 @@ void print_menu(WINDOW *win, int highlight)
    box(win, 0, 0);
    for(i = 0; i < n_choices; ++i){
       if(highlight == i + 1){ /* High light the present choice */
-	 wattron(win, A_REVERSE);
+         wattron(win, A_REVERSE);
          if (selected[i] > 0)
-	    mvwprintw(win, y, x, "%s : %s", MARKED, choices[i]);
+            mvwprintw(win, y, x, "%s : %s", MARKED, choices[i]);
          else if (selected[i] < 0)
-	    mvwprintw(win, y, x, "%s : %s", DISABLED, choices[i]);
+            mvwprintw(win, y, x, "%s : %s", DISABLED, choices[i]);
          else
-	    mvwprintw(win, y, x, "%s : %s", UNMARKED, choices[i]);
-	 wattroff(win, A_REVERSE);
-	 }
+            mvwprintw(win, y, x, "%s : %s", UNMARKED, choices[i]);
+         wattroff(win, A_REVERSE);
+         }
       else{
          if (selected[i] > 0)
-	    mvwprintw(win, y, x, "%s : %s", MARKED , choices[i]);
+            mvwprintw(win, y, x, "%s : %s", MARKED , choices[i]);
          else if (selected[i] < 0)
-	    mvwprintw(win, y, x, "%s : %s", DISABLED, choices[i]);
+            mvwprintw(win, y, x, "%s : %s", DISABLED, choices[i]);
          else
-	    mvwprintw(win, y, x, "%s : %s", UNMARKED, choices[i]);
+            mvwprintw(win, y, x, "%s : %s", UNMARKED, choices[i]);
          }
       ++y;
     }
@@ -336,10 +336,10 @@ void print_menu(WINDOW *win, int highlight)
 
 /*-----------------------------------------------------------------*/
 
-char MAKEDEFS[]={"Makedefs"};       /* The name of the Makedefs file Unicon  */ 
+char MAKEDEFS[]={"Makedefs"};       /* The name of the Makedefs file Unicon  */
 char AUTO_H[]  ={"src/h/auto.h"};   /* The name of the auto.h file in Unicon */
 
-char _All_Defined_Macros[100][40];   /* initialized from auto.h        */   
+char _All_Defined_Macros[100][40];   /* initialized from auto.h        */
 int _All_Defined_Macros_MAX;         /* number of #defined macros      */
 
 struct Info {
@@ -397,7 +397,7 @@ void InitInfo(void)
    /*
     * Initialize the X11 2D Graphis configurations
     */
-   _X11_2DGraphics[0].enabled = 0;    
+   _X11_2DGraphics[0].enabled = 0;
    strcpy(_X11_2DGraphics[0].tag,       "X11 2D Graphics");
    strcpy(_X11_2DGraphics[0].defined,   "#define HAVE_LIBX11 1");
    strcpy(_X11_2DGraphics[0].undefined, "#undef  HAVE_LIBX11");
@@ -409,7 +409,7 @@ void InitInfo(void)
    /*
     * Initialize the 3D Graphis configurations
     */
-   _3DGraphics[0].enabled = 0;    
+   _3DGraphics[0].enabled = 0;
    strcpy(_3DGraphics[0].tag,       "opengl");
    strcpy(_3DGraphics[0].defined,   "#define HAVE_LIBGL 1");
    strcpy(_3DGraphics[0].undefined, "#undef HAVE_LIBGL");
@@ -436,7 +436,7 @@ void InitInfo(void)
    _3DFonts[1].lib2[0] = '\0';
    _3DFonts[1].lib3[0] = '\0';
 
-   _3DFonts[2].enabled = 0; 
+   _3DFonts[2].enabled = 0;
    strcpy(_3DFonts[2].tag,       "Xft");
    strcpy(_3DFonts[2].defined,   "#define HAVE_LIBXFT 1");
    strcpy(_3DFonts[2].undefined, "#undef HAVE_LIBXFT");
@@ -447,7 +447,7 @@ void InitInfo(void)
    /*
     * Initialize the Audio configurations
     */
-   _Audio[0].enabled = 0; 
+   _Audio[0].enabled = 0;
    strcpy(_Audio[0].tag,       "ogg vorbis");
    strcpy(_Audio[0].defined,   "#define HAVE_LIBOGG 1");
    strcpy(_Audio[0].undefined, "#undef HAVE_LIBOGG");
@@ -455,7 +455,7 @@ void InitInfo(void)
    strcpy(_Audio[0].lib2,      "-lvorbis");    /* this one and the other */
    strcpy(_Audio[0].lib3,      "-lvorbisfile");/* this one and the other */
 
-   _Audio[1].enabled = 0; 
+   _Audio[1].enabled = 0;
    strcpy(_Audio[1].tag,       "libsmpeg");
    strcpy(_Audio[1].defined,   "#define HAVE_LIBSMPEG 1");
    strcpy(_Audio[1].undefined, "#undef HAVE_LIBSMPEG");
@@ -463,7 +463,7 @@ void InitInfo(void)
    _Audio[1].lib2[0] = '\0';
    _Audio[1].lib3[0] = '\0';
 
-   _Audio[2].enabled = 0; 
+   _Audio[2].enabled = 0;
    strcpy(_Audio[2].tag,       "libSDL");
    strcpy(_Audio[2].defined,   "#define HAVE_LIBSDL 1");
    strcpy(_Audio[2].undefined, "#undef HAVE_LIBSDL");
@@ -490,7 +490,7 @@ void InitInfo(void)
    _VoIP[0].lib2[0] = '\0';
    _VoIP[0].lib3[0] = '\0';
 
-   _VoIP[1].enabled = 0;  
+   _VoIP[1].enabled = 0;
    strcpy(_VoIP[1].tag,       "jrtplib");
    strcpy(_VoIP[1].defined,   "#define HAVE_LIBJRTP 1");
    strcpy(_VoIP[1].undefined, "#undef HAVE_LIBJRTP");
@@ -498,7 +498,7 @@ void InitInfo(void)
    _VoIP[1].lib2[0] = '\0';
    _VoIP[1].lib3[0] = '\0';
 
-   _VoIP[2].enabled = 0; 
+   _VoIP[2].enabled = 0;
    strcpy(_VoIP[2].tag,       "jthreadlib");
    strcpy(_VoIP[2].defined,   "#define HAVE_LIBJTHREAD 1");
    strcpy(_VoIP[2].undefined, "#undef HAVE_LIBJTHREAD");
@@ -506,7 +506,7 @@ void InitInfo(void)
    _VoIP[2].lib2[0] = '\0';
    _VoIP[2].lib3[0] = '\0';
 
-   _VoIP[3].enabled = 0; 
+   _VoIP[3].enabled = 0;
    strcpy(_VoIP[3].tag,       "voiplib");
    strcpy(_VoIP[3].defined,   "#define HAVE_LIBVOIP 1");
    strcpy(_VoIP[3].undefined, "#undef HAVE_LIBVOIP");
@@ -528,11 +528,11 @@ int isMatchedConfig(char *str, struct Info List[], int max)
    int matched=0, i;
    for(i=0; i < max ; i++){
       if (!strcmp(List[i].defined, str)){
-	 List[i].enabled = 1;
-	 return 1;
-	 }
+         List[i].enabled = 1;
+         return 1;
+         }
       }
-   return 0; 
+   return 0;
 }
 
 int isEnabled(struct Info List[], int max)
@@ -543,7 +543,7 @@ int isEnabled(struct Info List[], int max)
 
    if (enabled == max)
       return 1;
-   return 0; 
+   return 0;
 }
 
 /*
@@ -552,36 +552,36 @@ int isEnabled(struct Info List[], int max)
  */
 void checkEnabledFeatures(void)
 {
-   /* 
-    * Check for Database support 
+   /*
+    * Check for Database support
     */
    if (isEnabled(_DataBase, _DataBase_Score))
       selected[_ODBC_]= 1;
 
-   /* 
-    * Check for "X11 2D Graphics" + "3D Graphics" + "3D Fonts" support 
+   /*
+    * Check for "X11 2D Graphics" + "3D Graphics" + "3D Fonts" support
     */
    if (isEnabled(_X11_2DGraphics, _X11_2DGraphics_Score)){
       selected[_2D_X11_] = 1;
       if (isEnabled(_3DGraphics, _3DGraphics_Score)){
-	 selected[_3D_OpenGL_] = 1;
-	 if (isEnabled(_3DFonts, _3DFonts_Score))
-	    selected[_3D_Fonts_] = 1;
-	 }
+         selected[_3D_OpenGL_] = 1;
+         if (isEnabled(_3DFonts, _3DFonts_Score))
+            selected[_3D_Fonts_] = 1;
+         }
       }
- 
-   /* 
-    * Check for "Audio" and "VoIP" support 
+
+   /*
+    * Check for "Audio" and "VoIP" support
     */
    if (isEnabled(_Audio, _Audio_Score)){
       selected[_AUDIO_] = 1;
       if (isEnabled(_VoIP, _VoIP_Score))
-	 selected[_VoIP_] = 1;
+         selected[_VoIP_] = 1;
       }
 }
 
 /*
- * disables features in the auto.h and Makedefs files based 
+ * disables features in the auto.h and Makedefs files based
  * on the categorization in InitInfo()
  * and based on the user selection
  */
@@ -589,8 +589,8 @@ void disableFeatures(FILE *fout, struct Info List[], int max, int type)
 {
    int i;
    fprintf(fout,"\n"
-	        "/*\n"
-	        " * The following is disabled by the USER \n"
+                "/*\n"
+                " * The following is disabled by the USER \n"
                 " */\n");
    for(i=0; i < max; ++i)
       fprintf(fout,"%s\n",List[i].undefined);
@@ -598,59 +598,59 @@ void disableFeatures(FILE *fout, struct Info List[], int max, int type)
 
    if (type == _ODBC_) {
       for(i=0; i < _AC_LIBS_MAX; ++i)
-	 if ((!strcmp(List[0].lib1,_AC_LIBS[i])) ||
-	     ((!strcmp(List[1].lib1,_AC_LIBS[i]) ||
-	       (!strcmp(List[1].lib2,_AC_LIBS[i])))))
-	    _AC_LIBS[i][0] = '\0';
+         if ((!strcmp(List[0].lib1,_AC_LIBS[i])) ||
+             ((!strcmp(List[1].lib1,_AC_LIBS[i]) ||
+               (!strcmp(List[1].lib2,_AC_LIBS[i])))))
+            _AC_LIBS[i][0] = '\0';
       }
    else if ( type == _2D_X11_ ){
       for(i=0; i < _AC_LIBS_MAX; ++i)
-	 if ((!strcmp(List[0].lib1,_AC_LIBS[i])) || 
-	     (!strcmp(List[0].lib2,_AC_LIBS[i])))
-	    _AC_LIBS[i][0] = '\0';
+         if ((!strcmp(List[0].lib1,_AC_LIBS[i])) ||
+             (!strcmp(List[0].lib2,_AC_LIBS[i])))
+            _AC_LIBS[i][0] = '\0';
       }
    else if ( type == _3D_OpenGL_ ){
       for(i=0; i < _AC_LIBS_MAX; ++i)
-	 if ((!strcmp(List[0].lib1,_AC_LIBS[i])) || 
-	     (!strcmp(List[0].lib2,_AC_LIBS[i])))
-	    _AC_LIBS[i][0] = '\0';
+         if ((!strcmp(List[0].lib1,_AC_LIBS[i])) ||
+             (!strcmp(List[0].lib2,_AC_LIBS[i])))
+            _AC_LIBS[i][0] = '\0';
       }
    else if ( type == _3D_Fonts_ ){
       for(i=0; i < _AC_LIBS_MAX; ++i)
-	 if (!strcmp(List[0].lib1,_AC_LIBS[i])) 
-	    _AC_LIBS[i][0] = '\0';
-	 else 
-            if (!strcmp(List[1].lib1,_AC_LIBS[i])) 
-	       _AC_LIBS[i][0] = '\0';
-	    else
-	       if (!strcmp(List[2].lib1,_AC_LIBS[i])) 
-		  _AC_LIBS[i][0] = '\0';
+         if (!strcmp(List[0].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
+         else
+            if (!strcmp(List[1].lib1,_AC_LIBS[i]))
+               _AC_LIBS[i][0] = '\0';
+            else
+               if (!strcmp(List[2].lib1,_AC_LIBS[i]))
+                  _AC_LIBS[i][0] = '\0';
       }
    else if ( type == _AUDIO_ ){
       for(i=0; i < _AC_LIBS_MAX; ++i)
-	 if ((!strcmp(List[0].lib1,_AC_LIBS[i])) ||
-	     (!strcmp(List[0].lib2,_AC_LIBS[i])) ||
-	     (!strcmp(List[0].lib3,_AC_LIBS[i]))   )
-	    _AC_LIBS[i][0] = '\0';
-	 else if(!strcmp(List[1].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
-	 else if(!strcmp(List[2].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
-	 else if(!strcmp(List[3].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
+         if ((!strcmp(List[0].lib1,_AC_LIBS[i])) ||
+             (!strcmp(List[0].lib2,_AC_LIBS[i])) ||
+             (!strcmp(List[0].lib3,_AC_LIBS[i]))   )
+            _AC_LIBS[i][0] = '\0';
+         else if(!strcmp(List[1].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
+         else if(!strcmp(List[2].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
+         else if(!strcmp(List[3].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
       }
    else if ( type == _VoIP_ ){
       for(i=0; i < _AC_LIBS_MAX; ++i)
-	 if (!strcmp(List[0].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
-	 else if(!strcmp(List[1].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
-	 else if(!strcmp(List[2].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
-	 else if(!strcmp(List[3].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
-	 else if(!strcmp(List[4].lib1,_AC_LIBS[i]))
-	    _AC_LIBS[i][0] = '\0';
+         if (!strcmp(List[0].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
+         else if(!strcmp(List[1].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
+         else if(!strcmp(List[2].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
+         else if(!strcmp(List[3].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
+         else if(!strcmp(List[4].lib1,_AC_LIBS[i]))
+            _AC_LIBS[i][0] = '\0';
       }
 }
 
@@ -690,11 +690,11 @@ FILE *ckopen(char *name, char *mode, char *diagnostic)
    return f;
 }
 
-/*  
+/*
  *  re-writes the h/auto.h header file based on the user selections
  *  Before any call to this function, Makedefs should be read and its
  *  libraries are tokenized
- */ 
+ */
 void rewrite_Auto_h(void)
 {
    FILE *fin, *fout;
@@ -727,18 +727,18 @@ void read_Auto_h()
    printf("\n%s\n", AUTO_H);
    while(fgets(line, 100, fin) != NULL) {
       if (line[0] == '#') {
-	 /* remove the \n from the end of the defined macro */
-	 for(i=1; i< strlen(line); i++){
-	    prev = line[i-1];
-	    if ((line[i]=='1') && (prev == ' ')){
-	       line[i+1]='\0';
-	       break;
-	       }
-	    }
-	 strcpy(_All_Defined_Macros[_All_Defined_Macros_MAX],line);
-	 ++_All_Defined_Macros_MAX;
-	 }
-      } 
+         /* remove the \n from the end of the defined macro */
+         for(i=1; i< strlen(line); i++){
+            prev = line[i-1];
+            if ((line[i]=='1') && (prev == ' ')){
+               line[i+1]='\0';
+               break;
+               }
+            }
+         strcpy(_All_Defined_Macros[_All_Defined_Macros_MAX],line);
+         ++_All_Defined_Macros_MAX;
+         }
+      }
    fclose(fin);
 }
 
@@ -748,17 +748,17 @@ void analyze_Auto_h()
 
    for(i=0; i < _All_Defined_Macros_MAX; ++i){
       if (isMatchedConfig(_All_Defined_Macros[i], _DataBase, _DataBase_Score))
-	 continue;
+         continue;
       else if (isMatchedConfig(_All_Defined_Macros[i], _X11_2DGraphics, _X11_2DGraphics_Score))
-	 continue;
+         continue;
       else if (isMatchedConfig(_All_Defined_Macros[i], _3DGraphics, _3DGraphics_Score))
-	 continue;
+         continue;
       else if (isMatchedConfig(_All_Defined_Macros[i], _3DFonts, _3DFonts_Score))
-	 continue;
+         continue;
       else if (isMatchedConfig(_All_Defined_Macros[i], _Audio, _Audio_Score))
-	 continue;
+         continue;
       else if (isMatchedConfig(_All_Defined_Macros[i], _VoIP, _VoIP_Score))
-	 continue;
+         continue;
       };
    checkEnabledFeatures();
 }
@@ -787,7 +787,7 @@ void tokenize_AC_LIBS(char *line)
       while((line[i] == ' ') || (line[i] == '\t') || (line[i] == '=')) ++i;
       j = 0;
       while((isalpha(line[i])) || (isdigit(line[i])) || (line[i] == '-') || (line[i] == '_'))
-	 token[j++] = line[i++];
+         token[j++] = line[i++];
       token[j] ='\0';
       strcpy(_AC_LIBS[_AC_LIBS_MAX], token);
       ++_AC_LIBS_MAX;
@@ -802,9 +802,9 @@ void read_Makedefs()
    FILE *fin = ckopen (MAKEDEFS, "r", "configuration");
    while(fgets(line, 200, fin) != NULL) {
       if ((line[0] == 'A')  && (!strncmp(line,"AC_LIBS",7))){
-	 tokenize_AC_LIBS(line);
-	 break;
-	 }
+         tokenize_AC_LIBS(line);
+         break;
+         }
       }
    fclose(fin);
 }
@@ -822,15 +822,15 @@ void rewrite_Makedefs(void)
 
    while(fgets(line, 200, fin) != NULL) {
       if ((line[0] == 'A')  && (!strncmp(line,"AC_LIBS",7))){
-	 fprintf(fout, "#%s", line);
-	 fprintf(fout, "%s= ", _AC_LIBS[0]);
-	 for(i=1; i < _AC_LIBS_MAX; ++i)
-	    if (_AC_LIBS[i][0] != '\0')
-	       fprintf(fout, " %s ",_AC_LIBS[i]);
-	 fprintf(fout,"\n");
-	 }
+         fprintf(fout, "#%s", line);
+         fprintf(fout, "%s= ", _AC_LIBS[0]);
+         for(i=1; i < _AC_LIBS_MAX; ++i)
+            if (_AC_LIBS[i][0] != '\0')
+               fprintf(fout, " %s ",_AC_LIBS[i]);
+         fprintf(fout,"\n");
+         }
       else
-	 fprintf(fout,"%s", line); 
+         fprintf(fout,"%s", line);
       }
 
    fclose(fout);
@@ -840,16 +840,16 @@ void rewrite_Makedefs(void)
    system("mv Makedefs.tmp Makedefs");
 }
 
-/* 
+/*
  * The main procedure
  */
 int main(int argc, char* argv[])
 {
    char options[100]={"make X-Configure name="};
- 
+
    if (argc < 2) {
       printf("\nUsage: ./build [x86_32_linux | x86_64_linux | x86_32_macos |"
-	     " ...]\n\n\n");
+             " ...]\n\n\n");
       exit(-1);
       }
 

@@ -5,9 +5,9 @@ procedure main()
    local line, prefix
 
    while line := read() do {
-      if line == "#" then next		# omit lone #s -- illegal now
+      if line == "#" then next          # omit lone #s -- illegal now
       else line ? {
-         if write(="#endif") then next	# omit illegal stuff
+         if write(="#endif") then next  # omit illegal stuff
          else if (prefix := tab(find("yyerror("))) & ="yyerror(" &
             tab(upto('"')+1) then {
             #
@@ -17,7 +17,7 @@ procedure main()
             #
             writes(prefix)
             if ="syntax error\"" then
-	       writes("yyerror(\"syntax error\", yystate")
+               writes("yyerror(\"syntax error\", yystate")
             else if ="yacc stack overflow\"" then
                writes("tsyserr(\"parse stack overflow\"")
             else

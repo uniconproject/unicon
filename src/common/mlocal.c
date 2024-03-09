@@ -11,18 +11,18 @@
 #include <ctype.h>
 #if UNIX || defined(NTGCC)
 #include <unistd.h>
-#endif					/* UNIX || NTGCC */
+#endif                                  /* UNIX || NTGCC */
 #if UNIX
 #define PATHSEP ':'
 #define FILESEP '/'
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 #if MSDOS
 #define PATHSEP ';'
 #define FILESEP '\\'
 #if !defined(NTGCC)
 #define getcwd _getcwd
-#endif					/* !NTGCC */
-#endif					/* MSDOS */
+#endif                                  /* !NTGCC */
+#endif                                  /* MSDOS */
 
 char patchpath[MaxPath+18] = "%PatchStringHere->";
 char uniroot[MaxPath+18] = "%PatchUnirotHere->";
@@ -35,7 +35,7 @@ static char *canonize(char *path);
 #if HAVE_GETENV_R
 int
 getenv_r(const char *name, char *buf, size_t len);
-#endif					/* HAVE_GETENV_R */
+#endif                                  /* HAVE_GETENV_R */
 
 char *
 getenv_var(const char *name)
@@ -48,7 +48,7 @@ getenv_var(const char *name)
   buf = malloc(len);
   if (buf == NULL)
     return NULL;
-  
+
   while (1) {
     rv = getenv_r(name, buf, len-1);
     if (rv == 0)
@@ -57,9 +57,9 @@ getenv_var(const char *name)
       len = len * 2;
       buf2 = realloc(buf, len);
       if (buf2 == NULL ) {
-	free(buf);
-	return NULL;
-	}
+        free(buf);
+        return NULL;
+        }
       buf = buf2;
     }
     else {
@@ -67,12 +67,12 @@ getenv_var(const char *name)
       return NULL;
     }
   }
-#else 					/* HAVE_GETENV_R */
+#else                                   /* HAVE_GETENV_R */
   if ((buf = getenv(name)) != NULL)
     return strdup(buf);
   else
     return NULL;
-#endif 					/* HAVE_GETENV_R */
+#endif                                  /* HAVE_GETENV_R */
 }
 
 /*
@@ -89,31 +89,31 @@ char *relfile(char *prog, char *mod) {
    static char baseloc[MaxPath];
    char buf[MaxPath];
 
-   if (baseloc[0] == 0) {		/* if argv[0] not already found */
+   if (baseloc[0] == 0) {               /* if argv[0] not already found */
       if (findexe(prog, baseloc, sizeof(baseloc)) == NULL) {
-	 fprintf(stderr, "cannot find location of %s\n", prog);
+         fprintf(stderr, "cannot find location of %s\n", prog);
          exit(EXIT_FAILURE);
-	 }
+         }
       if (followsym(baseloc, buf, sizeof(buf)) != NULL)
          strcpy(baseloc, buf);
    }
 
-   strcpy(buf, baseloc);		/* start with base location */
-   strcat(buf, mod);			/* append adjustment */
+   strcpy(buf, baseloc);                /* start with base location */
+   strcat(buf, mod);                    /* append adjustment */
 
-   canonize(buf);			/* canonize result */
+   canonize(buf);                       /* canonize result */
 
 #if __clang__
 /*
  * clang moans about extra parentheses [-Wparentheses-equality] when MSDOS
  *  is not defined.  NB. MSDOS actually means "MSDOS and descendants"
  *  -- i.e. it includes MS WINDOWS.
- */       
+ */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wparentheses-equality"
 #endif                    /* clang */
 
-   if ((mod[strlen(mod)-1] == '/')	/* if trailing slash wanted */
+   if ((mod[strlen(mod)-1] == '/')      /* if trailing slash wanted */
 #if MSDOS
        ||(mod[strlen(mod)-1] == '\\')
 #endif
@@ -123,7 +123,7 @@ char *relfile(char *prog, char *mod) {
 #endif                    /* clang */
 
       sprintf(buf+strlen(buf), "%c", FILESEP);/* append to result */
-   return salloc(buf);			/* return allocated string */
+   return salloc(buf);                  /* return allocated string */
    }
 
 /*
@@ -179,11 +179,11 @@ static char *findexe(char *name, char *buf, size_t len) {
    /* if path is not absolute, prepend working directory */
 #if MSDOS
    if (! (isalpha(buf[0]) && buf[1] == ':'))
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
    if ((buf[0] != '/')
 #if MSDOS
        && (buf[0] != '\\')
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
    ) {
       n = strlen(buf) + 1;
       memmove(buf + len - n, buf, n);
@@ -222,25 +222,25 @@ char *findonpath(char *name, char *buf, size_t len) {
          plen = 1;
          }
       if (plen + 1 + nlen + 1 > len) {
-	 *buf = '\0';
+         *buf = '\0';
          return NULL;
          }
       memcpy(buf, next, plen);
-      
+
 #if NT
       if (buf[plen-1] != '\\')
-	buf[plen++] = '\\';
-#else					/* NT */
+        buf[plen++] = '\\';
+#else                                   /* NT */
       if (buf[plen-1] != '/')
-	buf[plen++] = '/';
-#endif					/* NT */
+        buf[plen++] = '/';
+#endif                                  /* NT */
       strcpy(buf + plen, name);
 #if NT
 /* X_OK flag not reliable, just check whether the file exists */
 #define access _access
 #undef X_OK
 #define X_OK F_OK
-#endif					/* NT */
+#endif                                  /* NT */
       if (access(buf, X_OK) == 0)
          return buf;
 #if MSDOS
@@ -332,10 +332,10 @@ static char *canonize(char *path) {
 #ifdef MSDOS
    if (isalpha(root[0]) && root[1]==':') root += 2;
 #endif
-   while (*root == '/')		/* preserve all leading slashes */
+   while (*root == '/')         /* preserve all leading slashes */
       root++;
-   in = root;				/* input pointer */
-   out = root;				/* output pointer */
+   in = root;                           /* input pointer */
+   out = root;                          /* output pointer */
 
    /* scan string one component at a time */
    while (in < end) {
@@ -345,46 +345,46 @@ static char *canonize(char *path) {
          ;
 
       /* check for ".", "..", or other */
-      if (len == 1 && *in == '.')	/* just ignore "." */
+      if (len == 1 && *in == '.')       /* just ignore "." */
          in++;
       else if (len == 2 && in[0] == '.' && in[1] == '.') {
-         in += 2;			/* skip over ".." */
+         in += 2;                       /* skip over ".." */
          /* find start of previous component */
          prev = out;
          if (prev > root)
-            prev--;			/* skip trailing slash */
+            prev--;                     /* skip trailing slash */
          while (prev > root && prev[-1] != '/')
-            prev--;			/* find next slash or start of path */
+            prev--;                     /* find next slash or start of path */
          if (prev < out - 1
          && (out - prev != 3 || strncmp(prev, "../", 3) != 0)) {
-            out = prev;		/* trim trailing component */
+            out = prev;         /* trim trailing component */
             }
          else {
-            memcpy(out, "../", 3);	/* cannot trim, so must keep ".." */
+            memcpy(out, "../", 3);      /* cannot trim, so must keep ".." */
             out += 3;
             }
          }
       else {
-         memmove(out, in, len);	/* copy component verbatim */
+         memmove(out, in, len); /* copy component verbatim */
          out += len;
          in += len;
-         *out++ = '/';		/* add output separator */
+         *out++ = '/';          /* add output separator */
          }
 
-      while (in < end && *in == '/')	/* consume input separators */
+      while (in < end && *in == '/')    /* consume input separators */
          in++;
       }
 
    /* final fixup */
    if (out > root)
-      out--;				/* trim trailing slash */
+      out--;                            /* trim trailing slash */
    if (out == path)
-      *out++ = '.';			/* change null path to "." */
+      *out++ = '.';                     /* change null path to "." */
    *out++ = '\0';
 #if MSDOS
    while(strchr(path, '/')) *strchr(path, '/') = '\\';
 #endif
-   return path;			/* return result */
+   return path;                 /* return result */
 }
 
 FILE *pathOpen(char *fname, char *mode)
@@ -455,65 +455,65 @@ char *libpath(char *prog, char *envname) {
 
 #else                                  /* UNIX */
 
-static char junk;		/* avoid empty module */
+static char junk;               /* avoid empty module */
 
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 
 #if !UNIX
 char junkclocal; /* avoid empty module */
-#endif					/* !UNIX */
+#endif                                  /* !UNIX */
 
 
 /*
- * This function retrieves platform specific C compiler information for 
- * &features and is called from keyword.r. 
+ * This function retrieves platform specific C compiler information for
+ * &features and is called from keyword.r.
  */
 
 int get_CCompiler(char *s)
 {
 #ifdef __GNUC__
 #ifdef __MINGW32__
-	 sprintf(s, "CCompiler MinGW gcc %d.%d.%d",
-		 __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-	 return 1;
-#else					/* MINGW32 */
+         sprintf(s, "CCompiler MinGW gcc %d.%d.%d",
+                 __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+         return 1;
+#else                                   /* MINGW32 */
 #ifdef __clang__
-	 sprintf(s, "CCompiler clang %d.%d.%d",
-		 __clang_major__,  __clang_minor__, __clang_patchlevel__);
-	 return 1;
-#else					/* clang */
+         sprintf(s, "CCompiler clang %d.%d.%d",
+                 __clang_major__,  __clang_minor__, __clang_patchlevel__);
+         return 1;
+#else                                   /* clang */
          sprintf(s, "CCompiler gcc %d.%d.%d",
-		 __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-	 return 1;
-#endif					/* clang */
-#endif					/* MINGW32 */
+                 __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+         return 1;
+#endif                                  /* clang */
+#endif                                  /* MINGW32 */
 
-#else					/* GNUC */
+#else                                   /* GNUC */
 #ifdef MSVC
-	 sprintf(s, "CCompiler MSC %d.%d",
-		 _MSC_VER/100, _MSC_VER%100);
-	 return 1;
-#else					/* MSVC */
-	 sprintf(s, "\0");
-	 return 0;
-#endif					/* MSVC */
-#endif					/* GNUC */
-} 
+         sprintf(s, "CCompiler MSC %d.%d",
+                 _MSC_VER/100, _MSC_VER%100);
+         return 1;
+#else                                   /* MSVC */
+         sprintf(s, "\0");
+         return 0;
+#endif                                  /* MSVC */
+#endif                                  /* GNUC */
+}
 
 /*
  * This function retrieves platform architecture for
- * &features and is called from keyword.r. 
+ * &features and is called from keyword.r.
  * pre allocated buffer for s is 20 bytes, make sure to increase it
  * if you add an arch that requires more.
  */
 void get_arch(char *arch){
- /* 
-  * Catch different symbols defined by different 
-  * compilers all at once. 
+ /*
+  * Catch different symbols defined by different
+  * compilers all at once.
   * Need to be tested on various platforms.
   */
-  char *s;  
+  char *s;
 #if defined(_M_X86) || defined(_M_X64) || defined(__i386) || defined(__amd64)
   s = "x86";
 #elif defined(_M_ARM) || defined(__arm) || defined(__arm__) || defined(__aarch32__) || defined(__aarch64__)

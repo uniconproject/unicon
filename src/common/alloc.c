@@ -5,9 +5,9 @@
 #include "../h/gsupport.h"
 
 #ifdef TypTrc
-   int typealloc = 0;		/* type allocation switch */
-   long typespace = 0;		/* type allocation amount */
-#endif					/* TypTrc */
+   int typealloc = 0;           /* type allocation switch */
+   long typespace = 0;          /* type allocation amount */
+#endif                                  /* TypTrc */
 
 /*
  * salloc - allocate and initialize string
@@ -38,9 +38,9 @@ unsigned int n;
 #ifdef TypTrc
    if (typealloc)
       typespace += (long)n;
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
-   if (n == 0)				/* Work-around for 0 allocation */
+   if (n == 0)                          /* Work-around for 0 allocation */
       n = 1;
 
    a = calloc((msize)n,sizeof(char));

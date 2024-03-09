@@ -2,8 +2,8 @@
  * patchstr.c -- install a string at preconfigured points in an executable
  *
  *  Original
- *  Usage:  patchstr filename newstring		-- to patch a file
- *          patchstr filename			-- to report existing values
+ *  Usage:  patchstr filename newstring         -- to patch a file
+ *          patchstr filename                   -- to report existing values
  *
  *  Extended Usage:
  *          patchstr -DPATCHSTRING filename newstring -- to patch
@@ -32,11 +32,11 @@
 
 
 #ifndef NOMAIN
-void	report		(char *filename);
+void    report          (char *filename);
 #endif
-void	patchstr	(char *filename, char *newstring);
-int	findpattern	(FILE *f);
-int	oldval 		(FILE *f, char *buf);
+void    patchstr        (char *filename, char *newstring);
+int     findpattern     (FILE *f);
+int     oldval          (FILE *f, char *buf);
 
 /* guard pattern; first character must not reappear later */
 #define PATTERN "%PatchStringHere->"
@@ -44,9 +44,9 @@ int	oldval 		(FILE *f, char *buf);
 /* maximum string length */
 #define MAXLEN 500
 
-int exitcode = 0;		/* exit code; nonzero if any problems */
-int nfound = 0;			/* number of strings found */
-int nchanged = 0;		/* number of strings changed */
+int exitcode = 0;               /* exit code; nonzero if any problems */
+int nfound = 0;                 /* number of strings found */
+int nchanged = 0;               /* number of strings changed */
 
 char *thepattern = PATTERN;
 
@@ -70,7 +70,7 @@ char *argv[];
       strcat(thepattern, "->");
       fprintf(stderr, "patch pattern set to %s\n", thepattern);
       for (i = 1; i+1 < argc; i++) {
-	 argv[i] = argv[i+1];
+         argv[i] = argv[i+1];
       }
       argv[i] = NULL;
       argc--;
@@ -102,28 +102,28 @@ char *fname;
    int n;
    char buf[MAXLEN+2];
 
-   if (!(f = fopen(fname, ReadBinary))) {	/* open read-only */
+   if (!(f = fopen(fname, ReadBinary))) {       /* open read-only */
       perror(fname);
       exit(1);
       }
-   while (findpattern(f)) {		/* find occurrence of magic string */
+   while (findpattern(f)) {             /* find occurrence of magic string */
       nfound++;
-      posn = ftell(f);			/* remember current location */
-      n = oldval(f, buf);		/* check available space */
-      fseek(f, posn, 0);		/* reposition to beginning of string */
+      posn = ftell(f);                  /* remember current location */
+      n = oldval(f, buf);               /* check available space */
+      fseek(f, posn, 0);                /* reposition to beginning of string */
       if (n > MAXLEN) {
          strcpy (buf+40, "...  [unterminated]");
          exitcode = 1;
          }
-      printf("at byte %ld:\t%s\n", posn, buf);	/* print value */
+      printf("at byte %ld:\t%s\n", posn, buf);  /* print value */
       }
    if (nfound == 0) {
       fprintf(stderr, "flag pattern not found\n");
       exitcode = 1;
       }
    }
-#endif					/* NOMAIN */
-   
+#endif                                  /* NOMAIN */
+
 /*
  * patchstr (filename, newstring) -- patch a file
  */
@@ -135,15 +135,15 @@ char *fname, *newstr;
    int n;
    char buf[MAXLEN+2];
 
-   if (!(f = fopen(fname, ReadEndBinary))) {	/* open for read-and-update */
+   if (!(f = fopen(fname, ReadEndBinary))) {    /* open for read-and-update */
       perror(fname);
       exit(1);
       }
-   while (findpattern(f)) {		/* find occurrence of magic string */
+   while (findpattern(f)) {             /* find occurrence of magic string */
       nfound++;
-      posn = ftell(f);			/* remember current location */
-      n = oldval(f, buf);		/* check available space */
-      fseek(f, posn, 0);		/* reposition to beginning of string */
+      posn = ftell(f);                  /* remember current location */
+      n = oldval(f, buf);               /* check available space */
+      fseek(f, posn, 0);                /* reposition to beginning of string */
       if (n > MAXLEN) {
          fprintf(stderr, "at byte %ld: unterminated string\n", posn);
          exitcode = 1;
@@ -154,12 +154,12 @@ char *fname, *newstr;
          exitcode = 1;
          }
       else {
-         fputs(newstr, f);		/* rewrite string with new value */
+         fputs(newstr, f);              /* rewrite string with new value */
          n -= strlen(newstr);
          while (n-- > 0)
-            putc('\0', f);		/* pad out with NUL characters */
+            putc('\0', f);              /* pad out with NUL characters */
          nchanged++;
-         fseek(f, 0L, 1);		/* re-enable reading */
+         fseek(f, 0L, 1);               /* re-enable reading */
          }
       }
    if (nfound == 0) {
@@ -170,7 +170,7 @@ char *fname, *newstr;
    else
       fprintf(stderr, "replaced %d occurrence%s\n", nchanged,
          nchanged == 1 ? "" : "s");
-#endif					/* NOMAIN */
+#endif                                  /* NOMAIN */
    }
 
 /*
@@ -184,18 +184,18 @@ FILE *f;
    int c;
    char *p;
 
-   p = thepattern;			/* p points to next char we're looking for */
+   p = thepattern;                      /* p points to next char we're looking for */
    for (;;) {
-      c = getc(f);		/* get next char from file */
+      c = getc(f);              /* get next char from file */
       if (c == EOF)
-         return 0;		/* if EOF, give up */
+         return 0;              /* if EOF, give up */
       if (c != *p) {
-         p = thepattern;		/* if mismatch, start over */
-         if (c == *p)		/* (but see if matched pattern start) */
+         p = thepattern;                /* if mismatch, start over */
+         if (c == *p)           /* (but see if matched pattern start) */
             p++;
          continue;
          }
-      if (*++p == '\0')		/* if entire pattern matched */
+      if (*++p == '\0')         /* if entire pattern matched */
          return 1;
       }
    }
@@ -214,11 +214,11 @@ char buf[MAXLEN+2];
    {
    int n;
    char *e, *p;
-   
-   n = fread(buf, 1, MAXLEN+1, f);	/* read up to MAXLEN + null char */
-   e = buf + n;				/* note end of read area */
-   n = strlen(buf);			/* count string length proper */
+
+   n = fread(buf, 1, MAXLEN+1, f);      /* read up to MAXLEN + null char */
+   e = buf + n;                         /* note end of read area */
+   n = strlen(buf);                     /* count string length proper */
    for (p = buf + n + 1; p < e && *p == '\0'; p++)
-      n++;				/* count nulls beyond end */
-   return n;				/* return usable length */
+      n++;                              /* count nulls beyond end */
+   return n;                            /* return usable length */
    }

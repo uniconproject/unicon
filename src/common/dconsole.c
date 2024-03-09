@@ -1,6 +1,6 @@
 #ifndef _MSC_VER
 void exit(int);
-#endif					/* Microsoft Visual C++ */
+#endif                                  /* Microsoft Visual C++ */
 
 /*
  * dconsole.c - versions of run-time support for console windows for
@@ -25,15 +25,15 @@ struct progstate *curpstate = &rootpstate;
 
 #else
 struct region *curstring, *curblock;
-struct b_file  k_errout = {T_File, NULL, Fs_Write};	/* &errout */
-struct b_file  k_input = {T_File, NULL, Fs_Read|Fs_Window};	/* &input */
-struct b_file  k_output = {T_File, NULL, Fs_Write};	/* &output */
+struct b_file  k_errout = {T_File, NULL, Fs_Write};         /* &errout */
+struct b_file  k_input = {T_File, NULL, Fs_Read|Fs_Window}; /* &input */
+struct b_file  k_output = {T_File, NULL, Fs_Write};         /* &output */
 
-struct descrip kywd_prog;		/* &progname */
+struct descrip kywd_prog;               /* &progname */
 struct descrip kywd_err = {D_Integer};  /* &error */
-int t_errornumber = 0;			/* tentative k_errornumber value */
-int t_have_val = 0;			/* tentative have_errval flag */
-struct descrip t_errorvalue;		/* tentative k_errorvalue value */
+int t_errornumber = 0;                  /* tentative k_errornumber value */
+int t_have_val = 0;                     /* tentative have_errval flag */
+struct descrip t_errorvalue;            /* tentative k_errorvalue value */
 static int list_ser;
 #endif
 
@@ -55,12 +55,12 @@ var->title = t_code;
    var->blksize = size;\
    }
 
-struct descrip onedesc = {D_Integer,1};	/* integer 1 */
-struct descrip zerodesc = {D_Integer,0};	/* integer 0 */
-struct descrip nulldesc = {D_Null};	/* null value */
+struct descrip onedesc = {D_Integer,1}; /* integer 1 */
+struct descrip zerodesc = {D_Integer,0};/* integer 0 */
+struct descrip nulldesc = {D_Null};     /* null value */
 struct descrip nullptr =
-   {F_Ptr | F_Nqual};	                /* descriptor with null block pointer */
-struct descrip emptystr; 		/* zero-length empty string */
+   {F_Ptr | F_Nqual};                   /* descriptor with null block pointer */
+struct descrip emptystr;                /* zero-length empty string */
 
 #ifdef Concurrent
 #undef tend
@@ -100,7 +100,7 @@ void init_threadstate(struct threadstate *ts)
 
 pthread_key_t tstate_key;
 
-#endif						/* Concurrent */
+#endif                                          /* Concurrent */
 
 void set_errortext(int i){
 
@@ -119,7 +119,7 @@ char *reserve_0(int r, word n) { return malloc(1); }
    if (rv > 0) return tmp;
       return NULL;
    }
-#endif					/* NTGCC */
+#endif                                  /* NTGCC */
 int idelay(int n){
   Sleep(n);
   return Succeeded;
@@ -129,7 +129,7 @@ void xmfree(){
 
 }
 
-#endif						/* MSWindows */
+#endif                                          /* MSWindows */
 
 /*
  * An array of all characters for use in making one-character strings.
@@ -234,7 +234,7 @@ struct b_real *alcreal_0(double val)
    return blk;
    }
 
-#endif 					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
 char *alcstr_0(char *s, word len)
 {
    register char *s1;
@@ -256,14 +256,14 @@ void initalloc(word codesize)
 
 #endif
    {
-   static char dummy[1];	/* dummy static region */
+   static char dummy[1];        /* dummy static region */
 
    StrLoc(kywd_prog) = "wicont";
    StrLen(kywd_prog) = strlen(StrLoc(kywd_prog));
    /*
-    * Set up allocated memory.	The regions are:
-    *	Allocated string region
-    *	Allocate block region
+    * Set up allocated memory.  The regions are:
+    *   Allocated string region
+    *   Allocate block region
     */
    curstring = (struct region *)malloc(sizeof(struct region));
    curblock = (struct region *)malloc(sizeof(struct region));
@@ -275,19 +275,19 @@ void initalloc(word codesize)
    curblock->Gnext = curblock->Gprev = NULL;
 
 #ifdef Concurrent
-      	 curtblock = curblock;
-	 curtstring = curstring;
+         curtblock = curblock;
+         curtstring = curstring;
          {
-	   int i; 
-	   int maxmutexes = 1024;
-	   mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
-	   if (mutexes==NULL) syserr("init_threads(): out of memory for mutexes!");
+           int i; 
+           int maxmutexes = 1024;
+           mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
+           if (mutexes==NULL) syserr("init_threads(): out of memory for mutexes!");
 
-	   for(i=0; i<NUM_STATIC_MUTEXES-1; i++)
-	      MUTEX_INITID(i, NULL);
-	 }
-	 /*init_threadstate(curtstate);*/  /* is this necessarry?  */
-#endif					/*Concurrent*/
+           for(i=0; i<NUM_STATIC_MUTEXES-1; i++)
+              MUTEX_INITID(i, NULL);
+         }
+         /*init_threadstate(curtstate);*/  /* is this necessarry?  */
+#endif                                  /*Concurrent*/
 
    if ((strfree = strbase = (char *)AllocReg(ssize)) == NULL)
       tfatal("insufficient memory for string region", NULL);
@@ -326,15 +326,15 @@ int (*compar)();
     l = 0;
     u = nel - 1;
     while (l <= u) {
-	m = (l + u) / 2;
-	a = (char *) ((char *) base + width * m);
-	r = compar (a, key);
-	if (r < 0)
-	    l = m + 1;
-	else if (r > 0)
-	    u = m - 1;
-	else
-	    return a;
+        m = (l + u) / 2;
+        a = (char *) ((char *) base + width * m);
+        r = compar (a, key);
+        if (r < 0)
+            l = m + 1;
+        else if (r > 0)
+            u = m - 1;
+        else
+            return a;
     }
     return 0;
 }
@@ -394,8 +394,8 @@ struct descrip *val;
 {
    register word i=0;
    register struct b_lelem *bp;  /* does not need to be tended */
-   static int two = 2;		/* some compilers generate bad code for
-				   division by a constant that's a power of 2*/
+   static int two = 2;          /* some compilers generate bad code for
+                                   division by a constant that's a power of 2*/
 
    /*
     * Point hp at the list-header block and bp at the last
@@ -419,7 +419,7 @@ struct descrip *val;
 #ifdef MaxListSlots
       if (i > MaxListSlots)
          i = MaxListSlots;
-#endif					/* MaxListSlots */
+#endif                                  /* MaxListSlots */
 
       /*
        * Allocate a new list element block.  If the block can't
@@ -509,22 +509,22 @@ char *s;
    *p = '\0';
    if (num >= 0L)
       do {
-	 *--p = ival % 10L + '0';
-	 ival /= 10L;
-	 } while (ival != 0L);
+         *--p = ival % 10L + '0';
+         ival /= 10L;
+         } while (ival != 0L);
    else {
       if (ival == -ival) {      /* max negative value */
-	 p -= strlen (maxneg);
-	 sprintf (p, "%s", maxneg);
+         p -= strlen (maxneg);
+         sprintf (p, "%s", maxneg);
          }
       else {
-	ival = -ival;
-	do {
-	   *--p = '0' + (ival % 10L);
-	   ival /= 10L;
-	   } while (ival != 0L);
-	*--p = '-';
-	}
+        ival = -ival;
+        do {
+           *--p = '0' + (ival % 10L);
+           ival /= 10L;
+           } while (ival != 0L);
+        *--p = '-';
+        }
       }
 
    StrLen(*dp) = s + MaxCvtLen - 1 - p;
@@ -543,18 +543,18 @@ dptr d;
    else switch (Type(*s)) {
    case T_Integer: {
          itos(IntVal(*s), d, sbuf);
-	 break;
-	 }
+         break;
+         }
    case T_Real: {
          double res;
          GetReal(s, res);
          rtos(res, d, sbuf);
-	 break;
+         break;
          }
 /*
    case T_Cset:
          cstos(BlkLoc(*s)->cset.bits, d, sbuf);
-	 break;
+         break;
 */
    default:
          return 0;
@@ -583,7 +583,7 @@ union numeric *result;
    while (isalnum(c)) {
       c = tonum(c);
       if (c >= r)
-	 return CvtFail;
+         return CvtFail;
       num = num * r + c;
       c = (s < end_s) ? *s++ : ' ';
       }
@@ -612,23 +612,23 @@ double n;
 dptr dp;
 char *s;
    {
-   s++; 				/* leave room for leading zero */
+   s++;                                 /* leave room for leading zero */
    sprintf(s, "%.*g", Precision, n + 0.0);  /* format string; +0.0 avoids -0 */
-   
+
    /*
     * Now clean up possible messes.
     */
-   while (*s == ' ')			/* delete leading blanks */
+   while (*s == ' ')                    /* delete leading blanks */
       s++;
-   if (*s == '.') {			/* prefix 0 to initial period */
+   if (*s == '.') {                     /* prefix 0 to initial period */
       s--;
       *s = '0';
       }
-   else if (strcmp(s, "-0.0") == 0)	/* negative zero */
+   else if (strcmp(s, "-0.0") == 0)     /* negative zero */
       s++;
    else if (!strchr(s, '.') && !strchr(s,'e') && !strchr(s,'E'))
-         strcat(s, ".0");		/* if no decimal point or exp. */
-   if (s[strlen(s) - 1] == '.')		/* if decimal point is at end ... */
+         strcat(s, ".0");               /* if no decimal point or exp. */
+   if (s[strlen(s) - 1] == '.')         /* if decimal point is at end ... */
       strcat(s, "0");
    StrLen(*dp) = strlen(s);
    StrLoc(*dp) = s;
@@ -646,17 +646,17 @@ union numeric *result;
    {
    register char *s = StrLoc(*dc_sp), *end_s;
    register int c;
-   int realflag = 0;	/* indicates a real number */
+   int realflag = 0;    /* indicates a real number */
    char msign = '+';    /* sign of mantissa */
    char esign = '+';    /* sign of exponent */
    double mantissa = 0; /* scaled mantissa with no fractional part */
-   long lresult = 0;	/* integer result */
-   int scale = 0;	/* number of decimal places to shift mantissa */
-   int digits = 0;	/* total number of digits seen */
-   int sdigits = 0;	/* number of significant digits seen */
-   int exponent = 0;	/* exponent part of real number */
-   double fiveto;	/* holds 5^scale */
-   double power;	/* holds successive squares of 5 to compute fiveto */
+   long lresult = 0;    /* integer result */
+   int scale = 0;       /* number of decimal places to shift mantissa */
+   int digits = 0;      /* total number of digits seen */
+   int sdigits = 0;     /* number of significant digits seen */
+   int exponent = 0;    /* exponent part of real number */
+   double fiveto;       /* holds 5^scale */
+   double power;        /* holds successive squares of 5 to compute fiveto */
    int err_no;
    char *ssave;         /* holds original ptr for bigradix */
 
@@ -690,13 +690,13 @@ union numeric *result;
    while (isdigit(c)) {
       digits++;
       if (mantissa < Big) {
-	 mantissa = mantissa * 10 + (c - '0');
+         mantissa = mantissa * 10 + (c - '0');
          lresult = lresult * 10 + (c - '0');
-	 if (mantissa > 0.0)
-	    sdigits++;
-	 }
+         if (mantissa > 0.0)
+            sdigits++;
+         }
       else
-	 scale++;
+         scale++;
       c = (s < end_s) ? *s++ : ' ';
       }
 
@@ -716,16 +716,16 @@ union numeric *result;
       realflag++;
       c = (s < end_s) ? *s++ : ' ';
       while (isdigit(c)) {
-	 digits++;
-	 if (mantissa < Big) {
-	    mantissa = mantissa * 10 + (c - '0');
-	    lresult = lresult * 10 + (c - '0');
-	    scale--;
-	    if (mantissa > 0.0)
-	       sdigits++;
-	    }
+         digits++;
+         if (mantissa < Big) {
+            mantissa = mantissa * 10 + (c - '0');
+            lresult = lresult * 10 + (c - '0');
+            scale--;
+            if (mantissa > 0.0)
+               sdigits++;
+            }
          c = (s < end_s) ? *s++ : ' ';
-	 }
+         }
       }
 
    /*
@@ -741,15 +741,15 @@ union numeric *result;
       realflag++;
       c = (s < end_s) ? *s++ : ' ';
       if (c == '+' || c == '-') {
-	 esign = c;
+         esign = c;
          c = (s < end_s) ? *s++ : ' ';
-	 }
+         }
       if (!isdigit(c))
-	 return CvtFail;
+         return CvtFail;
       while (isdigit(c)) {
-	 exponent = exponent * 10 + (c - '0');
+         exponent = exponent * 10 + (c - '0');
          c = (s < end_s) ? *s++ : ' ';
-	 }
+         }
       scale += (esign == '+') ? exponent : -exponent;
       }
 
@@ -772,7 +772,7 @@ union numeric *result;
       }
 
    if (!realflag)
-      return CvtFail;		/* don't promote to real if integer format */
+      return CvtFail;           /* don't promote to real if integer format */
 
    /*
     * Rough tests for overflow and underflow.
@@ -795,10 +795,10 @@ union numeric *result;
    power = 5.0;
    for (;;) {
       if (exponent & 01)
-	 fiveto *= power;
+         fiveto *= power;
       exponent >>= 1;
       if (exponent == 0)
-	 break;
+         break;
       power *= power;
       }
    if (scale > 0)
@@ -868,7 +868,7 @@ int cnv_c_int(s, d)
 dptr s;
 C_integer *d;
    {
-   struct descrip cnvstr, result;			/* not tended */
+   struct descrip cnvstr, result;                       /* not tended */
    union numeric numrc;
    char sbuf[MaxCvtLen];
 
@@ -902,7 +902,7 @@ C_integer *d;
       case T_Integer: {
          *d = numrc.integer;
          return 1;
-	 }
+         }
       case T_Real: {
          double dbl = numrc.real;
          if (dbl > MaxLong || dbl < MinLong) {
@@ -952,13 +952,13 @@ C_integer *d;
 
 
 /*
- * the global buffer used as work space for printing string, etc 
+ * the global buffer used as work space for printing string, etc
  */
 #if 0
 char ConsoleStringBuf[512 * 48];
 /* moved to rwindow.r
 char *ConsoleStringBufPtr = ConsoleStringBuf;
-unsigned long ConsoleFlags = 0;	*/
+unsigned long ConsoleFlags = 0; */
 #endif
 
 extern int ConsolePause;
@@ -980,13 +980,13 @@ void closelogfile()
        * copy to the permanent file name
        */
       if ((flog = fopen(tmplognam, "r")) &&
-	  (flog2 = fopen(lognam, "w"))) {
-	 while ((i = getc(flog)) != EOF)
-	    putc(i, flog2);
-	 fclose(flog);
-	 fclose(flog2);
-	 remove(tmplognam);
-	 }
+          (flog2 = fopen(lognam, "w"))) {
+         while ((i = getc(flog)) != EOF)
+            putc(i, flog2);
+         fclose(flog);
+         fclose(flog2);
+         remove(tmplognam);
+         }
 
       free(lognam);
       flog = NULL;
@@ -1027,13 +1027,13 @@ int i;
       i = rename(tmplognam, lognam);
       if (i != 0) {
          if ((flog = fopen(tmplognam, "r")) &&
-	     (flog2 = fopen(lognam, "w"))) {
-	    while ((i = getc(flog)) != EOF)
-	       putc(i, flog2);
-	    fclose(flog);
-	    fclose(flog2);
-	    remove(tmplognam);
-	    }
+             (flog2 = fopen(lognam, "w"))) {
+            while ((i = getc(flog)) != EOF)
+               putc(i, flog2);
+            fclose(flog);
+            fclose(flog2);
+            remove(tmplognam);
+            }
          }
 
       free(lognam);
@@ -1041,7 +1041,7 @@ int i;
    if (wstates != NULL) {
 #ifdef MSWindows
       PostQuitMessage(i);
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
       pollevent();
       }
 
@@ -1075,8 +1075,8 @@ int strncasecmp(char *s1, char *s2, int n)
    return 0;
 }
 
-#endif					/* NTGCC */
-#endif					/* ConsoleWindow */
+#endif                                  /* NTGCC */
+#endif                                  /* ConsoleWindow */
 
 int
 getenv_r(const char *name, char *buf, size_t len)
@@ -1084,9 +1084,9 @@ getenv_r(const char *name, char *buf, size_t len)
    char *buf2 = getenv(name);
    if (buf2) {
       if (strlen(buf2) >= len) {
-	 errno = ERANGE;
-	 return -1;
-	 }
+         errno = ERANGE;
+         return -1;
+         }
       errno = 0;
       strcpy(buf, buf2);
       return 0;

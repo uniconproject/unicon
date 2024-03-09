@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 
 #include "../h/define.h"
-static int inited = 0;		/* has first-time initialization been done? */
+static int inited = 0;          /* has first-time initialization been done? */
 #ifndef NoCoexpr
 
 extern void new_context(int, void *);
@@ -33,10 +33,10 @@ extern void *alloc(unsigned int n);
  * Define a "context" struct to hold the thread information we need.
  */
 typedef struct {
-   pthread_t thread;	/* thread ID (thread handle) */
-   sem_t sema;		/* synchronization semaphore (if unnamed) */
-   sem_t *semp;		/* pointer to semaphore */
-   int alive;		/* set zero when thread is to die */
+   pthread_t thread;    /* thread ID (thread handle) */
+   sem_t sema;          /* synchronization semaphore (if unnamed) */
+   sem_t *semp;         /* pointer to semaphore */
+   int alive;           /* set zero when thread is to die */
    } context;
 
 static void makesem(context *ctx);
@@ -55,12 +55,12 @@ typedef context **cstate;
  */
 int coswitch(void *o, void *n, int first) {
 
-   cstate ocs = o;			/* old cstate pointer */
-   cstate ncs = n;			/* new cstate pointer */
-   context *old, *new;			/* old and new context pointers */
+   cstate ocs = o;                      /* old cstate pointer */
+   cstate ncs = n;                      /* new cstate pointer */
+   context *old, *new;                  /* old and new context pointers */
 
-   if (inited)				/* if not first call */
-      old = ocs[1];			/* load current context pointer */
+   if (inited)                          /* if not first call */
+      old = ocs[1];                     /* load current context pointer */
    else {
       /*
        * This is the first coswitch() call.
@@ -73,8 +73,8 @@ int coswitch(void *o, void *n, int first) {
       inited = 1;
       }
 
-   if (first != 0)			/* if not first call for this cstate */
-      new = ncs[1];			/* load new context pointer */
+   if (first != 0)                      /* if not first call for this cstate */
+      new = ncs[1];                     /* load new context pointer */
    else {
       /*
        * This is a newly allocated cstate array.
@@ -82,17 +82,17 @@ int coswitch(void *o, void *n, int first) {
        */
       new = ncs[1] = alloc(sizeof(context));
       makesem(new);
-      if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
+      if (pthread_create(&new->thread, NULL, nctramp, new) != 0)
          syserr("cannot create thread");
       new->alive = 1;
       }
 
-   sem_post(new->semp);			/* unblock the new thread */
-   sem_wait(old->semp);			/* block this thread */
+   sem_post(new->semp);                 /* unblock the new thread */
+   sem_wait(old->semp);                 /* block this thread */
 
-   if (!old->alive)		
-      pthread_exit(NULL);		/* if unblocked because unwanted */
-   return 0;				/* else return to continue running */
+   if (!old->alive)
+      pthread_exit(NULL);               /* if unblocked because unwanted */
+   return 0;                            /* else return to continue running */
    }
 
 /*
@@ -100,46 +100,46 @@ int coswitch(void *o, void *n, int first) {
  */
 #if 0
 void coclean(void *o) {
-   cstate ocs = o;			/* old cstate pointer */
-   context *old = ocs[1];		/* old context pointer */
-   if (old == NULL)			/* if never initialized, do nothing */
+   cstate ocs = o;                      /* old cstate pointer */
+   context *old = ocs[1];               /* old context pointer */
+   if (old == NULL)                     /* if never initialized, do nothing */
       return;
-   old->alive = 0;			/* signal thread to exit */
-   sem_post(old->semp);			/* unblock it */
-   pthread_join(old->thread, NULL);	/* wait for thread to exit */
+   old->alive = 0;                      /* signal thread to exit */
+   sem_post(old->semp);                 /* unblock it */
+   pthread_join(old->thread, NULL);     /* wait for thread to exit */
    #ifdef NamedSemaphores
-      sem_close(old->semp);		/* close associated semaphore */
+      sem_close(old->semp);             /* close associated semaphore */
    #else
-      sem_destroy(old->semp);		/* destroy associated semaphore */
+      sem_destroy(old->semp);           /* destroy associated semaphore */
    #endif
-   free(old);				/* free context block */
+   free(old);                           /* free context block */
    }
 #endif
 /*
  * makesem(ctx) -- initialize semaphore in context struct.
  */
 static void makesem(context *ctx) {
-   #ifdef NamedSemaphores		/* if cannot use unnamed semaphores */
+   #ifdef NamedSemaphores               /* if cannot use unnamed semaphores */
       char name[50];
       sprintf(name, "i%ld.sem", (long)getpid());
       ctx->semp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 0);
       if (ctx->semp == (sem_t *)SEM_FAILED)
          syserr("cannot create semaphore");
       sem_unlink(name);
-   #else				/* NamedSemaphores */
+   #else                                /* NamedSemaphores */
       if (sem_init(&ctx->sema, 0, 0) == -1)
          syserr("cannot init semaphore");
       ctx->semp = &ctx->sema;
-   #endif				/* NamedSemaphores */
+   #endif                               /* NamedSemaphores */
    }
 
 /*
  * nctramp() -- trampoline for calling new_context(0,0).
  */
 static void *nctramp(void *arg) {
-   context *new = arg;			/* new context pointer */
-   sem_wait(new->semp);			/* wait for signal */
-   new_context(0, 0);			/* call new_context; will not return */
+   context *new = arg;                  /* new context pointer */
+   sem_wait(new->semp);                 /* wait for signal */
+   new_context(0, 0);                   /* call new_context; will not return */
    syserr("new_context returned to nctramp");
    return NULL;
    }

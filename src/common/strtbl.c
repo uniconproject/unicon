@@ -105,12 +105,12 @@ struct str_buf *sbuf;
 #if IntBits == 16
    unsigned int oldsize = sbuf->size;
    sbuf->size += (sbuf->size/2);
-   if (sbuf->size < oldsize) {		/* check for overflow */
+   if (sbuf->size < oldsize) {          /* check for overflow */
       sbuf->size = MaxBlock;
       }
-#else					/* IntBits == 16 */
+#else                                   /* IntBits == 16 */
    sbuf->size *= 2;
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */
 
    s1 = sbuf->strtimage;
    sbf = (struct str_buf_frag *)alloc((unsigned int)

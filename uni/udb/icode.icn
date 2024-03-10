@@ -16,7 +16,7 @@ $endif
 record header (
    hsize,    # /* size of interpreter code          */
    trace,    # /* initial value of &trace           */
-   Records,  # 
+   Records,  #
    Ftab,     # /* location of record/field table    */
    Fnames,   # /* location of names of fields       */
    Globals,  # /* location of global variables      */
@@ -44,7 +44,7 @@ class Icode(
    hdr,          # An instance of the header() record
    IntBits,      # number of bits in an integer
    WordBits,     # number of bits in a unicon word
-   wordSize,     # 4 on a 32-bit and 8 on a 64-bit machine 
+   wordSize,     # 4 on a 32-bit and 8 on a 64-bit machine
    FTC,          # a flag; when it is not null, it holds FT from icode v
    icodeVersion  # String holds the Icode Version 32/64 compressed/uncompressed
    )
@@ -104,7 +104,7 @@ end
 #end
 
 #
-# checks the accessability of the executable and reads the icode 
+# checks the accessability of the executable and reads the icode
 #
 method openIcodeFile(exeFile)
    local statrec, f
@@ -116,7 +116,7 @@ method openIcodeFile(exeFile)
       fail
       }
 
-   # reads all of the executable into the icode 
+   # reads all of the executable into the icode
    icode := reads(f, statrec.size)
    close(f)
 
@@ -160,16 +160,16 @@ end
 #
 method printIcodeHeader()
    local fn
-   
+
    write("   Icode Version   : " || icodeVersion)
    every fn := fieldnames(hdr) do
        if fn ~=="config" then
-          write("   header.", left(fn,8," "), " = ", image(hdr[fn])) 
+          write("   header.", left(fn,8," "), " = ", image(hdr[fn]))
 end
 
 #
 # Icode Version depends on the size of the Unicon word,
-# 4-bytes on a 32-bit machine or 8-bytes on a 64-bit machine 
+# 4-bytes on a 32-bit machine or 8-bytes on a 64-bit machine
 #
 method checkIcodeVersion(p)
 
@@ -199,8 +199,8 @@ method checkIcodeVersion(p)
          readIcodeHeader()
       }
       else if not match("I12.U",hdr.config) then
-	 write("Warning: did not recognize icode version:\n",
-	       image(hdr.config))
+         write("Warning: did not recognize icode version:\n",
+               image(hdr.config))
 
       icodeVersion := "64-bit"
       }
@@ -216,7 +216,7 @@ end
 method readCompressedIcode()
    local ftmp
 
-   # we need to uncompress the rest brute force means: 
+   # we need to uncompress the rest brute force means:
    # write it out and then read it in an uncompress mode
    ftmp := open("tmpfilename","w") |  stop("cannot open a tmpfilename")
    writes(ftmp, tab(0))
@@ -227,12 +227,12 @@ method readCompressedIcode()
                   stop("can't read compressed icode")
       close(ftmp)
       }
-   else 
+   else
       stop("cannot open a tmpfilename")
 end
 
 #
-# I code will be in a compressed format if it exceeds the 1 MB limit 
+# I code will be in a compressed format if it exceeds the 1 MB limit
 #
 method checkCompressedIcode()
    local Z, size
@@ -241,9 +241,9 @@ method checkCompressedIcode()
    hdr.config ? {
       tab(find("/")+1) | stop("can't find /")
       IntBits := size := integer(tab(many(&digits)))# tabs the IntBits
-      move(1)                                       # moves over the / 
+      move(1)                                       # moves over the /
       WordBits := integer(tab(many(&digits)))       # tabs the WordBits
-      Z := move(1)                                  # get the Z letter 
+      Z := move(1)                                  # get the Z letter
       }
 
    if Z == "Z" then {

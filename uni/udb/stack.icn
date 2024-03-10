@@ -11,7 +11,7 @@ class Stack(
    DState,     # (Alias) object of type State class
    MaxFrame,   # the max number of frames displayed in one command [bt & where]
    BaseFrame,  # the initial frame number by default is zero [bt & where]
-   Message     # a string with latest message from this class 
+   Message     # a string with latest message from this class
    )
 
 method getLevel(C)
@@ -28,7 +28,7 @@ method getLevel(C)
 end
 
 #
-# writes down the current frame information, 
+# writes down the current frame information,
 # used by cmdPrint, cmdFrame, cmdUp, cmdDown
 #
 method printFrame(frame, detail:1)
@@ -74,7 +74,7 @@ method printFrame(frame, detail:1)
       else{
          pfile ||:= keyword("file", CMonitored, frame)
          #DState.srcFile.getProcFile(pname) | "?"
-         pline ||:= keyword("line", CMonitored, frame) 
+         pline ||:= keyword("line", CMonitored, frame)
          #DState.srcFile.getProcLine(pname,pfile) | "?"
          }
       Message ||:= " at "|| pfile ||":"||pline
@@ -104,7 +104,7 @@ end
 #
 method printFrames(i, j)
    local f, level, CMonitored := DState.coState.target.val
-   
+
    # make sure that i < j
    if j < i then i :=: j
    if i < 0 then i := 0
@@ -120,7 +120,7 @@ method printFrames(i, j)
          DState.Write("   (More stack frames follow...)")
       }
    else if i<=level then{
-      DState.Write("") 
+      DState.Write("")
       every f := i to level do
           printFrame(f)
        }
@@ -128,7 +128,7 @@ method printFrames(i, j)
       DState.State := ERROR
       Message := "\n   No more frames, end of stack"
       DState.Write(Message)
-      } 
+      }
 end
 
 #
@@ -137,18 +137,18 @@ end
 method cmdUp(cmd)
    local level, CMonitored := DState.coState.target.val
 
-   level := keyword("level", CMonitored) - 1 
+   level := keyword("level", CMonitored) - 1
    if DState.State = PAUSE then {
       if DState.coState.target.curr_frame = level then
          DState.Write("\n   No more Frames up !!!")
       # move up one frame, need to update curr symbol table
       else {
-         DState.coState.target.curr_frame +:= 1 
+         DState.coState.target.curr_frame +:= 1
          if not printFrame(DState.coState.target.curr_frame) then {
             DState.Write("\n   No more Frames up !!!")
-            DState.coState.target.curr_frame -:= 1 
+            DState.coState.target.curr_frame -:= 1
             }
-	 }
+         }
       }
    else {
       DState.State := ERROR
@@ -170,7 +170,7 @@ method cmdDown(cmd)
       else {
          DState.coState.target.curr_frame -:= 1
          printFrame(DState.coState.target.curr_frame)
-	 }
+         }
       }
    else {
       DState.State := ERROR
@@ -191,7 +191,7 @@ method cmdFrame(cmd)
       CMonitored := DState.coState.target.val
       if *cmd = 1 then {
          printFrame(DState.coState.target.curr_frame)
-	 }
+         }
       else {
          if frame := integer(cmd[2]) then {
             level := keyword("level", CMonitored) - 1
@@ -239,9 +239,9 @@ method cmdBacktrace(cmd)
             if BaseFrame < level then {
                Message:= "---Type <return> to continue, or q <return> to quit---"
                DState.Writes(Message)
-               if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break 
+               if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break
                }
-            } 
+            }
          }
       else if *cmd = 2 & integer(cmd[2]) then{
          frames := integer(cmd[2])
@@ -250,7 +250,7 @@ method cmdBacktrace(cmd)
          else if frames < 0 then{
             BaseFrame := level + frames
             frames := level
-            } 
+            }
          if frames < MaxFrame then
             printFrames(BaseFrame, BaseFrame + frames)
          else{
@@ -268,7 +268,7 @@ method cmdBacktrace(cmd)
                   Message  := "---Type <return> to continue, _
                               or q <return> to quit---"
                   DState.Writes(Message)
-                  if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break 
+                  if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break
                   }
                }
             }
@@ -288,7 +288,7 @@ end
 initially()
 
    MaxFrame  := 9
-   BaseFrame := 0 
+   BaseFrame := 0
 
    Message := ""
 end

@@ -30,7 +30,7 @@ class TempAssert(
    assertTable, # a table that maps each assertion (obj) into its location
    assertList,  # an ordered list with all assertion's locations
 
-   eventMask,   # a cset of all monitored events in regards of all assertions 
+   eventMask,   # a cset of all monitored events in regards of all assertions
    msg          # a string with latest message from this class
    )
 
@@ -61,9 +61,9 @@ method isValidLocation(cmd)
    else if cmd[3] == ":" then{
       if find(".icn", cmd[2]) then
          fname := cmd[2]
-      else 
+      else
          fname := cmd[2]||".icn"
-   
+
       if x := integer(cmd[4]) then
         line := x
       else{
@@ -89,7 +89,7 @@ method isValidLocation(cmd)
          fail
          }
       }
-   
+
    # ensure the file name and line number are valid
    if DState.srcFile.isSrcFile(fname) then{
       if DState.srcFile.isLoaded(fname) then{
@@ -109,7 +109,7 @@ method isValidLocation(cmd)
             }
          else{
             msg:="\n   Line number "||line||" out of range; "||fname||
-                 " has "||DState.srcFile.getFileTotalLines(fname)||" lines." 
+                 " has "||DState.srcFile.getFileTotalLines(fname)||" lines."
             DState.Write(msg)
             fail
             }
@@ -144,7 +144,7 @@ method cmdAssert(cmd)
       DState.Write(msg)
       fail
       }
-  
+
    count +:= 1
    case body[1] of {
      # past time assertions
@@ -164,15 +164,15 @@ method cmdAssert(cmd)
         DState.State := ERROR
 
         msg := "\n   \""||DState.cmdHistory[1]||"\" Bad assertion syntax.\n" ||
-	       image(body[1]) || " is not a known command." ||
-	       "\n   Try \"help\" or \"help assert\" for assistance."
+               image(body[1]) || " is not a known command." ||
+               "\n   Try \"help\" or \"help assert\" for assistance."
         DState.Write(msg)
         count -:= 1
         fail
         }
      }
    loc := fname ||":"||line
-   if /assertTable[loc] then{ 
+   if /assertTable[loc] then{
       assertTable[loc] := obj
       put(assertList,loc)
       updateMasks()
@@ -195,12 +195,12 @@ method cmdAssert(cmd)
       else
          count -:= 1
      }
-      
+
    #insert(DState.assertLoc, line)
    #DState.assertVars ++:= obj.varNames
    #------------------------------------------------------
-   #write("------------cmd----------  : \n", ximage(cmd)) 
-   #write("------------body---------  : \n", ximage(body)) 
+   #write("------------cmd----------  : \n", ximage(cmd))
+   #write("------------body---------  : \n", ximage(body))
 end
 
 #
@@ -248,11 +248,11 @@ method cmdInfo(cmd)
 end
 
 #
-# forwards relevant events to relevant assertions based on their eventmask 
+# forwards relevant events to relevant assertions based on their eventmask
 #
 method forward()
    local x
-   
+
    #write("-Forward---->",evnames(&eventcode), ": ", image(&eventvalue))
    every x := !assertTable do{
      if x.state = ENABLED & member(x.eventMask, &eventcode) then{
@@ -261,8 +261,8 @@ method forward()
            E_Value: { if x.waitForValue > 0 then x.handle_event()              }
            E_Line:  { x.handle_event()                                         }
            E_Deref: { if member(x.varNames, &eventvalue) then x.handle_event() }
-           default: { #if x.triggered = TRUE then 
-                      x.handle_event()    
+           default: { #if x.triggered = TRUE then
+                      x.handle_event()
                     }
            }
         }
@@ -271,7 +271,7 @@ end
 
 ##
 ## Try to evaluate the assertion when it is ready for evaluation
-## The evaluation is triggered based on the E_Line event 
+## The evaluation is triggered based on the E_Line event
 ##
 #method trigger()
 #   local x, loc, fname, line
@@ -292,15 +292,15 @@ end
 #end
 
 #
-# it constructs/re-constucts the assertions' eventMask 
-# from all active assertions whenever an assertion is 
-# inserted, enabled, disabled  
+# it constructs/re-constucts the assertions' eventMask
+# from all active assertions whenever an assertion is
+# inserted, enabled, disabled
 #
 method updateMasks()
    local x, assertLoc:=set(), assertVars:=set()
 
   # write("----------------------Build mask !!!!!!!!!!!!")
-   
+
    # The temporal assertion's eventmask is a union of all enabled
    # assertions event masks + the E_Line event that is used to trigger
    # the assertion
@@ -322,7 +322,7 @@ end
 # The constructor
 #
 initially()
-   
+
    count       := 0
    assertTable := table()
    assertList  := []
@@ -332,12 +332,12 @@ end
 #------------------------------------------------------------------------------
 
 #
-# This is an abstract class for all kind of assertions 
+# This is an abstract class for all kind of assertions
 #
 class Assertion(
    DState,      # (Alias) object of type State class
    id,          # an integer idetifies the number of the assertion
-   
+
    pname,       # the procedure name of assertion's virtuall location
    fname,       # the file name of assertion's virtuall location
    line,        # the line number of assertion's virtuall location
@@ -373,7 +373,7 @@ class Assertion(
    eventMask,   # the set of all monitored events inqured by this assertion
    #valueMask,  # a table maps monitored variables into their monitored events
    varNames,    # a set of all internal names of the assertion vars
-   msg          # a string with the latest message from this class   
+   msg          # a string with the latest message from this class
    )
 
 #
@@ -385,7 +385,7 @@ class Assertion(
 method setCycles()
    local i := 2, x
 
-   if (body[i] == "(" & body[i+1] == ")") | body[i] == "()" then{ 
+   if (body[i] == "(" & body[i+1] == ")") | body[i] == "()" then{
       cycle := &null
       }
    else if body[i] == "(" then{
@@ -413,7 +413,7 @@ method parseBody()
    local i, k, x, vname, vscope, param, obj
 
    setCycles()
-   
+
    every i := 1 to *body do
       if body[i] == "{" then break
 
@@ -431,7 +431,7 @@ method parseBody()
    while(i <= *body & body[i] ~== "}") do{
       x := body[i]
       #write("-----------[",i,"]---[",image(x),"]---")
-      if member(OPERATOR, x) then{ 
+      if member(OPERATOR, x) then{
          put(evalList, x)
          k := i
          }
@@ -479,7 +479,7 @@ method parseBody()
                k -:= 1
                break
                }
-            else  
+            else
                put(param, body[k])
             }
          put(evalList, param)
@@ -514,7 +514,7 @@ method parseBody()
          }
       }
 
-   # 
+   #
    # print_evalList()
    #
 
@@ -551,7 +551,7 @@ method parseBody()
 end
 
 #
-# refresh_evalLiat(): frees all previouslly collected 
+# refresh_evalLiat(): frees all previouslly collected
 # data during the previous hit
 #
 method refresh_evalList()
@@ -658,7 +658,7 @@ end
 method handle_event(side)
    local i, x
 
-   if state = ENABLED then{ 
+   if state = ENABLED then{
       if /side then{
          #write("handle_event ------------ side = &null")
          # loop over the entier evalList: just in case that the same variable
@@ -702,7 +702,7 @@ end
 method getResult(oper, val1, val2)
    local i, result
 
-   if numeric(val1) & numeric(val2) then{ 
+   if numeric(val1) & numeric(val2) then{
       case oper of{
          ">":  { result := if val1  >  val2 then TRUE else FALSE }
          ">=": { result := if val1  >= val2 then TRUE else FALSE }
@@ -715,10 +715,10 @@ method getResult(oper, val1, val2)
          "||": { result := if val1  |  val2 then TRUE else FALSE }
          "&"|
          "&&": { result := if val1  &  val2 then TRUE else FALSE }
-         #"==>"|"-->"|"->"|"=>":{ }# implies : stil to be implemented 
+         #"==>"|"-->"|"->"|"=>":{ }# implies : stil to be implemented
          }
       }
-   else if string(val1) & string(val2) then{ 
+   else if string(val1) & string(val2) then{
       case oper of{
          ">":  { result := if val1 >>  val2 then TRUE else FALSE }
          ">=": { result := if val1 >>= val2 then TRUE else FALSE }
@@ -733,10 +733,10 @@ method getResult(oper, val1, val2)
 end
 
 ##
-## saves the surrent evaluation result for future inquiry 
+## saves the surrent evaluation result for future inquiry
 ##
 #method storeResult(result, side)
-#   
+#
 #   if /side then
 #      put(evalHistory, result)
 #   else if side = 1 then
@@ -759,7 +759,7 @@ method evaluateState(side)
       }
 
    if \implies then{
-      if /side then 
+      if /side then
          fail
       else if side = 1 then{
          first  := evalList[1]
@@ -788,7 +788,7 @@ method evaluateState(side)
 
    if not (type(oper) == "string" & member(OPERATOR, oper)) then{
       result := AssertHistory(val1, val2, oper, NOTVALID, "bad operator!")
-      if /side | side = 2 then{ 
+      if /side | side = 2 then{
          /evalStates[hits] := []
          put(evalStates[hits], result)
          #countFail +:= 1
@@ -799,7 +799,7 @@ method evaluateState(side)
    if /val1 | / val2 then{
       result := AssertHistory(image(val1), image(val2),
                               oper, NOTVALID, "bad operand!")
-      if /side | side = 2 then{ 
+      if /side | side = 2 then{
          /evalStates[hits] := []
          put(evalStates[hits], result)
          #countFail +:= 1
@@ -809,7 +809,7 @@ method evaluateState(side)
 
    if getResult(oper, val1, val2) = FALSE then{
       result := AssertHistory(val1, val2, oper, FALSE, "!")
-      if /side | side = 2 then{ 
+      if /side | side = 2 then{
          /evalStates[hits] := []
          put(evalStates[hits], result)
          #countFail +:= 1
@@ -818,7 +818,7 @@ method evaluateState(side)
       }
    else{
       result := AssertHistory(val1, val2, oper, TRUE, "!")
-      if /side | side = 2 then{ 
+      if /side | side = 2 then{
          /evalStates[hits] := []
          put(evalStates[hits], result)
          }
@@ -844,15 +844,15 @@ end
 # check the evaluation suite when the result is TRUE
 #
 method check_evalSuite()
- 
+
    case evalSuite of{
       HIDE_WHEN_TRUE: { }
-      STOP_WHEN_TRUE: { writeState() 
+      STOP_WHEN_TRUE: { writeState()
                         DState.State := PAUSE
                       }
       SHOW_WHEN_TRUE: { writeState()
                       }
-      PAUSE_WHEN_TRUE:{ writeState() 
+      PAUSE_WHEN_TRUE:{ writeState()
                         delay(500)
                       }
       }
@@ -867,9 +867,9 @@ method checkIntervals()
    countTrue := countFalse := 0
    every i := 1 to hits do{
       write("i=",i)
-      if evalInterval[i] = TRUE then 
+      if evalInterval[i] = TRUE then
          countTrue +:= 1
-      else 
+      else
          countFalse +:= 1
       }
 end
@@ -892,7 +892,7 @@ end
 #end
 
 #
-# this methods sets up strCmd with the string body of the assertion 
+# this methods sets up strCmd with the string body of the assertion
 #
 method setStrBody()
    local i, t
@@ -926,7 +926,7 @@ initially(DebugState, Pname, Fname, Line, Code, Body, ID)
    location     := 0
    state        := ENABLED
    waitForValue := 0
-   
+
    countFail    := 0
    countTrue    := 0
    countFalse   := 0
@@ -961,7 +961,7 @@ end
 class AssertHistory(
    Val1,   # the first value
    Val2,   # the second value
-   Oper,   # the operator 
+   Oper,   # the operator
    Result, # the result
    line,   # the line number of the evaluation
    fname,  # the file name of the evaluation
@@ -972,22 +972,22 @@ class AssertHistory(
 # returns a formated history for the instance
 #
 method getInfo(i)
-   
+
    if /i then{
       return  "\n   "||Val1||" "||Oper||" "||Val2||": "    ||
-              (if Result = TRUE then "True" 
+              (if Result = TRUE then "True"
                else if Result = FALSE then "False" else "Not Valid")  ||
               " at file "|| fname||":"||line||"; "||Message
       }
    else if i <= 0 then{
       return  Val1||" "||Oper||" "||Val2||": "            ||
-              (if Result = TRUE then "True" 
+              (if Result = TRUE then "True"
                else if Result = FALSE then "False" else "Not Valid")  ||
               " at file "||fname||":"||line||"; "||Message
       }
    else{
       return  "\n   "||i||"# "||Val1||" "||Oper||" "||Val2||": "||
-              (if Result = TRUE then "True" 
+              (if Result = TRUE then "True"
                else if Result = FALSE then "False" else "Not Valid")  ||
               " at file "||fname||":"||line||"; "||Message
       }
@@ -997,14 +997,14 @@ end
 # The constructor of the AssertHistory class
 #
 initially(v1, v2, op, result, msg)
-   Val1     := v1 
+   Val1     := v1
    Val2     := v2
    Oper     := op
    Result   := result
    Message  := msg
-  
+
    line     := keyword("&line", Monitored)
-   fname    := keyword("&file", Monitored) 
+   fname    := keyword("&file", Monitored)
 end
 
 #
@@ -1021,11 +1021,11 @@ class Always: Assertion()
 
 #
 # this methods handles events received from the evaluator of UDB
-#  
+#
 method handle_event()
    #static param_var
    local cur_proc, i, res
-   
+
    #write("-Always[-]---->",evnames(&eventcode), ": ", image(&eventvalue))
    if triggered = TRUE then{
       self.Assertion.handle_event()
@@ -1193,7 +1193,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    #checkIntervals()
    #x := countFalse + countTrue
@@ -1326,7 +1326,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    #checkIntervals()
    #x := countFalse + countTrue
@@ -1385,7 +1385,7 @@ method handle_event()
          }
       else if &eventcode ~== E_Assign then{
          if evaluateState() = TRUE then
-            check_evalSuite() 
+            check_evalSuite()
          }
       }
    else if &eventcode == (E_Pcall | E_Presum) then{
@@ -1429,7 +1429,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    #checkIntervals()
    #x := countFalse + countTrue
@@ -1500,7 +1500,7 @@ method handle_event()
             }
          else{ #if &eventcode ~== E_Line then
             self.Assertion.handle_event(2)
-            if &eventcode ~== E_Assign then{ 
+            if &eventcode ~== E_Assign then{
                if (res := evaluateState(2)) = FALSE then
                   evaluateInterval()
                else if \res = TRUE then
@@ -1542,7 +1542,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    #checkIntervals()
    #x := countTrue + countFalse
@@ -1609,10 +1609,10 @@ method handle_event()
          }
       else{
          self.Assertion.handle_event()
-         if &eventcode ~== E_Assign then{ 
+         if &eventcode ~== E_Assign then{
             if (res := evaluateState()) = TRUE then
                check_evalSuite()
-            } 
+            }
          }
       }
 end
@@ -1649,7 +1649,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    #checkIntervals()
    #x := countTrue + countFalse
@@ -1680,9 +1680,9 @@ end
 
 #
 # This class handles the evaluation of the future time assertion always)
-# which is equivalent to next 
-# This kind of assertions is triggered when their virtual location is 
-# reached for the first time 
+# which is equivalent to next
+# This kind of assertions is triggered when their virtual location is
+# reached for the first time
 #
 class AlwaysF: Assertion()
 
@@ -1766,7 +1766,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    #checkIntervals()
    #x := countTrue + countFalse
@@ -1829,7 +1829,7 @@ method handle_event()
             }
          else if &eventcode == E_Line then
             location +:= 1
-         else{ 
+         else{
             if evaluateState() = TRUE then
                check_evalSuite()
             }
@@ -1838,7 +1838,7 @@ method handle_event()
    else if &eventcode == E_Line & /pre_triggered then{
       cur_file := keyword("&file", Monitored)
       if &eventvalue = line & cur_file == fname then{
-         pre_triggered := TRUE 
+         pre_triggered := TRUE
          triggered     := TRUE
          hits +:= 1
          self.Assertion.handle_event(-1)
@@ -1875,7 +1875,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    #checkIntervals()
    #x := countTrue + countFalse
@@ -1968,7 +1968,7 @@ end
 # at the end of the program, it checks the state of this assertion
 #
 method checkEvaluation()
-   local x 
+   local x
 
    if falseHits > 0 then{
       evalValue := FALSE
@@ -2080,7 +2080,7 @@ method checkEvaluation()
       evalValue := TRUE
       msg   := "\n   Assertion #"||id||" at "||fname||","||line||": "||strCmd
       msg ||:= ": (Valid "||part2_CountTrue||" out of "||x||")."
-      msg ||:= "\n   Ended at file "||evaluated_fname||":"||evaluated_line 
+      msg ||:= "\n   Ended at file "||evaluated_fname||":"||evaluated_line
       msg ||:= "\n   Its location was hit "||location||" times."
       DState.Write(msg)
       }
@@ -2088,7 +2088,7 @@ method checkEvaluation()
       evalValue := FALSE
       msg   := "\n   Assertion #"||id||" at "||fname||","||line||": "||strCmd
       msg ||:= ": (Failed "||part2_CountTrue||" out of "||x||")."
-      msg ||:= "\n   Ended at file "||evaluated_fname||":"||evaluated_line 
+      msg ||:= "\n   Ended at file "||evaluated_fname||":"||evaluated_line
       msg ||:= "\n   Its location was hit "||location||" times."
       DState.Write(msg)
       }
@@ -2107,7 +2107,7 @@ initially(DebugState, Pname, Fname, Line, Code, Body, ID)
    kind             := FUTURE_TIME_ASSERT
    triggered        := FALSE
    pre_triggered    := FALSE
- 
+
    eventMask        := cset(E_Line)
    self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
 end

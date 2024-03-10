@@ -13,8 +13,8 @@ $include "defaults.icn"
 record oldVarInfo(
    fname, # file name
    line,  # line number
-   value  # variable value 
-   ) 
+   value  # variable value
+   )
 
 #
 # This record keeps information about the watched variable
@@ -26,7 +26,7 @@ record WatchedVar(
    hitMax,     # integer specifies the number of hits before notifying the user
    hitCount,   # integer counts the total number of watchpoint hits
    missCount,  # integer counts the total number of watchpoint misses
-   state,      # integer code of (ENABLED, DISABLED, or DELETED) 
+   state,      # integer code of (ENABLED, DISABLED, or DELETED)
    op,         # the operation used in the watch condition
    catchValue, # the value that user wants to catch (watched) value of interes
    watchType,  # watchType = (WASSIGN | WVALUECHANGE | WTYPECHANGE | WREAD)
@@ -46,16 +46,16 @@ class WatchPoint(
    varInfo,    # a table tracks information about the watched variables
    id,         # a watchpoint counter
    pname,      # the procedure name of the variable scope
-   chScope,    # the character scope ("+"|"-"|"^"|":")     
+   chScope,    # the character scope ("+"|"-"|"^"|":")
    catchValue, # the catched value
    var,        # the variable name as it is seen internally
-   vname,      # the variable name as its seen by the programmer 
+   vname,      # the variable name as its seen by the programmer
    initValue,  # the initial value at the time of placing the watchpoint
    oper,       # the relational operation used  for the catchvalue (=|<=|>=|>|<)
    hits,       # the maximum number of watchpoint hits
    watchType,  # watchType = (WASSIGN|WVALUECHANGE|WTYPECHANGE|WREAD)_SILENT
    silent,     # to enable variable tracing, when it is null, traceList os null
-   msg         # a string with latest message from this class 
+   msg         # a string with latest message from this class
    )
 
 #
@@ -66,12 +66,12 @@ class WatchPoint(
 method checkWatchRead()
    local var := &eventvalue
 
-   if member(DState.watchReadMask,var) & 
+   if member(DState.watchReadMask,var) &
       varInfo[var].state = ENABLED then {
 
       # static or local and not target coexp
-      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
-         \varInfo[var].coexp & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) &
+         \varInfo[var].coexp &
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
       if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
@@ -94,17 +94,17 @@ end
 # Check the Monitored file for a watchpoint
 # it is called when either E_Assign or E_Value is the event
 # An E_Value always immediately follows an E_Assign event
-# 
+#
 method checkWatchChange( )
    static var, hit := 0, evalue := 0
 
-   if &eventcode == E_Assign & 
+   if &eventcode == E_Assign &
       member(DState.watchChangeMask,&eventvalue) &
       varInfo[&eventvalue].state = ENABLED then {
       var := &eventvalue
       # static or local and not target coexp
-      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
-         \varInfo[var].coexp & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) &
+         \varInfo[var].coexp &
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
       if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
@@ -147,8 +147,8 @@ method checkWatchScan()
    if &eventcode == E_Spos then {
       var := "&pos"
       # static or local and not target coexp
-      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
-         \varInfo[var].coexp & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) &
+         \varInfo[var].coexp &
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
       if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
@@ -167,8 +167,8 @@ method checkWatchScan()
       var := "&subject"
 
       # static or local and not target coexp
-      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
-         \varInfo[var].coexp & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) &
+         \varInfo[var].coexp &
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
       if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
@@ -194,7 +194,7 @@ end
 #
 method checkCatchValue(var)
 
-   if numeric(varInfo[var].curValue) & 
+   if numeric(varInfo[var].curValue) &
       numeric(varInfo[var].catchValue) then {
       case varInfo[var].op of {
          "=":{
@@ -229,7 +229,7 @@ method checkCatchValue(var)
       varInfo[var].missCount +:= 1
       return
       }
-   else if type(varInfo[var].catchValue) == "string"  &  
+   else if type(varInfo[var].catchValue) == "string"  &
                              string(varInfo[var].curValue) then {
       if varInfo[var].watchType = WTYPE then {
          case varInfo[var].op of {
@@ -246,9 +246,9 @@ method checkCatchValue(var)
                DState.Write(msg)
                #printWatchedVarInfo(var)
                fail   }
-            } 
+            }
          }
-      else { 
+      else {
          case varInfo[var].op of {
             "=":{
                if varInfo[var].curValue == varInfo[var].catchValue then
@@ -282,7 +282,7 @@ method checkCatchValue(var)
             }
          }
       varInfo[var].missCount +:= 1
-      return   
+      return
       }
    fail
 end
@@ -294,8 +294,8 @@ end
 method printWatchedVarInfo(var)
 
    # this is for global vars that must be updated outside of target coexp
-   # current coexp isn't the same as watched coexp, exit 
-   if DState.srcFile.isGlobal(varInfo[var].name) & \varInfo[var].coexp & 
+   # current coexp isn't the same as watched coexp, exit
+   if DState.srcFile.isGlobal(varInfo[var].name) & \varInfo[var].coexp &
       varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
    if varInfo[var].watchType = (WASSIGN | WSCAN) then {
@@ -331,7 +331,7 @@ method scanSnapshot(p, len)
    /len := 40
    prefix   := "\n   &subject  : "
    pad := *prefix - 2 - 2
- 
+
    if size <= len then {
       pad +:= p #- 3
       prefix ||:= subject
@@ -393,7 +393,7 @@ method printInfo(var)
           " : "||type(varInfo[var].curValue)
    if var == "&pos" then {
       msg ||:= scanSnapshot(varInfo[var].curValue)
-      } 
+      }
    msg||:="\n   --------------------------------------------------"
    msg||:="\n   Watchpoint #" ||varInfo[var].id||" on: "||var||"; "||
              cur_file||":"||cur_line|| " coexp "||DState.coState.curr.id||"."
@@ -411,7 +411,7 @@ end
 
 #
 # private method
-# triggered at the end of a count watch, 
+# triggered at the end of a count watch,
 # it notfies the user that there is no more watching
 #
 method showEndWatchInfo(var)
@@ -420,7 +420,7 @@ method showEndWatchInfo(var)
    DState.State := PAUSE
    DState.RunCode := WATCH
 
-   if varInfo[var].hitMax > 0 then { 
+   if varInfo[var].hitMax > 0 then {
       msg   :="\n   Reaching the last of "||varInfo[var].hitCount||" hits"
       if \varInfo[var].silent then {
          msg ||:=" of:"
@@ -431,10 +431,10 @@ method showEndWatchInfo(var)
       }
    else
       msg := ""
-   msg ||:="\n   Do you want to display previous info (Y|n)? : " 
+   msg ||:="\n   Do you want to display previous info (Y|n)? : "
    DState.Writes(msg)
    if *(ans := DState.stateRead()) = 0 | ans == ("y"|"Y"|"yes"|"YES") then {
-      if varInfo[var].hitMax > 0 then { 
+      if varInfo[var].hitMax > 0 then {
          msg :="\n   --------------------------------------------------"
          every i := 1 to *varInfo[var].traceList do {
             r := varInfo[var].traceList[i]
@@ -545,7 +545,7 @@ method buildInternalVarName(cmd)
             }
          }
       else {
-         msg   :="\n   Setting a watchpoint is failed;" 
+         msg   :="\n   Setting a watchpoint is failed;"
          msg ||:="\n   \""||pname||"\" is not procedure in the current binary."
          DState.Write(msg)
          fail
@@ -553,16 +553,16 @@ method buildInternalVarName(cmd)
       }
    else { #watch var
       if DState.State = PAUSE then {
-	 # proc name is the current symbol table (scope) label
+         # proc name is the current symbol table (scope) label
          pname := DState.srcFile.curr_symtab.label
          if (ntype := DState.srcFile.getNameType(var)) then {
             case ntype of {
-               "local": { var ||:= "-" || pname } 
-               "param": { var ||:= "^" || pname } 
-               "static": { var ||:= ":" || pname } 
+               "local": { var ||:= "-" || pname }
+               "param": { var ||:= "^" || pname }
+               "static": { var ||:= ":" || pname }
                "global": { var ||:= "+" } # globals aren't a part of any proc
                default: { debug("got ",var," ",ntype)
-                  msg   :="\n   Fail to set watchpoint." 
+                  msg   :="\n   Fail to set watchpoint."
                   msg ||:="\n   \""||var||"\" not found."
                   DState.Write(msg)
                   fail
@@ -575,8 +575,8 @@ method buildInternalVarName(cmd)
 end
 
 #
-# private method 
-# retrieves a symbolic name for the watching type  
+# private method
+# retrieves a symbolic name for the watching type
 #
 method getWatchTypeName(varRec)
    local watchname:="whenever "
@@ -597,8 +597,8 @@ method getWatchTypeName(varRec)
      WSCAN:{
        watchname ||:= "changed"
        }
-     default:{ 
-       watchname ||:= "??" 
+     default:{
+       watchname ||:= "??"
        }
      }
    if \varRec.op & \varRec.catchValue then
@@ -609,7 +609,7 @@ method getWatchTypeName(varRec)
          watchname ||:=",(First "||varRec.hitMax||" hits)."
       else
          watchname ||:=",(Last "||abs(varRec.hitMax)||" hits are traceable)."
-      } 
+      }
    else
       watchname ||:=""
 
@@ -635,8 +635,8 @@ method addWatchpoint(coexp)
 
    #WatchedVar(name,id,silent,hitMax,hitCount,missCount,state,op,catchValue,
    #           watchType, initValue, oldValue, curValue, traceList, cmd, coexp)
-   varInfo[var] := 
-     WatchedVar(vname, (\old_id|id), silent, hits, 0, 0, ENABLED, oper, 
+   varInfo[var] :=
+     WatchedVar(vname, (\old_id|id), silent, hits, 0, 0, ENABLED, oper,
                 catchValue,watchType,initValue, initValue, initValue, ,
                 DState.cmdHistory[1], coexp)
 
@@ -660,20 +660,20 @@ end
 #
 method cmdWatch(cmd)
    local ans, coexp, resultTable := table()
-   
+
    if not isOKcmdWatch() then fail
-   
+
    initNewCmd()
 
    # check for [coexp N]
    if *cmd >= 4 & cmd[-2] == "coexp" then {
       if /(coexp := DState.coState.get_coexp(cmd[-1])) then {
-	 DState.State := ERROR
+         DState.State := ERROR
          msg := "\n   "||cmd[-2]||" "||cmd[1]||" does not exist."||
-	        "\n   Use command \"coexp\" to view activated co-expressions."
+                "\n   Use command \"coexp\" to view activated co-expressions."
          DState.Write(msg)
          fail
-         } 
+         }
       until pull(cmd) == "coexp"
       }
 
@@ -691,7 +691,7 @@ method cmdWatch(cmd)
       printWatchInfo(cmd)
       return
       }
-      
+
    if not resolveWatchType(cmd) then {
       DState.State := ERROR
       msg   := "\n   Undefined Command: \""|| DState.cmdHistory[1] ||"\"" ||
@@ -724,7 +724,7 @@ method cmdWatch(cmd)
          }
       else {
          addWatchpoint(coexp)
-         } 
+         }
       return
       }
    else fail
@@ -739,13 +739,13 @@ method constructWpMsg(var)
    msg||:=varInfo[var].id||" on: "||var
 
    if \varInfo[var].coexp then
-      msg ||:= " coexp " || varInfo[var].coexp.id 
+      msg ||:= " coexp " || varInfo[var].coexp.id
 
    msg||:="; "||
           getWatchTypeName(varInfo[var])||"("||
           getWatchState(varInfo[var].state)||")"
 
-   return msg 
+   return msg
 end
 
 #
@@ -779,7 +779,7 @@ method printWatchInfo(cmd)
                   if \varInfo[x].traceList & *varInfo[x].traceList > 0 then {
                      printOldInfo(x)
                      return
-                     } 
+                     }
                   break
                   }
                }
@@ -799,7 +799,7 @@ method printWatchInfo(cmd)
       }
 
    if *msg = 0 then
-      msg :="\n   No watchpoints available." 
+      msg :="\n   No watchpoints available."
    DState.Write(msg)
 end
 
@@ -809,7 +809,7 @@ end
 #
 method printOldInfo(var)
    local i, r, max
-   
+
    if \varInfo[var].traceList then {
       msg  :="\n   Command   : " ||varInfo[var].cmd
       msg||:="\n   hit  total: " ||varInfo[var].hitCount
@@ -823,7 +823,7 @@ method printOldInfo(var)
          max := abs(varInfo[var].hitMax)
       if /max | max > *varInfo[var].traceList then
          max := *varInfo[var].traceList
-       
+
       every i := 1 to max do {
          r := varInfo[var].traceList[i]
          msg||:="\n   "||i||"# at "||r.fname||":"||r.line||
@@ -871,7 +871,7 @@ method cmdClear(cmd)
          DState.Write(msg)
          }
       else {
-	 setWatchType(cmd[2], WASSIGN)
+         setWatchType(cmd[2], WASSIGN)
          every x := key(varInfo) do {
             if varInfo[x].watchType = watchType then {
                delete(varInfo, x)
@@ -937,7 +937,7 @@ method cmdDelete(cmd)
          DState.Write(msg)
          }
       else {
-	 setWatchType(cmd[2], WASSIGN)
+         setWatchType(cmd[2], WASSIGN)
          every x := key(varInfo) do {
             if varInfo[x].watchType = watchType &
                varInfo[x].state    ~= DELETED     then {
@@ -972,7 +972,7 @@ method cmdDelete(cmd)
                DState.Write(msg)
                fail
                }
-            } 
+            }
          }
       msg:="\n   Watchpoints # "||id|| " is not available to be deleted."
       DState.Write(msg)
@@ -1007,7 +1007,7 @@ method cmdEnable(cmd)
          DState.Write(msg)
          }
       else {
-	 setWatchType(cmd[2], WASSIGN)
+         setWatchType(cmd[2], WASSIGN)
          every x := key(varInfo) do {
             if varInfo[x].watchType = watchType &
                varInfo[x].state     = DISABLED then {
@@ -1034,7 +1034,7 @@ method cmdEnable(cmd)
                return
                }
             else {
-	       msg := "\n   Watchpoint #"||id||" is "
+               msg := "\n   Watchpoint #"||id||" is "
                if varInfo[x].state = ENABLED then
                   msg := "already enabled."
                else
@@ -1077,7 +1077,7 @@ method cmdDisable(cmd)
          DState.Write(msg)
          }
       else {
-	 setWatchType(cmd[2], WASSIGN)
+         setWatchType(cmd[2], WASSIGN)
          every x := key(varInfo) do {
             if varInfo[x].watchType = watchType &
                varInfo[x].state     = ENABLED then {
@@ -1104,7 +1104,7 @@ method cmdDisable(cmd)
                return
                }
             else {
-	       msg := "\n   Watchpoint #"||id||" is "
+               msg := "\n   Watchpoint #"||id||" is "
                if varInfo[x].state = DISABLED then
                   msg ||:= "already disabled."
                else
@@ -1177,7 +1177,7 @@ method resetWatchpoints()
    if i > 0 then {
       self.id := 0
       }
-   return 
+   return
 end
 
 #
@@ -1193,7 +1193,7 @@ end
 # Initialization
 #
 initially()
-   varInfo := table() # maps var into WatchedVar() 
+   varInfo := table() # maps var into WatchedVar()
    id   := 0
    msg := ""
 end

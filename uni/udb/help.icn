@@ -3,7 +3,7 @@
 # Author:      Ziad Al-Sharif, zsharif@gmail.com
 # Contributor: Gigi Young
 #
- 
+
 $include "defaults.icn"
 
 
@@ -34,7 +34,7 @@ class HELP(
    Message
    )
 
-#         
+#
 # General Help Command
 #
 method cmdHelp(cmd)
@@ -51,15 +51,15 @@ method cmdHelp(cmd)
     ERROR:{
       Message := errorState||cmdClasses||assistance
       }
-   }# end of case   
+   }# end of case
    }
    else{
    case cmd[2] of {
    "all":{
        Message := basic || breakpoints ||watchpoints || tracepoints ||
-	   stack || stepping || data || files || memory || shell ||
-	   assertions || extensions ||
-	   assistance
+           stack || stepping || data || files || memory || shell ||
+           assertions || extensions ||
+           assistance
     }
    "basic":{
     Message := basic
@@ -212,7 +212,7 @@ method cmdHelp(cmd)
     \n   Sets a watchpoint on some variable._
     \n   watch          : Prints a list of all pre-set watch variables._
     \n   watch var      : Break at every line the (var) can change._
-    \n                    If the program is running, it watches for_ 
+    \n                    If the program is running, it watches for_
     \n                    (var) in the local scope, otherwise it_
     \n                    assumes that (var) is a global variable._
     \n   watch var proc : Watch for local (var) in procedure (proc)."
@@ -298,18 +298,18 @@ method cmdHelp(cmd)
     }
    default:{
     Message:="\n   Command not found. Type \"help\" for assistance"
-    } 
+    }
    }#end of case
    }# end of else
-   #make udb console takes no actions 
+   #make udb console takes no actions
    DState.State := SKIP
    DState.Write(Message)
 end
 
 initially()
 
-   cmdClasses := "_ 
-    \n_   
+   cmdClasses := "_
+    \n_
     \n   Command classes:_
     \n   basic       : Common essential commands._
     \n   breakpoints : How to pause the program at source code locations._
@@ -401,7 +401,7 @@ initially()
 
    coexp := "_
     \n   coexp n     : Changes the viewed co-expression to (coexp n)._
-    \n   coexp       | _ 
+    \n   coexp       | _
     \n   info coexp  : Lists the currently activated co-expressions of_
     \n                 the program._
     \n _
@@ -467,52 +467,52 @@ initially()
     \n     the first [count] number of incidents. If [count] is provided and _
     \n     count < 0, the user is able to trace back the last [count] number of_
     \n     incidents’ locations and values._
-    \n_  
+    \n_
     \n   watch [–silent] var: Silently watches (var) whenever assigned._
     \n   watch [n] var  : Watches var's first (n) number of assignments._
     \n   watch [-n] var : Watches var's values and tracks its last n'th value._
     \n   watch var = val  : Watches (var) whenever assigned with value._
     \n   watch var > val  : Watches (var) whenever assigned with a value > val._
     \n   watch –s n var   : Silently watches var's first n assignments._
-    \n_  
+    \n_
     \n   rwatch [–silent] [count] variable [[=|>|<|<=|>=|~=] value]_
     \n     Sets a watchpoint on variable whenever read. Other arguments are_
     \n     similar to the watch command._
-    \n_  
+    \n_
     \n   vwatch [–silent] [count] variable [[=|>|<|<=|>=|~=] value]_
     \n     Sets a watchpoint on variable whenever assigned and the new value_
     \n     is different from the old one (changed value). Other arguments are_
     \n     similar to the watch command._
-    \n_  
+    \n_
     \n   twatch [–silent] [count] variable [[=|~=] type ]_
     \n     Sets a watchpoint on variable whenever assigned and the type of new_
     \n     value is different from the type of the old one (changed type)._
     \n     Other arguments are similar to the watch command._
-    \n_  
+    \n_
     \n   swatch [–silent][count]_
     \n     Sets a watchpoint on string scanning environment; in particular the_
     \n     explicit and implicit change of &pos and &subject keywords._
-    \n_  
+    \n_
     \n   info watchpoints : Shows a complete list of all watchpoints._
     \n              info awatch, info rwatch, info vwatch, or info twatch,_
     \n              each shows a list of the specified type of watchpoints._
-    \n_  
+    \n_
     \n   clear watchpoints: Clears all watchpoints regardless of their type._
     \n              clear awatch, clear rwatch, clear twatch, clear vwatch, or_
     \n              clear swatch, clears only the specified type of watchpoints._
-    \n_  
+    \n_
     \n   delete watchpoints : Deletes all watchpoints._
     \n              delete awatch, delete rwatch, delete twatch, delete vwatch,_
     \n              or delete swatch, each deletes only the specified type of_
     \n              watchpoints._
     \n   delete watch [n]   : Deletes the watchpoint with the id number [n]._
-    \n_  
+    \n_
     \n   enable watchpoints : Enables all disabled watchpoints._
     \n              enable awatch, enable rwatch, enable twatch, enable vwatch,_
     \n              or enable swatch, each enables only the specified_
     \n              type of watchpoints_
     \n   enable watch [n]   : Enables the watchpoint with the id number [n]_
-    \n_  
+    \n_
     \n   disable watchpoints: Disables all watchpoints._
     \n              disable awatch, disable rwatch, disable twatch,_
     \n              disable vwatch, or disable swatch, disable_
@@ -528,7 +528,7 @@ initially()
     \n     the first [count] number of incidents. If [count] is provided and _
     \n     count < 0, the user is able to trace back the last count number_
     \n     of incidents._
-    \n_  
+    \n_
     \n   trace p        : Traces all valid behaviors of the procedure (p)._
     \n   trace p call   : Traces whenever (p) is called. This action_
     \n                    is very similar to the break bar command._
@@ -536,7 +536,7 @@ initially()
     \n   trace p return <= 1 : Traces whenever (p) returns a value <= 1._
     \n   trace 10 p resume   : Traces the first 10 times that (p) is resumed._
     \n   trace p fail        : Traces whenever (p) fails._
-    \n_   
+    \n_
     \n   trace –silent p   : Silently traces all valid behaviors of (p)._
     \n_
     \n   trace [–silent] [count] function [behavior [op value]]_
@@ -546,13 +546,13 @@ initially()
     \n   trace p call        : Traces whenever p() is called._
     \n   trace p fail      : Traces whenever p() fails._
     \n   trace p return < 0  : Traces whenever p() returns a value < 0._
-    \n_  
+    \n_
     \n   trace [–silent] [count] operator [behavior [op value]]_
     \n     Sets a tracepoint on a built-in operator whenever the specified_
     \n     behavior is satisfied. If behavior is not provided, all behaviors_
     \n     are traced. operator is one of the following: (+, -, *, /, \, =,_
     \n     ~=, ==, ~==, ===, ~===, <, <=, <<=, >, >=, >>=, ++, --, **,!,?,[])_
-    \n_  
+    \n_
     \n   trace [] fail      : Traces whenever the [] (subscript) operator fails._
     \n   trace ! suspend    : Traces whenever the ! (apply) operator suspends._
     \n   trace = fail       : Traces whenever the = operator fails._
@@ -560,7 +560,7 @@ initially()
     \n   trace ~== return   : Traces whenever the ~== returns (succeeds)._
     \n   trace ~== return = “ab” : Traces the ~== whenever it returns and_
     \n                        the right side is lexically equal to “ab”_
-    \n_  
+    \n_
     \n   info tracepoints   : Prints a complete list of all tracepoints._
     \n   info trace [n]     : Prints info about the tracepoint with id [n]._
     \n   info trace [name]  : Prints info about the tracepoint on [name]._
@@ -586,14 +586,14 @@ initially()
     \n              If [n] is provided, it prints the nth innermost frames_
     \n              when n>0, and the nth outermost frames when_
     \n              n < 0. The where and bt commands are aliases._
-    \n_   
+    \n_
     \n   frame [n]: Selects and displays information of frame number [n]._
     \n              If [n] is not provided, it displays information about_
     \n              the currently selected frame. f [n] is an alias_
-    \n_  
+    \n_
     \n   up [n]   : Moves the selected frame [n] frames up; if [n] is not_
     \n              provided, it moves the currently frame one frame up_
-    \n_   
+    \n_
     \n   down [n] : Moves the selected frame [n] frames down; if [n] is not_
     \n               provided, it moves the currently frame one frame down"
 
@@ -603,7 +603,7 @@ initially()
     \n                 if [count] is specified, it repeats the command count_
     \n                 more times. s and s [count] are aliases._
     \n   next [count]: Executes the next line and steps over any procedure call._
-    \n                 If [count] is specified, it repeats the command [count]_ 
+    \n                 If [count] is specified, it repeats the command [count]_
     \n                 more times. n and n [count] are aliases._
     \n   return      : Completes the execution of the current procedure and_
     \n                 returns back to the place of calling to step on the next_
@@ -612,9 +612,9 @@ initially()
     \n   print var : Prints the value of (var); if variable is a reference to_
     \n               a structure, then it displays its ximage, otherwise it_
     \n               displays its simple value. p is an alias._
-    \n_  
+    \n_
     \n   print &keyword : Prints the value of &keyword; i.e. print &pos_
-    \n_  
+    \n_
     \n   print expr: Prints the evaluation of (expr). i.e._
     \n               p L[5]    : prints the contents of L[5]._
     \n               p S[i:10] : prints the characters between i and 10 of S._
@@ -624,7 +624,7 @@ initially()
     \n                     print x = 10, print L[1] = 1000, print S[4] = \“K\”,_
     \n                     p T[\“one\”]=\“1\”, p S[5:10]=\“insert a string\”_
     \n                     p r.a = 4.5, p x = y; where y is another variable._
-    \n_  
+    \n_
     \n   print &keyword = val: Assigns a val to a &keyword;_
     \n                         i.e. p &pos = 1, p &subject = \“ABCcba\”_
     \n_
@@ -648,7 +648,7 @@ initially()
     \n   info dir  | _
     \n   show dir  : Prints the source path._
      "
- 
+
    files := "_
     \n   list          : Displays ten lines of source code. If execution is_
     \n                   paused,the printed lines are from the current line_
@@ -663,7 +663,7 @@ initially()
     \n                   of the file. i.e. l -25: shows ten lines surrounding_
     \n                   the line number 25 counting backward from the end_
     \n                   of file_
-    \n_  
+    \n_
     \n   info source   : Prints a detailed summary about the loaded executable._
     \n   info file     : Prints a list of all source files in use including_
     \n                   library files._
@@ -704,12 +704,12 @@ initially()
     \n   -----Internals ------------------------------------------------------_
     \n   enable internal agent : Enables the internal agent named agent._
     \n   disable internal agent: Disables the internal agent named agent._
-    \n_  
+    \n_
     \n   info internal         : Prints information about all internal agents_
     \n                           available in the session and the system._
     \n   info internal agent   : Prints information about the specific internal_
     \n                           agents named agent._
-    \n_  
+    \n_
     \n   -----Externals ------------------------------------------------------_
     \n   load –agent agent     : Loads a standalone external agent named agent_
     \n                           on the fly during the debugging session._

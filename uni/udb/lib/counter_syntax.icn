@@ -35,7 +35,7 @@ end
 #
 # StandAlone is defined when this tool is used as a stand-alone monitor.
 #  Otherwise, this tool can be statically linked into the main utop/udb
-#  source code 
+#  source code
 #
 $ifdef StandAlone
 
@@ -44,7 +44,7 @@ link evinit
 #
 # This main procedure is only used in the standalone mode
 # or udb's external co-expression mode
-# 
+#
 procedure main(tp)
     local mask, obj
 
@@ -54,34 +54,34 @@ procedure main(tp)
     mask := obj.eventMask
 
     while EvGet(mask) do{
-	if &eventcode == E_Syntax then
-	    obj.handle_E_Syntax()
-	else 
-	    obj.handle_E_Exit()
+        if &eventcode == E_Syntax then
+            obj.handle_E_Syntax()
+        else
+            obj.handle_E_Exit()
     }
     return 0
     handle_Events()
 end
 
 #
-# This handle_Events procedure is only used udb's external 
+# This handle_Events procedure is only used udb's external
 # inter-program procedure calls
 #
 procedure handle_Events(code, value)
    static obj
-   
+
    initial{
-      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
       obj := EventCounterSyntax()
       return obj.eventMask
-      } 
+      }
 
    &eventcode  := code
    &eventvalue := value
 
    if &eventcode == E_Syntax then
       obj.handle_E_Syntax()
-   else 
+   else
       obj.handle_E_Exit()
    return
 end

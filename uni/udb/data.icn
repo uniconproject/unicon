@@ -24,7 +24,7 @@ class Data(
 method printGlobals(level)
    local x, i, CMonitored := DState.coState.target.val, output := [], globalsTable, variableTable
 
-   /level := DState.coState.target.curr_frame 
+   /level := DState.coState.target.curr_frame
    globalsTable := table()
    globalsTable["type"] := "globals"
 
@@ -88,7 +88,7 @@ end
 method printStatics(level)
    local x, i, CMonitored := DState.coState.target.val, output := [], staticsTable, variableTable
 
-   /level := DState.coState.target.curr_frame 
+   /level := DState.coState.target.curr_frame
    staticsTable := table()
    staticsTable["type"] := "statics"
 
@@ -106,7 +106,7 @@ method printStatics(level)
          put(output, variableTable)
       }
    }
-   
+
    staticsTable["variables"] := output
    if /DState.mode | \DState.mode ~== "-adapter" then
       more(output)
@@ -120,7 +120,7 @@ end
 method printParams(level)
    local x, i, CMonitored := DState.coState.target.val, output := [], paramsTable, variableTable
 
-   /level := DState.coState.target.curr_frame 
+   /level := DState.coState.target.curr_frame
    paramsTable := table()
    paramsTable["type"] := "params"
 
@@ -224,31 +224,31 @@ method getVarReference(Var, index, level)
            if \x1 & /x2 then {
               if v := variable(x1, CMonitored, level) | integer(x1) then {
                  if abs(v) <= *Var then {
-   		    Var := Var[v]
-		    return Var
-		    }
+                    Var := Var[v]
+                    return Var
+                    }
                  else {
                     Message := "\n   The string subscript \""||x1||
                                "\" is out of range."
                     }
-		 }
-	      else {
-		 #write("can't get variable reference ", image(Var),
-		 #      "[", image(v), "]")
+                 }
+              else {
+                 #write("can't get variable reference ", image(Var),
+                 #      "[", image(v), "]")
                  Message := "\n   The string subscript \""||x1||
                             "\" is invalid."
-		 fail
-		 }
+                 fail
+                 }
               }
            else if \x1 & \x2 then {
-	      if x2 === "][" then {
+              if x2 === "][" then {
                  Message := "\n   Strings cannot have double subscripts."
-		 fail
-		 }
+                 fail
+                 }
               # string slice
-	      else {
-		 i1 := variable(x1, CMonitored, level) | integer(x1)
-		 i2 := variable(x2, CMonitored, level) | integer(x2)
+              else {
+                 i1 := variable(x1, CMonitored, level) | integer(x1)
+                 i2 := variable(x2, CMonitored, level) | integer(x2)
                  if abs(i1) > *Var then {
                     Message := "\n   The string subscript \""||x1||
                                "\" is out of range."
@@ -259,9 +259,9 @@ method getVarReference(Var, index, level)
                                "\" is out of range."
                     fail
                     }
-		 Var := Var[i1:i2]
-		 return Var
-		 }
+                 Var := Var[i1:i2]
+                 return Var
+                 }
               }
            else {
               Message := "\n   Invalid expression."
@@ -292,10 +292,10 @@ method getVarReference(Var, index, level)
                     Var := Var[v]
                     return getVarReference(Var, index, level)
                     }
-                 else { 
+                 else {
                     Message := "\n   The list subscript \""||x1||
                                "\" is out of range."
-                    fail 
+                    fail
                     }
                  }
               else if x1 == "][" then {
@@ -307,7 +307,7 @@ method getVarReference(Var, index, level)
                  else {
                     Message := "\n   The list subscript \""||x2||
                                "\" is out of range."
-                    fail 
+                    fail
                     }
                  }
               else{
@@ -374,7 +374,7 @@ method setVarReference(lvar, index, level, value)
          return Var
          }
       else {
-         Message := "\n   Something went wrong." 
+         Message := "\n   Something went wrong."
          fail
          }
    }
@@ -525,7 +525,7 @@ method printVar(Expr, action, level)
                  if (type(ref) == ("list" | "table" | "set" | "foreign-local" )|
                      match("record"|"object",image(ref))) & *ref >= 1 then {
                         Message ||:= ximage(ref)
-			}
+                        }
                  else{
                         Message ||:= image(ref)
                      }
@@ -600,7 +600,7 @@ method cmdPrint(cmd)
          if *(cmd[1]) = 1 then action := pop(cmd[1])
          else {
             action := cmd[1][1]
-            cmd[1] := cmd[1][2:0] 
+            cmd[1] := cmd[1][2:0]
             }
          }
       every j := 1 to *cmd do {
@@ -674,7 +674,7 @@ method assignKeyword(lexpr, rexpr, level)
          var_ref := variable(lexpr, Monitored, 0, 1) := data
          Message := "\n   "||lexpr||" = "||image(var_ref)
          DState.Write(Message)
-         return 
+         return
          }
       else{
          DState.Write(Message)
@@ -866,20 +866,20 @@ method parsePrintExpression(expr)
 
        # first, split multi-token tokens
        x ? {
-	  if (s := tab(many(&letters++&digits++'_'))) & (*s < *x) then {
-	     insert(expr,i+1,x[*s+1:0])
-	     x := expr[i] := s
-	     }
-	  else if (c := tab(any('[]'))) & (s := tab(0)) & *s>0 then {
-	     insert(expr,i+1,s)
-	     x := expr[i] := c
-	     }
-	  else if (c := tab(any(':'))) & (s := tab(0)) & *s>0 &
-	     (s[1]~=="=") then {
-	     insert(expr,i+1,s)
-	     x := expr[i] := c
-	     }
-	  }
+          if (s := tab(many(&letters++&digits++'_'))) & (*s < *x) then {
+             insert(expr,i+1,x[*s+1:0])
+             x := expr[i] := s
+             }
+          else if (c := tab(any('[]'))) & (s := tab(0)) & *s>0 then {
+             insert(expr,i+1,s)
+             x := expr[i] := c
+             }
+          else if (c := tab(any(':'))) & (s := tab(0)) & *s>0 &
+             (s[1]~=="=") then {
+             insert(expr,i+1,s)
+             x := expr[i] := c
+             }
+          }
        i +:= 1
        }
 
@@ -894,17 +894,17 @@ method parsePrintExpression(expr)
              put(tokens, x[j+1:0])
              }
           else {
-	     if (x === "pos") & (tokens[-1]==="&") &
-		 (expr[i-2] == ("[" | ":")) then {
-		tokens[-1] ||:= x
-	        }
-	     else
-		put(tokens, x)
-	     }
+             if (x === "pos") & (tokens[-1]==="&") &
+                 (expr[i-2] == ("[" | ":")) then {
+                tokens[-1] ||:= x
+                }
+             else
+                put(tokens, x)
+             }
           }
        else if x == "]" & expr[i+1] == "[" then {
           # handle p L[3] [2], "][" is used to indicate new sublist. Otherwise
-	  # a second index is the back of a slice reference.
+          # a second index is the back of a slice reference.
           put(tokens,"][")
           }
        else if x == "]" & expr[i+1][1] == "." then {
@@ -1070,7 +1070,7 @@ end
 # used to print a summary of all used files
 #
 method printSrcSummary(detail)
-   local found, missing, ftotal, plural 
+   local found, missing, ftotal, plural
    local packages, classes, records, procs, globals
    local pclasses := [], precords := [], pprocs := [], pglobals := []
 
@@ -1081,10 +1081,10 @@ method printSrcSummary(detail)
    globals := DState.srcFile.getGlobals()
 
    every pkg := !packages do {
-      pclasses |||:= DState.srcFile.getClasses(pkg) 
-      precords |||:= DState.srcFile.getRecords(pkg) 
-      pprocs |||:= DState.srcFile.getProcedures(pkg) 
-      pglobals |||:= DState.srcFile.getGlobals(pkg) 
+      pclasses |||:= DState.srcFile.getClasses(pkg)
+      precords |||:= DState.srcFile.getRecords(pkg)
+      pprocs |||:= DState.srcFile.getProcedures(pkg)
+      pglobals |||:= DState.srcFile.getGlobals(pkg)
       }
 
    found   := *DState.srcFile.foundFiles
@@ -1183,7 +1183,7 @@ method cmdSource(cmd)
                else if set_pkg == "" then pkg := &null
                else {
                   write("\n   Package \"",set_pkg,"\" was not found.",
-                        "\n   Please try again.") 
+                        "\n   Please try again.")
                   fail
                   }
                #write("\n   Current package: ",(\pkg | "none"))
@@ -1243,7 +1243,7 @@ method cmdSource(cmd)
                printSrcSummary(1)
                }
             # src file
-            else if *cmd = 2 then { 
+            else if *cmd = 2 then {
                if not find(".icn", cmd[2]) then cmd[2] ||:= ".icn"
                if code := DState.srcFile.getSrcCode(cmd[2]) then {
                   more(code)
@@ -1260,7 +1260,7 @@ method cmdSource(cmd)
 
    # commands with optional arguments - prints specifics about specified
    # class or package
-   else if *cmd = 3 then {  
+   else if *cmd = 3 then {
       op := cmd[2] | ""
       arg := cmd[3] | ""
       if op[1] ~=="-" then op :="-"||op
@@ -1276,7 +1276,7 @@ method cmdSource(cmd)
                every i := 1 to *names do put(output,"   #"||i||"  "||names[i])
                more(output)
                }
-            else 
+            else
                DState.Write("\n   No class fields found.")
             }
          "-pkg"|"-pk"|"-package":{
@@ -1290,7 +1290,7 @@ method cmdSource(cmd)
                every i := 1 to *names do put(output,"   #"||i||"  "||names[i])
                more(output)
                }
-            else 
+            else
                DState.Write("\n   No global names found in package.")
             }
          default: {
@@ -1301,7 +1301,7 @@ method cmdSource(cmd)
             }
          }
       }
-   # invalid syntax 
+   # invalid syntax
    else {
       msg := "\n   Undefined command:"
       while msg ||:= " " || pop(cmd)
@@ -1309,7 +1309,7 @@ method cmdSource(cmd)
       DState.Write(msg)
       fail
       }
- 
+
 end
 
 #

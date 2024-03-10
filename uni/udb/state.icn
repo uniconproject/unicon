@@ -11,7 +11,7 @@ import json
 link ximage
 
 #
-# This class is used to handle the current debugging state of UDB 
+# This class is used to handle the current debugging state of UDB
 #
 class State(
    TP,              # TargetProgram and its arguments
@@ -21,13 +21,13 @@ class State(
    RunCount,        # integer counts number of runs a program has in a session
 
    MaskTable,       # a table that maps eventcodes into their value masks
-   eventMask,       # the cset of the main evaluator set of event codes 
+   eventMask,       # the cset of the main evaluator set of event codes
    valueMask,       # table used for breakpoints and watchpoints set of masks
    breakMask,       # a set of the E_Line values that we like to break on
    watchChangeMask, # a set of the E_Assign values that we like to watch
    watchReadMask,   # a set of the E_Deref values that we like to watch
    internalMask,    # The cset of the active internals event mask
-   externalMask,    # The cset of the active externals event mask   
+   externalMask,    # The cset of the active externals event mask
    traceMask,       # a cset of &eventcode(s) of wanted traced fetures
 
    assertEventMask, # a cset of the active temporal assertions event masks
@@ -53,7 +53,7 @@ class State(
 method Write(Msg)
    if /Msg then
       Msg := Message
-   
+
    if \mode == "-adapter" then {
       if type(Msg) == "table" then {
          if member(Msg, "code") then
@@ -95,7 +95,7 @@ end
 method Writes(Msg)
    if /Msg then
       Msg := Message
-   
+
    if \mode == "-adapter" then {
       if type(Msg) == "table" then {
          if member(Msg, "code") then
@@ -144,18 +144,18 @@ method constructEventMask()
    local x
 
    ## write("----> state.icn: re-constructing all of event mask and value mask")
-   if *internalMask >0 | *externalMask >0    | 
+   if *internalMask >0 | *externalMask >0    |
       *traceMask >0    | *assertEventMask >0 then{
       eventMask := cset(E_CoCreate || E_Coact || E_Cofail || E_Coret ||
-			E_Error || E_Exit || E_Signal || E_MXevent ||
-			E_Collect || E_EndCollect) ++
+                        E_Error || E_Exit || E_Signal || E_MXevent ||
+                        E_Collect || E_EndCollect) ++
                    internalMask ++ externalMask ++ traceMask ++ assertEventMask
       if *breakMask > 0 | *assertEventMask > 0 then{
          if member(traceMask,E_Line)    |
             member(internalMask,E_Line) | member(externalMask,E_Line) then
             delete(valueMask,E_Line)
          else{
-            eventMask ++:= cset(E_Line) 
+            eventMask ++:= cset(E_Line)
             valueMask[E_Line] := breakMask ++ assertLoc
             }
          }
@@ -193,8 +193,8 @@ method constructEventMask()
       }
    else{ # *internalMask = 0 & *externalMask = 0 & *traceMask = 0
       eventMask := cset(E_Error || E_Exit || E_Signal ||
-			E_CoCreate || E_Coact || E_Cofail || E_Coret ||
-			E_Collect || E_EndCollect)
+                        E_CoCreate || E_Coact || E_Cofail || E_Coret ||
+                        E_Collect || E_EndCollect)
       if *breakMask > 0 then {
          eventMask ++:= cset(E_Line)
          valueMask[E_Line] := breakMask
@@ -221,24 +221,24 @@ method constructEventMask()
 end
 
 #
-# Update the debug state 
+# Update the debug state
 # cmd =("run" | "rerun" | "continue" | "step" | "next"| "fresh" | "break")
 # enable/disable -internal/external,
-#  
+#
 method Update(state)
 
    if /state then state := State else  State := state
    case state of {
      LOAD :{
-          #write("\n   --- a program just loaded ---") 
+          #write("\n   --- a program just loaded ---")
           }
      RUN  |
      RERUN:{
         RunCount +:= 1
-	# maybe should unconditionally set RunCode := RUN here
-	if RunCode === SIGNAL then RunCode := RUN
+        # maybe should unconditionally set RunCode := RUN here
+        if RunCode === SIGNAL then RunCode := RUN
         constructEventMask()
-        } 
+        }
      PAUSE   |
      CONTINUE:{
         constructEventMask()
@@ -256,19 +256,19 @@ method Update(state)
         if not member(eventMask, E_PatAttempt) then eventMask ++:=
                                                cset(E_PatAttempt)
         if \valueMask[E_PatAttempt] then       delete(valueMask, E_PatAttempt)
-	if not member(eventMask, E_PelemAttempt) then eventMask ++:=
+        if not member(eventMask, E_PelemAttempt) then eventMask ++:=
                                                cset(E_PelemAttempt)
         if \valueMask[E_PelemAttempt] then     delete(valueMask, E_PelemAttempt)
-	if not member(eventMask, E_PatMatch) then eventMask ++:=
-					       cset(E_PatMatch)
-	if \valueMask[E_PatMatch] then         delete(valueMask, E_PatMatch)
+        if not member(eventMask, E_PatMatch) then eventMask ++:=
+                                               cset(E_PatMatch)
+        if \valueMask[E_PatMatch] then         delete(valueMask, E_PatMatch)
         if not member(eventMask, E_PatFail)  then eventMask ++:= cset(E_PatFail)
         if \valueMask[E_PatFail] then             delete(valueMask, E_PatFail)
         if not member(eventMask, E_PelemMatch) then eventMask ++:=
-	                                       cset(E_PelemMatch)
-	if \valueMask[E_PelemMatch] then       delete(valueMask, E_PelemMatch)
+                                               cset(E_PelemMatch)
+        if \valueMask[E_PelemMatch] then       delete(valueMask, E_PelemMatch)
         if not member(eventMask, E_PelemFail) then eventMask ++:=
-	                                       cset(E_PelemFail)
+                                               cset(E_PelemFail)
         if \valueMask[E_PelemFail] then        delete(valueMask, E_PelemFail)
         if not member(eventMask, E_PatVal) then eventMask ++:= cset(E_PatVal)
         if \valueMask[E_PatValue] then        delete(valueMask, E_PatVal)
@@ -305,7 +305,7 @@ method initializeState(tp)
       RunCode := NONE
       Write(Message)
       }
-   # load | load args | udb | udb args 
+   # load | load args | udb | udb args
    # reload current program or load new program
    else if *(\tp) > 0 | *TP > 0 then {
       # if a program is running, check for user input
@@ -323,7 +323,7 @@ method initializeState(tp)
             Writes(resultTable)
          }
 
-         # no, don't load 
+         # no, don't load
          if isNo(ans) then {
             State := SKIP
             fail
@@ -331,7 +331,7 @@ method initializeState(tp)
          # yes, restart session then reinitialize
          else {
             # Exit out of this run of startSession()
-            State := RELOAD 
+            State := RELOAD
 
             # renew TP if loading new program
             if *tp > 0 & *TP > 0 then {
@@ -349,7 +349,7 @@ method initializeState(tp)
             reinitState()
             }
          # load new program, reset TP
-         if *(\tp) > 0 then 
+         if *(\tp) > 0 then
             TP := tp
 
          # check if the TP is loadable and accessable.
@@ -370,7 +370,7 @@ $ifdef TEST
                State := RUN ###### TEST : For the sake of getting the Time right
 $endif
                Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
-                            srcFile.exeSize||" of "||icode.icodeVersion 
+                            srcFile.exeSize||" of "||icode.icodeVersion
                found := *srcFile.foundFiles
                if found > 0 then {
                   if found > 1 then plural := "s are " else plural := " is "
@@ -426,7 +426,7 @@ method update_cmdHistory(line)
    # cmdHistory[1]=""
    every i:=2 to *cmdHistory do
       if line == cmdHistory[i] then{
-         delete(cmdHistory,i)    
+         delete(cmdHistory,i)
          break
          }
    push(cmdHistory,line)
@@ -435,23 +435,23 @@ end
 #
 # refresh the debugging state to the default settings
 #
-method Fresh() 
+method Fresh()
 
    # Initially, eventMask does not contain the E_Line & E_Assign events
    # If there is a breakpoint, E_Line will be added to the eventMask,
    # and the breakpoint linenum will be inserted in valueMask[E_Line] set
    # Also, initially the eventMask will not contain the E_Assign event
-   # If there is a watchpoint then the E_Assign will be added and the 
+   # If there is a watchpoint then the E_Assign will be added and the
    # variable will be added to the watchMask set.
- 
+
    eventMask       := cset(E_Error || E_Exit || E_Signal ||
-			   E_CoCreate || E_Coact || E_Cofail || E_Coret) 
+                           E_CoCreate || E_Coact || E_Cofail || E_Coret)
    internalMask    :=
    externalMask    :=
    traceMask       :=
    assertEventMask := ''
 
-   valueMask       := table() 
+   valueMask       := table()
    assertVars      := set()
    breakMask       := set()
    watchChangeMask := set()
@@ -529,7 +529,7 @@ initially()
    coState   := CoexpState()
 
    eventMask       := cset(E_Error || E_Exit || E_Signal ||
-			   E_CoCreate || E_Coact || E_Cofail || E_Coret)
+                           E_CoCreate || E_Coact || E_Cofail || E_Coret)
    Fresh()
 end
 

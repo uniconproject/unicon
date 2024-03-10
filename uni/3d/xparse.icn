@@ -20,43 +20,43 @@ class XFile(
      has_bones,
      texture_format,
      texture_path
-     
+
 )
 
 method load(fname, m3d)
    local s, fin, p
    filename := fname
-   fin := open(filename) | 
-	    ( DEBUGW("can't open "|| filename) & fail )
+   fin := open(filename) |
+            ( DEBUGW("can't open "|| filename) & fail )
 
    s := reads(fin, 16) |
-	    ( DEBUGW("empty x file?!") & close(fin) & fail)
+            ( DEBUGW("empty x file?!") & close(fin) & fail)
 
    checkHeader(s) | fail
 
-   p := stat(fin) | 
-	    ( DEBUGW("can't stat "|| filename) & close(fin) & fail )
+   p := stat(fin) |
+            ( DEBUGW("can't stat "|| filename) & close(fin) & fail )
 
-   s := reads(fin, p.size) | 
-	    ( DEBUGW("empty x file?!") & close(fin) & fail )
-   
+   s := reads(fin, p.size) |
+            ( DEBUGW("empty x file?!") & close(fin) & fail )
+
    current_model := m3d
    current_xfile := self
    has_bones := &null
 
    s ? { Xparse() }
-   
+
    close(fin)
 
-   return 
+   return
 end
 
 method checkHeader(s)
    s ? {
-      ="xof " 		  | DEBUGW("Not a .X model file. Aborted...")
+      ="xof "             | DEBUGW("Not a .X model file. Aborted...")
       integer( move(2) ) <= 3 | DEBUGW("Major version greater than 03. Aborted...")
       integer( move(2) ) <= 3 | DEBUGW("Minor version greater than 03. Aborted...")
-      ="txt" 		  | DEBUGW(" Not a text file format. Aborted...")
+      ="txt"              | DEBUGW(" Not a text file format. Aborted...")
       }
 
    return
@@ -67,12 +67,12 @@ method set_texture_path(texpath)
     texture_path := texpath
   else
     texture_path := texpath || PS
-    
+
   stat(texture_path) | DEBUGW(texture_path || " Doesn't exist!")
 end
 
 # if set, map the texture file names read in the model file` to the new format
-# Probably this function should be extened to check if the underlying unicon 
+# Probably this function should be extened to check if the underlying unicon
 # supports jpg and png
 method set_texture_format(f)
   if f == (".gif" | ".png" | ".jpg") then
@@ -100,17 +100,17 @@ end
 #    i:= *fpath
 #    while i>0 & fpath[i] ~== (PS) do
 #        i-:=1
-#       
+#
 #    if i=0 then return fpath
 #    return fpath[i+1:0]
 # end
-# 
+#
 # method path_name(fpath)
 # local i
 #    i:= *fpath
 #    while i>0 & fpath[i] ~== (PS) do
 #        i-:=1
-#       
+#
 #    if i>0 then return fpath[1:i+1]
 # end
 
@@ -119,22 +119,22 @@ method Xparse()
    local root_bone
    while not(pos(0)) do{
       case parseBlock() of {
-         "Error"	: { DEBUGW("Stopped parseing the file ..."); fail}
-         "Comment"	: {}		# nothing to do
-         "}"		: {} 		# end of a block ?!
-         "Frame"	: parseBone(&null) 
-         "Mesh"		: parseMesh()
-         "Material"	: parseMaterial(1) # 1? material will be used later
-         "AnimationSet"	: parseAnimationSets()
+         "Error"        : { DEBUGW("Stopped parseing the file ..."); fail}
+         "Comment"      : {}            # nothing to do
+         "}"            : {}            # end of a block ?!
+         "Frame"        : parseBone(&null)
+         "Mesh"         : parseMesh()
+         "Material"     : parseMaterial(1) # 1? material will be used later
+         "AnimationSet" : parseAnimationSets()
          #"template"    :
-         #"{"		:
+         #"{"           :
          default: avoidTemplate()
-      	}
+        }
       }
 
    if \has_bones then
-      every root_bone := !current_model.skeleton.root_bones do 
-	 MapMeshToBones(root_bone)
+      every root_bone := !current_model.skeleton.root_bones do
+         MapMeshToBones(root_bone)
 
    return
 end
@@ -147,14 +147,14 @@ method parseBlock()
    #DEBUGW ("new block")
 
    case move(1) of {
-      "{": { 
+      "{": {
          move(-1)
          return "{"
          }
-      "}": return "}" 			# We arrived at the end of the block
+      "}": return "}"                   # We arrived at the end of the block
       "/": {
-           if move(1)~=="/" then 
-              return "Error" 	#we parseed a block label starting with slash ?!
+           if move(1)~=="/" then
+              return "Error"    #we parseed a block label starting with slash ?!
            else
               nextline()
 
@@ -167,9 +167,9 @@ method parseBlock()
          }
       default:{
          move(-1)
-      	 Text := parse_identifier()
-      	 /Text:="null"
-      	 #DEBUGW(" Identifier : ", Text)
+         Text := parse_identifier()
+         /Text:="null"
+         #DEBUGW(" Identifier : ", Text)
          return BlockID(Text)
          }
       } #case
@@ -223,17 +223,17 @@ end
 
 method parseBone(parentBone)
    local token, cBoneName, cBone
-   
-   cBoneName := parse_identifier() | getID("B") 
+
+   cBoneName := parse_identifier() | getID("B")
    jump_after("{")
 
    if /tempBoneTable then
       cBone := Bone()
    else{
       if member(tempBoneTable, cBoneName) then
-	 cBone := tempBoneTable[cBoneName]
+         cBone := tempBoneTable[cBoneName]
       else
-	 cBone := Bone()
+         cBone := Bone()
       }
 
    cBone.set_label( cBoneName )
@@ -248,24 +248,24 @@ method parseBone(parentBone)
       parentBone.add_subnode(cBone)
       DEBUGW("      :sub bone")
      }
-   
+
    token := "{"
    while(token ~== "}") do{
       case (token := parseBlock()) of{
-         "Comment": {}		# used for spaces and other kind of comments
-         "}" 	  : return	# this is the end
-         "{" 	  : {
+         "Comment": {}          # used for spaces and other kind of comments
+         "}"      : return      # this is the end
+         "{"      : {
              cBone.mesh_name := parse_identifier()
              jump_after("}")
              }
-     	 "Frame"  : parseBone(cBone)
+         "Frame"  : parseBone(cBone)
          "FrameTransformMatrix": parseFrameTransformMatrix(cBone)
          "Mesh"   : {
             parseMesh()
             cBone.mesh_name := current_mesh.label
             cBone.mapped_mesh := current_mesh
             }
-        default  : avoidTemplate() 
+        default  : avoidTemplate()
         }
       }
 end
@@ -274,13 +274,13 @@ end
 method parseMesh()
    local mesh, token, nVertices, nFaces
    mesh := Mesh()
-   current_mesh := mesh 
+   current_mesh := mesh
    current_model.addMesh(mesh)
    mesh.set_label(parse_identifier()|getID("M"))
    jump_after("{")
-      DEBUGW(" new mesh was created - Mesh: ", mesh.label)   
+      DEBUGW(" new mesh was created - Mesh: ", mesh.label)
 
-   nVertices := parse_int()   
+   nVertices := parse_int()
    semicolon()
    nextline()
    DEBUGW("Number of vertices:", nVertices)
@@ -291,17 +291,17 @@ method parseMesh()
    nextline()
    DEBUGW("Number of Faces:", nFaces)
    mesh.lst_face := parseArray(nFaces, parseFace)
-   
+
    token := "{"
    while(token ~== "}") do{
       case token := parseBlock() of {
-         "Comment"		:{} # used for spaces and other kind of comments
-         "}"	  		:  return  # this is the end
-         "MeshNormals"		: parseMeshNormals()
-      	 "MeshTextureCoords"	: parseMeshTextureCoords()
-         "MeshMaterialList"	: parseMeshMaterials()
-	 "SkinWeights"		: parseSkinWeights()
-         #"XSkinMeshHeader"	:
+         "Comment"              :{} # used for spaces and other kind of comments
+         "}"                    :  return  # this is the end
+         "MeshNormals"          : parseMeshNormals()
+         "MeshTextureCoords"    : parseMeshTextureCoords()
+         "MeshMaterialList"     : parseMeshMaterials()
+         "SkinWeights"          : parseSkinWeights()
+         #"XSkinMeshHeader"     :
          default: avoidTemplate()
          }
       }
@@ -311,11 +311,11 @@ method parseMeshTextureCoords()
    local nTextureCoords
 
    jump_after("{")
-   nTextureCoords := parse_int() 
+   nTextureCoords := parse_int()
    semicolon()
    nextline()
    DEBUGW("Number of Texture Coords:", nTextureCoords)
-   current_mesh.lst_texturecoords :=   
+   current_mesh.lst_texturecoords :=
       parseArray(nTextureCoords, parseTextureCoords)
    jump_after("}")
 end
@@ -324,7 +324,7 @@ method parseMeshMaterials()
    local id, token, nMaterials, nFace, i, L
 
    jump_after("{")
-   nMaterials := parse_int() 
+   nMaterials := parse_int()
    semicolon()
    skip_whitespace()
    #DEBUGW("Number of Materials :", nMaterials)
@@ -347,18 +347,18 @@ method parseMeshMaterials()
    token := "{"
    while(token ~== "}") do{
       case token := parseBlock() of {
-      	 "Comment"	: {}
-         "}"		: return
-   	 "Material"	: parseMaterial()
-   	 "{" 		: {
-   	     jump_after("{")
-   	     skip_whitespace()
-   	     id := parse_identifier()
-   	     if \blockTable[id] then current_mesh.addMaterial(blockTable[id])
-   	     jump_after("}")
-   	     }
+         "Comment"      : {}
+         "}"            : return
+         "Material"     : parseMaterial()
+         "{"            : {
+             jump_after("{")
+             skip_whitespace()
+             id := parse_identifier()
+             if \blockTable[id] then current_mesh.addMaterial(blockTable[id])
+             jump_after("}")
+             }
          default: avoidTemplate()
-	 }#case
+         }#case
       }# while
 end
 
@@ -368,19 +368,19 @@ method parseMeshNormals()
    nNormals := parse_int()
    semicolon()
    nextline()
-   #DEBUGW("Number of normals:", nNormals)   
+   #DEBUGW("Number of normals:", nNormals)
    current_mesh.lst_normal := parseArray(nNormals, parseVertex )
 
    nFace := parse_int()
    semicolon()
    nextline()
    L:=parseArray(nFace, parseFaceNormals) # parseArray(nFaces, parseFace)
-   
+
    if *L=*current_mesh.lst_face then
       every i:=1 to nFace do
-	 current_mesh.lst_face[i].lst_normal_index := L[i]
+         current_mesh.lst_face[i].lst_normal_index := L[i]
     else
-      DEBUGW("ERROR: The number of  face normals is not correct:", *L)   
+      DEBUGW("ERROR: The number of  face normals is not correct:", *L)
 
    jump_after("}")
 end
@@ -393,31 +393,31 @@ method find_texture(tex_fname)
   tex_fname := replace_slash(tex_fname)
 #endif
 
-  if \texture_format & map(tex_fname[-4:0]) ~== texture_format then 
+  if \texture_format & map(tex_fname[-4:0]) ~== texture_format then
     tex_fname := map(tex_fname[1:-4]) || texture_format
-  
+
   if stat(tex_fname) then return tex_fname
-  
+
   texfnamebase := file_name(tex_fname)
   # try the model's dir
   if xpath:=directory_name(filename) then{
     tex_fname2 := xpath || texfnamebase
     if stat(tex_fname2) then return tex_fname2
     }
-  
-  # try the current dir. 
+
+  # try the current dir.
   # And better to remember the current dir in case the user changes it
   xpath := chdir() || PS
   if stat(xpath || texfnamebase) then
     return xpath || tex_fname
-  
+
   # try the textures path set by the user
   if stat(texture_path || texfnamebase) then
     return texture_path || texfnamebase
- 
+
   # couldn't find the texture!
   DEBUGW(" Error: texture (", tex_fname, ") doesn't exist for 3D model: ", filename)
-  
+
 end
 
 method parseMaterial(to_table)
@@ -459,28 +459,28 @@ method parseMaterial(to_table)
    token := "{"
    while(token ~== "}") do {
       case token := parseBlock() of {
-         "Comment"	: {}
-         "}"		:{
+         "Comment"      : {}
+         "}"            :{
             if /to_table then
                current_mesh.addMaterial(newMaterial)
             else
                blockTable[id] := newMaterial
             return
             }
-      	 "TextureFilename":{
-      	    jump_after("{")
+         "TextureFilename":{
+            jump_after("{")
             #jump_after("\"") | stop("error in texture file label")
             tab(upto('"'))
             move(1)
             tex_fname := tab(upto('"')) | stop("error in texture file label")
-	    if not (tex_fname := find_texture(tex_fname)) then
-	      DEBUGW(" file not found..!! ", tex_fname)
-	     
+            if not (tex_fname := find_texture(tex_fname)) then
+              DEBUGW(" file not found..!! ", tex_fname)
+
             newMaterial.textureFileName := tex_fname
             jump_after("}")
 
-	    # probably should get rid of this. not usefull anymore
-            if newMaterial.textureFileName[1]=="." then 
+            # probably should get rid of this. not usefull anymore
+            if newMaterial.textureFileName[1]=="." then
                newMaterial.textureFileName := newMaterial.textureFileName[5:0]
             }
          default: avoidTemplate()
@@ -498,7 +498,7 @@ end
 method parseSkinWeights()
    local cBone, temp, nVertices, L
 
-   jump_after("{") 
+   jump_after("{")
    jump_after("\"")
    temp := tab(upto('"'))
    move(1)
@@ -550,15 +550,15 @@ method parseAnimationSets()
          "Comment": {}
          "}":{
               animationSet.maxKey := maxKey
-              DEBUGW("MaxKey:", maxKey) 
+              DEBUGW("MaxKey:", maxKey)
               current_model.addAnimationSet( animationSet)
               return
               }
          "Animation": parseAnimations(animationSet)
           default: avoidTemplate()
-      	 }# case
+         }# case
       }# while
-	
+
    animationSet.maxKey := maxKey
    DEBUGW("MaxKey:", maxKey)
    current_model.addAnimationSet( animationSet)
@@ -566,14 +566,14 @@ end
 
 method parseAnimations(animationSet) #Frm::AnimationSet* &pAS);
    local token, tempAnimation
-   
+
    tempAnimation := AnimationKeys()
    jump_after("{")
-   
+
    token := "{"
    while(token ~== "}") do{
       case token := parseBlock() of{
-      	"Comment": {}
+        "Comment": {}
         "}":{
             animationSet.addAnimation(tempAnimation)
             return
@@ -586,7 +586,7 @@ method parseAnimations(animationSet) #Frm::AnimationSet* &pAS);
             }
         "AnimationKey": parseAnimationKeys(tempAnimation)
          default: avoidTemplate()
-      	} # case
+        } # case
       } #while
    animationSet.addAnimation(tempAnimation)
 end
@@ -600,7 +600,7 @@ method parseRotationKey()
    semicolon()
    if tempRot.the_time > current_xfile.maxKey then
       current_xfile.maxKey := tempRot.the_time
-   # we could do (parse_int() , semicolon) 
+   # we could do (parse_int() , semicolon)
    # but we don't want this number (we know it is 4 for rotation) so
 
    tab(upto(';')+1)
@@ -621,17 +621,17 @@ method parseScalingKey()
    tempScale := ScaleKey()
    tempScale.v := Vector3()
    tempScale.the_time := parse_int()
-   
+
    semicolon()
    if tempScale.the_time > current_xfile.maxKey then
       current_xfile.maxKey := tempScale.the_time
-   # we could do (parse_int() , semicolon) 
+   # we could do (parse_int() , semicolon)
    # but we don't want this number (we know it is 3 for scaling) so
    #jump_after(";")
-   
+
    tab(upto(';')+1)
    tab(many(' \t\r\n'))
-   
+
 
    (
     tempScale.v.x     := parse_real(), coma() &
@@ -646,54 +646,54 @@ end
 method parseAnimationKeys(animation) #Frm::Animation* &pA);
    local key_type, Size, Data, tempRot, tempScale, tempPos, tempMatrix
 
-   jump_after("{")   
+   jump_after("{")
    key_type := parse_int()
    semicolon()
    nextline()
-   
+
    Size := parse_int()
    semicolon()
    nextline()
 
    case key_type of {
       0:{
-      	 #DEBUGW(" Rotation Keys:", Size)
+         #DEBUGW(" Rotation Keys:", Size)
          animation.lst_rotation := parseArray(Size, graphics3d__XFile_parseRotationKey)
          #DEBUGW(" Rotations read: ", *animation.lst_rotation)
          } # 0
       1:{
-      	 #DEBUGW("Scaling Keys : ", Size)
+         #DEBUGW("Scaling Keys : ", Size)
          animation.lst_scaling := parseArray(Size, graphics3d__XFile_parseScalingKey)
          #DEBUGW(" Scalings read: ", *animation.lst_scaling)
          } #1
       2:{
-      	 #DEBUGW("Position Keys: ", Size)
+         #DEBUGW("Position Keys: ", Size)
          animation.lst_translation := parseArray(Size, graphics3d__XFile_parseScalingKey)
          #DEBUGW(" positions read: ", *animation.lst_translation)
          } # 2
       4:{
-      	#DEBUGW(Size, "Matrix Keys")
+        #DEBUGW(Size, "Matrix Keys")
          while (Size>0 ) do{
             Size -:= 1
             tempMatrix := MatrixKey()
-	    tempMatrix.the_time := parse_int()
-	    semicolon()
+            tempMatrix.the_time := parse_int()
+            semicolon()
 
             if tempMatrix.the_time > maxKey then
-            	maxKey := tempMatrix.the_time
+                maxKey := tempMatrix.the_time
             jump_after(";")
-            
+
             tempMatrix.matrix := Matrix4x4()
             tempMatrix.matrix.set( parseArray(16, parse_real) )
-            
+
             semicolon()
-            coma() | semicolon() 
+            coma() | semicolon()
             skip_whitespace()
             animation.addAnimationKey("matrix", tempMatrix)
             }
          } # 4
       default: DEBUGW("Unknown Key Type", key_type, " ...")
-   	}
+        }
 
    jump_after("}")
 
@@ -730,10 +730,10 @@ initially()
    blockTable := table()
    tempBoneTable := &null
    X_TemplateID := set( "template" , "FrameTransformMatrix", "Frame",
-   	  "XSkinMeshHeader", "MeshTextureCoords", "MeshMaterialList",
-   	  "MeshNormals","Mesh", "Material", "SkinWeights", "TextureFilename",
-   	  "AnimationSet", "AnimationKey", "Animation", "Header"
-   	  )
+          "XSkinMeshHeader", "MeshTextureCoords", "MeshMaterialList",
+          "MeshNormals","Mesh", "Material", "SkinWeights", "TextureFilename",
+          "AnimationSet", "AnimationKey", "Animation", "Header"
+          )
 end
 
 ###################################################################################
@@ -763,7 +763,7 @@ end
 procedure parseVertex()
    local v
    v := Vector3()
-   
+
    ( v.x := parse_real(), semicolon() &
      v.y := parse_real(), semicolon() &
      v.z := parse_real(), semicolon()
@@ -775,7 +775,7 @@ procedure parseFace()
    local face
    face := Face()
    # we are assuming that each face has exactly 3 vertices! skip next num
-   ( parse_int(), semicolon() )  # unused num 
+   ( parse_int(), semicolon() )  # unused num
    ( put( face.lst_vertex_index, parse_int_add_one()), coma() &
       put( face.lst_vertex_index, parse_int_add_one()), coma() &
       put( face.lst_vertex_index, parse_int_add_one()), semicolon()
@@ -858,7 +858,7 @@ procedure skip_whitespace()  # and comments if they are there
    if /ch then return
    if ch =="/" then{
       tab(find("\n")+1)
-      tab(many(' \r\n\t')) 
+      tab(many(' \r\n\t'))
       }
    else
       move(-1)

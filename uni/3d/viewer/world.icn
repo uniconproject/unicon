@@ -9,7 +9,7 @@ class World(
 )
 
 #
-# load model fname and set its coordinates to "fit" in size 
+# load model fname and set its coordinates to "fit" in size
 #
 method load(fname, size)
   if \fname then{
@@ -37,13 +37,13 @@ method render()
   WAttrib("light1=diffuse white; ambient white; specular white; position 5.0, 5.0, -5.0")
   WAttrib("light0=on")
   WAttrib("light1=on")
-  
-  
+
+
   logger.logit("Rendering...")
   t:=&time
   #DrawSphere(0, 0, 0, 0.2)
   mod3d.render()
-  logger.logit("Done rendering in " || &time-t || " ms.")  
+  logger.logit("Done rendering in " || &time-t || " ms.")
   &window :=tmpw
 end
 
@@ -69,80 +69,80 @@ method handle_event()
 
   while *Pending()>0 do{
         case Event() of {
-	  "\e" : exit()
-	  "a"  : mod3d.move( 0.05, 0, 0)
-	  "A"  : mod3d.move(-0.05, 0, 0)
-	  "s"  : mod3d.move( 0, 0.05, 0)
-	  "S"  : mod3d.move( 0,-0.05, 0)
-	  "d"  : mod3d.move( 0, 0, 0.05)
-	  "D"  : mod3d.move( 0, 0,-0.05)
-	  
-	  "z"  : mod3d.rotate( 2, 0, 0)
-	  "Z"  : mod3d.rotate(-2, 0 ,0)
-	  "x"  : mod3d.rotate( 0, 2, 0)
-	  "X"  : mod3d.rotate( 0,-2, 0)
-	  "c"  : mod3d.rotate( 0, 0, 2)
-	  "C"  : mod3d.rotate( 0, 0,-2)
-	  
-	  Key_Up   :cam.move( d)
-	  Key_Down :cam.move(-d)
-	  
-	  Key_Left :cam.rotate(-0.1, 0)
-	  Key_Right:cam.rotate( 0.1, 0)
-	  
-	  "w"  : cam.slide( 0.1, 0)
-	  "W"  : cam.slide(-0.1, 0)
-	  "e"  : cam.slide( 0, 0.1)
-	  "E"  : cam.slide( 0,-0.1)
-	  
-	  "3"  :  logger.logit("camera step: ", d+:= 0.2)
-	  "4"  :  logger.logit("camera step: ", d-:= 0.2)
-	  
-	  
-	  "1"  : logger.logit("animation step: ", mod3d.animationc.faster() )
-	  "2"  : logger.logit("animation step: ", mod3d.animationc.slower() )
-	  "0"  : (/auto_refresh:=1) | auto_refresh:=&null
-	  
-	  "+"  : {
-	    mod3d.calc_animation()
-	  }
-	  " "  :{ 
-	    mod3d.pick_animation()
-	    #mod3d.calc_animation()
-	  }
-	  "m"  :{ 
-	    mod3d.pick_animation("Walk")
-	    #mod3d.calc_animation()
-	  }
-	  
-	  Key_PgUp  : cam.rotate( 0, 0.1)
-	  Key_PgDn  : cam.rotate( 0,-0.1)
+          "\e" : exit()
+          "a"  : mod3d.move( 0.05, 0, 0)
+          "A"  : mod3d.move(-0.05, 0, 0)
+          "s"  : mod3d.move( 0, 0.05, 0)
+          "S"  : mod3d.move( 0,-0.05, 0)
+          "d"  : mod3d.move( 0, 0, 0.05)
+          "D"  : mod3d.move( 0, 0,-0.05)
+
+          "z"  : mod3d.rotate( 2, 0, 0)
+          "Z"  : mod3d.rotate(-2, 0 ,0)
+          "x"  : mod3d.rotate( 0, 2, 0)
+          "X"  : mod3d.rotate( 0,-2, 0)
+          "c"  : mod3d.rotate( 0, 0, 2)
+          "C"  : mod3d.rotate( 0, 0,-2)
+
+          Key_Up   :cam.move( d)
+          Key_Down :cam.move(-d)
+
+          Key_Left :cam.rotate(-0.1, 0)
+          Key_Right:cam.rotate( 0.1, 0)
+
+          "w"  : cam.slide( 0.1, 0)
+          "W"  : cam.slide(-0.1, 0)
+          "e"  : cam.slide( 0, 0.1)
+          "E"  : cam.slide( 0,-0.1)
+
+          "3"  :  logger.logit("camera step: ", d+:= 0.2)
+          "4"  :  logger.logit("camera step: ", d-:= 0.2)
+
+
+          "1"  : logger.logit("animation step: ", mod3d.animationc.faster() )
+          "2"  : logger.logit("animation step: ", mod3d.animationc.slower() )
+          "0"  : (/auto_refresh:=1) | auto_refresh:=&null
+
+          "+"  : {
+            mod3d.calc_animation()
+          }
+          " "  :{
+            mod3d.pick_animation()
+            #mod3d.calc_animation()
+          }
+          "m"  :{
+            mod3d.pick_animation("Walk")
+            #mod3d.calc_animation()
+          }
+
+          Key_PgUp  : cam.rotate( 0, 0.1)
+          Key_PgDn  : cam.rotate( 0,-0.1)
 
         } #case
-        
+
         #write(mod3d.Name)
 
      if /auto_refresh then Refresh()
-      
+
     }#while
 
  if \auto_refresh then{
     #t1 := &time
     mod3d.calc_animation()
     t2 := &time
-    Refresh()    
+    Refresh()
     t3:=&time
     fr+:=1
-    
+
     if t3-t > 5000 then{
        #write("refresh time", t3 - t2)
        logger.logit( fr / 5.0, " fps")
        t:=t3
        fr:=0
        }
-    
+
     #write("calc time", t2 - t1)
-    
+
  }
 
 end

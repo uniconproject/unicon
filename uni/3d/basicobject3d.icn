@@ -15,46 +15,46 @@ class BasicObject3D(
       label,             # string
       loc,              # Vector3
       orientation_angles,  # Vector3 , Orientation in the 3D space
-      			   # which are the angles around x, y, z axises	      
+                           # which are the angles around x, y, z axises
       scalexyz,
-      color,           
+      color,
       radius,           # aproximation of the bounding sphere radius
-      
-      reference,	# Vector3 a refrence point in the 3D space
-      
-      bb_max,		#  max vector and min vector four bounding box calcs
-      bb_min,		#
-      
-      visible_section,   # Unicon WSection Record
-      Txyz,                # Unicon Translation Record
-      Rx,               # 
+
+      reference,        # Vector3 a refrence point in the 3D space
+
+      bb_max,           #  max vector and min vector four bounding box calcs
+      bb_min,           #
+
+      visible_section,  # Unicon WSection Record
+      Txyz,             # Unicon Translation Record
+      Rx,               #
       Ry,               # Unicon Rotation Records
-      Rz,               # 
-      
+      Rz,               #
+
       Sxyz,
-      
-      
-      
-      render_func	# rendering function if supplied
+
+
+
+      render_func       # rendering function if supplied
    )
 
    # render Template for all 3D objects
-   method render()                  
+   method render()
          visible_section := WSection( label )
-         PushMatrix()               
+         PushMatrix()
             Txyz:=Translate (loc.x, loc.y, loc.z)
             Sxyz:=Scale(scalexyz.x, scalexyz.y, scalexyz.z)
             Rx:=Rotate(orientation_angles.x, 1.0, 0.0, 0.0)
             Ry:=Rotate(orientation_angles.y, 0.0, 1.0, 0.0)
             Rz:=Rotate(orientation_angles.z, 0.0, 0.0, 1.0)
-                      
+
             render_details() # this is the real render
-            
+
 
          PopMatrix()
          WSection()
    end
-   
+
    # every object will override this method to customize
    # its look in the way it likes
    method render_details()
@@ -65,7 +65,7 @@ class BasicObject3D(
    method set_render_func(new_render)
        render_func := new_render
    end
-   
+
    method refreshLoc()
       if /Txyz then fail
       Txyz.x:=loc.x
@@ -79,14 +79,14 @@ class BasicObject3D(
       Sxyz.y:=scalexyz.y
       Sxyz.z:=scalexyz.z
    end
-   
+
    method refreshRot()
       if /Rx then fail
       Rx.angle := orientation_angles.x
       Ry.angle := orientation_angles.y
       Rz.angle := orientation_angles.z
    end
-   
+
    method set_location (v)
       loc.set (v)
       refreshLoc()
@@ -94,9 +94,9 @@ class BasicObject3D(
 
    method set_locationxyz (x, y, z)
       loc.setxyz (x, y, z)
-      refreshLoc()      
+      refreshLoc()
    end
-   
+
    #
    # param count: 1(vector) OR 3(reals)
    #
@@ -104,15 +104,15 @@ class BasicObject3D(
       if numeric(dx) then
          loc.addxyz(dx, dy, dz)
       else
-         loc.add(dx) 
+         loc.add(dx)
       refreshLoc()
    end
-   
+
    method set_orientation(v)
       orientation_angles.set(v)
       refreshRot()
    end
-   
+
    method set_orientationxyz(x, y, z)
       orientation_angles.setxyz(x, y, z)
       refreshRot()
@@ -125,7 +125,7 @@ class BasicObject3D(
    method set_referencexyz(x, y, z)
       reference.setxyz(x, y, z)
    end
-   
+
    method rotate(rx, ry, rz)
       if numeric(rx) then
          orientation_angles.addxyz(rx, ry, rz)
@@ -137,49 +137,49 @@ class BasicObject3D(
    method show()
       visible_section.skip:=0
    end
-   
+
    method hide()
       visible_section.skip:=1
    end
-      
+
    method is_hidden()
       return visible_section.skip=1
    end
-   
+
    method calc_bounding_box()
    end
 
-   method is_colliding( another_object )         
-      if loc.distance_to( another_object.loc ) < 
+   method is_colliding( another_object )
+      if loc.distance_to( another_object.loc ) <
          radius + another_object.radius then return
    end
-   
+
    method set_size_to(val)
       local d, dx, dy, dz, mesh, tx, ty, tz
-      
+
       calc_bounding_box()
-      
+
       /val := 1.0
-            
+
       dx := bb_max.x - bb_min.x
       dy := bb_max.y - bb_min.y
       dz := bb_max.z - bb_min.z
-      
+
       tx := -dx / 2.0 - bb_min.x
       ty := -bb_min.y
       tz := -dz / 2.0 - bb_min.z
-      
+
 
       if dx>dy & dx>dz then
-	 d:=dx
+         d:=dx
       else if dy>dz then
-	 d:=dy
+         d:=dy
       else
-	 d:=dz
+         d:=dz
 
-      scalexyz.x := scalexyz.y := scalexyz.z := real(val) / d      
+      scalexyz.x := scalexyz.y := scalexyz.z := real(val) / d
       refreshScale()
-   
+
    end
 
    initially(myname )

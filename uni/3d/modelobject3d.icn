@@ -11,7 +11,7 @@ $include "graphics3dh.icn"
 
 #####################################
 #
-#  load3DModel() should be the IO interface between uModel 
+#  load3DModel() should be the IO interface between uModel
 #  and different 3d model file formats
 #
 #####################################
@@ -41,40 +41,40 @@ end
 
 class ModelObject3D:BasicObject3D(
 
-   model_file_name,		# file label of the model
-   format,			#  "x", "s3d", or "?"
-   rendering_mode,		# "mesh", "bone", bone_mesh , "morph", or what else?
-   
-   lst_mesh,			# list of all meshes in the model      #concatMesh,
-	     
-   
+   model_file_name,             # file label of the model
+   format,                      #  "x", "s3d", or "?"
+   rendering_mode,              # "mesh", "bone", bone_mesh , "morph", or what else?
+
+   lst_mesh,                    # list of all meshes in the model      #concatMesh,
+
+
    scale_value
    )
    method init(fname)
 
       scale_value := 1
-      format := "unkown"   
+      format := "unkown"
 
       lst_mesh := []
-      
-      
+
+
       if \fname then
          load(fname)
-      
+
    end
-   
-   
+
+
    method load( fname )
       local tmp_cs
-  
+
       if load3DModel(fname, self)  then{
-         DEBUGW(fname, " model file was loaded successfully!!")            
+         DEBUGW(fname, " model file was loaded successfully!!")
          model_file_name := fname
          return
          }
 
    end
-   
+
    method mesh_count()
       return *lst_mesh
    end
@@ -102,7 +102,7 @@ class ModelObject3D:BasicObject3D(
      every c+:=(!lst_mesh).face_count()
       return c
    end
-  
+
    method material_count()
      local c:=0
      every c+:=(!lst_mesh).material_count()
@@ -125,7 +125,7 @@ class ModelObject3D:BasicObject3D(
    method texture_files_count()
       return *texture_files()
    end
-   
+
    method meshes()
       every suspend !lst_mesh
    end
@@ -137,61 +137,61 @@ class ModelObject3D:BasicObject3D(
    method flip_texcoord()
       every (!lst_mesh).flip_texcoord()
    end
-  
+
    method render_details()
       local mesh
 
       DEBUGW(" \nRendering model............... ", label )
-      
+
       every mesh := !lst_mesh do{
          DEBUGW("rendering mesh ", mesh.label)
          mesh.render()
-	 }
+         }
    end
- 
+
    method translateBy(tx, ty, tz)
       every (!lst_mesh).translate_vx(tx, ty, tz)
    end
-   
+
    method rotateBy(angle, axis)
       every (!lst_mesh).rotate_vx(angle, axis)
    end
-   
+
    method scaleBy(s)
       every (!lst_mesh).scale_vx(s)
    end
 
     method normalize(factor)
       local d, dx, dy, dz, mesh, tx, ty, tz
-      
+
       calc_bounding_box()
-      
+
       /factor := 1.0
-            
+
       dx := bb_max.x - bb_min.x
       dy := bb_max.y - bb_min.y
       dz := bb_max.z - bb_min.z
-      
+
       tx := -dx / 2.0 - bb_min.x
       ty := -bb_min.y
       tz := -dz / 2.0 - bb_min.z
-      
+
 
       if dx>dy & dx>dz then
-	 d:=dx
+         d:=dx
       else if dy>dz then
-	 d:=dy
+         d:=dy
       else
-	 d:=dz
+         d:=dz
 
       scale_value := real(factor) / d
       translateBy(tx, ty, tz)
-      
+
       every mesh:= !lst_mesh do
          mesh.scale_vx(scale_value)
-      
-      
- 
+
+
+
    end
 
 
@@ -199,16 +199,16 @@ class ModelObject3D:BasicObject3D(
    # note : this scale adjustment is uniform on all axieses.
    method adjustScale(adjust_value, adjust_axis, angle, axis)
       local d, dx, dy, dz, tx, ty, tz
-      
+
       calc_bounding_box()
-      
+
       /adjust_value := 1.0
       /adjust_axis := "y"
-      
+
       dy := bb_max.y - bb_min.y
       dx := bb_max.x - bb_min.x
       dz := bb_max.z - bb_min.z
-      
+
       tx := -dx / 2.0 - bb_min.x
       ty := -dy / 2.0 - bb_min.y
       tz := -dz / 2.0 - bb_min.z
@@ -226,25 +226,25 @@ class ModelObject3D:BasicObject3D(
       scale_value := real(adjust_value) / d
 
       translateBy(tx, ty, tz)
-      
+
       if \angle then
          rotateBy(angle, axis)
-         
+
       scaleBy(scale_value )
 
-      #write("Max x, y ,z :", bb_max.x, ", ", 
-      #                       bb_max.y, ", ", 
+      #write("Max x, y ,z :", bb_max.x, ", ",
+      #                       bb_max.y, ", ",
       #                       bb_max.z)
-	
-      #write("Min x, y ,z :", bb_min.x, ", ", 
-      #                       bb_min.y, ", ", 
+
+      #write("Min x, y ,z :", bb_min.x, ", ",
+      #                       bb_min.y, ", ",
       #                       bb_min.z)
-	
+
    end
 
    method calc_bounding_box()
-      local i, mesh 
-	
+      local i, mesh
+
        mesh := lst_mesh[1]
        mesh.calc_bounding_box()
        bb_min := mesh.bb_min
@@ -266,10 +266,10 @@ class ModelObject3D:BasicObject3D(
    end
 
    initially(myname)
-   
+
       self.BasicObject3D.initially(myname)
       format := "?"
       lst_mesh := list()
-   
+
 end
-  
+

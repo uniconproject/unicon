@@ -14,110 +14,110 @@ class Terrain:BasicObject3D(
    texture_file,
    base, rows, cols,
    length, width, height)
-   
+
 
    method generate()
       local i, j
       base := list(rows)
       every i:=1 to rows do
          base[i]:= list(cols)
-      
+
       every i:= 1 to rows do
-	 every j:=1 to cols do{
-	    base[i][j]:= Vector3(real(i)/rows*length,
-				 (?1000)/1000.0 * height,
-				 real(j)/cols*length)
-	    }
-       
+         every j:=1 to cols do{
+            base[i][j]:= Vector3(real(i)/rows*length,
+                                 (?1000)/1000.0 * height,
+                                 real(j)/cols*length)
+            }
+
    end
-   
+
    method render_details()
       local i, j, meshmod, L, Ltex
       meshmod :=  WAttrib("meshmode")
       WAttrib("meshmode=triangles")
       Fg("green")
-      
-      
+
+
       if \texture_file then{
-	 WAttrib("texmode=on")
-	 Texture(texture_file)
+         WAttrib("texmode=on")
+         Texture(texture_file)
          }
-      
+
       #DEBUGW("rendering terrain.....")
       Fg("green")
       every i:= 1 to rows-1 by 1 do{
          L := list()#(rows*6)
          Ltex := list()
-	 every j:=1 to cols-1 by 1 do{
-	    put(L,base[i][j].x, base[i][j].y, base[i][j].z,
-			base[i][j+1].x, base[i][j+1].y, base[i][j+1].z,
-			base[i+1][j].x, base[i+1][j].y, base[i+1][j].z,
-									 
-			base[i+1][j].x, base[i+1][j].y, base[i+1][j].z,
-			base[i][j+1].x, base[i][j+1].y, base[i][j+1].z,
-			base[i+1][j+1].x, base[i+1][j+1].y, base[i+1][j+1].z
-			)
-	    put(Ltex, real(i)/rows*length, real(j)/cols*length,
-	              real(i)/rows*length, real(j+1)/cols*length,
-	              real(i+1)/rows*length, real(j)/cols*length,
-	              real(i+1)/rows*length, real(j)/cols*length,
-	              real(i)/rows*length, real(j+1)/cols*length,
-	              real(i+1)/rows*length, real(j+1)/cols*length)
-	              
-			}
-	Texcoord (Ltex)
-	FillPolygon ! L
-	}
-	
+         every j:=1 to cols-1 by 1 do{
+            put(L,base[i][j].x, base[i][j].y, base[i][j].z,
+                        base[i][j+1].x, base[i][j+1].y, base[i][j+1].z,
+                        base[i+1][j].x, base[i+1][j].y, base[i+1][j].z,
+
+                        base[i+1][j].x, base[i+1][j].y, base[i+1][j].z,
+                        base[i][j+1].x, base[i][j+1].y, base[i][j+1].z,
+                        base[i+1][j+1].x, base[i+1][j+1].y, base[i+1][j+1].z
+                        )
+            put(Ltex, real(i)/rows*length, real(j)/cols*length,
+                      real(i)/rows*length, real(j+1)/cols*length,
+                      real(i+1)/rows*length, real(j)/cols*length,
+                      real(i+1)/rows*length, real(j)/cols*length,
+                      real(i)/rows*length, real(j+1)/cols*length,
+                      real(i+1)/rows*length, real(j+1)/cols*length)
+
+                        }
+        Texcoord (Ltex)
+        FillPolygon ! L
+        }
+
       WAttrib("meshmode="||string(meshmod))
-      WAttrib("texmode=off")  
+      WAttrib("texmode=off")
       #DEBUGW("done with terrain.....")
    end
-   
+
    method load(fname)
       local fin, s, p
-      
+
       DEBUGW("loading terrain....")
 
       fin := open(fname) | ( DEBUGW("can't open ", fname) & fail )
-      
+
       if /(p := stat(fin)) then DEBUGW("No stat") & fail
-      
+
       s := reads(fin, p.size) | ( DEBUGW("empty terrain data file?!") & fail )
-      
+
       close(fin)
-      
+
       parse_terrain(s)
       DEBUGW("DONE loading terrain....")
-      
-      return 
+
+      return
    end
-   
+
    method parse_terrain(s)
       local base2, i, j, offset
       static strmove
       initial {
-	 strmove := proc("move",1)
+         strmove := proc("move",1)
       }
-      
+
       cols := 256
       rows := 128
       base := list(rows)
       every i:=1 to rows do
-	 base[i]:= list(cols)
-      
-      
+         base[i]:= list(cols)
+
+
       every i:= 1 to rows do{
-	 offset := (i-1)*256
-	 every j:=1 to cols do{
-	    base[i][j]:= Vector3(real(i)/rows*length,
-				 real(ord(s[offset+j])) * height,
-				 real(j)/cols*length)
-	    }
-	 }
-      
+         offset := (i-1)*256
+         every j:=1 to cols do{
+            base[i][j]:= Vector3(real(i)/rows*length,
+                                 real(ord(s[offset+j])) * height,
+                                 real(j)/cols*length)
+            }
+         }
+
    end
-   
+
    initially(myname, tex)
       self.BasicObject3D.initially(myname)
       texture_file:=tex
@@ -126,9 +126,9 @@ class Terrain:BasicObject3D(
       length:=300.0
       width:=300.0
       height:=0.25
-      
+
       #length:=40.0
       #width:=40.0
-      #height:=0.25      
+      #height:=0.25
 
 end

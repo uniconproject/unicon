@@ -36,9 +36,9 @@ procedure main(args)
 
     # check whether to verify certificates or not
     if \opts["n"] then
-	mode := "m-" # don't verify https certificates 
+        mode := "m-" # don't verify https certificates
     else
-	mode := "m"
+        mode := "m"
 
     if \opts["6"] then
        mode ||:= "6"
@@ -47,63 +47,63 @@ procedure main(args)
 
     url ? proto := map(tab(many(&letters)))
 
-    if not (\proto == ("http" | "https")) then 
-	url := (proto := "http") || "://" || url 
-    
+    if not (\proto == ("http" | "https")) then
+        url := (proto := "http") || "://" || url
+
     if proto == "https" then
-	if not (&features == "secure sockets layer encryption") then
-	    stop("This Unicon build does not support https")  
+        if not (&features == "secure sockets layer encryption") then
+            stop("This Unicon build does not support https")
 
     fname := \opts["f"] | basename(url)
     if fname == "" then
-	    fname := basename(url[1:-1]) # drop the trailing slash
+            fname := basename(url[1:-1]) # drop the trailing slash
 
     # try to open the url, loop to follow redirects if applicable
     repeat {
-	web := &null
-	web := open(url, mode) | stop("open(", image(url), ") error: ", &errortext )
+        web := &null
+        web := open(url, mode) | stop("open(", image(url), ") error: ", &errortext )
 
-	\web | stop("can't open(", url,")")
-	    
-	if \opts["v"] | \opts["s"] then
-	    showheaders(web)
-	
-	# if this is a redirect then follow it
-	if web["Status-Code"] = (301 | 302) & redirect > 0 then {
-	    url := web["Location"]
-	    /opts["v"] | write(left("Redirect", 16), ": ", image(url))
-	    close(web)
-	    redirect-:=1
-	}
-	else
-	    break
+        \web | stop("can't open(", url,")")
+
+        if \opts["v"] | \opts["s"] then
+            showheaders(web)
+
+        # if this is a redirect then follow it
+        if web["Status-Code"] = (301 | 302) & redirect > 0 then {
+            url := web["Location"]
+            /opts["v"] | write(left("Redirect", 16), ": ", image(url))
+            close(web)
+            redirect-:=1
+        }
+        else
+            break
     }
 
     # make sure the response was OK
     if web["Status-Code"] ~= 200 then {
-	c := web["Status-Code"]
-	p := web["Reason-Phrase"]
-	close(web)
-	stop("Server response: ", c, " ", p)
+        c := web["Status-Code"]
+        p := web["Reason-Phrase"]
+        close(web)
+        stop("Server response: ", c, " ", p)
     }
 
     # if we are printing headers only then we are done, otherwise save the file
     if /opts["h"] then {
-	# save to file or print to screen
-	if /opts["p"] then {
-	    write("saving to file ", fname)
-	    if stat(fname) & /opts["o"] then
-		close(web) &
-		stop("file already exists, use -o to overwrite or -f for a new filename")
-	    fout := open(fname, "w") | stop("open(",image(fname), ") error: ", &errortext)
-	}
-	
-	size := integer(web["Content-Length"]) | -1
-	t := &time
-	line := reads(web, size) | stop("reads(",image(web),") error: ", &errortext)
-	write(fout, line)
-	close(\fout)
-	if \opts["v"] then {
+        # save to file or print to screen
+        if /opts["p"] then {
+            write("saving to file ", fname)
+            if stat(fname) & /opts["o"] then
+                close(web) &
+                stop("file already exists, use -o to overwrite or -f for a new filename")
+            fout := open(fname, "w") | stop("open(",image(fname), ") error: ", &errortext)
+        }
+
+        size := integer(web["Content-Length"]) | -1
+        t := &time
+        line := reads(web, size) | stop("reads(",image(web),") error: ", &errortext)
+        write(fout, line)
+        close(\fout)
+        if \opts["v"] then {
            write("file size: ", *line, " bytes")
            write("time: ", &time-t)
            }

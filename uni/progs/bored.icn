@@ -43,16 +43,16 @@
 #  the Master's hints and try to make a better guess based on that.
 #
 #  Update (Feb 10, 2011)
-#     Add new threads that help the master evaluate the guesses. 
+#     Add new threads that help the master evaluate the guesses.
 #
 
 class MsgData(
-  gs,		# the thread guess
-  mtx_gs,	# mutex to protect gs
-  rp,		# the master reply
-  mtx_rp	# mutex to protect rp
+  gs,           # the thread guess
+  mtx_gs,       # mutex to protect gs
+  rp,           # the master reply
+  mtx_rp        # mutex to protect rp
   )
-  
+
   # post a msg from a thread to the master
   method send_guess(g)
     lock(mtx_gs)
@@ -95,23 +95,23 @@ class MsgData(
 end
 
 global msgs, # list that hold msgs between the threads and the master
-	    # msg[1] : master and thread 1
-	    # msg[2] : master and thread 2
-	    # and so forth...
-	    
+            # msg[1] : master and thread 1
+            # msg[2] : master and thread 2
+            # and so forth...
+
       go,   # flags the begining of the competetion between the threads
       Max,   # the max guess
       done,
-      N	
-                                                                                                  
-procedure main(argv)                                                                                
+      N
+
+procedure main(argv)
    local n:=3, threads:=[], answer, ways, names, guesses
 
    if not (&features == "concurrent threads") then
       stop("This program requires concurrent threads.")
 
     write("Expect variations in bored output:")
-   
+
     ways:=[trust, notrust, doubt]
     names := ["Trust", "Notrust", "Doubt"]
     N := n
@@ -125,8 +125,8 @@ procedure main(argv)
        put(guesses, GuessData(Max/2, 1, Max))
        }
 
-    write(" Master: I have a number in mind between 1 and ", 
-	  Max ," (^o^)''{", answer ,"} ...")
+    write(" Master: I have a number in mind between 1 and ",
+          Max ," (^o^)''{", answer ,"} ...")
     write(" Can you threads guess what is it ?")
     write("Threads are trying ....")
     write(repl("-",80))
@@ -140,7 +140,7 @@ procedure main(argv)
 
     t:=&now
     go:=1
-    
+
     every wait(!threads)
     write(repl("-",80))
     write("time:", &now-t, " seconds")
@@ -149,14 +149,14 @@ end
 procedure process_guesses(id, answer, msg)
   local r
   while /done do{
-	if g:=msg.get_guess() then{
-	    if g=answer then { msg.send_reply("="); break;}
-	    r := if g<answer then "<" else ">"
-	    ?2=1 | (r:= ?2("<",">"))  # 50% chance to "alter" the answer
-	    msg.send_reply(r)
-	    }
-	 else
-	    delay(1)
+        if g:=msg.get_guess() then{
+            if g=answer then { msg.send_reply("="); break;}
+            r := if g<answer then "<" else ">"
+            ?2=1 | (r:= ?2("<",">"))  # 50% chance to "alter" the answer
+            msg.send_reply(r)
+            }
+         else
+            delay(1)
       }
 end
 
@@ -202,7 +202,7 @@ class GuessData(gs, lo, hi, GS, LO, HI)
     else gs:=hi
     return gs
   end
-  
+
   initially
     GS:=gs
     LO:=lo
@@ -219,7 +219,7 @@ procedure work(id, msg, my_way, name, guess)
       i+:=1
       msg.send_guess(guess.get())
       if r:=msg.get_reply() then
-	 if r=="=" then (done:=id)& break else guess.gs := my_way(guess, r)
+         if r=="=" then (done:=id)& break else guess.gs := my_way(guess, r)
       }
   write(name,"\t\t",i,"\t\t",guess.get(), "\t\t\t", if (\r)=="=" then "YES!" else "NO")
 end
@@ -237,7 +237,7 @@ procedure trust(guess, r)
 
    if last=guess.get() then
      return guess.reset()
-   
+
    return last:=guess.get()
 end
 

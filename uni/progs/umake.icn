@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     umake.icn
+#       File:     umake.icn
 #
-#	Subject:  Unicon version of the "make" program.
+#       Subject:  Unicon version of the "make" program.
 #
-#	Author:   Clinton Jeffery
+#       Author:   Clinton Jeffery
 #
-#	Date:     August 8, 2013
+#       Date:     August 8, 2013
 #
 ############################################################################
 #
@@ -31,20 +31,20 @@ procedure make(argv)
    i := 1
    while i <= *argv do {
       if argv[i]=="-n" then {
-	 noexec := 1
-	 delete(argv,i)
-	 next
-	 }
+         noexec := 1
+         delete(argv,i)
+         next
+         }
       else if argv[i]=="-f" then {
-	 delete(argv,i)			# remove the -f
-	 makefile := argv[i]
-	 delete(argv,i)			# remove the filename
-	 }
+         delete(argv,i)                 # remove the -f
+         makefile := argv[i]
+         delete(argv,i)                 # remove the filename
+         }
       else if argv[i]=="-v" then {
-	 verbose := 1
-	 delete(argv,i)
-	 next
-	 }
+         verbose := 1
+         delete(argv,i)
+         next
+         }
       i +:= 1
       }
    /makefile := "makefile"
@@ -53,8 +53,8 @@ procedure make(argv)
    else {
       depgraph := DependencyGraph(makefile)
       every i := 1 to *argv do {
-	 depgraph.make(argv[i])
-	 }
+         depgraph.make(argv[i])
+         }
       }
 end
 
@@ -75,19 +75,19 @@ class DependencyGraph(targets, initialtarget, marked)
       /dependencies := []
       /buildrules := []
       # if \targets[target] then {
-	 #
-	 # Target already exists.  Under some circumstances this ought to
-	 # be an error/fail/warning, but by default we replace silently.
-	 #
-	 #	 write(&errout, "replacing ", image(target))
-	 # }
+         #
+         # Target already exists.  Under some circumstances this ought to
+         # be an error/fail/warning, but by default we replace silently.
+         #
+         #       write(&errout, "replacing ", image(target))
+         # }
       targets[target] := Rule(target, dependencies, buildrules)
    end
    method add_dependency(source,target)
 
       /targets := Rule(target)
       if not (source == !(targets[target].dependencies)) then
-	 put(targets[target].dependencies, source)
+         put(targets[target].dependencies, source)
    end
 
    method mark(s)
@@ -107,40 +107,40 @@ class DependencyGraph(targets, initialtarget, marked)
       /targ := initialtarget
       if /targ then stop("no initial target? can't make.")
       if /(targets[targ]) then {
-	 # first, check for matching extensions
-	 every k := key(targets) do {
-	    if find("%", k) & (k ~=== "%")  then {
-	       s := targ
-	       kk := k
-	       while s[1]===k[1] do { s[1] := ""; k[1] := "" }
-	       while s[-1]===k[-1] do { s[-1] := ""; k[-1] := "" }
-	       if k == "%" & (*s>0) then {
-		  # instantiate the generic rule
-		  if \verbose then
-		     write("instantiating generic rule for ", targ)
-		  targets[targ] := targets[kk].clone(s)
-		  return targets[targ].make()
-		  }
-	       }
-	    }
-	 # last, try a global
-	 if t := targets["%"] then {
-	    write("there exists a universal target")
-	    targets[targ] := targets["%"].clone(targ)
-	    return targets[targ].make()
-	    }
-	 stop("no target for ", image(targ))
-	 }
+         # first, check for matching extensions
+         every k := key(targets) do {
+            if find("%", k) & (k ~=== "%")  then {
+               s := targ
+               kk := k
+               while s[1]===k[1] do { s[1] := ""; k[1] := "" }
+               while s[-1]===k[-1] do { s[-1] := ""; k[-1] := "" }
+               if k == "%" & (*s>0) then {
+                  # instantiate the generic rule
+                  if \verbose then
+                     write("instantiating generic rule for ", targ)
+                  targets[targ] := targets[kk].clone(s)
+                  return targets[targ].make()
+                  }
+               }
+            }
+         # last, try a global
+         if t := targets["%"] then {
+            write("there exists a universal target")
+            targets[targ] := targets["%"].clone(targ)
+            return targets[targ].make()
+            }
+         stop("no target for ", image(targ))
+         }
       targets[targ].make()
    end
    method get_targets(target)
    local s
       # for version 0, just break on spaces
       target ? {
-	 while s := tab(find(" ")) do { suspend s; =" " }
-	 s := tab(0)
-	 suspend s
-	 }
+         while s := tab(find(" ")) do { suspend s; =" " }
+         s := tab(0)
+         suspend s
+         }
    end
 initially(filename)
    filechars := &letters ++ './_%-'
@@ -150,64 +150,64 @@ initially(filename)
    readahead := []
    if f := open(\filename) then {
       while line := (pop(readahead) | unsplit(f) |
-		     (close(f) & (f:=pop(fstack)) & unsplit(f))) do {
-	 line := macroexpand(line)
+                     (close(f) & (f:=pop(fstack)) & unsplit(f))) do {
+         line := macroexpand(line)
          line ? {
-	    tab(many(' '))
-	    if ="#" then { # skip comment
-	       # write("comment: ", image(line))
-	       continue
-	       }
-	    else if pos(0) then { # skip empty lines
-	       continue
-	       }
-	    else if ="export" & tab(many(' \t')) &
-	       (envname := tab(many(filechars))) & =":=" & (val:=tab(0)) then {
-		  #what the heck, let's expand macro names
-		  val := macroexpand(val)
-		  if \verbose then
-		     write("setting ", envname, " to ", image(val))
+            tab(many(' '))
+            if ="#" then { # skip comment
+               # write("comment: ", image(line))
+               continue
+               }
+            else if pos(0) then { # skip empty lines
+               continue
+               }
+            else if ="export" & tab(many(' \t')) &
+               (envname := tab(many(filechars))) & =":=" & (val:=tab(0)) then {
+                  #what the heck, let's expand macro names
+                  val := macroexpand(val)
+                  if \verbose then
+                     write("setting ", envname, " to ", image(val))
 # if Windows... do we need to map PATH to Path, or is PATH OK?
 # need to test.  Mebbe PATH is OK.
-		  setenv(envname, val)
-		  }
-	    else if (target:=tab(many(filechars++' '))) & =":" then { # build a target or targets
-	       tab(many(' '))
-	       deps := []
-	       buildrules := []
-	       while dependency := tab(many(filechars)) do {
-		  put(deps,dependency)
-		  tab(many(' '))
-		  }
- 	       # This is a "recipe line", so continuations should not be concatenated
-	       # i.e. use read(f) directly, rather than unsplit(f)
-	       while (line := read(f)) & (line[1]=="\t") do {
-		  put(buildrules, macroexpand(line[2:0]))
-		  line := &null
-		  }
-	       put(readahead, \line)
-	       every t := get_targets(target) do {
-		  r := Rule(target,deps,buildrules)
-		  targets[t] := r
-		  }
-	       if not find("%", target, 1) then
-		  /initialtarget := target
-	       }
-	    else if (macroname:=tab(many(filechars))) &
+                  setenv(envname, val)
+                  }
+            else if (target:=tab(many(filechars++' '))) & =":" then { # build a target or targets
+               tab(many(' '))
+               deps := []
+               buildrules := []
+               while dependency := tab(many(filechars)) do {
+                  put(deps,dependency)
+                  tab(many(' '))
+                  }
+               # This is a "recipe line", so continuations should not be concatenated
+               # i.e. use read(f) directly, rather than unsplit(f)
+               while (line := read(f)) & (line[1]=="\t") do {
+                  put(buildrules, macroexpand(line[2:0]))
+                  line := &null
+                  }
+               put(readahead, \line)
+               every t := get_targets(target) do {
+                  r := Rule(target,deps,buildrules)
+                  targets[t] := r
+                  }
+               if not find("%", target, 1) then
+                  /initialtarget := target
+               }
+            else if (macroname:=tab(many(filechars))) &
                (tab(many(' '))|"") & ="=" then { # build a macro
-	       macros[macroname] := macroexpand(tab(0))
-	       if \verbose then
-		  write("macro ", macroname, " defined as ", macros[macroname])
-	       }
-	    else if ="include" & tab(many(' \t')) &
-	       (inclname := tab(many(filechars))) then {
-		  push(fstack, f)
-		  if \verbose then
-		     write("including ", image(inclname))
-		  f := open(inclname)
-		  }
-	    else write("??? ", image(line))
-	    }
+               macros[macroname] := macroexpand(tab(0))
+               if \verbose then
+                  write("macro ", macroname, " defined as ", macros[macroname])
+               }
+            else if ="include" & tab(many(' \t')) &
+               (inclname := tab(many(filechars))) then {
+                  push(fstack, f)
+                  if \verbose then
+                     write("including ", image(inclname))
+                  f := open(inclname)
+                  }
+            else write("??? ", image(line))
+            }
          }
       close(f)
       }
@@ -224,31 +224,31 @@ class Rule(target, dependencies, buildrules)
       newRule := Rule(target, copy(dependencies), copy(buildrules))
       newRule.target := subst(newRule.target, percent_sub)
       every d := 1 to *dependencies do {
-	 newRule.dependencies[d] := subst(newRule.dependencies[d], percent_sub)
-	 }
+         newRule.dependencies[d] := subst(newRule.dependencies[d], percent_sub)
+         }
       every b := 1 to *buildrules do {
-	 newRule.buildrules[b] := subst(newRule.buildrules[b],
-					newRule.dependencies[1], "$<")
-	 }
+         newRule.buildrules[b] := subst(newRule.buildrules[b],
+                                        newRule.dependencies[1], "$<")
+         }
       return newRule
    end
    method make()
    local s
       if depgraph.ismarked(target) then {
-	 if \verbose then write("umake ", target, " (already made)")
-	 }
+         if \verbose then write("umake ", target, " (already made)")
+         }
       else {
-	 if \verbose then write("umaking ", target)
-	 depgraph.mark(target)
-	 }
+         if \verbose then write("umaking ", target)
+         depgraph.mark(target)
+         }
       # first, recursively build dependencies
       every depgraph.node(!dependencies).make()
 
       # check timestamps of dependencies against my timestamp
       if (not stat(target)) | newer(!dependencies) then {
-	 exec()
-	 return
-	 }
+         exec()
+         return
+         }
       if \verbose then write("umake: `",target, "' is up to date")
    end
    # check me (target timestamp) against d and succeed if d is newer
@@ -256,22 +256,22 @@ class Rule(target, dependencies, buildrules)
    local mytimestamp, theirtimestamp
       if not (mytimestamp := stat(target).mtime) then return
       if not (theirtimestamp := stat(d).mtime) then
-	 stop(target, " depends on ", d, " but it didn't get built")
+         stop(target, " depends on ", d, " but it didn't get built")
       if \verbose then
-	 write("   ", target,": ", image(mytimestamp), ", ",
-	       d, ": ", image(theirtimestamp))
+         write("   ", target,": ", image(mytimestamp), ", ",
+               d, ": ", image(theirtimestamp))
       if mytimestamp < theirtimestamp then return
    end
    method exec()
    local r
       every r := !buildrules do {
-	 if \noexec then write(r)
-	 else {
-	    if not (rv := system(r)) then
-	       stop("umake: system(",image(r),") failed")
-	    if rv ~=== 0 then stop("umake: ", rv, " exit by ", image(r))
-	    }
-	 }
+         if \noexec then write(r)
+         else {
+            if not (rv := system(r)) then
+               stop("umake: system(",image(r),") failed")
+            if rv ~=== 0 then stop("umake: ", rv, " exit by ", image(r))
+            }
+         }
    end
    method print()
        writes("target ", image(target), " : ")
@@ -296,15 +296,15 @@ end
 procedure macroexpand(s)
    s ? {
       while tab(i := find("$")) &
-	    ="$(" & (mac := tab(many(filechars))) & =")" do {
-	 if not member(macros, mac) then {
-	    if val := getenv(mac|initcap(mac)|map(mac)) then
-	       macros[mac] := val
-	    else if \verbose then write("warning: empty macro ", mac)
-	    }
-	 s[i +: *mac+3] := macros[mac]
-	 &subject := s; &pos := i
-	 }
+            ="$(" & (mac := tab(many(filechars))) & =")" do {
+         if not member(macros, mac) then {
+            if val := getenv(mac|initcap(mac)|map(mac)) then
+               macros[mac] := val
+            else if \verbose then write("warning: empty macro ", mac)
+            }
+         s[i +: *mac+3] := macros[mac]
+         &subject := s; &pos := i
+         }
       }
    return s
 end
@@ -317,7 +317,7 @@ end
 # and replace the "whitespace \ whitespace" at the join with a single space
 procedure unsplit(f)
     local line := read(f) | fail
-    if line[-1] == "\\" 
-    then return trim(line, '\t \\') || " " || trim(\unsplit(f), ' \t', 1) 
+    if line[-1] == "\\"
+    then return trim(line, '\t \\') || " " || trim(\unsplit(f), ' \t', 1)
     else return line
 end

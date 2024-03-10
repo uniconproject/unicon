@@ -1,12 +1,12 @@
 ################################################################
 #
-#   File:	buffertabitem.icn
+#   File:       buffertabitem.icn
 #
-#   Subject:	SubClass TabItem
+#   Subject:    SubClass TabItem
 #
-#   Author:	Nolan Clayton
+#   Author:     Nolan Clayton
 #
-#   Date:	May 26, 2004
+#   Date:       May 26, 2004
 #
 ################################################################
 
@@ -14,19 +14,19 @@ $include "guih.icn"
 import gui
 
 #
-#  class BufferTabItem:  Overide Display method and add an extra attribute. 
+#  class BufferTabItem:  Overide Display method and add an extra attribute.
 #
 
 class BufferTabItem : TabItem (
    filename,     # The Complete filename of the TabItem (c:\Unicon ....).
    filedirectory # Absolute Path to file
    )
-   
+
    method setfilename(x)
       set_label(if \x then file_name (x) else " ")
       return filename := x
    end
-   
+
    method get_label()
       return label
    end
@@ -34,7 +34,7 @@ class BufferTabItem : TabItem (
    method set_label(x)
       return label := x
    end
-   
+
    method getfilename()
       return filename
    end
@@ -44,21 +44,21 @@ class BufferTabItem : TabItem (
    #
    method display_tab()
       local xpw, pslh, updown, ypos, cw
-      
+
       ypos := (line_no - 1) * parent.line_h + parent.y
       cw := Clone(parent.cbwin)
 
       xpw := label_x + label_w
       pslh := parent.line_h
-      
+
       Fg(cw, "black") #"greyish white")
       DrawLine(cw, xpw - 1, ypos, xpw - 1, ypos + pslh - 1)
       DrawLine(cw, xpw - 2, ypos + 1, xpw - 2, ypos + pslh - 2)
       DrawLine(cw, label_x, ypos + pslh - 1, label_x, ypos, xpw - 1, ypos)
-      
+
       Fg(cw, "white")
       DrawLine(cw, label_x + 1, ypos + pslh - 2,
-	       label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
+               label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
       Uncouple(cw)
 
       #
@@ -66,28 +66,28 @@ class BufferTabItem : TabItem (
       #
       Fg(\ (parent.cbwin), "white")
       FillRectangle(parent.cbwin, label_x, ypos + 2 + (pslh - 2) / 2,
-		    label_w - 2, (pslh - 2) / 2)
+                    label_w - 2, (pslh - 2) / 2)
       Fg(\ (parent.cbwin), "pale greyish white")
       FillRectangle(parent.cbwin, label_x, ypos + 2 + (pslh - 2) / 2,
-		    label_w - 2, (pslh - 2) / 4)
+                    label_w - 2, (pslh - 2) / 4)
       Fg(\ (parent.cbwin), "light greyish white")
       FillRectangle(parent.cbwin, label_x, ypos + 2,
-		    label_w - 2, (pslh - 2) /2 )
+                    label_w - 2, (pslh - 2) /2 )
       Fg(\ (parent.cbwin), "greyish white")
       FillRectangle(parent.cbwin, label_x, ypos + 2,
-		    label_w - 2, (pslh - 2) / 4)
+                    label_w - 2, (pslh - 2) / 4)
 
       updown := -1
       if parent.which_one === self then updown := 1
 
       Fg(\ (parent.cbwin), "pale grey")
       BevelRoundedRectangle(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND -1,
-			    ypos-6 + pslh / 2, TextWidth(parent.cbwin, label),
-			    3 + (pslh - 2) / 2, updown)
+                            ypos-6 + pslh / 2, TextWidth(parent.cbwin, label),
+                            3 + (pslh - 2) / 2, updown)
 
       Fg(\ (parent.cbwin), "black")
       left_string(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND,
-		  ypos + pslh / 2, label)
+                  ypos + pslh / 2, label)
 
       if is_shaded() then
          FilterRectangle(parent.cbwin, label_x, ypos + 2, label_w - 2, pslh-1)
@@ -102,18 +102,18 @@ end
 # Bevel Rounded Rectangle Proc: Draw a Beveled Rounded Rectangle
 # to be used for a TabItem.
 #
-procedure BevelRoundedRectangle(win, x, y, w, h, bw)	
-   local b, upper, lower, xx, yy, r, a, cx, cy, cw, cr, oldfg1, oldfg2 
+procedure BevelRoundedRectangle(win, x, y, w, h, bw)
+   local b, upper, lower, xx, yy, r, a, cx, cy, cw, cr, oldfg1, oldfg2
    static type
 
-   initial type := proc("type", 0)	# protect attractive name
+   initial type := proc("type", 0)      # protect attractive name
 
    if bw >= 0 then  {
       FillRectangle(win,x, y, w, h)
       FillCircle(win,x, y + (h/2), h/2 -1)
       FillCircle(win,x +w , y + (h/2), h/2 -1)
       }
-   
+
    if type(win) ~== "window" then
       return BevelRectangle((\&window | runerr(140)), win, x, y, w, h)
    b := bev_lookup(win)

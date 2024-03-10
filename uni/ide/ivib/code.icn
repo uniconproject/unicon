@@ -18,13 +18,13 @@ record a_method(name, params, body)
 # Class to process code generation
 #
 class Code(
-           class_vars,              # Class variables which have methods             
-           local_vars,              # Variables local to the setup method             
+           class_vars,              # Class variables which have methods
+           local_vars,              # Variables local to the setup method
            imports,                 # Set of import declarations
            methods,                 # Methods to be generated, a table of names->a_method records
-           code,                    # List of strings to generate in the setup method           
-           parent_Canvas,           #                     
-           indent1,                 # Spaces for indentation              
+           code,                    # List of strings to generate in the setup method
+           parent_Canvas,           #
+           indent1,                 # Spaces for indentation
            indent2,                 #
            indent3,                 #
            indent4                  #
@@ -128,10 +128,10 @@ class Code(
 
       close(f)
       if f := open(s) then {
-	 ivib_maindialog.source := []
-	 while put(ivib_maindialog.source, read(f))
-	 close(f)
-	 }
+         ivib_maindialog.source := []
+         while put(ivib_maindialog.source, read(f))
+         close(f)
+         }
 
       return
    end
@@ -150,17 +150,17 @@ class Code(
       add_setup_methods()
 
       if not (f := open(src_name)) then {
-	 alert_error("warning, couldn't open " || src_name)
-	 # the file has disappeared, try writing it from the copy we saved
-	 if f := open(src_name, "w") then {
-	    every write(f, !ivib_maindialog.source)
-	    close(f)
-	    if not (f := open(src_name)) then
-	       return alert_error("Couldn't open " || src_name)
-	    }
-	 else
-	    return alert_error("Couldn't open " || src_name)
-	 }
+         alert_error("warning, couldn't open " || src_name)
+         # the file has disappeared, try writing it from the copy we saved
+         if f := open(src_name, "w") then {
+            every write(f, !ivib_maindialog.source)
+            close(f)
+            if not (f := open(src_name)) then
+               return alert_error("Couldn't open " || src_name)
+            }
+         else
+            return alert_error("Couldn't open " || src_name)
+         }
 
       #
       # Save contents up to setup() method
@@ -196,7 +196,7 @@ class Code(
                   delete(imports, tab(many(idchars)))
             }
          }
-         put(part1, t)         
+         put(part1, t)
       }
 
       #
@@ -242,7 +242,7 @@ class Code(
          s ? {
             if ="class " then {
                # Substitute our own class and superclass name
-               s := "class " || self.parent_Canvas.name || " : " || 
+               s := "class " || self.parent_Canvas.name || " : " ||
                   self.parent_Canvas.superclass_name || "("
                tab(upto('('))
                move(1)
@@ -357,7 +357,7 @@ class Code(
             every write(f, indent2, !rec.body)
          write(f, indent1, "end")
          count +:= 1
-      } 
+      }
       return
    end
 
@@ -414,7 +414,7 @@ class Code(
    end
 
    #
-   # Generate a main procedure. 
+   # Generate a main procedure.
    #
    method main_out(f)
       write(f, "procedure main()")

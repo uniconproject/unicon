@@ -23,8 +23,8 @@ $endif
 # It maintains file extension information, defaulting to look for .icn files.
 #
 class HFileDialog : FileDialog(
-   file_extension,	    # File type extension
-   fext_list,		    # File extension list
+   file_extension,          # File type extension
+   fext_list,               # File extension list
    init_fileType
    )
 
@@ -37,7 +37,7 @@ class HFileDialog : FileDialog(
 
    #
    # Set the initial file/directory from a whole path.
-   # 
+   #
    method set_path(s)
       self.FileDialog.set_path(s)
       self.init_fileType := "*.icn"
@@ -58,11 +58,11 @@ class HFileDialog : FileDialog(
       #
       # Go to parent directory (unless at root directory)
       #
-      if \value == (".." || PATHCHAR) then {    
+      if \value == (".." || PATHCHAR) then {
          if s ~== PATHCHAR then {
             s[-1] := ""
             while s[-1] ~== PATHCHAR do s[-1] := ""
-	    }
+            }
          dir.set_contents(s)
          }
       else
@@ -89,13 +89,13 @@ class HFileDialog : FileDialog(
       #
       # Go to parent directory (unless at root directory)
       #
-      if \value == (".." || PATHCHAR) then {    
-	 if s ~== PATHCHAR then {
-	    s[-1] := ""
-	    while s[-1] ~== PATHCHAR do s[-1] := ""
-	    }
-	 dir.set_contents(s)
-	 }
+      if \value == (".." || PATHCHAR) then {
+         if s ~== PATHCHAR then {
+            s[-1] := ""
+            while s[-1] ~== PATHCHAR do s[-1] := ""
+            }
+         dir.set_contents(s)
+         }
       else
          dir.set_contents(s ||:= \value)
       #
@@ -118,12 +118,12 @@ class HFileDialog : FileDialog(
    method on_flist_lpress(ev)
    local sb
       if get_click_count() = 2 then {
-	 if (sb := \ (flist.vsb | flist.hsb)) &
-	    (sb.x <= &x <= sb.x+sb.w) & (sb.y <= &y <= sb.y+sb.h) then
-	       fail
-	 set_result()
-	 dispose()
-	 }
+         if (sb := \ (flist.vsb | flist.hsb)) &
+            (sb.x <= &x <= sb.x+sb.w) & (sb.y <= &y <= sb.y+sb.h) then
+               fail
+         set_result()
+         dispose()
+         }
    end
 
    method on_dir()
@@ -149,8 +149,8 @@ class HFileDialog : FileDialog(
       # Defaults if none set by caller.
       #
       if /init_dir | (init_dir == "") then {
-	 init_dir := chdir() | PATHCHAR
-	 }
+         init_dir := chdir() | PATHCHAR
+         }
       /init_file := ""
       /init_fileType := ""
       if (init_dir[-1] ~== PATHCHAR) then init_dir ||:= PATHCHAR
@@ -177,26 +177,26 @@ class HFileDialog : FileDialog(
       file_extension.set_pos("100", "80")
       file_extension.set_size("100%-150", "20")
       file_extension.connect(self, "on_file_extension",
-			     SELECTION_CHANGED_EVENT)
+                             SELECTION_CHANGED_EVENT)
       file_extension.set_selection_list(["All Files(*.*)",
-					 "Unicon Files(*.icn)",
+                                         "Unicon Files(*.icn)",
                                          "Project Files(*.uprj)"])
       file_extension.set_selection(2)
       self.add(file_extension)
       l.set_linked_accel(file_extension)
 
       l := (get_directory_list(init_dir,
-			       fext_list[file_extension.get_selection()]) |
-	    [[],[]])
+                               fext_list[file_extension.get_selection()]) |
+            [[],[]])
 
       dlist := TextList("pos=25,110", "size=50%-38,100%-170", "select_one",
-			"selection_on_key_moves=f")
+                        "selection_on_key_moves=f")
       dlist.connect(self, "on_dlist", SELECTION_CHANGED_EVENT)
       dlist.set_contents(l[1])
       self.add(dlist)
 
       flist := TextList("pos=50%+12,110", "size=50%-38,100%-170", "select_one",
-			"selection_on_key_moves=f")
+                        "selection_on_key_moves=f")
       flist.connect(self, "on_flist", SELECTION_CHANGED_EVENT)
       flist.connect(self, "on_flist_lpress", MOUSE_PRESS_EVENT)
       flist.set_contents(l[2])
@@ -207,7 +207,7 @@ class HFileDialog : FileDialog(
       self.add(okay)
 
       cancel := TextButton("pos=66%,100%-30", "align=c,c", "label=Cancel",
-			   "accel=c")
+                           "accel=c")
       cancel.connect(self, "dispose", ACTION_EVENT)
       self.add(cancel)
    end

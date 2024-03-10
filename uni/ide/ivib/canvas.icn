@@ -18,7 +18,7 @@ $include "guih.icn"
 #
 
 # Length of resize line at bottom right corner
-$define RSW      12       
+$define RSW      12
 
 # Width of the border around the Canvas.
 $define EDGE      4
@@ -57,7 +57,7 @@ class Canvas : Component : SelectiveClassCoding(
    orig_w,
    orig_h,
    orig_x_spec,         # Original pos/size spec of an item being
-   orig_y_spec,		# resized/moved
+   orig_y_spec,         # resized/moved
    orig_w_spec,
    orig_h_spec,
    x_new,               # New pos/size spec of an item being resized/moved
@@ -115,9 +115,9 @@ class Canvas : Component : SelectiveClassCoding(
    method update_pos_label()
       if \self.selected then
          self.parent_dialog.pos_label.set_label(self.selected.x_spec || "," ||
-						self.selected.y_spec || " : " ||
-						self.selected.w_spec || "," ||
-						self.selected.h_spec)
+                                                self.selected.y_spec || " : " ||
+                                                self.selected.w_spec || "," ||
+                                                self.selected.h_spec)
       else
          self.parent_dialog.pos_label.set_label("")
    end
@@ -208,8 +208,8 @@ class Canvas : Component : SelectiveClassCoding(
       every t := !selections do {
          c := t.cp()
          #
-         # Set pos of new object. 
-         #           
+         # Set pos of new object.
+         #
          c.w := t.w
          c.h := t.h
          c.x_spec :=  c.get_x_alignment_offset() + 10 + 7 * (copy_count % 4) + t.x - t.parent.get_x_reference()
@@ -490,7 +490,7 @@ class Canvas : Component : SelectiveClassCoding(
       self.update_pos_label()
       self.invalidate()
    end
-   
+
    #
    # Even-space the selections horizontally.
    #
@@ -501,7 +501,7 @@ class Canvas : Component : SelectiveClassCoding(
 
       self.parent_dialog.push_undo()
 
-      if *self.selections = 1 then 
+      if *self.selections = 1 then
          return
 
       #
@@ -535,7 +535,7 @@ class Canvas : Component : SelectiveClassCoding(
 
       self.parent_dialog.push_undo()
 
-      if *self.selections = 1 then 
+      if *self.selections = 1 then
          return
 
       #
@@ -634,7 +634,7 @@ class Canvas : Component : SelectiveClassCoding(
       cn ||:= "_" || (name_table[cn] +:= 1)
 
       return cn
-   end      
+   end
 
    #
    # Generate code output (see also code.iol).
@@ -672,7 +672,7 @@ class Canvas : Component : SelectiveClassCoding(
 
       return c
    end
-   
+
    #
    # Minimum width of canvas.
    #
@@ -688,7 +688,7 @@ class Canvas : Component : SelectiveClassCoding(
    end
 
    #
-   # Called if the canvas has been modified. 
+   # Called if the canvas has been modified.
    #
    method set_modified()
       self.modified === 1 & return
@@ -714,7 +714,7 @@ class Canvas : Component : SelectiveClassCoding(
       local star := if \self.modified then "*" else ""
       WAttrib(self.get_parent_win(), "label=Ivib: "||star||(\self.filename|""))
    end
-   
+
    #
    # Set the filename.
    #
@@ -723,7 +723,7 @@ class Canvas : Component : SelectiveClassCoding(
       set_wTitle()
       self.parent_dialog.set_filename_label()
    end
-   
+
    #
    # Reset fields to an original state.
    #
@@ -817,7 +817,7 @@ class Canvas : Component : SelectiveClassCoding(
       c.event_handlers := copy(\self.event_handlers)
       c.set_pos(self.x, self.y)
       c.set_size(self.w, self.h)
-      # 
+      #
       # Copy the items.
       #
       c.items := []
@@ -827,7 +827,7 @@ class Canvas : Component : SelectiveClassCoding(
       return c
    end
 
-   # 
+   #
    # Open the preferences dialog.
    #
    method dialog()
@@ -850,14 +850,14 @@ class Canvas : Component : SelectiveClassCoding(
       self.Component.resize()
       parent_dlg := self.get_parent_dialog()
       WAttrib(Canvas_temp_win, "size=" || parent_dlg.get_w_reference() -
-	      self.x + 2 * EDGE || "," || parent_dlg.get_h_reference() -
-	      self.y + 2 * EDGE)
+              self.x + 2 * EDGE || "," || parent_dlg.get_h_reference() -
+              self.y + 2 * EDGE)
    end
 
    #
    # Reset the cloned and buffer windows created by gui.iol to match the
    # Canvas's own attributes, rather than the program's.
-   #  
+   #
    method reset_windows()
       local t1, t2
       Uncouple(self.cwin)
@@ -868,7 +868,7 @@ class Canvas : Component : SelectiveClassCoding(
       self.cbwin := (Clone ! ([t2] ||| self.dialog_struct.attribs))
       Uncouple(t1)
       Uncouple(t2)
-      # 
+      #
       # The above will change the main window's pointer if this attrib is set
       # in its attrib list; so reset the pointer to normal just in case it's
       # changed.
@@ -891,31 +891,31 @@ class Canvas : Component : SelectiveClassCoding(
          # between right and bottom edge of canvas and edge of window.
          #
          EraseArea(parent.win, self.x + self.w + EDGE, self.y - EDGE,
-		   parent.get_w_reference(), parent.get_h_reference())
+                   parent.get_w_reference(), parent.get_h_reference())
          EraseArea(parent.win, self.x - EDGE, self.y + self.h + EDGE,
-		   parent.get_w_reference(), parent.get_h_reference())
+                   parent.get_w_reference(), parent.get_h_reference())
          clear_borders_flag := &null
-      } 
+      }
 
       if \self.is_held then {
-         # 
+         #
          # During a drag of a component
          #
 
          #
-         # Copy saved original to buffer. 
+         # Copy saved original to buffer.
          #
          CopyArea(Canvas_temp_win, self.cbwin,
-		  0, 0, self.w, self.h, self.x, self.y)
+                  0, 0, self.w, self.h, self.x, self.y)
          #
          # Highlight moving object
          #
          moving.do_highlight(self.cbwin)
          #
          # Display from buffer.
-         #        
+         #
          CopyArea(self.cbwin, self.cwin,
-		  self.x, self.y, self.w, self.h, self.x, self.y)
+                  self.x, self.y, self.w, self.h, self.x, self.y)
          }
       else if \self.is_resizing then {
          #
@@ -926,25 +926,25 @@ class Canvas : Component : SelectiveClassCoding(
          # Copy saved original to buffer.
          #
          CopyArea(Canvas_temp_win, self.cbwin, 0, 0,
-		  parent.get_w_reference() - self.x + 2 * EDGE,
-		  parent.get_h_reference() - self.y + 2 * EDGE,
-		  self.x - EDGE, self.y - EDGE)
+                  parent.get_w_reference() - self.x + 2 * EDGE,
+                  parent.get_h_reference() - self.y + 2 * EDGE,
+                  self.x - EDGE, self.y - EDGE)
 
          #
          # Draw outline of new Canvas into buffer.
          #
          cw := Clone(self.cbwin, "linestyle=dashed")
          Rectangle(cw, self.x - EDGE, self.y - EDGE,
-		   self.w + 2 * EDGE, self.h + 2 * EDGE)
+                   self.w + 2 * EDGE, self.h + 2 * EDGE)
          Uncouple(cw)
-         
+
          #
          # Copy buffer to display.
          #
          CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE,
-		  parent.get_w_reference() - self.x + 2 * EDGE,
-		  parent.get_h_reference() - self.y + 2 * EDGE,
-		  self.x - EDGE, self.y - EDGE)
+                  parent.get_w_reference() - self.x + 2 * EDGE,
+                  parent.get_h_reference() - self.y + 2 * EDGE,
+                  self.x - EDGE, self.y - EDGE)
         }
       else {
          #
@@ -972,15 +972,15 @@ class Canvas : Component : SelectiveClassCoding(
          WAttrib(cw, "fg=red")
          every i := 1 to EDGE do
             DrawLine(cw, self.x + self.w - 1 - RSW, self.y + self.h - 1 + i,
-		     self.x + self.w - 1 + i, self.y + self.h - 1 + i,
-		     self.x + self.w - 1 + i, self.y + self.h - 1 - RSW)
+                     self.x + self.w - 1 + i, self.y + self.h - 1 + i,
+                     self.x + self.w - 1 + i, self.y + self.h - 1 - RSW)
 
          Uncouple(cw)
 
          if /buffer_flag then
             CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE,
-		     self.w + 2 * EDGE, self.h + 2 * EDGE, self.x - EDGE,
-		     self.y - EDGE)
+                     self.w + 2 * EDGE, self.h + 2 * EDGE, self.x - EDGE,
+                     self.y - EDGE)
          #self.update_pos_label()
       }
    end
@@ -991,9 +991,9 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method in_resize_corner()
       return ((self.x + self.w <= &x < self.x + self.w + EDGE) &
-	      (self.y + self.h + EDGE - RSW <= &y < self.y + self.h + EDGE)) |
+              (self.y + self.h + EDGE - RSW <= &y < self.y + self.h + EDGE)) |
              ((self.x + self.w + EDGE - RSW <= &x < self.x + self.w + EDGE) &
-	      (self.y + self.h <= &y < self.y + self.h + EDGE)) 
+              (self.y + self.h <= &y < self.y + self.h + EDGE))
    end
 
    #
@@ -1001,11 +1001,11 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method handle_event(e)
       if e === (Key_Up | Key_Down | Key_Left | Key_Right) then
-         handle_key_move(e) 
+         handle_key_move(e)
       else {
          case e of {
             &lpress : handle_lpress()
-            &ldrag : handle_ldrag()         
+            &ldrag : handle_ldrag()
             &lrelease : handle_lrelease()
             &rpress : handle_rpress()
          }
@@ -1055,13 +1055,13 @@ class Canvas : Component : SelectiveClassCoding(
 
          if orig_w_spec ~== w_new then
             moving.w_default := &null
-         
+
          if orig_h_spec ~== h_new then
             moving.h_default := &null
 
-         moving.set_pos(x_new, y_new)         
+         moving.set_pos(x_new, y_new)
          moving.set_size(w_new, h_new)
-         moving.resize() 
+         moving.resize()
          self.check_inside()
          self.update_pos_label()
          invalidate()
@@ -1109,7 +1109,7 @@ class Canvas : Component : SelectiveClassCoding(
             y1 <:= orig_y + orig_h - (orig_h - moving.min_height()) / 2
             h_new := orig_h + 2 * (y1 - (orig_y + orig_h))
          }  else if /moving.y_fixed | moving.y_align ~== "b" then {
-            y1 >:= self.y + self.h 
+            y1 >:= self.y + self.h
             y1 <:= orig_y + moving.min_height()
             h_new := orig_h + (y1 - (orig_y + orig_h))
             if moving.y_align == "b" then
@@ -1125,7 +1125,7 @@ class Canvas : Component : SelectiveClassCoding(
             x1 <:= orig_x + orig_w - (orig_w - moving.min_width()) / 2
             w_new := orig_w + 2 * (x1 - (orig_x + orig_w))
          } else if /moving.x_fixed | moving.x_align ~== "r" then {
-            x1 >:= self.x + self.w 
+            x1 >:= self.x + self.w
             x1 <:= orig_x + moving.min_width()
             w_new := orig_w + (x1 - (orig_x + orig_w))
             if moving.x_align == "r" then
@@ -1139,7 +1139,7 @@ class Canvas : Component : SelectiveClassCoding(
       if /moving.w_fixed then {
          if moving.x_align == "c" then {
             #
-            # x won't change; work out new width. 
+            # x won't change; work out new width.
             #
             x1 <:= max(self.x, orig_x - (self.x + self.w - orig_x - orig_w))
             x1 >:= orig_x + (orig_w - moving.min_width()) / 2
@@ -1176,7 +1176,7 @@ class Canvas : Component : SelectiveClassCoding(
          # Not in old container.  Post a message.
          #
          self.parent_dialog.info_label.set_label(if obj === self then
-			"Placed back in canvas" else "Placed inside container")
+                        "Placed back in canvas" else "Placed inside container")
 
          #
          # Take it out of the one it's currently in ...
@@ -1186,8 +1186,8 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # ... and put it in the new one.
          #
-         obj.place_inside(moving)            
-      } 
+         obj.place_inside(moving)
+      }
    end
 
    #
@@ -1260,7 +1260,7 @@ class Canvas : Component : SelectiveClassCoding(
                WAttrib(self.get_parent_win(), "pointer=bottom right corner")
                self.drag_x_offset := &x - (moving.x + moving.w)
                self.drag_y_offset := &y - (moving.y + moving.h)
-            }                              
+            }
             #
             # Moving, not resizing.
             #
@@ -1270,7 +1270,7 @@ class Canvas : Component : SelectiveClassCoding(
                self.drag_y_offset := &y - moving.y
             }
          }
-         
+
          #
          # Save original pos and size.
          #
@@ -1287,7 +1287,7 @@ class Canvas : Component : SelectiveClassCoding(
          # Copy present screen to Canvas_temp_win
          #
          CopyArea(self.cwin, Canvas_temp_win,
-		  self.x, self.y, self.w, self.h, 0, 0)
+                  self.x, self.y, self.w, self.h, 0, 0)
       } else if in_resize_corner() then {
          #
          # Save for possible push onto undo list.
@@ -1314,9 +1314,9 @@ class Canvas : Component : SelectiveClassCoding(
          # Copy present screen to Canvas_temp_win
          #
          CopyArea(self.cwin, Canvas_temp_win, self.x - EDGE, self.y - EDGE,
-		  self.get_parent_dialog().get_w_reference() -self.x + 2*EDGE,
-		  self.get_parent_dialog().get_h_reference() - self.y + 2*EDGE,
-		  0, 0)
+                  self.get_parent_dialog().get_w_reference() -self.x + 2*EDGE,
+                  self.get_parent_dialog().get_h_reference() - self.y + 2*EDGE,
+                  0, 0)
 
          #
          # Set offsets.
@@ -1358,7 +1358,7 @@ class Canvas : Component : SelectiveClassCoding(
 
          #
          # Calculate new x position and width
-         #  
+         #
          case self.resize_mode of {
             #
             # Resizing x from left hand side of object.
@@ -1374,22 +1374,22 @@ class Canvas : Component : SelectiveClassCoding(
             # Moving
             #
             default : move_horizontally(x1)
-         }   
+         }
 
          #
          # Calculate new y position and height
-         #  
+         #
          case self.resize_mode of {
             #
             # Resizing y from top of object.
             #
             1 | 2 : resize_up(y1)
-            
+
             #
             # Resizing y from bottom
             #
             3 | 4 : resize_down(y1)
-            
+
             #
             # Moving
             #
@@ -1399,7 +1399,7 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Move the moving object to new position.
          #
-         moving.set_pos(x_new, y_new)         
+         moving.set_pos(x_new, y_new)
          moving.set_size(w_new, h_new)
          moving.Component.resize()
 
@@ -1441,19 +1441,19 @@ class Canvas : Component : SelectiveClassCoding(
       }
    end
 
-   # 
+   #
    # Left button released.
    #
    method handle_lrelease()
       if \self.is_held then {
          if orig_x_spec ~== moving.x_spec | orig_y_spec ~== moving.y_spec |
             orig_w_spec ~== moving.w_spec | orig_h_spec ~== moving.h_spec then {
-            self.parent_dialog.push_onto_undo(self.tmp_dup)            
+            self.parent_dialog.push_onto_undo(self.tmp_dup)
             self.set_modified()
 
             if orig_w_spec ~== moving.w_spec then
                moving.w_default := &null
-            
+
             if orig_h_spec ~== moving.h_spec then
                moving.h_default := &null
 
@@ -1471,7 +1471,7 @@ class Canvas : Component : SelectiveClassCoding(
          # Resizing or moving an object.
          #
 
-         # 
+         #
          # Reset the pointer to normal.
          #
          WAttrib(self.get_parent_win(), "pointer=top left arrow")
@@ -1487,11 +1487,11 @@ class Canvas : Component : SelectiveClassCoding(
          self.update_pos_label()
          self.invalidate()
       } else if \self.is_resizing then {
-         # 
+         #
          # Finished resizing whole canvas.
          #
-         if orig_w ~= self.w | orig_h ~= self.h then {         
-            self.parent_dialog.push_onto_undo(self.tmp_dup)            
+         if orig_w ~= self.w | orig_h ~= self.h then {
+            self.parent_dialog.push_onto_undo(self.tmp_dup)
             self.set_modified()
          }
 
@@ -1500,7 +1500,7 @@ class Canvas : Component : SelectiveClassCoding(
          #
          is_resizing := &null
 
-         # 
+         #
          # Reset the pointer to normal.
          #
          WAttrib(self.get_parent_win(), "pointer=top left arrow")
@@ -1511,7 +1511,7 @@ class Canvas : Component : SelectiveClassCoding(
          self.resize()
          every (!self.items).reset(self)
 
-         # 
+         #
          # Redisplay after erasing any rubbish outside the new area
          #
          self.erase_and_display()
@@ -1549,7 +1549,7 @@ class Canvas : Component : SelectiveClassCoding(
    end
 
    #
-   # Unfix the selected objects. 
+   # Unfix the selected objects.
    #
    method unfix()
       local e
@@ -1615,11 +1615,11 @@ class Canvas : Component : SelectiveClassCoding(
    method still_inside(c)
    end
 
-   # 
+   #
    # Add c to the list of items.
    #
    method add(c)
-      put(items, c) 
+      put(items, c)
    end
 
    #
@@ -1671,7 +1671,7 @@ class Canvas : Component : SelectiveClassCoding(
          if /e.is_button_subclass then
             return alert_error("You can only have subclasses of Button _
                                 in a CheckBoxGroup")
-	 }
+         }
 
       self.parent_dialog.push_undo()
 
@@ -1727,7 +1727,7 @@ class Canvas : Component : SelectiveClassCoding(
       self.parent_dialog.push_undo()
 
       #
-      # Create a new button group.   
+      # Create a new button group.
       #
       n := button_groups.new()
 
@@ -1767,7 +1767,7 @@ class Canvas : Component : SelectiveClassCoding(
 
 
       #
-      # Clear selections. 
+      # Clear selections.
       #
       self.clear_selections()
 
@@ -1779,7 +1779,7 @@ class Canvas : Component : SelectiveClassCoding(
       self.invalidate()
    end
 
-   initially 
+   initially
       initial
          Canvas_temp_win := WOpen("canvas=hidden")
 
@@ -1790,7 +1790,7 @@ end
 #############################################################################
 #
 # Preferences for Canvas.
-#     
+#
 class CanvasPreferencesDialog : CommonDialog(
                  c,                       # The object being edited
                  okay,                    # Okay button
@@ -1821,12 +1821,12 @@ class CanvasPreferencesDialog : CommonDialog(
 
    #
    # Get the result
-   #  
+   #
    method get_okay_result()
       return self.okay_result
    end
 
-   method on_set_min_w() 
+   method on_set_min_w()
       min_w_spec.toggle_is_shaded()
    end
 
@@ -1842,10 +1842,10 @@ class CanvasPreferencesDialog : CommonDialog(
    method on_has_ticker()
       text_ticker_rate.toggle_is_shaded()
    end
-   
+
    method on_okay()
       local pair
-      # 
+      #
       # Validate data
       #
       if set_min_w.is_checked() & not(integer(min_w_spec.get_contents())) then
@@ -1853,7 +1853,7 @@ class CanvasPreferencesDialog : CommonDialog(
       if set_min_h.is_checked() & not(integer(min_h_spec.get_contents())) then
          return alert_error("Min height not integer")
       integer(self.gen_indent.get_contents()) |
-	 return alert_error("Indent not integer")
+         return alert_error("Indent not integer")
       integer(w_spec.get_contents()) | return alert_error("Invalid width")
       integer(h_spec.get_contents()) | return alert_error("Invalid height")
       util_check_attribs(self, attrib_tab.get_contents()) | fail
@@ -1880,7 +1880,7 @@ class CanvasPreferencesDialog : CommonDialog(
       c.gen_component_setup := if self.gen_component_setup.is_checked() then 1 else &null
       c.gen_init_dialog := if self.gen_init_dialog.is_checked() then 1 else &null
       c.gen_initially := if self.gen_initially.is_checked() then 1 else &null
-      c.gen_indent := integer(self.gen_indent.get_contents()) 
+      c.gen_indent := integer(self.gen_indent.get_contents())
       c.set_size(w_spec.get_contents(), h_spec.get_contents())
       c.resize()
       c.reset_windows()
@@ -1946,7 +1946,7 @@ class CanvasPreferencesDialog : CommonDialog(
       } else {
          min_h_spec.set_is_shaded()
          min_h_spec.set_contents(c.h)
-      } 
+      }
       pos_tab.add(min_h_spec)
 
       l := Label()
@@ -2040,7 +2040,7 @@ class CanvasPreferencesDialog : CommonDialog(
       gen_indent.set_align("l", "c")
       methods_tab.add(gen_indent)
       gen_indent.set_contents(c.gen_indent)
-      
+
       code_tab := TabItem()
       code_tab.set_label("Code")
       tabset.add(code_tab)

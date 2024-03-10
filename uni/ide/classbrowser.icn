@@ -1,10 +1,10 @@
 ###############################################################################
 #
-#	File:     classbrowser.icn
+#       File:     classbrowser.icn
 #
-#	Subject:  Class Browser
+#       Subject:  Class Browser
 #
-#	Author:   Nolan Clayton
+#       Author:   Nolan Clayton
 #
 #       Date:     September 22, 2003
 #
@@ -14,14 +14,14 @@
 #  class browser for icon/unicon programs.
 #
 #   ex.     -Files
-#	    |--foo.icn
-#		|-+class blah
-#		|--class whatever
-#		|    |--method bees 
-#		|--procedure good
+#           |--foo.icn
+#               |-+class blah
+#               |--class whatever
+#               |    |--method bees
+#               |--procedure good
 #
 #
-#   result from--> classbrowser foo.icn 
+#   result from--> classbrowser foo.icn
 #
 ###############################################################################
 #  Links:  graphics
@@ -32,7 +32,7 @@ $include "guih.icn"
 
 #
 # class  ClassBrowser : is a subclass of Tree used  to overide the draw and
-#		other methods.
+#               other methods.
 #
 class  ClassBrowser : Tree(
    last_selected,
@@ -40,7 +40,7 @@ class  ClassBrowser : Tree(
    files_root)
 
    #
-   # Draw Method: Each node depending on its type is drawn 
+   # Draw Method: Each node depending on its type is drawn
    # with a different image.
    #
    method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
@@ -50,71 +50,71 @@ class  ClassBrowser : Tree(
       dashed := Clone(cbwin, "pattern=gray", "fillstyle=textured")
       lp := xp
       every j := 1 to N.depth - 1 do {
-	 if any('fd', N.draw_line[j]) then
-	    DrawLine(dashed, lp + col_w / 2, yp - line_height / 2,
-		     lp + col_w / 2, yp + line_height / 2)
-	 lp +:= col_w # should this be in the preceding then-block?
-	 }
-      if N.depth > 0 then { 
-	 if N.draw_line[N.depth] == "d" then
-	    DrawLine(dashed, lp + col_w / 2, yp, lp + col_w / 2,
-		     yp + line_height / 2)
-	 else if N.draw_line[N.depth] == "f" then
-	    DrawLine(dashed, lp + col_w / 2, yp - line_height / 2,
-		     lp + col_w / 2, yp + line_height / 2)
-	 else if N.draw_line[N.depth] == "u" then
-	    DrawLine(dashed, lp + col_w / 2, yp - line_height / 2,
-		     lp + col_w / 2, yp)
-	 DrawLine(dashed, lp + col_w / 2, yp, lp + col_w + col_w / 2, yp)
-	 lp +:= col_w
-	 }
+         if any('fd', N.draw_line[j]) then
+            DrawLine(dashed, lp + col_w / 2, yp - line_height / 2,
+                     lp + col_w / 2, yp + line_height / 2)
+         lp +:= col_w # should this be in the preceding then-block?
+         }
+      if N.depth > 0 then {
+         if N.draw_line[N.depth] == "d" then
+            DrawLine(dashed, lp + col_w / 2, yp, lp + col_w / 2,
+                     yp + line_height / 2)
+         else if N.draw_line[N.depth] == "f" then
+            DrawLine(dashed, lp + col_w / 2, yp - line_height / 2,
+                     lp + col_w / 2, yp + line_height / 2)
+         else if N.draw_line[N.depth] == "u" then
+            DrawLine(dashed, lp + col_w / 2, yp - line_height / 2,
+                     lp + col_w / 2, yp)
+         DrawLine(dashed, lp + col_w / 2, yp, lp + col_w + col_w / 2, yp)
+         lp +:= col_w
+         }
 
       bmps := \N.bmps | default_bmps
       if (*N.subnodes = 0) & /N.always_expandable_flag then
-	 img := bmps[3]
+         img := bmps[3]
       else {
-	 if N.is_expanded() then {
-	    img := bmps[2]
-	    little := minus
-	    if *N.subnodes > 0 then
-	       DrawLine(dashed, lp + col_w / 2, yp, lp + col_w / 2,
-			yp + line_height / 2)
-	    }
-	 else {
-	    img := bmps[1]
-	    little := plus
-	    }
-	 if not (N.type == ("class" | "editor" | "file")) then
-	    little := editorimgs("elbow")
+         if N.is_expanded() then {
+            img := bmps[2]
+            little := minus
+            if *N.subnodes > 0 then
+               DrawLine(dashed, lp + col_w / 2, yp, lp + col_w / 2,
+                        yp + line_height / 2)
+            }
+         else {
+            img := bmps[1]
+            little := plus
+            }
+         if not (N.type == ("class" | "editor" | "file")) then
+            little := editorimgs("elbow")
 
-	 temp := editorimgs(N.type)
-	 if \temp then img := temp
+         temp := editorimgs(N.type)
+         if \temp then img := temp
 
-	 EraseArea(cbwin, lp - col_w / 2 - little_w / 2,
-		   yp - little_h / 2, little_w, little_h)
-	 DrawImageEx(cbwin, lp - col_w / 2 - little_w / 2,
-		     yp - little_h/2, little)
-	 }
+         EraseArea(cbwin, lp - col_w / 2 - little_w / 2,
+                   yp - little_h / 2, little_w, little_h)
+         DrawImageEx(cbwin, lp - col_w / 2 - little_w / 2,
+                     yp - little_h/2, little)
+         }
 
       DrawImageEx(cbwin, lp + col_w / 2 - bmp_w / 2, yp - bmp_h / 2, img)
       left_string(cbwin, lp + col_w + HIGHLIGHT_TEXT_SPACING, yp, N.label)
 
       if \selection_cw then
-	 FillRectangle(selection_cw, lp + col_w, yp - line_height / 2,
-		       TextWidth(cbwin, N.label) +
-		       2 * HIGHLIGHT_TEXT_SPACING, line_height)
+         FillRectangle(selection_cw, lp + col_w, yp - line_height / 2,
+                       TextWidth(cbwin, N.label) +
+                       2 * HIGHLIGHT_TEXT_SPACING, line_height)
 
       if \cursor_cw then {
-	 Rectangle(cursor_cw, lp + col_w, yp - line_height / 2,
-		   TextWidth(cbwin, N.label) + 2 * HIGHLIGHT_TEXT_SPACING,
-		   line_height)
-	 }
+         Rectangle(cursor_cw, lp + col_w, yp - line_height / 2,
+                   TextWidth(cbwin, N.label) + 2 * HIGHLIGHT_TEXT_SPACING,
+                   line_height)
+         }
 
       if \highlight_cw then {
-	 Rectangle(highlight_cw, lp + col_w, yp - line_height / 2,
-		   TextWidth(cbwin, N.label) + 2 * HIGHLIGHT_TEXT_SPACING,
-		   line_height)
-	 }
+         Rectangle(highlight_cw, lp + col_w, yp - line_height / 2,
+                   TextWidth(cbwin, N.label) + 2 * HIGHLIGHT_TEXT_SPACING,
+                   line_height)
+         }
 
       Uncouple(dashed)
    end
@@ -126,38 +126,38 @@ class  ClassBrowser : Tree(
    method handle_press(e)
       local l, lno, N, curr_sel, yp, xp, c, i
       if (view.x <= &x < view.x + view.w) &
-	 (view.y  <= &y < view.y + view.h) then {
-	 lno := (&y - view.y) / line_height
-	 l := lno + get_first_line()
+         (view.y  <= &y < view.y + view.h) then {
+         lno := (&y - view.y) / line_height
+         l := lno + get_first_line()
 
-	 if l <= get_last_line() then {
-	    N := contents[l]
+         if l <= get_last_line() then {
+            N := contents[l]
 
-	    if (N.depth > 0) & (*N.subnodes > 0) |
-	       \N.always_expandable_flag then {
-	       #
-	       # Check for click on little +/- icon.
-	       #
-	       yp := view.y + line_height / 2 + line_height * lno - little_h /2
-	       xp := get_left_pos() + (N.depth - 1) * col_w + little_w / 2
-	       if (xp <= &x < xp + little_w) & (yp <= &y < yp + little_h) then{
-		  #
-		  # Clicking on the little icon ends the sequence, and sets
-		  # the selection to the given node.
-		  #
-		  start_handle(e)
-		  curr_sel := object_get_selections()
-		  N.toggle_expanded()
-		  last_expanded := N
-		  tree_structure_changed()
-		  is_held := &null
-		  if not lang::equals(object_get_selections(), curr_sel) then
-		     selchange := 1
-		  fire(TREE_NODE_EXPANSION_EVENT, e)
-		  end_handle(e)
-		  }
-	       }
-	    if find(".icn",N.parentfile) then {
+            if (N.depth > 0) & (*N.subnodes > 0) |
+               \N.always_expandable_flag then {
+               #
+               # Check for click on little +/- icon.
+               #
+               yp := view.y + line_height / 2 + line_height * lno - little_h /2
+               xp := get_left_pos() + (N.depth - 1) * col_w + little_w / 2
+               if (xp <= &x < xp + little_w) & (yp <= &y < yp + little_h) then{
+                  #
+                  # Clicking on the little icon ends the sequence, and sets
+                  # the selection to the given node.
+                  #
+                  start_handle(e)
+                  curr_sel := object_get_selections()
+                  N.toggle_expanded()
+                  last_expanded := N
+                  tree_structure_changed()
+                  is_held := &null
+                  if not lang::equals(object_get_selections(), curr_sel) then
+                     selchange := 1
+                  fire(TREE_NODE_EXPANSION_EVENT, e)
+                  end_handle(e)
+                  }
+               }
+            if find(".icn",N.parentfile) then {
                every i:=!uidlog.FileTabSet.children do {
                   if i.label == N.parentfile then {
                      c := uidlog.FileTabSet.get_tabitem(N.parentfile)
@@ -168,7 +168,7 @@ class  ClassBrowser : Tree(
                      uidlog.FileTabSet.set_which_one(\c)
                      }
                   }
-	       }
+               }
             last_selected := contents[1]
             goto(N.lineno)
             }
@@ -207,33 +207,33 @@ class  ClassBrowser : Tree(
 
    #
    # Node Replace Method: Remove a Node with the same label as Tab Label
-   #			  from the tree (class browser).
+   #                      from the tree (class browser).
    method nodereplace(tab_label)
       local i
 
       every i := 1 to *files_root.subnodes do
-	 if tab_label == files_root.subnodes[i].label then {
-	    files_root.subnodes := files_root.subnodes[1 : i] |||
-				   files_root.subnodes[i + 1 : 0]
-	    return
-	    }
+         if tab_label == files_root.subnodes[i].label then {
+            files_root.subnodes := files_root.subnodes[1 : i] |||
+                                   files_root.subnodes[i + 1 : 0]
+            return
+            }
       set_root_node(files_root)
    end
    #
    # Go To Method: A Node was clicked. Set the focus on Tab with the label
    # Tab Label and go to and highlight the line number Line.
-   # 
+   #
    method goto(line)
       local ceb, comment_adjust:=0, i:=1
 
       ceb := ide.CurrentEditBox()
-      
+
       if find("#", ceb.contents[line-2] | ceb.contents[line-1]) then {
          comment_adjust +:= 2
          every i := 3 to 6 do
             if find("#", ceb.contents[line-i]) then comment_adjust +:= 1
          }
-             
+
       ceb.ensure_row_visible(line + ceb.get_max_lines())
       ceb.ensure_row_visible(line - comment_adjust)
       ceb.start_handle()
@@ -247,7 +247,7 @@ class  ClassBrowser : Tree(
    end
 
 initially()
-   self$Tree.initially() 
+   self$Tree.initially()
    fileimgs := table()
    files_root := Tag("editor", "Editor",0, &null)
 end
@@ -256,9 +256,9 @@ end
 # class Tag : is a subclass of Node used only to keep track of Node attribs
 #
 class Tag : Node (
-   type,	# what kind of node it is (method, $include, procedure).
-   lineno,	# The line number on which the Node occurs.
-   parentfile	# The label(Tab Item) of file in which the Node is a member.
+   type,        # what kind of node it is (method, $include, procedure).
+   lineno,      # The line number on which the Node occurs.
+   parentfile   # The label(Tab Item) of file in which the Node is a member.
    )
 
    method settype( x )
@@ -290,7 +290,7 @@ initially (args[])
    if *\args > 3 then {
       type := args[1]
       self$set_label( args[2] )
-      lineno := args[3] 
+      lineno := args[3]
       parentfile := args[4]
       }
    set_always_expandable()

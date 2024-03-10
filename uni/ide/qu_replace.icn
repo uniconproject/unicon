@@ -30,7 +30,7 @@ class qu_replace : Dialog(s1, s2, text_button_close, text_field_1, text_field_2,
       ceb.cursor_x := second_x
 
       ide.handle_select_str(e, first_x, second_x, ceb.cursor_y)
-      
+
       get_clipboard().set_content(replace_str)
       ceb.handle_paste()
    end
@@ -45,10 +45,10 @@ class qu_replace : Dialog(s1, s2, text_button_close, text_field_1, text_field_2,
 
       if s1 == "" then fail
       if ide.findstring(\s1) then {
-	 second_x := ceb.cursor_x
-	 first_x := second_x - *s1
-	 ide.handle_select_str(&null, first_x, second_x, ceb.cursor_y)
-	 }
+         second_x := ceb.cursor_x
+         first_x := second_x - *s1
+         ide.handle_select_str(&null, first_x, second_x, ceb.cursor_y)
+         }
       # wrap to begining of buffer
       else if /direction_flag then {
          uidlog.MsgBox.set_contents(["end of buffer.\n searching from the top."])
@@ -66,12 +66,12 @@ class qu_replace : Dialog(s1, s2, text_button_close, text_field_1, text_field_2,
 
    method on_text_button_find(ev)
       return do_find(text_field_1.get_contents(),
-		     check_box_backwards.is_checked_flag)
+                     check_box_backwards.is_checked_flag)
    end
 
    method handle_pnl_find(ev)
       return do_find(ide.text_field_search.get_contents(),
-		     ide.toggle_find_dir_btn.is_checked_flag)
+                     ide.toggle_find_dir_btn.is_checked_flag)
    end
 
 
@@ -82,7 +82,7 @@ class qu_replace : Dialog(s1, s2, text_button_close, text_field_1, text_field_2,
       s2 := text_field_2.get_contents()
       if s1 == "" then fail
       if s2 == "" then fail
-      
+
       second_x := ide.CurrentEditBox().cursor_x
       first_x := second_x - *s1
       wu_replace(ev, first_x, second_x, s2)
@@ -96,13 +96,13 @@ class qu_replace : Dialog(s1, s2, text_button_close, text_field_1, text_field_2,
       s2 := text_field_2.get_contents()
       if s1 == "" then fail
       if s2 == "" then fail
-      
+
       while ide.findstring(s1) do {
          second_x := ide.CurrentEditBox().cursor_x
          first_x := second_x - (*s1)
-         wu_replace(ev, first_x, second_x, s2) 
-	 }
-      ide.modified := 1      
+         wu_replace(ev, first_x, second_x, s2)
+         }
+      ide.modified := 1
    end
 
    method on_check_box_backwards(ev)
@@ -212,7 +212,7 @@ class qu_replace : Dialog(s1, s2, text_button_close, text_field_1, text_field_2,
 
    initially
       self.Dialog.initially()
-      
+
 end
 
 

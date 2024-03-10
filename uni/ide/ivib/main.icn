@@ -92,7 +92,7 @@ end
 #
 # This listens for actions to either the menu/button object creation items.
 #
-class ObjectActionListener(main, object_ui) 
+class ObjectActionListener(main, object_ui)
    method on_event(event)
       main.create_in_canvas(object_ui)
    end
@@ -128,7 +128,7 @@ class Main : CommonDialog(
    new,                     # New canvas function
    orig_canvas_width,       # Variables for re-sizing canvas
    orig_canvas_height,      #
-   tool_area_height,        # 
+   tool_area_height,        #
    prog_preferences,        # Program preferences function
    centre_horiz,            # Centre horizontally command
    grid,                    # Grid command
@@ -142,7 +142,7 @@ class Main : CommonDialog(
    centre_vert,             # Centre vertically command
    popup_component,         # Popup on component
    popup_component_dialog,
-   popup_component_delete, 
+   popup_component_delete,
    popup_component_fix,     # Vertically fix command
    popup_component_unfix,   # Unfix command
    popup_component_save,    # Save component command
@@ -177,7 +177,7 @@ class Main : CommonDialog(
    grid_button,
    copy_button,
    last_icn_dir,
-   source		    # source file (list of strings)
+   source                   # source file (list of strings)
    )
 
    method show_tooltip(x, y, label)
@@ -211,7 +211,7 @@ class Main : CommonDialog(
       self.undo_button.set_is_shaded()
    end
 
-   # 
+   #
    # Get undo item
    #
    method get_undo()
@@ -220,7 +220,7 @@ class Main : CommonDialog(
       if *undo_list = 0 then
          clear_undo()
       return res
-   end 
+   end
 
    #
    # Push an undo item
@@ -249,7 +249,7 @@ class Main : CommonDialog(
       self.redo_button.set_is_shaded()
    end
 
-   # 
+   #
    # Get redo item
    #
    method get_redo()
@@ -258,7 +258,7 @@ class Main : CommonDialog(
       if *redo_list = 0 then
          clear_redo()
       return res
-   end 
+   end
 
    #
    # Push an redo item
@@ -278,11 +278,11 @@ class Main : CommonDialog(
       if \self.canvas.modified then
          s ||:= " *"
       self.filename_label.set_label(file_name(s))
-   end      
+   end
 
    #
    # Special custom show to allow a popup during init
-   #         
+   #
    method custom_show(a)
       local s, f, c
       self.args := a
@@ -339,7 +339,7 @@ class Main : CommonDialog(
    end
 
    #
-   # Push a canvas onto undo list. 
+   # Push a canvas onto undo list.
    #
    method push_onto_undo(d)
       #
@@ -537,7 +537,7 @@ class Main : CommonDialog(
       local d, t
 
       if /self.canvas.selected then
-         op_preferences()  
+         op_preferences()
       else {
          t := canvas.dup()
          d := canvas.selected.dialog()
@@ -550,7 +550,7 @@ class Main : CommonDialog(
          }
       }
    end
-   
+
    #
    # Add a new CanvasComponent using the given CanvasComponentUI to
    # create it.
@@ -651,7 +651,7 @@ class Main : CommonDialog(
    end
 
    #
-   # Save as... operation 
+   # Save as... operation
    #
    method op_save_as()
       local fd, s, c
@@ -728,8 +728,8 @@ class Main : CommonDialog(
    #
    method op_about()
       local d
-      d := InfoDialog(["Ivib Version : " || version_number, 
-                       "Date : " || version_date, 
+      d := InfoDialog(["Ivib Version : " || version_number,
+                       "Date : " || version_date,
                        "Author : " || version_author], "About ivib")
       d.show_modeless(self)
 
@@ -787,34 +787,34 @@ class Main : CommonDialog(
       local s
       source := [ ]
       repeat {
-	 if not (s := read(f)) then {
-	    cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
-	    cd.show_modal()
-	    if not cd.result() then fail
-	    # no ivib layout, need to append
-	    close(f)
-	    if f := open(fname, "w") then {
-	       # write L
-	       every write(f, !source)
-	       # write the empty layout
-	       append_ivib(f)
-	       close(f)
-	       source := [ ]
-	       if f := open(fname) then {
-		  alert_error("added an Ivib interface")
-		  next
-		  }
-	       else return alert_error("Failed to append layout to " || fname)
-	       }
-	    else
-	       return alert_error("No Ivib layout in " || fname)
-	    }
-	 if s == v1_marker then
-	    return load_v1(f, fname)
-	 if s == v2_marker then
-	    return load_v2(f, fname)
-	 put(source, s)
-	 }
+         if not (s := read(f)) then {
+            cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
+            cd.show_modal()
+            if not cd.result() then fail
+            # no ivib layout, need to append
+            close(f)
+            if f := open(fname, "w") then {
+               # write L
+               every write(f, !source)
+               # write the empty layout
+               append_ivib(f)
+               close(f)
+               source := [ ]
+               if f := open(fname) then {
+                  alert_error("added an Ivib interface")
+                  next
+                  }
+               else return alert_error("Failed to append layout to " || fname)
+               }
+            else
+               return alert_error("No Ivib layout in " || fname)
+            }
+         if s == v1_marker then
+            return load_v1(f, fname)
+         if s == v2_marker then
+            return load_v2(f, fname)
+         put(source, s)
+         }
    end
 
    #
@@ -871,7 +871,7 @@ class Main : CommonDialog(
       local s, t
       t := ""
       while s := read(f) do {
-	 put(source, s)
+         put(source, s)
          if s[1] == "#" then
             t ||:= s[2:0]
          else
@@ -894,7 +894,7 @@ class Main : CommonDialog(
       if not(c := lang::decode(s)) then
          return alert_error("Invalid file format")
 
-      d := InfoDialog(["Ivib v1 file successfully loaded.", 
+      d := InfoDialog(["Ivib v1 file successfully loaded.",
                        "",
                        "NB - some manual editing may be needed after",
                        "the file is next saved."],
@@ -971,7 +971,7 @@ class Main : CommonDialog(
              else
                 self.op_save_as()
          }
-      }      
+      }
    end
 
    #
@@ -1592,7 +1592,7 @@ end
 #############################################################################
 #
 # Preferences for program
-#     
+#
 class Preferences : CommonDialog(c, okay, cancel, undo_size)
    method on_okay()
       integer(self.undo_size.get_contents()) | return alert_error("Non-integer undo size")

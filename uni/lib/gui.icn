@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     gui.icn
+#       File:     gui.icn
 #
-#	Subject:  Set of classes for GUI objects in Unicon
+#       Subject:  Set of classes for GUI objects in Unicon
 #
-#	Authors:  Robert Parlett, Clint Jeffery, Susie Jeffery
+#       Authors:  Robert Parlett, Clint Jeffery, Susie Jeffery
 #
-#	Date:     16 January, 2001
+#       Date:     16 January, 2001
 #
 ############################################################################
 #
@@ -375,7 +375,7 @@ class _Dialog : Container(
    end
 
    method process_event(e)
-   local res, found, c, wrap, nw, nh, t 
+   local res, found, c, wrap, nw, nh, t
       if integer(e) = -11 then {
          dispose(1)
          }
@@ -398,7 +398,7 @@ class _Dialog : Container(
          while Pending(self.win)[1] === e do {
             e := Event(self.win)
 #            delay(50)
-	    }
+            }
          nw := &x
          nh := &y
 
@@ -424,7 +424,7 @@ class _Dialog : Container(
       if e === (&ldrag | &rdrag | &mdrag) then {
          while *Pending(self.win) > 0 & Pending(self.win)[1] === e do {
             e := Event(self.win)
-	    }
+            }
          }
 
       every E := (\self.unique_flag)$handle_event(e) do {
@@ -544,16 +544,16 @@ class MetaComponent()
             (val := tab(0))
             }
          if find(",", val) then {
-	    vals := []
-	    val ? {
-	       while put(vals, tab(find(","))) do move(1)
-	       put(vals, tab(0))
-	       }
-	    self.__m["set_" || attr] ! (push(vals, self))
-	    }
-	 else
-	    self.__m["set_" || attr] (self, val)
-	 }
+            vals := []
+            val ? {
+               while put(vals, tab(find(","))) do move(1)
+               put(vals, tab(0))
+               }
+            self.__m["set_" || attr] ! (push(vals, self))
+            }
+         else
+            self.__m["set_" || attr] (self, val)
+         }
    end
 
 end
@@ -758,13 +758,13 @@ end
 $include "_panel.icn"
 
 # a panel on which a background attribute should work
-# The parameter "buffer_flag" just tells it whether to draw directly into the 
+# The parameter "buffer_flag" just tells it whether to draw directly into the
 # visible window, or to use its non-visible buffer window instead (this is
 # used for double-buffering).
 
 class FillPanel : Panel()
    method display(buffer_flag)
-      EraseRectangle(if /buffer_flag then self.cwin else self.cbwin, 
+      EraseRectangle(if /buffer_flag then self.cwin else self.cbwin,
                      self.x, self.y, self.w, self.h)
       self.Panel.display(buffer_flag)
    end
@@ -800,7 +800,7 @@ procedure CacheImage(win,x,y,w,h,filename)
    /cache := table()
    /zoomed := table()
    / (cache[filename]) := open(filename,"g",
-			       "canvas=hidden","image="||filename) |
+                               "canvas=hidden","image="||filename) |
        stop("can't open ", image(filename))
 
    wc := cache[filename]
@@ -813,7 +813,7 @@ procedure CacheImage(win,x,y,w,h,filename)
    if / (zoomed[filename][w||","||h]) :=
        open(filename,"g","size="||w||","||h, "canvas=hidden") then {
        Zoom(wc, zoomed[filename][w||","||h],
-	    0,0,WAttrib(wc,"width"),WAttrib(wc,"height"),0,0,w,h)
+            0,0,WAttrib(wc,"width"),WAttrib(wc,"height"),0,0,w,h)
        }
    zc := zoomed[filename][w||","||h]
    CopyArea(zc, win, 0, 0, w, h, x, y)

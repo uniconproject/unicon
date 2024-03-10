@@ -13,12 +13,12 @@
 
 package json
 
-class ErrorHandler(filename, 
-                   lineno, 
+class ErrorHandler(filename,
+                   lineno,
                    error,
                    errout,
                    tag,
-                   strict	# Flag to enforce strict JSON if not null
+                   strict       # Flag to enforce strict JSON if not null
                   )
    method init(filename)
       self.filename := filename
@@ -33,7 +33,7 @@ class ErrorHandler(filename,
    end
 
    method constr_msg(s)
-      if \filename then 
+      if \filename then
          return tag || " " || filename || ":" || lineno || ": " || s
       else
          return tag || " " ||  s
@@ -58,7 +58,7 @@ class ErrorHandler(filename,
    #
    # Write out (error), if it exists, to (errout)
    #
-   method get_err() 
+   method get_err()
        if \error then {
           write(errout, error)
           }
@@ -94,7 +94,7 @@ $endif
 #
 # For scanner speed testing
 #
-$ifdef SCAN 
+$ifdef SCAN
 procedure main(argv)
    local input
    if *argv=0 then {
@@ -122,7 +122,7 @@ $endif
 # If the conversion fails, jtou() attempts to use s as a
 # filename. If it fails, then the function fails.
 #
-# This procedure is a generator. It will return the 
+# This procedure is a generator. It will return the
 # corresponding unicon objects, one-by-one, until the
 # conversion is complete.
 #
@@ -142,9 +142,9 @@ procedure jtou(s,strict,mode,error)
       tok_gen := create json_scanner(s,jerror)
       if u := json_parser(tok_gen,jerror) then {
          suspend u
-	 while u := json_parser(tok_gen,jerror) do suspend u
-	 fail
-	 }
+         while u := json_parser(tok_gen,jerror) do suspend u
+         fail
+         }
       # string conversion failed, run as file
       else {
          if not (file := open(s)) then {
@@ -168,8 +168,8 @@ procedure jtou(s,strict,mode,error)
             jerror.init(s)
             }
          # string mode
-         "s" : j := s 
-         default: return jerror.write_err("Invalid mode "||image(mode)) 
+         "s" : j := s
+         default: return jerror.write_err("Invalid mode "||image(mode))
          }
       }
    # parse
@@ -225,7 +225,7 @@ end
 #
 # Given a Unicon structure, produce a JSON equivalent if possible.
 # This function add meta data to the output to aid in reconstructing
-# the original Unicon structure. 
+# the original Unicon structure.
 # <[param x - a Unicon structure]>
 # <[param strict - Flag for specifing strict JSON syntax (non-null)]>
 # <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
@@ -234,7 +234,7 @@ end
 procedure utoj(x,strict,error)
    local j;
    jerror := ErrorHandler(error,strict)
-    
+
    if j := _utoj(x,jerror) then
       return j
 
@@ -277,14 +277,14 @@ procedure _utoj(u,jerror, raw)
       "string": {
          return      if u == "__true__" then "true"
                 else if u == "__false__" then "false"
-	        else jsonify_string(u,jerror)
+                else jsonify_string(u,jerror)
          }
       "integer" | "real": return image(u)
       "list": {
          s := "["
          if *u > 0 then s ||:= _utoj(u[1],jerror, raw)
          every i := 2 to *u do {
-	    s ||:= ("," || _utoj(u[i],jerror, raw)) | fail
+            s ||:= ("," || _utoj(u[i],jerror, raw)) | fail
             }
          s ||:= "]"
          return s
@@ -297,7 +297,7 @@ procedure _utoj(u,jerror, raw)
          i := 1
          every x := !u do {
             if i>1 then s ||:= ","
-	    s ||:= _utoj(x,jerror, raw) | fail
+            s ||:= _utoj(x,jerror, raw) | fail
             i +:= 1
             }
          if \raw then
@@ -318,11 +318,11 @@ procedure _utoj(u,jerror, raw)
          else
             s := "{\"__unitable__\":1"
          every k := key(u) do {
-	    if s[-1] ~== "{" then s ||:= ","
-            if type(k) == "string" then 
+            if s[-1] ~== "{" then s ||:= ","
+            if type(k) == "string" then
                s ||:= jsonify_string(k,jerror, raw)||":"|| _utoj(u[k],jerror, raw) | fail
             else {
-               if \(jerror.strict) then 
+               if \(jerror.strict) then
                   s ||:= "\""||image(k)||"\":"||_utoj(u[k],jerror, raw) | fail
                else
                   s ||:= _utoj(k,jerror)||":"||_utoj(u[k],jerror, raw) | fail
@@ -376,7 +376,7 @@ procedure _utoj(u,jerror, raw)
 end
 
 #
-# Procedure for converting Unicon escapes and escape sequences to valid 
+# Procedure for converting Unicon escapes and escape sequences to valid
 # JSON escape sequences.
 #
 procedure jsonify_string(s,jerror)
@@ -404,7 +404,7 @@ procedure jsonify_string(s,jerror)
             "\" contains an illegal double quote for JSON strings")
          # Handle escape sequences
          if c == "\\" then {
-            case (c := move(1)) | 
+            case (c := move(1)) |
                   return jerror.set_err("Incomplete escape sequence") of {
                # JSON escapes
                "\\": ns ||:= "\\\\"
@@ -436,7 +436,7 @@ procedure jsonify_string(s,jerror)
                      }
                   ns ||:= "\\u00"||tmp
                   }
-               !oct: { # octal 
+               !oct: { # octal
                   # Taken from octcode() in escape.icn
                   tmp := c || tab(many(oct)) | ""
                   if (i := *tmp) > 3 then { # back off if too large
@@ -466,7 +466,7 @@ end
 # Given an octal string, returns a hexadecimal string. Uses Unicon octal
 # specifications
 #
-procedure _octtohex(s) 
+procedure _octtohex(s)
    local val := 0, len := *s, i := len
    while i > 0 do {
       val +:= integer(s[i]) * 8^(len-i)
@@ -479,13 +479,13 @@ end
 # Given an integer value, return a hexidecimal string
 #
 procedure _dectohex(val)
-   local ns := "", rem 
+   local ns := "", rem
 
    while val > 0 do {
       rem := val % 16
       val := integer(val/16)
 
-      if rem < 10 then ns := string(rem) || ns 
+      if rem < 10 then ns := string(rem) || ns
       else case rem of {
          10: ns := "A" || ns
          11: ns := "B" || ns
@@ -495,7 +495,7 @@ procedure _dectohex(val)
          15: ns := "F" || ns
          }
       }
-   return ns         
+   return ns
 end
 
 #####################
@@ -503,13 +503,13 @@ end
 #####################
 
 #
-# A string-scanning generator - takes a JSON-formatted string 
+# A string-scanning generator - takes a JSON-formatted string
 # and returns single JSON tokens until scanning is complete
 #
 procedure json_scanner(s,jerror)
    local token
    local ws, operator, number
-   local end_pos := *s + 1 
+   local end_pos := *s + 1
 
    ws := ' \t'
    operator := '{}[]:,'
@@ -549,8 +549,8 @@ end
 #
 procedure scan_true(jerror)
    if move(3) == "rue" then return "true"
-   else 
-      return jerror.set_err("Expected JSON true: " || 
+   else
+      return jerror.set_err("Expected JSON true: " ||
              "t"||tab(upto(' \t\n{}[]:,')\1))
 end
 
@@ -559,8 +559,8 @@ end
 #
 procedure scan_false(jerror)
    if move(4) == "alse" then return "false"
-   else 
-      return jerror.set_err("Expected JSON false: " || 
+   else
+      return jerror.set_err("Expected JSON false: " ||
              "f"||tab(upto(' \t\n{}[]:,')\1))
 end
 
@@ -568,9 +568,9 @@ end
 # String scanning helper function to retrieve JSON value 'null'
 #
 procedure scan_null(jerror)
-   if move(3) == "ull" then return "null" 
-   else 
-      return jerror.set_err("Expected JSON null: " || 
+   if move(3) == "ull" then return "null"
+   else
+      return jerror.set_err("Expected JSON null: " ||
              "n"||tab(upto(' \t\n{}[]:,')\1))
 end
 
@@ -585,7 +585,7 @@ procedure scan_ctrl_char(jerror)
    #
    # This code is modified from escape() from IPL file escape.icn
    #
-   case (c := move(1)) | 
+   case (c := move(1)) |
         return jerror.set_err("Incomplete JSON escape sequence") of {
       # JSON escapes
       "b":  return "\b"
@@ -597,15 +597,15 @@ procedure scan_ctrl_char(jerror)
       "/":  return "/"
       "\"":  return "\""
       "u":  {
-         # 
+         #
          # Code taken from hexcode() in escape.icn and modified to handle
          # unicode escape sequence conversion. JSON supports unicode from
          # 0020-10FFFF, but this code restricts unicode to 16-bits to remove
          # ambiguity from Unicon and JSON escape conversion.
-         # 
+         #
          # If the unicode is extended ASCII, then return a Unicon hex escape.
          # Otherwise try to return a unicode escape
-         # 
+         #
          ns := tab(many(hex)) | ""
          if (i := *ns) > 4 then {
             ns := ns[1:5]
@@ -623,7 +623,7 @@ procedure scan_ctrl_char(jerror)
 end
 
 #
-# String scanning helper function that identifies a JSON string and 
+# String scanning helper function that identifies a JSON string and
 # returns a Unicon string
 #
 procedure scan_string(jerror)
@@ -632,14 +632,14 @@ procedure scan_string(jerror)
 
    while any(~'\"', c := move(1)) do {
       if c ~== "\\" then str ||:= c
-      else { 
+      else {
          if ctrl := scan_ctrl_char(jerror) then str ||:= ctrl
          else fail
          }
       }
    if move(1) == "\"" then return "\""||str||"\""
    else return jerror.set_err(
-               "JSON string missing terminating double-quotes: " || str) 
+               "JSON string missing terminating double-quotes: " || str)
 end
 
 #
@@ -648,14 +648,14 @@ end
 procedure scan_number(c,jerror)
    local num_str
    num_str := ""
- 
+
    # if negative
    if c == "-" then {
       num_str ||:= c
       c := move(1)
       }
 
-   # integer 
+   # integer
    if any(&digits,c) then {
 
       # append
@@ -664,31 +664,31 @@ procedure scan_number(c,jerror)
       # c is 0
       if c == "0" then {
          # number starting with 0 is either 0, frac, or exp
-         if any(&digits,move(1)) then 
-            return jerror.set_err("JSON int cannot have leading zero: " || 
+         if any(&digits,move(1)) then
+            return jerror.set_err("JSON int cannot have leading zero: " ||
                    num_str)
 
-         } 
+         }
 
       # c is 1-9, get all sequential digits
-      else num_str ||:= tab(many(&digits)) 
+      else num_str ||:= tab(many(&digits))
       }
-   
-   # fraction 
+
+   # fraction
    if (c := move(1)) == "." then {
 
       # append .
       num_str ||:= c
-        
+
       # get any/all sequential digits
-      if not (num_str ||:= tab(many(&digits))) then 
-         return jerror.set_err("Expected digits after '.' in JSON frac: " || 
+      if not (num_str ||:= tab(many(&digits))) then
+         return jerror.set_err("Expected digits after '.' in JSON frac: " ||
                 num_str)
       }
 
    # exponent
-   if any('eE',c := move(1)) then { 
-        
+   if any('eE',c := move(1)) then {
+
       # append e|E
       num_str ||:= c
 
@@ -697,10 +697,10 @@ procedure scan_number(c,jerror)
       else if (c := move(1)) == "+" then {}
 
       # check for sequential digits
-      if not (num_str ||:= tab(many(&digits))) then 
+      if not (num_str ||:= tab(many(&digits))) then
          return jerror.set_err("Expected digits after 'e' in JSON exp: " ||
                 num_str)
-      } 
+      }
    return num_str
 end
 
@@ -726,9 +726,9 @@ procedure json_parser(token_gen,jerror)
    initial {
       parse_funcs := table()
 
-      parse_funcs["{"] := parse_object 
-      parse_funcs["["] := parse_array 
-      parse_funcs["\""] := parse_string 
+      parse_funcs["{"] := parse_object
+      parse_funcs["["] := parse_array
+      parse_funcs["\""] := parse_string
       parse_funcs["-"] := parse_number
       parse_funcs["0"] := parse_number
       parse_funcs["1"] := parse_number
@@ -793,7 +793,7 @@ end
 # there are delimiting single-quotes within the double-quotes.
 #
 procedure parse_string(token, token_gen, parse_funcs, jerror)
-   if token[2] == "\'" & token[-2] == "\'" then 
+   if token[2] == "\'" & token[-2] == "\'" then
       return cset(token[3:-2])
    else
       return token[2:-1]
@@ -801,7 +801,7 @@ end
 
 #
 # Helper parsing function that recognizes the production rules for a
-# JSON object. Returns a Unicon object (table, class, record, set, or cset) 
+# JSON object. Returns a Unicon object (table, class, record, set, or cset)
 # if successfully parsed.
 #
 procedure parse_object(token, token_gen, parse_funcs, jerror)
@@ -809,7 +809,7 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
    local constr, attribs, fields, uni_object, i
    prev_token := token
 
-   # {json_object} is a table which holds the traditional JSON dictionary. 
+   # {json_object} is a table which holds the traditional JSON dictionary.
    # {uni_object} is a unicon object which uses unique JSON object encoding,
    # "__uniset__", "__unicset__", "__unitable__", "__uniclass__", and
    # "__unirecord__". {json_object} is always built in case the unique Unicon
@@ -817,7 +817,7 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
    while tok := @token_gen do {
       # end of object, allow for trailing comma, e.g. {... ,}
       if tok == "}"  then {
-         if \constr then 
+         if \constr then
             return constr ! attribs # class/record
          else if \uni_object then
             return uni_object # set/cset
@@ -836,21 +836,21 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
       else if prev_token == ("{"|",") then {
          # Dictionary - JSON string as key only
          if \(jerror.strict) then {
-            if tok[1] ~== "\"" then 
+            if tok[1] ~== "\"" then
                return jerror.set_err("Expecting JSON string for object key, "||
                       "got "||tok)
             json_key := tok[2:-1]
             }
          # For Unicon tables where the key can be any JSON value
          else {
-            if /(func := parse_funcs[tok[1]]) then 
+            if /(func := parse_funcs[tok[1]]) then
                return jerror.set_err("Invalid JSON object key value: "||tok)
             prev_token := tok
             json_key := func(tok, token_gen, parse_funcs, jerror)
             }
 
          # Colon
-         if (tok := @token_gen) == ":" then prev_token := tok 
+         if (tok := @token_gen) == ":" then prev_token := tok
          else return jerror.set_err("Expected colon in JSON pair before: "||tok)
 
          # JSON value
@@ -858,7 +858,7 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
             if \(func := parse_funcs[tok[1]]) then {
                json_value := func(tok, token_gen, parse_funcs, jerror)
                prev_token := "value"
-               
+
                # Special case for handling Unicon data types
                if \first then {
                   first := &null
@@ -872,36 +872,36 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
                         next
                         }
                      # {"__uniset__":[...]}
-                     "__uniset__": { 
-                        if type(json_value) == "list" then 
+                     "__uniset__": {
+                        if type(json_value) == "list" then
                            uni_object := set(json_value)
                         json_object := table()
                         json_object[json_key] := json_value
                         next
                         }
                      # {"__unirecord__":"RecordName", ...}
-                     # 
+                     #
                      # Try to create a class/record with its constructor.
                      # If the constructor doesn't exist, return a table instead
-                     "__unirecord__": { 
+                     "__unirecord__": {
                         if constr := proc(json_value) then {
                            tmp := constr()
                            fields := [: fieldnames(tmp) :] | []
                            #fields := []
                            #every put(fields, fieldnames(tmp))
-                           attribs := list(*fields) 
+                           attribs := list(*fields)
                            next
                            }
                         json_object := table()
                         }
                      # {"__uniclass__":"ClassName", ...}
-                     # 
+                     #
                      # Try to create a class with its constructor.
                      # If the constructor doesn't exist, return a table instead
-                     "__uniclass__": { 
+                     "__uniclass__": {
                         if constr := proc(json_value) then {
                            fields := membernames(json_value)
-                           attribs := list(*fields) 
+                           attribs := list(*fields)
                            next
                            }
                         json_object := table()
@@ -917,15 +917,15 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
                      default: {
                         json_object := table()
                         }
-                     } 
+                     }
                   }
                if \json_object then {
                   # Build a table
-                  if type(\uni_object) ~== "table" then 
+                  if type(\uni_object) ~== "table" then
                      uni_object := &null
                   json_object[json_key] := json_value
                   }
-               else { 
+               else {
                   # Build an attribute list for the class/record constructor.
                   # Check field names in case the JSON was user-constructed
                   # instead of from utoj*()
@@ -933,7 +933,7 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
                   every field := !fields do {
                      if field == json_key then {
                         attribs[i] := json_value
-                        break 
+                        break
                         }
                      i +:= 1
                      }
@@ -941,7 +941,7 @@ procedure parse_object(token, token_gen, parse_funcs, jerror)
                }
             else return jerror.set_err("Expected JSON value in JSON pair" ||
                         ", got: " || tok)
-            } 
+            }
          else return jerror.set_err("JSON pair missing JSON value")
          }
       else return jerror.set_err("Token violated JSON object syntax: " || tok)
@@ -974,22 +974,22 @@ procedure parse_array(token, token_gen, parse_funcs, jerror)
 
       # value
       else if \(func := parse_funcs[tok[1]]) then {
-         if prev_token == ("["|",") then { 
+         if prev_token == ("["|",") then {
             json_value := func(tok, token_gen, parse_funcs, jerror)
             prev_token := "value"
-            put(json_array, json_value) 
+            put(json_array, json_value)
             }
          else return jerror.set_err("Expected comma in JSON array before: " ||
               tok)
          }
-        
+
       # invalid array syntax
-      else { 
+      else {
          if prev_token == ("["|",") then
             return jerror.set_err("Expected JSON value, got: " || tok)
          else
-            return jerror.set_err("Token violated JSON array syntax: " || 
-                tok) 
+            return jerror.set_err("Token violated JSON array syntax: " ||
+                tok)
          }
       }
    return jerror.set_err("Expected terminating ] for JSON array")
@@ -1079,12 +1079,12 @@ procedure jss_validate(data, schema, strict, error)
 end
 
 #<p>
-# 
+#
 # Validate a specific value only at the current level given a schema of that value.
 #
 # <[param x is the table]>
 # <[param val is the name of the value of a property]>
-# 
+#
 # <[returns "" if the valid otherwise returns the error string]>
 #
 #</p>
@@ -1203,7 +1203,7 @@ procedure validate_property(x, val)
                   return val || " is too small. Must be greater than or equal to " || minLength || " characters."
 
             # TODO
-	    pattern := x["pattern"]
+            pattern := x["pattern"]
             return z
             }
          }
@@ -1304,11 +1304,11 @@ procedure _jsvalidation(obj, sch, schRoot)
                               if check ~== "" then return check
                               inc := inc + 1
                               }
-			}
+                        }
                      }
                   }
                }
-            } 
+            }
          else{
             pf := validate_property(sch["properties"][k], obj[k])
             if pf ~== "" then return pf

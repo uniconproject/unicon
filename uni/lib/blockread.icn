@@ -103,19 +103,19 @@ class BlockRead : Object (f, bSize, buffer)
    method readBlock(n)
       /n := bSize
       if s := ::reads(f, n) then {
-	 i := *s
-	 while (i > 0) & (s[i] ~== "\n") do {
-	    i -:= 1
-	    }
-	 nbuf := buffer
-	 buffer := s[i+1:0]
-	 return nbuf || s[1+:i]
-	 }
+         i := *s
+         while (i > 0) & (s[i] ~== "\n") do {
+            i -:= 1
+            }
+         nbuf := buffer
+         buffer := s[i+1:0]
+         return nbuf || s[1+:i]
+         }
       else if *buffer > 0 then {
-	 nbuf := buffer
-	 buffer := ""
-	 return nbuf
-	 }
+         nbuf := buffer
+         buffer := ""
+         return nbuf
+         }
       else fail
    end
 
@@ -173,12 +173,12 @@ initially (fileOrName, blockSize)
       }
    else {
       if ::type(fileOrName) == "string" then {
-	 f := ::open(fileOrName) |
-	    ::stop("BlockRead: Cannot open '",fileOrName,"'!")
-	 }
+         f := ::open(fileOrName) |
+            ::stop("BlockRead: Cannot open '",fileOrName,"'!")
+         }
       else {
-	 f := fileOrName     # Assume it's a file
-	 }
+         f := fileOrName     # Assume it's a file
+         }
       }
    /blockSize := 409600        # default to 1/2 MB reads
    bSize := blockSize

@@ -42,7 +42,7 @@ global Time_data_months, Time_data_base_year, Time_data_week_days,
 # @ t.set_seconds(n, z)      # n seconds past the base date in GMT, +/-z mins
 #
 class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
-			    zone, psub, ppos)
+                            zone, psub, ppos)
    #
    # Convert to a string
    #
@@ -57,9 +57,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       local s
       s := ::string(n)
       if *s < w then
-	 return ::right(s, w, "0")
+         return ::right(s, w, "0")
       else
-	 return s
+         return s
    end
 
    #
@@ -69,9 +69,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       local s
       s := Time_data_week_days[self.week_day() + 1]
       if w < 4 then
-	 return s[1:4]
+         return s[1:4]
       else
-	 return s
+         return s
    end
 
    #
@@ -81,13 +81,13 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       local s
 
       if w < 3 then
-	 return format_int(self.month, w)
+         return format_int(self.month, w)
 
       s := Time_data_months[self.month]
       if w = 3 then
-	 return s[1:4]
+         return s[1:4]
       else
-	 return s
+         return s
    end
 
    #
@@ -97,9 +97,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       local s
 
       if w == 2 then
-	 return format_int(self.year % 100, w)
+         return format_int(self.year % 100, w)
       else
-	 return format_int(self.year, w)
+         return format_int(self.year, w)
    end
 
    #
@@ -162,44 +162,44 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
 
       res := ""
       p ? {
-	 while not ::pos(0) do {
-	    if ::any('EydHMhmsaAz') then {
-	       ch := p[&pos]
-	       w := *::tab(::many(ch))
-	       res ||:= case ch of {
-		  "E": format_weekday(w)
-		  "y": format_year(w)
-		  "M": format_month(w)
-		  "d": format_int(self.mday, w)
-		  "h": {
-		     if self.hour < 13 then
-		        format_int(self.hour, w)
-		     else
-		        format_int(self.hour - 12, w)
-		     }
-		  "H": format_int(self.hour, w)
-		  "m": format_int(self.min, w)
-		  "s": format_int(self.sec, w)
-		  "z": zone.get_id()
-		  "Z": zone.get_offset()
-		  "a": {
-		     if self.hour < 12 then
-		        "am"
-		     else
-		        "pm"
-		     }
-		  "A": {
-		     if self.hour < 12 then
-		        "AM"
-		     else
-		        "PM"
- 		     }
-		  }
-	    } else if ::any('\'') then
-	       res ||:= match_literal()
-	    else
-	       res ||:= ::move(1)
-	 }
+         while not ::pos(0) do {
+            if ::any('EydHMhmsaAz') then {
+               ch := p[&pos]
+               w := *::tab(::many(ch))
+               res ||:= case ch of {
+                  "E": format_weekday(w)
+                  "y": format_year(w)
+                  "M": format_month(w)
+                  "d": format_int(self.mday, w)
+                  "h": {
+                     if self.hour < 13 then
+                        format_int(self.hour, w)
+                     else
+                        format_int(self.hour - 12, w)
+                     }
+                  "H": format_int(self.hour, w)
+                  "m": format_int(self.min, w)
+                  "s": format_int(self.sec, w)
+                  "z": zone.get_id()
+                  "Z": zone.get_offset()
+                  "a": {
+                     if self.hour < 12 then
+                        "am"
+                     else
+                        "pm"
+                     }
+                  "A": {
+                     if self.hour < 12 then
+                        "AM"
+                     else
+                        "PM"
+                     }
+                  }
+            } else if ::any('\'') then
+               res ||:= match_literal()
+            else
+               res ||:= ::move(1)
+         }
       }
       return res
    end
@@ -215,7 +215,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       # of this field.  This allows for example yyyyMMdd to parse 20001201.
       #
       if ::any('ydHMhms') then
-	 j >:= ppos + w
+         j >:= ppos + w
 
       n := ::integer(psub[ppos:j])
       ppos := j
@@ -276,13 +276,13 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       ="\'"
       s := ""
       repeat {
-	 s ||:= ::tab(::find("\'") | 0)
-	 if ::pos(0) then
-	    break
-	 ::move(1)
-	 # Two ''s in a row mean a single ' and press on - else break.
-	 s ||:= ="'" | break
-	 }
+         s ||:= ::tab(::find("\'") | 0)
+         if ::pos(0) then
+            break
+         ::move(1)
+         # Two ''s in a row mean a single ' and press on - else break.
+         s ||:= ="'" | break
+         }
       return s
    end
 
@@ -293,11 +293,11 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       local n
       n := parse_int(w) | fail
       if n < 70 then
-	 return 2000 + n
+         return 2000 + n
       else if n < 100 then
-	 return 1900 + n
+         return 1900 + n
       else
-	 return n
+         return n
    end
 
    #
@@ -350,33 +350,33 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
                ch := p[&pos]
                w := *::tab(::many(ch))
                case ch of {
-		  "E": parse_weekday() | fail
-		  "y": y := parse_year(w) | fail
-		  "M": m := parse_month(w) | fail
-		  "d": d := parse_int(w) | fail
-		  "h"|"H": hh := parse_int(w) | fail
-		  "m": mm := parse_int(w) | fail
-		  "s": ss := parse_int(w) | fail
-		  "z": z := parse_timezone() | fail
-		  "A"|"a": {
-		     ampm := parse_ampm() | fail
-		     if ampm == "pm" & (0 < \hh < 12) then
-		        hh +:= 12
-		     }
-		  }
-	       }
-	    else if ::any('\'') then {
-	       lit := match_literal()
-	       ppos := ::match(lit, psub, ppos) |
-		  return error("Expected literal:" || lit)
-	       }
-	    else {
-	       ch := ::move(1)
-	       while psub[ppos] == ch do
-	          ppos +:= 1
-	       }
-	    }
-	 }
+                  "E": parse_weekday() | fail
+                  "y": y := parse_year(w) | fail
+                  "M": m := parse_month(w) | fail
+                  "d": d := parse_int(w) | fail
+                  "h"|"H": hh := parse_int(w) | fail
+                  "m": mm := parse_int(w) | fail
+                  "s": ss := parse_int(w) | fail
+                  "z": z := parse_timezone() | fail
+                  "A"|"a": {
+                     ampm := parse_ampm() | fail
+                     if ampm == "pm" & (0 < \hh < 12) then
+                        hh +:= 12
+                     }
+                  }
+               }
+            else if ::any('\'') then {
+               lit := match_literal()
+               ppos := ::match(lit, psub, ppos) |
+                  return error("Expected literal:" || lit)
+               }
+            else {
+               ch := ::move(1)
+               while psub[ppos] == ch do
+                  ppos +:= 1
+               }
+            }
+         }
       set_fields(y, m, d, hh, mm, ss, z)
       return
    end
@@ -480,9 +480,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       self.min +:= self.sec / 60
       self.sec %:= 60
       if self.sec < 0 then {
-	 self.sec +:= 60
-	 self.min -:= 1
-	 }
+         self.sec +:= 60
+         self.min -:= 1
+         }
 
       #
       # Normalize minutes
@@ -490,9 +490,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       self.hour +:= self.min / 60
       self.min %:= 60
       if self.min < 0 then {
-	 self.min +:= 60
-	 self.hour -:= 1
-	 }
+         self.min +:= 60
+         self.hour -:= 1
+         }
 
       #
       # Normalize hours
@@ -500,9 +500,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       self.mday +:= self.hour / 24
       self.hour %:= 24
       if self.hour < 0 then {
-	 self.hour +:= 24
-	 self.mday -:= 1
-	 }
+         self.hour +:= 24
+         self.mday -:= 1
+         }
 
       #
       # Normalize month, year
@@ -512,7 +512,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       if self.month < 1 then {
          self.year -:= 1
          self.month +:= 12
-	 }
+         }
 
       #
       # Normalize mday downwards, adjusting month, year as we go along
@@ -521,10 +521,10 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
          self.mday -:= n
          self.month +:= 1
          if self.month = 13 then {
-	    self.month := 1
-	    self.year +:= 1
-	    }
-	 }
+            self.month := 1
+            self.year +:= 1
+            }
+         }
 
       #
       # Normalize mday upwards, adjusting month, year as we go along
@@ -532,19 +532,19 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       while self.mday < 1 do {
          self.month -:= 1
          if self.month = 0 then {
-	    self.month := 12
-	    self.year -:= 1
-	    }
-	 self.mday +:= get_days(self.year, self.month)
-	 }
+            self.month := 12
+            self.year -:= 1
+            }
+         self.mday +:= get_days(self.year, self.month)
+         }
 
       year_diff := self.year - Time_data_base_year
 
       days := 365 * year_diff + (year_diff + 3) / 4 - (year_diff + 99) / 100 +
-	 (year_diff + 399) / 400 + get_cum_days(year, month) + mday - 1
+         (year_diff + 399) / 400 + get_cum_days(year, month) + mday - 1
 
       return seconds :=  86400 * days + 3600 * hour + 60 * min + sec -
-	 zone.get_offset()
+         zone.get_offset()
    end
 
    #
@@ -567,51 +567,51 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
       # Case analysis within the 400 years to reduce to 4 years of 1460 or 1461
       # days.  - flag indicates whether block is 1460 or 1461 days
       if n < 36525 then {       # 1/1/1600 - 31/12/1699 - 25 blocks of 1461 days
-	 year +:= 4 * (n / 1461)
-	 n %:= 1461
-	 flag := 1
-	 }
+         year +:= 4 * (n / 1461)
+         n %:= 1461
+         flag := 1
+         }
       else if n < 37985 then {    # 1/1/1700 - 31/12/1703 - 1 block of 1460 days
          year +:= 100
          n -:= 36525
-	 }
+         }
       else if n < 73049 then {  # 1/1/1704 - 31/12/1799 - 24 blocks of 1461 days
-	 n -:= 37985
-	 year +:= 104 + 4 * (n / 1461)
-	 n %:= 1461
-	 flag := 1
-	 }
+         n -:= 37985
+         year +:= 104 + 4 * (n / 1461)
+         n %:= 1461
+         flag := 1
+         }
       else if n < 74509 then {    # 1/1/1800 - 31/12/1803 - 1 block of 1460 days
-	 year +:= 200
-	 n -:= 73049
-	 }
+         year +:= 200
+         n -:= 73049
+         }
       else if n < 109573 then { # 1/1/1804 - 31/12/1899 - 24 blocks of 1461 days
-	 n -:= 74509
-	 year +:= 204 + 4 * (n / 1461)
-	 n %:= 1461
-	 flag := 1
-	 }
+         n -:= 74509
+         year +:= 204 + 4 * (n / 1461)
+         n %:= 1461
+         flag := 1
+         }
       else if n < 111033 then {   # 1/1/1900 - 31/12/1903 - 1 block of 1460 days
-	 year +:= 300
-	 n -:= 109573
-	 }
+         year +:= 300
+         n -:= 109573
+         }
       else { # n < 146097         1/1/1904 - 31/12/1999 - 24 blocks of 1461 days
-	 n -:= 111033
-	 year +:= 304 + 4 * (n / 1461)
-	 n %:= 1461
-	 flag := 1
-	 }
+         n -:= 111033
+         year +:= 304 + 4 * (n / 1461)
+         n %:= 1461
+         flag := 1
+         }
 
       if /flag then {       # 4 years of 365 days each
-	 year +:= n / 365
-	 n %:= 365
-	 }
+         year +:= n / 365
+         n %:= 365
+         }
       else {              # 4 years of 366, 365, 365, 365 days
-	 if n > 365 then {
-	    year +:= 1 + (n - 366) / 365
-	    n := (n - 366) % 365
-	    }
-	 }
+         if n > 365 then {
+            year +:= 1 + (n - 366) / 365
+            n := (n - 366) % 365
+            }
+         }
 
       self.year := year
       get_cum_days(self.year, i := 1 to 13) > n
@@ -767,9 +767,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    #
    # @p
    method get_cum_days(y, m)
-      return if (y % 4 = 0) & (y % 100 ~= 0 | y % 400 = 0) then	# leap year
+      return if (y % 4 = 0) & (y % 100 ~= 0 | y % 400 = 0) then # leap year
          [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366][m]
-      else							# non-leap year
+      else                                                      # non-leap year
          [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365][m]
    end
 
@@ -778,9 +778,9 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
    #
    # @p
    method get_days(y, m)
-      return if (y % 4 = 0) & (y % 100 ~= 0 | y % 400 = 0) then	# leap year
+      return if (y % 4 = 0) & (y % 100 ~= 0 | y % 400 = 0) then # leap year
          [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m]
-      else							# non-leap year
+      else                                                      # non-leap year
          [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m]
    end
 
@@ -812,7 +812,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec,
          ss := get_int() | 0
          if ::tab(::upto(Time_data_tzchars)) then
             z := get_known_timezone(::tab(::many(Time_data_tzchars))) |
-	    return error("No timezone")
+            return error("No timezone")
          else
             z := get_system_timezone()
       }
@@ -881,7 +881,7 @@ procedure init_time()
                         "June", "July", "August", "September", "October",
                         "November", "December"]
    Time_data_week_days := ["Sunday", "Monday", "Tuesday", "Wednesday",
-			   "Thursday", "Friday", "Saturday", "Sunday"]
+                           "Thursday", "Friday", "Saturday", "Sunday"]
    Time_data_tzchars := '+-' ++ &digits ++ &ucase
    Time_data_base_year := 1600     # must be a multiple of 400
    Time_data_unix_base_offset := 11676096000

@@ -36,7 +36,7 @@
 
 /* 3.2 backward compatibility code */
 LFUNC(CreateOldColorTable, int, (XpmColor *ct, int ncolors,
-				 XpmColor ***oldct));
+                                 XpmColor ***oldct));
 
 LFUNC(FreeOldColorTable, void, (XpmColor **colorTable, int ncolors));
 
@@ -54,11 +54,11 @@ CreateOldColorTable(ct, ncolors, oldct)
 
     colorTable = (XpmColor **) XpmMalloc(ncolors * sizeof(XpmColor *));
     if (!colorTable) {
-	*oldct = NULL;
-	return (XpmNoMemory);
+        *oldct = NULL;
+        return (XpmNoMemory);
     }
     for (a = 0, color = colorTable; a < ncolors; a++, color++, ct++)
-	*color = ct;
+        *color = ct;
     *oldct = colorTable;
     return (XpmSuccess);
 }
@@ -73,13 +73,13 @@ FreeOldColorTable(colorTable, ncolors)
     char **sptr;
 
     if (colorTable) {
-	for (a = 0, color = colorTable; a < ncolors; a++, color++) {
-	    for (b = 0, sptr = (char **) *color; b <= NKEYS; b++, sptr++)
-		if (*sptr)
-		    XpmFree(*sptr);
-	}
-	XpmFree(*colorTable);
-	XpmFree(colorTable);
+        for (a = 0, color = colorTable; a < ncolors; a++, color++) {
+            for (b = 0, sptr = (char **) *color; b <= NKEYS; b++, sptr++)
+                if (*sptr)
+                    XpmFree(*sptr);
+        }
+        XpmFree(*colorTable);
+        XpmFree(colorTable);
     }
 }
 
@@ -98,12 +98,12 @@ xpmFreeColorTable(colorTable, ncolors)
     char **sptr;
 
     if (colorTable) {
-	for (a = 0, color = colorTable; a < ncolors; a++, color++) {
-	    for (b = 0, sptr = (char **) color; b <= NKEYS; b++, sptr++)
-		if (*sptr)
-		    XpmFree(*sptr);
-	}
-	XpmFree(colorTable);
+        for (a = 0, color = colorTable; a < ncolors; a++, color++) {
+            for (b = 0, sptr = (char **) color; b <= NKEYS; b++, sptr++)
+                if (*sptr)
+                    XpmFree(*sptr);
+        }
+        XpmFree(colorTable);
     }
 }
 
@@ -120,17 +120,17 @@ XpmFreeExtensions(extensions, nextensions)
     char **sptr;
 
     if (extensions) {
-	for (i = 0, ext = extensions; i < nextensions; i++, ext++) {
-	    if (ext->name)
-		XpmFree(ext->name);
-	    nlines = ext->nlines;
-	    for (j = 0, sptr = ext->lines; j < nlines; j++, sptr++)
-		if (*sptr)
-		    XpmFree(*sptr);
-	    if (ext->lines)
-		XpmFree(ext->lines);
-	}
-	XpmFree(extensions);
+        for (i = 0, ext = extensions; i < nextensions; i++, ext++) {
+            if (ext->name)
+                XpmFree(ext->name);
+            nlines = ext->nlines;
+            for (j = 0, sptr = ext->lines; j < nlines; j++, sptr++)
+                if (*sptr)
+                    XpmFree(*sptr);
+            if (ext->lines)
+                XpmFree(ext->lines);
+        }
+        XpmFree(extensions);
     }
 }
 
@@ -152,23 +152,23 @@ xpmInitAttributes(attributes)
     XpmAttributes *attributes;
 {
     if (attributes) {
-	attributes->pixels = NULL;
-	attributes->npixels = 0;
-	attributes->colorTable = NULL;
-	attributes->ncolors = 0;
+        attributes->pixels = NULL;
+        attributes->npixels = 0;
+        attributes->colorTable = NULL;
+        attributes->ncolors = 0;
 /* 3.2 backward compatibility code */
-	attributes->hints_cmt = NULL;
-	attributes->colors_cmt = NULL;
-	attributes->pixels_cmt = NULL;
+        attributes->hints_cmt = NULL;
+        attributes->colors_cmt = NULL;
+        attributes->pixels_cmt = NULL;
 /* end 3.2 bc */
-	if (attributes->valuemask & XpmReturnExtensions) {
-	    attributes->extensions = NULL;
-	    attributes->nextensions = 0;
-	}
-	if (attributes->valuemask & XpmReturnAllocPixels) {
-	    attributes->alloc_pixels = NULL;
-	    attributes->nalloc_pixels = 0;
-	}
+        if (attributes->valuemask & XpmReturnExtensions) {
+            attributes->extensions = NULL;
+            attributes->nextensions = 0;
+        }
+        if (attributes->valuemask & XpmReturnAllocPixels) {
+            attributes->alloc_pixels = NULL;
+            attributes->nalloc_pixels = 0;
+        }
     }
 }
 
@@ -182,57 +182,57 @@ xpmSetAttributes(attributes, image, info)
     XpmInfo *info;
 {
     if (attributes->valuemask & XpmReturnColorTable) {
-	attributes->colorTable = image->colorTable;
-	attributes->ncolors = image->ncolors;
+        attributes->colorTable = image->colorTable;
+        attributes->ncolors = image->ncolors;
 
-	/* avoid deletion of copied data */
-	image->ncolors = 0;
-	image->colorTable = NULL;
+        /* avoid deletion of copied data */
+        image->ncolors = 0;
+        image->colorTable = NULL;
     }
 /* 3.2 backward compatibility code */
     else if (attributes->valuemask & XpmReturnInfos) {
-	int ErrorStatus;
+        int ErrorStatus;
 
-	ErrorStatus = CreateOldColorTable(image->colorTable, image->ncolors,
-					  (XpmColor ***)
-					  &attributes->colorTable);
+        ErrorStatus = CreateOldColorTable(image->colorTable, image->ncolors,
+                                          (XpmColor ***)
+                                          &attributes->colorTable);
 
-	/* if error just say we can't return requested data */
-	if (ErrorStatus != XpmSuccess) {
-	    attributes->valuemask &= ~XpmReturnInfos;
-	    if (!(attributes->valuemask & XpmReturnPixels)) {
-		XpmFree(attributes->pixels);
-		attributes->pixels = NULL;
-		attributes->npixels = 0;
-	    }
-	    attributes->ncolors = 0;
-	} else {
-	    attributes->ncolors = image->ncolors;
-	    attributes->hints_cmt = info->hints_cmt;
-	    attributes->colors_cmt = info->colors_cmt;
-	    attributes->pixels_cmt = info->pixels_cmt;
+        /* if error just say we can't return requested data */
+        if (ErrorStatus != XpmSuccess) {
+            attributes->valuemask &= ~XpmReturnInfos;
+            if (!(attributes->valuemask & XpmReturnPixels)) {
+                XpmFree(attributes->pixels);
+                attributes->pixels = NULL;
+                attributes->npixels = 0;
+            }
+            attributes->ncolors = 0;
+        } else {
+            attributes->ncolors = image->ncolors;
+            attributes->hints_cmt = info->hints_cmt;
+            attributes->colors_cmt = info->colors_cmt;
+            attributes->pixels_cmt = info->pixels_cmt;
 
-	    /* avoid deletion of copied data */
-	    image->ncolors = 0;
-	    image->colorTable = NULL;
-	    info->hints_cmt = NULL;
-	    info->colors_cmt = NULL;
-	    info->pixels_cmt = NULL;
-	}
+            /* avoid deletion of copied data */
+            image->ncolors = 0;
+            image->colorTable = NULL;
+            info->hints_cmt = NULL;
+            info->colors_cmt = NULL;
+            info->pixels_cmt = NULL;
+        }
     }
 /* end 3.2 bc */
     if (attributes->valuemask & XpmReturnExtensions) {
-	attributes->extensions = info->extensions;
-	attributes->nextensions = info->nextensions;
+        attributes->extensions = info->extensions;
+        attributes->nextensions = info->nextensions;
 
-	/* avoid deletion of copied data */
-	info->extensions = NULL;
-	info->nextensions = 0;
+        /* avoid deletion of copied data */
+        info->extensions = NULL;
+        info->nextensions = 0;
     }
     if (info->valuemask & XpmHotspot) {
-	attributes->valuemask |= XpmHotspot;
-	attributes->x_hotspot = info->x_hotspot;
-	attributes->y_hotspot = info->y_hotspot;
+        attributes->valuemask |= XpmHotspot;
+        attributes->x_hotspot = info->x_hotspot;
+        attributes->y_hotspot = info->y_hotspot;
     }
     attributes->valuemask |= XpmCharsPerPixel;
     attributes->cpp = image->cpp;
@@ -250,53 +250,53 @@ XpmFreeAttributes(attributes)
     XpmAttributes *attributes;
 {
     if (attributes->valuemask & XpmReturnPixels && attributes->npixels) {
-	XpmFree(attributes->pixels);
-	attributes->pixels = NULL;
-	attributes->npixels = 0;
+        XpmFree(attributes->pixels);
+        attributes->pixels = NULL;
+        attributes->npixels = 0;
     }
     if (attributes->valuemask & XpmReturnColorTable) {
-	xpmFreeColorTable(attributes->colorTable, attributes->ncolors);
-	attributes->colorTable = NULL;
-	attributes->ncolors = 0;
+        xpmFreeColorTable(attributes->colorTable, attributes->ncolors);
+        attributes->colorTable = NULL;
+        attributes->ncolors = 0;
     }
 /* 3.2 backward compatibility code */
     else if (attributes->valuemask & XpmInfos) {
-	if (attributes->colorTable) {
-	    FreeOldColorTable((XpmColor **) attributes->colorTable,
-			      attributes->ncolors);
-	    attributes->colorTable = NULL;
-	    attributes->ncolors = 0;
-	}
-	if (attributes->hints_cmt) {
-	    XpmFree(attributes->hints_cmt);
-	    attributes->hints_cmt = NULL;
-	}
-	if (attributes->colors_cmt) {
-	    XpmFree(attributes->colors_cmt);
-	    attributes->colors_cmt = NULL;
-	}
-	if (attributes->pixels_cmt) {
-	    XpmFree(attributes->pixels_cmt);
-	    attributes->pixels_cmt = NULL;
-	}
-	if (attributes->pixels) {
-	    XpmFree(attributes->pixels);
-	    attributes->pixels = NULL;
-	    attributes->npixels = 0;
-	}
+        if (attributes->colorTable) {
+            FreeOldColorTable((XpmColor **) attributes->colorTable,
+                              attributes->ncolors);
+            attributes->colorTable = NULL;
+            attributes->ncolors = 0;
+        }
+        if (attributes->hints_cmt) {
+            XpmFree(attributes->hints_cmt);
+            attributes->hints_cmt = NULL;
+        }
+        if (attributes->colors_cmt) {
+            XpmFree(attributes->colors_cmt);
+            attributes->colors_cmt = NULL;
+        }
+        if (attributes->pixels_cmt) {
+            XpmFree(attributes->pixels_cmt);
+            attributes->pixels_cmt = NULL;
+        }
+        if (attributes->pixels) {
+            XpmFree(attributes->pixels);
+            attributes->pixels = NULL;
+            attributes->npixels = 0;
+        }
     }
 /* end 3.2 bc */
     if (attributes->valuemask & XpmReturnExtensions
-	&& attributes->nextensions) {
-	XpmFreeExtensions(attributes->extensions, attributes->nextensions);
-	attributes->extensions = NULL;
-	attributes->nextensions = 0;
+        && attributes->nextensions) {
+        XpmFreeExtensions(attributes->extensions, attributes->nextensions);
+        attributes->extensions = NULL;
+        attributes->nextensions = 0;
     }
     if (attributes->valuemask & XpmReturnAllocPixels
-	&& attributes->nalloc_pixels) {
-	XpmFree(attributes->alloc_pixels);
-	attributes->alloc_pixels = NULL;
-	attributes->nalloc_pixels = 0;
+        && attributes->nalloc_pixels) {
+        XpmFree(attributes->alloc_pixels);
+        attributes->alloc_pixels = NULL;
+        attributes->nalloc_pixels = 0;
     }
     attributes->valuemask = 0;
 }

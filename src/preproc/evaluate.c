@@ -197,8 +197,8 @@ struct token *trigger;
                case 'r':  e1 = (long) '\r'; break;
                case 't':  e1 = (long) '\t'; break;
                case 'v':  e1 = (long) '\v'; break;
-   
-               case 'x': 
+
+               case 'x':
                   ++s;
                   is_hex_char = 1;
                   while (is_hex_char) {
@@ -220,7 +220,7 @@ struct token *trigger;
                      }
                   e1 = (long)(char)e1;
                   break;
-   
+
                default:
                   e1 = (long) *s;
                }
@@ -295,15 +295,15 @@ struct token *trigger;
             e1 = (e1 * e2);
             break;
          case '/':
-	    if (e2 == 0) {
-	       errt2(*tp, "division by zero in #", trigger->image);
-	       }
+            if (e2 == 0) {
+               errt2(*tp, "division by zero in #", trigger->image);
+               }
             e1 = (e1 / e2);
             break;
          case '%':
-	    if (e2 == 0) {
-	       errt2(*tp, "modulo by zero in #", trigger->image);
-	       }
+            if (e2 == 0) {
+               errt2(*tp, "modulo by zero in #", trigger->image);
+               }
             e1 = (e1 % e2);
             break;
          }

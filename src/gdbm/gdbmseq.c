@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -47,8 +47,8 @@ get_next_key (dbf, elem_loc, return_val)
      int elem_loc;
      datum *return_val;
 {
-  int   found;			/* Have we found the next key. */
-  char  *find_data;		/* Data pointer returned by find_key. */
+  int   found;                  /* Have we found the next key. */
+  char  *find_data;             /* Data pointer returned by find_key. */
 
   /* Find the next key. */
   found = FALSE;
@@ -57,26 +57,26 @@ get_next_key (dbf, elem_loc, return_val)
       /* Advance to the next location in the bucket. */
       elem_loc++;
       if (elem_loc == dbf->header->bucket_elems)
-	{
-	  /* We have finished the current bucket, get the next bucket.  */
-	  elem_loc = 0;
+        {
+          /* We have finished the current bucket, get the next bucket.  */
+          elem_loc = 0;
 
-	  /* Find the next bucket.  It is possible several entries in
-	     the bucket directory point to the same bucket. */
-	  while (dbf->bucket_dir < dbf->header->dir_size / sizeof (off_t)
-		 && dbf->cache_entry->ca_adr == dbf->dir[dbf->bucket_dir])
-	    dbf->bucket_dir++;
+          /* Find the next bucket.  It is possible several entries in
+             the bucket directory point to the same bucket. */
+          while (dbf->bucket_dir < dbf->header->dir_size / sizeof (off_t)
+                 && dbf->cache_entry->ca_adr == dbf->dir[dbf->bucket_dir])
+            dbf->bucket_dir++;
 
-	  /* Check to see if there was a next bucket. */
-	  if (dbf->bucket_dir < dbf->header->dir_size / sizeof (off_t))
-	    _gdbm_get_bucket (dbf, dbf->bucket_dir);	      
-	  else
-	    /* No next key, just return. */
-	    return ;
-	}
+          /* Check to see if there was a next bucket. */
+          if (dbf->bucket_dir < dbf->header->dir_size / sizeof (off_t))
+            _gdbm_get_bucket (dbf, dbf->bucket_dir);
+          else
+            /* No next key, just return. */
+            return ;
+        }
       found = dbf->bucket->h_table[elem_loc].hash_value != -1;
     }
-  
+
   /* Found the next key, read it into return_val. */
   find_data = _gdbm_read_entry (dbf, elem_loc);
   return_val->dsize = dbf->bucket->h_table[elem_loc].key_size;
@@ -96,7 +96,7 @@ datum
 gdbm_firstkey (dbf)
      gdbm_file_info *dbf;
 {
-  datum return_val;		/* To return the first key. */
+  datum return_val;             /* To return the first key. */
 
   /* Set the default return value for not finding a first entry. */
   return_val.dptr = NULL;
@@ -121,10 +121,10 @@ gdbm_nextkey (dbf, key)
      gdbm_file_info *dbf;
      datum key;
 {
-  datum  return_val;		/* The return value. */
-  int    elem_loc;		/* The location in the bucket. */
-  char  *find_data;		/* Data pointer returned by _gdbm_findkey. */
-  word_t hash_val;		/* Returned by _gdbm_findkey. */
+  datum  return_val;            /* The return value. */
+  int    elem_loc;              /* The location in the bucket. */
+  char  *find_data;             /* Data pointer returned by _gdbm_findkey. */
+  word_t hash_val;              /* Returned by _gdbm_findkey. */
 
   /* Initialize the gdbm_errno variable. */
   gdbm_errno = GDBM_NO_ERROR;
@@ -139,7 +139,7 @@ gdbm_nextkey (dbf, key)
   elem_loc = _gdbm_findkey (dbf, key, &find_data, &hash_val);
   if (elem_loc == -1) return return_val;
 
-  /* Find the next key. */  
+  /* Find the next key. */
   get_next_key (dbf, elem_loc, &return_val);
 
   return return_val;

@@ -994,7 +994,7 @@ static struct il_code *db_abstr()
          il = new_il(IL_VarTyp, 1);        /* variable */
          il->u[0].fld = db_ilvar();        /* symbol table index, etc */
          break;
-      
+
       case '.':
          il = new_il(IL_Compnt, 2);        /* component access */
          il->u[0].fld = db_abstr();        /* type being accessed */
@@ -1077,7 +1077,7 @@ static struct il_c *db_ilc()
                               *nxtp = new_ilc(ILC_CGto);
 #ifdef MultiProgram
    #undef code
-#endif					/* MultiThead */
+#endif                                  /* MultiThead */
                               (*nxtp)->code[0] = db_ilc();
                               c = getc(db);
                               SkipWhSp(c);
@@ -1235,7 +1235,7 @@ static struct il_c *db_ilc()
       }
    db_err1(1, "expected C code of the form $c ... $e or nil");
    /*NOTREACHED*/
-   return 0;	/* avoid gcc warning */
+   return 0;    /* avoid gcc warning */
    }
 
 /*
@@ -1309,7 +1309,7 @@ static int db_tndtyp()
          /* NOTREACHED */
       }
    /* NOTREACHED */
-   return 0;	/* avoid gcc warning */
+   return 0;    /* avoid gcc warning */
    }
 
 /*
@@ -1382,7 +1382,7 @@ static int db_icntyp()
       }
    db_err1(1, "invalid type code");
    /* NOTREACHED */
-   return 0;	/* avoid gcc warning */
+   return 0;    /* avoid gcc warning */
    }
 
 /*
@@ -1596,7 +1596,7 @@ int n;
          case 'r':
             nxt[i] = 's';
             return;
-#endif					/* EBCDIC */
+#endif                                  /* EBCDIC */
 
          case 'z':
             /*

@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
     The author of this file is:
        e-mail:  downsj@csos.orst.edu
 
@@ -41,10 +41,10 @@
 /* ARGSUSED */
 int
 gdbm_setopt(dbf, optflag, optval, optlen)
-    gdbm_file_info *dbf;	/* descriptor to operate on. */
-    int optflag;		/* option to set. */
-    int *optval;		/* pointer to option value. */
-    int optlen;			/* size of optval. */
+    gdbm_file_info *dbf;        /* descriptor to operate on. */
+    int optflag;                /* option to set. */
+    int *optval;                /* pointer to option value. */
+    int optlen;                 /* size of optval. */
 {
   switch(optflag)
     {
@@ -59,15 +59,15 @@ gdbm_setopt(dbf, optflag, optval, optlen)
         return(_gdbm_init_cache(dbf, ((*optval) > 9) ? (*optval) : 10));
 
       case GDBM_FASTMODE:
-      	/* here, optval will point to either true or false. */
-	if ((*optval != TRUE) && (*optval != FALSE))
-	  {
-	    gdbm_errno = GDBM_OPT_ILLEGAL;
-	    return(-1);
-	  }
+        /* here, optval will point to either true or false. */
+        if ((*optval != TRUE) && (*optval != FALSE))
+          {
+            gdbm_errno = GDBM_OPT_ILLEGAL;
+            return(-1);
+          }
 
-	dbf->fast_write = *optval;
-	break;
+        dbf->fast_write = *optval;
+        break;
 
       default:
         gdbm_errno = GDBM_OPT_ILLEGAL;

@@ -65,33 +65,33 @@ XpmReadFileToBuffer(filename, buffer_return)
 
     fd = open(filename, O_RDONLY);
     if (fd < 0)
-	return XpmOpenFailed;
+        return XpmOpenFailed;
 
     if (fstat(fd, &stats)) {
-	close(fd);
-	return XpmOpenFailed;
+        close(fd);
+        return XpmOpenFailed;
     }
     fp = fdopen(fd, "r");
     if (!fp) {
-	close(fd);
-	return XpmOpenFailed;
+        close(fd);
+        return XpmOpenFailed;
     }
     len = (int) stats.st_size;
     ptr = (char *) XpmMalloc(len + 1);
     if (!ptr) {
-	fclose(fp);
-	return XpmNoMemory;
+        fclose(fp);
+        return XpmNoMemory;
     }
     fcheck = fread(ptr, 1, len, fp);
     fclose(fp);
 #ifdef VMS
     /* VMS often stores text files in a variable-length record format,
-       where there are two bytes of size followed by the record.  fread	
-       converts this so it looks like a record followed by a newline.	
-       Unfortunately, the size reported by fstat() (and fseek/ftell)	
-       counts the two bytes for the record terminator, while fread()	
-       counts only one.  So, fread() sees fewer bytes in the file (size	
-       minus # of records) and thus when asked to read the amount	
+       where there are two bytes of size followed by the record.  fread
+       converts this so it looks like a record followed by a newline.
+       Unfortunately, the size reported by fstat() (and fseek/ftell)
+       counts the two bytes for the record terminator, while fread()
+       counts only one.  So, fread() sees fewer bytes in the file (size
+       minus # of records) and thus when asked to read the amount
        returned by stat(), it fails.
        The best solution, suggested by DEC, seems to consider the length
        returned from fstat() as an upper bound and call fread() with
@@ -103,8 +103,8 @@ XpmReadFileToBuffer(filename, buffer_return)
 #else
     if (fcheck != len) {
 #endif
-	XpmFree(ptr);
-	return XpmOpenFailed;
+        XpmFree(ptr);
+        return XpmOpenFailed;
     }
     ptr[len] = '\0';
     *buffer_return = ptr;

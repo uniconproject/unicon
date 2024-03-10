@@ -30,9 +30,9 @@ int main(int argc, char **argv)
   if (argv[1][0] != '@') {
     puri = uri_parse(argv[1]);
     if (puri->status != URI_SUCCESS) {
-      fprintf(stderr, "testuri: %s `%s' (%s: %d)\n", 
-	      _uri_errlist[puri->status], argv[1],
-	      __FILE__, __LINE__);
+      fprintf(stderr, "testuri: %s `%s' (%s: %d)\n",
+              _uri_errlist[puri->status], argv[1],
+              __FILE__, __LINE__);
       uri_free(puri);
       exit(1);
     }
@@ -51,16 +51,16 @@ int main(int argc, char **argv)
 
     while (fgets(uri, 1024, uris)) {
       if (uri[0] == '#') {  /* Allow comments */
-	continue;
+        continue;
       }
       uri[strlen(uri)-1] = '\0'; /* Kill the newline */
       printf("\n[%s]\n", uri);
       puri = uri_parse(uri);
       if (puri->status != URI_SUCCESS) {
-	fprintf(stderr, "testuri: %s `%s' (%s: %d)", 
-		_uri_errlist[puri->status], uri, __FILE__, __LINE__);
-	uri_free(puri);
-	continue;
+        fprintf(stderr, "testuri: %s `%s' (%s: %d)",
+                _uri_errlist[puri->status], uri, __FILE__, __LINE__);
+        uri_free(puri);
+        continue;
       }
       print_uri(puri);
       uri_free(puri);
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 void print_uri(PURI puri)
 {
   static const char *nullstr = "<NULL>";
- 
+
   if (puri == NULL) {
     printf("NULL URI!\n");
     return;

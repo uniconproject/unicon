@@ -3,7 +3,7 @@
 # Barry Schwartz, January 2005.
 #
 # See http://www.amd64.org/ for information about AMD64 programming.
-# update by cvevans 
+# update by cvevans
 #  at users.sourceforge
 #  dot net
 
@@ -12,7 +12,7 @@
 #endif
 
         .file       "rswitch.s"
- 
+
         .section    .rodata
 .L0:    .string     "new_context() returned in coswitch"
 
@@ -53,5 +53,5 @@ coswitch:
         xorl    %esi, %esi         # (Implicitly zero-extended to 64 bits)
         call    new_context@PLT
         leaq    .L0(%rip), %rdi    # Call syserr(...)
-        xorl    %eax, %eax	   # 0 to return 
+        xorl    %eax, %eax         # 0 to return
         jmp     syserr@PLT

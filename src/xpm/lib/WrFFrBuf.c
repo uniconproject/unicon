@@ -43,13 +43,13 @@ XpmWriteFileFromBuffer(filename, buffer)
     FILE *fp = fopen(filename, "w");
 
     if (!fp)
-	return XpmOpenFailed;
+        return XpmOpenFailed;
 
     len = strlen(buffer);
     fcheck = fwrite(buffer, len, 1, fp);
     fclose(fp);
     if (fcheck != 1)
-	return XpmOpenFailed;
+        return XpmOpenFailed;
 
     return XpmSuccess;
 }

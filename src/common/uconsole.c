@@ -20,7 +20,7 @@ int getch(void)
    if (wgetchne((wbp)OpenConsole(), &res) >= 0)
       return *StrLoc(res) & 0xFF;
    else
-      return -1;	/* fail */
+      return -1;        /* fail */
 }
 
 /*
@@ -32,7 +32,7 @@ int getche(void)
    if (wgetche((wbp)OpenConsole(), &res) >= 0)
       return *StrLoc(res) & 0xFF;
    else
-      return -1;	/* fail */
+      return -1;        /* fail */
 }
 
 /*
@@ -64,12 +64,12 @@ int checkOpenConsole(FILE *w, char *s)
        ((w==k_output.fd.fp)&&(!(ConsoleFlags & StdOutRedirect)))||
        ((w==k_errout.fd.fp)&&(!(ConsoleFlags & StdErrRedirect)))
       )){
-	 w = OpenConsole();
+         w = OpenConsole();
        if (s){
-       	  register word l;
-	  l=strlen(s);
+          register word l;
+          l=strlen(s);
           for(i=0;i<l;i++) Consoleputc(s[i], w);
-	  }
+          }
        return 1;
        }
    return 0;
@@ -88,7 +88,7 @@ FILE *OpenConsole()
       struct b_list *hp;
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
        struct threadstate *curtstate;
-#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
 
       /*
        * If we haven't already allocated regions, we are called due to a
@@ -103,7 +103,7 @@ FILE *OpenConsole()
          }
       if (!alclist) curpstate->Alclist = alclist_0;
       if (!reserve) curpstate->Reserve = reserve_0;
-#endif						/* MultiProgram */
+#endif                                          /* MultiProgram */
 
 
       if (!curblock) {
@@ -112,35 +112,35 @@ FILE *OpenConsole()
          curstring->size = MaxStrSpace;
          curblock->size  = MaxAbrSize;
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
-   	 curtstate = &roottstate;
+         curtstate = &roottstate;
 #if !ConcurrentCOMPILER
-	 curpstate->tstate = curtstate;
-   	 rootpstate.tstate = curtstate;
+         curpstate->tstate = curtstate;
+         rootpstate.tstate = curtstate;
 #endif                                   /* ConcurrentCOMPILER */
 
-   	 init_threadstate(curtstate);
-   	 pthread_key_create(&tstate_key, NULL);
-   	 pthread_setspecific(tstate_key, (void *) curtstate);
+         init_threadstate(curtstate);
+         pthread_key_create(&tstate_key, NULL);
+         pthread_setspecific(tstate_key, (void *) curtstate);
          curtstate->Curstring = curstring;
          curtstate->Curblock = curblock;
-      	 curtstate->c = (struct b_coexpr *) malloc((msize) 1000);
-#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
+         curtstate->c = (struct b_coexpr *) malloc((msize) 1000);
+#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
 
 #if COMPILER
-	 initalloc();
-#else					/* COMPILER */
+         initalloc();
+#else                                   /* COMPILER */
 #ifdef MultiProgram
          initalloc(1000, &rootpstate);
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
          initalloc(1000);
-#endif					/* MultiProgram */
-#endif					/* COMPILER */
+#endif                                  /* MultiProgram */
+#endif                                  /* COMPILER */
 
 #ifdef Concurrent
 
-      	 curtblock = curblock;
-	 curtstring = curstring;
-#endif					/*Concurrent*/
+         curtblock = curblock;
+         curtstring = curstring;
+#endif                                  /*Concurrent*/
          }
 
 
@@ -182,7 +182,7 @@ FILE *OpenConsole()
       movechild(ws->child + (ws->nChildren-1), 0, 0, ws->width, ws->height);
       RESUME_THREADS();
 }
-#endif					/* ScrollingConsoleWin */
+#endif                                  /* ScrollingConsoleWin */
       }
    return ConsoleBinding;
    }
@@ -210,10 +210,10 @@ int Consolefprintf(FILE *file, const char *format, ...)
         int len = strlen(ConsoleStringBuf);
         if (flog != NULL) {
            int i;
-	   for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
-	   }
+           for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
+           }
         wputstr(console, ConsoleStringBuf, len);
-	}
+        }
       }
    else
       retval = vfprintf(file, format, list);
@@ -241,10 +241,10 @@ int Consoleprintf(const char *format, ...)
         int len = strlen(ConsoleStringBuf);
         if (flog != NULL) {
            int i;
-	   for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
-	   }
+           for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
+           }
         wputstr(console, ConsoleStringBuf, len);
-	}
+        }
       }
    else
       retval = vfprintf(file, format, list);
@@ -288,7 +288,7 @@ int Consolefflush(FILE *f)
       if (console == NULL) return 0;
 #ifndef MSWindows
       wflush(console);
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
       return 0;
       }
   return fflush(f);
@@ -304,7 +304,7 @@ void wattr(FILE *w, char *s, int len)
    wattrib((wbp)w, s, len, &answer, s);
 }
 
-#else					/* ConsoleWindow */
+#else                                   /* ConsoleWindow */
 
 /*
  * If we don't have graphics facilities (e.g. we are nticonx), let's define
@@ -355,4 +355,4 @@ int Consolefflush(FILE *f)
    return fflush(f);
 }
 
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */

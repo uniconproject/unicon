@@ -25,7 +25,7 @@ void print_union(struct gentry *g)  {
    }
    else if (g->flag & F_Proc)  {
       printf("  PROC Name: \'%s\'\n", g->val.proc->name);
-      printf("    %d %s\n", g->val.proc->tree->flag, g->val.proc->tree->n_field[0].n_str); 
+      printf("    %d %s\n", g->val.proc->tree->flag, g->val.proc->tree->n_field[0].n_str);
    }
    else if (g->flag & F_Record)  {
       printf("  REC Name \'%s\' Field Names: ", g->val.rec->name);
@@ -130,12 +130,12 @@ void print_code(struct code *cd)  {
              for (i=0; cd->ElemTyp(i) != A_End ;i++)  {
                 switch (cd->ElemTyp(i))  {
                    case A_Str :
-                      printf("%d  A_Str	\'%s\'\n",i,cd->Str(i));
-                      break; 
+                      printf("%d  A_Str \'%s\'\n",i,cd->Str(i));
+                      break;
                    case A_ValLoc :
                       printf("%d  A_ValLoc:\n",i);
                       switch (cd->ValLoc(i)->mod_access)  {
-                         case M_None : 
+                         case M_None :
                             printf("\t      access simply as descriptor\n");
                             break;
                          case M_CharPtr :
@@ -153,60 +153,60 @@ void print_code(struct code *cd)  {
                       }
                       switch (cd->ValLoc(i)->loc_type)  {
                          case V_NamedVar:
-                            printf("      V_NamedVar	\'%s\' %d\n",cd->ValLoc(i)->u.nvar->name, cd->ValLoc(i)->u.nvar->val.index);
+                            printf("      V_NamedVar    \'%s\' %d\n",cd->ValLoc(i)->u.nvar->name, cd->ValLoc(i)->u.nvar->val.index);
                             break;
                          case V_Temp :
-                            printf("      V_Temp	\'%d\'\n",(cd->ValLoc(i)->u.tmp + cur_proc->tnd_loc));
+                            printf("      V_Temp        \'%d\'\n",(cd->ValLoc(i)->u.tmp + cur_proc->tnd_loc));
                             break;
                          case V_ITemp :
-                            printf("      V_ITemp	\'%d\'\n",cd->ValLoc(i)->u.tmp);
+                            printf("      V_ITemp       \'%d\'\n",cd->ValLoc(i)->u.tmp);
                             break;
                          case V_DTemp :
-                            printf("      V_DTemp	\'%d\'\n",cd->ValLoc(i)->u.tmp);
+                            printf("      V_DTemp       \'%d\'\n",cd->ValLoc(i)->u.tmp);
                             break;
                          case V_PRslt :
-                      	  printf("      V_PRslt - procedure result location\n"); 
+                          printf("      V_PRslt - procedure result location\n");
                             break;
                          case V_Const :
-                            printf("      V_Const	\'%d\'\n",cd->ValLoc(i)->u.int_const);
+                            printf("      V_Const       \'%d\'\n",cd->ValLoc(i)->u.int_const);
                             break;
                          case V_CVar  :
-                            printf("      V_CVar	\'%s\'\n",cd->ValLoc(i)->u.name);
+                            printf("      V_CVar        \'%s\'\n",cd->ValLoc(i)->u.name);
                             break;
                          case V_Ignore :
-                            printf("      V_Ignore - trashcan\n"); 
+                            printf("      V_Ignore - trashcan\n");
                             break;
                       }
-                      break; 
+                      break;
                    case A_Intgr :
-                      printf("%d   A_intgr	\'%d\'\n",i,cd->Intgr(i));
-                      break; 
+                      printf("%d   A_intgr      \'%d\'\n",i,cd->Intgr(i));
+                      break;
                    case A_ProcCont :
                       printf("   A_ProcCont\n");
-                      break; 
+                      break;
                    case A_SBuf :
                       printf("   A_SBuf\n");
-                      break; 
+                      break;
                    case A_CBuf :
                       printf("   A_CBuf\n");
-                      break; 
+                      break;
                    case A_Ary :
                       printf("   Start A_Ary\n");
                       print_code(cd->Array(i));
                       printf("   End A_Ary\n");
-                      break; 
+                      break;
                 }
              }
              break;
-	default:
-	   printf("Unknown error!!!\n");
+        default:
+           printf("Unknown error!!!\n");
      }
 }
 
 void print_codelist(struct code *start)  {
    struct code *ptr;
-  
-   for(ptr=start; ptr != NULL ;ptr=ptr->next)  
+
+   for(ptr=start; ptr != NULL ;ptr=ptr->next)
        print_code(ptr);
 }
 
@@ -216,7 +216,7 @@ void print_fnc(struct c_fnc *fnclst)  {
    int           i;
 
    for (fnc=fnclst; fnc != NULL ;fnc=fnc->next) {
-      printf("Prefix(%s) FrmPrefix(%s) Flag(%d)\n", fnc->prefix, 
+      printf("Prefix(%s) FrmPrefix(%s) Flag(%d)\n", fnc->prefix,
               fnc->frm_prfx, fnc->flag);
       cur = &(fnc->cd);
       while (cur != NULL)  {
@@ -241,52 +241,52 @@ void print_ghash(void)  {
 }
 
 void print_val_loc(struct val_loc *vloc)  {
-   
+
    if (vloc == NULL)
       return;
    printf("loc_type   ");
    switch (vloc->loc_type)  {
       case  V_NamedVar:
-	       printf("V_NamedVar\n");
-	       break;
+               printf("V_NamedVar\n");
+               break;
       case  V_Temp:
-	       printf("V_Temp\n");
-	       break;
+               printf("V_Temp\n");
+               break;
       case  V_ITemp:
-	       printf("V_ITemp\n");
-	       break;
+               printf("V_ITemp\n");
+               break;
       case  V_DTemp:
-	       printf("V_DTemp\n");
-	       break;
+               printf("V_DTemp\n");
+               break;
       case  V_PRslt:
-	       printf("V_PRslt\n");
-	       break;
+               printf("V_PRslt\n");
+               break;
       case  V_Const:
-	       printf("V_Const\n");
-	       break;
+               printf("V_Const\n");
+               break;
       case  V_CVar:
-	       printf("V_CVar\n");
-	       break;
+               printf("V_CVar\n");
+               break;
       case  V_Ignore:
-	       printf("V_Ignore\n");
-	       break;
+               printf("V_Ignore\n");
+               break;
    }
    printf("mod access ");
    switch (vloc->mod_access)  {
       case  M_None:
-	       printf("M_None\n");
-	       break;
+               printf("M_None\n");
+               break;
       case  M_CharPtr:
-	       printf("M_CharPtr\n");
-	       break;
+               printf("M_CharPtr\n");
+               break;
       case  M_BlkPtr:
-	       printf("M_BlkPtr\n");
-	       break;
+               printf("M_BlkPtr\n");
+               break;
       case  M_CInt:
-	       printf("M_CInt\n");
-	       break;
+               printf("M_CInt\n");
+               break;
       case  M_Addr:
-	       printf("M_Addre\n");
-	       break;
+               printf("M_Addre\n");
+               break;
    }
 }

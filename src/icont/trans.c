@@ -14,14 +14,14 @@
  * Prototypes.
  */
 
-static	void	trans1		(char *filename);
+static  void    trans1          (char *filename);
 void writeUID(char *, FILE *);
 extern int __merr_errors;       /* in place of the old tfatals, the number of syntax errors in a file */
-int afatals;			/* total number of fatal errors */
-int nocode;			/* non-zero to suppress code generation */
-int in_line;			/* current input line number */
-int incol;			/* current input column number */
-int peekc;			/* one-character look ahead */
+int afatals;                    /* total number of fatal errors */
+int nocode;                     /* non-zero to suppress code generation */
+int in_line;                    /* current input line number */
+int incol;                      /* current input column number */
+int peekc;                      /* one-character look ahead */
 
 /*
  * translate a number of files, returning an error count
@@ -29,21 +29,21 @@ int peekc;			/* one-character look ahead */
 int trans(ifiles)
 char **ifiles;
    {
-   tmalloc();			/* allocate memory for translation */
+   tmalloc();                   /* allocate memory for translation */
 
    afatals = 0;
 
 #ifdef MultipleRuns
-   yylexinit();			/* initialize lexical analyser */
-   tcodeinit();			/* initialize code generator */
-#endif					/* Multiple Runs */
+   yylexinit();                 /* initialize lexical analyser */
+   tcodeinit();                 /* initialize code generator */
+#endif                                  /* Multiple Runs */
 
    while (*ifiles) {
-      trans1(*ifiles++);	/* translate each file in turn */
+      trans1(*ifiles++);        /* translate each file in turn */
       afatals += __merr_errors;
       }
 
-   tmfree();			/* free memory used for translation */
+   tmfree();                    /* free memory used for translation */
 
    /*
     * Report information about errors and warnings and be correct about it.
@@ -68,15 +68,15 @@ extern char *pofile;
 static void trans1(filename)
 char *filename;
 {
-   char oname1[MaxFileName];	/* buffer for constructing file name */
-   char oname2[MaxFileName];	/* buffer for constructing file name */
-   char oname3[MaxFileName];	/* buffer for constructing file name */
+   char oname1[MaxFileName];    /* buffer for constructing file name */
+   char oname2[MaxFileName];    /* buffer for constructing file name */
+   char oname3[MaxFileName];    /* buffer for constructing file name */
 
-   __merr_errors = 0;			/* reset error counts */
-   nocode = 0;			/* allow code generation */
-   in_line = 1;			/* start with line 1, column 0 */
+   __merr_errors = 0;                   /* reset error counts */
+   nocode = 0;                  /* allow code generation */
+   in_line = 1;                 /* start with line 1, column 0 */
    incol = 0;
-   peekc = 0;			/* clear character lookahead */
+   peekc = 0;                   /* clear character lookahead */
 
    if (!ppinit(filename,lpath,m4pre))
       quitf("cannot open %s",filename);
@@ -117,9 +117,9 @@ char *filename;
    codefile = fopen(oname1, WriteBinary);   /* avoid line splits */
    if (codefile != NULL)
       putc(' ', codefile);
-#else					/* MVS || VM */
+#else                                   /* MVS || VM */
    codefile = fopen(oname1, WriteText);
-#endif					/* MVS || VM */
+#endif                                  /* MVS || VM */
 
    if (codefile == NULL)
       quitf("cannot create %s", oname1);
@@ -128,9 +128,9 @@ char *filename;
 
 #if MVS || VM
    globfile = fopen(oname2, WriteBinary);
-#else					/* MVS || VM */
+#else                                   /* MVS || VM */
    globfile = fopen(oname2, WriteText);
-#endif					/* MVS || VM */
+#endif                                  /* MVS || VM */
 
    if (globfile == NULL)
       quitf("cannot create %s", oname2);
@@ -140,8 +140,8 @@ char *filename;
    tok_loc.n_file = filename;
    in_line = 1;
 
-   tminit();				/* Initialize data structures */
-   yyparse();				/* Parse the input */
+   tminit();                            /* Initialize data structures */
+   yyparse();                           /* Parse the input */
 
    /*
     * Close the output files.
@@ -166,17 +166,17 @@ char *filename;
        */
       unlink(oname3);
       if ((c=rename(oname2, oname3)) != 0) {
-	 globfile = fopen(oname3, "w");
-	 if (globfile == NULL) quitf("cannot write ucode file %s", oname3);
-	 ftemp=fopen(oname2, "r");
-	 if (ftemp == NULL) quitf("cannot read ucode file %s", oname2);
-	 while ((c = getc(ftemp)) != EOF) putc(c, globfile);
-	 fclose(ftemp);
-	 unlink(oname2);
-	 /* leave globfile opened in write mode */
-	 }
+         globfile = fopen(oname3, "w");
+         if (globfile == NULL) quitf("cannot write ucode file %s", oname3);
+         ftemp=fopen(oname2, "r");
+         if (ftemp == NULL) quitf("cannot read ucode file %s", oname2);
+         while ((c = getc(ftemp)) != EOF) putc(c, globfile);
+         fclose(ftemp);
+         unlink(oname2);
+         /* leave globfile opened in write mode */
+         }
       else
-	 globfile = fopen(oname3, "a");
+         globfile = fopen(oname3, "a");
       if (globfile == NULL) quitf("cannot append ucode file %s", oname3);
       putc('\014', globfile);
       putc('\n', globfile);
@@ -184,7 +184,7 @@ char *filename;
       if (codefile == NULL) quit("cannot read .u2 component");
       while ((c = getc(codefile)) != EOF) putc(c, globfile);
       if (fclose(codefile) != 0 || fclose(globfile) != 0)
-	 quit("cannot close ucode file");
+         quit("cannot close ucode file");
       remove(oname1);
       }
    }
@@ -202,12 +202,12 @@ int rc;
 /*
  * writeUID - write a universal-unicon ID to the file
  */
-#define RandA        1103515245	/* random seed multiplier */
-#define RandC	      453816694	/* random seed additive constant */
-#define RanScale 4.65661286e-10	/* random scale factor = 1/(2^31-1) */
+#define RandA        1103515245 /* random seed multiplier */
+#define RandC         453816694 /* random seed additive constant */
+#define RanScale 4.65661286e-10 /* random scale factor = 1/(2^31-1) */
 #define RandVal(RNDSEED) (RanScale*((RandA*RNDSEED+RandC)&0x7FFFFFFFL))
 void writeUID(char *fname, FILE * f)
-{   
+{
    time_t t;
    time(&t);
    writecheck(fprintf(f, "uid\t%s-%d-%d\n", fname, (int)t, (int)RandVal(t)));

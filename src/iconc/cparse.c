@@ -1,5 +1,5 @@
 #ifndef lint
-//static const char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
+//static const char yysccsid[] = "@(#)yaccpar   1.9 (Berkeley) 02/21/93";
 #endif
 
 #define YYBYACC 1
@@ -28,7 +28,7 @@
 #include "ctrans.h"
 #include "csym.h"
 #include "ctree.h"
-#include "ccode.h" 
+#include "ccode.h"
 #include "cproto.h"
 #undef YYSTYPE
 #define YYSTYPE nodeptr
@@ -1962,11 +1962,11 @@ char *p;
 #line 1961 "y.tab.c"
 
 #if YYDEBUG
-#include <stdio.h>		/* needed for printf */
+#include <stdio.h>              /* needed for printf */
 #endif
 
-#include <stdlib.h>	/* needed for malloc, etc */
-#include <string.h>	/* needed for memset */
+#include <stdlib.h>     /* needed for malloc, etc */
+#include <string.h>     /* needed for memset */
 
 /* allocate initial stack or double stack size, up to YYMAXDEPTH */
 static int yygrowstack(YYSTACKDATA *data)
@@ -2167,765 +2167,765 @@ yyreduce:
     {
 case 1:
 #line 203 "cgram.g"
-	{;}
+        {;}
 break;
 case 4:
 #line 208 "cgram.g"
-	{;}
+        {;}
 break;
 case 5:
 #line 209 "cgram.g"
-	{proc_lst->tree = yystack.l_mark[0];}
+        {proc_lst->tree = yystack.l_mark[0];}
 break;
 case 6:
 #line 210 "cgram.g"
-	{;}
+        {;}
 break;
 case 7:
 #line 211 "cgram.g"
-	{;}
+        {;}
 break;
 case 8:
 #line 212 "cgram.g"
-	{;}
+        {;}
 break;
 case 9:
 #line 214 "cgram.g"
-	{;}
+        {;}
 break;
 case 11:
 #line 217 "cgram.g"
-	{;}
+        {;}
 break;
 case 12:
 #line 219 "cgram.g"
-	{invoc_grp(Str0(yystack.l_mark[0]));;}
+        {invoc_grp(Str0(yystack.l_mark[0]));;}
 break;
 case 13:
 #line 220 "cgram.g"
-	{invocbl(yystack.l_mark[0], -1);;}
+        {invocbl(yystack.l_mark[0], -1);;}
 break;
 case 14:
 #line 221 "cgram.g"
-	{invocbl(yystack.l_mark[-2], atoi(Str0(yystack.l_mark[0])));;}
+        {invocbl(yystack.l_mark[-2], atoi(Str0(yystack.l_mark[0])));;}
 break;
 case 15:
 #line 223 "cgram.g"
-	{;}
+        {;}
 break;
 case 17:
 #line 226 "cgram.g"
-	{;}
+        {;}
 break;
 case 18:
 #line 228 "cgram.g"
-	{lnkdcl(Str0(yystack.l_mark[0]));;}
+        {lnkdcl(Str0(yystack.l_mark[0]));;}
 break;
 case 19:
 #line 229 "cgram.g"
-	{lnkdcl(Str0(yystack.l_mark[0]));;}
+        {lnkdcl(Str0(yystack.l_mark[0]));;}
 break;
 case 20:
 #line 231 "cgram.g"
-	{idflag = F_Global;}
+        {idflag = F_Global;}
 break;
 case 21:
 #line 231 "cgram.g"
-	{;}
+        {;}
 break;
 case 22:
 #line 233 "cgram.g"
-	{init_rec(Str0(yystack.l_mark[0])); idflag = F_Field;}
+        {init_rec(Str0(yystack.l_mark[0])); idflag = F_Field;}
 break;
 case 23:
 #line 233 "cgram.g"
-	{
+        {
   ;
   }
 break;
 case 24:
 #line 237 "cgram.g"
-	{;}
+        {;}
 break;
 case 25:
 #line 238 "cgram.g"
-	{;}
+        {;}
 break;
 case 26:
 #line 240 "cgram.g"
-	{
+        {
   yyval = tree6(N_Proc,yystack.l_mark[-5],yystack.l_mark[-5],yystack.l_mark[-2],yystack.l_mark[-1],yystack.l_mark[0]);
   }
 break;
 case 27:
 #line 244 "cgram.g"
-	{init_proc(Str0(yystack.l_mark[0])); idflag = F_Argument;}
+        {init_proc(Str0(yystack.l_mark[0])); idflag = F_Argument;}
 break;
 case 28:
 #line 244 "cgram.g"
-	{
+        {
   ;
   }
 break;
 case 29:
 #line 248 "cgram.g"
-	{;}
+        {;}
 break;
 case 30:
 #line 249 "cgram.g"
-	{;}
+        {;}
 break;
 case 31:
 #line 250 "cgram.g"
-	{proc_lst->nargs = -proc_lst->nargs;}
+        {proc_lst->nargs = -proc_lst->nargs;}
 break;
 case 32:
 #line 253 "cgram.g"
-	{
+        {
   install(Str0(yystack.l_mark[0]),idflag);
   }
 break;
 case 33:
 #line 256 "cgram.g"
-	{
+        {
   install(Str0(yystack.l_mark[0]),idflag);
   }
 break;
 case 34:
 #line 260 "cgram.g"
-	{;}
+        {;}
 break;
 case 35:
 #line 261 "cgram.g"
-	{;}
+        {;}
 break;
 case 36:
 #line 263 "cgram.g"
-	{idflag = F_Dynamic;}
+        {idflag = F_Dynamic;}
 break;
 case 37:
 #line 264 "cgram.g"
-	{idflag = F_Static;}
+        {idflag = F_Static;}
 break;
 case 38:
 #line 266 "cgram.g"
-	{yyval = tree1(N_Empty);}
+        {yyval = tree1(N_Empty);}
 break;
 case 39:
 #line 267 "cgram.g"
-	{yyval = yystack.l_mark[-1];}
+        {yyval = yystack.l_mark[-1];}
 break;
 case 40:
 #line 269 "cgram.g"
-	{yyval = tree1(N_Empty);}
+        {yyval = tree1(N_Empty);}
 break;
 case 41:
 #line 270 "cgram.g"
-	{yyval = tree4(N_Slist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Slist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 42:
 #line 272 "cgram.g"
-	{yyval = tree1(N_Empty);}
+        {yyval = tree1(N_Empty);}
 break;
 case 45:
 #line 276 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 47:
 #line 279 "cgram.g"
-	{yyval = tree5(N_Scan,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Scan,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 49:
 #line 282 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 50:
 #line 283 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 51:
 #line 284 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 52:
 #line 285 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 53:
 #line 286 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 54:
 #line 287 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 55:
 #line 288 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 56:
 #line 289 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 57:
 #line 290 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 58:
 #line 291 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 59:
 #line 292 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 60:
 #line 293 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 61:
 #line 294 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 62:
 #line 295 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 63:
 #line 296 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 64:
 #line 297 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 65:
 #line 298 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 66:
 #line 299 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 67:
 #line 300 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 68:
 #line 301 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 69:
 #line 302 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 70:
 #line 303 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 71:
 #line 304 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 72:
 #line 305 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 73:
 #line 306 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 74:
 #line 307 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 75:
 #line 308 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 76:
 #line 309 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 77:
 #line 310 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 78:
 #line 311 "cgram.g"
-	{yyval = tree5(N_Scan,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Scan,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 79:
 #line 312 "cgram.g"
-	{yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = aug_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 80:
 #line 313 "cgram.g"
-	{yyval = tree5(N_Activat,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Activat,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 82:
 #line 316 "cgram.g"
-	{yyval = to_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = to_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 83:
 #line 317 "cgram.g"
-	{yyval = toby_nd(yystack.l_mark[-3],yystack.l_mark[-4],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = toby_nd(yystack.l_mark[-3],yystack.l_mark[-4],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 85:
 #line 320 "cgram.g"
-	{yyval = tree4(N_Alt,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Alt,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 87:
 #line 323 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 88:
 #line 324 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 89:
 #line 325 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 90:
 #line 326 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 91:
 #line 327 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 92:
 #line 328 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 93:
 #line 329 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 94:
 #line 330 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 95:
 #line 331 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 96:
 #line 332 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 97:
 #line 333 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 98:
 #line 334 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 99:
 #line 335 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 100:
 #line 336 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 102:
 #line 339 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 103:
 #line 340 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 105:
 #line 343 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 106:
 #line 344 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 107:
 #line 345 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 108:
 #line 346 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 110:
 #line 349 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 111:
 #line 350 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 112:
 #line 351 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 113:
 #line 352 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 116:
 #line 356 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 117:
 #line 359 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
+        {yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
 break;
 case 118:
 #line 360 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
+        {yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
 break;
 case 119:
 #line 361 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
+        {yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
 break;
 case 120:
 #line 362 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
+        {yyval = binary_nd(yystack.l_mark[0],yystack.l_mark[-1],tree1(N_Empty));}
 break;
 case 122:
 #line 365 "cgram.g"
-	{yyval = tree4(N_Limit,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Limit,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 123:
 #line 366 "cgram.g"
-	{yyval = tree5(N_Activat,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Activat,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 124:
 #line 367 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 125:
 #line 368 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 126:
 #line 369 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 127:
 #line 370 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 128:
 #line 371 "cgram.g"
-	{yyval = tree4(N_Apply,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Apply,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 130:
 #line 374 "cgram.g"
-	{yyval = tree5(N_Activat,yystack.l_mark[-1],yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
+        {yyval = tree5(N_Activat,yystack.l_mark[-1],yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
 break;
 case 131:
 #line 375 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
 break;
 case 132:
 #line 376 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
 break;
 case 133:
 #line 377 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
 break;
 case 134:
 #line 378 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
+        {yyval = binary_nd(yystack.l_mark[-1],tree1(N_Empty),yystack.l_mark[0]);}
 break;
 case 135:
 #line 379 "cgram.g"
-	{yyval = tree3(N_Not,yystack.l_mark[0],yystack.l_mark[0]);}
+        {yyval = tree3(N_Not,yystack.l_mark[0],yystack.l_mark[0]);}
 break;
 case 136:
 #line 380 "cgram.g"
-	{yyval = tree3(N_Bar,yystack.l_mark[0],yystack.l_mark[0]);}
+        {yyval = tree3(N_Bar,yystack.l_mark[0],yystack.l_mark[0]);}
 break;
 case 137:
 #line 381 "cgram.g"
-	{yyval = tree3(N_Bar,yystack.l_mark[0],yystack.l_mark[0]);}
+        {yyval = tree3(N_Bar,yystack.l_mark[0],yystack.l_mark[0]);}
 break;
 case 138:
 #line 382 "cgram.g"
-	{yyval = tree3(N_Bar,yystack.l_mark[0],yystack.l_mark[0]);}
+        {yyval = tree3(N_Bar,yystack.l_mark[0],yystack.l_mark[0]);}
 break;
 case 139:
 #line 383 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 140:
 #line 384 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 141:
 #line 385 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 142:
 #line 386 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 143:
 #line 387 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 144:
 #line 388 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 145:
 #line 389 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 146:
 #line 390 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 147:
 #line 391 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 148:
 #line 392 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 149:
 #line 393 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 150:
 #line 394 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 151:
 #line 395 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 152:
 #line 396 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 153:
 #line 397 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 154:
 #line 398 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 155:
 #line 399 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 156:
 #line 400 "cgram.g"
-	{yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = MultiUnary(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 157:
 #line 401 "cgram.g"
-	{yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = unary_nd(yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 167:
 #line 412 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
+        {yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
 break;
 case 168:
 #line 413 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
+        {yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
 break;
 case 169:
 #line 414 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
+        {yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
 break;
 case 170:
 #line 415 "cgram.g"
-	{yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
+        {yyval = binary_nd(yystack.l_mark[0],tree1(N_Empty),tree1(N_Empty)); }
 break;
 case 171:
 #line 416 "cgram.g"
-	{yyval = tree3(N_Create,yystack.l_mark[-1],yystack.l_mark[0]); proc_lst->has_coexpr = 1;;}
+        {yyval = tree3(N_Create,yystack.l_mark[-1],yystack.l_mark[0]); proc_lst->has_coexpr = 1;;}
 break;
 case 172:
 #line 417 "cgram.g"
-	{LSym0(yystack.l_mark[0]) = putloc(Str0(yystack.l_mark[0]),0);}
+        {LSym0(yystack.l_mark[0]) = putloc(Str0(yystack.l_mark[0]),0);}
 break;
 case 173:
 #line 418 "cgram.g"
-	{yyval = tree2(N_Next,yystack.l_mark[0]);}
+        {yyval = tree2(N_Next,yystack.l_mark[0]);}
 break;
 case 174:
 #line 419 "cgram.g"
-	{yyval = tree3(N_Break,yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = tree3(N_Break,yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 175:
 #line 420 "cgram.g"
-	{if ((yystack.l_mark[-1])->n_type == N_Elist) yyval = invk_nd(yystack.l_mark[-2],tree1(N_Empty),yystack.l_mark[-1]); else yyval = yystack.l_mark[-1];}
+        {if ((yystack.l_mark[-1])->n_type == N_Elist) yyval = invk_nd(yystack.l_mark[-2],tree1(N_Empty),yystack.l_mark[-1]); else yyval = yystack.l_mark[-1];}
 break;
 case 176:
 #line 421 "cgram.g"
-	{yyval = yystack.l_mark[-1];}
+        {yyval = yystack.l_mark[-1];}
 break;
 case 177:
 #line 422 "cgram.g"
-	{yyval = list_nd(yystack.l_mark[-2],yystack.l_mark[-1]);}
+        {yyval = list_nd(yystack.l_mark[-2],yystack.l_mark[-1]);}
 break;
 case 178:
 #line 423 "cgram.g"
-	{yyval = buildarray(yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[-1]);}
+        {yyval = buildarray(yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[-1]);}
 break;
 case 179:
 #line 424 "cgram.g"
-	{yyval = invk_nd(yystack.l_mark[-1],yystack.l_mark[-2],list_nd(yystack.l_mark[-1],tree1(N_Empty)));}
+        {yyval = invk_nd(yystack.l_mark[-1],yystack.l_mark[-2],list_nd(yystack.l_mark[-1],tree1(N_Empty)));}
 break;
 case 180:
 #line 425 "cgram.g"
-	{yyval = invk_nd(yystack.l_mark[-2],yystack.l_mark[-3],list_nd(yystack.l_mark[-2],yystack.l_mark[-1]));}
+        {yyval = invk_nd(yystack.l_mark[-2],yystack.l_mark[-3],list_nd(yystack.l_mark[-2],yystack.l_mark[-1]));}
 break;
 case 181:
 #line 426 "cgram.g"
-	{yyval = invk_nd(yystack.l_mark[-2],yystack.l_mark[-3],yystack.l_mark[-1]);}
+        {yyval = invk_nd(yystack.l_mark[-2],yystack.l_mark[-3],yystack.l_mark[-1]);}
 break;
 case 182:
 #line 427 "cgram.g"
-	{yyval = tree4(N_Field,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Field,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 183:
 #line 428 "cgram.g"
-	{yyval = key_leaf(yystack.l_mark[-1],spec_str("fail"));}
+        {yyval = key_leaf(yystack.l_mark[-1],spec_str("fail"));}
 break;
 case 184:
 #line 429 "cgram.g"
-	{yyval = key_leaf(yystack.l_mark[-1],Str0(yystack.l_mark[0]));}
+        {yyval = key_leaf(yystack.l_mark[-1],Str0(yystack.l_mark[0]));}
 break;
 case 185:
 #line 432 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
+        {yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
 break;
 case 186:
 #line 433 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 187:
 #line 435 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
+        {yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
 break;
 case 188:
 #line 436 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 189:
 #line 438 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
+        {yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
 break;
 case 190:
 #line 439 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 191:
 #line 441 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
+        {yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
 break;
 case 192:
 #line 443 "cgram.g"
-	{yyval = tree4(N_Ret,yystack.l_mark[0],yystack.l_mark[0],tree1(N_Empty));}
+        {yyval = tree4(N_Ret,yystack.l_mark[0],yystack.l_mark[0],tree1(N_Empty));}
 break;
 case 193:
 #line 444 "cgram.g"
-	{yyval = tree4(N_Ret,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0]);}
+        {yyval = tree4(N_Ret,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0]);}
 break;
 case 194:
 #line 445 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
+        {yyval = tree5(N_Loop,yystack.l_mark[-1],yystack.l_mark[-1],yystack.l_mark[0],tree1(N_Empty));}
 break;
 case 195:
 #line 446 "cgram.g"
-	{yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_Loop,yystack.l_mark[-3],yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 196:
 #line 448 "cgram.g"
-	{yyval = tree5(N_If,yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0],tree1(N_Empty));}
+        {yyval = tree5(N_If,yystack.l_mark[-3],yystack.l_mark[-2],yystack.l_mark[0],tree1(N_Empty));}
 break;
 case 197:
 #line 449 "cgram.g"
-	{yyval = tree5(N_If,yystack.l_mark[-5],yystack.l_mark[-4],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree5(N_If,yystack.l_mark[-5],yystack.l_mark[-4],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 198:
 #line 451 "cgram.g"
-	{yyval = case_nd(yystack.l_mark[-5],yystack.l_mark[-4],yystack.l_mark[-1]);}
+        {yyval = case_nd(yystack.l_mark[-5],yystack.l_mark[-4],yystack.l_mark[-1]);}
 break;
 case 200:
 #line 454 "cgram.g"
-	{yyval = tree4(N_Clist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Clist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 201:
 #line 456 "cgram.g"
-	{yyval = tree4(N_Ccls,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Ccls,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 202:
 #line 457 "cgram.g"
-	{yyval = tree4(N_Ccls,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Ccls,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 case 203:
 #line 459 "cgram.g"
-	{yyval = yystack.l_mark[0];;}
+        {yyval = yystack.l_mark[0];;}
 break;
 case 204:
 #line 460 "cgram.g"
-	{yyval = tree4(N_Elist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);;}
+        {yyval = tree4(N_Elist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);;}
 break;
 case 205:
 #line 462 "cgram.g"
-	{
+        {
   yyval = tree3(N_Create,yystack.l_mark[0],yystack.l_mark[0]); proc_lst->has_coexpr = 1;;
   }
 break;
 case 206:
 #line 465 "cgram.g"
-	{
+        {
   yyval =tree4(N_Elist,yystack.l_mark[-1],yystack.l_mark[-2],tree3(N_Create,yystack.l_mark[-1],yystack.l_mark[0])); proc_lst->has_coexpr = 1;;
   }
 break;
 case 207:
 #line 469 "cgram.g"
-	{CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_IntLit,0);}
+        {CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_IntLit,0);}
 break;
 case 208:
 #line 470 "cgram.g"
-	{CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_RealLit,0);}
+        {CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_RealLit,0);}
 break;
 case 209:
 #line 471 "cgram.g"
-	{CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_StrLit,(int)Val1(yystack.l_mark[0]));}
+        {CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_StrLit,(int)Val1(yystack.l_mark[0]));}
 break;
 case 210:
 #line 472 "cgram.g"
-	{CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_CsetLit,(int)Val1(yystack.l_mark[0]));}
+        {CSym0(yystack.l_mark[0]) = putlit(Str0(yystack.l_mark[0]),F_CsetLit,(int)Val1(yystack.l_mark[0]));}
 break;
 case 211:
 #line 474 "cgram.g"
-	{yyval = sect_nd(yystack.l_mark[-2],yystack.l_mark[-5],yystack.l_mark[-3],yystack.l_mark[-1]);}
+        {yyval = sect_nd(yystack.l_mark[-2],yystack.l_mark[-5],yystack.l_mark[-3],yystack.l_mark[-1]);}
 break;
 case 212:
 #line 476 "cgram.g"
-	{yyval = yystack.l_mark[0];}
+        {yyval = yystack.l_mark[0];}
 break;
 case 213:
 #line 477 "cgram.g"
-	{yyval = yystack.l_mark[0];}
+        {yyval = yystack.l_mark[0];}
 break;
 case 214:
 #line 478 "cgram.g"
-	{yyval = yystack.l_mark[0];}
+        {yyval = yystack.l_mark[0];}
 break;
 case 216:
 #line 481 "cgram.g"
-	{yyval = tree4(N_Slist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
+        {yyval = tree4(N_Slist,yystack.l_mark[-1],yystack.l_mark[-2],yystack.l_mark[0]);}
 break;
 #line 2929 "y.tab.c"
     }

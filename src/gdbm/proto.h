@@ -42,7 +42,7 @@
 
 /* From bucket.c */
 void _gdbm_new_bucket    _ARGS((gdbm_file_info *dbf, hash_bucket *bucket,
-				int bits ));
+                                int bits ));
 void _gdbm_get_bucket    _ARGS((gdbm_file_info *dbf, word_t dir_index ));
 void _gdbm_split_bucket  _ARGS((gdbm_file_info *dbf, word_t next_insert ));
 void _gdbm_write_bucket  _ARGS((gdbm_file_info *dbf, cache_elem *ca_entry ));
@@ -50,14 +50,14 @@ void _gdbm_write_bucket  _ARGS((gdbm_file_info *dbf, cache_elem *ca_entry ));
 /* From falloc.c */
 off_t _gdbm_alloc       _ARGS((gdbm_file_info *dbf, int num_bytes ));
 void _gdbm_free         _ARGS((gdbm_file_info *dbf, off_t file_adr,
-			       int num_bytes ));
+                               int num_bytes ));
 int  _gdbm_put_av_elem  _ARGS((avail_elem new_el, avail_elem av_table [],
-			       int *av_count ));
+                               int *av_count ));
 
 /* From findkey.c */
 char *_gdbm_read_entry  _ARGS((gdbm_file_info *dbf, int elem_loc));
 int _gdbm_findkey       _ARGS((gdbm_file_info *dbf, datum key,  char **dptr,
-			       word_t *new_hash_val));
+                               word_t *new_hash_val));
 
 /* From hash.c */
 word_t _gdbm_hash _ARGS((datum key ));
@@ -67,21 +67,21 @@ void _gdbm_end_update   _ARGS((gdbm_file_info *dbf ));
 int _gdbm_fatal         _ARGS((gdbm_file_info *dbf, char *val ));
 
 /* From gdbmopen.c */
-int _gdbm_init_cache	_ARGS((gdbm_file_info *dbf, int size));
+int _gdbm_init_cache    _ARGS((gdbm_file_info *dbf, int size));
 
 /* The user callable routines.... */
-void  gdbm_close	  _ARGS((gdbm_file_info *dbf ));
-int   gdbm_delete	  _ARGS((gdbm_file_info *dbf, datum key ));
-datum gdbm_fetch	  _ARGS((gdbm_file_info *dbf, datum key ));
+void  gdbm_close          _ARGS((gdbm_file_info *dbf ));
+int   gdbm_delete         _ARGS((gdbm_file_info *dbf, datum key ));
+datum gdbm_fetch          _ARGS((gdbm_file_info *dbf, datum key ));
 gdbm_file_info *gdbm_open _ARGS((char *file, int block_size,
-				 int flags, int mode,
-				 void (*fatal_func) (void)));
-int   gdbm_reorganize	  _ARGS((gdbm_file_info *dbf ));
+                                 int flags, int mode,
+                                 void (*fatal_func) (void)));
+int   gdbm_reorganize     _ARGS((gdbm_file_info *dbf ));
 datum gdbm_firstkey       _ARGS((gdbm_file_info *dbf ));
 datum gdbm_nextkey        _ARGS((gdbm_file_info *dbf, datum key ));
 int   gdbm_store          _ARGS((gdbm_file_info *dbf, datum key,
-				 datum content, int flags ));
-int   gdbm_exists	  _ARGS((gdbm_file_info *dbf, datum key));
-void  gdbm_sync		  _ARGS((gdbm_file_info *dbf));
-int   gdbm_setopt	  _ARGS((gdbm_file_info *dbf, int optflag,
-				 int *optval, int optlen));
+                                 datum content, int flags ));
+int   gdbm_exists         _ARGS((gdbm_file_info *dbf, datum key));
+void  gdbm_sync           _ARGS((gdbm_file_info *dbf));
+int   gdbm_setopt         _ARGS((gdbm_file_info *dbf, int optflag,
+                                 int *optval, int optlen));

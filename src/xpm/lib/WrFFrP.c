@@ -50,25 +50,25 @@ XpmWriteFileFromPixmap(display, filename, pixmap, shapemask, attributes)
 
     /* get geometry */
     if (attributes && attributes->valuemask & XpmSize) {
-	width = attributes->width;
-	height = attributes->height;
+        width = attributes->width;
+        height = attributes->height;
     }
     /* get the ximages */
     if (pixmap)
-	xpmCreateImageFromPixmap(display, pixmap, &ximage, &width, &height);
+        xpmCreateImageFromPixmap(display, pixmap, &ximage, &width, &height);
     if (shapemask)
-	xpmCreateImageFromPixmap(display, shapemask, &shapeimage,
-				 &width, &height);
+        xpmCreateImageFromPixmap(display, shapemask, &shapeimage,
+                                 &width, &height);
 
     /* write to the file */
     ErrorStatus = XpmWriteFileFromImage(display, filename, ximage, shapeimage,
-					attributes);
+                                        attributes);
 
     /* destroy the ximages */
     if (ximage)
-	XDestroyImage(ximage);
+        XDestroyImage(ximage);
     if (shapeimage)
-	XDestroyImage(shapeimage);
+        XDestroyImage(shapeimage);
 
     return (ErrorStatus);
 }

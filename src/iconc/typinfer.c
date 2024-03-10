@@ -17,18 +17,18 @@
 #ifdef HighResTime
 #include <sys/time.h>
 #include <sys/resource.h>
-#endif					/* HighResTime */
-#endif					/* TypTrc */
+#endif                                  /* HighResTime */
+#endif                                  /* TypTrc */
 
 #if NT && !defined(NTGCC)
 /* keyword inline does not work on MSVC */
 #define inline
 #else
 #include <sys/time.h>
-#endif					/* WIN32 */
+#endif                                  /* WIN32 */
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
-#endif					/* HAVE_SYS_RESOURCE_H */
+#endif                                  /* HAVE_SYS_RESOURCE_H */
 /*
  * Information about co-expressions is keep on a list.
  */
@@ -98,7 +98,7 @@ static void         typ_deref (typeinfo_t *src, typeinfo_t *dest, int chk);
 #ifdef TypTrc
 static void         prt_d_typ   (FILE *file, typeinfo_t* typ);
 static void         prt_typ     (FILE *file, typeinfo_t* typ);
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
 #define CanFail   1
 
@@ -118,13 +118,13 @@ struct typ_info *type_array;
 static int num_new;   /* number of types supporting "new" abstract type comp */
 
 /*
- * Data base component codes are mapped to type inferencing information 
+ * Data base component codes are mapped to type inferencing information
  *  using an array.
  */
 struct compnt_info {
    int frst_bit;        /* first bit in bit vector allocated to component */
    int num_bits;        /* number of bits allocated to this component */
-   struct store *store; /* maps component "reference" to the type it holds */ 
+   struct store *store; /* maps component "reference" to the type it holds */
    };
 static struct compnt_info *compnt_array;
 
@@ -172,10 +172,10 @@ long changed;  /* number of changes to type information in this iteration */
 int iteration; /* iteration number for type inferencing */
 
 #ifdef TypTrc
-static FILE *trcfile = NULL;	/* output file pointer for tracing */
-static char *trcname = "stdout";/* "typ-trc.out"*/	/* output file name for tracing */
+static FILE *trcfile = NULL;    /* output file pointer for tracing */
+static char *trcname = "stdout";/* "typ-trc.out"*/      /* output file name for tracing */
 static char *trc_indent = "";
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
 /*
  * typeinfer - infer types of operands. If "do_typinfer" is set, actually
@@ -201,7 +201,7 @@ void typeinfer()
 #ifdef DebugOnly
 struct rusage ru_in, ru_out;
 getrusage(RUSAGE_SELF, &ru_in);
-#endif					/* DebugOnly */
+#endif                                  /* DebugOnly */
 #ifdef TypTrc
    /*
     * Set up for type tracing.
@@ -213,9 +213,9 @@ getrusage(RUSAGE_SELF, &ru_in);
 
    getrusage(RUSAGE_SELF, &rusage);
    start_infer = rusage.ru_utime.tv_sec*1000 + rusage.ru_utime.tv_usec/1000;
-#else					/* HighResTime */
+#else                                   /* HighResTime */
    start_infer = millisec();
-#endif					/* HighResTime */
+#endif                                  /* HighResTime */
 
    if (trcname == NULL)
       trcname = getenv("TYPTRC");
@@ -229,7 +229,7 @@ getrusage(RUSAGE_SELF, &ru_in);
          trcfile = popen(trcname+1, WriteText);
          }
       else
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
    if (strcmp(trcname, "stdout") == 0)
       trcfile = stdout;
@@ -244,7 +244,7 @@ getrusage(RUSAGE_SELF, &ru_in);
          exit(EXIT_FAILURE);
          }
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    /*
     * Make sure max_prm is large enough for any run-time routine.
@@ -259,7 +259,7 @@ getrusage(RUSAGE_SELF, &ru_in);
            max_prm = ip->nargs;
 
    /*
-    * Allocate an arrays to map data base type codes and component codes 
+    * Allocate an arrays to map data base type codes and component codes
     *  to type inferencing information.
     */
    type_array = (struct typ_info *)alloc((unsigned int)(num_typs *
@@ -329,7 +329,7 @@ getrusage(RUSAGE_SELF, &ru_in);
     *  static variables. Also allocate types to procedures, built-in functions,
     *  record constructors.
     */
-   n_gbl = 0; 
+   n_gbl = 0;
    for (i = 0; i < GHSize; i++)
       for (gptr = ghash[i]; gptr != NULL; gptr = gptr->blink) {
          flag = gptr->flag;
@@ -510,7 +510,7 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
          fprintf(trcfile, " sub-types: %d\n", type_array[i].num_bits);
          }
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    if (do_typinfer) {
       /*
@@ -672,7 +672,7 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
    iteration = 0;
    if (verbose > 1)
       fprintf(stderr, "type inferencing: ");
-   
+
    while (changed > 0L) {
       changed = 0L;
       ++iteration;
@@ -680,7 +680,7 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
 #ifdef TypTrc
       if (trcfile != NULL)
          fprintf(trcfile, "**** iteration %d ****\n", iteration);
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
       /*
        * Start at the implicit initial call to the main procedure. Inferencing
@@ -735,15 +735,15 @@ printf("hash-mask: %x hash-upper: %x hash-upper-shr: %d hash-shifts: %d\n",
 #ifdef HighResTime
         getrusage(RUSAGE_SELF, &rusage);
         end_infer = rusage.ru_utime.tv_sec*1000 + rusage.ru_utime.tv_usec/1000;
-#else					/* HighResTime */
+#else                                   /* HighResTime */
         end_infer = millisec();
-#endif					/* HighResTime */
-        fprintf(trcfile, "\n**** inferencing time: %ld milliseconds\n", 
+#endif                                  /* HighResTime */
+        fprintf(trcfile, "\n**** inferencing time: %ld milliseconds\n",
            end_infer - start_infer);
         if (trcfile != stdout && trcfile != stderr)
            fclose(trcfile);
         }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
    }
 
 /*
@@ -884,7 +884,7 @@ struct node *n;
       case N_Scan:
          if (optab[Val0(Tree0(n))].tok.t_type == AUGQMARK)
             abstr_new(n, optab[asgn_loc].binary->in_line);
-         find_new(Tree1(n));   /* subject */ 
+         find_new(Tree1(n));   /* subject */
          find_new(Tree2(n));   /* body */
          break;
 
@@ -945,7 +945,7 @@ struct il_code *il;
                 fprintf(trcfile, "%s (%d,%d) %s\n", n->n_file, n->n_line,
                    n->n_col, icontypes[il->u[0].n].id);
                 }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
              }
          i = il->u[1].n;            /* num args */
          indx = 2;
@@ -985,7 +985,7 @@ struct il_code *il;
          num_cases = il->u[0].n;
          indx = 1;
          for (i = 0; i < num_cases; ++i) {
-            ++indx;		              /* skip selection num */
+            ++indx;                           /* skip selection num */
             abstr_new(n, il->u[indx++].fld);  /* action */
             }
          abstr_new(n, il->u[indx].fld);       /* default */
@@ -993,7 +993,7 @@ struct il_code *il;
 
       case IL_Acase:
          abstr_new(n, il->u[2].fld);          /* C_integer action */
-         if (largeints) 
+         if (largeints)
             abstr_new(n, il->u[3].fld);       /* integer action */
          abstr_new(n, il->u[4].fld);          /* C_double action */
          break;
@@ -1110,7 +1110,7 @@ typeinfo_t *rslt_type;
 
 #ifdef TypTrc
          rslt_type = NULL;    /* don't share result loc with subexpressions*/
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
          if (resume)
             n->store = alloc_stor(n_gbl + n_loc, n_icntyp);
@@ -1123,7 +1123,7 @@ typeinfo_t *rslt_type;
             n->type = Vcall(alloc_typ(n_intrtyp));
          else
             n->type = rslt_type;
-         /* 
+         /*
           * Assume operation can suspend or fail.
           */
          n->store = alloc_stor(n_gbl + n_loc, n_icntyp);
@@ -1190,7 +1190,7 @@ typeinfo_t *rslt_type;
 
 #ifdef TypTrc
          rslt_type = NULL;    /* don't share result loc with subexpressions*/
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
          if (resume)
             n->store = alloc_stor(n_gbl + n_loc, n_icntyp);
@@ -1299,7 +1299,7 @@ typeinfo_t *rslt_type;
 
 #ifdef TypTrc
          rslt_type = NULL;    /* don't share result loc with subexpressions*/
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
          /*
           * control clause is bounded
           */
@@ -1519,7 +1519,7 @@ typeinfo_t *rslt_type;
             n->symtyps->next = symtyps(n_arg_sym(asgn_impl));
             }
          can_fail = findloops(Tree2(n), can_fail, NULL);  /* body */
-         can_fail = findloops(Tree1(n), can_fail, NULL);  /* subject */ 
+         can_fail = findloops(Tree1(n), can_fail, NULL);  /* subject */
          }
          break;
 
@@ -1686,7 +1686,7 @@ infer_prc(proc, n)
       fprintf(trcfile, "%s (%d,%d) %s%s(", n->n_file, n->n_line, n->n_col,
          trc_indent, proc->name);
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    /*
     * Get the types of the arguments, starting with the non-varargs part.
@@ -1706,7 +1706,7 @@ infer_prc(proc, n)
             fprintf(trcfile, ", ");
          prt_d_typ(trcfile, arg_typs->types[i]);
          }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
       }
 
@@ -1727,7 +1727,7 @@ infer_prc(proc, n)
                fprintf(trcfile, ", ");
             prt_d_typ(trcfile, arg_typs->types[i]);
             }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
          ++i;
          }
@@ -1747,7 +1747,7 @@ infer_prc(proc, n)
    {
       char *trc_ind_sav = trc_indent;
       trc_indent = "";  /* staring a new procedure, don't indent tracing */
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    /*
     * only perform type inference on the body of a procedure
@@ -1814,7 +1814,7 @@ infer_prc(proc, n)
 #ifdef TypTrc
       trc_indent = trc_ind_sav;
    }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    /*
     * Get updated types for global variables at the end of the call.
@@ -1845,26 +1845,26 @@ static struct store * cpy_store(struct store * src)
    int stor_sz;
    struct store * dst;
 
-   if (src == NULL) 
+   if (src == NULL)
       dst = get_store(1);
    else {
       stor_sz = n_gbl + n_loc;
       dst = get_store(0);
       for (i = 0; i < stor_sz; i++) {
-	 /*
-	  * This optimization, used for years, assumes that reference-based
-	  * semantics will suffice for copying of vectors contained within
-	  * stores. There may be situations where this can have side effects.
-	  * The original code (see below) only copied the first n_icntyp bits
-	  * in each vector contained within a store.
-	  *
-	  * Vpp(CpyTyp(n_icntyp, src->types[i], dst->types[i]));
-	  *
-	  * TODO: consider for this and subsequent/related calls to macro
-	  * tv_cpy(), whether more and better type vector copying is needed.
-	  */
-	 tv_cpy(dst->types[i], src->types[i]);
-	 }
+         /*
+          * This optimization, used for years, assumes that reference-based
+          * semantics will suffice for copying of vectors contained within
+          * stores. There may be situations where this can have side effects.
+          * The original code (see below) only copied the first n_icntyp bits
+          * in each vector contained within a store.
+          *
+          * Vpp(CpyTyp(n_icntyp, src->types[i], dst->types[i]));
+          *
+          * TODO: consider for this and subsequent/related calls to macro
+          * tv_cpy(), whether more and better type vector copying is needed.
+          */
+         tv_cpy(dst->types[i], src->types[i]);
+         }
       }
    return dst;
 }
@@ -2015,7 +2015,7 @@ deref_lcl(src, dest)
       prt_typ(trcfile, wktyp->bits);
       fprintf(trcfile, "\n");
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    free_wktyp(wktyp);
 }
@@ -2260,11 +2260,11 @@ nodeptr n;
 #ifdef TypTrc
          Vpp(MrgTyp(n_intrtyp, Tree0(n)->type, n->type));
          Vpp(MrgTyp(n_intrtyp, Tree1(n)->type, n->type));
-#else					/* TypTrc */
+#else                                   /* TypTrc */
          /*
           * Type is computed by sub-expressions directly into n->type.
           */
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
          break;
 
       case N_Apply: {
@@ -2292,7 +2292,7 @@ nodeptr n;
          for (i = 0; i < num_lst; ++i)
             if (Vcall(bitset(lst_types->bits, frst_lst + i)))
                Vpp(MrgTyp(n_icntyp, lstel_stor->types[i], wktyp->bits));
-	 Vcall(set_typ(wktyp->bits, null_bit));
+         Vcall(set_typ(wktyp->bits, null_bit));
          sav_nargs = num_args;
          sav_argtyp = arg_typs;
          num_args = max_prm;
@@ -2341,7 +2341,7 @@ nodeptr n;
           *  resumption store.  If backtracking reaches this operation
           *  execution may either continue backward or proceed forward
           *  again.
-          */ 
+          */
          mrg_store(n->store, fail_store);
          mrg_store(n->store, succ_store);
          fail_store = n->store;
@@ -2415,11 +2415,11 @@ nodeptr n;
                mrg_store(n->store, fail_store);  /* 'case' can be resumed */
 #ifdef TypTrc
             Vpp(MrgTyp(n_intrtyp, Tree1(clause)->type, n->type));
-#else					/* TypTrc */
+#else                                   /* TypTrc */
             /*
              * Type is computed by case clause directly into n->type.
             */
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
             }
 
          /*
@@ -2435,11 +2435,11 @@ nodeptr n;
                mrg_store(n->store, fail_store);  /* 'case' can be resumed */
 #ifdef TypTrc
             Vpp(MrgTyp(n_intrtyp, Tree2(n)->type, n->type));
-#else					/* TypTrc */
+#else                                   /* TypTrc */
             /*
              * Type is computed by default clause directly into n->type.
              */
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
             }
          free_store(succ_store);
          succ_store = s_store;
@@ -2549,11 +2549,11 @@ nodeptr n;
          Vpp(MrgTyp(n_intrtyp, Tree1(n)->type, n->type));
          if (Tree2(n)->n_type != N_Empty)
             Vpp(MrgTyp(n_intrtyp, Tree2(n)->type, n->type));
-#else					/* TypTrc */
+#else                                   /* TypTrc */
          /*
           * Type computed by 'then' and 'else' clauses directly into n->type.
           */
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
          break;
 
       case N_Invok:
@@ -2740,7 +2740,7 @@ nodeptr n;
               if (trcfile != NULL)
                   fprintf(trcfile, "%s (%d,%d) suspend ", n->n_file, n->n_line,
                      n->n_col);
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
                set_ret(Tree1(n)->type); /* set return type of procedure */
 
@@ -2750,11 +2750,11 @@ nodeptr n;
                 */
                store = cur_proc->susp_store;
                for (i = 0; i < n_gbl; ++i) {
-		  /* was:
-		   Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
-		   */
+                  /* was:
+                   Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
+                   */
                   tv_cpy(succ_store->types[i], store->types[i]);
-		  }
+                  }
 
                /*
                 * Next in the do clause resumes the control clause as
@@ -2870,7 +2870,7 @@ nodeptr n;
            if (trcfile != NULL)
                fprintf(trcfile, "%s (%d,%d) return ", n->n_file, n->n_line,
                n->n_col);
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
             set_ret(Tree1(n)->type);
             }
@@ -2878,10 +2878,10 @@ nodeptr n;
             set_ret(NULL);
 
 #ifdef TypTrc
-           if (trcfile != NULL) 
+           if (trcfile != NULL)
                fprintf(trcfile, "%s (%d,%d) fail\n", n->n_file, n->n_line,
                n->n_col);
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
             }
          free_store(succ_store);
@@ -2895,7 +2895,7 @@ nodeptr n;
       case N_Scan: {
          struct implement *asgn_impl;
 
-         infer_nd(Tree1(n));   /* subject */ 
+         infer_nd(Tree1(n));   /* subject */
          typ_deref(Tree1(n)->type, n->symtyps->types[0], 0);
          infer_nd(Tree2(n));   /* body */
 
@@ -2946,7 +2946,7 @@ nodeptr n;
          arg_typs->types[0] = Tree2(n)->type;
          arg_typs->types[1] = Tree3(n)->type;
          /*
-          * sectioning 
+          * sectioning
           */
          infer_impl(Impl0(n), n, n->symtyps, n->type);
          chk_succ(Impl0(n)->ret_flag, n->store);
@@ -3017,7 +3017,7 @@ nodeptr n;
             prt_d_typ(trcfile, Tree3(n)->type);
             fprintf(trcfile, "\n");
             }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
          /*
           * Type is precomputed.
           */
@@ -3075,7 +3075,7 @@ nodeptr n;
             prt_d_typ(trcfile, Typ4(n));
             fprintf(trcfile, "\n");
             }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
          free_argtyp(arg_typs);
          arg_typs = sav_argtyp;
@@ -3112,7 +3112,7 @@ infer_con(rec, n)
       fprintf(trcfile, "%s (%d,%d) %s%s(", n->n_file, n->n_line, n->n_col,
          trc_indent, rec->name);
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    /*
     * Dereference argument types into appropriate entries of field store.
@@ -3128,7 +3128,7 @@ infer_con(rec, n)
             fprintf(trcfile, ", ");
          prt_d_typ(trcfile, arg_typs->types[i]);
          }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
       }
 
@@ -3156,7 +3156,7 @@ infer_con(rec, n)
       prt_typ(trcfile, n->type);
       fprintf(trcfile, "\n");
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 }
 
 /*
@@ -3184,12 +3184,12 @@ infer_act(n)
 
 #ifdef TypTrc
    FILE *trc_save;
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    num_coexp = type_array[coexp_typ].num_bits;
    frst_coexp = type_array[coexp_typ].frst_bit;
 
-   infer_nd(Tree1(n));   /* value to transmit */ 
+   infer_nd(Tree1(n));   /* value to transmit */
    infer_nd(Tree2(n));   /* coexpression */
 
    /*
@@ -3200,13 +3200,13 @@ infer_act(n)
 #ifdef TypTrc
    trc_save = trcfile;
    trcfile = NULL;  /* don't trace value during dereferencing */
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    deref_lcl(Tree1(n)->type, n->symtyps->types[0]);
 
 #ifdef TypTrc
    trcfile = trc_save;
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    typ_deref(Tree2(n)->type, n->symtyps->types[1], 0);
 
@@ -3223,7 +3223,7 @@ infer_act(n)
        * was:
        * Vpp(CpyTyp(n_icntyp, succ_store->types[n_gbl + i],
        *            e_store->types[n_gbl + i]));
-       */	    
+       */
       tv_cpy(e_store->types[n_gbl + i], succ_store->types[n_gbl + i]);
       }
 
@@ -3286,7 +3286,7 @@ infer_act(n)
             if (trcfile != NULL)
                fprintf(trcfile, "%s (%d,%d) %sC%d  2=>>  ", coexp->n->n_file,
                   coexp->n->n_line, coexp->n->n_col, trc_indent, j);
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
             deref_lcl(coexp->n->type, coexp->rslt_typ);
 
@@ -3344,7 +3344,7 @@ infer_act(n)
       prt_typ(trcfile, rslt_typ->bits);
       fprintf(trcfile, "\n");
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    if (optab[Val0(Tree0(n))].tok.t_type == AUGAT) {
       /*
@@ -3420,7 +3420,7 @@ typ_deref(src, dst, chk)
    i = Vcall(deref_prep(dst, src));
    if (chk)
       changed += i;
-   /* 
+   /*
     * predefined variables whose types do not change.
     */
    for (i = 0; i < num_typs; ++i) {
@@ -3537,7 +3537,7 @@ typ_deref(src, dst, chk)
          Vpp(ChkMrgTyp(n_icntyp, fld_stor->types[rng[i] - frst_fld], dst));
       else
          Vpp(MrgTyp(n_icntyp, fld_stor->types[rng[i] - frst_fld], dst));
-      } 
+      }
 #endif
 
 #ifdef opt_try
@@ -3558,7 +3558,7 @@ typ_deref(src, dst, chk)
          Vpp(ChkMrgTyp(n_icntyp, succ_store->types[rng[i] - frst_gbl], dst));
       else
          Vpp(MrgTyp(n_icntyp, succ_store->types[rng[i] - frst_gbl], dst));
-      } 
+      }
 #endif
 
 #ifdef opt_try
@@ -3598,7 +3598,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
    typeinfo_t * rslt_typ;
 {
    int i;
-   int j; 
+   int j;
    int flag;
    int nparms;
    typeinfo_t * typ;
@@ -3612,7 +3612,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
       else
          fprintf(trcfile, "%s(", impl->name);
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
    /*
     * Set up the "symbol table" of dereferenced and undereferenced
     *  argument types as needed by the operation.
@@ -3621,7 +3621,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
    j = 0;
    for (i = 0; i < num_args && i < nparms; ++i) {
       if (impl->arg_flgs[i] & RtParm) {
-	 /* was:Vpp(CpyTyp(n_intrtyp, arg_typs->types[i], symtyps->types[j]));*/
+         /* was:Vpp(CpyTyp(n_intrtyp, arg_typs->types[i], symtyps->types[j]));*/
          tv_cpy(symtyps->types[j], arg_typs->types[i]);
 
 #ifdef TypTrc
@@ -3630,7 +3630,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
                fprintf(trcfile, ", ");
             prt_typ(trcfile, arg_typs->types[i]);
             }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
          ++j;
          }
@@ -3645,7 +3645,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
                fprintf(trcfile, ", ");
             prt_d_typ(trcfile, arg_typs->types[i]);
             }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
          ++j;
          }
@@ -3671,7 +3671,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
                      fprintf(trcfile, ", ");
                   prt_typ(trcfile, arg_typs->types[i]);
                   }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
               }
             else {
@@ -3683,7 +3683,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
                      fprintf(trcfile, ", ");
                   prt_d_typ(trcfile, arg_typs->types[i]);
                   }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
               }
             ++i;
@@ -3724,7 +3724,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
       prt_typ(trcfile, rslt_typ);
       fprintf(trcfile, "\n");
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 }
 
 /*
@@ -3823,7 +3823,7 @@ infer_il(il)
              &maybe_int, &maybe_dbl);
          if (maybe_int) {
             infer_il(il->u[2].fld);          /* C_integer action */
-            if (largeints) 
+            if (largeints)
                infer_il(il->u[3].fld);       /* integer action */
             }
          if (maybe_dbl)
@@ -4093,7 +4093,7 @@ abstr_typ(il, typ)
             num_bits = type_array[typecompnt[i].aggregate].num_bits;
             frst_cmpnt = compnt_array[i].frst_bit;
             if (!typecompnt[i].var && typ->size < n_rttyp)
-               break;   /* bad abstract type computation */ 
+               break;   /* bad abstract type computation */
             for (i = 0; i < num_bits; ++i)
                if (Vcall(bitset(typ1->bits, frst_bit + i)))
                   Vcall(set_typ(typ->bits, frst_cmpnt + i));
@@ -4619,7 +4619,7 @@ nodeptr n;
       fprintf(trcfile, "%s (%d,%d) {\n", n->n_file, n->n_line, n->n_col);
       trc_indent = "   ";
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
    frst_prc = type_array[proc_typ].frst_bit;
    num_prcs = type_array[proc_typ].num_bits;
@@ -4646,7 +4646,7 @@ nodeptr n;
          fprintf(trcfile, "%s (%d,%d) %s{i}(", n->n_file, n->n_line, n->n_col,
             trc_indent);
          }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
       for (i = 0; i < num_args; ++i) {
          Vpp(MrgTyp(n_intrtyp, arg_typs->types[i], n->type));
@@ -4657,7 +4657,7 @@ nodeptr n;
                fprintf(trcfile, ", ");
             prt_typ(trcfile, arg_typs->types[i]);
             }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
          }
 
@@ -4674,7 +4674,7 @@ nodeptr n;
          prt_typ(trcfile, n->type);
          fprintf(trcfile, "\n");
          }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
       }
 
    if (Vcall(bitset(prc_typ->bits, str_bit)) ||
@@ -4749,7 +4749,7 @@ nodeptr n;
       fprintf(trcfile, "%s (%d,%d) }\n", n->n_file, n->n_line, n->n_col);
       trc_indent = "";
       }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
    }
 
 /*
@@ -4894,7 +4894,7 @@ typeinfo_t *typ;
       if (Vcall(bitset(typ, frst_gbl + i))) {
          name = NULL;
          for (j = 0; j < GHSize && name == NULL; j++)
-            for (gptr = ghash[j]; gptr != NULL && name == NULL; 
+            for (gptr = ghash[j]; gptr != NULL && name == NULL;
                gptr = gptr->blink)
                   if (gptr->index == i)
                      name = gptr->name;
@@ -4952,13 +4952,13 @@ typeinfo_t *typ;
    prt_typ(file, wktyp->bits);
    free_wktyp(wktyp);
 }
-#endif					/* TypTrc */
+#endif                                  /* TypTrc */
 
 /*
  * get_argtyp - get an array of pointers to type bit vectors for use
  *  in constructing an argument list. The array is large enough for the
  *  largest argument list.
- */ 
+ */
 static struct argtyps *get_argtyp()
    {
    struct argtyps *argtyps;
@@ -5022,7 +5022,7 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
    n_types += n_set;
 #endif
 
-   /* 
+   /*
     * Predefined variable types.
     */
    for (i = 0; i < num_typs; ++i) {
@@ -5152,7 +5152,7 @@ mark_recs(fp, typ, num_offsets, offset, bad_recs)
    int frst_rec;
    struct type * wktyp;
    struct par_rec * rp;
-   
+
    *num_offsets = 0;
    *offset = -1;
    *bad_recs = 0;

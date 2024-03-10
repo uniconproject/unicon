@@ -19,7 +19,7 @@ http://www.chesterproductions.net.nz/blogs/it/c/an-ssl-client-using-openssl/245/
 
 #include <stdlib.h>
 /* stdlib.h should define getenv_r, but it is missing on some systems??!! */
-int		getenv_r	(const char *name, char *buf, size_t len);
+int             getenv_r        (const char *name, char *buf, size_t len);
 
 /* openssl thinks we are a VMS system when VMS=0 , see sys.h*/
 #if !VMS
@@ -114,7 +114,7 @@ ssize_t read_from_stream(BIO* bio, char* buffer, ssize_t length) {
             }
          /* "should retry" test succeeded. */
          /* check the reason for the retry and handle it appropriately here */
-	 /* think about whether to set errno to EINTR or some such */
+         /* think about whether to set errno to EINTR or some such */
          }
       }
     return r;
@@ -134,7 +134,7 @@ int write_to_stream(BIO* bio, char* buffer, ssize_t length) {
             }
          /* "should retry" test succeeded. */
          /* check the reason for the retry and handle it appropriately here */
-	 /* think about whether to set errno to EINTR or some such */
+         /* think about whether to set errno to EINTR or some such */
          }
       }
    return r;
@@ -144,8 +144,8 @@ int write_to_stream(BIO* bio, char* buffer, ssize_t length) {
  * Connect to a host using an encrypted stream
  */
 BIO* connect_encrypted(char* host, unsigned short port, char* store_path,
-		       char store_type, Tpdisc_t* tpdisc){
-  
+                       char store_type, Tpdisc_t* tpdisc){
+
    Tpssldisc_t* ssldisc = (Tpssldisc_t*) tpdisc;
    SSL_CTX* ctx = NULL;
    SSL* ssl = NULL;
@@ -170,19 +170,19 @@ BIO* connect_encrypted(char* host, unsigned short port, char* store_path,
       (void)tpdisc->exceptf(TP_ETRUST, NULL, tpdisc);
       return NULL;
       }
-   
+
    /* Setting up the BIO SSL object */
    bio = BIO_new_ssl_connect(ctx);
    if (bio == NULL) {
       /* Exception: Unable to allocate new bio. */
-      (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);     
+      (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);
       return NULL;
       }
-   
+
    BIO_get_ssl(bio, &ssl);
    if (ssl == NULL) {
       /* Exception: Unable to get SSL pointer. */
-      (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);     
+      (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);
       return NULL;
       }
    ssldisc->ssl = ssl;
@@ -203,16 +203,16 @@ BIO* connect_encrypted(char* host, unsigned short port, char* store_path,
    /* Attempt to connect */
    if (BIO_do_connect(bio) <= 0) {
       /* Exception: Unable to connect BIO. */
-      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
+      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);
       return NULL;
    }
 
    /* perform the handshake */
    if (BIO_do_handshake(bio) <= 0) {
       /* Exception: Unable to connect BIO. */
-      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
+      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);
       return NULL;
-      }   
+      }
 
    if ((ssldisc->verify != 0) && (SSL_get_verify_result(ssl) != X509_V_OK)) {
        /* valid/verified certificate is required but...*/
@@ -246,17 +246,17 @@ static int sslpathFind(char target[], char buf[], int n)
       for (i = 0; *path && *path != ';' ; ++i)
 #endif
          buf[i] = *path++;
-      if (*path)			/* skip the ; or : separator */
+      if (*path)                        /* skip the ; or : separator */
          ++path;
-      if (i == 0)			/* skip empty fragments in PATH */
+      if (i == 0)                       /* skip empty fragments in PATH */
          continue;
 #if UNIX
       if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\' && buf[i-1] != ':')
             buf[i++] = '/';
-#else					/* UNIX */
+#else                                   /* UNIX */
       if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\')
             buf[i++] = '\\';
-#endif					/* UNIX */
+#endif                                  /* UNIX */
       strcpy(buf + i, target);
       res = stat(buf, &sbuf);
       /* exclude directories (and any other nasties) from selection */
@@ -291,9 +291,9 @@ char get_storepath(Tpdisc_t *tpdisc, char *store_path)
       if (fgets(path_to_ssl, 1023, f) == NULL) return '\0';
       pclose(f);
       if (sscanf(path_to_ssl, "OPENSSLDIR: \"%s\"", store_path) == 1) {
-	 /* sscanf was OK */
-	 return 'd';
-	 }
+         /* sscanf was OK */
+         return 'd';
+         }
       /* else fall through to return a default string */
       }
 
@@ -315,7 +315,7 @@ int sslconnect(PURI puri, Tpdisc_t* tpdisc)
       }
    ((Tpssldisc_t*)tpdisc)->bio =
       connect_encrypted(puri->host, puri->port, store_path, store_type,
-			tpdisc);
+                        tpdisc);
    if (((Tpssldisc_t*)tpdisc)->bio == NULL) return -1;
    return 1;
 }
@@ -379,14 +379,14 @@ ssize_t sslread(void* buf, size_t n, Tpdisc_t* tpdisc)
     if ((nread = read_from_stream(((Tpssldisc_t*)tpdisc)->bio, ptr, nleft)) <= 0) {
       int action = tpdisc->exceptf(TP_EREAD, &nread, tpdisc);
       if (action > 0) {
-	nread = 0;
-	continue;
+        nread = 0;
+        continue;
       }
       else if (action == 0 && nread >= 0) {
-	break;
+        break;
       }
       else {
-	return (-1);
+        return (-1);
       }
     }
 
@@ -410,37 +410,37 @@ ssize_t sslreadln(void* buf, size_t maxlen, Tpdisc_t* tpdisc)
     if ((rc = read_from_stream(disc->bio, &c, 1)) == 1) {
       *ptr++ = c;
       if (c == '\n') {
-	break;
+        break;
       }
     }
     else {
       int action = tpdisc->exceptf(TP_EREAD, &rc, tpdisc);
       switch (action)
       {
-	case TP_TRYAGAIN: goto again;
-	case TP_DEFAULT:
-	  if (rc == 0 && n > 1 ){
-	    *ptr = '\0';
-	    return n-1;   /* no \n in this case */
-	  }
-	  return 0;
-	case TP_RETURNERROR:
-	default:          return -1;
+        case TP_TRYAGAIN: goto again;
+        case TP_DEFAULT:
+          if (rc == 0 && n > 1 ){
+            *ptr = '\0';
+            return n-1;   /* no \n in this case */
+          }
+          return 0;
+        case TP_RETURNERROR:
+        default:          return -1;
       }
 #if 0
       if (action TP_TRYAGAIN) {
-	goto again;
+        goto again;
       }
       else if (action == 0) {
-	if (rc == 0) {  /* No data read */
-	  return (0);
-	}
-	else {         /* Some data read before error */
-	  break;
-	}
+        if (rc == 0) {  /* No data read */
+          return (0);
+        }
+        else {         /* Some data read before error */
+          break;
+        }
       }
       else {
-	return (-1);
+        return (-1);
       }
 #endif
     }
@@ -466,11 +466,11 @@ ssize_t sslwrite(void* buf, size_t n, Tpdisc_t* tpdisc)
     if (nwritten <= 0) {
       int action = tpdisc->exceptf(TP_EWRITE, NULL, tpdisc);
       if (action <= 0) {
-	return -1;
+        return -1;
       }
       else {
-	nwritten = 0;
-	continue;
+        nwritten = 0;
+        continue;
       }
     }
 
@@ -482,8 +482,8 @@ ssize_t sslwrite(void* buf, size_t n, Tpdisc_t* tpdisc)
 }
 
 /* The SSL discipline */
-static Tpssldisc_t _tpdssl = 
-{ { sslconnect, sslclose, sslread, sslreadln, 
+static Tpssldisc_t _tpdssl =
+{ { sslconnect, sslclose, sslread, sslreadln,
     sslwrite, sslmem, sslfree, unixexcept, sslnewdisc, 0 },
   NULL, NULL, NULL,
   1, /* encrypt*/
@@ -497,5 +497,5 @@ void _tpssl_setparam(Tpdisc_t *disc, int val){
  }
 
 #else
-/* static char junk;		 avoid empty module */
-#endif					/* HAVE_LIBSSL */
+/* static char junk;             avoid empty module */
+#endif                                  /* HAVE_LIBSSL */

@@ -22,7 +22,7 @@
 
 #ifndef LoopThreshold
 #define LoopThreshold 7
-#endif					/* LoopThreshold */
+#endif                                  /* LoopThreshold */
 
 /*
  * MinOne - arrays sizes must be at least 1.
@@ -77,7 +77,7 @@ static void smpl_clsg (struct code *call, int outer);
 static void stat_nms  (struct lentry *lptr, int prt);
 static void val_loc   (struct val_loc *rslt, int outer);
 
-static int n_stat = -1;		/* number of static variables */
+static int n_stat = -1;         /* number of static variables */
 
 /*
  * var_dcls - produce declarations necessary to implement variables
@@ -169,7 +169,7 @@ void var_dcls()
          for (gptr = ghash[i]; gptr != NULL; gptr = gptr->blink)
             if (!(gptr->flag & F_SmplInv))
                fprintf(codefile, "   {%d, \"%s\"},\n",
-		       (int)strlen(gptr->name), gptr->name);
+                       (int)strlen(gptr->name), gptr->name);
       fprintf(codefile, "   };\n");
       }
 
@@ -183,11 +183,11 @@ void var_dcls()
       fprintf(codefile, "\nstruct b_proc *builtins[NGlobals] = {\n");
       for (i = 0; i < GHSize; i++)
          for (gptr = ghash[i]; gptr != NULL; gptr = gptr->blink)
-            if (!(gptr->flag & F_SmplInv)) {  
+            if (!(gptr->flag & F_SmplInv)) {
                /*
                 * Need to output *something* to stay in step with other arrays.
                 */
-	       if ((pfx = is_builtin(gptr)) != NULL) {
+               if ((pfx = is_builtin(gptr)) != NULL) {
                   fprintf(codefile, "   (struct b_proc *)&BF%c%c_%s,\n",
                      pfx[0], pfx[1], gptr->name);
                   }
@@ -224,7 +224,7 @@ void var_dcls()
     * Produce code to initialize run-time system variables. Some depend
     *  on compiler options.
     */
-/* mdw */ fprintf(codefile, "   dynrec_start_set(DYNREC_START);\n"); 
+/* mdw */ fprintf(codefile, "   dynrec_start_set(DYNREC_START);\n");
    fprintf(codefile, "   op_tbl = (struct b_proc *)init_op_tbl;\n");
    fprintf(codefile, "   globals = (dptr)init_globals;\n");
    fprintf(codefile, "   eglobals = &globals[%d];\n", n_glob);
@@ -256,11 +256,11 @@ void var_dcls()
   #ifndef HAVE_KEYWORD__THREAD
      fprintf(codefile, "   struct threadstate *curtstate;\n");
      fprintf(codefile, "   pthread_key_create(&tstate_key, NULL);\n");
-  #endif					/* HAVE_KEYWORD__THREAD */
+  #endif                                        /* HAVE_KEYWORD__THREAD */
      fprintf(codefile, "   init_threads();\n");
      fprintf(codefile, "   global_curtstate = &roottstate;\n");
      fprintf(codefile, "\n");
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
    /*
     * Produce code to call the routine to initialize the runtime system.
@@ -273,7 +273,7 @@ void var_dcls()
 #ifdef Concurrent
      fprintf(codefile, "   curtstate = &roottstate;\n");
      fprintf(codefile, "   curtstate_ce = curtstate->c;\n");
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
    fprintf(codefile, "\n");
 
@@ -289,7 +289,7 @@ void var_dcls()
       fprintf(codefile, "   tend = (struct tend_desc *)&t;\n");
       if (prc_main->nargs == 0)
          fprintf(codefile,
-            "   /* main() takes no arguments: construct no list */\n"); 
+            "   /* main() takes no arguments: construct no list */\n");
       else
          fprintf(codefile, "   cmd_line(argc, argv, &t.arg_lst);\n");
       fprintf(codefile, "\n");
@@ -409,7 +409,7 @@ int prt;
    lptr->val.index = n;
    if (prt)
       fprintf(inclfile, "   {%d, \"%s\"},\n",
-	      (int)strlen(lptr->name), lptr->name);
+              (int)strlen(lptr->name), lptr->name);
    return n + 1;
    }
 
@@ -429,7 +429,7 @@ int prt;
    lptr->val.index = n;
    if (prt)
       fprintf(inclfile, "   {%d, \"%s\"},\n",
-	      (int)strlen(lptr->name), lptr->name);
+              (int)strlen(lptr->name), lptr->name);
    return n + 1;
    }
 
@@ -447,7 +447,7 @@ int prt;
    lptr->val.index = ++n_stat;
    if (prt)
       fprintf(inclfile, "   {%d, \"%s\"},\n",
-	      (int)strlen(lptr->name), lptr->name);
+              (int)strlen(lptr->name), lptr->name);
    }
 
 /*
@@ -459,14 +459,14 @@ struct gentry *gptr;
    {
    struct implement *iptr;
 
-   if (!(gptr->flag & F_StrInv))	/* if not eligible for string invoc */
+   if (!(gptr->flag & F_StrInv))        /* if not eligible for string invoc */
       return 0;
-   if (gptr->flag & F_Builtin)		/* if global *is* a builtin */
+   if (gptr->flag & F_Builtin)          /* if global *is* a builtin */
       return gptr->val.builtin->prefix;
    iptr = db_ilkup(gptr->name, bhash);
-   if (iptr == NULL)			/* if no builtin by this name */
+   if (iptr == NULL)                    /* if no builtin by this name */
       return NULL;
-   bi_proc(gptr->name, iptr);		/* output prototype and proc block */
+   bi_proc(gptr->name, iptr);           /* output prototype and proc block */
    return iptr->prefix;
    }
 
@@ -479,7 +479,7 @@ struct gentry *gptr;
    {
    struct implement *iptr;
    char *name, *pfx;
-   
+
    name = gptr->name;
    iptr = gptr->val.builtin;
    pfx = iptr->prefix;
@@ -615,10 +615,10 @@ void const_blks()
 #ifdef DescriptorDouble
                fprintf(inclfile, "double BDR%s = %s;\n",
                    cptr->prefix, cptr->image);
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
                fprintf(inclfile, "struct b_real BDR%s = {T_Real, %s};\n",
                    cptr->prefix, cptr->image);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
                break;
             }
          }
@@ -702,7 +702,7 @@ outerfnc(fnc, reachable)
    int ret_flag;
 #ifdef OptimizeLoop
    int i;
-#endif					/* OptimizeLoop */
+#endif                                  /* OptimizeLoop */
 
    prefix = cur_proc->prefix;
    name = cur_proc->name;
@@ -769,7 +769,7 @@ outerfnc(fnc, reachable)
 #ifdef OptimizeLoop
    if ((ntend > 0) && (ntend < LoopThreshold))
       fprintf(codefile, "   register dptr p;\n");
-#endif						/* OptimizeLoop */
+#endif                                          /* OptimizeLoop */
    if (Type(Tree1(cur_proc->tree)) != N_Empty)
       fprintf(codefile, "   static int first_time = 1;");
    fprintf(codefile, "\n");
@@ -792,19 +792,19 @@ outerfnc(fnc, reachable)
 #ifdef OptimizeLoop
    if (ntend > 0)  {
       if (ntend < LoopThreshold) {
-	 fprintf(codefile, "   p = r_f.t.d;\n");
-	 for (i=0; i < ntend ;i++)
-	    fprintf(codefile, "   *p++ = nulldesc;\n");
-	 }
+         fprintf(codefile, "   p = r_f.t.d;\n");
+         for (i=0; i < ntend ;i++)
+            fprintf(codefile, "   *p++ = nulldesc;\n");
+         }
       else {
          fprintf(codefile, "   for (i = 0; i < %d; ++i)\n", ntend);
          fprintf(codefile, "      r_f.t.d[i] = nulldesc;\n");
       }
    }
-#else					/* OptimizeLoop */
+#else                                   /* OptimizeLoop */
    fprintf(codefile, "   for (i = 0; i < %d; ++i)\n", ntend);
    fprintf(codefile, "      r_f.t.d[i] = nulldesc;\n");
-#endif					/* OptimizeLoop */
+#endif                                  /* OptimizeLoop */
    if (optim) {
       /*
        * Dereferencing and argument list adjustment is done at the call
@@ -856,8 +856,8 @@ outerfnc(fnc, reachable)
             fprintf(codefile, "         r_f.t.d[1].dword = D_Null;\n");
             fprintf(codefile, "   }\n");
             fprintf(codefile, "   else  {\n");
- 	    fprintf(codefile, "      r_f.t.d[0].dword = D_Null;\n");
- 	    fprintf(codefile, "      r_f.t.d[1].dword = D_Null;\n");
+            fprintf(codefile, "      r_f.t.d[0].dword = D_Null;\n");
+            fprintf(codefile, "      r_f.t.d[1].dword = D_Null;\n");
             fprintf(codefile, "   }\n");
          }
          else {
@@ -872,7 +872,7 @@ outerfnc(fnc, reachable)
             else
                fprintf(codefile, "      r_f.t.d[i] = nulldesc;\n");
          }
-#else					/* OptimizeLoop */
+#else                                   /* OptimizeLoop */
          fprintf(codefile, "   for (i = 0; i < %d; ++i)\n", nparms);
          fprintf(codefile, "      if (i < r_nargs)\n");
          fprintf(codefile,
@@ -881,7 +881,7 @@ outerfnc(fnc, reachable)
          fprintf(codefile, "      else\n");
          fprintf(codefile, "         r_f.t.d[i + %d] = nulldesc;\n",
             first_arg);
-#endif					/* OptimizeLoop */
+#endif                                  /* OptimizeLoop */
          }
       fprintf(codefile, "   glbl_argp = &r_f.t.d[%d];\n", first_arg);
       }
@@ -939,7 +939,7 @@ struct c_fnc *fnc;
             ChkSeqNum(sig);
             fprintf(inclfile, "static int sig_%d (void);\n",
                sig->SeqNum);
-   
+
             fprintf(codefile, "\n");
             fprintf(codefile, "static int sig_%d()\n", sig->SeqNum);
             fprintf(codefile, "   {\n");
@@ -954,17 +954,17 @@ struct c_fnc *fnc;
       ChkPrefix(fnc->prefix);
       prefix = fnc->prefix;
       name = cur_proc->name;
-   
+
       fprintf(inclfile, "static int P%s_%s (void);\n", prefix, name);
-   
+
       fprintf(codefile, "\n");
       fprintf(codefile, "static int P%s_%s()\n", prefix, name);
       fprintf(codefile, "   {\n");
       if (fnc->flag & CF_Coexpr)
          fprintf(codefile, "#ifdef CoExpr\n");
-   
+
       prefix = fnc->frm_prfx;
-   
+
       fprintf(codefile, "   register int r_signal;\n");
       fprintf(codefile, "   register struct PF%s_%s *r_pfp;\n", prefix, name);
       fprintf(codefile, "   CURTSTATE_AND_CE();\n");
@@ -1095,7 +1095,7 @@ int outer;
              * goto label.
              */
             ChkSeqNum(cd->Lbl);
-            fprintf(codefile, "   goto L%d /* %s */;\n", cd->Lbl->SeqNum, 
+            fprintf(codefile, "   goto L%d /* %s */;\n", cd->Lbl->SeqNum,
                cd->Lbl->Desc);
             break;
 
@@ -1134,7 +1134,7 @@ int outer;
                      fprintf(codefile, "   ");
                      val_loc(cd->Rslt, outer);
                      fprintf(codefile, ".dword = %d;\n",
-			     (int)strlen(lit->image));
+                             (int)strlen(lit->image));
                      fprintf(codefile, "   cnv_int(&");
                      val_loc(cd->Rslt, outer);
                      fprintf(codefile, ", &");
@@ -1158,10 +1158,10 @@ int outer;
 #ifdef DescriptorDouble
                   fprintf(codefile, ".vword.realval = *(double *)&BDR%s;\n",
                      lit->prefix);
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
                   fprintf(codefile, ".vword.bptr = (union block *)&BDR%s;\n",
                      lit->prefix);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
                   break;
                case F_StrLit:
                   fprintf(codefile, ".vword.sptr = ");
@@ -1534,7 +1534,7 @@ int outer;
    int dflt;
    struct code *cond;
    struct code *then_cd;
-   
+
    /*
     * Decide whether to use "break;", "return r_signal;", or nothing as
     *  the default case.
@@ -1672,7 +1672,7 @@ int outer;
          /*
           * We know what to do without looking at the signal. Make sure
           *  we have done the call. If the action is not simply  "break"
-          *  out signal checking, execute it. 
+          *  out signal checking, execute it.
           */
          if (!sig_var) {
             fprintf(codefile, "   ");
@@ -1694,21 +1694,21 @@ int outer;
          fprintf(codefile, ";\n");
          sig_var = 1;
          }
-      
+
       if (ncaselbl == 2) {
          /*
           * We can use an if statement. If we need the signal in "r_signal",
           *  it is already there.
           */
          fprintf(codefile, "   if (");
-         if (sig_var) 
+         if (sig_var)
             fprintf(codefile, "r_signal");
          else
             prtcall(call, outer);
-   
+
          cond = call->SigActs->sig;
          then_cd = call->SigActs->cd;
-            
+
          /*
           * If the "then" clause is a no-op ("break;" from a switch),
           *  prepare to eliminate it by reversing the test in the
@@ -1718,10 +1718,10 @@ int outer;
             fprintf(codefile, " != ");
          else
             fprintf(codefile, " == ");
-   
+
          prt_cond(cond);
          fprintf(codefile, ")\n   ");
-   
+
          if (then_cd->cd_id == C_Break) {
             /*
              * We have reversed the test, so we need to use the default
@@ -1754,7 +1754,7 @@ int outer;
           *  break is the default (the break condition was saved).
           */
          fprintf(codefile, "   if (");
-         if (sig_var) 
+         if (sig_var)
             fprintf(codefile, "r_signal");
          else
             prtcall(call, outer);
@@ -1770,12 +1770,12 @@ int outer;
           *  "r_signal", it is already there.
           */
          fprintf(codefile, "   switch (");
-         if (sig_var) 
+         if (sig_var)
             fprintf(codefile, "r_signal");
          else
             prtcall(call, outer);
          fprintf(codefile, ") {\n");
-   
+
          /*
           * Print the cases
           */
@@ -1788,7 +1788,7 @@ int outer;
             fprintf(codefile, "      ");
             prtcode(sa->cd, outer);
             }
-      
+
          /*
           * If we have a default action and it is not break, print it.
           */
@@ -1796,7 +1796,7 @@ int outer;
             fprintf(codefile, "      default:\n");
             fprintf(codefile, "         return r_signal;\n");
             }
-      
+
          fprintf(codefile, "      }\n");
          }
       }

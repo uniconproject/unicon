@@ -23,30 +23,30 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 /* The data and key structure.  This structure is defined for compatibility. */
 typedef struct {
-	char *dptr;
-	int   dsize;
+        char *dptr;
+        int   dsize;
       } datum;
 
 
 /* These are the routines in dbm. */
 
-extern int	dbminit ();
+extern int      dbminit ();
 
-extern datum	fetch ();
+extern datum    fetch ();
 
-extern int	store ();
+extern int      store ();
 
-extern int	delete ();
+extern int      delete ();
 
-extern int	delete ();
+extern int      delete ();
 
-extern datum	firstkey ();
+extern datum    firstkey ();
 
-extern datum	nextkey ();
+extern datum    nextkey ();
 
-extern int	dbmclose ();
+extern int      dbmclose ();

@@ -9,30 +9,30 @@
 
 int file_comp(char *filename)
 {
-   gzFile f; 
+   gzFile f;
    FILE *finput, *foutput;
    struct header *hdr;
    int n, c;
    char *newfname;
    char buf[200];
    char *cf;
-  
+
    hdr = (struct header *)malloc(sizeof(struct header));
 
    /*
     * use fopen() to open the target file then read the header and
     * add "z" to the hdr->config.
     */
-    
+
    if ((finput=fopen(filename,ReadBinary))==NULL) {
       printf("Can't open the file: %s\n",filename);
       return 1;
       }
-    
+
    newfname=(char *)malloc(strlen(filename)+3*sizeof(char));
    strcpy(newfname,filename);
    strcat(newfname,"~z");
-    
+
    if ((foutput=fopen(newfname,WriteBinary))==NULL) {
       printf("Can't open/write the file: %s\n",newfname);
       fclose(finput);
@@ -41,22 +41,22 @@ int file_comp(char *filename)
 
    for (;;) {
       if (fgets(buf, sizeof buf-1, finput) == NULL) {
-	 fprintf(stderr, "read error: gz compressor can't grok the icode\n");
-	 fclose(finput);
-	 fclose(foutput);
-	 return 1;
-	 }
-      else 
-	 fputs(buf, foutput);
+         fprintf(stderr, "read error: gz compressor can't grok the icode\n");
+         fclose(finput);
+         fclose(foutput);
+         return 1;
+         }
+      else
+         fputs(buf, foutput);
 #if NT
       if (strncmp(buf, "rem [executable Icon binary follows]", 36) == 0)
-#else					/* NT */
+#else                                   /* NT */
       if (strncmp(buf, "[executable Icon binary follows]", 32) == 0)
-#endif					/* NT */
-	 break;
+#endif                                  /* NT */
+         break;
       }
 
-   while ((n = getc(finput)) != EOF && n != '\f')	/* read thru \f\n\0 */
+   while ((n = getc(finput)) != EOF && n != '\f')       /* read thru \f\n\0 */
       putc(n,foutput);
    putc(n,foutput);
    putc(getc(finput),foutput);
@@ -99,25 +99,25 @@ int file_comp(char *filename)
    while ((c=fgetc(finput)) != EOF) {
       gzputc(f,c);
       if (ferror(finput)) {
-	 printf("Error occurs while reading!\n");
-	 return 1;
-	 }
+         printf("Error occurs while reading!\n");
+         return 1;
+         }
       }
-   
+
    /* close both files */
    fclose(finput);
    gzclose(f);
-    
+
    if (unlink(filename)) {
       fprintf(stderr, "can't remove old %s, compressed version left in %s\n",
-	      filename, newfname);
+              filename, newfname);
       return 1;
       }
    if (rename(newfname, filename)) {
       fprintf(stderr, "can't rename compressed %s back to %s\n",
-	      newfname, filename);
+              newfname, filename);
       }
    setexe(filename);
    return 0;
 }
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBZ */

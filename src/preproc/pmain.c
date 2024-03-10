@@ -10,29 +10,29 @@ char *progname = "pp";
 
 #if PORT
 static char *ostr = "CPD:I:U:o:";
-static char *options = 
+static char *options =
    "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-ofile] [files]";
    /* may need more options */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
 #if MICROSOFT
    /* this really isn't right for anything but Microsoft */
 static char *ostr = "CPD:I:U:o:A:Z:J";
-static char *options = 
+static char *options =
    "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-ofile]\n    \
 [-A(S|C|M|L|H)] [-Za] [-J] [files]";
-#endif					/* MICROSOFT */
+#endif                                  /* MICROSOFT */
 
 #if TURBO
 static char *ostr = "CPD:I:U:o:m:p";
-static char *options = 
+static char *options =
    "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-ofile]\n    \
 [-m(t|s|m|c|l|h)] [-p] [files]";
-#endif					/* TURBO */
-#endif					/* MSDOS */
- 
+#endif                                  /* TURBO */
+#endif                                  /* MSDOS */
+
 #if VM || MVS
 static char *ostr = "CPD:I:U:o:";
 static char *options =
@@ -42,9 +42,9 @@ static char *options =
 
 #if UNIX || VMS
 static char *ostr = "CPD:I:U:o:";
-static char *options = 
+static char *options =
    "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-ofile] [files]";
-#endif					/* UNIX || VMS */
+#endif                                  /* UNIX || VMS */
 
 /*
  * End of operating-system specific code.
@@ -55,9 +55,9 @@ extern int line_cntrl;
 /*
  * getopt() variables
  */
-extern int optind;		/* index into parent argv vector */
-extern int optopt;		/* character checked for validity */
-extern char *optarg;		/* argument associated with option */
+extern int optind;              /* index into parent argv vector */
+extern int optopt;              /* character checked for validity */
+extern char *optarg;            /* argument associated with option */
 
 int main(argc, argv)
 int argc;
@@ -98,7 +98,7 @@ char **argv;
             line_cntrl = 0;
             break;
          case 'D': /* -D<id><definition> - predefine an identifier */
-         case 'I': /* -I<path> - location to search for standard header files */ 
+         case 'I': /* -I<path> - location to search for standard header files */
          case 'U': /* -U<id> - undefine predefined identifier */
 
 /*
@@ -109,29 +109,29 @@ char **argv;
 #if PORT
    /* may need something */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
 #if MICROSOFT
          case 'A':
          case 'J':
          case 'Z':
-#endif					/* MICROSOFT */
+#endif                                  /* MICROSOFT */
 
 #if TURBO
          case 'm':
          case 'p':
-#endif					/* TURBO */
+#endif                                  /* TURBO */
 
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
 #if MVS || VM
    /* ??? we'll see */
-#endif					/* MVS || VM */
+#endif                                  /* MVS || VM */
 
 #if UNIX || VMS
    /* nothing is needed */
-#endif					/* UNIX || VMS */
+#endif                                  /* UNIX || VMS */
 
 /*
  * End of operating-system specific code.

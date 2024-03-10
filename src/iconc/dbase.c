@@ -31,7 +31,7 @@ readdb(db_name)
    char *op, *s;
    int i;
    struct implement *ip;
-   char buf[MaxFileName];		/* file name construction buffer */
+   char buf[MaxFileName];               /* file name construction buffer */
    struct fileparts *fp;
    unsigned hashval;
 

@@ -23,12 +23,12 @@
  */
 #define MaxLineLen (4095)
 
-#define caf_is_peri(c)		((c)->flgs & F_Peri)
-#define caf_is_parsed(c)	((c)->flgs & F_Prsd)
-#define caf_set_parsed(c)	((c)->flgs |= F_Prsd)
-#define caf_set_peri(c)		((c)->flgs |= F_Peri)
-#define invk_is_resolved(i)	((i)->flgs & F_Rslvd)
-#define invk_set_resolved(i)	((i)->flgs |= F_Rslvd)
+#define caf_is_peri(c)          ((c)->flgs & F_Peri)
+#define caf_is_parsed(c)        ((c)->flgs & F_Prsd)
+#define caf_set_parsed(c)       ((c)->flgs |= F_Prsd)
+#define caf_set_peri(c)         ((c)->flgs |= F_Peri)
+#define invk_is_resolved(i)     ((i)->flgs & F_Rslvd)
+#define invk_set_resolved(i)    ((i)->flgs |= F_Rslvd)
 
 struct imp { /* import target */
    char * name;
@@ -887,9 +887,9 @@ next_member:
    /* read class methods */
    for (;;) {
       if (fgets(buf_, MaxLineLen, f) == NULL) {
-	 fprintf(stderr, "fgets fail#3 in read_bndl_class\n");
-	 exit(1);
-	 }
+         fprintf(stderr, "fgets fail#3 in read_bndl_class\n");
+         exit(1);
+         }
       len = strlen(buf_);
       buf_[len-1] = 0; /* clobber cr */
       if (strcmp(buf_, "end") == 0)

@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -44,7 +44,7 @@ void fsync(int i)
 {
   fflush(NULL); fflush(NULL);
 }
-#endif					/* fsync */
+#endif                                  /* fsync */
 #endif
 
 void

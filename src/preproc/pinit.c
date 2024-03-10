@@ -7,30 +7,30 @@
 #include "../preproc/ptoken.h"
 
 /*
- * The following code is operating-system dependent [@p_init.01]. 
+ * The following code is operating-system dependent [@p_init.01].
  *  #includes and #defines.
  */
 
 #if PORT
    /* something may be needed */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
 #if MICROSOFT
    /* nothing is needed */
-#endif					/* MICROSOFT */
+#endif                                  /* MICROSOFT */
 #if TURBO
 #include <dir.h>
 #define Strng(s) #s
 #define StrMBody(m) Strng(m)
 #define CBufSz 200
-#endif 					/* TURBO */
-#endif					/* MSDOS */
- 
+#endif                                  /* TURBO */
+#endif                                  /* MSDOS */
+
 #if UNIX || VMS
    /* nothing is needed */
-#endif					/* UNIX || VMS */
+#endif                                  /* UNIX || VMS */
 
 /*
  * End of operating-system specific code.
@@ -92,18 +92,18 @@ char **opt_args;
 #if PORT
    /* something may be needed */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
 #if MICROSOFT
    char *undef_model = "#undef M_I86SM\n#undef M_I86CM\n#undef M_I86MM\n"
        "#undef M_I86LM\n#undef M_I86HM\n";
    char *cl_var;
-   
+
    do_directive("#define MSDOS 1\n");
    do_directive("#define M_I86 1\n");
    do_directive("#define M_I86SM 1\n");  /* small memory model */
-   
+
    /*
     * Process all applicable options from the CL environment variable.
     */
@@ -115,7 +115,7 @@ Deliberate Syntax Error
             switch (*cl_var) {
                case 'U':
                   /*
-                   * Undefine a specific identifier. Find the identifier 
+                   * Undefine a specific identifier. Find the identifier
                    *  by skipping white space then locating its end.
                    */
                   ++cl_var;
@@ -132,7 +132,7 @@ Deliberate Syntax Error
                   do_directive("#undef MSDOS\n");
                   do_directive("#undef M_I86\n");
                   do_directive("#undef NO_EXT_KEYS\n");
-                  do_directive("#undef _CHAR_UNSIGED\n"); 
+                  do_directive("#undef _CHAR_UNSIGED\n");
                   break;
                case 'D':
                   /*
@@ -205,7 +205,7 @@ Deliberate Syntax Error
                      }
                   break;
                case 'J':
-                   do_directive("#undef _CHAR_UNSIGED\n"); 
+                   do_directive("#undef _CHAR_UNSIGED\n");
                    do_directive("#define _CHAR_UNSIGNED 1\n");
                    break;
                }
@@ -213,7 +213,7 @@ Deliberate Syntax Error
          if (*cl_var != '\0')
             ++cl_var;
          }
-#endif					/* MICROSOFT */
+#endif                                  /* MICROSOFT */
 
 #if TURBO
    char *undef_models = "#undef __TINY__\n#undef __SMALL__\n#undef __MEDIUM__\n\
@@ -223,13 +223,13 @@ Deliberate Syntax Error
    FILE *cfg_file;
    char cbuf[CBufSz];
    int c;
-    
+
    do_directive("#define __MSDOS__ 1\n");
    do_directive("#define __SMALL__ 1\n");
    do_directive("#define __CDECL__ 1\n");
    sprintf(dir_buf, "#define __TURBOC__ %s\n", StrMBody(__TURBOC__));
    do_directive(dir_buf);
-    
+
    /*
     * Process all applicable options from the configuration file.
     */
@@ -237,7 +237,7 @@ Deliberate Syntax Error
    if (cfg_fname != NULL && (cfg_file = fopen(cfg_fname, "r")) != NULL) {
       c = getc(cfg_file);
       while (c != EOF) {
-      	  if (c == '-') {
+          if (c == '-') {
              c = getc(cfg_file);
              switch (c) {
                 case 'U':
@@ -318,18 +318,18 @@ Deliberate Syntax Error
           }
        fclose(cfg_file);
        }
-#endif 					/* TURBO */
+#endif                                  /* TURBO */
 
-#endif					/* MSDOS */
- 
+#endif                                  /* MSDOS */
+
 #if UNIX
    do_directive("#define unix 1\n");
    do_directive(PPInit);   /* defines that vary between Unix systems */
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 #if VMS
    /* nothing is needed */
-#endif					/* VMS */
+#endif                                  /* VMS */
 
 /*
  * End of operating-system specific code.
@@ -362,7 +362,7 @@ Deliberate Syntax Error
 #if PORT
    /* something may be needed */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
 #if MICROSOFT
@@ -426,10 +426,10 @@ Deliberate Syntax Error
             }
             break;
          case 'J':
-             do_directive("#undef _CHAR_UNSIGED\n"); 
+             do_directive("#undef _CHAR_UNSIGED\n");
              do_directive("#define _CHAR_UNSIGNED 1\n");
              break;
-#endif					/* MICROSOFT */
+#endif                                  /* MICROSOFT */
 
 #if TURBO
          case 'm':
@@ -473,17 +473,17 @@ Deliberate Syntax Error
             do_directive("#undef __PASCAL__\n#undef __CDECL__\n");
             do_directive("#define __PASCAL__ 1\n");
             break;
-#endif					/* TURBO ... */
+#endif                                  /* TURBO ... */
 
-#endif					/* MSDOS */
- 
+#endif                                  /* MSDOS */
+
 #if MVS || VM
    /* ??? we'll see... */
 #endif                                  /* MVS || VM */
 
 #if UNIX || VMS
    /* nothing is needed */
-#endif					/* UNIX || VMS */
+#endif                                  /* UNIX || VMS */
 
 /*
  * End of operating-system specific code.
@@ -535,7 +535,7 @@ char *s;
    while (interp_dir() != NULL)
       ;
    }
-   
+
 /*
  * undef_opt - take the argument to a -U option and, if it is valid,
  *  undefine it.
@@ -608,7 +608,7 @@ struct token *dflt;
          free_t(t);
          t = next_tok();
          }
-            
+
 
       /*
        * Construct the token list for body of macro. Keep track of trailing
@@ -626,7 +626,7 @@ struct token *dflt;
          ptlst = &(*ptlst)->next;
          t = next_tok();
          }
-     
+
       /*
        * strip trailing white space
        */
@@ -636,7 +636,7 @@ struct token *dflt;
          }
       }
    else {
-      /* 
+      /*
        * There is no '=' after the macro name; use the supplied
        *  default value for the macro definition.
        */

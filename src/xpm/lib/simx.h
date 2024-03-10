@@ -39,7 +39,7 @@
 
 #ifdef FOR_MSW
 
-#include "windows.h"			/* MS windows GDI types */
+#include "windows.h"                    /* MS windows GDI types */
 
 /*
  * minimal portability layer between ansi and KR C
@@ -64,17 +64,17 @@ FUNC(boundCheckingRealloc, void *, (void *p, long s));
 /* define MSW types for X window types,
    I don't know much about MSW, but the following defines do the job */
 
-typedef HDC Display;			/* this should be similar */
-typedef void *Screen;			/* not used */
-typedef void *Visual;			/* not used yet, is for GRAY, COLOR,
-					 * MONO */
+typedef HDC Display;                    /* this should be similar */
+typedef void *Screen;                   /* not used */
+typedef void *Visual;                   /* not used yet, is for GRAY, COLOR,
+                                         * MONO */
 
-typedef void *Colormap;			/* should be COLORPALETTE, not done
-					 * yet */
+typedef void *Colormap;                 /* should be COLORPALETTE, not done
+                                         * yet */
 
 typedef COLORREF Pixel;
 
-#define PIXEL_T				/* let xpm.h know about above typedef */
+#define PIXEL_T                         /* let xpm.h know about above typedef */
 
 typedef struct {
     Pixel pixel;
@@ -103,14 +103,14 @@ extern "C" {
     FUNC(XParseColor, int, (Display *, Colormap *, char *, XColor *));
     FUNC(XAllocColor, int, (Display *, Colormap *, XColor *));
     FUNC(XQueryColors, void, (Display *display, Colormap *colormap,
-			      XColor *xcolors, int ncolors));
+                              XColor *xcolors, int ncolors));
     FUNC(XFreeColors, int, (Display *d, Colormap cmap,
-			    unsigned long pixels[],
-			    int npixels, unsigned long planes));
+                            unsigned long pixels[],
+                            int npixels, unsigned long planes));
 /* XImage */
     FUNC(XCreateImage, XImage *, (Display *, Visual *, int depth, int format,
-				  int x, int y, int width, int height,
-				  int pad, int foo));
+                                  int x, int y, int width, int height,
+                                  int pad, int foo));
 
 /* free and destroy bitmap */
     FUNC(XDestroyImage, void /* ? */ , (XImage *));
@@ -120,15 +120,15 @@ extern "C" {
 } /* end of extern "C" */
 #endif /* cplusplus */
 
-#define ZPixmap 1			/* not really used */
-#define XYBitmap 1			/* not really used */
+#define ZPixmap 1                       /* not really used */
+#define XYBitmap 1                      /* not really used */
 
 #ifndef True
 #define True 1
 #define False 0
 #endif
 #ifndef Bool
-typedef BOOL Bool;		/* take MSW bool */
+typedef BOOL Bool;              /* take MSW bool */
 #endif
 /* make these local here, simx.c gets the same from xpm.h */
 #undef LFUNC

@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 /* Start with the constant definitions.  */
@@ -31,20 +31,20 @@
 #define  FALSE   0
 
 /* Parameters to gdbm_open. */
-#define  GDBM_READER  0		/* READERS only. */
-#define  GDBM_WRITER  1		/* READERS and WRITERS.  Can not create. */
-#define  GDBM_WRCREAT 2		/* If not found, create the db. */
-#define  GDBM_NEWDB   3		/* ALWAYS create a new db.  (WRITER) */
-#define  GDBM_FAST    16	/* Write fast! => No fsyncs. */
+#define  GDBM_READER  0         /* READERS only. */
+#define  GDBM_WRITER  1         /* READERS and WRITERS.  Can not create. */
+#define  GDBM_WRCREAT 2         /* If not found, create the db. */
+#define  GDBM_NEWDB   3         /* ALWAYS create a new db.  (WRITER) */
+#define  GDBM_FAST    16        /* Write fast! => No fsyncs. */
 
 /* Parameters to gdbm_store for simple insertion or replacement in the
    case a key to store is already in the database. */
-#define  GDBM_INSERT  0		/* Do not overwrite data in the database. */
-#define  GDBM_REPLACE 1		/* Replace the old value with the new value. */
+#define  GDBM_INSERT  0         /* Do not overwrite data in the database. */
+#define  GDBM_REPLACE 1         /* Replace the old value with the new value. */
 
 /* Parameters to gdbm_setopt, specifing the type of operation to perform. */
-#define	 GDBM_CACHESIZE	1	/* Set the cache size. */
-#define  GDBM_FASTMODE	2	/* Turn on or off fast mode. */
+#define  GDBM_CACHESIZE 1       /* Set the cache size. */
+#define  GDBM_FASTMODE  2       /* Turn on or off fast mode. */
 
 /* In freeing blocks, we will ignore any blocks smaller (and equal) to
    IGNORE_SIZE number of bytes. */

@@ -10,7 +10,7 @@
  */
 
 struct toktab toktab[] = {
-/*  token		token type	flags */
+/*  token               token type      flags */
 
    /* primitives */
    "identifier",      IDENT,         Beginner+Ender,    /*   0 */
@@ -67,7 +67,7 @@ struct toktab *restab[] = {
    NULL,        &toktab[26], &toktab[29], &toktab[31], /* 71-74 qrst */
    &toktab[33], NULL,        &toktab[34], NULL,        /* 75-78 uvwx */
    NULL,        NULL,                                  /* 79-7A yz */
-#else					/* EBCDIC */
+#else                                   /* EBCDIC */
    NULL,        &toktab[ 6], &toktab[ 8], &toktab[10], /* 81-84 abcd */
    &toktab[12], &toktab[15], &toktab[16], NULL,        /* 85-88 efgh */
    &toktab[17], NULL,        NULL,        NULL,        /* 89-8C i... */
@@ -79,7 +79,7 @@ struct toktab *restab[] = {
    NULL,        &toktab[29], &toktab[31], &toktab[33], /* A1-A4 .stu */
    NULL,        &toktab[34], NULL,        NULL,        /* A5-A8 vwxy */
    NULL,                                               /* A9-A9 z */
-#endif					/* EBCDIC */
+#endif                                  /* EBCDIC */
    };
 
 /*

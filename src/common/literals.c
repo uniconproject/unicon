@@ -4,7 +4,7 @@
 /*
  * Prototypes.
  */
-unsigned short	*bitvect	(char *image,int len);
+unsigned short  *bitvect        (char *image,int len);
 static int escape               (char **str_ptr,int *nchars_ptr);
 
 /*
@@ -20,7 +20,7 @@ static int escape               (char **str_ptr,int *nchars_ptr);
  *  test the kind of character.
  */
 #define NextChar(c) ((*nchars_ptr)--, c = *(*str_ptr)++)
-#define isoctal(c) ((c)>='0'&&(c)<='7')	/* macro to test for octal digit */
+#define isoctal(c) ((c)>='0'&&(c)<='7') /* macro to test for octal digit */
 
 
 

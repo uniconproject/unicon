@@ -7,7 +7,7 @@
 
 #define Global
 #define Init(v) = v
-#include "tglobals.h"			/* define globals */
+#include "tglobals.h"                   /* define globals */
 
 /*
  *  Initialize globals that cannot be handled statically.

@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -47,7 +47,7 @@ datum
 fetch (key)
      datum key;
 {
-  datum  ret_val;		/* The return value. */
+  datum  ret_val;               /* The return value. */
 
   /* Free previous dynamic memory, do actual call, and save pointer to new
      memory. */

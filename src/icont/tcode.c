@@ -14,17 +14,17 @@
  * Prototypes.
  */
 
-static int	alclab		(int n);
-static void	binop		(int op);
-static void	emit		(char *s);
-static void	emitl		(char *s,int a);
-static void	emitlab		(int l);
-static void	emitn		(char *s,int a);
-static void	emits		(char *s,char *a);
-static void	setloc		(nodeptr n, char*s);
-static int	traverse	(nodeptr t);
-static void	unopa		(int op, nodeptr t);
-static void	unopb		(int op);
+static int      alclab          (int n);
+static void     binop           (int op);
+static void     emit            (char *s);
+static void     emitl           (char *s,int a);
+static void     emitlab         (int l);
+static void     emitn           (char *s,int a);
+static void     emits           (char *s,char *a);
+static void     setloc          (nodeptr n, char*s);
+static int      traverse        (nodeptr t);
+static void     unopa           (int op, nodeptr t);
+static void     unopb           (int op);
 
 extern int nocode;
 
@@ -32,36 +32,36 @@ extern int nocode;
  * Code generator parameters.
  */
 
-#define LoopDepth   20		/* max. depth of nested loops */
-#define CaseDepth   10		/* max. depth of nested case statements */
-#define CreatDepth  10		/* max. depth of nested create statements */
+#define LoopDepth   20          /* max. depth of nested loops */
+#define CaseDepth   10          /* max. depth of nested case statements */
+#define CreatDepth  10          /* max. depth of nested create statements */
 
 /*
  * loopstk structures hold information about nested loops.
  */
 struct loopstk {
-   int nextlab;			/* label for next exit */
-   int breaklab;		/* label for break exit */
-   int markcount;		/* number of marks */
-   int ltype;			/* loop type */
+   int nextlab;                 /* label for next exit */
+   int breaklab;                /* label for break exit */
+   int markcount;               /* number of marks */
+   int ltype;                   /* loop type */
    };
 
 /*
  * casestk structure hold information about case statements.
  */
 struct casestk {
-   int endlab;			/* label for exit from case statement */
-   nodeptr deftree;		/* pointer to tree for default clause */
+   int endlab;                  /* label for exit from case statement */
+   nodeptr deftree;             /* pointer to tree for default clause */
    };
 
 /*
  * creatstk structures hold information about create statements.
  */
 struct creatstk {
-   int nextlab;			/* previous value of nextlab */
-   int breaklab;		/* previous value of breaklab */
+   int nextlab;                 /* previous value of nextlab */
+   int breaklab;                /* previous value of breaklab */
    };
-static int nextlab;		/* next label allocated by alclab() */
+static int nextlab;             /* next label allocated by alclab() */
 
 /*
  * codegen - traverse tree t, generating code.
@@ -84,9 +84,9 @@ register nodeptr t;
    {
    register int lab, n, i;
    struct loopstk loopsave;
-   static struct loopstk loopstk[LoopDepth];	/* loop stack */
+   static struct loopstk loopstk[LoopDepth];    /* loop stack */
    static struct loopstk *loopsp;
-   static struct casestk casestk[CaseDepth];	/* case stack */
+   static struct casestk casestk[CaseDepth];    /* case stack */
    static struct casestk *casesp;
    static struct creatstk creatstk[CreatDepth]; /* create stack */
    static struct creatstk *creatsp;
@@ -99,591 +99,591 @@ register nodeptr t;
     */
    switch (TType(t)) {
 
-      case N_Activat:			/* co-expression activation */
-	 if (Val0(Tree0(t)) == AUGAT) {
-	    emit("pnull");
-	    }
-	 traverse(Tree2(t));		/* evaluate result expression */
-	 if (Val0(Tree0(t)) == AUGAT)
-	    emit("sdup");
-	 traverse(Tree1(t));		/* evaluate activate expression */
-	 setloc(t,NULL);
-	 emit("coact");
-	 if (Val0(Tree0(t)) == AUGAT)
-	    emit("asgn");
+      case N_Activat:                   /* co-expression activation */
+         if (Val0(Tree0(t)) == AUGAT) {
+            emit("pnull");
+            }
+         traverse(Tree2(t));            /* evaluate result expression */
+         if (Val0(Tree0(t)) == AUGAT)
+            emit("sdup");
+         traverse(Tree1(t));            /* evaluate activate expression */
+         setloc(t,NULL);
+         emit("coact");
+         if (Val0(Tree0(t)) == AUGAT)
+            emit("asgn");
          free(Tree0(t));
-	 break;
+         break;
 
-      case N_Alt:			/* alternation */
-	 lab = alclab(2);
-	 emitl("mark", lab);
-	 loopsp->markcount++;
-	 traverse(Tree0(t));		/* evaluate first alternative */
-	 loopsp->markcount--;
+      case N_Alt:                       /* alternation */
+         lab = alclab(2);
+         emitl("mark", lab);
+         loopsp->markcount++;
+         traverse(Tree0(t));            /* evaluate first alternative */
+         loopsp->markcount--;
 
 #ifdef EventMon
          setloc(t,NULL);
-#endif					/* EventMon */
+#endif                                  /* EventMon */
 
-	 emit("esusp");                 /*  and suspend with its result */
-	 emitl("goto", lab+1);
-	 emitlab(lab);
-	 traverse(Tree1(t));		/* evaluate second alternative */
-	 emitlab(lab+1);
-	 break;
+         emit("esusp");                 /*  and suspend with its result */
+         emitl("goto", lab+1);
+         emitlab(lab);
+         traverse(Tree1(t));            /* evaluate second alternative */
+         emitlab(lab+1);
+         break;
 
-      case N_Augop:			/* augmented assignment */
-      case N_Binop:			/*  or a binary operator */
-	 emit("pnull");
-	 traverse(Tree1(t));
-	 if (TType(t) == N_Augop)
-	    emit("dup");
-	 traverse(Tree2(t));
-	 setloc(t,NULL);
-	 binop((int)Val0(Tree0(t)));
-	 free(Tree0(t));
-	 break;
+      case N_Augop:                     /* augmented assignment */
+      case N_Binop:                     /*  or a binary operator */
+         emit("pnull");
+         traverse(Tree1(t));
+         if (TType(t) == N_Augop)
+            emit("dup");
+         traverse(Tree2(t));
+         setloc(t,NULL);
+         binop((int)Val0(Tree0(t)));
+         free(Tree0(t));
+         break;
 
-      case N_Bar:			/* repeated alternation */
-	 lab = alclab(1);
-	 emitlab(lab);
-	 emit("mark0");         /* fail if expr fails first time */
-	 loopsp->markcount++;
-	 traverse(Tree0(t));		/* evaluate first alternative */
-	 loopsp->markcount--;
-	 emitl("chfail", lab);          /* change to loop on failure */
-	 emit("esusp");                 /* suspend result */
-	 break;
+      case N_Bar:                       /* repeated alternation */
+         lab = alclab(1);
+         emitlab(lab);
+         emit("mark0");         /* fail if expr fails first time */
+         loopsp->markcount++;
+         traverse(Tree0(t));            /* evaluate first alternative */
+         loopsp->markcount--;
+         emitl("chfail", lab);          /* change to loop on failure */
+         emit("esusp");                 /* suspend result */
+         break;
 
-      case N_Break:			/* break expression */
-	 if (loopsp->breaklab <= 0)
-	    nfatal(t, "invalid context for break", NULL);
-	 else {
-	    for (i = 0; i < loopsp->markcount; i++)
-	       emit("unmark");
-	    loopsave = *loopsp--;
-	    traverse(Tree0(t));
-	    *++loopsp = loopsave;
-	    emitl("goto", loopsp->breaklab);
-	    }
-	 break;
+      case N_Break:                     /* break expression */
+         if (loopsp->breaklab <= 0)
+            nfatal(t, "invalid context for break", NULL);
+         else {
+            for (i = 0; i < loopsp->markcount; i++)
+               emit("unmark");
+            loopsave = *loopsp--;
+            traverse(Tree0(t));
+            *++loopsp = loopsave;
+            emitl("goto", loopsp->breaklab);
+            }
+         break;
 
-      case N_Case:			/* case expression */
-	 lab = alclab(1);
-	 casesp++;
-	 casesp->endlab = lab;
-	 casesp->deftree = NULL;
-	 setloc(t,"case"); /* -new- */
-	 emit("mark0");
-	 loopsp->markcount++;
-	 traverse(Tree0(t));		/* evaluate control expression */
-	 loopsp->markcount--;
-	 emit("eret");
-	 traverse(Tree1(t));		/* do rest of case (CLIST) */
-	 if (casesp->deftree != NULL) { /* evaluate default clause */
-	    emit("pop");
-	    traverse(casesp->deftree);
-	    }
-	 else
-	    emit("efail");
-	 emitlab(lab);			/* end label */
+      case N_Case:                      /* case expression */
+         lab = alclab(1);
+         casesp++;
+         casesp->endlab = lab;
+         casesp->deftree = NULL;
+         setloc(t,"case"); /* -new- */
+         emit("mark0");
+         loopsp->markcount++;
+         traverse(Tree0(t));            /* evaluate control expression */
+         loopsp->markcount--;
+         emit("eret");
+         traverse(Tree1(t));            /* do rest of case (CLIST) */
+         if (casesp->deftree != NULL) { /* evaluate default clause */
+            emit("pop");
+            traverse(casesp->deftree);
+            }
+         else
+            emit("efail");
+         emitlab(lab);                  /* end label */
          setloc(t,"endcase"); /* -new- */
-	 casesp--;
-	 break;
+         casesp--;
+         break;
 
-      case N_Ccls:			/* case expression clause */
-	 if (TType(Tree0(t)) == N_Res && /* default clause */
-	     Val0(Tree0(t)) == DEFAULT) {
-	    if (casesp->deftree != NULL)
-	       nfatal(t, "more than one default clause", NULL);
-	    else
-	       casesp->deftree = Tree1(t);
+      case N_Ccls:                      /* case expression clause */
+         if (TType(Tree0(t)) == N_Res && /* default clause */
+             Val0(Tree0(t)) == DEFAULT) {
+            if (casesp->deftree != NULL)
+               nfatal(t, "more than one default clause", NULL);
+            else
+               casesp->deftree = Tree1(t);
             free(Tree0(t));
-	    }
-	 else {				/* case clause */
-	    lab = alclab(1);
-	    emitl("mark", lab);
-	    loopsp->markcount++;
-	    emit("ccase");
-	    traverse(Tree0(t));		/* evaluate selector */
-	    setloc(t,NULL);
-	    emit("eqv");
-	    loopsp->markcount--;
-	    emit("unmark");
-	    emit("pop");
-	    traverse(Tree1(t));		/* evaluate expression */
-	    emitl("goto", casesp->endlab); /* goto end label */
-	    emitlab(lab);		/* label for next clause */
-	    }
-	 break;
+            }
+         else {                         /* case clause */
+            lab = alclab(1);
+            emitl("mark", lab);
+            loopsp->markcount++;
+            emit("ccase");
+            traverse(Tree0(t));         /* evaluate selector */
+            setloc(t,NULL);
+            emit("eqv");
+            loopsp->markcount--;
+            emit("unmark");
+            emit("pop");
+            traverse(Tree1(t));         /* evaluate expression */
+            emitl("goto", casesp->endlab); /* goto end label */
+            emitlab(lab);               /* label for next clause */
+            }
+         break;
 
-      case N_Clist:			/* list of case clauses */
-	 traverse(Tree0(t));
-	 traverse(Tree1(t));
-	 break;
+      case N_Clist:                     /* list of case clauses */
+         traverse(Tree0(t));
+         traverse(Tree1(t));
+         break;
 
-      case N_Conj:			/* conjunction */
-	 if (Val0(Tree0(t)) == AUGAND) {
-	    emit("pnull");
-	    }
-	 traverse(Tree1(t));
-	 if (Val0(Tree0(t)) != AUGAND)
-	    emit("pop");
-	 traverse(Tree2(t));
-	 if (Val0(Tree0(t)) == AUGAND) {
-	   setloc(t,NULL);
-	    emit("asgn");
-	    }
-	 free(Tree0(t));
-	 break;
+      case N_Conj:                      /* conjunction */
+         if (Val0(Tree0(t)) == AUGAND) {
+            emit("pnull");
+            }
+         traverse(Tree1(t));
+         if (Val0(Tree0(t)) != AUGAND)
+            emit("pop");
+         traverse(Tree2(t));
+         if (Val0(Tree0(t)) == AUGAND) {
+           setloc(t,NULL);
+            emit("asgn");
+            }
+         free(Tree0(t));
+         break;
 
-      case N_Create:			/* create expression */
-	 creatsp++;
-	 creatsp->nextlab = loopsp->nextlab;
-	 creatsp->breaklab = loopsp->breaklab;
-	 loopsp->nextlab = 0;		/* make break and next illegal */
-	 loopsp->breaklab = 0;
-	 lab = alclab(3);
-	 emitl("goto", lab+2);          /* skip over code for co-expression */
-	 emitlab(lab);			/* entry point */
-	 emit("pop");                   /* pop the result from activation */
-	 emitl("mark", lab+1);
-	 loopsp->markcount++;
-	 traverse(Tree0(t));		/* traverse code for co-expression */
-	 loopsp->markcount--;
-	 setloc(t,NULL);
-	 emit("coret");                 /* return to activator */
-	 emit("efail");                 /* drive co-expression */
-	 emitlab(lab+1);		/* loop on exhaustion */
-	 emit("cofail");                /* and fail each time */
-	 emitl("goto", lab+1);
-	 emitlab(lab+2);
-	 emitl("create", lab);          /* create entry block */
-	 loopsp->nextlab = creatsp->nextlab;   /* legalize break and next */
-	 loopsp->breaklab = creatsp->breaklab;
-	 creatsp--;
-	 break;
+      case N_Create:                    /* create expression */
+         creatsp++;
+         creatsp->nextlab = loopsp->nextlab;
+         creatsp->breaklab = loopsp->breaklab;
+         loopsp->nextlab = 0;           /* make break and next illegal */
+         loopsp->breaklab = 0;
+         lab = alclab(3);
+         emitl("goto", lab+2);          /* skip over code for co-expression */
+         emitlab(lab);                  /* entry point */
+         emit("pop");                   /* pop the result from activation */
+         emitl("mark", lab+1);
+         loopsp->markcount++;
+         traverse(Tree0(t));            /* traverse code for co-expression */
+         loopsp->markcount--;
+         setloc(t,NULL);
+         emit("coret");                 /* return to activator */
+         emit("efail");                 /* drive co-expression */
+         emitlab(lab+1);                /* loop on exhaustion */
+         emit("cofail");                /* and fail each time */
+         emitl("goto", lab+1);
+         emitlab(lab+2);
+         emitl("create", lab);          /* create entry block */
+         loopsp->nextlab = creatsp->nextlab;   /* legalize break and next */
+         loopsp->breaklab = creatsp->breaklab;
+         creatsp--;
+         break;
 
-      case N_Cset:			/* cset literal */
-	 emitn("cset", (int)Val0(t));
-	 break;
+      case N_Cset:                      /* cset literal */
+         emitn("cset", (int)Val0(t));
+         break;
 
-      case N_Elist:			/* expression list */
-	 n = traverse(Tree0(t));
-	 n += traverse(Tree1(t));
-	 break;
+      case N_Elist:                     /* expression list */
+         n = traverse(Tree0(t));
+         n += traverse(Tree1(t));
+         break;
 
-      case N_Empty:			/* a missing expression */
-	 emit("pnull");
-	 break;
+      case N_Empty:                     /* a missing expression */
+         emit("pnull");
+         break;
 
-      case N_Field:			/* field reference */
-	 emit("pnull");
-	 traverse(Tree0(t));
-	 setloc(t,NULL);
-	 emits("field", Str0(Tree1(t)));
-	 free(Tree1(t));
-	 break;
+      case N_Field:                     /* field reference */
+         emit("pnull");
+         traverse(Tree0(t));
+         setloc(t,NULL);
+         emits("field", Str0(Tree1(t)));
+         free(Tree1(t));
+         break;
 
 
-      case N_Id:			/* identifier */
-	 emitn("var", (int)Val0(t));
-	 break;
+      case N_Id:                        /* identifier */
+         emitn("var", (int)Val0(t));
+         break;
 
-      case N_If:			/* if expression */
-	 if (TType(Tree2(t)) == N_Empty) {
-	    lab = 0;
-	    setloc(t,"if"); /* -new- : there is no else part*/
-	    emit("mark0");
-	    }
-	 else {
-	    lab = alclab(2);
-	    setloc(t,"ifelse"); /* -new- : there is an else part*/
-	    emitl("mark", lab);
-	    }
-	 loopsp->markcount++;
-	 traverse(Tree0(t));
-	 loopsp->markcount--;
-	 emit("unmark");
-	 traverse(Tree1(t));
+      case N_If:                        /* if expression */
+         if (TType(Tree2(t)) == N_Empty) {
+            lab = 0;
+            setloc(t,"if"); /* -new- : there is no else part*/
+            emit("mark0");
+            }
+         else {
+            lab = alclab(2);
+            setloc(t,"ifelse"); /* -new- : there is an else part*/
+            emitl("mark", lab);
+            }
+         loopsp->markcount++;
+         traverse(Tree0(t));
+         loopsp->markcount--;
+         emit("unmark");
+         traverse(Tree1(t));
          if (lab == 0)         /* -new- */
             setloc(t,"endif"); /* -new- : there is no else part*/
-	 if (lab > 0) {
-	    emitl("goto", lab+1);
-	    emitlab(lab);
-	    traverse(Tree2(t));
-	    emitlab(lab+1);
+         if (lab > 0) {
+            emitl("goto", lab+1);
+            emitlab(lab);
+            traverse(Tree2(t));
+            emitlab(lab+1);
             setloc(t,"endifelse"); /* -new- : there is an else part*/
-	    }
+            }
          else
-	    free(Tree2(t));
-	 break;
+            free(Tree2(t));
+         break;
 
-      case N_Int:			/* integer literal */
-	 emitn("int", (int)Val0(t));
-	 break;
+      case N_Int:                       /* integer literal */
+         emitn("int", (int)Val0(t));
+         break;
 
-      case N_Apply:			/* application */
+      case N_Apply:                     /* application */
          traverse(Tree0(t));
          traverse(Tree1(t));
          emitn("invoke", -1);
          break;
 
-      case N_Invok:			/* invocation */
-	 if (TType(Tree0(t)) != N_Empty) {
-	    traverse(Tree0(t));
-	     }
-	 else {
-	    emit("pushn1");             /* default to -1(e1,...,en) */
-	    free(Tree0(t));
-	    }
-	 if (TType(Tree1(t)) == N_Empty) {
-            n = 0;
-	    free(Tree1(t));
-            }
-         else
-	    n = traverse(Tree1(t));
-	 setloc(t,NULL);
-	 emitn("invoke", n);
-	 n = 1;
-	 break;
-
-      case N_Key:			/* keyword reference */
-	setloc(t,NULL);
-	 emits("keywd", Str0(t));
-	 break;
-
-      case N_Limit:			/* limitation */
-	 traverse(Tree1(t));
-	 setloc(t,NULL);
-	 emit("limit");
-	 loopsp->markcount++;
-	 traverse(Tree0(t));
-	 loopsp->markcount--;
-	 emit("lsusp");
-	 break;
-
-      case N_List:			/* list construction */
-	 emit("pnull");
-	 if (TType(Tree0(t)) == N_Empty) {
-	    n = 0;
-	    free(Tree0(t));
-            }
-	 else
-	    n = traverse(Tree0(t));
-	 setloc(t,NULL);
-	 emitn("llist", n);
-	 n = 1;
-	 break;
-
-      case N_Loop:			/* loop */
-	 switch ((int)Val0(Tree0(t))) {
-	    case EVERY:
-	       lab = alclab(2);
-	       loopsp++;
-	       loopsp->ltype = EVERY;
-	       loopsp->nextlab = lab;
-	       loopsp->breaklab = lab + 1;
-	       loopsp->markcount = 1;
-	       setloc(t,"every"); /* -new- */
-	       emit("mark0");
-	       traverse(Tree1(t));
-	       emit("pop");
-	       if (TType(Tree2(t)) != N_Empty) {   /* every e1 do e2 */
-		  emit("mark0");
-		  loopsp->ltype = N_Loop;
-		  loopsp->markcount++;
-		  traverse(Tree2(t));
-		  loopsp->markcount--;
-		  emit("unmark");
-		  }
-               else
-		  free(Tree2(t));
-	       emitlab(loopsp->nextlab);
-	       emit("efail");
-	       emitlab(loopsp->breaklab);
-	       setloc(t,"endevery"); /* -new- */
-	       loopsp--;
-	       break;
-
-	    case REPEAT:
-	       lab = alclab(3);
-	       loopsp++;
-	       loopsp->ltype = N_Loop;
-	       loopsp->nextlab = lab + 1;
-	       loopsp->breaklab = lab + 2;
-	       loopsp->markcount = 1;
-	       emitlab(lab);
-	       setloc(t,"repeat");
-	       emitl("mark", lab);
-	       traverse(Tree1(t));
-	       emitlab(loopsp->nextlab);
-	       emit("unmark");
-	       emitl("goto", lab);
-	       emitlab(loopsp->breaklab);
-	       setloc(t,"endrepeat"); /* -new- */
-	       loopsp--;
-               free(Tree2(t));
-	       break;
-
-	    case SUSPEND:			/* suspension expression */
-	       if (creatsp > creatstk)
-		  nfatal(t, "invalid context for suspend", NULL);
-	       lab = alclab(2);
-	       loopsp++;
-	       loopsp->ltype = EVERY;		/* like every ... do for next */
-	       loopsp->nextlab = lab;
-	       loopsp->breaklab = lab + 1;
-	       loopsp->markcount = 1;
-	       setloc(t,"suspend"); /* -new- */
-	       emit("mark0");
-	       traverse(Tree1(t));
-	       setloc(t,NULL);
-	       emit("psusp");
-	       emit("pop");
-	       if (TType(Tree2(t)) != N_Empty) { /* suspend e1 do e2 */
-		  emit("mark0");
-		  loopsp->ltype = N_Loop;
-		  loopsp->markcount++;
-		  traverse(Tree2(t));
-		  loopsp->markcount--;
-		  emit("unmark");
-		  }
-               else
-		  free(Tree2(t));
-	       emitlab(loopsp->nextlab);
-	       emit("efail");
-	       emitlab(loopsp->breaklab);
-	       setloc(t,"endsuspend"); /* -new- */
-	       loopsp--;
-	       break;
-
-	    case WHILE:
-	       lab = alclab(3);
-	       loopsp++;
-	       loopsp->ltype = N_Loop;
-	       loopsp->nextlab = lab + 1;
-	       loopsp->breaklab = lab + 2;
-	       loopsp->markcount = 1;
-	       emitlab(lab);
-	       setloc(t,"while");
-	       emit("mark0");
-	       traverse(Tree1(t));
-	       if (TType(Tree2(t)) != N_Empty) {
-		  emit("unmark");
-		  emitl("mark", lab);
-		  traverse(Tree2(t));
-		  }
-               else
-		  free(Tree2(t));
-	       emitlab(loopsp->nextlab);
-	       emit("unmark");
-	       emitl("goto", lab);
-	       emitlab(loopsp->breaklab);
-               setloc(t,"endwhile"); /* -new- */
-	       loopsp--;
-	       break;
-
-	    case UNTIL:
-	       lab = alclab(4);
-	       loopsp++;
-	       loopsp->ltype = N_Loop;
-	       loopsp->nextlab = lab + 2;
-	       loopsp->breaklab = lab + 3;
-	       loopsp->markcount = 1;
-	       emitlab(lab);
-	       setloc(t,"until");
-	       emitl("mark", lab+1);
-	       traverse(Tree1(t));
-	       emit("unmark");
-	       emit("efail");
-	       emitlab(lab+1);
-	       emitl("mark", lab);
-	       traverse(Tree2(t));
-	       emitlab(loopsp->nextlab);
-	       emit("unmark");
-	       emitl("goto", lab);
-	       emitlab(loopsp->breaklab);
-	       setloc(t,"enduntil"); /* -new- */
-	       loopsp--;
-	       break;
-	    }
-	 free(Tree0(t));
-	 break;
-
-      case N_Next:			/* next expression */
-	 if (loopsp < loopstk || loopsp->nextlab <= 0)
-	    nfatal(t, "invalid context for next", NULL);
-	 else {
-	    if (loopsp->ltype != EVERY && loopsp->markcount > 1)
-	       for (i = 0; i < loopsp->markcount - 1; i++)
-		  emit("unmark");
-	    emitl("goto", loopsp->nextlab);
-	    }
-	 break;
-
-      case N_Not:			/* not expression */
-	 lab = alclab(1);
-	 emitl("mark", lab);
-	 loopsp->markcount++;
-	 traverse(Tree0(t));
-	 loopsp->markcount--;
-	 emit("unmark");
-	 emit("efail");
-	 emitlab(lab);
-	 emit("pnull");
-	 break;
-
-      case N_Proc:			/* procedure */
-	 loopsp = loopstk;
-	 loopsp->nextlab = 0;
-	 loopsp->breaklab = 0;
-	 loopsp->markcount = 0;
-	 casesp = casestk;
-	 creatsp = creatstk;
-
-
-	 writecheck(fprintf(codefile, "proc %s\n", Str0(Tree0(t))));
-	 lout(codefile);
-	 constout(codefile);
-
-	 emit("declend");
-	 setloc(t,NULL);
-	 if (TType(Tree1(t)) != N_Empty) {
-	    lab = alclab(3);
-	    emitlab(lab);
-	    emitl("init", lab+2);
-	    emitl("mark", lab+1);
-	    traverse(Tree1(t));
-	    emit("unmark");
-
-	    /*
-	     * end of initial section; unlock mutex and turn "init" into "agoto"
-	     */
-	    emitlab(lab+1);
-	    emitl("einit", lab);
-	    emitlab(lab+2);
-	    }
-         else
-	    free(Tree1(t));
-	 if (TType(Tree2(t)) != N_Empty)
-	    traverse(Tree2(t));
-         else
-	    free(Tree2(t));
-	 setloc(Tree3(t),NULL);
-	 emit("pfail");
-	 emit("end");
-	 if (!silent)
-	    fprintf(stderr, "  %s\n", Str0(Tree0(t)));
-#ifdef ConsoleWindow
-	 if (flog != NULL)
-	    fprintf(flog, "  %s\n", Str0(Tree0(t)));
-#endif					/* ConsoleWindow */
-	 free(Tree0(t));
-	 free(Tree3(t));
-	 break;
-
-      case N_Real:			/* real literal */
-	 emitn("real", (int)Val0(t));
-	 break;
-
-      case N_Ret:			/* return expression */
-	 if (creatsp > creatstk)
-	    nfatal(t, "invalid context for return or fail", NULL);
-	 if (Val0(Tree0(t)) == FAIL)
-	    free(Tree1(t));
+      case N_Invok:                     /* invocation */
+         if (TType(Tree0(t)) != N_Empty) {
+            traverse(Tree0(t));
+             }
          else {
-	    lab = alclab(1);
-	    emitl("mark", lab);
-	    loopsp->markcount++;
-	    traverse(Tree1(t));
-	    loopsp->markcount--;
-	    setloc(t,NULL);
-	    emit("pret");
-	    emitlab(lab);
-	    }
-	 setloc(t,NULL);
-	 emit("pfail");
+            emit("pushn1");             /* default to -1(e1,...,en) */
+            free(Tree0(t));
+            }
+         if (TType(Tree1(t)) == N_Empty) {
+            n = 0;
+            free(Tree1(t));
+            }
+         else
+            n = traverse(Tree1(t));
+         setloc(t,NULL);
+         emitn("invoke", n);
+         n = 1;
+         break;
+
+      case N_Key:                       /* keyword reference */
+        setloc(t,NULL);
+         emits("keywd", Str0(t));
+         break;
+
+      case N_Limit:                     /* limitation */
+         traverse(Tree1(t));
+         setloc(t,NULL);
+         emit("limit");
+         loopsp->markcount++;
+         traverse(Tree0(t));
+         loopsp->markcount--;
+         emit("lsusp");
+         break;
+
+      case N_List:                      /* list construction */
+         emit("pnull");
+         if (TType(Tree0(t)) == N_Empty) {
+            n = 0;
+            free(Tree0(t));
+            }
+         else
+            n = traverse(Tree0(t));
+         setloc(t,NULL);
+         emitn("llist", n);
+         n = 1;
+         break;
+
+      case N_Loop:                      /* loop */
+         switch ((int)Val0(Tree0(t))) {
+            case EVERY:
+               lab = alclab(2);
+               loopsp++;
+               loopsp->ltype = EVERY;
+               loopsp->nextlab = lab;
+               loopsp->breaklab = lab + 1;
+               loopsp->markcount = 1;
+               setloc(t,"every"); /* -new- */
+               emit("mark0");
+               traverse(Tree1(t));
+               emit("pop");
+               if (TType(Tree2(t)) != N_Empty) {   /* every e1 do e2 */
+                  emit("mark0");
+                  loopsp->ltype = N_Loop;
+                  loopsp->markcount++;
+                  traverse(Tree2(t));
+                  loopsp->markcount--;
+                  emit("unmark");
+                  }
+               else
+                  free(Tree2(t));
+               emitlab(loopsp->nextlab);
+               emit("efail");
+               emitlab(loopsp->breaklab);
+               setloc(t,"endevery"); /* -new- */
+               loopsp--;
+               break;
+
+            case REPEAT:
+               lab = alclab(3);
+               loopsp++;
+               loopsp->ltype = N_Loop;
+               loopsp->nextlab = lab + 1;
+               loopsp->breaklab = lab + 2;
+               loopsp->markcount = 1;
+               emitlab(lab);
+               setloc(t,"repeat");
+               emitl("mark", lab);
+               traverse(Tree1(t));
+               emitlab(loopsp->nextlab);
+               emit("unmark");
+               emitl("goto", lab);
+               emitlab(loopsp->breaklab);
+               setloc(t,"endrepeat"); /* -new- */
+               loopsp--;
+               free(Tree2(t));
+               break;
+
+            case SUSPEND:                       /* suspension expression */
+               if (creatsp > creatstk)
+                  nfatal(t, "invalid context for suspend", NULL);
+               lab = alclab(2);
+               loopsp++;
+               loopsp->ltype = EVERY;           /* like every ... do for next */
+               loopsp->nextlab = lab;
+               loopsp->breaklab = lab + 1;
+               loopsp->markcount = 1;
+               setloc(t,"suspend"); /* -new- */
+               emit("mark0");
+               traverse(Tree1(t));
+               setloc(t,NULL);
+               emit("psusp");
+               emit("pop");
+               if (TType(Tree2(t)) != N_Empty) { /* suspend e1 do e2 */
+                  emit("mark0");
+                  loopsp->ltype = N_Loop;
+                  loopsp->markcount++;
+                  traverse(Tree2(t));
+                  loopsp->markcount--;
+                  emit("unmark");
+                  }
+               else
+                  free(Tree2(t));
+               emitlab(loopsp->nextlab);
+               emit("efail");
+               emitlab(loopsp->breaklab);
+               setloc(t,"endsuspend"); /* -new- */
+               loopsp--;
+               break;
+
+            case WHILE:
+               lab = alclab(3);
+               loopsp++;
+               loopsp->ltype = N_Loop;
+               loopsp->nextlab = lab + 1;
+               loopsp->breaklab = lab + 2;
+               loopsp->markcount = 1;
+               emitlab(lab);
+               setloc(t,"while");
+               emit("mark0");
+               traverse(Tree1(t));
+               if (TType(Tree2(t)) != N_Empty) {
+                  emit("unmark");
+                  emitl("mark", lab);
+                  traverse(Tree2(t));
+                  }
+               else
+                  free(Tree2(t));
+               emitlab(loopsp->nextlab);
+               emit("unmark");
+               emitl("goto", lab);
+               emitlab(loopsp->breaklab);
+               setloc(t,"endwhile"); /* -new- */
+               loopsp--;
+               break;
+
+            case UNTIL:
+               lab = alclab(4);
+               loopsp++;
+               loopsp->ltype = N_Loop;
+               loopsp->nextlab = lab + 2;
+               loopsp->breaklab = lab + 3;
+               loopsp->markcount = 1;
+               emitlab(lab);
+               setloc(t,"until");
+               emitl("mark", lab+1);
+               traverse(Tree1(t));
+               emit("unmark");
+               emit("efail");
+               emitlab(lab+1);
+               emitl("mark", lab);
+               traverse(Tree2(t));
+               emitlab(loopsp->nextlab);
+               emit("unmark");
+               emitl("goto", lab);
+               emitlab(loopsp->breaklab);
+               setloc(t,"enduntil"); /* -new- */
+               loopsp--;
+               break;
+            }
          free(Tree0(t));
-	 break;
+         break;
 
-      case N_Scan:			/* scanning expression */
-	 if (Val0(Tree0(t)) == AUGQMARK)
-	    emit("pnull");
-	 traverse(Tree1(t));
-	 if (Val0(Tree0(t)) == AUGQMARK)
-	    emit("sdup");
-	 setloc(t,NULL);
-	 emit("bscan");
-	 traverse(Tree2(t));
-	 setloc(t,NULL);
-	 emit("escan");
-	 if (Val0(Tree0(t)) == AUGQMARK)
-	    emit("asgn");
-	 free(Tree0(t));
-	 break;
+      case N_Next:                      /* next expression */
+         if (loopsp < loopstk || loopsp->nextlab <= 0)
+            nfatal(t, "invalid context for next", NULL);
+         else {
+            if (loopsp->ltype != EVERY && loopsp->markcount > 1)
+               for (i = 0; i < loopsp->markcount - 1; i++)
+                  emit("unmark");
+            emitl("goto", loopsp->nextlab);
+            }
+         break;
 
-      case N_Sect:			/* section operation */
-	 emit("pnull");
-	 traverse(Tree1(t));
-	 traverse(Tree2(t));
-	 if (Val0(Tree0(t)) == PCOLON || Val0(Tree0(t)) == MCOLON)
-	    emit("dup");
-	 traverse(Tree3(t));
-	 setloc(Tree0(t),NULL);
-	 if (Val0(Tree0(t)) == PCOLON)
-	    emit("plus");
-	 else if (Val0(Tree0(t)) == MCOLON)
-	    emit("minus");
-	 setloc(t,NULL);
-	 emit("sect");
-	 free(Tree0(t));
-	 break;
+      case N_Not:                       /* not expression */
+         lab = alclab(1);
+         emitl("mark", lab);
+         loopsp->markcount++;
+         traverse(Tree0(t));
+         loopsp->markcount--;
+         emit("unmark");
+         emit("efail");
+         emitlab(lab);
+         emit("pnull");
+         break;
 
-      case N_Slist:			/* semicolon-separated expr list */
-	 lab = alclab(1);
-	 emitl("mark", lab);
-	 loopsp->markcount++;
-	 traverse(Tree0(t));
-	 loopsp->markcount--;
-	 emit("unmark");
-	 emitlab(lab);
-	 traverse(Tree1(t));
-	 break;
+      case N_Proc:                      /* procedure */
+         loopsp = loopstk;
+         loopsp->nextlab = 0;
+         loopsp->breaklab = 0;
+         loopsp->markcount = 0;
+         casesp = casestk;
+         creatsp = creatstk;
 
-      case N_Str:			/* string literal */
-	 emitn("str", (int)Val0(t));
-	 break;
 
-      case N_To:			/* to expression */
-	 emit("pnull");
-	 traverse(Tree0(t));
-	 traverse(Tree1(t));
-	 emit("push1");
-	 setloc(t,NULL);
-	 emit("toby");
-	 break;
+         writecheck(fprintf(codefile, "proc %s\n", Str0(Tree0(t))));
+         lout(codefile);
+         constout(codefile);
 
-      case N_ToBy:			/* to-by expression */
-	 emit("pnull");
-	 traverse(Tree0(t));
-	 traverse(Tree1(t));
-	 traverse(Tree2(t));
-	 setloc(t,NULL);
-	 emit("toby");
-	 break;
+         emit("declend");
+         setloc(t,NULL);
+         if (TType(Tree1(t)) != N_Empty) {
+            lab = alclab(3);
+            emitlab(lab);
+            emitl("init", lab+2);
+            emitl("mark", lab+1);
+            traverse(Tree1(t));
+            emit("unmark");
 
-      case N_Unop:			/* unary operator */
-	 unopa((int)Val0(Tree0(t)),t);
-	 traverse(Tree1(t));
-	 setloc(t,NULL);
-	 unopb((int)Val0(Tree0(t)));
-	 free(Tree0(t));
-	 break;
+            /*
+             * end of initial section; unlock mutex and turn "init" into "agoto"
+             */
+            emitlab(lab+1);
+            emitl("einit", lab);
+            emitlab(lab+2);
+            }
+         else
+            free(Tree1(t));
+         if (TType(Tree2(t)) != N_Empty)
+            traverse(Tree2(t));
+         else
+            free(Tree2(t));
+         setloc(Tree3(t),NULL);
+         emit("pfail");
+         emit("end");
+         if (!silent)
+            fprintf(stderr, "  %s\n", Str0(Tree0(t)));
+#ifdef ConsoleWindow
+         if (flog != NULL)
+            fprintf(flog, "  %s\n", Str0(Tree0(t)));
+#endif                                  /* ConsoleWindow */
+         free(Tree0(t));
+         free(Tree3(t));
+         break;
+
+      case N_Real:                      /* real literal */
+         emitn("real", (int)Val0(t));
+         break;
+
+      case N_Ret:                       /* return expression */
+         if (creatsp > creatstk)
+            nfatal(t, "invalid context for return or fail", NULL);
+         if (Val0(Tree0(t)) == FAIL)
+            free(Tree1(t));
+         else {
+            lab = alclab(1);
+            emitl("mark", lab);
+            loopsp->markcount++;
+            traverse(Tree1(t));
+            loopsp->markcount--;
+            setloc(t,NULL);
+            emit("pret");
+            emitlab(lab);
+            }
+         setloc(t,NULL);
+         emit("pfail");
+         free(Tree0(t));
+         break;
+
+      case N_Scan:                      /* scanning expression */
+         if (Val0(Tree0(t)) == AUGQMARK)
+            emit("pnull");
+         traverse(Tree1(t));
+         if (Val0(Tree0(t)) == AUGQMARK)
+            emit("sdup");
+         setloc(t,NULL);
+         emit("bscan");
+         traverse(Tree2(t));
+         setloc(t,NULL);
+         emit("escan");
+         if (Val0(Tree0(t)) == AUGQMARK)
+            emit("asgn");
+         free(Tree0(t));
+         break;
+
+      case N_Sect:                      /* section operation */
+         emit("pnull");
+         traverse(Tree1(t));
+         traverse(Tree2(t));
+         if (Val0(Tree0(t)) == PCOLON || Val0(Tree0(t)) == MCOLON)
+            emit("dup");
+         traverse(Tree3(t));
+         setloc(Tree0(t),NULL);
+         if (Val0(Tree0(t)) == PCOLON)
+            emit("plus");
+         else if (Val0(Tree0(t)) == MCOLON)
+            emit("minus");
+         setloc(t,NULL);
+         emit("sect");
+         free(Tree0(t));
+         break;
+
+      case N_Slist:                     /* semicolon-separated expr list */
+         lab = alclab(1);
+         emitl("mark", lab);
+         loopsp->markcount++;
+         traverse(Tree0(t));
+         loopsp->markcount--;
+         emit("unmark");
+         emitlab(lab);
+         traverse(Tree1(t));
+         break;
+
+      case N_Str:                       /* string literal */
+         emitn("str", (int)Val0(t));
+         break;
+
+      case N_To:                        /* to expression */
+         emit("pnull");
+         traverse(Tree0(t));
+         traverse(Tree1(t));
+         emit("push1");
+         setloc(t,NULL);
+         emit("toby");
+         break;
+
+      case N_ToBy:                      /* to-by expression */
+         emit("pnull");
+         traverse(Tree0(t));
+         traverse(Tree1(t));
+         traverse(Tree2(t));
+         setloc(t,NULL);
+         emit("toby");
+         break;
+
+      case N_Unop:                      /* unary operator */
+         unopa((int)Val0(Tree0(t)),t);
+         traverse(Tree1(t));
+         setloc(t,NULL);
+         unopb((int)Val0(Tree0(t)));
+         free(Tree0(t));
+         break;
 
       default:
-	 emitn("?????", TType(t));
-	 tsyserr("traverse: undefined node type");
+         emitn("?????", TType(t));
+         tsyserr("traverse: undefined node type");
       }
    free(t);
    return n;
@@ -704,191 +704,191 @@ int op;
    switch (op) {
 
       case ASSIGN:
-	 name = "asgn";
-	 break;
+         name = "asgn";
+         break;
 
       case AUGCARET:
-	 asgn++;
+         asgn++;
       case CARET:
-	 name = "power";
-	 break;
+         name = "power";
+         break;
 
       case AUGCONCAT:
-	 asgn++;
+         asgn++;
       case CONCAT:
-	 name = "cat";
-	 break;
+         name = "cat";
+         break;
 
       case AUGDIFF:
-	 asgn++;
+         asgn++;
       case DIFF:
-	 name = "diff";
-	 break;
+         name = "diff";
+         break;
 
       case AUGEQUIV:
-	 asgn++;
+         asgn++;
       case EQUIV:
-	 name = "eqv";
-	 break;
+         name = "eqv";
+         break;
 
       case AUGINTER:
-	 asgn++;
+         asgn++;
       case INTER:
-	 name = "inter";
-	 break;
+         name = "inter";
+         break;
 
       case LBRACK:
-	 name = "subsc";
-	 break;
+         name = "subsc";
+         break;
 
       case AUGLCONCAT:
-	 asgn++;
+         asgn++;
       case LCONCAT:
-	 name = "lconcat";
-	 break;
+         name = "lconcat";
+         break;
 
       case AUGSEQ:
-	 asgn++;
+         asgn++;
       case SEQ:
-	 name = "lexeq";
-	 break;
+         name = "lexeq";
+         break;
 
       case AUGSGE:
-	 asgn++;
+         asgn++;
       case SGE:
-	 name = "lexge";
-	 break;
+         name = "lexge";
+         break;
 
       case AUGSGT:
-	 asgn++;
+         asgn++;
       case SGT:
-	 name = "lexgt";
-	 break;
+         name = "lexgt";
+         break;
 
       case AUGSLE:
-	 asgn++;
+         asgn++;
       case SLE:
-	 name = "lexle";
-	 break;
+         name = "lexle";
+         break;
 
       case AUGSLT:
-	 asgn++;
+         asgn++;
       case SLT:
-	 name = "lexlt";
-	 break;
+         name = "lexlt";
+         break;
 
       case AUGSNE:
-	 asgn++;
+         asgn++;
       case SNE:
-	 name = "lexne";
-	 break;
+         name = "lexne";
+         break;
 
       case AUGMINUS:
-	 asgn++;
+         asgn++;
       case MINUS:
-	 name = "minus";
-	 break;
+         name = "minus";
+         break;
 
       case AUGMOD:
-	 asgn++;
+         asgn++;
       case MOD:
-	 name = "mod";
-	 break;
+         name = "mod";
+         break;
 
       case AUGNEQUIV:
-	 asgn++;
+         asgn++;
       case NEQUIV:
-	 name = "neqv";
-	 break;
+         name = "neqv";
+         break;
 
       case AUGNMEQ:
-	 asgn++;
+         asgn++;
       case NMEQ:
-	 name = "numeq";
-	 break;
+         name = "numeq";
+         break;
 
       case AUGNMGE:
-	 asgn++;
+         asgn++;
       case NMGE:
-	 name = "numge";
-	 break;
+         name = "numge";
+         break;
 
       case AUGNMGT:
-	 asgn++;
+         asgn++;
       case NMGT:
-	 name = "numgt";
-	 break;
+         name = "numgt";
+         break;
 
       case AUGNMLE:
-	 asgn++;
+         asgn++;
       case NMLE:
-	 name = "numle";
-	 break;
+         name = "numle";
+         break;
 
       case AUGNMLT:
-	 asgn++;
+         asgn++;
       case NMLT:
-	 name = "numlt";
-	 break;
+         name = "numlt";
+         break;
 
       case AUGNMNE:
-	 asgn++;
+         asgn++;
       case NMNE:
-	 name = "numne";
-	 break;
+         name = "numne";
+         break;
 
       case AUGPLUS:
-	 asgn++;
+         asgn++;
       case PLUS:
-	 name = "plus";
-	 break;
+         name = "plus";
+         break;
 
       case REVASSIGN:
-	 name = "rasgn";
-	 break;
+         name = "rasgn";
+         break;
 
       case REVSWAP:
-	 name = "rswap";
-	 break;
+         name = "rswap";
+         break;
 
       case AUGSLASH:
-	 asgn++;
+         asgn++;
       case SLASH:
-	 name = "div";
-	 break;
+         name = "div";
+         break;
 
       case AUGSTAR:
-	 asgn++;
+         asgn++;
       case STAR:
-	 name = "mult";
-	 break;
+         name = "mult";
+         break;
 
       case SWAP:
-	 name = "swap";
-	 break;
+         name = "swap";
+         break;
 
       case AUGUNION:
-	 asgn++;
+         asgn++;
       case UNION:
-	 name = "unions";
-	 break;
+         name = "unions";
+         break;
 
       case RCV:
-	 name = "rcv";
-	 break;
+         name = "rcv";
+         break;
       case RCVBK:
-	 name = "rcvbk";
-	 break;
+         name = "rcvbk";
+         break;
       case SND:
-	 name = "snd";
-	 break;
+         name = "snd";
+         break;
       case SNDBK:
-	 name = "sndbk";
-	 break;
+         name = "sndbk";
+         break;
 
       default:
-	 emitn("?binop", op);
-	 tsyserr("binop: undefined binary operator");
+         emitn("?binop", op);
+         tsyserr("binop: undefined binary operator");
       }
    emit(name);
    if (asgn)
@@ -901,7 +901,7 @@ int op;
  *  by the lexical analyzer as binary operators.  For example, ~===x means to
  *  do three tab(match(...)) operations and then a cset complement, but the
  *  lexical analyzer sees the operator sequence as the "neqv" binary
- *  operation.	unopa and unopb unravel tokens of this form.
+ *  operation.  unopa and unopb unravel tokens of this form.
  *
  * When a N_Unop node is encountered, unopa is called to emit the necessary
  *  number of "pnull" operations to receive the intermediate results.  This
@@ -912,32 +912,32 @@ int op;
 nodeptr t;
    {
    switch (op) {
-      case NEQUIV:		/* unary ~ and three = operators */
-	 emit("pnull");
-      case SNE:		/* unary ~ and two = operators */
-      case EQUIV:		/* three unary = operators */
-	 emit("pnull");
-      case NMNE:		/* unary ~ and = operators */
-      case UNION:		/* two unary + operators */
-      case DIFF:		/* two unary - operators */
-      case SEQ:		/* two unary = operators */
-      case INTER:		/* two unary * operators */
-	 emit("pnull");
-      case BACKSLASH:		/* unary \ operator */
-      case BANG:		/* unary ! operator */
-      case CARET:		/* unary ^ operator */
-      case PLUS:		/* unary + operator */
-      case TILDE:		/* unary ~ operator */
-      case MINUS:		/* unary - operator */
-      case NMEQ:		/* unary = operator */
-      case STAR:		/* unary * operator */
-      case QMARK:		/* unary ? operator */
-      case SLASH:		/* unary / operator */
-      case DOT:			/* unary . operator */
+      case NEQUIV:              /* unary ~ and three = operators */
+         emit("pnull");
+      case SNE:         /* unary ~ and two = operators */
+      case EQUIV:               /* three unary = operators */
+         emit("pnull");
+      case NMNE:                /* unary ~ and = operators */
+      case UNION:               /* two unary + operators */
+      case DIFF:                /* two unary - operators */
+      case SEQ:         /* two unary = operators */
+      case INTER:               /* two unary * operators */
+         emit("pnull");
+      case BACKSLASH:           /* unary \ operator */
+      case BANG:                /* unary ! operator */
+      case CARET:               /* unary ^ operator */
+      case PLUS:                /* unary + operator */
+      case TILDE:               /* unary ~ operator */
+      case MINUS:               /* unary - operator */
+      case NMEQ:                /* unary = operator */
+      case STAR:                /* unary * operator */
+      case QMARK:               /* unary ? operator */
+      case SLASH:               /* unary / operator */
+      case DOT:                 /* unary . operator */
          emit("pnull");
          break;
       default:
-	 tsyserr("unopa: undefined unary operator");
+         tsyserr("unopa: undefined unary operator");
       }
    }
 
@@ -950,14 +950,14 @@ nodeptr t;
  *  and unopb is called with the token for the appropriate operation.
  *
  * For example, consider the sequence of calls and code emission for "~===":
- *	unopb(NEQUIV)		~===
- *	    unopb(NMEQ)	=
- *		emits "tabmat"
- *	    unopb(NMEQ)	=
- *		emits "tabmat"
- *	    unopb(NMEQ)	=
- *		emits "tabmat"
- *	    emits "compl"
+ *      unopb(NEQUIV)           ~===
+ *          unopb(NMEQ) =
+ *              emits "tabmat"
+ *          unopb(NMEQ) =
+ *              emits "tabmat"
+ *          unopb(NMEQ) =
+ *              emits "tabmat"
+ *          emits "compl"
  */
 static void unopb(op)
 int op;
@@ -966,69 +966,69 @@ int op;
 
    switch (op) {
 
-      case DOT:			/* unary . operator */
-	 name = "value";
-	 break;
+      case DOT:                 /* unary . operator */
+         name = "value";
+         break;
 
-      case BACKSLASH:		/* unary \ operator */
-	 name = "nonnull";
-	 break;
+      case BACKSLASH:           /* unary \ operator */
+         name = "nonnull";
+         break;
 
-      case BANG:		/* unary ! operator */
-	 name = "bang";
-	 break;
+      case BANG:                /* unary ! operator */
+         name = "bang";
+         break;
 
-      case CARET:		/* unary ^ operator */
-	 name = "refresh";
-	 break;
+      case CARET:               /* unary ^ operator */
+         name = "refresh";
+         break;
 
-      case UNION:		/* two unary + operators */
-	 unopb(PLUS);
-      case PLUS:		/* unary + operator */
-	 name = "number";
-	 break;
+      case UNION:               /* two unary + operators */
+         unopb(PLUS);
+      case PLUS:                /* unary + operator */
+         name = "number";
+         break;
 
-      case NEQUIV:		/* unary ~ and three = operators */
-	 unopb(NMEQ);
-      case SNE:		/* unary ~ and two = operators */
-	 unopb(NMEQ);
-      case NMNE:		/* unary ~ and = operators */
-	 unopb(NMEQ);
-      case TILDE:		/* unary ~ operator (cset compl) */
-	 name = "compl";
-	 break;
+      case NEQUIV:              /* unary ~ and three = operators */
+         unopb(NMEQ);
+      case SNE:         /* unary ~ and two = operators */
+         unopb(NMEQ);
+      case NMNE:                /* unary ~ and = operators */
+         unopb(NMEQ);
+      case TILDE:               /* unary ~ operator (cset compl) */
+         name = "compl";
+         break;
 
-      case DIFF:		/* two unary - operators */
-	 unopb(MINUS);
-      case MINUS:		/* unary - operator */
-	 name = "neg";
-	 break;
+      case DIFF:                /* two unary - operators */
+         unopb(MINUS);
+      case MINUS:               /* unary - operator */
+         name = "neg";
+         break;
 
-      case EQUIV:		/* three unary = operators */
-	 unopb(NMEQ);
-      case SEQ:		/* two unary = operators */
-	 unopb(NMEQ);
-      case NMEQ:		/* unary = operator */
-	 name = "tabmat";
-	 break;
+      case EQUIV:               /* three unary = operators */
+         unopb(NMEQ);
+      case SEQ:         /* two unary = operators */
+         unopb(NMEQ);
+      case NMEQ:                /* unary = operator */
+         name = "tabmat";
+         break;
 
-      case INTER:		/* two unary * operators */
-	 unopb(STAR);
-      case STAR:		/* unary * operator */
-	 name = "size";
-	 break;
+      case INTER:               /* two unary * operators */
+         unopb(STAR);
+      case STAR:                /* unary * operator */
+         name = "size";
+         break;
 
-      case QMARK:		/* unary ? operator */
-	 name = "random";
-	 break;
+      case QMARK:               /* unary ? operator */
+         name = "random";
+         break;
 
-      case SLASH:		/* unary / operator */
-	 name = "null";
-	 break;
+      case SLASH:               /* unary / operator */
+         name = "null";
+         break;
 
       default:
-	 emitn("?unop", op);
-	 tsyserr("unopb: undefined unary operator");
+         emitn("?unop", op);
+         tsyserr("unopb: undefined unary operator");
       }
    emit(name);
    }
@@ -1075,7 +1075,7 @@ void tcodeinit()
    lastfiln = NULL;
    lastcol = 0;
    }
-#endif					/* Multiple Runs */
+#endif                                  /* Multiple Runs */
 
 /*
  * The emit* routines output ucode to codefile.  The various routines are:

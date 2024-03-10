@@ -47,9 +47,9 @@ int (*cmp)();
                 }
            }
 }
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */
 
-/* 
+/*
  * Write a long string in int-sized chunks.
  */
 

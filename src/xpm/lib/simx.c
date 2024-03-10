@@ -36,7 +36,7 @@
 #ifdef FOR_MSW
 
 #include "xpm.h"
-#include "xpmi.h"			/* for XpmMalloc */
+#include "xpmi.h"                       /* for XpmMalloc */
 
 /*
  * On DOS size_t is only 2 bytes, thus malloc(size_t s) can only malloc
@@ -51,55 +51,55 @@
 void *
 boundCheckingMalloc(long s)
 {
-    if (sizeof(size_t) == sizeof(long)) {	/* same size, just do it */
-	return (malloc((size_t) s));
+    if (sizeof(size_t) == sizeof(long)) {       /* same size, just do it */
+        return (malloc((size_t) s));
     } else {
-	if (sizeof(size_t) == 2) {
-	    if (s > 0xFFFF)
-		return (NULL);		/* to large, size_t with 2 bytes
-					 * only allows 16 bits */
-	    else
-		return (malloc((size_t) s));
-	} else {			/* it's not a long, not 2 bytes,
-					 * what is it ??? */
-	    return (malloc((size_t) s));
-	}
+        if (sizeof(size_t) == 2) {
+            if (s > 0xFFFF)
+                return (NULL);          /* to large, size_t with 2 bytes
+                                         * only allows 16 bits */
+            else
+                return (malloc((size_t) s));
+        } else {                        /* it's not a long, not 2 bytes,
+                                         * what is it ??? */
+            return (malloc((size_t) s));
+        }
     }
 }
 void *
 boundCheckingCalloc(long num, long s)
 {
-    if (sizeof(size_t) == sizeof(long)) {	/* same size, just do it */
-	return (calloc((size_t) num, (size_t) s));
+    if (sizeof(size_t) == sizeof(long)) {       /* same size, just do it */
+        return (calloc((size_t) num, (size_t) s));
     } else {
-	if (sizeof(size_t) == 2) {
-	    if (s > 0xFFFF || num * s > 0xFFFF)
-		return (NULL);		/* to large, size_t with 2 bytes
-					 * only allows 16 bits */
-	    else
-		return (calloc((size_t) num, (size_t) s));
-	} else {			/* it's not a long, not 2 bytes,
-					 * what is it ??? */
-	    return (calloc((size_t) num, (size_t) s));
-	}
+        if (sizeof(size_t) == 2) {
+            if (s > 0xFFFF || num * s > 0xFFFF)
+                return (NULL);          /* to large, size_t with 2 bytes
+                                         * only allows 16 bits */
+            else
+                return (calloc((size_t) num, (size_t) s));
+        } else {                        /* it's not a long, not 2 bytes,
+                                         * what is it ??? */
+            return (calloc((size_t) num, (size_t) s));
+        }
     }
 }
 void *
 boundCheckingRealloc(void *p, long s)
 {
-    if (sizeof(size_t) == sizeof(long)) {	/* same size, just do it */
-	return (realloc(p, (size_t) s));
+    if (sizeof(size_t) == sizeof(long)) {       /* same size, just do it */
+        return (realloc(p, (size_t) s));
     } else {
-	if (sizeof(size_t) == 2) {
-	    if (s > 0xFFFF)
-		return (NULL);		/* to large, size_t with 2 bytes
-					 * only allows 16 bits */
-	    else
-		return (realloc(p, (size_t) s));
-	} else {			/* it's not a long, not 2 bytes,
-					 * what is it ??? */
-	    return (realloc(p, (size_t) s));
-	}
+        if (sizeof(size_t) == 2) {
+            if (s > 0xFFFF)
+                return (NULL);          /* to large, size_t with 2 bytes
+                                         * only allows 16 bits */
+            else
+                return (realloc(p, (size_t) s));
+        } else {                        /* it's not a long, not 2 bytes,
+                                         * what is it ??? */
+            return (realloc(p, (size_t) s));
+        }
     }
 }
 
@@ -107,8 +107,8 @@ boundCheckingRealloc(void *p, long s)
 Visual *
 XDefaultVisual(Display *display, Screen *screen)
 {
-    return (NULL);			/* struct could contain info about
-					 * MONO, GRAY, COLOR */
+    return (NULL);                      /* struct could contain info about
+                                         * MONO, GRAY, COLOR */
 }
 
 Screen *
@@ -119,7 +119,7 @@ XDefaultScreen(Display *d)
 
 /* I get only 1 plane but 8 bits per pixel,
    so I think BITSPIXEL should be depth */
-int 
+int
 XDefaultDepth(Display *display, Screen *screen)
 {
     int d, b;
@@ -137,91 +137,91 @@ XDefaultColormap(Display *display, Screen *screen)
 
 /* convert hex color names,
    wrong digits (not a-f,A-F,0-9) are treated as zero */
-static int 
+static int
 hexCharToInt(c)
 {
     int r;
 
     if (c >= '0' && c <= '9')
-	r = c - '0';
+        r = c - '0';
     else if (c >= 'a' && c <= 'f')
-	r = c - 'a' + 10;
+        r = c - 'a' + 10;
     else if (c >= 'A' && c <= 'F')
-	r = c - 'A' + 10;
+        r = c - 'A' + 10;
     else
-	r = 0;
+        r = 0;
 
     return (r);
 }
 
-static int 
+static int
 rgbFromHex(char *hex, int *r, int *g, int *b)
 {
     int len;
 
     if (hex == NULL || hex[0] != '#')
-	return (0);
+        return (0);
 
     len = strlen(hex);
     if (len == 3 + 1) {
-	*r = hexCharToInt(hex[1]);
-	*g = hexCharToInt(hex[2]);
-	*b = hexCharToInt(hex[3]);
+        *r = hexCharToInt(hex[1]);
+        *g = hexCharToInt(hex[2]);
+        *b = hexCharToInt(hex[3]);
     } else if (len == 6 + 1) {
-	*r = hexCharToInt(hex[1]) * 16 + hexCharToInt(hex[2]);
-	*g = hexCharToInt(hex[3]) * 16 + hexCharToInt(hex[4]);
-	*b = hexCharToInt(hex[5]) * 16 + hexCharToInt(hex[6]);
+        *r = hexCharToInt(hex[1]) * 16 + hexCharToInt(hex[2]);
+        *g = hexCharToInt(hex[3]) * 16 + hexCharToInt(hex[4]);
+        *b = hexCharToInt(hex[5]) * 16 + hexCharToInt(hex[6]);
     } else if (len == 12 + 1) {
-	/* it's like c #32329999CCCC */
-	/* so for now only take two digits */
-	*r = hexCharToInt(hex[1]) * 16 + hexCharToInt(hex[2]);
-	*g = hexCharToInt(hex[5]) * 16 + hexCharToInt(hex[6]);
-	*b = hexCharToInt(hex[9]) * 16 + hexCharToInt(hex[10]);
+        /* it's like c #32329999CCCC */
+        /* so for now only take two digits */
+        *r = hexCharToInt(hex[1]) * 16 + hexCharToInt(hex[2]);
+        *g = hexCharToInt(hex[5]) * 16 + hexCharToInt(hex[6]);
+        *b = hexCharToInt(hex[9]) * 16 + hexCharToInt(hex[10]);
     } else
-	return (0);
+        return (0);
 
     return (1);
 }
 
 /* Color related functions */
-int 
+int
 XParseColor(Display *d, Colormap *cmap, char *name, XColor *color)
 {
-    int r, g, b;			/* only 8 bit values used */
+    int r, g, b;                        /* only 8 bit values used */
     int okay;
 
 /* TODO: use colormap via PALETTE */
     /* parse name either in table or #RRGGBB #RGB */
     if (name == NULL)
-	return (0);
+        return (0);
 
-    if (name[0] == '#') {		/* a hex string */
-	okay = rgbFromHex(name, &r, &g, &b);
+    if (name[0] == '#') {               /* a hex string */
+        okay = rgbFromHex(name, &r, &g, &b);
     } else {
-	okay = xpmGetRGBfromName(name, &r, &g, &b);
+        okay = xpmGetRGBfromName(name, &r, &g, &b);
     }
 
     if (okay) {
-	color->pixel = RGB(r, g, b);
-	color->red = (BYTE) r;
-	color->green = (BYTE) g;
-	color->blue = (BYTE) b;
-	return (1);
+        color->pixel = RGB(r, g, b);
+        color->red = (BYTE) r;
+        color->green = (BYTE) g;
+        color->blue = (BYTE) b;
+        return (1);
     } else
-	return (0);			/* --> ColorError */
+        return (0);                     /* --> ColorError */
 }
 
 
-int 
+int
 XAllocColor(Display *d, Colormap cmap, XColor *color)
 {
 /* colormap not used yet so color->pixel is the real COLORREF (RBG) and not an
    index in some colormap as in X */
     return (1);
 }
-void 
+void
 XQueryColors(Display *display, Colormap *colormap,
-	     XColor *xcolors, int ncolors)
+             XColor *xcolors, int ncolors)
 {
 /* under X this fills the rgb values to given .pixel */
 /* since there no colormap use FOR_MSW (not yet!!), rgb is plain encoded */
@@ -229,61 +229,61 @@ XQueryColors(Display *display, Colormap *colormap,
     int i;
 
     for (i = 0; i < ncolors; i++, xc++) {
-	xc->red = GetRValue(xc->pixel);
-	xc->green = GetGValue(xc->pixel);
-	xc->blue = GetBValue(xc->pixel);
+        xc->red = GetRValue(xc->pixel);
+        xc->green = GetGValue(xc->pixel);
+        xc->blue = GetBValue(xc->pixel);
     }
     return;
 }
-int 
+int
 XFreeColors(Display *d, Colormap cmap,
-	    unsigned long pixels[], int npixels, unsigned long planes)
+            unsigned long pixels[], int npixels, unsigned long planes)
 {
     /* no colormap yet */
-    return (0);				/* correct ??? */
+    return (0);                         /* correct ??? */
 }
 
 /* XImage functions */
 XImage *
 XCreateImage(Display *d, Visual *v,
-	     int depth, int format,
-	     int x, int y, int width, int height,
-	     int pad, int foo)
+             int depth, int format,
+             int x, int y, int width, int height,
+             int pad, int foo)
 {
     XImage *img = (XImage *) XpmMalloc(sizeof(XImage));
 
     if (img) {
-	/*JW: This is what it should be, but the picture comes out
-	      just black!?  It appears to be doing monochrome reduction,
-	      but I've got no clue why.  Using CreateBitmap() is supposed
-	      to be slower, but otherwise ok
-	  if ( depth == GetDeviceCaps(*d, BITSPIXEL) ) {
-	    img->bitmap = CreateCompatibleBitmap(*d, width, height);
+        /*JW: This is what it should be, but the picture comes out
+              just black!?  It appears to be doing monochrome reduction,
+              but I've got no clue why.  Using CreateBitmap() is supposed
+              to be slower, but otherwise ok
+          if ( depth == GetDeviceCaps(*d, BITSPIXEL) ) {
+            img->bitmap = CreateCompatibleBitmap(*d, width, height);
         } else*/ {
-	    img->bitmap = CreateBitmap(width, height, 1 /* plane */ ,
-				       depth /* bits per pixel */ , NULL);
-	}
-	img->width = width;
-	img->height = height;
-	img->depth = depth;
+            img->bitmap = CreateBitmap(width, height, 1 /* plane */ ,
+                                       depth /* bits per pixel */ , NULL);
+        }
+        img->width = width;
+        img->height = height;
+        img->depth = depth;
     }
     return (img);
 
 }
 
-void 
+void
 XImageFree(XImage *img)
 {
     if (img) {
-	XpmFree(img);
+        XpmFree(img);
     }
 }
-void 
+void
 XDestroyImage(XImage *img)
 {
     if (img) {
-	DeleteObject(img->bitmap);	/* check return ??? */
-	XImageFree(img);
+        DeleteObject(img->bitmap);      /* check return ??? */
+        XImageFree(img);
     }
 }
 

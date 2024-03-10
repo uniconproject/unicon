@@ -146,138 +146,138 @@ char *p;
 #define free(p) xfree((char*)p)
 int yyexca[] ={
 -1, 0,
-	0, 279,
-	258, 299,
-	347, 299,
-	348, 299,
-	349, 299,
-	-2, 193,
+        0, 279,
+        258, 299,
+        347, 299,
+        348, 299,
+        349, 299,
+        -2, 193,
 -1, 1,
-	0, -1,
-	-2, 0,
+        0, -1,
+        -2, 0,
 -1, 2,
-	0, 280,
-	258, 299,
-	347, 299,
-	348, 299,
-	349, 299,
-	-2, 193,
+        0, 280,
+        258, 299,
+        347, 299,
+        348, 299,
+        349, 299,
+        -2, 193,
 -1, 51,
-	44, 113,
-	59, 113,
-	-2, 290,
+        44, 113,
+        59, 113,
+        -2, 290,
 -1, 58,
-	44, 115,
-	59, 115,
-	-2, 289,
+        44, 115,
+        59, 115,
+        -2, 289,
 -1, 100,
-	123, 166,
-	-2, 168,
+        123, 166,
+        -2, 168,
 -1, 138,
-	125, 257,
-	59, 86,
-	-2, 230,
+        125, 257,
+        59, 86,
+        -2, 230,
 -1, 238,
-	125, 257,
-	59, 86,
-	-2, 230,
+        125, 257,
+        59, 86,
+        -2, 230,
 -1, 239,
-	125, 258,
-	59, 86,
-	-2, 230,
+        125, 258,
+        59, 86,
+        -2, 230,
 -1, 255,
-	58, 293,
-	-2, 1,
+        58, 293,
+        -2, 1,
 -1, 256,
-	58, 294,
-	-2, 98,
+        58, 294,
+        -2, 98,
 -1, 262,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 308,
-	41, 212,
-	-2, 193,
+        41, 212,
+        -2, 193,
 -1, 371,
-	41, 204,
-	44, 204,
-	-2, 193,
+        41, 204,
+        44, 204,
+        -2, 193,
 -1, 396,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 398,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 452,
-	41, 214,
-	44, 214,
-	-2, 194,
+        41, 214,
+        44, 214,
+        -2, 194,
 -1, 516,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 545,
-	40, 193,
-	91, 193,
-	-2, 219,
+        40, 193,
+        91, 193,
+        -2, 219,
 -1, 617,
-	293, 219,
-	294, 219,
-	295, 219,
-	296, 219,
-	297, 219,
-	299, 219,
-	300, 219,
-	301, 219,
-	302, 219,
-	303, 219,
-	304, 219,
-	305, 219,
-	306, 219,
-	307, 219,
-	308, 219,
-	309, 219,
-	310, 219,
-	311, 219,
-	312, 219,
-	313, 219,
-	41, 219,
-	339, 219,
-	341, 219,
-	342, 219,
-	-2, 193,
+        293, 219,
+        294, 219,
+        295, 219,
+        296, 219,
+        297, 219,
+        299, 219,
+        300, 219,
+        301, 219,
+        302, 219,
+        303, 219,
+        304, 219,
+        305, 219,
+        306, 219,
+        307, 219,
+        308, 219,
+        309, 219,
+        310, 219,
+        311, 219,
+        312, 219,
+        313, 219,
+        41, 219,
+        339, 219,
+        341, 219,
+        342, 219,
+        -2, 193,
 -1, 624,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 625,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 627,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 677,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 725,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 730,
-	58, 453,
-	-2, 317,
+        58, 453,
+        -2, 317,
 -1, 731,
-	58, 454,
-	-2, 321,
+        58, 454,
+        -2, 321,
 -1, 732,
-	58, 455,
-	-2, 324,
+        58, 455,
+        -2, 324,
 -1, 733,
-	58, 456,
-	-2, 337,
+        58, 456,
+        -2, 337,
 -1, 771,
-	59, 86,
-	-2, 230,
+        59, 86,
+        -2, 230,
 -1, 792,
-	59, 86,
-	-2, 230,
-	};
+        59, 86,
+        -2, 230,
+        };
 # define YYNPROD 481
 # define YYLAST 3082
 int yyact[]={
@@ -968,639 +968,639 @@ int yydef[]={
    415 };
 typedef struct { char *t_name; int t_val; } yytoktype;
 #ifndef YYDEBUG
-#	define YYDEBUG	0	/* don't allow debugging */
+#       define YYDEBUG  0       /* don't allow debugging */
 #endif
 
 #if YYDEBUG
 
 yytoktype yytoks[] =
 {
-	"Identifier",	257,
-	"StrLit",	258,
-	"LStrLit",	259,
-	"FltConst",	260,
-	"DblConst",	261,
-	"LDblConst",	262,
-	"CharConst",	263,
-	"LCharConst",	264,
-	"IntConst",	265,
-	"UIntConst",	266,
-	"LIntConst",	267,
-	"ULIntConst",	268,
-	"Arrow",	269,
-	"Incr",	270,
-	"Decr",	271,
-	"LShft",	272,
-	"RShft",	273,
-	"Leq",	274,
-	"Geq",	275,
-	"Equal",	276,
-	"Neq",	277,
-	"And",	278,
-	"Or",	279,
-	"MultAsgn",	280,
-	"DivAsgn",	281,
-	"ModAsgn",	282,
-	"PlusAsgn",	283,
-	"MinusAsgn",	284,
-	"LShftAsgn",	285,
-	"RShftAsgn",	286,
-	"AndAsgn",	287,
-	"XorAsgn",	288,
-	"OrAsgn",	289,
-	"Sizeof",	290,
-	"Intersect",	291,
-	"OpSym",	292,
-	"Typedef",	293,
-	"Extern",	294,
-	"Static",	295,
-	"Auto",	296,
-	"Register",	297,
-	"Tended",	298,
-	"Char",	299,
-	"Short",	300,
-	"Int",	301,
-	"Long",	302,
-	"Signed",	303,
-	"Unsigned",	304,
-	"Float",	305,
-	"Doubl",	306,
-	"Const",	307,
-	"Volatile",	308,
-	"Void",	309,
-	"TypeDefName",	310,
-	"Struct",	311,
-	"Union",	312,
-	"Enum",	313,
-	"Ellipsis",	314,
-	"Case",	315,
-	"Default",	316,
-	"If",	317,
-	"Else",	318,
-	"Switch",	319,
-	"While",	320,
-	"Do",	321,
-	"For",	322,
-	"Goto",	323,
-	"Continue",	324,
-	"Break",	325,
-	"Return",	326,
-	"%",	37,
-	"&",	38,
-	"(",	40,
-	")",	41,
-	"*",	42,
-	"+",	43,
-	",",	44,
-	"-",	45,
-	".",	46,
-	"/",	47,
-	"{",	123,
-	"|",	124,
-	"}",	125,
-	"~",	126,
-	"[",	91,
-	"]",	93,
-	"^",	94,
-	":",	58,
-	";",	59,
-	"<",	60,
-	"=",	61,
-	">",	62,
-	"?",	63,
-	"!",	33,
-	"@",	64,
-	"\\",	92,
-	"Runerr",	327,
-	"Is",	328,
-	"Cnv",	329,
-	"Def",	330,
-	"Exact",	331,
-	"Empty_type",	332,
-	"IconType",	333,
-	"Component",	334,
-	"Variable",	335,
-	"Any_value",	336,
-	"Named_var",	337,
-	"Struct_var",	338,
-	"C_Integer",	339,
-	"Arith_case",	340,
-	"C_Double",	341,
-	"C_String",	342,
-	"Tmp_string",	343,
-	"Tmp_cset",	344,
-	"Body",	345,
-	"End",	346,
-	"Function",	347,
-	"Keyword",	348,
-	"Operator",	349,
-	"Underef",	350,
-	"Declare",	351,
-	"Suspend",	352,
-	"Fail",	353,
-	"Inline",	354,
-	"Abstract",	355,
-	"Store",	356,
-	"Type",	357,
-	"New",	358,
-	"All_fields",	359,
-	"Then",	360,
-	"Type_case",	361,
-	"Of",	362,
-	"Len_case",	363,
-	"Constant",	364,
-	"Errorfail",	365,
-	"IfStmt",	366,
-	"-unknown-",	-1	/* ends search */
+        "Identifier",   257,
+        "StrLit",       258,
+        "LStrLit",      259,
+        "FltConst",     260,
+        "DblConst",     261,
+        "LDblConst",    262,
+        "CharConst",    263,
+        "LCharConst",   264,
+        "IntConst",     265,
+        "UIntConst",    266,
+        "LIntConst",    267,
+        "ULIntConst",   268,
+        "Arrow",        269,
+        "Incr", 270,
+        "Decr", 271,
+        "LShft",        272,
+        "RShft",        273,
+        "Leq",  274,
+        "Geq",  275,
+        "Equal",        276,
+        "Neq",  277,
+        "And",  278,
+        "Or",   279,
+        "MultAsgn",     280,
+        "DivAsgn",      281,
+        "ModAsgn",      282,
+        "PlusAsgn",     283,
+        "MinusAsgn",    284,
+        "LShftAsgn",    285,
+        "RShftAsgn",    286,
+        "AndAsgn",      287,
+        "XorAsgn",      288,
+        "OrAsgn",       289,
+        "Sizeof",       290,
+        "Intersect",    291,
+        "OpSym",        292,
+        "Typedef",      293,
+        "Extern",       294,
+        "Static",       295,
+        "Auto", 296,
+        "Register",     297,
+        "Tended",       298,
+        "Char", 299,
+        "Short",        300,
+        "Int",  301,
+        "Long", 302,
+        "Signed",       303,
+        "Unsigned",     304,
+        "Float",        305,
+        "Doubl",        306,
+        "Const",        307,
+        "Volatile",     308,
+        "Void", 309,
+        "TypeDefName",  310,
+        "Struct",       311,
+        "Union",        312,
+        "Enum", 313,
+        "Ellipsis",     314,
+        "Case", 315,
+        "Default",      316,
+        "If",   317,
+        "Else", 318,
+        "Switch",       319,
+        "While",        320,
+        "Do",   321,
+        "For",  322,
+        "Goto", 323,
+        "Continue",     324,
+        "Break",        325,
+        "Return",       326,
+        "%",    37,
+        "&",    38,
+        "(",    40,
+        ")",    41,
+        "*",    42,
+        "+",    43,
+        ",",    44,
+        "-",    45,
+        ".",    46,
+        "/",    47,
+        "{",    123,
+        "|",    124,
+        "}",    125,
+        "~",    126,
+        "[",    91,
+        "]",    93,
+        "^",    94,
+        ":",    58,
+        ";",    59,
+        "<",    60,
+        "=",    61,
+        ">",    62,
+        "?",    63,
+        "!",    33,
+        "@",    64,
+        "\\",   92,
+        "Runerr",       327,
+        "Is",   328,
+        "Cnv",  329,
+        "Def",  330,
+        "Exact",        331,
+        "Empty_type",   332,
+        "IconType",     333,
+        "Component",    334,
+        "Variable",     335,
+        "Any_value",    336,
+        "Named_var",    337,
+        "Struct_var",   338,
+        "C_Integer",    339,
+        "Arith_case",   340,
+        "C_Double",     341,
+        "C_String",     342,
+        "Tmp_string",   343,
+        "Tmp_cset",     344,
+        "Body", 345,
+        "End",  346,
+        "Function",     347,
+        "Keyword",      348,
+        "Operator",     349,
+        "Underef",      350,
+        "Declare",      351,
+        "Suspend",      352,
+        "Fail", 353,
+        "Inline",       354,
+        "Abstract",     355,
+        "Store",        356,
+        "Type", 357,
+        "New",  358,
+        "All_fields",   359,
+        "Then", 360,
+        "Type_case",    361,
+        "Of",   362,
+        "Len_case",     363,
+        "Constant",     364,
+        "Errorfail",    365,
+        "IfStmt",       366,
+        "-unknown-",    -1      /* ends search */
 };
 
 char * yyreds[] =
 {
-	"-no such reduction-",
-	"primary_expr : identifier",
-	"primary_expr : StrLit",
-	"primary_expr : LStrLit",
-	"primary_expr : FltConst",
-	"primary_expr : DblConst",
-	"primary_expr : LDblConst",
-	"primary_expr : CharConst",
-	"primary_expr : LCharConst",
-	"primary_expr : IntConst",
-	"primary_expr : UIntConst",
-	"primary_expr : LIntConst",
-	"primary_expr : ULIntConst",
-	"primary_expr : '(' expr ')'",
-	"postfix_expr : primary_expr",
-	"postfix_expr : postfix_expr '[' expr ']'",
-	"postfix_expr : postfix_expr '(' ')'",
-	"postfix_expr : postfix_expr '(' arg_expr_lst ')'",
-	"postfix_expr : postfix_expr '.' any_ident",
-	"postfix_expr : postfix_expr Arrow any_ident",
-	"postfix_expr : postfix_expr Incr",
-	"postfix_expr : postfix_expr Decr",
-	"postfix_expr : Is ':' i_type_name '(' assign_expr ')'",
-	"postfix_expr : Cnv ':' dest_type '(' assign_expr ',' assign_expr ')'",
-	"postfix_expr : Def ':' dest_type '(' assign_expr ',' assign_expr ',' assign_expr ')'",
-	"arg_expr_lst : assign_expr",
-	"arg_expr_lst : arg_expr_lst ',' assign_expr",
-	"unary_expr : postfix_expr",
-	"unary_expr : Incr unary_expr",
-	"unary_expr : Decr unary_expr",
-	"unary_expr : unary_op cast_expr",
-	"unary_expr : Sizeof unary_expr",
-	"unary_expr : Sizeof '(' type_name ')'",
-	"unary_op : '&'",
-	"unary_op : '*'",
-	"unary_op : '+'",
-	"unary_op : '-'",
-	"unary_op : '~'",
-	"unary_op : '!'",
-	"cast_expr : unary_expr",
-	"cast_expr : '(' type_name ')' cast_expr",
-	"multiplicative_expr : cast_expr",
-	"multiplicative_expr : multiplicative_expr '*' cast_expr",
-	"multiplicative_expr : multiplicative_expr '/' cast_expr",
-	"multiplicative_expr : multiplicative_expr '%' cast_expr",
-	"additive_expr : multiplicative_expr",
-	"additive_expr : additive_expr '+' multiplicative_expr",
-	"additive_expr : additive_expr '-' multiplicative_expr",
-	"shift_expr : additive_expr",
-	"shift_expr : shift_expr LShft additive_expr",
-	"shift_expr : shift_expr RShft additive_expr",
-	"relational_expr : shift_expr",
-	"relational_expr : relational_expr '<' shift_expr",
-	"relational_expr : relational_expr '>' shift_expr",
-	"relational_expr : relational_expr Leq shift_expr",
-	"relational_expr : relational_expr Geq shift_expr",
-	"equality_expr : relational_expr",
-	"equality_expr : equality_expr Equal relational_expr",
-	"equality_expr : equality_expr Neq relational_expr",
-	"and_expr : equality_expr",
-	"and_expr : and_expr '&' equality_expr",
-	"exclusive_or_expr : and_expr",
-	"exclusive_or_expr : exclusive_or_expr '^' and_expr",
-	"inclusive_or_expr : exclusive_or_expr",
-	"inclusive_or_expr : inclusive_or_expr '|' exclusive_or_expr",
-	"logical_and_expr : inclusive_or_expr",
-	"logical_and_expr : logical_and_expr And inclusive_or_expr",
-	"logical_or_expr : logical_and_expr",
-	"logical_or_expr : logical_or_expr Or logical_and_expr",
-	"conditional_expr : logical_or_expr",
-	"conditional_expr : logical_or_expr '?' expr ':' conditional_expr",
-	"assign_expr : conditional_expr",
-	"assign_expr : unary_expr assign_op assign_expr",
-	"assign_op : '='",
-	"assign_op : MultAsgn",
-	"assign_op : DivAsgn",
-	"assign_op : ModAsgn",
-	"assign_op : PlusAsgn",
-	"assign_op : MinusAsgn",
-	"assign_op : LShftAsgn",
-	"assign_op : RShftAsgn",
-	"assign_op : AndAsgn",
-	"assign_op : XorAsgn",
-	"assign_op : OrAsgn",
-	"expr : assign_expr",
-	"expr : expr ',' assign_expr",
-	"opt_expr : /* empty */",
-	"opt_expr : expr",
-	"constant_expr : conditional_expr",
-	"opt_constant_expr : /* empty */",
-	"opt_constant_expr : constant_expr",
-	"dcltion : typ_dcltion_specs ';'",
-	"dcltion : typ_dcltion_specs init_dcltor_lst ';'",
-	"dcltion : storcl_tqual_lst no_tdn_init_dcltor_lst ';'",
-	"typ_dcltion_specs : type_ind",
-	"typ_dcltion_specs : storcl_tqual_lst type_ind",
-	"dcltion_specs : typ_dcltion_specs",
-	"dcltion_specs : storcl_tqual_lst",
-	"type_ind : typedefname",
-	"type_ind : typedefname storcl_tqual_lst",
-	"type_ind : type_storcl_tqual_lst",
-	"type_storcl_tqual_lst : stnd_type",
-	"type_storcl_tqual_lst : type_storcl_tqual_lst stnd_type",
-	"type_storcl_tqual_lst : type_storcl_tqual_lst storage_class_spec",
-	"type_storcl_tqual_lst : type_storcl_tqual_lst type_qual",
-	"storcl_tqual_lst : storage_class_spec",
-	"storcl_tqual_lst : type_qual",
-	"storcl_tqual_lst : storcl_tqual_lst storage_class_spec",
-	"storcl_tqual_lst : storcl_tqual_lst type_qual",
-	"init_dcltor_lst : init_dcltor",
-	"init_dcltor_lst : init_dcltor_lst ',' init_dcltor",
-	"no_tdn_init_dcltor_lst : no_tdn_init_dcltor",
-	"no_tdn_init_dcltor_lst : no_tdn_init_dcltor_lst ',' no_tdn_init_dcltor",
-	"init_dcltor : dcltor",
-	"init_dcltor : dcltor '=' initializer",
-	"no_tdn_init_dcltor : no_tdn_dcltor",
-	"no_tdn_init_dcltor : no_tdn_dcltor '=' initializer",
-	"storage_class_spec : Typedef",
-	"storage_class_spec : Extern",
-	"storage_class_spec : Static",
-	"storage_class_spec : Auto",
-	"storage_class_spec : Register",
-	"type_spec : stnd_type",
-	"type_spec : typedefname",
-	"stnd_type : Void",
-	"stnd_type : Char",
-	"stnd_type : Short",
-	"stnd_type : Int",
-	"stnd_type : Long",
-	"stnd_type : Float",
-	"stnd_type : Doubl",
-	"stnd_type : Signed",
-	"stnd_type : Unsigned",
-	"stnd_type : struct_or_union_spec",
-	"stnd_type : enum_spec",
-	"struct_or_union_spec : struct_or_union any_ident '{' struct_dcltion_lst '}'",
-	"struct_or_union_spec : struct_or_union '{' struct_dcltion_lst '}'",
-	"struct_or_union_spec : struct_or_union any_ident",
-	"struct_or_union : Struct",
-	"struct_or_union : Union",
-	"struct_dcltion_lst : struct_dcltion",
-	"struct_dcltion_lst : struct_dcltion_lst struct_dcltion",
-	"struct_dcltion : struct_dcltion_specs struct_dcltor_lst ';'",
-	"struct_dcltion : tqual_lst struct_no_tdn_dcltor_lst ';'",
-	"struct_dcltion_specs : struct_type_ind",
-	"struct_dcltion_specs : tqual_lst struct_type_ind",
-	"struct_type_ind : typedefname",
-	"struct_type_ind : typedefname tqual_lst",
-	"struct_type_ind : struct_type_lst",
-	"struct_type_lst : stnd_type",
-	"struct_type_lst : struct_type_lst stnd_type",
-	"struct_type_lst : struct_type_lst type_qual",
-	"struct_dcltor_lst : struct_dcltor",
-	"struct_dcltor_lst : struct_dcltor_lst ',' struct_dcltor",
-	"struct_dcltor : dcltor",
-	"struct_dcltor : ':' constant_expr",
-	"struct_dcltor : dcltor ':'",
-	"struct_dcltor : dcltor ':' constant_expr",
-	"struct_no_tdn_dcltor_lst : struct_no_tdn_dcltor",
-	"struct_no_tdn_dcltor_lst : struct_no_tdn_dcltor_lst ',' struct_no_tdn_dcltor",
-	"struct_no_tdn_dcltor : no_tdn_dcltor",
-	"struct_no_tdn_dcltor : ':' constant_expr",
-	"struct_no_tdn_dcltor : no_tdn_dcltor ':'",
-	"struct_no_tdn_dcltor : no_tdn_dcltor ':' constant_expr",
-	"enum_spec : Enum",
-	"enum_spec : Enum '{' enumerator_lst '}'",
-	"enum_spec : Enum any_ident",
-	"enum_spec : Enum any_ident '{' enumerator_lst '}'",
-	"enum_spec : Enum any_ident",
-	"enumerator_lst : enumerator",
-	"enumerator_lst : enumerator_lst ',' enumerator",
-	"enumerator : any_ident",
-	"enumerator : any_ident '=' constant_expr",
-	"type_qual : Const",
-	"type_qual : Volatile",
-	"dcltor : opt_pointer direct_dcltor",
-	"no_tdn_dcltor : opt_pointer no_tdn_direct_dcltor",
-	"direct_dcltor : any_ident",
-	"direct_dcltor : '(' dcltor ')'",
-	"direct_dcltor : direct_dcltor '[' opt_constant_expr ']'",
-	"direct_dcltor : direct_dcltor '('",
-	"direct_dcltor : direct_dcltor '(' parm_dcls_or_ids ')'",
-	"no_tdn_direct_dcltor : identifier",
-	"no_tdn_direct_dcltor : '(' no_tdn_dcltor ')'",
-	"no_tdn_direct_dcltor : no_tdn_direct_dcltor '[' opt_constant_expr ']'",
-	"no_tdn_direct_dcltor : no_tdn_direct_dcltor '('",
-	"no_tdn_direct_dcltor : no_tdn_direct_dcltor '(' parm_dcls_or_ids ')'",
-	"parm_dcls_or_ids : opt_param_type_lst",
-	"parm_dcls_or_ids : ident_lst",
-	"pointer : '*'",
-	"pointer : '*' tqual_lst",
-	"pointer : '*' pointer",
-	"pointer : '*' tqual_lst pointer",
-	"opt_pointer : /* empty */",
-	"opt_pointer : pointer",
-	"tqual_lst : type_qual",
-	"tqual_lst : tqual_lst type_qual",
-	"param_type_lst : param_lst",
-	"param_type_lst : param_lst ',' Ellipsis",
-	"opt_param_type_lst : /* empty */",
-	"opt_param_type_lst : param_type_lst",
-	"param_lst : param_dcltion",
-	"param_lst : param_lst ',' param_dcltion",
-	"param_dcltion : dcltion_specs no_tdn_dcltor",
-	"param_dcltion : dcltion_specs",
-	"param_dcltion : dcltion_specs abstract_dcltor",
-	"ident_lst : identifier",
-	"ident_lst : ident_lst ',' identifier",
-	"type_tqual_lst : type_spec",
-	"type_tqual_lst : type_qual",
-	"type_tqual_lst : type_spec type_tqual_lst",
-	"type_tqual_lst : type_qual type_tqual_lst",
-	"type_name : type_tqual_lst",
-	"type_name : type_tqual_lst abstract_dcltor",
-	"abstract_dcltor : pointer",
-	"abstract_dcltor : opt_pointer direct_abstract_dcltor",
-	"direct_abstract_dcltor : '(' abstract_dcltor ')'",
-	"direct_abstract_dcltor : '[' opt_constant_expr ']'",
-	"direct_abstract_dcltor : direct_abstract_dcltor '[' opt_constant_expr ']'",
-	"direct_abstract_dcltor : '('",
-	"direct_abstract_dcltor : '(' opt_param_type_lst ')'",
-	"direct_abstract_dcltor : direct_abstract_dcltor '('",
-	"direct_abstract_dcltor : direct_abstract_dcltor '(' opt_param_type_lst ')'",
-	"initializer : assign_expr",
-	"initializer : '{' initializer_lst '}'",
-	"initializer : '{' initializer_lst ',' '}'",
-	"initializer_lst : initializer",
-	"initializer_lst : initializer_lst ',' initializer",
-	"stmt : labeled_stmt",
-	"stmt : non_lbl_stmt",
-	"non_lbl_stmt : /* empty */",
-	"non_lbl_stmt : compound_stmt",
-	"non_lbl_stmt : expr_stmt",
-	"non_lbl_stmt : selection_stmt",
-	"non_lbl_stmt : iteration_stmt",
-	"non_lbl_stmt : jump_stmt",
-	"non_lbl_stmt : Runerr '(' assign_expr ')' ';'",
-	"non_lbl_stmt : Runerr '(' assign_expr ',' assign_expr ')' ';'",
-	"labeled_stmt : label ':' stmt",
-	"labeled_stmt : Case constant_expr ':' stmt",
-	"labeled_stmt : Default ':' stmt",
-	"compound_stmt : '{' opt_stmt_lst '}'",
-	"compound_stmt : '{' local_dcls opt_stmt_lst '}'",
-	"dcltion_lst : dcltion",
-	"dcltion_lst : dcltion_lst dcltion",
-	"opt_dcltion_lst : /* empty */",
-	"opt_dcltion_lst : dcltion_lst",
-	"local_dcls : local_dcl",
-	"local_dcls : local_dcls local_dcl",
-	"local_dcl : dcltion",
-	"local_dcl : Tended tended_type init_dcltor_lst ';'",
-	"tended_type : Char",
-	"tended_type : Struct identifier",
-	"tended_type : Struct TypeDefName",
-	"tended_type : Union identifier",
-	"stmt_lst : stmt",
-	"stmt_lst : stmt_lst stmt",
-	"opt_stmt_lst : /* empty */",
-	"opt_stmt_lst : stmt_lst",
-	"expr_stmt : opt_expr ';'",
-	"selection_stmt : If '(' expr ')' stmt",
-	"selection_stmt : If '(' expr ')' stmt Else stmt",
-	"selection_stmt : Switch '(' expr ')' stmt",
-	"selection_stmt : Type_case expr Of '{' c_type_select_lst c_opt_default '}'",
-	"c_type_select_lst : c_type_select",
-	"c_type_select_lst : c_type_select_lst c_type_select",
-	"c_type_select : selector_lst non_lbl_stmt",
-	"c_opt_default : /* empty */",
-	"c_opt_default : Default ':' non_lbl_stmt",
-	"iteration_stmt : While '(' expr ')' stmt",
-	"iteration_stmt : Do stmt While '(' expr ')' ';'",
-	"iteration_stmt : For '(' opt_expr ';' opt_expr ';' opt_expr ')' stmt",
-	"jump_stmt : Goto label ';'",
-	"jump_stmt : Continue ';'",
-	"jump_stmt : Break ';'",
-	"jump_stmt : Return ret_val ';'",
-	"jump_stmt : Suspend ret_val ';'",
-	"jump_stmt : Fail ';'",
-	"jump_stmt : Errorfail ';'",
-	"translation_unit : /* empty */",
-	"translation_unit : extrn_decltn_lst",
-	"extrn_decltn_lst : external_dcltion",
-	"extrn_decltn_lst : extrn_decltn_lst external_dcltion",
-	"external_dcltion : function_definition",
-	"external_dcltion : dcltion",
-	"external_dcltion : definition",
-	"function_definition : func_head",
-	"function_definition : func_head opt_dcltion_lst compound_stmt",
-	"func_head : no_tdn_dcltor",
-	"func_head : storcl_tqual_lst no_tdn_dcltor",
-	"func_head : typ_dcltion_specs dcltor",
-	"any_ident : identifier",
-	"any_ident : typedefname",
-	"label : identifier",
-	"label : typedefname",
-	"typedefname : TypeDefName",
-	"typedefname : C_Integer",
-	"typedefname : C_Double",
-	"typedefname : C_String",
-	"definition : /* empty */",
-	"definition : description operation",
-	"operation : fnc_oper op_declare actions End",
-	"operation : keyword actions End",
-	"operation : keyword Constant key_const End",
-	"description : /* empty */",
-	"description : StrLit",
-	"fnc_oper : Function '{' result_seq '}' op_name '(' opt_s_parm_lst ')'",
-	"fnc_oper : Operator '{' result_seq",
-	"fnc_oper : Operator '{' result_seq '}' OpSym",
-	"fnc_oper : Operator '{' result_seq '}' OpSym op_name '(' opt_s_parm_lst ')'",
-	"keyword : Keyword '{' result_seq '}' op_name",
-	"key_const : StrLit",
-	"key_const : CharConst",
-	"key_const : DblConst",
-	"key_const : IntConst",
-	"identifier : Abstract",
-	"identifier : All_fields",
-	"identifier : Any_value",
-	"identifier : Body",
-	"identifier : Component",
-	"identifier : Declare",
-	"identifier : Empty_type",
-	"identifier : End",
-	"identifier : Exact",
-	"identifier : IconType",
-	"identifier : Identifier",
-	"identifier : Inline",
-	"identifier : Named_var",
-	"identifier : New",
-	"identifier : Of",
-	"identifier : Store",
-	"identifier : Struct_var",
-	"identifier : Then",
-	"identifier : Tmp_cset",
-	"identifier : Tmp_string",
-	"identifier : TokType",
-	"identifier : Underef",
-	"identifier : Variable",
-	"op_name : identifier",
-	"op_name : typedefname",
-	"op_name : Auto",
-	"op_name : Break",
-	"op_name : Case",
-	"op_name : Char",
-	"op_name : Cnv",
-	"op_name : Const",
-	"op_name : Continue",
-	"op_name : Def",
-	"op_name : Default",
-	"op_name : Do",
-	"op_name : Doubl",
-	"op_name : Else",
-	"op_name : Enum",
-	"op_name : Errorfail",
-	"op_name : Extern",
-	"op_name : Fail",
-	"op_name : Float",
-	"op_name : For",
-	"op_name : Function",
-	"op_name : Goto",
-	"op_name : If",
-	"op_name : Int",
-	"op_name : Is",
-	"op_name : Keyword",
-	"op_name : Long",
-	"op_name : Operator",
-	"op_name : Register",
-	"op_name : Return",
-	"op_name : Runerr",
-	"op_name : Short",
-	"op_name : Signed",
-	"op_name : Sizeof",
-	"op_name : Static",
-	"op_name : Struct",
-	"op_name : Suspend",
-	"op_name : Switch",
-	"op_name : Tended",
-	"op_name : Typedef",
-	"op_name : Union",
-	"op_name : Unsigned",
-	"op_name : Void",
-	"op_name : Volatile",
-	"op_name : While",
-	"result_seq : /* empty */",
-	"result_seq : length opt_plus",
-	"result_seq : length ',' length opt_plus",
-	"length : IntConst",
-	"length : '*'",
-	"opt_plus : /* empty */",
-	"opt_plus : '+'",
-	"opt_s_parm_lst : /* empty */",
-	"opt_s_parm_lst : s_parm_lst",
-	"opt_s_parm_lst : s_parm_lst '[' identifier ']'",
-	"s_parm_lst : s_parm",
-	"s_parm_lst : s_parm_lst ',' s_parm",
-	"s_parm : identifier",
-	"s_parm : Underef identifier",
-	"s_parm : Underef identifier Arrow identifier",
-	"op_declare : /* empty */",
-	"op_declare : Declare '{' local_dcls '}'",
-	"opt_actions : /* empty */",
-	"opt_actions : actions",
-	"actions : action",
-	"actions : actions action",
-	"action : checking_conversions",
-	"action : detail_code",
-	"action : runerr",
-	"action : '{' opt_actions '}'",
-	"action : Abstract",
-	"action : Abstract '{' type_computations",
-	"action : Abstract '{' type_computations '}'",
-	"checking_conversions : If type_check Then action",
-	"checking_conversions : If type_check Then action Else action",
-	"checking_conversions : Type_case variable Of '{' type_select_lst opt_default '}'",
-	"checking_conversions : Len_case identifier Of '{' len_select_lst Default ':' action '}'",
-	"checking_conversions : Arith_case '(' variable ',' variable ')' Of '{' dest_type ':' action dest_type ':' action dest_type ':' action '}'",
-	"type_select_lst : type_select",
-	"type_select_lst : type_select_lst type_select",
-	"type_select : selector_lst action",
-	"opt_default : /* empty */",
-	"opt_default : Default ':' action",
-	"selector_lst : i_type_name ':'",
-	"selector_lst : selector_lst i_type_name ':'",
-	"len_select_lst : len_select",
-	"len_select_lst : len_select_lst len_select",
-	"len_select : IntConst ':' action",
-	"type_check : simple_check_conj",
-	"type_check : '!' simple_check",
-	"simple_check_conj : simple_check",
-	"simple_check_conj : simple_check_conj And simple_check",
-	"simple_check : Is ':' i_type_name '(' variable ')'",
-	"simple_check : Cnv ':' dest_type '(' variable ')'",
-	"simple_check : Cnv ':' dest_type '(' variable ',' assign_expr ')'",
-	"simple_check : Def ':' dest_type '(' variable ',' assign_expr ')'",
-	"simple_check : Def ':' dest_type '(' variable ',' assign_expr ',' assign_expr ')'",
-	"detail_code : Body",
-	"detail_code : Body compound_stmt",
-	"detail_code : Inline",
-	"detail_code : Inline compound_stmt",
-	"runerr : Runerr '(' IntConst ')' opt_semi",
-	"runerr : Runerr '(' IntConst ',' variable ')' opt_semi",
-	"opt_semi : /* empty */",
-	"opt_semi : ';'",
-	"variable : identifier",
-	"variable : identifier '[' IntConst ']'",
-	"dest_type : IconType",
-	"dest_type : C_Integer",
-	"dest_type : C_Double",
-	"dest_type : C_String",
-	"dest_type : Tmp_string",
-	"dest_type : Tmp_cset",
-	"dest_type : '(' Exact ')' IconType",
-	"dest_type : '(' Exact ')' C_Integer",
-	"i_type_name : Any_value",
-	"i_type_name : Empty_type",
-	"i_type_name : IconType",
-	"i_type_name : Variable",
-	"ret_val : opt_expr",
-	"ret_val : C_Integer assign_expr",
-	"ret_val : C_Double assign_expr",
-	"ret_val : C_String assign_expr",
-	"type_computations : side_effect_lst Return type opt_semi",
-	"type_computations : Return type opt_semi",
-	"type_computations : side_effect_lst",
-	"side_effect_lst : side_effect",
-	"side_effect_lst : side_effect_lst side_effect",
-	"side_effect : Store '[' type ']' '=' type opt_semi",
-	"type : basic_type",
-	"type : type union basic_type",
-	"type : type Intersect basic_type",
-	"basic_type : i_type_name",
-	"basic_type : TokType '(' variable ')'",
-	"basic_type : New i_type_name '(' type_lst ')'",
-	"basic_type : Store '[' type ']'",
-	"basic_type : basic_type '.' attrb_name",
-	"basic_type : '(' type ')'",
-	"union : Incr",
-	"type_lst : type",
-	"type_lst : type_lst ',' type",
-	"attrb_name : Component",
-	"attrb_name : All_fields",
+        "-no such reduction-",
+        "primary_expr : identifier",
+        "primary_expr : StrLit",
+        "primary_expr : LStrLit",
+        "primary_expr : FltConst",
+        "primary_expr : DblConst",
+        "primary_expr : LDblConst",
+        "primary_expr : CharConst",
+        "primary_expr : LCharConst",
+        "primary_expr : IntConst",
+        "primary_expr : UIntConst",
+        "primary_expr : LIntConst",
+        "primary_expr : ULIntConst",
+        "primary_expr : '(' expr ')'",
+        "postfix_expr : primary_expr",
+        "postfix_expr : postfix_expr '[' expr ']'",
+        "postfix_expr : postfix_expr '(' ')'",
+        "postfix_expr : postfix_expr '(' arg_expr_lst ')'",
+        "postfix_expr : postfix_expr '.' any_ident",
+        "postfix_expr : postfix_expr Arrow any_ident",
+        "postfix_expr : postfix_expr Incr",
+        "postfix_expr : postfix_expr Decr",
+        "postfix_expr : Is ':' i_type_name '(' assign_expr ')'",
+        "postfix_expr : Cnv ':' dest_type '(' assign_expr ',' assign_expr ')'",
+        "postfix_expr : Def ':' dest_type '(' assign_expr ',' assign_expr ',' assign_expr ')'",
+        "arg_expr_lst : assign_expr",
+        "arg_expr_lst : arg_expr_lst ',' assign_expr",
+        "unary_expr : postfix_expr",
+        "unary_expr : Incr unary_expr",
+        "unary_expr : Decr unary_expr",
+        "unary_expr : unary_op cast_expr",
+        "unary_expr : Sizeof unary_expr",
+        "unary_expr : Sizeof '(' type_name ')'",
+        "unary_op : '&'",
+        "unary_op : '*'",
+        "unary_op : '+'",
+        "unary_op : '-'",
+        "unary_op : '~'",
+        "unary_op : '!'",
+        "cast_expr : unary_expr",
+        "cast_expr : '(' type_name ')' cast_expr",
+        "multiplicative_expr : cast_expr",
+        "multiplicative_expr : multiplicative_expr '*' cast_expr",
+        "multiplicative_expr : multiplicative_expr '/' cast_expr",
+        "multiplicative_expr : multiplicative_expr '%' cast_expr",
+        "additive_expr : multiplicative_expr",
+        "additive_expr : additive_expr '+' multiplicative_expr",
+        "additive_expr : additive_expr '-' multiplicative_expr",
+        "shift_expr : additive_expr",
+        "shift_expr : shift_expr LShft additive_expr",
+        "shift_expr : shift_expr RShft additive_expr",
+        "relational_expr : shift_expr",
+        "relational_expr : relational_expr '<' shift_expr",
+        "relational_expr : relational_expr '>' shift_expr",
+        "relational_expr : relational_expr Leq shift_expr",
+        "relational_expr : relational_expr Geq shift_expr",
+        "equality_expr : relational_expr",
+        "equality_expr : equality_expr Equal relational_expr",
+        "equality_expr : equality_expr Neq relational_expr",
+        "and_expr : equality_expr",
+        "and_expr : and_expr '&' equality_expr",
+        "exclusive_or_expr : and_expr",
+        "exclusive_or_expr : exclusive_or_expr '^' and_expr",
+        "inclusive_or_expr : exclusive_or_expr",
+        "inclusive_or_expr : inclusive_or_expr '|' exclusive_or_expr",
+        "logical_and_expr : inclusive_or_expr",
+        "logical_and_expr : logical_and_expr And inclusive_or_expr",
+        "logical_or_expr : logical_and_expr",
+        "logical_or_expr : logical_or_expr Or logical_and_expr",
+        "conditional_expr : logical_or_expr",
+        "conditional_expr : logical_or_expr '?' expr ':' conditional_expr",
+        "assign_expr : conditional_expr",
+        "assign_expr : unary_expr assign_op assign_expr",
+        "assign_op : '='",
+        "assign_op : MultAsgn",
+        "assign_op : DivAsgn",
+        "assign_op : ModAsgn",
+        "assign_op : PlusAsgn",
+        "assign_op : MinusAsgn",
+        "assign_op : LShftAsgn",
+        "assign_op : RShftAsgn",
+        "assign_op : AndAsgn",
+        "assign_op : XorAsgn",
+        "assign_op : OrAsgn",
+        "expr : assign_expr",
+        "expr : expr ',' assign_expr",
+        "opt_expr : /* empty */",
+        "opt_expr : expr",
+        "constant_expr : conditional_expr",
+        "opt_constant_expr : /* empty */",
+        "opt_constant_expr : constant_expr",
+        "dcltion : typ_dcltion_specs ';'",
+        "dcltion : typ_dcltion_specs init_dcltor_lst ';'",
+        "dcltion : storcl_tqual_lst no_tdn_init_dcltor_lst ';'",
+        "typ_dcltion_specs : type_ind",
+        "typ_dcltion_specs : storcl_tqual_lst type_ind",
+        "dcltion_specs : typ_dcltion_specs",
+        "dcltion_specs : storcl_tqual_lst",
+        "type_ind : typedefname",
+        "type_ind : typedefname storcl_tqual_lst",
+        "type_ind : type_storcl_tqual_lst",
+        "type_storcl_tqual_lst : stnd_type",
+        "type_storcl_tqual_lst : type_storcl_tqual_lst stnd_type",
+        "type_storcl_tqual_lst : type_storcl_tqual_lst storage_class_spec",
+        "type_storcl_tqual_lst : type_storcl_tqual_lst type_qual",
+        "storcl_tqual_lst : storage_class_spec",
+        "storcl_tqual_lst : type_qual",
+        "storcl_tqual_lst : storcl_tqual_lst storage_class_spec",
+        "storcl_tqual_lst : storcl_tqual_lst type_qual",
+        "init_dcltor_lst : init_dcltor",
+        "init_dcltor_lst : init_dcltor_lst ',' init_dcltor",
+        "no_tdn_init_dcltor_lst : no_tdn_init_dcltor",
+        "no_tdn_init_dcltor_lst : no_tdn_init_dcltor_lst ',' no_tdn_init_dcltor",
+        "init_dcltor : dcltor",
+        "init_dcltor : dcltor '=' initializer",
+        "no_tdn_init_dcltor : no_tdn_dcltor",
+        "no_tdn_init_dcltor : no_tdn_dcltor '=' initializer",
+        "storage_class_spec : Typedef",
+        "storage_class_spec : Extern",
+        "storage_class_spec : Static",
+        "storage_class_spec : Auto",
+        "storage_class_spec : Register",
+        "type_spec : stnd_type",
+        "type_spec : typedefname",
+        "stnd_type : Void",
+        "stnd_type : Char",
+        "stnd_type : Short",
+        "stnd_type : Int",
+        "stnd_type : Long",
+        "stnd_type : Float",
+        "stnd_type : Doubl",
+        "stnd_type : Signed",
+        "stnd_type : Unsigned",
+        "stnd_type : struct_or_union_spec",
+        "stnd_type : enum_spec",
+        "struct_or_union_spec : struct_or_union any_ident '{' struct_dcltion_lst '}'",
+        "struct_or_union_spec : struct_or_union '{' struct_dcltion_lst '}'",
+        "struct_or_union_spec : struct_or_union any_ident",
+        "struct_or_union : Struct",
+        "struct_or_union : Union",
+        "struct_dcltion_lst : struct_dcltion",
+        "struct_dcltion_lst : struct_dcltion_lst struct_dcltion",
+        "struct_dcltion : struct_dcltion_specs struct_dcltor_lst ';'",
+        "struct_dcltion : tqual_lst struct_no_tdn_dcltor_lst ';'",
+        "struct_dcltion_specs : struct_type_ind",
+        "struct_dcltion_specs : tqual_lst struct_type_ind",
+        "struct_type_ind : typedefname",
+        "struct_type_ind : typedefname tqual_lst",
+        "struct_type_ind : struct_type_lst",
+        "struct_type_lst : stnd_type",
+        "struct_type_lst : struct_type_lst stnd_type",
+        "struct_type_lst : struct_type_lst type_qual",
+        "struct_dcltor_lst : struct_dcltor",
+        "struct_dcltor_lst : struct_dcltor_lst ',' struct_dcltor",
+        "struct_dcltor : dcltor",
+        "struct_dcltor : ':' constant_expr",
+        "struct_dcltor : dcltor ':'",
+        "struct_dcltor : dcltor ':' constant_expr",
+        "struct_no_tdn_dcltor_lst : struct_no_tdn_dcltor",
+        "struct_no_tdn_dcltor_lst : struct_no_tdn_dcltor_lst ',' struct_no_tdn_dcltor",
+        "struct_no_tdn_dcltor : no_tdn_dcltor",
+        "struct_no_tdn_dcltor : ':' constant_expr",
+        "struct_no_tdn_dcltor : no_tdn_dcltor ':'",
+        "struct_no_tdn_dcltor : no_tdn_dcltor ':' constant_expr",
+        "enum_spec : Enum",
+        "enum_spec : Enum '{' enumerator_lst '}'",
+        "enum_spec : Enum any_ident",
+        "enum_spec : Enum any_ident '{' enumerator_lst '}'",
+        "enum_spec : Enum any_ident",
+        "enumerator_lst : enumerator",
+        "enumerator_lst : enumerator_lst ',' enumerator",
+        "enumerator : any_ident",
+        "enumerator : any_ident '=' constant_expr",
+        "type_qual : Const",
+        "type_qual : Volatile",
+        "dcltor : opt_pointer direct_dcltor",
+        "no_tdn_dcltor : opt_pointer no_tdn_direct_dcltor",
+        "direct_dcltor : any_ident",
+        "direct_dcltor : '(' dcltor ')'",
+        "direct_dcltor : direct_dcltor '[' opt_constant_expr ']'",
+        "direct_dcltor : direct_dcltor '('",
+        "direct_dcltor : direct_dcltor '(' parm_dcls_or_ids ')'",
+        "no_tdn_direct_dcltor : identifier",
+        "no_tdn_direct_dcltor : '(' no_tdn_dcltor ')'",
+        "no_tdn_direct_dcltor : no_tdn_direct_dcltor '[' opt_constant_expr ']'",
+        "no_tdn_direct_dcltor : no_tdn_direct_dcltor '('",
+        "no_tdn_direct_dcltor : no_tdn_direct_dcltor '(' parm_dcls_or_ids ')'",
+        "parm_dcls_or_ids : opt_param_type_lst",
+        "parm_dcls_or_ids : ident_lst",
+        "pointer : '*'",
+        "pointer : '*' tqual_lst",
+        "pointer : '*' pointer",
+        "pointer : '*' tqual_lst pointer",
+        "opt_pointer : /* empty */",
+        "opt_pointer : pointer",
+        "tqual_lst : type_qual",
+        "tqual_lst : tqual_lst type_qual",
+        "param_type_lst : param_lst",
+        "param_type_lst : param_lst ',' Ellipsis",
+        "opt_param_type_lst : /* empty */",
+        "opt_param_type_lst : param_type_lst",
+        "param_lst : param_dcltion",
+        "param_lst : param_lst ',' param_dcltion",
+        "param_dcltion : dcltion_specs no_tdn_dcltor",
+        "param_dcltion : dcltion_specs",
+        "param_dcltion : dcltion_specs abstract_dcltor",
+        "ident_lst : identifier",
+        "ident_lst : ident_lst ',' identifier",
+        "type_tqual_lst : type_spec",
+        "type_tqual_lst : type_qual",
+        "type_tqual_lst : type_spec type_tqual_lst",
+        "type_tqual_lst : type_qual type_tqual_lst",
+        "type_name : type_tqual_lst",
+        "type_name : type_tqual_lst abstract_dcltor",
+        "abstract_dcltor : pointer",
+        "abstract_dcltor : opt_pointer direct_abstract_dcltor",
+        "direct_abstract_dcltor : '(' abstract_dcltor ')'",
+        "direct_abstract_dcltor : '[' opt_constant_expr ']'",
+        "direct_abstract_dcltor : direct_abstract_dcltor '[' opt_constant_expr ']'",
+        "direct_abstract_dcltor : '('",
+        "direct_abstract_dcltor : '(' opt_param_type_lst ')'",
+        "direct_abstract_dcltor : direct_abstract_dcltor '('",
+        "direct_abstract_dcltor : direct_abstract_dcltor '(' opt_param_type_lst ')'",
+        "initializer : assign_expr",
+        "initializer : '{' initializer_lst '}'",
+        "initializer : '{' initializer_lst ',' '}'",
+        "initializer_lst : initializer",
+        "initializer_lst : initializer_lst ',' initializer",
+        "stmt : labeled_stmt",
+        "stmt : non_lbl_stmt",
+        "non_lbl_stmt : /* empty */",
+        "non_lbl_stmt : compound_stmt",
+        "non_lbl_stmt : expr_stmt",
+        "non_lbl_stmt : selection_stmt",
+        "non_lbl_stmt : iteration_stmt",
+        "non_lbl_stmt : jump_stmt",
+        "non_lbl_stmt : Runerr '(' assign_expr ')' ';'",
+        "non_lbl_stmt : Runerr '(' assign_expr ',' assign_expr ')' ';'",
+        "labeled_stmt : label ':' stmt",
+        "labeled_stmt : Case constant_expr ':' stmt",
+        "labeled_stmt : Default ':' stmt",
+        "compound_stmt : '{' opt_stmt_lst '}'",
+        "compound_stmt : '{' local_dcls opt_stmt_lst '}'",
+        "dcltion_lst : dcltion",
+        "dcltion_lst : dcltion_lst dcltion",
+        "opt_dcltion_lst : /* empty */",
+        "opt_dcltion_lst : dcltion_lst",
+        "local_dcls : local_dcl",
+        "local_dcls : local_dcls local_dcl",
+        "local_dcl : dcltion",
+        "local_dcl : Tended tended_type init_dcltor_lst ';'",
+        "tended_type : Char",
+        "tended_type : Struct identifier",
+        "tended_type : Struct TypeDefName",
+        "tended_type : Union identifier",
+        "stmt_lst : stmt",
+        "stmt_lst : stmt_lst stmt",
+        "opt_stmt_lst : /* empty */",
+        "opt_stmt_lst : stmt_lst",
+        "expr_stmt : opt_expr ';'",
+        "selection_stmt : If '(' expr ')' stmt",
+        "selection_stmt : If '(' expr ')' stmt Else stmt",
+        "selection_stmt : Switch '(' expr ')' stmt",
+        "selection_stmt : Type_case expr Of '{' c_type_select_lst c_opt_default '}'",
+        "c_type_select_lst : c_type_select",
+        "c_type_select_lst : c_type_select_lst c_type_select",
+        "c_type_select : selector_lst non_lbl_stmt",
+        "c_opt_default : /* empty */",
+        "c_opt_default : Default ':' non_lbl_stmt",
+        "iteration_stmt : While '(' expr ')' stmt",
+        "iteration_stmt : Do stmt While '(' expr ')' ';'",
+        "iteration_stmt : For '(' opt_expr ';' opt_expr ';' opt_expr ')' stmt",
+        "jump_stmt : Goto label ';'",
+        "jump_stmt : Continue ';'",
+        "jump_stmt : Break ';'",
+        "jump_stmt : Return ret_val ';'",
+        "jump_stmt : Suspend ret_val ';'",
+        "jump_stmt : Fail ';'",
+        "jump_stmt : Errorfail ';'",
+        "translation_unit : /* empty */",
+        "translation_unit : extrn_decltn_lst",
+        "extrn_decltn_lst : external_dcltion",
+        "extrn_decltn_lst : extrn_decltn_lst external_dcltion",
+        "external_dcltion : function_definition",
+        "external_dcltion : dcltion",
+        "external_dcltion : definition",
+        "function_definition : func_head",
+        "function_definition : func_head opt_dcltion_lst compound_stmt",
+        "func_head : no_tdn_dcltor",
+        "func_head : storcl_tqual_lst no_tdn_dcltor",
+        "func_head : typ_dcltion_specs dcltor",
+        "any_ident : identifier",
+        "any_ident : typedefname",
+        "label : identifier",
+        "label : typedefname",
+        "typedefname : TypeDefName",
+        "typedefname : C_Integer",
+        "typedefname : C_Double",
+        "typedefname : C_String",
+        "definition : /* empty */",
+        "definition : description operation",
+        "operation : fnc_oper op_declare actions End",
+        "operation : keyword actions End",
+        "operation : keyword Constant key_const End",
+        "description : /* empty */",
+        "description : StrLit",
+        "fnc_oper : Function '{' result_seq '}' op_name '(' opt_s_parm_lst ')'",
+        "fnc_oper : Operator '{' result_seq",
+        "fnc_oper : Operator '{' result_seq '}' OpSym",
+        "fnc_oper : Operator '{' result_seq '}' OpSym op_name '(' opt_s_parm_lst ')'",
+        "keyword : Keyword '{' result_seq '}' op_name",
+        "key_const : StrLit",
+        "key_const : CharConst",
+        "key_const : DblConst",
+        "key_const : IntConst",
+        "identifier : Abstract",
+        "identifier : All_fields",
+        "identifier : Any_value",
+        "identifier : Body",
+        "identifier : Component",
+        "identifier : Declare",
+        "identifier : Empty_type",
+        "identifier : End",
+        "identifier : Exact",
+        "identifier : IconType",
+        "identifier : Identifier",
+        "identifier : Inline",
+        "identifier : Named_var",
+        "identifier : New",
+        "identifier : Of",
+        "identifier : Store",
+        "identifier : Struct_var",
+        "identifier : Then",
+        "identifier : Tmp_cset",
+        "identifier : Tmp_string",
+        "identifier : TokType",
+        "identifier : Underef",
+        "identifier : Variable",
+        "op_name : identifier",
+        "op_name : typedefname",
+        "op_name : Auto",
+        "op_name : Break",
+        "op_name : Case",
+        "op_name : Char",
+        "op_name : Cnv",
+        "op_name : Const",
+        "op_name : Continue",
+        "op_name : Def",
+        "op_name : Default",
+        "op_name : Do",
+        "op_name : Doubl",
+        "op_name : Else",
+        "op_name : Enum",
+        "op_name : Errorfail",
+        "op_name : Extern",
+        "op_name : Fail",
+        "op_name : Float",
+        "op_name : For",
+        "op_name : Function",
+        "op_name : Goto",
+        "op_name : If",
+        "op_name : Int",
+        "op_name : Is",
+        "op_name : Keyword",
+        "op_name : Long",
+        "op_name : Operator",
+        "op_name : Register",
+        "op_name : Return",
+        "op_name : Runerr",
+        "op_name : Short",
+        "op_name : Signed",
+        "op_name : Sizeof",
+        "op_name : Static",
+        "op_name : Struct",
+        "op_name : Suspend",
+        "op_name : Switch",
+        "op_name : Tended",
+        "op_name : Typedef",
+        "op_name : Union",
+        "op_name : Unsigned",
+        "op_name : Void",
+        "op_name : Volatile",
+        "op_name : While",
+        "result_seq : /* empty */",
+        "result_seq : length opt_plus",
+        "result_seq : length ',' length opt_plus",
+        "length : IntConst",
+        "length : '*'",
+        "opt_plus : /* empty */",
+        "opt_plus : '+'",
+        "opt_s_parm_lst : /* empty */",
+        "opt_s_parm_lst : s_parm_lst",
+        "opt_s_parm_lst : s_parm_lst '[' identifier ']'",
+        "s_parm_lst : s_parm",
+        "s_parm_lst : s_parm_lst ',' s_parm",
+        "s_parm : identifier",
+        "s_parm : Underef identifier",
+        "s_parm : Underef identifier Arrow identifier",
+        "op_declare : /* empty */",
+        "op_declare : Declare '{' local_dcls '}'",
+        "opt_actions : /* empty */",
+        "opt_actions : actions",
+        "actions : action",
+        "actions : actions action",
+        "action : checking_conversions",
+        "action : detail_code",
+        "action : runerr",
+        "action : '{' opt_actions '}'",
+        "action : Abstract",
+        "action : Abstract '{' type_computations",
+        "action : Abstract '{' type_computations '}'",
+        "checking_conversions : If type_check Then action",
+        "checking_conversions : If type_check Then action Else action",
+        "checking_conversions : Type_case variable Of '{' type_select_lst opt_default '}'",
+        "checking_conversions : Len_case identifier Of '{' len_select_lst Default ':' action '}'",
+        "checking_conversions : Arith_case '(' variable ',' variable ')' Of '{' dest_type ':' action dest_type ':' action dest_type ':' action '}'",
+        "type_select_lst : type_select",
+        "type_select_lst : type_select_lst type_select",
+        "type_select : selector_lst action",
+        "opt_default : /* empty */",
+        "opt_default : Default ':' action",
+        "selector_lst : i_type_name ':'",
+        "selector_lst : selector_lst i_type_name ':'",
+        "len_select_lst : len_select",
+        "len_select_lst : len_select_lst len_select",
+        "len_select : IntConst ':' action",
+        "type_check : simple_check_conj",
+        "type_check : '!' simple_check",
+        "simple_check_conj : simple_check",
+        "simple_check_conj : simple_check_conj And simple_check",
+        "simple_check : Is ':' i_type_name '(' variable ')'",
+        "simple_check : Cnv ':' dest_type '(' variable ')'",
+        "simple_check : Cnv ':' dest_type '(' variable ',' assign_expr ')'",
+        "simple_check : Def ':' dest_type '(' variable ',' assign_expr ')'",
+        "simple_check : Def ':' dest_type '(' variable ',' assign_expr ',' assign_expr ')'",
+        "detail_code : Body",
+        "detail_code : Body compound_stmt",
+        "detail_code : Inline",
+        "detail_code : Inline compound_stmt",
+        "runerr : Runerr '(' IntConst ')' opt_semi",
+        "runerr : Runerr '(' IntConst ',' variable ')' opt_semi",
+        "opt_semi : /* empty */",
+        "opt_semi : ';'",
+        "variable : identifier",
+        "variable : identifier '[' IntConst ']'",
+        "dest_type : IconType",
+        "dest_type : C_Integer",
+        "dest_type : C_Double",
+        "dest_type : C_String",
+        "dest_type : Tmp_string",
+        "dest_type : Tmp_cset",
+        "dest_type : '(' Exact ')' IconType",
+        "dest_type : '(' Exact ')' C_Integer",
+        "i_type_name : Any_value",
+        "i_type_name : Empty_type",
+        "i_type_name : IconType",
+        "i_type_name : Variable",
+        "ret_val : opt_expr",
+        "ret_val : C_Integer assign_expr",
+        "ret_val : C_Double assign_expr",
+        "ret_val : C_String assign_expr",
+        "type_computations : side_effect_lst Return type opt_semi",
+        "type_computations : Return type opt_semi",
+        "type_computations : side_effect_lst",
+        "side_effect_lst : side_effect",
+        "side_effect_lst : side_effect_lst side_effect",
+        "side_effect : Store '[' type ']' '=' type opt_semi",
+        "type : basic_type",
+        "type : type union basic_type",
+        "type : type Intersect basic_type",
+        "basic_type : i_type_name",
+        "basic_type : TokType '(' variable ')'",
+        "basic_type : New i_type_name '(' type_lst ')'",
+        "basic_type : Store '[' type ']'",
+        "basic_type : basic_type '.' attrb_name",
+        "basic_type : '(' type ')'",
+        "union : Incr",
+        "type_lst : type",
+        "type_lst : type_lst ',' type",
+        "attrb_name : Component",
+        "attrb_name : All_fields",
 };
 #endif /* YYDEBUG */
 #line 1 "/usr/lib/yaccpar"
-/*	@(#)yaccpar 1.10 89/04/04 SMI; from S5R3 1.10	*/
+/*      @(#)yaccpar 1.10 89/04/04 SMI; from S5R3 1.10   */
 
 /*
 ** Skeleton parser driver for yacc output
@@ -1609,52 +1609,52 @@ char * yyreds[] =
 /*
 ** yacc user known macros and defines
 */
-#define YYERROR		goto yyerrlab
-#define YYACCEPT	{ free(yys); free(yyv); return(0); }
-#define YYABORT		{ free(yys); free(yyv); return(1); }
+#define YYERROR         goto yyerrlab
+#define YYACCEPT        { free(yys); free(yyv); return(0); }
+#define YYABORT         { free(yys); free(yyv); return(1); }
 #define YYBACKUP( newtoken, newvalue )\
 {\
-	if ( yychar >= 0 || ( yyr2[ yytmp ] >> 1 ) != 1 )\
-	{\
-		yyerror( "syntax error - cannot backup" );\
-		goto yyerrlab;\
-	}\
-	yychar = newtoken;\
-	yystate = *yyps;\
-	yylval = newvalue;\
-	goto yynewstate;\
+        if ( yychar >= 0 || ( yyr2[ yytmp ] >> 1 ) != 1 )\
+        {\
+                yyerror( "syntax error - cannot backup" );\
+                goto yyerrlab;\
+        }\
+        yychar = newtoken;\
+        yystate = *yyps;\
+        yylval = newvalue;\
+        goto yynewstate;\
 }
-#define YYRECOVERING()	(!!yyerrflag)
+#define YYRECOVERING()  (!!yyerrflag)
 #ifndef YYDEBUG
-#	define YYDEBUG	1	/* make debugging available */
+#       define YYDEBUG  1       /* make debugging available */
 #endif
 
 /*
 ** user known globals
 */
-int yydebug;			/* set to 1 to get debugging */
+int yydebug;                    /* set to 1 to get debugging */
 
 /*
 ** driver internal defines
 */
-#define YYFLAG		(-1000)
+#define YYFLAG          (-1000)
 
 /*
 ** static variables used by the parser
 */
-static YYSTYPE *yyv;			/* value stack */
-static int *yys;			/* state stack */
+static YYSTYPE *yyv;                    /* value stack */
+static int *yys;                        /* state stack */
 
-static YYSTYPE *yypv;			/* top of value stack */
-static int *yyps;			/* top of state stack */
+static YYSTYPE *yypv;                   /* top of value stack */
+static int *yyps;                       /* top of state stack */
 
-static int yystate;			/* current state */
-static int yytmp;			/* extra var (lasts between blocks) */
+static int yystate;                     /* current state */
+static int yytmp;                       /* extra var (lasts between blocks) */
 
-int yynerrs;			/* number of errors */
+int yynerrs;                    /* number of errors */
 
-int yyerrflag;			/* error recovery flag */
-int yychar;			/* current input token number */
+int yyerrflag;                  /* error recovery flag */
+int yychar;                     /* current input token number */
 
 
 /*
@@ -1663,384 +1663,384 @@ int yychar;			/* current input token number */
 int
 yyparse()
 {
-	register YYSTYPE *yypvt;	/* top of value stack for $vars */
-	unsigned yymaxdepth = YYMAXDEPTH;
+        register YYSTYPE *yypvt;        /* top of value stack for $vars */
+        unsigned yymaxdepth = YYMAXDEPTH;
 
-	/*
-	** Initialize externals - yyparse may be called more than once
-	*/
-	yyv = (YYSTYPE*)malloc(yymaxdepth*sizeof(YYSTYPE));
-	yys = (int*)malloc(yymaxdepth*sizeof(int));
-	if (!yyv || !yys)
-	{
-		yyerror( "out of memory" );
-		return(1);
-	}
-	yypv = &yyv[-1];
-	yyps = &yys[-1];
-	yystate = 0;
-	yytmp = 0;
-	yynerrs = 0;
-	yyerrflag = 0;
-	yychar = -1;
+        /*
+        ** Initialize externals - yyparse may be called more than once
+        */
+        yyv = (YYSTYPE*)malloc(yymaxdepth*sizeof(YYSTYPE));
+        yys = (int*)malloc(yymaxdepth*sizeof(int));
+        if (!yyv || !yys)
+        {
+                yyerror( "out of memory" );
+                return(1);
+        }
+        yypv = &yyv[-1];
+        yyps = &yys[-1];
+        yystate = 0;
+        yytmp = 0;
+        yynerrs = 0;
+        yyerrflag = 0;
+        yychar = -1;
 
-	goto yystack;
-	{
-		register YYSTYPE *yy_pv;	/* top of value stack */
-		register int *yy_ps;		/* top of state stack */
-		register int yy_state;		/* current state */
-		register int  yy_n;		/* internal state number info */
+        goto yystack;
+        {
+                register YYSTYPE *yy_pv;        /* top of value stack */
+                register int *yy_ps;            /* top of state stack */
+                register int yy_state;          /* current state */
+                register int  yy_n;             /* internal state number info */
 
-		/*
-		** get globals into registers.
-		** branch to here only if YYBACKUP was called.
-		*/
-	yynewstate:
-		yy_pv = yypv;
-		yy_ps = yyps;
-		yy_state = yystate;
-		goto yy_newstate;
-		goto yynewstate; /* noop, silence unused label warning */
+                /*
+                ** get globals into registers.
+                ** branch to here only if YYBACKUP was called.
+                */
+        yynewstate:
+                yy_pv = yypv;
+                yy_ps = yyps;
+                yy_state = yystate;
+                goto yy_newstate;
+                goto yynewstate; /* noop, silence unused label warning */
 
-		/*
-		** get globals into registers.
-		** either we just started, or we just finished a reduction
-		*/
-	yystack:
-		yy_pv = yypv;
-		yy_ps = yyps;
-		yy_state = yystate;
+                /*
+                ** get globals into registers.
+                ** either we just started, or we just finished a reduction
+                */
+        yystack:
+                yy_pv = yypv;
+                yy_ps = yyps;
+                yy_state = yystate;
 
-		/*
-		** top of for (;;) loop while no reductions done
-		*/
-	yy_stack:
-		/*
-		** put a state and value onto the stacks
-		*/
+                /*
+                ** top of for (;;) loop while no reductions done
+                */
+        yy_stack:
+                /*
+                ** put a state and value onto the stacks
+                */
 #if YYDEBUG
-		/*
-		** if debugging, look up token value in list of value vs.
-		** name pairs.  0 and negative (-1) are special values.
-		** Note: linear search is used since time is not a real
-		** consideration while debugging.
-		*/
-		if ( yydebug )
-		{
-			register int yy_i;
+                /*
+                ** if debugging, look up token value in list of value vs.
+                ** name pairs.  0 and negative (-1) are special values.
+                ** Note: linear search is used since time is not a real
+                ** consideration while debugging.
+                */
+                if ( yydebug )
+                {
+                        register int yy_i;
 
-			(void)printf( "State %d, token ", yy_state );
-			if ( yychar == 0 )
-				(void)printf( "end-of-file\n" );
-			else if ( yychar < 0 )
-				(void)printf( "-none-\n" );
-			else
-			{
-				for ( yy_i = 0; yytoks[yy_i].t_val >= 0;
-					yy_i++ )
-				{
-					if ( yytoks[yy_i].t_val == yychar )
-						break;
-				}
-				(void)printf( "%s\n", yytoks[yy_i].t_name );
-			}
-		}
+                        (void)printf( "State %d, token ", yy_state );
+                        if ( yychar == 0 )
+                                (void)printf( "end-of-file\n" );
+                        else if ( yychar < 0 )
+                                (void)printf( "-none-\n" );
+                        else
+                        {
+                                for ( yy_i = 0; yytoks[yy_i].t_val >= 0;
+                                        yy_i++ )
+                                {
+                                        if ( yytoks[yy_i].t_val == yychar )
+                                                break;
+                                }
+                                (void)printf( "%s\n", yytoks[yy_i].t_name );
+                        }
+                }
 #endif /* YYDEBUG */
-		if ( ++yy_ps >= &yys[ yymaxdepth ] )	/* room on stack? */
-		{
-			/*
-			** reallocate and recover.  Note that pointers
-			** have to be reset, or bad things will happen
-			*/
-			int yyps_index = (yy_ps - yys);
-			int yypv_index = (yy_pv - yyv);
-			int yypvt_index = (yypvt - yyv);
-			yymaxdepth += YYMAXDEPTH;
-			yyv = (YYSTYPE*)realloc((char*)yyv,
-				yymaxdepth * sizeof(YYSTYPE));
-			yys = (int*)realloc((char*)yys,
-				yymaxdepth * sizeof(int));
-			if (!yyv || !yys)
-			{
-				yyerror( "yacc stack overflow" );
-				return(1);
-			}
-			yy_ps = yys + yyps_index;
-			yy_pv = yyv + yypv_index;
-			yypvt = yyv + yypvt_index;
-		}
-		*yy_ps = yy_state;
-		*++yy_pv = yyval;
+                if ( ++yy_ps >= &yys[ yymaxdepth ] )    /* room on stack? */
+                {
+                        /*
+                        ** reallocate and recover.  Note that pointers
+                        ** have to be reset, or bad things will happen
+                        */
+                        int yyps_index = (yy_ps - yys);
+                        int yypv_index = (yy_pv - yyv);
+                        int yypvt_index = (yypvt - yyv);
+                        yymaxdepth += YYMAXDEPTH;
+                        yyv = (YYSTYPE*)realloc((char*)yyv,
+                                yymaxdepth * sizeof(YYSTYPE));
+                        yys = (int*)realloc((char*)yys,
+                                yymaxdepth * sizeof(int));
+                        if (!yyv || !yys)
+                        {
+                                yyerror( "yacc stack overflow" );
+                                return(1);
+                        }
+                        yy_ps = yys + yyps_index;
+                        yy_pv = yyv + yypv_index;
+                        yypvt = yyv + yypvt_index;
+                }
+                *yy_ps = yy_state;
+                *++yy_pv = yyval;
 
-		/*
-		** we have a new state - find out what to do
-		*/
-	yy_newstate:
-		if ( ( yy_n = yypact[ yy_state ] ) <= YYFLAG )
-			goto yydefault;		/* simple state */
+                /*
+                ** we have a new state - find out what to do
+                */
+        yy_newstate:
+                if ( ( yy_n = yypact[ yy_state ] ) <= YYFLAG )
+                        goto yydefault;         /* simple state */
 #if YYDEBUG
-		/*
-		** if debugging, need to mark whether new token grabbed
-		*/
-		yytmp = yychar < 0;
+                /*
+                ** if debugging, need to mark whether new token grabbed
+                */
+                yytmp = yychar < 0;
 #endif
-		if ( ( yychar < 0 ) && ( ( yychar = yylex() ) < 0 ) )
-			yychar = 0;		/* reached EOF */
+                if ( ( yychar < 0 ) && ( ( yychar = yylex() ) < 0 ) )
+                        yychar = 0;             /* reached EOF */
 #if YYDEBUG
-		if ( yydebug && yytmp )
-		{
-			register int yy_i;
+                if ( yydebug && yytmp )
+                {
+                        register int yy_i;
 
-			(void)printf( "Received token " );
-			if ( yychar == 0 )
-				(void)printf( "end-of-file\n" );
-			else if ( yychar < 0 )
-				(void)printf( "-none-\n" );
-			else
-			{
-				for ( yy_i = 0; yytoks[yy_i].t_val >= 0;
-					yy_i++ )
-				{
-					if ( yytoks[yy_i].t_val == yychar )
-						break;
-				}
-				(void)printf( "%s\n", yytoks[yy_i].t_name );
-			}
-		}
+                        (void)printf( "Received token " );
+                        if ( yychar == 0 )
+                                (void)printf( "end-of-file\n" );
+                        else if ( yychar < 0 )
+                                (void)printf( "-none-\n" );
+                        else
+                        {
+                                for ( yy_i = 0; yytoks[yy_i].t_val >= 0;
+                                        yy_i++ )
+                                {
+                                        if ( yytoks[yy_i].t_val == yychar )
+                                                break;
+                                }
+                                (void)printf( "%s\n", yytoks[yy_i].t_name );
+                        }
+                }
 #endif /* YYDEBUG */
-		if ( ( ( yy_n += yychar ) < 0 ) || ( yy_n >= YYLAST ) )
-			goto yydefault;
-		if ( yychk[ yy_n = yyact[ yy_n ] ] == yychar )	/*valid shift*/
-		{
-			yychar = -1;
-			yyval = yylval;
-			yy_state = yy_n;
-			if ( yyerrflag > 0 )
-				yyerrflag--;
-			goto yy_stack;
-		}
+                if ( ( ( yy_n += yychar ) < 0 ) || ( yy_n >= YYLAST ) )
+                        goto yydefault;
+                if ( yychk[ yy_n = yyact[ yy_n ] ] == yychar )  /*valid shift*/
+                {
+                        yychar = -1;
+                        yyval = yylval;
+                        yy_state = yy_n;
+                        if ( yyerrflag > 0 )
+                                yyerrflag--;
+                        goto yy_stack;
+                }
 
-	yydefault:
-		if ( ( yy_n = yydef[ yy_state ] ) == -2 )
-		{
+        yydefault:
+                if ( ( yy_n = yydef[ yy_state ] ) == -2 )
+                {
 #if YYDEBUG
-			yytmp = yychar < 0;
+                        yytmp = yychar < 0;
 #endif
-			if ( ( yychar < 0 ) && ( ( yychar = yylex() ) < 0 ) )
-				yychar = 0;		/* reached EOF */
+                        if ( ( yychar < 0 ) && ( ( yychar = yylex() ) < 0 ) )
+                                yychar = 0;             /* reached EOF */
 #if YYDEBUG
-			if ( yydebug && yytmp )
-			{
-				register int yy_i;
+                        if ( yydebug && yytmp )
+                        {
+                                register int yy_i;
 
-				(void)printf( "Received token " );
-				if ( yychar == 0 )
-					(void)printf( "end-of-file\n" );
-				else if ( yychar < 0 )
-					(void)printf( "-none-\n" );
-				else
-				{
-					for ( yy_i = 0;
-						yytoks[yy_i].t_val >= 0;
-						yy_i++ )
-					{
-						if ( yytoks[yy_i].t_val
-							== yychar )
-						{
-							break;
-						}
-					}
-					(void)printf( "%s\n", yytoks[yy_i].t_name );
-				}
-			}
+                                (void)printf( "Received token " );
+                                if ( yychar == 0 )
+                                        (void)printf( "end-of-file\n" );
+                                else if ( yychar < 0 )
+                                        (void)printf( "-none-\n" );
+                                else
+                                {
+                                        for ( yy_i = 0;
+                                                yytoks[yy_i].t_val >= 0;
+                                                yy_i++ )
+                                        {
+                                                if ( yytoks[yy_i].t_val
+                                                        == yychar )
+                                                {
+                                                        break;
+                                                }
+                                        }
+                                        (void)printf( "%s\n", yytoks[yy_i].t_name );
+                                }
+                        }
 #endif /* YYDEBUG */
-			/*
-			** look through exception table
-			*/
-			{
-				register int *yyxi = yyexca;
+                        /*
+                        ** look through exception table
+                        */
+                        {
+                                register int *yyxi = yyexca;
 
-				while ( ( *yyxi != -1 ) ||
-					( yyxi[1] != yy_state ) )
-				{
-					yyxi += 2;
-				}
-				while ( ( *(yyxi += 2) >= 0 ) &&
-					( *yyxi != yychar ) )
-					;
-				if ( ( yy_n = yyxi[1] ) < 0 )
-					YYACCEPT;
-			}
-		}
+                                while ( ( *yyxi != -1 ) ||
+                                        ( yyxi[1] != yy_state ) )
+                                {
+                                        yyxi += 2;
+                                }
+                                while ( ( *(yyxi += 2) >= 0 ) &&
+                                        ( *yyxi != yychar ) )
+                                        ;
+                                if ( ( yy_n = yyxi[1] ) < 0 )
+                                        YYACCEPT;
+                        }
+                }
 
-		/*
-		** check for syntax error
-		*/
-		if ( yy_n == 0 )	/* have an error */
-		{
-			/* no worry about speed here! */
-			switch ( yyerrflag )
-			{
-			case 0:		/* new error */
-				yyerror( "syntax error" );
-				goto skip_init;
-				goto yyerrlab; /* noop, silence unused label warning */
-			yyerrlab:
-				/*
-				** get globals into registers.
-				** we have a user generated syntax type error
-				*/
-				yy_pv = yypv;
-				yy_ps = yyps;
-				yy_state = yystate;
-				yynerrs++;
-			skip_init:
-			case 1:
-			case 2:		/* incompletely recovered error */
-					/* try again... */
-				yyerrflag = 3;
-				/*
-				** find state where "error" is a legal
-				** shift action
-				*/
-				while ( yy_ps >= yys )
-				{
-					yy_n = yypact[ *yy_ps ] + YYERRCODE;
-					if ( yy_n >= 0 && yy_n < YYLAST &&
-						yychk[yyact[yy_n]] == YYERRCODE)					{
-						/*
-						** simulate shift of "error"
-						*/
-						yy_state = yyact[ yy_n ];
-						goto yy_stack;
-					}
-					/*
-					** current state has no shift on
-					** "error", pop stack
-					*/
+                /*
+                ** check for syntax error
+                */
+                if ( yy_n == 0 )        /* have an error */
+                {
+                        /* no worry about speed here! */
+                        switch ( yyerrflag )
+                        {
+                        case 0:         /* new error */
+                                yyerror( "syntax error" );
+                                goto skip_init;
+                                goto yyerrlab; /* noop, silence unused label warning */
+                        yyerrlab:
+                                /*
+                                ** get globals into registers.
+                                ** we have a user generated syntax type error
+                                */
+                                yy_pv = yypv;
+                                yy_ps = yyps;
+                                yy_state = yystate;
+                                yynerrs++;
+                        skip_init:
+                        case 1:
+                        case 2:         /* incompletely recovered error */
+                                        /* try again... */
+                                yyerrflag = 3;
+                                /*
+                                ** find state where "error" is a legal
+                                ** shift action
+                                */
+                                while ( yy_ps >= yys )
+                                {
+                                        yy_n = yypact[ *yy_ps ] + YYERRCODE;
+                                        if ( yy_n >= 0 && yy_n < YYLAST &&
+                                                yychk[yyact[yy_n]] == YYERRCODE)                                        {
+                                                /*
+                                                ** simulate shift of "error"
+                                                */
+                                                yy_state = yyact[ yy_n ];
+                                                goto yy_stack;
+                                        }
+                                        /*
+                                        ** current state has no shift on
+                                        ** "error", pop stack
+                                        */
 #if YYDEBUG
-#	define _POP_ "Error recovery pops state %d, uncovers state %d\n"
-					if ( yydebug )
-						(void)printf( _POP_, *yy_ps,
-							yy_ps[-1] );
-#	undef _POP_
+#       define _POP_ "Error recovery pops state %d, uncovers state %d\n"
+                                        if ( yydebug )
+                                                (void)printf( _POP_, *yy_ps,
+                                                        yy_ps[-1] );
+#       undef _POP_
 #endif
-					yy_ps--;
-					yy_pv--;
-				}
-				/*
-				** there is no state on stack with "error" as
-				** a valid shift.  give up.
-				*/
-				YYABORT;
-			case 3:		/* no shift yet; eat a token */
+                                        yy_ps--;
+                                        yy_pv--;
+                                }
+                                /*
+                                ** there is no state on stack with "error" as
+                                ** a valid shift.  give up.
+                                */
+                                YYABORT;
+                        case 3:         /* no shift yet; eat a token */
 #if YYDEBUG
-				/*
-				** if debugging, look up token in list of
-				** pairs.  0 and negative shouldn't occur,
-				** but since timing doesn't matter when
-				** debugging, it doesn't hurt to leave the
-				** tests here.
-				*/
-				if ( yydebug )
-				{
-					register int yy_i;
+                                /*
+                                ** if debugging, look up token in list of
+                                ** pairs.  0 and negative shouldn't occur,
+                                ** but since timing doesn't matter when
+                                ** debugging, it doesn't hurt to leave the
+                                ** tests here.
+                                */
+                                if ( yydebug )
+                                {
+                                        register int yy_i;
 
-					(void)printf( "Error recovery discards " );
-					if ( yychar == 0 )
-						(void)printf( "token end-of-file\n" );
-					else if ( yychar < 0 )
-						(void)printf( "token -none-\n" );
-					else
-					{
-						for ( yy_i = 0;
-							yytoks[yy_i].t_val >= 0;
-							yy_i++ )
-						{
-							if ( yytoks[yy_i].t_val
-								== yychar )
-							{
-								break;
-							}
-						}
-						(void)printf( "token %s\n",
-							yytoks[yy_i].t_name );
-					}
-				}
+                                        (void)printf( "Error recovery discards " );
+                                        if ( yychar == 0 )
+                                                (void)printf( "token end-of-file\n" );
+                                        else if ( yychar < 0 )
+                                                (void)printf( "token -none-\n" );
+                                        else
+                                        {
+                                                for ( yy_i = 0;
+                                                        yytoks[yy_i].t_val >= 0;
+                                                        yy_i++ )
+                                                {
+                                                        if ( yytoks[yy_i].t_val
+                                                                == yychar )
+                                                        {
+                                                                break;
+                                                        }
+                                                }
+                                                (void)printf( "token %s\n",
+                                                        yytoks[yy_i].t_name );
+                                        }
+                                }
 #endif /* YYDEBUG */
-				if ( yychar == 0 )	/* reached EOF. quit */
-					YYABORT;
-				yychar = -1;
-				goto yy_newstate;
-			}
-		}/* end if ( yy_n == 0 ) */
-		/*
-		** reduction by production yy_n
-		** put stack tops, etc. so things right after switch
-		*/
+                                if ( yychar == 0 )      /* reached EOF. quit */
+                                        YYABORT;
+                                yychar = -1;
+                                goto yy_newstate;
+                        }
+                }/* end if ( yy_n == 0 ) */
+                /*
+                ** reduction by production yy_n
+                ** put stack tops, etc. so things right after switch
+                */
 #if YYDEBUG
-		/*
-		** if debugging, print the string that is the user's
-		** specification of the reduction which is just about
-		** to be done.
-		*/
-		if ( yydebug )
-			(void)printf( "Reduce by (%d) \"%s\"\n",
-				yy_n, yyreds[ yy_n ] );
+                /*
+                ** if debugging, print the string that is the user's
+                ** specification of the reduction which is just about
+                ** to be done.
+                */
+                if ( yydebug )
+                        (void)printf( "Reduce by (%d) \"%s\"\n",
+                                yy_n, yyreds[ yy_n ] );
 #endif
-		yytmp = yy_n;			/* value to switch over */
-		yypvt = yy_pv;			/* $vars top of value stack */
-		/*
-		** Look in goto table for next state
-		** Sorry about using yy_state here as temporary
-		** register variable, but why not, if it works...
-		** If yyr2[ yy_n ] doesn't have the low order bit
-		** set, then there is no action to be done for
-		** this reduction.  So, no saving & unsaving of
-		** registers done.  The only difference between the
-		** code just after the if and the body of the if is
-		** the goto yy_stack in the body.  This way the test
-		** can be made before the choice of what to do is needed.
-		*/
-		{
-			/* length of production doubled with extra bit */
-			register int yy_len = yyr2[ yy_n ];
+                yytmp = yy_n;                   /* value to switch over */
+                yypvt = yy_pv;                  /* $vars top of value stack */
+                /*
+                ** Look in goto table for next state
+                ** Sorry about using yy_state here as temporary
+                ** register variable, but why not, if it works...
+                ** If yyr2[ yy_n ] doesn't have the low order bit
+                ** set, then there is no action to be done for
+                ** this reduction.  So, no saving & unsaving of
+                ** registers done.  The only difference between the
+                ** code just after the if and the body of the if is
+                ** the goto yy_stack in the body.  This way the test
+                ** can be made before the choice of what to do is needed.
+                */
+                {
+                        /* length of production doubled with extra bit */
+                        register int yy_len = yyr2[ yy_n ];
 
-			if ( !( yy_len & 01 ) )
-			{
-				yy_len >>= 1;
-				yyval = ( yy_pv -= yy_len )[1];	/* $$ = $1 */
-				yy_state = yypgo[ yy_n = yyr1[ yy_n ] ] +
-					*( yy_ps -= yy_len ) + 1;
-				if ( yy_state >= YYLAST ||
-					yychk[ yy_state =
-					yyact[ yy_state ] ] != -yy_n )
-				{
-					yy_state = yyact[ yypgo[ yy_n ] ];
-				}
-				goto yy_stack;
-			}
-			yy_len >>= 1;
-			yyval = ( yy_pv -= yy_len )[1];	/* $$ = $1 */
-			yy_state = yypgo[ yy_n = yyr1[ yy_n ] ] +
-				*( yy_ps -= yy_len ) + 1;
-			if ( yy_state >= YYLAST ||
-				yychk[ yy_state = yyact[ yy_state ] ] != -yy_n )
-			{
-				yy_state = yyact[ yypgo[ yy_n ] ];
-			}
-		}
-					/* save until reenter driver code */
-		yystate = yy_state;
-		yyps = yy_ps;
-		yypv = yy_pv;
-	}
-	/*
-	** code supplied by user is placed in this switch
-	*/
-	switch( yytmp )
-	{
-		
+                        if ( !( yy_len & 01 ) )
+                        {
+                                yy_len >>= 1;
+                                yyval = ( yy_pv -= yy_len )[1]; /* $$ = $1 */
+                                yy_state = yypgo[ yy_n = yyr1[ yy_n ] ] +
+                                        *( yy_ps -= yy_len ) + 1;
+                                if ( yy_state >= YYLAST ||
+                                        yychk[ yy_state =
+                                        yyact[ yy_state ] ] != -yy_n )
+                                {
+                                        yy_state = yyact[ yypgo[ yy_n ] ];
+                                }
+                                goto yy_stack;
+                        }
+                        yy_len >>= 1;
+                        yyval = ( yy_pv -= yy_len )[1]; /* $$ = $1 */
+                        yy_state = yypgo[ yy_n = yyr1[ yy_n ] ] +
+                                *( yy_ps -= yy_len ) + 1;
+                        if ( yy_state >= YYLAST ||
+                                yychk[ yy_state = yyact[ yy_state ] ] != -yy_n )
+                        {
+                                yy_state = yyact[ yypgo[ yy_n ] ];
+                        }
+                }
+                                        /* save until reenter driver code */
+                yystate = yy_state;
+                yyps = yy_ps;
+                yypv = yy_pv;
+        }
+        /*
+        ** code supplied by user is placed in this switch
+        */
+        switch( yytmp )
+        {
+
 case 1:
 # line 81 "rttgram.y"
 {yyval.n = sym_node(yypvt[-0].t);} break;
@@ -2982,7 +2982,7 @@ case 473:
                                          free_t(yypvt[-2].t); free_t(yypvt[-0].t);} break;
 case 474:
 # line 1070 "rttgram.y"
-{yyval.n = node1(PstfxNd, yypvt[-0].t, yypvt[-2].n); 
+{yyval.n = node1(PstfxNd, yypvt[-0].t, yypvt[-2].n);
                                          free_t(yypvt[-1].t);} break;
 case 475:
 # line 1072 "rttgram.y"
@@ -2990,6 +2990,6 @@ case 475:
 case 478:
 # line 1081 "rttgram.y"
 {yyval.n = node2(CommaNd, yypvt[-1].t, yypvt[-2].n, yypvt[-0].n);} break;
-	}
-	goto yystack;		/* reset registers in driver code */
+        }
+        goto yystack;           /* reset registers in driver code */
 }

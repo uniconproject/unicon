@@ -111,7 +111,7 @@ struct char_src *new_cs(char *fname, FILE *f, int bufsize)
  *  from macro expansion.
  */
 struct mac_expand *new_me(struct macro *m, struct tok_lst **args,
-			  struct tok_lst **exp_args)
+                          struct tok_lst **exp_args)
    {
    struct mac_expand *me = NewStruct(mac_expand);
    me->m = m;
@@ -173,7 +173,7 @@ union src_ref *ref;
    sp->next = src_stack;
    src_stack = sp;
    }
-   
+
 /*
  * free_t - free a token.
  */
@@ -196,7 +196,7 @@ struct tok_lst *tlst;
    free_t_lst(tlst->next);
    free((char *)tlst);
    }
-   
+
 /*
  * free_id_lst - free an identifier list.
  */
@@ -208,7 +208,7 @@ struct id_lst *ilst;
    free_id_lst(ilst->next);
    free((char *)ilst);
    }
-   
+
 /*
  * free_m - if there are no more pointers to this macro entry, free it
  *  and other associated storage.

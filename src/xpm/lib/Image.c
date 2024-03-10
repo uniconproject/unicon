@@ -54,8 +54,8 @@ XpmFreeXpmImage(image)
     XpmImage *image;
 {
     if (image->colorTable)
-	xpmFreeColorTable(image->colorTable, image->ncolors);
+        xpmFreeColorTable(image->colorTable, image->ncolors);
     if (image->data)
-	XpmFree(image->data);
+        XpmFree(image->data);
     image->data = NULL;
 }

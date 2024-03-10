@@ -12,7 +12,7 @@
 
 extern int  __merr_errors;
 #ifndef SEPARATE_YYERROR
-static	char	*mapterm	(int typ,struct node *val);
+static  char    *mapterm        (int typ,struct node *val);
 
 /*
  * yyerror produces syntax error messages.  tok is the offending token
@@ -30,7 +30,7 @@ nodeptr lval;
    int line;
 #ifdef ConsoleWindow
    extern int silent;
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
    if (lval == NULL)
       line = 0;
@@ -39,7 +39,7 @@ nodeptr lval;
 
 #ifdef ConsoleWindow
    if (!silent) {
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
    if (tok_loc.n_file)
       fprintf(stderr, "File %s; ", tok_loc.n_file);
    if (tok == EOFX)   /* special case end of file */
@@ -66,7 +66,7 @@ nodeptr lval;
       fprintf(flog, "%s\n", p->e_mesg);
       }
       }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
    __merr_errors++;
    nocode++;
    }
@@ -95,7 +95,7 @@ nodeptr val;
          return ot->tok.t_word;
    return "???";
    }
-#endif					/* SEPARATE_YYERROR */
+#endif                                  /* SEPARATE_YYERROR */
 
 /*
  * tfatal produces the translator error messages s1 and s2 (if nonnull).  The
@@ -108,7 +108,7 @@ void tfatal(char *s1, char *s2)
    extern int silent;
 
    if (!silent) {
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
    if (tok_loc.n_file)
       fprintf(stderr, "File %s; ", tok_loc.n_file);
@@ -127,7 +127,7 @@ void tfatal(char *s1, char *s2)
          fprintf(flog, "\"%s\": ", s2);
       fprintf(flog, "%s\n", s1);
       }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
    __merr_errors++;
    nocode++;
    }
@@ -220,15 +220,15 @@ char *msg, *arg;
       fprintf(flog, msg, arg);
       fprintf(flog, "\n");
       }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 #if !defined(Iconc)
    {
       extern char *ofile;
       if (ofile)
-	 remove(ofile);			/* remove bad icode file */
+         remove(ofile);                 /* remove bad icode file */
    }
-#endif					/* !Iconc */
+#endif                                  /* !Iconc */
 
    exit(EXIT_FAILURE);
    }

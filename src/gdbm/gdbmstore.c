@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -58,20 +58,20 @@ gdbm_store (dbf, key, content, flags)
      datum content;
      int flags;
 {
-  word_t new_hash_val;		/* The new hash value. */
-  int  elem_loc;		/* The location in hash bucket. */
-  off_t file_adr;		/* The address of new space in the file.  */
-  off_t file_pos;		/* The position after a lseek. */
-  int  num_bytes;		/* Used for error detection. */
-  off_t free_adr;		/* For keeping track of a freed section. */
+  word_t new_hash_val;          /* The new hash value. */
+  int  elem_loc;                /* The location in hash bucket. */
+  off_t file_adr;               /* The address of new space in the file.  */
+  off_t file_pos;               /* The position after a lseek. */
+  int  num_bytes;               /* Used for error detection. */
+  off_t free_adr;               /* For keeping track of a freed section. */
   int  free_size;
 
-  /* char *write_data; */	/* To write both key and data in 1 call. */
-  /* char *src;	*/		/* Used to prepare write_data. */
-  /* char *dst;	*/		/* Used to prepare write_data. */
-  /* int   cnt;	*/		/* Counter for loops to fill write_data. */
-  int   new_size;		/* Used in allocating space. */
-  char *temp;			/* Used in _gdbm_findkey call. */
+  /* char *write_data; */       /* To write both key and data in 1 call. */
+  /* char *src; */              /* Used to prepare write_data. */
+  /* char *dst; */              /* Used to prepare write_data. */
+  /* int   cnt; */              /* Counter for loops to fill write_data. */
+  int   new_size;               /* Used in allocating space. */
+  char *temp;                   /* Used in _gdbm_findkey call. */
 
 
   /* First check to make sure this guy is a writer. */
@@ -101,18 +101,18 @@ gdbm_store (dbf, key, content, flags)
   if (elem_loc != -1)
     {
       if (flags == GDBM_REPLACE)
-	{
-	  /* Just replace the data. */
-	  free_adr = dbf->bucket->h_table[elem_loc].data_pointer;
-	  free_size = dbf->bucket->h_table[elem_loc].key_size
-	              + dbf->bucket->h_table[elem_loc].data_size;
-	  _gdbm_free (dbf, free_adr, free_size);
-	}
+        {
+          /* Just replace the data. */
+          free_adr = dbf->bucket->h_table[elem_loc].data_pointer;
+          free_size = dbf->bucket->h_table[elem_loc].key_size
+                      + dbf->bucket->h_table[elem_loc].data_size;
+          _gdbm_free (dbf, free_adr, free_size);
+        }
       else
-	{
-	  gdbm_errno = GDBM_CANNOT_REPLACE;
-	  return 1;
-	}
+        {
+          gdbm_errno = GDBM_CANNOT_REPLACE;
+          return 1;
+        }
     }
 
 
@@ -125,21 +125,21 @@ gdbm_store (dbf, key, content, flags)
   if (elem_loc == -1)
     {
       if (dbf->bucket->count == dbf->header->bucket_elems)
-	{
-	  /* Split the current bucket. */
-	  _gdbm_split_bucket (dbf, new_hash_val);
-	}
-      
+        {
+          /* Split the current bucket. */
+          _gdbm_split_bucket (dbf, new_hash_val);
+        }
+
       /* Find space to insert into bucket and set elem_loc to that place. */
       elem_loc = new_hash_val % dbf->header->bucket_elems;
       while (dbf->bucket->h_table[elem_loc].hash_value != -1)
-	{  elem_loc = (elem_loc + 1) % dbf->header->bucket_elems; }
+        {  elem_loc = (elem_loc + 1) % dbf->header->bucket_elems; }
 
       /* We now have another element in the bucket.  Add the new information.*/
       dbf->bucket->count += 1;
       dbf->bucket->h_table[elem_loc].hash_value = new_hash_val;
       bcopy (key.dptr, dbf->bucket->h_table[elem_loc].key_start,
-	     (SMALL < key.dsize ? SMALL : key.dsize));
+             (SMALL < key.dsize ? SMALL : key.dsize));
     }
 
 
@@ -163,5 +163,5 @@ gdbm_store (dbf, key, content, flags)
   /* Write everything that is needed to the disk. */
   _gdbm_end_update (dbf);
   return 0;
-  
+
 }

@@ -36,7 +36,7 @@
 
 int
 XpmReadFileToPixmap(display, d, filename, pixmap_return,
-		    shapemask_return, attributes)
+                    shapemask_return, attributes)
     Display *display;
     Drawable d;
     char *filename;
@@ -49,27 +49,27 @@ XpmReadFileToPixmap(display, d, filename, pixmap_return,
 
     /* initialize return values */
     if (pixmap_return)
-	*pixmap_return = 0;
+        *pixmap_return = 0;
     if (shapemask_return)
-	*shapemask_return = 0;
+        *shapemask_return = 0;
 
     /* create the images */
     ErrorStatus = XpmReadFileToImage(display, filename,
-				     (pixmap_return ? &ximage : NULL),
-				     (shapemask_return ? &shapeimage : NULL),
-				     attributes);
+                                     (pixmap_return ? &ximage : NULL),
+                                     (shapemask_return ? &shapeimage : NULL),
+                                     attributes);
 
-    if (ErrorStatus < 0)		/* fatal error */
-	return (ErrorStatus);
+    if (ErrorStatus < 0)                /* fatal error */
+        return (ErrorStatus);
 
     /* create the pixmaps and destroy images */
     if (pixmap_return && ximage) {
-	xpmCreatePixmapFromImage(display, d, ximage, pixmap_return);
-	XDestroyImage(ximage);
+        xpmCreatePixmapFromImage(display, d, ximage, pixmap_return);
+        XDestroyImage(ximage);
     }
     if (shapemask_return && shapeimage) {
-	xpmCreatePixmapFromImage(display, d, shapeimage, shapemask_return);
-	XDestroyImage(shapeimage);
+        xpmCreatePixmapFromImage(display, d, shapeimage, shapemask_return);
+        XDestroyImage(shapeimage);
     }
     return (ErrorStatus);
 }

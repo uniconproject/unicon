@@ -10,17 +10,17 @@
 #ifdef Header
    #ifndef ShellHeader
       #include "hdr.h"
-   #endif					/* ShellHeader */
+   #endif                                       /* ShellHeader */
    #ifndef MaxHeader
       #define MaxHeader MaxHdr
-   #endif					/* MaxHeader */
-#endif					/* Header */
+   #endif                                       /* MaxHeader */
+#endif                                  /* Header */
 
 /*
  * Prototype.
  */
 
-void	setexe	(char *fname);
+void    setexe  (char *fname);
 
 
 /*
@@ -31,52 +31,52 @@ void	setexe	(char *fname);
 #if PORT
    /* nothing to do */
    Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if VM || VMS
    /* nothing to do */
-#endif					/* VM || VMS */
+#endif                                  /* VM || VMS */
 
 #if MSDOS
    extern char pathToIconDOS[];
    #if MICROSOFT || TURBO
       #include <fcntl.h>
-   #endif				/* MICROSOFT || TURBO */
-#endif					/* MSDOS */
+   #endif                               /* MICROSOFT || TURBO */
+#endif                                  /* MSDOS */
 
 #if MVS
-   char *routname;			/* real output file name */
-#endif					/* MVS */
+   char *routname;                      /* real output file name */
+#endif                                  /* MVS */
 
 #if UNIX
    #ifndef XWindows
       #include <sys/types.h>
-   #endif				/* XWindows */
+   #endif                               /* XWindows */
    #include <sys/stat.h>
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 /*
  * End of operating-system specific code.
  */
 
-FILE *infile;				/* input file (.u1 or .u2) */
-FILE *outfile;				/* interpreter code output file */
+FILE *infile;                           /* input file (.u1 or .u2) */
+FILE *outfile;                          /* interpreter code output file */
 
-extern char *ofile;			/* output file name */
+extern char *ofile;                     /* output file name */
 
 #ifdef DeBugLinker
-   FILE *dbgfile;			/* debug file */
-   static char dbgname[MaxFileName];	/* debug file name */
-#endif					/* DeBugLinker */
+   FILE *dbgfile;                       /* debug file */
+   static char dbgname[MaxFileName];    /* debug file name */
+#endif                                  /* DeBugLinker */
 
-char inname[MaxFileName];		/* input file name */
-static char icnname[MaxFileName];	/* icon source file name */
+char inname[MaxFileName];               /* input file name */
+static char icnname[MaxFileName];       /* icon source file name */
 
-struct lfile *llfiles = NULL;		/* List of files to link */
+struct lfile *llfiles = NULL;           /* List of files to link */
 
-int colmno = 0;				/* current source column number */
-int lineno = 0;				/* current source line number */
-int fatals = 0;				/* number of errors encountered */
+int colmno = 0;                         /* current source column number */
+int lineno = 0;                         /* current source line number */
+int fatals = 0;                         /* number of errors encountered */
 
 /*
  * cannotopen() - quitf with a detailed errno-based message
@@ -100,7 +100,7 @@ void cannotopen(char *defaultmsg, char *filnam)
       case ELOOP: strcat(msgbuf," due to symbolic link loop"); break;
       case EOVERFLOW: strcat(msgbuf,"; file too long"); break;
       case ETXTBSY: strcat(msgbuf,"; file is in use"); break;
-#endif					/* !NT */
+#endif                                  /* !NT */
       case EROFS: strcat(msgbuf,"; read-only file system"); break;
       case EINVAL: strcat(msgbuf,"; bogus mode?!"); break;
       case ENOMEM: strcat(msgbuf,"; out of space"); break;
@@ -120,11 +120,11 @@ char *outname;
 
    int i;
    struct lfile *lf,*lfls;
-   char *filename;			/* name of current input file */
+   char *filename;                      /* name of current input file */
 
-   linit();				/* initialize memory structures */
+   linit();                             /* initialize memory structures */
    while (*ifiles)
-      alsolink(*ifiles++);		/* make initial list of files */
+      alsolink(*ifiles++);              /* make initial list of files */
 
    /*
     * Phase I: load global information contained in .u2 files into
@@ -152,21 +152,21 @@ char *outname;
        *  disaster which results may vary.
        */
       infile = fopen(inname, ReadBinary);
-#else					/* MVS || VM */
+#else                                   /* MVS || VM */
       infile = fopen(inname, ReadText);
-#endif					/* MVS || VM */
+#endif                                  /* MVS || VM */
 
       if (infile == NULL) {
-	 makename(inname, SourceDir, filename, USuffix);
-	 infile = fopen(inname, ReadText);
-	 }
+         makename(inname, SourceDir, filename, USuffix);
+         infile = fopen(inname, ReadText);
+         }
 
       if (infile == NULL) {
-	 cannotopen("cannot open", inname); /* die w/ diagnostic */
-	 }
+         cannotopen("cannot open", inname); /* die w/ diagnostic */
+         }
       else if (verbose >= 5) {
-	 fprintf(stderr, "linking %s\n", inname);
-	 }
+         fprintf(stderr, "linking %s\n", inname);
+         }
       readglob(lf);
       fclose(infile);
       }
@@ -185,9 +185,9 @@ char *outname;
    routname = outname;
    outfile = tmpfile();         /* write icode to temporary file to
                                    avoid fseek-PDS limitations */
-#else					/* MVS */
+#else                                   /* MVS */
       outfile = fopen(outname, WriteBinary);
-#endif					/* MVS */
+#endif                                  /* MVS */
 
 /*
  * The following code is operating-system dependent [@link.02].  Set
@@ -197,28 +197,28 @@ char *outname;
 #if PORT
    /* probably nothing */
    Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* MVS || ... */
+#endif                                  /* MVS || ... */
 
 #if MSDOS
    #if MICROSOFT || TURBO
-      setmode(fileno(outfile),O_BINARY);	/* set for untranslated mode */
-   #endif				/* MICROSOFT || TURBO */
-#endif					/* MSDOS */
+      setmode(fileno(outfile),O_BINARY);        /* set for untranslated mode */
+   #endif                               /* MICROSOFT || TURBO */
+#endif                                  /* MSDOS */
 
 /*
  * End of operating-system specific code.
  */
 
-   if (outfile == NULL) {		/* may exist, but can't open for "w" */
+   if (outfile == NULL) {               /* may exist, but can't open for "w" */
       char thecwd[512];
-      ofile = NULL;			/* so don't delete if it's there */
+      ofile = NULL;                     /* so don't delete if it's there */
       if ((getcwd(thecwd, 511) != NULL) && strstr(thecwd, "Program Files"))
-	 quitf("cannot write %s to an installation directory\n"
-	       "Try a folder not under 'Program Files'.", outname);
+         quitf("cannot write %s to an installation directory\n"
+               "Try a folder not under 'Program Files'.", outname);
 
       cannotopen("cannot create", outname); /* die w/ detailed diagnostic */
       }
@@ -265,19 +265,19 @@ char *outname;
       for (oneChar=fgetc(fIconDOS); !feof(fIconDOS); oneChar=fgetc(fIconDOS)) {
          if (ferror(fIconDOS) || ferror(outfile)) {
             quit("Error copying ixhdr.exe");
-	    }
+            }
          fputc (oneChar, outfile);
          }
-#else					/* MSWindows */
+#else                                   /* MSWindows */
 
       for (byteCounter = 0; byteCounter < originalExeBytes; byteCounter++) {
          oneChar = fgetc (fIconDOS);
          if (ferror(fIconDOS) || feof(fIconDOS) || ferror(outfile)) {
             quit("Error copying ixhdr.exe");
-	    }
+            }
          fputc (oneChar, outfile);
          }
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
 
       fclose (fIconDOS);
       fileOffsetOfStuffThatGoesInICX = ftell (outfile);
@@ -315,9 +315,9 @@ char *outname;
    strcat(script,"pause missing noop.bat - press ^c or shell will exit\r\n");
    strcat(script,"exit\r\nrem [executable Icon binary follows]\r\n");
    strcat(script, "        \n\f\n" + ((int)(strlen(script) + 4) % 8));
-   hdrsize = strlen(script) + 1;	/* length includes \0 at end */
-   fwrite(script, hdrsize, 1, outfile);	/* write header */
-#endif					/* NT */
+   hdrsize = strlen(script) + 1;        /* length includes \0 at end */
+   fwrite(script, hdrsize, 1, outfile); /* write header */
+#endif                                  /* NT */
 #if UNIX
    /*
     *  Generate a shell header that searches for iconx in this order:
@@ -345,9 +345,9 @@ char *outname;
       "[executable Icon binary follows]");
 #if __clang__
    /* clang doesn't much like the strcat code below and recommends array indexing instead. i.e.
-	*       strcat(script, &"        \n\f\n"[((int)(strlen(script) + 4) % 8)]);
-	* but the code is well defined standard C, so we'll just temporarily suppress clang's fastidiousness
-	*/
+        *       strcat(script, &"        \n\f\n"[((int)(strlen(script) + 4) % 8)]);
+        * but the code is well defined standard C, so we'll just temporarily suppress clang's fastidiousness
+        */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstring-plus-int"
 #endif
@@ -355,18 +355,18 @@ char *outname;
 #if __clang__
 #pragma clang diagnostic pop
 #endif
-   hdrsize = strlen(script) + 1;	/* length includes \0 at end */
-   fwrite(script, hdrsize, 1, outfile);	/* write header */
-#endif					/* UNIX */
+   hdrsize = strlen(script) + 1;        /* length includes \0 at end */
+   fwrite(script, hdrsize, 1, outfile); /* write header */
+#endif                                  /* UNIX */
    }
-#else					/* ShellHeader */
+#else                                   /* ShellHeader */
    /*
     *  Always write MaxHeader bytes.
     */
    fwrite(iconxhdr, sizeof(char), MaxHeader, outfile);
    hdrsize = MaxHeader;
-#endif					/* ShellHeader */
-#endif					/* Header */
+#endif                                  /* ShellHeader */
+#endif                                  /* Header */
 
    for (i = sizeof(struct header); i--;)
       putc(0, outfile);
@@ -384,7 +384,7 @@ char *outname;
       if (dbgfile == NULL)
          quitf("cannot create %s", dbgname);
       }
-#endif					/* DeBugLinker */
+#endif                                  /* DeBugLinker */
 
    /*
     * Loop through input files and generate code for each.
@@ -408,27 +408,27 @@ char *outname;
 
 
       if (infile == NULL) {
-	 int c;
-	 makename(inname, SourceDir, filename, USuffix);
-	 infile = fopen(inname, ReadText);
-	 if (infile == NULL)
-	    quitf("cannot open .u or .u1 for %s", inname);
-	 if (((c = getc(infile)) != 'v') ||
-	     ((c = getc(infile)) != 'e') ||
-	     ((c = getc(infile)) != 'r') ||
-	     ((c = getc(infile)) != 's')) {
-	    quitf("'%s' is not a ucode file", inname);
-	    }
-	 /*
-	  * skip past the control-L
-	  */
-	 while ((c = getc(infile)) != EOF)
-	    if (c == '\014') {
-	       c = getc(infile);
-	       if (c == '\r') getc(infile);
-	       break;
-	       }
-	 }
+         int c;
+         makename(inname, SourceDir, filename, USuffix);
+         infile = fopen(inname, ReadText);
+         if (infile == NULL)
+            quitf("cannot open .u or .u1 for %s", inname);
+         if (((c = getc(infile)) != 'v') ||
+             ((c = getc(infile)) != 'e') ||
+             ((c = getc(infile)) != 'r') ||
+             ((c = getc(infile)) != 's')) {
+            quitf("'%s' is not a ucode file", inname);
+            }
+         /*
+          * skip past the control-L
+          */
+         while ((c = getc(infile)) != EOF)
+            if (c == '\014') {
+               c = getc(infile);
+               if (c == '\r') getc(infile);
+               break;
+               }
+         }
 
       if (infile == NULL)
          quitf("cannot open %s", inname);
@@ -438,8 +438,8 @@ char *outname;
       }
 
 
-   gentables();		/* Generate record, field, global, global names,
-			   static, and identifier tables. */
+   gentables();         /* Generate record, field, global, global names,
+                           static, and identifier tables. */
 
    fclose(outfile);
    lmfree();
@@ -451,7 +451,7 @@ char *outname;
 
 #ifdef ConsoleWindow
    extern FILE *flog;
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 /*
  * lwarn - issue a linker warning message.
  */
@@ -467,9 +467,9 @@ char *s1, *s2, *s3;
       fprintf(flog, "\"%s\": %s%s\n", s1, s2, s3);
       fflush(flog);
       if (silent)
-	 return;
+         return;
       }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
    fprintf(stderr, "%s: ", icnname);
    if (lineno)
       fprintf(stderr, "Line %d # :", lineno);
@@ -493,9 +493,9 @@ char *s1, *s2;
          fprintf(flog, "Line %d # : ", lineno);
       fprintf(flog, "\"%s\": %s\n", s1, s2);
       if (silent)
-	 return;
+         return;
       }
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
    fprintf(stderr, "%s: ", icnname);
    if (lineno)
       fprintf(stderr, "Line %d # : ", lineno);
@@ -518,20 +518,20 @@ char *fname;
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS || MVS || VM || VMS
    /*
     * can't be made executable
     * note: VMS files can't be made executable, but see "iexe.com" under VMS.
     */
-#endif					/* MSDOS || ... */
+#endif                                  /* MSDOS || ... */
 
 #if MSDOS
    #if MICROSOFT || TURBO
-      chmod(fname,0755);	/* probably could be smarter... */
-   #endif				/* MICROSOFT || TURBO */
-#endif					/* MSDOS */
+      chmod(fname,0755);        /* probably could be smarter... */
+   #endif                               /* MICROSOFT || TURBO */
+#endif                                  /* MSDOS */
 
 #if UNIX
       {
@@ -542,14 +542,14 @@ Deliberate Syntax Error
        *  the current umask and if the corresponding read bit is set; do not
        *  clear any bits already set.
        */
-      umask(u = umask(0));		/* get and restore umask */
-      if (stat(fname,&stbuf) == 0)  {	/* must first read existing mode */
-         r = (stbuf.st_mode & 0444) >> 2;	/* get & position read bits */
-         m = stbuf.st_mode | (r & ~u);		/* set execute bits */
-         chmod(fname,m);		 /* change file mode */
+      umask(u = umask(0));              /* get and restore umask */
+      if (stat(fname,&stbuf) == 0)  {   /* must first read existing mode */
+         r = (stbuf.st_mode & 0444) >> 2;       /* get & position read bits */
+         m = stbuf.st_mode | (r & ~u);          /* set execute bits */
+         chmod(fname,m);                 /* change file mode */
          }
       }
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 /*
  * End of operating-system specific code.

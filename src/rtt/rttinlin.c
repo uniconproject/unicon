@@ -5,7 +5,7 @@
 #include "rtt.h"
 
 /*
- * prototypes for static functions. 
+ * prototypes for static functions.
  */
 static struct il_code *abstrcomp (struct node *n, int indx_stor,
                                     int chng_stor, int escapes);
@@ -45,10 +45,10 @@ struct var_lst {
    struct var_lst *next;
    };
 struct var_lst *body_prms;
-int n_bdy_prms;		/* number of entries in body_prms list */
-int rslt_loc;		/* flag: function passed addr of result descriptor */
+int n_bdy_prms;         /* number of entries in body_prms list */
+int rslt_loc;           /* flag: function passed addr of result descriptor */
 
-char prfx3;		/* 3rd prefix char; used for unique body func names */
+char prfx3;             /* 3rd prefix char; used for unique body func names */
 
 #if MVS
 extern char *src_file_nm;
@@ -86,7 +86,7 @@ struct node *n;
    i = 0;
 
    /*
-    * Go back through the declarations and fill in the array for the 
+    * Go back through the declarations and fill in the array for the
     *  tended part of the data base symbol table. Array entries contain
     *  an indication of the type of tended declaration, the C code to
     *  initialize the variable if there is any, and, for block pointer
@@ -128,7 +128,7 @@ struct node *n;
          }
       }
 
-   abs_ret = NoAbstr;		   /* abstract clause not encountered yet */
+   abs_ret = NoAbstr;              /* abstract clause not encountered yet */
    cur_impl->in_line = il_walk(n); /* produce in-line code for operation */
    }
 
@@ -750,14 +750,14 @@ int escapes;
                 */
                il = new_il(IL_VarTyp, 1);
                il->u[0].fld = il_var(n->u[0].child);
-               break; 
+               break;
             case Store:
                /*
                 * store[ <type> ]
                 */
                il = new_il(IL_Store, 1);
                il->u[0].fld = abstrcomp(n->u[0].child, 1, 0, 0);
-               break; 
+               break;
             }
          break;
       case PstfxNd:
@@ -774,10 +774,10 @@ int escapes;
                   errt3(t, typecompnt[cmpntcd].id,
                     " component is an internal reference type.\n",
                     "\t\tuse store[<type>.<component>] to \"dereference\" it");
-               break; 
+               break;
             case All_fields:
                il->u[1].n = CM_Fields;
-               break; 
+               break;
             }
          break;
       case IcnTypNd:
@@ -848,7 +848,7 @@ int escapes;
                 * Create the "new" construct for the data base with its type
                 *  code and arguments.
                 */
-               il = new_il(IL_New, 2 + nargs); 
+               il = new_il(IL_New, 2 + nargs);
                il->u[0].n = typcd;
                il->u[1].n = nargs;
                while (nargs > 1) {
@@ -909,7 +909,7 @@ int chng_stor;
 
 /*
  * body_anlz - walk the syntax tree for the C code in a body statment,
- *  analyzing the code to determine the interface needed by the C function 
+ *  analyzing the code to determine the interface needed by the C function
  *  which will implement it. Also determine how many buffers are needed.
  *  The value returned indicates whether it is possible for execution
  *  to fall through the the code.
@@ -930,7 +930,7 @@ int all;          /* input flag: need all information about operation */
    static int may_brnchto;
 
    if (n == NULL)
-      return 1; 
+      return 1;
 
    t =  n->tok;
 
@@ -1094,19 +1094,19 @@ int all;          /* input flag: need all information about operation */
                fall_thru = body_anlz(n->u[1].child, &break_chk, 0, 0, all);
                return fall_thru | break_chk;
             case While: {
-	       struct node *n0 = n->u[0].child;
+               struct node *n0 = n->u[0].child;
                body_anlz(n0, does_break, 0, 0, all);
                body_anlz(n->u[1].child, &break_chk, 0, 0, all);
-	       /*
-		* check for an infinite loop, while (1) ... :
+               /*
+                * check for an infinite loop, while (1) ... :
                 *  a condition consisting of an IntConst with image=="1"
                 *  and no breaks in the body.
-		*/
-	       if (n0->nd_id == PrimryNd && n0->tok->tok_id == IntConst &&
-		   !strcmp(n0->tok->image,"1") && !break_chk)
-		  return 0;
+                */
+               if (n0->nd_id == PrimryNd && n0->tok->tok_id == IntConst &&
+                   !strcmp(n0->tok->image,"1") && !break_chk)
+                  return 0;
                return 1;
-	       }
+               }
             case Do:
                /*
                 * Any "break;" statements in the body do not effect
@@ -1312,7 +1312,7 @@ struct node *n;
    struct sym_entry *sym;
 
    if (n == NULL)
-      return; 
+      return;
 
    /*
     * Walk the syntax tree until a block with declarations is found.
@@ -1411,7 +1411,7 @@ struct node *n;
    char buf1[MaxFileName];
 #else
    char buf[MaxFileName];
-#endif					/* MVS */
+#endif                                  /* MVS */
 
    /*
     * Figure out the next character to use as the 3rd prefix for the
@@ -1484,7 +1484,7 @@ struct node *n;
       err2("cannot open output file ", cname);
    else
       addrmlst(cname, out_file);
-      
+
    prologue(); /* output standard comments and preprocessor directives */
 
    /*
@@ -1738,7 +1738,7 @@ struct node *n;
       if (by_ref)
          sym->id_type |= ByRef;
       }
-   
+
    if (fall_thru) {
       /*
        * Write declarations for any needed buffer parameters.
@@ -1790,8 +1790,8 @@ struct node *n;
     */
    if (fall_thru) {
       if (tend_lst != NULL) {
-	 prt_str("tend = tend->previous;", IndentInc);
-	 ForceNl();
+         prt_str("tend = tend->previous;", IndentInc);
+         ForceNl();
          }
       if (fnc_ret == RetSig) {
          prt_str("return A_FallThru;", IndentInc);
@@ -1976,4 +1976,4 @@ int typ;
    else
       return SomeType;
    }
-#endif					/* Rttx */
+#endif                                  /* Rttx */

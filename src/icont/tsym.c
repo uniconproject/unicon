@@ -15,23 +15,23 @@
  * Prototypes.
  */
 
-static struct	tgentry *alcglob
+static struct   tgentry *alcglob
    (struct tgentry *blink, char *name,int flag,int nargs);
-static struct	tcentry *alclit	
+static struct   tcentry *alclit
    (struct tcentry *blink, char *name, int len,int flag);
-static struct	tlentry *alcloc	
+static struct   tlentry *alcloc
    (struct tlentry *blink, char *name,int flag);
-static struct	tcentry *clookup	(char *id,int flag);
-static struct	tgentry *glookup	(char *id);
-static struct	tlentry *llookup	(char *id);
-static void	putglob
+static struct   tcentry *clookup        (char *id,int flag);
+static struct   tgentry *glookup        (char *id);
+static struct   tlentry *llookup        (char *id);
+static void     putglob
    (char *id,int id_type, int n_args);
 
 #ifdef DeBugTrans
-void	cdump	(void);
-void	gdump	(void);
-void	ldump	(void);
-#endif					/* DeBugTrans */
+void    cdump   (void);
+void    gdump   (void);
+void    ldump   (void);
+#endif                                  /* DeBugTrans */
 
 
 /*
@@ -102,36 +102,36 @@ int flag, argcnt;
       } p;
 
    switch (flag) {
-      case F_Global:	/* a variable in a global declaration */
+      case F_Global:    /* a variable in a global declaration */
          if ((p.gp = glookup(name)) == NULL)
             putglob(name, flag, argcnt);
          else
             p.gp->g_flag |= flag;
          break;
 
-      case F_Proc|F_Global:	/* procedure declaration */
-      case F_Record|F_Global:	/* record declaration */
-      case F_Builtin|F_Global:	/* external declaration */
+      case F_Proc|F_Global:     /* procedure declaration */
+      case F_Record|F_Global:   /* record declaration */
+      case F_Builtin|F_Global:  /* external declaration */
          if ((p.gp = glookup(name)) == NULL)
             putglob(name, flag, argcnt);
          else if ((p.gp->g_flag & (~F_Global)) == 0) { /* superfluous global
-							   declaration for
-							   record or proc */
+                                                           declaration for
+                                                           record or proc */
             p.gp->g_flag |= flag;
             p.gp->g_nargs = argcnt;
             }
-         else			/* the user can't make up his mind */
+         else                   /* the user can't make up his mind */
             tfatal("inconsistent redeclaration", name);
          break;
 
-      case F_Static:	/* static declaration */
-      case F_Dynamic:	/* local declaration (possibly implicit?) */
-      case F_Argument:	/* formal parameter */
+      case F_Static:    /* static declaration */
+      case F_Dynamic:   /* local declaration (possibly implicit?) */
+      case F_Argument:  /* formal parameter */
          if ((p.lp = llookup(name)) == NULL)
             putloc(name,flag);
          else if (p.lp->l_flag == flag) /* previously declared as same type */
             tfatal("redeclared identifier", name);
-         else		/* previously declared as different type */
+         else           /* previously declared as different type */
             tfatal("inconsistent redeclaration", name);
          break;
 
@@ -148,7 +148,7 @@ int putloc(char *id, int id_type)
    {
    register struct tlentry *ptr;
 
-   if ((ptr = llookup(id)) == NULL) {	/* add to head of hash chain */
+   if ((ptr = llookup(id)) == NULL) {   /* add to head of hash chain */
       ptr = lhash[lhasher(id)];
       lhash[lhasher(id)] = alcloc(ptr, id, id_type);
       return lhash[lhasher(id)]->l_index;
@@ -165,7 +165,7 @@ static void putglob(char *id, int id_type, int n_args)
    {
    register struct tgentry *ptr;
 
-   if ((ptr = glookup(id)) == NULL) {	 /* add to head of hash chain */
+   if ((ptr = glookup(id)) == NULL) {    /* add to head of hash chain */
       ptr = ghash[ghasher(id)];
       ghash[ghasher(id)] = alcglob(ptr, id, id_type, n_args);
       }
@@ -261,11 +261,11 @@ void ldump()
    else
       n = llast->l_index + 1;
    fprintf(stderr,"Dump of local symbol table (%d entries)\n", n);
-   fprintf(stderr," loc   blink   id		  (name)      flags\n");
+   fprintf(stderr," loc   blink   id              (name)      flags\n");
    for (i = 0; i < lhsize; i++)
       for (lptr = lhash[i]; lptr != NULL; lptr = lptr->l_blink)
-         fprintf(stderr,"%5d  %5d  %5d	%20s  %7o\n", lptr->l_index,
-		lptr->l_blink, lptr->l_name, lptr->l_name, lptr->l_flag);
+         fprintf(stderr,"%5d  %5d  %5d  %20s  %7o\n", lptr->l_index,
+                lptr->l_blink, lptr->l_name, lptr->l_name, lptr->l_flag);
    fflush(stderr);
 
    }
@@ -285,12 +285,12 @@ void gdump()
    else
       n = glast->g_index + 1;
    fprintf(stderr,"Dump of global symbol table (%d entries)\n", n);
-   fprintf(stderr," loc   blink   id		  (name)      flags	  nargs\n");
+   fprintf(stderr," loc   blink   id              (name)      flags       nargs\n");
    for (i = 0; i < ghsize; i++)
       for (gptr = ghash[i]; gptr != NULL; gptr = gptr->g_blink)
-         fprintf(stderr,"%5d  %5d  %5d	%20s  %7o   %8d\n", gptr->g_index,
-		gptr->g_blink, gptr->g_name, gptr->g_name,
-		gptr->g_flag, gptr->g_nargs);
+         fprintf(stderr,"%5d  %5d  %5d  %20s  %7o   %8d\n", gptr->g_index,
+                gptr->g_blink, gptr->g_name, gptr->g_name,
+                gptr->g_flag, gptr->g_nargs);
    fflush(stderr);
    }
 
@@ -309,18 +309,18 @@ void cdump()
    else
       n = clast->c_index + 1;
    fprintf(stderr,"Dump of constant symbol table (%d entries)\n", n);
-   fprintf(stderr," loc   blink   id		  (name)      flags\n");
+   fprintf(stderr," loc   blink   id              (name)      flags\n");
    for (i = 0; i < lchsize; i++)
       for (cptr = chash[i]; cptr != NULL; cptr = cptr->c_blink)
-         fprintf(stderr,"%5d  %5d  %5d	%20s  %7o\n", cptr->c_index,
-		cptr->c_blink, cptr->c_name, cptr->c_name, cptr->c_flag);
+         fprintf(stderr,"%5d  %5d  %5d  %20s  %7o\n", cptr->c_index,
+                cptr->c_blink, cptr->c_name, cptr->c_name, cptr->c_flag);
    fflush(stderr);
    }
-#endif					/* DeBugTrans */
+#endif                                  /* DeBugTrans */
 
 /*
  * alcloc allocates a local symbol table entry, fills in fields with
- *  specified values and returns the new entry.  
+ *  specified values and returns the new entry.
  */
 static struct tlentry *alcloc(blink, name, flag)
 struct tlentry *blink;
@@ -348,7 +348,7 @@ int flag;
 
 /*
  * alcglob allocates a global symbol table entry, fills in fields with
- *  specified values and returns offset of new entry.  
+ *  specified values and returns offset of new entry.
  */
 static struct tgentry *alcglob(blink, name, flag, nargs)
 struct tgentry *blink;
@@ -377,7 +377,7 @@ int flag, nargs;
 
 /*
  * alclit allocates a constant symbol table entry, fills in fields with
- *  specified values and returns the new entry.  
+ *  specified values and returns the new entry.
  */
 static struct tcentry *alclit(blink, name, len, flag)
 struct tcentry *blink;
@@ -476,7 +476,7 @@ FILE *fd;
    int n;
    struct lfile *lfl;
    struct invkl *ivl;
-   
+
    if (uwarn)
       name = "error";
    else
@@ -484,15 +484,15 @@ FILE *fd;
    writecheck(fprintf(fd, "impl\t%s\n", name));
    if (trace)
       writecheck(fprintf(fd, "trace\n"));
-   
+
    lfl = lfiles;
    while (lfl) {
 
 #if MVS
       writecheck(fprintf(fd,"link\t%s\n",lfl->lf_name));
-#else					/* MVS */
+#else                                   /* MVS */
       writecheck(fprintf(fd,"link\t%s.u\n",lfl->lf_name));
-#endif					/* MVS */
+#endif                                  /* MVS */
 
       lfl = lfl->lf_link;
       }

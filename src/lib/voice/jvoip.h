@@ -4,8 +4,8 @@ typedef struct VOIPSession VSESSION;
 typedef struct VOIPSession* PVSESSION;
 
 #ifdef WIN32
-	int StartupWinSocket(void);
-	int CleanupWinSocket(void);
+        int StartupWinSocket(void);
+        int CleanupWinSocket(void);
 #endif
 
 char * FetchListener(PVSESSION VSession, int pos);

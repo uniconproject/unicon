@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -41,7 +41,7 @@ _gdbm_read_entry (dbf, elem_loc)
      gdbm_file_info *dbf;
      int elem_loc;
 {
-  int num_bytes;		/* For seeking and reading. */
+  int num_bytes;                /* For seeking and reading. */
   int key_size;
   int data_size;
   off_t file_pos;
@@ -55,7 +55,7 @@ _gdbm_read_entry (dbf, elem_loc)
   key_size = dbf->bucket->h_table[elem_loc].key_size;
   data_size = dbf->bucket->h_table[elem_loc].data_size;
   data_ca = &dbf->cache_entry->ca_data;
-  
+
   /* Set up the cache. */
   if (data_ca->dptr != NULL) free (data_ca->dptr);
   data_ca->key_size = key_size;
@@ -71,12 +71,12 @@ _gdbm_read_entry (dbf, elem_loc)
 
   /* Read into the cache. */
   file_pos = lseek (dbf->desc,
-		    dbf->bucket->h_table[elem_loc].data_pointer, L_SET);
+                    dbf->bucket->h_table[elem_loc].data_pointer, L_SET);
   if (file_pos != dbf->bucket->h_table[elem_loc].data_pointer)
     _gdbm_fatal (dbf, "lseek error");
   num_bytes = read (dbf->desc, data_ca->dptr, key_size+data_size);
   if (num_bytes != key_size+data_size) _gdbm_fatal (dbf, "read error");
-  
+
   return data_ca->dptr;
 }
 
@@ -92,20 +92,20 @@ _gdbm_findkey (dbf, key, dptr, new_hash_val)
      gdbm_file_info *dbf;
      datum key;
      char **dptr;
-     word_t *new_hash_val;		/* The new hash value. */
+     word_t *new_hash_val;              /* The new hash value. */
 {
-  word_t bucket_hash_val;	/* The hash value from the bucket. */
-  char  *file_key;		/* The complete key as stored in the file. */
-  int    elem_loc;		/* The location in the bucket. */
-  int    home_loc;		/* The home location in the bucket. */
-  int    key_size;		/* Size of the key on the file.  */
+  word_t bucket_hash_val;       /* The hash value from the bucket. */
+  char  *file_key;              /* The complete key as stored in the file. */
+  int    elem_loc;              /* The location in the bucket. */
+  int    home_loc;              /* The home location in the bucket. */
+  int    key_size;              /* Size of the key on the file.  */
 
   /* Compute hash value and load proper bucket.  */
   *new_hash_val = _gdbm_hash (key);
   _gdbm_get_bucket (dbf, *new_hash_val>> (31-dbf->header->dir_bits));
 
   /* Is the element the last one found for this bucket? */
-  if (dbf->cache_entry->ca_data.elem_loc != -1 
+  if (dbf->cache_entry->ca_data.elem_loc != -1
       && *new_hash_val == dbf->cache_entry->ca_data.hash_val
       && dbf->cache_entry->ca_data.key_size == key.dsize
       && dbf->cache_entry->ca_data.dptr != NULL
@@ -115,7 +115,7 @@ _gdbm_findkey (dbf, key, dptr, new_hash_val)
       *dptr = dbf->cache_entry->ca_data.dptr+key.dsize;
       return dbf->cache_entry->ca_data.elem_loc;
     }
-      
+
   /* It is not the cached value, search for element in the bucket. */
   elem_loc = *new_hash_val % dbf->header->bucket_elems;
   home_loc = elem_loc;
@@ -124,34 +124,34 @@ _gdbm_findkey (dbf, key, dptr, new_hash_val)
     {
       key_size = dbf->bucket->h_table[elem_loc].key_size;
       if (bucket_hash_val != *new_hash_val
-	 || key_size != key.dsize
-	 || bcmp (dbf->bucket->h_table[elem_loc].key_start, key.dptr,
-			(SMALL < key_size ? SMALL : key_size)) != 0) 
-	{
-	  /* Current elem_loc is not the item, go to next item. */
-	  elem_loc = (elem_loc + 1) % dbf->header->bucket_elems;
-	  if (elem_loc == home_loc) return -1;
-	  bucket_hash_val = dbf->bucket->h_table[elem_loc].hash_value;
-	}
+         || key_size != key.dsize
+         || bcmp (dbf->bucket->h_table[elem_loc].key_start, key.dptr,
+                        (SMALL < key_size ? SMALL : key_size)) != 0)
+        {
+          /* Current elem_loc is not the item, go to next item. */
+          elem_loc = (elem_loc + 1) % dbf->header->bucket_elems;
+          if (elem_loc == home_loc) return -1;
+          bucket_hash_val = dbf->bucket->h_table[elem_loc].hash_value;
+        }
       else
-	{
-	  /* This may be the one we want.
-	     The only way to tell is to read it. */
-	  file_key = _gdbm_read_entry (dbf, elem_loc);
-	  if (bcmp (file_key, key.dptr, key_size) == 0)
-	    {
-	      /* This is the item. */
-	      *dptr = file_key+key.dsize;
-	      return elem_loc;
-	    }
-	  else
-	    {
-	      /* Not the item, try the next one.  Return if not found. */
-	      elem_loc = (elem_loc + 1) % dbf->header->bucket_elems;
-	      if (elem_loc == home_loc) return -1;
-	      bucket_hash_val = dbf->bucket->h_table[elem_loc].hash_value;
-	    }
-	}
+        {
+          /* This may be the one we want.
+             The only way to tell is to read it. */
+          file_key = _gdbm_read_entry (dbf, elem_loc);
+          if (bcmp (file_key, key.dptr, key_size) == 0)
+            {
+              /* This is the item. */
+              *dptr = file_key+key.dsize;
+              return elem_loc;
+            }
+          else
+            {
+              /* Not the item, try the next one.  Return if not found. */
+              elem_loc = (elem_loc + 1) % dbf->header->bucket_elems;
+              if (elem_loc == home_loc) return -1;
+              bucket_hash_val = dbf->bucket->h_table[elem_loc].hash_value;
+            }
+        }
     }
 
   /* If we get here, we never found the key. */

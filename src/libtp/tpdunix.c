@@ -71,7 +71,7 @@ int unixconnect(PURI puri, Tpdisc_t* tpdisc)
   hints.ai_next = NULL;
 
   if ( (rc = getaddrinfo(puri->host, puri->sport?puri->sport:puri->scheme,
-			 &hints, &res0)) != 0) {
+                         &hints, &res0)) != 0) {
     set_gaierrortext(rc);
     tpdisc->exceptf(TP_EHOST, NULL, tpdisc);
     return -1;
@@ -80,24 +80,24 @@ int unixconnect(PURI puri, Tpdisc_t* tpdisc)
   disc->fd = -1;
   for (res = res0; res; res = res->ai_next) {
     if ((disc->fd = socket(res->ai_family, res->ai_socktype,
-			   res->ai_protocol)) < 0) {
+                           res->ai_protocol)) < 0) {
       if (tpdisc->exceptf(TP_ESOCKET, NULL, tpdisc) > 0) {
-	continue;
+        continue;
       }
       else {
-	freeaddrinfo(res0);
-	return (-1);
+        freeaddrinfo(res0);
+        return (-1);
       }
     }
 
     if (connect(disc->fd,res->ai_addr, res->ai_addrlen) < 0 ) {
       if (tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc) >= 0) {
-	continue;
+        continue;
       }
       else {
-	// TODO: we need to close(desc->fd);
-	freeaddrinfo(res0);
-	return (-1);
+        // TODO: we need to close(desc->fd);
+        freeaddrinfo(res0);
+        return (-1);
       }
     }
   }
@@ -161,51 +161,51 @@ int unixexcept(int type, void *obj, Tpdisc_t* tpdisc)
   switch(type) {
     case TP_ECONNECT:
       switch (WSAGetLastError()) {
-	case EADDRNOTAVAIL:
-	case ECONNREFUSED:
-	case ENETUNREACH:
-	case EADDRINUSE:
-	  return TP_RETURNERROR;
-	default:
-	  return TP_RETURNERROR;
+        case EADDRNOTAVAIL:
+        case ECONNREFUSED:
+        case ENETUNREACH:
+        case EADDRINUSE:
+          return TP_RETURNERROR;
+        default:
+          return TP_RETURNERROR;
       }
 
     case TP_EHOST:
       if (WSAGetLastError() == TRY_AGAIN) {
-	return TP_TRYAGAIN;
+        return TP_TRYAGAIN;
       }
       else {
-	return TP_RETURNERROR;
+        return TP_RETURNERROR;
       }
 
     case TP_EMEM:
       return TP_RETURNERROR;
 
-    case TP_EREAD: 
+    case TP_EREAD:
       if (WSAGetLastError() == EINTR) {
-	return TP_TRYAGAIN;
+        return TP_TRYAGAIN;
       }
       else {
-	ssize_t nread = (*(ssize_t*)obj);
-	if (nread == 0) { /* EOF */
-	  return TP_DEFAULT;
-	}
-	else {
-	  return TP_RETURNERROR;
-	}
+        ssize_t nread = (*(ssize_t*)obj);
+        if (nread == 0) { /* EOF */
+          return TP_DEFAULT;
+        }
+        else {
+          return TP_RETURNERROR;
+        }
       }
 
     case TP_ESOCKET:
       /* In theory, it may be possible to correct some errors
-	 (e.g. ENOBUFS) and return TP_TRYAGAIN. */
+         (e.g. ENOBUFS) and return TP_TRYAGAIN. */
       return TP_RETURNERROR;
-      
+
     case TP_EWRITE:
       if (WSAGetLastError() == EINTR) {
-	return TP_TRYAGAIN;
+        return TP_TRYAGAIN;
       }
       else {
-	return TP_RETURNERROR;
+        return TP_RETURNERROR;
       }
 
     default:
@@ -218,51 +218,51 @@ int unixexcept(int type, void *obj, Tpdisc_t* tpdisc)
   switch(type) {
     case TP_ECONNECT:
       switch (errno) {
-	case EADDRNOTAVAIL:
-	case ECONNREFUSED:
-	case ENETUNREACH:
-	case EADDRINUSE:
-	  return TP_RETURNERROR;
-	default:
-	  return TP_RETURNERROR;
+        case EADDRNOTAVAIL:
+        case ECONNREFUSED:
+        case ENETUNREACH:
+        case EADDRINUSE:
+          return TP_RETURNERROR;
+        default:
+          return TP_RETURNERROR;
       }
 
     case TP_EHOST:
       if (h_errno == TRY_AGAIN) {
-	return TP_TRYAGAIN;
+        return TP_TRYAGAIN;
       }
       else {
-	return TP_RETURNERROR;
+        return TP_RETURNERROR;
       }
 
     case TP_EMEM:
       return TP_RETURNERROR;
 
-    case TP_EREAD: 
+    case TP_EREAD:
       if (errno == EINTR) {
-	return TP_TRYAGAIN;
+        return TP_TRYAGAIN;
       }
       else {
-	ssize_t nread = (*(ssize_t*)obj);
-	if (nread == 0) { /* EOF */
-	  return TP_DEFAULT;
-	}
-	else {
-	  return TP_RETURNERROR;
-	}
+        ssize_t nread = (*(ssize_t*)obj);
+        if (nread == 0) { /* EOF */
+          return TP_DEFAULT;
+        }
+        else {
+          return TP_RETURNERROR;
+        }
       }
 
     case TP_ESOCKET:
       /* In theory, it may be possible to correct some errors
-	 (e.g. ENOBUFS) and return TP_TRYAGAIN. */
+         (e.g. ENOBUFS) and return TP_TRYAGAIN. */
       return TP_RETURNERROR;
-      
+
     case TP_EWRITE:
       if (errno == EINTR) {
-	return TP_TRYAGAIN;
+        return TP_TRYAGAIN;
       }
       else {
-	return TP_RETURNERROR;
+        return TP_RETURNERROR;
       }
 
     default:
@@ -285,14 +285,14 @@ ssize_t unixread(void* buf, size_t n, Tpdisc_t* tpdisc)
     if ((nread = recv(disc->fd, ptr, nleft, 0)) <= 0) {
       int action = tpdisc->exceptf(TP_EREAD, &nread, tpdisc);
       if (action > 0) {
-	nread = 0;
-	continue;
+        nread = 0;
+        continue;
       }
       else if (action == 0 && nread >= 0) {
-	break;
+        break;
       }
       else {
-	return (-1);
+        return (-1);
       }
     }
 
@@ -316,37 +316,37 @@ ssize_t unixreadln(void* buf, size_t maxlen, Tpdisc_t* tpdisc)
     if ((rc = recv(disc->fd, &c, 1, 0)) == 1) {
       *ptr++ = c;
       if (c == '\n') {
-	break;
+        break;
       }
     }
     else {
       int action = tpdisc->exceptf(TP_EREAD, &rc, tpdisc);
       switch (action)
       {
-	case TP_TRYAGAIN: goto again;
-	case TP_DEFAULT:
-	  if (rc == 0 && n > 1 ){
-	    *ptr = '\0';
-	    return n-1;   /* no \n in this case */
-	  }	  
-	  return 0;
-	case TP_RETURNERROR:
-	default:          return -1;
+        case TP_TRYAGAIN: goto again;
+        case TP_DEFAULT:
+          if (rc == 0 && n > 1 ){
+            *ptr = '\0';
+            return n-1;   /* no \n in this case */
+          }
+          return 0;
+        case TP_RETURNERROR:
+        default:          return -1;
       }
 #if 0
       if (action TP_TRYAGAIN) {
-	goto again;
+        goto again;
       }
       else if (action == 0) {
-	if (rc == 0) {  /* No data read */
-	  return (0);
-	}
-	else {         /* Some data read before error */
-	  break;
-	}
+        if (rc == 0) {  /* No data read */
+          return (0);
+        }
+        else {         /* Some data read before error */
+          break;
+        }
       }
       else {
-	return (-1);
+        return (-1);
       }
 #endif
     }
@@ -372,11 +372,11 @@ ssize_t unixwrite(void* buf, size_t n, Tpdisc_t* tpdisc)
     if (nwritten <= 0) {
       int action = tpdisc->exceptf(TP_EWRITE, NULL, tpdisc);
       if (action <= 0) {
-	return (-1);
+        return (-1);
       }
       else {
-	nwritten = 0;
-	continue;
+        nwritten = 0;
+        continue;
       }
     }
 
@@ -388,12 +388,12 @@ ssize_t unixwrite(void* buf, size_t n, Tpdisc_t* tpdisc)
 }
 
 /* The Unix discipline */
-static Tpunixdisc_t _tpdunix = 
-{ { unixconnect, unixclose, unixread, unixreadln, 
+static Tpunixdisc_t _tpdunix =
+{ { unixconnect, unixclose, unixread, unixreadln,
     unixwrite, unixmem, unixfree, unixexcept, unixnewdisc, 0 }, 0 };
 
 Tpdisc_t* TpdUnix = (Tpdisc_t *)&_tpdunix;
-  
+
 int tp_fileno(Tp_t *t)
 {
    int fd = ((Tpunixdisc_t *)t->disc)->fd;

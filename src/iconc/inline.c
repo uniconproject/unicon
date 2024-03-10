@@ -38,7 +38,7 @@ static int          part_asgn (struct val_loc *vloc, char *asgn,
                                     struct il_c *value);
 static void          rstr_locs (struct val_loc **locs);
 static struct val_loc **sav_locs  (void);
-static void         sub_ilc    (struct il_c *ilc, struct code *cd, int indx); 
+static void         sub_ilc    (struct il_c *ilc, struct code *cd, int indx);
 /* mdw */static void sub_ilc_fncall_explicit_arg(struct il_c * argilc, struct il_c * proto, struct code * cd, int indx);
 
 /*
@@ -98,7 +98,7 @@ int n_va;
          tnd = chk_alc(NULL, n->intrnl_lftm);
           switch (impl->tnds[i].var_type) {
              case TndDesc:
-                cur_symtab[dcl_var].loc = tnd; 
+                cur_symtab[dcl_var].loc = tnd;
                 break;
              case TndStr:
                 cd = alc_ary(2);
@@ -114,7 +114,7 @@ int n_va;
                 cd->ElemTyp(0) = A_ValLoc;
                 cd->ValLoc(0) =                tnd;
                 cd->ElemTyp(1) = A_Str;
-                cd->Str(1) =                   " = nullptr;"; 
+                cd->Str(1) =                   " = nullptr;";
                 cd_add(cd);
                 cur_symtab[dcl_var].loc = loc_cpy(tnd, M_BlkPtr);
                 cur_symtab[dcl_var].loc->blk_name = impl->tnds[i].blk_name;
@@ -125,10 +125,10 @@ int n_va;
              cd->ElemTyp(0) = A_ValLoc;
              cd->ValLoc(0) =                cur_symtab[dcl_var].loc;
              cd->ElemTyp(1) = A_Str;
-             cd->Str(1) =                   " = "; 
+             cd->Str(1) =                   " = ";
              sub_ilc(impl->tnds[i].init, cd, 2);
              cd->ElemTyp(3) = A_Str;
-             cd->Str(3) =                   ";"; 
+             cd->Str(3) =                   ";";
              cd_add(cd);
              }
          }
@@ -374,7 +374,7 @@ struct il_code *il;
                    cd->ElemTyp(0) = A_ValLoc;
                    cd->ValLoc(0) =                tnd;
                    cd->ElemTyp(1) = A_Str;
-                   cd->Str(1) =                   " = nullptr;"; 
+                   cd->Str(1) =                   " = nullptr;";
                    cd_add(cd);
                    break;
                 }
@@ -692,9 +692,9 @@ struct il_code *il;
          cd->ElemTyp(1) = A_Str;
 #ifdef DescriptorDouble
          cd->Str(1) =                  ".vword.realval = (double)(";
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
          cd->Str(1) =                  ".vword.bptr = (union block *)alcreal(";
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
          cd->ElemTyp(2) = A_Str;
          cd->Str(2) =                  oper_nm;
          cd->ElemTyp(3) = A_Str;
@@ -707,7 +707,7 @@ struct il_code *il;
          dwrd_asgn(rslt, "Real");
 #ifndef DescriptorDouble
          chkforblk();    /* make sure the block allocation succeeded */
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
          cd_add(mk_goto(*scont_strt));
          break;
       case RetNoVal:
@@ -799,7 +799,7 @@ struct il_c *value;
    struct code *cd;
 #ifdef OptimizeDescripAsgn
    struct val_loc *new_vloc;
-#endif				/* OptimizeDescripAsgn */
+#endif                          /* OptimizeDescripAsgn */
    int rv = 0;
 
    cd = alc_ary(4);
@@ -816,7 +816,7 @@ struct il_c *value;
     */
 #ifdef OptimizeDescripAsgn
    if ((strstr(cd->Str(1), "vword.integr =") != NULL) &&
-       (cd->ElemTyp(2) == A_ValLoc) && 
+       (cd->ElemTyp(2) == A_ValLoc) &&
        (cd->ValLoc(0)->mod_access == M_None) &&
        (cd->ValLoc(2)->mod_access == M_CInt)) {
       new_vloc = (struct val_loc *)alloc(sizeof(struct val_loc));
@@ -826,7 +826,7 @@ struct il_c *value;
       cd->ValLoc(2) = new_vloc;
       rv = 1;
    }
-#endif				/* OptimizeDescripAsgn */
+#endif                          /* OptimizeDescripAsgn */
    cd_add(cd);
    return rv;
    }
@@ -963,7 +963,7 @@ int indx;
       ++n;
 
    /*
-    * If there is only one piece of code, place it directly in the 
+    * If there is only one piece of code, place it directly in the
     *  slot of the array. Otherwise allocate a sub-array and place it
     *  in the slot.
     */
@@ -1069,7 +1069,7 @@ struct il_c *ilc;
              * return/suspend C_integer <expr>;
              */
             if (!part_asgn(rslt, ".vword.integr = ", ilc0))
-	       dwrd_asgn(rslt, "Integer");
+               dwrd_asgn(rslt, "Integer");
             break;
          case TypCDbl:
             /*
@@ -1081,9 +1081,9 @@ struct il_c *ilc;
             cd->ElemTyp(1) = A_Str;
 #ifdef DescriptorDouble
             cd->Str(1) =                ".vword.realval = (double)(";
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
             cd->Str(1) =                ".vword.bptr = (union block *)alcreal(";
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
             sub_ilc(ilc0, cd, 2);       /* value */
             cd->ElemTyp(3) = A_Str;
             cd->Str(3) =                ");";
@@ -1091,7 +1091,7 @@ struct il_c *ilc;
             dwrd_asgn(rslt, "Real");
 #ifndef DescriptorDouble
             chkforblk();    /* make sure the block allocation succeeded */
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
             break;
          case TypCStr:
             /*
@@ -1364,7 +1364,7 @@ struct il_c *ilc;
             if (cont == NULL)
                *scont_fail = lbl1;
             else {
-               cur_fnc->cursor = lbl1->prev; 
+               cur_fnc->cursor = lbl1->prev;
                fail_sav = on_failure;
                on_failure = lbl1;
                callc_add(cont);
@@ -1468,7 +1468,7 @@ struct il_c *ilc;
             last = ilc1;
             ilc1 = ilc1->next;
             break;
-         default: 
+         default:
             ilc1 = NULL;
          }
       }
@@ -1524,7 +1524,7 @@ struct il_c *ilc;
             break;
 
          default:
-            ilc = NULL;  
+            ilc = NULL;
          }
       ilc = ilc->next;
       }
@@ -1763,9 +1763,9 @@ struct il_c *dest;
       n = 7;
       if (dflt != NULL)
         n += 2;
-   
+
       cd = alc_ary(n);
-   
+
       /*
        * The names of simple conversions are distinguished from defaulting
        *  conversions by a prefix of "cnv_" or "def_".
@@ -1775,7 +1775,7 @@ struct il_c *dest;
          cd->Str(0) = "cnv_";
       else
          cd->Str(0) = "def_";
-   
+
       /*
        * Determine the name of the conversion routine.
        */
@@ -1830,24 +1830,24 @@ struct il_c *dest;
              */
             if (typcd == cset_typ)
                cd->Str(1) = "cset(&(";
-            else if (typcd == real_typ) 
+            else if (typcd == real_typ)
                cd->Str(1) = "real(&(";
-            else if (typcd == int_typ) 
+            else if (typcd == int_typ)
                cd->Str(1) = "int(&(";
             else if (typcd == str_typ)
                cd->Str(1) = "str(&(";
             break;
          }
-   
+
       il_var(src, cd, 2);
-   
+
       cd->ElemTyp(3) = A_Str;
       if (dflt != NULL && dflt_to_ptr)
          cd->Str(3) = "), &(";
       else
          cd->Str(3) = "), ";
-   
-   
+
+
       /*
        * Determine if this conversion has a default value.
        */
@@ -1862,7 +1862,7 @@ struct il_c *dest;
             cd->Str(i) = ", ";
          ++i;
          }
-   
+
       cd->ElemTyp(i) = A_Str;
       cd->Str(i) = "&(";
       ++i;
@@ -1965,23 +1965,23 @@ struct il_c *dest;
       cd->ElemTyp(0) = A_Str;
 #ifdef DescriptorDouble
       cd->Str(0) =                                      "(((";
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
       cd->Str(0) =                                      "((BlkLoc(";
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
       cnv_dest(0, 0, src, sym_indx, dest, cd, 1);       /* variable */
       cd->ElemTyp(2) = A_Str;
 #ifdef DescriptorDouble
       cd->Str(2) =                                ").vword.realval = (double)(";
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
       cd->Str(2) =                                ") = (union block *)alcreal(";
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
       sub_ilc(dflt, cd, 3);                             /* default */
       cd->ElemTyp(4) = A_Str;
 #ifdef DescriptorDouble
       cd->Str(4) =                     ")) , (";
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
       cd->Str(4) =                     ")) == NULL ? (fatalerr(0,NULL), 0) : (";
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
       cnv_dest(0, 0, src, sym_indx, dest, cd, 5);       /* variable */
       cd->ElemTyp(6) = A_Str;
       cd->Str(6) =                                     ".dword = D_Real, 1))";
@@ -2033,7 +2033,7 @@ int i;
             cd->ElemTyp(i) = A_ValLoc;
             cd->ValLoc(i) = loc_cpy(cur_symtab[dest->n].loc, M_None);
             }
-      else 
+      else
          sub_ilc(dest, cd, i);
       }
 

@@ -52,37 +52,37 @@ typedef char *pointer;
    STACK_DIRECTION = 0 => direction of growth unknown  */
 
 #ifndef STACK_DIRECTION
-#define	STACK_DIRECTION	0	/* Direction unknown.  */
+#define STACK_DIRECTION 0       /* Direction unknown.  */
 #endif
 
 #if STACK_DIRECTION != 0
 
-#define	STACK_DIR	STACK_DIRECTION	/* Known at compile-time.  */
+#define STACK_DIR       STACK_DIRECTION /* Known at compile-time.  */
 
 #else /* STACK_DIRECTION == 0; need run-time code.  */
 
-static int stack_dir;		/* 1 or -1 once known.  */
-#define	STACK_DIR	stack_dir
+static int stack_dir;           /* 1 or -1 once known.  */
+#define STACK_DIR       stack_dir
 
 static void
 find_stack_direction ()
 {
-  static char *addr = NULL;	/* Address of first `dummy', once known.  */
-  auto char dummy;		/* To get stack address.  */
+  static char *addr = NULL;     /* Address of first `dummy', once known.  */
+  auto char dummy;              /* To get stack address.  */
 
   if (addr == NULL)
-    {				/* Initial entry.  */
+    {                           /* Initial entry.  */
       addr = ADDRESS_FUNCTION (dummy);
 
-      find_stack_direction ();	/* Recurse once.  */
+      find_stack_direction ();  /* Recurse once.  */
     }
   else
     {
       /* Second entry.  */
       if (ADDRESS_FUNCTION (dummy) > addr)
-	stack_dir = 1;		/* Stack grew upward.  */
+        stack_dir = 1;          /* Stack grew upward.  */
       else
-	stack_dir = -1;		/* Stack grew downward.  */
+        stack_dir = -1;         /* Stack grew downward.  */
     }
 }
 
@@ -95,21 +95,21 @@ find_stack_direction ()
    It is very important that sizeof(header) agree with malloc
    alignment chunk size.  The following default should work okay.  */
 
-#ifndef	ALIGN_SIZE
-#define	ALIGN_SIZE	sizeof(double)
+#ifndef ALIGN_SIZE
+#define ALIGN_SIZE      sizeof(double)
 #endif
 
 typedef union hdr
 {
-  char align[ALIGN_SIZE];	/* To force sizeof(header).  */
+  char align[ALIGN_SIZE];       /* To force sizeof(header).  */
   struct
     {
-      union hdr *next;		/* For chaining headers.  */
-      char *deep;		/* For stack depth measure.  */
+      union hdr *next;          /* For chaining headers.  */
+      char *deep;               /* For stack depth measure.  */
     } h;
 } header;
 
-static header *last_alloca_header = NULL;	/* -> last alloca header.  */
+static header *last_alloca_header = NULL;       /* -> last alloca header.  */
 
 /* Return a pointer to at least SIZE bytes of storage,
    which will be automatically reclaimed upon exit from
@@ -122,11 +122,11 @@ pointer
 alloca (size)
      unsigned size;
 {
-  auto char probe;		/* Probes stack depth: */
+  auto char probe;              /* Probes stack depth: */
   register char *depth = ADDRESS_FUNCTION (probe);
 
 #if STACK_DIRECTION == 0
-  if (STACK_DIR == 0)		/* Unknown growth direction.  */
+  if (STACK_DIR == 0)           /* Unknown growth direction.  */
     find_stack_direction ();
 #endif
 
@@ -134,26 +134,26 @@ alloca (size)
      was allocated from deeper in the stack than currently. */
 
   {
-    register header *hp;	/* Traverses linked list.  */
+    register header *hp;        /* Traverses linked list.  */
 
     for (hp = last_alloca_header; hp != NULL;)
       if ((STACK_DIR > 0 && hp->h.deep > depth)
-	  || (STACK_DIR < 0 && hp->h.deep < depth))
-	{
-	  register header *np = hp->h.next;
+          || (STACK_DIR < 0 && hp->h.deep < depth))
+        {
+          register header *np = hp->h.next;
 
-	  free ((pointer) hp);	/* Collect garbage.  */
+          free ((pointer) hp);  /* Collect garbage.  */
 
-	  hp = np;		/* -> next header.  */
-	}
+          hp = np;              /* -> next header.  */
+        }
       else
-	break;			/* Rest are not deeper.  */
+        break;                  /* Rest are not deeper.  */
 
-    last_alloca_header = hp;	/* -> last valid storage.  */
+    last_alloca_header = hp;    /* -> last valid storage.  */
   }
 
   if (size == 0)
-    return NULL;		/* No allocation required.  */
+    return NULL;                /* No allocation required.  */
 
   /* Allocate combined header + user data storage.  */
 

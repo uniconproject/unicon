@@ -35,16 +35,16 @@
 #include "XpmI.h"
 
 LFUNC(WriteColors, int, (char **dataptr, unsigned int *data_size,
-			 unsigned int *used_size, XpmColor *colors,
-			 unsigned int ncolors, unsigned int cpp));
+                         unsigned int *used_size, XpmColor *colors,
+                         unsigned int ncolors, unsigned int cpp));
 
 LFUNC(WritePixels, void, (char *dataptr, unsigned int *used_size,
-			  unsigned int width, unsigned int height,
-			  unsigned int cpp, unsigned int *pixels,
-			  XpmColor *colors));
+                          unsigned int width, unsigned int height,
+                          unsigned int cpp, unsigned int *pixels,
+                          XpmColor *colors));
 
 LFUNC(WriteExtensions, void, (char *dataptr, unsigned int *used_size,
-			      XpmExtension *ext, unsigned int num));
+                              XpmExtension *ext, unsigned int num));
 
 LFUNC(ExtensionsSize, int, (XpmExtension *ext, unsigned int num));
 LFUNC(CommentsSize, int, (XpmInfo *info));
@@ -63,22 +63,22 @@ XpmCreateBufferFromImage(display, buffer_return, image, shapeimage, attributes)
 
     /* initialize return value */
     if (buffer_return)
-	*buffer_return = NULL;
+        *buffer_return = NULL;
 
     /* create an XpmImage from the image */
     ErrorStatus = XpmCreateXpmImageFromImage(display, image, shapeimage,
-					     &xpmimage, attributes);
+                                             &xpmimage, attributes);
     if (ErrorStatus != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     /* create the buffer from the XpmImage */
     if (attributes) {
-	xpmSetInfo(&info, attributes);
-	ErrorStatus =
-	    XpmCreateBufferFromXpmImage(buffer_return, &xpmimage, &info);
+        xpmSetInfo(&info, attributes);
+        ErrorStatus =
+            XpmCreateBufferFromXpmImage(buffer_return, &xpmimage, &info);
     } else
-	ErrorStatus =
-	    XpmCreateBufferFromXpmImage(buffer_return, &xpmimage, NULL);
+        ErrorStatus =
+            XpmCreateBufferFromXpmImage(buffer_return, &xpmimage, NULL);
 
     /* free the XpmImage */
     XpmFreeXpmImage(&xpmimage);
@@ -112,13 +112,13 @@ XpmCreateBufferFromXpmImage(buffer_return, image, info)
 
     cmts = info && (info->valuemask & XpmComments);
     extensions = info && (info->valuemask & XpmExtensions)
-	&& info->nextensions;
+        && info->nextensions;
 
     /* compute the extensions and comments size */
     if (extensions)
-	ext_size = ExtensionsSize(info->extensions, info->nextensions);
+        ext_size = ExtensionsSize(info->extensions, info->nextensions);
     if (cmts)
-	cmt_size = CommentsSize(info);
+        cmt_size = CommentsSize(info);
 
     /* write the header line */
 #ifndef VOID_SPRINTF
@@ -131,44 +131,44 @@ XpmCreateBufferFromXpmImage(buffer_return, image, info)
     ptr_size = used_size + ext_size + cmt_size + 1;
     ptr = (char *) XpmMalloc(ptr_size);
     if (!ptr)
-	return XpmNoMemory;
+        return XpmNoMemory;
     strcpy(ptr, buf);
 
     /* write the values line */
     if (cmts && info->hints_cmt) {
 #ifndef VOID_SPRINTF
-	used_size +=
+        used_size +=
 #endif
-	sprintf(ptr + used_size, "/*%s*/\n", info->hints_cmt);
+        sprintf(ptr + used_size, "/*%s*/\n", info->hints_cmt);
 #ifdef VOID_SPRINTF
-	used_size += strlen(info->hints_cmt) + 5;
+        used_size += strlen(info->hints_cmt) + 5;
 #endif
     }
 #ifndef VOID_SPRINTF
     l =
 #endif
     sprintf(buf, "\"%d %d %d %d", image->width, image->height,
-	    image->ncolors, image->cpp);
+            image->ncolors, image->cpp);
 #ifdef VOID_SPRINTF
     l = strlen(buf);
 #endif
 
     if (info && (info->valuemask & XpmHotspot)) {
 #ifndef VOID_SPRINTF
-	l +=
+        l +=
 #endif
-	sprintf(buf + l, " %d %d", info->x_hotspot, info->y_hotspot);
+        sprintf(buf + l, " %d %d", info->x_hotspot, info->y_hotspot);
 #ifdef VOID_SPRINTF
-	l = strlen(buf);
+        l = strlen(buf);
 #endif
     }
     if (extensions) {
 #ifndef VOID_SPRINTF
-	l +=
+        l +=
 #endif
-	sprintf(buf + l, " XPMEXT");
+        sprintf(buf + l, " XPMEXT");
 #ifdef VOID_SPRINTF
-	l = strlen(buf);
+        l = strlen(buf);
 #endif
     }
 #ifndef VOID_SPRINTF
@@ -181,7 +181,7 @@ XpmCreateBufferFromXpmImage(buffer_return, image, info)
     ptr_size += l;
     p = (char *) XpmRealloc(ptr, ptr_size);
     if (!p)
-	RETURN(XpmNoMemory);
+        RETURN(XpmNoMemory);
     ptr = p;
     strcpy(ptr + used_size, buf);
     used_size += l;
@@ -189,18 +189,18 @@ XpmCreateBufferFromXpmImage(buffer_return, image, info)
     /* write colors */
     if (cmts && info->colors_cmt) {
 #ifndef VOID_SPRINTF
-	used_size +=
+        used_size +=
 #endif
-	sprintf(ptr + used_size, "/*%s*/\n", info->colors_cmt);
+        sprintf(ptr + used_size, "/*%s*/\n", info->colors_cmt);
 #ifdef VOID_SPRINTF
-	used_size += strlen(info->colors_cmt) + 5;
+        used_size += strlen(info->colors_cmt) + 5;
 #endif
     }
     ErrorStatus = WriteColors(&ptr, &ptr_size, &used_size,
-			      image->colorTable, image->ncolors, image->cpp);
- 
+                              image->colorTable, image->ncolors, image->cpp);
+
     if (ErrorStatus != XpmSuccess)
-	RETURN(ErrorStatus);
+        RETURN(ErrorStatus);
 
     /*
      * now we know the exact size we need, realloc the data
@@ -211,26 +211,26 @@ XpmCreateBufferFromXpmImage(buffer_return, image, info)
 
     p = (char *) XpmRealloc(ptr, ptr_size);
     if (!p)
-	RETURN(XpmNoMemory);
+        RETURN(XpmNoMemory);
     ptr = p;
 
     /* print pixels */
     if (cmts && info->pixels_cmt) {
 #ifndef VOID_SPRINTF
-	used_size +=
+        used_size +=
 #endif
-	sprintf(ptr + used_size, "/*%s*/\n", info->pixels_cmt);
+        sprintf(ptr + used_size, "/*%s*/\n", info->pixels_cmt);
 #ifdef VOID_SPRINTF
-	used_size += strlen(info->pixels_cmt) + 5;
+        used_size += strlen(info->pixels_cmt) + 5;
 #endif
     }
     WritePixels(ptr + used_size, &used_size, image->width, image->height,
-		image->cpp, image->data, image->colorTable);
+                image->cpp, image->data, image->colorTable);
 
     /* print extensions */
     if (extensions)
-	WriteExtensions(ptr + used_size, &used_size,
-			info->extensions, info->nextensions);
+        WriteExtensions(ptr + used_size, &used_size,
+                        info->extensions, info->nextensions);
 
     /* close the array */
     strcpy(ptr + used_size, "};\n");
@@ -242,7 +242,7 @@ XpmCreateBufferFromXpmImage(buffer_return, image, info)
 /* exit point in case of error, free only locally allocated variables */
 error:
     if (ptr)
-	XpmFree(ptr);
+        XpmFree(ptr);
     return (ErrorStatus);
 }
 
@@ -263,31 +263,31 @@ WriteColors(dataptr, data_size, used_size, colors, ncolors, cpp)
     *buf = '"';
     for (a = 0; a < ncolors; a++, colors++) {
 
-	defaults = (char **) colors;
-	s = buf + 1;
-	strncpy(s, *defaults++, cpp);
-	s += cpp;
+        defaults = (char **) colors;
+        s = buf + 1;
+        strncpy(s, *defaults++, cpp);
+        s += cpp;
 
-	for (key = 1; key <= NKEYS; key++, defaults++) {
-	    if ((s2 = *defaults) != NULL) {
+        for (key = 1; key <= NKEYS; key++, defaults++) {
+            if ((s2 = *defaults) != NULL) {
 #ifndef VOID_SPRINTF
-		s +=
+                s +=
 #endif
-		sprintf(s, "\t%s %s", xpmColorKeys[key - 1], s2);
+                sprintf(s, "\t%s %s", xpmColorKeys[key - 1], s2);
 #ifdef VOID_SPRINTF
-		s += strlen(s);
+                s += strlen(s);
 #endif
-	    }
-	}
-	strcpy(s, "\",\n");
-	l = s + 3 - buf;
-	s = (char *) XpmRealloc(*dataptr, *data_size + l);
-	if (!s)
-	    return (XpmNoMemory);
-	*data_size += l;
-	strcpy(s + *used_size, buf);
-	*used_size += l;
-	*dataptr = s;
+            }
+        }
+        strcpy(s, "\",\n");
+        l = s + 3 - buf;
+        s = (char *) XpmRealloc(*dataptr, *data_size + l);
+        if (!s)
+            return (XpmNoMemory);
+        *data_size += l;
+        strcpy(s + *used_size, buf);
+        *used_size += l;
+        *dataptr = s;
     }
     return (XpmSuccess);
 }
@@ -307,19 +307,19 @@ WritePixels(dataptr, used_size, width, height, cpp, pixels, colors)
 
     h = height - 1;
     for (y = 0; y < h; y++) {
-	*s++ = '"';
-	for (x = 0; x < width; x++, pixels++) {
-	    strncpy(s, colors[*pixels].string, cpp);
-	    s += cpp;
-	}
-	strcpy(s, "\",\n");
-	s += 3;
+        *s++ = '"';
+        for (x = 0; x < width; x++, pixels++) {
+            strncpy(s, colors[*pixels].string, cpp);
+            s += cpp;
+        }
+        strcpy(s, "\",\n");
+        s += 3;
     }
     /* duplicate some code to avoid a test in the loop */
     *s++ = '"';
     for (x = 0; x < width; x++, pixels++) {
-	strncpy(s, colors[*pixels].string, cpp);
-	s += cpp;
+        strncpy(s, colors[*pixels].string, cpp);
+        s += cpp;
     }
     *s++ = '"';
     *used_size += s - dataptr;
@@ -335,12 +335,12 @@ ExtensionsSize(ext, num)
 
     size = 0;
     for (x = 0; x < num; x++, ext++) {
-	/* 11 = 10 (for ',\n"XPMEXT ') + 1 (for '"') */
-	size += strlen(ext->name) + 11;
-	a = ext->nlines;
-	for (y = 0, line = ext->lines; y < a; y++, line++)
-	    /* 4 = 3 (for ',\n"') + 1 (for '"') */
-	    size += strlen(*line) + 4;
+        /* 11 = 10 (for ',\n"XPMEXT ') + 1 (for '"') */
+        size += strlen(ext->name) + 11;
+        a = ext->nlines;
+        for (y = 0, line = ext->lines; y < a; y++, line++)
+            /* 4 = 3 (for ',\n"') + 1 (for '"') */
+            size += strlen(*line) + 4;
     }
     /* 13 is for ',\n"XPMENDEXT"' */
     return size + 13;
@@ -359,22 +359,22 @@ WriteExtensions(dataptr, used_size, ext, num)
 
     for (x = 0; x < num; x++, ext++) {
 #ifndef VOID_SPRINTF
-	s +=
+        s +=
 #endif
-	sprintf(s, ",\n\"XPMEXT %s\"", ext->name);
+        sprintf(s, ",\n\"XPMEXT %s\"", ext->name);
 #ifdef VOID_SPRINTF
-	s += strlen(ext->name) + 11;
+        s += strlen(ext->name) + 11;
 #endif
-	a = ext->nlines;
-	for (y = 0, line = ext->lines; y < a; y++, line++) {
+        a = ext->nlines;
+        for (y = 0, line = ext->lines; y < a; y++, line++) {
 #ifndef VOID_SPRINTF
-	    s +=
+            s +=
 #endif
-	    sprintf(s, ",\n\"%s\"", *line);
+            sprintf(s, ",\n\"%s\"", *line);
 #ifdef VOID_SPRINTF
-	    s += strlen(*line) + 4;
+            s += strlen(*line) + 4;
 #endif
-	}
+        }
     }
     strcpy(s, ",\n\"XPMENDEXT\"");
     *used_size += s - dataptr + 13;
@@ -388,13 +388,13 @@ CommentsSize(info)
 
     /* 5 = 2 (for "/_*") + 3 (for "*_/\n") */
     if (info->hints_cmt)
-	size += 5 + strlen(info->hints_cmt);
+        size += 5 + strlen(info->hints_cmt);
 
     if (info->colors_cmt)
-	size += 5 + strlen(info->colors_cmt);
+        size += 5 + strlen(info->colors_cmt);
 
     if (info->pixels_cmt)
-	size += 5 + strlen(info->pixels_cmt);
+        size += 5 + strlen(info->pixels_cmt);
 
     return size;
 }

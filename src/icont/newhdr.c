@@ -10,20 +10,20 @@
  * Prototype
  */
 
-void	putbyte	(int b);
+void    putbyte (int b);
 
 #ifdef Header
-main(argc, argv) 
+main(argc, argv)
 int argc;
 unsigned char *argv[];
    {
    int b, n;
- 
+
    /*
     * Create an array large enough to hold iconx.hdr (+1 for luck)
     * This array shall be included by link.c (and is nominally called
     * hdr.h)
-    */ 
+    */
    printf("static unsigned char iconxhdr[MaxHdr+1] = {\n");
 
    /*
@@ -43,12 +43,12 @@ unsigned char *argv[];
       unlink("hdr.h");
       exit(ErrorExit);
       }
-#endif					/* ShellHeader */
+#endif                                  /* ShellHeader */
 
    while (n++ < MaxHdr)
       putbyte(0);
 
-   printf("0x00};\n");			/* one more, sans comma, and finish */
+   printf("0x00};\n");                  /* one more, sans comma, and finish */
    exit(EXIT_SUCCESS);
    }
 
@@ -65,11 +65,11 @@ int b;
       }
    }
 
-#else					/* Header */
+#else                                   /* Header */
 
 main()
    {
    exit(0);
    }
 
-#endif					/* Header */
+#endif                                  /* Header */

@@ -1,0 +1,34 @@
+{
+   "name": "jammy",
+   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+   "image": "mcr.microsoft.com/devcontainers/base:jammy",
+   // Features to add to the dev container. More info: https://containers.dev/features.
+   "features": {
+      "ghcr.io/devcontainers/features/common-utils:2": {
+         "upgradePackages": false
+      }
+   },
+   "customizations": {
+      "vscode": {
+         "extensions": [
+            "jafar.unicon-syntax",
+            "jafar.unicon-debugger",
+            "jafar.unicon-lsp",
+            "ms-vscode.makefile-tools"
+         ]
+      }
+   },
+   "updateRemoteUserUID": true,
+   "remoteUser": "dev",
+   "containerEnv": {
+      "INTERACTIVE": "true",
+      "SOURCE_DIR": "/unicon",
+      "RELEASE_DIR": "/unicon/release/",
+      "DEPENDENCIES": "gcc"
+   },
+   "remoteEnv": {
+      "PATH": "${containerEnv:PATH}:/unicon/bin"
+   },
+   "workspaceMount": "source=${localWorkspaceFolder},target=/unicon,type=bind,consistency=cached",
+   "workspaceFolder": "/unicon"
+}

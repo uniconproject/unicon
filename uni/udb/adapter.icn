@@ -2,7 +2,7 @@ link ximage
 link strings
 link findre
 import json
-global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue
+global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue, currStructuredVars
 
 class Adapter(
    port,
@@ -28,7 +28,8 @@ class Adapter(
    # Process a result from udb in table or list form.
    method processResult(res)
    local response
-      write("udb -> udap:\n"|| ximage(res))
+      write("udb -> udap: "||ximage(res["type"]))
+      # write("udb -> udap:\n"|| ximage(res))
       \res | fail
 
       if type(res) == "table" then
@@ -68,9 +69,6 @@ class Adapter(
                      load_cmds()
 
                      while req := \pop(requestQueue) do {
-                        write("###############")
-                        write(ximage(requestQueue))
-                        write("\npopped "||jtou(req)["command"]|"\n")
                         process_request(req)
                      }
                   }
@@ -148,7 +146,7 @@ class Adapter(
          "stackTrace" : { put_cmdQueue("bt", request_body, 1)}
          "scopes" : { put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1);
                      every put_cmdQueue(![: "print -"||!"glsp" :], request_body, 1) }
-         "variables" : { put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1) }
+         "variables" : { variables(request_body, request_seq, request_command, request_arguments) }
          "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
          "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"] }
          "evaluate" : { evaluate(request_body, request_seq, request_command, request_arguments) }
@@ -209,6 +207,8 @@ class Adapter(
          ])
 
       responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
+
+      write(ximage(responseTable))
 
       write("udap -> client: " || responseBody)
 
@@ -340,7 +340,7 @@ class Adapter(
 
       put_cmdQueue("clear break " || filename || " all", request_body, 1)
       numBreakpoints +:= 1
-      
+
       if member(request_arguments, "breakpoints") then {
          every bp := !request_arguments["breakpoints"] do {
             put_cmdQueue("b " || filename || ":" || bp["line"], request_body)
@@ -363,7 +363,7 @@ class Adapter(
    method set_watchpoints(request_body, request_seq, request_command, request_arguments)
       watchpoints := request_arguments["breakpoints"]
 
-      put_cmdQueue("clear watch", request_body)
+      put_cmdQueue("clear watch", request_body, 1)
       numWatchpoints +:= 1
 
       every wp := !watchpoints do {
@@ -401,6 +401,47 @@ class Adapter(
       res := build_response(request_seq, "__true__", request_command, threadsTable)
       writes(sock, res)
    end
+
+   method variables(request_body, request_seq, request_command, request_arguments)
+   local ref
+      ref := request_arguments["variablesReference"]
+      write("ref requested:")
+      write(ref)
+      write(ximage(currStructuredVars))
+      if ref < 5 then
+         put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1)
+      else {
+         #put_cmdQueue("print "||currStructuredVars[ref]["name"], request_body, 1)
+         # any ref passed by vscode has already been stored in currStructuredVars, so just process what's stored in there
+         struct := currStructuredVars[ref]["value"]
+         vars := []
+         if type(struct) == ("list" | "table" )| match("record"|"object", image(struct)) then {
+            every k := key(struct) do {
+               val := struct[k]
+               if type(val) == ("list" | "table" ) | match("record"|"object", image(struct)) then {
+                  put(currStructuredVars, [
+                     "name": image(val)
+                     "value": val
+                  ])
+                  varRef := *currStructuredVars
+               }
+               else {
+                  varRef := 0
+               }
+               put(vars, [
+                  "name": replace("["||image(k)||"]", "\"", "\\\"")
+                  "value": replace(image(val), "\"", "\\\"")
+                  "type": type(val)
+                  "variablesReference": varRef
+               ])
+            }
+         }
+
+         response := build_response(request_seq, "__true__", request_command, table("variables", vars))
+         writes(sock, response)
+      }
+   end
+
 
    # Default response for request that only requires an acknowledgement.
    method acknowledge(request_seq, request_command)
@@ -492,11 +533,6 @@ class Adapter(
             "category": "console";
             "output": "[answered Y; input not from terminal]\n"])
          writes(sock, event)
-         write("\n\n%%%%%%%%%%%%%\n\n")
-         write(curCmd)
-         write(ximage(outputTable))
-         write("*********")
-         write(outputTable["requireResponse"])
          push_cmdQueue("Y")
       }
    end
@@ -621,16 +657,18 @@ class Adapter(
          numScopes := 0
          scopesList := []
       }
-      
+
    end
 
    method processVariablesResult(res)
-   local response, variables, var
+   local response, variables, var, ref
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
          writes(sock, response)
          return
       }
+
+      ref := currentRequestBody["arguments"]["variablesReference"]
 
       if member(res, "type") then {
          if member(res, "variables") then {
@@ -638,77 +676,126 @@ class Adapter(
                variables := res["variables"]
 
                every var := !variables do {
-                  var["value"] := replace(var["value"], "\"", "\\\"")
-                  var["type"] := replace(var["type"], "\"", "\\\"")
-                  var["variablesReference"] := 0
+                  if var["type"] == "table" then {
+                     put(currStructuredVars, [
+                        "value": var["value"]
+                        "name": var["name"]
+                     ])
+                     var["variablesReference"] := *currStructuredVars
+                  }
+                  else {
+                     var["variablesReference"] := 0
+                  }
+                  var["value"] := replace(image(var["value"]), "\"", "\\\"")
+               }
+            }
+         }
+         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("variables", variables))
+         writes(sock, response)
+      }
+   end
+
+   method processEvaluateResult(res)
+   local event, body, response, context, ref
+      context := \(\currentRequestBody["arguments"])["context"]
+      if \context == "repl" then {
+         if res["type"] == "assignVar" then {
+            if res["success"] == "__true__" then {
+               body := [
+                  "result": replace(image(res["result"]), "\"", "\\\"")
+                  "type": replace((type(res["result"])), "\"", "\\\"")
+                  "variablesReference": 0
+               ]
+               if type(res["result"]) == "table" then {
+                  body["indexedVariables"] := *res["result"]
+                  body["result"] := res
+               }
+               event := build_event("output", body)
+               writes(sock, event)
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+               writes(sock, response)
+            }
+            else {
+               write("assignVar unsuccessful")
+            }
+         }
+         else if res["type"] == "setBreakpoint" then {
+            if res["success"] == "__true__" then {
+               body := [
+                  "reason": "new";
+                  "breakpoint": [
+                     "id": res["breakpoint"]["id"];
+                     "line": res["breakpoint"]["line"];
+                     "verified": "__true__";
+                     "source": [
+                        "path": filePath||".icn"
+                     ]
+                  ]
+               ]
+               event := build_event("breakpoint", body)
+               writes(sock, event)
+            }
+            else {
+               write("setBreakpoint unsuccessful")
+            }
+         }
+         else if res["type"] == "clearBreakpoint" then {
+            if res["success"] == "__true__" then {
+               body := [
+                  "reason": "removed";
+                  "breakpoint": [
+                     "id": res["breakpoint"]["id"];
+                     "line": res["breakpoint"]["line"];
+                     "verified": "__true__";
+                     "source": [
+                        "path": filePath||".icn"
+                     ]
+                  ]
+               ]
+               event := build_event("breakpoint", body)
+               writes(sock, event)
+            }
+            else {
+               write("clearBreakpoint unsuccessful")
+            }
+         }
+      }
+      else if \context == "watch" then {
+         write("***************watch context*******************")
+         write(ximage(res))
+         if res["type"] ~== "frame" then {
+            if res["success"] == "__true__" then {
+               if res["type"] == "table" then {
+                  body := [
+                     "result": image(res["result"])
+                     # "variablesReference"
+                  ]
+               }
+               else {
+                  body := [
+                     "result": replace(image(res["result"]), "\"", "\\\"")
+                     "variablesReference": 0
+                  ]
                }
 
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("variables", variables))
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
                writes(sock, response)
+            }
+            else {
+               # send failure response
             }
          }
       }
    end
 
-   method processEvaluateResult(res)
-   local event, body, response
-      if res["type"] == "assignVar" then {
-         if res["success"] == "__true__" then {
-            body := [
-               "category": "console";
-               "output": res["consoleMsg"];
-               "result": res["value"];
-               "variablesReference": 0]
-            event := build_event("output", body)
-            writes(sock, event)
-            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
-            writes(sock, response)
-         }
-         else {
-            write("assignVar unsuccessful")
-         }
-      }
-      else if res["type"] == "setBreakpoint" then {
-         if res["success"] == "__true__" then {
-            body := [
-               "reason": "new";
-               "breakpoint": [
-                  "id": res["breakpoint"]["id"];
-                  "line": res["breakpoint"]["line"];
-                  "verified": "__true__";
-                  "source": [
-                     "path": filePath||".icn"
-                  ]
-               ]
-            ]
-            event := build_event("breakpoint", body)
-            writes(sock, event)
-         }
-         else {
-            write("setBreakpoint unsuccessful")
-         }
-      }
-      else if res["type"] == "clearBreakpoint" then {
-         if res["success"] == "__true__" then {
-            body := [
-               "reason": "removed";
-               "breakpoint": [
-                  "id": res["breakpoint"]["id"];
-                  "line": res["breakpoint"]["line"];
-                  "verified": "__true__";
-                  "source": [
-                     "path": filePath||".icn"
-                  ]
-               ]
-            ]
-            event := build_event("breakpoint", body)
-            writes(sock, event)
-         }
-         else {
-            write("clearBreakpoint unsuccessful")
-         }
-      }
-   end
+   # method processUdbResult(res)
+   #    if type(res) ~== "table" then {
+   #       return ximage(res)
+   #    }
+   #    else {
+
+   #    }
+   # end
 
    # Handles all the things required from a client "evaluate" request.
    method evaluate(request_body, request_seq, request_command, request_arguments)
@@ -733,7 +820,9 @@ class Adapter(
          put_cmdQueue(expression, request_body)
       }
       else if request_arguments["context"] == "watch" then {
-         
+         expression := "p "||request_arguments["expression"]
+         put_cmdQueue("frame "||request_arguments["frameId"], &null, 1)
+         put_cmdQueue(expression, request_body, 1)
       }
    end
 
@@ -789,10 +878,16 @@ class Adapter(
 
    # Attempt to open communication port for client and set default class parameters.
    method startup()
+      local names := [: "-"||!"glsp" :], values := ["Globals", "Locals", "Statics", "Params"]
       sock := open_sock(port)
       if /sock then stop("failed to connect to ",port)
 
       seq := 1
+      currStructuredVars := []
+      every i := 1 to 4 do put(currStructuredVars, [
+         "name": names[i]
+         "value": values[i]
+      ])
       udbError := &null
       showResult := &null
       lastUdbCmd := ""

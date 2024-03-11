@@ -33,13 +33,13 @@ method printGlobals(level)
       i := variable(x, CMonitored, level)
       put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       if \DState.mode == "-adapter" then
-         put(variablesList, table("name", x, "value", image(i), "type", type(i)))
+         put(variablesList, table("name", x, "value", i, "type", type(i)))
    }
 
    if /DState.mode | \DState.mode ~== "-adapter" then
       more(output)
    else {
-      variableTable := table("name", x, "value", image(i), "type", type(i))
+      variableTable := table("name", x, "value", i, "type", type(i))
       every consoleMsg ||:= ("\n"||!output)
       globalsTable := [
          "type":"globals";
@@ -65,13 +65,13 @@ method printLocals(level)
       i := variable(x, CMonitored, level)
       put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       if \DState.mode == "-adapter" then
-         put(variablesList, table("name", x, "value", image(i), "type", type(i)))
+         put(variablesList, table("name", x, "value", i, "type", type(i)))
    }
 
    if /DState.mode | \DState.mode ~== "-adapter" then
       more(output)
    else {
-      variableTable := table("name", x, "value", image(i), "type", type(i))
+      variableTable := table("name", x, "value", i, "type", type(i))
       every consoleMsg ||:= ("\n"||!output)
       localsTable := [
          "type":"locals";
@@ -88,7 +88,7 @@ end
 method printStatics(level)
    local x, i, CMonitored := DState.coState.target.val, output := [], staticsTable, variablesList := [], consoleMsg := ""
 
-   /level := DState.coState.target.curr_frame 
+   /level := DState.coState.target.curr_frame
    if \DState.mode ~== "-adapter" then
       put (output, "\n")
    put(output,"   Static variables:")
@@ -97,13 +97,13 @@ method printStatics(level)
       i := variable(x, CMonitored, level)
       put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       if \DState.mode == "-adapter" then
-         put(variablesList, table("name", x, "value", image(i), "type", type(i)))
+         put(variablesList, table("name", x, "value", i, "type", type(i)))
    }
 
    if /DState.mode | \DState.mode ~== "-adapter" then
       more(output)
    else {
-      variableTable := table("name", x, "value", image(i), "type", type(i))
+      variableTable := table("name", x, "value", i, "type", type(i))
       every consoleMsg ||:= ("\n"||!output)
       staticsTable := [
          "type":"statics";
@@ -129,13 +129,13 @@ method printParams(level)
       i := variable(x, CMonitored, level)
       put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       if \DState.mode == "-adapter" then
-         put(variablesList, table("name", x, "value", image(i), "type", type(i)))
+         put(variablesList, table("name", x, "value", i, "type", type(i)))
    }
 
    if /DState.mode | \DState.mode ~== "-adapter" then
       more(output)
    else {
-      variableTable := table("name", x, "value", image(i), "type", type(i))
+      variableTable := table("name", x, "value", i, "type", type(i))
       every consoleMsg ||:= ("\n"||!output)
       paramsTable := [
          "type":"params";
@@ -158,7 +158,7 @@ method getVarValue(Expr, level)
 
    every x := !Expr do expr ||:= x
 
-   # if the string in the expr is not a litteral (string value)
+   # if the string in the expr is not a literal (string value)
    if expr[1] ~== "\"" then {
       index := parsePrintExpression(Expr)
       if *index = 0 then fail
@@ -169,9 +169,9 @@ method getVarValue(Expr, level)
                      else if real(ref) = ref then real(ref)
                      else ref
             return Value
-            }
-         else fail
          }
+         else fail
+      }
       # var is a primitive or invalid expression
       else {
          if *index = 0 then {
@@ -179,22 +179,22 @@ method getVarValue(Expr, level)
                      else if real(expr) = expr then real(expr)
                      else string(expr)
             return Value
-            }
+         }
          # real part still in (index)
          else if index[1][1] == "." then {
             value := var
             while x := get(index) do value ||:= x
             if Value := real(value) then return Value
-            }
+         }
          else {
             value := var
             while value ||:= " " || get(index)
             Message := "\n   Invalid right-hand expression \""||value||"\"."
             fail
-            }
          }
-      return Value
       }
+      return Value
+   }
    else
       return expr[2:-1]
 end
@@ -212,151 +212,151 @@ method getVarReference(Var, index, level)
 
    #write("====",ximage(Var),"====",ximage(index))
 
-   case type(Var) of{
+   case type(Var) of {
       "integer"|"real"|"null"|"cset"|"set"|"file"|"window"|
       "procedure"|"co-expression"|"external":{
-           return Var
-           }
-      "string":{
-           x1 := get(index)
-           x2 := get(index)
-           # normal string subscript
-           if \x1 & /x2 then {
-              if v := variable(x1, CMonitored, level) | integer(x1) then {
-                 if abs(v) <= *Var then {
-                    Var := Var[v]
-                    return Var
-                    }
-                 else {
-                    Message := "\n   The string subscript \""||x1||
-                               "\" is out of range."
-                    }
-                 }
-              else {
-                 #write("can't get variable reference ", image(Var),
-                 #      "[", image(v), "]")
-                 Message := "\n   The string subscript \""||x1||
-                            "\" is invalid."
-                 fail
-                 }
-              }
-           else if \x1 & \x2 then {
-              if x2 === "][" then {
-                 Message := "\n   Strings cannot have double subscripts."
-                 fail
-                 }
-              # string slice
-              else {
-                 i1 := variable(x1, CMonitored, level) | integer(x1)
-                 i2 := variable(x2, CMonitored, level) | integer(x2)
-                 if abs(i1) > *Var then {
-                    Message := "\n   The string subscript \""||x1||
-                               "\" is out of range."
-                    fail
-                    }
-                 if abs(i2) > *Var then {
-                    Message := "\n   The string subscript \""||x2||
-                               "\" is out of range."
-                    fail
-                    }
-                 Var := Var[i1:i2]
-                 return Var
-                 }
-              }
-           else {
-              Message := "\n   Invalid expression."
-              fail
-              }
-           }
-      "list":{
-           x1 := get(index)
-           x2 := get(index)
-           # base case
-           if \x1 & /x2 then {
-              v := variable(x1, CMonitored, level) | integer(x1)
-              if abs(v) <= *Var then {
-                 Var := Var[v]
-                 return Var #getVarReference(Var, index, level)
-                 }
-              else {
-                 Message := "\n   The list subscript \""||x1||
-                            "\" is out of range."
-                 fail
-                 }
-              }
-           # multiple subscripts
-           else if \x1 & \x2 then {
-              if x2 == "][" then {
-                 v := variable(x1, CMonitored, level) | integer(x1)
-                 if abs(v) <= *Var then {
-                    Var := Var[v]
-                    return getVarReference(Var, index, level)
-                    }
-                 else {
-                    Message := "\n   The list subscript \""||x1||
-                               "\" is out of range."
-                    fail
-                    }
-                 }
-              else if x1 == "][" then {
-                 v := variable(x2, CMonitored, level) | integer(x2)
-                 if abs(v) <= *Var then {
-                    Var := Var[v]
-                    return getVarReference(Var, index, level)
-                    }
-                 else {
-                    Message := "\n   The list subscript \""||x2||
-                               "\" is out of range."
-                    fail
-                    }
-                 }
-              else{
-                 i1 := variable(x1, CMonitored, level) | integer(x1)
-                 i2 := variable(x2, CMonitored, level) | integer(x2)
-                 if abs(i1) <= *Var & abs(i2) <= *Var then {
-                    Var := Var[i1:i2]
-                    return getVarReference(Var, index, level)
-                    }
-                 else {
-                    Message := "\n   The list subscript slice \""||i1||":"||i2||
-                               "\" is out of range."
-                    fail
-                    }
-                 }
-              }
-           else {
-              Message := "\n   Invalid expression."
-              fail
-              }
-           }
-      "table":{
-           x := get(index)
-           if v := variable(x, CMonitored, level, 1) |
-                                      integer(x) | string(x[2:-2]) then {
-              Var := Var[v]
-              return getVarReference(Var, index, level)
-              }
-           fail # shouldn't get here, tables have default init values
-           }
-      # "record" & "object" do not have the word "record" in their type
-       default:{
-           if (x := get(index)) == "." then x := get(index) # get name of field
-
-           if \x then {
-              every fld := fieldnames(Var) do {
-                 if x === fld then {
-                    Var := Var[string(x)]
-                    return getVarReference(Var, index, level)
-                    }
-                  }
-              Message := "\n   Invalid field name \""||x||"\"."
-              fail
-              }
-           else{
-              return getVarReference(Var, index, level)
-              }
-           }
+            return Var
       }
+      "string":{
+         x1 := get(index)
+         x2 := get(index)
+         # normal string subscript
+         if \x1 & /x2 then {
+            if v := variable(x1, CMonitored, level) | integer(x1) then {
+               if abs(v) <= *Var then {
+                  Var := Var[v]
+                  return Var
+               }
+               else {
+                  Message := "\n   The string subscript \""||x1||
+                           "\" is out of range."
+               }
+            }
+            else {
+               #write("can't get variable reference ", image(Var),
+               #      "[", image(v), "]")
+               Message := "\n   The string subscript \""||x1||
+                           "\" is invalid."
+               fail
+            }
+         }
+         else if \x1 & \x2 then {
+            if x2 === "][" then {
+               Message := "\n   Strings cannot have double subscripts."
+               fail
+            }
+            # string slice
+            else {
+               i1 := variable(x1, CMonitored, level) | integer(x1)
+               i2 := variable(x2, CMonitored, level) | integer(x2)
+               if abs(i1) > *Var then {
+                  Message := "\n   The string subscript \""||x1||
+                              "\" is out of range."
+                  fail
+               }
+               if abs(i2) > *Var then {
+                  Message := "\n   The string subscript \""||x2||
+                              "\" is out of range."
+                  fail
+               }
+               Var := Var[i1:i2]
+               return Var
+            }
+         }
+         else {
+            Message := "\n   Invalid expression."
+            fail
+         }
+      }
+      "list":{
+         x1 := get(index)
+         x2 := get(index)
+         # base case
+         if \x1 & /x2 then {
+            v := variable(x1, CMonitored, level) | integer(x1)
+            if abs(v) <= *Var then {
+               Var := Var[v]
+               return Var #getVarReference(Var, index, level)
+            }
+            else {
+               Message := "\n   The list subscript \""||x1||
+                           "\" is out of range."
+               fail
+            }
+         }
+         # multiple subscripts
+         else if \x1 & \x2 then {
+            if x2 == "][" then {
+               v := variable(x1, CMonitored, level) | integer(x1)
+               if abs(v) <= *Var then {
+                  Var := Var[v]
+                  return getVarReference(Var, index, level)
+               }
+               else {
+                  Message := "\n   The list subscript \""||x1||
+                              "\" is out of range."
+                  fail
+               }
+            }
+            else if x1 == "][" then {
+               v := variable(x2, CMonitored, level) | integer(x2)
+               if abs(v) <= *Var then {
+                  Var := Var[v]
+                  return getVarReference(Var, index, level)
+               }
+               else {
+                  Message := "\n   The list subscript \""||x2||
+                              "\" is out of range."
+                  fail
+               }
+            }
+            else {
+               i1 := variable(x1, CMonitored, level) | integer(x1)
+               i2 := variable(x2, CMonitored, level) | integer(x2)
+               if abs(i1) <= *Var & abs(i2) <= *Var then {
+                  Var := Var[i1:i2]
+                  return getVarReference(Var, index, level)
+               }
+               else {
+                  Message := "\n   The list subscript slice \""||i1||":"||i2||
+                              "\" is out of range."
+                  fail
+               }
+            }
+         }
+         else {
+            Message := "\n   Invalid expression."
+            fail
+         }
+      }
+      "table":{
+         x := get(index)
+         if v := variable(x, CMonitored, level, 1) |
+                           integer(x) | string(x[2:-2]) then {
+            Var := Var[v]
+            return getVarReference(Var, index, level)
+         }
+         fail # shouldn't get here, tables have default init values
+      }
+      # "record" & "object" do not have the word "record" in their type
+      default: {
+         if (x := get(index)) == "." then x := get(index) # get name of field
+
+         if \x then {
+            every fld := fieldnames(Var) do {
+               if x === fld then {
+                  Var := Var[string(x)]
+                  return getVarReference(Var, index, level)
+               }
+            }
+            Message := "\n   Invalid field name \""||x||"\"."
+            fail
+         }
+         else {
+            return getVarReference(Var, index, level)
+         }
+      }
+   }
 end
 
 #
@@ -372,11 +372,11 @@ method setVarReference(lvar, index, level, value)
       if variable(lvar, CMonitored, level) then {
          Var := variable(lvar, CMonitored, level, 1) := value
          return Var
-         }
+      }
       else {
          Message := "\n   Something went wrong."
          fail
-         }
+      }
    }
 
    Var := variable(lvar, CMonitored, level, 1)
@@ -493,7 +493,7 @@ end
 # to the action such as */! or the value itself
 #
 method printVar(Expr, action, level)
-   local Var, var, ref, index, x, expr:=""
+   local Var, var, ref, index, x, expr:="", outputTable := table("type", "print"), result := ""
    local CMonitored := DState.coState.target.val
    /level := DState.coState.target.curr_frame
 
@@ -503,48 +503,59 @@ method printVar(Expr, action, level)
 
    if *index = 0 then {
       Message :="\n   \""||expr||"\" is an unknown expression."
-      DState.Write(Message)
+      outputTable["success"] := "__false__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
       return
-      }
+   }
 
    var := get(index)
    if Var := variable(var, CMonitored, level) then {
       if (ref := getVarReference(Var, index, level)) & *index = 0 then {
          case action of {
-            "*" :{ Message := "\n   *"||expr||" = "||*ref }
+            "*" :{ Message := "\n   *"||expr||" = "||*ref
+                  outputTable["result"] := *ref
+            }
             "!" :{ Message := "\n   !"||expr||" = "
-                   Message ||:="{ "
-                   every x := !ref do
-                      Message ||:= image(x)||", "
-                   Message:=Message[1:-2] || " }"
-                 }
+                  result ||:= "{ "
+                  every x := !ref do
+                     result ||:= image(x)||", "
+                  result := result[1:-2] || " }"
+                  Message ||:= result
+                  outputTable["result"] := result
+            }
             #"?" :{ Message := "OOPS: not implemented yet!!!"  }
             default: {
-                 Message := "\n   "||expr||" = "
-                 #DState.Write("---type of ",expr," is : ", type(ref))
-                 if (type(ref) == ("list" | "table" | "set" | "foreign-local" )|
-                     match("record"|"object",image(ref))) & *ref >= 1 then {
-                        Message ||:= ximage(ref)
-                        }
-                 else{
-                        Message ||:= image(ref)
-                     }
-                 }
-             }
+               Message := "\n   "||expr||" = "
+               #DState.Write("---type of ",expr," is : ", type(ref))
+               if (type(ref) == ("list" | "table" | "set" | "foreign-local" )|
+                  match("record"|"object",image(ref))) & *ref >= 1 then {
+                  Message ||:= ximage(ref)
+               }
+               else {
+                  Message ||:= image(ref)
+               }
+               outputTable["result"] := ref
+            }
          }
       }
+      outputTable["name"] := expr
+      outputTable["success"] := "__true__"
+   }
    else {
       Message := "\n   The variable \""|| var ||
                    "\" is not within the current frame."
-      }
-   DState.Write(Message)
+      outputTable["success"] := "__false__"
+   }
+   outputTable["consoleMsg"] := Message
+   DState.Write(outputTable)
 end
 
 #
 # sets a variable value according to the user input
 #
 method assignVar(Lexpr, Rexpr, level)
-   local lhs, lvar , rvalue, x, lexpr:="", rexpr:="", outputTable := table()
+   local lhs, lvar , rvalue, x, lexpr:="", rexpr:="", outputTable := table("type", "assignVar")
 
    every x := !Lexpr do lexpr ||:= x
    every x := !Rexpr do rexpr ||:= x
@@ -554,7 +565,6 @@ method assignVar(Lexpr, Rexpr, level)
       Message :="\n   The expression \""||lexpr||"\" is unknown."
       outputTable["consoleMsg"] := Message
       outputTable["success"] := "__false__"
-      outputTable["type"] := "assignVar"
       DState.Write(outputTable)
       return
       }
@@ -567,10 +577,9 @@ method assignVar(Lexpr, Rexpr, level)
          }
       }
    outputTable["consoleMsg"] := Message
-   outputTable["var"] := lvar
-   outputTable["value"] := var_ref
+   outputTable["result"] := var_ref
+   outputTable["name"] := lvar
    outputTable["success"] := "__true__"
-   outputTable["type"] := "assignVar"
    DState.Write(outputTable)
 end
 
@@ -579,16 +588,18 @@ end
 # procedures that are still in the stack can also be viewed.
 #
 method cmdPrint(cmd)
-   local i, j, expr, action, level, cur_level, left, right
+   local i, j, expr, action, level, cur_level, left, right, outputTable := table("type", "print")
    local CMonitored
 
    if DState.State ~= PAUSE then {
       DState.State := ERROR
       Message := "\n   The program is not being run._
                   \n   Try \"run\", or Type \"help\" for assistance."
-      DState.Write(Message)
+      outputTable["success"] := "__false__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
       return
-      }
+   }
 
    CMonitored := DState.coState.target.val
    cur_level := keyword("level", CMonitored)
@@ -599,7 +610,9 @@ method cmdPrint(cmd)
    if level > cur_level then {
       Message   :="\n   Frame #"||level||" is not valid."
       Message ||:="\n   The stack currently has "||cur_level||" frame(s)."
-      DState.Write(Message)
+      outputTable["success"] := "__false__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
       return
       }
 
@@ -666,7 +679,9 @@ method cmdPrint(cmd)
    else{
       Message :="\n   The command \""||DState.cmdHistory[1]||"\" is incomplete."
       Message ||:="\n   Try \"help\" or \"help print\" for assistance."
-      DState.Write(Message)
+      outputTable["success"] := "__false__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
       }
 end
 
@@ -674,63 +689,74 @@ end
 # It assignes to those keywords that are considered variables
 #
 method assignKeyword(lexpr, rexpr, level)
-   local data
+   local data, outputTable := table("type", "assignVar")
 
    #print &pos:=10
    if isValidKeyword(lexpr) then {
       if data := getVarValue(rexpr,level) then {
          var_ref := variable(lexpr, Monitored, 0, 1) := data
          Message := "\n   "||lexpr||" = "||image(var_ref)
-         DState.Write(Message)
+         outputTable["result"] := var_ref
+         outputTable["name"] := lexpr
+         outputTable["success"] := "__true__"
+         outputTable["consoleMsg"] := Message
+         DState.Write(outputTable)
          return
          }
       else{
-         DState.Write(Message)
+         outputTable["success"] := "__false__"
+         outputTable["consoleMsg"] := Message
+         DState.Write(outputTable)
          fail
-         }
       }
-   else{
+   }
+   else {
       Message := "\n   "||lexpr ||" is not a valid keyword."
-      DState.Write(Message)
+      outputTable["success"] := "__false__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
       fail
-      }
+   }
 end
 
 #
 # prints keyword value(s)
 #
 method printKeyword(expr, action, level)
-   local data
+   local data, outputTable := table("type", "print")
 
    #print &pos or #print *&subject
    if isValidKeyword(expr) then {
       if data := isGlobalKeyword(expr) then {
          Message :="\n   "|| expr ||" = "|| data
-         DState.Write(Message)
-         return
-         }
+      }
       else if data := isGenKeyword(expr, action) then {
          Message :="\n   "|| expr ||" = "|| data
-         DState.Write(Message)
-         return
-         }
+      }
       else if data := keyword(expr, Monitored) then {
          if \action == "*" then {
             data := *data
-            }
-         Message :="\n   "|| expr ||" = "|| image(data)
-         DState.Write(Message)
-         return
          }
+         Message :="\n   "|| expr ||" = "|| image(data)
+      }
       else{
          Message :="\n   "|| expr || " is not a valid udb operation yet."
-         DState.Write(Message)
+         outputTable["success"] := "__false__"
+         outputTable["consoleMsg"] := Message
+         DState.Write(outputTable)
          fail
-         }
       }
-   else{
+      outputTable["result"] := data
+      outputTable["name"] := expr
+      outputTable["success"] := "__true__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
+   }
+   else {
       Message :="\n   "|| expr || " : is not a valid keyword."
-      DState.Write(Message)
+      outputTable["success"] := "__false__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
       fail
       }
 end

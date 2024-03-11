@@ -6,8 +6,8 @@
 #
 
 #****************************************************************************
-# * Quaternion code 
-# 
+# * Quaternion code
+#
 
 package graphics3d
 
@@ -35,7 +35,7 @@ method mul(b)
    local  w, x, y, z
 
    W := W*b.W - (X*b.X + Y*b.Y + Z*b.Z)
-  
+
    X := W*b.X + b.W*X + Y*b.Z - Z*b.Y
    Y := W*b.Y + b.W*Y + Z*b.X - X*b.Z
    Z := W*b.Z + b.W*Z + X*b.Y - Y*b.X
@@ -46,7 +46,7 @@ method times(b)
    local  w, x, y, z
 
    w := W*b.W - (X*b.X + Y*b.Y + Z*b.Z)
-  
+
    x := W*b.X + b.W*X + Y*b.Z - Z*b.Y
    y := W*b.Y + b.W*Y + Z*b.X - X*b.Z
    z := W*b.Z + b.W*Z + X*b.Y - Y*b.X
@@ -63,7 +63,7 @@ end
 
 method invert()
    local norme, recip
-   
+
    norme := sqrt(W*W + X*X + Y*Y + Z*Z)
    if (norme < EPSLN) then
       norme := 1.0
@@ -97,9 +97,9 @@ end
 
 method from_axis(angle, x, y, z)
    local omega, s, c
-   
+
    s := sqrt(x*x + y*y + z*z)
-  
+
    if (s > EPSLN) then{
       c := 1.0/s
       x *:= c
@@ -116,7 +116,7 @@ method from_axis(angle, x, y, z)
       X := Y := Z := 0.0
       W := 1.0
       }
-  
+
    normalize()
    return self
 end
@@ -126,17 +126,17 @@ method to_matrix(matrix)   #  return a list of 16 real values
    /matrix := Matrix4x4()
 
    matrix.set (
-      [ 
+      [
       1.0 - 2.0*Y*Y - 2.0*Z*Z,
       2.0*X*Y - 2.0*W*Z,
       2.0*X*Z + 2.0*W*Y,
-      0.0,	       
+      0.0,
       2.0*X*Y + 2.0*W*Z,
-      1.0 - 2.0*X*X - 2.0*Z*Z,	       
+      1.0 - 2.0*X*X - 2.0*Z*Z,
       2.0*Y*Z - 2.0*W*X,
       0.0,
       2.0*X*Z - 2.0*W*Y,
-      2.0*Y*Z + 2.0*W*X,       
+      2.0*Y*Z + 2.0*W*X,
       1.0 - 2.0*X*X - 2.0*Y*Y,
       0.0,
       0.0,
@@ -155,7 +155,7 @@ method to_matrixOLD(matrix)   #  return a list of 16 real values
    matrix[5] := 2.0*X*Y + 2.0*W*Z;
    matrix[9] := 2.0*X*Z - 2.0*W*Y;
    matrix[13] := 0.0
-   
+
    matrix[2] := 2.0*X*Y - 2.0*W*Z;
    matrix[6] := 1.0 - 2.0*X*X - 2.0*Z*Z;
    matrix[10] := 2.0*Y*Z + 2.0*W*X;
@@ -165,13 +165,13 @@ method to_matrixOLD(matrix)   #  return a list of 16 real values
    matrix[7] := 2.0*Y*Z - 2.0*W*X;
    matrix[11] := 1.0 - 2.0*X*X - 2.0*Y*Y;
    matrix[15] := 0.0
-   
+
    matrix[4] := 0.0
    matrix[8] := 0.0
    matrix[12] := 0.0
    matrix[16] := 1.0
-   
-   
+
+
    return matrix
 end
 
@@ -182,15 +182,15 @@ method slerp(a, b, t)
 
    if ((1.0+cosom) > EPSLN) then{
       if ((1.0-cosom) > EPSLN) then{
-	 omega := acos(cosom)
-	 sinom := sin(omega)
-	 sclp := sin((1.0-t)*omega) / sinom
-	 sclq := sin(t*omega) / sinom
-	 }
+         omega := acos(cosom)
+         sinom := sin(omega)
+         sclp := sin((1.0-t)*omega) / sinom
+         sclq := sin(t*omega) / sinom
+         }
       else{
-	 sclp := 1.0 - t
-	 sclq := t
-	 }
+         sclp := 1.0 - t
+         sclq := t
+         }
 
       X := sclp*a.X + sclq*b.X
       Y := sclp*a.Y + sclq*b.Y
@@ -215,7 +215,7 @@ end
 
 method expp()
    local m, len
-   
+
    len := sqrt(X*X + Y*Y + Z*Z)
 
    if (len > EPSLN) then
@@ -227,7 +227,7 @@ method expp()
 
    X *:= m
    Y *:= m
-   Z *:= m 
+   Z *:= m
 
   return self
 end

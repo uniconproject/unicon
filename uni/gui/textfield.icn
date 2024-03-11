@@ -544,7 +544,7 @@ class TextField : Component(
          #  Clear rectangle, set s to string to display
          #
          EraseRectangle(dwin, self.x, self.y, self.w, self.h)
-	}
+        }
       else{
          dwin := self.cwin
          }
@@ -566,7 +566,7 @@ class TextField : Component(
             mp := cp + 1
          } else {
             np := cp
-	    np >:= (*view_str + 1)
+            np >:= (*view_str + 1)
          }
 
         if mark > cursor then
@@ -574,28 +574,28 @@ class TextField : Component(
         else
            mp2 := mp
 
-	 if (off1 := TextWidth(self.cwin, view_str[1:mp2 ])) &
-	     (off2 := TextWidth(self.cwin, view_str[1:np])) then {
+         if (off1 := TextWidth(self.cwin, view_str[1:mp2 ])) &
+             (off2 := TextWidth(self.cwin, view_str[1:np])) then {
 
-	    left_string(dwin, self.tx, self.y + self.h / 2 , view_str[1:mp])
+            left_string(dwin, self.tx, self.y + self.h / 2 , view_str[1:mp])
 
 
-	    cw := Clone(dwin, "fg=blue")
-	    FillRectangle(cw, self.tx + off1,
+            cw := Clone(dwin, "fg=blue")
+            FillRectangle(cw, self.tx + off1,
                        1 + self.y + (self.h - fh) / 2,
                        off2 - off1, fh)
 
-	    WAttrib(cw, "fg=white")
-	    left_string(cw, self.tx+off1, self.y + self.h / 2 , view_str[mp2:np])
-	    Uncouple(cw)
+            WAttrib(cw, "fg=white")
+            left_string(cw, self.tx+off1, self.y + self.h / 2 , view_str[mp2:np])
+            Uncouple(cw)
 
-	    left_string(dwin, self.tx+off2, self.y + self.h / 2 , view_str[np:0])
-	    nocursor := 1
+            left_string(dwin, self.tx+off2, self.y + self.h / 2 , view_str[np:0])
+            nocursor := 1
            }
          }
       else{
-	 #
-	 # Display view_str centred vertically in box
+         #
+         # Display view_str centred vertically in box
          #
          left_string(dwin, self.tx, self.y + self.h / 2 , view_str)
 

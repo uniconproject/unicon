@@ -9,10 +9,10 @@ procedure main(av)
    dd := DeenDictionary()
    every s := !av do {
       if lu := dd.lookup(s) then {
-	 if \all then
-	    every write(s, ": ", dd.lookup(s).definition)
-	 else write(s, ": ", lu.definition)
-	 }
+         if \all then
+            every write(s, ": ", dd.lookup(s).definition)
+         else write(s, ": ", lu.definition)
+         }
       else write(s, " is not in the dictionary.")
       }
 end
@@ -25,15 +25,15 @@ class buffer(filename, text)
       f := open(filename, mode) | stop("can't open ", image(filename))
 
       if filename[-3:0] == ".gz" then {
-	 if mode=="m" then { # download_to_local_file
-	    if not (f2 := open("de-en.txt.gz","w")) then stop("can't write")
-	    while s := reads(f, 1000000) do writes(f2, s)
-	    close(f)
-	    close(f2)
-	    }
-	 system("gunzip de-en.txt.gz")
-	 f := open("de-en.txt") | stop("can't read de-en.txt")
-	 }
+         if mode=="m" then { # download_to_local_file
+            if not (f2 := open("de-en.txt.gz","w")) then stop("can't write")
+            while s := reads(f, 1000000) do writes(f2, s)
+            close(f)
+            close(f2)
+            }
+         system("gunzip de-en.txt.gz")
+         f := open("de-en.txt") | stop("can't read de-en.txt")
+         }
 
       writes("Opened ",image(f),".\nReading")
       text := [ ]
@@ -55,11 +55,11 @@ class buftable : buffer()
       self.buffer.read()
       tmp := table()
       every line := !text do {
-	 line ? {
-	    word := tab(many(&letters)) | stop("failed on ", image(line))
-	    tmp[word] := line
-	    }
-	 }
+         line ? {
+            word := tab(many(&letters)) | stop("failed on ", image(line))
+            tmp[word] := line
+            }
+         }
       text := tmp
       return
    end
@@ -73,14 +73,14 @@ class dictionaryentry(word, part, etymology, definition)
    # assumed format is word;pos;eym;def
    method decode(s)
       s ? {
-	 word := tab(find(";"))
-	 move(1)
-	 part := tab(find(";"))
-	 move(1)
-	 etymology := tab(find(";"))
-	 move(1)
-	 definition := tab(0)
-	 }
+         word := tab(find(";"))
+         move(1)
+         part := tab(find(";"))
+         move(1)
+         etymology := tab(find(";"))
+         move(1)
+         definition := tab(0)
+         }
    end
    method encode() # encode a dictionary entry into a string
       return word || ";" || part || ";" || etymology || ";" || definition
@@ -95,10 +95,10 @@ class dictionary : buftable()
       self.buffer.read()
       tmp := table()
       every line := !text do
-	 line ? {
-	    word := tab(many(&letters)) | stop("failed on ", image(line))
-	    tmp[word] := dictionaryentry(line) | fail
-	    }
+         line ? {
+            word := tab(many(&letters)) | stop("failed on ", image(line))
+            tmp[word] := dictionaryentry(line) | fail
+            }
       text := tmp
    end
    method Write()
@@ -116,13 +116,13 @@ initially(de, en)
 
    de ? {
       if word := trim(tab(find("{")),,0) then {
-	 ="{"
-	 gender := tab(find("}"))
-	 }
+         ="{"
+         gender := tab(find("}"))
+         }
       else { # here is one without gender info
-	 word := trim(tab(find("[")|0),,0)
-	 gender := "?"
-	 }
+         word := trim(tab(find("[")|0),,0)
+         gender := "?"
+         }
       }
    definition := en
 end
@@ -138,41 +138,41 @@ procedure get_entries(s)
       english := tab(0)
 
       deutsch ? {
-	 while *(deutschwort := tab(find("|") | 0))>0 do {
-	    deutschwort := trim(deutschwort,,0)
-	    ="|"
-	    tab(many(' '))
-	    englishword := trim(english[1:find("|",english)|0],,0)
-	    english ?:= {
-	       tab(many(' \t'))
-	       =englishword
-	       tab(many(' \t'))
-	       ="|"
-	       tab(many(' \t'))
-	       tab(0)
-	       }
-	    if i := find(";", deutschwort) then {
-	       deutschwort ? {
-		  while *(dword := tab(find(";") | 0))>0 do {
-		     =";"
-		     tab(many(' '))
-		     if gronk:=englishword[1:upto(';|', englishword)|0] then {
-			if *gronk>0 then {
-			   eword := gronk
-			   }
-			}
+         while *(deutschwort := tab(find("|") | 0))>0 do {
+            deutschwort := trim(deutschwort,,0)
+            ="|"
+            tab(many(' '))
+            englishword := trim(english[1:find("|",english)|0],,0)
+            english ?:= {
+               tab(many(' \t'))
+               =englishword
+               tab(many(' \t'))
+               ="|"
+               tab(many(' \t'))
+               tab(0)
+               }
+            if i := find(";", deutschwort) then {
+               deutschwort ? {
+                  while *(dword := tab(find(";") | 0))>0 do {
+                     =";"
+                     tab(many(' '))
+                     if gronk:=englishword[1:upto(';|', englishword)|0] then {
+                        if *gronk>0 then {
+                           eword := gronk
+                           }
+                        }
 if /eword then stop("botched eword for dword ",image(dword)," in\n", s,"\n with remaining english of ", image(englishword))
 if eword === "" then write("empty eword for ", dword, " in:\n", s)
-		     put(subentries, DeenEntry(dword, eword))
-		     englishword ?:= { =eword; =";"; tab(many(' ')); tab(0)}
-		     }
-		  }
-	       }
-	    else {
-	       put(subentries, DeenEntry(deutschwort, englishword))
-	       }
-	    }
-	 }
+                     put(subentries, DeenEntry(dword, eword))
+                     englishword ?:= { =eword; =";"; tab(many(' ')); tab(0)}
+                     }
+                  }
+               }
+            else {
+               put(subentries, DeenEntry(deutschwort, englishword))
+               }
+            }
+         }
       }
    return subentries
 end
@@ -182,16 +182,16 @@ class DeenDictionary : dictionary()
       self.buffer.read()
       tmp := table()
       every line := !text do
-	 line ? {
-	    if ="#" | line=="" then next
-	    if not (L := get_entries(line)) then
-	       stop("get_entries failing on ", image(line))
-	    every x := !L do {
-	       if not member(tmp, x.word) then
-		  tmp[x.word] := [x]
-	       else put(tmp[x.word], x)
-	       }
-	    }
+         line ? {
+            if ="#" | line=="" then next
+            if not (L := get_entries(line)) then
+               stop("get_entries failing on ", image(line))
+            every x := !L do {
+               if not member(tmp, x.word) then
+                  tmp[x.word] := [x]
+               else put(tmp[x.word], x)
+               }
+            }
       text := tmp
    end
 initially

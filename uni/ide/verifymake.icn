@@ -3,19 +3,19 @@ import gui
 $include "guih.icn"
 
 $ifdef _MS_WINDOWS_NT
-$define CMD "where make.exe >null" 
+$define CMD "where make.exe >null"
 $define URL "http://sourceforge.net/projects/gnuwin32/files/make/3.81/"
 $else
-$define CMD "which make >/dev/null" 
+$define CMD "which make >/dev/null"
 $define URL "http://sourceforge.net/projects/gmsl/"
-$endif   
+$endif
 
 procedure verify_make()
    local m, check
    check := system(CMD)
    if check = 0 then return
    else m := VerifyMakeDlg(); m.show_modal()
-   if /m.quit_true then return 
+   if /m.quit_true then return
 end
 
 class VerifyMakeDlg : Dialog(
@@ -35,7 +35,7 @@ class VerifyMakeDlg : Dialog(
          pos_x := tab(find(","))
          =","
          pos_y := tab(many('-0123456789'))
-	 }
+         }
       if /pos_x then pos_x := 0
       else pos_x +:= 0.40 * WAttrib("width")
       if /pos_y then pos_y:=0
@@ -98,7 +98,7 @@ class VerifyMakeDlg : Dialog(
       lbl_warning_pt3.set_size(400, 20)
       lbl_warning_pt3.set_internal_alignment("l")
       lbl_warning_pt3.set_label("Gnu make facility is availble for download at:")
-      self.add(lbl_warning_pt3)      
+      self.add(lbl_warning_pt3)
       lbl_url := Label()
       lbl_url.set_pos(20, 86)
       lbl_url.set_size(400, 20)

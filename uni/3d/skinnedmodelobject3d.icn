@@ -13,108 +13,108 @@ $include "graphics3dh.icn"
 #
 class SkinnedModelObject3D:ModelObject3D(
       #concatMesh,
-	     
+
       #skinnedMesh,
-      skeleton,			#  Skeleton()
-      is_rigid,			# null if the model does not have bones      
+      skeleton,                 #  Skeleton()
+      is_rigid,                 # null if the model does not have bones
       tbl_animation_sets,
-      animationc,		# AnimationController()
+      animationc,               # AnimationController()
       current_anim,
 
-      rendering_mode,	# "mesh", "bone", bone_mesh , "morph", or what else?
+      rendering_mode,   # "mesh", "bone", bone_mesh , "morph", or what else?
       cv_anim,
       swap_key,
       key_is_ready,
       anim_thread
    )
-   
+
    method load( fname )
       local tmp_cs
-  
+
       if load3DModel(fname, self)  then{
-         DEBUGW(fname, " model file was loaded successfully!!")            
+         DEBUGW(fname, " model file was loaded successfully!!")
          model_file_name := fname
-	 setup()
+         setup()
          return
          }
 
-      
+
    end
    method setup()
       local n
       DEBUGW("---------------------------------- setup()")
       if  skeleton.is_not_empty() then{
-      	 #rendering_mode:="bone_mesh_local"
-      	 DEBUGW("reset skin")
-	 reset_skin()
+         #rendering_mode:="bone_mesh_local"
+         DEBUGW("reset skin")
+         reset_skin()
          skeleton.setup(lst_mesh, rendering_mode)
-	 n:=skeleton.bone_count()
-	 DEBUGW (" This models has this # of bones : ", n)
+         n:=skeleton.bone_count()
+         DEBUGW (" This models has this # of bones : ", n)
       }
       else{
-	 reset_skin()
-	 DEBUGW("done preparing the x model with NOOOOOO skeleton")
-	 
+         reset_skin()
+         DEBUGW("done preparing the x model with NOOOOOO skeleton")
+
       }
 
    end
 
    method reset_skin()
       local mesh, v
-      
+
       #write("---------------------------------- reset_skin()")
       if rendering_mode=="mesh" then{
-	 #write("================ copy original vertex data" )
+         #write("================ copy original vertex data" )
          every mesh := !lst_mesh do
                 mesh.lst_vertex_final := mesh.lst_vertex
-	 }
+         }
       #else if rendering_mode:= "bone_mesh_final" then
-	# mesh.lst_vertex_final := deepcopy(mesh.lst_vertex)
+        # mesh.lst_vertex_final := deepcopy(mesh.lst_vertex)
       else{
          every mesh := !lst_mesh do
             if \mesh.is_rigid then{
-	       #DEBUGW("mesh is rigid... creating zero vertexfinal ")
+               #DEBUGW("mesh is rigid... creating zero vertexfinal ")
                mesh.lst_vertex_final := []
                every v := !(mesh.lst_vertex) do
                   put(mesh.lst_vertex_final, Vector3(0, 0, 0))
                }
             else if \skeleton then{
                mesh.lst_vertex_final := []
-	       #DEBUGW("herereeeeeeeeeeeeeeeeeeeeeee")
-	    }
+               #DEBUGW("herereeeeeeeeeeeeeeeeeeeeeee")
+            }
             else{
                #DEBUGW("----------- copy original vertex data" )
-	       mesh.lst_vertex_final := mesh.lst_vertex
-	       }
+               mesh.lst_vertex_final := mesh.lst_vertex
+               }
           }
-            
-   end   
-   
+
+   end
+
    method render_details()
       local mesh
 
       DEBUGW(" \nRendering model............... ", label )
-      
+
       #every mesh := !lst_mesh do{
        #  DEBUGW("rendering mesh ", mesh.label)
         # mesh.render()
-	# }
+        # }
       case rendering_mode of{
-	 "bone_mesh_local"  : {skeleton.render(rendering_mode)}
-	 #"bone_mesh_final"  : {skeleton.render(rendering_mode)}
-	 default : { # "rendering_mode=mesh "
-	    every mesh := !lst_mesh do{
-	       DEBUGW("rendering mesh ", mesh.label)
-	       mesh.render()
-	    }
-	    }
-	 }      
+         "bone_mesh_local"  : {skeleton.render(rendering_mode)}
+         #"bone_mesh_final"  : {skeleton.render(rendering_mode)}
+         default : { # "rendering_mode=mesh "
+            every mesh := !lst_mesh do{
+               DEBUGW("rendering mesh ", mesh.label)
+               mesh.render()
+            }
+            }
+         }
    end
 
    method bone_count()
       return skeleton.bone_count()
    end
-   
+
    method animation_count()
       return *tbl_animation_sets
    end
@@ -122,34 +122,34 @@ class SkinnedModelObject3D:ModelObject3D(
    method addAnimationSet(aSet)
       tbl_animation_sets[aSet.label] := aSet
    end
-   
+
    method get_animationset(nam)
-      if member(tbl_animation_sets, nam) then 
-	 return tbl_animation_sets[nam]
+      if member(tbl_animation_sets, nam) then
+         return tbl_animation_sets[nam]
    end
 
    method get_current_animation()
       return \current_anim
    end
-   
+
    method pick_animation(nam)
       local anim, a
       if /nam then anim := ?tbl_animation_sets
       else anim := get_animationset(nam)
 
       if \anim then{
-	 animationc.set_animation_track(anim)
+         animationc.set_animation_track(anim)
          current_anim := anim.label
-	 DEBUGW("picked animation:", anim.label)
-	 DEBUGW("max key:", anim.maxKey)
-	 #every a:=!anim.lsAnimation do{
-	  #  DEBUGW("bone:",a.boneName)
-	   # DEBUGW("*M:",*(a.lst_matrix))
-	    #DEBUGW("*R:",*(a.lst_rotation))
-	    #DEBUGW("*S:",*(a.lst_scaling))
-	    #DEBUGW("*T:",*(a.lst_translation))
-	    #}
-      	 }
+         DEBUGW("picked animation:", anim.label)
+         DEBUGW("max key:", anim.maxKey)
+         #every a:=!anim.lsAnimation do{
+          #  DEBUGW("bone:",a.boneName)
+           # DEBUGW("*M:",*(a.lst_matrix))
+            #DEBUGW("*R:",*(a.lst_rotation))
+            #DEBUGW("*S:",*(a.lst_scaling))
+            #DEBUGW("*T:",*(a.lst_translation))
+            #}
+         }
       else
          DEBUGW("No such animation!")
    end
@@ -157,7 +157,7 @@ class SkinnedModelObject3D:ModelObject3D(
    method animations()
       local a
       every a:=!tbl_animation_sets do
-	 suspend a.get_label()
+         suspend a.get_label()
    end
 
    method get_animation_max_key(nam)
@@ -165,7 +165,7 @@ class SkinnedModelObject3D:ModelObject3D(
       a:= get_animationset(nam) | fail
       return a.get_max_key()
    end
-   
+
    method calc_animation()
       if /anim_thread then{
          if rendering_mode == "bone_mesh_final" then{
@@ -177,14 +177,14 @@ class SkinnedModelObject3D:ModelObject3D(
         if /key_is_ready then{
            #if /swap_key then
            { swap_key := 1; signal(cv_anim)}
-	   }
+           }
          else{
             swap_anim_keys()
             key_is_ready := &null
             swap_key := 1
             signal(cv_anim)
             }
-	}
+        }
    end
 
   method swap_anim_keys()
@@ -192,7 +192,7 @@ class SkinnedModelObject3D:ModelObject3D(
   end
 
   method wait_key()
-    critical cv_anim: while /swap_key & \key_is_ready do wait(cv_anim) 
+    critical cv_anim: while /swap_key & \key_is_ready do wait(cv_anim)
   end
 
   method start_anim_thread()
@@ -219,19 +219,18 @@ class SkinnedModelObject3D:ModelObject3D(
 
    initially(myname, rendmod)
       self.ModelObject3D.initially(myname)
-      
+
       if /rendmod then
-         rendering_mode := "bone_mesh_local"	# just render the mesh as is. no bones, frames, etc...
+         rendering_mode := "bone_mesh_local"    # just render the mesh as is. no bones, frames, etc...
       else
-	 rendering_mode := rendmod
-      
+         rendering_mode := rendmod
+
       skeleton := Skeleton()
       skeleton.rendering_mode := rendering_mode
-      
-      tbl_animation_sets := table(&null)      
+
+      tbl_animation_sets := table(&null)
       animationc := AnimationController()
       animationc.set_skeleton(skeleton)
-      
+
       is_rigid := &null
 end
-  

@@ -12,21 +12,21 @@ $include "graphics3dh.icn"
 # This class represents a node in a tree structure.
 #
 class Node(
-   subnodes,  		# list of subnodes. Tree structure
+   subnodes,            # list of subnodes. Tree structure
    label,
    depth,
    parent_node
    )
-   
+
    method init()
       parent_node := &null
       subnodes := []
    end
-   
+
    method set_label (s)
      if \s then return (label := s)
    end
-   
+
    #
    # return the count of all nodes below the current node.
    # current node is excluded.
@@ -34,10 +34,10 @@ class Node(
       local n, node
       n := *subnodes
       every node := !subnodes do
-	 n +:= node.subtree_count()
+         n +:= node.subtree_count()
       return n
    end
-   
+
    method add_subnode(node)
       node.parent_node := self
       put(subnodes, node)
@@ -46,7 +46,7 @@ class Node(
    method has_subnodes()
       if *subnodes > 0 then return *subnodes
    end
-   
+
    #
    # Return the {Node} that has the label look4name, or fail
    #
@@ -63,7 +63,7 @@ class Node(
    method is_leaf()
       if *subnodes=0 then return
    end
-   
+
    #
    # Generate all the {Nodes} in this subtree, including this {Node},
    # in preorder ordering.
@@ -86,7 +86,7 @@ class Node(
    method get_label()
       return self.label
    end
- 
+
    #
    # Get the parent_node node, or fail if there is none.
    #
@@ -120,7 +120,7 @@ class Node(
          }
       }
    end
-   
+
    initially()
       parent_node := &null
       subnodes := []

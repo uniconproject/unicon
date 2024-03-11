@@ -16,11 +16,11 @@ $include "guih.icn"
 # event handling and selection handling.
 #
 class SelectableScrollArea : LineBasedScrollArea(
-   contents,                #                
-   checked,                 #               
-   select_one,              #                  
-   select_many,             #                   
-   cursor,                                
+   contents,                #
+   checked,                 #
+   select_one,              #
+   select_many,             #
+   cursor,
    old_cursor,
    selchange,
    going_up,
@@ -329,7 +329,7 @@ class SelectableScrollArea : LineBasedScrollArea(
          every i := 1 to *l do {
             insert(self.contents, i + n - 1, l[i])
             insert(self.checked, i + n - 1)
-         }         
+         }
       }
       compute_and_invalidate()
    end
@@ -458,7 +458,7 @@ class SelectableScrollArea : LineBasedScrollArea(
       local i
       start_handle(e)
       if i := (\self.hsb).get_value() then {
-         self.hsb.set_value(i - self.hsb.increment_size) 
+         self.hsb.set_value(i - self.hsb.increment_size)
          self.refresh()
       }
       end_handle(e)
@@ -468,7 +468,7 @@ class SelectableScrollArea : LineBasedScrollArea(
       local i
       start_handle(e)
       if i := (\self.hsb).get_value() then {
-         self.hsb.set_value(i + self.hsb.increment_size) 
+         self.hsb.set_value(i + self.hsb.increment_size)
          self.refresh()
       }
       end_handle(e)
@@ -507,7 +507,7 @@ class SelectableScrollArea : LineBasedScrollArea(
          if self.cursor ~= l then {
             self.cursor := l
             self.refresh(1)
-         }            
+         }
       }
       end_handle(e)
    end
@@ -552,7 +552,7 @@ class SelectableScrollArea : LineBasedScrollArea(
          (\self.vsb).set_value(self.vsb.get_value() - self.vsb.increment_size)
       } else {
          self.cursor := self.get_last_line() + 1
-         self.cursor >:= *self.contents 
+         self.cursor >:= *self.contents
          (\self.vsb).set_value(self.vsb.get_value() + self.vsb.increment_size)
       }
       self.refresh(1)
@@ -573,8 +573,8 @@ class SelectableScrollArea : LineBasedScrollArea(
          # Clear flag, refresh, return event
          #
          if (e === (&lrelease|&rrelease|&mrelease)) &
-	    (\self.select_one | \self.select_many) &
-	    (get_line_under_pointer() = self.cursor) then {
+            (\self.select_one | \self.select_many) &
+            (get_line_under_pointer() = self.cursor) then {
 
             l := get_selections()
             if \self.select_many & (&shift | &control) then {
@@ -593,15 +593,15 @@ class SelectableScrollArea : LineBasedScrollArea(
                      self.checked[self.cursor] := 1
                }
             }
-	    else {
+            else {
                self.checked := list(*self.contents)
                self.checked[\self.cursor] := 1
             }
             self.refresh(1)
             if not lang::equals(get_selections(), l) then
                selchange := 1
-	    }
-	 }
+            }
+         }
       end_handle(e)
    end
 
@@ -736,7 +736,7 @@ class SelectableScrollArea : LineBasedScrollArea(
    end
 
    #
-   # This method is overridden by the subclass to draw the given 
+   # This method is overridden by the subclass to draw the given
    # line at the given position
    # @param xp  The left position it should be drawn at
    # @param yp   The y position it should be drawn at

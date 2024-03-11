@@ -25,7 +25,7 @@ $endif
         else if a == "-w" then
             WinIcon :=1
         }
-        
+
     write("Icon Evaluator, Version 1.1, ? for help")
     if \NoNum then
         tag := create |"r"
@@ -62,9 +62,9 @@ $endif
                 writes(if *line = 0 then "][ " else "... ")
                 inline := (read()|stop())
                 }
-                
+
             inline := trim(inline, ' \t')
-            
+
             if match(".type", inline) then {
                 (/showtype := 1) | (showtype := &null)
                 write("Will ",(/showtype&"not ")|"","display types")
@@ -122,25 +122,25 @@ $endif
                 #line[-2:0] := ""
                 break
                 }
-			else
-			    line[-2:0] := ""
+                        else
+                            line[-2:0] := ""
             }
 
-        if \showtype then    
+        if \showtype then
                 put(extras, "showtype := 1")
 
         if match(".every ", line) then {
                 every_exp := (line ? (=".every " & tab(0)))
                 Generate := 1
                 }
-    
+
         tfile := "._ie_tmp.icn"
         sfile := open(tfile,"w") |
                 stop("Can't open ie tmp file (", tfile, ") for writing\n",
                 "(Is the current directory writable?)")
         #sfile := open("icont -s - -x","pw")
         every write(sfile, !(header|||prog|||extras))
-        
+
         if \Generate then {
             write(sfile, "every WR(\"\",", every_exp, ")")
                 curexp := "every (" || every_exp || ")"
@@ -153,7 +153,7 @@ $endif
 
         if \WinIcon then
             write(sfile, "WDone()")
-        
+
         write(sfile, "end")
         WriteWR(sfile)
         WriteSplit(sfile)
@@ -168,7 +168,7 @@ $endif
                 remove("._ie_tmp.icx")
                 if \WinIcon then icont_cmd := "wicont"
                             else icont_cmd := "nticont"
-                            
+
                 rc := system(icont_cmd || " -s ._ie_tmp.icn " ||
                     atos(incfiles, " "))
                 if rc = 0 then
@@ -198,16 +198,16 @@ end
 procedure WriteSplit(f)
 
     write(f,
-	  "procedure split(line,dlms)\n",
-	  "local w\n",
-	  "/dlms := ' \t'\n",
-	  "w := []\n",
-	  "line ? repeat {\n",
-	  "   tab(upto(~dlms))\n",
+          "procedure split(line,dlms)\n",
+          "local w\n",
+          "/dlms := ' \t'\n",
+          "w := []\n",
+          "line ? repeat {\n",
+          "   tab(upto(~dlms))\n",
           "   put(w,tab(many(~dlms))) | break\n",
           "      }\n",
-	  "return w\n",
-	  "end\n")
+          "return w\n",
+          "end\n")
 
 end
 procedure Help()
@@ -228,7 +228,7 @@ procedure Edit(p)
     f := open("._ie_tmp.icn", "w")
     every write(f, !p)
     close(f)
-    
+
     system("$EDITOR ._ie_tmp.icn")
 
     f := open("._ie_tmp.icn")
@@ -237,7 +237,7 @@ procedure Edit(p)
 
     return p
 end
-    
+
 procedure atos(a,delim)
         local e, s
         s := ""

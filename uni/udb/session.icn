@@ -8,13 +8,13 @@ $include "evdefs.icn"
 $include "defaults.icn"
 
 #
-# This class is used to handle the current debugging state 
+# This class is used to handle the current debugging state
 #
 class Session(
    DState,       # an object of the class State()
    Help,         # an object of the class HELP()
    Message,      # the formatted output message
-   Debug         # An object of the class Evaluator() 
+   Debug         # An object of the class Evaluator()
    )
 
 #
@@ -26,7 +26,7 @@ method startSession()
 
    #-- it may need to be in EvInit() for the sake of re-run
    &eventsource := &null
-   
+
    if \DState.mode == "-adapter" then
       EvInit(DState.TP, DState.progSock, DState.progSock, DState.progSock) | { failed := "__true__" }
    else
@@ -37,7 +37,7 @@ method startSession()
       declare_exit("cant start evinit on " || DState.TP[1], 1)
       fail
    }
-   
+
    Message :="   Starting program: "
    every arg := !DState.TP do Message ||:=" "||arg
    Message ||:="\n"
@@ -69,7 +69,7 @@ method startSession()
             # forcefully quit program to load
             return
             }
-      }#end every 
+      }#end every
    }
    #--- Test
    #write("====================================")
@@ -100,8 +100,8 @@ method parse_Command(cmd)
      "run"    :{  cmdRun(cmd)                       }
      "q"      |
      "quit"   :{
-	write(&errout, "received ", image(cmd[1]), ", quitting")
-	cmdQuit()                         }
+        write(&errout, "received ", image(cmd[1]), ", quitting")
+        cmdQuit()                         }
      "p"      |
      "print"  :{  cmdPrint(cmd[2:0])                }
      "b"      |
@@ -142,9 +142,9 @@ method parse_Command(cmd)
      "enable" :{  cmdEnable(cmd)                    }
      "disable":{  cmdDisable(cmd)                   }
 
-     "coexp"  :{ cmdCoexp(cmd)                      } 
+     "coexp"  :{ cmdCoexp(cmd)                      }
      "directory"|
-     "dir"    :{ DState.srcFile.cmdDirectory(cmd)   } 
+     "dir"    :{ DState.srcFile.cmdDirectory(cmd)   }
      "show"   :{ cmdShow(cmd)                       }
      # Temporal Assertions support
      "assert" :{  Debug.DTA.cmdAssert(cmd)          }
@@ -158,7 +158,7 @@ method parse_Command(cmd)
      "ls"|"ll":{ ls()     }
      "pwd"    :{ pwd()    }
      "cd"     :{ cd(cmd)  }
-     #-new set of commands for the UDB config script 
+     #-new set of commands for the UDB config script
      "loadscript" :{ }
      "runscript"  :{ }
      "#"  :{ }
@@ -173,11 +173,11 @@ method parse_Command(cmd)
 end
 
 #
-# Loads a file after running the UDB Session 
+# Loads a file after running the UDB Session
 # or loads an external monitor: load -external name
 #
 method cmdLoad(cmd)
-   
+
    if cmd[2][1] == "-" then{
       #load -agent name
       if find("agent", cmd[2]) & \cmd[3] then{
@@ -191,8 +191,8 @@ method cmdLoad(cmd)
             Message := "\n   Can not fined agent: \""|| cmd[3] ||"\" !!!."
             DState.Write(Message)
             }
-         } 
-      #load -semi-internal name 
+         }
+      #load -semi-internal name
       else if find("semi-internal", cmd[2]) & \cmd[3] then
          Debug.SemiInternal.cmdLoad(cmd[3])
       else{
@@ -219,9 +219,9 @@ end
 method cmdRun(cmd)
    local i, ans, args
    local resultTable := table()
-     
+
    if DState.State = (LOAD | END | PAUSE) then {
-      # run - use args from 'load' 
+      # run - use args from 'load'
       if *cmd = 1 then {
          args := DState.TP
       }
@@ -231,7 +231,7 @@ method cmdRun(cmd)
          every i:=2 to *cmd do put(args, cmd[i])
       }
       DState.TP := args
- 
+
       if DState.State = PAUSE then{
          Message  :="\n   The program being debugged has been started already."
          Message||:="\n   Start it from the beginning? (Y/n)?: "
@@ -243,19 +243,19 @@ method cmdRun(cmd)
             Debug.Watch.resetWatchInfo()
             Debug.Trace.resetTraceInfo()
             DState.Update(RERUN)
-         } 
+         }
          else{
             DState.State := SKIP
             return
          }
-      } 
+      }
       # run (like normal)
       else {
          DState.Update(RUN)
          if DState.RunCount >= 1 then{
             Debug.Watch.resetWatchInfo()
             Debug.Trace.resetTraceInfo()
-         }             
+         }
       }
    }
    else {
@@ -278,7 +278,7 @@ method cmdQuit()
    # check whether a program is running or not, Paused, etc??????
    # do not exit directlly if the program is in the running state
    if DState.State = (RUN | PAUSE) then{
-      msg := "\n   The program \""|| 
+      msg := "\n   The program \""||
                           DState.srcFile.exeName ||
                           "\" is running.  Exit anyhow (Y/n)?: "
       resultTable["consoleMsg"] := msg
@@ -286,7 +286,7 @@ method cmdQuit()
       DState.Writes(resultTable)
       if (not (ans:=DState.stateRead())) | (*ans=0) | (map(ans[1]) == "y") then {
          DState.State := QUIT
-	 }
+         }
       else
          DState.State := SKIP
       }
@@ -319,7 +319,7 @@ method cmdPrint(cmd)
 end
 
 #
-# clears breakpoints, watchpoints, and tracepoints 
+# clears breakpoints, watchpoints, and tracepoints
 #
 method cmdClear(cmd)
 
@@ -358,7 +358,7 @@ else{
 end
 
 #
-# deletes breakpoints, watchpoints, and tracepoints 
+# deletes breakpoints, watchpoints, and tracepoints
 #
 method cmdDelete(cmd)
 
@@ -478,7 +478,7 @@ end
 # Allows switching between different co-expressions
 #
 method cmdCoexp(cmd)
-   # coexp 
+   # coexp
    if *cmd = 1 then {
       DState.printCoState()
       }
@@ -532,7 +532,7 @@ method cmdInfo(cmd)
       "trace"      |
       #"watchpoint" |
       "tracepoints":{ Debug.Trace.printTraceInfo(cmd)        }
-      "coexp"      :{ cmdInfoCoexp(cmd)                     } 
+      "coexp"      :{ cmdInfoCoexp(cmd)                     }
       # The following are for source code information
       "global"     :{ Debug.Print.cmdPrint(["p","-g"])       }
       "local"      :{ Debug.Print.cmdPrint(["p","-l"])       }
@@ -555,17 +555,17 @@ method cmdInfo(cmd)
       "procedure"  :{ Debug.Print.cmdSource(["src","-proc"]) }
       "func"       |
       "function"   :{ Debug.Print.cmdSource(["src","-func"]) }
-       
+
       "icode"      :{ Debug.Print.cmdSource(["src","-icode"])}
       "dir"        |
       "directory"  |
-      "directories":{ DState.srcFile.cmdShowDir(cmd) } 
+      "directories":{ DState.srcFile.cmdShowDir(cmd) }
 
       # the following is to query about agents
-      "agent"      |      
+      "agent"      |
       "agents"     :{ Debug.Internal.cmdInfo(name)
                       Debug.External.cmdInfo(name)           }
-      "internal"   |      
+      "internal"   |
       "internals"  :{ Debug.Internal.cmdInfo(name)           }
       "external"   |
       "externals"  :{ Debug.External.cmdInfo(name)           }
@@ -581,13 +581,13 @@ method cmdInfo(cmd)
       }
 end
 
-method cmdShow(cmd) 
+method cmdShow(cmd)
    if *cmd = 2 then {
       case cmd[2] of {
          "directories"|
          "directory"|
          "dir" : { DState.srcFile.cmdShowDir(cmd) }
-         default: { 
+         default: {
             DState.State := ERROR
             Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||
                        "\""||
@@ -633,16 +633,16 @@ initially()
    Debug  := Evaluator()
    Help   := HELP()
 
-   DState := Help.DState            := 
-             Debug.DState           := 
-             Debug.Break.DState     := 
-             Debug.Watch.DState     := 
-             Debug.Step.DState      := 
-             Debug.Frame.DState     := 
-             Debug.Print.DState     := 
-             Debug.Trace.DState     := 
-             Debug.Internal.DState  := 
-             Debug.External.DState  := 
+   DState := Help.DState            :=
+             Debug.DState           :=
+             Debug.Break.DState     :=
+             Debug.Watch.DState     :=
+             Debug.Step.DState      :=
+             Debug.Frame.DState     :=
+             Debug.Print.DState     :=
+             Debug.Trace.DState     :=
+             Debug.Internal.DState  :=
+             Debug.External.DState  :=
              Debug.DTA.DState       := State()
 
 # Test : To test the inter-program event forwarding

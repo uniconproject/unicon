@@ -149,15 +149,15 @@ class Dispatcher(
                      #
                      # Discard the event and beep in the window.
                      # A close on a blocked window is a bad situation,
-		     # probably the application should terminate in response
-		     # to a process_event(), but if not,
+                     # probably the application should terminate in response
+                     # to a process_event(), but if not,
                      # use the hidden offscreen window until it is unblocked.
                      #
                      e := Event(d.win)
-		     if integer(e) = -11 then {
-			d.win := d.buffer_win
-			d$process_event(e)
-			}
+                     if integer(e) = -11 then {
+                        d.win := d.buffer_win
+                        d$process_event(e)
+                        }
                      else if not(integer(e) = (&lrelease | &rrelease | &mrelease | &ldrag | &rdrag | &mdrag)) then
                         Alert(d.win)
                   }

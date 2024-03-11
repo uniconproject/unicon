@@ -23,30 +23,30 @@ u, v
 )
 
 class Vector4:Vector3 (
-        w	# not used yet, or maybe rarely
+        w       # not used yet, or maybe rarely
         )
    initially(xx, yy, zz, ww)
       self.Vector3.initally(xx, yy, zz)
       if /ww then w:=1.0
       else w:=ww
-end        
+end
 
 class Vector3 (
         x,y,z
         )
-      
-   method set(v)      # set the vector values to vector/list v values 
+
+   method set(v)      # set the vector values to vector/list v values
         x := v[1]
         y := v[2]
         z := v[3]
    end
-   
-   method setxyz(xx, yy, zz)      # set the vector values to vector v values 
+
+   method setxyz(xx, yy, zz)      # set the vector values to vector v values
         x := xx
         y := yy
         z := zz
    end
-   
+
    method add(v)      # add vector v to the current vector
         x +:= v[1]
         y +:= v[2]
@@ -58,13 +58,13 @@ class Vector3 (
         y +:= yy
         z +:= zz
    end
-   
+
    method sub(v)      # subtract vector v from the current vector
         x -:= v[1]
         y -:= v[2]
         z -:= v[3]
    end
-   
+
    method subxyz(xx, yy, zz)
         x -:= xx
         y -:= yy
@@ -94,7 +94,7 @@ class Vector3 (
         y *:= s
         z *:= s
    end
-   
+
    method div(s)
         x *:= s
         y *:= s
@@ -106,62 +106,62 @@ class Vector3 (
         y := -y
         z := -z
    end
-   
+
    method extend (d)    # extend the length of the vector by d. (preserve the direction)
-        local t, len 
+        local t, len
         len := length()
         if len=0 then len:=3.0
-        t := d/len  
+        t := d/len
         x +:= x * t
         y +:= y * t
         z +:= z * t
    end
-   
+
    method equal(v)
       return x=v.x & y=v.y & z=v.z
    end
-   
+
    method is_zero()
       return 0=x=y=z
    end
-   
+
    method LT(v)
       return x<v[1] & y<v[2] & z<v[3]
    end
-   
+
    method LTOE(v)
       return x<=v[1] & y<=v[2] & z<=v[3]
    end
-   
+
    method GT(v)
       return x>v[1] & y>v[2] & z>v[3]
    end
-   
+
    method GTOE(v)
       return x>=v[1] & y>=[2] & z>=v[3]
    end
-   
+
    method get()
       return Vector3(x, y, z)
    end
-      
-   method length()   
+
+   method length()
         return sqrt(x*x+y*y+z*z)
    end
-   
+
    # retunrs the disctance between the vector v and the current vector
-   method distance_to(v)     
+   method distance_to(v)
       local a, b, c
            a :=(x - v.x)
            b :=(y - v.y)
            c :=(z - v.z)
            return sqrt(a*a + b*b + c*c )
    end
-   
-   method dot(v)   
+
+   method dot(v)
       return ( x*v.x + y*v.y + z*v.z)
    end
-   
+
    method cross(v)
       return Vector3(( y*v.z - z*v.y ),
                       ( z*v.x - x*v.z ),
@@ -171,7 +171,7 @@ class Vector3 (
    method get_unit()
       local len
       len:=length()
-      if len~=0 then 
+      if len~=0 then
          return Vector3(x/len, y/len, z/len)
    end
 
@@ -183,29 +183,29 @@ class Vector3 (
       y:=y/len
       z:=z/len
    end
-   
+
    method mul_matrix(m)
       local xx:=x, yy:=y, zz:=z, newv, A
-      
+
       A:= m.A
-      
+
       newv := Vector3()
-      
+
       newv.x := A[1]*xx + A[5]*yy + A[ 9]*zz + A[13]
       newv.y := A[2]*xx + A[6]*yy + A[10]*zz + A[14]
       newv.z := A[3]*xx + A[7]*yy + A[11]*zz + A[15]
       return newv
    end
-   
-   initially(xx, yy, zz)      
+
+   initially(xx, yy, zz)
       if\xx then{
-      	x:=xx
-      	y:=yy
-      	z:=zz
-      	}
-      else{      
-      	x:=0.0
-      	y:=0.0
-      	z:=0.0
-      	}
+        x:=xx
+        y:=yy
+        z:=zz
+        }
+      else{
+        x:=0.0
+        y:=0.0
+        z:=0.0
+        }
 end

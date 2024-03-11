@@ -32,12 +32,12 @@ class IDEKeybindings : Keybindings(mode, prefix)
    local m
       if type(e) == "string" then e := prefix || e
       if m := \ (keymap[e]) then {
-	 if m == "handle_prefix" then prefix ||:= e
-	 else {
-	    prefix := ""
-	    return m
-	    }
-	 }
+         if m == "handle_prefix" then prefix ||:= e
+         else {
+            prefix := ""
+            return m
+            }
+         }
    end
    method current_mode()
       return mode
@@ -55,41 +55,41 @@ class IDEKeybindings : Keybindings(mode, prefix)
    method emacs_mode()
       mode := "emacs"
       set_key("\e",     "handle_prefix",
-	      Key_Home, "ide_key_home",
-	      Key_End,  "ide_key_end",
-	      "\^a",    "handle_start_of_line",
-	      "\^b",    "backward_char",
-	      "\^c",    "handle_prefix",
-	      "\^f",    "forward_char",
-	      "\^n",    "handle_key_down",
-	      "\^p",    "handle_key_up",
-	      "\^v",    "handle_key_page_down",
-	      "\^x",    "handle_prefix",
-	      "\^y",    "handle_paste",
-	      "\^z",    "handle_scrolldown_one_line",
-	      "\^x\^c", "handle_exit",
-	      "\^x\^x", "exchange_point_and_mark",
-	      "\^x\^f", "find_file",
-	      "\^x\^s", "save_buffer",
-	      "\^x\^n", "next_error"
+              Key_Home, "ide_key_home",
+              Key_End,  "ide_key_end",
+              "\^a",    "handle_start_of_line",
+              "\^b",    "backward_char",
+              "\^c",    "handle_prefix",
+              "\^f",    "forward_char",
+              "\^n",    "handle_key_down",
+              "\^p",    "handle_key_up",
+              "\^v",    "handle_key_page_down",
+              "\^x",    "handle_prefix",
+              "\^y",    "handle_paste",
+              "\^z",    "handle_scrolldown_one_line",
+              "\^x\^c", "handle_exit",
+              "\^x\^x", "exchange_point_and_mark",
+              "\^x\^f", "find_file",
+              "\^x\^s", "save_buffer",
+              "\^x\^n", "next_error"
 # Proposed function key bindings. Still under construction.
 # Loosely based on Borland-style IDE keybindings.
 #
-# Key	Base		Control     Alt		Shift
-#  F1   Help		search@crsr help/srch	help index
-#  F2	Save file	restart	    Find(next)	grep
-#  F3	Open file	callstack   closewin	New file
+# Key   Base            Control     Alt         Shift
+#  F1   Help            search@crsr help/srch   help index
+#  F2   Save file       restart     Find(next)  grep
+#  F3   Open file       callstack   closewin    New file
 #  F4   Run to cursor
-#  F5	Toggle breakpt		    User screen
-#  F6	Next win				Previous win
-#  F7	Step		set watchpt
-#  F8	Next		set breakpt
-#  F9	Make		Run	    Compileonly Run/debug
-# F10	Main menu		
-# F11	runtime msgs	project dlg inspect
-# F12	compiler msgs	toggle ivib
+#  F5   Toggle breakpt              User screen
+#  F6   Next win                                Previous win
+#  F7   Step            set watchpt
+#  F8   Next            set breakpt
+#  F9   Make            Run         Compileonly Run/debug
+# F10   Main menu
+# F11   runtime msgs    project dlg inspect
+# F12   compiler msgs   toggle ivib
 # alt-x = exit
-	      )
+              )
    end
 initially
    self.Keybindings.initially()
@@ -97,7 +97,7 @@ initially
 end
 
 class BuffEditableTextList : EditableTextList(
-   moved,	# to-do: check if we need this and if so, implement it.
+   moved,       # to-do: check if we need this and if so, implement it.
    mouse_locked,
    scroll_locked,
    pm,
@@ -138,41 +138,41 @@ class BuffEditableTextList : EditableTextList(
    local t1, t2
       self$Connectable.fire(type, param)
       if type === CONTENT_CHANGED_EVENT then {
-	 # Optimize this blind any-change==reparse logic to be more
-	 # selective.  Pressing return won't change the token sequence,
-	 # nor will editing of comments.
-	 doReparse := 1
-	 }
+         # Optimize this blind any-change==reparse logic to be more
+         # selective.  Pressing return won't change the token sequence,
+         # nor will editing of comments.
+         doReparse := 1
+         }
       if type === CURSOR_MOVED_EVENT & old_cursor_y ~= cursor_y then {
-	 t1 := &time
-	 ReparseCode()
-	 t2 := &time
-	 if t2 - t1 > 150 then
-	    write(&errout, "syntax checking is slow in here (", t2-t1,
-		  "ms); consider disabling it")
-	 }
+         t1 := &time
+         ReparseCode()
+         t2 := &time
+         if t2 - t1 > 150 then
+            write(&errout, "syntax checking is slow in here (", t2-t1,
+                  "ms); consider disabling it")
+         }
    end
 
    method on_vsb(ev,y_coor,enter_here)
       if /enter_here & \scroll_locked then fail #lock scrollbar
       self.EditableTextList.on_vsb(ev)
       if \enter_here=1 then {
-	 if \self.vsb then {
-	    self.vsb.set_value(y_coor)
-	    enter_here := 0
-	    }
-	 }
+         if \self.vsb then {
+            self.vsb.set_value(y_coor)
+            enter_here := 0
+            }
+         }
    end
 
    method on_hsb(ev,x_coor,enter_here)
       if /enter_here & \scroll_locked then fail#lock scrollbar
       self.EditableTextList.on_hsb(ev)
       if \enter_here=1 then {
-	 if \self.hsb then {
-	    self.hsb.set_value(x_coor)
-	    enter_here := 0
-	    }
-	 }
+         if \self.hsb then {
+            self.hsb.set_value(x_coor)
+            enter_here := 0
+            }
+         }
    end
 
    method handle_press(e,received)
@@ -193,26 +193,26 @@ class BuffEditableTextList : EditableTextList(
    method handle_return(e)
       local i, str, t1, t2
       self.EditableTextList.handle_return(e)
-      if \autoindent then{ 
-	 str := contents[cursor_y - 1]
-	 i := 1
+      if \autoindent then{
+         str := contents[cursor_y - 1]
+         i := 1
 
-         while i < *str + 1  do {	    
-            case str[i] of { 
+         while i < *str + 1  do {
+            case str[i] of {
                " "     : handle_default(" ")
                #"\t"    : handle_tab_text("\t")
                default : i := *str +2
                }
             i +:= 1
-	    }
+            }
         }
       # Reparse code when the cursor moves in the Y axis
       t1 := &time
       ReparseCode()
       t2 := &time
       if t2 - t1 > 150 then
-	 write(&errout, "syntax checking is slow in here (", t2-t1,
-	       "ms); consider disabling it")
+         write(&errout, "syntax checking is slow in here (", t2-t1,
+               "ms); consider disabling it")
    end
 
 
@@ -222,45 +222,45 @@ class BuffEditableTextList : EditableTextList(
       word := known.word_under_cursor()
       popup_item.disconnect(\l)
       if word === -1 then {
-	 #right-clicked on something besides a word
-	 #popmenu item should be a discription of what it can do	
-	 popup_item.set_label("Method call jumps to definition")
-	 }
+         #right-clicked on something besides a word
+         #popmenu item should be a discription of what it can do
+         popup_item.set_label("Method call jumps to definition")
+         }
       else {
-	 func_type := known.func_lookup(word)
-	 if func_type === 1 then {
-	    #popup menu item should be documentation for (function)
-	    popup_item.set_label("function "|| word || "()")
-	    l := popup_item.connect(self, "open_ref", ACTION_EVENT)
-	    }
-	 else if func_type === 2 then {
-	    #popup menu item should be Jump-To (name of function)
-	    popup_item.set_label("Jump to function definition for: "|| word)
-	    l := popup_item.connect(self, "jump_to", ACTION_EVENT)
+         func_type := known.func_lookup(word)
+         if func_type === 1 then {
+            #popup menu item should be documentation for (function)
+            popup_item.set_label("function "|| word || "()")
+            l := popup_item.connect(self, "open_ref", ACTION_EVENT)
+            }
+         else if func_type === 2 then {
+            #popup menu item should be Jump-To (name of function)
+            popup_item.set_label("Jump to function definition for: "|| word)
+            l := popup_item.connect(self, "jump_to", ACTION_EVENT)
 
-	    #popup_item.disconnect(self)
-	    }
-	 else if type(func_type) == "list" then {
-	    popup_item.set_label(func_type[1] || " " || word || " " ||
-				 func_type[2])
-	    }
-	 else {
-	    #popmenu item should be a discription of what it can do
-	    popup_item.set_label("Method call jumps to definition")
-	    }	
-	 }
+            #popup_item.disconnect(self)
+            }
+         else if type(func_type) == "list" then {
+            popup_item.set_label(func_type[1] || " " || word || " " ||
+                                 func_type[2])
+            }
+         else {
+            #popmenu item should be a discription of what it can do
+            popup_item.set_label("Method call jumps to definition")
+            }
+         }
 
       # Only add it once.
       if *pm_menu.children === 0 then {
-	 pm_menu.add(popup_item)
-	 pm.attrib("fg=magenta")
-	 }
+         pm_menu.add(popup_item)
+         pm.attrib("fg=magenta")
+         }
       pm.set_menu(pm_menu)
-      pm.set_parent(self.parent_dialog)	
+      pm.set_parent(self.parent_dialog)
       if !children === pm then {} else
-	 add(pm)
+         add(pm)
       pm.init()
-		
+
       #pm.set_pos(self.cursor_x, self.cursor_y)
       #pm.resize()
       #pm.display()
@@ -284,27 +284,27 @@ class BuffEditableTextList : EditableTextList(
    method handle_event(e)
    local t1, t2
       if integer(e) = &mpress then
-	 simulate_wheelbutton()
+         simulate_wheelbutton()
       # turn scroll up/down into a key_up/down in the vsb.
       else if integer(e) = -13 then
          every 1 to 4 do (\vsb).handle_button_up(e)
       else if integer(e) = -14 then
          every 1 to 4 do (\vsb).handle_button_down(e)
       else if integer(e) === &rrelease then {
-	handle_right_click(e)
-	}
-	else self.EditableTextList.handle_event(e)
+        handle_right_click(e)
+        }
+        else self.EditableTextList.handle_event(e)
 
-      
+
       if \self.old_cursor_y ~= self.cursor_y then {
-	 t1 := &time
-	 ReparseCode()
-	 t2 := &time
-	 if t2 - t1 > 150 then
-	    write(&errout, "syntax checking is slow in here (", t2-t1,
-		  "ms); consider disabling it")
-	 }
-      
+         t1 := &time
+         ReparseCode()
+         t2 := &time
+         if t2 - t1 > 150 then
+            write(&errout, "syntax checking is slow in here (", t2-t1,
+                  "ms); consider disabling it")
+         }
+
       if \self.changed then {
          #ide.modified:=1
          if not (ide.CurrentTabItem().label[-1] == "*") then {
@@ -330,10 +330,10 @@ class BuffEditableTextList : EditableTextList(
    method cursor_update()
       delay(300)
       paren_match_found:=&null
-      self.cursor_y := self.old_cursor_y 
+      self.cursor_y := self.old_cursor_y
       self.cursor_x := self.old_cursor_x
    end
-   
+
    method match_paren()
       local paren, paren_closing, paren_string, paren_string_rest, paren_grid,
          paren_pos, virtual_pos, counter, i, j, msgboxdata
@@ -342,22 +342,22 @@ class BuffEditableTextList : EditableTextList(
       paren_string := ""
       paren_string_rest := ""
       paren_grid := table()
-      
+
       if member(paren_closing, contents[cursor_y, cursor_x - 1]) then {
          every i := 1 to self.cursor_y - 1 do {
             paren_string ||:= self.contents[i]
             insert(paren_grid, i, self.contents[i])
          }
          virtual_pos := *paren_string + self.cursor_x
-         
+
          paren_string_rest := self.contents[self.cursor_y]
          paren_string_rest := paren_string_rest[1:self.cursor_x+1]
 
          paren_string||:=paren_string_rest
          insert(paren_grid, self.cursor_y, paren_string_rest)
-         
+
          paren_pos := paren.test(\paren_string, virtual_pos)
-         
+
          if \paren_pos then {
             counter := 0
             self.old_cursor_y := self.cursor_y
@@ -379,7 +379,7 @@ class BuffEditableTextList : EditableTextList(
       }
       fail
    end
-   
+
    #
    # The virtual x position of a line in the canvas, except
    # that we have line numbering turned on at the left.
@@ -465,39 +465,39 @@ class BuffEditableTextList : EditableTextList(
 
       left_string_unicon (self.cbwin, xp, yp, detab(s), i)
 
-      if (v.index = \self.cursor_y) & 
+      if (v.index = \self.cursor_y) &
          (v.first <= \self.cursor_x <= v.last) then {
          if \self.has_focus then {
             cw := Clone(self.cbwin,
-			"bg="||uidlog.ui_Preferences.cursor_highlight_color,
+                        "bg="||uidlog.ui_Preferences.cursor_highlight_color,
                         "fg="||uidlog.ui_Preferences.cursor_text_color)
             off := TextWidthEx(self.cbwin, s, 1, si, self.tab_width)
-            EraseRectangle(cw, xp + off, yp - self.line_height / 2, 
+            EraseRectangle(cw, xp + off, yp - self.line_height / 2,
                            CharWidth(self.cbwin, s[si]), self.line_height)
 
             if s[si] ~== "\t" then
                left_string(cw, xp + off, yp, s[si])
 
             Uncouple(cw)
-            } 
+            }
          else {
             cw := Clone(self.cbwin,
-			"fg="||uidlog.ui_Preferences.cursor_highlight_color)
-            Rectangle(cw, 
-                      xp + TextWidthEx(self.cbwin, s, 1, si, self.tab_width), 
-                      1 + yp - self.line_height / 2, 
-                      CharWidth(self.cbwin, s[si]), 
+                        "fg="||uidlog.ui_Preferences.cursor_highlight_color)
+            Rectangle(cw,
+                      xp + TextWidthEx(self.cbwin, s, 1, si, self.tab_width),
+                      1 + yp - self.line_height / 2,
+                      CharWidth(self.cbwin, s[si]),
                       self.line_height)
             Uncouple(cw)
             }
          }
 
       if \self.mark_y then {
-         if (self.mark_y < v.index < self.cursor_y) | 
+         if (self.mark_y < v.index < self.cursor_y) |
             (self.mark_y > v.index > self.cursor_y) then {
             # Whole line selected
             r := [v.first, v.last]
-            } 
+            }
          else if v.index = self.mark_y = self.cursor_y then {
             # Part of line
             if self.mark_x < self.cursor_x then {
@@ -506,19 +506,19 @@ class BuffEditableTextList : EditableTextList(
             else if self.mark_x > self.cursor_x then {
                r := range(v.first, v.last, self.cursor_x + 1 , self.mark_x)
                }
-            } 
+            }
          else if v.index = self.mark_y then {
             if self.mark_y < self.cursor_y then {
                r := range(v.first, v.last, self.mark_x, *self.contents[v.index] + 1)
-               } 
+               }
             else {
                r := range(v.first, v.last, 1, self.mark_x)
                }
-            } 
+            }
          else if v.index = self.cursor_y then {
             if self.mark_y > self.cursor_y then {
                r := range(v.first, v.last, self.cursor_x + 1, *self.contents[v.index] + 1)
-               } 
+               }
             else {
                r := range(v.first, v.last, 1, self.cursor_x)
                }
@@ -544,12 +544,12 @@ class BuffEditableTextList : EditableTextList(
       if \self.has_focus then {
          scroll_y := &y
 
-	 # five for each press
-	 handle_key_down()
-	 handle_key_down()
-	 handle_key_down()
-	 handle_key_down()
-	 handle_key_down()
+         # five for each press
+         handle_key_down()
+         handle_key_down()
+         handle_key_down()
+         handle_key_down()
+         handle_key_down()
 
          while ::Event() === &mdrag do {
             if &y > scroll_y then {
@@ -598,7 +598,7 @@ class BuffEditableTextList : EditableTextList(
             # Exit this method
             return
             }
-         }	
+         }
 
       # Reinitialize error counter in the yyerror function.  This is done in
       # order to avoid the istop() function being called from within the
@@ -645,7 +645,7 @@ class BuffEditableTextList : EditableTextList(
             # Add the offset to the x position
             x +:= off
             }
-         
+
          # Draw the rest of the string s that was not a token
          Fg(win, prefs.comment_text_color)#Very Dark Green
          }
@@ -681,44 +681,44 @@ class BuffEditableTextList : EditableTextList(
          x := 1
          s := copy(GetCode()) | []
 
-         # Extract the line number offset		
+         # Extract the line number offset
          lineNumberOffset := pop(s)
 
-         # Call the preprocessor but instead of passing a file name, 
+         # Call the preprocessor but instead of passing a file name,
          # pass a list containing the code.
-	 preproc_err_count := 0
+         preproc_err_count := 0
          yyin := ""
          every yyin ||:= preprocessor(s, uni_predefs) do yyin ||:= "\n"
-	 if preproc_err_count = 0 then {
-	    # Reinitialize lexical analyzer
-	    yylex_reinit()
-	    # Initialize variables
-	    /yydebug := 0
-	    parsingErrors := []
-	    # Reparse the code
-	    rv := yyparse()
-	    }
-         # Display errors	
+         if preproc_err_count = 0 then {
+            # Reinitialize lexical analyzer
+            yylex_reinit()
+            # Initialize variables
+            /yydebug := 0
+            parsingErrors := []
+            # Reparse the code
+            rv := yyparse()
+            }
+         # Display errors
          if errors + (\yynerrs|0) + preproc_err_count > 0 then {
             every errorObject := !parsingErrors do {
                # display the error
                errorObject.lineNumber +:= lineNumberOffset
-	       if errorObject.lineNumber <= *contents then {
-		  SetErrorLineNumber(errorObject.lineNumber)
-		  uidlog.MsgBox.set_contents([errorObject.lineNumber ||": " ||
-					      errorObject.errorMessage])
-		  }
+               if errorObject.lineNumber <= *contents then {
+                  SetErrorLineNumber(errorObject.lineNumber)
+                  uidlog.MsgBox.set_contents([errorObject.lineNumber ||": " ||
+                                              errorObject.errorMessage])
+                  }
                }
             }
-	 else uidlog.MsgBox.set_contents(["(no errors)"])
-	 doReparse := 0
-	 }
+         else uidlog.MsgBox.set_contents(["(no errors)"])
+         doReparse := 0
+         }
    end
 
    method GetCode()
       local codeSubStringList, originalPositionY, currentPositionY, token,
               startPositionY := 0, endPositionY := 0, endsneeded,
-	      inClass := 0, inMethod := 0
+              inClass := 0, inMethod := 0
 
       # reset parser
       reinitialize()
@@ -739,12 +739,12 @@ class BuffEditableTextList : EditableTextList(
                   break
                   }
                METHOD : {
-		  inMethod := 1
+                  inMethod := 1
                   startPositionY := currentPositionY
                   break
                   }
                CLASS : {
-		  inClass := 1
+                  inClass := 1
                   startPositionY := currentPositionY
                   break
                   }
@@ -762,26 +762,26 @@ class BuffEditableTextList : EditableTextList(
          # Reinitialize lexical analyzer
          yyin := contents[ currentPositionY ]
          yylex_reinit()
-	 while countdoublequotes(yyin)%2=1 & yyin[-1]=="_" do {
-	    currentPositionY +:= 1
-	    if not (yyin ||:= contents[ currentPositionY ]) then {
-	       break break
-	       }
-	    }
+         while countdoublequotes(yyin)%2=1 & yyin[-1]=="_" do {
+            currentPositionY +:= 1
+            if not (yyin ||:= contents[ currentPositionY ]) then {
+               break break
+               }
+            }
          yylex_reinit()
          # Get string s tokens
          while ( token := yylex() ) ~=== EOFX do {
             # Get tokens
             case token of {
                END: {
-		  endPositionY := currentPositionY
-		  break
+                  endPositionY := currentPositionY
+                  break
                   }
                CLASS | PROCEDURE: {
-		  if currentPositionY ~= startPositionY then {
-		     endPositionY := currentPositionY-1
-		     break
-		     }
+                  if currentPositionY ~= startPositionY then {
+                     endPositionY := currentPositionY-1
+                     break
+                     }
                   }
                default : break
                }
@@ -793,26 +793,26 @@ class BuffEditableTextList : EditableTextList(
       # Check if a valid enclosing end was found
       if endPositionY = 0 then {
          # Return all code
-         codeSubStringList := [ 0 ] ||| contents 		
+         codeSubStringList := [ 0 ] ||| contents
          return codeSubStringList
          }
       # Send only the enclosing sub string list
       if startPositionY = 0 then startPositionY := 1
 
       if inMethod = 1 then {
-	 codeSubStringList := [ startPositionY, "class __Parse()" ] ||| 
-				contents[ startPositionY : endPositionY+1 ]|||
-			      ["end"]
-	 }
+         codeSubStringList := [ startPositionY, "class __Parse()" ] |||
+                                contents[ startPositionY : endPositionY+1 ]|||
+                              ["end"]
+         }
       else if inClass = 1 then {
-	 codeSubStringList := [ startPositionY ] ||| 
-				contents[ startPositionY : endPositionY+1 ]|||
-			      ["end"]
-	 }
+         codeSubStringList := [ startPositionY ] |||
+                                contents[ startPositionY : endPositionY+1 ]|||
+                              ["end"]
+         }
       else {
-	 codeSubStringList := [ startPositionY ] ||| 
-				contents[ startPositionY : endPositionY+1 ]
-	 }
+         codeSubStringList := [ startPositionY ] |||
+                                contents[ startPositionY : endPositionY+1 ]
+         }
       # check what we came up with to parse
       # every write("\t", codeSubStringList[2 to *codeSubStringList])
       return codeSubStringList
@@ -844,14 +844,14 @@ procedure countdoublequotes(s)
 local i := 0
    s ? {
       while tab(upto('"\\')) do {
-	 if ="\"" then
-	    i +:= 1
-	 else {
-	    move(1) # eat \\
-	    if i % 2  = 1 then
-	       move(1) # eat escaped things; should make smarter
-	    }
-	 }
+         if ="\"" then
+            i +:= 1
+         else {
+            move(1) # eat \\
+            if i % 2  = 1 then
+               move(1) # eat escaped things; should make smarter
+            }
+         }
       }
    return i
 end

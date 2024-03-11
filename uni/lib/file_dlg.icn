@@ -1,25 +1,25 @@
 ############################################################################
 #
-#	File:     file_dlg.icn
+#       File:     file_dlg.icn
 #
-#	Subject:  
+#       Subject:
 #
-#	Author:   Robert Parlett
+#       Author:   Robert Parlett
 #
-#	Date:     October, 1998
+#       Date:     October, 1998
 #
 ############################################################################
 #
 #   This file is in the public domain.
 #
 ############################################################################
-#  
+#
 #   File dialog box
-#   
-#  
+#
+#
 ############################################################################
 #
-#  Links: 
+#  Links:
 #
 ############################################################################
 
@@ -36,13 +36,13 @@ $endif
 class FileDialog : _Dialog(
    init_dir,                # Initial directory name
    init_file,               # Initial file name
-   res,                     # Resulting file path          
+   res,                     # Resulting file path
    dir,                     # TextField directory
    file,                    # TextField filename
-   dlist,                   # TextList of directories            
-   flist,                   # TextList of files            
-   okay,                    #            
-   cancel,                  #              
+   dlist,                   # TextList of directories
+   flist,                   # TextList of files
+   okay,                    #
+   cancel,                  #
    extra_attribs            # Custom attributes
    )
 
@@ -83,7 +83,7 @@ class FileDialog : _Dialog(
 
    #
    # Set the initial file/directory from a whole path.
-   # 
+   #
    method set_path(s)
       self.init_dir := directory_name(s)
       self.init_file := file_name(s)
@@ -111,7 +111,7 @@ class FileDialog : _Dialog(
    method dialog_event(ev)
       case ev$get_component() of {
          cancel : {
-            if ev$get_code() > 0 then 
+            if ev$get_code() > 0 then
                self$dispose()
          }
 
@@ -142,7 +142,7 @@ class FileDialog : _Dialog(
                #
                # Go to parent directory (unless at root directory)
                #
-               if value == (".." || PATHCHAR) then {    
+               if value == (".." || PATHCHAR) then {
                   if s ~== PATHCHAR then {
                      s[-1] := ""
                      while s[-1] ~== PATHCHAR do s[-1] := ""
@@ -207,7 +207,7 @@ class FileDialog : _Dialog(
    method init_dialog()
       self$set_focus(file)
    end
-   
+
    method component_setup()
       #
       # Defaults if none set by caller.
@@ -233,7 +233,7 @@ class FileDialog : _Dialog(
       l$set_pos(50, 50)
       l$set_align("l", "c")
       self$add(l)
-      
+
       dir := TextField()
       dir$set_pos(150, 50)
       dir$set_size("100%-200")
@@ -254,7 +254,7 @@ class FileDialog : _Dialog(
       file$set_contents(init_file)
       self$add(file)
 
-      l1 := [] 
+      l1 := []
       l2 := []
       get_directory_list(init_dir, l1, l2)
 
@@ -302,7 +302,7 @@ $ifdef _MS_WINDOWS_NT
 $else
    if (*s > 1) & (s[-1] == PATHCHAR) then s[-1] := ""
 $endif
-   
+
    p := open(s) | {
        write(&errout, "get_directory_list: can't open ", image(s))
        fail
@@ -310,8 +310,8 @@ $endif
    if not (s[-1] == PATHCHAR) then s ||:= PATHCHAR
    while s2 := read(p) do {
       sr := stat(s||s2) | {
-	  write(&errout, "get_directory_list: can't stat ", image(s2))
-	  fail
+          write(&errout, "get_directory_list: can't stat ", image(s2))
+          fail
       }
       if sr.mode[1] == "d" then
          put(dir_list, s2 || PATHCHAR)

@@ -13,13 +13,13 @@ local pathto, rv, f, line
       }
    else {
       if f := open("/sbin/ifconfig", "p") then {
-	 while line := read(f) do {
-	    line ? {
-	       if tab(find("inet addr:127.0.0.1")) then next
-	       if tab(find("inet addr:")) then return "online, I think"
-	       }
-	    }
-	 }
+         while line := read(f) do {
+            line ? {
+               if tab(find("inet addr:127.0.0.1")) then next
+               if tab(find("inet addr:")) then return "online, I think"
+               }
+            }
+         }
       return "don't know, assume not"
       }
 end

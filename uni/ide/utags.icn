@@ -28,31 +28,31 @@ procedure utags(contents, parentfile)
       line[find("//",line):0] := ""
 
       line ? {
-	 gword := getword3(line)
+         gword := getword3(line)
 ### Unicon Tags ###
 
-	 if find(".icn", parentfile) then {    #Unicon Tags
-	    gword := getword()
-	    tab(many(' ')) 
+         if find(".icn", parentfile) then {    #Unicon Tags
+            gword := getword()
+            tab(many(' '))
 
-	    case gword of {
-	       "procedure"|"class": {
-		  put(outlines, Tag(gword, getword(), lineno, parentfile))
-		  }
-	       "method": {
-		  outlines[-1].add(Tag(gword, getword(), lineno,parentfile))
-		  }
-	       "initially": {
-		  outlines[-1].add(Tag(gword,gword,lineno,parentfile))
-		  }
-	       "link"|"$include"|"package": {
-		  every word := getword()  do
-		     put(outlines, Tag(gword, word, lineno, parentfile) )
-		  }
-	       }
-	    }
-	 lineno +:= 1
-	 }
+            case gword of {
+               "procedure"|"class": {
+                  put(outlines, Tag(gword, getword(), lineno, parentfile))
+                  }
+               "method": {
+                  outlines[-1].add(Tag(gword, getword(), lineno,parentfile))
+                  }
+               "initially": {
+                  outlines[-1].add(Tag(gword,gword,lineno,parentfile))
+                  }
+               "link"|"$include"|"package": {
+                  every word := getword()  do
+                     put(outlines, Tag(gword, word, lineno, parentfile) )
+                  }
+               }
+            }
+         lineno +:= 1
+         }
       }
    return outlines
 end
@@ -81,13 +81,13 @@ procedure getword3(line)
 local i, c, ch1 := 0, ch2, index1, index2, word
 
 #
-# returns the index of the location of 
+# returns the index of the location of
 # '(' or '{' in the method header.
 #
    index2 := upto('({', line)
 
    #
-   # returns the index of the location of 
+   # returns the index of the location of
    # the first blank before the method name.
    #
    i := \index2-2
@@ -95,7 +95,7 @@ local i, c, ch1 := 0, ch2, index1, index2, word
       i -:= 1
 
    index1 := i
-   word := line[\index1:\index2] 
+   word := line[\index1:\index2]
    suspend word
 end
 
@@ -109,21 +109,21 @@ global Tags
 
 procedure main(args)
    local i, lines, d, name, l, temp
-   
+
    Tags := []
    lines := []
    l := []
-   
+
    while *args > 0 do {
       name := pop(args)
       if not (i := open(name,"r")) then
-	 stop("utags: couldn't open ", image(name))
+         stop("utags: couldn't open ", image(name))
       while put(lines, read(i))
       close(i)
       l := utags(lines)
 
       temp := Tag("file",name, 0)
-      every  i :=  ! l do temp.add(i) 
+      every  i :=  ! l do temp.add(i)
 
       put(Tags, temp)
       lines := []
@@ -139,31 +139,31 @@ class dialog : _Dialog(class_browser)
 
    method handle_default(ev)
    end
-      
+
    method dialog_event(ev)
       case ev.get_component() of {
          class_browser : handle_class_browser(ev)
          default : handle_default(ev)
-	 }
+         }
    end
-   
+
    method setup()
       local nodes, names, i, j
-      
+
       self.set_attribs("size=500,600", "bg=pale gray")
       self.min_width  := 200
       self.min_height := 200
-      
+
       class_browser := ClassBrowser()
       class_browser$set_pos("5", "5")
       class_browser$set_size("100%-10", "100%-10")
       class_browser$set_attribs("bg=white","font=sans,18",
-				"label=Unicon Class File Browser", "resize=on")
-      
+                                "label=Unicon Class File Browser", "resize=on")
+
       class_browser$filltree(Tags)
       self$add(class_browser)
    end
-   
+
    method component_setup()
       self.setup()
    end

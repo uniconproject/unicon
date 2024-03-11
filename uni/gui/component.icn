@@ -20,22 +20,22 @@ $include "guih.icn"
 class Component : Object : SetFields : Connectable(
    #
    # x position as specified by {set_pos()}, eg "50%"
-   #                        
+   #
    x_spec,
    #
    # y position as specified by set_pos().
    #
    y_spec,
    #
-   # width specifier as specified in set_size(), eg "100%"              
+   # width specifier as specified in set_size(), eg "100%"
    #
-   w_spec, 
+   w_spec,
    #
    # height specifier as specified in set_size(),
    #
-   h_spec, 
+   h_spec,
    #
-   # x alignment as specified in set_align(), eg "l".             
+   # x alignment as specified in set_align(), eg "l".
    #
    x_align,
    #
@@ -50,7 +50,7 @@ class Component : Object : SetFields : Connectable(
    #
    # Absolute y position.
    #
-   y,                       #         
+   y,                       #
    #
    # Absolute width in pixels computed from w_spec and the
    # dimensions of the enclosing object or window.
@@ -74,13 +74,13 @@ class Component : Object : SetFields : Connectable(
    #
    # Flag indicating whether the {Component} currently is shaded;
    # {&null} means it isn't.
-   is_shaded_flag, 
+   is_shaded_flag,
    #
    # A cloned window created by combining the Dialog's canvas
    # with the Component's attributes, so drawing into this window
    # will draw straight to the Dialog window with the correct
    # attributes.
-   cwin,  
+   cwin,
    #
    # A cloned window created by combining a buffer window with
    # the {Component's} attributes.  This is used solely for
@@ -98,7 +98,7 @@ class Component : Object : SetFields : Connectable(
    #
    # Tooltip string
    #
-   tooltip,         
+   tooltip,
    #
    # Reference to enclosing {Component} object.
    #
@@ -335,24 +335,24 @@ class Component : Object : SetFields : Connectable(
       } else if e === (&lrelease | &rrelease | &mrelease) then {
          fire_icon_events_on_mouse(MOUSE_RELEASE_EVENT, e)
       } else {
-	 #
-	 # Non-mouse events.  By definition, these generate an ICON_EVENT.
-	 # If they are key presses, they generate a KEY_PRESS_EVENT.
-	 # If they are key releases, they generate a KEY_RELEASE_EVENT.
-	 # KEY_RELEASE_EVENTs do not occur unless input mask requests
-	 # them, and ivib does not yet know about KEY_RELEASE_EVENTs.
-	 # The other tricky part here is that in order for subcomponents
-	 # to get any events out of this, one has to visit children, which
-	 # is what the fire_..._on_mouse event does, as opposed to fire().
-	 #
-	 if (type(e)=="string") | (integer(e)>0) then {
-	    fire_icon_events_on_mouse(KEY_PRESS_EVENT, e)
-	    }
-	 else if integer(e) < -14 then {
-	    # -14 is the smallest built-in event, aka LASTEVENTCODE
-	    # need to think about whether this should be defined in guih.icn
-	    fire_icon_events_on_mouse(KEY_RELEASE_EVENT, e)
-	    }
+         #
+         # Non-mouse events.  By definition, these generate an ICON_EVENT.
+         # If they are key presses, they generate a KEY_PRESS_EVENT.
+         # If they are key releases, they generate a KEY_RELEASE_EVENT.
+         # KEY_RELEASE_EVENTs do not occur unless input mask requests
+         # them, and ivib does not yet know about KEY_RELEASE_EVENTs.
+         # The other tricky part here is that in order for subcomponents
+         # to get any events out of this, one has to visit children, which
+         # is what the fire_..._on_mouse event does, as opposed to fire().
+         #
+         if (type(e)=="string") | (integer(e)>0) then {
+            fire_icon_events_on_mouse(KEY_PRESS_EVENT, e)
+            }
+         else if integer(e) < -14 then {
+            # -14 is the smallest built-in event, aka LASTEVENTCODE
+            # need to think about whether this should be defined in guih.icn
+            fire_icon_events_on_mouse(KEY_RELEASE_EVENT, e)
+            }
          fire(ICON_EVENT, e)
       }
    end
@@ -380,7 +380,7 @@ class Component : Object : SetFields : Connectable(
    end
 
    #
-   # Set auto_refresh so that the component 
+   # Set auto_refresh so that the component
    # resize() itself on add()/remove()
    #
    method set_auto_refresh()
@@ -424,7 +424,7 @@ class Component : Object : SetFields : Connectable(
       self.is_shaded_flag := &null
       self.invalidate()
    end
-   
+
    #
    # Toggle whether or not to draw a border around the component.
    # Different objects respond differently to this flag being
@@ -471,7 +471,7 @@ class Component : Object : SetFields : Connectable(
    #
    # This draws, or re-draws, the component and all its children in the dialog
    # window.
-   # @param buffer_flag   If this parameter is not null, then 
+   # @param buffer_flag   If this parameter is not null, then
    # @ the component is displayed into the buffer window, not
    # @ the dialog window (this is used for double-buffering purposes).
    #
@@ -576,7 +576,7 @@ class Component : Object : SetFields : Connectable(
    #
    # Set the alignment of the component.  Options for
    # {x_align} are ``l'', ``c'' and ``r'', for left, centre, and right
-   # alignment.  Options for {y_align} are ``t'', ``c'' and ``b'', 
+   # alignment.  Options for {y_align} are ``t'', ``c'' and ``b'',
    # for top centre and bottom alignment.  The default alignment is ``l'', ``t''.
    #
    # @param x_align   The x alignment
@@ -641,35 +641,35 @@ class Component : Object : SetFields : Connectable(
       if /self.parent then
          fatal("incorrect ancestry (parent null)")
       if /self.cwin | /dont_force_new_win then {
-	parent_dialog := parent.get_parent_dialog_reference()
-      	if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
-	   cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
-	   }
-      	else {
-	   # Clone failed, what to do?  Try to drop a single
-	   # attribute, as that will identify which one is hurting us.
-	   every i := 1 to *attribs do {
-	      p := pop(attribs)
-	      if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
-	      write(&errout, "clone failed, had to discard attribute ", image(p))
-	      break
-	      }
-	    push(attribs, p)
-	    }
-	    if /cwin then {
-	       write(&errout, "clone failed, discarding attributes:")
-	       every write(&errout, "\t", ! attribs)
-	       cwin := Clone(parent.get_cwin_reference())
-	       if /cwin then fatal("multiple bad attributes")
-	       	  cbwin := Clone(parent.get_cbwin_reference())
-	       if /cbwin then fatal("bad cbwin, multiple bad attributes")
-	       }
-	    else {
-	       cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
-	       if /cbwin then fatal("bad cbwin, not sure why")
-	       }
-	    }
-	 }
+        parent_dialog := parent.get_parent_dialog_reference()
+        if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
+           cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
+           }
+        else {
+           # Clone failed, what to do?  Try to drop a single
+           # attribute, as that will identify which one is hurting us.
+           every i := 1 to *attribs do {
+              p := pop(attribs)
+              if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
+              write(&errout, "clone failed, had to discard attribute ", image(p))
+              break
+              }
+            push(attribs, p)
+            }
+            if /cwin then {
+               write(&errout, "clone failed, discarding attributes:")
+               every write(&errout, "\t", ! attribs)
+               cwin := Clone(parent.get_cwin_reference())
+               if /cwin then fatal("multiple bad attributes")
+                  cbwin := Clone(parent.get_cbwin_reference())
+               if /cbwin then fatal("bad cbwin, multiple bad attributes")
+               }
+            else {
+               cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
+               if /cbwin then fatal("bad cbwin, not sure why")
+               }
+            }
+         }
       every (!self.children).init()
    end
 
@@ -717,13 +717,13 @@ class Component : Object : SetFields : Connectable(
    #
    # Parse a position specification into an absolute value.
    # @param total   The total value
-   # @param s  The size specifier 
+   # @param s  The size specifier
    #
    method parse_pos(total, s)
       local pct, off
       s ? {
          if pct := 0.01 * integer(tab(upto('%'))) then {
-            move(1) 
+            move(1)
             if ="-" then
                off := -integer(tab(0)) | fail
             else if ="+" then
@@ -885,10 +885,10 @@ class Component : Object : SetFields : Connectable(
       j := *self.children
       while j>0 do {
          if self.children[j]===c then fail # we have it.
-	 j-:=1
-   	 }
-	
-      if /i | i=0 | i=*self.children then 
+         j-:=1
+         }
+
+      if /i | i=0 | i=*self.children then
          put(self.children, c)
       else
          insert(self.children, i, c)
@@ -898,7 +898,7 @@ class Component : Object : SetFields : Connectable(
       if self.is_dialog_open() & \self.auto_refresh then{
          c.init(1)
          self.resize()
-      	 }
+         }
       return
    end
 
@@ -911,7 +911,7 @@ class Component : Object : SetFields : Connectable(
       every i := 1 to *self.children do {
          if self.children[i] === c then {
             delete(self.children, i)
-	    if self.is_dialog_open() & \(self.auto_refresh) then
+            if self.is_dialog_open() & \(self.auto_refresh) then
                self.resize()
             return
          }
@@ -1105,27 +1105,27 @@ class Component : Object : SetFields : Connectable(
          "pointer" : set_pointer(string_val(attr, val))
          "allow_drop" :
             if test_flag(attr, val) then
-               set_allow_drop() 
+               set_allow_drop()
             else
                clear_allow_drop()
          "allow_drag" :
             if test_flag(attr, val) then
-               set_allow_drag() 
+               set_allow_drag()
             else
                clear_allow_drag()
-         "is_shaded" : 
+         "is_shaded" :
             if test_flag(attr, val) then
-               set_is_shaded() 
+               set_is_shaded()
             else
                clear_is_shaded()
-         "draw_border" : 
+         "draw_border" :
             if test_flag(attr, val) then
-               set_draw_border() 
+               set_draw_border()
             else
                clear_draw_border()
-         "accepts_focus" : 
+         "accepts_focus" :
             if test_flag(attr, val) then
-               set_accepts_focus() 
+               set_accepts_focus()
             else
                clear_accepts_focus()
          "pos" : set_pos!string_vals(attr, val)
@@ -1145,13 +1145,13 @@ class Component : Object : SetFields : Connectable(
       static attrib_set
       initial {
          attrib_set := set()
-         every insert(attrib_set, "label" | "posx" | "pos" | "posy" | "resize" | "size" | "height" | 
-                         "width" | "lines" | "columns" | "image" | "canvas" | "iconpos" | "iconlabel" | 
-                         "iconimage" | "echo" | "cursor" | "x" | "y" | "row" | "col" | "pointer" | 
-                         "pointerx" | "pointery" | "pointerrow" | "pointercol" | "display" | "depth" | 
-                         "displayheight" | "displaywidth" | "fg" | "bg" | "reverse" | "drawop" | "gamma" | 
-                         "font" | "fheight" | "fwidth" | "ascent" | "descent" | "leading" | "linewidth" | 
-                         "linestyle" | "fillstyle" | "pattern" | "clipx" | "clipy" | "clipw" | "cliph" | 
+         every insert(attrib_set, "label" | "posx" | "pos" | "posy" | "resize" | "size" | "height" |
+                         "width" | "lines" | "columns" | "image" | "canvas" | "iconpos" | "iconlabel" |
+                         "iconimage" | "echo" | "cursor" | "x" | "y" | "row" | "col" | "pointer" |
+                         "pointerx" | "pointery" | "pointerrow" | "pointercol" | "display" | "depth" |
+                         "displayheight" | "displaywidth" | "fg" | "bg" | "reverse" | "drawop" | "gamma" |
+                         "font" | "fheight" | "fwidth" | "ascent" | "descent" | "leading" | "linewidth" |
+                         "linestyle" | "fillstyle" | "pattern" | "clipx" | "clipy" | "clipw" | "cliph" |
                          "dx" | "dy" | "inputmask")
       }
       return member(attrib_set, s)

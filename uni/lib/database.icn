@@ -29,7 +29,7 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    # <[fails if unable to open database]>
    #</p>
    method open(user,      # Valid database user id
-	       password)   # Password for that user.
+               password)   # Password for that user.
       static real_open
       initial real_open := ::proc("open")
       return \accessDb(real_open(dsn,"o",db_table,user,password))
@@ -142,13 +142,13 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    method update(rec,          # table of fields (key is field name,
                                #    entry is new field value) to update
                                # <i>(Can also be a record)</i>
-		 whereClause   # SQL where clause (w/o the 'WHERE')
+                 whereClause   # SQL where clause (w/o the 'WHERE')
                                #    that identifies rows to modify
                  )
       s := "UPDATE " || db_table || " SET "
       every k := ::key(rec) do {
-	 s ||:= k ||"="||"'"||dbu.escape(rec[k])||"',"
-	 }
+         s ||:= k ||"="||"'"||dbu.escape(rec[k])||"',"
+         }
       s := s[1:-1]  # delete trailing comma?
       s ||:= " WHERE "||\whereClause
       return sql(s)
@@ -185,8 +185,8 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #</p>
    method startBlock()
       if blockDepth = 0 then {
-	 sql("BEGIN")
-	 }
+         sql("BEGIN")
+         }
       blockDepth +:= 1
    end
 
@@ -197,11 +197,11 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #</p>
    method endBlock()
       if blockDepth > 0 then {
-	 blockDepth -:= 1
-	 if blockDepth = 0 then {
-	    sql("COMMIT")
-	    }
-	 }
+         blockDepth -:= 1
+         if blockDepth = 0 then {
+            sql("COMMIT")
+            }
+         }
    end
 
    #<p>
@@ -209,13 +209,13 @@ class Database : Object (dsn, db_table, db, dbu, blockDepth)
    #</p>
    method abortBlock()
       if blockDepth > 0 then {
-	 sql("ROLLBACK")
-	 }
+         sql("ROLLBACK")
+         }
       blockDepth := 0
    end
 
 initially(DSN,          # Data store name (odbc)
-	  DB_TABLE)     # Table to access at that DSN
+          DB_TABLE)     # Table to access at that DSN
    dsn        := DSN
    db_table   := DB_TABLE
    dbu        := DButils()

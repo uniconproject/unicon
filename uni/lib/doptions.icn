@@ -5,10 +5,10 @@
 #
 # If you have a large program spread over a number of separately-compiled
 # packages, classes, etc., using options that change frequently, you don't
-# want to specify all these options in main().  
+# want to specify all these options in main().
 # This package allows decentralized processing of options (arguments to
 # the main program), according to specification strings that can be defined
-# wherever the particular options are used.  
+# wherever the particular options are used.
 #
 # Drawback: checking for unrecognized options is more cumbersome in a
 # decentralized setting.
@@ -29,13 +29,13 @@
 #   B()
 #   doptions::check()
 # end
-# 
+#
 # procedure A()
 #   local opts, s
 #   opts := doptions::get("-a:")
 #   s := opts["a"]
 # end
-# 
+#
 # procedure B()
 #   local opts, s
 #   opts := doptions::get("-b:")
@@ -61,7 +61,7 @@ procedure get(opt_string)
 end
 
 # Catches unrecognized options.  To be called by somebody, possibly main(),
-# after it is known that everyone has finished reading his/her options.  
+# after it is known that everyone has finished reading his/her options.
 procedure check()
   \initialized | stop("doptions::check: init() must be called first!")
   return options(main_args, all_opt_string, , 1)
@@ -70,7 +70,7 @@ end
 
 # This is the standard options() from the Icon program library, modified by
 # splitting error handling into two:
-# the procedure "errproc" that gets called on incorrect option specifications, 
+# the procedure "errproc" that gets called on incorrect option specifications,
 # and a flag "unrec", which, when set, checks for unrecognized options.
 
 procedure options(arg,optstring,errproc,unrec)
@@ -91,7 +91,7 @@ procedure options(arg,optstring,errproc,unrec)
     while optname := move(1) do {
       if optname == " " then next
       if optname == "-" then
-	  optname := tab(many(optcs)) | move(1) | break
+          optname := tab(many(optcs)) | move(1) | break
       opttype := tab(any('!:+.')) | "!"
       opttable[optname] := opttype
     }
@@ -103,42 +103,42 @@ procedure options(arg,optstring,errproc,unrec)
     if /x then ignore := &null     # if end of args from file, stop ignoring
     else x ? {
       if ="-" & not pos(0) & /ignore then {
-	if ="-" & pos(0) then ignore := 1	# ignore following args if --
-	else {
-	  tab(0) ? until pos(0) do {
-	    if opttype := \opttable[optname := ((pos(1),tab(0)) | move(1))] then {
-	      option[optname] :=
-		if any(':+.',opttype) then {
-		  p := "" ~== tab(0) | ::get(arg) | 
-		    return errproc("No parameter following -" || optname)
-		  case opttype of {
-		    ":": p
-		    "+": integer(p) |
-		       return errproc("-"||optname||" needs numeric parameter")
-		    ".": real(p)    |
-		       return errproc("-"||optname||" needs numeric parameter")
-		  }
-		}
-		else 1
-	    }
-	    else {
-	      if \unrec then stop("Unrecognized option: -" || optname)
-	      else break
-	    }
-	  }
-	}
+        if ="-" & pos(0) then ignore := 1       # ignore following args if --
+        else {
+          tab(0) ? until pos(0) do {
+            if opttype := \opttable[optname := ((pos(1),tab(0)) | move(1))] then {
+              option[optname] :=
+                if any(':+.',opttype) then {
+                  p := "" ~== tab(0) | ::get(arg) |
+                    return errproc("No parameter following -" || optname)
+                  case opttype of {
+                    ":": p
+                    "+": integer(p) |
+                       return errproc("-"||optname||" needs numeric parameter")
+                    ".": real(p)    |
+                       return errproc("-"||optname||" needs numeric parameter")
+                  }
+                }
+                else 1
+            }
+            else {
+              if \unrec then stop("Unrecognized option: -" || optname)
+              else break
+            }
+          }
+        }
       }
       #
       #  If the argument begins with the character "@", fetch option
       #  words from lines of a text file.
       #
       else if ="@" & not pos(0) & /ignore then {
-	f := open(fn := tab(0)) | return errproc("Can't open " || fn)
-	fileArg := []
-	while put(fileArg,read(f))
-	close(f)
-	push(arg)	# push null to signal end of args from file
-	while push(arg,pull(fileArg))
+        f := open(fn := tab(0)) | return errproc("Can't open " || fn)
+        fileArg := []
+        while put(fileArg,read(f))
+        close(f)
+        push(arg)       # push null to signal end of args from file
+        while push(arg,pull(fileArg))
       }
       else put(fList,x)
     }

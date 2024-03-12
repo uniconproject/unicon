@@ -84,7 +84,7 @@ static  cdefn * dlookup (char *name, int len, char *val);
 
 struct ppcmd {
    char *name;
-   char *(*func)();
+   char *(*func)(char *);
    }
 pplist[] = {
    { "define",  define  },
@@ -159,9 +159,7 @@ int ppinit(char *fname, char *inclpath, int m4)
  *
  *  Open calls may be nested.  Files are closed when EOF is read.
  */
-static int ppopen(fname, m4)
-char *fname;
-int m4;
+static int ppopen(char *fname, int m4)
    {
    FILE *f;
    infile *fs;
@@ -197,8 +195,7 @@ int m4;
 /*
  * m4pipe -- open a pipe from m4.
  */
-static FILE *m4pipe(filename)
-char *filename;
+static FILE *m4pipe(char *filename)
    {
 #if UNIX
       {
@@ -221,8 +218,7 @@ char *filename;
  *  Otherwise, defines s to have the value v.
  *  No error is given for a redefinition.
  */
-void ppdef(s, v)
-char *s, *v;
+void ppdef(char *s, char *v)
    {
    dlookup(s, -1, (char *)NULL);
    if (v != NULL)
@@ -375,7 +371,7 @@ int ppch()
 
 #if UNIX
          if (fs->m4flag) {                      /* if m4 preprocessing */
-            void quit();
+            void quit(char *);
             if (pclose(fs->fp) != 0)            /* close pipe */
                quit("m4 terminated abnormally");
             }
@@ -398,8 +394,7 @@ int ppch()
  *
  *  Allocates memory as needed.  Returns NULL for EOF.  Lines end with "\n\0".
  */
-static char *rline(fp)
-FILE *fp;
+static char *rline(FILE *fp)
    {
 #define LINE_SIZE_INIT 100
 #define LINE_SIZE_INCR 100
@@ -450,8 +445,7 @@ FILE *fp;
 /*
  * pushdef(d) -- insert definition into the input stream.
  */
-static void pushdef(d)
-cdefn *d;
+static void pushdef(cdefn *d)
    {
    buffer *b;
 
@@ -474,9 +468,7 @@ cdefn *d;
 /*
  * pushline(fname,lno) -- push #line directive into input stream.
  */
-static void pushline(fname, lno)
-char *fname;
-long lno;
+static void pushline(char *fname, long lno)
    {
    static char tbuf[200];
 
@@ -490,8 +482,7 @@ long lno;
  *
  *  s is the portion of the line following the $.
  */
-static void ppdir(s)
-char *s;
+static void ppdir(char *s)
    {
    char b0, *cmd, *errmsg;
    struct ppcmd *p;
@@ -524,8 +515,7 @@ char *s;
  *  We can't use tfatal() because we have our own line counter which may be
  *  out of sync with the lexical analyzer's.
  */
-static void pfatal(s1, s2)
-char *s1, *s2;
+static void pfatal(char *s1, char *s2)
    {
    int n;
 
@@ -544,8 +534,7 @@ char *s1, *s2;
 /*
  * errdir(s) -- handle deliberate $error.
  */
-static char *errdir(s)
-char *s;
+static char *errdir(char *s)
    {
    pfatal("explicit $error", s);                /* issue msg with text */
    return NULL;
@@ -554,8 +543,7 @@ char *s;
 /*
  * define(s) -- handle $define directive.
  */
-static char *define(s)
-char *s;
+static char *define(char *s)
    {
    char c, *name, *val;
 
@@ -586,8 +574,7 @@ char *s;
 /*
  * undef(s) -- handle $undef directive.
  */
-static char *undef(s)
-char *s;
+static char *undef(char *s)
    {
    char c, *name;
 
@@ -604,8 +591,7 @@ char *s;
 /*
  * include(s) -- handle $include directive.
  */
-static char *include(s)
-char *s;
+static char *include(char *s)
    {
    char *fname;
    char fullpath[MaxFileName];
@@ -623,8 +609,7 @@ char *s;
 /*
  * setline(s) -- handle $line (or #line) directive.
  */
-static char *setline(s)
-char *s;
+static char *setline(char *s)
    {
    long n;
    char c;
@@ -662,14 +647,12 @@ char *s;
 /*
  * ifdef(s), ifndef(s) -- conditional processing if s is/isn't defined.
  */
-static char *ifdef(s)
-char *s;
+static char *ifdef(char *s)
    {
    return ifxdef(s, 1);
    }
 
-static char *ifndef(s)
-char *s;
+static char *ifndef(char *s)
    {
    return ifxdef(s, 0);
    }
@@ -677,9 +660,7 @@ char *s;
 /*
  * ifxdef(s) -- handle $ifdef (if n is 1) or $ifndef (if n is 0).
  */
-static char *ifxdef(s, f)
-char *s;
-int f;
+static char *ifxdef(char *s, int f)
    {
    char c, *name;
 
@@ -698,8 +679,7 @@ int f;
 /*
  * elsedir(s) -- handle $else by skipping to $endif.
  */
-static char *elsedir(s)
-char *s;
+static char *elsedir(char *s)
    {
    if (ifdepth <= curfile->ifdepth)
       return "unexpected $else";
@@ -712,8 +692,7 @@ char *s;
 /*
  * endif(s) -- handle $endif.
  */
-static char *endif(s)
-char *s;
+static char *endif(char *s)
    {
    if (ifdepth <= curfile->ifdepth)
       return "unexpected $endif";
@@ -728,8 +707,7 @@ char *s;
  *
  *  If report is nonzero, generate #line directive at end of skip.
  */
-static void skipcode(doelse, report)
-int doelse, report;
+static void skipcode(int doelse, int report)
    {
    char c, *p, *cmd;
 
@@ -797,8 +775,7 @@ int doelse, report;
  *
  *  If '#' is encountered, skips to end of string.
  */
-static char *wskip(s)
-char *s;
+static char *wskip(char *s)
    {
    char c;
 
@@ -813,8 +790,7 @@ char *s;
 /*
  * nskip(s) -- skip over numeric constant and return updated pointer.
  */
-static char *nskip(s)
-char *s;
+static char *nskip(char *s)
    {
       char c;
 
@@ -846,8 +822,7 @@ char *s;
  *  the string.  Escaped quote characters do not stop the scan.  The
  *  updated pointer is returned.
  */
-static char *matchq(s)
-char *s;
+static char *matchq(char *s)
    {
    char c, q;
 
@@ -873,8 +848,7 @@ char *s;
  *  is typically done to avoid the need for another arbitrarily-long
  *  buffer.  An offset of -1 allows room for insertion of the '\0'.
  */
-static char *getidt(dst, src)
-char *dst, *src;
+static char *getidt(char *dst, char *src)
    {
    char c;
 
@@ -892,8 +866,7 @@ char *dst, *src;
  *  Similarly to getidt, getfnm extracts a quoted or unquoted file name.
  *  An empty string at dst indicates a missing or unterminated file name.
  */
-static char *getfnm(dst, src)
-char *dst, *src;
+static char *getfnm(char *dst, char *src)
    {
    char *lim;
 
@@ -921,10 +894,7 @@ char *dst, *src;
  *  If name is null, the call is ignored.
  *  If len < 0, strlen(name) is taken.
  */
-static cdefn *dlookup(name, len, val)
-char *name;
-int len;
-char *val;
+static cdefn *dlookup(char *name, int len, char *val)
    {
    int h, i, nlen, vlen;
    unsigned int t;

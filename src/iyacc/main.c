@@ -78,7 +78,7 @@ char  *rassoc;
 short **derives;
 char *nullable;
 
-extern char *getenv();
+/*extern char *getenv();*/
 
 /*
  * Since fclose() is called via the signal handler, it might die.  Don't loop

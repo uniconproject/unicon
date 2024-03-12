@@ -917,10 +917,7 @@ C_integer iipow(C_integer n1, C_integer n2, int *over_flowp)
 /*
  * ripow - raise a real number to an integral power.
  */
-int ripow(r, n, drslt)
-double r;
-C_integer n;
-dptr drslt;
+int ripow(double r, C_integer n, dptr drslt)
    {
    double retval;
    CURTSTATE();

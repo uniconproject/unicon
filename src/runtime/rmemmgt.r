@@ -446,8 +446,7 @@ void initalloc(word codesize)
  * collect - do a garbage collection of currently active regions.
  */
 
-int collect(region)
-int region;
+ int collect(int region)
    {
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
    static int setrlimit_firsttime=1, setrlimit_count=0;
@@ -818,8 +817,7 @@ static void markthreads()
 /*
  * markprogram - traverse pointers out of a program state structure
  */
-static void markprogram(pstate)
-struct progstate *pstate;
+static void markprogram(struct progstate *pstate)
    {
    struct descrip *dp;
 
@@ -884,8 +882,7 @@ struct progstate *pstate;
  *  are ignored.
  */
 
-static void postqual(dp)
-dptr dp;
+static void postqual(dptr dp)
    {
    char *newqual;
    CURTSTATE();
@@ -921,8 +918,7 @@ dptr dp;
  *  back-list of descriptors pointing to that block. (Phase I of garbage
  *  collection.)
  */
-static void markblock(dp)
-dptr dp;
+static void markblock(dptr dp)
    {
    register dptr dp1;
    register char *block, *endblock;
@@ -1160,8 +1156,7 @@ int is_in_a_block_region(char *block)
  *  is just a block pointer, not a descriptor.
  */
 
-static void markptr(ptr)
-union block **ptr;
+static void markptr(union block **ptr)
    {
    register dptr dp;
    register char *block, *endblock;
@@ -1297,8 +1292,7 @@ union block **ptr;
  *  marking the descriptors.
  */
 
-static void sweep(ce)
-struct b_coexpr *ce;
+static void sweep(struct b_coexpr *ce)
    {
    register struct tend_desc *tp;
    register int i;
@@ -1347,8 +1341,7 @@ static void sweep_pfps(struct p_frame *fp)
  *  the "if it can't be identified it's a descriptor" methodology.
  */
 
-static void sweep_stk(ce)
-struct b_coexpr *ce;
+static void sweep_stk(struct b_coexpr *ce)
    {
    register word *s_sp;
    register struct pf_marker *fp;
@@ -1562,8 +1555,7 @@ static void cofree()
  *  descriptors rather than pointers to them.
  */
 
-static void scollect(extra)
-word extra;
+static void scollect(word extra)
    {
    register char *source, *dest;
    register dptr *qptr;
@@ -1629,8 +1621,7 @@ word extra;
  * qlcmp - compare the location fields of two string qualifiers for qsort.
  */
 
-static int qlcmp(q1,q2)
-dptr *q1, *q2;
+static int qlcmp(dptr *q1, dptr *q2)
    {
 
 #if IntBits == 16
@@ -1654,8 +1645,7 @@ dptr *q1, *q2;
  *  collection.)
  */
 
-static void adjust(source,dest)
-char *source, *dest;
+static void adjust(char *source, char *dest)
    {
    register union block **nxtptr, **tptr;
    CURTSTATE();
@@ -1690,8 +1680,7 @@ char *source, *dest;
  *  collection.)
  */
 
-static void compact(source)
-char *source;
+static void compact(char *source)
    {
    register char *dest;
    register word size;
@@ -1737,9 +1726,7 @@ char *source;
  * be fairly large.)
  */
 
-static void mvc(n, src, dest)
-uword n;
-register char *src, *dest;
+static void mvc(uword n, register char *src, register char *dest)
    {
    register char *srcend, *destend;        /* end of data areas */
    word copy_size;                  /* of size copy_size */
@@ -1812,8 +1799,7 @@ register char *src, *dest;
  * descr - dump a descriptor.  Used only for debugging.
  */
 
-void descr(dp)
-dptr dp;
+void descr(dptr dp)
    {
    int i;
 

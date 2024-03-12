@@ -56,8 +56,7 @@ firstkey ()
 /* Continue visiting all keys.  The next key following KEY is returned. */
 
 datum
-nextkey (key)
-     datum key;
+nextkey (datum key)
 {
   datum ret_val;
 

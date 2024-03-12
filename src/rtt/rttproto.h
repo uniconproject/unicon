@@ -41,6 +41,9 @@ void           impl_key  (struct token *name);
 void           impl_op   (struct token *op_sym, struct token *name);
 void           init_lex  (void);
 void           init_sym  (void);
+#ifndef LEGACY_FUNCTION_PROTOTYPES
+int            set_parameter_decl(int nv);
+#endif                                  /* LEGACY_FUNCTION_PROTOTYPES */
 struct il_c   *inlin_c   (struct node *n, int may_mod);
 void           in_line   (struct node *n);
 void           just_type (struct node *typ, int indent, int ilc);

@@ -40,9 +40,7 @@
    point? it doesn't alloate any memory. */
 
 int
-gdbm_exists (dbf, key)
-    gdbm_file_info *dbf;
-    datum key;
+gdbm_exists (gdbm_file_info *dbf, datum key)
 {
 char *find_data;                /* dummy */
 word_t hash_val;                /* dummy */

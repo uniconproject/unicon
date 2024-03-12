@@ -93,9 +93,7 @@ void chkinv()
  * smpl_invk - find any global variable uses that are not a simple
  *  invocation and mark the variables.
  */
-static void chksmpl(n, smpl_invk)
-struct node *n;
-int smpl_invk;
+static void chksmpl(struct node *n, int smpl_invk)
    {
    struct node *cases;
    struct node *clause;
@@ -237,9 +235,8 @@ int smpl_invk;
  *   is a particularly special case. Also, determine whether execution
  *   might "fall through" this code and whether the code might fail.
  */
-static int spcl_inv(n, asgn)
-struct node *n;
-struct node *asgn;  /* the result goes into this special-cased assignment */
+static int spcl_inv(struct node *n, 
+                    struct node *asgn) /* the result goes into this special-cased assignment */
    {
    struct node *cases;
    struct node *clause;
@@ -515,9 +512,7 @@ struct node *asgn;  /* the result goes into this special-cased assignment */
  * seq_exec - take the execution flags for sequential pieces of code
  *  and compute the flags for the combined code.
  */
-static int seq_exec(exec_flg1, exec_flg2)
-int exec_flg1;
-int exec_flg2;
+static int seq_exec(int exec_flg1, int exec_flg2)
    {
    return (exec_flg1 & exec_flg2 & DoesFThru) |
       ((exec_flg1 | exec_flg2) & DoesFail);
@@ -529,8 +524,7 @@ int exec_flg2;
  *  failure to failure.
  *
  */
-static int chg_ret(flag)
-int flag;
+static int chg_ret(int flag)
    {
    int flg1;
 

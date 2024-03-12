@@ -222,9 +222,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #endif                                  /* MSWindows */
 #endif                                  /* NTConsole */
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
    {
    int c;
    int nopts;
@@ -482,8 +480,7 @@ char **argv;
 /*
  * trans - translate a source file.
  */
-void trans(src_file)
-char *src_file;
+void trans(char *src_file)
    {
    char *cname;
    char buf[MaxFileName];               /* file name construction buffer */
@@ -608,8 +605,7 @@ char *src_file;
 /*
  * add_tdef - add identifier to list of typedef names.
  */
-static void add_tdef(name)
-char *name;
+static void add_tdef(char *name)
    {
    struct tdefnm *td;
 
@@ -623,9 +619,7 @@ char *name;
  * Add name of file to the output list, and if it contains "interesting"
  *  code, add it to the dependency list in the data base.
  */
-void put_c_fl(fname, keep)
-char *fname;
-int keep;
+void put_c_fl(char *fname, int keep)
    {
    struct fileparts *fp;
    int oldlen = strlen(curlst_string);

@@ -112,9 +112,7 @@ char *versionLine(char *prefix)
 /*
  *  main program
  */
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
    {
    int errors = 0;                      /* compilation errors */
    int dynrec_start; /* recnum origin for dynamic recs */
@@ -640,10 +638,7 @@ Deliberate Syntax Error
  */
 static
 void
-emit_cmdline(f, argc, argv)
-   void * f;
-   int argc;
-   char ** argv;
+emit_cmdline(void * f, int argc, char ** argv)
 {
    int i, len, col;
 
@@ -665,8 +660,7 @@ emit_cmdline(f, argc, argv)
 /*
  * execute - execute compiled Icon program
  */
-static void execute(ofile,efile,args)
-char *ofile, *efile, **args;
+static void execute(char *ofile, char *efile, char **args)
    {
 
    int n;
@@ -728,8 +722,7 @@ Deliberate Syntax Error
 
    }
 
-static void report(s)
-char *s;
+static void report(char *s)
    {
 
 /*
@@ -756,8 +749,7 @@ Deliberate Syntax Error
  * rmfile - remove a file
  */
 
-static void rmfile(fname)
-char *fname;
+static void rmfile(char *fname)
    {
    remove(fname);
    }
@@ -766,8 +758,7 @@ char *fname;
  * open_out - open a C output file and write identifying information
  *  to the front.
  */
-static FILE *open_out(fname)
-char *fname;
+static FILE *open_out(char *fname)
    {
    FILE *f;
    static char *ident = "/*ICONC*/";

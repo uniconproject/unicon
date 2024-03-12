@@ -25,8 +25,7 @@ static struct optab *optr; /* pointer into operator table */
  */
 extern
 void
-readdb(db_name)
-   char *db_name;
+readdb(char *db_name)
 {
    char *op, *s;
    int i;
@@ -113,8 +112,7 @@ readdb(db_name)
  */
 static
 int
-acpt_op(ip)
-   struct implement *ip;
+acpt_op(struct implement *ip)
 {
    register char *op;
    register int opcmp;
@@ -168,8 +166,7 @@ acpt_op(ip)
  */
 static
 int
-chck_spec(ip)
-   struct implement *ip;
+chck_spec(struct implement *ip)
 {
    int indx;
    register char *op;

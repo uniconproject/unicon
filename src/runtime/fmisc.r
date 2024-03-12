@@ -1073,8 +1073,7 @@ end
  * trefcmp(d1,d2) - compare two-element lists on first field.
  */
 
-int trefcmp(d1,d2)
-dptr d1, d2;
+int trefcmp(dptr d1,dptr d2)
    {
 
 #ifdef DeBug
@@ -1090,8 +1089,7 @@ dptr d1, d2;
  * tvalcmp(d1,d2) - compare two-element lists on second field.
  */
 
-int tvalcmp(d1,d2)
-dptr d1, d2;
+int tvalcmp(dptr d1,dptr d2)
    {
 
 #ifdef DeBug
@@ -1110,8 +1108,7 @@ dptr d1, d2;
  * trcmp3(dp1,dp2)
  */
 
-int trcmp3(dp1,dp2)
-struct dpair *dp1,*dp2;
+int trcmp3(struct dpair *dp1, struct dpair *dp2)
 {
    return (anycmp(&((*dp1).dr),&((*dp2).dr)));
 }
@@ -1119,9 +1116,7 @@ struct dpair *dp1,*dp2;
  * tvcmp4(dp1,dp2)
  */
 
-int tvcmp4(dp1,dp2)
-struct dpair *dp1,*dp2;
-
+int tvcmp4(struct dpair *dp1, struct dpair *dp2)
    {
    return (anycmp(&((*dp1).dv),&((*dp2).dv)));
    }
@@ -1261,8 +1256,7 @@ end
 word sort_field;                /* field number, set by sort function */
 static dptr nth (dptr d);
 
-int nthcmp(d1,d2)
-dptr d1, d2;
+int nthcmp(dptr d1, dptr d2)
    {
    int t1, t2, rv;
    dptr e1, e2;
@@ -1297,8 +1291,7 @@ dptr d1, d2;
 /*
  * nth(d) - return the nth field of d, if any.  (sort_field is "n".)
  */
-static dptr nth(d)
-dptr d;
+static dptr nth(dptr d)
    {
    union block *bp;
    struct b_list *lp;

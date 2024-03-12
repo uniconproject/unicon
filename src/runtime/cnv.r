@@ -108,9 +108,7 @@ int cnv_c_dbl(dptr s, double *d)
 /*
  * cnv_c_int - cnv:C_integer(*s, *d), convert a value directly into a C_integer
  */
-int cnv_c_int(s, d)
-dptr s;
-C_integer *d;
+int cnv_c_int(dptr s, C_integer *d)
    {
    struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    union numeric numrc;
@@ -173,9 +171,7 @@ C_integer *d;
 /*
  * cnv_c_str - cnv:C_string(*s, *d), convert a value into a C (and Icon) string
  */
-int cnv_c_str(s, d)
-dptr s;
-dptr d;
+int cnv_c_str(dptr s, dptr d)
    {
    CURTSTATE();
    /*
@@ -265,9 +261,7 @@ cnv_cset_macro(cnv_cset,0,0,0,0,0)
 /*
  * cnv_ec_int - cnv:(exact)C_integer(*s, *d), convert to an exact C integer
  */
-int cnv_ec_int(s, d)
-dptr s;
-C_integer *d;
+int cnv_ec_int(dptr s, C_integer *d)
    {
    struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    union numeric numrc;
@@ -311,8 +305,7 @@ C_integer *d;
 /*
  * cnv_eint - cnv:(exact)integer(*s, *d), convert to an exact integer
  */
-int cnv_eint(s, d)
-dptr s, d;
+int cnv_eint(dptr s, dptr d)
    {
    struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    char sbuf[MaxCvtLen];
@@ -359,8 +352,7 @@ dptr s, d;
 /*
  * cnv_int - cnv:integer(*s, *d), convert to integer
  */
-int f(s, d)
-dptr s, d;
+int f(dptr s, dptr d)
    {
    struct descrip cnvstr;       /* not tended, see comment at cnv_c_dbl */
    char sbuf[MaxCvtLen];
@@ -782,8 +774,7 @@ deref_macro(deref,0)
 /*
  * getdbl - return as a double the value inside a real block.
  */
-double getdbl(dp)
-dptr dp;
+double getdbl(dptr dp)
    {
    double d;
    GetReal(dp, d);
@@ -793,10 +784,7 @@ dptr dp;
 /*
  * tmp_str - Convert to temporary string.
  */
-static int tmp_str(sbuf, s, d)
-char *sbuf;
-dptr s;
-dptr d;
+static int tmp_str(char *sbuf, dptr s, dptr d)
    {
    type_case *s of {
       string:
@@ -829,9 +817,8 @@ dptr d;
  * dp_pnmcmp - do a string comparison of a descriptor to the procedure
  *   name in a pstrnm struct; used in call to qsearch().
  */
-int dp_pnmcmp(pne,dp)
-struct pstrnm *pne;
-struct descrip *dp;
+int 
+dp_pnmcmp (struct pstrnm *pne, struct descrip *dp)
 {
    struct descrip d;
    StrLen(d) = strlen(pne->pstrep);
@@ -911,10 +898,7 @@ struct b_proc *strprc(dptr s, C_integer arity)
  *  making q a descriptor for the resulting string.
  */
 
-static void itos(num, dp, s)
-C_integer num;
-dptr dp;
-char *s;
+static void itos(C_integer num, dptr dp, char *s)
    {
    register char *p;
    word ival;
@@ -955,9 +939,7 @@ char *s;
  * union numeric (we do this to avoid allocating a block for a
  * real that will later be used directly as a C_double).
  */
-static int ston(sptr, result)
-dptr sptr;
-union numeric *result;
+static int ston(dptr sptr, union numeric *result)
    {
    register char *s = StrLoc(*sptr), *end_s;
    register int c;
@@ -1193,12 +1175,8 @@ union numeric *result;
  * radix - convert string s in radix r into an integer in *result.  sign
  *  will be either '+' or '-'.
  */
-int radix(sign, r, s, end_s, result)
-int sign;
-register int r;
-register char *s;
-register char *end_s;
-union numeric *result;
+int 
+radix (int sign, register int r, register char *s, register char *end_s, union numeric *result)
    {
    register int c;
    word num;
@@ -1237,9 +1215,7 @@ union numeric *result;
  *  given length.
  */
 
-word cvpos(pos, len)
-word pos;
-register word len;
+word cvpos(word pos, register word len)
    {
    register word p;
 
@@ -1268,10 +1244,7 @@ double dblZero = 0.0;
  * rtos - convert the real number n into a string using s as a buffer and
  *  making a descriptor for the resulting string.
  */
-void rtos(n, dp, s)
-double n;
-dptr dp;
-char *s;
+void rtos(double n, dptr dp, char *s)
    {
    s++;                                 /* leave room for leading zero */
    sprintf(s, "%.*g", Precision, n + dblZero);   /* format, avoiding -0 */
@@ -1298,10 +1271,7 @@ char *s;
  *  s as a buffer and making a descriptor for the resulting string.
  */
 
-static void cstos(cs, dp, s)
-unsigned int *cs;
-dptr dp;
-char *s;
+static void cstos(unsigned int *cs, dptr dp, char *s)
    {
    register unsigned int w;
    register int j, i;

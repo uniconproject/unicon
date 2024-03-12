@@ -58,8 +58,7 @@ struct implement *cur_impl;     /* data base entry for current operation */
 /*
  * loaddb - load data base.
  */
-void loaddb(dbname)
-char *dbname;
+void loaddb(char *dbname)
    {
    char *op;
    struct implement *ip;
@@ -153,9 +152,7 @@ char *dbname;
  * max_pre - find the maximum prefix in an implemetation table and set the
  *  prefix array to the next value.
  */
-static void max_pre(tbl, pre)
-struct implement **tbl;
-char *pre;
+static void max_pre(struct implement **tbl, char *pre)
    {
    register struct implement *ptr;
    unsigned hashval;
@@ -184,8 +181,7 @@ char *pre;
  * src_lkup - return pointer to dependency information for the given
  *   source file.
  */
-struct srcfile *src_lkup(srcname)
-char *srcname;
+struct srcfile *src_lkup(char *srcname)
    {
    unsigned hashval;
    struct srcfile *sfile;
@@ -217,9 +213,7 @@ char *srcname;
  * add_dpnd - add the given source/dependency relation to the dependency
  *   table.
  */
-void add_dpnd(sfile, c_name)
-struct srcfile *sfile;
-char *c_name;
+void add_dpnd(struct srcfile *sfile, char *c_name)
    {
    struct cfile *cf;
 
@@ -232,8 +226,7 @@ char *c_name;
 /*
  * clr_dpnd - delete all dependencies for the given source file.
  */
-void clr_dpnd(srcname)
-char *srcname;
+void clr_dpnd(char *srcname)
    {
    src_lkup(srcname)->dependents = NULL;
    }
@@ -241,8 +234,7 @@ char *srcname;
 /*
  * dumpdb - write the updated data base.
  */
-void dumpdb(dbname)
-char *dbname;
+void dumpdb(char *dbname)
    {
 #ifdef Rttx
    fprintf(stdout, "rtt was compiled to only support the intepreter, use -x\n");
@@ -477,9 +469,7 @@ static void prt_impls(FILE *db, char *sect, struct implement **tbl, int num,
  *   code used by iconc to perform type infernence for the operation
  *   and to generate a tailored version of the operation.
  */
-static void put_inlin(db, il)
-FILE *db;
-struct il_code *il;
+static void put_inlin(FILE *db, struct il_code *il)
    {
    int i;
    int num_cases;
@@ -833,9 +823,7 @@ struct il_code *il;
 /*
  * put_case - put the cases of a type_case statement into the data base file.
  */
-static int put_case(db, il)
-FILE *db;
-struct il_code *il;
+static int put_case(FILE *db, struct il_code *il)
    {
    int *typ_vect;
    int i, j;
@@ -862,9 +850,7 @@ struct il_code *il;
  * put_typcd - convert a numeric type code into an alpha type code and
  *  put it in the data base file.
  */
-static void put_typcd(db, typcd)
-FILE *db;
-int typcd;
+static void put_typcd(FILE *db, int typcd)
    {
    if (typcd >= 0)
       fprintf(db, "T%d ", typcd);
@@ -919,9 +905,7 @@ int typcd;
 /*
  * put_ilc - put in-line C code in the data base file.
  */
-static void put_ilc(db, ilc)
-FILE *db;
-struct il_c *ilc;
+static void put_ilc(FILE *db, struct il_c *ilc)
    {
    /*
     * In-line C code is either "nil" or code bracketed by $c $e.
@@ -995,10 +979,7 @@ struct il_c *ilc;
 /*
  * put_var - output in-line C code for a variable.
  */
-static void put_var(db, code, ilc)
-FILE *db;
-int code;
-struct il_c *ilc;
+static void put_var(FILE *db, int code, struct il_c *ilc)
    {
    fprintf(db, "$%c", code);  /* 'r': non-mod ref, 'm': mod ref, 't': tended */
    if (ilc->s != NULL)
@@ -1026,9 +1007,7 @@ static void ret_flag(FILE *db, int flag, int may_fthru)
 /*
  * put_ret - put the body of a return/suspend statement in the data base.
  */
-static void put_ret(db, ilc)
-FILE *db;
-struct il_c *ilc;
+static void put_ret(FILE *db, struct il_c *ilc)
    {
    int i;
 
@@ -1076,8 +1055,7 @@ static int op_cmp(const void *p1, const void *p2)
 /*
  * prt_dpnd - print dependency information to the data base.
  */
-static void prt_dpnd(db)
-FILE *db;
+static void prt_dpnd(FILE *db)
    {
    struct srcfile **sort_ary;
    struct srcfile *sfile;
@@ -1135,10 +1113,7 @@ static int src_cmp(const void *p1, const void *p2)
 /*
  * prt_c_fl - print list of C files in reverse order.
  */
-static int prt_c_fl(db, clst, line_left)
-FILE *db;
-struct cfile *clst;
-int line_left;
+static int prt_c_fl(FILE *db, struct cfile *clst, int line_left)
    {
    int len;
 
@@ -1193,8 +1168,7 @@ void full_lst()
  * impl_fnc - find or create implementation struct for function currently
  *  being parsed.
  */
-void impl_fnc(name)
-struct token *name;
+void impl_fnc(struct token *name)
    {
    /*
     * Set the global operation type for later use. If this is a
@@ -1208,8 +1182,7 @@ struct token *name;
  * impl_key - find or create implementation struct for keyword currently
  *  being parsed.
  */
-void impl_key(name)
-struct token *name;
+void impl_key(struct token *name)
    {
    /*
     * Set the global operation type for later use. If this is a
@@ -1223,11 +1196,7 @@ struct token *name;
  * set_impl - lookup a function or keyword in a hash table and update the
  *  entry, creating the entry if needed.
  */
-static int set_impl(name, tbl, num_impl, pre)
-struct token *name;
-struct implement **tbl;
-int num_impl;
-char *pre;
+static int set_impl(struct token *name, struct implement **tbl, int num_impl, char *pre)
    {
    register struct implement *ptr;
    char *name_s;
@@ -1284,8 +1253,7 @@ char *pre;
  * set_prms - set the parameter information of an implementation based on
  *   the params list constructed during parsing.
  */
-static void set_prms(ptr)
-struct implement *ptr;
+static void set_prms(struct implement *ptr)
    {
    struct sym_entry *sym;
    int nargs;
@@ -1319,9 +1287,7 @@ struct implement *ptr;
  * impl_op - find or create implementation struct for operator currently
  *  being parsed.
  */
-void impl_op(op_sym, name)
-struct token *op_sym;
-struct token *name;
+void impl_op(struct token *op_sym, struct token *name)
    {
    register struct implement *ptr;
    char *op;
@@ -1399,10 +1365,7 @@ struct token *name;
  * set_r_seq - save result sequence information for updating the
  *  operation entry.
  */
-void set_r_seq(min, max, resume)
-long min;
-long max;
-int resume;
+void set_r_seq(long min, long max, int resume)
    {
    if (min == UnbndSeq)
       min = 0;

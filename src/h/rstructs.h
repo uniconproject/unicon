@@ -236,19 +236,32 @@ struct b_mask {                 /* mask block, used to access fields across bloc
 #endif                          /* Concurrent */
    };
 
-
 struct b_proc {                 /* procedure block */
    word title;                  /*   T_Proc */
    word blksize;                /*   size of block */
 
    #if COMPILER
-      int (*ccode)();
+        union {
+           int (*p0)();
+           int (*p1d)(dptr);
+           int (*p2id)(int, dptr);
+           int (*p2dd)(dptr, dptr);
+           int (*p3idd)(int, dptr, dptr);
+           int (*p4iddc)(int, dptr, dptr, continuation);
+         } ccode;
    #else                                /* COMPILER */
       union {                   /*   entry points for */
-         int (*ccode)();        /*     C routines */
-         uword ioff;            /*     and icode as offset */
+         uword ioff;            /*     icode as offset */
          pointer icode;         /*     and icode as absolute pointer */
-         } entryp;
+         union {                /*     and C routines */
+           int (*p0)();
+           int (*p1d)(dptr);
+           int (*p2id)(int, dptr);
+           int (*p2dd)(dptr, dptr);
+           int (*p3idd)(int, dptr, dptr);
+           int (*p4iddc)(int, dptr, dptr, continuation);
+         } ccode;
+      } entryp;
    #endif                               /* COMPILER */
 
    word nparam;                 /*   number of parameters */

@@ -44,8 +44,7 @@
    allocated memory block.  This DBM interface uses the NDBM interface. */
 
 datum
-fetch (key)
-     datum key;
+fetch (datum key)
 {
   datum  ret_val;               /* The return value. */
 

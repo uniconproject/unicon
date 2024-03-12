@@ -52,11 +52,7 @@
    the database. */
 
 int
-gdbm_store (dbf, key, content, flags)
-     gdbm_file_info *dbf;
-     datum key;
-     datum content;
-     int flags;
+gdbm_store (gdbm_file_info *dbf, datum key, datum content, int flags)
 {
   word_t new_hash_val;          /* The new hash value. */
   int  elem_loc;                /* The location in hash bucket. */

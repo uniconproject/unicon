@@ -305,7 +305,7 @@ function{0,1} open(fname, spec)
       register char *s;
       int status;
       char mode[4];
-      extern FILE *fopen();
+      extern FILE *fopen(const char *, const char *);
       FILE *f = NULL;
       SOCKET fd;
       tended struct b_file *fl;
@@ -346,7 +346,7 @@ Deliberate Syntax Error
 #endif                                  /* PosixFns || Messaging */
 
 #if UNIX || VMS || NT
-      extern FILE *popen();
+      extern FILE *popen(const char*, const char*);
 #endif                                  /* UNIX || VMS || NT */
 
 /*
@@ -2530,7 +2530,7 @@ function{0,1} where(f)
 
    body {
       FILE *fd;
-      long ftell();
+      long ftell(FILE *);
       long pos;
 #ifdef Graphics
       CURTSTATE();

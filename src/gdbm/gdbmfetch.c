@@ -43,9 +43,7 @@
    allocated memory block.  */
 
 datum
-gdbm_fetch (dbf, key)
-     gdbm_file_info *dbf;
-     datum key;
+gdbm_fetch (gdbm_file_info *dbf, datum key)
 {
   datum  return_val;            /* The return value. */
   int    elem_loc;              /* The location in the bucket. */

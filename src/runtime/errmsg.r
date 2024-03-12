@@ -338,9 +338,7 @@ void err_msg(int n, dptr v)
  * irunerr - print an error message when the offending value is a C_integer
  *  rather than a descriptor.
  */
-void irunerr(n, v)
-int n;
-C_integer v;
+void irunerr(int n, C_integer v)
    {
    CURTSTATE();
    t_errornumber = n;
@@ -354,9 +352,7 @@ C_integer v;
  * drunerr - print an error message when the offending value is a C double
  *  rather than a descriptor.
  */
-void drunerr(n, v)
-int n;
-double v;
+void drunerr(int n, double v)
    {
    CURTSTATE();
 

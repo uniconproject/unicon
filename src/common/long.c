@@ -9,8 +9,7 @@
  * Long strlen
  */
 
-long lstrlen(s)
-char *s;
+long lstrlen(char *s)
 {
     long l = 0;
     while(*s++) l++;
@@ -53,10 +52,7 @@ int (*cmp)();
  * Write a long string in int-sized chunks.
  */
 
-long longwrite(s,len,file)
-FILE *file;
-char *s;
-long len;
+long longwrite(char *s,long len, FILE *file)
 {
    long tally = 0;
    int n = 0;

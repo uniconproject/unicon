@@ -279,8 +279,7 @@ static struct lit_tbl *alc_tbl()  {
 /*
  * proccode - generate code for a procedure.
  */
-void proccode(proc)
-struct pentry *proc;
+void proccode(struct pentry *proc)
    {
    struct c_fnc *fnc;
    struct code *cd;
@@ -459,8 +458,7 @@ struct pentry *proc;
 
 extern
 int
-is_methods_vector(recname)
-   char * recname;
+is_methods_vector(char * recname)
 {
    int len;
    if ((len = strlen(recname)) <= 9)
@@ -476,9 +474,7 @@ is_methods_vector(recname)
  */
 static
 int
-fldref_info_get(n, frf)
-   struct node * n;
-   struct fldrefinfo * frf;
+fldref_info_get(struct node * n, struct fldrefinfo * frf)
 {
    int i;
    int clsidx;
@@ -591,8 +587,7 @@ fldref_info_get(n, frf)
 
 static
 void
-fldref_info_free(frf)
-   struct fldrefinfo * frf;
+fldref_info_free(struct fldrefinfo * frf)
 {
    /*
     * This is necessary because we're using the heap to
@@ -622,10 +617,7 @@ fldref_info_free(frf)
  */
 static
 struct val_loc *
-gencode(p, n, rslt)
-   struct node * p;
-   struct node * n;
-   struct val_loc * rslt;
+gencode(struct node * p, struct node * n, struct val_loc * rslt)
 {
    struct code *cd;
    struct code *cd1;
@@ -1666,9 +1658,7 @@ gencode(p, n, rslt)
  * chk_alc - make sure a result location has been allocated. If it is
  *  a temporary variable, indicate that it is now in use.
  */
-struct val_loc *chk_alc(rslt, lifetime)
-struct val_loc *rslt;
-nodeptr lifetime;
+struct val_loc *chk_alc(struct val_loc *rslt, nodeptr lifetime)
    {
    struct tmplftm tmplftm;
 
@@ -1689,8 +1679,7 @@ nodeptr lifetime;
 /*
  * mk_goto - make a code structure for goto label
  */
-struct code *mk_goto(label)
-struct code *label;
+struct code *mk_goto(struct code *label)
    {
    register struct code *cd;
 
@@ -1706,9 +1695,7 @@ struct code *label;
 /*
  * mk_cpyval - make code to copy a value from one location to another.
  */
-static struct code *mk_cpyval(loc1, loc2)
-struct val_loc *loc1;
-struct val_loc *loc2;
+static struct code *mk_cpyval(struct val_loc *loc1, struct val_loc *loc2)
    {
    struct code *cd;
 
@@ -1727,8 +1714,7 @@ struct val_loc *loc2;
 /*
  * asgn_null - make code to assign the null value to a location.
  */
-static struct code *asgn_null(loc1)
-struct val_loc *loc1;
+static struct code *asgn_null(struct val_loc *loc1)
    {
    struct code *cd;
 
@@ -1744,8 +1730,7 @@ struct val_loc *loc1;
  * oper_name - create the name for the most general implementation of an Icon
  *   operation.
  */
-static char *oper_name(impl)
-struct implement *impl;
+static char *oper_name(struct implement *impl)
    {
    char *sbuf;
 
@@ -1758,10 +1743,7 @@ struct implement *impl;
 /*
  * gen_args - generate code to evaluate an argument list.
  */
-static struct val_loc *gen_args(n, frst_arg, nargs)
-struct node *n;
-int frst_arg;
-int nargs;
+static struct val_loc *gen_args(struct node *n, int frst_arg, int nargs)
    {
    struct tmplftm *lifetm_ary;
    int i;
@@ -1781,9 +1763,7 @@ int nargs;
 /*
  * gen_case - generate code for a case expression.
  */
-static struct val_loc *gen_case(n, rslt)
-struct node *n;
-struct val_loc *rslt;
+static struct val_loc *gen_case(struct node *n, struct val_loc *rslt)
    {
    struct node *control;
    struct node *cases;
@@ -1947,9 +1927,7 @@ struct val_loc *rslt;
 /*
  * gen_creat - generate code to create a co-expression.
  */
-static struct val_loc *gen_creat(n, rslt)
-struct node *n;
-struct val_loc *rslt;
+static struct val_loc *gen_creat(struct node *n, struct val_loc *rslt)
    {
    struct code *cd;
    struct code *fail_sav;
@@ -2155,9 +2133,7 @@ struct val_loc *rslt;
 /*
  * gen_lim - generate code for limitation.
  */
-static struct val_loc *gen_lim(n, rslt)
-struct node *n;
-struct val_loc *rslt;
+static struct val_loc *gen_lim(struct node *n, struct val_loc *rslt)
    {
    struct node *expr;
    struct node *limit;
@@ -2338,9 +2314,7 @@ struct val_loc *rslt;
 /*
  * gen_apply - generate code for the apply operator, !.
  */
-static struct val_loc *gen_apply(n, rslt)
-struct node *n;
-struct val_loc *rslt;
+static struct val_loc *gen_apply(struct node *n, struct val_loc *rslt)
    {
    struct val_loc *callee;
    struct val_loc *lst;
@@ -2397,9 +2371,7 @@ struct val_loc *rslt;
 /*
  * gen_scan - generate code for string scanning.
  */
-static struct val_loc *gen_scan(n, rslt)
-nodeptr n;
-struct val_loc *rslt;
+static struct val_loc *gen_scan(nodeptr n, struct val_loc *rslt)
    {
    struct node *op;
    struct node *subj;
@@ -2612,9 +2584,7 @@ struct val_loc *rslt;
 /*
  * gen_act - generate code for co-expression activation.
  */
-static struct val_loc *gen_act(n, rslt)
-nodeptr n;
-struct val_loc *rslt;
+static struct val_loc *gen_act(nodeptr n, struct val_loc *rslt)
    {
    struct node *op;
    struct node *transmit;
@@ -2780,9 +2750,7 @@ struct val_loc *rslt;
 /*
  * save_env - generate code to save scanning environment.
  */
-static void save_env(sub_sav, pos_sav)
-struct val_loc *sub_sav;
-struct val_loc *pos_sav;
+static void save_env(struct val_loc *sub_sav, struct val_loc *pos_sav)
    {
    struct code *cd;
 
@@ -2803,9 +2771,7 @@ struct val_loc *pos_sav;
 /*
  * restr_env - generate code to restore scanning environment.
  */
-static void restr_env(sub_sav, pos_sav)
-struct val_loc *sub_sav;
-struct val_loc *pos_sav;
+static void restr_env(struct val_loc *sub_sav, struct val_loc *pos_sav)
    {
    struct code *cd;
 
@@ -2830,13 +2796,8 @@ struct val_loc *pos_sav;
 /*
  * mk_callop - produce the code to directly call an operation.
  */
-static void mk_callop(oper_nm, ret_flag, arg1rslt, nargs, rslt, optim)
-char *oper_nm;
-int ret_flag;
-struct val_loc *arg1rslt;
-int nargs;
-struct val_loc *rslt;
-int optim;
+static void mk_callop(char *oper_nm, int ret_flag, struct val_loc *arg1rslt,
+                      int nargs, struct val_loc *rslt, int optim)
    {
    struct code *arg_lst;
    struct code *on_ret;
@@ -2953,10 +2914,7 @@ int optim;
  *  for the expression for the value to be transmitted in a co-expression
  *  context switch.
  */
-static struct val_loc *genretval(n, expr, dest)
-struct node *n;
-struct node *expr;
-struct val_loc *dest;
+static struct val_loc *genretval(struct node *n, struct node *expr, struct val_loc *dest)
    {
    int subtypes;
    struct lentry *single;
@@ -2989,10 +2947,7 @@ struct val_loc *dest;
  * deref_ret - produced dereferencing code for values returned from
  *  procedures or transmitted to co-expressions.
  */
-static void deref_ret(src, dest, subtypes)
-struct val_loc *src;
-struct val_loc *dest;
-int subtypes;
+static void deref_ret(struct val_loc *src, struct val_loc *dest, int subtypes)
    {
    struct code *cd;
    struct code *lbl;
@@ -3076,9 +3031,7 @@ int subtypes;
  *  reference. If no label is given to jump to for a non-variable, allocate
  *  one and generate code before it.
  */
-static struct code *check_var(d, lbl)
-struct val_loc *d;
-struct code *lbl;
+static struct code *check_var(struct val_loc *d, struct code *lbl)
    {
    struct code *cd, *cd1;
 
@@ -3109,10 +3062,7 @@ struct code *lbl;
  */
 static
 struct val_loc *
-invok_method(n, vtbl, rslt)
-   struct node * n;
-   struct vtbl * vtbl;
-   struct val_loc * rslt;
+invok_method(struct node * n, struct vtbl * vtbl, struct val_loc * rslt)
 {
    int deref;
    int index;
@@ -3266,11 +3216,7 @@ invok_method(n, vtbl, rslt)
  */
 static
 struct val_loc *
-invok_methods(n, gents, ncls, rslt)
-   struct node * n;
-   struct gentry ** gents;
-   int ncls;
-   struct val_loc * rslt;
+invok_methods(struct node * n, struct gentry ** gents, int ncls, struct val_loc * rslt)
 {
    struct code * cd;
    struct code * cd1;
@@ -3467,9 +3413,7 @@ invok_methods(n, gents, ncls, rslt)
 
 extern
 int
-rec_fld_index(rec, fldname)
-   struct rentry * rec;
-   char * fldname;
+rec_fld_index(struct rentry * rec, char * fldname)
 {
    int i;
    struct fldname * f;
@@ -3485,14 +3429,8 @@ rec_fld_index(rec, fldname)
 
 static
 struct val_loc *
-invok_methods_and_flds(p, n, clss, ncls, recs, nrec, rslt)
-   struct node * p;
-   struct node * n;
-   struct gentry ** clss;
-   int ncls;
-   struct gentry ** recs;
-   int nrec;
-   struct val_loc * rslt;
+invok_methods_and_flds(struct node * p, struct node * n, struct gentry ** clss,
+                       int ncls, struct gentry ** recs, int nrec, struct val_loc * rslt)
 {
    int i, ofst;
    int vidx, deref;
@@ -3839,11 +3777,7 @@ invok_methods_and_flds(p, n, clss, ncls, recs, nrec, rslt)
 
 static
 struct val_loc *
-invok_fuzzy(p, n, frf, rslt)
-   struct node * p;
-   struct node * n;
-   struct fldrefinfo * frf;
-   struct val_loc * rslt;
+invok_fuzzy(struct node * p, struct node * n, struct fldrefinfo * frf, struct val_loc * rslt)
 {
    struct fldrefhint * hint;
 
@@ -3886,10 +3820,7 @@ invok_fuzzy(p, n, frf, rslt)
 
 static
 struct val_loc *
-invok(p, n, rslt)
-   struct node * p;
-   struct node * n;
-   struct val_loc * rslt;
+invok(struct node * p, struct node * n, struct val_loc * rslt)
 {
    int i;
    struct val_loc * vloc;
@@ -3912,10 +3843,7 @@ invok(p, n, rslt)
  */
 static
 struct val_loc *
-field_ref(p, n, rslt)
-   struct node *p;
-   struct node *n;
-   struct val_loc *rslt;
+field_ref(struct node *p, struct node *n, struct val_loc *rslt)
 {
    struct node *rec;
    struct node *fld;
@@ -4208,10 +4136,7 @@ field_ref(p, n, rslt)
  * bound - bound the code for the given sub-tree. If catch_fail is true,
  *   direct failure to the bounding label.
  */
-static struct val_loc *bound(n, rslt, catch_fail)
-struct node *n;
-struct val_loc *rslt;
-int catch_fail;
+static struct val_loc *bound(struct node *n, struct val_loc *rslt, int catch_fail)
    {
    struct code *lbl1;
    struct code *fail_sav;
@@ -4239,8 +4164,7 @@ int catch_fail;
 /*
  * cd_add - add a code struct at the cursor in the current function.
  */
-void cd_add(cd)
-struct code *cd;
+void cd_add(struct code *cd)
    {
    register struct code *cursor;
 
@@ -4258,9 +4182,7 @@ struct code *cd;
  * sig_cd - convert a signal/label into a goto or return signal in
  *   the context of the given function.
  */
-struct code *sig_cd(sig, fnc)
-struct code *sig;
-struct c_fnc *fnc;
+struct code *sig_cd(struct code *sig, struct c_fnc *fnc)
    {
    struct code *cd;
 
@@ -4279,9 +4201,7 @@ struct c_fnc *fnc;
 /*
  * add_sig - add signal to list of signals returned by function.
  */
-struct sig_lst *add_sig(sig, fnc)
-struct code *sig;
-struct c_fnc *fnc;
+struct sig_lst *add_sig(struct code *sig, struct c_fnc *fnc)
    {
    struct sig_lst *sl;
 
@@ -4305,8 +4225,7 @@ struct c_fnc *fnc;
  *  signals returned and actions to take will be figured out after
  *  the continuation has been optimized.
  */
-void callc_add(cont)
-struct c_fnc *cont;
+void callc_add(struct c_fnc *cont)
    {
    struct code *cd;
 
@@ -4322,13 +4241,8 @@ struct c_fnc *cont;
 /*
  * callo_add - add code to call an operation.
  */
-void callo_add(oper_nm, ret_flag, cont, need_cont, arglist, on_ret)
-char *oper_nm;
-int ret_flag;
-struct c_fnc *cont;
-int need_cont;
-struct code *arglist;
-struct code *on_ret;
+void callo_add(char *oper_nm, int ret_flag, struct c_fnc *cont, int need_cont,
+               struct code *arglist, struct code *on_ret)
    {
    struct code *cd;
    struct code *cd1;
@@ -4381,10 +4295,7 @@ static struct code *new_call()
 /*
  * sig_act - create a new binding of an action to a signal.
  */
-struct sig_act *new_sgact(sig, cd, next)
-struct code *sig;
-struct code *cd;
-struct sig_act *next;
+struct sig_act *new_sgact(struct code *sig, struct code *cd, struct sig_act *next)
    {
    struct sig_act *sa;
 
@@ -4752,8 +4663,7 @@ static void remove_poll(void)  {
  *  source location of node n.  Code is only produced if the corresponding
  *  value has changed since the last time setloc was called.
  */
-static void setloc(n)
-nodeptr n;
+static void setloc(nodeptr n)
    {
    struct code *cd;
 
@@ -4799,8 +4709,7 @@ nodeptr n;
 /*
  * alc_ary - create an array for a sequence of code fragments.
  */
-struct code *alc_ary(n)
-int n;
+struct code *alc_ary(int n)
    {
    struct code *cd;
 
@@ -4816,9 +4725,7 @@ int n;
 /*
  * alc_lbl - create a label.
  */
-struct code *alc_lbl(desc, flag)
-char *desc;
-int flag;
+struct code *alc_lbl(char *desc, int flag)
    {
    register struct code *cd;
 
@@ -4866,8 +4773,7 @@ static struct c_fnc *alc_fnc()
  * tmp_loc - allocate a value location structure for nth temporary descriptor
  *  variable in procedure frame.
  */
-static struct val_loc *tmp_loc(n)
-int n;
+static struct val_loc *tmp_loc(int n)
    {
    register struct val_loc *r;
 
@@ -4882,8 +4788,7 @@ int n;
  * itmp_loc - allocate a value location structure for nth temporary integer
  *  variable in procedure frame.
  */
-struct val_loc *itmp_loc(n)
-int n;
+struct val_loc *itmp_loc(int n)
    {
    register struct val_loc *r;
 
@@ -4898,8 +4803,7 @@ int n;
  * dtmp_loc - allocate a value location structure for nth temporary double
  *  variable in procedure frame.
  */
-struct val_loc *dtmp_loc(n)
-int n;
+struct val_loc *dtmp_loc(int n)
    {
    register struct val_loc *r;
 
@@ -4914,8 +4818,7 @@ int n;
  * vararg_sz - allocate a value location structure that refers to the size
  *  of the variable part of an argument list.
  */
-static struct val_loc *vararg_sz(n)
-int n;
+static struct val_loc *vararg_sz(int n)
    {
    register struct val_loc *r;
 
@@ -4929,8 +4832,7 @@ int n;
 /*
  * cvar_loc - allocate a value location structure for a C variable.
  */
-struct val_loc *cvar_loc(name)
-char *name;
+struct val_loc *cvar_loc(char *name)
    {
    register struct val_loc *r;
 
@@ -4944,8 +4846,7 @@ char *name;
 /*
  * var_ref - allocate a value location structure for an Icon named variable.
  */
-static struct val_loc *var_ref(sym)
-struct lentry *sym;
+static struct val_loc *var_ref(struct lentry *sym)
    {
    struct val_loc *loc;
 
@@ -4959,9 +4860,7 @@ struct lentry *sym;
 /*
  * deref_cd - generate code to dereference a descriptor.
  */
-static void deref_cd(src, dest)
-struct val_loc *src;
-struct val_loc *dest;
+static void deref_cd(struct val_loc *src, struct val_loc *dest)
    {
    struct code *cd;
 
@@ -4984,9 +4883,7 @@ struct val_loc *dest;
  */
 static
 void
-deref_oparg_insitu(sym, impl)
-   struct op_symentry * sym;
-   struct implement * impl;
+deref_oparg_insitu(struct op_symentry * sym, struct implement * impl)
 {
    if (wop_get(Wop_OpArgDerefs) <= 0) {
       /*
@@ -5013,8 +4910,7 @@ deref_oparg_insitu(sym, impl)
  */
 static
 void
-deref_fld(loc)
-   struct val_loc * loc;
+deref_fld(struct val_loc * loc)
 {
    if (wop_get(Wop_FldDerefs) <= 0)  {
       /*
@@ -5032,10 +4928,7 @@ deref_fld(loc)
  */
 static
 struct val_loc *
-inv_op(p, n, rslt)
-   struct node * p;
-   struct node * n;
-   struct val_loc *rslt;
+inv_op(struct node * p, struct node * n, struct val_loc *rslt)
 {
    struct implement *impl;
    struct code *scont_strt;
@@ -5618,9 +5511,7 @@ inv_op(p, n, rslt)
  * max_lftm - given two lifetimes (in the form of nodes) return the
  *   maximum one.
  */
-static nodeptr max_lftm(n1, n2)
-nodeptr n1;
-nodeptr n2;
+static nodeptr max_lftm(nodeptr n1, nodeptr n2)
    {
    if (n1 == NULL)
       return n2;
@@ -5637,9 +5528,7 @@ nodeptr n2;
  */
 static
 struct val_loc *
-inv_prc(n, rslt)
-   nodeptr n;
-   struct val_loc *rslt;
+inv_prc(nodeptr n, struct val_loc *rslt)
 {
    struct pentry *proc;
    struct val_loc *r;
@@ -5829,11 +5718,7 @@ inv_prc(n, rslt)
  * endlife - link a temporary variable onto the list to be freed when
  *  execution reaches a node.
  */
-static void endlife(kind, indx, old, n)
-int kind;
-int indx;
-int old;
-nodeptr n;
+static void endlife(int kind, int indx, int old, nodeptr n)
    {
    struct freetmp *freetmp;
    if ((freetmp = freetmp_pool) == NULL) {
@@ -5852,9 +5737,7 @@ nodeptr n;
 /*
  * alc_tmp - allocate a block of temporary variables with the given lifetimes.
  */
-static int alc_tmp(num, lifetm_ary)
-int num;
-struct tmplftm *lifetm_ary;
+static int alc_tmp(int num, struct tmplftm *lifetm_ary)
    {
    int i, j, k;
    register int status;
@@ -5907,9 +5790,7 @@ struct tmplftm *lifetm_ary;
 /*
  * alc_lftm - allocate an array of lifetime information for an argument list.
  */
-static struct tmplftm *alc_lftm(num, args)
-int num;
-union field *args;
+static struct tmplftm *alc_lftm(int num, union field *args)
    {
    struct tmplftm *lifetm_ary;
    int i;
@@ -5927,8 +5808,7 @@ union field *args;
 /*
  * alc_itmp - allocate a temporary C integer variable.
  */
-int alc_itmp(lifetime)
-nodeptr lifetime;
+int alc_itmp(nodeptr lifetime)
    {
    int i, j;
    int new_size;
@@ -5960,8 +5840,7 @@ nodeptr lifetime;
 /*
  * alc_dtmp - allocate a temporary C integer variable.
  */
-int alc_dtmp(lifetime)
-nodeptr lifetime;
+int alc_dtmp(nodeptr lifetime)
    {
    int i, j;
    int new_size;
@@ -5993,9 +5872,7 @@ nodeptr lifetime;
 /*
  * alc_sbufs - allocate a block of string buffers with the given lifetime.
  */
-int alc_sbufs(num, lifetime)
-int num;
-nodeptr lifetime;
+int alc_sbufs(int num, nodeptr lifetime)
    {
    int i, j, k;
    int *new_status;
@@ -6043,9 +5920,7 @@ nodeptr lifetime;
 /*
  * alc_cbufs - allocate a block of cset buffers with the given lifetime.
  */
-int alc_cbufs(num, lifetime)
-int num;
-nodeptr lifetime;
+int alc_cbufs(int num, nodeptr lifetime)
    {
    int i, j, k;
    int *new_status;

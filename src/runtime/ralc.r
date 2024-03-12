@@ -284,8 +284,7 @@ struct b_coexpr *alccoexp()
  * sizeof(progstate) + icodesize + mstksize
  * Otherwise (icodesize==0), allocate a normal stksize...
  */
-struct b_coexpr *alccoexp(icodesize, stacksize)
-long icodesize, stacksize;
+struct b_coexpr *alccoexp(long icodesize, long stacksize)
 #else                                   /* MultiProgram */
 struct b_coexpr *alccoexp()
 #endif                                  /* MultiProgram */
@@ -878,11 +877,7 @@ alcrecd_macro(alcrecd,0)
  */
 
 #if COMPILER
-struct b_refresh *alcrefresh(na, nl, nt, wrk_sz)
-int na;
-int nl;
-int nt;
-int wrk_sz;
+     struct b_refresh *alcrefresh(int na, int nl, int nt, int wrk_sz)
    {
    struct b_refresh *blk;
    CURTSTATE();
@@ -1405,10 +1400,9 @@ reserve_macro(reserve,0,0)
  * region is returned.
  * IMPORTANT: This function assumes that the public heap in use is locked.
  */
-struct region *swap2publicheap( curr_private, curr_public, p_public)
-struct region *curr_private;
-struct region *curr_public;
-struct region **p_public; /* pointer to the head of the list*/
+struct region *swap2publicheap(struct region *curr_private,
+                               struct region *curr_public,
+                               struct region **p_public) /* pointer to the head of the list*/
   {
    if (curr_public){
       curr_private->Tnext = curr_public->Tnext;
@@ -1452,14 +1446,9 @@ struct region **p_public; /* pointer to the head of the list*/
  * findgap - search region chain for a region having at least nbytes available
  */
 #ifdef Concurrent
-static struct region *findgap(curr_private, nbytes, region)
-struct region *curr_private;
-word nbytes;
-int region;
+static struct region *findgap(struct region *curr_private, word nbytes, int region)
 #else                                   /* Concurrent */
-static struct region *findgap(curr, nbytes)
-struct region *curr;
-word nbytes;
+static struct region *findgap(struct region *curr, word nbytes)
 #endif                                  /* Concurrent */
    {
    struct region *rp;
@@ -1503,8 +1492,7 @@ word nbytes;
  * newregion - try to malloc a new region and tenure the old one,
  *  backing off if the requested size fails.
  */
-struct region *newregion(nbytes,stdsize)
-word nbytes,stdsize;
+struct region *newregion(word nbytes, word stdsize)
 {
    uword minSize = MinAbrSize;
    struct region *rp;

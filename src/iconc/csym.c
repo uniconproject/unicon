@@ -56,9 +56,7 @@ struct rentry *rec_lst = NULL;  /* record list */
  *instl_p - install procedure or record in global symbol table, returning
  *  the symbol table entry.
  */
-struct gentry *instl_p(name, flag)
-char *name;
-int flag;
+struct gentry *instl_p(char *name, int flag)
    {
    struct gentry *gp;
 
@@ -84,9 +82,7 @@ int flag;
  */
 extern
 void
-install(name, flag)
-   char * name;
-   int flag;
+install(char * name, int flag)
 {
    struct fentry *fp;
    struct gentry *gp;
@@ -162,10 +158,7 @@ install(name, flag)
 /*
  * dcl_loc - handle declaration of a local identifier.
  */
-static struct lentry *dcl_loc(name, flag, next)
-char *name;
-int flag;
-struct lentry *next;
+static struct lentry *dcl_loc(char *name, int flag, struct lentry *next)
    {
    register struct lentry *lp;
 

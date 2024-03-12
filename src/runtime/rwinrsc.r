@@ -16,10 +16,6 @@ wsp wstates = NULL;
 wbp wbndngs = NULL;
 int win_highwater = -1;
 
-#ifdef MacGraph
-#include "rmacrsc.ri"
-#endif                                  /* MacGraph */
-
 #ifdef XWindows
 #include "rxrsc.ri"
 #endif                                  /* XWindows */
@@ -40,8 +36,7 @@ wbp alc_wbinding()
 /*
  * free a window binding.
  */
-void free_binding(w)
-wbp w;
+void free_binding(wbp w)
    {
    w->refcount--;
    if(w->refcount == 0) {

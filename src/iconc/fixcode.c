@@ -25,8 +25,7 @@ static void         rm_unrch  (struct code *cd);
  *  goto's which immediately precede their labels, and remove unreachable
  *  code.
  */
-void fix_fncs(fnc)
-struct c_fnc *fnc;
+void fix_fncs(struct c_fnc *fnc)
    {
    struct code *cd, *cd1;
    struct code *contbody;
@@ -249,8 +248,7 @@ struct c_fnc *fnc;
 /*
  * clps_brch - collapse branch chains.
  */
-static void clps_brch(branch)
-struct code *branch;
+static void clps_brch(struct code *branch)
    {
    struct code *cd;
    int save_id;
@@ -291,8 +289,7 @@ struct code *branch;
  * rm_unrch - any code after the given point up to the next label is
  *   unreachable. Remove it.
  */
-static void rm_unrch(cd)
-struct code *cd;
+static void rm_unrch(struct code *cd)
    {
    struct code *cd1;
 
@@ -317,8 +314,7 @@ struct code *cd;
 /*
  * dec_refs - decrement reference counts for things this code references.
  */
-static void dec_refs(cd)
-struct code *cd;
+static void dec_refs(struct code *cd)
    {
    struct sig_act *sa;
 
@@ -350,9 +346,7 @@ struct code *cd;
  * ck_unneed - if there is nothing between a goto and its label, except
  *   perhaps other labels or '}', it is useless, so remove it.
  */
-static struct code *ck_unneed(cd, lbl)
-struct code *cd;
-struct code *lbl;
+static struct code *ck_unneed(struct code *cd, struct code *lbl)
    {
    struct code *cd1;
 

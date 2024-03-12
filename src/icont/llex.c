@@ -208,9 +208,7 @@ int getoct()
  *  Get integer, but if it's too large for a long, put the string via wp
  *   and return -1.
  */
-word getint(j,wp)
-   int j;
-   word *wp;
+word getint(int j,word *wp)
    {
    register int c;
    int over = 0;
@@ -339,8 +337,7 @@ int getlab()
  * getstrlit - get a string literal from infile, as a string
  *  of octal bytes, and return its index into the string table.
  */
-word getstrlit(l)
-register int l;
+word getstrlit(register int l)
    {
    register word indx;
 
@@ -373,8 +370,7 @@ void newline()
  * Store string syntax code in the string pointed to by synt.
  * Return 0 for success, -1 for failure.
  */
-word getsynt(synt)
-char **synt;
+word getsynt(char **synt)
    {
    word indx = getstr();
    if (indx == -1)

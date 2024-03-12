@@ -204,10 +204,7 @@ cptable_macro(cptable_1, E_Tcreate)
 cptable_macro(cptable, 0)
 #endif                                  /* MultiProgram */
 
-int cphash(dp1, dp2, n, tcode)
-dptr dp1, dp2;
-word n;
-int tcode;
+int cphash(dptr dp1, dptr dp2, word n, int tcode)
    {
    union block *src;
    tended union block *dst;
@@ -271,9 +268,7 @@ int tcode;
  *  If *nslots* is zero, a value appropriate for *nelem* elements is chosen.
  *  A return of NULL indicates allocation failure.
  */
-union block *hmake(tcode, nslots, nelem)
-int tcode;
-word nslots, nelem;
+union block *hmake(int tcode, word nslots, word nelem)
    {
    word seg, t, blksize, elemsize;
    tended union block *blk;
@@ -443,9 +438,7 @@ static unsigned char log2h[] = {
    11,11,11,11, 11,11,11,11, 11,11,11,11, 11,11,11,11
    };
 
-union block **hchain(pb, hn)
-union block *pb;
-register uword hn;
+union block **hchain(union block *pb, register uword hn)
    {
    register struct b_set *ps;
    register word slotnum, segnum, segslot;
@@ -464,9 +457,7 @@ register uword hn;
  * hgfirst - initialize for generating set or table, and return first element.
  */
 
-union block *hgfirst(bp, s)
-union block *bp;
-struct hgstate *s;
+union block *hgfirst(union block *bp, struct hgstate *s)
    {
    int i;
 
@@ -492,10 +483,7 @@ struct hgstate *s;
  *  can only *grow*.
  */
 
-union block *hgnext(bp, s, ep)
-union block *bp;
-struct hgstate *s;
-union block *ep;
+union block *hgnext(union block *bp, struct hgstate *s, union block *ep)
    {
    int i;
    word d, m;
@@ -594,8 +582,7 @@ union block *ep;
  * hgrow - split a hashed structure (doubling the buckets) for faster access.
  */
 
-void hgrow(bp)
-union block *bp;
+void hgrow(union block *bp)
    {
    register union block **tp0, **tp1, *ep;
    register word newslots, slotnum, segnum;
@@ -658,8 +645,7 @@ union block *bp;
  *  Call this only for newly created structures.  Shrinking an active structure
  *  can wreak havoc on suspended generators.
  */
-void hshrink(bp)
-union block *bp;
+void hshrink(union block *bp)
    {
    register union block **tp, *ep0, *ep1;
    int topseg, curseg;
@@ -792,18 +778,14 @@ struct b_proc_list **dr_arrays;
 static word mdw_dynrec_start = 0;
 
 void
-dynrec_start_set(start)
-   word start;
+dynrec_start_set(word start)
 {
    mdw_dynrec_start = start;
 }
 
 static
 char *
-dynrec_recname_create(name, flds, nflds)
-   dptr name;
-   dptr flds;
-   int nflds;
+dynrec_recname_create(dptr name, dptr flds, int nflds)
 {
    char * p;
    int i, len;
@@ -830,10 +812,7 @@ dynrec_recname_create(name, flds, nflds)
 
 static
 int
-rmkrec(nargs, cargp, rslt)
-   int nargs;
-   dptr cargp;
-   dptr rslt;
+rmkrec(int nargs, dptr cargp, dptr rslt)
 {
    int i;
    dptr d;
@@ -855,9 +834,7 @@ rmkrec(nargs, cargp, rslt)
    return A_Continue;
 }
 
-int fldlookup(rec, fld)
-    struct b_record * rec;
-    const char * const fld;
+int fldlookup(struct b_record * rec, const char * const fld)
 {
     int i, len;
     union block * desc;
@@ -878,10 +855,7 @@ int fldlookup(rec, fld)
 static struct b_proc_list * dr_tbl[128] = { 0 };
 
 struct b_proc *
-dynrecord(s, fields, n)
-   dptr s;
-   dptr fields;
-   int n;
+dynrecord(dptr s, dptr fields, int n)
 {
    int i, hval, len;
    struct b_proc * bp;
@@ -919,7 +893,7 @@ dynrecord(s, fields, n)
    if (bp == NULL) return NULL;
    bp->title = T_Proc;
    bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
-   bp->ccode = rmkrec;
+   bp->ccode.p3idd = rmkrec;
    bp->nfields = n;
    bp->ndynam = -2;
    bp->recnum = -1; /* recnum -1 means: dynamic record */
@@ -987,7 +961,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       if (bp == NULL) return NULL;
       bp->title = T_Proc;
       bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
-      bp->entryp.ccode = Omkrec;
+      bp->entryp.ccode.p2id = Omkrec;
       bp->nfields = n;
       bp->ndynam = -2;
       bp->recnum = -1; /* dynamic record */

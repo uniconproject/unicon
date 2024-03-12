@@ -48,8 +48,7 @@ void fsync(int i)
 #endif
 
 void
-gdbm_sync (dbf)
-     gdbm_file_info *dbf;
+gdbm_sync (gdbm_file_info *dbf)
 {
 
   /* Initialize the gdbm_errno variable. */

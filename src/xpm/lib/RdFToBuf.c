@@ -52,9 +52,7 @@
 #endif
 
 int
-XpmReadFileToBuffer(filename, buffer_return)
-    char *filename;
-    char **buffer_return;
+XpmReadFileToBuffer(char *filename, char **buffer_return)
 {
     int fd, fcheck, len;
     char *ptr;

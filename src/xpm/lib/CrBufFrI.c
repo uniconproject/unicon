@@ -50,12 +50,8 @@ LFUNC(ExtensionsSize, int, (XpmExtension *ext, unsigned int num));
 LFUNC(CommentsSize, int, (XpmInfo *info));
 
 int
-XpmCreateBufferFromImage(display, buffer_return, image, shapeimage, attributes)
-    Display *display;
-    char **buffer_return;
-    XImage *image;
-    XImage *shapeimage;
-    XpmAttributes *attributes;
+XpmCreateBufferFromImage(Display *display, char **buffer_return, XImage *image,
+                         XImage *shapeimage, XpmAttributes *attributes)
 {
     XpmImage xpmimage;
     XpmInfo info;
@@ -95,10 +91,7 @@ XpmCreateBufferFromImage(display, buffer_return, image, shapeimage, attributes)
 }
 
 int
-XpmCreateBufferFromXpmImage(buffer_return, image, info)
-    char **buffer_return;
-    XpmImage *image;
-    XpmInfo *info;
+XpmCreateBufferFromXpmImage(char **buffer_return, XpmImage *image, XpmInfo *info)
 {
     /* calculation variables */
     int ErrorStatus;
@@ -247,13 +240,8 @@ error:
 }
 
 static int
-WriteColors(dataptr, data_size, used_size, colors, ncolors, cpp)
-    char **dataptr;
-    unsigned int *data_size;
-    unsigned int *used_size;
-    XpmColor *colors;
-    unsigned int ncolors;
-    unsigned int cpp;
+WriteColors(char **dataptr, unsigned int *data_size, unsigned int *used_size,
+            XpmColor *colors, unsigned int ncolors, unsigned int cpp)
 {
     char buf[BUFSIZ];
     unsigned int a, key, l;
@@ -293,14 +281,8 @@ WriteColors(dataptr, data_size, used_size, colors, ncolors, cpp)
 }
 
 static void
-WritePixels(dataptr, used_size, width, height, cpp, pixels, colors)
-    char *dataptr;
-    unsigned int *used_size;
-    unsigned int width;
-    unsigned int height;
-    unsigned int cpp;
-    unsigned int *pixels;
-    XpmColor *colors;
+WritePixels(char *dataptr, unsigned int *used_size, unsigned int width, unsigned int height,
+            unsigned int cpp, unsigned int *pixels, XpmColor *colors)
 {
     char *s = dataptr;
     unsigned int x, y, h;
@@ -326,9 +308,7 @@ WritePixels(dataptr, used_size, width, height, cpp, pixels, colors)
 }
 
 static int
-ExtensionsSize(ext, num)
-    XpmExtension *ext;
-    unsigned int num;
+ExtensionsSize(XpmExtension *ext, unsigned int num)
 {
     unsigned int x, y, a, size;
     char **line;
@@ -347,11 +327,7 @@ ExtensionsSize(ext, num)
 }
 
 static void
-WriteExtensions(dataptr, used_size, ext, num)
-    char *dataptr;
-    unsigned int *used_size;
-    XpmExtension *ext;
-    unsigned int num;
+WriteExtensions(char *dataptr, unsigned int *used_size, XpmExtension *ext, unsigned int num)
 {
     unsigned int x, y, a;
     char **line;
@@ -381,8 +357,7 @@ WriteExtensions(dataptr, used_size, ext, num)
 }
 
 static int
-CommentsSize(info)
-    XpmInfo *info;
+CommentsSize(XpmInfo *info)
 {
     int size = 0;
 

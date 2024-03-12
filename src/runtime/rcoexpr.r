@@ -34,8 +34,7 @@ int pthreadcoswitch(struct b_coexpr *old, struct b_coexpr *new, word ostat, word
  * co_init - use the contents of the refresh block to initialize the
  *  co-expression.
  */
-void co_init(sblkp)
-struct b_coexpr *sblkp;
+void co_init(struct b_coexpr *sblkp)
 {
 #ifndef CoExpr
    syserr("co_init() called, but co-expressions not implemented");
@@ -184,12 +183,11 @@ struct b_coexpr *sblkp;
 /*
  * co_chng - high-level co-expression context switch.
  */
-int co_chng(ncp, valloc, rsltloc, swtch_typ, first)
-struct b_coexpr *ncp;
-struct descrip *valloc; /* location of value being transmitted */
-struct descrip *rsltloc;/* location to put result */
-int swtch_typ;          /* A_Coact, A_Coret, A_Cofail, or A_MTEvent */
-int first;
+int co_chng(struct b_coexpr *ncp,
+            struct descrip *valloc, /* location of value being transmitted */
+            struct descrip *rsltloc,/* location to put result */
+            int swtch_typ,          /* A_Coact, A_Coret, A_Cofail, or A_MTEvent */
+            int first)
 {
 #ifndef CoExpr
    syserr("co_chng() called, but co-expressions not implemented");
@@ -489,9 +487,7 @@ int first;
  * new_context - determine what function to call to execute the new
  *  co-expression; this completes the context switch.
  */
-void new_context(fsig,cargp)
-int fsig;
-dptr cargp;
+void new_context(int fsig, dptr cargp)
    {
    continuation cf;
    CURTSTATVAR();
@@ -907,8 +903,7 @@ void clean_threads()
  *   2==stop all threads
  *   3==kill all threads
  */
-void thread_control(action)
-int action;
+void thread_control(int action)
 {
    static int tc_queue=0;        /* how many threads are waiting for TC */
    static int action_in_progress=TC_NONE;

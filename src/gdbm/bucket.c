@@ -35,10 +35,7 @@
 
 /* Initializing a new hash buckets sets all bucket entries to -1 hash value. */
 void
-_gdbm_new_bucket (dbf, bucket, bits)
-     gdbm_file_info *dbf;
-     hash_bucket *bucket;
-     int bits;
+_gdbm_new_bucket (gdbm_file_info *dbf, hash_bucket *bucket, int bits)
 {
   int index;
 
@@ -63,9 +60,7 @@ _gdbm_new_bucket (dbf, bucket, bits)
    and dbf->bucket points to the correct bucket. */
 
 void
-_gdbm_get_bucket (dbf, dir_index)
-     gdbm_file_info *dbf;
-     word_t dir_index;
+_gdbm_get_bucket (gdbm_file_info *dbf, word_t dir_index)
 {
   off_t bucket_adr;     /* The address of the correct hash bucket.  */
   int   num_bytes;      /* The number of bytes read. */
@@ -125,9 +120,7 @@ _gdbm_get_bucket (dbf, dir_index)
    are stored in the buckets.  Splitting the current bucket may require
    doubling the size of the hash directory.  */
 void
-_gdbm_split_bucket (dbf, next_insert)
-     gdbm_file_info *dbf;
-     word_t next_insert;
+_gdbm_split_bucket (gdbm_file_info *dbf, word_t next_insert)
 {
   hash_bucket *bucket[2];       /* Pointers to the new buckets. */
 
@@ -318,9 +311,7 @@ _gdbm_split_bucket (dbf, next_insert)
    cache entry containing the bucket to be written. */
 
 void
-_gdbm_write_bucket (dbf, ca_entry)
-     gdbm_file_info *dbf;
-     cache_elem *ca_entry;
+_gdbm_write_bucket (gdbm_file_info *dbf, cache_elem *ca_entry)
 {
   int  num_bytes;       /* The return value for write. */
   off_t file_pos;       /* The return value for lseek. */

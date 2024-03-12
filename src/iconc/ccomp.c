@@ -61,8 +61,7 @@ static struct lib *liblst;
 /*
  * addlib - add a new library to the list the must be linked.
  */
-void addlib(libname)
-char *libname;
+void addlib(char *libname)
    {
    static struct lib **nxtlib = &liblst;
    struct lib *l;
@@ -116,8 +115,7 @@ Deliberate Syntax Error
  */
 static
 char *
-rmv_ccomp_opts(opts)
-   char * opts;
+rmv_ccomp_opts(char * opts)
 {
    char * p;
    char * q;
@@ -168,9 +166,7 @@ char *growcat(char *buf, int *buflenp, int n, ...)
 /*
  * ccomp - perform C compilation and linking.
  */
-int ccomp(srcname, exename)
-char *srcname;
-char *exename;
+int ccomp(char *srcname, char *exename)
    {
    struct lib *l;
    int  rv, buflen;

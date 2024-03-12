@@ -462,9 +462,7 @@ end
  * subs_asgn - perform assignment to a substring. Leave the updated substring
  *  in dest in case it is needed as the result of the assignment.
  */
-int subs_asgn(dest, src)
-dptr dest;
-const dptr src;
+int subs_asgn(dptr dest, const dptr src)
    {
    tended struct descrip deststr;
    tended struct descrip srcstr;
@@ -559,9 +557,7 @@ const dptr src;
  * tvtbl_asgn - perform an assignment to a table element trapped variable,
  *  inserting the element in the table if needed.
  */
-int tvtbl_asgn(dest, src)
-dptr dest;
-const dptr src;
+int tvtbl_asgn(dptr dest, const dptr src)
    {
    tended struct b_tvtbl *bp;
    tended struct descrip tval;
@@ -652,9 +648,7 @@ const dptr src;
  * tvmonitored_asgn - perform an assignment to a monitored trapped variable
  *   in the Target Program form the Monitor.
  */
-int tvmonitored_asgn(dest, src)
-dptr dest;
-const dptr src;
+int tvmonitored_asgn(dptr dest, const dptr src)
    {
    word count;
    CURTSTATE();

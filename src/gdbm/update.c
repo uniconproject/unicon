@@ -37,8 +37,7 @@ static void write_header _ARGS((gdbm_file_info *));
 /* This procedure writes the header back to the file described by DBF. */
 
 static void
-write_header (dbf)
-     gdbm_file_info *dbf;
+write_header (gdbm_file_info *dbf)
 {
   int  num_bytes;       /* Return value for write. */
   off_t file_pos;       /* Return value for lseek. */
@@ -58,8 +57,7 @@ write_header (dbf)
 /* After all changes have been made in memory, we now write them
    all to disk. */
 void
-_gdbm_end_update (dbf)
-     gdbm_file_info *dbf;
+_gdbm_end_update (gdbm_file_info *dbf)
 {
   int  num_bytes;       /* Return value for write. */
   off_t file_pos;       /* Return value for lseek. */
@@ -113,9 +111,7 @@ _gdbm_end_update (dbf)
 /* If a fatal error is detected, come here and exit. VAL tells which fatal
    error occured. */
 int
-_gdbm_fatal (dbf, val)
-     gdbm_file_info *dbf;
-     char *val;
+_gdbm_fatal (gdbm_file_info *dbf, char *val)
 {
   if (dbf->fatal_err != NULL)
     (*dbf->fatal_err) (val);

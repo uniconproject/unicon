@@ -75,8 +75,7 @@ void init_sym()
  * sym_lkup - look up a string in the symbol table. Return NULL If it is not
  *  there.
  */
-struct sym_entry *sym_lkup(image)
-char *image;
+struct sym_entry *sym_lkup(char *image)
    {
    register struct sym_entry *sym;
 
@@ -93,11 +92,7 @@ char *image;
  *  it is illegal to redefine them. In that case, NULL is returned otherwise
  *  the entry is returned.
  */
-struct sym_entry *sym_add(tok_id, image, id_type, nest_lvl)
-int tok_id;
-char *image;
-int id_type;
-int nest_lvl;
+struct sym_entry *sym_add(int tok_id, char *image, int id_type, int nest_lvl)
    {
    register struct sym_entry **symp;
    register struct sym_entry *sym;
@@ -153,8 +148,7 @@ int nest_lvl;
  * lbl - make sure the label is in the symbol table and return a node
  *  referencing the symbol table entry.
  */
-struct node *lbl(t)
-struct token *t;
+struct node *lbl(struct token *t)
    {
    struct sym_entry *sym;
    struct node *n;
@@ -172,8 +166,7 @@ struct token *t;
  * push_cntxt - push a level of declaration context (this may or may not
  *  be level of declaration nesting).
  */
-void push_cntxt(lvl_incr)
-int lvl_incr;
+void push_cntxt(int lvl_incr)
    {
    struct lvl_entry *entry;
 
@@ -227,9 +220,7 @@ void pop_cntxt()
  *  as being no longer in use, and leave the slots available for reuse
  *  for declarations that occur in pararallel compound statements.
  */
-void unuse(t_lst, lvl)
-struct init_tend *t_lst;
-int lvl;
+void unuse(struct init_tend *t_lst, int lvl)
    {
    while (t_lst != NULL) {
       if (t_lst->nest_lvl >= lvl)
@@ -242,8 +233,7 @@ int lvl;
  * free_sym - remove a reference to a symbol table entry and free storage
  *  related to it if no references remain.
  */
-void free_sym(sym)
-struct sym_entry *sym;
+void free_sym(struct sym_entry *sym)
    {
    if (--sym->ref_cnt <= 0) {
       switch (sym->id_type) {
@@ -260,10 +250,7 @@ struct sym_entry *sym;
  * alloc_tnd - allocated a slot in a tended array for a variable and return
  *  its index.
  */
-int alloc_tnd(typ, init, lvl)
-int typ;
-struct node *init;
-int lvl;
+int alloc_tnd(int typ, struct node *init, int lvl)
    {
    register struct init_tend *tnd;
 
@@ -330,9 +317,7 @@ void free_tend()
  * dst_alloc - the conversion of a parameter is encountered during
  *  parsing; make sure a place is allocated to act as the destination.
  */
-void dst_alloc(cnv_typ, var)
-struct node *cnv_typ;
-struct node *var;
+void dst_alloc(struct node *cnv_typ, struct node *var)
    {
    struct sym_entry *sym;
 
@@ -368,8 +353,7 @@ void strt_def()
 /*
  * add_def - update the symbol table for the given declarator.
  */
-static void add_def(dcltor)
-struct node *dcltor;
+static void add_def(struct node *dcltor)
    {
    struct sym_entry *sym;
    struct token *t;
@@ -420,9 +404,7 @@ struct node *dcltor;
  *  based on information put in the declaration context while parsing
  *  the "storage class type qualifier list".
  */
-void id_def(dcltor, init)
-struct node *dcltor;
-struct node *init;
+void id_def(struct node *dcltor, struct node *init)
    {
    struct node *chld0, *chld1;
    struct sym_entry *sym;
@@ -487,8 +469,7 @@ struct node *init;
  * func_def - a function header has been parsed. Add the identifier for
  *  the function to the symbol table.
  */
-void func_def(head)
-struct node *head;
+void func_def(struct node *head)
    {
    /*
     * If this is really a function header, the current declaration
@@ -514,9 +495,7 @@ struct node *head;
  *  Undereferenced and/or dereferenced versions of the parameter may be
  *  specified.
  */
-void s_prm_def(u_ident, d_ident)
-struct token *u_ident;
-struct token *d_ident;
+void s_prm_def(struct token *u_ident, struct token *d_ident)
    {
    int param_num;
 
@@ -535,10 +514,7 @@ struct token *d_ident;
  *  undereferenced version of a parameter. Put it on the current
  *  list of parameters.
  */
-static void add_s_prm(ident, param_num, flags)
-struct token *ident;
-int param_num;
-int flags;
+static void add_s_prm(struct token *ident, int param_num, int flags)
    {
    struct sym_entry *sym;
 
@@ -558,8 +534,7 @@ int flags;
 /*
  * var_args - a variable length parameter list for an operation is parsed.
  */
-void var_args(ident)
-struct token *ident;
+void var_args(struct token *ident)
    {
    struct sym_entry *sym;
 
@@ -592,8 +567,7 @@ struct token *ident;
  *   and initializer information to the symbol table entry for each
  *   identifier. Add the entry onto the list associated with the "declare"
  */
-void d_lst_typ(dcls)
-struct node *dcls;
+void d_lst_typ(struct node *dcls)
    {
    if (dcls == NULL)
       return;
@@ -608,8 +582,7 @@ struct node *dcls;
  *   symbol table entry of each identifier. Add the entry onto the list
  *   associated with the current "declare {...}".
  */
-static void dcl_typ(dcl)
-struct node *dcl;
+static void dcl_typ(struct node *dcl)
    {
    struct node *tqual;
    struct node *dcltors;
@@ -629,9 +602,7 @@ struct node *dcl;
  *   information to its symbol table entry. Add the entry onto the list
  *   associated with the current "declare {...}".
  */
-static void dcltor_typ(dcltor, tqual)
-struct node *dcltor;
-struct node *tqual;
+static void dcltor_typ(struct node *dcltor, struct node *tqual)
    {
    struct sym_entry *sym;
    struct node *part_dcltor;
@@ -693,8 +664,7 @@ void tnd_char()
  * tnd_strct - indicate in the current declaration context that a tended
  *  struct declaration has been found and indicate the struct type.
  */
-void tnd_strct(t)
-struct token *t;
+void tnd_strct(struct token *t)
    {
    char *strct_nm;
 
@@ -714,8 +684,7 @@ struct token *t;
  * tnd_strct - indicate in the current declaration context that a tended
  *  union (pointer?) declaration has been found.
  */
-void tnd_union(t)
-struct token *t;
+void tnd_union(struct token *t)
    {
    /*
     * Only union block pointers may be tended.

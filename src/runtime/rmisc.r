@@ -22,8 +22,7 @@ int        find_cindex(union block *l, union block *r);
 /*
  * eq - compare two Icon strings for equality
  */
-int eq(d1, d2)
-dptr d1, d2;
+int eq(dptr d1, dptr d2)
 {
         char *s1, *s2;
         int i;
@@ -97,9 +96,7 @@ int getkeyword(char *s, dptr vp)
  *  of the variable (Succeeded for keywords), or Failed if the variable
  *  does not exist.
  */
-int getvar(s,vp)
-   char *s;
-   dptr vp;
+int getvar(char *s, dptr vp)
    {
    register dptr dp;
    register dptr np;
@@ -322,8 +319,7 @@ glbvars:
  * hash - compute hash value of arbitrary object for table and set accessing.
  */
 
-uword hash(dp)
-dptr dp;
+uword hash(dptr dp)
    {
    register char *s;
    register uword i;
@@ -494,10 +490,7 @@ dptr dp;
  *  fields of records will not be imaged.
  */
 
-void outimage(f, dp, noimage)
-FILE *f;
-dptr dp;
-int noimage;
+ void outimage(FILE *f, dptr dp, int noimage)
    {
    register word i, j;
    register char *s;
@@ -929,9 +922,7 @@ int noimage;
  *  if c is unprintable, '\', or equal to q.
  */
 
-static void printimage(f, c, q)
-FILE *f;
-int c, q;
+static void printimage(FILE *f, int c, int q)
    {
    if (printable(c)) {
       /*
@@ -1013,10 +1004,7 @@ int c, q;
  * listimage - print an image of a list.
  */
 
-static void listimage(f, lp, noimage)
-FILE *f;
-struct b_list *lp;
-int noimage;
+ static void listimage(FILE *f, struct b_list *lp, int noimage)
    {
    register word i, j;
    word size, count;
@@ -1135,11 +1123,8 @@ int noimage;
  *  Based on Bentley, CACM 28,7 (July, 1985), p. 676.
  */
 
-char * qsearch (key, base, nel, width, compar)
-char * key;
-char * base;
-int nel, width;
-int (*compar)();
+ char * qsearch (char * key, char * base, int nel, int width,
+                 int (*compar)(char *, char *))
 {
     int l, u, m, r;
     char * a;
@@ -1167,9 +1152,7 @@ int (*compar)();
  *  in the string region.
  */
 
-int qtos(dp, sbuf)
-dptr dp;
-char *sbuf;
+ int qtos(dptr dp, char *sbuf)
    {
    register word slen;
    register char *c, *s;
@@ -1333,8 +1316,7 @@ struct b_coexpr *popact(struct b_coexpr *ce)
 /*
  * topact - return the most recent activator of ce.
  */
-struct b_coexpr *topact(ce)
-struct b_coexpr *ce;
+struct b_coexpr *topact(struct b_coexpr *ce)
 {
    struct astkblk *abp = ce->es_actstk;
    CURTSTATE();
@@ -1391,19 +1373,16 @@ struct b_coexpr *ce;
 /*
  * findline - find the source line number associated with the ipc
  */
-int findline(ipc_in)
-word *ipc_in;
+ int findline(word *ipc_in)
 {
   return findloc(ipc_in) & 65535;
 }
-int findcol(ipc_in)
-word *ipc_in;
+ int findcol(word *ipc_in)
 {
   return findloc(ipc_in) >> 21; /*16 changed to 21  */
 }
 
-int findsyntax(ipc_in)
-word *ipc_in;
+ int findsyntax(word *ipc_in)
 {
   return ((findloc(ipc_in) >> 16) & 31);
 }
@@ -1501,9 +1480,7 @@ int findipc(int line)
 /*
  * findoldipc - find the first ipc associated with a procedure frame level.
  */
-word* findoldipc(ce, level)
-struct b_coexpr *ce;
-int level;
+ word* findoldipc(struct b_coexpr *ce, int level)
 {
    struct pf_marker *fp;
    int i;
@@ -1538,8 +1515,7 @@ int level;
  * hitsyntax - finds if the ipc that has an entry on the line table.
  * returns a syntax_code > 0 if it founds, otherwise it returns a zero.
  */
-int hitsyntax(ipc_in)
-word *ipc_in;
+ int hitsyntax(word *ipc_in)
 {
 
    int synt=0;
@@ -1621,8 +1597,7 @@ char *findfile_p(word *ipc_in, struct progstate *prog)
  *  Returns number of characters allocated.
  */
 
-int doimage(c, q)
-int c, q;
+int doimage(int c, int q)
    {
    static char cbuf[5];
 
@@ -2478,8 +2453,7 @@ int find_cindex(union block *l, union block *r)
  * getimage(dp1,dp2) - return string image of object dp1 in dp2.
  */
 
-int getimage(dp1,dp2)
-dptr dp1, dp2;
+int getimage(dptr dp1, dptr dp2)
    {
    register word len, outlen, rnlen;
    int i;
@@ -2860,8 +2834,7 @@ dptr dp1, dp2;
 /*
  * csname(dp) -- return the name of a predefined cset matching dp.
  */
-static char *csname(dp)
-dptr dp;
+static char *csname(dptr dp)
    {
    register int n;
 
@@ -2935,8 +2908,7 @@ dptr dp;
 /*
  * cssize(dp) - calculate cset size, store it, and return it
  */
-int cssize(dp)
-dptr dp;
+int cssize(dptr dp)
 {
    register int i, n;
    register unsigned int w, *wp;
@@ -2956,8 +2928,7 @@ dptr dp;
  * printable(c) -- is c a "printable" character?
  */
 
-int printable(c)
-int c;
+int printable(int c)
    {
 
 /*
@@ -3111,10 +3082,7 @@ int sig_rsm()
 /*
  * cmd_line - convert command line arguments into a list of strings.
  */
-void cmd_line(argc, argv, rslt)
-int argc;
-char **argv;
-dptr rslt;
+void cmd_line(int argc, char **argv, dptr rslt)
    {
    tended struct b_list *hp;
    register word i;
@@ -3148,10 +3116,7 @@ dptr rslt;
  * varargs - construct list for use in procedures with variable length
  *  argument list.
  */
-void varargs(argp, nargs, rslt)
-dptr argp;
-int nargs;
-dptr rslt;
+void varargs(dptr argp, int nargs, dptr rslt)
    {
    tended struct b_list *hp;
    tended struct b_lelem *bp; /* deref() can alloc, needs to be tended. */
@@ -3179,10 +3144,7 @@ dptr rslt;
  *  string-valued variables. This is used for return, suspend, and
  *  transmitting values across co-expression context switches.
  */
-void retderef(valp, low, high)
-dptr valp;
-word *low;
-word *high;
+void retderef(dptr valp, word *low, word *high)
    {
    struct b_tvsubs *tvb;
    word *loc;

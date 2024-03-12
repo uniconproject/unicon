@@ -285,8 +285,7 @@ int get_fd(struct descrip file, unsigned int errmask)
 }
 
 
-int get_uid(name)
-char *name;
+int get_uid(char *name)
 {
 #if NT
    return -1;
@@ -299,8 +298,7 @@ char *name;
 #endif                                  /* NT */
 }
 
-int get_gid(name)
-char *name;
+int get_gid(char *name)
 {
 #if NT
    return -1;
@@ -313,9 +311,7 @@ char *name;
 #endif                                  /* NT */
 }
 
-static int newmode(mode, oldmode)
-char *mode;
-int oldmode;
+static int newmode(char *mode, int oldmode)
 {
    int i;
 
@@ -473,9 +469,7 @@ int oldmode;
 }
 
 
-int getmodefd(fd, mode)
-int fd;
-char *mode;
+int getmodefd(int fd, char *mode)
 {
 #if defined(NTGCC) && (WordBits==32)
 #passthru #if (__GNUC__==4) && (__GNUC_MINOR__>7)
@@ -488,9 +482,7 @@ char *mode;
    return newmode(mode, st.st_mode);
 }
 
-int getmodenam(path, mode)
-char *path;
-char *mode;
+int getmodenam(char *path, char *mode)
 {
    struct stat st;
    if (path) {
@@ -511,14 +503,13 @@ char *mode;
  * may trigger a garbage collection, the pointer parameters dp and rp
  * should point at tended variables.
  */
-void stat2rec(st, dp, rp)
+void stat2rec(
 #if NT
-struct _stat *st;
+              struct _stat *st, 
 #else                                   /* NT */
-struct stat *st;
+              struct stat *st,
 #endif                                  /* NT */
-struct descrip *dp;
-struct b_record **rp;
+              struct descrip *dp, struct b_record **rp)
 {
    int i;
    char mode[12], *user = NULL, *group = NULL;
@@ -680,8 +671,7 @@ struct descrip posix_group = {D_Null};
 struct descrip posix_servent = {D_Null};
 struct descrip posix_hostent = {D_Null};
 
-dptr rec_structor(name)
-char *name;
+dptr rec_structor(char *name)
 {
    int i;
    struct descrip s;
@@ -1560,8 +1550,7 @@ static int nsock = 0;
 /*
  * lookup a socket by name
  */
-static int sock_get(s)
-char *s;
+static int sock_get(char *s)
 {
    int i;
    for (i = 0; i < nsock; i++)
@@ -1570,9 +1559,7 @@ char *s;
    return -1;
 }
 
-static void sock_put(s, fd)
-char *s;
-int fd;
+static void sock_put(char *s, int fd)
 {
    MUTEX_LOCKID(MTX_SOCK_MAP);
    sock_map[nsock].fd = fd;
@@ -1919,9 +1906,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
 
 #if !NT
-dptr make_pwd(pw, result)
-struct passwd *pw;
-dptr result;
+dptr make_pwd(struct passwd *pw, dptr result)
 {
    tended struct b_record *rp;
    dptr constr;
@@ -1975,9 +1960,7 @@ void catstrs(char **ptrs, dptr d)
 }
 
 #if !NT
-dptr make_group(gr, result)
-struct group *gr;
-dptr result;
+dptr make_group(struct group *gr, dptr result)
 {
    struct b_record *rp;
    dptr constr;
@@ -2001,9 +1984,7 @@ dptr result;
 }
 #endif                                  /* !NT */
 
-dptr make_serv(s, result)
-struct servent *s;
-dptr result;
+dptr make_serv(struct servent *s, dptr result)
 {
    struct b_record *rp;
    dptr constr;
@@ -2029,10 +2010,7 @@ dptr result;
 
 #ifdef HAVE_GETADDRINFO
 
-dptr make_host_from_addrinfo(name, res0, result)
-char *name;
-struct addrinfo *res0;
- dptr result;
+dptr make_host_from_addrinfo(char *name, struct addrinfo *res0,  dptr result)
 {
    struct b_record *rp;
    dptr constr;
@@ -2167,9 +2145,7 @@ struct addrinfo *res0;
 }
 #endif                                  /* HAVE_GETADDRINFO */
 
-dptr make_host(hs, result)
-struct hostent *hs;
- dptr result;
+dptr make_host(struct hostent *hs,  dptr result)
 {
    struct b_record *rp;
    dptr constr;
@@ -2316,8 +2292,7 @@ void init_sighandlers()
 }
 #else                                   /* MultiProgram */
 
-void init_sighandlers(pstate)
-struct progstate *pstate;
+void init_sighandlers(struct progstate *pstate)
 {
    int i;
    for(i = 0; i < 41; i++)
@@ -2325,9 +2300,7 @@ struct progstate *pstate;
 }
 #endif                                  /* MultiProgram */
 
-struct descrip register_sig(sig, handler)
-int sig;
-struct descrip handler;
+struct descrip register_sig(int sig, struct descrip handler)
 {
    struct descrip old;
 
@@ -2341,8 +2314,7 @@ struct descrip handler;
    return old;
 }
 
-void signal_dispatcher(sig)
-int sig;
+void signal_dispatcher(int sig)
 {
    struct descrip proc;
 

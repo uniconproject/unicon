@@ -13,8 +13,7 @@
  * salloc - allocate and initialize string
  */
 
-char *salloc(s)
-char *s;
+char *salloc(char *s)
    {
    register char *s1;
 
@@ -30,8 +29,7 @@ char *s;
  * alloc - allocate n bytes
  */
 
-pointer alloc(n)
-unsigned int n;
+pointer alloc(unsigned int n)
    {
    register pointer a;
 

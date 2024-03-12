@@ -222,7 +222,7 @@ _Pragma("GCC diagnostic ignored \"-Wstringop-overflow=0\"");
          rtentryvector.Alcstr = alcstr;
          rtentryvector.Getdbl = getdbl;
 
-         (void) (*func)(&rtentryvector);
+         ((void (*)(struct rtentrypts *))*func)(&rtentryvector);
          }
 
       /*
@@ -275,10 +275,7 @@ end
  *
  *  Returns 0 if memory could not be allocated.
  */
-int makefunc(d, name, func)
-dptr d;
-char *name;
-int (*func)();
+int makefunc(dptr d, char *name, int (*func)())
    {
    struct b_proc *blk;
 
@@ -289,9 +286,9 @@ int (*func)();
    blk->blksize = sizeof(struct b_proc);
 
 #if COMPILER
-   blk->ccode = glue;           /* set code addr to glue routine */
+   blk->ccode.p4iddc = glue;      /* set code addr to glue routine */
 #else                                   /* COMPILER */
-   blk->entryp.ccode = glue;    /* set code addr to glue routine */
+   blk->entryp.ccode.p2id = glue; /* set code addr to glue routine */
 #endif                                  /* COMPILER */
 
    blk->nparam = -1;            /* varargs flag */
@@ -315,13 +312,9 @@ int (*func)();
 
 #if COMPILER
 
-int glue(argc, dargv, rslt, succ_cont)
-int argc;
-dptr dargv;
-dptr rslt;
-continuation succ_cont;
+int glue(int argc, dptr dargv, dptr rslt, continuation succ_cont)
    {
-   int i, status, (*func)();
+     int i, status, (*func)(int,dptr);
    struct b_proc *blk;
    struct descrip r;
    tended struct descrip p;
@@ -331,7 +324,7 @@ continuation succ_cont;
       deref(&dargv[i], &dargv[i]);      /* dereference args including proc */
 
    blk = (struct b_proc *)dargv[0].vword.bptr;  /* proc block address */
-   func = (int (*)())blk->lnames[0].vword.sptr; /* entry point address */
+   func = (int (*)(int,dptr))blk->lnames[0].vword.sptr; /* entry point address */
 
    p = dargv[0];                        /* save proc for traceback */
    dargv[0] = nulldesc;                 /* set default return value */
@@ -355,17 +348,15 @@ continuation succ_cont;
 
 #else                                           /* COMPILER */
 
-int glue(argc, dargv)
-int argc;
-dptr dargv;
+int glue(int argc, dptr dargv)
    {
-   int status, (*func)();
+     int status, (*func)(int,dptr);
    struct b_proc *blk;
    struct descrip r;
    tended struct descrip p;
 
    blk = (struct b_proc *)dargv[0].vword.bptr;  /* proc block address */
-   func = (int (*)())blk->lnames[0].vword.sptr; /* entry point address */
+   func = (int (*)(int, dptr))blk->lnames[0].vword.sptr; /* entry point address */
 
    p = dargv[0];                        /* save proc for traceback */
    dargv[0] = nulldesc;                 /* set default return value */

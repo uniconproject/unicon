@@ -19,9 +19,7 @@ void    doinclude       (char *fname);
 
 FILE *outfile;          /* output file */
 
-int main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
    {
    char *progname = argv[0];
 
@@ -49,8 +47,7 @@ char *argv[];
    /*NOTREACHED*/
    }
 
-void doinclude(fname)
-char *fname;
+void doinclude(char *fname)
    {
    FILE *f;
    char line[MAXLINE], newname[MAXLINE], *p;

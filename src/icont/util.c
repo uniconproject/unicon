@@ -38,8 +38,7 @@ int ftbsize = sizeof(ftable)/sizeof(char *);
 /*
  * tcalloc - allocate and zero m*n bytes
  */
-pointer tcalloc(m,n)
-unsigned int m, n;
+pointer tcalloc(unsigned int m, unsigned int n)
    {
    pointer a;
 
@@ -58,13 +57,14 @@ struct freedchunk {
  * trealloc - realloc a table making it half again larger and zero the
  *   new part of the table.
  */
-pointer trealloc(table, tblfree, size, unit_size, min_units, tbl_name)
-pointer table;      /* table to be realloc()ed */
-pointer tblfree;    /* reference to table free pointer if there is one */
-unsigned int *size; /* size of table */
-int unit_size;      /* number of bytes in a unit of the table */
-int min_units;      /* the minimum number of units that must be allocated. */
-char *tbl_name;     /* name of the table */
+
+pointer
+trealloc(pointer table,      /* table to be realloc()ed */
+         pointer tblfree,    /* reference to table free pointer if there is one */
+         unsigned int *size, /* size of table */
+         int unit_size,      /* number of bytes in a unit of the table */
+         int min_units,      /* the minimum number of units that must be allocated. */
+         char *tbl_name)     /* name of the table */
    {
    word new_size;
    word num_bytes;
@@ -128,8 +128,7 @@ char *tbl_name;     /* name of the table */
 /*
  * round2 - round an integer up to the next power of 2.
  */
-unsigned int round2(n)
-unsigned int n;
+unsigned int round2(unsigned int n)
    {
    unsigned int b = 1;
    while (b < n)
@@ -162,8 +161,7 @@ char *Syntax[]={
       "endsuspend"  /* exiting suspend loop    */
   };
 
-int SyntCode(s)
-char *s;
+int SyntCode(char *s)
 {   int i=0;
     for(i=0; i < MaxSyntax ; i++){
       if (strcmp(Syntax[i],s) == 0)

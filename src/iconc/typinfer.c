@@ -750,8 +750,7 @@ printf("hash-mask: %x hash-upper: %x hash-upper-shr: %d hash-shifts: %d\n",
  * find_new - walk the syntax tree allocating structure types where
  *  operations create new structures.
  */
-static void find_new(n)
-struct node *n;
+static void find_new(struct node *n)
    {
    struct t_coexpr *coexp;
    struct node *cases;
@@ -913,9 +912,7 @@ struct node *n;
  *  If they indicate that the operations creates structures, allocate a
  *  type for the structures and associate it with the node in the syntax tree.
  */
-static void abstr_new(n, il)
-struct node *n;
-struct il_code *il;
+static void abstr_new(struct node *n, struct il_code *il)
    {
    int i;
    int num_cases, indx;
@@ -1034,9 +1031,7 @@ struct il_code *il;
  */
 static
 struct store *
-alloc_stor(stor_sz, n_types)
-   int stor_sz;
-   int n_types;
+alloc_stor(int stor_sz, int n_types)
 {
    int i;
    struct store * rslt;
@@ -1065,10 +1060,7 @@ alloc_stor(stor_sz, n_types)
  *  The syntax tree is walked in reverse execution order looking for
  *  failure and for generators.
  */
-static int findloops(n, resume, rslt_type)
-struct node *n;
-int resume;
-typeinfo_t *rslt_type;
+static int findloops(struct node *n, int resume, typeinfo_t *rslt_type)
    {
    struct loop {
       int resume;
@@ -1608,8 +1600,7 @@ typeinfo_t *rslt_type;
  *  that maps argument indexes to types for an operation in the
  *  data base. Allocate the symbol table.
  */
-static struct symtyps *symtyps(nsyms)
-int nsyms;
+static struct symtyps *symtyps(int nsyms)
    {
    struct symtyps *tab;
 
@@ -1626,9 +1617,7 @@ int nsyms;
 
 static
 void
-infer_prc(proc, n)
-   struct pentry * proc;
-   nodeptr n;
+infer_prc(struct pentry * proc, nodeptr n)
 {
    int i;
    int nparams;
@@ -1875,9 +1864,7 @@ static struct store * cpy_store(struct store * src)
 static
 inline
 void
-mrg_store(src, dst)
-   struct store *src;
-   struct store *dst;
+mrg_store(struct store *src, struct store *dst)
 {
    int i;
 
@@ -1893,8 +1880,7 @@ mrg_store(src, dst)
  */
 static
 void
-set_ret(typ)
-   typeinfo_t * typ;
+set_ret(typeinfo_t * typ)
 {
    int i;
    int nints;
@@ -1923,9 +1909,7 @@ set_ret(typ)
  */
 static
 void
-deref_lcl(src, dest)
-   typeinfo_t * src;
-   typeinfo_t * dest;
+deref_lcl(typeinfo_t * src, typeinfo_t * dest)
 {
    int i, j;
    int n_set;
@@ -2025,8 +2009,7 @@ deref_lcl(src, dest)
  */
 static
 struct store *
-get_store(clear)
-   int clear;
+get_store(int clear)
 {
    int i;
    int store_sz;
@@ -2062,8 +2045,7 @@ get_store(clear)
    return store;
 }
 
-static void free_store(store)
-struct store *store;
+static void free_store(struct store *store)
    {
    store->next = store_pool;
    store_pool = store;
@@ -2071,16 +2053,14 @@ struct store *store;
 
 static
 int
-node_descendants(n)
-   struct node * n;
+node_descendants(struct node * n)
 {
    return n->n_nflds;
 }
 
 static
 struct node *
-dupnode(n)
-   struct node * n;
+dupnode(struct node * n)
 {
    int i;
    struct node * rslt;
@@ -2095,9 +2075,7 @@ dupnode(n)
 
 static
 int
-fldref_maybe_method(n, numrecs)
-   struct node * n;
-   int * numrecs;
+fldref_maybe_method(struct node * n, int * numrecs)
 {
    char * fldname;
    int i, frst_bit;
@@ -2132,8 +2110,7 @@ fldref_maybe_method(n, numrecs)
 
 static
 void
-methodinvok_add_implicit_self(n)
-   struct node * n;
+methodinvok_add_implicit_self(struct node * n)
 {
    int i;
    int nargs;
@@ -2166,8 +2143,7 @@ methodinvok_add_implicit_self(n)
 #if 0
 /* This function isn't used, except for debugging */
 void
-infer_nd_in(n)
-   struct node * n;
+infer_nd_in(struct node * n)
 {
    char * p;
    char * q;
@@ -2195,8 +2171,7 @@ infer_nd_in(n)
 /*
  * infer_nd - perform type inference on a subtree of the syntax tree.
  */
-static void infer_nd(n)
-nodeptr n;
+static void infer_nd(nodeptr n)
    {
    struct node *cases;
    struct node *clause;
@@ -3099,9 +3074,7 @@ nodeptr n;
  */
 static
 void
-infer_con(rec, n)
-   struct rentry * rec;
-   nodeptr n;
+infer_con(struct rentry * rec, nodeptr n)
 {
    int i;
    int nfields;
@@ -3164,8 +3137,7 @@ infer_con(rec, n)
  */
 static
 void
-infer_act(n)
-   nodeptr n;
+infer_act(nodeptr n)
 {
    int i;
    int j;
@@ -3376,10 +3348,7 @@ infer_act(n)
  */
 static
 void
-mrg_act(coexp, e_store, rslt_typ)
-   struct t_coexpr * coexp;
-   struct store * e_store;
-   struct type * rslt_typ;
+mrg_act(struct t_coexpr * coexp, struct store * e_store, struct type * rslt_typ)
 {
    int i;
    struct store * store;
@@ -3396,10 +3365,7 @@ mrg_act(coexp, e_store, rslt_typ)
  */
 static
 void
-typ_deref(src, dst, chk)
-   typeinfo_t * src;
-   typeinfo_t * dst;
-   int chk;
+typ_deref(typeinfo_t * src, typeinfo_t * dst, int chk)
 {
    int i;
    int j;
@@ -3591,11 +3557,7 @@ typ_deref(src, dst, chk)
  */
 static
 void
-infer_impl(impl, n, symtyps, rslt_typ)
-   struct implement * impl;
-   nodeptr n;
-   struct symtyps * symtyps;
-   typeinfo_t * rslt_typ;
+infer_impl(struct implement * impl, nodeptr n, struct symtyps * symtyps, typeinfo_t * rslt_typ)
 {
    int i;
    int j;
@@ -3734,9 +3696,7 @@ infer_impl(impl, n, symtyps, rslt_typ)
  */
 static
 void
-chk_succ(ret_flag, susp_stor)
-   int ret_flag;
-   struct store * susp_stor;
+chk_succ(int ret_flag, struct store * susp_stor)
 {
    if (ret_flag & DoesSusp) {
        if (susp_stor != NULL && (ret_flag & DoesRet))
@@ -3756,8 +3716,7 @@ chk_succ(ret_flag, susp_stor)
  */
 static
 int
-infer_il(il)
-   struct il_code * il;
+infer_il(struct il_code * il)
 {
    struct il_code *il1;
    int condition;
@@ -3879,8 +3838,7 @@ infer_il(il)
  */
 static
 void
-side_effect(il)
-   struct il_code * il;
+side_effect(struct il_code * il)
 {
    int n_set;
    int i, k;
@@ -3977,9 +3935,7 @@ side_effect(il)
  */
 static
 void
-abstr_typ(il, typ)
-   struct il_code * il;
-   struct type * typ;
+abstr_typ(struct il_code * il, struct type * typ)
 {
    int i;
    int j;
@@ -4178,8 +4134,7 @@ abstr_typ(il, typ)
  *  of uncertainty and because more than one execution path may be
  *  involved.
  */
-static int eval_cond(il)
-struct il_code *il;
+static int eval_cond(struct il_code *il)
    {
    int cond1;
    int cond2;
@@ -4223,11 +4178,10 @@ struct il_code *il;
  * eval_cnv - evaluate the conversion of a variable to a specific type
  *  to see if it may succeed or fail.
  */
-int eval_cnv(typcd, indx, def, cnv_flags)
-int typcd;       /* type to convert to */
-int indx;        /* index into symbol table of variable */
-int def;         /* flag: conversion has a default value */
-int *cnv_flags;  /* return flag for detailed conversion information */
+int eval_cnv(int typcd,       /* type to convert to */
+             int indx,        /* index into symbol table of variable */
+             int def,         /* flag: conversion has a default value */
+             int *cnv_flags)  /* return flag for detailed conversion information */
    {
    struct type *may_succeed;  /* types where conversion sometimes succeed */
    struct type *must_succeed; /* types where conversion always succeeds */
@@ -4410,9 +4364,7 @@ int *cnv_flags;  /* return flag for detailed conversion information */
  * eval_is - evaluate the result of an 'is' expression within a built-in
  *  operation.
  */
-int eval_is(typcd, indx)
-int typcd;
-int indx;
+int eval_is(int typcd, int indx)
    {
    int cond;
    typeinfo_t *typ;
@@ -4433,11 +4385,7 @@ int indx;
  * eval_arith - determine which cases of an arith_case may be taken based
  *   on the types of its arguments.
  */
-void eval_arith(indx1, indx2, maybe_int, maybe_dbl)
-int indx1;
-int indx2;
-int *maybe_int;
-int *maybe_dbl;
+void eval_arith(int indx1, int indx2, int *maybe_int, int *maybe_dbl)
    {
    typeinfo_t *typ1;
    typeinfo_t *typ2;
@@ -4496,10 +4444,7 @@ int *maybe_dbl;
  */
 extern
 int
-type_case(il, fnc, case_anlz)
-   struct il_code * il;
-   int (*fnc)();
-   struct case_anlz * case_anlz;
+type_case(struct il_code * il, int (*fnc)(struct il_code *), struct case_anlz * case_anlz)
 {
    int i, j;
    int indx;
@@ -4600,9 +4545,7 @@ type_case(il, fnc, case_anlz)
  * gen_inv - general invocation. The argument list is set up, perform
  *  abstract interpretation on each possible things being invoked.
  */
-static void gen_inv(typ, n)
-typeinfo_t *typ;
-nodeptr n;
+static void gen_inv(typeinfo_t *typ, nodeptr n)
    {
    int ret_flag = 0;
    struct store *s_store;
@@ -4777,8 +4720,7 @@ get_wktyp()
 /*
  * free_wktyp - free a dynamically allocated type bit vector.
  */
-static void free_wktyp(typ)
-struct type *typ;
+static void free_wktyp(struct type *typ)
    {
    typ->next = type_pool;
    type_pool = typ;
@@ -4794,9 +4736,7 @@ struct type *typ;
 /*
  * prt_typ - print a type that can include variable references.
  */
-void prt_typ(file, typ)
-FILE *file;
-typeinfo_t *typ;
+void prt_typ(FILE *file, typeinfo_t *typ)
    {
    struct gentry *gptr;
    struct lentry *lptr;
@@ -4941,9 +4881,7 @@ typeinfo_t *typ;
 /*
  * prt_d_typ - dereference a type and print it.
  */
-static void prt_d_typ(file, typ)
-FILE *file;
-typeinfo_t *typ;
+static void prt_d_typ(FILE *file, typeinfo_t *typ)
 {
    struct type *wktyp;
 
@@ -4976,8 +4914,7 @@ static struct argtyps *get_argtyp()
 /*
  * free_argtyp - free array of pointers to type bitvectors.
  */
-static void free_argtyp(argtyps)
-struct argtyps *argtyps;
+static void free_argtyp(struct argtyps *argtyps)
    {
    argtyps->next = argtyp_pool;
    argtyp_pool = argtyps;
@@ -5142,12 +5079,7 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
  */
 extern
 void
-mark_recs(fp, typ, num_offsets, offset, bad_recs)
-   struct fentry * fp;
-   typeinfo_t * typ;
-   int * num_offsets;
-   int * offset;
-   int * bad_recs;
+mark_recs(struct fentry * fp, typeinfo_t * typ, int * num_offsets, int * offset, int * bad_recs)
 {
    int frst_rec;
    struct type * wktyp;
@@ -5208,8 +5140,7 @@ mark_recs(fp, typ, num_offsets, offset, bad_recs)
  * past_prms - return true if execution might continue past the parameter
  *  evaluation. If a parameter has no type, this will not happen.
  */
-int past_prms(n)
-nodeptr n;
+int past_prms(nodeptr n)
    {
    struct implement *impl;
    struct symtyps *symtyps;

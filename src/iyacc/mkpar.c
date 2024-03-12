@@ -14,10 +14,10 @@ short final_state;
 static int SRcount;
 static int RRcount;
 
-extern action *parse_actions();
-extern action *get_shifts();
-extern action *add_reductions();
-extern action *add_reduce();
+extern action *parse_actions(int);
+extern action *get_shifts(int);
+extern action *add_reductions(int, action *);
+extern action *add_reduce(action *,int,int);
 
 
 void make_parser(void)

@@ -51,8 +51,7 @@
    NOTE: file.dir will be linked to file.pag. */
 
 int
-dbminit (file)
-     char *file;
+dbminit (char *file)
 {
   char* pag_file;           /* Used to construct "file.pag". */
   char* dir_file;           /* Used to construct "file.dir". */

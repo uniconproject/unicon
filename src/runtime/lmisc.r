@@ -8,16 +8,9 @@
  * create - return an entry block for a co-expression.
  */
 #if COMPILER
-struct b_coexpr *create(fnc, cproc, ntemps, wrk_size)
-continuation fnc;
-struct b_proc *cproc;
-int ntemps;
-int wrk_size;
+struct b_coexpr *create(continuation fnc, struct b_proc *cproc, int ntemps, int wrk_size)
 #else                                   /* COMPILER */
-
-int Ocreate(entryp, cargp)
-word *entryp;
-register dptr cargp;
+  int Ocreate(word *entryp, register dptr cargp)
 #endif                                  /* COMPILER */
    {
 
@@ -170,10 +163,7 @@ register dptr cargp;
 /*
  * activate - activate a co-expression.
  */
-int activate(val, ncp, result)
-dptr val;
-struct b_coexpr *ncp;
-dptr result;
+int activate(dptr val, struct b_coexpr *ncp, dptr result)
    {
 #ifdef CoExpr
 
@@ -316,12 +306,10 @@ dptr result;
 
 #ifdef Concurrent
 
-int msg_receive( dccp, dncp, msg, timeout)
-dptr dccp;
-dptr dncp;
-/*dptr valloc; /* location of value being transmitted */
-dptr msg;                         /* location to put result */
-int timeout;
+int msg_receive(dptr dccp, dptr dncp, 
+                /*dptr valloc, /* location of value being transmitted */
+                dptr msg,                         /* location to put result */
+                int timeout)
 {
    tended struct b_coexpr *ccp = BlkD(*dccp, Coexpr);
    tended struct b_coexpr *ncp;
@@ -436,12 +424,10 @@ int timeout;
       Fail; /* Unreachable */
 }
 
-int msg_send( dccp, dncp, msg, timeout)
-dptr dccp;
-dptr dncp;
-/*dptr valloc; /* location of value being transmitted */
-dptr msg;                         /* location to put result */
-int timeout;
+int msg_send( dptr dccp, dptr dncp, 
+              /*dptr valloc, /* location of value being transmitted */
+              dptr msg,                         /* location to put result */
+              int timeout)
 {
    tended struct b_coexpr *ccp = BlkD(*dccp, Coexpr);
    tended struct b_list *hp;

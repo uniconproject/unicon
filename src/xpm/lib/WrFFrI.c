@@ -55,12 +55,8 @@ LFUNC(OpenWriteFile, int, (char *filename, xpmData *mdata));
 LFUNC(xpmDataClose, void, (xpmData *mdata));
 
 int
-XpmWriteFileFromImage(display, filename, image, shapeimage, attributes)
-    Display *display;
-    char *filename;
-    XImage *image;
-    XImage *shapeimage;
-    XpmAttributes *attributes;
+XpmWriteFileFromImage(Display *display, char *filename, XImage *image,
+                      XImage *shapeimage, XpmAttributes *attributes)
 {
     XpmImage xpmimage;
     XpmInfo info;
@@ -86,10 +82,7 @@ XpmWriteFileFromImage(display, filename, image, shapeimage, attributes)
 }
 
 int
-XpmWriteFileFromXpmImage(filename, image, info)
-    char *filename;
-    XpmImage *image;
-    XpmInfo *info;
+XpmWriteFileFromXpmImage(char *filename, XpmImage *image, XpmInfo *info)
 {
     xpmData mdata;
     char *name, *dot, *s, new_name[BUFSIZ];
@@ -145,11 +138,7 @@ XpmWriteFileFromXpmImage(filename, image, info)
 }
 
 static int
-xpmWriteFile(file, image, name, info)
-    FILE *file;
-    XpmImage *image;
-    char *name;
-    XpmInfo *info;
+xpmWriteFile(FILE *file, XpmImage *image, char *name, XpmInfo *info)
 {
     /* calculation variables */
     unsigned int cmts, extensions;
@@ -203,10 +192,7 @@ xpmWriteFile(file, image, name, info)
 }
 
 static void
-WriteColors(file, colors, ncolors)
-    FILE *file;
-    XpmColor *colors;
-    unsigned int ncolors;
+WriteColors(FILE *file, XpmColor *colors, unsigned int ncolors)
 {
     unsigned int a, key;
     char *s;
@@ -227,13 +213,8 @@ WriteColors(file, colors, ncolors)
 
 
 static int
-WritePixels(file, width, height, cpp, pixels, colors)
-    FILE *file;
-    unsigned int width;
-    unsigned int height;
-    unsigned int cpp;
-    unsigned int *pixels;
-    XpmColor *colors;
+WritePixels(FILE *file, unsigned int width, unsigned int height, unsigned int cpp,
+            unsigned int *pixels, XpmColor *colors)
 {
     char *s, *p, *buf;
     unsigned int x, y, h;
@@ -269,10 +250,7 @@ WritePixels(file, width, height, cpp, pixels, colors)
 }
 
 static void
-WriteExtensions(file, ext, num)
-    FILE *file;
-    XpmExtension *ext;
-    unsigned int num;
+WriteExtensions(FILE *file, XpmExtension *ext, unsigned int num)
 {
     unsigned int x, y, n;
     char **line;
@@ -290,9 +268,7 @@ WriteExtensions(file, ext, num)
  * open the given file to be written as an xpmData which is returned
  */
 static int
-OpenWriteFile(filename, mdata)
-    char *filename;
-    xpmData *mdata;
+OpenWriteFile(char *filename, xpmData *mdata)
 {
 #ifndef NO_ZPIPE
     char buf[BUFSIZ];
@@ -334,8 +310,7 @@ OpenWriteFile(filename, mdata)
  * close the file related to the xpmData if any
  */
 static void
-xpmDataClose(mdata)
-    xpmData *mdata;
+xpmDataClose(xpmData *mdata)
 {
     switch (mdata->type) {
     case XPMFILE:

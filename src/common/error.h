@@ -22,9 +22,7 @@ static  char    *mapterm        (int typ,struct node *val);
  *  message is produced; if the state isn't found, "syntax error"
  *  is produced.
  */
-void yyerror(tok, lval, state)
-int tok, state;
-nodeptr lval;
+void yyerror(int tok, nodeptr lval, int state)
    {
    register struct errmsg *p;
    int line;
@@ -75,9 +73,7 @@ nodeptr lval;
  * mapterm finds a printable string for the given token type
  *  and value.
  */
-static char *mapterm(typ,val)
-int typ;
-nodeptr val;
+static char *mapterm(int typ, nodeptr val)
    {
    register struct toktab *t;
    register struct optab *ot;
@@ -136,9 +132,7 @@ void tfatal(char *s1, char *s2)
  * nfatal produces the error messages s1 and s2 (if nonnull), and associates
  *  it with source location of node.
  */
-void nfatal(n, s1, s2)
-nodeptr n;
-char *s1, *s2;
+void nfatal(nodeptr n, char *s1, char *s2)
    {
 
    if (n != NULL) {
@@ -158,8 +152,7 @@ char *s1, *s2;
  * twarn produces s1 and s2 (if nonnull) as translator warning messages.
  *  The location of the error is found in tok_loc.
  */
-void twarn(s1, s2)
-char *s1, *s2;
+void twarn(char *s1, char *s2)
    {
 
    if (tok_loc.n_file)
@@ -178,8 +171,7 @@ char *s1, *s2;
  * tsyserr is called for fatal errors.  The message s is produced and the
  *  translator exits.
  */
-void tsyserr(s)
-char *s;
+void tsyserr( char *s)
    {
 
 
@@ -194,8 +186,7 @@ char *s;
  * quit - immediate exit with error message
  */
 
-void quit(msg)
-char *msg;
+void quit(char *msg)
    {
    quitf(msg,"");
    }
@@ -203,8 +194,7 @@ char *msg;
 /*
  * quitf - immediate exit with message format and argument
  */
-void quitf(msg,arg)
-char *msg, *arg;
+void quitf(char *msg, char *arg)
    {
    extern char *progname;
 #ifdef ConsoleWindow

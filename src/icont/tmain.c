@@ -745,9 +745,8 @@ void iconx(int argc, char** argv){
 /*
  * execute - execute iconx to run the icon program
  */
-static void execute(ofile,efile,args)
-char *ofile, *efile, **args;
-   {
+static void execute(char *ofile, char *efile, char **args)
+{
 
    int n;
    char **argv, **p;
@@ -852,8 +851,7 @@ Deliberate Syntax Error
 
    }
 
-void report(s)
-char *s;
+void report(char *s)
    {
    char *c = (strchr(s, '\n') ? "" : ":\n") ;
    if (!silent)

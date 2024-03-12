@@ -63,12 +63,7 @@
 
 
 gdbm_file_info *
-gdbm_open (file, block_size, flags, mode, fatal_func)
-     char *file;
-     int  block_size;
-     int  flags;
-     int  mode;
-     void (*fatal_func) ();
+gdbm_open (char *file, int  block_size, int  flags, int  mode, void (*fatal_func) (char *))
 {
   gdbm_file_info *dbf;          /* The record to return. */
   struct stat file_stat;        /* Space for the stat information. */
@@ -420,9 +415,7 @@ gdbm_open (file, block_size, flags, mode, fatal_func)
 
 /* initialize the bucket cache. */
 int
-_gdbm_init_cache(dbf, size)
-    gdbm_file_info *dbf;
-    int size;
+_gdbm_init_cache(gdbm_file_info *dbf, int size)
 {
 register int index;
 

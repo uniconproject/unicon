@@ -101,10 +101,7 @@ LFUNC(ScanOtherColors, int, (Display *display, XpmColor *colors, int ncolors,
  * if not large enough.
  */
 static int
-storePixel(pixel, pmap, index_return)
-    Pixel pixel;
-    PixelsMap *pmap;
-    unsigned int *index_return;
+storePixel(Pixel pixel, PixelsMap *pmap, unsigned int *index_return)
 {
     unsigned int i;
     Pixel *p;
@@ -136,10 +133,7 @@ storePixel(pixel, pmap, index_return)
 }
 
 static int
-storeMaskPixel(pixel, pmap, index_return)
-    Pixel pixel;
-    PixelsMap *pmap;
-    unsigned int *index_return;
+storeMaskPixel(Pixel pixel, PixelsMap *pmap, unsigned int *index_return)
 {
     if (!pixel) {
         if (!pmap->ncolors) {
@@ -166,13 +160,8 @@ storeMaskPixel(pixel, pmap, index_return)
  * the given XpmImage structure.
  */
 int
-XpmCreateXpmImageFromImage(display, image, shapeimage,
-                           xpmimage, attributes)
-    Display *display;
-    XImage *image;
-    XImage *shapeimage;
-    XpmImage *xpmimage;
-    XpmAttributes *attributes;
+XpmCreateXpmImageFromImage(Display *display, XImage *image, XImage *shapeimage,
+                           XpmImage *xpmimage, XpmAttributes *attributes)
 {
     /* variables stored in the XpmAttributes structure */
     unsigned int cpp;
@@ -325,10 +314,7 @@ error:
 }
 
 static int
-ScanTransparentColor(color, cpp, attributes)
-    XpmColor *color;
-    unsigned int cpp;
-    XpmAttributes *attributes;
+ScanTransparentColor(XpmColor *color, unsigned int cpp, XpmAttributes *attributes)
 {
     char *s;
     unsigned int a, b, c;
@@ -379,14 +365,8 @@ ScanTransparentColor(color, cpp, attributes)
 }
 
 static int
-ScanOtherColors(display, colors, ncolors, pixels, mask, cpp, attributes)
-    Display *display;
-    XpmColor *colors;
-    int ncolors;
-    Pixel *pixels;
-    unsigned int mask;
-    unsigned int cpp;
-    XpmAttributes *attributes;
+ScanOtherColors(Display *display, XpmColor *colors, int ncolors, Pixel *pixels,
+                unsigned int mask, unsigned int cpp, XpmAttributes *attributes)
 {
     /* variables stored in the XpmAttributes structure */
     Colormap colormap;
@@ -571,11 +551,7 @@ static unsigned long Const low_bits_table[] = {
  */
 
 static int
-GetImagePixels(image, width, height, pmap)
-    XImage *image;
-    unsigned int width;
-    unsigned int height;
-    PixelsMap *pmap;
+GetImagePixels(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
 {
     char *src;
     char *dst;
@@ -674,11 +650,7 @@ static unsigned long byteorderpixel = MSBFirst << 24;
 #endif
 
 static int
-GetImagePixels32(image, width, height, pmap)
-    XImage *image;
-    unsigned int width;
-    unsigned int height;
-    PixelsMap *pmap;
+GetImagePixels32(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
 {
     unsigned char *addr;
     unsigned char *data;
@@ -739,11 +711,7 @@ GetImagePixels32(image, width, height, pmap)
  */
 
 static int
-GetImagePixels16(image, width, height, pmap)
-    XImage *image;
-    unsigned int width;
-    unsigned int height;
-    PixelsMap *pmap;
+GetImagePixels16(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
 {
     unsigned char *addr;
     unsigned char *data;
@@ -785,11 +753,7 @@ GetImagePixels16(image, width, height, pmap)
  */
 
 static int
-GetImagePixels8(image, width, height, pmap)
-    XImage *image;
-    unsigned int width;
-    unsigned int height;
-    PixelsMap *pmap;
+GetImagePixels8(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
 {
     unsigned int *iptr;
     unsigned char *data;
@@ -818,12 +782,8 @@ GetImagePixels8(image, width, height, pmap)
  */
 
 static int
-GetImagePixels1(image, width, height, pmap, storeFunc)
-    XImage *image;
-    unsigned int width;
-    unsigned int height;
-    PixelsMap *pmap;
-    int (*storeFunc) ();
+GetImagePixels1(XImage *image, unsigned int width, unsigned int height,
+                PixelsMap *pmap, int (*storeFunc) (Pixel, PixelsMap *, unsigned int *))
 {
     unsigned int *iptr;
     int x, y;
@@ -861,13 +821,8 @@ GetImagePixels1(image, width, height, pmap, storeFunc)
 
 #else  /* ndef FOR_MSW */
 static int
-MSWGetImagePixels(display, image, width, height, pmap, storeFunc)
-    Display *display;
-    XImage *image;
-    unsigned int width;
-    unsigned int height;
-    PixelsMap *pmap;
-    int (*storeFunc) ();
+MSWGetImagePixels(Display *display, XImage *image, unsigned int width, unsigned int height,
+                  PixelsMap *pmap,  int (*storeFunc) (Pixel, PixelsMap *, unsigned int *))
 {
     unsigned int *iptr;
     unsigned int x, y;
@@ -890,13 +845,8 @@ MSWGetImagePixels(display, image, width, height, pmap, storeFunc)
 
 #ifndef FOR_MSW
 int
-XpmCreateXpmImageFromPixmap(display, pixmap, shapemask,
-                            xpmimage, attributes)
-    Display *display;
-    Pixmap pixmap;
-    Pixmap shapemask;
-    XpmImage *xpmimage;
-    XpmAttributes *attributes;
+XpmCreateXpmImageFromPixmap(Display *display, Pixmap pixmap, Pixmap shapemask,
+                            XpmImage *xpmimage, XpmAttributes *attributes)
 {
     XImage *ximage = NULL;
     XImage *shapeimage = NULL;

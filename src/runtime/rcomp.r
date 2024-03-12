@@ -10,15 +10,12 @@
  * anycmp - compare any two objects.
  */
 
-int anycmp(dp1,dp2)
-dptr dp1, dp2;
+int anycmp(dptr dp1,dptr dp2)
    {
    return anycmpBase(dp1,dp2,SORTN);
    }
 
-int anycmpBase(dp1,dp2,sortType)
-dptr dp1, dp2;
-int sortType;
+int anycmpBase(dptr dp1,dptr dp2,int sortType)
    {
    register int o1, o2;
    register int t1, t2;
@@ -239,9 +236,7 @@ int sortType;
  * order(x) - return collating number for object x.
  */
 
-int order(dp, sortType)
-dptr dp;
-int sortType;
+int order(dptr dp, int sortType)
    {
    if (Qual(*dp))
       return 3;              /* string */
@@ -295,8 +290,7 @@ int sortType;
  * equiv - test equivalence of two objects.
  */
 
-int equiv(dp1, dp2)
-dptr dp1, dp2;
+int equiv(dptr dp1, dptr dp2)
    {
    register int result;
    register word i;
@@ -377,8 +371,7 @@ dptr dp1, dp2;
  * lexcmp - lexically compare two strings.
  */
 
-int lexcmp(dp1, dp2)
-dptr dp1, dp2;
+int lexcmp(dptr dp1, dptr dp2)
    {
 
 
@@ -426,8 +419,7 @@ dptr dp1, dp2;
  *  the two strings that the csets would be converted into.
  */
 
-int csetcmp(cs1, cs2)
-unsigned int *cs1, *cs2;
+int csetcmp(unsigned int *cs1, unsigned int *cs2)
    {
    unsigned int nbit, mask, *cs_end;
 

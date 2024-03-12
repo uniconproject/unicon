@@ -483,10 +483,7 @@ void main(int argc, char **argv)
 /*
  * icon_setup - handle interpreter command line options.
  */
-void icon_setup(argc,argv,ip)
-int argc;
-char **argv;
-int *ip;
+void icon_setup(int argc, char **argv, int *ip)
    {
 
 #ifdef TallyOpt
@@ -632,8 +629,7 @@ int *ip;
  *  file.
  */
 #ifdef MultiProgram
-   void resolve(pstate)
-   struct progstate *pstate;
+void resolve(struct progstate *pstate)
 #else                                   /* MultiProgram */
    void resolve()
 #endif                                  /* MultiProgram */
@@ -702,7 +698,7 @@ int *ip;
              * This procedure is a record constructor.  Make its entry point
              *  be the entry point of Omkrec().
              */
-            pp->entryp.ccode = Omkrec;
+            pp->entryp.ccode.p2id = Omkrec;
 
             /*
              * Initialize field names

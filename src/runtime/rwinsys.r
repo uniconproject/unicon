@@ -16,10 +16,6 @@ void checkpollevent(){
 
 #ifdef Graphics
 
-#ifdef MacGraph
-#include "rmac.ri"
-#endif                                  /* MacGraph */
-
 #ifdef XWindows
 #include "rxwin.ri"
 #endif                                  /* XWindows */

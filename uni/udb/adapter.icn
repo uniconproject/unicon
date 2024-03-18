@@ -27,9 +27,8 @@ class Adapter(
 
    # Process a result from udb in table or list form.
    method processResult(res)
-   local response
-      write("udb -> udap: "||ximage(res["type"]))
-      # write("udb -> udap:\n"|| ximage(res))
+      local response
+      #write("udb -> udap: "||ximage(res["type"]))
       \res | fail
 
       if type(res) == "table" then
@@ -47,20 +46,20 @@ class Adapter(
       repeat {
          if *cmdQueue ~= 0 then {
             cmdElement := pop(cmdQueue)
-            write(ximage(cmdElement))
+            #write(ximage(cmdElement))
             currentRequestBody := cmdElement["request"]
             showResult := cmdElement["showResult"]
             cmd := cmdElement["command"]
-            write("udb command: "||cmd||"\n")
+            #write("udb command: "||cmd||"\n")
             return cmd
          }
          every request_body := get_request(sock) do {
-            write("command: "||jtou(request_body)["command"]||"\n")
+            #write("command: "||jtou(request_body)["command"]||"\n")
             if \waitingForTerminal then {
                   if jtou(request_body)["command"] ~== "runInTerminal" then {
-                     write("put "||jtou(request_body)["command"])
+                     #write("put "||jtou(request_body)["command"])
                      put(requestQueue, request_body)
-                     write(ximage(requestQueue))
+                     #write(ximage(requestQueue))
                      next
                   }
                   else {
@@ -81,7 +80,7 @@ class Adapter(
    end
 
    method put_cmdQueue(cmd, requestBody, hideResult)
-   local cmdElement := table(), showResult
+      local cmdElement := table(), showResult
       cmdElement["command"] := cmd
       cmdElement["request"] := \requestBody
       if /hideResult then cmdElement["showResult"] := "__true__"
@@ -89,7 +88,7 @@ class Adapter(
    end
 
    method push_cmdQueue(cmd, requestBody, hideResult)
-   local cmdElement := table(), showResult
+      local cmdElement := table(), showResult
       cmdElement["command"] := cmd
       cmdElement["request"] := \requestBody
       if /hideResult then cmdElement["showResult"] := "__true__"
@@ -129,7 +128,7 @@ class Adapter(
       request_arguments := request_body["arguments"]
       response_body := request_body["body"]
 
-      write("client -> udap: " || request_json||"\n")
+      #write("client -> udap: " || request_json||"\n")
 
       case request_command of {
          "initialize": { initialize(request_seq, request_command, request_arguments) }
@@ -208,9 +207,9 @@ class Adapter(
 
       responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
 
-      write(ximage(responseTable))
+      #write(ximage(responseTable))
 
-      write("udap -> client: " || responseBody)
+      #write("udap -> client: " || responseBody)
 
       seq +:= 1
 
@@ -231,7 +230,7 @@ class Adapter(
       requestBody := tojson(requestTable)
       requestHeader := "Content-Length:" || *requestBody || "\r\n\r\n"
 
-      write("udap -> client: " || requestBody)
+      #write("udap -> client: " || requestBody)
 
       seq +:= 1
 
@@ -256,7 +255,7 @@ class Adapter(
          ])
       eventHeader := "Content-Length:" || *eventBody || "\r\n\r\n"
 
-      write("udap -> client: " || eventBody)
+      #write("udap -> client: " || eventBody)
 
       seq +:= 1
 
@@ -376,7 +375,7 @@ class Adapter(
 
    method watchpoint_info(request_body, request_seq, request_command, request_arguments)
    local res, body
-      write(ximage(request_body))
+      #write(ximage(request_body))
 
       body := [
          "dataId": request_arguments["name"]; # should be id that udb uses, not sure how that should be retrieved
@@ -403,11 +402,11 @@ class Adapter(
    end
 
    method variables(request_body, request_seq, request_command, request_arguments)
-   local ref
+      local ref
       ref := request_arguments["variablesReference"]
-      write("ref requested:")
-      write(ref)
-      write(ximage(currStructuredVars))
+      #write("ref requested:")
+      #write(ref)
+      #write(ximage(currStructuredVars))
       if ref < 5 then
          put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1)
       else {
@@ -538,7 +537,7 @@ class Adapter(
    end
 
    method processBreakpointResult(res)
-   local body
+      local body
       if \res["success"] == "__false__" then {
          response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
          writes(sock, response)
@@ -623,7 +622,7 @@ class Adapter(
    end
 
    method processScopesResult(res)
-   local response
+      local response
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
          writes(sock, response)
@@ -661,7 +660,7 @@ class Adapter(
    end
 
    method processVariablesResult(res)
-   local response, variables, var, ref
+      local response, variables, var, ref
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
          writes(sock, response)
@@ -696,7 +695,7 @@ class Adapter(
    end
 
    method processEvaluateResult(res)
-   local event, body, response, context, ref
+      local event, body, response, context, ref
       context := \(\currentRequestBody["arguments"])["context"]
       if \context == "repl" then {
          if res["type"] == "assignVar" then {
@@ -716,7 +715,7 @@ class Adapter(
                writes(sock, response)
             }
             else {
-               write("assignVar unsuccessful")
+               #write("assignVar unsuccessful")
             }
          }
          else if res["type"] == "setBreakpoint" then {
@@ -736,7 +735,7 @@ class Adapter(
                writes(sock, event)
             }
             else {
-               write("setBreakpoint unsuccessful")
+               #write("setBreakpoint unsuccessful")
             }
          }
          else if res["type"] == "clearBreakpoint" then {
@@ -756,13 +755,13 @@ class Adapter(
                writes(sock, event)
             }
             else {
-               write("clearBreakpoint unsuccessful")
+               #write("clearBreakpoint unsuccessful")
             }
          }
       }
       else if \context == "watch" then {
-         write("***************watch context*******************")
-         write(ximage(res))
+         #write("***************watch context*******************")
+         #write(ximage(res))
          if res["type"] ~== "frame" then {
             if res["success"] == "__true__" then {
                if res["type"] == "table" then {
@@ -787,15 +786,6 @@ class Adapter(
          }
       }
    end
-
-   # method processUdbResult(res)
-   #    if type(res) ~== "table" then {
-   #       return ximage(res)
-   #    }
-   #    else {
-
-   #    }
-   # end
 
    # Handles all the things required from a client "evaluate" request.
    method evaluate(request_body, request_seq, request_command, request_arguments)
@@ -863,18 +853,18 @@ class Adapter(
    # Open a port as a server and block until client connect.
    # Returns communication medium or fails.
    method open_sock(port)
-        local sock
-        if /port then return "port not declared"
-        port := (if &features == "MacOS" then "127.0.0.1" else "") || ":" || port
+      local sock
+      if /port then return "port not declared"
+      port := (if &features == "MacOS" then "127.0.0.1" else "") || ":" || port
 
-        every !5 do
-            if sock := open(port, "na") then
-                return sock
-            else
-                delay(1000)
+      every !5 do
+         if sock := open(port, "na") then
+            return sock
+         else
+            delay(1000)
 
-        write("udap failed to open port: " || port)
-    end
+      #write("udap failed to open port: " || port)
+   end
 
    # Attempt to open communication port for client and set default class parameters.
    method startup()

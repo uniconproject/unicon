@@ -112,9 +112,7 @@ void cannotopen(char *defaultmsg, char *filnam)
 /*
  *  ilink - link a number of files, returning error count
  */
-int ilink(ifiles,outname)
-char **ifiles;
-char *outname;
+int ilink(char **ifiles, char *outname)
    {
 
 
@@ -455,8 +453,7 @@ char *outname;
 /*
  * lwarn - issue a linker warning message.
  */
-void lwarn(s1, s2, s3)
-char *s1, *s2, *s3;
+void lwarn(char *s1, char *s2, char *s3)
    {
 
 #ifdef ConsoleWindow
@@ -481,8 +478,7 @@ char *s1, *s2, *s3;
  * lfatal - issue a fatal linker error message.
  */
 
-void lfatal(s1, s2)
-char *s1, *s2;
+void lfatal(char *s1, char *s2)
    {
 
    fatals++;
@@ -506,8 +502,7 @@ char *s1, *s2;
  * setexe - mark the output file as executable
  */
 
-void setexe(fname)
-char *fname;
+void setexe(char *fname)
    {
 
 /*

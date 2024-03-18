@@ -12,10 +12,7 @@
  * characters are read.  Returns the length of the line, not counting
  * the newline.  Returns -1 if EOF, and -3 if a socket error occurs.
  */
-int sock_getstrg(buf, maxi, file)
-register char *buf;
-int maxi;
-dptr file;
+int sock_getstrg(register char *buf, int maxi, dptr file)
    {
    int r = 0, i=0;
    char *stmp=NULL;
@@ -99,10 +96,7 @@ dptr file;
  *  newline.  Returns -1 if EOF and -2 if length was limited by maxi.
  *  Discards \r before \n in translated mode.  [[ Needs ferror() check. ]]
  */
-int getstrg(buf, maxi, fbp)
-register char *buf;
-int maxi;
-struct b_file *fbp;
+int getstrg(register char *buf, int maxi, struct b_file *fbp)
    {
    register int c, l;
    FILE *fd = fbp->fd.fp;
@@ -290,8 +284,7 @@ struct b_file *fbp;
  *  by hostname.  This code accommodates several different host name
  *  fetching schemes.
  */
-void iconhost(hostname)
-char *hostname;
+void iconhost(char *hostname)
    {
 
 #ifdef HostStr
@@ -326,11 +319,7 @@ char *hostname;
  * Read a long string in shorter parts. (Standard read may not handle
  *  long strings.)
  */
-word longread(s,width,len,fd)
-FILE *fd;
-int width;
-char *s;
-word len;
+word longread(char *s, int width,  word len, FILE *fd)
 {
    tended char *ts = s;
    word tally = 0;
@@ -372,11 +361,7 @@ word len;
  * Read a long string in shorter parts from a compressed file.
  * (Standard read may not handle long strings.)
  */
-word gzlongread(s,width,len,fd)
-char *s;
-int width;
-word len;
-FILE *fd;
+word gzlongread(char *s, int width, word len, FILE *fd)
 {
    tended char *ts = s;
    word tally = 0;
@@ -426,9 +411,7 @@ FILE *fd;
  *   a garbage collection.
  */
 
-int putstr(f, d)
-register FILE *f;
-dptr d;
+int putstr(register FILE *f, dptr d)
    {
    register char *s;
    register word l;
@@ -484,8 +467,7 @@ int iselect(int fd, int t)
 /*
  * idelay(n) - delay for n milliseconds
  */
-int idelay(n)
-int n;
+int idelay(int n)
    {
    if (n == 0) return Succeeded; /* delay < 0 = no delay */
 #ifdef Concurrent

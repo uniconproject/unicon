@@ -58,10 +58,7 @@
    ignored. */
 
 gdbm_file_info *
-dbm_open (file, flags, mode)
-     char *file;
-     int flags;
-     int mode;
+dbm_open (char *file, int flags, int mode)
 {
   char* pag_file;           /* Used to construct "file.pag". */
   char* dir_file;           /* Used to construct "file.dir". */

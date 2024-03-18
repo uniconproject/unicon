@@ -360,9 +360,7 @@ void var_dcls()
  */
 static
 void
-proc_blk(gptr, init_glbl)
-   struct gentry *gptr;
-   int init_glbl;
+proc_blk(struct gentry *gptr, int init_glbl)
 {
    int nquals;
    struct pentry *p;
@@ -397,9 +395,7 @@ proc_blk(gptr, init_glbl)
  * arg_nms - compute offsets of arguments and, if needed, output the
  *  initializer for a descriptor for the argument name.
  */
-static int arg_nms(lptr, prt)
-struct lentry *lptr;
-int prt;
+static int arg_nms(struct lentry *lptr, int prt)
    {
    register int n;
 
@@ -417,9 +413,7 @@ int prt;
  * dyn_nms - compute offsets of dynamic locals and, if needed, output the
  *  initializer for a descriptor for the variable name.
  */
-static int dyn_nms(lptr, prt)
-struct lentry *lptr;
-int prt;
+static int dyn_nms(struct lentry *lptr, int prt)
    {
    register int n;
 
@@ -437,9 +431,7 @@ int prt;
  * stat_nams - compute offsets of static locals and, if needed, output the
  *  initializer for a descriptor for the variable name.
  */
-static void stat_nms(lptr, prt)
-struct lentry *lptr;
-int prt;
+static void stat_nms(struct lentry *lptr, int prt)
    {
    if (lptr == NULL)
       return;
@@ -454,8 +446,7 @@ int prt;
  * is_builtin - check if a global names or hides a builtin, returning prefix.
  *  If it hides one, we must also generate the prototype and block here.
  */
-static char *is_builtin(gptr)
-struct gentry *gptr;
+static char *is_builtin(struct gentry *gptr)
    {
    struct implement *iptr;
 
@@ -474,8 +465,7 @@ struct gentry *gptr;
  * fnc_blk - output vword of descriptor for a built-in function and its
  *   procedure block.
  */
-static void fnc_blk(gptr)
-struct gentry *gptr;
+static void fnc_blk(struct gentry *gptr)
    {
    struct implement *iptr;
    char *name, *pfx;
@@ -496,9 +486,7 @@ struct gentry *gptr;
 /*
  * bi_proc - output prototype and procedure block for builtin function.
  */
-static void bi_proc(name, ip)
-char *name;
-   struct implement *ip;
+static void bi_proc(char *name, struct implement *ip)
    {
    int nargs;
    char prefix[3];
@@ -519,9 +507,7 @@ char *name;
  * rec_blk - if needed, output vword of descriptor for a record
  *   constructor and output its procedure block.
  */
-static void rec_blk(gptr, init_glbl)
-struct gentry *gptr;
-int init_glbl;
+static void rec_blk(struct gentry *gptr, int init_glbl)
    {
    struct rentry *r;
    register char *name;
@@ -564,8 +550,7 @@ int init_glbl;
 /*
  * fldnames - output the initializer for a descriptor for the field name.
  */
-static void fldnames(fields)
-struct fldname *fields;
+static void fldnames(struct fldname *fields)
    {
    register char *name;
 
@@ -579,8 +564,7 @@ struct fldname *fields;
 /*
  * implproto - print prototype for function implementing a run-time operation.
  */
-void implproto(ip)
-struct implement *ip;
+void implproto(struct implement *ip)
    {
    if (ip->iconc_flgs & ProtoPrint)
       return;    /* only print prototype once */
@@ -627,8 +611,7 @@ void const_blks()
 /*
  * reccnstr - output record constructors.
  */
-void recconstr(r)
-struct rentry *r;
+void recconstr(struct rentry *r)
    {
    int optim;
    int nfields;
@@ -687,9 +670,7 @@ struct rentry *r;
  * outerfnc - output code for the outer function implementing a procedure.
  */
 void
-outerfnc(fnc, reachable)
-   struct c_fnc *fnc;
-   int reachable;
+outerfnc(struct c_fnc *fnc, int reachable)
 {
    char *prefix;
    char *name;
@@ -920,8 +901,7 @@ outerfnc(fnc, reachable)
 /*
  * prt_fnc - output C function that implements a continuation.
  */
-void prt_fnc(fnc)
-struct c_fnc *fnc;
+void prt_fnc(struct c_fnc *fnc)
    {
    struct code *sig;
    char *name;
@@ -983,13 +963,7 @@ struct c_fnc *fnc;
 /*
  * prt_frame - output the definition for a procedure frame.
  */
-void prt_frame(prefix, ntend, n_itmp, n_dtmp, n_sbuf, n_cbuf)
-char *prefix;
-int ntend;
-int n_itmp;
-int n_dtmp;
-int n_sbuf;
-int n_cbuf;
+void prt_frame(char *prefix, int ntend, int n_itmp, int n_dtmp, int n_sbuf, int n_cbuf)
    {
    int i;
 
@@ -1034,9 +1008,7 @@ int n_cbuf;
 /*
  * prtcode - print a list of C code.
  */
-static void prtcode(cd, outer)
-struct code *cd;
-int outer;
+static void prtcode(struct code *cd, int outer)
    {
    struct lentry *var;
    struct centry *lit;
@@ -1297,9 +1269,7 @@ int outer;
 /*
  * prt_var - output C code to reference an Icon named variable.
  */
-static void prt_var(var, outer)
-struct lentry *var;
-int outer;
+static void prt_var(struct lentry *var, int outer)
    {
    switch (var->flag) {
       case F_Global:
@@ -1325,9 +1295,7 @@ int outer;
 /*
  * prt_ary - print an array of code fragments.
  */
-static void prt_ary(cd, outer)
-struct code *cd;
-int outer;
+static void prt_ary(struct code *cd, int outer)
    {
    int i;
 
@@ -1388,8 +1356,7 @@ int outer;
  * frame - access to the procedure frame. Access directly from outer function,
  *   but access through r_pfp from a continuation.
  */
-static void frame(outer)
-int outer;
+static void frame(int outer)
    {
    if (outer)
       fprintf(codefile, "r_f");
@@ -1400,8 +1367,7 @@ int outer;
 /*
  * prtpccall - print procedure continuation call.
  */
-static void prtpccall(outer)
-int outer;
+static void prtpccall(int outer)
    {
    int first_arg;
    int optim; /* optimized interface: no arg list adjustment */
@@ -1479,9 +1445,7 @@ int outer;
 /*
  * smpl_clsg - print call and signal handling code, but nothing fancy.
  */
-static void smpl_clsg(call, outer)
-struct code *call;
-int outer;
+static void smpl_clsg(struct code *call, int outer)
    {
    struct sig_act *sa;
 
@@ -1504,8 +1468,7 @@ int outer;
  * chkforgn - produce code to see if the current signal belongs to a
  *   procedure higher up the call chain and pass it along if it does.
  */
-static void chkforgn(outer)
-int outer;
+static void chkforgn(int outer)
    {
    fprintf(codefile, "   if (pfp != (struct p_frame *)");
    if (outer) {
@@ -1521,9 +1484,7 @@ int outer;
 /*
  * good_clsg - print call and signal handling code and do a good job.
  */
-static void good_clsg(call, outer)
-struct code *call;
-int outer;
+static void good_clsg(struct code *call, int outer)
    {
    struct sig_act *sa, *sa1, *nxt_sa;
    int ncases;   /* the number of cases - each may have multiple case labels */
@@ -1805,9 +1766,7 @@ int outer;
 /*
  * prtcall - print call.
  */
-static void prtcall(call, outer)
-struct code *call;
-int outer;
+static void prtcall(struct code *call, int outer)
    {
    /*
     * Either the operation or the continuation may be missing, but not
@@ -1847,8 +1806,7 @@ int outer;
 /*
  * prt_cont - print the name of a continuation.
  */
-static void prt_cont(cont)
-struct c_fnc *cont;
+static void prt_cont(struct c_fnc *cont)
    {
    struct code *sig;
 
@@ -1879,9 +1837,7 @@ struct c_fnc *cont;
  * val_loc - output code referencing a value location (usually variable of
  *  some sort).
  */
-static void val_loc(loc, outer)
-struct val_loc *loc;
-int outer;
+static void val_loc(struct val_loc *loc, int outer)
    {
    /*
     * See if we need to cast a block pointer to a specific block type
@@ -1970,8 +1926,7 @@ int outer;
 /*
  * prt_cond - print a condition (signal number).
  */
-static void prt_cond(cond)
-struct code *cond;
+static void prt_cond(struct code *cond)
    {
    if (cond == &resume)
       fprintf(codefile, "A_Resume");
@@ -1990,17 +1945,15 @@ struct code *cond;
  * initpblk - write a procedure block along with initialization up to the
  *   the array of qualifiers.
  */
-static void initpblk(f, c, prefix, name, nquals, nparam, ndynam, nstatic,
-   frststat)
-FILE *f;      /* output file */
-int c;        /* distinguishes procedures, functions, record constructors */
-char* prefix; /* prefix for name */
-char *name;   /* name of routine */
-int nquals;   /* number of qualifiers at end of block */
-int nparam;   /* number of parameters */
-int ndynam;   /* number of dynamic locals or function/record indicator */
-int nstatic;  /* number of static locals or record number */
-int frststat; /* index into static array of first static local */
+static void initpblk(FILE *f,      /* output file */
+                     int c,        /* distinguishes procedures, functions, record constructors */
+                     char* prefix, /* prefix for name */
+                     char *name,   /* name of routine */
+                     int nquals,   /* number of qualifiers at end of block */
+                     int nparam,   /* number of parameters */
+                     int ndynam,   /* number of dynamic locals or function/record indicator */
+                     int nstatic,  /* number of static locals or record number */
+                     int frststat) /* index into static array of first static local */
    {
    fprintf(f, "B_IProc(%d) B%c%s_%s = ", nquals, c, prefix, name);
    fprintf(f, "{T_Proc, %d, %c%s_%s, %d, %d, %d, %d, {", 9 + 2 * nquals, c,
@@ -2013,9 +1966,7 @@ int frststat; /* index into static array of first static local */
  */
 static
 void
-gen_disam(hfile, cfile)
-   void * hfile;
-   void * cfile;
+gen_disam(void * hfile, void * cfile)
 {
    static int first_time = 1;
 

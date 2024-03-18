@@ -4,8 +4,7 @@
  * redirerr - redirect error output to the named file. '-' indicates that
  *  it should be redirected to standard out.
  */
-int redirerr(p)
-char *p;
+int redirerr(char *p)
    {
    if ( *p == '-' ) { /* let - be stdout */
 

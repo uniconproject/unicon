@@ -60,9 +60,7 @@ uword xmod_control, xmod_shift, xmod_meta;
  * subscript the already-processed-events "queue" to index i.
  * used in "cooked mode" I/O to determine, e.g. how far to backspace.
  */
-char *evquesub(w,i)
-wbp w;
-int i;
+char *evquesub(wbp w, int i)
    {
    wsp ws = w->window;
    int j = ws->eQback+i;
@@ -85,10 +83,7 @@ int i;
  * returns 0 for success, -1 if window died or EOF, -2 for malformed queue,
  *    -3 if timeout expired
  */
-int wgetevent(w,res,t)
-wbp w;
-dptr res;
-int t;
+int wgetevent(wbp w, dptr res, int t)
    {
    struct descrip xdesc, ydesc, pickdesc;
    struct b_list *hp;
@@ -219,9 +214,7 @@ int t;
  *
  * return: 1 = success, -1 = window died, -2 = malformed queue, -3 = EOF
  */
-int wgetchne(w,res)
-wbp w;
-dptr res;
+int wgetchne(wbp w, dptr res)
    {
    int i;
 
@@ -243,9 +236,7 @@ dptr res;
  *
  * returns 1 for success, -1 if window died, -2 for malformed queue, -3 for EOF
  */
-int wgetche(w,res)
-wbp w;
-dptr res;
+int wgetche(wbp w, dptr res)
    {
    int i;
    i = wgetchne(w,res);
@@ -325,10 +316,7 @@ wsp getactivewindow()
  * returns length(>=0) for success, -1 if window died, -2 for malformed queue
  *  -3 on EOF
  */
-int wlongread(s, elsize, nelem, f)
-char *s;
-int elsize, nelem;
-FILE *f;
+int wlongread(char *s, int elsize, int nelem, FILE *f)
    {
    int c;
    tended char *ts = s;
@@ -361,10 +349,7 @@ FILE *f;
  * returns length(>=0) for success, -1 if window died, -2 for malformed queue
  *  -3 for EOF, -4 if length was limited by maxi
  */
-int wgetstrg(s, maxlen, f)
-char *s;
-long  maxlen;
-FILE *f;
+int wgetstrg(char *s, long  maxlen, FILE *f)
    {
    int c;
    tended char *ts = s;
@@ -398,8 +383,7 @@ FILE *f;
 /*
  * Assignment side-effects for &x,&y,&row,&col
  */
-int xyrowcol(dx)
-dptr dx;
+int xyrowcol(dptr dx)
 {
    if (VarLoc(*dx) == &amperX) { /* update &col too */
       wbp w;
@@ -499,12 +483,11 @@ void linkfiletowindow(wbp w, struct b_file *fl)
 /*
  * Enqueue an event, encoding time interval and key state with x and y values.
  */
-void qevent(ws,e,x,y,t,f)
-wsp ws;         /* canvas */
-dptr e;         /* event code (descriptor pointer) */
-int x, y;       /* x and y values */
-uword t;        /* ms clock value */
-long f;         /* modifier key flags */
+void qevent( wsp ws,         /* canvas */
+             dptr e,         /* event code (descriptor pointer) */
+             int x, int y,   /* x and y values */
+             uword t,        /* ms clock value */
+             long f)         /* modifier key flags */
    {
    dptr q = &(ws->listp);       /* a window's event queue (Icon list value) */
    struct descrip d;
@@ -544,9 +527,7 @@ long f;         /* modifier key flags */
 /*
  * setpos() - set (move) canvas position on the screen
  */
-static int setpos(w,s)
-wbp w;
-char *s;
+static int setpos(wbp w, char *s)
    {
    char *s2, tmp[32];
    int posx, posy;
@@ -592,9 +573,7 @@ char *s;
 /*
  * setsize() - set canvas size
  */
-int setsize(w,s)
-wbp w;
-char *s;
+int setsize(wbp w, char *s)
    {
    char *s2, tmp[32];
    int width, height;
@@ -659,10 +638,7 @@ void call_filepart_openlog_because_macOS_clang_is_too_smart() {
 /*
  * put a string out to a window using the current attributes
  */
-void wputstr(w,s,len)
-wbp w;
-char *s;
-int len;
+void wputstr(wbp w, char *s, int len)
    {
    char *s2 = s;
    tended struct descrip result;
@@ -881,10 +857,7 @@ static int texturephrase(char *buf, long *r, long *g, long *b, long *a);
  *  The comma-separated numbers format can be 24-bit, 48-bit, or normalized.
  */
 
-int parsecolor(w, buf, r, g, b, a)
-wbp w;
-char *buf;
-long *r, *g, *b, *a;
+int parsecolor(wbp w, char *buf, long *r, long *g, long *b, long *a)
    {
    int len, mul, texture;
    char *fmt, c;
@@ -1013,9 +986,7 @@ int mystrcmp(char *s1, char *s2)
 /*
  * texturephrase(s, &r, &g, &b, &texture) -- parse Unicon colored texture
  */
-static int texturephrase(buf, r, g, b, a)
-char *buf;
-long *r, *g, *b, *a;
+static int texturephrase(char *buf, long *r, long *g, long *b, long *a)
    {
    char buf2[128];
    char *p, *p2;
@@ -1078,9 +1049,7 @@ long *r, *g, *b, *a;
  *      IEEE Computer Graphics & Applications, May 1982
  */
 
-static int colorphrase(buf, r, g, b, a)
-char *buf;
-long *r, *g, *b, *a;
+static int colorphrase(char *buf, long *r, long *g, long *b, long *a)
    {
    int len, very;
    char c, *p, *ebuf, cbuffer[MAXCOLORNAME];
@@ -1263,8 +1232,7 @@ long *r, *g, *b, *a;
 /*
  * rgbval(n1, n2, hue) - helper function for HLS to RGB conversion
  */
-static double rgbval(n1, n2, hue)
-double n1, n2, hue;
+static double rgbval(double n1, double n2, double hue)
    {
    if (hue > 360)
       hue -= 360;
@@ -1531,9 +1499,7 @@ int readGIF(char *filename, int p, struct imgdata *imd)
 /*
  * gfread(filename, p) - read GIF file, setting gf_ globals
  */
-static int gfread(filename, p)
-char *filename;
-int p;
+static int gfread(char *filename, int p)
    {
    int i;
 
@@ -1580,8 +1546,7 @@ int p;
 /*
  * gfheader(f) - read GIF file header; return nonzero if successful
  */
-static int gfheader(f)
-FILE *f;
+static int gfheader(FILE *f)
    {
    unsigned char hdr[13];               /* size of a GIF header */
    int b;
@@ -1601,8 +1566,7 @@ FILE *f;
 /*
  * gfskip(f) - skip intermediate blocks and locate image
  */
-static int gfskip(f)
-FILE *f;
+static int gfskip(FILE *f)
    {
    int c, n;
 
@@ -1628,8 +1592,7 @@ FILE *f;
 /*
  * gfcontrol(f) - process control extension subblock
  */
-static void gfcontrol(f)
-FILE *f;
+static void gfcontrol(FILE *f)
    {
    int i, n, c, t;
 
@@ -1648,8 +1611,7 @@ FILE *f;
 /*
  * gfimhdr(f) - read image header
  */
-static int gfimhdr(f)
-FILE *f;
+static int gfimhdr(FILE *f)
    {
    unsigned char hdr[9];                /* size of image hdr excl separator */
    int b;
@@ -1669,9 +1631,7 @@ FILE *f;
 /*
  * gfmap(f, p) - read GIF color map into paltbl under control of palette p
  */
-static int gfmap(f, p)
-FILE *f;
-int p;
+static int gfmap(FILE *f, int p)
    {
    int ncolors, i, r, g, b, c;
    struct palentry *stdpal = 0;
@@ -1740,8 +1700,7 @@ static int gfsetup()
 /*
  * gfrdata(f) - read GIF data
  */
-static int gfrdata(f)
-FILE *f;
+static int gfrdata(FILE *f)
    {
    int curr, prev, c;
 
@@ -1794,8 +1753,7 @@ FILE *f;
 /*
  * gfrcode(f) - read next LZW code
  */
-static int gfrcode(f)
-FILE *f;
+static int gfrcode(FILE *f)
    {
    int c, r;
 
@@ -1818,8 +1776,7 @@ FILE *f;
 /*
  * gfinsert(prev, c) - insert into table
  */
-static void gfinsert(prev, c)
-int prev, c;
+static void gfinsert(int prev, int c)
    {
 
    if (gf_free >= GifTableSize)         /* sanity check */
@@ -1839,8 +1796,7 @@ int prev, c;
 /*
  * gffirst(c) - return the first pixel in a map structure
  */
-static int gffirst(c)
-int c;
+static int gffirst(int c)
    {
    int d;
 
@@ -1854,8 +1810,7 @@ int c;
 /*
  * gfgen(c) - generate and output prefix
  */
-static void gfgen(c)
-int c;
+static void gfgen(int c)
    {
    int d;
 
@@ -1867,8 +1822,7 @@ int c;
 /*
  * gfput(b) - add a byte to the output string
  */
-static void gfput(b)
-int b;
+static void gfput(int b)
    {
    if (gf_nxt >= gf_lim) {              /* if current row is full */
       gf_row += gf_step;
@@ -2476,10 +2430,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
  * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
-int writeGIF(w, filename, x, y, width, height)
-wbp w;
-char *filename;
-int x, y, width, height;
+int writeGIF(wbp w, char *filename, int x, int y, int width, int height)
    {
    int r;
 
@@ -2501,10 +2452,7 @@ int x, y, width, height;
  * we don't need any of the extensions of GIF89.
  */
 
-static int gfwrite(w, filename, x, y, width, height)
-wbp w;
-char *filename;
-int x, y, width, height;
+static int gfwrite(wbp w, char *filename, int x, int y, int width, int height)
    {
    int i, c, cur;
    long len;
@@ -2630,10 +2578,7 @@ int x, y, width, height;
  *
  * Sets gf_nbits and gf_cdsize based on the number of colors.
  */
-static void gfpack(data, len, paltbl)
-unsigned char *data;
-long len;
-struct palentry *paltbl;
+static void gfpack(unsigned char *data, long len, struct palentry *paltbl)
    {
    int i, ncolors, lastcolor;
    unsigned char *p, *q, cmap[DMAXCOLORS];
@@ -2674,8 +2619,7 @@ struct palentry *paltbl;
  * gfmktree() - initialize or reinitialize encoding tree
  */
 
-static void gfmktree(tree)
-lzwnode *tree;
+static void gfmktree(lzwnode *tree)
    {
    int i;
 
@@ -2691,8 +2635,7 @@ lzwnode *tree;
 /*
  * gfout(code) - output one LZW token
  */
-static void gfout(tcode)
-int tcode;
+static void gfout(int tcode)
    {
    gf_curr |= tcode << gf_valid;                /* add to current word */
    gf_valid += gf_lzwbits;              /* count the bits */
@@ -2828,8 +2771,7 @@ int writeJPEG(wbp w, char *filename, int x, int y, int width, int height)
 #define IMAGE_PNG       3
 #define IMAGE_BMP       4
 
-int image_type(fname)
-char *fname;
+int image_type(char *fname)
 {
   int n = strlen(fname);
   int i = n-3;
@@ -3150,8 +3092,7 @@ static unsigned char c1rgb[] = {
  *    returns 0 for unrecognized palette name
  *    returns -1 for non-string argument
  */
-int palnum(d)
-dptr d;
+int palnum(dptr d)
    {
    tended char *s;
    char c, x;
@@ -3176,8 +3117,7 @@ struct palentry *palsetup_palette;      /* current palette */
 /*
  * palsetup(p) - set up palette for specified palette.
  */
-struct palentry *palsetup(p)
-int p;
+struct palentry *palsetup(int p)
    {
    int r, g, b, i, n, c;
    unsigned int rr, gg, bb;
@@ -3274,9 +3214,7 @@ int p;
  *
  * In color cubes, finds "extra" grays only if r == g == b.
  */
-char *rgbkey(p, r, g, b)
-int p;
-double r, g, b;
+char *rgbkey(int p, double r, double g, double b)
    {
    int n, i;
    double m;
@@ -3371,12 +3309,7 @@ stringint font_type[] = {
  * returns 1 on an OK font name
  * returns 0 on a "malformed" font (might be a window-system fontname)
  */
-int parsefont(s, family, style, size, tp)
-char *s;
-char family[MAXFONTWORD+1];
-int *style;
-int *size;
-int *tp;
+int parsefont(char *s, char family[MAXFONTWORD+1], int *style, int *size, int *tp)
    {
    char c, *a, attr[MAXFONTWORD+1];
    int tmp;
@@ -3456,11 +3389,7 @@ int *tp;
 /*
  * parsepattern() - parse an encoded numeric stipple pattern
  */
-int parsepattern(s, len, width, nbits, bits)
-char *s;
-int len;
-int *width, *nbits;
-C_integer *bits;
+int parsepattern(char *s, int len, int *width, int *nbits, C_integer *bits)
    {
    C_integer v;
    int i, j, hexdigits_per_row, maxbits = *nbits;
@@ -3542,9 +3471,7 @@ C_integer *bits;
  * Returns:
  *  0 on bad value, 1 if size is set, 2 if position is set, 3 if both are set
  */
-int parsegeometry(buf, x, y, width, height)
-char *buf;
-SHORT *x, *y, *width, *height;
+int parsegeometry(char *buf, SHORT *x, SHORT *y, SHORT *width, SHORT *height)
    {
    int retval = 0;
    if (isdigit(*buf)) {
@@ -3585,12 +3512,7 @@ SHORT *x, *y, *width, *height;
  * wattrib() - get/set a single attribute in a window, return the result attr
  *  string.
  */
-int wattrib(w, s, len, answer, abuf)
-wbp w;
-char *s;
-long len;
-dptr answer;
-char * abuf;
+int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
    {
    char val[256], *valptr;
    struct descrip d;
@@ -4958,12 +4880,8 @@ char * abuf;
  *
  *  Returns index of bad argument, if any, or -1 for success.
  */
-int rectargs(w, argc, argv, i, px, py, pw, ph)
-wbp w;
-int argc;
-dptr argv;
-int i;
-C_integer *px, *py, *pw, *ph;
+int rectargs(wbp w, int argc, dptr argv, int i,
+             C_integer *px, C_integer *py, C_integer *pw, C_integer *ph)
    {
    int defw, defh;
    wcp wc = w->context;
@@ -5018,11 +4936,7 @@ C_integer *px, *py, *pw, *ph;
  *  Helper for DrawCircle and FillCircle.
  *  Returns index of bad argument, or -1 for success.
  */
-int docircles(w, argc, argv, fill)
-wbp w;
-int argc;
-dptr argv;
-int fill;
+int docircles(wbp w, int argc, dptr argv, int fill)
    {
    XArc arc;
    int i, dx, dy;
@@ -5239,10 +5153,7 @@ static void curveHelper(wbp w, XPoint *thepoints, int n)
 /*
  * draw a smooth curve through the array of points
  */
-void drawCurve(w, p, n)
-wbp w;
-XPoint *p;
-int n;
+void drawCurve(wbp w, XPoint *p, int n)
    {
    genCurve(w, p, n, curveHelper);
    }
@@ -5268,8 +5179,7 @@ void waitkey(FILE *w)
 /*
  * Compare two unsigned long values for qsort or qsearch.
  */
-int ulcmp(p1, p2)
-pointer p1, p2;
+int ulcmp(pointer p1, pointer p2)
    {
    register unsigned long u1 = *(unsigned int *)p1;
    register unsigned long u2 = *(unsigned int *)p2;
@@ -5643,8 +5553,7 @@ char *rgbkey(int p, double r, double g, double b)       { return 0; }
 /*
  * string-integer comparison, for qsearch()
  */
-static int sicmp(sip1,sip2)
-siptr sip1, sip2;
+static int sicmp(siptr sip1, siptr sip2)
 {
   return strcmp(sip1->s, sip2->s);
 }
@@ -5652,9 +5561,7 @@ siptr sip1, sip2;
 /*
  * string-integer lookup function: given a string, return its integer
  */
-int si_s2i(sip,s)
-siptr sip;
-char *s;
+int si_s2i(siptr sip, char *s)
 {
   stringint key;
   siptr p;
@@ -5668,9 +5575,7 @@ char *s;
 /*
  * string-integer inverse function: given an integer, return its string
  */
-char *si_i2s(sip,i)
-siptr sip;
-int i;
+char *si_i2s(siptr sip, int i)
 {
   register siptr sip2 = sip+1;
   for(;sip2<=sip+sip[0].i;sip2++) if (sip2->i == i) return sip2->s;

@@ -39,8 +39,7 @@
    bucket hash table size. */
 
 word_t
-_gdbm_hash (key)
-     datum key;
+_gdbm_hash (datum key)
 {
 #if LONG_64_BITS || !INT_16_BITS
   unsigned int value;   /* Used to compute the hash value.  */

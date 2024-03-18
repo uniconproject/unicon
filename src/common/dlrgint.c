@@ -16,9 +16,7 @@
 /*
  *  bignum -> file
  */
-void bigprint(f, da)
-FILE *f;
-dptr da;
+void bigprint(FILE *f, dptr da)
 {
 }
 
@@ -33,8 +31,7 @@ int bigtoreal(dptr da, double *result)
 /*
  *  bignum -> string
  */
-int bigtos(da, dx)
-dptr da, dx;
+int bigtos(dptr da, dptr dx)
    {
    return 0;
    }
@@ -42,8 +39,7 @@ dptr da, dx;
 /*
  *  da -> dx
  */
-int cpbignum(da, dx)
-dptr da, dx;
+int cpbignum(dptr da, dptr dx)
    {
    return 0;
    }
@@ -51,8 +47,7 @@ dptr da, dx;
 /*
  *  da / db -> dx
  */
-int bigdiv(da, db, dx)
-dptr da, db, dx;
+int bigdiv(dptr da, dptr db, dptr dx)
    {
    return 0;
    }
@@ -60,8 +55,7 @@ dptr da, db, dx;
 /*
  *  da % db -> dx
  */
-int bigmod(da, db, dx)
-dptr da, db, dx;
+int bigmod(dptr da, dptr db,dptr dx)
    {
    return 0;
    }
@@ -69,8 +63,7 @@ dptr da, db, dx;
 /*
  *  iand(da, db) -> dx
  */
-int bigand(da, db, dx)
-dptr da, db, dx;
+int bigand(dptr da, dptr db, dptr dx)
    {
    return 0;
    }
@@ -78,8 +71,7 @@ dptr da, db, dx;
 /*
  *  ior(da, db) -> dx
  */
-int bigor(da, db, dx)
-dptr da, db, dx;
+int bigor(dptr da, dptr db, dptr dx)
    {
    return 0;
    }
@@ -87,8 +79,7 @@ dptr da, db, dx;
 /*
  *  xor(da, db) -> dx
  */
-int bigxor(da, db, dx)
-dptr da, db, dx;
+int bigxor(dptr da, dptr db, dptr dx)
    {
    return 0;
    }
@@ -98,8 +89,7 @@ dptr da, db, dx;
  *  zero if da == db
  *  positive if da > db
  */
-word bigcmp(da, db)
-dptr da, db;
+word bigcmp(dptr da, dptr db)
    {
    return (word)0;
    }
@@ -107,8 +97,7 @@ dptr da, db;
 /*
  *  ?da -> dx
  */  
-int bigrand(da, dx)
-dptr da, dx;
+int bigrand(dptr da, dptr dx)
    {
    return 0;
    }
@@ -123,9 +112,7 @@ dptr da, dx;
 /*
  *  da + db -> dx
  */
-int bigadd(da, db, dx)
-dptr da, db;
-dptr dx;
+int bigadd(dptr da, dptr db, dptr dx)
    {
 #if ConcurrentCOMPILER
    CURTSTATE();
@@ -139,8 +126,7 @@ dptr dx;
 /*
  *  da * db -> dx
  */
-int bigmul(da, db, dx)
-dptr da, db, dx;
+int bigmul(dptr da, dptr db, dptr dx)
    {
 #if ConcurrentCOMPILER
    CURTSTATE();
@@ -154,8 +140,7 @@ dptr da, db, dx;
 /*
  *  -i -> dx
  */
-int bigneg(da, dx)
-dptr da, dx;
+int bigneg(dptr da, dptr dx)
    {
 #if ConcurrentCOMPILER
    CURTSTATE();
@@ -169,8 +154,7 @@ dptr da, dx;
 /*
  *  da - db -> dx
  */ 
-int bigsub(da, db, dx)
-dptr da, db, dx;
+int bigsub(dptr da, dptr db, dptr dx)
    {
 #if ConcurrentCOMPILER
    CURTSTATE();
@@ -190,8 +174,7 @@ dptr da, db, dx;
 /*
  *  real -> bignum
  */
-int realtobig(da, dx)
-dptr da, dx;
+int realtobig(dptr da, dptr dx)
    {
    return Failed;  /* conversion cannot be done */
    }
@@ -199,8 +182,7 @@ dptr da, dx;
 /*
  *  da ^ db -> dx
  */
-int bigpow(da, db, dx)
-dptr da, db, dx;
+int bigpow(dptr da, dptr db, dptr dx)
    {
    C_integer r;
    int over_flow;
@@ -226,11 +208,10 @@ dptr da, db, dx;
 /*
  *  string -> bignum
  */
-word bigradix(sign, r, s, end_s, result)
-int sign;                      /* '-' or not */
-int r;                          /* radix 2 .. 36 */
-char *s, *end_s;                        /* input string */
-union numeric *result;          /* output T_Integer or T_Lrgint */
+word bigradix(int sign,              /* '-' or not */
+              int r,                 /* radix 2 .. 36 */
+              char *s, char *end_s,  /* input string */
+              union numeric *result) /* output T_Integer or T_Lrgint */
    {
    /*
     * Just do string to ordinary integer.
@@ -241,8 +222,7 @@ union numeric *result;          /* output T_Integer or T_Lrgint */
 /*
  *  bigshift(da, db) -> dx
  */
-int bigshift(da, db, dx)
-dptr da, db, dx;
+int bigshift(dptr da, dptr db, dptr dx)
    {
    uword ci;                  /* shift in 0s, even if negative */
    C_integer cj;

@@ -42,8 +42,7 @@
    allocated.  */
 
 void
-gdbm_close (dbf)
-     gdbm_file_info *dbf;
+gdbm_close (gdbm_file_info *dbf)
 {
   register int index;   /* For freeing the bucket cache. */
 

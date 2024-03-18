@@ -686,15 +686,12 @@ stringint headers[] = {
 /*
  * Like si_s2i but not case-sensitive
  */
-static int csicmp(sip1,sip2)
-     siptr sip1, sip2;
+static int csicmp(siptr sip1, siptr sip2)
 {
    return strcasecmp(sip1->s, sip2->s);
 }
 
-int si_cs2i(sip,s)
-     siptr sip;
-     char *s;
+int si_cs2i(siptr sip, char *s)
 {
    stringint key;
    siptr p;

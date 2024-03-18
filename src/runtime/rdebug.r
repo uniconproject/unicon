@@ -19,16 +19,12 @@ static void xtrace
 /*
  * tracebk - print a trace of procedure calls.
  */
-void tracebk(lcl_pfp, argp, logfptr)
 
 #if COMPILER
-struct p_frame *lcl_pfp;
+void tracebk(struct p_frame *lcl_pfp, dptr argp, FILE *logfptr)
 #else                                   /* COMPILER */
-struct pf_marker *lcl_pfp;
+void tracebk(struct pf_marker *lcl_pfp, dptr argp, FILE *logfptr)
 #endif                                  /* COMPILER */
-
-dptr argp;
-FILE *logfptr;
    {
    struct b_proc *cproc;
 #if COMPILER
@@ -101,13 +97,7 @@ FILE *logfptr;
  * xtrace - procedure *bp is being called with nargs arguments, the first
  *  of which is at arg; produce a trace message.
  */
-static void xtrace(bp, nargs, arg, pline, pfile, logfile)
-struct b_proc *bp;
-word nargs;
-dptr arg;
-int pline;
-char *pfile;
-FILE *logfile;
+static void xtrace(struct b_proc *bp, word nargs, dptr arg, int pline, char *pfile, FILE *logfile)
    {
 
    fprintf(stderr, "   ");
@@ -499,9 +489,7 @@ void atrace()
 /*
  * keyref(bp,dp) -- print name of subscripted table
  */
-static int keyref(bp, dp)
-   union block *bp;
-   dptr dp;
+static int keyref(union block *bp, dptr dp)
    {
    char *s, *s2;
    char sbuf[256];                      /* buffer; might be too small */
@@ -543,11 +531,7 @@ static int keyref(bp, dp)
 /*
  * cotrace -- a co-expression context switch; produce a trace message.
  */
-void cotrace(ccp, ncp, swtch_typ, valloc)
-struct b_coexpr *ccp;
-struct b_coexpr *ncp;
-int swtch_typ;
-dptr valloc;
+void cotrace(struct b_coexpr *ccp, struct b_coexpr *ncp, int swtch_typ, dptr valloc)
    {
    struct b_proc *proc;
 
@@ -611,9 +595,7 @@ dptr valloc;
 /*
  * showline - print file and line number information.
  */
-static void showline(f, l)
-char *f;
-int l;
+static void showline(char *f, int l)
    {
    int i;
 
@@ -644,8 +626,7 @@ int l;
 /*
  * showlevel - print "| " n times.
  */
-static void showlevel(n)
-register int n;
+   static void showlevel(register int n)
    {
    while (n-- > 0) {
       putc('|', stderr);
@@ -667,8 +648,7 @@ extern struct b_proc *opblks[];
 /*
  * ttrace - show offending expression.
  */
-static void ttrace(f)
-FILE *f;
+ static void ttrace(FILE *f)
    {
    struct b_proc *bp;
    word nargs;
@@ -850,10 +830,7 @@ oneop:
  * ctrace - procedure named s is being called with nargs arguments, the first
  *  of which is at arg; produce a trace message.
  */
-void ctrace(dp, nargs, arg)
-dptr dp;
-int nargs;
-dptr arg;
+ void ctrace(dptr dp, int nargs, dptr arg)
    {
    CURTSTATE_AND_CE();
 
@@ -875,9 +852,7 @@ dptr arg;
  * rtrace - procedure named s is returning *rval; produce a trace message.
  */
 
-void rtrace(dp, rval)
-dptr dp;
-dptr rval;
+ void rtrace(dptr dp, dptr rval)
    {
    inst t_ipc;
    CURTSTATE_AND_CE();
@@ -899,8 +874,7 @@ dptr rval;
  * failtrace - procedure named s is failing; produce a trace message.
  */
 
-void failtrace(dp)
-dptr dp;
+ void failtrace(dptr dp)
    {
    inst t_ipc;
    CURTSTATE_AND_CE();
@@ -921,9 +895,7 @@ dptr dp;
  * strace - procedure named s is suspending *rval; produce a trace message.
  */
 
-void strace(dp, rval)
-dptr dp;
-dptr rval;
+ void strace(dptr dp, dptr rval)
    {
    inst t_ipc;
    CURTSTATE_AND_CE();
@@ -945,8 +917,7 @@ dptr rval;
  * atrace - procedure named s is being resumed; produce a trace message.
  */
 
-void atrace(dp)
-dptr dp;
+ void atrace(dptr dp)
    {
    inst t_ipc;
    CURTSTATE_AND_CE();
@@ -967,9 +938,7 @@ dptr dp;
 /*
  * coacttrace -- co-expression is being activated; produce a trace message.
  */
-void coacttrace(ccp, ncp)
-struct b_coexpr *ccp;
-struct b_coexpr *ncp;
+ void coacttrace(struct b_coexpr *ccp, struct b_coexpr *ncp)
    {
    struct b_proc *bp;
    inst t_ipc;
@@ -1006,9 +975,7 @@ struct b_coexpr *ncp;
 /*
  * corettrace -- return from co-expression; produce a trace message.
  */
-void corettrace(ccp, ncp)
-struct b_coexpr *ccp;
-struct b_coexpr *ncp;
+ void corettrace(struct b_coexpr *ccp, struct b_coexpr *ncp)
    {
    struct b_proc *bp;
    inst t_ipc;
@@ -1045,9 +1012,7 @@ struct b_coexpr *ncp;
 /*
  * cofailtrace -- failure return from co-expression; produce a trace message.
  */
-void cofailtrace(ccp, ncp)
-struct b_coexpr *ccp;
-struct b_coexpr *ncp;
+ void cofailtrace(struct b_coexpr *ccp, struct b_coexpr *ncp)
    {
    struct b_proc *bp;
    inst t_ipc;
@@ -1088,15 +1053,11 @@ struct b_coexpr *ncp;
  *  procedure calls to file f.
  */
 
-int xdisp(fp,dp,count,f)
 #if COMPILER
-   struct p_frame *fp;
+ int xdisp(struct p_frame *fp, register dptr dp, int count, FILE *f)
 #else                                   /* COMPILER */
-   struct pf_marker *fp;
+   int xdisp(struct pf_marker *fp, register dptr dp, int count, FILE *f)
 #endif                                  /* COMPILER */
-   register dptr dp;
-   int count;
-   FILE *f;
    {
    register dptr np;
    register int n;
@@ -1209,8 +1170,7 @@ int xdisp(fp,dp,count,f)
 /*
  * glbcmp - compare the names of two globals using their temporary indices.
  */
-static int glbcmp (pi, pj)
-char *pi, *pj;
+static int glbcmp (char *pi, char *pj)
    {
    register word i = *(word *)pi;
    register word j = *(word *)pj;

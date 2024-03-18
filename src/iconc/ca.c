@@ -148,9 +148,7 @@ static int resolve_invks(struct caf *, struct prc *);
 
 extern
 int
-ca_apply_add(fname, node)
-   char * fname;
-   struct node * node;
+ca_apply_add(char * fname, struct node * node)
 {
    char * id;
    struct node * n;
@@ -212,10 +210,8 @@ ca_dbg_dump(void)
 
 extern
 int
-ca_init(fname, argc, argv)
-   char * fname;
-   int argc;
-   char ** argv; /* argv to iconc */
+ca_init(char * fname, int argc, 
+        char ** argv) /* argv to iconc */
 {
    int i;
    int len;
@@ -318,9 +314,7 @@ ca_init(fname, argc, argv)
 
 extern
 int
-ca_invk_add(fname, node)
-   char * fname;
-   struct node * node;
+ca_invk_add(char * fname, struct node * node)
 {
    char * id;
    struct node * n;
@@ -355,8 +349,7 @@ ca_invk_add(fname, node)
 
 extern
 int
-ca_mark_parsed(fname)
-   char * fname;
+ca_mark_parsed(char * fname)
 {
    struct caf * caf;
 
@@ -397,8 +390,7 @@ ca_resolve(void)
 
 static
 void
-bndl_free(bndl)
-   struct bndl * bndl;
+bndl_free(struct bndl * bndl)
 {
    struct cls * cls;
 
@@ -414,8 +406,7 @@ bndl_free(bndl)
 
 static
 struct bndl *
-bndl_get(name)
-   char * name;
+bndl_get(char * name)
 {
    struct bndl * bndl;
 
@@ -428,8 +419,7 @@ bndl_get(name)
 
 static
 void
-caf_free(caf)
-   struct caf * caf;
+caf_free(struct caf * caf)
 {
    struct imp * imp;
    struct lnk * lnk;
@@ -469,8 +459,7 @@ caf_free(caf)
 
 static
 struct caf *
-caf_get_by_alias(alias)
-   char * alias;
+caf_get_by_alias(char * alias)
 {
    struct caf * caf;
 
@@ -483,8 +472,7 @@ caf_get_by_alias(alias)
 
 static
 struct caf *
-caf_get_by_name(fname)
-   char * fname;
+caf_get_by_name(char * fname)
 {
    struct caf * caf;
 
@@ -514,9 +502,7 @@ caf_get_class(name, caf)
 
 static
 struct prc *
-caf_get_prc(caf, name)
-   struct caf * caf;
-   char * name;
+caf_get_prc(struct caf * caf, char * name)
 {
    struct prc * prc;
 
@@ -529,8 +515,7 @@ caf_get_prc(caf, name)
 
 static
 int
-caf_has_posix_rec_defs(caf)
-   struct caf * caf;
+caf_has_posix_rec_defs(struct caf * caf)
 {
    int len;
    char * p;
@@ -544,9 +529,7 @@ caf_has_posix_rec_defs(caf)
 
 static
 void
-caf_parse(caf, sym)
-   struct caf * caf;
-   char * sym;
+caf_parse(struct caf * caf, char * sym)
 {
    if (!caf_is_parsed(caf)) {
       parse(caf->fname, sym);
@@ -575,8 +558,7 @@ cleanup(void)
 
 static
 void
-cls_free(cls)
-   struct cls * cls;
+cls_free(struct cls * cls)
 {
    struct mthd * mthd;
    struct member * mbr;
@@ -663,8 +645,7 @@ is_ctor(name)
  */
 static
 int
-is_rtl_func(name)
-   char * name;
+is_rtl_func(char * name)
 {
    int i;
    struct implement * impl;
@@ -706,8 +687,7 @@ name_get_pkgspec(name)
  */
 static
 unsigned
-name_hash(name)
-   char * name;
+name_hash(char * name)
 {
    unsigned h;
 
@@ -721,9 +701,7 @@ name_hash(name)
 
 static
 void
-parse(fname, symname)
-   char * fname;
-   char * symname;
+parse(char * fname, char * symname)
 {
    extern void trans1(char *);
    /*fprintf(stderr, "Parsing %s to resolve symbol %s\n", fname, symname);*/
@@ -747,9 +725,7 @@ posix_recs_init(void)
 
 static
 void
-prc_add_invk(prc, invk)
-   struct prc * prc;
-   struct invk * invk;
+prc_add_invk(struct prc * prc, struct invk * invk)
 {
    struct invk * tmp;
 
@@ -765,8 +741,7 @@ prc_add_invk(prc, invk)
 
 static
 void
-prc_free(prc)
-   struct prc * prc;
+prc_free(struct prc * prc)
 {
    struct invk * invk;
 
@@ -783,9 +758,7 @@ prc_free(prc)
  */
 static
 struct prc *
-prc_lkup(name, pcaf)
-   char *name;
-   struct caf ** pcaf;
+prc_lkup(char *name, struct caf ** pcaf)
 {
    unsigned h;
    struct bkt * bkt;
@@ -804,8 +777,7 @@ prc_lkup(name, pcaf)
 
 static
 void
-read_bndl_class(f)
-   void * f;
+read_bndl_class(void * f)
 {
    int len;
    char * p;
@@ -1120,12 +1092,8 @@ report_stats(void)
 
 static
 int
-resolve_invk(caf, prc, invk, cafs, prcs)
-   struct caf * caf;
-   struct prc * prc;
-   struct invk * invk;
-   struct caf * cafs[];
-   struct prc * prcs[];
+resolve_invk(struct caf * caf, struct prc * prc, struct invk * invk,
+             struct caf * cafs[], struct prc * prcs[])
 {
    int n;
    char buf[256];
@@ -1213,9 +1181,7 @@ resolve_gui_syms(void)
 
 static
 int
-resolve_invks(caf, prc)
-   struct caf * caf;
-   struct prc * prc;
+resolve_invks(struct caf * caf, struct prc * prc)
 {
    int i, n;
    struct invk * invk;

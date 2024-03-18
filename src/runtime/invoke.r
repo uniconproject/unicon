@@ -7,11 +7,7 @@
 /*
  * invoke - perform general invocation on a value.
  */
-int invoke(nargs, args, rslt, succ_cont)
-int nargs;
-dptr args;
-dptr rslt;
-continuation succ_cont;
+int invoke(int nargs, dptr args, dptr rslt, continuation succ_cont)
    {
    tended struct descrip callee;
    struct b_proc *proc;
@@ -25,7 +21,7 @@ continuation succ_cont;
    nargs -= 1;
 
    if (is:proc(callee))
-      return (*BlkD(callee, Proc)->ccode)(nargs, args, rslt, succ_cont);
+      return (*BlkD(callee, Proc)->ccode.p4iddc)(nargs, args, rslt, succ_cont);
    else if (cnv:C_integer(callee, n)) {
       if (n <= 0)
          n += nargs + 1;
@@ -38,7 +34,7 @@ continuation succ_cont;
       proc = strprc(&callee, (C_integer)nargs);
       if (proc == NULL)
          RunErr(106, &callee);
-      return (*(proc)->ccode)(nargs, args, rslt, succ_cont);
+      return (*(proc)->ccode.p4iddc)(nargs, args, rslt, succ_cont);
       }
    else if (is:record(callee)) { /* possible future support for culling */
       RunErr(106, &callee);
@@ -53,11 +49,7 @@ continuation succ_cont;
  * apply - implement binary bang. Construct an argument list for
  *   invoke() from the callee and the list it is applied to.
  */
-int apply(callee, strct, rslt, succ_cont)
-dptr callee;
-dptr strct;
-dptr rslt;
-continuation succ_cont;
+int apply(dptr callee, dptr strct, dptr rslt, continuation succ_cont)
    {
    tended struct descrip dstrct;
    struct tend_desc *tnd_args;  /* place to tend arguments to invoke() */
@@ -141,9 +133,7 @@ continuation succ_cont;
 /*
  * invoke -- Perform setup for invocation.
  */
-int invoke(nargs,cargp,n)
-dptr *cargp;
-int nargs, *n;
+int invoke(int nargs, dptr *cargp, int *n)
 {
    register struct pf_marker *newpfp;
    register dptr newargp;

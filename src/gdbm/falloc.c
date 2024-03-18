@@ -64,9 +64,7 @@ static void adjust_bucket_avail _ARGS((gdbm_file_info *));
    the value of 0 will be returned.  */
 
 off_t
-_gdbm_alloc (dbf, num_bytes)
-     gdbm_file_info *dbf;
-     int num_bytes;
+_gdbm_alloc (gdbm_file_info *dbf, int num_bytes)
 {
   off_t file_adr;               /* The address of the block. */
   avail_elem av_el;             /* For temporary use. */
@@ -114,10 +112,7 @@ _gdbm_alloc (dbf, num_bytes)
    errors occured, the value FALSE is returned. */
 
 void
-_gdbm_free (dbf, file_adr, num_bytes)
-     gdbm_file_info *dbf;
-     off_t file_adr;
-     int num_bytes;
+_gdbm_free (gdbm_file_info *dbf, off_t file_adr, int num_bytes)
 {
   avail_elem temp;
 
@@ -174,8 +169,7 @@ _gdbm_free (dbf, file_adr, num_bytes)
    active avail block.  It does a "free" for itself! */
 
 static void
-pop_avail_block (dbf)
-     gdbm_file_info *dbf;
+pop_avail_block (gdbm_file_info *dbf)
 {
   int  num_bytes;               /* For use with the read system call. */
   off_t file_pos;               /* For use with the lseek system call. */
@@ -204,8 +198,7 @@ pop_avail_block (dbf)
 /* Splits the header avail block and pushes half onto the avail stack. */
 
 static void
-push_avail_block (dbf)
-     gdbm_file_info *dbf;
+push_avail_block (gdbm_file_info *dbf)
 {
   int  num_bytes;
   int  av_size;
@@ -275,10 +268,7 @@ push_avail_block (dbf)
    routine does no I/O. */
 
 static avail_elem
-get_elem (size, av_table, av_count)
-     int size;
-     avail_elem av_table[];
-     int *av_count;
+get_elem (int size, avail_elem av_table[], int *av_count)
 {
   int index;                    /* For searching through the avail block. */
   avail_elem val;               /* The default return value. */
@@ -315,10 +305,7 @@ get_elem (size, av_table, av_count)
    sorted order. This routine does no I/O. */
 
 int
-_gdbm_put_av_elem (new_el, av_table, av_count)
-     avail_elem new_el;
-     avail_elem av_table[];
-     int *av_count;
+_gdbm_put_av_elem (avail_elem new_el, avail_elem av_table[], int *av_count)
 {
   int index;                    /* For searching through the avail block. */
   int index1;
@@ -363,9 +350,7 @@ _gdbm_put_av_elem (new_el, av_table, av_count)
    no I/O.  */
 
 static avail_elem
-get_block (size, dbf)
-     int size;
-     gdbm_file_info *dbf;
+get_block (int size, gdbm_file_info *dbf)
 {
   avail_elem val;
 
@@ -391,8 +376,7 @@ get_block (size, dbf)
 /*  When the header already needs writing, we can make sure the current
     bucket has its avail block as close to 1/2 full as possible. */
 static void
-adjust_bucket_avail (dbf)
-     gdbm_file_info *dbf;
+adjust_bucket_avail(gdbm_file_info *dbf)
 {
   int third = BUCKET_AVAIL / 3;
   avail_elem av_el;

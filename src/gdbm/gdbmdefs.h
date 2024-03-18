@@ -158,7 +158,7 @@ typedef struct {
         int fast_write;
 
         /* The fatal error handling routine. */
-        void (*fatal_err) ();
+        void (*fatal_err) (char *);
 
         /* The gdbm file descriptor which is set in gdbm_open.  */
         int  desc;

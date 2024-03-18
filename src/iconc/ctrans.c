@@ -43,8 +43,7 @@ extern char *lpath;                     /* LPATH value */
  */
 static
 void
-adjust_class_recs(recs)
-   struct rentry * recs;
+adjust_class_recs(struct rentry * recs)
 {
    int nflds;
    char * p, * q;
@@ -83,8 +82,7 @@ adjust_class_recs(recs)
 
 static
 void
-publish_unreachable_funcs(pents)
-   struct pentry * pents;
+publish_unreachable_funcs(struct pentry * pents)
 {
    unsigned long n;
    unsigned long nun;
@@ -200,8 +198,7 @@ int trans(char *argv0)
  * translate one file.
  */
 /* mdw: for ca... static */
-void trans1(filename)
-char *filename;
+void trans1(char *filename)
    {
    in_line = 1;                 /* start with line 1, column 0 */
    incol = 0;
@@ -257,8 +254,7 @@ void writecheck(rc)
 /*
  * lnkdcl - find file locally or on LPATH and add to source list.
  */
-void lnkdcl(name)
-char *name;
+void lnkdcl(char *name)
 {
 /* mdw: unrefd locals
    struct srcfile **pp;
@@ -274,9 +270,7 @@ char *name;
       }
 
 
-void src_file(name, srclist)
-char *name;
-struct srcfile **srclist;
+void src_file(char *name, struct srcfile **srclist)
    {
    struct srcfile **pp;
    struct srcfile *p;

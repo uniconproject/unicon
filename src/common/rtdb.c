@@ -30,8 +30,8 @@
  */
 static int            cmp_1_pre  (int p1, int p2);
 static struct il_code *db_abstr  (void);
-static void         db_case   (struct il_code *il, int num_cases);
-static void         db_err3   (int fatal,char *s1,char *s2,char *s3);
+static void            db_case   (struct il_code *il, int num_cases);
+static void            db_err3   (int fatal,char *s1,char *s2,char *s3);
 static int             db_icntyp (void);
 static struct il_c    *db_ilc    (void);
 static struct il_c    *db_ilcret (int il_c_type);
@@ -40,7 +40,7 @@ static struct il_code *db_ilvar  (void);
 static int             db_rtflg  (void);
 static int             db_tndtyp (void);
 static struct il_c    *new_ilc   (int il_c_type);
-static void          quoted   (int delim);
+static void             quoted   (int delim);
 
 extern char *progname;   /* name of program using this module */
 
@@ -54,9 +54,7 @@ static int *compnt_map;        /* map data base component codes to internal */
 /*
  * opendb - open data base and do other house keeping.
  */
-int db_open(s, lrgintflg)
-char *s;
-char **lrgintflg;
+int db_open(char *s, char **lrgintflg)
    {
    char *msg_buf;
    char *id;
@@ -192,8 +190,7 @@ char *db_string()
  * db_impl - read basic header information for an operation into a structure
  *   and return it.
  */
-struct implement *db_impl(oper_typ)
-int oper_typ;
+struct implement *db_impl(int oper_typ)
    {
    register struct implement *ip;
    register int c;
@@ -347,8 +344,7 @@ int oper_typ;
 /*
  * db_code - read the RTL code for the body of an operation.
  */
-void db_code(ip)
-struct implement *ip;
+void db_code(struct implement *ip)
    {
    register int c;
    char *s;
@@ -859,9 +855,7 @@ static int db_rtflg()
 /*
  * db_case - get the cases for a type_case statement from the data base.
  */
-static void db_case(il, num_cases)
-struct il_code *il;
-int num_cases;
+static void db_case(struct il_code *il, int num_cases)
    {
    register int c;
    int *typ_vect;
@@ -1242,8 +1236,7 @@ static struct il_c *db_ilc()
  * quoted - get the string for a quoted literal. The first quote mark
  *  has been read.
  */
-static void quoted(delim)
-int delim;
+static void quoted(int delim)
    {
    register int c;
 
@@ -1267,8 +1260,7 @@ int delim;
 /*
  * db_ilcret - get the in-line C code on a return or suspend statement.
  */
-static struct il_c *db_ilcret(il_c_type)
-int il_c_type;
+static struct il_c *db_ilcret(int il_c_type)
    {
    struct il_c *ilc;
    int c;
@@ -1388,8 +1380,7 @@ static int db_icntyp()
 /*
  * new_ilc - allocate a new structure to hold a piece of in-line C code.
  */
-static struct il_c *new_ilc(il_c_type)
-int il_c_type;
+static struct il_c *new_ilc(int il_c_type)
    {
    struct il_c *ilc;
    int i;
@@ -1408,9 +1399,7 @@ int il_c_type;
  * new_il - allocate a new structure with "size" fields to hold a piece of
  *   RTL code.
  */
-struct il_code *new_il(il_type, size)
-int il_type;
-int size;
+struct il_code *new_il(int il_type, int size)
    {
    struct il_code *il;
 
@@ -1424,8 +1413,7 @@ int size;
  * db_dscrd - discard an implementation up to $end, skipping the in-line
  *   RTL code.
  */
-void db_dscrd(ip)
-struct implement *ip;
+void db_dscrd(struct implement *ip)
    {
    char state;  /* how far along we are at recognizing $end */
 
@@ -1466,9 +1454,7 @@ struct implement *ip;
  * db_chstr - we are expecting a specific string. We may already have
  *   read a prefix of it.
  */
-void db_chstr(prefix, suffix)
-char *prefix;
-char *suffix;
+void db_chstr(char *prefix, char *suffix)
    {
    int c;
 
@@ -1493,9 +1479,7 @@ char *suffix;
  * db_tbl - fill in a hash table of implementation information for the
  *  given section.
  */
-int db_tbl(section, tbl)
-char *section;
-struct implement **tbl;
+int db_tbl(char *section, struct implement **tbl)
    {
    struct implement *ip;
    int num_added = 0;
@@ -1546,10 +1530,7 @@ struct implement *db_ilkup(char *id, struct implement **tbl)
  *   the range 0-9 and a-z, at least one of which is a digit.
  *
  */
-void nxt_pre(pre, nxt, n)
-char *pre;
-char *nxt;
-int n;
+void nxt_pre(char *pre, char *nxt, int n)
    {
    int i, num_dig;
 
@@ -1621,9 +1602,7 @@ int n;
 /*
  * cmp_pre - lexically compare 2-character prefixes.
  */
-int cmp_pre(pre1, pre2)
-char *pre1;
-char *pre2;
+int cmp_pre(char *pre1, char *pre2)
    {
    int cmp;
 
@@ -1637,9 +1616,7 @@ char *pre2;
 /*
  * cmp_1_pre - lexically compare 1 character of a prefix.
  */
-static int cmp_1_pre(p1, p2)
-int p1;
-int p2;
+static int cmp_1_pre(int p1, int p2)
    {
    if (isdigit(p1)) {
       if (isdigit(p2))
@@ -1658,9 +1635,7 @@ int p2;
 /*
  * db_err1 - print a data base error message in the form of 1 string.
  */
-void db_err1(fatal, s)
-int fatal;
-char *s;
+void db_err1(int fatal, char *s)
    {
    if (fatal)
       fprintf(stderr, "error, ");
@@ -1674,10 +1649,7 @@ char *s;
 /*
  * db_err2 - print a data base error message in the form of 2 strings.
  */
-void db_err2(fatal, s1, s2)
-int fatal;
-char *s1;
-char *s2;
+void db_err2(int fatal, char *s1, char *s2)
    {
    if (fatal)
       fprintf(stderr, "error, ");
@@ -1692,11 +1664,7 @@ char *s2;
 /*
  * db_err3 - print a data base error message in the form of 3 strings.
  */
-static void db_err3(fatal, s1, s2, s3)
-int fatal;
-char *s1;
-char *s2;
-char *s3;
+static void db_err3(int fatal, char *s1, char *s2, char *s3)
    {
    if (fatal)
       fprintf(stderr, "error, ");

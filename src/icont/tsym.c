@@ -92,9 +92,7 @@ void loc_init()
  *  the identifier if it isn't already there.  Some semantic checks
  *  are performed.
  */
-void install(name, flag, argcnt)
-char *name;
-int flag, argcnt;
+void install(char *name, int flag, int argcnt)
    {
    union {
       struct tgentry *gp;
@@ -322,10 +320,7 @@ void cdump()
  * alcloc allocates a local symbol table entry, fills in fields with
  *  specified values and returns the new entry.
  */
-static struct tlentry *alcloc(blink, name, flag)
-struct tlentry *blink;
-char *name;
-int flag;
+static struct tlentry *alcloc(struct tlentry *blink, char *name, int flag)
    {
    register struct tlentry *lp;
 
@@ -350,10 +345,7 @@ int flag;
  * alcglob allocates a global symbol table entry, fills in fields with
  *  specified values and returns offset of new entry.
  */
-static struct tgentry *alcglob(blink, name, flag, nargs)
-struct tgentry *blink;
-char *name;
-int flag, nargs;
+static struct tgentry *alcglob(struct tgentry *blink, char *name, int flag, int nargs)
    {
    register struct tgentry *gp;
 
@@ -379,10 +371,7 @@ int flag, nargs;
  * alclit allocates a constant symbol table entry, fills in fields with
  *  specified values and returns the new entry.
  */
-static struct tcentry *alclit(blink, name, len, flag)
-struct tcentry *blink;
-char *name;
-int len, flag;
+static struct tcentry *alclit(struct tcentry *blink, char *name, int len, int flag)
    {
    register struct tcentry *cp;
 
@@ -407,8 +396,7 @@ int len, flag;
 /*
  * lout dumps local symbol table to fd, which is a .u1 file.
  */
-void lout(fd)
-FILE *fd;
+void lout(FILE *fd)
    {
    register struct tlentry *lp;
 
@@ -420,8 +408,7 @@ FILE *fd;
 /*
  * constout dumps constant symbol table to fd, which is a .u1 file.
  */
-void constout(fd)
-FILE *fd;
+void constout(FILE *fd)
    {
    register int l;
    register char *c;
@@ -447,9 +434,7 @@ FILE *fd;
 /*
  * rout dumps a record declaration for name to file fd, which is a .u2 file.
  */
-void rout(fd,name)
-FILE *fd;
-char *name;
+void rout(FILE *fd, char *name)
    {
    register struct tlentry *lp;
    int n;
@@ -468,8 +453,7 @@ char *name;
  *  include: implicit status, tracing activation, link directives,
  *  invocable directives, and the global table.
  */
-void gout(fd)
-FILE *fd;
+void gout(FILE *fd)
    {
    register char *name;
    register struct tgentry *gp;

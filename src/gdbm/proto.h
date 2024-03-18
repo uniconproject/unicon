@@ -75,7 +75,7 @@ int   gdbm_delete         _ARGS((gdbm_file_info *dbf, datum key ));
 datum gdbm_fetch          _ARGS((gdbm_file_info *dbf, datum key ));
 gdbm_file_info *gdbm_open _ARGS((char *file, int block_size,
                                  int flags, int mode,
-                                 void (*fatal_func) (void)));
+                                 void (*fatal_func) (char *)));
 int   gdbm_reorganize     _ARGS((gdbm_file_info *dbf ));
 datum gdbm_firstkey       _ARGS((gdbm_file_info *dbf ));
 datum gdbm_nextkey        _ARGS((gdbm_file_info *dbf, datum key ));

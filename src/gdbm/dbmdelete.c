@@ -38,9 +38,7 @@
 /* Remove the KEYed item and the KEY from the database DBF. */
 
 int
-dbm_delete (dbf,key)
-     gdbm_file_info *dbf;
-     datum key;
+dbm_delete (gdbm_file_info *dbf, datum key)
 {
   return gdbm_delete (dbf,key);
 }

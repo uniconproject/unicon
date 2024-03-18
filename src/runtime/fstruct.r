@@ -145,9 +145,7 @@ end
  * c_get - convenient C-level access to the get function
  *  returns 0 on failure, otherwise fills in res
  */
-int c_get(hp, res)
-struct b_list *hp;
-struct descrip *res;
+int c_get(struct b_list *hp, struct descrip *res)
 {
    register word i;
    register struct b_lelem *bp;
@@ -1458,9 +1456,7 @@ end
 /*
  * c_push - C-level, nontending push operation
  */
-void c_push(l, val)
-dptr l;
-dptr val;
+void c_push(dptr l, dptr val)
 {
    register word i = 0;
    register struct b_lelem *bp; /* does not need to be tended */

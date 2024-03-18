@@ -40,11 +40,10 @@
 
 /* ARGSUSED */
 int
-gdbm_setopt(dbf, optflag, optval, optlen)
-    gdbm_file_info *dbf;        /* descriptor to operate on. */
-    int optflag;                /* option to set. */
-    int *optval;                /* pointer to option value. */
-    int optlen;                 /* size of optval. */
+gdbm_setopt(gdbm_file_info *dbf,        /* descriptor to operate on. */
+            int optflag,                /* option to set. */
+            int *optval,                /* pointer to option value. */
+            int optlen)                 /* size of optval. */
 {
   switch(optflag)
     {

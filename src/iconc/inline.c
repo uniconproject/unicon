@@ -13,30 +13,29 @@
  * Prototypes for static functions.
  */
 static void          arth_arg  ( struct il_code *var,
-                                    struct val_loc *v_orig, int chk,
-                                    struct code *cnv);
-static int              body_fnc  (struct il_code *il);
+                                 struct val_loc *v_orig, int chk,
+                                 struct code *cnv);
+static int           body_fnc  (struct il_code *il);
 static void          chkforblk (void);
 static void          cnv_dest  (int loc, int is_cstr,
                                     struct il_code *src, int sym_indx,
                                     struct il_c *dest, struct code *cd, int i);
 static void          dwrd_asgn (struct val_loc *vloc, char *typ);
-static struct il_c     *line_ilc  (struct il_c *ilc);
-static int              gen_if    (struct code *cond_cd,
-                                    struct il_code *il_then,
-                                    struct il_code *il_else,
-                                    struct val_loc **locs);
-static int              gen_il    (struct il_code *il);
+static struct il_c  *line_ilc  (struct il_c *ilc);
+static int           gen_if    (struct code *cond_cd,
+                                struct il_code *il_then,
+                                struct il_code *il_else,
+                                struct val_loc **locs);
+static int           gen_il    (struct il_code *il);
 static void          gen_ilc   (struct il_c *il);
 static void          gen_ilret (struct il_c *ilc);
-static int              gen_tcase (struct il_code *il, int has_dflt);
-static void          il_var    (struct il_code *il, struct code *cd,
-                                    int indx);
+static int           gen_tcase (struct il_code *il, int has_dflt);
+static void          il_var    (struct il_code *il, struct code *cd, int indx);
 static void          mrg_locs  (struct val_loc **locs);
-static struct code     *oper_lbl  (char *s);
+static struct code  *oper_lbl  (char *s);
 static int          part_asgn (struct val_loc *vloc, char *asgn,
-                                    struct il_c *value);
-static void          rstr_locs (struct val_loc **locs);
+                               struct il_c *value);
+static void         rstr_locs (struct val_loc **locs);
 static struct val_loc **sav_locs  (void);
 static void         sub_ilc    (struct il_c *ilc, struct code *cd, int indx);
 /* mdw */static void sub_ilc_fncall_explicit_arg(struct il_c * argilc, struct il_c * proto, struct code * cd, int indx);
@@ -58,18 +57,9 @@ static struct val_loc **tended;  /* array of tended locals */
 /*
  * gen_inlin - generate in-line code for an operation.
  */
-void gen_inlin(il, r, strt, fail, c, ip, ns, st, n, dcl_var, n_va)
-struct il_code *il;
-struct val_loc *r;
-struct code **strt;
-struct code **fail;
-struct c_fnc *c;
-struct implement *ip;
-int ns;
-struct op_symentry *st;
-nodeptr n;
-int dcl_var;
-int n_va;
+void gen_inlin(struct il_code *il, struct val_loc *r, struct code **strt, struct code **fail,
+               struct c_fnc *c, struct implement *ip, int ns, struct op_symentry *st,
+               nodeptr n, int dcl_var, int n_va)
    {
    struct code *cd;
    struct val_loc *tnd;
@@ -166,8 +156,7 @@ int n_va;
  *  base. Determine if execution can continue past this code.
  *
  */
-static int gen_il(il)
-struct il_code *il;
+static int gen_il(struct il_code *il)
    {
    struct code *cd;
    struct code *cd1;
@@ -413,11 +402,7 @@ struct il_code *il;
 /*
  * arth_arg - in-line code to check a conversion for an arith_case statement.
  */
-static void arth_arg(var, v_orig, chk, cnv)
-struct il_code *var;
-struct val_loc *v_orig;
-int chk;
-struct code *cnv;
+static void arth_arg(struct il_code *var, struct val_loc *v_orig, int chk, struct code *cnv)
    {
    struct code *lbl;
    struct code *cd;
@@ -460,8 +445,7 @@ struct code *cnv;
 /*
  * body_fnc - generate code to call a body function.
  */
-static int body_fnc(il)
-struct il_code *il;
+static int body_fnc(struct il_code *il)
    {
    struct code *arg_lst;
    struct code *cd;
@@ -753,10 +737,7 @@ struct il_code *il;
  * il_var - generate code for a possibly subscripted variable into
  *   an element of a code array.
  */
-static void il_var(il, cd, indx)
-struct il_code *il;
-struct code *cd;
-int indx;
+static void il_var(struct il_code *il, struct code *cd, int indx)
    {
    struct code *cd1;
 
@@ -791,10 +772,7 @@ int indx;
 /*
  * part_asgn - generate code for an assignment to (part of) a descriptor.
  */
-static int part_asgn(vloc, asgn, value)
-struct val_loc *vloc;
-char *asgn;
-struct il_c *value;
+static int part_asgn(struct val_loc *vloc, char *asgn, struct il_c *value)
    {
    struct code *cd;
 #ifdef OptimizeDescripAsgn
@@ -834,9 +812,7 @@ struct il_c *value;
 /*
  * dwrd_asgn - generate code to assign a type code to the dword of a descriptor.
  */
-static void dwrd_asgn(vloc, typ)
-struct val_loc *vloc;
-char *typ;
+static void dwrd_asgn(struct val_loc *vloc, char *typ)
    {
    struct code *cd;
 
@@ -858,11 +834,8 @@ char *typ;
  */
 static
 void
-sub_ilc_fncall_explicit_arg_old(argilc, protoilc, cd, indx)
-   struct il_c * argilc;
-   struct il_c * protoilc;
-   struct code * cd;
-   int indx;
+sub_ilc_fncall_explicit_arg_old(struct il_c * argilc, struct il_c * protoilc,
+                                struct code * cd, int indx)
 {
    /* printf("sub_ilc_fncall_explicit_arg: entry.\n"); */
 
@@ -903,11 +876,7 @@ sub_ilc_fncall_explicit_arg_old(argilc, protoilc, cd, indx)
 
 static
 void
-sub_ilc_fncall_explicit_arg(argilc, protoilc, cd, indx)
-   struct il_c * argilc;
-   struct il_c * protoilc;
-   struct code * cd;
-   int indx;
+sub_ilc_fncall_explicit_arg(struct il_c * argilc, struct il_c * protoilc, struct code * cd, int indx)
 {
    int loctype;
    /* printf("sub_ilc_fncall_explicit_arg: entry.\n"); */
@@ -946,10 +915,7 @@ sub_ilc_fncall_explicit_arg(argilc, protoilc, cd, indx)
  * sub_ilc - generate code from a sequence of C code and place it
  *  in a slot in a code array.
  */
-static void sub_ilc(ilc, cd, indx)
-struct il_c *ilc;
-struct code *cd;
-int indx;
+static void sub_ilc(struct il_c *ilc, struct code *cd, int indx)
    {
    struct il_c *ilc1;
    struct code *cd1;
@@ -1044,8 +1010,7 @@ int indx;
  * gen_ilret - generate code to set the result value from a suspend or
  *   return.
  */
-static void gen_ilret(ilc)
-struct il_c *ilc;
+static void gen_ilret(struct il_c *ilc)
    {
    struct il_c *ilc0;
    struct code *cd;
@@ -1278,8 +1243,7 @@ static void chkforblk()
 /*
  * gen_ilc - generate code for an sequence of in-line C code.
  */
-static void gen_ilc(ilc)
-struct il_c *ilc;
+static void gen_ilc(struct il_c *ilc)
    {
    struct il_c *ilc1;
    struct code *cd;
@@ -1441,8 +1405,7 @@ struct il_c *ilc;
 /*
  * line_ilc - gather a line of in-line code.
  */
-static struct il_c *line_ilc(ilc)
-struct il_c *ilc;
+static struct il_c *line_ilc(struct il_c *ilc)
    {
    struct il_c *ilc1;
    struct il_c *last;
@@ -1536,9 +1499,7 @@ struct il_c *ilc;
 /*
  * generate code to perform simple type checking.
  */
-struct code *typ_chk(var, typcd)
-struct il_code *var;
-int typcd;
+struct code *typ_chk(struct il_code *var, int typcd) 
    {
    struct code *cd;
 
@@ -1606,8 +1567,7 @@ int typcd;
  * oper_lbl - generate a label with an associated comment that includes
  *   the operation name.
  */
-static struct code *oper_lbl(s)
-char *s;
+static struct code *oper_lbl(char *s)
    {
    char *sbuf;
 
@@ -1639,8 +1599,7 @@ static struct val_loc **sav_locs()
  * rstr_locs - restore the interpretation of symbols that may
  *  have been affected by conversions.
  */
-static void rstr_locs(locs)
-struct val_loc **locs;
+static void rstr_locs(struct val_loc **locs)
    {
    int i;
 
@@ -1655,8 +1614,7 @@ struct val_loc **locs;
  *  if one path involves program termination so that the symbols
  *  no longer have an interpretation along that path.
  */
-static void mrg_locs(locs)
-struct val_loc **locs;
+static void mrg_locs(struct val_loc **locs)
    {
    int i;
 
@@ -1669,11 +1627,7 @@ struct val_loc **locs;
 /*
  * il_cnv - generate code for an in-line conversion.
  */
-struct code *il_cnv(typcd, src, dflt, dest)
-int typcd;
-struct il_code *src;
-struct il_c *dflt;
-struct il_c *dest;
+struct code *il_cnv(int typcd, struct il_code *src, struct il_c *dflt, struct il_c *dest)
    {
    struct code *cd;
    struct code *cd1;
@@ -1877,11 +1831,7 @@ struct il_c *dest;
 /*
  * il_dflt - generate code for a defaulting conversion that always defaults.
  */
-struct code *il_dflt(typcd, src, dflt, dest)
-int typcd;
-struct il_code *src;
-struct il_c *dflt;
-struct il_c *dest;
+struct code *il_dflt(int typcd, struct il_code *src, struct il_c *dflt, struct il_c *dest)
    {
    struct code *cd = NULL;
    int sym_indx;
@@ -1993,14 +1943,8 @@ struct il_c *dest;
 /*
  * cnv_dest - output the destination of a conversion.
  */
-static void cnv_dest(loc, is_cstr, src, sym_indx, dest, cd, i)
-int loc;
-int is_cstr;
-struct il_code *src;
-int sym_indx;
-struct il_c *dest;
-struct code *cd;
-int i;
+static void cnv_dest(int loc, int is_cstr, struct il_code *src, int sym_indx,
+                     struct il_c *dest, struct code *cd, int i)
    {
    if (dest == NULL) {
       /*
@@ -2043,9 +1987,7 @@ int i;
  * il_copy - produce code for an optimized "conversion" that always succeeds
  *   and just copies a value from one place to another.
  */
-struct code *il_copy(dest, src)
-struct il_c *dest;
-struct val_loc *src;
+struct code *il_copy(struct il_c *dest, struct val_loc *src)
    {
    struct code *cd;
 
@@ -2066,9 +2008,7 @@ struct val_loc *src;
  * loc_cpy - make a copy of a reference to a value location, but change
  *  the way the location is accessed.
  */
-struct val_loc *loc_cpy(loc, mod_access)
-struct val_loc *loc;
-int mod_access;
+struct val_loc *loc_cpy(struct val_loc *loc, int mod_access)
    {
    struct val_loc *new_loc;
 
@@ -2083,9 +2023,7 @@ int mod_access;
 /*
  * gen_tcase - generate in-line code for a type_case statement.
  */
-static int gen_tcase(il, has_dflt)
-struct il_code *il;
-int has_dflt;
+static int gen_tcase(struct il_code *il, int has_dflt)
    {
    struct case_anlz case_anlz;
 
@@ -2110,11 +2048,8 @@ int has_dflt;
  * gen_if - generate code to test a condition that might be true
  *  of false. Determine if execution can continue past this if statement.
  */
-static int gen_if(cond_cd, il_then, il_else, locs)
-struct code *cond_cd;
-struct il_code *il_then;
-struct il_code *il_else;
-struct val_loc **locs;
+static int gen_if(struct code *cond_cd, struct il_code *il_then,
+                  struct il_code *il_else, struct val_loc **locs)
    {
    struct val_loc **locs1;
    struct code *lbl_then;

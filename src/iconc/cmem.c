@@ -62,8 +62,7 @@ void init()
  */
 extern
 struct gentry *
-init_proc(name)
-   char *name;
+init_proc(char *name)
 {
    int i;
    struct gentry *sym_ent;
@@ -96,8 +95,7 @@ init_proc(name)
 
 static
 int
-rec_is_obj(name)
-   char * name;
+rec_is_obj(char * name)
 {
    int len;
 
@@ -112,8 +110,7 @@ rec_is_obj(name)
  * init_rec - add a new entry on the front of the record list.
  */
 void
-init_rec(name)
-   char * name;
+init_rec(char * name)
 {
    int flags;
    register struct rentry *r;
@@ -140,8 +137,7 @@ init_rec(name)
 #ifdef IconcLogAllocations
 static
 void *
-alloc_original(n)
-   unsigned int n;
+alloc_original(unsigned int n)
 {
    register void * a;
 
@@ -169,10 +165,7 @@ struct alc_ent * alc_tbl[AlcTblSize] = { 0 };
 
 static
 void
-add_alloc_entry(n, fname, line)
-   unsigned int n;
-   char * fname;
-   int line;
+add_alloc_entry(unsigned int n, char * fname, int line)
 {
    unsigned h;
    struct alc_ent * ent;
@@ -231,10 +224,7 @@ alc_stats(void)
 }
 
 pointer
-_alloc(n, fname, line)
-   unsigned int n;
-   char * fname;
-   int line;
+_alloc(unsigned int n, char * fname, int line)
 {
    pointer rslt;
 

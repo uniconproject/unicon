@@ -47,9 +47,7 @@
    to being used in gdbm). */
 
 static int
-rename (old_name, new_name)
-     char* old_name;
-     char* new_name;
+rename (char* old_name, char* new_name)
 {
   if (unlink (new_name) != 0)
     return -1;
@@ -73,8 +71,7 @@ rename (old_name, new_name)
    after a successful reorganization. */
 
 int
-gdbm_reorganize (dbf)
-     gdbm_file_info *dbf;
+gdbm_reorganize (gdbm_file_info *dbf)
 
 {
   gdbm_file_info *new_dbf;              /* The new file. */

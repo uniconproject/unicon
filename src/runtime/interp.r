@@ -133,7 +133,7 @@ dptr field_argp;                        /* see comment in imisc.r/Ofield() */
 #enddef                                 /* Setup_Arg */
 
 #begdef Call_Cond(e)
-   if ((*(optab[lastop]))(rargp) == A_Resume) {
+if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
      InterpEVValD(&lastdesc, e);
      goto efail_noev;
    }
@@ -258,7 +258,7 @@ printf("interp, fieldnum is still %d, recnum %d\n",
  *  passed to C_rtn_term to deal with the termination condition appropriately.
  */
 #begdef Call_Gen
-   signal = (*(optab[lastop]))(rargp);
+   signal = ((int (*)(dptr))*(optab[lastop]))(rargp);
    goto C_rtn_term;
 #enddef                                 /* Call_Gen */
 
@@ -1288,32 +1288,21 @@ invokej:
 
                bproc = BlkD(*rargp, Proc);
 
-#ifdef FncTrace
-               typedef int (*bfunc2)(dptr, struct descrip *);
-#endif                                  /* FncTrace */
-
-
                /* ExInterp not needed since no change since last EntInterp */
                if (type == I_Vararg) {
-                  int (*bfunc)();
-                  bfunc = bproc->entryp.ccode;
-
 #ifdef FncTrace
-                  signal = (*bfunc)(nargs, rargp, &(procs->pname));
+                  signal = (*(bproc->entryp.ccode.p3idd))(nargs, rargp, &(procs->pname));
 #else                                   /* FncTrace */
-                  signal = (*bfunc)(nargs,rargp);
+                  signal = (*(bproc->entryp.ccode.p2id))(nargs,rargp);
 #endif                                  /* FncTrace */
 
                   }
                else
                   {
-                  int (*bfunc)();
-                  bfunc = bproc->entryp.ccode;
-
 #ifdef FncTrace
-                  signal = (*(bfunc2)bfunc)(rargp, &(bproc->pname));
+                  signal = ((*(bproc->entryp.ccode.p2dd)))(rargp, &(bproc->pname));
 #else                                   /* FncTrace */
-                  signal = (*bfunc)(rargp);
+                  signal = ((*(bproc->entryp.ccode.p1d)))(rargp);
 #endif                                  /* FncTrace */
                   }
 
@@ -1339,7 +1328,7 @@ invokej:
             opnd = GetWord;
             Setup_Arg(0);
 
-            signal = (*(keytab[(int)opnd]))(rargp);
+            signal = ((int (*)(dptr))*(keytab[(int)opnd]))(rargp);
             goto C_rtn_term;
 
          case Op_Llist:         /* construct list */
@@ -2526,9 +2515,7 @@ void stkdump(op)
  * vanq_proc - monitor the removal of suspended operations from within
  *   a procedure.
  */
-static void vanq_proc(efp_v, gfp_v)
-struct ef_marker *efp_v;
-struct gf_marker *gfp_v;
+static void vanq_proc(struct ef_marker *efp_v, struct gf_marker *gfp_v)
    {
 
    if (is:null(curpstate->eventmask))
@@ -2548,9 +2535,7 @@ struct gf_marker *gfp_v;
  *   the current bounded expression and return the expression frame
  *   pointer for the bounded expression.
  */
-static struct ef_marker *vanq_bound(efp_v, gfp_v)
-struct ef_marker *efp_v;
-struct gf_marker *gfp_v;
+static struct ef_marker *vanq_bound(struct ef_marker *efp_v, struct gf_marker *gfp_v)
    {
 
    if (is:null(curpstate->eventmask))
@@ -2587,9 +2572,7 @@ struct gf_marker *gfp_v;
  * activate some other co-expression from an arbitrary point in
  * the interpreter.
  */
-int mt_activate(tvalp,rslt,ncp)
-dptr tvalp, rslt;
-register struct b_coexpr *ncp;
+int mt_activate(dptr tvalp, dptr rslt, register struct b_coexpr *ncp)
 {
    register struct b_coexpr *ccp;
    int first, rv;
@@ -2663,8 +2646,7 @@ register struct b_coexpr *ncp;
 /*
  * activate the "&parent" co-expression from anywhere, if there is one
  */
-void actparent(event)
-int event;
+void actparent(int event)
    {
    struct progstate *parent = curpstate->parent;
 

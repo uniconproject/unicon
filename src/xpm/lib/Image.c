@@ -38,8 +38,7 @@
  * Init returned data to free safely later on
  */
 void
-xpmInitXpmImage(image)
-    XpmImage *image;
+xpmInitXpmImage(XpmImage *image)
 {
     image->ncolors = 0;
     image->colorTable = NULL;
@@ -50,8 +49,7 @@ xpmInitXpmImage(image)
  * Free the XpmImage data which have been allocated
  */
 void
-XpmFreeXpmImage(image)
-    XpmImage *image;
+XpmFreeXpmImage(XpmImage *image)
 {
     if (image->colorTable)
         xpmFreeColorTable(image->colorTable, image->ncolors);

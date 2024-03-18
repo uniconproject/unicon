@@ -265,9 +265,7 @@ void yylexinit()
  *  following identifier goes in cc.
  */
 
-static struct toktab *getident(ac, cc)
-int ac;
-int *cc;
+static struct toktab *getident(int ac, int *cc)
    {
    register int c;
    register struct toktab *t;
@@ -337,8 +335,7 @@ static struct toktab *findres()
 /*
  * bufcmp - compare a null terminated string to what is in the string buffer.
  */
-static int bufcmp(s)
-char *s;
+static int bufcmp(char *s)
    {
    register char *s1;
    s1 = lex_sbuf.strtimage;
@@ -360,9 +357,7 @@ char *s;
  *  a numeric literal by what follows it.
  */
 
-static struct toktab *getnum(ac, cc)
-int ac;
-int *cc;
+static struct toktab *getnum(int ac, int *cc)
    {
    register int c;
    register unsigned int r, state;
@@ -450,9 +445,7 @@ int *cc;
  * getstring - gather a string literal starting with ac and place the
  *  character following the literal in *cc.
  */
-static struct toktab *getstring(ac, cc)
-int ac;
-int *cc;
+static struct toktab *getstring(int ac, int *cc)
    {
    register int c, sc;
    int sav_indx;
@@ -557,8 +550,7 @@ static int ctlesc()
  *  one, two, or three octal digits.
  */
 
-static int octesc(ac)
-int ac;
+static int octesc(int ac)
    {
    register int c, nc, i;
 
@@ -646,8 +638,7 @@ static int setlineno()
  * setfilenm -  set file name from #line comment, return following char.
  */
 
-static int setfilenm(c)
-register int c;
+static int setfilenm(register int c)
    {
    while (c == ' ' || c == '\t')
       c = NextChar;

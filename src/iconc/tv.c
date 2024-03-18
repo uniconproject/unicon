@@ -85,8 +85,7 @@ static inline void printvord(vord);
 
 extern
 struct tv *
-tv_alc(nbits)
-   int nbits;
+tv_alc(int nbits)
 {
    struct tv * rslt;
 
@@ -98,8 +97,7 @@ tv_alc(nbits)
 
 extern
 struct tv *
-tv_alc_set(nbits)
-   int nbits;
+tv_alc_set(int nbits)
 {
    struct tv * rslt;
    static int ncalls = 0;
@@ -121,9 +119,7 @@ tv_alc_set(nbits)
 
 extern
 void
-tv_bit_clr(tv, bit)
-   struct tv * tv;
-   int bit;
+tv_bit_clr(struct tv * tv, int bit)
 {
    vord msk;
    unsigned int k;
@@ -151,9 +147,7 @@ tv_bit_clr(tv, bit)
 
 extern
 int
-tv_bit_get(tv, bit)
-   struct tv * tv;
-   int bit;
+tv_bit_get(struct tv * tv, int bit)
 {
    vord v, msk;
    unsigned int idx;
@@ -173,9 +167,7 @@ tv_bit_get(tv, bit)
 
 extern
 void
-tv_bit_set(tv, bit)
-   struct tv * tv;
-   int bit;
+tv_bit_set(struct tv * tv, int bit)
 {
    vord msk;
    unsigned int k;
@@ -205,9 +197,7 @@ tv_bit_set(tv, bit)
 
 extern
 void
-tv_bits_clr(tv, nbits)
-   struct tv * tv;
-   int nbits;
+tv_bits_clr(struct tv * tv, int nbits)
 {
    int i;
    int nvords;
@@ -238,10 +228,7 @@ tv_bits_clr(tv, nbits)
 
 extern
 void
-tv_bits_cpy(dst, src, nbits)
-   struct tv * dst;
-   struct tv * src;
-   int nbits;
+tv_bits_cpy(struct tv * dst, struct tv * src, int nbits)
 {
    int i;
    int nvords;
@@ -274,10 +261,7 @@ tv_bits_cpy(dst, src, nbits)
 
 extern
 void
-tv_bits_or(dst, src, nbits)
-   struct tv * dst;
-   struct tv * src;
-   int nbits;
+tv_bits_or(struct tv * dst, struct tv * src, int nbits)
 {
    if (dst->ent == src->ent)
       return;
@@ -292,10 +276,7 @@ tv_bits_or(dst, src, nbits)
 
 extern
 int
-tv_bits_or_chk(dst, src, nbits)
-   struct tv * dst;
-   struct tv * src;
-   int nbits;
+tv_bits_or_chk(struct tv * dst, struct tv * src, int nbits)
 {
    int deltas;
    int nvords;
@@ -314,9 +295,7 @@ tv_bits_or_chk(dst, src, nbits)
 
 extern
 int
-tv_deref_prep(dst, src)
-   struct tv * dst;
-   struct tv * src;
+tv_deref_prep(struct tv * dst, struct tv * src)
 {
    int i;
    vord v;
@@ -374,10 +353,7 @@ tv_deref_prep(dst, src)
 
 extern
 int
-tv_has_type(tv, typcd, clr)
-   struct tv * tv;
-   int typcd;
-   int clr;
+tv_has_type(struct tv * tv, int typcd, int clr)
 {
    vord msk;
    int i, found;
@@ -399,11 +375,7 @@ tv_has_type(tv, typcd, clr)
 
 extern
 void
-tv_init(infer, nicntyp, nintrtyp, nrttyp)
-   int infer;
-   int nicntyp;
-   int nintrtyp;
-   int nrttyp;
+tv_init(int infer, int nicntyp, int nintrtyp, int nrttyp)
 {
    int i;
    unsigned int init;
@@ -505,9 +477,7 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
 
 extern
 int
-tv_int_get(tv, intidx)
-   struct tv * tv;
-   int intidx;
+tv_int_get(struct tv * tv, int intidx)
 {
    vord v;
    int vidx;
@@ -525,10 +495,7 @@ tv_int_get(tv, intidx)
 
 extern
 void
-tv_ints_and(dst, src, nints)
-   struct tv * dst;
-   struct tv * src;
-   int nints;
+tv_ints_and(struct tv * dst, struct tv * src, int nints)
 {
    int i;
    int nvords;
@@ -556,10 +523,7 @@ tv_ints_and(dst, src, nints)
 
 extern
 void
-tv_ints_or(dst, src, nints)
-   struct tv * dst;
-   struct tv * src;
-   int nints;
+tv_ints_or(struct tv * dst, struct tv * src, int nints)
 {
    if (dst->ent == src->ent)
       return;
@@ -574,10 +538,7 @@ tv_ints_or(dst, src, nints)
 
 extern
 int
-tv_ints_or_chk(dst, src, nints)
-   struct tv * dst;
-   struct tv * src;
-   int nints;
+tv_ints_or_chk(struct tv * dst, struct tv * src, int nints)
 {
    int deltas;
    int nvords;
@@ -596,8 +557,7 @@ tv_ints_or_chk(dst, src, nints)
 
 extern
 int
-tv_is_empty(tv)
-   struct tv * tv;
+tv_is_empty(struct tv * tv)
 {
    /*
     * the types.c is_empty() only uses NumInts(n_intrtyp) to check
@@ -620,17 +580,14 @@ tv_is_empty(tv)
 
 extern
 int
-tv_is_dflt_vect(tv)
-   struct tv * tv;
+tv_is_dflt_vect(struct tv * tv)
 {
    return (tv->ent == rttyp);
 }
 
 extern
 int
-tv_other_type(tv, typcd)
-   struct tv * tv;
-   int typcd;
+tv_other_type(struct tv * tv, int typcd)
 {
    int i;
    vord msk;
@@ -667,11 +624,7 @@ tv_other_type(tv, typcd)
  */
 extern
 unsigned int *
-tv_rng_get(tv, bgn, end, numset)
-   struct tv * tv;
-   int bgn;
-   int end;
-   int * numset;
+tv_rng_get(struct tv * tv, int bgn, int end, int * numset)
 {
    int n;
    vord tgt, msk;
@@ -723,9 +676,7 @@ done:
 
 extern
 void
-tv_stats(bgn, end)
-   int bgn;
-   int end;
+tv_stats(int bgn, int end)
 {
    int i, j, n;
    extern int verbose;
@@ -773,11 +724,7 @@ exit_point:
 
 extern
 void
-tv_stores_or(dst, src, bgn, end)
-   struct store * dst;
-   struct store * src;
-   int bgn;
-   int end;
+tv_stores_or(struct store * dst, struct store * src, int bgn, int end)
 {
    while (bgn <= end) {
       if ((dst->types[bgn]->ent != src->types[bgn]->ent) &&
@@ -789,9 +736,7 @@ tv_stores_or(dst, src, bgn, end)
 
 extern
 void
-tv_type_bits_set(tv, typcd)
-   struct tv * tv;
-   int typcd;
+tv_type_bits_set(struct tv * tv, int typcd)
 {
    int i;
    int frstbit, lastbit;
@@ -946,9 +891,7 @@ alctv(void)
 static
 inline
 void
-aura_clr(tvent, nbits)
-   struct tvent * tvent;
-   int nbits;
+aura_clr(struct tvent * tvent, int nbits)
 {
    int n;
 
@@ -966,9 +909,7 @@ aura_clr(tvent, nbits)
 static
 inline
 int
-aura_cmp(e1, e2)
-   struct tvent * e1;
-   struct tvent * e2;
+aura_cmp(struct tvent * e1, struct tvent * e2)
 {
    if (e1 == e2)
       return 0;
@@ -991,8 +932,7 @@ aura_cmp(e1, e2)
 static
 inline
 int
-aura_is_empty(tvent)
-   struct tvent * tvent;
+aura_is_empty(struct tvent * tvent)
 {
    if (tvent->aura)
       return 0;
@@ -1004,8 +944,7 @@ aura_is_empty(tvent)
 static
 inline
 void
-aura_sync(tvent)
-   struct tvent * tvent;
+aura_sync(struct tvent * tvent)
 {
    int i;
 
@@ -1021,10 +960,7 @@ aura_sync(tvent)
 static
 inline
 void
-bit_range(typcd, frstbit, lastbit)
-   int typcd;
-   int * frstbit;
-   int * lastbit;
+bit_range(int typcd, int * frstbit, int * lastbit)
 {
    extern unsigned int n_icntyp;
    extern unsigned int n_intrtyp;
@@ -1046,8 +982,7 @@ bit_range(typcd, frstbit, lastbit)
 static
 inline
 ull
-hash_th(bits)
-   vord * bits;
+hash_th(vord * bits)
 {
    int i;
    ull h;
@@ -1065,8 +1000,7 @@ hash_th(bits)
 static
 inline
 unsigned int
-hash_bh(raw)
-   ull raw;
+hash_bh(ull raw)
 {
    int i;
    unsigned int u;
@@ -1085,8 +1019,7 @@ hash_bh(raw)
 #if 0
 static
 int
-is_tgt_vect(ent)
-   struct tvent * ent;
+is_tgt_vect(struct tvent * ent)
 {
    int i;
 
@@ -1103,9 +1036,7 @@ is_tgt_vect(ent)
 static
 inline
 struct tvent *
-insert(ent, bkt)
-   struct tvent * ent;
-   unsigned int bkt;
+insert(struct tvent * ent, unsigned int bkt)
 {
    int cmp;
    struct tvent * e;
@@ -1143,10 +1074,7 @@ insert(ent, bkt)
 static
 inline
 int
-ints_or(dst, src, nvords)
-   struct tv * dst;
-   struct tv * src;
-   int nvords;
+ints_or(struct tv * dst, struct tv * src, int nvords)
 {
    int i;
    vord v;
@@ -1193,8 +1121,7 @@ ints_or(dst, src, nvords)
 static
 inline
 int
-next_pwr_2(n)
-   int n;
+next_pwr_2(int n)
 {
    n--;
    n |= (n >> 1);
@@ -1209,8 +1136,7 @@ next_pwr_2(n)
 static
 inline
 void
-printull(u)
-   ull u;
+printull(ull u)
 {
    ull msk;
    int c, shr;
@@ -1230,8 +1156,7 @@ printull(u)
 static
 inline
 void
-printvord(v)
-   vord v;
+printvord(vord v)
 {
 #if (VordBits == 64)
    printull(v);

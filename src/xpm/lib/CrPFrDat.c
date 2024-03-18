@@ -35,14 +35,8 @@
 #include "XpmI.h"
 
 int
-XpmCreatePixmapFromData(display, d, data, pixmap_return,
-                        shapemask_return, attributes)
-    Display *display;
-    Drawable d;
-    char **data;
-    Pixmap *pixmap_return;
-    Pixmap *shapemask_return;
-    XpmAttributes *attributes;
+XpmCreatePixmapFromData(Display *display, Drawable d, char **data, Pixmap *pixmap_return,
+                        Pixmap *shapemask_return, XpmAttributes *attributes)
 {
     XImage *ximage, *shapeimage;
     int ErrorStatus;

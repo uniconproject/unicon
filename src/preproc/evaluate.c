@@ -34,9 +34,7 @@ static long log_or         (struct token **tp, struct token *trigger);
  *               <character-constant>
  *               '(' <conditional> ')'
  */
-static long primary(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long primary(struct token **tp, struct token *trigger)
    {
    struct token *t = NULL;
    struct token *id = NULL;
@@ -250,9 +248,7 @@ struct token *trigger;
  *             '~' <unary> |
  *             '!' <unary>
  */
-static long unary(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long unary(struct token **tp, struct token *trigger)
    {
    switch ((*tp)->tok_id) {
       case '+':
@@ -278,9 +274,7 @@ struct token *trigger;
  *                      <multiplicative> '/' <unary> |
  *                      <multiplicative> '%' <unary>
  */
-static long multiplicative(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long multiplicative(struct token **tp, struct token *trigger)
    {
    long e1, e2;
    int tok_id;
@@ -317,9 +311,7 @@ struct token *trigger;
  *                <additive> '+' <multiplicative> |
  *                <additive> '-' <multiplicative>
  */
-static long additive(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long additive(struct token **tp, struct token *trigger)
    {
    long e1, e2;
    int tok_id;
@@ -343,9 +335,7 @@ struct token *trigger;
  *             <shift> '<<' <additive> |
  *             <shift> '>>' <additive>
  */
-static long shift(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long shift(struct token **tp, struct token *trigger)
    {
    long e1, e2;
    int tok_id;
@@ -371,9 +361,7 @@ struct token *trigger;
  *                <relation> '>' <shift> |
  *                <relation> '>=' <shift>
  */
-static long relation(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long relation(struct token **tp, struct token *trigger)
    {
    long e1, e2;
    int tok_id;
@@ -407,9 +395,7 @@ struct token *trigger;
  *                <equality> '==' <relation> |
  *                <equality> '!=' <relation>
  */
-static long equality(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long equality(struct token **tp, struct token *trigger)
    {
    long e1, e2;
    int tok_id;
@@ -432,9 +418,7 @@ struct token *trigger;
  * <and> ::= <equality> |
  *           <and> '&' <equality>
  */
-static long and(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long and(struct token **tp, struct token *trigger)
    {
    long e1, e2;
 
@@ -451,9 +435,7 @@ struct token *trigger;
  * <excl_or> ::= <and> |
  *               <excl_or> '^' <and>
  */
-static long excl_or(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long excl_or(struct token **tp, struct token *trigger)
    {
    long e1, e2;
 
@@ -470,9 +452,7 @@ struct token *trigger;
  * <incl_or> ::= <excl_or> |
  *               <incl_or> '|' <excl_or>
  */
-static long incl_or(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long incl_or(struct token **tp, struct token *trigger)
    {
    long e1, e2;
 
@@ -489,9 +469,7 @@ struct token *trigger;
  * <log_and> ::= <incl_or> |
  *               <log_and> '&&' <incl_or>
  */
-static long log_and(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long log_and(struct token **tp, struct token *trigger)
    {
    long e1, e2;
 
@@ -508,9 +486,7 @@ struct token *trigger;
  * <log_or> ::= <log_and> |
  *              <log_or> '||' <log_and>
  */
-static long log_or(tp, trigger)
-struct token **tp;
-struct token *trigger;
+static long log_or(struct token **tp, struct token *trigger)
    {
    long e1, e2;
 
@@ -527,9 +503,7 @@ struct token *trigger;
  * <conditional> ::= <log_or> |
  *                   <log_or> '?' <conditional> ':' <conditional>
  */
-long conditional(tp, trigger)
-struct token **tp;
-struct token *trigger;
+long conditional(struct token **tp, struct token *trigger)
    {
    long e1, e2, e3;
 
@@ -552,8 +526,7 @@ struct token *trigger;
  *  trigger is the preprocessing directive that triggered the evaluation;
  *  it is used for error messages.
  */
-int eval(trigger)
-struct token *trigger;
+int eval(struct token *trigger)
    {
    struct token *t = NULL;
    int result;

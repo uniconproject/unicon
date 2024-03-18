@@ -38,9 +38,7 @@
    from this procedure.  */
 
 int
-gdbm_delete (dbf, key)
-     gdbm_file_info *dbf;
-     datum key;
+gdbm_delete (gdbm_file_info *dbf, datum key)
 {
   int elem_loc;         /* The location in the current hash bucket. */
   int last_loc;         /* Last location emptied by the delete.  */

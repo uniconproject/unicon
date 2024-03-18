@@ -515,9 +515,7 @@ static void setfile()
  *  Note that the majority of the code for the lemit* routines is for debugging
  *  purposes.
  */
-static void lemit(op, name)
-int op;
-char *name;
+static void lemit(int op, char *name)
    {
 
 #ifdef DeBugLinker
@@ -528,9 +526,7 @@ char *name;
    outop(op);
    }
 
-static void lemitl(op, lab, name)
-int op, lab;
-char *name;
+static void lemitl(int op, int lab, char *name)
    {
    misalign();
 
@@ -551,10 +547,7 @@ char *name;
      outword(labels[lab] - (pc + WordSize));
    }
 
-static void lemitn(op, n, name)
-int op;
-word n;
-char *name;
+static void lemitn(int op, word n, char *name)
    {
    misalign();
 
@@ -569,10 +562,7 @@ char *name;
    }
 
 
-static void lemitr(op, loc, name)
-int op;
-word loc;
-char *name;
+static void lemitr(int op, word loc, char *name)
    {
    misalign();
    loc -= pc + ((IntBits/ByteBits) + WordSize);
@@ -592,10 +582,7 @@ char *name;
    outword(loc);
    }
 
-static void lemitin(op, offset, n, name)
-int op, n;
-word offset;
-char *name;
+static void lemitin(int op, word offset, int n, char *name)
    {
    misalign();
 
@@ -617,10 +604,7 @@ char *name;
  *  the same size as what the interpreter expects.  See op_int and op_intx
  *  in interp.s
  */
-static void lemitint(op, i, name)
-int op;
-word i;
-char *name;
+static void lemitint(int op, word i, char *name)
    {
    misalign();
 
@@ -633,8 +617,7 @@ char *name;
    outword(i);
    }
 
-static void lemitcon(k)
-register int k;
+static void lemitcon(register int k)
    {
    register int i, j;
    register char *s;
@@ -715,9 +698,7 @@ register int k;
       }
    }
 
-static void lemitproc(name, nargs, ndyn, nstat, fstat)
-word name;
-int nargs, ndyn, nstat, fstat;
+static void lemitproc(word name, int nargs, int ndyn, int nstat, int fstat)
    {
    register int i;
    register char *p;
@@ -1684,8 +1665,7 @@ static void misalign()
  * intout(i) outputs i as an int that is used by the runtime system
  *  IntBits/ByteBits bytes must be moved from &word[0] to &codep[0].
  */
-static void intout(oint)
-int oint;
+ static void intout(int oint)
    {
    int i;
    union {
@@ -1741,8 +1721,7 @@ static void shortout(short oint)
  * wordout(i) outputs i as a word that is used by the runtime system
  *  WordSize bytes must be moved from &oword[0] to &codep[0].
  */
-static void wordout(oword)
-word oword;
+ static void wordout(word oword)
    {
    int i;
    union {
@@ -1763,9 +1742,7 @@ word oword;
 /*
  * outblock(a,i) output i bytes starting at address a.
  */
-static void outblock(addr,count)
-char *addr;
-int count;
+ static void outblock(char *addr, int count)
    {
    CodeCheck(count);
    pc += count;
@@ -1778,9 +1755,7 @@ int count;
  * dumpblock(a,i) dump contents of i bytes at address a, used only
  *  in conjunction with -L.
  */
-static void dumpblock(addr, count)
-char *addr;
-int count;
+ static void dumpblock(char *addr, int count)
    {
    int i;
    for (i = 0; i < count; i++) {
@@ -1817,8 +1792,7 @@ static void clearlab()
 /*
  * backpatch - fill in all forward references to lab.
  */
-static void backpatch(lab)
-int lab;
+ static void backpatch(int lab)
    {
    word p, r;
    char *q;
@@ -1846,8 +1820,7 @@ int lab;
    }
 
 #ifdef DeBugLinker
-void idump(s)           /* dump code region */
-   char *s;
+void idump(char *s)           /* dump code region */
    {
    int *c;
 

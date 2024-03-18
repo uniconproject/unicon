@@ -42,10 +42,7 @@ extern char *_gdbm_read_entry _ARGS((gdbm_file_info *, int));
    put the data that is found. */
 
 static void
-get_next_key (dbf, elem_loc, return_val)
-     gdbm_file_info *dbf;
-     int elem_loc;
-     datum *return_val;
+get_next_key (gdbm_file_info *dbf, int elem_loc, datum *return_val)
 {
   int   found;                  /* Have we found the next key. */
   char  *find_data;             /* Data pointer returned by find_key. */
@@ -93,8 +90,7 @@ get_next_key (dbf, elem_loc, return_val)
    hash order, not in any sorted order.  */
 
 datum
-gdbm_firstkey (dbf)
-     gdbm_file_info *dbf;
+gdbm_firstkey (gdbm_file_info *dbf)
 {
   datum return_val;             /* To return the first key. */
 
@@ -117,9 +113,7 @@ gdbm_firstkey (dbf)
 /* Continue visiting all keys.  The next key following KEY is returned. */
 
 datum
-gdbm_nextkey (dbf, key)
-     gdbm_file_info *dbf;
-     datum key;
+gdbm_nextkey (gdbm_file_info *dbf, datum key)
 {
   datum  return_val;            /* The return value. */
   int    elem_loc;              /* The location in the bucket. */

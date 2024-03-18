@@ -365,9 +365,7 @@ char *precode;          /* pointer to start of code within filebuffer */
  * Used by icon_init() as well as MultiProgram's loadicode().
  * Note that if the icode is compressed, the FILE* returned may require gdzread().
  */
-static FILE *readhdr(name,hdr)
-char *name;
-struct header *hdr;
+static FILE *readhdr(char *name, struct header *hdr)
    {
    int n;
    char tname[MaxPath];
@@ -692,18 +690,10 @@ void init_progstate(struct progstate *pstate);
 #endif                                  /* MutliThread */
 
 #if COMPILER
-void init(name, argcp, argv, trc_init)
-char *name;
-int *argcp;
-char *argv[];
-int trc_init;
+ void init(char *name, int *argcp, char *argv[], int trc_init)
 #else                                   /* COMPILER */
-void icon_init(name, argcp, argv)
-char *name;
-int *argcp;
-char *argv[];
+   void icon_init(char *name, int *argcp, char *argv[])
 #endif                                  /* COMPILER */
-
    {
 #if !COMPILER
    FILE *fname = 0;
@@ -1305,10 +1295,7 @@ Deliberate Syntax Error
  * env_err - print an error mesage about the value of an environment
  *  variable.
  */
-static void env_err(msg, name, val)
-char *msg;
-char *name;
-char *val;
+static void env_err(char *msg, char *name, char *val)
 {
    char msg_buf[100];
 
@@ -1323,11 +1310,7 @@ char *val;
 /*
  * env_int - get the value of an integer-valued environment variable.
  */
-void env_int(name, variable, non_neg, limit)
-char *name;
-word *variable;
-int non_neg;
-uword limit;
+void env_int(char *name, word *variable, int non_neg, uword limit)
 {
    char *value, *s, sbuf[MaxCvtLen+1];
    register uword n = 0;
@@ -1408,8 +1391,7 @@ int is_startup_error;
 /*
  * error - print error message from s1 and s2; used only in startup code.
  */
-void error(s1, s2)
-char *s1, *s2;
+void error(char *s1, char *s2)
    {
 
    if (!s1)
@@ -1440,8 +1422,7 @@ void syserrn(char *s, char *s2)
 /*
  * syserr - print s as a system error.
  */
-void syserr(s)
-char *s;
+void syserr(char *s)
    {
    CURTSTATE_AND_CE();
 
@@ -1472,8 +1453,7 @@ void clear_all_filepids();
 /*
  * c_exit(i) - flush all buffers and exit with status i.
  */
-void c_exit(i)
-int i;
+void c_exit(int i)
 {
 
 #ifdef ConsoleWindow
@@ -1658,9 +1638,7 @@ int err()
 /*
  * fatalerr - disable error conversion and call run-time error routine.
  */
-void fatalerr(n, v)
-int n;
-dptr v;
+ void fatalerr(int n, dptr v)
    {
    IntVal(kywd_err) = 0;
    err_msg(n, v);
@@ -1670,8 +1648,7 @@ dptr v;
 /*
  * pstrnmcmp - compare names in two pstrnm structs; used for qsort.
  */
-int pstrnmcmp(a,b)
-struct pstrnm *a, *b;
+ int pstrnmcmp(struct pstrnm *a, struct pstrnm *b)
 {
   return strcmp(a->pstrep, b->pstrep);
 }
@@ -2102,10 +2079,10 @@ struct progstate * findicode(word *opnd)
 /*
  * loadicode - initialize memory particular to a given icode file
  */
-struct b_coexpr * loadicode(name, theInput, theOutput, theError, bs, ss, stk)
-char *name;
-struct b_file *theInput, *theOutput, *theError;
-C_integer bs, ss, stk;
+struct b_coexpr
+*loadicode(char *name,
+           struct b_file *theInput, struct b_file *theOutput, struct b_file *theError,
+           C_integer bs, C_integer ss, C_integer stk)
    {
    struct b_coexpr *coexp;
    struct progstate *pstate;

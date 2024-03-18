@@ -26,8 +26,7 @@ int peekc;                      /* one-character look ahead */
 /*
  * translate a number of files, returning an error count
  */
-int trans(ifiles)
-char **ifiles;
+int trans(char **ifiles)
    {
    tmalloc();                   /* allocate memory for translation */
 
@@ -65,8 +64,7 @@ extern char *pofile;
 /*
  * translate one file.
  */
-static void trans1(filename)
-char *filename;
+static void trans1(char *filename)
 {
    char oname1[MaxFileName];    /* buffer for constructing file name */
    char oname2[MaxFileName];    /* buffer for constructing file name */
@@ -192,8 +190,7 @@ char *filename;
 /*
  * writecheck - check the return code from a stdio output operation
  */
-void writecheck(rc)
-int rc;
+void writecheck(int rc)
    {
    if (rc < 0)
       quit("cannot write to ucode file");

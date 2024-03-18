@@ -43,8 +43,7 @@ class State(
    coState,         # an instance of CoexpState class
    cmdHistory,      # list keeps all of the UDB's cmd Session History
    mode,
-   sock,
-   progSock
+   udap
    )
 
 #
@@ -58,21 +57,24 @@ method Write(Msg)
       if type(Msg) == "table" then {
          if member(Msg, "code") then
             Msg["code"] := replacem(\Msg["code"], "\"", "\\\"")
-         if member(Msg, "name") then
-            Msg["name"] := replacem(\Msg["name"], "\"", "\\\"")
          if member(Msg, "consoleMsg") then
             Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
          Msg["state"] := State
-         write(sock, utoj(Msg))
+         # write(sock, utoj(Msg))
+         udap.processResult(Msg)
       }
       else {
          output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
-         write(sock, utoj(output))
+         # write(sock, utoj(output))
+         write("\nprocess result called\n")
+         udap.processResult(output)
       }
    }
    else {
-      if type(Msg) == "table" then
+      if type(Msg) == "table" then {
          Msg := Msg["consoleMsg"]
+      }
+         
       write(Msg)
    }
 
@@ -82,7 +84,8 @@ end
 method stateRead()
 local msg := ""
    if \mode == "-adapter" then {
-      return read(sock)
+      write("udb reading...")
+      return udap.getNextCommand()
    }
    else {
       return read()
@@ -100,21 +103,22 @@ method Writes(Msg)
       if type(Msg) == "table" then {
          if member(Msg, "code") then
             Msg["code"] := replacem(\Msg["code"], "\"", "\\\"")
-         if member(Msg, "name") then
-            Msg["name"] := replacem(\Msg["name"], "\"", "\\\"")
          if member(Msg, "consoleMsg") then
             Msg["consoleMsg"] := replacem(\Msg["consoleMsg"], "\"", "\\\"")
          Msg["state"] := State
-         writes(sock, utoj(Msg))
+         #writes(sock, utoj(Msg))
+         udap.processResult(Msg)
       }
       else {
          output := ["consoleMsg": replacem(Msg, "\"", "\\\""); "state": State]
-         writes(sock, utoj(output))
+         #writes(sock, utoj(output))
+         udap.processResult(output)
       }
    }
    else {
-      if type(Msg) == "table" then
+      if type(Msg) == "table" then {
          Msg := Msg["consoleMsg"]
+      }
       writes(Msg)
    }
 

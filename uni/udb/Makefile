@@ -7,7 +7,7 @@ CLEAN   = clean
 cflags  = $(UFLAGS) -c 
 ldflags = -u
 
-.PHONY: all udap
+.PHONY: all
 #
 # Add dependency on system include "evdefs.icn" because it is really sad
 # if udb gets broken.
@@ -18,14 +18,14 @@ SRC       = udb.icn icode.icn srcfile.icn state.icn \
             agent.icn internals.icn externals.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
-            evaluator.icn session.icn console.icn defaults.icn help.icn \
+            evaluator.icn session.icn adapter.icn console.icn defaults.icn help.icn \
 	    coexp.icn symtab.icn system.icn
 
 UFILES    = udb.u icode.u srcfile.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
-            evaluator.u session.u console.u help.u coexp.u symtab.u system.u
+            evaluator.u session.u adapter.u console.u help.u coexp.u symtab.u system.u
 
 LIB       = lib
 LIBRARY   = $(LIB)/listener.u      $(LIB)/memory.u     $(LIB)/structaliases.u \
@@ -40,10 +40,8 @@ DTA        = dta
 DTA_UFILES = $(DTA)/atomic_agent.u $(DTA)/temporals.u
 
 
-all: Libfiles Assertions udap $(EXEs)
+all: Libfiles Assertions dapcom $(EXEs)
 
-udap:
-	cd udap; $(MAKE)
 
 Libfiles:
 	cd $(LIB); $(MAKE)
@@ -54,6 +52,10 @@ Assertions:
 tools:
 	cd $(LIB); $(MAKE) tools
 
+dapcom: dapcom.icn
+	$(UC) $(DASHG) -o dapcom dapcom.icn
+	$(CP) dapcom$(EXE) ../../bin
+
 udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
 	cp udb$(EXE) ../../bin
@@ -61,7 +63,10 @@ udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb
 
-console.u: console.icn defaults.icn state.u session.u evaluator.u
+adapter.u: adapter.icn
+	$(UC) $(cflags) adapter
+
+console.u: console.icn defaults.icn state.u session.u evaluator.u adapter.u
 	$(UC) $(cflags) console
 
 session.u: session.icn defaults.icn state.u evaluator.u externals.u
@@ -129,6 +134,7 @@ Clean: clean
 clean:
 	$(DEL) *.u
 	$(DEL) $(EXEs) 
+	$(DEL) dapcom
 	$(DEL) *.exe
 	$(DEL) *.dir
 	$(DEL) *.pag
@@ -138,7 +144,6 @@ clean:
 	cd $(DTA); $(MAKE) clean
 	$(DEL) ../../bin/$(EXEs) 
 	cd lib; $(MAKE) clean
-	cd udap; $(MAKE) clean
 
 cleantools:
 	cd $(LIB); $(MAKE) cleantools

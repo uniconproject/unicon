@@ -20,47 +20,47 @@ procedure ulpp()
    seen_perper := seen_percur := 0
    every line := !ulppfin do {
       if match("%%", line) then {
-	 seen_perper +:= 1
-	 }
+         seen_perper +:= 1
+         }
       else if match("%int", line) then {
-	 if L[-1] == "%%" then pull(L)
+         if L[-1] == "%%" then pull(L)
          perpers_needed := 2
-	 next
+         next
          }
       else if match("%{", line) then {
-	 seen_percur +:= 1
-	 }
+         seen_percur +:= 1
+         }
       else if match("%}", line) then {
-	 if seen_percur<1 then stop("malformed .l file in: ", image(line))
-	 seen_percur -:= 1
-	 }
+         if seen_percur<1 then stop("malformed .l file in: ", image(line))
+         seen_percur -:= 1
+         }
       else if seen_perper = perpers_needed-1 then {
 write
-	 if seen_percur = 0 then {
-	    line ? {
-	       if nam := tab(many(&letters++&digits)) then {
+         if seen_percur = 0 then {
+            line ? {
+               if nam := tab(many(&letters++&digits)) then {
                   if ="=" then {
                      if /jflex := 1 then
                         write(&errout, "jflex compatibility mode")
                      }
-		  tab(many(' \t'))
-		  if def := tab(0) then {
+                  tab(many(' \t'))
+                  if def := tab(0) then {
                      def := trim(def, ' \t')
-		     macros[nam] := def
-		     line := ""
-		     }
-		  }
+                     macros[nam] := def
+                     line := ""
+                     }
+                  }
                else if (tab(many(' \t'))|"") & ="#" then line := ""
-	       }
-	    }
-	 }
+               }
+            }
+         }
       else if seen_perper = perpers_needed then {
-	 while i := find("{", line) &
-	       match(k := key(macros),line,i+1) &
-	       line[i+*k+1]=="}" do {
-	    line[i +: *k+2] := macros[k]
-	    }
-	 }
+         while i := find("{", line) &
+               match(k := key(macros),line,i+1) &
+               line[i+*k+1]=="}" do {
+            line[i +: *k+2] := macros[k]
+            }
+         }
       put(L, line)
 #write(&errout, "putting ", image(line))
       }

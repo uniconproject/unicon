@@ -25,20 +25,20 @@ struct automata* convert(struct tree* tr);
 
 %token <numeric> OR
 %token <numeric> BACKSLASH
-%token <numeric> SQUAREBRACKETS  
-%token <numeric> DOT             
-%token <numeric> CSET            
-%token <numeric> QUOTES          
-%token <numeric> LINEBEGIN       
-%token <numeric> LINEEND         
-%token <numeric> OPTIONAL        
-%token <numeric> ZEROORMORE      
+%token <numeric> SQUAREBRACKETS
+%token <numeric> DOT
+%token <numeric> CSET
+%token <numeric> QUOTES
+%token <numeric> LINEBEGIN
+%token <numeric> LINEEND
+%token <numeric> OPTIONAL
+%token <numeric> ZEROORMORE
 %token <numeric> ONEORMORE
-%token <numeric> PARENTHESES     
-%token <numeric> FORWARDSLASH    
-%token <numeric> CURLBRACKETS    
-%token <numeric> OCCURRENCES     
-%token <numeric> CLOSEPARENTHESES     
+%token <numeric> PARENTHESES
+%token <numeric> FORWARDSLASH
+%token <numeric> CURLBRACKETS
+%token <numeric> OCCURRENCES
+%token <numeric> CLOSEPARENTHESES
 %token <numeric> PERCENTS
 %token <numeric> CHARACTER
 %token <numeric> COMMENT
@@ -79,142 +79,142 @@ Start:    Newlines Percentexp Newlines { $$ = convert($2); }
         | Newlines Percentexp          { $$ = convert($2); }
         | Percentexp Newlines          { $$ = convert($1); }
         | Percentexp                   { $$ = convert($1); }
-	;
+        ;
 
 Percentexp: Regexps ;
 
-Regexps : Exprs Newlines { $$ = $1; } 
-	| Exprs		 { $$ = $1; }
-	;
+Regexps : Exprs Newlines { $$ = $1; }
+        | Exprs                  { $$ = $1; }
+        ;
 
 Newlines:  NEWLINE Newlines
-	| NEWLINE;
+        | NEWLINE;
 
 Exprs:    Exprs Newlines OneExpr {
-	   $$ = alcnode(EXPRTREE); 
-	   $$->children[0] = $1;
-	   $$->children[1] = $3;
-	   }
-	| OneExpr
-	;
+           $$ = alcnode(EXPRTREE);
+           $$->children[0] = $1;
+           $$->children[1] = $3;
+           }
+        | OneExpr
+        ;
 
 OneExpr : Expr ACTION {
-	   $$ = alcnode(EXPRESSION);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(ACTION);
-	   $$->children[1]->text = yylval.s;
-	   }
-
-	| Expr {
-	   $$ = alcnode(EXPRESSION);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(ACTION);
-	   $$->children[1]->text = "# fail";
-	   }
-	;
-
-Expr    : QUOTES { 
-	   $$ = alcnode(QUOTES);
-	   $$->text = yylval.s;
-	   }
-
-	| BACKSLASH {
-	   $$ = alcnode(BACKSLASH);
-	   $$->text = yylval.s;
-	   }
-
-	| CSET { 
-	   $$ = alcnode(CSET);
-	   $$->text = yylval.s;
-	   }
-
-	| CHARACTER { 
-	   $$ = alcnode(CHARACTER);
-	   $$->text = yylval.s;
-	   }
-
-	| DOT { $$ = alcnode(DOT); }
-
-	| BeginLine
-	| EndLine
-	| Question
-	| Star
-	| Plus
-	| Expr OR Expr {
-	   $$ = alcnode(OREXPR);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(OR);
-	   $$->children[2] = $3;
+           $$ = alcnode(EXPRESSION);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(ACTION);
+           $$->children[1]->text = yylval.s;
            }
-	| Expr Expr {
-	   $$ = alcnode(CONCATEXPR);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(CONCAT);
-	   $$->children[2] = $2;
-	   }
-	| Parenthetic
-	| ForSlash
-	| Occurrence
-	;
+
+        | Expr {
+           $$ = alcnode(EXPRESSION);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(ACTION);
+           $$->children[1]->text = "# fail";
+           }
+        ;
+
+Expr    : QUOTES {
+           $$ = alcnode(QUOTES);
+           $$->text = yylval.s;
+           }
+
+        | BACKSLASH {
+           $$ = alcnode(BACKSLASH);
+           $$->text = yylval.s;
+           }
+
+        | CSET {
+           $$ = alcnode(CSET);
+           $$->text = yylval.s;
+           }
+
+        | CHARACTER {
+           $$ = alcnode(CHARACTER);
+           $$->text = yylval.s;
+           }
+
+        | DOT { $$ = alcnode(DOT); }
+
+        | BeginLine
+        | EndLine
+        | Question
+        | Star
+        | Plus
+        | Expr OR Expr {
+           $$ = alcnode(OREXPR);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(OR);
+           $$->children[2] = $3;
+           }
+        | Expr Expr {
+           $$ = alcnode(CONCATEXPR);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(CONCAT);
+           $$->children[2] = $2;
+           }
+        | Parenthetic
+        | ForSlash
+        | Occurrence
+        ;
 
 BeginLine: LINEBEGIN Expr {
-	   $$ = alcnode(BEGINNING);
-	   $$->children[0] = alcnode(LINEBEGIN);
-	   $$->children[1] = $2;
-	   }
-	;
+           $$ = alcnode(BEGINNING);
+           $$->children[0] = alcnode(LINEBEGIN);
+           $$->children[1] = $2;
+           }
+        ;
 
 EndLine: Expr LINEEND {
-	   $$ = alcnode(ENDING);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(LINEEND);
-	   }
-	;
+           $$ = alcnode(ENDING);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(LINEEND);
+           }
+        ;
 
 Question: Expr OPTIONAL {
-	   $$ = alcnode(QUESTION);
-	   $$->children[1] = alcnode(OPTIONAL);
-	   $$->children[0] = $1;
-	   }
-	;
+           $$ = alcnode(QUESTION);
+           $$->children[1] = alcnode(OPTIONAL);
+           $$->children[0] = $1;
+           }
+        ;
 
 Star: Expr ZEROORMORE {
-	   $$ = alcnode(STAR);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(ZEROORMORE);
-	   }
-	;
+           $$ = alcnode(STAR);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(ZEROORMORE);
+           }
+        ;
 
 Plus: Expr ONEORMORE {
-	   $$ = alcnode(PLUS);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(ONEORMORE);
-	   }
-	;
+           $$ = alcnode(PLUS);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(ONEORMORE);
+           }
+        ;
 
 Parenthetic: PARENTHESES Expr CLOSEPARENTHESES {
-	   $$ = alcnode(PARENTHETIC);
-	   $$->children[0] = alcnode(PARENTHESES);
-	   $$->children[1] = $2;
-	   $$->children[2] = alcnode(CLOSEPARENTHESES); 
-	   }
-	;
+           $$ = alcnode(PARENTHETIC);
+           $$->children[0] = alcnode(PARENTHESES);
+           $$->children[1] = $2;
+           $$->children[2] = alcnode(CLOSEPARENTHESES);
+           }
+        ;
 
 ForSlash: Expr FORWARDSLASH Expr {
-	   $$ = alcnode(FORSLASH);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(FORWARDSLASH);
-	   $$->children[2] = $3;
-	   }
-	;
+           $$ = alcnode(FORSLASH);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(FORWARDSLASH);
+           $$->children[2] = $3;
+           }
+        ;
 
 Occurrence: Expr CURLBRACKETS {
-	   $$ = alcnode(OCCURRENCES);
-	   $$->children[0] = $1;
-	   $$->children[1] = alcnode(CURLBRACKETS);
-	   $$->text = yylval.s;
-	   }
-	;
+           $$ = alcnode(OCCURRENCES);
+           $$->children[0] = $1;
+           $$->children[1] = alcnode(CURLBRACKETS);
+           $$->text = yylval.s;
+           }
+        ;
 
 %%
 

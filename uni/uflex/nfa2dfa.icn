@@ -20,14 +20,14 @@ local fname := ""
    if *argv=0 then stop("Need  file")
    fname :=  argv[1]
    write(fname)
-  
-   fd := open(fname,"r") 
+
+   fd := open(fname,"r")
 
    if /fd then {
      write(" Could not open  "||fname)
      exit(1)
    }
-   
+
    lst := []
    while s := read(fd) do {
       put(lst,s)
@@ -43,13 +43,13 @@ local fname := ""
    every j := 1 to *nfa_sort do {
        lst := nfa_sort[j][2]
        writes(nfa_sort[j][1]||" ")
-       every k := 1 to *lst do 
+       every k := 1 to *lst do
          writes(lst[k]||" ")
        write()
    }
-   
+
    num_inputs := *lst - 1 # number of inputs is number of elts in lst -epsilon
-   
+
    epsilon_closure(nfa_tble,nfa_sort,ec_tble)
    ec_lst :=[]
    ec_lst := sort(ec_tble)
@@ -58,8 +58,8 @@ local fname := ""
      #write(ec_tble[j][1]||"  key ")
      write("e-closure ("||ec_lst[j][1]||") "||ec_lst[j][2])
    }
-   
-   
+
+
    #every x := key(ec_tble) do
    #   write("e-closure("||x||" "||ec_tble[x])
    #write("state1 "||ec_tble["A"])
@@ -68,7 +68,7 @@ local fname := ""
    newstate := ""
 
    write("num_inputs "||num_inputs)
-   
+
    newstate := ec_tble["A"]  # start with e-closure (A)
    insert(dfastates,1,newstate)  # unique state
    more_states := 1
@@ -77,8 +77,8 @@ local fname := ""
       k := k + 1
       newstate := check_marked_states(dfastates,marked_state)
       #write("MAIN Starting on NEW State "||newstate)
-      
-           
+
+
       moverc := ""
       rowlst := []
       put(rowlst,newstate)
@@ -86,11 +86,11 @@ local fname := ""
          moverc :=  get_move(newstate,nfa_tble,ec_tble,input_col,dfastates,marked_state)
          put(rowlst,moverc)
       }
-      
+
       insert(dfa,k,rowlst)
       insert(marked_state,newstate)
-      
-      #every x := key(dfastates) do 
+
+      #every x := key(dfastates) do
       #   write(x||" "||dfastates[x])
       if *dfastates = *marked_state then  {
           write(" DONE WITH MARKED STATES")
@@ -105,7 +105,7 @@ local fname := ""
          more := 0
          break
       }
-      
+
    }
    every j := 1 to *ec_lst do {
      #write(ec_tble[j][1]||"  key ")
@@ -116,13 +116,13 @@ local fname := ""
    every j := 1 to *nfa_sort do {
        lst := nfa_sort[j][2]
        writes(nfa_sort[j][1]||" ")
-       every k := 1 to *lst do 
+       every k := 1 to *lst do
          writes(lst[k]||" ")
        write()
    }
    write(" DFA ")
    dfat := sort(dfa)  #Sort by state 1,2,3,4
-   #lst := dfat[1][2]    # key is state 1,2,3  
+   #lst := dfat[1][2]    # key is state 1,2,3
    writes("stelst := [")
    every j := 1 to *dfat do {
       lst := dfat[j][2]  # second item in list is list of nodes = row
@@ -131,8 +131,8 @@ local fname := ""
    }
    write("]")
    #
-   
-     
+
+
 
    write(" DFA FOR INPUT FILE")
    every j := 1 to *dfat do {
@@ -152,29 +152,29 @@ local fname := ""
    outf := table()
    every j := 1 to *slst2 do
       insert(outf,slst2[j],j-1)
-   
+
    every j := 1 to *ec_lst do {
      #write(ec_tble[j][1]||"  key ")
      s2 := "{"
      s := ec_lst[j][2]
-     every m := 1 to *s do { 
-        if member(outf,s[m])  then 
+     every m := 1 to *s do {
+        if member(outf,s[m])  then
             s2 := s2 || outf[s[m]] ||","
       }
       s2 := s2[1:-1]  || "}"
-      s1 := outf[ec_lst[j][1]]  
+      s1 := outf[ec_lst[j][1]]
      write("e-closure ("||s1||") "||s2)
    }
-   
-   
+
+
    writes("stelst := [")
    every j := 1 to *dfat do {
       lst := dfat[j][2]  # second item in list is list of nodes = row
       if trim(lst[1]) ~== "" then {
          s2 := "{"
          s := lst[1]
-         every m := 1 to *s do { 
-            if member(outf,s[m])  then 
+         every m := 1 to *s do {
+            if member(outf,s[m])  then
               s2 := s2 || outf[s[m]] ||","
          }
          s2 := s2[1:-1]  || "}"
@@ -194,8 +194,8 @@ local fname := ""
          if s == "" then s := "-"
          else {
             s2 := "{"
-            every m := 1 to *s do { 
-               if member(outf,s[m])  then 
+            every m := 1 to *s do {
+               if member(outf,s[m])  then
                  s2 := s2 || outf[s[m]] ||","
             }
             s2 := s2[1:-1]  || "}"
@@ -231,10 +231,10 @@ local fname := ""
        write(fd)
    }
    close(fd)
-   
+
    return
-   
-   
+
+
 end
 procedure check_marked_states(dfastates,marked_state)
 local dfastates_sort := []
@@ -284,7 +284,7 @@ every j := 1 to *slst do {
 
 
 #write(" in get move ",newstate)
-every j := 1 to *newstate do 
+every j := 1 to *newstate do
     insert(stateset,newstate[j])
 
 # create set of sorted states for newstate
@@ -293,33 +293,33 @@ stateset := sort(stateset)
 nfa_num_states := *nfa_tble  # input table
 
 
-#  get move 
+#  get move
 ink := []
 #every input_col := 1 to num_inputs do {  # Go across (horizantal ) inputs
 #write("input_col "||input_col||"sz stateset "||*stateset)
    # find inputs not = blank every j  := 1 to nfa_num_states do {
    # We are going down vertical the nfatable for a given input
-   # We only need to put letter(stateset[k]) in the table to lookup 
-   
-   
-   
+   # We only need to put letter(stateset[k]) in the table to lookup
+
+
+
    every k := 1 to *stateset do {
          letter := stateset[k]
          #col := state_table2[letter]
-         line := nfa_tble[letter]  
+         line := nfa_tble[letter]
          move1 :=  line[input_col]
          if move1 ~== "-" then {
             write("NON Empty row letter "||letter||" move on input: "||input_col||" cell ="||move1)
-            # GET eps 
+            # GET eps
             eps_on_move := ""
             eps_on_move := get_epsclosure_on_move(move1,ec_tble)
             write("eps_on_move "||eps_on_move)
-            
+
             nextstate := nextstate || eps_on_move
          }
-             
-   }  # go down nfa tablefor everyy state 
-     
+
+   }  # go down nfa tablefor everyy state
+
   #writes("DONE for input: "||input_col||" "||newstate||" :"||nextstate||" ")
   stateset := set()
   every k := 1 to *nextstate do {
@@ -336,10 +336,10 @@ ink := []
   #if not member(dfastates,nextstate)  then {
   if not member(marked_state,nextstate) then {
      insert(dfastates,sz+1,nextstate) # unique state
-  }  # go across input s 
+  }  # go across input s
 
 return nextstate
-  
+
 
 
 end
@@ -351,7 +351,7 @@ ec := []
 ec := sort(ec_tble)
 #every j := 1 to *ec do {   write(ec[j][1]||" "||ec[j][2])}
 every j := 1 to *move1 do {
-      
+
    if member(ec_tble,move1[j])  then {
       newstate := newstate || ec_tble[move1[j]]
    }
@@ -372,7 +372,7 @@ local ec := ""
 local startnode := ""
 local more := ""
 #write("in eps ")
-epos := *(nfa_sort[1][2]) 
+epos := *(nfa_sort[1][2])
 #write("in ec epos="||epos)
 
 every j := 1 to *nfa_sort do {
@@ -381,7 +381,7 @@ every j := 1 to *nfa_sort do {
    startnode := nfa_sort[j][1]
    ec := lst[epos]
    write("STARTNODE "||startnode||" "||ec)
-   if ec == "-" then {  # 
+   if ec == "-" then {  #
       insert(ec_tble,nfa_sort[j][1],nfa_sort[j][1])
    }
    else {
@@ -389,11 +389,11 @@ every j := 1 to *nfa_sort do {
       every c := 1 to *ec do  { # ec is the first e-closure for state
          insert(ecset,ec[c])
       }
-      insert(ecset,startnode)  # 
+      insert(ecset,startnode)  #
       delete(ecset,"-")
       eclst := sort(ecset)
       ec := ""
-      every k := 1 to *eclst do  
+      every k := 1 to *eclst do
          ec := ec || eclst[k]
       #s := ec
       lst := []
@@ -402,7 +402,7 @@ every j := 1 to *nfa_sort do {
       more := 1
       doneset := set()
       while more = 1 do  { # get and put on eclst to get all states
-         if *eclst = 0 then 
+         if *eclst = 0 then
             more := 0
          else {
             node := get(eclst)
@@ -411,26 +411,26 @@ every j := 1 to *nfa_sort do {
               lst := nfa_tble[node]
               neweps := lst[epos]
               every m := 1 to *neweps do {
-               if not member(doneset,neweps[m]) then 
+               if not member(doneset,neweps[m]) then
                  put(eclst,neweps[m])
               }
               eclst := set(eclst)  # remove duplicates
               delete(eclst,"-")
               eclst := sort(eclst)
-              every m := 1 to *eclst do 
+              every m := 1 to *eclst do
                  writes(eclst[m]||" ")
               write()
                #eclst := sort(eclst)
               ec := ec || node
               lst := []
-              every m := 1 to *ec do 
+              every m := 1 to *ec do
                  put(lst,ec[m])
               doneset := set(lst)
               #write(" ec "||ec)
             }
          }
-      }  # while more 
-      write(" DONe with "||startnode||" "||ec) 
+      }  # while more
+      write(" DONe with "||startnode||" "||ec)
       s := ec
       ec_string := ""
       lst := []
@@ -440,15 +440,15 @@ every j := 1 to *nfa_sort do {
       #delete(ec,"-")
       ec := sort(ec)   # lst
       ec_string  := ""
-      every k := 1 to *ec do # 
+      every k := 1 to *ec do #
          ec_string  := ec_string || ec[k]
       write(j||" "||startnode||" SSSS "||ec_string)
       insert(ec_tble,startnode,ec_string)
-      
 
-   }  # else ~= "-" NOT terminal e-closure 
-   
- }  #every j := 1 to *nfa_sort 
+
+   }  # else ~= "-" NOT terminal e-closure
+
+ }  #every j := 1 to *nfa_sort
 
 
 end
@@ -476,16 +476,16 @@ local alnum,lst,word
 alnum := &letters ++ &digits ++ "-"
 lst := []
 word := ""
-    
+
    s ? {
       while tab(upto(alnum)) do {
-	   word := tab(many(alnum))
+           word := tab(many(alnum))
          #write("WD "||word)
          put(lst,word)
         }
       }
 
    return lst
- 
+
 end
 

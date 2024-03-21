@@ -50,20 +50,20 @@ procedure printautomata(myautomata)
    while \states do {
       state := states.current
       printf("state %d rule %d %s\n",
-	     state.label, state.rulenum,
-	     (if nodemember(state.label, myautomata.accepting) then "acc" else ""))
+             state.label, state.rulenum,
+             (if nodemember(state.label, myautomata.accepting) then "acc" else ""))
       edges := state.edges
       every edge := !\edges do {
-	 writes("   ", if edge.symbol~=="\n"then edge.symbol else "\\n",
+         writes("   ", if edge.symbol~=="\n"then edge.symbol else "\\n",
                 " -> ")
 
-	 states2 := edge.destinations
-	 while \states2 do {
-	    writes( states2.current.label, " ")
+         states2 := edge.destinations
+         while \states2 do {
+            writes( states2.current.label, " ")
             states2 := states2._next
-	    }
-	 write()
-	 }
+            }
+         write()
+         }
       states := states._next
       }
 end
@@ -97,29 +97,29 @@ procedure createicon(myautomata)
       }
 
    fprintf(outfile,
-	   "global semantic_action\n\n_
-	   procedure yylex()\n_
-	   static myautomata\n_
-	   local currstate, state2, tempedge\n\n_
-	   \   myautomata := automata()\n\n_
-	   \   myautomata.states := []\n_
-	   \   myautomata.accepting := []\n")
+           "global semantic_action\n\n_
+           procedure yylex()\n_
+           static myautomata\n_
+           local currstate, state2, tempedge\n\n_
+           \   myautomata := automata()\n\n_
+           \   myautomata.states := []\n_
+           \   myautomata.accepting := []\n")
 
    states := myautomata.states
    while \states do {
       state := states.current
       fprintf(outfile,
-	 "   put(myautomata.states, currstate := anode(%d, %d, [], [], []))\n",
-	      states.current.label, states.current.rulenum)
+         "   put(myautomata.states, currstate := anode(%d, %d, [], [], []))\n",
+              states.current.label, states.current.rulenum)
 
       if state.label == myautomata.start.label then
         fprintf(outfile, "   myautomata.start := currstate\n")
 
       if nodemember(state.label, myautomata.accepting) then {
-	 fprintf(outfile, "   put(myautomata.accepting, currstate)\n")
-	 if state.rulenum > maxrulenum then
-	    maxrulenum := state.rulenum
-	 }
+         fprintf(outfile, "   put(myautomata.accepting, currstate)\n")
+         if state.rulenum > maxrulenum then
+            maxrulenum := state.rulenum
+         }
 
       fprintf(outfile, "\n")
       states := states._next
@@ -129,84 +129,84 @@ procedure createicon(myautomata)
    while \states do {
       state := states.current
       fprintf(outfile,
-	      "   currstate := pop(myautomata.states)\n_
-	      \   put(myautomata.states, currstate)\n\n_
-	      \   while currstate.label ~= %d do {\n_
-	      \      currstate := pop(myautomata.states)\n_
-	      \      put(myautomata.states, currstate)\n      }\n_
-	      \   state2 := currstate\n\n",
-	      state.label)
+              "   currstate := pop(myautomata.states)\n_
+              \   put(myautomata.states, currstate)\n\n_
+              \   while currstate.label ~= %d do {\n_
+              \      currstate := pop(myautomata.states)\n_
+              \      put(myautomata.states, currstate)\n      }\n_
+              \   state2 := currstate\n\n",
+              state.label)
 
       states2 := state.epsilon
       while \states2 do {
-	 fprintf(outfile,
-		 "   currstate := pop(myautomata.states)\n_
-		 \   put(myautomata.states, currstate)\n\n_
-		 \   while currstate.label ~= %d do {\n_
-		 \      currstate := pop(myautomata.states)\n_
-		 \      put(myautomata.states, currstate)\n      }\n_
-		 \   put(state2.epsilon, currstate)\n\n",
-		 states2.current.label)
-	 states2 := states2._next
-	 }
+         fprintf(outfile,
+                 "   currstate := pop(myautomata.states)\n_
+                 \   put(myautomata.states, currstate)\n\n_
+                 \   while currstate.label ~= %d do {\n_
+                 \      currstate := pop(myautomata.states)\n_
+                 \      put(myautomata.states, currstate)\n      }\n_
+                 \   put(state2.epsilon, currstate)\n\n",
+                 states2.current.label)
+         states2 := states2._next
+         }
 
       states2 := state.dot
       while \states2 do {
-	 fprintf(outfile,
-		 "   currstate := pop(myautomata.states)\n_
-		 \   put(myautomata.states, currstate)\n\n_
-		 \   while currstate.label ~= %d do {\n_
-		 \      currstate := pop(myautomata.states)\n_
-		 \      put(myautomata.states, currstate)\n      }\n_
-		 \   put(state2.dot, currstate)\n\n",
-		 states2.current.label)
-	 states2 := states2._next
-	 }
+         fprintf(outfile,
+                 "   currstate := pop(myautomata.states)\n_
+                 \   put(myautomata.states, currstate)\n\n_
+                 \   while currstate.label ~= %d do {\n_
+                 \      currstate := pop(myautomata.states)\n_
+                 \      put(myautomata.states, currstate)\n      }\n_
+                 \   put(state2.dot, currstate)\n\n",
+                 states2.current.label)
+         states2 := states2._next
+         }
 
       edges := state.edges
       every edge := !\edges do {
-	 fprintf(outfile, "   tempedge := edge()\n")
+         fprintf(outfile, "   tempedge := edge()\n")
 
-	 if edge.symbol == "\n" then
-	    fprintf(outfile, "   tempedge.symbol := \"\\n\"\n")
-	 else {
-            if ((edge.symbol[1] == "[") & (*edge.symbol> 1))  then  
-	      fprintf(outfile, "   tempedge.symbol := csetfromrecset(\"%s\")\n",
+         if edge.symbol == "\n" then
+            fprintf(outfile, "   tempedge.symbol := \"\\n\"\n")
+         else {
+            if ((edge.symbol[1] == "[") & (*edge.symbol> 1))  then
+              fprintf(outfile, "   tempedge.symbol := csetfromrecset(\"%s\")\n",
                   escapify(edge.symbol))
-	    else fprintf(outfile, "   tempedge.symbol := \"%s\"\n",
+            else fprintf(outfile, "   tempedge.symbol := \"%s\"\n",
               escapify(edge.symbol))
-	  }
-	     
-	
+          }
 
-	 fprintf(outfile, "   tempedge.destinations := []\n")
 
-	 states2 := edge.destinations
-	 while \states2 do {
-	    fprintf(outfile, "   currstate := pop(myautomata.states)\n_
-		    \   put(myautomata.states, currstate)\n\n_
-		    \   while currstate.label ~= %d do {\n_
-		    \      currstate := pop(myautomata.states)\n_
-		    \      put(myautomata.states, currstate)\n      }\n_
-		    \   put(tempedge.destinations, currstate)\n\n_
-		    \   put(state2.edges, tempedge)\n",
-		    states2.current.label)
-	    states2 := states2._next
-	    }
-	 }
+
+         fprintf(outfile, "   tempedge.destinations := []\n")
+
+         states2 := edge.destinations
+         while \states2 do {
+            fprintf(outfile, "   currstate := pop(myautomata.states)\n_
+                    \   put(myautomata.states, currstate)\n\n_
+                    \   while currstate.label ~= %d do {\n_
+                    \      currstate := pop(myautomata.states)\n_
+                    \      put(myautomata.states, currstate)\n      }\n_
+                    \   put(tempedge.destinations, currstate)\n\n_
+                    \   put(state2.edges, tempedge)\n",
+                    states2.current.label)
+            states2 := states2._next
+            }
+         }
 
       states := states._next
       }
- 
+
    fprintf(outfile,
-	   "   init_semantic_actions()\n\n_
-	   \   return yyulex(myautomata)\n\n_
-	   end\n\n_
-	   procedure init_semantic_actions()\n\n_
-	   \   semantic_action := table()\n")
+           "   init_semantic_actions()\n\n_
+           \   return yyulex(myautomata)\n\n_
+           end\n\n_
+           procedure init_semantic_actions()\n\n_
+           \   semantic_action := table()\n")
 
    action := list(maxrulenum+1, 0)
-   
+
    every i := 1 to maxrulenum do {
       fprintf(outfile, "   semantic_action[%d] := semantic_action_%d\n", i, i)
       }
@@ -217,14 +217,14 @@ procedure createicon(myautomata)
    while \states do {
       state := states.current
       if action[state.rulenum] == 0 then {
-	 fprintf(outfile,
-		 "procedure semantic_action_%d()\n_
-		 \   %s\n_
-		 end\n\n",
-		 state.rulenum,
-		 state.semaction)
-	 action[state.rulenum] := 1
-	 }
+         fprintf(outfile,
+                 "procedure semantic_action_%d()\n_
+                 \   %s\n_
+                 end\n\n",
+                 state.rulenum,
+                 state.semaction)
+         action[state.rulenum] := 1
+         }
       states := states._next
       }
 end
@@ -234,7 +234,7 @@ procedure nodemember(nodelabel, nodelist)
 
    while \traverse do {
       if traverse.current.label == nodelabel then
-	 return 1
+         return 1
       traverse := traverse._next
       }
 end
@@ -250,11 +250,11 @@ end
 procedure escapify(s)
    if *s > 1 then {
       if s[1] == "\\" then {
-	 # a flex in-cset escape should not result in
-	 # extra piling-up of backslashes, etc. On the other hand,
-	 # a flex escape eaten by Unicon string literal syntax will
-	 # not be the escaped thing at the other end that is needed.
-	 case s[2] of {
+         # a flex in-cset escape should not result in
+         # extra piling-up of backslashes, etc. On the other hand,
+         # a flex escape eaten by Unicon string literal syntax will
+         # not be the escaped thing at the other end that is needed.
+         case s[2] of {
          "a": { return "\\\\a" || escapify(s[3:0]) }
          "b": { return "\\\\b" || escapify(s[3:0]) }
          "f": { return "\\\\f" || escapify(s[3:0]) }
@@ -279,7 +279,7 @@ procedure escapify(s)
       "\"": { return "\\\""; }
       "\\": { return "\\\\"; }
 #      default: {
-	  # by default \\X means X, literally, as in \*
+          # by default \\X means X, literally, as in \*
 #      }
       }
    return s;

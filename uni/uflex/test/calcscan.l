@@ -11,12 +11,12 @@ digiletter [a-zA-Z0-9_]
 
 %%
 
-{letter}{digiletter}*	{ yylval := yytext; return NAME }
+{letter}{digiletter}*   { yylval := yytext; return NAME }
 
-[0-9]+(\.[0-9]+)?	{ yylval := numeric(yytext); return NUMBER }
-\n			{ return 0 }
-":="			{ return ASSIGNMENT }
+[0-9]+(\.[0-9]+)?       { yylval := numeric(yytext); return NUMBER }
+\n                      { return 0 }
+":="                    { return ASSIGNMENT }
 [ \t]+
-.			{ return ord(yytext) }
+.                       { return ord(yytext) }
 
 %%

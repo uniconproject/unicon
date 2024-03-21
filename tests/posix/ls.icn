@@ -28,20 +28,20 @@ procedure format(p, name)
 
    case p.mode[1] of {
        "-": { # Normal file:
-	       return sprintf("%s (file) permissions %s size %8s", name, p.mode, p.size)
+               return sprintf("%s (file) permissions %s size %8s", name, p.mode, p.size)
             }
        "d": { # Directory: special case ".."
-	       if name == ".."
+               if name == ".."
                then return ".. (directory)"
-	       else return sprintf("%s (directory) permissions %s", name, p.mode)
-	    }
+               else return sprintf("%s (directory) permissions %s", name, p.mode)
+            }
        "l": { # Symbolic link:
-		 return sprintf("%s (symbolic link) -> %s", name, p.symlink)
-	    }
+                 return sprintf("%s (symbolic link) -> %s", name, p.symlink)
+            }
        default:
-	   {
-	       return sprintf("%s Unexpected file type (%s)", name, p.mode[1])
-	   }
+           {
+               return sprintf("%s Unexpected file type (%s)", name, p.mode[1])
+           }
    }
 
 end

@@ -1,14 +1,14 @@
 $include "posix.icn"
 
-procedure main() 
+procedure main()
    port:=":1072"
    if fork() == 0 then {
       f := open(port, "nua")
- 
-      if r := receive(f) then { 
-          # Process the request in r.msg - in the case of the time 
-          # service, we don't care what is actually in the message 
-	 send(r.addr, "hello, world!")
+
+      if r := receive(f) then {
+          # Process the request in r.msg - in the case of the time
+          # service, we don't care what is actually in the message
+         send(r.addr, "hello, world!")
       }
       exit(0)
    }

@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     auxiliary.icn
+#       File:     auxiliary.icn
 #
-#	Subject:  Auxiliary procedures for Unicon benchmark run-* scripts 
+#       Subject:  Auxiliary procedures for Unicon benchmark run-* scripts
 #
-#	Author:   Shea Newton
+#       Author:   Shea Newton
 #
-#	Date:     January 3, 2014
+#       Date:     January 3, 2014
 #
 ############################################################################
 
@@ -33,7 +33,7 @@ link "rsg"
 procedure write_ratios(rTable)
    write()
    every k := key(rTable) do {
-      printf("- concurrent %s represents a %2.2rx speedup\n",  k, rTable[k])  
+      printf("- concurrent %s represents a %2.2rx speedup\n",  k, rTable[k])
       }
    write()
 end
@@ -51,11 +51,11 @@ end
 
 procedure CpuToHrMinSec(ms:0)
    s := m := h := 0
-   if *ms > 3 then 
+   if *ms > 3 then
       s := ms[1:-3] & ms := ms[-3:0]
    if s > 59 then
       m := s / 60
-   if m > 59 then 
+   if m > 59 then
       h := m / 60
    return [h, m % 60, s % 60, ms]
 end
@@ -63,8 +63,8 @@ end
 procedure WallToHrMinSec(s:0)
    m := h := 0
    if s > 59 then
-      m := s / 60 
-   if m > 59 then 
+      m := s / 60
+   if m > 59 then
       h := m / 60
    return [h, m % 60, s % 60]
 end
@@ -81,7 +81,7 @@ procedure writetime(L1, L2, wallusec, c:0)
 end
 
 procedure writestime(L1, L2, wallusec, c:0)
-   if L2[1]>0 then 
+   if L2[1]>0 then
       printf("   %02d:%02d:%d.%03d", L2[1], L2[2], L2[3], wallusec/1000)
    else {
       if L2[2]>0 then
@@ -130,7 +130,7 @@ procedure getavgtimes(proc, arg)
       cpufinish := &time
       wallfinish := gettimeofday()
       put(L, calcseconds(cpustart, cpufinish, wallstart, wallfinish))
-   }      
+   }
    every i := !L do {
       cpu +:= i[1]
       wall +:= i[2]
@@ -154,7 +154,7 @@ end
 
 procedure write_error(msg)
    if msg = 1 then
-      write("N/A. Threaded Benchmark.")      
+      write("N/A. Threaded Benchmark.")
    if msg = 2 then {
       write("N/A. Threaded Benchmark.")
       write("\nConcurrency Not Enabled. \nEnable _
@@ -162,7 +162,7 @@ procedure write_error(msg)
       }
    if msg = 3 then {
       write("\nConcurrency not enabled. _
- 	     Enable concurrency to run threaded benchmarks.")
+             Enable concurrency to run threaded benchmarks.")
       }
 end
 
@@ -203,7 +203,7 @@ procedure write_header(c:0)
       write(left("CPU",32))
       write(left(get_CPU(), 60))
       write()
-      
+
       write("benchmark                      Elapsed time h:m:s")
       }
 end
@@ -237,7 +237,7 @@ procedure get_C_compiler()
    if match("CCompiler ", x := &features) then return x[11:0]
    else return "unknown"
 end
-   
+
 procedure get_CPU()
    local f, result := "unknown"
    if &features == ("MS Windows NT"|"Win32") then {
@@ -254,49 +254,49 @@ procedure get_CPU()
    }
    else {
        if f := open("/proc/cpuinfo") then {
-	   while line := read(f) do {
-	       if match("model name", line) then {
-		   result := line[find(":",line)+2:0]
-		   break
-	       }
-	   }
-	   close(f)
+           while line := read(f) do {
+               if match("model name", line) then {
+                   result := line[find(":",line)+2:0]
+                   break
+               }
+           }
+           close(f)
        }
    }
    if match("CPU cores", x := &features) then
       x := integer(x[11:0])
    return x || "x " || result
 end
-   
+
 procedure get_clockspeed()
    local f, entry := 0.0, result := "unknown"
    if f := open("/proc/cpuinfo") then {
       while line := read(f) do {
-	 # cores may run at different speeds, report the fastest
-	 if match("cpu MHz", line) then {
-	    entry <:= line[find(":",line)+2:0]
-	    }
-	 else if match("model name", line) & (i := find("GHz", line)) then {
-	    ghz := trim(reverse(line[1:i]))
-	    if ghz ?:= tab(many(&digits++'.')) then {
-	       mhz := reverse(ghz) * 1000 # comparing against cpu MHz
-	       entry <:= mhz
-	       }
-	    }
-	 }
+         # cores may run at different speeds, report the fastest
+         if match("cpu MHz", line) then {
+            entry <:= line[find(":",line)+2:0]
+            }
+         else if match("model name", line) & (i := find("GHz", line)) then {
+            ghz := trim(reverse(line[1:i]))
+            if ghz ?:= tab(many(&digits++'.')) then {
+               mhz := reverse(ghz) * 1000 # comparing against cpu MHz
+               entry <:= mhz
+               }
+            }
+         }
       close(f)
       result := sprintf("%1.1r GHz", ( 0 ~= \entry) / 1000)
    }
 
    if result == "unknown" then {
       if f:=open( "lscpu","p") then {
-	  while line := read(f) do 
-	      line ? (="CPU max MHz:" & entry := tab(0))
-	  result := sprintf("%1.1r GHz", \entry / 1000.0)
-	  close(f)
+          while line := read(f) do
+              line ? (="CPU max MHz:" & entry := tab(0))
+          result := sprintf("%1.1r GHz", \entry / 1000.0)
+          close(f)
       }
-      else if &features == ("MS Windows NT") then {       
-	  if f := open("wmic cpu get maxclockspeed", "p") then {
+      else if &features == ("MS Windows NT") then {
+          if f := open("wmic cpu get maxclockspeed", "p") then {
              read(f) # skip the first line which is "maxclockspeed"
              entry := read(f) # read the actual clock speed
              result := sprintf("%1.1r GHz", \entry / 1000.0)

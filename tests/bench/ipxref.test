@@ -88,7 +88,7 @@ procedure init()
    WAttrib("bg=black", "fg=white", "font=sans,bold,15")
    EraseArea(0, 0, 276, 510)
    DrawString(15,50,"Next Object")
-   WAttrib("bg=vivid blue", "font=serif,italic,bold,16") 
+   WAttrib("bg=vivid blue", "font=serif,italic,bold,16")
    GotoXY(4,16)
    WWrites("  SESRIT 2.4  ")
    WAttrib("fg=dark weak greenish cyan", "linewidth=1", "font=sans,bold,16")
@@ -162,14 +162,14 @@ procedure game_loop()
             }
          }
       if not move_piece(0,1) then {
-	 if (!activecells)[1] < 2 then {
+         if (!activecells)[1] < 2 then {
             game_over()
             return
             }
 
          while get(Pending())
          scanrows()
-         Fg("black")            
+         Fg("black")
          drawstat(score, , , tot_score)
          score +:= 5
          tot_score +:= 5
@@ -218,7 +218,7 @@ procedure newobject()
        every i := 2 to *nextpiece do
          if nextpiece[i][1] == (miny + maxy) / 2 &
             nextpiece[i][2] == (minx + maxx) / 2 then
-	     nextpiece[1] :=: nextpiece[i]
+             nextpiece[1] :=: nextpiece[i]
        if miny < 1 then every (!nextpiece)[1] +:= -miny + 1
        every minx to 3 do every (!nextpiece)[2] +:= 1
        if (!nextpiece)[1] > 5 then return newobject()
@@ -319,7 +319,7 @@ procedure scanrows()
       put(rows_to_delete, point[1])
       }
    if *rows_to_delete > 0 then {
-      Fg("black")            
+      Fg("black")
       drawstat(score, numrows, level, tot_score)
       numrows +:= *rows_to_delete
       level := integer(numrows / 10)
@@ -376,7 +376,7 @@ procedure game_over()
                     20 + (x-1)*15, 15, 15)
       }
    Bg("light gray")
-   Fg("black")               
+   Fg("black")
 
    dlg_text := ["Game Over", " "]
    if scores := highscore("sesrit", "player", score, "icon.cs.utsa.edu") then{
@@ -482,7 +482,7 @@ procedure buttons(x1, x2, y1, y2, text1, text2)
          DrawRectangle(x1, y1, 90, 20)
          WAttrib("font=sans,bold,16", "fg=" || text1[2])
          DrawString(text1[3], text1[4], text1[1])
-         } 
+         }
       }
 end
 
@@ -520,7 +520,7 @@ procedure refresh_screen()
       }
    every (x := 1 to 30, y := 1 to 10) do {
       FillRectangle(colors[L[x, y]], 120 + (y-1)*15, 20 + (x-1)*15, 15, 15)
-      if L[x,y] ~=== "black" then 
+      if L[x,y] ~=== "black" then
          DrawRectangle(colors["white"], 120 + (y-1)*15,
                        20 + (x-1) * 15, 14, 14)
       }

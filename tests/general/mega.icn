@@ -10,29 +10,29 @@
 link hexcvt
 link numbers
 
-global arglen	# if arg count > 0, show more info, irreproducibly
+global arglen   # if arg count > 0, show more info, irreproducibly
 
-global base	# basic string of 63 characters
-global mega	# growing mega-string
+global base     # basic string of 63 characters
+global mega     # growing mega-string
 
 
 procedure main(args)
    local nbits
    arglen := *args
-   nbits := integer(args[1]) | 20	# number of length bits to try
+   nbits := integer(args[1]) | 20       # number of length bits to try
    init()
    report()
    while bitlen(*mega) < nbits do {
-      mega := double(mega)	# double the size
-      validate(mega)		# validate new longer string
-      tscan(mega)		# test string scanning
-      collect()			# perform a garbage collection
-      report()			# print statistics
+      mega := double(mega)      # double the size
+      validate(mega)            # validate new longer string
+      tscan(mega)               # test string scanning
+      collect()                 # perform a garbage collection
+      report()                  # print statistics
       }
    write("PASS.")
 end
 
-procedure report()		#: write statistics to stdout
+procedure report()              #: write statistics to stdout
    local n, alc, avl
    n := *mega
    every alc := &allocated \ 3
@@ -44,14 +44,14 @@ procedure report()		#: write statistics to stdout
    write()
 end
 
-procedure bitlen(n)		#: return number of bits needed to represent n
+procedure bitlen(n)             #: return number of bits needed to represent n
    local i
    every i := seq(1) do
       if n < ishift(1, i - 1) then
          return i - 1
 end
 
-procedure validate(s)		#: check that s is plausibly correct
+procedure validate(s)           #: check that s is plausibly correct
    local n, lh, rh
    n := *s / 2 + 63
    lh := s[1+:n]
@@ -61,7 +61,7 @@ procedure validate(s)		#: check that s is plausibly correct
    return
 end
 
-procedure tscan(s)		#: test string scanning
+procedure tscan(s)              #: test string scanning
    local L, n, t, i
    L := [.91, .22, .77, .11, .88]
    s ? every n := 0 | 1 | -17 | 23 | integer(!L * *s) do {
@@ -72,7 +72,7 @@ procedure tscan(s)		#: test string scanning
       }
 end
 
-procedure init()		#: set up globals
+procedure init()                #: set up globals
    writes("            strlength bits   hexlength")
    if arglen > 0 then
       writes("       allocated / available")
@@ -86,11 +86,11 @@ procedure init()		#: set up globals
    mega := base
 end
 
-procedure double(s)		#: return s || s, mainly to test a big "return"
+procedure double(s)             #: return s || s, mainly to test a big "return"
    return s || s
 end
 
-procedure fxu(i, n)		#: format i with n hex digits plus underscores
+procedure fxu(i, n)             #: format i with n hex digits plus underscores
    local s, t
    s := ""
    hexstring(i, n) ? {

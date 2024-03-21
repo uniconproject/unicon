@@ -1,13 +1,13 @@
 ############################################################################
 #
-#	File:     run-shootout.icn
+#       File:     run-shootout.icn
 #
-#	Subject:  Run Unicon Benchmarks with full, benchmark shootout
-#                 game n 
+#       Subject:  Run Unicon Benchmarks with full, benchmark shootout
+#                 game n
 #
-#	Author:   Shea Newton
+#       Author:   Shea Newton
 #
-#	Date:     January 3, 2014
+#       Date:     January 3, 2014
 #
 ############################################################################
 #
@@ -20,7 +20,7 @@
 #
 ############################################################################
 
-link "auxiliary" 
+link "auxiliary"
 
 $ifdef _UNIX
 $define NUL "/dev/null"
@@ -34,7 +34,7 @@ procedure main(argv)
    local rL, tL, rT, concurrent, tests := [], rTable := table()
 
    concurrent := verify_concurrent()
-   
+
    output := open(NUL, "w") | stop("Cannot open " || NUL || " for writing")
 
    if *argv < 1 then {
@@ -42,7 +42,7 @@ procedure main(argv)
          write_error(3)
       put(tests, "all")
       }
-   else every put(tests, !argv) 
+   else every put(tests, !argv)
    while test := get(tests) do {
       case test of {
          "all" : {
@@ -53,7 +53,7 @@ procedure main(argv)
             writes(left("binary-trees 20",31))
             tL:= gettimes(run_binarytrees_sequential,20)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            put(rT, list_to_num(rL)) 
+            put(rT, list_to_num(rL))
 #            insert(rTable, "binary-trees", tabulate_ratios(rT))
 
             if \concurrent then {
@@ -66,9 +66,9 @@ procedure main(argv)
                writestime(rL[1], rL[2], rL[3],1)
                writes(right(tabulate_ratios(rT) || "x\n",16))
                }
-            
+
             if \concurrent then {
-	       writes(left("chameneos-redux 6000000",43))
+               writes(left("chameneos-redux 6000000",43))
                writes(left("N/A", 3))
                tL := gettimes(run_chameneos, 6000000)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
@@ -103,7 +103,7 @@ procedure main(argv)
             writes(left("mandelbrot 16000",31))
             tL := gettimes(run_mandelbrot_sequential,16000)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            put(rT, list_to_num(rL)) 
+            put(rT, list_to_num(rL))
 
             if \concurrent then {
                writestime(rL[1], rL[2], rL[3])
@@ -115,7 +115,7 @@ procedure main(argv)
                writes(right(tabulate_ratios(rT) || "x\n", 16))
                }
             else writetime(rL[1], rL[2], rL[3])
-            
+
             writes(left("meteor-contest 2098",31))
             tL := gettimes(run_meteorcontest, 2098)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
@@ -156,7 +156,7 @@ procedure main(argv)
                writes(right(tabulate_ratios(rT) || "x\n", 16))
                }
             else writetime(rL[1], rL[2], rL[3])
-            
+
             writes(left("reverse-complement 25-mil.dat",31))
             tL := gettimes(run_reversecomplement, "25-mil.dat")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
@@ -174,13 +174,13 @@ procedure main(argv)
             } else writetime(rL[1], rL[2], rL[3])
 
             if \concurrent then {
-	       writes(left("thread-ring 50000000",43))
+               writes(left("thread-ring 50000000",43))
                writes(left("N/A", 3))
                tL := gettimes(run_threadring, 50000000)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
                writetime(rL[1], rL[2], rL[3],1)
                }
-            if \concurrent then write_ratios(rTable)            
+            if \concurrent then write_ratios(rTable)
             }
          "concord" : {
             write("\n")
@@ -250,7 +250,7 @@ procedure main(argv)
             }
          "meteor-contest" : {
             write_header()
-            writes(left("meteor-contest 2098",31)) 
+            writes(left("meteor-contest 2098",31))
             tL := gettimes(run_meteorcontest, 2098)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])

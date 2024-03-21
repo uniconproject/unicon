@@ -18,13 +18,13 @@ procedure main()
    T["three"] := 333
 
    write()
-   write("convert:")			# convert
+   write("convert:")                    # convert
    gen(exbase10, 11213, 8)
    gen(inbase10, 11213, 8)
    gen(radcon, 11213, 4, 7)
 
    write()
-   write("datetime:")			# datetime
+   write("datetime:")                   # datetime
    HoursFromGmt := 7
    gen(ClockToSec, "14:27:43")
    gen(DateLineToSec, "Friday, September 7, 1984  1:07 pm")
@@ -40,7 +40,7 @@ procedure main()
    # several procedures that return records omitted
 
    write()
-   write("factors:")			# factors
+   write("factors:")                    # factors
    gen(divisors, 360)
    gen(factorial, 0)
    gen(factorial, 6)
@@ -54,8 +54,8 @@ procedure main()
    lst(prdecomp, 360)
    lst(prdecomp, 504)
    gen(prime)
-#  gen(primel)		# not testable without data file
-#  gen(primeorial, 12)	# not testable without data file
+#  gen(primel)          # not testable without data file
+#  gen(primeorial, 12)  # not testable without data file
    gen(sfactors, 360)
 
    write("[testing factorizations]")
@@ -64,13 +64,13 @@ procedure main()
    tprimes(100)
 
    write()
-   write("io:")				# io
+   write("io:")                                 # io
    gen(exists, "/foo/bar/baz/not/very/likely")
    gen(directory, "/tmp")
    # several others omitted
 
    write()
-   write("lists:")			# lists
+   write("lists:")                      # lists
    lst(lcollate, L, LR)
    lst(lcompact, L)
    lst(lclose, [3, 1, 4, 1])
@@ -108,14 +108,14 @@ procedure main()
    # several others omitted
 
    write()
-   write("math:")			# math
+   write("math:")                       # math
    gen(binocoef, 16, 5)
    gen(cosh, &pi / 3)
    gen(sinh, &pi / 3)
    gen(tanh, &pi / 3)
 
    write()
-   write("numbers:")			# numbers
+   write("numbers:")                    # numbers
    gen(adp, 2147483647)
    gen(adr, 2147483647)
    gen(amean, 1, 1, 2, 3, 5, 8, 13, 21, 42)
@@ -154,13 +154,13 @@ procedure main()
    gen(roman, 1989)
    gen(round, &e)
    gen(sign, -47)
-   gen(spell, 47193)				# result is not strictly correct
+   gen(spell, 47193)                            # result is not strictly correct
    gen(sum, 1, 1, 2, 3, 5, 8, 13, 21, 42)
    gen(trunc, &phi)
    gen(unroman, "MCMLXXIV")
 
    write()
-   write("options:")			# options  (not part of core)
+   write("options:")                    # options  (not part of core)
    argv := ["-abc","-","-s","-v","-i","42","-r","98.6","--","-b","x","y"]
    tbl(options, copy(argv))
    tbl(options, copy(argv), "scrivab")
@@ -171,7 +171,7 @@ procedure main()
    every writes(" ", "  argv        " | !argv | "\n")
 
    write()
-   write("random:")			# random
+   write("random:")                     # random
    gen(rand_num)
    gen(rand_int, 20)
    gen(randomize)
@@ -182,7 +182,7 @@ procedure main()
    gen(shuffle, "A23456789TJQK")
 
    write()
-   write("rational:")			# rational  (not part of core)
+   write("rational:")                   # rational  (not part of core)
    rat(str2rat, "(355/113)")
    r1 := rat(real2rat, 355. / 113.)
    gen(rat2str, r1)
@@ -198,15 +198,15 @@ procedure main()
    trat()
 
    write()
-   write("records:")			# records
+   write("records:")                    # records
    gen(field, DateRec(), 7)
    gen(fieldnum, DateRec(), "weekday")
 
    write()
-   write("scan:")			# scan
+   write("scan:")                       # scan
 
    write()
-   write("sets:")			# sets
+   write("sets:")                       # sets
    lst(cset2set, &digits)
    lst(domain, T)
    lst(inverse, T)
@@ -217,11 +217,11 @@ procedure main()
    gen(simage, set(L))
 
    write()
-   write("sort:")			# sort
+   write("sort:")                       # sort
    lst(isort, "Quoth The Raven: Nevermore", map)
 
    write()
-   write("strings:")			# strings
+   write("strings:")                    # strings
    gen(cat, "abc", "def", "ghi")
    gen(charcnt, "deinstitutionalization", 'aeiou')
    gen(collate, "abcde", "12345")
@@ -265,7 +265,7 @@ procedure main()
    gen(words,    "fly.me.to.the.moon.and.let.me.sing.among.the.stars", '.')
 
    write()
-   write("tables:")			# tables
+   write("tables:")                     # tables
    lst(keylist, T)
    lst(kvallist, T)
    tbl(tbleq, T, copy(T))
@@ -289,7 +289,7 @@ procedure unreal(x)
    else return x
 end
 
-procedure gen(p, a[])			#: test a simple procedure or generator
+procedure gen(p, a[])                   #: test a simple procedure or generator
    &random := 4747
    outp := (image(p) ? (=("procedure "|"function ") & tab(0)))
    writes(left(outp, LSIZE - 1))
@@ -297,7 +297,7 @@ procedure gen(p, a[])			#: test a simple procedure or generator
    return
 end
 
-procedure lst(p, a[])			#: test a procedure that returns a list
+procedure lst(p, a[])                   #: test a procedure that returns a list
    local L
 
    L := (p ! a) | ["[FAILED]"]
@@ -308,7 +308,7 @@ procedure lst(p, a[])			#: test a procedure that returns a list
    return
 end
 
-procedure tbl(p, a[])			#: test a procedure that returns a table
+procedure tbl(p, a[])                   #: test a procedure that returns a table
    local k, T, L
 
    writes(left(image(p)[11:0] | "", LSIZE - 1))
@@ -322,14 +322,14 @@ procedure tbl(p, a[])			#: test a procedure that returns a table
    return \T
 end
 
-procedure rat(p, a[])			#: test a procedure that rets a rational
+procedure rat(p, a[])                   #: test a procedure that rets a rational
    local v
    v := p ! a
    write(left(image(p)[11:0], LSIZE), rat2str(\v) | ["[FAILED]"])
    return \v
 end
 
-procedure tfact(n)			#: test factorization of n
+procedure tfact(n)                      #: test factorization of n
    local D, F, P, i, v
 
    F := factors(n)
@@ -358,7 +358,7 @@ procedure tfact(n)			#: test factorization of n
          }
 end
 
-procedure tprimes(n)			#: test the first n primes
+procedure tprimes(n)                    #: test the first n primes
    local i, L1, L2, L3
 
    L1 := []
@@ -381,7 +381,7 @@ procedure tprimes(n)			#: test the first n primes
          write("   PRIME ENTRY ", i, ":   ", L1[i], ", ", L2[i], ", ", L3[i])
 end
 
-procedure trat()			#: test rational arithmetic
+procedure trat()                        #: test rational arithmetic
    local r1, r2, L, n, d, r, g
 
    write("[testing conversions]")

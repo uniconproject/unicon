@@ -1,11 +1,11 @@
 /***
- *	Subject    : Unicon Plugin Template
- *	Author     : Jafar Al-Gharaibeh
- *	Date       : Feb 3, 2017
+    xunt*       Subject    : Unicon Plugin Template
+ *      Author     : Jafar Al-Gharaibeh
+ *      Date       : Feb 3, 2017
  ***
  *
- *	Description: This is a template a Unicon plugin.
- *		    
+ *      Description: This is a template a Unicon plugin.
+ *
  ***
  *
  *      This file is in the public domain.
@@ -21,15 +21,15 @@
  *   r : real
  *   n : number
  *   s : string
- *   l : list 
- *   t : table 
+ *   l : list
+ *   t : table
  *   x : any
  * ...
 
  * return signatures
  *   function{0} return 0 result, i.e fail
  *   function{1} return 1 result
- *   function{0, 1} return 1 result or fail 
+ *   function{0, 1} return 1 result or fail
 
  *   param signature
  *   name@type              => param name and type, and it is required

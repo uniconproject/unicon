@@ -1,0 +1,61 @@
+################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+################################################################################
+#
+#    A simple speed test to see how fast a generator is.
+#
+#    The actual values returned by &time may not be all that useful, but the
+#    relative differences between different rnglibs should be illuminating.
+#
+#    Don Ward
+#    March 2022
+#
+################################################################################
+link printf
+
+procedure main(args)
+$ifdef _RNG_LIBRARY
+   local rng := args[1] | "rngIcon"     # Default generator is the built-in one.
+   local limit := args[2] | 100000000   # Default number of iterations
+   local total := 0.0
+   local percentFromPerfect
+   local t0, t1, t2, ms, rate
+   local generator
+
+   generator := loadrng(rng)
+   if generator=="rngGSL" then generator ||:= "(" || getenv("GSL_RNG_TYPE") || ")"
+
+   # The generator is not seeded explicitly. Generators using rngGSL will get the
+   # value from an environment variable GSL_RNG_SEED.  Other generators will use
+   # a random-ish value provided by the runtime.
+
+   t0 := &time
+   every 1 to limit do { total +:= 0.5 }
+   t1 := &time          # Measure the loop overhead
+   every 1 to limit do { total +:= ?0 }
+   t2 := &time
+
+   ms := (t2 -t1) - (t1 - t0)
+   if ms <= 0 then stop("Too few iterations")
+   rate := 0.001 * (real(limit)/real(ms)) # K doubles/sec
+   printf("%-20s: %5dmS (%-5.1rK/sec)\n", generator, ms, rate)
+   fprintf(open("./speedtest.csv", "a"),
+           "%s,%s,%d,%d,%d,%d,%-6.2r\n",
+           &dateline, generator, limit, t2, t1, t0, rate)
+
+   if limit >= 100000 then {
+      # Complain if the total isn't close to 50% of the limit.
+      percentFromPerfect :=  abs(total - limit)/(0.0 + limit)
+      if percentFromPerfect >= 0.01 then {
+         write(generator, " isn't looking good (",
+               integer(100.0*percentFromPerfect), "% from the ideal value)")
+      }
+   }
+$else
+   write(&errout, "RNG libraries are not available")
+$endif
+end

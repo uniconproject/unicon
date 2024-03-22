@@ -1,0 +1,31 @@
+# --------------------------------------------------------------------------------
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+# --------------------------------------------------------------------------------
+# A confidence test for the rngLib implementation of the GSL interface
+#
+#     Don Ward
+#     March 2022
+#
+# The generator may be tested by
+#    unicon -s -u test-vectors
+#    ./test-vectors > test.output
+#    diff selected.test-vectors test.output
+# 
+# The selected.test-vectors file was created by pasting in the example output
+# from the GNU Scientific Library documentation.
+#
+# --------------------------------------------------------------------------------
+link printf
+procedure main()
+
+   loadrng("rngGSL")            # load the rng interface to the GNU Scientific Library
+   &random := "mrg"             # select the mrg generator from the library
+   &random := 123               # seed it
+   every 1 to 10 do { 
+      printf("%-7.5r\n", ?0)    # print numbers in the same format as the example
+   }
+end

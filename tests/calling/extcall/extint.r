@@ -9,7 +9,7 @@
  *    3: getpgrp (get process group)
  */
 
-struct descrip retval;			/* for returned value */
+struct descrip retval;                  /* for returned value */
 
 dptr extcall(dargv, argc, ip)
 dptr dargv;
@@ -18,39 +18,39 @@ int *ip;
    {
    int retcode;
    int getpid(), getppid(), getpgrp();
-    
-   if (!cnv_int(dargv, dargv)) {	/* 1st argument must be a string */
-      *ip = 101;			/* "integer expected" error number */
-      return dargv;			/* return offending value */
+
+   if (!cnv_int(dargv, dargv)) {        /* 1st argument must be a string */
+      *ip = 101;                        /* "integer expected" error number */
+      return dargv;                     /* return offending value */
       }
 
    switch ((int)IntVal(*dargv)) {
-      case 1:				/* getpid */
+      case 1:                           /* getpid */
          retcode = getpid();
          break;
-      case 2:				/* getppid */
+      case 2:                           /* getppid */
          retcode = getppid();
          break;
-      case 3:				/* getpgrp */
+      case 3:                           /* getpgrp */
          if (argc < 2) {
-            *ip = 205;			/* no error number fits, really */
-            return NULL;		/* no offending value */
+            *ip = 205;                  /* no error number fits, really */
+            return NULL;                /* no offending value */
             }
-         dargv++;			/* get to next value */
-         if (!cnv_int(dargv, dargv)) {	/* 2nd argument must be integer */
-            *ip = 101;			/* "integer expected" error number */
+         dargv++;                       /* get to next value */
+         if (!cnv_int(dargv, dargv)) {  /* 2nd argument must be integer */
+            *ip = 101;                  /* "integer expected" error number */
             return dargv;
             }
          retcode = getpgrp(IntVal(*dargv));
          break;
       default:
-         *ip = 216;			/* external function not found */
+         *ip = 216;                     /* external function not found */
          return NULL;
       }
-   MakeInt(retcode,&retval);		/* make an Icon integer for result */
+   MakeInt(retcode,&retval);            /* make an Icon integer for result */
    return &retval;
    }
 #else ExternalFunctions
-static char x;				/* prevent empty module */
-#endif					/* ExternalFunctions */
-#endif					/* COMPILER */
+static char x;                          /* prevent empty module */
+#endif                                  /* ExternalFunctions */
+#endif                                  /* COMPILER */

@@ -2,11 +2,11 @@
 #
 # The Computer Language Benchmarks Game
 # http://shootout.alioth.debian.org/
-# Translated from Olof Kraigher's 
+# Translated from Olof Kraigher's
 # Python program
 
-global width, height, masksAtCell 
-global solutions, masks, directions 
+global width, height, masksAtCell
+global solutions, masks, directions
 global rotate, flip, moves, pieces
 
 record xy(x, y)
@@ -17,7 +17,7 @@ procedure findFreeCell(board)
       every x := 0 to width - 1 do {
          if iand(board, bitposn) = 0 then
             return xy(x, y)
-	 bitposn := ishift(bitposn, 1)
+         bitposn := ishift(bitposn, 1)
          }
       }
 end
@@ -27,7 +27,7 @@ procedure floodFill(board, coords)
    x := coords.x
    y := coords.y
    bitposn := ishift(1, x + width * y)
-   
+
    if (not valid(x,y)) | (iand(board, bitposn) ~= 0) then
       return board
    board := ior(board, bitposn)
@@ -66,13 +66,13 @@ end
 procedure allBitmasks(piece, color)
    bitmasks := []
    every !2 do {
-      every rotations := 1 
+      every rotations := 1
       to (6 - 3*(if color = 4 then 1 else 0)) do {
          every y := 0 to height - 1 do {
             every x := 0 to width - 1 do {
-               if noIslands(mask := getBitmask(x, y, piece)) 
+               if noIslands(mask := getBitmask(x, y, piece))
                then {
-                  put(bitmasks, mask) 
+                  put(bitmasks, mask)
                   }
                }
             }
@@ -85,7 +85,7 @@ end
 
 procedure generateBitmasks()
    local color := 0
-   
+
    every piece := !pieces do {
       m := sort(allBitmasks(piece, color))
       cellMask := ishift(1, (width*height-1))
@@ -160,21 +160,21 @@ procedure stringOfMasks(masks)
 end
 
 procedure inverse(s)
-   
+
    ns := s
    write(output, image(s))
-   every x := 0 to width - 1 do 
+   every x := 0 to width - 1 do
       every y := 0 to height - 1 do {
-         ns[(x + y*width) + 1] := 
+         ns[(x + y*width) + 1] :=
             s[(width-x-1 + (width - y - 1)*width) + 1]
-         
+
          }
    return s
 end
 
 procedure printSolution(solution)
    every y := 0 to height - 1 do {
-      every x := 0 to width - 1 do 
+      every x := 0 to width - 1 do
          writes(output, solution[(x + y*width) + 1], " ")
       if (y%2) = 0 then {
          write(output, )
@@ -196,10 +196,10 @@ end
 procedure zerocount(mask)
    static zeros_in_4bits
    local sum := -2
-   initial zeros_in_4bits := 
+   initial zeros_in_4bits :=
                    [
-                    4, 3, 3, 2, 3, 
-                    2, 2, 1, 3, 2, 
+                    4, 3, 3, 2, 3,
+                    2, 2, 1, 3, 2,
                     2, 1, 2, 1, 1,0
                    ]
    every x := 0 to 48 by 4 do {
@@ -234,9 +234,9 @@ procedure run_meteorcontest(argv)
    if *argv < 1 then stop("usage: meteor-contest num")
    width := 5
    height := 10
-   
+
    directions :=
-      table( 
+      table(
             "E", 0,
             "NE", 1,
             "NW", 2,
@@ -282,10 +282,10 @@ procedure run_meteorcontest(argv)
               ]
    solutions := []
    masks := list(10, 0)
-   
+
    masksAtCell := list(width * height)
    every !masksAtCell := [[], [], [], [], [], [], [], [], [], []]
-   
+
    solve(argv[1])
    write(output, *solutions, " solutions found\n")
    printSolution(min(solutions))
@@ -295,12 +295,12 @@ procedure run_meteorcontest(argv)
 
    width := height := solutions := masks := directions := &null
    rotate := flip := moves := pieces := masksAtCell := &null
-end 
+end
 
 
 $ifdef MAIN
 procedure main(argv)
    output := &output
    run_meteorcontest(argv)
-end 
+end
 $endif

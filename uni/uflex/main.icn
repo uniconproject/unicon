@@ -50,11 +50,11 @@ procedure main(argv)
 
    if *argv > arg & match("-o", argv[arg]) then {
       if *argv[arg]>2 then
-	 outfilename := argv[arg][3:0]
+         outfilename := argv[arg][3:0]
       else {
-	 arg +:= 1
-	 outfilename := argv[arg]
-	 }
+         arg +:= 1
+         outfilename := argv[arg]
+         }
       arg +:= 1
       }
    else {
@@ -84,7 +84,7 @@ procedure main(argv)
    if pp ~= 0 then {
 #      ppcmdline := sprintf("ulpp < %s > %s.tmp", yyfilename, yyfilename)
 #      if ppcmdline[-2:0] ~== ".l" then
-#	 ppcmdline ||:= ".l"
+#        ppcmdline ||:= ".l"
 #write(&errout, "opening preprocessor via ", ppcmdline)
 #      system(ppcmdline)
 #write(&errout, "system finished")
@@ -93,10 +93,10 @@ procedure main(argv)
 
        ulppfin := open(yyfilename)
        if (L := ulpp()) & (f := open(yyfilename || ".tmp", "w")) then {
-	   every xxx := !L do {
+           every xxx := !L do {
                write(f,xxx)
-	   }
-	   close(f)
+           }
+           close(f)
        }
 
       if not (yyin := open(yyfilename || ".tmp", "r")) then write("open failed")
@@ -135,11 +135,11 @@ $endif
       #
       nextchar := nextchar2
       if not (nextchar2 := reads(yyin,1)) then {
-	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
-	 exit(-1)
-	 }
+         fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+         exit(-1)
+         }
       if nextchar2 == ("\n" | "\^m") then
-	 yylineno +:= 1
+         yylineno +:= 1
       }
 
 
@@ -223,12 +223,12 @@ procedure grab_upto_percents()
 
    while (nextchar ~== "%" | nextchar2 ~== "}") do {
       if nextchar2 == -1 then {
-	 fprintf(&errout, "error in processing upto first percents")
-	 exit(-1)
-	 }
+         fprintf(&errout, "error in processing upto first percents")
+         exit(-1)
+         }
 
       if nextchar == "\"" & slash == 0 then
-	 quotemode := 1 - quotemode
+         quotemode := 1 - quotemode
 
       if nextchar == "\\" then slash := 1 - slash
 
@@ -236,19 +236,19 @@ procedure grab_upto_percents()
 
       nextchar := nextchar2
       if not (nextchar2 := reads(yyin,1)) then {
-	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
-	 }
+         fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+         }
       if nextchar2 == ("\n" | "\^m") then
-	 yylineno +:= 1
+         yylineno +:= 1
       }
 
    while (nextchar | nextchar2) ~== "%" do {
       nextchar := nextchar2
       if not (nextchar2 := reads(yyin,1)) then {
-	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
-	 }
+         fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+         }
       if nextchar2 == ("\n" | "\^m") then
-	 yylineno +:= 1
+         yylineno +:= 1
       }
 end
 

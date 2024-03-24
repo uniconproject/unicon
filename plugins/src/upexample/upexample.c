@@ -1,11 +1,11 @@
 /***
- *	Subject    : Unicon Plugin Example
- *	Author     : Jafar Al-Gharaibeh
- *	Date       : Feb 3, 2017
+ *      Subject    : Unicon Plugin Example
+ *      Author     : Jafar Al-Gharaibeh
+ *      Date       : Feb 3, 2017
  ***
  *
- *	Description: This is an example demonstrating the format of
- *		     a Unicon plugin.
+ *      Description: This is an example demonstrating the format of
+ *                   a Unicon plugin.
  *                   Example functions borrowed from IPL
  ***
  *
@@ -26,32 +26,32 @@ int bitcount(UARGS) /*: count bits in an integer */
    unsigned long v;
    int n;
 
-   ArgInteger(1);			/* validate type */
-   
-   v = IntegerVal(argv[1]);		/* get value as unsigned long */
+   ArgInteger(1);                       /* validate type */
+
+   v = IntegerVal(argv[1]);             /* get value as unsigned long */
    n = 0;
-   while (v != 0) {			/* while more bits to count */
-      n += v & 1;			/*    check low-order bit */
-      v >>= 1;				/*    shift off with zero-fill */
+   while (v != 0) {                     /* while more bits to count */
+      n += v & 1;                       /*    check low-order bit */
+      v >>= 1;                          /*    shift off with zero-fill */
       }
 
-   RetInteger(n);			/* return result */
+   RetInteger(n);                       /* return result */
    }
 
 
-#define F_LTL 0x100	/* little-endian */
-#define F_BIG 0x200	/* big-endian */
-#define F_REV 0x400	/* internal flag: reversal needed */
+#define F_LTL 0x100     /* little-endian */
+#define F_BIG 0x200     /* big-endian */
+#define F_REV 0x400     /* internal flag: reversal needed */
 
-#define F_INT 1		/* integer */
-#define F_UNS 2		/* unsigned integer */
-#define F_REAL 4	/* real */
+#define F_INT 1         /* integer */
+#define F_UNS 2         /* unsigned integer */
+#define F_REAL 4        /* real */
 
-#define DEF_WIDTH 4	/* default width */
-#define MAX_WIDTH 256	/* maximum width */
+#define DEF_WIDTH 4     /* default width */
+#define MAX_WIDTH 256   /* maximum width */
 
 static unsigned long testval = 1;
-#define LNATIVE (*(char*)&testval)	/* true if machine is little-endian */
+#define LNATIVE (*(char*)&testval)      /* true if machine is little-endian */
 
 static int flags(char *s, int n);
 static void *memrev(void *s1, void *s2, size_t n);
@@ -60,7 +60,7 @@ static void *memrev(void *s1, void *s2, size_t n);
  * pack(value, flags, width)
  */
 RTEX
-int pack(UARGS)	/*: pack integer into bytes */
+int pack(UARGS) /*: pack integer into bytes */
    {
    int f, i, n, x;
    long v;
@@ -71,21 +71,21 @@ int pack(UARGS)	/*: pack integer into bytes */
     * check arguments
     */
    if (argc == 0)
-      Error(102);			/* no value given */
+      Error(102);                       /* no value given */
 
    if (argc > 1) {
       ArgString(2);
       if ((f = flags(StringAddr(argv[2]), StringLen(argv[2]))) == 0)
-         ArgError(2, 205);		/* illegal flag string */
+         ArgError(2, 205);              /* illegal flag string */
       }
-   else 
+   else
       f = flags("", 0);
 
    if (argc > 2) {
       ArgInteger(3);
       n = IntegerVal(argv[3]);
       if (n < 0 || n > MAX_WIDTH)
-         ArgError(3, 205);		/* too long to handle */
+         ArgError(3, 205);              /* too long to handle */
       }
    else
       n = DEF_WIDTH;
@@ -101,37 +101,37 @@ int pack(UARGS)	/*: pack integer into bytes */
       else if (n == sizeof(float))
          u.f = RealVal(argv[1]);
       else
-         ArgError(3, 205);		/* illegal length for real value */
+         ArgError(3, 205);              /* illegal length for real value */
 
       if (f & F_REV)
          RetStringN(memrev(obuf, u.buf, n), n);
       else
          RetStringN((char *)u.buf, n);
-      } 
+      }
 
    /*
     * pack integer value
     */
    ArgInteger(1);
-   v = IntegerVal(argv[1]);		/* value */
+   v = IntegerVal(argv[1]);             /* value */
 
    if (v >= 0)
-      x = 0;				/* sign extension byte */
+      x = 0;                            /* sign extension byte */
    else if (f & F_UNS)
-      Fail;				/* invalid unsigned value */
+      Fail;                             /* invalid unsigned value */
    else
       x = (unsigned char) -1;
 
    for (s = obuf, i = 0; i < sizeof(long); i++)  {
-      *s++ = v & 0xFF;			/* save in little-endian fashion */
+      *s++ = v & 0xFF;                  /* save in little-endian fashion */
       v = ((unsigned long)v) >> 8;
       }
    while (i++ < n)
-      *s++ = x;				/* extend if > sizeof(long) */
+      *s++ = x;                         /* extend if > sizeof(long) */
 
-   for (i = n; i < sizeof(long); i++)	/* check that all bits did fit */
+   for (i = n; i < sizeof(long); i++)   /* check that all bits did fit */
       if (obuf[i] != x)
-         Fail;				/* overflow */
+         Fail;                          /* overflow */
 
    if (f & F_BIG)
       RetStringN(memrev(u.buf, obuf, n), n);
@@ -143,7 +143,7 @@ int pack(UARGS)	/*: pack integer into bytes */
  *  unpack(string, flags)
  */
 RTEX
-int unpack(UARGS)	/*: unpack integer from bytes */
+int unpack(UARGS)       /*: unpack integer from bytes */
    {
    int f, i, n, x;
    long v;
@@ -157,14 +157,14 @@ int unpack(UARGS)	/*: unpack integer from bytes */
    s = (unsigned char *)StringAddr(argv[1]);
    n = StringLen(argv[1]);
    if (n > MAX_WIDTH)
-      ArgError(1, 205);			/* too long to handle */
+      ArgError(1, 205);                 /* too long to handle */
 
    if (argc > 1) {
       ArgString(2);
       if ((f = flags(StringAddr(argv[2]), StringLen(argv[2]))) == 0)
-         ArgError(2, 205);		/* illegal flag string */
+         ArgError(2, 205);              /* illegal flag string */
       }
-   else 
+   else
       f = flags("", 0);
 
    if (f & F_REAL) {
@@ -181,29 +181,29 @@ int unpack(UARGS)	/*: unpack integer from bytes */
       else if (n == sizeof(float))
          RetReal(u.f);
       else
-         ArgError(1, 205);		/* illegal length for real value */
+         ArgError(1, 205);              /* illegal length for real value */
       }
 
    /*
-    * unpack integer value 
+    * unpack integer value
     */
    if (f & F_BIG)
-      s = memrev(u.buf, s, n);		/* put in little-endian order */
+      s = memrev(u.buf, s, n);          /* put in little-endian order */
    for (v = i = 0; i < n && i < sizeof(long); i++)
-      v |= *s++ << (8 * i);		/* pack into a long */
+      v |= *s++ << (8 * i);             /* pack into a long */
 
    if (v >= 0)
-      x = 0;				/* sign extension byte */
+      x = 0;                            /* sign extension byte */
    else if (f & F_UNS)
-      Fail;				/* value overflows as unsigned */
+      Fail;                             /* value overflows as unsigned */
    else
       x = (unsigned char) -1;
 
-   for (; i < n; i++)			/* check bytes beyond sizeof(long) */
+   for (; i < n; i++)                   /* check bytes beyond sizeof(long) */
       if (*s++ != x)
-         Fail;				/* value overflows a long */
+         Fail;                          /* value overflows a long */
 
-   RetInteger(v);			/* return value */
+   RetInteger(v);                       /* return value */
    }
 
 
@@ -215,25 +215,25 @@ static int flags(char *s, int n)
    int f = 0;
 
    while (n--) switch(*s++) {
-      case 'l':  f |= F_LTL;				break;
-      case 'b':  f |= F_BIG;				break;
-      case 'n':  f |= (LNATIVE ? F_LTL : F_BIG); 	break;
-      case 'i':  f |= F_INT;				break;
-      case 'u':  f |= F_UNS + F_INT;			break;
-      case 'r':  f |= F_REAL;				break;
-      default:	 return 0;
+      case 'l':  f |= F_LTL;                            break;
+      case 'b':  f |= F_BIG;                            break;
+      case 'n':  f |= (LNATIVE ? F_LTL : F_BIG);        break;
+      case 'i':  f |= F_INT;                            break;
+      case 'u':  f |= F_UNS + F_INT;                    break;
+      case 'r':  f |= F_REAL;                           break;
+      default:   return 0;
       }
 
    if (((f & F_LTL) && (f & F_BIG)) | ((f & F_INT) && (f & F_REAL)))
-      return 0;				/* illegal conflict */
+      return 0;                         /* illegal conflict */
 
    if (!(f & F_BIG))
-      f |= F_LTL;			/* default packing is little-endian */
+      f |= F_LTL;                       /* default packing is little-endian */
    if (!(f & F_REAL))
-      f |= F_INT;			/* default type is integer */
+      f |= F_INT;                       /* default type is integer */
 
    if (f & (LNATIVE ? F_BIG : F_LTL))
-      f |= F_REV;			/* set flag if non-native mode */
+      f |= F_REV;                       /* set flag if non-native mode */
 
    return f;
    }

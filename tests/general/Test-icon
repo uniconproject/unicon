@@ -16,10 +16,10 @@ unset MSTKSIZE COEXPSIZE QLSIZE
 #  check that icont and iconx have been built
 ls $IC ../../bin/iconx >/dev/null || exit 0
 B="\n"
-case `uname` in 
+case `uname` in
     *"NT"*) NT=1
-	    B="  "
-	    ;; 
+            B="  "
+            ;;
 esac;
 
 #  if no files specified, run them all
@@ -43,10 +43,10 @@ for F in $*; do
    # Assume that NT in uname means Windows
    if [ -n "$NT" ]; then
        if test -r stand/$F.wstd; then
-	  diff -w stand/$F.wstd local/$F.out
+          diff -w stand/$F.wstd local/$F.out
       else
-	  diff -w stand/$F.std local/$F.out
-      fi	  
+          diff -w stand/$F.std local/$F.out
+      fi
    else
        diff stand/$F.std local/$F.out
    fi
@@ -55,10 +55,10 @@ for F in $*; do
    if [ $? -eq 1 ]; then
        # skip the env test since it is expected to be different
        if [ "$F" != "env" ]; then
-	   L=$L$B$F
+           L=$L$B$F
        fi
    fi
-   
+
    rm -f $F $F.c $F.h
 done
 

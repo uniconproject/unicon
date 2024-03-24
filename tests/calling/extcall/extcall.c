@@ -12,10 +12,10 @@ dptr dargv;
 int argc;
 int *ip;
    {
-   *ip = 216;			/* no external function to find */
+   *ip = 216;           /* no external function to find */
    return (dptr)NULL;
    }
 
-#else					/* ExternalFunctions */
-static char x;			/* prevent empty module */
-#endif 					/* ExternalFunctions */
+#else                   /* ExternalFunctions */
+static char x;          /* prevent empty module */
+#endif                  /* ExternalFunctions */

@@ -49,12 +49,12 @@ static void repeat_fasta (char const *s, size_t count) {
     memcpy (s2, s, len); 
     memcpy (s2 + len, s, WIDTH); 
     do {   
-     	size_t line = MIN(WIDTH, count); 
-     	fwrite (s2 + pos,1,line,stdout); 
-     	putchar ('\n'); 
-     	pos += line; 
-     	if (pos >= len) pos -= len; 
-     	count -= line;  
+        size_t line = MIN(WIDTH, count); 
+        fwrite (s2 + pos,1,line,stdout); 
+        putchar ('\n'); 
+        pos += line; 
+        if (pos >= len) pos -= len; 
+        count -= line;  
     } while (count); 
     free (s2); 
 }
@@ -70,54 +70,54 @@ static void repeat_fasta (char const *s, size_t count) {
 /* Between each WIDTH consecutive characters, the function prints a newline */
 static void random_fasta (aminoacid_t const *genelist, size_t count) {
     do {    
-	size_t line = MIN(WIDTH, count);    
-	size_t pos = 0;    
-	char buf[WIDTH + 1];    
-	do {    
-	    float r = myrandom (1.0);
-	    size_t i = 0;   
-	    while (genelist[i].p < r)    
-		++i; /* Linear search */    
-	    buf[pos++] = genelist[i].c;    
-	} while (pos < line);   
-	buf[line] = '\n';
-	fwrite (buf, 1, line + 1, stdout);    
-	count -= line;    
+        size_t line = MIN(WIDTH, count);    
+        size_t pos = 0;    
+        char buf[WIDTH + 1];    
+        do {    
+            float r = myrandom (1.0);
+            size_t i = 0;   
+            while (genelist[i].p < r)    
+                ++i; /* Linear search */    
+            buf[pos++] = genelist[i].c;    
+        } while (pos < line);   
+        buf[line] = '\n';
+        fwrite (buf, 1, line + 1, stdout);    
+        count -= line;    
     } while (count);   
 }
 
 int main (int argc, char **argv) {
     size_t n;
     if (argc > 1) { 
-	char const *arg = argv[1];
- 	char *tail; 
- 	n = strtoul (arg, &tail, 0); 
- 	if (tail == arg)  
-	    printf ("Could not convert \"%s\" to an unsigned long integer", arg); 
+        char const *arg = argv[1];
+        char *tail; 
+        n = strtoul (arg, &tail, 0); 
+        if (tail == arg)  
+            printf ("Could not convert \"%s\" to an unsigned long integer", arg); 
     } else n = 1000;
 
     static aminoacid_t iub[] = {
-	{ 0.27, 'a' },
-	{ 0.12, 'c' },
-	{ 0.12, 'g' },
-	{ 0.27, 't' },
-	{ 0.02, 'B' },
-	{ 0.02, 'D' },
-	{ 0.02, 'H' },
-	{ 0.02, 'K' },
-	{ 0.02, 'M' },
-	{ 0.02, 'N' },
-	{ 0.02, 'R' },
-	{ 0.02, 'S' },
-	{ 0.02, 'V' },
-	{ 0.02, 'W' },
-	{ 0.02, 'Y' }};
+        { 0.27, 'a' },
+        { 0.12, 'c' },
+        { 0.12, 'g' },
+        { 0.27, 't' },
+        { 0.02, 'B' },
+        { 0.02, 'D' },
+        { 0.02, 'H' },
+        { 0.02, 'K' },
+        { 0.02, 'M' },
+        { 0.02, 'N' },
+        { 0.02, 'R' },
+        { 0.02, 'S' },
+        { 0.02, 'V' },
+        { 0.02, 'W' },
+        { 0.02, 'Y' }};
 
     static aminoacid_t homosapiens[] = {
-	{ 0.3029549426680, 'a' },
-	{ 0.1979883004921, 'c' },
-	{ 0.1975473066391, 'g' },
-	{ 0.3015094502008, 't' }};
+        { 0.3029549426680, 'a' },
+        { 0.1979883004921, 'c' },
+        { 0.1975473066391, 'g' },
+        { 0.3015094502008, 't' }};
 
     accumulate_probabilities (iub, NELEMENTS(iub)); 
     accumulate_probabilities (homosapiens, NELEMENTS(homosapiens));

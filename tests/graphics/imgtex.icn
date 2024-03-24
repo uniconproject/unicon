@@ -23,23 +23,23 @@ end
 procedure readimg(w, imgFile, bkresult)
     writes("\tReadimage " , format, ": ")
     if ReadImage(w, imgFile) then {
-	write(w, "background: ", imgFile, bkgresult)
-	write(w, "ReadImage(", imgFile,") OK" )
-	write("OK")
+        write(w, "background: ", imgFile, bkgresult)
+        write(w, "ReadImage(", imgFile,") OK" )
+        write("OK")
     }
     else{
-	write(w, "ReadImage(", imgFile,") Failed" )
-	write("Failed")
+        write(w, "ReadImage(", imgFile,") Failed" )
+        write("Failed")
     }
 end
 
 procedure win(title, imgFile)
-   if \imgFile then {  
+   if \imgFile then {
        if w := open(title, "g", "image="|| imgFile, "inputmask=c") then {
-	   write("OK")
-	   write(w, "background: ", imgFile, " OK")
-	   readimg(w, imgFile, " OK")
-	   return w
+           write("OK")
+           write(w, "background: ", imgFile, " OK")
+           readimg(w, imgFile, " OK")
+           return w
        }
    }
    else  if w := open(title, "g", "inputmask=c") then {
@@ -52,15 +52,15 @@ end
 
 procedure main(argv)
     local windows, imgFormats, renderList
-    
+
     write("\nUnicon Image and Texture Test")
 
     if not (&features == "graphics") then
-	stop("This test requires 2D graphics which is not available in this build, aborting...")
-    
+        stop("This test requires 2D graphics which is not available in this build, aborting...")
+
     write("Beside succeeding or failing a test, look for visual artifacts")
     write("possiable issues to look for:")
-    
+
     windows:=[]
     renderList := []
     imgFormats := ["gif", "bmp", "jpg", "png"]
@@ -71,15 +71,15 @@ procedure main(argv)
        if (format == "jpg" & not (&features == "JPEG images")) |
           (format == "png" & not (&features == "PNG images")) then
           write ("\t",format, " support is not enabled in this build") & next
-          
+
        fname := "unicon." || format
        writes("\tOpen window with " , format, " background: ")
        if w := win(format || " 2D Window", fname) then {
           put(windows, w)
           WAttrib(w, "pos=" || x ||"," || y )
       }
-           
-   	x+:=256
+
+        x+:=256
     }
 
     if not (&features == "3D graphics") then {
@@ -101,41 +101,41 @@ procedure main(argv)
     # Open a 3D window to test textures created from the different image formats
     (w3d:= open(title1, "gl", "size=1024,256", "bg=blue", "buffer=on")) |
        stop("Can't Open 3D window, textures can't be tested\n")
-  
+
     WAttrib(w3d, "pos=" || 1 ||"," || 290 )
 
     title2 := "3D Win 2: Dynamic Textures, src window: [*gif 2D] --  [*3D Win 1]" ||
-	"  --  [*All 2D-win drawable canvases] --  [*current focus]"
+        "  --  [*All 2D-win drawable canvases] --  [*current focus]"
     # Open a 3D window to test dynamic textures
     (wtex := open(title2, "gl", "size=1024,256", "bg=very dark gray",
                   "pos=1,258", "buffer=on")) |
        stop("Can't Open 3D window, textures can't be tested\n")
-    
+
     WAttrib(wtex, "pos=" || 1 ||"," || 580 )
 
     t:=&time
     x:=-3
 
     every format := !imgFormats do {
-        writes("\nTesting texture ", format, "...")	
-	put(renderList, rObj:= renderObj(format,"unicon." || format))
-	renderBox(w3d, x, 0,0, 1, rObj)
-	x+:=2
+        writes("\nTesting texture ", format, "...")
+        put(renderList, rObj:= renderObj(format,"unicon." || format))
+        renderBox(w3d, x, 0,0, 1, rObj)
+        x+:=2
     }
 
     Eye(w3d, 0,0,8, 0,0,0, 0,1,0)
     Eye(wtex, 0,0,8, 0,0,0, 0,1,0)
     Refresh(w3d)
-    
+
     x:=-3
 
     write("\nDynamic textures test...")
     write()
-    
+
     # if some of the 2D windows failed to open, replicate
     # windows[1] to fill in the missing slots
     while *windows < 4 do
-	put(windows, windows[1])
+        put(windows, windows[1])
 
     writes("Testing source - 2D window...")
     put(renderList, rObj:= renderObj("win",windows[1]))
@@ -156,7 +156,7 @@ procedure main(argv)
     put(renderList, texObj2:= renderObj("win",windows[4]))
     renderBox(wtex,x, 0,0, 1, texObj2)
     x+:=2
-      
+
     Eye(w3d, 0,0,8, 0,0,0, 0,1,0)
 
     put(windows, \w3d)
@@ -168,37 +168,37 @@ procedure main(argv)
     j:=0
     rf:=50
     repeat{
-	i:=0
-	j+:=1
-	update(renderList)
-	Refresh(w3d)
-	Refresh(wtex)
-	WAttrib(w3d, "windowlabel= " || title1 || "  " || (rf:=FPS()) ||"fps" )
-	every w := !windows  do{
-	    i+:=1
-	    if *Pending(w)>0 then { 
-		case Event(w) of{
-		    "q" | "Q" | "\e" : {
-			shutdown := 1
-			break break
-		    }
-		    &lpress | &rpress  :{
-			flag := 1
-			the_win := i
-		    }
-		    &ldrag :{
-			FillRectangle(texObj.tex, x:=&x,y:=&y, wid:=4,ht:=4)
-			FillRectangle(w, x,y, wid,ht)
-		    }		    
-		}
-	    }
-	}
+        i:=0
+        j+:=1
+        update(renderList)
+        Refresh(w3d)
+        Refresh(wtex)
+        WAttrib(w3d, "windowlabel= " || title1 || "  " || (rf:=FPS()) ||"fps" )
+        every w := !windows  do{
+            i+:=1
+            if *Pending(w)>0 then {
+                case Event(w) of{
+                    "q" | "Q" | "\e" : {
+                        shutdown := 1
+                        break break
+                    }
+                    &lpress | &rpress  :{
+                        flag := 1
+                        the_win := i
+                    }
+                    &ldrag :{
+                        FillRectangle(texObj.tex, x:=&x,y:=&y, wid:=4,ht:=4)
+                        FillRectangle(w, x,y, wid,ht)
+                    }
+                }
+            }
+        }
 
-	if j>rf then{
-	    CopyArea(windows[\the_win], texObj2.tex, 0,0, 256, 256, 0,0)
-	    the_win := &null
-	    j:=0
-	}
+        if j>rf then{
+            CopyArea(windows[\the_win], texObj2.tex, 0,0, 256, 256, 0,0)
+            the_win := &null
+            j:=0
+        }
     }
 
 end
@@ -211,14 +211,14 @@ end
 
 procedure update(renderList)
     every rObj := !renderList do
-	rObj.rot.angle +:= 0.05;
+        rObj.rot.angle +:= 0.05;
 end
 
 
 procedure FPS()
     local len:=5000
    static t, fps
-   initial{ 
+   initial{
       t:=milliseconds()
       fps:=0
       }
@@ -229,7 +229,7 @@ procedure FPS()
        t:=milliseconds()
        return fpsTmp
       }
-   
+
 end
 
 procedure renderBox(w, x,y,z, r, rObj)
@@ -238,12 +238,12 @@ procedure renderBox(w, x,y,z, r, rObj)
     rObj.rot := Rotate(w, 0, 0, 1, 0)
     WAttrib(w,"texmode=on")
     if rObj.tex := Texture(w, rObj.imgFile) then
-	write("OK")
+        write("OK")
     else
-	write("Failed")
+        write("Failed")
     rObj.shape := DrawCube(w, 0,0,0, r)
     WAttrib(w,"texmode=off")
     PopMatrix(w)
     return \(rObj.tex)
 end
-  
+

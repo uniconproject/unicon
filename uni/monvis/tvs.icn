@@ -10,12 +10,12 @@ procedure main(av)
    EvInit(av) | stop("no EvInit")
    while EvGet(mask) do {
       case &eventcode of {
-	 E_Collect: collects +:= 1
-	 E_Tvsubs: { subs +:= 1; subbytes +:= &eventvalue }
-	 }
+         E_Collect: collects +:= 1
+         E_Tvsubs: { subs +:= 1; subbytes +:= &eventvalue }
+         }
       }
    write(&errout, collects, " collections, ", subs, " substring blocks (",
-	 subbytes, " bytes)")
+         subbytes, " bytes)")
    if collects > 0 then
       fprintf(&errout, "%0.1r tvsubs bytes/collect\n",real(subbytes)/collects)
 end

@@ -1,10 +1,10 @@
 /***
- *	Subject    : Unicon Plugin Template
- *	Author     : Jafar Al-Gharaibeh
- *	Date       : Feb 3, 2017
+ *      Subject    : Unicon Plugin Template
+ *      Author     : Jafar Al-Gharaibeh
+ *      Date       : Feb 3, 2017
  ***
  *
- *	Description: This is a template a Unicon plugin.
+ *      Description: This is a template a Unicon plugin.
  *
  ***
  *
@@ -22,5 +22,5 @@
 int foo(UARGS)
    {
    int n=0;
-   RetInteger(n);			/* return result */
+   RetInteger(n);                       /* return result */
    }

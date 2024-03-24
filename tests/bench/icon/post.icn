@@ -8,14 +8,14 @@
 #  and Term__(), where name is used for tagging the results.
 #  The typical usage is:
 #
-#	procedure main()
-#	   [declarations]
-#	   Init__(name)
-#		.
-#		.
-#		.
-#	   Term__()
-#	end
+#       procedure main()
+#          [declarations]
+#          Init__(name)
+#               .
+#               .
+#               .
+#          Term__()
+#       end
 #
 #     If the environment variable OUTPUT is set, program output is
 #  not suppressed.
@@ -27,15 +27,15 @@ global Save__, Saves__, Name__
 # List information before running.
 #
 procedure Init__(prog)
-   Name__ := prog			# program name
-   Signature__()			# initial information
+   Name__ := prog                       # program name
+   Signature__()                        # initial information
    Regions__()
    Time__()
-   if getenv("OUTPUT") then {	# if OUTPUT is set, allow output
+   if getenv("OUTPUT") then {   # if OUTPUT is set, allow output
       write("*** Benchmarking with output ***")
       return
       }
-   Save__ := write			# turn off output
+   Save__ := write                      # turn off output
    Saves__ := writes
    write := writes := 1
    return
@@ -44,11 +44,11 @@ end
 # List information at termination.
 
 procedure Term__()
-   if not getenv("OUTPUT") then {	# if OUTPUT is not set, restore output
+   if not getenv("OUTPUT") then {       # if OUTPUT is not set, restore output
       write := Save__
       writes := Saves__
       }
-					# final information
+                                        # final information
    write(Name__," elapsed time = ",Time__())
    Regions__()
    Storage__()
@@ -61,7 +61,7 @@ end
 procedure Collections__()
    static labels
    local collections
-   
+
    initial labels := ["total","static","string","block"]
 
    collections := []
@@ -77,7 +77,7 @@ end
 procedure Regions__()
    static labels
    local regions
-   
+
    initial labels := ["static","string","block"]
 
    regions := []
@@ -102,7 +102,7 @@ end
 procedure Storage__()
    static labels
    local storage
-   
+
    initial labels := ["static","string","block"]
 
    storage := []

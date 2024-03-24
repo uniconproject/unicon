@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     generate.icn
+#       File:     generate.icn
 #
-#	Subject:  Generates input files for Unicon Benchmarks
+#       Subject:  Generates input files for Unicon Benchmarks
 #
-#	Author:   Shea Newton
+#       Author:   Shea Newton
 #
-#	Date:     January 3, 2014
+#       Date:     January 3, 2014
 #
 ############################################################################
 
@@ -19,16 +19,16 @@ $endif
 
 procedure main(argv)
    local types := []
-   
+
    if *argv < 1 then {
       put(types, "all")
       }
-   else every put(types, !argv) 
+   else every put(types, !argv)
 
    while type := get(types) do {
       case type of {
          "all" : {
-            writes("generating input files...")  
+            writes("generating input files...")
             if not stat("ipxref.dat") then {
                fin := open("ipxref.test", "r") | stop("ipxref.test not found")
                fout := open("ipxref.dat", "w") | stop("cannot open ipxref.dat for writing")
@@ -38,7 +38,7 @@ procedure main(argv)
                every 1 to 96 do write(fout, data)
                close(fout)
                }
-            
+
             if has_C_compiler() then {
                writes(".")
                if not stat("generate.out") then system("gcc -o generate.out fasta.c")
@@ -104,7 +104,7 @@ procedure main(argv)
             break
             }
          "test" : {
-            writes("generating input files...")  
+            writes("generating input files...")
             if has_C_compiler() then {
                if not stat("generate.out") then system("gcc -o generate.out fasta.c")
                writes(".")
@@ -127,7 +127,7 @@ procedure main(argv)
             break
             }
          "benchmark" : {
-            writes("generating input files...")  
+            writes("generating input files...")
             if not stat("generate.out") then system("gcc -o generate.out fasta.c")
             writes(".")
             if not stat("ipxref.dat") then {
@@ -163,7 +163,7 @@ procedure main(argv)
             break
             }
          "med" : {
-            writes("generating input files...")  
+            writes("generating input files...")
             if has_C_compiler() then {
                if not stat("generate.out") then system("gcc -o generate.out fasta.c")
                writes(".")
@@ -190,7 +190,7 @@ procedure main(argv)
             break
             }
          "shootout" : {
-            writes("generating input files...")  
+            writes("generating input files...")
             if has_C_compiler() then {
                if not stat("generate.out") then system("gcc -o generate.out fasta.c")
                writes(".")
@@ -216,5 +216,5 @@ procedure main(argv)
 end
 
 procedure has_C_compiler()
-   if match("CCompiler ", x := &features) then return 
+   if match("CCompiler ", x := &features) then return
 end

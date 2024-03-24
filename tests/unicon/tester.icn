@@ -3,17 +3,17 @@ package testing
 #----------------------------------------------------------------------
 # Simple testing class
 
-class tester(id,    			# Name of test
-             quiet, 			# noise level
+class tester(id,                # Name of test
+             quiet,             # noise level
                  # quiet = 0: Not quiet        -- PASSED & FAILED messages
                  # quiet = 1: quiet (default)  -- FAILED messages only
                  # quiet = 2: very quiet       -- no messages
              passes,            # count of tests that pass
-             fails, 			# count of tests that fail
-             mtx, 				# mutex for concurrent testing
-             opf, 				# file for output
-             banner,			# Flag controlling start/finish output
-             t0					# Start time for timing test
+             fails,             # count of tests that fail
+             mtx,               # mutex for concurrent testing
+             opf,               # file for output
+             banner,            # Flag controlling start/finish output
+             t0                 # Start time for timing test
              )
 
    # ----------------------------------------
@@ -21,13 +21,13 @@ class tester(id,    			# Name of test
       critical mtx: passes := fails := 0
       id := \testName
       if 0 <= q <= 2 then {
-         quiet := q 
+         quiet := q
       } else {
          write(opf, id, " Initialisation FAILED")
          quiet := 0
          critical mtx: fails +:= 1
       }
-      banner := &null			# No start banner has been written (yet)
+      banner := &null           # No start banner has been written (yet)
    end
 
    # ----------------------------------------
@@ -38,7 +38,7 @@ class tester(id,    			# Name of test
          if @args[2] then {
             critical mtx: passes +:= 1
             if quiet < 1 then write(opf, id, " ", @args[1], " PASSED")
-            return	# success
+            return  # success
          } else {
             critical mtx: fails +:= 1
             if quiet < 2 then write(opf, id, " ", @args[1], " FAILED")
@@ -56,7 +56,7 @@ class tester(id,    			# Name of test
          if not @args[2] then {
             critical mtx: passes +:= 1
             if quiet < 1 then write(opf, id, " ", @args[1], " Expected FAILURE")
-            return	# success
+            return  # success
          } else {
             critical mtx: fails +:= 1
             if quiet < 2 then write(opf, id, " ", @args[1], " Unexpected PASS")
@@ -94,7 +94,7 @@ class tester(id,    			# Name of test
          if (*id > 0) & \banner then {
             if (quiet < 2) | (fails > 0) then {
   #            write(opf, repl("-",50))
-               write(opf, repl(" ", 10), id, 
+               write(opf, repl(" ", 10), id,
                      " Passed = ", passes,
                      " Failed = ", fails)
                write(opf, repl("-",50))
@@ -102,7 +102,7 @@ class tester(id,    			# Name of test
          }
          banner := &null
       }
-      if fails = 0 then return 	# success
+      if fails = 0 then return  # success
       # otherwise fail
    end
 

@@ -29,7 +29,7 @@ procedure main ()
    name2 := "temp2"
    data := "Here's the data"
 
-   every remove (name1 | name2)		# just in case
+   every remove (name1 | name2)                 # just in case
    open (name1) & stop ("can't remove ", name1, " to initialize test")
    open (name2) & stop ("can't remove ", name2, " to initialize test")
    remove (name1) & stop ("successfully removed nonexistent file")
@@ -76,7 +76,7 @@ procedure main ()
       c := char (i)
       n := ord (c)
       if n ~= i | c ~== s[i+1] then
-	 write ("oops -- ord/char failure at ",i)
+         write ("oops -- ord/char failure at ",i)
    }
    if char("47") ~== char(47) then
       write ("oops -- type conversion failed in char()")
@@ -99,8 +99,8 @@ procedure main ()
    fset := set()
    # try three kinds of reading in rotation
    while insert(fset, read(f)) do {
-      insert(fset, !f)			# note just one per loop pass
-      insert(fset, reads(f, 25))	# assumes no name longer than 25
+      insert(fset, !f)                  # note just one per loop pass
+      insert(fset, reads(f, 25))        # assumes no name longer than 25
       }
    every s := ![".", "..", "Makefile", "recent.icn", "recogn.icn", "nope"] do
       if member(fset, s) then
@@ -108,7 +108,7 @@ procedure main ()
 
 #  test sorting
 
-   a := list(1)		# different sizes to make identification easy
+   a := list(1)                 # different sizes to make identification easy
    b := list(2)
    c := list(3)
    d := list(4)
@@ -154,7 +154,7 @@ procedure main ()
    show(t)
 
 #  test multiple subscripts
-   
+
    write("t := table(\"default\") --> ", image(t := table("default")) |
       "failure")
    write("t[\"one\"] := 1 --> ", image(t["one"] := 1) | "failure")
@@ -250,9 +250,9 @@ procedure sf (args)
     dump ("sort(L)", sort (data))
 
     if *args = 0 then
-	every test (&null | 1 | "2" | '3' | 4 | 17 | -4 | -3 | "-2" | -1)
+        every test (&null | 1 | "2" | '3' | 4 | 17 | -4 | -3 | "-2" | -1)
     else
-	every test (!args)
+        every test (!args)
     end
 
 procedure test (n)
@@ -263,9 +263,9 @@ procedure test (n)
     r2 := sortf (set(data), n)
     dump ("sortf(L,n)", r1)
     if same (r1, r2) then
-	write ("\nsortf(S,n) [same]")
+        write ("\nsortf(S,n) [same]")
     else
-	dump ("sortf(S,n) [********** OOPS -- results differ: **********]", r2)
+        dump ("sortf(S,n) [********** OOPS -- results differ: **********]", r2)
     end
 
 procedure dump (s, l)
@@ -275,9 +275,9 @@ procedure dump (s, l)
     every e := !l do {
        writes ("  ", left(type(e), 8))
        if (type(e) == ("r1" | "r3" | "list")) then
-	  every writes (" ", image(e[(1 to 5) | (95 to 100)]) | "\n")
+          every writes (" ", image(e[(1 to 5) | (95 to 100)]) | "\n")
        else
-	  write (" ", image(e))
+          write (" ", image(e))
        }
     return
     end
@@ -286,6 +286,6 @@ procedure same (a, b)
     local i
     if *a ~= *b then fail
     every i := 1 to *a do
-	if a[i] ~=== b[i] then fail
+        if a[i] ~=== b[i] then fail
     return
     end

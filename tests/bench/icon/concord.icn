@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	Name:	concord.icn
+#       Name:   concord.icn
 #
-#	Title:	Produce concordance
+#       Title:  Produce concordance
 #
-#	Author:	Ralph E. Griswold
+#       Author:         Ralph E. Griswold
 #
-#	Date:	December 22, 1989
+#       Date:   December 22, 1989
 #
 ############################################################################
 #
@@ -15,8 +15,8 @@
 #
 #     There are two options:
 #
-#	-l n	set maximum line length to n (default 72), starts new line
-#	-w n	set maximum width for word to n (default 15), truncates
+#       -l n    set maximum line length to n (default 72), starts new line
+#       -w n    set maximum width for word to n (default 15), truncates
 #
 #     There are lots of possibilities for improving this program and adding
 #  functionality to it. For example, a list of words to be ignored could be
@@ -42,20 +42,20 @@ procedure main(args)
 
    Init__("concord")
 
-   opts := options(args, "l+w+")		# process options
+   opts := options(args, "l+w+")                # process options
    colmax := \opts["l"] | 72
    namewidth := \opts["w"] | 15
    uses := table("")
    lineno := 0
-   every tabulate(item(), lineno)		# tabulate all the citations
-   uselist := sort(uses, 3)			# sort by uses
+   every tabulate(item(), lineno)               # tabulate all the citations
+   uselist := sort(uses, 3)                     # sort by uses
    while name := get(uselist) do
       format(left(name, namewidth) || get(uselist))
 
    Term__()
 end
 
-#  Add line number to citations for name. If it already has been cited, 
+#  Add line number to citations for name. If it already has been cited,
 #  add (or increment) the number of citations.
 #
 procedure tabulate(name, lineno)
@@ -68,7 +68,7 @@ procedure tabulate(name, lineno)
          new ||:= number
          }
       if /number | (number ~== lineno)
-         then uses[name] ||:= lineno || ", "		# new line number
+         then uses[name] ||:= lineno || ", "            # new line number
       else {
          if ="(" then count := tab(upto(')')) else count := 1
          uses[name] := new || "(" || count + 1 || "), "
@@ -82,7 +82,7 @@ procedure format(line)
    local i
    while *line > colmax + 2 do {
       i := colmax + 2
-      until line[i -:= 1] == " "				# back off to break point
+      until line[i -:= 1] == " "                                # back off to break point
       write(line[1:i])
       line := repl(" ", namewidth) || line[i + 1:0]
       }
@@ -97,12 +97,12 @@ procedure item()
    while line := read() do {
       lineno +:= 1
       write(right(lineno, 6), "  ", line)
-      line := map(line)				# fold to lowercase
+      line := map(line)                                 # fold to lowercase
       i := 1
       line ? {
          while tab(upto(&letters)) do {
             word := tab(many(&letters))
-            if *word >= 3 then suspend word		# skip short words
+            if *word >= 3 then suspend word             # skip short words
             }
          }
       }

@@ -10,7 +10,7 @@
 #       fname - the filename to preprocess
 #
 #       predefined_syms - (optional) a table of symbols & definitions to
-#               serve as preprocessor "predefined" symbols 
+#               serve as preprocessor "predefined" symbols
 #
 
 # This preprocessor comes to Unicon courtesy of Bob Alexander, its author.
@@ -32,61 +32,61 @@ procedure predefs()
 
     # reverse engineer the predefined symbols list from our predefined symbols
     t["_V9"] := 1
-    if comp === -1 then 
-	t["_NOLINK"] := 1
-    else 
-	t["_LINK"] := 1
+    if comp === -1 then
+    t["_NOLINK"] := 1
+    else
+    t["_LINK"] := 1
 
     every s := &features do {
-	t[case s of {
+        t[case s of {
 # _CMS # gone
-	    "CMS": "_CMS"
-	    "MacOS":"_MACOS"
-	    "MS Windows NT":"_MS_WINDOWS_NT"
-	    "MS-DOS":"_MSDOS"
-	    "MVS":"_MVS"
-# _PORT # in use  
-	    "PORT":"_PORT"		
-	    "UNIX":"_UNIX"
-	    "Solaris":"_SOLARIS"
-	    "POSIX":"_POSIX"
-	    "DBM":"_DBM"
-	    "VMS":"_VMS"
-	    "ASCII":"_ASCII"
-	    "EBCDIC":"_EBCDIC"
-	    "co-expressions":"_CO_EXPRESSIONS"
-	    "native coswitch":"_NATIVECOSWITCH"
-	    "concurrent threads":"_CONCURRENT"
+            "CMS": "_CMS"
+            "MacOS":"_MACOS"
+            "MS Windows NT":"_MS_WINDOWS_NT"
+            "MS-DOS":"_MSDOS"
+            "MVS":"_MVS"
+# _PORT # in use
+            "PORT":"_PORT"
+            "UNIX":"_UNIX"
+            "Solaris":"_SOLARIS"
+            "POSIX":"_POSIX"
+            "DBM":"_DBM"
+            "VMS":"_VMS"
+            "ASCII":"_ASCII"
+            "EBCDIC":"_EBCDIC"
+            "co-expressions":"_CO_EXPRESSIONS"
+            "native coswitch":"_NATIVECOSWITCH"
+            "concurrent threads":"_CONCURRENT"
             "concurrent threads, compiler subset":"_CONCURRENT"
-	    "console window":"_CONSOLE_WINDOW"
-	    "dynamic loading":"_DYNAMIC_LOADING"
+            "console window":"_CONSOLE_WINDOW"
+            "dynamic loading":"_DYNAMIC_LOADING"
 # "" environment variables
-	    "event monitoring":"_EVENT_MONITOR"
-	    "external functions":"_EXTERNAL_FUNCTIONS"
-	    "keyboard functions":"_KEYBOARD_FUNCTIONS"
-	    "large integers":"_LARGE_INTEGERS"
-	    "multiple programs":"_MULTITASKING"
-	    "pattern type":"_PATTERNS"
-	    "pipes":"_PIPES"
-	    "pseudo terminals":"_PTY"
-	    "system function":"_SYSTEM_FUNCTION"
-	    "messaging":"_MESSAGING"
-	    "graphics":"_GRAPHICS"
-	    "3D graphics":"_3D_GRAPHICS"
-	    "X Windows":"_X_WINDOW_SYSTEM"
-	    "MS Windows":"_MS_WINDOWS"
-	    "Win32":"_WIN32"
-	    "MS-DOS extensions":"_DOS_FUNCTIONS"
-	    "libz file compression":"_LIBZ_COMPRESSION"
-	    "JPEG images":"_JPEG"
-	    "PNG images":"_PNG"
-	    "SQL via ODBC":"_SQL"
-	    "secure sockets layer encryption":"_SSL"
-	    "Audio":"_AUDIO"
-	    "Voice Over IP":"_VOIP"
-	    "operator overloading":"_OVLD"
-	    "developer mode":"_DEVMODE"
-	}] := "1"
+            "event monitoring":"_EVENT_MONITOR"
+            "external functions":"_EXTERNAL_FUNCTIONS"
+            "keyboard functions":"_KEYBOARD_FUNCTIONS"
+            "large integers":"_LARGE_INTEGERS"
+            "multiple programs":"_MULTITASKING"
+            "pattern type":"_PATTERNS"
+            "pipes":"_PIPES"
+            "pseudo terminals":"_PTY"
+            "system function":"_SYSTEM_FUNCTION"
+            "messaging":"_MESSAGING"
+            "graphics":"_GRAPHICS"
+            "3D graphics":"_3D_GRAPHICS"
+            "X Windows":"_X_WINDOW_SYSTEM"
+            "MS Windows":"_MS_WINDOWS"
+            "Win32":"_WIN32"
+            "MS-DOS extensions":"_DOS_FUNCTIONS"
+            "libz file compression":"_LIBZ_COMPRESSION"
+            "JPEG images":"_JPEG"
+            "PNG images":"_PNG"
+            "SQL via ODBC":"_SQL"
+            "secure sockets layer encryption":"_SSL"
+            "Audio":"_AUDIO"
+            "Voice Over IP":"_VOIP"
+            "operator overloading":"_OVLD"
+            "developer mode":"_DEVMODE"
+        }] := "1"
     }
 
     # there is no predefn for "environment variables" feature
@@ -125,12 +125,12 @@ procedure preprocessor(fname,predefined_syms)
     }
 
     preproc_new(fname,predefined_syms)
-    
+
     while line := preproc_read() do line ? {
         preproc_space()
         if (preproc_dollar_or_pound := ="#") &
-	   tmppos := &pos & ="line" & tab(any(' \t')) then {
-	    &pos := tmppos
+           tmppos := &pos & ="line" & tab(any(' \t')) then {
+            &pos := tmppos
             suspend preproc_scan_directive()
         }
         if (preproc_dollar_or_pound := ="$") & any(nonpunctuation) then {
@@ -158,11 +158,11 @@ procedure preproc_new(fname,predefined_syms)
       }
    else {
       if fname == "_stdin.icn" then
-	 preproc_file := &input
+         preproc_file := &input
       else
       # Normal file execution
       preproc_file := open(fname) |
-	 stop(&progname, ": cannot open ", image(fname))
+         stop(&progname, ": cannot open ", image(fname))
 
       preproc_include_set := set([fname])
       preproc_filename := preproc_include_name := fname
@@ -199,27 +199,27 @@ procedure preproc_scan_directive()
    preproc_command := preproc_word()
    if \preproc_if_state then {
       if match("if",preproc_command) then {
-	 preproc_command := "$if"
-	 }
+         preproc_command := "$if"
+         }
       }
    preproc_space()
    case preproc_command of {
       "define": {
-	 if /preproc_if_state then {
-	    if sym := preproc_word() then {
-	       if value := preproc_scan_define_value() then {
-		  if \(old := preproc_sym_table[sym]) ~=== value then {
-		     preproc_error("redefinition of " || sym || " = " ||
-				   old)
-		     }
-	          else {
-		     preproc_sym_table[sym] := value
-		     }
-		  }
+         if /preproc_if_state then {
+            if sym := preproc_word() then {
+               if value := preproc_scan_define_value() then {
+                  if \(old := preproc_sym_table[sym]) ~=== value then {
+                     preproc_error("redefinition of " || sym || " = " ||
+                                   old)
+                     }
+                  else {
+                     preproc_sym_table[sym] := value
+                     }
+                  }
                }
-	    else {
-	       preproc_error()
-	       }
+            else {
+               preproc_error()
+               }
             }
         }
         "undef": {
@@ -324,13 +324,13 @@ procedure preproc_scan_directive()
                     preproc_filename := \new_filename
                     preproc_line := new_line
                 } else {
-		   if \preproc_dollar_or_pound == "$" then {
-		       if /new_line then 
-		           preproc_error("$line: expected a line number.")
-		       else preproc_error("$line: expected only \"file\" after line number.")
-		   } 
-		   else # it was just a comment beginning with #line
-		      tab(find("\n") | 0)
+                   if \preproc_dollar_or_pound == "$" then {
+                       if /new_line then
+                           preproc_error("$line: expected a line number.")
+                       else preproc_error("$line: expected only \"file\" after line number.")
+                   }
+                   else # it was just a comment beginning with #line
+                      tab(find("\n") | 0)
                 }
             #}
         }
@@ -350,20 +350,20 @@ procedure preproc_scan_directive()
                 }
             }
         }
-	"C":{
+        "C":{
            if /preproc_if_state then {
                cincludes := ""
-	       while line := preproc_read() do {
-		   if match("$Cend", line) then {Cend := "yes"; break}
-		   cincludes ||:= line
-	       }
-	       if /Cend then {
-		   preproc_error("unfinished C code block")
-	       }
-	       stub := CIncludesParser(cincludes)
-	       # write("------ stub ------"); write(stub); write(repl("-",19)) 
-	       return stub
-	   }
+               while line := preproc_read() do {
+                   if match("$Cend", line) then {Cend := "yes"; break}
+                   cincludes ||:= line
+               }
+               if /Cend then {
+                   preproc_error("unfinished C code block")
+               }
+               stub := CIncludesParser(cincludes)
+               # write("------ stub ------"); write(stub); write(repl("-",19))
+               return stub
+           }
        }
     default: {
             if /preproc_if_state then {
@@ -399,12 +399,12 @@ procedure preproc_scan_text(done_set)
                             while tab(upto(interesting_in_quotes)) do {
                                 case move(1) of {
                                     "\\": {
-				       # backslash can eat multiple chars;
-				       # may need more than this
-				       case move(1) of {
-					  "^": move(1)
-					  }
-				       }
+                                       # backslash can eat multiple chars;
+                                       # may need more than this
+                                       case move(1) of {
+                                          "^": move(1)
+                                          }
+                                       }
                                     default: {
                                         break break
                                     }
@@ -467,13 +467,13 @@ procedure preproc_read()
    local result
    until result := preproc_read_result() do {
       if *preproc_if_stack ~= preproc_nest_level then {
-	 preproc_error("$if(s) without $endif(s): " ||
-		       *preproc_if_stack - preproc_nest_level)
-	 until *preproc_if_stack <= preproc_nest_level do
-	    preproc_if_state := pop(preproc_if_stack)
-	 }
+         preproc_error("$if(s) without $endif(s): " ||
+                       *preproc_if_stack - preproc_nest_level)
+         until *preproc_if_stack <= preproc_nest_level do
+            preproc_if_state := pop(preproc_if_stack)
+         }
       if type(preproc_file) ~== "list" & preproc_file ~=== &input then
-	 close(preproc_file)
+         close(preproc_file)
       delete(preproc_include_set,preproc_include_name)
       (preproc_nest_level := pop(preproc_file_stack) &
        preproc_line := pop(preproc_file_stack) &
@@ -547,7 +547,7 @@ procedure preproc_scan_define_value()
                             }
                         }
                     }
-		    preproc_error("unterminated string in $define")
+                    preproc_error("unterminated string in $define")
                     fail # end of line inside quotes!!
                 }
             }

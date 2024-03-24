@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     pool.icn
+#       File:     pool.icn
 #
-#	Subject:  Thread "pool" management 
+#       Subject:  Thread "pool" management
 #
-#	Author:   Clinton Jeffery and Shea Newton
+#       Author:   Clinton Jeffery and Shea Newton
 #
-#	Date:     January 3, 2014
+#       Date:     January 3, 2014
 #
 ############################################################################
 
@@ -15,7 +15,7 @@ class SeqPool()
    method imap(p, L)
        L2 := list(*L)
        every i := 1 to *L do {
-	   L2[i] := p(L[i])
+           L2[i] := p(L[i])
        }
        return L2
    end
@@ -24,24 +24,24 @@ end
 # concurrent pool
 class Pool(
            workers,          # list of threads
-	   worklist,         # list of work to do
-	   resultlist,       # return value
-	   resultlistcount,  # count of how many return values are in
-	   rlcmutex
-	   )
+           worklist,         # list of work to do
+           resultlist,       # return value
+           resultlistcount,  # count of how many return values are in
+           rlcmutex
+           )
 
    method work()
       repeat {
-	  while *worklist=0 do {
-             if <@ then  
-                return # kill thread                
+          while *worklist=0 do {
+             if <@ then
+                return # kill thread
              delay(0) # else wait for more work
              }
-	  # non-empty worklist, get some work
-	  while *worklist > 0 do {
+          # non-empty worklist, get some work
+          while *worklist > 0 do {
              if mywork := pop(worklist) then {
-		  resultlist[mywork[1]] := mywork[2](mywork[3])
-		  critical rlcmutex: resultlistcount +:= 1
+                  resultlist[mywork[1]] := mywork[2](mywork[3])
+                  critical rlcmutex: resultlistcount +:= 1
                   }
               }
           }
@@ -50,7 +50,7 @@ class Pool(
    method kill()
       # put a message in each live thread's inbox
       # signaling work is completed
-      every t := !workers do 
+      every t := !workers do
          @>>t
    end
 
@@ -71,8 +71,8 @@ initially(n:1, blocksize)
          put(workers, thread work())
    }
    else {
-      every i := 1 to n do 
+      every i := 1 to n do
          put(workers, spawn(create(work(), blocksize)))
    }
-      
+
 end

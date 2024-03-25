@@ -3097,7 +3097,7 @@ function{0, 1} ready(f, i)
       return string
       }
    body {
-      int status, fd;
+      int status;
       tended struct descrip desc;
       status = BlkD(f,File)->status;
 
@@ -3129,7 +3129,7 @@ function{0, 1} ready(f, i)
          if (select(pt->master_fd+1, &readset, NULL, NULL, &tv) > 0) {
             /* performance bug: how many bytes are really available? */
             tb = 1;
-#endif
+#endif                                  /* NT */
             if (i == 0) i = tb;
             else if (tb < i) i = tb;
             Protect(sbuf = alcstr(NULL, i), runerr(0));
@@ -3138,7 +3138,7 @@ function{0, 1} ready(f, i)
 #else
             tb = read(pt->master_fd, sbuf, i);
             status = (tb != -1);
-#endif
+#endif                                  /* NT */
             if (!status) fail;
             StrLoc(desc) = sbuf;
             StrLen(desc) = tb;

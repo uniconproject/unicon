@@ -86,7 +86,10 @@ void init_openssl() {
 #endif
    SSL_load_error_strings();
    /*OPENSSL_config(NULL); */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+   /* Needed only in older versions*/
    ERR_load_BIO_strings();
+#endif
    OpenSSL_add_all_algorithms();
 
    /*

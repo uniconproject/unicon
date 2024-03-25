@@ -30,7 +30,7 @@ void tracebk(struct pf_marker *lcl_pfp, dptr argp, FILE *logfptr)
 #if COMPILER
    struct debug *debug;
 #else                                   /* COMPILER */
-   long depth = 0, iteration = 0;
+   //long depth = 0, iteration = 0;
    struct pf_marker *origpfp;
    dptr arg;
    inst cipc;
@@ -55,7 +55,7 @@ void tracebk(struct pf_marker *lcl_pfp, dptr argp, FILE *logfptr)
 
    for (pfp->pf_efp = NULL; pfp->pf_pfp != NULL; pfp = pfp->pf_pfp) {
       (pfp->pf_pfp)->pf_efp = (struct ef_marker *)pfp;
-      depth++;
+      //depth++;
       }
 
    /* Now start from the base procedure frame marker, producing a listing
@@ -88,7 +88,7 @@ void tracebk(struct pf_marker *lcl_pfp, dptr argp, FILE *logfptr)
          }
 
       pfp = (struct pf_marker *)(pfp->pf_efp);
-      iteration++;
+      //iteration++;
       }
 #endif                                  /* COMPILER */
    }

@@ -1586,9 +1586,8 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
    tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *ciphers13=NULL, *password=NULL;
    tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
    tended char *min_proto=NULL, *max_proto=NULL, *verifyPeer=NULL;
-   int old_ssl_flags=0;
    static int SSL_is_initialized = 0;
-   C_integer timeout = 0, timeout_set = 0;
+   C_integer timeout = 0;
    int count;
    int a;
 
@@ -1600,7 +1599,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
        attr[a] = emptystr;
      }
      else if (a==0 && cnv:C_integer(attr[a], timeout)) {
-       timeout_set = 1;
+       //timeout_set = 1;
      }
      else if (cnv:C_string(attr[a], tmps)) {
        /*
@@ -1725,7 +1724,6 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 #endif
 
    count = 2;
-   old_ssl_flags = 0;
    do {
       char *proto;
       if (count == 2)
@@ -1777,6 +1775,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
         if (count == 2) {
 #if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+          int old_ssl_flags=0;
           switch (ver) {
           case TLS1_2_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
               SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
@@ -1799,6 +1798,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
         }
         else {
 #if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+         int old_ssl_flags=0;
           switch (ver) {
           case TLS1_2_VERSION: break;
           case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_2; break;

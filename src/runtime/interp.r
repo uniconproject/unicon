@@ -147,6 +147,10 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
 
 #begdef HandleOVLD(numargs)
 #ifdef OVLD
+{
+  struct descrip x;
+  int fieldnum;
+
   fieldnum = OpTab[lastop];
 #ifdef OVLD_DEBUG
   fprintf(stdout,"LastOp = %d\tFieldNum=%d\n",lastop, fieldnum);
@@ -158,14 +162,12 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
 #endif
     if (is:record(x)) {
       register word fnum;
-      tended struct b_record *rp;
-      register dptr dp;
+      struct b_record *rp;
       register union block *bptr;
       int nfields, i;
       struct b_record *rp2;
-      tended struct descrip md;
+      struct descrip md;
       int found = 0;
-      char *funcname = NULL;
       rp =  (struct b_record *) BlkLoc(x);
       bptr = rp->recdesc;
       nfields = bptr->Proc.nfields;
@@ -246,6 +248,7 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
 #ifdef OVLD_DEBUG
   fprintf(stdout, "%s\n", "No overloading occured");
 #endif
+}
 #else
 #endif
 #enddef
@@ -404,12 +407,10 @@ int interp_x(int fsig,dptr cargp)
 #ifdef Concurrent
 /*
  * TSTATARG doesn't take a CURTSTATE because it is a passed parameter.
- * OVLD doesn't take a CURTSTATE because it declares a tended variable.
- * Review OVLD code and do away with the tended if possible.
  */
-#if !(defined(TSTATARG) || defined(OVLD))
+#ifndef TSTATARG
     CURTSTATE_AND_CE();
-#endif                                   /* TSTATARG */
+#endif                                  /* TSTATARG */
 #endif                                  /* Concurrent */
 
 #if e_intcall
@@ -719,12 +720,6 @@ Deliberate Syntax Error
                                  */
 
                                 /* ---Constant construction--- */
-
-#ifdef OVLD
-             tended struct descrip x;
-             int fieldnum;
-#endif
-
 
          case Op_Cset:          /* cset */
 #ifdef Concurrent

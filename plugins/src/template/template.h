@@ -1,5 +1,5 @@
 /***
-    xunt*       Subject    : Unicon Plugin Template
+ *      Subject    : Unicon Plugin Template
  *      Author     : Jafar Al-Gharaibeh
  *      Date       : Feb 3, 2017
  ***

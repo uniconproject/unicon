@@ -817,7 +817,7 @@ static int tmp_str(char *sbuf, dptr s, dptr d)
  * dp_pnmcmp - do a string comparison of a descriptor to the procedure
  *   name in a pstrnm struct; used in call to qsearch().
  */
-int 
+int
 dp_pnmcmp (struct pstrnm *pne, struct descrip *dp)
 {
    struct descrip d;
@@ -956,8 +956,9 @@ static int ston(dptr sptr, union numeric *result)
    double power;        /* holds successive squares of 5 to compute fiveto */
    int err_no;
    char *ssave;         /* holds original ptr for bigradix */
+   char *esave;         /* points to the suffix character, if present */
    int suffix = 0;      /* number of times to multiply 1024 into the result */
-
+   int overflow;        /* Overflow during suffix multiplication */
    if (StrLen(*sptr) == 0)
       return CvtFail;
    end_s = s + StrLen(*sptr);
@@ -1054,6 +1055,8 @@ static int ston(dptr sptr, union numeric *result)
    if (digits == 0)
       return CvtFail;
 
+   /* Assume there is a suffix (and undo this assignment if not) */
+   esave = s-1;
    /*
     * Get exponent part.
     */
@@ -1079,7 +1082,12 @@ static int ston(dptr sptr, union numeric *result)
          }
       scale += (esign == '+') ? exponent : -exponent;
       }
-      }
+     /* drop through */
+   default:                     /* No suffix found */
+     esave = NULL;
+   }
+
+   if (realflag) if (suffix) return CvtFail;
 
    /*
     * Skip trailing white space and make sure there is nothing else left
@@ -1092,15 +1100,16 @@ static int ston(dptr sptr, union numeric *result)
       return CvtFail;
 
    /* KMGTP suffixes multiply by 1024, some number (1-5) of times */
+   overflow = 0;
    while (suffix--) {
       mantissa *= 1024;
-      lresult *= 1024;
+      if (0 > (lresult *= 1024)) {overflow = 1; break;}
       }
 
    /*
     * Test for integer.
     */
-   if (!realflag && !scale && mantissa >= MinLong && mantissa <= (double)MaxLong) {
+   if (!overflow && !realflag && !scale && mantissa >= MinLong && mantissa <= (double) MaxLong) {
       result->integer = (msign == '+' ? lresult : -lresult);
       return T_Integer;
       }
@@ -1114,11 +1123,65 @@ static int ston(dptr sptr, union numeric *result)
 #endif                                  /* COMPILER */
       if (!realflag) {
          int rv;
-         rv = bigradix((int)msign, 10, ssave, end_s, result);
-         if (rv == RunError)
-            fatalerr(0, NULL);
-         return rv;
+         /* There are two possible reasons for being here:
+          *    The number (without a suffix) is larger then MaxLong.
+          *    The number overflowed whilst multiplying by the suffix.
+          *
+          * bigradix() does not support suffixes, so we compute the number
+          * sans suffix and multiply it (using big arithmetic) afterwards.
+          */
+         rv = bigradix((int)msign, 10, ssave, (esave ? esave : end_s), result);
+         if (rv == RunError) fatalerr(0, NULL);
+
+         if (esave) { /* We have a suffix: use bigmul (da * db -> dx) */
+           tended struct descrip da = nulldesc, db = nulldesc, dx =nulldesc;
+
+           /* Initialise da from the result returned by bigradix */
+           if (rv == T_Lrgint) {
+             da.dword = D_Lrgint;
+             BlkLoc(da) = (union block *)(result->big);
+           } else {
+             da.dword = D_Integer;
+             IntVal(da) = result->integer;
+           }
+
+           /* Initialise db from the suffix
+            * 32 bit m/c  [KMG] are  small integers, [TP] are large integers
+            * 64 bit m/c  [KMGTP] are all small integers
+            */
+           switch (*esave) {
+           default: return CvtFail; /* unkown suffix */
+           case 'k': case 'K': { MakeInt(((word) 1024),&db); break; }
+           case 'm': case 'M': { MakeInt(((word) 1024*1024),&db); break; }
+           case 'g': case 'G': { MakeInt(((word) 1024*1024*1024),&db); break; }
+#if WordBits == 64
+           case 't': case 'T': { MakeInt(((word) 1024*1024*1024*1024),&db); break; }
+           case 'p': case 'P': { MakeInt(((word) 1024*1024*1024*1024*1024),&db); break; }
+#else /* assume 32 bit */
+           case 't': case 'T': {
+             ssave = "1099511627776"; /*1024*1024*1024*1024 */
+             db.dword = bigradix((int)'+', 10, ssave, ssave+13, result);
+             if (RunError == db.dword) fatalerr(0, NULL);
+             BlkLoc(db) = (union block *)(result->big);
+             break;
+           }
+           case 'p': case 'P': {
+             ssave = "1125899906842624"; /*1024*1024*1024*1024*1024 */
+             db.dword = bigradix((int)'+', 10, ssave, ssave+16, result);
+             if (RunError == db.dword) fatalerr(0, NULL);
+             BlkLoc(db) = (union block *)(result->big);
+             break;
+           }
+#endif                                  /* WordBits == 64 */
+           }
+
+           if (Succeeded != bigmul(&da,&db,&dx)) return CvtFail;
+           /* convert dx to union numeric */
+           rv = T_Lrgint;
+           result->big = BlkD(dx, Lrgint);
          }
+         return rv;
+      }
 #endif                                  /* LargeInts */
 
    if (!realflag)
@@ -1175,7 +1238,7 @@ static int ston(dptr sptr, union numeric *result)
  * radix - convert string s in radix r into an integer in *result.  sign
  *  will be either '+' or '-'.
  */
-int 
+int
 radix (int sign, register int r, register char *s, register char *end_s, union numeric *result)
    {
    register int c;

@@ -541,12 +541,6 @@ void icon_setup(int argc, char **argv, int *ip)
    free(tmp);
    }
 
-#ifdef MaxLevel
-   maxilevel = 0;
-   maxplevel = 0;
-   maxsp = 0;
-#endif                                  /* MaxLevel */
-
 /*
  * Handle command line options.
 */

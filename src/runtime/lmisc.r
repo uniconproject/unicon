@@ -771,7 +771,7 @@ operator{0,1} <@ rcv(x,y)
       }
 #ifdef PosixFns
    else if is:file(y) then inline {
-      int status, fd, i=0;
+      int status, i=0;
       tended struct descrip desc;
       status = BlkD(y, File)->status;
 
@@ -902,9 +902,6 @@ operator{0,1} <<@ rcvbk(x,y)
       int status;
       char sbuf[MaxReadStr];
       tended struct descrip s;
-#ifdef PosixFns
-      SOCKET ws;
-#endif                                  /* PosixFns */
 
       status = BlkLoc(y)->File.status;
 

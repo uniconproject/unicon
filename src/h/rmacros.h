@@ -2040,3 +2040,9 @@
  * Macro definition used by pollevent() to avoid magic numbers
  */
 #define POLL_INTERVAL 400
+
+#if defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120000
+#define vfork fork
+#endif
+#endif

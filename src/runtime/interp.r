@@ -147,106 +147,108 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
 
 #begdef HandleOVLD(numargs)
 #ifdef OVLD
-            fieldnum = OpTab[lastop];
+{
+  struct descrip x;
+  int fieldnum;
+
+  fieldnum = OpTab[lastop];
 #ifdef OVLD_DEBUG
-            fprintf(stdout,"LastOp = %d\tFieldNum=%d\n",lastop, fieldnum);
+  fprintf(stdout,"LastOp = %d\tFieldNum=%d\n",lastop, fieldnum);
 #endif
-            if ( fieldnum != -1) {
-             deref(&rargp[1],&x);
+  if ( fieldnum != -1) {
+    deref(&rargp[1],&x);
 #ifdef OVLD_DEBUG
-             fprintf(stdout, "Try overload\n");
+    fprintf(stdout, "Try overload\n");
 #endif
-             if (is:record(x)) {
-                  register word fnum;
-                  tended struct b_record *rp;
-                  register dptr dp;
-                  register union block *bptr;
-                  int nfields, i;
-                  struct b_record *rp2;
-                  tended struct descrip md;
-                  int found = 0;
-                  char *funcname = NULL;
-                  rp =  (struct b_record *) BlkLoc(x);
-                  bptr = rp->recdesc;
-                  nfields = bptr->Proc.nfields;
+    if (is:record(x)) {
+      register word fnum;
+      struct b_record *rp;
+      register union block *bptr;
+      int nfields, i;
+      struct b_record *rp2;
+      struct descrip md;
+      int found = 0;
+      rp =  (struct b_record *) BlkLoc(x);
+      bptr = rp->recdesc;
+      nfields = bptr->Proc.nfields;
 #ifdef OVLD_DEBUG
-                  fprintf(stdout, "x is a record\n");
+      fprintf(stdout, "x is a record\n");
 #endif
-/*
-Check if our record is a class ( has a method vector)
-*/
-                   for( i = 0; i < nfields;i++) {
-                       if (!strcmp(StrLoc(bptr->Proc.lnames[i]), "__m")) {
-                           found = 1;
-                           break;
-                         }
-                     }/* for ... nfields */
-                   if (found) {
-                       md = rp->fields[i];
-                       if (is:record(md)) {
-                         rp2 = (struct b_record *)BlkLoc(md);
+      /*
+        Check if our record is a class ( has a method vector)
+      */
+      for( i = 0; i < nfields;i++) {
+        if (!strcmp(StrLoc(bptr->Proc.lnames[i]), "__m")) {
+          found = 1;
+          break;
+        }
+      }/* for ... nfields */
+      if (found) {
+        md = rp->fields[i];
+        if (is:record(md)) {
+          rp2 = (struct b_record *)BlkLoc(md);
 #ifdef OVLD_DEBUG
-                         fprintf(stdout, " x has method vector\n");
+          fprintf(stdout, " x has method vector\n");
 #endif
-/*
-Now that we have a method vector we check if it contains the specified field
-*/
+          /*
+            Now that we have a method vector we check if it contains the specified field
+          */
 
 #ifdef FieldTableCompression
 #define FO(i) ((foffwidth==1)?(focp[i]&255L):((foffwidth==2)?(fosp[i]&65535L):fo[i]))
 #define FTAB(i) ((ftabwidth==1)?(ftabcp[i]&255L):((ftabwidth==2)?(ftabsp[i]&65535L):ftabp[i]))
 
-         if (rp2->recdesc->Proc.recnum == -1)
+          if (rp2->recdesc->Proc.recnum == -1)
             syserr("dynamic classes not supported yet\n");
 
-         fnum = FTAB(FO(fieldnum) + (rp2->recdesc->Proc.recnum - 1));
+          fnum = FTAB(FO(fieldnum) + (rp2->recdesc->Proc.recnum - 1));
 
-         /*
-          * Check the bitmap for this entry.  If it fails, it converts our
-          * nice field offset number into -1 (empty/invalid for our row).
-          */
-         {
-           int bytes, index;
-           unsigned char this_bit = 0200;
+          /*
+           * Check the bitmap for this entry.  If it fails, it converts our
+           * nice field offset number into -1 (empty/invalid for our row).
+           */
+          {
+            int bytes, index;
+            unsigned char this_bit = 0200;
 
-           bytes = *records >> 3;
-           if ((*records & 07) != 0)
-             bytes++;
-           index = IntVal(Arg2) * bytes + (rp2->recdesc->Proc.recnum - 1) / 8;
-           this_bit = this_bit >> (rp2->recdesc->Proc.recnum - 1) % 8;
-           if ((bm[index] | this_bit) != bm[index]) {
-             fnum = -1;
-           }
-           else { /* bitmap passes test on __m.field */
-           }
-         }
+            bytes = *records >> 3;
+            if ((*records & 07) != 0)
+              bytes++;
+            index = IntVal(Arg2) * bytes + (rp2->recdesc->Proc.recnum - 1) / 8;
+            this_bit = this_bit >> (rp2->recdesc->Proc.recnum - 1) % 8;
+            if ((bm[index] | this_bit) != bm[index]) {
+              fnum = -1;
+            }
+            else { /* bitmap passes test on __m.field */
+            }
+          }
 #else                                   /* FieldTableCompression */
 #ifdef OVLD_DEBUG
-printf("interp, fieldnum is still %d, recnum %d\n",
-        fieldnum, rp2->recdesc->Proc.recnum); fflush(stdout);
+          printf("interp, fieldnum is still %d, recnum %d\n",
+                 fieldnum, rp2->recdesc->Proc.recnum); fflush(stdout);
 #endif
-         fnum = ftabp[fieldnum * *records + rp2->recdesc->Proc.recnum - 1];
+          fnum = ftabp[fieldnum * *records + rp2->recdesc->Proc.recnum - 1];
 #ifdef OVLD_DEBUG
-      fprintf(stdout,"Resolving method fnum = %d\n" , fnum);
+          fprintf(stdout,"Resolving method fnum = %d\n" , fnum);
 #endif
 #endif                                  /* FieldTableCompression */
-         if ( fnum >= 0)
-                     {
+          if ( fnum >= 0)
+            {
 #ifdef OVLD_DEBUG
-                       fprintf(stdout, "x has the overloaded method\n");
+              fprintf(stdout, "x has the overloaded method\n");
 #endif
-                       rargp[0] = (rp2->fields[fnum]);
-                       args = numargs;
-                       goto invokej;
-
-                     }
-               }/*if is:record(md)*/
-             }/*if found == 1*/
-          }/*if is record x*/
-      }/*if fieldnum != -1*/
+              rargp[0] = (rp2->fields[fnum]);
+              args = numargs;
+              goto invokej;
+            }
+        }/*if is:record(md)*/
+      }/*if found == 1*/
+    }/*if is record x*/
+  }/*if fieldnum != -1*/
 #ifdef OVLD_DEBUG
-      fprintf(stdout, "%s\n", "No overloading occured");
+  fprintf(stdout, "%s\n", "No overloading occured");
 #endif
+}
 #else
 #endif
 #enddef
@@ -405,12 +407,10 @@ int interp_x(int fsig,dptr cargp)
 #ifdef Concurrent
 /*
  * TSTATARG doesn't take a CURTSTATE because it is a passed parameter.
- * OVLD doesn't take a CURTSTATE because it declares a tended variable.
- * Review OVLD code and do away with the tended if possible.
  */
-#if !(defined(TSTATARG) || defined(OVLD))
+#ifndef TSTATARG
     CURTSTATE_AND_CE();
-#endif                                   /* TSTATARG */
+#endif                                  /* TSTATARG */
 #endif                                  /* Concurrent */
 
 #if e_intcall
@@ -720,12 +720,6 @@ Deliberate Syntax Error
                                  */
 
                                 /* ---Constant construction--- */
-
-#ifdef OVLD
-             tended struct descrip x;
-             int fieldnum;
-#endif
-
 
          case Op_Cset:          /* cset */
 #ifdef Concurrent

@@ -14,6 +14,12 @@ ICONT = icont
 IFLAGS = -us
 ITRAN = $(ICONT) $(IFLAGS)
 
+# If clang, suppress W-deprecated-non-prototype warnings
+CC_VERSION := $(shell $(CC) --version)
+ifneq '' '$(findstring clang,$(CC_VERSION))'
+  CFLAGS +=  -Wno-deprecated-non-prototype
+endif
+
 # Macs should really use libcfunc.dylib, but libcfunc.so works just as well
 #  (and requires no alterations to other makefiles to accommodate the change to dylib).
 FUNCLIB = libcfunc.so

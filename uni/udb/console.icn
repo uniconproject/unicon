@@ -17,6 +17,7 @@ class Console : Session(
    RIGHT,      # The right arrow control key
    LEFT,       # The left arrow control key
    ENTER,      # The enter key
+   TAB,        # The tab key
    BkSp,       # The Back Space key
    badKeys,    # A set of all other control keys
    mode        # Either &null (normal), "-line", or "-adapter"
@@ -55,8 +56,54 @@ end
 # Reads an input string char by char
 #
 method get_Line()
-   local line := "", i := 0, ch, c, left, x
-   local max := 0
+   local line := "", i := 0, ch, c, left, x, max := 0, matchableCmds, matchedCmd
+   static stateUnloadedCmds, stateLoadedCmds, statePausedCmds
+   initial {
+      stateUnloadedCmds := [
+         "load",
+         "quit",
+         "help",
+         "directory",
+         "show",
+         "source",
+         "info",
+         "analyze",
+         "ls",
+         "pwd",
+         "cd"
+      ]
+      stateLoadedCmds := stateUnloadedCmds ||| [
+         "run",
+         "break",
+         "watch",
+         "awatch",
+         "twatch",
+         "vwatch",
+         "rwatch",
+         "swatch",
+         "list",
+         "clear",
+         "delete",
+         "enable",
+         "disable",
+         "assert",
+         "trace"
+      ]
+      statePausedCmds := stateLoadedCmds ||| [
+         "print",
+         "step",
+         "pstep",
+         "next",
+         "return",
+         "frame",
+         "up",
+         "down",
+         "continue",
+         "where",
+         "bracktrace",
+         "coexp"
+      ]
+   }
 
    writes(PROMPT)
 
@@ -104,6 +151,24 @@ method get_Line()
          RIGHT:{
             if \left & left <= *line then left+:=1
             }
+         TAB:{
+            line ? {
+               tab(many("\ "))
+               cmd := tab(upto("\ ") | 0)
+               if not pos(0) then next
+            }
+            case DState.State of {
+               NONE: { matchableCmds := stateUnloadedCmds }
+               LOAD: { matchableCmds := stateLoadedCmds }
+               PAUSE: { matchableCmds := statePausedCmds }
+            }
+            matchedCmd := tab_Complete(cmd, matchableCmds)
+            if \matchedCmd then {
+               line := matchedCmd
+               left := &null
+               matchedCmd := &null
+            }
+         }
          ENTER:{
             left := &null
 $ifndef _UNIX
@@ -139,6 +204,46 @@ $endif
       }#end of while
    write() # new line after the prompt
    return line
+end
+
+# Displays set of possible commands if more than one valid match.
+# Returns matched cmd if only one valid match, otherwise returns nothing.
+method tab_Complete(line, matchableCmds)
+   local matchedCmds, formattedCmds := [], i, minLength := 0, cmd, diff, outString := "\n", col
+   matchedCmds := copy(matchableCmds)
+   if line ~== "" then {
+      i := 1
+      while i <= *matchedCmds do {
+         if not match(map(line), matchedCmds[i]) then
+            delete(matchedCmds, i)
+         else
+            i +:= 1
+      }
+   }
+   if *matchedCmds > 1 then {
+      matchedCmds := sort(matchedCmds)
+      every cmd := !matchedCmds do {
+         if *cmd > minLength then
+            minLength := *cmd
+      }
+      minLength +:= 2
+      col := 0
+      every cmd := !matchedCmds do {
+         if col = 3 then
+            outString ||:= "\n"
+         diff := minLength - *cmd
+         every 1 to diff do
+            cmd ||:= " "
+         outString ||:= cmd
+         if col = 3 then
+            col := 1
+         else
+            col +:= 1
+      }
+      write(outString)
+   }
+   else if *matchedCmds = 1 then
+      return matchedCmds[1]
 end
 
 #
@@ -359,6 +464,7 @@ $ifdef _UNIX
    RIGHT := "\e[C"
    LEFT  := "\e[D"
    ENTER := "\n"
+   TAB   := "\t"
    BkSp  := "\d"
    badKeys := otherControls()
 $else
@@ -367,6 +473,7 @@ $else
    RIGHT := "\xe0M" 
    LEFT  := "\xe0K"
    ENTER := "\r"
+   TAB   := "\t"
    BkSp  := "\b"
    badKeys := otherControls()
 $endif

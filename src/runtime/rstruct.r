@@ -720,12 +720,11 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
    register union block **lp;
    register struct b_selem *pe;
    register uword eh;
+#if E_HashChain
    int chainlen = 0; /* # of elements visited during this lookup */
+#endif                                  /* E_HashChain */
 #ifdef DebugHeap
-   int elemtitle;
-   if (pb->Set.title == T_Set) elemtitle = T_Selem;
-   else if (pb->Set.title == T_Table) elemtitle = T_Telem;
-   else { syserr("odd memb\n"); }
+   if ((pb->Set.title != T_Set) && (pb->Set.title != T_Table)) { syserr("odd memb\n"); }
 #endif
 
    lp = hchain(pb, hn);
@@ -734,7 +733,9 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
     */
    *res = 0;
    while ((pe = (struct b_selem *)*lp) != NULL && BlkType(pe) != T_Table) {
+#if E_HashChain
       chainlen++;
+#endif                                  /* E_HashChain */
       eh = pe->hashnum;
       if (eh > hn) {                    /* too far - it isn't there */
          EVVal((word)chainlen, E_HashChain);

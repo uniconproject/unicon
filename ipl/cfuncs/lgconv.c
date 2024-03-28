@@ -52,16 +52,11 @@ struct b_bignum {		/* large integer block */
    word msd, lsd;		/*   most and least significant digits */
    int sign;			/*   sign; 0 positive, 1 negative */
    DIGIT digits[1];		/*   digits */
-   };
+};
 
-
-
-
-int lgconv(argc, argv)		/*: convert large integer to string */
-int argc;
-descriptor *argv;
-   {
-#define BCDIGITS (2 * sizeof(long))	/* BCD digits per long */
+int lgconv(int argc, descriptor *argv) /*: convert large integer to string */
+{
+#define BCDIGITS (2 * sizeof(long)) /* BCD digits per long */
    int nbig, ndec, nbcd, nchr, bcdlen, i, j, n, t;
    char tbuf[25], *o, *p;
    struct b_bignum *big;
@@ -70,11 +65,12 @@ descriptor *argv;
    unsigned long b, *bp, *bcdbuf, *powbuf, *totbuf;
 
    t = IconType(argv[1]);
-   if (t != 'I') {				/* if not large integer */
-      ArgInteger(1);				/* must be a small one */
+   if (t != 'I')
+   {                 /* if not large integer */
+      ArgInteger(1); /* must be a small one */
       sprintf(tbuf, "%ld", IntegerVal(argv[1]));
       RetString(tbuf);
-      }
+   }
 
    big = (struct b_bignum *) argv[1].vword.bptr;/* pointer to bignum struct */
    nbig = big->lsd - big->msd + 1;		/* number of bignum digits */
@@ -134,10 +130,8 @@ descriptor *argv;
       o++;
    if (big->sign)
       *--o = '-';
-   RetAlcString(o, p - o); 
-   }
-
-
+   RetAlcString(o, p - o);
+}
 
 /*
  * bcdadd(lside,rside,n) -- compute lside += rside for n BCD longwords

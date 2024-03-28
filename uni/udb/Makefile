@@ -19,13 +19,13 @@ SRC       = udb.icn icode.icn srcfile.icn state.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
             evaluator.icn session.icn adapter.icn console.icn defaults.icn help.icn \
-	    coexp.icn symtab.icn system.icn
+	    coexp.icn symtab.icn system.icn exparser.icn
 
 UFILES    = udb.u icode.u srcfile.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
-            evaluator.u session.u adapter.u console.u help.u coexp.u symtab.u system.u
+            evaluator.u session.u adapter.u console.u help.u coexp.u symtab.u system.u exparser.u
 
 LIB       = lib
 LIBRARY   = $(LIB)/listener.u      $(LIB)/memory.u     $(LIB)/structaliases.u \
@@ -101,6 +101,9 @@ stack.u: stack.icn defaults.icn state.u
 
 data.u: data.icn defaults.icn state.u
 	$(UC) $(cflags) data
+
+exparser.u: exparser.icn
+	$(UC) $(cflags) exparser
 
 trace.u: trace.icn defaults.icn state.u $(EVD)
 	$(UC) $(cflags) trace

@@ -4,6 +4,8 @@
 # Contributor: Gigi Young
 #
 
+link exparser
+link io
 $include "evdefs.icn"
 $include "defaults.icn"
 
@@ -583,6 +585,119 @@ method assignVar(Lexpr, Rexpr, level)
    DState.Write(outputTable)
 end
 
+method cmdEval(cmd)
+   local resTable, outputTable := table("type", "eval")
+
+   if DState.State ~= PAUSE then {
+      DState.State := ERROR
+      Message := "\n   The program is not being run._
+                  \n   Try \"run\", or Type \"help\" for assistance."
+      outputTable["success"] := "__false__"
+      outputTable["consoleMsg"] := Message
+      DState.Write(outputTable)
+      return
+   }
+
+   cmdStr := ""
+   every cmdStr ||:= !cmd||" "
+   cmdStr := cmdStr[1:-1]
+
+   resTable := evaluate(cmdStr)
+
+   if /resTable | \resTable["error"] then {
+      outputTable["success"] := "__false__"
+      if \resTable then
+         outputTable["consoleMsg"] := "\n   An error occurred\n   "||resTable["result"]
+      else
+         outputTable["consoleMsg"] := "\n   Invalid expression (probably)"
+      DState.Write(outputTable)
+      fail
+   }
+   else {
+      outputTable["consoleMsg"] := "\n   "||ximage(resTable["result"])
+      outputTable["result"] := resTable["result"]
+      outputTable["success"] := "__true__"
+      DState.Write(outputTable)
+   }
+end
+
+method evaluate(expr)
+   local sfile, sc, level, CMonitored, vars := table(), idents, links := set(), imports := set()
+
+   CMonitored := DState.coState.target.val
+   level := DState.coState.target.curr_frame
+
+   pkgs := DState.srcFile.getPackages()
+   idents := getIdentifiers(expr)
+   every vars[varName := !idents["vars"]] := variable(varName, CMonitored, level, 1)
+
+   every prc := !idents["procs"] do {
+      src := &null
+      src := DState.srcFile.findProcMethod(prc)[1]
+      if \src then
+         if src ~== DState.srcFile.procMainFile then
+            insert(links, "\""||DState.srcFile.findDirectory(src)||"/"||src[1:-4]||"\"") #& write(prc||" in "||src)
+         else
+            vars[prc] := variable(prc, CMonitored, level, 1)
+      else
+         every pkg := !pkgs do DState.srcFile.findPkgProc(pkg, prc)[1] & insert(imports, pkg)
+   }
+
+   sfileName := tempname("ue_")
+   sfile := open(sfileName||".icn", "w")
+
+   every write(sfile, "import "||!imports)
+   every write(sfile, "link "||!links)
+   write(sfile, "global __vars")
+   write(sfile, "procedure main()")
+   write(sfile, "   &error := 1")
+   every varName := key(vars) do {
+      write(sfile, varName||" := __vars[\""||varName||"\"]")
+   }
+   write(sfile, "   return __construct_eval_result_table(("||expr||") | \"failure\")")
+   write(sfile, "end")
+
+   write(sfile, "procedure __construct_eval_result_table(evalResult)")
+   write(sfile, "   resultTable := table(\"vars\", table())")
+   write(sfile, "   if \\&errornumber then {")
+   write(sfile, "      evalResult := \"Run-time error \"||&errornumber||\": \"||&errortext")
+   write(sfile, "      resultTable[\"error\"] := \"__true__\"")
+   write(sfile, "   }")
+   write(sfile, "   resultTable[\"result\"] := evalResult")
+   write(sfile, "   every varName := key(__vars) do resultTable[\"vars\"][varName]:= variable(varName, &current, 1, 1)")
+   write(sfile, "   return resultTable")
+   write(sfile, "end")
+
+   close(sfile)
+
+   # write()
+   # system("cat "||sfileName||".icn")
+   # write()
+
+   sc :=  system("unicon -s "||sfileName||" -o "||sfileName)
+
+   if sc = 0 then {
+      coex := load(sfileName)
+      variable("__vars", coex) := vars
+
+      resTable := @ coex
+
+      every varName := key(vars) do {
+         variable(varName, CMonitored, level, 1) := resTable["vars"][varName]
+      }
+
+      evalResult := [
+         "result": resTable["result"]
+      ]
+      evalResult["error"] := \resTable["error"]
+   }
+
+   system("rm -f "||sfileName||".icn "||sfileName)
+
+   return \evalResult
+
+end
+
 #
 # Prints out a variable and it's current value. Variables from previous
 # procedures that are still in the stack can also be viewed.
@@ -614,75 +729,75 @@ method cmdPrint(cmd)
       outputTable["consoleMsg"] := Message
       DState.Write(outputTable)
       return
-      }
+   }
 
    if \cmd[1] then {
       if cmd[1][1] == ("*"|"!"|"?") then {
          if *(cmd[1]) = 1 then action := pop(cmd[1])
          else {
             action := cmd[1][1]
-            cmd[1] := cmd[1][2:0]
-            }
+            cmd[1] := cmd[1][2:0] 
          }
+      }
       every j := 1 to *cmd do {
          if cmd[j] == ("="|":=") then {
             left   := cmd[1:j]
             right  := cmd[j+1:0]
             action := ":="
             break
-            }
          }
+      }
       if \action & action == ":=" then {
          # this allows '& keyword'
          if left[1][1] == "&" then {
             if *left[1] = 1 then left := "&"||left[2]
             else left := left[1]
             assignKeyword(left, right, level)
-            }
+         }
          else
             assignVar(left, right, level)
-         }
+      }
       else{
          expr := cmd
          #print -g [level]
          if expr[1] == ("-g"|"-G"|"-globals") then {
             printGlobals(level)
             return
-            }
+         }
          #print -l [level]
          else if expr[1] == ("-l"|"-L"|"-locals") then {
             printLocals(level)
             return
-            }
+         }
          #print -p [level]
          else if expr[1] == ("-p"|"-P"|"-params") then {
             printParams(level)
             return
-            }
+         }
          #print -s [level]
          else if expr[1] == ("-s"|"-S"|"-static") then {
             printStatics(level)
             return
-            }
+         }
          #print &pos or #print *&subject
          else if expr[1][1] == "&" then {
             # this allows '& keyword'
             if *expr[1] = 1 then expr := "&"||expr[2]
             else expr := expr[1]
             printKeyword(expr, action, level)
-            }
+         }
          #print x or #print *s
          else
             printVar(expr, action, level)
-         }
       }
-   else{
+   }
+   else {
       Message :="\n   The command \""||DState.cmdHistory[1]||"\" is incomplete."
       Message ||:="\n   Try \"help\" or \"help print\" for assistance."
       outputTable["success"] := "__false__"
       outputTable["consoleMsg"] := Message
       DState.Write(outputTable)
-      }
+   }
 end
 
 #

@@ -234,8 +234,6 @@ extern int cnv_int(descriptor *, descriptor *);
 int cnv_str(descriptor *, descriptor *);
 int cnv_real(descriptor *, descriptor *);
 int cnv_c_str(descriptor *, descriptor *);
-int chmod();
-int umask(int);
 char *alcstr(char *s, word len);
 #if !defined(DescriptorDouble)
 realblock *alcreal(double v);

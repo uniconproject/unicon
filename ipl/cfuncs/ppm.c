@@ -422,7 +422,7 @@ static descriptor ppmalc(int w, int h, int max)
 /*  ppmcrack(d) -- crack PPM header, setting max=0 on error  */
 
 static ppminfo ppmcrack(descriptor d)
-   {
+{
    int n;
    char *s;
    ppminfo info;
@@ -452,9 +452,7 @@ static ppminfo ppmcrack(descriptor d)
 
    info.data = s;
    return info;
-   }
-
-
+}
 
 /*
  *  ppmrows(hdr, nbr, func, arg) -- extend rows and call driver function  
@@ -487,23 +485,25 @@ static ppminfo ppmcrack(descriptor d)
  *  Otherwise, ppmrows returns zero.
  */
 
-static int ppmrows(ppminfo hdr, int nbr, int (*func) (), long arg)
-   {
+static int ppmrows(ppminfo hdr, int nbr, int (*func)(char *a[], int w, int i, long max), long arg)
+{
    char **a, *s;
    void *buf;
    int i, rv, np, row, rowlen;
 
    /* process nbr=0 without any copying */
-   if (nbr <= 0) {
+   if (nbr <= 0)
+   {
       s = hdr.data;
-      for (row = 0; row < hdr.h; row++) {
-	 rv = func(&s, hdr.w, row, arg);
-	 if (rv != 0)
-	    return rv;
-	 s += 3 * hdr.w;
-	 }
-      return 0;
+      for (row = 0; row < hdr.h; row++)
+      {
+         rv = func(&s, hdr.w, row, arg);
+         if (rv != 0)
+            return rv;
+         s += 3 * hdr.w;
       }
+      return 0;
+   }
 
    /* allocate memory for pointers and data */
    np = 2 * nbr + 1;			/* number of pointers */
@@ -552,9 +552,7 @@ static int ppmrows(ppminfo hdr, int nbr, int (*func) (), long arg)
 
    free(buf);
    return 0;
-   }
-
-
+}
 
 /*
  *  rowextend(dst, src, w, nbr) -- extend row on both ends
@@ -564,7 +562,7 @@ static int ppmrows(ppminfo hdr, int nbr, int (*func) (), long arg)
  *  Returns unextended dst pointer.
  */
 static char *rowextend(char *dst, char *src, int w, int nbr)
-   {
+{
    char *s1, *s2, *d1, *d2;
 
    memcpy(dst, src, 3 * w);
@@ -578,4 +576,4 @@ static char *rowextend(char *dst, char *src, int w, int nbr)
       *d2++ = *s2++;
       }
    return dst;
-   }
+}

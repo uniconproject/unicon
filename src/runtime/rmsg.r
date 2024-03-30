@@ -545,7 +545,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
 
    /* Parse attributes into the header */
    header[0] = '\0';
-   hleft = sizeof(header);
+   hleft = sizeof(header) - 1;
    for (i=0; i<nattr; i++) {
       if (!cnv:C_string(attr[i], s)) {
          abort();

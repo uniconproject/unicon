@@ -17,6 +17,9 @@ jmp_buf Mexceptbuf;
 int Mexceptjmp;
 int Merror;
 
+/* Size of header array */
+#define HDRSIZE 8192
+
 /*
  * Adding a timeout to open() is a practical requirement.
  * Not implemented yet.
@@ -157,11 +160,11 @@ void Mhttp(struct MFile* mf, dptr attr, int nattr)
    tended char *s;
    char *end, *colon;
    char buf[4096];
-   char header[8192];
+   char header[HDRSIZE];
 
    int need_user_agent = 1;
    int need_host = 1;
-   int hleft = sizeof(header) - 1;
+   int hleft = HDRSIZE;
 
    Tprequest_t req;
 
@@ -384,7 +387,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    char useraddr[1024] = { 0 };
    char *at, *colon, *end;
    char buf[4096], tmpbuf[256];
-   char header[8192];
+   char header[HDRSIZE];
    int l, hleft;
    int i;
    Tprequest_t req;
@@ -545,7 +548,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
 
    /* Parse attributes into the header */
    header[0] = '\0';
-   hleft = sizeof(header) - 1;
+   hleft = HDRSIZE;
    for (i=0; i<nattr; i++) {
       if (!cnv:C_string(attr[i], s)) {
          abort();
@@ -656,20 +659,13 @@ char *Mwashs(char* dest, char* s, size_t n)
    return dest;
 }
 
-char *Maddtoheader(char* header, const char* s, int slen, int* nleft)
+char *Maddtoheader(char header[HDRSIZE], const char* s, int slen, int* nleft)
 {
-   if (*nleft <= 0) {
-      return header;
-      }
+   if (slen >= *nleft) if (0 >= (slen = *nleft - 1)) return header;
 
-   if (slen < *nleft) {
-      strncat(header, s, slen);
-      }
-   else {
-      strncat(header, s, *nleft);
-      }
-
+   memcpy(&header[HDRSIZE - *nleft], s, slen);
    *nleft -= slen;
+   header[HDRSIZE - *nleft] = '\0';
    return header;
 }
 

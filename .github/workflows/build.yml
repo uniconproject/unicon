@@ -21,7 +21,6 @@ on:
 
 jobs:
   Windows:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
@@ -75,13 +74,12 @@ jobs:
         cat unicon-features.log
 
   macOS:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
       matrix:
         cfg:
-        -  { os: macos-latest,    name: 'macOS',           opt: 'CC=clang CXX=clang++' }
+        -  { os: macos-latest,    name: 'macOS',           opt: '--enable-werror CC=clang CXX=clang++' }
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -108,20 +106,20 @@ jobs:
 
 
   Linux:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ubuntu-latest
     name: ${{ matrix.cfg.name }}
     container: ${{ matrix.cfg.os }}
     strategy:
       matrix:
         cfg:
-        -  { os: 'ubuntu:20.04',  name: 'Ubuntu 20.04',   opt: '' }
-        -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04',   opt: '' }
-        -  { os: 'centos:7',      name: 'CentOS 7',       opt: '' }
-        -  { os: 'fedora:latest', name: 'Fedora Latest',  opt: '' }
-        -  { os: 'debian:10',     name: 'Debian 10',      opt: '' }
-        -  { os: 'debian:11',     name: 'Debian 11',      opt: '' }
-        -  { os: 'oraclelinux:8', name: 'Oracle Linux 8', opt: '' }
+        -  { os: 'ubuntu:20.04',  name: 'Ubuntu 20.04',   opt: '--enable-werror ' }
+        -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04',   opt: '--enable-werror ' }
+        -  { os: 'centos:7',      name: 'CentOS 7',       opt: '--enable-werror ' }
+        -  { os: 'fedora:latest', name: 'Fedora Latest',  opt: '--enable-werror ' }
+        -  { os: 'debian:10',     name: 'Debian 10',      opt: '--enable-werror ' }
+        -  { os: 'debian:11',     name: 'Debian 11',      opt: '--enable-werror ' }
+        -  { os: 'debian:12',     name: 'Debian 12',      opt: '--enable-werror ' }
+        -  { os: 'oraclelinux:8', name: 'Oracle Linux 8', opt: '--enable-werror ' }
         #-  { os: 'alpine:latest', name: 'Alpine Latest',  opt: '' }
     steps:
 
@@ -179,7 +177,6 @@ jobs:
         cat unicon-features.log
 
   Features:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
@@ -192,6 +189,7 @@ jobs:
         -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency' }
         -  { os: ubuntu-latest, name: 'Heap Test',      opt: '--enable-debugheap  --enable-verifyheap' }
         -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
+        -  { os: ubuntu-latest, name: 'Dev Mode',       opt: '--enable-devmode' }
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -235,7 +233,6 @@ jobs:
         cat unicon-features.log
 
   DebianPkg:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:

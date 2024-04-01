@@ -156,13 +156,10 @@ unsigned char allchars[256] = {
 /*
  * fatalerr - disable error conversion and call run-time error routine.
  */
-void fatalerr(n, v)
-int n;
-dptr v;
+void fatalerr(int n, dptr v)
    {
    IntVal(kywd_err) = 0;
    err_msg(n, v);
-   return;
    }
 
 struct b_list *alclist_0(uword size, uword nslots)
@@ -278,7 +275,7 @@ void initalloc(word codesize)
          curtblock = curblock;
          curtstring = curstring;
          {
-           int i; 
+           int i;
            int maxmutexes = 1024;
            mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
            if (mutexes==NULL) syserr("init_threads(): out of memory for mutexes!");

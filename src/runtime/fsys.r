@@ -1432,7 +1432,7 @@ function{0,1} read(f)
          */
         if (status & Fs_Compress) {
 
-            if (gzeof(fp)) fail;
+            if (gzeof((gzFile)fp)) fail;
             DEC_NARTHREADS;
             if (gzgets((gzFile)fp,sbuf,MaxReadStr+1) == Z_NULL) {
                INC_NARTHREADS_CONTROLLED;
@@ -1784,14 +1784,14 @@ function{0,1} reads(f,i)
        * Read characters from a compressed file
        */
       if (status & Fs_Compress) {
-         if (gzeof(fp)) {
+         if (gzeof((gzFile)fp)) {
             fail;
             }
          DEC_NARTHREADS;
          slen = gzread((gzFile) fp, StrLoc(s), i);
          INC_NARTHREADS_CONTROLLED;
          if (slen == 0) {
-            if (gzeof(fp)) fail;
+            if (gzeof((gzFile)fp)) fail;
             /* an underlying read error, but gzread() returned 0? */
             set_gzerrortext((gzFile) fp);
             fail;
@@ -1998,8 +1998,8 @@ function{0,1} seek(f,o)
          if (o<0) {
             set_errortext(214);
             }
-         if (gzseek(fd, o - 1, SEEK_SET) == -1) {
-            if (gzeof(fd)) fail;
+         if (gzseek((gzFile)fd, o - 1, SEEK_SET) == -1) {
+            if (gzeof((gzFile)fd)) fail;
             set_gzerrortext((gzFile) fd);
             fail;
             }
@@ -2879,14 +2879,14 @@ function {1} name(x[nargs])
 
 #if HAVE_LIBZ
                      if (status & Fs_Compress) {
-                        if (gzputc(f.fp,'\n')==-1){
+                        if (gzputc((gzFile)f.fp,'\n')==-1){
 #ifdef Concurrent
                            if (fblk)
                            MUTEX_UNLOCKID(fblk->mutexid);
 #endif                                  /* Concurrent */
                            runerr(214);
                            }
-/*                      gzflush(f.fp,4); */
+/*                      gzflush((gzFile)f.fp,4); */
                           }
                      else {
                           }
@@ -3018,7 +3018,7 @@ function {1} name(x[nargs])
 
 #if HAVE_LIBZ
                   if (status & Fs_Compress){
-                     if (gzputs(f.fp, StrLoc(t))==-1){
+                     if (gzputs((gzFile)f.fp, StrLoc(t))==-1){
                         MUTEX_UNLOCKID(fblk->mutexid);
                         runerr(214);
                         }

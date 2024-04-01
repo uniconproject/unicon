@@ -385,10 +385,10 @@ word gzlongread(char *s, int width, word len, FILE *fd)
 #endif                                  /* XWindows && !MacOS */
 
    while (len > 0) {
-      n = gzread(fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));
+      n = gzread((gzFile)fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));
       if (n <= 0) {
 #ifdef NT_FIXFTELL
-         gzseek(fd, pos + tally, SEEK_SET);
+         gzseek((gzFile)fd, pos + tally, SEEK_SET);
 #endif                                  /* NT_FIXFTELL */
          return tally;
          }
@@ -397,7 +397,7 @@ word gzlongread(char *s, int width, word len, FILE *fd)
       len -= n;
       }
 #ifdef NT_FIXFTELL
-   gzseek(fd, pos + tally, SEEK_SET);
+   gzseek((gzFile)fd, pos + tally, SEEK_SET);
 #endif                                  /* NT_FIXFTELL */
    return tally;
    }

@@ -1054,7 +1054,7 @@ Deliberate Syntax Error
                 (long)hdr.hsize,(long)cbread);
          error(name, "bad icode file");
          }
-      gzclose(fname);
+      gzclose((gzFile)fname);
 #else                                   /* HAVE_LIBZ */
       error(name, "this VM can't read compressed icode");
 #endif                                  /* HAVE_LIBZ */
@@ -2181,7 +2181,7 @@ struct b_coexpr
                 (long)hdr.hsize,(long)cbread);
          error(name, "can't read interpreter code");
          }
-      gzclose(fname);
+      gzclose((gzFile)fname);
 #else                                   /* HAVE_LIBZ */
         error(name, "this VM can't read compressed icode");
 #endif                                  /* HAVE_LIBZ */

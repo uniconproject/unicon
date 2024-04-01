@@ -129,7 +129,7 @@ int cnv_c_int(dptr s, C_integer *d)
       real: {
          double dbl;
          GetReal(s,dbl);
-         if (dbl > MaxLong || dbl < MinLong) {
+         if (dbl > (double)MaxLong || dbl < MinLong) {
             return 0;
             }
          *d = dbl;
@@ -157,7 +157,7 @@ int cnv_c_int(dptr s, C_integer *d)
          }
       case T_Real: {
          double dbl = numrc.real;
-         if (dbl > MaxLong || dbl < MinLong) {
+         if (dbl > (double)MaxLong || dbl < MinLong) {
             return 0;
             }
          *d = dbl;
@@ -370,7 +370,7 @@ int f(dptr s, dptr d)
       real: {
          double dbl;
          GetReal(s,dbl);
-         if (dbl > MaxLong || dbl < MinLong) {
+         if (dbl > (double)MaxLong || dbl < MinLong) {
 
 #ifdef LargeInts
             if (realtobig(s, d) == Succeeded) {
@@ -422,7 +422,7 @@ int f(dptr s, dptr d)
          return 1;
       case T_Real: {
          double dbl = numrc.real;
-         if (dbl > MaxLong || dbl < MinLong) {
+         if (dbl > (double)MaxLong || dbl < MinLong) {
 
 #ifdef LargeInts
 #ifdef DescriptorDouble
@@ -1100,7 +1100,7 @@ static int ston(dptr sptr, union numeric *result)
    /*
     * Test for integer.
     */
-   if (!realflag && !scale && mantissa >= MinLong && mantissa <= MaxLong) {
+   if (!realflag && !scale && mantissa >= MinLong && mantissa <= (double)MaxLong) {
       result->integer = (msign == '+' ? lresult : -lresult);
       return T_Integer;
       }

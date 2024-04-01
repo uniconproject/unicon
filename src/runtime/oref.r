@@ -265,7 +265,7 @@ operator{*} ! bang(underef x -> dx)
 
 #if HAVE_LIBZ
                   if (status & Fs_Compress) {
-                      if (gzeof(fd)) fail;
+                      if (gzeof((gzFile)fd)) fail;
                       if (gzgets((gzFile)fd,sbuf,MaxCvtLen+1) == Z_NULL) {
                           runerr(214);
                          }

@@ -51,6 +51,15 @@ keyword{4} allocated
       }
 end
 
+#if NT
+#if HAVE_TIMEZONE
+#define timezone _timezone
+#endif
+#if HAVE_TZNAME
+#define tzname _tzname
+#endif
+#endif
+
 "&clock - a string consisting of the current time of day"
 keyword{2} clock
    abstract {

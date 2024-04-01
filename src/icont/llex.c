@@ -227,7 +227,7 @@ word getint(int j,word *wp)
       lsspace[indx++] = c;
       result = result * 10 + (c - '0');
       lresult = lresult * 10 + (c - '0');
-      if (result >= MaxLong) {
+      if (result >= (double)MaxLong) {
          over = 1;                      /* flag overflow */
          result = 0;                    /* reset to avoid fp exception */
          }
@@ -246,7 +246,7 @@ word getint(int j,word *wp)
             break;
          result = result * radix + c;
          lresult = lresult * iradix + c;
-         if (result >= MaxLong) {
+         if (result >= (double)MaxLong) {
             over = 1;                   /* flag overflow */
             result = 0;                 /* reset to avoid fp exception */
             }

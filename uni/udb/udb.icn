@@ -8,12 +8,18 @@
 
 $include "defaults.icn"
 import json
+link regexp
+link xoptions
+
+global dapproxySock
 
 procedure main(argv)
-   local udb, res := "reset",port, progPort
+   local udb, processedArgs, tempArgs, res := "reset"
+
+   processedArgs := multiprog(argv)
 
    if not (&features == "multiple programs") then
-      stop("udb requires multiple programs feature to be enabled.")
+      usage("udb requires multiple programs feature to be enabled.")
 
    #&error := -1
    trap("SIGINT",  sig_ignore)
@@ -22,18 +28,76 @@ procedure main(argv)
    while res == "reset" do {
       res := ""
       &eventsource := &null
-      tempargv := copy(argv)
+      tempArgs := copy(processedArgs)
 
       udb := Console()
-      res := udb.startConsole(tempargv)
+      res := udb.startConsole(tempArgs)
    }
 
    write("\n   Thank you for using UDB.\n   Goodbye !!!")
 end
 
-procedure sig_ignore(non)
-  writes("\r")
-  write(PROMPT || "Quit")
-  writes(PROMPT)
+# If multiprog matches --dapproxy or --adapterfactory it wil NEVER RETURN!
+procedure multiprog(argv)
+   local opts, arg
+   opts := xoptions(argv, "--dapproxy+ --adapterfactory+ --adapter+ -h! --help! --line$ --noline$", usage)
+   if *opts > 1 then {
+      usage("Please only use one argument.")
+   }
+   arg := key(opts)
+   case arg of {
+      "-dapproxy": { dapproxy(opts[arg]) }
+      "-adapterfactory": { factory(opts[arg]) }
+      "-adapter": { return ["--adapter", opts[arg]] }
+      "-line": { return ["--line", \opts[arg]] | ["--line"] }
+      "-noline": { return ["--noline", \opts[arg]] | ["--noline"] }
+      "h" |
+      "-help": { usage() }
+      &null: { return argv }
+      default: { usage("Bad value.") } # This should never happen assuming xoptions works correctly
+   }
 end
 
+procedure dapproxy(portArg)
+   local port
+   port := (if &features == "MacOS" then "127.0.0.1" else "") || ":" || portArg
+   every trap("SIGINT" | "SIGHUP" | "SIGPIPE", dapproxyExit)
+   every !5 do
+      if dapproxySock := open(port, "n") then
+         break
+      else
+         delay(1000)
+   \dapproxySock | stop("failed to connect to ",port, " ", &errortext )
+   repeat every s := !select([dapproxySock, &input]) do
+      writes(ready(s === dapproxySock)) | writes(dapproxySock, ready())
+end
+
+procedure factory(portArg)
+   repeat {
+      system("udb --adapter " || portArg)
+   }
+end
+
+procedure usage(msg)
+   write(\msg || "\n")
+   write("Usage: udb [options] <file>")
+   write("\nOptions:")
+   write("\t--line: Run udb without interactive command line.\n")
+   write("\tUsed with the debug adapter protocol client-server contexts, will not accept file argument:")
+   write("\t--adapter <PORT>: Run udb in adapter mode.")
+   write("\t--adapterfactory <PORT>: A service used for creating udb adapter instances.")
+   write("\t--dapproxy <PORT>: A service for facilitating communication between a target program and a client embedded terminal.\n")
+   write("\t-h: Show this help\n")
+   exit(-1)
+end
+
+procedure sig_ignore(non)
+   writes("\r")
+   write(PROMPT || "Quit")
+   writes(PROMPT)
+end
+
+procedure dapproxyExit(non)
+   close(\dapproxySock)
+   stop()
+end

@@ -40,7 +40,7 @@ DTA        = dta
 DTA_UFILES = $(DTA)/atomic_agent.u $(DTA)/temporals.u
 
 
-all: Libfiles Assertions dapcom $(EXEs)
+all: Libfiles Assertions $(EXEs)
 
 
 Libfiles:
@@ -51,10 +51,6 @@ Assertions:
 
 tools:
 	cd $(LIB); $(MAKE) tools
-
-dapcom: dapcom.icn
-	$(UC) $(DASHG) -o dapcom dapcom.icn
-	$(CP) dapcom$(EXE) ../../bin
 
 udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
@@ -134,7 +130,6 @@ Clean: clean
 clean:
 	$(DEL) *.u
 	$(DEL) $(EXEs) 
-	$(DEL) dapcom
 	$(DEL) *.exe
 	$(DEL) *.dir
 	$(DEL) *.pag

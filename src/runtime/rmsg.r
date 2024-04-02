@@ -32,7 +32,7 @@ extern int StartupWinSocket(void);
 
 const char* DEFAULT_USER_AGENT = "User-Agent: Unicon Messaging/13.0";
 
-char *Maddtoheader(char* header, const char* s, int slen, int* nleft);
+char *Maddtoheader(char header[HDRSIZE], const char* s, int slen, int* nleft);
 void Mhttp(struct MFile* mf, dptr attr, int nattr);
 void Mpop(struct MFile* mf, dptr attr, int nattr);
 int Mpop_newlist(struct MFile* mf, unsigned n);

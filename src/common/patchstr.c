@@ -30,19 +30,19 @@
 
 #undef strlen
 
+/* guard pattern; first character must not reappear later */
+#define PATTERN "%PatchStringHere->"
+
+/* maximum string length */
+#define MAXLEN 500
 
 #ifndef NOMAIN
 void    report          (char *filename);
 #endif
 void    patchstr        (char *filename, char *newstring);
 int     findpattern     (FILE *f);
-int     oldval          (FILE *f, char *buf);
+int     oldval          (FILE *f, char buf[MAXLEN+2]);
 
-/* guard pattern; first character must not reappear later */
-#define PATTERN "%PatchStringHere->"
-
-/* maximum string length */
-#define MAXLEN 500
 
 int exitcode = 0;               /* exit code; nonzero if any problems */
 int nfound = 0;                 /* number of strings found */

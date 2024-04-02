@@ -102,7 +102,7 @@ dlrgint.$(O): ../h/auto.h ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstr
 xwindow.$(O): ../h/auto.h ../h/graphics.h ../h/xwin.h
 
 rswitch.$(O): FORCE
-	$(SLNT) $(CC) $(CPPFLAGS) $(CFLAGS) -c rswitch.[cs]
+	$(SLNT) $(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-command-line-argument -c rswitch.[cs]
 FORCE:
 
 distclean clean:

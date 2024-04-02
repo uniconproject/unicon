@@ -157,10 +157,11 @@ unsigned char allchars[256] = {
  * fatalerr - disable error conversion and call run-time error routine.
  */
 void fatalerr(int n, dptr v)
-   {
+{
    IntVal(kywd_err) = 0;
    err_msg(n, v);
-   }
+   c_exit(0); /* unreachable; but makes the compiler happy happy */
+}
 
 struct b_list *alclist_0(uword size, uword nslots)
    {

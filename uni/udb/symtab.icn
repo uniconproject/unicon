@@ -44,7 +44,8 @@ class Symtab(
    packages,
    records,
    classes,
-   methods
+   methods,
+   safe_filelist
    )
 
 #
@@ -258,6 +259,7 @@ method build_filetab(fileText)
             }
          }
       }
+   refresh_safe_filelist()
 end
 
 #
@@ -414,6 +416,10 @@ method add_to_filetab(symt)
    #debug("[",Self.tag," ",Self.label,"].filetab[",filename,"][",i,"] := [",symt.tag," ",symt.label, "]")
 end
 
+method refresh_safe_filelist()
+   safe_filelist := []
+   every put(safe_filelist, !key(filetab))
+end
 
 #method add_to_procs(symt)
 #   if not member(procs, symt.label) then
@@ -516,7 +522,7 @@ method lookup_fileline(filename, lineno)
    local symt, temp
 
    if \filename & \lineno then {
-      if not member(filetab, filename) then fail
+      if not member(safe_filelist, filename) then fail
 
       line := numeric(lineno)
 
@@ -668,6 +674,7 @@ initially
    filetab := table()
    nametab := table()
    pkgtab  := table()
+   safe_filelist := []
 
    locals  := []
    statics := []

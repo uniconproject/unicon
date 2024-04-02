@@ -28,6 +28,18 @@
 #include "../h/posix.h"
 #endif                                  /* PosixFns */
 
+#if COMPILER
+#ifdef NT
+/* 
+ * Declare flock (which is defined in fxposix.ri, just before it is used).
+ * It's needed here because rtt splits fxposix.ri into several C files 
+ * when producing code for iconc, which separates the definition from its use.
+ */
+int flock(int fd, int operation);
+#endif                                  /* NT */
+#endif                                  /* COMPILER */
+
+
 #ifdef Messaging
 #include "../h/messagin.h"
 #endif                                  /* Messaging */

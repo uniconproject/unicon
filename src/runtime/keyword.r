@@ -52,12 +52,9 @@ keyword{4} allocated
 end
 
 #if NT
-#if HAVE_TIMEZONE
+/* redefine deprected functions to fix warnings on Windows*/
 #define timezone _timezone
-#endif
-#if HAVE_TZNAME
 #define tzname _tzname
-#endif
 #endif
 
 "&clock - a string consisting of the current time of day"

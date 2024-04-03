@@ -582,7 +582,7 @@ int checkOpenConsole( FILE *w, char *s );
    void geticonic       (wbp w, char *answer);
    int  geticonpos      (wbp w, char *s);
    int  getimstr        (wbp w, int x, int y, int width, int hgt,
-                          struct palentry *ptbl, unsigned char *data);
+                          struct palentry ptbl[DMAXCOLORS], unsigned char *data);
    int  getimstr24      (wbp w, int xx, int yy, int width, int hgt,
                           unsigned char *d);
    void getlinestyle    (wbp w, char *answer);

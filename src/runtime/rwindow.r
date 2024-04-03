@@ -3309,7 +3309,7 @@ stringint font_type[] = {
  * returns 1 on an OK font name
  * returns 0 on a "malformed" font (might be a window-system fontname)
  */
-int parsefont(char *s, char family[MAXFONTWORD+1], int *style, int *size, int *tp)
+int parsefont(char *s, char *family, int *style, int *size, int *tp)
    {
    char c, *a, attr[MAXFONTWORD+1];
    int tmp;

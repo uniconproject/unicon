@@ -305,38 +305,6 @@ c_exit(1);
 }
 
 /*
- * qsearch(key,base,nel,width,compar) - binary search
- *
- *  A binary search routine with arguments similar to qsort(3).
- *  Returns a pointer to the item matching "key", or NULL if none.
- *  Based on Bentley, CACM 28,7 (July, 1985), p. 676.
- */
-
-char * qsearch (key, base, nel, width, compar)
-char * key;
-char * base;
-int nel, width;
-int (*compar)();
-{
-    int l, u, m, r;
-    char * a;
-
-    l = 0;
-    u = nel - 1;
-    while (l <= u) {
-        m = (l + u) / 2;
-        a = (char *) ((char *) base + width * m);
-        r = compar (a, key);
-        if (r < 0)
-            l = m + 1;
-        else if (r > 0)
-            u = m - 1;
-        else
-            return a;
-    }
-    return 0;
-}
-/*
  * c_get - convenient C-level access to the get function
  *  returns 0 on failure, otherwise fills in res
  */
@@ -1075,6 +1043,39 @@ int strncasecmp(char *s1, char *s2, int n)
 
 #endif                                  /* NTGCC */
 #endif                                  /* ConsoleWindow */
+
+/*
+ * qsearch(key,base,nel,width,compar) - binary search
+ *
+ *  A binary search routine with arguments similar to qsort(3).
+ *  Returns a pointer to the item matching "key", or NULL if none.
+ *  Based on Bentley, CACM 28,7 (July, 1985), p. 676.
+ */
+
+char * qsearch (key, base, nel, width, compar)
+char * key;
+char * base;
+int nel, width;
+int (*compar)();
+{
+    int l, u, m, r;
+    char * a;
+
+    l = 0;
+    u = nel - 1;
+    while (l <= u) {
+        m = (l + u) / 2;
+        a = (char *) ((char *) base + width * m);
+        r = compar (a, key);
+        if (r < 0)
+            l = m + 1;
+        else if (r > 0)
+            u = m - 1;
+        else
+            return a;
+    }
+    return 0;
+}
 
 int
 getenv_r(const char *name, char *buf, size_t len)

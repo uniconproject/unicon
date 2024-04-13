@@ -2508,8 +2508,6 @@ function{0,1} select(files[nargs])
          BlkLoc(d) = (union block *) lp;
          tv.tv_sec = tv.tv_usec = 0;
          }
-#endif                                  /* Graphics */
-
 #if defined(PseudoPty) && defined(MSWindows)
       else if ((lps->size > 0) && ((lp = findactivepty(lps)) != NULL)) {
          d.dword = D_List;
@@ -2517,6 +2515,7 @@ function{0,1} select(files[nargs])
          tv.tv_sec = tv.tv_usec = 0;
          }
 #endif                                  /* PseudoPty && MSWindows */
+#endif                                  /* Graphics */
 
       if (n) {
         DEC_NARTHREADS;
@@ -2543,7 +2542,6 @@ function{0,1} select(files[nargs])
             d.dword = D_List;
             BlkLoc(d) = (union block *) lp;
             }
-#endif                                  /* Graphics */
 #if defined(PseudoPty) && defined(MSWindows)
          /*
           * if our select() could have taken any time, try ptys again
@@ -2553,6 +2551,7 @@ function{0,1} select(files[nargs])
             BlkLoc(d) = (union block *) lp;
             }
 #endif                                  /* PseudoPty */
+#endif                                  /* Graphics */
          }
       else if (ptv && (ptv->tv_sec || ptv->tv_usec)) {
          idelay(ptv->tv_sec * 1000 + ptv->tv_usec / 1000);

@@ -1600,8 +1600,10 @@ void c_exit(int i)
 #endif
 
 #ifdef MSWindows
+#ifdef Graphics
    PostQuitMessage(0);
    while (wstates != NULL) pollevent();
+#endif                                  /* Graphics  */
 #endif                                  /* MSWindows */
 
 #if NT

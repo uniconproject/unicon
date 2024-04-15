@@ -5,7 +5,8 @@ global triggerCharLoc
 
 class SignatureHandler(
    workspace,
-   params
+   params,
+   currentSigItems
    )
 
    method setVariables(new_workspace, new_params)
@@ -66,6 +67,8 @@ class SignatureHandler(
       local _context, sig_tables := [], methodName, objectName, linked_classes, imported_classes,
          internal_classes, package_classes, objects, className, built_in_functions, linked_procedures,
          imported_procedures, internal_procedures, package_procedures, line, charNum
+      
+      currentSigItems := []
 
       # Collect context information (inside comment, space before, object before, no object before) #
       _context := context.getCase()
@@ -93,21 +96,33 @@ class SignatureHandler(
             # Check if function is a method of a linked class #
             if member(linked_classes, className) & member(linked_classes[className]["methods"], methodName) then {
                put(sig_tables, updateResults(methodName, linked_classes[className]["methods"][methodName], results_table))
+               linked_classes[className]["methods"][methodName]["name"] := methodName
+               linked_classes[className]["methods"][methodName]["type"] := "method"
+               put(currentSigItems, linked_classes[className]["methods"][methodName])
             }
 
             # Check if function is a method of an imported class #
             if member(imported_classes, className) & member(imported_classes[className]["methods"], methodName) then {
                put(sig_tables, updateResults(methodName, imported_classes[className]["methods"][methodName], results_table))
+               imported_classes[className]["methods"][methodName]["name"] := methodName
+               imported_classes[className]["methods"][methodName]["type"] := "method"
+               put(currentSigItems, imported_classes[className]["methods"][methodName])
             }
 
             # Check if function is a method of an internal class #
             if member(internal_classes, className) & member(internal_classes[className]["methods"], methodName) then {
                put(sig_tables, updateResults(methodName, internal_classes[className]["methods"][methodName], results_table))
+               internal_classes[className]["methods"][methodName]["name"] := methodName
+               internal_classes[className]["methods"][methodName]["type"] := "method"
+               put(currentSigItems, internal_classes[className]["methods"][methodName])
             }
 
             # Check if function is a method of a package class #
             if member(package_classes, className) & member(package_classes[className]["methods"], methodName) then {
                put(sig_tables, updateResults(methodName, package_classes[className]["methods"][methodName], results_table))
+               package_classes[className]["methods"][methodName]["name"] := methodName
+               package_classes[className]["methods"][methodName]["type"] := "method"
+               put(currentSigItems, package_classes[className]["methods"][methodName])
             }
          }
 
@@ -125,47 +140,77 @@ class SignatureHandler(
             # Check if function is an internal procedure #
             if member(internal_procedures, methodName) then {
                put(sig_tables, updateResults(methodName, internal_procedures[methodName], results_table))
+               internal_procedures[methodName]["name"] := methodName
+               internal_procedures[methodName]["type"] := "procedure"
+               put(currentSigItems, internal_procedures[methodName])
             }
 
             # Check if function is a package procedure #
             if member(package_procedures, methodName) then {
                put(sig_tables, updateResults(methodName, package_procedures[methodName], results_table))
+               package_procedures[methodName]["name"] := methodName
+               package_procedures[methodName]["type"] := "procedure"
+               put(currentSigItems, package_procedures[methodName])
             }
 
             # Check if function is a linked procedure #
             if member(linked_procedures, methodName) then {
                put(sig_tables, updateResults(methodName, linked_procedures[methodName], results_table))
+               linked_procedures[methodName]["name"] := methodName
+               linked_procedures[methodName]["type"] := "procedure"
+               put(currentSigItems, linked_procedures[methodName])
             }
 
             # Check if function is an imported procedure #
             if member(imported_procedures, methodName) then {
                put(sig_tables, updateResults(methodName, imported_procedures[methodName], results_table))
+               imported_procedures[methodName]["name"] := methodName
+               imported_procedures[methodName]["type"] := "procedure"
+               put(currentSigItems, imported_procedures[methodName])
             }
 
             # Check if function is a built in function #
             if member(built_in_functions, methodName) then {
                put(sig_tables, updateResults(methodName, built_in_functions[methodName], results_table))
+               built_in_functions[methodName]["name"] := methodName
+               built_in_functions[methodName]["type"] := "built-in"
+               put(currentSigItems, built_in_functions[methodName])
             }
 
             # Check if function is part of an internal class #
             every className := key(internal_classes) do {
                if member(internal_classes[className]["methods"], methodName) then {
                   put(sig_tables, updateResults(methodName, internal_classes[className]["methods"][methodName], results_table))
+                  internal_classes[className]["methods"][methodName]["name"] := methodName
+                  internal_classes[className]["methods"][methodName]["type"] := "method"
+                  put(currentSigItems, internal_classes[className]["methods"][methodName])
                }
             }
 
             # Check if function is a constructor #
             if member(linked_classes, methodName) then {
                put(sig_tables, updateResults(methodName, linked_classes[methodName], results_table))
+               linked_classes[methodName]["name"] := methodName
+               linked_classes[methodName]["type"] := "class"
+               put(currentSigItems, linked_classes[methodName])
             }
             if member(imported_classes, methodName) then {
                put(sig_tables, updateResults(methodName, imported_classes[methodName], results_table))
+               imported_classes[methodName]["name"] := methodName
+               imported_classes[methodName]["type"] := "class"
+               put(currentSigItems, imported_classes[methodName])
             }
             if member(internal_classes, methodName) then {
                put(sig_tables, updateResults(methodName, internal_classes[methodName], results_table))
+               internal_classes[methodName]["name"] := methodName
+               internal_classes[methodName]["type"] := "class"
+               put(currentSigItems, internal_classes[methodName])
             }
             if member(package_classes, methodName) then {
                put(sig_tables, updateResults(methodName, package_classes[methodName], results_table))
+               package_classes[methodName]["name"] := methodName
+               package_classes[methodName]["type"] := "class"
+               put(currentSigItems, package_classes[methodName])
             }
          }
       }
@@ -306,7 +351,7 @@ class SignatureHandler(
       every param_table := !functionTable["params"] do
          put(param_list, table("label", param_table["name"]))
 
-      if \functionTable["comments"] then
+      if member(functionTable, "comments") then
          signature_table := table("label", signature, "parameters", param_list, "activeParameter", 0,
             "documentation", table("kind", "markdown", "value", functionTable["comments"]))
       else
@@ -335,5 +380,9 @@ class SignatureHandler(
       signature ||:= ")"
 
       return signature
+   end
+
+   method getCurrentSigItems()
+      return currentSigItems
    end
 end

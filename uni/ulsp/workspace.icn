@@ -171,6 +171,7 @@ class Workspace(
        local _procedure, _param, paramName, paramType, paramDef
        internal_procedures := table()
        every _procedure := getFile().getProcedures().get() do {
+         _procedure.setSrcFile(uri)
          internal_procedures[_procedure.getName()] := table()
          internal_procedures[_procedure.getName()]["comments"] := makeComment(_procedure)
 
@@ -184,6 +185,8 @@ class Workspace(
                "type", paramType,
                "default", paramDef))
          }
+
+         internal_procedures[_procedure.getName()]["source"] := uri
        }
     end
 
@@ -266,10 +269,13 @@ class Workspace(
        local _class, _method, _param, paramName, paramType, paramDef, constructor_param
        internal_classes := table()
        every _class := getFile().getClasses().get() do {
+          _class.setSrcFile(uri)
           internal_classes[_class.getName()] := table()
+          internal_classes[_class.getName()]["source"] := uri
 
           internal_classes[_class.getName()]["methods"] := table()
           every _method := _class.getMethods().get() do {
+             _method.setSrcFile(uri)
              internal_classes[_class.getName()]["methods"][_method.getName()] := table()
              internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := makeComment(_method)
 
@@ -283,6 +289,8 @@ class Workspace(
                   "type", paramType,
                   "default", paramDef))
                }
+            
+             internal_classes[_class.getName()]["methods"][_method.getName()]["source"] := uri
              }
 
           internal_classes[_class.getName()]["attributes"] := []

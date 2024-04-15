@@ -30,6 +30,7 @@ class Server(
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
    signatureHandler,
    hoverHandler,
+   definitionHandler,
    lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
    )
 
@@ -56,7 +57,7 @@ class Server(
                "textDocument/completion" : completion(request_id, request_params)
                "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
                "textDocument/hover" : hoverHelp(request_id, request_params)
-               "textDocument/declaration" : write("Don't know what to do with go to declaration request.")
+               "textDocument/definition" : definitionHelp(request_id, request_params)
                "$/cancelRequest" : cancelRequest(request_id)
                default: { write("Don't know what to do with: ", request_method) }
                }
@@ -135,7 +136,8 @@ class Server(
             "contextSupport": "__true__";
             "triggerCharacters": ["("]
          ];
-         "hoverProvider": "__true__"
+         "hoverProvider": "__true__";
+         "definitionProvider": "__true__"
       ]]
 
       result := build_response(request_id, tojson(capabilitiesTable))
@@ -247,9 +249,18 @@ class Server(
    end
 
 ########################################################
-#                textDocument/declaration              #
+#                textDocument/definition               #
 ########################################################
 
+   method definitionHelp(request_id, request_params)
+      local uri, workspace_object, result, res
+      uri := request_params["textDocument"]["uri"]
+      workspace_object := openFiles[\uri]
+      definitionHandler.setVariables(workspace_object, request_params)
+      result := definitionHandler.run()
+      res := build_response(request_id, result)
+      writes(sock, res)
+   end
 
 ########################################################
 #                  $/cancelRequest                     #
@@ -266,22 +277,23 @@ class Server(
 
    initially
 
-       every 1 to 5 do
-          if sock := open(port, "n") then
-             break
-          else {
-             write("open(",port,") ERROR: ", &errortext)
-             delay(1000)
-             }
+      every 1 to 5 do
+         if sock := open(port, "n") then
+            break
+         else {
+            write("open(",port,") ERROR: ", &errortext)
+            delay(1000)
+            }
 
-       if /sock then stop("failed to connect to ",port)
+      if /sock then stop("failed to connect to ",port)
 
-       openFiles := table()
-       lsp_database := LSPDB()
-       lsp_database.build()
+      openFiles := table()
+      lsp_database := LSPDB()
+      lsp_database.build()
 
-       completionHandler := CompletionHandler()
-       signatureHandler := SignatureHandler()
-       hoverHandler := HoverHandler()
+      completionHandler := CompletionHandler()
+      signatureHandler := SignatureHandler()
+      hoverHandler := HoverHandler()
+      definitionHandler := DefinitionHandler()
 end
 

@@ -60,9 +60,9 @@ class Server(
                "textDocument/definition" : definitionHelp(request_id, request_params)
                "$/cancelRequest" : cancelRequest(request_id)
                default: { write("Don't know what to do with: ", request_method) }
-               }
             }
          }
+      }
    end
 
 #################################################################################
@@ -86,14 +86,14 @@ class Server(
                tab(upto("\r\n\r\n") + 4)
                if pos(0) then {
                   request_body := ready(sock, len)
-                  }
+               }
                else
                   request_body := move(len)
                   msg := tab(0)
-               }
-               suspend request_body
             }
+            suspend request_body
          }
+      }
    end
 
 #################################################################################
@@ -152,15 +152,15 @@ class Server(
    method didOpen(request_params)
       local fname, uri, f, initial_file_contents, workspace_object
       if \(uri := request_params["textDocument"]["uri"]) then {
-      # uri: file://<PATH>
-      uri ? {
-         ="file://" | write(&errout, "unexpected uri:", uri)
-         fname := tab(0)
+         # uri: file://<PATH>
+         uri ? {
+            ="file://" | write(&errout, "unexpected uri:", uri)
+            fname := tab(0)
          }
 
-      if f := open(fname) then {
-         initial_file_contents := reads(f, -1)
-         close(f)
+         if f := open(fname) then {
+            initial_file_contents := reads(f, -1)
+            close(f)
          }
       }
 
@@ -187,18 +187,19 @@ class Server(
 
    method didChange(request_params)
       local fname, uri, f, file_contents, workspace_object, initial_file_contents
-         if \(uri := request_params["textDocument"]["uri"]) then {
+      if \(uri := request_params["textDocument"]["uri"]) then {
          # uri: file://<PATH>
          uri ? {
             ="file://" | write(&errout, "unexpected uri:", uri)
             fname := tab(0)
-            }
+         }
 
          if f := open(fname) then {
             initial_file_contents := reads(f, -1)
             close(f)
-            }
          }
+      }
+
       uri := request_params["textDocument"]["uri"]
       file_contents := request_params["contentChanges"][1]["text"]
       workspace_object := openFiles[\uri]
@@ -277,13 +278,14 @@ class Server(
 
    initially
 
-      every 1 to 5 do
+      every 1 to 5 do {
          if sock := open(port, "n") then
             break
          else {
             write("open(",port,") ERROR: ", &errortext)
             delay(1000)
-            }
+         }
+      }
 
       if /sock then stop("failed to connect to ",port)
 

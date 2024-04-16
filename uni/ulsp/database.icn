@@ -56,9 +56,9 @@ class LSPDB(
                    "&row", "&rpress", "&rrelease", "&shift", "&source", "&storage", "&subject",
                    "&time", "&trace", "&ucase", "&version", "&window", "&x", "&y"]
 
-        preprocessors := ["$define", "$else", "$endif", "$error", "$ifdef", "$ifndef",
+      preprocessors := ["$define", "$else", "$endif", "$error", "$ifdef", "$ifndef",
                                   "$include", "$line", "$undef", "#line"]
-    end
+   end
 
    method build_bnf()
       local idoc, dirPath, source_table, source_file, _procedure, param_in_procedure, paramName, paramType, paramDef
@@ -93,105 +93,103 @@ class LSPDB(
                "default", paramDef))
          }
       }
-
    end
 
-    method build_package_db()
-       local dirPath, paths, path
-       dirPath := getenv("FPATH")
-       dirPath ? {
-         tab(upto("/"))
-         dirPath := tab(-3)
-       }
+   method build_package_db()
+      local dirPath, paths, path
+      dirPath := getenv("FPATH")
+      dirPath ? {
+      tab(upto("/"))
+      dirPath := tab(-3)
+      }
 
-       paths := []
+      paths := []
 
-       put(paths, dirPath || "ipl/procs")
+      put(paths, dirPath || "ipl/procs")
 
-       dirPath ||:= "uni/"
+      dirPath ||:= "uni/"
 
-       put(paths, dirPath || "3d")
-       put(paths, dirPath || "gui")
-       #put(paths, dirPath || "parser")
-       put(paths, dirPath || "xml")
-       put(paths, dirPath || "lib")
-       put(paths, dirPath || "unidoc")
+      put(paths, dirPath || "3d")
+      put(paths, dirPath || "gui")
+      #put(paths, dirPath || "parser")
+      put(paths, dirPath || "xml")
+      put(paths, dirPath || "lib")
+      put(paths, dirPath || "unidoc")
 
-       every path := !paths do build_by_path(path)
-    end
+      every path := !paths do build_by_path(path)
+   end
 
-    method build_by_path(path)
-       local idoc, x, pack, file_in_pack, file_without_ext, import_in_file, procedure_in_file, param_in_procedure,
-          paramName, paramType, paramDef, class_in_file, method_in_class, param_in_method, class_param, class_comment,
-          constructor_param
-       idoc := UniAll()
+   method build_by_path(path)
+      local idoc, x, pack, file_in_pack, file_without_ext, import_in_file, procedure_in_file, param_in_procedure,
+         paramName, paramType, paramDef, class_in_file, method_in_class, param_in_method, class_param, class_comment,
+         constructor_param
+      idoc := UniAll()
 
-       idoc.setSourcePath(path)
-       idoc.setTargetDir(path)
-       idoc.processFile(path)
-       x := idoc.packages
+      idoc.setSourcePath(path)
+      idoc.setTargetDir(path)
+      idoc.processFile(path)
+      x := idoc.packages
 
-       every pack := !x do {
+      every pack := !x do {
 
-          if /package_db[pack.getName()] then {
-             package_db[pack.getName()] := table()
-             package_db[pack.getName()]["files"] := table()
-             }
+         if /package_db[pack.getName()] then {
+            package_db[pack.getName()] := table()
+            package_db[pack.getName()]["files"] := table()
+         }
 
-          every file_in_pack := pack.getFiles().get() do {
-             file_without_ext := &null
-             file_in_pack.getName() ? {
-                file_without_ext := tab(upto("."))
-                }
+         every file_in_pack := pack.getFiles().get() do {
+            file_without_ext := &null
+            file_in_pack.getName() ? {
+               file_without_ext := tab(upto("."))
+            }
 
-             package_db[pack.getName()]["files"][file_without_ext] := table()
-             if /package_db[pack.getName()]["files"][file_without_ext]["imports"] then package_db[pack.getName()]["files"][file_without_ext]["imports"] := []
-             every import_in_file := file_in_pack.getImports().get() do {
-                put(package_db[pack.getName()]["files"][file_without_ext]["imports"], import_in_file.getName())
-                }
+            package_db[pack.getName()]["files"][file_without_ext] := table()
+            if /package_db[pack.getName()]["files"][file_without_ext]["imports"] then package_db[pack.getName()]["files"][file_without_ext]["imports"] := []
+            every import_in_file := file_in_pack.getImports().get() do {
+               put(package_db[pack.getName()]["files"][file_without_ext]["imports"], import_in_file.getName())
+            }
 
+            if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := table()
+            every procedure_in_file := file_in_pack.getProcedures().get() do {
+               procedure_in_file.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
+               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
+               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["comments"] := makeComment(procedure_in_file)
 
-             if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := table()
-             every procedure_in_file := file_in_pack.getProcedures().get() do {
-                procedure_in_file.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
-                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
-                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["comments"] := makeComment(procedure_in_file)
+               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := []
+               every param_in_procedure := procedure_in_file.getParams().get() do {
+                  paramName := param_in_procedure.getName()
+                  paramType := param_in_procedure.getTypeValue() | &null
+                  paramDef := param_in_procedure.getDefValue() | &null
+                  put(package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"], table(
+                     "name", paramName,
+                     "type", paramType,
+                     "default", paramDef))
+               }
 
-                package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := []
-                every param_in_procedure := procedure_in_file.getParams().get() do {
-                     paramName := param_in_procedure.getName()
-                     paramType := param_in_procedure.getTypeValue() | &null
-                     paramDef := param_in_procedure.getDefValue() | &null
-                     put(package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"], table(
-                        "name", paramName,
-                        "type", paramType,
-                        "default", paramDef))
-                  }
+               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["source"] := procedure_in_file.getSrcFile()
+            }
 
-                  package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["source"] := procedure_in_file.getSrcFile()
-                }
+            if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()
+            every class_in_file := file_in_pack.getClasses().get() do {
+               class_in_file.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()] := table()
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := table()
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"] := []
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["superclass"] := []
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["source"] := class_in_file.getSrcFile()
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"] := table()
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["name"] := class_in_file.getConstructor().getName()
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["comments"] := makeComment(class_in_file)
+               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"] := []
 
-             if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()
-             every class_in_file := file_in_pack.getClasses().get() do {
-                class_in_file.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()] := table()
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := table()
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"] := []
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["superclass"] := []
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["source"] := class_in_file.getSrcFile()
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"] := table()
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["name"] := class_in_file.getConstructor().getName()
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["comments"] := makeComment(class_in_file)
-                package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"] := []
+               every method_in_class := class_in_file.getMethods().get() do {
+                  method_in_class.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
+                  package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()] := table()
+                  package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["comments"] := makeComment(method_in_class)
 
-                every method_in_class := class_in_file.getMethods().get() do {
-                   method_in_class.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
-                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()] := table()
-                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["comments"] := makeComment(method_in_class)
-
-                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
-                   every param_in_method := method_in_class.getParams().get() do {
+                  package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
+                  every param_in_method := method_in_class.getParams().get() do {
                      paramName := param_in_method.getName()
                      paramType := param_in_method.getTypeValue() | &null
                      paramDef := param_in_method.getDefValue() | &null
@@ -199,36 +197,36 @@ class LSPDB(
                         "name", paramName,
                         "type", paramType,
                         "default", paramDef))
-                     }
+                  }
 
                   package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["source"] := method_in_class.getSrcFile()
                }
-                every class_param := class_in_file.getParams().get() do {
-                   paramName := class_param.getName()
-                   paramType := class_param.getTypeValue() | &null
-                   paramDef := class_param.getDefValue() | &null
-                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], table(
-                      "name", paramName,
-                      "type", paramType,
-                      "default", paramDef))
-                   }
 
-                every constructor_param := class_in_file.getConstructor().getParams().get() do {
-                   paramName := constructor_param.getName()
-                   paramType := constructor_param.getTypeValue() | &null
-                   paramDef := constructor_param.getDefValue() | &null
-                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"], table(
-                      "name", paramName,
-                      "type", paramType,
-                      "default", paramDef))
-                   }
+               every class_param := class_in_file.getParams().get() do {
+                  paramName := class_param.getName()
+                  paramType := class_param.getTypeValue() | &null
+                  paramDef := class_param.getDefValue() | &null
+                  put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], table(
+                     "name", paramName,
+                     "type", paramType,
+                     "default", paramDef))
+               }
 
-                every class_comment := class_in_file.getComments().get() do {
-                   put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
-                   }
+               every constructor_param := class_in_file.getConstructor().getParams().get() do {
+                  paramName := constructor_param.getName()
+                  paramType := constructor_param.getTypeValue() | &null
+                  paramDef := constructor_param.getDefValue() | &null
+                  put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"], table(
+                     "name", paramName,
+                     "type", paramType,
+                     "default", paramDef))
+               }
 
-                }
-             }
-          }
-    end
+               every class_comment := class_in_file.getComments().get() do {
+                  put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
+               }
+            }
+         }
+      }
+   end
 end

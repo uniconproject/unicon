@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: windows-latest,  name: 'Windows 64-bit',  opt: '--enable-werror' }
+        -  { os: windows-latest,  name: 'Windows 64-bit', pkg: 'Windows_64-bit',  opt: '--enable-werror' }
         #-  { os: windows-latest,  name: 'Windows 32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
 
     defaults:
@@ -51,7 +51,7 @@ jobs:
       shell: bash
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -68,6 +68,16 @@ jobs:
     - name: TestReport
       run: make -C tests Report
 
+    - name: Installer
+      run: |
+        make WinInstaller
+
+    - name: Publish
+      uses: actions/upload-artifact@v4
+      with:
+        name: unicon-${{ matrix.cfg.pkg}}
+        path: Output/setup-unicon*.exe
+
     - name: Summary
       run: |
         cat unicon-config.log
@@ -82,7 +92,7 @@ jobs:
         -  { os: macos-latest,    name: 'macOS',           opt: '--enable-werror CC=clang CXX=clang++' }
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -192,7 +202,7 @@ jobs:
         -  { os: ubuntu-latest, name: 'Dev Mode',       opt: '--enable-devmode' }
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
@@ -242,7 +252,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |

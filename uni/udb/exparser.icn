@@ -6,12 +6,12 @@ $include "ytab_h.icn"
 
 procedure getIdentifiers(expr)
    local i, idents := table(), vars := set(), procs := set()
-	yyfilename := [expr]
-	yyin := ""
-	every yyin ||:= preprocessor(yyfilename, predefs()) do yyin ||:= "\n"
-	yylex_reinit()
+   yyfilename := [expr]
+   yyin := ""
+   every yyin ||:= preprocessor(yyfilename, predefs()) do yyin ||:= "\n"
+   yylex_reinit()
 
-	while (i := yylex()) ~=== EOFX do {
+   while (i := yylex()) ~=== EOFX do {
       # write(tokenstr(i))
       if \found then {
          if i === LPAREN then
@@ -20,9 +20,16 @@ procedure getIdentifiers(expr)
             insert(vars, found)
          found := &null
       }
-		if i === IDENT then
+      if i === IDENT then
          found := yytext
-	}
+   }
+   if \found then {
+      if i === LPAREN then
+         insert(procs, found)
+      else
+         insert(vars, found)
+      found := &null
+   }
    idents := [
       "vars": vars
       "procs": procs

@@ -606,10 +606,15 @@ method cmdEval(cmd)
 
    if /resTable | \resTable["error"] then {
       outputTable["success"] := "__false__"
-      if \resTable then
+      if \resTable then {
          outputTable["consoleMsg"] := "\n   An error occurred\n   "||resTable["result"]
-      else
+         outputTable["result"] := resTable["result"]
+      }
+      else {
          outputTable["consoleMsg"] := "\n   Invalid expression (probably)"
+         outputTable["result"] := "Invalid expression"
+      }
+         
       DState.Write(outputTable)
       fail
    }

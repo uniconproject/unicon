@@ -2,7 +2,7 @@ link ximage
 link strings
 link findre
 import json
-global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue, currStructuredVars
+global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue, currStructuredVars, hideConsoleMsg
 
 class Adapter(
    port,
@@ -481,7 +481,7 @@ class Adapter(
                "threadId": 1])
             writes(sock, event)
          }
-         if \showResult & outputTable["type"] ~== "assignVar" then {
+         if \showResult then {
             body := [
                "category": "console";
                "output": udbRes]
@@ -494,7 +494,7 @@ class Adapter(
             "stackTrace": processStackTraceResult(outputTable)
             "scopes": processScopesResult(outputTable)
             "variables": processVariablesResult(outputTable)
-            "evaluate": processEvaluateResult(outputTable)
+            "evaluate": processEvaluateResult(outputTable, showResult)
          }
       }
       else if outputTable["type"] == "stderr" then {
@@ -675,7 +675,7 @@ class Adapter(
                variables := res["variables"]
 
                every var := !variables do {
-                  if var["type"] == "table" then {
+                  if var["type"] == ("list" | "table" )| match("record"|"object", image(struct)) then {
                      put(currStructuredVars, [
                         "value": var["value"]
                         "name": var["name"]
@@ -694,95 +694,88 @@ class Adapter(
       }
    end
 
-   method processEvaluateResult(res)
+   method processEvaluateResult(res, noBody)
       local event, body, response, context, ref
       context := \(\currentRequestBody["arguments"])["context"]
-      if \context == "repl" then {
-         if res["type"] == "assignVar" then {
-            if res["success"] == "__true__" then {
+      if res["type"] == "eval" then {
+         if res["success"] == "__true__" then {
+            if \noBody then {
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+            }
+            else {
                body := [
-                  "result": replace(image(res["result"]), "\"", "\\\"")
-                  "type": replace((type(res["result"])), "\"", "\\\"")
+                  "result": replacem(image(res["result"]), "\"", "\\\"")
+                  "type": type(res["result"])
                   "variablesReference": 0
                ]
-               if type(res["result"]) == "table" then {
-                  body["indexedVariables"] := *res["result"]
-                  body["result"] := res
-               }
-               event := build_event("output", body)
-               writes(sock, event)
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
-               writes(sock, response)
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
             }
-            else {
-               #write("assignVar unsuccessful")
-            }
+            writes(sock, response)
          }
-         else if res["type"] == "setBreakpoint" then {
-            if res["success"] == "__true__" then {
-               body := [
-                  "reason": "new";
-                  "breakpoint": [
-                     "id": res["breakpoint"]["id"];
-                     "line": res["breakpoint"]["line"];
-                     "verified": "__true__";
-                     "source": [
-                        "path": filePath||".icn"
-                     ]
-                  ]
-               ]
-               event := build_event("breakpoint", body)
-               writes(sock, event)
-            }
-            else {
-               #write("setBreakpoint unsuccessful")
-            }
-         }
-         else if res["type"] == "clearBreakpoint" then {
-            if res["success"] == "__true__" then {
-               body := [
-                  "reason": "removed";
-                  "breakpoint": [
-                     "id": res["breakpoint"]["id"];
-                     "line": res["breakpoint"]["line"];
-                     "verified": "__true__";
-                     "source": [
-                        "path": filePath||".icn"
-                     ]
-                  ]
-               ]
-               event := build_event("breakpoint", body)
-               writes(sock, event)
-            }
-            else {
-               #write("clearBreakpoint unsuccessful")
-            }
+         else {
+            body := [
+               "result": replacem(res["result"], "\"", "\\\"")
+               "variablesReference": 0
+            ]
+            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+            writes(sock, response)
          }
       }
-      else if \context == "watch" then {
-         #write("***************watch context*******************")
-         #write(ximage(res))
-         if res["type"] ~== "frame" then {
-            if res["success"] == "__true__" then {
-               if res["type"] == "table" then {
-                  body := [
-                     "result": image(res["result"])
-                     # "variablesReference"
+      else if res["type"] == "assignVar" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "result": replace(image(res["result"]), "\"", "\\\"")
+               "type": replace((type(res["result"])), "\"", "\\\"")
+               "variablesReference": 0
+            ]
+            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+            writes(sock, response)
+         }
+         else {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
+         }
+      }
+      else if res["type"] == "setBreakpoint" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "reason": "new";
+               "breakpoint": [
+                  "id": res["breakpoint"]["id"];
+                  "line": res["breakpoint"]["line"];
+                  "verified": "__true__";
+                  "source": [
+                     "path": filePath||".icn"
                   ]
-               }
-               else {
-                  body := [
-                     "result": replace(image(res["result"]), "\"", "\\\"")
-                     "variablesReference": 0
+               ]
+            ]
+            event := build_event("breakpoint", body)
+            writes(sock, event)
+         }
+         else {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
+         }
+      }
+      else if res["type"] == "clearBreakpoint" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "reason": "removed";
+               "breakpoint": [
+                  "id": res["breakpoint"]["id"];
+                  "line": res["breakpoint"]["line"];
+                  "verified": "__true__";
+                  "source": [
+                     "path": filePath||".icn"
                   ]
-               }
-
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
-               writes(sock, response)
-            }
-            else {
-               # send failure response
-            }
+               ]
+            ]
+            event := build_event("breakpoint", body)
+            writes(sock, event)
+         }
+         else {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
          }
       }
    end
@@ -796,9 +789,12 @@ class Adapter(
             if tab(match("-exec ")) then {
                expression := tab()
                lastUdbCmd := expression
+               hideConsoleMsg := &null
             }
             else if expression ~== "" then {
-               expression := "p "||expression
+               expression := "e "||expression
+               lastUdbCmd := expression
+               hideConsoleMsg := 1
             }
             else if \lastUdbCmd then {
                expression := lastUdbCmd
@@ -807,10 +803,10 @@ class Adapter(
 
          if member(request_arguments, "frameId") then
             put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
-         put_cmdQueue(expression, request_body)
+         put_cmdQueue(expression, request_body, hideConsoleMsg)
       }
       else if request_arguments["context"] == "watch" then {
-         expression := "p "||request_arguments["expression"]
+         expression := "e "||request_arguments["expression"]
          put_cmdQueue("frame "||request_arguments["frameId"], &null, 1)
          put_cmdQueue(expression, request_body, 1)
       }

@@ -1,0 +1,187 @@
+# TODO: assertions
+#     - asserting objects
+#     - asserting nested values (list, table, objects, etc.)
+# TODO: Test Reporter
+#     - add message to results
+#     - add backtrace if possible
+# TODO: exit 0 when success, 1 when failure.
+# TODO: there should be a way to discover and load tests dynamically
+# TODO: add timer, see tests/unicon/tester.icn
+# TODO: how to catch stdin/stdout/stderr within tests, see capture().
+# TODO: enable/disable verbosity.
+
+package unittest
+
+link ximage
+
+import lang
+
+invocable all
+
+class TestCase : Object(__status)
+   $define STATUS_SUCCESS 0
+   $define STATUS_FAIL 1
+
+   method setupClass()
+      write(classname(self), "::setupClass()")
+   end
+
+   method teardownClass()
+      write(classname(self), "::teardownClass()")
+   end
+
+   method setup()
+      write(classname(self), "::setup()")
+   end
+
+   method teardown()
+      write(classname(self), "::teardown()")
+   end
+
+   method __reset()
+      self.__status := STATUS_SUCCESS
+   end
+
+   method assert(expression)
+      if not @expression[1] then {
+         self.__status := STATUS_FAIL
+         write("Assertion failed.")
+         fail
+      }
+
+      return
+   end
+
+   method assertFail(expression)
+      if not @expression[1] then return
+
+      write("Assertion failed.")
+      self.__status := STATUS_FAIL
+      fail
+   end
+
+   method assertEqual(expected, actual)
+      if type(expected) ~== type(actual) then {
+         write("Assertion failed: expected value of type ", type(expected), ", but got ", type(actual))
+         self.__status := STATUS_FAIL
+         fail
+      } else if expected ~== actual then {
+         write("Assertion failed: expected ", expected, ", but got ", actual)
+         self.__status := STATUS_FAIL
+         fail
+      }
+
+      return
+   end
+
+   method assertNotEqual(unexpected, actual)
+      if type(unexpected) === type(actual) & unexpected === actual then {
+         write("Assertion failed: unexpected ", unexpected, ", but got ", actual)
+         self.__status := STATUS_FAIL
+         fail
+      }
+
+      return
+   end
+
+initially
+   /__status := STATUS_SUCCESS
+end
+
+class TestSuite(__tests, __testReporter)
+   $define EXIT_SUCCESS 0
+   $define EXIT_FAIL 1
+
+   method add(testCase)
+      if (classname(testCase) ~=== "unittest__TestCase") then {
+         if \testCase.__m["Type"] then {
+            every ctype := testCase.Type() do {
+               if ctype == "unittest::TestCase" then {
+                  put(__tests, testCase)
+               }
+            }
+         }
+      }
+   end
+
+   method run()
+      local mname, counts
+
+      every test := !__tests do {
+         cname := classname(test)
+
+         test.setupClass()
+         every image(!test.__m) ? {
+            mname := (="procedure ", tab(0)) | next
+            if mname ? (tab(*cname+1), ="_", match("test")) then {
+               write(ximage(mname))
+               test.__reset()
+               test.setup()
+               mname(test)
+               test.teardown()
+
+               self.__testReporter.result(cname, mname, test.__status)
+               write()
+            }
+         }
+         test.teardownClass()
+      }
+
+      counts := self.__testReporter.summary()
+
+      self.output()
+
+      return if counts[2] > 0 then EXIT_FAIL else EXIT_SUCCESS
+   end
+
+   method output()
+      write(ximage(__tests))
+   end
+
+initially
+   __tests := []
+   /__testReporter := TestReporter()
+end
+
+class TestReporter(__results, __counts)
+   $define STATUS_SUCCESS 0
+   $define STATUS_FAIL 1
+
+   method result(cname, mname, passed)
+      put(self.__results, [cname, mname, passed])
+      if passed == STATUS_SUCCESS then self.__counts[1] +:= 1 else self.__counts[2] +:= 1
+   end
+
+   method results()
+      return self.__counts
+   end
+
+   method summary()
+      write("=== TEST SUMMARY ===")
+      write("passed: " || self.__counts[1] || ", failed: " || self.__counts[2])
+
+      return self.__counts
+   end
+
+initially
+   /__results := []
+   /__counts := [0, 0]
+end
+
+class Mock(__expectations)
+   method expect(mname, retval)
+      self.__expectations[mname] := retval
+   end
+
+   method verify(mname, args)
+      return member(self.__expectations, mname)
+   end
+
+   method invoke(mname, args)
+      self.verify(mname, args) | fail
+      return self.__expectations[mname]
+   end
+
+initially
+   /__expectations := table()
+end

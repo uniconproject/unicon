@@ -1,0 +1,243 @@
+import unittest
+
+link ximage, capture, io
+
+# TODO: TestSuite
+#        - run()
+#        Internal
+#        - __testReporter
+
+class TestTestSuite : TestCase(__testSuite)
+   method setup()
+      self.__testSuite := TestSuite()
+   end
+
+   method testInitialState()
+      assertEqual(0, *self.__testSuite.__tests)
+   end
+
+   method testAddTest()
+      st := SimpleTest()
+      self.__testSuite.add(st)
+      assertEqual(1, *self.__testSuite.__tests)
+   end
+
+   method testAddNonTest()
+      assertEqual(0, *self.__testSuite.__tests)
+      self.__testSuite.add(Empty())
+      self.__testSuite.add(&null)
+      self.__testSuite.add("StringClass")
+      assertEqual(0, *self.__testSuite.__tests)
+   end
+
+   method testRunTests()
+      # TODO: self.__testSuite.run(), check successes and failures. Check return value.
+   end
+
+   method testTestReporter()
+      # TODO: make sure that the TestReporter is class TestReporter, check default values.
+   end
+end
+
+class SimpleTest : TestCase()
+   method testAssertEqual()
+      assertEqual(1, 1)
+   end
+
+   method testAssert()
+      assert { 1 == 1 }
+   end
+end
+
+class SuccessTest : TestCase()
+   method testSuccessAssertEqual()
+      assertEqual(1, 1)
+   end
+
+   method testSuccessAssert()
+      assert { 1 == 1 }
+   end
+end
+
+class FailureTest : TestCase()
+   method testFailAssertEqual()
+      assertEqual(0, 9)
+   end
+
+   method testFailAssert()
+      assert { 0 == 9 }
+   end
+end
+
+class Empty()
+   method testNotReal()
+      write("This should not be displayed.")
+   end
+end
+
+class TestTestCase : TestCase(__calls)
+   $define STATUS_SUCCESS 0
+   $define STATUS_FAIL 1
+
+   method setupClass()
+      self.__calls["setupClass"] +:= 1
+      assertEqual(1, self.__calls["setupClass"])
+   end
+
+   method teardownClass()
+      self.__calls["teardownClass"] +:= 1
+      assertEqual(1, self.__calls["teardownClass"])
+      assertEqual(1, self.__calls["setupClass"])
+   end
+
+   method setup()
+      self.__calls["setup"] +:= 1
+      assertEqual(self.__calls["tests"] + 1, self.__calls["setup"])
+   end
+
+   method teardown()
+      self.__calls["teardown"] +:= 1
+      assertEqual(self.__calls["tests"], self.__calls["teardown"])
+      assertEqual(self.__calls["tests"], self.__calls["setup"])
+   end
+
+   method testInitialState()
+      assertEqual(STATUS_SUCCESS, self.__status)
+      self.__calls["tests"] +:= 1
+   end
+
+   method testResetStatus()
+      assertEqual(STATUS_SUCCESS, self.__status)
+      self.__status := 255
+      self.__reset()
+      assertEqual(STATUS_SUCCESS, self.__status)
+      self.__calls["tests"] +:= 1
+   end
+
+   method testAssertEqual()
+      assertEqual(1, 1)
+      assertEqual("Unicon", "Unicon")
+      self.__calls["tests"] +:= 1
+   end
+
+   method testAssert()
+      assert { 1 == 1 }
+      assert { "Unicon" == "Unicon" }
+      self.__calls["tests"] +:= 1
+   end
+
+   # TODO: may need to clean up the test reporter to avoid the Test Suite to fail.
+   method testStatusAssertFail()
+      assertEqual(STATUS_SUCCESS, self.__status)
+      assert { 1 == 2 }
+      assertEqual(STATUS_FAIL, self.__status)
+      self.__calls["tests"] +:= 1
+   end
+
+   # TODO: may need to clean up the test reporter to avoid the Test Suite to fail.
+   method testStatusAssertEqualFail()
+      assertEqual(STATUS_SUCCESS, self.__status)
+      assertEqual(1, 2)
+      assertEqual(STATUS_FAIL, self.__status)
+      self.__calls["tests"] +:= 1
+   end
+
+initially
+   __calls := table()
+   every call := !["setupClass", "teardownClass", "setup", "teardown", "tests"] do
+      __calls[call] := 0
+end
+
+# TODO: TestReporter
+#        - summary()
+
+class TestTestReporter : TestCase(__reporter)
+   method setup()
+      self.__reporter := TestReporter()
+   end
+
+   method testInitialState()
+      assertEqual(0, *self.__reporter.__results)
+   end
+
+   method testResult()
+      self.__reporter.result(classname(self), "testResult", 0)
+      assertEqual(1, *self.__reporter.__results)
+      assertEqual(classname(self), self.__reporter.__results[1][1])
+      assertEqual("testResult", self.__reporter.__results[1][2])
+      assertEqual(0, self.__reporter.__results[1][3])
+   end
+
+   method testSummary()
+      # TODO: not much luck with capture()'ing the output.
+
+      #self.__reporter.result(classname(self), "testResult", 0)
+      #assertEqual(1, *self.__reporter.__results)
+      #self.__reporter.summary()
+   end
+end
+
+class TestMock : TestCase(__mock)
+   method setup()
+      self.__mock := Mock()
+   end
+
+   method testInitialState()
+      assertEqual(0, *self.__mock.__expectations)
+   end
+
+   method testExpect()
+      self.__mock.expect("success", 1)
+      assertEqual(1, self.__mock.__expectations["success"])
+      assertEqual(1, *self.__mock.__expectations)
+
+      self.__mock.expect("str", "Unicon")
+      assertEqual("Unicon", self.__mock.__expectations["str"])
+      assertEqual(2, *self.__mock.__expectations)
+   end
+
+   method testVerify()
+      local expectation
+
+      expectation := self.__mock.verify("unknown", [])
+      assertEqual(1, (((expectation === &null) & 1) | 0))
+
+      self.__mock.expect("verify", "expected")
+      expectation := self.__mock.verify("verify", [])
+      assertEqual("verify", expectation)
+      assertEqual(1, *self.__mock.__expectations)
+   end
+
+   method testInvoke()
+      local expectation, value
+
+      expectation := self.__mock.invoke("unknown", [])
+      assertEqual(1, (((expectation === &null) & 1) | 0))
+
+      self.__mock.expect("invoke", "expected")
+      value := self.__mock.invoke("invoke", [])
+      assertEqual("expected", value)
+      assertEqual(1, *self.__mock.__expectations)
+   end
+
+initially
+   __mock := &null
+end
+
+procedure main()
+   ts := TestSuite()
+   
+   tss := TestTestSuite()
+   ts.add(tss)
+
+   tc := TestTestCase()
+   ts.add(tc)
+   
+   tm := TestMock()
+   ts.add(tm)
+
+   tr := TestTestReporter()
+   ts.add(tr)
+
+   exit(ts.run())
+end

@@ -1101,21 +1101,31 @@ Deliberate Syntax Error
          else if (stat(fnamestr, &st) < 0) {
             /* stat reported an error; file does not exist */
 
-            if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
-               char tempbuf[1024];
+            if ((strlen(fnamestr) < MaxPath) && (strchr(fnamestr, '*') || strchr(fnamestr, '?'))) {
+               /* account for (2 * strlen(fnamestr)) + 128 for the shell script */
+               char tempbuf[MaxPath*2 + 128];
 #if UNIX
                /*
-                * attempted to open a wildcard. used to use ls(1) output.
+                * attempt to open a wildcard. used to use ls(1) output.
                 * Now using shell for-loop and echo in order to avoid bad
                 * answers when no match is found.
                 */
-               sprintf(tempbuf, "for i in %s; do if [ \"$i\" != \"%s\" ]; then echo \"$i\"; fi; done", fnamestr, fnamestr);
+               int rt;
+               rt = snprintf(tempbuf, sizeof(tempbuf),
+                 "for i in %s; do if [ \"$i\" != \"%s\" ]; then echo \"$i\"; fi; done",
+                 fnamestr, fnamestr);
+
+               if (rt < 0 || rt > sizeof(tempbuf)) {
+                  set_errortext(218);
+                  fail;
+                 }
+
                status |= Fs_Pipe;
                f = popen(tempbuf, "r");
 #endif                                  /* UNIX */
 #if NT
                 /*
-                 * attempted to open a wildcard, do file completion
+                 * attempt to open a wildcard, do file completion
                  */
                 strcpy(tempbuf, fnamestr);
                 if (*tempbuf) {

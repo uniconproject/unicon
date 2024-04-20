@@ -61,7 +61,14 @@ int fpoll(int argc, descriptor *argv)	/*: await data from file */
 
    /* check for data already in buffer */
    /* there's no legal way to do this in C; we cheat */
-#ifdef __linux
+   /* cheating leads to portability issues, skip this on MUSL/ALPINE */
+
+#define __MUSL__
+
+#ifdef __MUSL__
+      /*FIXME: this is always defined */
+      /* insert your implementation here */
+#elif __linux
    if (f->_IO_read_ptr < f->_IO_read_end)
       RetArg(1);
 #elif __bsdi__ || __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __APPLE__

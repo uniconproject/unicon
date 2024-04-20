@@ -89,7 +89,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: macos-latest,    name: 'macOS',           opt: '--enable-werror CC=clang CXX=clang++' }
+        -  { os: macos-latest, name: 'macOS', opt: '--enable-werror CC=clang CXX=clang++' }
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -114,7 +114,6 @@ jobs:
         cat unicon-config.log
         cat unicon-features.log
 
-
   Linux:
     runs-on: ubuntu-latest
     name: ${{ matrix.cfg.name }}
@@ -130,7 +129,7 @@ jobs:
         -  { os: 'debian:11',     name: 'Debian 11',      opt: '--enable-werror' }
         -  { os: 'debian:12',     name: 'Debian 12',      opt: '--enable-werror' }
         -  { os: 'oraclelinux:8', name: 'Oracle Linux 8', opt: '--enable-werror' }
-        #-  { os: 'alpine:latest', name: 'Alpine Latest',  opt: '' }
+        -  { os: 'alpine:latest', name: 'Alpine Latest',  opt: '' }
     steps:
 
     - name: Install dependencies
@@ -159,7 +158,7 @@ jobs:
               ;;
            alpine*)
               apk update
-              apk add build-base
+              apk add build-base diffutils
               ;;
             esac
 
@@ -186,6 +185,49 @@ jobs:
         cat unicon-config.log
         cat unicon-features.log
 
+  Alpine:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+         -  { arch: aarch64 }
+         -  { arch: armv7 }
+         -  { arch: x86 }
+    steps:
+    - name: alpine
+      uses: jirutka/setup-alpine@v1
+      with:
+        arch:  ${{ matrix.platform.arch }}
+        branch: v3.19
+        packages: >
+          build-base
+          diffutils
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure
+      run: ./configure CFLAGS=-fno-pie LDFLAGS=-no-pie --disable-iconc
+      shell: alpine.sh {0}
+
+    - name: Make
+      run: make
+      shell: alpine.sh {0}
+
+    - name: Test
+      run: make Test
+      shell: alpine.sh {0}
+
+    - name: TestReport
+      run: make -C tests Report
+      shell: alpine.sh {0}
+
+    - name: Summary
+      run: |
+        cat unicon-config.log
+        cat unicon-features.log
+      shell: alpine.sh {0}
+
   Features:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
@@ -210,7 +252,10 @@ jobs:
         if [[ "${{ matrix.cfg.name }}" = "Ubuntu 32-bit" ]]
         then
         # Install tools to cross compile 32-bit
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
         sudo apt-get install -q -y gcc-multilib g++-multilib
+        sudo apt install libssl-dev:i386
         fi
         # Easy way to install all dependencies
         sudo apt-get install -q -y devscripts equivs

@@ -1793,10 +1793,9 @@ dptr processMethodCallList(struct b_list *lp)
    ep->lslots[0] = var;
    self = var;
    classname = var.vword.bptr->Record.recdesc->Proc.pname.vword.sptr;
-   cnlen = strcspn(classname, "_");
-   classname = strncpy(classname, classname, cnlen);
-   classname[cnlen] = '_';
-   classname[cnlen + 1] = '\0';
+   cnlen = 0;
+   while (classname[cnlen++] != '_'); /* skip to just after first '_' */
+   classname[cnlen] = '\0';
    methodptr = ep->lslots[1];
    if (!is:string(methodptr)) ReturnErrVal(103, methodptr, NULL);
    rp = (struct b_record *)BlkLoc(var);

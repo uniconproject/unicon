@@ -68,8 +68,7 @@ end
 
 class TestSuite(__tests, __testReporter)
    method add(testCase)
-      cname := classname(testCase)
-      if (\cname & (not (cname == "unittest__TestCase"))) then {
+      if (classname(testCase) ~=== "unittest__TestCase") then {
          if \testCase.__m["Type"] then {
             every ctype := testCase.Type() do {
                if ctype == "unittest::TestCase" then {
@@ -117,6 +116,7 @@ initially
    /__testReporter := TestReporter()
 end
 
+# TODO: save summary in a variable or return a summary from summary()
 class TestReporter(__results)
    $define STATUS_SUCCESS 0
    $define STATUS_FAIL 1

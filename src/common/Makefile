@@ -27,7 +27,7 @@ TMPdoincl.exe:     doincl.$(O)
 patchstr$(EXE): patchstr.$(O)
 		$(CC) $(CPPFLAGS) $(LDFLAGS) -o patchstr patchstr.$(O)
 		$(CP) patchstr$(EXE) ../../bin/
-		strip ../../bin/patchstr$(EXE)
+		grep -q '^#define DEVELOPMODE' ../../src/h/auto.h || strip ../../bin/patchstr$(EXE)
 
 # iconx needs NTConsole to be defined/set,
 # make this a dependency for iconx to set it

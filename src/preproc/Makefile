@@ -16,7 +16,7 @@ DOT_H = preproc.h pproto.h ptoken.h ../h/define.h ../h/config.h\
 pp: pmain.o $(OBJS) ../../rt/lib/libucommon.a
 	$(CC) $(CFLAGS) $(LDFLAGS) -o pp pmain.o $(OBJS) -lucommon
 	$(CP) pp ../../bin
-	-strip ../../bin/pp
+	-grep -q '^#define DEVELOPMODE' ../../src/h/auto.h || strip ../../bin/pp
 
 %.o: %.c
 	$(CMNT)@echo "   [PREPROC] $<"

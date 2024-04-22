@@ -24,7 +24,7 @@ all:	urtt$(EXE)
 urtt$(EXE):	$(OBJ)
 	$(CC) $(LDFLAGS) -o urtt $(OBJ) -lucommon
 	$(CP) urtt$(EXE) ../../bin/
-	strip ../../bin/urtt$(EXE)
+	grep -q '^#define DEVELOPMODE' ../../src/h/auto.h || strip ../../bin/urtt$(EXE)
 
 library:	$(OBJ)
 		$(RM) -r rtt.a

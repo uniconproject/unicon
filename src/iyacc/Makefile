@@ -48,7 +48,7 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo -n "Loading $(PROGRAM) ... "
 		@$(LINKER) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
 		@cp $(PROGRAM) ../../bin/
-		strip ../../bin/$(PROGRAM)
+		grep -q '^#define DEVELOPMODE' ../../src/h/auto.h || strip ../../bin/$(PROGRAM)
 		@cd test; $(MAKE)
 		@echo "done"
 

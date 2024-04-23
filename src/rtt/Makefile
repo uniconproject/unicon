@@ -24,7 +24,7 @@ all:	urtt$(EXE)
 urtt$(EXE):	$(OBJ)
 	$(CC) $(LDFLAGS) -o urtt $(OBJ) -lucommon
 	$(CP) urtt$(EXE) ../../bin/
-	strip ../../bin/urtt$(EXE)
+	$(STRIP) ../../bin/urtt$(EXE)
 
 library:	$(OBJ)
 		$(RM) -r rtt.a

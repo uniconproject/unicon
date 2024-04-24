@@ -146,6 +146,7 @@ class Adapter(
          "scopes" : { put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1);
                      every put_cmdQueue(![: "print -"||!"glsp" :], request_body, 1) }
          "variables" : { variables(request_body, request_seq, request_command, request_arguments) }
+         "setVariable": { setVariable(request_body, request_arguments) }
          "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
          "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"] }
          "evaluate" : { evaluate(request_body, request_seq, request_command, request_arguments) }
@@ -270,8 +271,8 @@ class Adapter(
 
       capabilitiesTable := [
          "supportsConfigurationDoneRequest": "__true__";
-         # "supportsFunctionBreakpoints": "__true__";
-         "supportsDataBreakpoints" : "__true__"
+         "supportsDataBreakpoints" : "__true__";
+         "supportsSetVariable": "__true__"
       ]
 
       res := build_response(request_seq, "__true__", request_command, capabilitiesTable)
@@ -402,38 +403,33 @@ class Adapter(
    end
 
    method variables(request_body, request_seq, request_command, request_arguments)
-      local ref
-      ref := request_arguments["variablesReference"]
-      #write("ref requested:")
-      #write(ref)
-      #write(ximage(currStructuredVars))
-      if ref < 5 then
+      local reqRef
+      reqRef := request_arguments["variablesReference"]
+      if reqRef < 5 then
          put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1)
       else {
-         #put_cmdQueue("print "||currStructuredVars[ref]["name"], request_body, 1)
          # any ref passed by vscode has already been stored in currStructuredVars, so just process what's stored in there
-         struct := currStructuredVars[ref]["value"]
+         struct := currStructuredVars[reqRef]["value"]
+         structName := currStructuredVars[reqRef]["name"]
          vars := []
-         if type(struct) == ("list" | "table" )| match("record"|"object", image(struct)) then {
-            every k := key(struct) do {
-               val := struct[k]
-               if type(val) == ("list" | "table" ) | match("record"|"object", image(struct)) then {
-                  put(currStructuredVars, [
-                     "name": image(val)
-                     "value": val
-                  ])
-                  varRef := *currStructuredVars
-               }
-               else {
-                  varRef := 0
-               }
-               put(vars, [
-                  "name": replace("["||image(k)||"]", "\"", "\\\"")
-                  "value": replace(image(val), "\"", "\\\"")
-                  "type": type(val)
-                  "variablesReference": varRef
+         every k := key(struct) do {
+            val := struct[k]
+            if type(val) == ("list" | "table" ) | match("record"|"object", image(struct)) then {
+               put(currStructuredVars, [
+                  "name": structName||"["||k||"]"
+                  "value": val
                ])
+               ref := *currStructuredVars
             }
+            else {
+               ref := 0
+            }
+            put(vars, [
+               "name": replace("["||image(k)||"]", "\"", "\\\"")
+               "value": replace(image(val), "\"", "\\\"")
+               "type": type(val)
+               "variablesReference": ref
+            ])
          }
 
          response := build_response(request_seq, "__true__", request_command, table("variables", vars))
@@ -441,6 +437,18 @@ class Adapter(
       }
    end
 
+   method setVariable(request_body, request_arguments)
+      local varName, varVal, reqRef
+      varVal := request_arguments["value"]
+      reqRef := request_arguments["variablesReference"]
+      if reqRef >= 5 then
+         varName := currStructuredVars[reqRef]["name"]
+      else
+         varName := ""
+      varName ||:= request_arguments["name"]
+
+      put_cmdQueue("e "||varName||" := "||varVal, request_body, 1)
+   end
 
    # Default response for request that only requires an acknowledgement.
    method acknowledge(request_seq, request_command)
@@ -494,6 +502,7 @@ class Adapter(
             "stackTrace": processStackTraceResult(outputTable)
             "scopes": processScopesResult(outputTable)
             "variables": processVariablesResult(outputTable)
+            "setVariable": processSetVariableResult(outputTable)
             "evaluate": processEvaluateResult(outputTable, showResult)
          }
       }
@@ -660,14 +669,12 @@ class Adapter(
    end
 
    method processVariablesResult(res)
-      local response, variables, var, ref
+      local response, variables, var
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
          writes(sock, response)
          return
       }
-
-      ref := currentRequestBody["arguments"]["variablesReference"]
 
       if member(res, "type") then {
          if member(res, "variables") then {
@@ -675,7 +682,7 @@ class Adapter(
                variables := res["variables"]
 
                every var := !variables do {
-                  if var["type"] == ("list" | "table" )| match("record"|"object", image(struct)) then {
+                  if var["type"] == ("list" | "table" )| match("record"|"object", image(var["value"])) then {
                      put(currStructuredVars, [
                         "value": var["value"]
                         "name": var["name"]
@@ -694,9 +701,60 @@ class Adapter(
       }
    end
 
+   method addStructuredVar(val)
+      local varName, reqRef
+      reqRef := currentRequestBody["arguments"]["variablesReference"]
+      if type(val) == ("list" | "table" ) | match("record"|"object", image(val)) then {
+         if reqRef >= 5 then
+            varName := currStructuredVars[reqRef]["name"]
+         else
+            varName := ""
+         varName ||:= currentRequestBody["arguments"]["name"]
+         put(currStructuredVars, [
+            "name": varName
+            "value": val
+         ])
+         return *currStructuredVars
+      }
+      else
+         return 0
+   end
+
+   method processSetVariableResult(res)
+      local response, body, ref
+      if res["type"] == "eval" then {
+         if \res["success"] == "__false__" then {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
+            return
+         }
+         
+         ref := addStructuredVar(res["result"])
+         
+         body := [
+            "value": replace(image(res["result"]), "\"", "\\\"")
+            "type": type(res["result"])
+            "variablesReference": ref
+         ]
+         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+         writes(sock, response)
+      }  
+      
+   end
+
    method processEvaluateResult(res, noBody)
       local event, body, response, context, ref
-      context := \(\currentRequestBody["arguments"])["context"]
+
+      if type(res["result"]) == ("list" | "table" ) | match("record"|"object", image(res["result"])) then {
+         put(currStructuredVars, [
+            "name": ""
+            "value": res["result"]
+         ])
+         ref := *currStructuredVars
+      }
+      else
+         ref := 0
+
       if res["type"] == "eval" then {
          if res["success"] == "__true__" then {
             if \noBody then {
@@ -704,9 +762,9 @@ class Adapter(
             }
             else {
                body := [
-                  "result": replacem(image(res["result"]), "\"", "\\\"")
+                  "result": replace(image(res["result"]), "\"", "\\\"")
                   "type": type(res["result"])
-                  "variablesReference": 0
+                  "variablesReference": ref
                ]
                response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
             }
@@ -714,8 +772,8 @@ class Adapter(
          }
          else {
             body := [
-               "result": replacem(res["result"], "\"", "\\\"")
-               "variablesReference": 0
+               "result": replace(res["result"], "\"", "\\\"")
+               "variablesReference": ref
             ]
             response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
             writes(sock, response)
@@ -726,7 +784,7 @@ class Adapter(
             body := [
                "result": replace(image(res["result"]), "\"", "\\\"")
                "type": replace((type(res["result"])), "\"", "\\\"")
-               "variablesReference": 0
+               "variablesReference": ref
             ]
             response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
             writes(sock, response)
@@ -807,7 +865,7 @@ class Adapter(
       }
       else if request_arguments["context"] == "watch" then {
          expression := "e "||request_arguments["expression"]
-         put_cmdQueue("frame "||request_arguments["frameId"], &null, 1)
+         put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
          put_cmdQueue(expression, request_body, 1)
       }
    end

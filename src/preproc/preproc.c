@@ -19,7 +19,8 @@ static void toks_to_str  (struct str_buf *sbuf, struct token *t);
 /*
  * start_select - handle #if, #ifdef, #ifndef
  */
-static void start_select(struct token *t)
+static void start_select(t)
+struct token *t;
    {
    struct token *t1;
    struct tok_lst *tlst;
@@ -48,7 +49,7 @@ static void start_select(struct token *t)
          errt2(t1, "expecting end of line following argument to #", t->image);
       free_t(t1);
       }
-
+ 
    /*
     * look for the branch of the conditional inclusion to take or #endif.
     */
@@ -68,7 +69,7 @@ static void start_select(struct token *t)
              */
             ++nesting;
             break;
-
+ 
          case PpEndif:
             /*
              * #endif found. See if this is this the end of a nested
@@ -89,7 +90,7 @@ static void start_select(struct token *t)
                return;
                }
             break;
-
+  
          case PpElif:
             /*
              * #elif found. If this is not a nested conditional, see if
@@ -102,7 +103,7 @@ static void start_select(struct token *t)
                condition = eval(t);
                }
             break;
-
+ 
          case PpElse:
             /*
              * #else found. If this is not a nested conditional, take
@@ -128,11 +129,12 @@ static void start_select(struct token *t)
    tlst->next = src_stack->cond;
    src_stack->cond = tlst;
    }
-
+
 /*
  * end_select - handle #elif, #else, and #endif
  */
-static void end_select(struct token *t)
+static void end_select(t)
+struct token *t;
    {
    struct tok_lst *tlst;
    struct token *t1;
@@ -184,11 +186,12 @@ static void end_select(struct token *t)
    free_t(t1);
    return;
    }
-
+
 /*
  * incl_file - handle #include
  */
-static void incl_file(struct token *t)
+static void incl_file(t)
+struct token *t;
    {
    struct token *file_tok, *t1;
    struct str_buf *sbuf;
@@ -282,14 +285,15 @@ static void incl_file(struct token *t)
    free_t(file_tok);
    free_t(t);
    }
-
+
 /*
  * define - handle #define and #begdef
  */
-static void define(struct token *t)
+static void define(t)
+struct token *t;
    {
    struct token *mname;   /* name of macro */
-   int category;          /* NoArgs for object-like macro, else number params */
+   int category;	  /* NoArgs for object-like macro, else number params */
    int multi_line;
    struct id_lst *prmlst; /* parameter list */
    struct tok_lst *body;  /* replacement list */
@@ -305,7 +309,7 @@ static void define(struct token *t)
    nxt_non_wh(&mname);
    if (mname->tok_id != Identifier)
       errt2(mname, "syntax error in #", t->image);
-
+   
    /*
     * Determine if this macro takes arguments.
     */
@@ -408,11 +412,13 @@ static void define(struct token *t)
    m_install(mname, category, multi_line, prmlst, body);
    free_t(mname);
    }
-
+
 /*
  * expand - add expansion of macro to source stack.
  */
-static int expand(struct token *t, struct macro *m)
+static int expand(t, m)
+struct token *t;
+struct macro *m;
    {
    struct token *t1 = NULL;
    struct token *t2;
@@ -581,7 +587,9 @@ static int expand(struct token *t, struct macro *m)
  * toks_to_str - put in a buffer the string image of tokens up to the end of
  *    of a preprocessor directive.
  */
-static void toks_to_str(struct str_buf *sbuf, struct token *t)
+static void toks_to_str(sbuf, t)
+struct str_buf *sbuf;
+struct token *t;
    {
    char *s;
 
@@ -607,7 +615,7 @@ static void toks_to_str(struct str_buf *sbuf, struct token *t)
       }
    free_t(t);
    }
-
+
 /*
  * interp_dir - interpret preprocessing directives and recognize macro calls.
  */
@@ -635,7 +643,7 @@ struct token *interp_dir()
          case PpIfndef:      /* #endif */
             start_select(t);
             break;
-
+            
          case PpElif:        /* #elif */
          case PpElse:        /* #else */
          case PpEndif:       /* #endif */
@@ -674,7 +682,7 @@ struct token *interp_dir()
          case PpLine:        /* #line */
             /* this directive is handled in next_tok() */
             break;
-
+ 
          case PpError:       /* #error */
             /*
              * Create an error message out of the rest of the tokens
@@ -743,10 +751,10 @@ struct token *interp_dir()
          }
       }
    }
-
+
 
 /*
- * See if compiler used to build the preprocessor recognizes '\a'
+ * See if compiler used to build the preprocessor recognizes '\a' 
  *  as the bell character.
  */
 #if '\a' == Bell
@@ -760,7 +768,8 @@ struct token *interp_dir()
 /*
  * fix_bell - replace \a characters which correct octal escape sequences.
  */
-static char *fix_bell(register char *s)
+static char *fix_bell(s)
+register char *s;
    {
    struct str_buf *sbuf;
 
@@ -819,7 +828,7 @@ static struct token *check_bell()
    }
 
 #endif     /*  '\a' == Bell  */
-
+
 /*
  * preproc - return the next fully preprocessed token.
  */
@@ -921,7 +930,7 @@ struct token *preproc()
                       */
                      escape_seq = s;
                      i = 1;
-                     while (i <= 3 && *s >= '0' && *s <= '7') {
+                     while (i <= 3 && *s >= '0' && *s <= '7') { 
                         ++i;
                         ++s;
                         }

@@ -4,7 +4,8 @@
  * redirerr - redirect error output to the named file. '-' indicates that
  *  it should be redirected to standard out.
  */
-int redirerr(char *p)
+int redirerr(p)
+char *p;
    {
    if ( *p == '-' ) { /* let - be stdout */
 
@@ -16,11 +17,11 @@ int redirerr(char *p)
 #if PORT
    /* may not be possible */
    Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if MVS || VM
    /* cannot do this */
-#endif                                  /* MVS || VM */
+#endif					/* MVS || VM */
 
 #if MSDOS || VMS
    #ifdef _UCRT
@@ -32,11 +33,11 @@ int redirerr(char *p)
       setbuf(stdout,NULL);
       setbuf(stderr,NULL);
       stderr->_file = stdout->_file;
-   #else                                /* NT */
+   #else				/* NT */
       if (dup2(fileno(stdout),fileno(stderr)))
-        return 0;
-   #endif                               /* NT */
-#endif                                  /* MSDOS || ... */
+	return 0;
+   #endif				/* NT */
+#endif					/* MSDOS || ... */
 
 
 #if UNIX
@@ -45,8 +46,8 @@ int redirerr(char *p)
        */
       close(fileno(stderr));
       if (dup(fileno(stdout) == -1))
-          return 0;
-#endif                                  /* UNIX */
+	  return 0;
+#endif					/* UNIX */
 
 /*
  * End of operating-system specific code.

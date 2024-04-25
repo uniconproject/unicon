@@ -8,6 +8,7 @@ on:
 
 jobs:
   Windows:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
@@ -38,7 +39,7 @@ jobs:
       shell: bash
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -51,13 +52,14 @@ jobs:
         make WinInstaller
 
     - name: Publish
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v2
       with:
         name: unicon-${{ matrix.cfg.name}}
         path: Output/setup-unicon*.exe
 
 
   Ubuntu:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
@@ -69,7 +71,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |
@@ -92,7 +94,7 @@ jobs:
         cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
 
     - name: Publish
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v2
       with:
         name: unicon-${{ matrix.cfg.name}}
         path: debian-pkg/unicon_*

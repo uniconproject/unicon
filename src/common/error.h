@@ -12,7 +12,7 @@
 
 extern int  __merr_errors;
 #ifndef SEPARATE_YYERROR
-static  char    *mapterm        (int typ,struct node *val);
+static	char	*mapterm	(int typ,struct node *val);
 
 /*
  * yyerror produces syntax error messages.  tok is the offending token
@@ -22,13 +22,15 @@ static  char    *mapterm        (int typ,struct node *val);
  *  message is produced; if the state isn't found, "syntax error"
  *  is produced.
  */
-void yyerror(int tok, nodeptr lval, int state)
+void yyerror(tok, lval, state)
+int tok, state;
+nodeptr lval;
    {
    register struct errmsg *p;
    int line;
 #ifdef ConsoleWindow
    extern int silent;
-#endif                                  /* ConsoleWindow */
+#endif					/* ConsoleWindow */
 
    if (lval == NULL)
       line = 0;
@@ -37,7 +39,7 @@ void yyerror(int tok, nodeptr lval, int state)
 
 #ifdef ConsoleWindow
    if (!silent) {
-#endif                                  /* ConsoleWindow */
+#endif					/* ConsoleWindow */
    if (tok_loc.n_file)
       fprintf(stderr, "File %s; ", tok_loc.n_file);
    if (tok == EOFX)   /* special case end of file */
@@ -64,16 +66,18 @@ void yyerror(int tok, nodeptr lval, int state)
       fprintf(flog, "%s\n", p->e_mesg);
       }
       }
-#endif                                  /* ConsoleWindow */
+#endif					/* ConsoleWindow */
    __merr_errors++;
    nocode++;
    }
-
+
 /*
  * mapterm finds a printable string for the given token type
  *  and value.
  */
-static char *mapterm(int typ, nodeptr val)
+static char *mapterm(typ,val)
+int typ;
+nodeptr val;
    {
    register struct toktab *t;
    register struct optab *ot;
@@ -91,8 +95,8 @@ static char *mapterm(int typ, nodeptr val)
          return ot->tok.t_word;
    return "???";
    }
-#endif                                  /* SEPARATE_YYERROR */
-
+#endif					/* SEPARATE_YYERROR */
+
 /*
  * tfatal produces the translator error messages s1 and s2 (if nonnull).  The
  *  location of the error is found in tok_loc.
@@ -104,7 +108,7 @@ void tfatal(char *s1, char *s2)
    extern int silent;
 
    if (!silent) {
-#endif                                  /* ConsoleWindow */
+#endif					/* ConsoleWindow */
 
    if (tok_loc.n_file)
       fprintf(stderr, "File %s; ", tok_loc.n_file);
@@ -123,16 +127,18 @@ void tfatal(char *s1, char *s2)
          fprintf(flog, "\"%s\": ", s2);
       fprintf(flog, "%s\n", s1);
       }
-#endif                                  /* ConsoleWindow */
+#endif					/* ConsoleWindow */
    __merr_errors++;
    nocode++;
    }
-
+
 /*
  * nfatal produces the error messages s1 and s2 (if nonnull), and associates
  *  it with source location of node.
  */
-void nfatal(nodeptr n, char *s1, char *s2)
+void nfatal(n, s1, s2)
+nodeptr n;
+char *s1, *s2;
    {
 
    if (n != NULL) {
@@ -146,13 +152,14 @@ void nfatal(nodeptr n, char *s1, char *s2)
    __merr_errors++;
    nocode++;
    }
-
+
 
 /*
  * twarn produces s1 and s2 (if nonnull) as translator warning messages.
  *  The location of the error is found in tok_loc.
  */
-void twarn(char *s1, char *s2)
+void twarn(s1, s2)
+char *s1, *s2;
    {
 
    if (tok_loc.n_file)
@@ -166,12 +173,13 @@ void twarn(char *s1, char *s2)
 #endif
    }
 
-
+
 /*
  * tsyserr is called for fatal errors.  The message s is produced and the
  *  translator exits.
  */
-void tsyserr( char *s)
+void tsyserr(s)
+char *s;
    {
 
 
@@ -181,20 +189,22 @@ void tsyserr( char *s)
 
    exit(EXIT_FAILURE);
    }
-
+
 /*
  * quit - immediate exit with error message
  */
 
-void quit(char *msg)
+void quit(msg)
+char *msg;
    {
    quitf(msg,"");
    }
-
+
 /*
  * quitf - immediate exit with message format and argument
  */
-void quitf(char *msg, char *arg)
+void quitf(msg,arg)
+char *msg, *arg;
    {
    extern char *progname;
 #ifdef ConsoleWindow
@@ -210,15 +220,15 @@ void quitf(char *msg, char *arg)
       fprintf(flog, msg, arg);
       fprintf(flog, "\n");
       }
-#endif                                  /* ConsoleWindow */
+#endif					/* ConsoleWindow */
 
 #if !defined(Iconc)
    {
       extern char *ofile;
       if (ofile)
-         remove(ofile);                 /* remove bad icode file */
+	 remove(ofile);			/* remove bad icode file */
    }
-#endif                                  /* !Iconc */
+#endif					/* !Iconc */
 
    exit(EXIT_FAILURE);
    }

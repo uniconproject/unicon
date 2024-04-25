@@ -43,8 +43,13 @@ static int n_ret;       /* number of returns */
  */
 extern
 int
-do_inlin(struct implement *impl, struct node * p, struct node * n,
-         int *cont_loc, struct op_symentry *symtab, int n_va)
+do_inlin(impl, p, n, cont_loc, symtab, n_va) 
+   struct implement *impl;
+   struct node * n;
+   struct node * p;
+   int *cont_loc;
+   struct op_symentry *symtab;
+   int n_va;
 {
    int i;
    int nsyms;
@@ -114,7 +119,10 @@ do_inlin(struct implement *impl, struct node * p, struct node * n,
 
 static
 int
-can_il(struct node * p, struct node * n, struct implement * impl)
+can_il(p, n, impl)
+   struct node * p;
+   struct node * n;
+   struct implement * impl;
 {
    extern int num_dynrec_ctors;
 
@@ -140,7 +148,8 @@ can_il(struct node * p, struct node * n, struct implement * impl)
  * il_anlz - analyze a piece of RTL code. Return an indication of
  *  whether execution can continue beyond it.
  */
-static int il_anlz(struct il_code *il)
+static int il_anlz(il)
+struct il_code *il;
    {
    int fall_thru;
    int ncases;
@@ -305,7 +314,8 @@ static int il_anlz(struct il_code *il)
 /*
  * if_anlz - analyze the condition of an if statement.
  */
-static int if_anlz(struct il_code *il)
+static int if_anlz(il)
+struct il_code *il;
    {
    int cond;
    int cond1;
@@ -333,7 +343,9 @@ static int if_anlz(struct il_code *il)
  *   conditions. If cdp is not NULL, use it to return a pointer code
  *   that implements the condition.
  */
-int cond_anlz(struct il_code *il, struct code **cdp)
+int cond_anlz(il, cdp)
+struct il_code *il;
+struct code **cdp;
    {
    struct code *cd1;
    struct code *cd2;
@@ -418,7 +430,9 @@ int cond_anlz(struct il_code *il, struct code **cdp)
  * and_cond - construct && of two conditions, either of which may have
  *  been optimized away.
  */
-static struct code *and_cond(struct code *cd1, struct code *cd2)
+static struct code *and_cond(cd1, cd2)
+struct code *cd1;
+struct code *cd2;
    {
    struct code *cd;
 
@@ -443,8 +457,12 @@ static struct code *and_cond(struct code *cd1, struct code *cd2)
  *  and, if requested, produce code to perform the conversion. Also
  *  gather information about the variables it uses.
  */
-static int cnv_anlz(unsigned int typcd, struct il_code *src, struct il_c *dflt,
-                    struct il_c *dest, struct code **cdp)
+static int cnv_anlz(typcd, src, dflt, dest, cdp)
+unsigned int typcd;
+struct il_code *src;
+struct il_c *dflt;
+struct il_c *dest;
+struct code **cdp;
    {
    struct val_loc *src_loc;
    int cond;
@@ -589,7 +607,8 @@ static int cnv_anlz(unsigned int typcd, struct il_code *src, struct il_c *dflt,
 /*
  * ilc_anlz - gather information about in-line C code.
  */
-static void ilc_anlz(struct il_c *ilc)
+static void ilc_anlz(ilc)
+struct il_c *ilc;
    {
    while (ilc != NULL) {
       switch(ilc->il_c_type) {
@@ -642,7 +661,8 @@ static void ilc_anlz(struct il_c *ilc)
  * ret_anlz - gather information about the in-line C code associated
  *   with a return or suspend.
  */
-static void ret_anlz(struct il_c *ilc)
+static void ret_anlz(ilc)
+struct il_c *ilc;
    {
    int i;
    int j;
@@ -666,7 +686,8 @@ static void ret_anlz(struct il_c *ilc)
  * deref_il - dummy routine to pass to a code walk.
  */
 /*ARGSUSED*/
-static int defer_il(struct il_code *il)
+static int defer_il(il)
+struct il_code *il;
    {
    /*
     * Called for each case in a type_case statement that might be selected.
@@ -682,7 +703,10 @@ static int defer_il(struct il_code *il)
  *   that can be used (if there are more than two, the code is not
  *   in-lined).
  */
-void findcases(struct il_code *il, int has_dflt, struct case_anlz *case_anlz)
+void findcases(il, has_dflt, case_anlz)
+struct il_code *il;
+int has_dflt;
+struct case_anlz *case_anlz;
    {
    int i;
 
@@ -724,7 +748,9 @@ void findcases(struct il_code *il, int has_dflt, struct case_anlz *case_anlz)
  *   in-lining if it can be reduced to an "if" statement or an
  *   unconditional statement.
  */
-static int tc_anlz(struct il_code *il, int has_dflt)
+static int tc_anlz(il, has_dflt)
+struct il_code *il;
+int has_dflt;
    {
    struct case_anlz case_anlz;
    int fall_thru;
@@ -751,10 +777,15 @@ static int tc_anlz(struct il_code *il, int has_dflt)
 /*
  * arth_anlz - analyze the type checking of an arith_case statement.
  */
-void arth_anlz(struct il_code *var1, struct il_code *var2,
-               int *maybe_int, int *maybe_dbl,
-               int *chk1, struct code **conv1p,
-               int *chk2, struct code **conv2p)
+void arth_anlz(var1, var2, maybe_int, maybe_dbl, chk1, conv1p, chk2, conv2p)
+struct il_code *var1;
+struct il_code *var2;
+int *maybe_int;
+int *maybe_dbl;
+int *chk1;
+struct code **conv1p;
+int *chk2;
+struct code **conv2p;
    {
    int cond;
    int cnv_typ;

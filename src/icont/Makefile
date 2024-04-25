@@ -24,8 +24,8 @@ all:		$(UNICONT)
 
 $(UNICONT) $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a
 		$(CC) $(CFLAGS) $(LDFLAGS) -o $(UNICONT) $(OBJS) -lucommon $(LIBS)
-		$(CP) $(PGMS) ../../bin
-		$(STRIP) ../../bin/$(PGMS)
+		cp $(PGMS) ../../bin
+		strip ../../bin/$(PGMS)
 
 $(UNICONWT) $(WICONTEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a common
 	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o $(UNICONWT) -mwindows $(OBJS) $(WOBJS)  -lucommon -lwuconsole -lwinmm $(LIBS) $(WGLIBS)

@@ -14,7 +14,8 @@
  *   for each node size is used for speed and simplicity.
  */
 
-nodeptr tree1(int type)
+nodeptr tree1(type)
+int type;
    {
    register nodeptr t;
 
@@ -23,7 +24,9 @@ nodeptr tree1(int type)
    return t;
    }
 
-nodeptr tree2(int type, nodeptr loc_model)
+nodeptr tree2(type, loc_model)
+int type;
+nodeptr loc_model;
    {
    register nodeptr t;
 
@@ -35,7 +38,10 @@ nodeptr tree2(int type, nodeptr loc_model)
    return t;
    }
 
-nodeptr tree3(int type, nodeptr loc_model, nodeptr c)
+nodeptr tree3(type, loc_model, c)
+int type;
+nodeptr loc_model;
+nodeptr c;
    {
    register nodeptr t;
 
@@ -48,7 +54,10 @@ nodeptr tree3(int type, nodeptr loc_model, nodeptr c)
    return t;
    }
 
-nodeptr tree4(int type, nodeptr loc_model, nodeptr c, nodeptr d)
+nodeptr tree4(type, loc_model, c, d)
+int type;
+nodeptr loc_model;
+nodeptr c, d;
    {
    register nodeptr t;
 
@@ -62,7 +71,10 @@ nodeptr tree4(int type, nodeptr loc_model, nodeptr c, nodeptr d)
    return t;
    }
 
-nodeptr tree5(int type, nodeptr loc_model, nodeptr c, nodeptr d, nodeptr e)
+nodeptr tree5(type, loc_model, c, d, e)
+int type;
+nodeptr loc_model;
+nodeptr c, d, e;
    {
    register nodeptr t;
 
@@ -77,7 +89,10 @@ nodeptr tree5(int type, nodeptr loc_model, nodeptr c, nodeptr d, nodeptr e)
    return t;
    }
 
-nodeptr tree6(int type, nodeptr loc_model, nodeptr c, nodeptr d, nodeptr e, nodeptr f)
+nodeptr tree6(type, loc_model, c, d, e, f)
+int type;
+nodeptr loc_model;
+nodeptr c, d, e, f;
    {
    register nodeptr t;
 
@@ -93,13 +108,14 @@ nodeptr tree6(int type, nodeptr loc_model, nodeptr c, nodeptr d, nodeptr e, node
    return t;
    }
 
-nodeptr buildarray(nodeptr a, nodeptr lb, nodeptr e, nodeptr rb)
+nodeptr buildarray(a,lb,e,rb)
+nodeptr a, lb, e, rb;
    {
    register nodeptr t, t2;
    if (e->n_type == N_Elist) {
       t2 = int_leaf(lb->n_type, lb, (int)lb->n_field[0].n_val);
       t = tree5(N_Binop, t2, t2, buildarray(a,lb,e->n_field[0].n_ptr,rb),
-                e->n_field[1].n_ptr);
+		e->n_field[1].n_ptr);
       free(e);
       }
    else
@@ -107,7 +123,10 @@ nodeptr buildarray(nodeptr a, nodeptr lb, nodeptr e, nodeptr rb)
    return t;
    }
 
-nodeptr int_leaf(int type, nodeptr loc_model, int c)
+nodeptr int_leaf(type, loc_model, c)
+int type;
+nodeptr loc_model;
+int c;
    {
    register nodeptr t;
 
@@ -120,7 +139,10 @@ nodeptr int_leaf(int type, nodeptr loc_model, int c)
    return t;
    }
 
-nodeptr c_str_leaf(int type, nodeptr loc_model, char *c)
+nodeptr c_str_leaf(type, loc_model, c)
+int type;
+nodeptr loc_model;
+char *c;
    {
    register nodeptr t;
 
@@ -133,7 +155,11 @@ nodeptr c_str_leaf(int type, nodeptr loc_model, char *c)
    return t;
    }
 
-nodeptr i_str_leaf(int type, nodeptr loc_model, char *c, int d)
+nodeptr i_str_leaf(type, loc_model, c, d)
+int type;
+nodeptr loc_model;
+char *c;
+int d;
    {
    register nodeptr t;
 

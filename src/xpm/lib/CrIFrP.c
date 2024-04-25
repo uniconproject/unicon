@@ -35,17 +35,21 @@
 #include "XpmI.h"
 
 void
-xpmCreateImageFromPixmap(Display *display, Pixmap pixmap, XImage **ximage_return,
-                         unsigned int *width, unsigned int *height)
+xpmCreateImageFromPixmap(display, pixmap, ximage_return, width, height)
+    Display *display;
+    Pixmap pixmap;
+    XImage **ximage_return;
+    unsigned int *width;
+    unsigned int *height;
 {
     unsigned int dum;
     int dummy;
     Window win;
 
     if (*width == 0 && *height == 0)
-        XGetGeometry(display, pixmap, &win, &dummy, &dummy,
-                     width, height, &dum, &dum);
+	XGetGeometry(display, pixmap, &win, &dummy, &dummy,
+		     width, height, &dum, &dum);
 
     *ximage_return = XGetImage(display, pixmap, 0, 0, *width, *height,
-                               AllPlanes, ZPixmap);
+			       AllPlanes, ZPixmap);
 }

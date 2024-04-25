@@ -20,7 +20,8 @@ static nodeptr subsc_nd  (nodeptr op, nodeptr arg1, nodeptr arg2);
 
 extern
 struct node *
-mdw_new_node(int nflds)
+mdw_new_node(nflds)
+   int nflds;
 {
    struct node * rslt;
 
@@ -38,7 +39,8 @@ mdw_new_node(int nflds)
  *   speed and simplicity.
  */
 
-nodeptr tree1(int type)
+nodeptr tree1(type)
+int type;
    {
    register nodeptr t;
 
@@ -51,7 +53,9 @@ nodeptr tree1(int type)
    return t;
    }
 
-nodeptr tree2(int type, nodeptr loc_model)
+nodeptr tree2(type, loc_model)
+int type;
+nodeptr loc_model;
    {
    register nodeptr t;
 
@@ -64,7 +68,10 @@ nodeptr tree2(int type, nodeptr loc_model)
    return t;
    }
 
-nodeptr tree3(int type, nodeptr loc_model, nodeptr a)
+nodeptr tree3(type, loc_model, a)
+int type;
+nodeptr loc_model;
+nodeptr a;
    {
    register nodeptr t;
 
@@ -78,7 +85,10 @@ nodeptr tree3(int type, nodeptr loc_model, nodeptr a)
    return t;
    }
 
-nodeptr tree4(int type, nodeptr loc_model, nodeptr a, nodeptr b)
+nodeptr tree4(type, loc_model, a, b)
+int type;
+nodeptr loc_model;
+nodeptr a, b;
    {
    register nodeptr t;
 
@@ -95,7 +105,10 @@ ca_apply_add(t->n_file, t);
    return t;
    }
 
-nodeptr tree5(int type, nodeptr loc_model, nodeptr a, nodeptr b, nodeptr c)
+nodeptr tree5(type, loc_model, a, b, c)
+int type;
+nodeptr loc_model;
+nodeptr a, b, c;
    {
    register nodeptr t;
 
@@ -111,7 +124,10 @@ nodeptr tree5(int type, nodeptr loc_model, nodeptr a, nodeptr b, nodeptr c)
    return t;
    }
 
-nodeptr tree6(int type, nodeptr loc_model, nodeptr a, nodeptr b, nodeptr c, nodeptr d)
+nodeptr tree6(type, loc_model, a, b, c, d)
+int type;
+nodeptr loc_model;
+nodeptr a, b, c, d;
    {
    register nodeptr t;
 
@@ -128,7 +144,10 @@ nodeptr tree6(int type, nodeptr loc_model, nodeptr a, nodeptr b, nodeptr c, node
    return t;
    }
 
-nodeptr int_leaf(int type, nodeptr loc_model, int a)
+nodeptr int_leaf(type, loc_model, a)
+int type;
+nodeptr loc_model;
+int a;
    {
    register nodeptr t;
 
@@ -142,7 +161,10 @@ nodeptr int_leaf(int type, nodeptr loc_model, int a)
    return t;
    }
 
-nodeptr c_str_leaf(int type, nodeptr loc_model, char *a)
+nodeptr c_str_leaf(type, loc_model, a)
+int type;
+nodeptr loc_model;
+char *a;
    {
    register nodeptr t;
 
@@ -159,7 +181,11 @@ nodeptr c_str_leaf(int type, nodeptr loc_model, char *a)
 /*
  * i_str_leaf - create a leaf node containing a string and length.
  */
-nodeptr i_str_leaf(int type, nodeptr loc_model, char *a, int b)
+nodeptr i_str_leaf(type, loc_model, a, b)
+int type;
+nodeptr loc_model;
+char *a;
+int b;
    {
    register nodeptr t;
 
@@ -177,7 +203,9 @@ nodeptr i_str_leaf(int type, nodeptr loc_model, char *a, int b)
 /*
  * key_leaf - create a leaf node for a keyword.
  */
-nodeptr key_leaf(nodeptr loc_model, char *keyname)
+nodeptr key_leaf(loc_model, keyname)
+nodeptr loc_model;
+char *keyname;
    {
    register nodeptr t;
    struct implement *ip;
@@ -241,7 +269,9 @@ nodeptr key_leaf(nodeptr loc_model, char *keyname)
 /*
  * list_nd - create a list creation node.
  */
-nodeptr list_nd(nodeptr loc_model, nodeptr args)
+nodeptr list_nd(loc_model, args)
+nodeptr loc_model;
+nodeptr args;
    {
    register nodeptr t;
    struct implement *impl;
@@ -286,7 +316,9 @@ int num_dynrec_ctors = 0;
 
 static
 int
-invk_check_dyn_rec(int argc, nodeptr argv)
+invk_check_dyn_rec(argc, argv)
+   int argc;
+   nodeptr argv;
 {
    int i;
    nodeptr p;
@@ -347,7 +379,10 @@ invk_check_dyn_rec(int argc, nodeptr argv)
  */
 extern
 struct node *
-invk_nd(struct node * loc_model, struct node * proc, struct node * args)
+invk_nd(loc_model, proc, args)
+   struct node * loc_model;
+   struct node * proc;
+   struct node * args;
 {
    int nargs;
    register nodeptr t;
@@ -388,7 +423,10 @@ invk_nd(struct node * loc_model, struct node * proc, struct node * args)
  * put_elms - convert a linked list of arguments into an array of arguments
  *  in a node.
  */
-static void put_elms(nodeptr t, nodeptr args, int slot)
+static void put_elms(t, args, slot)
+nodeptr t;
+nodeptr args;
+int slot;
    {
    if (args->n_type == N_Elist) {
       /*
@@ -405,7 +443,8 @@ static void put_elms(nodeptr t, nodeptr args, int slot)
 /*
  * chk_empty - if an argument is empty, replace it with &null.
  */
-static nodeptr chk_empty(nodeptr n)
+static nodeptr chk_empty(n)
+nodeptr n;
    {
    if (n->n_type == N_Empty)
       n = key_leaf(n, spec_str("null"));
@@ -415,7 +454,10 @@ static nodeptr chk_empty(nodeptr n)
 /*
  * case_nd - create a node for a case statement.
  */
-nodeptr case_nd(nodeptr loc_model, nodeptr expr, nodeptr cases)
+nodeptr case_nd(loc_model, expr, cases)
+nodeptr loc_model;
+nodeptr expr;
+nodeptr cases;
    {
    register nodeptr t;
    nodeptr reverse;
@@ -490,7 +532,10 @@ nodeptr case_nd(nodeptr loc_model, nodeptr expr, nodeptr cases)
  * multiunary - construct nodes to implement a sequence of unary operators
  *  that have been lexically analyzed as one operator.
  */
-nodeptr multiunary(char *op, nodeptr loc_model, nodeptr oprnd)
+nodeptr multiunary(op, loc_model, oprnd)
+nodeptr loc_model;
+char *op;
+nodeptr oprnd;
    {
    int n;
    nodeptr nd;
@@ -512,7 +557,10 @@ nodeptr multiunary(char *op, nodeptr loc_model, nodeptr oprnd)
 /*
  * binary_nd - construct a node for a binary operator.
  */
-nodeptr binary_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
+nodeptr binary_nd(op, arg1, arg2)
+nodeptr op;
+nodeptr arg1;
+nodeptr arg2;
    {
    register nodeptr t;
    struct implement *impl;
@@ -542,7 +590,9 @@ nodeptr binary_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
 /*
  * unary_nd - construct a node for a unary operator.
  */
-nodeptr unary_nd(nodeptr op, nodeptr arg)
+nodeptr unary_nd(op, arg)
+nodeptr op;
+nodeptr arg;
    {
    register nodeptr t;
    struct implement *impl;
@@ -572,7 +622,8 @@ nodeptr unary_nd(nodeptr op, nodeptr arg)
  * buildarray - convert "multi-dimensional" subscripting into a sequence
  *  of subsripting operations.
  */
-nodeptr buildarray(nodeptr a, nodeptr lb, nodeptr e)
+nodeptr buildarray(a,lb,e)
+nodeptr a, lb, e;
    {
    register nodeptr t, t2;
    if (e->n_type == N_Elist) {
@@ -589,7 +640,10 @@ nodeptr buildarray(nodeptr a, nodeptr lb, nodeptr e)
 /*
  * subsc_nd - construct a node for subscripting.
  */
-static nodeptr subsc_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
+static nodeptr subsc_nd(op, arg1, arg2)
+nodeptr op;
+nodeptr arg1;
+nodeptr arg2;
    {
    register nodeptr t;
    struct implement *impl;
@@ -619,7 +673,10 @@ static nodeptr subsc_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
 /*
  * to_nd - construct a node for binary to.
  */
-nodeptr to_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
+nodeptr to_nd(op, arg1, arg2)
+nodeptr op;
+nodeptr arg1;
+nodeptr arg2;
    {
    register nodeptr t;
    struct implement *impl;
@@ -649,7 +706,11 @@ nodeptr to_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
 /*
  * toby_nd - construct a node for binary to-by.
  */
-nodeptr toby_nd(nodeptr op, nodeptr arg1, nodeptr arg2, nodeptr arg3)
+nodeptr toby_nd(op, arg1, arg2, arg3)
+nodeptr op;
+nodeptr arg1;
+nodeptr arg2;
+nodeptr arg3;
    {
    register nodeptr t;
    struct implement *impl;
@@ -680,7 +741,10 @@ nodeptr toby_nd(nodeptr op, nodeptr arg1, nodeptr arg2, nodeptr arg3)
 /*
  * aug_nd - create a node for an augmented assignment.
  */
-nodeptr aug_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
+nodeptr aug_nd(op, arg1, arg2)
+nodeptr op;
+nodeptr arg1;
+nodeptr arg2;
    {
    register nodeptr t;
    struct implement *impl;
@@ -719,7 +783,11 @@ nodeptr aug_nd(nodeptr op, nodeptr arg1, nodeptr arg2)
 /*
  * sect_nd - create a node for sectioning.
  */
-nodeptr sect_nd(nodeptr op, nodeptr arg1, nodeptr arg2, nodeptr arg3)
+nodeptr sect_nd(op, arg1, arg2, arg3)
+nodeptr op;
+nodeptr arg1;
+nodeptr arg2;
+nodeptr arg3;
    {
    register nodeptr t;
    int tok;
@@ -776,7 +844,8 @@ nodeptr sect_nd(nodeptr op, nodeptr arg1, nodeptr arg2, nodeptr arg3)
  * invk_main - produce an procedure invocation node with one argument for
  *  use in the initial invocation to main() during type inference.
  */
-nodeptr invk_main(struct pentry *main_proc)
+nodeptr invk_main(main_proc)
+struct pentry *main_proc;
    {
    register nodeptr t;
 

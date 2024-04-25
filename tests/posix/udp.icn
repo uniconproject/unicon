@@ -1,23 +1,20 @@
 $include "posix.icn"
 
-procedure main()
-   port:=":1072"
-   if fork() == 0 then {
-      f := open(port, "nua")
+procedure main() 
 
-      if r := receive(f) then {
-          # Process the request in r.msg - in the case of the time
-          # service, we don't care what is actually in the message
-         send(r.addr, "hello, world!")
+   if fork() == 0 then {
+      f := open(":1072", "nua") 
+ 
+      if r := receive(f) then { 
+          # Process the request in r.msg - in the case of the time 
+          # service, we don't care what is actually in the message 
+	 send(r.addr, "hello, world!")
       }
       exit(0)
    }
 
    delay(100)
-   if (&features == "MacOS") then
-      port := "localhost" || port
-
-   f := open(port, "nu") |
+   f := open(":1072", "nu") |
       stop("Open failed: ", sys_errstr(&errno))
 
    write(f, "")

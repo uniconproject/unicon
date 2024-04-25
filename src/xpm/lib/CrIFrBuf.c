@@ -37,8 +37,13 @@
 LFUNC(OpenBuffer, void, (char *buffer, xpmData *mdata));
 
 int
-XpmCreateImageFromBuffer(Display *display, char *buffer, XImage **image_return,
-                         XImage **shapeimage_return, XpmAttributes *attributes)
+XpmCreateImageFromBuffer(display, buffer, image_return,
+			 shapeimage_return, attributes)
+    Display *display;
+    char *buffer;
+    XImage **image_return;
+    XImage **shapeimage_return;
+    XpmAttributes *attributes;
 {
     XpmImage image;
     XpmInfo info;
@@ -53,19 +58,19 @@ XpmCreateImageFromBuffer(Display *display, char *buffer, XImage **image_return,
 
     /* create the XImage from the XpmData */
     if (attributes) {
-        xpmInitAttributes(attributes);
-        xpmSetInfoMask(&info, attributes);
-        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-                                            image_return, shapeimage_return,
-                                            &image, &info, attributes);
+	xpmInitAttributes(attributes);
+	xpmSetInfoMask(&info, attributes);
+	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+					    image_return, shapeimage_return,
+					    &image, &info, attributes);
     } else
-        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-                                            image_return, shapeimage_return,
-                                            &image, NULL, attributes);
+	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+					    image_return, shapeimage_return,
+					    &image, NULL, attributes);
     if (attributes) {
-        if (ErrorStatus >= 0)           /* no fatal error */
-            xpmSetAttributes(attributes, &image, &info);
-        XpmFreeXpmInfo(&info);
+	if (ErrorStatus >= 0)		/* no fatal error */
+	    xpmSetAttributes(attributes, &image, &info);
+	XpmFreeXpmInfo(&info);
     }
 
     /* free the XpmImage */
@@ -75,7 +80,10 @@ XpmCreateImageFromBuffer(Display *display, char *buffer, XImage **image_return,
 }
 
 int
-XpmCreateXpmImageFromBuffer(char *buffer, XpmImage *image, XpmInfo *info)
+XpmCreateXpmImageFromBuffer(buffer, image, info)
+    char *buffer;
+    XpmImage *image;
+    XpmInfo *info;
 {
     xpmData mdata;
     int ErrorStatus;
@@ -97,7 +105,9 @@ XpmCreateXpmImageFromBuffer(char *buffer, XpmImage *image, XpmInfo *info)
  * open the given buffer to be read or written as an xpmData which is returned
  */
 static void
-OpenBuffer(char *buffer, xpmData *mdata)
+OpenBuffer(buffer, mdata)
+    char *buffer;
+    xpmData *mdata;
 {
     mdata->type = XPMBUFFER;
     mdata->cptr = buffer;

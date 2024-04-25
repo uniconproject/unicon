@@ -127,7 +127,8 @@ util_gencodeary(int size, ...)
 
 extern
 char *
-util_gettreenodetypename(int type)
+util_gettreenodetypename(type)
+   int type;
 {
    if (type < 1 || type > (sizeof(treenodetypenames)/sizeof(char *)))
       type = 0;
@@ -136,7 +137,10 @@ util_gettreenodetypename(int type)
 
 extern
 int
-util_getvarflags(int flags, char * buf, int bufmax)
+util_getvarflags(flags, buf, bufmax)
+   int flags;
+   char * buf;
+   int bufmax;
 {
    int i, len;
 

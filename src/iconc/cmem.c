@@ -9,21 +9,21 @@
 #include "ccode.h"
 #include "cproto.h"
 
-struct centry *chash[CHSize];           /* hash area for constant table */
-struct fentry *fhash[FHSize];           /* hash area for field table */
-struct gentry *ghash[GHSize];           /* hash area for global table */
+struct centry *chash[CHSize];		/* hash area for constant table */
+struct fentry *fhash[FHSize];		/* hash area for field table */
+struct gentry *ghash[GHSize];		/* hash area for global table */
 
-struct implement *bhash[IHSize];        /* hash area for built-in functions */
-struct implement *khash[IHSize];        /* hash area for keywords */
-struct implement *ohash[IHSize];        /* hash area for operators */
+struct implement *bhash[IHSize];	/* hash area for built-in functions */
+struct implement *khash[IHSize];	/* hash area for keywords */
+struct implement *ohash[IHSize];	/* hash area for operators */
 
-struct implement *spec_op[NumSpecOp];   /* table of ops with special syntax */
+struct implement *spec_op[NumSpecOp];	/* table of ops with special syntax */
 
 char pre[PrfxSz] = {'0', '0', '0'};     /* initial function name prefix */
 
 extern struct str_buf lex_sbuf;
 
-
+
 /*
  * init - initialize memory for the translator
  */
@@ -62,7 +62,8 @@ void init()
  */
 extern
 struct gentry *
-init_proc(char *name)
+init_proc(name)
+   char *name;
 {
    int i;
    struct gentry *sym_ent;
@@ -81,7 +82,7 @@ init_proc(char *name)
    p->statics = NULL;
    p->ret_flag = DoesRet | DoesFail | DoesSusp; /* start out pessimistic */
    p->arg_lst = 0;
-   p->lhash =
+   p->lhash = 
      (struct lentry **)alloc((unsigned int)((LHSize)*sizeof(struct lentry *)));
    for (i = 0; i < LHSize; i++)
       p->lhash[i] = NULL;
@@ -95,13 +96,14 @@ init_proc(char *name)
 
 static
 int
-rec_is_obj(char * name)
+rec_is_obj(name)
+   char * name;
 {
    int len;
 
    if ((len = strlen(name)) < 15)
       return 0;
-   if (strcmp("__state", (char *)(name + len - 7)) == 0)
+   if (strcmp("__mdw_inst_mdw", (char *)(name + len - 14)) == 0)
       return 1;
    return 0;
 }
@@ -110,7 +112,8 @@ rec_is_obj(char * name)
  * init_rec - add a new entry on the front of the record list.
  */
 void
-init_rec(char * name)
+init_rec(name)
+   char * name;
 {
    int flags;
    register struct rentry *r;
@@ -137,7 +140,8 @@ init_rec(char * name)
 #ifdef IconcLogAllocations
 static
 void *
-alloc_original(unsigned int n)
+alloc_original(n)
+   unsigned int n;
 {
    register void * a;
 
@@ -165,7 +169,10 @@ struct alc_ent * alc_tbl[AlcTblSize] = { 0 };
 
 static
 void
-add_alloc_entry(unsigned int n, char * fname, int line)
+add_alloc_entry(n, fname, line)
+   unsigned int n;
+   char * fname;
+   int line;
 {
    unsigned h;
    struct alc_ent * ent;
@@ -224,7 +231,10 @@ alc_stats(void)
 }
 
 pointer
-_alloc(unsigned int n, char * fname, int line)
+_alloc(n, fname, line)
+   unsigned int n;
+   char * fname;
+   int line;
 {
    pointer rslt;
 
@@ -232,4 +242,4 @@ _alloc(unsigned int n, char * fname, int line)
    rslt = alloc_original(n);
    return rslt;
 }
-#endif                                  /* IconcLogAllocations */
+#endif					/* IconcLogAllocations */

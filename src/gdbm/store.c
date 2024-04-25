@@ -39,7 +39,9 @@
    returning from this procedure.  */
 
 int
-store (datum key, datum content)
+store (key, content)
+     datum key;
+     datum content;
 {
   return gdbm_store (_gdbm_file, key, content, GDBM_REPLACE);
 }

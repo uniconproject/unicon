@@ -5,15 +5,16 @@
 #include "../h/gsupport.h"
 
 #ifdef TypTrc
-   int typealloc = 0;           /* type allocation switch */
-   long typespace = 0;          /* type allocation amount */
-#endif                                  /* TypTrc */
+   int typealloc = 0;		/* type allocation switch */
+   long typespace = 0;		/* type allocation amount */
+#endif					/* TypTrc */
 
 /*
  * salloc - allocate and initialize string
  */
 
-char *salloc(char *s)
+char *salloc(s)
+char *s;
    {
    register char *s1;
 
@@ -29,16 +30,17 @@ char *salloc(char *s)
  * alloc - allocate n bytes
  */
 
-pointer alloc(unsigned int n)
+pointer alloc(n)
+unsigned int n;
    {
    register pointer a;
 
 #ifdef TypTrc
    if (typealloc)
       typespace += (long)n;
-#endif                                  /* TypTrc */
+#endif					/* TypTrc */
 
-   if (n == 0)                          /* Work-around for 0 allocation */
+   if (n == 0)				/* Work-around for 0 allocation */
       n = 1;
 
    a = calloc((msize)n,sizeof(char));

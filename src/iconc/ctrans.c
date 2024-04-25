@@ -17,20 +17,20 @@
  */
 static void adjust_class_recs(struct rentry *);
 static void publish_unreachable_funcs(struct pentry *);
-/* mdw: for ca static */ void   trans1(char *);
+/* mdw: for ca static */ void	trans1(char *);
 
 /*
  * Variables.
  */
-int __merr_errors = 0;          /* total number of fatal errors */
-int twarns = 0;                 /* total number of warnings */
-int nocode;                     /* set by lexer; unused in compiler */
-int in_line;                    /* current input line number */
-int incol;                      /* current input column number */
-int peekc;                      /* one-character look ahead */
-struct srcfile *srclst = NULL;  /* list of source files to translate */
+int __merr_errors = 0;		/* total number of fatal errors */
+int twarns = 0;			/* total number of warnings */
+int nocode;			/* set by lexer; unused in compiler */
+int in_line;			/* current input line number */
+int incol;			/* current input column number */
+int peekc;			/* one-character look ahead */
+struct srcfile *srclst = NULL;	/* list of source files to translate */
 
-extern char *lpath;                     /* LPATH value */
+extern char *lpath;			/* LPATH value */
 
 
 /*
@@ -43,7 +43,8 @@ extern char *lpath;                     /* LPATH value */
  */
 static
 void
-adjust_class_recs(struct rentry * recs)
+adjust_class_recs(recs)
+   struct rentry * recs;
 {
    int nflds;
    char * p, * q;
@@ -52,7 +53,7 @@ adjust_class_recs(struct rentry * recs)
    struct rentry * rmeth;
 
    for (rinst=recs; rinst; rinst=rinst->next) {
-      if ((p = strstr(rinst->name, "__state")) == NULL)
+      if ((p = strstr(rinst->name, "__mdw_inst_mdw")) == NULL)
          continue;
       for (rmeth=rinst->next; rmeth; rmeth=rmeth->next) {
          if ((q = strstr(rmeth->name, "__methods")) == NULL)
@@ -78,11 +79,12 @@ adjust_class_recs(struct rentry * recs)
          }
       }
 }
-
+
 
 static
 void
-publish_unreachable_funcs(struct pentry * pents)
+publish_unreachable_funcs(pents)
+   struct pentry * pents;
 {
    unsigned long n;
    unsigned long nun;
@@ -111,7 +113,7 @@ int trans(char *argv0)
    extern char * ca_first_perifile;
    extern int ca_mark_parsed(char *);
 
-   lpath = (char *)libpath(argv0, "LPATH");     /* remains null if unspecified */
+   lpath = (char *)libpath(argv0, "LPATH");	/* remains null if unspecified */
 
    if (opt_ca && ca_first_perifile) {
       /*
@@ -131,7 +133,7 @@ int trans(char *argv0)
       }
    else {
       for (sf = srclst; sf != NULL; sf = sf->next)
-         trans1(sf->name);      /* translate each file in turn */
+         trans1(sf->name);	/* translate each file in turn */
       }
 
    if (!pponly) {
@@ -143,7 +145,7 @@ int trans(char *argv0)
 
 #ifdef DeBug
       symdump();
-#endif                                  /* DeBug */
+#endif					/* DeBug */
 
       if (__merr_errors == 0) {
          chkstrinv();  /* see what needs be available for string invocation */
@@ -189,28 +191,29 @@ int trans(char *argv0)
 
 #ifdef TranStats
    tokdump();
-#endif                                  /* TranStats */
+#endif					/* TranStats */
 
    return __merr_errors;
    }
-
+
 /*
  * translate one file.
  */
 /* mdw: for ca... static */
-void trans1(char *filename)
+void trans1(filename)
+char *filename;
    {
-   in_line = 1;                 /* start with line 1, column 0 */
+   in_line = 1;			/* start with line 1, column 0 */
    incol = 0;
-   peekc = 0;                   /* clear character lookahead */
+   peekc = 0;			/* clear character lookahead */
 
    if (!ppinit(filename, lpath, m4pre)) {
       tfatal(filename, "cannot open source file");
       return;
       }
-   if (!largeints)              /* undefine predef symbol if no -l option */
+   if (!largeints)		/* undefine predef symbol if no -l option */
       ppdef("_LARGE_INTEGERS", (char *)NULL);
-   ppdef("_MULTITASKING", (char *)NULL);        /* never defined in compiler */
+   ppdef("_MULTITASKING", (char *)NULL);	/* never defined in compiler */
    ppdef("_EVENT_MONITOR", (char *)NULL);
 #ifdef NoConcurrentCOMPILER
    ppdef("_CONCURRENT", (char *)NULL);
@@ -223,21 +226,21 @@ void trans1(char *filename)
       filename = "stdin";
    if (strstr(filename, "/uni") && strstr(filename, "-iconc")) {
       if (verbose > 1)
-         fprintf(stderr, "%s:\n",filename);
+	 fprintf(stderr, "%s:\n",filename);
       }
    else
       if (verbose > 0)
-         fprintf(stderr, "%s:\n",filename);
+	 fprintf(stderr, "%s:\n",filename);
 
    tok_loc.n_file = filename;
    in_line = 1;
 
    if (pponly)
-      ppecho();                 /* preprocess only */
+      ppecho();			/* preprocess only */
    else
-      yyparse();                                /* Parse the input */
+      yyparse();				/* Parse the input */
    }
-
+
 /*
  * writecheck - check the return code from a stdio output operation
  *
@@ -250,11 +253,12 @@ void writecheck(rc)
       quit("unable to write to icode file");
    }
 */
-
+
 /*
  * lnkdcl - find file locally or on LPATH and add to source list.
  */
-void lnkdcl(char *name)
+void lnkdcl(name)
+char *name;
 {
 /* mdw: unrefd locals
    struct srcfile **pp;
@@ -268,9 +272,11 @@ void lnkdcl(char *name)
    else
       tfatal("cannot resolve reference to file name", name);
       }
+
 
-
-void src_file(char *name, struct srcfile **srclist)
+void src_file(name, srclist)
+char *name;
+struct srcfile **srclist;
    {
    struct srcfile **pp;
    struct srcfile *p;

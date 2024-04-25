@@ -25,12 +25,13 @@ static struct optab *optr; /* pointer into operator table */
  */
 extern
 void
-readdb(char *db_name)
+readdb(db_name)
+   char *db_name;
 {
    char *op, *s;
    int i;
    struct implement *ip;
-   char buf[MaxFileName];               /* file name construction buffer */
+   char buf[MaxFileName];		/* file name construction buffer */
    struct fileparts *fp;
    unsigned hashval;
 
@@ -112,7 +113,8 @@ readdb(char *db_name)
  */
 static
 int
-acpt_op(struct implement *ip)
+acpt_op(ip)
+   struct implement *ip;
 {
    register char *op;
    register int opcmp;
@@ -166,7 +168,8 @@ acpt_op(struct implement *ip)
  */
 static
 int
-chck_spec(struct implement *ip)
+chck_spec(ip)
+   struct implement *ip;
 {
    int indx;
    register char *op;

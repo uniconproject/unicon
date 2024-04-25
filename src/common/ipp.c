@@ -3,88 +3,88 @@
  *
  *  All Icon source passes through here before translation or compilation.
  *  Directives recognized are:
- *      #line n [filename]
- *      $line n [filename]
- *      $include filename
- *      $define identifier text
- *      $undef identifier
- *      $ifdef identifier
- *      $ifndef identifier
- *      $else
- *      $endif
- *      $error [text]
+ *	#line n [filename]
+ *	$line n [filename]
+ *	$include filename
+ *	$define identifier text
+ *	$undef identifier
+ *	$ifdef identifier
+ *	$ifndef identifier
+ *	$else
+ *	$endif
+ *	$error [text]
  *
  *  Entry points are
- *      ppinit(fname,inclpath,m4flag) -- open input file
- *      ppdef(s,v) -- "$define s v", or "$undef s" if v is a null pointer
- *      ppch() -- return next preprocessed character
- *      ppecho() -- preprocess to stdout (for icont/iconc -E)
+ *	ppinit(fname,inclpath,m4flag) -- open input file
+ *	ppdef(s,v) -- "$define s v", or "$undef s" if v is a null pointer
+ *	ppch() -- return next preprocessed character
+ *	ppecho() -- preprocess to stdout (for icont/iconc -E)
  *
  *  See ../h/feature.h for the set of predefined symbols.
  */
-
+ 
 #include "../h/gsupport.h"
 
-#define HTBINS 256                      /* number of hash bins */
+#define HTBINS 256			/* number of hash bins */
 
-typedef struct fstruct {                /* input file structure */
-   struct fstruct *prev;                /* previous file */
-   char *fname;                         /* file name */
-   long lno;                            /* line number */
-   FILE *fp;                            /* stdio file pointer */
-   int m4flag;                          /* nz if preprocessed by m4 */
-   int ifdepth;                         /* $if nesting depth when opened */
+typedef struct fstruct {		/* input file structure */
+   struct fstruct *prev;		/* previous file */
+   char *fname;				/* file name */
+   long lno;				/* line number */
+   FILE *fp;				/* stdio file pointer */
+   int m4flag;				/* nz if preprocessed by m4 */
+   int ifdepth;				/* $if nesting depth when opened */
    } infile;
 
-typedef struct bstruct {                /* buffer pointer structure */
-   struct bstruct *prev;                /* previous pointer structure */
-   struct cd *defn;                     /* definition being processed */
-   char *ptr;                           /* saved pointer value */
-   char *stop;                          /* saved stop value */
-   char *lim;                           /* saved limit value */
+typedef struct bstruct {		/* buffer pointer structure */
+   struct bstruct *prev;		/* previous pointer structure */
+   struct cd *defn;			/* definition being processed */
+   char *ptr;				/* saved pointer value */
+   char *stop;				/* saved stop value */
+   char *lim;				/* saved limit value */
    } buffer;
 
-typedef struct {                        /* preprocessor token structure */
-   char *addr;                          /* beginning of token */
-   short len;                           /* length */
+typedef struct {			/* preprocessor token structure */
+   char *addr;				/* beginning of token */
+   short len;				/* length */
    } ptok;
 
-typedef struct cd {                     /* structure holding a definition */
-   struct cd *next;                     /* link to next defn */
-   struct cd *prev;                     /* link to previous defn */
-   short nlen, vlen;                    /* length of name & val */
-   char inuse;                          /* nonzero if curr being expanded */
-   char s[1];                           /* name then value, as needed, no \0 */
+typedef struct cd {			/* structure holding a definition */
+   struct cd *next;			/* link to next defn */
+   struct cd *prev;			/* link to previous defn */
+   short nlen, vlen;			/* length of name & val */
+   char inuse;				/* nonzero if curr being expanded */
+   char s[1];				/* name then value, as needed, no \0 */
    } cdefn;
 
-static  int     ppopen  (char *fname, int m4);
-static  FILE *  m4pipe  (char *fname);
-static  char *  rline   (FILE *fp);
-static  void    pushdef (cdefn *d);
-static  void    pushline (char *fname, long lno);
-static  void    ppdir   (char *line);
-static  void    pfatal  (char *s1, char *s2);
-static  void    skipcode (int doelse, int report);
-static  char *  define  (char *s);
-static  char *  undef   (char *s);
-static  char *  ifdef   (char *s);
-static  char *  ifndef  (char *s);
-static  char *  ifxdef  (char *s, int f);
-static  char *  elsedir (char *s);
-static  char *  endif   (char *s);
-static  char *  errdir  (char *s);
-static  char *  include (char *s);
-static  char *  setline (char *s);
-static  char *  wskip   (char *s);
-static  char *  nskip   (char *s);
-static  char *  matchq  (char *s);
-static  char *  getidt  (char *dst, char *src);
-static  char *  getfnm  (char *dst, char *src);
-static  cdefn * dlookup (char *name, int len, char *val);
+static	int	ppopen	(char *fname, int m4);
+static	FILE *	m4pipe	(char *fname);
+static	char *	rline	(FILE *fp);
+static	void	pushdef	(cdefn *d);
+static	void	pushline (char *fname, long lno);
+static	void	ppdir	(char *line);
+static	void	pfatal	(char *s1, char *s2);
+static	void	skipcode (int doelse, int report);
+static	char *	define	(char *s);
+static	char *	undef	(char *s);
+static	char *	ifdef	(char *s);
+static	char *	ifndef	(char *s);
+static	char *	ifxdef	(char *s, int f);
+static	char *	elsedir	(char *s);
+static	char *	endif	(char *s);
+static	char *	errdir	(char *s);
+static	char *	include	(char *s);
+static	char *	setline	(char *s);
+static	char *	wskip	(char *s);
+static	char *	nskip	(char *s);
+static	char *	matchq	(char *s);
+static	char *	getidt	(char *dst, char *src);
+static	char *	getfnm	(char *dst, char *src);
+static	cdefn *	dlookup	(char *name, int len, char *val);
 
 struct ppcmd {
    char *name;
-   char *(*func)(char *);
+   char *(*func)();
    }
 pplist[] = {
    { "define",  define  },
@@ -98,25 +98,25 @@ pplist[] = {
    { "error",   errdir  },
    { 0,         0       }};
 
-static infile nofile;                   /* ancestor of all files; all zero */
-static infile *curfile;                 /* pointer to current entry */
+static infile nofile;			/* ancestor of all files; all zero */
+static infile *curfile;			/* pointer to current entry */
 
-static buffer *bstack;                  /* stack of pending buffers */
-static buffer *bfree;                   /* pool of free bstructs */
+static buffer *bstack;			/* stack of pending buffers */
+static buffer *bfree;			/* pool of free bstructs */
 
-static char *buf;                       /* input line buffer */
-static char *bnxt;                      /* next character */
-static char *bstop;                     /* limit of preprocessed chars */
-static char *blim;                      /* limit of all chars */
+static char *buf;			/* input line buffer */
+static char *bnxt;			/* next character */
+static char *bstop;			/* limit of preprocessed chars */
+static char *blim;			/* limit of all chars */
 
-static cdefn *cbin[HTBINS];             /* hash bins for defn table */
+static cdefn *cbin[HTBINS];		/* hash bins for defn table */
 
-char *lpath;                            /* LPATH for finding source files */
+char *lpath;				/* LPATH for finding source files */
 
-static int ifdepth;                     /* depth of $if nesting */
+static int ifdepth;			/* depth of $if nesting */
 
-extern int __merr_errors, nocode;               /* provided by icont, iconc */
-
+extern int __merr_errors, nocode;		/* provided by icont, iconc */
+
 /*
  * ppinit(fname, inclpath, m4) -- initialize preprocessor to read from fname.
  *
@@ -145,11 +145,11 @@ int ppinit(char *fname, char *inclpath, int m4)
 #include "../h/feature.h"
 
    /*
-    * initialize variables and open source file
+    * initialize variables and open source file 
     */
    lpath = inclpath;
-   curfile = &nofile;                   /* init file struct pointer */
-   return ppopen(fname, m4);            /* open main source file */
+   curfile = &nofile;			/* init file struct pointer */
+   return ppopen(fname, m4);		/* open main source file */
    }
 
 /*
@@ -159,15 +159,17 @@ int ppinit(char *fname, char *inclpath, int m4)
  *
  *  Open calls may be nested.  Files are closed when EOF is read.
  */
-static int ppopen(char *fname, int m4)
+static int ppopen(fname, m4)
+char *fname;
+int m4;
    {
    FILE *f;
    infile *fs;
 
    for (fs = curfile; fs->fname != NULL; fs = fs->prev)
       if (strcmp(fname, fs->fname) == 0) {
-         pfatal("circular include", fname);     /* issue error message */
-         return 1;                              /* treat as success */
+         pfatal("circular include", fname);	/* issue error message */
+         return 1;				/* treat as success */
          }
    if (m4)
       f = m4pipe(fname);
@@ -195,7 +197,8 @@ static int ppopen(char *fname, int m4)
 /*
  * m4pipe -- open a pipe from m4.
  */
-static FILE *m4pipe(char *filename)
+static FILE *m4pipe(filename)
+char *filename;
    {
 #if UNIX
       {
@@ -206,9 +209,9 @@ static FILE *m4pipe(char *filename)
       free(s);
       return f;
       }
-#else                                   /* UNIX */
+#else					/* UNIX */
    return NULL;
-#endif                                  /* UNIX */
+#endif					/* UNIX */
    }
 
 /*
@@ -218,7 +221,8 @@ static FILE *m4pipe(char *filename)
  *  Otherwise, defines s to have the value v.
  *  No error is given for a redefinition.
  */
-void ppdef(char *s, char *v)
+void ppdef(s, v)
+char *s, *v;
    {
    dlookup(s, -1, (char *)NULL);
    if (v != NULL)
@@ -235,7 +239,7 @@ void ppecho()
    while ((c = ppch()) != EOF)
       putchar(c);
    }
-
+
 /*
  * ppch() -- get preprocessed character.
  */
@@ -248,8 +252,8 @@ int ppch()
    infile *fs;
 
    for (;;) {
-      if (bnxt < bstop)                 /* if characters ready to go */
-         return ((int)*bnxt++) & 0xFF;          /* return first one */
+      if (bnxt < bstop)			/* if characters ready to go */
+         return ((int)*bnxt++) & 0xFF;		/* return first one */
 
       if (bnxt < blim) {
          /*
@@ -265,20 +269,20 @@ int ppch()
              *  contiguous in this buffer.  Check it.
              */
             p = bnxt + 1;
-            while (p < blim && (isalnum(c = *p) || c == '_'))   /* find end */
+            while (p < blim && (isalnum(c = *p) || c == '_'))	/* find end */
                p++;
-            bstop = p;                  /* safe to consume through end */
+            bstop = p;			/* safe to consume through end */
             if (((d = dlookup(bnxt, p-bnxt, bnxt)) == 0)  || (d->inuse == 1)) {
                bnxt++;
-               return f;                /* not defined; just use it */
+               return f;		/* not defined; just use it */
                }
             /*
              * We got a match.  Remove the token from the input stream and
              *  push the replacement value.
              */
             bnxt = p;
-            pushdef(d);                 /* make defn the curr buffer */
-            continue;                   /* loop to preprocess */
+            pushdef(d);			/* make defn the curr buffer */
+            continue;			/* loop to preprocess */
             }
          else {
             /*
@@ -289,27 +293,27 @@ int ppch()
             p = bnxt++;
             while (p < blim) {
                c = *p;
-               if (isalpha(c) || c == '_') {    /* there's an id ahead */
+               if (isalpha(c) || c == '_') {	/* there's an id ahead */
                   bstop = p;
                   return f;
                   }
-               else if (isdigit(c)) {           /* numeric constant */
+               else if (isdigit(c)) {		/* numeric constant */
                   p = nskip(p);
                   }
-               else if (c == '#') {             /* comment: skip to EOL */
+               else if (c == '#') {		/* comment: skip to EOL */
                   bstop = blim;
                   return f;
                   }
-               else if (c == '"' || c == '\''){ /* quoted literal */
-                  p = matchq(p);                /* skip to end */
+               else if (c == '"' || c == '\''){	/* quoted literal */
+                  p = matchq(p);		/* skip to end */
                   if (*p != '\0')
                      p++;
                   }
                else
-                  p++;                          /* else advance one char */
+                  p++;				/* else advance one char */
                }
-            bstop = blim;                       /* mark end of processed chrs */
-            return f;                           /* return first char */
+            bstop = blim;			/* mark end of processed chrs */
+            return f;				/* return first char */
             }
          }
 
@@ -325,9 +329,9 @@ int ppch()
          bstack = b->prev;
          b->prev = bfree;
          bfree = b;
-         continue;                              /* loop to preprocess */
+         continue;				/* loop to preprocess */
          }
-
+   
       /*
        * There's nothing at all in memory.  Read a new line.
        */
@@ -335,25 +339,25 @@ int ppch()
          /*
           * The read was successful.
           */
-         p = bnxt = bstop = blim = buf;         /* reset buffer pointers */
-         curfile->lno++;                        /* bump line number */
+         p = bnxt = bstop = blim = buf;		/* reset buffer pointers */
+         curfile->lno++;			/* bump line number */
          while (isspace(c = *p))
-            p++;                                /* find first nonwhite */
+            p++;				/* find first nonwhite */
          if (c == '$' && (!ispunct(p[1]) || p[1]==' '))
-            ppdir(p + 1);                       /* handle preprocessor cmd */
+            ppdir(p + 1);			/* handle preprocessor cmd */
          else if (buf[1]=='l' && buf[2]=='i' && buf[3]=='n' && buf[4]=='e' &&
                   buf[0]=='#' && buf[5]==' ')
-            ppdir(p + 1);                       /* handle #line form */
+            ppdir(p + 1);			/* handle #line form */
          else {
             /*
              * Not a preprocessor line; will need to scan for symbols.
              */
             bnxt = buf;
             blim = buf + strlen(buf);
-            bstop = bnxt;                       /* no chars scanned yet */
+            bstop = bnxt;			/* no chars scanned yet */
             }
          }
-
+   
       else {
          /*
           * The read hit EOF.
@@ -370,36 +374,37 @@ int ppch()
          curfile = fs->prev;
 
 #if UNIX
-         if (fs->m4flag) {                      /* if m4 preprocessing */
-            void quit(char *);
-            if (pclose(fs->fp) != 0)            /* close pipe */
+         if (fs->m4flag) {			/* if m4 preprocessing */
+	    void quit();
+            if (pclose(fs->fp) != 0)		/* close pipe */
                quit("m4 terminated abnormally");
             }
          else
-#endif                                  /* UNIX */
-            fclose(fs->fp);             /* close current file */
-
+#endif					/* UNIX */
+            fclose(fs->fp);		/* close current file */
+           
          free((char *)fs->fname);
          free((char *)fs);
-         if (curfile == &nofile)        /* if at outer level, return EOF */
+         if (curfile == &nofile)	/* if at outer level, return EOF */
             return EOF;
-         else                           /* else generate #line comment */
+         else				/* else generate #line comment */
             pushline(curfile->fname, curfile->lno);
          }
       }
    }
-
+
 /*
  * rline(fp) -- read arbitrarily long line and return pointer.
  *
  *  Allocates memory as needed.  Returns NULL for EOF.  Lines end with "\n\0".
  */
-static char *rline(FILE *fp)
+static char *rline(fp)
+FILE *fp;
    {
 #define LINE_SIZE_INIT 100
 #define LINE_SIZE_INCR 100
-   static char *lbuf = NULL;    /* line buffer */
-   static int llen = 0;         /* current buffer length */
+   static char *lbuf = NULL;	/* line buffer */
+   static int llen = 0;		/* current buffer length */
    register char *p;
    register int c, n;
 
@@ -425,7 +430,7 @@ static char *rline(FILE *fp)
       while (--n >= 0 && (c = getc(fp)) != '\n' && c != EOF)
          *p++ = c;
       if (n >= 0) {
-         *p++ = '\n';                   /* always terminate with \n\0 */
+         *p++ = '\n';			/* always terminate with \n\0 */
          *p++ = '\0';
          return lbuf;
          }
@@ -441,11 +446,12 @@ static char *rline(FILE *fp)
       n = LINE_SIZE_INCR;
       }
    }
-
+
 /*
  * pushdef(d) -- insert definition into the input stream.
  */
-static void pushdef(cdefn *d)
+static void pushdef(d)
+cdefn *d;
    {
    buffer *b;
 
@@ -468,7 +474,9 @@ static void pushdef(cdefn *d)
 /*
  * pushline(fname,lno) -- push #line directive into input stream.
  */
-static void pushline(char *fname, long lno)
+static void pushline(fname, lno)
+char *fname;
+long lno;
    {
    static char tbuf[200];
 
@@ -476,30 +484,31 @@ static void pushline(char *fname, long lno)
    bnxt = tbuf;
    bstop = blim = tbuf + strlen(tbuf);
    }
-
+
 /*
  * ppdir(s) -- handle preprocessing directive.
  *
  *  s is the portion of the line following the $.
  */
-static void ppdir(char *s)
+static void ppdir(s)
+char *s;
    {
    char b0, *cmd, *errmsg;
    struct ppcmd *p;
 
-   b0 = buf[0];                         /* remember first char of line */
-   bnxt = "\n";                         /* set buffer pointers to empty line */
+   b0 = buf[0];				/* remember first char of line */
+   bnxt = "\n";				/* set buffer pointers to empty line */
    bstop = blim = bnxt + 1;
 
-   s = wskip(s);                        /* skip whitespace */
-   s = getidt(cmd = s - 1, s);          /* get command name */
-   s = wskip(s);                        /* skip whitespace */
+   s = wskip(s);			/* skip whitespace */
+   s = getidt(cmd = s - 1, s);		/* get command name */
+   s = wskip(s);			/* skip whitespace */
 
    for (p = pplist; p->name != NULL; p++) /* find name in table */
       if (strcmp(cmd, p->name) == 0) {
-         errmsg = (*p->func)(s);        /* process directive */
+         errmsg = (*p->func)(s);	/* process directive */
          if (errmsg != NULL && (p->func != setline || b0 != '#'))
-            pfatal(errmsg, (char *)0);  /* issue err if not from #line form */
+            pfatal(errmsg, (char *)0);	/* issue err if not from #line form */
       return;
       }
 
@@ -515,7 +524,8 @@ static void ppdir(char *s)
  *  We can't use tfatal() because we have our own line counter which may be
  *  out of sync with the lexical analyzer's.
  */
-static void pfatal(char *s1, char *s2)
+static void pfatal(s1, s2)
+char *s1, *s2;
    {
    int n;
 
@@ -523,10 +533,10 @@ static void pfatal(char *s1, char *s2)
    if (s2 != NULL && *s2 != '\0') {
       n = strlen(s2);
       if (n > 0 && s2[n-1] == '\n')
-         s2[n-1] = '\0';                        /* remove newline */
-      fprintf(stderr, "\"%s\": ", s2);          /* print offending value */
+         s2[n-1] = '\0';			/* remove newline */
+      fprintf(stderr, "\"%s\": ", s2);		/* print offending value */
       }
-   fprintf(stderr, "%s\n", s1);                 /* print diagnostic */
+   fprintf(stderr, "%s\n", s1);			/* print diagnostic */
    __merr_errors++;
    nocode++;
    }
@@ -534,28 +544,30 @@ static void pfatal(char *s1, char *s2)
 /*
  * errdir(s) -- handle deliberate $error.
  */
-static char *errdir(char *s)
+static char *errdir(s)
+char *s;
    {
-   pfatal("explicit $error", s);                /* issue msg with text */
+   pfatal("explicit $error", s);		/* issue msg with text */
    return NULL;
    }
-
+
 /*
  * define(s) -- handle $define directive.
  */
-static char *define(char *s)
+static char *define(s)
+char *s;
    {
    char c, *name, *val;
 
    if (isalpha(c = *s) || c == '_')
-      s = getidt(name = s - 1, s);              /* get name */
+      s = getidt(name = s - 1, s);		/* get name */
    else
       return "$define: missing name";
    if (*s == '(')
       return "$define: \"(\" after name requires preceding space";
    val = s = wskip(s);
    if (*s != '\0') {
-      while ((c = *s) != '\0' && c != '#') {    /* scan value */
+      while ((c = *s) != '\0' && c != '#') {	/* scan value */
          if (c == '"' || c == '\'') {
             s = matchq(s);
             if (*s == '\0')
@@ -563,23 +575,24 @@ static char *define(char *s)
             }
          s++;
          }
-      while (isspace(s[-1]))                    /* trim trailing whitespace */
+      while (isspace(s[-1]))			/* trim trailing whitespace */
          s--;
       }
    *s = '\0';
-   dlookup(name, -1, val);              /* install in table */
+   dlookup(name, -1, val);		/* install in table */
    return NULL;
    }
 
 /*
  * undef(s) -- handle $undef directive.
  */
-static char *undef(char *s)
+static char *undef(s)
+char *s;
    {
    char c, *name;
 
    if (isalpha(c = *s) || c == '_')
-      s = getidt(name = s - 1, s);              /* get name */
+      s = getidt(name = s - 1, s);		/* get name */
    else
       return "$undef: missing name";
    if (*wskip(s) != '\0')
@@ -587,11 +600,12 @@ static char *undef(char *s)
    dlookup(name, -1, (char *)NULL);
    return NULL;
    }
-
+
 /*
  * include(s) -- handle $include directive.
  */
-static char *include(char *s)
+static char *include(s)
+char *s;
    {
    char *fname;
    char fullpath[MaxFileName];
@@ -609,7 +623,8 @@ static char *include(char *s)
 /*
  * setline(s) -- handle $line (or #line) directive.
  */
-static char *setline(char *s)
+static char *setline(s)
+char *s;
    {
    long n;
    char c;
@@ -619,12 +634,12 @@ static char *setline(char *s)
       return "$line: no line number";
    n = c - '0';
 
-   while (isdigit(c = *++s))            /* extract line number */
+   while (isdigit(c = *++s))		/* extract line number */
       n = 10 * n + c - '0';
-   s = wskip(s);                        /* skip whitespace */
+   s = wskip(s);			/* skip whitespace */
 
-   if (isalpha (c = *s) || c == '_' || c == '"') {      /* if filename */
-      s = getfnm(fname = s - 1, s);                     /* extract it */
+   if (isalpha (c = *s) || c == '_' || c == '"') {	/* if filename */
+      s = getfnm(fname = s - 1, s);			/* extract it */
       if (*fname == '\0')
          return "$line: invalid file name";
       }
@@ -634,8 +649,8 @@ static char *setline(char *s)
    if (*wskip(s) != '\0')
       return "$line: too many arguments";
 
-   curfile->lno = n;                    /* set line number */
-   if (fname != NULL) {                 /* also set filename if given */
+   curfile->lno = n;			/* set line number */
+   if (fname != NULL) {			/* also set filename if given */
       free(curfile->fname);
       curfile->fname = salloc(fname);
       }
@@ -643,16 +658,18 @@ static char *setline(char *s)
    pushline(curfile->fname, curfile->lno);
    return NULL;
    }
-
+
 /*
  * ifdef(s), ifndef(s) -- conditional processing if s is/isn't defined.
  */
-static char *ifdef(char *s)
+static char *ifdef(s)
+char *s;
    {
    return ifxdef(s, 1);
    }
 
-static char *ifndef(char *s)
+static char *ifndef(s)
+char *s;
    {
    return ifxdef(s, 0);
    }
@@ -660,39 +677,43 @@ static char *ifndef(char *s)
 /*
  * ifxdef(s) -- handle $ifdef (if n is 1) or $ifndef (if n is 0).
  */
-static char *ifxdef(char *s, int f)
+static char *ifxdef(s, f)
+char *s;
+int f;
    {
    char c, *name;
 
    ifdepth++;
    if (isalpha(c = *s) || c == '_')
-      s = getidt(name = s - 1, s);              /* get name */
+      s = getidt(name = s - 1, s);		/* get name */
    else
       return "$ifdef/$ifndef: missing name";
    if (*wskip(s) != '\0')
       return "$ifdef/$ifndef: too many arguments";
    if ((dlookup(name, -1, name) != NULL) ^ f)
-      skipcode(1, 1);                           /* skip to $else or $endif */
+      skipcode(1, 1);				/* skip to $else or $endif */
    return NULL;
    }
 
 /*
  * elsedir(s) -- handle $else by skipping to $endif.
  */
-static char *elsedir(char *s)
+static char *elsedir(s)
+char *s;
    {
    if (ifdepth <= curfile->ifdepth)
       return "unexpected $else";
    if (*s != '\0')
       pfatal ("extraneous arguments on $else/$endif", s);
-   skipcode(0, 1);                      /* skip the $else section */
+   skipcode(0, 1);			/* skip the $else section */
    return NULL;
    }
 
 /*
  * endif(s) -- handle $endif.
  */
-static char *endif(char *s)
+static char *endif(s)
+char *s;
    {
    if (ifdepth <= curfile->ifdepth)
       return "unexpected $endif";
@@ -701,25 +722,26 @@ static char *endif(char *s)
    ifdepth--;
    return NULL;
    }
-
+
 /*
  * skipcode(doelse,report) -- skip code to $else (doelse=1) or $endif (=0).
  *
  *  If report is nonzero, generate #line directive at end of skip.
  */
-static void skipcode(int doelse, int report)
+static void skipcode(doelse, report)
+int doelse, report;
    {
    char c, *p, *cmd;
 
    while ((p = buf = rline(curfile->fp)) != NULL) {
-      curfile->lno++;                   /* bump line number */
+      curfile->lno++;			/* bump line number */
 
       /*
        * Handle #line form encountered while skipping.
        */
       if (buf[1]=='l' && buf[2]=='i' && buf[3]=='n' && buf[4]=='e' &&
             buf[0]=='#' && buf[5]==' ') {
-         ppdir(buf + 1);                        /* interpret #line */
+         ppdir(buf + 1);			/* interpret #line */
          continue;
          }
 
@@ -727,12 +749,12 @@ static void skipcode(int doelse, int report)
        * Check for any other kind of preprocessing directive.
        */
       while (isspace(c = *p))
-         p++;                           /* find first nonwhite */
+         p++;				/* find first nonwhite */
       if (c != '$' || (ispunct(p[1]) && p[1]!=' '))
-         continue;                      /* not a preprocessing directive */
-      p = wskip(p+1);                   /* skip whitespace */
-      p = getidt(cmd = p-1, p);         /* get command name */
-      p = wskip(p);                     /* skip whitespace */
+         continue;			/* not a preprocessing directive */
+      p = wskip(p+1);			/* skip whitespace */
+      p = getidt(cmd = p-1, p);		/* get command name */
+      p = wskip(p);			/* skip whitespace */
 
       /*
        * Check for a directive that needs special attention.
@@ -742,10 +764,10 @@ static void skipcode(int doelse, int report)
        */
       if (cmd[0] == 'i' && cmd[1] == 'f') {
          ifdepth++;
-         skipcode(0, 0);                /* skip to $endif */
+         skipcode(0, 0);		/* skip to $endif */
          }
       else if (strcmp(cmd, "line") == 0)
-         setline(p);                    /* process $line, ignore errors */
+         setline(p);			/* process $line, ignore errors */
       else if (strcmp(cmd, "endif") == 0 ||
                (doelse == 1 && strcmp(cmd, "else") == 0)) {
          /*
@@ -753,19 +775,19 @@ static void skipcode(int doelse, int report)
           */
          if (*p != '\0')
             pfatal ("extraneous arguments on $else/$endif", p);
-         if (cmd[1] == 'n')             /* if $endif */
+         if (cmd[1] == 'n')		/* if $endif */
             ifdepth--;
          if (report)
             pushline(curfile->fname, curfile->lno);
          return;
          }
       }
-
+     
    /*
     *  At EOF, just return; main loop will report unterminated $if.
     */
    }
-
+
 /*
  * Token scanning functions.
  */
@@ -775,7 +797,8 @@ static void skipcode(int doelse, int report)
  *
  *  If '#' is encountered, skips to end of string.
  */
-static char *wskip(char *s)
+static char *wskip(s)
+char *s;
    {
    char c;
 
@@ -790,7 +813,8 @@ static char *wskip(char *s)
 /*
  * nskip(s) -- skip over numeric constant and return updated pointer.
  */
-static char *nskip(char *s)
+static char *nskip(s)
+char *s;
    {
       char c;
 
@@ -822,7 +846,8 @@ static char *nskip(char *s)
  *  the string.  Escaped quote characters do not stop the scan.  The
  *  updated pointer is returned.
  */
-static char *matchq(char *s)
+static char *matchq(s)
+char *s;
    {
    char c, q;
 
@@ -848,7 +873,8 @@ static char *matchq(char *s)
  *  is typically done to avoid the need for another arbitrarily-long
  *  buffer.  An offset of -1 allows room for insertion of the '\0'.
  */
-static char *getidt(char *dst, char *src)
+static char *getidt(dst, src)
+char *dst, *src;
    {
    char c;
 
@@ -866,7 +892,8 @@ static char *getidt(char *dst, char *src)
  *  Similarly to getidt, getfnm extracts a quoted or unquoted file name.
  *  An empty string at dst indicates a missing or unterminated file name.
  */
-static char *getfnm(char *dst, char *src)
+static char *getfnm(dst, src)
+char *dst, *src;
    {
    char *lim;
 
@@ -883,7 +910,7 @@ static char *getfnm(char *dst, char *src)
    *dst = '\0';
    return lim + 1;
    }
-
+
 /*
  * dlookup(name, len, val) look up entry in definition table.
  *
@@ -894,7 +921,10 @@ static char *getfnm(char *dst, char *src)
  *  If name is null, the call is ignored.
  *  If len < 0, strlen(name) is taken.
  */
-static cdefn *dlookup(char *name, int len, char *val)
+static cdefn *dlookup(name, len, val)
+char *name;
+int len;
+char *val;
    {
    int h, i, nlen, vlen;
    unsigned int t;
@@ -905,29 +935,29 @@ static cdefn *dlookup(char *name, int len, char *val)
    if (len == 0)
       return NULL;
    for (t = i = 0; i < len; i++)
-      t = 37 * t + (name[i] & 0xFF);    /* calc hash value */
-   h = t % HTBINS;                      /* calc bin number */
-   p = &cbin[h];                        /* get head of list */
+      t = 37 * t + (name[i] & 0xFF);	/* calc hash value */
+   h = t % HTBINS;			/* calc bin number */
+   p = &cbin[h];			/* get head of list */
    while ((d = *p) != NULL) {
       if (d->nlen == len && strncmp(name, d->s, len) == 0) {
          /*
           * We found a match in the table.
           */
-         if (val == NULL) {             /* if $undef */
-            *p = d->next;               /* delete from table */
+         if (val == NULL) {		/* if $undef */
+            *p = d->next;		/* delete from table */
             free((char *)d);
             return NULL;
             }
          if (val != name && strcmp(val, d->s + d->nlen) != 0)
             pfatal("value redefined", name);
-         return d;                      /* return pointer to entry */
+         return d;			/* return pointer to entry */
          }
       p = &d->next;
       }
    /*
     * No match. Install a definition if that is what is wanted.
     */
-   if (val == name || val == NULL)      /* if was reference or $undef */
+   if (val == name || val == NULL)	/* if was reference or $undef */
       return NULL;
    nlen = strlen(name);
    vlen = strlen(val);

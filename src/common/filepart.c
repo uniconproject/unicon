@@ -4,8 +4,8 @@
  */
 #include "../h/gsupport.h"
 
-static char *pathelem	(char *s, char *buf);
-static char *tryfile	(char *buf, char *dir, char *name, char *extn);
+static char *pathelem   (char *s, char *buf);
+static char *tryfile    (char *buf, char *dir, char *name, char *extn);
 
 /*
  * The following code is operating-system dependent [@filepart.01].
@@ -21,38 +21,33 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    #define Prefix "/"
    #define FileSep '/'
    Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
    #define Prefix "/:\\"
    #define DefPath ";"
    #define PathSep " ;"
    #define FileSep '/'
-#endif					/* MSDOS */
-
-#if MACINTOSH
-   #define Prefix ":"
-   #define FileSep ':'
-#endif					/* MACINTOSH */
+#endif                                  /* MSDOS */
 
 #if MVS
    #define Prefix ""
    #define FileSep '('
-#endif					/* MVS */
+#endif                                  /* MVS */
 
 #if VM
    #define Prefix ""
-#endif					/* VM */
+#endif                                  /* VM */
 
 #if UNIX
    #define Prefix "/"
    #define FileSep '/'
    #define PathSep " ;"
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 #if VMS
    #define Prefix "]:"
-#endif					/* VMS */
+#endif                                  /* VMS */
 
 /*
  * End of operating-system specific code.
@@ -60,12 +55,12 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
 
 #ifndef DefPath
    #define DefPath ""
-#endif					/* DefPath */
+#endif                                  /* DefPath */
 
 #ifndef PathSep
    #define PathSep " ;"
-#endif					/* PathSep */
-
+#endif                                  /* PathSep */
+
 static char *last_vetted_path;
 static char *vetted_PathSep;
 void vet_the_PathSep(char *s)
@@ -81,8 +76,8 @@ void vet_the_PathSep(char *s)
          vetted_PathSep++;
       }
       else if ((vetted_PathSep = malloc(2)) != NULL) {
-	 vetted_PathSep[0] = PathSep[0]; vetted_PathSep[1] = '\0';
-	 }
+         vetted_PathSep[0] = PathSep[0]; vetted_PathSep[1] = '\0';
+         }
       if (!strchr(s, vetted_PathSep[0])) vetted_PathSep = PathSep;
       }
    if (vetted_PathSep == NULL) vetted_PathSep = PathSep;
@@ -102,15 +97,14 @@ void vet_the_PathSep(char *s)
  *  name is the file name.
  *  extn is the file extension (.icn or .u1) to be appended, or NULL if none.
  */
-char *pathfind(buf, path, name, extn)
-char *buf, *path, *name, *extn;
+char *pathfind(char *buf, char *path, char *name, char *extn)
    {
    char *s;
    char pbuf[MaxFileName];
 
-   if (tryfile(buf, (char *)NULL, name, extn))	/* try curr directory first */
+   if (tryfile(buf, (char *)NULL, name, extn))  /* try curr directory first */
       return buf;
-   if (!path)				/* if no path, use default */
+   if (!path)                           /* if no path, use default */
       path = DefPath;
    s = path;
 
@@ -120,11 +114,11 @@ char *buf, *path, *name, *extn;
       last_vetted_path = strdup(path);
       }
 
-   while ((s = pathelem(s, pbuf)) != 0) {	/* for each path element */
-      if (tryfile(buf, pbuf, name, extn))	/* look for file */
+   while ((s = pathelem(s, pbuf)) != 0) {       /* for each path element */
+      if (tryfile(buf, pbuf, name, extn))       /* look for file */
          return buf;
    }
-   return NULL;				/* return NULL if no file found */
+   return NULL;                         /* return NULL if no file found */
    }
 
 /*
@@ -132,8 +126,7 @@ char *buf, *path, *name, *extn;
  *
  *  Returns the updated pointer s.
  */
-static char *pathelem(s, buf)
-char *s, *buf;
+static char *pathelem(char *s, char *buf)
    {
    char c;
 
@@ -161,10 +154,10 @@ char *s, *buf;
     * We have to append a path separator here.
     *  Seems like makename should really be the one to do that.
     */
-   if (!strchr(Prefix, buf[-1])) {	/* if separator not already there */
+   if (!strchr(Prefix, buf[-1])) {      /* if separator not already there */
       *buf++ = FileSep;
       }
-#endif					/* FileSep */
+#endif                                  /* FileSep */
 
    *buf = '\0';
    return s;
@@ -176,8 +169,7 @@ char *s, *buf;
  *  The file name is constructed in buf from dir + name + extn.
  *  findfile returns buf if successful or NULL if not.
  */
-static char *tryfile(buf, dir, name, extn)
-char *buf, *dir, *name, *extn;
+static char *tryfile(char *buf, char *dir, char *name, char *extn)
    {
    FILE *f;
    makename(buf, dir, name, extn);
@@ -188,13 +180,12 @@ char *buf, *dir, *name, *extn;
    else
       return NULL;
    }
-
+
 /*
  * fparse - break a file name down into component parts.
  * Result is a pointer to a struct of static pointers good until the next call.
  */
-struct fileparts *fparse(s)
-char *s;
+struct fileparts *fparse(char *s)
    {
    static char buf[MaxFileName+2];
    static struct fileparts fp;
@@ -212,7 +203,7 @@ char *s;
       s = extbuf;
    }
    else fp.member = s + strlen(s);
-#endif					/* MVS */
+#endif                                  /* MVS */
 
    q = s;
    fp.ext = p = s + strlen(s);
@@ -245,17 +236,16 @@ char *s;
       fp.ext[n] = '\0';
       }
    else
-      fp.version = fp.name + n;		/* point version to '\0' */
+      fp.version = fp.name + n;         /* point version to '\0' */
 #endif                                  /* VMS */
 
    return &fp;
    }
-
+
 /*
  * makename - make a file name, optionally substituting a new dir and/or ext
  */
-char *makename(dest,d,name,e)
-char *dest, *d, *name, *e;
+char *makename(char *dest, char *d, char *name, char *e)
    {
    struct fileparts fp;
    fp = *fparse(name);
@@ -268,18 +258,17 @@ char *dest, *d, *name, *e;
    if (*fp.member)
       sprintf(dest,"%s%s%s(%s", fp.dir, fp.name, fp.ext, fp.member);
    else
-#endif					/* MVS */
+#endif                                  /* MVS */
 
    sprintf(dest,"%s%s%s",fp.dir,fp.name,fp.ext);
 
    return dest;
    }
-
+
 /*
  * smatch - case-insensitive string match - returns nonzero if they match
  */
-int smatch(s,t)
-char *s, *t;
+int smatch(char *s, char *t)
    {
    char a, b;
    for (;;) {
@@ -301,7 +290,7 @@ char *s, *t;
 #if NT
 #include <sys/stat.h>
 #include <direct.h>
-#endif					/* NT */
+#endif                                  /* NT */
 
 /*
  * this version of pathfind, unlike the one above, is looking on
@@ -317,9 +306,9 @@ int pathFind(char target[], char buf[], int n)
    if ((target[0] == '/') || (target[0] == '\\') ||
        (target[1]==':' && target[2]=='\\')) {
       if ((res = stat(target, &sbuf)) == 0) {
-	 strcpy(buf, target);
-	 return 1;
-	 }
+         strcpy(buf, target);
+         return 1;
+         }
       }
 
    if ((path = getenv("PATH")) == 0)
@@ -333,20 +322,20 @@ int pathFind(char target[], char buf[], int n)
       FILE *fpath;
       char buf[32768];
       if ((fpath = popen("cmd /C set PATH", "r")) != NULL) {
-	 if (fgets(buf, 32768, fpath) != NULL) {
-	    if (strncasecmp("path=", buf, 5) == 0) {
-	       path = strdup(buf+5);
-	       }
-	    }
-	 pclose(fpath);
+         if (fgets(buf, 32768, fpath) != NULL) {
+            if (strncasecmp("path=", buf, 5) == 0) {
+               path = strdup(buf+5);
+               }
+            }
+         pclose(fpath);
          }
       }
-#endif					/* NT */
+#endif                                  /* NT */
 
-   if (!getcwd(buf, n)) {		/* get current working directory */
-      *buf = 0;		/* may be better to do something nicer if we can't */
-      return 0;		/* find out where we are -- struggling to achieve */
-      }			/* something can be better than not trying */
+   if (!getcwd(buf, n)) {               /* get current working directory */
+      *buf = 0;         /* may be better to do something nicer if we can't */
+      return 0;         /* find out where we are -- struggling to achieve */
+      }                 /* something can be better than not trying */
 
    /* attempt to find the icode file in the current directory first */
    /* this mimicks the behavior of COMMAND.COM */
@@ -355,9 +344,9 @@ int pathFind(char target[], char buf[], int n)
       if (i != '\\' && i != '/' && i != ':')
 #if UNIX
          strcat(buf, "/");
-#else					/* UNIX */
+#else                                   /* UNIX */
          strcat(buf, "\\");
-#endif					/* UNIX */
+#endif                                  /* UNIX */
       }
    strcat(buf, target);
 
@@ -370,17 +359,17 @@ int pathFind(char target[], char buf[], int n)
       for (i = 0; *path && *path != ';' ; ++i)
 #endif
          buf[i] = *path++;
-      if (*path)			/* skip the ; or : separator */
+      if (*path)                        /* skip the ; or : separator */
          ++path;
-      if (i == 0)			/* skip empty fragments in PATH */
+      if (i == 0)                       /* skip empty fragments in PATH */
          continue;
 #if UNIX
       if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\' && buf[i-1] != ':')
             buf[i++] = '/';
-#else					/* UNIX */
+#else                                   /* UNIX */
       if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\')
             buf[i++] = '\\';
-#endif					/* UNIX */
+#endif                                  /* UNIX */
       strcpy(buf + i, target);
       res = stat(buf, &sbuf);
       /* exclude directories (and any other nasties) from selection */
@@ -408,8 +397,8 @@ int pathOpenHandle(char *fname, char *mode)
    for( i = 0; buf[i] = fname[i]; ++i)
       if ((buf[i] == '/') || (buf[i] == ':') || (buf[i] == '\\')) {
          use = 0;
-	 if (buf[i] == '/') buf[i] = '\\';
-	 }
+         if (buf[i] == '/') buf[i] = '\\';
+         }
 
    if (use && !pathFind(fname, buf, 250)) {
        return -1;
@@ -419,11 +408,11 @@ int pathOpenHandle(char *fname, char *mode)
    if (mode[1] == 'b')
      return open(buf, ( mode[0]=='r' ? O_RDONLY : O_WRONLY) | O_BINARY);
    else
-#endif					/* NT */
+#endif                                  /* NT */
      return open(buf, mode[0]=='r' ? O_RDONLY : O_WRONLY);
    }
 
-#endif					/* MSDOS */
+#endif                                  /* MSDOS */
 
 /*
  * Global variables for logfiles.
@@ -449,10 +438,10 @@ void openlog(char *p)
        */
       if ((flog = fopen(lognam, "r")) != NULL) {
          flog = freopen(lognam, "a", flog);
-	 }
+         }
       else {
-	 flog = fopen(lognam, "w");
-	 }
+         flog = fopen(lognam, "w");
+         }
       }
 }
 

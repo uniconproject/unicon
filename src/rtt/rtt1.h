@@ -51,36 +51,36 @@ extern char *largeints;    /* "Largeints" or "NoLargeInts" */
  *  to a run-time routine, or the special variable "result".
  */
 struct sym_entry {
-   int tok_id;	       /* Ident, TokType, or identification of reserved word */
-   char *image;		/* image of symbol */
-   int id_type;		/* OtherDcl, TndDesc, TndStr, TndBlk, Label, RtParm,
+   int tok_id;          /* Ident, TokType, or identification of reserved word */
+   char *image;         /* image of symbol */
+   int id_type;         /* OtherDcl, TndDesc, TndStr, TndBlk, Label, RtParm,
                            DrfPrm, RsltLoc */
    union {
-      struct {			/* RtParm: */
-         int param_num;		/*   parameter number */
-         int cur_loc;		/*   PrmTend, PrmCStr, PrmInt, or PrmDbl */
-         int non_tend;		/*   non-tended locations used */
+      struct {                  /* RtParm: */
+         int param_num;         /*   parameter number */
+         int cur_loc;           /*   PrmTend, PrmCStr, PrmInt, or PrmDbl */
+         int non_tend;          /*   non-tended locations used */
          int parm_mod;          /*   something may have modified it */
          struct sym_entry *next;
          } param_info;
       struct {                  /* TndDesc, TndStr, TndBlk: */
          struct node *init;     /*   initial value from declaration */
-         char *blk_name;	/*   TndBlk: struct name of block */
+         char *blk_name;        /*   TndBlk: struct name of block */
          struct sym_entry *next;
          } tnd_var;
-      struct {			/* OtherDcl from "declare {...}": */
-         struct node *tqual;	/*   storage class, type qualifier list */
-         struct node *dcltor;	/*   declarator */
+      struct {                  /* OtherDcl from "declare {...}": */
+         struct node *tqual;    /*   storage class, type qualifier list */
+         struct node *dcltor;   /*   declarator */
          struct node *init;     /*   initial value from declaration */
          struct sym_entry *next;
          } declare_var;
       int typ_indx;             /* index into arrays of type information */
       word lbl_num;             /* label number used in in-line code */
-      int referenced;		/* RsltLoc: is referenced */
+      int referenced;           /* RsltLoc: is referenced */
       } u;
-   int t_indx;		/* index into tended array */
-   int il_indx;		/* index used in in-line code */
-   int nest_lvl;	/* 0 - reserved word, 1 - global, >= 2 - local */
+   int t_indx;          /* index into tended array */
+   int il_indx;         /* index used in in-line code */
+   int nest_lvl;        /* 0 - reserved word, 1 - global, >= 2 - local */
    int may_mod;         /* may be modified in particular piece of code */
    int ref_cnt;
    struct sym_entry *next;
@@ -134,7 +134,7 @@ extern int il_indx;                /* next index into data base symbol table */
  */
 struct lvl_entry {
    int nest_lvl;
-   int kind_dcl;	/* IsTypedef, TndDesc, TndStr, TndBlk, or OtherDcl */
+   int kind_dcl;        /* IsTypedef, TndDesc, TndStr, TndBlk, or OtherDcl */
    char *blk_name;      /* for TndBlk, the struct name of the block */
    int parms_done;      /* level consists of parameter list which is complete */
    struct sym_entry *tended; /* symbol table entries for tended variables */

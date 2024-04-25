@@ -1,6 +1,6 @@
 /*
  * tpmdaytime.c: RFC 876 protocol METHOD for libtp.
- *	 Copyright 2000 by Steve Lumos.  All rights reserved.
+ *       Copyright 2000 by Steve Lumos.  All rights reserved.
  */
 
 #include "../h/config.h"
@@ -42,7 +42,7 @@ Tpresponse_t* daytimeend(Tp_t* tp)
     resp->header = NULL;
     return resp;
   }
-  
+
   buf[n+1] = '\0';
   disc->closef(disc);
   TPSET(tp, CLOSED);
@@ -75,5 +75,5 @@ int daytimefree(Tp_t* tp, Tpresponse_t* resp)
 }
 
 static Tpmethod_t _tpmdaytime = { daytimebegin, daytimeend, daytimeclose,
-				  daytimefree, 0 };
+                                  daytimefree, 0 };
 Tpmethod_t* TpmDaytime = &_tpmdaytime;

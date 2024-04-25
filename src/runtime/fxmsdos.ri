@@ -8,7 +8,7 @@ char *zptr = NULL;
  * Prototype.
  */
 
-int	getlist	(struct b_lelem *bp,unsigned int *vals, int limit);
+int     getlist (struct b_lelem *bp,unsigned int *vals, int limit);
 
 "Int86(a) - perform an interrupt"
 
@@ -56,7 +56,7 @@ function{1} Int86(a)
    /*  flag = int86x(flag,&inreg,&outreg,&insreg); */
 
        int86x(flag,&inreg,&outreg,&insreg);    /* ... this should work for */
-       flag = outreg.x.cflag;		    /* ... both MSC and Turbo C */
+       flag = outreg.x.cflag;               /* ... both MSC and Turbo C */
 
       /*
        * Return the values.
@@ -82,8 +82,8 @@ function{1} Int86(a)
       return result;
       }
 end
-#endif					/* MICROSOFT || TURBO ... */
-
+#endif                                  /* MICROSOFT || TURBO ... */
+
 
 "Peek(addr,len) - read from memory"
 
@@ -114,7 +114,7 @@ function{1} Peek(addr,len)
 #ifdef LargeInts
             if (Type(addr) == T_Lrgint)
                runerr(205,addr);
-#endif						/* LargeInts */
+#endif                                          /* LargeInts */
 
             return string(_len_,(char *) word2ptr(IntVal(addr)));
             }
@@ -127,16 +127,16 @@ function{1} Peek(addr,len)
             if (getlist(bp, vals, 2) == Failed) fail;
             unaddr.Word.s = vals[0];
             unaddr.Word.o = vals[1];
-	    return string(_len_,unaddr.cptr);
+            return string(_len_,unaddr.cptr);
             }
          default: {
             runerr(101,addr);
-	    }
+            }
          }
       /* NOTREACHED */
       }
 end
-
+
 
 "Poke(addr,s) - write to memory"
 
@@ -166,10 +166,10 @@ function{1} Poke(addr,s)
 #ifdef LargeInts
             if (Type(addr) == T_Lrgint)
                runerr(205, addr);
-#endif					/* LargeInts */
+#endif                                  /* LargeInts */
 
             unaddr.cptr = (char *)word2ptr(addr.vword.integr);
-	    }
+            }
          list: {
             hp = (struct b_list *) BlkLoc(addr);
             if (hp->size != 2) {
@@ -182,22 +182,22 @@ function{1} Poke(addr,s)
             }
          default: {
             runerr(101,addr);
-	    }
+            }
          }
       l = StrLen(s);
       s1 = StrLoc(s);
       s2 = unaddr.cptr;
 
-      memcopy(s2,s1,l);	 /* Copy... */
+      memcopy(s2,s1,l);  /* Copy... */
       return nulldesc;
       }
 end
-
+
 
 "GetSpace(i) - allocate memory block"
 
 function{1} GetSpace(i)
-   if !cnv:C_integer(i) then	/* should check for small */
+   if !cnv:C_integer(i) then    /* should check for small */
       runerr(101,i)
    abstract {
       return integer
@@ -213,7 +213,7 @@ function{1} GetSpace(i)
       return C_integer u;
       }
 end
-
+
 
 "FreeSpace(a) - free allocated memory block"
 
@@ -248,25 +248,25 @@ struct b_lelem *bp;
 
     i = 0;
     for(count = 0 ;count <limit;count++) {
-	int j;
-	if( ++i > bp->nused) {
-	    i = 1;
-	    bp = (struct b_lelem *) bp->listnext;
-	}
-	j = bp->first + i - 1;	/* Get slot index */
-	if( j >= bp->nslots)
-	    j -= bp->nslots;
-	switch(Type(bp->lslots[j])) {
-	    case T_Integer:	/* should check for small */
-		vals[count] = (int)IntVal(bp->lslots[j]);
-		break;
-	    default:
-		RunErr(101,&bp->lslots[j]);
-	}
+        int j;
+        if( ++i > bp->nused) {
+            i = 1;
+            bp = (struct b_lelem *) bp->listnext;
+        }
+        j = bp->first + i - 1;  /* Get slot index */
+        if( j >= bp->nslots)
+            j -= bp->nslots;
+        switch(Type(bp->lslots[j])) {
+            case T_Integer:     /* should check for small */
+                vals[count] = (int)IntVal(bp->lslots[j]);
+                break;
+            default:
+                RunErr(101,&bp->lslots[j]);
+        }
     }
    return 0;
 }
-
+
 
 "InPort(i) - return a value from port i"
 
@@ -280,7 +280,7 @@ function{1} InPort(i)
       return C_integer inp(i);
       }
 end
-
+
 
 "OutPort(i1,i2) - write i2 to port i1"
 

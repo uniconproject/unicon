@@ -84,61 +84,61 @@ class Workspace(
       return m_uni_file
    end
 
-    method updateUniDoc(uri, contents)
-       local files, file_contents
-       temp_idoc.processFile(uri, contents)
-       file_contents := contents
-       files := temp_idoc.getAllFiles()
-       m_uni_file := files[1]
-    end
+   method updateUniDoc(uri, contents)
+      local files, file_contents
+      temp_idoc.processFile(uri, contents)
+      file_contents := contents
+      files := temp_idoc.getAllFiles()
+      m_uni_file := files[1]
+   end
 
-    method deleteTempFile()
-       remove(temp_file)
-    end
+   method deleteTempFile()
+      remove(temp_file)
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Links (get, set, update) -------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
 
-    method setLinks()
-       local links_w_ext, link_w_ext, temp, _link, pack
-       links := []
-       links_w_ext := getFile().getLinkNames()
-       every link_w_ext := !links_w_ext do {
-          temp := reverse(link_w_ext)
-          temp ? {
-             move(4)
-             _link := tab(0)
-             _link := reverse(_link)
-          }
-          every pack := key(lsp_database.package_db) do {
+   method setLinks()
+      local links_w_ext, link_w_ext, temp, _link, pack
+      links := []
+      links_w_ext := getFile().getLinkNames()
+      every link_w_ext := !links_w_ext do {
+         temp := reverse(link_w_ext)
+         temp ? {
+            move(4)
+            _link := tab(0)
+            _link := reverse(_link)
+         }
+         every pack := key(lsp_database.package_db) do {
             if member(lsp_database.package_db[pack]["files"], _link) then
                put(links, _link)
-          }
-       }
-    end
+         }
+      }
+   end
 
-    method getLinks()
-       return links
-    end
+   method getLinks()
+      return links
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Imports (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setImports()
-       local _import
-       imports := []
-         every _import := !getFile().getImportNames() do {
-            if member(lsp_database.package_db, _import) then
-               put(imports, _import)
-         }
-    end
+   method setImports()
+      local _import
+      imports := []
+      every _import := !getFile().getImportNames() do {
+         if member(lsp_database.package_db, _import) then
+            put(imports, _import)
+      }
+   end
 
-    method getImports()
-       return imports
-    end
+   method getImports()
+      return imports
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Package (get, set, update) -----------------------------------------------------
@@ -167,10 +167,11 @@ class Workspace(
 # ---------------- Internal Procedures (get, set, update) -----------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setInternalProcedures()
-       local _procedure, _param, paramName, paramType, paramDef
-       internal_procedures := table()
-       every _procedure := getFile().getProcedures().get() do {
+   method setInternalProcedures()
+      local _procedure, _param, paramName, paramType, paramDef
+      internal_procedures := table()
+      every _procedure := getFile().getProcedures().get() do {
+         _procedure.setSrcFile(uri)
          internal_procedures[_procedure.getName()] := table()
          internal_procedures[_procedure.getName()]["comments"] := makeComment(_procedure)
 
@@ -184,13 +185,15 @@ class Workspace(
                "type", paramType,
                "default", paramDef))
          }
-       }
-    end
+
+         internal_procedures[_procedure.getName()]["source"] := uri
+      }
+   end
 
 
-    method getInternalProcedures()
-       return internal_procedures
-    end
+   method getInternalProcedures()
+      return internal_procedures
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Linked Procedures (get, set, update) -------------------------------------------
@@ -214,29 +217,29 @@ class Workspace(
       }
    end
 
-    method getLinkedProcedures()
-       return linked_procedures
-    end
+   method getLinkedProcedures()
+      return linked_procedures
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Imported Procedures (get, set, update) -----------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setImportedProcedures()
-       local _import, file_in_pack, _key
-       imported_procedures := table()
-         every _import := !imports do {
-          every file_in_pack := !lsp_database.package_db[_import]["files"] do {
-             every _key := key(file_in_pack["procedures"]) do {
-                imported_procedures[_key] := file_in_pack["procedures"][_key]
-                }
-             }
-          }
-    end
+   method setImportedProcedures()
+      local _import, file_in_pack, _key
+      imported_procedures := table()
+      every _import := !imports do {
+         every file_in_pack := !lsp_database.package_db[_import]["files"] do {
+            every _key := key(file_in_pack["procedures"]) do {
+               imported_procedures[_key] := file_in_pack["procedures"][_key]
+               }
+            }
+         }
+   end
 
-    method getImportedProcedures()
-       return imported_procedures
-    end
+   method getImportedProcedures()
+      return imported_procedures
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Package Procedures (get, set, update) -----------------------------------------
@@ -254,27 +257,30 @@ class Workspace(
       }
    end
 
-    method getPackageProcedures()
-       return package_procedures
-    end
+   method getPackageProcedures()
+      return package_procedures
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Internal Classes (get, set, update) --------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setInternalClasses()
-       local _class, _method, _param, paramName, paramType, paramDef, constructor_param
-       internal_classes := table()
-       every _class := getFile().getClasses().get() do {
-          internal_classes[_class.getName()] := table()
+   method setInternalClasses()
+      local _class, _method, _param, paramName, paramType, paramDef, constructor_param
+      internal_classes := table()
+      every _class := getFile().getClasses().get() do {
+         _class.setSrcFile(uri)
+         internal_classes[_class.getName()] := table()
+         internal_classes[_class.getName()]["source"] := uri
 
-          internal_classes[_class.getName()]["methods"] := table()
-          every _method := _class.getMethods().get() do {
-             internal_classes[_class.getName()]["methods"][_method.getName()] := table()
-             internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := makeComment(_method)
+         internal_classes[_class.getName()]["methods"] := table()
+         every _method := _class.getMethods().get() do {
+            _method.setSrcFile(uri)
+            internal_classes[_class.getName()]["methods"][_method.getName()] := table()
+            internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := makeComment(_method)
 
-             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []
-             every _param := _method.getParams().get() do {
+            internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []
+            every _param := _method.getParams().get() do {
                paramName := _param.getName()
                paramType := _param.getTypeValue() | &null
                paramDef := _param.getDefValue() | &null
@@ -282,39 +288,41 @@ class Workspace(
                   "name", paramName,
                   "type", paramType,
                   "default", paramDef))
-               }
-             }
+            }
+            
+            internal_classes[_class.getName()]["methods"][_method.getName()]["source"] := uri
+         }
 
-          internal_classes[_class.getName()]["attributes"] := []
-          every _param := _class.getParams().get() do {
-             paramName := _param.getName()
-             paramType := _param.getTypeValue() | &null
-             paramDef := _param.getDefValue() | &null
-             put(internal_classes[_class.getName()]["attributes"], table(
-                "name", paramName,
-                "type", paramType,
-                "default", paramDef))
-             }
+         internal_classes[_class.getName()]["attributes"] := []
+         every _param := _class.getParams().get() do {
+            paramName := _param.getName()
+            paramType := _param.getTypeValue() | &null
+            paramDef := _param.getDefValue() | &null
+            put(internal_classes[_class.getName()]["attributes"], table(
+               "name", paramName,
+               "type", paramType,
+               "default", paramDef))
+         }
 
-          internal_classes[_class.getName()]["constructor"] := table()
-          internal_classes[_class.getName()]["constructor"]["name"] := _class.getConstructor().getName()
-          internal_classes[_class.getName()]["constructor"]["comments"] := makeComment(_class)
-          internal_classes[_class.getName()]["constructor"]["params"] := []
-          every constructor_param := _class.getConstructor().getParams().get() do {
-             paramName := constructor_param.getName()
-             paramType := constructor_param.getTypeValue() | &null
-             paramDef := constructor_param.getDefValue() | &null
-             put(internal_classes[_class.getName()]["constructor"]["params"], table(
-                "name", paramName,
-                "type", paramType,
-                "default", paramDef))
-             }
-          }
-    end
+         internal_classes[_class.getName()]["constructor"] := table()
+         internal_classes[_class.getName()]["constructor"]["name"] := _class.getConstructor().getName()
+         internal_classes[_class.getName()]["constructor"]["comments"] := makeComment(_class)
+         internal_classes[_class.getName()]["constructor"]["params"] := []
+         every constructor_param := _class.getConstructor().getParams().get() do {
+            paramName := constructor_param.getName()
+            paramType := constructor_param.getTypeValue() | &null
+            paramDef := constructor_param.getDefValue() | &null
+            put(internal_classes[_class.getName()]["constructor"]["params"], table(
+               "name", paramName,
+               "type", paramType,
+               "default", paramDef))
+         }
+      }
+   end
 
-    method getInternalClasses()
-       return internal_classes
-    end
+   method getInternalClasses()
+      return internal_classes
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Linked Classes (get, set, update) ----------------------------------------------
@@ -338,29 +346,29 @@ class Workspace(
       }
    end
 
-    method getLinkedClasses()
-        return linked_classes
-    end
+   method getLinkedClasses()
+      return linked_classes
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Imported Classes (get, set, update) --------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setImportedClasses()
-       local _import, file_in_pack, _key
-       imported_classes := table()
-         every _import := !imports do {
-            every file_in_pack := !lsp_database.package_db[_import]["files"] do {
-               every _key := key(file_in_pack["classes"]) do {
-                  imported_classes[_key] := file_in_pack["classes"][_key]
-               }
+   method setImportedClasses()
+      local _import, file_in_pack, _key
+      imported_classes := table()
+      every _import := !imports do {
+         every file_in_pack := !lsp_database.package_db[_import]["files"] do {
+            every _key := key(file_in_pack["classes"]) do {
+               imported_classes[_key] := file_in_pack["classes"][_key]
             }
          }
-    end
+      }
+   end
 
-    method getImportedClasses()
-       return imported_classes
-    end
+   method getImportedClasses()
+      return imported_classes
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Package Classes (get, set, update) --------------------------------------------
@@ -378,170 +386,170 @@ class Workspace(
       }
    end
 
-    method getPackageClasses()
-       return package_classes
-    end
+   method getPackageClasses()
+      return package_classes
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Objects (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
-    method setObjects()
-       local lineNum, _line, objectName, className
-       objects := table()
-       lineNum := 1
-       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
-          if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
-             _line ? {
-                tab(many(' \t'))
-                objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))
-                tab(many(' \t'))
-                move(2)
-                tab(many(' \t'))
-                className := tab(upto("\("))
-                if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
-                   objects[objectName] := className
-                   }
-                }
-             }
-             lineNum +:= 1
-          }
-    end
+   method setObjects()
+      local lineNum, _line, objectName, className
+      objects := table()
+      lineNum := 1
+      while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
+         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
+            _line ? {
+               tab(many(' \t'))
+               objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))
+               tab(many(' \t'))
+               move(2)
+               tab(many(' \t'))
+               className := tab(upto("\("))
+               if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
+                  objects[objectName] := className
+               }
+            }
+         }
+         lineNum +:= 1
+      }
+   end
 
 
-    method getObjects()
-       return objects
-    end
+   method getObjects()
+      return objects
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Variables (get, set, update) -----------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method setVariables()
-       local f, _line, variableName, _content, globalName, lineNum
-       variables := table()
-       global_variables := table()
-       lineNum := 1
-       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
-          if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", _line) then {
-             _line ? {
-                tab(many(' \t'))
-                variableName := tab(many(identifiers))
-                tab(many(' \t'))
-                move(2)
-                tab(many(' \t'))
-                _content := tab(*_line + 1)
-                if not member(objects, variableName) then {
-                   variables[variableName] := _content
-                }
-             }
-          }
-          #if ReMatch("^[\ \t]*local", _line) then {
-          #   _line ? {
-          #      tab(many(' \t'))
-          #      move(5)
-          #      tab(many(' \t'))
-          #      until &pos >= *_line do {
-          #         temp_pos := &pos
-          #         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", tab(upto(,))) then {
-          #            &pos := temp_pos
-          #            variableName := tab(many(identifiers))
-          #            variables[variableName] := "local declare"
-          #            tab(upto(,))
-          #         }
-          #      }
-          #   }
-          #}
-          if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then {
-             _line ? {
-                tab(many(' \t'))
-                move(6)
-                tab(many(' \t'))
-                globalName := tab(many(identifiers))
-                global_variables[globalName] := ""
-             }
-          }
-          lineNum +:= 1
-       }
-    end
+   method setVariables()
+      local f, _line, variableName, _content, globalName, lineNum
+      variables := table()
+      global_variables := table()
+      lineNum := 1
+      while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
+         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", _line) then {
+            _line ? {
+               tab(many(' \t'))
+               variableName := tab(many(identifiers))
+               tab(many(' \t'))
+               move(2)
+               tab(many(' \t'))
+               _content := tab(*_line + 1)
+               if not member(objects, variableName) then {
+                  variables[variableName] := _content
+               }
+            }
+         }
+         #if ReMatch("^[\ \t]*local", _line) then {
+         #   _line ? {
+         #      tab(many(' \t'))
+         #      move(5)
+         #      tab(many(' \t'))
+         #      until &pos >= *_line do {
+         #         temp_pos := &pos
+         #         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", tab(upto(,))) then {
+         #            &pos := temp_pos
+         #            variableName := tab(many(identifiers))
+         #            variables[variableName] := "local declare"
+         #            tab(upto(,))
+         #         }
+         #      }
+         #   }
+         #}
+         if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then {
+            _line ? {
+               tab(many(' \t'))
+               move(6)
+               tab(many(' \t'))
+               globalName := tab(many(identifiers))
+               global_variables[globalName] := ""
+            }
+         }
+         lineNum +:= 1
+      }
+   end
 
-    method getVariables()
-       return variables
-    end
+   method getVariables()
+      return variables
+   end
 
-    method getGlobalVariables()
-       return global_variables
-    end
+   method getGlobalVariables()
+      return global_variables
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Database accessors -------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
 
-    method getDeclarativeExpressions()
-       return lsp_database.declarative_expressions
-    end
+   method getDeclarativeExpressions()
+      return lsp_database.declarative_expressions
+   end
 
-    method getBuiltInFunctions()
-       return lsp_database.built_in_functions
-    end
+   method getBuiltInFunctions()
+      return lsp_database.built_in_functions
+   end
 
-    method getActionWords()
-       return lsp_database.action_words
-    end
+   method getActionWords()
+      return lsp_database.action_words
+   end
 
-    method getSyntaxReservedWords()
-       return lsp_database.syntax_reserved_words
-    end
+   method getSyntaxReservedWords()
+      return lsp_database.syntax_reserved_words
+   end
 
-    method getKeywords()
-       return lsp_database.keywords
-    end
+   method getKeywords()
+      return lsp_database.keywords
+   end
 
-    method getPreprocessors()
-       return lsp_database.preprocessors
-    end
+   method getPreprocessors()
+      return lsp_database.preprocessors
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- Build object completion items --------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    method buildObjectCompletionItems(results_table, objectName)
-       local className, class_method, class_attribute
-       className := objects[objectName]
+   method buildObjectCompletionItems(results_table, objectName)
+      local className, class_method, class_attribute
+      className := objects[objectName]
 
-       if member(linked_classes, className) then {
-          every class_method := key(linked_classes[className]["methods"]) do {
-             put(results_table["items"], table("label", class_method, "kind", 2))
-             }
-          every class_attribute := linked_classes[className]["attributes"][1 to *linked_classes[className]["attributes"]] do {
-             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
-             }
-          }
-       if member(imported_classes, className) then {
-          every class_method := key(imported_classes[className]["methods"]) do {
-             put(results_table["items"], table("label", class_method, "kind", 2))
-             }
-          every class_attribute := imported_classes[className]["attributes"][1 to *imported_classes[className]["attributes"]] do {
-             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
-             }
-          }
-       if member(internal_classes, className) then {
-          every class_method := key(internal_classes[className]["methods"]) do {
-             put(results_table["items"], table("label", class_method, "kind", 2))
-             }
-          every class_attribute := internal_classes[className]["attributes"][1 to *internal_classes[className]["attributes"]] do {
-             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
-             }
-          }
-       if member(package_classes, className) then {
-          every class_method := key(package_classes[className]["methods"]) do {
-             put(results_table["items"], table("label", class_method, "kind", 2))
-             }
-          every class_attribute := package_classes[className]["attributes"][1 to *package_classes[className]["attributes"]] do {
-             put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
-             }
-          }
-    end
+      if member(linked_classes, className) then {
+         every class_method := key(linked_classes[className]["methods"]) do {
+            put(results_table["items"], table("label", class_method, "kind", 2))
+         }
+         every class_attribute := linked_classes[className]["attributes"][1 to *linked_classes[className]["attributes"]] do {
+            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+         }
+      }
+      if member(imported_classes, className) then {
+         every class_method := key(imported_classes[className]["methods"]) do {
+            put(results_table["items"], table("label", class_method, "kind", 2))
+         }
+         every class_attribute := imported_classes[className]["attributes"][1 to *imported_classes[className]["attributes"]] do {
+            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+         }
+      }
+      if member(internal_classes, className) then {
+         every class_method := key(internal_classes[className]["methods"]) do {
+            put(results_table["items"], table("label", class_method, "kind", 2))
+         }
+         every class_attribute := internal_classes[className]["attributes"][1 to *internal_classes[className]["attributes"]] do {
+            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+         }
+      }
+      if member(package_classes, className) then {
+         every class_method := key(package_classes[className]["methods"]) do {
+            put(results_table["items"], table("label", class_method, "kind", 2))
+         }
+         every class_attribute := package_classes[className]["attributes"][1 to *package_classes[className]["attributes"]] do {
+            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+         }
+      }
+   end
 
    method buildPackageConstructorItems(results_table, packageName)
       local _file, _class, _constructor
@@ -555,35 +563,34 @@ class Workspace(
       }
    end
 
-     method getPackages()
-       return lsp_database.package_db
-    end
+   method getPackages()
+      return lsp_database.package_db
+   end
 
-    method getFileNames()
-       local pack, _file, _files
-       _files := []
-       every pack := key(lsp_database.package_db) do {
-            every _file := key(lsp_database.package_db[pack]["files"]) do
-               put(_files, _file)
-       }
-       return _files
-    end
+   method getFileNames()
+      local pack, _file, _files
+      _files := []
+      every pack := key(lsp_database.package_db) do {
+         every _file := key(lsp_database.package_db[pack]["files"]) do
+            put(_files, _file)
+      }
+      return _files
+   end
 
-    method getContext(lineNum, charNum)
+   method getContext(lineNum, charNum)
       if (/context | (context.isNewContext(lineNum, charNum))) then {
          context := Context(temp_idoc, uri, lineNum, charNum)
       }
       return context
-    end
+   end
 
 # -------------------------------------------------------------------------------------------------
 # ---------------- initially ----------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-    initially
-        setFile()
-        identifiers := &letters ++ &digits ++ '_' ++ '-'
-
+   initially
+      setFile()
+      identifiers := &letters ++ &digits ++ '_' ++ '-'
 end
 
 class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase, packageName)
@@ -599,8 +606,8 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
          while c := move(-1) do {
             if (c ** identifiers) ~== c then {
                break
-                  }
             }
+         }
 
          if ="." then {
             move(-1)
@@ -608,12 +615,12 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
                if (c ** identifiers) ~== c then {
                   move(1)
                   break
-                     }
                }
+            }
             name := tab(upto("."))
             return name
-            }
          }
+      }
    end
 
    # Retrive method name #
@@ -722,6 +729,7 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
          self.methodName := getMethodName()
          return "object"
       }
+
       #-----------------------------------------------#
       #-------- Case "method" ------------#
       #-----------------------------------------------#
@@ -764,140 +772,140 @@ end
 # Creates a working comments
 procedure makeComment(_function)
    local paramComment, returnComment, failsComment, genComment, normalComment, firstTen, currentType, insideComment,
-      tabCharacter, _comment, paramCounter, returnCounter, failsCounter, genCounter, _line, paramPos, returnsPos,
-      failsPos, genPos, firstKey, fullComment, paramList, _param, paramName, sourceComment, srcFile
-      paramComment:= ""
-      returnComment := ""
-      failsComment := ""
-      genComment := ""
-      sourceComment := ""
-      normalComment := ""
-      firstTen := ""
-      currentType := 0
-      insideComment := 0
-      tabCharacter := "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-      paramList := []
+   tabCharacter, _comment, paramCounter, returnCounter, failsCounter, genCounter, _line, paramPos, returnsPos,
+   failsPos, genPos, firstKey, fullComment, paramList, _param, paramName, sourceComment, srcFile
+   paramComment:= ""
+   returnComment := ""
+   failsComment := ""
+   genComment := ""
+   sourceComment := ""
+   normalComment := ""
+   firstTen := ""
+   currentType := 0
+   insideComment := 0
+   tabCharacter := "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+   paramList := []
 
-      every _param := _function.getParams().get() do {
-         paramName := _param.getName()
-         put(paramList, paramName)
-      }
+   every _param := _function.getParams().get() do {
+      paramName := _param.getName()
+      put(paramList, paramName)
+   }
 
-      every _comment := _function.getComments().get() do {
-         paramCounter := 1
-         returnCounter := 0
-         failsCounter := 0
-         genCounter := 0
-         every _line := _comment.get() do {
-            _line := replace(_line, "\\n", "\\\\n")
+   every _comment := _function.getComments().get() do {
+      paramCounter := 1
+      returnCounter := 0
+      failsCounter := 0
+      genCounter := 0
+      every _line := _comment.get() do {
+         _line := replace(_line, "\\n", "\\\\n")
 
-            if((find("<[", _line))) then
-               insideComment := 1
-            if((find("]>", _line))) then
-               insideComment := 0
+         if((find("<[", _line))) then
+            insideComment := 1
+         if((find("]>", _line))) then
+            insideComment := 0
 
-            if((find("<[", _line)) | (find("]>", _line))) then {
+         if((find("<[", _line)) | (find("]>", _line))) then {
 
-               if(find("param", _line)) then
-                  paramPos := find("param", _line)
+            if(find("param", _line)) then
+               paramPos := find("param", _line)
+            else
+               paramPos := 9999
+
+            if (find("returns", _line)) then
+               returnsPos := find("returns", _line)
+            else
+               returnsPos := 9999
+
+            if (find("fails", _line)) then
+               failsPos := find("fails", _line)
+            else
+               failsPos := 9999
+
+            if (find("generates", _line)) then
+               genPos := find("generates", _line)
+            else
+               genPos := 9999
+
+            firstKey := min(paramPos, returnsPos, failsPos, genPos)
+
+            if ((find("param", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+               if \paramList then
+                  _line := _line[1:firstKey+6] || "*" || _line[firstKey+6:firstKey+6+*paramList[paramCounter]] || "*:" || _line[firstKey+6+*paramList[paramCounter]:*_line+1]
+
+               if(paramCounter == 1) then
+                  _line := replace(_line, "param", "\n **Parameters:**  \n \\\\>" || tabCharacter)
                else
-                  paramPos := 9999
-
-               if (find("returns", _line)) then
-                  returnsPos := find("returns", _line)
-               else
-                  returnsPos := 9999
-
-               if (find("fails", _line)) then
-                  failsPos := find("fails", _line)
-               else
-                  failsPos := 9999
-
-               if (find("generates", _line)) then
-                  genPos := find("generates", _line)
-               else
-                  genPos := 9999
-
-               firstKey := min(paramPos, returnsPos, failsPos, genPos)
-
-               if ((find("param", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
-                  if \paramList then
-                     _line := _line[1:firstKey+6] || "*" || _line[firstKey+6:firstKey+6+*paramList[paramCounter]] || "*:" || _line[firstKey+6+*paramList[paramCounter]:*_line+1]
-
-                  if(paramCounter == 1) then
-                     _line := replace(_line, "param", "\n **Parameters:**  \n \\\\>" || tabCharacter)
-                  else
-                     _line := replace(_line, "param", "\n \\\\>" || tabCharacter)
+                  _line := replace(_line, "param", "\n \\\\>" || tabCharacter)
 
 
-                  paramCounter +:= 1
-                  paramComment ||:= _line
-                  currentType := 1
-               }
-               else if ((find("returns", _line[firstKey:firstKey+7]) & (find("<[", _line)))) then {
-                  if(returnCounter == 0) then {
-                     _line := replace(_line, "returns", "\n **Returns:**  \n " || tabCharacter)
-                     returnCounter +:= 1
-                  }
-                  else
-                     _line := replace(_line, "returns", "\n " || tabCharacter)
-
-                  returnComment ||:= _line
-                  currentType := 2
-               }
-               else if ((find("fails", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
-                  if(failsCounter == 0) then {
-                     _line := replace(_line, "fails", "\n **Fails:**  \n " || tabCharacter)
-                     failsCounter +:= 1
-                  }
-                  else
-                     _line := replace(_line, "fails", "\n " || tabCharacter)
-
-                  failsComment ||:= _line
-                  currentType := 3
-               }
-               else if ((find("generates", _line[firstKey:firstKey+9]) & (find("<[", _line)))) then {
-                  if(genCounter == 0) then {
-                     _line := replace(_line, "generates", "\n **Generates:**  \n " || tabCharacter)
-                     genCounter +:= 1
-                  }
-                  else
-                     _line := replace(_line, "generates", "\n " || tabCharacter)
-
-                  genComment ||:= _line
-                  currentType := 4
-               }
-               else
-                  if currentType = 1 then paramComment ||:= _line
-                  else if currentType = 2 then returnComment ||:= _line
-                  else if currentType = 3 then failsComment ||:= _line
-                  else if currentType = 4 then genComment ||:= _line
+               paramCounter +:= 1
+               paramComment ||:= _line
+               currentType := 1
             }
-            else if (insideComment = 1) then {
+            else if ((find("returns", _line[firstKey:firstKey+7]) & (find("<[", _line)))) then {
+               if(returnCounter == 0) then {
+                  _line := replace(_line, "returns", "\n **Returns:**  \n " || tabCharacter)
+                  returnCounter +:= 1
+               }
+               else
+                  _line := replace(_line, "returns", "\n " || tabCharacter)
+
+               returnComment ||:= _line
+               currentType := 2
+            }
+            else if ((find("fails", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+               if(failsCounter == 0) then {
+                  _line := replace(_line, "fails", "\n **Fails:**  \n " || tabCharacter)
+                  failsCounter +:= 1
+               }
+               else
+                  _line := replace(_line, "fails", "\n " || tabCharacter)
+
+               failsComment ||:= _line
+               currentType := 3
+            }
+            else if ((find("generates", _line[firstKey:firstKey+9]) & (find("<[", _line)))) then {
+               if(genCounter == 0) then {
+                  _line := replace(_line, "generates", "\n **Generates:**  \n " || tabCharacter)
+                  genCounter +:= 1
+               }
+               else
+                  _line := replace(_line, "generates", "\n " || tabCharacter)
+
+               genComment ||:= _line
+               currentType := 4
+            }
+            else
                if currentType = 1 then paramComment ||:= _line
                else if currentType = 2 then returnComment ||:= _line
                else if currentType = 3 then failsComment ||:= _line
                else if currentType = 4 then genComment ||:= _line
-            }
-            else if ReMatch("^[\ ]*Source: ", _line) then {
-               sourceComment := replace(_line, "Source:", "\n **Source:**")
-            }
-            else
-               normalComment ||:= _line
          }
+         else if (insideComment = 1) then {
+            if currentType = 1 then paramComment ||:= _line
+            else if currentType = 2 then returnComment ||:= _line
+            else if currentType = 3 then failsComment ||:= _line
+            else if currentType = 4 then genComment ||:= _line
+         }
+         else if ReMatch("^[\ ]*Source: ", _line) then {
+            sourceComment := replace(_line, "Source:", "\n **Source:**")
+         }
+         else
+            normalComment ||:= _line
       }
+   }
 
-      if srcFile := _function.getSrcFile() & sourceComment == "" then
-         sourceComment := "\n **Source:** " || srcFile
+   if srcFile := _function.getSrcFile() & sourceComment == "" then
+      sourceComment := "\n **Source:** " || srcFile
 
-      fullComment := normalComment || "\n \n --- \n \n" || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment || " " || sourceComment
-      fullComment := replacem(fullComment, "<p>", "", "</p>", "")
-      fullComment := replacem(fullComment, "<i>", "_", "</i>", "_")
-      fullComment := replacem(fullComment, "<b>", "**", "</b>", "**")
-      fullComment := replacem(fullComment, "<tt>", "`", "</tt>", "`")
-      fullComment := replace(fullComment, "\"", "\\\"")
-      fullComment := replace(fullComment, "<[", "")
-      fullComment := replace(fullComment, "]>", "")
+   fullComment := normalComment || "\n \n --- \n \n" || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment || " " || sourceComment
+   fullComment := replacem(fullComment, "<p>", "", "</p>", "")
+   fullComment := replacem(fullComment, "<i>", "_", "</i>", "_")
+   fullComment := replacem(fullComment, "<b>", "**", "</b>", "**")
+   fullComment := replacem(fullComment, "<tt>", "`", "</tt>", "`")
+   fullComment := replace(fullComment, "\"", "\\\"")
+   fullComment := replace(fullComment, "<[", "")
+   fullComment := replace(fullComment, "]>", "")
 
-      return fullComment
+   return fullComment
 end

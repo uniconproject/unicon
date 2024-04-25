@@ -5,7 +5,7 @@
 #include "rtt.h"
 
 /*
- * prototypes for static functions. 
+ * prototypes for static functions.
  */
 static struct il_code *abstrcomp (struct node *n, int indx_stor,
                                     int chng_stor, int escapes);
@@ -45,10 +45,10 @@ struct var_lst {
    struct var_lst *next;
    };
 struct var_lst *body_prms;
-int n_bdy_prms;		/* number of entries in body_prms list */
-int rslt_loc;		/* flag: function passed addr of result descriptor */
+int n_bdy_prms;         /* number of entries in body_prms list */
+int rslt_loc;           /* flag: function passed addr of result descriptor */
 
-char prfx3;		/* 3rd prefix char; used for unique body func names */
+char prfx3;             /* 3rd prefix char; used for unique body func names */
 
 #if MVS
 extern char *src_file_nm;
@@ -58,8 +58,7 @@ extern char *src_file_nm;
  * in_line - place in the data base in-line code for an operation and
  *   produce C functions for body statements.
  */
-void in_line(n)
-struct node *n;
+void in_line(struct node *n)
    {
    struct sym_entry *sym;
    int i;
@@ -86,7 +85,7 @@ struct node *n;
    i = 0;
 
    /*
-    * Go back through the declarations and fill in the array for the 
+    * Go back through the declarations and fill in the array for the
     *  tended part of the data base symbol table. Array entries contain
     *  an indication of the type of tended declaration, the C code to
     *  initialize the variable if there is any, and, for block pointer
@@ -128,15 +127,14 @@ struct node *n;
          }
       }
 
-   abs_ret = NoAbstr;		   /* abstract clause not encountered yet */
+   abs_ret = NoAbstr;              /* abstract clause not encountered yet */
    cur_impl->in_line = il_walk(n); /* produce in-line code for operation */
    }
 
 /*
  * il_walk - walk the syntax tree producing in-line code.
  */
-static struct il_code *il_walk(n)
-struct node *n;
+static struct il_code *il_walk(struct node *n)
    {
    struct token *t;
    struct node *n1;
@@ -699,8 +697,7 @@ struct node *n;
  * il_var - produce in-line code in the data base for varibel references.
  *   These include both simple identifiers and subscripted identifiers.
  */
-static struct il_code *il_var(n)
-struct node *n;
+static struct il_code *il_var(struct node *n)
    {
    struct il_code *il = NULL;
 
@@ -725,11 +722,7 @@ struct node *n;
  * abstrcomp - produce data base code for RTL abstract type computations.
  *  In the process, do a few sanity checks where they are easy to do.
  */
-static struct il_code *abstrcomp(n, indx_stor, chng_stor, escapes)
-struct node *n;
-int indx_stor;
-int chng_stor;
-int escapes;
+static struct il_code *abstrcomp(struct node *n, int indx_stor, int chng_stor, int escapes)
    {
    struct token *t;
    struct il_code *il;
@@ -750,14 +743,14 @@ int escapes;
                 */
                il = new_il(IL_VarTyp, 1);
                il->u[0].fld = il_var(n->u[0].child);
-               break; 
+               break;
             case Store:
                /*
                 * store[ <type> ]
                 */
                il = new_il(IL_Store, 1);
                il->u[0].fld = abstrcomp(n->u[0].child, 1, 0, 0);
-               break; 
+               break;
             }
          break;
       case PstfxNd:
@@ -774,10 +767,10 @@ int escapes;
                   errt3(t, typecompnt[cmpntcd].id,
                     " component is an internal reference type.\n",
                     "\t\tuse store[<type>.<component>] to \"dereference\" it");
-               break; 
+               break;
             case All_fields:
                il->u[1].n = CM_Fields;
-               break; 
+               break;
             }
          break;
       case IcnTypNd:
@@ -848,7 +841,7 @@ int escapes;
                 * Create the "new" construct for the data base with its type
                 *  code and arguments.
                 */
-               il = new_il(IL_New, 2 + nargs); 
+               il = new_il(IL_New, 2 + nargs);
                il->u[0].n = typcd;
                il->u[1].n = nargs;
                while (nargs > 1) {
@@ -883,11 +876,7 @@ int escapes;
  * abstrsnty - do some sanity checks on how this type is being used in
  *  an abstract type computation.
  */
-static void abstrsnty(t, typcd, indx_stor, chng_stor)
-struct token *t;
-int typcd;
-int indx_stor;
-int chng_stor;
+static void abstrsnty(struct token *t, int typcd, int indx_stor, int chng_stor)
    {
    struct icon_type *itp;
 
@@ -909,17 +898,16 @@ int chng_stor;
 
 /*
  * body_anlz - walk the syntax tree for the C code in a body statment,
- *  analyzing the code to determine the interface needed by the C function 
+ *  analyzing the code to determine the interface needed by the C function
  *  which will implement it. Also determine how many buffers are needed.
  *  The value returned indicates whether it is possible for execution
  *  to fall through the the code.
  */
-static int body_anlz(n, does_break, may_mod, const_cast, all)
-struct node *n;   /* subtree being analyzed */
-int *does_break;  /* output flag: subtree contains "break;" */
-int may_mod;      /* input flag: this subtree might be assigned to */
-int const_cast;   /* input flag: expression is cast to (const ...) */
-int all;          /* input flag: need all information about operation */
+static int body_anlz(struct node *n,   /* subtree being analyzed */
+                     int *does_break,  /* output flag: subtree contains "break;" */
+                     int may_mod,      /* input flag: this subtree might be assigned to */
+                     int const_cast,   /* input flag: expression is cast to (const ...) */
+                     int all)          /* input flag: need all information about operation */
    {
    struct token *t;
    struct node *n1, *n2, *n3;
@@ -930,7 +918,7 @@ int all;          /* input flag: need all information about operation */
    static int may_brnchto;
 
    if (n == NULL)
-      return 1; 
+      return 1;
 
    t =  n->tok;
 
@@ -1094,19 +1082,19 @@ int all;          /* input flag: need all information about operation */
                fall_thru = body_anlz(n->u[1].child, &break_chk, 0, 0, all);
                return fall_thru | break_chk;
             case While: {
-	       struct node *n0 = n->u[0].child;
+               struct node *n0 = n->u[0].child;
                body_anlz(n0, does_break, 0, 0, all);
                body_anlz(n->u[1].child, &break_chk, 0, 0, all);
-	       /*
-		* check for an infinite loop, while (1) ... :
+               /*
+                * check for an infinite loop, while (1) ... :
                 *  a condition consisting of an IntConst with image=="1"
                 *  and no breaks in the body.
-		*/
-	       if (n0->nd_id == PrimryNd && n0->tok->tok_id == IntConst &&
-		   !strcmp(n0->tok->image,"1") && !break_chk)
-		  return 0;
+                */
+               if (n0->nd_id == PrimryNd && n0->tok->tok_id == IntConst &&
+                   !strcmp(n0->tok->image,"1") && !break_chk)
+                  return 0;
                return 1;
-	       }
+               }
             case Do:
                /*
                 * Any "break;" statements in the body do not effect
@@ -1306,13 +1294,12 @@ int all;          /* input flag: need all information about operation */
  *  lcl_tend  - allocate any tended variables needed in this body or inline
  *   statement.
  */
-static void lcl_tend(n)
-struct node *n;
+static void lcl_tend(struct node *n)
    {
    struct sym_entry *sym;
 
    if (n == NULL)
-      return; 
+      return;
 
    /*
     * Walk the syntax tree until a block with declarations is found.
@@ -1365,8 +1352,7 @@ struct node *n;
  * chkrettyp - check type of return to see if it is a C integer or a
  *  C double and make note of what is found.
  */
-static void chkrettyp(n)
-struct node *n;
+static void chkrettyp(struct node *n)
    {
    if (n->nd_id == PrefxNd && n->tok != NULL) {
       switch (n->tok->tok_id) {
@@ -1384,8 +1370,7 @@ struct node *n;
 /*
  * body_fnc - produce the function which implements a body statement.
  */
-static struct il_code *body_fnc(n)
-struct node *n;
+static struct il_code *body_fnc(struct node *n)
    {
    struct node *compound;
    struct node *dcls;
@@ -1411,7 +1396,7 @@ struct node *n;
    char buf1[MaxFileName];
 #else
    char buf[MaxFileName];
-#endif					/* MVS */
+#endif                                  /* MVS */
 
    /*
     * Figure out the next character to use as the 3rd prefix for the
@@ -1484,7 +1469,7 @@ struct node *n;
       err2("cannot open output file ", cname);
    else
       addrmlst(cname, out_file);
-      
+
    prologue(); /* output standard comments and preprocessor directives */
 
    /*
@@ -1567,6 +1552,183 @@ struct node *n;
    fname = cname;
    line = 7;
 
+#ifndef LEGACY_FUNCTION_PROTOTYPES
+   /*
+    * Write parameter list, first the parenthesized list of names. Start
+    *  with names of RLT variables that must be passed in.
+    * Include the types before the names (new style function declarations)
+    */
+   set_parameter_decl(1); /* Tell simpl_dcl and parm_dcl we don't want semicolon terminators */
+   first = 1;
+   for (var_ref = body_prms; var_ref != NULL; var_ref = var_ref->next) {
+      sym = var_ref->sym;
+      sym->id_type &= ~PrmMark;             /* unmark entry */
+      if (first)
+         first = 0;
+      else
+         prt_str(", ", IndentInc);
+      
+      /*
+       * Each parameters has two slots in the data base entry. One
+       *  is the declaration for use by iconc in producing function
+       *  prototypes. The other is the argument that must be passed as
+       *  part of the call generated by iconc.
+       *
+       * Determine whether the parameter is passed by reference or by
+       *  value (flag by_ref). Tended variables that refer to just the
+       *  vword of a descriptor require special handling. They must
+       *  be passed to the body function as a pointer to the entire
+       *  descriptor and not just the vword. Within the function the
+       *  parameter is then accessed as x->vword... This is indicated
+       *  by the parameter flag just_desc.
+       */
+      var_ref->id_type = sym->id_type;      /* save old id_type */
+      by_ref = 0;
+      just_desc = 0;
+      switch (sym->id_type) {
+         case TndDesc:  /* tended struct descrip x */
+            by_ref = 1;
+            il->u[bprm_indx++].c_cd = simpl_dcl("dptr ", 0, sym);
+            break;
+         case TndStr:   /* tended char *x */
+         case TndBlk:   /* tended struct b_??? *x or tended union block *x */
+            by_ref = 1;
+            just_desc = 1;
+            il->u[bprm_indx++].c_cd = simpl_dcl("dptr ", 0, sym);
+            break;
+         case RtParm: /* undereferenced RTL parameter */
+         case DrfPrm: /* dereferenced RTL parameter */
+            switch (sym->u.param_info.cur_loc) {
+               case PrmTend: /* plain parameter: descriptor */
+                  by_ref = 1;
+                  il->u[bprm_indx++].c_cd = simpl_dcl("dptr ", 0, sym);
+                  break;
+               case PrmCStr: /* parameter converted to a tended C string */
+                  by_ref = 1;
+                  just_desc = 1;
+                  il->u[bprm_indx++].c_cd = simpl_dcl("dptr ", 0, sym);
+                  break;
+               case PrmInt:  /* parameter converted to a C integer */
+                  sym->id_type = OtherDcl;
+                  if (var_ref->sym->may_mod && fall_thru)
+                     by_ref = 1;
+                  il->u[bprm_indx++].c_cd = simpl_dcl("C_integer ", by_ref,
+                     sym);
+                  break;
+               case PrmDbl: /* parameter converted to a C double */
+                  sym->id_type = OtherDcl;
+                  if (var_ref->sym->may_mod && fall_thru)
+                     by_ref =  1;
+                  il->u[bprm_indx++].c_cd = simpl_dcl("double ", by_ref, sym);
+                  break;
+               }
+            break;
+         case RtParm | VarPrm:
+         case DrfPrm | VarPrm:
+            /*
+             * Variable part of RTL parameter list: already descriptor pointer.
+             */
+            sym->id_type = OtherDcl;
+            il->u[bprm_indx++].c_cd = simpl_dcl("dptr ", 0, sym);
+            break;
+         case VArgLen:
+            /*
+             * Number of elements in variable part of RTL parameter list:
+             *  integer but not a true variable.
+             */
+            sym->id_type = OtherDcl;
+            il->u[bprm_indx++].c_cd = simpl_dcl("int ", 0, sym);
+            break;
+         case OtherDcl:
+            is_reg = 0;
+            /*
+             * Pass by reference if it is a structure or union type (but
+             *  not if it is a pointer to one) or if the variable is
+             *  modified and it is possible to execute more code after the
+             *  body. WARNING: crude assumptions are made for typedef
+             *  types.
+             */
+            strct = strct_typ(sym->u.declare_var.tqual, &is_reg);
+            addr = is_addr(sym->u.declare_var.dcltor, '\0');
+            if ((strct && !addr) || (var_ref->sym->may_mod && fall_thru))
+                  by_ref = 1;
+            if (is_reg && by_ref)
+              errt2(sym->u.declare_var.dcltor->u[1].child->tok, sym->image,
+                 " may not be declared 'register'");
+
+            il->u[bprm_indx++].c_cd = parm_dcl(by_ref, sym);
+            break;
+         }
+
+      /*
+       * Determine what the iconc generated argument in a function
+       *  call should look like.
+       */
+      il->u[bprm_indx++].c_cd = bdy_prm(by_ref, just_desc, sym,
+         var_ref->sym->may_mod);
+
+      /*
+       * If it a call-by-reference parameter, indicate that the level
+       *  of indirection must be taken into account within the function
+       *  body.
+       */
+      if (by_ref)
+         sym->id_type |= ByRef;
+      }
+
+   if (fall_thru) {
+      /*
+       * We cannot allocate string and cset buffers locally, so any
+       *   that are needed must be parameters.
+       */
+      if (n_tmp_str > 0) {
+         if (first)
+            first = 0;
+         else
+            prt_str(", ", IndentInc);
+         prt_str("char (*r_sbuf)[MaxCvtLen]", IndentInc);
+      }
+      if (n_tmp_cset > 0) {
+         if (first)
+            first = 0;
+         else
+            prt_str(", ", IndentInc);
+         prt_str("struct b_cset *r_cbuf", IndentInc);
+      }
+      /*
+       * Indicate that buffers must be allocated by compiler and not
+       *  within the function.
+       */
+      il->u[5].n = n_tmp_str;
+      il->u[6].n = n_tmp_cset;
+      n_tmp_str = 0;
+      n_tmp_cset = 0;
+   }
+
+   /*
+    * If the result location is needed it is passed as the next parameter.
+    */
+   if (rslt_loc) {
+      if (first)
+         first = 0;
+      else
+         prt_str(", ", IndentInc);
+      prt_str("dptr r_rslt", IndentInc);
+      }
+
+   /*
+    * If a success continuation is needed, it goes last.
+    */
+   if (ret_flag & DoesSusp) {
+      if (!first)
+         prt_str(", ", IndentInc);
+      prt_str("continuation r_s_cont", IndentInc);
+      }
+   prt_str(")", IndentInc);
+   ForceNl();
+
+   set_parameter_decl(0);
+#else                                  /* LEGACY_FUNCTION_PROTOTYPES */
    /*
     * Write parameter list, first the parenthesized list of names. Start
     *  with names of RLT variables that must be passed in.
@@ -1738,7 +1900,7 @@ struct node *n;
       if (by_ref)
          sym->id_type |= ByRef;
       }
-   
+
    if (fall_thru) {
       /*
        * Write declarations for any needed buffer parameters.
@@ -1773,6 +1935,7 @@ struct node *n;
       prt_str("continuation r_s_cont;", 0);
       ForceNl();
       }
+#endif                                  /* LEGACY_FUNCTION_PROTOTYPES */
 
    /*
     * Output the code for the function including ordinary declaration,
@@ -1790,8 +1953,8 @@ struct node *n;
     */
    if (fall_thru) {
       if (tend_lst != NULL) {
-	 prt_str("tend = tend->previous;", IndentInc);
-	 ForceNl();
+         prt_str("tend = tend->previous;", IndentInc);
+         ForceNl();
          }
       if (fnc_ret == RetSig) {
          prt_str("return A_FallThru;", IndentInc);
@@ -1828,9 +1991,7 @@ struct node *n;
  * strct_typ - determine if the declaration may be for a structured type
  *   and look for register declarations.
  */
-static int strct_typ(typ, is_reg)
-struct node *typ;
-int *is_reg;
+static int strct_typ(struct node *typ, int *is_reg)
    {
    if (typ->nd_id == LstNd) {
       return strct_typ(typ->u[0].child, is_reg) |
@@ -1867,9 +2028,7 @@ int *is_reg;
 /*
  * determine if the variable being declared evaluates to an address.
  */
-static int is_addr(dcltor, modifier)
-struct node *dcltor;
-int modifier;
+static int is_addr(struct node *dcltor, int modifier)
    {
    switch (dcltor->nd_id) {
       case ConCatNd:
@@ -1913,9 +2072,7 @@ int modifier;
  * chgn_ploc - if this is an "in-place" conversion to a C value, change
  *  the "location" of the parameter being converted.
  */
-static void chng_ploc(typcd, src)
-int typcd;
-struct node *src;
+static void chng_ploc(int typcd, struct node *src)
    {
    int loc;
 
@@ -1944,8 +2101,7 @@ struct node *src;
  * cnt_bufs - See if we need to allocate a string or cset buffer for
  *  this conversion.
  */
-static void cnt_bufs(cnv_typ)
-struct node *cnv_typ;
+static void cnt_bufs(struct node *cnv_typ)
    {
    if (cnv_typ->nd_id == PrimryNd)
       switch (cnv_typ->tok->tok_id) {
@@ -1963,9 +2119,7 @@ struct node *cnv_typ;
  *   The type lattice has three levels: NoAbstr is bottom, SomeType is top,
  *   and individual types form the middle level.
  */
-static int mrg_abstr(sum, typ)
-int sum;
-int typ;
+static int mrg_abstr(int sum, int typ)
    {
    if (sum == NoAbstr)
       return typ;
@@ -1976,4 +2130,4 @@ int typ;
    else
       return SomeType;
    }
-#endif					/* Rttx */
+#endif                                  /* Rttx */

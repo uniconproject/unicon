@@ -3,7 +3,7 @@
 #   facilitate creating and managing lxc containters.
 #
 #
-# Author 
+# Author
 #         09/29/2016
 #
 
@@ -19,16 +19,16 @@ global LXC
 
 #<p>
 # This is the main LXC plugin class. It holds references to the C functions
-# And also provides utility functions to be used with lxc containers. 
+# And also provides utility functions to be used with lxc containers.
 #<p>
 class LXC : uso::USO (
     # Variables to hold C functions references
-    LXCCreate, 
+    LXCCreate,
     LXCStart,
     LXCAttach,
     LXCReboot,
     LXCShutdown,  # gracefull shutdown
-    LXCStop, 	  # shutdown but force stop if necessary
+    LXCStop,      # shutdown but force stop if necessary
     LXCDestroy,
     LXCState,
     LXCExist,
@@ -37,7 +37,7 @@ class LXC : uso::USO (
     LXCClone,
     LXCRename,
     LXCInit,
-    # 
+    #
     vernum,
     ark,
     errorTable
@@ -79,13 +79,13 @@ class LXC : uso::USO (
 
    initially(path)
        # Load the shared library and setup the various function references to C
-      /path	   :="lxcunicon.so"
+      /path        :="lxcunicon.so"
       ((LXCCreate  := loadfunc(path, "create")),
       (LXCStart    := loadfunc(path, "start")),
       (LXCAttach    := loadfunc(path, "attach")),
       (LXCShutdown := loadfunc(path, "shutdown")),
       (LXCReboot := loadfunc(path, "reboot")),
-      (LXCStop 	   := loadfunc(path, "stop")),
+      (LXCStop     := loadfunc(path, "stop")),
       (LXCFreeze   := loadfunc(path, "freeze")),
       (LXCUnfreeze := loadfunc(path, "unfreeze")),
       #(LXCClone   := loadfunc(path, "clone")),
@@ -95,13 +95,13 @@ class LXC : uso::USO (
       (LXCExist    := loadfunc(path, "exist")),
       (LXCInit     := loadfunc(path, "lxcinit"))) |
          stop("can't load LXC library from ", image(path))
-      
+
       errorTable := table()
       LXC := self
       vernum := LXC.LXCInit()
-      
-      # The default architecture 
-      /ark := (&features ?(="Arch " & 
+
+      # The default architecture
+      /ark := (&features ?(="Arch " &
             (if ="x86_" then
                if ="32" then
                   "i386"
@@ -112,7 +112,7 @@ class LXC : uso::USO (
                   "armhf"
                else
                   "arm64")))
-      
+
 end
 
 class LXContainer(
@@ -122,7 +122,7 @@ class LXContainer(
             arch,
             handle,
             lasterrorcode
-		  )
+                  )
    #
    # Create an lxc container
    # <[param d the OS distribution of the container]>
@@ -139,27 +139,27 @@ class LXContainer(
 
    #
    # Check whether this container exists (created already)
-   #   
+   #
    method exist()
       return handle := LXC.LXCExist(name)
    end
 
    #
    # Start/boot the container
-   #      
+   #
    method start()
       /handle := name
       return handle := LXC.LXCStart(handle)
    end
 
    #
-   # Perform an attach operation on the container and execute the list of  
+   # Perform an attach operation on the container and execute the list of
    # commands in args
    # <[param arg command arguments to pass to the container]>
    # <[param stdi file to use as a standard input]>
    # <[param stdo file to use as a standard output]>
    # <[param stde file to use as a standard error]>
-   #   
+   #
    method attach(arg:string, stdi, stdo, stde)
       string(arg) & (arg || " X")
       return LXC.LXCAttach(handle, arg, stdi, stdo, stde)

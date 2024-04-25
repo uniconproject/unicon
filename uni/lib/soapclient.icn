@@ -48,8 +48,8 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    #</p>
    method setDebugFile(f)
       if ::type(f) == "string" then {
-	 f := ::open(f, "w") | fail
-	 }
+         f := ::open(f, "w") | fail
+         }
       debugFile := f
    end
 
@@ -69,7 +69,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    #   <[returns result of RPC call]>
    #</p>
    method call(rpc,        # Name of remote service to invoke
-	       args[])      # Remaining arguments are arguments to use on rpc
+               args[])      # Remaining arguments are arguments to use on rpc
       local msg, host, svc, result
       msg := buildSoapMsg ! ([rpc] ||| args)
       msg := mkHttpMesgForm(msg)
@@ -77,7 +77,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
 
       host := getHost() | ::stop("Cannot figure out host!")
       svc := ::open(host||":"||port, "n") |
-	 ::stop("Cannot get '",host,"' connection: ", &errortext)
+         ::stop("Cannot get '",host,"' connection: ", &errortext)
 
       ::write(svc, msg) | ::stop("Cannot send msg: ",&errortext)
       result := ""
@@ -104,10 +104,10 @@ class SoapClient : Object (uri, proxy, port, debugFile)
       initial parser := soap::getXmlParser()
 
       ::map(result) ? {
-	 if p := ::find("<soap-env:envelope") then {
-	    result := result[p:0]
-	    }
-	 }
+         if p := ::find("<soap-env:envelope") then {
+            result := result[p:0]
+            }
+         }
 
       root := parser.parse(result).get_root_element()
       xDoc := root.search_children("SOAP-ENV:Body")
@@ -122,9 +122,9 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    #<p><i>Internal use only.</i></p>
    method getHost()
       proxy ? {
-	 ="http://"
-	 return ::tab(::upto('/'))
-	 }
+         ="http://"
+         return ::tab(::upto('/'))
+         }
    end
 
    #<p>
@@ -134,9 +134,9 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    #<p><i>Internal use only.</i></p>
    method getTarget()
       proxy ? {
-	 ="http://"
-	 (&pos := ::upto('/')) & return ::tab(0)
-	 }
+         ="http://"
+         (&pos := ::upto('/')) & return ::tab(0)
+         }
    end
 
    #<p>
@@ -145,7 +145,7 @@ class SoapClient : Object (uri, proxy, port, debugFile)
    #</p>
    #<p><i>Internal use only.</i></p>
    method buildSoapMsg(rpc,        # Name of remote service to invoke
-		       args[])      # Remaining args are args to use on rpc
+                       args[])      # Remaining args are args to use on rpc
       local msg, i
 
       i := create ::seq()
@@ -181,8 +181,8 @@ class SoapClient : Object (uri, proxy, port, debugFile)
 # Create a new SOAP client.
 #</p>
 initially (newUri,      # URI for server
-	   newProxy,    # 'Proxy' information for server (defaults to URI)
-	   newPort)      # Port on server (defaults to 80)
+           newProxy,    # 'Proxy' information for server (defaults to URI)
+           newPort)      # Port on server (defaults to 80)
    uri := newUri
    proxy := \newProxy | uri
    port := \newPort | ::getserv("http").port | "80"

@@ -36,40 +36,40 @@
 #include <io.h>
 
 typedef struct _FINDFILE_TAG {
-   intptr_t		handle;
-   struct _finddata_t	fileinfo;
+   intptr_t             handle;
+   struct _finddata_t   fileinfo;
    } FINDDATA_T;
 
-#define FINDFIRST(pattern, pfd)	\
+#define FINDFIRST(pattern, pfd) \
    ( ( (pfd)->handle = _findfirst ( (pattern), &(pfd)->fileinfo ) ) != -1L )
 #define FINDNEXT(pfd) ( _findnext ( (pfd)->handle, &(pfd)->fileinfo ) != -1 )
-#define FILENAME(pfd)	( (pfd)->fileinfo.name )
-#define FINDCLOSE(pfd)	_findclose( (pfd)->handle )
+#define FILENAME(pfd)   ( (pfd)->fileinfo.name )
+#define FINDCLOSE(pfd)  _findclose( (pfd)->handle )
 
-#endif 					/* NT */
-
+#endif                                  /* NT */
+
 #if MICROSOFT
 
 #include <dos.h>
 
 typedef struct _find_t FINDDATA_T;
 
-#define FINDFIRST(pattern, pfd)	(!_dos_findfirst ((pattern), _A_NORMAL, (pfd)))
-#define FINDNEXT(pfd)	( !_dos_findnext ( (pfd) ) )
-#define FILENAME(pfd)	( (pfd)->name )
-#define FINDCLOSE(pfd)	( (void) 0 )
+#define FINDFIRST(pattern, pfd) (!_dos_findfirst ((pattern), _A_NORMAL, (pfd)))
+#define FINDNEXT(pfd)   ( !_dos_findnext ( (pfd) ) )
+#define FILENAME(pfd)   ( (pfd)->name )
+#define FINDCLOSE(pfd)  ( (void) 0 )
 
-#endif					/* MICROSOFT */
-
+#endif                                  /* MICROSOFT */
+
 #if PORT
 Deliberate Syntax Error                 /* Give it some thought */
 #endif                                  /* PORT */
-#else					/* WildCards */
+#else                                   /* WildCards */
 typedef struct _NotWild { char *name; } FINDDATA_T;
-#define FINDFIRST(pattern, pfd)	((pfd)->name = (pattern))
-#define FINDNEXT(pfd)	( 0 )
-#define FILENAME(pfd)	( (pfd)->name )
-#define FINDCLOSE(pfd)	( (void) 0 )
+#define FINDFIRST(pattern, pfd) ((pfd)->name = (pattern))
+#define FINDNEXT(pfd)   ( 0 )
+#define FILENAME(pfd)   ( (pfd)->name )
+#define FINDCLOSE(pfd)  ( (void) 0 )
 
-#endif					/* WildCards */
+#endif                                  /* WildCards */
 #endif

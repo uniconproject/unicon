@@ -40,27 +40,23 @@
 
 /* MS Windows define a function called WriteFile @#%#&!!! */
 LFUNC(xpmWriteFile, int, (FILE *file, XpmImage *image, char *name,
-			  XpmInfo *info));
+                          XpmInfo *info));
 
 LFUNC(WriteColors, void, (FILE *file, XpmColor *colors, unsigned int ncolors));
 
 LFUNC(WritePixels, int, (FILE *file, unsigned int width, unsigned int height,
-			 unsigned int cpp, unsigned int *pixels,
-			 XpmColor *colors));
+                         unsigned int cpp, unsigned int *pixels,
+                         XpmColor *colors));
 
 LFUNC(WriteExtensions, void, (FILE *file, XpmExtension *ext,
-			      unsigned int num));
+                              unsigned int num));
 
 LFUNC(OpenWriteFile, int, (char *filename, xpmData *mdata));
 LFUNC(xpmDataClose, void, (xpmData *mdata));
 
 int
-XpmWriteFileFromImage(display, filename, image, shapeimage, attributes)
-    Display *display;
-    char *filename;
-    XImage *image;
-    XImage *shapeimage;
-    XpmAttributes *attributes;
+XpmWriteFileFromImage(Display *display, char *filename, XImage *image,
+                      XImage *shapeimage, XpmAttributes *attributes)
 {
     XpmImage xpmimage;
     XpmInfo info;
@@ -68,16 +64,16 @@ XpmWriteFileFromImage(display, filename, image, shapeimage, attributes)
 
     /* create an XpmImage from the image */
     ErrorStatus = XpmCreateXpmImageFromImage(display, image, shapeimage,
-					     &xpmimage, attributes);
+                                             &xpmimage, attributes);
     if (ErrorStatus != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     /* write the file from the XpmImage */
     if (attributes) {
-	xpmSetInfo(&info, attributes);
-	ErrorStatus = XpmWriteFileFromXpmImage(filename, &xpmimage, &info);
+        xpmSetInfo(&info, attributes);
+        ErrorStatus = XpmWriteFileFromXpmImage(filename, &xpmimage, &info);
     } else
-	ErrorStatus = XpmWriteFileFromXpmImage(filename, &xpmimage, NULL);
+        ErrorStatus = XpmWriteFileFromXpmImage(filename, &xpmimage, NULL);
 
     /* free the XpmImage */
     XpmFreeXpmImage(&xpmimage);
@@ -86,10 +82,7 @@ XpmWriteFileFromImage(display, filename, image, shapeimage, attributes)
 }
 
 int
-XpmWriteFileFromXpmImage(filename, image, info)
-    char *filename;
-    XpmImage *image;
-    XpmInfo *info;
+XpmWriteFileFromXpmImage(char *filename, XpmImage *image, XpmInfo *info)
 {
     xpmData mdata;
     char *name, *dot, *s, new_name[BUFSIZ];
@@ -97,47 +90,47 @@ XpmWriteFileFromXpmImage(filename, image, info)
 
     /* open file to write */
     if ((ErrorStatus = OpenWriteFile(filename, &mdata)) != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     /* figure out a name */
     if (filename) {
 #ifdef VMS
-	name = filename;
+        name = filename;
 #else
-	if (!(name = rindex(filename, '/'))
+        if (!(name = rindex(filename, '/'))
      )
-	    name = filename;
-	else
-	    name++;
+            name = filename;
+        else
+            name++;
 #endif
-	/* let's try to make a valid C syntax name */
-	if ((dot = index(name, '.')) != NULL) {
-	    strcpy(new_name, name);
-	    /* change '.' to '_' */
-	    name = s = new_name;
-	    while ((dot = index(s, '.')) != NULL) {
-		*dot = '_';
-		s = dot;
-	    }
-	}
-	if ((dot = index(name, '-')) != NULL) {
-	    if (name != new_name) {
-		strcpy(new_name, name);
-		name = new_name;
-	    }
-	    /* change '-' to '_' */
-	    s = name;
-	    while ((dot = index(s, '-')) != NULL) {
-		*dot = '_';
-		s = dot;
-	    }
-	}
+        /* let's try to make a valid C syntax name */
+        if ((dot = index(name, '.')) != NULL) {
+            strcpy(new_name, name);
+            /* change '.' to '_' */
+            name = s = new_name;
+            while ((dot = index(s, '.')) != NULL) {
+                *dot = '_';
+                s = dot;
+            }
+        }
+        if ((dot = index(name, '-')) != NULL) {
+            if (name != new_name) {
+                strcpy(new_name, name);
+                name = new_name;
+            }
+            /* change '-' to '_' */
+            s = name;
+            while ((dot = index(s, '-')) != NULL) {
+                *dot = '_';
+                s = dot;
+            }
+        }
     } else
-	name = "image_name";
+        name = "image_name";
 
     /* write the XpmData from the XpmImage */
     if (ErrorStatus == XpmSuccess)
-	ErrorStatus = xpmWriteFile(mdata.stream.file, image, name, info);
+        ErrorStatus = xpmWriteFile(mdata.stream.file, image, name, info);
 
     xpmDataClose(&mdata);
 
@@ -145,11 +138,7 @@ XpmWriteFileFromXpmImage(filename, image, info)
 }
 
 static int
-xpmWriteFile(file, image, name, info)
-    FILE *file;
-    XpmImage *image;
-    char *name;
-    XpmInfo *info;
+xpmWriteFile(FILE *file, XpmImage *image, char *name, XpmInfo *info)
 {
     /* calculation variables */
     unsigned int cmts, extensions;
@@ -157,44 +146,44 @@ xpmWriteFile(file, image, name, info)
 
     cmts = info && (info->valuemask & XpmComments);
     extensions = info && (info->valuemask & XpmExtensions)
-	&& info->nextensions;
+        && info->nextensions;
 
     /* print the header line */
     fprintf(file, "/* XPM */\nstatic char * %s[] = {\n", name);
 
     /* print the hints line */
     if (cmts && info->hints_cmt)
-	fprintf(file, "/*%s*/\n", info->hints_cmt);
+        fprintf(file, "/*%s*/\n", info->hints_cmt);
 
     fprintf(file, "\"%d %d %d %d", image->width, image->height,
-	    image->ncolors, image->cpp);
+            image->ncolors, image->cpp);
 
     if (info && (info->valuemask & XpmHotspot))
-	fprintf(file, " %d %d", info->x_hotspot, info->y_hotspot);
+        fprintf(file, " %d %d", info->x_hotspot, info->y_hotspot);
 
     if (extensions)
-	fprintf(file, " XPMEXT");
+        fprintf(file, " XPMEXT");
 
     fprintf(file, "\",\n");
 
     /* print colors */
     if (cmts && info->colors_cmt)
-	fprintf(file, "/*%s*/\n", info->colors_cmt);
+        fprintf(file, "/*%s*/\n", info->colors_cmt);
 
     WriteColors(file, image->colorTable, image->ncolors);
 
     /* print pixels */
     if (cmts && info->pixels_cmt)
-	fprintf(file, "/*%s*/\n", info->pixels_cmt);
+        fprintf(file, "/*%s*/\n", info->pixels_cmt);
 
     ErrorStatus = WritePixels(file, image->width, image->height, image->cpp,
-			      image->data, image->colorTable);
+                              image->data, image->colorTable);
     if (ErrorStatus != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     /* print extensions */
     if (extensions)
-	WriteExtensions(file, info->extensions, info->nextensions);
+        WriteExtensions(file, info->extensions, info->nextensions);
 
     /* close the array */
     fprintf(file, "};\n");
@@ -203,10 +192,7 @@ xpmWriteFile(file, image, name, info)
 }
 
 static void
-WriteColors(file, colors, ncolors)
-    FILE *file;
-    XpmColor *colors;
-    unsigned int ncolors;
+WriteColors(FILE *file, XpmColor *colors, unsigned int ncolors)
 {
     unsigned int a, key;
     char *s;
@@ -214,26 +200,21 @@ WriteColors(file, colors, ncolors)
 
     for (a = 0; a < ncolors; a++, colors++) {
 
-	defaults = (char **) colors;
-	fprintf(file, "\"%s", *defaults++);
+        defaults = (char **) colors;
+        fprintf(file, "\"%s", *defaults++);
 
-	for (key = 1; key <= NKEYS; key++, defaults++) {
-	    if ((s = *defaults) != NULL)
-		fprintf(file, "\t%s %s", xpmColorKeys[key - 1], s);
-	}
-	fprintf(file, "\",\n");
+        for (key = 1; key <= NKEYS; key++, defaults++) {
+            if ((s = *defaults) != NULL)
+                fprintf(file, "\t%s %s", xpmColorKeys[key - 1], s);
+        }
+        fprintf(file, "\",\n");
     }
 }
 
 
 static int
-WritePixels(file, width, height, cpp, pixels, colors)
-    FILE *file;
-    unsigned int width;
-    unsigned int height;
-    unsigned int cpp;
-    unsigned int *pixels;
-    XpmColor *colors;
+WritePixels(FILE *file, unsigned int width, unsigned int height, unsigned int cpp,
+            unsigned int *pixels, XpmColor *colors)
 {
     char *s, *p, *buf;
     unsigned int x, y, h;
@@ -241,24 +222,24 @@ WritePixels(file, width, height, cpp, pixels, colors)
     h = height - 1;
     p = buf = (char *) XpmMalloc(width * cpp + 3);
     if (!buf)
-	return (XpmNoMemory);
+        return (XpmNoMemory);
     *buf = '"';
     p++;
     for (y = 0; y < h; y++) {
-	s = p;
-	for (x = 0; x < width; x++, pixels++) {
-	    strncpy(s, colors[*pixels].string, cpp);
-	    s += cpp;
-	}
-	*s++ = '"';
-	*s = '\0';
-	fprintf(file, "%s,\n", buf);
+        s = p;
+        for (x = 0; x < width; x++, pixels++) {
+            strncpy(s, colors[*pixels].string, cpp);
+            s += cpp;
+        }
+        *s++ = '"';
+        *s = '\0';
+        fprintf(file, "%s,\n", buf);
     }
     /* duplicate some code to avoid a test in the loop */
     s = p;
     for (x = 0; x < width; x++, pixels++) {
-	strncpy(s, colors[*pixels].string, cpp);
-	s += cpp;
+        strncpy(s, colors[*pixels].string, cpp);
+        s += cpp;
     }
     *s++ = '"';
     *s = '\0';
@@ -269,19 +250,16 @@ WritePixels(file, width, height, cpp, pixels, colors)
 }
 
 static void
-WriteExtensions(file, ext, num)
-    FILE *file;
-    XpmExtension *ext;
-    unsigned int num;
+WriteExtensions(FILE *file, XpmExtension *ext, unsigned int num)
 {
     unsigned int x, y, n;
     char **line;
 
     for (x = 0; x < num; x++, ext++) {
-	fprintf(file, ",\n\"XPMEXT %s\"", ext->name);
-	n = ext->nlines;
-	for (y = 0, line = ext->lines; y < n; y++, line++)
-	    fprintf(file, ",\n\"%s\"", *line);
+        fprintf(file, ",\n\"XPMEXT %s\"", ext->name);
+        n = ext->nlines;
+        for (y = 0, line = ext->lines; y < n; y++, line++)
+            fprintf(file, ",\n\"%s\"", *line);
     }
     fprintf(file, ",\n\"XPMENDEXT\"");
 }
@@ -290,9 +268,7 @@ WriteExtensions(file, ext, num)
  * open the given file to be written as an xpmData which is returned
  */
 static int
-OpenWriteFile(filename, mdata)
-    char *filename;
-    xpmData *mdata;
+OpenWriteFile(char *filename, xpmData *mdata)
 {
 #ifndef NO_ZPIPE
     char buf[BUFSIZ];
@@ -300,31 +276,31 @@ OpenWriteFile(filename, mdata)
 #endif
 
     if (!filename) {
-	mdata->stream.file = (stdout);
-	mdata->type = XPMFILE;
+        mdata->stream.file = (stdout);
+        mdata->type = XPMFILE;
     } else {
 #ifndef NO_ZPIPE
-	int len = strlen(filename);
-	if (len > 2 && !strcmp(".Z", filename + (len - 2))) {
-	    sprintf(buf, "compress > \"%s\"", filename);
-	    if (!(mdata->stream.file = popen(buf, "w")))
-		return (XpmOpenFailed);
+        int len = strlen(filename);
+        if (len > 2 && !strcmp(".Z", filename + (len - 2))) {
+            sprintf(buf, "compress > \"%s\"", filename);
+            if (!(mdata->stream.file = popen(buf, "w")))
+                return (XpmOpenFailed);
 
-	    mdata->type = XPMPIPE;
-	} else if (len > 3 && !strcmp(".gz", filename + (len - 3))) {
-	    sprintf(buf, "gzip -q > \"%s\"", filename);
-	    if (!(mdata->stream.file = popen(buf, "w")))
-		return (XpmOpenFailed);
+            mdata->type = XPMPIPE;
+        } else if (len > 3 && !strcmp(".gz", filename + (len - 3))) {
+            sprintf(buf, "gzip -q > \"%s\"", filename);
+            if (!(mdata->stream.file = popen(buf, "w")))
+                return (XpmOpenFailed);
 
-	    mdata->type = XPMPIPE;
-	} else {
+            mdata->type = XPMPIPE;
+        } else {
 #endif
-	    if (!(mdata->stream.file = fopen(filename, "w")))
-		return (XpmOpenFailed);
+            if (!(mdata->stream.file = fopen(filename, "w")))
+                return (XpmOpenFailed);
 
-	    mdata->type = XPMFILE;
+            mdata->type = XPMFILE;
 #ifndef NO_ZPIPE
-	}
+        }
 #endif
     }
     return (XpmSuccess);
@@ -334,18 +310,17 @@ OpenWriteFile(filename, mdata)
  * close the file related to the xpmData if any
  */
 static void
-xpmDataClose(mdata)
-    xpmData *mdata;
+xpmDataClose(xpmData *mdata)
 {
     switch (mdata->type) {
     case XPMFILE:
-	if (mdata->stream.file != (stdout))
-	    fclose(mdata->stream.file);
-	break;
+        if (mdata->stream.file != (stdout))
+            fclose(mdata->stream.file);
+        break;
 #ifndef NO_ZPIPE
     case XPMPIPE:
-	pclose(mdata->stream.file);
-	break;
+        pclose(mdata->stream.file);
+        break;
 #endif
     }
 }

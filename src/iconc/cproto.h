@@ -39,17 +39,17 @@ struct val_loc   *chk_alc    (struct val_loc *rslt, nodeptr lifetime);
 void           chkinv     (void);
 void           chkstrinv  (void);
 struct node      *c_str_leaf (int type,struct node *loc_model, char *c);
-void	          codegen    (struct node *t);
+void              codegen    (struct node *t);
 int               cond_anlz  (struct il_code *il, struct code **cdp);
 void           const_blks (void);
 struct val_loc   *cvar_loc   (char *name);
 int do_inlin(struct implement *, struct node *, struct node *, int *,
-				struct op_symentry *, int);
-void	          doiconx    (char *s);
+                                struct op_symentry *, int);
+void              doiconx    (char *s);
 struct val_loc   *dtmp_loc   (int n);
 void          eval_arith (int indx1, int indx2, int *maybe_int, int *maybe_dbl);
 int           eval_cnv   (int typcd, int indx, int def, int *cnv_flags);
-int	eval_is	(int typcd,int indx);
+int     eval_is (int typcd,int indx);
 void           findcases  (struct il_code *il, int has_dflt,
                                struct case_anlz *case_anlz);
 void           fix_fncs   (struct c_fnc *fnc);
@@ -60,9 +60,9 @@ void           gen_inlin  (struct il_code *il, struct val_loc *rslt,
                                struct implement *impl, int nsyms,
                                struct op_symentry *symtab, nodeptr n,
                                int dcl_var, int n_va);
-int	          getopr     (int ac, int *cc);
+int               getopr     (int ac, int *cc);
 struct gentry    *glookup    (char *id);
-void	          hsyserr    (char **av, char *file);
+void              hsyserr    (char **av, char *file);
 struct node      *i_str_leaf (int type,struct node *loc_model,char *c, int d);
 long              iconint    (char *image);
 struct code      *il_copy    (struct il_c *dest, struct val_loc *src);
@@ -85,11 +85,11 @@ struct node      *invk_nd    (struct node *loc_model, struct node *proc,
 void           invoc_grp  (char *grp);
 void           invocbl    (nodeptr op, int arity);
 struct node      *key_leaf   (nodeptr loc_model, char *keyname);
-char		*libpath	(char *prog, char *envname);
+char            *libpath        (char *prog, char *envname);
 void           liveness (nodeptr n, nodeptr resumer, nodeptr *failer, int *gen);
 struct node      *list_nd    (nodeptr loc_model, nodeptr args);
 void           lnkdcl     (char *name);
-void	          readdb     (char *db_name);
+void              readdb     (char *db_name);
 struct val_loc   *loc_cpy    (struct val_loc *loc, int mod_access);
 void           mark_recs (struct fentry *fp, typeinfo_t *typ,
                               int *num_offsets, int *offset, int *bad_recs);
@@ -106,11 +106,11 @@ int               past_prms  (struct node *n);
 void           proccode   (struct pentry *proc);
 void           prt_fnc    (struct c_fnc *fnc);
 void           prt_frame  (char *prefix, int ntend, int n_itmp,
-				int i, int j, int k);
+                                int i, int j, int k);
 struct centry    *putlit     (char *image,int littype,int len);
 struct lentry    *putloc     (char *id,int id_type);
-void	          quit       (char *msg);
-void	          quitf      (char *msg,char *arg);
+void              quit       (char *msg);
+void              quitf      (char *msg,char *arg);
 void           recconstr  (struct rentry *r);
 void           resolve    (struct pentry *proc);
 unsigned int      round2     (unsigned int n);
@@ -131,19 +131,19 @@ struct node      *tree3      (int type,struct node *loc_model,
 struct node      *tree4      (int type, struct node *loc_model,
                                struct node *c, struct node *d);
 struct node      *tree5      (int type, struct node *loc_model,
-			       struct node *c, struct node *d,
-			       struct node *e);
+                               struct node *c, struct node *d,
+                               struct node *e);
 struct node      *tree6      (int type,struct node *loc_model,
-			       struct node *c, struct node *d,
-			       struct node *e, struct node *f);
+                               struct node *c, struct node *d,
+                               struct node *e, struct node *f);
 #if __clang__
-/* Declaring tsyserr as noreturn stops clang from emitting false positive 
+/* Declaring tsyserr as noreturn stops clang from emitting false positive
       "uninitialized variable" warning messages   */
 void              tsyserr    (char *s) __attribute__ ((noreturn,nothrow));
 #else
-void	          tsyserr    (char *s);
+void              tsyserr    (char *s);
 #endif
-void	          twarn      (char *s1,char *s2);
+void              twarn      (char *s1,char *s2);
 struct code      *typ_chk    (struct il_code *var, int typcd);
 int               type_case  (struct il_code *il, int (*fnc)(),
                                struct case_anlz *case_anlz);
@@ -151,11 +151,11 @@ void           typeinfer  (void);
 struct node      *unary_nd   (nodeptr op, nodeptr arg);
 void           var_dcls   (void);
 int               varsubtyp  (typeinfo_t *typ, struct lentry **single);
-void	          writecheck (int rc);
-void              yyerror			(char *s,int state);
+void              writecheck (int rc);
+void              yyerror                       (char *s,int state);
 int               yylex      (void);
 int               yyparse    (void);
-pointer		xmalloc	(long n);
+pointer         xmalloc (long n);
 
 #ifdef DeBug
 void symdump (void);
@@ -164,5 +164,5 @@ void gdump   (void);
 void cdump   (void);
 void fdump   (void);
 void rdump   (void);
-#endif					/* DeBug */
+#endif                                  /* DeBug */
 

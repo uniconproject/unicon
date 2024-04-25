@@ -60,19 +60,19 @@ procedure deepcopy(A, cache)
 
    case ::type(A) of {
       "table"|"list": {
-	 cache[A] := ::copy(A)
-	 every cache[A][k := ::key(A)] := deepcopy(A[k], cache)
-	 }
+         cache[A] := ::copy(A)
+         every cache[A][k := ::key(A)] := deepcopy(A[k], cache)
+         }
       "set": {
-	 cache[A] := ::set()
-	 every ::insert(cache[A], deepcopy(!A, cache))
-	 }
+         cache[A] := ::set()
+         every ::insert(cache[A], deepcopy(!A, cache))
+         }
       default: {
-	 cache[A] := ::copy(A)
-	 if ::match("record ",::image(A)) then {
-	    every cache[A][k := ::key(A)] := deepcopy(A[k], cache)
-	    }
-	 }
+         cache[A] := ::copy(A)
+         if ::match("record ",::image(A)) then {
+            every cache[A][k := ::key(A)] := deepcopy(A[k], cache)
+            }
+         }
       }
    return .cache[A]
 end
@@ -92,18 +92,18 @@ end
 #     end
 #</pre>
 procedure breadthwalk(root,        # node of graph to start walk at
-		      getChildren) # function that generates a node's children
+                      getChildren) # function that generates a node's children
    local node, child, queue, visited
    /getChildren := defaultGenChildren
    queue := [root]
    visited := ::set([root])
    while node := ::get(queue) do {
       every child := getChildren(node) do {
-	 if not ::member(visited, child) then {
-	    ::insert(visited, child)
-	    ::put(queue, child)
-	    }
-	 }
+         if not ::member(visited, child) then {
+            ::insert(visited, child)
+            ::put(queue, child)
+            }
+         }
       suspend node
       }
 end
@@ -127,8 +127,8 @@ end
 #  be given by the user.
 #</p>
 procedure depthwalk(root,        # node of graph to start walk at
-		    getChildren, # function that generates a node's children
-		    visited)     # ignore, <i>used internally.</i>
+                    getChildren, # function that generates a node's children
+                    visited)     # ignore, <i>used internally.</i>
    /getChildren := defaultGenChildren
    /visited := ::set()
    if not ::member(visited, root) then {

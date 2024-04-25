@@ -18,8 +18,8 @@ $include "guih.icn"
 # be left to default to a size based on the given label.
 #
 class TextButton : Button(
-   internal_alignment,      #                          
-   tx,                      #          
+   internal_alignment,      #
+   tx,                      #
    tw                       #
    )
 
@@ -40,17 +40,17 @@ class TextButton : Button(
 
       if /self.transparent then{
          EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-	 dwin := self.cbwin
-	 }
+         dwin := self.cbwin
+         }
       else
-	 dwin := self.cwin
+         dwin := self.cwin
 
       case self.internal_alignment of {
          "c" : center_string(dwin, self.tx + self.tw / 2, yoff, self.label, self.accel)
          "l" : left_string(dwin, self.tx, yoff, self.label, self.accel)
          "r" : right_string(dwin, self.tx + self.tw, yoff, self.label, self.accel)
          default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
-      }         
+      }
 
       if /self.no_keyboard_flag & \self.has_focus then {
          DashedRectangle(dwin, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
@@ -86,7 +86,7 @@ class TextButton : Button(
       self.tx := self.x + DEFAULT_TEXT_X_SURROUND
       self.tw := self.w - 2 *  DEFAULT_TEXT_X_SURROUND
    end
-      
+
    method set_one(attr, val)
       case attr of {
          "internal_alignment" : set_internal_alignment(string_val(attr, val))

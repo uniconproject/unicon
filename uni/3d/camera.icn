@@ -23,7 +23,7 @@ class Camera(
    vRadians,
 
    halfPI,
-   
+
    line, line2
 
    )
@@ -38,18 +38,18 @@ class Camera(
 
       # angles that it is rotated in the x-z plane and in the y direction
       # (horizontal and vertical).
-      hRadians := 0.0 
+      hRadians := 0.0
       vRadians := 0.0
-      
+
       halfPI := &pi/2.0
       #Fg("red")
       #line:=DrawSphere(target.x, target.y, target.z, 0.1)
-      
+
       #Fg("blue")
       #line2:=DrawSphere(position.x, position.y, position.z, 0.5)
-      
+
       #DrawLine( position.x, position.y, position.z,
-      #    	      target.x, target.y, target.z )
+      #               target.x, target.y, target.z )
    end
 #
 # Setting the Camera consists of giving its position and angles that it is
@@ -58,7 +58,7 @@ class Camera(
    method set( x, y, z, h, v)
       position.setxyz(x, y, z)
       target := Vector3(0.0, 0.0, 0.0)
-      upVector := Vector3(0.0, 1.0, 0.0) 
+      upVector := Vector3(0.0, 1.0, 0.0)
       hRadians := h
       vRadians := v
 
@@ -66,7 +66,7 @@ class Camera(
   end
 
 #
-# Rotating the Camera is possible in both the horizontal and vertical 
+# Rotating the Camera is possible in both the horizontal and vertical
 #
    method rotate( h, v)
       hRadians +:= h
@@ -79,21 +79,21 @@ class Camera(
       upVector.x := position.x - target.x
       upVector.y := abs(position.y + radius * sin(vRadians + halfPI))
       upVector.z := position.z - target.z
-      
-      
+
+
       #line[3]:=position.x
       #line[4]:=position.y
       #line[5]:=position.z
       #line.x:=target.x
       #line.y:=target.y
       #line.z:=target.z
-      
+
       Eye(position.x, position.y, position.z,
           target.x, target.y, target.z,
           upVector.x, upVector.y, upVector.z)
 
    end
-   
+
 #
 # Sliding along the vertical and horizontal planes,
 #

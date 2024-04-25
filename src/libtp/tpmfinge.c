@@ -1,6 +1,6 @@
 /*
  * tpmfinge.c: Method for finger protocol (RFC1288).
- *	 Copyright 2000 by Steve Lumos.  All rights reserved.
+ *       Copyright 2000 by Steve Lumos.  All rights reserved.
  */
 
 #include "../h/config.h"
@@ -53,6 +53,6 @@ int fingerfree(Tp_t* tp, Tpresponse_t* resp)
   return 1;
 }
 
-static Tpmethod_t _tpmfinger = { fingerbegin, fingerend, fingerclose, 
-				 fingerfree, 0 };
+static Tpmethod_t _tpmfinger = { fingerbegin, fingerend, fingerclose,
+                                 fingerfree, 0 };
 Tpmethod_t* TpmFinger = &_tpmfinger;

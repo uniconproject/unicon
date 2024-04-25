@@ -15,7 +15,7 @@ static FTFont *fonts;
 // static int height;
 
 extern "C" int cpp_drawstring3d(double x, double y, double z, char *s,
-				char *f, int t, int size, void **tfont)
+                                char *f, int t, int size, void **tfont)
 {
    FTFont **fp;
    int point_size=size;
@@ -58,14 +58,14 @@ extern "C" int cpp_drawstring3d(double x, double y, double z, char *s,
    return 0;
 }
 
-#else					/* HAVE_LIBGL && HAVE_FTGL */
+#else                                   /* HAVE_LIBGL && HAVE_FTGL */
 
 extern "C" int cpp_drawstring3d(double x, double y, double z, char *s,
-				char *f, int t, int size, void **tfont)
+                                char *f, int t, int size, void **tfont)
 {
-	fprintf(stderr,"no OpenGL/FTGL, cannot drawstring3d\n");
-	fflush(stderr);
-	exit(-1);
+        fprintf(stderr,"no OpenGL/FTGL, cannot drawstring3d\n");
+        fflush(stderr);
+        exit(-1);
 }
 
-#endif					/* HAVE_LIBGL && HAVE_FTGL */
+#endif                                  /* HAVE_LIBGL && HAVE_FTGL */

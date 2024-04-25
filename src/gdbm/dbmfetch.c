@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -44,11 +44,9 @@
    dynamically allocated memory block.  */
 
 datum
-dbm_fetch (dbf, key)
-     gdbm_file_info *dbf;
-     datum key;
+dbm_fetch (gdbm_file_info *dbf, datum key)
 {
-  datum  ret_val;		/* The return value. */
+  datum  ret_val;               /* The return value. */
 
   /* Free previous dynamic memory, do actual call, and save pointer to new
      memory. */

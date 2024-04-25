@@ -24,7 +24,7 @@ $include "guih.icn"
 # font specified.
 #
 class MenuBar : Component(
-   which_highlight,      #                  
+   which_highlight,      #
    which_open,           #
    menus                 #
    )
@@ -64,12 +64,12 @@ class MenuBar : Component(
       every m := !menus do {
          if m === \which_highlight then
             DrawRaisedRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
-				m.label_mid_w, h - 2 * BORDER_WIDTH)
+                                m.label_mid_w, h - 2 * BORDER_WIDTH)
          left_string(cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, y + h / 2,
-		     m.get_label(), m.get_accel())
+                     m.get_label(), m.get_accel())
          if \m.is_shaded_flag then
             FilterRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
-			    m.label_mid_w, h - 2 * BORDER_WIDTH)
+                            m.label_mid_w, h - 2 * BORDER_WIDTH)
       }
       do_shading(cbwin)
 
@@ -256,7 +256,7 @@ class MenuBar : Component(
             #
             if /self.which_highlight then
                self.unique_start()
- 
+
             #
             # Open t, possibly just toggling the partial_flag.
             #
@@ -281,16 +281,16 @@ class MenuBar : Component(
       }
    end
 
-   method handle_release(e) 
+   method handle_release(e)
       local t
       if self.in_region() & \self.which_highlight then {
          #
          # Released with menu open.  If not on a label then close
          #
-         if not(t := which_button()) then {               
+         if not(t := which_button()) then {
             self.set_which_highlight()
             self.unique_end(1)
-         }            
+         }
       } else {
          (\self.which_open).handle_event(e)
       }
@@ -318,7 +318,7 @@ class MenuBar : Component(
                   else
                      self.set_which_open(t)
                }
-            } else 
+            } else
                #
                # Drag with menu open, but not on a label, blank present menu leaving
                # sub menus open
@@ -363,7 +363,7 @@ class MenuBar : Component(
       }
 
       /self.x_spec := 0
-      /self.y_spec := 0      
+      /self.y_spec := 0
       /self.w_spec := "100%"
       /self.h_spec := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND
       self.Component.resize()
@@ -372,7 +372,7 @@ class MenuBar : Component(
       #
       px := self.x + BORDER_WIDTH
       every m := !self.menus do {
-         m.set_parent_component(self)         
+         m.set_parent_component(self)
          m.set_abs_coords(px, self.y + self.h)
          m.set_label_pos(px, self.y + BORDER_WIDTH)
          m.size_label()

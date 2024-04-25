@@ -20,7 +20,7 @@ extern char *refpath;
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif						/* PORT */
+#endif                                          /* PORT */
 
 #if MSDOS
 #ifdef NTGCC
@@ -32,16 +32,16 @@ Deliberate Syntax Error
 #endif
 #endif
 
-#if UNIX || MACINTOSH || MVS || VM
+#if UNIX || MVS || VM
 #define ExeFlag "-o"
 #define LinkLibs " -lm"
-#endif						/* UNIX ... */
- 
+#endif                                          /* UNIX ... */
+
 #if VMS
 #include file
 #define ExeFlag "link/exe="
 #define LinkLibs ""
-#endif						/* VMS */
+#endif                                          /* VMS */
 
 /*
  * End of operating-system specific code.
@@ -61,8 +61,7 @@ static struct lib *liblst;
 /*
  * addlib - add a new library to the list the must be linked.
  */
-void addlib(libname)
-char *libname;
+void addlib(char *libname)
    {
    static struct lib **nxtlib = &liblst;
    struct lib *l;
@@ -77,12 +76,12 @@ char *libname;
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif						/* PORT */
+#endif                                          /* PORT */
 
-#if UNIX || MACINTOSH || MSDOS || MVS || VM
+#if UNIX || MSDOS || MVS || VM
    l->libname = libname;
    l->nm_sz = strlen(libname);
-#endif						/* UNIX ... */
+#endif                                          /* UNIX ... */
 
 #if VMS
    /* change directory string to VMS format */
@@ -95,11 +94,11 @@ Deliberate Syntax Error
       if (strcmp(fp->name, "rt") == 0 && strcmp(fp->ext, ".olb") == 0)
          strcat(newlibname, "/lib/include=data");
       else
-	 strcat(newlibname, "/lib");
+         strcat(newlibname, "/lib");
       l->libname = newlibname;
       l->nm_sz = strlen(newlibname);
       }
-#endif						/* VMS */
+#endif                                          /* VMS */
 
 /*
  * End of operating-system specific code.
@@ -116,18 +115,17 @@ Deliberate Syntax Error
  */
 static
 char *
-rmv_ccomp_opts(opts)
-   char * opts;
+rmv_ccomp_opts(char * opts)
 {
    char * p;
    char * q;
    char * rslt;
 
-#if PORT || MACINTOSH || MSDOS || MVS || VM || VMS
+#if PORT || MSDOS || MVS || VM || VMS
    /* something may be needed */
    fprintf(stderr, "warning: option \"-nO\" unsupported on this platform.\n");
    return opts;
-#endif						/* PORT || ... */
+#endif                                          /* PORT || ... */
 
 #if UNIX
    /*
@@ -156,9 +154,9 @@ char *growcat(char *buf, int *buflenp, int n, ...)
    for(i=0; i<n; i++) {
       s = va_arg(args, char *);
       if (strlen(buf) + strlen(s) >= *buflenp) {
-	 *buflenp *= 2;
-	 if ((buf = realloc(buf, *buflenp)) == NULL) return NULL;
-	 }
+         *buflenp *= 2;
+         if ((buf = realloc(buf, *buflenp)) == NULL) return NULL;
+         }
       strcat(buf, s);
       }
    va_end(args);
@@ -168,9 +166,7 @@ char *growcat(char *buf, int *buflenp, int n, ...)
 /*
  * ccomp - perform C compilation and linking.
  */
-int ccomp(srcname, exename)
-char *srcname;
-char *exename;
+int ccomp(char *srcname, char *exename)
    {
    struct lib *l;
    int  rv, buflen;
@@ -178,9 +174,9 @@ char *exename;
    char *s;
    /* dlrgint disabled for now */
 #if 0
-   char sbuf[MaxFileName];		/* file name construction buffer */
+   char sbuf[MaxFileName];              /* file name construction buffer */
    char objname[MaxFileName];
-   char *dlrgint;               
+   char *dlrgint;
 #endif
    extern int opt_hc_opts;
 
@@ -214,17 +210,17 @@ char *exename;
  *  time as the number of libraries grew, it became a maintenance problem.
  */
 
-#if PORT || MACINTOSH || MVS || VM
+#if PORT || MVS || VM
    /* something may be needed */
 Deliberate Syntax Error
-#endif						/* PORT || ... */
+#endif                                          /* PORT || ... */
 
 #if MSDOS && !NTGCC
    /*
     * Visual Studio / VC++ / cl.exe
     */
    buf = growcat(buf, &buflen, 8, c_comp, " /c ", c_opts, " /I", refpath,
-		 "\\rt\\include ", srcname, " ");
+                 "\\rt\\include ", srcname, " ");
 
    /* First, the compile. */
    /*
@@ -241,8 +237,8 @@ Deliberate Syntax Error
    strcpy(objname+strlen(objname)-1, "obj"); /* replace .c with .obj */
 
    sprintf(buf, "link -subsystem:console %s /LIBPATH:%s %s -out:%s.exe",
-	   objname, refpath, LinkLibs, exename);
-#endif					/* MS-DOS && !NTGCC */
+           objname, refpath, LinkLibs, exename);
+#endif                                  /* MS-DOS && !NTGCC */
 
 #if UNIX || NTGCC
 
@@ -255,17 +251,17 @@ Deliberate Syntax Error
 #if NTGCC
    buf = growcat(buf, &buflen, 3, " -I", refpath, "\\rt\\include");
    buf = growcat(buf, &buflen, 3, " -L", refpath, "\\rt\\lib" );
-#else					/* NTGCC */
+#else                                   /* NTGCC */
    buf = growcat(buf, &buflen, 3, " -I", refpath, "/rt/include");
    buf = growcat(buf, &buflen, 3, " -L", refpath, "/rt/lib" );
-#endif					/* NTGCC */
+#endif                                  /* NTGCC */
 
 #ifdef Graphics
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1,
-	 " -I/usr/X11/include  -I/usr/X11 -I/usr/X11/include/freetype2 -L/usr/X11/lib");
+         " -I/usr/X11/include  -I/usr/X11 -I/usr/X11/include/freetype2 -L/usr/X11/lib");
 #endif
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
 
@@ -280,47 +276,47 @@ Deliberate Syntax Error
 
 #ifdef Messaging
    buf = growcat(buf, &buflen, 1, " -ltp");
-#endif					/* Messaging */
+#endif                                  /* Messaging */
 
 #ifdef Dbm
    buf = growcat(buf, &buflen, 1, " -lgdbm");
-#endif					/* Dbm */
+#endif                                  /* Dbm */
 
 #ifdef Graphics
    buf = growcat(buf, &buflen, 1, " -lXpm");
 #ifdef Graphics3D
    buf = growcat(buf, &buflen, 1, " -lGL -lGLU");
-#endif					/* Graphics3D */
-#endif					/* Graphics */
+#endif                                  /* Graphics3D */
+#endif                                  /* Graphics */
 
    buf = growcat(buf, &buflen, 1, " -luconsole  -lucommon");
    buf = growcat(buf, &buflen, 2, " ", ICONC_LIB);
 
 #if HAVE_LIBZ
    buf = growcat(buf, &buflen, 1, " -lz");
-#endif					/* HAVE_LIBZ */
+#endif                                  /* HAVE_LIBZ */
 
 #if HAVE_LIBJPEG
    buf = growcat(buf, &buflen, 1, " -ljpeg");
-#endif					/* HAVE_LIBJPEG */
+#endif                                  /* HAVE_LIBJPEG */
 
 #if HAVE_LIBPTHREAD
    buf = growcat(buf, &buflen, 1, " -lpthread");
-#endif					/* HAVE_LIBPTHREAD */
+#endif                                  /* HAVE_LIBPTHREAD */
 
    buf = growcat(buf, &buflen, 2, " ", LinkLibs);
 
 #if defined(MacOS) || defined(HAVE_LIBFTGL)
    buf = growcat(buf, &buflen, 1, " -lstdc++");
-#endif					/* MacOS || HAVE_LIBFTGL */
+#endif                                  /* MacOS || HAVE_LIBFTGL */
 
 #if HAVE_LIBSSL
    buf = growcat(buf, &buflen, 1, " -lssl -lcrypto");
-#endif					/* HAVE_LIBSSL */
+#endif                                  /* HAVE_LIBSSL */
 
 #if NTGCC
-   buf = growcat(buf, &buflen, 1, " -lwinmm -lwsock32 -lodbc32 -lws2_32"); 
-#endif					/* NTGCC */
+   buf = growcat(buf, &buflen, 1, " -lwinmm -lwsock32 -lodbc32 -lws2_32");
+#endif                                  /* NTGCC */
 
 #if UNIX
 #ifdef MacOS
@@ -329,10 +325,10 @@ Deliberate Syntax Error
 #else
    /* needs to be more precise, add a HAVE_LIBDL or some such */
    buf = growcat(buf, &buflen, 1, " -ldl -export-dynamic ");
-#endif					/* MacOS */
-#endif					/* UNIX */
+#endif                                  /* MacOS */
+#endif                                  /* UNIX */
 
-#endif					/* UNIX || NTGCC */
+#endif                                  /* UNIX || NTGCC */
 
    /*
     * Emit command-line if verbosity is set above 2
@@ -353,9 +349,9 @@ Deliberate Syntax Error
     */
    /* Execute the (compile+)link */
    if ((rv = system(buf)) == -1)
-      return EXIT_FAILURE;	/* fork() failed, or whatever */
+      return EXIT_FAILURE;      /* fork() failed, or whatever */
    if (WEXITSTATUS(rv) != 0)
-      return EXIT_FAILURE;	/* command failed */
+      return EXIT_FAILURE;      /* command failed */
 
 #if UNIX || NTGCC
    /* Strip debug symbols from target unless they were requested. */
@@ -369,7 +365,7 @@ Deliberate Syntax Error
       if ((rv = system(buf)) == -1) return EXIT_FAILURE;
       if (WEXITSTATUS(rv) != 0) return EXIT_FAILURE;
       }
-#endif						/* UNIX */
+#endif                                          /* UNIX */
 
 #if VMS
 
@@ -392,7 +388,7 @@ Deliberate Syntax Error
 
    if (system(buf) == 0)
       return EXIT_FAILURE;
-#endif						/* VMS */
+#endif                                          /* VMS */
 
 /*
  * End of operating-system specific code.

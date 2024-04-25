@@ -9,13 +9,13 @@
 
 #if PORT
    Deliberate Syntax Error
-#endif					/* PORT */
+#endif                                  /* PORT */
 
 #if MSDOS
    #if MICROSOFT || TURBO || NT
       #include <dos.h>
-   #endif				/* MICROSOFT || TURBO ... */
-#endif					/* MSDOS */
+   #endif                               /* MICROSOFT || TURBO ... */
+#endif                                  /* MSDOS */
 
 /*
  * End of operating-system specific code.
@@ -32,4 +32,4 @@
    #define sbrk lsbrk
    #define strlen lstrlen
    #define qsort lqsort
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */

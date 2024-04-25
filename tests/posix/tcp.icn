@@ -5,7 +5,7 @@ procedure main()
    if fork() ~== 0 then {
       delay(2)
       f := open(":1234", "n") | stop("Couldn't open connection: ",
-				    sys_errstr(&errno))
+                                    sys_errstr(&errno))
       write(f, "hellow, world!")
       write("ret: ", read(f))
 
@@ -14,8 +14,8 @@ procedure main()
 
    if f := open(":1234", "na") then {
       if fork() = 0 then {
-	 handle(f)
-	 exit(0)
+         handle(f)
+         exit(0)
       }
       close(f)
       delay(10)
@@ -23,7 +23,7 @@ procedure main()
    }
    (&errno = 0) | stop("Couldn't accept: ", sys_errstr(&errno))
 end
-   
+
 procedure handle(f)
    while line := read(f) do {
       s := reverse(line)
@@ -31,4 +31,4 @@ procedure handle(f)
    }
 end
 
-		  
+

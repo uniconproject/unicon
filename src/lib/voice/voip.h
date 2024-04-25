@@ -8,16 +8,16 @@
 #include "jvoipsessionparams.h"
 
 #ifndef WIN32
-	#include "jvoipsoundcardparams.h"
-	#include<netdb.h>
+        #include "jvoipsoundcardparams.h"
+        #include<netdb.h>
 #endif
 
 #include "jvoiperrors.h"
 #include <stdio.h>
 
 #ifndef WIN32
-	#include <arpa/inet.h>
-	#include <netinet/in.h>
+        #include <arpa/inet.h>
+        #include <netinet/in.h>
 #endif
 
 #include <stdlib.h>
@@ -29,11 +29,11 @@
 enum { FALSE=0, TRUE=1};
 
 struct LISTENER{
-	char *name;     /*   [20]; */
-	char *address;  /*   [30]; */
-	char *port;     /*   [10]; */
-	unsigned long iaddress;
-	int iport;
+        char *name;     /*   [20]; */
+        char *address;  /*   [30]; */
+        char *port;     /*   [10]; */
+        unsigned long iaddress;
+        int iport;
 };
 
 
@@ -49,22 +49,22 @@ struct LISTENER{
 /* this is just for starting up windows sockets*/
 extern "C" int StartupWinSocket(void)
 {
-	WSADATA wsa_data;
-	if(WSAStartup(MAKEWORD(1,1),&wsa_data)!= 0){
-	         printf("\n StartupWinSocket : WSAStartup Fails");
-		 return 0;
-	}
-	return 1;
+        WSADATA wsa_data;
+        if(WSAStartup(MAKEWORD(1,1),&wsa_data)!= 0){
+                 printf("\n StartupWinSocket : WSAStartup Fails");
+                 return 0;
+        }
+        return 1;
 }
 
 /* this is just for clossing windows sockets */
 extern "C" int CleanupWinSocket(void)
 {
-	if(WSACleanup()==SOCKET_ERROR){
-		printf("\n CleanupWinSocket : Can not sign off from the Windows Sockeet API ");
-		return 0;
-	}
-	return 1;
+        if(WSACleanup()==SOCKET_ERROR){
+                printf("\n CleanupWinSocket : Can not sign off from the Windows Sockeet API ");
+                return 0;
+        }
+        return 1;
 }
 #endif
 //----------------------------------------------

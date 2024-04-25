@@ -43,15 +43,15 @@ int exception(int e, void* obj, Tpdisc_t* disc)
       perror(url);
     }
     else {
-      switch (e) 
+      switch (e)
       {
-	case TP_EHOST:
-	  fputs(url, stderr); fputs(": Unknown host\n", stderr);
-	  break;
+        case TP_EHOST:
+          fputs(url, stderr); fputs(": Unknown host\n", stderr);
+          break;
 
-	default:
-	  fputs(url, stderr); fputs(": Error connecting\n", stderr);
-	  return rc;
+        default:
+          fputs(url, stderr); fputs(": Error connecting\n", stderr);
+          return rc;
       }
     }
     exit(1);
@@ -86,7 +86,7 @@ ssize_t readf(void* buf, size_t n, Tpdisc_t* disc)
 
   return nread;
 }
-  
+
 ssize_t readlnf(void* buf, size_t n, Tpdisc_t* disc)
 {
   ssize_t nread;
@@ -174,7 +174,7 @@ int main(int argc, char **argv)
   tpreadln = disc->readlnf;
   disc->readlnf = readlnf;
   tpwrite = disc->writef;
-  disc->writef = writef;  
+  disc->writef = writef;
 #endif
 
   tp = tp_new(puri, TpmPOP, disc);
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
     if (buf[0] == '.' && buf[1] != '.') {
       break;
     }
-   
+
     printf("%s", buf);
   }
 

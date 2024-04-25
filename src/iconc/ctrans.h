@@ -16,26 +16,26 @@ typedef struct tv typeinfo_t;
 #ifndef CUsage
    #define CUsage "[-C C-comp] [-E] [-T] [-c] [-f{adelns}] [-n{acest}]\n\
  [-o ofile] [-p C-opts] [-r runtime] [-s] [-t] [-u] [-v i]"
-#endif				/* CUsage */
+#endif                          /* CUsage */
 
 #ifdef strlen
-#undef strlen			/* defined in some contexts */
+#undef strlen                   /* defined in some contexts */
 #endif /* strlen */
 
 #define Abs(n) ((n) >= 0 ? (n) : -(n))
 #define Max(x,y) ((x)>(y)?(x):(y))
 
 #if !EBCDIC
-#define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
-#endif					/* !EBCDIC */
+#define tonum(c)        (isdigit(c) ? (c - '0') : ((c & 037) + 9))
+#endif                                  /* !EBCDIC */
 
 /*
  * Hash tables must be a power of 2.
  */
-#define CHSize 128	/* size of constant hash table */
-#define FHSize  32	/* size of field hash table */
-#define GHSize 128	/* size of global hash table */
-#define LHSize 128	/* size of local hash table */
+#define CHSize 128      /* size of constant hash table */
+#define FHSize  32      /* size of field hash table */
+#define GHSize 128      /* size of global hash table */
+#define LHSize 128      /* size of local hash table */
 
 #define PrfxSz 3        /* size of prefix */
 
@@ -56,7 +56,7 @@ extern int twarns;
 
 #ifdef TranStats
 #include "tstats.h"
-#else					/* TranStats */
+#else                                   /* TranStats */
 #define TokInc(x)
 #define TokDec(x)
-#endif					/* TranStats */
+#endif                                  /* TranStats */

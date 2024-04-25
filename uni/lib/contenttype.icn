@@ -28,20 +28,20 @@ class ContentType:ContentDisposition(subtype)
    method parse(s)
       local p := mail::RFC822Parser()
       return p.parse_content_type(s, self) | error(p)
-   end   
+   end
 
    method to_rfc1521()
       return type || "/" || subtype || rfc1521_parameters()
    end
 
-   # can inherit initially() from superclass once initially-w-parameters 
+   # can inherit initially() from superclass once initially-w-parameters
    # inheritance bug is fixed, i.e. not yet.
 
    initially(a[])
       parameters := ClTable()
       if (*a = 1) & (::type(a[1]) == "string") then {
-	 parse(a[1]) | fail
-	 }
+         parse(a[1]) | fail
+         }
 end
 
 

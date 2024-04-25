@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     run-benchmark.icn
+#       File:     run-benchmark.icn
 #
-#	Subject:  Run Unicon Benchmarks with "small" n
+#       Subject:  Run Unicon Benchmarks with "small" n
 #
-#	Author:   Shea Newton
+#       Author:   Shea Newton
 #
-#	Date:     January 3, 2014
+#       Date:     January 3, 2014
 #
 ############################################################################
 #
@@ -19,7 +19,7 @@
 #
 ############################################################################
 
-link "auxiliary" 
+link "auxiliary"
 
 $ifdef _UNIX
 $define NUL "/dev/null"
@@ -33,7 +33,7 @@ procedure main(argv)
    local rL, tL, rT, concurrent, tests := [], rTable := table()
 
    concurrent := verify_concurrent()
-   
+
    output := open(NUL, "w") | stop("Cannot open " || NUL || " for writing")
 
    if *argv < 1 then {
@@ -41,7 +41,7 @@ procedure main(argv)
          write_error(3)
       put(tests, "all")
       }
-   else every put(tests, !argv) 
+   else every put(tests, !argv)
    while test := get(tests) do {
       case test of {
          "all" : {
@@ -49,7 +49,7 @@ procedure main(argv)
             write("Expect 2-20 minutes for suite to run to completion.")
 
             write_header(1)
-            
+
             writes(left("concord concord.data",31))
             tL := getavgtimes(run_concord, "concord.data")
             if \concurrent then {
@@ -63,7 +63,7 @@ procedure main(argv)
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
-            
+
             writes(left("ipxref ipxref.dat",31))
             tL := getavgtimes(run_ipxref, "ipxref.dat")
             if \concurrent then {
@@ -77,7 +77,7 @@ procedure main(argv)
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
-            
+
             writes(left("rsg rsg.data",31))
             tL := getavgtimes(run_rsg, "rsg.data")
             if \concurrent then {
@@ -88,7 +88,7 @@ procedure main(argv)
             rT := []
             writes(left("binary-trees 14",31))
             tL:= getavgtimes(run_binarytrees_sequential,14)
-            put(rT, list_to_num(tL)) 
+            put(rT, list_to_num(tL))
 #            insert(rTable, "binary-trees", tabulate_ratios(rT))
 
             if \concurrent then {
@@ -103,7 +103,7 @@ procedure main(argv)
             else writetime(tL[1], tL[2], tL[3])
 
             if \concurrent then {
-	       writes(left("chameneos-redux 65000",43))
+               writes(left("chameneos-redux 65000",43))
                writes(left("N/A", 3))
                tL := getavgtimes(run_chameneos, 65000)
                writetime(tL[1], tL[2], tL[3],1)
@@ -134,7 +134,7 @@ procedure main(argv)
             rT := []
             writes(left("mandelbrot 750",31))
             tL := getavgtimes(run_mandelbrot_sequential,750)
-            put(rT, list_to_num(tL)) 
+            put(rT, list_to_num(tL))
 
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
@@ -197,12 +197,12 @@ procedure main(argv)
             } else writetime(tL[1], tL[2], tL[3])
 
             if \concurrent then {
-	       writes(left("thread-ring 700000",43))
+               writes(left("thread-ring 700000",43))
                writes(left("N/A", 3))
                tL := getavgtimes(run_threadring, 700000)
                writetime(tL[1], tL[2], tL[3],1)
                }
-            if \concurrent then write_ratios(rTable)            
+            if \concurrent then write_ratios(rTable)
             }
          "concord" : {
             write_header()
@@ -287,7 +287,7 @@ procedure main(argv)
             }
          "meteor-contest" : {
             write_header()
-            writes(left("meteor-contest 600",31)) 
+            writes(left("meteor-contest 600",31))
             tL := gettimes(run_meteorcontest, 600)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])

@@ -23,7 +23,7 @@ static int               *cpy_image   (struct token *t, int *s);
 #define MacTblSz 149
 #define MHash(x) (((unsigned int)(uword) (x)) % MacTblSz)
 
-static struct macro *m_table[MacTblSz];	/* hash table of macros */
+static struct macro *m_table[MacTblSz]; /* hash table of macros */
 
 int max_recurse;
 
@@ -36,14 +36,13 @@ static char *date_mac = "__DATE__";
 static char *time_mac = "__TIME__";
 static char *rcrs_mac = "__RCRS__";
 static char *defined = "defined";
-
+
 /*
  * m_find - return return location of pointer to where macro belongs in
  *  macro table. If the macro is not in the table, the pointer at the
  *  location is NULL.
  */
-static struct macro **m_find(mname)
-char *mname;
+static struct macro **m_find(char *mname)
    {
    struct macro **mpp;
 
@@ -52,14 +51,12 @@ char *mname;
       ;
    return mpp;
    }
-
+
 /*
  * eq_id_lst - check to see if two identifier lists contain the same identifiers
  *  in the same order.
  */
-static int eq_id_lst(lst1, lst2)
-struct id_lst *lst1;
-struct id_lst *lst2;
+static int eq_id_lst(struct id_lst *lst1, struct id_lst *lst2)
    {
    if (lst1 == lst2)
       return 1;
@@ -74,9 +71,7 @@ struct id_lst *lst2;
  * eq_tok_lst - check to see if 2 token lists contain the same tokens
  *  in the same order. All white space tokens are considered equal.
  */
-static int eq_tok_lst(lst1, lst2)
-struct tok_lst *lst1;
-struct tok_lst *lst2;
+static int eq_tok_lst(struct tok_lst *lst1, struct tok_lst *lst2)
    {
    if (lst1 == lst2)
       return 1;
@@ -89,7 +84,7 @@ struct tok_lst *lst2;
       return 0;
    return eq_tok_lst(lst1->next, lst2->next);
    }
-
+
 /*
  * init_macro - initialize this module, setting up standard macros.
  */
@@ -175,16 +170,15 @@ void init_macro()
    *mpp = new_macro(rcrs_mac, NoArgs, 0, NULL, new_t_lst(copy_t(one_tok)));
    max_recurse = 1;
    }
-
+
 /*
  * m_install - install a macro.
  */
-void m_install(mname, category, multi_line, prmlst, body)
-struct token *mname;	/* name of macro */
-int multi_line;		/* flag indicating if this is a multi-line macro */
-int category;		/* # parms, or NoArgs if it is object-like macro */
-struct id_lst *prmlst;	/* parameter list */
-struct tok_lst *body;	/* replacement list */
+void m_install(struct token *mname,    /* name of macro */
+               int category,           /* # parms, or NoArgs if it is object-like macro */
+               int multi_line,         /* flag indicating if this is a multi-line macro */
+               struct id_lst *prmlst,  /* parameter list */
+               struct tok_lst *body)   /* replacement list */
    {
    struct macro **mpp;
    char *s;
@@ -225,12 +219,11 @@ struct tok_lst *body;	/* replacement list */
       free_t_lst(body);
       }
    }
-
+
 /*
  * m_delete - delete a macro.
  */
-void m_delete(mname)
-struct token *mname;
+void m_delete(struct token *mname)
    {
    struct macro **mpp, *mp;
 
@@ -257,7 +250,7 @@ struct token *mname;
       free_m(mp);
       }
    }
-
+
 /*
  * m_lookup - lookup a macro name. Return pointer to macro, if it is defined;
  *  return NULL, if it is not. This routine sets the definition for macros
@@ -281,7 +274,7 @@ struct macro *m_lookup(struct token *id)
       }
    return m;
    }
-
+
 /*
  * parm_indx - see if a name is a paramter to the given macro.
  */
@@ -295,19 +288,15 @@ static int parm_indx(char *id, struct macro *m)
          return i;
    return -1;
    }
-
+
 /*
  * cpy_str - copy a string into a string buffer, adding delimiters.
  */
-static void cpy_str(ldelim, image, rdelim, sbuf)
-char *ldelim;
-char *image;
-char *rdelim;
-struct str_buf *sbuf;
+static void cpy_str(char *ldelim, char *image, char *rdelim, struct str_buf *sbuf)
    {
    register char *s;
 
-   for (s = ldelim; *s != '\0'; ++s) 
+   for (s = ldelim; *s != '\0'; ++s)
       AppChar(*sbuf, *s);
 
    for (s = image; *s != '\0'; ++s) {
@@ -316,29 +305,27 @@ struct str_buf *sbuf;
       AppChar(*sbuf, *s);
       }
 
-   for (s = rdelim; *s != '\0'; ++s) 
+   for (s = rdelim; *s != '\0'; ++s)
       AppChar(*sbuf, *s);
    }
-
+
 /*
  * stringize - create a stringized version of a token.
  */
-static struct token *stringize(trigger, me)
-struct token *trigger;
-struct mac_expand *me;
+static struct token *stringize(struct token *trigger, struct mac_expand *me)
    {
    register struct token *t;
    struct tok_lst *arg;
    struct str_buf *sbuf;
    char *s;
    int indx;
-   
+
    /*
     * Get the next token from the macro body. It must be a macro parameter;
     *  retrieve the raw tokens for the corresponding argument.
     */
    if (me->rest_bdy == NULL)
-      errt1(trigger, "the # operator must have an argument"); 
+      errt1(trigger, "the # operator must have an argument");
    t = me->rest_bdy->t;
    me->rest_bdy = me->rest_bdy->next;
    if (t->tok_id == Identifier)
@@ -346,7 +333,7 @@ struct mac_expand *me;
    else
       indx = -1;
    if (indx == -1)
-      errt1(t, "the # operator may only be applied to a macro argument"); 
+      errt1(t, "the # operator may only be applied to a macro argument");
    arg = me->args[indx];
 
    /*
@@ -381,7 +368,7 @@ struct mac_expand *me;
    rel_sbuf(sbuf);
    return t;
    }
-
+
 /*
  * paste_parse - parse an expression involving token pasting operators (and
  *  stringizing operators). Return a list of token lists. Each token list
@@ -390,9 +377,7 @@ struct mac_expand *me;
  *  is needed for each operand). Any needed stringizing is done as the list
  *  is created.
  */
-static struct paste_lsts *paste_parse(t, me)
-struct token *t;
-struct mac_expand *me;
+static struct paste_lsts *paste_parse(struct token *t, struct mac_expand *me)
    {
    struct token *t1;
    struct token *trigger = NULL;
@@ -446,14 +431,12 @@ struct mac_expand *me;
    else
       return new_plsts(trigger, lst, plst);
    }
-
+
 /*
  * cpy_image - copy the image of a token into a character buffer adding
  *  delimiters if it is a string or character literal.
  */
-static int *cpy_image(t, s)
-struct token *t;
-int *s;          /* the string buffer can contain EOF */
+static int *cpy_image(struct token *t, int *s)         /* the string buffer can contain EOF */
    {
    register char *s1;
 
@@ -491,7 +474,7 @@ int *s;          /* the string buffer can contain EOF */
 
    return s;
    }
-
+
 /*
  * paste - return the next token from a source which pastes tokens. The
  *   source may represent a series of token pasting operators.
@@ -540,7 +523,7 @@ struct token *paste()
       (int)strlen(t->image) + (int)strlen(t1->image) + 7);
    push_src(CharSrc, &ref);
    s = cpy_image(t, ref.cs->char_buf);
-   s = cpy_image(t1, s); 
+   s = cpy_image(t1, s);
    *s = EOF;
 
    /*
@@ -557,7 +540,7 @@ struct token *paste()
 
    return next_tok(); /* first token from pasted images */
    }
-
+
 /*
  * mac_tok - return the next token from a source which is a macro.
  */

@@ -37,8 +37,7 @@
    file number.  Since we have only one file number, we return it. */
 
 int
-dbm_dirfno (dbf)
-     gdbm_file_info *dbf;
+dbm_dirfno (gdbm_file_info *dbf)
 {
   return (dbf->desc);
 }

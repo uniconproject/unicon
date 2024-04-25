@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     run-med.icn
+#       File:     run-med.icn
 #
-#	Subject:  Run Unicon Benchmarks with "medium" n
+#       Subject:  Run Unicon Benchmarks with "medium" n
 #
-#	Author:   Shea Newton
+#       Author:   Shea Newton
 #
-#	Date:     January 3, 2014
+#       Date:     January 3, 2014
 #
 ############################################################################
 #
@@ -19,7 +19,7 @@
 #
 ############################################################################
 
-link "auxiliary" 
+link "auxiliary"
 
 $ifdef _UNIX
 $define NUL "/dev/null"
@@ -33,7 +33,7 @@ procedure main(argv)
    local rL, tL, rT, concurrent, tests := [], rTable := table()
 
    concurrent := verify_concurrent()
-   
+
    output := open(NUL, "w") | stop("Cannot open " || NUL || " for writing")
 
    if *argv < 1 then {
@@ -41,7 +41,7 @@ procedure main(argv)
          write_error(3)
       put(tests, "all")
       }
-   else every put(tests, !argv) 
+   else every put(tests, !argv)
    while test := get(tests) do {
       case test of {
          "all" : {
@@ -52,7 +52,7 @@ procedure main(argv)
             writes(left("binary-trees 17",31))
             tL:= gettimes(run_binarytrees_sequential,17)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            put(rT, list_to_num(rL)) 
+            put(rT, list_to_num(rL))
 #            insert(rTable, "binary-trees", tabulate_ratios(rT))
 
             if \concurrent then {
@@ -68,7 +68,7 @@ procedure main(argv)
             else writetime(rL[1], rL[2], rL[3])
 
             if \concurrent then {
-	       writes(left("chameneos-redux 1500000",43))
+               writes(left("chameneos-redux 1500000",43))
                writes(left("N/A", 3))
                tL := gettimes(run_chameneos, 1500000)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
@@ -103,7 +103,7 @@ procedure main(argv)
             writes(left("mandelbrot 3500",31))
             tL := gettimes(run_mandelbrot_sequential,3500)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            put(rT, list_to_num(rL)) 
+            put(rT, list_to_num(rL))
 
             if \concurrent then {
                writestime(rL[1], rL[2], rL[3])
@@ -174,7 +174,7 @@ procedure main(argv)
             } else writetime(rL[1], rL[2], rL[3])
 
             if \concurrent then {
-	       writes(left("thread-ring 15000000",43))
+               writes(left("thread-ring 15000000",43))
                writes(left("N/A", 3))
                tL := gettimes(run_threadring, 15000000)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
@@ -217,7 +217,7 @@ procedure main(argv)
             if \concurrent then {
                tL := gettimes(run_chameneos, 1500000)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3],1)   
+               writetime(rL[1], rL[2], rL[3],1)
                } else write_error(2)
             }
          "fannkuch" : {
@@ -251,7 +251,7 @@ procedure main(argv)
             }
          "meteor-contest" : {
             write_header()
-            writes(left("meteor-contest 2098",31)) 
+            writes(left("meteor-contest 2098",31))
             tL := gettimes(run_meteorcontest, 2098)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])

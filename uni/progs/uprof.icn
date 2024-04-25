@@ -27,15 +27,15 @@ link printf
 $include "evdefs.icn"
 
 # Column widths for output formatting
-$define PROC_WIDTH	12	# PROCEDURE
-$define PTIME_WIDTH	5	# %TIME
-$define TIME_WIDTH	7	# TIME
-$define CTIME_WIDTH	10	# TIME/CALL
-$define CALL_WIDTH	10	# CALLS	
-$define RET_WIDTH	10	# RETURNS
-$define SUSP_WIDTH	10	# SUSPENDS
-$define RESUM_WIDTH	10	# RESUMES
-$define FAIL_WIDTH	6	# FAILS
+$define PROC_WIDTH      12      # PROCEDURE
+$define PTIME_WIDTH     5       # %TIME
+$define TIME_WIDTH      7       # TIME
+$define CTIME_WIDTH     10      # TIME/CALL
+$define CALL_WIDTH      10      # CALLS
+$define RET_WIDTH       10      # RETURNS
+$define SUSP_WIDTH      10      # SUSPENDS
+$define RESUM_WIDTH     10      # RESUMES
+$define FAIL_WIDTH      6       # FAILS
 
 global Proc_stack
 global Call_time_stack
@@ -64,16 +64,16 @@ procedure main(args)
    local lastline, lines
    local line_time := table(0), line_count := table(0)
    local longest_filename_length := 0
-   
+
    if (*args=0) | (args[1] == ("--help"|"-help")) then
        stop("Usage: uprof [-l] [-o outfile] prog args\n",
-	    "\n",
-	    "  -l \t\tEnables line-level time sampling\n",
-	    "  -o outfile \tWwrites output to file 'outfile'\n")
+            "\n",
+            "  -l \t\tEnables line-level time sampling\n",
+            "  -o outfile \tWwrites output to file 'outfile'\n")
 
    if args[1] == "-l" then { pop(args); lines := 1; mask ++:= E_Line }
 
-   if args[1] == "-o" then { 
+   if args[1] == "-o" then {
       pop(args)
       output := pop(args) | stop("no output file specified for -o option")
       if *args = 0 then
@@ -95,22 +95,22 @@ procedure main(args)
 
    #Build the tables
       case &eventcode of {
-	 E_Line: {
-	     linetime := keyword("time", Monitored)
-	     linefile := keyword("file", Monitored)
-	     longest_filename_length <:= *linefile
-	     line_count[linefile||":"||&eventvalue] +:= 1
-	     if delta := (0 < linetime-\last_linetime) then {
-		 line_time[linefile||":"||&eventvalue] +:= delta
-	     }
-	     last_linetime := linetime
-	 }
+         E_Line: {
+             linetime := keyword("time", Monitored)
+             linefile := keyword("file", Monitored)
+             longest_filename_length <:= *linefile
+             line_count[linefile||":"||&eventvalue] +:= 1
+             if delta := (0 < linetime-\last_linetime) then {
+                 line_time[linefile||":"||&eventvalue] +:= delta
+             }
+             last_linetime := linetime
+         }
 
          #CALL
          E_Pcall: {
             push(Proc_stack, val)
             push(Call_time_stack, (keyword("&time", Monitored)))
-	    Proc_calls[val] +:= 1
+            Proc_calls[val] +:= 1
          }
 
          #FAIL
@@ -125,8 +125,8 @@ procedure main(args)
             Proc_time[Current_proc] +:= curr_proc_time
 
             if *Proc_stack > 0 then {
-                # subtract this proc's runtime from next proc on stack 
-                Proc_time[Proc_stack[1]] -:= curr_proc_time 
+                # subtract this proc's runtime from next proc on stack
+                Proc_time[Proc_stack[1]] -:= curr_proc_time
             }
          }
 
@@ -142,7 +142,7 @@ procedure main(args)
             Proc_time[Current_proc] +:= curr_proc_time
 
             if *Proc_stack > 0 then {
-                # subtract this proc's runtime from next proc on stack 
+                # subtract this proc's runtime from next proc on stack
                 Proc_time[Proc_stack[1]] -:= curr_proc_time
             }
          }
@@ -159,7 +159,7 @@ procedure main(args)
             Proc_time[Current_proc] +:= curr_proc_time
 
             if *Proc_stack > 0 then {
-                # subtract this proc's runtime from next proc on stack 
+                # subtract this proc's runtime from next proc on stack
                 Proc_time[Proc_stack[1]] -:= curr_proc_time
             }
 
@@ -185,10 +185,10 @@ procedure main(args)
          proc_end_time := keyword("&time", Monitored)
 
          curr_proc_time := proc_end_time - proc_start_time
-         Proc_time[Current_proc] +:= curr_proc_time 
+         Proc_time[Current_proc] +:= curr_proc_time
          if *Proc_stack > 0 then {
-             # subtract this proc's runtime from next proc on stack 
-             Proc_time[Proc_stack[1]] -:= curr_proc_time 
+             # subtract this proc's runtime from next proc on stack
+             Proc_time[Proc_stack[1]] -:= curr_proc_time
          }
       }
    }
@@ -209,24 +209,24 @@ procedure main(args)
    #every mxname <:= *image((!keys).keyval)[10:0]
 
    if \outfile then {
-      write(outfile, left("PROCEDURE",PROC_WIDTH), 
-            right("%TIME", PTIME_WIDTH), 
-            right("TIME", TIME_WIDTH), 
+      write(outfile, left("PROCEDURE",PROC_WIDTH),
+            right("%TIME", PTIME_WIDTH),
+            right("TIME", TIME_WIDTH),
             right("TIME/CALL", CTIME_WIDTH),
-            right("CALLS", CALL_WIDTH), 
+            right("CALLS", CALL_WIDTH),
             right("RETURNS", RET_WIDTH),
-            right("SUSPENDS", SUSP_WIDTH), 
-            right("RESUMES",RESUM_WIDTH), 
-            right("FAILS", FAIL_WIDTH) 
+            right("SUSPENDS", SUSP_WIDTH),
+            right("RESUMES",RESUM_WIDTH),
+            right("FAILS", FAIL_WIDTH)
            )
-      write(outfile, left("",PROC_WIDTH), 
-            right("", PTIME_WIDTH), 
-            right("(ms)", TIME_WIDTH), 
+      write(outfile, left("",PROC_WIDTH),
+            right("", PTIME_WIDTH),
+            right("(ms)", TIME_WIDTH),
             right("(ms)", CTIME_WIDTH),
-            right("", CALL_WIDTH), 
+            right("", CALL_WIDTH),
             right("", RET_WIDTH),
-            right("", SUSP_WIDTH), 
-            right("",RESUM_WIDTH), 
+            right("", SUSP_WIDTH),
+            right("",RESUM_WIDTH),
             right("", FAIL_WIDTH)
            )
        write(outfile)
@@ -240,11 +240,11 @@ procedure main(args)
                           Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))
                          ),
                      CTIME_WIDTH),
-               right(Proc_calls[y], CALL_WIDTH), 
+               right(Proc_calls[y], CALL_WIDTH),
                right(Proc_returns[y], RET_WIDTH),
                right(Proc_suspends[y], SUSP_WIDTH),
-	       right(Proc_resumes[y], RESUM_WIDTH),
-	       right(Proc_fails[y], FAIL_WIDTH)
+               right(Proc_resumes[y], RESUM_WIDTH),
+               right(Proc_fails[y], FAIL_WIDTH)
               )
       }
 
@@ -252,13 +252,13 @@ procedure main(args)
 
       if \lines then {
          write(outfile, sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
-	       "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
+               "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
          write(outfile, sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
-	       "    ", "    ", "(ms)", "COUNT", "  (ms) "))
+               "    ", "    ", "(ms)", "COUNT", "  (ms) "))
          L := reverse(sort(line_time,2))
          every le := !L do {
             write(outfile, sprintf("%"||(longest_filename_length+1)||"s %8d %8d %8d   %.3r",
-	          le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
+                  le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
                   le[2], line_count[le[1]],
                   divimage(le[2], real(line_count[le[1]]))))
          }
@@ -269,24 +269,24 @@ procedure main(args)
    # print to stdout
    else {
 
-      write(left("PROCEDURE",PROC_WIDTH), 
-            right("%TIME", PTIME_WIDTH), 
-            right("TIME", TIME_WIDTH), 
+      write(left("PROCEDURE",PROC_WIDTH),
+            right("%TIME", PTIME_WIDTH),
+            right("TIME", TIME_WIDTH),
             right("TIME/CALL", CTIME_WIDTH),
-            right("CALLS", CALL_WIDTH), 
+            right("CALLS", CALL_WIDTH),
             right("RETURNS", RET_WIDTH),
-            right("SUSPENDS", SUSP_WIDTH), 
-            right("RESUMES",RESUM_WIDTH), 
-            right("FAILS", FAIL_WIDTH) 
+            right("SUSPENDS", SUSP_WIDTH),
+            right("RESUMES",RESUM_WIDTH),
+            right("FAILS", FAIL_WIDTH)
            )
-      write(left("",PROC_WIDTH), 
-            right("", PTIME_WIDTH), 
-            right("(ms)", TIME_WIDTH), 
+      write(left("",PROC_WIDTH),
+            right("", PTIME_WIDTH),
+            right("(ms)", TIME_WIDTH),
             right("(ms)", CTIME_WIDTH),
-            right("", CALL_WIDTH), 
+            right("", CALL_WIDTH),
             right("", RET_WIDTH),
-            right("", SUSP_WIDTH), 
-            right("",RESUM_WIDTH), 
+            right("", SUSP_WIDTH),
+            right("",RESUM_WIDTH),
             right("", FAIL_WIDTH)
            )
        write()
@@ -300,11 +300,11 @@ procedure main(args)
                           Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))
                          ),
                      CTIME_WIDTH),
-               right(Proc_calls[y], CALL_WIDTH), 
+               right(Proc_calls[y], CALL_WIDTH),
                right(Proc_returns[y], RET_WIDTH),
                right(Proc_suspends[y], SUSP_WIDTH),
-	       right(Proc_resumes[y], RESUM_WIDTH),
-	       right(Proc_fails[y], FAIL_WIDTH)
+               right(Proc_resumes[y], RESUM_WIDTH),
+               right(Proc_fails[y], FAIL_WIDTH)
               )
       }
 
@@ -312,15 +312,15 @@ procedure main(args)
 
       if \lines then {
          write(sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
-	       "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
+               "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
          write(sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
-	       "    ", "    ", "(ms)", "COUNT", "  (ms) "))
+               "    ", "    ", "(ms)", "COUNT", "  (ms) "))
          L := reverse(sort(line_time,2))
          every le := !L do {
             write(sprintf("%"||(longest_filename_length+1)||"s %8d %8d %8d   %.3r",
-	          le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
-	          le[2], line_count[le[1]],
-	          divimage(le[2], real(line_count[le[1]]))))
+                  le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
+                  le[2], line_count[le[1]],
+                  divimage(le[2], real(line_count[le[1]]))))
          }
       }
    }

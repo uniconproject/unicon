@@ -27,51 +27,51 @@ class Material(
       specular:= [1.0 , 1.0 , 1.0]            # RGB
       emissive:= [0.0 , 0.0 , 0.0]            # RGB
       power := 50
-      
+
       textureFileName := &null      # null if not available
-      textureRecord := &null     
+      textureRecord := &null
   end
 
   method has_texture_filename()
      return \textureFileName
   end
 
-  method get_texture_filename()	
+  method get_texture_filename()
      return \textureFileName
   end
-  
+
   method apply()
      local diff, spec, emis, shin, rec, f, t
      diff := "diffuse " || string( diffuse[1] * 65535 ) || "," ||
-			   string( diffuse[2] * 65535 ) || "," ||
-			   string( diffuse[3]  * 65535  )
+                           string( diffuse[2] * 65535 ) || "," ||
+                           string( diffuse[3]  * 65535  )
      #DEBUGW(diff)
      emis := "emission " || string( emissive[1] * 65535  ) || "," ||
-			    string( emissive[2]* 65535  ) || "," ||
-			    string( emissive[3]* 65535 )
+                            string( emissive[2]* 65535  ) || "," ||
+                            string( emissive[3]* 65535 )
      #DEBUGW(emis)
      spec := "specular " || string( specular[1] * 65535 ) || "," ||
-			    string( specular[2]* 65535 ) || "," ||
-			    string( specular[3]* 65535 )
+                            string( specular[2]* 65535 ) || "," ||
+                            string( specular[3]* 65535 )
      #DEBUGW(spec)
      shin := "shininess " || string(power)
-     
+
      # DEBUGW( shin )
-     
-     
+
+
      f:=Fg( diff || ";" || emis || ";" || spec || ";" ||shin )
      #Fg( diffuse );  Fg( emissive ); Fg( specular ); Fg( shininess )
-     
-     if has_texture_filename() then{              
-	if WAttrib("texmode")=="off" then WAttrib("texmode=on")               
-	t:=Texture(get_texture_filename())
-	DEBUGW( "Texture :", get_texture_filename() )
-	return \t
-	}
+
+     if has_texture_filename() then{
+        if WAttrib("texmode")=="off" then WAttrib("texmode=on")
+        t:=Texture(get_texture_filename())
+        DEBUGW( "Texture :", get_texture_filename() )
+        return \t
+        }
      return \f
 
   end
-  
+
    initially
       init()
 end

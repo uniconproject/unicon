@@ -27,45 +27,45 @@ int yyinput(void);
 
 %%
 
-"}%"	{ printf("%s", "}% should read %}"); }
+"}%"    { printf("%s", "}% should read %}"); }
 
-"%%"	{
-	/*
-	 * copy out remainder, up to EOF, into output file.
-	 */
-	int nextchar;
-	FILE *foutfile = fopen("ulex.tmp","w");
-	whiteflag = 1;
+"%%"    {
+        /*
+         * copy out remainder, up to EOF, into output file.
+         */
+        int nextchar;
+        FILE *foutfile = fopen("ulex.tmp","w");
+        whiteflag = 1;
 
-	if (foutfile == NULL) {
-	   fprintf(stderr, "couldn't write to ulex.tmp; exiting\n");
-	   fflush(stderr);
-	   exit(1);
-	   }
-	fprintf(foutfile, "\n\n");
-	fprintf(foutfile, "$line %d \"%s\"\n", yylineno, yyfilename);
+        if (foutfile == NULL) {
+           fprintf(stderr, "couldn't write to ulex.tmp; exiting\n");
+           fflush(stderr);
+           exit(1);
+           }
+        fprintf(foutfile, "\n\n");
+        fprintf(foutfile, "$line %d \"%s\"\n", yylineno, yyfilename);
 
-	while ((nextchar = yyinput()) > 0) {
-	   fprintf(foutfile,"%c",nextchar);
-	   }
+        while ((nextchar = yyinput()) > 0) {
+           fprintf(foutfile,"%c",nextchar);
+           }
 
-	fclose(foutfile);
-/*	return -1; was token(PERCENTS) */;
-	return 0;
-	}
+        fclose(foutfile);
+/*      return -1; was token(PERCENTS) */;
+        return 0;
+        }
 
 "["("^")?([^\]\\]|((\\\\)*\\.))+"]" {
                                       yylval.s = strdup(yytext);
                                       return token(CSET);
                                     }
-"."			            { return token(DOT); }
+"."                                 { return token(DOT); }
 "\""(((\\\\)*\\.)|[^\"\\])+"\""     {
                                       yylval.s = strdup(yytext);
                                       return token(QUOTES);
                                     }
-"\\".			            {
+"\\".                               {
                                       yylval.s = strdup(yytext);
-				      return token(BACKSLASH);
+                                      return token(BACKSLASH);
                                     }
 "^"                                 { return token(LINEBEGIN); }
 "$"                                 { return token(LINEEND); }
@@ -80,7 +80,7 @@ int yyinput(void);
                                       yylval.s = strdup(yytext);
                                       return token(CURLBRACKETS);
                                     }
-"{"			  	    {
+"{"                                 {
                                       grab_semantic_action();
                                       yylval.s = strdup(yytext);
                                       return token(ACTION);
@@ -92,11 +92,11 @@ int yyinput(void);
 
 \n                                  { return token(NEWLINE); }
 "# ".*\n
-^[\t ]*\n				{ if (whiteflag) return 1; }
+^[\t ]*\n                               { if (whiteflag) return 1; }
 
-[ \t\n]			            {  if (whiteflag) return 1; }
-.			            {  if (whiteflag) return 1;
-					else fprintf(stderr, "%s:%d: lexical error on token '%s'\n", yyfilename, yylineno, yytext); }
+[ \t\n]                                     {  if (whiteflag) return 1; }
+.                                   {  if (whiteflag) return 1;
+                                        else fprintf(stderr, "%s:%d: lexical error on token '%s'\n", yyfilename, yylineno, yytext); }
 
 %%
 int token(int x)
@@ -115,26 +115,26 @@ void grab_semantic_action()
     while (numbrace != 0) {
         nextchar = yyinput();
         if (nextchar == EOF) {
-	   fprintf(stderr,"bad/unfinished semantic action\n");
-	   fflush(stderr);
-	   exit(-1);
-	   }
+           fprintf(stderr,"bad/unfinished semantic action\n");
+           fflush(stderr);
+           exit(-1);
+           }
 
         if (nextchar == '"' && slash == 0) {
            quotemode = 1 - quotemode;
-	   }
+           }
 
         if (nextchar == '\\') {
-	   slash = 1 - slash;
-	   }
-	else slash = 0;
+           slash = 1 - slash;
+           }
+        else slash = 0;
         if (quotemode == 0) {
             if (nextchar == '{') {
-	       numbrace ++;
-	       }
+               numbrace ++;
+               }
             else if (nextchar == '}') {
-	       numbrace --;
-	       }
+               numbrace --;
+               }
         }
 
         temp = yytext;

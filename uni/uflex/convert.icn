@@ -25,101 +25,101 @@ write(&errout, "treeprint")
   #write(&errout, "convert"||image(tr.label))
  # if \(tr.text) then printf("text=  %s", image(tr.text))
    case tr.label of {
- 
+
    EXPRTREE: {
-	#
-	# This case is handled by converting the two subtrees and then making
-	# a new start node with epsilon transitions to the start nodes of the
-	# two machines for each branch.
-	#
+        #
+        # This case is handled by converting the two subtrees and then making
+        # a new start node with epsilon transitions to the start nodes of the
+        # two machines for each branch.
+        #
 
-	returnvalue := alcautomata()
-	returnvalue.start := alcanode(0)
+        returnvalue := alcautomata()
+        returnvalue.start := alcanode(0)
 
-	aut1 := convert(tr.children[1])
-	aut2 := convert(tr.children[2])
+        aut1 := convert(tr.children[1])
+        aut2 := convert(tr.children[2])
 
-	returnvalue.start.epsilon := alcnodelist()
-	returnvalue.start.epsilon.current := aut1.start
-	returnvalue.start.epsilon._next := alcnodelist()
-	returnvalue.start.epsilon._next.current := aut2.start
-
-	returnvalue.states := alcnodelist()
-	returnvalue.states.current := returnvalue.start
-
-	returnvalue.states._next := aut1.states
-	listptr := aut1.states
-
-	while \ (listptr._next) do
-	  listptr := listptr._next
-
-	listptr._next := aut2.states
-	
-	returnvalue.accepting := aut1.accepting
-	listptr := aut1.accepting
-
-	while \ (listptr._next) do
-	  listptr := listptr._next
-	
-	listptr._next := aut2.accepting
-
-	return returnvalue
-      }
-
-    EXPRESSION: {
-	#
-	# This case is handled by converting the expression recursively and 
-	# associating the accepting states with the semantic action if there
-	# is one. This case is also the one that is used to set which rule
-	# number is associated with which states. This is accomplished by 
-	# using a global variable that is incremented each time that we 
-	# convert an expression.
-	#
-
-#	write("children is ", image(tr.children))
-	if not (returnvalue := convert(tr.children[1])) then
-	   stop("convert failed for ", image(tr.children[1])|"nochild")
-
-	if \ (tr.children[2]) then {
-	    listptr := returnvalue.accepting
-	    while \listptr do {
-		listptr.current.semaction := tr.children[2].text
-		listptr := listptr._next
-	      }
-	  }
-	
-	listptr := returnvalue.states
-	
-	while \listptr do {
-	    listptr.current.rulenum := rulenumber
-	    listptr := listptr._next
-	  }
-	
-	rulenumber +:= 1
-	
-	return returnvalue
-      }
-
-    OREXPR: {
-	#
-	# This case is handled by converting the two expressions that are 
-	# connected by the or and making a new start state with an epsilon
-	# transition to the start state of each of the other two machines.
-	#
-
-	returnvalue := alcautomata()
-	returnvalue.start := alcanode(0)
-	
-	aut1 := convert(tr.children[1])
-	aut2 := convert(tr.children[3])
-
-	returnvalue.start.epsilon := alcnodelist()
+        returnvalue.start.epsilon := alcnodelist()
         returnvalue.start.epsilon.current := aut1.start
         returnvalue.start.epsilon._next := alcnodelist()
         returnvalue.start.epsilon._next.current := aut2.start
 
-	returnvalue.states := alcnodelist()
-	returnvalue.states.current := returnvalue.start
+        returnvalue.states := alcnodelist()
+        returnvalue.states.current := returnvalue.start
+
+        returnvalue.states._next := aut1.states
+        listptr := aut1.states
+
+        while \ (listptr._next) do
+          listptr := listptr._next
+
+        listptr._next := aut2.states
+
+        returnvalue.accepting := aut1.accepting
+        listptr := aut1.accepting
+
+        while \ (listptr._next) do
+          listptr := listptr._next
+
+        listptr._next := aut2.accepting
+
+        return returnvalue
+      }
+
+    EXPRESSION: {
+        #
+        # This case is handled by converting the expression recursively and
+        # associating the accepting states with the semantic action if there
+        # is one. This case is also the one that is used to set which rule
+        # number is associated with which states. This is accomplished by
+        # using a global variable that is incremented each time that we
+        # convert an expression.
+        #
+
+#       write("children is ", image(tr.children))
+        if not (returnvalue := convert(tr.children[1])) then
+           stop("convert failed for ", image(tr.children[1])|"nochild")
+
+        if \ (tr.children[2]) then {
+            listptr := returnvalue.accepting
+            while \listptr do {
+                listptr.current.semaction := tr.children[2].text
+                listptr := listptr._next
+              }
+          }
+
+        listptr := returnvalue.states
+
+        while \listptr do {
+            listptr.current.rulenum := rulenumber
+            listptr := listptr._next
+          }
+
+        rulenumber +:= 1
+
+        return returnvalue
+      }
+
+    OREXPR: {
+        #
+        # This case is handled by converting the two expressions that are
+        # connected by the or and making a new start state with an epsilon
+        # transition to the start state of each of the other two machines.
+        #
+
+        returnvalue := alcautomata()
+        returnvalue.start := alcanode(0)
+
+        aut1 := convert(tr.children[1])
+        aut2 := convert(tr.children[3])
+
+        returnvalue.start.epsilon := alcnodelist()
+        returnvalue.start.epsilon.current := aut1.start
+        returnvalue.start.epsilon._next := alcnodelist()
+        returnvalue.start.epsilon._next.current := aut2.start
+
+        returnvalue.states := alcnodelist()
+        returnvalue.states.current := returnvalue.start
 
         returnvalue.states._next := aut1.states
         listptr := aut1.states
@@ -141,71 +141,71 @@ write(&errout, "treeprint")
       }
 
     CONCATEXPR: {
-	#
-	# This case is handled by converting the two subexpressions and 
-	# linking the accepting states of the first to the start state of the
-	# second. The accepting states are those of the second machine.
-	#
+        #
+        # This case is handled by converting the two subexpressions and
+        # linking the accepting states of the first to the start state of the
+        # second. The accepting states are those of the second machine.
+        #
 
-	aut1 := convert(tr.children[1])
-	aut2 := convert(tr.children[3])
+        aut1 := convert(tr.children[1])
+        aut2 := convert(tr.children[3])
 
-	listptr := aut1.accepting
-	
-	while \listptr do {
-	    if /(listptr.current.epsilon) then {
-		listptr.current.epsilon := alcnodelist()
-		listptr.current.epsilon.current := aut2.start
-	      }
+        listptr := aut1.accepting
 
-	    else {
-		listptr2 := listptr.current.epsilon
+        while \listptr do {
+            if /(listptr.current.epsilon) then {
+                listptr.current.epsilon := alcnodelist()
+                listptr.current.epsilon.current := aut2.start
+              }
 
-		while \ (listptr2._next) do
-		  listptr2 := listptr2._next
-		
-		listptr2._next := alcnodelist()
-		listptr2._next.current := aut2.start
-	      }
+            else {
+                listptr2 := listptr.current.epsilon
 
-	    listptr := listptr._next
-	  }
+                while \ (listptr2._next) do
+                  listptr2 := listptr2._next
 
-	listptr := aut1.states
+                listptr2._next := alcnodelist()
+                listptr2._next.current := aut2.start
+              }
 
-	while \ (listptr._next) do
-	  listptr := listptr._next
+            listptr := listptr._next
+          }
 
-	listptr._next := aut2.states
+        listptr := aut1.states
 
-	aut1.accepting := aut2.accepting
-	return aut1
+        while \ (listptr._next) do
+          listptr := listptr._next
+
+        listptr._next := aut2.states
+
+        aut1.accepting := aut2.accepting
+        return aut1
       }
 
     QUOTES: {
-	#
-	# This case is handled by creating a chain of states with transitions
-	# that correspond to each individual letter of the string in quotes.
-	#
+        #
+        # This case is handled by creating a chain of states with transitions
+        # that correspond to each individual letter of the string in quotes.
+        #
 
-	returnvalue := alcautomata()
+        returnvalue := alcautomata()
 
-	newnode1 := alcanode(0)
-	listptr := alcnodelist()
-	listptr.current := newnode1
+        newnode1 := alcanode(0)
+        listptr := alcnodelist()
+        listptr.current := newnode1
 
         returnvalue.start := newnode1
         returnvalue.states := listptr
 
-	tempstring := tr.text[2:0]  # skip past initial doublequote
+        tempstring := tr.text[2:0]  # skip past initial doublequote
 
-	while tempstring[1] ~== "\"" do {
-	    getsinglechar := tempstring[1]
-	    newnode2 := alcanode(0)
-	    listptr._next := alcnodelist()
-	    listptr._next.current := newnode2
+        while tempstring[1] ~== "\"" do {
+            getsinglechar := tempstring[1]
+            newnode2 := alcanode(0)
+            listptr._next := alcnodelist()
+            listptr._next.current := newnode2
 
-	    if getsinglechar == "\\" then {
+            if getsinglechar == "\\" then {
 tempstring := tempstring[2:0]
 echar := tempstring[1]
 write("eureka \\", echar)
@@ -215,274 +215,274 @@ case echar of {
     "\\": getsinglechar := "\\"
     default: stop("unhandled escape in flex string literal \\", tempstring)
 }
-	       }
+               }
 
-	    newnode1.edges := [ alcedge(getsinglechar) ]
-	    newnode1.edges[1].destinations := alcnodelist()
-	    newnode1.edges[1].destinations.current := newnode2
+            newnode1.edges := [ alcedge(getsinglechar) ]
+            newnode1.edges[1].destinations := alcnodelist()
+            newnode1.edges[1].destinations.current := newnode2
 
-	    newnode1 := newnode2
-	    listptr := listptr._next
-	    tempstring := tempstring[2:0]
-	  }
+            newnode1 := newnode2
+            listptr := listptr._next
+            tempstring := tempstring[2:0]
+          }
 
-	returnvalue.accepting := alcnodelist()
-	returnvalue.accepting.current := newnode2
-	return returnvalue
+        returnvalue.accepting := alcnodelist()
+        returnvalue.accepting.current := newnode2
+        return returnvalue
       }
 
     BACKSLASH: {
 #write("got to BACKSLASH")
-	#
-	# This case is handled by creating a two state automata with the edge
-	# labelled directly with the character that follows the backslash.
-	#
+        #
+        # This case is handled by creating a two state automata with the edge
+        # labelled directly with the character that follows the backslash.
+        #
 
-	returnvalue := alcautomata()
+        returnvalue := alcautomata()
 
-	newnode1 := alcanode(0)
+        newnode1 := alcanode(0)
         newnode2 := alcanode(0)
-	
-	listptr := alcnodelist()
-	listptr.current := newnode1
-	listptr._next := alcnodelist()
-	listptr._next.current := newnode2
 
-	tr.text := tr.text[2:0] # skip over \
+        listptr := alcnodelist()
+        listptr.current := newnode1
+        listptr._next := alcnodelist()
+        listptr._next.current := newnode2
+
+        tr.text := tr.text[2:0] # skip over \
 #        write(" tr.text "||image(tr.text))
 
-	if tr.text[1] == "n" then tr.text[1] := "\n"
-	else if tr.text[1] == "t" then tr.text[1] := "\t"
+        if tr.text[1] == "n" then tr.text[1] := "\n"
+        else if tr.text[1] == "t" then tr.text[1] := "\t"
 
-	elistptr := [ alcedge(tr.text) ]
-	
-	listptr2 := alcnodelist()
-	listptr2.current := newnode2
+        elistptr := [ alcedge(tr.text) ]
 
-	elistptr[1].destinations := listptr2
+        listptr2 := alcnodelist()
+        listptr2.current := newnode2
 
-	newnode1.edges := elistptr
+        elistptr[1].destinations := listptr2
 
-	returnvalue.start := newnode1
-	returnvalue.states := listptr
-	returnvalue.accepting := alcnodelist()
-	returnvalue.accepting.current := newnode2
+        newnode1.edges := elistptr
 
-	return returnvalue
+        returnvalue.start := newnode1
+        returnvalue.states := listptr
+        returnvalue.accepting := alcnodelist()
+        returnvalue.accepting.current := newnode2
+
+        return returnvalue
       }
 
     CSET: {
-	#
-	# This case is handled by creating an automata with a start state and
-	# transitioning to a final state and the edge is labelled with the 
-	# entire string representing the cset. This becomes a special case in
-	# handling the simulation of the automata.
-	#
+        #
+        # This case is handled by creating an automata with a start state and
+        # transitioning to a final state and the edge is labelled with the
+        # entire string representing the cset. This becomes a special case in
+        # handling the simulation of the automata.
+        #
 
-	returnvalue := alcautomata()
-	returnvalue.start := alcanode(0)
-	returnvalue.states := alcnodelist()
-	returnvalue.accepting := alcnodelist()
+        returnvalue := alcautomata()
+        returnvalue.start := alcanode(0)
+        returnvalue.states := alcnodelist()
+        returnvalue.accepting := alcnodelist()
 
-	returnvalue.accepting.current := alcanode(0)
+        returnvalue.accepting.current := alcanode(0)
 
-	returnvalue.states.current := returnvalue.start
-	returnvalue.states._next := alcnodelist()
-	returnvalue.states._next.current := returnvalue.accepting.current
+        returnvalue.states.current := returnvalue.start
+        returnvalue.states._next := alcnodelist()
+        returnvalue.states._next.current := returnvalue.accepting.current
 
-	returnvalue.start.edges := [ alcedge(tr.text) ]
-	returnvalue.start.edges[1].destinations := alcnodelist()
-	returnvalue.start.edges[1].destinations.current :=
-	  returnvalue.accepting.current
+        returnvalue.start.edges := [ alcedge(tr.text) ]
+        returnvalue.start.edges[1].destinations := alcnodelist()
+        returnvalue.start.edges[1].destinations.current :=
+          returnvalue.accepting.current
 
-	return returnvalue
+        return returnvalue
       }
 
     CHARACTER: {
-	#
-	# The most striaghtforward case - create a two state automata that
-	# transitions from the start to the final state on the specified 
-	# character.
-	#
+        #
+        # The most striaghtforward case - create a two state automata that
+        # transitions from the start to the final state on the specified
+        # character.
+        #
 
-	returnvalue := alcautomata()
+        returnvalue := alcautomata()
 
-	newnode1 := alcanode(0)
-	newnode2 := alcanode(0)
-	elistptr := newnode1.edges
+        newnode1 := alcanode(0)
+        newnode2 := alcanode(0)
+        elistptr := newnode1.edges
 
-	newnode1.edges := [ alcedge(tr.text) ]
-	newnode1.edges[1].destinations := alcnodelist()
-	newnode1.edges[1].destinations.current := newnode2
+        newnode1.edges := [ alcedge(tr.text) ]
+        newnode1.edges[1].destinations := alcnodelist()
+        newnode1.edges[1].destinations.current := newnode2
 
-	returnvalue.start := newnode1
+        returnvalue.start := newnode1
 
-	returnvalue.states := alcnodelist()
-	returnvalue.states.current := newnode1
-	returnvalue.states._next := alcnodelist()
-	returnvalue.states._next.current := newnode2
+        returnvalue.states := alcnodelist()
+        returnvalue.states.current := newnode1
+        returnvalue.states._next := alcnodelist()
+        returnvalue.states._next.current := newnode2
 
-	returnvalue.accepting := alcnodelist()
-	returnvalue.accepting.current := newnode2
+        returnvalue.accepting := alcnodelist()
+        returnvalue.accepting.current := newnode2
 
-	return returnvalue
+        return returnvalue
       }
 
     DOT: {
-	#
-	# This case uses a special feature of our automata that creates a 
-	# transition that simply means consume any character. Each node has
-	# an associated list of nodes called dot that it can reach on any 
-	# single character.
-	#
+        #
+        # This case uses a special feature of our automata that creates a
+        # transition that simply means consume any character. Each node has
+        # an associated list of nodes called dot that it can reach on any
+        # single character.
+        #
 
-	returnvalue := alcautomata()
-	returnvalue.start := alcanode(0)
+        returnvalue := alcautomata()
+        returnvalue.start := alcanode(0)
 
-	newnode1 := alcanode(0)
-	listptr := alcnodelist()
+        newnode1 := alcanode(0)
+        listptr := alcnodelist()
 
-	listptr.current := newnode1
-	returnvalue.start.dot := listptr
+        listptr.current := newnode1
+        returnvalue.start.dot := listptr
 
-	listptr := alcnodelist()
-	listptr.current := returnvalue.start
-	listptr._next := alcnodelist()
-	listptr._next.current := newnode1
-	returnvalue.states := listptr
+        listptr := alcnodelist()
+        listptr.current := returnvalue.start
+        listptr._next := alcnodelist()
+        listptr._next.current := newnode1
+        returnvalue.states := listptr
 
-	returnvalue.accepting := alcnodelist()
-	returnvalue.accepting.current := newnode1
+        returnvalue.accepting := alcnodelist()
+        returnvalue.accepting.current := newnode1
 
-	return returnvalue
+        return returnvalue
       }
 
     BEGINNING: {
-	#
-	# This is accomplished by converting the tree obtained from the 
-	# regular expression into an automata, and then adding a transition
-	# from all final states to themselves on any input.
-	#
+        #
+        # This is accomplished by converting the tree obtained from the
+        # regular expression into an automata, and then adding a transition
+        # from all final states to themselves on any input.
+        #
 
-	aut1 := convert(tr.children[2])
+        aut1 := convert(tr.children[2])
 
-	listptr := aut1.accepting
+        listptr := aut1.accepting
 
-	while \listptr do {
-	    listptr2 := listptr.current.dot
+        while \listptr do {
+            listptr2 := listptr.current.dot
 
-	    if /listptr2 then {
-		listptr2 := alcnodelist()
-		listptr2.current := listptr.current
-		listptr.current.dot := listptr2
-	      }
+            if /listptr2 then {
+                listptr2 := alcnodelist()
+                listptr2.current := listptr.current
+                listptr.current.dot := listptr2
+              }
 
-	    else {
-		while \ (listptr2._next) do
-		  listptr2 := listptr2._next
-		
-		listptr2._next := alcnodelist()
-		listptr2._next.current := listptr.current
-	      }
+            else {
+                while \ (listptr2._next) do
+                  listptr2 := listptr2._next
 
-	    listptr := listptr._next
-	  }
+                listptr2._next := alcnodelist()
+                listptr2._next.current := listptr.current
+              }
 
-	return aut1
+            listptr := listptr._next
+          }
+
+        return aut1
       }
 
     ENDING: {
-	#
-	# This case is handled by converting the regular expression and then
-	# adding a new start state that transitions to itself on any input
-	# and has an epsilon transition to the start state of the converted
-	# machine.
-	#
+        #
+        # This case is handled by converting the regular expression and then
+        # adding a new start state that transitions to itself on any input
+        # and has an epsilon transition to the start state of the converted
+        # machine.
+        #
 
-	aut1 := convert(tr.children[1])
+        aut1 := convert(tr.children[1])
 
-	newnode1 := alcanode(0)
+        newnode1 := alcanode(0)
 
-	newnode1.dot := alcnodelist()
-	newnode1.dot.current := newnode1
+        newnode1.dot := alcnodelist()
+        newnode1.dot.current := newnode1
 
-	newnode1.epsilon := alcnodelist()
-	newnode1.epsilon.current := aut1.start
+        newnode1.epsilon := alcnodelist()
+        newnode1.epsilon.current := aut1.start
 
-	listptr := aut1.states
-	aut1.states := alcnodelist()
-	aut1.states.current := newnode1
-	aut1.states._next := listptr
+        listptr := aut1.states
+        aut1.states := alcnodelist()
+        aut1.states.current := newnode1
+        aut1.states._next := listptr
 
-	aut1.start := newnode1
-	return aut1
+        aut1.start := newnode1
+        return aut1
       }
 
     QUESTION: {
-	#
-	# This adds the start state to the list of accepting states for the
-	# machine that is a conversion of the regular expression.
-	#
+        #
+        # This adds the start state to the list of accepting states for the
+        # machine that is a conversion of the regular expression.
+        #
 
-	aut1 := convert(tr.children[1])
+        aut1 := convert(tr.children[1])
 
-	listptr := aut1.accepting
-	if /listptr then
-	  return aut1
+        listptr := aut1.accepting
+        if /listptr then
+          return aut1
 
-	while \ (listptr._next) do
-	  listptr := listptr._next
-	
-	listptr._next := alcnodelist()
-	listptr._next.current := aut1.start
+        while \ (listptr._next) do
+          listptr := listptr._next
 
-	return aut1
+        listptr._next := alcnodelist()
+        listptr._next.current := aut1.start
+
+        return aut1
       }
 
     STAR: {
-	#
-	# This case converts the regular expression and then adds an epsilon
-	# transition from the final states to the start state and makes the
-	# start state a final state.
-	#
+        #
+        # This case converts the regular expression and then adds an epsilon
+        # transition from the final states to the start state and makes the
+        # start state a final state.
+        #
 
         aut1 := convert(tr.children[1])
 
         listptr := aut1.accepting
 
         while \ listptr do {
-	    listptr2 := listptr.current.epsilon
+            listptr2 := listptr.current.epsilon
 
-	    if /listptr2 then {
-		listptr2 := alcnodelist()
-		listptr2.current := aut1.start
-		listptr.current.epsilon := listptr2
-	      }
+            if /listptr2 then {
+                listptr2 := alcnodelist()
+                listptr2.current := aut1.start
+                listptr.current.epsilon := listptr2
+              }
 
-	    else {
-		while \ (listptr2._next) do
-		  listptr2 := listptr2._next
+            else {
+                while \ (listptr2._next) do
+                  listptr2 := listptr2._next
 
-		listptr2._next := alcnodelist()
-		listptr2._next.current := aut1.start
-	      }
+                listptr2._next := alcnodelist()
+                listptr2._next.current := aut1.start
+              }
 
-	    listptr := listptr._next
-	  }
+            listptr := listptr._next
+          }
 
-	listptr := aut1.accepting
-	aut1.accepting := alcnodelist()
+        listptr := aut1.accepting
+        aut1.accepting := alcnodelist()
         aut1.accepting.current := aut1.start
-	aut1.accepting._next := listptr
+        aut1.accepting._next := listptr
 
         return aut1
       }
 
     PLUS: {
-	#
-	# Works similar to the case for star except that it doesn't make the
-	# start state a final state.
-	#
+        #
+        # Works similar to the case for star except that it doesn't make the
+        # start state a final state.
+        #
 
         aut1 := convert(tr.children[1])
 
@@ -502,7 +502,7 @@ case echar of {
                 while \ (listptr2._next) do
                   listptr2 := listptr2._next
 
-		listptr2._next := alcnodelist()
+                listptr2._next := alcnodelist()
                 listptr2._next.current := aut1.start
               }
 
@@ -518,105 +518,105 @@ case echar of {
     FORSLASH |
 
     OCCURRENCES: {
-	tempstring := tr.text
-	tempstring +:= 1
-	t1 := *tempstring - 48                # convert from char to int
-	tempstring +:= 2
+        tempstring := tr.text
+        tempstring +:= 1
+        t1 := *tempstring - 48                # convert from char to int
+        tempstring +:= 2
 
-	#
-	# First we convert the regular expression that we are generating 
-	# multiple occurrences for.
-	#
+        #
+        # First we convert the regular expression that we are generating
+        # multiple occurrences for.
+        #
 
-	returnvalue := convert(tr.children[1])
+        returnvalue := convert(tr.children[1])
 
-	every i := 1 to t1-1 do {
-	    #
-	    # This loop will continue until the first number in the number
-	    # of occurrences or theonly number as the case may be. It will 
-	    # reconvert the regular expression to create a copy of the 
-	    # automata and then it will link the previous final states to the
-	    # start state of this machine turning off the previous final 
-	    # states.
-	    #
+        every i := 1 to t1-1 do {
+            #
+            # This loop will continue until the first number in the number
+            # of occurrences or theonly number as the case may be. It will
+            # reconvert the regular expression to create a copy of the
+            # automata and then it will link the previous final states to the
+            # start state of this machine turning off the previous final
+            # states.
+            #
 
-	    aut1 := convert(tr.children[1])
-	    
-	    listptr := returnvalue.accepting
-	    while \listptr do {
-		if / (listptr.current.epsilon) then {
-		    listptr.current.epsilon := alcnodelist()
-		    listptr.current.epsilon.current := aut1.start
-		  }
+            aut1 := convert(tr.children[1])
 
-		else {
-		    listptr2 := listptr.current.epsilon
+            listptr := returnvalue.accepting
+            while \listptr do {
+                if / (listptr.current.epsilon) then {
+                    listptr.current.epsilon := alcnodelist()
+                    listptr.current.epsilon.current := aut1.start
+                  }
 
-		    while \ (listptr2._next) do
-		      listptr2 := listptr2._next
+                else {
+                    listptr2 := listptr.current.epsilon
 
-		    listptr2._next := alcnodelist()
-		    listptr2._next.current := aut1.start
-		  }
+                    while \ (listptr2._next) do
+                      listptr2 := listptr2._next
 
-		listptr := listptr._next
-	      }
+                    listptr2._next := alcnodelist()
+                    listptr2._next.current := aut1.start
+                  }
 
-	    returnvalue.accepting := aut1.accepting 
+                listptr := listptr._next
+              }
 
-	    listptr := returnvalue.states
-	    while \ (listptr._next) do
-	      listptr := listptr._next
+            returnvalue.accepting := aut1.accepting
 
-	    listptr._next := aut1.states
-	  }
+            listptr := returnvalue.states
+            while \ (listptr._next) do
+              listptr := listptr._next
 
-	if \tempstring then {
-	    #
-	    # If there were two numbers in the set of occurrences then we do 
-	    # basically the same as the above up to the second number except
-	    # that we do not turn off the final states of the previous machine
-	    # during each iteration.
-	    #
+            listptr._next := aut1.states
+          }
 
-	    t2 := *tempstring - 48
-	    every i := t1 to t2-1 do {
-		aut1 := convert(tr.children[1])
-		listptr := returnvalue.accepting
+        if \tempstring then {
+            #
+            # If there were two numbers in the set of occurrences then we do
+            # basically the same as the above up to the second number except
+            # that we do not turn off the final states of the previous machine
+            # during each iteration.
+            #
 
-		while \listptr do {
-		    if / (listptr.current.epsilon) then {
-			listptr.current.epsilon := alcnodelist()
-			listptr.current.epsilon.current := aut1.start
-		      }
+            t2 := *tempstring - 48
+            every i := t1 to t2-1 do {
+                aut1 := convert(tr.children[1])
+                listptr := returnvalue.accepting
 
-		    else {
-			listptr2 := listptr.current.epsilon
+                while \listptr do {
+                    if / (listptr.current.epsilon) then {
+                        listptr.current.epsilon := alcnodelist()
+                        listptr.current.epsilon.current := aut1.start
+                      }
 
-			while \ (listptr2._next) do
-			  listptr2 := listptr2._next
+                    else {
+                        listptr2 := listptr.current.epsilon
 
-			listptr2._next := alcnodelist()
-			listptr2._next.current := aut1.start
-		      }
+                        while \ (listptr2._next) do
+                          listptr2 := listptr2._next
 
-		    listptr := listptr._next
-		  }
+                        listptr2._next := alcnodelist()
+                        listptr2._next.current := aut1.start
+                      }
+
+                    listptr := listptr._next
+                  }
 
                 # append aut1.accepting onto returnvalue.accepting
-		listptr := returnvalue.accepting
-		while \ (listptr._next) do
-		  listptr := listptr._next
-		listptr._next := aut1.accepting
+                listptr := returnvalue.accepting
+                while \ (listptr._next) do
+                  listptr := listptr._next
+                listptr._next := aut1.accepting
 
                 # append aut1.states onto returnvalue.states
-		listptr := returnvalue.states
-		while \ (listptr._next) do
-		  listptr := listptr._next
-		listptr._next := aut1.states
-	      }
-	  }
-	return returnvalue
+                listptr := returnvalue.states
+                while \ (listptr._next) do
+                  listptr := listptr._next
+                listptr._next := aut1.states
+              }
+          }
+        return returnvalue
       }
     }
    stop("failing off the end of convert: ",image(tr), " label ",image(tr.label),

@@ -11,7 +11,7 @@
 #include <string.h>
 #ifndef HAVE_LIBPNG
 #include <setjmp.h>
-#endif					/* HAVE_LIBPNG */
+#endif                                  /* HAVE_LIBPNG */
 #endif
 
 #include "tp.h"
@@ -40,7 +40,7 @@ int smtpbegin(Tp_t* tp, Tprequest_t* req)
     }
     TPSET(tp, CONNECTED);
   }
-  
+
   switch (req->type)
   {
     case DATA:
@@ -51,9 +51,9 @@ int smtpbegin(Tp_t* tp, Tprequest_t* req)
       disc->readlnf(buf, sizeof(buf), disc);
       rc = atoi(buf);
       if (rc != 354) {
-	 disc->exceptf(TP_ECONNECT, "DATA", disc);
-	 return (-1);
-	 }
+         disc->exceptf(TP_ECONNECT, "DATA", disc);
+         return (-1);
+         }
       while(buf[3] == '-') disc->readlnf(buf, sizeof(buf), disc);
       _tpsends(disc, "%s\r\n", req->header);
       TPENTER(tp, WRITING);

@@ -1,21 +1,21 @@
 ############################################################################
 #
-#	Name:	 cleanup.icn
+#       Name:    cleanup.icn
 #
-#	Subject: Program to recurse down a directory hierarchy
-# 		 and remove files with # or ~ in their names	
+#       Subject: Program to recurse down a directory hierarchy
+#                and remove files with # or ~ in their names
 #
-#	Author:	 Shea Newton and Clinton Jeffery, from Rosetta Code directory
-# 	 	 traversal solution at:
-# 		 http://rosettacode.org/wiki/Walk_a_directory/Recursively#Unicon
+#       Author:  Shea Newton and Clinton Jeffery, from Rosetta Code directory
+#                traversal solution at:
+#                http://rosettacode.org/wiki/Walk_a_directory/Recursively#Unicon
 #
-#	Date:	 May 28, 2013
+#       Date:    May 28, 2013
 #
 ############################################################################
 
 $ifdef _MS_WINDOWS_NT
 $define RM "del /Q "
-$define SL "\\" 
+$define SL "\\"
 $else
 $define RM "rm -f "
 $define SL "/"
@@ -25,17 +25,17 @@ procedure main(argv)
    if *argv=0 then put(argv, ".")
    # writes out all directories from the current directory down
    every d :=  !getdirs(!argv) do {
-   
+
       # construct file deletion commands around current directory name
-      # tilde's behaviour on Windows systems requires two separate expressions	
+      # tilde's behaviour on Windows systems requires two separate expressions
       cmd1 := RM || d || SL || "*~"
       cmd2 := RM || d || SL || "\~*"
       cmd3 := RM || d || SL || "*\#*"
 
 $ifdef _MS_WINDOWS_NT
-   
+
       # postpend Windows file deletion commands with stdout/stderr redirects.
-      # sends stderr to nul so user doesn't see complaints when files 
+      # sends stderr to nul so user doesn't see complaints when files
       # matching these patterns aren't present
       cmd1 ||:= " >nul 2>&1"
       cmd2 ||:= " >nul 2>&1"
@@ -58,7 +58,7 @@ procedure getdirs(s)  # return a list of directories beneath the directory 's'
             D |||:= getdirs(s || SL || f)
          }
       close(d)
-    
+
       return D
-   } 
+   }
 end

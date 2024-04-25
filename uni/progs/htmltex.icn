@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     htmltex.icn
+#       File:     htmltex.icn
 #
-#	Subject:  Program to convert LaTeX to HTML
+#       Subject:  Program to convert LaTeX to HTML
 #
-#	Author:   Clinton L. Jeffery
+#       Author:   Clinton L. Jeffery
 #
-#	Date:     February 18, 2015
+#       Date:     February 18, 2015
 #
 ############################################################################
 #
@@ -39,39 +39,39 @@ procedure main(args)
    else {
       i := 1
       while args[i][1] == "-" do {
-	 case args[i] of {
-	    "-silent": silent := 1
-	    "-cut"   : cut := "-cut"
-	    default  : write(&errout,"dont know option ",args[i])
-	    }
-	 i +:= 1
+         case args[i] of {
+            "-silent": silent := 1
+            "-cut"   : cut := "-cut"
+            default  : write(&errout,"dont know option ",args[i])
+            }
+         i +:= 1
          }
       if /silent then write(&errout, vers, " executed on ",date)
       if i > *args then {
-	 every write(\ (htmltex(!&input)))
-	 return
+         every write(\ (htmltex(!&input)))
+         return
          }
       if j := find(".ctex", args[i]) then {
-	 args[i][j:0] := ""
-	 system("retex -c -silent " || cut || " " || args[i])
+         args[i][j:0] := ""
+         system("retex -c -silent " || cut || " " || args[i])
          }
       else if j := find(".gtex", args[i]) then {
-	 args[i][j:0] := ""
-	 s := "pstex " || args[i] || ".gtex >" || args[i] || ".tex"
-	 mysystem("rm -f " || args[i] || ".tex")
-	 mysystem(s)
-	 }
+         args[i][j:0] := ""
+         s := "pstex " || args[i] || ".gtex >" || args[i] || ".tex"
+         mysystem("rm -f " || args[i] || ".tex")
+         mysystem(s)
+         }
       else if j := find(".tex", args[i]) then args[i][j:0] := ""
       root := args[i]
       if not (fout := open(args[i] || ".html","w")) then
-	 stop("htmltex: couldn't open ",args[i],".html for writing")
+         stop("htmltex: couldn't open ",args[i],".html for writing")
       include(args[i])
       if \bibliography then {
-	 if not (fin := open(bibliography,"r")) then
-	    stop(&errout,"htmltex: couldn't open ",bibliography," for reading")
-	 write(fout,"\n\n",trim(center("References",70)))
-	 every write(fout,\ (debib(htmltex(!fin))))
-	 }
+         if not (fin := open(bibliography,"r")) then
+            stop(&errout,"htmltex: couldn't open ",bibliography," for reading")
+         write(fout,"\n\n",trim(center("References",70)))
+         every write(fout,\ (debib(htmltex(!fin))))
+         }
       close(fout)
       }
 end
@@ -264,7 +264,7 @@ while s[find("\\}", s) +: 2] := "\\rightcurly"
    if i := find("\\begin{supertabular}", s) then {
       in_supertabular := 1
       s := "<table border><tr><td>"
-      
+
       }
    if i := find("\\end{supertabular}", s) then {
       in_supertabular := &null
@@ -284,9 +284,9 @@ while s[find("\\}", s) +: 2] := "\\rightcurly"
    else {
       # eat & in latex by default, but not if it is an HTML-ism
       while (x <- find("&",s)) & s[0<x-1]~=="\\" do {
-	 if match("lt"|"gt"|"amp", s, x+1) then break
-	 s[ x ] := ""
-	 }
+         if match("lt"|"gt"|"amp", s, x+1) then break
+         s[ x ] := ""
+         }
       }
    while s[find("$<$", s) +: 3] := "&lt"
    while s[find("$>$", s) +: 3] := "&gt"
@@ -305,14 +305,14 @@ while s[find("\\}", s) +: 2] := "\\rightcurly"
 
    if i := find("\\hfill",s) then {
       s := "<div style=\"text-align:left; float:left;\">" ||s[1:i]|| "</div>"||
-	 "<div style=\"text-align:right; float:right\">"||s[i+6:0]|| "</div>"||
-	 "<br>"
+         "<div style=\"text-align:right; float:right\">"||s[i+6:0]|| "</div>"||
+         "<br>"
       }
    if i := find("\\hline",s) then {
       if \in_supertabular then
-	 s[i +: *"\\hline"] := "\n"
+         s[i +: *"\\hline"] := "\n"
       else
-	 s[i +: *"\\hline"] := "\n" || repl("-",i) || "\n"
+         s[i +: *"\\hline"] := "\n" || repl("-",i) || "\n"
       }
    while s[find("~",s)] := ""
 
@@ -339,91 +339,91 @@ procedure deline(s)
       move(1)
       command := tab(many(&letters))
       case command of {
-	 "noindent": {
-	    tab(many(' \t'))
-	    return tab(0)
-	    }
-	 "caption": {
-	    tab(upto('{')+1)
-	    return "(Figure titled \"" || tab(-1) || "\" omitted.)"
-	    }
-	 "include": {
-	    if ="{" &
-	       (fname := tab(many(&letters++&digits))) &
-	       ="}" then {
-		  include(fname)
-		  }
-	    }
-	 "item": {
-	    tab(many(' \t'))
-	    if ="[" then {
-	       body := tab(upto(']'))
-	       move(1) # past "]"
-	       return body || tab(0)
-	       }
-	    else return "<LI> " || tab(0)
-	    }
-	 "bibitem": {
-	    body := tab(upto(']}')+1)
-	    return body
-	    }
-	 "newblock": {
-	    move(1)
-	    body := tab(0)
-	    return body
-	    }
-	 "bibliography": {
-	    tab(upto('{')+1)
-	    if not (body := tab(upto('}'))) then body := tab(0)
-	    bibliography := (\root | body) || ".bbl"
-	    return ""
-	    }
-	 "title": {
-	    tab(upto('{')+1)
-	    if not (body := tab(upto('}'))) then body := tab(0)
-	    return "<TITLE>" || body || "</TITLE>" || "\n" ||
-		"<BR><BR><BR><BR><BR><BR><BR><BR><BR>\n" ||
-		"<H1><P ALIGN=\"center\">" || body || "</P></H1>"
-	    }
-	 "author": {
-	    tab(upto('{')+1)
-	    if not (body := tab(upto('}'))) then body := tab(0)
-	    return "<h4><P ALIGN=\"center\">" || body || "<BR>\n"
-	    }
-	 "date": {
-	    tab(upto('{')+1) # handle both \section{ and \section*{
-	    if not (body := tab(upto('}'))) then body := tab(0)
-	    return body || "\n</p></h4>"
-	    }
-	 "section" | "subsection" | "subsubsection": {
-	    tab(upto('{')+1) # handle both \section{ and \section*{
-	    if not (body := tab(upto('}'))) then body := tab(0)
-	    return "<" || cmd2tag(command) || ">" || body ||
-		"</" || cmd2tag(command) || ">"
-	    }
-	 "iconcode": {
-	    return "<PRE>"
-	    }
-	 "trnumber": {
-	    tab(upto('{')+1) # handle both \section{ and \section*{
-	    if not (body := tab(upto('}'))) then body := tab(0)
-	    return "TR " || body || "<BR>"
-	    }
-	 "abstract": {
-	    return "<BR><BR><BR><BR><BR>\n<H4>_
+         "noindent": {
+            tab(many(' \t'))
+            return tab(0)
+            }
+         "caption": {
+            tab(upto('{')+1)
+            return "(Figure titled \"" || tab(-1) || "\" omitted.)"
+            }
+         "include": {
+            if ="{" &
+               (fname := tab(many(&letters++&digits))) &
+               ="}" then {
+                  include(fname)
+                  }
+            }
+         "item": {
+            tab(many(' \t'))
+            if ="[" then {
+               body := tab(upto(']'))
+               move(1) # past "]"
+               return body || tab(0)
+               }
+            else return "<LI> " || tab(0)
+            }
+         "bibitem": {
+            body := tab(upto(']}')+1)
+            return body
+            }
+         "newblock": {
+            move(1)
+            body := tab(0)
+            return body
+            }
+         "bibliography": {
+            tab(upto('{')+1)
+            if not (body := tab(upto('}'))) then body := tab(0)
+            bibliography := (\root | body) || ".bbl"
+            return ""
+            }
+         "title": {
+            tab(upto('{')+1)
+            if not (body := tab(upto('}'))) then body := tab(0)
+            return "<TITLE>" || body || "</TITLE>" || "\n" ||
+                "<BR><BR><BR><BR><BR><BR><BR><BR><BR>\n" ||
+                "<H1><P ALIGN=\"center\">" || body || "</P></H1>"
+            }
+         "author": {
+            tab(upto('{')+1)
+            if not (body := tab(upto('}'))) then body := tab(0)
+            return "<h4><P ALIGN=\"center\">" || body || "<BR>\n"
+            }
+         "date": {
+            tab(upto('{')+1) # handle both \section{ and \section*{
+            if not (body := tab(upto('}'))) then body := tab(0)
+            return body || "\n</p></h4>"
+            }
+         "section" | "subsection" | "subsubsection": {
+            tab(upto('{')+1) # handle both \section{ and \section*{
+            if not (body := tab(upto('}'))) then body := tab(0)
+            return "<" || cmd2tag(command) || ">" || body ||
+                "</" || cmd2tag(command) || ">"
+            }
+         "iconcode": {
+            return "<PRE>"
+            }
+         "trnumber": {
+            tab(upto('{')+1) # handle both \section{ and \section*{
+            if not (body := tab(upto('}'))) then body := tab(0)
+            return "TR " || body || "<BR>"
+            }
+         "abstract": {
+            return "<BR><BR><BR><BR><BR>\n<H4>_
                      <P ALIGN=\"center\">Abstract</P></H4><BR>"
-	    }
-	 "maketitle": {
-	    return "<BR><BR><BR><BR><BR><BR><BR><CENTER>\n" ||
+            }
+         "maketitle": {
+            return "<BR><BR><BR><BR><BR><BR><BR><CENTER>\n" ||
               "<P>Department of Computer Science<br>\n" ||
-		"The University of Idaho<br>\n" ||
-		"Moscow, ID 83844\n</P>\n<h5>" ||
-		"(this document generated from latex source by " || vers ||
-		")</h5></CENTER><BR><BR><BR><BR>\n"
-	    }
-	 default: {
-	    return ""
-	    }
+                "The University of Idaho<br>\n" ||
+                "Moscow, ID 83844\n</P>\n<h5>" ||
+                "(this document generated from latex source by " || vers ||
+                ")</h5></CENTER><BR><BR><BR><BR>\n"
+            }
+         default: {
+            return ""
+            }
          }
       }
    else
@@ -440,23 +440,23 @@ procedure debrace(s)
 
    s ||:= " "
    while i := find((cmd := "{\\it "|"{\\em "|"{\\texttt "|"{\\tt "|
-		    "{\\textbf "|"{\\bf "| "{\\textit "|
-		    "{\\textsf "|"{\\sf "|"{\\ctt "|"{\\sf\\bf "),s) do {
+                    "{\\textbf "|"{\\bf "| "{\\textit "|
+                    "{\\textsf "|"{\\sf "|"{\\ctt "|"{\\sf\\bf "),s) do {
       j := &null
       k := 0
       every j := bal(&cset,'{','}',s,i,0) \ 2 do k +:= 1
       if \j & k=2 then {
-	 s := s[1:i] ||
-	     "<" || cmd2tag(cmd) || ">" ||
-	     s[i+*cmd:j-1] ||
-	     "</" || cmd2tag(cmd) || ">" ||
-	     s[j:0]
+         s := s[1:i] ||
+             "<" || cmd2tag(cmd) || ">" ||
+             s[i+*cmd:j-1] ||
+             "</" || cmd2tag(cmd) || ">" ||
+             s[j:0]
          }
       else {
-	 write(&errout,"check matching brace for ",image(s))
+         write(&errout,"check matching brace for ",image(s))
 write(&errout, "   j ", image(j), " k ", image(k))
-	 break
-	 }
+         break
+         }
       }
 while s[find("\\leftcurly", s) +: *"\\leftcurly"] := "{"
 while s[find("\\rightcurly", s) +: *"\\rightcurly"] := "}"

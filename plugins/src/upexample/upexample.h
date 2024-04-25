@@ -1,11 +1,11 @@
 /***
- *	Subject    : Unicon Plugin Example
- *	Author     : Jafar Al-Gharaibeh
- *	Date       : Feb 3, 2017
+ *      Subject    : Unicon Plugin Example
+ *      Author     : Jafar Al-Gharaibeh
+ *      Date       : Feb 3, 2017
  ***
  *
- *	Description: This is an example demonstrating the format of
- *		     a Unicon plugin.
+ *      Description: This is an example demonstrating the format of
+ *                   a Unicon plugin.
  *                   Example functions borrowed from IPL
  ***
  *
@@ -22,15 +22,15 @@
  *   r : real
  *   n : number
  *   s : string
- *   l : list 
- *   t : table 
+ *   l : list
+ *   t : table
  *   x : any
  * ...
 
  * return signatures
  *   function{0} return 0 result, i.e fail
  *   function{1} return 1 result
- *   function{0, 1} return 1 result or fail 
+ *   function{0, 1} return 1 result or fail
 
  *   param signature
  *   name@type              => param name and type, and it is required
@@ -58,9 +58,9 @@ int bitcount(UARGS);
 /*
  *  s := pack(value, flags, width)
  *  x := unpack(string, flags)
- * 
+ *
  *  Flag characters are as follows:
- * 
+ *
  *    l -- little-endian [default]
  *    b -- big-endian
  *    n -- host platform's native packing order
@@ -84,7 +84,7 @@ int bitcount(UARGS);
  *
  *  @function{0, 1} pack(value@n, flags@s:null, width@i:4)
  *  @return : n
- * 
+ *
  *  pack integer into bytes
  */
  int pack(UARGS);

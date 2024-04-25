@@ -65,15 +65,15 @@ class Try : Object (sources, exceptions, lastException)
       ::push(exceptions, &null)     # placeholder
       #  Consider making this a generator!
       if result := (@L[1])\1 then {
-	 ::pop(sources)
-	 lastException := ::pop(exceptions) | &null
-	 return result
-	 }
+         ::pop(sources)
+         lastException := ::pop(exceptions) | &null
+         return result
+         }
       else {
-	 ::pop(sources)
-	 lastException := ::pop(exceptions) | &null
-	 fail
-	 }
+         ::pop(sources)
+         lastException := ::pop(exceptions) | &null
+         fail
+         }
     end
 
    #<p>
@@ -83,19 +83,19 @@ class Try : Object (sources, exceptions, lastException)
    method throw(exception) # Exception to throw.
 
       while *sources > 0 do {
-	 # Save the exception for checking with catch() later.
-	 exceptions[1] := exception
-	 exception @ sources[1]
-	 # If we get back here, nothing caught exception, propagate up
-	 #   (the sources stack has been popped)
-	 }
+         # Save the exception for checking with catch() later.
+         exceptions[1] := exception
+         exception @ sources[1]
+         # If we get back here, nothing caught exception, propagate up
+         #   (the sources stack has been popped)
+         }
 
       # Quit if exception isn't caught at all...
       #    If the exception is thrown inside a Try() that doesn't
       #    catch it, this code is never reached.  I.e. uncaught
       #    exceptions are ignored if any are tried to be caught.
       ::stop("Exception thrown outside of Try call: ",
-	   exception.getMessage(),":\n",exception.getLocation())
+           exception.getMessage(),":\n",exception.getLocation())
 
    end
 
@@ -145,7 +145,7 @@ class Try : Object (sources, exceptions, lastException)
 initially ()
    sources := []       # Stack of 'try' clauses
    exceptions := []    # Stack of thrown exceptions (probably always
-		       #   <= size 1) - this needs more thought!
+                       #   <= size 1) - this needs more thought!
    Try := create |self # Convert to a singleton object
 end
 

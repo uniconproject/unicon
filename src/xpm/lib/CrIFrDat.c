@@ -37,13 +37,8 @@
 LFUNC(OpenArray, void, (char **data, xpmData *mdata));
 
 int
-XpmCreateImageFromData(display, data, image_return,
-		       shapeimage_return, attributes)
-    Display *display;
-    char **data;
-    XImage **image_return;
-    XImage **shapeimage_return;
-    XpmAttributes *attributes;
+XpmCreateImageFromData(Display *display, char **data, XImage **image_return,
+                       XImage **shapeimage_return, XpmAttributes *attributes)
 {
     XpmImage image;
     XpmInfo info;
@@ -58,19 +53,19 @@ XpmCreateImageFromData(display, data, image_return,
 
     /* create an XpmImage from the file */
     if (attributes) {
-	xpmInitAttributes(attributes);
-	xpmSetInfoMask(&info, attributes);
-	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-					    image_return, shapeimage_return,
-					    &image, &info, attributes);
+        xpmInitAttributes(attributes);
+        xpmSetInfoMask(&info, attributes);
+        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+                                            image_return, shapeimage_return,
+                                            &image, &info, attributes);
     } else
-	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-					    image_return, shapeimage_return,
-					    &image, NULL, attributes);
+        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+                                            image_return, shapeimage_return,
+                                            &image, NULL, attributes);
     if (attributes) {
-	if (ErrorStatus >= 0)		/* no fatal error */
-	    xpmSetAttributes(attributes, &image, &info);
-	XpmFreeXpmInfo(&info);
+        if (ErrorStatus >= 0)           /* no fatal error */
+            xpmSetAttributes(attributes, &image, &info);
+        XpmFreeXpmInfo(&info);
     }
 
     /* free the XpmImage */
@@ -80,10 +75,7 @@ XpmCreateImageFromData(display, data, image_return,
 }
 
 int
-XpmCreateXpmImageFromData(data, image, info)
-    char **data;
-    XpmImage *image;
-    XpmInfo *info;
+XpmCreateXpmImageFromData(char **data, XpmImage *image, XpmInfo *info)
 {
     xpmData mdata;
     int ErrorStatus;
@@ -105,9 +97,7 @@ XpmCreateXpmImageFromData(data, image, info)
  * open the given array to be read or written as an xpmData which is returned
  */
 static void
-OpenArray(data, mdata)
-    char **data;
-    xpmData *mdata;
+OpenArray(char **data, xpmData *mdata)
 {
     mdata->type = XPMARRAY;
     mdata->stream.data = data;
@@ -116,5 +106,5 @@ OpenArray(data, mdata)
     mdata->CommentLength = 0;
     mdata->Bcmt = mdata->Ecmt = NULL;
     mdata->Bos = mdata->Eos = '\0';
-    mdata->format = 0;			/* this can only be Xpm 2 or 3 */
+    mdata->format = 0;                  /* this can only be Xpm 2 or 3 */
 }

@@ -48,13 +48,8 @@ LFUNC(OpenReadFile, int, (char *filename, xpmData *mdata));
 LFUNC(xpmDataClose, void, (xpmData *mdata));
 
 int
-XpmReadFileToImage(display, filename,
-		   image_return, shapeimage_return, attributes)
-    Display *display;
-    char *filename;
-    XImage **image_return;
-    XImage **shapeimage_return;
-    XpmAttributes *attributes;
+XpmReadFileToImage(Display *display, char *filename, XImage **image_return,
+                   XImage **shapeimage_return, XpmAttributes *attributes)
 {
     XpmImage image;
     XpmInfo info;
@@ -66,23 +61,23 @@ XpmReadFileToImage(display, filename,
 
     /* open file to read */
     if ((ErrorStatus = OpenReadFile(filename, &mdata)) != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     /* create the XImage from the XpmData */
     if (attributes) {
-	xpmInitAttributes(attributes);
-	xpmSetInfoMask(&info, attributes);
-	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-					    image_return, shapeimage_return,
-					    &image, &info, attributes);
+        xpmInitAttributes(attributes);
+        xpmSetInfoMask(&info, attributes);
+        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+                                            image_return, shapeimage_return,
+                                            &image, &info, attributes);
     } else
-	ErrorStatus = xpmParseDataAndCreate(display, &mdata,
-					    image_return, shapeimage_return,
-					    &image, NULL, attributes);
+        ErrorStatus = xpmParseDataAndCreate(display, &mdata,
+                                            image_return, shapeimage_return,
+                                            &image, NULL, attributes);
     if (attributes) {
-	if (ErrorStatus >= 0)		/* no fatal error */
-	    xpmSetAttributes(attributes, &image, &info);
-	XpmFreeXpmInfo(&info);
+        if (ErrorStatus >= 0)           /* no fatal error */
+            xpmSetAttributes(attributes, &image, &info);
+        XpmFreeXpmInfo(&info);
     }
 
     xpmDataClose(&mdata);
@@ -93,10 +88,7 @@ XpmReadFileToImage(display, filename,
 }
 
 int
-XpmReadFileToXpmImage(filename, image, info)
-    char *filename;
-    XpmImage *image;
-    XpmInfo *info;
+XpmReadFileToXpmImage(char *filename, XpmImage *image, XpmInfo *info)
 {
     xpmData mdata;
     int ErrorStatus;
@@ -107,7 +99,7 @@ XpmReadFileToXpmImage(filename, image, info)
 
     /* open file to read */
     if ((ErrorStatus = OpenReadFile(filename, &mdata)) != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     /* create the XpmImage from the XpmData */
     ErrorStatus = xpmParseData(&mdata, image, info);
@@ -121,9 +113,7 @@ XpmReadFileToXpmImage(filename, image, info)
  * open the given file to be read as an xpmData which is returned.
  */
 static int
-OpenReadFile(filename, mdata)
-    char *filename;
-    xpmData *mdata;
+OpenReadFile(char *filename, xpmData *mdata)
 {
 #ifndef NO_ZPIPE
     char buf[BUFSIZ];
@@ -134,62 +124,62 @@ OpenReadFile(filename, mdata)
 #endif
 
     if (!filename) {
-	mdata->stream.file = (stdin);
-	mdata->type = XPMFILE;
+        mdata->stream.file = (stdin);
+        mdata->type = XPMFILE;
     } else {
 #ifndef NO_ZPIPE
-	int len = strlen(filename);
-	if ((len > 2) && !strcmp(".Z", filename + (len - 2))) {
-	    mdata->type = XPMPIPE;
-	    sprintf(buf, "uncompress -c \"%s\"", filename);
-	    if (!(mdata->stream.file = popen(buf, "r")))
-		return (XpmOpenFailed);
+        int len = strlen(filename);
+        if ((len > 2) && !strcmp(".Z", filename + (len - 2))) {
+            mdata->type = XPMPIPE;
+            sprintf(buf, "uncompress -c \"%s\"", filename);
+            if (!(mdata->stream.file = popen(buf, "r")))
+                return (XpmOpenFailed);
 
-	} else if ((len > 3) && !strcmp(".gz", filename + (len - 3))) {
-	    mdata->type = XPMPIPE;
-	    sprintf(buf, "gunzip -qc \"%s\"", filename);
-	    if (!(mdata->stream.file = popen(buf, "r")))
-		return (XpmOpenFailed);
+        } else if ((len > 3) && !strcmp(".gz", filename + (len - 3))) {
+            mdata->type = XPMPIPE;
+            sprintf(buf, "gunzip -qc \"%s\"", filename);
+            if (!(mdata->stream.file = popen(buf, "r")))
+                return (XpmOpenFailed);
 
-	} else {
+        } else {
 # ifdef STAT_ZFILE
-	    if (!(compressfile = (char *) XpmMalloc(len + 4)))
-		return (XpmNoMemory);
+            if (!(compressfile = (char *) XpmMalloc(len + 4)))
+                return (XpmNoMemory);
 
-	    sprintf(compressfile, "%s.Z", filename);
-	    if (!stat(compressfile, &status)) {
-		sprintf(buf, "uncompress -c \"%s\"", compressfile);
-		if (!(mdata->stream.file = popen(buf, "r"))) {
-		    XpmFree(compressfile);
-		    return (XpmOpenFailed);
-		}
-		mdata->type = XPMPIPE;
-	    } else {
-		sprintf(compressfile, "%s.gz", filename);
-		if (!stat(compressfile, &status)) {
-		    sprintf(buf, "gunzip -c \"%s\"", compressfile);
-		    if (!(mdata->stream.file = popen(buf, "r"))) {
-			XpmFree(compressfile);
-			return (XpmOpenFailed);
-		    }
-		    mdata->type = XPMPIPE;
-		} else {
+            sprintf(compressfile, "%s.Z", filename);
+            if (!stat(compressfile, &status)) {
+                sprintf(buf, "uncompress -c \"%s\"", compressfile);
+                if (!(mdata->stream.file = popen(buf, "r"))) {
+                    XpmFree(compressfile);
+                    return (XpmOpenFailed);
+                }
+                mdata->type = XPMPIPE;
+            } else {
+                sprintf(compressfile, "%s.gz", filename);
+                if (!stat(compressfile, &status)) {
+                    sprintf(buf, "gunzip -c \"%s\"", compressfile);
+                    if (!(mdata->stream.file = popen(buf, "r"))) {
+                        XpmFree(compressfile);
+                        return (XpmOpenFailed);
+                    }
+                    mdata->type = XPMPIPE;
+                } else {
 # endif
 #endif
-		    if (!(mdata->stream.file = fopen(filename, "r"))) {
+                    if (!(mdata->stream.file = fopen(filename, "r"))) {
 #if !defined(NO_ZPIPE) && defined(STAT_ZFILE)
-			XpmFree(compressfile);
+                        XpmFree(compressfile);
 #endif
-			return (XpmOpenFailed);
-		    }
-		    mdata->type = XPMFILE;
+                        return (XpmOpenFailed);
+                    }
+                    mdata->type = XPMFILE;
 #ifndef NO_ZPIPE
 # ifdef STAT_ZFILE
-		}
-	    }
-	    XpmFree(compressfile);
+                }
+            }
+            XpmFree(compressfile);
 # endif
-	}
+        }
 #endif
     }
     mdata->CommentLength = 0;
@@ -200,18 +190,17 @@ OpenReadFile(filename, mdata)
  * close the file related to the xpmData if any
  */
 static void
-xpmDataClose(mdata)
-    xpmData *mdata;
+xpmDataClose(xpmData *mdata)
 {
     switch (mdata->type) {
     case XPMFILE:
-	if (mdata->stream.file != (stdin))
-	    fclose(mdata->stream.file);
-	break;
+        if (mdata->stream.file != (stdin))
+            fclose(mdata->stream.file);
+        break;
 #ifndef NO_ZPIPE
     case XPMPIPE:
-	pclose(mdata->stream.file);
-	break;
+        pclose(mdata->stream.file);
+        break;
 #endif
     }
 }

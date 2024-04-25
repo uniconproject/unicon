@@ -13,14 +13,14 @@ record X(x)
 procedure main(argl)
 &trace:=-1
 &random:=0
-if not(&features == "operator overloading" ) then 
-	stop ("requires operator overloading")
+if not(&features == "operator overloading" ) then
+        stop ("requires operator overloading")
 y:=Op(5)
 fails:=" fails"
 
 every x:=y|y.x do {
 m:=&null
-x:=+argl[1] # ovld 5 -> 2 runs w same x 
+x:=+argl[1] # ovld 5 -> 2 runs w same x
 xl:=(type(x)=="Op__state" ,x)|[x]
 write(type(x))
 xc:=(type(x)=="Op__state" ,x)|(create x)
@@ -82,7 +82,7 @@ every writes (y.x,"+\"5\" is ",image(x+"5"),", ")
 write()
 every writes (y.x,"^\"5\" is ",image(x^"5"),", ")
 write(m)
-# ^ is it calling refresh or powr? 
+# ^ is it calling refresh or powr?
 #every writes ("^",y.x," is ",image(^xc),"=",@xc,", ")
 # ^ no op overload for @. TODO. so we can return a list of  all member coexpr's results
 every writes ("^",y.x," is ",image(^xc),", ")
@@ -101,12 +101,12 @@ write ("the rest varies:")
 every write (&collections, " (varies )")
 }
 
-end # main 
+end # main
 
 # ================================== class Op ====================================
 
 class Op (x)
-# method !() 
+# method !()
 method __bang__()
 suspend !x
 end
@@ -125,7 +125,7 @@ method __tabmat__()
 m:="tabmat"
 suspend =x
 end
-# ^ unicon: this is NOT used? 
+# ^ unicon: this is NOT used?
 method __number__()
 m:="number"
 suspend +x
@@ -212,8 +212,8 @@ method __sect__(y,z)
 suspend x[y:z]
 end
 method __size__()
-# suspend *self # recurses forever. 
-# ^ FIXME: how do we find our own size? 
+# suspend *self # recurses forever.
+# ^ FIXME: how do we find our own size?
 suspend *x
 end
 method __subsc__(y)
@@ -230,7 +230,7 @@ end
 end # class Op
 
 #============================== procedures ========================
- 
+
 # every i:=5|"5" do writeimg(y.x,"===",i, x===i|fails) # need wr{}
 procedure writeimg ( x,s,i,r)
 # TODO

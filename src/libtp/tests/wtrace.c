@@ -50,14 +50,14 @@ int exception(int e, void* obj, Tpdisc_t* disc)
       perror(url);
     }
     else {
-      switch (e) 
+      switch (e)
       {
-	case TP_EHOST:
-	  fputs(url, stderr); fputs(": Unknown host\n", stderr);
-	  break;
+        case TP_EHOST:
+          fputs(url, stderr); fputs(": Unknown host\n", stderr);
+          break;
 
-	default:
-	  fputs(url, stderr); fputs(": Error connecting\n", stderr);
+        default:
+          fputs(url, stderr); fputs(": Error connecting\n", stderr);
       }
     }
     exit(1);
@@ -92,7 +92,7 @@ ssize_t readf(void* buf, size_t n, Tpdisc_t* disc)
 
   return nread;
 }
-  
+
 ssize_t readlnf(void* buf, size_t n, Tpdisc_t* disc)
 {
   ssize_t nread;
@@ -168,13 +168,13 @@ int main(int argc, char **argv)
     switch (argv[i][1])
     {
       case 't':
-	type = argv[i+1];
-	i += 2;
-	break;
+        type = argv[i+1];
+        i += 2;
+        break;
 
       default:
-	fprintf(stderr, "Unrecognized option: %s", argv[i]);
-	exit(1);
+        fprintf(stderr, "Unrecognized option: %s", argv[i]);
+        exit(1);
     }
   }
 
@@ -201,7 +201,7 @@ int main(int argc, char **argv)
   tpreadln = disc->readlnf;
   disc->readlnf = readlnf;
   tpwrite = disc->writef;
-  disc->writef = writef;  
+  disc->writef = writef;
 
   tp = tp_new(puri, TpmHTTP, disc);
   resp = tp_sendreq(tp, &req);

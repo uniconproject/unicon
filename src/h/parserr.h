@@ -9,8 +9,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 static struct errmsg {
-   int	e_state;		/* parser state number */
-   char *e_mesg;		/* message text */
+   int  e_state;                /* parser state number */
+   char *e_mesg;                /* message text */
    } errtab[] = {
 
      0, "invalid declaration",

@@ -35,7 +35,7 @@ int popbegin(Tp_t* tp, Tprequest_t* req)
   }
 
   pass = tp->uri.pass;
-  
+
   if ((auth != NULL) && (strcmp(auth, "USER") != 0)) {
     disc->exceptf(TPM_UNIMPLEMENTED, auth, disc);
     return -1;
@@ -67,13 +67,13 @@ int popbegin(Tp_t* tp, Tprequest_t* req)
       return -1;
     }
   }
-  
-  switch (req->type) 
+
+  switch (req->type)
   {
     case DELE:
       if (req->args == NULL) {
-	disc->exceptf(TP_EINVAL, NULL, disc);
-	return -1;
+        disc->exceptf(TP_EINVAL, NULL, disc);
+        return -1;
       }
       _tpsends(disc, "DELE %s\r\n", req->args);
       TPSET(tp, CONNECTED);
@@ -81,10 +81,10 @@ int popbegin(Tp_t* tp, Tprequest_t* req)
 
     case LIST:
       if (req->args != NULL) {
-	_tpsends(disc, "LIST %s\r\n", req->args);
+        _tpsends(disc, "LIST %s\r\n", req->args);
       }
       else {
-	disc->writef("LIST\r\n", 6, disc);
+        disc->writef("LIST\r\n", 6, disc);
       }
       TPENTER(tp, READING);
       break;
@@ -94,8 +94,8 @@ int popbegin(Tp_t* tp, Tprequest_t* req)
 
     case RETR:
       if (req->args == NULL) {
-	disc->exceptf(TP_EINVAL, NULL, disc);
-	return -1;
+        disc->exceptf(TP_EINVAL, NULL, disc);
+        return -1;
       }
       _tpsends(disc, "RETR %s\r\n", req->args);
       TPENTER(tp, READING);
@@ -109,7 +109,7 @@ int popbegin(Tp_t* tp, Tprequest_t* req)
       disc->exceptf(TPM_UNSUPPORTED, req, disc);
       return -1;
   }
-    
+
   return 1;
 }
 

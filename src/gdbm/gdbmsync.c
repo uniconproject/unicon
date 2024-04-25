@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -44,12 +44,11 @@ void fsync(int i)
 {
   fflush(NULL); fflush(NULL);
 }
-#endif					/* fsync */
+#endif                                  /* fsync */
 #endif
 
 void
-gdbm_sync (dbf)
-     gdbm_file_info *dbf;
+gdbm_sync (gdbm_file_info *dbf)
 {
 
   /* Initialize the gdbm_errno variable. */

@@ -39,8 +39,7 @@
 /* not much of a routine, but should be a function for compatibility. */
 
 int
-dbm_rdonly(dbf)
-    gdbm_file_info *dbf;
+dbm_rdonly(gdbm_file_info *dbf)
 {
   return (dbf->read_write == GDBM_READER);
 }

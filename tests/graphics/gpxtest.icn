@@ -7,20 +7,20 @@
 
 ############################################################################
 #
-#	File:     gpxtest.icn
+#       File:     gpxtest.icn
 #
-#	Subject:  Program to test graphics procedures
+#       Subject:  Program to test graphics procedures
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     September 26, 1995
+#       Date:     September 26, 1995
 #
 ############################################################################
 #
 #  This program exercises a wide variety of graphics operations.  Several
 #  independent output tests are run in square cells within a window.  The
 #  resulting image can be compared with a standard image to determine its
-#  correctness.  
+#  correctness.
 #
 #  The "Dialog" button brings up an interactive dialog box test; the
 #  "Quit" button exits the program.
@@ -49,20 +49,20 @@
 #====== link graphics
 
 
-$define CELL 80				# size of one test "cell"
-$define HALF (CELL / 2)			# half a cell
-$define GAP 10				# gap between cells
+$define CELL 80                         # size of one test "cell"
+$define HALF (CELL / 2)                 # half a cell
+$define GAP 10                          # gap between cells
 
-$define NWIDE 6				# number of cells across
-$define NHIGH 4 			# number of cells down
+$define NWIDE 6                         # number of cells across
+$define NHIGH 4                         # number of cells down
 
-$define WIDTH (NWIDE * (CELL + GAP))	# total width
-$define HEIGHT (NHIGH * (CELL + GAP))	# total height
+$define WIDTH (NWIDE * (CELL + GAP))    # total width
+$define HEIGHT (NHIGH * (CELL + GAP))   # total height
 
 $define ABET "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz"
 
 
-global cx, cy				# current cell indices
+global cx, cy                           # current cell indices
 
 
 ##############################  Overall control  ##############################
@@ -83,8 +83,8 @@ procedure main(args)
    # Shrink the window, test defaults, grow to final size.
    deftest()
    WAttrib("size=" || WIDTH || "," || HEIGHT)
-   WAttrib("width=" || WIDTH)			# should be no-op
-   WAttrib("size=" || WIDTH || "," || HEIGHT)	# should be no-op
+   WAttrib("width=" || WIDTH)                   # should be no-op
+   WAttrib("size=" || WIDTH || "," || HEIGHT)   # should be no-op
 
    # Make a simple background.
    if WAttrib("depth") > 1 then
@@ -94,7 +94,7 @@ procedure main(args)
    Fg("#000")
 
    # Run a series of tests confined to small, square cells.
-   cx := cy := 0			# current cell (already filled)
+   cx := cy := 0                        # current cell (already filled)
    cell(simple)
    cell(lines)
    cell(rects)
@@ -183,20 +183,20 @@ procedure attribs()
    local alist, afail, n, a, f, cw, ch, cl, v1, v2
 
    alist := [
-      "fg", "bg", "reverse", "drawop", "gamma", "font", "leading", 
+      "fg", "bg", "reverse", "drawop", "gamma", "font", "leading",
       "linewidth", "linestyle", "fillstyle", "pattern",
       "clipx", "clipy", "clipw", "cliph", "dx", "dy",
       "label", "pos", "posx", "posy", "size", "height", "width", "canvas",
       "resize", "echo", "cursor", "x", "y", "row", "col", "pointer",
-      "pointerx", "pointery", "pointerrow", "pointercol", 
+      "pointerx", "pointery", "pointerrow", "pointercol",
       ]
    afail := []
 
    every a := \!alist do {
-      v1 := WAttrib(a)		| { put(afail, a); next }
-      WAttrib(a || "=" || v1)	| { put(afail, a || "=" || v1); next }
-      v2 := WAttrib(a)		| { put(afail, a); next }
-      v1 == v2		| { put(afail, a || ": " || v1 || "/" || v2); next }
+      v1 := WAttrib(a)          | { put(afail, a); next }
+      WAttrib(a || "=" || v1)   | { put(afail, a || "=" || v1); next }
+      v2 := WAttrib(a)          | { put(afail, a); next }
+      v1 == v2          | { put(afail, a || ": " || v1 || "/" || v2); next }
       }
 
    Translate(-HALF, -HALF)
@@ -216,8 +216,8 @@ procedure attribs()
    cl := WAttrib("leading") | "[FAILED]"
    Font("sans,10")
    WWrite("display=", WAttrib("display") | "[FAILED]")
-   WWrite("  (", WAttrib("displaywidth") | "????", "x", 
-      WAttrib("displayheight") | "????", "x", WAttrib("depth") | "??", ")") 
+   WWrite("  (", WAttrib("displaywidth") | "????", "x",
+      WAttrib("displayheight") | "????", "x", WAttrib("depth") | "??", ")")
    every a := "gamma" | "pointer" do
       WWrite(a, "=", WAttrib(a) | "[FAILED]")
    WWrite("std font=", f)
@@ -230,7 +230,7 @@ end
 #  Tests DrawImage using g16 palette.
 
 procedure balls()
-   every DrawImage(-HALF + 2 to HALF by 20, -HALF + 2 to HALF by 20, 
+   every DrawImage(-HALF + 2 to HALF by 20, -HALF + 2 to HALF by 20,
       " 16 , g16 , FFFFB98788AEFFFF_
       FFD865554446AFFF FD856886544339FF E8579BA9643323AF_
       A569DECA7433215E 7569CDB86433211A 5579AA9643222108_
@@ -247,7 +247,7 @@ end
 procedure cheshire()
    local face, eyes, grin, i, g
 
-   if (face := NewColor("white")) & 
+   if (face := NewColor("white")) &
    (eyes := NewColor("black")) & (grin := NewColor("black")) then {
       Fg("gray")
       FillRectangle(-HALF, -HALF)
@@ -297,9 +297,9 @@ procedure copying()
       }
    every DrawCircle(win, HALF, HALF, HALF - 2 to sqrt(2) * HALF by 3)
 
-   o := 5		# offset for copy
-   w := CELL / 4	# width of square to be copied
-   h := w / 2		# half of that, for centering
+   o := 5               # offset for copy
+   w := CELL / 4        # width of square to be copied
+   h := w / 2           # half of that, for centering
    Bg(win, "black")
 
    CopyArea(win, -o, -o, w, w, 0, 0)
@@ -393,7 +393,7 @@ procedure fontvars()
    WWrites("\n", if Font("mono,12") then ABET else "no mono 12")
    WWrites("\n", if Font("serif,italic") then ABET else "no SF ital")
    WWrites("\n", if Font("sans,bold,18") then ABET else "no SN B 18")
-   WWrites("\n", if Font("fixed") then ABET else "no fixed!") 
+   WWrites("\n", if Font("fixed") then ABET else "no fixed!")
 end
 
 
@@ -459,7 +459,7 @@ procedure patts()
    local i, j, s, x, y
 
    WAttrib("linewidth=4")
-   DrawCircle(0, 0, 0.38 * CELL)	# circle should persist after patts
+   DrawCircle(0, 0, 0.38 * CELL)        # circle should persist after patts
    WAttrib("linewidth=1")
 
    WAttrib("fillstyle=masked")
@@ -519,7 +519,7 @@ procedure rects()
    r := HALF
    every a := 1 to 19 by 2 do
       DrawRectangle(0, 0, r * cos(0.33 * a), r * sin(0.33 * a))
-end 
+end
 
 
 ## rings() -- draw a pile of rings
@@ -534,9 +534,9 @@ procedure rings()
       x := ?CELL
       y := ?CELL
       WAttrib("fg=black", "linewidth=5")
-      DrawCircle(x, y, 30)		# draw ring in black
+      DrawCircle(x, y, 30)              # draw ring in black
       WAttrib("fg=white", "linewidth=3")
-      DrawCircle(x, y, 30)		# color with white band
+      DrawCircle(x, y, 30)              # color with white band
       }
 end
 
@@ -566,9 +566,9 @@ procedure slices()
    local n, a, da, ov
 
    n := 10
-   da := 2 * &pi / n			# change in angle
-   a := -&pi / 2 - da			# current angle
-   ov := &pi / 1000			# small overlap
+   da := 2 * &pi / n                    # change in angle
+   a := -&pi / 2 - da                   # current angle
+   ov := &pi / 1000                     # small overlap
 
    FillRectangle(-HALF, -HALF)
    every 1 to n do {
@@ -585,8 +585,8 @@ end
 procedure spiral()
    local r, a, d
 
-   r := 3			# initial radius
-   a := 0			# initial start angle
+   r := 3                       # initial radius
+   a := 0                       # initial start angle
    while r < HALF do {
       DrawPoint(r * cos(a), r * sin(a))
       d := 1.0 / r
@@ -616,11 +616,11 @@ procedure stdfonts()
    FillRectangle(-4)
    Shade("black")
    GotoRC(1, 1)
-   WWrite(if Font("mono") then "mono" else "no mono!") 
-   WWrite(if Font("typewriter") then "typewriter" else "no typewriter!") 
-   WWrite(if Font("sans") then "sans" else "no sans!") 
-   WWrite(if Font("serif") then "serif" else "no serif!") 
-   WWrite(if Font("fixed") then "fixed" else "no fixed!") 
+   WWrite(if Font("mono") then "mono" else "no mono!")
+   WWrite(if Font("typewriter") then "typewriter" else "no typewriter!")
+   WWrite(if Font("sans") then "sans" else "no sans!")
+   WWrite(if Font("serif") then "serif" else "no serif!")
+   WWrite(if Font("fixed") then "fixed" else "no fixed!")
 end
 
 
@@ -641,7 +641,7 @@ procedure stdpats()
          WAttrib("pattern=" || s[4 * i + j + 1])
          x := -HALF + j * CELL / 4
          y := -HALF + i * CELL / 4
-         FillRectangle(x, y)	# depends on opacity of patterns to work
+         FillRectangle(x, y)    # depends on opacity of patterns to work
          }
 end
 
@@ -723,7 +723,7 @@ procedure dltest()
 end
 
 
-#===<<vib:begin>>===	modify using vib; do not remove this marker line
+#===<<vib:begin>>===    modify using vib; do not remove this marker line
 procedure dlog(win, deftbl)
 static dstate
 initial dstate := dsetup(win,
@@ -741,7 +741,7 @@ initial dstate := dsetup(win,
    )
 return dpopup(win, deftbl, dstate)
 end
-#===<<vib:end>>===	end of section maintained by vib
+#===<<vib:end>>===      end of section maintained by vib
 
 
 
@@ -751,13 +751,13 @@ end
 
 ############################################################################
 #
-#	File:     vdefns.icn
+#       File:     vdefns.icn
 #
-#	Subject:  Definitions for visual interface
+#       Subject:  Definitions for visual interface
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 10, 1995
+#       Date:     July 10, 1995
 #
 ###########################################################################
 #
@@ -789,13 +789,13 @@ $define VBackground "gray-white"
 
 ############################################################################
 #
-#	File:     keysyms.icn
+#       File:     keysyms.icn
 #
-#	Subject:  Definitions for event key symbols
+#       Subject:  Definitions for event key symbols
 #
-#	Author:   Ralph E. Griswold and Gregg M. Townsend
+#       Author:   Ralph E. Griswold and Gregg M. Townsend
 #
-#	Date:     October 19, 1994
+#       Date:     October 19, 1994
 #
 ###########################################################################
 #
@@ -803,76 +803,76 @@ $define VBackground "gray-white"
 #
 ############################################################################
 
-$define Key_Compose		65312
-$define Key_Do			65383
-$define Key_Down		65364
-$define Key_End			65367
-$define Key_F1			65470
-$define Key_F2			65471
-$define Key_F3			65472
-$define Key_F4			65473
-$define Key_F5			65474
-$define Key_F6			65475
-$define Key_F7			65476
-$define Key_F8			65477
-$define Key_F9			65478
-$define Key_F10			65479
-$define Key_F11			65480
-$define Key_F12			65481
-$define Key_F13			65482
-$define Key_F14			65483
-$define Key_F15			65484
-$define Key_F16			65485
-$define Key_F17			65486
-$define Key_F18			65487
-$define Key_F19			65488
-$define Key_F20			65489
-$define Key_Find		65384
-$define Key_Help		65386
-$define Key_Home		65360
-$define Key_Insert		65379
-$define Key_KP_Down		65433
-$define Key_KP_Left		65430
-$define Key_KP_Right		65432
-$define Key_KP_Up		65431
-$define Key_L1			65480  # clash with f11
-$define Key_L2			65481  # clash with f12
-$define Key_L3			65482
-$define Key_L4			65483
-$define Key_L5			65484
-$define Key_L6			65485
-$define Key_L7			65486
-$define Key_L8			65487
-$define Key_L9			65488
-$define Key_L10			65489
-$define Key_Left		65361
-$define Key_PF1			65425
-$define Key_PF2			65426
-$define Key_PF3			65427
-$define Key_PF4			65428
-$define Key_Pause		65299
-$define Key_PgDn		65366
-$define Key_PgUp		65365
-$define Key_PrSc		65377
-$define Key_R1			65490
-$define Key_R2			65491
-$define Key_R3			65492
-$define Key_R4			65493
-$define Key_R5			65494
-$define Key_R6			65495
-$define Key_R7			65496
-$define Key_R8			65497
-$define Key_R9			65498
-$define Key_R10			65499
-$define Key_R11			65500
-$define Key_R12			65501
-$define Key_R13			65502
-$define Key_R14			65503
-$define Key_R15			65504
-$define Key_Right		65363
-$define Key_ScrollLock		65300
-$define Key_Select		65376
-$define Key_Up			65362
+$define Key_Compose             65312
+$define Key_Do                  65383
+$define Key_Down                65364
+$define Key_End                 65367
+$define Key_F1                  65470
+$define Key_F2                  65471
+$define Key_F3                  65472
+$define Key_F4                  65473
+$define Key_F5                  65474
+$define Key_F6                  65475
+$define Key_F7                  65476
+$define Key_F8                  65477
+$define Key_F9                  65478
+$define Key_F10                 65479
+$define Key_F11                 65480
+$define Key_F12                 65481
+$define Key_F13                 65482
+$define Key_F14                 65483
+$define Key_F15                 65484
+$define Key_F16                 65485
+$define Key_F17                 65486
+$define Key_F18                 65487
+$define Key_F19                 65488
+$define Key_F20                 65489
+$define Key_Find                65384
+$define Key_Help                65386
+$define Key_Home                65360
+$define Key_Insert              65379
+$define Key_KP_Down             65433
+$define Key_KP_Left             65430
+$define Key_KP_Right            65432
+$define Key_KP_Up               65431
+$define Key_L1                  65480  # clash with f11
+$define Key_L2                  65481  # clash with f12
+$define Key_L3                  65482
+$define Key_L4                  65483
+$define Key_L5                  65484
+$define Key_L6                  65485
+$define Key_L7                  65486
+$define Key_L8                  65487
+$define Key_L9                  65488
+$define Key_L10                 65489
+$define Key_Left                65361
+$define Key_PF1                 65425
+$define Key_PF2                 65426
+$define Key_PF3                 65427
+$define Key_PF4                 65428
+$define Key_Pause               65299
+$define Key_PgDn                65366
+$define Key_PgUp                65365
+$define Key_PrSc                65377
+$define Key_R1                  65490
+$define Key_R2                  65491
+$define Key_R3                  65492
+$define Key_R4                  65493
+$define Key_R5                  65494
+$define Key_R6                  65495
+$define Key_R7                  65496
+$define Key_R8                  65497
+$define Key_R9                  65498
+$define Key_R10                 65499
+$define Key_R11                 65500
+$define Key_R12                 65501
+$define Key_R13                 65502
+$define Key_R14                 65503
+$define Key_R15                 65504
+$define Key_Right               65363
+$define Key_ScrollLock          65300
+$define Key_Select              65376
+$define Key_Up                  65362
 
 
 
@@ -882,13 +882,13 @@ $define Key_Up			65362
 
 ############################################################################
 #
-#	File:     button.icn
+#       File:     button.icn
 #
-#	Subject:  Procedures for pushbutton sensors
+#       Subject:  Procedures for pushbutton sensors
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     November 14, 1994
+#       Date:     November 14, 1994
 #
 ############################################################################
 #
@@ -901,52 +901,52 @@ $define Key_Up			65362
 #
 #   button(win, label, proc, arg, x, y, w, h)
 #
-#	establishes a button of size (w,h) at (x,y) and returns a handle.
-#	"label" is displayed as the text of the button.
-#	When the button is pushed, proc(win, arg) is called.
+#       establishes a button of size (w,h) at (x,y) and returns a handle.
+#       "label" is displayed as the text of the button.
+#       When the button is pushed, proc(win, arg) is called.
 #
-#	If proc is null, the label is drawn with no surrounding box, and
-#	the button is not sensitive to mouse events.  This can be used to
-#	insert a label in a row of buttons.
+#       If proc is null, the label is drawn with no surrounding box, and
+#       the button is not sensitive to mouse events.  This can be used to
+#       insert a label in a row of buttons.
 #
 #   buttonlabel(handle, label)
 #
-#	changes the label on a button.
+#       changes the label on a button.
 #
 #   buttonrow(win,x,y,w,h,dx,dy, label,proc,arg, label,proc,arg, ...)
 #
-#	establishes a row (or column) of buttons and returns a list of handles.
-#	Every button has size (w,h) and is offset from its predecessor by
-#	(dx,dy).
+#       establishes a row (or column) of buttons and returns a list of handles.
+#       Every button has size (w,h) and is offset from its predecessor by
+#       (dx,dy).
 #
-#	(x,y) give the "anchor point" for the button row, which is a corner
-#	of the first button.  x specifies the left edge of that button unless
-#	dx is negative, in which case it specifies the right edge.  Similarly,
-#	y is the top edge, or the bottom if dy is negative.
+#       (x,y) give the "anchor point" for the button row, which is a corner
+#       of the first button.  x specifies the left edge of that button unless
+#       dx is negative, in which case it specifies the right edge.  Similarly,
+#       y is the top edge, or the bottom if dy is negative.
 #
-#	One button is created for each argument triple of label,proc,arg.
-#	An extra null argument is accepted to allow regularity in coding as
-#	shown in the example below.
+#       One button is created for each argument triple of label,proc,arg.
+#       An extra null argument is accepted to allow regularity in coding as
+#       shown in the example below.
 #
-#	If all three items of the triple are null, a half-button-sized
-#	gap is inserted instead of a button.
+#       If all three items of the triple are null, a half-button-sized
+#       gap is inserted instead of a button.
 #
 #   Example:
 #
-#	Draw a pushbutton at (x,y) of size (w,h);
-#	then change its label from "Slow" to "Reluctant"
-#	When the button is pushed, call setspeed (win, -3).
+#       Draw a pushbutton at (x,y) of size (w,h);
+#       then change its label from "Slow" to "Reluctant"
+#       When the button is pushed, call setspeed (win, -3).
 #
-# 		b := button (win, "Slow", setspeed, -3, x, y, w, h)
-#   		buttonlabel (b, "Reluctant")
+#               b := button (win, "Slow", setspeed, -3, x, y, w, h)
+#               buttonlabel (b, "Reluctant")
 #
-#	Make a set of buttons extending to the left from (490,10)
+#       Make a set of buttons extending to the left from (490,10)
 #
-#		blist := buttonrow(win, 490, 10, 50, 20, -60, 0,
-#		    "fast", setspeed, +3,
-#		    "med", setspeed, 0,
-#		    "slow", setspeed, -3,
-#		    )
+#               blist := buttonrow(win, 490, 10, 50, 20, -60, 0,
+#                   "fast", setspeed, +3,
+#                   "med", setspeed, 0,
+#                   "slow", setspeed, -3,
+#                   )
 #
 ############################################################################
 #
@@ -961,7 +961,7 @@ $define Key_Up			65362
 #====== link evmux
 #====== link graphics
 
-$define BORDER 2	# border width
+$define BORDER 2        # border width
 
 record Button_Rec(win, label, proc, arg, x, y, w, h)
 
@@ -1003,7 +1003,7 @@ end
 procedure buttonlabel(r, s)
    r.label := s
    if /r.proc then
-      EraseArea(r.win, r.x, r.y, r.w, r.h)	# borderless button
+      EraseArea(r.win, r.x, r.y, r.w, r.h)      # borderless button
    else
       EraseArea(r.win, r.x+BORDER, r.y+BORDER, r.w-2*BORDER, r.h-2*BORDER)
    CenterString(r.win, r.x + r.w/2, r.y + r.h/2, r.label)
@@ -1021,7 +1021,7 @@ procedure Exec_Button(win, r, x, y)
       x := &x
       y := &y
       case e of {
-         &ldrag: {			# drag
+         &ldrag: {                      # drag
             t := (if ontarget(r, x, y) then -BORDER else BORDER)
             if b ~===:= t then {
                BevelRectangle(win, r.x, r.y, r.w, r.h, b)
@@ -1029,7 +1029,7 @@ procedure Exec_Button(win, r, x, y)
                   r.x + BORDER, r.y + BORDER, r.w - 2*BORDER, r.h - 2*BORDER)
                }
             }
-         &lrelease: {			# release leftbutton
+         &lrelease: {                   # release leftbutton
             if b < 0 then {
                BevelRectangle(win, r.x, r.y, r.w, r.h, BORDER)
                FillRectangle(win,
@@ -1053,13 +1053,13 @@ end
 
 ###########################################################################
 #
-#	File:     dsetup.icn
+#       File:     dsetup.icn
 #
-#	Subject:  Procedures for creating dialog boxes
+#       Subject:  Procedures for creating dialog boxes
 #
-#	Author:   Gregg M. Townsend and Ralph E. Griswold
+#       Author:   Gregg M. Townsend and Ralph E. Griswold
 #
-#	Date:     September 22, 1995
+#       Date:     September 22, 1995
 #
 ###########################################################################
 #
@@ -1117,32 +1117,32 @@ procedure dsetup(win, wlist[])
       win := &window
 
    win := Clone(win, "fg=black", "linewidth=1", "linestyle=solid",
-      "fillstyle=solid", "drawop=copy")	# clone window with standard attribs
-   VSetFont(win)			# set standard VIB font
+      "fillstyle=solid", "drawop=copy") # clone window with standard attribs
+   VSetFont(win)                        # set standard VIB font
    if ColorValue(Bg(win)) == ("65535,65535,65535" | "0,0,0") then
-      Bg(win, VBackground)		# change black or white bg to gray-white
+      Bg(win, VBackground)              # change black or white bg to gray-white
 
-   while /wlist[-1] do			# ignore trailing null elements
+   while /wlist[-1] do                  # ignore trailing null elements
       pull(wlist)
-   wspec := get(wlist)			# first spec gives wdow size
+   wspec := get(wlist)                  # first spec gives wdow size
 
    r := DL_crack(wspec) | stop("dsetup: bad spec")
 
    did_list := []
    did_label := &null
 
-   dialog := Vdialog(win, 0, 0)		# create dialog frame
+   dialog := Vdialog(win, 0, 0)         # create dialog frame
    dialog.id := r.var
-   VInsert(dialog, Vmessage(win, ""),	# set dialog box dimensions
+   VInsert(dialog, Vmessage(win, ""),   # set dialog box dimensions
       r.x + r.w - 1, r.y + r.h - WAttrib(win, "fheight") - 1)
 
    every r := DL_crack(!sort(wlist), &null) do {
-      DL_obj(win, dialog, r)			# insert other vidgets
+      DL_obj(win, dialog, r)                    # insert other vidgets
       }
 
-   VFormat(dialog)				# create the dialog
+   VFormat(dialog)                              # create the dialog
 
-   return DL_state(dialog, did_list, did_label)	# return state for dpopup()
+   return DL_state(dialog, did_list, did_label) # return state for dpopup()
 
 end
 
@@ -1180,7 +1180,7 @@ procedure DL_crack(wspec, cbk)
    local r, f
 
    r := DL_rec()
-   (get(wspec) | fail) ? { 
+   (get(wspec) | fail) ? {
       r.var := tab(upto(':')) | fail;  move(1)
       r.typ := tab(upto(':')) | fail;  move(1)
       r.sty := tab(upto(':')) | fail;  move(1)
@@ -1191,8 +1191,8 @@ procedure DL_crack(wspec, cbk)
       r.h := tab(upto(':')) | fail;  move(1)
       r.lbl := tab(0)
       }
-   get(wspec)		# skip callback field
-   r.cbk := cbk		# always use parameter
+   get(wspec)           # skip callback field
+   r.cbk := cbk         # always use parameter
    r.etc := get(wspec)
    return r
 end
@@ -1210,7 +1210,7 @@ procedure DL_obj(win, dialog, r)
          }
       "Line": {
          obj := Vline(win, r.x, r.y, r.w, r.h)
-         VInsert(dialog, obj, r.x, r.y, 1, 1) 
+         VInsert(dialog, obj, r.x, r.y, 1, 1)
          }
 #     "Rect": {
 #        gc := Clone(win)
@@ -1226,24 +1226,24 @@ procedure DL_obj(win, dialog, r)
          }
       "Button": {
          style := case r.sty of {
-            "regular":	V_RECT
+            "regular":  V_RECT
             "regularno":V_RECT_NO
-            "check":	V_CHECK
-            "checkno":	V_CHECK_NO
-            "circle":	V_CIRCLE
-            "circleno":	V_CIRCLE_NO
-            "diamond":	V_DIAMOND
+            "check":    V_CHECK
+            "checkno":  V_CHECK_NO
+            "circle":   V_CIRCLE
+            "circleno": V_CIRCLE_NO
+            "diamond":  V_DIAMOND
             "diamondno":V_DIAMOND_NO
-            "xbox":	V_XBOX
-            "xboxno":	V_XBOX_NO
-            default:	V_RECT
+            "xbox":     V_XBOX
+            "xboxno":   V_XBOX_NO
+            default:    V_RECT
             }
-         if r.num == "1" then {		# toggle
+         if r.num == "1" then {         # toggle
             put(did_list, r.var)
             obj := Vtoggle(win, r.lbl, r.cbk, r.var, style, r.w, r.h)
             VRegister(dialog, obj, r.x, r.y)
             }
-         else {				# dismiss
+         else {                         # dismiss
             obj := Vbutton(win, r.lbl, dialog_cb, V_OK, style, r.w, r.h)
             VInsert(dialog, obj, r.x, r.y)
             if r.num == "-1" then
@@ -1271,7 +1271,7 @@ procedure DL_obj(win, dialog, r)
             "vSlider":
                Vvert_slider(win, r.cbk, r.var, r.h, r.w, hi, lo, iv, r.num)
             "hScrollbar":
-               Vhoriz_scrollbar(win, r.cbk, r.var, r.w, r.h, lo, hi, , , r.num) 
+               Vhoriz_scrollbar(win, r.cbk, r.var, r.w, r.h, lo, hi, , , r.num)
             "vScrollbar":
                Vvert_scrollbar(win, r.cbk, r.var, r.h, r.w, hi, lo, , , r.num)
             }
@@ -1348,13 +1348,13 @@ end
 
 ############################################################################
 #
-#	File:     evmux.icn
+#       File:     evmux.icn
 #
-#	Subject:  Procedures for window event multiplexor
+#       Subject:  Procedures for window event multiplexor
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 11, 1995
+#       Date:     July 11, 1995
 #
 ############################################################################
 #
@@ -1365,60 +1365,60 @@ end
 #   registered when the sensor was created.
 #
 #   These routines interpret window events and respond by calling user code:
-#	sensor() registers the events of interest
-#	evhandle() reads and responds to the next event
-#	evmux() loops forever, handling events
+#       sensor() registers the events of interest
+#       evhandle() reads and responds to the next event
+#       evmux() loops forever, handling events
 #
 #   Two other little routines help build event-driven programs:
-#	quitsensor() registers a standardized response to ^C, DEL, etc.
-#	argless() responds by calling any proc with no arguments, e.g. exit().
+#       quitsensor() registers a standardized response to ^C, DEL, etc.
+#       argless() responds by calling any proc with no arguments, e.g. exit().
 #
 #
 #   sensor(win, ev, proc, arg, x, y, w, h) -- register an event responder.
 #
-#	registers *proc* as the procedure to be called when the event[s]
-#	*ev* occur within the given bounds inside window *win* and returns
-#	a handle.  The default bounds encompass the entire window.
+#       registers *proc* as the procedure to be called when the event[s]
+#       *ev* occur within the given bounds inside window *win* and returns
+#       a handle.  The default bounds encompass the entire window.
 #
-#	The event set *ev* can be either:
-#	    -- a cset or string specifying particular keypresses of interest
-#	    -- one of the event keywords (&lpress, &rdrag, &resize, etc.)
+#       The event set *ev* can be either:
+#           -- a cset or string specifying particular keypresses of interest
+#           -- one of the event keywords (&lpress, &rdrag, &resize, etc.)
 #
-#	When a matching event occurs, proc(win, arg, x, y, e) is called.  proc,
-#	win, and arg are as recorded from the sensor call.  x and y give the
-#	current mouse position and e the event; for a keypress, this is the
-#	character.
+#       When a matching event occurs, proc(win, arg, x, y, e) is called.  proc,
+#       win, and arg are as recorded from the sensor call.  x and y give the
+#       current mouse position and e the event; for a keypress, this is the
+#       character.
 #
-#	No event generates more than one procedure call.
-#	In the case of conflicting entries, the later registrant wins.
+#       No event generates more than one procedure call.
+#       In the case of conflicting entries, the later registrant wins.
 #
-#	delsensor(win, x) deletes sensor x from the specified window.
-#	If x is null, all sensors are deleted.
+#       delsensor(win, x) deletes sensor x from the specified window.
+#       If x is null, all sensors are deleted.
 #
 #
 #   evmux(win) -- loop forever, calling event handlers as appropriate.
 #   evhandle(win) -- wait for the next event, and handle it.
 #
-#	evmux(win) is an infinite loop that calls user routines in response
-#	to window events.  It is for programs that don't need to do other
-#	work while waiting for window input.
+#       evmux(win) is an infinite loop that calls user routines in response
+#       to window events.  It is for programs that don't need to do other
+#       work while waiting for window input.
 #
-#	evhandle(win) processes one event and then returns to its caller,
-#	allowing external loop control.  evhandle returns the outcome of
-#	the handler proc, or fails if there is no handler for the event.
+#       evhandle(win) processes one event and then returns to its caller,
+#       allowing external loop control.  evhandle returns the outcome of
+#       the handler proc, or fails if there is no handler for the event.
 #
 #   quitsensor(win, wait) -- standardized "quit" sensor
 #
-#	quitsensor() registers a sensor that calls exit() when either
-#	"q" or "Q" is typed in the window.
+#       quitsensor() registers a sensor that calls exit() when either
+#       "q" or "Q" is typed in the window.
 #
-#	If wait is non-null, quitsensor does not return but just waits for
-#	the signal (useful in non-interactive display programs).
+#       If wait is non-null, quitsensor does not return but just waits for
+#       the signal (useful in non-interactive display programs).
 #
 #
 #   argless(win, proc) -- call proc with no arguments.
 #
-#	Useful for registering argless procedures as in quitsensor() above.
+#       Useful for registering argless procedures as in quitsensor() above.
 #
 ############################################################################
 #
@@ -1466,12 +1466,12 @@ procedure delsensor(win, x)
    t := \EvMux_Windows[win] | fail
 
    if /x then {
-      delete(EvMux_Windows, win)	# delete whole set of sensors
+      delete(EvMux_Windows, win)        # delete whole set of sensors
       return
       }
 
    if not (x === !t) then
-      fail				# not registered in this window
+      fail                              # not registered in this window
 
    # Sensor is registered for this window.  Disable it.
    x.ev := ''
@@ -1496,16 +1496,16 @@ end
 
 procedure evchar(s)
    return case s of {
-      &lpress:    "\237"	# mouse button 1 down
-      &mpress:    "\236"	# mouse button 2 down
-      &rpress:    "\235"	# mouse button 3 down
-      &lrelease:  "\234"	# mouse button 1 up
-      &mrelease:  "\233"	# mouse button 2 up
-      &rrelease:  "\232"	# mouse button 3 up
-      &ldrag:     "\231"	# mouse button 1 is dragging
-      &mdrag:     "\230"	# mouse button 2 is dragging
-      &rdrag:     "\227"	# mouse button 3 is dragging
-      &resize:    "\226"	# window has resized
+      &lpress:    "\237"        # mouse button 1 down
+      &mpress:    "\236"        # mouse button 2 down
+      &rpress:    "\235"        # mouse button 3 down
+      &lrelease:  "\234"        # mouse button 1 up
+      &mrelease:  "\233"        # mouse button 2 up
+      &rrelease:  "\232"        # mouse button 3 up
+      &ldrag:     "\231"        # mouse button 1 is dragging
+      &mdrag:     "\230"        # mouse button 2 is dragging
+      &rdrag:     "\227"        # mouse button 3 is dragging
+      &resize:    "\226"        # window has resized
    }
    fail
 end
@@ -1513,7 +1513,7 @@ end
 
 ## evmux(win) -- loop forever, calling event handlers as appropriate.
 ## evhandle(win) -- wait for the next event, and handle it.
-#		    produce result of the handler proc; fail if nobody handles.
+#                   produce result of the handler proc; fail if nobody handles.
 
 procedure evmux(win)
    repeat
@@ -1575,13 +1575,13 @@ end
 
 ############################################################################
 #
-#	File:     graphics.icn
+#       File:     graphics.icn
 #
-#	Subject:  Procedures for graphics
+#       Subject:  Procedures for graphics
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     November 14, 1994
+#       Date:     November 14, 1994
 #
 ############################################################################
 #
@@ -1595,7 +1595,7 @@ end
 #====== link enqueue
 #====== link gpxop
 #====== link gpxlib
-#====== link vidgets	# basic set needed by Dialog() and Vset()
+#====== link vidgets    # basic set needed by Dialog() and Vset()
 #====== link window
 #====== link wopen
 
@@ -1607,13 +1607,13 @@ end
 
 ############################################################################
 #
-#	File:     dialog.icn
+#       File:     dialog.icn
 #
-#	Subject:  Procedures for dialogs
+#       Subject:  Procedures for dialogs
 #
-#	Author:   Ralph E. Griswold and Gregg M. Townsend
+#       Author:   Ralph E. Griswold and Gregg M. Townsend
 #
-#	Date:     August 23, 1995
+#       Date:     August 23, 1995
 #
 ############################################################################
 #
@@ -1651,21 +1651,21 @@ end
 global dialog_button
 global dialog_value
 
-$define ButtonWidth	 50	# minimum button width
-$define ButtonHeight	 30	# button height
-$define FieldWidth	 10	# default field width
-$define OpenWidth	 50	# default field width for Open/SaveDialog
+$define ButtonWidth      50     # minimum button width
+$define ButtonHeight     30     # button height
+$define FieldWidth       10     # default field width
+$define OpenWidth        50     # default field width for Open/SaveDialog
 
-$define XOff		  0	# offset for text vidgets
-$define XOffButton	 85	# initial x offset for buttons
-$define XOffIncr	 15	# space between buttons
+$define XOff              0     # offset for text vidgets
+$define XOffButton       85     # initial x offset for buttons
+$define XOffIncr         15     # space between buttons
 
 procedure Dialog(win, captions, labels, defaults, widths, buttons, index)
    Dialog := TextDialog
    return Dialog(win, captions, labels, defaults, widths, buttons, index)
 end
 
-procedure TextDialog(			#: text dialog
+procedure TextDialog(                   #: text dialog
    win, captions, labels, defaults, widths, buttons, index
    )
    local maxl, lead, pad, default_button, i, maxw, cwidth, id, label_width
@@ -1689,14 +1689,14 @@ procedure TextDialog(			#: text dialog
    if type(widths) ~== "list" then widths := ([\widths] | [default_width])
    if type(buttons) ~== "list" then buttons := [buttons]
 
-   default_button := buttons[index] 		# null if out of bounds
+   default_button := buttons[index]             # null if out of bounds
    default_width := widths[-1] | FieldWidth
 
    maxl := 0
    every maxl <:= *(labels | defaults | widths)
    until *labels = maxl do put(labels, labels[-1] | "")
    until *defaults = maxl do put(defaults, defaults[-1] | "")
-   until *widths = maxl do put(widths, widths[-1] | 10) 
+   until *widths = maxl do put(widths, widths[-1] | 10)
 
    id := 0
 
@@ -1752,7 +1752,7 @@ procedure TextDialog(			#: text dialog
 
 end
 
-procedure ToggleDialog(			#: toggle dialog
+procedure ToggleDialog(                 #: toggle dialog
    win, captions, labels, defaults, buttons, index
    )
    local maxl, lead, pad, default_button, i, maxw, cwidth, id, label_width
@@ -1774,7 +1774,7 @@ procedure ToggleDialog(			#: toggle dialog
    if type(defaults) ~== "list" then defaults := ([\defaults] | [])
    if type(buttons) ~== "list" then buttons := [buttons]
 
-   default_button := buttons[index] 		# null if out of bounds
+   default_button := buttons[index]             # null if out of bounds
 
    maxl := 0
    every maxl <:= *labels
@@ -1833,9 +1833,9 @@ procedure ToggleDialog(			#: toggle dialog
 
 end
 
-procedure SelectDialog( 		#: selection dialog
+procedure SelectDialog(                 #: selection dialog
    win, captions, labels, deflt, buttons, index
-   ) 
+   )
    local maxl, lead, pad, default_button, i, maxw, cwidth, label_width
    local button, maxb, dialog, x, y, button_space, box_id
 
@@ -1853,7 +1853,7 @@ procedure SelectDialog( 		#: selection dialog
    if type(labels) ~== "list" then labels := ([\labels] | [])
    if type(buttons) ~== "list" then buttons := [buttons]
 
-   default_button := buttons[index] 		# null if out of bounds
+   default_button := buttons[index]             # null if out of bounds
 
    maxl := 0
    every maxl <:= *labels
@@ -1905,7 +1905,7 @@ procedure SelectDialog( 		#: selection dialog
 
 end
 
-procedure Notice(captions[])		#: notice dialog
+procedure Notice(captions[])            #: notice dialog
    local win
 
    if type(captions[1]) == "window" then
@@ -1921,7 +1921,7 @@ procedure Notice(captions[])		#: notice dialog
 
 end
 
-procedure SaveDialog(win, caption, filename, len)	#: save dialog
+procedure SaveDialog(win, caption, filename, len)       #: save dialog
 
    if type(win) ~== "window" then
       return SaveDialog((\&window | runerr(140)), win, caption, filename)
@@ -1938,7 +1938,7 @@ procedure SaveDialog(win, caption, filename, len)	#: save dialog
 
 end
 
-procedure OpenDialog(win, caption, filename, len)	#: open dialog
+procedure OpenDialog(win, caption, filename, len)       #: open dialog
 
    if type(win) ~== "window" then
       return OpenDialog((\&window | runerr(140)), win, caption, filename)
@@ -1965,10 +1965,10 @@ end
 
 #  ColorDialog(win, captions, color, callback, id) -- display color dialog
 #
-#  captions	list of dialog box captions; default is ["Select color:"]
-#  color	reference color setting; none displayed if not supplied
-#  callback	procedure to call when the setting is changed
-#  id		arbitrary value passed to callback
+#  captions     list of dialog box captions; default is ["Select color:"]
+#  color        reference color setting; none displayed if not supplied
+#  callback     procedure to call when the setting is changed
+#  id           arbitrary value passed to callback
 #
 #  ColorDialog displays a dialog window with R/G/B and H/S/V sliders for
 #  color selection.  When the "Okay" or "Cancel" button is pressed,
@@ -1981,14 +1981,14 @@ end
 record cdl_rec(rect, orgcolor, refcolor, mutable, callback, id,
    r, g, b, h, s, v, rv, gv, bv, hv, sv, vv)
 
-global cdl_data			# data for current color dialog
+global cdl_data                 # data for current color dialog
 
-$define PickerWidth	300	# overall color picker width
-$define SliderHeight	200	# height of a slider
-$define SliderWidth	 15	# width of one slider
-$define SliderPad	  5	# distance between sliders
+$define PickerWidth     300     # overall color picker width
+$define SliderHeight    200     # height of a slider
+$define SliderWidth      15     # width of one slider
+$define SliderPad         5     # distance between sliders
 
-procedure ColorDialog(win, captions, refcolor, callback, id)	#: color dialog
+procedure ColorDialog(win, captions, refcolor, callback, id)    #: color dialog
    local x1, x2, dx, y, bw, lead, pad, dialog, box_id
 
    if type(win) ~== "window" then
@@ -2060,7 +2060,7 @@ procedure ColorDialog(win, captions, refcolor, callback, id)	#: color dialog
 
 end
 
-procedure cdl_slider(dialog, id, x, y, low, high, init) 	# place a slider
+procedure cdl_slider(dialog, id, x, y, low, high, init)         # place a slider
    local v
 
    v := Vvert_slider(dialog.win, cdl_setval, id,
@@ -2069,7 +2069,7 @@ procedure cdl_slider(dialog, id, x, y, low, high, init) 	# place a slider
    return v
 end
 
-procedure cdl_init()			# initialize non-vidget part of dialog
+procedure cdl_init()                    # initialize non-vidget part of dialog
    local c, r
 
    r := cdl_data.rect
@@ -2087,17 +2087,17 @@ procedure cdl_init()			# initialize non-vidget part of dialog
    return
 end
 
-procedure cdl_exit(vidget, s)		# save position and button name on exit
+procedure cdl_exit(vidget, s)           # save position and button name on exit
    dialog_button := vidget.s
    FreeColor(cdl_data.rect.win, \cdl_data.mutable)
    return
 end
 
-procedure cdl_setval(v, x)		# set value in response to slider motion
+procedure cdl_setval(v, x)              # set value in response to slider motion
    static recurse
 
-   if /recurse then {			# if not a recursive call
-      recurse := 1			# note to prevent recursion
+   if /recurse then {                   # if not a recursive call
+      recurse := 1                      # note to prevent recursion
       case v.id of {
          "r":  { cdl_data.r := x; cdl_sethsv(); }
          "g":  { cdl_data.g := x; cdl_sethsv(); }
@@ -2111,7 +2111,7 @@ procedure cdl_setval(v, x)		# set value in response to slider motion
    return
 end
 
-procedure cdl_sethsv()			# set h/s/v values from r/g/b
+procedure cdl_sethsv()                  # set h/s/v values from r/g/b
    local c
 
    HSV(c := cdl_data.r || "," || cdl_data.g || "," || cdl_data.b) ? {
@@ -2125,7 +2125,7 @@ procedure cdl_sethsv()			# set h/s/v values from r/g/b
    return
 end
 
-procedure cdl_setrgb()			# set r/g/b values from h/s/v
+procedure cdl_setrgb()                  # set r/g/b values from h/s/v
    local c
 
    (c := HSVValue(cdl_data.h || "/" || cdl_data.s || "/" || cdl_data.v)) ? {
@@ -2139,18 +2139,18 @@ procedure cdl_setrgb()			# set r/g/b values from h/s/v
    return
 end
 
-procedure cdl_setcolor(c)		# display new color and invoke callback
+procedure cdl_setcolor(c)               # display new color and invoke callback
    local win, x1, x2, y, dy
 
    win := cdl_data.rect.win
-   Color(win, \cdl_data.mutable, c)		# set the mutable color
+   Color(win, \cdl_data.mutable, c)             # set the mutable color
 
    x1 := cdl_data.rect.ax
    x2 := x1 + cdl_data.rect.aw
    y := cdl_data.rect.ay + cdl_data.rect.ah + SliderPad
    dy := WAttrib(win, "leading")
 
-   EraseArea(win, x1, y, x2 - x1, 3 * dy)	# erase and redraw text area
+   EraseArea(win, x1, y, x2 - x1, 3 * dy)       # erase and redraw text area
    y +:= WAttrib(win, "ascent")
    x2 -:= TextWidth(win, "h: 360")
 
@@ -2163,7 +2163,7 @@ procedure cdl_setcolor(c)		# display new color and invoke callback
    DrawString(win, x1, y, "b: " || right(cdl_data.b, 5))
    DrawString(win, x2, y, "v: " || right(cdl_data.v, 3))
 
-   (\cdl_data.callback)(cdl_data.id, c)		# invoke user callback, if any
+   (\cdl_data.callback)(cdl_data.id, c)         # invoke user callback, if any
    return
 end
 
@@ -2173,9 +2173,9 @@ end
 #   as seen by proc, is a new binding of win in which dx, dy, and clipping
 #   have been set.  The usable area begins at (0,0);  its size is
 #   (WAttrib(win, "clipw"), WAttrib(win, "cliph")).  Defaults are:
-#   	x, y	positioned to center the subwindow
-#	w, h	250, 150
-#	proc	Event
+#       x, y    positioned to center the subwindow
+#       w, h    250, 150
+#       proc    Event
 #  Popup(win, x, y, w, h, proc, args[])
 
 $define BorderWidth 4
@@ -2187,18 +2187,18 @@ procedure Popup(args[])
    # Get parameters.
    PushWin(args)
    win := get(args)
-   x := get(args);		integer(x) | runerr(101, \x)
-   y := get(args);		integer(y) | runerr(101, \y)
-   w := \get(args) | 250; 	integer(w) | runerr(101, w)
-   h := \get(args) | 150; 	integer(h) | runerr(101, h)
+   x := get(args);              integer(x) | runerr(101, \x)
+   y := get(args);              integer(y) | runerr(101, \y)
+   w := \get(args) | 250;       integer(w) | runerr(101, w)
+   h := \get(args) | 150;       integer(h) | runerr(101, h)
    proc := \get(args) | Event
 
    # Handle defaults
    dx := WAttrib(win, "dx")
    dy := WAttrib(win, "dy")
-   /x := (WAttrib(win, "width") - w) / 2 - dx	# center the subwindow
+   /x := (WAttrib(win, "width") - w) / 2 - dx   # center the subwindow
    /y := (WAttrib(win, "height") - h) / 2 - dy
-   w >:= WAttrib(win, "width")			# limit to size of full win
+   w >:= WAttrib(win, "width")                  # limit to size of full win
    h >:= WAttrib(win, "height")
 
    # Adjust subwindow configuration parameters.
@@ -2222,7 +2222,7 @@ procedure Popup(args[])
    FillRectangle(-BorderWidth + ShadowWidth, h + BorderWidth,
       ww - ShadowWidth, ShadowWidth)
    FillRectangle(w + BorderWidth, -BorderWidth + ShadowWidth,
-      ShadowWidth, hh - ShadowWidth) 
+      ShadowWidth, hh - ShadowWidth)
    Clip(0, 0, w, h)
    EraseArea()
 
@@ -2249,19 +2249,19 @@ end
 
 ############################################################################
 #
-#	File:     vdialog.icn
+#       File:     vdialog.icn
 #
-#	Subject:  Procedures for dialog boxes
+#       Subject:  Procedures for dialog boxes
 #
-#	Author:   Jon Lipp
+#       Author:   Jon Lipp
 #
-#	Date:     July 10, 1995
+#       Date:     July 10, 1995
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
 #
-#	Vdialog
+#       Vdialog
 #
 ############################################################################
 #
@@ -2276,7 +2276,7 @@ end
 #====== link vbuttons
 #====== link vtext
 
-record DL_pos_rec(x,y)		# dialog position record
+record DL_pos_rec(x,y)          # dialog position record
 
 ############################################################################
 #  Vdialog - allows a pop-up menu_frame to be associated with a button.
@@ -2325,9 +2325,9 @@ initial xytable := table()
 ## Check ID and determine x and y values.
    if \x then {
       if WAttrib(self.win, "canvas") == ("normal" | "maximal") then  {
-	 x +:= WAttrib(self.win, "posx")
-	 y +:= WAttrib(self.win, "posy")
-	 }
+         x +:= WAttrib(self.win, "posx")
+         y +:= WAttrib(self.win, "posy")
+         }
       }
    else if \y then {
       /xytable[y] := DL_pos_rec()
@@ -2419,22 +2419,22 @@ initial xytable := table()
       }
       r := (\newfocus).V.event(newfocus, e, &x, &y) | &null
       case r of {
-         V_NEXT: { 	#move to next entry
+         V_NEXT: {      #move to next entry
             now := self.F.text_lu[self.F.focus.id]
             tid := ((*self.F.text_entries >= now + 1) | 1)
             switch_focus_Vdialog(self, self.F.entries[self.F.text_entries[tid]])
             }
-         V_PREVIOUS: {	#move to previous entry
+         V_PREVIOUS: {  #move to previous entry
             now := self.F.text_lu[self.F.focus.id]
             tid := ((1 <= now - 1) | *self.F.text_entries)
             switch_focus_Vdialog(self, self.F.entries[self.F.text_entries[tid]])
             }
-         V_OK: {	# done, quit with changes
+         V_OK: {        # done, quit with changes
             rv := []
             every e := !sel do put(rv, e[2].data)
             break
             }
-         V_CANCEL: { 	# cancel changes, quit.
+         V_CANCEL: {    # cancel changes, quit.
             break
             }
       }
@@ -2533,13 +2533,13 @@ end
 
 ############################################################################
 #
-#	File:     vidgets.icn
+#       File:     vidgets.icn
 #
-#	Subject:  Procedures for vidgets
+#       Subject:  Procedures for vidgets
 #
-#	Author:   Jon Lipp
+#       Author:   Jon Lipp
 #
-#	Date:     November 14, 1994
+#       Date:     November 14, 1994
 #
 ############################################################################
 #
@@ -2562,23 +2562,23 @@ end
 
 ############################################################################
 #
-#	File:     vslider.icn
+#       File:     vslider.icn
 #
-#	Subject:  Procedures for sliders
+#       Subject:  Procedures for sliders
 #
-#	Author:   Jon Lipp and Gregg M. Townsend
+#       Author:   Jon Lipp and Gregg M. Townsend
 #
-#	Date:     March 23, 1995
+#       Date:     March 23, 1995
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
-#	Vvslider
-#	Vhslider
+#       Vvslider
+#       Vhslider
 #
 #  Utility procedures in this file:
-#	Vvert_slider()
-#	Vhoriz_slider()
+#       Vvert_slider()
+#       Vhoriz_slider()
 #
 ############################################################################
 #
@@ -2618,7 +2618,7 @@ procedure Vvslider(params[])
       _Vbomb("invalid width parameter to Vvert_slider()")
    if (\self.ah, not numeric(self.ah) ) then
       _Vbomb("invalid length parameter to Vvert_slider()")
-   
+
    self.uid := Vget_uid()
    self.V := procs_Vvslider()
    self.P := Vstd_pos()
@@ -2657,7 +2657,7 @@ local value
          e := Event(s.win)
          }
    else
-      fail				# not our event
+      fail                              # not our event
    if \s.discont then
       s.callback.V.set(s.callback, s, s.callback.value)
    update_Vvslider(s)
@@ -2736,7 +2736,7 @@ end
 
 
 ############################################################################
-# Vhslider 
+# Vhslider
 ############################################################################
 
 procedure procs_Vhslider()
@@ -2797,7 +2797,7 @@ local value
          e := Event(s.win)
          }
    else
-      fail				# not our event
+      fail                              # not our event
    if \s.discont then
       s.callback.V.set(s.callback, s, s.callback.value)
    update_Vhslider(s)
@@ -2880,7 +2880,7 @@ end
 ############################################################################
 
 procedure outline_Vslider(s)
-   BevelRectangle(s.win, s.ax, s.ay, s.aw, s.ah, -2)	# draw trough
+   BevelRectangle(s.win, s.ax, s.ay, s.aw, s.ah, -2)    # draw trough
 end
 
 procedure Vmake_slider(slider_type, w, callback, id, length, width,
@@ -2895,14 +2895,14 @@ local cv, sl, cb, t
    cv := Vrange_coupler(min, max, init)
    sl := slider_type(w, cv, id, width, length, discontinuous)
    sl.rev := t
-   
+
    add_clients_Vinit(cv, callback, sl)
    return sl
 end
 
 ############################################################################
 # Vvert_slider(w, callback, id, width, length, lower_bound, upper_bound,
-#              initial_value) 
+#              initial_value)
 ############################################################################
 procedure Vvert_slider(params[])
 local frame, x, y, ins, t, self
@@ -2920,7 +2920,7 @@ end
 
 ############################################################################
 # Vhoriz_slider(w, callback, id, width, length, left_bound, right_bound,
-#              initial_value) 
+#              initial_value)
 ############################################################################
 procedure Vhoriz_slider(params[])
 local frame, x, y, ins, self
@@ -2943,28 +2943,28 @@ end
 
 ############################################################################
 #
-#	File:     vmenu.icn
+#       File:     vmenu.icn
 #
-#	Subject:  Procedures for vidget menus
+#       Subject:  Procedures for vidget menus
 #
-#	Author:   Jon Lipp and Gregg M. Townsend
+#       Author:   Jon Lipp and Gregg M. Townsend
 #
-#	Date:     November 8, 1994
+#       Date:     November 8, 1994
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
 #
-#	Vmenu_item
-#	Vmenu_bar_item
-#	Vmenu_frame
-#	Vpull_down_button
+#       Vmenu_item
+#       Vmenu_bar_item
+#       Vmenu_frame
+#       Vpull_down_button
 #
 #  Utility procedures in this file:
-#	Vsub_menu()
-#	Vmenu_bar()
-#	Vpull_down_pick_menu()
-#	Vpull_down()
+#       Vsub_menu()
+#       Vmenu_bar()
+#       Vpull_down_pick_menu()
+#       Vpull_down()
 #
 ############################################################################
 #
@@ -3144,7 +3144,7 @@ procedure event_Vmenu_bar_item(self, e)
 local rv, callback, i, t, labels
 
    if e ~=== &lpress & e ~=== &mpress & e ~=== &rpress then
-      fail				# not our event
+      fail                              # not our event
    self.D.draw_on(self)
    show_Vmenu_frame(\self.menu)
    repeat {
@@ -3556,30 +3556,30 @@ end
 
 ############################################################################
 #
-#	File:     vscroll.icn
+#       File:     vscroll.icn
 #
-#	Subject:  Procedures for scrollbars
+#       Subject:  Procedures for scrollbars
 #
-#	Author:   Jon Lipp and Gregg M. Townsend
+#       Author:   Jon Lipp and Gregg M. Townsend
 #
-#	Date:     March 23, 1995
+#       Date:     March 23, 1995
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
-#	Varrow
-#	Vvthumb
-#	Vhthumb
-#	Vscrollbar_frame
+#       Varrow
+#       Vvthumb
+#       Vhthumb
+#       Vscrollbar_frame
 #
 #  Utility procedures in this file:
-#	Vvert_scrollbar()
-#	Vhoriz_scrollbar()
-#	reformat_Vhthumb()
-#	reformat_Vvthumb()
-#	Vreformat_vscrollbar()
-#	Vreformat_hscrollbar()
-#	VReformat()
+#       Vvert_scrollbar()
+#       Vhoriz_scrollbar()
+#       reformat_Vhthumb()
+#       reformat_Vvthumb()
+#       Vreformat_vscrollbar()
+#       Vreformat_hscrollbar()
+#       VReformat()
 #
 ############################################################################
 #
@@ -3631,9 +3631,9 @@ local c, prev, new
       s.callback.V.set(s.callback, s, prev := press_Varrow(s))
       delay(200)
       while (*Pending(s.win) = 0) |
-	    (Event(s.win) === (&ldrag|&mdrag|&rdrag)) do {
+            (Event(s.win) === (&ldrag|&mdrag|&rdrag)) do {
          new := press_Varrow(s)
-	 if new ~= prev then
+         if new ~= prev then
             s.callback.V.set(s.callback, s, prev := new)
          delay(40)
          }
@@ -3650,8 +3650,8 @@ end
 procedure press_Varrow(s)
    local v
    v := s.incop(s.callback.value, s.callback.inc)
-   if abs(v) < abs(s.callback.inc) / 1000000.0 then	# if close to zero
-      v -:= v					# set to zero, preserving type
+   if abs(v) < abs(s.callback.inc) / 1000000.0 then     # if close to zero
+      v -:= v                                   # set to zero, preserving type
    return v
 end
 
@@ -3779,7 +3779,7 @@ procedure init_Vvthumb(s)
    s.tw := s.aw
    \s.win_sz <:= 0
    if /s.win_sz then s.th := s.tw
-   else s.th := ( s.tw < 
+   else s.th := ( s.tw <
                 integer( ((1.0 >= real(s.win_sz)/s.tot_sz) | 1.0)\1 * s.ah) ) |
                 s.tw
    s.ws := 0 < real(s.ah - s.th) | 0
@@ -3892,15 +3892,15 @@ procedure init_Vhthumb(s)
    s.th := s.ah
    \s.win_sz <:= 0
    if /s.win_sz then s.tw := s.th
-   else s.tw := ( s.th < 
-                integer( ((1.0 >= real(s.win_sz)/s.tot_sz) | 1.0)\1 * s.aw) ) | 
+   else s.tw := ( s.th <
+                integer( ((1.0 >= real(s.win_sz)/s.tot_sz) | 1.0)\1 * s.aw) ) |
                 s.th
    s.ws := 0 < real(s.aw - s.tw) | 0
    s.cv_range := (0 < s.callback.max - s.callback.min | 1.0)
 end
 
 ############################################################################
-# Vscrollbar_frame 
+# Vscrollbar_frame
 ############################################################################
 
 record Vscrollbar_frame_rec(win, callback, id, aw, ah, lookup, draw, uid,
@@ -3930,23 +3930,23 @@ procedure resize_Vscrollbar(self, x, y, w, h)
    resize_Vframe(self, x, y, w, h)
 
    if self.aw > self.ah then {
-      if \self.thumb.type then {		# was formerly vertical
+      if \self.thumb.type then {                # was formerly vertical
          self.thumb.V := procs_Vhthumb()
-	 self.thumb.type := &null
-	 }
+         self.thumb.type := &null
+         }
       VReformat(self, self.aw, self.ah)
       }
 
    else {
-      if /self.thumb.type then {		# was formerly horizontal
+      if /self.thumb.type then {                # was formerly horizontal
          self.thumb.V := procs_Vvthumb()
-	 self.thumb.type := 1
-	 }
+         self.thumb.type := 1
+         }
       VReformat(self, self.ah, self.aw)
       }
 end
 
-#  These are the middle-man procedures between the scrollbar frame 
+#  These are the middle-man procedures between the scrollbar frame
 #  and the thumb.
 
 procedure couplerset_Vhscrollbar(s, caller, value)
@@ -3968,7 +3968,7 @@ procedure set_value_Vvscrollbar(s, value)
 end
 
 ############################################################################
-# Vertical scrollbar 
+# Vertical scrollbar
 ############################################################################
 procedure Vvert_scrollbar(params[])
 local frame, x, y, ins, t, self
@@ -3983,7 +3983,7 @@ local frame, x, y, ins, t, self
    return self
 end
 
-procedure Vmake_vscrollbar(win, callback, id, length, width, 
+procedure Vmake_vscrollbar(win, callback, id, length, width,
                            min, max, inc, win_sz, discont)
    local cv, cb, frame, up, down, thumb, tot_sz
    local r, rev, in_max, odd
@@ -4007,7 +4007,7 @@ procedure Vmake_vscrollbar(win, callback, id, length, width,
    rev := 1
    if max < min then { max :=: min; rev := &null }
    in_max := max
-   max -:= (\win_sz | 0) 
+   max -:= (\win_sz | 0)
    max <:= min
    tot_sz := 0 < abs(in_max-min) | 1
    r := (type(min|max) == "real", 1)
@@ -4019,7 +4019,7 @@ procedure Vmake_vscrollbar(win, callback, id, length, width,
    frame := Vscrollbar_frame(win, cv, id, width, length)
    Varrow(frame, 2, 2, win, cv, width - 4, width - 4, rev, "n")
    odd := width % 2
-   thumb := Vvthumb(frame, 2, width - odd, 
+   thumb := Vvthumb(frame, 2, width - odd,
       win, cv, id, width - 4, length - 2 * width + 1 + odd,
       win_sz, tot_sz, discont)
    Varrow(frame, 2, length - width + 2, win, cv, width - 4, width - 4, rev, "s")
@@ -4037,7 +4037,7 @@ procedure Vmake_vscrollbar(win, callback, id, length, width,
 end
 
 ############################################################################
-# Horizontal scrollbar 
+# Horizontal scrollbar
 ############################################################################
 procedure Vhoriz_scrollbar(params[])
 local frame, x, y, ins, t, self
@@ -4087,7 +4087,7 @@ procedure Vmake_hscrollbar(win, callback, id, length, width,
    frame := Vscrollbar_frame(win, cv, id, length, width)
    Varrow(frame, 2, 2, win, cv, width - 4, width - 4, rev, "w")
    odd := width % 2
-   thumb := Vhthumb(frame, width - odd, 2, 
+   thumb := Vhthumb(frame, width - odd, 2,
       win, cv, id, length - 2 * width + 1 + odd, width - 4,
       win_sz, tot_sz, discont)
    Varrow(frame, length - width + 2, 2, win, cv, width-4, width-4, rev, "e")
@@ -4200,7 +4200,7 @@ procedure VReformat(scrollbar, length, width)
 
    if \(scrollbar.thumb.type) then
       Vreformat_vscrollbar(scrollbar, length, width)
-   else 
+   else
       Vreformat_hscrollbar(scrollbar, length, width)
 end
 
@@ -4212,18 +4212,18 @@ end
 
 ############################################################################
 #
-#	File:     vtext.icn
+#       File:     vtext.icn
 #
-#	Subject:  Procedures for textual vidgets
+#       Subject:  Procedures for textual vidgets
 #
-#	Author:   Jon Lipp and Gregg M. Townsend
+#       Author:   Jon Lipp and Gregg M. Townsend
 #
-#	Date:     March 23, 1995
+#       Date:     March 23, 1995
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
-#	Vtext
+#       Vtext
 #
 ############################################################################
 #
@@ -4322,7 +4322,7 @@ procedure init_Vtext(self)
 
    self.T.dx := TextWidth (self.win, self.s) + 6
    self.aw := self.T.dx + self.T.MaxPixelSize + 4
-   self.ah := WAttrib(self.win, "fheight") + 6	# 4 for bevel, 2 for I-bar
+   self.ah := WAttrib(self.win, "fheight") + 6  # 4 for bevel, 2 for I-bar
    self.T.dy := self.ah - 3 - WAttrib(self.win, "descent")
 
    p := \self.callback
@@ -4496,17 +4496,17 @@ procedure event_Vtext(self, e, x, y)
    else if (not &meta) & (not (integer(e) < 0)) then  {
       ## it's a keypress
       if rv := case e of {
-         "\^b" | Key_Left | Key_KP_Left:	move_cursor_Vtext(self, -1)
-         "\^f" | Key_Right | Key_KP_Right:	move_cursor_Vtext(self, 1)
-         "\b" | "\d":				delete_left_Vtext(self)
-         "\^k" | "\^u" | "\^x":			delete_line_Vtext(self)
-	 (&shift & "\t") | Key_Up | Key_KP_Up:  return V_PREVIOUS
-         "\t" | Key_Down | Key_KP_Down:		return V_NEXT
+         "\^b" | Key_Left | Key_KP_Left:        move_cursor_Vtext(self, -1)
+         "\^f" | Key_Right | Key_KP_Right:      move_cursor_Vtext(self, 1)
+         "\b" | "\d":                           delete_left_Vtext(self)
+         "\^k" | "\^u" | "\^x":                 delete_line_Vtext(self)
+         (&shift & "\t") | Key_Up | Key_KP_Up:  return V_PREVIOUS
+         "\t" | Key_Down | Key_KP_Down:         return V_NEXT
          "\r" | "\l": {
-	    self.callback.V.set(self.callback, self, self.data)
-	    V_NEXT
-	    }
-         default:				insert_char_Vtext(self, e)
+            self.callback.V.set(self.callback, self, self.data)
+            V_NEXT
+            }
+         default:                               insert_char_Vtext(self, e)
          }
       then {
          draw_data_Vtext(self)
@@ -4515,7 +4515,7 @@ procedure event_Vtext(self, e, x, y)
          }
       }
    else
-      fail				# not our event
+      fail                              # not our event
 
    ota := self.T.ta
    return rv
@@ -4558,7 +4558,7 @@ procedure get_pos_Vtext(self, x)
       if (c +:= 1) > self.T.DataLength then break
    }
    if x <= ((i + j) / 2) then
-      c -:= 1				# less than halfway into the char
+      c -:= 1                           # less than halfway into the char
    if i < x then tp := self.T.DataLength+1
    else tp := (1 <= c) | 1
    return tp
@@ -4584,7 +4584,7 @@ procedure insert_char_Vtext(self, c)
    c := c[1]
 
    if TextWidth(self.win, c) == 0 then
-      fail				# not displayable
+      fail                              # not displayable
 
    if (self.T.DataLength - abs(self.T.ta-self.T.tb) + 1) > self.MaxChars |
       not (c ? any(self.mask)) then fail
@@ -4684,23 +4684,23 @@ end
 
 ############################################################################
 #
-#	File:     vbuttons.icn
+#       File:     vbuttons.icn
 #
-#	Subject:  Procedures for buttons
+#       Subject:  Procedures for buttons
 #
-#	Author:   Jon Lipp and Gregg M. Townsend
+#       Author:   Jon Lipp and Gregg M. Townsend
 #
-#	Date:     November 17, 1994
+#       Date:     November 17, 1994
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
 #
-#	Vbutton
-#	Vtoggle
-#	Vcheckbox  (obsolete)
-#	Vmessage
-#	Vline
+#       Vbutton
+#       Vtoggle
+#       Vcheckbox  (obsolete)
+#       Vmessage
+#       Vline
 #
 ############################################################################
 #
@@ -4767,26 +4767,26 @@ procedure event_Vbutton(self, e)
    if e === (&lpress|&mpress|&rpress) then {
       self.D.draw_on(self)
       repeat {
-	 e := Event(self.win)
-	 if self.V.inrange(self, &x, &y) then {
-	    if e === (&lrelease|&mrelease|&rrelease) then {
-	       self.D.draw_off(self)
-	       self.callback.V.set(self.callback, self)
-	       return self.id
+         e := Event(self.win)
+         if self.V.inrange(self, &x, &y) then {
+            if e === (&lrelease|&mrelease|&rrelease) then {
+               self.D.draw_off(self)
+               self.callback.V.set(self.callback, self)
+               return self.id
                }
-	    else if \out then {
-	       self.D.draw_on(self)
-	       out := &null
+            else if \out then {
+               self.D.draw_on(self)
+               out := &null
                }
             }
-	 else
-	    if e === (&ldrag|&mdrag|&rdrag) & /out then {
-	       self.D.draw_off(self)
-	       out := 1
+         else
+            if e === (&ldrag|&mdrag|&rdrag) & /out then {
+               self.D.draw_off(self)
+               out := 1
                }
-	    else if e === (&lrelease|&mrelease|&rrelease) then {
-	       self.D.draw_off(self)
-	       break
+            else if e === (&lrelease|&mrelease|&rrelease) then {
+               self.D.draw_off(self)
+               break
                }
          }
       return
@@ -4803,7 +4803,7 @@ procedure init_Vbutton (self)
 end
 
 procedure resize_Vbutton(s, x, y, w, h)
-   
+
    resize_Vidget(s, x, y, w, h)
    Vset_style(s, s.style)
    s.D.init(s)
@@ -5097,26 +5097,26 @@ end
 
 ############################################################################
 #
-#	File:     vradio.icn
+#       File:     vradio.icn
 #
-#	Subject:  Procedures for radio buttons
+#       Subject:  Procedures for radio buttons
 #
-#	Author:   Jon Lipp and Gregg M. Townsend
+#       Author:   Jon Lipp and Gregg M. Townsend
 #
-#	Date:     September 24, 1994
+#       Date:     September 24, 1994
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
-#	Vradio_entry
-#	Vradio_frame
+#       Vradio_entry
+#       Vradio_frame
 #
 #  Utility procedures in this file:
-#	Vradio_buttons()
-#	Vvert_radio_buttons()
-#	Vhoriz_radio_buttons()
-#	init_format_Vrb()
-#	format_Vradio_frame()	
+#       Vradio_buttons()
+#       Vvert_radio_buttons()
+#       Vhoriz_radio_buttons()
+#       init_format_Vrb()
+#       format_Vradio_frame()
 #
 ############################################################################
 
@@ -5150,7 +5150,7 @@ end
 procedure init_Vradio_entry (self)
    local p
 
-   if /self.callback then 
+   if /self.callback then
       _Vbomb("must pass a coupler variable to a Vradio_entry button")
    self.D.init(self)
 end
@@ -5197,7 +5197,7 @@ procedure event_Vradio_entry(self, e)
       self.D.draw_on(self)
       self.don := 1
       }
-   if \e === (&lrelease|&mrelease|&rrelease) then 
+   if \e === (&lrelease|&mrelease|&rrelease) then
       return self
 end
 
@@ -5231,7 +5231,7 @@ procedure Vradio_frame(params[])
    p := \self.callback
    self.callback := Vcoupler()
    add_clients_Vinit(self.callback, p, self)
-   
+
    return self
 end
 
@@ -5251,7 +5251,7 @@ procedure event_Vradio_frame(self, e, x, y)
       e := Event(self.win)
       if e === "\^s" then
          until Event(self.win) === (&lpress|&mpress|&rpress) ;
-      if self.V.inrange(self, &x, &y) then 
+      if self.V.inrange(self, &x, &y) then
          focus := self.V.lookup(self, &x, &y)
       if rv := (\focus).V.event(focus, e) then {
          self.data := rv.s
@@ -5277,7 +5277,7 @@ procedure set_value_Vradio_frame(self, value)
       kid := self.cv.curr_id
       id := self.cv.value
       s := self.data
-      every (k := !self.lookup | fail) do 
+      every (k := !self.lookup | fail) do
          if value === k.s then {
             id := k.id
             kid := k
@@ -5293,8 +5293,8 @@ procedure set_value_Vradio_frame(self, value)
 
    self.callback.V.set(self.callback, self, self.data)
 
-   (\old).D.draw_off(old)	# clear current button
-   (\kid).D.draw_on(kid)	# set new button
+   (\old).D.draw_off(old)       # clear current button
+   (\kid).D.draw_on(kid)        # set new button
 
    return
 end
@@ -5302,8 +5302,8 @@ end
 ############################################################################
 # Vradio_buttons -
 # Construct radio buttons. Parameters:
-# 	w - window, proc - the callback procedure,
-#	s[] - a list of button labels. 
+#       w - window, proc - the callback procedure,
+#       s[] - a list of button labels.
 ############################################################################
 procedure Vradio_buttons(params[])
    return Vvert_radio_buttons ! params
@@ -5328,8 +5328,8 @@ procedure Vvert_radio_buttons(params[])
    uncentered := params[6]
 
    Vwin_check(win, "Vradio_buttons()")
-   if type(s) ~== "list" then 
-      _Vbomb("data parameter to Vradio_buttons must be a list of strings") 
+   if type(s) ~== "list" then
+      _Vbomb("data parameter to Vradio_buttons must be a list of strings")
    cv := Vmenu_coupler()
    rb_frame := Vradio_frame(win, cv, callback, id)
    if /uncentered then {
@@ -5337,8 +5337,8 @@ procedure Vvert_radio_buttons(params[])
       every i := !s do max <:= TextWidth(win, i)
       max +:= 8
       }
-   if \style == (V_CIRCLE | V_CHECK | V_DIAMOND | 
-	 V_CHECK_NO | V_CIRCLE_NO | V_DIAMOND_NO) then
+   if \style == (V_CIRCLE | V_CHECK | V_DIAMOND |
+         V_CHECK_NO | V_CIRCLE_NO | V_DIAMOND_NO) then
       max +:= 4 + WAttrib(win, "fheight")
    every i := 1 to *s do {
       rb := Vradio_entry(win, s[i], cv, i, style, max)
@@ -5378,7 +5378,7 @@ procedure Vhoriz_radio_buttons(params[])
    }
 
    init_format_Vrb(rb_frame)
-   rb_frame.V.resize(rb_frame, 0, 0, Vmin_frame_width(rb_frame), 
+   rb_frame.V.resize(rb_frame, 0, 0, Vmin_frame_width(rb_frame),
       Vmin_frame_height(rb_frame))
 
    if \ins then VInsert(frame, rb_frame, x, y)
@@ -5387,7 +5387,7 @@ end
 
 #
 #  Set to no radio button selected, format size of frame.
-#	
+#
 procedure init_format_Vrb(rb_frame)
 
    rb_frame.cv.value :=  V_DUMMY_ID
@@ -5416,13 +5416,13 @@ end
 
 ############################################################################
 #
-#	File:     vsetup.icn
+#       File:     vsetup.icn
 #
-#	Subject:  Procedures for vidget application setup
+#       Subject:  Procedures for vidget application setup
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     August 23, 1995
+#       Date:     August 23, 1995
 #
 ############################################################################
 #
@@ -5473,19 +5473,19 @@ record VS_rec(var, typ, sty, num, x, y, w, h, lbl, cbk, etc)
 procedure vsetup(args[])
    local r, wlbl, root, vtable, wspec, alist, win, winargs, cbk
 
-   case type(args[1]) of {		# check for window or arglist argument
-      "window":	win := get(args)
-      "list":	winargs := get(args)
-      "null":	get(args)
+   case type(args[1]) of {              # check for window or arglist argument
+      "window": win := get(args)
+      "list":   winargs := get(args)
+      "null":   get(args)
       }
    /win := &window
 
-   if type(args[1]) ~== "list" then	# check for callback argument
+   if type(args[1]) ~== "list" then     # check for callback argument
       cbk := get(args)
 
-   wspec := get(args)			# first spec gives window size
+   wspec := get(args)                   # first spec gives window size
 
-   if /win then {			# if we don't have a window
+   if /win then {                       # if we don't have a window
       r := VS_crack(wspec) | _Vbomb("bad specification in vsetup")
       wlbl := ("" ~== r.lbl) |
          (&progname ? {while tab(upto('/')+1); tab(upto('.')|0)})
@@ -5497,15 +5497,15 @@ procedure vsetup(args[])
       win := Window ! alist
       }
 
-   VSetFont(win)			# set correct text font
+   VSetFont(win)                        # set correct text font
 
-   vtable := table()			# make table of handles
-   vtable["root"] := root := Vroot_frame(win)	# insert root frame
+   vtable := table()                    # make table of handles
+   vtable["root"] := root := Vroot_frame(win)   # insert root frame
    every r := VS_crack(\!args, cbk) do
-      vtable[r.var] := VS_obj(win, root, r)	# insert other vidgets
-   VResize(root)			# configure and realize vidgets
+      vtable[r.var] := VS_obj(win, root, r)     # insert other vidgets
+   VResize(root)                        # configure and realize vidgets
    root.id := "root"
-   return vtable			# return table
+   return vtable                        # return table
 end
 
 
@@ -5518,7 +5518,7 @@ procedure VS_crack(wspec, cbk)
    local r, f
 
    r := VS_rec()
-   (get(wspec) | fail) ? { 
+   (get(wspec) | fail) ? {
       r.var := tab(upto(':')) | fail;  move(1)
       r.typ := tab(upto(':')) | fail;  move(1)
       r.sty := tab(upto(':')) | fail;  move(1)
@@ -5593,11 +5593,11 @@ procedure VS_obj(win, root, r)
             "vSlider":
                Vvert_slider(win, r.cbk, r.var, r.h, r.w, hi, lo, iv, r.num)
             "hScrollbar":
-               Vhoriz_scrollbar(win, r.cbk, r.var, r.w, r.h, lo, hi, , , r.num) 
+               Vhoriz_scrollbar(win, r.cbk, r.var, r.w, r.h, lo, hi, , , r.num)
             "vScrollbar":
                Vvert_scrollbar(win, r.cbk, r.var, r.h, r.w, hi, lo, , , r.num)
             }
-         VSetState(obj, iv)			# needed for scrollbars
+         VSetState(obj, iv)                     # needed for scrollbars
          VInsert(root, obj, r.x, r.y)
          }
       "Text": {
@@ -5643,13 +5643,13 @@ end
 
 ############################################################################
 #
-#	File:     bevel.icn
+#       File:     bevel.icn
 #
-#	Subject:  Procedures for drawing beveled objects
+#       Subject:  Procedures for drawing beveled objects
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 11, 1995
+#       Date:     July 11, 1995
 #
 ############################################################################
 #
@@ -5660,35 +5660,35 @@ end
 #  or if clipping is set, due to the use of cached graphics contexts.
 #
 #  BevelReset(win) -- set/reset colors for beveling
-#	This procedure is called automatically by the others.
-#	It can be called explicitly if the background color is changed.
+#       This procedure is called automatically by the others.
+#       It can be called explicitly if the background color is changed.
 #
 #  BevelCircle(win, x, y, r, bw) -- draw beveled circle
 #  BevelDiamond(win, x, y, r, bw) -- draw beveled diamond
 #  BevelTriangle(win, x, y, r, o, bw) -- draw beveled triangle
 #  BevelSquare(win, x, y, r, bw) -- draw beveled square
-#	These procedures draw a figure centered at (x,y) and having
-#	a "radius" of r.  bw is the bevel width, in pixels.
+#       These procedures draw a figure centered at (x,y) and having
+#       a "radius" of r.  bw is the bevel width, in pixels.
 #       o is the triangle orientation: "n", "s", "e", or "w".
 #
 #  FillSquare(win, x, y, r) -- fill square centered at (x,y)
 #  FillDiamond(win, x, y, r) -- fill diamond centered at (x,y)
 #  FillTriangle(win, x, y, r, o) -- fill triangle centered at (x,y)
-#	These procedures complement the beveled outline procedures
-#	by filling a figure centered at (x,y).  Fillcircle is already
-#	an Icon function and so is not included here.
+#       These procedures complement the beveled outline procedures
+#       by filling a figure centered at (x,y).  Fillcircle is already
+#       an Icon function and so is not included here.
 #
 #  RidgeRectangle(win, x, y, w, h, bw) -- draw ridged rectangle
 #  GrooveRectangle(win, x, y, w, h, bw) -- draw grooved rectangle
 #  BevelRectangle(win, x, y, w, h, bw) -- draw beveled rectangle
-#	These procedures draw a rectangle with the given external
-#	dimensions and border width.  Beveled rectangles are raised
-#	if bw > 0 or sunken if bw < 0.
+#       These procedures draw a rectangle with the given external
+#       dimensions and border width.  Beveled rectangles are raised
+#       if bw > 0 or sunken if bw < 0.
 #
 #  DrawRidge(win, x1, y1, x2, y2, w) -- draw a ridged line
 #  DrawGroove(win, x1, y1, x2, y2, w) -- draw a grooved line
-#	These procedures draw a groove or ridge of width 2 at any angle.
-#	If w = 0, a groove or ridge is erased to the background color.
+#       These procedures draw a groove or ridge of width 2 at any angle.
+#       If w = 0, a groove or ridge is erased to the background color.
 #
 #  For BevelSquare() and FillSquare(), the width drawn is 2 * r + 1,
 #  not just 2 * r.  This is necessary to keep the visual center at the
@@ -5725,7 +5725,7 @@ record bev_record(shadow, hilite)
 #  must also be called explicitly if the background color is changed.
 #  (Pale, weak background colors work best with beveling.)
 
-procedure BevelReset(win)	#: set colors for beveled drawing
+procedure BevelReset(win)       #: set colors for beveled drawing
    local b, h, l, s, hilite, shadow, lhilite, lshadow
 
    /win := &window
@@ -5746,16 +5746,16 @@ procedure BevelReset(win)	#: set colors for beveled drawing
          move(1)
          s := tab(0)
          }
-   
+
       case l of {
-          0 <= l < 10 & l:	  { lshadow := 25;	lhilite := 50 }
-         10 <= l < 25 & l:	  { lshadow := 0;	lhilite := l + 25 }
-         25 <= l < 75 & l:	  { lshadow := l - 25;	lhilite := l + 25 }
-         75 <= l < 90 & l:	  { lshadow := l - 25;	lhilite := 100 }
-         default:		  { lshadow := 50;	lhilite := 75 }
+          0 <= l < 10 & l:        { lshadow := 25;      lhilite := 50 }
+         10 <= l < 25 & l:        { lshadow := 0;       lhilite := l + 25 }
+         25 <= l < 75 & l:        { lshadow := l - 25;  lhilite := l + 25 }
+         75 <= l < 90 & l:        { lshadow := l - 25;  lhilite := 100 }
+         default:                 { lshadow := 50;      lhilite := 75 }
          }
       s /:= 2
-   
+
       shadow := Clone(win, "fg=" || HLSValue(h || ":" || lshadow || ":" || s),
          "linewidth=1", "linestyle=solid", "fillstyle=solid", "drawop=copy")
       hilite := Clone(shadow,
@@ -5791,7 +5791,7 @@ end
 
 #  BevelCircle(win, x, y, r, bw) -- draw beveled circle
 
-procedure BevelCircle(win, x, y, r, bw)		#: draw beveled circle
+procedure BevelCircle(win, x, y, r, bw)         #: draw beveled circle
    local b, upper, lower, a
 
    if type(win) ~== "window" then
@@ -5822,7 +5822,7 @@ end
 
 #  BevelDiamond(win, x, y, r, bw) -- draw beveled diamond
 
-procedure BevelDiamond(win, x, y, r, bw)	#: draw beveled diamond
+procedure BevelDiamond(win, x, y, r, bw)        #: draw beveled diamond
    local b, upper, lower
 
    if type(win) ~== "window" then
@@ -5898,7 +5898,7 @@ end
 
 #  BevelSquare(win, x, y, r, bw) -- draw beveled square
 
-procedure BevelSquare(win, x, y, r, bw)		#: draw beveled square
+procedure BevelSquare(win, x, y, r, bw)         #: draw beveled square
 
    if type(win) ~== "window" then
       return BevelSquare((\&window | runerr(140)), win, x, y, r)
@@ -5909,7 +5909,7 @@ end
 
 #  RidgeRectangle(win, x, y, w, h, bw) -- draw ridged rectangle
 
-procedure RidgeRectangle(win, x, y, w, h, bw)	#: draw ridged rectangle
+procedure RidgeRectangle(win, x, y, w, h, bw)   #: draw ridged rectangle
 
    if type(win) ~== "window" then
       return RidgeRectangle((\&window | runerr(140)), win, x, y, w, h)
@@ -5920,7 +5920,7 @@ end
 
 #  GrooveRectangle(win, x, y, w, h, bw) -- draw grooved rectangle
 
-procedure GrooveRectangle(win, x, y, w, h, bw)	#: draw grooved rectangle
+procedure GrooveRectangle(win, x, y, w, h, bw)  #: draw grooved rectangle
    local abw
 
    if type(win) ~== "window" then
@@ -5954,7 +5954,7 @@ end
 #  bw is the border width (>0 for raised bevel, <0 for sunken bevel).
 #  (x,y,w,h) bounds the entire beveled rectangle, not the usable area inside.
 
-procedure BevelRectangle(win, x, y, w, h, bw)	#: draw beveled rectangle
+procedure BevelRectangle(win, x, y, w, h, bw)   #: draw beveled rectangle
    local b, upper, lower, xx, yy
 
    if type(win) ~== "window" then
@@ -6000,7 +6000,7 @@ end
 #
 #  If w is negative, a groove is drawn instead.
 
-procedure DrawRidge(win, x1, y1, x2, y2, w)	#: draw ridged line
+procedure DrawRidge(win, x1, y1, x2, y2, w)     #: draw ridged line
 
    if type(win) ~== "window" then
       return DrawRidge((\&window | runerr(140)), win, x1, y1, x2, y2)
@@ -6020,7 +6020,7 @@ end
 #  Horizontal and vertical grooves fill the same pixels as lines drawn
 #  linewidth=2.  Angled grooves are not necessarily the same, though.
 
-procedure DrawGroove(win, x1, y1, x2, y2, w)	#: draw grooved line
+procedure DrawGroove(win, x1, y1, x2, y2, w)    #: draw grooved line
    local a, n, b, upper, lower, fg
 
    if type(win) ~== "window" then
@@ -6032,13 +6032,13 @@ procedure DrawGroove(win, x1, y1, x2, y2, w)	#: draw grooved line
    x2 := integer(x2)
    y2 := integer(y2)
 
-   if w ~= 0 then {			# if really drawing
+   if w ~= 0 then {                     # if really drawing
       b := bev_lookup(win)
       upper := b.shadow
       lower := b.hilite
       }
    else {
-      fg := Fg(win)			# if erasing, draw in bg color
+      fg := Fg(win)                     # if erasing, draw in bg color
       Fg(win, Bg(win))
       upper := lower := win
       }
@@ -6048,28 +6048,28 @@ procedure DrawGroove(win, x1, y1, x2, y2, w)	#: draw grooved line
       a +:= &pi
    n := integer(8 * a / &pi)
 
-   if w < 0 then			# if groove/ridge swap
+   if w < 0 then                        # if groove/ridge swap
       upper :=: lower
-   if n = 2 then			# if tricky illumination angle
+   if n = 2 then                        # if tricky illumination angle
       upper :=: lower
 
-   if 2 <= n <= 5 then {		# approximately vertical
+   if 2 <= n <= 5 then {                # approximately vertical
       DrawLine(upper, x1 - 1, y1, x2 - 1, y2)
       DrawLine(lower, x1, y1, x2, y2)
       }
-   else {				# approximately horizontal
+   else {                               # approximately horizontal
       DrawLine(upper, x1, y1 - 1, x2, y2 - 1)
       DrawLine(lower, x1, y1, x2, y2)
       }
 
-   Fg(win, \fg)				# restore foreground if changed
+   Fg(win, \fg)                         # restore foreground if changed
    return win
 end
 
 
 #  FillSquare(win, x, y, r) -- fill square centered at (x,y)
 
-procedure FillSquare(win, x, y, r)		#: draw filled square
+procedure FillSquare(win, x, y, r)              #: draw filled square
    if type(win) ~== "window" then
       return FillSquare((\&window | runerr(140)), win, x, y)
    return FillRectangle(win, x - r, y - r, 2 * r + 1, 2 * r + 1)
@@ -6078,7 +6078,7 @@ end
 
 #  FillDiamond(win, x, y, r) -- fill diamond centered at (x,y)
 
-procedure FillDiamond(win, x, y, r)		#: draw filled diamond
+procedure FillDiamond(win, x, y, r)             #: draw filled diamond
    if type(win) ~== "window" then
       return FillDiamond((\&window | runerr(140)), win, x, y)
    return FillPolygon(win, x - r, y, x, y + r + 1, x + r + 1, y, x, y - r - 1)
@@ -6090,7 +6090,7 @@ end
 #  r is "radius" (1/2 of side of enclosing square)
 #  o is orientation ("n", "s", "e", "w")
 
-procedure FillTriangle(win, x, y, r, o)		#: draw filled triangle
+procedure FillTriangle(win, x, y, r, o)         #: draw filled triangle
    if type(win) ~== "window" then
       return FillTriangle((\&window | runerr(140)), win, x, y, r)
    return case o of {
@@ -6114,13 +6114,13 @@ end
 
 ############################################################################
 #
-#	File:     color.icn
+#       File:     color.icn
 #
-#	Subject:  Procedures dealing with colors
+#       Subject:  Procedures dealing with colors
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 10, 1995
+#       Date:     July 10, 1995
 #
 ############################################################################
 #
@@ -6182,7 +6182,7 @@ end
 
 #   ScaleGamma(v, g) -- scale fraction to int with gamma correction.
 
-procedure ScaleGamma(v, g)		#: scale with gamma correction
+procedure ScaleGamma(v, g)              #: scale with gamma correction
    /g := 2.5
    return integer(65535 * v ^ (1.0 / g))
 end
@@ -6190,7 +6190,7 @@ end
 
 #  Blend(color1, color2, ...) -- generate sequence of colors
 
-procedure Blend(args[])			#: generate sequence of colors
+procedure Blend(args[])                 #: generate sequence of colors
    local win, n, s, a, i, f1, f2, r1, g1, b1, r2, g2, b2, r3, g3, b3
 
    n := 4
@@ -6229,7 +6229,7 @@ end
 
 #  Contrast(win, color) -- return "white" or "black" to maximize contrast
 
-procedure Contrast(win, color)		#: choose contrasting color
+procedure Contrast(win, color)          #: choose contrasting color
    static l
    initial l := ["white", "black"]
 
@@ -6242,7 +6242,7 @@ end
 
 #  Shade(win, color) -- approximate a shade with a pattern if bilevel screen
 
-procedure Shade(win, color)		#: dither shade using pattern
+procedure Shade(win, color)             #: dither shade using pattern
    local r, g, b
    static dmat, env
    initial env := ("" ~== map(getenv("XSHADE")))
@@ -6295,11 +6295,11 @@ end
 
 #   RandomColor(win, palette) -- choose random color
 
-procedure RandomColor(win, palette)	#: choose random color
+procedure RandomColor(win, palette)     #: choose random color
    local s, n
 
    if type(win) ~== "window" then
-      palette:= win			# window allowed but ignored
+      palette:= win                     # window allowed but ignored
    /palette := "c6"
 
    s := PaletteChars(palette)
@@ -6314,10 +6314,10 @@ end
 
 #  PaletteGrays(win, palette) -- return grayscale entries from palette.
 
-procedure PaletteGrays(win, palette)	#: grayscale entries from palette
+procedure PaletteGrays(win, palette)    #: grayscale entries from palette
 
    if (type(win) ~== "window") then
-      palette := win				# window not needed
+      palette := win                            # window not needed
 
    palette := string(palette) | runerr(103, palette)
 
@@ -6325,24 +6325,24 @@ procedure PaletteGrays(win, palette)	#: grayscale entries from palette
       return PaletteChars(palette)
 
    return case palette of {
-      "c1":	"0123456"
-      "c2":	"kxw"
-      "c3":	"@abMcdZ"
-      "c4":	"0$%&L*+-g/?@}"
-      "c5":	"\0}~\177\200\37\201\202\203\204>\205\206\207\210]_
+      "c1":     "0123456"
+      "c2":     "kxw"
+      "c3":     "@abMcdZ"
+      "c4":     "0$%&L*+-g/?@}"
+      "c5":     "\0}~\177\200\37\201\202\203\204>\205\206\207\210]_
                   \211\212\213\214|"
-      "c6":	"\0\330\331\332\333\334+\335\336\337\340\341V\342\343\344\345_
+      "c6":     "\0\330\331\332\333\334+\335\336\337\340\341V\342\343\344\345_
                   \346\201\347\350\351\352\353\254\354\355\356\357\360\327"
-      default:	fail
+      default:  fail
       }
 end
 
 
 #  RGBKey(win, palette, r, g, b) -- find key given real-valued color
 
-procedure RGBKey(win, palette, r, g, b)	#: return palette key for color
+procedure RGBKey(win, palette, r, g, b) #: return palette key for color
 
-   if type(win) ~== "window" then	# allow unused window argument
+   if type(win) ~== "window" then       # allow unused window argument
       win :=: palette :=: r :=: g :=: b
    r := integer(r * 65535.99)
    g := integer(g * 65535.99)
@@ -6355,16 +6355,16 @@ end
 #
 #  HSV conversion based on Foley et al, 2/e, p.593
 
-procedure HSVKey(win, palette, h, s, v)	#: nearest key from HSV specification
+procedure HSVKey(win, palette, h, s, v) #: nearest key from HSV specification
    local i, f, p, q, t, r, g, b
 
-   if type(win) ~== "window" then	# allow unused window argument
+   if type(win) ~== "window" then       # allow unused window argument
       win :=: palette :=: h :=: s :=: v
 
-   if s = 0.0 then			# achromatic case
+   if s = 0.0 then                      # achromatic case
       return RGBKey(palette, v, v, v)
 
-   h *:= 6.0				# hue [0.0 - 6.0)
+   h *:= 6.0                            # hue [0.0 - 6.0)
    if h >= 6.0 then
       h := 0.0
 
@@ -6375,12 +6375,12 @@ procedure HSVKey(win, palette, h, s, v)	#: nearest key from HSV specification
    t := v * (1.0 - (1.0 - f) * s)
 
    case i of {
-      0: { r := v;  g := t;  b := p }	# red - yellow
-      1: { r := q;  g := v;  b := p }	# yellow - green
-      2: { r := p;  g := v;  b := t }	# green - cyan
-      3: { r := p;  g := q;  b := v }	# cyan - blue
-      4: { r := t;  g := p;  b := v }	# blue - magenta
-      5: { r := v;  g := p;  b := q }	# magenta - red
+      0: { r := v;  g := t;  b := p }   # red - yellow
+      1: { r := q;  g := v;  b := p }   # yellow - green
+      2: { r := p;  g := v;  b := t }   # green - cyan
+      3: { r := p;  g := q;  b := v }   # cyan - blue
+      4: { r := t;  g := p;  b := v }   # blue - magenta
+      5: { r := v;  g := p;  b := q }   # magenta - red
       }
 
    return RGBKey(palette, r, g, b)
@@ -6395,7 +6395,7 @@ end
 #
 #  based on Foley et al, 2/e, p.592
 
-procedure HSV(k)			#: HSV interpretation of color
+procedure HSV(k)                        #: HSV interpretation of color
    local r, g, b, h, s, v, min, max, d
 
    (ColorValue(k) | fail) ? {
@@ -6406,26 +6406,26 @@ procedure HSV(k)			#: HSV interpretation of color
       b := tab(many(&digits)) / 65535.0
       }
 
-   min := r;  min >:= g;  min >:= b		# minimum
-   max := r;  max <:= g;  max <:= b		# maximum
-   d := max - min				# difference
+   min := r;  min >:= g;  min >:= b             # minimum
+   max := r;  max <:= g;  max <:= b             # maximum
+   d := max - min                               # difference
 
-   v := max					# value is max of all values
+   v := max                                     # value is max of all values
    if max > 0 then
-      s := d / max				# saturation is (max-min)/max
+      s := d / max                              # saturation is (max-min)/max
    else
       s := 0.0
 
    if s = 0 then
-      h := 0.0					# use hue 0 if unsaturated
+      h := 0.0                                  # use hue 0 if unsaturated
    else if g = max then
-      h := 2 + (b - r) / d			# yellow through cyan
+      h := 2 + (b - r) / d                      # yellow through cyan
    else if b = max then
-      h := 4 + (r - g) / d			# cyan through magenta
+      h := 4 + (r - g) / d                      # cyan through magenta
    else if g < b then
-      h := 6 + (g - b) / d			# magenta through red
+      h := 6 + (g - b) / d                      # magenta through red
    else
-      h := (g - b) / d				# red through yellow
+      h := (g - b) / d                          # red through yellow
 
    return integer(60 * h + 0.5) || "/" ||
       integer(100 * s + 0.5) || "/" || integer(100 * v + 0.5)
@@ -6440,7 +6440,7 @@ end
 #
 #  based on Foley et al, 2/e, p.593
 
-procedure HSVValue(hsv)			#: color value of HSV specification
+procedure HSVValue(hsv)                 #: color value of HSV specification
    local h, s, v, r, g, b, i, f, p, q, t
 
    hsv ? {
@@ -6453,12 +6453,12 @@ procedure HSVValue(hsv)			#: color value of HSV specification
       }
    if (h | s | v) > 1 then fail
 
-   if s = 0.0 then {			# achromatic case
+   if s = 0.0 then {                    # achromatic case
       v := integer(65535 * v + 0.499999)
       return v || "," || v || "," || v
       }
 
-   h *:= 6.0				# hue [0.0 - 6.0)
+   h *:= 6.0                            # hue [0.0 - 6.0)
    if h >= 6.0 then
       h := 0.0
 
@@ -6469,12 +6469,12 @@ procedure HSVValue(hsv)			#: color value of HSV specification
    t := v * (1.0 - (1.0 - f) * s)
 
    case i of {
-      0: { r := v;  g := t;  b := p }	# red - yellow
-      1: { r := q;  g := v;  b := p }	# yellow - green
-      2: { r := p;  g := v;  b := t }	# green - cyan
-      3: { r := p;  g := q;  b := v }	# cyan - blue
-      4: { r := t;  g := p;  b := v }	# blue - magenta
-      5: { r := v;  g := p;  b := q }	# magenta - red
+      0: { r := v;  g := t;  b := p }   # red - yellow
+      1: { r := q;  g := v;  b := p }   # yellow - green
+      2: { r := p;  g := v;  b := t }   # green - cyan
+      3: { r := p;  g := q;  b := v }   # cyan - blue
+      4: { r := t;  g := p;  b := v }   # blue - magenta
+      5: { r := v;  g := p;  b := q }   # magenta - red
       }
 
    return integer(65535 * r + 0.499999) || "," ||
@@ -6490,7 +6490,7 @@ end
 #
 #  based on Foley et al, 2/e, p.595
 
-procedure HLS(k)			#: HLS interpretation of color
+procedure HLS(k)                        #: HLS interpretation of color
    local r, g, b, h, l, s, min, max, delta
 
    (ColorValue(k) | fail) ? {
@@ -6501,30 +6501,30 @@ procedure HLS(k)			#: HLS interpretation of color
       b := tab(many(&digits)) / 65535.0
       }
 
-   min := r;  min >:= g;  min >:= b	# minimum
-   max := r;  max <:= g;  max <:= b	# maximum
-   delta := max - min			# difference
+   min := r;  min >:= g;  min >:= b     # minimum
+   max := r;  max <:= g;  max <:= b     # maximum
+   delta := max - min                   # difference
 
-   l := (max + min) / 2			# lightness
+   l := (max + min) / 2                 # lightness
 
-   if max = min then 
-      h := s := 0			# achromatic
+   if max = min then
+      h := s := 0                       # achromatic
 
    else {
 
       if l <= 0.5 then
-         s := delta / (max + min)	# saturation
+         s := delta / (max + min)       # saturation
       else
          s := delta / (2 - max - min)
 
       if r = max then
-         h := (g - b) / delta		# yellow through magenta
+         h := (g - b) / delta           # yellow through magenta
       else if g = max then
-         h := 2 + (b - r) / delta	# cyan through yellow
+         h := 2 + (b - r) / delta       # cyan through yellow
       else # b = max
-         h := 4 + (r - g) / delta	# magenta through cyan
+         h := 4 + (r - g) / delta       # magenta through cyan
       if h < 0 then
-         h +:= 6			# ensure positive value
+         h +:= 6                        # ensure positive value
       }
 
    return integer(60 * h + 0.5) || ":" ||
@@ -6540,7 +6540,7 @@ end
 #
 #  based on Foley & Van Dam, 1/e, p.619
 
-procedure HLSValue(hls)			#: color value of HLS specification
+procedure HLSValue(hls)                 #: color value of HLS specification
    local h, l, s, r, g, b, m1, m2
 
    hls ? {
@@ -6560,7 +6560,7 @@ procedure HLSValue(hls)			#: color value of HLS specification
    m1 := 2 * l - m2
 
    if s = 0.0 then
-      r := g := b := l			# achromatic
+      r := g := b := l                  # achromatic
    else {
       r := hls_rgb_val(m1, m2, h + 0.3333333)
       g := hls_rgb_val(m1, m2, h)
@@ -6571,7 +6571,7 @@ procedure HLSValue(hls)			#: color value of HLS specification
       integer(65535 * g + 0.499999) || "," || integer(65535 * b + 0.499999)
 end
 
-procedure hls_rgb_val(n1, n2, hue)	# helper function for HLSValue
+procedure hls_rgb_val(n1, n2, hue)      # helper function for HLSValue
    hue *:= 6
    if hue >= 6 then
       hue -:= 6
@@ -6595,13 +6595,13 @@ end
 
 ############################################################################
 #
-#	File:     enqueue.icn
+#       File:     enqueue.icn
 #
-#	Subject:  Procedures for queued events
+#       Subject:  Procedures for queued events
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 4, 1995
+#       Date:     July 4, 1995
 #
 ############################################################################
 #
@@ -6612,15 +6612,15 @@ end
 #   as three consecutive entries on the list.  The first is the event code:
 #   a string for a keypress, or an integer for any other event.  The next
 #   two list entries are integers, interpreted as a packed structure:
-#	0000 0000 0000 0SMC  XXXX XXXX XXXX XXXX   (second entry)
-#	0EEE MMMM MMMM MMMM  YYYY YYYY YYYY YYYY   (third entry)
+#       0000 0000 0000 0SMC  XXXX XXXX XXXX XXXX   (second entry)
+#       0EEE MMMM MMMM MMMM  YYYY YYYY YYYY YYYY   (third entry)
 #
 #   The fields have these meanings:
-#	X...X	&x: 16-bit signed x-coordinate value
-#	Y...Y	&y: 16-bit signed y-coordinate value
-#	SMC	&shift, &meta, and &control (modifier keys)
-#	E...M	&interval, interpreted as  M * 16 ^ E
-#	0	currently unused; should be zero
+#       X...X   &x: 16-bit signed x-coordinate value
+#       Y...Y   &y: 16-bit signed y-coordinate value
+#       SMC     &shift, &meta, and &control (modifier keys)
+#       E...M   &interval, interpreted as  M * 16 ^ E
+#       0       currently unused; should be zero
 #
 #
 #      pack_modkeys(s) encodes a set of modifier keys, returning an
@@ -6643,11 +6643,11 @@ end
 #   and enqueues an event for a window, packing the interval and modifier
 #   keys (specified as above) into the correct places.  Default values
 #   are:
-#	eventcode = &null
-#	x = 0
-#	y = 0
-#	interval = 0
-#	modkeys = ""
+#       eventcode = &null
+#       x = 0
+#       y = 0
+#       interval = 0
+#       modkeys = ""
 #
 ############################################################################
 #
@@ -6658,67 +6658,67 @@ end
 
 #  pack_intrvl(n) -- encode event interval
 
-procedure pack_intrvl(n)			#: encode event interval
+procedure pack_intrvl(n)                        #: encode event interval
    local e
 
-   n := integer(n) | runerr(101, n)	# ensure integer
-   n <:= 0				# ensure nonnegative
-   e := 0				# assume exponent of 0
+   n := integer(n) | runerr(101, n)     # ensure integer
+   n <:= 0                              # ensure nonnegative
+   e := 0                               # assume exponent of 0
 
-   while n >= 16r1000 do {		# if too big
-      n := ishift(n, -4)		# reduce significance
-      e +:= 16r1000			# increase exponent
+   while n >= 16r1000 do {              # if too big
+      n := ishift(n, -4)                # reduce significance
+      e +:= 16r1000                     # increase exponent
    }
-   return ishift(e + n, 16)		# return shifted result
+   return ishift(e + n, 16)             # return shifted result
 end
 
 
 #  unpack_intrvl(n) -- decode event interval
 
-procedure unpack_intrvl(n)			#: decode event interval
+procedure unpack_intrvl(n)                      #: decode event interval
    local e
 
-   n := integer(n) | runerr(101, n)	# ensure integer
-   e := iand(ishift(n, -28), 7)		# exponent
-   n := iand(ishift(n, -16), 16rFFF)	# mantissa
+   n := integer(n) | runerr(101, n)     # ensure integer
+   e := iand(ishift(n, -28), 7)         # exponent
+   n := iand(ishift(n, -16), 16rFFF)    # mantissa
    return ishift(n, 4 * e)
 end
 
 
 #  pack_modkeys(s) -- encode modifier keys
 
-procedure pack_modkeys(s)			#: encode modifier keys
+procedure pack_modkeys(s)                       #: encode modifier keys
    local b, c
 
    b := 0
-   s := string(s) | runerr(103, s)		# ensure string value
-   every c := !s do case c of {			# set bit for each flag
-      "c":	b := ior(b, 16r10000)
-      "m":	b := ior(b, 16r20000)
-      "s":	b := ior(b, 16r40000)
-      default:	runerr(205, s)			# diagnose bad flag
+   s := string(s) | runerr(103, s)              # ensure string value
+   every c := !s do case c of {                 # set bit for each flag
+      "c":      b := ior(b, 16r10000)
+      "m":      b := ior(b, 16r20000)
+      "s":      b := ior(b, 16r40000)
+      default:  runerr(205, s)                  # diagnose bad flag
       }
-   return b					# return result
+   return b                                     # return result
 end
 
 
 #  unpack_modkeys(n) -- decode modifier keys
 
-procedure unpack_modkeys(n)			#: decode modifier keys
+procedure unpack_modkeys(n)                     #: decode modifier keys
    local s
 
-   n := integer(n) | runerr(101, n)		# ensure integer
+   n := integer(n) | runerr(101, n)             # ensure integer
    s := ""
-   if iand(n, 16r10000) ~= 0 then s ||:= "c"	# check each bit
+   if iand(n, 16r10000) ~= 0 then s ||:= "c"    # check each bit
    if iand(n, 16r20000) ~= 0 then s ||:= "m"
    if iand(n, 16r40000) ~= 0 then s ||:= "s"
-   return s					# return result string
+   return s                                     # return result string
 end
 
 
 #  Enqueue(window, eventcode, x, y, modkeys, interval) -- enqueue event
 
-procedure Enqueue(win, eventcode, x, y, modkeys, interval)	#: enqueue event
+procedure Enqueue(win, eventcode, x, y, modkeys, interval)      #: enqueue event
 
    if type(win) ~== "window" then {
       win :=: eventcode :=: x :=: y :=: modkeys :=: interval
@@ -6742,13 +6742,13 @@ end
 
 ############################################################################
 #
-#	File:     gpxop.icn
+#       File:     gpxop.icn
 #
-#	Subject:  Procedures for graphics operations
+#       Subject:  Procedures for graphics operations
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 11, 1995
+#       Date:     July 11, 1995
 #
 ############################################################################
 #
@@ -6804,7 +6804,7 @@ end
 
 #   LeftString(x, y, s) -- draw string left-justified at (x,y).
 
-procedure LeftString(win, x, y, s)		#: draw left-justified string
+procedure LeftString(win, x, y, s)              #: draw left-justified string
    if type(win) ~== "window" then {
       win :=: x :=: y :=: s
       win := &window
@@ -6816,7 +6816,7 @@ end
 
 #   CenterString(x, y, s) -- draw string centered about (x,y).
 
-procedure CenterString(win, x, y, s)		#: draw centered string
+procedure CenterString(win, x, y, s)            #: draw centered string
    if type(win) ~== "window" then {
       win :=: x :=: y :=: s
       win := &window
@@ -6829,7 +6829,7 @@ end
 
 #   RightString(x, y, s) -- draw string right-justified at (x,y).
 
-procedure RightString(win, x, y, s)		#: draw right-justified string
+procedure RightString(win, x, y, s)             #: draw right-justified string
    if type(win) ~== "window" then {
       win :=: x :=: y :=: s
       win := &window
@@ -6842,7 +6842,7 @@ end
 
 #   ClearOutline(x, y, w, h) -- draw rectangle and fill background.
 
-procedure ClearOutline(win, x, y, w, h)		#: draw and clear rectangle
+procedure ClearOutline(win, x, y, w, h)         #: draw and clear rectangle
    if type(win) ~== "window" then {
       win :=: x :=: y :=: w :=: h
       win := &window
@@ -6866,7 +6866,7 @@ end
 
 #   Translate(dx, dy, w, h) -- add translation and possibly clipping.
 
-procedure Translate(win, dx, dy, w, h)		#: add translation
+procedure Translate(win, dx, dy, w, h)          #: add translation
    if type(win) ~== "window" then {
       win :=: dx :=: dy :=: w :=: h
       win := &window
@@ -6879,45 +6879,45 @@ end
 
 #  Sweep() -- sweep out area with mouse, return bounds
 
-procedure Sweep(win)				#: sweep area with mouse
+procedure Sweep(win)                            #: sweep area with mouse
    local x, y, w, h, wmin, wmax, hmin, hmax
 
    /win := &window
    win := Clone(win, "drawop=reverse")
 
-   x := &x					# set initial rect bounds
+   x := &x                                      # set initial rect bounds
    y := &y
    w := h := 0
 
-   wmin := -WAttrib(win, "dx") - x		# calc coordinate limits
+   wmin := -WAttrib(win, "dx") - x              # calc coordinate limits
    hmin := -WAttrib(win, "dy") - y
    wmax := wmin + WAttrib(win, "width") - 1
    hmax := hmin + WAttrib(win, "height") - 1
 
-   DrawRectangle(win, x, y, w, h)		# draw initial bounding rect
+   DrawRectangle(win, x, y, w, h)               # draw initial bounding rect
    until Event(win) === (&lrelease | &mrelease | &rrelease) do {
-      DrawRectangle(win, x, y, w, h)		# erase old bounds
-      w := &x - x				# calc new width & height
+      DrawRectangle(win, x, y, w, h)            # erase old bounds
+      w := &x - x                               # calc new width & height
       h := &y - y
-      w <:= wmin				# clip to stay on window
+      w <:= wmin                                # clip to stay on window
       w >:= wmax
       h <:= hmin
       h >:= hmax
-      DrawRectangle(win, x, y, w, h)		# draw new bounds
+      DrawRectangle(win, x, y, w, h)            # draw new bounds
       }
-   DrawRectangle(win, x, y, w, h)		# erase bounding rectangle
+   DrawRectangle(win, x, y, w, h)               # erase bounding rectangle
 
-   if w < 0 then x -:= (w := -w)		# ensure nonnegative sizes
+   if w < 0 then x -:= (w := -w)                # ensure nonnegative sizes
    if h < 0 then y -:= (h := -h)
 
    Uncouple(win)
-   return [x, y, w + 1, h + 1]			# return FillRectangle bounds
+   return [x, y, w + 1, h + 1]                  # return FillRectangle bounds
 end
 
 
 #  Zoom(win1, win2, x1, y1, w1, h1, x2, y2, w2, h2) -- copy and distort.
 
-procedure Zoom(args[])				#: zoom image
+procedure Zoom(args[])                          #: zoom image
    local win1, x1, y1, w1, h1
    local win2, x2, y2, w2, h2
    local x, y, scr
@@ -6958,7 +6958,7 @@ procedure Zoom(args[])				#: zoom image
    every y := 0 to h2 - 1 do
       CopyArea(scr, win2, 0, h1 * ((y + 0.5) / h2), w2, 1, x2, y2 + y)
 
-   EraseArea(scr)		# release colors
+   EraseArea(scr)               # release colors
    return win1
 end
 
@@ -6967,7 +6967,7 @@ end
 
 $define CaptureChunk 100
 
-procedure Capture(win, pal, x, y, w, h)		#: capture image as string
+procedure Capture(win, pal, x, y, w, h)         #: capture image as string
    local a, c, s, t
 
    if type(win) ~== "window" then {
@@ -7013,13 +7013,13 @@ end
 
 ############################################################################
 #
-#	File:     gpxlib.icn
+#       File:     gpxlib.icn
 #
-#	Subject:  Procedures for graphics tasks
+#       Subject:  Procedures for graphics tasks
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 24, 1995
+#       Date:     July 24, 1995
 #
 ############################################################################
 #
@@ -7075,7 +7075,7 @@ end
 
 #   Distance(x1, y1, x2, y2) -- compute distance between two points.
 
-procedure Distance(x1, y1, x2, y2)		#: distance between two points
+procedure Distance(x1, y1, x2, y2)              #: distance between two points
    x1 -:= x2
    y1 -:= y2
    return sqrt(x1 * x1 + y1 * y1)
@@ -7084,7 +7084,7 @@ end
 
 #   InBounds(x, y, w, h) -- succeed if (&x,&y) is in a rectangular area.
 
-procedure InBounds(x, y, w, h)			#: check point within rectangle
+procedure InBounds(x, y, w, h)                  #: check point within rectangle
    if w < 0 then
       x -:= (w := -w)
    if h < 0 then
@@ -7095,7 +7095,7 @@ end
 
 #  ScratchCanvas([win,] w, h) -- return hidden window for temporary use.
 
-procedure ScratchCanvas(win, w, h)		#: return scratch canvas
+procedure ScratchCanvas(win, w, h)              #: return scratch canvas
    local d
    static dpytab
    initial dpytab := table()
@@ -7106,7 +7106,7 @@ procedure ScratchCanvas(win, w, h)		#: return scratch canvas
       }
    /w := WAttrib(win, "width")
    /h := WAttrib(win, "height")
-   w <:= 100				# if too teeny, can't open
+   w <:= 100                            # if too teeny, can't open
    h <:= 100
 
    d := WAttrib(win, "display")
@@ -7128,13 +7128,13 @@ end
 
 ############################################################################
 #
-#	File:     window.icn
+#       File:     window.icn
 #
-#	Subject:  Procedure for opening window
+#       Subject:  Procedure for opening window
 #
-#	Authors:  Gregg M. Townsend
+#       Authors:  Gregg M. Townsend
 #
-#	Date:     July 14, 1995
+#       Date:     July 14, 1995
 #
 ############################################################################
 #
@@ -7163,8 +7163,8 @@ end
 #  options when the program is executed.  If attributes appear after the
 #  program arglist, they cannot be overridden.  For example, with
 #
-#	procedure main(args)
-#	Window("size=600,400", "fg=yellow", args, "bg=black")
+#       procedure main(args)
+#       Window("size=600,400", "fg=yellow", args, "bg=black")
 #
 #  the program user can change the size and foreground color
 #  but not the background color.
@@ -7181,29 +7181,29 @@ end
 #  Window() call, but only these are set from the command line or
 #  environment:
 #
-#	arg	attribute	default		meaning
-#	---	---------	-------		--------------------------
-#	-B	bg		gray-white	background color
-#	-F	fg		black		foreground color
-#	-T	font		 -		text font
-#	-L	label		&progname	window title
-#				(trimmed)
+#       arg     attribute       default         meaning
+#       ---     ---------       -------         --------------------------
+#       -B      bg              gray-white      background color
+#       -F      fg              black           foreground color
+#       -T      font             -              text font
+#       -L      label           &progname       window title
+#                               (trimmed)
 #
-#	-D	display		 -		window device
-#	-X	posx		 -		horizontal position
-#	-Y	posy		 -		vertical position
-#	-W	width		500		window width
-#	-H	height		300		window height
+#       -D      display          -              window device
+#       -X      posx             -              horizontal position
+#       -Y      posy             -              vertical position
+#       -W      width           500             window width
+#       -H      height          300             window height
 #
-#	-S	size		500,300		size
-#	-P	pos		 -		position
-#	-G	geometry	 -		window size and/or position
+#       -S      size            500,300         size
+#       -P      pos              -              position
+#       -G      geometry         -              window size and/or position
 #
-#	-A	<any>		 -		use "-A name=value"
-#						to set arbitrary attribute
+#       -A      <any>            -              use "-A name=value"
+#                                               to set arbitrary attribute
 #
-#	-!	 -		 -		write open() params to &error
-#						(for debugging)
+#       -!       -               -              write open() params to &error
+#                                               (for debugging)
 #
 ############################################################################
 #
@@ -7218,7 +7218,7 @@ end
 
 #====== $include "vdefns.icn"
 
-global wdw_debug			# non-null if to trace open call
+global wdw_debug                        # non-null if to trace open call
 
 
 #  Window(att, ..., arglist, ..., att) -- open window and set &window
@@ -7261,7 +7261,7 @@ procedure Window(args[])
    /att["bg"] := VBackground
    /att["label"] := pname
 
-   if /att["image"] & not (att["canvas"] === "maximal") then {	# don't override
+   if /att["image"] & not (att["canvas"] === "maximal") then {  # don't override
       /att["width"] := 500
       /att["height"] := 300
       }
@@ -7278,7 +7278,7 @@ procedure Window(args[])
    wdw_attrib(win, att, "fg")
    wdw_attrib(win, att, "bg")
    wdw_attrib(win, att, "font")
-   GotoRC(win, 1, 1)			# now that font has been set
+   GotoRC(win, 1, 1)                    # now that font has been set
    /&window := win
    return win
 end
@@ -7410,7 +7410,7 @@ end
 
 procedure wdw_reg(att, name, val)
    case name of {
-      "size": val ? {		# size=www,hhh
+      "size": val ? {           # size=www,hhh
          att["width"] := tab(many(&digits)) | fail
          ="," | fail
          att["height"] := tab(many(&digits)) | fail
@@ -7418,13 +7418,13 @@ procedure wdw_reg(att, name, val)
          if \att["canvas"] == "maximal" then
             delete(att, "canvas")
          }
-      "pos": val ? {		# pos=xxx,yyy
+      "pos": val ? {            # pos=xxx,yyy
          att["posx"] := tab(many(&digits)) | fail
          ="," | fail
          att["posy"] := tab(many(&digits)) | fail
          pos(0) | fail
          }
-      "geometry": val ? {	# geometry=[wwwxhhh][+xxx+yyy]
+      "geometry": val ? {       # geometry=[wwwxhhh][+xxx+yyy]
          if att["width"] := tab(many(&digits))
          then {
             ="x" | fail
@@ -7500,13 +7500,13 @@ end
 
 ############################################################################
 #
-#	File:     wopen.icn
+#       File:     wopen.icn
 #
-#	Subject:  Procedures for graphics input/output
+#       Subject:  Procedures for graphics input/output
 #
-#	Authors:  Gregg M. Townsend and Ralph E. Griswold
+#       Authors:  Gregg M. Townsend and Ralph E. Griswold
 #
-#	Date:     November 14, 1994
+#       Date:     November 14, 1994
 #
 ############################################################################
 #
@@ -7679,28 +7679,28 @@ end
 
 ############################################################################
 #
-#	File:     vcoupler.icn
+#       File:     vcoupler.icn
 #
-#	Subject:  Procedures for coupler variables
+#       Subject:  Procedures for coupler variables
 #
-#	Author:   Jon Lipp
+#       Author:   Jon Lipp
 #
-#	Date:     March 23, 1995
+#       Date:     March 23, 1995
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
 #
-#	Vcoupler
-#	Vrange_coupler
-#	Vstrset_coupler
-#	Vbool_coupler
-#	Vtable_coupler
-#	Vmenu_coupler
+#       Vcoupler
+#       Vrange_coupler
+#       Vstrset_coupler
+#       Vbool_coupler
+#       Vtable_coupler
+#       Vmenu_coupler
 #
 #  Utility procedures in this file:
 #
-#	add_clients_Vinit()
+#       add_clients_Vinit()
 #
 ############################################################################
 #
@@ -7710,7 +7710,7 @@ end
 
 #====== link vidgets
 
-record Vcoupler_rec(value, callers, clients, id, curr_id, old_id, 
+record Vcoupler_rec(value, callers, clients, id, curr_id, old_id,
                     allowed, locked, uid, V)
 
 ############################################################################
@@ -7722,7 +7722,7 @@ procedure Vcoupler(params[])
    static procs
 
    initial procs := Vstd_coupler(set_Vcoupler, add_client_Vcoupler,
-			init_Vcoupler, null_proc, null_proc,
+                        init_Vcoupler, null_proc, null_proc,
                         null_proc)
 
    self := Vcoupler_rec ! params
@@ -7783,7 +7783,7 @@ end
 # particular range of legal values.  Presently they must be numeric.
 # The default increment is 0.1.
 ############################################################################
-record Vrange_coupler_rec(min, max, value, inc, callers, clients, real, id, 
+record Vrange_coupler_rec(min, max, value, inc, callers, clients, real, id,
    locked, uid, V)
 
 procedure Vrange_coupler(params[])
@@ -7791,8 +7791,8 @@ procedure Vrange_coupler(params[])
    static procs
 
    initial procs := Vstd_coupler(set_Vrange_coupler,
-			add_client_Vcoupler,
-			init_Vrange_coupler, null_proc,
+                        add_client_Vcoupler,
+                        init_Vrange_coupler, null_proc,
                         null_proc, null_proc)
 
    self := Vrange_coupler_rec ! params
@@ -7824,8 +7824,8 @@ procedure init_Vrange_coupler(s)
 
    /s.value := \ s.min
    s.real := (type(s.min|s.max) == "real", 1)
-  
-   /s.inc := 0.1*(s.max-s.min) 
+
+   /s.inc := 0.1*(s.max-s.min)
    if /s.real then s.inc := integer(s.inc)
    init_Vcoupler(s)
 end
@@ -7838,9 +7838,9 @@ procedure Vstrset_coupler(params[])
    local self
    static procs
 
-   initial procs := Vstd_coupler(set_Vstrset_coupler, 
-			add_client_Vcoupler,
-			init_Vstrset_coupler, null_proc,
+   initial procs := Vstd_coupler(set_Vstrset_coupler,
+                        add_client_Vcoupler,
+                        init_Vstrset_coupler, null_proc,
                         null_proc, null_proc)
 
    self := Vcoupler_rec ! params
@@ -7852,7 +7852,7 @@ end
 
 procedure set_Vstrset_coupler(s, id, val)
    if \s.locked then fail
-   if !s.allowed === val then 
+   if !s.allowed === val then
       return set_Vcoupler(s, id, val)
 end
 
@@ -7869,10 +7869,10 @@ procedure Vbool_coupler(params[])
    local self
    static procs
 
-   initial procs := Vstd_coupler(set_Vbool_coupler, 
-			add_client_Vcoupler,
-			init_Vcoupler, unset_Vbool_coupler,
-			toggle_Vbool_coupler, eval_Vbool_coupler)
+   initial procs := Vstd_coupler(set_Vbool_coupler,
+                        add_client_Vcoupler,
+                        init_Vcoupler, unset_Vbool_coupler,
+                        toggle_Vbool_coupler, eval_Vbool_coupler)
 
    self := Vcoupler_rec ! params
    self.uid := Vget_uid()
@@ -7913,9 +7913,9 @@ procedure Vtable_coupler(params[])
    local self
    static procs
 
-   initial procs := Vstd_coupler(set_Vtable_coupler, 
-			add_client_Vcoupler,
-			init_Vtable_coupler, null_proc,
+   initial procs := Vstd_coupler(set_Vtable_coupler,
+                        add_client_Vcoupler,
+                        init_Vtable_coupler, null_proc,
                         null_proc, null_proc)
 
    self := Vcoupler_rec ! params
@@ -7930,7 +7930,7 @@ procedure set_Vtable_coupler(s, id, key, val)
    call_clients_Vcoupler(s, id, val)
 end
 
-procedure init_Vtable_coupler(s) 
+procedure init_Vtable_coupler(s)
   s.value := table()
   init_Vcoupler(s)
 end
@@ -7943,9 +7943,9 @@ procedure Vmenu_coupler(params[])
    local self
    static procs
 
-   initial procs := Vstd_coupler(set_Vmenu_coupler, 
-			null_proc,
-			null_proc, null_proc,
+   initial procs := Vstd_coupler(set_Vmenu_coupler,
+                        null_proc,
+                        null_proc, null_proc,
                         null_proc, null_proc)
 
    self := Vcoupler_rec ! params
@@ -7964,10 +7964,10 @@ procedure set_Vmenu_coupler(s, id, val)
    (\s.old_id).V.couplerset(s.old_id, , val)
    return val
 end
- 
+
 
 ############################################################################
-# Utilities 
+# Utilities
 ############################################################################
 
 #
@@ -7993,25 +7993,25 @@ end
 
 ############################################################################
 #
-#	File:     vframe.icn
+#       File:     vframe.icn
 #
-#	Subject:  Procedures for pane frame vidgets
+#       Subject:  Procedures for pane frame vidgets
 #
-#	Author:   Jon Lipp
+#       Author:   Jon Lipp
 #
-#	Date:     March 23, 1995
+#       Date:     March 23, 1995
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
 #
-# 	Vframe
-#	Vroot_frame
+#       Vframe
+#       Vroot_frame
 #
 #  Utility procedures in this file:
 #
-# 	Vmin_frame_width()
-#	Vmin_frame_height()
+#       Vmin_frame_width()
+#       Vmin_frame_height()
 #
 ############################################################################
 #
@@ -8026,7 +8026,7 @@ end
 #====== link vidgets
 
 ############################################################################
-#	frame vidget -
+#       frame vidget -
 #       Keeps track of panes.  Frames can contain
 #       sub-frames in a hierarchy.  Frames know their own absolute
 #       coordinates and the relative sizes and positions of their
@@ -8039,10 +8039,10 @@ record Vframe_rec(win, aw, ah, callback, id, lookup, draw, ax, ay,
 
 #
 #  Creation procedure for a Vframe.
-#	Specify its "own" utility procedures (V field).
-#	Specify "special" procedures (format, in F field).
-#	Get a unique id (uid).
-#	check implicit insertion, insert if necessary.
+#       Specify its "own" utility procedures (V field).
+#       Specify "special" procedures (format, in F field).
+#       Get a unique id (uid).
+#       check implicit insertion, insert if necessary.
 #
 procedure Vframe(params[])
    local self, procs, spec_procs, frame, x, y, ins
@@ -8336,37 +8336,37 @@ end
 
 ############################################################################
 #
-#	File:     viface.icn
+#       File:     viface.icn
 #
-#	Subject:  Procedures for interfacing vidgets
+#       Subject:  Procedures for interfacing vidgets
 #
-#	Author:   Jon Lipp
+#       Author:   Jon Lipp
 #
-#	Date:     August 23, 1995
+#       Date:     August 23, 1995
 #
 ############################################################################
 #
 #  Utility procedures in this file:
-#	VDraw()
-#	VErase()
-#	VOutline()
-#	VResize()
-#	VRemove()
-#	VInsert()
-#	VEvent()
-#	VRegister()
-#	VUnregister()
-#	VOpenDialog()
-#	VFormat()
-#	VAddClient()
-#	VToggle()
-#	VUnSet()
-#	VSetState()  [formerly SetVidget() and VSet()]
-#	VGetState()
-#	ProcessEvent()
-#	GetEvents()
-#	VEcho()
-#	VSetFont()
+#       VDraw()
+#       VErase()
+#       VOutline()
+#       VResize()
+#       VRemove()
+#       VInsert()
+#       VEvent()
+#       VRegister()
+#       VUnregister()
+#       VOpenDialog()
+#       VFormat()
+#       VAddClient()
+#       VToggle()
+#       VUnSet()
+#       VSetState()  [formerly SetVidget() and VSet()]
+#       VGetState()
+#       ProcessEvent()
+#       GetEvents()
+#       VEcho()
+#       VSetFont()
 #
 ############################################################################
 #
@@ -8428,7 +8428,7 @@ procedure VRemove(frame, vid, erase)
       _Vbomb("invalid frame parameter to VRemove()")
    else if not (type(vid) == !Vrecset ) then
       _Vbomb("invalid vidget parameter to VRemove()")
- 
+
    frame.V.remove(frame, vid, erase)
 end
 
@@ -8571,16 +8571,16 @@ procedure VSetState(vid, val, code)
       return (\(\vid).V.set)(vid, , val, code)
    else if type(vid) == !Vrecset then
       return (\(\vid).V.set_value)(vid, val, code)
-   else 
+   else
       _Vbomb("invalid vidget parameter to VSetState()")
 end
 
-procedure SetVidget(vid, val, code)	# old name
+procedure SetVidget(vid, val, code)     # old name
    SetVidget := VSetState
    return VSetState(vid, val, code)
 end
 
-procedure VSet(vid, val, code)		# older name
+procedure VSet(vid, val, code)          # older name
    VSet := VSetState
    return VSetState(vid, val, code)
 end
@@ -8597,7 +8597,7 @@ end
 
 
 ############################################################################
-# Event handlers. 
+# Event handlers.
 ############################################################################
 
 procedure GetEvents(vidget, missed, all, resize)
@@ -8636,7 +8636,7 @@ end
 #  It just prints a message on standard output giving the value of x.
 ############################################################################
 
-procedure vecho(v, x)	# old name
+procedure vecho(v, x)   # old name
    vecho := VEcho
    return VEcho(v, x)
 end
@@ -8662,7 +8662,7 @@ end
 #  VSetFont tries to set a 7-pixel-wide font for use by VIB and vidgets.
 ############################################################################
 
-procedure vsetfont(win)		# old name
+procedure vsetfont(win)         # old name
    vsetfont := VSetFont
    return VSetFont(win)
 end
@@ -8672,14 +8672,14 @@ procedure VSetFont(win)
 
    /win := &window
    if WAttrib(win, "fwidth") = VFWidth then
-      return win			# existing font is acceptable
+      return win                        # existing font is acceptable
 
-   every spec := 
+   every spec :=
 
 $ifdef _X_WINDOW_SYSTEM
          "lucidasanstypewriter-bold-12" |
-         "-*-lucidatypewriter-bold-r-*-*-12-*-*-*-*-70-iso8859-1" | 
-         "-*-lucidatypewriter-bold-r-*-*-*-*-*-*-*-70-iso8859-1" | 
+         "-*-lucidatypewriter-bold-r-*-*-12-*-*-*-*-70-iso8859-1" |
+         "-*-lucidatypewriter-bold-r-*-*-*-*-*-*-*-70-iso8859-1" |
          "-*-*-r-*-sans-*-*-*-*-m-70-iso8859-1" |
          "-*-*-r-*-*-*-*-*-*-m-70-iso8859-1" |
          "-*-*-r-*-*-*-*-*-*-c-70-iso8859-1"
@@ -8688,10 +8688,10 @@ $else
 $endif
 
       do {
-         Font(win, spec) | next		# try a font
-         /maybe := spec			# remember first success
+         Font(win, spec) | next         # try a font
+         /maybe := spec                 # remember first success
          if WAttrib(win, "fwidth") = VFWidth then
-            return win			# this font is right size
+            return win                  # this font is right size
          }
 
    # No font was the right size.  Go back to the first one that was legal.
@@ -8708,18 +8708,18 @@ end
 
 ############################################################################
 #
-#	File:     vpane.icn
+#       File:     vpane.icn
 #
-#	Subject:  Procedures for vidget panes
+#       Subject:  Procedures for vidget panes
 #
-#	Author:   Jon Lipp
+#       Author:   Jon Lipp
 #
-#	Date:     March 23, 1995
+#       Date:     March 23, 1995
 #
 ############################################################################
 #
 #  Vidgets defined in this file:
-#	Vpane
+#       Vpane
 #
 ############################################################################
 #
@@ -8734,7 +8734,7 @@ end
 ############################################################################
 
 record Vpane_rec(win, callback, id, style, aw, ah, ax, ay,
-	uw, uh, ux, uy, uid, P, V)
+        uw, uh, ux, uy, uid, P, V)
 
 procedure Vpane(params[])
    local self, frame, x, y, ins
@@ -8757,14 +8757,14 @@ procedure Vpane(params[])
    /self.style := "invisible"
    if integer(self.style) then
       if self.style > 0 then
-	 self.style := "grooved"
+         self.style := "grooved"
       else
-	 self.style := "invisible"
+         self.style := "invisible"
 
    self.uid := Vget_uid()
    self.V := procs
    self.P := Vstd_pos()
-   
+
    if \ins then VInsert(frame, self, x, y)
    return self
 end
@@ -8782,7 +8782,7 @@ end
 #  Set the absolute position and size fields of a vidget.
 #
 procedure resize_Vidget(self, x, y, w, h)
-   self.ax := \x 
+   self.ax := \x
    self.ay := \y
    self.aw := \w
    self.ah := \h
@@ -8829,7 +8829,7 @@ procedure draw_Vpane(self)
    self.V.outline(self)
 end
 
-#  
+#
 #  If the Vpane has a callback, call (or set) it; otherwise, reject the event.
 #
 procedure event_Vpane(self, e, x, y)
@@ -8838,13 +8838,13 @@ procedure event_Vpane(self, e, x, y)
    cb := self.callback
    /x := &x
    /y := &y
-   if type(\cb) == "procedure" then		# procedure
+   if type(\cb) == "procedure" then             # procedure
       return cb(self, e, x, y) | &null
-   if find("coupler",type(\cb)) then {		# coupler
+   if find("coupler",type(\cb)) then {          # coupler
       if \self.callback.locked then fail
       return cb.V.set(cb, self) | &null
       }
-   fail						# reject
+   fail                                         # reject
 end
 
 #
@@ -8875,23 +8875,23 @@ end
 
 ############################################################################
 #
-#	File:     vstd.icn
+#       File:     vstd.icn
 #
-#	Subject:  Procedures for standard lookups
+#       Subject:  Procedures for standard lookups
 #
-#	Author:   Jon Lipp
+#       Author:   Jon Lipp
 #
-#	Date:     March 3, 1995
+#       Date:     March 3, 1995
 #
 ############################################################################
 #
 #  Utility procedures in this file:
-#	VInit()
-#	null_proc()
-#	Vget_uid()
-#	_Vbomb()
-#	Vinsert_check()
-#	Vwin_check()
+#       VInit()
+#       null_proc()
+#       Vget_uid()
+#       _Vbomb()
+#       Vinsert_check()
+#       Vwin_check()
 #
 ############################################################################
 
@@ -8912,7 +8912,7 @@ record Vstd_draw(draw_off, draw_on, init, space, CS, CP, outline,
 #
 #  type is non-null for vertical; &null for horizontal.
 #
-record Vstd_scrollbar(sp, sw, tw, th, ws, cv_range, oldpos, rev, 
+record Vstd_scrollbar(sp, sw, tw, th, ws, cv_range, oldpos, rev,
    frame, drawn, type)
 record Vstd_pos(x, y, w, h)
 
@@ -8930,10 +8930,10 @@ procedure VInit()
 initial {
 
 #  Define the cset of all allowable vidget record types.
-   Vrecset := set(["Vbutton_rec", "Vcheckbox_rec", 
-      "Vline_rec", "Vdialog_frame_rec", 
-      "Vframe_rec",  "Vmenu_item_rec", 
-      "Vmenu_frame_rec", "Vradio_entry_rec", "Vradio_frame_rec", 
+   Vrecset := set(["Vbutton_rec", "Vcheckbox_rec",
+      "Vline_rec", "Vdialog_frame_rec",
+      "Vframe_rec",  "Vmenu_item_rec",
+      "Vmenu_frame_rec", "Vradio_entry_rec", "Vradio_frame_rec",
       "Vpull_down_button_rec", "Vpane_rec", "Varrow_rec",
       "Vthumb_rec", "Vscrollbar_frame_rec",
       "Vslider_rec", "Vtext_rec", "Vgrid_rec"])
@@ -8941,44 +8941,44 @@ initial {
    Vcoupler_recset := set(["Vcoupler_rec", "Vrange_coupler_rec"])
 
 #  The padding in a Vtext_in between the data outline and the data text.
-   V_TEXT_PAD 		:= 4
+   V_TEXT_PAD           := 4
 
 #  Used for button styles.
-   V_RECT := V_2D 	:= -690402
-   V_CHECK 		:= -690403
-   V_CIRCLE 		:= -690404
-   V_RECT_NO := V_2D_NO	:= -690406
-   V_CHECK_NO 		:= -690407
-   V_CIRCLE_NO 		:= -690408
-   V_XBOX		:= -690409
-   V_XBOX_NO		:= -690410
-   V_DIAMOND		:= -690411
-   V_DIAMOND_NO		:= -690412
+   V_RECT := V_2D       := -690402
+   V_CHECK              := -690403
+   V_CIRCLE             := -690404
+   V_RECT_NO := V_2D_NO := -690406
+   V_CHECK_NO           := -690407
+   V_CIRCLE_NO          := -690408
+   V_XBOX               := -690409
+   V_XBOX_NO            := -690410
+   V_DIAMOND            := -690411
+   V_DIAMOND_NO         := -690412
    V_IMAGE              := -690413
    V_IMAGE_NO           := -690414
 
 #  Used for communication bewtween a dialog box and its contents.
-   V_CANCEL 		:= -690417
-   V_OK		  	:= -690418
-   V_NEXT		:= -690419
-   V_PREVIOUS		:= -690420
+   V_CANCEL             := -690417
+   V_OK                 := -690418
+   V_NEXT               := -690419
+   V_PREVIOUS           := -690420
 
 #  Used for telling a radio button frame *not* to turn on a default
 #  selection.
-   V_NO_RB_FOCUS	:= -690421
+   V_NO_RB_FOCUS        := -690421
 
 #  Used in menus.
-   V_DRAGGING		:= -690422
-   V_FAIL		:= -690423
+   V_DRAGGING           := -690422
+   V_FAIL               := -690423
 
 #  Lets a thumb know an arrow called its couplerset.
-   V_ARROW		:= -690424
-   V_COUPLER 		:= -690425
-   V_DUMMY_ID		:= -690426
+   V_ARROW              := -690424
+   V_COUPLER            := -690425
+   V_DUMMY_ID           := -690426
 }
 
 end
-   
+
 procedure Vget_uid()
    static uid
    initial uid := 0
@@ -8992,7 +8992,7 @@ procedure _Vbomb(str)
    write(&errout, "Vidget error: ", str)
    runerr(600)
 
-end   
+end
 
 procedure Vinsert_check(p)
 
@@ -9018,18 +9018,18 @@ end
 
 ############################################################################
 #
-#	File:     vstyle.icn
+#       File:     vstyle.icn
 #
-#	Subject:  Procedures for drawing buttons
+#       Subject:  Procedures for drawing buttons
 #
-#	Author:   Jon Lipp and Gregg M. Townsend
+#       Author:   Jon Lipp and Gregg M. Townsend
 #
-#	Date:     March 6, 1995
+#       Date:     March 6, 1995
 #
 ############################################################################
 #
 #  Utility procedures in this file:
-#	Vset_style()
+#       Vset_style()
 #
 ############################################################################
 
@@ -9038,34 +9038,34 @@ end
 procedure Vset_style (vid, style)
 
    style := integer(style) | case style of {
-      &null:		V_RECT
-      "regular":	V_RECT
-      "regularno":	V_RECT_NO
-      "check":		V_CHECK
-      "checkno":	V_CHECK_NO
-      "circle":		V_CIRCLE
-      "circleno":	V_CIRCLE_NO
-      "diamond":	V_DIAMOND
-      "diamondno":	V_DIAMOND_NO
-      "xbox":		V_XBOX
-      "xboxno":		V_XBOX_NO
-      "image":		V_IMAGE
-      "imageno":	V_IMAGE_NO
-      default:		_Vbomb("invalid style parameter")
+      &null:            V_RECT
+      "regular":        V_RECT
+      "regularno":      V_RECT_NO
+      "check":          V_CHECK
+      "checkno":        V_CHECK_NO
+      "circle":         V_CIRCLE
+      "circleno":       V_CIRCLE_NO
+      "diamond":        V_DIAMOND
+      "diamondno":      V_DIAMOND_NO
+      "xbox":           V_XBOX
+      "xboxno":         V_XBOX_NO
+      "image":          V_IMAGE
+      "imageno":        V_IMAGE_NO
+      default:          _Vbomb("invalid style parameter")
       }
 
    vid.style := style
    case style of {
       V_RECT :
-	 vid.D := Vstd_draw(draw_off_rect, draw_on_rect, init_rect)
+         vid.D := Vstd_draw(draw_off_rect, draw_on_rect, init_rect)
       V_CHECK :
-	 vid.D := Vstd_draw(draw_off_check, draw_on_check, init_check)
+         vid.D := Vstd_draw(draw_off_check, draw_on_check, init_check)
       V_CIRCLE :
-	 vid.D := Vstd_draw(draw_off_circle, draw_on_circle, init_circle)
+         vid.D := Vstd_draw(draw_off_circle, draw_on_circle, init_circle)
       V_DIAMOND:
-	 vid.D := Vstd_draw(draw_off_diamond, draw_on_diamond, init_diamond)
+         vid.D := Vstd_draw(draw_off_diamond, draw_on_diamond, init_diamond)
       V_XBOX :
-	 vid.D := Vstd_draw(draw_off_xbox, draw_on_xbox, init_xbox)
+         vid.D := Vstd_draw(draw_off_xbox, draw_on_xbox, init_xbox)
       V_IMAGE :
          vid.D := Vstd_draw(draw_off_image, draw_on_image, init_image)
       V_RECT_NO : {
@@ -9085,12 +9085,12 @@ procedure Vset_style (vid, style)
          vid.D.outline := 1
          }
       V_XBOX_NO : {
-	 vid.D := Vstd_draw(draw_off_xbox, draw_on_xbox, init_xbox)
-	 vid.D.outline := 1
-	 }
+         vid.D := Vstd_draw(draw_off_xbox, draw_on_xbox, init_xbox)
+         vid.D.outline := 1
+         }
       V_IMAGE_NO : {
          vid.D := Vstd_draw(draw_off_image, draw_on_image, init_image)
-         vid.D.outline := 1  
+         vid.D.outline := 1
          }
       default: _Vbomb("invalid style parameter")
       }
@@ -9112,7 +9112,7 @@ end
 
 procedure draw_on_xbox(s)
    WAttrib(s.win, "linewidth=2")
-   DrawSegment(s.win, s.ax + 4, s.ay + 4, s.ax + s.aw - 4, s.ay + s.ah - 4, 
+   DrawSegment(s.win, s.ax + 4, s.ay + 4, s.ax + s.aw - 4, s.ay + s.ah - 4,
       s.ax + s.aw - 4, s.ay + 4, s.ax + 4, s.ay + s.ah - 4)
    WAttrib(s.win, "linewidth=1")
    if /s.D.outline then
@@ -9325,8 +9325,8 @@ end
 
 procedure init_image(s)
    local imagefile
- 
-   imagefile := s.s 
+
+   imagefile := s.s
    if string(s.s) then {
       if not find(",", s.s) then {
          s.s := WOpen("canvas=hidden","image="||imagefile) |
@@ -9337,7 +9337,7 @@ procedure init_image(s)
       else {
          s.aw := imswidth(s.s)
          s.ah := imsheight(s.s)
-	 if /s.aw | /s.ah then
+         if /s.aw | /s.ah then
             _Vbomb("illegal DrawImage string for button")
          }
       if /s.D.outline then {
@@ -9347,7 +9347,7 @@ procedure init_image(s)
       }
 end
 
-procedure draw_on_image(s)  
+procedure draw_on_image(s)
    draw_image_helper(s, -2, FillRectangle)
 end
 
@@ -9381,13 +9381,13 @@ end
 
 ############################################################################
 #
-#	File:     imscolor.icn
+#       File:     imscolor.icn
 #
-#	Subject:  Procedures for manipulating images
+#       Subject:  Procedures for manipulating images
 #
-#	Author:   Gregg M. Townsend
+#       Author:   Gregg M. Townsend
 #
-#	Date:     July 11, 1995
+#       Date:     July 11, 1995
 #
 ############################################################################
 #
@@ -9408,9 +9408,9 @@ end
 #  in the given rectangular region.  The layout algorithm works best
 #  when the height is two to four times the width.  Characters in the
 #  flag string f have these meanings:
-#	l	label each color with its key
-#	o	outline each color in black
-#	u	unframed use: don't hash unused cells at end
+#       l       label each color with its key
+#       o       outline each color in black
+#       u       unframed use: don't hash unused cells at end
 #
 #  pickpalette([win,] p, dx, dy, w, h) returns the character at offset
 #  (dx, dy) within a region drawn by drawpalette(win, p, x, y, w, h).
@@ -9440,21 +9440,21 @@ end
 
 #  imspalette(im) -- return palette used by image
 
-procedure imspalette(im)			#: palette for image
+procedure imspalette(im)                        #: palette for image
    im ? {tab(upto(',') + 1) & return ((="#" & &null) | tab(upto(',')))}
 end
 
 
 #  imswidth(im) -- return width of image
 
-procedure imswidth(im)				#: width of image
+procedure imswidth(im)                          #: width of image
    im ? return integer(tab(upto(',')))
 end
 
 
 #  imsheight(im) -- return height of image
 
-procedure imsheight(im)				#: height of image
+procedure imsheight(im)                         #: height of image
    local pal, w, n, d, c
 
    im ? {
@@ -9473,7 +9473,7 @@ procedure imsheight(im)				#: height of image
       }
 end
 
-procedure IMH_Count(c)		# count remaining chars that are in cset c
+procedure IMH_Count(c)          # count remaining chars that are in cset c
    local n
 
    n := 0
@@ -9485,22 +9485,22 @@ end
 
 #  imsmap(s1, s2, s3) -- map the data (only) of an image string
 
-procedure imsmap(s1, s2, s3)			#: map data of image string
+procedure imsmap(s1, s2, s3)                    #: map data of image string
    s1 ? return tab(upto(',')+1) || tab(upto(',')+1) || map(tab(0), s2, s3)
 end
 
 
 #  imswrite(f, s, n) -- write image string s to file f, max linelength of n.
 
-procedure imswrite(f, s, n)			#: write image string
+procedure imswrite(f, s, n)                     #: write image string
    local w, h, p, d, ll
 
    w := imswidth(s) | fail
    h := imsheight(s) | fail
    p := imspalette(s) | fail
 
-   if /p then				# if bilevel image
-      d := (w + 3) / 4			# number of digits per row
+   if /p then                           # if bilevel image
+      d := (w + 3) / 4                  # number of digits per row
    else
       d := w
 
@@ -9508,10 +9508,10 @@ procedure imswrite(f, s, n)			#: write image string
    /n := 79
 
    # Figure out a reasonable line length for output, with n as maximum
-   n -:= 1				# allow for underscore
+   n -:= 1                              # allow for underscore
    if upto('\0', PaletteChars(\p)) then
-      n /:= 4				# allow for escapes
-   ll := 1 + (n > (d - 1) / seq(1))	# divide line as equally as possible
+      n /:= 4                           # allow for escapes
+   ll := 1 + (n > (d - 1) / seq(1))     # divide line as equally as possible
 
    # Write the image as a multiline string constant.
    s ? {
@@ -9524,7 +9524,7 @@ procedure imswrite(f, s, n)			#: write image string
    return
 end
 
-procedure IWR_Row(f, s, n)	# write one row, max n bytes per line
+procedure IWR_Row(f, s, n)      # write one row, max n bytes per line
    s ? while not pos(0) do
       write(f, image(move(n) | tab(0)) [2:-1], "_")
    return
@@ -9533,7 +9533,7 @@ end
 
 #  drawpalette(win, p, x, y, w, h, f) -- draw palette in region
 
-procedure drawpalette(win, p, x, y, w, h, f)	#: draw palette
+procedure drawpalette(win, p, x, y, w, h, f)    #: draw palette
    local nw, nh, c, s, colr, x1, x2, y1, y2, i, j, ret
    static cs
    initial cs := &ascii[33+:95]
@@ -9560,13 +9560,13 @@ procedure drawpalette(win, p, x, y, w, h, f)	#: draw palette
 
    s := PAL_Order(p) | fail
    nw := case p of {
-      "c1":		6
-      "c2":		2
-      "c3":		3
-      "c4":		4
-      "c5":		5
-      "c6":		6
-      default:		integer(w / sqrt(w * h / *s))
+      "c1":             6
+      "c2":             2
+      "c3":             3
+      "c4":             4
+      "c5":             5
+      "c6":             6
+      default:          integer(w / sqrt(w * h / *s))
       }
    nh := (*s + nw - 1) / nw
 
@@ -9622,7 +9622,7 @@ end
 
 #  pickpalette(win, p, dx, dy, w, h) -- return key picked from drawn palette
 
-procedure pickpalette(win, p, dx, dy, w, h)	#: key from drawn palette
+procedure pickpalette(win, p, dx, dy, w, h)     #: key from drawn palette
    local s, nw, nh
 
    if type(win) ~== "window" then {
@@ -9636,13 +9636,13 @@ procedure pickpalette(win, p, dx, dy, w, h)	#: key from drawn palette
 
    s := PAL_Order(p) | fail
    nw := case p of {
-      "c1":		6
-      "c2":		2
-      "c3":		3
-      "c4":		4
-      "c5":		5
-      "c6":		6
-      default:		integer(w / sqrt(w * h / *s))
+      "c1":             6
+      "c2":             2
+      "c3":             3
+      "c4":             4
+      "c5":             5
+      "c6":             6
+      default:          integer(w / sqrt(w * h / *s))
       }
    nh := (*s + nw - 1) / nw
    dx := ((dx + 1) * nw - 1) / w
@@ -9675,7 +9675,7 @@ procedure PAL_Order(p)
       while &pos <= n3 do
          every !l ||:= (move(n) \ 1)
       s := ""
-      every s ||:= !l		# build g/r/b cube portion
+      every s ||:= !l           # build g/r/b cube portion
 
       t := ""
       every i := 1 to (n3 - 1) by (n * (n + 1) + 1) do
@@ -9688,12 +9688,12 @@ end
 
 #  XPMImage(win, f, palette) -- read XPM file and return Icon image spec
 
-procedure XPMImage(win, f, pal)			#: image string for XPM file
+procedure XPMImage(win, f, pal)                 #: image string for XPM file
    local w, h, nc, cpp, i, im, c, k, s1, s2
 
    if type(win) ~== "window" then {
       win :=: f :=: pal
-      win := &window		# okay if null
+      win := &window            # okay if null
       }
    /f := &input
    /pal := "c1"
@@ -9715,7 +9715,7 @@ procedure XPMImage(win, f, pal)			#: image string for XPM file
    every i := 1 to nc do (XPM_RdStr(f) | fail) ? {
       s1 ||:= move(1)
       if cpp > 1 then
-         =" " | fail			# if not blank, we can't handle it
+         =" " | fail                    # if not blank, we can't handle it
       k := &null
       # find a color key we can decipher; try color, then grayscale, then mono
       (c := !"cgm") & tab(upto(' \t') + 1) & =c & tab(many(' \t')) &
@@ -9733,22 +9733,22 @@ procedure XPMImage(win, f, pal)			#: image string for XPM file
    return im
 end
 
-procedure XPM_Key(win, pal, s)	#  return key corresponding to color s
+procedure XPM_Key(win, pal, s)  #  return key corresponding to color s
 
-   if s == "None" then {		# if transparent
-      if PaletteColor(pal, "~") then	# if "~" is in palette
-         return "\xFF"			# then use "\xFF" for transparent
+   if s == "None" then {                # if transparent
+      if PaletteColor(pal, "~") then    # if "~" is in palette
+         return "\xFF"                  # then use "\xFF" for transparent
       else
-         return "~"			# but use "~" if possible
+         return "~"                     # but use "~" if possible
       }
 
    if \win then
-      return PaletteKey(win, pal, s)	# return key from palette, or fail
+      return PaletteKey(win, pal, s)    # return key from palette, or fail
    else
-      return PaletteKey(pal, s)		# return key from palette, or fail
+      return PaletteKey(pal, s)         # return key from palette, or fail
 end
 
-procedure XPM_RdStr(f)		# read next C string from file f
+procedure XPM_RdStr(f)          # read next C string from file f
    local line, s
 
    while line := read(f) do line ? {
@@ -9760,7 +9760,7 @@ procedure XPM_RdStr(f)		# read next C string from file f
    fail
 end
 
-procedure XPM_Nth(s, n)		#  concatenate every nth character from s
+procedure XPM_Nth(s, n)         #  concatenate every nth character from s
    local t
    n -:= 1
    t := ""

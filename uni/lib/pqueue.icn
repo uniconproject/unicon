@@ -19,37 +19,37 @@
 #
 #       Methods:
 #
-#	construct(S)	returns a max-priority queue containing the elements
-#			in  the structure (list, table, or set) S of "elem"
+#       construct(S)    returns a max-priority queue containing the elements
+#                       in  the structure (list, table, or set) S of "elem"
 #                       records, each containing a "data" and a numeric
 #                       "priority" field.
 #
-#	get()	        removes and returns the highest priority element
-#			from the priority queue.
+#       get()           removes and returns the highest priority element
+#                       from the priority queue.
 #
-#	put(e)	        adds element e (a "elem" record) to the queue.
+#       put(e)          adds element e (a "elem" record) to the queue.
 #
-#	gen()	        generates (non-destructively) the elements of the queue
+#       gen()           generates (non-destructively) the elements of the queue
 #                       in order, highest priority first.
 #
 #       len()           returns the number of elements in the queue.
 #       maxlen()        returns the maximum length reached by the queue during
 #                       its lifetime.
 #
-#	elem(d, p)	constructs a record with data d and priority p.
+#       elem(d, p)      constructs a record with data d and priority p.
 #
 #
 ############################################################################
 #
-#	The priority queue is implemented as a max-heap.  The heap is
-#	implemented by a list in the usual fashion.
+#       The priority queue is implemented as a max-heap.  The heap is
+#       implemented by a list in the usual fashion.
 #
 ############################################################################
 
 class MaxPQueue(Q, elem, L)
 
   # Create the queue from a list, table, or set of "elem"
-  method construct(S)	
+  method construct(S)
     local i
     /S := list()
     Q := list()
@@ -86,7 +86,7 @@ class MaxPQueue(Q, elem, L)
   end
 
   # Generate the elements
-  method gen()	
+  method gen()
     local q, e
     q := copy(Q)
     while e := copy(self.get(q)) do
@@ -100,7 +100,7 @@ class MaxPQueue(Q, elem, L)
     right := left + 1
     if Q[left].priority > Q[i].priority then
       largest := left
-    else 
+    else
       largest := i
     if Q[right].priority > Q[largest].priority then largest := right
     if largest ~= i then {

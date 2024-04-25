@@ -64,9 +64,9 @@ class Server(addrport, mode, opt, rounds)
            rounds := 4
            opt := [addrport, "nae", key, cert, ca]
            }
-        "TLS1.1 Min": {
+        "TLS1.2 Min": {
            rounds := 3;
-           opt := [addrport, "nae", key, cert, ca, "minProto=TLS1.1"]
+           opt := [addrport, "nae", key, cert, ca, "minProto=TLS1.2"]
            }
 
         "Client Auth": {
@@ -187,6 +187,8 @@ procedure main(args)
 
    if not (&features == "secure sockets layer encryption") then
       stop("This program requires secure sockets layer encryption.")
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
 
    interactive := args[1]
 
@@ -196,8 +198,8 @@ procedure main(args)
    ssltest("Encrypted sockets", "TLS",
            [["No TLS", "Fail"], ["TLS No CA", "Fail"], ["TLS No Verify", "Pass"], ["TLS With CA", "Pass"]])
 
-   ssltest("TLS versions", "TLS1.1 Min",
-           [["TLS1.0", "Fail"], ["TLS1.1", "Pass"], ["TLS1.2", "Pass"]])
+   ssltest("TLS versions", "TLS1.2 Min",
+           [["TLS1.0", "Fail"], ["TLS1.1", "Fail"], ["TLS1.2", "Pass"]])
 
    ssltest("Client authentication", "Client Auth",
            [["TLS No Cert", "Fail"], ["Client Auth", "Pass"]])

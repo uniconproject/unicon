@@ -173,7 +173,7 @@ class Mainbar(
       # Or do they just modify &window such that it needs saved/restored?
       &window := &null
       if TextDialog("Enter compiler options: ",,targs,60) == "Okay" then
-	 targs := dialog_value[1]
+         targs := dialog_value[1]
       &window := oldwindow
       # having obtained some compile options, where do they go? Project object?
    end
@@ -196,7 +196,7 @@ class Mainbar(
       # Or do they just modify &window such that it needs saved/restored?
       &window := &null
       if TextDialog("Enter command line arguments: ",,xargs,60) == "Okay" then
-	 xargs := dialog_value[1]
+         xargs := dialog_value[1]
       &window := oldwindow
       # having obtained some run arguments, where do they go? Project object?
    end
@@ -258,13 +258,13 @@ class Mainbar(
       projectname := ide.ProjectSave()
 
       if \projectname then {
-	 pname := file_name(projectname)
-	 filedirectory := projectname[1:(*projectname - *pname)]
+         pname := file_name(projectname)
+         filedirectory := projectname[1:(*projectname - *pname)]
 
-	 newUPro := UProject(pname,filedirectory)
+         newUPro := UProject(pname,filedirectory)
 
-	 newUPro.show_modal()
-	 }
+         newUPro.show_modal()
+         }
       projecttype := "Unicon"
       projectCreated := "TRUE"
       uidlog.tab_item_1.set_label("Messages: (Project Mode)")
@@ -291,12 +291,12 @@ $else # implies Windows for now
 $endif
 
       if \projecttype == "Unicon" then {
-	 chdir(filedirectory)
-	 ide.system("make deps")
-	 ide.system("make -f " || pname2 || "_uprjMakefile > " ||
-		    wiconlog || " 2>&1", lst, 1)
-	 ide.showanyerror(wiconlog, lst)
-	 }
+         chdir(filedirectory)
+         ide.system("make deps")
+         ide.system("make -f " || pname2 || "_uprjMakefile > " ||
+                    wiconlog || " 2>&1", lst, 1)
+         ide.showanyerror(wiconlog, lst)
+         }
       fileCompiled := "TRUE"
    end
 
@@ -320,13 +320,13 @@ $endif
       pname2 := pname[1:*pname-4]
 
       if \ (projectCreated | projectOpened) == "TRUE" then {
-	 if \projecttype == "Unicon" then {
-	    chdir(filedirectory)
-	    ide.system("make clean -f " || pname2 || "_uprjMakefile > " ||
-		   wiconlog || " 2>&1", lst, 1)
-	    }
-	 ide.showanyerror(wiconlog, lst)
-	 }
+         if \projecttype == "Unicon" then {
+            chdir(filedirectory)
+            ide.system("make clean -f " || pname2 || "_uprjMakefile > " ||
+                   wiconlog || " 2>&1", lst, 1)
+            }
+         ide.showanyerror(wiconlog, lst)
+         }
       else on_project_check()
    end
 
@@ -337,13 +337,13 @@ $endif
       pname2 := pname[1:*pname-4]
 
       if \projectCreated == "TRUE" then {
-	 if \projecttype == "Unicon" then {
-	    chdir(filedirectory)
-	    ide.system("make clean -f "||pname2||"_uprjMakefile"||
-	       " > "||wiconlog||" 2>&1",lst,1)
-	    }
-	 ide.showanyerror(wiconlog, lst)
-	 }
+         if \projecttype == "Unicon" then {
+            chdir(filedirectory)
+            ide.system("make clean -f "||pname2||"_uprjMakefile"||
+               " > "||wiconlog||" 2>&1",lst,1)
+            }
+         ide.showanyerror(wiconlog, lst)
+         }
       else on_project_check()
    end
 
@@ -359,19 +359,19 @@ $else # implies Windows for now
       console := "cmd "
 $endif
       if \projecttype == "Unicon" then { #run unicon projects
-	 chdir(filedirectory)
+         chdir(filedirectory)
 $ifdef _UNIX
-	 # path search, see if xterm exists on path, use it
-	 if pathfind("xterm", getenv("PATH")) then {
-	    console :="xterm -hold -e "
-	    ide.system(console || " ./UProject")
-	    }
-	 else #just run without "console || ..."
-	    ide.system(pname2)
+         # path search, see if xterm exists on path, use it
+         if pathfind("xterm", getenv("PATH")) then {
+            console :="xterm -hold -e "
+            ide.system(console || " ./UProject")
+            }
+         else #just run without "console || ..."
+            ide.system(pname2)
 $else
-	 ide.system(console || " ./UProject")
+         ide.system(console || " ./UProject")
 $endif
-	 }
+         }
    end
 
    #
@@ -379,59 +379,59 @@ $endif
    #
    method on_ui_programming_envi(ev)
       handle_help("doc/utr/utr12.html",
-		  "http://unicon.sourceforge.net/utr/utr12.html")
+                  "http://unicon.sourceforge.net/utr/utr12.html")
    end
 
    method on_tutorial_overview(ev)
       handle_help("doc/icon/ipd266.htm",
-		  "http://www.cs.arizona.edu/icon/docs/ipd266.htm")
+                  "http://www.cs.arizona.edu/icon/docs/ipd266.htm")
    end
 
    method on_icon_ref()
       handle_help("doc/icon/ipd266.htm",
-		  "http://www.cs.arizona.edu/icon/refernce/ref.htm")
+                  "http://www.cs.arizona.edu/icon/refernce/ref.htm")
    end
 
    method on_unicon_ref()
       handle_help("doc/unicon/utr8.html",
-		  "http://unicon.sourceforge.net/utr/utr8.html")
+                  "http://unicon.sourceforge.net/utr/utr8.html")
    end
 
    method on_graphics_ref()
       handle_help("doc/icon/ipd281.htm",
-		  "http://www.cs.arizona.edu/icon/docs/ipd281.htm")
+                  "http://www.cs.arizona.edu/icon/docs/ipd281.htm")
    end
 
    method on_graphics3D_ref()
       handle_help("doc/utr/utr9.html",
-		  "http://unicon.org/utr/utr9.html")
+                  "http://unicon.org/utr/utr9.html")
    end
 
    method on_icon_prog_library()
       handle_help("doc/icon/ipd283.htm",
-		  "http://www.cs.arizona.edu/icon/docs/ipd283.htm")
+                  "http://www.cs.arizona.edu/icon/docs/ipd283.htm")
    end
 
    method on_ivib_interface_builder()
       handle_help("doc/utr/utr6.html",
-		  "http://unicon.org/utr/utr6.html")
+                  "http://unicon.org/utr/utr6.html")
    end
 
    method on_icon_faq()
       handle_help("doc/icon/faq.htm",
-		  "http://www.cs.arizona.edu/icon/faq.htm")
+                  "http://www.cs.arizona.edu/icon/faq.htm")
    end
 
    method on_unicon_faq()
       handle_help("doc/unicon/faq.html",
-		  "http://unicon.sourceforge.net/faq.html")
+                  "http://unicon.sourceforge.net/faq.html")
    end
 
    method on_unicon_manpage()
       handle_help("doc/unicon/utr11.html",
-		  "http://unicon.org/utr/utr11.html")
+                  "http://unicon.org/utr/utr11.html")
    end
-      
+
    #
    # Launch online help, if we are online.
    #
@@ -440,38 +440,38 @@ $endif
       local line, p, s
 
       if /browser then {
-	 uidlog.MsgBox.set_contents([
-	    "Sorry, you must configure a browser in order for help to work."])
-	 fail
-	 }
+         uidlog.MsgBox.set_contents([
+            "Sorry, you must configure a browser in order for help to work."])
+         fail
+         }
 
 $ifdef _UNIX
       if not match("online", is_online()) then {
-	 # use local copy since UI thinks we are offline
-	 if \docpath then {
-	    URL := "file://" || \docpath || filename
-	    }
-	 else URL := "file://" || filename
-	 }
+         # use local copy since UI thinks we are offline
+         if \docpath then {
+            URL := "file://" || \docpath || filename
+            }
+         else URL := "file://" || filename
+         }
 
       if find("netscape"|"firefox", \browser) then {
-	 if /browserversion then {
-	    if p := open(\browser || " -version", "p") then {
-	       s := read(p)
-	       close(p)
-	       s ? {
-		  tab(upto(&digits))
-		  browserversion := real(tab(many(&digits)))
-		  }
-	       }
-	    }
-	 if \browserversion <36 then
-	    URL2 := " -remote 'openURL(" || URL || ")'"
-	 else URL2 := " " || URL
-	 }
+         if /browserversion then {
+            if p := open(\browser || " -version", "p") then {
+               s := read(p)
+               close(p)
+               s ? {
+                  tab(upto(&digits))
+                  browserversion := real(tab(many(&digits)))
+                  }
+               }
+            }
+         if \browserversion <36 then
+            URL2 := " -remote 'openURL(" || URL || ")'"
+         else URL2 := " " || URL
+         }
       else if browser=="open" then {
-	 URL2 := " -a Safari " || URL
-	 }
+         URL2 := " -a Safari " || URL
+         }
       else URL2 := " " || URL
 
       foutname := tempname("ui", ".err")
@@ -488,39 +488,39 @@ $ifdef _UNIX
 
       if find("netscape"|"firefox", \browser) then {
          if f := open("cat " ||
-		      (if \fout then foutname else "") ||
-		      " "||
-		      (if \fout2 then foutname2 else ""),"p") then {
+                      (if \fout then foutname else "") ||
+                      " "||
+                      (if \fout2 then foutname2 else ""),"p") then {
             line := ""
             while line ||:= read(f)
             map(line) ? {
                if tab(find(nonot:=("no"|"not")) + *nonot) & tab(many(' ')) &
-		  ="running" then {
+                  ="running" then {
                #   write(&errout, \browser, " not running, reverting to URL")
-		  if \fout then remove(foutname)
-		  if \fout2 then remove(foutname2)
-		  fout := fout2 := &null
-		  fout := open(foutname,"w")
+                  if \fout then remove(foutname)
+                  if \fout2 then remove(foutname2)
+                  fout := fout2 := &null
+                  fout := open(foutname,"w")
                   fout2 := open(foutname2,"w")
                   proc("system",0)(\browser||" "||URL, , fout, fout2, "nowait")
-		  close(\fout)
-		  close(\fout2)
-		  if \fout then remove(foutname)
-		  if \fout2 then remove(foutname2)
+                  close(\fout)
+                  close(\fout2)
+                  if \fout then remove(foutname)
+                  if \fout2 then remove(foutname2)
                   }
                else {
                #   write(&errout, \browser, " was running, so we are good")
                   }
-	       }
+               }
             close(f)
             }
          }
 $else
       if \docpath then {
-	 URL := "file://" || map(\docpath || filename,"/",PATHSEP)
-	 }
+         URL := "file://" || map(\docpath || filename,"/",PATHSEP)
+         }
       uidlog.MsgBox.set_contents([
-	 "launching " || browser || " " || URL])
+         "launching " || browser || " " || URL])
       proc("system",0)(\browser || " " || URL) # || " &")
       #s := \browser[2:-1] || " " || URL
       #proc("system",0)(s,,,,1)
@@ -618,27 +618,27 @@ $endif
 
    method update_view_window(ev)
       case cur_ide_win_setup of {
-	 "view_window_all" : on_view_window_all(ev)
-	 "view_window_files" : on_view_window_files(ev)
-	 "view_window_filesmsgs" : on_view_window_filesmsgs(ev)
-	 "view_window_filesclassbrowser" : on_view_window_filesclassbrowser(ev)
-	 default : write("ERROR")
-	 }
+         "view_window_all" : on_view_window_all(ev)
+         "view_window_files" : on_view_window_files(ev)
+         "view_window_filesmsgs" : on_view_window_filesmsgs(ev)
+         "view_window_filesclassbrowser" : on_view_window_filesclassbrowser(ev)
+         default : write("ERROR")
+         }
    end
 
    method on_hide_toolbar(ev)
       if hide_toolbar.get_label() == "Hide Toolbar" then {
-	 cur_ide_tb_status := "hide"
-	 hide_toolbar.set_label("Show Toolbar")
-	 uidlog.pnlToolbar.set_pos("0", "110%")
-	 tb_adj := -4
-	 }
+         cur_ide_tb_status := "hide"
+         hide_toolbar.set_label("Show Toolbar")
+         uidlog.pnlToolbar.set_pos("0", "110%")
+         tb_adj := -4
+         }
       else {
-	 cur_ide_tb_status := "show"
-	 hide_toolbar.set_label("Hide Toolbar")
-	 uidlog.pnlToolbar.set_pos("0","4.5%")
-	 tb_adj := 0
-	 }
+         cur_ide_tb_status := "show"
+         hide_toolbar.set_label("Hide Toolbar")
+         uidlog.pnlToolbar.set_pos("0","4.5%")
+         tb_adj := 0
+         }
       update_view_window(ev)
    end
 
@@ -733,47 +733,47 @@ $endif
    #
    method set_font(fname, fcolor)
       local tab_item, buff_editable, type, size, style, l, i:=1,
-	 prefs := uidlog.ui_Preferences
+         prefs := uidlog.ui_Preferences
       /fontname := "mono,16"
       if not (/fname := fontname) then fontname := fname
       fontname ? {
-	 type := tab(find(","))
-	 tab(upto(&digits))
-	 size := integer(tab(many(&digits)))
-	 =","
-	 style := tab(0)
-	 }
+         type := tab(find(","))
+         tab(upto(&digits))
+         size := integer(tab(many(&digits)))
+         =","
+         style := tab(0)
+         }
       if size > 36 | type == "" then {
-	 if size > 36 then size := "36"
-	 if type == "" then type := "mono"
-	 fontname := type||","||size
-	 fontname ||:= \style
-	 }
+         if size > 36 then size := "36"
+         if type == "" then type := "mono"
+         fontname := type||","||size
+         fontname ||:= \style
+         }
       uidlog.MsgBox.set_attribs("font=" || fontname)
 
       if \prefs.sample_box then {
-	 l := prefs.sample_box.attribs
-	 while i <= *l do {
-	    if match("font=", l[i]) then
-	       delete(l, i)
-	    else
-	       i +:= 1
-	    }
-	 prefs.sample_box.set_attribs("font=" || fontname)
-	 i := 1
-	 }
+         l := prefs.sample_box.attribs
+         while i <= *l do {
+            if match("font=", l[i]) then
+               delete(l, i)
+            else
+               i +:= 1
+            }
+         prefs.sample_box.set_attribs("font=" || fontname)
+         i := 1
+         }
 
       every tab_item := !uidlog.FileTabSet.children do
-	 every buff_editable := !tab_item.children do {
-	    l := buff_editable.attribs
-	    while i <= *l do {
-	       if match("font=", l[i]) then
-		  delete(l, i)
-	       else
-		  i +:= 1
-	    }
-	    buff_editable.set_attribs("font="||fontname)
-	 }
+         every buff_editable := !tab_item.children do {
+            l := buff_editable.attribs
+            while i <= *l do {
+               if match("font=", l[i]) then
+                  delete(l, i)
+               else
+                  i +:= 1
+            }
+            buff_editable.set_attribs("font="||fontname)
+         }
       uidlog.init()
       uidlog.resize()
       uidlog.display()
@@ -793,19 +793,19 @@ $endif
       prefs.show_modal()
 
       every tab_item := !uidlog.FileTabSet.children do
-	 every buff_editable := !tab_item.children do {
-	    l := buff_editable.attribs
-	    while i <= *l do {
-	       if match("bg=", l[i]) then
-	          delete(l, i)
-	       else
-	          i +:= 1
-	    }
-	    buff_editable.set_attribs("bg="||prefs.val_background_color)
-	    WAttrib(\ (buff_editable.cbwin), "bg="||prefs.val_background_color)
-	    WAttrib(\ (buff_editable.view.cbwin),
-	            "bg="||prefs.val_background_color)
-	 }
+         every buff_editable := !tab_item.children do {
+            l := buff_editable.attribs
+            while i <= *l do {
+               if match("bg=", l[i]) then
+                  delete(l, i)
+               else
+                  i +:= 1
+            }
+            buff_editable.set_attribs("bg="||prefs.val_background_color)
+            WAttrib(\ (buff_editable.cbwin), "bg="||prefs.val_background_color)
+            WAttrib(\ (buff_editable.view.cbwin),
+                    "bg="||prefs.val_background_color)
+         }
       ceb.display()
    end
 
@@ -819,10 +819,10 @@ $endif
    method save_config()
       local f, pos_x, pos_y, prefs := uidlog.ui_Preferences
       WAttrib("pos") ? {
-	 pos_x := tab(find(","))
-	 =","
-	 pos_y := tab(many('-' ++ &digits))
-	 }
+         pos_x := tab(find(","))
+         =","
+         pos_y := tab(many('-' ++ &digits))
+         }
       pos_x := integer(pos_x)
       pos_y := integer(pos_y)
       if /pos_x | pos_x < 0 then pos_x := 0
@@ -831,139 +831,139 @@ $endif
       width := WAttrib("width")
       height := WAttrib("height")
       if f := open(getenv("HOME"|"HOMEDIR"|"LOCALAPPDATA")||PS||FILE,"w") then {
-	 write(f,  "position=",win_position, "\n",
-	       "width=",width, "\n",
-	       "height=",height,"\n",
-	       "window_setup=", cur_ide_win_setup, "\n",
-	       "toolbar_status=", cur_ide_tb_status, "\n",
-	       "msglines=",msglines,"\n",
-	       "font=",fontname, "\n",
-	       "linebreak=",linebreak, "\n",
-	       "val_background_color=", prefs.val_background_color, "\n",
-	       "linenumber_highlight_color=", prefs.linenumber_highlight_color, "\n",
-	       "default_text_color=", prefs.default_text_color, "\n",
-	       "cursor_highlight_color=", prefs.cursor_highlight_color, "\n",
-	       "cursor_text_color=", prefs.cursor_text_color, "\n",
-	       "syntax_text_color=", prefs.syntax_text_color, "\n",
-	       "glob_text_color=", prefs.glob_text_color, "\n",
-	       "procedure_text_color=", prefs.procedure_text_color, "\n",
-	       "quote_text_color=", prefs.quote_text_color, "\n",
-	       "comment_text_color=", prefs.comment_text_color, "\n",
-	       "linenumber_text_color=", prefs.linenumber_text_color, "\n",
-	       "text_highlight_color=", prefs.text_highlight_color, "\n",
-	       "error_text_color=", prefs.error_text_color, "\n",
-	       "parentheses_match=", prefs.paren_check_box_state, "\n",
-	       "syntax_highlighting=", prefs.syntax_check_box_state, "\n"
-	       )
-	 close(f)
-	 }
+         write(f,  "position=",win_position, "\n",
+               "width=",width, "\n",
+               "height=",height,"\n",
+               "window_setup=", cur_ide_win_setup, "\n",
+               "toolbar_status=", cur_ide_tb_status, "\n",
+               "msglines=",msglines,"\n",
+               "font=",fontname, "\n",
+               "linebreak=",linebreak, "\n",
+               "val_background_color=", prefs.val_background_color, "\n",
+               "linenumber_highlight_color=", prefs.linenumber_highlight_color, "\n",
+               "default_text_color=", prefs.default_text_color, "\n",
+               "cursor_highlight_color=", prefs.cursor_highlight_color, "\n",
+               "cursor_text_color=", prefs.cursor_text_color, "\n",
+               "syntax_text_color=", prefs.syntax_text_color, "\n",
+               "glob_text_color=", prefs.glob_text_color, "\n",
+               "procedure_text_color=", prefs.procedure_text_color, "\n",
+               "quote_text_color=", prefs.quote_text_color, "\n",
+               "comment_text_color=", prefs.comment_text_color, "\n",
+               "linenumber_text_color=", prefs.linenumber_text_color, "\n",
+               "text_highlight_color=", prefs.text_highlight_color, "\n",
+               "error_text_color=", prefs.error_text_color, "\n",
+               "parentheses_match=", prefs.paren_check_box_state, "\n",
+               "syntax_highlighting=", prefs.syntax_check_box_state, "\n"
+               )
+         close(f)
+         }
       else
-	 uidlog.MsgBox.set_contents(["couldn't save settings"])
+         uidlog.MsgBox.set_contents(["couldn't save settings"])
    end
 
    method load_config()
       local f, prefs := uidlog.ui_Preferences, line
       if f := open(getenv("HOME"|"HOMEDIR"|"LOCALAPPDATA")||PS||FILE,"r") then {
-	 while line := read(f) do {
-	    line ? {
-	       if ="position" then {
-		  tab(upto(&digits))
-		  win_position := tab(many(&digits ++ ','))
-		  }
-	       else if ="height" then {
-		  tab(upto(&digits))
-		  height := integer(tab(many(&digits)))
-		  }
-	       else if ="width" then {
-		  tab(upto(&digits))
-		  width := integer(tab(many(&digits)))
-		  }
-	       else if ="window_setup" then {
-		  tab(many('= \t'))
-		  cur_ide_win_setup := tab(0)
-		  }
-	       else if ="toolbar_status" then {
-		  tab(many('= \t'))
-		  cur_ide_tb_status := tab(0)
-		  }
-	       else if ="msglines" then {
-		  tab(upto(&digits))
-		  msglines := integer(tab(many(&digits)))
-		  }
-	       else if ="font" then {
-		  tab(many('= \t'))
-		  fontname := tab(0)
-		  }
-	       else if ="linebreak" then {
-		  tab(many('= \t'))
-		  linebreak := tab(0)
-		  }
-	       else if ="val_background_color" then {
-		  tab(many('= \t'))
-		  prefs.val_background_color := tab(0)
-		  }
-	       else if ="linenumber_highlight_color" then {
-		  tab(many('= \t'))
-		  prefs.linenumber_highlight_color := tab(0)
-		  }
-	       else if ="default_text_color=" then {
-		  tab(many('= \t'))
-		  prefs.default_text_color := tab(0)
-		  }
-	       else if ="cursor_highlight_color" then {
-		  tab(many('= \t'))
-		  prefs.cursor_highlight_color := tab(0)
-		  }
-	       else if ="cursor_text_color" then {
-		  tab(many('= \t'))
-		  prefs.cursor_text_color := tab(0)
-		  }
-	       else if ="syntax_text_color" then {
-		  tab(many('= \t'))
-		  prefs.syntax_text_color := tab(0)
-		  }
-	       else if ="glob_text_color" then {
-		  tab(many('= \t'))
-		  prefs.glob_text_color := tab(0)
-		  }
-	       else if ="procedure_text_color" then {
-		  tab(many('= \t'))
-		  prefs.procedure_text_color := tab(0)
-		  }
-	       else if ="quote_text_color" then {
-		  tab(many('= \t'))
-		  prefs.quote_text_color := tab(0)
-		  }
-	       else if ="comment_text_color" then {
-		  tab(many('= \t'))
-		  prefs.comment_text_color := tab(0)
-		  }
-	       else if ="linenumber_text_color" then {
-		  tab(many('= \t'))
-		  prefs.linenumber_text_color := tab(0)
-		  }
-	       else if ="text_highlight_color" then {
-		  tab(many('= \t'))
-		  prefs.text_highlight_color := tab(0)
-		  }
-	       else if ="error_text_color" then {
-		  tab(many('= \t'))
-		  prefs.error_text_color := tab(0)
-		  }
-	       else if ="parentheses_match" then {
-		  tab(many('= \t'))
-		  prefs.paren_check_box_state := tab(0)
-		  }
-	       else if ="syntax_highlighting" then {
-		  tab(many('= \t'))
-		  prefs.syntax_check_box_state := tab(0)
-		  }
-	       }
-	    }
-	 close(f)
-	 }
+         while line := read(f) do {
+            line ? {
+               if ="position" then {
+                  tab(upto(&digits))
+                  win_position := tab(many(&digits ++ ','))
+                  }
+               else if ="height" then {
+                  tab(upto(&digits))
+                  height := integer(tab(many(&digits)))
+                  }
+               else if ="width" then {
+                  tab(upto(&digits))
+                  width := integer(tab(many(&digits)))
+                  }
+               else if ="window_setup" then {
+                  tab(many('= \t'))
+                  cur_ide_win_setup := tab(0)
+                  }
+               else if ="toolbar_status" then {
+                  tab(many('= \t'))
+                  cur_ide_tb_status := tab(0)
+                  }
+               else if ="msglines" then {
+                  tab(upto(&digits))
+                  msglines := integer(tab(many(&digits)))
+                  }
+               else if ="font" then {
+                  tab(many('= \t'))
+                  fontname := tab(0)
+                  }
+               else if ="linebreak" then {
+                  tab(many('= \t'))
+                  linebreak := tab(0)
+                  }
+               else if ="val_background_color" then {
+                  tab(many('= \t'))
+                  prefs.val_background_color := tab(0)
+                  }
+               else if ="linenumber_highlight_color" then {
+                  tab(many('= \t'))
+                  prefs.linenumber_highlight_color := tab(0)
+                  }
+               else if ="default_text_color=" then {
+                  tab(many('= \t'))
+                  prefs.default_text_color := tab(0)
+                  }
+               else if ="cursor_highlight_color" then {
+                  tab(many('= \t'))
+                  prefs.cursor_highlight_color := tab(0)
+                  }
+               else if ="cursor_text_color" then {
+                  tab(many('= \t'))
+                  prefs.cursor_text_color := tab(0)
+                  }
+               else if ="syntax_text_color" then {
+                  tab(many('= \t'))
+                  prefs.syntax_text_color := tab(0)
+                  }
+               else if ="glob_text_color" then {
+                  tab(many('= \t'))
+                  prefs.glob_text_color := tab(0)
+                  }
+               else if ="procedure_text_color" then {
+                  tab(many('= \t'))
+                  prefs.procedure_text_color := tab(0)
+                  }
+               else if ="quote_text_color" then {
+                  tab(many('= \t'))
+                  prefs.quote_text_color := tab(0)
+                  }
+               else if ="comment_text_color" then {
+                  tab(many('= \t'))
+                  prefs.comment_text_color := tab(0)
+                  }
+               else if ="linenumber_text_color" then {
+                  tab(many('= \t'))
+                  prefs.linenumber_text_color := tab(0)
+                  }
+               else if ="text_highlight_color" then {
+                  tab(many('= \t'))
+                  prefs.text_highlight_color := tab(0)
+                  }
+               else if ="error_text_color" then {
+                  tab(many('= \t'))
+                  prefs.error_text_color := tab(0)
+                  }
+               else if ="parentheses_match" then {
+                  tab(many('= \t'))
+                  prefs.paren_check_box_state := tab(0)
+                  }
+               else if ="syntax_highlighting" then {
+                  tab(many('= \t'))
+                  prefs.syntax_check_box_state := tab(0)
+                  }
+               }
+            }
+         close(f)
+         }
       else
-	 return "couldn't load saved settings"
+         return "couldn't load saved settings"
    end
 
    #
@@ -1197,7 +1197,7 @@ $endif
       debuggIt := TextMenuItem()
       debuggIt.set_label("Debug program")
       debuggIt.connect(self, "on_debuggIt", ACTION_EVENT)
-      menu_10.add(debuggIt)   
+      menu_10.add(debuggIt)
       menu_bar_1.add(menu_10)
       menu_12 := Menu()
       menu_12.set_label("Project")

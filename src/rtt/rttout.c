@@ -24,44 +24,44 @@ static void chk_conj      (struct node *n);
 static void chk_nl        (int indent);
 static void chk_rsltblk   (int indent);
 static void comp_def      (struct node *n);
-static int     does_call     (struct node *expr);
+static int  does_call     (struct node *expr);
 static void failure       (int indent, int brace);
 static void interp_def    (struct node *n);
-static int     len_sel       (struct node *sel,
+static int  len_sel       (struct node *sel,
                                struct parminfo *strt_prms,
                                struct parminfo *end_prms, int indent);
 static void line_dir      (int nxt_line, char *new_fname);
-static int     only_proto    (struct node *n);
+static int  only_proto    (struct node *n);
 static void parm_locs     (struct sym_entry *op_params);
 static void parm_tnd      (struct sym_entry *sym);
 static void prt_runerr    (struct token *t, struct node *num,
                                struct node *val, int indent);
 static void prt_tok       (struct token *t, int indent);
 static void prt_var       (struct node *n, int indent);
-static int     real_def      (struct node *n);
-static int     retval_dcltor (struct node *dcltor, int indent);
+static int  real_def      (struct node *n);
+static int  retval_dcltor (struct node *dcltor, int indent);
 static void ret_value     (struct token *t, struct node *n,
                                int indent);
 static void ret_1_arg     (struct token *t, struct node *args,
                                int typcd, char *vwrd_asgn, char *arg_rep,
                                int indent);
-static int     rt_walk       (struct node *n, int indent, int brace);
+static int  rt_walk       (struct node *n, int indent, int brace);
 static void spcl_start    (struct sym_entry *op_params);
-static int     tdef_or_extr  (struct node *n);
+static int  tdef_or_extr  (struct node *n);
 static void tend_ary      (int n);
 static void tend_init     (void);
 static void tnd_var       (struct sym_entry *sym, char *strct_ptr, char *access, int indent);
 static void tok_line      (struct token *t, int indent);
 static void typ_asrt      (int typcd, struct node *desc,
                                struct token *tok, int indent);
-static int     typ_case      (struct node *var, struct node *slct_lst,
+static int  typ_case      (struct node *var, struct node *slct_lst,
                                struct node *dflt,
                                int (*walk)(struct node *n, int xindent,
                                  int brace), int maybe_var, int indent);
 static void untend        (int indent);
 
 extern char *progname;
- 
+
 #if MVS
 extern char *src_file_nm;
 #endif                                  /* MVS */
@@ -91,8 +91,7 @@ static struct node *fnc_head; /* header of function being "copied" to output */
 /*
  * chk_nl - if a new-line is required, output it and indent the next line.
  */
-static void chk_nl(indent)
-int indent;
+static void chk_nl(int indent)
    {
    int col;
 
@@ -111,12 +110,10 @@ int indent;
 /*
  * line_dir - Output a line directive.
  */
-static void line_dir(nxt_line, new_fname)
-int nxt_line;
-char *new_fname;
+static void line_dir(int nxt_line, char *new_fname)
    {
    char *s;
- 
+
    /*
     * Make sure line directives are desired in the output. Normally,
     *  blank lines surround the directive for readability. However,`
@@ -163,9 +160,7 @@ char *new_fname;
  * prt_str - print a string to the output file, possibly preceded by
  *   a new-line and indenting.
  */
-void prt_str(s, indent)
-char *s;
-int indent;
+void prt_str(char *s, int indent)
    {
    chk_nl(indent);
    fprintf(out_file, "%s", s);
@@ -175,9 +170,7 @@ int indent;
  * tok_line - determine if a line directive is needed to synchronize the
  *  output file name and line number with an input token.
  */
-static void tok_line(t, indent)
-struct token *t;
-int indent;
+static void tok_line(struct token *t, int indent)
    {
    int nxt_line;
 
@@ -215,9 +208,7 @@ int indent;
 /*
  * prt_tok - print a token.
  */
-static void prt_tok(t, indent)
-struct token *t;
-int indent;
+static void prt_tok(struct token *t, int indent)
    {
    char *s;
 
@@ -250,8 +241,7 @@ int indent;
  * untend - output code to removed the tended descriptors in this
  *  function from the global tended list.
  */
-static void untend(indent)
-int indent;
+static void untend(int indent)
    {
    ForceNl();
    prt_str("tend = ", indent);
@@ -271,11 +261,7 @@ int indent;
 /*
  * tnd_var - output an expression to accessed a tended variable.
  */
-static void tnd_var(sym, strct_ptr, access, indent)
-struct sym_entry *sym;
-char *strct_ptr;
-char *access;
-int indent;
+static void tnd_var(struct sym_entry *sym, char *strct_ptr, char *access, int indent)
    {
    /*
     * A variable that is a specific block pointer type must be cast
@@ -322,9 +308,7 @@ int indent;
 /*
  * prt_var - print a variable.
  */
-static void prt_var(n, indent)
-struct node *n;
-int indent;
+static void prt_var(struct node *n, int indent)
    {
    struct token *t;
    struct sym_entry *sym;
@@ -434,8 +418,7 @@ int indent;
  * does_call - determine if an expression contains a function call by
  *  walking its syntax tree.
  */
-static int does_call(expr)
-struct node *expr;
+static int does_call(struct node *expr)
    {
    int n_subs;
    int i;
@@ -485,11 +468,7 @@ struct node *expr;
 /*
  * prt_runerr - print code to implement runerr().
  */
-static void prt_runerr(t, num, val, indent)
-struct token *t;
-struct node *num;
-struct node *val;
-int indent;
+static void prt_runerr(struct token *t, struct node *num, struct node *val, int indent)
    {
    if (op_type == OrdFunc)
       errt1(t, "'runerr' may not be used in an ordinary C function");
@@ -520,9 +499,7 @@ int indent;
  * typ_name - convert a type code to a string that can be used to
  *  output "T_" or "D_" type codes.
  */
-char *typ_name(typcd, tok)
-int typcd;
-struct token *tok;
+char *typ_name(int typcd, struct token *tok)
    {
    if (typcd == Empty_type)
       errt1(tok, "it is meaningless to assert a type of empty_type");
@@ -533,18 +510,14 @@ struct token *tok;
    else
       return icontypes[typcd].cap_id;
    /*NOTREACHED*/
-   return 0; 	/* avoid gcc warning */
+   return 0;    /* avoid gcc warning */
    }
 
 /*
  * Produce a C conditional expression to check a descriptor for a
  *  particular type.
  */
-static void typ_asrt(typcd, desc, tok, indent)
-int typcd;
-struct node *desc;
-struct token *tok;
-int indent;
+static void typ_asrt(int typcd, struct node *desc, struct token *tok, int indent)
    {
 /*
  * If rtt has been built by clang, assume it is producing code to
@@ -625,9 +598,7 @@ int indent;
  *  variable is a temporary location to store the result of the argument
  *  to a C return statement.
  */
-static int retval_dcltor(dcltor, indent)
-struct node *dcltor;
-int indent;
+static int retval_dcltor(struct node *dcltor, int indent)
    {
    int flag;
 
@@ -677,19 +648,14 @@ int indent;
       }
    err1("rtt internal error detected in function retval_dcltor()");
    /*NOTREACHED*/
-   return 0; 	/* avoid gcc warning */
+   return 0;    /* avoid gcc warning */
    }
 
 /*
  * cnv_fnc - produce code to handle RTT cnv: and def: constructs.
  */
-static void cnv_fnc(t, typcd, src, dflt, dest, indent)
-struct token *t;
-int typcd;
-struct node *src;
-struct node *dflt;
-struct node *dest;
-int indent;
+static void cnv_fnc(struct token *t, int typcd, struct node *src, struct node *dflt,
+                    struct node *dest, int indent)
    {
    int dflt_to_ptr;
    int loc;
@@ -813,10 +779,7 @@ int indent;
  *   constructed in a static buffer. Also determine if a default
  *   must be passed "by reference".
  */
-char *cnv_name(typcd, dflt, dflt_to_ptr)
-int typcd;
-struct node *dflt;
-int *dflt_to_ptr;
+char *cnv_name(int typcd, struct node *dflt, int *dflt_to_ptr)
    {
    static char buf[15];
    int by_ref;
@@ -878,10 +841,7 @@ int *dflt_to_ptr;
  * ret_value - produce code to set the result location of an operation
  *  using the expression on a return or suspend.
  */
-static void ret_value(t, n, indent)
-struct token *t;
-struct node *n;
-int indent;
+static void ret_value(struct token *t, struct node *n, int indent)
    {
    struct node *caller;
    struct node *args;
@@ -920,14 +880,14 @@ int indent;
              */
             prt_str(rslt_loc, indent);
 #ifdef DescriptorDouble
-	    prt_str(".vword.realval = ", indent);
+            prt_str(".vword.realval = ", indent);
             c_walk(n->u[0].child, indent + IndentInc, 0);
             prt_str(";", indent + IndentInc);
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
             prt_str(".vword.bptr = (union block *)alcreal(", indent);
             c_walk(n->u[0].child, indent + IndentInc, 0);
             prt_str(");", indent + IndentInc);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
             ForceNl();
             prt_str(rslt_loc, indent);
             prt_str(".dword = D_Real;", indent);
@@ -936,7 +896,7 @@ int indent;
              * The allocation of the real block may fail.
              */
             chk_rsltblk(indent);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
             chkabsret(t, real_typ); /* compare return with abstract return */
             return;
          case C_String:
@@ -1100,13 +1060,8 @@ int indent;
 /*
  * ret_1_arg - produce code for a special return/suspend with one argument.
  */
-static void ret_1_arg(t, args, typcd, vwrd_asgn, arg_rep, indent)
-struct token *t;
-struct node *args;
-int typcd;
-char *vwrd_asgn;
-char *arg_rep;
-int indent;
+static void ret_1_arg(struct token *t, struct node *args, int typcd,
+                      char *vwrd_asgn, char *arg_rep, int indent)
    {
    if (args == NULL || args->nd_id == CommaNd)
       errt3(t, "wrong no. of args for", icontypes[typcd].id, arg_rep);
@@ -1133,8 +1088,7 @@ int indent;
  * chk_rsltblk - the result value contains an allocated block, make sure
  *    the allocation succeeded.
  */
-static void chk_rsltblk(indent)
-int indent;
+static void chk_rsltblk(int indent)
    {
    ForceNl();
    prt_str("if (", indent);
@@ -1156,9 +1110,7 @@ int indent;
 /*
  * failure - produce code for fail or efail.
  */
-static void failure(indent, brace)
-int indent;
-int brace;
+static void failure(int indent, int brace)
    {
    /*
     * If there are tended variables, they must be removed from the tended
@@ -1192,10 +1144,7 @@ int brace;
  *  corresponding ordinary C. Return and indication of whether execution
  *  falls through the code.
  */
-int c_walk(n, indent, brace)
-struct node *n;
-int indent;
-int brace;
+int c_walk(struct node *n, int indent, int brace)
    {
    struct token *t;
    struct node *n1;
@@ -1218,157 +1167,157 @@ int brace;
                   errt1(t, "'fail' may not be used in an ordinary C function");
                cur_impl->ret_flag |= DoesFail;
                failure(indent, brace);
-	       chkabsret(t, SomeType);  /* check preceding abstract return */
-	       return 0;
-	    case Errorfail:
-	       if (op_type == OrdFunc)
-		  errt1(t,
-		      "'errorfail' may not be used in an ordinary C function");
-	       cur_impl->ret_flag |= DoesEFail;
-	       failure(indent, brace);
-	       return 0;
+               chkabsret(t, SomeType);  /* check preceding abstract return */
+               return 0;
+            case Errorfail:
+               if (op_type == OrdFunc)
+                  errt1(t,
+                      "'errorfail' may not be used in an ordinary C function");
+               cur_impl->ret_flag |= DoesEFail;
+               failure(indent, brace);
+               return 0;
             case Break:
-	       prt_tok(t, indent);
-	       prt_str(";", indent);
+               prt_tok(t, indent);
+               prt_str(";", indent);
                does_break = 1;
                return 0;
-	    default:
+            default:
                /*
                 * Other "primary" expressions are just their token image,
                 *  possibly followed by a semicolon.
                 */
-	       prt_tok(t, indent);
-	       if (t->tok_id == Continue)
-		  prt_str(";", indent);
+               prt_tok(t, indent);
+               if (t->tok_id == Continue)
+                  prt_str(";", indent);
                return 1;
-	    }
+            }
       case PrefxNd:
-	 switch (t->tok_id) {
-	    case Sizeof:
-	       prt_tok(t, indent);                /* sizeof */
-	       prt_str("(", indent);
-	       c_walk(n->u[0].child, indent, 0);
-	       prt_str(")", indent);
-	       return 1;
-	    case '{':
+         switch (t->tok_id) {
+            case Sizeof:
+               prt_tok(t, indent);                /* sizeof */
+               prt_str("(", indent);
+               c_walk(n->u[0].child, indent, 0);
+               prt_str(")", indent);
+               return 1;
+            case '{':
                /*
                 * Initializer list.
                 */
-	       prt_tok(t, indent + IndentInc);     /* { */
-	       c_walk(n->u[0].child, indent + IndentInc, 0);
-	       prt_str("}", indent + IndentInc);
-	       return 1;
-	    case Default:
-	       prt_tok(t, indent - IndentInc);     /* default (un-indented) */
-	       prt_str(": ", indent - IndentInc);
-	       fall_thru = c_walk(n->u[0].child, indent, 0);
+               prt_tok(t, indent + IndentInc);     /* { */
+               c_walk(n->u[0].child, indent + IndentInc, 0);
+               prt_str("}", indent + IndentInc);
+               return 1;
+            case Default:
+               prt_tok(t, indent - IndentInc);     /* default (un-indented) */
+               prt_str(": ", indent - IndentInc);
+               fall_thru = c_walk(n->u[0].child, indent, 0);
                may_brnchto = 1;
                return fall_thru;
-	    case Goto:
-	       prt_tok(t, indent);                 /* goto */
-	       prt_str(" ", indent);
-	       c_walk(n->u[0].child, indent, 0);
-	       prt_str(";", indent);
-	       return 0;
-	    case Return:
-	       if (n->u[0].child != NULL)
-		  no_ret_val = 0;  /* note that return statement has no value */
+            case Goto:
+               prt_tok(t, indent);                 /* goto */
+               prt_str(" ", indent);
+               c_walk(n->u[0].child, indent, 0);
+               prt_str(";", indent);
+               return 0;
+            case Return:
+               if (n->u[0].child != NULL)
+                  no_ret_val = 0;  /* note that return statement has no value */
 
-	       if (op_type == OrdFunc || fnc_ret == RetInt ||
-		  fnc_ret == RetDbl) {
-		  /*
-		   * ordinary C return: ignore C_integer, C_double, and
-		   *  C_string qualifiers on return expression (the first
-		   *  two may legally occur when fnc_ret is RetInt or RetDbl).
-		   */
-		  n1 = n->u[0].child;
-		  if (n1 != NULL && n1->nd_id == PrefxNd && n1->tok != NULL) {
-		     switch (n1->tok->tok_id) {
-			case C_Integer:
-			case C_Double:
-			case C_String:
-			   n1 = n1->u[0].child;
-			}
-		     }
-		  if (ntend != 0) {
+               if (op_type == OrdFunc || fnc_ret == RetInt ||
+                  fnc_ret == RetDbl) {
+                  /*
+                   * ordinary C return: ignore C_integer, C_double, and
+                   *  C_string qualifiers on return expression (the first
+                   *  two may legally occur when fnc_ret is RetInt or RetDbl).
+                   */
+                  n1 = n->u[0].child;
+                  if (n1 != NULL && n1->nd_id == PrefxNd && n1->tok != NULL) {
+                     switch (n1->tok->tok_id) {
+                        case C_Integer:
+                        case C_Double:
+                        case C_String:
+                           n1 = n1->u[0].child;
+                        }
+                     }
+                  if (ntend != 0) {
                      /*
                       * There are tended variables that must be removed from
                       *  the tended list.
                       */
-		     if (!brace)
-			prt_str("{", indent);
-		     if (does_call(n1)) {
-			/*
-			 * The return expression contains a function call;
+                     if (!brace)
+                        prt_str("{", indent);
+                     if (does_call(n1)) {
+                        /*
+                         * The return expression contains a function call;
                          *  the variables must remain tended while it is
                          *  computed, so compute it into a temporary variable
                          *  named r_retval.Output a declaration for r_retval;
                          *  its type must match the return type of the C
                          *  function.
                          */
-			ForceNl();
-			prt_str("register ", indent);
-			if (op_type == OrdFunc) {
-			   no_nl = 1;
-			   just_type(fnc_head->u[0].child, indent, 0);
-			   prt_str(" ", indent);
-			   retval_dcltor(fnc_head->u[1].child, indent);
-			   prt_str(";", indent);
-			   no_nl = 0;
-			   }
-			else if (fnc_ret == RetInt)
-			   prt_str("C_integer r_retval;", indent);
-			else    /* fnc_ret == RetDbl */
-			   prt_str("double r_retval;", indent);
-			ForceNl();
+                        ForceNl();
+                        prt_str("register ", indent);
+                        if (op_type == OrdFunc) {
+                           no_nl = 1;
+                           just_type(fnc_head->u[0].child, indent, 0);
+                           prt_str(" ", indent);
+                           retval_dcltor(fnc_head->u[1].child, indent);
+                           prt_str(";", indent);
+                           no_nl = 0;
+                           }
+                        else if (fnc_ret == RetInt)
+                           prt_str("C_integer r_retval;", indent);
+                        else    /* fnc_ret == RetDbl */
+                           prt_str("double r_retval;", indent);
+                        ForceNl();
 
                         /*
                          * Output code to compute the return value, untend
                          *  the variable, then return the value.
                          */
-			prt_str("r_retval = ", indent);
-			c_walk(n1, indent + IndentInc, 0);
-			prt_str(";", indent);
-			untend(indent);
-			ForceNl();
-			prt_str("return r_retval;", indent);
-			}
-		     else {
+                        prt_str("r_retval = ", indent);
+                        c_walk(n1, indent + IndentInc, 0);
+                        prt_str(";", indent);
+                        untend(indent);
+                        ForceNl();
+                        prt_str("return r_retval;", indent);
+                        }
+                     else {
                         /*
                          * It is safe to untend the variables and return
                          *  the result value directly with a return
                          *  statement.
                          */
-			untend(indent);
-			ForceNl();
-			prt_tok(t, indent);    /* return */
-			prt_str(" ", indent);
-			c_walk(n1, indent, 0);
-			prt_str(";", indent);
-			}
-		     if (!brace) {
-			ForceNl();
-			prt_str("}", indent);
-			}
-		     ForceNl();
-		     }
-		  else {
+                        untend(indent);
+                        ForceNl();
+                        prt_tok(t, indent);    /* return */
+                        prt_str(" ", indent);
+                        c_walk(n1, indent, 0);
+                        prt_str(";", indent);
+                        }
+                     if (!brace) {
+                        ForceNl();
+                        prt_str("}", indent);
+                        }
+                     ForceNl();
+                     }
+                  else {
                      /*
                       * There are no tended variable, just output the
                       *  return expression.
                       */
-		     prt_tok(t, indent);     /* return */
-		     prt_str(" ", indent);
-		     c_walk(n1, indent, 0);
-		     prt_str(";", indent);
-		     }
+                     prt_tok(t, indent);     /* return */
+                     prt_str(" ", indent);
+                     c_walk(n1, indent, 0);
+                     prt_str(";", indent);
+                     }
 
                   /*
                    * If this is a body function, check the return against
                    *  preceding abstract returns.
                    */
-		  if (fnc_ret == RetInt)
-		     chkabsret(n->tok, int_typ);
+                  if (fnc_ret == RetInt)
+                     chkabsret(n->tok, int_typ);
                   else if (fnc_ret == RetDbl)
                      chkabsret(n->tok, real_typ);
                   }
@@ -1424,24 +1373,24 @@ int brace;
                 *  is returned.
                 */
                if (iconx_flg) {
-		  switch (op_type) {
-		  case TokFunction:
-		     prt_str(
-		       "if ((signal = interp(G_Fsusp, r_args RTTCURTSTATARG)) != A_Resume) {",
-			     indent);
-		     break;
-		  case Operator:
-		  case Keyword:
-		     prt_str(
-		       "if ((signal = interp(G_Osusp, r_args RTTCURTSTATARG)) != A_Resume) {",
-			     indent);
-		     break;
-		  default:
-		     prt_str(
-		       "if ((signal = interp(G_Csusp, r_args RTTCURTSTATARG)) != A_Resume) {",
-			     indent);
-		  }
-		  }
+                  switch (op_type) {
+                  case TokFunction:
+                     prt_str(
+                       "if ((signal = interp(G_Fsusp, r_args RTTCURTSTATARG)) != A_Resume) {",
+                             indent);
+                     break;
+                  case Operator:
+                  case Keyword:
+                     prt_str(
+                       "if ((signal = interp(G_Osusp, r_args RTTCURTSTATARG)) != A_Resume) {",
+                             indent);
+                     break;
+                  default:
+                     prt_str(
+                       "if ((signal = interp(G_Csusp, r_args RTTCURTSTATARG)) != A_Resume) {",
+                             indent);
+                  }
+                  }
                else {
                   prt_str("if (r_s_cont == (continuation)NULL) {", indent);
                   if (ntend != 0)
@@ -1879,14 +1828,13 @@ int brace;
             }
       }
    /*NOTREACHED*/
-   return 0; 	/* avoid gcc warning */
+   return 0;    /* avoid gcc warning */
    }
 
 /*
  * call_ret - decide whether a function being called might return.
  */
-int call_ret(n)
-struct node *n;
+int call_ret(struct node *n)
    {
    /*
     * Assume functions return except for c_exit(), fatalerr(), and syserr().
@@ -1927,8 +1875,7 @@ struct parminfo *new_prmloc()
  * ld_prmloc - load parameter location information that has been
  *  saved in an arrary into the symbol table.
  */
-void ld_prmloc(parminfo)
-struct parminfo *parminfo;
+void ld_prmloc(struct parminfo *parminfo)
    {
    struct sym_entry *sym;
    int param_num;
@@ -1946,8 +1893,7 @@ struct parminfo *parminfo;
  * sv_prmloc - save parameter location information from the the symbol table
  *  into an array.
  */
-void sv_prmloc(parminfo)
-struct parminfo *parminfo;
+void sv_prmloc(struct parminfo *parminfo)
    {
    struct sym_entry *sym;
    int param_num;
@@ -1967,8 +1913,7 @@ struct parminfo *parminfo;
  *  in conflicting location information, but conflicts are only detected
  *  when a parameter is actually used.
  */
-void mrg_prmloc(parminfo)
-struct parminfo *parminfo;
+void mrg_prmloc(struct parminfo *parminfo)
    {
    struct sym_entry *sym;
    int param_num;
@@ -2004,13 +1949,9 @@ void clr_prmloc()
  *  "walk" is a function used to process the subtrees within the type_case
  *  statement.
  */
-static int typ_case(var, slct_lst, dflt, walk, maybe_var, indent)
-struct node *var;
-struct node *slct_lst;
-struct node *dflt;
-int (*walk)(struct node *n, int xindent, int brace);
-int maybe_var;
-int indent;
+static int typ_case(struct node *var, struct node *slct_lst, struct node *dflt,
+                    int (*walk)(struct node *n, int xindent, int brace),
+                    int maybe_var, int indent)
    {
    struct node *lst;
    struct node *select;
@@ -2049,7 +1990,7 @@ int indent;
       select = lst->u[1].child;
       fnd_slctrs = 0; /* flag: found type selections for clause for this pass */
       /*
-       * A selection clause may include several types. 
+       * A selection clause may include several types.
        */
       for (slctor = select->u[0].child; slctor != NULL; slctor =
         slctor->u[0].child) {
@@ -2072,7 +2013,7 @@ int indent;
                prt_str("if (", indent);
                fnd_slctrs = 1;
                }
-            
+
             /*
              * Output type check
              */
@@ -2163,7 +2104,7 @@ int indent;
          select = lst->u[1].child;
          fnd_slctrs = 0;
          /*
-          * A selection clause may include several types. 
+          * A selection clause may include several types.
           */
          for (slctor = select->u[0].child; slctor != NULL; slctor =
            slctor->u[0].child) {
@@ -2177,15 +2118,15 @@ int indent;
                 */
                fnd_slctrs = 1;
 
-	       if (typcd == int_typ) {
-		 ForceNl();
-		 prt_str("#ifdef LargeInts", 0);
-		 ForceNl();
-		 prt_str("case T_Lrgint:  ", indent + IndentInc);
-		 ForceNl();
-		 prt_str("#endif /* LargeInts */", 0);
-		 ForceNl();
-	       }
+               if (typcd == int_typ) {
+                 ForceNl();
+                 prt_str("#ifdef LargeInts", 0);
+                 ForceNl();
+                 prt_str("case T_Lrgint:  ", indent + IndentInc);
+                 ForceNl();
+                 prt_str("#endif /* LargeInts */", 0);
+                 ForceNl();
+               }
 
                prt_str("case T_", indent + IndentInc);
                prt_str(s, indent + IndentInc);
@@ -2267,8 +2208,7 @@ int indent;
  *   conversion of a parameter other than a conversion to C_integer or
  *   C_double. If so issue a warning.
  */
-static void chk_conj(n)
-struct node *n;
+static void chk_conj(struct node *n)
    {
    struct node *cnv_type;
    struct node *src;
@@ -2329,11 +2269,7 @@ struct node *n;
  *  clause. Return an indication of whether execution falls through the
  *  clause.
  */
-static int len_sel(sel, strt_prms, end_prms, indent)
-struct node *sel;
-struct parminfo *strt_prms;
-struct parminfo *end_prms;
-int indent;
+static int len_sel(struct node *sel, struct parminfo *strt_prms, struct parminfo *end_prms, int indent)
    {
    int fall_thru;
 
@@ -2361,10 +2297,7 @@ int indent;
  * rt_walk - walk the part of the syntax tree containing rtt code, producing
  *   code for the most-general version of the routine.
  */
-static int rt_walk(n, indent, brace)
-struct node *n;
-int indent;
-int brace;
+static int rt_walk(struct node *n, int indent, int brace)
    {
    struct token *t, *t1;
    struct node *n1, *errnum;
@@ -2382,7 +2315,7 @@ int brace;
                /*
                 * RTL code: { <actions> }
                 */
-               if (brace) 
+               if (brace)
                   tok_line(t, indent); /* just synch file name and line num */
                else
                   prt_tok(t, indent);  /* { */
@@ -2563,8 +2496,8 @@ int brace;
                end_prms = new_prmloc();
 
                n1 = n->u[0].child;
-               if (!(n1->u[0].sym->id_type & VArgLen)) 
-	          errt1(t, "len_case must select on length of vararg"); 
+               if (!(n1->u[0].sym->id_type & VArgLen))
+                  errt1(t, "len_case must select on length of vararg");
                /*
                 * The len_case statement is implemented as a C switch
                 *  statement.
@@ -2784,8 +2717,7 @@ int brace;
  * spcl_dcls - print special declarations for tended variables, parameter
  *  conversions, and buffers.
  */
-void spcl_dcls(op_params)
-struct sym_entry *op_params; /* operation parameters or NULL */
+void spcl_dcls(struct sym_entry *op_params) /* operation parameters or NULL */
    {
    register struct sym_entry *sym;
    struct sym_entry *sym1;
@@ -2832,7 +2764,7 @@ struct sym_entry *op_params; /* operation parameters or NULL */
          2 * IndentInc);
       ForceNl();
       prt_str("", 3 * IndentInc);
-      fprintf(out_file, "+ (r_nargs + %d) * sizeof(struct descrip)));", 
+      fprintf(out_file, "+ (r_nargs + %d) * sizeof(struct descrip)));",
          ntend - 2 - op_params->u.param_info.param_num);
       ForceNl();
       prt_str("if (r_tendp == NULL) {", 2 * IndentInc);
@@ -2953,8 +2885,7 @@ struct sym_entry *op_params; /* operation parameters or NULL */
  *  declarations for buffers and locations to hold conversions to C values.
  *  Determine what tended locations are needed for parameters.
  */
-static void spcl_start(op_params)
-struct sym_entry *op_params;
+static void spcl_start(struct sym_entry *op_params)
    {
    ForceNl();
    if (n_tmp_str > 0) {
@@ -2977,12 +2908,11 @@ struct sym_entry *op_params;
 /*
  * tend_ary - write struct containing array of tended descriptors.
  */
-static void tend_ary(n)
-int n;
+static void tend_ary(int n)
    {
    if (n == 0)
       return;
-  
+
    ForceNl();
    prt_str("CURTSTATE_AND_CE();", IndentInc);
    ForceNl();
@@ -3066,8 +2996,7 @@ static void tend_init()
 /*
  * parm_tnd - produce code to put a parameter in its tended location.
  */
-static void parm_tnd(sym)
-struct sym_entry *sym;
+static void parm_tnd(struct sym_entry *sym)
    {
    /*
     * A parameter may either be dereferenced into its tended location
@@ -3090,8 +3019,7 @@ struct sym_entry *sym;
  *  their conversions. Produce declarations for the C_integer and C_double
  *  locations.
  */
-static void parm_locs(op_params)
-struct sym_entry *op_params;
+static void parm_locs(struct sym_entry *op_params)
    {
    struct sym_entry *next_parm;
 
@@ -3128,8 +3056,7 @@ struct sym_entry *op_params;
 /*
  * real_def - see if a declaration really defines storage.
  */
-static int real_def(n)
-struct node *n;
+static int real_def(struct node *n)
    {
    struct node *dcl_lst;
 
@@ -3139,7 +3066,7 @@ struct node *n;
     */
    if (dcl_lst == NULL)
       return 0;
-   
+
    if (only_proto(dcl_lst))
       return 0;
 
@@ -3152,8 +3079,7 @@ struct node *n;
 /*
  * only_proto - see if this declarator list contains only function prototypes.
  */
-static int only_proto(n)
-struct node *n;
+static int only_proto(struct node *n)
    {
    switch (n->nd_id) {
       case CommaNd:
@@ -3198,8 +3124,7 @@ struct node *n;
 /*
  * tdef_or_extr - see if this is a typedef or extern.
  */
-static int tdef_or_extr(n)
-struct node *n;
+static int tdef_or_extr(struct node *n)
    {
    switch (n->nd_id) {
       case LstNd:
@@ -3223,8 +3148,7 @@ struct node *n;
 /*
  * dclout - output an ordinary global C declaration.
  */
-void dclout(n)
-struct node *n;
+void dclout(struct node *n)
    {
    if (!enable_out)
       return;        /* output disabled */
@@ -3237,10 +3161,7 @@ struct node *n;
 /*
  * fncout - output code for a C function.
  */
-void fncout(head, prm_dcl, block)
-struct node *head;
-struct node *prm_dcl;
-struct node *block;
+void fncout(struct node *head, struct node *prm_dcl, struct node *block)
    {
    if (!enable_out)
       return;       /* output disabled */
@@ -3256,10 +3177,11 @@ struct node *block;
    fnc_head = head;
    c_walk(head, 0, 0);
    prt_str(" ",  0);
+   if (prm_dcl != 0) { prt_str("/* Old-school function definition */", 0); }
    c_walk(prm_dcl, 0, 0);
    prt_str(" ", 0);
 
-   /* 
+   /*
     * Handle outer block.
     */
    prt_tok(block->tok, IndentInc);          /* { */
@@ -3292,8 +3214,7 @@ struct node *block;
 /*
  * defout - output operation definitions (except for constant keywords)
  */
-void defout(n)
-struct node *n;
+void defout(struct node *n)
    {
    struct sym_entry *sym, *sym1;
 
@@ -3335,13 +3256,12 @@ struct node *n;
 /*
  * comp_def - output code for the compiler for operation definitions.
  */
-static void comp_def(n)
-struct node *n;
+static void comp_def(struct node *n)
    {
 #ifdef Rttx
    fprintf(stdout, "rtt was compiled to only support the interpreter, use -x\n");
    exit(EXIT_FAILURE);
-#else					/* Rttx */
+#else                                   /* Rttx */
    struct sym_entry *sym;
    struct node *n1;
    FILE *f_save;
@@ -3417,7 +3337,7 @@ struct node *n;
          err2("cannot open output file", cname);
       else
          addrmlst(cname, out_file);
-         
+
       prologue(); /* output standard comments and preprocessor directives */
 
       /*
@@ -3426,12 +3346,17 @@ struct node *n;
        *  for the operation type, the prefix that makes the function
        *  name unique, and the name of the operation.
        */
+#ifndef LEGACY_FUNCTION_PROTOTYPES
+      fprintf(out_file, "int %c%c%c_%s(int r_nargs, dptr r_args, dptr r_rslt, continuation r_s_cont)\n",
+              uc_letter, prfx1, prfx2, cur_impl->name);
+#else                                   /* LEGACY_FUNCTION_PROTOTYPES */
       fprintf(out_file, "int %c%c%c_%s(r_nargs, r_args, r_rslt, r_s_cont)\n",
          uc_letter, prfx1, prfx2, cur_impl->name);
       fprintf(out_file, "int r_nargs;\n");
       fprintf(out_file, "dptr r_args;\n");
       fprintf(out_file, "dptr r_rslt;\n");
       fprintf(out_file, "continuation r_s_cont;");
+#endif                                  /* LEGACY_FUNCTION_PROTOTYPES */
       fname = cname;
       line = 12;
       ForceNl();
@@ -3472,10 +3397,10 @@ struct node *n;
       ForceNl();
       prt_str("}\n", IndentInc);
       if (rmlst_empty_p() == 0) {
-	 if (fclose(out_file) != 0)
-	    err2("cannot close ", cname);
-	 else
-	    markrmlst(out_file);
+         if (fclose(out_file) != 0)
+            err2("cannot close ", cname);
+         else
+            markrmlst(out_file);
          }
       out_file = f_save;   /* reset out_file */
       put_c_fl(cname, 1);  /* note name of output file for operation */
@@ -3526,14 +3451,13 @@ struct node *n;
       err2(name, ": minimum result sequence length greater than maximum");
 
    out_file = f_save;
-#endif					/* Rttx */
+#endif                                  /* Rttx */
    }
 
 /*
  * interp_def - output code for the interpreter for operation definitions.
  */
-static void interp_def(n)
-struct node *n;
+static void interp_def(struct node *n)
    {
    struct sym_entry *sym;
    struct node *n1;
@@ -3582,9 +3506,9 @@ struct node *n;
 
 #if VMS
          letter = 'Y';
-#else					/* VMS */
+#else                                   /* VMS */
          letter = 'Z';
-#endif					/* VMS */
+#endif                                  /* VMS */
 
          break;
       case Keyword:
@@ -3611,7 +3535,7 @@ struct node *n;
        */
       switch (op_type) {
          case TokFunction:
-            fprintf(out_file, "FncBlock(%s, %d, %d)\n\n", name, nparms, 
+            fprintf(out_file, "FncBlock(%s, %d, %d)\n\n", name, nparms,
                (has_underef ? -1 : 0));
             ++line;
             break;
@@ -3631,6 +3555,12 @@ struct node *n;
     *   have an extra parameter: the number of arguments.
     */
    fprintf(out_file, "int %c%s(", letter, name);
+#ifndef LEGACY_FUNCTION_PROTOTYPES
+   if (params != NULL && (params->id_type & VarPrm))
+      fprintf(out_file, "int r_nargs, ");
+   fprintf(out_file, "dptr r_args)\n");
+   ++line;
+ #else                                   /* LEGACY_FUNCTION_PROTOTYPES */
    if (params != NULL && (params->id_type & VarPrm))
       fprintf(out_file, "r_nargs, ");
    fprintf(out_file, "r_args)\n");
@@ -3641,9 +3571,10 @@ struct node *n;
       }
    fprintf(out_file, "dptr r_args;");
    ++line;
+#endif                                  /* LEGACY_FUNCTION_PROTOTYPES */
    ForceNl();
    prt_str("{", IndentInc);
-      
+
    /*
     * Output ordinary declarations from the declare clause.
     */
@@ -3745,8 +3676,7 @@ struct node *n;
 /*
  * keyconst - produce code for a constant keyword.
  */
-void keyconst(t)
-struct token *t;
+void keyconst(struct token *t)
    {
    struct il_code *il;
    int n;
@@ -3758,9 +3688,14 @@ struct token *t;
       rslt_loc = "r_args[0]";  /* result location */
 
       fprintf(out_file, "\n");
+#ifndef LEGACY_FUNCTION_PROTOTYPES
+      fprintf(out_file, "int K%s(dptr r_args)\n", cur_impl->name);
+      ++line;
+#else                                   /* LEGACY_FUNCTION_PROTOTYPES */
       fprintf(out_file, "int K%s(r_args)\n", cur_impl->name);
       fprintf(out_file, "dptr r_args;");
       line += 2;
+#endif                                  /* LEGACY_FUNCTION_PROTOTYPES */
       ForceNl();
       prt_str("{", IndentInc);
       ForceNl();
@@ -3791,7 +3726,7 @@ struct token *t;
             ForceNl();
             prt_str(rslt_loc, IndentInc);
             fprintf(out_file, ".vword.realval = %s;", t->image);
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
             prt_str("static struct b_real real_blk = {T_Real, ", IndentInc);
             fprintf(out_file, "%s};", t->image);
             ForceNl();
@@ -3800,7 +3735,7 @@ struct token *t;
             ForceNl();
             prt_str(rslt_loc, IndentInc);
             prt_str(".vword.bptr = (union block *)&real_blk;", IndentInc);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
             break;
          case IntConst:
             prt_str(rslt_loc, IndentInc);
@@ -3824,7 +3759,7 @@ struct token *t;
        * For the compiler, make an entry in the data base for the keyword.
        */
       cur_impl->use_rslt = 0;
-   
+
       il = new_il(IL_Const, 2);
       switch (t->tok_id) {
          case StrLit:
@@ -3863,8 +3798,7 @@ struct token *t;
  *   If it is #passthru, print just the body of the directive, otherwise
  *   print the whole thing.
  */
-void keepdir(t)
-struct token *t;
+void keepdir(struct token *t)
    {
    char *s;
 

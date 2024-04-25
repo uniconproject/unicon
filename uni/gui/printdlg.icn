@@ -18,9 +18,9 @@ end
 # stddlg dialogs.
 #
 class pdialog : Dialog(printerInfo_tab_item, printer_tabset,
-			   lprlocation_col, lprname_col, lprstatus_col,
-			   cancel_btn, print_btn, printer_tbl,
-			   copies_lbl, copies_txt, copies_lbl_1, printcmd)
+                           lprlocation_col, lprname_col, lprstatus_col,
+                           cancel_btn, print_btn, printer_tbl,
+                           copies_lbl, copies_txt, copies_lbl_1, printcmd)
    method component_setup()
       self.setup()
    end
@@ -37,7 +37,7 @@ class pdialog : Dialog(printerInfo_tab_item, printer_tabset,
          printers_lst := [], name, loc, status, ln, prn, i, log1
 
       printers_tbl := []
-$ifdef _UNIX      
+$ifdef _UNIX
       system("lpstat -v > prn1.txt")
       system("lpstat -p > prn2.txt")
       if log1 := open("prn1.txt", "r") then {
@@ -47,14 +47,14 @@ $ifdef _UNIX
                   move(2)
                   loc := tab(0)
                   }
-	       else stop("death by prn: ", image(prn))
+               else stop("death by prn: ", image(prn))
                }
            name := name[12:0]
            put(name_lst, name)
            put(loc_lst, loc)
            }
            close(log1)
-	   remove("prn1.txt")
+           remove("prn1.txt")
         }
       if log1 := open("prn2.txt", "r") then {
          while prn := read(log1) do {
@@ -62,16 +62,16 @@ $ifdef _UNIX
                \(ln := tab(find(".")))
                ln ? {
                   tab(find("is")+2)
-                  status := tab(0) 
+                  status := tab(0)
                   }
-	       }
+               }
             put(stat_lst, status)
             }
          close(log1)
-	 remove("prn2.txt")
-	 }
+         remove("prn2.txt")
+         }
       every i := 1 to * name_lst do {
-	 printers_lst := [name_lst[i], loc_lst[i], stat_lst[i]]
+         printers_lst := [name_lst[i], loc_lst[i], stat_lst[i]]
          put(printers_tbl, printers_lst)
          }
       printer_tbl.set_contents(printers_tbl)
@@ -79,7 +79,7 @@ $ifdef _UNIX
 $else
       printer_tbl.set_contents([["Printing not enabled"], [""], [""]])
 $endif
-      
+
 $ifdef _MS_WINDOWS_NT
       printcmd.set_contents("print")
 $else

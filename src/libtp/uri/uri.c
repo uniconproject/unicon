@@ -63,15 +63,15 @@ PURI uri_parse(char *uri, int af_fam)
     int i = 0;
     while (schemes[i] != 0) {
       if (!strcmp(schemes[i]->name, puri->scheme)) {
-	/* Load default port here since different schemes 
-	 * might use the same parser */
-	puri->port = schemes[i]->port;
-	puri->is_explicit_port = schemes[i]->is_explicit_port;
-	return schemes[i]->parse(colon+1, puri);
+        /* Load default port here since different schemes
+         * might use the same parser */
+        puri->port = schemes[i]->port;
+        puri->is_explicit_port = schemes[i]->is_explicit_port;
+        return schemes[i]->parse(colon+1, puri);
       }
       i++;
     }
-  }    
+  }
   /* We don't have a parse function */
   puri->status = URI_EUNKNOWNSCHEME;
   return puri;

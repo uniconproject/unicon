@@ -21,7 +21,7 @@ class Mesh : BasicObject3D (
    #lsTexture,
    lst_material,          # list of materilas
    lst_face,              # list of faces
-   
+
    is_rigid,
    render_items,
    render_items_tmp,
@@ -59,7 +59,7 @@ class Mesh : BasicObject3D (
    method material_count()
       return *lst_material
    end
-   
+
    method texmaterial_count()
       local m, c:=0
       every m:=!lst_material do
@@ -81,18 +81,18 @@ class Mesh : BasicObject3D (
    method normal_render ()
       local face, L, Ltex, Lnorm, currentMaterial, cm , oldMaterial:=-1, faceMaterial,  uv,
             meshmod, i:=1, j,  LL, normod, render_item
-            
-      #normod :=  WAttrib("normode"); 
+
+      #normod :=  WAttrib("normode");
       meshmod :=  WAttrib("meshmode")
       WAttrib("meshmode=triangles")
-     
+
       /lst_vertex_final:=lst_vertex
-      
+
       DEBUGW(" *vertex       : ", *lst_vertex)
       DEBUGW(" *vertex Final : ", *lst_vertex_final)
-      DEBUGW(" *Faces 	     : ", *lst_face)
+      DEBUGW(" *Faces        : ", *lst_face)
       DEBUGW(" *texture      : ", *lst_texturecoords)
-      
+
       PushMatrix()
 
       render_list_face_count := []
@@ -100,47 +100,47 @@ class Mesh : BasicObject3D (
       render_items_tmp:=[]
       i:=1
       while i <= *lst_face do{
-	 L := [];  Ltex := [];  Lnorm := []
-	 currentMaterial := faceMaterial := ( lst_face[i].get_material_id() | 1 )
-	    
-	 while i<= *lst_face & currentMaterial= faceMaterial do{
-	    face := lst_face[i]
-	    every put(L, 
-	       lst_vertex_final[ !face.lst_vertex_index ]["x" | "y" | "z"])
-	    every put(Ltex, 
-	       lst_texturecoords[ !face.lst_vertex_index ]["u" | "v"])
-	    /lst_normal | every 
-                 put(Lnorm, lst_normal[ !face.lst_normal_index ]["x"|"y"|"z"])
-	    faceMaterial := face.get_material_id()
-	    i +:= 1
-	    }
-	 
-	 put(render_list_face_count, *L)
-	 
-	 if  *Ltex * 3/2 ~= *L then write("PROBLEM in texture coords")
-	 
-	 if *lst_material > 0 & oldMaterial~=currentMaterial then{
-	    cm := lst_material[currentMaterial]
-	    oldMaterial := currentMaterial
-	    if not (cm.apply()) then
-	       WAttrib("texmode")=="off" | WAttrib("texmode=off")
-	    }
+         L := [];  Ltex := [];  Lnorm := []
+         currentMaterial := faceMaterial := ( lst_face[i].get_material_id() | 1 )
 
-        
+         while i<= *lst_face & currentMaterial= faceMaterial do{
+            face := lst_face[i]
+            every put(L,
+               lst_vertex_final[ !face.lst_vertex_index ]["x" | "y" | "z"])
+            every put(Ltex,
+               lst_texturecoords[ !face.lst_vertex_index ]["u" | "v"])
+            /lst_normal | every
+                 put(Lnorm, lst_normal[ !face.lst_normal_index ]["x"|"y"|"z"])
+            faceMaterial := face.get_material_id()
+            i +:= 1
+            }
+
+         put(render_list_face_count, *L)
+
+         if  *Ltex * 3/2 ~= *L then write("PROBLEM in texture coords")
+
+         if *lst_material > 0 & oldMaterial~=currentMaterial then{
+            cm := lst_material[currentMaterial]
+            oldMaterial := currentMaterial
+            if not (cm.apply()) then
+               WAttrib("texmode")=="off" | WAttrib("texmode=off")
+            }
+
+
 
 $ifdef ARRAYS
-	 *Ltex = 0  | Texcoord(Ltex)
-	 render_item := FillPolygon(L)  
-	 #(*Lnorm = 0 & WAttrib("normode=auto") ) | ( WAttrib("normode=on") & Normals(Lnorm))
+         *Ltex = 0  | Texcoord(Ltex)
+         render_item := FillPolygon(L)
+         #(*Lnorm = 0 & WAttrib("normode=auto") ) | ( WAttrib("normode=on") & Normals(Lnorm))
 $else
-	 *Ltex = 0  | Texcoord ! Ltex
+         *Ltex = 0  | Texcoord ! Ltex
 
-	 render_item := FillPolygon ! L
-	 #(*Lnorm = 0 & WAttrib("normode=auto") ) | ( WAttrib("normode=on") & Normals(Lnorm))
+         render_item := FillPolygon ! L
+         #(*Lnorm = 0 & WAttrib("normode=auto") ) | ( WAttrib("normode=on") & Normals(Lnorm))
 $endif
-	 put(render_items, render_item)
-	 put(render_items_tmp, array(*L, 0.0))
-	 } # while
+         put(render_items, render_item)
+         put(render_items_tmp, array(*L, 0.0))
+         } # while
 
       WAttrib("texmode")=="off" | WAttrib("texmode=off")
       WAttrib("meshmode="||string(meshmod))
@@ -148,83 +148,83 @@ $endif
 
       PopMatrix()
    end
-   
+
    #
    #  update the mesh directly in the display list. No new render items is added to the list
    #
    method update_render(curious)
       local i, face, L, currentMaterial, oldMaterial, faceMaterial,  uv,
-	    index, display_item, k, v, n
-   
+            index, display_item, k, v, n
+
       oldMaterial := -1
       index := 0
       i:=1
       while i <= *lst_face do{
-	 
-	 if faceMaterial := lst_face[i].get_material_id() then
-	    currentMaterial := faceMaterial
-	 else
-	    currentMaterial := faceMaterial := 1
 
-	 index +:= 1
+         if faceMaterial := lst_face[i].get_material_id() then
+            currentMaterial := faceMaterial
+         else
+            currentMaterial := faceMaterial := 1
+
+         index +:= 1
 
       if /curious then{
          if type(render_items[index][3])=="list" then{
-	    k:=1
-	    L :=  render_items[index][3]
-	    }
+            k:=1
+            L :=  render_items[index][3]
+            }
          else{
-	    k:=3
-	    L :=  render_items[index]
-	   }
+            k:=3
+            L :=  render_items[index]
+           }
          }
       else{
-	    k:=1
-	    L :=  render_items_tmp[index]
+            k:=1
+            L :=  render_items_tmp[index]
           }
 
-	 n:=render_list_face_count[index]
-	 while k <n  & i<= *lst_face & currentMaterial= faceMaterial do{
-	    face := lst_face[i]
-	    v := lst_vertex_final[face.lst_vertex_index[1]]
-	    L[k]:= v.x
-	    L[k+1]:= v.y
-	    L[k+2]:= v.z
-	    v := lst_vertex_final[face.lst_vertex_index[2]]
-	    L[k+3]:= v.x
-	    L[k+4]:= v.y
-	    L[k+5]:= v.z
-	    v := lst_vertex_final[face.lst_vertex_index[3]]
-	    L[k+6]:= v.x
-	    L[k+7]:= v.y
-	    L[k+8]:= v.z
-	    k+:=9
-	    
-	    if not(faceMaterial := face.get_material_id()) then
-	       faceMaterial := currentMaterial
-		  
-	    i +:= 1
-	    }
-	 
-	 
-	 if *lst_material > 0 & oldMaterial~=currentMaterial then
-	    oldMaterial := currentMaterial
+         n:=render_list_face_count[index]
+         while k <n  & i<= *lst_face & currentMaterial= faceMaterial do{
+            face := lst_face[i]
+            v := lst_vertex_final[face.lst_vertex_index[1]]
+            L[k]:= v.x
+            L[k+1]:= v.y
+            L[k+2]:= v.z
+            v := lst_vertex_final[face.lst_vertex_index[2]]
+            L[k+3]:= v.x
+            L[k+4]:= v.y
+            L[k+5]:= v.z
+            v := lst_vertex_final[face.lst_vertex_index[3]]
+            L[k+6]:= v.x
+            L[k+7]:= v.y
+            L[k+8]:= v.z
+            k+:=9
+
+            if not(faceMaterial := face.get_material_id()) then
+               faceMaterial := currentMaterial
+
+            i +:= 1
+            }
+
+
+         if *lst_material > 0 & oldMaterial~=currentMaterial then
+            oldMaterial := currentMaterial
 
          if \curious then{
             curious.notify()
             curious.wait_key()
-	   }
+           }
 
-	 } # while
+         } # while
    end
-   
+
    method swap_anim_keys(curious)
      local i
      every i:=1 to *render_items_tmp do
       render_items_tmp[i] :=:  render_items[i][3]
    end
-   
-   
+
+
    method render_details()  # returns a unicon display list index
 
       DEBUGW ( "  rendering Mesh......   vx=", image(*lst_vertex), "   faces=", image(*lst_face))
@@ -238,7 +238,7 @@ $endif
    method addMaterial(newMaterial)
       put(lst_material, newMaterial)
    end
-   
+
    method set_label (s)
      if \s then return (label := s)
    end
@@ -254,26 +254,26 @@ $endif
       every v := !lst_vertex do {
          if minv.x > v.x then
             minv.x := v.x
-         else 
+         else
          if maxv.x < v.x then
             maxv.x := v.x
 
          if minv.y > v.y then
             minv.y := v.y
-         else 
+         else
          if maxv.y < v.y then
             maxv.y := v.y
 
          if minv.z > v.z then
             minv.z := v.z
-         else 
+         else
          if maxv.z < v.z then
             maxv.z := v.z
          }
 
       bb_min := minv
       bb_max := maxv
-      
+
       #write(image(bb_min))
       #write(image(bb_max))
    end
@@ -289,39 +289,39 @@ $endif
 
    method flip_texcoord()
       local uv
-      every uv := !lst_texturecoords do 
-	 uv.v := 1.0 - uv.v
+      every uv := !lst_texturecoords do
+         uv.v := 1.0 - uv.v
    end
-   
+
    method rotate_vx(angle, axis)
    local anglePI, sin_t, cos_t, v, x, y, z
-   
+
       anglePI := angle * &pi / 180.0
       sin_t := sin(angle)
       cos_t := cos(angle)
-      
+
       case axis of{
          "z"|"Z" :{
             every v := !lst_vertex do{
                x := v.x
                y := v.y
-               v.x := cos_t * x + sin_t * y 
-               v.y := cos_t * y - sin_t * x  
+               v.x := cos_t * x + sin_t * y
+               v.y := cos_t * y - sin_t * x
                }
             }
          "y"|"Y" :{
             every v := !lst_vertex do{
                x := v.x
                z := v.z
-               v.x := cos_t * x - sin_t * z 
-               v.z := cos_t * x + sin_t * z 
+               v.x := cos_t * x - sin_t * z
+               v.z := cos_t * x + sin_t * z
                }
             }
          "x"|"X" :{
             every v := !lst_vertex do{
                z := v.z
                y := v.y
-               v.y := cos_t * y + sin_t * z 
+               v.y := cos_t * y + sin_t * z
                v.z := cos_t * z - cos_t * y
                }
             }
@@ -332,9 +332,9 @@ $endif
    method scale_vx(s)
       local v
       every v := !lst_vertex do{
-         v.x := v.x * s 
+         v.x := v.x * s
          v.y := v.y * s
-         v.z := v.z * s 
+         v.z := v.z * s
          }
    end
 
@@ -386,9 +386,9 @@ class Frame(
       WSection()
       return render_index_list
    end
-   
+
    method activate()
-   local i, j, main_display_list      
+   local i, j, main_display_list
       main_display_list := WindowContents()
       j:=1
       every i:=!render_index_list do{
@@ -408,11 +408,11 @@ class Frame(
    method hide()
       section.skip:=1
    end
-   
+
    method show()
       section.skip:=0
    end
 
    initially
-      lsMesh := list()      
+      lsMesh := list()
 end # Class Frame

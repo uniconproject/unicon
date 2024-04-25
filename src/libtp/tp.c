@@ -1,6 +1,6 @@
 /*
  * tp.c: User functions for libtp.
- *	 Copyright 2000 by Steve Lumos.  All rights reserved.
+ *       Copyright 2000 by Steve Lumos.  All rights reserved.
  */
 #include <stdio.h>
 
@@ -137,7 +137,7 @@ ssize_t tp_readln(Tp_t* tp, void* buf, size_t n)
   Tpdisc_t* disc = tp->disc;
   char* p = buf;
   size_t nleft = n;
-  
+
   if (!TPSTATE(tp, READING)) {
     int rc = disc->exceptf(TP_STATENOTREADING, tp, disc);
     if (!(rc == TP_TRYAGAIN && TPSTATE(tp, READING))) {
@@ -149,8 +149,8 @@ ssize_t tp_readln(Tp_t* tp, void* buf, size_t n)
     while (nleft-- > 0 && tp->rlen-- > 0) {
       int c = *(tp->rptr++);
       if (c == '\n') {
-	*(p++) = '\0';
-	return (n - nleft);
+        *(p++) = '\0';
+        return (n - nleft);
       }
       *(p++) = *(tp->rptr++);
     }
@@ -167,7 +167,7 @@ ssize_t tp_readln(Tp_t* tp, void* buf, size_t n)
 ssize_t tp_write(Tp_t* tp, void* buf, size_t n)
 {
   Tpdisc_t* disc = tp->disc;
-  
+
   if (!TPSTATE(tp, WRITING)) {
     int rc = disc->exceptf(TP_STATENOTWRITING, tp, disc);
     if (!(rc == TP_TRYAGAIN && TPSTATE(tp, WRITING))) {
@@ -187,7 +187,7 @@ char* tp_headerfield(char *header, char *field)
 
   /* Find the field */
   val = _tpstrcasestr(header, field);
-  
+
   if (val != NULL) {
     /* Skip the field name */
     val = strchr(val, ':');
@@ -199,4 +199,4 @@ char* tp_headerfield(char *header, char *field)
   }
   return val;
 }
-  
+

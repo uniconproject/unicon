@@ -55,46 +55,46 @@ AllocRastPort (
     unsigned int   depth)
 {
     struct RastPort  *rp;
-    
+
     rp = XpmMalloc (sizeof (*rp));
     if (rp != NULL)
     {
-	InitRastPort (rp);
-	if (GfxBase->LibNode.lib_Version >= 39)
-	{
-	    rp->BitMap = AllocBitMap (width, height, depth, BMF_CLEAR, NULL);
-	    if (rp->BitMap == NULL)
-	    {
-		FreeRastPort (rp, width, height);
-		return NULL;
-	    }
-	}
-	else
-	{
-	    unsigned int   i;
-	    
-	    rp->BitMap = XpmMalloc (sizeof (*rp->BitMap));
-	    if (rp->BitMap == NULL)
-	    {
-		FreeRastPort (rp, width, height);
-		return NULL;
-	    }
-	    
-	    InitBitMap (rp->BitMap, depth, width, height);
-	    for (i = 0; i < depth; ++i)
-		rp->BitMap->Planes[i] = NULL;
-	    for (i = 0; i < depth; ++i)
-	    {
-		rp->BitMap->Planes[i] = (PLANEPTR)AllocRaster (width, height);
-		if (rp->BitMap->Planes[i] == NULL)
-		{
-		    FreeRastPort (rp, width, height);
-		    return NULL;
-		}
-	    }
-	}
+        InitRastPort (rp);
+        if (GfxBase->LibNode.lib_Version >= 39)
+        {
+            rp->BitMap = AllocBitMap (width, height, depth, BMF_CLEAR, NULL);
+            if (rp->BitMap == NULL)
+            {
+                FreeRastPort (rp, width, height);
+                return NULL;
+            }
+        }
+        else
+        {
+            unsigned int   i;
+
+            rp->BitMap = XpmMalloc (sizeof (*rp->BitMap));
+            if (rp->BitMap == NULL)
+            {
+                FreeRastPort (rp, width, height);
+                return NULL;
+            }
+
+            InitBitMap (rp->BitMap, depth, width, height);
+            for (i = 0; i < depth; ++i)
+                rp->BitMap->Planes[i] = NULL;
+            for (i = 0; i < depth; ++i)
+            {
+                rp->BitMap->Planes[i] = (PLANEPTR)AllocRaster (width, height);
+                if (rp->BitMap->Planes[i] == NULL)
+                {
+                    FreeRastPort (rp, width, height);
+                    return NULL;
+                }
+            }
+        }
     }
-    
+
     return rp;
 }
 
@@ -107,24 +107,24 @@ FreeRastPort (
 {
     if (rp != NULL)
     {
-	if (rp->BitMap != NULL)
-	{
-	    WaitBlit ();
-	    if (GfxBase->LibNode.lib_Version >= 39)
-		FreeBitMap (rp->BitMap);
-	    else
-	    {
-		unsigned int   i;
-		
-		for (i = 0; i < rp->BitMap->Depth; ++i)
-		{
-		    if (rp->BitMap->Planes[i] != NULL)
-			FreeRaster (rp->BitMap->Planes[i], width, height);
-		}
-		XpmFree (rp->BitMap);
-	    }
-	}
-	XpmFree (rp);
+        if (rp->BitMap != NULL)
+        {
+            WaitBlit ();
+            if (GfxBase->LibNode.lib_Version >= 39)
+                FreeBitMap (rp->BitMap);
+            else
+            {
+                unsigned int   i;
+
+                for (i = 0; i < rp->BitMap->Depth; ++i)
+                {
+                    if (rp->BitMap->Planes[i] != NULL)
+                        FreeRaster (rp->BitMap->Planes[i], width, height);
+                }
+                XpmFree (rp->BitMap);
+            }
+        }
+        XpmFree (rp);
     }
 }
 
@@ -136,20 +136,20 @@ AllocXImage (
     unsigned int   depth)
 {
     XImage  *img;
-    
+
     img = XpmMalloc (sizeof (*img));
     if (img != NULL)
     {
-	img->width = width;
-	img->height = height;
-	img->rp = AllocRastPort (img->width, img->height, depth);
-	if (img->rp == NULL)
-	{
-	    FreeXImage (img);
-	    return NULL;
-	}
+        img->width = width;
+        img->height = height;
+        img->rp = AllocRastPort (img->width, img->height, depth);
+        if (img->rp == NULL)
+        {
+            FreeXImage (img);
+            return NULL;
+        }
     }
-    
+
     return img;
 }
 
@@ -160,10 +160,10 @@ FreeXImage (
 {
     if (ximage != NULL)
     {
-	FreeRastPort (ximage->rp, ximage->width, ximage->height);
-	XpmFree (ximage);
+        FreeRastPort (ximage->rp, ximage->width, ximage->height);
+        XpmFree (ximage);
     }
-    
+
     return Success;
 }
 
@@ -177,7 +177,7 @@ XPutPixel (
 {
     SetAPen (ximage->rp, pixel);
     WritePixel (ximage->rp, x, y);
-    
+
     return Success;
 }
 
@@ -191,62 +191,62 @@ AllocBestPen (
 {
     if (GfxBase->LibNode.lib_Version >= 39)
     {
-	unsigned long   r, g, b;
-	
-	r = screen_in_out->red * 0x00010001;
-	g = screen_in_out->green * 0x00010001;
-	b = screen_in_out->blue * 0x00010001;
-	screen_in_out->pixel = ObtainBestPen (colormap, r, g, b,
-					      OBP_Precision, precision,
-					      OBP_FailIfBad, fail_if_bad,
-					      TAG_DONE);
-	if (screen_in_out->pixel == -1)
-	    return False;
-	
-	QueryColor (colormap, screen_in_out);
+        unsigned long   r, g, b;
+
+        r = screen_in_out->red * 0x00010001;
+        g = screen_in_out->green * 0x00010001;
+        b = screen_in_out->blue * 0x00010001;
+        screen_in_out->pixel = ObtainBestPen (colormap, r, g, b,
+                                              OBP_Precision, precision,
+                                              OBP_FailIfBad, fail_if_bad,
+                                              TAG_DONE);
+        if (screen_in_out->pixel == -1)
+            return False;
+
+        QueryColor (colormap, screen_in_out);
     }
     else
     {
-	XColor   nearest, trial;
-	long     nearest_delta, trial_delta;
-	int      num_cells, i;
-	
-	num_cells = colormap->Count;
-	nearest.pixel = 0;
-	QueryColor (colormap, &nearest);
-	nearest_delta = ((((screen_in_out->red >> 8) - (nearest.red >> 8))
-			  * ((screen_in_out->red >> 8) - (nearest.red >> 8)))
-			 +
-			 (((screen_in_out->green >> 8) - (nearest.green >> 8))
-			  * ((screen_in_out->green >> 8) - (nearest.green >> 8)))
-			 +
-			 (((screen_in_out->blue >> 8) - (nearest.blue >> 8))
-			  * ((screen_in_out->blue >> 8) - (nearest.blue >> 8))));
-	for (i = 1; i < num_cells; i++)
-	{
-	/* precision and fail_if_bad is ignored under pre V39 */
-	    trial.pixel = i;
-	    QueryColor (colormap, &trial);
-	    trial_delta = ((((screen_in_out->red >> 8) - (trial.red >> 8))
-			    * ((screen_in_out->red >> 8) - (trial.red >> 8)))
-			   +
-			   (((screen_in_out->green >> 8) - (trial.green >> 8))
-			    * ((screen_in_out->green >> 8) - (trial.green >> 8)))
-			   +
-			   (((screen_in_out->blue >> 8) - (trial.blue >> 8))
-			    * ((screen_in_out->blue >> 8) - (trial.blue >> 8))));
-	    if (trial_delta < nearest_delta)
-	    {
-		nearest = trial;
-		nearest_delta = trial_delta;
-	    }
-	}
-	screen_in_out->pixel = nearest.pixel;
-	screen_in_out->red = nearest.red;
-	screen_in_out->green = nearest.green;
-	screen_in_out->blue = nearest.blue;
+        XColor   nearest, trial;
+        long     nearest_delta, trial_delta;
+        int      num_cells, i;
+
+        num_cells = colormap->Count;
+        nearest.pixel = 0;
+        QueryColor (colormap, &nearest);
+        nearest_delta = ((((screen_in_out->red >> 8) - (nearest.red >> 8))
+                          * ((screen_in_out->red >> 8) - (nearest.red >> 8)))
+                         +
+                         (((screen_in_out->green >> 8) - (nearest.green >> 8))
+                          * ((screen_in_out->green >> 8) - (nearest.green >> 8)))
+                         +
+                         (((screen_in_out->blue >> 8) - (nearest.blue >> 8))
+                          * ((screen_in_out->blue >> 8) - (nearest.blue >> 8))));
+        for (i = 1; i < num_cells; i++)
+        {
+        /* precision and fail_if_bad is ignored under pre V39 */
+            trial.pixel = i;
+            QueryColor (colormap, &trial);
+            trial_delta = ((((screen_in_out->red >> 8) - (trial.red >> 8))
+                            * ((screen_in_out->red >> 8) - (trial.red >> 8)))
+                           +
+                           (((screen_in_out->green >> 8) - (trial.green >> 8))
+                            * ((screen_in_out->green >> 8) - (trial.green >> 8)))
+                           +
+                           (((screen_in_out->blue >> 8) - (trial.blue >> 8))
+                            * ((screen_in_out->blue >> 8) - (trial.blue >> 8))));
+            if (trial_delta < nearest_delta)
+            {
+                nearest = trial;
+                nearest_delta = trial_delta;
+            }
+        }
+        screen_in_out->pixel = nearest.pixel;
+        screen_in_out->red = nearest.red;
+        screen_in_out->green = nearest.green;
+        screen_in_out->blue = nearest.blue;
     }
-    
+
     return True;
 }
 
@@ -259,12 +259,12 @@ FreePens (
 {
     if (GfxBase->LibNode.lib_Version >= 39)
     {
-	int   i;
-	
-	for (i = 0; i < npixels; i++)
-	    ReleasePen (colormap, pixels[i]);
+        int   i;
+
+        for (i = 0; i < npixels; i++)
+            ReleasePen (colormap, pixels[i]);
     }
-    
+
     return Success;
 }
 
@@ -275,66 +275,66 @@ ParseColor (
     XColor  *exact_def_return)
 {
     int spec_length;
-    
+
     if (spec == 0)
-	return False;
-    
+        return False;
+
     spec_length = strlen(spec);
     if (spec[0] == '#')
     {
-	int hexlen;
-	char hexstr[10];
-	
-	hexlen = (spec_length - 1) / 3;
-	if (hexlen < 1 || hexlen > 4 || hexlen * 3 != spec_length - 1)
-	    return False;
-	
-	hexstr[hexlen] = '\0';
-	strncpy (hexstr, spec + 1, hexlen);
-	exact_def_return->red = strtoul (hexstr, NULL, 16) << (16 - 4*hexlen);
-	strncpy (hexstr, spec + 1 + hexlen, hexlen);
-	exact_def_return->green = strtoul (hexstr, NULL, 16) << (16 - 4*hexlen);
-	strncpy (hexstr, spec + 1 + 2 * hexlen, hexlen);
-	exact_def_return->blue = strtoul (hexstr, NULL, 16) << (16 - 4*hexlen);
-	
-	return True;
+        int hexlen;
+        char hexstr[10];
+
+        hexlen = (spec_length - 1) / 3;
+        if (hexlen < 1 || hexlen > 4 || hexlen * 3 != spec_length - 1)
+            return False;
+
+        hexstr[hexlen] = '\0';
+        strncpy (hexstr, spec + 1, hexlen);
+        exact_def_return->red = strtoul (hexstr, NULL, 16) << (16 - 4*hexlen);
+        strncpy (hexstr, spec + 1 + hexlen, hexlen);
+        exact_def_return->green = strtoul (hexstr, NULL, 16) << (16 - 4*hexlen);
+        strncpy (hexstr, spec + 1 + 2 * hexlen, hexlen);
+        exact_def_return->blue = strtoul (hexstr, NULL, 16) << (16 - 4*hexlen);
+
+        return True;
     }
     else
     {
-	FILE  *rgbf;
-	int    items, red, green, blue;
-	char   line[512], name[512];
-	Bool   success = False;
-	
-	rgbf = fopen ("LIBS:rgb.txt", "r");
-	if (rgbf == NULL)
-	    return False;
-	
-	while (fgets(line, sizeof (line), rgbf) && !success)
-	{
-	    items = sscanf (line, "%d %d %d %[^\n]\n",
-			    &red, &green, &blue, name);
-	    if (items != 4)
-		continue;
-	    
-	    if (red < 0 || red > 0xFF
-		|| green < 0 || green > 0xFF
-		|| blue < 0 || blue > 0xFF)
-	    {
-		continue;
-	    }
-	    
-	    if (0 == xpmstrcasecmp (spec, name))
-	    {
-		exact_def_return->red = red * 0x0101;
-		exact_def_return->green = green * 0x0101;
-		exact_def_return->blue = blue * 0x0101;
-		success = True;
-	    }
-	}
-	fclose (rgbf);
-	
-	return success;
+        FILE  *rgbf;
+        int    items, red, green, blue;
+        char   line[512], name[512];
+        Bool   success = False;
+
+        rgbf = fopen ("LIBS:rgb.txt", "r");
+        if (rgbf == NULL)
+            return False;
+
+        while (fgets(line, sizeof (line), rgbf) && !success)
+        {
+            items = sscanf (line, "%d %d %d %[^\n]\n",
+                            &red, &green, &blue, name);
+            if (items != 4)
+                continue;
+
+            if (red < 0 || red > 0xFF
+                || green < 0 || green > 0xFF
+                || blue < 0 || blue > 0xFF)
+            {
+                continue;
+            }
+
+            if (0 == xpmstrcasecmp (spec, name))
+            {
+                exact_def_return->red = red * 0x0101;
+                exact_def_return->green = green * 0x0101;
+                exact_def_return->blue = blue * 0x0101;
+                success = True;
+            }
+        }
+        fclose (rgbf);
+
+        return success;
     }
 }
 
@@ -346,23 +346,23 @@ QueryColor (
 {
     if (GfxBase->LibNode.lib_Version >= 39)
     {
-	unsigned long   rgb[3];
-	
-	GetRGB32 (colormap, def_in_out->pixel, 1, rgb);
-	def_in_out->red = rgb[0] >> 16;
-	def_in_out->green = rgb[1] >> 16;
-	def_in_out->blue = rgb[2] >> 16;
+        unsigned long   rgb[3];
+
+        GetRGB32 (colormap, def_in_out->pixel, 1, rgb);
+        def_in_out->red = rgb[0] >> 16;
+        def_in_out->green = rgb[1] >> 16;
+        def_in_out->blue = rgb[2] >> 16;
     }
     else
     {
-	unsigned short   rgb;
-	
-	rgb = GetRGB4 (colormap, def_in_out->pixel);
-	def_in_out->red = ((rgb >> 8) & 0xF) * 0x1111;
-	def_in_out->green = ((rgb >> 4) & 0xF) * 0x1111;
-	def_in_out->blue = (rgb & 0xF) * 0x1111;
+        unsigned short   rgb;
+
+        rgb = GetRGB4 (colormap, def_in_out->pixel);
+        def_in_out->red = ((rgb >> 8) & 0xF) * 0x1111;
+        def_in_out->green = ((rgb >> 4) & 0xF) * 0x1111;
+        def_in_out->blue = (rgb & 0xF) * 0x1111;
     }
-    
+
     return Success;
 }
 
@@ -374,9 +374,9 @@ QueryColors (
     int        ncolors)
 {
     int   i;
-    
+
     for (i = 0; i < ncolors; i++)
-	QueryColor (colormap, &defs_in_out[i]);
-    
+        QueryColor (colormap, &defs_in_out[i]);
+
     return Success;
 }

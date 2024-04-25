@@ -138,7 +138,7 @@ procedure PSDone(sw)			#: terminate PostScript recording
    close(PS_f)
    return
 end
-
+
 #########################  Internal Functions  #########################
 
 #  PS_swap() -- swap local functions for the real versions
@@ -165,7 +165,7 @@ procedure PS_swap()
    PS_font :=: Font
    return
 end
-
+
 #  PS_init(w, f) -- initialize recording system
 
 procedure PS_init(a[])
@@ -265,7 +265,7 @@ local fname, scale, psw, psh, llx, lly
    write(PS_f)
 return
 end
-
+
 #  PS_out(s, s, ...) -- output strings to PS file, with spaces between
 
 procedure PS_out(a[])
@@ -296,7 +296,7 @@ procedure PS_afix(a)
       push(a, &window)
    return a
 end
-
+
 ####################  Icon Function Substitutes  ####################
 
 procedure PS_flush(a[])		# replaces WFlush
@@ -329,7 +329,7 @@ procedure PS_color(color)	# parse color, return string of PS r, g, b
       }
    return (r / 65535.0) || " " || (g / 65535.0) || " " || (b / 65535.0)
 end
-
+
 procedure PS_drawpoint(a[])	# replaces DrawPoint
    local i
 
@@ -414,7 +414,7 @@ procedure PS_area(a, cmd)	# generate w, h, x, y, and cmd, with defaults
    h := (0 ~= \a[5]) | PS_height
    PS_out(w, h, x, y, cmd)
 end
-
+
 procedure PS_drawcircle(a[])	# replaces DrawCircle
    PS_arc(a, 0, "")
    return PS_drawcircle ! a
@@ -471,7 +471,7 @@ procedure PS_arc(a, n, f)	# handle draw/fill arc/circle, append f to cmd
       }
    return
 end
-
+
 procedure PS_font(a[])	     	# replaces Font (very crudely)
    local ret, xname, psname, n
 
@@ -527,7 +527,7 @@ procedure PS_psstring(s)		# output a string as a PS string
    }
    return
 end
-
+
 #  PS_attrib() -- handle WAttrib calls
 #
 #  Any attribute that is accepted here should also be checked and set to

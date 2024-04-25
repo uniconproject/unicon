@@ -57,41 +57,41 @@ char * gl_endmark_fields[] = {"depth"};
  * real number arguments to convert.
  */
 stringint redraw3Dnames[] = {
-   { 0,			34 },		/* number of entries */
-   { "DrawCube",	REDRAW_CUBE | 4 },
-   { "DrawCylinder",	REDRAW_CYLINDER | 6},
-   { "DrawDisk",	REDRAW_DISK | 7 },
-   { "DrawLine",	REDRAW_LINE },
-   { "DrawPoint",	REDRAW_POINT },
-   { "DrawPolygon",	REDRAW_POLYGON },
-   { "DrawSegment",	REDRAW_SEGMENT },
-   { "DrawSphere",	REDRAW_SPHERE | 4 },
+   { 0,                 34 },           /* number of entries */
+   { "DrawCube",        REDRAW_CUBE | 4 },
+   { "DrawCylinder",    REDRAW_CYLINDER | 6},
+   { "DrawDisk",        REDRAW_DISK | 7 },
+   { "DrawLine",        REDRAW_LINE },
+   { "DrawPoint",       REDRAW_POINT },
+   { "DrawPolygon",     REDRAW_POLYGON },
+   { "DrawSegment",     REDRAW_SEGMENT },
+   { "DrawSphere",      REDRAW_SPHERE | 4 },
    { "DrawString3d",    REDRAW_DRAWSTRING3D | 3},
-   { "DrawTorus",	REDRAW_TORUS | 5},
+   { "DrawTorus",       REDRAW_TORUS | 5},
    { "EndMark",         REDRAW_ENDMARK},
-   { "Fg",		REDRAW_FG},
-   { "FillPolygon",	REDRAW_FILLPOLYGON },
+   { "Fg",              REDRAW_FG},
+   { "FillPolygon",     REDRAW_FILLPOLYGON },
    { "Font3d",          REDRAW_FONT3D },
-   { "Identity",	REDRAW_IDENTITY },
+   { "Identity",        REDRAW_IDENTITY },
    { "Mark",            REDRAW_MARK},
-   { "MatrixMode",	REDRAW_MATRIXMODE },
+   { "MatrixMode",      REDRAW_MATRIXMODE },
    { "MeshMode",        REDRAW_MESHMODE },
-   { "MultMatrix",	REDRAW_MULTMATRIX },
-   { "Normals",		REDRAW_NORMALS },
-   { "Pick"	,	REDRAW_PICK},
-   { "PopMatrix",	REDRAW_POPMATRIX },
-   { "PushMatrix",	REDRAW_PUSHMATRIX },
-   { "Rotate",		REDRAW_ROTATE | 4 },
-   { "Scale",		REDRAW_SCALE | 3 },
-   { "Texcoord",	REDRAW_TEXCOORD },
-   { "Texture",		REDRAW_TEXTURE },
-   { "Translate",	REDRAW_TRANSLATE | 3 },
-   { "dim",		REDRAW_DIM },
-   { "linewidth",	REDRAW_LINEWIDTH },
-   { "normode",		REDRAW_NORMODE },
-   { "rings",		REDRAW_RINGS },
-   { "slices",		REDRAW_SLICES },
-   { "texmode",		REDRAW_TEXMODE },
+   { "MultMatrix",      REDRAW_MULTMATRIX },
+   { "Normals",         REDRAW_NORMALS },
+   { "Pick"     ,       REDRAW_PICK},
+   { "PopMatrix",       REDRAW_POPMATRIX },
+   { "PushMatrix",      REDRAW_PUSHMATRIX },
+   { "Rotate",          REDRAW_ROTATE | 4 },
+   { "Scale",           REDRAW_SCALE | 3 },
+   { "Texcoord",        REDRAW_TEXCOORD },
+   { "Texture",         REDRAW_TEXTURE },
+   { "Translate",       REDRAW_TRANSLATE | 3 },
+   { "dim",             REDRAW_DIM },
+   { "linewidth",       REDRAW_LINEWIDTH },
+   { "normode",         REDRAW_NORMODE },
+   { "rings",           REDRAW_RINGS },
+   { "slices",          REDRAW_SLICES },
+   { "texmode",         REDRAW_TEXMODE },
    };
 
 /*
@@ -138,7 +138,7 @@ dptr rec_structor3d(int type)
          return rec_structinate(&gl_cylinder, "gl_cylinder", 8, gl_cylinder_fields);
       case GL3D_DISK:
          return rec_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
-        
+
       case GL3D_SPHERE:
          return rec_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
       case GL3D_TORUS:
@@ -162,9 +162,9 @@ dptr rec_structor3d(int type)
       case GL3D_FONT:
          return rec_structinate(&gl_font3d, "gl_font3d", 3, gl_font_fields);
       case GL3D_DRAWSTRING:
-	 return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 6, gl_drawstring3d_fields);
+         return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 6, gl_drawstring3d_fields);
       case GL3D_MARK:
-	 return rec_structinate(&gl_mark, "gl_mark", 7, gl_mark_fields);
+         return rec_structinate(&gl_mark, "gl_mark", 7, gl_mark_fields);
       case GL3D_ENDMARK:
          return rec_structinate(&gl_endmark, "gl_endmark", 3, gl_mark_fields);
       case GL3D_MESHMODE:
@@ -172,23 +172,23 @@ dptr rec_structor3d(int type)
       default:
          break;
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    return 0;
 }
 
 int create3Dlisthdr(dptr dp, char *strname, word size){
    int draw_code;
-   struct descrip funcname, g;	/* do not need to be tended */
+   struct descrip funcname, g;  /* do not need to be tended */
    tended struct b_list *func;
-  
+
    /* create a list to save function information */
    Protect(func = alclist(0, size), return RunError);
    dp->dword = D_List;
    dp->vword.bptr = (union block *) func;
    MakeStr(strname, strlen(strname), &funcname);
    c_put(dp, &funcname);
-  
+
    draw_code = si_s2i(redraw3Dnames, strname);
    if (draw_code == -1)
       return RunError;
@@ -266,7 +266,7 @@ int gettexture(wbp w, dptr dp)
 int init_3dcontext(wcp wc)
 {
   /* set defaults for attributes */
-   wc->dim = 3; 
+   wc->dim = 3;
    wc->slices = 15;
    wc->rings = 10;
    wc->selectionenabled = 0;
@@ -282,7 +282,7 @@ int init_3dcontext(wcp wc)
    wc->normals = NULL;
    wc->texmode = wc->numtexcoords = 0;
 
-   wc->texcoords = NULL; 
+   wc->texcoords = NULL;
    wc->curtexture = -1;
    wc->buffermode = IMMEDIATE3D;
    wc->meshmode = U3D_POLYGON;
@@ -384,23 +384,23 @@ int section_length(wbp w)
       if (k<0) k=bp->nslots-1;
 
       if (used<=0) {
-  	 bp = (struct b_lelem *) bp->listprev;
-	 used = bp->nused;
+         bp = (struct b_lelem *) bp->listprev;
+         used = bp->nused;
          k = bp->first + used-1;
          if (k>=bp->nslots) k=k-bp->nslots-1;
       }
       if (is:record(flist)) {
-	 rp = BlkD(flist, Record);
+         rp = BlkD(flist, Record);
          fname = rp->fields[0];
          tmp=si_s2i(redraw3Dnames, StrLoc(fname));
 
-	 if (tmp == -1) {
-	    return Failed;
-	    }
+         if (tmp == -1) {
+            return Failed;
+            }
          if ((tmp & ~0xf)==REDRAW_MARK) {
              if (!cnv:C_integer(rp->fields[4], v)) return Failed;
-	     if (v==0) {
-		save_flist = flist;
+             if (v==0) {
+                save_flist = flist;
                 flag = 1;
                 break;
                 }
@@ -452,9 +452,9 @@ int seteye(wbp w, char *s)
    wsp ws = w->window;
 
    if (sscanf(s, " %lf , %lf , %lf , %lf , %lf , %lf , %lf , %lf , %lf ",
-	      &(ws->eyeposx), &(ws->eyeposy), &(ws->eyeposz),
-	      &(ws->eyedirx), &(ws->eyediry), &(ws->eyedirz),
-	      &(ws->eyeupx),  &(ws->eyeupy),  &(ws->eyeupz)) != 9) {
+              &(ws->eyeposx), &(ws->eyeposy), &(ws->eyeposz),
+              &(ws->eyedirx), &(ws->eyediry), &(ws->eyedirz),
+              &(ws->eyeupx),  &(ws->eyeupy),  &(ws->eyeupz)) != 9) {
       return RunError;
       }
 
@@ -614,7 +614,7 @@ int setfov(wbp w, char* s)
 
    fov = atof(s);
    ws->fov = fov;
-   
+
    return Succeeded;
 }
 
@@ -626,12 +626,12 @@ int setnormode(wbp w, char* s)
    tended struct b_list *func;
    tended struct descrip mode;
    wcp wc = w->context;
-   
+
    MakeCurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "normode", 4)!=Succeeded)
      return RunError;
-   
+
    if (!strcmp("on", s))
       wc->normode = 2;
    else if (!strcmp("auto", s))
@@ -642,7 +642,7 @@ int setnormode(wbp w, char* s)
    /* not a valid normals mode so generate an error */
    else
       return RunError;
-   
+
    MakeInt(wc->normode, &mode);
    c_put(&f, &mode);
    c_put(&(w->window->funclist), &f);
@@ -656,19 +656,19 @@ int setrings(wbp w, char* s)
    tended struct descrip val;
    int rings;
    wcp wc = w->context;
-   
+
    MakeCurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "rings", 4)!=Succeeded)
      return RunError;
-   
+
    rings = atoi(s);
    /* must be positive integer */
    if (rings<=0) return RunError;
    MakeInt(rings, &val);
-   c_put(&f, &val);   
+   c_put(&f, &val);
    wc->rings = rings;
-   
+
    c_put(&(w->window->funclist), &f);
 
    return Succeeded;
@@ -681,19 +681,19 @@ int setslices(wbp w, char* s)
    tended struct descrip val;
    int slices;
    wcp wc = w->context;
-   
+
    MakeCurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "slices", 4) != Succeeded)
      return RunError;
-   
+
    slices = atoi(s);
-   /* must be positive integer */   
+   /* must be positive integer */
    if (slices <= 0) return RunError;
    MakeInt(slices, &val);
-   c_put(&f, &val);   
+   c_put(&f, &val);
    wc->slices = slices;
-   
+
    c_put(&(w->window->funclist), &f);
 
    return Succeeded;
@@ -757,7 +757,7 @@ int setautogen(wbp w, int i)
 
 /* set a texture */
 int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
-	       int is_init)
+               int is_init)
 {
    wcp wc = w->context;
    char* s;
@@ -772,14 +772,14 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
 
    if (!is_init){
       if (!constr &&  !(constr = rec_structor3d(GL3D_TEXTURE)))
-      	 syserr("failed to create opengl record constructor");
-   	 nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+         syserr("failed to create opengl record constructor");
+         nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-   	 /*
-    	  * create a record of the graphical object and its parameters
-    	  */
+         /*
+          * create a record of the graphical object and its parameters
+          */
       if (!(rp = alcrecd(nfields, BlkLoc(*constr))))
-      	 return Failed;
+         return Failed;
      (*f).dword = D_Record;
      (*f).vword.bptr = (union block *)rp;
      MakeStr("Texture", 7, &(rp->fields[0]));
@@ -790,9 +790,9 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
      MakeInt(draw_code, &(rp->fields[1]));
 
      Protect(BlkLoc(rp->fields[3]) =
-	      (union block *)alcfile((FILE *)w, Fs_Window|Fs_Read|Fs_Write
-		      | (w->context->rendermode == UGL3D?Fs_Window3D:0)	
-		      , &emptystr), return Failed);
+              (union block *)alcfile((FILE *)w, Fs_Window|Fs_Read|Fs_Write
+                      | (w->context->rendermode == UGL3D?Fs_Window3D:0)
+                      , &emptystr), return Failed);
 
      rp->fields[3].dword = D_File;
      }
@@ -805,7 +805,7 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
    while(isspace(*s)) s++;
    if (*s == ',')  /* must be an image string */
       ttype = 3;
-   else	{	  /* it is a file name */
+   else {         /* it is a file name */
       ttype = 1;
       }
 
@@ -824,7 +824,7 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
    return Succeeded;
 }
 
-/* 
+/*
  * Create an empty list for function calls for a 3D window
  */
 int create_display_list(wbp w, int size)
@@ -838,8 +838,8 @@ int create_display_list(wbp w, int size)
    if ((BlkLoc(w->window->funclist2d) = (union block *)alclist(0, size)) == NULL)
       return Failed;
    w->window->funclist2d.dword = D_List;
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
 
    return Succeeded;
 }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */

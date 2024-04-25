@@ -21,14 +21,14 @@
  * lines have to be very long in order to accommodate very large gdbm
  * entries; can get around this by reformatting the unicon output later.
  */
-#define MaxLineLen (4095) 
+#define MaxLineLen (4095)
 
-#define caf_is_peri(c)		((c)->flgs & F_Peri)
-#define caf_is_parsed(c)	((c)->flgs & F_Prsd)
-#define caf_set_parsed(c)	((c)->flgs |= F_Prsd)
-#define caf_set_peri(c)		((c)->flgs |= F_Peri)
-#define invk_is_resolved(i)	((i)->flgs & F_Rslvd)
-#define invk_set_resolved(i)	((i)->flgs |= F_Rslvd)
+#define caf_is_peri(c)          ((c)->flgs & F_Peri)
+#define caf_is_parsed(c)        ((c)->flgs & F_Prsd)
+#define caf_set_parsed(c)       ((c)->flgs |= F_Prsd)
+#define caf_set_peri(c)         ((c)->flgs |= F_Peri)
+#define invk_is_resolved(i)     ((i)->flgs & F_Rslvd)
+#define invk_set_resolved(i)    ((i)->flgs |= F_Rslvd)
 
 struct imp { /* import target */
    char * name;
@@ -148,9 +148,7 @@ static int resolve_invks(struct caf *, struct prc *);
 
 extern
 int
-ca_apply_add(fname, node)
-   char * fname;
-   struct node * node;
+ca_apply_add(char * fname, struct node * node)
 {
    char * id;
    struct node * n;
@@ -212,10 +210,8 @@ ca_dbg_dump(void)
 
 extern
 int
-ca_init(fname, argc, argv)
-   char * fname;
-   int argc;
-   char ** argv; /* argv to iconc */
+ca_init(char * fname, int argc, 
+        char ** argv) /* argv to iconc */
 {
    int i;
    int len;
@@ -259,7 +255,7 @@ ca_init(fname, argc, argv)
     */
    for (;;) {
       if (fgets(buf_, MaxLineLen, f) == NULL) {
-         printf("ca-init: premature eof?\n"); 
+         printf("ca-init: premature eof?\n");
          break;
          }
       switch (*buf_) {
@@ -318,9 +314,7 @@ ca_init(fname, argc, argv)
 
 extern
 int
-ca_invk_add(fname, node)
-   char * fname;
-   struct node * node;
+ca_invk_add(char * fname, struct node * node)
 {
    char * id;
    struct node * n;
@@ -328,7 +322,7 @@ ca_invk_add(fname, node)
    struct prc * prc;
    struct invk * invk;
    extern struct pentry * proc_lst;
- 
+
    id = 0;
    n = node->n_field[1].n_ptr;
    switch (n->n_type) {
@@ -355,8 +349,7 @@ ca_invk_add(fname, node)
 
 extern
 int
-ca_mark_parsed(fname)
-   char * fname;
+ca_mark_parsed(char * fname)
 {
    struct caf * caf;
 
@@ -365,7 +358,7 @@ ca_mark_parsed(fname)
       return -1;
       }
    caf_set_parsed(caf);
-   return 0; 
+   return 0;
 }
 
 int looking_for_main;
@@ -397,8 +390,7 @@ ca_resolve(void)
 
 static
 void
-bndl_free(bndl)
-   struct bndl * bndl;
+bndl_free(struct bndl * bndl)
 {
    struct cls * cls;
 
@@ -414,8 +406,7 @@ bndl_free(bndl)
 
 static
 struct bndl *
-bndl_get(name)
-   char * name;
+bndl_get(char * name)
 {
    struct bndl * bndl;
 
@@ -428,8 +419,7 @@ bndl_get(name)
 
 static
 void
-caf_free(caf)
-   struct caf * caf;
+caf_free(struct caf * caf)
 {
    struct imp * imp;
    struct lnk * lnk;
@@ -469,8 +459,7 @@ caf_free(caf)
 
 static
 struct caf *
-caf_get_by_alias(alias)
-   char * alias;
+caf_get_by_alias(char * alias)
 {
    struct caf * caf;
 
@@ -483,8 +472,7 @@ caf_get_by_alias(alias)
 
 static
 struct caf *
-caf_get_by_name(fname)
-   char * fname;
+caf_get_by_name(char * fname)
 {
    struct caf * caf;
 
@@ -514,9 +502,7 @@ caf_get_class(name, caf)
 
 static
 struct prc *
-caf_get_prc(caf, name)
-   struct caf * caf;
-   char * name;
+caf_get_prc(struct caf * caf, char * name)
 {
    struct prc * prc;
 
@@ -529,8 +515,7 @@ caf_get_prc(caf, name)
 
 static
 int
-caf_has_posix_rec_defs(caf)
-   struct caf * caf;
+caf_has_posix_rec_defs(struct caf * caf)
 {
    int len;
    char * p;
@@ -544,9 +529,7 @@ caf_has_posix_rec_defs(caf)
 
 static
 void
-caf_parse(caf, sym)
-   struct caf * caf;
-   char * sym;
+caf_parse(struct caf * caf, char * sym)
 {
    if (!caf_is_parsed(caf)) {
       parse(caf->fname, sym);
@@ -575,8 +558,7 @@ cleanup(void)
 
 static
 void
-cls_free(cls)
-   struct cls * cls;
+cls_free(struct cls * cls)
 {
    struct mthd * mthd;
    struct member * mbr;
@@ -645,9 +627,9 @@ is_ctor(name)
    char * name;
 {
    char buf[256];
-   
+
    strcpy(buf, name);
-   strcat(buf, "__mdw_inst_mdw");
+   strcat(buf, "__state");
    if (prc_lkup(buf, NULL))
       return name;
    return 0;
@@ -663,8 +645,7 @@ is_ctor(name)
  */
 static
 int
-is_rtl_func(name)
-   char * name;
+is_rtl_func(char * name)
 {
    int i;
    struct implement * impl;
@@ -706,8 +687,7 @@ name_get_pkgspec(name)
  */
 static
 unsigned
-name_hash(name)
-   char * name;
+name_hash(char * name)
 {
    unsigned h;
 
@@ -721,9 +701,7 @@ name_hash(name)
 
 static
 void
-parse(fname, symname)
-   char * fname;
-   char * symname;
+parse(char * fname, char * symname)
 {
    extern void trans1(char *);
    /*fprintf(stderr, "Parsing %s to resolve symbol %s\n", fname, symname);*/
@@ -747,9 +725,7 @@ posix_recs_init(void)
 
 static
 void
-prc_add_invk(prc, invk)
-   struct prc * prc;
-   struct invk * invk;
+prc_add_invk(struct prc * prc, struct invk * invk)
 {
    struct invk * tmp;
 
@@ -765,8 +741,7 @@ prc_add_invk(prc, invk)
 
 static
 void
-prc_free(prc)
-   struct prc * prc;
+prc_free(struct prc * prc)
 {
    struct invk * invk;
 
@@ -783,9 +758,7 @@ prc_free(prc)
  */
 static
 struct prc *
-prc_lkup(name, pcaf)
-   char *name;
-   struct caf ** pcaf;
+prc_lkup(char *name, struct caf ** pcaf)
 {
    unsigned h;
    struct bkt * bkt;
@@ -796,7 +769,7 @@ prc_lkup(name, pcaf)
       if (strcmp(name, bkt->prc->name) == 0)
          break;
       bkt = bkt->next;
-      }   
+      }
    if (bkt && pcaf)
       *pcaf = bkt->caf;
    return bkt ? bkt->prc : NULL;
@@ -804,8 +777,7 @@ prc_lkup(name, pcaf)
 
 static
 void
-read_bndl_class(f)
-   void * f;
+read_bndl_class(void * f)
 {
    int len;
    char * p;
@@ -887,9 +859,9 @@ next_member:
    /* read class methods */
    for (;;) {
       if (fgets(buf_, MaxLineLen, f) == NULL) {
-	 fprintf(stderr, "fgets fail#3 in read_bndl_class\n");
-	 exit(1);
-	 }
+         fprintf(stderr, "fgets fail#3 in read_bndl_class\n");
+         exit(1);
+         }
       len = strlen(buf_);
       buf_[len-1] = 0; /* clobber cr */
       if (strcmp(buf_, "end") == 0)
@@ -934,7 +906,7 @@ read_caf_class(void)
    int len;
    char * p;
    struct cls * cls;
- 
+
    /* read the name of a class defined in the current caf */
    for (p=buf_; *p && *p != ':'; p++)
       ;
@@ -956,7 +928,7 @@ read_caf_import(void)
    struct imp * imp;
 
    /* read an import of the cur caf */
-   imp = alloc(sizeof(struct imp));         
+   imp = alloc(sizeof(struct imp));
    for (p=buf_; *p && *p != ':'; p++)
       ;
    len = strlen(++p);
@@ -996,17 +968,17 @@ read_caf_name(void)
    char * q;
    struct caf * caf;
 
-   /* read a caf's fname */ 
+   /* read a caf's fname */
    caf = alloc(sizeof(struct caf));
    for (p=buf_; *p && *p != ':'; p++)
       ;
    for(q=++p; *q && *q != ' '; q++)
       ;
-   len = q - p; 
+   len = q - p;
    caf->fname = alloc(sizeof(char) * (len + 1));
    strncpy(caf->fname, p, len);
    caf->fname[len] = 0;
-   /* read a caf's alias */ 
+   /* read a caf's alias */
    while (*q == ' ')
       q++;
    len = strlen(q);
@@ -1014,13 +986,13 @@ read_caf_name(void)
    strcpy(caf->alias, q);
    caf->alias[len - 1] = 0; /* clobber cr */
 
-   /* init rest of caf */ 
+   /* init rest of caf */
    caf->flgs = 0;
    caf->lnks = NULL;
    caf->imps = NULL;
    caf->prcs = NULL;
    caf->clss = NULL;
-   /* enqueue the caf */ 
+   /* enqueue the caf */
    caf->next = cafs;
    cafs = caf;
 }
@@ -1071,7 +1043,7 @@ read_caf_proc(void)
    bkt->caf = cafs;
    h = name_hash(prc->name);
    bkt->next = htbl[h];
-   htbl[h] = bkt; 
+   htbl[h] = bkt;
 }
 
 static
@@ -1120,12 +1092,8 @@ report_stats(void)
 
 static
 int
-resolve_invk(caf, prc, invk, cafs, prcs)
-   struct caf * caf;
-   struct prc * prc;
-   struct invk * invk;
-   struct caf * cafs[];
-   struct prc * prcs[];
+resolve_invk(struct caf * caf, struct prc * prc, struct invk * invk,
+             struct caf * cafs[], struct prc * prcs[])
 {
    int n;
    char buf[256];
@@ -1161,7 +1129,7 @@ resolve_invk(caf, prc, invk, cafs, prcs)
    for (cls=caf->clss; cls; cls=cls->next) {
       sprintf(buf, "%s_%s", cls->name, invk->name);
       /*printf("  mthd: %s\n", buf);*/
-      prcs[n] = prc_lkup(buf, &cafs[n]); 
+      prcs[n] = prc_lkup(buf, &cafs[n]);
       if (prcs[n]) {
          /*printf("    matched\n");*/
          caf_parse(cafs[n], buf);
@@ -1213,15 +1181,13 @@ resolve_gui_syms(void)
 
 static
 int
-resolve_invks(caf, prc)
-   struct caf * caf;
-   struct prc * prc;
+resolve_invks(struct caf * caf, struct prc * prc)
 {
    int i, n;
    struct invk * invk;
    struct caf * cafs[32];
    struct prc * prcs[32];
-   
+
    for (invk=prc->invks; invk; invk=invk->next) {
       if (invk_is_resolved(invk))
          continue;

@@ -48,7 +48,7 @@ class DialogPreferences : Dialog(
          pos_x := tab(find(","))
          =","
          pos_y := tab(many('-0123456789'))
-	 }
+         }
       if /pos_x | pos_x < 0 then pos_x := 0
       if /pos_y | pos_y < 0 then pos_y := 0
       position := pos_x||","||pos_y
@@ -62,7 +62,7 @@ class DialogPreferences : Dialog(
                delete(l, i)
             else
                i +:= 1
-	    }
+            }
          self.set_attribs("pos=" || position)
       }
    end
@@ -73,7 +73,7 @@ class DialogPreferences : Dialog(
       update()
       set_focus(list_bg_color)
    end
-   
+
    method end_dialog()
       vbc:=stc:=mtc:=ltc:=thc:=etc:=lhc:=dtc:=chc:=ctc:=gtc:=ptc:=qtc:=&null
    end
@@ -87,17 +87,17 @@ class DialogPreferences : Dialog(
       temp_val_background_color := list_bg_color.get_string_selection()
       update()
    end
-   
+
    method on_list_syntax_color(ev)
       temp_syntax_text_color := list_syntax_color.get_string_selection()
       update()
    end
-   
+
    method on_list_comment_color(ev)
       temp_comment_text_color := list_comment_color.get_string_selection()
       update()
    end
-   
+
    method on_list_linenumber_color(ev)
       temp_linenumber_text_color := list_linenumber_color.get_string_selection()
       update()
@@ -115,7 +115,7 @@ class DialogPreferences : Dialog(
 
    method update()
       local i, l
-            
+
       l := sample_box.attribs
       i := 1
       if \temp_val_background_color then {
@@ -136,14 +136,14 @@ class DialogPreferences : Dialog(
             cursor_text_color := "black"
             }
          else
-            val_background_color := "white"            
+            val_background_color := "white"
          linenumber_highlight_color := val_background_color
          while i <= *l do {
             if match("bg=", l[i]) then
                delete(l, i)
             else
                i +:= 1
-	    }
+            }
          sample_box.set_attribs("bg="||val_background_color)
          WAttrib(\ (sample_box.cbwin), "bg="||val_background_color)
          WAttrib(\ (sample_box.view.cbwin), "bg="||val_background_color)
@@ -203,7 +203,7 @@ class DialogPreferences : Dialog(
 
    method check_box_syntax_highlighting_on(ev)
    end
-   
+
    method on_text_button_ok(ev)
       exit_with_saving()
    end
@@ -217,7 +217,7 @@ class DialogPreferences : Dialog(
       syntax_check_box_state:=check_box_syntax_highlighting_on.is_checked_flag
       dispose()
    end
-   
+
    method exit_without_saving()
       local i, l
       if \vbc then {
@@ -229,23 +229,23 @@ class DialogPreferences : Dialog(
                delete(l, i)
             else
                i +:= 1
-	    }
+            }
          sample_box.set_attribs("bg="||val_background_color)
          WAttrib(\ (sample_box.cbwin), "bg="||val_background_color)
          WAttrib(\ (sample_box.view.cbwin), "bg="||val_background_color)
          sample_box.display()
          }
-      default_text_color := \dtc 
+      default_text_color := \dtc
       cursor_highlight_color := \chc
-      cursor_text_color := \ctc 
+      cursor_text_color := \ctc
       syntax_text_color := \stc
-      linenumber_highlight_color := \lhc 
-      glob_text_color := \gtc 
-      procedure_text_color := \ptc 
+      linenumber_highlight_color := \lhc
+      glob_text_color := \gtc
+      procedure_text_color := \ptc
       quote_text_color := \qtc
-      comment_text_color := \mtc 
-      linenumber_text_color := \ltc 
-      text_highlight_color := \thc 
+      comment_text_color := \mtc
+      linenumber_text_color := \ltc
+      text_highlight_color := \thc
       error_text_color := \etc
       check_box_paren_on.is_checked_flag:=paren_check_box_state
       check_box_syntax_highlighting_on.is_checked_flag:=syntax_check_box_state
@@ -254,7 +254,7 @@ class DialogPreferences : Dialog(
 
    method initialize_values()
       if /position then position := "0,0"
-      
+
       if /val_background_color then {
          val_background_color := "white"
          linenumber_highlight_color := "white"
@@ -277,7 +277,7 @@ class DialogPreferences : Dialog(
       if /error_text_color then
          error_text_color := "red"
    end
-   
+
    method setup()
       self.set_attribs("size=640,200", "pos="||position)
 
@@ -287,9 +287,9 @@ class DialogPreferences : Dialog(
       sample_box.set_size("75%", "75%-4")
       sample_box.set_contents(["# Sample Code w/ Error",
                                "procedure main()", "   local c",
-			       "   c:=Hello()", "end", "",
-			       "class Hello ()",
-			       "   write(\"Hello World\")", "end"])
+                               "   c:=Hello()", "end", "",
+                               "class Hello ()",
+                               "   write(\"Hello World\")", "end"])
 
       list_bg_color := List()
       list_bg_color.set_pos(25, 25)
@@ -301,22 +301,22 @@ class DialogPreferences : Dialog(
       list_syntax_color.set_pos(125, 25)
       list_syntax_color.set_size("100")
       list_syntax_color.connect(self, "on_list_syntax_color",
-				SELECTION_CHANGED_EVENT)
+                                SELECTION_CHANGED_EVENT)
       list_syntax_color.set_selection_list(["light-colors", "dark-colors",
-					    "bright-colors"])
-      
+                                            "bright-colors"])
+
       list_comment_color := List()
       list_comment_color.set_pos(225, 25)
       list_comment_color.set_size("100")
       list_comment_color.connect(self, "on_list_comment_color",
-				 SELECTION_CHANGED_EVENT)
+                                 SELECTION_CHANGED_EVENT)
       list_comment_color.set_selection_list(["blue", "red", "green"])
 
       list_linenumber_color := List()
       list_linenumber_color.set_pos(325, 25)
       list_linenumber_color.set_size("100")
       list_linenumber_color.connect(self, "on_list_linenumber_color",
-				    SELECTION_CHANGED_EVENT)
+                                    SELECTION_CHANGED_EVENT)
       list_linenumber_color.set_selection_list(["grey","black","white","brown",
                                                 "dark-yellow", "yellow"])
 
@@ -324,17 +324,17 @@ class DialogPreferences : Dialog(
       list_highlight_color.set_pos(425, 25)
       list_highlight_color.set_size("100")
       list_highlight_color.connect(self, "on_list_highlight_color",
-				   SELECTION_CHANGED_EVENT)
+                                   SELECTION_CHANGED_EVENT)
       list_highlight_color.set_selection_list(["light-grey", "white-grey",
-					       "yellow"])
+                                               "yellow"])
 
       list_error_color := List()
       list_error_color.set_pos(525, 25)
       list_error_color.set_size("100")
       list_error_color.connect(self, "on_list_error_color",
-			       SELECTION_CHANGED_EVENT)
+                               SELECTION_CHANGED_EVENT)
       list_error_color.set_selection_list(["red", "dark-red", "pink"])
-      
+
       label_background_color := Label()
       label_background_color.set_pos("35", "10")
       label_background_color.set_internal_alignment("l")
@@ -344,7 +344,7 @@ class DialogPreferences : Dialog(
       label_syntax_color.set_pos("135", "10")
       label_syntax_color.set_internal_alignment("l")
       label_syntax_color.set_label("Syntax:")
-      
+
       label_comment_color := Label()
       label_comment_color.set_pos("235", "10")
       label_comment_color.set_internal_alignment("l")
@@ -392,16 +392,16 @@ class DialogPreferences : Dialog(
       label_syntax_highlighting2.set_pos("530", "132")
       label_syntax_highlighting2.set_internal_alignment("l")
       label_syntax_highlighting2.set_label("Highlighting:")
-      
+
       check_box_syntax_highlighting_on := CheckBox()
       check_box_syntax_highlighting_on.set_pos("555", "146")
       check_box_syntax_highlighting_on.connect(self,
-			      "check_box_syntax_highlighting_on", ACTION_EVENT)
+                              "check_box_syntax_highlighting_on", ACTION_EVENT)
       check_box_syntax_highlighting_on.set_toggles()
       if \syntax_check_box_state = 1 then
          check_box_syntax_highlighting_on.set_is_checked()
       check_box_syntax_highlighting_on.set_label("On")
-      
+
       text_button_ok := TextButton()
       text_button_ok.set_pos(595, 170)
       text_button_ok.connect(self, "on_text_button_ok", BUTTON_RELEASE_EVENT)
@@ -411,10 +411,10 @@ class DialogPreferences : Dialog(
       text_button_cancel := TextButton()
       text_button_cancel.set_pos(535, 170)
       text_button_cancel.connect(self, "on_text_button_cancel",
-				 BUTTON_RELEASE_EVENT)
+                                 BUTTON_RELEASE_EVENT)
       text_button_cancel.set_internal_alignment("c")
       text_button_cancel.set_label("Cancel")
-      
+
       self.add(sample_box)
       self.add(list_bg_color)
       self.add(list_syntax_color)

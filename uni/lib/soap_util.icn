@@ -12,7 +12,7 @@
 
 package soap
 
-import util	    # does it use this, or just lang::
+import util         # does it use this, or just lang::
 import xml          # From Robert Parlett's class library
 
 #<p>
@@ -65,8 +65,8 @@ procedure getNonWSChildren(x)
 
    every e := !x.get_children() do {
       if ::type(e) ~== "string" then {
-	 ::put(a, e)
-	 }
+         ::put(a, e)
+         }
       }
    return a
 end
@@ -94,13 +94,13 @@ procedure encode(x,                     # Message element
    else if lang::istype(x, "table"|"record") then {
       s := "\n"||prefix||"<"||label||">\n"
       every k := ::key(x) do {
-	 s ||:= prefix||"  "||encode(x[k], prefix,i,k)||"\n"
-	 }
+         s ||:= prefix||"  "||encode(x[k], prefix,i,k)||"\n"
+         }
       s ||:= prefix||"</"||label||">\n"
       }
    else if lang::istype(x, "list") then {
       s := "\n"||prefix||"<"||label||" xsi:type=\"SOAP-ENC:Array\" "||
-	   " SOAP-ENC:arrayType=\"xsd:ur-type["||*x||"]\">\n"
+           " SOAP-ENC:arrayType=\"xsd:ur-type["||*x||"]\">\n"
       every s ||:= encode(!x, prefix||"  ", i) || "\n"
       s ||:= prefix||"</"||label||">\n"
       }
@@ -140,16 +140,16 @@ procedure decode(x)
       "integer" : return ::integer(x.get_children()[1])
       "null"    : return &null
       "list"    : {
-	 every ::put(a := [], decode(!getNonWSChildren(x)))
-	 return a
-	 }
+         every ::put(a := [], decode(!getNonWSChildren(x)))
+         return a
+         }
       "table"   : {
-	 a := ::table()
-	 every child := !getNonWSChildren(x) do {
-	    a[child.get_name()] := decode(child)
-	    }
-	 return a
-	 }
+         a := ::table()
+         every child := !getNonWSChildren(x) do {
+            a[child.get_name()] := decode(child)
+            }
+         return a
+         }
       }
    return x[1]
 end
@@ -176,15 +176,15 @@ procedure getElementType(x)
    a := x.get_attributes()
    every k := ::key(a) do {
       k ? {
-	 &pos := ::upto(':')+1                     # skip any namespace id
-	 if ="type" & ::pos(0) then {
-	    a[k] ? {
-	       &pos := ::any('\'"')
-	       &pos := ::upto(':')+1             # skip any namespace id
-	       return typeMap[::map(::tab(::upto('\'"')|0))]
-	       }
-	    }
-	 }
+         &pos := ::upto(':')+1                     # skip any namespace id
+         if ="type" & ::pos(0) then {
+            a[k] ? {
+               &pos := ::any('\'"')
+               &pos := ::upto(':')+1             # skip any namespace id
+               return typeMap[::map(::tab(::upto('\'"')|0))]
+               }
+            }
+         }
       }
    return "table"                # wild guess!
 end
@@ -224,9 +224,9 @@ class ErrHandler : xml::DefaultErrorHandler (out_file)
    method fatal_error(msg:"", stack)
       ::writes(\out_file, "Fatal error: " || msg)
       if \stack then {
-	 ::write(\out_file, " at:")
-	 show_stack(stack)
-	 }
+         ::write(\out_file, " at:")
+         show_stack(stack)
+         }
    end
 
    #<p>
@@ -252,13 +252,13 @@ class ErrHandler : xml::DefaultErrorHandler (out_file)
       local x, i, t
 
       every x := !stack do {
-	 if \x.id then {
-	    t := x.subject[1:x.pos]
-	    i := 1
-	    every ::find("\n", t) do i +:= 1
-	    ::write(\out_file, x.id || ": "||i)
-	    }
-	 }
+         if \x.id then {
+            t := x.subject[1:x.pos]
+            i := 1
+            every ::find("\n", t) do i +:= 1
+            ::write(\out_file, x.id || ": "||i)
+            }
+         }
     end
 
 initially ()

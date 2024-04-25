@@ -1,12 +1,12 @@
 ###########################################################################
 #
-#	File:     wu.icn
+#       File:     wu.icn
 #
-#	Subject:  Program environment for Windows Unicon
+#       Subject:  Program environment for Windows Unicon
 #
-#	Author:   Clinton L. Jeffery
+#       Author:   Clinton L. Jeffery
 #
-#	Date:     June 12, 2000
+#       Date:     June 12, 2000
 #
 ############################################################################
 #
@@ -14,10 +14,10 @@
 #  It is gradually gaining features and usability.
 #
 #  To do:
-#	keyboard shortcuts
-#	multiple edit regions. Also, edit regions > Windows' 32K limit.
-#	UNIX port, or equivalent
-#	
+#       keyboard shortcuts
+#       multiple edit regions. Also, edit regions > Windows' 32K limit.
+#       UNIX port, or equivalent
+#
 ############################################################################
 #
 #  Requires:  Version 9 graphics, MS Windows extensions
@@ -32,21 +32,21 @@
 link graphics, io
 
 global menu,
-	current_file,
-	project,
-	icodename,
-	xargs,
-	targs,
-	height,
-	width,
-	font,
-	fontheight,
-	msglines,
-	linebreak,
-	findstr,
-	findpos,
-	wiconlog,
-	wi_ini
+        current_file,
+        project,
+        icodename,
+        xargs,
+        targs,
+        height,
+        width,
+        font,
+        fontheight,
+        msglines,
+        linebreak,
+        findstr,
+        findpos,
+        wiconlog,
+        wi_ini
 
 #
 # appendmessage(s) - add message to end of message window contents
@@ -57,7 +57,7 @@ procedure appendmessage(s, nonl)
    if /nonl then nonl := "\r\n" else nonl := ""
    WinEditRegion("messagewin", s2 || nonl || s, 0, height - (fontheight * (msglines + 2)))
    WinEditRegion("editregion", &null, 0, 0,
-	       width, height - (fontheight * (msglines + 2)))
+               width, height - (fontheight * (msglines + 2)))
 end
 
 #
@@ -95,22 +95,22 @@ procedure complink()
       while menu[1][i] ~== "E&xit" do i +:= 1
       i +:= 1
       while menu[1][i] do {
-	 arglist ||:= comp1file(menu[1][i])
-	 arglist ||:= " "
-	 i +:= 1
-	 }
+         arglist ||:= comp1file(menu[1][i])
+         arglist ||:= " "
+         i +:= 1
+         }
       if find(".icn", arglist) then {
-	 system("wiconx unicon -quiet -log " || wiconlog || " -c " || targs || " " || arglist, log)
+         system("wiconx unicon -quiet -log " || wiconlog || " -c " || targs || " " || arglist, log)
 
-	 every 1 to 5 do {
-	     if f := open(wiconlog) then {
-		 close(f)
-		 log := readin(wiconlog)
-		 if showanyerror(log) then fail
-		 break
-	     }
-	     delay(1000)
-	 }
+         every 1 to 5 do {
+             if f := open(wiconlog) then {
+                 close(f)
+                 log := readin(wiconlog)
+                 if showanyerror(log) then fail
+                 break
+             }
+             delay(1000)
+         }
      }
 
       # build a list of all the files to be linked together
@@ -119,13 +119,13 @@ procedure complink()
       while menu[1][i] ~== "E&xit" do i +:= 1
       i +:= 1
       while menu[1][i] do {
-	 s := menu[1][i]
+         s := menu[1][i]
          s[find(".icn", map(s)) : 0] := ".u"
-	 if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
-	 arglist ||:= s
-	 arglist ||:= " "
-	 i +:= 1
-	 }
+         if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
+         arglist ||:= s
+         arglist ||:= " "
+         i +:= 1
+         }
       }
 
       system("wiconx unicon -quiet -log " || wiconlog || " -o " || quotes(icodename) || " " || targs || " " || arglist, log)
@@ -140,7 +140,7 @@ end
 procedure defextension(s)
    s ? {
       if tab(find(".")+1) & (tab(many(&letters++&digits))|"") & pos(0) then
-	 return s
+         return s
       else return s ||:= ".icn"
    }
 end
@@ -153,8 +153,8 @@ procedure findstring(s, i)
    s2 := WinEditRegion("editregion")
    s2 ? {
       if findpos := find(s, , i + 1) then {
-	 WinEditRegion("editregion", "!setsel", findpos, findpos + *s)
-	 }
+         WinEditRegion("editregion", "!setsel", findpos, findpos + *s)
+         }
       }
 end
 
@@ -162,8 +162,8 @@ procedure gotoline(i)
    s2 := WinEditRegion("editregion")
    s2 ? {
       every i := 1 to i - 1 do {
-	 tab(find("\n")+1) | fail
-	 }
+         tab(find("\n")+1) | fail
+         }
       j := &pos
       tab(find("\n")+1) | fail
       WinEditRegion("editregion", "!setsel", j, &pos)
@@ -182,35 +182,35 @@ procedure main(av)
       pop(av)
       }
    &window := open("Wu","g", "size="||width||","||height, "font="||font,
-	"resize=on")
+        "resize=on")
    fontheight := WAttrib("fheight")
    menu := [
-	["&File", "&New", "&Open...", "&Print", "&Save", "Save &As...", "&IVIB", "E&xit"],
-	["&Edit", "C&opy", "&Cut", "&Paste", "&Select All",
-	 "&Find...", "Find &Next", "&Replace...", "&Goto line...",
-	 "&Match parentheses",
-	 "&Undo" # , "Show &Next Error" # not yet
-	 ],
-	["&Options", "&Message window size...", "&Font...",
-	 "Use &DOS (CR-LF) line breaks when saving",
-	 "Use &UNIX (LF) newlines when saving",
-	 "&Save options"],
-	["&Compile", "&Make (compile + link) executable",
-	 "&Compile only",
-	# "Make &Everything",
-	 "&Graphics (Win32) binary (= -G)",
-	 "&NT (console mode) binary",
-	 "Compiler &Options..."],
-	["&Run", "&Run", "&Arguments..."],
-	["&Help", "&Wu Programming Environment",
-		"Icon &Tutorial Overview",
-		"Icon &Language Reference",
-	 	"I&dol Reference",
-		"Icon &Graphics Facilities Reference",
-		"Icon &Program Library Reference",
-		"&Visual Interface Builder Reference",
-		"&Frequently Asked Questions",
-		"&About..."]]
+        ["&File", "&New", "&Open...", "&Print", "&Save", "Save &As...", "&IVIB", "E&xit"],
+        ["&Edit", "C&opy", "&Cut", "&Paste", "&Select All",
+         "&Find...", "Find &Next", "&Replace...", "&Goto line...",
+         "&Match parentheses",
+         "&Undo" # , "Show &Next Error" # not yet
+         ],
+        ["&Options", "&Message window size...", "&Font...",
+         "Use &DOS (CR-LF) line breaks when saving",
+         "Use &UNIX (LF) newlines when saving",
+         "&Save options"],
+        ["&Compile", "&Make (compile + link) executable",
+         "&Compile only",
+        # "Make &Everything",
+         "&Graphics (Win32) binary (= -G)",
+         "&NT (console mode) binary",
+         "Compiler &Options..."],
+        ["&Run", "&Run", "&Arguments..."],
+        ["&Help", "&Wu Programming Environment",
+                "Icon &Tutorial Overview",
+                "Icon &Language Reference",
+                "I&dol Reference",
+                "Icon &Graphics Facilities Reference",
+                "Icon &Program Library Reference",
+                "&Visual Interface Builder Reference",
+                "&Frequently Asked Questions",
+                "&About..."]]
    WinMenuBar ! menu | stop("wi: menu bar failed")
    WinEditRegion("messagewin", "", 0, height - (fontheight * (msglines + 2)))
    if av[1] then openfile(av[1])
@@ -221,167 +221,167 @@ end
 procedure mainloop()
    while e := Event() do
       case e of {
-	 "&Find...": {
-	    if TextDialog("Enter string to seek: ",,xargs,60)=="Okay" then {
-		findstr := dialog_value[1]
-		findstring(findstr)
-		}
-	    }
-	 "Find &Next": {
-	    findstring(\findstr, findpos)
-	    }
-	 "&Replace...": {
-	    if TextDialog("Replace what with what: ",,
-		[(\findstr | ""),""],60)=="Okay" then {
-		wu_replace(dialog_value[1], dialog_value[2])
-		}
-	    }
-	 "&Arguments...": {
-	    if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then
-		xargs := dialog_value[1]
-		}
-	 "Compiler &Options...": {
-	    if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
-		targs := dialog_value[1]
-		}
-	 "&Message window size...": {
-	    if TextDialog("Enter # of lines for the message window: ",,msglines,60)=="Okay" then {
-	       msglines := dialog_value[1]
-	       resize()
-	       }
-	   }
-	 "Use &DOS (CR-LF) line breaks when saving": {
-	    linebreak := "CRLF"
-	    }
-	 "Use &UNIX (LF) newlines when saving": {
-	    linebreak := "LF"
-	    }
-	 "&Font..." : {
-	    /font := Font()
-	    if font := WinFontDialog(font) then {
-	       Font(font)
-	       fontheight := WAttrib("fheight")
-	       WinEditRegion("messagewin", "!font=" || font)
-	       WinEditRegion("editregion", "!font=" || font)
-	       }
-	    }
-	"&Save options": {
-	   wi_saveoptions()
-	   }
-	"C&opy" : {
-	   WinEditRegion("editregion", "!copy", 0, 0,
-		      width, height - (fontheight * (msglines + 2)))
-	   }
-	"&Cut" : {
-	   WinEditRegion("editregion", "!cut", 0, 0,
-		      width, height - (fontheight * (msglines + 2)))
-	   }
-	"&Paste" : {
-	   WinEditRegion("editregion", "!paste", 0, 0,
-		      width, height - (fontheight * (msglines + 2)))
-	   }
-	"&Goto line..." : {
-	   if TextDialog("What line shall we go to?",,"",6)=="Okay" then {
-	      gotoline(integer(dialog_value[1]))
-	      }
-	   }
-	"&Match parentheses" : {
-	    i := WinEditRegion("editregion","!getsel",0,0,
-		      width, height - (fontheight * (msglines + 2))) |
-		stop("can't get selection")
-	    message("i " || image(i))
-	    s := WinEditRegion("editregion") || " "
-	    if s[i] == ( "(" | "{" | "[" ) then {
-		every j := (bal(,s[i],map(s[i],"({[",")}]"),s,i) \ 2)
-		if j > i then WinEditRegion("editregion","!setsel",i,j)
-	        }
-	    else if s[i-1] == (")"|"}"|"]") then {
-		every j := (bal(,s[i-1],map(s[i-1],")}]","({["),
-				reverse(s[1:i])||" ") \ 2)
-		if j > 1 then WinEditRegion("editregion","!setsel",i-(j-1),i)
-	        }
-	   }
-	"&Undo" : {
-	   WinEditRegion("editregion", "!undo", 0, 0,
-		      width, height - (fontheight * (msglines + 2)))
-	   }
-	"&Select All" : {
-	   WinEditRegion("editregion", "!setsel", 1, 0)
-	   }
-	"&New": {
-	   openfile("noname.icn")
-	   WinEditRegion("editregion", "", 0, 0, width, height-(fontheight * (msglines + 2)))
-	   message("creating new file")
-	   }
-	"&Open..." : {
-	   openfile()
-	   }
-	"&Print" : {
-	   printfile()
-	   }
-	"&Save" : {
-	   save()
-	   }
-	"Save &As..." : {
-	   saveas()
-	   }
-	"&Compile only": {
-	   save()
-	   compile()
-	   }
-	"&IVIB": {
-	   openfile(current_file)
-	   system("ivib.exe "|| current_file) |
-	       write("system failed")
-	   openfile(current_file)
-	   }
-	"&Make (compile + link) executable": {
-	   save()
-	   complink()
-	   }
-	"&Run": run()
-	"E&xit" : exit(0)
-	"Icon &Language Reference":
-	   system("winhelp iconref.hlp &")
-	"Icon &Graphics Facilities Reference":
-	   system("winhelp gipd.hlp &")
-	"&Wu Programming Environment":
-	   system("winhelp ipd271.hlp &")
-	"Icon &Tutorial Overview":
-	   system("winhelp iconintr.hlp &")
-	"Icon &Program Library Reference":
-	   system("winhelp iplref.hlp &")
-	"&Frequently Asked Questions":
-	   system("winhelp iconfaq.hlp &")
-	"&Visual Interface Builder Reference":
-	   system("winhelp ipd284.hlp &")
-	"&About...": {
-	   Notice("Windows " || &version,
-		  "Wu version 1.03 BETA",
-		  "Clint Jeffery, jeffery@cs.uidaho.edu",
-		  "Department of Computer Science",
-		  "University of Idaho")
-	   }
-	&resize: {
-	   width := &x
-	   height := &y
-	   resize()
-	   }
-	default: {
-	   if e == !(menu[1]) then { # open file in the current project
-	      openfile(e)
-	      }
-	   else {
-	      appendmessage("dropping extraneous event: " || image(e))
-	      }
-	   }
-	}
+         "&Find...": {
+            if TextDialog("Enter string to seek: ",,xargs,60)=="Okay" then {
+                findstr := dialog_value[1]
+                findstring(findstr)
+                }
+            }
+         "Find &Next": {
+            findstring(\findstr, findpos)
+            }
+         "&Replace...": {
+            if TextDialog("Replace what with what: ",,
+                [(\findstr | ""),""],60)=="Okay" then {
+                wu_replace(dialog_value[1], dialog_value[2])
+                }
+            }
+         "&Arguments...": {
+            if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then
+                xargs := dialog_value[1]
+                }
+         "Compiler &Options...": {
+            if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
+                targs := dialog_value[1]
+                }
+         "&Message window size...": {
+            if TextDialog("Enter # of lines for the message window: ",,msglines,60)=="Okay" then {
+               msglines := dialog_value[1]
+               resize()
+               }
+           }
+         "Use &DOS (CR-LF) line breaks when saving": {
+            linebreak := "CRLF"
+            }
+         "Use &UNIX (LF) newlines when saving": {
+            linebreak := "LF"
+            }
+         "&Font..." : {
+            /font := Font()
+            if font := WinFontDialog(font) then {
+               Font(font)
+               fontheight := WAttrib("fheight")
+               WinEditRegion("messagewin", "!font=" || font)
+               WinEditRegion("editregion", "!font=" || font)
+               }
+            }
+        "&Save options": {
+           wi_saveoptions()
+           }
+        "C&opy" : {
+           WinEditRegion("editregion", "!copy", 0, 0,
+                      width, height - (fontheight * (msglines + 2)))
+           }
+        "&Cut" : {
+           WinEditRegion("editregion", "!cut", 0, 0,
+                      width, height - (fontheight * (msglines + 2)))
+           }
+        "&Paste" : {
+           WinEditRegion("editregion", "!paste", 0, 0,
+                      width, height - (fontheight * (msglines + 2)))
+           }
+        "&Goto line..." : {
+           if TextDialog("What line shall we go to?",,"",6)=="Okay" then {
+              gotoline(integer(dialog_value[1]))
+              }
+           }
+        "&Match parentheses" : {
+            i := WinEditRegion("editregion","!getsel",0,0,
+                      width, height - (fontheight * (msglines + 2))) |
+                stop("can't get selection")
+            message("i " || image(i))
+            s := WinEditRegion("editregion") || " "
+            if s[i] == ( "(" | "{" | "[" ) then {
+                every j := (bal(,s[i],map(s[i],"({[",")}]"),s,i) \ 2)
+                if j > i then WinEditRegion("editregion","!setsel",i,j)
+                }
+            else if s[i-1] == (")"|"}"|"]") then {
+                every j := (bal(,s[i-1],map(s[i-1],")}]","({["),
+                                reverse(s[1:i])||" ") \ 2)
+                if j > 1 then WinEditRegion("editregion","!setsel",i-(j-1),i)
+                }
+           }
+        "&Undo" : {
+           WinEditRegion("editregion", "!undo", 0, 0,
+                      width, height - (fontheight * (msglines + 2)))
+           }
+        "&Select All" : {
+           WinEditRegion("editregion", "!setsel", 1, 0)
+           }
+        "&New": {
+           openfile("noname.icn")
+           WinEditRegion("editregion", "", 0, 0, width, height-(fontheight * (msglines + 2)))
+           message("creating new file")
+           }
+        "&Open..." : {
+           openfile()
+           }
+        "&Print" : {
+           printfile()
+           }
+        "&Save" : {
+           save()
+           }
+        "Save &As..." : {
+           saveas()
+           }
+        "&Compile only": {
+           save()
+           compile()
+           }
+        "&IVIB": {
+           openfile(current_file)
+           system("ivib.exe "|| current_file) |
+               write("system failed")
+           openfile(current_file)
+           }
+        "&Make (compile + link) executable": {
+           save()
+           complink()
+           }
+        "&Run": run()
+        "E&xit" : exit(0)
+        "Icon &Language Reference":
+           system("winhelp iconref.hlp &")
+        "Icon &Graphics Facilities Reference":
+           system("winhelp gipd.hlp &")
+        "&Wu Programming Environment":
+           system("winhelp ipd271.hlp &")
+        "Icon &Tutorial Overview":
+           system("winhelp iconintr.hlp &")
+        "Icon &Program Library Reference":
+           system("winhelp iplref.hlp &")
+        "&Frequently Asked Questions":
+           system("winhelp iconfaq.hlp &")
+        "&Visual Interface Builder Reference":
+           system("winhelp ipd284.hlp &")
+        "&About...": {
+           Notice("Windows " || &version,
+                  "Wu version 1.03 BETA",
+                  "Clint Jeffery, jeffery@cs.uidaho.edu",
+                  "Department of Computer Science",
+                  "University of Idaho")
+           }
+        &resize: {
+           width := &x
+           height := &y
+           resize()
+           }
+        default: {
+           if e == !(menu[1]) then { # open file in the current project
+              openfile(e)
+              }
+           else {
+              appendmessage("dropping extraneous event: " || image(e))
+              }
+           }
+        }
 end
 
 procedure message(s)
    WinEditRegion("messagewin", s, 0, height - (fontheight * (msglines + 2)))
    WinEditRegion("editregion", &null, 0, 0,
-	       width, height - (fontheight * (msglines + 2)))
+               width, height - (fontheight * (msglines + 2)))
 end
 
 procedure monthval(s)
@@ -405,7 +405,7 @@ end
 # is t1 newer than t2?
 procedure newer(s1, s2)
    local month, day, year, hour, minute, second,
-	 month2, day2, year2, hour2, minute2, second2
+         month2, day2, year2, hour2, minute2, second2
 if map(s1|s2) == "util.icn" then Notice("s1 " || s1 || " s2 "||s2)
    t1 := stat(s1).mtime | fail
 if map(s1|s2) == "util.icn" then Notice("s1 " || s1 || " t1 "||t1)
@@ -461,85 +461,85 @@ end
 procedure openfile(s)
    oldfilnam := current_file
    if WinEditRegion("editregion", "!modified", 0, 0,
-		 width, height - (fontheight * (msglines + 2))) then {
+                 width, height - (fontheight * (msglines + 2))) then {
       case SelectDialog(current_file || " is modified, save it?",,,
-		 ["Yes", "Save As", "No", "Cancel"]) of {
-	 "Yes": {
-	    save()
-	    }
-	 "Save As": {
-	    saveas()
-	    }
-	 "Cancel": {
-	    fail
-	    }
-	 }
+                 ["Yes", "Save As", "No", "Cancel"]) of {
+         "Yes": {
+            save()
+            }
+         "Save As": {
+            saveas()
+            }
+         "Cancel": {
+            fail
+            }
+         }
       }
 
    if current_file := (\s | ((OpenDialog("Open Source File", "noname.icn", 50,
       fileextensions()) == "Okay") & \dialog_value)) then {
       if find(".icp", map(current_file)) then { # open project
-	 project := current_file
-	 updateproject()
-	 }
+         project := current_file
+         updateproject()
+         }
       else { # open a source file
-	 current_file := defextension(current_file)
-	 if \project then {
-	    tmps := current_file
-	    # probably should only delete the prefix of the project here
-	    while tmps[1:find("\\",tmps)+1] := ""
-	    if not find(map(tmps), map(!(menu[1]))) then {
-	       # opened file not in project, add it, or switch out
-	       # of project mode?
-	       case SelectDialog(current_file || " is not in the project",,,
-			["Add it", "Open it", "Cancel"]) of {
-	       "Add it": {
-		  f := open(project, "w") |
-		     stop("can't write to project ", project)
-		  put(menu[1], current_file)
-		  i := 1
-		  while menu[1][i] ~== "E&xit" do i +:= 1
-		  i +:= 1
-		  while menu[1][i] do {
-		     write(f, menu[1][i])
-		      i +:= 1
-		     }
-		  close(f)
-		  WinMenuBar ! menu
-		  }
-	       "Open it": {
-		  project := &null
-		  icodename := current_file
-		  icodename[find(".icn"|".ICN", icodename) : 0] := ""
-		  while menu[1][-1] ~== "E&xit" do pull(menu[1])
-		  WinMenuBar ! menu
-		  }
-	       "Cancel": {
-	   current_file := oldfilnam
-	   fail
-	   }
-	}
-	     }
-	 }
+         current_file := defextension(current_file)
+         if \project then {
+            tmps := current_file
+            # probably should only delete the prefix of the project here
+            while tmps[1:find("\\",tmps)+1] := ""
+            if not find(map(tmps), map(!(menu[1]))) then {
+               # opened file not in project, add it, or switch out
+               # of project mode?
+               case SelectDialog(current_file || " is not in the project",,,
+                        ["Add it", "Open it", "Cancel"]) of {
+               "Add it": {
+                  f := open(project, "w") |
+                     stop("can't write to project ", project)
+                  put(menu[1], current_file)
+                  i := 1
+                  while menu[1][i] ~== "E&xit" do i +:= 1
+                  i +:= 1
+                  while menu[1][i] do {
+                     write(f, menu[1][i])
+                      i +:= 1
+                     }
+                  close(f)
+                  WinMenuBar ! menu
+                  }
+               "Open it": {
+                  project := &null
+                  icodename := current_file
+                  icodename[find(".icn"|".ICN", icodename) : 0] := ""
+                  while menu[1][-1] ~== "E&xit" do pull(menu[1])
+                  WinMenuBar ! menu
+                  }
+               "Cancel": {
+           current_file := oldfilnam
+           fail
+           }
+        }
+             }
+         }
       else {
-	 icodename := current_file
+         icodename := current_file
          icodename[find(".icn", map(icodename)) : 0] := ""
-	 }
+         }
       }
       if s := readin(current_file) then {
-	 i := 0
-	 every find("\n", s) do i +:=1
-	 WinEditRegion("editregion", s, 0, 0, width, height - (fontheight * (msglines + 2)))
-	 message("opened " || current_file || ", " || i || " lines, " || *s || " characters")
-	 setlabel()
-	 return
-	 }
+         i := 0
+         every find("\n", s) do i +:=1
+         WinEditRegion("editregion", s, 0, 0, width, height - (fontheight * (msglines + 2)))
+         message("opened " || current_file || ", " || i || " lines, " || *s || " characters")
+         setlabel()
+         return
+         }
       }
    else {
       if /current_file then {
-	 WinEditRegion("editregion", "# wi won't you please open a file?", 0, 0,
-		    width, height - (fontheight * (msglines + 2)))
-	 }
+         WinEditRegion("editregion", "# wi won't you please open a file?", 0, 0,
+                    width, height - (fontheight * (msglines + 2)))
+         }
       }
 end
 
@@ -568,9 +568,9 @@ procedure readin(fname)
    s2 := ""
    s ? {
       while s2 ||:= tab(find("\n")) do {
-	 if s2[*s2] ~== "\r" then s2 ||:= "\r"
-	 s2 ||:= move(1)
-	 }
+         if s2[*s2] ~== "\r" then s2 ||:= "\r"
+         s2 ||:= move(1)
+         }
       s3 := tab(0)
       if *s3 > 0 then s2 ||:= s3
       }
@@ -584,25 +584,25 @@ procedure wu_replace(s1, s2)
    while findpos := find(s1, s3, i + 1) do {
       WinEditRegion("editregion", "!setsel", findpos, findpos + *s1)
       case \yes | SelectDialog("replace "||s1||" with "||s2|| " ?",,,
-		 ["Yes", "Yes to All", "No", "Cancel"]) of {
-	 "Yes": {
-	    s3[findpos : findpos + *s1] := s2
-	    i := findpos + *s2
-	    WinEditRegion("editregion", s3)
-	    }
-	 "Yes to All": {
-	    yes := "Yes to All"
-	    s3[findpos : findpos + *s1] := s2
-	    i := findpos + *s2
-	    WinEditRegion("editregion", s3)
-	    }
-	 "No": {
-	    i := findpos + 1
-	    }
-	 "Cancel": {
-	    fail
-	    }
-	 }
+                 ["Yes", "Yes to All", "No", "Cancel"]) of {
+         "Yes": {
+            s3[findpos : findpos + *s1] := s2
+            i := findpos + *s2
+            WinEditRegion("editregion", s3)
+            }
+         "Yes to All": {
+            yes := "Yes to All"
+            s3[findpos : findpos + *s1] := s2
+            i := findpos + *s2
+            WinEditRegion("editregion", s3)
+            }
+         "No": {
+            i := findpos + 1
+            }
+         "Cancel": {
+            fail
+            }
+         }
       }
 end
 
@@ -611,37 +611,37 @@ procedure resize()
    s2 := WinEditRegion("messagewin")
    WinEditRegion("messagewin", s2, 0, height - (fontheight * (msglines + 2)))
    WinEditRegion("editregion", &null, 0, 0,
-	       width, height - (fontheight * (msglines + 2)))
+               width, height - (fontheight * (msglines + 2)))
 end
 
 procedure run()
    if s := \wiconlog then {
       if system( # "wiconx " ||
-		icodename || " " || xargs) then {
-	 s := readin(s)
-	 showanyerror(s)
-	 }
+                icodename || " " || xargs) then {
+         s := readin(s)
+         showanyerror(s)
+         }
       else {
-	 s := "system(" || # wiconx " ||
-	       icodename || " " || xargs ||
-		") failed.  Is the PATH setup to run this?"
-	 showanyerror(s)
-	 }
+         s := "system(" || # wiconx " ||
+               icodename || " " || xargs ||
+                ") failed.  Is the PATH setup to run this?"
+         showanyerror(s)
+         }
       }
    else {
       if system( # "wiconx " ||
-		icodename || " " || xargs) then {
-	 s := # "wiconx " ||
-	     icodename || " " || xargs || " completed.\r\n" ||
-		"Set your WICONLOG variable for better error support; see Help."
-	 showanyerror(s)
-	 }
+                icodename || " " || xargs) then {
+         s := # "wiconx " ||
+             icodename || " " || xargs || " completed.\r\n" ||
+                "Set your WICONLOG variable for better error support; see Help."
+         showanyerror(s)
+         }
       else {
-	 s := # "wiconx " ||
-	     icodename || " " || xargs || " ... failed.\r\n" ||
-		"Set your WICONLOG variable for better error support; see Help."
-	 showanyerror(s)
-	 }
+         s := # "wiconx " ||
+             icodename || " " || xargs || " ... failed.\r\n" ||
+                "Set your WICONLOG variable for better error support; see Help."
+         showanyerror(s)
+         }
       }
 end
 
@@ -652,25 +652,25 @@ procedure save(evenifnotmodified)
       return
       }
    if \evenifnotmodified | WinEditRegion("editregion", "!modified", 0, 0,
-		 width, height - (fontheight * (msglines + 2))) then {
+                 width, height - (fontheight * (msglines + 2))) then {
       s := WinEditRegion("editregion")
       if linebreak === "LF" then
-	 while s[find("\^m\n", s)] := ""
+         while s[find("\^m\n", s)] := ""
       if file := open(current_file, "wu") then {
-	 writes(file, s)
-	 close(file)
-	 if current_file === project then updateproject()
-	 i := 0
-	 every find("\n", s) do i +:=1
-	 message("saved " || current_file || ", " || i || " lines, " || *s || " characters")
-	 # reset the modified flag in the edit region
-	 WinEditRegion("editregion", "!modified=0", 0, 0,
-	       width, height - (fontheight * (msglines + 2)))
-	 return
-	 }
+         writes(file, s)
+         close(file)
+         if current_file === project then updateproject()
+         i := 0
+         every find("\n", s) do i +:=1
+         message("saved " || current_file || ", " || i || " lines, " || *s || " characters")
+         # reset the modified flag in the edit region
+         WinEditRegion("editregion", "!modified=0", 0, 0,
+               width, height - (fontheight * (msglines + 2)))
+         return
+         }
       else {
-	 Notice("Can't save " || current_file)
-	 }
+         Notice("Can't save " || current_file)
+         }
       }
 end
 
@@ -679,10 +679,10 @@ procedure fileextensions()
    static eL
    initial {
       eL := [
-	"Unicon Sources(*.icn)|*.icn",
-	"Unicon Projects(*.icp)|*.icp",
-	"All Files(*.*)|*.*"
-	]
+        "Unicon Sources(*.icn)|*.icn",
+        "Unicon Projects(*.icp)|*.icp",
+        "All Files(*.*)|*.*"
+        ]
       }
 
    /current_file := "noname.icn"
@@ -699,21 +699,21 @@ procedure saveas()
    if s := WinSaveDialog("Save File As...", ,50, fileextensions()) then {
       s := defextension(s)
       if \project then {
-	 if (not find(s, !menu[1])) & find(".icn"|".u",s) then {
-	    put(menu[1], s)
-	    WinMenuBar ! menu
-	    }
-	 }
+         if (not find(s, !menu[1])) & find(".icn"|".u",s) then {
+            put(menu[1], s)
+            WinMenuBar ! menu
+            }
+         }
       if match(icodename, current_file) then {
-	 icodename := s
+         icodename := s
          icodename[find(".icn", map(icodename)) : 0] := ""
       }
       current_file := s
       save(1)
       if find(".icp", map(current_file)) then { # open project
-	 project := current_file
-	 updateproject()
-	 }
+         project := current_file
+         updateproject()
+         }
       setlabel()
       }
 end
@@ -729,19 +729,19 @@ procedure showanyerror(s)
       s := WinEditRegion("messagewin") || "\r\n" || trim(s, '\r\n \t')
       WinEditRegion("messagewin", s, 0, height - (fontheight * (msglines + 2)))
       s ? {
-	 if tab(find("File ")+5) & fn := tab(find(";")) &
-	    ="; Line " & ln := integer(tab(many(&digits))) then {
-	    if map(fn) ~== map(current_file) then
+         if tab(find("File ")+5) & fn := tab(find(";")) &
+            ="; Line " & ln := integer(tab(many(&digits))) then {
+            if map(fn) ~== map(current_file) then
                if not openfile(fn) then return
-		  else appendmessage(s)
-	    gotoline(ln)
-	    return
-	    }
-	 else
-	    WinEditRegion("editregion", &null, 0, 0,
-		       width, height - (fontheight * (msglines + 2)))
-	 if find("cannot") then return
-	 }
+                  else appendmessage(s)
+            gotoline(ln)
+            return
+            }
+         else
+            WinEditRegion("editregion", &null, 0, 0,
+                       width, height - (fontheight * (msglines + 2)))
+         if find("cannot") then return
+         }
 end
 
 procedure system(s, apnd)
@@ -763,8 +763,8 @@ procedure updateproject()
    icodename[find(".icp", map(icodename)) : 0] := ""
    if f := open(project) then {
       while s := trim(read(f), '\^m') do {
-	 put(menu[1], defextension(s))
-	 }
+         put(menu[1], defextension(s))
+         }
       close(f)
       }
    WinMenuBar ! menu
@@ -774,10 +774,10 @@ procedure wi_saveoptions()
    local f
    if f := open(wi_ini,"w") then {
       write(f, "width=",width,"\n",
-		"height=",height,"\n",
-		"msglines=",msglines,"\n",
-		"font=",font,"\n",
-		"linebreak=",linebreak)
+                "height=",height,"\n",
+                "msglines=",msglines,"\n",
+                "font=",font,"\n",
+                "linebreak=",linebreak)
       }
    else {
       }
@@ -792,29 +792,29 @@ procedure wi_initialize()
    linebreak := "CRLF"
    if f := open(wi_ini) then {
       while line := read(f) do {
-	 line ? {
-	    if ="msglines" then {
-	       tab(upto(&digits))
-	       msglines := integer(tab(many(&digits)))
-	       }
-	    else if ="height" then {
-	       tab(upto(&digits))
-	       height := integer(tab(many(&digits)))
-	       }
-	    else if ="width" then {
-	       tab(upto(&digits))
-	       width := integer(tab(many(&digits)))
-	       }
-	    else if ="font" then {
-	       tab(many('= \t'))
-	       font := tab(0)
-	       }
-	    else if ="linebreak" then {
-	       tab(many('= \t'))
-	       linebreak := tab(0)
-	       }
-	    }
-	 }
+         line ? {
+            if ="msglines" then {
+               tab(upto(&digits))
+               msglines := integer(tab(many(&digits)))
+               }
+            else if ="height" then {
+               tab(upto(&digits))
+               height := integer(tab(many(&digits)))
+               }
+            else if ="width" then {
+               tab(upto(&digits))
+               width := integer(tab(many(&digits)))
+               }
+            else if ="font" then {
+               tab(many('= \t'))
+               font := tab(0)
+               }
+            else if ="linebreak" then {
+               tab(many('= \t'))
+               linebreak := tab(0)
+               }
+            }
+         }
       close(f)
       }
 end

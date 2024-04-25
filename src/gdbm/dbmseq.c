@@ -40,8 +40,7 @@
    information pointer. */
 
 datum
-dbm_firstkey (dbf)
-     gdbm_file_info *dbf;
+dbm_firstkey (gdbm_file_info *dbf)
 {
   datum ret_val;
 
@@ -60,8 +59,7 @@ dbm_firstkey (dbf)
    DBF is the file information pointer. */
 
 datum
-dbm_nextkey (dbf)
-     gdbm_file_info *dbf;
+dbm_nextkey (gdbm_file_info *dbf)
 {
   datum ret_val;
 

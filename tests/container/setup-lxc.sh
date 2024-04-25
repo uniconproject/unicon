@@ -2,7 +2,7 @@
 
 echo ""
 echo "#####################################################"
-echo "Setup LXC Environemt:v 0.5" 
+echo "Setup LXC Environemt:v 0.5"
 echo "July 2018- Jafar Al-Gharaibeh"
 echo ""
 echo "Run this script once to setup the machine with LXC"
@@ -11,7 +11,7 @@ echo "machine. Currently supports only Debian based systems"
 echo "Tested on Ubuntu 16.04/18.04"
 echo ""
 echo "This script was made to run unprivileged "
-echo "containers only, i.e, you don't need to be root to" 
+echo "containers only, i.e, you don't need to be root to"
 echo "run containers. However, parts of this scripts will"
 echo "ask for sudo access for initial setup"
 echo "#####################################################"
@@ -32,7 +32,7 @@ chmod +x $HOME/.local
 chmod +x $LXCCDIR
 
 echo "LXC config dir: $LXCCONFDIR"
-echo "LXC run dir   : $LXCCDIR" 
+echo "LXC run dir   : $LXCCDIR"
 
 IFACE=eth0
 BRDGNAME=lxcbr0
@@ -50,13 +50,13 @@ for i in $pkgs
 do
     dpkg -l $i >& /dev/null
     if [ $? = 1 ]; then
-	echo
-	echo "###############################"
-	echo installing $i
-	sudo apt-get install --yes  $i
-	echo
-	echo +++ done installing $i
-	echo
+        echo
+        echo "###############################"
+        echo installing $i
+        sudo apt-get install --yes  $i
+        echo
+        echo +++ done installing $i
+        echo
     fi
 done
 
@@ -108,7 +108,7 @@ fi
 exit 0
 # on Ubuntu 16.04 and later with LXC 2.0 the following is not needed anymore since
 # a brigde is automatically configured when lxc is installed.
-# This setup or a similar setup might still be needed on other platforms 
+# This setup or a similar setup might still be needed on other platforms
 
 IFACEFILE=/etc/network/interfaces
 
@@ -122,12 +122,12 @@ if [ "$?" -ne "0" ]; then
 # LXC-Config
 auto $BRDGNAME
 iface $BRDGNAME inet static
-	address 10.0.4.2
-	netmask 255.255.255.0
-	bridge_ports $device
-	bridge_stp off
-	bridge_maxwait 5
-	post-up /usr/sbin/brctl setfd $BRDGNAME 0
+        address 10.0.4.2
+        netmask 255.255.255.0
+        bridge_ports $device
+        bridge_stp off
+        bridge_maxwait 5
+        post-up /usr/sbin/brctl setfd $BRDGNAME 0
 EOF
 
 #   sudo /etc/init.d/networking restart

@@ -25,22 +25,22 @@ operator{1} ~ compl(x)
        */
       Protect(cp = alccset(), runerr(0));
       cpx = (struct b_cset *)BlkLoc(x);      /* must come after alccset() */
-      for (i = 0; i < CsetSize; i++) 
+      for (i = 0; i < CsetSize; i++)
           cp->bits[i] = ~cpx->bits[i];
       return cset(cp);
       }
 end
-
+
 
 "x -- y - difference of csets, sets or tables x and y."
 
 operator{1} -- diff(x,y)
    if is:table(x) && is:table(y) then {
       abstract {
-	 return type(x)
-	 }
+         return type(x)
+         }
       body {
-	 int res;
+         int res;
          register int i;
          register word slotnum;
          tended union block *srcp, *tstp, *dstp;
@@ -58,9 +58,9 @@ operator{1} -- diff(x,y)
          /*
           * For each element in table x if it is not in table y
           *  copy it directly into the result table.
-	  *
-	  * np always has a new element ready for use.  We get one in advance,
-	  *  and stay one ahead, because hook can't be tended.
+          *
+          * np always has a new element ready for use.  We get one in advance,
+          *  and stay one ahead, because hook can't be tended.
           */
          srcp = BlkLoc(x);
          tstp = BlkLoc(y);
@@ -73,16 +73,16 @@ operator{1} -- diff(x,y)
                   memb(tstp, &ep->tref, ep->hashnum, &res);
                   if (res == 0) {
                      hook = memb(dstp, &ep->tref, ep->hashnum, &res);
-		     np->tref = ep->tref;
-		     np->tval = ep->tval;
-		     np->hashnum = ep->hashnum;
+                     np->tref = ep->tref;
+                     np->tval = ep->tval;
+                     np->hashnum = ep->hashnum;
                      addmem(Blk(dstp,Set), (struct b_selem *)np, hook);
                      Protect(np = alctelem(), runerr(0));
                      }
                   ep = (struct b_telem *)ep->clink;
                   }
                }
-	 deallocate((union block *)np);
+         deallocate((union block *)np);
          if (TooSparse(dstp))
             hshrink(dstp);
          Desc_EVValD(dstp, E_Tcreate, D_Table);
@@ -95,7 +95,7 @@ operator{1} -- diff(x,y)
          return type(x)
          }
       body {
-	 int res;
+         int res;
          register int i;
          register word slotnum;
          tended union block *srcp, *tstp, *dstp;
@@ -113,9 +113,9 @@ operator{1} -- diff(x,y)
          /*
           * For each element in set x if it is not in set y
           *  copy it directly into the result set.
-	  *
-	  * np always has a new element ready for use.  We get one in advance,
-	  *  and stay one ahead, because hook can't be tended.
+          *
+          * np always has a new element ready for use.  We get one in advance,
+          *  and stay one ahead, because hook can't be tended.
           */
          srcp = BlkLoc(x);
          tstp = BlkLoc(y);
@@ -128,15 +128,15 @@ operator{1} -- diff(x,y)
                   memb(tstp, &ep->setmem, ep->hashnum, &res);
                   if (res == 0) {
                      hook = memb(dstp, &ep->setmem, ep->hashnum, &res);
-		     np->setmem = ep->setmem;
-		     np->hashnum = ep->hashnum;
+                     np->setmem = ep->setmem;
+                     np->hashnum = ep->hashnum;
                      addmem(Blk(dstp,Set), np, hook);
                      Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
                      }
                   ep = (struct b_selem *)ep->clink;
                   }
                }
-	 deallocate((union block *)np);
+         deallocate((union block *)np);
          if (TooSparse(dstp))
             hshrink(dstp);
          Desc_EVValD(dstp, E_Screate, D_Set);
@@ -169,19 +169,19 @@ operator{1} -- diff(x,y)
          }
       }
 end
-
+
 
 "x ** y - intersection of csets, sets or tables x and y."
 
 operator{1} ** inter(x,y)
    if is:table(x) && is:table(y) then {
       abstract {
-	 return new table(store[type(x).tbl_key] ** store[type(y).tbl_key],
-			  store[type(x).tbl_val] ** store[type(y).tbl_val],
-			  store[type(x).tbl_dflt])
+         return new table(store[type(x).tbl_key] ** store[type(y).tbl_key],
+                          store[type(x).tbl_val] ** store[type(y).tbl_val],
+                          store[type(x).tbl_dflt])
          }
       body {
-	 int res;
+         int res;
          register int i;
          register word slotnum;
          tended union block *srcp, *tstp, *dstp;
@@ -201,12 +201,12 @@ operator{1} ** inter(x,y)
           * Using the left table as the source,
           *  copy directly into the result each of its elements
           *  that are also members of the other set.
-	  *
-	  * np always has a new element ready for use.  We get one in advance,
-	  *  and stay one ahead, because hook can't be tended.
+          *
+          * np always has a new element ready for use.  We get one in advance,
+          *  and stay one ahead, because hook can't be tended.
           */
-	 srcp = BlkLoc(x);
-	 tstp = BlkLoc(y);
+         srcp = BlkLoc(x);
+         tstp = BlkLoc(y);
          Protect(np = alctelem(), runerr(0));
          for (i = 0; i < HSegs && (seg = Blk(srcp,Table)->hdir[i]) != NULL; i++)
             for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
@@ -215,16 +215,16 @@ operator{1} ** inter(x,y)
                   memb(tstp, &ep->tref, ep->hashnum, &res);
                   if (res != 0) {
                      hook = memb(dstp, &ep->tref, ep->hashnum, &res);
-		     np->tref = ep->tref;
-		     np->tval = ep->tval;
-		     np->hashnum = ep->hashnum;
+                     np->tref = ep->tref;
+                     np->tval = ep->tval;
+                     np->hashnum = ep->hashnum;
                      addmem(Blk(dstp,Set), (struct b_selem *)np, hook);
                      Protect(np = alctelem(), runerr(0));
                      }
                   ep = (struct b_telem *)ep->clink;
                   }
                }
-	 deallocate((union block *)np);
+         deallocate((union block *)np);
          if (TooSparse(dstp))
             hshrink(dstp);
          Desc_EVValD(dstp, E_Tcreate, D_Table);
@@ -237,7 +237,7 @@ operator{1} ** inter(x,y)
          return new set(store[type(x).set_elem] ** store[type(y).set_elem])
          }
       body {
-	 int res;
+         int res;
          register int i;
          register word slotnum;
          tended union block *srcp, *tstp, *dstp;
@@ -257,9 +257,9 @@ operator{1} ** inter(x,y)
           * Using the smaller of the two sets as the source
           *  copy directly into the result each of its elements
           *  that are also members of the other set.
-	  *
-	  * np always has a new element ready for use.  We get one in advance,
-	  *  and stay one ahead, because hook can't be tended.
+          *
+          * np always has a new element ready for use.  We get one in advance,
+          *  and stay one ahead, because hook can't be tended.
           */
          if (BlkD(x,Set)->size <= BlkD(y,Set)->size) {
             srcp = BlkLoc(x);
@@ -277,15 +277,15 @@ operator{1} ** inter(x,y)
                   memb(tstp, &ep->setmem, ep->hashnum, &res);
                   if (res != 0) {
                      hook = memb(dstp, &ep->setmem, ep->hashnum, &res);
-		     np->setmem = ep->setmem;
-		     np->hashnum = ep->hashnum;
+                     np->setmem = ep->setmem;
+                     np->hashnum = ep->hashnum;
                      addmem(Blk(dstp,Set), np, hook);
                      Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
                      }
                   ep = (struct b_selem *)ep->clink;
                   }
                }
-	 deallocate((union block *)np);
+         deallocate((union block *)np);
          if (TooSparse(dstp))
             hshrink(dstp);
          Desc_EVValD(dstp, E_Screate, D_Set);
@@ -321,21 +321,21 @@ operator{1} ** inter(x,y)
          }
       }
 end
-
+
 
 "x ++ y - union of csets, sets or tables x and y."
 
 operator{1} ++ union(x,y)
    if is:table(x) && is:table(y) then {
       abstract {
-	 return new table(store[type(x).tbl_key] ++ store[type(y).tbl_key],
-			  store[type(x).tbl_val] ++ store[type(y).tbl_val],
-			  store[type(x).tbl_dflt])
-	 }
+         return new table(store[type(x).tbl_key] ++ store[type(y).tbl_key],
+                          store[type(x).tbl_val] ++ store[type(y).tbl_val],
+                          store[type(x).tbl_dflt])
+         }
       body {
-	 int res;
-	 register int i;
-	 register word slotnum;
+         int res;
+         register int i;
+         register word slotnum;
          tended union block *dstp;
          tended struct b_slots *seg;
          tended struct b_telem *ep;
@@ -343,9 +343,9 @@ operator{1} ++ union(x,y)
          union block **hook;
 
          /*
-	  * Unlike for sets, do not union whichever is smaller into
-	  * whichever is larger. For tables, duplicate keys retain
-	  * the values in the left operand.
+          * Unlike for sets, do not union whichever is smaller into
+          * whichever is larger. For tables, duplicate keys retain
+          * the values in the left operand.
           */
 
          /*
@@ -361,9 +361,9 @@ operator{1} ++ union(x,y)
             }
          /*
           * Copy each element from y into the result, if not already there.
-	  *
-	  * np always has a new element ready for use.  We get one in
-	  *  advance, and stay one ahead, because hook can't be tended.
+          *
+          * np always has a new element ready for use.  We get one in
+          *  advance, and stay one ahead, because hook can't be tended.
           */
          dstp = BlkLoc(result);
          Protect(np = alctelem(), runerr(0));
@@ -373,22 +373,22 @@ operator{1} ++ union(x,y)
                while ((ep != NULL) && (BlkType(ep) != T_Table)) {
                   hook = memb(dstp, &ep->tref, ep->hashnum, &res);
                   if (res == 0) {
-		     np->tref = ep->tref;
-		     np->tval = ep->tval;
-		     np->hashnum = ep->hashnum;
-		     /* addmem() looks like it works on tables :-) */
+                     np->tref = ep->tref;
+                     np->tval = ep->tval;
+                     np->hashnum = ep->hashnum;
+                     /* addmem() looks like it works on tables :-) */
                      addmem(Blk(dstp,Set), (struct b_selem *)np, hook);
                      Protect(np = alctelem(), runerr(0));
                      }
                   ep = (struct b_telem *)ep->clink;
                   }
                }
-	 deallocate((union block *)np);
-         if (TooCrowded(dstp)) {	/* if the union got too big, enlarge */
+         deallocate((union block *)np);
+         if (TooCrowded(dstp)) {        /* if the union got too big, enlarge */
             hgrow(dstp);
             }
          return result;
-	 }
+         }
       }
    else
    if is:set(x) && is:set(y) then {
@@ -396,9 +396,9 @@ operator{1} ++ union(x,y)
          return new set(store[type(x).set_elem] ++ store[type(y).set_elem])
          }
       body {
-	 int res;
-	 register int i;
-	 register word slotnum;
+         int res;
+         register int i;
+         register word slotnum;
          struct descrip d;
          tended union block *dstp;
          tended struct b_slots *seg;
@@ -410,10 +410,10 @@ operator{1} ++ union(x,y)
           * Ensure that x is the larger set; if not, swap.
           */
          if (BlkD(y,Set)->size > BlkD(x,Set)->size) {
-	    d = x;
-	    x = y;
-	    y = d;
-	    }
+            d = x;
+            x = y;
+            y = d;
+            }
          /*
           * Copy x and ensure there's room for *x + *y elements.
           */
@@ -427,9 +427,9 @@ operator{1} ++ union(x,y)
             }
          /*
           * Copy each element from y into the result, if not already there.
-	  *
-	  * np always has a new element ready for use.  We get one in
-	  *  advance, and stay one ahead, because hook can't be tended.
+          *
+          * np always has a new element ready for use.  We get one in
+          *  advance, and stay one ahead, because hook can't be tended.
           */
          dstp = BlkLoc(result);
          Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
@@ -439,20 +439,20 @@ operator{1} ++ union(x,y)
                while (ep != NULL) {
                   hook = memb(dstp, &ep->setmem, ep->hashnum, &res);
                   if (res == 0) {
-		     np->setmem = ep->setmem;
-		     np->hashnum = ep->hashnum;
+                     np->setmem = ep->setmem;
+                     np->hashnum = ep->hashnum;
                      addmem(Blk(dstp,Set), np, hook);
                      Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
                      }
                   ep = (struct b_selem *)ep->clink;
                   }
                }
-	 deallocate((union block *)np);
-         if (TooCrowded(dstp)) {	/* if the union got too big, enlarge */
+         deallocate((union block *)np);
+         if (TooCrowded(dstp)) {        /* if the union got too big, enlarge */
             hgrow(dstp);
             }
          return result;
-	 }
+         }
       }
    else {
       if !cnv:tmp_cset(x) then

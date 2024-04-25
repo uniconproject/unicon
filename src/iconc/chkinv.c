@@ -40,7 +40,7 @@ void chkinv()
 
    /*
     * start off assuming that global variables for procedure, etc. are
-    *  only used as immediate operands to invocations then mark any 
+    *  only used as immediate operands to invocations then mark any
     *  which are not. Any variables retaining the property are never
     *  changed. Go through the code and change invocations to such
     *  variables to invocations directly to the operation.
@@ -48,7 +48,7 @@ void chkinv()
    for (i = 0; i < GHSize; i++)
       for (gp = ghash[i]; gp != NULL; gp = gp->blink) {
          if (gp->flag & (F_Proc | F_Builtin | F_Record) &&
-            !(gp->flag & F_StrInv)) 
+            !(gp->flag & F_StrInv))
                gp->flag |= F_SmplInv;
          /*
           * However, only optimize normal cases for main.
@@ -93,9 +93,7 @@ void chkinv()
  * smpl_invk - find any global variable uses that are not a simple
  *  invocation and mark the variables.
  */
-static void chksmpl(n, smpl_invk)
-struct node *n;
-int smpl_invk;
+static void chksmpl(struct node *n, int smpl_invk)
    {
    struct node *cases;
    struct node *clause;
@@ -142,7 +140,7 @@ int smpl_invk;
                clause = Tree1(cases);
                cases = Tree0(cases);
                }
-      
+
             chksmpl(Tree0(clause), 0);   /* value of clause */
             chksmpl(Tree1(clause), 0);   /* body of clause */
             }
@@ -237,9 +235,8 @@ int smpl_invk;
  *   is a particularly special case. Also, determine whether execution
  *   might "fall through" this code and whether the code might fail.
  */
-static int spcl_inv(n, asgn)
-struct node *n;
-struct node *asgn;  /* the result goes into this special-cased assignment */
+static int spcl_inv(struct node *n, 
+                    struct node *asgn) /* the result goes into this special-cased assignment */
    {
    struct node *cases;
    struct node *clause;
@@ -297,7 +294,7 @@ struct node *asgn;  /* the result goes into this special-cased assignment */
 
       case N_Break:
          if (cur_loop == NULL) {
-	    nfatal(n, "invalid context for break", NULL);
+            nfatal(n, "invalid context for break", NULL);
             return 0;
             }
          loop_sav = cur_loop;
@@ -322,7 +319,7 @@ struct node *asgn;  /* the result goes into this special-cased assignment */
                clause = Tree1(cases);
                cases = Tree0(cases);
                }
-      
+
             spcl_inv(Tree0(clause), NULL);
             exec_flg |= spcl_inv(Tree1(clause), asgn);
             }
@@ -408,8 +405,8 @@ struct node *asgn;  /* the result goes into this special-cased assignment */
              */
             n->n_type = N_SmplAsgn;
 
-            /* 
-             * For now, assume rhs of := can compute directly into a 
+            /*
+             * For now, assume rhs of := can compute directly into a
              *  variable. This may be changed when the rhs is examined
              *  in the recursive call to spcl_inv().
              */
@@ -423,7 +420,7 @@ struct node *asgn;  /* the result goes into this special-cased assignment */
             lst_arg = 1 + Val0(n);
             exec_flg = chg_ret(Impl1(n)->ret_flag);
             for (i = 2; i <= lst_arg; ++i)
-               exec_flg = seq_exec(exec_flg, spcl_inv(n->n_field[i].n_ptr, 
+               exec_flg = seq_exec(exec_flg, spcl_inv(n->n_field[i].n_ptr,
                   NULL)); /* arg i */
             if (asgn != NULL && Impl1(n)->use_rslt)
                Val0(asgn) = AsgnCopy;
@@ -515,9 +512,7 @@ struct node *asgn;  /* the result goes into this special-cased assignment */
  * seq_exec - take the execution flags for sequential pieces of code
  *  and compute the flags for the combined code.
  */
-static int seq_exec(exec_flg1, exec_flg2)
-int exec_flg1;
-int exec_flg2;
+static int seq_exec(int exec_flg1, int exec_flg2)
    {
    return (exec_flg1 & exec_flg2 & DoesFThru) |
       ((exec_flg1 | exec_flg2) & DoesFail);
@@ -527,10 +522,9 @@ int exec_flg2;
  * chg_ret - take a return flag and change suspend and return to
  *  "fall through". If error conversion is supported, change error
  *  failure to failure.
- *  
+ *
  */
-static int chg_ret(flag)
-int flag;
+static int chg_ret(int flag)
    {
    int flg1;
 

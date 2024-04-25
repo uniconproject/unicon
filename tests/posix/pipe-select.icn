@@ -12,15 +12,15 @@ procedure main()
    } else {
       close(L[2])
       while 1 do {
-	 while *(L := select(&input, L[1], 1000)) = 0 do
-	    delay(10)
-	 (&errno = 0) | stop("Select failed: ", sys_errstr(&errno))
+         while *(L := select(&input, L[1], 1000)) = 0 do
+            delay(10)
+         (&errno = 0) | stop("Select failed: ", sys_errstr(&errno))
 
-	 if L[1] === &input then
-	    line := reads()
-	 else
-	    (line := reads(L[1])) | break
-	 write(line)
+         if L[1] === &input then
+            line := reads()
+         else
+            (line := reads(L[1])) | break
+         write(line)
       }
       write("Everything's ok.")
    }

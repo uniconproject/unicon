@@ -7,12 +7,12 @@
 #include "tglobals.h"
 #include "opcode.h"
 
-int nlflag = 0;		/* newline last seen */
+int nlflag = 0;         /* newline last seen */
 
 #if !EBCDIC
-   #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
-#endif					/* !EBCDIC */
-
+   #define tonum(c)     (isdigit(c) ? (c - '0') : ((c & 037) + 9))
+#endif                                  /* !EBCDIC */
+
 #if !EBCDIC
 /*
  * getopc - get an opcode from infile, return the opcode number (via
@@ -47,12 +47,12 @@ int getopc(char **id)
    *id = s;
    return 0;
    }
-#else					/* !EBCDIC */
+#else                                   /* !EBCDIC */
 /*
  * getopc - get an opcode from infile, return the opcode number (via
  * sequential search of opcode table) and point id at the name of the opcode.
  */
- 
+
 int getopc(id)
 char **id;
    {
@@ -60,7 +60,7 @@ char **id;
    register struct opentry *p;
    register int test;
    word indx;
- 
+
    indx = getstr();
    if (indx == -1)
       return EOF;
@@ -75,8 +75,8 @@ char **id;
    *id = s;
    return 0;
    }
-#endif					/* !EBCDIC */
-
+#endif                                  /* !EBCDIC */
+
 /*
  * getid - get an identifier from infile, put it in the identifier
  *  table, and return a index to it.
@@ -90,7 +90,7 @@ word getid()
       return EOF;
    return putident((int)strlen(&lsspace[indx])+1, 1);
    }
-
+
 /*
  * getstr - get an identifier from infile and return an index to it.
  */
@@ -103,8 +103,8 @@ word getstr()
    while ((c = getc(infile)) == ' ' || c == '\t' || c == '\r') ;
    if (c == EOF)
       return -1;
-   if (c == '\014') {		/* ^L sentinel between .u2 and .u1 portions */
-      c = getc(infile);		/* discard following newline */
+   if (c == '\014') {           /* ^L sentinel between .u2 and .u1 portions */
+      c = getc(infile);         /* discard following newline */
       if (c == '\r') c = getc(infile); /* optional carriage return */
       return -1;
       }
@@ -129,7 +129,7 @@ word getstr()
    nlflag = (c == '\n');
    return lsfree;
    }
-
+
 /*
  * getrest - get the rest of the line from infile, put it in the identifier
  *  table, and return its index in the string space.
@@ -159,7 +159,7 @@ word getrest()
    nlflag = (c == '\n');
    return putident((int)(indx - lsfree), 1);
    }
-
+
 /*
  * getdec - get a decimal integer from infile, and return it.
  */
@@ -182,9 +182,9 @@ int getdec()
       }
    nlflag = (c == '\n');
    rv = n * sign;
-   return rv;					/* some compilers ... */
+   return rv;                                   /* some compilers ... */
    }
-
+
 /*
  * getoct - get an octal number from infile, and return it.
  */
@@ -203,14 +203,12 @@ int getoct()
    nlflag = (c == '\n');
    return n;
    }
-
+
 /*
  *  Get integer, but if it's too large for a long, put the string via wp
  *   and return -1.
  */
-word getint(j,wp)
-   int j;
-   word *wp;
+word getint(int j,word *wp)
    {
    register int c;
    int over = 0;
@@ -224,14 +222,14 @@ word getint(j,wp)
    if (lsfree + j >= stsize)
       lsspace = (char *)trealloc(lsspace, NULL, &stsize, 1, j, "string space");
    indx = lsfree;
-   
+
    while ((c = getc(infile)) >= '0' && c <= '9') {
       lsspace[indx++] = c;
       result = result * 10 + (c - '0');
       lresult = lresult * 10 + (c - '0');
-      if (result >= MaxLong) {
-         over = 1;			/* flag overflow */
-         result = 0;			/* reset to avoid fp exception */
+      if (result >= (double)MaxLong) {
+         over = 1;                      /* flag overflow */
+         result = 0;                    /* reset to avoid fp exception */
          }
       }
    if (c == 'r' || c == 'R') {
@@ -248,23 +246,23 @@ word getint(j,wp)
             break;
          result = result * radix + c;
          lresult = lresult * iradix + c;
-         if (result >= MaxLong) {
-            over = 1;			/* flag overflow */
-            result = 0;			/* reset to avoid fp exception */
+         if (result >= (double)MaxLong) {
+            over = 1;                   /* flag overflow */
+            result = 0;                 /* reset to avoid fp exception */
             }
          }
       }
    nlflag = (c == '\n');
    if (!over) {
-      return lresult;			/* integer is small enough */
+      return lresult;                   /* integer is small enough */
    }
-   else {				/* integer is too large */
+   else {                               /* integer is too large */
       lsspace[indx++] = '\0';
       *wp = putident((int)(indx - lsfree), 1); /* convert integer to string */
-      return -1;			/* indicate integer is too big */
+      return -1;                        /* indicate integer is too big */
       }
    }
-
+
 /*
  * getreal - get an Icon real number from infile, and return it.
  */
@@ -318,7 +316,7 @@ double getreal()
    nlflag = (c == '\n');
    return n;
    }
-
+
 /*
  * getlab - get a label ("L" followed by a number) from infile,
  *  and return the number.
@@ -334,13 +332,12 @@ int getlab()
    nlflag = (c == '\n');
    return 0;
    }
-
+
 /*
  * getstrlit - get a string literal from infile, as a string
  *  of octal bytes, and return its index into the string table.
  */
-word getstrlit(l)
-register int l;
+word getstrlit(register int l)
    {
    register word indx;
 
@@ -355,7 +352,7 @@ register int l;
    lsspace[indx++] = '\0';
    return putident((int)(indx-lsfree), 1);
    }
-
+
 /*
  * newline - skip to next line.
  */
@@ -373,8 +370,7 @@ void newline()
  * Store string syntax code in the string pointed to by synt.
  * Return 0 for success, -1 for failure.
  */
-word getsynt(synt)
-char **synt;
+word getsynt(char **synt)
    {
    word indx = getstr();
    if (indx == -1)

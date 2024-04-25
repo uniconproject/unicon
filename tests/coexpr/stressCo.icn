@@ -3,7 +3,7 @@
 # based on stress.icn
 # tests coexpression op
 
- global gsum, str, v, w, usermode, a, b, c 
+ global gsum, str, v, w, usermode, a, b, c
 
  procedure main(argv)
    if not (&features == "co-expressions") then
@@ -30,7 +30,7 @@
    t := &now
 
    v := w := ""
-   
+
    write("Busy work Coexprs... ")
    every 1 to 9 do put(thrdL, create dowork(m, d, x))
 
@@ -41,12 +41,12 @@
    @a
    dowork(m, d, x)
    @c
-   every @1(!thrdL,writes(&errout,".")) 
+   every @1(!thrdL,writes(&errout,"."))
    write(&errout)
 
  # print the sum. (x-d*n) is just an error correction when using "odd"  # of threads.
    write("sum=",gsum + (x - d*n))
-   
+
    if \usermode then
       write("time:", &now-t, " seconds")
 #   write (&now - start)
@@ -56,14 +56,14 @@
    writes("Collections: ")
    every writes(&collections, ", ")
    write()
- end # main 
+ end # main
 
  procedure dowork(n, d, x)
    thrd := []
    if \usermode then {
       write(n , " coexpr(s) will sum ", x, " ones.")
       write("The work will be divided equally between them. Please wait... ")
-      } 
+      }
    every i:=!n do put(thrd, create suma(d, i))
    @^b
    every @(!thrd) # do writes(&errout,".")
@@ -77,10 +77,10 @@
 
    every !n do sum+:=1
 
-  # critical region:  
+  # critical region:
     gsum +:= sum
- #    	write("collecting:")
- #	   collect()
+ #      write("collecting:")
+ #         collect()
    if \usermode then
       write("Coexpr ", id , " is done")
 
@@ -89,13 +89,13 @@
  procedure A()
    /str := ""
    every i:=1 to 1000 do {
-     if i%100 = 1 then { L := []; str := "A" } 
+     if i%100 = 1 then { L := []; str := "A" }
      put(L, table())
      put(L, list(100))
      x := "snow"
        str ||:= x
-   } 
-   
+   }
+
    w := x
    v := w
 
@@ -116,7 +116,7 @@
       }
 
    w := x
-   v ||:= w 
+   v ||:= w
 
  end
 
@@ -130,7 +130,7 @@
       put(L, table())
       put(L, list(1000))
       str ||:= x
-      } 
+      }
    w := x
    v ||:= w
 

@@ -6,7 +6,7 @@
  */
 #ifndef Bell
 #define Bell '\a'
-#endif					/* Bell */
+#endif                                  /* Bell */
 
 #define CBufSize 256  /* size of buffer for file input */
 
@@ -78,8 +78,8 @@ struct rsrvd_wrd {
  * Token.
  */
 struct token {
-   int tok_id;		/* token identifier */
-   char *image;		/* string image of token */
+   int tok_id;          /* token identifier */
+   char *image;         /* string image of token */
    char *fname;         /* file name of origin */
    int line;            /* line number of origin */
    int flag;            /* token flag, see above */
@@ -136,14 +136,14 @@ struct macro {
  */
 struct char_src {
    FILE *f;               /* file, if the chars come directly from a file */
-   char *fname;		  /* name of file */
-   int bufsize;		  /* size of character buffer */  
+   char *fname;           /* name of file */
+   int bufsize;           /* size of character buffer */
    int *char_buf;         /* pointer to character buffer */
-   int *line_buf;	  /* buffer of lines characters come from */
-   int *next_char;	  /* next unprocessed character in buffer */
-   int *last_char;	  /* last character in buffer */
-   int line_adj;	  /* line adjustment caused by #line directive */
-   int dir_state;	  /* state w.r.t. recognizing directives */
+   int *line_buf;         /* buffer of lines characters come from */
+   int *next_char;        /* next unprocessed character in buffer */
+   int *last_char;        /* last character in buffer */
+   int line_adj;          /* line adjustment caused by #line directive */
+   int dir_state;         /* state w.r.t. recognizing directives */
    struct token *tok_sav; /* used to save token after look ahead */
    };
 
@@ -151,7 +151,7 @@ struct char_src {
  * Information for a source of tokens dirived from expanding a macro.
  */
 struct mac_expand {
-   struct macro *m;	      /* the macro being expanded */
+   struct macro *m;           /* the macro being expanded */
    struct tok_lst **args;     /* list of arguments for macro call */
    struct tok_lst **exp_args; /* list of expanded arguments for macro call */
    struct tok_lst *rest_bdy;  /* position within the body of the macro */
@@ -175,24 +175,24 @@ union src_ref {
    struct tok_lst *tlst;     /* source is token list (a macro argument) */
    struct paste_lsts *plsts; /* source is token lists for token pasting */
    };
-   
+
 /*
  * Types of token sources:
  */
 #define CharSrc   0     /* tokenized characters */
 #define MacExpand 1     /* macro expansion */
 #define TokLst    2     /* token list */
-#define PasteLsts 4	/* paste last token of 1st list to first of 2nd */
+#define PasteLsts 4     /* paste last token of 1st list to first of 2nd */
 #define DummySrc  5     /* base of stack */
 
 #define NTokSav  2      /* maximum number of tokens that can be pushed back */
 
 struct src {
-   int flag;			/* indicate what kind of source it is */
-   struct tok_lst *cond;	/* list of nested conditionals in effect */
-   struct token *toks[NTokSav];	/* token push-back stack for preproc() */
-   int ntoks;			/* number of tokens on stack */
-   struct src *next;		/* link for creating stack */
+   int flag;                    /* indicate what kind of source it is */
+   struct tok_lst *cond;        /* list of nested conditionals in effect */
+   struct token *toks[NTokSav]; /* token push-back stack for preproc() */
+   int ntoks;                   /* number of tokens on stack */
+   struct src *next;            /* link for creating stack */
    union src_ref u;             /* pointer to specific kind of source */
    };
 

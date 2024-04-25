@@ -24,11 +24,11 @@ package util
 class Connectable(listeners)
    method genlisteners(typ)
       case ::type(listeners) of {
-	 "table": suspend !\(listeners[typ])
-	 "list": every x := !listeners do
-		    if x.type === typ then suspend x
-	 default: if (\listeners).type === typ then return listeners
-	 }
+         "table": suspend !\(listeners[typ])
+         "list": every x := !listeners do
+                    if x.type === typ then suspend x
+         default: if (\listeners).type === typ then return listeners
+         }
    end
 
    #
@@ -39,28 +39,28 @@ class Connectable(listeners)
 
       e := Notification(self, typ, param)
       every l := genlisteners(\typ|&null) do {
-	 case type(l.obj) of {
-	    "procedure" | "string" | "integer": {
-	       suspend l.obj(self, typ, param)
-	       }
-	    # list invocation here uses substitution rules per future UniLib
-	    # integration.  This probably won't work well until that happens.
-	    "list": {
-	       a := ::copy(l.obj)
-	       fcn := ::pop(a)
-	       args := [self, typ, param]
-	       every i := 1 to *a do if a[i] === Arg then a[i] := ::pop(args)
-	       suspend fcn ! a
-	       }
-	    "co-expression": {
-	       args := [self, typ, param]
-	       while suspend args @ l.obj
-	       }
-	    default: {
-	       l.meth(l.obj, e)
-	       }
-	    }
-	 }
+         case type(l.obj) of {
+            "procedure" | "string" | "integer": {
+               suspend l.obj(self, typ, param)
+               }
+            # list invocation here uses substitution rules per future UniLib
+            # integration.  This probably won't work well until that happens.
+            "list": {
+               a := ::copy(l.obj)
+               fcn := ::pop(a)
+               args := [self, typ, param]
+               every i := 1 to *a do if a[i] === Arg then a[i] := ::pop(args)
+               suspend fcn ! a
+               }
+            "co-expression": {
+               args := [self, typ, param]
+               while suspend args @ l.obj
+               }
+            default: {
+               l.meth(l.obj, e)
+               }
+            }
+         }
       return e
    end
 
@@ -75,27 +75,27 @@ class Connectable(listeners)
 
       # omit duplicate requests
       every l := genlisteners(typ) do
-	 if (l.obj === obj) & (l.meth === p) then
-	    fail
+         if (l.obj === obj) & (l.meth === p) then
+            fail
 
       l := Subscription(obj, p, typ)
 
       if /listeners then return listeners := l
 
       else if ::type(listeners) ~== "list" & ::type(listeners) ~== "table" then
-	 listeners := [listeners] # promote to list and continue
+         listeners := [listeners] # promote to list and continue
 
       if ::type(listeners) == "list" then {
-	 if (!listeners).type ~=== typ then {
-	    T := ::table()
-	    every x := !listeners do {
-	       /T[x.type] := []
-	       ::put(T[x.type], x)
-	       }
-	    listeners := T # promote to table and continue
-	    }
-	 else { ::put(listeners, l); return l }
-	 }
+         if (!listeners).type ~=== typ then {
+            T := ::table()
+            every x := !listeners do {
+               /T[x.type] := []
+               ::put(T[x.type], x)
+               }
+            listeners := T # promote to table and continue
+            }
+         else { ::put(listeners, l); return l }
+         }
 
       /listeners[typ] := []
       ::put(listeners[typ], l)
@@ -116,14 +116,14 @@ class Connectable(listeners)
       local k, t, l
 
       if ::type(listeners) == "table" then {
-	 every k := ::key(listeners) do
-	    listeners[k] := disconnect_fromlist(listeners[k], obj)
-	 }
+         every k := ::key(listeners) do
+            listeners[k] := disconnect_fromlist(listeners[k], obj)
+         }
       else if ::type(listeners) == "list" then
-	 listeners := disconnect_fromlist(listeners, obj)
+         listeners := disconnect_fromlist(listeners, obj)
 
       else if ::type(listeners) == "Subscription" then
-	 if listeners.obj === obj then listeners := &null
+         if listeners.obj === obj then listeners := &null
 
    end
 
@@ -138,13 +138,13 @@ class Connectable(listeners)
       t := []
 
       if ::type(listeners) == "list" then {
-	 every ::put(t, l ~=== !listeners)
-	 listeners := t
-	 }
+         every ::put(t, l ~=== !listeners)
+         listeners := t
+         }
       else if ::type(listeners) == "table" then {
-	 every ::put(t, l ~=== !listeners[k])
-	 listeners[k] := t
-	 }
+         every ::put(t, l ~=== !listeners[k])
+         listeners[k] := t
+         }
    end
 
 initially

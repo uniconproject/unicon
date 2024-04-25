@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -54,13 +54,13 @@ main (argc, argv)
      int argc;
      char *argv[];
 {
-  GDBM_FILE gfile;	/* The gdbm file. */
-  datum key;		/* Key and data pairs retrieved. */
+  GDBM_FILE gfile;      /* The gdbm file. */
+  datum key;            /* Key and data pairs retrieved. */
   datum data;
-  int   errors;		/* error count. */
-  int   num;		/* insert count. */
+  int   errors;         /* error count. */
+  int   num;            /* insert count. */
   int   block_size;     /* gdbm block size. */
-  char  quiet;		/* Do work Quietly? */
+  char  quiet;          /* Do work Quietly? */
   char  option_char;    /* The option character. */
 
   char *dbm_file, *gdbm_file;   /* pointers to the file names. */
@@ -78,18 +78,18 @@ main (argc, argv)
   while  ( (option_char = getopt (argc, argv, "b:q")) != EOF)
     {
       switch (option_char)
-	{
-	case 'b':
-	  block_size = atoi (optarg);
-	  break;
+        {
+        case 'b':
+          block_size = atoi (optarg);
+          break;
 
-	case 'q':
-	  quiet = TRUE;
-	  break;
+        case 'q':
+          quiet = TRUE;
+          break;
 
-	default:
-	  usage (argv[0]);
-	}
+        default:
+          usage (argv[0]);
+        }
     }
 
   /* The required dbm file name. */
@@ -113,7 +113,7 @@ main (argc, argv)
 
   /* No more arguments are legal. */
   if (argc > optind)  usage (argv[0]);
-  
+
   /* Open the dbm file. */
   if (dbminit (dbm_file) != 0)
     {
@@ -137,7 +137,7 @@ main (argc, argv)
 
   if (!quiet)
     printf ("%s: Converting %s.pag and %s.dir to %s.\n", argv[0], dbm_file,
-	    dbm_file, gdbm_file);
+            dbm_file, gdbm_file);
 
   /* The convert loop - read a key/data pair from the dbm file and insert
      it into the gdbm file. */
@@ -146,19 +146,19 @@ main (argc, argv)
     {
       data = fetch (key);
       if (gdbm_store (gfile, key, data, GDBM_INSERT) != 0)
-	{
-	  errors++;
-	}
+        {
+          errors++;
+        }
       else
-	{
-	  num++;
-	  if ( !quiet && ((num % 100) == 0))
-	    {
-	      printf (".");
-	      if ( (num % 7000) == 0)
-		printf ("\n");
-	    }
-	}
+        {
+          num++;
+          if ( !quiet && ((num % 100) == 0))
+            {
+              printf (".");
+              if ( (num % 7000) == 0)
+                printf ("\n");
+            }
+        }
     }
 
   gdbm_close (gfile);
@@ -167,8 +167,8 @@ main (argc, argv)
     {
       /* Final reporting. */
       if (errors)
-	printf ("%s: %d items not inserted into %s.\n", argv[0],
-	        errors, gdbm_file);
+        printf ("%s: %d items not inserted into %s.\n", argv[0],
+                errors, gdbm_file);
 
       printf  ("%s: %d items inserted into %s.\n", argv[0], num, gdbm_file);
     }

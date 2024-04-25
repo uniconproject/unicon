@@ -627,8 +627,8 @@ GL_LDFLAGS
 GL_CFLAGS
 JV_LDFLAGS
 PLUGINS
+STRIP
 DASHG
-DASHX
 DASHS
 SLNT
 CMNT
@@ -2977,28 +2977,39 @@ unicon_osrel=$OSREL
 case $host_os in
      *linux*)
         unicon_os="linux"
-
-	# if dist/version are not set, try to guess them
-	if test x$unicon_osdist = x ; then
-	   if test -f /etc/os-release ; then
-	      . /etc/os-release
-	      unicon_osdist=$NAME
-	      unicon_osrel=$VERSION_ID
-	   elif type lsb_release >/dev/null 2>&1; then
-	      unicon_osdist=$(lsb_release -si)
-	      unicon_osrel=$(lsb_release -sr)
-	   elif test -f /etc/lsb-release ; then
-	      . /etc/lsb-release
-	      unicon_osdist=$DISTRIB_ID
-	      unicon_osrel=$DISTRIB_RELEASE
-	   elif test -f /etc/debian_version ; then
-	      unicon_osdist=Debian
-	      unicon_osrel=$(cat /etc/debian_version)
-	   fi
-	fi
+        # if dist/version are not set, try to guess them
+        if test x$unicon_osdist = x ; then
+            if test -f /etc/os-release ; then
+               . /etc/os-release
+               unicon_osdist=$NAME
+               unicon_osrel=$VERSION_ID
+            elif type lsb_release >/dev/null 2>&1; then
+               unicon_osdist=$(lsb_release -si)
+               unicon_osrel=$(lsb_release -sr)
+            elif test -f /etc/lsb-release ; then
+               . /etc/lsb-release
+               unicon_osdist=$DISTRIB_ID
+               unicon_osrel=$DISTRIB_RELEASE
+            elif test -f /etc/debian_version ; then
+               unicon_osdist=Debian
+               unicon_osrel=$(cat /etc/debian_version)
+            fi
+        fi
 
 
 $as_echo "#define UNIX 1" >>confdefs.h
+
+
+        case $host_os in
+           *musl*)
+
+$as_echo "#define __MUSL__ 1" >>confdefs.h
+
+            MUSLFLG="-D__MUSL__"
+            CFLAGS="-fno-pie $CFLAGS"
+            LDFLAGS=" -no-pie $LDFLAGS"
+            ;;
+         esac
 
         ;;
      *solaris*)
@@ -3020,7 +3031,7 @@ $as_echo "#define UNIX 1" >>confdefs.h
 
         ;;
      *bsd*)
-       # freebsd for now
+        # freebsd for now
         unicon_os="freebsd"
 
 $as_echo "#define UNIX 1" >>confdefs.h
@@ -3200,6 +3211,7 @@ else
   thin=no
 fi
 
+
 # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug; debug=yes
@@ -3223,10 +3235,11 @@ fi
 
 # Check whether --enable-devmode was given.
 if test "${enable_devmode+set}" = set; then :
-  enableval=$enable_devmode; devmode=yes
+  enableval=$enable_devmode; devmode=$enableval
 else
   devmode=no
 fi
+
 
 # Check whether --enable-werror was given.
 if test "${enable_werror+set}" = set; then :
@@ -3241,6 +3254,7 @@ if test "${enable_warnings+set}" = set; then :
 else
   warn=no
 fi
+
 
 # Check whether --enable-uniconx was given.
 if test "${enable_uniconx+set}" = set; then :
@@ -4741,24 +4755,30 @@ else
   UNICONWT=wicont
 fi
 
-if test x"$devmode" = x"yes" ; then
+if test x"$devmode" = x"yes" || test x"$devmode" = x"all"; then
   debug=yes
   warn=yes
 
 $as_echo "#define DEVELOPMODE 1" >>confdefs.h
 
+  if test x"$devmode" = x"all"; then
+   debugheap=yes
+   verifyheap=yes
+  fi
 fi
 
 if test x"$debugheap" = x"yes" ; then
 
 $as_echo "#define DebugHeap 1" >>confdefs.h
 
+  debugheapreport="DebugHeap"
 fi
 
 if test x"$verifyheap" = x"yes" ; then
 
 $as_echo "#define VerifyHeap 1" >>confdefs.h
 
+    verifyheapreport="VerifyHeap"
 fi
 
 if test x"$udbtools" = x"yes" ; then
@@ -7022,7 +7042,7 @@ esac
 
 OBJ=o
 CFUNCTARGET="cfun"
-CFDYN="-fPIC "
+CFDYN="-fPIC $MUSLFLG "
 LDDYN="-shared "
 SO=so
 # OS specific flags go here
@@ -7042,7 +7062,6 @@ case $unicon_host in
         ;;
      *macos*)
        LDDYN="-Xlinker -undefined -Xlinker dynamic_lookup -shared "
-       DASHX=-x
        RLIBS="-ldl "
 	;;
      *windows*)
@@ -7080,9 +7099,14 @@ if test "x$iconc" = "xyes" || test "x$iconc" = "xon" ; then
        ICONCTARGET=Iconc
 fi
 
-
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
+fi
+
+if test x"$debug" = x"yes" ; then
+  STRIP="@\#strip"
+else
+  STRIP=strip
 fi
 
 
@@ -17122,9 +17146,11 @@ LDFLAGS  :$LDFLAGS
 LIBS     : $LIBS
 CXX      :  $CXX  (Required only with FTGL and VOIP)
 CXXFLAGS : $CXXFLAGS
-prefix	 :  $prefix
+CFDYN    : $CFDYN
+LDDYN    : $LDDYN
+prefix   :  $prefix
 Verbose  :  $verbosebuild
-Debug    :  $debug
+Debug    :  $debug $debugheapreport $verifyheapreport
 Warnings :  $warn
 Werror   :  $werror
 Devmode  :  $devmode

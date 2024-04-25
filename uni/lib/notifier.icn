@@ -95,10 +95,10 @@ class Notifier:Object(listeners)
          if lang::Type(l.obj)\1 == "string" then {   # Special case
             if ::proc(l.obj) === listener then disconnect(l)
             }
-	 else if (l.obj === listener) then {
+         else if (l.obj === listener) then {
             if lang::isClass(listener) &
-	       (l.meth === lang::find_method(listener, methodname)) then {
-	       disconnect(l)
+               (l.meth === lang::find_method(listener, methodname)) then {
+               disconnect(l)
                }
             else {
                disconnect(l)
@@ -153,8 +153,8 @@ class Notifier:Object(listeners)
           }
       # omit duplicate requests
       every l := genListeners(typ) do
-	 if (l.obj === obj) & (l.meth === p) then
-	    fail
+         if (l.obj === obj) & (l.meth === p) then
+            fail
 
       l := Subscription(obj, p, typ)
       addToListeners(l)
@@ -194,19 +194,19 @@ class Notifier:Object(listeners)
    #</p>
    method notify1(l, message)
       case ::type(l.obj) of {
-	 "procedure" | "string" : l.obj(lang::Type(self)\1, l.type, message)
-	 "co-expression" : [lang::Type(self)\1, l.type , message] @ l.obj
-	 # list invocation here uses substitution rules per future UniLib
-	 # integration.  This probably won't work well until that happens.
-	 "list": {
+         "procedure" | "string" : l.obj(lang::Type(self)\1, l.type, message)
+         "co-expression" : [lang::Type(self)\1, l.type , message] @ l.obj
+         # list invocation here uses substitution rules per future UniLib
+         # integration.  This probably won't work well until that happens.
+         "list": {
              a := ::copy(l.obj)
-	     fcn := ::pop(a)
-	     args := [lang::Type(self)\1, l.type, param]
-	     every i := 1 to *a do if a[i] === Arg then a[i] := ::pop(args)
-	     suspend fcn ! a
-	     }
-	 default: if lang::isClass(l.obj) then notifyClass(l, message)
-	 }
+             fcn := ::pop(a)
+             args := [lang::Type(self)\1, l.type, param]
+             every i := 1 to *a do if a[i] === Arg then a[i] := ::pop(args)
+             suspend fcn ! a
+             }
+         default: if lang::isClass(l.obj) then notifyClass(l, message)
+         }
    end
 
    #<p>

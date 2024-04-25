@@ -125,7 +125,7 @@ ica_pcall_add(node)
       case N_Id:
          pcall = alloc(sizeof(struct pcall));
          pcall->node = node;
-         pcall->name = n->n_field[0].csym->image; 
+         pcall->name = n->n_field[0].csym->image;
          pcall->next = pcalls;
          pcalls = pcall;
          break;
@@ -253,9 +253,9 @@ chk_pdefns_pre(void)
       for (pcall=pcalls; pcall; pcall=pcall->next) {
          if (strcmp(pentry->name, pcall->name))
             continue;
-         printf("ica.chk-pdefns-pre: found \"%s\"\n", pentry->name);      
+         printf("ica.chk-pdefns-pre: found \"%s\"\n", pentry->name);
          }
-      } 
+      }
 }
 
 static
@@ -342,7 +342,7 @@ find_clsinst_call(clsname)
    struct pcall * pcall;
 
    clslen = strlen(clsname);
-   clslen -= 14/* "__mdw_inst_mdw" */;
+   clslen -= 7 /* "__state" */;
    if (clslen <= 0) {
       errmsg("ica.find-clsinst-call: invalid len: %d clsname: \"%s\"\n",
          clslen, clsname);
@@ -404,7 +404,7 @@ rdecl_print_flds(rdecl)
       for (pr=f->rlist; pr; pr=pr->next) {
          dbgmsg("    prec: \"%s\" addr: %p\n", pr->rec->name, pr->rec);
          if (pr->rec == rdecl->ent->val.rec)
-            dbgmsg("      ** match **\n"); 
+            dbgmsg("      ** match **\n");
          }
       }
 }
@@ -479,13 +479,13 @@ rdecl_rmv_parrec_entries(rdecl)
          continue;
          }
       for (pr=f->rlist; pr && pr->next; pr=pr->next) {
-         if (pr->next->rec != r) 
-            continue; 
+         if (pr->next->rec != r)
+            continue;
          tmp = pr->next;
          pr->next = tmp->next;
          free(tmp);
-         break; 
+         break;
          }
-      }   
+      }
 }
 

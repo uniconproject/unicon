@@ -15,8 +15,7 @@
  * iconint - convert the string representation of an Icon integer to a C long. 
  *   Return -1 if the number is too big and large integers are supported.
  */
-long iconint(image)
-char *image;
+long iconint(char *image)
    {
    register int c;
    register int r;

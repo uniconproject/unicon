@@ -5,12 +5,12 @@ class MatchParen(stack, matching, closing_paren, opening_paren)
          "("|")" : return "("
          "["|"]" : return "["
          "{"|"}" : return "{"
-	 }
+         }
    end
 
-   method add_char(c, cur_pos, i) 
+   method add_char(c, cur_pos, i)
       local n, m := leftMatch(c)
-      
+
       if \m & \cur_pos then {
          if m == c then   # c is some kind of left parenthesis
             push(stack, [m,i]) # push a Character version, m and its position
@@ -27,18 +27,18 @@ class MatchParen(stack, matching, closing_paren, opening_paren)
                return n[2]
          }
       }
-      
+
       else if \m then {
          if m == c then   # c is some kind of left parenthesis
             push(stack, m)     # push a Character version, m
          else {
             if (not (n := pop(stack))) | (n ~=== m) then {
-	       return matching := "false"
-	       }
+               return matching := "false"
+               }
          }
       }
    end
-   
+
    method add_string(s, cur_pos)
       local i, match_paren_pos
       every i := 1 to *s do {
@@ -50,13 +50,13 @@ class MatchParen(stack, matching, closing_paren, opening_paren)
 
    method test(s, cur_pos)
       local match_paren_pos
-      
+
       stack := []
       matching := "true"
 
       #if \cur_pos then
       #   if not member(closing_paren, s[cur_pos-1:cur_pos]) then return
-            
+
       match_paren_pos:=add_string(s, cur_pos)
 
       if \cur_pos & \match_paren_pos then

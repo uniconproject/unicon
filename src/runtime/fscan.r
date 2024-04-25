@@ -63,7 +63,7 @@ function{0,1+} move(i)
       fail;
       }
 end
-
+
 
 "pos(i) - test if &pos is at position i in &subject."
 
@@ -86,7 +86,7 @@ function{0,1} pos(i)
       return C_integer i;
       }
 end
-
+
 
 "tab(i) - set &pos to i, return substring of &subject spanned."
 "Reverses effects if resumed."

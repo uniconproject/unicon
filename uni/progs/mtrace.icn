@@ -11,7 +11,7 @@
 # For example, here is the output from this program when run
 #   on a test program:
 #<pre>
-#Allocation that is not freed: 
+#Allocation that is not freed:
 #        0x8831f90[    1024 bytes] <- test.c:[197]
 #        0x88337c0[    1024 bytes] <- test.c:[197]
 #        0x8832fb0[    1024 bytes] <- test.c:[197]
@@ -19,7 +19,7 @@
 #        0x88327a0[    1024 bytes] <- test.c:[197]
 #        0x88333d8[      50 bytes] <- test.c:[159]
 #
-#Duplicated free: 
+#Duplicated free:
 #        0x98c1378[    1024 bytes] <- test.c:[209] <test.c[197]>
 #        0x98c1b88[    1024 bytes] <- test.c:[209] <test.c[197]>
 #        0x98c2398[    1024 bytes] <- test.c:[209] <test.c[197]>
@@ -112,29 +112,29 @@ procedure process(f)
                 tab(many(' \t'))
                 size := tab(0)
                 }
-             size ?:= (="0x","16r")||tab(0)	# Size to Unicon hex form
+             size ?:= (="0x","16r")||tab(0)     # Size to Unicon hex form
 
-             if "+" == action then {	        # malloc
+             if "+" == action then {            # malloc
                  traceMap[memLoc] :=
                       traceRecord(name, size, memLoc, codeLoc, &null)
                  }
              else if "-" == action then {       # free
                  tr := traceMap[memLoc] | &null
-                 if /tr then {		        # No matching malloc?
+                 if /tr then {                  # No matching malloc?
                      put(noMalloc, mkRec(name, codeLoc, memLoc))
                      }
-                 else if \tr.freeAddr then {	# Already freed?
+                 else if \tr.freeAddr then {    # Already freed?
                      put(dupFree, mkFreeRec(name, codeLoc, memLoc, tr))
                      }
                  else {
-                     tr.freeAddr := memLoc	# Normal free
+                     tr.freeAddr := memLoc      # Normal free
                      }
                  }
              }
           }
-    
+
     every tr := !traceMap do {
-        if /tr.freeAddr then {	# No free for malloc?
+        if /tr.freeAddr then {  # No free for malloc?
             put(noFree, mkRec(tr.fName, tr.alloAddr, tr.memAddr, tr.size))
             }
         }
@@ -192,10 +192,10 @@ procedure getFileAndLine(fName, codeLoc)
     cmdLine := "gdb -q "||
            fName|| "<<HERE_FILE\ninfo line *"||codeLoc||"\nquit\nHERE_FILE"
     cmd := open(cmdLine,"rp")
-    read(cmd)		# Skip first line
+    read(cmd)           # Skip first line
     lineNo := "???"
     fileName := "<unknown>"
-    read(cmd) ? {	# extract source file name and line number
+    read(cmd) ? {       # extract source file name and line number
         lineNo   := (tab(find("Line ")),  ="Line ",  tab(upto(' ')))
         fileName := (tab(find(" of \"")), =" of \"", tab(upto('"')))
         }

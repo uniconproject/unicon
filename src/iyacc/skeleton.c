@@ -1,21 +1,21 @@
 #include "defs.h"
 
-/*  The definition of yysccsid in the banner should be replaced with	*/
-/*  a #pragma ident directive if the target C compiler supports		*/
-/*  #pragma ident directives.						*/
-/*									*/
-/*  If the skeleton is changed, the banner should be changed so that	*/
-/*  the altered version can be easily distinguished from the original.	*/
-/*									*/
-/*  The #defines included with the banner are there because they are	*/
-/*  useful in subsequent code.  The macros #defined in the header or	*/
-/*  the body either are not useful outside of semantic actions or	*/
-/*  are conditional.							*/
+/*  The definition of yysccsid in the banner should be replaced with    */
+/*  a #pragma ident directive if the target C compiler supports         */
+/*  #pragma ident directives.                                           */
+/*                                                                      */
+/*  If the skeleton is changed, the banner should be changed so that    */
+/*  the altered version can be easily distinguished from the original.  */
+/*                                                                      */
+/*  The #defines included with the banner are there because they are    */
+/*  useful in subsequent code.  The macros #defined in the header or    */
+/*  the body either are not useful outside of semantic actions or       */
+/*  are conditional.                                                    */
 
 char *banner[] =
 {
     "#ifndef lint",
-    "static char yysccsid[] = \"@(#)yaccpar	1.9 (Berkeley) 02/21/93\";",
+    "static char yysccsid[] = \"@(#)yaccpar     1.9 (Berkeley) 02/21/93\";",
     "#endif",
     "#define YYBYACC 1",
     "#define YYMAJOR 1",
@@ -29,7 +29,7 @@ char *banner[] =
 char *jbanner[] =
 {
     "//### This file created by BYACC 1.9(/Java extension  0.9)",
-    "//### (Berkeley) 02/21/93", 
+    "//### (Berkeley) 02/21/93",
     "//### Java capabilities added 7 Jan 97, Bob Jamison",
     "//### Updated : 27 Nov 97  -- Bob Jamison, Joe Nieten",
     "//###           Updateed to JDK1.1 and added LVAL type",
@@ -603,8 +603,8 @@ char *ibody[] =
 /*    "    debug(&line, \"loop\")  ", */
     "",
     "    ##### NEXT ACTION (from reduction table)",
-    "	yyn := yydefred[yystate+1]",
-/*    "	debug(&line, \"yyn: \", yyn)", */
+    "   yyn := yydefred[yystate+1]",
+/*    " debug(&line, \"yyn: \", yyn)", */
     "",
     "    while yyn = 0 do {",
 /*    "      debug(&line, \"yyn:\", yyn, \"  state:\", yystate, \"  char:\", yychar) ", */
@@ -617,12 +617,12 @@ char *ibody[] =
     "          if \\yydebug = 1 then yylexdebug(yystate, yychar) ",
     "          }",
     "        } # yychar < 0",
-    "	  ",
+    "     ",
     "      yyn := yysindex[yystate+1]  # get amount to shift by (shift index)",
     "",
     "      if (yyn ~= 0)           & ((yyn +:= yychar) >= 0) & ",
     "         (yyn <= YYTABLESIZE) & (yycheck[yyn+1] = yychar) then {",
-    "		",
+    "           ",
 /*    "        debug(&line, \"state \", yystate, \", shifting to state \", yytable[yyn+1], \"\") ", */
     "        ##### NEXT STATE ####",
     "        yystate := yytable[yyn+1] # we are in a new state",
@@ -637,10 +637,10 @@ char *ibody[] =
     "",
     "    yyn := yyrindex[yystate+1]    # reduce",
     "",
-/*  
+/*
     "    debug(&line, \"yyn: \", yyn)",
-    "	 debug(&line, \"yychar: \", yychar)",
-    "	 debug(&line, \"yycheck[yyn+yychar+1]:\", yycheck[yyn+yychar+1])",
+    "    debug(&line, \"yychar: \", yychar)",
+    "    debug(&line, \"yycheck[yyn+yychar+1]:\", yycheck[yyn+yychar+1])",
     "",
 */
     "    if (yyn ~= 0)           & ((yyn +:= yychar) >= 0) &",
@@ -702,7 +702,7 @@ char *ibody[] =
     "    }# yyn = 0 loop",
     "",
 /*
-    "    debug(&line, \"at the end of yyn = 0 loop\")", 
+    "    debug(&line, \"at the end of yyn = 0 loop\")",
     "",
 */
     "    if doaction = 0 then   # any reason not to proceed?",
@@ -715,9 +715,9 @@ char *ibody[] =
 */
     "    yyval := valstk[yym]   # get current semantic value",
     "    if arv := action[yyn]() then return arv # execute the semantic action",
-	"",
+        "",
 /*    "    case yyn of {",
-    "########### USER-SUPPLIED ACTIONS ##########", 
+    "########### USER-SUPPLIED ACTIONS ##########",
 */
     0
 };
@@ -862,11 +862,11 @@ char *itrailer[] =
     "    yystate := statestk[1]        # get new state",
     "",
     "    every 1 to yym do pop(valstk) # corresponding value drop",
-/*    "	 debug(&line, \"yyn: \", yyn)",
+/*    "  debug(&line, \"yyn: \", yyn)",
     "",
 */
     "    yym := yylhs[yyn+1]           # select next TERMINAL(on lhs)",
-/*    "	 debug(&line, \"yym: \", yym)",
+/*    "  debug(&line, \"yym: \", yym)",
     "",
 */
     "    if yystate = 0 & yym = 0 then {",
@@ -886,9 +886,9 @@ char *itrailer[] =
     "    else {                        #else not done yet",
     "      # get next state and push, for next yydefred[]",
 /*
-    "	   debug(&line, \"yyn: \", yyn)",
-    "	   debug(&line, \"yym: \", yym)",
-    "	   debug(&line, \"yygindex[yym]: \", yygindex[yym+1])",
+    "      debug(&line, \"yyn: \", yyn)",
+    "      debug(&line, \"yym: \", yym)",
+    "      debug(&line, \"yygindex[yym]: \", yygindex[yym+1])",
     "",
 */
     "      yyn := yygindex[yym+1]        # find out where to go",
@@ -898,7 +898,7 @@ char *itrailer[] =
     "        }",
     "      else {",
     "        yystate := yydgoto[yym+1]   # else go to new defred",
-    "	     }",
+    "        }",
 /*
     "      debug(&line, \"after reduction, shifting from state \", ",
     "            state[1], \" to state \", yystate, \"\") ",
@@ -912,13 +912,13 @@ char *itrailer[] =
     "end",
     "",
     "### end of procedure parse() ######################################",
-	"",
-	"### start semantic actions ########################################",
-	"",
-	"procedure action_null()",
+        "",
+        "### start semantic actions ########################################",
+        "",
+        "procedure action_null()",
     "  #write(\"null action\")",
     "end",
-    "", 
+    "",
     0
 };
 
@@ -983,13 +983,13 @@ FILE *fp;
     }
   for (i = 0; section[i]; ++i)
     {
-	 ++outline;
+         ++outline;
     if (strncmp(section[i],"@JAVA@",6)==0)
-	   fprintf(fp,&(section[i][6]),java_class_name);
+           fprintf(fp,&(section[i][6]),java_class_name);
     else if (strncmp(section[i],"@JAVAX@",7)==0)
-	   fprintf(fp,&(section[i][7]),java_class_name,java_extend_name);
+           fprintf(fp,&(section[i][7]),java_class_name,java_extend_name);
     else
-	   fprintf(fp, "%s\n", section[i]);
+           fprintf(fp, "%s\n", section[i]);
     }
 }
 

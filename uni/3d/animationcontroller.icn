@@ -22,37 +22,37 @@ class AnimationController(
       #animation_track := []
       animation_step := 1
    end
-   
+
    method set_skeleton(skl)
       skeleton := skl
    end
-   
+
    method init_timer()
       a_clock:=0
    end
 
    method set_timer(t)
-      a_clock := t      
+      a_clock := t
    end
-   
+
    method get_timer()
       return a_clock
    end
-   
+
    method faster()
       animation_step +:= 1
       DEBUGW("animation_step:", animation_step)
       return animation_step
    end
-   
+
    method slower()
       if animation_step > 1 then{
-	 animation_step -:= 1
-	 DEBUGW("animation_step:", animation_step)
-	 }
+         animation_step -:= 1
+         DEBUGW("animation_step:", animation_step)
+         }
       return animation_step
    end
-   
+
    # Do we need trk ?
    method set_animation_track(anim_set, trk)
       local bone, anim
@@ -60,9 +60,9 @@ class AnimationController(
       #animation_step := anim_set.maxKey/120
       a_clock := 0
       DEBUGW("anim track set to:", anim_set.label)
-      
+
       DEBUGW("mapping... animation to bones")
-      
+
       every anim := ! anim_set.lsAnimation do{
          bone := skeleton.get_bone_by_label(anim.boneName)
          bone.animation := anim
@@ -70,29 +70,29 @@ class AnimationController(
          }
       DEBUGW("done!")
    end
-   
+
    method calc_animation(curious)
       if /animation_track then fail
       if a_clock > animation_track.get_max_key() then{
-	 a_clock := 0
- 	 #CalcAnimation(Skeletton)
+         a_clock := 0
+         #CalcAnimation(Skeletton)
       }
       DEBUGW("controller clock:", a_clock)
       skeleton.calc_animation(a_clock, curious)
       a_clock +:= animation_step
-      
+
    end
-   
+
    method update_animation()
       a_clock +:= animation_step
       if a_clock > animation_track.get_max_key() then{
-	 a_clock := 0
- 	 #CalcAnimation(_Skeletton)
-	 #CalcAttitude(_Skeletton,0)
-	 #SkinMesh(_Skeletton)
+         a_clock := 0
+         #CalcAnimation(_Skeletton)
+         #CalcAttitude(_Skeletton,0)
+         #SkinMesh(_Skeletton)
       }
-   end   
-   
+   end
+
    initially
       init()
 end

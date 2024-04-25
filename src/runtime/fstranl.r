@@ -17,17 +17,17 @@
    abstract {
       return integer
       }
-   
+
    if is:null(s) then {
       inline {
 #if !ConcurrentCOMPILER
-	 CURTSTATE();
+         CURTSTATE();
 #endif                                     /* ConcurrentCOMPILER */
          s = k_subject;
          }
       if is:null(i) then inline {
 #if !ConcurrentCOMPILER
-	 CURTSTATE();
+         CURTSTATE();
 #endif                                     /* ConcurrentCOMPILER */
          cnv_ ## i = k_pos;
          }
@@ -66,7 +66,7 @@
        runerr(101,j)
 
 #enddef
-
+
 
 "any(c,s,i1,i2) - produces min(i1,i2)+1 if s[min(i1,i2)] is contained "
 "in c and i1 ~= i2, but fails otherwise."
@@ -83,7 +83,7 @@ function{0,1} any(c,s,i,j)
       return C_integer cnv_i+1;
       }
 end
-
+
 
 "bal(c1,c2,c3,s,i1,i2) - generates the sequence of integer positions in s up to"
 " a character of c1 in s[i1:i2] that is balanced with respect to characters in"
@@ -132,7 +132,7 @@ function{*} bal(c1,c2,c3,s,i,j)
       fail;
       }
 end
-
+
 
 "find(s1,s2,i1,i2) - generates the sequence of positions in s2 at which "
 "s1 occurs as a substring in s2[i1:i2], but fails if there is no such position."
@@ -175,7 +175,7 @@ function{*} find(s1,s2,i,j)
       fail;
       }
 end
-
+
 
 "many(c,s,i1,i2) - produces the position in s after the longest initial "
 "sequence of characters in c in s[i1:i2] but fails if there is none."
@@ -204,7 +204,7 @@ function{0,1} many(c,s,i,j)
       return C_integer cnv_i;
       }
 end
-
+
 
 "match(s1,s2,i1,i2) - produces i1+*s1 if s1==s2[i1+:*s1], but fails otherwise."
 
@@ -237,7 +237,7 @@ function{0,1} match(s1,s2,i,j)
       return C_integer cnv_i + StrLen(s1);
       }
 end
-
+
 
 "upto(c,s,i1,i2) - generates the sequence of integer positions in s up to a "
 "character in c in s[i2:i2], but fails if there is no such position."
@@ -255,12 +255,12 @@ function{*} upto(c,s,i,j)
        * of a character in c.
        */
       while (cnv_i < cnv_j) {
-	 tmp = (C_integer)ToAscii(StrLoc(s)[cnv_i-1]);
-	 if (Testb(tmp, c)) {
-	    suspend C_integer cnv_i;
-	    }
-	 cnv_i++;
-	 }
+         tmp = (C_integer)ToAscii(StrLoc(s)[cnv_i-1]);
+         if (Testb(tmp, c)) {
+            suspend C_integer cnv_i;
+            }
+         cnv_i++;
+         }
       /*
        * Eventually fail.
        */

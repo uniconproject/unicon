@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:	  webup.icn
+#       File:     webup.icn
 #
-#	Subject:  A rudimentary web-based updater/patcher.
+#       Subject:  A rudimentary web-based updater/patcher.
 #
-#	Author:   Clint Jeffery
+#       Author:   Clint Jeffery
 #
-#	Date:     30 June 2010
+#       Date:     30 June 2010
 #
 ############################################################################
 #
@@ -53,46 +53,46 @@ class dialogtable()
 
       platform :=
 $ifdef _UNIX
-	 "linux"
+         "linux"
 $else
-	 "windows"
+         "windows"
 $endif
 
       N := 0
       every dir := (platform | "shared") do {
-	 d.syncdir := dir
+         d.syncdir := dir
 
-	 if *(L := d.check()) > 0 then {
-	    N +:= *L
-	    handle_updates(L, d)
-	    }
-	 }
+         if *(L := d.check()) > 0 then {
+            N +:= *L
+            handle_updates(L, d)
+            }
+         }
       if N = 0 then {
-	 d.message("no files updated")
-	 delay(500)
-	 d.dispose()
-	 }
+         d.message("no files updated")
+         delay(500)
+         d.dispose()
+         }
       else {
-	 d.message((N/3) || " files updated")
-	 delay(3500)
-	 d.dispose()
-	 }
+         d.message((N/3) || " files updated")
+         delay(3500)
+         d.dispose()
+         }
    end
 
    method handle_updates(L, d)
    local fn, reason, size, errs, nerrs
-      errs := ""   
+      errs := ""
       nerrs := 0
       while fn := pop(L) do {
-	 reason := pop(L)
-	 size := pop(L)
-	 errs ||:= d.update(fn, reason, size) || " "
-	 }
+         reason := pop(L)
+         size := pop(L)
+         errs ||:= d.update(fn, reason, size) || " "
+         }
       if errs ~== "" then {
-	 d.message("exiting because: " || errs)
-	 dispatcher.message_loop(d)
-	 exit(-1)
-	 }
+         d.message("exiting because: " || errs)
+         dispatcher.message_loop(d)
+         exit(-1)
+         }
       d.message("updated " || fn || ", continuing")
       delay(800)
       return
@@ -157,7 +157,7 @@ class UnicronProgressBar : _Dialog(lab, fnlab, pb, closebtn, syncdir)
          closebtn: {
             if ev.get_code() > 0 then {
                dispose()
-	       win := &null
+               win := &null
                }
             }
       }
@@ -175,39 +175,39 @@ class UnicronProgressBar : _Dialog(lab, fnlab, pb, closebtn, syncdir)
       message("checking "|| url|| "...")
       db := open(url, "m") | {
          write("can't update, was trying to read ", image(url))
-	 fail
+         fail
          }
       message("checking... opened " || url)
       L := []
       while r := read(db)  do {
-	 if (r == "") | (r[1] == "#") | match("filename ",r) then next
-	 r ? {
+         if (r == "") | (r[1] == "#") | match("filename ",r) then next
+         r ? {
             filen := tab(upto(' \t'))|write("no filename in ", image(r))
             tab(many(' \t'))
             size := numeric(tab(many(&digits)))|
-		write("no filesize in ", image(r))
+                write("no filesize in ", image(r))
             tab(many(' \t'))
             mtime := numeric(tab(many(&digits)))|
-		write("no mtime in ", image(r))
-	    }
+                write("no mtime in ", image(r))
+            }
          message("checking " || filen)
          if not (fs := stat(filen)) then {
             put(L, filen, "because it is a new file", size)
             }
          else if fs.size ~= size then {
             put(L, filen, "because its size ("||size||
-	           ") is different than ours (" || fs.size||")", size)
+                   ") is different than ours (" || fs.size||")", size)
             }
          else if fs.mtime < mtime then {
             put(L, filen, "because it is newer ("||mtime||
-	        ") than ours (" || fs.mtime || ")", size)
+                ") than ours (" || fs.mtime || ")", size)
          }
-	 else {
-	    #write("don't think we updated ", filen)
-	    #write("\tbecause ", image(fs.size), " = ", image(size))
-	    #write("\tbecause ", image(fs.mtime), " >= ", image(mtime))
-	    }
-	 }
+         else {
+            #write("don't think we updated ", filen)
+            #write("\tbecause ", image(fs.size), " = ", image(size))
+            #write("\tbecause ", image(fs.mtime), " >= ", image(mtime))
+            }
+         }
       close(db)
       return L
    end
@@ -223,7 +223,7 @@ class UnicronProgressBar : _Dialog(lab, fnlab, pb, closebtn, syncdir)
       pb.set_percentage(0)
       (fetcher := open(distfile(fn), "m")) | {
          s := "can't get contents of " || fn
-	 message(s)
+         message(s)
          WAttrib(win, "pointer=arrow")
          return s
          }
@@ -239,11 +239,11 @@ class UnicronProgressBar : _Dialog(lab, fnlab, pb, closebtn, syncdir)
          }
       total := 0
       while writes(fo, s := reads(fetcher, 1024)) do {
-	 total +:= *s
-	 percent := 100 * total / size
-	 if percent > 100 then percent := 100
-	 pb.set_percentage(percent)
-	 }
+         total +:= *s
+         percent := 100 * total / size
+         if percent > 100 then percent := 100
+         pb.set_percentage(percent)
+         }
       close(fo)
       if match("new-", fn) then {
          s := "couldn't write " || fn[4:0] ||
@@ -264,18 +264,18 @@ initially
 local t
    self$_Dialog.initially()
    set_attribs("label=" || webuptitle, "size=644,399",
-	       "font=sans", "bg=yellowish white", "resize=on")
+               "font=sans", "bg=yellowish white", "resize=on")
    t := Label("pos=10%,15%", "size=80%,10%",
-	      "internal_alignment=c",
-	      "label=Checking for update files! please wait...")
+              "internal_alignment=c",
+              "label=Checking for update files! please wait...")
    t.set_attribs("font=serif,28,bold","fg=blue")
    add(t)
    lab := Label("pos=50%,80%", "size=90%,10%", "align=c,c",
-		"label=initializing...")
+                "label=initializing...")
    lab.set_attribs("font=serif,18,bold")
    add(lab)
    fnlab := Label("pos=50%,38%", "size=50%,15%", "align=c,c",
-		  "label=no files updated")
+                  "label=no files updated")
    fnlab.set_attribs("font=serif,18,bold")
    add(fnlab)
    pb := ProgressBar("pos=50%,50%", "size=50%", "align=c,c")

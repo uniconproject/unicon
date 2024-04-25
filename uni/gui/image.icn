@@ -22,10 +22,10 @@ global image_cache, zoom_cache
 # set with {set_size()}.
 #
 class Image : Component(
-   filename,                #                
-   scale_up_flag,           #                     
+   filename,                #
+   scale_up_flag,           #
    cache_image_flag,
-   x_internal_alignment,    #                            
+   x_internal_alignment,    #
    y_internal_alignment     #
    )
 
@@ -54,9 +54,9 @@ class Image : Component(
 
    #
    # If set, then the image will be scaled up to fit in the space
-   # specified by {set_size()}.  The image will not be distorted, 
-   # but will be expanded to fill one of the dimensions depending 
-   # on its shape.  If the image is bigger than the specified size 
+   # specified by {set_size()}.  The image will not be distorted,
+   # but will be expanded to fill one of the dimensions depending
+   # on its shape.  If the image is bigger than the specified size
    # then it will always be scaled down.
    #
    method set_scale_up()
@@ -109,7 +109,7 @@ class Image : Component(
          aspr, aspmax, zoom_w, zoom_h, yoff, xoff, zc
 
       W := if /buffer_flag then self.cwin else self.cbwin
- 
+
       EraseRectangle(W, self.x, self.y, self.w, self.h)
 
       #
@@ -166,7 +166,7 @@ class Image : Component(
          "b" : yoff := h1 - zoom_h
          "c" : yoff := (h1 - zoom_h) / 2
          default : fatal("incorrect y internal_alignment specifier: " ||
-			 image(self.y_internal_alignment))
+                         image(self.y_internal_alignment))
       }
 
       case self.x_internal_alignment of {
@@ -174,7 +174,7 @@ class Image : Component(
          "r" : xoff := w1 - zoom_w
          "c" : xoff := (w1 - zoom_w) / 2
          default : fatal("incorrect x internal_alignment specifier: " ||
-			 image(self.x_internal_alignment))
+                         image(self.x_internal_alignment))
       }
 
       zoom_w <:= 1
@@ -186,11 +186,11 @@ class Image : Component(
             CopyArea(zc, W, , , , , x1 + xoff, y1 + yoff)
          else
             Zoom(imwin, W, 0, 0, img_w, img_h,
-		 x1 + xoff, y1 + yoff, zoom_w, zoom_h)
+                 x1 + xoff, y1 + yoff, zoom_w, zoom_h)
          }
       else {
          zc := WOpen("size=" || zoom_w || "," || zoom_h, "canvas=hidden") |
-	    fatal("Couldn't open temp window")
+            fatal("Couldn't open temp window")
          Zoom(imwin, zc, 0, 0, img_w, img_h, 0, 0, zoom_w, zoom_h)
          insert(zoom_cache, filename, zc)
          CopyArea(zc, W, , , , , x1 + xoff, y1 + yoff)
@@ -201,7 +201,7 @@ class Image : Component(
       #
       if \self.draw_border_flag then
          DrawRaisedRectangle(W, x1+xoff-BORDER_WIDTH, y1+yoff-BORDER_WIDTH,
-			     zoom_w + 2*BORDER_WIDTH, zoom_h + 2*BORDER_WIDTH)
+                             zoom_w + 2*BORDER_WIDTH, zoom_h + 2*BORDER_WIDTH)
       self.do_shading(W)
 
    end
@@ -224,8 +224,8 @@ class Image : Component(
             else
                clear_cache_image()
          "internal_alignment" : {
-	    set_internal_alignment!string_vals(attr, val, 2)
-	    }
+            set_internal_alignment!string_vals(attr, val, 2)
+            }
          default: self.Component.set_one(attr, val)
       }
    end
@@ -262,22 +262,22 @@ class TempImage : Image(basewidth, baseheight)
    end
    method display(buffer_flag)
       if not member(image_cache, filename) then {
-	insert(image_cache, filename, WOpen("canvas=hidden", "size="||basewidth||","||baseheight))
-	   }
+        insert(image_cache, filename, WOpen("canvas=hidden", "size="||basewidth||","||baseheight))
+           }
     self.Image.display(buffer_flag)
 end
 
 initially(a[])
     if match("width=", x := !a) then
-	basewidth := integer(x[7:0]) else basewidth := 64
+        basewidth := integer(x[7:0]) else basewidth := 64
     if match("height=", x := !a) then
-	baseheight := integer(x[8:0]) else baseheight := 64
+        baseheight := integer(x[8:0]) else baseheight := 64
     if match("size=", x := !a) then {
-	x[6:0] ? {
-	    basewidth := integer(tab(many(&digits)))
-	    =","
-	    baseheight := integer(tab(many(&digits)))
-	}
+        x[6:0] ? {
+            basewidth := integer(tab(many(&digits)))
+            =","
+            baseheight := integer(tab(many(&digits)))
+        }
     }
     self.Image.initially()
     set_fields(a)

@@ -35,9 +35,7 @@
 #include "XpmI.h"
 
 int
-XpmReadFileToData(filename, data_return)
-    char *filename;
-    char ***data_return;
+XpmReadFileToData(char *filename, char ***data_return)
 {
     XpmImage image;
     XpmInfo info;
@@ -49,14 +47,14 @@ XpmReadFileToData(filename, data_return)
      * initialize return value
      */
     if (data_return)
-	*data_return = NULL;
+        *data_return = NULL;
 
     ErrorStatus = XpmReadFileToXpmImage(filename, &image, &info);
     if (ErrorStatus != XpmSuccess)
-	return (ErrorStatus);
+        return (ErrorStatus);
 
     ErrorStatus =
-	XpmCreateDataFromXpmImage(data_return, &image, &info);
+        XpmCreateDataFromXpmImage(data_return, &image, &info);
 
     XpmFreeXpmImage(&image);
     XpmFreeXpmInfo(&info);

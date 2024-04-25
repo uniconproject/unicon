@@ -14,19 +14,19 @@ procedure main()
    template := "{yyval = tree5(N_Binop"
    while line := read () do {
       if not(match(template,line)) then
-         write(line)		# copy until "offending member" is found
+         write(line)            # copy until "offending member" is found
       else {
-         lastline := line	# save it for last case in group
-         buffer := []		# push-back buffer
+         lastline := line       # save it for last case in group
+         buffer := []           # push-back buffer
          repeat {
-            put(buffer,read())	# "case ..."
-            put(buffer,read())	# "# line ...
+            put(buffer,read())  # "case ..."
+            put(buffer,read())  # "# line ...
             line := read()
             if not match(template,line) then {
-               write(lastline)	# if not a duplicate, insert the one instance
-               while write(get(buffer))	# write out lines pushed back
-               write(line)	# write the new line
-               break		# break back to the main loop (may be more)
+               write(lastline)  # if not a duplicate, insert the one instance
+               while write(get(buffer)) # write out lines pushed back
+               write(line)      # write the new line
+               break            # break back to the main loop (may be more)
                }
              else while write(get(buffer))  # else write out lines pushed back
              }

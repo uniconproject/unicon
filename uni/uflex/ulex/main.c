@@ -45,11 +45,11 @@ int main(int argc, char *argv[])
 
    if (argc > arg && argv[arg][0]=='-' && argv[arg][1]=='o') {
       if (strlen(argv[arg]+2))
-	 outfilename = argv[arg]+2;
+         outfilename = argv[arg]+2;
       else {
-	 arg++;
-	 outfilename = argv[arg];
-	 }
+         arg++;
+         outfilename = argv[arg];
+         }
       arg++;
       }
    else if (arg < argc) {
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
       int len = strlen(argv[arg]);
       strcpy(ppcmdline, argv[arg]);
       if (((ppcmdline[len-1]=='l')||(ppcmdline[len-1]=='L')) &&
-	   (ppcmdline[len-2]=='.')) ppcmdline[len-2] = '\0';
+           (ppcmdline[len-2]=='.')) ppcmdline[len-2] = '\0';
       strcat(ppcmdline, ".icn");
       outfilename = strdup(ppcmdline);
       }
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
    if (pp) {
       sprintf(ppcmdline, "ulpp < %s", yyfilename);
       if (strcmp(ppcmdline+strlen(ppcmdline)-2, ".l"))
-	 strcat(ppcmdline, ".l");
+         strcat(ppcmdline, ".l");
       yyin = popen(ppcmdline, "r");
       }
    else {
@@ -112,16 +112,16 @@ int main(int argc, char *argv[])
        */
       nextchar = nextchar2;
       if ((nextchar2 = fgetc(yyin)) == EOF) {
-	 fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
-	 }
+         fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+         }
       if (nextchar2 == 10 || nextchar2 == 13)
-	 yylineno++;
+         yylineno++;
       }
 
    if (nextchar2 == '{') {
       grab_upto_percents();
       }
-     
+
    /* yyparse() calls automata.c::createicon() which opens outfile. */
 
    i = yyparse();
@@ -183,25 +183,25 @@ char* grab_upto_percents()
 
    while (nextchar != '%' || nextchar2 != '}') {
       if (nextchar2 == -1) {
-	 fprintf(stderr, "error in processing upto first percents");
-	 fflush(stderr);
-	 exit(-1);
-	 }
+         fprintf(stderr, "error in processing upto first percents");
+         fflush(stderr);
+         exit(-1);
+         }
 
       if (nextchar == '"' && slash == 0)
-	 quotemode = 1 - quotemode;
+         quotemode = 1 - quotemode;
 
       if (nextchar == '\\') slash = 1 - slash;
 
       if (index >= size-2) {
-	 size *= 2;
-	 begintext = realloc(begintext, size * sizeof(char));
-	 if (begintext == NULL) {
-	    fprintf(stderr, "calloc failed in makebigger\n");
-	    fflush(stderr);
-	    exit(-1);
-	    }
-	 }
+         size *= 2;
+         begintext = realloc(begintext, size * sizeof(char));
+         if (begintext == NULL) {
+            fprintf(stderr, "calloc failed in makebigger\n");
+            fflush(stderr);
+            exit(-1);
+            }
+         }
 
       begintext[index] = nextchar;
       index++;
@@ -209,18 +209,18 @@ char* grab_upto_percents()
 
       nextchar = nextchar2;
       if ((nextchar2 = fgetc(yyin)) == EOF) {
-	 fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
-	 }
+         fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+         }
       if (nextchar2 == 10 || nextchar2 == 13)
-	 yylineno++;
+         yylineno++;
       }
 
    while (nextchar != '%' || nextchar2 != '%') {
       nextchar = nextchar2;
       if ((nextchar2 = fgetc(yyin)) == EOF) {
-	 fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
-	 }
+         fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+         }
       if (nextchar2 == 10 || nextchar2 == 13)
-	 yylineno++;
+         yylineno++;
       }
 }

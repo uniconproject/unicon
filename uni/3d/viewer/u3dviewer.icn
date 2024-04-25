@@ -9,7 +9,7 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    menubar, mHelp, tianimation,  start_dir, wdir, files_history , tblanimation,
    tckeys, tcname, check_box_group_animation , tcFrames, mioptions,
    mipreferences, treeskeleton)
-   
+
    method component_setup()
       self.setup()
       setup_animationbtns()
@@ -23,23 +23,23 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
       world.w3d := view_model3d.cwin
       \(world.w3d) | write("Window is null!!")
    end
-   
+
    method init_history()
       local fin, what, dat, line, mif, f, fname, i
       start_dir := wdir := chdir() | ""
       files_history  := []
       fin := open("last_session.ini") | fail
-      
+
       while line := read(fin) do{
-	line ? {
-	  what := tab(find(":")) | next
-	  move(1)
-	  dat :=  tab(0) | next
-	  case what of{
-	    "dir" : stat(dat) & wdir := dat
-	    "file": stat(dat) & put(files_history, dat)
-	  }
-	} # line ?
+        line ? {
+          what := tab(find(":")) | next
+          move(1)
+          dat :=  tab(0) | next
+          case what of{
+            "dir" : stat(dat) & wdir := dat
+            "file": stat(dat) & put(files_history, dat)
+          }
+        } # line ?
       } # while
       close(fin)
 
@@ -48,40 +48,40 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
       mFile.add(MenuSeparator())
 
       every i := 1 to *files_history do {
-	 f := files_history[i]
-	 mif := TextMenuItem()
-	 fname := file_name(f)
-	 mif.set_label(i || ". " ||fname)
-	 mif.connect(self, "on_mif", ACTION_EVENT)
-	 mFile.add(mif)
-	 }
+         f := files_history[i]
+         mif := TextMenuItem()
+         fname := file_name(f)
+         mif.set_label(i || ". " ||fname)
+         mif.connect(self, "on_mif", ACTION_EVENT)
+         mFile.add(mif)
+         }
    end
-   
+
    method add_file_history(f)
       local i, replace, mif, items, base
       if f==files_history[1] then fail # the new file is already at the top of the list
       every i := 2 to *files_history do
-	 if f == files_history[i] then {
-	    delete(files_history, i)
-	    break replace := i
-	    }
+         if f == files_history[i] then {
+            delete(files_history, i)
+            break replace := i
+            }
       push(files_history, f)
       return
       #if *files_history=1 then mFile.add(MenuSeparator())
-	
+
       if /replace then{
-	mif := TextMenuItem()
-	mif.set_label(f)
-	mif.connect(self, "on_mif", ACTION_EVENT)
-	mFile.add(mif)
-	}
+        mif := TextMenuItem()
+        mif.set_label(f)
+        mif.connect(self, "on_mif", ACTION_EVENT)
+        mFile.add(mif)
+        }
       else{
-	items := mFile.get_children()
-	base := *items - *files_history
-	mif := items[base+replace]
-	mFile.remove(mif)
-	mFile.add(mif, base+1)
-	}
+        items := mFile.get_children()
+        base := *items - *files_history
+        mif := items[base+replace]
+        mFile.remove(mif)
+        mFile.add(mif, base+1)
+        }
    end
 
    method on_mif(ev)
@@ -91,7 +91,7 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
      \i | fail
      load_file(files_history[i])
    end
-   
+
    method on_miLoadModel(ev)
      local fd, fname
     #$ifdef _UNIX
@@ -101,13 +101,13 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
          fname := fd.get_result() | fail
     ##$else
     #  fname  :=  WinOpenDialog("Open 3D Model File...", "", 50) | fail
-    #$endif    
+    #$endif
 
       if not(map(fname[-4:0]) == ".s3d" | map(fname[-2:0]) == ".x" )then
          fail
       load_file(fname)
    end
-   
+
    method load_file(fname)
      world.w3d := view_model3d.cwin
      world.load (fname, 1.8) | fail
@@ -118,29 +118,29 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
      world.render()
      self.display()
    end
-   
+
    method fill_animation()
    local anim, LL := []
       every anim := world.mod3d.animations() do {
-	 put(LL, [anim, world.mod3d.get_animation_max_key(anim) | "?"])
-	 }
+         put(LL, [anim, world.mod3d.get_animation_max_key(anim) | "?"])
+         }
       tblanimation.set_contents(LL)
       tsstat.display()
    end
-   
+
    method fill_summary()
       local LL := [
-	 [ "meshes", world.mod3d.mesh_count() ],
-	 [ "vertices", world.mod3d.vertex_count() ],
-	 [ "normals", world.mod3d.normals_count() ],
-	 [ "polygons", world.mod3d.face_count() ],
-	 [ "bones", world.mod3d.bone_count() ],
-	 [ "animations", world.mod3d.animation_count() ],
-	 [ "all materials", world.mod3d.material_count() ],
-	 [ "textured materials", world.mod3d.texmaterial_count() ],
-	 [ "texture files", world.mod3d.texture_files_count() ],
-	 [ "texture coords", world.mod3d.texture_coords_count() ]
-	 ]
+         [ "meshes", world.mod3d.mesh_count() ],
+         [ "vertices", world.mod3d.vertex_count() ],
+         [ "normals", world.mod3d.normals_count() ],
+         [ "polygons", world.mod3d.face_count() ],
+         [ "bones", world.mod3d.bone_count() ],
+         [ "animations", world.mod3d.animation_count() ],
+         [ "all materials", world.mod3d.material_count() ],
+         [ "textured materials", world.mod3d.texmaterial_count() ],
+         [ "texture files", world.mod3d.texture_files_count() ],
+         [ "texture coords", world.mod3d.texture_coords_count() ]
+         ]
       tblsummary.set_contents(LL)
       tsstat.display()
    end
@@ -149,10 +149,10 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    local fout, f
       chdir(start_dir)
       fout := open("last_session.ini", "w") |
-	 stop("can't write last_session.ini")
+         stop("can't write last_session.ini")
       write(fout, "dir:",wdir )
       every f := !files_history do
-	 write(fout, "file:", f)
+         write(fout, "file:", f)
       close(fout)
       self.dispose()
    end
@@ -164,13 +164,13 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
     Notice("       Unicon 3D viewer         ",
            "         Version 1.0            ",
            "",
-	   " Developer : Jafar Al-Gharaibeh ",
-	   " Email     : to.jafar@gmail.com ",
-	   " Date      : Dec 30, 2010       ")
-    
+           " Developer : Jafar Al-Gharaibeh ",
+           " Email     : to.jafar@gmail.com ",
+           " Date      : Dec 30, 2010       ")
+
     &window := win
    end
-   
+
    method logit(msgs[])
    local msg := ""
    static L
@@ -183,12 +183,12 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
       tllogmsg.ensure_row_visible(*L)
       tllogmsg.display()
    end
-   
+
    method on_play()
       if on_tblanimation() then
-	world.set_auto_refresh()
+        world.set_auto_refresh()
    end
-   
+
    method on_stop()
       world.unset_auto_refresh()
    end
@@ -199,19 +199,19 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
 
    method setup_animationbtns()
       local animation_toolbar, icnbtn, panel_1
-      
+
       animation_toolbar := ToolBar()
       animation_toolbar.set_pos("2", "70%")
       animation_toolbar.set_size("96%", "41")
       #animation_toolbar.set_draw_border()
-      
+
       panel_1 := Panel()
       panel_1.set_pos("2", "50%")
       panel_1.set_size("96%", "35")
       panel_1.set_align("l", "c")
-      
+
       check_box_group_animation := CheckBoxGroup()
-      
+
       icnbtn := ToggleIconButton()
       icnbtn.set_pos("34", "50%")
       icnbtn.set_align("l", "c")
@@ -222,7 +222,7 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
       icnbtn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~33~~~~~~~~~~~~~~~~303~~~~~~~~~~~~~~~3003~~~~~~~~~~~~~~30003~~~~~~~~~~~~~300003~~~~~~~~~~~~3000003~~~~~~~~~~~30000003~~~~~~~~~~30000006~~~~~~~~~~3000006~~~~~~~~~~~300006~~~~~~~~~~~~30006~~~~~~~~~~~~~3006~~~~~~~~~~~~~~306~~~~~~~~~~~~~~~36~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
       icnbtn.connect(self, "on_play", ACTION_EVENT)
       panel_1.add(icnbtn)
-      
+
       icnbtn := ToggleIconButton()
       icnbtn.set_pos("68", "50%")
       icnbtn.set_align("l", "c")
@@ -233,7 +233,7 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
       icnbtn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~333333~333333~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~366666~366666~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
       icnbtn.connect(self, "on_pause", ACTION_EVENT)
       panel_1.add(icnbtn)
-      
+
       icnbtn := ToggleIconButton()
       icnbtn.set_pos("102", "50%")
       icnbtn.set_align("l", "c")
@@ -245,10 +245,10 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
       icnbtn.connect(self, "on_stop", ACTION_EVENT)
       panel_1.add(icnbtn)
       animation_toolbar.add(panel_1)
-      
+
       tianimation.add(animation_toolbar)
-   end   
-   
+   end
+
    method on_tblanimation(ev)
      local LL, a, row
      static last_anim

@@ -2,7 +2,7 @@
 #
 # The Computer Language Benchmarks Game
 # http://benchmarksgame.alioth.debian.org/
-# Translated from Greg Buchholz's C program   
+# Translated from Greg Buchholz's C program
 
 global w, h, wr, hr
 $define iter 50
@@ -12,24 +12,24 @@ procedure do_y(y)
    local bit_num, byte_acc, x, Zr, Zi, Cr, Ci, Tr, Ti, i, rv
    bit_num := byte_acc := 0
    rv := ""
-      
+
       Ci := (2.0*y/hr - 1.0)
       every x := 0 to w-1 do {
          Zr := Zi := Tr := Ti := 0.0
-         Cr := (2.0*x/wr - 1.5) 
-	 every i := 0 to iter-1 do {
-	    if Tr+Ti > 4.0 then break
+         Cr := (2.0*x/wr - 1.5)
+         every i := 0 to iter-1 do {
+            if Tr+Ti > 4.0 then break
             Zi := 2.0 * Zr * Zi + Ci
             Zr := Tr - Ti + Cr
             Tr := Zr * Zr
             Ti := Zi * Zi
             }
-         
-         byte_acc := ishift(byte_acc, 1) 
-         if Tr+Ti <= 4.0 then { 
+
+         byte_acc := ishift(byte_acc, 1)
+         if Tr+Ti <= 4.0 then {
             byte_acc := ior(byte_acc, 1)
-            }          
-         bit_num +:= 1 
+            }
+         bit_num +:= 1
 
          if bit_num = 8 then {
             rv ||:= char(byte_acc)
@@ -37,10 +37,10 @@ procedure do_y(y)
             }
          }
       if bit_num ~= 0 then {
-	 byte_acc := ishift(byte_acc, abs(8-w%8))
-	 rv ||:= char(byte_acc)
-	 byte_acc := bit_num := 0
-	 }
+         byte_acc := ishift(byte_acc, abs(8-w%8))
+         rv ||:= char(byte_acc)
+         byte_acc := bit_num := 0
+         }
      return rv
 end
 
@@ -51,13 +51,13 @@ procedure run_mandelbrot_concurrent(argv)
       x := integer(x[11:0])
    else
       x := 4
-   
-   pool := Pool(x) 
+
+   pool := Pool(x)
    wL := list()
    rL := list()
    w := h := integer(argv[1])
    wr := hr := real(w)
-   
+
    write(output, "P4\n", w, " ", h)
 
    every i := 0 to h-1 do
@@ -74,7 +74,7 @@ procedure run_mandelbrot_sequential(argv)
    rL := list()
    w := h := integer(argv[1])
    wr := hr := real(w)
-   
+
    write(output, "P4\n", w, " ", h)
 
 
@@ -83,8 +83,8 @@ procedure run_mandelbrot_sequential(argv)
    rL := list(*wL)
    every i := 1 to *rL do {
       rL[i] := do_y(wL[i])
-      }   
-   
+      }
+
    every i := !rL do
       writes(output, i)
    w := r := wr := hr := &null

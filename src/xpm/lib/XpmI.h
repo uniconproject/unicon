@@ -104,22 +104,22 @@ extern FILE *popen();
 #define XpmMalloc(size) boundCheckingMalloc((long)(size))/* in simx.[ch] */
 #define XpmRealloc(ptr, size) boundCheckingRealloc((ptr),(long)(size))
 #define XpmCalloc(nelem, elsize) \
-		boundCheckingCalloc((long)(nelem),(long) (elsize))
+                boundCheckingCalloc((long)(nelem),(long) (elsize))
 #endif
 
 #define XPMMAXCMTLEN BUFSIZ
 typedef struct {
     unsigned int type;
     union {
-	FILE *file;
-	char **data;
+        FILE *file;
+        char **data;
     }     stream;
     char *cptr;
     unsigned int line;
     int CommentLength;
     char Comment[XPMMAXCMTLEN];
     char *Bcmt, *Ecmt, Bos, Eos;
-    int format;			/* 1 if XPM1, 0 otherwise */
+    int format;                 /* 1 if XPM1, 0 otherwise */
 }      xpmData;
 
 #define XPMARRAY 0
@@ -132,15 +132,15 @@ typedef struct {
 #define SPC ' '
 
 typedef struct {
-    char *type;			/* key word */
-    char *Bcmt;			/* string beginning comments */
-    char *Ecmt;			/* string ending comments */
-    char Bos;			/* character beginning strings */
-    char Eos;			/* character ending strings */
-    char *Strs;			/* strings separator */
-    char *Dec;			/* data declaration string */
-    char *Boa;			/* string beginning assignment */
-    char *Eoa;			/* string ending assignment */
+    char *type;                 /* key word */
+    char *Bcmt;                 /* string beginning comments */
+    char *Ecmt;                 /* string ending comments */
+    char Bos;                   /* character beginning strings */
+    char Eos;                   /* character ending strings */
+    char *Strs;                 /* strings separator */
+    char *Dec;                  /* data declaration string */
+    char *Boa;                  /* string beginning assignment */
+    char *Eoa;                  /* string ending assignment */
 }      xpmDataType;
 
 extern xpmDataType xpmDataTypes[];
@@ -159,7 +159,7 @@ typedef struct {
 
 extern char *xpmColorKeys[];
 
-#define TRANSPARENT_COLOR "None"	/* this must be a string! */
+#define TRANSPARENT_COLOR "None"        /* this must be a string! */
 
 /* number of xpmColorKeys */
 #define NKEYS 5
@@ -168,10 +168,10 @@ extern char *xpmColorKeys[];
 
 FUNC(xpmParseData, int, (xpmData *data, XpmImage *image, XpmInfo *info));
 FUNC(xpmParseDataAndCreate, int, (Display *display, xpmData *data,
-				  XImage **image_return,
-				  XImage **shapeimage_return,
-				  XpmImage *image, XpmInfo *info,
-				  XpmAttributes *attributes));
+                                  XImage **image_return,
+                                  XImage **shapeimage_return,
+                                  XpmImage *image, XpmInfo *info,
+                                  XpmAttributes *attributes));
 
 FUNC(xpmFreeColorTable, void, (XpmColor *colorTable, int ncolors));
 
@@ -184,16 +184,16 @@ FUNC(xpmInitXpmInfo, void, (XpmInfo *info));
 FUNC(xpmSetInfoMask, void, (XpmInfo *info, XpmAttributes *attributes));
 FUNC(xpmSetInfo, void, (XpmInfo *info, XpmAttributes *attributes));
 FUNC(xpmSetAttributes, void, (XpmAttributes *attributes, XpmImage *image,
-			      XpmInfo *info));
+                              XpmInfo *info));
 
 #if !defined(FOR_MSW)
 FUNC(xpmCreatePixmapFromImage, void, (Display *display, Drawable d,
-				      XImage *ximage, Pixmap *pixmap_return));
+                                      XImage *ximage, Pixmap *pixmap_return));
 
 FUNC(xpmCreateImageFromPixmap, void, (Display *display, Pixmap pixmap,
-				      XImage **ximage_return,
-				      unsigned int *width,
-				      unsigned int *height));
+                                      XImage **ximage_return,
+                                      unsigned int *width,
+                                      unsigned int *height));
 #endif
 
 /* structures and functions related to hastable code */
@@ -226,40 +226,40 @@ FUNC(xpmNextUI, int, (xpmData *mdata, unsigned int *ui_return));
 FUNC(xpmGetString, int, (xpmData *mdata, char **sptr, unsigned int *l));
 
 #define xpmGetC(mdata) \
-	((!mdata->type || mdata->type == XPMBUFFER) ? \
-	 (*mdata->cptr++) : (getc(mdata->stream.file)))
+        ((!mdata->type || mdata->type == XPMBUFFER) ? \
+         (*mdata->cptr++) : (getc(mdata->stream.file)))
 
 FUNC(xpmNextWord, unsigned int,
      (xpmData *mdata, char *buf, unsigned int buflen));
 FUNC(xpmGetCmt, int, (xpmData *mdata, char **cmt));
 FUNC(xpmParseHeader, int, (xpmData *mdata));
 FUNC(xpmParseValues, int, (xpmData *data, unsigned int *width,
-			   unsigned int *height, unsigned int *ncolors,
-			   unsigned int *cpp, unsigned int *x_hotspot,
-			   unsigned int *y_hotspot, unsigned int *hotspot,
-			   unsigned int *extensions));
+                           unsigned int *height, unsigned int *ncolors,
+                           unsigned int *cpp, unsigned int *x_hotspot,
+                           unsigned int *y_hotspot, unsigned int *hotspot,
+                           unsigned int *extensions));
 
 FUNC(xpmParseColors, int, (xpmData *data, unsigned int ncolors,
-			   unsigned int cpp, XpmColor **colorTablePtr,
-			   xpmHashTable *hashtable));
+                           unsigned int cpp, XpmColor **colorTablePtr,
+                           xpmHashTable *hashtable));
 
 FUNC(xpmParseExtensions, int, (xpmData *data, XpmExtension **extensions,
-			       unsigned int *nextensions));
+                               unsigned int *nextensions));
 
 /* RGB utility */
 
 FUNC(xpmReadRgbNames, int, (char *rgb_fname, xpmRgbName *rgbn));
 FUNC(xpmGetRgbName, char *, (xpmRgbName *rgbn, int rgbn_max,
-			     int red, int green, int blue));
+                             int red, int green, int blue));
 FUNC(xpmFreeRgbNames, void, (xpmRgbName *rgbn, int rgbn_max));
 #ifdef FOR_MSW
 FUNC(xpmGetRGBfromName,int, (char *name, int *r, int *g, int *b));
 #endif
 
 FUNC(xpm_xynormalizeimagebits, void, (register unsigned char *bp,
-				      register XImage *img));
+                                      register XImage *img));
 FUNC(xpm_znormalizeimagebits, void, (register unsigned char *bp,
-				     register XImage *img));
+                                     register XImage *img));
 
 /*
  * Macros
@@ -283,11 +283,11 @@ FUNC(xpm_znormalizeimagebits, void, (register unsigned char *bp,
 
 #define XYNORMALIZE(bp, img) \
     if ((img->byte_order == MSBFirst) || (img->bitmap_bit_order == MSBFirst)) \
-	xpm_xynormalizeimagebits((unsigned char *)(bp), img)
+        xpm_xynormalizeimagebits((unsigned char *)(bp), img)
 
 #define ZNORMALIZE(bp, img) \
     if (img->byte_order == MSBFirst) \
-	xpm_znormalizeimagebits((unsigned char *)(bp), img)
+        xpm_znormalizeimagebits((unsigned char *)(bp), img)
 
 #define XYINDEX(x, y, img) \
     ((y) * img->bytes_per_line) + \
@@ -318,7 +318,7 @@ FUNC(xpmstrdup, char *, (char *s1));
 #endif
 
 
-#ifdef NEED_STRCASECMP                   
+#ifdef NEED_STRCASECMP
 FUNC(xpmstrcasecmp, int, (char *s1, char *s2));
 #else
 #undef xpmstrcasecmp

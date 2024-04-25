@@ -58,8 +58,7 @@ void free_stbl()
 /*
  * init_sbuf - initialize a new sbuf struct, allocating an initial buffer.
  */
-void init_sbuf(sbuf)
-struct str_buf *sbuf;
+void init_sbuf(struct str_buf *sbuf)
    {
    sbuf->size = SBufSize;
    sbuf->frag_lst = (struct str_buf_frag *)alloc((unsigned int)
@@ -73,8 +72,7 @@ struct str_buf *sbuf;
 /*
  * clear_sbuf - free string buffer storage.
  */
-void clear_sbuf(sbuf)
-struct str_buf *sbuf;
+void clear_sbuf(struct str_buf *sbuf)
    {
    struct str_buf_frag *sbf, *sbf1;
 
@@ -92,8 +90,7 @@ struct str_buf *sbuf;
  * new_sbuf - allocate a new buffer for a sbuf struct, copying the partially
  *   created string from the end of full buffer to the new one.
  */
-void new_sbuf(sbuf)
-struct str_buf *sbuf;
+void new_sbuf(struct str_buf *sbuf)
    {
    struct str_buf_frag *sbf;
    char *s1, *s2;
@@ -105,12 +102,12 @@ struct str_buf *sbuf;
 #if IntBits == 16
    unsigned int oldsize = sbuf->size;
    sbuf->size += (sbuf->size/2);
-   if (sbuf->size < oldsize) {		/* check for overflow */
+   if (sbuf->size < oldsize) {          /* check for overflow */
       sbuf->size = MaxBlock;
       }
-#else					/* IntBits == 16 */
+#else                                   /* IntBits == 16 */
    sbuf->size *= 2;
-#endif					/* IntBits == 16 */
+#endif                                  /* IntBits == 16 */
 
    s1 = sbuf->strtimage;
    sbf = (struct str_buf_frag *)alloc((unsigned int)
@@ -124,12 +121,11 @@ struct str_buf *sbuf;
    sbuf->endimage = s2;
    sbuf->end = sbuf->strtimage + sbuf->size;
    }
-
+
 /*
  * spec_str - install a special string (null terminated) in the string table.
  */
-char *spec_str(s)
-char *s;
+char *spec_str(char *s)
    {
    struct str_entry *se;
    register char *s1;
@@ -153,14 +149,13 @@ char *s;
    str_tbl[h] = se;
    return s;
    }
-
+
 /*
  * str_install - find out if the string at the end of the buffer is in
  *   the string table. If not, put it there. Return a pointer to the
  *   string in the table.
  */
-char *str_install(sbuf)
-struct str_buf *sbuf;
+char *str_install(struct str_buf *sbuf)
    {
    int h;
    struct str_entry *se;
@@ -203,14 +198,12 @@ struct str_buf *sbuf;
    str_tbl[h] = se;
    return se->s;
    }
-
+
 /*
  * streq - compare s1 with s2 for len bytes, and return 1 for equal,
  *  0 for not equal.
  */
-static int streq(len, s1, s2)
-register int len;
-register char *s1, *s2;
+static int streq(register int len, register char *s1, register char *s2)
    {
    while (len--)
       if (*s1++ != *s2++)

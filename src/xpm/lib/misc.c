@@ -40,63 +40,58 @@
  * which does the trick
  */
 char *
-xpmstrdup(s1)
-    char *s1;
+xpmstrdup(char *s1)
 {
     char *s2;
     int l = strlen(s1) + 1;
 
     if (s2 = (char *) XpmMalloc(l))
-	strcpy(s2, s1);
+        strcpy(s2, s1);
     return s2;
 }
 
 #endif
 
 unsigned int
-xpmatoui(p, l, ui_return)
-    register char *p;
-    unsigned int l;
-    unsigned int *ui_return;
+xpmatoui(register char *p, unsigned int l, unsigned int *ui_return)
 {
     register unsigned int n, i;
 
     n = 0;
     for (i = 0; i < l; i++)
-	if (*p >= '0' && *p <= '9')
-	    n = n * 10 + *p++ - '0';
-	else
-	    break;
+        if (*p >= '0' && *p <= '9')
+            n = n * 10 + *p++ - '0';
+        else
+            break;
 
     if (i != 0 && i == l) {
-	*ui_return = n;
-	return 1;
+        *ui_return = n;
+        return 1;
     } else
-	return 0;
+        return 0;
 }
 
 /*
  * Function returning a character string related to an error code.
  */
 char *
-XpmGetErrorString(errcode)
-    int errcode;
+XpmGetErrorString(int errcode)
 {
     switch (errcode) {
     case XpmColorError:
-	return ("XpmColorError");
+        return ("XpmColorError");
     case XpmSuccess:
-	return ("XpmSuccess");
+        return ("XpmSuccess");
     case XpmOpenFailed:
-	return ("XpmOpenFailed");
+        return ("XpmOpenFailed");
     case XpmFileInvalid:
-	return ("XpmFileInvalid");
+        return ("XpmFileInvalid");
     case XpmNoMemory:
-	return ("XpmNoMemory");
+        return ("XpmNoMemory");
     case XpmColorFailed:
-	return ("XpmColorFailed");
+        return ("XpmColorFailed");
     default:
-	return ("Invalid XpmError");
+        return ("Invalid XpmError");
     }
 }
 
@@ -117,8 +112,7 @@ XpmLibraryVersion()
 #endif
 
 void
-XpmFree(ptr)
-    void *ptr;
+XpmFree(void *ptr)
 {
     free(ptr);
 }

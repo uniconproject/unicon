@@ -14,18 +14,18 @@ procedure main()
 
     f := open("a.icn","w") | stop("can't write a.icn")
     write(f, "procedure main()\n_
-	         write(\"hello, world\")\n_
+                 write(\"hello, world\")\n_
               end")
     close(f)
     write("compiling a.icn")
 #  TODO: when selecticont() is in any lib/, use it
-    icont:= "icont"    
+    icont:= "icont"
     getenv("ICONT")? (find("icont") , icont:=tab(0))
     &features ? ( ="Binaries at ", unicon:=tab(0)|| "unicon" )
     stat(unicon) & icont:=unicon   # if wrong, do not use this.
     getenv("UC"|"UNICON")? (find("unicon") , icont:=tab(0))
     if ss := system(icont||" -s a.icn") then {
-	if ss ~= 0 then stop("compile returned ", image(ss))
+        if ss ~= 0 then stop("compile returned ", image(ss))
         }
     else stop("system(icont a.icn) failed")
 
@@ -40,4 +40,4 @@ procedure main()
     if find("NT", &features) then remove("a.exe")
     else remove("a")
 end
-    
+

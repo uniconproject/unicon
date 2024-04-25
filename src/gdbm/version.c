@@ -23,11 +23,11 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 #include "../h/config.h"
 
 /* Keep a string with the version number in it! */
 const char * gdbm_version =
-	"This is GDBM version 1.7.3, as of May 19, 1994.";
+        "This is GDBM version 1.7.3, as of May 19, 1994.";

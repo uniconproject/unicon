@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     msgutils.icn
+#       File:     msgutils.icn
 #
-#	Subject:  Miscellaneous routines for messaging
+#       Subject:  Miscellaneous routines for messaging
 #
-#	Author:   Steve Lumos
+#       Author:   Steve Lumos
 #
-#	Date:     22 Apr 2000
+#       Date:     22 Apr 2000
 #
 ############################################################################
 #
@@ -26,21 +26,21 @@ procedure FormOpen(url, fields)
 
     boundry := "--"
     every 1 to 30 do boundry ||:= ?(&letters++&digits)
-    
+
     formdata := boundry
     every nam := key(fields) do {
-	formdata ||:= "\r\n" ||
-	    "Content-Disposition: form-data; name=\"" || nam || "\"\r\n" ||
-	    "Content-Type: text/plain\r\n" || "\r\n"
-	formdata ||:= fields[nam] || "\r\n"
-	formdata ||:= boundry
+        formdata ||:= "\r\n" ||
+            "Content-Disposition: form-data; name=\"" || nam || "\"\r\n" ||
+            "Content-Type: text/plain\r\n" || "\r\n"
+        formdata ||:= fields[nam] || "\r\n"
+        formdata ||:= boundry
     }
     formdata ||:= "--\r\n"
 
-    web := open(url, "m", 
-		"Content-Type: multipart/form-data; " ||
+    web := open(url, "m",
+                "Content-Type: multipart/form-data; " ||
                                "boundry=" || boundry[3:0],
-		"Content-Length: " || *formdata)
+                "Content-Length: " || *formdata)
     writes(web, formdata)
     return web
 end
@@ -54,19 +54,19 @@ procedure UploadFile(filename, url)
 
     f := open(filename) | fail
     if match(typ, "text/") then {
-	enc := "7bit"
-	s := reads(f, 1000000)
+        enc := "7bit"
+        s := reads(f, 1000000)
     }
     else {
-	enc := "base64"
-	s := base64encode(reads(f, 10000000))
+        enc := "base64"
+        s := base64encode(reads(f, 10000000))
     }
-    close(f)	
+    close(f)
 
     server := open(url, "m",
-		   "Content-Type: " || typ,
-		   "Content-Transfer-Encoding: " || enc,
-		   "Content-Length: " || *s) | fail
+                   "Content-Type: " || typ,
+                   "Content-Transfer-Encoding: " || enc,
+                   "Content-Length: " || *s) | fail
     writes(server, s)
     return server
 end
@@ -77,132 +77,132 @@ procedure ContentType(filename)
     local  ext
 
     initial {
-	typemap := table("application/octet-stream")
+        typemap := table("application/octet-stream")
 
-	# These are from the mime.types included with Apache
-	typemap["ez"]   := "application/andrew-inset"
-	typemap["hqx"]  := "application/mac-binhex40"
-	typemap["cpt"]  := "application/mac-compactpro"
-	typemap["doc"]  := "application/msword"
-	typemap["oda"]  := "application/oda"
-	typemap["pdf"]  := "application/pdf"
-	typemap["ai"]   := "application/postscript"
-	typemap["ps"]   := "application/postscript"
-	typemap["eps"]  := "application/postscript"
-	typemap["rtf"]  := "application/rtf"
-	typemap["smi"]  := "application/smil"
-	typemap["smil"] := "application/smil"
-	typemap["mif"]  := "application/vnd.mif"
-	typemap["xls"]  := "application/vnd.ms-excel"
-	typemap["ppt"]  := "application/vnd.ms-powerpoint"
-	typemap["bcpio"] := "application/x-bcpio"
-	typemap["vcd"]  := "application/x-cdlink"
-	typemap["pgn"]  := "application/x-chess-pgn"
-	typemap["cpio"] := "application/x-cpio"
-	typemap["csh"]  := "application/x-csh"
-	typemap["dcr"]  := "application/x-director"
-	typemap["dir"]  := "application/x-director"
-	typemap["dxr"]  := "application/x-director"
-	typemap["dvi"]  := "application/x-dvi"
-	typemap["spl"]  := "application/x-futuresplash"
-	typemap["gtar"] := "application/x-gtar"
-	typemap["hdf"]  := "application/x-hdf"
-	typemap["js"]   := "application/x-javascript"
-	typemap["skp"]  := "application/x-koan"
-	typemap["skd"]  := "application/x-koan"
-	typemap["skt"]  := "application/x-koan"
-	typemap["skm"]  := "application/x-koan"
-	typemap["latex"] := "application/x-latex"
-	typemap["nc"]   := "application/x-netcdf"
-	typemap["cdf"]   := "application/x-netcdf"
-	typemap["sh"]   := "application/x-sh"
-	typemap["shar"] := "application/x-shar"
-	typemap["swf"]  := "application/x-shockwave-flash"
-	typemap["sit"]  := "application/x-stuffit"
-	typemap["sv4cpio"] := "application/x-sv4cpio"
-	typemap["sv4crc"] := "application/x-sv4crc"
-	typemap["tar"]  := "application/x-tar"
-	typemap["tcl"] := "application/x-tcl"
-	typemap["tex"] := "application/x-tex"
-	typemap["texi"] := "application/x-texinfo"
-	typemap["texinfo"] := "application/x-texinfo"
-	typemap["t"] := "application/x-troff"
-	typemap["tr"] := "application/x-troff"
-	typemap["roff"] := "application/x-troff"
-	typemap["man"] := "application/x-troff-man"
-	typemap["me"] := "application/x-troff-me"
-	typemap["ms"] := "application/x-troff-ms"
-	typemap["ustar"] := "application/x-ustar"
-	typemap["src"] := "application/x-wais-source"
-	typemap["zip"] := "application/zip"
-	typemap["au"] := "audio/basic"
-	typemap["snd"] := "audio/basic"
-	typemap["mid"] :=  "audio/midi"
-	typemap["midi"] :=  "audio/midi"
-	typemap["kar"]  := "audio/midi"
-	typemap["mpga"] :=  "audio/mpeg"
-	typemap["mp2"] :=  "audio/mpeg"
-	typemap["mp3"] := "audio/mpeg"
-	typemap["aif"] :=  "audio/x-aiff"
-	typemap["aiff"] :=  "audio/x-aiff"
-	typemap["aifc"] := "audio/x-aiff"
-	typemap["ram"] :=  "audio/x-pn-realaudio"
-	typemap["rm"] := "audio/x-pn-realaudio"
-	typemap["rpm"] := "audio/x-pn-realaudio-plugin"
-	typemap["ra"] := "audio/x-realaudio"
-	typemap["wav"] := "audio/x-wav"
-	typemap["pdb"] :=  "chemical/x-pdb"
-	typemap["xyz"] := "chemical/x-pdb"
-	typemap["bmp"] := "image/bmp"
-	typemap["gif"] := "image/gif"
-	typemap["ief"] := "image/ief"
-	typemap["jpeg"] :=  "image/jpeg"
-	typemap["jpg"] :=  "image/jpeg"
-	typemap["jpe"] := "image/jpeg"
-	typemap["png"] := "image/png"
-	typemap["tiff"] :=  "image/tiff"
-	typemap["tif"] := "image/tiff"
-	typemap["ras"] := "image/x-cmu-raster"
-	typemap["pnm"] := "image/x-portable-anymap"
-	typemap["pbm"] := "image/x-portable-bitmap"
-	typemap["pgm"] := "image/x-portable-graymap"
-	typemap["ppm"] := "image/x-portable-pixmap"
-	typemap["rgb"] := "image/x-rgb"
-	typemap["xbm"] := "image/x-xbitmap"
-	typemap["xpm"] := "image/x-xpixmap"
-	typemap["xwd"] := "image/x-xwindowdump"
-	typemap["igs"] :=  "model/iges"
-	typemap["iges"] := "model/iges"
-	typemap["msh"] :=  "model/mesh"
-	typemap["mesh"] :=  "model/mesh"
-	typemap["silo"] := "model/mesh"
-	typemap["wrl"] :=  "model/vrml"
-	typemap["vrml"] := "model/vrml"
-	typemap["css"] := "text/css"
-	typemap["html"] :=  "text/html"
-	typemap["htm"] := "text/html"
-	typemap["asc"] :=  "text/plain"
-	typemap["txt"] := "text/plain"
-	typemap["rtx"] := "text/richtext"
-	typemap["rtf"] := "text/rtf"
-	typemap["sgml"] :=  "text/sgml"
-	typemap["sgm"] := "text/sgml"
-	typemap["tsv"] := "text/tab-separated-values"
-	typemap["etx"] := "text/x-setext"
-	typemap["xml"] := "text/xml"
-	typemap["mpeg"] :=  "video/mpeg"
-	typemap["mpg"] :=  "video/mpeg"
-	typemap["mpe"] := "video/mpeg"
-	typemap["qt"] :=  "video/quicktime"
-	typemap["mov"] := "video/quicktime"
-	typemap["avi"] := "video/x-msvideo"
-	typemap["movie"] := "video/x-sgi-movie"
-	typemap["ice"] := "x-conference/x-cooltalk"
+        # These are from the mime.types included with Apache
+        typemap["ez"]   := "application/andrew-inset"
+        typemap["hqx"]  := "application/mac-binhex40"
+        typemap["cpt"]  := "application/mac-compactpro"
+        typemap["doc"]  := "application/msword"
+        typemap["oda"]  := "application/oda"
+        typemap["pdf"]  := "application/pdf"
+        typemap["ai"]   := "application/postscript"
+        typemap["ps"]   := "application/postscript"
+        typemap["eps"]  := "application/postscript"
+        typemap["rtf"]  := "application/rtf"
+        typemap["smi"]  := "application/smil"
+        typemap["smil"] := "application/smil"
+        typemap["mif"]  := "application/vnd.mif"
+        typemap["xls"]  := "application/vnd.ms-excel"
+        typemap["ppt"]  := "application/vnd.ms-powerpoint"
+        typemap["bcpio"] := "application/x-bcpio"
+        typemap["vcd"]  := "application/x-cdlink"
+        typemap["pgn"]  := "application/x-chess-pgn"
+        typemap["cpio"] := "application/x-cpio"
+        typemap["csh"]  := "application/x-csh"
+        typemap["dcr"]  := "application/x-director"
+        typemap["dir"]  := "application/x-director"
+        typemap["dxr"]  := "application/x-director"
+        typemap["dvi"]  := "application/x-dvi"
+        typemap["spl"]  := "application/x-futuresplash"
+        typemap["gtar"] := "application/x-gtar"
+        typemap["hdf"]  := "application/x-hdf"
+        typemap["js"]   := "application/x-javascript"
+        typemap["skp"]  := "application/x-koan"
+        typemap["skd"]  := "application/x-koan"
+        typemap["skt"]  := "application/x-koan"
+        typemap["skm"]  := "application/x-koan"
+        typemap["latex"] := "application/x-latex"
+        typemap["nc"]   := "application/x-netcdf"
+        typemap["cdf"]   := "application/x-netcdf"
+        typemap["sh"]   := "application/x-sh"
+        typemap["shar"] := "application/x-shar"
+        typemap["swf"]  := "application/x-shockwave-flash"
+        typemap["sit"]  := "application/x-stuffit"
+        typemap["sv4cpio"] := "application/x-sv4cpio"
+        typemap["sv4crc"] := "application/x-sv4crc"
+        typemap["tar"]  := "application/x-tar"
+        typemap["tcl"] := "application/x-tcl"
+        typemap["tex"] := "application/x-tex"
+        typemap["texi"] := "application/x-texinfo"
+        typemap["texinfo"] := "application/x-texinfo"
+        typemap["t"] := "application/x-troff"
+        typemap["tr"] := "application/x-troff"
+        typemap["roff"] := "application/x-troff"
+        typemap["man"] := "application/x-troff-man"
+        typemap["me"] := "application/x-troff-me"
+        typemap["ms"] := "application/x-troff-ms"
+        typemap["ustar"] := "application/x-ustar"
+        typemap["src"] := "application/x-wais-source"
+        typemap["zip"] := "application/zip"
+        typemap["au"] := "audio/basic"
+        typemap["snd"] := "audio/basic"
+        typemap["mid"] :=  "audio/midi"
+        typemap["midi"] :=  "audio/midi"
+        typemap["kar"]  := "audio/midi"
+        typemap["mpga"] :=  "audio/mpeg"
+        typemap["mp2"] :=  "audio/mpeg"
+        typemap["mp3"] := "audio/mpeg"
+        typemap["aif"] :=  "audio/x-aiff"
+        typemap["aiff"] :=  "audio/x-aiff"
+        typemap["aifc"] := "audio/x-aiff"
+        typemap["ram"] :=  "audio/x-pn-realaudio"
+        typemap["rm"] := "audio/x-pn-realaudio"
+        typemap["rpm"] := "audio/x-pn-realaudio-plugin"
+        typemap["ra"] := "audio/x-realaudio"
+        typemap["wav"] := "audio/x-wav"
+        typemap["pdb"] :=  "chemical/x-pdb"
+        typemap["xyz"] := "chemical/x-pdb"
+        typemap["bmp"] := "image/bmp"
+        typemap["gif"] := "image/gif"
+        typemap["ief"] := "image/ief"
+        typemap["jpeg"] :=  "image/jpeg"
+        typemap["jpg"] :=  "image/jpeg"
+        typemap["jpe"] := "image/jpeg"
+        typemap["png"] := "image/png"
+        typemap["tiff"] :=  "image/tiff"
+        typemap["tif"] := "image/tiff"
+        typemap["ras"] := "image/x-cmu-raster"
+        typemap["pnm"] := "image/x-portable-anymap"
+        typemap["pbm"] := "image/x-portable-bitmap"
+        typemap["pgm"] := "image/x-portable-graymap"
+        typemap["ppm"] := "image/x-portable-pixmap"
+        typemap["rgb"] := "image/x-rgb"
+        typemap["xbm"] := "image/x-xbitmap"
+        typemap["xpm"] := "image/x-xpixmap"
+        typemap["xwd"] := "image/x-xwindowdump"
+        typemap["igs"] :=  "model/iges"
+        typemap["iges"] := "model/iges"
+        typemap["msh"] :=  "model/mesh"
+        typemap["mesh"] :=  "model/mesh"
+        typemap["silo"] := "model/mesh"
+        typemap["wrl"] :=  "model/vrml"
+        typemap["vrml"] := "model/vrml"
+        typemap["css"] := "text/css"
+        typemap["html"] :=  "text/html"
+        typemap["htm"] := "text/html"
+        typemap["asc"] :=  "text/plain"
+        typemap["txt"] := "text/plain"
+        typemap["rtx"] := "text/richtext"
+        typemap["rtf"] := "text/rtf"
+        typemap["sgml"] :=  "text/sgml"
+        typemap["sgm"] := "text/sgml"
+        typemap["tsv"] := "text/tab-separated-values"
+        typemap["etx"] := "text/x-setext"
+        typemap["xml"] := "text/xml"
+        typemap["mpeg"] :=  "video/mpeg"
+        typemap["mpg"] :=  "video/mpeg"
+        typemap["mpe"] := "video/mpeg"
+        typemap["qt"] :=  "video/quicktime"
+        typemap["mov"] := "video/quicktime"
+        typemap["avi"] := "video/x-msvideo"
+        typemap["movie"] := "video/x-sgi-movie"
+        typemap["ice"] := "x-conference/x-cooltalk"
     }
 
     filename ? {
-	while tab(upto('.')+1)
-	ext := tab(0)
+        while tab(upto('.')+1)
+        ext := tab(0)
     }
 
     return typemap[ext]

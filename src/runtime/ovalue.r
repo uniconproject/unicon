@@ -24,7 +24,7 @@ operator{0,1} \ nonnull(underef x -> dx)
       }
 end
 
-
+
 
 "/x - test x for null value."
 
@@ -46,7 +46,7 @@ operator{0,1} / null(underef x -> dx)
          fail;
       }
 end
-
+
 
 ".x - produce value of x."
 
@@ -58,7 +58,7 @@ operator{1} . value(x)
      return x;
      }
 end
-
+
 
 "x & y - produce value of y."
 

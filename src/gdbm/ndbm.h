@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 #ifndef NDBM_H
@@ -36,8 +36,8 @@
 
 /* The data and key structure.  This structure is defined for compatibility. */
 typedef struct {
-	char *dptr;
-	int   dsize;
+        char *dptr;
+        int   dsize;
       } datum;
 
 
@@ -45,32 +45,47 @@ typedef struct {
 typedef struct {int dummy[10];} DBM;
 
 
+#if __STDC__
+extern void   dbm_close    (DBM *);
+extern int    dbm_delete   (DBM *, datum);
+extern datum  dbm_fetch    (DBM *, datum);
+extern datum  dbm_firstkey (DBM *);
+extern datum  dbm_nextkey  (DBM *);
+extern DBM   *dbm_open     (const char *, int, mode_t);
+extern int    dbm_store    (DBM *, datum, datum, int);
+
+#define       dbm_error(dbf)  (0)
+#define       dbm_clearerr(dbf)
+
+#else                           /*  __STDC__ */
+
 /* These are the routines (with some macros defining them!) */
 
-extern DBM 	*dbm_open ();
+extern DBM      *dbm_open ();
 
-extern void	 dbm_close ();
+extern void      dbm_close ();
 
-extern datum	 dbm_fetch ();
+extern datum     dbm_fetch ();
 
-extern int	 dbm_store ();
+extern int       dbm_store ();
 
-extern int	 dbm_delete ();
+extern int       dbm_delete ();
 
-extern int	 dbm_delete ();
+extern int       dbm_delete ();
 
-extern datum	 dbm_firstkey ();
+extern datum     dbm_firstkey ();
 
-extern datum	 dbm_nextkey ();
+extern datum     dbm_nextkey ();
 
-#define		 dbm_error(dbf)  (0)
+#define          dbm_error(dbf)  (0)
 
-#define		 dbm_clearerr(dbf)
+#define          dbm_clearerr(dbf)
 
-extern int	 dbm_dirfno ();
+extern int       dbm_dirfno ();
 
-extern int	 dbm_pagfno ();
+extern int       dbm_pagfno ();
 
-extern int	 dbm_rdonly ();
+extern int       dbm_rdonly ();
 
-#endif 				/*  NDBM_H */
+#endif                          /*  __STDC__ */
+#endif                          /*  NDBM_H */

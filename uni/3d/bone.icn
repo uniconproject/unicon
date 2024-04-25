@@ -13,22 +13,22 @@ $include "graphics3dh.icn"
 #
 #
 class Bone : Node(
-   mesh_name,		# the mesh label that this bone works on
-   mapped_mesh,		# the mesh object that this bone works on
-   tmp_mesh,	
-   local_mesh,   	# mesh created by using vertex index data in this bone only
-   
-   lst_vertex_index,	# vertecies affected by this bone
+   mesh_name,           # the mesh label that this bone works on
+   mapped_mesh,         # the mesh object that this bone works on
+   tmp_mesh,
+   local_mesh,          # mesh created by using vertex index data in this bone only
+
+   lst_vertex_index,    # vertecies affected by this bone
    lst_weight,
-	    
+
    local_matrix,
    default_local_matrix,
-   combined_matrix,	# =local_matrix * parent_node-combined_matrix
-   final_matrix,		# =skinOfset * combined_matrix
-   skin_offset_matrix,	# Transformation matrix
-   
+   combined_matrix,     # =local_matrix * parent_node-combined_matrix
+   final_matrix,                # =skinOfset * combined_matrix
+   skin_offset_matrix,  # Transformation matrix
+
    animation,
-   
+
    display_list_matrix,
 
    anim_index_mat,anim_index_R,
@@ -38,16 +38,16 @@ class Bone : Node(
    method init()
       lst_vertex_index := []
       lst_weight := []
-      skin_offset_matrix := []     
-      anim_index_mat:=1 
+      skin_offset_matrix := []
+      anim_index_mat:=1
       anim_index_R:=1
       anim_index_S:=1
       anim_index_T:=1
-         
+
 
    end
-   
-   
+
+
    #
    #
    #
@@ -58,17 +58,17 @@ class Bone : Node(
       local_mesh:=Mesh()
       local_mesh.label:= mesh_name || "$" || label
       DEBUGW(" creating new bone mesh ",  local_mesh.label )
-      
+
       local_mesh.lst_vertex:= mapped_mesh.lst_vertex
-      local_mesh.lst_vertex_final := local_mesh.lst_vertex 
+      local_mesh.lst_vertex_final := local_mesh.lst_vertex
       #local_mesh.lst_vertex_index := mapped_mesh.lst_vertex_index
       local_mesh.lst_texturecoords := mapped_mesh.lst_texturecoords
       local_mesh.lst_material := mapped_mesh.lst_material
       local_mesh.lst_face := []
-      
+
       i:=1
       #n :=
-   
+
       while i <= *(tmp_mesh.lst_face) do{
          face := tmp_mesh.lst_face[i]
          every bonevi := !lst_vertex_index do{
@@ -84,22 +84,22 @@ class Bone : Node(
           i:=i+1
          }
       } #if
-      
+
       every node := !subnodes do
           node.create_local_mesh()
-       
-       
+
+
    end
-   
+
    method render_standalone()
-   
+
    end
-   
- 
+
+
    method render_final()
-   
+
    end
-   
+
    method update_display_list_matrix()
       local c, i
       \display_list_matrix | fail
@@ -109,34 +109,34 @@ class Bone : Node(
       #   display_list_matrix[i+2] := local_matrix[i]
       display_list_matrix[3] := local_matrix.A
    end
-   
-   
+
+
    method render_in_displaylist()
       local node
-      
+
       PushMatrix()
       display_list_matrix := MultMatrix(local_matrix.to_list())
-      
+
       #every writes(!display_list_matrix)
-      
-      if \local_mesh then{   
-	 PushMatrix()
-	 MultMatrix(skin_offset_matrix.to_list())
-	 DEBUGW(" rendering bone mesh ", local_mesh.label )
-	 local_mesh.render()
-	 PopMatrix()
+
+      if \local_mesh then{
+         PushMatrix()
+         MultMatrix(skin_offset_matrix.to_list())
+         DEBUGW(" rendering bone mesh ", local_mesh.label )
+         local_mesh.render()
+         PopMatrix()
       }
- 
+
     every node:=!subnodes do
        node.render_in_displaylist()
-      
+
       PopMatrix()
    end
-   
+
    # Combined_Matrix = Local_Matrix * Combined_Matrix_parent
    # Final_Matrix = Skin_Offset * Combined_Matrix
 
-   method build_final_matrix() 
+   method build_final_matrix()
       DEBUGW(" Combined Matrix : ", label)
       if \parent_node then{
          combined_matrix := local_matrix.mul2(parent_node.combined_matrix )
@@ -149,26 +149,26 @@ class Bone : Node(
          final_matrix := skin_offset_matrix.mul2(combined_matrix)
       else
          final_matrix := deepcopy (combined_matrix)
-         
+
       update_display_list_matrix()
-      
+
    end
-   
+
    method transform_skin()
       local i, j, v
       DEBUGW(" trying to transform skin.... for mesh:", mapped_mesh.label)
       DEBUGW("image(mapped_mesh.is_rigid)=",image(mapped_mesh.is_rigid))
-      
+
       #mapped_mesh.is_rigid :=1
       if \(mapped_mesh.is_rigid) then{
-	 DEBUGW(" Transformaing sking.... for mesh:", mapped_mesh.label)
+         DEBUGW(" Transformaing sking.... for mesh:", mapped_mesh.label)
          every i:= 1 to *lst_vertex_index do{
             j:=lst_vertex_index[i]
             #v := mapped_mesh.lst_vertex[j]
-	    v := mapped_mesh.lst_vertex[j].mul_matrix(final_matrix)
-	    mapped_mesh.lst_vertex_final[j].x +:= v.x * lst_weight[i]
-	    mapped_mesh.lst_vertex_final[j].y +:= v.y * lst_weight[i]
-	    mapped_mesh.lst_vertex_final[j].z +:= v.z * lst_weight[i]
+            v := mapped_mesh.lst_vertex[j].mul_matrix(final_matrix)
+            mapped_mesh.lst_vertex_final[j].x +:= v.x * lst_weight[i]
+            mapped_mesh.lst_vertex_final[j].y +:= v.y * lst_weight[i]
+            mapped_mesh.lst_vertex_final[j].z +:= v.z * lst_weight[i]
             }
          }
       else
@@ -185,30 +185,30 @@ class Bone : Node(
          node.build_skin(mode)
 
    end
-   
+
    method set_local_matrix(lm)
       local_matrix := lm
       update_display_list_matrix()
    end
-   
+
    method mulLocalMatrix(m)
       local_matrix :=  matrixMul (local_matrix, m )
       update_display_list_matrix()
    end
-   
+
    method rotate(r, axis)
       local c
       c:=matrixRotate(r, axis)
       local_matrix :=  matrixMul (local_matrix, c )
       update_display_list_matrix()
    end
-   
+
    method translate(t)
    end
-   
+
    method scale(s)
    end
-   
+
    method calc_animation(pkey)
       local delta_key, cur_time, A, B, C, mat, quat, scal, tran, bone
 
@@ -221,79 +221,79 @@ class Bone : Node(
       mat := Matrix4x4()
       #If the transformations are expressed as matrices
       if not(animation.matrix_empty()) then{
-	 if pkey = 0 then anim_index_mat := 1
-	 if anim_index_mat >= animation.matrix_size() then
-	    #If we are at the last matrix index use the last matrix as a transform matrix
-	    mat :=  (animation.get_matrix( -1)).matrix
-	 else{
-	    # Advance the internal matrix animation index according to the main the_time count
-	    while (pkey > (animation.get_matrix(anim_index_mat+1)).the_time) do {
-	       anim_index_mat+:=1
-	       if anim_index_mat >= animation.matrix_size() then{
-	          anim_index_mat := animation.matrix_size()-1
-              	  break
-              	  }
+         if pkey = 0 then anim_index_mat := 1
+         if anim_index_mat >= animation.matrix_size() then
+            #If we are at the last matrix index use the last matrix as a transform matrix
+            mat :=  (animation.get_matrix( -1)).matrix
+         else{
+            # Advance the internal matrix animation index according to the main the_time count
+            while (pkey > (animation.get_matrix(anim_index_mat+1)).the_time) do {
+               anim_index_mat+:=1
+               if anim_index_mat >= animation.matrix_size() then{
+                  anim_index_mat := animation.matrix_size()-1
+                  break
+                  }
                } # while
 
          #interpolate the transform matrix between this matrix index and
-         #the next using the the_time count parameter         
+         #the next using the the_time count parameter
          #write("mat_index:",anim_index_mat)
          #write(*(animation.lst_matrix))
-         
+
          A := animation.get_matrix(anim_index_mat)
          B := animation.get_matrix(anim_index_mat+1)
          C := B.matrix.minus(A.matrix)
 
-       	 delta_key := B.the_time - A.the_time       		    
-	 cur_time := pkey - A.the_time	 
-	 C.mul_s(real(cur_time) / delta_key)
+         delta_key := B.the_time - A.the_time
+         cur_time := pkey - A.the_time
+         C.mul_s(real(cur_time) / delta_key)
          mat := A.matrix.plus(C)
          }
       local_matrix :=  mat
       }
    else
-   	{
+        {
      # Quat := Quaternion()
      # Scal := ??
      # Tran := ??
 
       local_matrix.identity()
       if (pkey = 0) then{
-      	 anim_index_R := 1
+         anim_index_R := 1
          anim_index_S := 1
          anim_index_T := 1
          }
 
       #If there are rotations
       if not(animation.rotation_empty()) then{
-	 if anim_index_R >= animation.rotation_size() then
-	    #If we are at the last rotation index use the last rotation
-	    quat := (animation.get_rotation(-1)).quat
-	 else{
-	    #Advance the internal rotation animation index according to the main the_time count
-	    while (pkey > (animation.get_rotation(anim_index_R+1)).the_time) do{
-	       anim_index_R+:=1
-	       if anim_index_R >= animation.rotation_size() then{
-	          anim_index_R := animation.rotation_size() - 1
-	          break
-	          }
-	       }# while
+         if anim_index_R >= animation.rotation_size() then
+            #If we are at the last rotation index use the last rotation
+            quat := (animation.get_rotation(-1)).quat
+         else{
+            #Advance the internal rotation animation index according to the main the_time count
+            while (pkey > (animation.get_rotation(anim_index_R+1)).the_time) do{
+               anim_index_R+:=1
+               if anim_index_R >= animation.rotation_size() then{
+                  anim_index_R := animation.rotation_size() - 1
+                  break
+                  }
+               }# while
             #Interpolate the quaternion
             #write("R_index:",anim_index_R)
             #write(*(animation.lst_rotation))
-            
+
             A := animation.get_rotation(anim_index_R)
-	    B := animation.get_rotation(anim_index_R+1)
+            B := animation.get_rotation(anim_index_R+1)
 
             delta_key := B.the_time - A.the_time
             cur_time := pkey - A.the_time
             quat := Quaternion()
             quat.slerp( A.quat, B.quat , real(cur_time)/delta_key)
             }
-            
+
          mat.identity()
          quat.to_matrix(mat)
-	 DEBUGW("BONE LABEL:", label , " -- " , image(mat) ) #, " -- ", image(mat.A))
+         DEBUGW("BONE LABEL:", label , " -- " , image(mat) ) #, " -- ", image(mat.A))
          local_matrix.mul(mat)
          }
 
@@ -314,22 +314,22 @@ class Bone : Node(
             #Interpolate the vector
             #write("S_index:",anim_index_S)
             #write(*(animation.lst_scaling))
-            
+
             A := animation.get_scaling(anim_index_S)
-	    B := animation.get_scaling(anim_index_S+1)
-	    C := B.v.minus(A.v)
+            B := animation.get_scaling(anim_index_S+1)
+            C := B.v.minus(A.v)
 
             delta_key := B.the_time - A.the_time
             cur_time := pkey - A.the_time;
-            
+
             C.mul( real(cur_time) / delta_key)
             scal := A.v.plus(C)
             }
 
          mat.identity()
          mat.scaling_matrix(scal)
-	 local_matrix.mul(mat)
-      	}
+         local_matrix.mul(mat)
+        }
 
       #if there are translations
       if not(animation.translation_empty()) then{
@@ -348,25 +348,25 @@ class Bone : Node(
             #interpolate the vector
             #write("T_index:",anim_index_T)
             #write(*(animation.lst_translation))
-            
+
             A := animation.get_translation(anim_index_T)
-	    B := animation.get_translation(anim_index_T+1)
-	    C := B.v.minus(A.v)
+            B := animation.get_translation(anim_index_T+1)
+            C := B.v.minus(A.v)
 
             delta_key := B.the_time - A.the_time
             cur_time := pkey - A.the_time;
-            
+
             C.mul( real(cur_time) / delta_key)
             tran := A.v.plus(C)
             }
          mat.identity()
          mat.translation_matrix(tran)
-	 local_matrix.mul(mat)
-      	}
-	}
-	
-	every bone := !subnodes do
-	   bone.calc_animation(pkey)
+         local_matrix.mul(mat)
+        }
+        }
+
+        every bone := !subnodes do
+           bone.calc_animation(pkey)
    end
 
    method resetMatrixAll()

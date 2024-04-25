@@ -42,18 +42,18 @@ class ShellETL : EditableTextList (
    changed, moved,
    mouse_locked,
    scroll_locked,
-   vi,		# virtual line index
-   undolist,	# Taken from old-version editabletextlist
-   wordlist,	# Taken from old-version editabletextlist
-   noedit,	# Taken from old-version editabletextlist
-   startdragx,	# Taken from old-version editabletextlist
-   enddragx,	# Taken from old-version editabletextlist
-   startdragy,	# Taken from old-version editabletextlist
-   enddragy,	# Taken from old-version editabletextlist
-   donedrag,	# Taken from old-version editabletextlist
+   vi,          # virtual line index
+   undolist,    # Taken from old-version editabletextlist
+   wordlist,    # Taken from old-version editabletextlist
+   noedit,      # Taken from old-version editabletextlist
+   startdragx,  # Taken from old-version editabletextlist
+   enddragx,    # Taken from old-version editabletextlist
+   startdragy,  # Taken from old-version editabletextlist
+   enddragy,    # Taken from old-version editabletextlist
+   donedrag,    # Taken from old-version editabletextlist
    highlightcolor, # Taken from buffertextlist
-   autoindent,	# Taken from buffertextlist
-   scroll_y,	# Taken from buffertextlist
+   autoindent,  # Taken from buffertextlist
+   scroll_y,    # Taken from buffertextlist
    objType,
    pos,result,counter,found,
    pmlbl_width
@@ -72,7 +72,7 @@ class ShellETL : EditableTextList (
                if match(attr, attribs[i]) then {
                    attribs[i] := attrval
                    return
-		   }
+                   }
                }
            }
       return self$EditableTextList.set_attribs(attrval)
@@ -111,44 +111,44 @@ class ShellETL : EditableTextList (
       # note that if we aren't at the end of the editable buffer, we
       # probably should not be trying to execute anything.
       if cursor_y < *contents - 2 then {
-	 write(&errout, "missing end-of-buffer check before writing to shell")
+         write(&errout, "missing end-of-buffer check before writing to shell")
          goto_line(*contents,1)
          }
       else {
-	 cmdln := contents[cursor_y]
-	 if \cmdln then {    # if cmdln is non-null
-	       write(ide.pty, cmdln)  # write it to the pseudo-tty
+         cmdln := contents[cursor_y]
+         if \cmdln then {    # if cmdln is non-null
+               write(ide.pty, cmdln)  # write it to the pseudo-tty
 
-	       cmdln ? {      # scan string
-		  if cmdstr := tab(upto(' ')) then move(1)
-		  else cmdstr := cmdln
-		  shellcmd := cmdstr
-		  case map(\cmdstr) of {
-		     "b" | "break" : {
-			highlightline := integer(tab(many(&digits)))
-			}
-		     "r" | "run" : {
-			runs := 1
-#			every i := 1 to *file_contents do
-#			   if find("main", file_contents[i]) then rnln := i
-			if \rnln < highlightline then {
-			   rnln := highlightline
-			   }
-			}
-		     "q" | "quit" : {
-			ide.debugger := 0
+               cmdln ? {      # scan string
+                  if cmdstr := tab(upto(' ')) then move(1)
+                  else cmdstr := cmdln
+                  shellcmd := cmdstr
+                  case map(\cmdstr) of {
+                     "b" | "break" : {
+                        highlightline := integer(tab(many(&digits)))
+                        }
+                     "r" | "run" : {
+                        runs := 1
+#                       every i := 1 to *file_contents do
+#                          if find("main", file_contents[i]) then rnln := i
+                        if \rnln < highlightline then {
+                           rnln := highlightline
+                           }
+                        }
+                     "q" | "quit" : {
+                        ide.debugger := 0
 #                        write("shelletl.handlereturn debugger is ", image(ide.debugger))
 #                        uidlog.DevTabSet.set_which_one(uidlog.tab_item_3)
-			}
-		     default : { highlightline := integer(tab(many(&digits))) }
-		     }
-		  }
+                        }
+                     default : { highlightline := integer(tab(many(&digits))) }
+                     }
+                  }
 
-	    f := open(wiconlog, "a") | stop("Can't open the logfile")
-	    close(f)
-	    showanyresult(wiconlog, ide.dlst)
-	    }
-	 }
+            f := open(wiconlog, "a") | stop("Can't open the logfile")
+            close(f)
+            showanyresult(wiconlog, ide.dlst)
+            }
+         }
       self.EditableTextList.handle_return(e)
       resize()
       refresh(1)
@@ -183,13 +183,13 @@ class ShellETL : EditableTextList (
       set_cursor_y(*ide.dlst)
       goto_line(*ide.dlst,1)
       handle_delete_line()
-      
+
       msgboxSize := *(uidlog.PtyBox.get_contents())
       uidlog.PtyBox.set_cursor_y(msgboxSize)
       uidlog.PtyBox.goto_line(msgboxSize, 1)
       uidlog.PtyBox.handle_delete_line()
    end
-   
+
    #
    #
    # #
@@ -204,14 +204,14 @@ class ShellETL : EditableTextList (
          constrain_cursor()
          refresh()
          #text_area_to_high()
-	 }
+         }
       else if E := (\hsb).handle_event(e) then {
          #
          # Handled by HSB; amend left offset and refresh
          #
          constrain_cursor()
          refresh()
-	 }
+         }
       else {
          if e === -11 then fail # window closed, nothing to do?
          old_contents_size := *contents
@@ -250,7 +250,7 @@ class ShellETL : EditableTextList (
                "\^v" :  handle_paste(e)
                "\^z" :  handle_undo(e)
                "\^y" :  handle_redo(e)
-               default : handle_default(e)   
+               default : handle_default(e)
             }
          }
          if \moved then {
@@ -260,7 +260,7 @@ class ShellETL : EditableTextList (
             constrain_line()
             refresh(1)
             return _Event(e, self, 0)
-	    }
+            }
          else if \changed then {
             if (*contents ~= old_contents_size) | \long_line |
                (old_mw ~= TextWidth(cwin,contents[long_line])) then {
@@ -269,13 +269,13 @@ class ShellETL : EditableTextList (
                # screen and re-display whole object.
                set_internal_fields()
                constrain_line()
-               display() 
+               display()
          if e === -11 then fail
-	       }
+               }
             else {
                constrain_line()
                refresh(1)
-	       }
+               }
             return _Event(e, self, 0)
          }
       }
@@ -289,7 +289,7 @@ class ShellETL : EditableTextList (
          if find(".icn", tblbl) then promptlbl := "(udb)"
          else uidlog.PtyBox.set_contents(uidlog.PtyBox.get_contents() ||| ["Not a Unicon program."])
          }
-     
+
       pmlbl_width := TextWidthEx(cbwin, promptlbl)
    end
 
@@ -319,7 +319,7 @@ class ShellETL : EditableTextList (
                left_string(cbwin, xp - pmlbl_width, yp,"(udb)")
             else {
                left_string(cbwin, xp - pmlbl_width, yp,"(ICI)")  # prompt
-	       }
+               }
             }
          else {
             Fg(cbwin, "black")   #line_num color
@@ -356,8 +356,8 @@ class ShellETL : EditableTextList (
                left_string(cw, xp + off, yp + 1, s[si])
 
             Uncouple(cw)
-	    }
-	 else {
+            }
+         else {
             cw := Clone(cbwin, "fg=red")
             Rectangle(cw,
                       xp + TextWidthEx(cbwin, s, 1, si, tab_width),
@@ -373,42 +373,42 @@ class ShellETL : EditableTextList (
             (mark_y > v.index > cursor_y) then {
             # Whole line selected
             r := [v.first, v.last]
-	    }
-	 else if v.index = mark_y = cursor_y then {
+            }
+         else if v.index = mark_y = cursor_y then {
             # Part of line
             if mark_x < cursor_x then {
                r := range(v.first, v.last, mark_x, cursor_x)
-	       }
+               }
             else if mark_x > cursor_x then {
                r := range(v.first, v.last, cursor_x + 1 , mark_x)
-	       }
-	    }
-	 else if v.index = mark_y then {
+               }
+            }
+         else if v.index = mark_y then {
             if mark_y < cursor_y then {
                r := range(v.first, v.last, mark_x,
-			  *contents[v.index] + 1)
-	       }
-	    else {
+                          *contents[v.index] + 1)
+               }
+            else {
                r := range(v.first, v.last, 1, mark_x)
-	       }
-	    }
-	 else if v.index = cursor_y then {
+               }
+            }
+         else if v.index = cursor_y then {
             if mark_y > cursor_y then {
                r := range(v.first, v.last, cursor_x + 1,
-			  *contents[v.index] + 1)
-	       }
-	    else {
+                          *contents[v.index] + 1)
+               }
+            else {
                r := range(v.first, v.last, 1, cursor_x)
-	       }
+               }
          }
          if \r then {
             off1 := TextWidthEx(cbwin, s, 1, r[1] - v.first + 1,
-				tab_width)
+                                tab_width)
             off2 := TextWidthEx(cbwin, s, 1, r[2] - v.first + 1,
-				tab_width)
+                                tab_width)
             FillRectangle(rev, xp + off1, 1 + yp - line_height / 2,
-			  off2 - off1, line_height)
-	    }
+                          off2 - off1, line_height)
+            }
       }
    end
 
@@ -426,22 +426,22 @@ class ShellETL : EditableTextList (
 #       if \has_focus then {
 #          scroll_y := &y
 
-# 	 while Event() === &mdrag do {
-# 	    if &y > scroll_y then {
-# 	       handle_key_down()
-# 	       handle_key_down()
-# 	       handle_key_down()
-# 	       }
-# 	    if &y < scroll_y  then {
-# 	       handle_key_up()
-# 	       handle_key_up()
-# 	       handle_key_up()
-# 	       }
-# 	    constrain_line()
-# 	    refresh(1)
-# #	    text_area_to_high()
-# 	    }
-# 	 }
+#        while Event() === &mdrag do {
+#           if &y > scroll_y then {
+#              handle_key_down()
+#              handle_key_down()
+#              handle_key_down()
+#              }
+#           if &y < scroll_y  then {
+#              handle_key_up()
+#              handle_key_up()
+#              handle_key_up()
+#              }
+#           constrain_line()
+#           refresh(1)
+# #         text_area_to_high()
+#           }
+#        }
 #    end
 #    #
    #
@@ -473,13 +473,13 @@ class ShellETL : EditableTextList (
 
    tab_line ? {
       while x12 := move(1) do {
-	 linepos +:= 1
+         linepos +:= 1
          if /use_selfcontents then {
-	    if posx == endpos - 1 then # stop at the pos. in the line displayed
+            if posx == endpos - 1 then # stop at the pos. in the line displayed
                return sblnks - numtabs
             }
          else {
-	    if linepos == endpos then  # stop where at endpos in contents
+            if linepos == endpos then  # stop where at endpos in contents
                return  sblnks - numtabs
              }
          if x12 == "\t" then {

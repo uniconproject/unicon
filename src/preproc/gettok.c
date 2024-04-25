@@ -131,13 +131,12 @@ struct token *next_tok()
    else
       return t;
    }
-
+
 /*
  * Get the next raw non-white space token, freeing token that the argument
  *  used to point to.
  */
-void nxt_non_wh(tp)
-struct token **tp;
+void nxt_non_wh(struct token **tp)
    {
    register struct token *t;
 
@@ -158,8 +157,7 @@ struct token **tp;
  *  new-line, and thus, for a directive, the PpDirEnd token, will be
  *  seen immediately before EOF).
  */
-void advance_tok(tp)
-struct token **tp;
+void advance_tok(struct token **tp)
    {
    struct token *t;
 
@@ -171,16 +169,13 @@ struct token **tp;
    free_t(*tp);
    *tp = t;
    }
-
+
 /*
  * merge_whsp - merge a sequence of white space tokens into one token,
  *  returning it along with the next token. Whether these are raw or
  *  processed tokens depends on the token source function, t_src.
  */
-void merge_whsp(whsp, next_t, t_src)
-struct token **whsp;
-struct token **next_t;
-struct token *(*t_src)(void);
+void merge_whsp(struct token **whsp, struct token **next_t, struct token *(*t_src)(void))
    {
    struct token *t1;
    struct str_buf *sbuf;

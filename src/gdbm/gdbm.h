@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 /* Protection for multiple includes. */
@@ -32,16 +32,16 @@
 
 /* Parameters to gdbm_open for READERS, WRITERS, and WRITERS who
    can create the database. */
-#define  GDBM_READER  0		/* A reader. */
-#define  GDBM_WRITER  1		/* A writer. */
-#define  GDBM_WRCREAT 2		/* A writer.  Create the db if needed. */
-#define  GDBM_NEWDB   3		/* A writer.  Always create a new db. */
-#define  GDBM_FAST    16	/* Write fast! => No fsyncs. */
+#define  GDBM_READER  0         /* A reader. */
+#define  GDBM_WRITER  1         /* A writer. */
+#define  GDBM_WRCREAT 2         /* A writer.  Create the db if needed. */
+#define  GDBM_NEWDB   3         /* A writer.  Always create a new db. */
+#define  GDBM_FAST    16        /* Write fast! => No fsyncs. */
 
 /* Parameters to gdbm_store for simple insertion or replacement in the
    case that the key is already in the database. */
-#define  GDBM_INSERT  0		/* Never replace old data with new. */
-#define  GDBM_REPLACE 1		/* Always replace old data with new. */
+#define  GDBM_INSERT  0         /* Never replace old data with new. */
+#define  GDBM_REPLACE 1         /* Always replace old data with new. */
 
 /* Parameters to gdbm_setopt, specifing the type of operation to perform. */
 #define  GDBM_CACHESIZE 1       /* Set the cache size. */
@@ -49,8 +49,8 @@
 
 /* The data and key structure.  This structure is defined for compatibility. */
 typedef struct {
-	char *dptr;
-	int   dsize;
+        char *dptr;
+        int   dsize;
       } datum;
 
 
@@ -65,7 +65,7 @@ typedef struct {int dummy[10];} *GDBM_FILE;
 #endif
 
 /* External variable, the gdbm build release string. */
-extern char *gdbm_version;	
+extern char *gdbm_version;
 
 
 /* GDBM C++ support */
@@ -138,28 +138,28 @@ extern int gdbm_setopt GDBM_Proto((
 #endif
 
 /* gdbm sends back the following error codes in the variable gdbm_errno. */
-typedef enum {	GDBM_NO_ERROR,
-		GDBM_MALLOC_ERROR,
-		GDBM_BLOCK_SIZE_ERROR,
-		GDBM_FILE_OPEN_ERROR,
-		GDBM_FILE_WRITE_ERROR,
-		GDBM_FILE_SEEK_ERROR,
-		GDBM_FILE_READ_ERROR,
-		GDBM_BAD_MAGIC_NUMBER,
-		GDBM_EMPTY_DATABASE,
-		GDBM_CANT_BE_READER,
-	        GDBM_CANT_BE_WRITER,
-		GDBM_READER_CANT_DELETE,
-		GDBM_READER_CANT_STORE,
-		GDBM_READER_CANT_REORGANIZE,
-		GDBM_UNKNOWN_UPDATE,
-		GDBM_ITEM_NOT_FOUND,
-		GDBM_REORGANIZE_FAILED,
-		GDBM_CANNOT_REPLACE,
-		GDBM_ILLEGAL_DATA,
-		GDBM_OPT_ALREADY_SET,
-		GDBM_OPT_ILLEGAL}
-	gdbm_error;
+typedef enum {  GDBM_NO_ERROR,
+                GDBM_MALLOC_ERROR,
+                GDBM_BLOCK_SIZE_ERROR,
+                GDBM_FILE_OPEN_ERROR,
+                GDBM_FILE_WRITE_ERROR,
+                GDBM_FILE_SEEK_ERROR,
+                GDBM_FILE_READ_ERROR,
+                GDBM_BAD_MAGIC_NUMBER,
+                GDBM_EMPTY_DATABASE,
+                GDBM_CANT_BE_READER,
+                GDBM_CANT_BE_WRITER,
+                GDBM_READER_CANT_DELETE,
+                GDBM_READER_CANT_STORE,
+                GDBM_READER_CANT_REORGANIZE,
+                GDBM_UNKNOWN_UPDATE,
+                GDBM_ITEM_NOT_FOUND,
+                GDBM_REORGANIZE_FAILED,
+                GDBM_CANNOT_REPLACE,
+                GDBM_ILLEGAL_DATA,
+                GDBM_OPT_ALREADY_SET,
+                GDBM_OPT_ILLEGAL}
+        gdbm_error;
 extern gdbm_error gdbm_errno;
 
 /* extra prototypes */

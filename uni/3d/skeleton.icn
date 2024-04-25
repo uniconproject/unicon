@@ -12,33 +12,33 @@ $include "graphics3dh.icn"
 class Skeleton(
    root_bones,
    lst_mesh,
-   bone_table,		# mapping between bones names and their objects
+   bone_table,          # mapping between bones names and their objects
    rendering_mode
    )
-   
+
    method setup(lsmesh)
       local root_bone
          lst_mesh := lsmesh
-	 every root_bone := !root_bones do{
-	    root_bone.build_skin(rendering_mode)
-	    #write("bone table ")
-	    create_bone_table(root_bone)
-	    }
-	 if rendering_mode=="bone_mesh_local"  then create_bone_local_Mesh()
-	 DEBUGW("done preparing the x model with skeleton")
+         every root_bone := !root_bones do{
+            root_bone.build_skin(rendering_mode)
+            #write("bone table ")
+            create_bone_table(root_bone)
+            }
+         if rendering_mode=="bone_mesh_local"  then create_bone_local_Mesh()
+         DEBUGW("done preparing the x model with skeleton")
    end
 
    method add_root_bone(bone)
       /root_bones:=[]
       put(root_bones, bone)
    end
-   
+
    method get_root_bone()
       local root_bone
       every root_bone := !root_bones do
          suspend root_bone
    end
-   
+
    method is_empty()
       if /root_bones then return
    end
@@ -46,16 +46,16 @@ class Skeleton(
    method is_not_empty()
       if \root_bones then return
    end
-   
+
    method bone_count()
       local root_bone, tot:=0
       if \root_bones then{
-	 every root_bone := !root_bones do 
-	     tot +:= 1 + root_bone.subtree_count()
-	  return tot
-	 }
+         every root_bone := !root_bones do
+             tot +:= 1 + root_bone.subtree_count()
+          return tot
+         }
       else
-	 return 0
+         return 0
    end
 
    #
@@ -63,9 +63,9 @@ class Skeleton(
    #
    method get_bone_by_label(bname)
       local bone, root_bone
-      every root_bone := !root_bones do 
-	 if bone := root_bone.get_node_by_label(bname) then
-	   return bone
+      every root_bone := !root_bones do
+         if bone := root_bone.get_node_by_label(bname) then
+           return bone
    end
 
    method create_bone_table(bone)
@@ -98,61 +98,61 @@ class Skeleton(
             if tmp_mesh.label==bone.mesh_name then
                bone.tmp_mesh := tmp_mesh
          }
-      
-      every root_bone := !root_bones do 
+
+      every root_bone := !root_bones do
          root_bone.create_local_mesh()
    end
-   
+
    method render()
       if rendering_mode=="bone_mesh_final" then
-	 render_bones_standalone()
+         render_bones_standalone()
       else
-	 render_bones_in_displaylist()
+         render_bones_in_displaylist()
    end
-   
+
    method render_bones_in_displaylist()
       local root_bone
-      every root_bone := !root_bones do 
-	 root_bone.render_in_displaylist()
+      every root_bone := !root_bones do
+         root_bone.render_in_displaylist()
    end
-   
+
    method render_bones_standalone()
       local root_bone
-      every root_bone := !root_bones do 
-	 root_bone.render_standalone()
+      every root_bone := !root_bones do
+         root_bone.render_standalone()
    end
 
    method swap_anim_keys(curious)
      local mesh
       every mesh := !lst_mesh do
-	 mesh.swap_anim_keys(curious)
+         mesh.swap_anim_keys(curious)
    end
-  
-   
-   method calc_animation(anim_clock, curious)   
+
+
+   method calc_animation(anim_clock, curious)
       local mesh, root_bone, t
       t:=&time
-      every root_bone := !root_bones do 
-	 root_bone.calc_animation(anim_clock)
+      every root_bone := !root_bones do
+         root_bone.calc_animation(anim_clock)
       DEBUGW(" calc bone animation::", &time-t)
-      
+
       t:=&time
-      every root_bone := !root_bones do 
-	 root_bone.build_skin(rendering_mode)
+      every root_bone := !root_bones do
+         root_bone.build_skin(rendering_mode)
       DEBUGW(" rebuilding skin:", &time-t)
-      
+
       t:=&time
       if rendering_mode == "bone_mesh_final" then{
-	 every mesh := !lst_mesh do{
-	    DEBUGW("special rendering!!! mesh: ", mesh.label)
-	    mesh.update_render(curious)
-	    DEBUGW(" special render:", &time-t)
-	  }
+         every mesh := !lst_mesh do{
+            DEBUGW("special rendering!!! mesh: ", mesh.label)
+            mesh.update_render(curious)
+            DEBUGW(" special render:", &time-t)
+          }
       }
 
-   end   
-   
+   end
+
    initially()
    bone_table := table()
-   
+
 end

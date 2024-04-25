@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -44,10 +44,9 @@
    allocated memory block.  This DBM interface uses the NDBM interface. */
 
 datum
-fetch (key)
-     datum key;
+fetch (datum key)
 {
-  datum  ret_val;		/* The return value. */
+  datum  ret_val;               /* The return value. */
 
   /* Free previous dynamic memory, do actual call, and save pointer to new
      memory. */

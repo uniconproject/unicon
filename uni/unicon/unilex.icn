@@ -166,38 +166,38 @@ initial {
    repeat {
        if pos(0) then fail
        if
-#	   tokflags >= Newline &
-	   ="#" then {
-	       if ="line " then {
-		   if yylineno := integer(tab(many(&digits))) then {
-		       =" \""
-		       new_filename := tab(find("\"")|0)
-		       if *new_filename > 0 then {
-			   yyfilename := new_filename
-			   }
-		   }
-	       }
-	       tab(find("\n") | 0)
-	       next
-	   }
+#          tokflags >= Newline &
+           ="#" then {
+               if ="line " then {
+                   if yylineno := integer(tab(many(&digits))) then {
+                       =" \""
+                       new_filename := tab(find("\"")|0)
+                       if *new_filename > 0 then {
+                           yyfilename := new_filename
+                           }
+                   }
+               }
+               tab(find("\n") | 0)
+               next
+           }
        if ="\n" then {
-	   yylineno +:= 1
-	   yycolno := 1
-	   if tokflags < Newline then
-	       tokflags +:= Newline
-	   next
+           yylineno +:= 1
+           yycolno := 1
+           if tokflags < Newline then
+               tokflags +:= Newline
+           next
        }
        if tab(any(' ')) then { yycolno +:= 1; next }
        if tab(any('\v\^l')) then { next }
        if tab(any('\t')) then {
-	   yycolno +:= 1
-	   while (yycolno-1) % 8 ~= 0 do yycolno +:= 1
-	   next
+           yycolno +:= 1
+           while (yycolno-1) % 8 ~= 0 do yycolno +:= 1
+           next
        }
 
        yytext := move(1)
        if rv := punc_table[yytext]() then {
-	   return rv
+           return rv
        }
    }
 end
@@ -213,77 +213,77 @@ end
 procedure do_digits()
   local c, expstr, dsz, numdie
 
-	      yytext ||:= tab(many(&digits))
-	      tokflags +:= Beginner+Ender
-	      if yytext ||:= ="." then {
-		  yytext ||:= tab(many(&digits))
-		  if yytext ||:= tab(any('eE')) then {
-		      yytext ||:= tab(any('+-')) # optional + or -
+              yytext ||:= tab(many(&digits))
+              tokflags +:= Beginner+Ender
+              if yytext ||:= ="." then {
+                  yytext ||:= tab(many(&digits))
+                  if yytext ||:= tab(any('eE')) then {
+                      yytext ||:= tab(any('+-')) # optional + or -
                       if not (expstr := tab(many(&digits))) then {
                          expstr := ""
                          uni_error("malformed real number")
                          }
                       else if expstr > 308 then
                          uni_error("real number out of range")
-		      yytext ||:= expstr
-		  }
-		  return REALLIT
-	      }
-	      else if yytext ||:= tab(any('eE')) then {
-		  yytext ||:= ="-" # optional; should we also allow + ?
+                      yytext ||:= expstr
+                  }
+                  return REALLIT
+              }
+              else if yytext ||:= tab(any('eE')) then {
+                  yytext ||:= ="-" # optional; should we also allow + ?
                   if not (expstr := tab(many(&digits))) then
                      uni_error("malformed real number")
                   else if expstr > 308 then
                      uni_error("real number out of range")
                   else # keep this else, uni_error is non-fatal
                      yytext ||:= expstr
-		  return REALLIT
-	      }
-	      else {
-		  if yytext ||:= tab(any('rR')) then {
-		     yytext ||:= tab(many(R))
-		     }
-		  else if c := tab(any('kK')) then {
-		     yytext := string(yytext * 1024)
-		     }
-		  else if c := tab(any('mM')) then {
-		     yytext := string(yytext * 1024^2)
-		     }
-		  else if c := tab(any('gG')) then {
-		     yytext := string(yytext * 1024^3)
-		     }
-		  else if c := tab(any('tT')) then {
-		     yytext := string(yytext * 1024^4)
-		     }
-		  else if c := tab(any('pP')) then {
-		     yytext := string(yytext * 1024^5)
-		     }
+                  return REALLIT
+              }
+              else {
+                  if yytext ||:= tab(any('rR')) then {
+                     yytext ||:= tab(many(R))
+                     }
+                  else if c := tab(any('kK')) then {
+                     yytext := string(yytext * 1024)
+                     }
+                  else if c := tab(any('mM')) then {
+                     yytext := string(yytext * 1024^2)
+                     }
+                  else if c := tab(any('gG')) then {
+                     yytext := string(yytext * 1024^3)
+                     }
+                  else if c := tab(any('tT')) then {
+                     yytext := string(yytext * 1024^4)
+                     }
+                  else if c := tab(any('pP')) then {
+                     yytext := string(yytext * 1024^5)
+                     }
                   # e.g. 3D6 for sum of three six-sided dice
-		  else if c := tab(any('dD')) & dsz := tab(many(&digits)) then {
+                  else if c := tab(any('dD')) & dsz := tab(many(&digits)) then {
                      numdie := integer(yytext)
-		     yytext := "("
+                     yytext := "("
                      every !numdie do {
                         if yytext ~== "(" then yytext ||:= "+"
                         yytext ||:= "?" || dsz
                         }
-		     yytext ||:= ")"
-		     }
-		  if \c & any(&letters) then {
-		     uni_error("missing space or malformed token")
-		     }
-		  return INTLIT
-	      }
+                     yytext ||:= ")"
+                     }
+                  if \c & any(&letters) then {
+                     uni_error("missing space or malformed token")
+                     }
+                  return INTLIT
+              }
 end
 
 procedure do_dollar()
-	      if yytext ||:= ="(" then { tokflags +:= Beginner; return LBRACE }
-	      if yytext ||:= =")" then { tokflags +:= Ender; return RBRACE }
-	      if yytext ||:= ="<" then { tokflags +:= Beginner; return LBRACK }
-	      if yytext ||:= =">" then { tokflags +:= Ender; return RBRACK }
+              if yytext ||:= ="(" then { tokflags +:= Beginner; return LBRACE }
+              if yytext ||:= =")" then { tokflags +:= Ender; return RBRACE }
+              if yytext ||:= ="<" then { tokflags +:= Beginner; return LBRACK }
+              if yytext ||:= =">" then { tokflags +:= Ender; return RBRACK }
 $ifndef PatternIntegration
-	      if yytext ||:= ="$" then { return PIMDASSN }
+              if yytext ||:= ="$" then { return PIMDASSN }
 $endif
-	      return DOLLAR
+              return DOLLAR
 end
 
 procedure do_comma()
@@ -319,38 +319,38 @@ procedure do_rparen()
 end
 
 procedure do_tilde()
-	      if yytext ||:= ="=" then {
-		  if yytext ||:= ="=" then {
-		      if yytext ||:= ="=" then {
-			  if yytext ||:= =":=" then {return AUGNEQUIV }
-			  tokflags +:= Beginner
-			  return NEQUIV
-		      }
-		      if yytext ||:= =":=" then {return AUGSNE}
-		      tokflags +:= Beginner
-		      return SNE
-		  }
-		  if yytext ||:= =":=" then { return AUGNMNE}
-		  tokflags +:= Beginner
-		  return NMNE
-	      }
-	      tokflags +:= Beginner
-	      return TILDE
+              if yytext ||:= ="=" then {
+                  if yytext ||:= ="=" then {
+                      if yytext ||:= ="=" then {
+                          if yytext ||:= =":=" then {return AUGNEQUIV }
+                          tokflags +:= Beginner
+                          return NEQUIV
+                      }
+                      if yytext ||:= =":=" then {return AUGSNE}
+                      tokflags +:= Beginner
+                      return SNE
+                  }
+                  if yytext ||:= =":=" then { return AUGNMNE}
+                  tokflags +:= Beginner
+                  return NMNE
+              }
+              tokflags +:= Beginner
+              return TILDE
 end
 
 procedure do_or()
-	      if yytext ||:= ="|" then {
-		  if yytext ||:= ="|" then {
-		      if yytext ||:= =":=" then{return AUGLCONCAT}
-		      tokflags +:= Beginner
-		      return LCONCAT
-		  }
-		  if yytext ||:= =":=" then { return AUGCONCAT}
-		  tokflags +:= Beginner
-		  return CONCAT
-	      }
-	      tokflags +:= Beginner
-	      return BAR
+              if yytext ||:= ="|" then {
+                  if yytext ||:= ="|" then {
+                      if yytext ||:= =":=" then{return AUGLCONCAT}
+                      tokflags +:= Beginner
+                      return LCONCAT
+                  }
+                  if yytext ||:= =":=" then { return AUGCONCAT}
+                  tokflags +:= Beginner
+                  return CONCAT
+              }
+              tokflags +:= Beginner
+              return BAR
 end
 
 procedure do_caret()
@@ -380,29 +380,29 @@ procedure do_at()
 end
 
 procedure do_qmark()
-	      if yytext ||:= =":=" then { return AUGQMARK }
-	      else if yytext ||:= = "?" then {return PMATCH }
-	      tokflags +:= Beginner
-	      return QMARK
+              if yytext ||:= =":=" then { return AUGQMARK }
+              else if yytext ||:= = "?" then {return PMATCH }
+              tokflags +:= Beginner
+              return QMARK
 end
 
 procedure do_equal()
-	      if yytext ||:= ="=" then {
-		  if yytext ||:= ="=" then {
-		      if yytext ||:= =":=" then{return AUGEQUIV}
-		      tokflags +:= Beginner
-		      return EQUIV
-		  }
-		  if yytext ||:= =":=" then { return AUGSEQ }
-		  tokflags +:= Beginner
-		  return SEQ
-	      }
-	      if yytext ||:= =":=" then { return AUGNMEQ }
+              if yytext ||:= ="=" then {
+                  if yytext ||:= ="=" then {
+                      if yytext ||:= =":=" then{return AUGEQUIV}
+                      tokflags +:= Beginner
+                      return EQUIV
+                  }
+                  if yytext ||:= =":=" then { return AUGSEQ }
+                  tokflags +:= Beginner
+                  return SEQ
+              }
+              if yytext ||:= =":=" then { return AUGNMEQ }
 $ifndef NoPatternIntegration
-	      if yytext ||:= =">" then { return PIMDASSN }
+              if yytext ||:= =">" then { return PIMDASSN }
 $endif
-	      tokflags +:= Beginner
-	      return NMEQ
+              tokflags +:= Beginner
+              return NMEQ
 end
 
 global next_gt_is_ender
@@ -412,9 +412,9 @@ procedure do_greater()
    if yytext ||:= =">" then {
       if yytext ||:= =":=" then { return AUGSGT }
       if yytext ||:= ="=" then {
-	 if yytext ||:= =":=" then {return AUGSGE}
-	 return SGE
-	 }
+         if yytext ||:= =":=" then {return AUGSGE}
+         return SGE
+         }
       return SGT
       }
    if yytext ||:= ="=" then {
@@ -434,40 +434,40 @@ procedure do_less()
       tokflags +:= Beginner + Ender
       return RCV
       }
-	      if yytext ||:= =":=" then { return AUGNMLT }
-	      if yytext ||:= ="-" then {
-		  if yytext ||:= =">" then { return REVSWAP }
-		  return REVASSIGN
-	      }
-	      if yytext ||:= ="<" then {
-		  if yytext ||:= ="@" then {
-		     tokflags +:= Beginner + Ender
-		     return RCVBK
-		  }
-		  if yytext ||:= =":=" then { return AUGSLT }
-		  if yytext ||:= ="=" then {
-		      if yytext ||:= =":=" then {return AUGSLE}
-		      return SLE
-		  }
-		  return SLT
-	      }
-	      if yytext ||:= ="=" then {
-		  if yytext ||:= =":=" then { return AUGNMLE }
-		  return NMLE
-	      }
-	      return NMLT
+              if yytext ||:= =":=" then { return AUGNMLT }
+              if yytext ||:= ="-" then {
+                  if yytext ||:= =">" then { return REVSWAP }
+                  return REVASSIGN
+              }
+              if yytext ||:= ="<" then {
+                  if yytext ||:= ="@" then {
+                     tokflags +:= Beginner + Ender
+                     return RCVBK
+                  }
+                  if yytext ||:= =":=" then { return AUGSLT }
+                  if yytext ||:= ="=" then {
+                      if yytext ||:= =":=" then {return AUGSLE}
+                      return SLE
+                  }
+                  return SLT
+              }
+              if yytext ||:= ="=" then {
+                  if yytext ||:= =":=" then { return AUGNMLE }
+                  return NMLE
+              }
+              return NMLT
 end
 
 procedure do_colon()
-	      if yytext ||:= ="=" then {
-		  if yytext ||:= =":" then { return SWAP }
-		  return ASSIGN
-	      }
-	      if yytext ||:= =":" then {
+              if yytext ||:= ="=" then {
+                  if yytext ||:= =":" then { return SWAP }
+                  return ASSIGN
+              }
+              if yytext ||:= =":" then {
                   tokflags +:= Beginner
-		  return COLONCOLON
-	      }
-	      return COLON
+                  return COLONCOLON
+              }
+              return COLON
 end
 
 procedure do_slash()
@@ -478,41 +478,41 @@ end
 
 procedure do_dot()
     if yytext ||:= tab(many(&digits)) then {
-	tokflags +:= Beginner+Ender
-	return REALLIT
+        tokflags +:= Beginner+Ender
+        return REALLIT
     }
     else if yytext ||:= ="|" then { return POR }
     else if yytext ||:= =">" then {
        # .> is normally a cursor assignment, but not inside a regex
        if next_gt_is_ender === 1 then {
-	  move(-1) # back up, don't eat the >
-	  tokflags +:= Beginner
-	  return DOT
-	  }
+          move(-1) # back up, don't eat the >
+          tokflags +:= Beginner
+          return DOT
+          }
        else
        return PSETCUR
        }
     # next one .$ is candidate for deletion, old S.G. syntax
     else if yytext ||:= ="$" then { return PSETCUR }
     else {
-	tokflags +:= Beginner
-	return DOT
+        tokflags +:= Beginner
+        return DOT
     }
 end
 
 procedure do_minus()
     if yytext ||:= =":" then {
-	if yytext ||:= ="=" then { return AUGMINUS}
-	return MCOLON
+        if yytext ||:= ="=" then { return AUGMINUS}
+        return MCOLON
     }
     if yytext ||:= ="-" then {
-	if yytext ||:= =":=" then { return AUGDIFF}
-	tokflags +:= Beginner # could be two unary prefix - operators
-	return DIFF
+        if yytext ||:= =":=" then { return AUGDIFF}
+        tokflags +:= Beginner # could be two unary prefix - operators
+        return DIFF
     }
     if yytext ||:= =">" then {
-	return PASSNONMATCH
-	}
+        return PASSNONMATCH
+        }
     tokflags +:= Beginner
     return MINUS
 end
@@ -540,9 +540,9 @@ end
 procedure do_star()
     if yytext ||:= =":=" then { return AUGSTAR }
     if yytext ||:= ="*" then {
-	if yytext ||:= =":=" then {return AUGINTER}
-	tokflags +:= Beginner # could be two unary prefix * operators
-	return INTER
+        if yytext ||:= =":=" then {return AUGINTER}
+        tokflags +:= Beginner # could be two unary prefix * operators
+        return INTER
     }
     tokflags +:= Beginner
     return STAR
@@ -572,43 +572,43 @@ end
 
 procedure do_literal()
    local eat, s
-	      until yytext ||:= =(yytext[1]) do {
-		  if yytext ||:= ="\\" then {
-		     # need more logic here to eat escape chars
-		     yytext ||:= ="^" # \^ is a control-char escape
-		     }
-		  yytext ||:= move(1) | {
-		      if not (yytext[-1]=="_") then {
-		         uni_error("unterminated string constant")
-			 break
-		     }
-		  }
-		  if yytext[-1] == "\n" then {
-		      # discard newline. discard trailing whitespace.
-		      yytext := trim(yytext[1:-1])
-		      yylineno +:= 1
-		      yycolno := 1
-		      if not (yytext[-1] == "_") then {
-			  uni_error("unterminated string constant")
-			  break
-		      }
-		      else {
-			  yytext := yytext[1:-1] # discard _
-			  if eat := tab(many(' \t')) then {
-			      every s := !eat do {
-				 yycolno +:= 1
-				 if s == "\t" then {
-				    while (yycolno-1) % 8 ~= 0 do yycolno +:= 1
-				    }
-			         }
-			      }
-			  }
-		      }
-		  }
-	      tokflags +:= Beginner + Ender
-	      if yytext[1] == "'" then
-		  return CSETLIT
-	      else return STRINGLIT
+              until yytext ||:= =(yytext[1]) do {
+                  if yytext ||:= ="\\" then {
+                     # need more logic here to eat escape chars
+                     yytext ||:= ="^" # \^ is a control-char escape
+                     }
+                  yytext ||:= move(1) | {
+                      if not (yytext[-1]=="_") then {
+                         uni_error("unterminated string constant")
+                         break
+                     }
+                  }
+                  if yytext[-1] == "\n" then {
+                      # discard newline. discard trailing whitespace.
+                      yytext := trim(yytext[1:-1])
+                      yylineno +:= 1
+                      yycolno := 1
+                      if not (yytext[-1] == "_") then {
+                          uni_error("unterminated string constant")
+                          break
+                      }
+                      else {
+                          yytext := yytext[1:-1] # discard _
+                          if eat := tab(many(' \t')) then {
+                              every s := !eat do {
+                                 yycolno +:= 1
+                                 if s == "\t" then {
+                                    while (yycolno-1) % 8 ~= 0 do yycolno +:= 1
+                                    }
+                                 }
+                              }
+                          }
+                      }
+                  }
+              tokflags +:= Beginner + Ender
+              if yytext[1] == "'" then
+                  return CSETLIT
+              else return STRINGLIT
 
 end
 
@@ -618,25 +618,25 @@ procedure do_backquote()
    /unallowedchars := &ascii --( &letters ++ '()`., "_' ++ &digits)
    if yytext ||:= ="`" then {
       until yytext ||:= ="``" do {
-	 if not (yytext ||:= move(1)) then {
-	    uni_error(yytext)
-	    return PUNEVAL
-	    }
-	 }
+         if not (yytext ||:= move(1)) then {
+            uni_error(yytext)
+            return PUNEVAL
+            }
+         }
       }
    else {
       until yytext ||:= ="`" do {
-	 if not (yytext ||:= move(1)) then {
-	    uni_error(yytext)
-	    return PUNEVAL
-	    }
-	 }
+         if not (yytext ||:= move(1)) then {
+            uni_error(yytext)
+            return PUNEVAL
+            }
+         }
       }
    yytext ? {
       if tab(upto(unallowedchars)) then
-	 uni_error(": character "||move(1)|| " not supported in ` ` expression")
-#			if *yytext = bal() then {}
-#			else uni_error(yytext)
+         uni_error(": character "||move(1)|| " not supported in ` ` expression")
+#                       if *yytext = bal() then {}
+#                       else uni_error(yytext)
       }
    tokflags +:= Ender
    return PUNEVAL
@@ -664,12 +664,12 @@ procedure yylex(ender)
    initial {
       yylex2 := yylex2Normal
       if /buffer then
-	  yylex_reinit()
+          yylex_reinit()
       }
 
    if /buffer then {
       if \debuglex then
-	 write("yylex() : 0")
+         write("yylex() : 0")
       return 0
       }
   if \saved_tok then {
@@ -685,37 +685,37 @@ procedure yylex(ender)
       tokflags := 0
   if *buffer=0 then {
       if type(yyin)=="list" then {
-	 if buffer := pop(yyin) then {
-	    yylineno +:= 1
-	    yycolno := 1
-	    if tokflags < Newline then
-	       tokflags +:= Newline
-	    return yylex(ender)
-	    }
-	 }
+         if buffer := pop(yyin) then {
+            yylineno +:= 1
+            yycolno := 1
+            if tokflags < Newline then
+               tokflags +:= Newline
+            return yylex(ender)
+            }
+         }
       buffer := &null
       if \debuglex then
-	  write("yylex() : EOFX")
+          write("yylex() : EOFX")
       return EOFX
      }
   buffer ? {
       if rv := yylex2() then {
-	  buffer := tab(0)
+          buffer := tab(0)
       }
       else {
-	 if type(yyin)=="list" then {
-	    if buffer := pop(yyin) then {
-	       yylineno +:= 1
-	       yycolno := 1
-	       if tokflags < Newline then
-		  tokflags +:= Newline
-	       return yylex(ender)
-	       }
-	    }
+         if type(yyin)=="list" then {
+            if buffer := pop(yyin) then {
+               yylineno +:= 1
+               yycolno := 1
+               if tokflags < Newline then
+                  tokflags +:= Newline
+               return yylex(ender)
+               }
+            }
          buffer := &null
-	 yytext := ""
-	 if \debuglex then
-	     write("yylex() : EOFX")
+         yytext := ""
+         if \debuglex then
+             write("yylex() : EOFX")
          return EOFX
       }
   }
@@ -737,7 +737,7 @@ end
 procedure token_isconst(t)
    return case t.tok of {
      INTLIT | REALLIT | STRINGLIT | CSETLIT : {
-	 "const"
+         "const"
      }
      default: fail
    }

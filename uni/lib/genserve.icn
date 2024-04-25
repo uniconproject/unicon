@@ -14,22 +14,22 @@ $define DEFAULT_PORT 8080
 $include "posix.icn"
 
 class SocketDriver(
-	 socket,
-	 user,		# Associated user object, or &null if none
+         socket,
+         user,          # Associated user object, or &null if none
 
-	 dtype,		# one of "listen", "admin", or "user"
+         dtype,         # one of "listen", "admin", or "user"
 
-	 pending_output,# string containing generated output not yet sent
-			# across the socket barrier.
+         pending_output,# string containing generated output not yet sent
+                        # across the socket barrier.
 
-	 pending_input,	# unhandled input (typically from incomplete lines).
+         pending_input, # unhandled input (typically from incomplete lines).
 
-	 partition,	# A string that indicates a logical break in the
-			# inputs. "\n" for example. This could be extended
-			# to be a list of strings.
+         partition,     # A string that indicates a logical break in the
+                        # inputs. "\n" for example. This could be extended
+                        # to be a list of strings.
 
-	 Error		# Indicates a socket failure if set
-	 )
+         Error          # Indicates a socket failure if set
+         )
 
    ##
    # returns the pending input on socket. If partition is set, the input
@@ -39,39 +39,39 @@ class SocketDriver(
    method read_socket()
       local buffer, buffer2
       if buffer2 := pending_input || ready( socket ) then {
-	 pending_input := ""
-	 if /partition then # no partitions, return everything
-	    return buffer2
-	   
-	 buffer2 ? {
-	    while buffer := tab(find(partition)) do {
-	       move(*partition)
-	       pending_input := &subject[&pos:0]
-	       suspend buffer
-	       }
-	    if *(buffer := tab(0)) > 0 then
-	       pending_input := buffer
-	    } # buffer2 ? ...
-	 } 
+         pending_input := ""
+         if /partition then # no partitions, return everything
+            return buffer2
+
+         buffer2 ? {
+            while buffer := tab(find(partition)) do {
+               move(*partition)
+               pending_input := &subject[&pos:0]
+               suspend buffer
+               }
+            if *(buffer := tab(0)) > 0 then
+               pending_input := buffer
+            } # buffer2 ? ...
+         }
       else
-	 Error := "Failure in reading input from socket: " || image(socket)
+         Error := "Failure in reading input from socket: " || image(socket)
    end
-    
+
    method write_socket(s)
       pending_output ||:= s
       #writes(socket, s)
    end
-    
-   # 
+
+   #
    # flushes any pending output on the socket
    #
    method flush()
       if *(\pending_output) > 0 then {
-	 writes(socket, pending_output)
-	 pending_output := ""
-	 }
+         writes(socket, pending_output)
+         pending_output := ""
+         }
    end
-    
+
 initially
    /pending_input := ""
    /pending_output := ""
@@ -86,8 +86,8 @@ class LogHandler()
       local msg, s
       msg:=""
       every s := !L do
-	 msg ||:= s
-      
+         msg ||:= s
+
       write(&clock," ",msg)
    end
 end
@@ -96,16 +96,16 @@ end
 #  A basic server class, ideas from cved
 #
 class BasicServer(
-	 port,		# one port for now. Some future servers may need to
-			# listen to several ports.
+         port,          # one port for now. Some future servers may need to
+                        # listen to several ports.
 
-	 server_name,	# text name of the server. Default: Unicon Server
+         server_name,   # text name of the server. Default: Unicon Server
 
-	 Tsocket_drivers, # socket to SocketDriver objects
-	 socket_list,
-	 logger,	# Logger object
-	 fileHandler	# fileTransfer object ? to be added
-	 )
+         Tsocket_drivers, # socket to SocketDriver objects
+         socket_list,
+         logger,        # Logger object
+         fileHandler    # fileTransfer object ? to be added
+         )
 
    ##
    #  Starts listening on a specific port for TCP requests
@@ -117,15 +117,15 @@ class BasicServer(
       /p := port
       if not(listen_sock := server_socket(p)) then {
          logger.logit("open_listener_TCP(:",image(port),
-		      "): starting server failed because ", sys_errstr(&errno))
+                      "): starting server failed because ", sys_errstr(&errno))
          shutdown()
       }
-      logger.logit("open_listener_TCP():", server_name, 
-		   " started on port ", port)
+      logger.logit("open_listener_TCP():", server_name,
+                   " started on port ", port)
 
       add_socket(listen_sock, &null, "listen")
    end
-   
+
    #
    # add sock to the list of open connections
    #
@@ -133,7 +133,7 @@ class BasicServer(
       Tsocket_drivers[sock] := SocketDriver(sock, user, typ)
       put(socket_list, sock)
    end
-   
+
    ##
    # close connection to sock and remove it with its driver
    #@param sock socket to be removed
@@ -141,12 +141,12 @@ class BasicServer(
       local i
       Tsocket_drivers[sock].pending_output := ""
       delete( Tsocket_drivers, sock  )
-   
+
       every i := 1 to *socket_list do {
-	 if socket_list[i] === sock then {
-	    delete(socket_list, i)
-	    }
-	 }
+         if socket_list[i] === sock then {
+            delete(socket_list, i)
+            }
+         }
       close( sock )
    end
 
@@ -157,7 +157,7 @@ class BasicServer(
    method server_socket(p)
       return open(":" || p, "nl")
    end
-   
+
    method process_input(driver, buffer)
     stop("Error: Server should implement method process_input(driver, buffer)")
    end
@@ -169,62 +169,62 @@ class BasicServer(
       local i, sock, L, buffer, driver, listen_sock
 
       repeat {
-	 L := select( socket_list, SERVER_TIMEOUT*1000)
+         L := select( socket_list, SERVER_TIMEOUT*1000)
 
-	 every sock := !L do {
-	    driver := Tsocket_drivers[sock]
+         every sock := !L do {
+            driver := Tsocket_drivers[sock]
 
-	    if /driver then {
-	       logger.logit("Run(): This should not happen!  _
-			  What is the best way to handle this?  _
-			  Driver is null; do not know socket:" || image(sock))
-	       next  # fail?
-	       }
+            if /driver then {
+               logger.logit("Run(): This should not happen!  _
+                          What is the best way to handle this?  _
+                          Driver is null; do not know socket:" || image(sock))
+               next  # fail?
+               }
 
-	    case driver.dtype of {
-	    "listen": {
+            case driver.dtype of {
+            "listen": {
 
-	       # If they can't log in, stop listening to them.
-	       # login() would have closed the socket already
-	       if not login(driver) then
-		  remove_socket(sock)
-                     
-	       # create a net listener socket to replace the last one
-	       # note that the last one gets connected to a user in the
-	       # lower level code regardless of whether the login works,
-	       # and is thus not usable for listening for any new users.
-	       # This is a feature of the unicon networking design, and
-	       # probably a good one.
+               # If they can't log in, stop listening to them.
+               # login() would have closed the socket already
+               if not login(driver) then
+                  remove_socket(sock)
 
-	       if listen_sock := server_socket(port) then 
-		  add_socket(listen_sock, &null, "listen")
-	       else {
-		  logger.logit("Run(): can't open a new listener!")
-		  # need to do more here
-		  }
-	       }
+               # create a net listener socket to replace the last one
+               # note that the last one gets connected to a user in the
+               # lower level code regardless of whether the login works,
+               # and is thus not usable for listening for any new users.
+               # This is a feature of the unicon networking design, and
+               # probably a good one.
 
-	    # Read from connected, "live" sockets
-	    "admin" | "user" : {
-	       every buffer := driver.read_socket() do {
-		  process_input(driver, buffer)
-		  }
+               if listen_sock := server_socket(port) then
+                  add_socket(listen_sock, &null, "listen")
+               else {
+                  logger.logit("Run(): can't open a new listener!")
+                  # need to do more here
+                  }
+               }
 
-	       if \driver.Error then {
-		  logger.logit ("Run() :", driver.Error)
-		  remove_socket(sock)
-		  }
-	       }
+            # Read from connected, "live" sockets
+            "admin" | "user" : {
+               every buffer := driver.read_socket() do {
+                  process_input(driver, buffer)
+                  }
 
-	    default: {
-	       write("unknown driver.dtype ", image(driver.dtype))
-	       }
+               if \driver.Error then {
+                  logger.logit ("Run() :", driver.Error)
+                  remove_socket(sock)
+                  }
+               }
+
+            default: {
+               write("unknown driver.dtype ", image(driver.dtype))
+               }
                # end default
-	    } # end case
-	 } # end every sock := !L
+            } # end case
+         } # end every sock := !L
 
-	 every driver := !Tsocket_drivers do
-	    driver.flush()
+         every driver := !Tsocket_drivers do
+            driver.flush()
       } # end repeat
    end
 
@@ -238,7 +238,7 @@ class BasicServer(
       driver.dtype := "user"
       return
    end
-   
+
    #
    # shutdown: gracefully shuts down the server.
    #
@@ -246,16 +246,16 @@ class BasicServer(
       local sock
       # remove sockets
       every sock := key(Tsocket_drivers) do
-	 remove_socket( sock )
+         remove_socket( sock )
 
       logger.logit("shutdown(): ", server_name, " ", server_version())
       exit(0)
    end
-   
+
    method server_version()
       return "0.1"
    end
-   
+
 initially
    /server_name := "Unicon Server"
    /port := DEFAULT_PORT
@@ -277,9 +277,9 @@ $ifdef MAIN
 
 procedure main()
     trap("SIGINT", SIGINT_handler)
-    
+
     server := BasicServer(9000, "Generic Server")
-    
+
     write("opening TCP connection...")
     server.open_listener_TCP()
 

@@ -1,27 +1,27 @@
 ############################################################################
 #
-#	Name:	queens.icn
+#       Name:   queens.icn
 #
-#	Title:	Generate solutions to the n-queens problem
+#       Title:  Generate solutions to the n-queens problem
 #
-#	Author:	Stephen B. Wampler
+#       Author:         Stephen B. Wampler
 #
-#	Date:	June 10, 1988
+#       Date:   June 10, 1988
 #
 ############################################################################
-#  
+#
 #     This program displays the solutions to the non-attacking n-
 #  queens problem: the ways in which n queens can be placed on an
 #  n-by-n chessboard so that no queen can attack another. A positive
 #  integer can be given as a command line argument to specify the
 #  number of queens. For example,
-#  
+#
 #          iconx queens -n8
-#  
+#
 #  displays the solutions for 8 queens on an 8-by-8 chessboard.  The
 #  default value in the absence of an argument is 6.  One solution
 #  for six queens is:
-#  
+#
 #         -------------------------
 #         |   | Q |   |   |   |   |
 #         -------------------------
@@ -35,11 +35,11 @@
 #         -------------------------
 #         |   |   |   |   | Q |   |
 #         -------------------------
-#  
+#
 #  Comments: There are many approaches to programming solutions to
 #  the n-queens problem.  This program is worth reading for
 #  its programming techniques.
-#  
+#
 ############################################################################
 #
 #  Links: options, post
@@ -59,9 +59,9 @@ procedure main(args)
    n := \opts["n"] | 6
    if n <= 0 then stop("-n needs a positive numeric parameter")
 
-   solution := list(n)		# ... and a list of column solutions
+   solution := list(n)          # ... and a list of column solutions
    write(n,"-Queens:")
-   every q(1)			# start by placing queen in first column
+   every q(1)                   # start by placing queen in first column
 
    Term__()
 
@@ -79,9 +79,9 @@ procedure q(c)
       }
    every 0 = rows[r := 1 to n] = up[n+r-c] = down[r+c-1] &
       rows[r] <- up[n+r-c] <- down[r+c-1] <- 1        do {
-         solution[c] := r	# record placement.
+         solution[c] := r       # record placement.
          if c = n then show()
-         else q(c + 1)		# try to place next queen.
+         else q(c + 1)          # try to place next queen.
          }
 end
 

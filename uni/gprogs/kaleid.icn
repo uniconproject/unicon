@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     kaleid.icn
+#       File:     kaleid.icn
 #
-#	Subject:  Program to produce kaleidoscopic display
+#       Subject:  Program to produce kaleidoscopic display
 #
-#	Author:   C. Jeffery, inspired by kaleido.icn by Ralph E. Griswold
+#       Author:   C. Jeffery, inspired by kaleido.icn by Ralph E. Griswold
 #
-#	Date:     December 24, 2014
+#       Date:     December 24, 2014
 #
 ############################################################################
 #
@@ -33,37 +33,37 @@ $include "guih.icn"
 
 link filedialog
 
-global t1				# the ticker that controls speed
-global size				# size of view area (width & height)
-global half				# half size of view area
-global pane				# graphics context for viewing
-global colors				# list of colors
+global t1                               # the ticker that controls speed
+global size                             # size of view area (width & height)
+global half                             # half size of view area
+global pane                             # graphics context for viewing
+global colors                           # list of colors
 
 #  Parameters that can be set from the interface
 
-global delay				# delay between drawing circles
-global density				# number of circles in steady state
-global draw_proc			# drawing procedure
-global max_off				# maximum offset of circle
-global min_off				# minimum offset of circle
-global max_radius			# maximum radius of circle
-global min_radius			# minimum radius of circle
-global scale_radius			# radius scale factor
+global delay                            # delay between drawing circles
+global density                          # number of circles in steady state
+global draw_proc                        # drawing procedure
+global max_off                          # maximum offset of circle
+global min_off                          # minimum offset of circle
+global max_radius                       # maximum radius of circle
+global min_radius                       # minimum radius of circle
+global scale_radius                     # radius scale factor
 
 #  State information
 
-global draw_list			# list of pending drawing parameters
-global reset				# nonnull when view area needs resetting
+global draw_list                        # list of pending drawing parameters
+global reset                            # nonnull when view area needs resetting
 
 #  Record for circle data
 
 record circle(off1, off2, radius, color)
 
-$define DelayFactor	200
-$define DensityMax	100
+$define DelayFactor     200
+$define DensityMax      100
 
-$define SliderMax	10.0		# shared knowledge
-$define SliderMin	1.0
+$define SliderMax       10.0            # shared knowledge
+$define SliderMin       1.0
 
 procedure putcircle()
    local off1, off2, radius, color
@@ -73,7 +73,7 @@ procedure putcircle()
    off1 := ?size % half
    off2 := ?size % half
    radius := ((max_radius - min_radius) * ?0 + min_radius) * scale_radius
-   radius <:= 1			# don't let them vanish
+   radius <:= 1                         # don't let them vanish
 
    color := ?colors
    put(draw_list, circle(off1, off2, radius, color))
@@ -110,10 +110,10 @@ class Kaleido : Dialog(menu_1, menu_bar_1, quit_menu_item, snapshot_menu_item, c
    method tick()
       if not pause_button.is_checked() then fail
       if \reset then {
-	 EraseArea(pane, -half, -half, size, size)	# clear display
-	 draw_list := []				# new drawing list
-	 reset := &null
-	 }
+         EraseArea(pane, -half, -half, size, size)      # clear display
+         draw_list := []                                # new drawing list
+         reset := &null
+         }
       putcircle()
       if *draw_list > density then clrcircle()
    end
@@ -130,7 +130,7 @@ class Kaleido : Dialog(menu_1, menu_bar_1, quit_menu_item, snapshot_menu_item, c
 
       delay := 0.5
       density := DensityMax / 2.0
-      max_radius := SliderMax			# scaled later
+      max_radius := SliderMax                   # scaled later
       min_radius := SliderMin
       scale_radius := (size / 4) / SliderMax
 
@@ -143,9 +143,9 @@ class Kaleido : Dialog(menu_1, menu_bar_1, quit_menu_item, snapshot_menu_item, c
       half := size / 2
 
       pane := Clone(panel_1.cwin, "g", "pos="||panel_1.x||","||panel_1.y,
-		    "size="||panel_1.w||","||panel_1.h,
-		    "bg=black", "dx=" || half,
-		    "dy=" || half, "drawop=reverse")
+                    "size="||panel_1.w||","||panel_1.h,
+                    "bg=black", "dx=" || half,
+                    "dy=" || half, "drawop=reverse")
    end
 
    # x and y may be negative, since win usually has a positive dx,dy
@@ -153,7 +153,7 @@ class Kaleido : Dialog(menu_1, menu_bar_1, quit_menu_item, snapshot_menu_item, c
       fd := FileDialog("label=Image file name")
       fd.show_modal()
       if filename := fd.get_result() then
-	 WriteImage(win, filename, x, y, w, h)
+         WriteImage(win, filename, x, y, w, h)
    end
 
    method on_quit_menu_item(ev)
@@ -166,8 +166,8 @@ class Kaleido : Dialog(menu_1, menu_bar_1, quit_menu_item, snapshot_menu_item, c
 
    method on_pause_button(ev)
       pause_button.set_label(
-	 if pause_button.is_checked() then "pause" else "run"
-	 )
+         if pause_button.is_checked() then "pause" else "run"
+         )
    end
 
    method on_reset_button(ev)
@@ -176,33 +176,33 @@ class Kaleido : Dialog(menu_1, menu_bar_1, quit_menu_item, snapshot_menu_item, c
 
    method on_Kaleido(ev)
       if &meta then
-	 case map(ev.param) of {		# fold case
-	    "q":	exit()
-	    "s":	snapshot(pane, -half, -half, size, size)
-	    }
+         case map(ev.param) of {                # fold case
+            "q":        exit()
+            "s":        snapshot(pane, -half, -half, size, size)
+            }
    end
 
    method on_density_slider(ev)
-      if / (ev.source.slider_down) then {	# calc on release only
-	 density := (real(ev.source.value) / SliderMax) * DensityMax
-	 density <:= 1
-	 reset := 1
-	 }
+      if / (ev.source.slider_down) then {       # calc on release only
+         density := (real(ev.source.value) / SliderMax) * DensityMax
+         density <:= 1
+         reset := 1
+         }
    end
 
    method on_maxradius_slider(ev)
       max_radius := real(ev.source.value)
-      if max_radius < min_radius then {	# if max < min lower min
-	 min_radius := max_radius
-	 }
+      if max_radius < min_radius then {         # if max < min lower min
+         min_radius := max_radius
+         }
       reset := 1
    end
 
    method on_minradius_slider(ev)
       min_radius := real(ev.source.value)
-      if min_radius > max_radius then {	# if min > max raise max
-	 max_radius := min_radius
-	 }
+      if min_radius > max_radius then {         # if min > max raise max
+         max_radius := min_radius
+         }
       reset := 1
    end
 
@@ -213,9 +213,9 @@ class Kaleido : Dialog(menu_1, menu_bar_1, quit_menu_item, snapshot_menu_item, c
    method on_shape(ev)
       write(image(ev.source))
       draw_proc := case ev.source of {
-	 disc_check_box: FillCircle
-	 ring_check_box: DrawCircle
-	 }
+         disc_check_box: FillCircle
+         ring_check_box: DrawCircle
+         }
       reset := 1
    end
 

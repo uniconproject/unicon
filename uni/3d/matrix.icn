@@ -19,31 +19,31 @@ class Matrix4x4(
       every i:=1 to 16 do
          A[i] := L[i]
    end
-   
+
    method to_list()
    return [ A[1 ],  A[2 ],  A[3 ],  A[4 ],
-	    A[5 ],  A[6 ],  A[7 ],  A[8 ],
-	    A[9 ],  A[10],  A[11],  A[12],
-	    A[13],  A[14],  A[15],  A[16]
-	     ]
+            A[5 ],  A[6 ],  A[7 ],  A[8 ],
+            A[9 ],  A[10],  A[11],  A[12],
+            A[13],  A[14],  A[15],  A[16]
+             ]
    end
-   
+
    method copy_elements_to(L)
       local i
       every i:=1 to 16 do
          L[i] := A[i]
    end
-   
+
    method get_copy()
       local mat, B, i
       mat := Matrix4x4()
       B := mat.A
       every i:=1 to 16 do
-	 B[i] := A[i]
-      
+         B[i] := A[i]
+
       return mat
    end
-   
+
    method identity()
       A[1 ] := 1.0; A[2 ] := 0.0; A[3 ] := 0.0; A[4 ] := 0.0
       A[5 ] := 0.0; A[6 ] := 1.0; A[7 ] := 0.0; A[8 ] := 0.0
@@ -57,7 +57,7 @@ class Matrix4x4(
       A[10] :=: A[7]
       A[13] :=: A[4]
       A[14] :=: A[8]
-      A[15] :=: A[12]   
+      A[15] :=: A[12]
       return self
    end
 
@@ -66,7 +66,7 @@ class Matrix4x4(
       every writes(left(string(A[b to (b+4)]),5), "  ")
       write()
    end
-   
+
    method print()
       print_row(1)
       print_row(2)
@@ -187,64 +187,64 @@ class Matrix4x4(
    method mul(matb)
       local b,
          e1:=A[1], e2:=A[2], e3:=A[3], e4:=A[4], e5:=A[5], e6:=A[6], e7:=A[7],
-	 e8:=A[8], e9:=A[9], e10:=A[10], e11:=A[11], e12:=A[12], e13:=A[13], 
-	 e14:=A[14], e15:=A[15], e16:=A[16]  
-      
+         e8:=A[8], e9:=A[9], e10:=A[10], e11:=A[11], e12:=A[12], e13:=A[13],
+         e14:=A[14], e15:=A[15], e16:=A[16]
+
       b := matb.A
-      
+
       A[1 ] := e1*b[1] + e2*b[5] + e3*b[9 ] + e4*b[13]
       A[2 ] := e1*b[2] + e2*b[6] + e3*b[10] + e4*b[14]
       A[3 ] := e1*b[3] + e2*b[7] + e3*b[11] + e4*b[15]
       A[4 ] := e1*b[4] + e2*b[8] + e3*b[12] + e4*b[16]
-      
+
       A[5 ] := e5*b[1] + e6*b[5] + e7*b[9 ] + e8*b[13]
       A[6 ] := e5*b[2] + e6*b[6] + e7*b[10] + e8*b[14]
       A[7 ] := e5*b[3] + e6*b[7] + e7*b[11] + e8*b[15]
       A[8 ] := e5*b[4] + e6*b[8] + e7*b[12] + e8*b[16]
-      
+
       A[9 ] := e9*b[1] + e10*b[5] + e11*b[9 ] + e12*b[13]
       A[10] := e9*b[2] + e10*b[6] + e11*b[10] + e12*b[14]
       A[11] := e9*b[3] + e10*b[7] + e11*b[11] + e12*b[15]
       A[12] := e9*b[4] + e10*b[8] + e11*b[12] + e12*b[16]
-      
+
       A[13] := e13*b[1] + e14*b[5] + e15*b[9 ] + e16*b[13]
       A[14] := e13*b[2] + e14*b[6] + e15*b[10] + e16*b[14]
       A[15] := e13*b[3] + e14*b[7] + e15*b[11] + e16*b[15]
       A[16] := e13*b[4] + e14*b[8] + e15*b[12] + e16*b[16]
-      
+
       return self
    end
 
    method mul2(matb)
       local matc, b, c,
          e1:=A[1], e2:=A[2], e3:=A[3], e4:=A[4], e5:=A[5], e6:=A[6], e7:=A[7],
-	 e8:=A[8], e9:=A[9], e10:=A[10], e11:=A[11], e12:=A[12], e13:=A[13], 
-	 e14:=A[14], e15:=A[15], e16:=A[16]  
-      
+         e8:=A[8], e9:=A[9], e10:=A[10], e11:=A[11], e12:=A[12], e13:=A[13],
+         e14:=A[14], e15:=A[15], e16:=A[16]
+
       matc := Matrix4x4()
       c := matc.A
       b := matb.A
-      
+
       c[1 ] := e1*b[1] + e2*b[5] + e3*b[9 ] + e4*b[13]
       c[2 ] := e1*b[2] + e2*b[6] + e3*b[10] + e4*b[14]
       c[3 ] := e1*b[3] + e2*b[7] + e3*b[11] + e4*b[15]
       c[4 ] := e1*b[4] + e2*b[8] + e3*b[12] + e4*b[16]
-      
+
       c[5 ] := e5*b[1] + e6*b[5] + e7*b[9 ] + e8*b[13]
       c[6 ] := e5*b[2] + e6*b[6] + e7*b[10] + e8*b[14]
       c[7 ] := e5*b[3] + e6*b[7] + e7*b[11] + e8*b[15]
       c[8 ] := e5*b[4] + e6*b[8] + e7*b[12] + e8*b[16]
-      
+
       c[9 ] := e9*b[1] + e10*b[5] + e11*b[9 ] + e12*b[13]
       c[10] := e9*b[2] + e10*b[6] + e11*b[10] + e12*b[14]
       c[11] := e9*b[3] + e10*b[7] + e11*b[11] + e12*b[15]
       c[12] := e9*b[4] + e10*b[8] + e11*b[12] + e12*b[16]
-      
+
       c[13] := e13*b[1] + e14*b[5] + e15*b[9 ] + e16*b[13]
       c[14] := e13*b[2] + e14*b[6] + e15*b[10] + e16*b[14]
       c[15] := e13*b[3] + e14*b[7] + e15*b[11] + e16*b[15]
       c[16] := e13*b[4] + e14*b[8] + e15*b[12] + e16*b[16]
-      
+
       return matc
    end
 
@@ -252,29 +252,29 @@ class Matrix4x4(
       local sint, cost, L
       sint := sin(angle)
       cost := cos(angle)
-      
+
       case axis of{
-	 "x" :{
-	    A[ 6] := cost
-	    A[ 7] := sint
-	    A[10] :=-sint
-	    A[11] := cost
-	    }
-	 "y" :{
-	    A[ 1] := sint
-	    A[ 3] := cost
-	    A[ 9] := cost
-	    A[11] :=-sint
-	    }
-	 "z" :{
-	    A[ 1] := cost
-	    A[ 2] := sint
-	    A[ 5] :=-sint
-	    A[ 6] := cost
-	 }
+         "x" :{
+            A[ 6] := cost
+            A[ 7] := sint
+            A[10] :=-sint
+            A[11] := cost
+            }
+         "y" :{
+            A[ 1] := sint
+            A[ 3] := cost
+            A[ 9] := cost
+            A[11] :=-sint
+            }
+         "z" :{
+            A[ 1] := cost
+            A[ 2] := sint
+            A[ 5] :=-sint
+            A[ 6] := cost
+         }
       } # case
    end
-   
+
    method scaling_matrix(s)
       A[ 1] := s.x
       A[ 6] := s.y

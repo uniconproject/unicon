@@ -83,95 +83,95 @@ Then you can either compile XPM via "imake" or in a stand-alone way.
 
 <h3><a name="sec4.1">4.1. With imake</a></h3>
 <p>
-	Imakefiles are provided to build both shared and unshared libraries.
-	However, building a shared lib is very OS dependent and often requires
-	specific files which are not available. Also config files are often not
-	set correctly for this task. So if it fails you can avoid trying to
-	build one and simply build the static library instead. In order to do
-	so you should edit the top Imakefile to add -DSharedLibXpm=NO to the
-	definition of IMAKE_DEFINES as described.
+        Imakefiles are provided to build both shared and unshared libraries.
+        However, building a shared lib is very OS dependent and often requires
+        specific files which are not available. Also config files are often not
+        set correctly for this task. So if it fails you can avoid trying to
+        build one and simply build the static library instead. In order to do
+        so you should edit the top Imakefile to add -DSharedLibXpm=NO to the
+        definition of IMAKE_DEFINES as described.
 <p>
-	The compilation and installation of the library and the sxpm program
-	should only require you to edit the top Imakefile. But you should do so
-	in order to specify the locations where the various files should be
-	installed and to set the DEFINES variable accordingly to your system.
+        The compilation and installation of the library and the sxpm program
+        should only require you to edit the top Imakefile. But you should do so
+        in order to specify the locations where the various files should be
+        installed and to set the DEFINES variable accordingly to your system.
 <p>
-	On Solaris 2.* the compilation works only in the native svr4
-	environment, avoid the bsd one or it won't compile. Especially you
-	should be using /opt/SUNWspro/bin/cc and not /usr/ucb/cc.
-	Also since the compiler is no longer part of the OS distribution a lot
-	of people use gcc instead. This is fine, but be aware that the imake
-	tool you get as part of the X Window System on a solaris box is
-	configured for cc. Therefore the compilation using the generated
-	Makefiles will not succeed unless you have changed the default
-	configuration. An easy work around is to directly edit the generated
-	lib/Makefile to change '-K pic' to '-fpic'. Fixing your imake
-	configuration would be better though.
+        On Solaris 2.* the compilation works only in the native svr4
+        environment, avoid the bsd one or it won't compile. Especially you
+        should be using /opt/SUNWspro/bin/cc and not /usr/ucb/cc.
+        Also since the compiler is no longer part of the OS distribution a lot
+        of people use gcc instead. This is fine, but be aware that the imake
+        tool you get as part of the X Window System on a solaris box is
+        configured for cc. Therefore the compilation using the generated
+        Makefiles will not succeed unless you have changed the default
+        configuration. An easy work around is to directly edit the generated
+        lib/Makefile to change '-K pic' to '-fpic'. Fixing your imake
+        configuration would be better though.
 <p>
-	On Linux, if you do not use ELF yet you'd better get the binary
-	distribution available from sunsite. Because it's really a pain to
-	build a shared lib and the current XPM distribution doesn't contain
-	the jump files you would need to do so. On the other hand people have
-	had no problems building it using ELF.
+        On Linux, if you do not use ELF yet you'd better get the binary
+        distribution available from sunsite. Because it's really a pain to
+        build a shared lib and the current XPM distribution doesn't contain
+        the jump files you would need to do so. On the other hand people have
+        had no problems building it using ELF.
 <p>
-	Then execute the following command:
+        Then execute the following command:
 <pre>
-		xmkmf -a
+                xmkmf -a
 </pre>
 <p>
-	or if this option is not supported by your version of xmkmf:
+        or if this option is not supported by your version of xmkmf:
 <pre>
-		xmkmf
-		make Makefiles
-		make includes
-		make depend		(optional)
+                xmkmf
+                make Makefiles
+                make includes
+                make depend             (optional)
 </pre>
 <p>
-	Then simply execute: 
+        Then simply execute:
 <pre>
-		make
+                make
 </pre>
 <p>
-	which will build the XPM library and the sxpm application. 
-	Then do:
+        which will build the XPM library and the sxpm application.
+        Then do:
 <pre>
-	     	make install
-		make install.man
+                make install
+                make install.man
 </pre>
 <p>
-	which will install the library and the sxpm program and man page.
+        which will install the library and the sxpm program and man page.
 <p>
-	If it fails, be sure you have set the DEFINES correctly in the top
-	Imakefile to suit your machine.
+        If it fails, be sure you have set the DEFINES correctly in the top
+        Imakefile to suit your machine.
 
 <h4>NOTE ON USING IMAKE:</h4>
 <p>
-	Building the XPM distribution with imake requires to have imake
-	<strong>correctly installed and configured</strong> on your
-	system. I do my best at tweaking the Imakefiles so they work with
-	as many imake flavors people might have as possible but there is
-	nothing I can do against wrong imake configurations. So if your
-	build fails using imake, don't send me email for advice. Get your
-	imake configuration fixed or forget about it!
+        Building the XPM distribution with imake requires to have imake
+        <strong>correctly installed and configured</strong> on your
+        system. I do my best at tweaking the Imakefiles so they work with
+        as many imake flavors people might have as possible but there is
+        nothing I can do against wrong imake configurations. So if your
+        build fails using imake, don't send me email for advice. Get your
+        imake configuration fixed or forget about it!
 
 
 <h3><a name="sec4.2">4.2. Without imake</a></h3>
 <p>
-	A set of makefiles is provided for those who do not have imake
-	available on their system. However, this is only provided as a
-	convenience and you should be considered as a starting point and not as
-	something ready to use. These makefiles, called Makefile.noX, will most
-	likely require some editing in order be set accordingly to your system.
+        A set of makefiles is provided for those who do not have imake
+        available on their system. However, this is only provided as a
+        convenience and you should be considered as a starting point and not as
+        something ready to use. These makefiles, called Makefile.noX, will most
+        likely require some editing in order be set accordingly to your system.
 <p>
-	Once this setting is done, you should be able to compile XPM, by
-	executing the following command:
+        Once this setting is done, you should be able to compile XPM, by
+        executing the following command:
 <pre>
-	        make -f Makefile.noX
+                make -f Makefile.noX
 </pre>
 <p>
-	Then to install it, do:
+        Then to install it, do:
 <pre>
-		make -f Makefile.noX install
+                make -f Makefile.noX install
 </pre>
 
 
@@ -181,7 +181,7 @@ In addition to the library the sxpm tool is provided to show XPM file and
 convert them from XPM1 or XPM2 to XPM version 3. If you have previously done
 'make' or 'make all' you should already have it, otherwise just do:
 <pre>
-		      cd sxpm; make
+                      cd sxpm; make
 </pre>
 <p>
 This application shows you most of the features of XPM and its source can be
@@ -230,7 +230,7 @@ The cxpm tool is provided to help you figure out whether an XPM file is correct
 or not with regard to its format. If you have previously done 'make' or
 'make all' you should already have it, otherwise just do:
 <pre>
-		      cd cxpm; make
+                      cd cxpm; make
 </pre>
 <p>
 The related man page will tell you everything about it but here is a simple

@@ -11,7 +11,7 @@ procedure main()
    f := stat("tmp") | stop("Couldn't stat after mkdir: ", sys_errstr(&errno))
 
    write(format(f, "tmp"))
-   
+
    rmdir("tmp") | stop("Couldn't remove ./tmp: ", sys_errstr(&errno))
 
    f := stat("tmp") | write("Couldn't stat: ", sys_errstr(&errno))
@@ -24,10 +24,10 @@ end
 procedure format(p, name)
 
    s := right("*", 4) || # was p.blocks
-	 " " || p.mode || " " ||
-	 right(p.nlink, 3) || " "  ||
-	 " " || right("*", 8) || # was p.size
-	 " " || name
+         " " || p.mode || " " ||
+         right(p.nlink, 3) || " "  ||
+         " " || right("*", 8) || # was p.size
+         " " || name
 
    if p.mode[1] == "l" then
       s ||:= " -> " || readlink(name)

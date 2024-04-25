@@ -1,12 +1,12 @@
 ###########################################################################
 #
-#	File:     ui.icn
+#       File:     ui.icn
 #
-#	Subject:  Unicon IDE, an integrated programming environment
+#       Subject:  Unicon IDE, an integrated programming environment
 #
-#	Authors:  Hani Bani Salameh, Nolan Clayton and Clinton Jeffery
+#       Authors:  Hani Bani Salameh, Nolan Clayton and Clinton Jeffery
 #
-#	Date:     July 2, 2007
+#       Date:     July 2, 2007
 #
 ############################################################################
 #
@@ -14,9 +14,9 @@
 #  for Unicon.  It is gradually gaining features and usability.
 #
 #  To do:
-#	keyboard shortcuts
-#	multiple edit regions.
-#	
+#       keyboard shortcuts
+#       multiple edit regions.
+#
 ############################################################################
 #
 #  Requires:  graphics, version 2 GUI libraries, and ivib
@@ -71,12 +71,12 @@ class UIDE : Dialog(
    method open_win()
       local i
       if not (self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs))) then {
-	 every i := 1 to *self.attribs do if match("font=", self.attribs[i]) then {
-	    delete(self.attribs, i)
-	    if not (self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs))) then fatal("couldn't open window")
-	    else break # might need to do more here to indicate font setting was lost
-	    }
-	 }
+         every i := 1 to *self.attribs do if match("font=", self.attribs[i]) then {
+            delete(self.attribs, i)
+            if not (self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs))) then fatal("couldn't open window")
+            else break # might need to do more here to indicate font setting was lost
+            }
+         }
       self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | fatal("couldn't open window")
       Raise(self.win)
       return
@@ -122,11 +122,11 @@ class UIDE : Dialog(
       ui_Preferences := DialogPreferences()
       error_msg := menubar.load_config()
       if \ui_Preferences.paren_check_box_state == "" then
-	  ui_Preferences.paren_check_box_state := &null
+          ui_Preferences.paren_check_box_state := &null
       if \ui_Preferences.syntax_check_box_state == "" then
-	  ui_Preferences.syntax_check_box_state := &null
+          ui_Preferences.syntax_check_box_state := &null
       if not (blank_window := open("u_ide_blank", "g", "canvas=hidden")) then
-	 return "can't open window"
+         return "can't open window"
       if /win_position then win_position := "2,3"
       if /height then height := WAttrib(blank_window, "displayheight") - 150
       if /width then width := WAttrib(blank_window, "displaywidth") - 150
@@ -155,31 +155,31 @@ class UIDE : Dialog(
       if \MsgBox.contents then {
          m := ""
          every m ||:= !!MsgBox.contents
-	 }
+         }
       if /is_MSWindows then {
          # browser search appears random but should actually should be in order
          # of how well docs are displayed (in-line, external tool, or not at all)
          every browser := getenv("BROWSER") | "qupzilla" | "surf" | "uzbl" | "dillo" |
-		  "firefox" | "chromium-browser" | "opera" | "netscape" | "open" | "midori" | "mozilla" do {
-	    if stat(getpaths() || browser) then {
-	       MsgBox.set_contents(["found browser " || browser, \m])
-	       break
-	       }
-	    else browser := &null
-	    }
-	 }
+                  "firefox" | "chromium-browser" | "opera" | "netscape" | "open" | "midori" | "mozilla" do {
+            if stat(getpaths() || browser) then {
+               MsgBox.set_contents(["found browser " || browser, \m])
+               break
+               }
+            else browser := &null
+            }
+         }
       else {
          (browser := "\""|| (
-	     WinAssociate("HTM") |
+             WinAssociate("HTM") |
              (getenv("ProgramW6432"|"ProgramFiles"|"ProgramFiles(x86)") ||
-			"\\Internet Explorer\\iexplore.exe")) || "\"") |
+                        "\\Internet Explorer\\iexplore.exe")) || "\"") |
             write("What, no browser?  Unicon's online help won't be readable \n_
              until you associate an HTML reader application with the HTM \n_
              file extension.\n")
       }
       # iexplore runs off http:// but not file://
       if (not find("iexplore.exe", \browser)) |
-	 (not match("online", is_online())) then set_docpath()
+         (not match("online", is_online())) then set_docpath()
 #      if not verify_make() then on_close()
    end
 
@@ -195,26 +195,26 @@ class UIDE : Dialog(
       menubar.set_font()
       # queue up an lpress to set the initial focus to the editor buffer
       if \win then {
-	 Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
-	 }
+         Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
+         }
    end
 
 # Proposed function key bindings. Still under construction.
 # Loosely based on Borland-style IDE keybindings.
 #
-#  Key	Base		Control     Alt		Shift
-#  F1   Help		search@crsr help/srch	help index
-#  F2	Save file	restart	    Find(next)	grep
-#  F3	Open file	callstack   closewin	New file
+#  Key  Base            Control     Alt         Shift
+#  F1   Help            search@crsr help/srch   help index
+#  F2   Save file       restart     Find(next)  grep
+#  F3   Open file       callstack   closewin    New file
 #  F4   Run to cursor
-#  F5	Toggle breakpt		    User screen
-#  F6	Next win/tab				Previous win
-#  F7	Step		set watchpt
-#  F8	Next		set breakpt
-#  F9	Make		Run	    Compileonly Run/debug
-#  F10	Main menu		
-#  F11	runtime msgs	project dlg inspect
-#  F12	compiler msgs	toggle ivib
+#  F5   Toggle breakpt              User screen
+#  F6   Next win/tab                            Previous win
+#  F7   Step            set watchpt
+#  F8   Next            set breakpt
+#  F9   Make            Run         Compileonly Run/debug
+#  F10  Main menu
+#  F11  runtime msgs    project dlg inspect
+#  F12  compiler msgs   toggle ivib
 # alt-x = exit
 
 
@@ -223,19 +223,19 @@ class UIDE : Dialog(
    #
    method on_function_key(ev)
       case ev.param of {
-	 Key_F1:   ide_key_file_menu()
-	 Key_F2:   ide_key_help_menu()
-	 Key_F3:   ide_handle_save()
-	 Key_F4:   ide_handle_open()
-	 Key_F5:   ide_prev_tab()
-	 Key_F6:   ide_next_tab()
-	 Key_F7:   ""#ide_handle_compile()
-	 Key_F8:   ""#ide_handle_run()
-	 Key_F9:    ""
-	 Key_F10:   ""
-	 Key_F11:   ""
-	 Key_F12:  ide_handle_exit()
-	 }
+         Key_F1:   ide_key_file_menu()
+         Key_F2:   ide_key_help_menu()
+         Key_F3:   ide_handle_save()
+         Key_F4:   ide_handle_open()
+         Key_F5:   ide_prev_tab()
+         Key_F6:   ide_next_tab()
+         Key_F7:   ""#ide_handle_compile()
+         Key_F8:   ""#ide_handle_run()
+         Key_F9:    ""
+         Key_F10:   ""
+         Key_F11:   ""
+         Key_F12:  ide_handle_exit()
+         }
    end
 
    #
@@ -347,8 +347,8 @@ class UIDE : Dialog(
       self.min_width := 645
       self.min_height := 485
       self.set_attribs("size="||width||","||height, "pos="||win_position,
-		       "bg=pale gray",
-		       "label=Unicon IDE", "font=mono,16", "resize=on")
+                       "bg=pale gray",
+                       "label=Unicon IDE", "font=mono,16", "resize=on")
 
       DevTabSet := TabSet()
       DevTabSet.set_pos("0", "100%-110")
@@ -365,7 +365,7 @@ class UIDE : Dialog(
 
       PtyBox := ShellETL()
       PtyBox.set_pos("2", "2")
-      PtyBox.set_size("100%-4", "100%-4") 
+      PtyBox.set_size("100%-4", "100%-4")
       PtyBox.set_draw_border()
       PtyBox.set_attribs("bg=yellowish white", "font="||fontname)
       PtyBox.set_contents([""])
@@ -378,7 +378,7 @@ class UIDE : Dialog(
       EditBox.set_size("100%-4", "100%-4")
       EditBox.set_draw_border()
       EditBox.set_attribs("bg="||ui_Preferences.val_background_color,
-			  "font="||fontname)
+                          "font="||fontname)
       EditBox.set_contents([""])
 
       DevTabSet.add(tab_item_1)
@@ -386,7 +386,7 @@ class UIDE : Dialog(
       DevTabSet.add(tab_item_4)
       DevTabSet.connect(self, "change", SELECTION_CHANGED_EVENT)
       self.add(DevTabSet)
-      
+
       FileTabSet := BufferTabSet()
       FileTabSet.set_pos("150", "9%")
       FileTabSet.set_size("100%-150", "100%-160")
@@ -396,7 +396,7 @@ class UIDE : Dialog(
       FileTabSet.add(tab_item_2)
       FileTabSet.set_which_one(tab_item_2)
       self.add(FileTabSet)
-      
+
       ClassTabSet := BufferTabSet()
       ClassTabSet.set_pos("0", "9%")
       ClassTabSet.set_size("150", "100%-160")
@@ -412,7 +412,7 @@ class UIDE : Dialog(
       ClassTabSet.add(tab_item_3)
       ClassTabSet.set_which_one(tab_item_3)
       self.add(ClassTabSet)
-      
+
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
       pnlToolbar.set_size("100%", "4.5%")

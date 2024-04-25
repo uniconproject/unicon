@@ -3,15 +3,15 @@
  *  non window-system-specific window support routines
  */
 
-unsigned long ConsoleFlags = 0;			 /* Console flags */
+unsigned long ConsoleFlags = 0;                  /* Console flags */
 
 #ifdef Graphics
 
-static	int	colorphrase    (char *buf, long *r, long *g, long *b, long *a);
-static	double	rgbval		(double n1, double n2, double hue);
+static  int     colorphrase     (char *buf, long *r, long *g, long *b, long *a);
+static  double  rgbval          (double n1, double n2, double hue);
 
-static	int	setpos          (wbp w, char *s);
-static	int	sicmp		(siptr sip1, siptr sip2);
+static  int     setpos          (wbp w, char *s);
+static  int     sicmp           (siptr sip1, siptr sip2);
 
 /*
  * Global variables.
@@ -22,7 +22,7 @@ static	int	sicmp		(siptr sip1, siptr sip2);
 
 #ifndef Concurrent
 int pollctr;
-#endif					/* Concurrent */
+#endif                                  /* Concurrent */
 
 FILE *ConsoleBinding = NULL;
 /*
@@ -41,7 +41,7 @@ wfont *start_font, *end_font, *curr_font;
 extern wclrp scp;
 extern HPALETTE palette;
 extern int numColors;
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
 
 #ifndef MultiProgram
 struct descrip amperX = {D_Integer};
@@ -53,16 +53,14 @@ struct descrip amperPick = {D_Null};
 struct descrip lastEventWin = {D_Null};
 int lastEvFWidth = 0, lastEvLeading = 0, lastEvAscent = 0;
 uword xmod_control, xmod_shift, xmod_meta;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
-
+
 /*
  * subscript the already-processed-events "queue" to index i.
  * used in "cooked mode" I/O to determine, e.g. how far to backspace.
  */
-char *evquesub(w,i)
-wbp w;
-int i;
+char *evquesub(wbp w, int i)
    {
    wsp ws = w->window;
    int j = ws->eQback+i;
@@ -77,7 +75,7 @@ int i;
       return NULL;
       }
    }
-
+
 
 /*
  * get event from window, assigning to &x, &y, and &interval
@@ -85,51 +83,48 @@ int i;
  * returns 0 for success, -1 if window died or EOF, -2 for malformed queue,
  *    -3 if timeout expired
  */
-int wgetevent(w,res,t)
-wbp w;
-dptr res;
-int t;
+int wgetevent(wbp w, dptr res, int t)
    {
    struct descrip xdesc, ydesc, pickdesc;
    struct b_list *hp;
    uword i;
    int retval;
 
-   if (wstates != NULL && wstates->next != NULL		/* if multiple windows*/
-   && (BlkD(w->window->listp,List)->size == 0)) {	/* & queue is empty */
+   if (wstates != NULL && wstates->next != NULL         /* if multiple windows*/
+   && (BlkD(w->window->listp,List)->size == 0)) {       /* & queue is empty */
       while (BlkD(w->window->listp,List)->size == 0) {
 #ifdef XWindows
          extern void postcursor(wbp);
          extern void scrubcursor(wbp);
          if (ISCLOSED(w)) {
-	    return -1;
-	    }
-	 if (ISCURSORON(w)) {
-	    postcursor(w);
-	    }
-#endif					/* XWindows */
+            return -1;
+            }
+         if (ISCURSORON(w)) {
+            postcursor(w);
+            }
+#endif                                  /* XWindows */
 #ifdef MSWindows
-	 if (ISCURSORON(w) && w->window->hasCaret == 0) {
-	    wsp ws = w->window;
-	    CreateCaret(ws->iconwin, NULL, FWIDTH(w), FHEIGHT(w));
-	    SetCaretBlinkTime(500);
-	    SetCaretPos(ws->x, ws->y - ASCENT(w));
-	    ShowCaret(ws->iconwin);
-	    ws->hasCaret = 1;
-	    }
-#endif					/* MSWindows */
-	 if (pollevent() < 0)				/* poll all windows */
-	    break;					/* break on error */
+         if (ISCURSORON(w) && w->window->hasCaret == 0) {
+            wsp ws = w->window;
+            CreateCaret(ws->iconwin, NULL, FWIDTH(w), FHEIGHT(w));
+            SetCaretBlinkTime(500);
+            SetCaretPos(ws->x, ws->y - ASCENT(w));
+            ShowCaret(ws->iconwin);
+            ws->hasCaret = 1;
+            }
+#endif                                  /* MSWindows */
+         if (pollevent() < 0)                           /* poll all windows */
+            break;                                      /* break on error */
 #if UNIX || VMS
          idelay(XICONSLEEP);
-#endif					/* UNIX || VMS */
+#endif                                  /* UNIX || VMS */
 #ifdef MSWindows
-	 Sleep(20);
-#endif					/* MSWindows */
-	 }
+         Sleep(20);
+#endif                                  /* MSWindows */
+         }
 #ifdef XWindows
       if (ISCURSORON(w))
-	 scrubcursor(w);
+         scrubcursor(w);
 #endif
       }
 
@@ -137,15 +132,15 @@ int t;
    if (w->window->is_gl)
       retval = gl_wgetq(w,res,t);
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    retval = wgetq(w,res,t);
    if (retval == -1)
-      return -1;					/* window died */
+      return -1;                                        /* window died */
    if (retval == -2)
-      return -3;					/* timeout expired */
+      return -3;                                        /* timeout expired */
 
    if (BlkD(w->window->listp,List)->size < 2)
-      return -2;					/* malformed queue */
+      return -2;                                        /* malformed queue */
 
 #ifdef GraphicsGL
    if (w->window->is_gl) {
@@ -153,7 +148,7 @@ int t;
       gl_wgetq(w,&ydesc,-1);
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    {
    wgetq(w,&xdesc,-1);
    wgetq(w,&ydesc,-1);
@@ -168,7 +163,7 @@ int t;
          if (w->window->is_gl)
             gl_wgetq( w, &amperPick, -1);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          wgetq( w, &amperPick, -1);
          }
       else
@@ -176,17 +171,17 @@ int t;
       }
    else
         amperPick = nulldesc;
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    if (xdesc.dword != D_Integer || ydesc.dword != D_Integer)
 {
-      return -2;			/* bad values on queue */
+      return -2;                        /* bad values on queue */
 }
 
-   IntVal(amperX) = IntVal(xdesc) & 0xFFFF;		/* &x */
+   IntVal(amperX) = IntVal(xdesc) & 0xFFFF;             /* &x */
    if (IntVal(amperX) >= 0x8000)
       IntVal(amperX) -= 0x10000;
-   IntVal(amperY) = IntVal(ydesc) & 0xFFFF;		/* &y */
+   IntVal(amperY) = IntVal(ydesc) & 0xFFFF;             /* &y */
    if (IntVal(amperY) >= 0x8000)
       IntVal(amperY) -= 0x10000;
    IntVal(amperX) -= w->context->dx;
@@ -194,47 +189,45 @@ int t;
 
 #ifdef GraphicsGL
    if (w->window->is_gl) {
-      MakeInt(1 + GL_XTOCOL(w,IntVal(amperX)), &(amperCol));	/* &col */
-      MakeInt(GL_YTOROW(w,IntVal(amperY)) , &(amperRow));	/* &row */
+      MakeInt(1 + GL_XTOCOL(w,IntVal(amperX)), &(amperCol));    /* &col */
+      MakeInt(GL_YTOROW(w,IntVal(amperY)) , &(amperRow));       /* &row */
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    {
-   MakeInt(1 + XTOCOL(w,IntVal(amperX)), &(amperCol));	/* &col */
-   MakeInt(YTOROW(w,IntVal(amperY)) , &(amperRow));	/* &row */
+   MakeInt(1 + XTOCOL(w,IntVal(amperX)), &(amperCol));  /* &col */
+   MakeInt(YTOROW(w,IntVal(amperY)) , &(amperRow));     /* &row */
    }
 
-   xmod_control = IntVal(xdesc) & EQ_MOD_CONTROL;	/* &control */
-   xmod_meta = IntVal(xdesc) & EQ_MOD_META;		/* &meta */
-   xmod_shift = IntVal(xdesc) & EQ_MOD_SHIFT;		/* &shift */
+   xmod_control = IntVal(xdesc) & EQ_MOD_CONTROL;       /* &control */
+   xmod_meta = IntVal(xdesc) & EQ_MOD_META;             /* &meta */
+   xmod_shift = IntVal(xdesc) & EQ_MOD_SHIFT;           /* &shift */
 
-   i = (((uword) IntVal(ydesc)) >> 16) & 0xFFF;		/* mantissa */
-   i <<= 4 * ((((uword) IntVal(ydesc)) >> 28) & 0x7);	/* scale it */
-   IntVal(amperInterval) = i;				/* &interval */
+   i = (((uword) IntVal(ydesc)) >> 16) & 0xFFF;         /* mantissa */
+   i <<= 4 * ((((uword) IntVal(ydesc)) >> 28) & 0x7);   /* scale it */
+   IntVal(amperInterval) = i;                           /* &interval */
    return 0;
    }
-
+
 /*
  * get event from window (drop mouse events), no echo
  *
  * return: 1 = success, -1 = window died, -2 = malformed queue, -3 = EOF
  */
-int wgetchne(w,res)
-wbp w;
-dptr res;
+int wgetchne(wbp w, dptr res)
    {
    int i;
 
    while (1) {
       i = wgetevent(w,res,-1);
       if (i != 0)
-	 return i;
+         return i;
       if (is:string(*res)) {
 #ifdef MSWindows
          if (*StrLoc(*res) == '\032') return -3; /* control-Z gives EOF */
-#endif					/* MSWindows */
+#endif                                  /* MSWindows */
          return 1;
-	 }
+         }
       }
    }
 
@@ -243,9 +236,7 @@ dptr res;
  *
  * returns 1 for success, -1 if window died, -2 for malformed queue, -3 for EOF
  */
-int wgetche(w,res)
-wbp w;
-dptr res;
+int wgetche(wbp w, dptr res)
    {
    int i;
    i = wgetchne(w,res);
@@ -259,14 +250,14 @@ dptr res;
          if (i == '\r') gl_wputc((int)'\n', w); /* CR -> CR/LF */
          }
       else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
        {
        wputc(i, w);
        if (i == '\r') wputc((int)'\n', w); /* CR -> CR/LF */
       }}
    return 1;
    }
-
+
 /*
  * Get a window that has an event pending (queued)
  */
@@ -300,35 +291,32 @@ wsp getactivewindow()
       switch (pollevent()) {
       case -1: ReturnErrNum(141, NULL);
       case 0: return NULL;
-	 }
+         }
       /*
        * go through windows, looking for one with an event pending
        */
       for (ws = ptr, i = 0, j = next + 1; i < nwindows;
-	   (ws = (ws->next) ? ws->next : wstates), i++, j++)
-	 if (ws != stdws && BlkD(ws->listp,List)->size > 0) {
-	    next = j;
-	    return ws;
-	    }
+           (ws = (ws->next) ? ws->next : wstates), i++, j++)
+         if (ws != stdws && BlkD(ws->listp,List)->size > 0) {
+            next = j;
+            return ws;
+            }
 #if UNIX || VMS
       /*
        * couldn't find a pending event - wait awhile
        */
       idelay(XICONSLEEP);
-#endif					/* UNIX || VMS */
+#endif                                  /* UNIX || VMS */
       }
    }
-
+
 /*
  * wlongread(s,elsize,nelem,f) -- read string from window for reads(w)
  *
  * returns length(>=0) for success, -1 if window died, -2 for malformed queue
  *  -3 on EOF
  */
-int wlongread(s, elsize, nelem, f)
-char *s;
-int elsize, nelem;
-FILE *f;
+int wlongread(char *s, int elsize, int nelem, FILE *f)
    {
    int c;
    tended char *ts = s;
@@ -338,9 +326,9 @@ FILE *f;
    while (l < bytes) {
      c = wgetche((wbp)f, &foo);
      if (c == -3 && l > 0)
-	return l;
+        return l;
      if (c < 0)
-	return c;
+        return c;
      c = *StrLoc(foo);
      switch(c) {
        case '\177':
@@ -361,10 +349,7 @@ FILE *f;
  * returns length(>=0) for success, -1 if window died, -2 for malformed queue
  *  -3 for EOF, -4 if length was limited by maxi
  */
-int wgetstrg(s, maxlen, f)
-char *s;
-long  maxlen;
-FILE *f;
+int wgetstrg(char *s, long  maxlen, FILE *f)
    {
    int c;
    tended char *ts = s;
@@ -374,9 +359,9 @@ FILE *f;
    while (l < maxlen) {
       c = wgetche((wbp)f,&foo);
       if (c == -3 && l > 0)
-	 return l;
+         return l;
       if (c < 0)
-	 return c;
+         return c;
       c = *StrLoc(foo);
       switch(c) {
         case '\177':
@@ -398,8 +383,7 @@ FILE *f;
 /*
  * Assignment side-effects for &x,&y,&row,&col
  */
-int xyrowcol(dx)
-dptr dx;
+int xyrowcol(dptr dx)
 {
    if (VarLoc(*dx) == &amperX) { /* update &col too */
       wbp w;
@@ -407,14 +391,14 @@ dptr dx;
           ((BlkD(lastEventWin,File)->status & Fs_Window) == 0) ||
           ((BlkD(lastEventWin,File)->status & (Fs_Read|Fs_Write)) == 0)) {
          MakeInt(1 + IntVal(amperX)/lastEvFWidth, &amperCol);
-	 }
+         }
       else {
          w = BlkD(lastEventWin,File)->fd.wb;
 #ifdef GraphicsGL
          if (w->window->is_gl)
             MakeInt(1 + GL_XTOCOL(w, IntVal(amperX)), &amperCol);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          MakeInt(1 + XTOCOL(w, IntVal(amperX)), &amperCol);
          }
       }
@@ -431,7 +415,7 @@ dptr dx;
          if (w->window->is_gl)
             MakeInt(GL_YTOROW(w, IntVal(amperY)), &amperRow);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          MakeInt(YTOROW(w, IntVal(amperY)), &amperRow);
          }
       }
@@ -448,7 +432,7 @@ dptr dx;
          if (w->window->is_gl)
             MakeInt(GL_COLTOX(w, IntVal(amperCol)), &amperX);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          MakeInt(COLTOX(w, IntVal(amperCol)), &amperX);
          }
       }
@@ -465,7 +449,7 @@ dptr dx;
          if (w->window->is_gl)
             MakeInt(GL_ROWTOY(w, IntVal(amperRow)), &amperY);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          MakeInt(ROWTOY(w, IntVal(amperRow)), &amperY);
          }
       }
@@ -486,7 +470,7 @@ void linkfiletowindow(wbp w, struct b_file *fl)
          lastEvAscent = GL_ASCENT(w);
          }
       else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          {
       lastEvFWidth = FWIDTH(w);
       lastEvLeading = LEADING(w);
@@ -499,39 +483,38 @@ void linkfiletowindow(wbp w, struct b_file *fl)
 /*
  * Enqueue an event, encoding time interval and key state with x and y values.
  */
-void qevent(ws,e,x,y,t,f)
-wsp ws;		/* canvas */
-dptr e;		/* event code (descriptor pointer) */
-int x, y;	/* x and y values */
-uword t;	/* ms clock value */
-long f;		/* modifier key flags */
+void qevent( wsp ws,         /* canvas */
+             dptr e,         /* event code (descriptor pointer) */
+             int x, int y,   /* x and y values */
+             uword t,        /* ms clock value */
+             long f)         /* modifier key flags */
    {
-   dptr q = &(ws->listp);	/* a window's event queue (Icon list value) */
+   dptr q = &(ws->listp);       /* a window's event queue (Icon list value) */
    struct descrip d;
    uword ivl, mod;
    int expo;
 
-   mod = 0;				/* set modifier key bits */
+   mod = 0;                             /* set modifier key bits */
    if (f & ControlMask) mod |= EQ_MOD_CONTROL;
    if (f & Mod1Mask)    mod |= EQ_MOD_META;
    if (f & ShiftMask)   mod |= EQ_MOD_SHIFT;
 
-   if (t != ~(uword)0) {		/* if clock value supplied */
-      if (ws->timestamp == 0)		/* if first time */
-	 ws->timestamp = t;
-      if (t < ws->timestamp)		/* if clock went backwards */
-	 t = ws->timestamp;
-      ivl = t - ws->timestamp;		/* calc interval in milliseconds */
-      ws->timestamp = t;		/* save new clock value */
+   if (t != ~(uword)0) {                /* if clock value supplied */
+      if (ws->timestamp == 0)           /* if first time */
+         ws->timestamp = t;
+      if (t < ws->timestamp)            /* if clock went backwards */
+         t = ws->timestamp;
+      ivl = t - ws->timestamp;          /* calc interval in milliseconds */
+      ws->timestamp = t;                /* save new clock value */
       expo = 0;
-      while (ivl >= 0x1000) {		/* if too big */
-	 ivl >>= 4;			/* reduce significance */
-	 expo += 0x1000;		/* bump exponent */
-	 }
-      ivl += expo;			/* combine exponent with mantissa */
+      while (ivl >= 0x1000) {           /* if too big */
+         ivl >>= 4;                     /* reduce significance */
+         expo += 0x1000;                /* bump exponent */
+         }
+      ivl += expo;                      /* combine exponent with mantissa */
       }
    else
-      ivl = 0;				/* report 0 if interval unknown */
+      ivl = 0;                          /* report 0 if interval unknown */
 
    c_put(q, e);
    d.dword = D_Integer;
@@ -544,9 +527,7 @@ long f;		/* modifier key flags */
 /*
  * setpos() - set (move) canvas position on the screen
  */
-static int setpos(w,s)
-wbp w;
-char *s;
+static int setpos(wbp w, char *s)
    {
    char *s2, tmp[32];
    int posx, posy;
@@ -581,20 +562,18 @@ char *s;
       }
    w->window->real_posx = posx;
    w->window->real_posy = posy;
-#ifdef GraphicsGL 
+#ifdef GraphicsGL
    if (w->window->is_gl)
       return gl_setgeometry(w,tmp);
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    return setgeometry(w,tmp);
    }
 
 /*
  * setsize() - set canvas size
  */
-int setsize(w,s)
-wbp w;
-char *s;
+int setsize(wbp w, char *s)
    {
    char *s2, tmp[32];
    int width, height;
@@ -623,7 +602,7 @@ char *s;
    if (w->window->is_gl)
       return gl_setgeometry(w,tmp);
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    return setgeometry(w,tmp);
    }
 
@@ -637,7 +616,7 @@ int setrgbmode(wbp w, char *s)
    else if (!strcmp(s, "24")) { w->context->rgbmode = 1; return Succeeded; }
    else if (!strcmp(s, "auto")) { w->context->rgbmode = 0; return Succeeded; }
    else if (!strcmp(s, "normalized") || !strcmp(s, "normal") ||
-	    !strcmp(s, "norm")) { w->context->rgbmode = 3; return Succeeded; }
+            !strcmp(s, "norm")) { w->context->rgbmode = 3; return Succeeded; }
    return Failed;
 }
 
@@ -659,10 +638,7 @@ void call_filepart_openlog_because_macOS_clang_is_too_smart() {
 /*
  * put a string out to a window using the current attributes
  */
-void wputstr(w,s,len)
-wbp w;
-char *s;
-int len;
+void wputstr(wbp w, char *s, int len)
    {
    char *s2 = s;
    tended struct descrip result;
@@ -683,39 +659,39 @@ int len;
       char *catenation;
       int i, j=0;
       for(i=0; i<len; i++)
-	 if (s[i]=='\n') j++;
+         if (s[i]=='\n') j++;
       geteditregion(ws->child, &result);
 
       while (StrLen(result) + len + j + 1 > 32700) {
-	 while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
-	    StrLoc(result) ++;
-	    StrLen(result) --;
-	    }
-	 if (StrLen(result) > 0) {
-	    StrLoc(result)++; StrLen(result)--;
-	    }
-	 }
+         while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
+            StrLoc(result) ++;
+            StrLen(result) --;
+            }
+         if (StrLen(result) > 0) {
+            StrLoc(result)++; StrLen(result)--;
+            }
+         }
 
-	reserve(Strings, StrLen(result) + len + j + 1);
-	catenation = alcstr(StrLoc(result), StrLen(result));
+        reserve(Strings, StrLen(result) + len + j + 1);
+        catenation = alcstr(StrLoc(result), StrLen(result));
         alcstr(s, len+j);
 
-	{ int i, k=0;
-	for(i=0; i<len; i++) {
-	   if (s[i] == '\n')
-	      catenation[StrLen(result) + k++] = '\r';
-	   catenation[StrLen(result) + k++] = s[i];
-	   }
-	}
+        { int i, k=0;
+        for(i=0; i<len; i++) {
+           if (s[i] == '\n')
+              catenation[StrLen(result) + k++] = '\r';
+           catenation[StrLen(result) + k++] = s[i];
+           }
+        }
         alcstr("\0", 1);
-	seteditregion(ws->child, catenation);
+        seteditregion(ws->child, catenation);
         movechild(ws->child, 0, 0, ws->width, ws->height);
         setfocusonchild(ws, ws->child, ws->width, ws->height);
-	setchildselection(ws, ws->child, StrLen(result), StrLen(result)+len);
-	return;
-	}
+        setchildselection(ws, ws->child, StrLen(result), StrLen(result)+len);
+        return;
+        }
 #define fprintf Consolefprintf
-#endif					/* ScrollingConsoleWin */
+#endif                                  /* ScrollingConsoleWin */
 
    while (len > 0) {
       /*
@@ -723,19 +699,19 @@ int len;
        */
 #ifdef MSWindows
       while (len > 0) {
-	 if (IsDBCSLeadByte(*s2)) {
-	    s2++; s2++; len--; len--;
-	    }
-	 else if (isprint(*s2)) {
-	    s2++; len--;
-	    }
-	 else break;
-	 }
-#else					/* MSWindows */
+         if (IsDBCSLeadByte(*s2)) {
+            s2++; s2++; len--; len--;
+            }
+         else if (isprint(*s2)) {
+            s2++; len--;
+            }
+         else break;
+         }
+#else                                   /* MSWindows */
       while (isprint(*s2) && len > 0) {
-	 s2++; len--;
-	 }
-#endif					/* MSWindows */
+         s2++; len--;
+         }
+#endif                                  /* MSWindows */
       /*
        * if a chunk was parsed, write it out
        */
@@ -744,7 +720,7 @@ int len;
          if (w->window->is_gl)
             gl_xdis(w, s, s2 - s);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          xdis(w, s, s2 - s);
          }
       /*
@@ -755,7 +731,7 @@ int len;
          if (w->window->is_gl)
             gl_wputc(*s2++, w);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          wputc(*s2++, w);
          }
     s = s2;
@@ -772,20 +748,20 @@ int len;
  *  Tables must be kept lexically sorted.
  */
 
-typedef struct {	/* color name entry */
-   char name[8];	/* basic color name */
-   char ish[12];	/* -ish form */
-   short hue;		/* hue, in degrees */
-   char lgt;		/* lightness, as percentage */
-   char sat;		/* saturation, as percentage */
+typedef struct {        /* color name entry */
+   char name[8];        /* basic color name */
+   char ish[12];        /* -ish form */
+   short hue;           /* hue, in degrees */
+   char lgt;            /* lightness, as percentage */
+   char sat;            /* saturation, as percentage */
 } colrname;
 
-typedef struct {	/* arbitrary lookup entry */
-   char word[15];	/* word */
-   char val;		/* value, as percentage */
+typedef struct {        /* arbitrary lookup entry */
+   char word[15];       /* word */
+   char val;            /* value, as percentage */
 } colrmod;
 
-static colrname colortable[] = {		/* known colors */
+static colrname colortable[] = {                /* known colors */
    /* color       ish-form     hue  lgt  sat */
    { "black",    "blackish",     0,   0,   0 },
    { "blue",     "bluish",     240,  50, 100 },
@@ -804,23 +780,23 @@ static colrname colortable[] = {		/* known colors */
    { "yellow",   "yellowish",   60,  50, 100 },
    };
 
-static colrmod lighttable[] = {			/* lightness modifiers */
+static colrmod lighttable[] = {                 /* lightness modifiers */
    { "dark",       0 },
-   { "deep",       0 },		/* = very dark (see code) */
+   { "deep",       0 },         /* = very dark (see code) */
    { "light",    100 },
    { "medium",    50 },
-   { "pale",     100 },		/* = very light (see code) */
+   { "pale",     100 },         /* = very light (see code) */
    };
 
-static colrmod sattable[] = {			/* saturation levels */
+static colrmod sattable[] = {                   /* saturation levels */
    { "moderate",  50 },
    { "strong",    75 },
    { "vivid",    100 },
    { "weak",      25 },
    };
 
-static colrmod transptable[] = {		/* transparency levels */
-   { "dull",  75 },				/* alias for subtranslucent */
+static colrmod transptable[] = {                /* transparency levels */
+   { "dull",  75 },                             /* alias for subtranslucent */
    { "opaque",  100 },
    { "subtranslucent",  75 },
    { "subtransparent",  25 },
@@ -857,8 +833,8 @@ static char *texturetable[] = {
    };
 
 static int texturephrase(char *buf, long *r, long *g, long *b, long *a);
-#endif					/* Graphics3D */
-
+#endif                                  /* Graphics3D */
+
 /*
  *  parsecolor(w, s, &r, &g, &b, &a) - parse a color specification
  *
@@ -867,24 +843,21 @@ static int texturephrase(char *buf, long *r, long *g, long *b, long *a);
  *
  *  An Icon color specification can be any of the forms
  *
- *     #rgb			(hexadecimal digits)
+ *     #rgb                     (hexadecimal digits)
  *     #rgba
  *     #rrggbb
  *     #rrggbbaa
- *     #rrrgggbbb		(note: no 3 digit rrrgggbbbaaa)
+ *     #rrrgggbbb               (note: no 3 digit rrrgggbbbaaa)
  *     #rrrrggggbbbb
  *     #rrrrggggbbbbaaaa
- *     nnnnn,nnnnn,nnnnn	(numbers, interpret by rgbmode)
+ *     nnnnn,nnnnn,nnnnn        (numbers, interpret by rgbmode)
  *     <Icon color phrase>
  *     <native color spec>
  *
  *  The comma-separated numbers format can be 24-bit, 48-bit, or normalized.
  */
 
-int parsecolor(w, buf, r, g, b, a)
-wbp w;
-char *buf;
-long *r, *g, *b, *a;
+int parsecolor(wbp w, char *buf, long *r, long *g, long *b, long *a)
    {
    int len, mul, texture;
    char *fmt, c;
@@ -893,9 +866,9 @@ long *r, *g, *b, *a;
    *r = *g = *b = 0L;
 #ifdef GraphicsGL
    *a = (long) (w->context->alpha*65535.0);
-#else					/* GraphicsGL */
+#else                                   /* GraphicsGL */
    *a = 65535;
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
 
    /* trim leading spaces */
    while (isspace(*buf))
@@ -907,7 +880,7 @@ long *r, *g, *b, *a;
       *a = da;
       goto RGBnums;
       }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    /* try interpreting as three comma-separated numbers */
    if (sscanf(buf, "%lf,%lf,%lf%c", &dr, &dg, &db, &c) == 3) {
@@ -917,35 +890,35 @@ RGBnums:
       *b = db;
 
       if (w && w->context && w->context->rgbmode == 0) { /* auto */
-	 /* see if we need to revert it to 48-bit mode. */
-	 if (dr>=256 || dg>=256 || db>=256) {
-	    w->context->rgbmode = 2;
-	    }
-	 }
+         /* see if we need to revert it to 48-bit mode. */
+         if (dr>=256 || dg>=256 || db>=256) {
+            w->context->rgbmode = 2;
+            }
+         }
 
       if (w && w->context)
       switch (w->context->rgbmode) {
-      case 0:			/* nonreverted auto treated as 24-bit color */
+      case 0:                   /* nonreverted auto treated as 24-bit color */
 #ifdef Graphics3D
-				/* unless you are in 3D using normalized */
-	 if (w->context->rendermode == UGL3D && dr>=0 && dr<=1.0 &&
-	     dg>=0 && dg<=1.0 && db>=0 && db<=1.0)
-	    goto normalized;
-#endif					/* Graphics3D */
-      case 1:			/* convert app 24-bit color to 48-bits */
-	 *r *= 257;
-	 *g *= 257;
-	 *b *= 257;
-	 break;
-      case 2:			/* no-op, 48 bit color is internal default */
-	 break;
+                                /* unless you are in 3D using normalized */
+         if (w->context->rendermode == UGL3D && dr>=0 && dr<=1.0 &&
+             dg>=0 && dg<=1.0 && db>=0 && db<=1.0)
+            goto normalized;
+#endif                                  /* Graphics3D */
+      case 1:                   /* convert app 24-bit color to 48-bits */
+         *r *= 257;
+         *g *= 257;
+         *b *= 257;
+         break;
+      case 2:                   /* no-op, 48 bit color is internal default */
+         break;
       case 3:
 normalized:
-	 *r = dr * 65535;
-	 *g = dg * 65535;
-	 *b = db * 65535;
-	 *a = da * 65535;
-	 }
+         *r = dr * 65535;
+         *g = dg * 65535;
+         *b = db * 65535;
+         *a = da * 65535;
+         }
 
 
       if (*r>=0 && *r<=65535 && *g>=0 && *g<=65535 && *b>=0 && *b<=65535)
@@ -971,7 +944,7 @@ normalized:
       if ((len == 4) || (len == 8) || (len == 16)) {
          if (sscanf(buf, fmt, r, g, b, a, &c) != 4)
             return Failed;
-	 *a *= mul;
+         *a *= mul;
          }
       else if (sscanf(buf, fmt, r, g, b, &c) != 3)
             return Failed;
@@ -986,7 +959,7 @@ normalized:
       return Failed; /* not handling textures yet */
       }
    else
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    /* try interpreting as a color phrase or as a native color spec */
 #ifdef GraphicsGL
@@ -997,13 +970,13 @@ normalized:
          return Failed;
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    if (colorphrase(buf, r, g, b, a) || nativecolor(w, buf, r, g, b))
       return Succeeded;
    else
       return Failed;
    }
-
+
 #ifdef Graphics3D
 int mystrcmp(char *s1, char *s2)
 {
@@ -1013,9 +986,7 @@ int mystrcmp(char *s1, char *s2)
 /*
  * texturephrase(s, &r, &g, &b, &texture) -- parse Unicon colored texture
  */
-static int texturephrase(buf, r, g, b, a)
-char *buf;
-long *r, *g, *b, *a;
+static int texturephrase(char *buf, long *r, long *g, long *b, long *a)
    {
    char buf2[128];
    char *p, *p2;
@@ -1032,20 +1003,20 @@ long *r, *g, *b, *a;
     * if it is a texture.
     */
    p2 = qsearch(p, (char *)texturetable,
-		ElemCount(texturetable), ElemSize(texturetable), mystrcmp);
+                ElemCount(texturetable), ElemSize(texturetable), mystrcmp);
    if (p2) {
       texture = ((char **)p2 - texturetable) + 1;
       if (p != buf2) {
-	 p--;
-	 *p = '\0';
-	 if (colorphrase(buf2, r, g, b, a)) return texture;
-	 else return 0;
-	 }
+         p--;
+         *p = '\0';
+         if (colorphrase(buf2, r, g, b, a)) return texture;
+         else return 0;
+         }
       else return -texture;
       }
    return 0;
    }
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
 /*
  *  colorphrase(s, &r, &g, &b, &a) -- parse Icon color phrase.
@@ -1073,29 +1044,27 @@ long *r, *g, *b, *a;
  *  "pale" means "very light"; "deep" means "very dark".
  *
  *  This naming scheme is based loosely on
- *	A New Color-Naming System for Graphics Languages
- *	Toby Berk, Lee Brownston, and Arie Kaufman
- *	IEEE Computer Graphics & Applications, May 1982
+ *      A New Color-Naming System for Graphics Languages
+ *      Toby Berk, Lee Brownston, and Arie Kaufman
+ *      IEEE Computer Graphics & Applications, May 1982
  */
 
-static int colorphrase(buf, r, g, b, a)
-char *buf;
-long *r, *g, *b, *a;
+static int colorphrase(char *buf, long *r, long *g, long *b, long *a)
    {
    int len, very;
    char c, *p, *ebuf, cbuffer[MAXCOLORNAME];
    float lgt, sat, blend, bl2, m1, m2, alpha, tmpf;
    float h1, l1, s1, h2, l2, s2, r2, g2, b2;
 
-   alpha = (float)(*a/65535.0);		/* default transparency */
-   lgt = -1.0;				/* default no lightness mod */
-   sat =  1.0;				/* default vivid saturation */
+   alpha = (float)(*a/65535.0);         /* default transparency */
+   lgt = -1.0;                          /* default no lightness mod */
+   sat =  1.0;                          /* default vivid saturation */
    len = strlen(buf);
    while (isspace(buf[len-1]))
-      len--;				/* trim trailing spaces */
+      len--;                            /* trim trailing spaces */
 
    if (len >= sizeof(cbuffer))
-      return 0;				/* if too long for valid Icon spec */
+      return 0;                         /* if too long for valid Icon spec */
 
    /*
     * copy spec, lowering case and replacing spaces and hyphens with NULs
@@ -1148,9 +1117,9 @@ long *r, *g, *b, *a;
    if (p) {
       /* set the "very" flag for "pale" or "deep" */
       if (strcmp(buf, "pale") == 0)
-         very = 1;			/* pale = very light */
+         very = 1;                      /* pale = very light */
       else if (strcmp(buf, "deep") == 0)
-         very = 1;			/* deep = very dark */
+         very = 1;                      /* deep = very dark */
       /* skip past word */
       buf += strlen(buf) + 1;
       if (buf >= ebuf)
@@ -1173,7 +1142,7 @@ long *r, *g, *b, *a;
       }
 
    if (buf + strlen(buf) >= ebuf)
-      blend = h1 = l1 = s1 = 0.0;		/* only one word left */
+      blend = h1 = l1 = s1 = 0.0;               /* only one word left */
    else {
       /* we have two (or more) name words; get the first */
       if ((p = qsearch(buf, colortable[0].name,
@@ -1263,8 +1232,7 @@ long *r, *g, *b, *a;
 /*
  * rgbval(n1, n2, hue) - helper function for HLS to RGB conversion
  */
-static double rgbval(n1, n2, hue)
-double n1, n2, hue;
+static double rgbval(double n1, double n2, double hue)
    {
    if (hue > 360)
       hue -= 360;
@@ -1280,82 +1248,82 @@ double n1, n2, hue;
    else
       return n1;
    }
-
+
 /*
  *  Functions and data for reading and writing GIF and JPEG images
  */
 
-#define GifSeparator	0x2C	/* (',') beginning of image */
-#define GifTerminator	0x3B	/* (';') end of image */
-#define GifExtension	0x21	/* ('!') extension block */
-#define GifControlExt	0xF9	/*       graphic control extension label */
-#define GifEmpty	-1	/* internal flag indicating no prefix */
+#define GifSeparator    0x2C    /* (',') beginning of image */
+#define GifTerminator   0x3B    /* (';') end of image */
+#define GifExtension    0x21    /* ('!') extension block */
+#define GifControlExt   0xF9    /*       graphic control extension label */
+#define GifEmpty        -1      /* internal flag indicating no prefix */
 
-#define GifTableSize	4096	/* maximum number of entries in table */
-#define GifBlockSize	255	/* size of output block */
+#define GifTableSize    4096    /* maximum number of entries in table */
+#define GifBlockSize    255     /* size of output block */
 
-typedef struct lzwnode {	/* structure of LZW encoding tree node */
-   unsigned short tcode;		/* token code */
-   unsigned short child;	/* first child node */
-   unsigned short sibling;	/* next sibling */
+typedef struct lzwnode {        /* structure of LZW encoding tree node */
+   unsigned short tcode;                /* token code */
+   unsigned short child;        /* first child node */
+   unsigned short sibling;      /* next sibling */
    } lzwnode;
 
 #if HAVE_LIBJPEG
 struct my_error_mgr { /* a part of JPEG error handling */
-  struct jpeg_error_mgr pub;	/* "public" fields */
-  jmp_buf setjmp_buffer;	/* for return to caller */
+  struct jpeg_error_mgr pub;    /* "public" fields */
+  jmp_buf setjmp_buffer;        /* for return to caller */
 };
 
 typedef struct my_error_mgr * my_error_ptr; /* a part of error handling */
-#endif					/* HAVE_LIBJPEG */
+#endif                                  /* HAVE_LIBJPEG */
 
-static	int	gfread		(char *fn, int p);
-static	int	gfheader	(FILE *f);
-static	int	gfskip		(FILE *f);
-static	void	gfcontrol	(FILE *f);
-static	int	gfimhdr		(FILE *f);
-static	int	gfmap		(FILE *f, int p);
-static	int	gfsetup		(void);
-static	int	gfrdata		(FILE *f);
-static	int	gfrcode		(FILE *f);
-static	void	gfinsert	(int prev, int c);
-static	int	gffirst		(int c);
-static	void	gfgen		(int c);
-static	void	gfput		(int b);
+static  int     gfread          (char *fn, int p);
+static  int     gfheader        (FILE *f);
+static  int     gfskip          (FILE *f);
+static  void    gfcontrol       (FILE *f);
+static  int     gfimhdr         (FILE *f);
+static  int     gfmap           (FILE *f, int p);
+static  int     gfsetup         (void);
+static  int     gfrdata         (FILE *f);
+static  int     gfrcode         (FILE *f);
+static  void    gfinsert        (int prev, int c);
+static  int     gffirst         (int c);
+static  void    gfgen           (int c);
+static  void    gfput           (int b);
 
-static	int	gfwrite		(wbp w, char *filename,
-				   int x, int y, int width, int height);
-static	int	bmpwrite	(wbp w, char *filename,
-				   int x, int y, int width, int height);
-static	void	gfpack		(unsigned char *data, long len,
-				   struct palentry *paltbl);
-static	void	gfmktree	(lzwnode *tree);
-static	void	gfout		(int tcode);
-static	void	gfdump		(void);
+static  int     gfwrite         (wbp w, char *filename,
+                                   int x, int y, int width, int height);
+static  int     bmpwrite        (wbp w, char *filename,
+                                   int x, int y, int width, int height);
+static  void    gfpack          (unsigned char *data, long len,
+                                   struct palentry *paltbl);
+static  void    gfmktree        (lzwnode *tree);
+static  void    gfout           (int tcode);
+static  void    gfdump          (void);
 
-static FILE *gf_f;			/* input file */
+static FILE *gf_f;                      /* input file */
 
-static int gf_gcmap, gf_lcmap;		/* global color map? local color map? */
-static int gf_nbits;			/* number of bits per pixel */
-static int gf_ilace;			/* interlace flag */
-static int gf_width, gf_height;		/* image size */
+static int gf_gcmap, gf_lcmap;          /* global color map? local color map? */
+static int gf_nbits;                    /* number of bits per pixel */
+static int gf_ilace;                    /* interlace flag */
+static int gf_width, gf_height;         /* image size */
 
-static short *gf_prefix, *gf_suffix;	/* prefix and suffix tables */
-static int gf_free;			/* next free position */
+static short *gf_prefix, *gf_suffix;    /* prefix and suffix tables */
+static int gf_free;                     /* next free position */
 
-static struct palentry *gf_paltbl;	/* palette table */
-static unsigned char *gf_string;	/* image string */
-static unsigned char *gf_nxt, *gf_lim;	/* store pointer and its limit */
-static int gf_row, gf_step;		/* current row and step size */
+static struct palentry *gf_paltbl;      /* palette table */
+static unsigned char *gf_string;        /* image string */
+static unsigned char *gf_nxt, *gf_lim;  /* store pointer and its limit */
+static int gf_row, gf_step;             /* current row and step size */
 
-static int gf_cdsize;			/* code size */
-static int gf_clear, gf_eoi;		/* values of CLEAR and EOI codes */
-static int gf_lzwbits, gf_lzwmask;	/* current bits per code */
+static int gf_cdsize;                   /* code size */
+static int gf_clear, gf_eoi;            /* values of CLEAR and EOI codes */
+static int gf_lzwbits, gf_lzwmask;      /* current bits per code */
 
-static unsigned char *gf_obuf;		/* output buffer */
-static unsigned long gf_curr;		/* current partial byte(s) */
-static int gf_valid;			/* number of valid bits */
-static int gf_rem;			/* remaining bytes in this block */
+static unsigned char *gf_obuf;          /* output buffer */
+static unsigned long gf_curr;           /* current partial byte(s) */
+static int gf_valid;                    /* number of valid bits */
+static int gf_rem;                      /* remaining bytes in this block */
 
 /*
  * Construct Icon-style paltbl from BMP-style colortable
@@ -1392,7 +1360,7 @@ unsigned char * bmp_data(int width, int height, int bpp, char * rasterdata, int 
    for(i=0;i<height/2;i++) {
       memmove(tmp, rasterdata + (i * rowbytes), rowbytes);
       memmove(rasterdata + (i * rowbytes),
-	   rasterdata + (height-i-1) * rowbytes, rowbytes);
+           rasterdata + (height-i-1) * rowbytes, rowbytes);
       memmove(rasterdata + (height-i-1) * rowbytes, tmp, rowbytes);
       }
   free(tmp);
@@ -1433,7 +1401,7 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      case 24: numcolors = 65536 * 256;
      default:
         /* teart as 8-bit ?*/
-	numcolors = 256; break;
+        numcolors = 256; break;
      }
   compression = *(int *)(headerstuff+28);
   if (compression != 0) {
@@ -1450,16 +1418,16 @@ int readBMP(char *filename, int p, struct imgdata *imd)
 
   if (bitcount <= 8) {
      if ((colortable = (int *)malloc(4 * numcolors)) == NULL) {
-	fclose(f); return Failed;
-	}
+        fclose(f); return Failed;
+        }
      if (fread(colortable, 4, numcolors, f) < numcolors) {
-	fclose(f); return Failed;
-	}
+        fclose(f); return Failed;
+        }
      }
   if ((rasterdata = (char *)malloc(imagesize))) {
      if (fread(rasterdata, 1, imagesize, f) < imagesize) {
-	fclose(f); return Failed;
-	}
+        fclose(f); return Failed;
+        }
      /* OK, read the whole thing, now what to do with it ? */
      imd->width = width;
      imd->height = height;
@@ -1471,11 +1439,11 @@ int readBMP(char *filename, int p, struct imgdata *imd)
         imd->paltbl = NULL;
         imd->data = bmp_data(width, height, 3, rasterdata, imd->is_bottom_up);
 #if NT
-	if (imd->format == UCOLOR_RGB &&  bitcount == 24 ){
-	   unsigned char *byte, t;
- 	   for (byte=imd->data; byte<imd->data+width*height*3; byte+=3)
-	     {t = byte[0]; byte[0] = byte[2]; byte[2] = t;}
-	   }
+        if (imd->format == UCOLOR_RGB &&  bitcount == 24 ){
+           unsigned char *byte, t;
+           for (byte=imd->data; byte<imd->data+width*height*3; byte+=3)
+             {t = byte[0]; byte[0] = byte[2]; byte[2] = t;}
+           }
 #endif
         }
      return Succeeded;
@@ -1493,7 +1461,7 @@ int readGIF(char *filename, int p, struct imgdata *imd)
    {
    int r;
 
-   r = gfread(filename, p);			/* read image */
+   r = gfread(filename, p);                     /* read image */
 
    if (gf_prefix) {
       free((pointer)gf_prefix);
@@ -1508,32 +1476,30 @@ int readGIF(char *filename, int p, struct imgdata *imd)
       gf_f = NULL;
       }
 
-   if (r != Succeeded) {			/* if no success, free mem */
+   if (r != Succeeded) {                        /* if no success, free mem */
       if (gf_paltbl) {
-	 free((pointer) gf_paltbl);
-	 gf_paltbl = NULL;
-	 }
+         free((pointer) gf_paltbl);
+         gf_paltbl = NULL;
+         }
       if (gf_string) {
-	 free((pointer) gf_string);
-	 gf_string = NULL;
-	 }
-      return r;					/* return Failed or RunError */
+         free((pointer) gf_string);
+         gf_string = NULL;
+         }
+      return r;                                 /* return Failed or RunError */
       }
 
-   imd->width = gf_width;			/* set return variables */
+   imd->width = gf_width;                       /* set return variables */
    imd->height = gf_height;
    imd->paltbl = gf_paltbl;
    imd->data = gf_string;
 
-   return Succeeded;				/* return success */
+   return Succeeded;                            /* return success */
    }
 
 /*
  * gfread(filename, p) - read GIF file, setting gf_ globals
  */
-static int gfread(filename, p)
-char *filename;
-int p;
+static int gfread(char *filename, int p)
    {
    int i;
 
@@ -1546,32 +1512,32 @@ int p;
       return Failed;
 
 #ifdef MSWindows
-	   if ((gf_f = fopen(filename, "rb")) == NULL)
-#else					/* MSWindows */
-	   if ((gf_f = fopen(filename, "r")) == NULL)
-#endif					/* MSWindows */
+           if ((gf_f = fopen(filename, "rb")) == NULL)
+#else                                   /* MSWindows */
+           if ((gf_f = fopen(filename, "r")) == NULL)
+#endif                                  /* MSWindows */
       return Failed;
 
-   for (i = 0; i < 256; i++)		/* init palette table */
+   for (i = 0; i < 256; i++)            /* init palette table */
       gf_paltbl[i].used = gf_paltbl[i].valid = gf_paltbl[i].transpt = 0;
 
-   if (!gfheader(gf_f))			/* read file header */
+   if (!gfheader(gf_f))                 /* read file header */
       return Failed;
-   if (gf_gcmap)			/* read global color map, if any */
+   if (gf_gcmap)                        /* read global color map, if any */
       if (!gfmap(gf_f, p))
          return Failed;
-   if (!gfskip(gf_f))			/* skip to start of image */
+   if (!gfskip(gf_f))                   /* skip to start of image */
       return Failed;
-   if (!gfimhdr(gf_f))			/* read image header */
+   if (!gfimhdr(gf_f))                  /* read image header */
       return Failed;
-   if (gf_lcmap)			/* read local color map, if any */
+   if (gf_lcmap)                        /* read local color map, if any */
       if (!gfmap(gf_f, p))
          return Failed;
-   if (!gfsetup())			/* prepare to read image */
+   if (!gfsetup())                      /* prepare to read image */
       return RunError;
-   if (!gfrdata(gf_f))			/* read image data */
+   if (!gfrdata(gf_f))                  /* read image data */
       return Failed;
-   while (gf_row < gf_height)		/* pad if too short */
+   while (gf_row < gf_height)           /* pad if too short */
       gfput(0);
 
    return Succeeded;
@@ -1580,44 +1546,42 @@ int p;
 /*
  * gfheader(f) - read GIF file header; return nonzero if successful
  */
-static int gfheader(f)
-FILE *f;
+static int gfheader(FILE *f)
    {
-   unsigned char hdr[13];		/* size of a GIF header */
+   unsigned char hdr[13];               /* size of a GIF header */
    int b;
 
    if (fread((char *)hdr, sizeof(char), sizeof(hdr), f) != sizeof(hdr))
-      return 0;				/* header short or missing */
+      return 0;                         /* header short or missing */
    if (strncmp((char *)hdr, "GIF", 3) != 0 ||
          !isdigit(hdr[3]) || !isdigit(hdr[4]))
-      return 0;				/* not GIFnn */
+      return 0;                         /* not GIFnn */
 
-   b = hdr[10];				/* flag byte */
-   gf_gcmap = b & 0x80;			/* global color map flag */
-   gf_nbits = (b & 7) + 1;		/* number of bits per pixel */
+   b = hdr[10];                         /* flag byte */
+   gf_gcmap = b & 0x80;                 /* global color map flag */
+   gf_nbits = (b & 7) + 1;              /* number of bits per pixel */
    return 1;
    }
 
 /*
  * gfskip(f) - skip intermediate blocks and locate image
  */
-static int gfskip(f)
-FILE *f;
+static int gfskip(FILE *f)
    {
    int c, n;
 
    while ((c = getc(f)) != GifSeparator) { /* look for start-of-image flag */
       if (c == EOF)
          return 0;
-      if (c == GifExtension) {		/* if extension block is present */
-         c = getc(f);				/* get label */
-	 if ((c & 0xFF) == GifControlExt)
-	    gfcontrol(f);			/* process control subblock */
-         while ((n = getc(f)) != 0) {		/* read blks until empty one */
+      if (c == GifExtension) {          /* if extension block is present */
+         c = getc(f);                           /* get label */
+         if ((c & 0xFF) == GifControlExt)
+            gfcontrol(f);                       /* process control subblock */
+         while ((n = getc(f)) != 0) {           /* read blks until empty one */
             if (n == EOF)
                return 0;
-	    n &= 0xFF;				/* ensure positive count */
-            while (n--)				/* skip block contents */
+            n &= 0xFF;                          /* ensure positive count */
+            while (n--)                         /* skip block contents */
                getc(f);
             }
          }
@@ -1628,50 +1592,46 @@ FILE *f;
 /*
  * gfcontrol(f) - process control extension subblock
  */
-static void gfcontrol(f)
-FILE *f;
+static void gfcontrol(FILE *f)
    {
    int i, n, c, t;
 
-   n = getc(f) & 0xFF;				/* subblock length (s/b 4) */
+   n = getc(f) & 0xFF;                          /* subblock length (s/b 4) */
    for (i = t = 0; i < n; i++) {
       c = getc(f) & 0xFF;
       if (i == 0)
-	 t = c & 1;				/* transparency flag */
+         t = c & 1;                             /* transparency flag */
       else if (i == 3 && t != 0) {
-	 gf_paltbl[c].transpt = 1;		/* set flag for transpt color */
-	 gf_paltbl[c].valid = 0;		/* color is no longer "valid" */
-	 }
+         gf_paltbl[c].transpt = 1;              /* set flag for transpt color */
+         gf_paltbl[c].valid = 0;                /* color is no longer "valid" */
+         }
       }
    }
 
 /*
  * gfimhdr(f) - read image header
  */
-static int gfimhdr(f)
-FILE *f;
+static int gfimhdr(FILE *f)
    {
-   unsigned char hdr[9];		/* size of image hdr excl separator */
+   unsigned char hdr[9];                /* size of image hdr excl separator */
    int b;
 
    if (fread((char *)hdr, sizeof(char), sizeof(hdr), f) != sizeof(hdr))
-      return 0;				/* header short or missing */
+      return 0;                         /* header short or missing */
    gf_width = hdr[4] + 256 * hdr[5];
    gf_height = hdr[6] + 256 * hdr[7];
-   b = hdr[8];				/* flag byte */
-   gf_lcmap = b & 0x80;			/* local color map flag */
-   gf_ilace = b & 0x40;			/* interlace flag */
+   b = hdr[8];                          /* flag byte */
+   gf_lcmap = b & 0x80;                 /* local color map flag */
+   gf_ilace = b & 0x40;                 /* interlace flag */
    if (gf_lcmap)
-      gf_nbits = (b & 7) + 1;		/* if local map, reset nbits also */
+      gf_nbits = (b & 7) + 1;           /* if local map, reset nbits also */
    return 1;
    }
 
 /*
  * gfmap(f, p) - read GIF color map into paltbl under control of palette p
  */
-static int gfmap(f, p)
-FILE *f;
-int p;
+static int gfmap(FILE *f, int p)
    {
    int ncolors, i, r, g, b, c;
    struct palentry *stdpal = 0;
@@ -1692,12 +1652,12 @@ int p;
          gf_paltbl[i].clr = stdpal[c].clr;
          }
       else {
-         gf_paltbl[i].clr.red   = 257 * r;	/* 257 * 255 -> 65535 */
+         gf_paltbl[i].clr.red   = 257 * r;      /* 257 * 255 -> 65535 */
          gf_paltbl[i].clr.green = 257 * g;
          gf_paltbl[i].clr.blue  = 257 * b;
          }
-      if (!gf_paltbl[i].transpt)		/* if not transparent color */
-         gf_paltbl[i].valid = 1;		/* mark as valid/opaque */
+      if (!gf_paltbl[i].transpt)                /* if not transparent color */
+         gf_paltbl[i].valid = 1;                /* mark as valid/opaque */
       }
 
    return 1;
@@ -1722,16 +1682,16 @@ static int gfsetup()
       gf_suffix[i] = i;
       }
 
-   gf_row = 0;				/* current row is 0 */
-   gf_nxt = gf_string;			/* set store pointer */
+   gf_row = 0;                          /* current row is 0 */
+   gf_nxt = gf_string;                  /* set store pointer */
 
-   if (gf_ilace) {			/* if interlaced */
-      gf_step = 8;			/* step rows by 8 */
-      gf_lim = gf_string + gf_width;	/* stop at end of one row */
+   if (gf_ilace) {                      /* if interlaced */
+      gf_step = 8;                      /* step rows by 8 */
+      gf_lim = gf_string + gf_width;    /* stop at end of one row */
       }
    else {
-      gf_lim = gf_string + len;		/* do whole image at once */
-      gf_step = gf_height;		/* step to end when full */
+      gf_lim = gf_string + len;         /* do whole image at once */
+      gf_step = gf_height;              /* step to end when full */
       }
 
    return 1;
@@ -1740,8 +1700,7 @@ static int gfsetup()
 /*
  * gfrdata(f) - read GIF data
  */
-static int gfrdata(f)
-FILE *f;
+static int gfrdata(FILE *f)
    {
    int curr, prev, c;
 
@@ -1760,30 +1719,30 @@ FILE *f;
 
    prev = curr = gfrcode(f);
    while (curr != gf_eoi) {
-      if (curr == gf_clear) {		/* if reset code */
+      if (curr == gf_clear) {           /* if reset code */
          gf_lzwbits = gf_cdsize + 1;
          gf_lzwmask = (1 << gf_lzwbits) - 1;
          gf_free = gf_eoi + 1;
          prev = curr = gfrcode(f);
          gfgen(curr);
          }
-      else if (curr < gf_free) {	/* if code is in table */
+      else if (curr < gf_free) {        /* if code is in table */
          gfgen(curr);
          gfinsert(prev, gffirst(curr));
          prev = curr;
          }
-      else if (curr == gf_free) {	/* not yet in table */
+      else if (curr == gf_free) {       /* not yet in table */
          c = gffirst(prev);
          gfgen(prev);
          gfput(c);
          gfinsert(prev, c);
          prev = curr;
          }
-      else {				/* illegal code */
+      else {                            /* illegal code */
          if (gf_nxt == gf_lim)
-            return 1;			/* assume just extra stuff after end */
+            return 1;                   /* assume just extra stuff after end */
          else
-            return 0;			/* more badly confused */
+            return 0;                   /* more badly confused */
          }
       curr = gfrcode(f);
       }
@@ -1794,8 +1753,7 @@ FILE *f;
 /*
  * gfrcode(f) - read next LZW code
  */
-static int gfrcode(f)
-FILE *f;
+static int gfrcode(FILE *f)
    {
    int c, r;
 
@@ -1818,11 +1776,10 @@ FILE *f;
 /*
  * gfinsert(prev, c) - insert into table
  */
-static void gfinsert(prev, c)
-int prev, c;
+static void gfinsert(int prev, int c)
    {
 
-   if (gf_free >= GifTableSize)		/* sanity check */
+   if (gf_free >= GifTableSize)         /* sanity check */
       return;
 
    gf_prefix[gf_free] = prev;
@@ -1839,13 +1796,12 @@ int prev, c;
 /*
  * gffirst(c) - return the first pixel in a map structure
  */
-static int gffirst(c)
-int c;
+static int gffirst(int c)
    {
    int d;
 
    if (c >= gf_free)
-      return 0;				/* not in table (error) */
+      return 0;                         /* not in table (error) */
    while ((d = gf_prefix[c]) != GifEmpty)
       c = d;
    return gf_suffix[c];
@@ -1854,8 +1810,7 @@ int c;
 /*
  * gfgen(c) - generate and output prefix
  */
-static void gfgen(c)
-int c;
+static void gfgen(int c)
    {
    int d;
 
@@ -1867,43 +1822,42 @@ int c;
 /*
  * gfput(b) - add a byte to the output string
  */
-static void gfput(b)
-int b;
+static void gfput(int b)
    {
-   if (gf_nxt >= gf_lim) {		/* if current row is full */
+   if (gf_nxt >= gf_lim) {              /* if current row is full */
       gf_row += gf_step;
       while (gf_row >= gf_height && gf_ilace && gf_step > 2) {
          if (gf_step == 4) {
             gf_row = 1;
             gf_step = 2;
             }
-	 else if ((gf_row % 8) != 0) {
+         else if ((gf_row % 8) != 0) {
             gf_row = 2;
             gf_step = 4;
             }
          else {
             gf_row = 4;
-	    /* gf_step remains 8 */
-	    }
-	 }
+            /* gf_step remains 8 */
+            }
+         }
 
       if (gf_row >= gf_height) {
-	 gf_step = 0;
-	 return;			/* too much data; ignore it */
-	 }
+         gf_step = 0;
+         return;                        /* too much data; ignore it */
+         }
       gf_nxt = gf_string + ((word)gf_row * (word)gf_width);
       gf_lim = gf_nxt + gf_width;
       }
 
-   *gf_nxt++ = b;			/* store byte */
-   gf_paltbl[b].used = 1;		/* mark color entry as used */
+   *gf_nxt++ = b;                       /* store byte */
+   gf_paltbl[b].used = 1;               /* mark color entry as used */
    }
-
+
 
 #if HAVE_LIBJPEG
 
 /*
- * jpeg error handler 
+ * jpeg error handler
  */
 
 void my_error_exit (j_common_ptr cinfo)
@@ -1924,14 +1878,14 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
    unsigned char *row_ptr;
    int row_stride, row_stride_shift;
    int i;
-   static FILE *jpg_f = NULL;			/* input file */
+   static FILE *jpg_f = NULL;                   /* input file */
 
 #ifdef MSWindows
       if ((jpg_f = fopen(filename, "rb")) == NULL)
-#else					/* MSWindows */
+#else                                   /* MSWindows */
       if ((jpg_f = fopen(filename, "r")) == NULL)
-#endif					/* MSWindows */
-	 return Failed;
+#endif                                  /* MSWindows */
+         return Failed;
 
    cinfo.err = jpeg_std_error(&jerr.pub);
    jerr.pub.error_exit = my_error_exit;
@@ -1939,7 +1893,7 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
    if (setjmp(jerr.setjmp_buffer)) {
       jpeg_destroy_decompress(&cinfo);
       if (jpg_f != NULL)
-	 fclose(jpg_f);
+         fclose(jpg_f);
       return Failed;
       }
 
@@ -1956,10 +1910,10 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
       }
    else {
       /*
-       * Check the requested image color format. Use BGR on windows 
+       * Check the requested image color format. Use BGR on windows
        * if it is available (jpeg-turbo) by checking for JCS_EXTENSIONS macro
        */
-      
+
       cinfo.out_color_space = JCS_RGB;
       cinfo.quantize_colors = FALSE;
 
@@ -1978,25 +1932,25 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
 
    if (p == 1) {
       if (!(imd->paltbl=(struct palentry *)malloc(256 * sizeof(struct palentry))))
-	 return Failed;
+         return Failed;
 
       for (i = 0; i < cinfo.actual_number_of_colors; i++) {
-	 /* init palette table */
-	 imd->paltbl[i].used = 1;
-	 imd->paltbl[i].valid = 1;
-	 imd->paltbl[i].transpt = 0;
-	 imd->paltbl[i].clr.red = cinfo.colormap[0][i] * 257;
-	 imd->paltbl[i].clr.green = cinfo.colormap[1][i] * 257;
-	 imd->paltbl[i].clr.blue = cinfo.colormap[2][i] * 257;
-	 }
+         /* init palette table */
+         imd->paltbl[i].used = 1;
+         imd->paltbl[i].valid = 1;
+         imd->paltbl[i].transpt = 0;
+         imd->paltbl[i].clr.red = cinfo.colormap[0][i] * 257;
+         imd->paltbl[i].clr.green = cinfo.colormap[1][i] * 257;
+         imd->paltbl[i].clr.blue = cinfo.colormap[2][i] * 257;
+         }
 
       for(;i < 256; i++) {
-	 imd->paltbl[i].used = imd->paltbl[i].valid = imd->paltbl[i].transpt = 0;
-	 }
+         imd->paltbl[i].used = imd->paltbl[i].valid = imd->paltbl[i].transpt = 0;
+         }
       }
 
       imd->data = calloc(row_stride*cinfo.output_height,
-			 sizeof(unsigned char));
+                         sizeof(unsigned char));
    /*
     * Make a one-row-high sample array that will go away when done with image
     */
@@ -2030,7 +1984,7 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
          c = *byte; *byte = byte[2]; byte[2] = c;
          }
    }
-#endif					/* !JCS_EXTENSIONS */
+#endif                                  /* !JCS_EXTENSIONS */
 
    /*
     * Finish and release the JPEG decompression object
@@ -2055,14 +2009,14 @@ int readJPEG(char *filename, int p, struct imgdata *imd)
    imd->paltbl = NULL;
    imd->data = NULL;
 
-   r = jpegread(filename, p, imd);			/* read image */
+   r = jpegread(filename, p, imd);                      /* read image */
    if (r == Failed){
       if (imd->paltbl) free(imd->paltbl);
       if (imd->data) free(imd->data);
       return Failed;
       }
 
-   return Succeeded;				/* return success */
+   return Succeeded;                            /* return success */
 }
 
 #endif
@@ -2089,17 +2043,17 @@ static int pngread(char *filename, int p, struct imgdata *imd)
 
    #ifdef MSWindows
       if ((png_f = fopen(filename, "rb")) == NULL) {
-   #else					/* MSWindows */
+   #else                                        /* MSWindows */
       if ((png_f = fopen(filename, "r")) == NULL) {
-   #endif					/* MSWindows */
-	 return Failed;
-	 }
+   #endif                                       /* MSWindows */
+         return Failed;
+         }
 
    /* read the first n bytes (1-8, 8 used here) and test for png signature */
    if (fread(header, 1, 8, png_f) < 8) {
       fclose(png_f);
       return Failed;
-      }   
+      }
 
    if (png_sig_cmp(header, 0, 8)) {
       fclose(png_f);
@@ -2109,21 +2063,21 @@ static int pngread(char *filename, int p, struct imgdata *imd)
    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
    if (!png_ptr){
-      fclose(png_f);   
+      fclose(png_f);
       return Failed;
       }
 
    info_ptr = png_create_info_struct(png_ptr);
    if (!info_ptr) {
       png_destroy_read_struct(&png_ptr, NULL, NULL);
-      fclose(png_f);      
+      fclose(png_f);
       return Failed;
       }
 
    end_info = png_create_info_struct(png_ptr);
    if (!end_info){
       png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-      fclose(png_f);      
+      fclose(png_f);
       return Failed;
       }
 
@@ -2137,12 +2091,12 @@ static int pngread(char *filename, int p, struct imgdata *imd)
    png_set_sig_bytes(png_ptr, 8);
    png_read_info(png_ptr, info_ptr);
 
-   png_get_IHDR(png_ptr, info_ptr, &mywidth, &myheight, &bit_depth, 
-   		&color_type, NULL, NULL, NULL);
+   png_get_IHDR(png_ptr, info_ptr, &mywidth, &myheight, &bit_depth,
+                &color_type, NULL, NULL, NULL);
 
    imd->width  = (int) mywidth;
    imd->height = (int) myheight;
- 
+
    /*
     * Expand palette images to RGB, low-bit-depth grayscale images to 8 bits,
     * transparency chunks to full alpha channel; strip 16-bit-per-sample
@@ -2151,24 +2105,24 @@ static int pngread(char *filename, int p, struct imgdata *imd)
 
    switch (color_type) {
       case PNG_COLOR_TYPE_PALETTE:
-	 png_set_palette_to_rgb(png_ptr);
-	 break;
+         png_set_palette_to_rgb(png_ptr);
+         break;
       case PNG_COLOR_TYPE_GRAY:
-	 if (bit_depth < 8)
-	    png_set_expand_gray_1_2_4_to_8(png_ptr);
-	 png_set_gray_to_rgb(png_ptr);
-	 break;
+         if (bit_depth < 8)
+            png_set_expand_gray_1_2_4_to_8(png_ptr);
+         png_set_gray_to_rgb(png_ptr);
+         break;
       case PNG_COLOR_TYPE_GRAY_ALPHA:
-	 if (bit_depth < 8)
-	    png_set_expand_gray_1_2_4_to_8(png_ptr);
-	 png_set_gray_to_rgb(png_ptr);
-	 png_set_strip_alpha(png_ptr);
-	 break;
+         if (bit_depth < 8)
+            png_set_expand_gray_1_2_4_to_8(png_ptr);
+         png_set_gray_to_rgb(png_ptr);
+         png_set_strip_alpha(png_ptr);
+         break;
       case PNG_COLOR_TYPE_RGB:
-	 break;
+         break;
       case PNG_COLOR_TYPE_RGB_ALPHA:
-	 png_set_strip_alpha(png_ptr);
-	 break;
+         png_set_strip_alpha(png_ptr);
+         break;
       }
 
    if (bit_depth == 16)
@@ -2189,13 +2143,13 @@ static int pngread(char *filename, int p, struct imgdata *imd)
       /*png_set_tRNS_to_alpha(png_ptr);*/
       png_set_strip_alpha(png_ptr);
       }
-	 
+
    if (png_get_bKGD(png_ptr, info_ptr, &image_background))
         png_set_background(png_ptr, image_background,
-        	PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+                PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
    /*else
       png_set_background(png_ptr, &my_background,
-      	PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+        PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
     */
 
    /*
@@ -2268,14 +2222,14 @@ int readPNG(char *filename, int p, struct imgdata *imd)
    imd->paltbl = NULL;
    imd->data = NULL;
 
-   r = pngread(filename, p, imd);			/* read image */
+   r = pngread(filename, p, imd);                       /* read image */
    if (r == Failed){
       if (imd->paltbl) free(imd->paltbl);
       if (imd->data) free(imd->data);
       return Failed;
       }
 
-   return Succeeded;				/* return success */
+   return Succeeded;                            /* return success */
 }
 
 
@@ -2284,7 +2238,7 @@ int readPNG(char *filename, int p, struct imgdata *imd)
 #undef fprintf
 #undef putc
 #define putc fputc
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 /*
  * pngwrite(w, filename, x, y, width, height) - write PNG file
@@ -2368,7 +2322,7 @@ int writePNG(wbp w, char *filename, int x, int y, int width, int height)
          }
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    if (!getimstr24(w, x, y, width, height, imgBuf)) {
       free(imgBuf);
       return RunError;
@@ -2383,11 +2337,11 @@ int writePNG(wbp w, char *filename, int x, int y, int width, int height)
 
    free(imgBuf);
    fclose(png_f);
-   
+
    return r;
    }
 
-#endif		/*  HAVE_LIBPNG  */
+#endif          /*  HAVE_LIBPNG  */
 
 /*
  * writeBMP(w, filename, x, y, width, height) - write BMP image
@@ -2419,7 +2373,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
    long len;
    struct palentry paltbl[DMAXCOLORS];
 
-   len = (long)width * (long)height;	/* total length of data */
+   len = (long)width * (long)height;    /* total length of data */
 
    if (!(gf_f = fopen(filename, "wb")))
       return Failed;
@@ -2433,8 +2387,8 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
       if (!gl_getimstr(w, x, y, width, height, paltbl, gf_string))
          return RunError;
       }
-   else 
-#endif					/* GraphicsGL */
+   else
+#endif                                  /* GraphicsGL */
    if (!getimstr(w, x, y, width, height, paltbl, gf_string))
       return RunError;
 
@@ -2476,10 +2430,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
  * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
-int writeGIF(w, filename, x, y, width, height)
-wbp w;
-char *filename;
-int x, y, width, height;
+int writeGIF(wbp w, char *filename, int x, int y, int width, int height)
    {
    int r;
 
@@ -2493,7 +2444,7 @@ int x, y, width, height;
 #undef fprintf
 #undef putc
 #define putc fputc
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 /*
  * gfwrite(w, filename, x, y, width, height) - write GIF file
  *
@@ -2501,10 +2452,7 @@ int x, y, width, height;
  * we don't need any of the extensions of GIF89.
  */
 
-static int gfwrite(w, filename, x, y, width, height)
-wbp w;
-char *filename;
-int x, y, width, height;
+static int gfwrite(wbp w, char *filename, int x, int y, int width, int height)
    {
    int i, c, cur;
    long len;
@@ -2514,7 +2462,7 @@ int x, y, width, height;
    unsigned char obuf[GifBlockSize];
    lzwnode tree[GifTableSize + 1];
 
-   len = (long)width * (long)height;	/* total length of data */
+   len = (long)width * (long)height;    /* total length of data */
 
    if (!(gf_f = fopen(filename, "wb")))
       return Failed;
@@ -2529,13 +2477,13 @@ int x, y, width, height;
          return RunError;
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    if (!getimstr(w, x, y, width, height, paltbl, gf_string))
       return RunError;
 
-   gfpack(gf_string, len, paltbl);	/* pack color table, set color params */
+   gfpack(gf_string, len, paltbl);      /* pack color table, set color params */
 
-   gf_clear = 1 << gf_cdsize;		/* set encoding variables */
+   gf_clear = 1 << gf_cdsize;           /* set encoding variables */
    gf_eoi = gf_clear + 1;
    gf_free = gf_eoi + 1;
    gf_lzwbits = gf_cdsize + 1;
@@ -2548,7 +2496,7 @@ int x, y, width, height;
       0x80 | ((gf_nbits - 1) << 4) | (gf_nbits - 1), 0, 0);
 
 
-   for (i = 0; i < (1 << gf_nbits); i++) {	/* output color table */
+   for (i = 0; i < (1 << gf_nbits); i++) {      /* output color table */
       if (i < DMAXCOLORS && paltbl[i].valid) {
          cp = &paltbl[i].clr;
          putc(cp->red >> 8, gf_f);
@@ -2568,61 +2516,61 @@ int x, y, width, height;
    /*
     * Encode and write the image.
     */
-   gf_obuf = obuf;			/* initialize output state */
+   gf_obuf = obuf;                      /* initialize output state */
    gf_curr = 0;
    gf_valid = 0;
    gf_rem = GifBlockSize;
 
-   gfmktree(tree);			/* initialize encoding tree */
+   gfmktree(tree);                      /* initialize encoding tree */
 
-   gfout(gf_clear);			/* start with CLEAR code */
+   gfout(gf_clear);                     /* start with CLEAR code */
 
    p = gf_string;
    q = p + len;
-   cur = *p++;				/* first pixel is special */
+   cur = *p++;                          /* first pixel is special */
    while (p < q) {
-      c = *p++;				/* get code */
+      c = *p++;                         /* get code */
       for (i = tree[cur].child; i != 0; i = tree[i].sibling)
-         if (tree[i].tcode == c)	/* find as suffix of previous string */
+         if (tree[i].tcode == c)        /* find as suffix of previous string */
             break;
-      if (i != 0) {			/* if found in encoding tree */
-         cur = i;			/* note where */
-         continue;			/* and accumulate more */
+      if (i != 0) {                     /* if found in encoding tree */
+         cur = i;                       /* note where */
+         continue;                      /* and accumulate more */
          }
-      gfout(cur);			/* new combination -- output prefix */
-      tree[gf_free].tcode = c;		/* make node for new combination */
+      gfout(cur);                       /* new combination -- output prefix */
+      tree[gf_free].tcode = c;          /* make node for new combination */
       tree[gf_free].child = 0;
       tree[gf_free].sibling = tree[cur].child;
       tree[cur].child = gf_free;
-      cur = c;				/* restart string from single pixel */
-      ++gf_free;			/* grow tree to account for new node */
+      cur = c;                          /* restart string from single pixel */
+      ++gf_free;                        /* grow tree to account for new node */
       if (gf_free > (1 << gf_lzwbits)) {
          if (gf_free > GifTableSize) {
-            gfout(gf_clear);		/* table is full; reset to empty */
+            gfout(gf_clear);            /* table is full; reset to empty */
             gf_lzwbits = gf_cdsize + 1;
             gfmktree(tree);
             }
          else
-            gf_lzwbits++;		/* time to make output one bit wider */
+            gf_lzwbits++;               /* time to make output one bit wider */
          }
       }
 
    /*
     * Finish up.
     */
-   gfout(cur);				/* flush accumulated prefix */
-   gfout(gf_eoi);			/* send EOI code */
+   gfout(cur);                          /* flush accumulated prefix */
+   gfout(gf_eoi);                       /* send EOI code */
    gf_lzwbits = 7;
-   gfout(0);				/* force out last partial byte */
-   gfdump();				/* dump final block */
-   putc(0, gf_f);			/* terminate image (block of size 0) */
-   putc(GifTerminator, gf_f);		/* terminate file */
+   gfout(0);                            /* force out last partial byte */
+   gfdump();                            /* dump final block */
+   putc(0, gf_f);                       /* terminate image (block of size 0) */
+   putc(GifTerminator, gf_f);           /* terminate file */
 
    fflush(gf_f);
    if (ferror(gf_f))
       return Failed;
    else
-      return Succeeded;			/* caller will close file */
+      return Succeeded;                 /* caller will close file */
    }
 
 /*
@@ -2630,10 +2578,7 @@ int x, y, width, height;
  *
  * Sets gf_nbits and gf_cdsize based on the number of colors.
  */
-static void gfpack(data, len, paltbl)
-unsigned char *data;
-long len;
-struct palentry *paltbl;
+static void gfpack(unsigned char *data, long len, struct palentry *paltbl)
    {
    int i, ncolors, lastcolor;
    unsigned char *p, *q, cmap[DMAXCOLORS];
@@ -2643,11 +2588,11 @@ struct palentry *paltbl;
    for (i = 0; i < DMAXCOLORS; i++)
       if (paltbl[i].used) {
          lastcolor = i;
-         cmap[i] = ncolors;		/* mapping to output color */
+         cmap[i] = ncolors;             /* mapping to output color */
          if (i != ncolors) {
-            paltbl[ncolors] = paltbl[i];		/* shift down */
+            paltbl[ncolors] = paltbl[i];                /* shift down */
             paltbl[i].used = paltbl[i].valid = paltbl[i].transpt = 0;
-							/* invalidate old */
+                                                        /* invalidate old */
             }
          ncolors++;
          }
@@ -2656,7 +2601,7 @@ struct palentry *paltbl;
       p = data;
       q = p + len;
       while (p < q) {
-         *p = cmap[*p];		       /* adjust color values in data string */
+         *p = cmap[*p];                /* adjust color values in data string */
          p++;
          }
       }
@@ -2674,33 +2619,31 @@ struct palentry *paltbl;
  * gfmktree() - initialize or reinitialize encoding tree
  */
 
-static void gfmktree(tree)
-lzwnode *tree;
+static void gfmktree(lzwnode *tree)
    {
    int i;
 
-   for (i = 0; i < gf_clear; i++) {	/* for each basic entry */
-      tree[i].tcode = i;			/* code is pixel value */
-      tree[i].child = 0;		/* no suffixes yet */
-      tree[i].sibling = i + 1;		/* next code is sibling */
+   for (i = 0; i < gf_clear; i++) {     /* for each basic entry */
+      tree[i].tcode = i;                        /* code is pixel value */
+      tree[i].child = 0;                /* no suffixes yet */
+      tree[i].sibling = i + 1;          /* next code is sibling */
       }
-   tree[gf_clear - 1].sibling = 0;	/* last entry has no sibling */
-   gf_free = gf_eoi + 1;		/* reset next free entry */
+   tree[gf_clear - 1].sibling = 0;      /* last entry has no sibling */
+   gf_free = gf_eoi + 1;                /* reset next free entry */
    }
 
 /*
  * gfout(code) - output one LZW token
  */
-static void gfout(tcode)
-int tcode;
+static void gfout(int tcode)
    {
-   gf_curr |= tcode << gf_valid;		/* add to current word */
-   gf_valid += gf_lzwbits;		/* count the bits */
-   while (gf_valid >= 8) {		/* while we have a byte to output */
-      gf_obuf[GifBlockSize - gf_rem] = gf_curr;	/* put in buffer */
-      gf_curr >>= 8;				/* remove from word */
+   gf_curr |= tcode << gf_valid;                /* add to current word */
+   gf_valid += gf_lzwbits;              /* count the bits */
+   while (gf_valid >= 8) {              /* while we have a byte to output */
+      gf_obuf[GifBlockSize - gf_rem] = gf_curr; /* put in buffer */
+      gf_curr >>= 8;                            /* remove from word */
       gf_valid -= 8;
-      if (--gf_rem == 0)			/* flush buffer when full */
+      if (--gf_rem == 0)                        /* flush buffer when full */
          gfdump();
       }
    }
@@ -2713,9 +2656,9 @@ static void gfdump()
    int n;
 
    n = GifBlockSize - gf_rem;
-   putc(n, gf_f);			/* write block size */
+   putc(n, gf_f);                       /* write block size */
    fwrite((pointer)gf_obuf, 1, n, gf_f); /*write block */
-   gf_rem = GifBlockSize;		/* reset buffer to empty */
+   gf_rem = GifBlockSize;               /* reset buffer to empty */
    }
 
 
@@ -2725,7 +2668,7 @@ static void gfdump()
 #undef fprintf
 #undef putc
 #define putc fputc
-#endif					/* ConsoleWindow */
+#endif                                  /* ConsoleWindow */
 
 /*
  * jpegwrite(w, filename, x, y, width, height) - write JPEG file
@@ -2739,8 +2682,8 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
    struct jpeg_compress_struct cinfo;
    struct my_error_mgr jerr;
 
-   JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
-   int row_stride;		/* physical row width in image buffer */
+   JSAMPROW row_pointer[1];     /* pointer to JSAMPLE row[s] */
+   int row_stride;              /* physical row width in image buffer */
    int quality;
 
    quality = 95;
@@ -2765,10 +2708,10 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 
    jpeg_stdio_dest(&cinfo, jpg_f);
 
-   cinfo.image_width = width; 	/* image width and height, in pixels */
+   cinfo.image_width = width;   /* image width and height, in pixels */
    cinfo.image_height = height;
 
-   cinfo.input_components = 3;	/* # of color components per pixel */
+   cinfo.input_components = 3;  /* # of color components per pixel */
    cinfo.in_color_space = JCS_RGB; /* colorspace of input image */
 
    jpeg_set_defaults(&cinfo);
@@ -2776,7 +2719,7 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 
    jpeg_start_compress(&cinfo, TRUE);
 
-   row_stride = cinfo.image_width *3;	/* JSAMPLEs per row in image_buffer */
+   row_stride = cinfo.image_width *3;   /* JSAMPLEs per row in image_buffer */
 
    if (!(imgBuf = (unsigned char*)malloc( height * row_stride * sizeof(unsigned char))))
       return RunError;
@@ -2789,7 +2732,7 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
          }
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    if (!getimstr24(w, x, y, width, height, imgBuf)) {
       free(imgBuf);
       return RunError;
@@ -2820,16 +2763,15 @@ int writeJPEG(wbp w, char *filename, int x, int y, int width, int height)
    return r;
    }
 
-#endif					/* HAVE_LIBJPEG */
+#endif                                  /* HAVE_LIBJPEG */
 
-#define IMAGE_UNKNOWN	0
-#define IMAGE_GIF	1
-#define IMAGE_JPEG	2
-#define IMAGE_PNG	3
-#define IMAGE_BMP	4
+#define IMAGE_UNKNOWN   0
+#define IMAGE_GIF       1
+#define IMAGE_JPEG      2
+#define IMAGE_PNG       3
+#define IMAGE_BMP       4
 
-int image_type(fname)
-char *fname;
+int image_type(char *fname)
 {
   int n = strlen(fname);
   int i = n-3;
@@ -2837,28 +2779,28 @@ char *fname;
      return IMAGE_UNKNOWN;
 
   if (fname[i] == 'j' || fname[i] == 'J')
-     if ( (fname[++i] == 'p' || fname[i] == 'P') && 
-     	  (fname[++i] == 'g' || fname[i] == 'G'))
-	  return IMAGE_JPEG;
+     if ( (fname[++i] == 'p' || fname[i] == 'P') &&
+          (fname[++i] == 'g' || fname[i] == 'G'))
+          return IMAGE_JPEG;
 
   if (fname[i] == 'p' || fname[i] == 'P')
-     if ( (fname[++i] == 'n' || fname[i] == 'N') && 
-     	  (fname[++i] == 'g' || fname[i] == 'G'))
-	  return IMAGE_PNG;
+     if ( (fname[++i] == 'n' || fname[i] == 'N') &&
+          (fname[++i] == 'g' || fname[i] == 'G'))
+          return IMAGE_PNG;
 
   if (fname[i] == 'g' || fname[i] == 'G')
-     if ( (fname[++i] == 'i' || fname[i] == 'I') && 
-     	  (fname[++i] == 'f' || fname[i] == 'F'))
-	  return IMAGE_GIF;
+     if ( (fname[++i] == 'i' || fname[i] == 'I') &&
+          (fname[++i] == 'f' || fname[i] == 'F'))
+          return IMAGE_GIF;
 
   if (fname[i] == 'b' || fname[i] == 'B')
-     if ( (fname[++i] == 'm' || fname[i] == 'M') && 
-     	  (fname[++i] == 'p' || fname[i] == 'P'))
-	  return IMAGE_BMP;
+     if ( (fname[++i] == 'm' || fname[i] == 'M') &&
+          (fname[++i] == 'p' || fname[i] == 'P'))
+          return IMAGE_BMP;
 
   return IMAGE_UNKNOWN;
 }
- 
+
 /*
  * readImage(filename, p, imd) - read an image file into image data structure
  * p is a palette number to which the image colors are to be coerced;
@@ -2870,26 +2812,26 @@ int readImage(char *filename, int p, struct imgdata *imd){
    itype = image_type(filename);
 
    switch (itype){
-     case IMAGE_JPEG: 
+     case IMAGE_JPEG:
 #if HAVE_LIBJPEG
         r = readJPEG(filename, p, imd);
-#endif					/* HAVE_LIBJPEG */
-	break;
-     case IMAGE_PNG: 
+#endif                                  /* HAVE_LIBJPEG */
+        break;
+     case IMAGE_PNG:
 #if HAVE_LIBPNG
         r = readPNG(filename, p, imd);
-#endif					/* HAVE_LIBPNG */
-	break;
-     case IMAGE_GIF: 
+#endif                                  /* HAVE_LIBPNG */
+        break;
+     case IMAGE_GIF:
         r = readGIF(filename, p, imd);
-	break;
-     case IMAGE_BMP: 
+        break;
+     case IMAGE_BMP:
         r = readBMP(filename, p, imd);
-	break;
+        break;
      }
 
   if (r == Succeeded)
-     return Succeeded; 				/* return success */
+     return Succeeded;                          /* return success */
 
  /*
   * We couldn't read the file based on its extension
@@ -2898,12 +2840,12 @@ int readImage(char *filename, int p, struct imgdata *imd){
 #if HAVE_LIBJPEG
    if (itype != IMAGE_JPEG && readJPEG(filename, p, imd) == Succeeded)
      return Succeeded;
-#endif					/* HAVE_LIBPNG */
+#endif                                  /* HAVE_LIBPNG */
 
 #if HAVE_LIBPNG
    if (itype != IMAGE_PNG && readPNG(filename, p, imd) == Succeeded)
      return Succeeded;
-#endif					/* HAVE_LIBPNG */
+#endif                                  /* HAVE_LIBPNG */
 
    if (itype != IMAGE_GIF && readGIF(filename, p, imd) == Succeeded)
      return Succeeded;
@@ -2914,25 +2856,25 @@ int readImage(char *filename, int p, struct imgdata *imd){
    return Failed;
 }
 
-int  writeImage	(wbp w, char *filename, int x, int y, int width, int height){
+int  writeImage (wbp w, char *filename, int x, int y, int width, int height){
    int itype;
    itype = image_type(filename);
 
    switch (itype){
-     case IMAGE_JPEG: 
+     case IMAGE_JPEG:
 #if HAVE_LIBJPEG
-#endif					/* HAVE_LIBJPEG */
-	break;
-     case IMAGE_PNG: 
+#endif                                  /* HAVE_LIBJPEG */
+        break;
+     case IMAGE_PNG:
 #if HAVE_LIBPNG
-#endif					/* HAVE_LIBPNG */
-	break;
-     case IMAGE_GIF: 
+#endif                                  /* HAVE_LIBPNG */
+        break;
+     case IMAGE_GIF:
 
-	break;
-     case IMAGE_BMP: 
+        break;
+     case IMAGE_BMP:
 
-	break;
+        break;
      }
   return Failed;
 }
@@ -2942,8 +2884,8 @@ int  writeImage	(wbp w, char *filename, int x, int y, int width, int height){
 #define fprintf Consolefprintf
 #undef putc
 #define putc Consoleputc
-#endif					/* ConsoleWindow */
-
+#endif                                  /* ConsoleWindow */
+
 /*
  * Static data for XDrawImage and XPalette functions
  */
@@ -2971,7 +2913,7 @@ static char *cgrays[] = { "0123456", "kxw", "@abMcdZ", "0$%&L*+-g/?@}",
  *
  * This is 10x10x10 cube (A Thousand Points of Light).
  */
-#define C1Side 10  			/* length of one side of C1 cube */
+#define C1Side 10                       /* length of one side of C1 cube */
 static char c1cube[] = {
    '0', '0', 'w', 'w', 'w', 'W', 'W', 'W', 'J', 'J', '0', '0', 'v', 'v', 'v',
    'W', 'W', 'W', 'J', 'J', 's', 't', 't', 'v', 'v', 'V', 'V', 'V', 'V', 'J',
@@ -3049,98 +2991,98 @@ static char c1cube[] = {
  * Each entry gives r,g,b in linear range 0 to 48.
  */
 static unsigned char c1rgb[] = {
-   0, 0, 0,		/*  0             black		*/
-   8, 8, 8,		/*  1   very dark gray		*/
-   16, 16, 16,		/*  2        dark gray		*/
-   24, 24, 24,		/*  3             gray		*/
-   32, 32, 32,		/*  4       light gray		*/
-   40, 40, 40,		/*  5  very light gray		*/
-   48, 48, 48,		/*  6             white		*/
-   48, 24, 30,		/*  7             pink		*/
-   36, 24, 48,		/*  8             violet	*/
-   48, 36, 24,		/*  9  very light brown		*/
-   24, 12, 0,		/*  ?             brown		*/
-   8, 4, 0,		/*  !   very dark brown		*/
-   16, 0, 0,		/*  n   very dark red		*/
-   32, 0, 0,		/*  N        dark red		*/
-   48, 0, 0,		/*  A             red		*/
-   48, 16, 16,		/*  a       light red		*/
-   48, 32, 32,		/*  #  very light red		*/
-   30, 18, 18,		/*  @        weak red		*/
-   16, 4, 0,		/*  o   very dark orange	*/
-   32, 8, 0,		/*  O        dark orange	*/
-   48, 12, 0,		/*  B             orange	*/
-   48, 24, 16,		/*  b       light orange	*/
-   48, 36, 32,		/*  $  very light orange	*/
-   30, 21, 18,		/*  %        weak orange	*/
-   16, 8, 0,		/*  p   very dark red-yellow	*/
-   32, 16, 0,		/*  P        dark red-yellow	*/
-   48, 24, 0,		/*  C             red-yellow	*/
-   48, 32, 16,		/*  c       light red-yellow	*/
-   48, 40, 32,		/*  &  very light red-yellow	*/
-   30, 24, 18,		/*  |        weak red-yellow	*/
-   16, 16, 0,		/*  q   very dark yellow	*/
-   32, 32, 0,		/*  Q        dark yellow	*/
-   48, 48, 0,		/*  D             yellow	*/
-   48, 48, 16,		/*  d       light yellow	*/
-   48, 48, 32,		/*  ,  very light yellow	*/
-   30, 30, 18,		/*  .        weak yellow	*/
-   8, 16, 0,		/*  r   very dark yellow-green	*/
-   16, 32, 0,		/*  R        dark yellow-green	*/
-   24, 48, 0,		/*  E             yellow-green	*/
-   32, 48, 16,		/*  e       light yellow-green	*/
-   40, 48, 32,		/*  ;  very light yellow-green	*/
-   24, 30, 18,		/*  :        weak yellow-green	*/
-   0, 16, 0,		/*  s   very dark green		*/
-   0, 32, 0,		/*  S        dark green		*/
-   0, 48, 0,		/*  F             green		*/
-   16, 48, 16,		/*  f       light green		*/
-   32, 48, 32,		/*  +  very light green		*/
-   18, 30, 18,		/*  -        weak green		*/
-   0, 16, 8,		/*  t   very dark cyan-green	*/
-   0, 32, 16,		/*  T        dark cyan-green	*/
-   0, 48, 24,		/*  G             cyan-green	*/
-   16, 48, 32,		/*  g       light cyan-green	*/
-   32, 48, 40,		/*  *  very light cyan-green	*/
-   18, 30, 24,		/*  /        weak cyan-green	*/
-   0, 16, 16,		/*  u   very dark cyan		*/
-   0, 32, 32,		/*  U        dark cyan		*/
-   0, 48, 48,		/*  H             cyan		*/
-   16, 48, 48,		/*  h       light cyan		*/
-   32, 48, 48,		/*  `  very light cyan		*/
-   18, 30, 30,		/*  '        weak cyan		*/
-   0, 8, 16,		/*  v   very dark blue-cyan	*/
-   0, 16, 32,		/*  V        dark blue-cyan	*/
-   0, 24, 48,		/*  I             blue-cyan	*/
-   16, 32, 48,		/*  i       light blue-cyan	*/
-   32, 40, 48,		/*  <  very light blue-cyan	*/
-   18, 24, 30,		/*  >        weak blue-cyan	*/
-   0, 0, 16,		/*  w   very dark blue		*/
-   0, 0, 32,		/*  W        dark blue		*/
-   0, 0, 48,		/*  J             blue		*/
-   16, 16, 48,		/*  j       light blue		*/
-   32, 32, 48,		/*  (  very light blue		*/
-   18, 18, 30,		/*  )        weak blue		*/
-   8, 0, 16,		/*  x   very dark purple	*/
-   16, 0, 32,		/*  X        dark purple	*/
-   24, 0, 48,		/*  K             purple	*/
-   32, 16, 48,		/*  k       light purple	*/
-   40, 32, 48,		/*  [  very light purple	*/
-   24, 18, 30,		/*  ]        weak purple	*/
-   16, 0, 16,		/*  y   very dark magenta	*/
-   32, 0, 32,		/*  Y        dark magenta	*/
-   48, 0, 48,		/*  L             magenta	*/
-   48, 16, 48,		/*  l       light magenta	*/
-   48, 32, 48,		/*  {  very light magenta	*/
-   30, 18, 30,		/*  }        weak magenta	*/
-   16, 0, 8,		/*  z   very dark magenta-red	*/
-   32, 0, 16,		/*  Z        dark magenta-red	*/
-   48, 0, 24,		/*  M             magenta-red	*/
-   48, 16, 32,		/*  m       light magenta-red	*/
-   48, 32, 40,		/*  ^  very light magenta-red	*/
-   30, 18, 24,		/*  =        weak magenta-red	*/
+   0, 0, 0,             /*  0             black         */
+   8, 8, 8,             /*  1   very dark gray          */
+   16, 16, 16,          /*  2        dark gray          */
+   24, 24, 24,          /*  3             gray          */
+   32, 32, 32,          /*  4       light gray          */
+   40, 40, 40,          /*  5  very light gray          */
+   48, 48, 48,          /*  6             white         */
+   48, 24, 30,          /*  7             pink          */
+   36, 24, 48,          /*  8             violet        */
+   48, 36, 24,          /*  9  very light brown         */
+   24, 12, 0,           /*  ?             brown         */
+   8, 4, 0,             /*  !   very dark brown         */
+   16, 0, 0,            /*  n   very dark red           */
+   32, 0, 0,            /*  N        dark red           */
+   48, 0, 0,            /*  A             red           */
+   48, 16, 16,          /*  a       light red           */
+   48, 32, 32,          /*  #  very light red           */
+   30, 18, 18,          /*  @        weak red           */
+   16, 4, 0,            /*  o   very dark orange        */
+   32, 8, 0,            /*  O        dark orange        */
+   48, 12, 0,           /*  B             orange        */
+   48, 24, 16,          /*  b       light orange        */
+   48, 36, 32,          /*  $  very light orange        */
+   30, 21, 18,          /*  %        weak orange        */
+   16, 8, 0,            /*  p   very dark red-yellow    */
+   32, 16, 0,           /*  P        dark red-yellow    */
+   48, 24, 0,           /*  C             red-yellow    */
+   48, 32, 16,          /*  c       light red-yellow    */
+   48, 40, 32,          /*  &  very light red-yellow    */
+   30, 24, 18,          /*  |        weak red-yellow    */
+   16, 16, 0,           /*  q   very dark yellow        */
+   32, 32, 0,           /*  Q        dark yellow        */
+   48, 48, 0,           /*  D             yellow        */
+   48, 48, 16,          /*  d       light yellow        */
+   48, 48, 32,          /*  ,  very light yellow        */
+   30, 30, 18,          /*  .        weak yellow        */
+   8, 16, 0,            /*  r   very dark yellow-green  */
+   16, 32, 0,           /*  R        dark yellow-green  */
+   24, 48, 0,           /*  E             yellow-green  */
+   32, 48, 16,          /*  e       light yellow-green  */
+   40, 48, 32,          /*  ;  very light yellow-green  */
+   24, 30, 18,          /*  :        weak yellow-green  */
+   0, 16, 0,            /*  s   very dark green         */
+   0, 32, 0,            /*  S        dark green         */
+   0, 48, 0,            /*  F             green         */
+   16, 48, 16,          /*  f       light green         */
+   32, 48, 32,          /*  +  very light green         */
+   18, 30, 18,          /*  -        weak green         */
+   0, 16, 8,            /*  t   very dark cyan-green    */
+   0, 32, 16,           /*  T        dark cyan-green    */
+   0, 48, 24,           /*  G             cyan-green    */
+   16, 48, 32,          /*  g       light cyan-green    */
+   32, 48, 40,          /*  *  very light cyan-green    */
+   18, 30, 24,          /*  /        weak cyan-green    */
+   0, 16, 16,           /*  u   very dark cyan          */
+   0, 32, 32,           /*  U        dark cyan          */
+   0, 48, 48,           /*  H             cyan          */
+   16, 48, 48,          /*  h       light cyan          */
+   32, 48, 48,          /*  `  very light cyan          */
+   18, 30, 30,          /*  '        weak cyan          */
+   0, 8, 16,            /*  v   very dark blue-cyan     */
+   0, 16, 32,           /*  V        dark blue-cyan     */
+   0, 24, 48,           /*  I             blue-cyan     */
+   16, 32, 48,          /*  i       light blue-cyan     */
+   32, 40, 48,          /*  <  very light blue-cyan     */
+   18, 24, 30,          /*  >        weak blue-cyan     */
+   0, 0, 16,            /*  w   very dark blue          */
+   0, 0, 32,            /*  W        dark blue          */
+   0, 0, 48,            /*  J             blue          */
+   16, 16, 48,          /*  j       light blue          */
+   32, 32, 48,          /*  (  very light blue          */
+   18, 18, 30,          /*  )        weak blue          */
+   8, 0, 16,            /*  x   very dark purple        */
+   16, 0, 32,           /*  X        dark purple        */
+   24, 0, 48,           /*  K             purple        */
+   32, 16, 48,          /*  k       light purple        */
+   40, 32, 48,          /*  [  very light purple        */
+   24, 18, 30,          /*  ]        weak purple        */
+   16, 0, 16,           /*  y   very dark magenta       */
+   32, 0, 32,           /*  Y        dark magenta       */
+   48, 0, 48,           /*  L             magenta       */
+   48, 16, 48,          /*  l       light magenta       */
+   48, 32, 48,          /*  {  very light magenta       */
+   30, 18, 30,          /*  }        weak magenta       */
+   16, 0, 8,            /*  z   very dark magenta-red   */
+   32, 0, 16,           /*  Z        dark magenta-red   */
+   48, 0, 24,           /*  M             magenta-red   */
+   48, 16, 32,          /*  m       light magenta-red   */
+   48, 32, 40,          /*  ^  very light magenta-red   */
+   30, 18, 24,          /*  =        weak magenta-red   */
    };
-
+
 /*
  * palnum(d) - return palette number, or 0 if unrecognized.
  *
@@ -3150,8 +3092,7 @@ static unsigned char c1rgb[] = {
  *    returns 0 for unrecognized palette name
  *    returns -1 for non-string argument
  */
-int palnum(d)
-dptr d;
+int palnum(dptr d)
    {
    tended char *s;
    char c, x;
@@ -3169,15 +3110,14 @@ dptr d;
       return -n;
    return 0;
    }
-
 
-struct palentry *palsetup_palette;	/* current palette */
+
+struct palentry *palsetup_palette;      /* current palette */
 
 /*
  * palsetup(p) - set up palette for specified palette.
  */
-struct palentry *palsetup(p)
-int p;
+struct palentry *palsetup(int p)
    {
    int r, g, b, i, n, c;
    unsigned int rr, gg, bb;
@@ -3185,13 +3125,13 @@ int p;
    double m;
    struct palentry *e;
 
-   static int palnumber;		/* current palette number */
+   static int palnumber;                /* current palette number */
 
    if (palnumber == p)
       return palsetup_palette;
    if (palsetup_palette == NULL) {
       palsetup_palette =
-	 (struct palentry *)malloc(256 * sizeof(struct palentry));
+         (struct palentry *)malloc(256 * sizeof(struct palentry));
       if (palsetup_palette == NULL)
          return NULL;
       }
@@ -3202,7 +3142,7 @@ int p;
    palsetup_palette[TCH1].transpt = 1;
    palsetup_palette[TCH2].transpt = 1;
 
-   if (p < 0) {				/* grayscale palette */
+   if (p < 0) {                         /* grayscale palette */
       n = -p;
       if (n <= 64)
          s = (unsigned char *)c4list;
@@ -3215,12 +3155,12 @@ int p;
          gg = 65535 * m * i;
          e->clr.red = e->clr.green = e->clr.blue = gg;
          e->valid = 1;
-	 e->transpt = 0;
+         e->transpt = 0;
          }
       return palsetup_palette;
       }
 
-   if (p == 1) {			/* special c1 palette */
+   if (p == 1) {                        /* special c1 palette */
       s = (unsigned char *)c1list;
       t = c1rgb;
       while ((c = *s++) != 0) {
@@ -3229,17 +3169,17 @@ int p;
          e->clr.green = 65535 * (((int)*t++) / 48.0);
          e->clr.blue  = 65535 * (((int)*t++) / 48.0);
          e->valid = 1;
-	 e->transpt = 0;
+         e->transpt = 0;
          }
       return palsetup_palette;
       }
 
-   switch (p) {				/* color cube plus extra grays */
-      case  2:  s = (unsigned char *)c2list;	break;	/* c2 */
-      case  3:  s = (unsigned char *)c3list;	break;	/* c3 */
-      case  4:  s = (unsigned char *)c4list;	break;	/* c4 */
-      case  5:  s = allchars;			break;	/* c5 */
-      case  6:  s = allchars; 			break;	/* c6 */
+   switch (p) {                         /* color cube plus extra grays */
+      case  2:  s = (unsigned char *)c2list;    break;  /* c2 */
+      case  3:  s = (unsigned char *)c3list;    break;  /* c3 */
+      case  4:  s = (unsigned char *)c4list;    break;  /* c4 */
+      case  5:  s = allchars;                   break;  /* c5 */
+      case  6:  s = allchars;                   break;  /* c6 */
       }
    m = 1.0 / (p - 1);
    for (r = 0; r < p; r++) {
@@ -3253,7 +3193,7 @@ int p;
             e->clr.green = gg;
             e->clr.blue = bb;
             e->valid = 1;
-	    e->transpt = 0;
+            e->transpt = 0;
             }
          }
       }
@@ -3264,25 +3204,23 @@ int p;
          e = &palsetup_palette[*s++];
          e->clr.red = e->clr.green = e->clr.blue = gg;
          e->valid = 1;
-	 e->transpt = 0;
+         e->transpt = 0;
          }
    return palsetup_palette;
    }
-
+
 /*
  * rgbkey(p,r,g,b) - return pointer to key of closest color in palette number p.
  *
  * In color cubes, finds "extra" grays only if r == g == b.
  */
-char *rgbkey(p, r, g, b)
-int p;
-double r, g, b;
+char *rgbkey(int p, double r, double g, double b)
    {
    int n, i;
    double m;
    char *s;
 
-   if (p > 0) { 			/* color */
+   if (p > 0) {                         /* color */
       if (r == g && g == b) {
          if (p == 1)
             m = 6;
@@ -3300,16 +3238,16 @@ double r, g, b;
          i = n * i + (int)(0.501 + m * g);
          i = n * i + (int)(0.501 + m * b);
          switch(p) {
-            case  1:  return c1cube + i;		/* c1 */
-            case  2:  return c2list + i;		/* c2 */
-            case  3:  return c3list + i;		/* c3 */
-            case  4:  return c4list + i;		/* c4 */
-            case  5:  return (char *)allchars + i;	/* c5 */
-            case  6:  return (char *)allchars + i;	/* c6 */
+            case  1:  return c1cube + i;                /* c1 */
+            case  2:  return c2list + i;                /* c2 */
+            case  3:  return c3list + i;                /* c3 */
+            case  4:  return c4list + i;                /* c4 */
+            case  5:  return (char *)allchars + i;      /* c5 */
+            case  6:  return (char *)allchars + i;      /* c6 */
             }
          }
       }
-   else {				/* grayscale */
+   else {                               /* grayscale */
       if (p < -64)
          s = (char *)allchars;
       else
@@ -3320,36 +3258,36 @@ double r, g, b;
    /*NOTREACHED*/
    return 0;  /* avoid gcc warning */
    }
-
+
 /*
  * mapping from recognized style attributes to flag values
  */
 stringint fontwords[] = {
-   { 0,			24 },		/* number of entries */
-   { "arabic",		FONTATT_CHARSET | FONTFLAG_ARABIC },
-   { "bold",		FONTATT_WEIGHT	| FONTFLAG_BOLD },
-   { "condensed",	FONTATT_WIDTH	| FONTFLAG_CONDENSED },
-   { "cyrillic",	FONTATT_CHARSET | FONTFLAG_CYRILLIC },
-   { "demi",		FONTATT_WEIGHT	| FONTFLAG_DEMI },
-   { "demibold",	FONTATT_WEIGHT	| FONTFLAG_DEMI | FONTFLAG_BOLD },
-   { "extended",	FONTATT_WIDTH	| FONTFLAG_EXTENDED },
-   { "greek",		FONTATT_CHARSET | FONTFLAG_GREEK },
-   { "hebrew",		FONTATT_CHARSET | FONTFLAG_HEBREW },
-   { "italic",		FONTATT_SLANT	| FONTFLAG_ITALIC },
-   { "latin1",		FONTATT_CHARSET | FONTFLAG_LATIN1 },
-   { "latin2",		FONTATT_CHARSET | FONTFLAG_LATIN2 },
-   { "latin6",		FONTATT_CHARSET | FONTFLAG_LATIN6 },
-   { "light",		FONTATT_WEIGHT	| FONTFLAG_LIGHT },
-   { "medium",		FONTATT_WEIGHT	| FONTFLAG_MEDIUM },
-   { "mono",		FONTATT_SPACING	| FONTFLAG_MONO },
-   { "narrow",		FONTATT_WIDTH	| FONTFLAG_NARROW },
-   { "normal",		FONTATT_WIDTH	| FONTFLAG_NORMAL },
-   { "oblique",		FONTATT_SLANT	| FONTFLAG_OBLIQUE },
-   { "proportional",	FONTATT_SPACING	| FONTFLAG_PROPORTIONAL },
-   { "roman",		FONTATT_SLANT	| FONTFLAG_ROMAN },
-   { "sans",		FONTATT_SERIF	| FONTFLAG_SANS },
-   { "serif",		FONTATT_SERIF	| FONTFLAG_SERIF },
-   { "wide",		FONTATT_WIDTH	| FONTFLAG_WIDE },
+   { 0,                 24 },           /* number of entries */
+   { "arabic",          FONTATT_CHARSET | FONTFLAG_ARABIC },
+   { "bold",            FONTATT_WEIGHT  | FONTFLAG_BOLD },
+   { "condensed",       FONTATT_WIDTH   | FONTFLAG_CONDENSED },
+   { "cyrillic",        FONTATT_CHARSET | FONTFLAG_CYRILLIC },
+   { "demi",            FONTATT_WEIGHT  | FONTFLAG_DEMI },
+   { "demibold",        FONTATT_WEIGHT  | FONTFLAG_DEMI | FONTFLAG_BOLD },
+   { "extended",        FONTATT_WIDTH   | FONTFLAG_EXTENDED },
+   { "greek",           FONTATT_CHARSET | FONTFLAG_GREEK },
+   { "hebrew",          FONTATT_CHARSET | FONTFLAG_HEBREW },
+   { "italic",          FONTATT_SLANT   | FONTFLAG_ITALIC },
+   { "latin1",          FONTATT_CHARSET | FONTFLAG_LATIN1 },
+   { "latin2",          FONTATT_CHARSET | FONTFLAG_LATIN2 },
+   { "latin6",          FONTATT_CHARSET | FONTFLAG_LATIN6 },
+   { "light",           FONTATT_WEIGHT  | FONTFLAG_LIGHT },
+   { "medium",          FONTATT_WEIGHT  | FONTFLAG_MEDIUM },
+   { "mono",            FONTATT_SPACING | FONTFLAG_MONO },
+   { "narrow",          FONTATT_WIDTH   | FONTFLAG_NARROW },
+   { "normal",          FONTATT_WIDTH   | FONTFLAG_NORMAL },
+   { "oblique",         FONTATT_SLANT   | FONTFLAG_OBLIQUE },
+   { "proportional",    FONTATT_SPACING | FONTFLAG_PROPORTIONAL },
+   { "roman",           FONTATT_SLANT   | FONTFLAG_ROMAN },
+   { "sans",            FONTATT_SERIF   | FONTFLAG_SANS },
+   { "serif",           FONTATT_SERIF   | FONTFLAG_SERIF },
+   { "wide",            FONTATT_WIDTH   | FONTFLAG_WIDE },
 };
 
 stringint font_type[] = {
@@ -3371,12 +3309,7 @@ stringint font_type[] = {
  * returns 1 on an OK font name
  * returns 0 on a "malformed" font (might be a window-system fontname)
  */
-int parsefont(s, family, style, size, tp)
-char *s;
-char family[MAXFONTWORD+1];
-int *style;
-int *size;
-int *tp;
+int parsefont(char *s, char *family, int *style, int *size, int *tp)
    {
    char c, *a, attr[MAXFONTWORD+1];
    int tmp;
@@ -3397,9 +3330,9 @@ int *tp;
       /*
        * find start of next comma-separated attribute word
        */
-      while (isspace(*s) || *s == ',')	/* trim leading spaces & empty words */
+      while (isspace(*s) || *s == ',')  /* trim leading spaces & empty words */
          s++;
-      if (*s == '\0')			/* stop at end of string */
+      if (*s == '\0')                   /* stop at end of string */
          break;
 
       /*
@@ -3410,7 +3343,7 @@ int *tp;
             c = tolower(c);
          *a++ = c;
          if (a - attr >= MAXFONTWORD)
-            return 0;			/* too long */
+            return 0;                   /* too long */
          }
 
       /*
@@ -3424,27 +3357,27 @@ int *tp;
        * interpret word as family name, size, or style characteristic
        */
       if (*family == '\0')
-         strcpy(family, attr);		/* first word is the family name */
+         strcpy(family, attr);          /* first word is the family name */
 
       else if (sscanf(attr, "%d%c", &tmp, &c) == 1 && tmp > 0) {
          if (*size != -1 && *size != tmp)
-            return 0;			/* if conflicting sizes given */
-         *size = tmp;			/* integer value is a size */
+            return 0;                   /* if conflicting sizes given */
+         *size = tmp;                   /* integer value is a size */
          }
 
-      else {				/* otherwise it's a style attribute */
-         tmp = si_s2i(fontwords, attr);	/* look up in table */
-         if (tmp != -1) {		/* if recognized */
+      else {                            /* otherwise it's a style attribute */
+         tmp = si_s2i(fontwords, attr); /* look up in table */
+         if (tmp != -1) {               /* if recognized */
             if ((tmp & *style) != 0 && (tmp & *style) != tmp)
-               return 0;		/* conflicting attribute */
+               return 0;                /* conflicting attribute */
             *style |= tmp;
             }
-	 else {
-	    *tp=0;
-	    for (tmp=1; tmp<=font_type[0].i; tmp++) {
-	      if (!strcmp(font_type[tmp].s, attr))
-		*tp = font_type[tmp].i-1;
-	      }
+         else {
+            *tp=0;
+            for (tmp=1; tmp<=font_type[0].i; tmp++) {
+              if (!strcmp(font_type[tmp].s, attr))
+                *tp = font_type[tmp].i-1;
+              }
             }
          }
       }
@@ -3452,15 +3385,11 @@ int *tp;
    /* got to end of string; it's OK if it had at least a font family */
    return (*family != '\0');
    }
-
+
 /*
  * parsepattern() - parse an encoded numeric stipple pattern
  */
-int parsepattern(s, len, width, nbits, bits)
-char *s;
-int len;
-int *width, *nbits;
-C_integer *bits;
+int parsepattern(char *s, int len, int *width, int *nbits, C_integer *bits)
    {
    C_integer v;
    int i, j, hexdigits_per_row, maxbits = *nbits;
@@ -3479,7 +3408,7 @@ C_integer *bits;
       len--; s++;
       }
    if ((len <= 1) || (*s != ',')) return RunError;
-   len--; s++;					/* skip over ',' */
+   len--; s++;                                  /* skip over ',' */
 
    if (*s == '#') {
       /*
@@ -3494,20 +3423,20 @@ C_integer *bits;
       if (*nbits > maxbits) return Failed;
       for (i = 0; i < *nbits; i++) {
          v = 0;
-	 for (j = 0; j < hexdigits_per_row; j++, len--, s++) {
-	    if (len == 0) break;
-	    v <<= 4;
-	    if (isdigit(*s)) v += *s - '0';
-	    else switch (*s) {
-	    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-	       v += *s - 'a' + 10; break;
-	    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-	       v += *s - 'A' + 10; break;
-	    default: return RunError;
-	       }
-	    }
-	 *bits++ = v;
-	 }
+         for (j = 0; j < hexdigits_per_row; j++, len--, s++) {
+            if (len == 0) break;
+            v <<= 4;
+            if (isdigit(*s)) v += *s - '0';
+            else switch (*s) {
+            case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+               v += *s - 'a' + 10; break;
+            case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+               v += *s - 'A' + 10; break;
+            default: return RunError;
+               }
+            }
+         *bits++ = v;
+         }
       }
    else {
       if (*width > 32) return Failed;
@@ -3517,34 +3446,32 @@ C_integer *bits;
       v = 0;
       *nbits = 0;
       while (len > 0) {
-	 while ((len > 0) && isdigit(*s)) {
-	    v = v * 10 + *s - '0';
-	    len--; s++;
-	    }
-	 (*nbits)++;
-	 if (*nbits > maxbits) return Failed;
-	 *bits++ = v;
-	 v = 0;
+         while ((len > 0) && isdigit(*s)) {
+            v = v * 10 + *s - '0';
+            len--; s++;
+            }
+         (*nbits)++;
+         if (*nbits > maxbits) return Failed;
+         *bits++ = v;
+         v = 0;
 
-	 if (len > 0) {
-	    if (*s == ',') { len--; s++; }
-	    else {
-	       ReturnErrNum(205, RunError);
-	       }
-	    }
-	 }
+         if (len > 0) {
+            if (*s == ',') { len--; s++; }
+            else {
+               ReturnErrNum(205, RunError);
+               }
+            }
+         }
       }
    return Succeeded;
    }
-
+
 /*
  * parsegeometry - parse a string of the form: intxint[+-]int[+-]int
  * Returns:
  *  0 on bad value, 1 if size is set, 2 if position is set, 3 if both are set
  */
-int parsegeometry(buf, x, y, width, height)
-char *buf;
-SHORT *x, *y, *width, *height;
+int parsegeometry(char *buf, SHORT *x, SHORT *y, SHORT *width, SHORT *height)
    {
    int retval = 0;
    if (isdigit(*buf)) {
@@ -3570,7 +3497,7 @@ SHORT *x, *y, *width, *height;
       }
    return retval;
    }
-
+
 
 /* return failure if operation returns either failure or error */
 #define AttemptAttr(operation) do { switch (operation) { case RunError: t_errornumber=145; StrLen(t_errorvalue)=strlen(val);StrLoc(t_errorvalue)=val;return RunError; case Succeeded: break; default: return Failed; } } while(0)
@@ -3585,12 +3512,7 @@ SHORT *x, *y, *width, *height;
  * wattrib() - get/set a single attribute in a window, return the result attr
  *  string.
  */
-int wattrib(w, s, len, answer, abuf)
-wbp w;
-char *s;
-long len;
-dptr answer;
-char * abuf;
+int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
    {
    char val[256], *valptr;
    struct descrip d;
@@ -3639,47 +3561,47 @@ char * abuf;
 
       switch (a = si_s2i(attribs, abuf)) {
       case A_LINES: case A_ROWS: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 if ((new_height = tmp) < 1)
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         if ((new_height = tmp) < 1)
+            return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    new_height = GL_ROWTOY(w, new_height);
-	    new_height += GL_MAXDESCENDER(w);
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 {
-	 new_height = ROWTOY(w, new_height);
-	 new_height += MAXDESCENDER(w);
-	 }
+         if (ws->is_gl) {
+            new_height = GL_ROWTOY(w, new_height);
+            new_height += GL_MAXDESCENDER(w);
+            }
+         else
+#endif                                  /* GraphicsGL */
+         {
+         new_height = ROWTOY(w, new_height);
+         new_height += MAXDESCENDER(w);
+         }
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    if (gl_setheight(w, new_height) == Failed) return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 if (setheight(w, new_height) == Failed) return Failed;
-	 break;
+         if (ws->is_gl) {
+            if (gl_setheight(w, new_height) == Failed) return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         if (setheight(w, new_height) == Failed) return Failed;
+         break;
          }
       case A_COLUMNS: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 if ((new_width = tmp) < 1)
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         if ((new_width = tmp) < 1)
+            return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    new_width = GL_COLTOX(w, new_width + 1);
-	    if (gl_setwidth(w, new_width) == Failed) return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 {
-	 new_width = COLTOX(w, new_width + 1);
-	 if (setwidth(w, new_width) == Failed) return Failed;
-	 }
-	 break;
+         if (ws->is_gl) {
+            new_width = GL_COLTOX(w, new_width + 1);
+            if (gl_setwidth(w, new_width) == Failed) return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         {
+         new_width = COLTOX(w, new_width + 1);
+         if (setwidth(w, new_width) == Failed) return Failed;
+         }
+         break;
          }
 #ifdef Graphics3D
       case A_RENDERMODE:
@@ -3687,49 +3609,49 @@ char * abuf;
             wc->rendermode = UGL2D;
          else if (!strcmp(val,"3d"))
             wc->rendermode = UGL3D;
-         else 
+         else
             return Failed;
-	 break;
+         break;
       case A_DIM:
-	 AttemptAttr(setdim(w, val));
-	 break;
+         AttemptAttr(setdim(w, val));
+         break;
       case A_EYE:
-	 AttemptAttr(seteye(w, val));
-	 break;
+         AttemptAttr(seteye(w, val));
+         break;
       case A_EYEPOS:
-	 AttemptAttr(seteyepos(w, val));
-	 break;
+         AttemptAttr(seteyepos(w, val));
+         break;
       case A_EYEUP:
-	 AttemptAttr(seteyeup(w, val));
-	 break;
+         AttemptAttr(seteyeup(w, val));
+         break;
       case A_EYEDIR:
-   	 AttemptAttr(seteyedir(w, val));
-	 break;
+         AttemptAttr(seteyedir(w, val));
+         break;
 #if HAVE_LIBGL
       case A_LIGHT: case A_LIGHT0:
-	 AttemptAttr(setlight(w, val, GL_LIGHT0));
-	 break;
+         AttemptAttr(setlight(w, val, GL_LIGHT0));
+         break;
       case A_LIGHT1:
-	 AttemptAttr(setlight(w, val, GL_LIGHT1));
-	 break;
+         AttemptAttr(setlight(w, val, GL_LIGHT1));
+         break;
       case A_LIGHT2:
-	 AttemptAttr(setlight(w, val, GL_LIGHT2));
-	 break;
+         AttemptAttr(setlight(w, val, GL_LIGHT2));
+         break;
       case A_LIGHT3:
-	 AttemptAttr( setlight(w, val, GL_LIGHT3));
-	 break;
+         AttemptAttr( setlight(w, val, GL_LIGHT3));
+         break;
       case A_LIGHT4:
-	 AttemptAttr(setlight(w, val, GL_LIGHT4));
-	 break;
+         AttemptAttr(setlight(w, val, GL_LIGHT4));
+         break;
       case A_LIGHT5:
-	 AttemptAttr(setlight(w, val, GL_LIGHT5));
-	 break;
+         AttemptAttr(setlight(w, val, GL_LIGHT5));
+         break;
       case A_LIGHT6:
-	 AttemptAttr(setlight(w, val, GL_LIGHT6));
-	 break;
+         AttemptAttr(setlight(w, val, GL_LIGHT6));
+         break;
       case A_LIGHT7:
-	 AttemptAttr(setlight(w, val, GL_LIGHT7));
-	 break;
+         AttemptAttr(setlight(w, val, GL_LIGHT7));
+         break;
       case A_ALPHA:
          {
          double alpha;
@@ -3738,331 +3660,331 @@ char * abuf;
          if (alpha == 0.0)
             return Failed;
 
-         alpha = Abs(alpha); 
-         if (alpha >= 1.0) 
+         alpha = Abs(alpha);
+         if (alpha >= 1.0)
             alpha = 1.0;
 
          wc->alpha = alpha;
-	 break;
+         break;
          }
       case A_PROJECTION:
-	 if (!strcmp(val,"ortho"))
-	    ws->projection = UGL_ORTHOGONAL;
-	 else if (!strcmp(val,"perspec"))
-	    ws->projection = UGL_PERSPECTIVE;
-	 break;
+         if (!strcmp(val,"ortho"))
+            ws->projection = UGL_ORTHOGONAL;
+         else if (!strcmp(val,"perspec"))
+            ws->projection = UGL_PERSPECTIVE;
+         break;
       case A_CAMWIDTH:
-	 {
-	 double width;
+         {
+         double width;
 
-	 width = atof(val);
-	 if (width == 0.0) 
-	    return Failed;
+         width = atof(val);
+         if (width == 0.0)
+            return Failed;
 
          ws->camwidth = Abs(width);
-	 break;
-	 }
-#endif					/* HAVE_LIBGL */
+         break;
+         }
+#endif                                  /* HAVE_LIBGL */
       case A_MESHMODE:
-	 if (!setmeshmode(w,val)) return Failed;
-	 break;
+         if (!setmeshmode(w,val)) return Failed;
+         break;
       case A_TEXTURE:{
          /* -1 means no curtexture, 0 means f is not initialized */
-	 AttemptAttr( settexture(w, StrLoc(d), StrLen(d), &f, -1, 0));
-	 break;
-	 }
+         AttemptAttr( settexture(w, StrLoc(d), StrLen(d), &f, -1, 0));
+         break;
+         }
       case A_TEXCOORD:
-	 AttemptAttr(settexcoords(w, val));
-	 break;
+         AttemptAttr(settexcoords(w, val));
+         break;
       case A_TEXMODE:
-	 AttemptAttr(settexmode(w, val));
-	 break;
+         AttemptAttr(settexmode(w, val));
+         break;
       case A_NORMODE:
-	 AttemptAttr(setnormode(w, val));
-	 break;
+         AttemptAttr(setnormode(w, val));
+         break;
       case A_SLICES:
-	AttemptAttr(setslices(w, val));
-	break;
+        AttemptAttr(setslices(w, val));
+        break;
       case A_RINGS:
-	AttemptAttr(setrings(w, val));
-	break;
+        AttemptAttr(setrings(w, val));
+        break;
       case A_FOV:
-	AttemptAttr(setfov(w, val));
+        AttemptAttr(setfov(w, val));
         break;
       case A_PICK:
-	 AttemptAttr(setselectionmode(w, val));
-	 break;
+         AttemptAttr(setselectionmode(w, val));
+         break;
       case A_BUFFERMODE: {
         if (!strcmp(val,"on")) {
            wc->buffermode=BUFFERED3D;
            ws->buffermode=UGL_BUFFERED;
            }
-        else if (!strcmp(val,"off")) { 
+        else if (!strcmp(val,"off")) {
            wc->buffermode = IMMEDIATE3D;
            ws->buffermode=UGL_IMMEDIATE;
            }
         else return Failed;
         if (!ws->initAttrs) ApplyBuffermode(w, ws->buffermode);
         break;
-	}
-#endif					/* Graphics3D */
+        }
+#endif                                  /* Graphics3D */
       case A_RGBMODE:
-	 AttemptAttr(setrgbmode(w, val));
-	 break;
+         AttemptAttr(setrgbmode(w, val));
+         break;
       case A_HEIGHT: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
          if ((new_height = tmp) < 1) return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    if (gl_setheight(w, new_height) == Failed) return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 if (setheight(w, new_height) == Failed) return Failed;
-	 break;
+         if (ws->is_gl) {
+            if (gl_setheight(w, new_height) == Failed) return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         if (setheight(w, new_height) == Failed) return Failed;
+         break;
          }
       case A_WIDTH: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
          if ((new_width = tmp) < 1) return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    if (gl_setwidth(w, new_width) == Failed) return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 if (setwidth(w, new_width) == Failed) return Failed;
-	 break;
+         if (ws->is_gl) {
+            if (gl_setwidth(w, new_width) == Failed) return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         if (setwidth(w, new_width) == Failed) return Failed;
+         break;
          }
       case A_SIZE: {
-	 AttemptAttr(setsize(w, val));
-	 break;
-	 }
+         AttemptAttr(setsize(w, val));
+         break;
+         }
       case A_GEOMETRY: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setgeometry(w, val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setgeometry(w, val));
-	 break;
+         if (ws->is_gl)
+            AttemptAttr(gl_setgeometry(w, val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setgeometry(w, val));
+         break;
          }
       case A_SELECTION: {
-	 if (setselection(w, &d) == Succeeded) {
+         if (setselection(w, &d) == Succeeded) {
             *answer = d;
 #ifdef GraphicsGL
             if (ws->is_gl)
                gl_wflush(w);
             else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
             wflush(w);
             return Succeeded;
             }
-	 break;
-	 }
+         break;
+         }
       case A_INPUTMASK: {
-	 AttemptAttr(setinputmask(w, val));
-	 break;
-	 }
+         AttemptAttr(setinputmask(w, val));
+         break;
+         }
       case A_RESIZE: {
-	 if (strcmp(val, "on") & strcmp(val, "off"))
-	    return Failed;
+         if (strcmp(val, "on") & strcmp(val, "off"))
+            return Failed;
 #ifdef GraphicsGL
          if (ws->is_gl)
             gl_allowresize(w, ATOBOOL(val));
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          allowresize(w, ATOBOOL(val));
-	 break;
+         break;
          }
       case A_TITLEBAR: {
          if (w->window->pix != 0) return Failed;
-	 if (strcmp(val, "on") & strcmp(val, "off"))
-	    return Failed;
+         if (strcmp(val, "on") & strcmp(val, "off"))
+            return Failed;
          if (ATOBOOL(val)) {
             SETTITLEBAR(w->window);
             }
          else {
             CLRTITLEBAR(w->window);
             }
-	 break;
+         break;
          }
       case A_ROW: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-  	    ws->y = GL_ROWTOY(w, tmp) + wc->dy;
-  	 else
-#endif					/* GraphicsGL */
-	 ws->y = ROWTOY(w, tmp) + wc->dy;
-	 break;
-	 }
+         if (ws->is_gl)
+            ws->y = GL_ROWTOY(w, tmp) + wc->dy;
+         else
+#endif                                  /* GraphicsGL */
+         ws->y = ROWTOY(w, tmp) + wc->dy;
+         break;
+         }
       case A_COL: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    ws->x = GL_COLTOX(w, tmp) + wc->dx;
-	 else
-#endif					/* GraphicsGL */
-	 ws->x = COLTOX(w, tmp) + wc->dx;
-	 break;
-	 }
+         if (ws->is_gl)
+            ws->x = GL_COLTOX(w, tmp) + wc->dx;
+         else
+#endif                                  /* GraphicsGL */
+         ws->x = COLTOX(w, tmp) + wc->dx;
+         break;
+         }
       case A_CANVAS: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setcanvas(w,val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setcanvas(w,val));
-	 break;
-	 }
+         if (ws->is_gl)
+            AttemptAttr(gl_setcanvas(w,val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setcanvas(w,val));
+         break;
+         }
       case A_ICONIC: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_seticonicstate(w,val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(seticonicstate(w,val));
-	 break;
-	 }
-      case A_ICONIMAGE: {
-	 if (!val[0]) return Failed;
-#ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_seticonimage(w, &d));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(seticonimage(w, &d));
+         if (ws->is_gl)
+            AttemptAttr(gl_seticonicstate(w,val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(seticonicstate(w,val));
          break;
-	 }
+         }
+      case A_ICONIMAGE: {
+         if (!val[0]) return Failed;
+#ifdef GraphicsGL
+         if (ws->is_gl)
+            AttemptAttr(gl_seticonimage(w, &d));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(seticonimage(w, &d));
+         break;
+         }
       case A_ICONLABEL: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_seticonlabel(w, val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(seticonlabel(w, val));
-	 break;
-	 }
+         if (ws->is_gl)
+            AttemptAttr(gl_seticonlabel(w, val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(seticonlabel(w, val));
+         break;
+         }
       case A_ICONPOS: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_seticonpos(w,val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(seticonpos(w,val));
-	 break;
-	 }
+         if (ws->is_gl)
+            AttemptAttr(gl_seticonpos(w,val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(seticonpos(w,val));
+         break;
+         }
       case A_LABEL:
       case A_WINDOWLABEL: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setwindowlabel(w, val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setwindowlabel(w, val));
-	 break;
+         if (ws->is_gl)
+            AttemptAttr(gl_setwindowlabel(w, val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setwindowlabel(w, val));
+         break;
          }
       case A_CURSOR: {
-	 int on_off;
-	 if (strcmp(val, "on") & strcmp(val, "off"))
-	    return Failed;
-	 on_off = ATOBOOL(val);
+         int on_off;
+         if (strcmp(val, "on") & strcmp(val, "off"))
+            return Failed;
+         on_off = ATOBOOL(val);
 #ifdef GraphicsGL
          if (ws->is_gl)
             gl_setcursor(w, on_off);
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          setcursor(w, on_off);
-	 break;
+         break;
          }
       case A_FONT: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setfont(w, &valptr));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setfont(w, &valptr));
-	 break;
+         if (ws->is_gl)
+            AttemptAttr(gl_setfont(w, &valptr));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setfont(w, &valptr));
+         break;
          }
       case A_PATTERN: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_SetPattern(w, val, strlen(val)));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(SetPattern(w, val, strlen(val)));
+         if (ws->is_gl)
+            AttemptAttr(gl_SetPattern(w, val, strlen(val)));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(SetPattern(w, val, strlen(val)));
          break;
-	 }
+         }
       case A_POS: {
-	 AttemptAttr(setpos(w, val));
-	 break;
-	 }
-      case A_POSX: {
-	 char tmp[268];
-	 sprintf(tmp,"%s,%d",val,ws->posy);
-	 AttemptAttr(setpos(w, tmp));
-	 break;
-	 }
-      case A_POSY: {
-	 char tmp[268];
-	 sprintf(tmp,"%d,%s",ws->posx,val);
-	 AttemptAttr(setpos(w, tmp));
+         AttemptAttr(setpos(w, val));
          break;
-	 }
+         }
+      case A_POSX: {
+         char tmp[268];
+         sprintf(tmp,"%s,%d",val,ws->posy);
+         AttemptAttr(setpos(w, tmp));
+         break;
+         }
+      case A_POSY: {
+         char tmp[268];
+         sprintf(tmp,"%d,%s",ws->posx,val);
+         AttemptAttr(setpos(w, tmp));
+         break;
+         }
       case A_FG: {
-	 if (cnv:C_integer(d, tmp) && tmp < 0) {
+         if (cnv:C_integer(d, tmp) && tmp < 0) {
 #ifdef GraphicsGL
-	    if (ws->is_gl) {
-	       if (gl_isetfg(w, tmp) != Succeeded) return Failed;
-	       }
-	    else
-#endif					/* GraphicsGL */
-	    if (isetfg(w, tmp) != Succeeded) return Failed;
-	    }
-	 else {
+            if (ws->is_gl) {
+               if (gl_isetfg(w, tmp) != Succeeded) return Failed;
+               }
+            else
+#endif                                  /* GraphicsGL */
+            if (isetfg(w, tmp) != Succeeded) return Failed;
+            }
+         else {
 #ifdef Graphics3D
 
             if (w->context->rendermode == UGL3D) {
-	       if (setmaterials(w,val) != Succeeded)
-	          return Failed;
+               if (setmaterials(w,val) != Succeeded)
+                  return Failed;
                }
-            else 
-#endif					/* Graphics3D */
+            else
+#endif                                  /* Graphics3D */
 #ifdef GraphicsGL
-               if (ws->is_gl) { 
- 	          if (gl_setfg(w, val) != Succeeded) return Failed;
+               if (ws->is_gl) {
+                  if (gl_setfg(w, val) != Succeeded) return Failed;
                   }
-	       else
-#endif					/* GraphicsGL */
+               else
+#endif                                  /* GraphicsGL */
              {
-	     if (setfg(w, val) != Succeeded) return Failed;
+             if (setfg(w, val) != Succeeded) return Failed;
             }}
-	 break;
+         break;
          }
       case A_BG: {
-	 if (cnv:C_integer(d, tmp) && tmp < 0) {
+         if (cnv:C_integer(d, tmp) && tmp < 0) {
 #ifdef GraphicsGL
-	    if (ws->is_gl) {
-	       if (gl_isetbg(w, tmp) != Succeeded) return Failed;
-	       }
-	    else
-#endif					/* GraphicsGL */
-	    if (isetbg(w, tmp) != Succeeded) return Failed;
-	    }
-	 else {
-#ifdef GraphicsGL
-            if (ws->is_gl) { 
- 	       if (gl_setbg(w, val) != Succeeded) return Failed;
+            if (ws->is_gl) {
+               if (gl_isetbg(w, tmp) != Succeeded) return Failed;
                }
-	    else
-#endif					/* GraphicsGL */
-	    if (setbg(w, val) != Succeeded) return Failed;
-	    }
-	 break;
+            else
+#endif                                  /* GraphicsGL */
+            if (isetbg(w, tmp) != Succeeded) return Failed;
+            }
+         else {
+#ifdef GraphicsGL
+            if (ws->is_gl) {
+               if (gl_setbg(w, val) != Succeeded) return Failed;
+               }
+            else
+#endif                                  /* GraphicsGL */
+            if (setbg(w, val) != Succeeded) return Failed;
+            }
+         break;
          }
       case A_GAMMA: {
          if (sscanf(val, "%lf%c", &gamma, &c) != 1 || gamma <= 0.0)
@@ -4073,122 +3995,122 @@ char * abuf;
                return Failed;
             }
          else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
          if (setgamma(w, gamma) != Succeeded)
             return Failed;
          break;
          }
       case A_FILLSTYLE: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setfillstyle(w, val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setfillstyle(w, val));
-	 break;
-	 }
+         if (ws->is_gl)
+            AttemptAttr(gl_setfillstyle(w, val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setfillstyle(w, val));
+         break;
+         }
       case A_LINESTYLE: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setlinestyle(w, val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setlinestyle(w, val));
-	 break;
-	 }
-      case A_LINEWIDTH: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-#ifdef Graphics3D
- 	 if (w->context->rendermode == UGL3D) {
-            if (setlinewidth3D(w, tmp) == RunError)
-	       return Failed;
-	    }
+         if (ws->is_gl)
+            AttemptAttr(gl_setlinestyle(w, val));
          else
-#endif					/* Graphics3D */
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setlinestyle(w, val));
+         break;
+         }
+      case A_LINEWIDTH: {
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+#ifdef Graphics3D
+         if (w->context->rendermode == UGL3D) {
+            if (setlinewidth3D(w, tmp) == RunError)
+               return Failed;
+            }
+         else
+#endif                                  /* Graphics3D */
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    if (gl_setlinewidth(w, tmp) == RunError)
-	       return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 if (setlinewidth(w, tmp) == RunError)
-	    return Failed;
-	 break;
-	 }
+         if (ws->is_gl) {
+            if (gl_setlinewidth(w, tmp) == RunError)
+               return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         if (setlinewidth(w, tmp) == RunError)
+            return Failed;
+         break;
+         }
       case A_POINTER: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setpointer(w, val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setpointer(w, val));
-	 break;
+         if (ws->is_gl)
+            AttemptAttr(gl_setpointer(w, val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setpointer(w, val));
+         break;
          }
       case A_DRAWOP: {
 #ifdef GraphicsGL
-	 if (ws->is_gl) 
-	    AttemptAttr(gl_setdrawop(w, val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setdrawop(w, val));
-	 break;
+         if (ws->is_gl)
+            AttemptAttr(gl_setdrawop(w, val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setdrawop(w, val));
+         break;
          }
       case A_DISPLAY: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    AttemptAttr(gl_setdisplay(w,val));
-	 else
-#endif					/* GraphicsGL */
-	 AttemptAttr(setdisplay(w,val));
-	 break;
+         if (ws->is_gl)
+            AttemptAttr(gl_setdisplay(w,val));
+         else
+#endif                                  /* GraphicsGL */
+         AttemptAttr(setdisplay(w,val));
+         break;
          }
       case A_X: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 ws->x = tmp + wc->dx;
-         UpdateCursorPos(ws, wc);	/* tell system where to blink it */
-	 break;
-	 }
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         ws->x = tmp + wc->dx;
+         UpdateCursorPos(ws, wc);       /* tell system where to blink it */
+         break;
+         }
       case A_Y: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 ws->y = tmp + wc->dy;
-         UpdateCursorPos(ws, wc);	/* tell system where to blink it */
-	 break;
-	 }
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         ws->y = tmp + wc->dy;
+         UpdateCursorPos(ws, wc);       /* tell system where to blink it */
+         break;
+         }
       case A_DX: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 wc->dx = tmp;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         wc->dx = tmp;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
+         if (ws->is_gl)
             gl_setdx(w);
-#endif					/* GraphicsGL */
-         UpdateCursorPos(ws, wc);	/* tell system where to blink it */
-	 break;
-	 }
+#endif                                  /* GraphicsGL */
+         UpdateCursorPos(ws, wc);       /* tell system where to blink it */
+         break;
+         }
       case A_DY: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 wc->dy = tmp;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         wc->dy = tmp;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
+         if (ws->is_gl)
             gl_setdy(w);
-#endif					/* GraphicsGL */
-         UpdateCursorPos(ws, wc);	/* tell system where to blink it */
-	 break;
-	 }
+#endif                                  /* GraphicsGL */
+         UpdateCursorPos(ws, wc);       /* tell system where to blink it */
+         break;
+         }
       case A_LEADING: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_setleading(w, tmp);
-	 else
-#endif					/* GraphicsGL */
-	 setleading(w, tmp);
+         if (ws->is_gl)
+            gl_setleading(w, tmp);
+         else
+#endif                                  /* GraphicsGL */
+         setleading(w, tmp);
          break;
          }
       case A_IMAGE: {
@@ -4196,7 +4118,7 @@ char * abuf;
          ws->initimage.format = UCOLOR_BGR;
 #else
          ws->initimage.format = UCOLOR_RGB;
-#endif 
+#endif
          ws->initimage.is_bottom_up = 0;
 
          /* first try supported image file formats; then try platform-dependent format */
@@ -4208,7 +4130,7 @@ char * abuf;
                gl_setheight(w, ws->initimage.height);
                }
             else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
              {
              setwidth(w, ws->initimage.width);
              setheight(w, ws->initimage.height);
@@ -4218,130 +4140,130 @@ char * abuf;
             if (ws->is_gl)
                r = gl_setimage(w, val);
             else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
             r = setimage(w, val);
             }
 
-	 AttemptAttr(r);
+         AttemptAttr(r);
          break;
          }
       case A_ECHO: {
-	 if (strcmp(val, "on") & strcmp(val, "off"))
-	    return Failed;
-	 if (ATOBOOL(val)) SETECHOON(w);
-	 else CLRECHOON(w);
-	 break;
+         if (strcmp(val, "on") & strcmp(val, "off"))
+            return Failed;
+         if (ATOBOOL(val)) SETECHOON(w);
+         else CLRECHOON(w);
+         break;
          }
       case A_CLIPX:
       case A_CLIPY:
       case A_CLIPW:
       case A_CLIPH: {
-	 if (!*val) {
-	    wc->clipx = wc->clipy = 0;
-	    wc->clipw = wc->cliph = -1;
-#ifdef GraphicsGL
-	    if (ws->is_gl)
-	       gl_unsetclip(w);
-	    else
-#endif					/* GraphicsGL */
-	    unsetclip(w);
-	    }
-	 else {
-	    if (!cnv:C_integer(d, tmp))
-	       return Failed;
-	    if (wc->clipw < 0) {
-	       wc->clipx = wc->clipy = 0;
-	       wc->clipw = ws->width;
-	       wc->cliph = ws->height;
-	       }
-	    switch (a) {
-	       case A_CLIPX:  wc->clipx = tmp;  break;
-	       case A_CLIPY:  wc->clipy = tmp;  break;
-	       case A_CLIPW:  wc->clipw = tmp;  break;
-	       case A_CLIPH:  wc->cliph = tmp;  break;
-	       }
-#ifdef GraphicsGL
-	    if (ws->is_gl)
-	       gl_setclip(w);
-	    else
-#endif					/* GraphicsGL */
-	    setclip(w);
-	    }
-	 break;
-	 }
-      case A_REVERSE: {
-	 if (strcmp(val, "on") && strcmp(val, "off"))
-	    return Failed;
-	 if ((!ATOBOOL(val) && ISREVERSE(w)) ||
-	     (ATOBOOL(val) && !ISREVERSE(w))) {
+         if (!*val) {
+            wc->clipx = wc->clipy = 0;
+            wc->clipw = wc->cliph = -1;
 #ifdef GraphicsGL
             if (ws->is_gl)
-	       gl_toggle_fgbg(w);
-	    else
-#endif					/* GraphicsGL */
-	    {
-	    toggle_fgbg(w);
-	    ISREVERSE(w) ? CLRREVERSE(w) : SETREVERSE(w);
-	    }
-	    }
-	 break;
+               gl_unsetclip(w);
+            else
+#endif                                  /* GraphicsGL */
+            unsetclip(w);
+            }
+         else {
+            if (!cnv:C_integer(d, tmp))
+               return Failed;
+            if (wc->clipw < 0) {
+               wc->clipx = wc->clipy = 0;
+               wc->clipw = ws->width;
+               wc->cliph = ws->height;
+               }
+            switch (a) {
+               case A_CLIPX:  wc->clipx = tmp;  break;
+               case A_CLIPY:  wc->clipy = tmp;  break;
+               case A_CLIPW:  wc->clipw = tmp;  break;
+               case A_CLIPH:  wc->cliph = tmp;  break;
+               }
+#ifdef GraphicsGL
+            if (ws->is_gl)
+               gl_setclip(w);
+            else
+#endif                                  /* GraphicsGL */
+            setclip(w);
+            }
+         break;
+         }
+      case A_REVERSE: {
+         if (strcmp(val, "on") && strcmp(val, "off"))
+            return Failed;
+         if ((!ATOBOOL(val) && ISREVERSE(w)) ||
+             (ATOBOOL(val) && !ISREVERSE(w))) {
+#ifdef GraphicsGL
+            if (ws->is_gl)
+               gl_toggle_fgbg(w);
+            else
+#endif                                  /* GraphicsGL */
+            {
+            toggle_fgbg(w);
+            ISREVERSE(w) ? CLRREVERSE(w) : SETREVERSE(w);
+            }
+            }
+         break;
          }
       case A_POINTERX: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 ws->pointerx = tmp + wc->dx;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         ws->pointerx = tmp + wc->dx;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_warpPointer(w, ws->pointerx, ws->pointery);
-	 else
-#endif					/* GraphicsGL */
-	 warpPointer(w, ws->pointerx, ws->pointery);
-	 break;
-	 }
+         if (ws->is_gl)
+            gl_warpPointer(w, ws->pointerx, ws->pointery);
+         else
+#endif                                  /* GraphicsGL */
+         warpPointer(w, ws->pointerx, ws->pointery);
+         break;
+         }
       case A_POINTERY: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
-	 ws->pointery = tmp + wc->dy;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
+         ws->pointery = tmp + wc->dy;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_warpPointer(w, ws->pointerx, ws->pointery);
-	 else
-#endif					/* GraphicsGL */
-	 warpPointer(w, ws->pointerx, ws->pointery);
-	 break;
-	 }
+         if (ws->is_gl)
+            gl_warpPointer(w, ws->pointerx, ws->pointery);
+         else
+#endif                                  /* GraphicsGL */
+         warpPointer(w, ws->pointerx, ws->pointery);
+         break;
+         }
       case A_POINTERCOL: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    ws->pointerx = GL_COLTOX(w, tmp) + wc->dx;
-	    gl_warpPointer(w, ws->pointerx, ws->pointery);
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 {
-	 ws->pointerx = COLTOX(w, tmp) + wc->dx;
-	 warpPointer(w, ws->pointerx, ws->pointery);
-	 }
-	 break;
-	 }
+         if (ws->is_gl) {
+            ws->pointerx = GL_COLTOX(w, tmp) + wc->dx;
+            gl_warpPointer(w, ws->pointerx, ws->pointery);
+            }
+         else
+#endif                                  /* GraphicsGL */
+         {
+         ws->pointerx = COLTOX(w, tmp) + wc->dx;
+         warpPointer(w, ws->pointerx, ws->pointery);
+         }
+         break;
+         }
       case A_POINTERROW: {
-	 if (!cnv:C_integer(d, tmp))
-	    return Failed;
+         if (!cnv:C_integer(d, tmp))
+            return Failed;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    ws->pointery = GL_ROWTOY(w, tmp) + wc->dy;
-	    gl_warpPointer(w, ws->pointerx, ws->pointery);
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 {
-	 ws->pointery = ROWTOY(w, tmp) + wc->dy;
-	 warpPointer(w, ws->pointerx, ws->pointery);
-	 }
-	 break;
-	 }
+         if (ws->is_gl) {
+            ws->pointery = GL_ROWTOY(w, tmp) + wc->dy;
+            gl_warpPointer(w, ws->pointerx, ws->pointery);
+            }
+         else
+#endif                                  /* GraphicsGL */
+         {
+         ws->pointery = ROWTOY(w, tmp) + wc->dy;
+         warpPointer(w, ws->pointerx, ws->pointery);
+         }
+         break;
+         }
       /*
        * remaining valid attributes are error #147
        */
@@ -4357,8 +4279,8 @@ char * abuf;
        * invalid attribute
        */
       default:
-	 ReturnErrNum(145, RunError);
-	 }
+         ReturnErrNum(145, RunError);
+         }
       strncpy(abuf, s, len);
       abuf[len] = '\0';
       }
@@ -4372,46 +4294,46 @@ char * abuf;
       abuf[len] = '\0';
       switch (a=si_s2i(attribs, abuf)) {
       case A_SELECTION:
-	 if ((selectiontemp=getselection(w, abuf)) == NULL) return Failed;
-	 MakeStr(selectiontemp, strlen(selectiontemp), answer);
-	 break;
+         if ((selectiontemp=getselection(w, abuf)) == NULL) return Failed;
+         MakeStr(selectiontemp, strlen(selectiontemp), answer);
+         break;
       case A_IMAGE:
          ReturnErrNum(147, RunError);
          break;
 #ifdef Graphics3D
       case A_RENDERMODE:
          if (wc->rendermode == UGL3D)
-	    sprintf(abuf, "3d");
+            sprintf(abuf, "3d");
          else
-	    sprintf(abuf, "2d");
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+            sprintf(abuf, "2d");
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_DIM:
-	 MakeInt(wc->dim, answer);
-	 break;
+         MakeInt(wc->dim, answer);
+         break;
       case A_EYE:
-	 sprintf(abuf,"%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-		 ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx,
-		 ws->eyediry, ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         sprintf(abuf,"%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
+                 ws->eyeposx, ws->eyeposy, ws->eyeposz, ws->eyedirx,
+                 ws->eyediry, ws->eyedirz, ws->eyeupx, ws->eyeupy, ws->eyeupz);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_EYEPOS:
- 	 sprintf(abuf,"%.2f,%.2f,%.2f", ws->eyeposx, ws->eyeposy, ws->eyeposz);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         sprintf(abuf,"%.2f,%.2f,%.2f", ws->eyeposx, ws->eyeposy, ws->eyeposz);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_EYEUP:
- 	sprintf(abuf, "%.2f,%.2f,%.2f", ws->eyeupx, ws->eyeupy, ws->eyeupz);
-	MakeStr(abuf, strlen(abuf), answer);
-	break;
+        sprintf(abuf, "%.2f,%.2f,%.2f", ws->eyeupx, ws->eyeupy, ws->eyeupz);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
       case A_EYEDIR:
-	sprintf(abuf, "%.2f,%.2f,%.2f", ws->eyedirx, ws->eyediry, ws->eyedirz);
-	MakeStr(abuf, strlen(abuf), answer);
-	break;
+        sprintf(abuf, "%.2f,%.2f,%.2f", ws->eyedirx, ws->eyediry, ws->eyedirz);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
       case A_LIGHT:
       case A_LIGHT0:
-	 getlight(0, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         getlight(0, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_LIGHT1:
         getlight(1, abuf);
         MakeStr(abuf, strlen(abuf), answer);
@@ -4443,164 +4365,164 @@ char * abuf;
       case A_ALPHA:
         sprintf(abuf,"%f",wc->alpha);
         MakeStr(abuf, strlen(abuf), answer);
-	break;
+        break;
       case A_PROJECTION:
-	if (ws->projection == UGL_PERSPECTIVE)
+        if (ws->projection == UGL_PERSPECTIVE)
            sprintf(abuf,"perspec");
-	else
+        else
            sprintf(abuf,"ortho");
         MakeStr(abuf, strlen(abuf), answer);
-	break;
+        break;
       case A_CAMWIDTH:
         sprintf(abuf,"%f",ws->camwidth);
         MakeStr(abuf, strlen(abuf), answer);
-	break;
+        break;
       case A_MESHMODE:
         getmeshmode(w, abuf);
-	MakeStr(abuf, strlen(abuf), answer);
+        MakeStr(abuf, strlen(abuf), answer);
         break;
       case A_TEXTURE:
-	gettexture( w, answer );
-	/* looks like a memory leak to me */
-	if (is:string(*answer)) StrLoc(*answer) = strdup(StrLoc(*answer));
+        gettexture( w, answer );
+        /* looks like a memory leak to me */
+        if (is:string(*answer)) StrLoc(*answer) = strdup(StrLoc(*answer));
         break;
       case A_TEXMODE:
-	gettexmode( w, abuf, answer );
+        gettexmode( w, abuf, answer );
         break;
       case A_NORMODE:
-	 if (!wc->normode){
-	    strcpy(abuf, "off");
-	    MakeStr(abuf, 3, answer); 
-	 }
-	 else if (wc->normode==1){
-	    strcpy(abuf, "auto");
-	    MakeStr(abuf, 4, answer); 
-	 }
-	 else{
-	    strcpy(abuf, "on");
-	    MakeStr(abuf, 2, answer); 
-	 }
-	 break;
+         if (!wc->normode){
+            strcpy(abuf, "off");
+            MakeStr(abuf, 3, answer);
+         }
+         else if (wc->normode==1){
+            strcpy(abuf, "auto");
+            MakeStr(abuf, 4, answer);
+         }
+         else{
+            strcpy(abuf, "on");
+            MakeStr(abuf, 2, answer);
+         }
+         break;
       case A_TEXCOORD:
-	 strcpy(abuf, "auto");
-	 if (wc->autogen)
-	    MakeStr(abuf, 4, answer);
-	 else {
-	    gettexcoords(w, abuf);
-	    MakeStr(strdup(abuf), strlen(abuf), answer);
-	    }
-	 break;
+         strcpy(abuf, "auto");
+         if (wc->autogen)
+            MakeStr(abuf, 4, answer);
+         else {
+            gettexcoords(w, abuf);
+            MakeStr(strdup(abuf), strlen(abuf), answer);
+            }
+         break;
       case A_SLICES:
-	MakeInt(wc->slices, answer);
-	break;
+        MakeInt(wc->slices, answer);
+        break;
       case A_RINGS:
-	MakeInt(wc->rings, answer);
-	break;
+        MakeInt(wc->rings, answer);
+        break;
       case A_RGBMODE:
-	 switch (wc->rgbmode) {
-	    case 0: strcpy(abuf, "auto"); break;
-	    case 1: strcpy(abuf, "24"); break;
-	    case 2: strcpy(abuf, "48"); break;
-	    case 3: strcpy(abuf, "normalized"); break;
-	    }
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         switch (wc->rgbmode) {
+            case 0: strcpy(abuf, "auto"); break;
+            case 1: strcpy(abuf, "24"); break;
+            case 2: strcpy(abuf, "48"); break;
+            case 3: strcpy(abuf, "normalized"); break;
+            }
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_PICK: {
-	 sprintf(abuf,"%s",((w->context->selectionenabled==1)?"on":"off"));
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
-	 }
+         sprintf(abuf,"%s",((w->context->selectionenabled==1)?"on":"off"));
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
+         }
       case A_GLRENDERER: {
 #if HAVE_LIBGL
-	 sprintf(abuf,"%s", (char *) glGetString(GL_RENDERER));
-#else					/* HAVE_LIBGL */
-	 sprintf(abuf,"%s", "Unknown");
-#endif					/* HAVE_LIBGL */
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
-	 }
+         sprintf(abuf,"%s", (char *) glGetString(GL_RENDERER));
+#else                                   /* HAVE_LIBGL */
+         sprintf(abuf,"%s", "Unknown");
+#endif                                  /* HAVE_LIBGL */
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
+         }
       case A_GLVENDOR: {
 #if HAVE_LIBGL
-	 sprintf(abuf,"%s", (char *) glGetString(GL_VENDOR));
-#else					/* HAVE_LIBGL */
-	 sprintf(abuf,"%s", "Unknown");
-#endif					/* HAVE_LIBGL */
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
-	 }
+         sprintf(abuf,"%s", (char *) glGetString(GL_VENDOR));
+#else                                   /* HAVE_LIBGL */
+         sprintf(abuf,"%s", "Unknown");
+#endif                                  /* HAVE_LIBGL */
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
+         }
       case A_GLVERSION: {
 #if HAVE_LIBGL
-	 sprintf(abuf,"%s", (char *) glGetString(GL_VERSION));
-#else					/* HAVE_LIBGL */
-	 sprintf(abuf,"%s", "Unknown");
-#endif					/* HAVE_LIBGL */
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
-	 }
+         sprintf(abuf,"%s", (char *) glGetString(GL_VERSION));
+#else                                   /* HAVE_LIBGL */
+         sprintf(abuf,"%s", "Unknown");
+#endif                                  /* HAVE_LIBGL */
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
+         }
       case A_BUFFERMODE: {
-	 sprintf(abuf,"%s",((ws->buffermode==UGL_BUFFERED)?"on":"off"));
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
-	 }
-#endif					/* Graphics3D */
+         sprintf(abuf,"%s",((ws->buffermode==UGL_BUFFERED)?"on":"off"));
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
+         }
+#endif                                  /* Graphics3D */
       case A_VISUAL:
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    if (gl_getvisual(w, abuf) == Failed) return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 if (getvisual(w, abuf) == Failed) return Failed;
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl) {
+            if (gl_getvisual(w, abuf) == Failed) return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         if (getvisual(w, abuf) == Failed) return Failed;
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_DEPTH:
-	 MakeInt(SCREENDEPTH(w), answer);
-	 break;
+         MakeInt(SCREENDEPTH(w), answer);
+         break;
       case A_DISPLAY:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_getdisplay(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getdisplay(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl)
+            gl_getdisplay(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getdisplay(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_ASCENT:
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    MakeInt(GL_ASCENT(w), answer);
+         if (ws->is_gl) {
+            MakeInt(GL_ASCENT(w), answer);
             }
          else
-#endif					/* GraphicsGL */
-	 MakeInt(ASCENT(w), answer);
-	 break;
+#endif                                  /* GraphicsGL */
+         MakeInt(ASCENT(w), answer);
+         break;
       case A_DESCENT:
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    MakeInt(GL_DESCENT(w), answer);
+         if (ws->is_gl) {
+            MakeInt(GL_DESCENT(w), answer);
             }
          else
-#endif					/* GraphicsGL */
-	 MakeInt(DESCENT(w), answer);
-	 break;
+#endif                                  /* GraphicsGL */
+         MakeInt(DESCENT(w), answer);
+         break;
       case A_FHEIGHT:
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    MakeInt(GL_FHEIGHT(w), answer);
+         if (ws->is_gl) {
+            MakeInt(GL_FHEIGHT(w), answer);
             }
          else
-#endif					/* GraphicsGL */
-	 MakeInt(FHEIGHT(w), answer);
-	 break;
+#endif                                  /* GraphicsGL */
+         MakeInt(FHEIGHT(w), answer);
+         break;
       case A_FWIDTH:
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    MakeInt(GL_FWIDTH(w), answer);
+         if (ws->is_gl) {
+            MakeInt(GL_FWIDTH(w), answer);
             }
          else
-#endif					/* GraphicsGL */
-	 MakeInt(FWIDTH(w), answer);
-	 break;
+#endif                                  /* GraphicsGL */
+         MakeInt(FWIDTH(w), answer);
+         break;
       case A_INPUTMASK: {
          char *s = abuf;
          int mask = w->window->inputmask;
@@ -4611,343 +4533,343 @@ char * abuf;
          if (mask & WindowClosureMask)
             *s++ = 'c';
          *s = 0;
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
          }
       case A_ROW:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    MakeInt(GL_YTOROW(w, ws->y - wc->dy), answer);
-	 else
-#endif					/* GraphicsGL */
-	 MakeInt(YTOROW(w, ws->y - wc->dy), answer);
-	 break;
+         if (ws->is_gl)
+            MakeInt(GL_YTOROW(w, ws->y - wc->dy), answer);
+         else
+#endif                                  /* GraphicsGL */
+         MakeInt(YTOROW(w, ws->y - wc->dy), answer);
+         break;
       case A_COL:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    MakeInt(1 + GL_XTOCOL(w, ws->x - wc->dx), answer);
-	 else
-#endif					/* GraphicsGL */
-	 MakeInt(1 + XTOCOL(w, ws->x - wc->dx), answer);
-	 break;
+         if (ws->is_gl)
+            MakeInt(1 + GL_XTOCOL(w, ws->x - wc->dx), answer);
+         else
+#endif                                  /* GraphicsGL */
+         MakeInt(1 + XTOCOL(w, ws->x - wc->dx), answer);
+         break;
       case A_POINTERROW: {
-	 XPoint xp;
+         XPoint xp;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    gl_query_pointer(w, &xp);
-	    MakeInt(GL_YTOROW(w, xp.y - wc->dy), answer);
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 {
-	 query_pointer(w, &xp);
-	 MakeInt(YTOROW(w, xp.y - wc->dy), answer);
-	 }
-	 break;
-	 }
+         if (ws->is_gl) {
+            gl_query_pointer(w, &xp);
+            MakeInt(GL_YTOROW(w, xp.y - wc->dy), answer);
+            }
+         else
+#endif                                  /* GraphicsGL */
+         {
+         query_pointer(w, &xp);
+         MakeInt(YTOROW(w, xp.y - wc->dy), answer);
+         }
+         break;
+         }
       case A_POINTERCOL: {
-	 XPoint xp;
+         XPoint xp;
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    gl_query_pointer(w, &xp);
-	    MakeInt(1 + GL_XTOCOL(w, xp.x - wc->dx), answer);
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 {
-	 query_pointer(w, &xp);
-	 MakeInt(1 + XTOCOL(w, xp.x - wc->dx), answer);
-	 }
-	 break;
-	 }
+         if (ws->is_gl) {
+            gl_query_pointer(w, &xp);
+            MakeInt(1 + GL_XTOCOL(w, xp.x - wc->dx), answer);
+            }
+         else
+#endif                                  /* GraphicsGL */
+         {
+         query_pointer(w, &xp);
+         MakeInt(1 + XTOCOL(w, xp.x - wc->dx), answer);
+         }
+         break;
+         }
       case A_LINES:
       case A_ROWS:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    MakeInt(GL_YTOROW(w,ws->height - DESCENT(w)), answer);
-	 else
-#endif					/* GraphicsGL */
-	 MakeInt(YTOROW(w,ws->height - DESCENT(w)), answer);
-	 break;
+         if (ws->is_gl)
+            MakeInt(GL_YTOROW(w,ws->height - DESCENT(w)), answer);
+         else
+#endif                                  /* GraphicsGL */
+         MakeInt(YTOROW(w,ws->height - DESCENT(w)), answer);
+         break;
       case A_COLUMNS:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    MakeInt(GL_XTOCOL(w,ws->width), answer);
-	 else
-#endif					/* GraphicsGL */
-	 MakeInt(XTOCOL(w,ws->width), answer);
-	 break;
+         if (ws->is_gl)
+            MakeInt(GL_XTOCOL(w,ws->width), answer);
+         else
+#endif                                  /* GraphicsGL */
+         MakeInt(XTOCOL(w,ws->width), answer);
+         break;
       case A_POS: case A_POSX: case A_POSY:
 #ifdef GraphicsGL
-	 if (ws->is_gl) {
-	    if (gl_getpos(w) == Failed)
-	       return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 if (getpos(w) == Failed)
-	    return Failed;
-	 switch (a) {
-	 case A_POS:
-	    sprintf(abuf, "%d,%d", ws->posx, ws->posy);
-	    MakeStr(abuf, strlen(abuf), answer);
-	    break;
-	 case A_POSX:
-	    MakeInt(ws->posx, answer);
-	    break;
-	 case A_POSY:
-	    MakeInt(ws->posy, answer);
-	    break;
-	    }
-	 break;
+         if (ws->is_gl) {
+            if (gl_getpos(w) == Failed)
+               return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         if (getpos(w) == Failed)
+            return Failed;
+         switch (a) {
+         case A_POS:
+            sprintf(abuf, "%d,%d", ws->posx, ws->posy);
+            MakeStr(abuf, strlen(abuf), answer);
+            break;
+         case A_POSX:
+            MakeInt(ws->posx, answer);
+            break;
+         case A_POSY:
+            MakeInt(ws->posy, answer);
+            break;
+            }
+         break;
       case A_FG:
 #ifdef Graphics3D
- 	 if (w->context->rendermode == UGL3D)
-	    getmaterials(abuf);
-	 else
+         if (w->context->rendermode == UGL3D)
+            getmaterials(abuf);
+         else
 #endif
-#ifdef GraphicsGL 
-	 if (ws->is_gl)
-	    gl_getfg(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getfg(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+#ifdef GraphicsGL
+         if (ws->is_gl)
+            gl_getfg(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getfg(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_BG:
-#ifdef GraphicsGL 
-	 if (ws->is_gl)
-	    gl_getbg(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getbg(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
+#ifdef GraphicsGL
+         if (ws->is_gl)
+            gl_getbg(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getbg(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_GAMMA:
 #ifdef DescriptorDouble
-	 answer->vword.realval = wc->gamma;
-#else					/* DescriptorDouble */
+         answer->vword.realval = wc->gamma;
+#else                                   /* DescriptorDouble */
          Protect(BlkLoc(*answer) = (union block *)alcreal(wc->gamma),
             return RunError);
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
          answer->dword = D_Real;
          break;
       case A_FILLSTYLE:
          sprintf(abuf, "%s",
             (wc->fillstyle == FS_SOLID) ? "solid" :
             (wc->fillstyle == FS_STIPPLE) ? "masked" : "textured");
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_LINESTYLE:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_getlinestyle(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getlinestyle(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl)
+            gl_getlinestyle(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getlinestyle(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_LINEWIDTH:
-	 MakeInt(LINEWIDTH(w), answer);
-	 break;
+         MakeInt(LINEWIDTH(w), answer);
+         break;
       case A_HEIGHT: { MakeInt(ws->height, answer); break; }
       case A_WIDTH: { MakeInt(ws->width, answer); break; }
       case A_SIZE:
-	 sprintf(abuf, "%d,%d", ws->width, ws->height);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         sprintf(abuf, "%d,%d", ws->width, ws->height);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_RESIZE:
-	 sprintf(abuf,"%s",(ISRESIZABLE(w)?"on":"off"));
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         sprintf(abuf,"%s",(ISRESIZABLE(w)?"on":"off"));
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_DISPLAYHEIGHT:
-	 MakeInt(DISPLAYHEIGHT(w), answer);
-	 break;
+         MakeInt(DISPLAYHEIGHT(w), answer);
+         break;
       case A_DISPLAYWIDTH:
-	 MakeInt(DISPLAYWIDTH(w), answer);
-	 break;
+         MakeInt(DISPLAYWIDTH(w), answer);
+         break;
       case A_CURSOR:
-	 sprintf(abuf,"%s",(ISCURSORON(w)?"on":"off"));
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         sprintf(abuf,"%s",(ISCURSORON(w)?"on":"off"));
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_ECHO:
-	 sprintf(abuf,"%s",(ISECHOON(w)?"on":"off"));
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         sprintf(abuf,"%s",(ISECHOON(w)?"on":"off"));
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_REVERSE:
-	 sprintf(abuf,"%s",(ISREVERSE(w)?"on":"off"));
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         sprintf(abuf,"%s",(ISREVERSE(w)?"on":"off"));
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_FONT:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_getfntnam(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getfntnam(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl)
+            gl_getfntnam(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getfntnam(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_X:  MakeInt(ws->x - wc->dx, answer); break;
       case A_Y:  MakeInt(ws->y - wc->dy, answer); break;
       case A_DX: MakeInt(wc->dx, answer); break;
       case A_DY: MakeInt(wc->dy, answer); break;
       case A_LEADING: MakeInt(LEADING(w), answer); break;
       case A_POINTERX: {
-	 XPoint xp;
+         XPoint xp;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_query_pointer(w, &xp);
-	 else
-#endif					/* GraphicsGL */
-	 query_pointer(w, &xp);
-	 MakeInt(xp.x - wc->dx, answer);
-	 break;
-	 }
+         if (ws->is_gl)
+            gl_query_pointer(w, &xp);
+         else
+#endif                                  /* GraphicsGL */
+         query_pointer(w, &xp);
+         MakeInt(xp.x - wc->dx, answer);
+         break;
+         }
       case A_POINTERY: {
-	 XPoint xp;
+         XPoint xp;
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_query_pointer(w, &xp);
-	 else
-#endif					/* GraphicsGL */
-	 query_pointer(w, &xp);
-	 MakeInt(xp.y - wc->dy, answer);
-	 break;
-	 }
+         if (ws->is_gl)
+            gl_query_pointer(w, &xp);
+         else
+#endif                                  /* GraphicsGL */
+         query_pointer(w, &xp);
+         MakeInt(xp.y - wc->dy, answer);
+         break;
+         }
       case A_POINTER:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_getpointername(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getpointername(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl)
+            gl_getpointername(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getpointername(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_DRAWOP:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_getdrawop(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getdrawop(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl)
+            gl_getdrawop(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getdrawop(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_GEOMETRY:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
+         if (ws->is_gl)
        { if (gl_getpos(w) == Failed) return Failed; }
-	 else
-#endif					/* GraphicsGL */
-	 if (getpos(w) == Failed) return Failed;
+         else
+#endif                                  /* GraphicsGL */
+         if (getpos(w) == Failed) return Failed;
          if (ws->win)
            sprintf(abuf, "%dx%d+%d+%d",
-		   ws->width, ws->height, ws->posx, ws->posy);
+                   ws->width, ws->height, ws->posx, ws->posy);
          else
            sprintf(abuf, "%dx%d", ws->pixwidth, ws->pixheight);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_CANVAS:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_getcanvas(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 getcanvas(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl)
+            gl_getcanvas(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         getcanvas(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_ICONIC:
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    gl_geticonic(w, abuf);
-	 else
-#endif					/* GraphicsGL */
-	 geticonic(w, abuf);
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ws->is_gl)
+            gl_geticonic(w, abuf);
+         else
+#endif                                  /* GraphicsGL */
+         geticonic(w, abuf);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_ICONIMAGE:
-	 if (ICONFILENAME(w) != NULL)
-	    sprintf(abuf, "%s", ICONFILENAME(w));
-	 else *abuf = '\0';
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ICONFILENAME(w) != NULL)
+            sprintf(abuf, "%s", ICONFILENAME(w));
+         else *abuf = '\0';
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_ICONLABEL:
-	 if (ICONLABEL(w) != NULL)
-	    sprintf(abuf, "%s", ICONLABEL(w));
-	 else return Failed;
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (ICONLABEL(w) != NULL)
+            sprintf(abuf, "%s", ICONLABEL(w));
+         else return Failed;
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_LABEL:
       case A_WINDOWLABEL:
-	 if (WINDOWLABEL(w) != NULL)
-	    sprintf(abuf,"%s", WINDOWLABEL(w));
-	 else return Failed;
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
+         if (WINDOWLABEL(w) != NULL)
+            sprintf(abuf,"%s", WINDOWLABEL(w));
+         else return Failed;
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_ICONPOS: {
 #ifdef GraphicsGL
-	 if (ws->is_gl)
-	    switch (gl_geticonpos(w,abuf)) {
-	       case Failed: return Failed;
-	       case RunError:  return Failed;
-	    }
-	 else
-#endif					/* GraphicsGL */
-	 switch (geticonpos(w,abuf)) {
-	    case Failed: return Failed;
-	    case RunError:  return Failed;
-	    }
-	 MakeStr(abuf, strlen(abuf), answer);
-	 break;
-	 }
+         if (ws->is_gl)
+            switch (gl_geticonpos(w,abuf)) {
+               case Failed: return Failed;
+               case RunError:  return Failed;
+            }
+         else
+#endif                                  /* GraphicsGL */
+         switch (geticonpos(w,abuf)) {
+            case Failed: return Failed;
+            case RunError:  return Failed;
+            }
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
+         }
       case A_PATTERN: {
-	 s = w->context->patternname;
-	 if (s != NULL) {
-	    strcpy(abuf, s);
-	    MakeStr(abuf, strlen(s), answer);
-	    }
-	 else {
-	    strcpy(abuf, "black");
-	    MakeStr(abuf, 5, answer);
-	    }
-	 break;
-	 }
+         s = w->context->patternname;
+         if (s != NULL) {
+            strcpy(abuf, s);
+            MakeStr(abuf, strlen(s), answer);
+            }
+         else {
+            strcpy(abuf, "black");
+            MakeStr(abuf, 5, answer);
+            }
+         break;
+         }
       case A_CLIPX:
-	 if (wc->clipw >= 0)
-	    MakeInt(wc->clipx, answer);
-	 else
-	    *answer = nulldesc;
-	 break;
+         if (wc->clipw >= 0)
+            MakeInt(wc->clipx, answer);
+         else
+            *answer = nulldesc;
+         break;
       case A_CLIPY:
-	 if (wc->clipw >= 0)
-	    MakeInt(wc->clipy, answer);
-	 else
-	    *answer = nulldesc;
-	 break;
+         if (wc->clipw >= 0)
+            MakeInt(wc->clipy, answer);
+         else
+            *answer = nulldesc;
+         break;
       case A_CLIPW:
-	 if (wc->clipw >= 0)
-	    MakeInt(wc->clipw, answer);
-	 else
-	    *answer = nulldesc;
-	 break;
+         if (wc->clipw >= 0)
+            MakeInt(wc->clipw, answer);
+         else
+            *answer = nulldesc;
+         break;
       case A_CLIPH:
-	 if (wc->clipw >= 0)
-	    MakeInt(wc->cliph, answer);
-	 else
-	    *answer = nulldesc;
-	 break;
+         if (wc->clipw >= 0)
+            MakeInt(wc->cliph, answer);
+         else
+            *answer = nulldesc;
+         break;
       default:
-	 ReturnErrNum(145, RunError);
-	 }
+         ReturnErrNum(145, RunError);
+         }
    }
 #ifdef GraphicsGL
    if (ws->is_gl)
       gl_wflush(w);
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    wflush(w);
    return Succeeded;
    }
-
+
 /*
  * rectargs -- interpret rectangle arguments uniformly
  *
@@ -4958,12 +4880,8 @@ char * abuf;
  *
  *  Returns index of bad argument, if any, or -1 for success.
  */
-int rectargs(w, argc, argv, i, px, py, pw, ph)
-wbp w;
-int argc;
-dptr argv;
-int i;
-C_integer *px, *py, *pw, *ph;
+int rectargs(wbp w, int argc, dptr argv, int i,
+             C_integer *px, C_integer *py, C_integer *pw, C_integer *ph)
    {
    int defw, defh;
    wcp wc = w->context;
@@ -5011,18 +4929,14 @@ C_integer *px, *py, *pw, *ph;
 
    return -1;
    }
-
+
 /*
  * docircles -- draw or file circles.
  *
  *  Helper for DrawCircle and FillCircle.
  *  Returns index of bad argument, or -1 for success.
  */
-int docircles(w, argc, argv, fill)
-wbp w;
-int argc;
-dptr argv;
-int fill;
+int docircles(wbp w, int argc, dptr argv, int fill)
    {
    XArc arc;
    int i, dx, dy;
@@ -5031,13 +4945,13 @@ int fill;
    dx = w->context->dx;
    dy = w->context->dy;
 
-   for (i = 0; i < argc; i += 5) {	/* for each set of five args */
+   for (i = 0; i < argc; i += 5) {      /* for each set of five args */
 
       /*
        * Collect arguments.
        */
       if (i + 2 >= argc)
-         return i + 2;			/* missing y or r */
+         return i + 2;                  /* missing y or r */
       if (!cnv:C_double(argv[i], x))
          return i;
       if (!cnv:C_double(argv[i + 1], y))
@@ -5056,17 +4970,17 @@ int fill;
       /*
        * Put in canonical form: r >= 0, -2*pi <= theta < 0, alpha >= 0.
        */
-      if (r < 0) {			/* ensure positive radius */
+      if (r < 0) {                      /* ensure positive radius */
          r = -r;
          theta += Pi;
          }
-      if (alpha < 0) {			/* ensure positive extent */
+      if (alpha < 0) {                  /* ensure positive extent */
          theta += alpha;
          alpha = -alpha;
          }
 
       theta = fmod(theta, 2 * Pi);
-      if (theta > 0)			/* normalize initial angle */
+      if (theta > 0)                    /* normalize initial angle */
          theta -= 2 * Pi;
 
       /*
@@ -5088,15 +5002,15 @@ int fill;
        */
 #ifdef GraphicsGL
       if (w->window->is_gl) {
-         if (fill) 
+         if (fill)
             gl_fillcircles(w, &arc, 1);
-         else 
+         else
             gl_drawcircles(w, &arc, 1);
          }
-      else 
-#endif					/* GraphicsGL */
+      else
+#endif                                  /* GraphicsGL */
       {
-      if (fill) {			/* {} required due to form of macros */
+      if (fill) {                       /* {} required due to form of macros */
          fillarcs(w, &arc, 1);
          }
       else {
@@ -5106,7 +5020,7 @@ int fill;
       }
    return -1;
    }
-
+
 
 /*
  * genCurve - draw a smooth curve through a set of points.  Algorithm from
@@ -5157,14 +5071,14 @@ void genCurve(wbp w, XPoint *p, int n, void (*helper) (wbp, XPoint [], int))
       int tmp2 = abs(p[i-1].y - p[i-2].y);
       steps = max(tmp1, tmp2) + 10;
       }
-#else						/* VMS */
+#else                                           /* VMS */
       steps = max(abs(p[i-1].x - p[i-2].x), abs(p[i-1].y - p[i-2].y)) + 10;
-#endif						/* VMS */
+#endif                                          /* VMS */
 
       if (steps+4 > npoints) {
          if (thepoints != NULL) free(thepoints);
-	 thepoints = (XPoint *)malloc((steps+4) * sizeof(XPoint));
-	 npoints = steps+4;
+         thepoints = (XPoint *)malloc((steps+4) * sizeof(XPoint));
+         npoints = steps+4;
          }
 
       stepsize = 1.0/steps;
@@ -5183,12 +5097,12 @@ void genCurve(wbp w, XPoint *p, int n, void (*helper) (wbp, XPoint [], int))
       /* calculate the points for drawing the curve */
 
       for (j = 0; j < steps; j++) {
-	 x = x + dx;
-	 y = y + dy;
-	 dx = dx + d2x;
-	 dy = dy + d2y;
-	 d2x = d2x + d3x;
-	 d2y = d2y + d3y;
+         x = x + dx;
+         y = y + dy;
+         dx = dx + d2x;
+         dy = dy + d2y;
+         d2x = d2x + d3x;
+         d2y = d2y + d3y;
          thepoints[j + 1].x = (int)x;
          thepoints[j + 1].y = (int)y;
          }
@@ -5212,11 +5126,11 @@ void curveLister(wbp w, XPoint *pts, int n)
     */
    for(i=0; i<n; i++) {
       if ((i==0) || (pts[i].x != pts[i-1].x) || (pts[i].y != pts[i-1].y)) {
-	 MakeInt(pts[i].x, &d);
-	 c_put(dp, &d);
-	 MakeInt(pts[i].y, &d);
-	 c_put(dp, &d);
-	 }
+         MakeInt(pts[i].x, &d);
+         c_put(dp, &d);
+         MakeInt(pts[i].y, &d);
+         c_put(dp, &d);
+         }
       }
 }
 
@@ -5232,21 +5146,18 @@ static void curveHelper(wbp w, XPoint *thepoints, int n)
    if (w->window->is_gl)
       gl_drawlines(w, thepoints, n);
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    drawlines(w, thepoints, n);
    }
 
 /*
  * draw a smooth curve through the array of points
  */
-void drawCurve(w, p, n)
-wbp w;
-XPoint *p;
-int n;
+void drawCurve(wbp w, XPoint *p, int n)
    {
    genCurve(w, p, n, curveHelper);
    }
-
+
 
 void waitkey(FILE *w)
 {
@@ -5261,15 +5172,14 @@ void waitkey(FILE *w)
 
 #if !NT
   extern FILE *flog;
-#endif						/* NT */
+#endif                                          /* NT */
 
 
-
+
 /*
  * Compare two unsigned long values for qsort or qsearch.
  */
-int ulcmp(p1, p2)
-pointer p1, p2;
+int ulcmp(pointer p1, pointer p2)
    {
    register unsigned long u1 = *(unsigned int *)p1;
    register unsigned long u2 = *(unsigned int *)p2;
@@ -5288,99 +5198,99 @@ pointer p1, p2;
  */
 
 stringint attribs[] = {
-   { 0,			NUMATTRIBS},
-   {"alpha",		A_ALPHA},
-   {"ascent",		A_ASCENT},
-   {"bg",		A_BG},
+   { 0,                 NUMATTRIBS},
+   {"alpha",            A_ALPHA},
+   {"ascent",           A_ASCENT},
+   {"bg",               A_BG},
    {"buffer",           A_BUFFERMODE},
-   {"camwidth",		A_CAMWIDTH},
-   {"canvas",		A_CANVAS},
-   {"ceol",		A_CEOL},
-   {"cliph",		A_CLIPH},
-   {"clipw",		A_CLIPW},
-   {"clipx",		A_CLIPX},
-   {"clipy",		A_CLIPY},
-   {"col",		A_COL},
-   {"columns",		A_COLUMNS},
-   {"cursor",		A_CURSOR},
-   {"depth",		A_DEPTH},
-   {"descent",		A_DESCENT},
-   {"dim",		A_DIM},
-   {"display",		A_DISPLAY},
-   {"displayheight",	A_DISPLAYHEIGHT},
-   {"displaywidth",	A_DISPLAYWIDTH},
-   {"drawop",		A_DRAWOP},
-   {"dx",		A_DX},
-   {"dy",		A_DY},
-   {"echo",		A_ECHO},
-   {"eye",		A_EYE},
-   {"eyedir",		A_EYEDIR},
-   {"eyepos",		A_EYEPOS},
-   {"eyeup",		A_EYEUP},
-   {"fg",		A_FG},
-   {"fheight",		A_FHEIGHT},
-   {"fillstyle",	A_FILLSTYLE},
-   {"font",		A_FONT},
-   {"fovangle",		A_FOV},
-   {"fwidth",		A_FWIDTH},
-   {"gamma",		A_GAMMA},
-   {"geometry",		A_GEOMETRY},
-   {"glrenderer",	A_GLRENDERER},
-   {"glvendor",		A_GLVENDOR},
-   {"glversion",	A_GLVERSION},
-   {"height",		A_HEIGHT},
-   {"iconic",		A_ICONIC},
-   {"iconimage",	A_ICONIMAGE},
-   {"iconlabel",	A_ICONLABEL},
-   {"iconpos",		A_ICONPOS},
-   {"image",		A_IMAGE},
-   {"inputmask",	A_INPUTMASK},
-   {"label",		A_LABEL},
-   {"leading",		A_LEADING},
-   {"light",	 	A_LIGHT},
-   {"light0",	 	A_LIGHT0},
-   {"light1",	 	A_LIGHT1},
-   {"light2",	 	A_LIGHT2},
-   {"light3",	 	A_LIGHT3},
-   {"light4",	 	A_LIGHT4},
-   {"light5",	 	A_LIGHT5},
-   {"light6",	 	A_LIGHT6},
-   {"light7",	 	A_LIGHT7},
-   {"lines",		A_LINES},
-   {"linestyle",	A_LINESTYLE},
-   {"linewidth",	A_LINEWIDTH},
-   {"meshmode",		A_MESHMODE},
-   {"normode",		A_NORMODE},
-   {"pattern",		A_PATTERN},
-   {"pick",		A_PICK},
-   {"pointer",		A_POINTER},
-   {"pointercol",	A_POINTERCOL},
-   {"pointerrow",	A_POINTERROW},
-   {"pointerx",		A_POINTERX},
-   {"pointery",		A_POINTERY},
-   {"pos",		A_POS},
-   {"posx",		A_POSX},
-   {"posy",		A_POSY},
-   {"projection",	A_PROJECTION},
-   {"rendermode",	A_RENDERMODE},
-   {"resize",		A_RESIZE},
-   {"reverse",		A_REVERSE},
-   {"rgbmode",		A_RGBMODE},
-   {"rings",		A_RINGS},
-   {"row",		A_ROW},
-   {"rows",		A_ROWS},
-   {"selection",	A_SELECTION},
-   {"size",		A_SIZE},
-   {"slices",		A_SLICES},
-   {"texcoord",		A_TEXCOORD},
-   {"texmode",		A_TEXMODE},
-   {"texture",		A_TEXTURE},
-   {"titlebar",		A_TITLEBAR},
-   {"visual",		A_VISUAL},
-   {"width",		A_WIDTH},
-   {"windowlabel",	A_WINDOWLABEL},
-   {"x",		A_X},
-   {"y",		A_Y},
+   {"camwidth",         A_CAMWIDTH},
+   {"canvas",           A_CANVAS},
+   {"ceol",             A_CEOL},
+   {"cliph",            A_CLIPH},
+   {"clipw",            A_CLIPW},
+   {"clipx",            A_CLIPX},
+   {"clipy",            A_CLIPY},
+   {"col",              A_COL},
+   {"columns",          A_COLUMNS},
+   {"cursor",           A_CURSOR},
+   {"depth",            A_DEPTH},
+   {"descent",          A_DESCENT},
+   {"dim",              A_DIM},
+   {"display",          A_DISPLAY},
+   {"displayheight",    A_DISPLAYHEIGHT},
+   {"displaywidth",     A_DISPLAYWIDTH},
+   {"drawop",           A_DRAWOP},
+   {"dx",               A_DX},
+   {"dy",               A_DY},
+   {"echo",             A_ECHO},
+   {"eye",              A_EYE},
+   {"eyedir",           A_EYEDIR},
+   {"eyepos",           A_EYEPOS},
+   {"eyeup",            A_EYEUP},
+   {"fg",               A_FG},
+   {"fheight",          A_FHEIGHT},
+   {"fillstyle",        A_FILLSTYLE},
+   {"font",             A_FONT},
+   {"fovangle",         A_FOV},
+   {"fwidth",           A_FWIDTH},
+   {"gamma",            A_GAMMA},
+   {"geometry",         A_GEOMETRY},
+   {"glrenderer",       A_GLRENDERER},
+   {"glvendor",         A_GLVENDOR},
+   {"glversion",        A_GLVERSION},
+   {"height",           A_HEIGHT},
+   {"iconic",           A_ICONIC},
+   {"iconimage",        A_ICONIMAGE},
+   {"iconlabel",        A_ICONLABEL},
+   {"iconpos",          A_ICONPOS},
+   {"image",            A_IMAGE},
+   {"inputmask",        A_INPUTMASK},
+   {"label",            A_LABEL},
+   {"leading",          A_LEADING},
+   {"light",            A_LIGHT},
+   {"light0",           A_LIGHT0},
+   {"light1",           A_LIGHT1},
+   {"light2",           A_LIGHT2},
+   {"light3",           A_LIGHT3},
+   {"light4",           A_LIGHT4},
+   {"light5",           A_LIGHT5},
+   {"light6",           A_LIGHT6},
+   {"light7",           A_LIGHT7},
+   {"lines",            A_LINES},
+   {"linestyle",        A_LINESTYLE},
+   {"linewidth",        A_LINEWIDTH},
+   {"meshmode",         A_MESHMODE},
+   {"normode",          A_NORMODE},
+   {"pattern",          A_PATTERN},
+   {"pick",             A_PICK},
+   {"pointer",          A_POINTER},
+   {"pointercol",       A_POINTERCOL},
+   {"pointerrow",       A_POINTERROW},
+   {"pointerx",         A_POINTERX},
+   {"pointery",         A_POINTERY},
+   {"pos",              A_POS},
+   {"posx",             A_POSX},
+   {"posy",             A_POSY},
+   {"projection",       A_PROJECTION},
+   {"rendermode",       A_RENDERMODE},
+   {"resize",           A_RESIZE},
+   {"reverse",          A_REVERSE},
+   {"rgbmode",          A_RGBMODE},
+   {"rings",            A_RINGS},
+   {"row",              A_ROW},
+   {"rows",             A_ROWS},
+   {"selection",        A_SELECTION},
+   {"size",             A_SIZE},
+   {"slices",           A_SLICES},
+   {"texcoord",         A_TEXCOORD},
+   {"texmode",          A_TEXMODE},
+   {"texture",          A_TEXTURE},
+   {"titlebar",         A_TITLEBAR},
+   {"visual",           A_VISUAL},
+   {"width",            A_WIDTH},
+   {"windowlabel",      A_WINDOWLABEL},
+   {"x",                A_X},
+   {"y",                A_Y},
 };
 
 void gotorc(wbp w,int r,int c)
@@ -5399,7 +5309,7 @@ void gotorc(wbp w,int r,int c)
       ws->x = GL_COLTOX(w, c);
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    {
    ws->y = ROWTOY(w, r);
    ws->x = COLTOX(w, c);
@@ -5442,7 +5352,7 @@ int guicurses_lines(wbp w)
    if (w->window->is_gl)
       return GL_YTOROW(w,w->window->height - GL_DESCENT(w));
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    return YTOROW(w,w->window->height - DESCENT(w));
 }
 
@@ -5451,7 +5361,7 @@ int guicurses_cols(wbp w)
 #ifdef GraphicsGL
    if (w->window->is_gl)
       return GL_XTOCOL(w,w->window->width - GL_DESCENT(w));
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    return XTOCOL(w,w->window->width - DESCENT(w));
 }
 
@@ -5493,25 +5403,25 @@ char * watt(wbp w, char *s)
    if (len > 4) {
       if (!strncmp(s, "pos=", 4)) config |= 1;
       if (len > 5) {
-	 if (!strncmp(s, "posx=", 5)) config |= 1;
-	 if (!strncmp(s, "posy=", 5)) config |= 1;
-	 if (!strncmp(s, "rows=", 5)) config |= 2;
-	 if (!strncmp(s, "size=", 5)) config |= 2;
-	 if (len > 6) {
-	    if (!strncmp(s, "width=", 6)) config |= 2;
-	    if (!strncmp(s, "lines=", 6)) config |= 2;
-	    if (len > 7) {
-	       if (!strncmp(s, "height=", 7)) config |= 2;
-	       if (!strncmp(s, "resize=", 7)) config |= 2;
-	       if (len > 8) {
-		  if (!strncmp(s, "columns=", 8)) config |= 2;
-		  if (len > 9) {
-		     if (!strncmp(s, "geometry=", 9)) config |= 3;
-		     }
-		  }
-		}
-	    }
-	 }
+         if (!strncmp(s, "posx=", 5)) config |= 1;
+         if (!strncmp(s, "posy=", 5)) config |= 1;
+         if (!strncmp(s, "rows=", 5)) config |= 2;
+         if (!strncmp(s, "size=", 5)) config |= 2;
+         if (len > 6) {
+            if (!strncmp(s, "width=", 6)) config |= 2;
+            if (!strncmp(s, "lines=", 6)) config |= 2;
+            if (len > 7) {
+               if (!strncmp(s, "height=", 7)) config |= 2;
+               if (!strncmp(s, "resize=", 7)) config |= 2;
+               if (len > 8) {
+                  if (!strncmp(s, "columns=", 8)) config |= 2;
+                  if (len > 9) {
+                     if (!strncmp(s, "geometry=", 9)) config |= 3;
+                     }
+                  }
+                }
+            }
+         }
       }
 
    if (config) {
@@ -5520,14 +5430,14 @@ char * watt(wbp w, char *s)
          if (gl_do_config(w, config) == Failed) return NULL;
          }
       else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       if (do_config(w, config) == Failed) return NULL;
       }
 
    if (strchr(s, '=') == NULL) {
       if (is:integer(throw)) {
-	 sprintf(foo, "%ld", (long)(IntVal(throw)));
-	 }
+         sprintf(foo, "%ld", (long)(IntVal(throw)));
+         }
       else if (!is:string(throw)) return NULL;
       return strdup(foo);
       }
@@ -5548,35 +5458,35 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    /*
     * allocate a window state, and a context
     */
-#ifdef GraphicsGL   
+#ifdef GraphicsGL
    if (wp->window->is_gl || is_3d) {
       Protect(w->window = gl_alc_winstate(), { free_binding(w); return 0; });
       //if (!wp->window->is_gl) w->window->is_gl = 0;
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
    ws = w->window;
    ws->display = wd;
     CLRTITLEBAR(ws);
-#ifdef GraphicsGL   
+#ifdef GraphicsGL
    if (w->window->is_gl) {
       Protect(w->context = gl_alc_context(w), { free_binding(w); return 0; });
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
    Protect(w->context = alc_context(w), { free_binding(w); return 0; });
 
    wc = w->context;
    wc->display = wd;
-#ifdef GraphicsGL 
-   if (wp->window->is_gl) 
+#ifdef GraphicsGL
+   if (wp->window->is_gl)
       wc->font = wd->glfonts;
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
 #ifdef XWindows
       wc->font = wd->fonts;
-#endif					/* XWindows */
+#endif                                  /* XWindows */
    wd->refcount++;
 
    ws->listp.dword = D_List;
@@ -5610,7 +5520,7 @@ char child_window_generic(wbp w, wbp wp, int child_window)
       wc->buffermode = IMMEDIATE3D;
       }
    else
-#endif					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       {
       ws->y = 0;
       ws->x = 0;
@@ -5624,17 +5534,17 @@ char child_window_generic(wbp w, wbp wp, int child_window)
  * There are more, X-specific stringint arrays in ../common/xwindow.c
  */
 
-#else					/* Graphics */
+#else                                   /* Graphics */
 
 /*
  * Stubs to prevent dynamic loader from rejecting cfunc library of IPL.
  */
-int palnum(dptr *d)					{ return 0; }
-char *rgbkey(int p, double r, double g, double b)	{ return 0; }
+int palnum(dptr *d)                                     { return 0; }
+char *rgbkey(int p, double r, double g, double b)       { return 0; }
 
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
-
+
 /*
  * The next section consists of code to deal with string-integer
  * (stringint) symbols.  See rstructs.h.
@@ -5643,8 +5553,7 @@ char *rgbkey(int p, double r, double g, double b)	{ return 0; }
 /*
  * string-integer comparison, for qsearch()
  */
-static int sicmp(sip1,sip2)
-siptr sip1, sip2;
+static int sicmp(siptr sip1, siptr sip2)
 {
   return strcmp(sip1->s, sip2->s);
 }
@@ -5652,9 +5561,7 @@ siptr sip1, sip2;
 /*
  * string-integer lookup function: given a string, return its integer
  */
-int si_s2i(sip,s)
-siptr sip;
-char *s;
+int si_s2i(siptr sip, char *s)
 {
   stringint key;
   siptr p;
@@ -5668,9 +5575,7 @@ char *s;
 /*
  * string-integer inverse function: given an integer, return its string
  */
-char *si_i2s(sip,i)
-siptr sip;
-int i;
+char *si_i2s(siptr sip, int i)
 {
   register siptr sip2 = sip+1;
   for(;sip2<=sip+sip[0].i;sip2++) if (sip2->i == i) return sip2->s;

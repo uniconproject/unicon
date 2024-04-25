@@ -6,7 +6,7 @@
 
 #ifdef ExecImages
 
-
+
 /*
  * save(s) -- for generic BSD systems.
  */
@@ -61,8 +61,8 @@ int ef;
    close(ef);
    return hdr.a_data;
 }
-#endif					/* GenericBSD */
-
+#endif                                  /* GenericBSD */
+
 /*
  * save(s) -- for Sun Workstations.
  */
@@ -77,7 +77,7 @@ int ef;
    int tsize, dsize;
 
    hdrp = (struct exec *)PAGSIZ;
-	
+
    /*
     * This code only handles the ZMAGIC format...
     */
@@ -118,8 +118,8 @@ int ef;
    close(ef);
    return hdr.a_data;
 }
-#endif					/* SUN */
+#endif                                  /* SUN */
 
-#else					/* ExecImages */
+#else                                   /* ExecImages */
 /* static char junk; */
-#endif					/* ExecImages */
+#endif                                  /* ExecImages */

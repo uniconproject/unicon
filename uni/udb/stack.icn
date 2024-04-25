@@ -11,7 +11,7 @@ class Stack(
    DState,     # (Alias) object of type State class
    MaxFrame,   # the max number of frames displayed in one command [bt & where]
    BaseFrame,  # the initial frame number by default is zero [bt & where]
-   Message     # a string with latest message from this class 
+   Message     # a string with latest message from this class
    )
 
 method getLevel(C)
@@ -28,18 +28,23 @@ method getLevel(C)
 end
 
 #
-# writes down the current frame information, 
+# writes down the current frame information,
 # used by cmdPrint, cmdFrame, cmdUp, cmdDown
 #
 method printFrame(frame, detail:1)
-   local x, i, level, p:="(", pname
+   local x, i, level, p:="(", pname, frameTable
    local pfile:="", pline:="", CMonitored := DState.coState.target.val
+
+   frameTable := table()
+   frameTable["type"] := "frame"
 
    # something funky is going on with &level I believe...
    level := keyword("level", CMonitored) - 1
 
    if 0 <= frame <= level then {
       Message := "   #"|| frame
+      frameTable["id"] := frame
+      frameTable["levels"] := level + 1
 
       # check for proc() failure in lieu of &level being reliable
       if not (pname := image(proc(CMonitored, frame))) then fail
@@ -57,6 +62,7 @@ method printFrame(frame, detail:1)
 
       p:= p[1:-2]
       Message ||:= p ||")"
+      frameTable["name"] := pname || p || ")"
 
       # work around that is valid when the source file of the debuggee is
       # loaded and the name of the procedure is not anywhere in another class
@@ -69,20 +75,28 @@ method printFrame(frame, detail:1)
       else{
          pfile ||:= keyword("file", CMonitored, frame)
          #DState.srcFile.getProcFile(pname) | "?"
-         pline ||:= keyword("line", CMonitored, frame) 
+         pline ||:= keyword("line", CMonitored, frame)
          #DState.srcFile.getProcLine(pname,pfile) | "?"
          }
       Message ||:= " at "|| pfile ||":"||pline
+
+      frameTable["line"] := integer(pline)
+      frameTable["column"] := 0
+      frameTable["source"] := table("name", pfile, "path", DState.srcFile.findDirectory(pfile) || "/" || pfile, "presentationHint", "normal")
+      frameTable["success"] := "__true__"
+      frameTable["consoleMsg"] := Message
       }
    else {
       Message := "\n   The \""||frame ||"\" is not a valid frame number_
                   \n   valid frames are (0 <= frame_num <= "||level||")."
+      frameTable["consoleMsg"] := Message
+      frameTable["success"] := "__false__"
 
       # in lieu of &level reliability
-      DState.Write(Message)
+      DState.Write(frameTable)
       fail
       }
-   DState.Write(Message)
+   DState.Write(frameTable)
    return
 end
 
@@ -91,7 +105,7 @@ end
 #
 method printFrames(i, j)
    local f, level, CMonitored := DState.coState.target.val
-   
+
    # make sure that i < j
    if j < i then i :=: j
    if i < 0 then i := 0
@@ -107,7 +121,7 @@ method printFrames(i, j)
          DState.Write("   (More stack frames follow...)")
       }
    else if i<=level then{
-      DState.Write("") 
+      DState.Write("")
       every f := i to level do
           printFrame(f)
        }
@@ -115,7 +129,7 @@ method printFrames(i, j)
       DState.State := ERROR
       Message := "\n   No more frames, end of stack"
       DState.Write(Message)
-      } 
+      }
 end
 
 #
@@ -124,18 +138,18 @@ end
 method cmdUp(cmd)
    local level, CMonitored := DState.coState.target.val
 
-   level := keyword("level", CMonitored) - 1 
+   level := keyword("level", CMonitored) - 1
    if DState.State = PAUSE then {
       if DState.coState.target.curr_frame = level then
          DState.Write("\n   No more Frames up !!!")
       # move up one frame, need to update curr symbol table
       else {
-         DState.coState.target.curr_frame +:= 1 
+         DState.coState.target.curr_frame +:= 1
          if not printFrame(DState.coState.target.curr_frame) then {
             DState.Write("\n   No more Frames up !!!")
-            DState.coState.target.curr_frame -:= 1 
+            DState.coState.target.curr_frame -:= 1
             }
-	 }
+         }
       }
    else {
       DState.State := ERROR
@@ -157,7 +171,7 @@ method cmdDown(cmd)
       else {
          DState.coState.target.curr_frame -:= 1
          printFrame(DState.coState.target.curr_frame)
-	 }
+         }
       }
    else {
       DState.State := ERROR
@@ -178,7 +192,7 @@ method cmdFrame(cmd)
       CMonitored := DState.coState.target.val
       if *cmd = 1 then {
          printFrame(DState.coState.target.curr_frame)
-	 }
+         }
       else {
          if frame := integer(cmd[2]) then {
             level := keyword("level", CMonitored) - 1
@@ -220,15 +234,15 @@ method cmdBacktrace(cmd)
       level := keyword("level", CMonitored) - 1
       if *cmd = 1 then {
          BaseFrame := 0
-         while BaseFrame < level do {
+         while BaseFrame <= level do {
             printFrames(BaseFrame, BaseFrame + MaxFrame)
             BaseFrame +:= MaxFrame + 1
             if BaseFrame < level then {
                Message:= "---Type <return> to continue, or q <return> to quit---"
                DState.Writes(Message)
-               if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
+               if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break
                }
-            } 
+            }
          }
       else if *cmd = 2 & integer(cmd[2]) then{
          frames := integer(cmd[2])
@@ -237,7 +251,7 @@ method cmdBacktrace(cmd)
          else if frames < 0 then{
             BaseFrame := level + frames
             frames := level
-            } 
+            }
          if frames < MaxFrame then
             printFrames(BaseFrame, BaseFrame + frames)
          else{
@@ -255,7 +269,7 @@ method cmdBacktrace(cmd)
                   Message  := "---Type <return> to continue, _
                               or q <return> to quit---"
                   DState.Writes(Message)
-                  if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
+                  if *(ans:=DState.stateRead())~=0 & ans[1]==("q"|"Q") then break
                   }
                }
             }
@@ -275,7 +289,7 @@ end
 initially()
 
    MaxFrame  := 9
-   BaseFrame := 0 
+   BaseFrame := 0
 
    Message := ""
 end

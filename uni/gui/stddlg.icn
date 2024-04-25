@@ -11,14 +11,14 @@ package gui
 
 global dialog_value, dialog_button
 
-$define ButtonWidth	 50	# minimum button width
-$define ButtonHeight	 30	# button height
-$define FieldWidth	 20	# default field width
-$define OpenWidth	 50	# default field width for Open/SaveDialog
+$define ButtonWidth      50     # minimum button width
+$define ButtonHeight     30     # button height
+$define FieldWidth       20     # default field width
+$define OpenWidth        50     # default field width for Open/SaveDialog
 
-$define XOff		  0	# offset for text vidgets
-$define XOffButton	 85	# initial x offset for buttons
-$define XOffIncr	 15	# space between buttons
+$define XOff              0     # offset for text vidgets
+$define XOffButton       85     # initial x offset for buttons
+$define XOffIncr         15     # space between buttons
 
 # dialog used for selection, dialog_value should be one of choices, or &null
 class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
@@ -40,12 +40,12 @@ class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
 
       self.set_attribs("size="||(220+choice_width)||"," || (32 * nlines))
       every i := 1 to *captions do {
-	 cap := Label()
-	 cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
-	 cap.set_internal_alignment("l")
-	 cap.set_label(captions[i])
-	 self.add(cap)
-	 }
+         cap := Label()
+         cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
+         cap.set_internal_alignment("l")
+         cap.set_label(captions[i])
+         self.add(cap)
+         }
       border_1 := Border()
       border_1.set_pos("10", integer((i+1) * 100 / nlines) || "%-5")
       border_1.set_size("100%-20",((*choices)*100/nlines)||"%")
@@ -53,27 +53,27 @@ class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
       check_box_group_1 := CheckBoxGroup()
 
       every i := 1 to *choices do {
-	 cb := CheckBox()
-	 cb.set_pos(10, integer(i*100/nlines) || "%")
-	 cb.set_toggles()
-	 check_box_group_1.add(cb)
-	 cb.set_label(choices[i])
-	 cb.connect(self, "on_selection", ACTION_EVENT)
-	 border_1.add(cb)
-	 }
+         cb := CheckBox()
+         cb.set_pos(10, integer(i*100/nlines) || "%")
+         cb.set_toggles()
+         check_box_group_1.add(cb)
+         cb.set_label(choices[i])
+         cb.connect(self, "on_selection", ACTION_EVENT)
+         border_1.add(cb)
+         }
       self.add(border_1)
 
       every i := 1 to *buttons do {
-	 text_button_1 := TextButton()
-	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
-			       integer((*captions + *choices + 1)*100/nlines) ||
-			       "%" )
-	 text_button_1.connect(self, "on_button", ACTION_EVENT)
-	 text_button_1.clear_toggles()
-	 text_button_1.set_label(buttons[i])
-	 text_button_1.set_internal_alignment("c")
-	 self.add(text_button_1)
-	 }
+         text_button_1 := TextButton()
+         text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
+                               integer((*captions + *choices + 1)*100/nlines) ||
+                               "%" )
+         text_button_1.connect(self, "on_button", ACTION_EVENT)
+         text_button_1.clear_toggles()
+         text_button_1.set_label(buttons[i])
+         text_button_1.set_internal_alignment("c")
+         self.add(text_button_1)
+         }
    end
 
    method on_selection(ev)
@@ -91,7 +91,7 @@ class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
       if ev.param === -12 then fail # do not trigger on mouse moves
       dialog_button := buttons[1]
       if ev.param === "\r" then
-	 dispose()
+         dispose()
    end
 
 initially(caps, chocs, dflt, btns, indx, chow)
@@ -125,7 +125,7 @@ local default_width, default_button, maxl, id, choice_width, maxb, lead, pad,
    if type(choices) ~== "list" then choices := ([\choices] | [])
    if type(buttons) ~== "list" then buttons := [buttons]
 
-   default_button := buttons[index] 		# null if out of bounds
+   default_button := buttons[index]             # null if out of bounds
    default_width := FieldWidth
 
    maxl := 0
@@ -161,7 +161,7 @@ end
 
 # toggle dialog. myanswer should be a 1 for Okay or &null for cancel.
 class tdialog : Dialog(captions, toggles, states, buttons, index, tognam_width,
-		       myanswer, cboxes)
+                       myanswer, cboxes)
    method component_setup()
       self.setup()
    end
@@ -182,34 +182,34 @@ cboxes := []
 
       self.set_attribs("size="||(220+tognam_width)||"," || (32 * nlines))
       every i := 1 to *captions do {
-	 cap := Label()
-	 cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
-	 cap.set_internal_alignment("l")
-	 cap.set_label(captions[i])
-	 self.add(cap)
-	 }
+         cap := Label()
+         cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
+         cap.set_internal_alignment("l")
+         cap.set_label(captions[i])
+         self.add(cap)
+         }
 
       every i := 1 to *toggles do {
-	 cb := CheckBox()
-	 cb.set_pos(10, integer((*captions+i)*100/nlines) || "%")
-	 cb.set_toggles()
-	 if \ (states[i]) then cb.set_is_checked()
-	 cb.set_label(toggles[i])
-	 self.add(cb)
-	 put(cboxes, cb)
-	 }
+         cb := CheckBox()
+         cb.set_pos(10, integer((*captions+i)*100/nlines) || "%")
+         cb.set_toggles()
+         if \ (states[i]) then cb.set_is_checked()
+         cb.set_label(toggles[i])
+         self.add(cb)
+         put(cboxes, cb)
+         }
 
       every i := 1 to *buttons do {
-	 text_button_1 := TextButton()
-	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
-			       integer((*captions + *toggles + 1)*100/nlines) ||
-			       "%" )
-	 text_button_1.connect(self, "on_button", ACTION_EVENT)
-	 text_button_1.clear_toggles()
-	 text_button_1.set_label(buttons[i])
-	 text_button_1.set_internal_alignment("c")
-	 self.add(text_button_1)
-	 }
+         text_button_1 := TextButton()
+         text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
+                               integer((*captions + *toggles + 1)*100/nlines) ||
+                               "%" )
+         text_button_1.connect(self, "on_button", ACTION_EVENT)
+         text_button_1.clear_toggles()
+         text_button_1.set_label(buttons[i])
+         text_button_1.set_internal_alignment("c")
+         self.add(text_button_1)
+         }
    end
 
    method on_button(ev)
@@ -222,7 +222,7 @@ cboxes := []
       if ev.param === -12 then fail # do not trigger on mouse moves
       myanswer := buttons[1]
       if ev.param === "\r" then
-	 dispose()
+         dispose()
    end
 
 initially(caps, togs, stats, btns, indx, togw)
@@ -258,7 +258,7 @@ local default_width, default_button, maxl, id, tognam_width, maxb, lead, pad,
    if type(states) ~== "list" then states := ([\states] | [])
    if type(buttons) ~== "list" then buttons := [buttons]
 
-   default_button := buttons[index] 		# null if out of bounds
+   default_button := buttons[index]             # null if out of bounds
    default_width := FieldWidth
 
    maxl := 0
@@ -297,8 +297,8 @@ local default_width, default_button, maxl, id, tognam_width, maxb, lead, pad,
 end
 
 class vdialog : Dialog(captions, labels, buttons, textfields,
-		       defaults, myanswer, label_width,
-		       myanswer)
+                       defaults, myanswer, label_width,
+                       myanswer)
    method component_setup()
       self.setup()
    end
@@ -314,8 +314,8 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
       maxw <:= 220+label_width
       self.resize_win(maxw, (32 * (*captions + *labels +2)))
       if textfields[1] then {
-	 Enqueue(\win, &lpress, textfields[1].x+2, textfields[1].y+2)
-	 }
+         Enqueue(\win, &lpress, textfields[1].x+2, textfields[1].y+2)
+         }
    end
 
    method setup()
@@ -325,51 +325,51 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
 
       self.set_attribs("size="||(220+label_width)||"," || (32 * nlines))
       every i := 1 to *captions do {
-	 cap := Label()
-	 cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
-	 cap.set_internal_alignment("l")
-	 cap.set_label(captions[i])
-	 self.add(cap)
-	 }
+         cap := Label()
+         cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
+         cap.set_internal_alignment("l")
+         cap.set_label(captions[i])
+         self.add(cap)
+         }
       every i := 1 to *labels do {
-	 label_2 := Label()
-	 label_2.set_pos(20, integer((*captions + i)*100/nlines) || "%")
-	 label_2.set_internal_alignment("l")
-	 label_2.set_label(labels[i])
-	 self.add(label_2)
-	 }
+         label_2 := Label()
+         label_2.set_pos(20, integer((*captions + i)*100/nlines) || "%")
+         label_2.set_internal_alignment("l")
+         label_2.set_label(labels[i])
+         self.add(label_2)
+         }
       every i := 1 to *labels do {
-	 text_field_1 := TextField()
-	 text_field_1.set_pos(20+label_width,
-			      integer((*captions + i)*100/nlines) || "%-10")
-	 text_field_1.set_size(180, 30)
-	 text_field_1.set_contents((\defaults)[i])
-	 text_field_1.set_draw_border()
+         text_field_1 := TextField()
+         text_field_1.set_pos(20+label_width,
+                              integer((*captions + i)*100/nlines) || "%-10")
+         text_field_1.set_size(180, 30)
+         text_field_1.set_contents((\defaults)[i])
+         text_field_1.set_draw_border()
          if \dialogFor == "find" then
-	    text_field_1.set_contents(findstr)
+            text_field_1.set_contents(findstr)
          else if \dialogFor == "goto" then
-	    text_field_1.set_contents(gotoln)
+            text_field_1.set_contents(gotoln)
          else if \dialogFor == "compile" then
-	    text_field_1.set_contents(targs)
+            text_field_1.set_contents(targs)
          else if \dialogFor == "run" then
-	    text_field_1.set_contents(xargs)
+            text_field_1.set_contents(xargs)
          else text_field_1.set_contents("")
-	 text_field_1.connect(self, "on_keypress", ACTION_EVENT)
+         text_field_1.connect(self, "on_keypress", ACTION_EVENT)
 
-	 self.add(text_field_1)
-	 put(textfields, text_field_1)
-	 }
+         self.add(text_field_1)
+         put(textfields, text_field_1)
+         }
       every i := 1 to *buttons do {
-	 text_button_1 := TextButton()
-	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
-			       integer((*captions + *labels + 1)*100/nlines) ||
-			       "%" )
-	 text_button_1.connect(self, "on_button", ACTION_EVENT)
-	 text_button_1.clear_toggles()
-	 text_button_1.set_label(buttons[i])
-	 text_button_1.set_internal_alignment("c")
-	 self.add(text_button_1)
-	 }
+         text_button_1 := TextButton()
+         text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
+                               integer((*captions + *labels + 1)*100/nlines) ||
+                               "%" )
+         text_button_1.connect(self, "on_button", ACTION_EVENT)
+         text_button_1.clear_toggles()
+         text_button_1.set_label(buttons[i])
+         text_button_1.set_internal_alignment("c")
+         self.add(text_button_1)
+         }
    end
 
    method on_button(ev)
@@ -382,7 +382,7 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
       if ev.param === -12 then fail # do not trigger on mouse moves
       myanswer := buttons[1]
       if ev.param === "\r" then
-	 dispose()
+         dispose()
    end
 
 initially(caps, labs, btns, dflts, labwid)
@@ -396,7 +396,7 @@ initially(caps, labs, btns, dflts, labwid)
 end
 
 
-procedure TextDialog(			#: text dialog
+procedure TextDialog(                   #: text dialog
    win, captions, labels, defaults, widths, buttons, index
    )
 local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
@@ -422,7 +422,7 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    if type(widths) ~== "list" then widths := ([\widths] | [default_width])
    if type(buttons) ~== "list" then buttons := [buttons]
 
-   default_button := buttons[index] 		# null if out of bounds
+   default_button := buttons[index]             # null if out of bounds
    default_width := widths[-1] | FieldWidth
 
    maxl := 0
@@ -460,11 +460,11 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    return dialog_button
 end
 
-procedure Notice(captions[])		#: notice dialog
+procedure Notice(captions[])            #: notice dialog
    local win, temp_win, p
    static type
 
-   initial type := proc("type", 0)	# protect attractive name
+   initial type := proc("type", 0)      # protect attractive name
 
    if type(captions[1]) == "window" then
       win := get(captions)
@@ -510,12 +510,12 @@ class ColourRectangle : Component(r, g, b)
    method set_hsv(h, s, v)
       dialog_value := HSVValue(h||"/"||s||"/"||v) | stop("no HSVValue")
       dialog_value ? {
-	 self.r := integer(tab(many(&digits)))
-	 =","
-	 self.g := integer(tab(many(&digits)))
-	 =","
-	 self.b := integer(tab(many(&digits)))
-	 }
+         self.r := integer(tab(many(&digits)))
+         =","
+         self.g := integer(tab(many(&digits)))
+         =","
+         self.b := integer(tab(many(&digits)))
+         }
    end
 
    initially
@@ -523,8 +523,8 @@ class ColourRectangle : Component(r, g, b)
 end
 
 class cdialog : Dialog(captions, refcolor, callback, value,
-		       s1, s2, s3, s4, s5, s6, # RBG, then HSV
-		       b1, cr, lab, myanswer)
+                       s1, s2, s3, s4, s5, s6, # RBG, then HSV
+                       b1, cr, lab, myanswer)
    method init_dialog()
    local maxw := 0
       every maxw <:= TextWidth(win, !captions)
@@ -555,16 +555,16 @@ if ev.source === (s1 | s2 | s3) then {
       # set s4, s5, s6
       hsv := HSV(r||","||g||","||b)
       hsv ? {
-	 h := tab(many(&digits))
-	 ="/"
-	 s := tab(many(&digits))
-	 ="/"
-	 v := tab(many(&digits))
-	 s4.set_value(h)
-	 s5.set_value(s)
-	 s6.set_value(v)
-	 invalidate()
-	 }
+         h := tab(many(&digits))
+         ="/"
+         s := tab(many(&digits))
+         ="/"
+         v := tab(many(&digits))
+         s4.set_value(h)
+         s5.set_value(s)
+         s6.set_value(v)
+         invalidate()
+         }
       }
 else if ev.source === (s4 | s5 | s6) then {
       cr.set_hsv((h:=s4.get_value()), (s:=s5.get_value()), (v:=s6.get_value()))
@@ -572,16 +572,16 @@ else if ev.source === (s4 | s5 | s6) then {
       # set s1, s2, s3
       rgb := HSVValue(h||"/"||s||"/"||v)
       rgb ? {
-	 r := tab(many(&digits))
-	 =","
-	 g := tab(many(&digits))
-	 =","
-	 b := tab(many(&digits))
-	 s1.set_value(r)
-	 s2.set_value(g)
-	 s3.set_value(b)
-	 invalidate()
-	 }
+         r := tab(many(&digits))
+         =","
+         g := tab(many(&digits))
+         =","
+         b := tab(many(&digits))
+         s1.set_value(r)
+         s2.set_value(g)
+         s3.set_value(b)
+         invalidate()
+         }
    }
       lab.set_label("(" || s1.get_value() || ", " || s2.get_value() || ", " || s3.get_value() || ")")
    end
@@ -594,15 +594,15 @@ else if ev.source === (s4 | s5 | s6) then {
       self.set_attribs_list(["size=420,370"])
 
       every i := 1 to *captions do {
-	 cap := Label()
-	 cap.set_pos("20", string(i * 32))
-	 cap.set_internal_alignment("l")
-	 cap.set_label(captions[i])
-	 self.add(cap)
-	 }
+         cap := Label()
+         cap.set_pos("20", string(i * 32))
+         cap.set_internal_alignment("l")
+         cap.set_label(captions[i])
+         self.add(cap)
+         }
 
       s1 := Slider()
-      s1.set_pos("40", "50%")      
+      s1.set_pos("40", "50%")
       s1.set_align("c", "c")
       s1.set_size(, "50%")
       s1.set_range(0, 65535)
@@ -611,9 +611,9 @@ else if ev.source === (s4 | s5 | s6) then {
       s1.set_value(0)
       s1.connect(self, "on_slider")
       self.add(s1)
- 
+
       s2 := Slider()
-      s2.set_pos("80", "50%")      
+      s2.set_pos("80", "50%")
       s2.set_align("c", "c")
       s2.set_size(, "50%")
       s2.set_range(0, 65535)
@@ -622,9 +622,9 @@ else if ev.source === (s4 | s5 | s6) then {
       s2.set_value(0)
       s2.connect(self, "on_slider")
       self.add(s2)
- 
+
       s3 := Slider()
-      s3.set_pos("120", "50%")      
+      s3.set_pos("120", "50%")
       s3.set_align("c", "c")
       s3.set_size(, "50%")
       s3.set_range(0, 65535)
@@ -635,7 +635,7 @@ else if ev.source === (s4 | s5 | s6) then {
       self.add(s3)
 
       s4 := Slider()
-      s4.set_pos("300", "50%")      
+      s4.set_pos("300", "50%")
       s4.set_align("c", "c")
       s4.set_size(, "50%")
       s4.set_range(0, 360)
@@ -644,9 +644,9 @@ else if ev.source === (s4 | s5 | s6) then {
       s4.set_value(0)
       s4.connect(self, "on_slider")
       self.add(s4)
- 
+
       s5 := Slider()
-      s5.set_pos("340", "50%")      
+      s5.set_pos("340", "50%")
       s5.set_align("c", "c")
       s5.set_size(, "50%")
       s5.set_range(0, 100)
@@ -655,9 +655,9 @@ else if ev.source === (s4 | s5 | s6) then {
       s5.set_value(0)
       s5.connect(self, "on_slider")
       self.add(s5)
- 
+
       s6 := Slider()
-      s6.set_pos("380", "50%")      
+      s6.set_pos("380", "50%")
       s6.set_align("c", "c")
       s6.set_size(, "50%")
       s6.set_range(0, 100)
@@ -668,9 +668,9 @@ else if ev.source === (s4 | s5 | s6) then {
       self.add(s6)
 
       cr := ColourRectangle()
-      cr.set_pos("200", "50%")      
+      cr.set_pos("200", "50%")
       cr.set_align("c", "c")
-      cr.set_size(70, 70)   
+      cr.set_size(70, 70)
       cr.set_colours(0, 0, 0)
       self.add(cr)
 
@@ -681,7 +681,7 @@ else if ev.source === (s4 | s5 | s6) then {
       lab.set_pos(200, "50%-90")
       lab.set_align("c", "c")
       self.add(lab)
-      
+
       b1 := TextButton()
       b1.set_label("Okay")
       b1.set_pos("35%", "88%")

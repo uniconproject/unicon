@@ -46,7 +46,7 @@ enum _tperr {
   TP_DEFAULT = 0,
   TP_TRYAGAIN = 1,
 
-  TP_ECONNECT, 
+  TP_ECONNECT,
   TP_EHOST,
   TP_EINVAL,
   TP_EMEM,
@@ -62,7 +62,7 @@ enum _tperr {
 
   TP_ETRUST,
   TP_EVERIFY,
-  
+
   TPM_UNIMPLEMENTED,
   TPM_UNSUPPORTED,
 
@@ -76,9 +76,9 @@ typedef struct _tpresponse_s Tpresponse_t;
 typedef int Tpreqtype_t;
 enum _tpreqtype_e {
   NOOP=1,
-  GET, HEAD, POST, PUT,			/* HTTP */
-  DELE, LIST, QUIT, RETR, STAT,		/* POP3 */
-  DATA, HELO, MAIL, RCPT		/* SMTP */
+  GET, HEAD, POST, PUT,                 /* HTTP */
+  DELE, LIST, QUIT, RETR, STAT,         /* POP3 */
+  DATA, HELO, MAIL, RCPT                /* SMTP */
 };
 
 struct _tprequest_s
@@ -101,7 +101,7 @@ typedef int           (*Tpmclose_f)(Tp_t* tp);
 typedef int           (*Tpmfreeresp_f)(Tp_t* tp, Tpresponse_t* resp);
 
 typedef int Tpstate_t;
-enum _tpstate_e { 
+enum _tpstate_e {
   CLOSED     = 0,
   CONNECTING = 1,
   CONNECTED  = 2,

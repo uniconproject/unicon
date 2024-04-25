@@ -36,7 +36,7 @@ long millisec()
    if (i == -1) return 0;
    return (ruse.ru_utime.tv_sec + ruse.ru_stime.tv_sec)*1000 +
           (ruse.ru_utime.tv_usec + ruse.ru_stime.tv_usec)/1000;
-#else					/* HAVE_GETRUSAGE */
+#else                                   /* HAVE_GETRUSAGE */
 
    static long starttime = -2;
 
@@ -47,10 +47,10 @@ long millisec()
       static long system_millisec;
      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
      if (starttime == -2)
-	system_millisec = ts.tv_sec * 1000 + ts.tv_nsec/1000000;
+        system_millisec = ts.tv_sec * 1000 + ts.tv_nsec/1000000;
      usertime = ts.tv_sec * 1000 + ts.tv_nsec/1000000 - system_millisec;
      }
-#endif					/* HAVE_CLOCK_GETTIME */
+#endif                                  /* HAVE_CLOCK_GETTIME */
 
 /*
  * t's units here are (system-defined) clock ticks. If we have clock_gettime()
@@ -63,28 +63,28 @@ long millisec()
    times(&tp);
 #ifdef HAVE_CLOCK_GETTIME
    t = (long) (tp.tms_stime);
-#else					/* HAVE_CLOCK_GETTIME */
+#else                                   /* HAVE_CLOCK_GETTIME */
    t = (long) (tp.tms_utime + tp.tms_stime);
-#endif					/* HAVE_CLOCK_GETTIME */
+#endif                                  /* HAVE_CLOCK_GETTIME */
    }
 
    if (starttime == -2) {
       starttime = t;
 #ifdef CLK_TCK
       clk_tck = CLK_TCK;
-#else					/* CLK_TCK */
+#else                                   /* CLK_TCK */
       clk_tck = sysconf(_SC_CLK_TCK);
 #endif
       }
 
 #ifdef HAVE_CLOCK_GETTIME
    return usertime + (long) ((1000.0 / clk_tck) * (t - starttime));
-#else					/* HAVE_CLOCK_GETTIME */
+#else                                   /* HAVE_CLOCK_GETTIME */
    return (long) ((1000.0 / clk_tck) * (t - starttime));
-#endif					/* HAVE_CLOCK_GETTIME */
-#endif					/* HAVE_GETRUSAGE */
+#endif                                  /* HAVE_CLOCK_GETTIME */
+#endif                                  /* HAVE_GETRUSAGE */
    }
-#endif					/* UNIX */
+#endif                                  /* UNIX */
 
 #if NT && defined(HAVE_CLOCK_GETTIME)
 /*
@@ -125,4 +125,4 @@ long millisec()
    return (long) ((1000.0 / CLOCKS_PER_SEC) * (t - starttime));
    }
 
-#endif					/* UNIX */
+#endif                                  /* UNIX */

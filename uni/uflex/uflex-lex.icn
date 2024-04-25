@@ -32,35 +32,35 @@ repeat {
 
    if ="}%" then { printf("%s", "}% should read %}") }
    else if ="%%" then {
-	#
-	# copy out remainder, up to EOF, into output file.
-	#
-	whiteflag := 1
-	
-	if not (foutfile := open("ulex.tmp","w")) then {
-	   fprintf(&errout, "couldn't write to ulex.tmp; exiting\n")
-	   exit(1)
-	   }
-	fprintf(foutfile, "\n")
-	fprintf(foutfile, "$line %d \"%s\"\n", yylineno, yyfilename)
+        #
+        # copy out remainder, up to EOF, into output file.
+        #
+        whiteflag := 1
 
-	while nextchar := yyinput() do {
-	    if nextchar === "\^m" then {
-		write("hmmmm"); nextchar := yyinput();
-		if nextchar === "\n" then write(foutfile)
-		else writes(foutfile, "\^m", nextchar)
-	    }
-	   writes(foutfile,nextchar)
-	   }
+        if not (foutfile := open("ulex.tmp","w")) then {
+           fprintf(&errout, "couldn't write to ulex.tmp; exiting\n")
+           exit(1)
+           }
+        fprintf(foutfile, "\n")
+        fprintf(foutfile, "$line %d \"%s\"\n", yylineno, yyfilename)
 
-	close(foutfile)
-	return 0
-	}
+        while nextchar := yyinput() do {
+            if nextchar === "\^m" then {
+                write("hmmmm"); nextchar := yyinput();
+                if nextchar === "\n" then write(foutfile)
+                else writes(foutfile, "\^m", nextchar)
+            }
+           writes(foutfile,nextchar)
+           }
+
+        close(foutfile)
+        return 0
+        }
 
    else if yytext := (="[" || (="^"|"")) then { # cset processing
       while not (yytext ||:= ="]") do {
-       
-	 # character class expressions (predefined csets)
+
+         # character class expressions (predefined csets)
          if ="[:alnum:]" then yytext ||:= string(&letters++&digits)
          else if ="[:cntrl:]" then yytext ||:= "\\1-\\32"
          else if ="[:lower:]" then yytext ||:= string(&lcase)
@@ -77,9 +77,9 @@ repeat {
          else if yytext ||:= tab(any(&cset -- ']\\')) then { }
          # generalize to handle all escapes legal in flex:
          else if yytext ||:= (="\\" || tab(any('tnrfv\"\\-01234567'))) then { }
-         else { 
+         else {
             fprintf(&errout, "%s:%d: lexical error, broken cset2 regex '%s'\n",
-	 	    yyfilename, yylineno, yytext)
+                    yyfilename, yylineno, yytext)
             return 0
             }
          }
@@ -101,7 +101,7 @@ repeat {
          else if yytext ||:= (="\\" || tab(any('tnrf\"\\'))) then { }
          else {
             fprintf(&errout, "%s:%d: lexical error, broken string %s\n",
-		    yyfilename, yylineno, yytext)
+                    yyfilename, yylineno, yytext)
             return 0
             }
          }
@@ -167,8 +167,8 @@ repeat {
    else if yytext := ="{-}" then { return token(CSETDIFFERENCE) }
    else if yytext := ((="{" || tab(many(&digits)) || ="," ||
                                tab(many(&digits)) || ="}") |
-			(="{" || tab(any(&digits)) || =",}") |
-			(="{" || tab(any(&digits)) || ="}")) then {
+                        (="{" || tab(any(&digits)) || =",}") |
+                        (="{" || tab(any(&digits)) || ="}")) then {
       yylval.s = yytext
       return token(CURLBRACKETS)
       }
@@ -204,9 +204,9 @@ repeat {
    else if yytext := move(1) then {
       if whiteflag ~= 0 then return 1
       else { fprintf(&errout, "%s:%d: lexical error on token '%s'\n",
-		    yyfilename, yylineno, yytext)
-	     return 0
-	 }
+                    yyfilename, yylineno, yytext)
+             return 0
+         }
       }
    else { # couldn't move(1), must be EOF
       return 0
@@ -228,24 +228,24 @@ procedure grab_semantic_action()
 
     while numbrace ~= 0 do {
         if not (nextchar := move(1)) then {
-	   fprintf(&errout,"bad/unfinished semantic action\n");
-	   exit(-1);
-	   }
+           fprintf(&errout,"bad/unfinished semantic action\n");
+           exit(-1);
+           }
         if nextchar == "\"" & slash = 0 then {
            quotemode := 1 - quotemode
-	   }
+           }
 
         if nextchar == "\\" then {
-	   slash := 1 - slash
-	   }
-	else slash := 0
+           slash := 1 - slash
+           }
+        else slash := 0
         if quotemode == 0 then {
             if nextchar == "{" then {
-	       numbrace +:= 1
-	       }
+               numbrace +:= 1
+               }
             else if nextchar == "}" then {
-	       numbrace -:= 1
-	       }
+               numbrace -:= 1
+               }
         }
 
         # append nextchar onto end of yytext

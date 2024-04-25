@@ -57,7 +57,7 @@ static struct rsrvd_wrd pp_rsrvd[] = {
    {"error",   PpError},
    {"pragma",  PpPragma},
    {NULL, Invalid}};
-
+
 /*
  * init_tok - initialize tokenizer.
  */
@@ -79,12 +79,11 @@ void init_tok()
       one_tok = new_token(PpNumber, spec_str("1"), "", 0);
       }
    }
-
+
 /*
  * pp_tok_id - see if s in the name of a preprocessing directive.
  */
-static int pp_tok_id(s)
-char *s;
+static int pp_tok_id(char *s)
    {
    struct rsrvd_wrd *rw;
 
@@ -92,7 +91,7 @@ char *s;
       ;
    return rw->tok_id;
    }
-
+
 /*
  * chk_eq_sign - look ahead to next character to see if it is an equal sign.
  *  It is used for processing -D options.
@@ -106,14 +105,13 @@ int chk_eq_sign()
    else
       return 0;
    }
-
+
 /*
  * chck_wh_sp - If the input is at white space, construct a white space token
  *  and return it, otherwise return NULL. This function also helps keeps track
  *  of preprocessor directive boundaries.
  */
-static struct token *chck_wh_sp(cs)
-struct char_src *cs;
+static struct token *chck_wh_sp(struct char_src *cs)
    {
    register int c1, c2;
    struct token *t;
@@ -217,7 +215,7 @@ struct char_src *cs;
             AdvChar();
             if (whsp_image == FullImage)
                AppChar(tknize_sbuf, c1);
-	    c1 = *next_char;
+            c1 = *next_char;
             }
 
          /*
@@ -261,7 +259,7 @@ struct char_src *cs;
       }
    return t;
    }
-
+
 /*
  * pp_number - Create a token for a preprocessing number (See ANSI C Standard
  *  for the syntax of such a number).
@@ -292,13 +290,11 @@ static struct token *pp_number()
          }
       }
    }
-
+
 /*
  * char_str - construct a token for a character constant or string literal.
  */
-static struct token *char_str(delim, tok_id)
-int delim;
-int tok_id;
+static struct token *char_str(int delim, int tok_id)
    {
    register int c;
 
@@ -322,15 +318,12 @@ int tok_id;
    AdvChar();
    return new_token(tok_id, str_install(&tknize_sbuf), fname, line);
    }
-
+
 /*
  * hdr_tok - create a token for an #include header. The delimiter may be
  *  > or ".
  */
-static struct token *hdr_tok(delim, tok_id, cs)
-int delim;
-int tok_id;
-struct char_src *cs;
+static struct token *hdr_tok(int delim, int tok_id, struct char_src *cs)
    {
    register int c;
 
@@ -350,7 +343,7 @@ struct char_src *cs;
    AdvChar();
    return new_token(tok_id, str_install(&tknize_sbuf), fname, line);
    }
-
+
 /*
  * tokenize - return the next token from the character source on the top
  *  of the source stack.
@@ -413,7 +406,7 @@ struct token *tokenize()
                }
             else
                free_t(t1);  /* discard white space */
-	    }
+            }
          c = *next_char;
          if (islower(c) || isupper(c) || c == '_') {
             /*
@@ -442,7 +435,7 @@ struct token *tokenize()
                         errt1(t2, "file name missing from #include");
                      else
                         free_t(t2);
-		     }
+                     }
                   c = *next_char;
                   if (c == '"')
                      cs->tok_sav = hdr_tok('"', StrLit, cs);
@@ -500,7 +493,7 @@ struct token *tokenize()
       AppChar(tknize_sbuf, c);
       return pp_number();
       }
-  
+
    /*
     * Check for character constant.
     */
@@ -545,7 +538,7 @@ struct token *tokenize()
             }
          else
             return new_token('.', str_install(&tknize_sbuf), fname, line);
- 
+
       case '+':
          c = *next_char;
          if (c == '+') {
@@ -566,7 +559,7 @@ struct token *tokenize()
             }
          else
             return new_token('+', str_install(&tknize_sbuf), fname, line);
- 
+
       case '-':
          c = *next_char;
          if (c == '>') {
@@ -596,7 +589,7 @@ struct token *tokenize()
             }
          else
             return new_token('-', str_install(&tknize_sbuf), fname, line);
- 
+
       case '<':
          c = *next_char;
          if (c == '<') {
@@ -627,7 +620,7 @@ struct token *tokenize()
             }
          else
             return new_token('<', str_install(&tknize_sbuf), fname, line);
- 
+
       case '>':
          c = *next_char;
          if (c == '>') {
@@ -658,7 +651,7 @@ struct token *tokenize()
             }
          else
             return new_token('>', str_install(&tknize_sbuf), fname, line);
- 
+
       case '=':
          if (*next_char == '=') {
             /*
@@ -670,7 +663,7 @@ struct token *tokenize()
             }
          else
             return new_token('=', str_install(&tknize_sbuf), fname, line);
- 
+
       case '!':
          if (*next_char == '=') {
             /*
@@ -682,7 +675,7 @@ struct token *tokenize()
             }
          else
             return new_token('!', str_install(&tknize_sbuf), fname, line);
- 
+
       case '&':
          c = *next_char;
          if (c == '&') {
@@ -703,7 +696,7 @@ struct token *tokenize()
             }
          else
             return new_token('&', str_install(&tknize_sbuf), fname, line);
- 
+
       case '|':
          c = *next_char;
          if (c == '|') {
@@ -724,7 +717,7 @@ struct token *tokenize()
             }
          else
             return new_token('|', str_install(&tknize_sbuf), fname, line);
- 
+
       case '*':
          if (*next_char == '=') {
             /*
@@ -748,7 +741,7 @@ struct token *tokenize()
             }
          else
             return new_token('/', str_install(&tknize_sbuf), fname, line);
- 
+
       case '%':
          if (*next_char == '=') {
             /*
@@ -760,7 +753,7 @@ struct token *tokenize()
             }
          else
             return new_token('%', str_install(&tknize_sbuf), fname, line);
- 
+
       case '^':
          if (*next_char == '=') {
             /*
@@ -772,7 +765,7 @@ struct token *tokenize()
             }
          else
             return new_token('^', str_install(&tknize_sbuf), fname, line);
- 
+
       case '#':
          /*
           * Token pasting or stringizing operator.
@@ -797,7 +790,7 @@ struct token *tokenize()
                " preprocessing expression must not cross directive boundary");
             else
                free_t(t2);
-	    }
+            }
          return t1;
 
       default:

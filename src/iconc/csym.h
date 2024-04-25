@@ -5,7 +5,7 @@
 #define MaybeTrue  1 /* condition might be true at run time */
 #define MaybeFalse 2 /* condition might be false at run time */
 
-#define MayConvert 1 /* type conversion may convert the value */ 
+#define MayConvert 1 /* type conversion may convert the value */
 #define MayDefault 2 /* defaulting type conversion may use default */
 #define MayKeep    4 /* conversion may succeed without any actual conversion */
 
@@ -23,7 +23,7 @@ struct typ_info {
 /*
  * A type is a bit vector representing a union of basic types. There
  *  are 3 sizes of types: first class types (Icon language types),
- *  intermediate value types (first class types plus variable references), 
+ *  intermediate value types (first class types plus variable references),
  *  run-time routine types (intermediate value types plus internal
  *  references to descriptors such as set elements). When the size of
  *  the type is known from context, a simple bit vector can be used.
@@ -79,45 +79,45 @@ typedef unsigned int vord;
 #define NumVords NumInts
 #define VordBits IntBits
 
-struct centry {		/* constant table entry */
-   struct centry *blink;	/*   link for bucket chain */
-   char *image;			/*   pointer to string image of literal */
-   int length;			/*   length of string */
+struct centry {                 /* constant table entry */
+   struct centry *blink;        /*   link for bucket chain */
+   char *image;                 /*   pointer to string image of literal */
+   int length;                  /*   length of string */
    union {
-      unsigned short *cset;	/*   pointer to bit string for cset literal */
-      long intgr;		/*   value of integer literal */
+      unsigned short *cset;     /*   pointer to bit string for cset literal */
+      long intgr;               /*   value of integer literal */
       } u;
-   uword flag;			/*   type of literal flag */
-   char prefix[PrfxSz+1];	/*   unique prefix used in data block name */
+   uword flag;                  /*   type of literal flag */
+   char prefix[PrfxSz+1];       /*   unique prefix used in data block name */
    };
 
-struct fentry {			/* field table entry */
-   struct fentry *blink;	/*   link for bucket chain */
-   char *name;			/*   name of field */
-   struct par_rec *rlist;	/*   head of list of records */
+struct fentry {                 /* field table entry */
+   struct fentry *blink;        /*   link for bucket chain */
+   char *name;                  /*   name of field */
+   struct par_rec *rlist;       /*   head of list of records */
    };
 
-struct lentry {			/* local table entry */
-   struct lentry *blink;	/*   link for bucket chain */
-   char *name;			/*   name of variable */
-   uword flag;			/*   variable flags */
+struct lentry {                 /* local table entry */
+   struct lentry *blink;        /*   link for bucket chain */
+   char *name;                  /*   name of variable */
+   uword flag;                  /*   variable flags */
    union {
       struct gentry *global;    /*   for globals: global symbol table entry */
       int index;                /*   type index; run-time descriptor index */
       } val;
-   struct lentry *next;		/*   used for linking a class of variables */
+   struct lentry *next;         /*   used for linking a class of variables */
    };
 
-struct gentry {			 /* global table entry */
-   struct gentry *blink;	 /*   link for bucket chain */
-   char *name;			 /*   name of variable */
-   uword flag;			 /*   variable flags */
+struct gentry {                  /* global table entry */
+   struct gentry *blink;         /*   link for bucket chain */
+   char *name;                   /*   name of variable */
+   uword flag;                   /*   variable flags */
    union {
       struct implement *builtin; /*   pointer to built-in function */
-      struct pentry *proc;	 /*   pointer to procedure entry */
-      struct rentry *rec;	 /*   pointer to record entry */
+      struct pentry *proc;       /*   pointer to procedure entry */
+      struct rentry *rec;        /*   pointer to record entry */
       } val;
-   int index;			 /*   index into global array */
+   int index;                    /*   index into global array */
    int init_type;                /*   initial type if procedure */
    };
 
@@ -125,8 +125,8 @@ struct gentry {			 /* global table entry */
  * Structure for list of parent records for a field name.
  */
 struct par_rec {
-   struct rentry *rec;		/* parent record */
-   int offset;			/* field's offset within this record */
+   struct rentry *rec;          /* parent record */
+   int offset;                  /* field's offset within this record */
    int mark;                    /* used during code generation */
    struct par_rec *next;
    };
@@ -135,26 +135,26 @@ struct par_rec {
  * Structure for a procedure.
  */
 struct pentry {
-   char *name;			/* name of procedure */
-   char prefix[PrfxSz+1];	/* prefix to make name unique */
-   struct lentry **lhash;	/* hash area for procedure's local table */
-   int nargs;			/* number of args */
-   struct lentry *args;		/* list of arguments in reverse order */
+   char *name;                  /* name of procedure */
+   char prefix[PrfxSz+1];       /* prefix to make name unique */
+   struct lentry **lhash;       /* hash area for procedure's local table */
+   int nargs;                   /* number of args */
+   struct lentry *args;         /* list of arguments in reverse order */
    int ndynam;                  /* number of dynamic locals */
    struct lentry *dynams;       /* list of dynamics in reverse order */
    int nstatic;                 /* number of statics */
-   struct lentry *statics;	/* list of statics in reverse order */
-   struct node *tree;		/* syntax tree for procedure */
-   int has_coexpr;		/* this procedure contains co-expressions */
-   int tnd_loc;			/* number of tended dynamic locals */
-   int ret_flag;		/* proc returns, suspends, and/or fails */
+   struct lentry *statics;      /* list of statics in reverse order */
+   struct node *tree;           /* syntax tree for procedure */
+   int has_coexpr;              /* this procedure contains co-expressions */
+   int tnd_loc;                 /* number of tended dynamic locals */
+   int ret_flag;                /* proc returns, suspends, and/or fails */
    int reachable;               /* this procedure may be executed */
-   int iteration;		/* last iteration of type inference performed */
-   int arg_lst;			/* for varargs - the type number of the list */
+   int iteration;               /* last iteration of type inference performed */
+   int arg_lst;                 /* for varargs - the type number of the list */
    typeinfo_t *ret_typ; /* type returned from procedure */
-   struct store *in_store;	/* store at start of procedure */
-   struct store *susp_store;	/* store for resumption points of procedure */
-   struct store *out_store;	/* store on exiting procedure */
+   struct store *in_store;      /* store at start of procedure */
+   struct store *susp_store;    /* store for resumption points of procedure */
+   struct store *out_store;     /* store on exiting procedure */
    struct lentry **vartypmap;   /* mapping from var types to symtab entries */
    typeinfo_t * coexprs; /* co-expressions in which proc may be called */
    struct pentry *next;
@@ -164,12 +164,12 @@ struct pentry {
  * Structure for a record.
  */
 struct rentry {
-   char *name;			/* name of record */
-   char prefix[PrfxSz+1];	/* prefix to make name unique */
-   int frst_fld;		/* offset of variable type of 1st field */
-   int nfields;			/* number of fields */
-   struct fldname *fields;	/* list of field names in reverse order */
-   int rec_num;			/* id number for record */
+   char *name;                  /* name of record */
+   char prefix[PrfxSz+1];       /* prefix to make name unique */
+   int frst_fld;                /* offset of variable type of 1st field */
+   int nfields;                 /* number of fields */
+   struct fldname *fields;      /* list of field names in reverse order */
+   int rec_num;                 /* id number for record */
    struct rentry *next;
    };
 
@@ -227,12 +227,12 @@ extern struct implement *spec_op[NumSpecOp];
  * Symbol table region pointers.
  */
 
-extern struct implement *bhash[];	/* hash area for built-in func table */
-extern struct centry *chash[];		/* hash area for constant table */
-extern struct fentry *fhash[];		/* hash area for field table */
-extern struct gentry *ghash[];		/* hash area for global table */
-extern struct implement *khash[];	/* hash area for keyword table */
-extern struct implement *ohash[];	/* hash area for operator table */
+extern struct implement *bhash[];       /* hash area for built-in func table */
+extern struct centry *chash[];          /* hash area for constant table */
+extern struct fentry *fhash[];          /* hash area for field table */
+extern struct gentry *ghash[];          /* hash area for global table */
+extern struct implement *khash[];       /* hash area for keyword table */
+extern struct implement *ohash[];       /* hash area for operator table */
 
 extern struct pentry *proc_lst; /* procedure list */
 extern struct rentry *rec_lst;  /* record list */
@@ -248,10 +248,10 @@ extern struct pentry *cur_proc; /* procedure currently being translated */
  *  are all a power of 2.
  */
 
-#define CHasher(x)	(((word)x)&(CHSize-1))	 /* constant symbol table */
-#define FHasher(x)	(((word)x)&(FHSize-1))	 /* field symbol table */
-#define GHasher(x)	(((word)x)&(GHSize-1))	 /* global symbol table */
-#define LHasher(x)	(((word)x)&(LHSize-1))	 /* local symbol table */
+#define CHasher(x)      (((word)x)&(CHSize-1))   /* constant symbol table */
+#define FHasher(x)      (((word)x)&(FHSize-1))   /* field symbol table */
+#define GHasher(x)      (((word)x)&(GHSize-1))   /* global symbol table */
+#define LHasher(x)      (((word)x)&(LHSize-1))   /* local symbol table */
 
 /*
  * flags for implementation entries.

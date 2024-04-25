@@ -9,10 +9,10 @@
  */
 #ifdef TokDotH
 #include TokDotH
-#else					/* TokDotH */
+#else                                   /* TokDotH */
 #ifndef NoRTT
 #include "../rtt/ltoken.h"
-#else					/* RTT */
+#else                                   /* RTT */
 /*
  * These are the numbers for tokens (other than single characters) returned
  *   by the preproccesor and seen by a yacc parser for a C grammar.
@@ -44,5 +44,5 @@
 #define RShftAsgn 281
 #define StrLit 282
 #define XorAsgn 283
-#endif					/* NoRTT */
-#endif					/* TokDotH */
+#endif                                  /* NoRTT */
+#endif                                  /* TokDotH */

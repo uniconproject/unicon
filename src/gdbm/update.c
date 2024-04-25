@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -37,11 +37,10 @@ static void write_header _ARGS((gdbm_file_info *));
 /* This procedure writes the header back to the file described by DBF. */
 
 static void
-write_header (dbf)
-     gdbm_file_info *dbf;
+write_header (gdbm_file_info *dbf)
 {
-  int  num_bytes;	/* Return value for write. */
-  off_t file_pos;	/* Return value for lseek. */
+  int  num_bytes;       /* Return value for write. */
+  off_t file_pos;       /* Return value for lseek. */
 
   file_pos = lseek (dbf->desc, 0L, L_SET);
   if (file_pos != 0) _gdbm_fatal (dbf, "lseek error");
@@ -58,13 +57,12 @@ write_header (dbf)
 /* After all changes have been made in memory, we now write them
    all to disk. */
 void
-_gdbm_end_update (dbf)
-     gdbm_file_info *dbf;
+_gdbm_end_update (gdbm_file_info *dbf)
 {
-  int  num_bytes;	/* Return value for write. */
-  off_t file_pos;	/* Return value for lseek. */
-  
-  
+  int  num_bytes;       /* Return value for write. */
+  off_t file_pos;       /* Return value for lseek. */
+
+
   /* Write the current bucket. */
   if (dbf->bucket_changed && (dbf->cache_entry != NULL))
     {
@@ -80,14 +78,14 @@ _gdbm_end_update (dbf)
           register int index;
 
           for (index = 0; index < dbf->cache_size; index++)
-	    {
-	      if (dbf->bucket_cache[index].ca_changed)
-	        _gdbm_write_bucket (dbf, &dbf->bucket_cache[index]);
+            {
+              if (dbf->bucket_cache[index].ca_changed)
+                _gdbm_write_bucket (dbf, &dbf->bucket_cache[index]);
             }
         }
       dbf->second_changed = FALSE;
     }
-  
+
   /* Write the directory. */
   if (dbf->directory_changed)
     {
@@ -95,10 +93,10 @@ _gdbm_end_update (dbf)
       if (file_pos != dbf->header->dir) _gdbm_fatal (dbf, "lseek error");
       num_bytes = write (dbf->desc, dbf->dir, dbf->header->dir_size);
       if (num_bytes != dbf->header->dir_size)
-	_gdbm_fatal (dbf, "write error");
+        _gdbm_fatal (dbf, "write error");
       dbf->directory_changed = FALSE;
       if (!dbf->header_changed && !dbf->fast_write)
-	fsync (dbf->desc);
+        fsync (dbf->desc);
     }
 
   /* Final write of the header. */
@@ -113,9 +111,7 @@ _gdbm_end_update (dbf)
 /* If a fatal error is detected, come here and exit. VAL tells which fatal
    error occured. */
 int
-_gdbm_fatal (dbf, val)
-     gdbm_file_info *dbf;
-     char *val;
+_gdbm_fatal (gdbm_file_info *dbf, char *val)
 {
   if (dbf->fatal_err != NULL)
     (*dbf->fatal_err) (val);

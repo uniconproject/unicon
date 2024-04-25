@@ -16,7 +16,7 @@ void addmem(struct b_set *ps,struct b_selem *pe,union block **pl)
       pe->clink = *pl;
    *pl = (union block *) pe;
    }
-
+
 /*
  * cpslots(dp1, slotptr, i, j) - copy elements of sublist dp1[i:j]
  *  into an array of descriptors.
@@ -44,10 +44,10 @@ void cpslots(dptr dp1, dptr slotptr, word i, word j)
        * Locate the block containing element i in the source list.
        */
       if (size > 0) {
-	 while (i > bp1->nused) {
-	    i -= bp1->nused;
-	    bp1 = (struct b_lelem *) bp1->listnext;
-	 }
+         while (i > bp1->nused) {
+            i -= bp1->nused;
+            bp1 = (struct b_lelem *) bp1->listnext;
+         }
       }
 
       /*
@@ -56,13 +56,13 @@ void cpslots(dptr dp1, dptr slotptr, word i, word j)
        *  block have been copied.
        */
       while (size > 0) {
-	 j = bp1->first + i - 1;
-	 if (j >= bp1->nslots)
-	   j -= bp1->nslots;
-	 *slotptr++ = bp1->lslots[j];
-	 if (++i > bp1->nused) {
-	   i = 1;
-	   bp1 = (struct b_lelem *) bp1->listnext;
+         j = bp1->first + i - 1;
+         if (j >= bp1->nslots)
+           j -= bp1->nslots;
+         *slotptr++ = bp1->lslots[j];
+         if (++i > bp1->nused) {
+           i = 1;
+           bp1 = (struct b_lelem *) bp1->listnext;
            }
          size--;
          }
@@ -111,10 +111,10 @@ void cpslots(dptr dp1, dptr slotptr, word i, word j)
             struct b_real *xp;
             xp = alcreal((double)ap->a[i++]);
             slotptr[k].vword.bptr = (union block *) xp;
-	    }
-#endif					/* DescriptorDouble */
-	    slotptr[k].dword = D_Real;
-	    }
+            }
+#endif                                  /* DescriptorDouble */
+            slotptr[k].dword = D_Real;
+            }
          } /* if (ndims==1) */
      else {
         // TODO: multi-dimensional
@@ -123,7 +123,7 @@ void cpslots(dptr dp1, dptr slotptr, word i, word j)
       break;
    } /* Realrray */
 
-#endif				/* Arrays */
+#endif                          /* Arrays */
 
    default:
       syserr("impossible cpslots\n");
@@ -163,11 +163,11 @@ int f(dptr dp1, dptr dp2, word i, word j)
 #ifdef MultiProgram
 cplist_macro(cplist_0, 0)
 cplist_macro(cplist_1, E_Lcreate)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cplist_macro(cplist, 0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
-
+
 #begdef cpset_macro(f, e)
 /*
  * cpset(dp1,dp2,n) - copy set dp1 to dp2, reserving memory for n entries.
@@ -183,9 +183,9 @@ int f(dptr dp1, dptr dp2, word n)
 #ifdef MultiProgram
 cpset_macro(cpset_0, 0)
 cpset_macro(cpset_1, E_Screate)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cpset_macro(cpset, 0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #begdef cptable_macro(f, e)
 int f(dptr dp1, dptr dp2, word n)
@@ -200,14 +200,11 @@ int f(dptr dp1, dptr dp2, word n)
 #ifdef MultiProgram
 cptable_macro(cptable_0, 0)
 cptable_macro(cptable_1, E_Tcreate)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cptable_macro(cptable, 0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
-int cphash(dp1, dp2, n, tcode)
-dptr dp1, dp2;
-word n;
-int tcode;
+int cphash(dptr dp1, dptr dp2, word n, int tcode)
    {
    union block *src;
    tended union block *dst;
@@ -227,36 +224,36 @@ int tcode;
     * Copy the header and slot blocks.
     */
    src = BlkLoc(*dp1);
-   dst->Set.size = src->Set.size;	/* actual set size */
-   dst->Set.mask = src->Set.mask;	/* hash mask */
+   dst->Set.size = src->Set.size;       /* actual set size */
+   dst->Set.mask = src->Set.mask;       /* hash mask */
    for (i = 0; i < HSegs && src->Set.hdir[i] != NULL; i++)
       memcpy((char *)dst->Set.hdir[i], (char *)src->Set.hdir[i],
          src->Set.hdir[i]->blksize);
    /*
     * Work down the chain of element blocks in each bucket
-    *	and create identical chains in new set.
+    *   and create identical chains in new set.
     */
    for (i = 0; i < HSegs && (seg = BlkPH(dst,Set,hdir)[i]) != NULL; i++)
       for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--)  {
-	 prev = NULL;
+         prev = NULL;
          for (ep = (struct b_selem *)seg->hslots[slotnum];
-	      ep != NULL && BlkType(ep) != T_Table;
-	      ep = (struct b_selem *)ep->clink) {
-	    if (tcode == T_Set) {
+              ep != NULL && BlkType(ep) != T_Table;
+              ep = (struct b_selem *)ep->clink) {
+            if (tcode == T_Set) {
                Protect(se = alcselem(&ep->setmem, ep->hashnum),return RunError);
                se->clink = ep->clink;
-	       }
-	    else {
-	       Protect(se = (struct b_selem *)alctelem(), return RunError);
-	       *(struct b_telem *)se = *(struct b_telem *)ep; /* copy table entry */
-	       if (BlkType(se->clink) == T_Table)
-		  se->clink = dst;
-	       }
-	    if (prev == NULL)
-		seg->hslots[slotnum] = (union block *)se;
-	    else
-		prev->clink = (union block *)se;
-	    prev = se;
+               }
+            else {
+               Protect(se = (struct b_selem *)alctelem(), return RunError);
+               *(struct b_telem *)se = *(struct b_telem *)ep; /* copy table entry */
+               if (BlkType(se->clink) == T_Table)
+                  se->clink = dst;
+               }
+            if (prev == NULL)
+                seg->hslots[slotnum] = (union block *)se;
+            else
+                prev->clink = (union block *)se;
+            prev = se;
             }
          }
    dp2->dword = tcode | D_Typecode | F_Ptr;
@@ -265,15 +262,13 @@ int tcode;
       hshrink(dst);
    return Succeeded;
    }
-
+
 /*
  * hmake - make a hash structure (Set or Table) with a given number of slots.
  *  If *nslots* is zero, a value appropriate for *nelem* elements is chosen.
  *  A return of NULL indicates allocation failure.
  */
-union block *hmake(tcode, nslots, nelem)
-int tcode;
-word nslots, nelem;
+union block *hmake(int tcode, word nslots, word nelem)
    {
    word seg, t, blksize, elemsize;
    tended union block *blk;
@@ -283,12 +278,12 @@ word nslots, nelem;
       nslots = (nelem + MaxHLoad - 1) / MaxHLoad;
    for (seg = t = 0; seg < (HSegs - 1) && (t += segsize[seg]) < nslots; seg++)
       ;
-   nslots = ((word)HSlots) << seg;	/* ensure legal power of 2 */
+   nslots = ((word)HSlots) << seg;      /* ensure legal power of 2 */
    if (tcode == T_Table) {
       blksize = sizeof(struct b_table);
       elemsize = sizeof(struct b_telem);
       }
-   else {	/* T_Set */
+   else {       /* T_Set */
       blksize = sizeof(struct b_set);
       elemsize = sizeof(struct b_selem);
       }
@@ -303,19 +298,19 @@ word nslots, nelem;
          Blk(blk,Table)->hdir[seg] = segp;
       else
          Blk(blk,Set)->hdir[seg] = segp;
-#else					/* DebugHeap */
+#else                                   /* DebugHeap */
       blk->Set.hdir[seg] = segp;
-#endif					/* DebugHeap */
+#endif                                  /* DebugHeap */
       if (tcode == T_Table) {
-	 int j;
-	 for (j = 0; j < segsize[seg]; j++)
-	    segp->hslots[j] = blk;
+         int j;
+         for (j = 0; j < segsize[seg]; j++)
+            segp->hslots[j] = blk;
          }
       }
    blk->Set.mask = nslots - 1;
    return blk;
    }
-
+
 /*
  * hchain - return a pointer to the word that points to the head of the
  *  hash chain for hash number hn in hashed structure s.
@@ -443,9 +438,7 @@ static unsigned char log2h[] = {
    11,11,11,11, 11,11,11,11, 11,11,11,11, 11,11,11,11
    };
 
-union block **hchain(pb, hn)
-union block *pb;
-register uword hn;
+union block **hchain(union block *pb, register uword hn)
    {
    register struct b_set *ps;
    register word slotnum, segnum, segslot;
@@ -459,18 +452,16 @@ register uword hn;
    segslot = hn & (segsize[segnum] - 1);
    return &ps->hdir[segnum]->hslots[segslot];
    }
-
+
 /*
  * hgfirst - initialize for generating set or table, and return first element.
  */
 
-union block *hgfirst(bp, s)
-union block *bp;
-struct hgstate *s;
+union block *hgfirst(union block *bp, struct hgstate *s)
    {
    int i;
 
-   s->segnum = 0;				/* set initial state */
+   s->segnum = 0;                               /* set initial state */
    s->slotnum = -1;
    s->tmask = BlkPH(bp,Table,mask);
    for (i = 0; i < HSegs; i++)
@@ -486,16 +477,13 @@ struct hgstate *s;
  *  the time of the split and checking past history when starting to process
  *  a new chain.
  *
- *  Elements inserted or deleted between calls may or may not be generated. 
+ *  Elements inserted or deleted between calls may or may not be generated.
  *
  *  We assume that no structure *shrinks* after its initial creation; they
  *  can only *grow*.
  */
 
-union block *hgnext(bp, s, ep)
-union block *bp;
-struct hgstate *s;
-union block *ep;
+union block *hgnext(union block *bp, struct hgstate *s, union block *ep)
    {
    int i;
    word d, m;
@@ -508,21 +496,21 @@ union block *ep;
     *  by doing nothing now.
     */
    if (BlkPH(bp,Table,mask) != s->tmask &&
-	  (BlkPE(ep,Selem,clink) == NULL ||
-	   BlkType(BlkPE(ep,Telem,clink)) == T_Table ||
-	  BlkPE(BlkPE(ep,Telem,clink),Telem,hashnum) != BlkPE(ep,Telem,hashnum))){
+          (BlkPE(ep,Selem,clink) == NULL ||
+           BlkType(BlkPE(ep,Telem,clink)) == T_Table ||
+          BlkPE(BlkPE(ep,Telem,clink),Telem,hashnum) != BlkPE(ep,Telem,hashnum))){
       /*
        * Yes, they did split.  Make a note of the current state.
        */
       hn = BlkPE(ep,Telem,hashnum);
       for (i = 1; i < HSegs; i++)
          if ((((word)HSlots) << (i - 1)) > s->tmask) {
-   	 /*
-   	  * For the newly created segments only, save the mask and
-   	  *  hash number being processed at time of creation.
-   	  */
-   	 s->sgmask[i] = s->tmask;
-   	 s->sghash[i] = hn;
+         /*
+          * For the newly created segments only, save the mask and
+          *  hash number being processed at time of creation.
+          */
+         s->sgmask[i] = s->tmask;
+         s->sghash[i] = hn;
          }
       s->tmask = BlkPH(bp,Table,mask);
       /*
@@ -533,7 +521,7 @@ union block *ep;
        */
       ep = BlkPH(bp,Table,hdir)[s->segnum]->hslots[s->slotnum];
       while (ep != NULL && BlkType(ep) != T_Table &&
-	     BlkPE(ep,Telem,hashnum) <= hn)
+             BlkPE(ep,Telem,hashnum) <= hn)
          ep = BlkPE(ep,Telem,clink);
       }
 
@@ -543,8 +531,8 @@ union block *ep;
        *  that have identical hash numbers.  Find the next element in
        *  the current hash chain.
        */
-      if (ep != NULL && BlkType(ep) != T_Table)	/* NULL on very first call */
-         ep = BlkPE(ep,Telem,clink);	/* next element in chain, if any */
+      if (ep != NULL && BlkType(ep) != T_Table) /* NULL on very first call */
+         ep = BlkPE(ep,Telem,clink);    /* next element in chain, if any */
    }
 
    /*
@@ -556,10 +544,10 @@ union block *ep;
        */
       s->slotnum++;
       if (s->slotnum >= segsize[s->segnum]) {
-	 s->slotnum = 0;		/* need to move to next segment */
-	 s->segnum++;
-	 if (s->segnum >= HSegs || BlkPH(bp,Table,hdir)[s->segnum] == NULL)
-	    return 0;			/* return NULL at end of set/table */
+         s->slotnum = 0;                /* need to move to next segment */
+         s->segnum++;
+         if (s->segnum >= HSegs || BlkPH(bp,Table,hdir)[s->segnum] == NULL)
+            return 0;                   /* return NULL at end of set/table */
          }
       ep = BlkPH(bp,Table,hdir)[s->segnum]->hslots[s->slotnum];
       /*
@@ -569,15 +557,15 @@ union block *ep;
        */
       for (i = s->segnum; (m = s->sgmask[i]) != 0; i--) {
          d = (word)(m & s->slotnum) - (word)(m & s->sghash[i]);
-         if (d < 0)			/* if all elements processed earlier */
-            ep = NULL;			/* skip this slot */
+         if (d < 0)                     /* if all elements processed earlier */
+            ep = NULL;                  /* skip this slot */
          else if (d == 0) {
             /*
              * This chain was split from its parent while the parent was
              *  being processed.  Skip past elements already processed.
              */
             while (ep != NULL && BlkType(ep) != T_Table &&
-		   BlkPE(ep,Telem,hashnum) <= s->sghash[i])
+                   BlkPE(ep,Telem,hashnum) <= s->sghash[i])
                ep = BlkPE(ep,Telem,clink);
             }
          }
@@ -589,13 +577,12 @@ union block *ep;
    if (ep && BlkType(ep) == T_Table) ep = NULL;
    return ep;
    }
-
+
 /*
  * hgrow - split a hashed structure (doubling the buckets) for faster access.
  */
 
-void hgrow(bp)
-union block *bp;
+void hgrow(union block *bp)
    {
    register union block **tp0, **tp1, *ep;
    register word newslots, slotnum, segnum;
@@ -610,7 +597,7 @@ union block *bp;
       heaperr("invalid title not set/table", (union block *)ps, T_Set);
 #endif
    if (ps->hdir[HSegs-1] != NULL)
-      return;				/* can't split further */
+      return;                           /* can't split further */
 
    newslots = ps->mask + 1;
    EVVal((word)newslots, E_HashSlots);
@@ -623,22 +610,22 @@ union block *bp;
    curslot = newseg->hslots;
    for (segnum = 0; (seg = ps->hdir[segnum]) != NULL; segnum++)
       for (slotnum = 0; slotnum < segsize[segnum]; slotnum++)  {
-         tp0 = &seg->hslots[slotnum];	/* ptr to tail of old slot */
-         tp1 = curslot++;		/* ptr to tail of new slot */
+         tp0 = &seg->hslots[slotnum];   /* ptr to tail of old slot */
+         tp1 = curslot++;               /* ptr to tail of new slot */
          for (ep = *tp0;
-	      ep != NULL && BlkType(ep) != T_Table;
-	      ep = BlkPE(ep,Telem,clink)) {
+              ep != NULL && BlkType(ep) != T_Table;
+              ep = BlkPE(ep,Telem,clink)) {
             if ((BlkPE(ep,Telem,hashnum) & newslots) == 0) {
-               *tp0 = ep;		/* element does not move */
+               *tp0 = ep;               /* element does not move */
                tp0 = &(ep->Selem.clink);
                }
             else {
-               *tp1 = ep;		/* element moves to new slot */
+               *tp1 = ep;               /* element moves to new slot */
                tp1 = &(ep->Selem.clink);
                }
             }
-         if ( BlkType(ps) == T_Table ) 
-	    *tp0 = *tp1 = (union block *) ps;
+         if ( BlkType(ps) == T_Table )
+            *tp0 = *tp1 = (union block *) ps;
          else
             *tp0 = *tp1 = NULL;
          }
@@ -649,17 +636,16 @@ union block *bp;
      vrfy_Live_Table((struct b_table *)ps);
    }
 #endif                  /* VerifyHeap */
-   
+
    }
-
+
 /*
  * hshrink - combine buckets in a set or table that is too sparse.
  *
  *  Call this only for newly created structures.  Shrinking an active structure
  *  can wreak havoc on suspended generators.
  */
-void hshrink(bp)
-union block *bp;
+void hshrink(union block *bp)
    {
    register union block **tp, *ep0, *ep1;
    int topseg, curseg;
@@ -686,11 +672,11 @@ union block *bp;
       ps->hdir[topseg--] = NULL;
       for (curseg = 0; (seg = ps->hdir[curseg]) != NULL; curseg++)
          for (slotnum = 0; slotnum < segsize[curseg]; slotnum++)  {
-            tp = &seg->hslots[slotnum];		/* tail pointer */
-            ep0 = seg->hslots[slotnum];		/* lower slot entry pointer */
-            ep1 = *uppslot++;			/* upper slot entry pointer */
+            tp = &seg->hslots[slotnum];         /* tail pointer */
+            ep0 = seg->hslots[slotnum];         /* lower slot entry pointer */
+            ep1 = *uppslot++;                   /* upper slot entry pointer */
             while (ep0 != NULL && BlkType(ep0) != T_Table &&
-		   ep1 != NULL && BlkType(ep1) != T_Table)
+                   ep1 != NULL && BlkType(ep1) != T_Table)
                if (Blk(ep0,Selem)->hashnum < Blk(ep1,Selem)->hashnum) {
                   *tp = ep0;
                   tp = &(ep0->Selem.clink);
@@ -716,12 +702,12 @@ union block *bp;
       }
 #ifdef VerifyHeap
    if ( BlkType(bp) == T_Table ) {
-	 vrfy_Live_Table(&bp->Table);
+         vrfy_Live_Table(&bp->Table);
    }
 #endif                  /* VerifyHeap */
 
    }
-
+
 /*
  * memb - sets res flag to 1 if x is a member of a set or table, 0 if not.
  *  Returns a pointer to the word which points to the element, or which
@@ -734,12 +720,11 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
    register union block **lp;
    register struct b_selem *pe;
    register uword eh;
+#if E_HashChain
    int chainlen = 0; /* # of elements visited during this lookup */
+#endif                                  /* E_HashChain */
 #ifdef DebugHeap
-   int elemtitle;
-   if (pb->Set.title == T_Set) elemtitle = T_Selem;
-   else if (pb->Set.title == T_Table) elemtitle = T_Telem;
-   else { syserr("odd memb\n"); }
+   if ((pb->Set.title != T_Set) && (pb->Set.title != T_Table)) { syserr("odd memb\n"); }
 #endif
 
    lp = hchain(pb, hn);
@@ -748,15 +733,17 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
     */
    *res = 0;
    while ((pe = (struct b_selem *)*lp) != NULL && BlkType(pe) != T_Table) {
+#if E_HashChain
       chainlen++;
+#endif                                  /* E_HashChain */
       eh = pe->hashnum;
-      if (eh > hn) {			/* too far - it isn't there */
-	 EVVal((word)chainlen, E_HashChain);
+      if (eh > hn) {                    /* too far - it isn't there */
+         EVVal((word)chainlen, E_HashChain);
          return lp;
-	 }
+         }
       else if ((eh == hn) && (equiv(&pe->setmem, x)))  {
          *res = 1;
-	 EVVal((word)chainlen, E_HashChain);
+         EVVal((word)chainlen, E_HashChain);
          return lp;
          }
       /*
@@ -786,24 +773,20 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
 #ifndef MultiProgram
 int longest_dr = 0;
 struct b_proc_list **dr_arrays;
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #if COMPILER
 static word mdw_dynrec_start = 0;
 
 void
-dynrec_start_set(start)
-   word start;
+dynrec_start_set(word start)
 {
    mdw_dynrec_start = start;
 }
 
 static
 char *
-dynrec_recname_create(name, flds, nflds)
-   dptr name;
-   dptr flds;
-   int nflds;
+dynrec_recname_create(dptr name, dptr flds, int nflds)
 {
    char * p;
    int i, len;
@@ -815,7 +798,7 @@ dynrec_recname_create(name, flds, nflds)
       printf("dynrec_name_create: name exceeds max.\n");
       return NULL;
       }
-      
+
    Protect(rslt = alcstr(NULL, 256), return NULL);
    for (p=rslt,i=0; i<nflds; i++) {
       strncpy(p, StrLoc(flds[i]), StrLen(flds[i]));
@@ -830,10 +813,7 @@ dynrec_recname_create(name, flds, nflds)
 
 static
 int
-rmkrec(nargs, cargp, rslt)
-   int nargs;
-   dptr cargp;
-   dptr rslt;
+rmkrec(int nargs, dptr cargp, dptr rslt)
 {
    int i;
    dptr d;
@@ -855,9 +835,7 @@ rmkrec(nargs, cargp, rslt)
    return A_Continue;
 }
 
-int fldlookup(rec, fld)
-    struct b_record * rec;
-    const char * const fld;
+int fldlookup(struct b_record * rec, const char * const fld)
 {
     int i, len;
     union block * desc;
@@ -868,7 +846,7 @@ int fldlookup(rec, fld)
         if (len == StrLen(desc->Proc.lnames[i]) &&
            (strncmp(fld, StrLoc(desc->Proc.lnames[i]), len) == 0)) {
            break;
-	   }
+           }
         }
     if (i >= desc->Proc.nfields)
         i = -1;
@@ -878,10 +856,7 @@ int fldlookup(rec, fld)
 static struct b_proc_list * dr_tbl[128] = { 0 };
 
 struct b_proc *
-dynrecord(s, fields, n)
-   dptr s;
-   dptr fields;
-   int n;
+dynrecord(dptr s, dptr fields, int n)
 {
    int i, hval, len;
    struct b_proc * bp;
@@ -919,7 +894,7 @@ dynrecord(s, fields, n)
    if (bp == NULL) return NULL;
    bp->title = T_Proc;
    bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
-   bp->ccode = rmkrec;
+   bp->ccode.p3idd = rmkrec;
    bp->nfields = n;
    bp->ndynam = -2;
    bp->recnum = -1; /* recnum -1 means: dynamic record */
@@ -959,14 +934,14 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
                dr_arrays = realloc(dr_arrays, n * sizeof (struct b_proc *));
                if (dr_arrays == NULL){
                   RESUME_THREADS();
-	          return NULL;
-		  }
+                  return NULL;
+                  }
                while(longest_dr<n) {
                   dr_arrays[longest_dr++] = NULL;
                   }
             }
          RESUME_THREADS();
-	 }
+         }
 
       if (n>0)
       for(bpelem = dr_arrays[n-1]; bpelem; bpelem = bpelem->next, ct++) {
@@ -987,7 +962,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       if (bp == NULL) return NULL;
       bp->title = T_Proc;
       bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
-      bp->entryp.ccode = Omkrec;
+      bp->entryp.ccode.p2id = Omkrec;
       bp->nfields = n;
       bp->ndynam = -2;
       bp->recnum = -1; /* dynamic record */
@@ -999,12 +974,12 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       for(i=0;i<StrLen(*s); i++) StrLoc(bp->recname)[i]=StrLoc(*s)[i];
       StrLoc(bp->recname)[StrLen(*s)] = '\0';
       for(i=0;i<n;i++) {
-	 StrLen(bp->lnames[i]) = StrLen(fields[i]);
-	 StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
-	 if (StrLoc(bp->lnames[i]) == NULL) return NULL;
-	 strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
-	 StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
-	 }
+         StrLen(bp->lnames[i]) = StrLen(fields[i]);
+         StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
+         if (StrLoc(bp->lnames[i]) == NULL) return NULL;
+         strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
+         StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
+         }
       bpelem = malloc(sizeof (struct b_proc_list));
       if (bpelem == NULL) return NULL;
       bpelem->this = bp;
@@ -1048,7 +1023,7 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
       return Succeeded;
       }
    }
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * Insert an array of alternating keys and values into a table.
@@ -1069,34 +1044,34 @@ int cinserttable(union block **pbp, int n, dptr x)
       /* get this now because can't tend pd */
       Protect(te = alctelem(), return -1);
 
-      pd = memb(*pbp, x+argc, hn, &res);	/* search table for key */
+      pd = memb(*pbp, x+argc, hn, &res);        /* search table for key */
       if (res == 0) {
-	 /*
-	  * The element is not in the table - insert it.
-	  */
-	 Blk(*pbp, Table)->size++;
-	 te->clink = *pd;
-	 *pd = (union block *)te;
-	 te->hashnum = hn;
-	 te->tref = x[argc];
-	 if (argc+1 < n)
-	    te->tval = x[argc+1];
-	 else
-	    te->tval = nulldesc;
-	 if (TooCrowded(*pbp))
-	    hgrow(*pbp);
-	 }
+         /*
+          * The element is not in the table - insert it.
+          */
+         Blk(*pbp, Table)->size++;
+         te->clink = *pd;
+         *pd = (union block *)te;
+         te->hashnum = hn;
+         te->tref = x[argc];
+         if (argc+1 < n)
+            te->tval = x[argc+1];
+         else
+            te->tval = nulldesc;
+         if (TooCrowded(*pbp))
+            hgrow(*pbp);
+         }
       else {
-	 /*
-	  * We found an existing entry; just change its value.
-	  */
-	 deallocate((union block *)te);
-	 te = (struct b_telem *) *pd;
-	 if (argc+1 < n)
-	    te->tval = x[argc+1];
-	 else
-	    te->tval = nulldesc;
-	 }
+         /*
+          * We found an existing entry; just change its value.
+          */
+         deallocate((union block *)te);
+         te = (struct b_telem *) *pd;
+         if (argc+1 < n)
+            te->tval = x[argc+1];
+         else
+            te->tval = nulldesc;
+         }
       EVValD(&s, E_Tinsert);
       EVValD(x+argc, E_Tsub);
       }
@@ -1104,7 +1079,7 @@ int cinserttable(union block **pbp, int n, dptr x)
 }
 
 
-/* 
+/*
  * Make simple Icon lists (all elements the same type) from C arrays.
  * Intended primarily to be called from loaded C code.  If you are
  * considering using this, you may also want to consider using
@@ -1132,7 +1107,7 @@ union block * mkIlist(int x[], int n)
   bp = (struct b_lelem *)hp->listhead;
   /* List has only one list-element block: */
   hp->listhead = hp->listtail = (union block *) bp;
-  
+
   /* Set slot i to a descriptor for the integer x[i] */
   for (i = 0; i < size; i++) {
     bp->lslots[i].dword = D_Integer;
@@ -1149,7 +1124,7 @@ union block * mkIlist(int x[], int n)
  * an Icon list made from "x".
  */
 union block * mkRlist(double x[], int n)
-{ 
+{
   tended struct b_list *hp;
   tended struct b_lelem *bp;
   register word i, size;
@@ -1168,13 +1143,13 @@ union block * mkRlist(double x[], int n)
   for (i = 0; i < size; i++) {
 #ifdef DescriptorDouble
     bp->lslots[i].vword.realval = x[i];
-#else					/* DescriptorDouble */
+#else                                   /* DescriptorDouble */
     {
     register struct b_real *rblk; /* does not need to be tended */
     Protect(rblk = alcreal(x[i]), ReturnErrNum(307,NULL));
     bp->lslots[i].vword.bptr = (union block *)rblk;
     }
-#endif					/* DescriptorDouble */
+#endif                                  /* DescriptorDouble */
     bp->lslots[i].dword = D_Real;
   }
 
@@ -1233,10 +1208,10 @@ double *getRArrDataPtr( struct b_list * L)
 
 int arraytolist(struct descrip *arr)
 {
-   int ndims, lsize, i; 
+   int ndims, lsize, i;
    register struct b_lelem *lelemp;
    tended struct b_list *lparr;
-   
+
    if (is:list(*arr)) {
       lparr = (struct b_list *) BlkD(*arr, List);
       if (lparr->listtail!=NULL) return Succeeded;
@@ -1247,148 +1222,148 @@ int arraytolist(struct descrip *arr)
    if (BlkType(lparr->listhead) == T_Realarray) {
 
       struct b_realarray *ap = (struct b_realarray *) lparr->listhead;
-      
+
       ndims = (ap->dims ?
-	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
-		 sizeof(word)) / sizeof(word))
-	       : 1);
+               ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
+                 sizeof(word)) / sizeof(word))
+               : 1);
 
       lsize = (ndims>1 ? ap->dims->Intarray.a[0] :
-	       (ap->blksize - sizeof(struct b_realarray) + sizeof(double)) /
-	       sizeof(double));
+               (ap->blksize - sizeof(struct b_realarray) + sizeof(double)) /
+               sizeof(double));
 
-      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return RunError );      
+      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return RunError );
       lelemp->listprev = lelemp->listnext = (union block *) lparr;
       lparr->listhead = lparr->listtail = (union block *)lelemp;
-      
+
       if (ndims==1) {
-	 for (i=0; i<lsize; i++) {
+         for (i=0; i<lsize; i++) {
 #ifdef DescriptorDouble
-	    lelemp->lslots[i].vword.realval = (double)ap->a[i];
-#else					/* DescriptorDouble */
-	    {
-	    struct b_real *xp;
-	    xp = alcreal((double)ap->a[i]);
-	    lelemp->lslots[i].vword.bptr = (union block *) xp;
-	    }
-#endif					/* DescriptorDouble */
-	    lelemp->lslots[i].dword = D_Real;
-	    lelemp->nused++;
-	    }
+            lelemp->lslots[i].vword.realval = (double)ap->a[i];
+#else                                   /* DescriptorDouble */
+            {
+            struct b_real *xp;
+            xp = alcreal((double)ap->a[i]);
+            lelemp->lslots[i].vword.bptr = (union block *) xp;
+            }
+#endif                                  /* DescriptorDouble */
+            lelemp->lslots[i].dword = D_Real;
+            lelemp->nused++;
+            }
          } /* if (ndims==1) */
       else if (ndims==2) {
-	 struct b_realarray *ap2;
-	 int n=ap->dims->Intarray.a[1];
-	 int base=0, j;
+         struct b_realarray *ap2;
+         int n=ap->dims->Intarray.a[1];
+         int base=0, j;
 
-	 for (i=0; i<lsize; i++){
-	    ap2 = alcrealarray(n);
+         for (i=0; i<lsize; i++){
+            ap2 = alcrealarray(n);
 
-	    ap2->dims=NULL;
-	    for(j=0; j<n; j++) /* copy elements over to the new sub-array */
-	       ap2->a[j]=ap->a[base++];
+            ap2->dims=NULL;
+            for(j=0; j<n; j++) /* copy elements over to the new sub-array */
+               ap2->a[j]=ap->a[base++];
 
-	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
-	    lelemp->lslots[i].dword = D_Realarray;
-	    lelemp->nused++;
-	 }
+            lelemp->lslots[i].vword.bptr = (union block *) ap2;
+            lelemp->lslots[i].dword = D_Realarray;
+            lelemp->nused++;
+         }
 
-	 } /* (ndims==2) */
+         } /* (ndims==2) */
      else { /* (ndims > 2) */
-	 struct b_realarray *ap2;
-	 int n=ap->dims->Intarray.a[1];
-	 int base=0, j;
-	 
-	 for(i=2; i<ndims; i++)
-	    n *= ap->dims->Intarray.a[i];
+         struct b_realarray *ap2;
+         int n=ap->dims->Intarray.a[1];
+         int base=0, j;
 
-	 for (i=0; i<lsize; i++){
-	    struct b_intarray *dims = NULL;
-	    
-	    ap2 = alcrealarray(n);
-	    dims = alcintarray(ndims-1); 	/* dimension is less by 1 */
-	    ap2->dims = (union block *)dims;	
-	    for(j=1; j<ndims; j++)		/* copy the dimensions */
-	       dims->a[j-1]=ap->dims->Intarray.a[j]; /* to the new array */
+         for(i=2; i<ndims; i++)
+            n *= ap->dims->Intarray.a[i];
 
-	    for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
-	       ap2->a[j]=ap->a[base++];
+         for (i=0; i<lsize; i++){
+            struct b_intarray *dims = NULL;
 
-	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
-	    lelemp->lslots[i].dword = D_Realarray;
-	    lelemp->nused++;
-	 }
+            ap2 = alcrealarray(n);
+            dims = alcintarray(ndims-1);        /* dimension is less by 1 */
+            ap2->dims = (union block *)dims;
+            for(j=1; j<ndims; j++)              /* copy the dimensions */
+               dims->a[j-1]=ap->dims->Intarray.a[j]; /* to the new array */
 
-	 } /* (ndims>2) */
- 
+            for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
+               ap2->a[j]=ap->a[base++];
+
+            lelemp->lslots[i].vword.bptr = (union block *) ap2;
+            lelemp->lslots[i].dword = D_Realarray;
+            lelemp->nused++;
+         }
+
+         } /* (ndims>2) */
+
       } /* Realrray */
 
    else if (BlkType(lparr->listhead)==T_Intarray) {
 
       struct b_intarray *ap = (struct b_intarray *) lparr->listhead;
-      
+
       ndims = (ap->dims?
       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +sizeof(word)) /
        sizeof(word))
       : 1);
-      
+
       lsize = (ndims>1? ap->dims->Intarray.a[0]:
        (ap->blksize - sizeof(struct b_intarray) + sizeof(word))/sizeof(word));
 
-      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return RunError );      
+      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return RunError );
       lelemp->listprev = lelemp->listnext = (union block *) lparr;
       lparr->listhead = lparr->listtail = (union block *)lelemp;
-      
+
       if (ndims==1){
-	 for (i=0; i<lsize; i++){
-	    MakeInt(ap->a[i],&(lelemp->lslots[i]));
-	    lelemp->nused++;
-	    }
+         for (i=0; i<lsize; i++){
+            MakeInt(ap->a[i],&(lelemp->lslots[i]));
+            lelemp->nused++;
+            }
          } /* if (ndims==1) */
       else if (ndims==2){
-	 struct b_intarray *ap2;
-	 int n=ap->dims->Intarray.a[1];
-	 int base=0, j;
+         struct b_intarray *ap2;
+         int n=ap->dims->Intarray.a[1];
+         int base=0, j;
 
-	 for (i=0; i<lsize; i++){
-	    ap2 = alcintarray(n);
+         for (i=0; i<lsize; i++){
+            ap2 = alcintarray(n);
 
-	    ap2->dims=NULL;
-	    for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
-	       ap2->a[j]=ap->a[base++];
+            ap2->dims=NULL;
+            for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
+               ap2->a[j]=ap->a[base++];
 
-	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
-	    lelemp->lslots[i].dword = D_Intarray;
-	    lelemp->nused++;
-	 }
+            lelemp->lslots[i].vword.bptr = (union block *) ap2;
+            lelemp->lslots[i].dword = D_Intarray;
+            lelemp->nused++;
+         }
 
-	 } /* (ndims==2) */
+         } /* (ndims==2) */
      else { /* (ndims > 2) */
-	 struct b_intarray *ap2;
-	 int n=ap->dims->Intarray.a[1];
-	 int base=0, j;
-	 
-	 for(i=2; i<ndims; i++)
-	    n*=ap->dims->Intarray.a[i];
+         struct b_intarray *ap2;
+         int n=ap->dims->Intarray.a[1];
+         int base=0, j;
 
-	 for (i=0; i<lsize; i++){
-	    struct b_intarray *dims = NULL;
-	    
-	    ap2 = alcintarray(n);
-	    dims = alcintarray(ndims-1); 	/* dimension is less by 1 */
-	    ap2->dims = (union block *)dims;	
-	    for(j=1; j<ndims; j++)		/* copy the dimensions */
-	       dims->a[j-1]=ap->dims->Intarray.a[j]; /* to the new array */
+         for(i=2; i<ndims; i++)
+            n*=ap->dims->Intarray.a[i];
 
-	    for(j=0; j<n; j++) /* copy elements over to the new sub-array */
-	       ap2->a[j]=ap->a[base++];
+         for (i=0; i<lsize; i++){
+            struct b_intarray *dims = NULL;
 
-	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
-	    lelemp->lslots[i].dword = D_Intarray;
-	    lelemp->nused++;
-	 }
+            ap2 = alcintarray(n);
+            dims = alcintarray(ndims-1);        /* dimension is less by 1 */
+            ap2->dims = (union block *)dims;
+            for(j=1; j<ndims; j++)              /* copy the dimensions */
+               dims->a[j-1]=ap->dims->Intarray.a[j]; /* to the new array */
 
-	 } /* (ndims>2) */
+            for(j=0; j<n; j++) /* copy elements over to the new sub-array */
+               ap2->a[j]=ap->a[base++];
+
+            lelemp->lslots[i].vword.bptr = (union block *) ap2;
+            lelemp->lslots[i].dword = D_Intarray;
+            lelemp->nused++;
+         }
+
+         } /* (ndims>2) */
 
       } /* IntArray*/
    else
@@ -1431,13 +1406,13 @@ int c_traverse(struct b_list *hp, struct descrip * res, int position)
    used = bp->nused;
    for (j=0; j < position; j++){
       if (used <= 1){
-	 bp = (struct b_lelem *) bp->listnext;
+         bp = (struct b_lelem *) bp->listnext;
          used = bp->nused;
          i = bp->first;
          }
       else {
-	 if (i++ >= bp->nslots) i = 0;
-	 used--;
+         if (i++ >= bp->nslots) i = 0;
+         used--;
          }
       }
    *res = bp->lslots[i];
@@ -1448,58 +1423,58 @@ int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
 {
    word size;
    tended struct b_realarray *ap2;
-   
+
    /*
    * Calculate the size of the sublist.
    */
    size =j - i ;
    if (!reserve(Blocks, (word)(sizeof(struct b_list) + (word)sizeof(struct b_realarray)
       + size * (word)sizeof(double))))  return RunError;
-   
+
    Protect(ap2 = (struct b_realarray *) alcrealarray(size), return RunError);
 
    if (!skipcopyelements){
       word k;
       /* copy elements i throgh j to the new array ap2*/
       if (is:list(*dp)){
-	tended struct b_list *lp;
-	lp = (struct b_list *) BlkD(*dp, List);
-	if (BlkType(lp->listhead) == T_Realarray){
-	  double *a, *a2;
-	  a = &(((struct b_realarray *) lp->listhead )->a[i]);
-	  a2 = ap2->a;
-	  for (k=0; k<size; k++)
-	     a2[k]=a[k];
-	  }
-	else if (BlkType(lp->listhead) == T_Intarray){
-	  word *a;
-	  double *a2;
-	  a = &(((struct b_intarray *) lp->listhead )->a[i]);
-	  a2 = ap2->a;
-	  for (k=0; k<size; k++)
-	     a2[k]=(double) a[k];
-	  }
-	else{ /* regular list */
-	  tended struct descrip val;
-	  for (k=0; k<size; k++,i++){
-	    c_traverse(lp, &val, i); /* This is not very efficient */
-	    if (!cnv:C_double(val, ap2->a[k]))
-	      return RunError;
-	    }
-	  }
-	}
+        tended struct b_list *lp;
+        lp = (struct b_list *) BlkD(*dp, List);
+        if (BlkType(lp->listhead) == T_Realarray){
+          double *a, *a2;
+          a = &(((struct b_realarray *) lp->listhead )->a[i]);
+          a2 = ap2->a;
+          for (k=0; k<size; k++)
+             a2[k]=a[k];
+          }
+        else if (BlkType(lp->listhead) == T_Intarray){
+          word *a;
+          double *a2;
+          a = &(((struct b_intarray *) lp->listhead )->a[i]);
+          a2 = ap2->a;
+          for (k=0; k<size; k++)
+             a2[k]=(double) a[k];
+          }
+        else{ /* regular list */
+          tended struct descrip val;
+          for (k=0; k<size; k++,i++){
+            c_traverse(lp, &val, i); /* This is not very efficient */
+            if (!cnv:C_double(val, ap2->a[k]))
+              return RunError;
+            }
+          }
+        }
       else{ /*( *dp is not a list, it is a ptr to an array of descriptors)*/
-	dp = &dp[i];
-	for (k=0; k<size; k++){
-	  if (!cnv:C_double(*dp++, ap2->a[k]))
-	    return RunError;
-	    }
-	  }
+        dp = &dp[i];
+        for (k=0; k<size; k++){
+          if (!cnv:C_double(*dp++, ap2->a[k]))
+            return RunError;
+            }
+          }
       } /* skip */
-   
+
   /* for now, we only handle one dimensional lists */
    ap2->dims=NULL;
-   
+
    /*
    * Fix type and location fields for the new realarray
    */
@@ -1516,43 +1491,43 @@ int cpint2realarray(dptr dp1, dptr dp2, word i, word j, int copyelements)
    word size, bytes;
    struct b_intarray *ap;
    tended struct b_realarray *ap2;
-   
+
    /*
    * Calculate the size of the sublist.
    */
    size = j - i;
    bytes = (word)(sizeof(struct b_list) + (word)sizeof(struct b_realarray) +
-		size * (word)sizeof(double));
+                size * (word)sizeof(double));
    if (!reserve(Blocks, bytes)) return RunError;
-   
+
    Protect(ap2 = (struct b_realarray *) alcrealarray(size), return RunError);
    ap = (struct b_intarray *) BlkD(*dp1, List)->listhead;
-   
+
    if (copyelements){
       word *a, k;
       double *b;
-      
+
       a=ap->a;
       b=ap2->a;
-   
+
       /* cop elements i throgh j to the new array ap2*/
       for (k=i-1, j=0; j<size; k++,j++)
-	 b[j]=a[k];
+         b[j]=a[k];
       }
-   
+
    if (ap->dims){
       word ndims;
       ndims = (ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
-	       sizeof(word)) / sizeof(word);
+               sizeof(word)) / sizeof(word);
       /* The first dimension of the new array is reduced to size */
       ap2->dims->Intarray.a[1] = size ;
       /* The remaining dimensions are the same, just copy them. */
       for(i=2; i<ndims; i++)
-	 ap2->dims->Intarray.a[i] = ap->dims->Intarray.a[i];
+         ap2->dims->Intarray.a[i] = ap->dims->Intarray.a[i];
       }
    else
       ap2->dims = NULL;
-   
+
    /*
    * Fix type and location fields for the new realarray
    */
@@ -1574,43 +1549,43 @@ int f(dptr dp1, dptr dp2, word i, word j)
    word size, copyelements=1;
    struct b_realarray *ap;
    tended struct b_realarray *ap2;
-   
+
    /*
     * Calculate the size of the sublist.
     */
    size =j - i;
    if (!reserve(Blocks, (word)(sizeof(struct b_list) +
-			       (word)sizeof(struct b_realarray) +
-				size * (word)sizeof(double))))  return RunError;
-   
+                               (word)sizeof(struct b_realarray) +
+                                size * (word)sizeof(double))))  return RunError;
+
    Protect(ap2 = (struct b_realarray *) alcrealarray(size), return RunError);
    ap = (struct b_realarray *) BlkD(*dp1, List)->listhead;
 
    if (copyelements){
       word k;
       double *a, *b;
-      
+
       a = ap->a;
       b = ap2->a;
-   
+
       /* cop elements i throgh j to the new array ap2*/
       for (k=i-1, j=0; j<size; k++,j++)
-	 b[j] = a[k];
+         b[j] = a[k];
       }
-   
+
    if (ap->dims) {
       word ndims;
       ndims = (ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
-	       sizeof(word)) / sizeof(word);
+               sizeof(word)) / sizeof(word);
       /* the first dimension of the new array is reduced to size */
       ap2->dims->Intarray.a[1]= size ;
       /* the remaining dimensions are the same, just copy them */
       for(i=2; i<ndims; i++)
-	 ap2->dims->Intarray.a[i] = ap->dims->Intarray.a[i];
+         ap2->dims->Intarray.a[i] = ap->dims->Intarray.a[i];
       }
    else
       ap2->dims=NULL;
-   
+
    /*
    * Fix type and location fields for the new realarray
    */
@@ -1625,9 +1600,9 @@ int f(dptr dp1, dptr dp2, word i, word j)
 
 #ifdef MultiProgram
 cprealarray_macro(cprealarray_0, 0)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cprealarray_macro(cprealarray, 0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 #begdef cpintarray_macro(f, e)
 /*
@@ -1638,39 +1613,39 @@ int f(dptr dp1, dptr dp2, word i, word j)
    word size, copyelements=1;
    struct b_intarray *ap;
    tended struct b_intarray *ap2;
-   
+
    /*
    * Calculate the size of the sublist.
    */
    size =j - i;
    if (!reserve(Blocks, (word)(sizeof(struct b_list) +
-			       (word) sizeof(struct b_intarray) +
-				size * (word) sizeof(word))))  return RunError;
-   
+                               (word) sizeof(struct b_intarray) +
+                                size * (word) sizeof(word))))  return RunError;
+
    Protect(ap2 = (struct b_intarray *) alcintarray(size), return RunError);
    ap = (struct b_intarray *) BlkD(*dp1, List)->listhead;
-   
+
    if (copyelements){
       word *a, *b, k;
-      
+
       a = ap->a;
       b = ap2->a;
-   
+
       /* copy elements i through j to the new array ap2 */
       for (k=i-1, j=0; j<size; k++,j++)
-	 b[j] = a[k];
+         b[j] = a[k];
       }
-   
+
    if (ap->dims) {
       word ndims = (ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
-		    sizeof(word)) / sizeof(word);
+                    sizeof(word)) / sizeof(word);
       ap2->dims->Intarray.a[1] = size;
       for(i=2; i<ndims; i++)
-	 ap2->dims->Intarray.a[i]=ap->dims->Intarray.a[i];
+         ap2->dims->Intarray.a[i]=ap->dims->Intarray.a[i];
       }
    else
       ap2->dims=NULL;
-   
+
    /*
    * Fix type and location fields for the new intarray
    */
@@ -1684,9 +1659,9 @@ int f(dptr dp1, dptr dp2, word i, word j)
 
 #ifdef MultiProgram
 cpintarray_macro(cpintarray_0, 0)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
 cpintarray_macro(cpintarray, 0)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * Convert a list to an array. If not possible, return the original list
@@ -1816,4 +1791,4 @@ struct descrip listtoarray(dptr l)
    return ans;
 }
 
-#endif					/* Arrays */
+#endif                                  /* Arrays */

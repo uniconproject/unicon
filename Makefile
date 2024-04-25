@@ -61,7 +61,6 @@ help:
 	@echo "        sh configure --build=x86_64-w64-mingw32"
 	@echo "        make"
 	@echo
-	@echo " The --help option of configure gives details of build options"
 
 ##################################################################
 #

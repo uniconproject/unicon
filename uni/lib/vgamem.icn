@@ -14,31 +14,31 @@ $ifdef _UNIX
    pin := open("/sbin/lspci -v", "p") | stop("can't run /sbin/lspci")
    while line := read(pin) do {
       line ? {
-	 if any(&digits) & find("VGA") then {
-	    mem := 0
-	    while line := read(pin) do {
-	       if line == "" then break
-	       line ? {
-		  tab(many(' \t'))
-		  if ="Memory at" then {
-		     tab(many(' \t')) | next
-		     tab(many(&digits ++ 'abcdefABCDEF')) | next
-		     tab(many(' \t')) | next
-		     ="(" | next
-		     tab(many(&digits)) | next
-		     ="-bit," | next
-		     tab(many(' \t')) | next
-		     ="prefetchable" | next
-		     =")" | next
-		     tab(many(' \t')) | next
-		     ="[" | next
-		     ="size=" | next
-		     mem <:= KMsize(tab(many(&digits++'KM')))
-		     }
-	          }
-	       }
-	    put(results, 0 < mem)
-	    }
+         if any(&digits) & find("VGA") then {
+            mem := 0
+            while line := read(pin) do {
+               if line == "" then break
+               line ? {
+                  tab(many(' \t'))
+                  if ="Memory at" then {
+                     tab(many(' \t')) | next
+                     tab(many(&digits ++ 'abcdefABCDEF')) | next
+                     tab(many(' \t')) | next
+                     ="(" | next
+                     tab(many(&digits)) | next
+                     ="-bit," | next
+                     tab(many(' \t')) | next
+                     ="prefetchable" | next
+                     =")" | next
+                     tab(many(' \t')) | next
+                     ="[" | next
+                     ="size=" | next
+                     mem <:= KMsize(tab(many(&digits++'KM')))
+                     }
+                  }
+               }
+            put(results, 0 < mem)
+            }
          }
       }
    close(pin)
@@ -58,14 +58,14 @@ $ifdef _MS_WINDOWS_NT
       }
    while line := read(fin) do {
       line ? {
-	 # Look for "Adapter RAM" - in MSinfo32's Unicode output
+         # Look for "Adapter RAM" - in MSinfo32's Unicode output
          if tab(find("A\0d\0a\0p\0t\0e\0r\0 \0R\0A\0M\0")) then {
-	    tab(find("(")+2) | fail
-	    mem := 0
-	    while c := move(1) do { mem := mem * 10 + integer(c); move(1) }
-	    close(fin)
-	    remove(fn)
-	    return mem
+            tab(find("(")+2) | fail
+            mem := 0
+            while c := move(1) do { mem := mem * 10 + integer(c); move(1) }
+            close(fin)
+            remove(fn)
+            return mem
             }
          }
       }
@@ -78,8 +78,8 @@ end
 #
 procedure KMsize(s)
     case s[-1] of {
-	"M": return integer(s[1:-1]) * 1024 * 1024
-	"K": return integer(s[1:-1]) * 1024
-	default: return s
+        "M": return integer(s[1:-1]) * 1024 * 1024
+        "K": return integer(s[1:-1]) * 1024
+        default: return s
     }
 end

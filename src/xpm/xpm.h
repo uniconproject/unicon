@@ -58,10 +58,10 @@
 #define XpmIncludeVersion ((XpmFormat * 100 + XpmVersion) * 100 + XpmRevision)
 
 #ifdef FOR_MSW
-# define SYSV			/* uses memcpy string.h etc. */
+# define SYSV                   /* uses memcpy string.h etc. */
 # include <malloc.h>
-# include "simx.h"		/* defines some X stuff using MSW types */
-#define NEED_STRCASECMP		/* at least for MSVC++ */
+# include "simx.h"              /* defines some X stuff using MSW types */
+#define NEED_STRCASECMP         /* at least for MSVC++ */
 #else /* FOR_MSW */
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
@@ -69,7 +69,7 @@
 
 /* let's define Pixel if it is not done yet */
 #if ! defined(_XtIntrinsic_h) && ! defined(PIXEL_T)
-typedef unsigned long Pixel;	/* Index into colormap */
+typedef unsigned long Pixel;    /* Index into colormap */
 # define PIXEL_T
 #endif
 
@@ -88,86 +88,86 @@ typedef unsigned long Pixel;	/* Index into colormap */
 #define XpmColorFailed  -4
 
 typedef struct {
-    char *name;			/* Symbolic color name */
-    char *value;		/* Color value */
-    Pixel pixel;		/* Color pixel */
+    char *name;                 /* Symbolic color name */
+    char *value;                /* Color value */
+    Pixel pixel;                /* Color pixel */
 }      XpmColorSymbol;
 
 typedef struct {
-    char *name;			/* name of the extension */
-    unsigned int nlines;	/* number of lines in this extension */
-    char **lines;		/* pointer to the extension array of strings */
+    char *name;                 /* name of the extension */
+    unsigned int nlines;        /* number of lines in this extension */
+    char **lines;               /* pointer to the extension array of strings */
 }      XpmExtension;
 
 typedef struct {
-    char *string;		/* characters string */
-    char *symbolic;		/* symbolic name */
-    char *m_color;		/* monochrom default */
-    char *g4_color;		/* 4 level grayscale default */
-    char *g_color;		/* other level grayscale default */
-    char *c_color;		/* color default */
+    char *string;               /* characters string */
+    char *symbolic;             /* symbolic name */
+    char *m_color;              /* monochrom default */
+    char *g4_color;             /* 4 level grayscale default */
+    char *g_color;              /* other level grayscale default */
+    char *c_color;              /* color default */
 }      XpmColor;
 
 typedef struct {
-    unsigned int width;		/* image width */
-    unsigned int height;	/* image height */
-    unsigned int cpp;		/* number of characters per pixel */
-    unsigned int ncolors;	/* number of colors */
-    XpmColor *colorTable;	/* list of related colors */
-    unsigned int *data;		/* image data */
+    unsigned int width;         /* image width */
+    unsigned int height;        /* image height */
+    unsigned int cpp;           /* number of characters per pixel */
+    unsigned int ncolors;       /* number of colors */
+    XpmColor *colorTable;       /* list of related colors */
+    unsigned int *data;         /* image data */
 }      XpmImage;
 
 typedef struct {
-    unsigned long valuemask;	/* Specifies which attributes are defined */
-    char *hints_cmt;		/* Comment of the hints section */
-    char *colors_cmt;		/* Comment of the colors section */
-    char *pixels_cmt;		/* Comment of the pixels section */
-    unsigned int x_hotspot;	/* Returns the x hotspot's coordinate */
-    unsigned int y_hotspot;	/* Returns the y hotspot's coordinate */
-    unsigned int nextensions;	/* number of extensions */
-    XpmExtension *extensions;	/* pointer to array of extensions */
+    unsigned long valuemask;    /* Specifies which attributes are defined */
+    char *hints_cmt;            /* Comment of the hints section */
+    char *colors_cmt;           /* Comment of the colors section */
+    char *pixels_cmt;           /* Comment of the pixels section */
+    unsigned int x_hotspot;     /* Returns the x hotspot's coordinate */
+    unsigned int y_hotspot;     /* Returns the y hotspot's coordinate */
+    unsigned int nextensions;   /* number of extensions */
+    XpmExtension *extensions;   /* pointer to array of extensions */
 }      XpmInfo;
 
 typedef int (*XpmAllocColorFunc)(
-    Display*			/* display */,
-    Colormap			/* colormap */,
-    char*			/* colorname */,
-    XColor*			/* xcolor */,
-    void*			/* closure */
+    Display*                    /* display */,
+    Colormap                    /* colormap */,
+    char*                       /* colorname */,
+    XColor*                     /* xcolor */,
+    void*                       /* closure */
 );
 
 typedef int (*XpmFreeColorsFunc)(
-    Display*			/* display */,
-    Colormap			/* colormap */,
-    Pixel*			/* pixels */,
-    int				/* npixels */,
-    void*			/* closure */
+    Display*                    /* display */,
+    Colormap                    /* colormap */,
+    Pixel*                      /* pixels */,
+    int                         /* npixels */,
+    void*                       /* closure */
 );
 
 typedef struct {
-    unsigned long valuemask;		/* Specifies which attributes are
-					   defined */
+    unsigned long valuemask;            /* Specifies which attributes are
+                                           defined */
 
-    Visual *visual;			/* Specifies the visual to use */
-    Colormap colormap;			/* Specifies the colormap to use */
-    unsigned int depth;			/* Specifies the depth */
-    unsigned int width;			/* Returns the width of the created
-					   pixmap */
-    unsigned int height;		/* Returns the height of the created
-					   pixmap */
-    unsigned int x_hotspot;		/* Returns the x hotspot's
-					   coordinate */
-    unsigned int y_hotspot;		/* Returns the y hotspot's
-					   coordinate */
-    unsigned int cpp;			/* Specifies the number of char per
-					   pixel */
-    Pixel *pixels;			/* List of used color pixels */
-    unsigned int npixels;		/* Number of used pixels */
-    XpmColorSymbol *colorsymbols;	/* List of color symbols to override */
-    unsigned int numsymbols;		/* Number of symbols */
-    char *rgb_fname;			/* RGB text file name */
-    unsigned int nextensions;		/* Number of extensions */
-    XpmExtension *extensions;		/* List of extensions */
+    Visual *visual;                     /* Specifies the visual to use */
+    Colormap colormap;                  /* Specifies the colormap to use */
+    unsigned int depth;                 /* Specifies the depth */
+    unsigned int width;                 /* Returns the width of the created
+                                           pixmap */
+    unsigned int height;                /* Returns the height of the created
+                                           pixmap */
+    unsigned int x_hotspot;             /* Returns the x hotspot's
+                                           coordinate */
+    unsigned int y_hotspot;             /* Returns the y hotspot's
+                                           coordinate */
+    unsigned int cpp;                   /* Specifies the number of char per
+                                           pixel */
+    Pixel *pixels;                      /* List of used color pixels */
+    unsigned int npixels;               /* Number of used pixels */
+    XpmColorSymbol *colorsymbols;       /* List of color symbols to override */
+    unsigned int numsymbols;            /* Number of symbols */
+    char *rgb_fname;                    /* RGB text file name */
+    unsigned int nextensions;           /* Number of extensions */
+    XpmExtension *extensions;           /* List of extensions */
 
     unsigned int ncolors;               /* Number of colors */
     XpmColor *colorTable;               /* List of colors */
@@ -180,53 +180,53 @@ typedef struct {
                                            color */
 
     /* Color Allocation Directives */
-    Bool exactColors;			/* Only use exact colors for visual */
-    unsigned int closeness;		/* Allowable RGB deviation */
-    unsigned int red_closeness;		/* Allowable red deviation */
-    unsigned int green_closeness;	/* Allowable green deviation */
-    unsigned int blue_closeness;	/* Allowable blue deviation */
-    int color_key;			/* Use colors from this color set */
+    Bool exactColors;                   /* Only use exact colors for visual */
+    unsigned int closeness;             /* Allowable RGB deviation */
+    unsigned int red_closeness;         /* Allowable red deviation */
+    unsigned int green_closeness;       /* Allowable green deviation */
+    unsigned int blue_closeness;        /* Allowable blue deviation */
+    int color_key;                      /* Use colors from this color set */
 
-    Pixel *alloc_pixels;		/* Returns the list of alloc'ed color
-					   pixels */
-    int nalloc_pixels;			/* Returns the number of alloc'ed
-					   color pixels */
+    Pixel *alloc_pixels;                /* Returns the list of alloc'ed color
+                                           pixels */
+    int nalloc_pixels;                  /* Returns the number of alloc'ed
+                                           color pixels */
 
-    Bool alloc_close_colors;    	/* Specify whether close colors should
-					   be allocated using XAllocColor
-					   or not */
-    int bitmap_format;			/* Specify the format of 1bit depth
-					   images: ZPixmap or XYBitmap */
+    Bool alloc_close_colors;            /* Specify whether close colors should
+                                           be allocated using XAllocColor
+                                           or not */
+    int bitmap_format;                  /* Specify the format of 1bit depth
+                                           images: ZPixmap or XYBitmap */
 
     /* Color functions */
-    XpmAllocColorFunc alloc_color;	/* Application color allocator */
-    XpmFreeColorsFunc free_colors;	/* Application color de-allocator */
-    void *color_closure;		/* Application private data to pass to
-					   alloc_color and free_colors */
+    XpmAllocColorFunc alloc_color;      /* Application color allocator */
+    XpmFreeColorsFunc free_colors;      /* Application color de-allocator */
+    void *color_closure;                /* Application private data to pass to
+                                           alloc_color and free_colors */
 
 }      XpmAttributes;
 
 /* XpmAttributes value masks bits */
-#define XpmVisual	   (1L<<0)
-#define XpmColormap	   (1L<<1)
-#define XpmDepth	   (1L<<2)
-#define XpmSize		   (1L<<3)	/* width & height */
-#define XpmHotspot	   (1L<<4)	/* x_hotspot & y_hotspot */
+#define XpmVisual          (1L<<0)
+#define XpmColormap        (1L<<1)
+#define XpmDepth           (1L<<2)
+#define XpmSize            (1L<<3)      /* width & height */
+#define XpmHotspot         (1L<<4)      /* x_hotspot & y_hotspot */
 #define XpmCharsPerPixel   (1L<<5)
-#define XpmColorSymbols	   (1L<<6)
-#define XpmRgbFilename	   (1L<<7)
+#define XpmColorSymbols    (1L<<6)
+#define XpmRgbFilename     (1L<<7)
 /* 3.2 backward compatibility code */
-#define XpmInfos	   (1L<<8)
-#define XpmReturnInfos	   XpmInfos
+#define XpmInfos           (1L<<8)
+#define XpmReturnInfos     XpmInfos
 /* end 3.2 bc */
-#define XpmReturnPixels	   (1L<<9)
+#define XpmReturnPixels    (1L<<9)
 #define XpmExtensions      (1L<<10)
 #define XpmReturnExtensions XpmExtensions
 
 #define XpmExactColors     (1L<<11)
-#define XpmCloseness	   (1L<<12)
-#define XpmRGBCloseness	   (1L<<13)
-#define XpmColorKey	   (1L<<14)
+#define XpmCloseness       (1L<<12)
+#define XpmRGBCloseness    (1L<<13)
+#define XpmColorKey        (1L<<14)
 
 #define XpmColorTable      (1L<<15)
 #define XpmReturnColorTable XpmColorTable
@@ -256,12 +256,12 @@ typedef struct {
  * color keys for visual type, they must fit along with the number key of
  * each related element in xpmColorKeys[] defined in XpmI.h
  */
-#define XPM_MONO	2
-#define XPM_GREY4	3
-#define XPM_GRAY4	3
-#define XPM_GREY 	4
-#define XPM_GRAY 	4
-#define XPM_COLOR	5
+#define XPM_MONO        2
+#define XPM_GREY4       3
+#define XPM_GRAY4       3
+#define XPM_GREY        4
+#define XPM_GRAY        4
+#define XPM_COLOR       5
 
 
 /* macros for forward declarations of functions with prototypes */
@@ -286,80 +286,80 @@ extern "C" {
 
 #if !defined(FOR_MSW)
     FUNC(XpmCreatePixmapFromData, int, (Display *display,
-					Drawable d,
-					char **data,
-					Pixmap *pixmap_return,
-					Pixmap *shapemask_return,
-					XpmAttributes *attributes));
+                                        Drawable d,
+                                        char **data,
+                                        Pixmap *pixmap_return,
+                                        Pixmap *shapemask_return,
+                                        XpmAttributes *attributes));
 
     FUNC(XpmCreateDataFromPixmap, int, (Display *display,
-					char ***data_return,
-					Pixmap pixmap,
-					Pixmap shapemask,
-					XpmAttributes *attributes));
+                                        char ***data_return,
+                                        Pixmap pixmap,
+                                        Pixmap shapemask,
+                                        XpmAttributes *attributes));
 
     FUNC(XpmReadFileToPixmap, int, (Display *display,
-				    Drawable d,
-				    char *filename,
-				    Pixmap *pixmap_return,
-				    Pixmap *shapemask_return,
-				    XpmAttributes *attributes));
+                                    Drawable d,
+                                    char *filename,
+                                    Pixmap *pixmap_return,
+                                    Pixmap *shapemask_return,
+                                    XpmAttributes *attributes));
 
     FUNC(XpmWriteFileFromPixmap, int, (Display *display,
-				       char *filename,
-				       Pixmap pixmap,
-				       Pixmap shapemask,
-				       XpmAttributes *attributes));
+                                       char *filename,
+                                       Pixmap pixmap,
+                                       Pixmap shapemask,
+                                       XpmAttributes *attributes));
 #endif
 
     FUNC(XpmCreateImageFromData, int, (Display *display,
-				       char **data,
-				       XImage **image_return,
-				       XImage **shapemask_return,
-				       XpmAttributes *attributes));
+                                       char **data,
+                                       XImage **image_return,
+                                       XImage **shapemask_return,
+                                       XpmAttributes *attributes));
 
     FUNC(XpmCreateDataFromImage, int, (Display *display,
-				       char ***data_return,
-				       XImage *image,
-				       XImage *shapeimage,
-				       XpmAttributes *attributes));
+                                       char ***data_return,
+                                       XImage *image,
+                                       XImage *shapeimage,
+                                       XpmAttributes *attributes));
 
     FUNC(XpmReadFileToImage, int, (Display *display,
-				   char *filename,
-				   XImage **image_return,
-				   XImage **shapeimage_return,
-				   XpmAttributes *attributes));
+                                   char *filename,
+                                   XImage **image_return,
+                                   XImage **shapeimage_return,
+                                   XpmAttributes *attributes));
 
     FUNC(XpmWriteFileFromImage, int, (Display *display,
-				      char *filename,
-				      XImage *image,
-				      XImage *shapeimage,
-				      XpmAttributes *attributes));
+                                      char *filename,
+                                      XImage *image,
+                                      XImage *shapeimage,
+                                      XpmAttributes *attributes));
 
     FUNC(XpmCreateImageFromBuffer, int, (Display *display,
-					 char *buffer,
-					 XImage **image_return,
-					 XImage **shapemask_return,
-					 XpmAttributes *attributes));
+                                         char *buffer,
+                                         XImage **image_return,
+                                         XImage **shapemask_return,
+                                         XpmAttributes *attributes));
 #if !defined(FOR_MSW)
     FUNC(XpmCreatePixmapFromBuffer, int, (Display *display,
-					  Drawable d,
-					  char *buffer,
-					  Pixmap *pixmap_return,
-					  Pixmap *shapemask_return,
-					  XpmAttributes *attributes));
+                                          Drawable d,
+                                          char *buffer,
+                                          Pixmap *pixmap_return,
+                                          Pixmap *shapemask_return,
+                                          XpmAttributes *attributes));
 
     FUNC(XpmCreateBufferFromImage, int, (Display *display,
-					 char **buffer_return,
-					 XImage *image,
-					 XImage *shapeimage,
-					 XpmAttributes *attributes));
+                                         char **buffer_return,
+                                         XImage *image,
+                                         XImage *shapeimage,
+                                         XpmAttributes *attributes));
 
     FUNC(XpmCreateBufferFromPixmap, int, (Display *display,
-					  char **buffer_return,
-					  Pixmap pixmap,
-					  Pixmap shapemask,
-					  XpmAttributes *attributes));
+                                          char **buffer_return,
+                                          Pixmap pixmap,
+                                          Pixmap shapemask,
+                                          XpmAttributes *attributes));
 #endif
     FUNC(XpmReadFileToBuffer, int, (char *filename, char **buffer_return));
     FUNC(XpmWriteFileFromBuffer, int, (char *filename, char *buffer));
@@ -370,7 +370,7 @@ extern "C" {
     FUNC(XpmAttributesSize, int, ());
     FUNC(XpmFreeAttributes, void, (XpmAttributes *attributes));
     FUNC(XpmFreeExtensions, void, (XpmExtension *extensions,
-				   int nextensions));
+                                   int nextensions));
 
     FUNC(XpmFreeXpmImage, void, (XpmImage *image));
     FUNC(XpmFreeXpmInfo, void, (XpmInfo *info));
@@ -379,57 +379,57 @@ extern "C" {
 
     /* XpmImage functions */
     FUNC(XpmReadFileToXpmImage, int, (char *filename,
-				      XpmImage *image,
-				      XpmInfo *info));
+                                      XpmImage *image,
+                                      XpmInfo *info));
 
     FUNC(XpmWriteFileFromXpmImage, int, (char *filename,
-					 XpmImage *image,
-					 XpmInfo *info));
+                                         XpmImage *image,
+                                         XpmInfo *info));
 #if !defined(FOR_MSW)
     FUNC(XpmCreatePixmapFromXpmImage, int, (Display *display,
-					    Drawable d,
-					    XpmImage *image,
-					    Pixmap *pixmap_return,
-					    Pixmap *shapemask_return,
-					    XpmAttributes *attributes));
+                                            Drawable d,
+                                            XpmImage *image,
+                                            Pixmap *pixmap_return,
+                                            Pixmap *shapemask_return,
+                                            XpmAttributes *attributes));
 #endif
     FUNC(XpmCreateImageFromXpmImage, int, (Display *display,
-					   XpmImage *image,
-					   XImage **image_return,
-					   XImage **shapeimage_return,
-					   XpmAttributes *attributes));
+                                           XpmImage *image,
+                                           XImage **image_return,
+                                           XImage **shapeimage_return,
+                                           XpmAttributes *attributes));
 
     FUNC(XpmCreateXpmImageFromImage, int, (Display *display,
-					   XImage *image,
-					   XImage *shapeimage,
-					   XpmImage *xpmimage,
-					   XpmAttributes *attributes));
+                                           XImage *image,
+                                           XImage *shapeimage,
+                                           XpmImage *xpmimage,
+                                           XpmAttributes *attributes));
 #if !defined(FOR_MSW)
     FUNC(XpmCreateXpmImageFromPixmap, int, (Display *display,
-					    Pixmap pixmap,
-					    Pixmap shapemask,
-					    XpmImage *xpmimage,
-					    XpmAttributes *attributes));
+                                            Pixmap pixmap,
+                                            Pixmap shapemask,
+                                            XpmImage *xpmimage,
+                                            XpmAttributes *attributes));
 #endif
     FUNC(XpmCreateDataFromXpmImage, int, (char ***data_return,
-					  XpmImage *image,
-					  XpmInfo *info));
+                                          XpmImage *image,
+                                          XpmInfo *info));
 
     FUNC(XpmCreateXpmImageFromData, int, (char **data,
-					  XpmImage *image,
-					  XpmInfo *info));
+                                          XpmImage *image,
+                                          XpmInfo *info));
 
     FUNC(XpmCreateXpmImageFromBuffer, int, (char *buffer,
-					    XpmImage *image,
-					    XpmInfo *info));
+                                            XpmImage *image,
+                                            XpmInfo *info));
 
     FUNC(XpmCreateBufferFromXpmImage, int, (char **buffer_return,
-					    XpmImage *image,
-					    XpmInfo *info));
+                                            XpmImage *image,
+                                            XpmInfo *info));
 
     FUNC(XpmGetParseError, int, (char *filename,
-				 int *linenum_return,
-				 int *charnum_return));
+                                 int *linenum_return,
+                                 int *charnum_return));
 
     FUNC(XpmFree, void, (void *ptr));
 

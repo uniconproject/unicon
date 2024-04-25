@@ -8,12 +8,12 @@
  *  This file is in the public domain.
  ***
  *  Describtion: provides basic function for creating and
- *               managing LXC containers 
+ *               managing LXC containers
  ***
  *  compile:  gcc -std=c99 -shared -fpic -o luxicon.so luxicon.c -llxc
  ***
 */
- 
+
 #include <lxc/lxccontainer.h>
 #include <string.h>
 #include <stdio.h>
@@ -23,7 +23,7 @@
 /*
  * Error Codes
  */
-#define SETUP_FAILED -1 
+#define SETUP_FAILED -1
 //"Failed to setup lxc_container struct"
 
 #define ALREADY_EXISTS -2
@@ -59,16 +59,16 @@ word getid(){
   if (!(c = lxc_container_new(name, NULL))) Error(305); /* out of memory */
 
 
-#define GETCONTAINER( arg, id, c) do {					\
-    if (Type(arg) == T_Integer){					\
-      id = IntegerVal(arg);						\
-      if(( c = get_cont(id)) == NULL) ArgError(1,101);			\
-    }									\
-    else {								\
-      ArgString(1);							\
-      NEWC(StringVal(arg), c);						\
-      CACHE(c, id);							\
-    }									\
+#define GETCONTAINER( arg, id, c) do {                                  \
+    if (Type(arg) == T_Integer){                                        \
+      id = IntegerVal(arg);                                             \
+      if(( c = get_cont(id)) == NULL) ArgError(1,101);                  \
+    }                                                                   \
+    else {                                                              \
+      ArgString(1);                                                     \
+      NEWC(StringVal(arg), c);                                          \
+      CACHE(c, id);                                                     \
+    }                                                                   \
   } while (0)
 
 struct lxc_container *get_cont(word id){
@@ -85,7 +85,7 @@ lxcinit(int argc, descriptor *argv)
   csid = 0;
   for (i=0; i<maxc; i++)
     cs[i]=NULL;
-  // return lxc version 
+  // return lxc version
   RetConstString((char *)lxc_get_version());
 }
 
@@ -100,7 +100,7 @@ exist(int argc, descriptor *argv)
   //printf("%s(): handle:%lu\n", __PRETTY_FUNCTION__, handle);
   if (c->is_defined(c))
     RetInteger(handle);
-  
+
   Fail;
 }
 
@@ -125,15 +125,15 @@ create(int argc, descriptor *argv)
   }
   /* Create the container */
   if (!c->createl(c, "download", NULL, NULL, LXC_CREATE_QUIET,
-		  "-d", StringVal(argv[2]),
-		  "-r", StringVal(argv[3]),
-		  "-a", StringVal(argv[4]),
-		  NULL)) {
+                  "-d", StringVal(argv[2]),
+                  "-r", StringVal(argv[3]),
+                  "-a", StringVal(argv[4]),
+                  NULL)) {
     //fprintf(stderr, "Can't to create container rootfs\n");
     lxc_container_put(c);
     Fail;
   }
-  RetInteger(id);    
+  RetInteger(id);
 }
 
 word
@@ -169,11 +169,11 @@ stop(int argc, descriptor *argv){
   if (argc < 2) Error(130);
   GETCONTAINER(argv[1], id, c);
   ArgInteger(2);
-  timeout = IntegerVal(argv[2]); 
+  timeout = IntegerVal(argv[2]);
   /* Stop the container */
   if ((timeout > 0 && c->shutdown(c, timeout)) || (c->stop(c)))
      RetInteger(id);
- 
+
   //fprintf(stderr, "Failed to kill the container.\n");
   Fail;
 }
@@ -256,11 +256,11 @@ reboot(int argc, descriptor *argv){
 }
 
 
-#define GETFILENO(i, fno) do if (i <= argc) {	\
-    if (Type(argv[i]) == T_File)		\
-      fno = fileno(FileVal(argv[i]));		\
-    else if (Type(argv[i]) != T_Null)	 	\
-      ArgError(i, 105);				\
+#define GETFILENO(i, fno) do if (i <= argc) {   \
+    if (Type(argv[i]) == T_File)                \
+      fno = fileno(FileVal(argv[i]));           \
+    else if (Type(argv[i]) != T_Null)           \
+      ArgError(i, 105);                                 \
   } while (0)
 
 
@@ -291,7 +291,7 @@ attach(int argc, descriptor *argv){
   char **extra_keep = NULL;
   ssize_t extra_keep_size = 0;
   int progargc;
-  int stdi=0, stdo=1, stde=2; 
+  int stdi=0, stdo=1, stde=2;
 
   if (argc < 1) Error(130);
   GETCONTAINER(argv[1], id, c);
@@ -310,23 +310,23 @@ attach(int argc, descriptor *argv){
   //free(command.argv[progargc-1]);
   command.argv[progargc] = NULL;
   command.program = command.argv[0];
-  
+
   attach_options =  (lxc_attach_options_t ){
-		.attach_flags 	=  LXC_ATTACH_DEFAULT,
-		.namespaces 	= -1,
-		.personality 	= -1,
-		.initial_cwd 	= NULL,
-		.uid 		= (uid_t)-1,
-		.gid 		= (gid_t)-1,
-		.env_policy 	=  LXC_ATTACH_KEEP_ENV,
-		.extra_env_vars = NULL,
-		.extra_keep_env = NULL,
-		.stdin_fd 	= stdi,
-		.stdout_fd 	= stdo,
-		.stderr_fd 	= stde,
+                .attach_flags   =  LXC_ATTACH_DEFAULT,
+                .namespaces     = -1,
+                .personality    = -1,
+                .initial_cwd    = NULL,
+                .uid            = (uid_t)-1,
+                .gid            = (gid_t)-1,
+                .env_policy     =  LXC_ATTACH_KEEP_ENV,
+                .extra_env_vars = NULL,
+                .extra_keep_env = NULL,
+                .stdin_fd       = stdi,
+                .stdout_fd      = stdo,
+                .stderr_fd      = stde,
   };
 
-  
+
   ret = c->attach(c, lxc_attach_run_command, &command, &attach_options, &pid);
   if (ret>=0)
     ret = lxc_wait_for_pid_status(pid);
@@ -335,7 +335,7 @@ attach(int argc, descriptor *argv){
     free(command.argv[--progargc]);
   }
   free(command.argv);
-  
+
   if (ret>=0)
     RetInteger(ret);
   else

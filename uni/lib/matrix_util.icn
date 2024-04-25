@@ -221,24 +221,24 @@ procedure m_lupDecomposition(M, subfcn, mulfcn, divfcn,
          if invokeFcn(invertMetric, M[i,k]) > p then {
             p := ::abs(M[i,k])
             k2 := i
-	    }
+            }
       if p = 0 then fail
       b[k] :=: b[k2]
       every i := 1 to n do
-	 M[k,i] :=: M[k2,i]
+         M[k,i] :=: M[k2,i]
       every i := k+1 to n do {
-	 M[i,k] := invokeFcn(divfcn, M[i,k], M[k,k]) | fail
-	 every j := k+1 to n do
-	    M[i,j] := invokeFcn(subfcn,M[i,j],invokeFcn(mulfcn,M[i,k],M[k,j]))
-	 }
+         M[i,k] := invokeFcn(divfcn, M[i,k], M[k,k]) | fail
+         every j := k+1 to n do
+            M[i,j] := invokeFcn(subfcn,M[i,j],invokeFcn(mulfcn,M[i,k],M[k,j]))
+         }
       }
    L := m_constant(*M, *M[1], addident)
    U := m_constant(*M, *M[1], addident)
    every (i := 1 to *M, j := 1 to *M[i]) do
       if i > j then
-	 L[i,j] := M[i,j]
+         L[i,j] := M[i,j]
       else
-	 U[i,j] := M[i,j]
+         U[i,j] := M[i,j]
    every i := 1 to *M do
       L[i,i] := mulident
    return [L,U,b]
@@ -265,13 +265,13 @@ procedure m_lupSolve(L,U,p,b,addfun,subfun,mulfun,divfun,addident:0.0)
    every i := 1 to n do {
       s := addident
       every j := 1 to i-1 do
-	 s := invokeFcn(addfun,s,invokeFcn(mulfun,L[i,j],y[j]))
+         s := invokeFcn(addfun,s,invokeFcn(mulfun,L[i,j],y[j]))
       y[i] := invokeFcn(subfun,b[p[i]],s)
       }
    every i := n to 1 by -1 do {
       s := addident
       every j := i+1 to n do
-	 s := invokeFcn(addfun,s,invokeFcn(mulfun,U[i,j],x[j]))
+         s := invokeFcn(addfun,s,invokeFcn(mulfun,U[i,j],x[j]))
       x[i] := invokeFcn(divfun,invokeFcn(subfun,y[i],s),U[i,i]) | fail
       }
    return x
@@ -288,7 +288,7 @@ procedure m_linearSolve(A,b,addfun,subfun,mulfun,divfun,
                         addident,mulident,invertMetric)
    local lup, L, U, p
    lup := m_lupDecomposition(A,subfun,mulfun,divfun,
-			     invertMetric,addident,mulident) | fail
+                             invertMetric,addident,mulident) | fail
    L := lup[1]
    U := lup[2]
    p := lup[3]
@@ -310,7 +310,7 @@ procedure m_divide(M1,M2,addfun,subfun,mulfun,divfun,
    X := ::list()
    every i := 1 to n do {
       x := m_linearSolve(M2,m_col(M1, i),addfun,subfun,mulfun,divfun,
-			 addident,mulident,invertMetric) | fail
+                         addident,mulident,invertMetric) | fail
       ::put(X, x)
       }
    return m_transpose(X)
@@ -326,8 +326,8 @@ end
 procedure m_inverse(M,addfun,subfun,mulfun,divfun,
                     addident,mulident,invertMetric)
    return m_divide(m_identity(*M,*M,addident,mulident),
-		   M,addfun,subfun,mulfun,divfun,addident,
-		   mulident,invertMetric)
+                   M,addfun,subfun,mulfun,divfun,addident,
+                   mulident,invertMetric)
 end
 
 #<p>
@@ -344,15 +344,15 @@ procedure m_write(args[])   # Matrices and output files
    outfile := &output
    while arg := ::get(args) do {
       case ::type(arg) of {
-	 "file": outfile := arg
-	 "list": {    # Assume it's a matrix!
-	    every i := !M do {
-	       every ::writes(outfile, !i," ")
-	       ::write(outfile)
-	       }
-	    }
-	 default: ::writes(outfile, arg)
-	 }
+         "file": outfile := arg
+         "list": {    # Assume it's a matrix!
+            every i := !M do {
+               every ::writes(outfile, !i," ")
+               ::write(outfile)
+               }
+            }
+         default: ::writes(outfile, arg)
+         }
       }
    ::write(outfile)
 end

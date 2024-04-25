@@ -12,7 +12,7 @@ procedure do_trim()
    sequ ? {
       while outs ||:= tab(findp(,&subject,&pos,0)) & mark := __endpoint do {
          tab(mark)
-	 }
+         }
       outs ||:= sequ[&pos:0]
    }
    return copy(outs)
@@ -25,7 +25,7 @@ end
 
 procedure do_subst()
    every e := !subst do {
-      outs := ""   
+      outs := ""
       sequ ? {
          while outs ||:= tab(find(e.f)) do  {
             outs ||:= e.r
@@ -48,19 +48,19 @@ procedure findp(p, subj:&subject, i1:&pos, i2:0)
 
    every i := upto('>\n',subj,i1,i2) do {
       case subj[i] of {
-	 ">": {
-	    i3 := many('>', subj, i, i2)
-	    i3 := many(alphaspace, subj, i3, i2)
-	    if not i3 := many('\n', subj, i3, i2) then {
-	       next
-	       }
-	    __endpoint := i3
-	    }
-	 "\n": {
-	    i3 := many('\n', subj, i, i2)
-	    __endpoint := i3
-	    }
-	 }
+         ">": {
+            i3 := many('>', subj, i, i2)
+            i3 := many(alphaspace, subj, i3, i2)
+            if not i3 := many('\n', subj, i3, i2) then {
+               next
+               }
+            __endpoint := i3
+            }
+         "\n": {
+            i3 := many('\n', subj, i, i2)
+            __endpoint := i3
+            }
+         }
       suspend i
       }
 end
@@ -171,36 +171,36 @@ procedure run_regexdna_concurrent(av)
    fin := open(av[1]) | stop("usage: regex-dna filename")
    siz := stat(av[1]).size | stop("can't stat ", av[1])
    sequ := reads(fin, siz) | stop("can't read ", av[1])
-   
+
    if match("CPU cores", x := &features) then
       x := integer(x[11:0])
    else
       x := 4
-   pool := Pool(x) 
+   pool := Pool(x)
 
    p := ">+[A-Za-z ]*\n+|\n+"
    ilen := *sequ
-   
+
    outs := ""
    sequ ? {
       while outs ||:= tab(findp(,&subject, &pos, 0)) & mark := __endpoint do {
          tab(mark)
-	 }
+         }
       outs ||:= sequ[&pos:0]
    }
    sequ := copy(outs)
-   
+
    clen := *sequ
-   
+
    variants := [["agggtaaa|tttaccct", var_1],
-		["[cgt]gggtaaa|tttaccc[acg]", var_2],
-		["a[act]ggtaaa|tttacc[agt]t", var_3],
-		["ag[act]gtaaa|tttac[agt]ct", var_4],
-		["agg[act]taaa|ttta[agt]cct", var_5],
-		["aggg[acg]aaa|ttt[cgt]ccct", var_6],
-		["agggt[cgt]aa|tt[acg]accct", var_7],
-		["agggta[cgt]a|t[acg]taccct", var_8],
-		["agggtaa[cgt]|[acg]ttaccct", var_9]
+                ["[cgt]gggtaaa|tttaccc[acg]", var_2],
+                ["a[act]ggtaaa|tttacc[agt]t", var_3],
+                ["ag[act]gtaaa|tttac[agt]ct", var_4],
+                ["agg[act]taaa|ttta[agt]cct", var_5],
+                ["aggg[acg]aaa|ttt[cgt]ccct", var_6],
+                ["agggt[cgt]aa|tt[acg]accct", var_7],
+                ["agggta[cgt]a|t[acg]taccct", var_8],
+                ["agggtaa[cgt]|[acg]ttaccct", var_9]
                 ]
    subst := [ sp("B", "(c|g|t)"),
              sp("D", "(a|g|t)"),
@@ -221,9 +221,9 @@ procedure run_regexdna_concurrent(av)
    rL := pool.imap(do_variants, wL)
    pool.kill()
    every write(output, !rL)
-   
+
    every e := !subst do {
-      outs := ""   
+      outs := ""
       sequ ? {
          while outs ||:= tab(find(e.f)) do  {
             outs ||:= e.r
@@ -251,27 +251,27 @@ procedure run_regexdna_sequential(av)
 
    p := ">+[A-Za-z ]*\n+|\n+"
    ilen := *sequ
-   
+
    outs := ""
    sequ ? {
       while outs ||:= tab(findp()) & mark := __endpoint do {
          tab(mark)
-	 }
+         }
       outs ||:= sequ[&pos:0]
    }
    sequ := copy(outs)
 
    clen := *sequ
-   
+
    variants := [["agggtaaa|tttaccct", var_1],
-		["[cgt]gggtaaa|tttaccc[acg]", var_2],
-		["a[act]ggtaaa|tttacc[agt]t", var_3],
-		["ag[act]gtaaa|tttac[agt]ct", var_4],
-		["agg[act]taaa|ttta[agt]cct", var_5],
-		["aggg[acg]aaa|ttt[cgt]ccct", var_6],
-		["agggt[cgt]aa|tt[acg]accct", var_7],
-		["agggta[cgt]a|t[acg]taccct", var_8],
-		["agggtaa[cgt]|[acg]ttaccct", var_9]
+                ["[cgt]gggtaaa|tttaccc[acg]", var_2],
+                ["a[act]ggtaaa|tttacc[agt]t", var_3],
+                ["ag[act]gtaaa|tttac[agt]ct", var_4],
+                ["agg[act]taaa|ttta[agt]cct", var_5],
+                ["aggg[acg]aaa|ttt[cgt]ccct", var_6],
+                ["agggt[cgt]aa|tt[acg]accct", var_7],
+                ["agggta[cgt]a|t[acg]taccct", var_8],
+                ["agggtaa[cgt]|[acg]ttaccct", var_9]
                 ]
    subst := [ sp("B", "(c|g|t)"),
              sp("D", "(a|g|t)"),
@@ -291,12 +291,12 @@ procedure run_regexdna_sequential(av)
 
    rL := list(*wL)
    every i := 1 to *wL do
-      rL[i] := do_variants(wL[i]) 
+      rL[i] := do_variants(wL[i])
 
    every write(output, !rL)
-   
+
    every e := !subst do {
-      outs := ""   
+      outs := ""
       sequ ? {
          while outs ||:= tab(find(e.f)) do  {
             outs ||:= e.r

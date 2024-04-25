@@ -35,21 +35,19 @@
 #include "XpmI.h"
 
 int
-XpmWriteFileFromBuffer(filename, buffer)
-    char *filename;
-    char *buffer;
+XpmWriteFileFromBuffer(char *filename, char *buffer)
 {
     int fcheck, len;
     FILE *fp = fopen(filename, "w");
 
     if (!fp)
-	return XpmOpenFailed;
+        return XpmOpenFailed;
 
     len = strlen(buffer);
     fcheck = fwrite(buffer, len, 1, fp);
     fclose(fp);
     if (fcheck != 1)
-	return XpmOpenFailed;
+        return XpmOpenFailed;
 
     return XpmSuccess;
 }

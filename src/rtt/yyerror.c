@@ -162,8 +162,8 @@ int _yyerror(char *s, int state)
       s=sbuf;
       }
       if (yylval.t)
-	fprintf(stderr, "%d: # \"%s\": %s\n", yylval.t->line, yylval.t->image, s);
+        fprintf(stderr, "%d: # \"%s\": %s\n", yylval.t->line, yylval.t->image, s);
       else
-	fprintf(stderr, "%s\n", s);
+        fprintf(stderr, "%s\n", s);
    return 0;
 }

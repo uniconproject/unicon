@@ -25,7 +25,7 @@ procedure reinitialize()
    imported_classes := table()
    thePackage := &null
 end
-
+
 # classspec database (DBM) entry
 record db_entry(dir, entry)
 
@@ -37,7 +37,7 @@ class declaration(name,fields,tag,lptoken,rptoken)
   method name()
     return self.name
   end
-
+
   method setname(s)
     self.name := s
   end
@@ -84,7 +84,7 @@ if / (self.tag) then {
 initially
    tmpcount := 0
 end
-
+
 global imported
 
 procedure import_class(node)
@@ -97,26 +97,26 @@ procedure import_class(node)
    else if node.tok = IDENT then {
       tempp := Package(node.s)
       if /tempp.dir then {
-	 uni_error("Unable to import (1) package " || image(node.s))
-	 }
+         uni_error("Unable to import (1) package " || image(node.s))
+         }
       tempp.add_imported()
       }
    else if node.tok = STRINGLIT then {
       node.s ? {
-	  move(1)
-	  pack := ""
-	  while pack ||:= tab(upto('/\\')) do pack ||:= move(1)
-	  if pack ||:= tab(find(".")) then {
-	      move(1)
-	      s := tab(-1)
-	  }
-	  else pack ||:= tab(-1)
+          move(1)
+          pack := ""
+          while pack ||:= tab(upto('/\\')) do pack ||:= move(1)
+          if pack ||:= tab(find(".")) then {
+              move(1)
+              s := tab(-1)
+          }
+          else pack ||:= tab(-1)
       }
 
       tempp := Package(pack)
       if /tempp.dir then {
-	 uni_error("Unable to import (2) package " || image(pack))
-	 }
+         uni_error("Unable to import (2) package " || image(pack))
+         }
       tempp.add_imported(s)
       }
 end
@@ -138,9 +138,9 @@ class Package : declaration(files, dir, classes)
       local s, f
 
       if /dir then return
-      
+
       f := open(dir || "/uniclass", "dr") |
-	 stop("Couldn't re-open uniclass db in " || dir)
+         stop("Couldn't re-open uniclass db in " || dir)
       every s := (if \sym then sym else fields.foreach()) do {
          if member(imported, s) then
              put(imported[s], self.name)
@@ -205,11 +205,11 @@ initially(name)
       name := name[2:-1]
       self.name := ""
       name ? {
-	 if upto('/\\') then {
-	    while self.name ||:= tab(upto('/\\')) do self.name ||:= move(1)
-	    }
-	 self.name ||:= tab(find(".")|0)
-	 }
+         if upto('/\\') then {
+            while self.name ||:= tab(upto('/\\')) do self.name ||:= move(1)
+            }
+         self.name ||:= tab(find(".")|0)
+         }
       }
    else {
       self.name := name
@@ -221,7 +221,7 @@ initially(name)
    /tag := "package"
    /fields := classFields()
 end
-
+
 # imethods and ifields are all lists of these:
 record classident(Class,ident)
 
@@ -229,15 +229,15 @@ record classident(Class,ident)
 # Attributes and operations of classes
 #
 class Class : declaration (supers,
-			   methods,
-			   text,
-			   imethods,
-			   ifields,
-			   glob,
-			   linkfile,
-			   dir,
-			   unmangled_name,
-			   supers_node)
+                           methods,
+                           text,
+                           imethods,
+                           ifields,
+                           glob,
+                           linkfile,
+                           dir,
+                           unmangled_name,
+                           supers_node)
 
   method ismethod(id)
      if \ (self.methods$lookup(id)) | (!\self.imethods).ident == id then
@@ -259,35 +259,35 @@ class Class : declaration (supers,
   method ReadBody(depth,L)
     while line  := pop(L) do {
       line ? {
-	tab(many(white))
-	if ="initially" then {
-	    (cf := classFields())$parse("")
-	    decl := Method(self.name,self.text,,cf,"method")
-	    decl$setname("initially")
-	    self.methods$insert(decl, "initially")
-	} else if ="method" then {
-	    decl := Method(self.name)
-	    decl$Read(line,phase)
-	    self.methods$insert(decl,decl$name())
-	} else if ="end" & pos(0) then {
-	    # "end" is tossed here. see "initially" above
-	    return
-	} else if ="procedure" then {
-	    decl := Method("")
-	    decl$Read(line,phase)
-	    /self.glob := []
-	    put(self.glob,decl)
-	} else if ="global" then {
-	    /self.glob := []
-	    put(self.glob,vardecl(line))
-	} else if ="record" then {
-	    /self.glob := []
-	    put(self.glob,declaration(line))
-	} else if upto(nonwhite) then {
-	    decl := Method(self.name)
-	    decl$Read("method " || line || "()", phase)
-	    self.methods$insert(decl,decl$name())
-	}
+        tab(many(white))
+        if ="initially" then {
+            (cf := classFields())$parse("")
+            decl := Method(self.name,self.text,,cf,"method")
+            decl$setname("initially")
+            self.methods$insert(decl, "initially")
+        } else if ="method" then {
+            decl := Method(self.name)
+            decl$Read(line,phase)
+            self.methods$insert(decl,decl$name())
+        } else if ="end" & pos(0) then {
+            # "end" is tossed here. see "initially" above
+            return
+        } else if ="procedure" then {
+            decl := Method("")
+            decl$Read(line,phase)
+            /self.glob := []
+            put(self.glob,decl)
+        } else if ="global" then {
+            /self.glob := []
+            put(self.glob,vardecl(line))
+        } else if ="record" then {
+            /self.glob := []
+            put(self.glob,declaration(line))
+        } else if upto(nonwhite) then {
+            decl := Method(self.name)
+            decl$Read("method " || line || "()", phase)
+            self.methods$insert(decl,decl$name())
+        }
       }
     }
     if depth = 0 then
@@ -318,19 +318,19 @@ class Class : declaration (supers,
   method transitive_closure()
     count := supers$size()
     while count > 0 do {
-	added := taque()
-	every sc := supers$foreach() do {
-	  if /(super := classes$lookup(sc)) then
-	    halt("class/transitive_closure: couldn't find superclass ",sc)
-	  every supersuper := super$foreachsuper() do {
-	    if / self.supers$lookup(supersuper) &
-		 /added$lookup(supersuper) then {
-	      added$insert(supersuper)
-	    }
-	  }
-	}
-	count := added$size()
-	every self.supers$insert(added$foreach())
+        added := taque()
+        every sc := supers$foreach() do {
+          if /(super := classes$lookup(sc)) then
+            halt("class/transitive_closure: couldn't find superclass ",sc)
+          every supersuper := super$foreachsuper() do {
+            if / self.supers$lookup(supersuper) &
+                 /added$lookup(supersuper) then {
+              added$insert(supersuper)
+            }
+          }
+        }
+        count := added$size()
+        every self.supers$insert(added$foreach())
     }
   end
   #
@@ -340,7 +340,7 @@ class Class : declaration (supers,
   method writedecl(f,s)
     writes(f, s," ",self.name)
     if s=="class" & ( *(superstr := self.supers$String()) > 0 ) then
-	    writes(f," : ",superstr)
+            writes(f," : ",superstr)
     writes(f,"(")
 
     if s~=="class" &
@@ -354,24 +354,24 @@ class Class : declaration (supers,
     else {
        rv := self.fields$String(s)
        if *rv > 0 then rv ||:= ","
-       if s~=="class" & *(\self.ifields)>0 then	{	# inherited fields
-	 every l := !self.ifields do {
-	    lid := l.ident
-	    if type(lid) == "string" then
-	       rv := rv || lid || ","
-	    else if type(lid)=="treenode" & lid.label == "arg3" then {
-	       rv := rv || (lid.children[1].s)
-	       if s=="class" then {
-		  rv := rv || ":" || lid.children[3].s
-		  }
-	       rv := rv || ","
-	       }
-	    else stop("Write(): can't handle ", type(ifi))
-	    }
-	 # resolve the last field in order to see if it is a vararg
-	 if /(superclass := classes$lookup(l.Class)) then
-	    halt("class/resolve: couldn't find superclass ",sc)
-	 if superclass$isvarg(l.ident) then rv := rv[1:-1]||"[],"
+       if s~=="class" & *(\self.ifields)>0 then {       # inherited fields
+         every l := !self.ifields do {
+            lid := l.ident
+            if type(lid) == "string" then
+               rv := rv || lid || ","
+            else if type(lid)=="treenode" & lid.label == "arg3" then {
+               rv := rv || (lid.children[1].s)
+               if s=="class" then {
+                  rv := rv || ":" || lid.children[3].s
+                  }
+               rv := rv || ","
+               }
+            else stop("Write(): can't handle ", type(ifi))
+            }
+         # resolve the last field in order to see if it is a vararg
+         if /(superclass := classes$lookup(l.Class)) then
+            halt("class/resolve: couldn't find superclass ",sc)
+         if superclass$isvarg(l.ident) then rv := rv[1:-1]||"[],"
          }
        writes(f,rv[1:-1])
        }
@@ -381,7 +381,7 @@ class Class : declaration (supers,
     if \iconc_import then return # Do not write anything during the iconc import phase
     f := open(env,"d") | {
        write(&errout, "can't open class database ", image(env),
-	     " to write spec for ",self.name)
+             " to write spec for ",self.name)
        fail
        }
 
@@ -414,7 +414,7 @@ class Class : declaration (supers,
     s := fetch(f, nam) | stop("fetch(", image(nam),") fails")
     close(f)
   end
-
+
   #
   # write out the Icon code for this class' explicit methods
   # and its "nested global" declarations (procedures, records, etc.)
@@ -424,10 +424,10 @@ class Class : declaration (supers,
     every (methods$foreach())$Write(f)
 
     if \self.glob & *self.glob>0 then {
-	write(f,"#\n# globals declared within the class\n#")
-	every i := 1 to *self.glob do
-	   yyprint(glob[i])
-	write(f)
+        write(f,"#\n# globals declared within the class\n#")
+        every i := 1 to *self.glob do
+           yyprint(glob[i])
+        write(f)
     }
   end
 
@@ -450,15 +450,15 @@ class Class : declaration (supers,
     write(f,"#line 1 \"__faux.icn\"")
     writes(f,"record ",nam,"__state(__s,__m") # reserved fields
     rv := ","
-    rv ||:= self.fields$idTaque.String()		     # my fields
+    rv ||:= self.fields$idTaque.String()                     # my fields
     if rv[-1] ~== "," then rv ||:= ","
 
     every ifi := (!self.ifields).ident do {
        if type(ifi) == "string" then
           rv := rv || ifi || "," # inherited fields
        else if type(ifi) == "treenode" & ifi.label == "arg3" then {
-	    rv := rv || (ifi.children[1].s) || ","
-	    }
+            rv := rv || (ifi.children[1].s) || ","
+            }
        else stop("Write(): can't handle ", type(ifi))
        }
 
@@ -469,13 +469,13 @@ class Class : declaration (supers,
     #
     writes(f,"record ",nam,"__methods(")
     rv := ""
-    every s := (((methods$foreach())$name())	|	# my explicit methods
-		(!self.imethods).ident		|	# my inherited methods
-		supers$foreach()
-		)				# super.method fields
-	do rv := rv || s || ","
+    every s := (((methods$foreach())$name())    |       # my explicit methods
+                (!self.imethods).ident          |       # my inherited methods
+                supers$foreach()
+                )                               # super.method fields
+        do rv := rv || s || ","
 
-    if *rv>0 then rv[-1] := ""			# trim trailling ,
+    if *rv>0 then rv[-1] := ""                  # trim trailling ,
     yyprint(rv||")\n")
 
     #
@@ -485,7 +485,7 @@ class Class : declaration (supers,
     writes(f,"global ",nam,"__oprec")
     every writes(f,", ", supers$foreach(),"__oprec")
     yyprint("\n")
-
+
     #
     # write the constructor procedure.
     # This is a long involved process starting with writing the declaration.
@@ -498,9 +498,9 @@ class Class : declaration (supers,
     #
     yyprint("initial {\n  if /"||nam||"__oprec then "||nam||"initialize()\n")
     if supers$size() > 0 then
-	every (super <- supers$foreach()) ~== nam do
-	    yyprint("  if /"||super||"__oprec then "||super||"initialize()\n"||
-		    "  "||nam||"__oprec."||super||" := "|| super||"__oprec\n")
+        every (super <- supers$foreach()) ~== nam do
+            yyprint("  if /"||super||"__oprec then "||super||"initialize()\n"||
+                    "  "||nam||"__oprec."||super||" := "|| super||"__oprec\n")
     yyprint("  }\n")
 
 
@@ -508,18 +508,18 @@ class Class : declaration (supers,
     # If the class field list has or inherits defaults, write them out.
     #
     every fld := fields$foreach() do {
-	if type(fld) == "treenode" & fld.label == "arg3" then {
-	    writes(f,"/",fld.children[1].s, " := ")
-	    yyprint(fld.children[3])
-	    yyprint("\n")
-	    }
-	}
+        if type(fld) == "treenode" & fld.label == "arg3" then {
+            writes(f,"/",fld.children[1].s, " := ")
+            yyprint(fld.children[3])
+            yyprint("\n")
+            }
+        }
     every ifi := (!(self.ifields)).ident do {
        if type(ifi) == "treenode" & ifi.label == "arg3" then {
-	  writes(f,"/",ifi.children[1].s, " := ")
-	  yyprint(ifi.children[3])
-	  yyprint("\n")
-	  }
+          writes(f,"/",ifi.children[1].s, " := ")
+          yyprint(ifi.children[3])
+          yyprint("\n")
+          }
        }
 
 
@@ -537,19 +537,19 @@ class Class : declaration (supers,
        yyprint(")\n  self.__s := self\n")
        if \ (m.fields.varg) then {
           m.fields.String()[1:-2] ? {
-	     if find(",") then {
+             if find(",") then {
                  writes(f,"  self.__m.initially!([self,")
                  while writes(f,tab(find(","))) do {
-		    move(1)   # if last was nonfinal write it
-		    if find(",") then writes(f,",")
-		    }
-	         write(f, "]|||", tab(0),") | fail")
+                    move(1)   # if last was nonfinal write it
+                    if find(",") then writes(f,",")
+                    }
+                 write(f, "]|||", tab(0),") | fail")
                  }
              else {
-		write(f,"  self.__m.initially!(push(", tab(0), ",self)) | fail")
+                write(f,"  self.__m.initially!(push(", tab(0), ",self)) | fail")
                   }
-	     }
-	  }
+             }
+          }
       else {
           writes(f,"  self.__m.initially(self,")
           yyprint(m.fields)
@@ -558,23 +558,23 @@ class Class : declaration (supers,
        }
    else {
       every fld := fields$foreach() do {
-	 if type(fld) == "treenode" then writes(f,",",fld.children[1].s)
-	 else
-	    writes(f,",",fld)
-	 }
+         if type(fld) == "treenode" then writes(f,",",fld.children[1].s)
+         else
+            writes(f,",",fld)
+         }
       if \self.ifields then
          every ifi := (!self.ifields).ident do {
-	    if type(ifi) == "string" then writes(f,",",ifi)
-	    else if type(ifi) == "treenode" & ifi.label == "arg3" then {
-	       writes(f, ",", ifi.children[1].s)
-	       }
-	    else {
-	       write(&errout, "unicon: system error inheriting ", type(ifi))
-	       }
-	    }
+            if type(ifi) == "string" then writes(f,",",ifi)
+            else if type(ifi) == "treenode" & ifi.label == "arg3" then {
+               writes(f, ",", ifi.children[1].s)
+               }
+            else {
+               write(&errout, "unicon: system error inheriting ", type(ifi))
+               }
+            }
        yyprint(")\n  self.__s := self\n")
     if ((methods$foreach())$name()| (!self.imethods).ident) == "initially" then
-	  yyprint("  self.__m.initially(self) | fail\n")
+          yyprint("  self.__m.initially(self) | fail\n")
        }
 
     #
@@ -591,25 +591,25 @@ class Class : declaration (supers,
     if \strict then
        yyprint("  return idol_object(self,"||self.name||"__oprec)\nend\n\n")
     else yyprint("  return self\nend\n\n")
-  
-    
+
+
     #
     # write out class initializer procedure to initialize my operation record
     #
     yyprint("procedure "||nam||"initialize()\n")
     writes(f,"  initial ",nam,"__oprec := ",nam,"__methods")
     rv := "("
-    every s := (methods$foreach())$name() do {		# explicit methods
+    every s := (methods$foreach())$name() do {          # explicit methods
       if *rv>1 then rv ||:= ","
       rv := rv || nam || "_" || s
     }
-    every l := !self.imethods do {			# inherited methods
+    every l := !self.imethods do {                      # inherited methods
       if *rv>1 then rv ||:= ","
       rv := rv || l.Class || "_" || l.ident
     }
     yyprint(rv||")\nend\n")
   end
-
+
   #
   # resolve -- primary inheritance resolution utility
   #
@@ -623,35 +623,35 @@ class Class : declaration (supers,
     addedfields := table()
     addedmethods := table()
     every sc := supers$foreach() do {
-	if /(superclass := classes$lookup(sc)) then
-	    halt("class/resolve: couldn't find superclass ",sc)
-	every superclassfield := superclass$foreachfield() do {
-	    if /self.fields$lookup(superclassfield) &
-	       /addedfields[superclassfield] then {
-		addedfields[superclassfield] := superclassfield
-		put ( self.ifields , classident(sc,superclassfield) )
-		if superclass$ispublic(superclassfield) then
-		    put( ipublics, classident(sc,superclassfield) )
-	    } else if \strict then {
-		warn("class/resolve: '",sc,"' field '",superclassfield,
-		     "' is redeclared in subclass ",self.name)
-	    }
-	}
-	every superclassmethod := (superclass$foreachmethod())$name() do {
-	    if /self.methods$lookup(superclassmethod) &
-	       /addedmethods[superclassmethod] then {
-		addedmethods[superclassmethod] := superclassmethod
-		put ( self.imethods, classident(sc,superclassmethod) )
-	    }
-	}
-	every public := (!ipublics) do {
-	    if public.Class == sc then
-		put (self.imethods, classident(sc,public.ident))
-	}
+        if /(superclass := classes$lookup(sc)) then
+            halt("class/resolve: couldn't find superclass ",sc)
+        every superclassfield := superclass$foreachfield() do {
+            if /self.fields$lookup(superclassfield) &
+               /addedfields[superclassfield] then {
+                addedfields[superclassfield] := superclassfield
+                put ( self.ifields , classident(sc,superclassfield) )
+                if superclass$ispublic(superclassfield) then
+                    put( ipublics, classident(sc,superclassfield) )
+            } else if \strict then {
+                warn("class/resolve: '",sc,"' field '",superclassfield,
+                     "' is redeclared in subclass ",self.name)
+            }
+        }
+        every superclassmethod := (superclass$foreachmethod())$name() do {
+            if /self.methods$lookup(superclassmethod) &
+               /addedmethods[superclassmethod] then {
+                addedmethods[superclassmethod] := superclassmethod
+                put ( self.imethods, classident(sc,superclassmethod) )
+            }
+        }
+        every public := (!ipublics) do {
+            if public.Class == sc then
+                put (self.imethods, classident(sc,public.ident))
+        }
     }
   end
 end
-
+
 #
 # a class defining operations on methods and procedures
 #
@@ -665,12 +665,12 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag, first
     decl ?:= tab(find("("))
 #    if s == "method" then decl[1:upto(white,decl)] := "method"
 #    else {
-#	decl[1:upto(white,decl)] := "procedure"
-#	if *(self.Class)>0 then {
-#	    decl[upto(white,decl)] ||:= self.Class||"_"
-#	    i := find("(",decl)
-#	    decl[i] ||:= "self" || (((decl[i+1] ~== ")"), ",") | "")
-#	}
+#       decl[1:upto(white,decl)] := "procedure"
+#       if *(self.Class)>0 then {
+#           decl[upto(white,decl)] ||:= self.Class||"_"
+#           i := find("(",decl)
+#           decl[i] ||:= "self" || (((decl[i+1] ~== ")"), ",") | "")
+#       }
 #    }
     return decl || "\n"
   end
@@ -679,21 +679,21 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag, first
      if x := \ (self.fields$lookup(id)) then return x
      return isloco( \ (self.locals), id)
 #     if x := \ (self.text.vars) then
-#	return x$lookup(id)
+#       return x$lookup(id)
   end
   method Write(f, nam)
     yyprint("\n")
 
       if \firsttoken then {
-	 if outfilename ~== firsttoken.filename |
-	    outline ~= firsttoken.line then {
-	    write(yyout,"\n#line ", firsttoken.line-1," \"",
-		  firsttoken.filename,"\"")
-	    outline := firsttoken.line
-	    outcol := 1
-	    outfilename := firsttoken.filename
-	    }
-	 }
+         if outfilename ~== firsttoken.filename |
+            outline ~= firsttoken.line then {
+            write(yyout,"\n#line ", firsttoken.line-1," \"",
+                  firsttoken.filename,"\"")
+            outline := firsttoken.line
+            outcol := 1
+            outfilename := firsttoken.filename
+            }
+         }
 
     writes(f, "procedure ")
     writes(f, self.Class$name(), "_")
@@ -707,13 +707,13 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag, first
     if /abstract_flag then {
        yyprint(locals)
        if exists_statlists(locals) then {
-	  yyprint("\ninitial {")
+          yyprint("\ninitial {")
           if initl ~=== &null then { # append into existing initial
-	     yyprint(initl.children[2])
-	     yyprint(";\n")
-	     }
+             yyprint(initl.children[2])
+             yyprint(";\n")
+             }
           yystalists(locals)
-	  yyprint("\n}\n")
+          yyprint("\n}\n")
           }
        else
           yyprint(initl)
@@ -727,7 +727,7 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag, first
     yyprint("\nend\n")
   end
 end
-
+
 #
 # a class corresponding to an Icon table, with special treatment of empties
 #
@@ -752,36 +752,36 @@ end
 procedure methodstaque(node, cl, taq)
    /taq := taque()
    case type(node) of {
-	 "treenode": {
-	    if (node.label ~=== "global") & (node.label ~=== "record") then {
-	       if *node.children > 0 then
-		  every methodstaque(!node.children, cl, taq)
-	       else write("leaf ", node.label)
-	       }
-	    else {
-	       /(cl.glob) := []
-	       put(cl.glob, node)
-	       }
-	    }
+         "treenode": {
+            if (node.label ~=== "global") & (node.label ~=== "record") then {
+               if *node.children > 0 then
+                  every methodstaque(!node.children, cl, taq)
+               else write("leaf ", node.label)
+               }
+            else {
+               /(cl.glob) := []
+               put(cl.glob, node)
+               }
+            }
          "Method__state": {
-	    node.Class := cl
-	    if not (taq$insert(node, node$name())) then {
-	       uni_error("method " || node$name() ||
-		       " redeclared in " || cl.name)
-	       }
-	    }
-	 "null": { }
-	 "token": {
-	    write("token ", tokenstr(node.tok), " line ", node.line, " file ", node.filename)
-	    }
+            node.Class := cl
+            if not (taq$insert(node, node$name())) then {
+               uni_error("method " || node$name() ||
+                       " redeclared in " || cl.name)
+               }
+            }
+         "null": { }
+         "token": {
+            write("token ", tokenstr(node.tok), " line ", node.line, " file ", node.filename)
+            }
          "declaration__state" : {
             # Record declaration.
             /(cl.glob) := []
             put(cl.glob, node)
             }
-	 default: {
-	    write("methods Taque on ", type(node), " : ", image(node))
-	    }
+         default: {
+            write("methods Taque on ", type(node), " : ", image(node))
+            }
       }
    return taq
 end
@@ -822,7 +822,7 @@ class taque : Table (l)
     suspend self$Table.foreach()
   end
 end
-
+
 #
 # support for taques found as lists of ids separated by punctuation
 # constructor called with (separation char, source string)
@@ -833,13 +833,13 @@ class idTaque : taque(punc)
     s ? {
       tab(many(white))
       while name := tab(find(self.punc)) do {
-	self$insert(trim(name,white))
-	move(1)
-	tab(many(white))
+        self$insert(trim(name,white))
+        move(1)
+        tab(many(white))
       }
       if any(nonwhite) then {
-	 self$insert(trim(tab(0),white))
-	 }
+         self$insert(trim(tab(0),white))
+         }
     }
     return
   end
@@ -851,59 +851,59 @@ class idTaque : taque(punc)
   #
   method traverse(nod, isClassLocal)
       case type(nod) of {
-	 "treenode": {
-	    if *nod.children > 0 then {
-	       if nod.label == ("arg" || (2 to 8)) then {
-		  if /isClassLocal then
-		     insert(nod, nod.children[1].s)
-		  else {
-		     insert(nod.children[1].s)
-		     }
-		  }
-	       else if nod.label == "varlist2" then {
-		  if /isClassLocal then
+         "treenode": {
+            if *nod.children > 0 then {
+               if nod.label == ("arg" || (2 to 8)) then {
+                  if /isClassLocal then
                      insert(nod, nod.children[1].s)
-		  else {
+                  else {
                      insert(nod.children[1].s)
-		     nod := copy(nod)
-		     nod.label := "assign"
-		     return nod
-		     }
-		  }
-	       else if nod.label==("varlist3"|"varlist4") then {
-		  traverse(nod.children[1], isClassLocal)
-		  if /isClassLocal then
-		     insert(nod, nod.children[3].s)
-		  else {
-		     insert(nod.children[3].s)
-		     }
-		  }
-	       else {
-		  accum := []
-		  every \(x := traverse(!nod.children, isClassLocal)) do {
-		     put(accum, x)
-		     }
-	          accumtree := &null
-	          while x := pull(accum) do
-		     accumtree := node("procbody", x, ";", accumtree)
-		  return accumtree
-	          }
-	       }
-	    else write("leaf ", nod.label)
-	    }
-	 "token": {
-	    if nod.tok = IDENT then
-	       insert(nod.s)
-	    }
-	 "string": {
-	    if (nod ~== self.punc) & (nod ~== ";") then
-	       write("idTaque on ", type(nod), " : ", image(nod), " (punc was ",image(punc),")")
-	    }
-	 "null": { }
-	 default: {
-	    write("idTaque on ", type(nod), " : ", image(nod))
-	    }
-	 }
+                     }
+                  }
+               else if nod.label == "varlist2" then {
+                  if /isClassLocal then
+                     insert(nod, nod.children[1].s)
+                  else {
+                     insert(nod.children[1].s)
+                     nod := copy(nod)
+                     nod.label := "assign"
+                     return nod
+                     }
+                  }
+               else if nod.label==("varlist3"|"varlist4") then {
+                  traverse(nod.children[1], isClassLocal)
+                  if /isClassLocal then
+                     insert(nod, nod.children[3].s)
+                  else {
+                     insert(nod.children[3].s)
+                     }
+                  }
+               else {
+                  accum := []
+                  every \(x := traverse(!nod.children, isClassLocal)) do {
+                     put(accum, x)
+                     }
+                  accumtree := &null
+                  while x := pull(accum) do
+                     accumtree := node("procbody", x, ";", accumtree)
+                  return accumtree
+                  }
+               }
+            else write("leaf ", nod.label)
+            }
+         "token": {
+            if nod.tok = IDENT then
+               insert(nod.s)
+            }
+         "string": {
+            if (nod ~== self.punc) & (nod ~== ";") then
+               write("idTaque on ", type(nod), " : ", image(nod), " (punc was ",image(punc),")")
+            }
+         "null": { }
+         default: {
+            write("idTaque on ", type(nod), " : ", image(nod))
+            }
+         }
     return
   end
   method String()
@@ -920,12 +920,12 @@ initially
       argtree := l
       l := []
       if type(argtree) == "token" then
-	 insert(argtree.s)
+         insert(argtree.s)
       else
-	 traverse(argtree)
+         traverse(argtree)
       }
 end
-
+
 #
 # parameter lists in which the final argument may have a trailing []
 # The "[]" varg parameter is passed in by the parser if it is present.
@@ -941,56 +941,56 @@ class argList : idTaque(varg)
    local first
       every x := !\l do
          if type(x) == "treenode" then {
-	    if /first := 1 then write(yyout)
-	    v := x.children[1].s
-	    if x.label == ("arg3" | "arg4") then {
-	       writes(yyout, "/", v, " := ", x.children[-1].s)
-	       yyprint("\n")
+            if /first := 1 then write(yyout)
+            v := x.children[1].s
+            if x.label == ("arg3" | "arg4") then {
+               writes(yyout, "/", v, " := ", x.children[-1].s)
+               yyprint("\n")
                }
-	    else if x.label == ("arg5" | "arg6") then {
-	       writes(yyout, "/", v, " := &", x.children[-1].children[-1].s)
-	       yyprint("\n")
+            else if x.label == ("arg5" | "arg6") then {
+               writes(yyout, "/", v, " := &", x.children[-1].children[-1].s)
+               yyprint("\n")
                }
-	    else if x.label == ("arg7" | "arg8") then {
-	       writes(yyout, "/", v, " := []")
-	       yyprint("\n")
-	       }
-	    if x.label == ("arg2" | "arg4" | "arg6") then {
-	      case x.children[3].s of {
-		  "integer"|"string"|"numeric"|"cset"|"real": {
-		      writes(yyout, v, " := ", x.children[3].s, "(",  v, ") |")
-		  }
-		  default: {
-		      writes(yyout, "(type(",v,")==\"",x.children[3].s,"\") |")
-		  }
-	      }
-	      writes(yyout, " runerr(")
-	      writes(yyout, case x.children[3].s of {
-		"integer": 101
-		"numeric": 102
-		"string": 103
-		"cset": 104
-		"file": 105
-		"list": 108
-		"set": 119
-		"table": 124
-		"window": 140
-		default: 123
-	      })
-	      writes(yyout,", ", v, ")")
+            else if x.label == ("arg7" | "arg8") then {
+               writes(yyout, "/", v, " := []")
+               yyprint("\n")
+               }
+            if x.label == ("arg2" | "arg4" | "arg6") then {
+              case x.children[3].s of {
+                  "integer"|"string"|"numeric"|"cset"|"real": {
+                      writes(yyout, v, " := ", x.children[3].s, "(",  v, ") |")
+                  }
+                  default: {
+                      writes(yyout, "(type(",v,")==\"",x.children[3].s,"\") |")
+                  }
+              }
+              writes(yyout, " runerr(")
+              writes(yyout, case x.children[3].s of {
+                "integer": 101
+                "numeric": 102
+                "string": 103
+                "cset": 104
+                "file": 105
+                "list": 108
+                "set": 119
+                "table": 124
+                "window": 140
+                default: 123
+              })
+              writes(yyout,", ", v, ")")
               yyprint("\n")
-	      }
-	    }
+              }
+            }
    # if any coercions happened, emit a #line directive
    if \first then {
       if lm := leftmost_token(\x) then {
-	       if outline ~=== lm.line then {
-		  write(yyout,"\n#line ", lm.line-1," \"", lm.filename,"\"")
-		  outline := lm.line
-		  outcol := 1
-		  if lm.column > 1 then writes(yyout, repl(" ",lm.column-1))
-		  outfilename := lm.filename
-		  }
+               if outline ~=== lm.line then {
+                  write(yyout,"\n#line ", lm.line-1," \"", lm.filename,"\"")
+                  outline := lm.line
+                  outcol := 1
+                  if lm.column > 1 then writes(yyout, repl(" ",lm.column-1))
+                  outfilename := lm.filename
+                  }
          }
       else {
          write(yyout, "\n# no leftmost lineno, line directive omitted")
@@ -1005,7 +1005,7 @@ class argList : idTaque(varg)
   end
 initially
   self.punc := ","
-  self$idTaque.initially() 
+  self$idTaque.initially()
 end
 
 #
@@ -1028,15 +1028,15 @@ class classFields : argList(publics)
   method insert(s)
     s ? {
       if ="public" & tab(many(white)) then {
-	s := tab(0)
-	/self.publics := []
-	put(self.publics,s)
+        s := tab(0)
+        /self.publics := []
+        put(self.publics,s)
       }
     }
     return self$argList.insert(s)
   end
 end
-
+
 #
 # find a class specification, along the IPATH if necessary
 #
@@ -1045,27 +1045,27 @@ procedure fetchspec(name)
    local basedir := "."
    name ? {
       while basedir ||:= tab(upto('\\/')) do {
-	 basedir ||:= move(1)
-	 }
+         basedir ||:= move(1)
+         }
       name := tab(0)
       # throw away initial "." and trailing "/"
       if basedir[-1] == ("\\"|"/") then basedir := basedir[2:-1]
       }
    if f := open(basedir || "/" || env,"dr") then {
       if s := fetch(f, name) then {
-	 close(f)
-#	 if s[1] == "\^z" then { # need to decompress s
-#	    f2 := open("gzip.out", "pw")
-#	    writes(f2, s[2:0])
-#	    close(f2)
-#	    f2 := open("gzip -d -c gzip.out")
-#	    s := reads(f2, 100000)
-##	    write(&errout, "decompressed to ", *s, " bytes")
-#	    close(f2)
-#	    remove("gzip.out")
-#	    }
-	 return db_entry(basedir, s)
-	 }
+         close(f)
+#        if s[1] == "\^z" then { # need to decompress s
+#           f2 := open("gzip.out", "pw")
+#           writes(f2, s[2:0])
+#           close(f2)
+#           f2 := open("gzip -d -c gzip.out")
+#           s := reads(f2, 100000)
+##          write(&errout, "decompressed to ", *s, " bytes")
+#           close(f2)
+#           remove("gzip.out")
+#           }
+         return db_entry(basedir, s)
+         }
       close(f)
       }
 
@@ -1107,83 +1107,83 @@ procedure readspec(name)
    fromfile := pop(L)
    while line := pop(L) do {
       line ? {
-	 tab(many(white))
-	 if ="class" then {
-	    decl := Class()
+         tab(many(white))
+         if ="class" then {
+            decl := Class()
             decl.dir := dbe.dir
-	    decl.linkfile := fromfile
-	    decl$Read(line,L)
-	    #insert into table for lookup, but not into list for generation
-	    classes$insert_t(decl,decl$name())
-	    }
-	 else if ="procedure" then {
-	    if comp = 0 then comp := 1
-	    decl := Method("")
-	    decl$Read(line)
-	    decl$Write(fout,"")
-	    }
-	 else if ="record" then {
-	    if comp = 0 then comp := 1
-	    decl := declaration(line)
-	    decl$Write(fout,"")
-	    }
-	 else if =("global"|"link") then {
-	    if comp = 0 then comp := 1
-	    tab(many(white))
-	    if pos(0) then line ||:= readln("wrap")
-	    decl := vardecl(line)
-	    decl$Write(fout,"")
-	    }
-	 else if ="const" then {
-	    ct$append ( constdcl(line) )
-	    }
-	 else if ="method" then {
-	    halt("readinput: method outside class")
-	    }
-	 else if upto(nonwhite) then {
-	    halt("expected declaration on: ",line)
-	    }
-	 }
+            decl.linkfile := fromfile
+            decl$Read(line,L)
+            #insert into table for lookup, but not into list for generation
+            classes$insert_t(decl,decl$name())
+            }
+         else if ="procedure" then {
+            if comp = 0 then comp := 1
+            decl := Method("")
+            decl$Read(line)
+            decl$Write(fout,"")
+            }
+         else if ="record" then {
+            if comp = 0 then comp := 1
+            decl := declaration(line)
+            decl$Write(fout,"")
+            }
+         else if =("global"|"link") then {
+            if comp = 0 then comp := 1
+            tab(many(white))
+            if pos(0) then line ||:= readln("wrap")
+            decl := vardecl(line)
+            decl$Write(fout,"")
+            }
+         else if ="const" then {
+            ct$append ( constdcl(line) )
+            }
+         else if ="method" then {
+            halt("readinput: method outside class")
+            }
+         else if upto(nonwhite) then {
+            halt("expected declaration on: ",line)
+            }
+         }
       if pos(0) then break
       }
 end
-
+
 #
-# finds series of high-precedence expressions 
+# finds series of high-precedence expressions
 # preceding a $
 #
 procedure get_invoker()
     local id, rv
     rv := ""
     while any(alpha) | match(")"|"]"|"}") do {
-	if id := tab(many(alpha)) then {
-	   if find(" "||id||" ", reserved) then {
-	      move(-*id)
-	      break
-	      }
-	   rv ||:= id
-	   if not ((tab(many(white))|"") & (rv ||:= =".")) then break
-	   }
-	else {
-	    case &subject[&pos] of {
-		")": {
-		    if not (rv ||:= tab(&pos<bal(&cset,')','(')))
-		    then halt("readln: can't bal ",&subject)
-		}
-		"]": {
-		    if not (rv ||:= tab(&pos<bal(&cset,']','[')))
-		    then halt("readln: can't bal ",&subject)
-		}
-		"}": { # deliberately use "" to keep code size smaller
-		    if not (rv ||:= tab(&pos<bal(&cset,"}","{")))
-		    then halt("readln: can't bal ",&subject)
-		}
-	    }
-	}
+        if id := tab(many(alpha)) then {
+           if find(" "||id||" ", reserved) then {
+              move(-*id)
+              break
+              }
+           rv ||:= id
+           if not ((tab(many(white))|"") & (rv ||:= =".")) then break
+           }
+        else {
+            case &subject[&pos] of {
+                ")": {
+                    if not (rv ||:= tab(&pos<bal(&cset,')','(')))
+                    then halt("readln: can't bal ",&subject)
+                }
+                "]": {
+                    if not (rv ||:= tab(&pos<bal(&cset,']','[')))
+                    then halt("readln: can't bal ",&subject)
+                }
+                "}": { # deliberately use "" to keep code size smaller
+                    if not (rv ||:= tab(&pos<bal(&cset,"}","{")))
+                    then halt("readln: can't bal ",&subject)
+                }
+            }
+        }
     }
     return reverse(rv)
 end
-
+
 #
 # filter the input translating $ references
 # (also eats comments and HTML tags, and trims lines)
@@ -1197,25 +1197,25 @@ procedure readln(wrap,htmlfunc)
     fLine +:= 1
     if line ? {
        (tab(many(white)) | "") &
-	  match("$include"|"$define"|"$else"|"$endif")
+          match("$include"|"$define"|"$else"|"$endif")
        } then return line
     line ? {
        if  (tab(many(white)) | "") & tab(match("$ifdef"|"$ifndef")) then {
-	  tab(many(white))
-	  testedsym := tab(many(nonwhite))
-	  if testedval := ct$eval(testedsym) then
-	     line := "$define "|| testedsym ||" "|| testedval ||"\n"|| line
-	  else
-	     line := "$undef "|| testedsym ||"\n"|| line
-	  return line
-	  }
+          tab(many(white))
+          testedsym := tab(many(nonwhite))
+          if testedval := ct$eval(testedsym) then
+             line := "$define "|| testedsym ||" "|| testedval ||"\n"|| line
+          else
+             line := "$undef "|| testedsym ||"\n"|| line
+          return line
+          }
        }
     line[ 1(x<-find("#",line),notquote(line[1:x])) : 0] := ""
     line := trim(line,white)
 #    line := selfdot(line)
     x := 1
     while ((x := find("$",line,x)) & notquote(line[1:x])) do {
-      z := line[x+1:0] ||" "	     # " " is for bal()
+      z := line[x+1:0] ||" "         # " " is for bal()
       case line[x+1] of {
         #
         # IBM 370 digraphs
@@ -1224,125 +1224,125 @@ procedure readln(wrap,htmlfunc)
         ")": line[x+:2] := "}"
         "<": line[x+:2] := "["
         ">": line[x+:2] := "]"
-	#
-	# $. used to be a syntax shorthand for self.
-	#
-	".": line[x] := "self"
+        #
+        # $. used to be a syntax shorthand for self.
+        #
+        ".": line[x] := "self"
         #
         # Invocation operators $! $* $@ $? (for $$ see below)
         #
         "!"|"*"|"@"|"?": {
           z ? {
-	    move(1)
-	    tab(many(white))
-	    if not (id := tab(many(alphadot))) then {
-	      if not match("(") then halt("readln can't parse ",line)
-	      if not (id := tab(&pos<bal())) then
-		  halt("readln: cant bal ",&subject)
-	    }
-	    Op := case line[x+1] of {
-		"@": "activate"
-		"*": "size"
-		"!": "foreach"
-		"?": "random"
-	    }
-	    if many(alpha,id) = *id + 1 then {
-	       front := id || ".__m."
-	       back := id
-	       }
-	    else {
-	       tmpcount +:= 1
-	       back := "__" || tmpcount
-	       front := "(" || back || " := " || id || ").__m."
-	       }
-	    if \strict then back ||:= ".__s"
-	    line[x:0] := front || Op || "(" || back || ")" || tab(0)
-	  }
+            move(1)
+            tab(many(white))
+            if not (id := tab(many(alphadot))) then {
+              if not match("(") then halt("readln can't parse ",line)
+              if not (id := tab(&pos<bal())) then
+                  halt("readln: cant bal ",&subject)
+            }
+            Op := case line[x+1] of {
+                "@": "activate"
+                "*": "size"
+                "!": "foreach"
+                "?": "random"
+            }
+            if many(alpha,id) = *id + 1 then {
+               front := id || ".__m."
+               back := id
+               }
+            else {
+               tmpcount +:= 1
+               back := "__" || tmpcount
+               front := "(" || back || " := " || id || ").__m."
+               }
+            if \strict then back ||:= ".__s"
+            line[x:0] := front || Op || "(" || back || ")" || tab(0)
+          }
         }
-	#
-	# x $[ y ] shorthand for x$index(y)
-	#
-	"[": {
-	    z ? {
-		if not (middle := tab((&pos<bal(&cset,'[',']'))-1)[2:0]) then
-		    halt("readln: can't bal([) ",&subject)
-		="]"
-		tail := tab(0)|""
-		line := line[1:x]||"$index("||middle||")"||(tab(0)|"")||tail
-	    }
-	}
+        #
+        # x $[ y ] shorthand for x$index(y)
+        #
+        "[": {
+            z ? {
+                if not (middle := tab((&pos<bal(&cset,'[',']'))-1)[2:0]) then
+                    halt("readln: can't bal([) ",&subject)
+                ="]"
+                tail := tab(0)|""
+                line := line[1:x]||"$index("||middle||")"||(tab(0)|"")||tail
+            }
+        }
         default: {
-	    #
-	    # get the invoking object.
-	    #
-	    reverse(line[1:x])||" " ? {
-	       tab(many(white))
-	       id := get_invoker()
-	       if *id = 0 then halt("readln: no invoking object precedes $")
-	       objlen := &pos-1
-	       }
+            #
+            # get the invoking object.
+            #
+            reverse(line[1:x])||" " ? {
+               tab(many(white))
+               id := get_invoker()
+               if *id = 0 then halt("readln: no invoking object precedes $")
+               objlen := &pos-1
+               }
 
-	    if many(alpha, id) = *id + 1 then {
-	       front := id||".__m."
-	       back := id
-	       }
-	    else {
-	       tmpcount +:= 1
-	       back := "__"||tmpcount
-	       front := "("||back||" := "||id||").__m."
-	       }
-	    if \strict then back ||:= ".__s"
-	    #
-	    # get the method name
-	    #
-	    z ? {
-		="$"
-		tab(many(white))
-		if not (methodname := tab(many(alphadot))) then
-		    halt("readln: expected a method name after $")
-		tab(many(white))
-		methodname ||:= "("
-		if ="(" then {
-		    tab(many(white))
-		    afterlp := &subject[&pos]
-		}
-		else {
-		    afterlp := ")"
-		    back ||:= ")"
-		}
-		methlen := &pos-1
-	    }
-	    if line[x+1] == "$" then {
-		c := if afterlp[1] ~== ")" then "" else "[]"
-		methodname[-1] := "!("
-		back := "["||back||"]|||"
-	    } else {
-		c := if (\afterlp)[1] == ")" then "" else ","
-	    }
-	    line[x-objlen : (((*line>=(x+methlen+1))|0)\1)] :=
-		front || methodname || back || c
-	}
+            if many(alpha, id) = *id + 1 then {
+               front := id||".__m."
+               back := id
+               }
+            else {
+               tmpcount +:= 1
+               back := "__"||tmpcount
+               front := "("||back||" := "||id||").__m."
+               }
+            if \strict then back ||:= ".__s"
+            #
+            # get the method name
+            #
+            z ? {
+                ="$"
+                tab(many(white))
+                if not (methodname := tab(many(alphadot))) then
+                    halt("readln: expected a method name after $")
+                tab(many(white))
+                methodname ||:= "("
+                if ="(" then {
+                    tab(many(white))
+                    afterlp := &subject[&pos]
+                }
+                else {
+                    afterlp := ")"
+                    back ||:= ")"
+                }
+                methlen := &pos-1
+            }
+            if line[x+1] == "$" then {
+                c := if afterlp[1] ~== ")" then "" else "[]"
+                methodname[-1] := "!("
+                back := "["||back||"]|||"
+            } else {
+                c := if (\afterlp)[1] == ")" then "" else ","
+            }
+            line[x-objlen : (((*line>=(x+methlen+1))|0)\1)] :=
+                front || methodname || back || c
+        }
       } # case
     } # while there's a $ to process
     if /wrap | (prefix==line=="") then finished := line
     else {
-	prefix := prefix || line || " "			# " " is for bal()
-	prefix ? {
-	    # we are done if the line is balanced wrt parens and
-	    # doesn't end in a continuation character (currently just ,)
-	    if ((*prefix = bal()) & (not find(",",prefix[-2]))) then {
-	        # add another condition or 3: we aren't done if we have
-	        # a class|method|procedure declaration with no parens yet
-	        if (tab(many(white)) | "") &
-		   =("class"|"method"|"procedure"|"<h1>"|"<h2>") &
-		   not find("(") &
-		   not find("<dl>")
-		then { }
-		else {
-		   finished := prefix[1:-1]
-		   }
-		}
-	}
+        prefix := prefix || line || " "                 # " " is for bal()
+        prefix ? {
+            # we are done if the line is balanced wrt parens and
+            # doesn't end in a continuation character (currently just ,)
+            if ((*prefix = bal()) & (not find(",",prefix[-2]))) then {
+                # add another condition or 3: we aren't done if we have
+                # a class|method|procedure declaration with no parens yet
+                if (tab(many(white)) | "") &
+                   =("class"|"method"|"procedure"|"<h1>"|"<h2>") &
+                   not find("(") &
+                   not find("<dl>")
+                then { }
+                else {
+                   finished := prefix[1:-1]
+                   }
+                }
+        }
     }
   } # while / finished
   return ct$expand(finished)
@@ -1351,17 +1351,17 @@ end
 # suspend all the HTML (4.0, at the moment) tags
 procedure htmltags()
    suspend ("EM"|"STRONG"|"BLOCKQUOTE"|"Q"|"SUP"|"SUB"|
-	    "H1"|"H2"|"H3"|"H4"|"H5"|"H6"|
-	    "BR"|"PRE"|"INS"|"DEL"|"UL"|"OL"|"DL"|"DT"|"DD"|
-	    "DIR"|"MENU"|"TABLE"|"CAPTION"|"THEAD"|"TFOOT"|"TBODY"|
-	    "COLGROUP"|"COL"|"TR"|"TH"|"TD"|"LINK"|
-	    "IMG"|"OBJECT"|"PARAM"|"APPLET"|"MAP"|"AREA"|"STYLE"|
-	    "TT"|"BIG"|"SMALL"|"STRIKE"|"U"|"FONT"|
-	    "HTML"|"HEAD"|"META"|"BODY"|
-	    "BASEFONT"|"HR"|"FRAMESET"|"FRAME"|"NOFRAMES"|"IFRAME"|
-	    "FORM"|"INPUT"|"BUTTON"|"SELECT"|"OPTGROUP"|"OPTION"|
-	    "TEXTAREA"|"ISINDEX"|"LABEL"|"FIELDSET"|"LEGEND"|
-	    "SCRIPT"|"NOSCRIPT"|"P"|"B"|"LI"|"A"|"BASE"|"I"|"S")
+            "H1"|"H2"|"H3"|"H4"|"H5"|"H6"|
+            "BR"|"PRE"|"INS"|"DEL"|"UL"|"OL"|"DL"|"DT"|"DD"|
+            "DIR"|"MENU"|"TABLE"|"CAPTION"|"THEAD"|"TFOOT"|"TBODY"|
+            "COLGROUP"|"COL"|"TR"|"TH"|"TD"|"LINK"|
+            "IMG"|"OBJECT"|"PARAM"|"APPLET"|"MAP"|"AREA"|"STYLE"|
+            "TT"|"BIG"|"SMALL"|"STRIKE"|"U"|"FONT"|
+            "HTML"|"HEAD"|"META"|"BODY"|
+            "BASEFONT"|"HR"|"FRAMESET"|"FRAME"|"NOFRAMES"|"IFRAME"|
+            "FORM"|"INPUT"|"BUTTON"|"SELECT"|"OPTGROUP"|"OPTION"|
+            "TEXTAREA"|"ISINDEX"|"LABEL"|"FIELDSET"|"LEGEND"|
+            "SCRIPT"|"NOSCRIPT"|"P"|"B"|"LI"|"A"|"BASE"|"I"|"S")
 end
 
 #
@@ -1377,11 +1377,11 @@ procedure dehtml(line)
    while line[1(x<-find("&nbsp;", line), notquote(line[1:x])) +: 6] := ""
    line ? {
       while rv ||:= tab(find("<")) do {
-	 if notquote(line[1:&pos]) then {
-	    tmps := move(1)
-	    tmps ||:= ="/"
-	    if tag := =(htmltags() | map(htmltags())) then {
-	       if (attrs := tab(find(">")) & notquote(line[1:&pos])) then {
+         if notquote(line[1:&pos]) then {
+            tmps := move(1)
+            tmps ||:= ="/"
+            if tag := =(htmltags() | map(htmltags())) then {
+               if (attrs := tab(find(">")) & notquote(line[1:&pos])) then {
                   move(1) # throw away >
                   attrs ? {
                      if tab(find("idol=")+5) then {
@@ -1389,17 +1389,17 @@ procedure dehtml(line)
                         else rv ||:= " " || tab(upto(white)|0) || " "
                         }
                      }
-		  }
-	       else {
-		  rv ||:= tmps
-		  rv ||:= tag
-		  }
-	       }
-	    else {
-	       rv ||:= tmps # not a tag, move on
-	       }
-	    }
-	 else rv ||:= move(1)
+                  }
+               else {
+                  rv ||:= tmps
+                  rv ||:= tag
+                  }
+               }
+            else {
+               rv ||:= tmps # not a tag, move on
+               }
+            }
+         else rv ||:= move(1)
          }
       rv ||:= tab(0)
       }

@@ -23,7 +23,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
@@ -103,107 +103,107 @@ main (argc, argv)
 
   /* Welcome message. */
   printf ("\nWelcome to the gndbm test program.  Type ? for help.\n\n");
-  
+
   while (!done)
     {
       printf ("com -> ");
       cmd_ch = getchar ();
       while (getchar () != '\n') /* Do nothing. */;
       switch (cmd_ch)
-	{
-	case 'q':
-	  done = TRUE;
-	  break;
+        {
+        case 'q':
+          done = TRUE;
+          break;
 
-	case 'f':
-	  printf ("key -> ");
-	  gets (key_line);
-	  key_data.dptr = key_line;
-	  key_data.dsize = strlen (key_line)+1;
-	  return_data = dbm_fetch (dbm_file, key_data);
-	  if (return_data.dptr != NULL)
-	      printf ("data is ->%s\n\n", return_data.dptr);
-	  else
-	    printf ("No such item found.\n\n");
-	  break;
+        case 'f':
+          printf ("key -> ");
+          gets (key_line);
+          key_data.dptr = key_line;
+          key_data.dsize = strlen (key_line)+1;
+          return_data = dbm_fetch (dbm_file, key_data);
+          if (return_data.dptr != NULL)
+              printf ("data is ->%s\n\n", return_data.dptr);
+          else
+            printf ("No such item found.\n\n");
+          break;
 
-	case 's':
-	  printf ("key -> ");
-	  gets (key_line);
-	  key_data.dptr = key_line;
-	  key_data.dsize = strlen (key_line)+1;
-	  printf ("data -> ");
-	  gets (data_line);
-	  data_data.dsize = strlen (data_line)+1;
-	  if (dbm_store (dbm_file, key_data, data_data, DBM_REPLACE) != 0)
-	    printf ("Item not inserted. \n");
-	  printf ("\n");
-	  break;
+        case 's':
+          printf ("key -> ");
+          gets (key_line);
+          key_data.dptr = key_line;
+          key_data.dsize = strlen (key_line)+1;
+          printf ("data -> ");
+          gets (data_line);
+          data_data.dsize = strlen (data_line)+1;
+          if (dbm_store (dbm_file, key_data, data_data, DBM_REPLACE) != 0)
+            printf ("Item not inserted. \n");
+          printf ("\n");
+          break;
 
-	case 'd':
-	  printf ("key -> ");
-	  gets (key_line);
-	  key_data.dptr = key_line;
-	  key_data.dsize = strlen (key_line)+1;
-	  if (dbm_delete (dbm_file, key_data) != 0)
-	    printf ("Item not found or deleted\n");
-	  printf ("\n");
-	  break;
+        case 'd':
+          printf ("key -> ");
+          gets (key_line);
+          key_data.dptr = key_line;
+          key_data.dsize = strlen (key_line)+1;
+          if (dbm_delete (dbm_file, key_data) != 0)
+            printf ("Item not found or deleted\n");
+          printf ("\n");
+          break;
 
-	case '1':
-	  key_data = dbm_firstkey (dbm_file);
-	  if (key_data.dptr != NULL)
-	    {
-	      return_data = dbm_fetch (dbm_file, key_data);
-	      printf ("key is ->%.*s\n", key_data.dsize, key_data.dptr);
-	      printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
-	    }
-	  else
-	    printf ("No such item found.\n\n");
-	  break;
+        case '1':
+          key_data = dbm_firstkey (dbm_file);
+          if (key_data.dptr != NULL)
+            {
+              return_data = dbm_fetch (dbm_file, key_data);
+              printf ("key is ->%.*s\n", key_data.dsize, key_data.dptr);
+              printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
+            }
+          else
+            printf ("No such item found.\n\n");
+          break;
 
 
-	case '2':
-	  key_data = dbm_nextkey (dbm_file);
-	  if (key_data.dptr != NULL)
-	    {
-	      return_data = dbm_fetch (dbm_file, key_data);
-	      printf ("key is ->%.*s\n", key_data.dsize, key_data.dptr);
-	      printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
-	    }
-	  else
-	    printf ("No such item found.\n\n");
-	  break;
+        case '2':
+          key_data = dbm_nextkey (dbm_file);
+          if (key_data.dptr != NULL)
+            {
+              return_data = dbm_fetch (dbm_file, key_data);
+              printf ("key is ->%.*s\n", key_data.dsize, key_data.dptr);
+              printf ("data is ->%.*s\n\n", return_data.dsize, return_data.dptr);
+            }
+          else
+            printf ("No such item found.\n\n");
+          break;
 
-	case 'c':
-	  {
-	    int temp;
-	    temp = 0;
-	    return_data = dbm_firstkey (dbm_file);
-	    while (return_data.dptr != NULL)
-	      {
-		temp++;
-		return_data = dbm_nextkey (dbm_file);
-	      }
-	    printf ("There are %d items in the database.\n\n", temp);
-	  }
-	  break;
+        case 'c':
+          {
+            int temp;
+            temp = 0;
+            return_data = dbm_firstkey (dbm_file);
+            while (return_data.dptr != NULL)
+              {
+                temp++;
+                return_data = dbm_nextkey (dbm_file);
+              }
+            printf ("There are %d items in the database.\n\n", temp);
+          }
+          break;
 
-	case '?':
-	  printf ("c - count elements\n");
-	  printf ("d - delete\n");
-	  printf ("f - fetch\n");
-	  printf ("q - quit\n");
-	  printf ("s - store\n");
-	  printf ("1 - firstkey\n");
-	  printf ("2 - nextkey on last return value\n\n");
-	  break;
+        case '?':
+          printf ("c - count elements\n");
+          printf ("d - delete\n");
+          printf ("f - fetch\n");
+          printf ("q - quit\n");
+          printf ("s - store\n");
+          printf ("1 - firstkey\n");
+          printf ("2 - nextkey on last return value\n\n");
+          break;
 
-	default:
-	  printf ("What? \n\n");
-	  break;
+        default:
+          printf ("What? \n\n");
+          break;
 
-	}
+        }
     }
 
   /* Quit normally. */

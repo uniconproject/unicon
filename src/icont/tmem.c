@@ -8,20 +8,20 @@
 #include "tsym.h"
 #include "tree.h"
 
-struct tlentry **lhash;		/* hash area for local table */
-struct tgentry **ghash;		/* hash area for global table */
-struct tcentry **chash;		/* hash area for constant table */
+struct tlentry **lhash;         /* hash area for local table */
+struct tgentry **ghash;         /* hash area for global table */
+struct tcentry **chash;         /* hash area for constant table */
 
-struct tlentry *lfirst;		/* first local table entry */
-struct tlentry *llast;		/* last local table entry */
-struct tcentry *cfirst;		/* first constant table entry */
-struct tcentry *clast;		/* last constant table entry */
-struct tgentry *gfirst;		/* first global table entry */
-struct tgentry *glast;		/* last global table entry */
+struct tlentry *lfirst;         /* first local table entry */
+struct tlentry *llast;          /* last local table entry */
+struct tcentry *cfirst;         /* first constant table entry */
+struct tcentry *clast;          /* last constant table entry */
+struct tgentry *gfirst;         /* first global table entry */
+struct tgentry *glast;          /* last global table entry */
 
 extern struct str_buf lex_sbuf;
 
-
+
 /*
  * tmalloc - allocate memory for the translator
  */
@@ -34,7 +34,7 @@ void tmalloc()
    init_str();
    init_sbuf(&lex_sbuf);
    }
-
+
 /*
  * meminit - clear tables for use in translating the next file
  */
@@ -61,7 +61,7 @@ void tminit()
    for (cp = chash; cp < &chash[lchsize]; cp++)
       *cp = NULL;
    }
-
+
 /*
  * tmfree - free memory used by the translator
  */

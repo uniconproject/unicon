@@ -65,44 +65,44 @@ procedure ush(s)
    s ? {
       tab(many(' \t'))
       if ="(" then {  # should do paren balancing; too much work for now
-	 subcmd := tab(find(")")) |stop("unclosed parentheses in\n  ",image(s))
-	 =")"
+         subcmd := tab(find(")")) |stop("unclosed parentheses in\n  ",image(s))
+         =")"
 #write("trying subcmd ", image(subcmd))
-	 i2 := system("sh.exe " || subcmd)
-	 tab(many(' \t'))
-	 if pos(0) then return
-	 if ="&&" then {
+         i2 := system("sh.exe " || subcmd)
+         tab(many(' \t'))
+         if pos(0) then return
+         if ="&&" then {
 #write("trying &&, i2 ", image(i2))
-	    if i2 ~=== 0 then exit(i2)
-	    return ush(tab(0))
-	    }
-	 else if ="||" then {
+            if i2 ~=== 0 then exit(i2)
+            return ush(tab(0))
+            }
+         else if ="||" then {
 #write("trying ||, i2 ", image(i2))
-	    if i2 === 0 then return
-	    return ush(tab(0))
-	    }
-	 else stop("syntax error after parens in\n  ",image(s))
-	 }
+            if i2 === 0 then return
+            return ush(tab(0))
+            }
+         else stop("syntax error after parens in\n  ",image(s))
+         }
 
        # perform variable substitution
        while tab((i := find("$"))+1) do {
-	   var := tab(many(&letters++&digits++'_'))
-#	   write("var ", var, " replaced as ", variables[var])
-	   s := &subject := s[1:i] || (\variables)[var] || s[i+1+*var:0] |
-	       stop("can't variable substitute in\n\t", image(s))
+           var := tab(many(&letters++&digits++'_'))
+#          write("var ", var, " replaced as ", variables[var])
+           s := &subject := s[1:i] || (\variables)[var] || s[i+1+*var:0] |
+               stop("can't variable substitute in\n\t", image(s))
        }
 
        # perform command substitutions
        while tab((i := find("`"))+1) do {
-	   cmdsub := tab(find("`"))
+           cmdsub := tab(find("`"))
 #if match("basename",cmdsub) then cmdsub[1:9] := "c:\\bin\\basename.exe"
            if not (fcmd := open(cmdsub, "p")) then
-	       stop("popen failed ", image(cmdsub))
-	   cmdout := read(fcmd)
-	   close(fcmd)
-#	   write("cmdsub ", cmdsub, " replaced as ", cmdout)
-	   s := &subject := s[1:i] || cmdout || s[i+2+*cmdsub:0] |
-	       stop("can't command substitute in\n\t", image(s))
+               stop("popen failed ", image(cmdsub))
+           cmdout := read(fcmd)
+           close(fcmd)
+#          write("cmdsub ", cmdsub, " replaced as ", cmdout)
+           s := &subject := s[1:i] || cmdout || s[i+2+*cmdsub:0] |
+               stop("can't command substitute in\n\t", image(s))
        }
 
       tab(many(' \t'))
@@ -112,26 +112,26 @@ procedure ush(s)
          # handle assignments, but only in initial position
          if ="=" then {
             if *av ~=== 0 then {
-		cmd ||:= "="
-		cmd ||:= tab(many(&cset -- ' \t'))
+                cmd ||:= "="
+                cmd ||:= tab(many(&cset -- ' \t'))
 #write("cmd revised to ", cmd)
-		put(av, cmd)
-		tab(many(' \t'))
-		next
-	    }
-	    tab(many(' \t'))
-	    if ="\"" then {
-		val := tab(find("\""))
-		move(1)
-		}
-	    else val := tab(many(&letters++&digits++'._/'))
-	    setenv(cmd, val)
+                put(av, cmd)
+                tab(many(' \t'))
+                next
+            }
+            tab(many(' \t'))
+            if ="\"" then {
+                val := tab(find("\""))
+                move(1)
+                }
+            else val := tab(many(&letters++&digits++'._/'))
+            setenv(cmd, val)
 #write("setting ", image(cmd), " -> ", image(val))
             /variables := table()
-	    variables[cmd] := val
+            variables[cmd] := val
          tab(many(' \t'))
-	    next
-	    }
+            next
+            }
          tab(many(' \t'))
          if cmd == "&&" then {
              if (i := run(av)) ~= 0 then exit(i)
@@ -140,21 +140,21 @@ procedure ush(s)
          else if cmd == "#" then {
              if (i := run(av)) ~= 0 then exit(i)
              av := [ ]
-	     return
-	     }
+             return
+             }
          else if (av[1] ~=== "if") & (cmd[-1] == ";") then {
-	     if *cmd>1 then put(av, cmd[1:-1])
+             if *cmd>1 then put(av, cmd[1:-1])
              run(av)
              av := [ ]
              }
           else {
-	      sizcmd := *av
-	      every put(av, glob(cmd))
-	      if *av = sizcmd then {
-		  write(image(s), ": no match")
-		  fail
-	      }
-	  }
+              sizcmd := *av
+              every put(av, glob(cmd))
+              if *av = sizcmd then {
+                  write(image(s), ": no match")
+                  fail
+              }
+          }
       }
       if (i := run(av)) ~=== 0 then exit(i)
    }
@@ -182,23 +182,23 @@ procedure catt(av)
    pop(av)              # discard "cat"
    if match(">>", av[-1]) then {
        if not (fout := open(av[-1][3:0],"a")) then
-	   stop("can't append to ", av[3])
+           stop("can't append to ", av[3])
        pull(av)
    }
    else if match(">", av[-1]) then {
        if not (fout := open(av[-1][3:0],"w")) then
-	   stop("can't write to ", av[3])
+           stop("can't write to ", av[3])
        pull(av)
    }
    else if av[-2] == ">>" then {
        if not (fout := open(av[-1],"a")) then
-	   stop("can't append to ", av[-1])
+           stop("can't append to ", av[-1])
        pull(av)
        pull(av)
    }
    else if av[-2] == ">" then {
        if not (fout := open(av[-1],"w")) then
-	   stop("can't write to ", av[-1])
+           stop("can't write to ", av[-1])
        pull(av)
        pull(av)
    }
@@ -251,18 +251,18 @@ local varname
       line := Lscript[Lscript_i]
       Lscript_i +:= 1
       line ? {
-	  tab(many(' \t'))
-	  case tab(0) of {
-	      "do": numdo +:= 1
-	      "done": numdo -:= 1
-	      }
+          tab(many(' \t'))
+          case tab(0) of {
+              "do": numdo +:= 1
+              "done": numdo -:= 1
+              }
           }
        }
    if numdo > 0 then stop("malformed 'for' block")
    Lscript_i -:= 1 #points at "done", will advance to line after that
    newList := Lscript[forstart : Lscript_i] # slice not including "done"
 
-   
+
    every variables[varname] := !av do {
      runlist(newList)
    }
@@ -273,21 +273,21 @@ procedure echo(av)
    fout := &output
    if av[-2] == ">>" then {
       if not (fout := open(av[-1],"a")) then
-	  stop("can't append to ", av[-1])
+          stop("can't append to ", av[-1])
       pull(av); pull(av)
    }
    else
    if av[-2] == ">" then {
       if not (fout := open(av[-1],"w")) then
-	  stop("can't write to ", av[-1])
+          stop("can't write to ", av[-1])
       pull(av); pull(av)
    } else if av[-1][1:3] == ">>" then {
       if not (fout := open(av[-1][3:0],"a")) then
-	  stop("can't append to ", av[-1][3:0])
+          stop("can't append to ", av[-1][3:0])
       pull(av)
    } else if av[-1][1] == ">" then {
       if not (fout := open(av[-1][2:0],"w")) then
-	  stop("can't write to ", av[-1][2:0])
+          stop("can't write to ", av[-1][2:0])
       pull(av)
    }
 
@@ -326,38 +326,38 @@ local cond
       Lscript_i +:= 1
       then_start := Lscript_i
       until (trim(Lscript[Lscript_i],,0) == "fi") | (Lscript_i > *Lscript) do {
-	 Lscript_i +:= 1
-	 }
+         Lscript_i +:= 1
+         }
       if trim(Lscript[Lscript_i],,0) == "fi" then {
-	 newList := Lscript[then_start : Lscript_i] # slice not including "fi"
-	 }
+         newList := Lscript[then_start : Lscript_i] # slice not including "fi"
+         }
       else stop("if without fi: ")
       }
 
    if (i===0 & /ifnot) | (i~===0 & \ifnot) then {
       # test passed, execute then-part
       if *av == 1 then {
-	 # executing separate-line then-part
-	 runlist(newList)
-	 }
+         # executing separate-line then-part
+         runlist(newList)
+         }
       else if av[1] == "then" then {
-	 pop(av)
-	 thenpart := [ ]
-	 while av[1] ~=== "fi" do put(thenpart, pop(av))
-	 if thenpart[1] == "{" then pop(thenpart)
-	 if thenpart[-1] == "}" then pull(thenpart)
-	 ush(stringify(thenpart))
-	 }
+         pop(av)
+         thenpart := [ ]
+         while av[1] ~=== "fi" do put(thenpart, pop(av))
+         if thenpart[1] == "{" then pop(thenpart)
+         if thenpart[-1] == "}" then pull(thenpart)
+         ush(stringify(thenpart))
+         }
       else stop("then expected")
       }
    else {
       # skipping over then-part on *av words
       if *av == 1 then {
-	 # skip over separate-line then-part
-	 }
+         # skip over separate-line then-part
+         }
       else {
-	 while av[1] ~=== "fi" do pop(av)
-	 }
+         while av[1] ~=== "fi" do pop(av)
+         }
       }
 end
 
@@ -371,17 +371,17 @@ end
 procedure test(av)
    case av[2] of {
        "-f": {
-	   if (str := stat(av[3])) then {
-#	      write("test ",av[2]," ",av[3]," succeeded")
-	      return 0
-	   }
-	   else {
-#	      write("test ",av[2]," ",av[3]," failed")
-	      return -1
-	   }
+           if (str := stat(av[3])) then {
+#             write("test ",av[2]," ",av[3]," succeeded")
+              return 0
+           }
+           else {
+#             write("test ",av[2]," ",av[3]," failed")
+              return -1
+           }
        }
        default: {
-	   stop("don't know how to test ", image(av[2]))
+           stop("don't know how to test ", image(av[2]))
        }
    }
 end
@@ -392,7 +392,7 @@ procedure cond(L)
     if not pull(L) == "]" then stop("conditional trouble, missing ]")
     case L[1] of {
       "-f": { # should be more picky, and check whether L[2] is regular
-	  if stat(L[2]) then return 0
+          if stat(L[2]) then return 0
           else return -1
       }
      }
@@ -420,13 +420,13 @@ procedure run(av)
 #  write("first searching for ", line, " in: ", getenv("PATH"))
       every foo := ((".\\" | getpaths()) || line) do {
          if stat(foo) then {
-	  line := foo
-	  if not (line[-4:0] == (".exe" | ".com" | ".bat")) then {
+          line := foo
+          if not (line[-4:0] == (".exe" | ".com" | ".bat")) then {
              av[1] := line
              runscript(av)
              return
-	     }
-	  break
+             }
+          break
           }
         }
 
@@ -459,15 +459,15 @@ dir := "."
 
    if not (fdir := open(dir)) then {
        stop("can't open ",image(dir)," in ", chdir(),
-	    "\n...wanted to glob ", image(s))
+            "\n...wanted to glob ", image(s))
    }
 #   write("globbing ", s, " in dir ", dir, " (chdir ", chdir(), ")")
    while fnam := read(fdir) do {
       if (s[1]=="*" & fnam[-(*s-1) : 0] == s[2:0]) |
-	  (s[-1]=="*" & fnam[1 : (*s)] == s[1:-1]) then {
-	      if dir ~== "." then suspend dir ||"\\"|| fnam
-	      else
-		  suspend fnam
+          (s[-1]=="*" & fnam[1 : (*s)] == s[1:-1]) then {
+              if dir ~== "." then suspend dir ||"\\"|| fnam
+              else
+                  suspend fnam
       }
    }
    close(fdir)

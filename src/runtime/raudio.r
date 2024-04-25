@@ -11,7 +11,7 @@
  * TODO: contemplate whether alcOpenDevice() and alcCreateContext() are needed.
  */
 #ifdef Audio
- 
+
 struct sSources
 {
    ALuint source;
@@ -78,7 +78,7 @@ int GetIndex()
    if (pthread_mutex_lock(&mutex) != 0) return -1;
    for(i = 0; i < 16; ++i) {
       if (arraySource[i].inUse == 0)
-	 break;
+         break;
       }
    if (i < 16)
       arraySource[i].inUse += 1;
@@ -137,12 +137,12 @@ int audioDevice(int channels, int rate)
    waveformater.nChannels  =  (WORD)channels;
    waveformater.wBitsPerSample  = 16;
    waveformater.nBlockAlign     = (WORD)((waveformater.wBitsPerSample>>3) *
-					 waveformater.nChannels);
+                                         waveformater.nChannels);
    waveformater.nSamplesPerSec  = rate;
    waveformater.nAvgBytesPerSec = waveformater.nSamplesPerSec *
                                      waveformater.nBlockAlign;
    if (waveOutOpen(&hwave,WAVE_MAPPER,&waveformater,(DWORD_PTR)PlayCallback,
-		   (DWORD_PTR)&bufferinfo,CALLBACK_FUNCTION) ==
+                   (DWORD_PTR)&bufferinfo,CALLBACK_FUNCTION) ==
       MMSYSERR_NOERROR ){
       /* should report the error more specifically somehow. &errno? */
       return 0;
@@ -199,7 +199,7 @@ DWORD WINAPI PlayOggVorbisWIN32(void * params)
       waveformater.wBitsPerSample > 1;
 
    if (audioDevice(arraySource[index]vorbinfo->channels,
-		   arraySource[index].vorbinfo->rate)){
+                   arraySource[index].vorbinfo->rate)){
       /*
        * Error setting up audio device; fail.
        */
@@ -213,36 +213,36 @@ DWORD WINAPI PlayOggVorbisWIN32(void * params)
       }
    while (1) {
       for (okay=false; !okay; ) {
-	 EnterCriticalSection(&bufferinfo.criticalsection);
-	 if (bufferinfo.nused<nbuffers) {
-	    bufferinfo.nused++;
-	    okay=true;
-	    }
-	 LeaveCriticalSection(&bufferinfo.criticalsection);
-	 if (!okay)
-	    WaitForSingleObject(bufferinfo.huponfree,INFINITE);
-	}
+         EnterCriticalSection(&bufferinfo.criticalsection);
+         if (bufferinfo.nused<nbuffers) {
+            bufferinfo.nused++;
+            okay=true;
+            }
+         LeaveCriticalSection(&bufferinfo.criticalsection);
+         if (!okay)
+            WaitForSingleObject(bufferinfo.huponfree,INFINITE);
+        }
 
       header = &(headers[currentbuffer]);
 
       for (header->dwBufferLength=0; header->dwBufferLength<buffersize; ) {
-	 long ret = 0;
-	 if ((ret = ov_read( &arraySource[index].vorbinfo,
-			     header->lpData+header->dwBufferLength,
-			     buffersize - header->dwBufferLength, 0, 2, 1,
-			     &current_section ) ) <= 0 ) {
-	    break;
-	    }
-	 header->dwBufferLength += ret;
-	 totprogress+=header->dwBufferLength;
-	 }
+         long ret = 0;
+         if ((ret = ov_read( &arraySource[index].vorbinfo,
+                             header->lpData+header->dwBufferLength,
+                             buffersize - header->dwBufferLength, 0, 2, 1,
+                             &current_section ) ) <= 0 ) {
+            break;
+            }
+         header->dwBufferLength += ret;
+         totprogress+=header->dwBufferLength;
+         }
 
       currentbuffer = (currentbuffer + 1)% nbuffers;
       waveOutWrite(hwave, header, sizeof(WAVEHDR));
 
       if (header->dwBufferLength==0) {
-	 break;
-	 }
+         break;
+         }
       }
 
    for (okay=false; !okay; ) {
@@ -250,7 +250,7 @@ DWORD WINAPI PlayOggVorbisWIN32(void * params)
       okay = (bufferinfo.nused==0);
       LeaveCriticalSection(&bufferinfo.criticalsection);
       if (!okay)
-	 WaitForSingleObject( bufferinfo.huponfree, INFINITE );
+         WaitForSingleObject( bufferinfo.huponfree, INFINITE );
       }
    waveOutReset(hwave);
 
@@ -276,56 +276,56 @@ DWORD WINAPI PlayOggVorbisWIN32(void * params)
 #endif  /*#if WIN32 && HAVE_LIBOGG */
 
 #if !defined(WIN32) && defined(HAVE_LIBOPENAL)
-	
+
         #passthru #include <AL/alut.h>
 
 #else
-	DWORD dwThreadId;
-	HANDLE hThread;
+        DWORD dwThreadId;
+        HANDLE hThread;
 #endif
 
 /*function pointer for LOKI extensions */
-ALfloat	(*talcGetAudioChannel)(ALuint channel);
-void	(*talcSetAudioChannel)(ALuint channel, ALfloat volume);
+ALfloat (*talcGetAudioChannel)(ALuint channel);
+void    (*talcSetAudioChannel)(ALuint channel, ALfloat volume);
 
-void	(*talMute)(void);
-void	(*talUnMute)(void);
+void    (*talMute)(void);
+void    (*talUnMute)(void);
 
-void	(*talReverbScale)(ALuint sid, ALfloat param);
-void	(*talReverbDelay)(ALuint sid, ALfloat param);
-void	(*talBombOnError)(void);
+void    (*talReverbScale)(ALuint sid, ALfloat param);
+void    (*talReverbDelay)(ALuint sid, ALfloat param);
+void    (*talBombOnError)(void);
 
-void	(*talBufferi)(ALuint bid, ALenum param, ALint value);
+void    (*talBufferi)(ALuint bid, ALenum param, ALint value);
 
-typedef void	(*tbwd)(ALuint bid, ALenum format, ALvoid *data,
-			      ALint size, ALint freq, ALenum iFormat);
-void	(*talBufferWriteData)(ALuint bid, ALenum format, ALvoid *data,
-			      ALint size, ALint freq, ALenum iFormat);
+typedef void    (*tbwd)(ALuint bid, ALenum format, ALvoid *data,
+                              ALint size, ALint freq, ALenum iFormat);
+void    (*talBufferWriteData)(ALuint bid, ALenum format, ALvoid *data,
+                              ALint size, ALint freq, ALenum iFormat);
 
 ALuint  (*talBufferAppendData)(ALuint bid, ALenum format, ALvoid *data,
-			       ALint freq, ALint samples);
+                               ALint freq, ALint samples);
 ALuint  (*talBufferAppendWriteData)(ALuint bid, ALenum format, ALvoid *data,
-				    ALint freq, ALint samples,
-				    ALenum internalFormat);
+                                    ALint freq, ALint samples,
+                                    ALenum internalFormat);
 
 ALboolean (*alCaptureInit) ( ALenum format, ALuint rate, ALsizei bufferSize );
 ALboolean (*alCaptureDestroy) ( void );
 ALboolean (*alCaptureStart) ( void );
 ALboolean (*alCaptureStop) ( void );
 ALsizei (*alCaptureGetData) ( ALvoid* data, ALsizei n, ALenum format,
-			     ALuint rate );
+                             ALuint rate );
 
 /* new ones */
 void (*talGenStreamingBuffers)(ALsizei n, ALuint *bids );
 ALboolean (*talutLoadRAW_ADPCMData)(ALuint bid,
-				ALvoid *data, ALuint size, ALuint freq,
-				ALenum format);
+                                ALvoid *data, ALuint size, ALuint freq,
+                                ALenum format);
 ALboolean (*talutLoadIMA_ADPCMData)(ALuint bid,
-				ALvoid *data, ALuint size, ALuint freq,
-				ALenum format);
+                                ALvoid *data, ALuint size, ALuint freq,
+                                ALenum format);
 ALboolean (*talutLoadMS_ADPCMData)(ALuint bid,
-				ALvoid *data, ALuint size, ALuint freq,
-				ALenum format);
+                                ALvoid *data, ALuint size, ALuint freq,
+                                ALenum format);
 
 #define GP(x)  alGetProcAddress((const ALchar *) x)
 
@@ -346,7 +346,7 @@ void micro_sleep(unsigned int n)
 int fixup_function_pointers(void)
 {
    talcGetAudioChannel = (ALfloat (*)(ALuint channel))
-			    GP("alcGetAudioChannel_LOKI");
+                            GP("alcGetAudioChannel_LOKI");
    if (talcGetAudioChannel == NULL)
       return 0;
 
@@ -366,7 +366,7 @@ int fixup_function_pointers(void)
        */
       return 0;
       }
-   talBufferi = (void (*)(ALuint, ALenum, ALint ))	GP("alBufferi_LOKI");
+   talBufferi = (void (*)(ALuint, ALenum, ALint ))      GP("alBufferi_LOKI");
    if (talBufferi == NULL) {
       /*
        * Could not GetProcAddress alBufferi_LOKI; fail.
@@ -390,7 +390,7 @@ int fixup_function_pointers(void)
    talBufferAppendData = (ALuint (*)(ALuint, ALenum, ALvoid *, ALint, ALint))
       GP("alBufferAppendData_LOKI");
    talBufferAppendWriteData = (ALuint (*)(ALuint, ALenum, ALvoid *, ALint,
-					  ALint, ALenum))
+                                          ALint, ALenum))
       GP("alBufferAppendWriteData_LOKI");
 
    talGenStreamingBuffers = (void (*)(ALsizei n, ALuint *bids ))
@@ -402,45 +402,45 @@ int fixup_function_pointers(void)
       return 0;
       }
 /*   talutLoadRAW_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
-					   ALuint size, ALuint freq,
-					   ALenum format))
+                                           ALuint size, ALuint freq,
+                                           ALenum format))
       GP("alutLoadRAW_ADPCMData_LOKI");
    if (talutLoadRAW_ADPCMData == NULL) {
-       * 
+       *
        * Could not GP alutLoadRAW_ADPCMData_LOKI; fail.
        *
-      return 0; 
+      return 0;
       }
    talutLoadIMA_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
-					   ALuint size, ALuint freq,
-					   ALenum format))
+                                           ALuint size, ALuint freq,
+                                           ALenum format))
       GP("alutLoadIMA_ADPCMData_LOKI");
    if (talutLoadIMA_ADPCMData == NULL) {
-       * 
+       *
        * Could not GP alutLoadIMA_ADPCMData_LOKI; fail.
        *
-      return 0; 
+      return 0;
       }
 
    talutLoadMS_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data, ALuint size,
-			        	  ALuint freq,ALenum format))
+                                          ALuint freq,ALenum format))
                            GP("alutLoadMS_ADPCMData_LOKI");
    if( talutLoadMS_ADPCMData == NULL ) {
-       * 
+       *
        * Could not GP alutLoadMS_ADPCMData_LOKI; fail.
        *
-      return 0; 
+      return 0;
       }
 */
    return 1;
 }
 
-#endif					/* HAVE_LIBOPENAL */
+#endif                                  /* HAVE_LIBOPENAL */
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 /* The following is for MP3 Support on top of OpenAL */
-#define DATABUFSIZE_MP3 	(8 * 4098)
-#define MP3_FUNC    		"alutLoadMP3_LOKI"
+#define DATABUFSIZE_MP3         (8 * 4098)
+#define MP3_FUNC                "alutLoadMP3_LOKI"
 
 /* our mp3 extension */
 typedef ALboolean (mp3Loader)(ALuint, ALvoid *, ALint);
@@ -449,7 +449,7 @@ mp3Loader *alutLoadMP3p = NULL;
 static void initMP3( int index )
 {
    alSourceQueueBuffers(arraySource[index].source, 1,
-			&(arraySource[index].mBuffer ));
+                        &(arraySource[index].mBuffer ));
    alSourcei(  arraySource[index].source, AL_LOOPING, AL_FALSE );
    return;
 }
@@ -548,7 +548,7 @@ void * OpenAL_PlayMP3( void * args )
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG)
 /* The following is for Ogg-Vorbis Support on top of OpenAL*/
-#define DATABUFSIZE 		(4096 * 16)
+#define DATABUFSIZE             (4096 * 16)
 
 /*
  * OggStreamBuf - read a buffer's worth of data from our Ogg stream.
@@ -566,14 +566,14 @@ int OggStreamBuf(ALuint buffer, int index)
    size = 0;
    while (size < DATABUFSIZE) {
       result = ov_read(&arraySource[index].oggStream, pcm + size,
-		       DATABUFSIZE - size, 0, 2, 1, &section);
+                       DATABUFSIZE - size, 0, 2, 1, &section);
       if (result > 0) {
          size += result;
-	 }
+         }
       else
          if (result < 0) {
             return 1;
-	    }
+            }
          else
             break;
       }
@@ -584,7 +584,7 @@ int OggStreamBuf(ALuint buffer, int index)
       active = 0;
       }
    alBufferData(buffer, arraySource[index].format, pcm, size,
-		arraySource[index].vorbisInfo->rate);
+                arraySource[index].vorbisInfo->rate);
    return active;
 }
 
@@ -607,18 +607,18 @@ int OggPlayback(int index)
    else { /* some data, support up to 4 buffers */
       arraySource[index].numBuffers++;
       if(OggStreamBuf(arraySource[index].buffer[1], index) != 1) {
-	 arraySource[index].numBuffers++;
-	 if(OggStreamBuf(arraySource[index].buffer[2], index) != 1) {
-	    arraySource[index].numBuffers++;
-	    if(OggStreamBuf(arraySource[index].buffer[3], index) != 1) {
-	       arraySource[index].numBuffers++;
-	       }
-	    }
-	 }
+         arraySource[index].numBuffers++;
+         if(OggStreamBuf(arraySource[index].buffer[2], index) != 1) {
+            arraySource[index].numBuffers++;
+            if(OggStreamBuf(arraySource[index].buffer[3], index) != 1) {
+               arraySource[index].numBuffers++;
+               }
+            }
+         }
       }
 
    alSourceQueueBuffers(arraySource[index].source, arraySource[index].numBuffers,
-			arraySource[index].buffer);
+                        arraySource[index].buffer);
    alSourcePlay(arraySource[index].source);
    return 0;
 }
@@ -671,15 +671,15 @@ void * OpenAL_PlayOgg(void * args)
       case OV_EVERSION:   /* vorbis version mismatch */
       case OV_EBADHEADER: /* bad vorbis bitstream header */
       case OV_EFAULT:     /* internal logic fault */
-	 ;
-	 }
+         ;
+         }
 
       if (pthread_mutex_lock(&mutex) == 0) {
-	 ov_clear(&arraySource[i].oggStream);
-	 isPlaying -= 1;
-	 arraySource[i].inUse -= 1;
-	 pthread_mutex_unlock(&mutex);
-	 }
+         ov_clear(&arraySource[i].oggStream);
+         isPlaying -= 1;
+         arraySource[i].inUse -= 1;
+         pthread_mutex_unlock(&mutex);
+         }
       pthread_exit(NULL);
    }
    arraySource[i].vorbisInfo = ov_info(&(arraySource[i].oggStream), -1);
@@ -697,8 +697,8 @@ void * OpenAL_PlayOgg(void * args)
       }
    while(OggUpdate(i) == 0) {
       if(OggPlayback(i) == 1) {
-	 goto errfail;
-	 }
+         goto errfail;
+         }
       sleep(2);
       }
  errfail:
@@ -706,7 +706,7 @@ void * OpenAL_PlayOgg(void * args)
    pthread_exit(NULL);
 }
 
-#endif 	/* #if(HAVE_LIBOPENAL && HAVE_LIBOGG)*/
+#endif  /* #if(HAVE_LIBOPENAL && HAVE_LIBOGG)*/
 
 #ifdef HAVE_LIBOPENAL
 
@@ -731,7 +731,7 @@ void * OpenAL_PlayWAV(void * args)
    arraySource[indexSource].wBuffer =
       alutCreateBufferFromFile(arraySource[indexSource].filename);
    alSourceQueueBuffers(arraySource[indexSource].source, 1,
-			&arraySource[indexSource].wBuffer);
+                        &arraySource[indexSource].wBuffer);
    alSourcePlay(arraySource[indexSource].source);
    alGetSourcei(arraySource[indexSource].source, AL_SOURCE_STATE, &tState);
    while(tState == AL_PLAYING) {
@@ -766,7 +766,7 @@ int StartAudioThread(char filename[])
          alGenBuffers(1, &arraySource[i].mBuffer);
          alGenBuffers(1, &arraySource[i].wBuffer);
          arraySource[i].inUse = 0;
-	 }
+         }
       isPlaying = 0;
       }
    if (pthread_mutex_unlock(&mutex) != 0) return -1;
@@ -774,7 +774,7 @@ int StartAudioThread(char filename[])
    while (isSet != 0)
       sleep(1);
    if ((i = GetIndex()) < 0) return -1;
-   
+
    isSet = 1;
    gIndex = i;
    strcpy(arraySource[i].filename, filename);
@@ -785,58 +785,58 @@ int StartAudioThread(char filename[])
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 #ifndef WIN32
       if (pthread_create(&arraySource[i].thread, &attrib, OpenAL_PlayMP3,NULL)){
-	 goto errfail;
-	 }
+         goto errfail;
+         }
       return i;
-#else					/* !WIN32 */
+#else                                   /* !WIN32 */
       /* WIN32 : MP3 is not implemented yet */
       goto errfail;
-#endif					/* !WIN32 */
-#else					/* HAVE_LIBOPENAL && ... */
+#endif                                  /* !WIN32 */
+#else                                   /* HAVE_LIBOPENAL && ... */
       goto errfail;
-#endif					/* HAVE_LIBOPENAL && ... */
-	 }
+#endif                                  /* HAVE_LIBOPENAL && ... */
+         }
 
       else if ((strptr = strstr(filename,".ogg")) != NULL) {
-#if defined(HAVE_LIBOGG) 
+#if defined(HAVE_LIBOGG)
 #ifndef WIN32
-	 if (pthread_create(&arraySource[i].thread, &attrib,
-			    OpenAL_PlayOgg, NULL)) {
-	    goto errfail;
-	    }
-#else					/* !WIN32 */
-	 arraySource[i].hThread =
-	    CreateThread(NULL, 0, PlayOggVorbisWIN32, NULL, 0, &dwThreadId);
-	 if (arraySouce[i].hThread == NULL) {
-	    goto errfail;
-	    }
-#endif					/* !WIN32 */
-	 return i;
-#else					/* HAVE_LIBOGG */
-	 goto errfail;
-#endif					/* HAVE_LIBOGG */
-	 }
+         if (pthread_create(&arraySource[i].thread, &attrib,
+                            OpenAL_PlayOgg, NULL)) {
+            goto errfail;
+            }
+#else                                   /* !WIN32 */
+         arraySource[i].hThread =
+            CreateThread(NULL, 0, PlayOggVorbisWIN32, NULL, 0, &dwThreadId);
+         if (arraySouce[i].hThread == NULL) {
+            goto errfail;
+            }
+#endif                                  /* !WIN32 */
+         return i;
+#else                                   /* HAVE_LIBOGG */
+         goto errfail;
+#endif                                  /* HAVE_LIBOGG */
+         }
 
       if((strptr = strstr(filename,".wav")) != NULL){
 #ifdef HAVE_LIBOPENAL
 #ifndef WIN32
-	 if (pthread_create(&arraySource[i].thread, &attrib,
-			    OpenAL_PlayWAV, NULL)) {
-	    goto errfail;
-	    }
-	 return i;
-#else					/* !WIN32 */
-	 /* WIN32 : WAV is not implemented yet, you can use WinPlayMedia() */
-	 return -1;
-#endif					/* !WIN32 */
+         if (pthread_create(&arraySource[i].thread, &attrib,
+                            OpenAL_PlayWAV, NULL)) {
+            goto errfail;
+            }
+         return i;
+#else                                   /* !WIN32 */
+         /* WIN32 : WAV is not implemented yet, you can use WinPlayMedia() */
+         return -1;
+#endif                                  /* !WIN32 */
 #else
-	 goto errfail;
+         goto errfail;
 #endif
-	 }
+         }
  errfail:
    if (pthread_mutex_lock(&mutex) == 0) {
       arraySource[i].inUse -= 1;
-      pthread_mutex_unlock(&mutex); 
+      pthread_mutex_unlock(&mutex);
       }
    isSet = 0;
    return -1;
@@ -848,7 +848,7 @@ void StopAudioThread(int index)
    if (index < 0 || index > 15)
       return;
    pthread_mutex_lock(&mutex);
-   if (arraySource[index].inUse > 0) 
+   if (arraySource[index].inUse > 0)
    {
       isPlaying -= 1;;
       arraySource[index].inUse -= 1;
@@ -865,8 +865,8 @@ void StopAudioThread(int index)
 
 /*
  *  audio mixer
- *	Windows 32: Based on Windows Multimedia -lwinmm
- *	Linux     : Based on the OSS APIs
+ *      Windows 32: Based on Windows Multimedia -lwinmm
+ *      Linux     : Based on the OSS APIs
  *  Author      : Ziad Al-Sharif, zsharif@cs.uidaho.edu
  *  Date        : April 1, 2006
  */
@@ -907,13 +907,13 @@ int OpenMixer()
 
    /* open mixer, read only */
    mixer_fd = open("/dev/mixer", O_RDONLY);
-   if (mixer_fd == -1) { 
+   if (mixer_fd == -1) {
       /* unable to open /dev/mixer */
       return mixer_fd;
       }
 
    /* get needed information about the mixer */
-   if ( ioctl(mixer_fd, SOUND_MIXER_READ_DEVMASK, &devmask) == -1 ) 
+   if ( ioctl(mixer_fd, SOUND_MIXER_READ_DEVMASK, &devmask) == -1 )
       return -1; /* ioctl failed */
 
    if ( ioctl(mixer_fd, SOUND_MIXER_READ_STEREODEVS, &stereodevs) == -1)
@@ -940,15 +940,15 @@ int CloseMixer()
 
 int SetMixerAttribute(char *dev, int value)
 {
-   int left, right, level;	/* gain settings */
-   int device;		/* which mixer device to set */
-   int i;			/* general purpose loop counter */
+   int left, right, level;      /* gain settings */
+   int device;          /* which mixer device to set */
+   int i;                       /* general purpose loop counter */
 
    /* figure out which device to use */
    for (i = 0 ; i < SOUND_MIXER_NRDEVICES ; i++)
       if (((1 << i) & devmask) && !strcmp(dev, sound_device_names[i]))
-	 break;
-   if (i == SOUND_MIXER_NRDEVICES) { 	/* didn't find a match */
+         break;
+   if (i == SOUND_MIXER_NRDEVICES) {    /* didn't find a match */
       /* "dev" is not a valid mixer device */
       return -1;
       }
@@ -982,14 +982,14 @@ int SetMixerAttribute(char *dev, int value)
 int GetMixerAttribute(char * dev)
 {
    int left, right, level;   /* gain settings */
-   int device;		     /* which mixer device to set */
-   int i;		     /* general purpose loop counter */
+   int device;               /* which mixer device to set */
+   int i;                    /* general purpose loop counter */
 
    /* figure out which device to use */
    for (i = 0 ; i < SOUND_MIXER_NRDEVICES ; i++)
       if (((1 << i) & devmask) && !strcmp(dev, sound_device_names[i]))
-	 break;
-   if (i == SOUND_MIXER_NRDEVICES) { 	
+         break;
+   if (i == SOUND_MIXER_NRDEVICES) {
       /* didn't find a match             */
       /* dev is not a valid mixer device */
       return -1;
@@ -999,14 +999,14 @@ int GetMixerAttribute(char * dev)
 
    if ((1 << i) & stereodevs) {
       if (ioctl(mixer_fd, MIXER_READ(device), &level) == -1)
-	 return -1; /* ioctl failed */
+         return -1; /* ioctl failed */
       left  = level & 0xff;
       right = (level & 0xff00) >> 8;
       level = (left + right) / 2;
       }
    else { /* only one channel */
       if (ioctl(mixer_fd, MIXER_READ(device), &level) == -1)
-	 return -1; /* ioctl failed */
+         return -1; /* ioctl failed */
       level = level & 0xff;
       }
    return level;
@@ -1024,48 +1024,48 @@ int LinuxMixer(char * cmd) /* cmd: eg. "vol=50" */
       /*----------------parse cmd; */
       p = strchr(cmd,'=');
       if (p != NULL) { /* cmd: "cmd=ival" */
-	 strptr = cmd;
-	 while (strptr != p) cmdsVal[i++] = *strptr++;
-	 cmdsVal[i] = '\0';
-	 i=0;
-	 while(*++p != '\0') val[i++] = *p;
-	 val[i] = '\0';
-	 cmdiVal = atoi(val);
-	 }
+         strptr = cmd;
+         while (strptr != p) cmdsVal[i++] = *strptr++;
+         cmdsVal[i] = '\0';
+         i=0;
+         while(*++p != '\0') val[i++] = *p;
+         val[i] = '\0';
+         cmdiVal = atoi(val);
+         }
       else  /* cmd: "cmd" */
-	 strcat(cmdsVal,cmd);
+         strcat(cmdsVal,cmd);
 
       /*----------------*/
       if ( !strcmp(cmdsVal,"wave"))
-	 strcpy(cmdsVal,"pcm");
+         strcpy(cmdsVal,"pcm");
 
       /*----------------*/
       if (cmdiVal > -1){
-	 if ( !strcmp(cmdsVal,"mic")){
-	    SetMixerAttribute(cmdsVal, cmdiVal);
-	    return SetMixerAttribute("igain", cmdiVal);
-	    }
-	 else
-	    if ( !strcmp(cmdsVal,"phone")){
-	       SetMixerAttribute("phin", cmdiVal);  /* phin:  is phone  */
-	       /* phout: is Master Mono */
-	       return SetMixerAttribute("phout", cmdiVal);
-	       }
-	    else
-	       return SetMixerAttribute(cmdsVal, cmdiVal);
-	 }
+         if ( !strcmp(cmdsVal,"mic")){
+            SetMixerAttribute(cmdsVal, cmdiVal);
+            return SetMixerAttribute("igain", cmdiVal);
+            }
+         else
+            if ( !strcmp(cmdsVal,"phone")){
+               SetMixerAttribute("phin", cmdiVal);  /* phin:  is phone  */
+               /* phout: is Master Mono */
+               return SetMixerAttribute("phout", cmdiVal);
+               }
+            else
+               return SetMixerAttribute(cmdsVal, cmdiVal);
+         }
       else {
-	 if (!strcmp(cmdsVal,"mic")){
-	    GetMixerAttribute(cmdsVal);
-	    return GetMixerAttribute("igain");
-	    }
-	 if (!strcmp(cmdsVal,"phone")){
-	    GetMixerAttribute("phin");   /* phin:  is phone  */
-	    return GetMixerAttribute("phout");  /* phout: is Master Mono */
-	    }
-	 else
-	    return GetMixerAttribute(cmdsVal);
-	 }
+         if (!strcmp(cmdsVal,"mic")){
+            GetMixerAttribute(cmdsVal);
+            return GetMixerAttribute("igain");
+            }
+         if (!strcmp(cmdsVal,"phone")){
+            GetMixerAttribute("phin");   /* phin:  is phone  */
+            return GetMixerAttribute("phout");  /* phout: is Master Mono */
+            }
+         else
+            return GetMixerAttribute(cmdsVal);
+         }
       }
    return -1;
 }
@@ -1082,7 +1082,7 @@ int  numlines=0;
 MIXERLINE * mxl_List[256]={NULL};
 int VolumeDevmask[256];
 int MuteDevmask[256];
-#define mxfactr	655.35
+#define mxfactr 655.35
 
 /*void print_NameValue(int device);*/
 void Clear();
@@ -1103,7 +1103,7 @@ void Clear()
    int i;
    for (i=0; i< numlines; ++i) {
       if(mxl_List[i] != NULL)
-	 free(mxl_List[i]);
+         free(mxl_List[i]);
       VolumeDevmask[numlines] = -1;
       MuteDevmask[numlines]   = -1;
       }
@@ -1131,10 +1131,10 @@ int CloseMixer()
 {
    if (hmix != NULL)
       if(mixerClose(hmix) == MMSYSERR_NOERROR){
-	 hmix = NULL;
-	 Clear();
-	 return 1;
-	 }
+         hmix = NULL;
+         Clear();
+         return 1;
+         }
    return -1;
 }
 
@@ -1145,8 +1145,8 @@ int CloseMixer()
 int GetAllMixerLinesInfo()
 {
    unsigned int i,k,num;
-   MIXERLINE  	*pmxl;
-   MMRESULT 	res;
+   MIXERLINE    *pmxl;
+   MMRESULT     res;
    MIXERCAPS   mxcaps;
    numlines=0;
    if (!opened)
@@ -1160,34 +1160,34 @@ int GetAllMixerLinesInfo()
       pmxl->cbStruct = sizeof(MIXERLINE);
       pmxl->dwDestination = i;
       res = mixerGetLineInfo((HMIXEROBJ)hmix, pmxl,
-			     MIXER_GETLINEINFOF_DESTINATION);
+                             MIXER_GETLINEINFOF_DESTINATION);
       if (res == MMSYSERR_NOERROR){
-	 num = pmxl->cConnections;
-	 /*---*/
-	 mxl_List[numlines]=pmxl;
-	 VolumeDevmask[numlines]= -1;
-	 MuteDevmask[numlines]  = -1;
-	 numlines++;
-	 /*---*/
-	 for (k = 0 ; k < num ; k++){
-	    pmxl= (MIXERLINE*)malloc(sizeof(MIXERLINE));
+         num = pmxl->cConnections;
+         /*---*/
+         mxl_List[numlines]=pmxl;
+         VolumeDevmask[numlines]= -1;
+         MuteDevmask[numlines]  = -1;
+         numlines++;
+         /*---*/
+         for (k = 0 ; k < num ; k++){
+            pmxl= (MIXERLINE*)malloc(sizeof(MIXERLINE));
             if (pmxl == NULL)  return -1;
-	    pmxl->cbStruct = sizeof(MIXERLINE);
-	    pmxl->dwDestination = i;
-	    pmxl->dwSource = k;
-	    res = mixerGetLineInfo((HMIXEROBJ)hmix, pmxl,
-				   MIXER_GETLINEINFOF_SOURCE);
-	    if (res == MMSYSERR_NOERROR){
-	       /*---*/
-	       mxl_List[numlines]=pmxl;
-	       VolumeDevmask[numlines]= -1;
-	       MuteDevmask[numlines]  = -1;
-	       numlines++;
-	       /*---*/
-	       }
-	    else free(pmxl);
-	    }
-	 } else free(pmxl);
+            pmxl->cbStruct = sizeof(MIXERLINE);
+            pmxl->dwDestination = i;
+            pmxl->dwSource = k;
+            res = mixerGetLineInfo((HMIXEROBJ)hmix, pmxl,
+                                   MIXER_GETLINEINFOF_SOURCE);
+            if (res == MMSYSERR_NOERROR){
+               /*---*/
+               mxl_List[numlines]=pmxl;
+               VolumeDevmask[numlines]= -1;
+               MuteDevmask[numlines]  = -1;
+               numlines++;
+               /*---*/
+               }
+            else free(pmxl);
+            }
+         } else free(pmxl);
       }
    loaded = 1;
    return 1;
@@ -1196,7 +1196,7 @@ int GetAllMixerLinesInfo()
 int GetAllMixerLinesVolume()
 {
    unsigned int i;
-   MMRESULT 	res;
+   MMRESULT     res;
    MIXERCAPS   mxcaps;
    MIXERCONTROL        mxc;
    MIXERLINECONTROLS   mxlc;
@@ -1219,27 +1219,27 @@ int GetAllMixerLinesVolume()
       mxlc.cbmxctrl = sizeof(MIXERCONTROL);
       mxlc.pamxctrl = &mxc;
       res = mixerGetLineControls((HMIXEROBJ)hmix, &mxlc,
-		     MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
+                     MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
       if ( res != MMSYSERR_NOERROR){
-	 VolumeDevmask[i] = -1;
-	 }
+         VolumeDevmask[i] = -1;
+         }
       else {
-	 mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
-	 mxcd.dwControlID = mxc.dwControlID;
-	 mxcd.cChannels = 1;
-	 mxcd.cMultipleItems = 0;
-	 mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
-	 mxcd.paDetails = &mxcdVolume;
-	 res = mixerGetControlDetails((HMIXEROBJ)hmix,&mxcd,
-		       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
-	 if( res != MMSYSERR_NOERROR){
-	    VolumeDevmask[i] = -1;
-	    }
-	 else {
-	    dwVal = mxcdVolume.dwValue;
-	    VolumeDevmask[i] = dwVal;
-	    }
-	 }
+         mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
+         mxcd.dwControlID = mxc.dwControlID;
+         mxcd.cChannels = 1;
+         mxcd.cMultipleItems = 0;
+         mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
+         mxcd.paDetails = &mxcdVolume;
+         res = mixerGetControlDetails((HMIXEROBJ)hmix,&mxcd,
+                       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
+         if( res != MMSYSERR_NOERROR){
+            VolumeDevmask[i] = -1;
+            }
+         else {
+            dwVal = mxcdVolume.dwValue;
+            VolumeDevmask[i] = dwVal;
+            }
+         }
       }
    loaded = 1;
    return dwVal;
@@ -1247,7 +1247,7 @@ int GetAllMixerLinesVolume()
 
 int GetMixerLineVolume(unsigned int i)
 {
-   MMRESULT 	res;
+   MMRESULT     res;
    MIXERCAPS   mxcaps;
    MIXERCONTROL        mxc;
    MIXERLINECONTROLS   mxlc;
@@ -1257,9 +1257,9 @@ int GetMixerLineVolume(unsigned int i)
 
    if (!opened)
       return -1;
-   /*	res = mixerGetDevCaps(mixid,&mxcaps,sizeof(MIXERCAPS)); */
-   /*	if(res != MMSYSERR_NOERROR) */
-   /*		return -1; */
+   /*   res = mixerGetDevCaps(mixid,&mxcaps,sizeof(MIXERCAPS)); */
+   /*   if(res != MMSYSERR_NOERROR) */
+   /*           return -1; */
 
    /* get dwControlID */
    mxlc.cbStruct = sizeof(MIXERLINECONTROLS);
@@ -1269,7 +1269,7 @@ int GetMixerLineVolume(unsigned int i)
    mxlc.cbmxctrl = sizeof(MIXERCONTROL);
    mxlc.pamxctrl = &mxc;
    res = mixerGetLineControls((HMIXEROBJ)hmix,&mxlc,
-		    MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
+                    MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
    if ( res != MMSYSERR_NOERROR){
       VolumeDevmask[i] = -1;
       }
@@ -1281,14 +1281,14 @@ int GetMixerLineVolume(unsigned int i)
       mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
       mxcd.paDetails = &mxcdVolume;
       res = mixerGetControlDetails((HMIXEROBJ)hmix,&mxcd,MIXER_OBJECTF_HMIXER |
-				   MIXER_GETCONTROLDETAILSF_VALUE);
+                                   MIXER_GETCONTROLDETAILSF_VALUE);
       if (res != MMSYSERR_NOERROR){
-	 VolumeDevmask[i] = -1;
-	 }
+         VolumeDevmask[i] = -1;
+         }
       else {
-	 dwVal = mxcdVolume.dwValue;
-	 VolumeDevmask[i] = dwVal;
-	 }
+         dwVal = mxcdVolume.dwValue;
+         VolumeDevmask[i] = dwVal;
+         }
       }
    loaded = 1;
    return dwVal;
@@ -1297,7 +1297,7 @@ int GetMixerLineVolume(unsigned int i)
 int SetAllMixerLinesVolume(DWORD Volume)
 {
    unsigned int i;
-   MMRESULT 	res;
+   MMRESULT     res;
    MIXERCAPS   mxcaps;
    MIXERCONTROL        mxc;
    MIXERLINECONTROLS   mxlc;
@@ -1320,27 +1320,27 @@ int SetAllMixerLinesVolume(DWORD Volume)
       mxlc.cbmxctrl = sizeof(MIXERCONTROL);
       mxlc.pamxctrl = &mxc;
       res = mixerGetLineControls((HMIXEROBJ)hmix,&mxlc,MIXER_OBJECTF_HMIXER |
-				 MIXER_GETLINECONTROLSF_ONEBYTYPE);
+                                 MIXER_GETLINECONTROLSF_ONEBYTYPE);
       if ( res != MMSYSERR_NOERROR){
-	 VolumeDevmask[i] = -1;
-	 }
+         VolumeDevmask[i] = -1;
+         }
       else {
-	 mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
-	 mxcd.dwControlID = mxc.dwControlID;
-	 mxcd.cChannels = 1;
-	 mxcd.cMultipleItems = 0;
-	 mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
-	 mxcd.paDetails = &mxcdVolume;
-	 res = mixerSetControlDetails((HMIXEROBJ)hmix,&mxcd,
-		      MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
-	 if (res != MMSYSERR_NOERROR) {
-	    VolumeDevmask[i] = -1;
-	    }
-	 else {
-	    dwVal = mxcdVolume.dwValue;
-	    VolumeDevmask[i] = dwVal;
-	    }
-	 }
+         mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
+         mxcd.dwControlID = mxc.dwControlID;
+         mxcd.cChannels = 1;
+         mxcd.cMultipleItems = 0;
+         mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
+         mxcd.paDetails = &mxcdVolume;
+         res = mixerSetControlDetails((HMIXEROBJ)hmix,&mxcd,
+                      MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
+         if (res != MMSYSERR_NOERROR) {
+            VolumeDevmask[i] = -1;
+            }
+         else {
+            dwVal = mxcdVolume.dwValue;
+            VolumeDevmask[i] = dwVal;
+            }
+         }
       }
    loaded = 1;
    return dwVal;
@@ -1371,7 +1371,7 @@ int SetMixerLineVolume(unsigned int i, DWORD Volume)
    mxlc.cbmxctrl = sizeof(MIXERCONTROL);
    mxlc.pamxctrl = &mxc;
    res = mixerGetLineControls((HMIXEROBJ)hmix,&mxlc,
-		    MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
+                    MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
    if (res != MMSYSERR_NOERROR) {
       VolumeDevmask[i] = -1;
       }
@@ -1383,14 +1383,14 @@ int SetMixerLineVolume(unsigned int i, DWORD Volume)
       mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
       mxcd.paDetails = &mxcdVolume;
       res = mixerSetControlDetails((HMIXEROBJ)hmix,&mxcd,MIXER_OBJECTF_HMIXER |
-				   MIXER_GETCONTROLDETAILSF_VALUE);
+                                   MIXER_GETCONTROLDETAILSF_VALUE);
       if (res != MMSYSERR_NOERROR) {
-	 VolumeDevmask[i] = -1;
-	 }
+         VolumeDevmask[i] = -1;
+         }
       else {
-	 dwVal = mxcdVolume.dwValue;
-	 VolumeDevmask[i] = dwVal;
-	 }
+         dwVal = mxcdVolume.dwValue;
+         VolumeDevmask[i] = dwVal;
+         }
       }
    loaded = 1;
    return dwVal;
@@ -1399,7 +1399,7 @@ int SetMixerLineVolume(unsigned int i, DWORD Volume)
 int GetAllMixerLinesMuteState()
 {
    unsigned int i;
-   MMRESULT 	res;
+   MMRESULT     res;
    MIXERCAPS   mxcaps;
    MIXERCONTROL        mxc;
    MIXERLINECONTROLS   mxlc;
@@ -1422,27 +1422,27 @@ int GetAllMixerLinesMuteState()
       mxlc.cbmxctrl = sizeof(MIXERCONTROL);
       mxlc.pamxctrl = &mxc;
       res = mixerGetLineControls((HMIXEROBJ)hmix,&mxlc,
-		     MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
+                     MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
       if (res != MMSYSERR_NOERROR) {
-	 MuteDevmask[i] = -1;
-	 }
+         MuteDevmask[i] = -1;
+         }
       else {
-	 mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
-	 mxcd.dwControlID = mxc.dwControlID;
-	 mxcd.cChannels = 1;
-	 mxcd.cMultipleItems = 0;
-	 mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_BOOLEAN); /* new */
-	 mxcd.paDetails = &mxcdMute;
-	 res = mixerGetControlDetails((HMIXEROBJ)hmix,&mxcd,
-		       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
-	 if (res != MMSYSERR_NOERROR) {
-	    MuteDevmask[i] = -1;
-	    }
-	 else {
-	    dwVal = mxcdMute.fValue;
-	    MuteDevmask[i] = dwVal;
-	    }
-	 }
+         mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
+         mxcd.dwControlID = mxc.dwControlID;
+         mxcd.cChannels = 1;
+         mxcd.cMultipleItems = 0;
+         mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_BOOLEAN); /* new */
+         mxcd.paDetails = &mxcdMute;
+         res = mixerGetControlDetails((HMIXEROBJ)hmix,&mxcd,
+                       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
+         if (res != MMSYSERR_NOERROR) {
+            MuteDevmask[i] = -1;
+            }
+         else {
+            dwVal = mxcdMute.fValue;
+            MuteDevmask[i] = dwVal;
+            }
+         }
       }
    loaded = 1;
    return dwVal;
@@ -1450,7 +1450,7 @@ int GetAllMixerLinesMuteState()
 
 int GetMixerLineMuteState(unsigned int i)
 {
-   MMRESULT 	res;
+   MMRESULT     res;
    MIXERCAPS   mxcaps;
    MIXERCONTROL        mxc;
    MIXERLINECONTROLS   mxlc;
@@ -1472,7 +1472,7 @@ int GetMixerLineMuteState(unsigned int i)
    mxlc.cbmxctrl = sizeof(MIXERCONTROL);
    mxlc.pamxctrl = &mxc;
    res = mixerGetLineControls((HMIXEROBJ)hmix,&mxlc,
-		     MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
+                     MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
    if ( res != MMSYSERR_NOERROR){
       MuteDevmask[i] = -1;
       }
@@ -1484,14 +1484,14 @@ int GetMixerLineMuteState(unsigned int i)
       mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_BOOLEAN); /*new */
       mxcd.paDetails = &mxcdMute;
       res = mixerGetControlDetails((HMIXEROBJ)hmix, &mxcd,
-		       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
+                       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
       if (res != MMSYSERR_NOERROR) {
-	 MuteDevmask[i] = -1;
-	 }
+         MuteDevmask[i] = -1;
+         }
       else {
-	 dwVal = mxcdMute.fValue;
-	 MuteDevmask[i] = dwVal;
-	 }
+         dwVal = mxcdMute.fValue;
+         MuteDevmask[i] = dwVal;
+         }
       }
    loaded = 1;
    return dwVal;
@@ -1500,7 +1500,7 @@ int GetMixerLineMuteState(unsigned int i)
 /* Val=[0|1], 1 means MUTE=ON, 0 means Mute=OFF  */
 int SetMixerLineMuteState(unsigned int i, LONG Val)
 {
-   MMRESULT 	res;
+   MMRESULT     res;
    MIXERCAPS   mxcaps;
    MIXERCONTROL        mxc;
    MIXERLINECONTROLS   mxlc;
@@ -1522,7 +1522,7 @@ int SetMixerLineMuteState(unsigned int i, LONG Val)
    mxlc.cbmxctrl = sizeof(MIXERCONTROL);
    mxlc.pamxctrl = &mxc;
    res = mixerGetLineControls((HMIXEROBJ)hmix,&mxlc,
-		   MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
+                   MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
    if (res != MMSYSERR_NOERROR) {
       MuteDevmask[i] = -1;
       }
@@ -1534,14 +1534,14 @@ int SetMixerLineMuteState(unsigned int i, LONG Val)
       mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_BOOLEAN); /* new */
       mxcd.paDetails = &mxcdMute;
       res = mixerSetControlDetails((HMIXEROBJ)hmix, &mxcd,
-		       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
+                       MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
       if (res != MMSYSERR_NOERROR) {
-	 MuteDevmask[i] = -1;
-	 }
+         MuteDevmask[i] = -1;
+         }
       else {
-	 dwVal = mxcdMute.fValue;
-	 MuteDevmask[i] = dwVal;
-	 }
+         dwVal = mxcdMute.fValue;
+         MuteDevmask[i] = dwVal;
+         }
       }
    loaded = 1;
    return dwVal;
@@ -1558,58 +1558,58 @@ int WinMixer(char * cmd) /* cmd: eg. "vol=50" */
       "Volume Contro","Wave","SW Synth","Telephone","PC Speaker",
       "CD Audio","Line In","Microphone","IIS","Phone Line"};
    char * attribs[10] = {"vol","wave","synth","telephone","speaker",
-			    "cd","line","mic","iis","phoneline"};
+                            "cd","line","mic","iis","phoneline"};
    if (MixInitialize()) {
       /*----------------parse cmd */
       p = strchr(cmd,'=');
       if (p != NULL){ /* cmd: "cmd=ival" */
-	 strptr=cmd;
-	 while(strptr != p)	cmdsVal[i++]=*strptr++;
-	 cmdsVal[i]='\0';
-	 i=0;
-	 while(*++p != '\0')	val[i++]=*p;
-	 val[i]='\0';
-	 cmdiVal = atoi(val);
-	 }
+         strptr=cmd;
+         while(strptr != p)     cmdsVal[i++]=*strptr++;
+         cmdsVal[i]='\0';
+         i=0;
+         while(*++p != '\0')    val[i++]=*p;
+         val[i]='\0';
+         cmdiVal = atoi(val);
+         }
       else  /* cmd: "cmd" */
-	 strcat(cmdsVal,cmd);
+         strcat(cmdsVal,cmd);
 
       /*----------------*/
       if( !strcmp(cmdsVal,"pcm"))
-	 strcpy(cmdsVal,"wave");
+         strcpy(cmdsVal,"wave");
       if( !strcmp(cmdsVal,"phone")){
-	 strcpy(cmdsVal,"phoneline");
-	 i=9;
-	 }
+         strcpy(cmdsVal,"phoneline");
+         i=9;
+         }
       else
-	 for(i=0; i < 10; ++i)
-	    if(strstr(cmdsVal,attribs[i])){
-	       break;
-	       }
+         for(i=0; i < 10; ++i)
+            if(strstr(cmdsVal,attribs[i])){
+               break;
+               }
       if(i != 10){
-	 for(k=0; k < numlines; ++k){
-	    if (strstr(mxl_List[k]->szName,DevNames[i])) {
-	       if(VolumeDevmask[k] != -1)
-		  if(cmdiVal > -1){
-		     if(cmdiVal == 0){ /* do mute */
-			SetMixerLineMuteState((unsigned int) k,
-					      1 /*(DWORD) cmdiVal*/);
-			return (int)(SetMixerLineVolume((unsigned int) k,
-						      (DWORD)cmdiVal)/mxfactr);
-			}
-		     else { /* do unmute */
-			SetMixerLineMuteState((unsigned int) k,
-					      0 /*(DWORD) cmdiVal*/);
-			return (int)(SetMixerLineVolume((unsigned int) k,
-						    (DWORD)cmdiVal) / mxfactr);
-			}
-		     }
-		  else {
-		     return (int)(GetMixerLineVolume((unsigned int)k)/mxfactr);
-		     }
-	       }
-	    }
-	 }
+         for(k=0; k < numlines; ++k){
+            if (strstr(mxl_List[k]->szName,DevNames[i])) {
+               if(VolumeDevmask[k] != -1)
+                  if(cmdiVal > -1){
+                     if(cmdiVal == 0){ /* do mute */
+                        SetMixerLineMuteState((unsigned int) k,
+                                              1 /*(DWORD) cmdiVal*/);
+                        return (int)(SetMixerLineVolume((unsigned int) k,
+                                                      (DWORD)cmdiVal)/mxfactr);
+                        }
+                     else { /* do unmute */
+                        SetMixerLineMuteState((unsigned int) k,
+                                              0 /*(DWORD) cmdiVal*/);
+                        return (int)(SetMixerLineVolume((unsigned int) k,
+                                                    (DWORD)cmdiVal) / mxfactr);
+                        }
+                     }
+                  else {
+                     return (int)(GetMixerLineVolume((unsigned int)k)/mxfactr);
+                     }
+               }
+            }
+         }
       }
    return -1;
 }
@@ -1620,10 +1620,10 @@ int MixInitialize()
    if (OpenMixer() >= 0) {
 #ifdef WIN32
       if (GetAllMixerLinesInfo() >= 0)
-	 if (GetAllMixerLinesVolume() >= 0)
-	    if (GetAllMixerLinesMuteState() >= 0){
-	       return 1;
-	       }
+         if (GetAllMixerLinesVolume() >= 0)
+            if (GetAllMixerLinesMuteState() >= 0){
+               return 1;
+               }
 #else
       return 1;
 #endif
@@ -1637,4 +1637,4 @@ void MixUnInitialize()
 }
 #else
 /**/
-#endif					/* Audio */
+#endif                                  /* Audio */

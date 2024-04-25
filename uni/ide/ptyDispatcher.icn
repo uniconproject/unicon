@@ -10,7 +10,7 @@ $include "keysyms.icn"
 $include "guih.icn"
 
 
-class ptyDispatcher : Dispatcher (ptys, connections) 
+class ptyDispatcher : Dispatcher (ptys, connections)
 
    method add_pty (n)
       insert(ptys, n)
@@ -27,22 +27,22 @@ class ptyDispatcher : Dispatcher (ptys, connections)
 
       idle_sleep := 3
       dialogwins := set()
- 
+
       while \r.is_open do {
          connections := []
          every insert(dialogwins, (!dialogs).win)
          every put(connections, !dialogwins | !ptys)
-         
-	 if *(L := select(connections,1)) > 0 then {
-	    every x := !L do {
+
+         if *(L := select(connections,1)) > 0 then {
+            every x := !L do {
                if member(dialogwins, x) then {
-		  do_event()
+                  do_event()
                   break next
                   }
                else if member(ptys, x) then {
-	          ide.do_pty_event()
-		  break next
-	          }
+                  ide.do_pty_event()
+                  break next
+                  }
                }
             }
          else {
@@ -51,13 +51,13 @@ class ptyDispatcher : Dispatcher (ptys, connections)
       }
    end
 
- 
+
    initially ()
       self$Dispatcher.initially()
       ptys := set()
       connections := []
-      
+
 end
- 
+
 
 

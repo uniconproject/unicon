@@ -23,19 +23,19 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-       
+
 *************************************************************************/
 
 
 #ifdef __GNUC__
 #ifndef alloca
-#define alloca	__builtin_alloca
+#define alloca  __builtin_alloca
 #endif
-#else	/* not __GNUC__ */
+#else   /* not __GNUC__ */
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
-#endif	/* not HAVE_ALLOCA_H */
-#endif 	/* not __GNUC__ */
+#endif  /* not HAVE_ALLOCA_H */
+#endif  /* not __GNUC__ */
 
 /* Include all system headers first. */
 #if HAVE_SYS_TYPES_H
@@ -82,11 +82,11 @@
 #if HAVE_FLOCK
 
 #ifndef LOCK_SH
-#define LOCK_SH	1
+#define LOCK_SH 1
 #endif
 
 #ifndef LOCK_EX
-#define LOCK_EX	2
+#define LOCK_EX 2
 #endif
 
 #ifndef LOCK_NB
@@ -106,29 +106,29 @@
 /* Assume it is done like System V. */
 
 #define UNLOCK_FILE(dbf) \
-	{					\
-	  struct flock flock;			\
-	  flock.l_type = F_UNLCK;		\
-	  flock.l_whence = SEEK_SET;		\
-	  flock.l_start = flock.l_len = 0L;	\
-	  fcntl (dbf->desc, F_SETLK, &flock);	\
-	}
+        {                                       \
+          struct flock flock;                   \
+          flock.l_type = F_UNLCK;               \
+          flock.l_whence = SEEK_SET;            \
+          flock.l_start = flock.l_len = 0L;     \
+          fcntl (dbf->desc, F_SETLK, &flock);   \
+        }
 #define READLOCK_FILE(dbf) \
-	{					\
-	  struct flock flock;			\
-	  flock.l_type = F_RDLCK;		\
-	  flock.l_whence = SEEK_SET;			\
-	  flock.l_start = flock.l_len = 0L;	\
-	  lock_val = fcntl (dbf->desc, F_SETLK, &flock);	\
-	}
+        {                                       \
+          struct flock flock;                   \
+          flock.l_type = F_RDLCK;               \
+          flock.l_whence = SEEK_SET;                    \
+          flock.l_start = flock.l_len = 0L;     \
+          lock_val = fcntl (dbf->desc, F_SETLK, &flock);        \
+        }
 #define WRITELOCK_FILE(dbf) \
-	{					\
-	  struct flock flock;			\
-	  flock.l_type = F_WRLCK;		\
-	  flock.l_whence = SEEK_SET;			\
-	  flock.l_start = flock.l_len = 0L;	\
-	  lock_val = fcntl (dbf->desc, F_SETLK, &flock);	\
-	}
+        {                                       \
+          struct flock flock;                   \
+          flock.l_type = F_WRLCK;               \
+          flock.l_whence = SEEK_SET;                    \
+          flock.l_start = flock.l_len = 0L;     \
+          lock_val = fcntl (dbf->desc, F_SETLK, &flock);        \
+        }
 #endif
 #endif
 
@@ -137,7 +137,7 @@
 #if HAVE_MEMORY_H
 #include <memory.h>
 #endif
-#define bcmp(d1, d2, n)	memcmp(d1, d2, n)
+#define bcmp(d1, d2, n) memcmp(d1, d2, n)
 #define bcopy(d1, d2, n) memcpy(d2, d1, n)
 #endif
 

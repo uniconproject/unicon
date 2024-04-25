@@ -30,10 +30,10 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
    method mapIn(s:"")
       local ns := ""
       s ? {
-	 while ns ||:= ::map(outMap, inMap, ::move(*inMap))
-	 while ns ||:= ::map(outM,   inM,   ::move(*inM))
-	 ns ||:= ::tab(0)
-	 }
+         while ns ||:= ::map(outMap, inMap, ::move(*inMap))
+         while ns ||:= ::map(outM,   inM,   ::move(*inM))
+         ns ||:= ::tab(0)
+         }
       return ns
    end
 
@@ -45,10 +45,10 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
    method mapOut(s:"")
       local ns := ""
       s ? {
-	 while ns ||:= ::map(inMap, outMap, ::move(*outMap))
-	 while ns ||:= ::map(inM,   outM,   ::move(*outM))
-	 ns ||:= ::tab(0)
-	 }
+         while ns ||:= ::map(inMap, outMap, ::move(*outMap))
+         while ns ||:= ::map(inM,   outM,   ::move(*outM))
+         ns ||:= ::tab(0)
+         }
       return ns
    end
 
@@ -56,8 +56,8 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
    # Copy one file to another with mapping (leaves files open).
    #</p>
    method mapInFile(inFile,    # Input file (already opened for reading)
-		    outFile,   # Output file (already opened for writing)
-		    blockSize  # If present, overrides class' blkSize
+                    outFile,   # Output file (already opened for writing)
+                    blockSize  # If present, overrides class' blkSize
                     )
       blockSize := adjBlockSize(blockSize)
       while ::writes(outFile, mapIn(::reads(inFile, blockSize)))
@@ -67,8 +67,8 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
    # Copy one file to another with reverse mapping (leaves files open)
    #</p>
    method mapOutFile(inFile,    # Input file (already opened for reading)
-		     outFile,   # Output file (already opened for writing)
-		     blockSize  # If present, overrides class' blkSize
+                     outFile,   # Output file (already opened for writing)
+                     blockSize  # If present, overrides class' blkSize
                      )
       blockSize := adjBlockSize(blockSize)
       while ::writes(outFile, mapOut(::reads(inFile, blockSize)))
@@ -91,10 +91,10 @@ class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
 #  in a string.  Efficiently handles large strings.
 #</p>
 initially(in,        # Arrangement of bytes found in input string
-	  out,       # Rearrangement of those bytes for output string
-	  blockSize  # Default size of file read/write operations (bytes).
-		     # <i>Adjusted automatically to be a multiple of *in</i>.
-	  )
+          out,       # Rearrangement of those bytes for output string
+          blockSize  # Default size of file read/write operations (bytes).
+                     # <i>Adjusted automatically to be a multiple of *in</i>.
+          )
    inM  := \in  | "1"
    outM := \out | in                # Default is identity mapping
    blkSize := 64*1024               # Default is large blocks

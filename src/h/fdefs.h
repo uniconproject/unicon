@@ -2,12 +2,12 @@
  * Definitions of functions.
  */
 
-#undef exit		/* may be defined under ConsoleWindow */
+#undef exit             /* may be defined under ConsoleWindow */
 
 #if defined(Audio)
 FncDef(PlayAudio,1)
 FncDef(StopAudio,1)
-#endif					/* Audio */
+#endif                                  /* Audio */
 
 #if defined(Audio) || defined(HAVE_VOICE)
 FncDefV(VAttrib)
@@ -105,8 +105,8 @@ FncDefV(write)
 FncDefV(writes)
 #ifdef PatternType
      FncDef(pattern_match,2) /* ?? */
-     FncDef(Any,1)    
-     FncDef(Break,1) 
+     FncDef(Any,1)
+     FncDef(Break,1)
      FncDef(NotAny,1)
      FncDef(Span,1)
      FncDef(Nspan,1)
@@ -137,7 +137,7 @@ FncDefV(writes)
      FncDef(Tab,1)
      FncDef(Rtab,1)
      FncDef(pindex_image, 1)
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 
 /*
@@ -152,9 +152,9 @@ FncDefV(writes)
 
 #ifdef Graphics
    FncDefV(open)
-#else					/* Graphics */
+#else                                   /* Graphics */
    FncDef(open,3)
-#endif					/* Graphics */
+#endif                                  /* Graphics */
 
 #ifdef MultiProgram
    FncDef(display,3)
@@ -162,33 +162,33 @@ FncDefV(writes)
    FncDef(proc,3)
    FncDef(variable,4)
    FncDef(istate,2)
-#else					/* MultiProgram */
+#else                                   /* MultiProgram */
    FncDef(display,2)
    FncDef(name,1)
    FncDef(proc,2)
    FncDef(variable,1)
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /*
  * Dynamic loading.
  */
 #ifdef LoadFunc
    FncDef(loadfunc,2)
-#endif					/* LoadFunc */
+#endif                                  /* LoadFunc */
 
 /*
  * Executable images.
  */
 #ifdef ExecImages
    FncDef(save,1)
-#endif					/* ExecImages */
+#endif                                  /* ExecImages */
 
 /*
  * External functions.
  */
 #ifdef ExternalFunctions
    FncDefV(callout)
-#endif					/* ExternalFunctions */
+#endif                                  /* ExternalFunctions */
 
 /*
  * Keyboard Functions
@@ -197,7 +197,7 @@ FncDefV(writes)
    FncDef(getch,0)
    FncDef(getche,0)
    FncDef(kbhit,0)
-#endif					/* KeyboardFncs */
+#endif                                  /* KeyboardFncs */
 
 /*
  * The POSIX interface
@@ -257,13 +257,13 @@ FncDef(syswrite,2)
 FncDef(send,2)
 FncDef(receive,1)
 FncDef(setenv,2)
-#endif					/* PosixFns */
+#endif                                  /* PosixFns */
 
 #ifdef PosixFns
 #ifdef Dbm
 FncDef(fetch,2)
-#endif					/* Dbm */
-#endif					/* PosixFns */
+#endif                                  /* Dbm */
+#endif                                  /* PosixFns */
 /*
  * Functions for MS-DOS.
  */
@@ -275,7 +275,7 @@ FncDef(fetch,2)
    FncDef(FreeSpace,1)
    FncDef(InPort,1)
    FncDef(OutPort,1)
-#endif					/* DosFncs */
+#endif                                  /* DosFncs */
 
 /*
  * Graphics functions.  These are always defined; in virtual machines
@@ -369,7 +369,7 @@ FncDef(fetch,2)
    FncDef(EvSend,3)
    FncDef(eventmask,2)
 
-#endif					/* MultiProgram */
+#endif                                  /* MultiProgram */
 
 /* SQL/ODBC database support */
 #ifdef ISQL
@@ -380,7 +380,7 @@ FncDef(fetch,2)
   FncDef(dbproduct,1)
   FncDef(sql,2)
   FncDef(dbtables,1)
-#endif					/* ISQL */
+#endif                                  /* ISQL */
 
   FncDefV(DrawTorus)
   FncDefV(DrawCube)
@@ -419,4 +419,4 @@ FncDef(fetch,2)
 
 #ifdef HAVE_LIBCL
   FncDef(opencl, 1)
-#endif					/* HAVE_LIBCL */
+#endif                                  /* HAVE_LIBCL */

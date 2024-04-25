@@ -29,6 +29,7 @@
 */
 
 #include "icall.h"
+#include <sys/stat.h>
 
 int icon_chmod (int argc, descriptor argv[]) /*: change UNIX file permissions */
    {

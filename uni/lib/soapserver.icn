@@ -75,8 +75,8 @@ class SoapServer : Object(uri,            # URI of service
    #</p>
    method setDebugFile(f)  # File name or open file.
       if ::type(f) == "string" then {
-	 f := ::open(f, "w") | fail
-	 }
+         f := ::open(f, "w") | fail
+         }
       debugFile := f
    end
 
@@ -84,8 +84,8 @@ class SoapServer : Object(uri,            # URI of service
    #   Add a service.
    #</p>
    method addService(sName,    # Name of service
-		     func,     # Procedure implementing service
-		     helpMsg)   # (Optional) help message
+                     func,     # Procedure implementing service
+                     helpMsg)   # (Optional) help message
       services[sName] := func
       servicesHelp[sName] := \helpMsg
    end
@@ -99,8 +99,8 @@ class SoapServer : Object(uri,            # URI of service
    #     <tt>&lt;result&gt;...&lt;/result&gt;</tt> element.)
    #</p>
    method addSpecialService(sName,  # Name of service
-			    func,   # Procedure implementing service
-			    helpMsg) # (Optional) help message
+                            func,   # Procedure implementing service
+                            helpMsg) # (Optional) help message
       addService(sName, func, helpMsg)
       ::insert(specialServices, sName)
    end
@@ -121,8 +121,8 @@ class SoapServer : Object(uri,            # URI of service
    method listServices()
       local aList := [], sName
       every sName := (!::sort(services))[1] do {
-	 ::put(aList, ::left(sName,30)||(\servicesHelp[sName] | ""))
-	 }
+         ::put(aList, ::left(sName,30)||(\servicesHelp[sName] | ""))
+         }
       return aList
    end
 
@@ -144,7 +144,7 @@ class SoapServer : Object(uri,            # URI of service
    #</p>
    #<p><i>Internal use only.</i></p>
    method invokeService(sName, # Name of service
-			aList)  # List of arguments for service
+                        aList)  # List of arguments for service
       return (getService(sName) ! aList)
    end
 
@@ -160,35 +160,35 @@ class SoapServer : Object(uri,            # URI of service
       initial Fmt := xml::XmlFormatter()
 
       if request := getRequest() then {
-	 debugMsg("Request: ",Fmt.format_document(request,0))
-	 children := request.get_children()
-	 debugMsg("Children: ",image(children))
-	 (svc := (!children), ::type(svc) ~== "string")
-	 debugMsg("SVC: ",::image(svc))
-	 sName := svc.get_name()
-	 sName ?:= 2(skipTo(::upto(':')+1),::tab(0))
-	 debugMsg("Name: ",sName)
-	 arglist := []
-	 every param := !soap::getNonWSChildren(svc) do {
-	    ::put(arglist, soap::decode(param))
-	    }
-	 debugMsg("Param count: ",*arglist)
-	 if sName == "listServices" then {
-	    return respond(listServices())
-	    }
-	 else if msg := invokeService(sName, arglist) then {
-	    if not ::member(specialServices, sName) then {
-	       return respond(msg)
-	       }
-	    else {
-	       return respondSpecial(msg)
-	       }
-	    }
-	 else {
-	    return error("SOAP-ENV:Server",
-			 "Unknown service '"||sName||"'.")
-	    }
-	 }
+         debugMsg("Request: ",Fmt.format_document(request,0))
+         children := request.get_children()
+         debugMsg("Children: ",image(children))
+         (svc := (!children), ::type(svc) ~== "string")
+         debugMsg("SVC: ",::image(svc))
+         sName := svc.get_name()
+         sName ?:= 2(skipTo(::upto(':')+1),::tab(0))
+         debugMsg("Name: ",sName)
+         arglist := []
+         every param := !soap::getNonWSChildren(svc) do {
+            ::put(arglist, soap::decode(param))
+            }
+         debugMsg("Param count: ",*arglist)
+         if sName == "listServices" then {
+            return respond(listServices())
+            }
+         else if msg := invokeService(sName, arglist) then {
+            if not ::member(specialServices, sName) then {
+               return respond(msg)
+               }
+            else {
+               return respondSpecial(msg)
+               }
+            }
+         else {
+            return error("SOAP-ENV:Server",
+                         "Unknown service '"||sName||"'.")
+            }
+         }
    end
 
    #<p>
@@ -197,9 +197,9 @@ class SoapServer : Object(uri,            # URI of service
    #</p>
    #<p><i>Internal use only.</i></p>
    method error(code,  # SOAP error code
-		msg)    # Error message text
+                msg)    # Error message text
       msg := "    <SOAP-ENV:Fault>\n"                            ||
-	     "      <faultcode>"||code||"</faultcode>\n"         ||
+             "      <faultcode>"||code||"</faultcode>\n"         ||
              "      <faultstring>"||msg||"</faultstring>\n"      ||
              "    </SOAP-ENV:Fault>\n"
       return respondSpecial(msg)
@@ -216,11 +216,11 @@ class SoapServer : Object(uri,            # URI of service
       initial parser := soap::getXmlParser()
 
       if ::getenv("REQUEST_METHOD") == "GET" then {
-	 line := ::getenv("QUERY_STRING")
-	 }
+         line := ::getenv("QUERY_STRING")
+         }
       else {
-	 line := ::reads(&input, ::getenv("CONTENT_LENGTH"))
-	 }
+         line := ::reads(&input, ::getenv("CONTENT_LENGTH"))
+         }
       debugMsg("Got: '",line,"'")
       root := parser.parse(line).get_root_element()
       return root.search_children("SOAP-ENV:Body")
@@ -253,7 +253,7 @@ class SoapServer : Object(uri,            # URI of service
       local res
 
       res := soap::soapHead()         ||
-	     "  <SOAP-ENV:Body>\n"    ||
+             "  <SOAP-ENV:Body>\n"    ||
              response                 ||
              "  </SOAP-ENV:Body>\n"   ||
              soap::soapTail()
@@ -282,7 +282,7 @@ class SoapServer : Object(uri,            # URI of service
 #   to procedures.
 #</p>
 initially (newUri,      # URI indentifying server
-	   newServices)  # (Optional) table mapping procedures to services
+           newServices)  # (Optional) table mapping procedures to services
    uri := newUri
    services := \newServices | ::table()
    servicesHelp := ::table()

@@ -364,16 +364,15 @@ typedef struct {
 #define RECY(rec) (rec).top
 #define RECWIDTH(rec) (rec).right
 #define RECHEIGHT(rec) (rec).bottom
-#define ROWTOY(wb, row)  ((row - 1) * (LEADING(wb) + FHEIGHT(wb)) + \
-								  MARGIN + ASCENT(wb))
+#define ROWTOY(wb, row)  ((row - 1) * (LEADING(wb) + FHEIGHT(wb)) + MARGIN + ASCENT(wb))
 #define COLTOX(wb, col)  ((col - 1) * FWIDTH(wb) + MARGIN)
 #define YTOROW(wb, y)    (((y) - MARGIN) /  (LEADING(wb) + FHEIGHT(wb)) + 1)
 #define XTOCOL(wb, x)    (((x) - MARGIN) / FWIDTH(wb))
 
 #define STDLOCALS(w) \
-	wcp wc = (w)->context;\
-	wsp ws = (w)->window;
- 
+        wcp wc = (w)->context;\
+        wsp ws = (w)->window;
+
 #define TEXTWIDTH(w,s,n) textWidth(w,s,n)
 /*
  * the bitmasks for the modifier keys
@@ -383,7 +382,7 @@ typedef struct {
 #define ShiftMask            (4 << 16)
 #define VirtKeyMask          (8 << 16)
 
-#define FS_SOLID	SOLID_FILL
-#define FS_STIPPLE	EMPTY_FILL
+#define FS_SOLID        SOLID_FILL
+#define FS_STIPPLE      EMPTY_FILL
 
 #define stdwin 0

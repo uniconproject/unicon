@@ -3,8 +3,8 @@
  */
 
 struct opentry {
-   char *op_name;		/* name of opcode */
-   int   op_code;		/* opcode number */
+   char *op_name;               /* name of opcode */
+   int   op_code;               /* opcode number */
    };
 
 /*

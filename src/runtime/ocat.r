@@ -3,57 +3,57 @@
  */
 
 #ifdef PatternType
-"x || y - concatenate strings and patterns x and y." 
-#else					/* PatternType */
-"x || y - concatenate strings x and y." 
-#endif					/* PatternType */
+"x || y - concatenate strings and patterns x and y."
+#else                                   /* PatternType */
+"x || y - concatenate strings x and y."
+#endif                                  /* PatternType */
 
 operator{1} || cater(x, y)
 
 #ifdef PatternType
    if is:pattern(x) then {
       abstract {
-	 return pattern;
-	 }
+         return pattern;
+         }
       body {
-	 struct b_pattern *lp, *rp;
-	 struct b_pelem *pe;
-	 union block *bp;
+         struct b_pattern *lp, *rp;
+         struct b_pelem *pe;
+         union block *bp;
 
-	 if (!cnv_pattern(&y, &y)) runerr(127, y);
+         if (!cnv_pattern(&y, &y)) runerr(127, y);
 
-	 lp = (struct b_pattern *)BlkLoc(x);
-	 rp = (struct b_pattern *)BlkLoc(y);
+         lp = (struct b_pattern *)BlkLoc(x);
+         rp = (struct b_pattern *)BlkLoc(y);
 
-	 /* perform concatenation in patterns */
-	 pe = (struct b_pelem *)Concat(Copy((struct b_pelem *)lp->pe), Copy((struct b_pelem *)rp->pe), rp->stck_size);
-	 bp = (union block *)pattern_make_pelem(lp->stck_size + rp->stck_size,pe);
-	 return pattern(bp);
-	 }
+         /* perform concatenation in patterns */
+         pe = (struct b_pelem *)Concat(Copy((struct b_pelem *)lp->pe), Copy((struct b_pelem *)rp->pe), rp->stck_size);
+         bp = (union block *)pattern_make_pelem(lp->stck_size + rp->stck_size,pe);
+         return pattern(bp);
+         }
       }
    else if is:pattern(y) then {
       abstract {
-	 return pattern;
-	 }
+         return pattern;
+         }
       body {
-	 struct b_pattern *lp, *rp;
-	 struct b_pelem *pe;
-	 union block *bp;
+         struct b_pattern *lp, *rp;
+         struct b_pelem *pe;
+         union block *bp;
 
-	 if (!cnv_pattern(&x, &x)) runerr(127, x);
+         if (!cnv_pattern(&x, &x)) runerr(127, x);
 
-	 lp = (struct b_pattern *)BlkLoc(x);
-	 rp = (struct b_pattern *)BlkLoc(y);
+         lp = (struct b_pattern *)BlkLoc(x);
+         rp = (struct b_pattern *)BlkLoc(y);
 
-	 /* perform concatenation in patterns */
-	 pe = (struct b_pelem *)Concat(Copy((struct b_pelem *)lp->pe),
-				 Copy((struct b_pelem *)rp->pe), rp->stck_size);
-	 bp = (union block *)pattern_make_pelem(lp->stck_size+rp->stck_size,pe);
-	 return pattern(bp);
-	 }
+         /* perform concatenation in patterns */
+         pe = (struct b_pelem *)Concat(Copy((struct b_pelem *)lp->pe),
+                                 Copy((struct b_pelem *)rp->pe), rp->stck_size);
+         bp = (union block *)pattern_make_pelem(lp->stck_size+rp->stck_size,pe);
+         return pattern(bp);
+         }
       }
    else {
-#endif				/* PatternType */
+#endif                          /* PatternType */
 
    if !cnv:string(x) then
       runerr(103, x)
@@ -77,23 +77,23 @@ operator{1} || cater(x, y)
          return result;
          }
       else if ((StrLoc(x) + StrLen(x) == strfree) &&
-	       (DiffPtrs(strend,strfree) > StrLen(y))) {
+               (DiffPtrs(strend,strfree) > StrLen(y))) {
          /*
           * Optimization 2: The end of x is at the end of the string space.
           *  Hence, x was the last string allocated and need not be
           *  re-allocated. y is appended to the string space and the
           *  result is pointed to the start of x.
           */
-	 result = x;
-	 /*
-	  * Append y to the end of the string space.
-	  */
-	 Protect(alcstr(StrLoc(y),StrLen(y)), runerr(0));
-	 /*
-	  *  Set the length of the result and return.
-	  */
-	 StrLen(result) = StrLen(x) + StrLen(y);
-	 return result;
+         result = x;
+         /*
+          * Append y to the end of the string space.
+          */
+         Protect(alcstr(StrLoc(y),StrLen(y)), runerr(0));
+         /*
+          *  Set the length of the result and return.
+          */
+         StrLen(result) = StrLen(x) + StrLen(y);
+         return result;
          }
 
       /*
@@ -113,10 +113,10 @@ operator{1} || cater(x, y)
 
 #ifdef PatternType
    }
-#endif					/* PatternType */
+#endif                                  /* PatternType */
 
 end
-
+
 
 "x ||| y - concatenate lists x and y."
 

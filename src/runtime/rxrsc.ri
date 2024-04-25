@@ -15,10 +15,10 @@ wfp loadfont(wdp wd, char *s);
 
 #ifdef HAVE_XFT
 static char *convert_spec(char *s);
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
 #define DEFAULTFONTNAME "fixed"
 
-
+
 int colorhash(int r, int g, int b)
 {
    return (((r * 37) + g) * 37 + b) & 16383;
@@ -31,9 +31,9 @@ int bucklookup(wdp wd, int r, int g, int b)
    wc = wd->buckets[i];
    while (wc != -1) {
       if (r == wd->colors[wc].r && g == wd->colors[wc].g &&
-	  b == wd->colors[wc].b) {
-	 return wc;
-	 }
+          b == wd->colors[wc].b) {
+         return wc;
+         }
       wc = wd->colors[wc].next;
       }
    return -1;
@@ -67,11 +67,7 @@ int buckinsert(wdp wd, wclrp wc)
  * per-display basis, but they are often freed on a per-window basis,
  * so they are remembered in two structures.
  */
-wclrp alc_rgb(w,s,r,g,b,is_iconcolor)
-wbp w;
-char *s;
-unsigned int r,g,b;
-int is_iconcolor;
+wclrp alc_rgb(wbp w, char *s, unsigned int r, unsigned int g, unsigned int b, int is_iconcolor)
    {
    LinearColor lc;
    XColor color;
@@ -93,20 +89,20 @@ int is_iconcolor;
 
    if (is_iconcolor) {
       if (ws->iconColors == NULL) {
-	 ws->iconColors = (short *)calloc(WMAXCOLORS, sizeof(short));
-	 if (ws->iconColors == NULL) return NULL;
-	 ws->siziColors = WMAXCOLORS;
-	 }
+         ws->iconColors = (short *)calloc(WMAXCOLORS, sizeof(short));
+         if (ws->iconColors == NULL) return NULL;
+         ws->siziColors = WMAXCOLORS;
+         }
       numColors = &(ws->numiColors);
       sizColors = &(ws->siziColors);
       theColors = &(ws->iconColors);
       }
    else {
       if (ws->theColors == NULL) {
-	 ws->theColors = (short *)calloc(WMAXCOLORS*2, sizeof(short));
-	 if (ws->theColors == NULL) return NULL;
-	 ws->sizColors = WMAXCOLORS*2;
-	 }
+         ws->theColors = (short *)calloc(WMAXCOLORS*2, sizeof(short));
+         if (ws->theColors == NULL) return NULL;
+         ws->sizColors = WMAXCOLORS*2;
+         }
       numColors = &(ws->numColors);
       sizColors = &(ws->sizColors);
       theColors = &(ws->theColors);
@@ -133,19 +129,19 @@ int is_iconcolor;
        * first verify there is room in window color table.
        */
       if (*numColors >= *sizColors-1) {
-	 if (*numColors >= 2 << DefaultDepth(stddpy, wd->screen))
-	    return NULL;
-	 (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
-	 *sizColors *= 2;
-	 /*
-	  * reallocated color table to *sizColors
-	  */
+         if (*numColors >= 2 << DefaultDepth(stddpy, wd->screen))
+            return NULL;
+         (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
+         *sizColors *= 2;
+         /*
+          * reallocated color table to *sizColors
+          */
          }
 
       if (!XAllocColor(stddpy, wd->cmap, &color)) {
-	 /* try again with a virtual colormap (but not for an icon) */
-	 if (is_iconcolor || !go_virtual(w) ||
-	     !XAllocColor(stddpy, wd->cmap, &color))
+         /* try again with a virtual colormap (but not for an icon) */
+         if (is_iconcolor || !go_virtual(w) ||
+             !XAllocColor(stddpy, wd->cmap, &color))
             return NULL;
          }
       j = alc_centry(wd);
@@ -172,14 +168,14 @@ int is_iconcolor;
 
       if (lastfound && (*theColors)[lastfound] == i) return &(wd->colors[i]);
       if (lastlastfound && (*theColors)[lastlastfound] == i)
-	 return &(wd->colors[i]);
+         return &(wd->colors[i]);
 
       for(k=*numColors-1; k >= 0; k--){
          if ((*theColors)[k] == i) {
-	    /* already there, no further action needed */
-	    lastlastfound = lastfound;
-	    lastfound = k;
-	    return &(wd->colors[i]);
+            /* already there, no further action needed */
+            lastlastfound = lastfound;
+            lastfound = k;
+            return &(wd->colors[i]);
             }
          }
       wd->colors[i].refcount++;
@@ -192,8 +188,7 @@ int is_iconcolor;
 /*
 *  Allocate color on TrueColor Display
 */
-static int highbit(ul)
-     unsigned long ul;
+static int highbit(unsigned long ul)
 {
 
   /* returns position of highest set bit in 'ul' as an integer (0-31),
@@ -205,14 +200,12 @@ static int highbit(ul)
   return i;
 }
 
-wclrp alc_rgbTrueColor(w,r,g,b)
-wbp w;
-unsigned long r,g,b;
-   {   
+wclrp alc_rgbTrueColor(wbp w, unsigned long r, unsigned long g, unsigned long b)
+   {
    XColor color;
    unsigned long rmask, gmask, bmask;
    int rshift, gshift, bshift;
-   Visual *vis = w->window->vis;    
+   Visual *vis = w->window->vis;
    wdp wd = w->window->display;
 
    /*
@@ -222,8 +215,8 @@ unsigned long r,g,b;
    color.green = g;
    color.blue = b;
 
-   /* shift r,g,b so that high bit of 16-bit color specification is 
-    * aligned with high bit of r,g,b-mask in visual, 
+   /* shift r,g,b so that high bit of 16-bit color specification is
+    * aligned with high bit of r,g,b-mask in visual,
     * AND each component with its mask,
     * and OR the three components together
     */
@@ -266,7 +259,7 @@ unsigned long r,g,b;
             else b = b << bshift;
 
    wd->colors[2].r = r;  wd->colors[2].g = g;  wd->colors[2].b = b;
- 
+
    return  &(wd->colors[2]);;
 }
 
@@ -274,10 +267,7 @@ unsigned long r,g,b;
 *
 */
 
-wclrp alc_rgb2(w,s,r,g,b)
-wbp w;
-char *s;
-unsigned int r,g,b;
+wclrp alc_rgb2(wbp w, char *s, unsigned int r, unsigned int g, unsigned int b)
    {
    XColor color;
    int i;
@@ -297,10 +287,10 @@ unsigned int r,g,b;
       return &(wd->colors[1]);
 
       if (ws->theColors == NULL) {
-	 ws->theColors = (short *)calloc(WMAXCOLORS*2, sizeof(short));
-	 if (ws->theColors == NULL) return NULL;
-	 ws->sizColors = WMAXCOLORS*2;
-	 }
+         ws->theColors = (short *)calloc(WMAXCOLORS*2, sizeof(short));
+         if (ws->theColors == NULL) return NULL;
+         ws->sizColors = WMAXCOLORS*2;
+         }
       numColors = &(ws->numColors);
       sizColors = &(ws->sizColors);
       theColors = &(ws->theColors);
@@ -327,19 +317,19 @@ unsigned int r,g,b;
        * first verify there is room in window color table.
        */
       if (*numColors >= *sizColors-1) {
-	 if (*numColors >= 2 << DefaultDepth(wd->display, wd->screen))
-	    return NULL;
-	 (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
-	 *sizColors *= 2;
-	 /*
-	  * reallocated color table to *sizColors
-	  */
+         if (*numColors >= 2 << DefaultDepth(wd->display, wd->screen))
+            return NULL;
+         (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
+         *sizColors *= 2;
+         /*
+          * reallocated color table to *sizColors
+          */
          }
 
       if (!XAllocColor(stddpy, wd->cmap, &color)) {
-	 /* try again with a virtual colormap (but not for an icon) */
-	 if (!go_virtual(w) ||
-	     !XAllocColor(stddpy, wd->cmap, &color))
+         /* try again with a virtual colormap (but not for an icon) */
+         if (!go_virtual(w) ||
+             !XAllocColor(stddpy, wd->cmap, &color))
             return NULL;
          }
 
@@ -369,32 +359,29 @@ unsigned int r,g,b;
 /*
  * allocate a color entry, return index (or 0 if table is full)
  */
-int alc_centry(wd)
-wdp wd;
+int alc_centry(wdp wd)
 {
    int j;
 
    for (j = 2; j < wd->sizColors; j++)
       if (wd->colors[j].refcount == 0)
-	 break;
+         break;
    return alc_centry2(wd, j);
 }
 
-int alc_centry2(wd, j)
-wdp wd;
-int j;
+int alc_centry2(wdp wd, int j)
    {
 int i;
 
    if (j >= wd->sizColors-1) {
       if (j >= 2 << DefaultDepth(wd->display, wd->screen)) return 0;
       wd->colors = realloc(wd->colors,
-			   wd->sizColors * 2 * sizeof (struct wcolor));
+                           wd->sizColors * 2 * sizeof (struct wcolor));
       if (wd->colors == NULL) return 0;
       for(i=wd->sizColors;i<wd->sizColors*2;i++) {
-	 wd->colors[i].refcount=0;
-	 wd->colors[i].prev = wd->colors[i].next = -1;
-	 }
+         wd->colors[i].refcount=0;
+         wd->colors[i].prev = wd->colors[i].next = -1;
+         }
       wd->sizColors *= 2;
       /*
        * reallocated color table to wd->sizColors
@@ -403,7 +390,7 @@ int i;
    if (j == wd->numColors)
       wd->numColors++;
    else if (j > wd->numColors)
-      return 0;		/* internal confusion */
+      return 0;         /* internal confusion */
 
    wd->colors[j].refcount = 1;
    wd->colors[j].prev = wd->colors[j].next = -1;
@@ -414,9 +401,7 @@ int i;
  * allocate by named color and return Icon color pointer.
  *  This is used by setfg and setbg.
  */
-wclrp alc_color(w,s)
-wbp w;
-char *s;
+wclrp alc_color(wbp w, char *s)
    {
    wclrp rv;
    long r, g, b, a;
@@ -433,13 +418,12 @@ char *s;
    Protect(rv = alc_rgb(w, s, r, g, b, 0), return 0);
    return rv;
    }
-
+
 /*
  * copy color entries to reflect pixel transmission via CopyArea()
  * (assumes w1 and w2 are on the same display)
  */
-void copy_colors(w1, w2)
-wbp w1, w2;
+void copy_colors(wbp w1, wbp w2)
    {
    wsp ws1 = w1->window, ws2 = w2 -> window;
    wdp wd = ws1->display;
@@ -448,33 +432,31 @@ wbp w1, w2;
    for (i1 = 0; i1 < ws1->numColors; i1++) {
       j = ws1->theColors[i1];
       if (wd->colors[j].refcount > 0 && wd->colors[j].type != CLR_MUTABLE) {
-	 for (i2 = 0; i2 < ws2->numColors; i2++) {
-	    if (j == ws2->theColors[i2])
-	       break;
-	    }
-	 if (i2 >= ws2->numColors) {
-	    /* need to add this color */
-	    wd->colors[j].refcount++;
-	    if (ws2->numColors < WMAXCOLORS) {
-	       if (ws2->theColors == NULL)
-		  ws2->theColors = (short *)calloc(WMAXCOLORS, sizeof(short));
-	       if (ws2->theColors == NULL)
-		  break; /* unlikely bug; should fail or something */
+         for (i2 = 0; i2 < ws2->numColors; i2++) {
+            if (j == ws2->theColors[i2])
+               break;
+            }
+         if (i2 >= ws2->numColors) {
+            /* need to add this color */
+            wd->colors[j].refcount++;
+            if (ws2->numColors < WMAXCOLORS) {
+               if (ws2->theColors == NULL)
+                  ws2->theColors = (short *)calloc(WMAXCOLORS, sizeof(short));
+               if (ws2->theColors == NULL)
+                  break; /* unlikely bug; should fail or something */
                ws2->sizColors = WMAXCOLORS;
-	       ws2->theColors[ws2->numColors++] = j;
-	       }
-	    /* else cannot record it -- table full */
-	    }
-	 }
+               ws2->theColors[ws2->numColors++] = j;
+               }
+            /* else cannot record it -- table full */
+            }
+         }
       }
    }
 
 /*
  * free a single color allocated by a given window
  */
-void free_xcolor(w,c)
-wbp w;
-unsigned long c;
+void free_xcolor(wbp w, unsigned long c)
    {
    int i;
    wsp ws = w->window;
@@ -488,11 +470,11 @@ unsigned long c;
       }
    else {
       if (--(wd->colors[ws->theColors[i]].refcount) == 0) {
-	 buckdelete(wd, &(wd->colors[ws->theColors[i]]));
-	 XFreeColors(wd->display, wd->cmap, &c, 1, 0);
-	 ws->numColors--;
-	 if (ws->numColors != i)
-	    ws->theColors[i] = ws->theColors[ws->numColors];
+         buckdelete(wd, &(wd->colors[ws->theColors[i]]));
+         XFreeColors(wd->display, wd->cmap, &c, 1, 0);
+         ws->numColors--;
+         if (ws->numColors != i)
+            ws->theColors[i] = ws->theColors[ws->numColors];
          }
       }
    }
@@ -503,9 +485,7 @@ unsigned long c;
  * fg, bg, wbg, and mutable colors.  extent == 1 implies free icon colors.
  * extent == 2 implies free window AND fg/bg/wbg (window is closed)
  */
-void free_xcolors(w, extent)
-wbp w;
-int extent;
+void free_xcolors(wbp w, int extent)
    {
    int i;
    unsigned long *toFree;
@@ -525,17 +505,17 @@ int extent;
       int j = theColors[i];
 
 
-      if (j < 2)		/* black & white are permanent residents */
-	 continue;
+      if (j < 2)                /* black & white are permanent residents */
+         continue;
       /*
        * don't free fg, bg, or mutable color
        */
       if (((extent==0) && (j == w->context->fg)) ||
-	  ((extent==0) && (j == w->context->bg)) ||
-	  (wd->colors[j].type == CLR_MUTABLE)) {
-	     theColors[numSaved++] = j;
-	     continue;
-	     }
+          ((extent==0) && (j == w->context->bg)) ||
+          (wd->colors[j].type == CLR_MUTABLE)) {
+             theColors[numSaved++] = j;
+             continue;
+             }
 
 #ifndef NoFreeColorFix
       /*
@@ -544,24 +524,24 @@ int extent;
       {
       wcp wc; int numhits = 0;
       for(wc=wcntxts; wc; wc=wc->next) {
-	 if ((wc->fg == j) || (wc->bg == j)) {
-	    if (numhits == 0)
-	       theColors[numSaved++] = j;
-	    numhits++;
-	    }
-	 }
+         if ((wc->fg == j) || (wc->bg == j)) {
+            if (numhits == 0)
+               theColors[numSaved++] = j;
+            numhits++;
+            }
+         }
       if (numhits) {
-	 if (numhits > wd->colors[j].refcount)
-	    wd->colors[j].refcount = numhits;
-	 continue;
-	 }
+         if (numhits > wd->colors[j].refcount)
+            wd->colors[j].refcount = numhits;
+         continue;
+         }
       }
-#endif					/* NoFreeColorFix */
+#endif                                  /* NoFreeColorFix */
 
       if (--(wd->colors[j].refcount) == 0) {
-	 toFree[freed++] = wd->colors[j].c;
-	 /* unlink it from the link list */
-	 buckdelete(wd, &(wd->colors[j]));
+         toFree[freed++] = wd->colors[j].c;
+         /* unlink it from the link list */
+         buckdelete(wd, &(wd->colors[j]));
          }
       }
    if (freed>0)
@@ -575,8 +555,7 @@ int extent;
  * the default colormap to new colormap, and set all windows to use this new
  * colormap.  Returns 0 on failure.
  */
-int go_virtual(w)
-wbp w;
+int go_virtual(wbp w)
 {
    wsp ws;
    wdp wd = w->window->display;
@@ -599,8 +578,7 @@ wbp w;
 /*
  * allocate a display on machine s
  */
-wdp alc_display(s)
-char *s;
+wdp alc_display(char *s)
    {
    double g;
    wdp wd;
@@ -614,7 +592,7 @@ char *s;
    for(wd = wdsplys; wd; wd = wd->next)
       if (!strcmp(wd->name,s)) {
          wd->refcount++;
-	 return wd;
+         return wd;
          }
 
    GRFX_ALLOC(wd, _wdisplay);
@@ -640,11 +618,11 @@ char *s;
 #ifdef GraphicsGL
    {
    int query;
-   int fbparms[] = {GLX_RENDER_TYPE, GLX_RGBA_BIT, 
-                   GLX_DOUBLEBUFFER, True, 
-                   GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT, 
-                   GLX_DEPTH_SIZE, 16, 
-                   GLX_STENCIL_SIZE, 3, None}; 
+   int fbparms[] = {GLX_RENDER_TYPE, GLX_RGBA_BIT,
+                   GLX_DOUBLEBUFFER, True,
+                   GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+                   GLX_DEPTH_SIZE, 16,
+                   GLX_STENCIL_SIZE, 3, None};
 
    /* Check for GLX */
    if (!glXQueryExtension(wd->display, &query, &query)) {
@@ -655,7 +633,7 @@ char *s;
    /*
     * Try to get a GLXFBConfig for GLXWindows and GLXPixmaps
     */
-   wd->configs = glXChooseFBConfig(wd->display, wd->screen, fbparms, 
+   wd->configs = glXChooseFBConfig(wd->display, wd->screen, fbparms,
       &(wd->nConfigs));
    if (wd->configs == NULL) {
       fprintf(stderr, "failed to get fbconfig\n");
@@ -684,7 +662,7 @@ char *s;
          }
       }
    }
-#endif 					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
 
    /*
     * Color slots 0 and 1 are permanently reserved for black and white
@@ -726,7 +704,7 @@ char *s;
    if (XParseColor(wd->display, wd->cmap, "RGBi:.5/.5/.5", &color)) {
       g = .299 * color.red + .587 * color.green + .114 * color.blue;
       g /= 65535;
-      if (g >= 0.1 && g <= 0.9)		/* sanity check */
+      if (g >= 0.1 && g <= 0.9)         /* sanity check */
          wd->gamma = log(0.5) / log(g);
       }
 
@@ -736,9 +714,9 @@ char *s;
    wd->numFonts = 1;
 #ifdef HAVE_XFT
    wd->fonts = loadfont(wd, convert_spec(DEFAULTFONTNAME));
-#else					/* HAVE_XFT */
+#else                                   /* HAVE_XFT */
    wd->fonts = loadfont(wd, DEFAULTFONTNAME);
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
    if (wd->fonts == NULL) {
       free(wd);
       return NULL;
@@ -747,16 +725,16 @@ char *s;
    wd->fonts->next = wd->fonts->previous = NULL;
 #ifdef HAVE_XFT
    wd->xfont = XLoadQueryFont(wd->display, "fixed");
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
 
    {
    XGCValues gcv;
    Display *stddpy = wd->display;
 #ifdef HAVE_XFT
    gcv.font = wd->xfont->fid;
-#else					/* HAVE_XFT */
+#else                                   /* HAVE_XFT */
    gcv.font = wd->fonts->fsp->fid;
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
    gcv.foreground = wd->colors[0].c;
    gcv.background = wd->colors[1].c;
    gcv.fill_style = FillSolid;
@@ -772,14 +750,14 @@ char *s;
    GRFX_LINK(wd, wdsplys);
    return wd;
    }
-
+
 
 #ifdef HAVE_XFT
 
 /*
  * Convert a given font spec, which may or may not be in icon font spec format,
  * into fontconfig (used by Xft) style format.  The result is never null.
- * 
+ *
  * To avoid ambiguity, a spec can start with "fc:" to indicate it's in
  * fontconfig format; otherwise parsefont is called to decide the format.
  */
@@ -862,9 +840,7 @@ char *convert_spec(char *s)
 /*
  * allocate font s in the display attached to w
  */
-wfp alc_font(w,s)
-wbp w;
-char **s;
+wfp alc_font(wbp w, char **s)
 {
    return tryfont(w,convert_spec(*s));
 }
@@ -874,9 +850,7 @@ char **s;
 /*
  * allocate font s in the display attached to w
  */
-wfp alc_font(w,s)
-wbp w;
-char **s;
+wfp alc_font(wbp w, char **s)
    {
    int flags, size, tp;
    wfp rv;
@@ -920,7 +894,7 @@ char **s;
           */
          rv = findfont(w, family, size, flags);
          }
-   
+
       if (rv != NULL)
          return rv;
       }
@@ -934,13 +908,11 @@ char **s;
 /*
  * return pointer to field i inside XLFD (X Logical Font Description) s.
  */
-char *xlfd_field(s, i)
-char *s;
-int i;
+char *xlfd_field(char *s, int i)
    {
    int j = 0;
    while (j < i) {
-      if (*s == '\0') return "";	/* if no such field */
+      if (*s == '\0') return "";        /* if no such field */
       if (*s++ == '-') j++;
       }
    return s;
@@ -949,9 +921,7 @@ int i;
 /*
  * return size of font, treating a scalable font as having size n
  */
-int xlfd_size(s, n)
-char *s;
-int n;
+int xlfd_size(char *s, int n)
    {
    char *f;
    int z;
@@ -969,10 +939,7 @@ int n;
 /*
  * Find the best font matching a set of specifications.
  */
-wfp findfont(w, family, size, flags)
-wbp w;
-char *family;
-int size, flags;
+wfp findfont(wbp w, char *family, int size, int flags)
    {
    char fontspec[MAXFONTWORD+100];
    char *p, *weight, *slant, *width, *spacing, **fontlist;
@@ -1025,7 +992,7 @@ int size, flags;
    if (flags & FONTFLAG_PROPORTIONAL)
       spacing = "p";
    else
-      spacing = "*";			/* can't specify {m or c} to X */
+      spacing = "*";                    /* can't specify {m or c} to X */
 
    sprintf(fontspec, "-*-%s-%s-%s-%s-*-*-*-*-*-%s-*-*-*",
       family, weight, slant, width, spacing);
@@ -1039,9 +1006,9 @@ int size, flags;
       champ++;
    if (champ >= n) {
       XFreeFontNames(fontlist);
-      return NULL;			/* nothing acceptable */
+      return NULL;                      /* nothing acceptable */
       }
-   for (challenger = champ + 1; challenger < n; challenger++) 
+   for (challenger = champ + 1; challenger < n; challenger++)
       if (okfont(fontlist[challenger], size, flags)
       && fontcmp(fontlist[challenger], fontlist[champ], bestsize, flags) < 0)
          champ = challenger;
@@ -1065,14 +1032,12 @@ int size, flags;
  * -- size wrong (there's a bug in OpenWindows 3.3 else X could do it)
  * -- not monospaced (can't set pattern to match m or c but not p)
  */
-int okfont(spec, size, flags)
-char *spec;
-int size, flags;
+int okfont(char *spec, int size, int flags)
    {
    if (size > 0 && xlfd_size(spec, size) != size)
-      return 0;			/* can't match explicit size request */
+      return 0;                 /* can't match explicit size request */
    if ((flags & FONTFLAG_MONO) && xlfd_field(spec, XLFD_Spacing)[0] == 'p')
-      return 0;			/* requested mono, but this isn't */
+      return 0;                 /* requested mono, but this isn't */
    return 1;
    }
 
@@ -1080,16 +1045,14 @@ int size, flags;
  * rank two fonts based on whether XLFD field n matches a preferred value.
  * returns <0 if font1 is better, >0 if font2 is better, else 0.
  */
-int fieldcmp(font1, font2, value, field)
-char *font1, *font2, *value;
-int field;
+int fieldcmp(char *font1, char *font2, char *value, int field)
    {
    int len, r1, r2;
 
    len = strlen(value);
    r1 = (strncmp(xlfd_field(font1, field), value, len) == 0);
    r2 = (strncmp(xlfd_field(font2, field), value, len) == 0);
-   return r2 - r1;			/* -1, 0, or 1 */
+   return r2 - r1;                      /* -1, 0, or 1 */
    }
 
 /*
@@ -1100,9 +1063,7 @@ int field;
  * earlier filtering in findfont(), so all those flags aren't checked
  * again here; normal values are just favored in case nothing was specified.
  */
-int fontcmp(font1, font2, size, flags)
-char *font1, *font2;
-int size, flags;
+int fontcmp(char *font1, char *font2, int size, int flags)
    {
    int n;
 
@@ -1137,13 +1098,13 @@ do { int r = fieldcmp(font1, font2, s, n); if (r != 0) return -r; } while (0)
     * prefer normal values for other fields.  These only have an effect
     * for fields that were wildcarded when requesting the font list.
     */
-   PREFER("r", XLFD_Slant);		/* prefer roman slant */
-   PREFER("medium", XLFD_Weight);	/* prefer medium weight */
-   SPURN("demi", XLFD_Weight);		/* prefer non-demi if no medium */
-   PREFER("normal", XLFD_SetWidth);	/* prefer normal width */
-   PREFER("iso8859", XLFD_CharSet);	/* prefer font of ASCII chars */
-   SPURN("0", XLFD_PointSize);		/* prefer tuned font to scaled */
-   PREFER("adobe", XLFD_Foundry);	/* these look better than others */
+   PREFER("r", XLFD_Slant);             /* prefer roman slant */
+   PREFER("medium", XLFD_Weight);       /* prefer medium weight */
+   SPURN("demi", XLFD_Weight);          /* prefer non-demi if no medium */
+   PREFER("normal", XLFD_SetWidth);     /* prefer normal width */
+   PREFER("iso8859", XLFD_CharSet);     /* prefer font of ASCII chars */
+   SPURN("0", XLFD_PointSize);          /* prefer tuned font to scaled */
+   PREFER("adobe", XLFD_Foundry);       /* these look better than others */
 
    /* no significant difference */
    return 0;
@@ -1155,9 +1116,7 @@ do { int r = fieldcmp(font1, font2, s, n); if (r != 0) return -r; } while (0)
  * load a font and return a font structure.
  */
 
-wfp tryfont(w,s)
-wbp w;
-char *s;
+wfp tryfont(wbp w, char *s)
    {
    wdp wd = w->window->display;
    wfp rv;
@@ -1192,9 +1151,7 @@ char *s;
    return rv;
    }
 
-wfp loadfont(wd,s)
-wdp wd;
-char *s;
+wfp loadfont(wdp wd, char *s)
    {
    wfp rv;
    CURTSTATE();
@@ -1203,9 +1160,9 @@ char *s;
    if (rv->name == NULL) ReturnErrNum(305, NULL);
 #ifdef HAVE_XFT
    rv->fsp = XftFontOpenName(wd->display, wd->screen, rv->name);
-#else					/* HAVE_XFT */
+#else                                   /* HAVE_XFT */
    rv->fsp = XLoadQueryFont(wd->display, rv->name);
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
    if (rv->fsp == NULL){
       free(rv->name);
       free(rv);
@@ -1214,7 +1171,7 @@ char *s;
 
 #ifdef HAVE_XFT
    {
-   XGlyphInfo	extents; 
+   XGlyphInfo   extents;
    char s[256];
    int i;
 
@@ -1238,12 +1195,11 @@ char *s;
    return rv;
    }
 
-
+
 /*
  * allocate a context.  Can't be called until w has a display and window.
  */
-wcp alc_context(w)
-wbp w;
+wcp alc_context(wbp w)
    {
    wcp wc;
    wdp wd = w->window->display;
@@ -1254,9 +1210,9 @@ wbp w;
    wc->display = wd;
    wd->refcount++;
 
-#ifdef OpenGL2D 
-   if (!w->window->is_gl) 
-#endif					/* OpenGL2D */
+#ifdef OpenGL2D
+   if (!w->window->is_gl)
+#endif                                  /* OpenGL2D */
    {
    wd->colors[0].refcount++;
    wc->fg = 0;
@@ -1275,12 +1231,11 @@ wbp w;
    GRFX_LINK(wc, wcntxts);
    return wc;
    }
-
+
 /*
  * allocate a context, cloning attributes from an existing context
  */
-wcp clone_context(w)
-wbp w;
+wcp clone_context(wbp w)
    {
 /* from rxrsc.ri */
    wcp wc, rv;
@@ -1288,7 +1243,7 @@ wbp w;
    XGCValues gcv;
    XRectangle rec;
    unsigned long gcmask = GCFont | GCForeground | GCBackground |
-		GCFillStyle | GCCapStyle | GCLineWidth | GCLineStyle;
+                GCFillStyle | GCCapStyle | GCLineWidth | GCLineStyle;
 
    wc = w->context;
    wd = w->context->display;
@@ -1315,7 +1270,7 @@ wbp w;
 
 #ifdef Graphics3D
    copy_3dcontext(wc, rv);
-#endif					/* Graphics3D */
+#endif                                  /* Graphics3D */
 
    if (ISXORREVERSE(w))
       gcv.foreground = wd->colors[rv->fg].c ^ wd->colors[rv->bg].c;
@@ -1324,9 +1279,9 @@ wbp w;
    gcv.background = wd->colors[rv->bg].c;
 #ifdef HAVE_XFT
    gcv.font       = wd->xfont->fid;
-#else					/* HAVE_XFT */
+#else                                   /* HAVE_XFT */
    gcv.font       = rv->font->fsp->fid;
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
    gcv.line_style = rv->linestyle;
    gcv.line_width = rv->linewidth;
    if (rv->linewidth > 1) {
@@ -1349,7 +1304,7 @@ wbp w;
       }
    return rv;
    }
-
+
 /*
  * allocate a window state structure
  */
@@ -1359,21 +1314,21 @@ wsp alc_winstate()
    CURTSTATE();
    GRFX_ALLOC(ws, _wstate);
    ws->serial = ++canvas_serial;
-   ws->bits = 1024;				/* echo ON; others OFF */
+   ws->bits = 1024;                             /* echo ON; others OFF */
    ws->filep = nulldesc;
    ws->listp = nulldesc;
    ws->theCursor = si_s2i(cursorsyms, "left ptr") >> 1;
    SETTITLEBAR(ws);
    ws->inputmask =
       ExposureMask | KeyPressMask |
-	 ButtonPressMask | ButtonReleaseMask | ButtonMotionMask |
-	    StructureNotifyMask;
+         ButtonPressMask | ButtonReleaseMask | ButtonMotionMask |
+            StructureNotifyMask;
    ws->iconic = NormalState;
    ws->posx = ws->posy = -(MaxInt);
    ws->minwidth = ws->minheight = 0;
 #ifdef HAVE_XFT
    ws->pixDraw = ws->winDraw = NULL;
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
 
    GRFX_LINK(ws, wstates);
    return ws;
@@ -1382,12 +1337,11 @@ wsp alc_winstate()
 /*
  * free a window state
  */
-int free_window(ws)
-wsp ws;
+int free_window(wsp ws)
    {
    ws->refcount--;
    if(ws->refcount == 0) {
-      ws->bits |= 1;			/* SETZOMBIE */
+      ws->bits |= 1;                    /* SETZOMBIE */
 #ifdef HAVE_XFT
       if (ws->winDraw) {
          XftDrawDestroy(ws->winDraw);
@@ -1397,7 +1351,7 @@ wsp ws;
          XftDrawDestroy(ws->pixDraw);
          ws->pixDraw = NULL;
          }
-#endif					/* HAVE_XFT */
+#endif                                  /* HAVE_XFT */
 #ifdef GraphicsGL
       if (ws->ctx != (GLXContext) NULL) {
          ws->redraw_flag = 0;
@@ -1410,13 +1364,13 @@ wsp ws;
          glXDestroyPbuffer(ws->display->display, ws->pbuf);
          ws->pbuf = (GLXPbuffer) NULL;
          }
-#endif 					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       if (ws->win != (Window) NULL) {
-	 XDestroyWindow(ws->display->display, ws->win);
-	 XFlush(ws->display->display);
-	 while (ws->win != (Window) NULL)
-	    if (pollevent() == -1) return -1;
-	 }
+         XDestroyWindow(ws->display->display, ws->win);
+         XFlush(ws->display->display);
+         while (ws->win != (Window) NULL)
+            if (pollevent() == -1) return -1;
+         }
       else {
          /*
           * There was no XDestroyWindow, so it is necessary
@@ -1443,13 +1397,12 @@ wsp ws;
 /*
  * free a window context
  */
-void free_context(wc)
-wcp wc;
+void free_context(wcp wc)
    {
    wc->refcount--;
    if(wc->refcount == 0) {
       if (wc->gc != NULL)
-	 XFreeGC(wc->display->display, wc->gc);
+         XFreeGC(wc->display->display, wc->gc);
       free_display(wc->display);
       GRFX_UNLINK(wc, wcntxts);
       }
@@ -1458,8 +1411,7 @@ wcp wc;
 /*
  * free a display
  */
-void free_display(wd)
-wdp wd;
+void free_display(wdp wd)
    {
    wfp wf, tmp;
    wd->refcount--;
@@ -1478,16 +1430,16 @@ wdp wd;
          glXDestroyContext(wd->display, wd->sharedCtx);
          wd->sharedCtx = NULL;
          }
-#endif 					/* GraphicsGL */
+#endif                                  /* GraphicsGL */
       wf = wd->fonts;
       while (wf) { /* free fonts */
          tmp = wf;
-         wf = wf->next; 
+         wf = wf->next;
          free(tmp->name);
          free(tmp);
          }
       if (wd->cmap != DefaultColormap(wd->display, wd->screen))
-	 XFreeColormap(wd->display, wd->cmap);
+         XFreeColormap(wd->display, wd->cmap);
       XCloseDisplay(wd->display);
       if (wd->previous) wd->previous->next = wd->next;
       else wdsplys = wd->next;

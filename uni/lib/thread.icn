@@ -64,7 +64,7 @@ procedure channel(x, port)
           if ::member(chTableN, x) then
              chnl :=  chTableN[x]
           else
-	     chTableN[x] := chnl := ::condvar([])
+             chTableN[x] := chnl := ::condvar([])
 
        return chnl
       }
@@ -74,16 +74,16 @@ procedure channel(x, port)
          if not(::member(chTable, ce)) then chTable[ce] := ::table()
          if not(::member(chTable, x)) then chTable[x] := ::table()
 
-	 if \(L := chTable[ce][x]) & chnl := ::get(L) then {
-	    if *L=0 then ::delete(chTable[ce], x)
-	    }
-	 else if \(L := chTable[x][ce]) then
-	       ::put(L, chnl := ::condvar([]))
+         if \(L := chTable[ce][x]) & chnl := ::get(L) then {
+            if *L=0 then ::delete(chTable[ce], x)
+            }
+         else if \(L := chTable[x][ce]) then
+               ::put(L, chnl := ::condvar([]))
          else {
-	    L := []
+            L := []
             ::put(L, chnl := ::condvar([]))
             chTable[x][ce] := L
-	    }
+            }
          } # critical
       return chnl
       }
@@ -93,18 +93,18 @@ procedure channel(x, port)
          if not(::member(chTableP, ce)) then chTableP[ce] := ::table()
          if not(::member(chTableP, x)) then chTableP[x] := ::table()
 
-	 if \(TP := chTableP[ce][x]) & \(chnl := TP[port]) then {
-	    ::delete(TP, port)
-	    if *TP=0 then ::delete(chTableP[ce], x)
-	    }
-	 else if \(TP := chTableP[x][ce]) then {
-	    TP[port] := chnl := ::condvar([])
+         if \(TP := chTableP[ce][x]) & \(chnl := TP[port]) then {
+            ::delete(TP, port)
+            if *TP=0 then ::delete(chTableP[ce], x)
+            }
+         else if \(TP := chTableP[x][ce]) then {
+            TP[port] := chnl := ::condvar([])
             }
          else {
-	    TP := ::table()
+            TP := ::table()
             TP[port] := chnl := ::condvar([])
             chTableP[x][ce] := TP
-	    }
+            }
          } # critical
       return chnl
      }
@@ -140,17 +140,17 @@ initially(work, t)
 end
 
 class Task(
-  nthread, 		# number of threads asked for
-  active_threads, 	# the threads assigned to this task
-  func,    		# proc, what I'm supposed to do
-  reduce_func,    		# proc, how do I combine results
-  tttype,    		# thread task type , repeat, divide, chunk
-  chunk_size, 		#
+  nthread,              # number of threads asked for
+  active_threads,       # the threads assigned to this task
+  func,                 # proc, what I'm supposed to do
+  reduce_func,                  # proc, how do I combine results
+  tttype,               # thread task type , repeat, divide, chunk
+  chunk_size,           #
   caller,
-  cv_caller,		#
+  cv_caller,            #
   args,
   result_list,
-  done 			# set when done
+  done                  # set when done
   )
 
   method do_work(args)
@@ -164,7 +164,7 @@ class Task(
        ::insert(active_threads, &current)
        if \func then {
           if rslt := func(args) then done := "Yes"
-	}
+        }
        else if rslt := do_work(args) then done := "yes"
        ::delete(active_threads, &current)
        ::put(result_list, rslt)
@@ -273,15 +273,15 @@ method thread_func()
          ::insert(thread_active,cur_thread)
 
          #write("thread is execing task")
-	 if rslt_lst := tsk.exec_map() then
-	    ::put(tsk.result_list, tsk.reduce_func(rslt_lst))
+         if rslt_lst := tsk.exec_map() then
+            ::put(tsk.result_list, tsk.reduce_func(rslt_lst))
          #write("thread done execing task")
 
          ::delete(thread_active, cur_thread)
          ::insert(thread_ready,  cur_thread)
 
          critical task_ready: {
-	    if *tsk.args>0 & tsk~===task_ready[1] then
+            if *tsk.args>0 & tsk~===task_ready[1] then
             ::push(task_ready, tsk)
             }
 

@@ -2,14 +2,14 @@
 # Context switch for AMD64 small model.  (Position-independent code.)
 # Barry Schwartz, January 2005.
 # Modified for x64 Windows by Shea Newton, June 2014
-#	
+#
 # See http://www.amd64.org/ for information about AMD64 programming.
 #
 
         .file       "x86_64_windows-rswitch.s"
         .text
         .globl      coswitch
-	
+
 coswitch:
         # coswitch(old_cstate, new_cstate, first)
         #

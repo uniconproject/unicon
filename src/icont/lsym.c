@@ -10,29 +10,28 @@
  * Prototypes.
  */
 
-static struct 	fentry *alcfhead
+static struct   fentry *alcfhead
    (struct fentry *blink,word name, int fid, struct rentry *rlist);
-static struct 	rentry *alcfrec	
+static struct   rentry *alcfrec
    (struct rentry *link,struct gentry *gp, int fnum);
-static struct 	gentry *alcglobal
+static struct   gentry *alcglobal
    (struct gentry *blink, word name, int flag,int nargs,int procid);
-static struct 	ientry *alcident	(char *nam,int len);
+static struct   ientry *alcident        (char *nam,int len);
 
-int dynoff;			/* stack offset counter for locals */
-int argoff;			/* stack offset counter for arguments */
-int static1;			/* first static in procedure */
-int lstatics = 0;		/* static variable counter */
+int dynoff;                     /* stack offset counter for locals */
+int argoff;                     /* stack offset counter for arguments */
+int static1;                    /* first static in procedure */
+int lstatics = 0;               /* static variable counter */
 
-int nlocal;			/* number of locals in local table */
-int nconst;			/* number of constants in constant table */
-int nfields = 0;		/* number of fields in field table */
+int nlocal;                     /* number of locals in local table */
+int nconst;                     /* number of constants in constant table */
+int nfields = 0;                /* number of fields in field table */
 
 /*
  * instid - copy the string s to the start of the string free space
  *  and call putident with the length of the string.
  */
-word instid(s)
-char *s;
+word instid(char *s)
    {
    register int l;
    register word indx;
@@ -50,7 +49,7 @@ char *s;
 
    return putident(l, 1);
    }
-
+
 /*
  * putident - install the identifier named by the string starting at lsfree
  *  and extending for len bytes.  The installation entails making an
@@ -64,8 +63,7 @@ char *s;
  * If "install" is 0, putident returns -1 for a nonexistent identifier,
  * and does not install it.
  */
-word putident(len, install)
-int len, install;
+word putident(int len, int install)
    {
    register int hash;
    register char *s;
@@ -87,7 +85,7 @@ int len, install;
    /*
     * If the identifier hasn't been installed, install it.
     */
-   if ((ip = lihash[hash]) != NULL) {	 /* collision */
+   if ((ip = lihash[hash]) != NULL) {    /* collision */
       for (;;) { /* work down i_blink chain until id is found or the
                      end of the chain is reached */
          if (l == ip->i_length && lexeql(l, s, &lsspace[ip->i_name]))
@@ -111,28 +109,24 @@ int len, install;
    lsfree += l;
    return lihash[hash]->i_name;
    }
-
+
 /*
  * lexeql - compare two strings of given length.  Returns non-zero if
  *  equal, zero if not equal.
  */
-int lexeql(l, s1, s2)
-register int l;
-register char *s1, *s2;
+int lexeql(register int l, register char *s1, register char *s2)
    {
    while (l--)
       if (*s1++ != *s2++)
          return 0;
    return 1;
    }
-
+
 /*
  * alcident - get the next free identifier table entry, and fill it in with
  *  the specified values.
  */
-static struct ientry *alcident(nam, len)
-char *nam;
-int len;
+static struct ientry *alcident(char *nam, int len)
    {
    register struct ientry *ip;
 
@@ -142,7 +136,7 @@ int len;
    ip->i_length = len;
    return ip;
    }
-
+
 /*
  * locinit -  clear local symbol table.
  */
@@ -154,7 +148,7 @@ void locinit()
    nconst = -1;
    static1 = lstatics;
    }
-
+
 /*
  * putlocal - make a local symbol table entry.
  */
@@ -174,40 +168,40 @@ void putlocal(int n, word id, int flags, int imperror, word procname)
    lp = &lltable[n];
    lp->l_name = id;
    lp->l_flag = flags;
-   if (flags == 0) {				/* undeclared */
-      if ((p.gp = glocate(id)) != NULL) {	/* check global */
+   if (flags == 0) {                            /* undeclared */
+      if ((p.gp = glocate(id)) != NULL) {       /* check global */
          lp->l_flag = F_Global;
          lp->l_val.global = p.gp;
          }
 
-      else if ((p.bn = blocate(id)) != 0) {	/* check for function */
+      else if ((p.bn = blocate(id)) != 0) {     /* check for function */
          lp->l_flag = F_Builtin | F_Global;
          lp->l_val.global = putglobal(id, F_Builtin | F_Proc, -1, p.bn);
          }
 
-      else {					/* implicit local */
+      else {                                    /* implicit local */
          if (imperror)
-            lwarn(&lsspace[id], "undeclared identifier, procedure ", 
+            lwarn(&lsspace[id], "undeclared identifier, procedure ",
                &lsspace[procname]);
          lp->l_flag = F_Dynamic;
          lp->l_val.offset = ++dynoff;
          }
       }
-   else if (flags & F_Global) {			/* global variable */
+   else if (flags & F_Global) {                 /* global variable */
       if ((p.gp = glocate(id)) == NULL)
          quit("putlocal: global not in global table");
       lp->l_val.global = p.gp;
       }
-   else if (flags & F_Argument)			/* procedure argument */
+   else if (flags & F_Argument)                 /* procedure argument */
       lp->l_val.offset = ++argoff;
-   else if (flags & F_Dynamic)			/* local dynamic */
+   else if (flags & F_Dynamic)                  /* local dynamic */
       lp->l_val.offset = ++dynoff;
-   else if (flags & F_Static)			/* local static */
+   else if (flags & F_Static)                   /* local static */
       lp->l_val.staticid = ++lstatics;
    else
       quit("putlocal: unknown flags");
    }
-
+
 /*
  * putglobal - make a global symbol table entry.
  */
@@ -216,7 +210,7 @@ struct gentry *putglobal(word id, int flags, int nargs, int procid)
    register struct gentry *p;
 
    flags |= F_Global;
-   if ((p = glocate(id)) == NULL) {	/* add to head of hash chain */
+   if ((p = glocate(id)) == NULL) {     /* add to head of hash chain */
       p = lghash[ghasher(id)];
       lghash[ghasher(id)] = alcglobal(p, id, flags, nargs, procid);
       return lghash[ghasher(id)];
@@ -226,16 +220,11 @@ struct gentry *putglobal(word id, int flags, int nargs, int procid)
    p->g_procid = procid;
    return p;
    }
-
+
 /*
  * putconst - make a constant symbol table entry.
  */
-void putconst(n, flags, len, pc, valp)
-int n;
-int flags, len;
-word pc;
-union xval *valp;
-
+void putconst(int n, int flags, int len, word pc, union xval *valp)
    {
    register struct centry *p;
    if (n >= csize)
@@ -257,39 +246,36 @@ union xval *valp;
       p->c_val.sval = valp->sval;
       p->c_length = len;
       }
-   else	if (flags & F_RealLit)
+   else if (flags & F_RealLit)
 
 #ifdef Double
 /* access real values one word at a time */
-    {  int *rp, *rq;	
+    {  int *rp, *rq;
        rp = (int *) &(p->c_val.rval);
        rq = (int *) &(valp->rval);
        *rp++ = *rq++;
        *rp   = *rq;
     }
-#else					/* Double */
+#else                                   /* Double */
       p->c_val.rval = valp->rval;
-#endif					/* Double */
+#endif                                  /* Double */
 
    else
       fprintf(stderr, "putconst: bad flags: %06o %011" LINTFRMT  "o\n",
-	      flags, valp->ival);
+              flags, valp->ival);
    }
-
+
 /*
  * putfield - make a record/field table entry.
  */
-void putfield(fname, gp, fnum)
-word fname;
-struct gentry *gp;
-int fnum;
+void putfield(word fname, struct gentry *gp, int fnum)
    {
    register struct fentry *fp;
    register struct rentry *rp, *rp2;
    word hash;
 
    fp = flocate(fname);
-   if (fp == NULL) {		/* create a field entry */
+   if (fp == NULL) {            /* create a field entry */
       nfields++;
       hash = fhasher(fname);
       fp = lfhash[hash];
@@ -297,12 +283,12 @@ int fnum;
          gp, fnum));
       return;
       }
-   rp = fp->f_rlist;				/* found field entry; */
-   if (rp->r_gp->g_procid > gp->g_procid) {	/* find spot in record list */
+   rp = fp->f_rlist;                            /* found field entry; */
+   if (rp->r_gp->g_procid > gp->g_procid) {     /* find spot in record list */
       fp->f_rlist = alcfrec(rp, gp, fnum);
       return;
       }
-   while (rp->r_gp->g_procid < gp->g_procid) {	/* keep record list ascending */
+   while (rp->r_gp->g_procid < gp->g_procid) {  /* keep record list ascending */
       if (rp->r_link == NULL) {
          rp->r_link = alcfrec((struct rentry *)NULL, gp, fnum);
          return;
@@ -312,7 +298,7 @@ int fnum;
       }
    rp2->r_link = alcfrec(rp, gp, fnum);
    }
-
+
 /*
  * glocate - lookup identifier in global symbol table, return NULL
  *  if not present.
@@ -326,7 +312,7 @@ struct gentry *glocate(word id)
       p = p->g_blink;
    return p;
    }
-
+
 /*
  * flocate - lookup identifier in field table.
  */
@@ -337,16 +323,11 @@ struct fentry *flocate(word id)
       p = p->f_blink;
    return p;
    }
-
+
 /*
  * alcglobal - create a new global symbol table entry.
  */
-static struct gentry *alcglobal(blink, name, flag, nargs, procid)
-struct gentry *blink;
-word name;
-int flag;
-int nargs;
-int procid;
+static struct gentry *alcglobal(struct gentry *blink, word name, int flag, int nargs, int procid)
    {
    register struct gentry *gp;
 
@@ -368,15 +349,11 @@ int procid;
    lglast = gp;
    return gp;
    }
-
+
 /*
  * alcfhead - allocate a field table header.
  */
-static struct fentry *alcfhead(blink, name, fid, rlist)
-struct fentry *blink;
-word name;
-int fid;
-struct rentry *rlist;
+static struct fentry *alcfhead(struct fentry *blink, word name, int fid, struct rentry *rlist)
    {
    register struct fentry *fp;
 
@@ -393,14 +370,11 @@ struct rentry *rlist;
    lflast = fp;
    return fp;
    }
-
+
 /*
  * alcfrec - allocate a field table record list element.
  */
-static struct rentry *alcfrec(link, gp, fnum)
-struct rentry *link;
-struct gentry *gp;
-int fnum;
+static struct rentry *alcfrec(struct rentry *link, struct gentry *gp, int fnum)
    {
    register struct rentry *rp;
 
@@ -410,14 +384,13 @@ int fnum;
    rp->r_fnum = fnum;
    return rp;
    }
-
+
 /*
  * blocate - search for a function. The search is linear to make
  *  it easier to add/delete functions. If found, returns index+1 for entry.
  */
 
-int blocate(s_indx)
-word s_indx;
+int blocate(word s_indx)
    {
 register char *s;
    register int i;

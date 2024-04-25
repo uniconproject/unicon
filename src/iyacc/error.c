@@ -28,7 +28,7 @@ void open_error(char *filename)
 void unexpected_EOF(void)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unexpected end-of-file\n",
-	    myname, lineno, input_file_name);
+            myname, lineno, input_file_name);
     done(1);
 }
 
@@ -40,18 +40,18 @@ void print_pos(char *st_line,char *st_cptr)
     if (st_line == 0) return;
     for (s = st_line; *s != '\n'; ++s)
     {
-	if (isprint(*s) || *s == '\t')
-	    putc(*s, stderr);
-	else
-	    putc('?', stderr);
+        if (isprint(*s) || *s == '\t')
+            putc(*s, stderr);
+        else
+            putc('?', stderr);
     }
     putc('\n', stderr);
     for (s = st_line; s < st_cptr; ++s)
     {
-	if (*s == '\t')
-	    putc('\t', stderr);
-	else
-	    putc(' ', stderr);
+        if (*s == '\t')
+            putc('\t', stderr);
+        else
+            putc(' ', stderr);
     }
     putc('^', stderr);
     putc('\n', stderr);
@@ -61,7 +61,7 @@ void print_pos(char *st_line,char *st_cptr)
 void syntax_error(int st_lineno,char *st_line,char *st_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", syntax error\n",
-	    myname, st_lineno, input_file_name);
+            myname, st_lineno, input_file_name);
     print_pos(st_line, st_cptr);
     done(1);
 }
@@ -70,7 +70,7 @@ void syntax_error(int st_lineno,char *st_line,char *st_cptr)
 void unterminated_comment(int c_lineno,char *c_line,char *c_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unmatched /*\n",
-	    myname, c_lineno, input_file_name);
+            myname, c_lineno, input_file_name);
     print_pos(c_line, c_cptr);
     done(1);
 }
@@ -79,7 +79,7 @@ void unterminated_comment(int c_lineno,char *c_line,char *c_cptr)
 void unterminated_string(int s_lineno,char *s_line,char *s_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unterminated string\n",
-	    myname, s_lineno, input_file_name);
+            myname, s_lineno, input_file_name);
     print_pos(s_line, s_cptr);
     done(1);
 }
@@ -88,7 +88,7 @@ void unterminated_string(int s_lineno,char *s_line,char *s_cptr)
 void unterminated_text(int t_lineno,char *t_line,char *t_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unmatched %%{\n",
-	    myname, t_lineno, input_file_name);
+            myname, t_lineno, input_file_name);
     print_pos(t_line, t_cptr);
     done(1);
 }
@@ -117,7 +117,7 @@ void over_unionized(char *u_cptr)
 void illegal_tag(int t_lineno,char *t_line,char *t_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", illegal tag\n",
-	    myname, t_lineno, input_file_name);
+            myname, t_lineno, input_file_name);
     print_pos(t_line, t_cptr);
     done(1);
 }
@@ -126,7 +126,7 @@ void illegal_tag(int t_lineno,char *t_line,char *t_cptr)
 void illegal_character(char *c_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", illegal character\n",
-	    myname, lineno, input_file_name);
+            myname, lineno, input_file_name);
     print_pos(line, c_cptr);
     done(1);
 }
@@ -219,7 +219,7 @@ void prec_redeclared(void)
 void unterminated_action(int a_lineno,char *a_line,char *a_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unterminated action\n",
-	    myname, a_lineno, input_file_name);
+            myname, a_lineno, input_file_name);
     print_pos(a_line, a_cptr);
     done(1);
 }
@@ -236,7 +236,7 @@ void dollar_warning(int a_lineno,int i)
 void dollar_error(int a_lineno,char *a_line,char *a_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", illegal $-name\n",
-	    myname, a_lineno, input_file_name);
+            myname, a_lineno, input_file_name);
     print_pos(a_line, a_cptr);
     done(1);
 }
@@ -245,7 +245,7 @@ void dollar_error(int a_lineno,char *a_line,char *a_cptr)
 void untyped_lhs(void)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", $$ is untyped\n",
-	    myname, lineno, input_file_name);
+            myname, lineno, input_file_name);
     done(1);
 }
 
@@ -253,7 +253,7 @@ void untyped_lhs(void)
 void untyped_rhs(int i,char *s)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", $%d (%s) is untyped\n",
-	    myname, lineno, input_file_name, i, s);
+            myname, lineno, input_file_name, i, s);
     done(1);
 }
 
@@ -261,7 +261,7 @@ void untyped_rhs(int i,char *s)
 void unknown_rhs(int i)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", $%d is untyped\n",
-	    myname, lineno, input_file_name, i);
+            myname, lineno, input_file_name, i);
     done(1);
 }
 

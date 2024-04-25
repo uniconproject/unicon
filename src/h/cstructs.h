@@ -6,18 +6,18 @@
 /*
  * fileparts holds a file name broken down into parts.
  */
-struct fileparts {			/* struct of file name parts */
-   char *dir;				/* directory */
-   char *name;				/* name */
-   char *ext;				/* extension */
+struct fileparts {                      /* struct of file name parts */
+   char *dir;                           /* directory */
+   char *name;                          /* name */
+   char *ext;                           /* extension */
 
 #if VMS
    char *version;
-#endif					/* VMS */
+#endif                                  /* VMS */
 
 #if MVS
    char *member;
-#endif					/* MVS */
+#endif                                  /* MVS */
 
    };
 
@@ -25,9 +25,9 @@ struct fileparts {			/* struct of file name parts */
  * xval - holds references to literal constants
  */
 union xval {
-   word ival;		/* integer */
-   double rval;		/*  real */
-   word sval;		/*  offset into string space of string */
+   word ival;           /* integer */
+   double rval;         /*  real */
+   word sval;           /*  offset into string space of string */
    };
 
 /*
@@ -57,35 +57,35 @@ struct str_buf {
 /*
  * implement contains information about the implementation of an operation.
  */
-#define NoRsltSeq  -1L	     /* no result sequence: {} */
+#define NoRsltSeq  -1L       /* no result sequence: {} */
 #define UnbndSeq   -2L       /* unbounded result sequence: {*} */
 
-#define DoesRet    01	     /* operation (or "body" function) returns */
-#define DoesFail   02	     /* operation (or "body" function) fails */
-#define DoesSusp   04	     /* operation (or "body" function) suspends */
+#define DoesRet    01        /* operation (or "body" function) returns */
+#define DoesFail   02        /* operation (or "body" function) fails */
+#define DoesSusp   04        /* operation (or "body" function) suspends */
 #define DoesEFail 010        /* fails through error conversion */
-#define DoesFThru 020	     /* only "body" functions can "fall through" */
+#define DoesFThru 020        /* only "body" functions can "fall through" */
 
 struct implement {
    struct implement *blink;   /* link for bucket chain in hash tables */
    char oper_typ;             /* 'K'=keyword, 'F'=function, 'O'=operator */
-   char prefix[2];	      /* prefix to make start of name unique */
-   char *name;		      /* function/operator/keyword name */
-   char *op;		      /* operator symbol (operators only) */
-   int nargs;		      /* number of arguments operation requires */
+   char prefix[2];            /* prefix to make start of name unique */
+   char *name;                /* function/operator/keyword name */
+   char *op;                  /* operator symbol (operators only) */
+   int nargs;                 /* number of arguments operation requires */
    int *arg_flgs;             /* array of arg flags: deref/underef, var len*/
-   long min_result;	      /* minimum result sequence length */
-   long max_result;	      /* maiximum result sequence length */
-   int resume;		      /* flag - resumption after last result */
-   int ret_flag;	      /* DoesRet, DoesFail, DoesSusp */
+   long min_result;           /* minimum result sequence length */
+   long max_result;           /* maiximum result sequence length */
+   int resume;                /* flag - resumption after last result */
+   int ret_flag;              /* DoesRet, DoesFail, DoesSusp */
    int use_rslt;              /* flag - explicitly uses result location */
-   char *comment;	      /* description of operation */
-   int ntnds;		      /* size of tnds array */
+   char *comment;             /* description of operation */
+   int ntnds;                 /* size of tnds array */
    struct tend_var *tnds;     /* pointer to array of info about tended vars */
    int nvars;                 /* size of vars array */
    struct ord_var  *vars;     /* pointer to array of info about ordinary vars */
    struct il_code *in_line;    /* inline version of the operation */
-   int iconc_flgs;	      /* flags for internal use by the compiler */
+   int iconc_flgs;            /* flags for internal use by the compiler */
    };
 
 /*
@@ -108,7 +108,7 @@ struct implement {
 
 /*
  * Flags to indicate what types are returned from the function implementing
- *  a body. These are unsed in determining the calling conventions 
+ *  a body. These are unsed in determining the calling conventions
  *  of the function.
  */
 #define RetInt   1  /* body/function returns a C_integer */
@@ -233,7 +233,7 @@ struct il_c {
    char *s;
    struct il_c *next;
    };
-   
+
 /*
  * The parameter value of a run-time operation may be in one of several
  *  different locations depending on what conversions have been done to it.
@@ -266,26 +266,26 @@ struct il_c {
  * Information about an Icon type.
  */
 struct icon_type {
-   char *id;		/* name of type */
-   int support_new;	/* supports RTL "new" construct */
-   int deref;		/* dereferencing needs */
-   int rtl_ret;		/* kind of RTL return supported if any */
-   char *typ;		/* for variable: initial type */
-   int num_comps;	/* for aggregate: number of type components */
-   int compnts;		/* for aggregate: index of first component */
-   char *abrv;		/* abreviation used for type tracing */
-   char *cap_id;	/* name of type with first character capitalized */
+   char *id;            /* name of type */
+   int support_new;     /* supports RTL "new" construct */
+   int deref;           /* dereferencing needs */
+   int rtl_ret;         /* kind of RTL return supported if any */
+   char *typ;           /* for variable: initial type */
+   int num_comps;       /* for aggregate: number of type components */
+   int compnts;         /* for aggregate: index of first component */
+   char *abrv;          /* abreviation used for type tracing */
+   char *cap_id;        /* name of type with first character capitalized */
    };
 
 /*
  * Information about a component of an aggregate type.
  */
 struct typ_compnt {
-   char *id;		/* name of component */
-   int n;		/* position of component within type aggragate */
-   int var;		/* flag: this component is an Icon-level variable */
-   int aggregate;	/* index of type that owns the component */
-   char *abrv;		/* abreviation used for type tracing */
+   char *id;            /* name of component */
+   int n;               /* position of component within type aggragate */
+   int var;             /* flag: this component is an Icon-level variable */
+   int aggregate;       /* index of type that owns the component */
+   char *abrv;          /* abreviation used for type tracing */
    };
 
 extern int num_typs;                 /* number of types in table */

@@ -22,11 +22,11 @@ PURI _ftp_parse(char *uri, PURI puri);
 
 SCHEME scFTP = { "ftp", _ftp_parse, 21 };
 
-/* 
+/*
  * Expects the scheme part (i.e. "ftp:") to have already been
  * removed, and the scheme and default port to be in the struct.
  *
- * From RFC 1738: 
+ * From RFC 1738:
  *   ftpurl         = "ftp://" login [ "/" fpath [ ";type=" ftptype ]]
  *   login          = [ user [ ":" password ] "@" ] hostport
  *   hostport       = host [ ":" port ]
@@ -36,7 +36,7 @@ PURI _ftp_parse(char *uri, PURI puri)
   char *colon;
   char *slash;
   char *at;
-  
+
   if (uri[0] == '/' && uri[1] == '/') {
     uri += 2;
   }
@@ -52,26 +52,26 @@ PURI _ftp_parse(char *uri, PURI puri)
     if (colon) {
       /* user and pass */
       if ((colon - uri) > 0) {
-	puri->user = (char *)malloc(colon - uri + 1);
-	if (!puri->user) {
-	  puri->status = URI_ECHECKERRNO;
-	  return puri;
-	}
-	puri->user[0] = '\0';
-	strncat(puri->user, uri, colon - uri);
-	
-	puri->pass = (char *)malloc(at - colon + 1);
-	if (!puri->user) {
-	  puri->status = URI_ECHECKERRNO;
-	  return puri;
-	}
-	puri->pass[0] = '\0';
-	strncat(puri->pass, colon + 1, at - colon - 1);
+        puri->user = (char *)malloc(colon - uri + 1);
+        if (!puri->user) {
+          puri->status = URI_ECHECKERRNO;
+          return puri;
+        }
+        puri->user[0] = '\0';
+        strncat(puri->user, uri, colon - uri);
+
+        puri->pass = (char *)malloc(at - colon + 1);
+        if (!puri->user) {
+          puri->status = URI_ECHECKERRNO;
+          return puri;
+        }
+        puri->pass[0] = '\0';
+        strncat(puri->pass, colon + 1, at - colon - 1);
       }
       else {
-	/* empty user is illegal */
-	puri->status = URI_ENOUSER;
-	return puri;
+        /* empty user is illegal */
+        puri->status = URI_ENOUSER;
+        return puri;
       }
     }
     else {
@@ -149,4 +149,4 @@ PURI _ftp_parse(char *uri, PURI puri)
   puri->status = URI_SUCCESS;
   return puri;
 }
-  
+

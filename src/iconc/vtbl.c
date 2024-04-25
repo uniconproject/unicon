@@ -19,8 +19,7 @@ static struct vtbl * vtbls = NULL;
 
 extern
 int
-vtbl_add(name)
-   char * name;
+vtbl_add(char * name)
 {
    struct vtbl * vtbl;
    struct gentry * gentry;
@@ -36,8 +35,7 @@ vtbl_add(name)
 
 extern
 struct vtbl *
-vtbl_get(gentry)
-   struct gentry * gentry;
+vtbl_get(struct gentry * gentry)
 {
    char * p;
    char * buf;
@@ -53,11 +51,11 @@ vtbl_get(gentry)
    buf = NULL;
 
    if ((p = strstr(gentry->name, "__methods")) ||
-      (p = strstr(gentry->name, "__mdw_inst_mdw"))) {
+      (p = strstr(gentry->name, "__state"))) {
       buf = alloc(sizeof(char)*(strlen(gentry->name)));
       strncpy(buf, gentry->name, p - gentry->name);
       buf[p - gentry->name] = 0;
-      strcat(buf, "__oprec"); 
+      strcat(buf, "__oprec");
       }
 
    if (buf == NULL)
@@ -73,17 +71,14 @@ vtbl_get(gentry)
 
 extern
 int
-vtbl_index_get(vtbl)
-   struct vtbl * vtbl;
+vtbl_index_get(struct vtbl * vtbl)
 {
    return (vtbl->g) ? vtbl->g->index : -1;
 }
 
 extern
 int
-vtbl_method_lkup(vtbl, method)
-   struct vtbl * vtbl;
-   char * method;
+vtbl_method_lkup(struct vtbl * vtbl, char * method)
 {
    char * p;
    struct fentry * f;
@@ -106,16 +101,14 @@ vtbl_method_lkup(vtbl, method)
 
 extern
 char *
-vtbl_name(vtbl)
-   struct vtbl * vtbl;
+vtbl_name(struct vtbl * vtbl)
 {
    return (vtbl && vtbl->g) ? vtbl->g->name : "vtbl_name: invalid arg.";
 }
 
 extern
 int
-vtbl_name_check(name)
-   char * name;
+vtbl_name_check(char * name)
 {
    /*
     * The name of a vtbl is [a-zA-Z][a-ZA-Z0-9_]*__oprec

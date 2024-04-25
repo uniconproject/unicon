@@ -38,7 +38,8 @@
 /* Remove the KEYed item and the KEY from the database. */
 
 int
-delete (datum key)
+delete (key)
+     datum key;
 {
   return gdbm_delete (_gdbm_file, key);
 }

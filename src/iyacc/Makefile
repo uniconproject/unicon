@@ -47,8 +47,8 @@ all:		$(PROGRAM)
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo -n "Loading $(PROGRAM) ... "
 		@$(LINKER) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
-		@$(CP) $(PROGRAM) ../../bin/
-		$(STRIP) ../../bin/$(PROGRAM)
+		@cp $(PROGRAM) ../../bin/
+		strip ../../bin/$(PROGRAM)
 		@cd test; $(MAKE)
 		@echo "done"
 

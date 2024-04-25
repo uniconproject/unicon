@@ -1,4 +1,4 @@
-#ifndef RT_H    /* only include once */
+#ifndef RT_H	/* only include once */
 #define RT_H 1
 
 /*
@@ -18,27 +18,15 @@
 
 #ifdef Graphics
    #include "../h/graphics.h"
-#endif                                  /* Graphics */
+#endif					/* Graphics */
 
 #ifdef Audio
    #include "../h/audio.h"
-#endif                                  /* Audio */
+#endif					/* Audio */
 
 #ifdef PosixFns
 #include "../h/posix.h"
-#endif                                  /* PosixFns */
-
-#if COMPILER
-#ifdef NT
-/* 
- * Declare flock (which is defined in fxposix.ri, just before it is used).
- * It's needed here because rtt splits fxposix.ri into several C files 
- * when producing code for iconc, which separates the definition from its use.
- */
-int flock(int fd, int operation);
-#endif                                  /* NT */
-#endif                                  /* COMPILER */
-
+#endif					/* PosixFns */
 
 #ifdef Messaging
 #include "../h/messagin.h"
@@ -53,4 +41,4 @@ int flock(int fd, int operation);
 #endif                                  /* _UCRT */
 
 
-#endif                                  /* RT_DOT_H */
+#endif					/* RT_DOT_H */

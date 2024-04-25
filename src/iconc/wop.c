@@ -13,7 +13,8 @@ static unsigned int flags = 0;
 
 extern
 void
-wop_arg_deref_insitu(struct val_loc * loc)
+wop_arg_deref_insitu(loc)
+   struct val_loc * loc;
 {
    struct code * code;
 
@@ -38,7 +39,8 @@ wop_arg_deref_insitu(struct val_loc * loc)
 
 extern
 void
-wop_fld_deref(struct val_loc * loc)
+wop_fld_deref(loc)
+   struct val_loc * loc;
 {
    struct code * code;
 
@@ -63,7 +65,8 @@ wop_fld_deref(struct val_loc * loc)
 
 extern
 int
-wop_get(unsigned bit)
+wop_get(bit)
+   unsigned bit;
 {
    if (isbadopbit(bit))
       return -1;
@@ -72,7 +75,8 @@ wop_get(unsigned bit)
 
 extern
 int
-wop_set(unsigned bit)
+wop_set(bit)
+   unsigned bit;
 {
    if (isbadopbit(bit))
       return -1;

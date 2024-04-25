@@ -7,7 +7,11 @@
 /*
  * invoke - perform general invocation on a value.
  */
-int invoke(int nargs, dptr args, dptr rslt, continuation succ_cont)
+int invoke(nargs, args, rslt, succ_cont)
+int nargs;
+dptr args;
+dptr rslt;
+continuation succ_cont;
    {
    tended struct descrip callee;
    struct b_proc *proc;
@@ -21,7 +25,7 @@ int invoke(int nargs, dptr args, dptr rslt, continuation succ_cont)
    nargs -= 1;
 
    if (is:proc(callee))
-      return (*BlkD(callee, Proc)->ccode.p4iddc)(nargs, args, rslt, succ_cont);
+      return (*BlkD(callee, Proc)->ccode)(nargs, args, rslt, succ_cont);
    else if (cnv:C_integer(callee, n)) {
       if (n <= 0)
          n += nargs + 1;
@@ -34,7 +38,7 @@ int invoke(int nargs, dptr args, dptr rslt, continuation succ_cont)
       proc = strprc(&callee, (C_integer)nargs);
       if (proc == NULL)
          RunErr(106, &callee);
-      return (*(proc)->ccode.p4iddc)(nargs, args, rslt, succ_cont);
+      return (*(proc)->ccode)(nargs, args, rslt, succ_cont);
       }
    else if (is:record(callee)) { /* possible future support for culling */
       RunErr(106, &callee);
@@ -49,7 +53,11 @@ int invoke(int nargs, dptr args, dptr rslt, continuation succ_cont)
  * apply - implement binary bang. Construct an argument list for
  *   invoke() from the callee and the list it is applied to.
  */
-int apply(dptr callee, dptr strct, dptr rslt, continuation succ_cont)
+int apply(callee, strct, rslt, succ_cont)
+dptr callee;
+dptr strct;
+dptr rslt;
+continuation succ_cont;
    {
    tended struct descrip dstrct;
    struct tend_desc *tnd_args;  /* place to tend arguments to invoke() */
@@ -72,12 +80,12 @@ int apply(dptr callee, dptr strct, dptr rslt, continuation succ_cont)
             + (nargs - 1) * sizeof(struct descrip)));
          if (tnd_args == NULL)
             RunErr(305, NULL);
-
+      
          tnd_args->d[0] = *callee;
          indx = 1;
          for (ep = BlkD(dstrct, List)->listhead;
-              BlkType(ep) == T_Lelem;
-              ep = Blk(ep,Lelem)->listnext) {
+	      BlkType(ep) == T_Lelem;
+	      ep = Blk(ep,Lelem)->listnext) {
             for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
                j = ep->Lelem.first + i;
                if (j >= ep->Lelem.nslots)
@@ -103,7 +111,7 @@ int apply(dptr callee, dptr strct, dptr rslt, continuation succ_cont)
             + (nargs - 1) * sizeof(struct descrip)));
          if (tnd_args == NULL)
             RunErr(305, NULL);
-
+      
          tnd_args->d[0] = *callee;
          indx = 1;
          ep = BlkLoc(dstrct);
@@ -123,17 +131,19 @@ int apply(dptr callee, dptr strct, dptr rslt, continuation succ_cont)
       }
    }
 
-#else                                   /* COMPILER */
+#else					/* COMPILER */
 
 #if E_Ecall
-#include "../h/opdefs.h"                /* for Op_Invoke eventvalue */
-#endif                                  /* E_Ecall */
+#include "../h/opdefs.h"		/* for Op_Invoke eventvalue */
+#endif					/* E_Ecall */
 
-
+
 /*
- * invoke -- Perform setup for invocation.
+ * invoke -- Perform setup for invocation.  
  */
-int invoke(int nargs, dptr *cargp, int *n)
+int invoke(nargs,cargp,n)
+dptr *cargp;
+int nargs, *n;
 {
    register struct pf_marker *newpfp;
    register dptr newargp;
@@ -154,7 +164,7 @@ int invoke(int nargs, dptr *cargp, int *n)
    xargp = newargp;
 
    Deref(newargp[0]);
-
+   
    /*
     * See what course the invocation is to take.
     */
@@ -167,9 +177,9 @@ int invoke(int nargs, dptr *cargp, int *n)
       if (cnv:C_integer(newargp[0], tmp)) {
          MakeInt(tmp,&newargp[0]);
 
-         /*
-          * Arg0 is an integer, select result.
-          */
+	 /*
+	  * Arg0 is an integer, select result.
+	  */
          i = cvpos(IntVal(newargp[0]), (word)nargs);
          if (i == CvtFail || i > nargs)
             return I_Fail;
@@ -184,71 +194,71 @@ int invoke(int nargs, dptr *cargp, int *n)
           * Arg0 is a co-expression, start by dereferencing the
           *   parameters.
           */
-         int result;
-         int lelems;
-         dptr llargp;
+	 int result;
+	 int lelems;
+	 dptr llargp;
 
-         for (i = 1; i <= nargs; i++)
-            Deref(newargp[i]);
+	 for (i = 1; i <= nargs; i++)
+	    Deref(newargp[i]);
 
-         /*
-          * Convert argument list to a List
-          */
-         lelems = nargs;
-         llargp = &newargp[1];
-         arg_sv = llargp[-1];
-         Ollist(lelems, &llargp[-1]);
-         llargp[0] = llargp[-1];
-         llargp[-1] = arg_sv;
+	 /*
+	  * Convert argument list to a List
+	  */
+	 lelems = nargs;
+	 llargp = &newargp[1];
+	 arg_sv = llargp[-1];
+	 Ollist(lelems, &llargp[-1]);
+	 llargp[0] = llargp[-1];
+	 llargp[-1] = arg_sv;
 
-         /*
-          * Activate the coexpression.
-          */
-         result = activate(&llargp[0], BlkD(newargp[0], Coexpr), &llargp[-1]);
-         sp = (word *)newargp+1;
-         if (result == A_Resume) return I_Fail;
-         return I_Continue;
-         }
+	 /*
+	  * Activate the coexpression.
+	  */
+	 result = activate(&llargp[0], BlkD(newargp[0], Coexpr), &llargp[-1]);
+	 sp = (word *)newargp+1;
+	 if (result == A_Resume) return I_Fail;
+	 return I_Continue;
+	 }
       else {
          struct b_proc *tmp;
-         /*
-          * See if Arg0 can be converted to a string that names a procedure
-          *  or operator.  If not, generate run-time error 106.
-          */
-         if (!cnv:tmp_string(newargp[0],newargp[0]) ||
-             ((tmp = strprc(newargp, (C_integer)nargs)) == NULL)) {
+	 /*
+	  * See if Arg0 can be converted to a string that names a procedure
+	  *  or operator.  If not, generate run-time error 106.
+	  */
+	 if (!cnv:tmp_string(newargp[0],newargp[0]) ||
+	     ((tmp = strprc(newargp, (C_integer)nargs)) == NULL)) {
 
-            if(is:record(newargp[0])) {
-               struct b_record *rp = BlkD(newargp[0], Record);
-               union block *bp = rp->recdesc;
-               if ((Blk(bp,Proc)->ndynam == -3) ||
-                   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__s")) ||
-                   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__m")) ||
-                   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[
-                                    Blk(bp,Proc)->nfields-1]), "__m"))) {
-                  /* its an object */
-                  return invoke(nargs+1, cargp, n);
-                  }
-               }
+	    if(is:record(newargp[0])) {
+	       struct b_record *rp = BlkD(newargp[0], Record);
+	       union block *bp = rp->recdesc;
+	       if ((Blk(bp,Proc)->ndynam == -3) ||
+		   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__s")) ||
+		   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__m")) ||
+		   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[
+				    Blk(bp,Proc)->nfields-1]), "__m"))) {
+		  /* its an object */
+		  return invoke(nargs+1, cargp, n);
+		  }
+	       }
 
             err_msg(106, newargp);
             return I_Fail;
             }
-         BlkLoc(newargp[0]) = (union block *)tmp;
-         newargp[0].dword = D_Proc;
-         }
+	 BlkLoc(newargp[0]) = (union block *)tmp;
+	 newargp[0].dword = D_Proc;
+	 }
       }
-
+   
    /*
     * newargp[0] is now a descriptor suitable for invocation.  Dereference
     *  the supplied arguments.
     */
 
    proc = BlkD(newargp[0], Proc);
-   if (proc->nstatic >= 0)      /* if negative, don't reference arguments */
+   if (proc->nstatic >= 0)	/* if negative, don't reference arguments */
       for (i = 1; i <= nargs; i++)
          Deref(newargp[i]);
-
+      
    /*
     * Adjust the argument list to conform to what the routine being invoked
     *  expects (proc->nparam).  If nparam is less than 0, the number of
@@ -279,7 +289,7 @@ int invoke(int nargs, dptr *cargp, int *n)
    else {
       if (proc->ndynam >= 0) { /* this is a procedure */
          int lelems, absnparam = abs(nparam);
-         dptr llargp;
+	 dptr llargp;
 
          if (nargs < absnparam - 1) {
             i = absnparam - 1 - nargs;
@@ -290,21 +300,21 @@ int invoke(int nargs, dptr *cargp, int *n)
             nargs = absnparam - 1;
             }
 
-         lelems = nargs - (absnparam - 1);
+	 lelems = nargs - (absnparam - 1);
          llargp = &newargp[absnparam];
          arg_sv = llargp[-1];
 
-         Ollist(lelems, &llargp[-1]);
+	 Ollist(lelems, &llargp[-1]);
 
-         llargp[0] = llargp[-1];
-         llargp[-1] = arg_sv;
+	 llargp[0] = llargp[-1];
+	 llargp[-1] = arg_sv;
          /*
           *  Reload proc pointer in case Ollist triggered a garbage collection.
           */
          proc = BlkD(newargp[0], Proc);
-         newsp = (word *)llargp + 1;
-         nargs = absnparam;
-         }
+	 newsp = (word *)llargp + 1;
+	 nargs = absnparam;
+	 }
       }
 
    if (proc->ndynam < 0) {
@@ -341,17 +351,17 @@ int invoke(int nargs, dptr *cargp, int *n)
    if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->es_stackend)){
       fatalerr(301, NULL);
       }
-#else                                   /* StackCheck */
+#else					/* StackCheck */
 #ifndef MultiProgram
    /*
     * Make a stab at catching interpreter stack overflow.  This does
     * nothing for invocation in a co-expression other than &main.
     */
    if (BlkLoc(k_current) == BlkLoc(k_main) &&
-      ((char *)sp + PerilDelta) > (char *)stackend)
+      ((char *)sp + PerilDelta) > (char *)stackend) 
          fatalerr(301, NULL);
-#endif                                  /* MultiProgram */
-#endif                                  /* StackCheck */
+#endif					/* MultiProgram */
+#endif					/* StackCheck */
 
    /*
     * Build the procedure frame.
@@ -364,7 +374,7 @@ int invoke(int nargs, dptr *cargp, int *n)
    newpfp->pf_scan = NULL;
 #ifdef PatternType
    newpfp->pattern_cache = NULL;
-#endif                                  /* PatternType */
+#endif					/* PatternType */
 
    newpfp->pf_ipc = ipc;
    newpfp->pf_gfp = gfp;
@@ -376,12 +386,12 @@ int invoke(int nargs, dptr *cargp, int *n)
 
    /*
     * If tracing is on, use ctrace to generate a message.
-    */
+    */   
    if (k_trace) {
       k_trace--;
       ctrace(&(proc->pname), nargs, &newargp[1]);
       }
-
+   
    /*
     * Point ipc at the icode entry point of the procedure being invoked.
     */
@@ -405,4 +415,4 @@ int invoke(int nargs, dptr *cargp, int *n)
    return I_Continue;
 }
 
-#endif                                  /* COMPILER */
+#endif					/* COMPILER */

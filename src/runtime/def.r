@@ -6,7 +6,10 @@
  * DefConvert - macro for general form of defaulting conversion.
  */
 #begdef DefConvert(default, dftype, destype, converter, body)
-int default(dptr s, dftype df, destype d)
+int default(s,df,d)
+dptr s;
+dftype df;
+destype d;
    {
    if (is:null(*s)) {
       body
@@ -113,9 +116,9 @@ DefConvert(def_int, C_integer, dptr, cnv_int, IntAsgn)
 #begdef RealAsgn
 #ifdef DescriptorDouble
    d->vword.realval = df;
-#else                                   /* DescriptorDouble */
+#else					/* DescriptorDouble */
    Protect(BlkLoc(*d) = (union block *)alcreal(df), fatalerr(0,NULL));
-#endif                                  /* DescriptorDouble */
+#endif					/* DescriptorDouble */
    d->dword = D_Real;
 #enddef
 
@@ -139,7 +142,9 @@ DefConvert(def_str, dptr, dptr, cnv_str, StrAsgn)
  *  point destination descriptor to it. Note that this routine needs
  *  a cset buffer (cset block) to perform an actual conversion.
  */
-int def_tcset(struct b_cset * cbuf, dptr s, struct b_cset *df, dptr d)
+int def_tcset(cbuf, s, df, d)
+struct b_cset *cbuf, *df;
+dptr s, d;
 {
    if (is:null(*s)) {
       d->dword = D_Cset;
@@ -155,7 +160,9 @@ int def_tcset(struct b_cset * cbuf, dptr s, struct b_cset *df, dptr d)
  *  copy it to destination descriptor. Note that this routine needs
  *  a string buffer to perform an actual conversion.
  */
-int def_tstr(char *sbuf, dptr s, dptr df, dptr d)
+int def_tstr(sbuf, s, df, d)
+char *sbuf;
+dptr s, df, d;
    {
    if (is:null(*s)) {
       *d = *df;

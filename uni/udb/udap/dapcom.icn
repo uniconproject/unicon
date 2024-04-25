@@ -1,0 +1,23 @@
+#
+# relay communication between the target program's std in/out, and udap socket.
+#
+global sock
+procedure main(argv)
+	port := (if &features == "MacOS" then "127.0.0.1" else "") || ":" || pop(argv)
+	every trap("SIGINT" | "SIGHUP" | "SIGPIPE", onExit)
+
+	every !5 do
+		if sock := open(port, "n") then
+			break
+		else
+			delay(1000)
+
+	\sock | stop("failed to connect to ",port, " ", &errortext )
+	repeat every s := !select([sock, &input]) do
+		writes(ready(s === sock)) | writes(sock, ready())
+end
+
+procedure onExit(non)
+	close(\sock)
+	stop()
+end

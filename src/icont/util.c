@@ -12,7 +12,7 @@ extern int optind;
 
 extern char *ofile;
 
-
+
 /*
  * Information about Icon functions.
  */
@@ -34,11 +34,12 @@ char *ftable[] = {
    };
 
 int ftbsize = sizeof(ftable)/sizeof(char *);
-
+
 /*
  * tcalloc - allocate and zero m*n bytes
  */
-pointer tcalloc(unsigned int m, unsigned int n)
+pointer tcalloc(m,n)
+unsigned int m, n;
    {
    pointer a;
 
@@ -46,7 +47,7 @@ pointer tcalloc(unsigned int m, unsigned int n)
       quit("out of memory");
    return a;
    }
-
+
 struct freedchunk {
    char *p;
    struct freedchunk *next;
@@ -57,14 +58,13 @@ struct freedchunk {
  * trealloc - realloc a table making it half again larger and zero the
  *   new part of the table.
  */
-
-pointer
-trealloc(pointer table,      /* table to be realloc()ed */
-         pointer tblfree,    /* reference to table free pointer if there is one */
-         unsigned int *size, /* size of table */
-         int unit_size,      /* number of bytes in a unit of the table */
-         int min_units,      /* the minimum number of units that must be allocated. */
-         char *tbl_name)     /* name of the table */
+pointer trealloc(table, tblfree, size, unit_size, min_units, tbl_name)
+pointer table;      /* table to be realloc()ed */
+pointer tblfree;    /* reference to table free pointer if there is one */
+unsigned int *size; /* size of table */
+int unit_size;      /* number of bytes in a unit of the table */
+int min_units;      /* the minimum number of units that must be allocated. */
+char *tbl_name;     /* name of the table */
    {
    word new_size;
    word num_bytes;
@@ -88,7 +88,7 @@ trealloc(pointer table,      /* table to be realloc()ed */
           quitf("out of memory for %s", tbl_name);
        }
     }
-#endif                                  /* IntBits == 16 */
+#endif					/* IntBits == 16 */
 
    if (tblfree != NULL)
       free_offset = DiffPtrs(*(char **)tblfree,  (char *)table);
@@ -123,12 +123,13 @@ trealloc(pointer table,      /* table to be realloc()ed */
 
    return (pointer)new_tbl;
    }
-
+
 
 /*
  * round2 - round an integer up to the next power of 2.
  */
-unsigned int round2(unsigned int n)
+unsigned int round2(n)
+unsigned int n;
    {
    unsigned int b = 1;
    while (b < n)
@@ -136,7 +137,7 @@ unsigned int round2(unsigned int n)
    return b;
    }
 
-/*
+/* 
  * used by the new pesudo Op_Synt and the E_Syntax
  */
 #define MaxSyntax 17
@@ -144,28 +145,29 @@ unsigned int round2(unsigned int n)
 char *Syntax[]={
       "any",        /* any unidentified syntax */
       "case",       /* entering case expr      */
-      "endcase",    /* exiting case expr       */
+      "endcase",    /* exiting case expr       */  
       "if",         /* entering if expr        */
       "endif",      /* exiting if expr         */
       "ifelse",     /* entering if/else expr   */
       "endifelse",  /* exiting if/else expr    */
       "while",      /* entering while loop     */
-      "endwhile",   /* exiting while loop      */
+      "endwhile",   /* exiting while loop      */ 
       "every",      /* entering every loop     */
       "endevery",   /* exiting every loop      */
       "until",      /* entering until loop     */
       "enduntil",   /* exiting until loop      */
-      "repeat",     /* entering repeat loop    */
-      "endrepeat",  /* exiting repeat loop     */
+      "repeat",     /* entering repeat loop    */ 
+      "endrepeat",  /* exiting repeat loop     */ 
       "suspend",    /* entering suspend loop   */
       "endsuspend"  /* exiting suspend loop    */
   };
 
-int SyntCode(char *s)
+int SyntCode(s)
+char *s;
 {   int i=0;
     for(i=0; i < MaxSyntax ; i++){
       if (strcmp(Syntax[i],s) == 0)
           return i;
-     }
+     } 
     return 0;
-}
+} 

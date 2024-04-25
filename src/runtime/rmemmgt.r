@@ -4,32 +4,36 @@
  *   garbage collection, dump routines
  */
 
+#ifdef CRAY
+#include <malloc.h>
+#endif					/* CRAY */
+
 /*
  * Prototypes
  */
-static void postqual            (dptr dp);
-static void markblock   (dptr dp);
-static void markptr             (union block **ptr);
-static void sweep               (struct b_coexpr *ce);
-static void reclaim             (void);
-static void cofree              (void);
-static void scollect            (word extra);
-static int  qlcmp               (dptr  *q1,dptr  *q2);
-static void adjust              (char *source, char *dest);
-static void compact             (char *source);
-static void mvc         (uword n, char *src, char *dest);
+static void postqual		(dptr dp);
+static void markblock	(dptr dp);
+static void markptr		(union block **ptr);
+static void sweep		(struct b_coexpr *ce);
+static void reclaim		(void);
+static void cofree		(void);
+static void scollect		(word extra);
+static int  qlcmp		(dptr  *q1,dptr  *q2);
+static void adjust		(char *source, char *dest);
+static void compact		(char *source);
+static void mvc		(uword n, char *src, char *dest);
 
 #ifdef MultiProgram
-static void markprogram (struct progstate *pstate);
-#endif                                  /* MultiProgram */
+static void markprogram	(struct progstate *pstate);
+#endif					/* MultiProgram */
 #ifdef Concurrent
 static void markthreads();
-#endif                                  /* Concurrent */
+#endif					/* Concurrent */
 #if COMPILER
 static void sweep_pfps(struct p_frame *fp);
 #else
-static void sweep_stk   (struct b_coexpr *ce);
-#endif                                  /* COMPILER */
+static void sweep_stk	(struct b_coexpr *ce);
+#endif					/* COMPILER */
 
 #ifdef VerifyHeap
 static void vrfyCrash(const char *fmt, ...);
@@ -41,7 +45,7 @@ static void vrfyRegion(int expected);
 #ifdef Arrays
 static void vrfy_Intarray(struct b_intarray *b);
 static void vrfy_Realarray(struct b_realarray *b);
-#endif                                  /* Arrays */
+#endif					/* Arrays */
 static void vrfy_File(struct b_file *b);
 static void vrfy_Cons(struct b_cons *b);
 static void vrfy_Record(struct b_record *b);
@@ -64,7 +68,7 @@ word coll_stat = 0;             /* collections in static region */
 word coll_str = 0;              /* collections in string region */
 word coll_blk = 0;              /* collections in block region */
 word coll_tot = 0;              /* total collections */
-#endif                          /* MultiProgram */
+#endif				/* MultiProgram */
 word alcnum = 0;                /* co-expressions allocated since g.c. */
 
 dptr *quallist;                 /* string qualifier list */
@@ -81,7 +85,7 @@ int qualfail;                   /* flag: qualifier list overflow */
       postqual(&(d)); \
    else if (Pointer(d))\
       markblock(&(d));
-
+
 /*
  * Allocated block size table (sizes given in bytes).  A size of -1 is used
  *  for types that have no blocks; a size of 0 indicates that the
@@ -95,9 +99,9 @@ int bsizes[] = {
      0,                       /* T_Lrgint (2), large integer */
 #ifdef DescriptorDouble
     -1,
-#else                                   /* DescriptorDouble */
+#else					/* DescriptorDouble */
      sizeof(struct b_real),   /* T_Real (3), real number */
-#endif                                  /* DescriptorDouble */
+#endif					/* DescriptorDouble */
      sizeof(struct b_cset),   /* T_Cset (4), cset */
      sizeof(struct b_file),   /* T_File (5), file block */
      0,                       /* T_Proc (6), procedure block */
@@ -122,21 +126,21 @@ int bsizes[] = {
      -1,                      /* T_Kywdevent (25), event keyword variable */
 #ifdef PatternType
      sizeof(struct b_pattern),   /* T_Pattern (26), pattern block */
-     sizeof(struct b_pelem),     /* T_Pattern (27), pattern element */
-#else                                   /* PatternType */
+     sizeof(struct b_pelem),     /* T_Pattern (27), pattern element */    
+#else					/* PatternType */
      0,
      0,
-#endif                                  /* PatternType */
+#endif					/* PatternType */
 #ifdef EventMon
      sizeof(struct b_tvmonitored),
-#else                                   /* EventMon */
+#else					/* EventMon */
      0,
-#endif                                  /* EventMon */
-     0,                         /* T_Intarray (29), int array */
-     0,                         /* T_Realarray (30), real array */
-     sizeof(struct b_cons),     /* T_Cons (31), cons cell */
+#endif					/* EventMon */
+     0,				/* T_Intarray (29), int array */
+     0,				/* T_Realarray (30), real array */
+     sizeof(struct b_cons),	/* T_Cons (31), cons cell */
     };
-
+
 /*
  * Table of offsets (in bytes) to first descriptor in blocks.  -1 is for
  *  types not allocated, 0 for blocks with no descriptors.
@@ -150,30 +154,30 @@ int firstd[] = {
 
 #ifdef Concurrent
      4*WordSize,              /* T_File (5), file block */
-#else                                   /* Concurrent */
+#else					/* Concurrent */
      3*WordSize,              /* T_File (5), file block */
 #endif
 
 #ifdef MultiProgram
      8*WordSize,              /* T_Proc (6), procedure block */
-#else                           /* MultiProgram */
+#else				/* MultiProgram */
      7*WordSize,              /* T_Proc (6), procedure block */
-#endif                          /* MultiProgram */
+#endif				/* MultiProgram */
 
 #ifdef Concurrent
      6*WordSize,              /* T_Record (7), record block */
-#else                                   /* Concurrent */
+#else					/* Concurrent */
      4*WordSize,              /* T_Record (7), record block */
-#endif                                  /* Concurrent */
+#endif					/* Concurrent */
      0,                       /* T_List (8), list header block */
      7*WordSize,              /* T_Lelem (9), list element block */
      0,                       /* T_Set (10), set header block */
      3*WordSize,              /* T_Selem (11), set element block */
 #ifdef Concurrent
      (6+HSegs)*WordSize,      /* T_Table (12), table header block */
-#else                                   /* Concurrent */
+#else					/* Concurrent */
      (4+HSegs)*WordSize,      /* T_Table (12), table header block */
-#endif                                  /* Concurrent */
+#endif					/* Concurrent */
      3*WordSize,              /* T_Telem (13), table element block */
      3*WordSize,              /* T_Tvtbl (14), table element trapped variable */
      0,                       /* T_Slots (15), set/table hash block */
@@ -181,9 +185,9 @@ int firstd[] = {
 
 #if COMPILER
      2*WordSize,              /* T_Refresh (17), refresh block */
-#else                           /* COMPILER */
+#else				/* COMPILER */
      (4+Wsizeof(struct pf_marker))*WordSize, /* T_Refresh (17), refresh block */
-#endif                          /* COMPILER */
+#endif				/* COMPILER */
 
     -1,                       /* T_Coexpr (18), co-expression block */
      0,                       /* T_External (19), external block */
@@ -193,14 +197,14 @@ int firstd[] = {
      -1,                      /* T_Kywdwin (23), keyword &window */
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
-    0,                          /* T_Pattern (26), pattern block */
+    0,				/* T_Pattern (26), pattern block */
     5*WordSize,              /* T_Pelem (27), pattern element */
-    2*WordSize,                 /* T_Tvmonitored */
-    0,                          /* T_Intarray (29), integer array */
-    0,                          /* T_Realarray (30), real array */
-    0,                          /* T_Cons (31), cons cell */
+    2*WordSize,			/* T_Tvmonitored */
+    0,				/* T_Intarray (29), integer array */
+    0,				/* T_Realarray (30), real array */
+    0,				/* T_Cons (31), cons cell */
     };
-
+
 /*
  * Table of offsets (in bytes) to first pointer in blocks.  -1 is for
  *  types not allocated, 0 for blocks with no pointers.
@@ -220,14 +224,14 @@ int firstp[] = {
      6*WordSize,              /* T_Set (10), set header block */
      1*WordSize,              /* T_Selem (11), set element block */
      6*WordSize,              /* T_Table (12), table header block */
-#else                           /* Concurrent */
+#else				/* Concurrent */
      3*WordSize,              /* T_Record (7), record block */\
      3*WordSize,              /* T_List (8), list header block */
      2*WordSize,              /* T_Lelem (9), list element block */
      4*WordSize,              /* T_Set (10), set header block */
      1*WordSize,              /* T_Selem (11), set element block */
      4*WordSize,              /* T_Table (12), table header block */
-#endif                          /* Concurrent */
+#endif				/* Concurrent */
      1*WordSize,              /* T_Telem (13), table element block */
      1*WordSize,              /* T_Tvtbl (14), table element trapped variable */
      2*WordSize,              /* T_Slots (15), set/table hash block */
@@ -243,12 +247,12 @@ int firstp[] = {
      -1,                      /* T_Kywdevent (25), event keyword variable */
     3*WordSize,               /* T_Pattern(26) pattern block*/
     2*WordSize,               /* T_Pelem(27) pattern element block*/
-    -1,                         /* T_Tvmonitored (28) */
-    2*WordSize,                 /* T_Intarray (29), integer array */
-    2*WordSize,                 /* T_Realarray (30), integer array */
-    1*WordSize,                 /* T_Cons (31), cons cell */
+    -1,				/* T_Tvmonitored (28) */
+    2*WordSize,			/* T_Intarray (29), integer array */
+    2*WordSize,			/* T_Realarray (30), integer array */
+    1*WordSize,			/* T_Cons (31), cons cell */
     };
-
+
 /*
  * Table of number of pointers in blocks.  -1 is for types not allocated and
  *  types without pointers, 0 for pointers through the end of the block.
@@ -282,12 +286,12 @@ int ptrno[] = {
     -1,                       /* T_Kywdevent (25), event keyword variable */
      1,                       /* T_Pattern (26), pattern block */
      1,                       /* T_Pelem (27), pattern element block */
-    -1,                         /* T_Tvmonitored (28) */
-     2,                         /* T_Intarray (29), integer array */
-     2,                         /* T_Realarray (30), real array */
-     2,                         /* T_Cons (31), cons cell */
+    -1,				/* T_Tvmonitored (28) */
+     2,				/* T_Intarray (29), integer array */
+     2,				/* T_Realarray (30), real array */
+     2,				/* T_Cons (31), cons cell */
     };
-
+
 /*
  * Table of block names used by debugging functions.
  */
@@ -320,37 +324,37 @@ char *blkname[] = {
    "illegal object",                    /* T_Kywdevent (25) */
    "pattern",                           /* T_Pattern (26) */
    "pattern element",                   /* T_Pelem (27) */
-   "monitor trapped variable",          /* T_Tvmonitored (28) */
-   "integer array",                     /* T_Intarray (29) */
-   "real array",                        /* T_Realarray (30) */
-   "cons",                              /* T_Cons (31) */
+   "monitor trapped variable",		/* T_Tvmonitored (28) */
+   "integer array",			/* T_Intarray (29) */
+   "real array",			/* T_Realarray (30) */
+   "cons",				/* T_Cons (31) */
    };
-
+
 /*
  * Sizes of hash chain segments.
  *  Table size must equal or exceed HSegs.
  */
 uword segsize[] = {
-   ((uword)HSlots),                     /* segment 0 */
-   ((uword)HSlots),                     /* segment 1 */
-   ((uword)HSlots) << 1,                /* segment 2 */
-   ((uword)HSlots) << 2,                /* segment 3 */
-   ((uword)HSlots) << 3,                /* segment 4 */
-   ((uword)HSlots) << 4,                /* segment 5 */
-   ((uword)HSlots) << 5,                /* segment 6 */
-   ((uword)HSlots) << 6,                /* segment 7 */
-   ((uword)HSlots) << 7,                /* segment 8 */
-   ((uword)HSlots) << 8,                /* segment 9 */
-   ((uword)HSlots) << 9,                /* segment 10 */
-   ((uword)HSlots) << 10,               /* segment 11 */
-   ((uword)HSlots) << 11,               /* segment 12 */
-   ((uword)HSlots) << 12,               /* segment 13 */
-   ((uword)HSlots) << 13,               /* segment 14 */
-   ((uword)HSlots) << 14,               /* segment 15 */
-   ((uword)HSlots) << 15,               /* segment 16 */
-   ((uword)HSlots) << 16,               /* segment 17 */
-   ((uword)HSlots) << 17,               /* segment 18 */
-   ((uword)HSlots) << 18,               /* segment 19 */
+   ((uword)HSlots),			/* segment 0 */
+   ((uword)HSlots),			/* segment 1 */
+   ((uword)HSlots) << 1,		/* segment 2 */
+   ((uword)HSlots) << 2,		/* segment 3 */
+   ((uword)HSlots) << 3,		/* segment 4 */
+   ((uword)HSlots) << 4,		/* segment 5 */
+   ((uword)HSlots) << 5,		/* segment 6 */
+   ((uword)HSlots) << 6,		/* segment 7 */
+   ((uword)HSlots) << 7,		/* segment 8 */
+   ((uword)HSlots) << 8,		/* segment 9 */
+   ((uword)HSlots) << 9,		/* segment 10 */
+   ((uword)HSlots) << 10,		/* segment 11 */
+   ((uword)HSlots) << 11,		/* segment 12 */
+   ((uword)HSlots) << 12,		/* segment 13 */
+   ((uword)HSlots) << 13,		/* segment 14 */
+   ((uword)HSlots) << 14,		/* segment 15 */
+   ((uword)HSlots) << 15,		/* segment 16 */
+   ((uword)HSlots) << 16,		/* segment 17 */
+   ((uword)HSlots) << 17,		/* segment 18 */
+   ((uword)HSlots) << 18,		/* segment 19 */
    };
 
 /*
@@ -362,13 +366,13 @@ void initalloc()
    {
 #ifdef Concurrent
    CURTSTATE();
-#endif                                  /* Concurrent */
-#else                                   /* COMPILER */
+#endif					/* Concurrent */
+#else					/* COMPILER */
 #ifdef MultiProgram
 void initalloc(word codesize, struct progstate *p)
-#else                                   /* MultiProgram */
+#else					/* MultiProgram */
 void initalloc(word codesize)
-#endif                                  /* MultiProgram */
+#endif					/* MultiProgram */
    {
 #ifdef MultiProgram
    struct region *ps, *pb;
@@ -381,18 +385,18 @@ void initalloc(word codesize)
     */
 #ifdef MultiProgram
    if (codesize)
-#endif                                  /* MultiProgram */
+#endif					/* MultiProgram */
    if ((code = (char *)AllocReg(codesize)) == NULL)
       error(NULL,
-         "insufficient memory, corrupted icode file, or wrong platform");
-#endif                                  /* COMPILER */
+	 "insufficient memory, corrupted icode file, or wrong platform");
+#endif					/* COMPILER */
 
    /*
-    * Set up allocated memory.  The regions are:
-    *   Static memory region (not used)
-    *   Allocated string region
-    *   Allocate block region
-    *   Qualifier list
+    * Set up allocated memory.	The regions are:
+    *	Static memory region (not used)
+    *	Allocated string region
+    *	Allocate block region
+    *	Qualifier list
     */
 
 #ifdef MultiProgram
@@ -413,7 +417,7 @@ void initalloc(word codesize)
          error(NULL, "insufficient memory for qualifier list");
       equallist = (dptr *)((char *)quallist + qualsize);
       }
-#else                                   /* MultiProgram */
+#else					/* MultiProgram */
    {
    uword t1, t2;
 #if ConcurrentCOMPILER
@@ -439,14 +443,15 @@ void initalloc(word codesize)
       error(NULL, "insufficient memory for qualifier list");
    equallist = (dptr *)((char *)quallist + qualsize);
    }
-#endif                                  /* MultiProgram */
+#endif					/* MultiProgram */
    }
-
+
 /*
  * collect - do a garbage collection of currently active regions.
  */
 
- int collect(int region)
+int collect(region)
+int region;
    {
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
    static int setrlimit_firsttime=1, setrlimit_count=0;
@@ -458,7 +463,7 @@ void initalloc(word codesize)
    /* what is this and why? */
    curblock = curtblock;
    curstring = curtstring;
-#endif                                  /* Concurrent */
+#endif					/* Concurrent */
 
 #ifdef VerifyHeap
    vrfyStart();
@@ -473,8 +478,8 @@ void initalloc(word codesize)
       char *s;
       setrlimit_firsttime = 0;
       if ((s=getenv("SETRLIMIT_COUNT"))) {
-         setrlimit_count = atoi(s);
-         }
+	 setrlimit_count = atoi(s);
+	 }
       }
 
    getrlimit(RLIMIT_STACK , &rl);
@@ -486,13 +491,13 @@ void initalloc(word codesize)
    if (rl.rlim_cur < curblock->size) {
       rl.rlim_cur = curblock->size;
       if (setrlimit(RLIMIT_STACK , &rl) == -1) {
-         if (setrlimit_count != 0) {
-            fprintf(stderr,"iconx setrlimit(%lu) failed %d\n",
-                    (unsigned long)(rl.rlim_cur),errno);
-            fflush(stderr);
-            setrlimit_count--;
-            }
-         }
+	 if (setrlimit_count != 0) {
+	    fprintf(stderr,"iconx setrlimit(%lu) failed %d\n",
+		    (unsigned long)(rl.rlim_cur),errno);
+	    fflush(stderr);
+	    setrlimit_count--;
+	    }
+	 }
       }
 #endif
 
@@ -501,8 +506,8 @@ void initalloc(word codesize)
 #if E_Collect
    if (!noMTevents)
       EVVal((word)region,E_Collect);
-#endif                                  /* E_Collect */
-#endif                                  /* Concurrent */
+#endif					/* E_Collect */
+#endif					/* Concurrent */
 
    switch (region) {
       case Static:
@@ -511,7 +516,7 @@ void initalloc(word codesize)
       case Strings:
          coll_str++;
          break;
-      case Blocks:
+      case Blocks:  
          coll_blk++;
          break;
       }
@@ -530,7 +535,7 @@ void initalloc(word codesize)
 #endif                  /* VerifyHeap */
       return 0;
       }
-#endif                                  /* !COMPILER */
+#endif					/* !COMPILER */
 
    /*
     * Sync the values (used by sweep) in the coexpr block for &current
@@ -542,12 +547,12 @@ void initalloc(word codesize)
 /*  This is replaced by a better mechanism: point directly to the ce variable
  * and don't host any of these variables in tstate.
  * Ex:
- *    instead of "tend" refering to
+ *    instead of "tend" refering to 
  *     tstate->Tend
- *    it will refer directly to
- *          tstate->c->es_tend
+ *    it will refer directly to 
+ *          tstate->c->es_tend   
  *
- *   The code here will be kept until we are are sure the alternative is a
+ *   The code here will be kept until we are are sure the alternative is a 
  *   better option and we don't have surprises.
  *
    { struct threadstate *tstate;
@@ -565,7 +570,7 @@ void initalloc(word codesize)
 *
 */
 
-#else                                   /* Concurrent */
+#else					/* Concurrent */
    {
    struct b_coexpr *cp;
    cp = BlkD(k_current, Coexpr);
@@ -577,9 +582,9 @@ void initalloc(word codesize)
    cp->es_gfp = gfp;
    cp->es_efp = efp;
    cp->es_sp = sp;
-#endif                                  /* !COMPILER */
+#endif					/* !COMPILER */
    }
-#endif                                  /* Concurrent */
+#endif					/* Concurrent */
 
    /*
     * Reset qualifier list.
@@ -595,8 +600,8 @@ void initalloc(word codesize)
 #else
 #if ConcurrentCOMPILER
    markthreads();
-#endif                                  /* ConcurrentCOMPILER */
-#endif                                  /* MultiProgram */
+#endif	                                /* ConcurrentCOMPILER */
+#endif					/* MultiProgram */
 
    markblock(&k_main);
    markblock(&k_current);
@@ -609,8 +614,8 @@ void initalloc(word codesize)
 #if !ConcurrentCOMPILER
    postqual(&k_subject);
    postqual(&kywd_prog);
-#endif                                  /* ConcurrentCOMPILER */
-#endif                                  /* MultiProgram */
+#endif					/* ConcurrentCOMPILER */
+#endif					/* MultiProgram */
 
 #ifdef Concurrent
    /* turn the non-concurrent maps2 and maps3 code into a loop over all threads */
@@ -618,16 +623,16 @@ void initalloc(word codesize)
    struct threadstate *curtstate;     /* do NOT change this name, the maps[23] macros depend on it */
    for (curtstate = &roottstate; curtstate != NULL; curtstate = curtstate->next) {
 #endif
-        if (Qual(maps2))                     /*  caution: the cached arguments of */
-           postqual(&maps2);                 /*  map may not be strings. */
-        else if (Pointer(maps2))
-           markblock(&maps2);
-        if (Qual(maps3))
-           postqual(&maps3);
-        else if (Pointer(maps3))
-           markblock(&maps3);
+	if (Qual(maps2))                     /*  caution: the cached arguments of */
+      	   postqual(&maps2);                 /*  map may not be strings. */
+   	else if (Pointer(maps2))
+      	   markblock(&maps2);
+   	if (Qual(maps3))
+      	   postqual(&maps3);
+   	else if (Pointer(maps3))
+      	   markblock(&maps3);
 #ifdef Concurrent
-       }                /* These two braces match the curtstate loop */
+       }		/* These two braces match the curtstate loop */
    }            /* and struct threadstate declaration above */
 #endif /* Concurrent */
 
@@ -641,42 +646,42 @@ void initalloc(word codesize)
 
      for (ws = wstates; ws ; ws = ws->next) {
 #ifdef GraphicsGL
-        /*
+        /* 
          * For some reason, the 2d display doesn't get marked because
          * the title word of {BlkLoc(ws->filep)} would contain the address
-         * of {ws->funclist2d} as it was getting explicitly marked,
+         * of {ws->funclist2d} as it was getting explicitly marked, 
          * resulting in the 2d display not getting marked
          * at all and a subsequent memory violation after GC.
          * It would seem that shouldn't happen during GC, but I believe
          * I've checked for all buffer overflows in drawgeometry2d()...
          * What's worse is this memory violation is sporadic...
-         *
-         * For now, try marking the display list before the Unicon window
+         * 
+         * For now, try marking the display list before the Unicon window 
          * values. It seems to work...?
          * - Gigi
          */
         if (is:list(ws->funclist2d))
-           markblock(&(ws->funclist2d));
-#endif                                  /* GraphicsGL */
+	   markblock(&(ws->funclist2d));
+#endif					/* GraphicsGL */
 
-        if (is:file(ws->filep))
-           markblock(&(ws->filep));
-        if (is:list(ws->listp))
-           markblock(&(ws->listp));
+	if (is:file(ws->filep))
+	   markblock(&(ws->filep));
+	if (is:list(ws->listp))
+	   markblock(&(ws->listp));
 #ifdef Graphics3D
         if (is:list(ws->funclist))
-           markblock(&(ws->funclist));
+	   markblock(&(ws->funclist));
 #endif                            /* Graphics3D */
         }
 
 #ifdef Graphics3D
      for (wc = wcntxts; wc ; wc = wc->next) {
-        if (wc->normals) markptr((union block **)&(wc->normals));
-        if (wc->texcoords) markptr((union block **)(&(wc->texcoords)));
-        }
+	if (wc->normals) markptr((union block **)&(wc->normals));
+	if (wc->texcoords) markptr((union block **)(&(wc->texcoords)));
+	}
 #endif                            /* Graphics3D */
    }
-#endif                                  /* Graphics */
+#endif					/* Graphics */
 
    /*
     * Mark the globals and the statics.
@@ -686,15 +691,15 @@ void initalloc(word codesize)
    { register struct descrip *dp;
    for (dp = globals; dp < eglobals; dp++)
       if (Qual(*dp))
-         postqual(dp);
+	 postqual(dp);
       else if (Pointer(*dp))
-         markblock(dp);
+	 markblock(dp);
 
    for (dp = statics; dp < estatics; dp++)
       if (Qual(*dp))
-         postqual(dp);
+	 postqual(dp);
       else if (Pointer(*dp))
-         markblock(dp);
+	 markblock(dp);
    }
 
 #ifdef Graphics
@@ -702,16 +707,16 @@ void initalloc(word codesize)
       markblock(&(kywd_xwin[XKey_Window]));
    if (is:file(lastEventWin))
       markblock(&(lastEventWin));
-#endif                                  /* Graphics */
-#endif                                  /* MultiProgram */
+#endif					/* Graphics */
+#endif					/* MultiProgram */
 
 #if COMPILER
    sweep_pfps(pfp);
-#endif                                  /* COMPILER */
+#endif					/* COMPILER */
 
 #if NT
    markptr((union block **) &LstTmpFiles);
-#endif                                  /* NT */
+#endif					/* NT */
 
    reclaim();
 
@@ -723,7 +728,7 @@ void initalloc(word codesize)
       char *source = br->base, *free = br->free;
       uword NoMark = (uword) ~F_Mark;
       while (source < free) {
-         BlkType(source) &= NoMark;
+	 BlkType(source) &= NoMark;
          source += BlkSize(source);
          }
       }
@@ -731,7 +736,7 @@ void initalloc(word codesize)
       char *source = br->base, *free = br->free;
       uword NoMark = (uword) ~F_Mark;
       while (source < free) {
-         BlkType(source) &= NoMark;
+	 BlkType(source) &= NoMark;
          source += BlkSize(source);
          }
       }
@@ -743,8 +748,8 @@ void initalloc(word codesize)
       mmrefresh();
       EVValD(&nulldesc, E_EndCollect);
       }
-#endif                                  /* instrument allocation events */
-#endif                                  /* Concurrent */
+#endif					/* instrument allocation events */
+#endif					/* Concurrent */
 
 #ifdef VerifyHeap
    vrfyEnd();
@@ -752,7 +757,7 @@ void initalloc(word codesize)
 
    return 1;
    }
-
+
 #if defined(MultiProgram) || ConcurrentCOMPILER
 /*
  * use  threadstate in order to sync VM registers
@@ -767,7 +772,7 @@ static void markthread(struct threadstate *tcp)
    if(!is:null(tcp->Value_tmp)) {
       PostDescrip(tcp->Value_tmp);
       }
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
    if(!is:null(tcp->Kywd_pos)) {
       PostDescrip(tcp->Kywd_pos);
       }
@@ -807,17 +812,18 @@ static void markthreads()
    markthread(&roottstate);
    for (t = roottstate.next; t != NULL; t = t->next)
       if (t->c && (IS_TS_THREAD(t->c->status))){
-         markthread(t);
-         }
+	 markthread(t);
+	 }
 }
-#endif                                  /* Concurrent */
-#endif                                  /* MultiProgram || ConcurrentCOMPILER */
+#endif					/* Concurrent */
+#endif					/* MultiProgram || ConcurrentCOMPILER */
 
 #ifdef MultiProgram
 /*
  * markprogram - traverse pointers out of a program state structure
  */
-static void markprogram(struct progstate *pstate)
+static void markprogram(pstate)
+struct progstate *pstate;
    {
    struct descrip *dp;
 
@@ -826,9 +832,9 @@ static void markprogram(struct progstate *pstate)
     */
 #ifdef Concurrent
    markthreads();
-#else                                   /* Concurrent */
+#else					/* Concurrent */
    markthread(pstate->tstate);
-#endif                                  /* Concurrent */
+#endif					/* Concurrent */
 
    PostDescrip(pstate->K_main);
 
@@ -841,7 +847,7 @@ static void markprogram(struct progstate *pstate)
 
 #ifdef Graphics3D
    PostDescrip(pstate->AmperPick);
-#endif                                  /* Graphics3D */
+#endif					/* Graphics3D */
 
    /* Kywd_err, &error, always an integer */
    /* Kywd_pos, &pos, always an integer */
@@ -856,38 +862,44 @@ static void markprogram(struct progstate *pstate)
     */
    for (dp = pstate->Globals; dp < pstate->Eglobals; dp++)
       if (Qual(*dp))
-         postqual(dp);
+	 postqual(dp);
       else if (Pointer(*dp))
-         markblock(dp);
+	 markblock(dp);
 
    for (dp = pstate->Statics; dp < pstate->Estatics; dp++)
       if (Qual(*dp))
-         postqual(dp);
+	 postqual(dp);
       else if (Pointer(*dp))
-         markblock(dp);
+	 markblock(dp);
 
    /*
     * no marking for &x, &y, &row, &col, &interval, all integers
     */
 #ifdef Graphics
-   PostDescrip(pstate->LastEventWin);   /* last Event() win */
-   PostDescrip(pstate->Kywd_xwin[XKey_Window]); /* &window */
-#endif                                  /* Graphics */
+   PostDescrip(pstate->LastEventWin);	/* last Event() win */
+   PostDescrip(pstate->Kywd_xwin[XKey_Window]);	/* &window */
+#endif					/* Graphics */
 
    }
-#endif                                  /* MultiProgram */
-
+#endif					/* MultiProgram */
+
 /*
  * postqual - mark a string qualifier.  Strings outside the string space
  *  are ignored.
  */
 
-static void postqual(dptr dp)
+static void postqual(dp)
+dptr dp;
    {
    char *newqual;
    CURTSTATE();
 
-   if (InRange(strbase,StrLoc(*dp),strfree + 1)) {
+#ifdef CRAY
+   if (strbase <= StrLoc(*dp) && StrLoc(*dp) < (strfree + 1)) {
+#else					/* CRAY */
+   if (InRange(strbase,StrLoc(*dp),strfree + 1)) { 
+#endif					/* CRAY */
+
       /*
        * The string is in the string space.  Add it to the string qualifier
        *  list, but before adding it, expand the string qualifier list if
@@ -895,30 +907,31 @@ static void postqual(dptr dp)
        */
       if (qualfree >= equallist) {
 
-         /* reallocate a new qualifier list that's twice as large */
-         newqual = (char *)realloc((char *)quallist, (msize)(2 * qualsize));
-         if (newqual) {
-            quallist = (dptr *)newqual;
-            qualfree = (dptr *)(newqual + qualsize);
-            qualsize *= 2;
-            equallist = (dptr *)(newqual + qualsize);
-            }
-         else {
+	 /* reallocate a new qualifier list that's twice as large */
+	 newqual = (char *)realloc((char *)quallist, (msize)(2 * qualsize));
+	 if (newqual) {
+	    quallist = (dptr *)newqual;
+	    qualfree = (dptr *)(newqual + qualsize);
+	    qualsize *= 2;
+	    equallist = (dptr *)(newqual + qualsize);
+	    }
+	 else {
             qualfail = 1;
             return;
-            }
+	    }
 
          }
       *qualfree++ = dp;
       }
    }
-
+
 /*
  * markblock - mark each accessible block in the block region and build
  *  back-list of descriptors pointing to that block. (Phase I of garbage
  *  collection.)
  */
-static void markblock(dptr dp)
+static void markblock(dp)
+dptr dp;
    {
    register dptr dp1;
    register char *block, *endblock;
@@ -981,15 +994,15 @@ static void markblock(dptr dp)
              * The block contains pointers; mark each pointer.
              */
             ptr = (union block **)(block + fdesc);
-            numptr = ptrno[type];
-            if (numptr > 0)
-               lastptr = ptr + numptr;
-            else
-               lastptr = (union block **)endblock;
-            for (; ptr < lastptr; ptr++)
-               if (*ptr != NULL)
+	    numptr = ptrno[type];
+	    if (numptr > 0)
+	       lastptr = ptr + numptr;
+	    else
+	       lastptr = (union block **)endblock;
+	    for (; ptr < lastptr; ptr++)
+	       if (*ptr != NULL)
                   markptr(ptr);
-            }
+	    }
          if ((fdesc = firstd[type]) > 0)
             /*
              * The block contains descriptors; mark each descriptor.
@@ -1027,7 +1040,7 @@ static void markblock(dptr dp)
           */
          markprogram(((struct b_coexpr *)block)->program);
          }
-#endif                                  /* MultiProgram */
+#endif					/* MultiProgram */
 
 #ifdef CoExpr
       /*
@@ -1051,17 +1064,17 @@ static void markblock(dptr dp)
          markblock(&((struct b_coexpr *)block)->freshblk);
 
 #ifdef Concurrent
-
+       
        if (!is:null(cp->inbox))
-         markblock(&(cp->inbox));
+	 markblock(&(cp->inbox));
        if (!is:null(cp->outbox))
-         markblock(&(cp->outbox));
+	 markblock(&(cp->outbox));
        if (!is:null(cp->cequeue))
-         markblock(&(cp->cequeue));
-       if (cp->handdata!=NULL)
-            markblock((cp->handdata));
+	 markblock(&(cp->cequeue));
+       if (cp->handdata!=NULL) 
+	    markblock((cp->handdata));
 
-#endif                                  /* Concurrent */
+#endif					/* Concurrent */
 #endif                                  /* CoExpr */
       }
 
@@ -1072,7 +1085,7 @@ static void markblock(dptr dp)
        * Look for this block in other allocated block regions.
        */
       for (rp = curblock->Gnext; rp; rp = rp->Gnext)
-         if (InRange(rp->base,block,rp->free)) break;
+	 if (InRange(rp->base,block,rp->free)) break;
 
       if (rp == NULL)
          for (rp = curblock->Gprev; rp; rp = rp->Gprev)
@@ -1102,22 +1115,22 @@ static void markblock(dptr dp)
        */
       endblock = block + BlkSize(block);
 
-      BlkType(block) |= F_Mark;                 /* mark the block */
+      BlkType(block) |= F_Mark;			/* mark the block */
 
       if ((fdesc = firstp[type]) > 0) {
          /*
           * The block contains pointers; mark each pointer.
           */
          ptr = (union block **)(block + fdesc);
-         numptr = ptrno[type];
-         if (numptr > 0)
-            lastptr = ptr + numptr;
-         else
-            lastptr = (union block **)endblock;
-         for (; ptr < lastptr; ptr++)
-            if (*ptr != NULL)
+	 numptr = ptrno[type];
+	 if (numptr > 0)
+	    lastptr = ptr + numptr;
+	 else
+	    lastptr = (union block **)endblock;
+	 for (; ptr < lastptr; ptr++)
+	    if (*ptr != NULL)
                markptr(ptr);
-         }
+	 }
       if ((fdesc = firstd[type]) > 0)
          /*
           * The block contains descriptors; mark each descriptor.
@@ -1131,7 +1144,7 @@ static void markblock(dptr dp)
             }
       }
    }
-
+
 int is_in_a_block_region(char *block)
 {
    struct region *rp;
@@ -1156,7 +1169,8 @@ int is_in_a_block_region(char *block)
  *  is just a block pointer, not a descriptor.
  */
 
-static void markptr(union block **ptr)
+static void markptr(ptr)
+union block **ptr;
    {
    register dptr dp;
    register char *block, *endblock;
@@ -1227,7 +1241,7 @@ static void markptr(union block **ptr)
        * Look for this block in other allocated block regions.
        */
       for (rp = curblock->Gnext;rp;rp = rp->Gnext)
-         if (InRange(rp->base,block,rp->free)) break;
+	 if (InRange(rp->base,block,rp->free)) break;
 
       if (rp == NULL)
          for (rp = curblock->Gprev;rp;rp = rp->Gprev)
@@ -1257,7 +1271,7 @@ static void markptr(union block **ptr)
        */
       endblock = block + BlkSize(block);
 
-      BlkType(block) |= F_Mark;                 /* mark the block */
+      BlkType(block) |= F_Mark;			/* mark the block */
 
       if ((fdesc = firstp[type]) > 0) {
          /*
@@ -1266,13 +1280,13 @@ static void markptr(union block **ptr)
          ptr1 = (union block **)(block + fdesc);
          numptr = ptrno[type];
          if (numptr > 0)
-            lastptr = ptr1 + numptr;
-         else
-            lastptr = (union block **)endblock;
-         for (; ptr1 < lastptr; ptr1++)
-            if (*ptr1 != NULL)
+	    lastptr = ptr1 + numptr;
+	 else
+	    lastptr = (union block **)endblock;
+	 for (; ptr1 < lastptr; ptr1++)
+	    if (*ptr1 != NULL)
                markptr(ptr1);
-         }
+	 }
       if ((fdesc = firstd[type]) > 0)
          /*
           * The block contains descriptors; mark each descriptor.
@@ -1286,13 +1300,14 @@ static void markptr(union block **ptr)
             }
          }
    }
-
+
 /*
  * sweep - sweep the chain of tended descriptors for a co-expression
  *  marking the descriptors.
  */
 
-static void sweep(struct b_coexpr *ce)
+static void sweep(ce)
+struct b_coexpr *ce;
    {
    register struct tend_desc *tp;
    register int i;
@@ -1304,7 +1319,7 @@ static void sweep(struct b_coexpr *ce)
          else if (Pointer(tp->d[i])) {
             if(BlkLoc(tp->d[i]) != NULL)
                markblock(&tp->d[i]);
-            }
+	    }
          }
       }
 #if COMPILER
@@ -1313,7 +1328,7 @@ static void sweep(struct b_coexpr *ce)
    sweep_stk(ce);
 #endif
    }
-
+
 #if COMPILER
 
 static void sweep_pfps(struct p_frame *fp)
@@ -1321,10 +1336,10 @@ static void sweep_pfps(struct p_frame *fp)
 #ifdef PatternType
    while (fp != NULL) {
       if (fp->pattern_cache != NULL)
-         markptr((union block **)&(fp->pattern_cache));
+	 markptr((union block **)&(fp->pattern_cache));
       fp = fp->old_pfp;
       }
-#endif                                  /* PatternType */
+#endif					/* PatternType */
 }
 #else
 /*
@@ -1341,7 +1356,8 @@ static void sweep_pfps(struct p_frame *fp)
  *  the "if it can't be identified it's a descriptor" methodology.
  */
 
-static void sweep_stk(struct b_coexpr *ce)
+static void sweep_stk(ce)
+struct b_coexpr *ce;
    {
    register word *s_sp;
    register struct pf_marker *fp;
@@ -1366,15 +1382,15 @@ static void sweep_stk(struct b_coexpr *ce)
 #ifdef MultiProgram
    if (fp == 0) {
       if (is:list(* (dptr) (s_sp - 1))) {
-         /*
-          * this is the argument list of an un-started task
-          */
+	 /*
+	  * this is the argument list of an un-started task
+	  */
          if (Pointer(*((dptr)(&s_sp[-1])))) {
             markblock((dptr)&s_sp[-1]);
-            }
-         }
+	    }
+	 }
       }
-#endif                                  /* MultiProgram */
+#endif					/* MultiProgram */
 
    while ((fp != 0) || nargs) {         /* Keep going until current fp is
                                             0 and no arguments are left. */
@@ -1385,11 +1401,11 @@ static void sweep_stk(struct b_coexpr *ce)
 
 #ifdef PatternType
        if ((fp != NULL) && is_in_a_block_region((char *)(fp->pattern_cache))) {
-         if (fp->pattern_cache->title == T_Table) {
-           markptr((union block **)&(fp->pattern_cache));
-         }
+	 if (fp->pattern_cache->title == T_Table) {
+	   markptr((union block **)&(fp->pattern_cache));
+	 }
        }
-#endif
+#endif       
 
          s_efp = fp->pf_efp;            /* Get saved efp out of frame */
          s_gfp = fp->pf_gfp;            /* Get save gfp */
@@ -1444,15 +1460,15 @@ static void sweep_stk(struct b_coexpr *ce)
             postqual((dptr)&s_sp[-1]);
          else if (Pointer(*((dptr)(&s_sp[-1])))) {
             markblock((dptr)&s_sp[-1]);
-            }
+	    }
          s_sp -= 2;                     /* Move past descriptor. */
          if (nargs)                     /* Decrement argument count if in an*/
             nargs--;                    /*  argument list. */
          }
       }
    }
-#endif                                  /* !COMPILER */
-
+#endif					/* !COMPILER */
+
 /*
  * reclaim - reclaim space in the allocated memory regions. The marking
  *   phase has already been completed.
@@ -1483,7 +1499,7 @@ static void reclaim()
     */
    compact(blkbase);
    }
-
+
 /*
  * cofree - collect co-expression blocks.  This is done after
  *  the marking phase of garbage collection and the stacks that are
@@ -1502,9 +1518,9 @@ static void cofree()
 
 #ifdef MultiProgram
    rootpstate.Mainhead->title = T_Coexpr;
-#else                           /* MultiProgram */
+#else				/* MultiProgram */
    BlkLoc(k_main)->Coexpr.title = T_Coexpr;
-#endif                          /* MultiProgram */
+#endif				/* MultiProgram */
 
    /*
     * The co-expression blocks are linked together through their
@@ -1530,14 +1546,14 @@ static void cofree()
             if ( xabp->nactivators == 0 )
                free((pointer)xabp);
 #if 0
-            else
-               fprintf(stderr,"Warning: internal gc error: activator list is not empty.\n");
+            else 
+	       fprintf(stderr,"Warning: internal gc error: activator list is not empty.\n"); 
 #endif
-            } /* for abp */
+            } /* for abp */ 
 
          #ifdef CoClean
-            coclean(xep);
-         #endif                         /* CoClean */
+ 	    coclean(xep);
+         #endif				/* CoClean */
 
          free((pointer)xep);
          }
@@ -1547,7 +1563,7 @@ static void cofree()
          }
       }
    }
-
+
 /*
  * scollect - collect the string space.  quallist is a list of pointers to
  *  descriptors for all the reachable strings in the string space.  For
@@ -1555,7 +1571,8 @@ static void cofree()
  *  descriptors rather than pointers to them.
  */
 
-static void scollect(word extra)
+static void scollect(extra)
+word extra;
    {
    register char *source, *dest;
    register dptr *qptr;
@@ -1616,12 +1633,13 @@ static void scollect(word extra)
       *dest++ = *source++;
    strfree = dest;
    }
-
+
 /*
  * qlcmp - compare the location fields of two string qualifiers for qsort.
  */
 
-static int qlcmp(dptr *q1, dptr *q2)
+static int qlcmp(q1,q2)
+dptr *q1, *q2;
    {
 
 #if IntBits == 16
@@ -1638,14 +1656,15 @@ static int qlcmp(dptr *q1, dptr *q2)
 #endif                                  /* IntBits == 16 */
 
    }
-
+
 /*
  * adjust - adjust pointers into the block region, beginning with block oblk
  *  and basing the "new" block region at nblk.  (Phase II of garbage
  *  collection.)
  */
 
-static void adjust(char *source, char *dest)
+static void adjust(source,dest)
+char *source, *dest;
    {
    register union block **nxtptr, **tptr;
    CURTSTATE();
@@ -1674,13 +1693,14 @@ static void adjust(char *source, char *dest)
       source += BlkSize(source);
       }
    }
-
+
 /*
  * compact - compact good blocks in the block region. (Phase III of garbage
  *  collection.)
  */
 
-static void compact(char *source)
+static void compact(source)
+char *source;
    {
    register char *dest;
    register word size;
@@ -1716,7 +1736,7 @@ static void compact(char *source)
     */
    blkfree = dest;
    }
-
+
 /*
  * mvc - move n bytes from src to dest
  *
@@ -1726,7 +1746,9 @@ static void compact(char *source)
  * be fairly large.)
  */
 
-static void mvc(uword n, register char *src, register char *dest)
+static void mvc(n, src, dest)
+uword n;
+register char *src, *dest;
    {
    register char *srcend, *destend;        /* end of data areas */
    word copy_size;                  /* of size copy_size */
@@ -1793,13 +1815,14 @@ static void mvc(uword n, register char *src, register char *dest)
     *  Note that src == dest implies no action
     */
    }
-
+
 #ifdef DeBugIconx
 /*
  * descr - dump a descriptor.  Used only for debugging.
  */
 
-void descr(dptr dp)
+void descr(dp)
+dptr dp;
    {
    int i;
 
@@ -1824,7 +1847,7 @@ void descr(dptr dp)
       }
    fprintf(stderr," %08lx %08lx\n",(long)dp->dword,(long)IntVal(*dp));
    }
-
+
 /*
  * blkdump - dump the allocated block region.  Used only for debugging.
  *   NOTE:  Not adapted for multiple regions.
@@ -1868,9 +1891,9 @@ void blkdump()
  */
 #if NT
 unsigned long long int memorysize(int available)
-#else                                   /* NT */
+#else					/* NT */
 unsigned long memorysize(int available)
-#endif                                  /* NT */
+#endif					/* NT */
 {
    FILE *f;
    char buf[80], *p, *fieldname;
@@ -1884,10 +1907,10 @@ unsigned long memorysize(int available)
  */
 #if defined(_SC_PHYS_PAGES) && defined(_SC_PAGE_SIZE)
    if (!available) return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
-#endif                                  /* _SC_PHYS_PAGES && _SC_PAGE_SIZE */
+#endif					/* _SC_PHYS_PAGES && _SC_PAGE_SIZE */
 #if defined(_SC_AVPHYS_PAGES) && defined(_SC_PAGE_SIZE)
    if (available) return sysconf(_SC_AVPHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
-#endif                                  /* _SC_AVPHYS_PAGES && _SC_PAGE_SIZE */
+#endif					/* _SC_AVPHYS_PAGES && _SC_PAGE_SIZE */
 
 /*
  * Method #2: call sysctlbyname(). MacOS and maybe BSD too.
@@ -1902,7 +1925,7 @@ unsigned long memorysize(int available)
       i = mem;
       return i;
       }
-#endif                                  /* MacOS */
+#endif					/* MacOS */
 
 /*
  * Method #3: read /proc/meminfo. Linux.
@@ -1911,29 +1934,29 @@ unsigned long memorysize(int available)
 
    if ((f = fopen("/proc/meminfo", "r")) != NULL) {
       while (fgets(buf, 80, f)) {
-         if (!strncmp(fieldname, buf, strlen(fieldname))) {
-            p = buf+strlen(fieldname);
-            while (isspace(*p)) p++;
-            i = atol(p);
-            while (isdigit(*p)) p++;
-            while (isspace(*p)) p++;
-            if (!strncmp(p, "kB",2)) i *= 1024;
-            else if (!strncmp(p, "MB", 2)) i *= 1024 * 1024;
-            fclose(f);
-            return i;
-            }
-         }
+	 if (!strncmp(fieldname, buf, strlen(fieldname))) {
+	    p = buf+strlen(fieldname);
+	    while (isspace(*p)) p++;
+	    i = atol(p);
+	    while (isdigit(*p)) p++;
+	    while (isspace(*p)) p++;
+	    if (!strncmp(p, "kB",2)) i *= 1024;
+	    else if (!strncmp(p, "MB", 2)) i *= 1024 * 1024;
+	    fclose(f);
+	    return i;
+	    }
+	 }
       fclose(f);
       }
 
-#endif                                  /* UNIX */
+#endif					/* UNIX */
 
 #if NT
-   MEMORYSTATUSEX ms;
+   MEMORYSTATUSEX ms; 
    ms.dwLength = sizeof(ms);
    GlobalMemoryStatusEx(&ms);
    return (available ? ms.ullAvailPhys : ms.ullTotalPhys);
-#endif                                  /* NT */
+#endif					/* NT */
 
    /*
     * Out of methods. Could try "top", but don't want to launch
@@ -1946,9 +1969,9 @@ unsigned long memorysize(int available)
 
 #if NT
 unsigned long long int physicalmemorysize()
-#else                                   /* NT */
+#else					/* NT */
 unsigned long physicalmemorysize()
-#endif                                  /* NT */
+#endif					/* NT */
 {
 return memorysize(0);
 }
@@ -1972,7 +1995,7 @@ typedef char vlogmessage[64];
 static vlogmessage vlog[VRFY_LOGSIZE];
 #else
 static vlogmessage vlog[2000];
-#endif                                  /* VRFY_LOGSIZE */
+#endif					/* VRFY_LOGSIZE */
 static int vlogNext;
 
 /* Insert a (formatted) message into the log buffer with parameters */
@@ -2090,7 +2113,7 @@ static void vrfyStart()
      * and don't have Unicon source files longer than 99999 lines".
      */
     snprintf(fl, sizeof(vlogmessage), "%.57s %.5d",
-#if COMPILER
+#if COMPILER  
              file_name, line_num
 #else
              findfile(curtstate->c->es_ipc.opnd),
@@ -2488,7 +2511,7 @@ static void vrfy_Realarray(struct b_realarray *b)
     }
   }
 }
-#endif                                  /* Arrays */
+#endif					/* Arrays */
 
 static void vrfy_File(struct b_file *b)
 {
@@ -2515,7 +2538,7 @@ static void vrfy_File(struct b_file *b)
           || ((status & (Fs_Buff | Fs_Unbuf)) == (Fs_Buff | Fs_Unbuf))
           || ((status & (Fs_Socket | Fs_Directory)) == (Fs_Socket | Fs_Directory))
           || ((status & (Fs_BPipe | Fs_Directory)) == (Fs_BPipe | Fs_Directory))
-#endif                                  /* PosixFns */
+#endif					/* PosixFns */
           ) {
         vrfyCrash("File at %p: bogus status value (0x%lx)", b, status);
       }
@@ -2655,7 +2678,7 @@ static void vrfy_Lelem(struct b_lelem *b)
       vrfyCrash("Lelem at %p: bad slots (%ld > %d)",
                 b, b->nslots, MaxListSlots);
     }
-#endif                                  /* MaxListSlots */
+#endif					/* MaxListSlots */
     if (b->nused > b->nslots) {
       vrfyCrash("Lelem at %p: bad used slots (%ld > %ld)",
                 b, b->nused, b->nslots);

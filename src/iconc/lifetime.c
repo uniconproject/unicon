@@ -24,7 +24,11 @@ static int postn = -1; /* relative position in execution order (all neg) */
 /*
  * liveness - compute lifetimes of intermediate results.
  */
-void liveness(nodeptr n, nodeptr resumer, nodeptr *failer, int *gen)
+void liveness(n, resumer, failer, gen)
+nodeptr n;
+nodeptr resumer;
+nodeptr *failer;
+int *gen;
    {
    struct loop {
       nodeptr resumer;
@@ -43,7 +47,7 @@ void liveness(nodeptr n, nodeptr resumer, nodeptr *failer, int *gen)
    struct node *clause;
    long min_result;  /* minimum result sequence length */
    long max_result;  /* maximum result sequence length */
-   int resume;       /* flag - resumption possible after last result */
+   int resume;	     /* flag - resumption possible after last result */
 
    n->postn = postn--;
 
@@ -65,7 +69,7 @@ void liveness(nodeptr n, nodeptr resumer, nodeptr *failer, int *gen)
          break;
 
       case N_Apply:
-         /*
+         /* 
           * Assume operation can suspend or fail.
           */
          arg_life(n, 0L, UnbndSeq, 1, 0, 2, resumer, failer, gen);
@@ -130,7 +134,7 @@ void liveness(nodeptr n, nodeptr resumer, nodeptr *failer, int *gen)
             if (resumer == NULL && failer2 != NULL)
                *failer = n;
             *gen |= gen2;
-
+      
             /*
              * The expression being compared can be resumed.
              */
@@ -171,7 +175,7 @@ void liveness(nodeptr n, nodeptr resumer, nodeptr *failer, int *gen)
 
       case N_Cset:
       case N_Empty:
-      case N_Id:
+      case N_Id: 
       case N_Int:
       case N_Real:
       case N_Str:
@@ -366,7 +370,7 @@ void liveness(nodeptr n, nodeptr resumer, nodeptr *failer, int *gen)
             Tree2(n)->lifetime = n->lifetime;
             liveness(Tree2(n), resumer, &failer2, &gen2);  /* body */
             Tree1(n)->lifetime = n;
-            liveness(Tree1(n), failer2, &failer1, &gen1);  /* subject */
+            liveness(Tree1(n), failer2, &failer1, &gen1);  /* subject */ 
             *failer = failer1;
             *gen = gen1 | gen2;
             }
@@ -426,13 +430,17 @@ void liveness(nodeptr n, nodeptr resumer, nodeptr *failer, int *gen)
 /*
  * arg_life - compute the lifetimes of an argument list.
  */
-static void arg_life(nodeptr n,
-                     long min_result,  /* minimum result sequence length */
-                     long max_result,  /* maximum result sequence length */
-                     int resume,       /* flag - resumption possible after last result */
-                     int frst_arg, int nargs,
-                     nodeptr resumer, nodeptr *failer,
-                     int *gen)
+static void arg_life(n, min_result, max_result, resume, frst_arg, nargs,
+   resumer, failer, gen)
+nodeptr n;
+long min_result;  /* minimum result sequence length */
+long max_result;  /* maximum result sequence length */
+int resume;	  /* flag - resumption possible after last result */
+int frst_arg;
+int nargs;
+nodeptr resumer;
+nodeptr *failer;
+int *gen;
    {
    nodeptr failer1;
    nodeptr failer2;

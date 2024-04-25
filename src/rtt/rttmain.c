@@ -1,6 +1,10 @@
 #include "rtt.h"
 
-/*#include "../h/filepat.h"             ?* added for filepat change */
+/*#include "../h/filepat.h"		?* added for filepat change */
+
+#if MACINTOSH
+#include <console.h>
+#endif					/* MACINTOSH */
 
 /*
  * prototypes for static functions.
@@ -18,9 +22,9 @@ extern char patchpath[];
 
 #ifdef RefPath
 char *refpath = RefPath;
-#else                                   /* RefPath */
+#else					/* RefPath */
 char *refpath = "";
-#endif                                  /* RefPath */
+#endif					/* RefPath */
 
 #if MVS
 char *src_file_nm;
@@ -36,12 +40,17 @@ char *src_file_nm;
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
+
+#if MACINTOSH
+char *grttin_path = "::h:grttin.h";
+char *rt_path = "::h:rt.h";
+#endif					/* MACINTOSH */
 
 #if MSDOS
 char *grttin_path = "..\\src\\h\\grttin.h";
 char *rt_path = "..\\src\\h\\rt.h";
-#endif                                  /* MSDOS */
+#endif					/* MSDOS */
 
 #if MVS
 char *grttin_path = "ddn:h(grttin)";  /* presented to source() */
@@ -56,7 +65,7 @@ char *rt_path = "rt.h";
 #if UNIX
 char *grttin_path = "../src/h/grttin.h";
 char *rt_path = "../src/h/rt.h";
-#endif                                  /* UNIX */
+#endif					/* UNIX */
 
 /*
  * End of operating-system specific code.
@@ -95,10 +104,10 @@ int archive_flg = 0;
 int ccomp_flg = 0;
 char *ccomp_opts = NULL;
 
-char *curlst_string;                            /* string of files, with .c */
+char *curlst_string;				/* string of files, with .c */
 char *fulllst_string;
 
-static char *cur_src;                           /* current source (.r) file */
+static char *cur_src;				/* current source (.r) file */
 
 static int silent = 0;
 
@@ -123,17 +132,17 @@ static struct tdefnm *tdefnm_lst = NULL;
 /*
  * getopt() variables
  */
-extern int optind;              /* index into parent argv vector */
-extern int optopt;              /* character checked for validity */
-extern char *optarg;            /* argument associated with option */
+extern int optind;		/* index into parent argv vector */
+extern int optopt;		/* character checked for validity */
+extern char *optarg;		/* argument associated with option */
 
 #if TURBO
 unsigned _stklen = 30000;
-#endif                                  /* TURBO */
+#endif					/* TURBO */
 
 #ifdef ConsoleWindow
 int ConsolePause = 1;
-#endif                                  /* ConsoleWindow */
+#endif					/* ConsoleWindow */
 
 #ifndef NTConsole
 #ifdef MSWindows
@@ -171,7 +180,7 @@ int CmdParamToArgv(char *s, char ***avp)
    return rv;
    }
 
-LRESULT_CALLBACK WndProc        (HWND, UINT, WPARAM, LPARAM);
+LRESULT_CALLBACK WndProc	(HWND, UINT, WPARAM, LPARAM);
 
 void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstance)
    {
@@ -179,14 +188,14 @@ void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstan
    if (!hPrevInstance) {
 #if NT
       wc.style = CS_HREDRAW | CS_VREDRAW;
-#else                                   /* NT */
+#else					/* NT */
       wc.style = 0;
-#endif                                  /* NT */
+#endif					/* NT */
 #ifdef NTConsole
       wc.lpfnWndProc = DefWindowProc;
-#else                                   /* NTConsole */
+#else					/* NTConsole */
       wc.lpfnWndProc = WndProc;
-#endif                                  /* NTConsole */
+#endif					/* NTConsole */
       wc.cbClsExtra = 0;
       wc.cbWndExtra = 0;
       wc.hInstance  = hInstance;
@@ -219,14 +228,16 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 }
 
 #define main rtt
-#endif                                  /* MSWindows */
-#endif                                  /* NTConsole */
+#endif					/* MSWindows */
+#endif					/* NTConsole */
 
-int main(int argc, char **argv)
+int main(argc, argv)
+int argc;
+char **argv;
    {
    int c;
    int nopts;
-   char buf[MaxFileName];               /* file name construction buffer */
+   char buf[MaxFileName];		/* file name construction buffer */
    struct fileparts *fp;
    int keeptmp = 0;
 
@@ -254,6 +265,10 @@ int main(int argc, char **argv)
    whsp_image = NoSpelling;
    line_cntrl = 1;
 
+#if MACINTOSH
+   argc = ccommand(&argv);
+#endif					/* MACINTOSH */
+
    /*
     * opt_lst and opt_args are the options and corresponding arguments
     *  that are passed along to the preprocessor initialization routine.
@@ -268,7 +283,7 @@ int main(int argc, char **argv)
     */
    while ((c = getopt(argc, argv, ostr)) != EOF)
       switch (c) {
-         case 'E': /* run preprocessor only */
+	 case 'E': /* run preprocessor only */
             pp_only = 1;
             if (whsp_image == NoSpelling)
                whsp_image = NoComment;
@@ -276,33 +291,33 @@ int main(int argc, char **argv)
      case 'K':              /* Do not remove files */
             keeptmp = 1;
             break;
-         case 'C':  /* retain spelling of white space, only effective with -E */
+	 case 'C':  /* retain spelling of white space, only effective with -E */
             whsp_image = FullImage;
             break;
-         case 'P': /* do not produce #line directives in output */
+	 case 'P': /* do not produce #line directives in output */
             line_cntrl = 0;
             break;
-         case 'A': /* produce a .a archive file, as if rttfull.cur */
+	 case 'A': /* produce a .a archive file, as if rttfull.cur */
             archive_flg = 1;
             break;
-         case 'c': /* go ahead and C compile */
-            ccomp_flg = 1;
-            break;
+	 case 'c': /* go ahead and C compile */
+	    ccomp_flg = 1;
+	    break;
          case 's': /* silent */
-            silent = 1;
-            break;
-         case 'O': /* options to pass to C compiler */
-            ccomp_opts = optarg;
-            ++nopts;
-            break;
-         case 'd': /* -d name: name of data base */
+	    silent = 1;
+	    break;
+	 case 'O': /* options to pass to C compiler */
+	    ccomp_opts = optarg;
+	    ++nopts;
+	    break;
+	 case 'd': /* -d name: name of data base */
             dbname = optarg;
             break;
 #ifdef ConsoleWindow
-         case 'q':
-            ConsolePause = 0;
-            break;
-#endif                                  /* ConsoleWindow */
+	 case 'q':
+ 	    ConsolePause = 0;
+	    break;
+#endif					/* ConsoleWindow */
          case 'r':  /* -r path: location of include files */
             refpath = optarg;
             break;
@@ -327,13 +342,17 @@ int main(int argc, char **argv)
             show_usage();
          }
 
+#if MACINTOSH
+   iconx_flg = 1;     /* Produce interpreter code */
+#endif					/* MACINTOSH */
+
 #ifdef Rttx
    if (!iconx_flg) {
       fprintf(stdout,
          "rtt was compiled to only support the intepreter, use -x\n");
       exit(EXIT_FAILURE);
       }
-#endif                                  /* Rttx */
+#endif					/* Rttx */
 
    if (iconx_flg)
       compiler_def = "#define COMPILER 0\n";
@@ -393,17 +412,17 @@ int main(int argc, char **argv)
 
       if (!FINDFIRST(argv[optind], &fd)) {
          fprintf(stderr,"File %s: no match\n", argv[optind]);
-         fflush(stderr);
-         exit(EXIT_FAILURE);
+	 fflush(stderr);
+	 exit(EXIT_FAILURE);
          }
       do {
          argv[optind] = FILENAME(&fd);
          trans(argv[optind]);
       } while (FINDNEXT(&fd));
       FINDCLOSE(&fd);
-#else                                   /* WildCards */
+#else					/* WildCards */
       trans(argv[optind]);
-#endif                                  /* WildCards */
+#endif					/* WildCards */
       optind++;
       }
 
@@ -423,30 +442,30 @@ int main(int argc, char **argv)
        * for a separate invocation of gcc or lcc but that is now subsumed by
        * curlst_string.
        */
-#endif                                  /* NT */
+#endif					/* NT */
       dumpdb(dbname);
       full_lst();
       if (archive_flg) {
-         char *archive_line;
-         struct stat sb;
+	 char *archive_line;
+	 struct stat sb;
 
-         archive_line = alloc(strlen("ar qc rt.a ") +
-                         strlen(fulllst_string) + strlen(ccomp_opts) + 3);
+	 archive_line = alloc(strlen("ar qc rt.a ") +
+			 strlen(fulllst_string) + strlen(ccomp_opts) + 3);
 
-         if (stat("rt.a", &sb) == 0)
-            remove("rt.a");
+	 if (stat("rt.a", &sb) == 0)
+	    remove("rt.a"); 
 
-         if (ccomp_opts == NULL) ccomp_opts = "";
+	 if (ccomp_opts == NULL) ccomp_opts = "";
 
-         sprintf(archive_line, "%s %s %s", "ar qc rt.a",
-                 fulllst_string, ccomp_opts);
+	 sprintf(archive_line, "%s %s %s", "ar qc rt.a",
+		 fulllst_string, ccomp_opts);
 
-         if (!silent)
-            fprintf(stdout, "%s\n", archive_line);
-         if (system(archive_line)) return EXIT_FAILURE;
-         }
+	 if (!silent)
+	    fprintf(stdout, "%s\n", archive_line);
+	 if (system(archive_line)) return EXIT_FAILURE;
+	 }
       }
-#endif                                  /* Rttx */
+#endif					/* Rttx */
 
    if ( yynerrs > 0 || __merr_errors > 0)
       return EXIT_FAILURE;
@@ -463,11 +482,11 @@ int main(int argc, char **argv)
       char *ccomp_line;
       if (ccomp_opts == NULL) ccomp_opts = "";
       ccomp_line = alloc(strlen(CComp) + strlen(ccomp_opts) +
-                         strlen(curlst_string) + 6);
+			 strlen(curlst_string) + 6);
       sprintf(ccomp_line, "%s -c %s%s", CComp, ccomp_opts, curlst_string);
       if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
       if (system(ccomp_line)) return EXIT_FAILURE;
-      if (0 == keeptmp) {
+      if (0 == keeptmp) { 
         sprintf(ccomp_line, "%s%s", "rm", curlst_string);
         if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
         if (system(ccomp_line)) return EXIT_FAILURE;
@@ -480,10 +499,11 @@ int main(int argc, char **argv)
 /*
  * trans - translate a source file.
  */
-void trans(char *src_file)
+void trans(src_file)
+char *src_file;
    {
    char *cname;
-   char buf[MaxFileName];               /* file name construction buffer */
+   char buf[MaxFileName];		/* file name construction buffer */
    char *buf_ptr;
    char *s;
    struct fileparts *fp;
@@ -587,9 +607,9 @@ void trans(char *src_file)
       fprintf(out_file, "\n");
 
       if (rmlst_empty_p() == 0) {
-         if (fclose(out_file) != 0)
-            err2("cannot close ", cname);
-         else   /* can't close it again if we remove it to due an error */
+	 if (fclose(out_file) != 0)
+	    err2("cannot close ", cname);
+	 else	/* can't close it again if we remove it to due an error */
             markrmlst(out_file);
          }
 
@@ -605,7 +625,8 @@ void trans(char *src_file)
 /*
  * add_tdef - add identifier to list of typedef names.
  */
-static void add_tdef(char *name)
+static void add_tdef(name)
+char *name;
    {
    struct tdefnm *td;
 
@@ -619,7 +640,9 @@ static void add_tdef(char *name)
  * Add name of file to the output list, and if it contains "interesting"
  *  code, add it to the dependency list in the data base.
  */
-void put_c_fl(char *fname, int keep)
+void put_c_fl(fname, keep)
+char *fname;
+int keep;
    {
    struct fileparts *fp;
    int oldlen = strlen(curlst_string);

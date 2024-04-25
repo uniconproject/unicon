@@ -11,26 +11,33 @@
 #if PORT
    /* something may be needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if VM || MVS
    /* something may be needed */
 Deliberate Syntax Error
-#endif                                  /* VM || MVS */
+#endif					/* VM || MVS */
+
+#if MACINTOSH
+char *FileNameMacToUnix(char *fn);
+char *FileNameUnixToMac(char *fn);
+char *FileNameMacConvert(char *(*func)(char *),char *fn);
+#define IsRelPath(fname) (fname[0] != '/')
+#endif					/* MACINTOSH */
 
 #if MSDOS
 #if MICROSOFT
    /* nothing is needed */
-#endif                                  /* MICROSOFT */
+#endif					/* MICROSOFT */
 #if TURBO
 #include <dir.h>
-#endif                                  /* TURBO */
+#endif 					/* TURBO */
 #define IsRelPath(fname) (fname[0] != '/')
-#endif                                  /* MSDOS */
+#endif					/* MSDOS */
 
 #if UNIX || VMS
 #define IsRelPath(fname) (fname[0] != '/')
-#endif                                  /* UNIX || VMS */
+#endif					/* UNIX || VMS */
 
 /*
  * End of operating-system specific code.
@@ -49,7 +56,9 @@ static char **incl_search; /* standard locations to search for header files */
  * file_src - set up the structures for a characters source from a file,
  *  putting the source on the top of the stack.
  */
-static void file_src (char *fname, FILE *f)
+static void file_src(fname, f)
+char *fname;
+FILE *f;
    {
    union src_ref ref;
 
@@ -64,16 +73,20 @@ static void file_src (char *fname, FILE *f)
 #if PORT
    /* something may be needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if VM || MVS
    /* something may be needed */
 Deliberate Syntax Error
-#endif                                  /* VM || MVS */
+#endif					/* VM || MVS */
+
+#if MACINTOSH
+   fname = FileNameMacConvert(FileNameMacToUnix,fname);
+#endif					/* MACINTOSH */
 
 #if MSDOS
    char *s;
-
+   
    /*
     * Convert back slashes to slashes for internal consistency.
     */
@@ -81,11 +94,11 @@ Deliberate Syntax Error
    for (s = fname; *s != '\0'; ++s)
       if (*s == '\\')
          *s = '/';
-#endif                                  /* MSDOS */
+#endif					/* MSDOS */
 
 #if UNIX || VMS
    /* nothing is needed */
-#endif                                  /* UNIX || VMS */
+#endif					/* UNIX || VMS */
 
 /*
  * End of operating-system specific code.
@@ -96,28 +109,32 @@ Deliberate Syntax Error
    next_char = NULL;
    fill_cbuf();
    }
-
+
 /*
  * source - Open the file named fname or use stdin if fname is "-". fname
  *  is the first file from which to read input (that is, the outermost file).
  */
-void source(char *fname)
+void source(fname)
+char *fname;
    {
    FILE *f;
 
    if (strcmp(fname, "-") == 0)
       file_src("<stdin>", stdin);
    else {
-      if ((f = fopen(fname, "r")) == NULL)
+      if ((f = fopen(fname, "r")) == NULL) 
          err2("cannot open ", fname);
       file_src(fname, f);
       }
    }
-
+
 /*
- * include - open the file named fname and make it the current input file.
+ * include - open the file named fname and make it the current input file. 
  */
-void include(struct token *trigger, char *fname, int system)
+void include(trigger, fname, system)
+struct token *trigger;
+char *fname;
+int system;
    {
    struct str_buf *sbuf;
    char *s;
@@ -133,7 +150,7 @@ void include(struct token *trigger, char *fname, int system)
     */
    if (IsRelPath(fname)) {
       sbuf = get_sbuf();
-#if  !MVS && !VM                                        /* ??? */
+#if  !MVS && !VM					/* ??? */
       f = NULL;
       if (!system) {
          /*
@@ -152,12 +169,26 @@ void include(struct token *trigger, char *fname, int system)
                   for (s = cs->fname; *s != '\0'; ++s)
                      if (*s == '/')
                         end_prfx = s;
-                  if (end_prfx != NULL)
-                  for (s = cs->fname; s <= end_prfx; ++s)
-                     AppChar(*sbuf, *s);
+                  if (end_prfx != NULL) 
+#if MACINTOSH
+		     /*
+		      * For Mac-style names, don't include the file
+		      * separator character in the prefix.
+		      */
+                     for (s = cs->fname; s < end_prfx; ++s)
+#else					/* MACINTOSH */
+                     for (s = cs->fname; s <= end_prfx; ++s)
+#endif					/* MACINTOSH */
+                        AppChar(*sbuf, *s);
                   for (s = fname; *s != '\0'; ++s)
                      AppChar(*sbuf, *s);
                   path = str_install(sbuf);
+#if MACINTOSH
+		  /*
+		   * Convert UNIX-style path to Mac-style.
+		   */
+		  path = FileNameMacConvert(FileNameUnixToMac,path);
+#endif					/* MACINTOSH */
                   f = fopen(path, "r");
                   }
                }
@@ -166,7 +197,7 @@ void include(struct token *trigger, char *fname, int system)
          }
       /*
        * Search in the locations for the system include files.
-       */
+       */   
       prefix = incl_search;
       while (f == NULL && *prefix != NULL) {
          for (s = *prefix; *s != '\0'; ++s)
@@ -176,11 +207,17 @@ void include(struct token *trigger, char *fname, int system)
          for (s = fname; *s != '\0'; ++s)
             AppChar(*sbuf, *s);
          path = str_install(sbuf);
+#if MACINTOSH
+	 /*
+	  * Convert UNIX-style path to Mac-style.
+	  */
+	 path = FileNameMacConvert(FileNameUnixToMac,path);
+#endif					/* MACINTOSH */
          f = fopen(path, "r");
          ++prefix;
          }
       rel_sbuf(sbuf);
-#else                                   /* !MVS && !VM */
+#else					/* !MVS && !VM */
       if (system) {
          for (s = "ddn:SYSLIB("; *s != '\0'; ++s)
             AppChar(*sbuf, *s);
@@ -211,7 +248,7 @@ void include(struct token *trigger, char *fname, int system)
       path = str_install(sbuf);
       f = fopen(path, "r");
       rel_sbuf(sbuf);
-#endif                                  /* !MVS && !VM */
+#endif					/* !MVS && !VM */
       }
    else {                               /* The path is absolute. */
       path = fname;
@@ -222,17 +259,19 @@ void include(struct token *trigger, char *fname, int system)
       errt2(trigger, "cannot open include file ", fname);
    file_src(path, f);
    }
-
+
 /*
  * init_files - Initialize this module, setting up the search path for
  *  system header files.
  */
-void init_files(char *opt_lst, char **opt_args)
+void init_files(opt_lst, opt_args)
+char *opt_lst;
+char **opt_args;
    {
    int n_paths = 0;
    int i, j;
    char *s, *s1;
-
+  
 /*
  * The following code is operating-system dependent [@files.03].
  *  Determine the number of standard locations to search for
@@ -243,7 +282,7 @@ void init_files(char *opt_lst, char **opt_args)
 #if PORT
    /* probably needs something */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if VMS
    char **syspaths;
@@ -259,12 +298,12 @@ Deliberate Syntax Error
       n_paths++;
       vmsi++;
       }
-#endif                                  /* VMS */
+#endif					/* VMS */
 
-#if VM || MVS
+#if VM || MVS || MACINTOSH
    /* probably needs something */
 Deliberate Syntax Error
-#endif                                  /* VM || MVS */
+#endif					/* VM || MVS || ... */
 
 #if MSDOS
 
@@ -272,7 +311,7 @@ Deliberate Syntax Error
    char *syspath;
    char *cl_var;
    char *incl_var;
-
+   
    incl_var = getenv("INCLUDE");
    cl_var = getenv("CL");
    n_paths = 0;
@@ -294,7 +333,7 @@ Deliberate Syntax Error
                   ++s;
                }
             else if (*s == 'X')
-               incl_var = NULL;         /* ignore INCLUDE environment var */
+               incl_var = NULL;		/* ignore INCLUDE environment var */
             }
          if (*s != '\0')
             ++s;
@@ -315,7 +354,7 @@ Deliberate Syntax Error
          if (*incl_var++ == ';' && *incl_var != '\0')
             ++n_paths;
       }
-#endif                                  /* MICROSOFT || NT */
+#endif					/* MICROSOFT || NT */
 
 #if TURBO
     char *cfg_fname;
@@ -339,15 +378,15 @@ Deliberate Syntax Error
              c = getc(cfg_file);
           }
        }
-#endif                                  /* TURBO */
+#endif 					/* TURBO */
 
-#endif                                  /* MSDOS */
+#endif					/* MSDOS */
 
 #if UNIX
    static char *sysdir = "/usr/include/";
 
    n_paths = 1;
-#endif                                  /* UNIX */
+#endif					/* UNIX */
 
 /*
  * End of operating-system specific code.
@@ -365,7 +404,7 @@ Deliberate Syntax Error
     */
    incl_search = (char **)alloc((unsigned int)(sizeof(char *)*(n_paths + 1)));
    j = 0;
-
+  
 /*
  * The following code is operating-system dependent [@files.04].
  *  Establish the standard locations to search before the -I options
@@ -375,12 +414,12 @@ Deliberate Syntax Error
 #if PORT
    /* something may be needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if VM || MVS
    /* something may be needed */
 Deliberate Syntax Error
-#endif                                  /* VM || MVS */
+#endif					/* VM || MVS */
 
 #if MSDOS
 #if MICROSOFT
@@ -415,13 +454,13 @@ Deliberate Syntax Error
          if (*cl_var != '\0')
             ++cl_var;
          }
-#endif                                  /* MICROSOFT */
+#endif					/* MICROSOFT */
 
-#endif                                  /* MSDOS */
+#endif					/* MSDOS */
 
-#if UNIX || VMS
+#if UNIX || VMS || MACINTOSH
    /* nothing is needed */
-#endif                                  /* UNIX || VMS */
+#endif					/* UNIX || VMS || MACINTOSH */
 
 /*
  * End of operating-system specific code.
@@ -435,7 +474,7 @@ Deliberate Syntax Error
          s = opt_args[i];
          s1 = (char *) alloc((unsigned int)(strlen(s)+1));
          strcpy(s1, s);
-
+         
 /*
  * The following code is operating-system dependent [@files.05].
  *  Insure that path syntax is in Unix format for internal consistency
@@ -446,12 +485,16 @@ Deliberate Syntax Error
 #if PORT
    /* something might be needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if VM || MVS
    /* something might be needed */
 Deliberate Syntax Error
-#endif                                  /* VM || MVS */
+#endif					/* VM || MVS */
+
+#if MACINTOSH
+   s1 = FileNameMacConvert(FileNameMacToUnix,s);
+#endif					/* MACINTOSH */
 
 #if MSDOS
          /*
@@ -460,16 +503,16 @@ Deliberate Syntax Error
          for (s = s1; *s != '\0'; ++s)
             if (*s == '\\')
                *s = '/';
-#endif                                  /* MSDOS */
+#endif					/* MSDOS */
 
 #if UNIX || VMS
    /* nothing is needed */
-#endif                                  /* UNIX || VMS */
+#endif					/* UNIX || VMS */
 
 /*
  * End of operating-system specific code.
  */
-
+         
          incl_search[j++] = s1;
          }
 
@@ -482,17 +525,17 @@ Deliberate Syntax Error
 #if PORT
    /* probably needs something */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if VMS
    for ( ; vmsi; vmsi--)
       incl_search[n_paths - vmsi] = syspaths[vmsi-1];
-#endif                                  /* VMS */
+#endif					/* VMS */
 
 #if VM || MVS
    /* probably needs something */
 Deliberate Syntax Error
-#endif                                  /* VM || MVS */
+#endif					/* VM || MVS */
 
 #if MSDOS
 #if MICROSOFT
@@ -515,7 +558,7 @@ Deliberate Syntax Error
          ++s;
          }
       }
-#endif                                  /* MICROSOFT */
+#endif					/* MICROSOFT */
 
 #if TURBO
     /*
@@ -542,13 +585,13 @@ Deliberate Syntax Error
        rel_sbuf(sbuf);
        fclose(cfg_file);
        }
-#endif                                  /* TURBO ... */
+#endif 					/* TURBO ... */
 
-#endif                                  /* MSDOS */
+#endif					/* MSDOS */
 
-#if UNIX
+#if UNIX || MACINTOSH
    incl_search[n_paths - 1] = sysdir;
-#endif                                  /* UNIX */
+#endif					/* UNIX || MACINTOSH */
 
 /*
  * End of operating-system specific code.

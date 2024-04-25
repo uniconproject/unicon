@@ -39,7 +39,11 @@
    database before returning from this procedure.  */
 
 int
-dbm_store (gdbm_file_info *dbf, datum key, datum content, int flags)
+dbm_store (dbf, key, content, flags)
+     gdbm_file_info *dbf;
+     datum key;
+     datum content;
+     int flags;
 {
   return gdbm_store (dbf, key, content, flags);
 }

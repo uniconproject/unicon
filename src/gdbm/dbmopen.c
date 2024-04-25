@@ -24,7 +24,7 @@
                 Computer Science Department
                 Western Washington University
                 Bellingham, WA 98226
-
+       
 *************************************************************************/
 
 
@@ -58,11 +58,14 @@
    ignored. */
 
 gdbm_file_info *
-dbm_open (char *file, int flags, int mode)
+dbm_open (file, flags, mode)
+     char *file;
+     int flags;
+     int mode;
 {
-  char* pag_file;           /* Used to construct "file.pag". */
-  char* dir_file;           /* Used to construct "file.dir". */
-  struct stat dir_stat;     /* Stat information for "file.dir". */
+  char* pag_file;	    /* Used to construct "file.pag". */
+  char* dir_file;	    /* Used to construct "file.dir". */
+  struct stat dir_stat;	    /* Stat information for "file.dir". */
   gdbm_file_info *temp_dbf;  /* Temporary file pointer storage. */
 
 
@@ -74,7 +77,7 @@ dbm_open (char *file, int flags, int mode)
   strcat (pag_file, ".pag");
   strcpy (dir_file, file);
   strcat (dir_file, ".dir");
-
+  
 
   /* Call the actual routine, saving the pointer to the file information. */
   flags &= O_RDONLY | O_RDWR | O_CREAT | O_TRUNC;
@@ -107,24 +110,24 @@ dbm_open (char *file, int flags, int mode)
   if (stat (dir_file, &dir_stat) == 0)
     {
       if (dir_stat.st_size == 0)
-        if (unlink (dir_file) != 0 || link (pag_file, dir_file) != 0)
-          {
-            gdbm_errno = GDBM_FILE_OPEN_ERROR;
-            gdbm_close (temp_dbf);
-            return NULL;
-          }
+	if (unlink (dir_file) != 0 || link (pag_file, dir_file) != 0)
+	  {
+	    gdbm_errno = GDBM_FILE_OPEN_ERROR;
+	    gdbm_close (temp_dbf);
+	    return NULL;
+	  }
     }
   else
     {
       /* Since we can't stat it, we assume it is not there and try
          to link the dir_file to the pag_file. */
       if (link (pag_file, dir_file) != 0)
-        {
-          gdbm_errno = GDBM_FILE_OPEN_ERROR;
-          gdbm_close (temp_dbf);
-          return NULL;
-        }
+	{
+	  gdbm_errno = GDBM_FILE_OPEN_ERROR;
+	  gdbm_close (temp_dbf);
+	  return NULL;
+	}
     }
-
+	    
   return temp_dbf;
 }

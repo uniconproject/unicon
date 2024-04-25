@@ -25,7 +25,7 @@ static long log_and        (struct token **tp, struct token *trigger);
 static long log_or         (struct token **tp, struct token *trigger);
 
 #include "../preproc/pproto.h"
-
+
 /*
  * <primary> ::= <identifier>
  *               defined <identifier>
@@ -34,7 +34,9 @@ static long log_or         (struct token **tp, struct token *trigger);
  *               <character-constant>
  *               '(' <conditional> ')'
  */
-static long primary(struct token **tp, struct token *trigger)
+static long primary(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    struct token *t = NULL;
    struct token *id = NULL;
@@ -195,8 +197,8 @@ static long primary(struct token **tp, struct token *trigger)
                case 'r':  e1 = (long) '\r'; break;
                case 't':  e1 = (long) '\t'; break;
                case 'v':  e1 = (long) '\v'; break;
-
-               case 'x':
+   
+               case 'x': 
                   ++s;
                   is_hex_char = 1;
                   while (is_hex_char) {
@@ -218,7 +220,7 @@ static long primary(struct token **tp, struct token *trigger)
                      }
                   e1 = (long)(char)e1;
                   break;
-
+   
                default:
                   e1 = (long) *s;
                }
@@ -240,7 +242,7 @@ static long primary(struct token **tp, struct token *trigger)
    /*NOTREACHED*/
    return 0;  /* avoid gcc warning */
    }
-
+
 /*
  * <unary> ::= <primary> |
  *             '+' <unary> |
@@ -248,7 +250,9 @@ static long primary(struct token **tp, struct token *trigger)
  *             '~' <unary> |
  *             '!' <unary>
  */
-static long unary(struct token **tp, struct token *trigger)
+static long unary(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    switch ((*tp)->tok_id) {
       case '+':
@@ -267,14 +271,16 @@ static long unary(struct token **tp, struct token *trigger)
          return primary(tp, trigger);
       }
    }
-
+
 /*
  * <multiplicative> ::= <unary> |
  *                      <multiplicative> '*' <unary> |
  *                      <multiplicative> '/' <unary> |
  *                      <multiplicative> '%' <unary>
  */
-static long multiplicative(struct token **tp, struct token *trigger)
+static long multiplicative(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
    int tok_id;
@@ -289,15 +295,15 @@ static long multiplicative(struct token **tp, struct token *trigger)
             e1 = (e1 * e2);
             break;
          case '/':
-            if (e2 == 0) {
-               errt2(*tp, "division by zero in #", trigger->image);
-               }
+	    if (e2 == 0) {
+	       errt2(*tp, "division by zero in #", trigger->image);
+	       }
             e1 = (e1 / e2);
             break;
          case '%':
-            if (e2 == 0) {
-               errt2(*tp, "modulo by zero in #", trigger->image);
-               }
+	    if (e2 == 0) {
+	       errt2(*tp, "modulo by zero in #", trigger->image);
+	       }
             e1 = (e1 % e2);
             break;
          }
@@ -305,13 +311,15 @@ static long multiplicative(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <additive> ::= <multiplicative> |
  *                <additive> '+' <multiplicative> |
  *                <additive> '-' <multiplicative>
  */
-static long additive(struct token **tp, struct token *trigger)
+static long additive(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
    int tok_id;
@@ -329,13 +337,15 @@ static long additive(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <shift> ::= <additive> |
  *             <shift> '<<' <additive> |
  *             <shift> '>>' <additive>
  */
-static long shift(struct token **tp, struct token *trigger)
+static long shift(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
    int tok_id;
@@ -353,7 +363,7 @@ static long shift(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <relation> ::= <shift> |
  *                <relation> '<' <shift> |
@@ -361,7 +371,9 @@ static long shift(struct token **tp, struct token *trigger)
  *                <relation> '>' <shift> |
  *                <relation> '>=' <shift>
  */
-static long relation(struct token **tp, struct token *trigger)
+static long relation(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
    int tok_id;
@@ -389,13 +401,15 @@ static long relation(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <equality> ::= <relation> |
  *                <equality> '==' <relation> |
  *                <equality> '!=' <relation>
  */
-static long equality(struct token **tp, struct token *trigger)
+static long equality(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
    int tok_id;
@@ -413,12 +427,14 @@ static long equality(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <and> ::= <equality> |
  *           <and> '&' <equality>
  */
-static long and(struct token **tp, struct token *trigger)
+static long and(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
 
@@ -430,12 +446,14 @@ static long and(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <excl_or> ::= <and> |
  *               <excl_or> '^' <and>
  */
-static long excl_or(struct token **tp, struct token *trigger)
+static long excl_or(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
 
@@ -447,12 +465,14 @@ static long excl_or(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <incl_or> ::= <excl_or> |
  *               <incl_or> '|' <excl_or>
  */
-static long incl_or(struct token **tp, struct token *trigger)
+static long incl_or(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
 
@@ -464,12 +484,14 @@ static long incl_or(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <log_and> ::= <incl_or> |
  *               <log_and> '&&' <incl_or>
  */
-static long log_and(struct token **tp, struct token *trigger)
+static long log_and(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
 
@@ -481,12 +503,14 @@ static long log_and(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <log_or> ::= <log_and> |
  *              <log_or> '||' <log_and>
  */
-static long log_or(struct token **tp, struct token *trigger)
+static long log_or(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2;
 
@@ -498,12 +522,14 @@ static long log_or(struct token **tp, struct token *trigger)
       }
    return e1;
    }
-
+
 /*
  * <conditional> ::= <log_or> |
  *                   <log_or> '?' <conditional> ':' <conditional>
  */
-long conditional(struct token **tp, struct token *trigger)
+long conditional(tp, trigger)
+struct token **tp;
+struct token *trigger;
    {
    long e1, e2, e3;
 
@@ -520,13 +546,14 @@ long conditional(struct token **tp, struct token *trigger)
    else
       return e1;
    }
-
+
 /*
  * eval - get the tokens for a conditional and evaluate it to 0 or 1.
  *  trigger is the preprocessing directive that triggered the evaluation;
  *  it is used for error messages.
  */
-int eval(struct token *trigger)
+int eval(trigger)
+struct token *trigger;
    {
    struct token *t = NULL;
    int result;

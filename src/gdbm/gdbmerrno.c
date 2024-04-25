@@ -48,7 +48,8 @@ const char * const gdbm_errlist[] = {
 };
 
 const char *
-gdbm_strerror(gdbm_error error)
+gdbm_strerror(error)
+    gdbm_error error;
 {
   if(((int)error < 0) || ((int)error > 18))
     {

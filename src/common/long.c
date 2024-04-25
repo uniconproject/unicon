@@ -9,13 +9,14 @@
  * Long strlen
  */
 
-long lstrlen(char *s)
+long lstrlen(s)
+char *s;
 {
     long l = 0;
     while(*s++) l++;
     return l;
 }
-
+
 /* Shell sort with some enhancements from Knuth.. */
 
 void lqsort( base, nel, width, cmp )
@@ -46,13 +47,16 @@ int (*cmp)();
                 }
            }
 }
-#endif                                  /* IntBits == 16 */
-
-/*
+#endif					/* IntBits == 16 */
+
+/* 
  * Write a long string in int-sized chunks.
  */
 
-long longwrite(char *s,long len, FILE *file)
+long longwrite(s,len,file)
+FILE *file;
+char *s;
+long len;
 {
    long tally = 0;
    int n = 0;

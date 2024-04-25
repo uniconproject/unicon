@@ -21,12 +21,13 @@ on:
 
 jobs:
   Windows:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
       matrix:
         cfg:
-        -  { os: windows-latest,  name: 'Windows 64-bit', pkg: 'Windows_64-bit',  opt: '--enable-werror' }
+        -  { os: windows-latest,  name: 'Windows 64-bit',  opt: '' }
         #-  { os: windows-latest,  name: 'Windows 32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
 
     defaults:
@@ -51,7 +52,7 @@ jobs:
       shell: bash
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -67,16 +68,6 @@ jobs:
 
     - name: TestReport
       run: make -C tests Report
-
-    - name: Installer
-      run: |
-        make WinInstaller
-
-    - name: Publish
-      uses: actions/upload-artifact@v4
-      with:
-        name: unicon-${{ matrix.cfg.pkg}}
-        path: Output/setup-unicon*.exe
 
     - name: Summary
       run: |
@@ -84,15 +75,16 @@ jobs:
         cat unicon-features.log
 
   macOS:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
       matrix:
         cfg:
-        -  { os: macos-latest, name: 'macOS', opt: '--enable-werror CC=clang CXX=clang++' }
+        -  { os: macos-latest,    name: 'macOS',           opt: 'CC=clang CXX=clang++' }
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -114,22 +106,23 @@ jobs:
         cat unicon-config.log
         cat unicon-features.log
 
+
   Linux:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ubuntu-latest
     name: ${{ matrix.cfg.name }}
     container: ${{ matrix.cfg.os }}
     strategy:
       matrix:
         cfg:
-        -  { os: 'ubuntu:20.04',  name: 'Ubuntu 20.04',   opt: '--enable-werror' }
-        -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04',   opt: '--enable-werror' }
-        -  { os: 'centos:7',      name: 'CentOS 7',       opt: '--enable-werror' }
-        -  { os: 'fedora:latest', name: 'Fedora Latest',  opt: '--enable-werror' }
-        -  { os: 'debian:10',     name: 'Debian 10',      opt: '--enable-werror' }
-        -  { os: 'debian:11',     name: 'Debian 11',      opt: '--enable-werror' }
-        -  { os: 'debian:12',     name: 'Debian 12',      opt: '--enable-werror' }
-        -  { os: 'oraclelinux:8', name: 'Oracle Linux 8', opt: '--enable-werror' }
-        -  { os: 'alpine:latest', name: 'Alpine Latest',  opt: '' }
+        -  { os: 'ubuntu:20.04',  name: 'Ubuntu 20.04',   opt: '' }
+        -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04',   opt: '' }
+        -  { os: 'centos:7',      name: 'CentOS 7',       opt: '' }
+        -  { os: 'fedora:latest', name: 'Fedora Latest',  opt: '' }
+        -  { os: 'debian:10',     name: 'Debian 10',      opt: '' }
+        -  { os: 'debian:11',     name: 'Debian 11',      opt: '' }
+        -  { os: 'oraclelinux:8', name: 'Oracle Linux 8', opt: '' }
+        #-  { os: 'alpine:latest', name: 'Alpine Latest',  opt: '' }
     steps:
 
     - name: Install dependencies
@@ -158,7 +151,7 @@ jobs:
               ;;
            alpine*)
               apk update
-              apk add build-base diffutils
+              apk add build-base
               ;;
             esac
 
@@ -166,7 +159,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Configure
-      run: ./configure ${{ matrix.cfg.opt }}
+      run: ./configure
 
     - name: Make
       run: make
@@ -185,66 +178,23 @@ jobs:
         cat unicon-config.log
         cat unicon-features.log
 
-  Alpine:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform:
-         -  { arch: aarch64 }
-         -  { arch: armv7 }
-         -  { arch: x86 }
-    steps:
-    - name: alpine
-      uses: jirutka/setup-alpine@v1
-      with:
-        arch:  ${{ matrix.platform.arch }}
-        branch: v3.19
-        packages: >
-          build-base
-          diffutils
-
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Configure
-      run: ./configure --disable-iconc
-      shell: alpine.sh {0}
-
-    - name: Make
-      run: make
-      shell: alpine.sh {0}
-
-    - name: Test
-      run: make Test
-      shell: alpine.sh {0}
-
-    - name: TestReport
-      run: make -C tests Report
-      shell: alpine.sh {0}
-
-    - name: Summary
-      run: |
-        cat unicon-config.log
-        cat unicon-features.log
-      shell: alpine.sh {0}
-
   Features:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
       matrix:
         cfg:
         #-  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
-        -  { os: ubuntu-latest, name: 'Clang',          opt: 'CC=clang CXX=clang++ --enable-werror' }
-        -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics --enable-werror' }
-        -  { os: ubuntu-latest, name: 'No 3D Graphics', opt: '--disable-graphics3d --enable-werror' }
-        -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency --enable-werror' }
-        -  { os: ubuntu-latest, name: 'Heap Test',      opt: '--enable-debugheap  --enable-verifyheap --enable-werror' }
-        -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin --enable-werror' }
-        -  { os: ubuntu-latest, name: 'Dev Mode',       opt: '--enable-devmode' }
+        -  { os: ubuntu-latest, name: 'Clang',          opt: 'CC=clang CXX=clang++' }
+        -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics' }
+        -  { os: ubuntu-latest, name: 'No 3D Graphics', opt: '--disable-graphics3d' }
+        -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency' }
+        -  { os: ubuntu-latest, name: 'Heap Test',      opt: '--enable-debugheap  --enable-verifyheap' }
+        -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin' }
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |
@@ -252,10 +202,7 @@ jobs:
         if [[ "${{ matrix.cfg.name }}" = "Ubuntu 32-bit" ]]
         then
         # Install tools to cross compile 32-bit
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
         sudo apt-get install -q -y gcc-multilib g++-multilib
-        sudo apt install libssl-dev:i386
         fi
         # Easy way to install all dependencies
         sudo apt-get install -q -y devscripts equivs
@@ -288,6 +235,7 @@ jobs:
         cat unicon-features.log
 
   DebianPkg:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     strategy:
@@ -297,7 +245,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |

@@ -21,12 +21,12 @@ static void report  (char *s);
 static void usage   (void);
 
 #ifdef strlen
-#undef strlen                           /* pre-defined in some contexts */
-#endif                                  /* strlen */
+#undef strlen				/* pre-defined in some contexts */
+#endif					/* strlen */
 
 #ifdef ExpTools
 char *toolstr = "${TOOLS}";
-#endif                                  /* ExpTools */
+#endif					/* ExpTools */
 
 
 char *unirootfile(char *prog, char *mod);
@@ -40,10 +40,10 @@ extern char patchpath[];
 /*
  * getopt() variables
  */
-extern int optind;              /* index into parent argv vector */
-extern int optopt;              /* character checked for validity */
-extern char *optarg;            /* argument associated with option */
-
+extern int optind;		/* index into parent argv vector */
+extern int optopt;		/* character checked for validity */
+extern char *optarg;		/* argument associated with option */
+
 
 static
 int
@@ -112,32 +112,34 @@ char *versionLine(char *prefix)
 /*
  *  main program
  */
-int main(int argc, char **argv)
+int main(argc,argv)
+int argc;
+char **argv;
    {
-   int errors = 0;                      /* compilation errors */
+   int errors = 0;			/* compilation errors */
    int dynrec_start; /* recnum origin for dynamic recs */
-   int no_c_comp = 0;                   /* suppress C compile and link? */
-   char *cfile = NULL;                  /* name of C file - primary */
-   char *hfile = NULL;                  /* name of C file - include */
-   char *ofile = NULL;                  /* name of executable result */
-   char *efile = NULL;                  /* stderr file */
-   int keeptmp = 0;                     /* Do not remove cfile and hfile */
+   int no_c_comp = 0;			/* suppress C compile and link? */
+   char *cfile = NULL;			/* name of C file - primary */
+   char *hfile = NULL;			/* name of C file - include */
+   char *ofile = NULL;			/* name of executable result */
+   char *efile = NULL;			/* stderr file */
+   int keeptmp = 0;			/* Do not remove cfile and hfile */
 
-   char *db_name = "rt.db";             /* data base name */
-   char *incl_file = "rt.h";            /* header file name */
+   char *db_name = "rt.db";		/* data base name */
+   char *incl_file = "rt.h";		/* header file name */
 
-   char *db_path;                       /* path to data base */
-   char *db_lst;                        /* list of private data bases */
-   char *incl_path;                     /* path to header file */
+   char *db_path;			/* path to data base */
+   char *db_lst;			/* list of private data bases */
+   char *incl_path;			/* path to header file */
    char *s, c1;
-   char buf[MaxFileName];               /* file name construction buffer */
+   char buf[MaxFileName];		/* file name construction buffer */
    extern int ca_init(char *, int, char **);
    extern void ca_dbg_dump(void);
    extern char * ca_first_perifile;
 #ifdef ExpTools
    char Buf[MaxFileName];
-   char *tools;                         /* patch and TOOLS string buffer */
-#endif                                  /* ExpTools */
+   char *tools;				/* patch and TOOLS string buffer */
+#endif					/* ExpTools */
 
    int c;
    int ret_code;
@@ -149,8 +151,8 @@ int main(int argc, char **argv)
 #ifdef ExpTools
    if (strlen(patchpath)>18) {
       refpath = patchpath+18;
-      if(!strncmp(refpath,toolstr,strlen(toolstr))) {   /* Is it TOOLS   */
-         refpath = refpath+strlen(toolstr);             /* skip TOOLS    */
+      if(!strncmp(refpath,toolstr,strlen(toolstr))) {	/* Is it TOOLS   */
+         refpath = refpath+strlen(toolstr);		/* skip TOOLS    */
          if ((tools = getenv("TOOLS")) == NULL) {
             fprintf(stderr,
               "patchstr begins with \"${TOOLS}\" but ${TOOLS} has no value\n");
@@ -159,19 +161,19 @@ int main(int argc, char **argv)
            }
          else
             strcpy(Buf,tools);
-         strcat(Buf,refpath);                   /* append name   */
+         strcat(Buf,refpath);			/* append name   */
          if (Buf[strlen(Buf)-1] != '/')
             strcat(Buf,"/");
-         refpath = Buf;                         /* use refpath   */
+         refpath = Buf;				/* use refpath   */
          }
       }
    fprintf(stderr,"iconc library files found in %s\n",refpath);
-#else                                   /* ExpTools */
+#else					/* ExpTools */
 
    // find the path to the top level directory
    refpath = unirootfile(argv[0], "/../..");
 
-#endif                                  /* ExpTools */
+#endif					/* ExpTools */
 
    /*
     * Pre-process options looking for -help and -version
@@ -358,9 +360,9 @@ int main(int argc, char **argv)
             ofile = optarg;
             break;
          case 'p': /* -p C-opts: options for C comp */
-            if (*optarg == '\0')        /* if empty string, clear options */
+            if (*optarg == '\0')	/* if empty string, clear options */
                c_opts = optarg;
-            else {                      /* else append to current set */
+            else {			/* else append to current set */
                s = (char *)alloc(strlen(c_opts) + 1 + strlen(optarg) + 1);
                sprintf(s, "%s %s", c_opts, optarg);
                c_opts = s;
@@ -390,7 +392,7 @@ int main(int argc, char **argv)
                   case 'b': /* -wb: optimize arg derefs #2 */
                      wop_set(Wop_OpArgDerefs);
                      break;
-                  case 'f':             /* -wf: optimize field derefs */
+                  case 'f':		/* -wf: optimize field derefs */
                      wop_set(Wop_FldDerefs);
                      break;
                   default:
@@ -404,7 +406,7 @@ int main(int argc, char **argv)
             usage();
          }
 
-   init();                      /* initialize memory for translation */
+   init();			/* initialize memory for translation */
    /*
     * Load the data bases of information about run-time routines and
     *  determine what libraries are needed for linking (these libraries
@@ -433,9 +435,9 @@ int main(int argc, char **argv)
    strcpy(db_path, refpath);
 #if NTGCC
    strcat(db_path, "\\rt\\lib\\");
-#else                                   /* NTGCC */
+#else					/* NTGCC */
    strcat(db_path, "/rt/lib/");
-#endif                                  /* NTGCC */
+#endif					/* NTGCC */
    strcat(db_path, db_name);
    readdb(db_path);
    addlib(salloc(makename(buf,SourceDir, db_path, LibSuffix)));
@@ -444,10 +446,10 @@ int main(int argc, char **argv)
     * Scan the rest of the command line for file name arguments.
     */
    while (optind < argc)  {
-      if (strcmp(argv[optind],"-x") == 0)       /* stop at -x */
+      if (strcmp(argv[optind],"-x") == 0)	/* stop at -x */
          break;
       else if (strcmp(argv[optind],"-") == 0)
-         /* mdw src_file("-"); */                               /* "-" means standard input */
+         /* mdw src_file("-"); */				/* "-" means standard input */
          src_file("-", &srclst);
 
 /*
@@ -458,25 +460,25 @@ int main(int argc, char **argv)
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if UNIX
       else if (argv[optind][0] == '-')
-         addlib(argv[optind]);          /* assume linker option */
-#endif                                  /* UNIX ... */
+         addlib(argv[optind]);		/* assume linker option */
+#endif					/* UNIX ... */
 
-#if MSDOS || MVS || VM || VMS
+#if MACINTOSH || MSDOS || MVS || VM || VMS
       /*
        * Linker options on command line not supported.
        */
-#endif                                  /* MSDOS || ... */
+#endif					/* MACINTOSH || ... */
 
 /*
  * End of operating-system specific code.
  */
 
       else {
-         fp = fparse(argv[optind]);             /* parse file name */
+         fp = fparse(argv[optind]);		/* parse file name */
          if (*fp->ext == '\0' || smatch(fp->ext, SourceSuffix)) {
             /* mdw: modified this clause */
             if (unicon_mode)
@@ -485,7 +487,7 @@ Deliberate Syntax Error
                makename(buf,SourceDir,argv[optind], SourceSuffix);
 #if VMS
             strcat(buf, fp->version);
-#endif                                  /* VMS */
+#endif					/* VMS */
             /* mdw src_file(buf);*/
             src_file(buf, &srclst);
             }
@@ -499,7 +501,7 @@ Deliberate Syntax Error
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 
 #if UNIX
@@ -507,14 +509,14 @@ Deliberate Syntax Error
              * Assume all files that are not Icon source go to linker.
              */
             addlib(argv[optind]);
-#endif                                  /* UNIX ... */
+#endif					/* UNIX ... */
 
-#if MSDOS || MVS || VM || VMS
+#if MACINTOSH || MSDOS || MVS || VM || VMS
             /*
              * Pass no files to the linker.
              */
             quitf("bad argument %s",argv[optind]);
-#endif                                  /* MSDOS || ... */
+#endif					/* MACINTOSH || ... */
 
 /*
  * End of operating-system specific code.
@@ -525,7 +527,7 @@ Deliberate Syntax Error
       }
 
    if (srclst == NULL)
-      usage();                          /* error -- no files named */
+      usage();				/* error -- no files named */
 
    if (pponly) {
       if (trans(argv[0]) == 0)
@@ -534,13 +536,13 @@ Deliberate Syntax Error
          exit (EXIT_SUCCESS);
       }
 
-   if (ofile == NULL) {         /* if no -o file, synthesize a name */
+   if (ofile == NULL) {		/* if no -o file, synthesize a name */
       if (strcmp(srclst->name,"-") == 0)
          ofile = salloc(makename(buf,TargetDir,"stdin",ExecSuffix));
       else
          ofile = salloc(makename(buf,TargetDir,srclst->name,ExecSuffix));
       }
-   else {                               /* add extension if necessary */
+   else {				/* add extension if necessary */
       fp = fparse(ofile);
       if (*fp->ext == '\0' && *ExecSuffix != '\0')
          ofile = salloc(makename(buf,NULL,ofile,ExecSuffix));
@@ -563,9 +565,9 @@ Deliberate Syntax Error
    strcpy(incl_path, refpath);
 #if NTGCC
    strcat(incl_path, "\\rt\\include\\");
-#else                                   /* NTGCC */
+#else					/* NTGCC */
    strcat(incl_path, "/rt/include/");
-#endif                                  /* NTGCC */
+#endif					/* NTGCC */
    strcat(incl_path, incl_file);
    fprintf(inclfile,"#include \"%s\"\n", incl_path);
 
@@ -577,7 +579,7 @@ Deliberate Syntax Error
 
    errors = trans(argv[0]);
 
-   if ((errors > 0) || just_type_trace) {       /* exit if errors seen */
+   if ((errors > 0) || just_type_trace) {	/* exit if errors seen */
       rmfile(cfile);
       rmfile(hfile);
       if (errors > 0)
@@ -599,7 +601,7 @@ Deliberate Syntax Error
    /*
     * Compile and link C file.
     */
-   if (no_c_comp) {                     /* exit if no C compile wanted */
+   if (no_c_comp) {			/* exit if no C compile wanted */
       exit(EXIT_SUCCESS);
       }
 
@@ -624,7 +626,7 @@ Deliberate Syntax Error
    }
 #ifdef IconcLogAllocations
    alc_stats();
-#endif                                  /* IconcLogAllocations */
+#endif					/* IconcLogAllocations */
    if (ret_code == EXIT_SUCCESS && optind < argc)  {
       if (verbose > 0)
          report("Executing");
@@ -632,13 +634,16 @@ Deliberate Syntax Error
       }
    return ret_code;
    }
-
+
 /*
  * Write the iconc command-line into a comment in the C file generated by iconc.
- */
+ */ 
 static
 void
-emit_cmdline(void * f, int argc, char ** argv)
+emit_cmdline(f, argc, argv)
+   void * f;
+   int argc;
+   char ** argv;
 {
    int i, len, col;
 
@@ -660,25 +665,26 @@ emit_cmdline(void * f, int argc, char ** argv)
 /*
  * execute - execute compiled Icon program
  */
-static void execute(char *ofile, char *efile, char **args)
+static void execute(ofile,efile,args)
+char *ofile, *efile, **args;
    {
 
    int n;
    char **argv, **p;
 
 #if UNIX
-      char buf[MaxFileName];            /* file name construction buffer */
+      char buf[MaxFileName];		/* file name construction buffer */
 
       ofile = salloc(makename(buf,"./",ofile,ExecSuffix));
-#endif                                  /* UNIX */
+#endif					/* UNIX */
 
-   for (n = 0; args[n] != NULL; n++)    /* count arguments */
+   for (n = 0; args[n] != NULL; n++)	/* count arguments */
       ;
    p = argv = (char **)alloc((unsigned int)((n + 2) * sizeof(char *)));
 
-   *p++ = ofile;                        /* set executable file */
+   *p++ = ofile;			/* set executable file */
 
-   while ((*p++ = *args++) != NULL)             /* copy args into argument vector */
+   while ((*p++ = *args++) != NULL)		/* copy args into argument vector */
       ;
 
    *p = NULL;
@@ -696,13 +702,17 @@ static void execute(char *ofile, char *efile, char **args)
 #if PORT
    /* something is needed */
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
+
+#if MACINTOSH
+      fprintf(stderr,"-x not supported\n"); fflush(stderr);
+#endif					/* MACINTOSH */
 
 #if MSDOS
 #if MICROSOFT || TURBO
       execvp(ofile,argv);
-#endif                                  /* MICROSOFT || ... */
-#endif                                  /* MSDOS */
+#endif					/* MICROSOFT || ... */
+#endif					/* MSDOS */
 
 #if MVS || VM
       fprintf(stderr,"-x not supported\n");
@@ -711,7 +721,7 @@ Deliberate Syntax Error
 
 #if UNIX || VMS
       execvp(ofile,argv);
-#endif                                  /* UNIX || VMS */
+#endif					/* UNIX || VMS */
 
 
 /*
@@ -721,8 +731,9 @@ Deliberate Syntax Error
    quitf("could not run %s",ofile);
 
    }
-
-static void report(char *s)
+
+static void report(s)
+char *s;
    {
 
 /*
@@ -733,32 +744,34 @@ static void report(char *s)
 #if PORT
    fprintf(stderr,"%s:\n",s);
 Deliberate Syntax Error
-#endif                                  /* PORT */
+#endif					/* PORT */
 
 #if MSDOS || MVS || UNIX || VM || VMS
    fprintf(stderr,"%s:\n",s);
-#endif                                  /* MSDOS || ... */
+#endif					/* MSDOS || ... */
 
 /*
  * End of operating-system specific code.
  */
 
    }
-
+
 /*
  * rmfile - remove a file
  */
 
-static void rmfile(char *fname)
+static void rmfile(fname)
+char *fname;
    {
    remove(fname);
    }
-
+
 /*
  * open_out - open a C output file and write identifying information
  *  to the front.
  */
-static FILE *open_out(char *fname)
+static FILE *open_out(fname)
+char *fname;
    {
    FILE *f;
    static char *ident = "/*ICONC*/";
@@ -790,7 +803,7 @@ static FILE *open_out(char *fname)
    fflush(f);
    return f;
    }
-
+
 /*
  * Print an error message if called incorrectly.  The message depends
  *  on the legal options for this system.

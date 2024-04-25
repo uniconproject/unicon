@@ -35,7 +35,9 @@
 #include "XpmI.h"
 
 int
-XpmWriteFileFromData(char *filename, char **data)
+XpmWriteFileFromData(filename, data)
+    char *filename;
+    char **data;
 {
     XpmImage image;
     XpmInfo info;
@@ -46,7 +48,7 @@ XpmWriteFileFromData(char *filename, char **data)
     ErrorStatus = XpmCreateXpmImageFromData(data, &image, &info);
 
     if (ErrorStatus != XpmSuccess)
-        return (ErrorStatus);
+	return (ErrorStatus);
 
     ErrorStatus = XpmWriteFileFromXpmImage(filename, &image, &info);
 

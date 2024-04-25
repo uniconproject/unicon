@@ -68,16 +68,6 @@ jobs:
     - name: TestReport
       run: make -C tests Report
 
-    - name: Installer
-      run: |
-        make WinInstaller
-
-    - name: Publish
-      uses: actions/upload-artifact@v4
-      with:
-        name: unicon-${{ matrix.cfg.pkg}}
-        path: Output/setup-unicon*.exe
-
     - name: Summary
       run: |
         cat unicon-config.log
@@ -89,7 +79,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: macos-latest, name: 'macOS', opt: '--enable-werror CC=clang CXX=clang++' }
+        -  { os: macos-13, name: 'macOS', opt: '--enable-werror CC=clang CXX=clang++' }
     steps:
     - name: Checkout
       uses: actions/checkout@v4

@@ -89,6 +89,9 @@ initially
 end
 
 class TestSuite(__tests, __testReporter)
+   $define EXIT_SUCCESS 0
+   $define EXIT_FAIL 1
+
    method add(testCase)
       if (classname(testCase) ~=== "unittest__TestCase") then {
          if \testCase.__m["Type"] then {
@@ -102,7 +105,7 @@ class TestSuite(__tests, __testReporter)
    end
 
    method run()
-      local mname
+      local mname, counts
 
       every test := !__tests do {
          cname := classname(test)
@@ -124,9 +127,11 @@ class TestSuite(__tests, __testReporter)
          test.teardownClass()
       }
 
-      self.__testReporter.summary()
+      counts := self.__testReporter.summary()
 
       self.output()
+
+      return if counts[2] > 0 then EXIT_FAIL else EXIT_SUCCESS
    end
 
    method output()
@@ -138,35 +143,29 @@ initially
    /__testReporter := TestReporter()
 end
 
-# TODO: save summary in a variable or return a summary from summary()
-class TestReporter(__results)
+class TestReporter(__results, __counts)
    $define STATUS_SUCCESS 0
    $define STATUS_FAIL 1
 
    method result(cname, mname, passed)
       put(self.__results, [cname, mname, passed])
+      if passed == STATUS_SUCCESS then self.__counts[1] +:= 1 else self.__counts[2] +:= 1
+   end
+
+   method results()
+      return self.__counts
    end
 
    method summary()
-      local passed, failed
-
-      passed := 0
-      failed := 0
-
-      every results := !self.__results do {
-         if results[3] == STATUS_SUCCESS then {
-            passed +:= 1
-         } else {
-            failed +:= 1
-         }
-      }
-      
       write("=== TEST SUMMARY ===")
-      write("passed: " || passed || ", failed: " || failed)
+      write("passed: " || self.__counts[1] || ", failed: " || self.__counts[2])
+
+      return self.__counts
    end
 
 initially
    /__results := []
+   /__counts := [0, 0]
 end
 
 class Mock(__expectations)

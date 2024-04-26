@@ -52,9 +52,31 @@ class TestCase : Object(__status)
       return
    end
 
+   method assertFail(expression)
+      if not @expression[1] then return
+
+      write("Assertion failed.")
+      self.__status := STATUS_FAIL
+      fail
+   end
+
    method assertEqual(expected, actual)
-      if expected ~== actual then {
+      if type(expected) ~== type(actual) then {
+         write("Assertion failed: expected value of type ", type(expected), ", but got ", type(actual))
+         self.__status := STATUS_FAIL
+         fail
+      } else if expected ~== actual then {
          write("Assertion failed: expected ", expected, ", but got ", actual)
+         self.__status := STATUS_FAIL
+         fail
+      }
+
+      return
+   end
+
+   method assertNotEqual(unexpected, actual)
+      if type(unexpected) === type(actual) & unexpected === actual then {
+         write("Assertion failed: unexpected ", unexpected, ", but got ", actual)
          self.__status := STATUS_FAIL
          fail
       }

@@ -64,6 +64,10 @@ class FailureTest : TestCase()
       assertEqual(0, 9)
    end
 
+   method testFailAssertNotEqual()
+      assert(0, 0)
+   end
+
    method testFailAssert()
       assert { 0 == 9 }
    end
@@ -117,12 +121,29 @@ class TestTestCase : TestCase(__calls)
    method testAssertEqual()
       assertEqual(1, 1)
       assertEqual("Unicon", "Unicon")
+
+      self.__calls["tests"] +:= 1
+   end
+
+   method testAssertNotEqual()
+      assertNotEqual(1, 2)
+      assertNotEqual("Unicon", "Icon")
+
       self.__calls["tests"] +:= 1
    end
 
    method testAssert()
       assert { 1 == 1 }
       assert { "Unicon" == "Unicon" }
+
+      self.__calls["tests"] +:= 1
+   end
+
+   method testAssertFail()
+      assertFail { 1 == 2 }
+      assertFail { 1 == "Unicon" }
+      assertFail { "Unicon" == 1 }
+
       self.__calls["tests"] +:= 1
    end
 

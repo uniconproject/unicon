@@ -526,20 +526,19 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
        */
 
 #ifdef Graphics3D
-   if (w->context->rendermode == UGL3D) {
-      if (argc>warg && is:record(argv[warg])) {
-        /* set a boolean flag, use a texture */
-        dest_is_texture=1;
-        /* Get the Window from Texture record */
-        w2 = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
-        /* Pull out the texture handler */
-        dest_texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
-        /* get the context from the window binding */
-        warg++;
+       if (argc>warg && is:record(argv[warg])) {
+         /* set a boolean flag, use a texture */
+         dest_is_texture=1;
+         /* Get the Window from Texture record */
+         w2 = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
+         /* Pull out the texture handler */
+         dest_texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
+         /* get the context from the window binding */
+         warg++;
       }
 
       if (argc-warg<4) /* should have at least 4 int values */
-            runerr(146);
+         runerr(146);
 
       /*
        * This is the: "w2 is a destination texture" case.
@@ -580,7 +579,6 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
          }
          ReturnWindow;
          }
-      }
 #endif                                  /* Graphics3D */
 
       /*

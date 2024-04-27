@@ -2,18 +2,17 @@ import unittest
 
 link ximage, capture, io
 
-# TODO: TestSuite
-#        - run()
-#        Internal
-#        - __testReporter
-
 class TestTestSuite : TestCase(__testSuite)
+   $define EXIT_SUCCESS 0
+   $define EXIT_FAIL 1
+
    method setup()
       self.__testSuite := TestSuite()
    end
 
    method testInitialState()
       assertEqual(0, *self.__testSuite.__tests)
+      assertEqual("unittest__TestReporter", classname(self.__testSuite.__testReporter))
    end
 
    method testAddTest()
@@ -31,11 +30,26 @@ class TestTestSuite : TestCase(__testSuite)
    end
 
    method testRunTests()
-      # TODO: self.__testSuite.run(), check successes and failures. Check return value.
+      assertEqual(0, *self.__testSuite.__tests)
+      assertEqual(EXIT_SUCCESS, self.__testSuite.run())
+
+      st := SimpleTest()
+      self.__testSuite.add(st)
+      assertEqual(EXIT_SUCCESS, self.__testSuite.run())
    end
 
-   method testTestReporter()
-      # TODO: make sure that the TestReporter is class TestReporter, check default values.
+   method testRunFailureTests()
+      local results
+
+      assertEqual(0, *self.__testSuite.__tests)
+
+      ft := FailureTest()
+      self.__testSuite.add(ft)
+      assertEqual(EXIT_FAIL, self.__testSuite.run())
+
+      results := self.__testSuite.__testReporter.results()
+      assertEqual(0, results[1])
+      assertNotEqual(0, results[2])
    end
 end
 
@@ -59,19 +73,24 @@ class SuccessTest : TestCase()
    end
 end
 
-# TODO: move all failing tests here in order to avoid exit(1)
+# NOTE: move all failing tests here in order to avoid exit(1)
 #        these tests are isolated in a different test runner.
 class FailureTest : TestCase()
    method testFailAssertEqual()
       assertEqual(0, 9)
+      assertEqual("Unicon", "Icon")
    end
 
    method testFailAssertNotEqual()
-      assert(0, 0)
+      assertNotEqual(0, 0)
+      assertNotEqual("Unicon", "Unicon")
    end
 
    method testFailAssert()
       assert { 0 == 9 }
+      assert { 0 ~= 0 }
+      assert { "Unicon" == "Icon" }
+      assert { "Unicon" ~== "Unicon" }
    end
 end
 
@@ -149,30 +168,11 @@ class TestTestCase : TestCase(__calls)
       self.__calls["tests"] +:= 1
    end
 
-   # TODO: may need to clean up the test reporter to avoid the Test Suite to fail.
-   method testStatusAssertFail()
-      assertEqual(STATUS_SUCCESS, self.__status)
-      assert { 1 == 2 }
-      assertEqual(STATUS_FAIL, self.__status)
-      self.__calls["tests"] +:= 1
-   end
-
-   # TODO: may need to clean up the test reporter to avoid the Test Suite to fail.
-   method testStatusAssertEqualFail()
-      assertEqual(STATUS_SUCCESS, self.__status)
-      assertEqual(1, 2)
-      assertEqual(STATUS_FAIL, self.__status)
-      self.__calls["tests"] +:= 1
-   end
-
 initially
    __calls := table()
    every call := !["setupClass", "teardownClass", "setup", "teardown", "tests"] do
       __calls[call] := 0
 end
-
-# TODO: TestReporter
-#        - summary()
 
 class TestTestReporter : TestCase(__reporter)
    method setup()
@@ -180,7 +180,14 @@ class TestTestReporter : TestCase(__reporter)
    end
 
    method testInitialState()
+      local results
+
       assertEqual(0, *self.__reporter.__results)
+
+      results := self.__reporter.results()
+      every result := !results do {
+         assertEqual(0, result)
+      }
    end
 
    method testResult()
@@ -212,11 +219,11 @@ class TestTestReporter : TestCase(__reporter)
       assertEqual(2, *self.__reporter.__results)
       results := self.__reporter.summary()
       assertEqual(1, results[1])
-      assertEqual(1, results[1])
+      assertEqual(1, results[2])
 
       results := self.__reporter.results()
       assertEqual(1, results[1])
-      assertEqual(1, results[1])
+      assertEqual(1, results[2])
    end
 end
 

@@ -4,10 +4,10 @@
 # TODO: Test Reporter
 #     - add message to results
 #     - add backtrace if possible
-# TODO: exit 0 when success, 1 when failure.
 # TODO: there should be a way to discover and load tests dynamically
 # TODO: add timer, see tests/unicon/tester.icn
 # TODO: how to catch stdin/stdout/stderr within tests, see capture().
+# TODO: enable/disable summary.
 # TODO: enable/disable verbosity.
 
 package unittest
@@ -23,19 +23,19 @@ class TestCase : Object(__status)
    $define STATUS_FAIL 1
 
    method setupClass()
-      write(classname(self), "::setupClass()")
+      # write(classname(self), "::setupClass()")
    end
 
    method teardownClass()
-      write(classname(self), "::teardownClass()")
+      # write(classname(self), "::teardownClass()")
    end
 
    method setup()
-      write(classname(self), "::setup()")
+      # write(classname(self), "::setup()")
    end
 
    method teardown()
-      write(classname(self), "::teardown()")
+      # write(classname(self), "::teardown()")
    end
 
    method __reset()
@@ -114,7 +114,7 @@ class TestSuite(__tests, __testReporter)
          every image(!test.__m) ? {
             mname := (="procedure ", tab(0)) | next
             if mname ? (tab(*cname+1), ="_", match("test")) then {
-               write(ximage(mname))
+               write(mname)
                test.__reset()
                test.setup()
                mname(test)
@@ -128,8 +128,6 @@ class TestSuite(__tests, __testReporter)
       }
 
       counts := self.__testReporter.summary()
-
-      self.output()
 
       return if counts[2] > 0 then EXIT_FAIL else EXIT_SUCCESS
    end

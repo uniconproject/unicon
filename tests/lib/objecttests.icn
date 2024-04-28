@@ -1,6 +1,6 @@
 #<p>
 # <b>
-# Illustrate some features of the Object class (UniLib Class API)
+# Illustrate some features of the Object class (UniLib API)
 # </b>
 #<p>
 #<p>
@@ -88,18 +88,20 @@ procedure main()
    g := GTest(1,2,3)
    h := HTest(4,5,6)
 
-   write("Check to see if d is an instance of Class.")
+   write("Check to see if d is an instance of Object.")
    write()
-   if lang::instanceof(d, "Class") then {
-      write("\td is an instance of Class")
+   if lang::instanceof(d, "lang::Object") then {
+      write("\td is an instance of Object")
       }
    else {
-      write("\td is NOT an instance of Class!")
+      write("\td is NOT an instance of Object!")
       }
    write()
 
    write("Test string invocation of method names...should see '123'")
+   d.invoke("write","\t"||1,2,3)
    write()
+   write("And now nested invokes...should still see '123'")
    d.invoke("invoke","invoke","invoke","write","\t"||1,2,3)
    write()
 
@@ -110,17 +112,20 @@ procedure main()
 
    write("Check the inheritance hierarchy")
    write()
-   checkInherit(a,"Class")
+   checkInherit(a,"ATest")
+   checkInherit(a,"Test::ATest")
+   checkInherit(a,"Object")
    checkInherit(a,"BTest")
    checkInherit(b,"ATest")
    checkInherit(b,"BTest")
-   checkInherit(c,"Class")
+   checkInherit(c,"Object")
    checkInherit(c,"ATest")
-   checkInherit(d,"Class")
+   checkInherit(d,"Object")
    checkInherit(d,"ATest")
    checkInherit(d,"BTest")
    checkInherit(d,"CTest")
    checkInherit(e,"Class")
+   checkInherit(e,"Object")
    checkInherit(e,"FTest")
    checkInherit(f,"ETest")
    write()

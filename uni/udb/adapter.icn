@@ -2,7 +2,7 @@ link ximage
 link strings
 link findre
 import json
-global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue, currStructuredVars
+global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue, currStructuredVars, hideConsoleMsg
 
 class Adapter(
    port,
@@ -146,6 +146,7 @@ class Adapter(
          "scopes" : { put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1);
                      every put_cmdQueue(![: "print -"||!"glsp" :], request_body, 1) }
          "variables" : { variables(request_body, request_seq, request_command, request_arguments) }
+         "setVariable": { setVariable(request_body, request_arguments) }
          "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
          "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"] }
          "evaluate" : { evaluate(request_body, request_seq, request_command, request_arguments) }
@@ -270,8 +271,10 @@ class Adapter(
 
       capabilitiesTable := [
          "supportsConfigurationDoneRequest": "__true__";
-         # "supportsFunctionBreakpoints": "__true__";
-         "supportsDataBreakpoints" : "__true__"
+         "supportsDataBreakpoints" : "__true__";
+         "supportsConditionalBreakpoints": "__true__";
+         "supportsHitConditionalBreakpoints": "__true__";
+         "supportsSetVariable": "__true__"
       ]
 
       res := build_response(request_seq, "__true__", request_command, capabilitiesTable)
@@ -360,14 +363,20 @@ class Adapter(
    end
 
    method set_watchpoints(request_body, request_seq, request_command, request_arguments)
+      local watchType, condition, silentCount
       watchpoints := request_arguments["breakpoints"]
 
       put_cmdQueue("clear watch", request_body, 1)
       numWatchpoints +:= 1
 
       every wp := !watchpoints do {
-         if \wp["frameId"] then put_cmdQueue("frame "||wp["frameId"], 1)
-         put_cmdQueue("vwatch "||wp["dataId"])
+         case wp["accessType"] of {
+            "read": watchType := "rwatch"
+            "write": watchType := "vwatch"
+         }
+         condition := \wp["condition"] | ""
+         silentCount := "-silent "||\wp["hitCondition"] | ""
+         put_cmdQueue(watchType||" "||silentCount||" "||wp["dataId"]||" "||condition, request_body)
          numWatchpoints +:= 1
       }
 
@@ -378,8 +387,12 @@ class Adapter(
       #write(ximage(request_body))
 
       body := [
-         "dataId": request_arguments["name"]; # should be id that udb uses, not sure how that should be retrieved
-         "description": "description here"
+         "dataId": request_arguments["name"]
+         "description": request_arguments["name"]
+         "accessTypes": [
+            "read",
+            "write"
+         ]
       ]
 
       res := build_response(request_seq, "__true__", request_command, body)
@@ -402,38 +415,37 @@ class Adapter(
    end
 
    method variables(request_body, request_seq, request_command, request_arguments)
-      local ref
-      ref := request_arguments["variablesReference"]
-      #write("ref requested:")
-      #write(ref)
-      #write(ximage(currStructuredVars))
-      if ref < 5 then
+      local reqRef, keyName
+      reqRef := request_arguments["variablesReference"]
+      if reqRef < 5 then
          put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1)
       else {
-         #put_cmdQueue("print "||currStructuredVars[ref]["name"], request_body, 1)
          # any ref passed by vscode has already been stored in currStructuredVars, so just process what's stored in there
-         struct := currStructuredVars[ref]["value"]
+         struct := currStructuredVars[reqRef]["value"]
+         structName := currStructuredVars[reqRef]["name"]
          vars := []
-         if type(struct) == ("list" | "table" )| match("record"|"object", image(struct)) then {
-            every k := key(struct) do {
-               val := struct[k]
-               if type(val) == ("list" | "table" ) | match("record"|"object", image(struct)) then {
-                  put(currStructuredVars, [
-                     "name": image(val)
-                     "value": val
-                  ])
-                  varRef := *currStructuredVars
-               }
-               else {
-                  varRef := 0
-               }
-               put(vars, [
-                  "name": replace("["||image(k)||"]", "\"", "\\\"")
-                  "value": replace(image(val), "\"", "\\\"")
-                  "type": type(val)
-                  "variablesReference": varRef
+         every k := key(struct) do {
+            val := struct[k]
+            if type(val) == ("list" | "table" ) | match("record"|"object", image(struct)) then {
+               if type(k) == "string" then
+                  keyName := "\""||k||"\""
+               else
+                  keyName := k
+               put(currStructuredVars, [
+                  "name": structName||"["||keyName||"]"
+                  "value": val
                ])
+               ref := *currStructuredVars
             }
+            else {
+               ref := 0
+            }
+            put(vars, [
+               "name": replace("["||image(k)||"]", "\"", "\\\"")
+               "value": replace(image(val), "\"", "\\\"")
+               "type": type(val)
+               "variablesReference": ref
+            ])
          }
 
          response := build_response(request_seq, "__true__", request_command, table("variables", vars))
@@ -441,6 +453,18 @@ class Adapter(
       }
    end
 
+   method setVariable(request_body, request_arguments)
+      local varName, varVal, reqRef
+      varVal := request_arguments["value"]
+      reqRef := request_arguments["variablesReference"]
+      if reqRef >= 5 then
+         varName := currStructuredVars[reqRef]["name"]
+      else
+         varName := ""
+      varName ||:= request_arguments["name"]
+
+      put_cmdQueue("e "||varName||" := "||varVal, request_body, 1)
+   end
 
    # Default response for request that only requires an acknowledgement.
    method acknowledge(request_seq, request_command)
@@ -481,7 +505,7 @@ class Adapter(
                "threadId": 1])
             writes(sock, event)
          }
-         if \showResult & outputTable["type"] ~== "assignVar" then {
+         if \showResult then {
             body := [
                "category": "console";
                "output": udbRes]
@@ -494,7 +518,8 @@ class Adapter(
             "stackTrace": processStackTraceResult(outputTable)
             "scopes": processScopesResult(outputTable)
             "variables": processVariablesResult(outputTable)
-            "evaluate": processEvaluateResult(outputTable)
+            "setVariable": processSetVariableResult(outputTable)
+            "evaluate": processEvaluateResult(outputTable, showResult)
          }
       }
       else if outputTable["type"] == "stderr" then {
@@ -660,14 +685,12 @@ class Adapter(
    end
 
    method processVariablesResult(res)
-      local response, variables, var, ref
+      local response, variables, var
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
          writes(sock, response)
          return
       }
-
-      ref := currentRequestBody["arguments"]["variablesReference"]
 
       if member(res, "type") then {
          if member(res, "variables") then {
@@ -675,7 +698,7 @@ class Adapter(
                variables := res["variables"]
 
                every var := !variables do {
-                  if var["type"] == "table" then {
+                  if var["type"] == ("list" | "table" )| match("record"|"object", image(var["value"])) then {
                      put(currStructuredVars, [
                         "value": var["value"]
                         "name": var["name"]
@@ -694,95 +717,139 @@ class Adapter(
       }
    end
 
-   method processEvaluateResult(res)
+   method addStructuredVar(val)
+      local varName, reqRef
+      reqRef := currentRequestBody["arguments"]["variablesReference"]
+      if type(val) == ("list" | "table" ) | match("record"|"object", image(val)) then {
+         if reqRef >= 5 then
+            varName := currStructuredVars[reqRef]["name"]
+         else
+            varName := ""
+         varName ||:= currentRequestBody["arguments"]["name"]
+         put(currStructuredVars, [
+            "name": varName
+            "value": val
+         ])
+         return *currStructuredVars
+      }
+      else
+         return 0
+   end
+
+   method processSetVariableResult(res)
+      local response, body, ref
+      if res["type"] == "eval" then {
+         if \res["success"] == "__false__" then {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
+            return
+         }
+         
+         ref := addStructuredVar(res["result"])
+         
+         body := [
+            "value": replace(image(res["result"]), "\"", "\\\"")
+            "type": type(res["result"])
+            "variablesReference": ref
+         ]
+         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+         writes(sock, response)
+      }  
+      
+   end
+
+   method processEvaluateResult(res, noBody)
       local event, body, response, context, ref
-      context := \(\currentRequestBody["arguments"])["context"]
-      if \context == "repl" then {
-         if res["type"] == "assignVar" then {
-            if res["success"] == "__true__" then {
+
+      if type(res["result"]) == ("list" | "table" ) | match("record"|"object", image(res["result"])) then {
+         put(currStructuredVars, [
+            "name": ""
+            "value": res["result"]
+         ])
+         ref := *currStructuredVars
+      }
+      else
+         ref := 0
+
+      if res["type"] == "eval" then {
+         if res["success"] == "__true__" then {
+            if \noBody then {
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+            }
+            else {
                body := [
                   "result": replace(image(res["result"]), "\"", "\\\"")
-                  "type": replace((type(res["result"])), "\"", "\\\"")
-                  "variablesReference": 0
+                  "type": type(res["result"])
+                  "variablesReference": ref
                ]
-               if type(res["result"]) == "table" then {
-                  body["indexedVariables"] := *res["result"]
-                  body["result"] := res
-               }
-               event := build_event("output", body)
-               writes(sock, event)
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
-               writes(sock, response)
+               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
             }
-            else {
-               #write("assignVar unsuccessful")
-            }
+            writes(sock, response)
          }
-         else if res["type"] == "setBreakpoint" then {
-            if res["success"] == "__true__" then {
-               body := [
-                  "reason": "new";
-                  "breakpoint": [
-                     "id": res["breakpoint"]["id"];
-                     "line": res["breakpoint"]["line"];
-                     "verified": "__true__";
-                     "source": [
-                        "path": filePath||".icn"
-                     ]
-                  ]
-               ]
-               event := build_event("breakpoint", body)
-               writes(sock, event)
-            }
-            else {
-               #write("setBreakpoint unsuccessful")
-            }
-         }
-         else if res["type"] == "clearBreakpoint" then {
-            if res["success"] == "__true__" then {
-               body := [
-                  "reason": "removed";
-                  "breakpoint": [
-                     "id": res["breakpoint"]["id"];
-                     "line": res["breakpoint"]["line"];
-                     "verified": "__true__";
-                     "source": [
-                        "path": filePath||".icn"
-                     ]
-                  ]
-               ]
-               event := build_event("breakpoint", body)
-               writes(sock, event)
-            }
-            else {
-               #write("clearBreakpoint unsuccessful")
-            }
+         else {
+            body := [
+               "result": replace(res["result"], "\"", "\\\"")
+               "variablesReference": ref
+            ]
+            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+            writes(sock, response)
          }
       }
-      else if \context == "watch" then {
-         #write("***************watch context*******************")
-         #write(ximage(res))
-         if res["type"] ~== "frame" then {
-            if res["success"] == "__true__" then {
-               if res["type"] == "table" then {
-                  body := [
-                     "result": image(res["result"])
-                     # "variablesReference"
+      else if res["type"] == "assignVar" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "result": replace(image(res["result"]), "\"", "\\\"")
+               "type": replace((type(res["result"])), "\"", "\\\"")
+               "variablesReference": ref
+            ]
+            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+            writes(sock, response)
+         }
+         else {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
+         }
+      }
+      else if res["type"] == "setBreakpoint" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "reason": "new";
+               "breakpoint": [
+                  "id": res["breakpoint"]["id"];
+                  "line": res["breakpoint"]["line"];
+                  "verified": "__true__";
+                  "source": [
+                     "path": filePath||".icn"
                   ]
-               }
-               else {
-                  body := [
-                     "result": replace(image(res["result"]), "\"", "\\\"")
-                     "variablesReference": 0
+               ]
+            ]
+            event := build_event("breakpoint", body)
+            writes(sock, event)
+         }
+         else {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
+         }
+      }
+      else if res["type"] == "clearBreakpoint" then {
+         if res["success"] == "__true__" then {
+            body := [
+               "reason": "removed";
+               "breakpoint": [
+                  "id": res["breakpoint"]["id"];
+                  "line": res["breakpoint"]["line"];
+                  "verified": "__true__";
+                  "source": [
+                     "path": filePath||".icn"
                   ]
-               }
-
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
-               writes(sock, response)
-            }
-            else {
-               # send failure response
-            }
+               ]
+            ]
+            event := build_event("breakpoint", body)
+            writes(sock, event)
+         }
+         else {
+            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            writes(sock, response)
          }
       }
    end
@@ -796,9 +863,12 @@ class Adapter(
             if tab(match("-exec ")) then {
                expression := tab()
                lastUdbCmd := expression
+               hideConsoleMsg := &null
             }
             else if expression ~== "" then {
-               expression := "p "||expression
+               expression := "e "||expression
+               lastUdbCmd := expression
+               hideConsoleMsg := 1
             }
             else if \lastUdbCmd then {
                expression := lastUdbCmd
@@ -807,11 +877,11 @@ class Adapter(
 
          if member(request_arguments, "frameId") then
             put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
-         put_cmdQueue(expression, request_body)
+         put_cmdQueue(expression, request_body, hideConsoleMsg)
       }
       else if request_arguments["context"] == "watch" then {
-         expression := "p "||request_arguments["expression"]
-         put_cmdQueue("frame "||request_arguments["frameId"], &null, 1)
+         expression := "e "||request_arguments["expression"]
+         put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
          put_cmdQueue(expression, request_body, 1)
       }
    end

@@ -15,7 +15,7 @@ export IPATH=$(UNI)/unidoc
 all: $(prog)
 
 $(prog): $(OBJ)
-	$(UC) $(DASHG) -o $(prog) $(OBJ)
+	$(UC) -o $(prog) $(OBJ)
 	$(CP) $(prog)$(EXE) ../../bin
 
 launch-lsp.u:launch-lsp.icn workspace.u database.u server.u completion.u signature.u hover.u definition.u

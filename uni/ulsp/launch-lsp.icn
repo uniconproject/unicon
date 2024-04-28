@@ -40,11 +40,13 @@ procedure main(args)
    #write("args: ", ximage(args))
    port := validate_args(args) | stop("Error: invalid args/port number.")
 
-   if &features == "MacOS" then
-      #port := "localhost:" || port
-      port := "127.0.0.1:" || port
-   else
-      port := ":" || port
+   # Allow passing full host:port as an arg
+   if integer(port) then {
+      if &features == ("MacOS" | "MS Windows NT") then
+         port := "127.0.0.1:" || port
+      else
+         port := ":" || port
+   }
 
    Server(port).run()
 end

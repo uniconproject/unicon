@@ -81,7 +81,8 @@ class Workspace(
    end
 
    method getFile()
-      return m_uni_file
+      if \m_uni_file then
+         return m_uni_file
    end
 
    method updateUniDoc(uri, contents)
@@ -104,7 +105,8 @@ class Workspace(
    method setLinks()
       local links_w_ext, link_w_ext, temp, _link, pack
       links := []
-      links_w_ext := getFile().getLinkNames()
+      getFile() | fail
+      links_w_ext := getFile().getLinkNames() | fail
       every link_w_ext := !links_w_ext do {
          temp := reverse(link_w_ext)
          temp ? {
@@ -130,6 +132,7 @@ class Workspace(
    method setImports()
       local _import
       imports := []
+      getFile() | fail
       every _import := !getFile().getImportNames() do {
          if member(lsp_database.package_db, _import) then
             put(imports, _import)
@@ -146,6 +149,7 @@ class Workspace(
 
    method setPackage()
       local file_loc
+      getFile() | fail
       if \getFile().getPackageName() then {
          _package := getFile().getPackageName()
          if not member(lsp_database.package_db, _package) then {
@@ -170,6 +174,7 @@ class Workspace(
    method setInternalProcedures()
       local _procedure, _param, paramName, paramType, paramDef
       internal_procedures := table()
+      getFile() | fail
       every _procedure := getFile().getProcedures().get() do {
          _procedure.setSrcFile(uri)
          internal_procedures[_procedure.getName()] := table()
@@ -268,6 +273,7 @@ class Workspace(
    method setInternalClasses()
       local _class, _method, _param, paramName, paramType, paramDef, constructor_param
       internal_classes := table()
+      getFile() | fail
       every _class := getFile().getClasses().get() do {
          _class.setSrcFile(uri)
          internal_classes[_class.getName()] := table()

@@ -272,6 +272,8 @@ class Adapter(
       capabilitiesTable := [
          "supportsConfigurationDoneRequest": "__true__";
          "supportsDataBreakpoints" : "__true__";
+         "supportsConditionalBreakpoints": "__true__";
+         "supportsHitConditionalBreakpoints": "__true__";
          "supportsSetVariable": "__true__"
       ]
 
@@ -361,14 +363,20 @@ class Adapter(
    end
 
    method set_watchpoints(request_body, request_seq, request_command, request_arguments)
+      local watchType, condition, silentCount
       watchpoints := request_arguments["breakpoints"]
 
       put_cmdQueue("clear watch", request_body, 1)
       numWatchpoints +:= 1
 
       every wp := !watchpoints do {
-         if \wp["frameId"] then put_cmdQueue("frame "||wp["frameId"], 1)
-         put_cmdQueue("vwatch "||wp["dataId"])
+         case wp["accessType"] of {
+            "read": watchType := "rwatch"
+            "write": watchType := "vwatch"
+         }
+         condition := \wp["condition"] | ""
+         silentCount := "-silent "||\wp["hitCondition"] | ""
+         put_cmdQueue(watchType||" "||silentCount||" "||wp["dataId"]||" "||condition, request_body)
          numWatchpoints +:= 1
       }
 
@@ -379,8 +387,12 @@ class Adapter(
       #write(ximage(request_body))
 
       body := [
-         "dataId": request_arguments["name"]; # should be id that udb uses, not sure how that should be retrieved
-         "description": "description here"
+         "dataId": request_arguments["name"]
+         "description": request_arguments["name"]
+         "accessTypes": [
+            "read",
+            "write"
+         ]
       ]
 
       res := build_response(request_seq, "__true__", request_command, body)

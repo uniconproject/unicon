@@ -415,7 +415,7 @@ class Adapter(
    end
 
    method variables(request_body, request_seq, request_command, request_arguments)
-      local reqRef
+      local reqRef, keyName
       reqRef := request_arguments["variablesReference"]
       if reqRef < 5 then
          put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1)
@@ -427,8 +427,12 @@ class Adapter(
          every k := key(struct) do {
             val := struct[k]
             if type(val) == ("list" | "table" ) | match("record"|"object", image(struct)) then {
+               if type(k) == "string" then
+                  keyName := "\""||k||"\""
+               else
+                  keyName := k
                put(currStructuredVars, [
-                  "name": structName||"["||k||"]"
+                  "name": structName||"["||keyName||"]"
                   "value": val
                ])
                ref := *currStructuredVars

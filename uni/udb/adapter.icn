@@ -916,14 +916,15 @@ $endif
       writes(sock, event)
    end
 
-   # Disconnect from client and udb and startup as a fresh session.
+   # Disconnect from client and udb and end session.
    method disconnect()
+      close(\dapcomSock)
       # Kill terminal running dapcom
       kill(\shellProcessId, 9)
       # End communication with client
       close(\sock)
-      # Restart session
-      put_cmdQueue("reset")
+      # End session
+      exit()
    end
 
    # Open a port as a server and block until client connect.
@@ -936,8 +937,12 @@ $endif
       every !5 do
          if sock := open(port, "na") then
             return sock
-         else
+         else {
+$ifdef VERBOSE
+            write("open(",port,") ERROR: ", \&errortext | "Unknown")
+$endif
             delay(1000)
+         }
 
       #write("udap failed to open port: " || port)
    end

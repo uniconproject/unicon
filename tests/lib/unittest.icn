@@ -38,6 +38,18 @@ class TestTestSuite : TestCase(__testSuite)
       assertEqual(EXIT_SUCCESS, self.__testSuite.run())
    end
 
+   method testRuntime()
+      local runtime
+
+      st := SlowTest()
+      self.__testSuite.add(st)
+
+      self.__testSuite.run()
+      runtime := self.__testSuite.__testReporter.__summary.runtime
+
+      assert { 2.0 <= runtime & 3.0 > runtime }
+   end
+
    method testRunFailureTests()
       local results
 
@@ -70,6 +82,12 @@ class SuccessTest : TestCase()
 
    method testSuccessAssert()
       assert { 1 == 1 }
+   end
+end
+
+class SlowTest : TestCase()
+   method testSlow()
+      delay(2000)
    end
 end
 
@@ -185,9 +203,11 @@ class TestTestReporter : TestCase(__reporter)
       assertEqual(0, *self.__reporter.__results)
 
       results := self.__reporter.results()
-      every result := !results do {
-         assertEqual(0, result)
-      }
+      assertEqual(0, results.passed)
+      assertEqual(0, results.failed)
+      assertEqual(0.0, results.runtime)
+
+      assertEqual(0.0, self.__reporter.__summary.runtime)
    end
 
    method testResult()
@@ -200,14 +220,20 @@ class TestTestReporter : TestCase(__reporter)
       assertEqual(0, self.__reporter.__results[1][3])
    end
 
+   method testRuntime()
+     self.__reporter.runtime(5.5)
+     assertEqual(5.5, self.__reporter.__summary.runtime)
+   end
+
    # TODO: not much luck with capture()'ing the output.
    method testSummary()
       local results
 
       assertEqual(0, *self.__reporter.__results)
-      every result := !self.__reporter.summary() do {
-         assertEqual(0, result)
-      }
+      results := self.__reporter.summary()
+      assertEqual(0, results.passed)
+      assertEqual(0, results.failed)
+      assertEqual(0.0, results.runtime)
 
       self.__reporter.result(classname(self), "testResult", 0)
       assertEqual(1, *self.__reporter.__results)

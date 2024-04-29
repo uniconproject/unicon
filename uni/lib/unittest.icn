@@ -1,3 +1,17 @@
+############################################################################
+#
+#       File:     unittest.icn
+#
+#       Subject:  An object-oriented unit test framework based on Kent Beck's SUnit.
+#
+#       https://web.archive.org/web/20150315073817/http://www.xprogramming.com/testfram.htm
+#
+#       Author:   Ian Trudel
+#
+#       Date:     April 19, 2024
+#
+############################################################################
+
 # TODO: assertions
 #     - asserting objects
 #     - asserting nested values (list, table, objects, etc.)
@@ -5,14 +19,14 @@
 #     - add message to results
 #     - add backtrace if possible
 # TODO: there should be a way to discover and load tests dynamically
-# TODO: add timer, see tests/unicon/tester.icn
+# TODO: implement concurrency, see tests/unicon/tester.icn
 # TODO: how to catch stdin/stdout/stderr within tests, see capture().
 # TODO: enable/disable summary.
 # TODO: enable/disable verbosity.
 
 package unittest
 
-link ximage
+link ximage, printf
 
 import lang
 
@@ -105,7 +119,9 @@ class TestSuite(__tests, __testReporter)
    end
 
    method run()
-      local mname, counts
+      local mname, counts, t0, t1
+
+      t0 := gettimeofday()
 
       every test := !__tests do {
          cname := classname(test)
@@ -127,6 +143,8 @@ class TestSuite(__tests, __testReporter)
          test.teardownClass()
       }
 
+      t1 := gettimeofday()
+      self.__testReporter.runtime(((t1.sec - t0.sec) * 1000000 + (t1.usec - t0.usec)) / 1000000.0)
       counts := self.__testReporter.summary()
 
       return if counts[2] > 0 then EXIT_FAIL else EXIT_SUCCESS
@@ -141,29 +159,40 @@ initially
    /__testReporter := TestReporter()
 end
 
-class TestReporter(__results, __counts)
+class TestReporter(__results, __summary)
    $define STATUS_SUCCESS 0
    $define STATUS_FAIL 1
 
+   record total(passed, failed, runtime)
+
    method result(cname, mname, passed)
       put(self.__results, [cname, mname, passed])
-      if passed == STATUS_SUCCESS then self.__counts[1] +:= 1 else self.__counts[2] +:= 1
+      if passed == STATUS_SUCCESS then self.__summary.passed +:= 1 else self.__summary.failed +:= 1
    end
 
    method results()
-      return self.__counts
+      return self.__summary
+   end
+
+   method runtime(time)
+      self.__summary.runtime := real(time)
    end
 
    method summary()
-      write("=== TEST SUMMARY ===")
-      write("passed: " || self.__counts[1] || ", failed: " || self.__counts[2])
+      local runtime
 
-      return self.__counts
+      runtime := sprintf("%.6r", self.__summary.runtime)
+
+      write("=== TEST SUMMARY ===")
+      write("passed: " || self.__summary.passed || ", failed: " || self.__summary.failed)
+      write("ran " || *self.__results || " tests in " || runtime || "s")
+
+      return self.__summary
    end
 
 initially
    /__results := []
-   /__counts := [0, 0]
+   /__summary := total(0, 0, 0.0)
 end
 
 class Mock(__expectations)

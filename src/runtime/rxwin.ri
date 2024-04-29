@@ -1194,7 +1194,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    tended struct b_list *tlp;
    tended struct descrip attrrslt;
 
-   tlp = lp;
    for(i=0;i<n;i++) {
       if (is:string(attr[i]) &&
           (StrLen(attr[i])>8) &&
@@ -1205,15 +1204,25 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
          }
       }
 
+   tlp = lp;
+
+   /*
+    * Allocate a binding, a window state, and a context.
+    * If anything goes wrong, a free_binding() call clears it all out.
+    */
+
    if ((w = alc_wbinding()) == NULL) {
       *err_index = -2;
+      set_errortext(145);
       return NULL;
       }
+
 #ifdef GraphicsGL
    if (is_gl) {
       if ((ws = w->window = gl_alc_winstate()) == NULL) {
          *err_index = -2;
          free_binding(w);
+         set_errortext(145);
          return NULL;
          }
       if ((ws->display = gl_alc_display(display)) == NULL) {
@@ -1229,10 +1238,11 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    if ((ws = w->window = alc_winstate()) == NULL) {
       *err_index = -2;
       free_binding(w);
+      set_errortext(145);
       return NULL;
       }
 
-   if ((w->window->display = alc_display(display)) == NULL) {
+   if ((ws->display = alc_display(display)) == NULL) {
       *err_index = -1;
       free_binding(w);
       set_errortext(145); /* maybe out of memory, probably bad DISPLAY var. */
@@ -1241,12 +1251,12 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
    }
 
-
    ws->children=NULL;
    ws->parent = NULL;
-
+   ws->width = ws->height = 0;
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *)tlp;
+
 
    /*
     * some attributes of the display and window are used in the context
@@ -1338,10 +1348,16 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
             }
          }
       }
+
+   /*
+    * set the title, defaulting to the "filename" supplied to open()
+    */
+
    if (ws->windowlabel == NULL) {
       ws->windowlabel = salloc(name);
       if (ws->windowlabel == NULL) { /* out of memory */
          *err_index = -2;
+         set_errortext(145);
          return NULL;
          }
       }

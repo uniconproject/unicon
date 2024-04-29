@@ -1486,15 +1486,20 @@ int copy_2dcontext(wcp wcdest, wcp wcsrc)
       wcdest->leading = wcsrc->leading;
       }
 
-   if (wcdest->patternname) {
-      if (strcmp(wcdest->patternname,wcsrc->patternname)) {
-         free(wcdest->patternname);
+   if (wcsrc->patternname != NULL)
+      if (wcdest->patternname) {
+         if (strcmp(wcdest->patternname,wcsrc->patternname)) {
+            free(wcdest->patternname);
+            wcdest->patternname = strdup(wcsrc->patternname);
+            }
+         }
+      else {
          wcdest->patternname = strdup(wcsrc->patternname);
          }
-      }
-   else {
-      wcdest->patternname = strdup(wcsrc->patternname);
-      }
+   else if (wcdest->patternname != NULL) {
+         free(wcdest->patternname);
+         wcdest->patternname = NULL;
+         }
 
    wcdest->fillstyle = wcsrc->fillstyle;
    wcdest->linestyle = wcsrc->linestyle;
@@ -3167,9 +3172,15 @@ int setpattern2d(wbp w, struct b_record *rp)
          }
       }
    else {
-     update = 1;
-     s = wcr->patternname;
-     slen = strlen(wcr->patternname);
+      update = 1;
+      /* "black" is default pattern */
+      if (wcr->patternname == NULL) {
+         return Failed;
+         wcr->patternname = strdup("black");
+         if (!wcr->patternname) return RunError;
+         }
+      s = wcr->patternname;
+      slen = strlen(wcr->patternname);
      }
 
    if (update) {
@@ -6683,7 +6694,9 @@ static wfp loadfont(wdp wd, char *s, int len)
    wf->size = size; /* in pixels */
    wf->ascent = FT_ASCENT(wf->face);
    wf->descent = FT_DESCENT(wf->face);
+   #ifdef XWindows
    wf->maxwidth = FT_FWIDTH(wf->face);
+   #endif                                  /* XWindows */
    wf->height = FT_FHEIGHT(wf->face);
 
    /*

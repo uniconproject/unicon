@@ -941,6 +941,7 @@ int checkOpenConsole( FILE *w, char *s );
        */
       wcp gl_alc_context(wbp w);
       wdp gl_alc_display(char *s);
+      wdp gl_alc_display_font(wdp wd);
       wsp gl_alc_winstate();
       void gl_free_context(wcp wc);
       void gl_free_display(wdp wd);

@@ -217,12 +217,12 @@ char *lookcmdname(char *buf, char *s)
 
 /*
  * wopen
- * If it returns NULL, per fsys.r, wopen() should set err_idx to one of:
+ * If it returns NULL, per fsys.r, wopen() should set err_index to one of:
  *  >= 0: the index of an offending attribute value
  *  -1  : ordinary failure
  *  -2  : out of memory
  */
-FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int is_3d, int is_gl)
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int is_3d, int is_gl)
    {
    wbp w;
    wsp ws;
@@ -248,33 +248,118 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       }
 
    tlp = lp;
+
    /*
     * Allocate a binding, a window state, and a context.
     * If anything goes wrong, a free_binding() call clears it all out.
     */
-   if (((w               = alc_wbinding()) == NULL) ||
-       ((ws = w->window  = alc_winstate()) == NULL) ||
-       ((ws->display     = alc_display(NULL)) == NULL) ||
-       ((wc = w->context = alc_context(w)) == NULL)) {
-      if (w) free_binding(w);
-      *err_idx = -2;
+   if ((w = alc_wbinding()) == NULL) {
+      *err_index = -2;
+      set_errortext(145);
       return NULL;
       }
 
+#ifdef GraphicsGL
+   if (is_gl) {
+      if ((ws = w->window = gl_alc_winstate()) == NULL) {
+         *err_index = -2;
+         free_binding(w);
+         set_errortext(145); /* maybe out of memory */
+         return NULL;
+         }
+      if ((ws->display = gl_alc_display(NULL)) == NULL) {
+         *err_index = -1;
+         free_binding(w);
+         set_errortext(145);
+         return NULL;
+         }
+      if ((gl_alc_display_font(ws->display)) == NULL) {
+         if (!is_3d) {
+            *err_index = -1;
+            free_binding(w);
+            set_errortext(145);
+            return NULL;
+            }
+         }
+      }
+   else
+#endif                                  /* GraphicsGL */
+   {
+   if ((ws = w->window = alc_winstate()) == NULL) {
+      *err_index = -2;
+      free_binding(w);
+      set_errortext(145);
+      return NULL;
+      }
+
+   if ((ws->display = alc_display(NULL)) == NULL) {
+      *err_index = -1;
+      free_binding(w);
+      set_errortext(145);
+      return NULL;
+      }
+   }
+
+   ws->children=NULL;
+   ws->parent = NULL;
+   ws->width = ws->height = 0;
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *) tlp;
-   ws->width = ws->height = 0;
 
-#ifdef Graphics3D
-   ws->is_3D = wc->rendermode = is_3d;
-   if (is_3d) {
-      /* create an empty list for list of function calls */
-      if (create_display_list(w, 40000) == Failed) {
-         *err_idx = -2;
+   #ifdef GraphicsGL
+   ws->is_3D = is_3d;
+   #endif                                  /* GraphicsGL */
+
+   /*
+    * some attributes of the display and window are used in the context
+    */
+
+#ifdef GraphicsGL
+   if (is_gl) {
+      if ((wc = w->context = gl_alc_context(w)) == NULL) {
+         *err_index = -2;
+         free_binding(w);
+         set_errortext(145);
          return NULL;
          }
       }
-#endif                                  /* Graphics3D */
+   else
+#endif                                  /* GraphicsGL */
+   if ((wc = w->context = alc_context(w)) == NULL) {
+      *err_index = -2;
+      free_binding(w);
+      return NULL;
+      }
+
+#ifdef GraphicsGL
+   if (is_gl) {
+      wc->rendermode = is_3d;
+
+      /* Allocate display lists */
+      if (is_3d) {
+         if (create_display_list(w, 40000) == Failed) {
+            *err_index = -2;
+            return NULL;
+            }
+         }
+      if (create_display_list2d(w, 40000) == Failed) {
+         *err_index = -2;
+         return NULL;
+         }
+
+      /*
+       * Need to determine a way to initialize the default context for a
+       * window without adding items to the display list.
+       */
+      if (!ws->initAttrs)
+         ws->initAttrs = 1;
+      else {
+         glprintf("gl_wopen(): need a mutex lock\n");
+         return NULL;
+         }
+      }
+#endif                                  /* GraphicsGL */
+
 
    /*
     * process the passed in attributes - by calling wattrib
@@ -282,27 +367,40 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    for(i = 0; i < n; i++)
       switch (wattrib(w, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt,
                         answer)) {
+      case RunError:
+         *err_index = i;
+         return NULL;
       case Failed:
          wclose(w); /* suspicious; didn't get it opened OK */
          set_errortext(145);
-         *err_idx = -1;
-         return NULL;
-      case RunError:
-         *err_idx = i;
+         *err_index = -1;
          return NULL;
          }
 
    /*
     * set the title, defaulting to the "filename" supplied to open()
     */
-   if (ws->windowlabel == NULL) ws->windowlabel = salloc(name);
-   if (ws->iconlabel == NULL) ws->iconlabel = salloc(name);
+   if (ws->windowlabel == NULL) {
+      ws->windowlabel = salloc(name);
+      if (ws->windowlabel == NULL) { /* out of memory */
+         *err_index = -2;
+         set_errortext(145);
+         return NULL;
+         }
+      }
+
+   if (ws->iconlabel == NULL) {
+      ws->iconlabel = salloc(name);
+      if (ws->iconlabel == NULL) { /* out of memory */
+         *err_index = -2;
+         set_errortext(145);
+         return NULL;
+         }
+      }
 
    if (ws->posx < 0) ws->posx = 0;
    if (ws->posy < 0) ws->posy = 0;
    ws->no = 0;
-   ws->children = NULL;
-   ws->parent = NULL;
 
    /*
     * create the window
@@ -342,18 +440,23 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       scp[1].type = CLR_SHARED;
       strcpy(scp[1].name, "white");
       }
-   oldfont = SelectObject(hdc, wc->font->font);
-   GetTextMetrics(hdc, &metrics);
-   wc->font->charwidth = dc_maxcharwidth(hdc);
-   SelectObject(hdc, oldfont);
-   ReleaseDC(ws->iconwin, hdc);
-   wc->font->ascent = metrics.tmAscent;
-   wc->font->descent = metrics.tmDescent;
-   /*   wc->font->charwidth = metrics.tmMaxCharWidth; buggy */
-   wc->font->height = metrics.tmHeight;
-   wc->leading = metrics.tmHeight;
+
+   if (wc->font) {
+      oldfont = SelectObject(hdc, wc->font->font);
+      GetTextMetrics(hdc, &metrics);
+      wc->font->charwidth = dc_maxcharwidth(hdc);
+      SelectObject(hdc, oldfont);
+      ReleaseDC(ws->iconwin, hdc);
+      wc->font->ascent = metrics.tmAscent;
+      wc->font->descent = metrics.tmDescent;
+      /*   wc->font->charwidth = metrics.tmMaxCharWidth; buggy */
+      wc->font->height = metrics.tmHeight;
+      wc->leading = metrics.tmHeight;
+      ws->y = ASCENT(w);
+   }
+   else
+    ws->y = 7;
    ws->x = 0;
-   ws->y = ASCENT(w);
    ws->y += w->context->dy;
    ws->x += w->context->dx;
    /*
@@ -375,11 +478,11 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       }
 
    if (alc_rgb(w, wc->fg) == Failed) {
-      *err_idx = -1; /* review */
+      *err_index = -1; /* review */
       return 0;
       }
    if (alc_rgb(w, wc->bg) == Failed) {
-      *err_idx = -1; /* review */
+      *err_index = -1; /* review */
       return 0;
       }
    ws->pixwidth = ws->width;
@@ -452,7 +555,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
          free((pointer)imd->data);
          imd->width = 0;
          if (r < 0) {
-            *err_idx = -1; /* review. when does strimage fail? */
+            *err_index = -1; /* review. when does strimage fail? */
             return 0;
             }
          }
@@ -1159,11 +1262,36 @@ int pollevent()
    wbp w;
    MSG m;
    extern jmp_buf mark_sj;
+#ifdef GraphicsGL
+   wbp wb;
+   static int gpx_poll = FLUSH_POLL_INTERVAL;
+#endif                                  /* GraphicsGL */
 #ifdef Concurrent
    int isbusy;
    MUTEX_TRYLOCKID(MTX_POLLEVENT, isbusy);
    if (isbusy) return POLL_INTERVAL;
 #endif                                  /* Concurrent */
+
+#ifdef GraphicsGL
+   if (gpx_poll) gpx_poll--;
+   if (!gpx_poll) {
+      for (wb = wbndngs; wb; wb=wb->next) {
+         wsp ws = wb->window;
+         if (ws->buffermode == UGL_IMMEDIATE) {
+            if (ws->redraw_flag && !ws->busy_flag) {
+               ws->busy_flag = 1;
+
+               MakeCurrent(wb);
+               glFlush();
+
+               ws->redraw_flag = 0;
+               ws->busy_flag = 0;
+               }
+            }
+         }
+      gpx_poll = FLUSH_POLL_INTERVAL;
+      }
+#endif                                  /* GraphicsGL */
 
    /* some while PeekMessage loops here, maybe one per window ? */
    while (PeekMessage(&m, NULL, 0, 0, PM_NOREMOVE)) {

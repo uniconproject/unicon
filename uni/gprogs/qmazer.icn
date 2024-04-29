@@ -1,0 +1,303 @@
+#<p>
+#  <b>qmazer</b> -- create a maze and then find the shortest path through it.
+#    The maze creation was taken from a Unicon solution to a RosettaCode
+#    problem.
+#</p>
+#<p>
+#    (In this version, the maze creation only builds mazes with a single
+#     successful path but the path search is generalized to locate the shortest
+#     path in any maze with a single entry.)
+#</p>
+#<p>
+#    The default maze size is suitable for an HD display, for a 4K display
+#    try <tt>cols=185</tt> and <tt>rows=100</tt>.
+#</p>
+
+global showMice, showPaths
+global start, finish
+global delayms
+global fullPath
+
+import util
+link printf
+ 
+$define CELL   20                                   # cell size in pixels
+$define BORDER 30                                   # border size in pixels
+
+#<p>
+#  Display a 2D maze, wait for a mouse click then solve the maze and wait for a
+#  second click to terminate program.
+#</p>
+#  Arguments (all are optional):
+#<pre>
+#  help -- display a help message
+#  showpaths -- put a mark on each maze cell as it's visited
+#  showmice -- show the individual mice as they traverse the maze
+#  cols=COLS -- set the number of columns [default: 88]
+#  rows=ROWS -- set the number of rows [default: 48]
+#  delay=MS  -- delay between mouse movements in milliseconds [default: 0]
+#</pre>
+procedure main(A)
+    Args(A)
+    if \Args().getOpt("help","yes") then helpMesg()
+    showPaths := Args().getOpt("showpaths","yes") # Show mice (dead or alive)
+    showMice := Args().getOpt("showmice","yes")   # Show all live mice
+    mh := Args().getOpt("rows") | 48              # Maze height (rows)
+    mw := Args().getOpt("cols") | 88              # Maze width (columns)
+    delayms := Args().getOpt("delay")             # Delay between mice creations
+    fullPath := []                                # Points in best path
+ 
+    mz := DisplayMaze(GenerateMaze(mh,mw))   # Build and show maze
+ 
+    QMouse(mz.maze,findStart(mz.maze),&null,0)   # Start first quantum mouse
+    waitForCompletion() # block until all quantum mice have finished
+ 
+    # Mark the best path into the maze and display it.
+    if showPath(mz.maze) then DisplayMazeSolution(mz)
+    else {   # Give the person time to examine the failed maze search...
+       write("No path found for maze!")
+       DisplayMazeSolution(mz)
+       }
+end
+
+procedure helpMesg()
+    write(&errout,"Usage: qMazer [--showmice] [--cols=C] [--rows=R]")
+    write(&errout,"\twhere:")
+    write(&errout,"\t\t--showmice  # displays all mice as they search")
+    write(&errout,"\t\t--showpaths # displays all mice paths as they search")
+    write(&errout,"\t\t--cols=C    # sets maze width to C (default 188) columns")
+    write(&errout,"\t\t--rows=R    # sets maze height to R (default 100) rows")
+    write(&errout,"\t\t--delay=ms  # delay ms millisecond (default none) between mice creations")
+    stop()
+end
+
+# A "Quantum-mouse" for traversing mazes.  Each mouse lives for exactly one
+#   cell, but can spawn additional mice to examine adjacent cells as needed.
+
+global qMice, bestMouse, bestMouseLock, region, qMiceEmpty
+record Position(r,c)
+
+# Must match values used in maze generation!
+$define FINISH 64 # exit
+$define START  32 # entrance
+$define PATH  128 
+$define SEEN   16 # bread crumbs for generator
+$define NORTH   8 # sides ...
+$define EAST    4
+$define SOUTH   2
+$define WEST    1
+$define EMPTY   0 # like new
+
+class QMouse(maze, loc, parent, len, val)
+
+    method getLoc(); return loc; end
+
+    method getParent(); return \parent; end
+
+    method getLen(); return len; end
+
+    method atEnd(); return EMPTY ~= iand(val, FINISH); end
+
+    method goNorth()
+        if EMPTY ~= iand(val,NORTH) then return visit(loc.r-1, loc.c)
+    end
+
+    method goSouth()
+        if EMPTY ~= iand(val,SOUTH) then return visit(loc.r+1, loc.c)
+    end
+
+    method goEast()
+        if EMPTY ~= iand(val,EAST) then return visit(loc.r, loc.c+1)
+    end
+
+    method goWest()
+        if EMPTY ~= iand(val,WEST) then return visit(loc.r, loc.c-1)
+    end
+
+    method visit(r,c)
+        local p
+        # Only visit a cell if it makes sense to do so (not already seen and
+        #    not on a path longer than the best known solution).
+        critical region[r,c]:
+            if EMPTY = iand(maze[r,c],SEEN) then {
+                if /bestMouse | (len <= bestMouse.getLen()) then { # Keep going
+                    mark(maze, r,c)
+                    unlock(region[r,c])
+                    return Position(r,c)
+                    }
+                }
+    end
+
+initially (m, l, p, n)
+    initial {   # Construct critical region mutexes and completion condvar
+        qMice := mutex(set())
+        qMiceEmpty := condvar()
+        bestMouseLock := mutex()
+        region := list(*m)            # Minimize critical region size
+        every r := 1 to *m do region[r] := list(*m[1])
+        every !!region := mutex()
+        }
+    maze := m
+    loc := l
+    parent := p
+    len := n+1
+    val := maze[loc.r,loc.c] | fail   # Fail if outside maze
+    insert(qMice, self)
+    delay(\delayms)
+    thread {
+        if atEnd() then {
+            critical bestMouseLock:
+                if /bestMouse | (len < bestMouse.getLen()) then bestMouse := self
+            }
+        else {         # Try to spawn more mice to look for finish
+            QMouse(maze, goNorth(), self, len)
+            QMouse(maze, goSouth(), self, len)
+            QMouse(maze, goEast(), self, len)
+            QMouse(maze, goWest(), self, len)
+            }
+
+        delete(qMice, self)
+        if /showPaths then markCell(loc.r,loc.c,"white",5)
+        if *qMice=0 then signal(qMiceEmpty)
+        }
+end
+
+procedure mark(maze, r,c, fg)
+    /fg := "grey"
+    maze[r,c] := ior(maze[r,c],SEEN)
+    if \(showMice|showPaths) then markCell(r,c,fg,5)
+    return Position(r,c)
+end
+
+procedure clearMaze(maze)  # Clear out dregs from maze creation
+    every r := 1 to *maze & c := 1 to *maze[1] do  # remove breadcrumbs
+        maze[r,c] := iand(maze[r,c],NORTH+EAST+SOUTH+WEST+START+FINISH)
+end
+
+procedure findStart(maze)  # Anywhere in maze
+    clearMaze(maze)                                # Remove breadcrumbs
+    every r := 1 to *maze & c := 1 to *maze[1] do  # Locate START cell
+        if EMPTY ~= iand(maze[r,c],START) then
+           return mark(maze, r,c, "red")
+end
+
+procedure showPath(maze)
+    if path := \bestMouse then {   # Mark it in maze
+        repeat {
+            loc := path.getLoc()
+            # Remember the path so its cells can be connected by line segments
+            put(fullPath,CELL*(loc.c-1),CELL*(loc.r-1))
+            maze[loc.r,loc.c] +:= PATH
+            path := \path.getParent() | break
+            }
+       return
+       }
+end
+
+procedure waitForCompletion()
+   critical qMiceEmpty: while *qMice > 0 do wait(qMiceEmpty)
+end
+ 
+procedure GenerateMaze(r,c)                     #: Depth First Maze Generation
+static maze,h,w,rd 
+   if /maze then {                              # BEGING - No maze yet
+      /h := integer(1 < r) | runerr(r,205)      # valid size 2x2 or better
+      /w := integer(1 < c) | runerr(r,205)
+      every !(maze := list(h)) := list(w,EMPTY) # shiny new empty maze
+      start  := [?h,?w,?4-1,START]              # random [r,c] start & finish
+      finish := [?h,?w,(start[3]+2)%4,FINISH]   # w/ opposite side exponent
+      every x := start | finish do {
+         case x[3] := 2 ^ x[3] of {             # get side from exponent and 
+            NORTH : x[1] := 1                   # project r,c to selected edge
+            EAST  : x[2] := w
+            SOUTH : x[1] := h         
+            WEST  : x[2] := 1
+            }   
+         maze[x[1],x[2]] +:= x[3] + x[4]        # transcribe s/f to maze
+         }
+      rd := [NORTH, EAST, SOUTH, WEST]          # initial list of directions     
+      GenerateMaze(start[1],start[2])           # recurse through maze     
+      return 1(.maze,maze := &null)             # return maze, reset for next
+   }
+   else {         # ----------------------- recursed to clear insize of maze
+      if iand(maze[r,c],SEEN) = EMPTY then {        # in bounds and not SEEN yet?
+         maze[r,c] +:= SEEN                     # Mark current cell as visited   
+         every !rd :=: ?rd                      # randomize list of directions
+         every d := !rd do
+            case d of {                         # try all, succeed & clear wall
+               NORTH :  maze[r,c] +:= ( GenerateMaze(r-1,c), NORTH)
+               EAST  :  maze[r,c] +:= ( GenerateMaze(r,c+1),  EAST)
+               SOUTH :  maze[r,c] +:= ( GenerateMaze(r+1,c), SOUTH)
+               WEST  :  maze[r,c] +:= ( GenerateMaze(r,c-1),  WEST)   
+               }
+         return                                 # signal success to caller
+         }
+   }
+end
+ 
+record mazeinfo(window,maze,filename)               # keepers
+ 
+procedure DisplayMaze(maze)                         #: show it off
+    if CELL < 8 then runerr(205,CELL)                   # too small
+ 
+    wh := (ch := (mh := *maze  ) * CELL) + 2 * BORDER   # win, cell, maze height
+    ww := (cw := (mw := *maze[1]) * CELL) + 2 * BORDER  # win, cell, maze width
+ 
+    wparms := [ sprintf("Maze %dx%d",*maze,*maze[1]),   # window parameters
+                "g","bg=white","canvas=hidden",      
+                sprintf("size=%d,%d",ww,wh),
+                sprintf("dx=%d",BORDER),
+                sprintf("dy=%d",BORDER)]
+ 
+    &window := open!wparms | stop("Unable to open Window")
+ 
+    Fg("black")                                         # Draw full grid
+    every DrawLine(x := 0 to cw by CELL,0,x,ch+1)       # . verticals
+    every DrawLine(0,y := 0 to ch by CELL,cw+1,y)       # . horizontals
+ 
+    Fg("white")                                         # Set to erase lines
+    every y := CELL*((r := 1 to mh)-1) & x := CELL*((c := 1 to mw)-1) do {
+       WAttrib("dx="||x+BORDER,"dy="||y+BORDER)         # position @ cell r,c
+       if iand(maze[r,c],NORTH) ~= EMPTY then DrawLine(2,0,CELL-1,0)
+       if iand(maze[r,c],EAST)  ~= EMPTY then DrawLine(CELL,2,CELL,CELL-1)
+       if iand(maze[r,c],SOUTH) ~= EMPTY then DrawLine(2,CELL,CELL-1,CELL)
+       if iand(maze[r,c],WEST)  ~= EMPTY then DrawLine(0,2,0,CELL-1)
+       }   
+ 
+    WAttrib(&window,"canvas=normal")
+    WAttrib("dx="||(dxy:=BORDER+CELL/2),"dy="||dxy)
+    colorCell(start[1],start[2], "red", 3)
+    colorCell(finish[1],finish[2], "green", 3)
+    until Event() == &lpress
+    return mazeinfo(&window,maze,sprintf("maze-%dx%d-%d.gif",r,c,&now))
+end
+ 
+procedure DisplayMazeSolution(mz)                  #: draw marked PATH
+    &window := mz.window
+    maze := mz.maze
+    WAttrib("dx="||(dxy:=BORDER+CELL/2),"dy="||dxy)
+    every (r := 1 to *maze) & (c := 1 to *maze[1]) do {
+       fg := "blue"
+       if iand(maze[r,c],START) ~= EMPTY then fg := "red"
+       if iand(maze[r,c],FINISH) ~= EMPTY then fg := "green"
+       if iand(maze[r,c],PATH) ~= EMPTY then markCell(r,c,fg,3)
+       }
+    # Now, draw a line through the full path.
+    if *fullPath > 0 then {
+        DrawLine!fullPath
+        }
+    until Event() == &lpress
+    close(&window)
+    return mz
+end
+
+procedure markCell(r,c,fg,sz)
+    initial WAttrib("dx="||(dxy:=BORDER+CELL/2),"dy="||dxy)
+    colorCell(r,c,fg,sz)
+end
+
+procedure colorCell(r,c,fg,sz)
+    Fg(fg)
+    FillCircle(CELL*(c-1),CELL*(r-1),CELL/sz)
+end
+

@@ -115,12 +115,17 @@ class QMouse(maze, loc, parent, len, val)
     end
 
     method visit(r,c)
+        static cw := Clone("linewidth=2","fg=grey")
         local p
         # Only visit a cell if it makes sense to do so (not already seen and
         #    not on a path longer than the best known solution).
         critical region[r,c]:
             if EMPTY = iand(maze[r,c],SEEN) then {
                 if /bestMouse | (len <= bestMouse.getLen()) then { # Keep going
+                    if \showPaths then {
+                        DrawLine(cw,CELL*(c-1),CELL*(r-1),
+                                    CELL*(loc.c-1),CELL*(loc.r-1))
+                        }
                     mark(maze, r,c)
                     unlock(region[r,c])
                     return Position(r,c)

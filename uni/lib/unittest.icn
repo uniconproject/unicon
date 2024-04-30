@@ -104,7 +104,7 @@ end
 
 class TestSuite(__tests, __testReporter)
    $define EXIT_SUCCESS 0
-   $define EXIT_FAIL 1
+   $define EXIT_FAILURE 1
 
    method add(testCase)
       if (classname(testCase) ~=== "unittest__TestCase") then {
@@ -147,7 +147,7 @@ class TestSuite(__tests, __testReporter)
       self.__testReporter.runtime(((t1.sec - t0.sec) * 1000000 + (t1.usec - t0.usec)) / 1000000.0)
       summary := self.__testReporter.summary()
 
-      return if summary.failed > 0 then EXIT_FAIL else EXIT_SUCCESS
+      return if summary.failed > 0 then EXIT_FAILURE else EXIT_SUCCESS
    end
 
    method output()

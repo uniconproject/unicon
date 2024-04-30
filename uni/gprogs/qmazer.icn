@@ -276,16 +276,17 @@ procedure DisplayMazeSolution(mz)                  #: draw marked PATH
     &window := mz.window
     maze := mz.maze
     WAttrib("dx="||(dxy:=BORDER+CELL/2),"dy="||dxy)
+    # First, draw a line through the full path.
+    if *fullPath > 0 then {
+        push(fullPath, Clone("linewidth=3","fg=blue"))
+        DrawLine!fullPath
+        }
     every (r := 1 to *maze) & (c := 1 to *maze[1]) do {
        fg := "blue"
        if iand(maze[r,c],START) ~= EMPTY then fg := "red"
        if iand(maze[r,c],FINISH) ~= EMPTY then fg := "green"
        if iand(maze[r,c],PATH) ~= EMPTY then markCell(r,c,fg,3)
        }
-    # Now, draw a line through the full path.
-    if *fullPath > 0 then {
-        DrawLine!fullPath
-        }
     until Event() == &lpress
     close(&window)
     return mz

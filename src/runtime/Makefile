@@ -57,21 +57,19 @@ OBJS=	$(XOBJS) $(EXEICONTARGET)
 interp_all: update_rev 
 	$(MAKE) $(UNICONX)
 
-# Some systems require global symbols to be left in iconx for loadfunc() to work
-# but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
-# so only use strip -x when it is known to be needed and available (MacOS).
-
 # NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
 $(UNICONX) $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
 	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o $(UNICONX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
 	cp $(UNICONX)$(EXE) ../../bin
-	$(STRIP) ../../bin/$(UNICONX)$(EXE);
+# Symbols are needed for plugins to load successfully
+#	$(STRIP) ../../bin/$(UNICONX)$(EXE);
 
 # on windows, always add WNTCON dependency to set NTCONSOLE accordingly
 $(UNICONWX) $(WICONEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
 	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o $(UNICONWX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -lwuconsole
 	cp $(UNICONWX)$(EXE) ../../bin
-	$(STRIP) ../../bin/$(UNICONWX)$(EXE);
+# Symbols are needed for plugins to load successfully
+#	$(STRIP) ../../bin/$(UNICONWX)$(EXE);
 
 # prepare the icon for the executables
 icon.$(O):

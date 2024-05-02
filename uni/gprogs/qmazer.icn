@@ -16,7 +16,7 @@
 global showMice, showPaths
 global start, finish
 global delayms
-global fullPath
+global fullPath, visited
 
 import util
 link printf
@@ -31,7 +31,7 @@ $define BORDER 30                                   # border size in pixels
 #  Arguments (all are optional):
 #<pre>
 #  help -- display a help message
-#  showpaths -- put a mark on each maze cell as it's visited
+#  showpaths -- put a mark on each maze cell as it's seen
 #  showmice -- show the individual mice as they traverse the maze
 #  cols=COLS -- set the number of columns [default: 88]
 #  rows=ROWS -- set the number of rows [default: 48]
@@ -65,8 +65,8 @@ procedure helpMesg()
     write(&errout,"\twhere:")
     write(&errout,"\t\t--showmice  # displays all mice as they search")
     write(&errout,"\t\t--showpaths # displays all mice paths as they search")
-    write(&errout,"\t\t--cols=C    # sets maze width to C (default 188) columns")
-    write(&errout,"\t\t--rows=R    # sets maze height to R (default 100) rows")
+    write(&errout,"\t\t--cols=C    # sets maze width to C (default 88) columns")
+    write(&errout,"\t\t--rows=R    # sets maze height to R (default 48) rows")
     write(&errout,"\t\t--delay=ms  # delay ms millisecond (default none) between mice creations")
     stop()
 end
@@ -203,41 +203,75 @@ procedure waitForCompletion()
    critical qMiceEmpty: while *qMice > 0 do wait(qMiceEmpty)
 end
  
-procedure GenerateMaze(r,c)                     #: Depth First Maze Generation
-static maze,h,w,rd 
-   if /maze then {                              # BEGING - No maze yet
-      /h := integer(1 < r) | runerr(r,205)      # valid size 2x2 or better
-      /w := integer(1 < c) | runerr(r,205)
-      every !(maze := list(h)) := list(w,EMPTY) # shiny new empty maze
-      start  := [?h,?w,?4-1,START]              # random [r,c] start & finish
-      finish := [?h,?w,(start[3]+2)%4,FINISH]   # w/ opposite side exponent
-      every x := start | finish do {
-         case x[3] := 2 ^ x[3] of {             # get side from exponent and 
-            NORTH : x[1] := 1                   # project r,c to selected edge
-            EAST  : x[2] := w
-            SOUTH : x[1] := h         
-            WEST  : x[2] := 1
-            }   
-         maze[x[1],x[2]] +:= x[3] + x[4]        # transcribe s/f to maze
-         }
-      rd := [NORTH, EAST, SOUTH, WEST]          # initial list of directions     
-      GenerateMaze(start[1],start[2])           # recurse through maze     
-      return 1(.maze,maze := &null)             # return maze, reset for next
-   }
-   else {         # ----------------------- recursed to clear insize of maze
-      if iand(maze[r,c],SEEN) = EMPTY then {        # in bounds and not SEEN yet?
-         maze[r,c] +:= SEEN                     # Mark current cell as visited   
-         every !rd :=: ?rd                      # randomize list of directions
+procedure GenerateMaze(r,c)     # Non-recursive depth first maze generation
+local maze,h,w,rd 
+   /h := integer(1 < r) | runerr(r,205)      # valid size 2x2 or better
+   /w := integer(1 < c) | runerr(r,205)
+   # The maze is a 2-D array implemented as a list of lists, where each cell
+   #   holds bit flags (see line 80 and following for the possible flags).
+   #   Note that the flags denoting directions indicate a direction to another
+   #   cell that is reachable by going in that direction (e.g. the flag NORTH
+   #   indicates that there is no wall between this cell and its northern
+   #   neighbor).
+   every !(maze := list(h)) := list(w,EMPTY) # shiny new empty maze
+                                             #   (each cell starts with 4 walls)
+   start  := [?h,?w,?4-1,START]              # random [r,c] start & finish
+   finish := [?h,?w,(start[3]+2)%4,FINISH]   # w/ opposite side exponent
+   every x := start | finish do {
+      case x[3] := 2 ^ x[3] of {             # get side from exponent and 
+         NORTH : x[1] := 1                   # project r,c to selected edge
+         EAST  : x[2] := w
+         SOUTH : x[1] := h         
+         WEST  : x[2] := 1
+         }   
+      maze[x[1],x[2]] +:= x[3] + x[4]        # transcribe s/f to maze
+      }
+   maze[start[1],start[2]] +:= SEEN
+   push(visited := [], Position(start[1],start[2]))
+   rd := [NORTH, EAST, SOUTH, WEST]          # initial list of directions     
+   while *visited > 0 do {
+      p := pop(visited)
+      r := p.r
+      c := p.c
+      if maze[r,c] then {                    # in bounds
+         every !rd :=: ?rd                    # randomize list of directions
+         xp := &null                          # This forces depth-first!
          every d := !rd do
-            case d of {                         # try all, succeed & clear wall
-               NORTH :  maze[r,c] +:= ( GenerateMaze(r-1,c), NORTH)
-               EAST  :  maze[r,c] +:= ( GenerateMaze(r,c+1),  EAST)
-               SOUTH :  maze[r,c] +:= ( GenerateMaze(r+1,c), SOUTH)
-               WEST  :  maze[r,c] +:= ( GenerateMaze(r,c-1),  WEST)   
+            case d of {                       # try all, if succeed: clear wall
+               NORTH :  if np := chkPos(maze,r-1,c,p, NORTH) then {
+                           if /xp then (push(visited,p),xp := "putback")
+                           push(visited, np)
+                           break
+                           }
+               EAST  :  if np := chkPos(maze,r,c+1,p, EAST) then {
+                           if /xp then (push(visited,p),xp := "putback")
+                           push(visited, np)
+                           break
+                           }
+               SOUTH :  if np := chkPos(maze,r+1,c,p, SOUTH) then {
+                           if /xp then (push(visited,p),xp := "putback")
+                           push(visited, np)
+                           break
+                           }
+               WEST  :  if np := chkPos(maze,r,c-1,p, WEST) then {
+                           if /xp then (push(visited,p),xp := "putback")
+                           push(visited, np)
+                           break
+                           }
                }
-         return                                 # signal success to caller
-         }
-   }
+          }
+      }
+   return maze
+end
+
+procedure chkPos(maze,r,c,p,wall)
+   # If the new cell is inside the maze and hasn't been visited yet,
+   #    remove the wall between the old and new cells and return the new cell
+   if iand(maze[r,c], SEEN) = EMPTY then {
+      maze[r,c] +:= SEEN
+      maze[p.r,p.c] +:= wall
+      return Position(r,c)
+      }
 end
  
 record mazeinfo(window,maze,filename)               # keepers

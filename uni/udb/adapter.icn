@@ -121,7 +121,7 @@ class Adapter(
    method process_request(request_json)
       local request_body, request_seq, request_command, request_arguments, response_body
 
-      request_body := jtou(request_json)
+      request_body := jtou(request_json) | fail
 
       request_seq := request_body["seq"]
       request_command := request_body["command"]
@@ -175,8 +175,12 @@ class Adapter(
                }
                else {
                   request_body := move(len)
-                  msg := tab(0)
                }
+               until *request_body = len do {
+                  (*select(sock, 5000) ~= 0) | break
+                  request_body ||:= ready(sock, len)
+               }
+               msg := tab(0)
             }
             suspend request_body
          }

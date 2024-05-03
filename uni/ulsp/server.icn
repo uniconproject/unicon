@@ -39,7 +39,7 @@ class Server(
 
       repeat {
          every request_body := get_request(sock) do {
-            jsontable := jtou(request_body)
+            jsontable := jtou(request_body) | next
 
             request_method := jsontable["method"]
             request_params := jsontable["params"]
@@ -87,9 +87,14 @@ class Server(
                if pos(0) then {
                   request_body := ready(sock, len)
                }
-               else
+               else {
                   request_body := move(len)
-                  msg := tab(0)
+               }
+               until *request_body = len do {
+                  (*select(sock, 5000) ~= 0) | break
+                  request_body ||:= ready(sock, len)
+               }
+               msg := tab(0)
             }
             suspend request_body
          }

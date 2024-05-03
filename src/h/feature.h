@@ -14,6 +14,13 @@
  *
  * The translator and compiler modify this list of predefined symbols
  * through calls to ppdef().
+ *
+ * Note: 
+ *    If you add a new feature that comes with a predefined symname,
+ *    don't forget to amend the preprocessor file uni/unicon/preproce.icn.
+ *    It "reverse engineers" these definitions from &features and your
+ *    new feature must be added explicitly to the predefs() procedure,
+ *    rather than happening automatically.
  */
 
    Feature(1, "_V9", 0)         /* Version 9 (unconditional) */
@@ -91,6 +98,10 @@
 #ifdef LoadFunc
    Feature(1, "_DYNAMIC_LOADING", "dynamic loading")
 #endif                  /* LoadFunc */
+
+#ifdef RngLibrary
+   Feature(1, "_RNG_LIBRARY", "loadable RNGs")
+#endif					/* RNG libraries */
 
    Feature(1, "", "environment variables")
 

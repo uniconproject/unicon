@@ -1,0 +1,164 @@
+#<p>
+# Implement ranked choice voting.
+#</p>
+#<p>
+# Author: Stephen Wampler (sbw@tapestry.tucson.az.us)
+#</p>
+#<p>
+# This program is in the public domain.
+#</p>
+
+import util
+link printf	     # For sprintf
+
+global ballots,      # Individual ballots
+       totalVotes,   # Total votes for first candidate on each ballot, per round
+       results,      # How each round turned out
+       maxcands      # Most candidates on any ballot (needed in tie-breaks)
+
+#<p>
+#  Read in ranked-choice ballots where each ballot is a single line with the
+#  candidates ordered from first to last choice separated by commas.
+#  Output the winning candidate.
+#  <i>This is not intended for use where a "split-ballot" is used.</i>
+#</p>
+#<p>
+#  The arguments, if present, are the files that
+#  contain the ballots.  Multiple ballots may appear in each file.  If no files
+#  are listed then <tt>&input</tt> is used.
+#  Also accepts an option <tt>--verbose</tt> to see more details of the
+#  rounds of the ranked-choice voting and <tt>--help</tt> can be used to get
+#  a simple help message.
+# <[param A - arguments and options, if any]>
+#</p>
+procedure main(A)
+   Args(A,set(["verbose","help"]),helpMesg)
+   if Args().getOpt("help") then {
+      helpMesg()
+      stop()
+      }
+   files := Args().getArgs()
+   if *files > 0 then every readBallots(f := open(!files)) do close(f)
+   else readBallots(&input)
+   while not majority() do removeWorst()
+   showResult()
+end
+
+#<p>
+#   Display a help message.
+#</p>
+procedure helpMesg()
+   write(&errout, "Usage: rankvote [--verbose] [ballotfile...]")
+   write(&errout, "   reads ballots from &input if no ballotfiles listed")
+end
+
+#<p>
+#  Constructs a list of ballots as read from a file.
+#  Each line is a single ballot with candidates ordered from first to last
+#  choice, separated by commas.  A candidate's name may include commas if it
+#  is embedded in double quotes.
+#  <[param f - file containing ballots, already opened]>
+#</p>
+procedure readBallots(f)
+   initial {
+      ballots := []
+      maxcands := 0
+      }
+   every put(ballots, b := parseCSV(!f,',')) do maxcands <:= *b
+   return
+end
+
+#<p>
+#  Check to see if any candidate has a clear majority.
+#<[succeeds if a candidate has a clear majority]>
+#<[fails if no candidate has a clear majority yet]>
+#</p>
+procedure majority()
+   results := computeRanks()
+   if Args().getOpt("verbose") then showAllResults()
+   if percentVote(results[-1]) > 50.0 then return
+end
+
+#<p>
+#  Compute the current ranking based on first choices.
+#  <[returns a list of candidates ranked from last to first]>
+#</p>
+procedure computeRanks()
+   curRanking := table()
+   totalVotes := 0
+   # Start by tallying counts for all first choices
+   every *(b := !ballots) > 0 do {   # Ignore empty ballots
+      every c := !b do /curRanking[c] := 0  # Pass all candidates through
+      curRanking[b[1]] +:= 1
+      totalVotes +:= 1
+      }
+   return sort(curRanking,2)  # Worst candidate is first in list!
+end
+
+#<p>
+#  Find the remaining candidate with the fewest first-place votes and
+#  remove them.
+#  Handles tie breaks.
+#</p>
+procedure removeWorst()
+   worst := results[1]
+   worst2 := results[2]  # Needed to check for ties...		
+   if percentVote(worst) < percentVote(worst2) then removeCandidate(worst)
+   else tieBreak(worst1,worst2)
+end
+
+#<p>
+#  Remove a candidate (always one with the fewest first-place votes, of course!)
+#  <[param worst - worst candidate as a list [name,number of votes for first]>
+#</p>
+procedure removeCandidate(worst)
+   write("\tRemoving '",worst[1],"' with ",percentVote(worst),"% of votes")
+   every b := !ballots do 
+      every i := 1 to *b do if worst[1] == b[i] then delete(b,i)
+end
+
+#<p>
+#  Break a tie for the worst remaining candidate by removing the candidate
+#  that has the lowest cummulative ranking.  Factor in that some ballots may
+#  not include all candidates.
+#</p>
+procedure tieBreak(A[])
+   if Args().getOpt("verbose") then write("\tGoing to tie breaker!")
+   tb := table()
+   every c := \!A do {
+      cVotes := 0
+      every b := !ballots do {
+         every i := 1 to *b do if b[i] == c[1] then cVotes +:= (maxcands+1)-i
+         }
+      tb[c[1]] := cVotes   # 0 if candidate c not on ballot b
+      }
+   worst := sort(tb,2)[1]
+   every i := 1 to *results do
+      if worst[1] == results[i][1] then break removeCandidate(results[i])
+end
+
+#<p>
+#  Compute the percent of first-place votes a candidate has in the current
+#  round.
+#  <[param candidate - a candidate as a list [name,number of votes for first]>.
+#  <[returns percent of total votes that the candidate has]>
+#</p>
+procedure percentVote(candidate)
+   return sprintf("%8.4r",100.0*candidate[2]/real(totalVotes))
+end
+
+#<p>
+#  Show the results for the current round.
+#</p>
+procedure showAllResults()
+   write("Current results for ",*results," candidate:")
+   every c := !results do write("\t",c[1]," -> ",percentVote(c),"%")
+end
+
+#<p>
+#  Show the final round's winner.
+#</p>
+procedure showResult()
+   write("Winner is '",results[-1][1],"' with ",percentVote(results[-1]),"% ",
+            "of votes.")
+end

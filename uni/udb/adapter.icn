@@ -54,7 +54,9 @@ class Adapter(
             return cmd
          }
          every request_body := get_request(sock) do {
-            #write("command: "||jtou(request_body)["command"]||"\n")
+$ifdef VERBOSE
+            write("client -> udb:\n" || request_body)
+$endif
             if \waitingForTerminal then {
                   if jtou(request_body)["command"] ~== "runInTerminal" then {
                      #write("put "||jtou(request_body)["command"])
@@ -212,11 +214,11 @@ class Adapter(
 
       responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
 
-      #write(ximage(responseTable))
-
-      #write("udap -> client: " || responseBody)
-
       seq +:= 1
+
+$ifdef VERBOSE
+      write("udb -> client:\n" || responseBody)
+$endif
 
       return responseHeader || responseBody
    end
@@ -235,9 +237,11 @@ class Adapter(
       requestBody := tojson(requestTable)
       requestHeader := "Content-Length:" || *requestBody || "\r\n\r\n"
 
-      #write("udap -> client: " || requestBody)
-
       seq +:= 1
+
+$ifdef VERBOSE
+      write("udb -> client:\n" || requestBody)
+$endif
 
       return requestHeader || requestBody
    end
@@ -260,9 +264,11 @@ class Adapter(
          ])
       eventHeader := "Content-Length:" || *eventBody || "\r\n\r\n"
 
-      #write("udap -> client: " || eventBody)
-
       seq +:= 1
+
+$ifdef VERBOSE
+      write("udb -> client:\n" || eventBody)
+$endif
 
       return eventHeader || eventBody
    end
@@ -914,14 +920,15 @@ class Adapter(
       writes(sock, event)
    end
 
-   # Disconnect from client and udb and startup as a fresh session.
+   # Disconnect from client and udb and end session.
    method disconnect()
+      close(\dapcomSock)
       # Kill terminal running dapcom
       kill(\shellProcessId, 9)
       # End communication with client
       close(\sock)
-      # Restart session
-      put_cmdQueue("reset")
+      # End session
+      exit()
    end
 
    # Open a port as a server and block until client connect.
@@ -934,8 +941,12 @@ class Adapter(
       every !5 do
          if sock := open(port, "na") then
             return sock
-         else
+         else {
+$ifdef VERBOSE
+            write("open(",port,") ERROR: ", \&errortext | "Unknown")
+$endif
             delay(1000)
+         }
 
       #write("udap failed to open port: " || port)
    end

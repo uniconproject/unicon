@@ -1,4 +1,7 @@
-include ../../Makedefs
+BASE=../../..
+include $(BASE)/Makedefs.uni
+
+UC=$(UNICON)
 DEL = $(RM)
 BASE=../../..
 UC=$(UNICON)

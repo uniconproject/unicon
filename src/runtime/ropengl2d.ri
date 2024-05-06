@@ -1429,6 +1429,16 @@ int init_2dcontext(wcp wc)
       glprintf("fonts not allocated\n");
       wc->font = NULL;
       wc->leading = 0;
+      wc->font = (wfp)alloc(sizeof (struct _wfont));
+      wc->font->name = salloc("fixed");
+      wc->font->font = CreateFont(16,0,0,0,FW_NORMAL,0,0,0,
+            ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
+            OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
+            NULL);
+
+      wc->font->charwidth = 8; /* looks like a bug */
+      wc->leading = 16;
       }
 
    /* drawing */
@@ -7528,9 +7538,19 @@ wdp gl_alc_display(char *s)
       wd->maxTexIds = 256;
       wd->numTexIds = 0;
       wd->texIds = (unsigned int *)malloc(wd->maxTexIds*sizeof(unsigned int));
-      if (!wd->texIds) return NULL;
+      if (!wd->texIds) {
+          free(wd);
+          return NULL;
+         }
       }
+   return wd;
+   }
 
+/*
+ * allocate font for a display
+ */
+wdp gl_alc_display_font(wdp wd)
+{
    if (!wd->glfonts) {
       wd->numFonts = 1;
       wd->glfonts = loadfont(wd,DEFAULTFONTNAME,strlen(DEFAULTFONTNAME));
@@ -7540,7 +7560,8 @@ wdp gl_alc_display(char *s)
          }
       }
    return wd;
-   }
+}
+
 
 
 

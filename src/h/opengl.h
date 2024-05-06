@@ -5,6 +5,8 @@
 
 //#define GL2D_DRAWARRAYS 1 /* Punt this off as a TODO item */
 
+#define GL2D_DEBUG
+
 #ifdef GL2D_DEBUG
 #define glprintf(s, ...) fprintf(stderr, "%s:%s:%d: " s, __FILE__, __func__, __LINE__, ##__VA_ARGS__)
 #else                                   /* GL2D_DEBUG */

@@ -475,31 +475,25 @@ Deliberate Syntax Error
                XInitThreads();
 #endif                                  /* XWindows */
 #ifdef GraphicsGL
-               /*
-                * For now, having FreeType is a requirement for the OpenGL
-                * 2D and 2D/3D implementation
-                */
-#if HAVE_LIBFREETYPE
                /* for enabling OpenGL 2D implementation in a convenient way */
-               if (!getenv("UNICONGL2D"))
+               if (getenv("UNICONGL2D")) {
+                  /*
+                  * FreeType is a requirement for OpenGL 2D
+                  */
+#if !HAVE_LIBFREETYPE
+                  set_errortext(1045);
+                  fail;
 #endif                                  /* HAVE_LIBFREETYPE */
+                  if (status & Fs_Window) {
+                     status |= Fs_WinGL2D;
+                  }
+               }
 #endif                                  /* GraphicsGL */
                continue;
 #else                                   /* Graphics */
                set_errortext(148);
                fail;
 #endif                                  /* Graphics */
-#ifdef GraphicsGL
-               /* OpenGL 2D implementation */
-               if (status & Fs_Window) {
-                  status |= Fs_WinGL2D;
-                  continue;
-                  }
-#else
-               /* Does it need a specific code? */
-               set_errortext(1045);
-               fail;
-#endif                                  /* GraphicsGL */
             case 'l':
             case 'L':
 #ifdef PosixFns

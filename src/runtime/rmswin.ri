@@ -273,6 +273,14 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
          set_errortext(145);
          return NULL;
          }
+      if ((gl_alc_display_font(ws->display)) == NULL) {
+         if (!is_3d) {
+            *err_index = -1;
+            free_binding(w);
+            set_errortext(145);
+            return NULL;
+            }
+         }
       }
    else
 #endif                                  /* GraphicsGL */
@@ -298,6 +306,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *) tlp;
 
+   #ifdef GraphicsGL
+   ws->is_3D = is_3d;
+   #endif                                  /* GraphicsGL */
+
    /*
     * some attributes of the display and window are used in the context
     */
@@ -321,7 +333,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 
 #ifdef GraphicsGL
    if (is_gl) {
-      ws->is_3D = wc->rendermode = is_3d;
+      wc->rendermode = is_3d;
 
       /* Allocate display lists */
       if (is_3d) {
@@ -428,18 +440,23 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       scp[1].type = CLR_SHARED;
       strcpy(scp[1].name, "white");
       }
-   oldfont = SelectObject(hdc, wc->font->font);
-   GetTextMetrics(hdc, &metrics);
-   wc->font->charwidth = dc_maxcharwidth(hdc);
-   SelectObject(hdc, oldfont);
-   ReleaseDC(ws->iconwin, hdc);
-   wc->font->ascent = metrics.tmAscent;
-   wc->font->descent = metrics.tmDescent;
-   /*   wc->font->charwidth = metrics.tmMaxCharWidth; buggy */
-   wc->font->height = metrics.tmHeight;
-   wc->leading = metrics.tmHeight;
+
+   if (wc->font) {
+      oldfont = SelectObject(hdc, wc->font->font);
+      GetTextMetrics(hdc, &metrics);
+      wc->font->charwidth = dc_maxcharwidth(hdc);
+      SelectObject(hdc, oldfont);
+      ReleaseDC(ws->iconwin, hdc);
+      wc->font->ascent = metrics.tmAscent;
+      wc->font->descent = metrics.tmDescent;
+      /*   wc->font->charwidth = metrics.tmMaxCharWidth; buggy */
+      wc->font->height = metrics.tmHeight;
+      wc->leading = metrics.tmHeight;
+      ws->y = ASCENT(w);
+   }
+   else
+    ws->y = 7;
    ws->x = 0;
-   ws->y = ASCENT(w);
    ws->y += w->context->dy;
    ws->x += w->context->dx;
    /*
@@ -1245,11 +1262,36 @@ int pollevent()
    wbp w;
    MSG m;
    extern jmp_buf mark_sj;
+#ifdef GraphicsGL
+   wbp wb;
+   static int gpx_poll = FLUSH_POLL_INTERVAL;
+#endif                                  /* GraphicsGL */
 #ifdef Concurrent
    int isbusy;
    MUTEX_TRYLOCKID(MTX_POLLEVENT, isbusy);
    if (isbusy) return POLL_INTERVAL;
 #endif                                  /* Concurrent */
+
+#ifdef GraphicsGL
+   if (gpx_poll) gpx_poll--;
+   if (!gpx_poll) {
+      for (wb = wbndngs; wb; wb=wb->next) {
+         wsp ws = wb->window;
+         if (ws->buffermode == UGL_IMMEDIATE) {
+            if (ws->redraw_flag && !ws->busy_flag) {
+               ws->busy_flag = 1;
+
+               MakeCurrent(wb);
+               glFlush();
+
+               ws->redraw_flag = 0;
+               ws->busy_flag = 0;
+               }
+            }
+         }
+      gpx_poll = FLUSH_POLL_INTERVAL;
+      }
+#endif                                  /* GraphicsGL */
 
    /* some while PeekMessage loops here, maybe one per window ? */
    while (PeekMessage(&m, NULL, 0, 0, PM_NOREMOVE)) {
@@ -3718,7 +3760,7 @@ wbp w;
 
    GRFX_ALLOC(wc, _wcontext);
 
-   if (getenv_r("ICONFONT", icnfnt, 255 ) == 0)
+   if (getenv_r("ICONFONT", fnt, 255 ) == 0)
      icnfnt = fnt;
 
    wc->serial = ++context_serial;

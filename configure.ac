@@ -375,6 +375,7 @@ CFUNCTARGET="cfun"
 CFDYN="-fPIC $MUSLFLG "
 LDDYN="-shared "
 SO=so
+DASHX=
 # OS specific flags go here
 case $unicon_host in
      *linux*)
@@ -393,6 +394,7 @@ case $unicon_host in
      *macos*)
        LDDYN="-Xlinker -undefined -Xlinker dynamic_lookup -shared "
        RLIBS="-ldl "
+       DASHX="-x"
 	;;
      *windows*)
        EXE=".exe"
@@ -436,7 +438,7 @@ fi
 if test x"$debug" = x"yes" ; then
   STRIP="@\#strip"
 else
-  STRIP=strip
+  STRIP="strip $DASHX"
 fi
 
 AC_SUBST(UNICONX)

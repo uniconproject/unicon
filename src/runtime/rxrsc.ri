@@ -1209,24 +1209,37 @@ wcp alc_context(wbp w)
    wc->serial = ++context_serial;
    wc->display = wd;
    wd->refcount++;
+   wc->font = NULL;
 
-#ifdef OpenGL2D
-   if (!w->window->is_gl)
-#endif                                  /* OpenGL2D */
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      init_2dcontext(wc);
+      init_3dcontext(wc);
+      wc->glfg.c = wd->colors[0].c;
+      wd->colors[0].refcount++;
+      wc->glbg.c = wd->colors[1].c;
+      wd->colors[1].refcount++;
+   } else
+#endif                                  /* GraphicsGL */
    {
-   wd->colors[0].refcount++;
-   wc->fg = 0;
-   wd->colors[1].refcount++;
-   wc->bg = 1;
-   wc->font = wd->fonts;
-   wc->leading = wd->fonts->height;
-   wc->drawop = GXcopy;
-   wc->rgbmode = 2;
    wc->gamma = wd->gamma;
    wc->clipx = wc->clipy = 0;
    wc->clipw = wc->cliph = -1;
    wc->linewidth = 1;
+   wc->drawop = GXcopy;
+   wc->fg = 0;
+   wc->bg = 1;
+   wc->rgbmode = 2;
    }
+
+
+
+
+   /* Ensure we have fonts, even with GLand no FreeType, so alway fall back to the old ways */
+   if (!wc->font) {
+      wc->font = wd->fonts;
+      wc->leading = wd->fonts->height;
+      }
 
    GRFX_LINK(wc, wcntxts);
    return wc;

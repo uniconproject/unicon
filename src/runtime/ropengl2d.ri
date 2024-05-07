@@ -1306,7 +1306,13 @@ int init_2dcanvas(wbp w)
     */
    if (glIsEnabled(GL_STENCIL_TEST) == GL_FALSE)
       glEnable(GL_STENCIL_TEST);
-   setpattern2d(w, NULL);
+
+   /*
+    * FIXME: setpattern2d() seems to casue issues with 3D windows
+    * Disbale for now
+    */
+   if (!ws->is_3D)
+      setpattern2d(w, NULL);
 
    /*
     * Clipping
@@ -1402,18 +1408,12 @@ int init_2dcontext(wcp wc)
    /* default fg is black */
    SetColor(wc->glfg, 0, 0, 0, 65535, 0);
    sprintf(wc->glfg.name,"black");
-#ifdef XWindows
-   wc->glfg.c = wd->colors[0].c;
-   wd->colors[0].refcount++;
-#endif                                  /* XWindows */
+
 
    /* default bg is white */
    SetColor(wc->glbg, 65535, 65535, 65535, 65535, 0);
    sprintf(wc->glbg.name,"white");
-#ifdef XWindows
-   wc->glbg.c = wd->colors[1].c;
-   wd->colors[1].refcount++;
-#endif                                  /* XWindows */
+
 
    wc->rgbmode = 2;
    wc->gamma = wd->gamma;
@@ -1429,16 +1429,6 @@ int init_2dcontext(wcp wc)
       glprintf("fonts not allocated\n");
       wc->font = NULL;
       wc->leading = 0;
-      wc->font = (wfp)alloc(sizeof (struct _wfont));
-      wc->font->name = salloc("fixed");
-      wc->font->font = CreateFont(16,0,0,0,FW_NORMAL,0,0,0,
-            ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
-            OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
-            DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
-            NULL);
-
-      wc->font->charwidth = 8; /* looks like a bug */
-      wc->leading = 16;
       }
 
    /* drawing */
@@ -7319,7 +7309,7 @@ wcp gl_clone_context(wbp w)
    wcp wc, rv;
 
    wc = w->context;
-   Protect(rv = gl_alc_context(w), return NULL);
+   Protect(rv = alc_context(w), return NULL);
 
    copy_2dcontext(rv, wc);
    copy_3dcontext(wc, rv);
@@ -7493,28 +7483,6 @@ int gl_wputc(int ci, wbp w)
 /*******************************************************
  * (5) Window management functions (platform specific) *
  *******************************************************/
-
-
-
-
-/*
- * allocate a context.  Can't be called until w has a display and window.
- */
-wcp gl_alc_context(wbp w)
-   {
-   wcp wc;
-
-   wc = alc_context(w); /* platform-specific init */
-   if (!wc) return NULL;
-
-   /* set defaults here */
-   init_2dcontext(wc);
-   init_3dcontext(wc);
-
-   return wc;
-   }
-
-
 
 
 /*

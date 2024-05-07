@@ -314,17 +314,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
     * some attributes of the display and window are used in the context
     */
 
-#ifdef GraphicsGL
-   if (is_gl) {
-      if ((wc = w->context = gl_alc_context(w)) == NULL) {
-         *err_index = -2;
-         free_binding(w);
-         set_errortext(145);
-         return NULL;
-         }
-      }
-   else
-#endif                                  /* GraphicsGL */
    if ((wc = w->context = alc_context(w)) == NULL) {
       *err_index = -2;
       free_binding(w);

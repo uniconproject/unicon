@@ -5469,12 +5469,7 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    ws = w->window;
    ws->display = wd;
     CLRTITLEBAR(ws);
-#ifdef GraphicsGL
-   if (w->window->is_gl) {
-      Protect(w->context = gl_alc_context(w), { free_binding(w); return 0; });
-      }
-   else
-#endif                                  /* GraphicsGL */
+
    Protect(w->context = alc_context(w), { free_binding(w); return 0; });
 
    wc = w->context;

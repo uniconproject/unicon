@@ -15,7 +15,7 @@ static FILE * readhdr   (char *name, struct header *hdr);
 /*
  * Prototypes.
  */
-
+static word unicon_getrandom(void);
 static void     env_err         (char *msg, char *name, char *val);
 FILE            *pathOpen       (char *fname, char *mode);
 
@@ -627,7 +627,7 @@ void init_threadstate( struct threadstate *ts)
    StrLoc(ts->ksub) = "";
 
    ts->Kywd_ran = zerodesc;
-   IntVal(ts->Kywd_ran) = getrandom();
+   IntVal(ts->Kywd_ran) = unicon_getrandom();
    ts->K_errornumber = 0;
    ts->K_level = 0;
    ts->T_errornumber = 0;
@@ -1655,7 +1655,7 @@ int err()
   return strcmp(a->pstrep, b->pstrep);
 }
 
-word getrandom()
+static word unicon_getrandom(void)
 {
 #ifndef NoRandomize
 /*
@@ -1787,7 +1787,7 @@ void datainit()
       k_output.status = Fs_Write;
 
    IntVal(kywd_pos) = 1;
-   IntVal(kywd_ran) = getrandom();
+   IntVal(kywd_ran) = unicon_getrandom();
 
    StrLen(kywd_prog) = strlen(prog_name);
    StrLoc(kywd_prog) = prog_name;

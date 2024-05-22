@@ -613,56 +613,11 @@ wdp alc_display(char *s)
       return NULL;
       }
    wd->screen = DefaultScreen(wd->display);
+#ifdef Graphics3D
+   wd->vis = NULL; /* initialized later if we are a 3D app */
+   wd->stex = NULL;
+#endif                                  /* Graphics3D */
    wd->cmap = DefaultColormap(wd->display, wd->screen);
-
-#ifdef GraphicsGL
-   {
-   int query;
-   int fbparms[] = {GLX_RENDER_TYPE, GLX_RGBA_BIT,
-                   GLX_DOUBLEBUFFER, True,
-                   GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-                   GLX_DEPTH_SIZE, 16,
-                   GLX_STENCIL_SIZE, 3, None};
-
-   /* Check for GLX */
-   if (!glXQueryExtension(wd->display, &query, &query)) {
-      fprintf(stderr, "no visual extension\n");
-      return NULL;
-      }
-
-   /*
-    * Try to get a GLXFBConfig for GLXWindows and GLXPixmaps
-    */
-   wd->configs = glXChooseFBConfig(wd->display, wd->screen, fbparms,
-      &(wd->nConfigs));
-   if (wd->configs == NULL) {
-      fprintf(stderr, "failed to get fbconfig\n");
-      return NULL;
-      }
-
-   /*
-    * Try to get a glX visual
-    */
-   wd->vis = glXGetVisualFromFBConfig(wd->display, wd->configs[0]);
-   if (wd->vis == NULL) {
-      fprintf(stderr, "failed to get visual\n");
-      return NULL;
-      }
-
-   /*
-    * Create a shared context with direct rendering (if possible)
-    * for textures. All windows sharing a display will share
-    * with this context.
-    */
-   if (wd->sharedCtx == NULL) {
-      wd->sharedCtx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
-      if (wd->sharedCtx == NULL) {
-         printf("failed to get shared render context\n");
-         return NULL;
-         }
-      }
-   }
-#endif                                  /* GraphicsGL */
 
    /*
     * Color slots 0 and 1 are permanently reserved for black and white
@@ -1209,11 +1164,6 @@ wcp alc_context(wbp w)
    wc->serial = ++context_serial;
    wc->display = wd;
    wd->refcount++;
-
-#ifdef OpenGL2D
-   if (!w->window->is_gl)
-#endif                                  /* OpenGL2D */
-   {
    wd->colors[0].refcount++;
    wc->fg = 0;
    wd->colors[1].refcount++;
@@ -1226,7 +1176,6 @@ wcp alc_context(wbp w)
    wc->clipx = wc->clipy = 0;
    wc->clipw = wc->cliph = -1;
    wc->linewidth = 1;
-   }
 
    GRFX_LINK(wc, wcntxts);
    return wc;
@@ -1237,7 +1186,6 @@ wcp alc_context(wbp w)
  */
 wcp clone_context(wbp w)
    {
-/* from rxrsc.ri */
    wcp wc, rv;
    wdp wd;
    XGCValues gcv;
@@ -1330,6 +1278,11 @@ wsp alc_winstate()
    ws->pixDraw = ws->winDraw = NULL;
 #endif                                  /* HAVE_XFT */
 
+#ifdef Graphics3D
+  ws->type = REAL_WSTATE;
+  ws->texindex = -1;
+#endif                                  /* Graphics3D */
+
    GRFX_LINK(ws, wstates);
    return ws;
    }
@@ -1350,21 +1303,8 @@ int free_window(wsp ws)
       if (ws->pixDraw) {
          XftDrawDestroy(ws->pixDraw);
          ws->pixDraw = NULL;
-         }
+      }
 #endif                                  /* HAVE_XFT */
-#ifdef GraphicsGL
-      if (ws->ctx != (GLXContext) NULL) {
-         ws->redraw_flag = 0;
-         ws->busy_flag = 1;
-         UnbindCurrent(ws->display);
-         glXDestroyContext(ws->display->display, ws->ctx);
-         ws->ctx = (GLXContext) NULL;
-         }
-      if (ws->pbuf != (GLXPbuffer) NULL) {
-         glXDestroyPbuffer(ws->display->display, ws->pbuf);
-         ws->pbuf = (GLXPbuffer) NULL;
-         }
-#endif                                  /* GraphicsGL */
       if (ws->win != (Window) NULL) {
          XDestroyWindow(ws->display->display, ws->win);
          XFlush(ws->display->display);
@@ -1403,6 +1343,7 @@ void free_context(wcp wc)
    if(wc->refcount == 0) {
       if (wc->gc != NULL)
          XFreeGC(wc->display->display, wc->gc);
+      /* free color references to fg and bg? */
       free_display(wc->display);
       GRFX_UNLINK(wc, wcntxts);
       }
@@ -1413,31 +1354,8 @@ void free_context(wcp wc)
  */
 void free_display(wdp wd)
    {
-   wfp wf, tmp;
    wd->refcount--;
    if(wd->refcount == 0) {
-#ifdef GraphicsGL
-      if (wd->vis != (XVisualInfo *) NULL) {
-         XFree((void *) wd->vis);
-         wd->vis = NULL;
-         }
-      if (wd->configs != (GLXFBConfig *) NULL) {
-         XFree((void *) wd->configs);
-         wd->configs = NULL;
-         }
-      if (wd->sharedCtx != (GLXContext) NULL) {
-         UnbindCurrent(wd);
-         glXDestroyContext(wd->display, wd->sharedCtx);
-         wd->sharedCtx = NULL;
-         }
-#endif                                  /* GraphicsGL */
-      wf = wd->fonts;
-      while (wf) { /* free fonts */
-         tmp = wf;
-         wf = wf->next;
-         free(tmp->name);
-         free(tmp);
-         }
       if (wd->cmap != DefaultColormap(wd->display, wd->screen))
          XFreeColormap(wd->display, wd->cmap);
       XCloseDisplay(wd->display);

@@ -128,50 +128,48 @@ dptr rec_structinate(dptr dp, char *name, int nfields, char *a[])
 }
 
 
-dptr rec_structor3d(int type)
+dptr rec_structor3d(char *name)
 {
 #ifdef Graphics3D
-   switch(type) {
-      case GL3D_CUBE:
-         return rec_structinate(&gl_cube, "gl_cube", 6, gl_cube_fields);
-      case GL3D_CYLINDER:
-         return rec_structinate(&gl_cylinder, "gl_cylinder", 8, gl_cylinder_fields);
-      case GL3D_DISK:
-         return rec_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
-
-      case GL3D_SPHERE:
-         return rec_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
-      case GL3D_TORUS:
-         return rec_structinate(&gl_torus, "gl_torus", 7, gl_torus_fields);
-      case GL3D_IDENTITY:
-         return rec_structinate(&gl_identity, "gl_identity", 2, NULL);
-      case GL3D_MATRIXMODE:
-         return rec_structinate(&gl_matrixmode, "gl_matrixmode", 3, gl_matrixmode_fields);
-      case GL3D_POPMATRIX:
-         return rec_structinate(&gl_popmatrix, "gl_popmatrix", 2, NULL);
-      case GL3D_PUSHMATRIX:
-         return rec_structinate(&gl_pushmatrix, "gl_pushmatrix", 2, NULL);
-      case GL3D_ROTATE:
-         return rec_structinate(&gl_rotate, "gl_rotate", 6, gl_rotate_fields);
-      case GL3D_SCALE:
-         return rec_structinate(&gl_scale, "gl_scale", 5, NULL);
-      case GL3D_TEXTURE:
-         return rec_structinate(&gl_texture, "gl_texture", 4, gl_texture_fields);
-      case GL3D_TRANSLATE:
-         return rec_structinate(&gl_translate, "gl_translate", 5, NULL);
-      case GL3D_FONT:
-         return rec_structinate(&gl_font3d, "gl_font3d", 3, gl_font_fields);
-      case GL3D_DRAWSTRING:
-         return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 6, gl_drawstring3d_fields);
-      case GL3D_MARK:
-         return rec_structinate(&gl_mark, "gl_mark", 7, gl_mark_fields);
-      case GL3D_ENDMARK:
-         return rec_structinate(&gl_endmark, "gl_endmark", 3, gl_mark_fields);
-      case GL3D_MESHMODE:
-         return rec_structinate(&gl_meshmode, "gl_meshmode", 3, gl_meshmode_fields);
-      default:
-         break;
-      }
+   if (!strcmp(name, "gl_torus"))
+      return rec_structinate(&gl_torus, "gl_torus", 7, gl_torus_fields);
+   else if (!strcmp(name, "gl_cube"))
+      return rec_structinate(&gl_cube, "gl_cube", 6, gl_cube_fields);
+   else if (!strcmp(name, "gl_sphere"))
+      return rec_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
+   else if (!strcmp(name, "gl_cylinder"))
+      return rec_structinate(&gl_cylinder, "gl_cylinder", 8, gl_cylinder_fields);
+   else if (!strcmp(name, "gl_disk"))
+      return rec_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
+   else if (!strcmp(name, "gl_rotate"))
+      return rec_structinate(&gl_rotate, "gl_rotate", 6, gl_rotate_fields);
+   else if (!strcmp(name, "gl_translate"))
+      return rec_structinate(&gl_translate, "gl_translate", 5, NULL);
+   else if (!strcmp(name, "gl_scale"))
+      return rec_structinate(&gl_scale, "gl_scale", 5, NULL);
+   else if (!strcmp(name, "gl_popmatrix"))
+      return rec_structinate(&gl_popmatrix, "gl_popmatrix", 2, NULL);
+   else if (!strcmp(name, "gl_pushmatrix"))
+      return rec_structinate(&gl_pushmatrix, "gl_pushmatrix", 2, NULL);
+   else if (!strcmp(name, "gl_identity"))
+      return rec_structinate(&gl_identity, "gl_identity", 2, NULL);
+   else if (!strcmp(name, "gl_matrixmode"))
+      return rec_structinate(&gl_matrixmode, "gl_matrixmode",
+                                3, gl_matrixmode_fields);
+   else if (!strcmp(name, "gl_meshmode"))
+      return rec_structinate(&gl_meshmode, "gl_meshmode",
+                                3, gl_meshmode_fields);
+   else if (!strcmp(name, "gl_texture"))
+      return rec_structinate(&gl_texture, "gl_texture", 4, gl_texture_fields);
+   else if (!strcmp(name, "gl_font3d"))
+      return rec_structinate(&gl_font3d, "gl_font3d", 3, gl_font_fields);
+   else if (!strcmp(name, "gl_drawstring3d"))
+        return rec_structinate(&gl_drawstring3d, "gl_drawstring3d",
+                                6, gl_drawstring3d_fields);
+   else if (!strcmp(name, "gl_endmark"))
+      return rec_structinate(&gl_endmark, "gl_endmark", 3, gl_mark_fields);
+   else if (!strcmp(name, "gl_mark"))
+        return rec_structinate(&gl_mark, "gl_mark", 7, gl_mark_fields);
 #endif                                  /* Graphics3D */
 
    return 0;
@@ -266,6 +264,8 @@ int gettexture(wbp w, dptr dp)
 int init_3dcontext(wcp wc)
 {
   /* set defaults for attributes */
+   wc->eyeupx = wc->eyeupz = 0.0;
+   wc->eyeupy = 1.0;
    wc->dim = 3;
    wc->slices = 15;
    wc->rings = 10;
@@ -277,6 +277,8 @@ int init_3dcontext(wcp wc)
    if (wc->selectionnamelist == NULL) return Failed;
    wc->app_use_selection3D = 0;
 
+   wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
+   wc->eyedirz = -100.0;
    wc->autogen = 1;
    wc->normode = 1;
    wc->normals = NULL;
@@ -292,6 +294,9 @@ int init_3dcontext(wcp wc)
 int copy_3dcontext(wcp wc, wcp rv)
 {
   /* set defaults for attributes */
+   rv->eyeupx = wc->eyeupx;
+   rv->eyeupz = wc->eyeupz;
+   rv->eyeupy = wc->eyeupy;
    rv->dim = wc->dim;
    rv->slices = wc->slices;
    rv->rings = wc->rings;
@@ -301,6 +306,13 @@ int copy_3dcontext(wcp wc, wcp rv)
    rv->selectionnamecount = wc->selectionnamecount;
    rv->selectionnamelist = wc->selectionnamelist;
    rv->app_use_selection3D = wc->app_use_selection3D;
+
+   rv->eyeposx = wc->eyeposx;
+   rv->eyeposy = wc->eyeposy;
+   rv->eyeposz = wc->eyeposz;
+   rv->eyedirx = wc->eyedirx;
+   rv->eyediry = wc->eyediry;
+   rv->eyedirz = wc->eyedirz;
    rv->autogen = wc->autogen;
    rv->normode = wc->normode;
    rv->normals = wc->normals;
@@ -324,11 +336,11 @@ int pushmatrix_rd(wbp w, dptr f)
    int nfields, draw_code;
    tended struct b_record *rp;
 
-   if (!constr && !(constr = rec_structor3d(GL3D_PUSHMATRIX)))
+   if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
       syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-   MakeCurrent(w);
+   makecurrent(w);
 
    /* push a copy of the top matrix, if possible */
    if (pushmatrix() == 0)
@@ -426,7 +438,7 @@ int setdim(wbp w, char* s)
    tended struct descrip d;
    int dim;
 
-   MakeCurrent(w);
+   makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "dim", 4)!=Succeeded)
      return RunError;
@@ -449,12 +461,12 @@ int setdim(wbp w, char* s)
 /* this set the eyeup, eyedir, and the eyepos attributes */
 int seteye(wbp w, char *s)
 {
-   wsp ws = w->window;
+   wcp wc = w->context;
 
    if (sscanf(s, " %lf , %lf , %lf , %lf , %lf , %lf , %lf , %lf , %lf ",
-              &(ws->eyeposx), &(ws->eyeposy), &(ws->eyeposz),
-              &(ws->eyedirx), &(ws->eyediry), &(ws->eyedirz),
-              &(ws->eyeupx),  &(ws->eyeupy),  &(ws->eyeupz)) != 9) {
+              &(wc->eyeposx), &(wc->eyeposy), &(wc->eyeposz),
+              &(wc->eyedirx), &(wc->eyediry), &(wc->eyedirz),
+              &(wc->eyeupx),  &(wc->eyeupy),  &(wc->eyeupz)) != 9) {
       return RunError;
       }
 
@@ -467,12 +479,12 @@ int seteye(wbp w, char *s)
 int seteyedir(wbp w, char *s)
 {
    char *s2 = s;
-   wsp ws = w->window;
+   wcp wc = w->context;
 
    while (isspace(*s2)) s2++;
    /* find the x-coordinate of eyedir */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   ws->eyedirx = atof(s2);
+   wc->eyedirx = atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -483,7 +495,7 @@ int seteyedir(wbp w, char *s)
    /* find the y-coordinate */
    if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   ws->eyediry= atof(s2);
+   wc->eyediry= atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -494,7 +506,7 @@ int seteyedir(wbp w, char *s)
    /* find the z-coordinate */
    if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   ws->eyedirz = atof(s2);
+   wc->eyedirz = atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -512,7 +524,7 @@ int seteyedir(wbp w, char *s)
 int seteyepos(wbp w, char *s)
 {
    char *s2 =s;
-   wsp ws = w->window;
+   wcp wc = w->context;
 
    /* parse string */
    while (isspace(*s2)) s2++;
@@ -520,7 +532,7 @@ int seteyepos(wbp w, char *s)
    /* get the x-coordinate of eyepos */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
       return RunError;
-   ws->eyeposx = atof(s2);
+   wc->eyeposx = atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -531,7 +543,7 @@ int seteyepos(wbp w, char *s)
    /* get the y-coordinate of eyepos */
    if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   ws->eyeposy = atof(s2);
+   wc->eyeposy = atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -542,7 +554,7 @@ int seteyepos(wbp w, char *s)
    /* get the z-coordinate of eyepos */
    if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   ws->eyeposz = atof(s2);
+   wc->eyeposz = atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -561,14 +573,14 @@ int seteyepos(wbp w, char *s)
 int seteyeup(wbp w, char *s)
 {
    char *s2 = s;
-   wsp ws = w->window;
+   wcp wc = w->context;
 
    while (isspace(*s2)) s2++;
 
    /* set the x-coordinate of eyeyp */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
       return RunError;
-   ws->eyeupx = atof(s2);
+   wc->eyeupx = atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -580,7 +592,7 @@ int seteyeup(wbp w, char *s)
    if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
       return RunError;
-   ws->eyeupy= atof(s2);
+   wc->eyeupy= atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -593,7 +605,7 @@ int seteyeup(wbp w, char *s)
    if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
       return RunError;
-   ws->eyeupz = atof(s2);
+   wc->eyeupz = atof(s2);
 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -609,12 +621,27 @@ int seteyeup(wbp w, char *s)
 /* set the fovangle attribute */
 int setfov(wbp w, char* s)
 {
+   tended struct descrip f;
+   tended struct descrip val;
    double fov;
-   wsp ws = w->window;
+   wcp wc = w->context;
+
+   makecurrent(w);
+   /* create a list */
+   if (create3Dlisthdr(&f, "fov", 4)!=Succeeded)
+     return RunError;
 
    fov = atof(s);
-   ws->fov = fov;
+#ifdef DescriptorDouble
+   val.vword.realval = fov;
+#else                                    /* DescriptorDouble */
+   BlkLoc(val) = (union block *)alcreal(fov);
+#endif                                    /* DescriptorDouble */
+   val.dword = D_Real;
+   c_put(&f, &val);
+   wc->fov = fov;
 
+   c_put(&(w->window->funclist), &f);
    return Succeeded;
 }
 
@@ -627,7 +654,7 @@ int setnormode(wbp w, char* s)
    tended struct descrip mode;
    wcp wc = w->context;
 
-   MakeCurrent(w);
+   makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "normode", 4)!=Succeeded)
      return RunError;
@@ -657,7 +684,7 @@ int setrings(wbp w, char* s)
    int rings;
    wcp wc = w->context;
 
-   MakeCurrent(w);
+   makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "rings", 4)!=Succeeded)
      return RunError;
@@ -670,7 +697,6 @@ int setrings(wbp w, char* s)
    wc->rings = rings;
 
    c_put(&(w->window->funclist), &f);
-
    return Succeeded;
 }
 
@@ -682,7 +708,7 @@ int setslices(wbp w, char* s)
    int slices;
    wcp wc = w->context;
 
-   MakeCurrent(w);
+   makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "slices", 4) != Succeeded)
      return RunError;
@@ -695,7 +721,6 @@ int setslices(wbp w, char* s)
    wc->slices = slices;
 
    c_put(&(w->window->funclist), &f);
-
    return Succeeded;
 }
 
@@ -710,7 +735,7 @@ int settexmode(wbp w, char* s)
    wcp wc = w->context;
    int oldtexmode = wc->texmode;
 
-   MakeCurrent(w);
+   makecurrent(w);
     /* create a list */
     if (create3Dlisthdr(&f, "texmode", 4)!=Succeeded)
       return RunError;
@@ -742,7 +767,6 @@ int settexmode(wbp w, char* s)
    MakeInt(wc->texmode, &mode);
    c_put(&f, &mode);
    c_put(&(w->window->funclist), &f);
-
    return Succeeded;
 }
 
@@ -768,30 +792,30 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
    int wt_index;
    int ttype;
 
-   MakeCurrent(w);
+   makecurrent(w);
 
-   if (!is_init){
-      if (!constr &&  !(constr = rec_structor3d(GL3D_TEXTURE)))
+   if (!is_init) {
+      if (!constr &&  !(constr = rec_structor3d("gl_texture")))
          syserr("failed to create opengl record constructor");
-         nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-         /*
-          * create a record of the graphical object and its parameters
-          */
+      /*
+       * create a record of the graphical object and its parameters
+       */
       if (!(rp = alcrecd(nfields, BlkLoc(*constr))))
          return Failed;
-     (*f).dword = D_Record;
-     (*f).vword.bptr = (union block *)rp;
-     MakeStr("Texture", 7, &(rp->fields[0]));
+      (*f).dword = D_Record;
+      (*f).vword.bptr = (union block *)rp;
+      MakeStr("Texture", 7, &(rp->fields[0]));
 
-     draw_code = si_s2i(redraw3Dnames, "Texture");
-     if (draw_code == -1)
-       return Failed;
-     MakeInt(draw_code, &(rp->fields[1]));
+      draw_code = si_s2i(redraw3Dnames, "Texture");
+      if (draw_code == -1)
+        return Failed;
+      MakeInt(draw_code, &(rp->fields[1]));
 
      Protect(BlkLoc(rp->fields[3]) =
-              (union block *)alcfile((FILE *)w, Fs_Window|Fs_Read|Fs_Write
-                      | (w->context->rendermode == UGL3D?Fs_Window3D:0)
+            (union block *)alcfile((FILE *)w, Fs_Window|Fs_Read|Fs_Write
+                      | (w->context->is_3D?Fs_Window3D:0)
                       , &emptystr), return Failed);
 
      rp->fields[3].dword = D_File;
@@ -829,16 +853,10 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
  */
 int create_display_list(wbp w, int size)
 {
-   if ((BlkLoc(w->window->funclist) = (union block *)alclist(0, size)) == NULL)
+   if ((w->window->funclist.vword.bptr = (union block *)alclist(0, size)) == NULL)
       return Failed;
+
    w->window->funclist.dword = D_List;
-
-
-#ifdef GraphicsGL
-   if ((BlkLoc(w->window->funclist2d) = (union block *)alclist(0, size)) == NULL)
-      return Failed;
-   w->window->funclist2d.dword = D_List;
-#endif                                  /* GraphicsGL */
 
    return Succeeded;
 }

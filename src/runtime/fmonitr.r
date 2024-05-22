@@ -284,11 +284,6 @@ function{0,1} EvGet(cs,vmask,flag)
       if (Testb((word)ToAscii(E_MXevent), cs) &&
           is:file(kywd_xwin[XKey_Window])) {
          wbp _w_ = BlkD(kywd_xwin[XKey_Window],File)->fd.wb;
-#ifdef GraphicsGL
-         if (_w_->window->is_gl)
-            gl_wsync(_w_);
-         else
-#endif                                  /* GraphicsGL */
          wsync(_w_);
          pollctr = pollevent();
          if (pollctr == -1)

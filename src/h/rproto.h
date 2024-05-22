@@ -645,7 +645,7 @@ int checkOpenConsole( FILE *w, char *s );
    void wflush          (wbp w);
 #endif
    int  wgetq           (wbp w, dptr res, int t);
-   FILE *wopen          (char *nm, struct b_list *hp, dptr attr, int n, int *e, int is_3d, int is_gl);
+   FILE *wopen          (char *nm, struct b_list *hp, dptr attr, int n, int *e, int is_3d);
 #ifdef Graphics3D
    FILE *wopengl        (char *nm, struct b_list *hp, dptr attr, int n,int *e);
 #endif                                  /* Graphics3D */
@@ -679,7 +679,7 @@ int checkOpenConsole( FILE *w, char *s );
       int       setbgrgb                (wbp w, int r, int g, int b);
 
       XColor    xcolor                  (wbp w, LinearColor clr);
-      LinearColor       lcolor          (wbp w, XColor color);
+      LinearColor lcolor                (wbp w, XColor color);
       int       pixmap_open             (wbp w, dptr attribs, int argc);
       int       pixmap_init             (wbp w);
       int       remap                   (wbp w, int x, int y);
@@ -706,11 +706,11 @@ int checkOpenConsole( FILE *w, char *s );
       int       go_virtual              (wbp w);
       int       resizePixmap            (wbp w, int width, int height);
       void      wflushall               (void);
-      void postcursor(wbp);
-      void scrubcursor(wbp);
-      void mkfont                       (char *s, char is_3D);
+      void      postcursor              (wbp);
+      void      scrubcursor             (wbp);
+      void      mkfont                  (char *s, char is_3D);
 #ifdef HAVE_XFT
-      void drawstrng(wbp w, int x, int y, char *str, int slen);
+      void      drawstrng               (wbp w, int x, int y, char *str, int slen);
 #endif                                  /* HAVE_XFT */
 
    #endif                               /* XWindows */
@@ -806,185 +806,10 @@ int checkOpenConsole( FILE *w, char *s );
       void applyAutomaticTextureCoords(int enable);
       void applymatrix(wbp w, double a[]);
       int create_display_list(wbp w, int size);
-   #endif                                       /* Graphics3D */
-
-   #ifdef GraphicsGL
-      /*
-       * Implementation routines specific to OpenGL for 2D facilities
-       */
-      int create_display_list2d(wbp w, int size);
-      dptr rec_structor2d(int type);
-      dptr rec_structor2dinit(dptr dp, char *name, int nfields, char *field_names[]);
-      int traversefunclist2d(wbp w);
-      int updaterendercontext(wbp w, int intcode);
-
-      int init_2dcanvas(wbp w);
-      int init_canvas(wbp w);
-      int init_2dcontext(wcp wc);
-      int copy_2dcontext(wcp wcdest, wcp wcsrc);
-
-      int get_tex_index(wdp wd, unsigned int ntex);
-      int delete_first_tex(wdp wd, unsigned int ndel);
-      int delete_last_tex(wdp wd, unsigned int ndel);
-
-      int drawgeometry2d(wbp w, struct b_record *rp);
-      int drawblimage2d(wbp w, struct b_record *rp);
-      int drawreadimage2d(wbp w, struct b_record *rp);
-      int drawstrimage2d(wbp w, struct b_record *rp);
-      int copyarea2d(wbp w, struct b_record *rp);
-      int erasearea2d(wbp w, struct b_record *rp);
-
-      int setcolor2d(wbp w, struct b_record *rp, int type);
-      int setdrawop2d(wbp w, struct b_record *rp);
-      int setgamma2d(wbp w, struct b_record *rp);
-      int togglefgbg2d(wbp w);
-
-      int setlinewidth2d(wbp w, struct b_record *rp);
-      int setlinestyle2d(wbp w, struct b_record *rp);
-      int setfillstyle2d(wbp w, struct b_record *rp);
-      int setpattern2d(wbp w, struct b_record *rp);
-
-      int setclip2d(wbp w, struct b_record *rp);
-      int setdx2d(wbp w, struct b_record *rp);
-      int setdy2d(wbp w, struct b_record *rp);
-      int setfont2d(wbp w, struct b_record *rp);
-      int setleading2d(wbp w, struct b_record *rp);
-      int drawstring2d(wbp w, struct b_record *rp);
-      int drawstringhelper(wbp w, double x, double y, double z, char *s, int len, int fill, int draw);
-
-      /*
-       * 2D API
-       */
-
-      /*
-       * Rendering functions
-       */
-      int gl_blimage(wbp w, int x, int y, int width, int height, int ch, unsigned char *s, word len);
-      int gl_readimage(wbp w, char *filename, int x, int y, int *status);
-      int gl_strimage(wbp w, int x, int y, int width, int height, struct palentry *e, unsigned char *s, word len, int on_icon);
-      int gl_drawstrng(wbp w, int x, int y, char *s, int slen);
-      int gl_xdis(wbp w, char *s, int s_len);
-      int gl_copyArea(wbp w1, wbp w2, int x, int y, int width, int height, int x2, int y2);
-      int gl_eraseArea(wbp w, int x, int y, int width, int height);
-      int gl_arcs(wbp w, XArc *arcs, int n, int circle, int fill);
-      int gl_fillarcs(wbp w, XArc *arcs, int n);
-      int gl_drawarcs(wbp w, XArc *arcs, int n);
-      int gl_fillcircles(wbp w, XArc *arcs, int n);
-      int gl_drawcircles(wbp w, XArc *arcs, int n);
-      int gl_rectangles(wbp w, XRectangle *recs, int n, int fill);
-      int gl_fillrectangles(wbp w, XRectangle *recs, int n);
-      int gl_drawrectangles(wbp w, XRectangle *recs, int n);
-      int gl_drawlines(wbp w, XPoint *points, int n);
-      int gl_drawpoints(wbp w, XPoint *points, int n);
-      int gl_drawsegments(wbp w, XSegment *segs, int n);
-      int gl_fillpolygon(wbp w, XPoint *pts, int n);
-
-      int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y, unsigned int width, unsigned int height);
-      int gl_getimstr(wbp w, int x, int y, int width, int height, struct palentry *ptbl, unsigned char *data);
-      int gl_getimstr24(wbp w, int xx, int yy, int width, int height, unsigned char *data);
-      int gl_getpixel_init(wbp w, struct imgmem *imem);
-      int gl_getpixel_term(wbp w, struct imgmem *imem);
-      int gl_getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem);
-      char *gl_loadimage(wbp w, char *filename, unsigned int *height, unsigned int *width, int atorigin, int *is_pixmap);
-
-      /*
-       * Context functions
-       */
-      void gl_getfg(wbp w, char *s);
-      void gl_getbg(wbp w, char *s);
-      void gl_getdrawop(wbp w, char *s);
-      void gl_getlinestyle(wbp w, char *s);
-      void gl_getfntnam(wbp w, char *s);
-      char *gl_get_mutable_name(wbp w, int mute_index);
-      int gl_set_mutable(wbp w, int mute_index, char *s);
-      void gl_free_mutable(wbp w, int mute_index);
-      int gl_mutable_color(wbp w, dptr argv, int warg, int *rv);
-      struct color *find_mutable(wbp w, int index);
-      struct color *alc_mutable_color(wbp w);
-      void free_mutables(wdp wd);
-
-      int gl_color(wbp w, int intcode, int mindex, char *s);
-      int gl_setbgrgb(wbp w, int r, int g, int b);
-      int gl_setfgrgb(wbp w, int r, int g, int b);
-      int gl_isetbg(wbp w, int mindex);
-      int gl_isetfg(wbp w, int mindex);
-      int gl_setbg(wbp w, char *s);
-      int gl_setfg(wbp w, char *s);
-      int gl_setdrawop(wbp w, char *s);
-      int gl_setleading(wbp w, int i);
-      int gl_setlinestyle(wbp w, char *s);
-      int gl_setlinewidth(wbp w, LONG lwidth);
-      int gl_SetPattern(wbp w, char *name, int len);
-      int gl_setfillstyle(wbp w, char *s);
-      int gl_setfont(wbp w, char **s);
-      wfp gl_alc_font(wbp w, char **s, int len);
-      int gl_setgamma(wbp w, double gamma);
-      int gl_setclip(wbp w);
-      int gl_unsetclip(wbp w);
-      int gl_setdx(wbp w);
-      int gl_setdy(wbp w);
-      int gl_toggle_fgbg(wbp w);
-
-      /*
-       * Windowing functions (platform-neutral)
-       */
-      int gl_allowresize(wbp w, int on);
-      char gl_child_window_stuff(wbp w, wbp wp, int child_window);
-      wcp gl_clone_context(wbp w);
-      int gl_rebind(wbp w, wbp w2);
-      int gl_resizePixmap(wbp w, int width, int height);
-      int gl_setcursor(wbp w, int on);
-      int gl_wputc(int c, wbp w);
-
-      /*
-       * Windowing functions (platform-specific)
-       */
-      wcp gl_alc_context(wbp w);
-      wdp gl_alc_display(char *s);
-      wsp gl_alc_winstate();
-      void gl_free_context(wcp wc);
-      void gl_free_display(wdp wd);
-      int gl_free_window(wsp ws);
-      void gl_freecolor(wbp w, char *s);
-      int gl_do_config(wbp w, int status);
-      void gl_getcanvas(wbp w, char *s);
-      int gl_getdefault(wbp w, char *prog, char *opt, char *answer);
-      void gl_getdisplay(wbp w, char *s);
-      void gl_geticonic(wbp w, char *s);
-      int gl_geticonpos(wbp w, char *s);
-      void gl_getpointername(wbp w, char *s);
-      int gl_getpos(wbp w);
-      int gl_getvisual(wbp w, char *s);
-      int gl_nativecolor(wbp w, char *s, long *r, long *g, long *b);
-      int gl_lowerWindow(wbp w);
-      int gl_raiseWindow(wbp w);
-      int gl_setcanvas(wbp w, char *s);
-      int gl_setdisplay(wbp w, char *s);
-      int gl_seticonicstate(wbp w, char *s);
-      int gl_seticonimage(wbp w, dptr dp);
-      int gl_seticonlabel(wbp w, char *s);
-      int gl_seticonpos(wbp w, char *s);
-      int gl_setimage(wbp w, char *s);
-      int gl_setpointer(wbp w, char *s);
-      int gl_setwidth(wbp w, SHORT new_width);
-      int gl_setheight(wbp w, SHORT new_height);
-      int gl_setgeometry(wbp w, char *s);
-      int gl_setwindowlabel(wbp w, char *s);
-      int gl_query_pointer(wbp w, XPoint *xp);
-      int gl_query_rootpointer(XPoint *xp);
-      int gl_walert(wbp w, int volume);
-      void gl_warpPointer(wbp w, int x, int y);
-      int gl_wclose(wbp w);
-      void gl_wflush(wbp w);
-      void gl_wflushall();
-      int gl_wgetq(wbp w, dptr res, int t);
-      FILE *gl_wopen(char *name, struct b_list *lp, dptr attrs, int n, int *err_index, int is_3d);
-      int gl_wmap(wbp w);
-      void gl_wsync(wbp w);
-   #endif                                       /* GraphicsGL */
+   #endif                                  /* Graphics3D */
 
    #ifdef MSWindows
-      wdp       alc_display             (char *s);
+      wdp       alc_display     (char *s);
       /*
        * Implementation routines specific to MS Windows
        */
@@ -1159,7 +984,7 @@ dptr make_group                 (struct group *pw, dptr result);
 #endif                                  /* NT */
 
 dptr rec_structor               (char *s);
-dptr rec_structor3d             (int type);
+dptr rec_structor3d             (char *type);
 int sock_connect                (char *s, int udp, int timeout, int af_fam);
 int sock_getstrg                (char *buf, int maxi, dptr file);
 int getmodefd                   (int fd, char *mode);
@@ -1173,9 +998,7 @@ dptr make_group                 (struct group *pw, dptr result);
 
 dptr make_host                  (struct hostent *pw, dptr result);
 
-#ifdef HAVE_GETADDRINFO
 dptr make_host_from_addrinfo(char *name, struct addrinfo *inforesult, dptr result);
-#endif
 struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family);
 void            set_gaierrortext(int i);
 

@@ -1663,7 +1663,6 @@ cpintarray_macro(cpintarray_0, 0)
 cpintarray_macro(cpintarray, 0)
 #endif                                  /* MultiProgram */
 
-
 /*
  * Convert a list to an array. If not possible, return the original list
  */

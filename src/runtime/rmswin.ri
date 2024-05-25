@@ -222,7 +222,7 @@ char *lookcmdname(char *buf, char *s)
  *  -1  : ordinary failure
  *  -2  : out of memory
  */
-FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int is_3d, int is_gl)
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int is_3d)
    {
    wbp w;
    wsp ws;
@@ -266,7 +266,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    ws->width = ws->height = 0;
 
 #ifdef Graphics3D
-   ws->is_3D = wc->rendermode = is_3d;
+   ws->is_3D = wc->is_3D = is_3d;
    if (is_3d) {
       /* create an empty list for list of function calls */
       if (create_display_list(w, 40000) == Failed) {
@@ -386,7 +386,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    ws->pixheight = ws->height;
 
 #ifdef Graphics3D
-   if (wc->rendermode == UGL3D) {
+   if (wc->is_3D) {
       hdc = GetDC(ws->iconwin);
       SetDCPixelFormat(hdc);
       create3Dcontext(w);
@@ -503,10 +503,14 @@ int handle_config(wbp w, UINT msg, WPARAM wp, LPARAM lp)
    if(ws->is_3D) {
       HDC tmpdc = GetDC(ws->iconwin);
       double tb = 0.125 * ws->height / ws->width;
-#ifdef GraphicsGL
-      wglMakeCurrent(tmpdc, w->window->ctx);
-      SetWindowSize(w);
-#endif                                  /* GraphicsGL */
+#if HAVE_LIBGL
+      wglMakeCurrent(tmpdc, w->context->ctx);
+      glViewport(0, 0, (GLsizei)neww, (GLsizei) newh);
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity();
+      glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
+      glMatrixMode(GL_MODELVIEW);
+#endif                                  /* HAVE_LIBGL */
       ReleaseDC(ws->iconwin, tmpdc);
       }
 #endif                                  /* Graphics3D */
@@ -762,7 +766,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: case WM_MBUTTONDOWN:
       handle_mouse(wb,msg,wp,lp);
 #ifdef Graphics3D
-      if (wb->context->rendermode == UGL3D && wb->context->app_use_selection3D){
+      if (wb->context->is_3D && wb->context->app_use_selection3D){
           wb->context->selectionrendermode = 1;
           redraw3D(wb);
           wb->context->selectionrendermode = 0;
@@ -1046,11 +1050,11 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 #endif                                  /* ConsoleWindow */
 #ifdef Graphics3D
             if(ws->is_3D) {
-#ifdef GraphicsGL
+#if HAVE_LIBGL
                wglMakeCurrent(0, NULL);
-               wglDeleteContext(wb->window->ctx);
-               wb->window->ctx = NULL;
-#endif                                          /* GraphicsGL */
+               wglDeleteContext(wb->context->ctx);
+               wb->context->ctx = NULL;
+#endif                                  /* HAVE_LIBGL */
                }
 #endif                                  /* Graphics3D */
             PostQuitMessage(0);
@@ -1096,7 +1100,7 @@ int wclose(wbp w)
 #ifdef Graphics3D
       if(tmp_wb->window->is_3D)
          release_3d_resources(tmp_wb);
-#endif                                          /* Graphics3D */
+#endif                                  /* Graphics3D */
       w->window->children = w->window->children->next;
       tmp_wb->refcount--;
       tmp_wb->window->parent=NULL;
@@ -1132,7 +1136,7 @@ int wclose(wbp w)
 #ifdef Graphics3D
    if (w->window->is_3D)
       release_3d_resources(w);
-#endif                                          /* Graphics3D */
+#endif                                  /* Graphics3D */
 
    ws->inputmask &= ~WindowClosureMask;
 
@@ -3746,10 +3750,19 @@ wbp w;
    setfont(&tmp, &(wc2->font->name));
 
 #ifdef Graphics3D
-   wc->rendermode = wc2->rendermode;
-   if(wc->rendermode == UGL3D) {
+   wc->is_3D = wc2->is_3D;
+   if(wc->is_3D) {
       HDC hdc;
+      wc->eyeupx = wc2->eyeupx;
+      wc->eyeupy = wc2->eyeupy;
+      wc->eyeupz = wc2->eyeupz;
       wc->dim = wc2->dim;
+      wc->eyeposx = wc2->eyeposx;
+      wc->eyeposy = wc2->eyeposy;
+      wc->eyeposz = wc2->eyeposz;
+      wc->eyedirx = wc2->eyedirx;
+      wc->eyediry = wc2->eyediry;
+      wc->eyedirz = wc2->eyedirz;
       wc->autogen = wc2->autogen;
       wc->texmode = wc2->texmode;
 
@@ -3757,14 +3770,18 @@ wbp w;
       wc->numtexcoords = wc2->numtexcoords;
       wc->texcoords = wc2->texcoords;
 
-#if 0 /* ctx moved to _wstate */
+#if HAVE_LIBGL
+#if 0
       hdc = GetDC(ws->iconwin);
       SetDCPixelFormat(hdc);
       wc->ctx = wglCreateContext(hdc);
       wglMakeCurrent(hdc, wc->ctx);
       /* additional code to set values in new context */
       ReleaseDC(ws->iconwin, hdc);
+#else
+      wc->ctx = wc2->ctx;
 #endif
+#endif                                  /* HAVE_LIBGL */
       }
 #endif                                  /* Graphics3D */
 
@@ -4141,6 +4158,18 @@ int status;
       }
 #ifdef Graphics3D
    if (ws->is_3D) {
+      makecurrent(w);
+#if HAVE_LIBGL
+      glViewport(0, 0, (GLsizei)wid, (GLsizei)ht);
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity();
+      {
+      double tb = 0.125 * ws->height / ws->width;
+      glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
+      }
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+#endif                                  /* HAVE_LIBGL */
       redraw3D(w);
       }
 #endif
@@ -4338,10 +4367,10 @@ HDC CreateWinDC(wbp w)
 
 #ifdef Graphics3D
 /*   wc->ctx = wglCreateContext (hdc); */
-   if (w->context->rendermode == UGL3D) {
-#ifdef GraphicsGL
-      wglMakeCurrent (hdc, w->window->ctx);
-#endif                                  /* GraphicsGL */
+   if (w->context->is_3D) {
+#if HAVE_LIBGL
+      wglMakeCurrent (hdc, wc->ctx);
+#endif                                  /* HAVE_LIBGL */
       }
 #endif                                  /* Graphics3D */
 
@@ -5060,13 +5089,13 @@ char my_wmap(wbp w)
    ws->pixheight = ws->height;
 
 #ifdef Graphics3D
-   if (wc->rendermode == UGL3D) {
+   if (wc->is_3D) {
       hdc = GetDC(ws->iconwin);
       SetDCPixelFormat(hdc);
-#ifdef GraphicsGL
-      ws->ctx = wglCreateContext (hdc);
-      wglMakeCurrent (hdc, ws->ctx);
-#endif                                  /* GraphicsGL */
+#if HAVE_LIBGL
+      wc->ctx = wglCreateContext (hdc);
+      wglMakeCurrent (hdc, wc->ctx);
+#endif                                  /* HAVE_LIBGL */
       ReleaseDC(ws->iconwin, hdc);
       }
 #endif                                  /* Graphics3D */
@@ -5157,9 +5186,9 @@ char my_wmap(wbp w)
 void makecurrent(wbp w)
 {
    HDC stddc = GetDC(w->window->iconwin);
-#ifdef GraphicsGL
-   wglMakeCurrent(stddc, w->window->ctx);
-#endif                                  /* GraphicsGL */
+#if HAVE_LIBGL
+   wglMakeCurrent(stddc, w->context->ctx);
+#endif                                  /* HAVE_LIBGL */
    ReleaseDC(w->window->iconwin, stddc);
 }
 #endif                                  /* Graphics3D */

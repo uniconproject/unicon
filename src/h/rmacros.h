@@ -98,9 +98,6 @@
    #define Fs_Pty       040000000            /* pty */
 #endif
 
-#ifdef GraphicsGL
-   #define Fs_WinGL2D   0100000000      /* for OpenGL 2D window */
-#endif                                  /* GraphicsGL */
 
 /*
  * Thread status flags in status field of coexpr blocks.

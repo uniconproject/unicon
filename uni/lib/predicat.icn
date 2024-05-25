@@ -89,6 +89,7 @@ end
 
 #<p>
 # Is the type of x s?  Works even if s is "class" or "record".
+# Succeeds of x is a class and s names a superclass of x.
 # Also works if s is an actual class instead of a string, as in:
 # </p>
 # <pre>
@@ -108,7 +109,19 @@ procedure istype(x,         # Object to examine
       if ss == "numeric" then {
          return ::numeric(x) & x
       } else {
-         return ss == get_type(x) & x
+         if isClass(x) then {
+            # This is surprisingly tricky since if x is a class then Type(x)
+            #  returns fully-qualified names of the classes in its class
+            #  hierarchy.
+            if find("::",ss) then {   # Require exact match.
+               return ss == Type(x) & x
+               }
+            else {  # Strip prefix from superclasses (will match first
+                    #  superclass with a matching simple name...)
+               return ss == simpleClassname(Type(x)) & x
+               }
+            }
+         return ss == Type(x) & x
       }
    } else {
       #
@@ -116,6 +129,16 @@ procedure istype(x,         # Object to examine
       #
       return get_type(s) == Type(x) & x
    }
+end
+
+#<p>
+#  Produce the simple class name (no package prefix) for cn.
+#  <[returns cn with any package prefix stripped off.]>
+procedure simpleClassname(cn)
+   cn ? {
+      if tab(find("::")) then cn := (move(2),tab(0))
+      }
+   return cn
 end
 
 #<p>

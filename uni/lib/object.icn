@@ -150,11 +150,18 @@ class Object()
    # <p>
    # What methods are available for this class?
    #    <[generates the names of all methods]>
-   #    remove implementation dependency and instead use Unicon function for this
-   #    information.
+   #    reverts "remove implementation dependency and instead use Unicon function for this
+   #    information." since methodnames doesn't (yet) traverse superclasses to
+   #    produce the names of methods.  (Revert back if methodnames fixed!)
    # </p>
    method genMethods()
-      suspend !::methodnames(self)
+#      suspend !::methodnames(self)
+#     This all replaces the above line until methodnames is fixed:
+      local mname
+
+      every mname := key(self.__m) ? {
+         suspend ("procedure" == type(self.__m[mname]), mname)
+         }
    end
 
    # <p>

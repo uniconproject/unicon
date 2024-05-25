@@ -2400,6 +2400,7 @@ static int construct_funcimage(union block *pe, int aicode,
  * most common element
  */
 
+
 int find_cindex(union block *l, union block *r)
 {
    int pat_size = -1;
@@ -2408,14 +2409,14 @@ int find_cindex(union block *l, union block *r)
    union block * tmp;
 
    tmp = r;
-   while(Blk(tmp, Pelem) != NULL){
+   while(tmp != NULL){
       if(pat_size < Blk(tmp, Pelem)->index)
          pat_size = Blk(tmp, Pelem)->index;
       tmp = Blk(tmp, Pelem)->pthen;
       }
 
    tmp = l;
-   while(Blk(tmp, Pelem) != NULL){
+   while(tmp != NULL){
       if(pat_size < Blk(tmp, Pelem)->index)
          pat_size = Blk(tmp, Pelem)->index;
       tmp = Blk(tmp, Pelem)->pthen;

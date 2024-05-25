@@ -29,7 +29,6 @@ void checkpollevent(){
 #include "rwin3d.ri"
 #if HAVE_LIBGL
 #include "ropengl.ri"
-#include "ropengl2d.ri"
 #endif                                  /* HAVE_LIBGL */
 #if HAVE_D3D
 #include "rd3d.ri"

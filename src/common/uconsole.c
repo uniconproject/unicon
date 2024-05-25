@@ -165,7 +165,7 @@ FILE *OpenConsole()
        */
       if ((hp = alclist(0, MinListSlots)) == NULL) return NULL;
 
-      ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0,0);
+      ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0);
       if ( !(ConsoleFlags & StdInRedirect ))
          k_input.fd.fp = ConsoleBinding;
       if ( !(ConsoleFlags & StdOutRedirect ))

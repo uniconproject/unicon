@@ -20,7 +20,7 @@ all:		$(UNICONC)
 $(UNICONC):		$(OBJS) ../../rt/lib/libucommon.a
 		$(CC) $(LDFLAGS) -o $(UNICONC)  $(OBJS) -lucommon
 		$(CP) $(UNICONC)$(EXE) ../../bin
-		strip ../../bin/$(UNICONC)$(EXE)
+		$(STRIP) ../../bin/$(UNICONC)$(EXE)
 
 $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 		../h/proto.h ../h/mproto.h ../h/typedefs.h ../h/gsupport.h \

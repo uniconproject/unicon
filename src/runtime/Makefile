@@ -13,7 +13,7 @@ HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/rproto.h ../h/mproto.h ../h/version.h ../h/sys.h
 
 GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h
-GRAPHICSRI = rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri ropengl2d.ri
+GRAPHICSRI = rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri
 
 .PHONY: update_rev
 
@@ -65,13 +65,13 @@ interp_all: update_rev
 $(UNICONX) $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
 	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o $(UNICONX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
 	cp $(UNICONX)$(EXE) ../../bin
-	strip $(DASHX) ../../bin/$(UNICONX)$(EXE);
+	$(STRIP) ../../bin/$(UNICONX)$(EXE);
 
 # on windows, always add WNTCON dependency to set NTCONSOLE accordingly
 $(UNICONWX) $(WICONEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
 	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o $(UNICONWX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -lwuconsole
 	cp $(UNICONWX)$(EXE) ../../bin
-	strip $(DASHX) ../../bin/$(UNICONWX)$(EXE);
+	$(STRIP) ../../bin/$(UNICONWX)$(EXE);
 
 # prepare the icon for the executables
 icon.$(O):

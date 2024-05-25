@@ -343,6 +343,15 @@ char *allocate(unsigned n)
     return (p);
 }
 
+/* Return the number of characters before the final period in a name */
+static size_t lastdot(const char *name)
+{
+  size_t len, dot;
+  for (dot = len = 0; name[len] != '\0'; len += strcspn(name + len, ".")) dot = len++;
+  if (dot == 0) dot = len;  /* no dot: return strlen */
+  return dot;
+}
+
 void create_file_names(void)
 {
     int i, len;
@@ -399,12 +408,12 @@ void create_file_names(void)
 
     else if (iflag)
       {
-      len = strcspn(input_file_name, ".");
+        len = lastdot(input_file_name);
 
-      output_file_name = MALLOC(len + 5);/*for '.icn\0' */
-      if (output_file_name == 0) no_space();
-      strncpy(output_file_name, input_file_name, len);
-      strcpy(output_file_name + len, ICON_OUTPUT_SUFFIX);
+        output_file_name = MALLOC(len + 5);/*for '.icn\0' */
+        if (output_file_name == 0) no_space();
+        strncpy(output_file_name, input_file_name, len);
+        strcpy(output_file_name + len, ICON_OUTPUT_SUFFIX);
       }
 
     else
@@ -435,7 +444,7 @@ void create_file_names(void)
             defines_file_name = MALLOC(len + 11);
             if (defines_file_name == 0)
               no_space();
-            len = strcspn(input_file_name, ".");
+            len = lastdot(input_file_name);
             strncpy(defines_file_name, input_file_name, len);
             strcpy(defines_file_name + len, "_tab" ICON_OUTPUT_SUFFIX);
         }

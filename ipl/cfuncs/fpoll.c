@@ -63,8 +63,6 @@ int fpoll(int argc, descriptor *argv)	/*: await data from file */
    /* there's no legal way to do this in C; we cheat */
    /* cheating leads to portability issues, skip this on MUSL/ALPINE */
 
-#define __MUSL__
-
 #ifdef __MUSL__
       /*FIXME: this is always defined */
       /* insert your implementation here */

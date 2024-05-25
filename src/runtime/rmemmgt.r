@@ -640,40 +640,21 @@ void initalloc(word codesize)
      wcp wc;
 
      for (ws = wstates; ws ; ws = ws->next) {
-#ifdef GraphicsGL
-        /*
-         * For some reason, the 2d display doesn't get marked because
-         * the title word of {BlkLoc(ws->filep)} would contain the address
-         * of {ws->funclist2d} as it was getting explicitly marked,
-         * resulting in the 2d display not getting marked
-         * at all and a subsequent memory violation after GC.
-         * It would seem that shouldn't happen during GC, but I believe
-         * I've checked for all buffer overflows in drawgeometry2d()...
-         * What's worse is this memory violation is sporadic...
-         *
-         * For now, try marking the display list before the Unicon window
-         * values. It seems to work...?
-         * - Gigi
-         */
-        if (is:list(ws->funclist2d))
-           markblock(&(ws->funclist2d));
-#endif                                  /* GraphicsGL */
-
-        if (is:file(ws->filep))
-           markblock(&(ws->filep));
-        if (is:list(ws->listp))
-           markblock(&(ws->listp));
+         if (is:file(ws->filep))
+            markblock(&(ws->filep));
+         if (is:list(ws->listp))
+            markblock(&(ws->listp));
 #ifdef Graphics3D
-        if (is:list(ws->funclist))
-           markblock(&(ws->funclist));
+         if (is:list(ws->funclist))
+            markblock(&(ws->funclist));
 #endif                            /* Graphics3D */
-        }
+         }
 
 #ifdef Graphics3D
      for (wc = wcntxts; wc ; wc = wc->next) {
-        if (wc->normals) markptr((union block **)&(wc->normals));
-        if (wc->texcoords) markptr((union block **)(&(wc->texcoords)));
-        }
+         if (wc->normals) markptr((union block **)&(wc->normals));
+         if (wc->texcoords) markptr((union block **)(&(wc->texcoords)));
+         }
 #endif                            /* Graphics3D */
    }
 #endif                                  /* Graphics */

@@ -1,10 +1,10 @@
-include ../../Makedefs
-DEL = $(RM)
 BASE=../../..
+include $(BASE)/Makedefs.uni
+
 UC=$(UNICON)
 UFLAGS=-c -u
 
-UFILES= u3dviewer.u world.u subwin3d.u 
+UFILES= u3dviewer.u world.u subwin3d.u
 
 TARGET=u3dview
 
@@ -14,12 +14,12 @@ pure:
 	$(MAKE) clean
 	$(MAKE) all
 
-$(TARGET): $(UFILES) 
+$(TARGET): $(UFILES)
 	$(UC) -G -o $(TARGET) $(UFILES)
 
 # u3dview.u: u3dview.icn
 
-%.u:	%.icn 
+%.u:	%.icn
 	 $(UC) $(UFLAGS) $<
 
 zip:

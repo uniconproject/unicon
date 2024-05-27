@@ -1697,12 +1697,11 @@ HFONT mkfont(char *s, char is_3D)
           * Standard name: first try preferred family, then generalize.
           * ICONFONT can be NULL, in which case Windows chooses.
           */
-         char *icnfnt, fnt[256];
-         icnfnt = fnt;
+         char *icnfnt=NULL, fnt[256];
          hf = findfont(stdfam, size, flags, 1);
          if (hf == NULL){
-            if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
-                 icnfnt=NULL;
+            if (getenv_r("ICONFONT", icnfnt, 255 ) == 0)
+               icnfnt=fnt;
             hf = findfont(icnfnt, size, flags, 1);
             }
          }
@@ -3636,7 +3635,7 @@ wbp w;
 
    GRFX_ALLOC(wc, _wcontext);
 
-   if (getenv_r("ICONFONT", icnfnt, 255 ) == 0)
+   if (getenv_r("ICONFONT", fnt, 255 ) == 0)
      icnfnt = fnt;
 
    wc->serial = ++context_serial;

@@ -1745,6 +1745,9 @@ function{0,1} name(t)
    inline {
       int l;
       char *p;
+#if HAVE_CTIME_R || HAVE_GMTIME_R
+      char buf[32];
+#endif                                  /* HAVE_CTIME_R || HAVE_GMTIME_R */
 #if i
 #if HAVE_CTIME_R
       if ((p = ctime_r((time_t *)&t, buf)) == NULL) runerr(0);
@@ -1755,7 +1758,6 @@ function{0,1} name(t)
 #else
 #if HAVE_GMTIME_R && HAVE_ASCTIME_R
     {
-      char buf[32];
       struct tm gmt;
       if (gmtime_r((time_t *)&t, &gmt) == NULL) runerr(0);
       if ((p = asctime_r(&gmt, buf)) == NULL) runerr(0);

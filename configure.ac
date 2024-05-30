@@ -563,7 +563,8 @@ fi
 AC_CHECK_FUNCS([socket bcopy bzero memcpy memset inet_aton inet_pton \
 	       snprintf vsprintf rename ftruncate flock fsync \
 	       getrlimit setrlimit strerror vfork \
-	       getrusage sysconf profil getenv_r])
+	       getrusage sysconf profil getenv_r clock_gettime \
+          ctime_r asctime_r gmtime_r localtime_r])
 
 AC_FUNC_STRERROR_R()
 
@@ -587,8 +588,7 @@ AC_SUBST(SQLITE)
 
 AC_SEARCH_LIBS([getaddrinfo],[socket],
 	[AC_DEFINE([HAVE_GETADDRINFO], [1], [getaddinfo])])
-AC_SEARCH_LIBS([clock_gettime],[rt],
-	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [gettime])])
+
 AC_SEARCH_LIBS([crypt],[crypt],
 	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
 

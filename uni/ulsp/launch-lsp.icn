@@ -21,36 +21,37 @@ procedure usage()
    write("Check your IDE for the correct LSP server invocation.")
    write("\nOptions:")
    write("\t --socket <PORT> : set the lsp server port")
+   write("\t -s : run as a server (default)")
+   write("\t -c : run as a client")
    write("\t -h : show this help\n")
    exit(-1)
 end
 
 procedure validate_args(args)
-   local opts, port
-   opts := options(args, "--socket:")
+   local opts
+   opts := options(args, "--socket+ -h! -c! -s!", usage)
    if *opts = 0 then usage()
-   port := \opts["-socket"] | usage()
-   port := opts["-socket"]
-   return port
+   member(opts, "-socket") | usage()
+   return opts
 end
-
 
 procedure main(args)
-   local port
-   #write("args: ", ximage(args))
-   port := validate_args(args) | stop("Error: invalid args/port number.")
+   local opts, sock, mode
+
+   # If validate_args() fails, it will display usage() and never return.
+   opts := validate_args(args)
 
    # Allow passing full host:port as an arg
-   if integer(port) then {
-      if &features == ("MacOS" | "MS Windows NT") then
-         port := "127.0.0.1:" || port
-      else
-         port := ":" || port
+   sock := opts["-socket"]
+   if &features == ("MacOS" | "MS Windows NT") then {
+      sock := "127.0.0.1:" || sock
+   }
+   else {
+      sock := ":" || sock
    }
 
-   Server(port).run()
+   # Set mode for server to run in, based on opts.
+   member(opts, mode := "c") | (mode := "s")
+
+   Server(sock, mode).run()
 end
-
-
-
-

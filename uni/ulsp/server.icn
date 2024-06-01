@@ -25,6 +25,7 @@ import json
 
 class Server(
    port,                         # Port number acquired from args on start up of server
+   mode,                         # Mode to run in (client | server)
    sock,                         # Socket connection for communication with client
    openFiles,                    # File container for open files
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
@@ -282,9 +283,17 @@ class Server(
    end
 
    initially
+      local openopt := "n", mstring := "server"
 
-      every 1 to 10 do {
-         if sock := open(port, "n", 1000) then
+      case mode of {
+         "s" : { openopt ||:= "a" }
+         "c" : { mstring := "client" }
+         default: { write("Unknown mode: " || mode) }
+      }
+
+      write("Attempting to start ulsp as a " || mstring)
+      every 1 to 5 do {
+         if sock := open(port, openopt) then
             break
          else {
             write("open(",port,") ERROR: ", \&errortext | "Unknown")
@@ -292,12 +301,11 @@ class Server(
          }
       }
 
-      if /sock then stop("failed to connect to ",port)
+      if /sock then stop("Failed to establish connection on ",port)
 
       openFiles := table()
       lsp_database := LSPDB()
       lsp_database.build()
-
       completionHandler := CompletionHandler()
       signatureHandler := SignatureHandler()
       hoverHandler := HoverHandler()

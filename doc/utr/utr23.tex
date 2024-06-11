@@ -130,6 +130,35 @@ A test suite allows to aggregate multiple test cases in order to facilitate thei
 \noindent
 \texttt{assertFail \{ expression \}} evaluates an expression, and if false, the test will pass, otherwise will fail.
 
+\newpage\subsection{Mock}
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf expect(mname, retval)} \hfill {\tt\bf set an expectation for a method call}
+
+\vspace{0.1cm}
+\noindent
+\texttt{expect(mname, retval)} sets an expectation for the method call \texttt{mname} and returns the value \texttt{retval}.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf verify(mname, args)} \hfill {\tt\bf verify a given method exists}
+
+\vspace{0.1cm}
+\noindent
+\texttt{verify(mname, args)} verifies whether a method exists or not, will return the name of the method or fail.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf invoke(mname, args)} \hfill {\tt\bf invoke a method}
+
+\vspace{0.1cm}
+\noindent
+\texttt{invoke(mname, args)} simulates the invocation of a method \texttt{mname} with the arguments \texttt{args}. It checks whether the call matches the expectations or not and returns the expected value, otherwise will fail.
+
 \newpage\section{Example Usage}
 
 \subsection{A simple Calculator}
@@ -491,6 +520,109 @@ ran 3 tests in 0.004026s
    \item The test summary reports the three (3) tests have passed.
 \end{itemize}
 
+\newpage\subsection{Mock objects}
+
+Test-driven development (TDD) encourages the use of mock objects as a test-first strategy. Mock objects aim to replicate the behaviour of actual objects without their actual implementation, thus allowing tests to be written nonetheless. The following example demonstrate how to implement tests for temperature sensors that are not yet implemented (or physically unavailable).
+
+\bigskip\noindent {\bf temperature\_sensor.icn}
+\begin{verbatim}
+class TemperatureSensor()
+   method read()
+      stop("TemperatureSensor: not yet implemented.")
+   end
+end
+
+class TemperatureMonitor(sensors, threshold, callback)
+   method check()
+      retval := 0
+      
+      every sensor := !self.sensors do {
+         temperature := sensor.read()
+         if temperature > self.threshold then {
+            self.callback(sensor, temperature)
+            retval +:= 1
+         }
+      }
+
+      return (retval == 0 & 1) | (retval > 0 & fail)
+   end
+end
+\end{verbatim}
+
+\bigskip\noindent {\bf test\_temperature\_sensor.icn}
+\begin{verbatim}
+link temperature_sensor
+
+import unittest
+
+class MockTemperatureSensor : TemperatureSensor : Mock()
+   method read()
+      return self.invoke("read")
+   end
+end
+
+procedure alert(sensor, temperature)
+   write("Sensor " || image(sensor) || " temperature " || 
+      temperature || " exceeds threshold")
+end
+
+class TestTemperatureMonitor : TestCase(monitor, sensors)
+   method setup()
+      self.sensors := [
+         MockTemperatureSensor(),
+         MockTemperatureSensor(),
+         MockTemperatureSensor()
+      ]
+
+      self.monitor := TemperatureMonitor(self.sensors, 115, alert)
+   end
+
+   method testCheckTemperature()
+      every sensor := !self.sensors do {
+         sensor.expect("read", ?40)
+      }
+
+      assert { self.monitor.check() }
+   end
+
+   method testCheckTemperatureThreshold()
+      every sensor := !self.sensors do {
+         sensor.expect("read", 115 + ?100)
+      }
+
+      assertFail { self.monitor.check() }
+   end
+end
+
+procedure main()
+   ts := TestSuite()
+   ts.add(TestTemperatureMonitor())
+   exit(ts.run())
+end
+\end{verbatim}
+
+\noindent Output
+\begin{verbatim}
+TestTemperatureMonitor_testCheckTemperature
+
+TestTemperatureMonitor_testCheckTemperatureThreshold
+Sensor object MockTemperatureSensor_4(1) temperature 136 exceeds threshold
+Sensor object MockTemperatureSensor_5(1) temperature 199 exceeds threshold
+Sensor object MockTemperatureSensor_6(1) temperature 215 exceeds threshold
+
+=== TEST SUMMARY ===
+passed: 2, failed: 0
+ran 2 tests in 0.000807s
+\end{verbatim}
+
+\noindent {\bf Highlights}
+\begin{itemize}
+   \item \texttt{MockTemperatureSensor} class inherits from both TemperatureSensor and Mock, thus allowing to mock the read() method.
+   \item \texttt{setup()} defines a series of sensors to be monitored along with a threshold temperature and a callback method.
+   \item \texttt{testCheckTemperature()} checks that the temperature reported by the sensors are within an acceptable threshold.
+   \item \texttt{testCheckTemperatureThreshold()} checks that the temperature reported by the sensors are not within an acceptable threshold.
+   \item The test summary reports the two (2) tests have passed.
+\end{itemize}
 
 \section*{References}
 

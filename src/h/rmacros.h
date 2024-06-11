@@ -222,12 +222,18 @@
 /*
  * Block references that do not use (the address of) a particular field.
  */
+#ifdef __clang__
 #define Blk(p,u) \
   _Pragma("clang diagnostic push")                                  \
   _Pragma("clang diagnostic ignored \"-Wunused-value\"")            \
   ((((!ValidPtr(p)) || ((p)->u.title != T_ ## u)) ?                 \
       (heaperr("invalid block",p, T_ ## u) , 1) : 1), &((p)->u))    \
   _Pragma("clang diagnostic pop")
+#else
+#define Blk(p,u) \
+  ((((!ValidPtr(p)) || ((p)->u.title != T_ ## u)) ?                 \
+      (heaperr("invalid block",p, T_ ## u) , 1) : 1), &((p)->u))
+#endif
 
 /*
  * Block references for generic (set|table) code.

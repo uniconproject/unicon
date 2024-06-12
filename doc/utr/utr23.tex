@@ -48,12 +48,47 @@ A test suite allows to aggregate multiple test cases in order to facilitate thei
 
 \subsection{TestReporter}
 
-\texttt{TestReporter} collects and displays test results in a readable format.
+\texttt{TestReporter} collects and displays test results in a readable format. A TestReporter can be subclassed and passed onto a TestSuite for a custom reporting format.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf result(cname, mname, passed)} \hfill {\tt\bf adding a result}
+
+\vspace{0.1cm}
+\noindent
+\texttt{result(cname, mname, passed)} adds the result of a test including the classname, method name and whether it passed or not.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf results()} \hfill {\tt\bf returns the test results}
+
+\vspace{0.1cm}
+\noindent
+\texttt{results()} returns the test results including the number of tests that have passed, failed and the total runtime, as a record \texttt{total(passed, failed, runtime)}.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf runtime(time)} \hfill {\tt\bf sets the total runtime}
+
+\vspace{0.1cm}
+\noindent
+\texttt{runtime(time)} sets the total runtime for the entire TestSuite.
+
+\bigskip
+\hrule\vspace{0.1cm}
+\noindent
+{\tt\bf summary()} \hfill {\tt\bf display the tests summary}
+
+\vspace{0.1cm}
+\noindent
+\texttt{summary()} reports the test results including the number of tests that have passed, failed and the total runtime in a human-readable format. It also returns a record \texttt{total(passed, failed, runtime)}.
 
 \subsection{TestCase}
 
 \texttt{TestCase} serves as the base class for all tests. It is necessary to subclass \texttt{TestCase} in order to write individual tests. It provides methods for set up and tear down the test environment both on a per-class and per-test basis. Every method starting with \texttt{test} in the subclass will be automatically recognized and run by the test suite.
-
 
 \bigskip
 \hrule\vspace{0.1cm}
@@ -64,7 +99,6 @@ A test suite allows to aggregate multiple test cases in order to facilitate thei
 \noindent
 \texttt{setupClass()} initializes resources before any tests in the class run. It is used to allocate or initialize resources shared across all tests in a test class, ensuring they are available before any tests are executed.
 
-\newpage
 \bigskip
 \hrule\vspace{0.1cm}
 \noindent
@@ -92,7 +126,7 @@ A test suite allows to aggregate multiple test cases in order to facilitate thei
 \noindent
 \texttt{teardown()} cleans up resources after each test individual test runs, maintaining isolation between tests.
 
-\subsection{Assertions}
+\newpage\subsection{Assertions}
 
 \bigskip
 \hrule\vspace{0.1cm}
@@ -130,7 +164,7 @@ A test suite allows to aggregate multiple test cases in order to facilitate thei
 \noindent
 \texttt{assertFail \{ expression \}} evaluates an expression, and if false, the test will pass, otherwise will fail.
 
-\newpage\subsection{Mock}
+\subsection{Mock}
 
 \bigskip
 \hrule\vspace{0.1cm}
@@ -522,7 +556,7 @@ ran 3 tests in 0.004026s
 
 \newpage\subsection{Mock objects}
 
-Test-driven development (TDD) encourages the use of mock objects as a test-first strategy. Mock objects aim to replicate the behaviour of actual objects without their actual implementation, thus allowing tests to be written nonetheless. The following example demonstrate how to implement tests for temperature sensors that are not yet implemented (or physically unavailable).
+Test-driven development (TDD) encourages the use of mock objects as a test-first strategy. Mock objects aim to replicate the behaviour of actual objects without their actual implementation, thus allowing tests to be written nonetheless. The following example demonstrates how to implement tests for temperature sensors that are not yet implemented (or physically unavailable).
 
 \bigskip\noindent {\bf temperature\_sensor.icn}
 \begin{verbatim}

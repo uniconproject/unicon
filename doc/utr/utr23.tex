@@ -409,7 +409,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 INSERT INTO accounts (account, holder, balance) VALUES
    ('123456789', 'Ada Lovelace', 10000.00),
    ('987654321', 'Alan C. Kay', 99801.28),
-   ('123454321', 'Ralph Griswold', 48000.0);
+   ('123454321', 'Ralph Griswold', 48000.00);
 
 CREATE TABLE IF NOT EXISTS transactions (
    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -485,7 +485,7 @@ class TestBankAccount : TestCase(db, accounts)
       every account := !accounts do {
          assert { 0 < *account.account }
          assert { 0 < *account.holder }
-         assert { 0.0 < account.balance }
+         assert { 0.0 <= account.balance }
       }
    end
 

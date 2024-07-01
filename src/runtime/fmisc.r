@@ -2842,7 +2842,7 @@ body {
         /* Revert to built-in rngIcon */
         curtstate->rng = NULL;
         curtstate->Kywd_ran = zerodesc;
-        IntVal(curtstate->Kywd_ran) = getrandom(); /* Reinitialize */
+        IntVal(curtstate->Kywd_ran) = unicon_getrandom(); /* Reinitialize */
       } else {
 #ifndef Arrays
         /* The rng state is stored as an array of integers */
@@ -2965,7 +2965,7 @@ body {
             /* Call startRng */
             {
               struct rng_rt_api api;
-              api.getInitialBits = getrandom;
+              api.getInitialBits = unicon_getrandom;
               api.getRngState = getRngState;
               api.putErrorCode = putErrorCode;
 

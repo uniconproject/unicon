@@ -15,7 +15,6 @@ static FILE * readhdr   (char *name, struct header *hdr);
 /*
  * Prototypes.
  */
-static word unicon_getrandom(void);
 static void     env_err         (char *msg, char *name, char *val);
 FILE            *pathOpen       (char *fname, char *mode);
 
@@ -1675,7 +1674,7 @@ int err()
   return strcmp(a->pstrep, b->pstrep);
 }
 
-static word unicon_getrandom(void)
+word unicon_getrandom()
 {
 #ifndef NoRandomize
 /*

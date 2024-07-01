@@ -2549,6 +2549,7 @@ void putErrorCode(int n)
   err_msg(n,NULL);
 }
 
+#ifdef DEVELOPMODE
 /* ============================== Debugging Code ============================== */
 /* ========================= Will eventually disapear ========================= */
 
@@ -2621,6 +2622,7 @@ body {
 end
 
 /* =========================== End of Debugging Code ============================ */
+#endif                  /* DEVELOPMODE */
 
 /* allocate the rng state (and say if it didn't work) */
 int no_rng_state()
@@ -2634,7 +2636,7 @@ int no_rng_state()
 
     if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) return 1; /* No state */
     d.vword.bptr = (union block *) alclisthdr(elems, (union block *)alcintarray(elems));
-    d.dword = D_Intarray | F_RngState | F_Var;
+    d.dword = D_List | F_RngState | F_Var;
     /* Clear the rng's state */
     memset(&d.vword.bptr->List.listhead->Intarray.a[0], 0, elems * sizeof(word));
     /* Store the rng ID */
@@ -2697,6 +2699,9 @@ function{0,1} rngbits(n)
            }
          }
 
+         /* reject a request that is too large (+ve or -ve_ */
+         if (n > INT_MAX || n < INT_MIN) fail;
+
          if (n < 0) { /* Call getRandomBits without a buffer (to just advance the state) */
            if (0 > curtstate->rng->info.api.getRandomBits(-n, NULL)) {
              fail;
@@ -2732,6 +2737,9 @@ function{0,1} rngbitstring(n)
    abstract { return string ++ empty_type}
    body {
      CURTSTATE();
+
+     /* reject a request that is too large (+ve or -ve_ */
+     if (n > INT_MAX || n < INT_MIN) fail;
 
      if (curtstate->rng != NULL) {
        if (n == 0 ) n = curtstate->rng->info.property.blockBits;
@@ -2871,7 +2879,12 @@ body {
         /* Revert to built-in rngIcon */
         curtstate->rng = NULL;
         curtstate->Kywd_ran = zerodesc;
-        IntVal(curtstate->Kywd_ran) = getrandom(); /* Reinitialize */
+        IntVal(curtstate->Kywd_ran) = unicon_getrandom(); /* Reinitialize */
+        if (IS_TS_MAIN(curtstate->c->status)) { /* Reset default RNG for new threads */
+          MUTEX_LOCKID(MTX_RNG_CHAIN);
+          rngDefInfo = NULL;
+          MUTEX_UNLOCKID(MTX_RNG_CHAIN);
+        }
       } else {
         int isMain = (IS_TS_MAIN(curtstate->c->status) ? 1 : 0);
 #ifndef Arrays
@@ -2924,13 +2937,22 @@ body {
                 runerr(1022, dtmp);
               }
 
+              /* try the installed place (e.g. /usr/local/lib/unicon/plugins/lib/) */
               snprintf(path+n-strlen(UNICONX), MaxPath - n, "../lib/unicon/plugins/lib/");
               handle = tryLoad(&dtmp, "%.*s", path); /* Try path/<name>  */
               if (!handle) handle = tryLoad(&dtmp, "%.*s.so", path);    /* Try path/<name>.so */
               if (!handle) handle = tryLoad(&dtmp, "lib%.*s.so", path); /* Try path/lib<name>.so */
               if (!handle) {
-                UNLOCK_RNG_CHAIN;
-                runerr(750, dtmp);
+                /* try the uninstalled place (e.g. ..../unicon/plugins/lib/) */
+                /* There must be space because "../plugins/lib/" is shorter than "../lib/unicon/plugins/lib/"*/
+                snprintf(path+n-strlen(UNICONX), MaxPath - n, "../plugins/lib/");
+                handle = tryLoad(&dtmp, "%.*s", path); /* Try path/<name>  */
+                if (!handle) handle = tryLoad(&dtmp, "%.*s.so", path);    /* Try path/<name>.so */
+                if (!handle) handle = tryLoad(&dtmp, "lib%.*s.so", path); /* Try path/lib<name>.so */
+                if (!handle) {
+                  UNLOCK_RNG_CHAIN;
+                  runerr(750, dtmp);
+                }
               }
             }
           }
@@ -3000,7 +3022,7 @@ body {
             /* Call startRng */
             {
               struct rng_rt_api api;
-              api.getInitialBits = getrandom;
+              api.getInitialBits = unicon_getrandom;
               api.getRngState = getRngState;
               api.putErrorCode = putErrorCode;
 
@@ -3024,7 +3046,7 @@ body {
             runerr(0);
           }
           d.vword.bptr = (union block *) alclisthdr(elems, (union block *)alcintarray(elems));
-          d.dword = D_Intarray | F_RngState | F_Var;
+          d.dword = D_List | F_RngState | F_Var;
           /* Clear the rng's state */
           memset(&d.vword.bptr->List.listhead->Intarray.a[0], 0, elems * sizeof(word));
           /* Store the rng ID */

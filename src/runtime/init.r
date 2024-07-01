@@ -15,7 +15,6 @@ static FILE * readhdr   (char *name, struct header *hdr);
 /*
  * Prototypes.
  */
-static word unicon_getrandom(void);
 static void     env_err         (char *msg, char *name, char *val);
 FILE            *pathOpen       (char *fname, char *mode);
 
@@ -630,7 +629,9 @@ void init_threadstate( struct threadstate *ts)
    ts->Kywd_ran = zerodesc;
    IntVal(ts->Kywd_ran) = unicon_getrandom();
 #else
+   MUTEX_LOCKID(MTX_RNG_CHAIN);
    ts->rng = rngDefInfo;
+   MUTEX_UNLOCKID(MTX_RNG_CHAIN);
    if (ts->rng) {
      ts->hasSeed = 0;
      ts->Kywd_ran = nulldesc;    /* Allocate later -- see no_rng_state() in fmisc.r */
@@ -1675,7 +1676,7 @@ int err()
   return strcmp(a->pstrep, b->pstrep);
 }
 
-static word unicon_getrandom(void)
+word unicon_getrandom()
 {
 #ifndef NoRandomize
 /*

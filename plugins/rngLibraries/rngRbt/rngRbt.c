@@ -91,6 +91,7 @@ char * getErrorText(int err)
     case 701: return "Unexpected size supplied to putSeed";
     case 702: return "Bad seed value";
     case 703: return "Fewer than 192 bits in seed";
+    case 705: return "Internal error";
 
     default:  return "??";      /* Not one of our errors */
     }
@@ -123,9 +124,7 @@ int putSeed(word type, word size, void *param)
      * getInitialBits may be called more than once, but there is no guarantee
      * that it will return a different value on subsequent calls.
      */
-    state = (ECRYPT_ctx *)runtime.getRngState(); /* get the location of generator's state */
     seed = runtime.getInitialBits();       /* get some random bits */
-
     return putSeed(T_Integer, sizeof(seed), &seed);
   }
 
@@ -164,6 +163,10 @@ int putSeed(word type, word size, void *param)
     }
 
     state = (ECRYPT_ctx *)runtime.getRngState(); /* get the location of generator's state */
+    if (state == NULL) { /* should never happen if RNG is loaded */
+      runtime.putErrorCode(705);
+      return -1;
+    }
     if (size == 48) { /* key and IV */
       ECRYPT_keysetup(state, keyIV, 16, 8);
       ECRYPT_ivsetup(state, keyIV + 16);
@@ -190,6 +193,11 @@ int putSeed(word type, word size, void *param)
     } else {
       /* Set up key and IV */
       state = (ECRYPT_ctx *)runtime.getRngState(); /* get the location of generator's state */
+      if (state == NULL) { /* should never happen if RNG is loaded */
+        runtime.putErrorCode(705);
+        return -1;
+      }
+
       /* This only sets up the key (it uses neither of the two size parameters) */
       ECRYPT_keysetup(state, param, 16, 8);
       /* Set up the IV */
@@ -198,6 +206,10 @@ int putSeed(word type, word size, void *param)
     }
   } else { /* type == T_Integer */
     state = (ECRYPT_ctx *)runtime.getRngState(); /* get the location of generator's state */
+    if (state == NULL) { /* should never happen if RNG is loaded */
+      runtime.putErrorCode(705);
+      return -1;
+    }
 
     /* Check if the generator has been initialized before */
     if ((0 == memcmp(&zero_ctx, &state->master_ctx, sizeof(RABBIT_ctx))) &&
@@ -205,11 +217,21 @@ int putSeed(word type, word size, void *param)
      /* Not initialized */
       u64 keyIv[3];
       /* "stretch" the data to 192 bits. There are probably better ways to do this. */
-      keyIv[0] = keyIv[1] = keyIv[2] = *(u64 *)param;
+      if (size == 4) { /* 32-bit system */
+        keyIv[0] = keyIv[1] = keyIv[2] = *(u32 *)param;
+      } else {
+        keyIv[0] = keyIv[1] = keyIv[2] = *(u64 *)param;
+      }
       return putSeed(T_Intarray, sizeof(keyIv), keyIv);
     } else {
       /* This is a reinitilization with an integer: just change the IV */
-      ECRYPT_ivsetup(state, param);
+      u64 keyIv;
+      if (size == 4) { /* 32-bit system */
+        keyIv = *(u32 *)param;
+      } else {
+        keyIv = *(u64 *)param;
+      }
+      ECRYPT_ivsetup(state, (const u8 *) &keyIv);
       state->cached = 1.0;      /* Clear any stored value */
     }
   }
@@ -227,6 +249,10 @@ int putSeed(word type, word size, void *param)
 double getRandomFpt(void)
 {
   ECRYPT_ctx *state =  (ECRYPT_ctx *)runtime.getRngState();
+  if (state == NULL) { /* should never happen if RNG is loaded */
+    runtime.putErrorCode(705);
+    return 0.0;
+  }
 
   /* Rabbit generates 2 double's worth of bits every call of ECRYPT_keystream_bytes()
    * so the second double is stored for the next time around.
@@ -257,7 +283,11 @@ double getRandomFpt(void)
 int getRandomBits(int nBits, void *buffer)
 {
   ECRYPT_ctx *state =  (ECRYPT_ctx *)runtime.getRngState();
-
+  if (state == NULL) { /* should never happen if RNG is loaded */
+    runtime.putErrorCode(705);
+    return -1;
+  }
+  
   state->cached = 1.0;        /* Clear the stored value (if any) */
   if (buffer != NULL) {
     int bytes = (nBits + 7)/8;
@@ -280,6 +310,10 @@ word getRandomInt(void)
 {
   ECRYPT_ctx *state =  (ECRYPT_ctx *)runtime.getRngState();
   u64 ans[2];
+  if (state == NULL) { /* should never happen if RNG is loaded */
+    runtime.putErrorCode(705);
+    return 0;
+  }
   state->cached = 1.0;        /* Clear the stored value (if any) */
   /* Get a block's worth of random bits */
   ECRYPT_keystream_bytes(state, (u8 *)ans, sizeof(ans));

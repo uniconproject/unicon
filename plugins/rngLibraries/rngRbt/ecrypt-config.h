@@ -37,6 +37,9 @@
 #define ECRYPT_LITTLE_ENDIAN
 #elif defined(__ARMEL__)        /* Raspberry Pi (gcc) */
 #define ECRYPT_LITTLE_ENDIAN
+#elif defined(__AARCH64EL__)    /* Raspberry Pi 64 bit (gcc) */
+#define ECRYPT_LITTLE_ENDIAN
+
 
 /*
  * The BIG endian machines:

@@ -306,7 +306,11 @@ $else
    if not("rngRbt" == loadrng("rngRbt")) then {
       write(**** "loadrng(\"rngRbt\") failed (Error) ****")
    } else {
-      if not (&random := a := array(192/intBits(),42)) then {
+      a := array(192/intBits(),42)
+      if intBits() = 32 then {
+         a[2] := a[4] := a[6] := 0
+      }
+      if not (&random := a) then {
          Failure("**** Initialization with an array failed (Error) ****")
       } else {
          printRandomState()
@@ -422,7 +426,7 @@ $else
    # One round of ClosePool(); MakePool() is usually enough to cause the
    # invocatiotion of the garbage collector
    ClosePool()
-   MakePool()
+   MakePool(18)
 
    printGC("After recreating thread pool")
    printLibChain("After recreating thread pool: ")
@@ -442,19 +446,21 @@ $else
    printLibChain("After 5th sequence test: ")
    write("The current rng library is <", loadrng(), ">")
 
+   # reload the library to guarantee a clean start
+   alterRng(loadrng())
    &random := 42
    every 1 to 1000000 do Rbt1000000 := ?0
    write("The value of the millionth number after 42 is ", Rbt1000000)
 
-   banner("Run Iconx in parallel")
-   every n := 1 to 16 do {
-      every 1 to n do Dispatch(check1000000,5, "rngIconEx", Icon1000000)
-      write("main waiting ...")
-      every 1 to n do <<@
-   }
    banner("Run Rbt in parallel")
    every n := 1 to 16 do {
       every 1 to n do Dispatch(check1000000,5, "rngRbt", Rbt1000000)
+      write("main waiting ...")
+      every 1 to n do <<@
+   }
+   banner("Run Iconx in parallel")
+   every n := 1 to 16 do {
+      every 1 to n do Dispatch(check1000000,5, "rngIconEx", Icon1000000)
       write("main waiting ...")
       every 1 to n do <<@
    }
@@ -499,16 +505,21 @@ procedure check1000000(limit, rnglib, theLastOne)
    local x, differences
    differences := 0
    every 1 to limit do {
-      loadrng(rnglib)
+      # Force a new copy of the library by loading something else
+     loadrng(if rnglib == "rngIcon" then "rngRbt" else "rngIcon")
+     loadrng(rnglib)
       &random := 42
       every 1 to 1000000 do x := ?0
-      if x ~= theLastOne then differences +:= 1
+      if x ~= theLastOne then {
+         differences +:= 1
+         write("Thread ", serial(&current), " ", x, " ~= ", theLastOne)
+      }
    }
 
    if differences = 0 then {
-      write("Thread ", serial(&current), " no differences")
+      write("Thread ", serial(&current), " (", rnglib, ") no differences")
    } else {
-      Failure("Thread ", serial(&current),
+      Failure("Thread ", serial(&current), " (", rnglib, ") ",
             " **** ", differences, " differences (Error) ****")
    }
    @>&main
@@ -551,10 +562,12 @@ end
 
 # Print out garbage collector stats.
 procedure printGC(s)
-   writes(s, ": GC heap: ", &collections)
-   writes(" static: ", &collections)
-   writes(" string: ", &collections)
-   write(" block: ", &collections)
+   local Heap, Static, String, Block
+   Heap := &collections
+   every Static := &collections \ 2
+   every String := &collections \ 3
+   every Block := &collections \4
+   write(s, ": GC heap: ", Heap, " static: ", Static, " string: ", String, " block: ", Block)
 end
 
 # Print out value of &random (or a copy)
@@ -601,13 +614,15 @@ $endif
  end
 
 # Note failures as we go along and produce a summary at the end
-procedure Failure(msg)
+procedure Failure(msg[])
+   local m
    static FT, total
    initial { FT := mutex(table(0)) ; total := 0}
-   if \msg then {
-      write(&errout, msg)
+   if *msg > 0 then {
+      m := ""; every m ||:= !msg
+      write(&errout, m)
       critical FT: {
-         FT[msg] +:= 1
+         FT[m] +:= 1
          total +:= 1
       }
    } else { # Produce a Final summary
@@ -615,8 +630,8 @@ procedure Failure(msg)
          write(&errout, "All tests passed")
       } else {
          write(&errout, total, " test", if total = 1 then " failed" else "s failed")
-         every msg := key(FT) do {
-            write(&errout, left(FT[msg],6), msg)
+         every m := key(FT) do {
+            write(&errout, left(FT[m],6), m)
          }
          write(&errout, "Verbose output is on stdout")
       }

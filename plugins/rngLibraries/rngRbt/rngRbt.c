@@ -205,11 +205,21 @@ int putSeed(word type, word size, void *param)
      /* Not initialized */
       u64 keyIv[3];
       /* "stretch" the data to 192 bits. There are probably better ways to do this. */
-      keyIv[0] = keyIv[1] = keyIv[2] = *(u64 *)param;
+      if (size == 4) { /* 32-bit system */
+        keyIv[0] = keyIv[1] = keyIv[2] = *(u32 *)param;
+      } else {
+        keyIv[0] = keyIv[1] = keyIv[2] = *(u64 *)param;
+      }
       return putSeed(T_Intarray, sizeof(keyIv), keyIv);
     } else {
       /* This is a reinitilization with an integer: just change the IV */
-      ECRYPT_ivsetup(state, param);
+      u64 keyIv;
+      if (size == 4) { /* 32-bit system */
+        keyIv = *(u32 *)param;
+      } else {
+        keyIv = *(u64 *)param;
+      }
+      ECRYPT_ivsetup(state, (const u8 *) &keyIv);
       state->cached = 1.0;      /* Clear any stored value */
     }
   }

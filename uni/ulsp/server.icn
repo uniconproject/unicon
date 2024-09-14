@@ -282,6 +282,18 @@ class Server(
       write("We received a cancel request. We need to implement this still...")
    end
 
+   method loadDB()
+      openFiles := table()
+      lsp_database := LSPDB()
+      lsp_database.build()
+      completionHandler := CompletionHandler()
+      signatureHandler := SignatureHandler()
+      hoverHandler := HoverHandler()
+      definitionHandler := DefinitionHandler()
+
+   end
+
+
    initially
       local openopt := "n", mstring := "server"
 
@@ -291,7 +303,9 @@ class Server(
          default: { write("Unknown mode: " || mode) }
       }
 
-      write("Attempting to start ulsp as a " || mstring)
+      write("Loading Database...")
+      loadDB()
+      write("Starting Unicon LSP in ", mstring, " mode at ", port)
       every 1 to 5 do {
          if sock := open(port, openopt) then
             break
@@ -303,12 +317,5 @@ class Server(
 
       if /sock then stop("Failed to establish connection on ",port)
 
-      openFiles := table()
-      lsp_database := LSPDB()
-      lsp_database.build()
-      completionHandler := CompletionHandler()
-      signatureHandler := SignatureHandler()
-      hoverHandler := HoverHandler()
-      definitionHandler := DefinitionHandler()
 end
 

@@ -12,6 +12,8 @@ package ulsp
 
 import UniDoc
 
+link paths
+
 class LSPDB(
    package_db,
    built_in_functions,           # List containing all native function names
@@ -19,7 +21,9 @@ class LSPDB(
    declarative_expressions,      # List containing the declarative expressions (subset of reserved words)
    syntax_reserved_words,        # List containing the syntax reserved words (subset of reserved words)
    keywords,                     # List containing all keywords
-   preprocessors                 # List containing all preprocessors
+   preprocessors,                # List containing all preprocessors
+
+   unicon_dir
    )
 
 
@@ -28,7 +32,7 @@ class LSPDB(
       built_in_functions := table()
       package_db := table()
 
-      if getenv("FPATH") then {
+      if \unicon_dir then {
          build_bnf()
          build_package_db()
       }
@@ -64,12 +68,8 @@ class LSPDB(
       local idoc, dirPath, source_table, source_file, _procedure, param_in_procedure, paramName, paramType, paramDef
       idoc := UniAll()
 
-      dirPath := getenv("FPATH")
+      dirPath := unicon_dir
 
-      dirPath ? {
-         tab(upto("/"))
-         dirPath := tab(-3)
-      }
       dirPath ||:= "uni/ulsp/unicon_built_in_functions.icn"
 
       idoc.setSourcePath(dirPath)
@@ -96,27 +96,22 @@ class LSPDB(
    end
 
    method build_package_db()
-      local dirPath, paths, path
-      dirPath := getenv("FPATH")
-      dirPath ? {
-      tab(upto("/"))
-      dirPath := tab(-3)
-      }
+      local dirPath, db_paths
 
-      paths := []
+      dirPath := unicon_dir
 
-      put(paths, dirPath || "ipl/procs")
+      db_paths := ipaths_get()
 
-      dirPath ||:= "uni/"
+      pop(db_paths) # remove the current directory
 
-      put(paths, dirPath || "3d")
-      put(paths, dirPath || "gui")
-      #put(paths, dirPath || "parser")
-      put(paths, dirPath || "xml")
-      put(paths, dirPath || "lib")
-      put(paths, dirPath || "unidoc")
 
-      every path := !paths do build_by_path(path)
+      if \unicon_dir then
+         put(db_paths, unicon_dir || "ipl/procs", unicon_dir || "uni/unidoc")
+
+      write("Looking in:")
+      every write("   ", !db_paths)
+
+      every build_by_path(!db_paths)
    end
 
    method build_by_path(path)
@@ -229,4 +224,8 @@ class LSPDB(
          }
       }
    end
+
+   initially
+
+      unicon_dir := ulibprefix()
 end

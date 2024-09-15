@@ -213,7 +213,7 @@ Source: "tests\thread\Makefile"; DestDir: "{app}\tests\thread"; Flags: ignorever
 
 ; Bench
 Source: "tests\bench\*.icn"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
-Source: "tests\bench\*.dat"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "tests\bench\*.data"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
 Source: "tests\bench\*.c"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
 Source: "tests\bench\*.test"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
 Source: "tests\bench\README"; DestDir: "{app}\tests\bench"; Flags: ignoreversion

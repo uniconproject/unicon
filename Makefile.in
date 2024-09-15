@@ -205,7 +205,7 @@ INST=$(SHTOOL) install -c
 F=*.{u,icn}
 Tbins=unicon$(EXE) icont$(EXE) iconx$(EXE) iconc$(EXE) unicont$(EXE) uniconx$(EXE) \
       uniconc$(EXE) udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) \
-      patchstr$(EXE) iyacc$(EXE) rt.a rt.h
+      ulsp$(EXE) patchstr$(EXE) iyacc$(EXE) rt.a rt.h
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
 IPLdirs=lib incl gincl mincl procs

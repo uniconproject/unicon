@@ -96,14 +96,14 @@ class LSPDB(
    end
 
    method build_package_db()
-      local dirPath, db_paths
+      local dirPath, db_paths := [], dir
 
       dirPath := unicon_dir
 
-      db_paths := ipaths_get()
-
-      pop(db_paths) # remove the current directory
-
+      every dir := !ipaths_get() do
+         # remove the current dir, also skip parser due to a unidoc bug
+         if not((dir == ("." | "")) | find("uni/parser"|"uni\\parser", dir))then
+            put(db_paths, dir)
 
       if \unicon_dir then
          put(db_paths, unicon_dir || "ipl/procs", unicon_dir || "uni/unidoc")

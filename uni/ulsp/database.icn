@@ -14,6 +14,8 @@ import UniDoc
 
 link paths
 
+global Logger
+
 class LSPDB(
    package_db,
    built_in_functions,           # List containing all native function names
@@ -108,10 +110,11 @@ class LSPDB(
       if \unicon_dir then
          put(db_paths, unicon_dir || "ipl/procs", unicon_dir || "uni/unidoc")
 
-      write("Looking in:")
-      every write("   ", !db_paths)
-
-      every build_by_path(!db_paths)
+      Logger.debug1_class("db", "Looking in unicon paths")
+      every dir := !db_paths do {
+         Logger.debug2_class("db:path", "Processing ", dir)
+         build_by_path(dir)
+      }
    end
 
    method build_by_path(path)
@@ -126,6 +129,7 @@ class LSPDB(
       x := idoc.packages
 
       every pack := !x do {
+         Logger.debug3_class("db:path:package", "Processing ", pack.getName())
 
          if /package_db[pack.getName()] then {
             package_db[pack.getName()] := table()
@@ -133,6 +137,7 @@ class LSPDB(
          }
 
          every file_in_pack := pack.getFiles().get() do {
+            Logger.debug4_class("db:path:package:file", "Processing ", file_in_pack.getName())
             file_without_ext := &null
             file_in_pack.getName() ? {
                file_without_ext := tab(upto("."))

@@ -12,6 +12,8 @@ link options
 link basename
 link ximage
 
+global ulsp_server
+
 procedure usage()
    local prog
    prog := basename(&progname)
@@ -23,23 +25,42 @@ procedure usage()
    write("\t --socket <PORT> : set the lsp server port")
    write("\t -s : run as a server (default)")
    write("\t -c : run as a client")
+   write("\t --logfile <filename> : log file")
+   write("\t --loglevel <level> : log level from 0-17. log levels 8-17 are used for debugging")
+   write("\t --debug-class  <class>: debug class to log")
    write("\t -h : show this help\n")
    exit(-1)
 end
 
 procedure validate_args(args)
    local opts
-   opts := options(args, "--socket+ -h! -c! -s!", usage)
+   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-class: -h! -c! -s!", usage)
    if *opts = 0 then usage()
    member(opts, "-socket") | usage()
    return opts
 end
 
+procedure ulsp_sig_handler(siganl)
+   Logger.notice("\nshutdown signal received! Server Shutting down...")
+   if \ulsp_server then
+      ulsp_server.shutdown()
+
+   Logger.finalize()
+   exit(0)
+end
+
 procedure main(args)
    local opts, sock, mode
 
+   trap("SIGINT", ulsp_sig_handler)
+
    # If validate_args() fails, it will display usage() and never return.
    opts := validate_args(args)
+
+   Logger(opts["-loglevel"] | 7, opts["-logfile"] | &null) #  # default to informational, stdout
+
+   if \opts["-debug-class"] then
+      Logger.add_debug_class(opts["-debug-class"])
 
    # Allow passing full host:port as an arg
    sock := opts["-socket"]
@@ -53,5 +74,7 @@ procedure main(args)
    # Set mode for server to run in, based on opts.
    member(opts, mode := "c") | (mode := "s")
 
-   Server(sock, mode).run()
+
+   ulsp_server := Server(sock, mode)
+   ulsp_server.run()
 end

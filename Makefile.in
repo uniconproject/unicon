@@ -207,7 +207,7 @@ Tbins=unicon$(EXE) icont$(EXE) iconx$(EXE) iconc$(EXE) unicont$(EXE) uniconx$(EX
       uniconc$(EXE) udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) \
       ulsp$(EXE) patchstr$(EXE) iyacc$(EXE) rt.a rt.h
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
-Udirs=lib 3d gui unidoc unidep xml parser
+Udirs=lib 3d gui unidoc unidep xml parser ulsp
 IPLdirs=lib incl gincl mincl procs
 RTdirs=lib include include/uri
 

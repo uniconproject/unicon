@@ -57,7 +57,7 @@ procedure main(args)
    # If validate_args() fails, it will display usage() and never return.
    opts := validate_args(args)
 
-   Logger(opts["-loglevel"] | 7, opts["-logfile"] | &null) #  # default to informational, stdout
+   Logger((opts["-loglevel"]), opts["-logfile"]) #  # default to informational, stdout
 
    if \opts["-debug-class"] then
       Logger.add_debug_class(opts["-debug-class"])
@@ -73,7 +73,6 @@ procedure main(args)
 
    # Set mode for server to run in, based on opts.
    member(opts, mode := "c") | (mode := "s")
-
 
    ulsp_server := Server(sock, mode)
    ulsp_server.run()

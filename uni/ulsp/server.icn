@@ -40,8 +40,8 @@ class Logger(
    # private
    method _log(loglvl, msgs)
       local msg
-      clock := &date || " " || &clock
       if loglvl <= current_log_level then {
+         clock := &date || " " || &clock
          msg := ""; every msg ||:=!msgs
          self._log_to_file(msg, loglvl)
          self._log_std(msg, loglvl)
@@ -60,9 +60,10 @@ class Logger(
       #    }
       # }
 
-      clock := &date || " " || &clock
-      if loglvl <= current_log_level |
-         (loglvl >= 8 & member(debug_class_set, filter))  then {
+      if current_log_level < 8 then fail
+
+      if loglvl <= current_log_level | member(debug_class_set, filter)  then {
+         clock := &date || " " || &clock
          msg := ""; every msg ||:=!msgs
          self._log_to_file(msg, loglvl, filter)
          self._log_std(msg, loglvl, filter)
@@ -285,7 +286,7 @@ class Logger(
       enable_timestamp := "file"
       enable_loginfo := "all"
       debug_class_set := set("")
-      current_log_level := \init_log_level | 5
+      current_log_level := \init_log_level | 7
       log_destinations := []
       if \log_file_path then
          if f := open(log_file_path, "a") then
@@ -317,11 +318,13 @@ class Server(
             request_params := jsontable["params"]
             request_id := jsontable["id"]
 
-            write("-----------------------------------------")
-            write(request_method)
-            write("-----------------------------------------")
+            Logger.debug2_class("lsp:jrpc:request", "-----------------------------------------")
+            Logger.debug2_class("lsp:jrpc:request", request_method)
+            Logger.debug2_class("lsp:jrpc:request", "-----------------------------------------")
+            Logger.debug5_class("lsp:jrpc:request:", image(request_body) )
 
             case request_method of {
+               # requests
                "initialize" : initialize(request_id)
                "textDocument/didOpen" : didOpen(request_params)
                "textDocument/didClose" : didClose(request_params)
@@ -330,8 +333,15 @@ class Server(
                "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
                "textDocument/hover" : hoverHelp(request_id, request_params)
                "textDocument/definition" : definitionHelp(request_id, request_params)
+
+               # notifications
+               "initialized" : Logger.debug2_class("lsp:jrpc:notification:", image(request_body))
+
+               # utils?
                "$/cancelRequest" : cancelRequest(request_id)
-               default: { write("Don't know what to do with: ", request_method) }
+               default: {
+                  Logger.debug1_class("lsp:jrpc", "Unsupported request: ", image(request_method), ">>", image(request_body))
+                  }
             }
          }
       }
@@ -379,6 +389,7 @@ class Server(
 
    method build_response(id, results)
       local responseBody, responseHeader
+      /results := "{}"
       responseBody := "{\"jsonrpc\":\"2.0\",\"id\":"||id||",\"result\":"||results||"}"
       responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
       return responseHeader || responseBody
@@ -404,18 +415,20 @@ class Server(
    method initialize(request_id)
       local capabilitiesTable, result
 
-      capabilitiesTable := ["capabilities": [
-         "completionProvider": [
-            "triggerCharacters": [".", ":"]
-         ];
-         "textDocumentSync": 1;
-         "signatureHelpProvider": [
-            "contextSupport": "__true__";
-            "triggerCharacters": ["("]
-         ];
-         "hoverProvider": "__true__";
-         "definitionProvider": "__true__"
-      ]]
+      capabilitiesTable := [
+         "capabilities": [
+            "completionProvider": [
+               "triggerCharacters": [".", ":"]
+            ];
+            "textDocumentSync": 1;
+            "signatureHelpProvider": [
+               "contextSupport": "__true__";
+               "triggerCharacters": ["("]
+            ];
+            "hoverProvider": "__true__";
+            "definitionProvider": "__true__"
+         ]
+      ]
 
       result := build_response(request_id, tojson(capabilitiesTable))
       write(result)

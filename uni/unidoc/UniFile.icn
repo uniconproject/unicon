@@ -214,29 +214,35 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
                         }
                     else {  # Hard cases, might have continuation
     
-                        if =";" then {          # Not so hard after all
-                            setBuffer(tab(0))
-                            return line
-                            }
-    
-                        if ="#" then {          # Also easy
+                        if ="#" then {          # Easy
                             line := buffer
                             clearBuffer()
                             return line
                             }
     
-                        if any('\'') then {    l    # Hard
+                        if =";" then {          # Not too hard
+                            #  (We're not going to care about anything
+                            #  else on the line...)
+                            clearBuffer()
+                            return line
+                            }
+
+                        if ="'" then {    l    # Harder
                             if not (line ||:= matchCSet()) then {
                                 # Must be a continued cset!
-                                setBuffer(buffer[1:-1] | "")
+                                #  (We're not going to care about anything
+                                #  else on the line...)
+                                clearBuffer()
                                 break
                                 }
                             }
     
-                        if any('"') then {         # Hard
+                        if ="\"" then {         # Harder
                             if not (line ||:= matchString()) then {
                                 # Must be a continued string!
-                                setBuffer(buffer[1:-1] | "")
+                                #  (We're not going to care about anything
+                                #  else on the line...)
+                                clearBuffer()
                                 break
                                 }
                             }
@@ -251,7 +257,6 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
         if *buffer > 0 then {
             line := buffer
             clearBuffer()
-            line
             }
     
     end

@@ -1,0 +1,353 @@
+#<p>
+#  Logger class
+#</p>
+#<p>
+#  This class provides logging and debugging facilities for Unicon.
+#  Currently the class defines 18 levels of logging from 0 through 17.
+#  The 18 levels are defined as follows:
+#  0    : No logging
+#  1-4  : Errors
+#  5-7  : Significant or informational events
+#  8-17 : Debugging
+#</p>
+#<p>
+#  See the table in the initially method of the class for the list of logging
+#  levels and their expected use.
+#</p>
+#<p>
+#  In normal operation, the log level should be set to 7 or below. The default
+#  logging level is 7 (info). Logging messages should be kept at minimum; i.e,
+#  avoid logging frequent events at level 7 or below.
+#</p>
+#<p>
+#  Each logging level has an associated method to log at the level.
+#  For example, loginfo() logs at level 7, debug() logs at level 8,
+#  debug1() logs at level 9, up to debug9() which logs at level 17.
+#  Effectively, there are 10 debug levels, 0 through 9, Debugging
+#  functions also support associating a category or a kind to the
+#  debug messages to help in filtering the messages in cases where
+#  there is a lot of debug output. To add a "kind" to the debug
+#  message, call the "_kind" form of the debug method. Examples:
+#  debug2_kind(), or debug5_kind(). The first argument to these
+#  functions define the kind of logs in the that call. The kind is
+#  a user-defined string. Debug messages are only printed when the
+#  log level is 8 or above.
+#</p>
+#<p>
+#  Examples:
+#    Logger.warn("can't find file", fname)
+#    Logger.info("loading configurations...")
+#
+#    # debug with level
+#    Logger.debug("Opening the database ", path, size)
+#    Logger.debug3("processing record number ", i)
+#
+#    debug with level and kind
+#    Logger.debug2_kind("Packet",  "sending packet to ", dest)
+#    Logger.debug4_kind("packet:http", "processing http msg ", image(p))
+#    Logger.debug5_kind("config", "sending config to client)
+#</p>
+#
+# TODO: Make the class thread-safe
+#
+
+package ulsp
+
+link strings
+
+class Logger(
+   log_destinations,    # zero or more log destinations
+   current_log_level,   # the current log level
+   debug_class_set,
+   log_type_list,       #
+   enable_stdout,       # log to stdout
+   enable_stderr,       # log to stderr
+   std_redirect,        # redirect output ("out", "err")
+   enable_timestamp,    # add time stamp to log messages ("file", "all", "none")
+   enable_loginfo,      # add log info to log messages ("file", "all", "none")
+   clock
+   )
+
+   # private
+   # concat all strings in list L
+   method cat(L)
+      local m := "", s
+      every s := !L do
+         if \s then
+            m ||:= s
+      return m
+   end
+
+   # private
+   method _log(loglvl, msgs)
+      local msg
+      loglvl <= current_log_level | fail
+
+      if \enable_timestamp then
+         clock := &date || " " || &clock
+
+      msg := cat(msgs)
+      self._log_to_file(loglvl, &null, msg)
+      self._log_std(loglvl, &null, msg)
+   end
+
+   # private, used with kinds
+   method _debug(loglvl, kind, msgs)
+      local msg
+
+      # every w := words(kind, ":") do {
+      #    (/s:=w) | (s||:= ":" || w)
+      #    if member(debug_class_set, s) then {
+      #       match_kind := 1
+      #       break
+      #    }
+      # }
+
+      current_log_level > 7 | fail
+      loglvl <= current_log_level | member(debug_class_set, kind) | fail
+
+      if \enable_timestamp then
+         clock := &date || " " || &clock
+
+      msg := cat(msgs)
+      self._log_to_file(loglvl, kind, msg)
+      self._log_std(loglvl, kind, msg)
+   end
+
+   #private
+   method _decorate_ts(is_file)
+      if enable_timestamp == "all" | enable_timestamp == is_file == "file" then
+         return "[" || clock || "]"
+      else
+         return ""
+   end
+
+   method _decorate_info(is_file, lvl, kind)
+      if enable_loginfo == "all" | enable_loginfo == is_file == "file" then
+         return "[" || log_type_list[lvl] || (if /kind then "" else  (":" || kind )) || "]"
+      else
+         return ""
+   end
+
+   method decoration(is_file, lvl, kind)
+      return _decorate_ts(is_file) || _decorate_info(is_file, lvl, kind) || " "
+   end
+
+   # private
+   method _log_to_file(lvl, kind, msg)
+      local decorate
+      if *log_destinations > 0 then {
+         decorate := decoration("file", lvl, kind)
+         every write(!log_destinations, decorate, msg)
+         every flush(!log_destinations)
+      }
+   end
+
+   # private
+   method _log_std(lvl, kind, msg)
+      if (std_redirect ~== "err") & (lvl > 5 | std_redirect == "out") then {
+         if \enable_stdout then
+            write(&output, decoration("std", lvl, kind), msg)
+      }
+      else if lvl <= 5 | std_redirect == "err" then {
+         if \enable_stderr then
+            write(&errout, decoration("std", lvl, kind), msg)
+      }
+   end
+
+   ###########
+   # Config methods
+   #
+   method add_debug_kind(kind)
+      insert(debug_class_set, kind)
+   end
+
+   method remove_debug_kind(kind)
+      delete(debug_class_set, kind)
+   end
+
+   # move all output to stderr
+   method redirect_std_out_to_err()
+      std_redirect := "err"
+   end
+
+   # always log this, effectively unaware of logging levels)
+   method log(msgs[])
+      local msg := cat(msgs)
+      self._log_to_file(0, &null, msg)
+      self._log_std(0, &null, msg)
+   end
+
+   method finalize()
+      every close(!log_destinations)
+   end
+
+   #############################
+   # Errors                    #
+   #############################
+   # 1. The system is unusable.
+   method emergency(msgs[])
+      self._log(1, msgs)
+   end
+
+   # 2. Actions that must be taken care of immediately.
+   method alert(msgs[])
+      self._log(2, msgs)
+   end
+
+    # 3. Critical conditions.
+   method crit(msgs[])
+      self._log(3, msgs)
+   end
+
+   # 4. Non-critical error conditions.
+   method error(msgs[])
+      self._log(4, msgs)
+   end
+
+   #############################
+   # Important events          #
+   #############################
+   # 5. Warning conditions that should be taken care of.
+   method warn(msgs[])
+      self._log(5, msgs)
+   end
+
+    # 6. Normal, but significant events.
+   method notice(msgs[])
+      self._log(6, msgs)
+   end
+
+   # 7. Informational messages that require no action.
+   method info(msgs[])
+      self._log(7, msgs)
+   end
+
+   #############################
+   # Debugging                 #
+   #############################
+   # 8. debugging messages
+   method debug(msgs[])
+      self._log(8, msgs)
+   end
+
+   # associate a log with a kind
+   method debug_kind(kind, msgs[])
+      self._debug(8, kind, msgs)
+   end
+
+   method debug1(msgs[])
+      self._log(9, msgs)
+   end
+
+   method debug1_kind(kind, msgs[])
+      self._debug(9, kind, msgs)
+   end
+
+   method debug2(msgs[])
+      self._log(10, msgs)
+   end
+
+   method debug2_kind(kind, msgs[])
+      self._debug(10, kind, msgs)
+   end
+
+   method debug3(msgs[])
+      self._log(11, msgs)
+   end
+
+   method debug3_kind(kind, msgs[])
+      self._debug(11, kind, msgs)
+   end
+
+   method debug4(msgs[])
+      self._log(12, msgs)
+   end
+
+   method debug4_kind(kind, msgs[])
+      self._debug(12, kind, msgs)
+   end
+
+   method debug5(msgs[])
+      self._log(13, msgs)
+   end
+
+   method debug5_kind(kind, msgs[])
+      self._debug(13, kind, msgs)
+   end
+
+   method debug6(msgs[])
+      self._log(14, msgs)
+   end
+
+   method debug6_kind(kind, msgs[])
+      self._debug(14, kind, msgs)
+   end
+
+   method debug7(msgs[])
+      self._log(15, msgs)
+   end
+
+   method debug7_kind(kind, msgs[])
+      self._debug(15, kind, msgs)
+   end
+
+   method debug8(msgs[])
+      self._log(16, msgs)
+   end
+
+   method debug8_kind(kind, msgs[])
+      self._debug(16, kind, msgs)
+   end
+
+   method debug9(msgs[])
+      self._log(17, msgs)
+   end
+
+   method debug9_kind(kind, msgs[])
+      self._debug(17, kind, msgs)
+   end
+
+   # associate a log with a debug level and a kind
+   method debug_level_kind(lvl, kind, msgs[])
+      self._debug(lvl+8, kind, msgs)
+   end
+
+   initially(init_log_level, log_file_path)
+      local f
+      log_type_list := [
+         #"none",       # 0. Disable logging completely.
+         "emergency",   # 1. The system is unusable.
+         "alert",       # 2. Actions that must be taken care of immediately.
+         "critical",    # 3. Critical conditions.
+         "error",       # 4. Non-critical error conditions.
+         "warning",     # 5. Warning conditions that should be taken care of.
+         "notice",      # 6. Normal, but significant events.
+         "info",        # 7. Informational messages that require no action.
+         "debug",       # 8. Debugging messages level 0.
+         "debug1",      # 9. Debugging messages level 1.
+         "debug2",      # 10
+         "debug3",      # 11
+         "debug4",      # 12
+         "debug5",      # 13
+         "debug6",      # 14
+         "debug7",      # 15
+         "debug8",      # 16
+         "debug9",      # 17 Debugging messages level 9.
+      ]
+
+      enable_stdout := 1
+      enable_stderr := 1
+      std_redirect := "none"
+      enable_timestamp := "file"
+      enable_loginfo := "all"
+      clock := ""
+      debug_class_set := set("")
+      current_log_level := \init_log_level | 7
+      log_destinations := []
+      if \log_file_path then
+         if f := open(log_file_path, "a") then
+            put(log_destinations, f)
+
+      Logger := self # make this a singleton class
+end

@@ -5,8 +5,9 @@ UFLAGS=-s -u
 
 prog=ulsp
 
-SRC=launch-lsp.icn workspace.icn database.icn server.icn completion.icn signature.icn hover.icn definition.icn
-OBJ=launch-lsp.u workspace.u database.u server.u completion.u signature.u hover.u definition.u
+SRC=launch-lsp.icn workspace.icn database.icn server.icn completion.icn signature.icn hover.icn \
+	definition.icn logger.icn
+OBJ=launch-lsp.u workspace.u database.u server.u completion.u signature.u hover.u definition.u logger.u
 
 export IPATH=$(UNI)/unidoc
 
@@ -19,11 +20,8 @@ $(prog): $(OBJ)
 	$(CP) $(prog)$(EXE) ../../bin
 
 launch-lsp.u:launch-lsp.icn workspace.u database.u server.u completion.u signature.u hover.u definition.u
-workspace.u:workspace.icn
-database.u:database.icn
-server.u:server.icn database.u completion.u workspace.u signature.u hover.u definition.u
-completion.u:completion.icn
-signature.u:signature.icn
+
+server.u:server.icn database.u completion.u workspace.u signature.u hover.u definition.u logger.u
 hover.u:hover.icn signature.u
 definition.u: definition.icn hover.u
 

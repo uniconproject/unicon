@@ -1,20 +1,10 @@
 # Date of creation:
 #    12/8/22
 #
-# Date last updated:
-#    12/9/22
-#
 # Author(s):
 #    Mark Stowell,
 #    Jonah Schnettler
 #
-# Description:
-#
-#
-#
-#
-#
-
 
 package ulsp
 
@@ -23,277 +13,6 @@ link strings
 import json
 #import UniDoc
 
-link strings
-class Logger(
-   log_destinations,    #zero or more log destinations
-   current_log_level,   # the current log level
-   debug_class_set,
-   log_type_list,       #
-   enable_stdout,       # log to stadout
-   enable_stderr,       # log to stderr
-   std_redirect,        # redirect output ("out", "err")
-   enable_timestamp,    # add time stamp to log messages ("file", "all", "none")
-   enable_loginfo,      # add log info to log messages ("file", "all", "none")
-   clock
-   )
-
-   # private
-   method _log(loglvl, msgs)
-      local msg
-      if loglvl <= current_log_level then {
-         clock := &date || " " || &clock
-         msg := ""; every msg ||:=!msgs
-         self._log_to_file(msg, loglvl)
-         self._log_std(msg, loglvl)
-      }
-   end
-
-   # private, used with filters
-   method _debug(loglvl, filter, msgs)
-      local msg
-
-      # every w := words(filter, ":") do {
-      #    (/s:=w) | (s||:= ":" || w)
-      #    if member(debug_class_set, s) then {
-      #       match_filter := 1
-      #       break
-      #    }
-      # }
-
-      if current_log_level < 8 then fail
-
-      if loglvl <= current_log_level | member(debug_class_set, filter)  then {
-         clock := &date || " " || &clock
-         msg := ""; every msg ||:=!msgs
-         self._log_to_file(msg, loglvl, filter)
-         self._log_std(msg, loglvl, filter)
-      }
-   end
-
-   #private
-   method _decorate_ts(is_file)
-      local ts := ""
-      if enable_timestamp == "all" | enable_timestamp == is_file == "file" then
-         ts := ts := "[" || clock || "]"
-      return ts
-   end
-
-   method _decorate_info(is_file, lvl, filter)
-      local linfo := ""
-      if enable_loginfo == "all" | enable_loginfo == is_file == "file" then
-         linfo := "[" || log_type_list[lvl] || (if /filter then "" else  (":" ||filter )) || "]"
-      return linfo
-   end
-
-   method decoration(is_file, lvl, filter)
-      return _decorate_ts(is_file) || _decorate_info(is_file, lvl, filter) || " "
-   end
-
-   # private
-   method _log_to_file(msg, lvl, filter)
-      local decorate
-      if *log_destinations > 0 then {
-         decorate := decoration("file", lvl, filter)
-         every write(!log_destinations, decorate, msg)
-         every flush(!log_destinations)
-      }
-   end
-
-   # private
-   method _log_std(msg, lvl, filter)
-      if (std_redirect ~== "err") & (lvl > 5 | std_redirect == "out") then {
-         if \enable_stdout then
-            write(&output, decoration("std", lvl, filter), msg)
-      }
-      else if lvl <= 5 | std_redirect == "err" then {
-         if \enable_stderr then
-            write(&errout, decoration("std", lvl, filter), msg)
-      }
-   end
-
-   method add_debug_class(filter)
-      insert(debug_class_set, filter)
-   end
-
-   method remove_debug_class(filter)
-      delete(debug_class_set, filter)
-   end
-
-   # move all output to stderr
-   method redirect_std_out_to_err()
-      std_redirect := "err"
-   end
-
-   # always log this
-   method log(msgs[])
-      local msg
-      msg := ""; every msg ||:=!msgs
-      self._log_to_file(msg, 0)
-      self._log_std(msg, 0)
-   end
-
-   method finalize()
-      every close(!log_destinations)
-   end
-
-   # 1. The system is unusable.
-   method emergency(msgs[])
-      self._log(1, msgs)
-   end
-
-   # 2. Actions that must be taken care of immediately.
-   method alert(msgs[])
-      self._log(2, msgs)
-   end
-
-    # 3. Critical conditions.
-   method crit(msgs[])
-      self._log(3, msgs)
-   end
-
-   # 4. Non-critical error conditions.
-   method error(msgs[])
-      self._log(4, msgs)
-   end
-
-   # 5. Warning conditions that should be taken care of.
-   method warn(msgs[])
-      self._log(5, msgs)
-   end
-
-    # 6. Normal, but significant events.
-   method notice(msgs[])
-      self._log(6, msgs)
-   end
-
-   # 7. Informational messages that require no action.
-   method info(msgs[])
-      self._log(7, msgs)
-   end
-
-   # 8. debugging messages
-   method debug(msgs[])
-      self._log(8, msgs)
-   end
-
-   # associate a log with a filter
-   method debug_class(filter, msgs[])
-      self._debug(8, filter, msgs)
-   end
-
-   # associate a log with a debug level and a filter
-   method debug_level_filter(lvl, filter, msgs[])
-      self._debug(lvl+8, filter, msgs)
-   end
-
-   method debug1(msgs[])
-      self._log(9, msgs)
-   end
-
-   method debug1_class(filter, msgs[])
-      self._debug(9, filter, msgs)
-   end
-
-   method debug2(msgs[])
-      self._log(10, msgs)
-   end
-
-   method debug2_class(filter, msgs[])
-      self._debug(10, filter, msgs)
-   end
-
-   method debug3(msgs[])
-      self._log(11, msgs)
-   end
-
-   method debug3_class(filter, msgs[])
-      self._debug(11, filter, msgs)
-   end
-
-   method debug4(msgs[])
-      self._log(12, msgs)
-   end
-
-   method debug4_class(filter, msgs[])
-      self._debug(12, filter, msgs)
-   end
-
-   method debug5(msgs[])
-      self._log(13, msgs)
-   end
-
-   method debug5_class(filter, msgs[])
-      self._debug(13, filter, msgs)
-   end
-
-   method debug6(msgs[])
-      self._log(14, msgs)
-   end
-
-   method debug6_class(filter, msgs[])
-      self._debug(14, filter, msgs)
-   end
-
-   method debug7(msgs[])
-      self._log(15, msgs)
-   end
-
-   method debug7_class(filter, msgs[])
-      self._debug(15, filter, msgs)
-   end
-
-   method debug8(msgs[])
-      self._log(16, msgs)
-   end
-
-   method debug8_class(filter, msgs[])
-      self._debug(16, filter, msgs)
-   end
-
-   method debug9(msgs[])
-      self._log(17, msgs)
-   end
-
-   method debug9_class(filter, msgs[])
-      self._debug(17, filter, msgs)
-   end
-
-   initially(init_log_level, log_file_path)
-      local f
-      log_type_list := [
-         #"none",       # 0. Disable logging completely.
-         "emergency",   # 1. The system is unusable.
-         "alert",       # 2. Actions that must be taken care of immediately.
-         "critical",    # 3. Critical conditions.
-         "error",       # 4. Non-critical error conditions.
-         "warning",     # 5. Warning conditions that should be taken care of.
-         "notice",      # 6. Normal, but significant events.
-         "info",        # 7. Informational messages that require no action.
-         "debug",       # 8. Debugging messages level 0.
-         "debug1",      # 9. Debugging messages level 1.
-         "debug2",      # 10
-         "debug3",      # 11
-         "debug4",      # 12
-         "debug5",      # 13
-         "debug6",      # 14
-         "debug7",      # 15
-         "debug8",      # 16
-         "debug9",      # 17 Debugging messages level 9.
-      ]
-
-      enable_stdout := enable_stderr := 1
-      std_redirect := "none"
-      enable_timestamp := "file"
-      enable_loginfo := "all"
-      debug_class_set := set("")
-      current_log_level := \init_log_level | 7
-      log_destinations := []
-      if \log_file_path then
-         if f := open(log_file_path, "a") then
-            put(log_destinations, f)
-
-      Logger := self # make this a singleton class
-end
 
 class Server(
    port,                         # Port number acquired from args on start up of server
@@ -318,10 +37,10 @@ class Server(
             request_params := jsontable["params"]
             request_id := jsontable["id"]
 
-            Logger.debug2_class("lsp:jrpc:request", "-----------------------------------------")
-            Logger.debug2_class("lsp:jrpc:request", request_method)
-            Logger.debug2_class("lsp:jrpc:request", "-----------------------------------------")
-            Logger.debug5_class("lsp:jrpc:request:", image(request_body) )
+            Logger.debug2_kind("lsp:jrpc:request", "-----------------------------------------")
+            Logger.debug2_kind("lsp:jrpc:request", request_method)
+            Logger.debug2_kind("lsp:jrpc:request", "-----------------------------------------")
+            Logger.debug5_kind("lsp:jrpc:request:", image(request_body) )
 
             case request_method of {
                # requests
@@ -335,12 +54,12 @@ class Server(
                "textDocument/definition" : definitionHelp(request_id, request_params)
 
                # notifications
-               "initialized" : Logger.debug2_class("lsp:jrpc:notification:", image(request_body))
+               "initialized" : Logger.debug2_kind("lsp:jrpc:notification:", image(request_body))
 
                # utils?
                "$/cancelRequest" : cancelRequest(request_id)
                default: {
-                  Logger.debug1_class("lsp:jrpc", "Unsupported request: ", image(request_method), ">>", image(request_body))
+                  Logger.debug1_kind("lsp:jrpc", "Unsupported request: ", image(request_method), ">>", image(request_body))
                   }
             }
          }

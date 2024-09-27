@@ -66,7 +66,7 @@ class Canvas : Component : SelectiveClassCoding(
    orig_w,
    orig_h,
    orig_x_spec,         # Original pos/size spec of an item being
-   orig_y_spec,		      # resized/moved
+   orig_y_spec,            # resized/moved
    orig_w_spec,
    orig_h_spec,
    x_new,               # New pos/size spec of an item being resized/moved
@@ -124,9 +124,9 @@ class Canvas : Component : SelectiveClassCoding(
    method update_pos_label()
       if \self.selected then
          self.parent.pos_label.set_label(self.selected.x_spec || "," ||
-						self.selected.y_spec || " : " ||
-						self.selected.w_spec || "," ||
-						self.selected.h_spec)
+                  self.selected.y_spec || " : " ||
+                  self.selected.w_spec || "," ||
+                  self.selected.h_spec)
       else
          self.parent.pos_label.set_label("")
    end
@@ -859,8 +859,8 @@ class Canvas : Component : SelectiveClassCoding(
       parent_dlg := self.get_parent_dialog()
       if ( parent_dlg.get_h_reference() - self.y + 2 * EDGE > 0 ) || ( parent_dlg.get_w_reference() - self.x + 2 * EDGE > 0 ) then
         WAttrib(Canvas_temp_win, "size=" || parent_dlg.get_w_reference() -
-	       self.x + 2 * EDGE || "," || parent_dlg.get_h_reference() -
-	        self.y + 2 * EDGE)
+          self.x + 2 * EDGE || "," || parent_dlg.get_h_reference() -
+           self.y + 2 * EDGE)
       else
         WAttrib(Canvas_temp_win, "size=" || parent_dlg.get_w_reference() || "," || parent_dlg.get_h_reference() )
    end
@@ -902,9 +902,9 @@ class Canvas : Component : SelectiveClassCoding(
          # between right and bottom edge of canvas and edge of window.
          #
          EraseArea(parent.win, self.x + self.w + EDGE, self.y - EDGE,
-		   parent.get_w_reference(), parent.get_h_reference())
+         parent.get_w_reference(), parent.get_h_reference())
          EraseArea(parent.win, self.x - EDGE, self.y + self.h + EDGE,
-		   parent.get_w_reference(), parent.get_h_reference())
+         parent.get_w_reference(), parent.get_h_reference())
          clear_borders_flag := &null
       }
 
@@ -917,7 +917,7 @@ class Canvas : Component : SelectiveClassCoding(
          # Copy saved original to buffer.
          #
          CopyArea(Canvas_temp_win, self.cbwin,
-		  0, 0, self.w, self.h, self.x, self.y)
+        0, 0, self.w, self.h, self.x, self.y)
          #
          # Highlight moving object
          #
@@ -926,7 +926,7 @@ class Canvas : Component : SelectiveClassCoding(
          # Display from buffer.
          #
          CopyArea(self.cbwin, self.cwin,
-		  self.x, self.y, self.w, self.h, self.x, self.y)
+        self.x, self.y, self.w, self.h, self.x, self.y)
          }
       else if \self.is_resizing then {
          #
@@ -937,25 +937,25 @@ class Canvas : Component : SelectiveClassCoding(
          # Copy saved original to buffer.
          #
          CopyArea(Canvas_temp_win, self.cbwin, 0, 0,
-		  parent.get_w_reference() - self.x + 2 * EDGE,
-		  parent.get_h_reference() - self.y + 2 * EDGE,
-		  self.x - EDGE, self.y - EDGE)
+        parent.get_w_reference() - self.x + 2 * EDGE,
+        parent.get_h_reference() - self.y + 2 * EDGE,
+        self.x - EDGE, self.y - EDGE)
 
          #
          # Draw outline of new Canvas into buffer.
          #
          cw := Clone(self.cbwin, "linestyle=dashed")
          Rectangle(cw, self.x - EDGE, self.y - EDGE,
-		   self.w + 2 * EDGE, self.h + 2 * EDGE)
+         self.w + 2 * EDGE, self.h + 2 * EDGE)
          Uncouple(cw)
 
          #
          # Copy buffer to display.
          #
          CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE,
-		  parent.get_w_reference() - self.x + 2 * EDGE,
-		  parent.get_h_reference() - self.y + 2 * EDGE,
-		  self.x - EDGE, self.y - EDGE)
+        parent.get_w_reference() - self.x + 2 * EDGE,
+        parent.get_h_reference() - self.y + 2 * EDGE,
+        self.x - EDGE, self.y - EDGE)
         }
       else {
          #
@@ -983,15 +983,15 @@ class Canvas : Component : SelectiveClassCoding(
          WAttrib(cw, "fg=red")
          every i := 1 to EDGE do
             DrawLine(cw, self.x + self.w - 1 - RSW, self.y + self.h - 1 + i,
-		     self.x + self.w - 1 + i, self.y + self.h - 1 + i,
-		     self.x + self.w - 1 + i, self.y + self.h - 1 - RSW)
+           self.x + self.w - 1 + i, self.y + self.h - 1 + i,
+           self.x + self.w - 1 + i, self.y + self.h - 1 - RSW)
 
          Uncouple(cw)
 
          if /buffer_flag then
             CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE,
-		     self.w + 2 * EDGE, self.h + 2 * EDGE, self.x - EDGE,
-		     self.y - EDGE)
+           self.w + 2 * EDGE, self.h + 2 * EDGE, self.x - EDGE,
+           self.y - EDGE)
          #self.update_pos_label()
       }
    end
@@ -1002,9 +1002,9 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method in_resize_corner()
       return ((self.x + self.w <= &x < self.x + self.w + EDGE) &
-	      (self.y + self.h + EDGE - RSW <= &y < self.y + self.h + EDGE)) |
+         (self.y + self.h + EDGE - RSW <= &y < self.y + self.h + EDGE)) |
              ((self.x + self.w + EDGE - RSW <= &x < self.x + self.w + EDGE) &
-	      (self.y + self.h <= &y < self.y + self.h + EDGE))
+         (self.y + self.h <= &y < self.y + self.h + EDGE))
    end
 
    #
@@ -1187,7 +1187,7 @@ class Canvas : Component : SelectiveClassCoding(
          # Not in old container.  Post a message.
          #
          self.parent.info_label.set_label(if obj === self then
-			"Placed back in canvas" else "Placed inside container")
+         "Placed back in canvas" else "Placed inside container")
 
          #
          # Take it out of the one it's currently in ...
@@ -1298,7 +1298,7 @@ class Canvas : Component : SelectiveClassCoding(
          # Copy present screen to Canvas_temp_win
          #
          CopyArea(self.cwin, Canvas_temp_win,
-		  self.x, self.y, self.w, self.h, 0, 0)
+        self.x, self.y, self.w, self.h, 0, 0)
       } else if in_resize_corner() then {
          #
          # Save for possible push onto undo list.
@@ -1325,9 +1325,9 @@ class Canvas : Component : SelectiveClassCoding(
          # Copy present screen to Canvas_temp_win
          #
          CopyArea(self.cwin, Canvas_temp_win, self.x - EDGE, self.y - EDGE,
-		  self.get_parent_dialog().get_w_reference() -self.x + 2*EDGE,
-		  self.get_parent_dialog().get_h_reference() - self.y + 2*EDGE,
-		  0, 0)
+        self.get_parent_dialog().get_w_reference() -self.x + 2*EDGE,
+        self.get_parent_dialog().get_h_reference() - self.y + 2*EDGE,
+        0, 0)
 
          #
          # Set offsets.
@@ -1682,7 +1682,7 @@ class Canvas : Component : SelectiveClassCoding(
          if /e.is_button_subclass then
             return alert_error("You can only have subclasses of Button _
                                 in a CheckBoxGroup")
-	 }
+    }
 
       self.parent.push_undo()
 
@@ -1864,7 +1864,7 @@ class CanvasPreferencesDialog : CommonDialog(
       if set_min_h.is_checked() & not(integer(min_h_spec.get_contents())) then
          return alert_error("Min height not integer")
       integer(self.gen_indent.get_contents()) |
-	 return alert_error("Indent not integer")
+    return alert_error("Indent not integer")
       integer(w_spec.get_contents()) | return alert_error("Invalid width")
       integer(h_spec.get_contents()) | return alert_error("Invalid height")
       util_check_attribs(self, attrib_tab.get_contents()) | fail

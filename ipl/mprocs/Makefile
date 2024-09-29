@@ -7,7 +7,7 @@ IC=../../bin/$(UNICONT)
 UFLAGS= -usc
 
 all:$(TARGETS)
-	@cp *.u ../lib/
+	@$(CP) *.u ../lib/
 
 %.u: %.icn
 	@echo $<

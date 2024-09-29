@@ -54,7 +54,7 @@ tools:
 
 udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
-	cp udb$(EXE) ../../bin
+	$(CP) udb$(EXE) ../../bin
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb

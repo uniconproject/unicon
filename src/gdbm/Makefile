@@ -81,7 +81,7 @@ CP_HEADERS:gdbm.h ndbm.h
 
 gdbm.h:	gdbm.proto gdbmerrno.h gdbm.proto2
 	$(RM) gdbm.h
-	cp $(srcdir)/gdbm.proto gdbm.h
+	$(CP) $(srcdir)/gdbm.proto gdbm.h
 	-chmod +w gdbm.h
 	grep _ $(srcdir)/gdbmerrno.h >> gdbm.h
 	cat $(srcdir)/gdbm.proto2 >> gdbm.h
@@ -103,7 +103,7 @@ testndbm: testndbm.o libgdbm.a
 	$(CC) $(LDFLAGS) -o testndbm testndbm.o libgdbm.a
 
 tndbm.o: testndbm.c
-	cp $(srcdir)/testndbm.c ./tndbm.c
+	$(CP) $(srcdir)/testndbm.c ./tndbm.c
 	$(CC) -c -I. -I$(srcdir) $(CFLAGS) $(DEFS) ./tndbm.c
 	rm -f ./tndbm.c
 

@@ -58,7 +58,7 @@ link strings
 class Logger(
    log_destinations,    # zero or more log destinations
    current_log_level,   # the current log level
-   debug_class_set,
+   debug_kind_set,
    log_type_list,       #
    enable_stdout,       # log to stdout
    enable_stderr,       # log to stderr
@@ -97,14 +97,14 @@ class Logger(
 
       # every w := words(kind, ":") do {
       #    (/s:=w) | (s||:= ":" || w)
-      #    if member(debug_class_set, s) then {
+      #    if member(debug_kind_set, s) then {
       #       match_kind := 1
       #       break
       #    }
       # }
 
       current_log_level > 7 | fail
-      loglvl <= current_log_level | member(debug_class_set, kind) | fail
+      loglvl <= current_log_level | member(debug_kind_set, kind) | fail
 
       if \enable_timestamp then
          clock := &date || " " || &clock
@@ -159,11 +159,20 @@ class Logger(
    # Config methods
    #
    method add_debug_kind(kind)
-      insert(debug_class_set, kind)
+      insert(debug_kind_set, kind)
    end
 
    method remove_debug_kind(kind)
-      delete(debug_class_set, kind)
+      delete(debug_kind_set, kind)
+   end
+
+   method add_log_file(log_file_path)
+      local f
+      if \log_file_path then
+         if f := open(log_file_path, "a") then {
+            put(log_destinations, f)
+            return
+         }
    end
 
    # move all output to stderr
@@ -313,7 +322,7 @@ class Logger(
       self._debug(lvl+8, kind, msgs)
    end
 
-   initially(init_log_level, log_file_path)
+   initially(init_log_level, log_file_path, no_singleton)
       local f
       log_type_list := [
          #"none",       # 0. Disable logging completely.
@@ -342,12 +351,13 @@ class Logger(
       enable_timestamp := "file"
       enable_loginfo := "all"
       clock := ""
-      debug_class_set := set("")
+      debug_kind_set := set("")
       current_log_level := \init_log_level | 7
       log_destinations := []
       if \log_file_path then
          if f := open(log_file_path, "a") then
             put(log_destinations, f)
 
-      Logger := self # make this a singleton class
+      if /no_singleton then
+         Logger := self # make this a singleton class
 end

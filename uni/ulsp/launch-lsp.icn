@@ -27,14 +27,14 @@ procedure usage()
    write("\t -c : run as a client")
    write("\t --logfile <filename> : log file")
    write("\t --loglevel <level> : log level from 0-17. log levels 8-17 are used for debugging")
-   write("\t --debug-class  <class>: debug class to log")
+   write("\t --debug-kind  <kind>: debug kind to log")
    write("\t -h : show this help\n")
    exit(-1)
 end
 
 procedure validate_args(args)
    local opts
-   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-class: -h! -c! -s!", usage)
+   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-kind: -h! -c! -s!", usage)
    if *opts = 0 then usage()
    member(opts, "-socket") | usage()
    return opts
@@ -59,8 +59,8 @@ procedure main(args)
 
    Logger((opts["-loglevel"]), opts["-logfile"]) #  # default to informational, stdout
 
-   if \opts["-debug-class"] then
-      Logger.add_debug_kind(opts["-debug-class"])
+   if \opts["-debug-kind"] then
+      Logger.add_debug_kind(opts["-debug-kind"])
 
    # Allow passing full host:port as an arg
    sock := opts["-socket"]

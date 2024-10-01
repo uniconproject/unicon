@@ -7,7 +7,7 @@ all:
 
 Cfun:
 	cd ../cfuncs; LPATH= $(MAKE) ICONT=../../bin/$(UNICONT)
-	-cd ../cfuncs; cp cfunc.u ../lib
+	-cd ../cfuncs; $(CP) cfunc.u ../lib
 	-cd ../cfuncs; cp libcfunc.so ../../bin
 
 clean Clean Pure:

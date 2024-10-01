@@ -61,7 +61,7 @@ $(PMOS): $(LIBD)/uso.u
 
 # Unicon interface
 $(LIBD)/%.u:	%.icn $(CSRC)
-	cp $< $(LIBD)/
+	$(CP) $< $(LIBD)/
 	cd $(LIBD); $(UC) $(UFLAGS) $<
 	rm $(LIBD)/$<
 

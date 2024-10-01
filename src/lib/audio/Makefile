@@ -18,7 +18,7 @@ staticlib: $(ARCHIVE)
 $(ARCHIVE): $(OBJECTS)
 	rm -f $(ARCHIVE)
 	ar $(ARFLAGS) $(ARCHIVE) $(OBJECTS)
-	cp $(ARCHIVE) ../../../bin
+	$(CP) $(ARCHIVE) ../../../bin
 	rm *.o
 
 al.o : al.c base.h config.h

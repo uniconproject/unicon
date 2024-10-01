@@ -31,7 +31,7 @@ lib: $(UFILES)
 
 
 tools: listener.u $(Tools)
-	cp $(Tools) ../../../bin
+	$(CP) $(Tools) ../../../bin
 
 $(Tools): $%
 	$(UC) $(UFLAGS) $(STANDALONE) $(LDFLAGS) $@

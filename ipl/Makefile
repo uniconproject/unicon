@@ -6,7 +6,7 @@ include ../Makedefs.uni
 
 Ilib:	../bin/libcfunc.so
 ../bin/libcfunc.so:  ../bin/$(UNICONT)
-	cp incl/*.icn gincl/*.icn cfuncs/icall.h ../lib
+	$(CP) incl/*.icn gincl/*.icn cfuncs/icall.h ../lib
 	$(MAKE) -C procs
 	$(MAKE) -C gprocs
 	$(MAKE) -C mprocs

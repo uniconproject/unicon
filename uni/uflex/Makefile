@@ -14,7 +14,7 @@ all: $(PROGRAM)
 
 $(PROGRAM): flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u automatadfa.u uflexskel.u
 	$(UNICON) -s -o uflex flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u convert.u automatadfa.u ulpp.icn
-	@cp $(PROGRAM) ../../bin/
+	@$(CP) $(PROGRAM) ../../bin/
 	@cd test; $(MAKE)
 
 flexgram.icn flexgram_tab.icn: flexgram.y

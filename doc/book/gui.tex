@@ -2356,6 +2356,21 @@ top-level window of a program. This section looks at some techniques
 for integrating dialog windows that are secondary or helper windows
 into a program.
 
+\subsection*{Thread-safety}
+It is important to note that the design and implementation of the GUI classes was
+completed {\em before }the introduction of concurrency to the Unicon language.
+The same remark applies to the underlying graphical operations that the GUI classes
+use. Thus, neither is thread safe. Furthermore, some platforms restrict graphical
+operations to the main thread.
+
+The most portable strategy is therefore to restrict the use of the GUI classes to the main
+thread. Any results from concurrently executing threads that affect the display must be
+communicated to the main thread (either via global variables or via Unicon's message
+passing facilities) and mutual exclusion must be employed -- as in any concurrent program
+using shared data. The main thread cannot wait indefinitely for new results, because this
+will ``freeze'' the display if no new data is forthcoming. Instead, the main thread must
+poll for new data, probably best achieved by using the toolkit's ticker facilites.
+
 \subsection*{Parameters}
 
 A dialog window will normally have parameters that the calling program will want

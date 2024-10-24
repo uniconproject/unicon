@@ -1,0 +1,424 @@
+package ulsp
+
+link regexp
+link io
+import json
+import UniDoc
+
+import lang
+import util
+import parser
+
+global identifiers
+
+class Context(
+   uniAll,
+   uri,
+   lineNum,
+   column,
+   char,
+   line,
+   absoluteCharNum,
+   lsp_database,
+   fileContents,
+   type,
+   item,
+   leftBound,
+   rightBound,
+   totalFileLines
+   )
+
+   method getItem(setBounds)
+      local temp, tempPos, retItem,
+         c := fileContents[absoluteCharNum],
+         nextC := fileContents[absoluteCharNum + 1]
+      static whitespaces
+      initial
+      {
+         whitespaces := ' \t\r\n\v\f'
+      }
+
+      if isInComment(line, column) then
+      {
+         return getCommentItem(setBounds)
+      }
+
+      if isInString(line, column) then
+      {
+         return getStringItem(setBounds)
+      }
+
+      if ((c ** (identifiers ++ '&')) ~== c) |
+         ((c == "&") & (/nextC |
+         ((nextC ** whitespaces) == nextC))) then
+      {
+         /setBounds | (leftBound := column & rightBound := column)
+         return c
+      }
+
+      line ?
+      {
+         tab(column)
+         while c := move(-1) do
+         {
+            if (c ** identifiers) ~== c then
+            {
+               tab(upto(identifiers))
+               break
+            }
+         }
+
+         tempPos := &pos
+         if member(set(\lsp_database.keywords),
+            retItem := (((move(-1) == "&") & move()) ||
+            tab(many(identifiers)))) then
+         {
+            /setBounds | (leftBound := tempPos - 1 & rightBound := &pos - 1)
+            return retItem
+         }
+         &pos := tempPos
+
+         /setBounds | (leftBound := &pos)
+         retItem := tab(many(identifiers))
+         /setBounds | (rightBound := &pos - 1)
+         return retItem
+      }
+   end
+
+   method getCommentItem(setBounds)
+      local item := ""
+
+      isInComment(line, column) | fail
+
+      line ?
+      {
+         tab(column)
+         while (&pos ~= 1) & (isInComment(line, &pos -:= 1))
+         if (&pos = 1) & (isInComment(line, 1)) then
+         {
+            item ||:= line[1]
+            /setBounds | (leftBound := 1)
+         }
+         else
+         {
+            /setBounds | (leftBound := &pos + 1)
+         }
+         while item ||:= isInComment(line, &pos +:= 1)
+         /setBounds | (rightBound := &pos - 1)
+      }
+
+      return item
+   end
+
+   method getStringItem(setBounds)
+      local item := ""
+
+      isInString(line, column) | fail
+
+      line ?
+      {
+         tab(column)
+         while (&pos ~= 1) & (isInString(line, &pos -:= 1))
+         if (&pos = 1) & (isInString(line, 1)) then
+         {
+            item ||:= line[1]
+            /setBounds | (leftBound := 1)
+         }
+         else
+         {
+            /setBounds | (leftBound := &pos + 1)
+         }
+         while item ||:= isInString(line, &pos +:= 1)
+         /setBounds | (rightBound := &pos - 1)
+      }
+
+      return item
+   end
+
+   method getLineFromAbsolutePosition(absoluteCharNum)
+      local lineNum := 1
+      fileContents ?
+      {
+         until &pos = absoluteCharNum do
+         {
+            if &subject[&pos] == '\n' then
+            {
+               lineNum +:= 1
+            }
+            move()
+         }
+      }
+      return lineNum
+   end
+
+   method getColumnFromAbsolutePosition(absoluteCharNum)
+      local lineNum := getLineFromAbsolutePosition(absoluteCharNum), lineTracker := 1
+      fileContents ?
+      {
+         until lineTracker = lineNum do
+         {
+            if &subject[&pos] == '\n' then
+            {
+               lineTracker +:= 1
+            }
+            move()
+         }
+         return absoluteCharNum - &pos + 1
+      }
+   end
+
+
+   method getLeftContext()
+      local leftContextLeftBound := leftBound,
+         leftContextLineNum := lineNum, leftContext
+
+      until leftContextLeftBound = 1 & leftContextLineNum = 1 do
+      {
+         if leftContextLeftBound = 1 then
+         {
+            leftContext := Context(uniAll, uri,
+               leftContextLineNum - 1,
+               *uniAll.getUniFileLine(uri, leftContextLineNum - 1) + 1)
+         }
+         else
+         {
+            leftContext := Context(uniAll, uri,
+               leftContextLineNum,
+               leftContextLeftBound - 1)
+         }
+
+         leftContextLeftBound := leftContext.leftBound
+         leftContextLineNum := leftContext.lineNum
+         suspend leftContext
+      }
+   end
+
+   method getRightContext()
+      local rightContextRightBound := rightBound,
+         rightContextLineNum := lineNum, rightContext,
+         lengthLastLine := *uniAll.getUniFileLine(uri, totalFileLines) + 1
+
+      until rightContextRightBound = lengthLastLine &
+         rightContextLineNum = totalFileLines do
+      {
+         if rightContextRightBound =
+            *uniAll.getUniFileLine(uri, rightContextLineNum) + 1 then
+         {
+            rightContext := Context(uniAll, uri, rightContextLineNum + 1, 1)
+         }
+         else
+         {
+            rightContext := Context(uniAll, uri, rightContextLineNum,
+               rightContextRightBound + 1)
+         }
+
+         rightContextRightBound := rightContext.rightBound
+         rightContextLineNum := rightContext.lineNum
+         suspend rightContext
+      }
+   end
+
+   method getType()
+      local single_quote := 0, double_quote := 0,
+      backslash_count := 0, c, item
+      static whitespaces
+      initial
+      {
+         whitespaces := ' \t\r\n\v\f'
+      }
+
+      if isInComment(line, column) then
+      {
+         return "comment"
+      }
+
+      if isInString(line, column) then
+      {
+         return "string"
+      }
+
+      if (char ** whitespaces) == char then
+      {
+         return "whitespace"
+      }
+
+      if ((char ** identifiers) ~== char) &
+         ((char ~== "&") |
+         (not member(set(\lsp_database.keywords), getItem()))) then
+      {
+         return "symbol"
+      }
+
+      item := getItem() | fail
+
+      if item == !lsp_database.action_words then
+      {
+         return "action"
+      }
+
+      if item == !lsp_database.declarative_expressions then
+      {
+         return "declaration"
+      }
+
+      if item == !lsp_database.syntax_reserved_words then
+      {
+         return "reserved"
+      }
+
+      if item == !lsp_database.keywords then
+      {
+         return "keyword"
+      }
+
+      if isInFunctionName(line, column) then
+      {
+         return "function"
+      }
+
+      item ?
+      {
+         while &pos <= *item do
+         {
+            member(&digits, move()) | return "variable"
+         }
+      }
+
+      return "digit"
+   end
+
+   method isInComment(subject, position)
+      local c
+      subject ?
+      {
+         while (&pos <= position) do
+         {
+            c := move(1) | break
+            if (c == "#") & (not isInString(subject, &pos - 1)) then
+            {
+               return subject[position]
+            }
+         }
+      }
+   end
+
+   method isInString(subject, position)
+      local singleQuote := 0, doubleQuote := 0, match, c
+
+      subject ?
+      {
+         while (&pos <= position) do
+         {
+            c := move(1) | fail
+            if (match := (c == ("\'"|"\""))) &
+               (not isEscaped(line, &pos - 1)) then
+            {
+               case match of
+               {
+                  "\'":{ if (doubleQuote % 2) = 0 then { singleQuote +:= 1 } }
+                  "\"":{ if (singleQuote % 2) = 0 then { doubleQuote +:= 1 } }
+               }
+            }
+         }
+      }
+
+      if ((singleQuote % 2) = 0) &
+         ((doubleQuote % 2) = 0) &
+         (not ((subject[position] == ("\'"|"\"")) &
+         (not isEscaped(subject, position)))) then
+      {
+         fail
+      }
+
+      return subject[position]
+   end
+
+   method isEscaped(subject, position)
+      local slashCount := 0
+
+      subject ?
+      {
+         tab(position)
+         while move(-1) == "\\" do
+         {
+            slashCount +:= 1
+         }
+      }
+
+      if (slashCount % 2) = 0 then
+      {
+         fail
+      }
+
+      return subject[position]
+   end
+
+   method isInFunctionName(subject, position)
+      local c
+      static whitespaces
+      initial
+      {
+         whitespaces := ' \t'
+      }
+
+      if (isInComment(subject, position) | isInString(subject, position)) then
+      {
+         fail
+      }
+
+      subject ?
+      {
+         tab(position)
+         tab(many(identifiers))
+         tab(many(whitespaces))
+         if subject[&pos] == "(" then
+         {
+            return subject[position]
+         }
+      }
+   end
+
+   method isNewContext(lineNumber, charNumber)
+      local newContext
+
+      if lineNum ~= lineNumber then
+      {
+         newContext := "Yes"
+      }
+      else if column ~= charNumber then
+      {
+         newContext := "Yes"
+      }
+      else
+      {
+         newContext := &null
+      }
+
+      return newContext
+   end
+
+   initially(uniAll, uri, lineNum, column)
+      local uniFile, uniLine, uniFileIndex := 0
+      identifiers := &letters ++ &digits ++ '_'
+      fileContents := ""
+      lsp_database := Resources().getLSPDB()
+      self.uniAll := uniAll
+      self.uri := uri
+      self.lineNum := lineNum
+      self.column := column
+      line := uniAll.getUniFileLine(uri, lineNum) | fail
+      uniFile := ((\uniAll.uniFilez)[uri]) | fail
+      totalFileLines := 0
+      while uniLine := (uniFile.Read(uniFileIndex +:= 1) || "\n") do
+      {
+         if uniFileIndex = lineNum then
+         {
+            absoluteCharNum := *fileContents + column
+         }
+         fileContents ||:= uniLine
+         totalFileLines +:= 1
+      }
+      char := cset(fileContents[absoluteCharNum])
+      item := getItem(1)
+      type := getType()
+end

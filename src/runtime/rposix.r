@@ -2445,9 +2445,21 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
          /* Something is available: allocate another chunk */
          if (i == 0)
             StrLoc(*d) = alcstr(NULL, bufsize);
-         else
+         else {
             /* Extend the string */
+           /* We must guard against running over the end of the current string region.
+            * In that case, allocate a whole new buffer (which will result in a GC)
+            * and copy the existing buffer into it. Don't use alcstr() to do the copy
+            * because that might involve accessing potentially non-existent memory after
+            * the end of the (old) string region.
+            */
+           if (DiffPtrs(strend,strfree) < bufsize) {
+             char *newb = alcstr(NULL, StrLen(*d) + bufsize); /* a GC will occur */
+             memcpy(newb, StrLoc(*d), StrLen(*d));
+             StrLoc(*d) = newb;
+           } else
             (void) alcstr(NULL, bufsize);
+         }
 tryagain:
 
          if (fstatus & Fs_Socket) {

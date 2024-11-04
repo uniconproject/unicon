@@ -31,8 +31,8 @@ class HoverHandler(
       signatureHandler := SignatureHandler()
       signatureHandler.setVariables(workspace)
 
-      hover_item := \getHoverItem(desired_line, character) | return tojson(results_table)
-      _context := \getContext(context) | return tojson(results_table)
+      hover_item := \getHoverItem(desired_line, character) | return results_table
+      _context := \getContext(context) | return results_table
 
       if _context == "function" | _context == "built-in-function" | _context == "method" |
          _context == "procedure" | _context == "constructor" then {
@@ -48,7 +48,7 @@ class HoverHandler(
          results_table["contents"] := table("kind", "markdown", "value", "(_" || _context || "_) " || hover_item )
       }
 
-      return tojson(results_table)
+      return results_table
    end
 
    method getContext(context)

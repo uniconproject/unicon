@@ -1,0 +1,262 @@
+#
+# https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
+#
+
+# Request message:
+#
+# Content-Length: ...\r\n
+# \r\n
+# {
+#    "jsonrpc": "2.0",
+#    "id": 1,
+#    "method": "textDocument/completion",
+#    "params": {
+#       ...
+#    }
+# }
+#
+# Response msg:
+#
+# Content-Length: ...\r\n
+# \r\n
+# {
+#    "jsonrpc": "2.0",
+#    "id": 1,
+#    "result": ...,
+#    "error": ...
+# }
+#
+#	The result of a request is REQUIRED on success.
+#	It MUST NOT exist if there was an error invoking the method.
+#  In case of an error, and error objet should bre returned.
+#
+
+package ulsp
+import json
+link ximage
+
+$define CONTENT_LENGTH "Content-Length: "
+
+class JRPC_Message(msg, kind, json_table)
+
+   method parse_json(s)
+      msg := s
+      if json_table := jtou(s) then {
+         guess_kind()
+         return self
+      } else
+         kind := "unknown"
+   end
+
+   method guess_kind()
+      #if we have a method, the msg is a request
+      if \json_table["method"] then
+         kind := if \json_table["id"] then "request" else "notification"
+      else if \json_table["error"] then
+         kind := "error"
+      else if \json_table["result"] then
+         kind := "response"
+      else
+         kind := "unknown"
+   end
+
+   method get_kind()
+      return kind
+   end
+   method get_id()
+      return json_table["id"]
+   end
+   method get_method()
+      return json_table["method"]
+   end
+   method get_params()
+      return json_table["params"]
+   end
+   # many requests operate on a file, stored in uri param
+   method get_param_uri()
+      return json_table["params"]["textDocument"]["uri"]
+   end
+
+   method get_result()
+      return json_table["result"]
+   end
+   method get_error()
+      return json_table["error"]
+   end
+   method get_content()
+      return msg
+   end
+
+   method init_msg()
+      /json_table := ["jsonrpc" : "2.0"]
+   end
+
+   method set_result(result)
+      json_table["result"] := result
+   end
+   method set_id(id)
+      return json_table["id"] := id
+   end
+   method set_method(meth)
+      return json_table["method"] := meth
+   end
+   method set_params(params)
+      return json_table["params"] := params
+   end
+
+   method make_result_response(result)
+      delete(json_table, "method", "params", "error")
+      json_table["result"] := \result | ""
+      if msg := tojson(json_table) then
+         return self
+   end
+
+   method make_request(id, meth, params)
+      if /json_table then
+         json_table := [
+            "id" : id;
+            "method" : meth;
+            "params" : params
+            ]
+      else {
+         delete(json_table, "result", "error")
+         json_table["id"] := id
+         json_table["method"] := meth
+         json_table["params"] := params
+      }
+      if msg := tojson(json_table) then
+         return self
+   end
+
+   # ErrorCodes
+   # # Defined by JSON-RPC
+   # ParseError: -32700;
+   # InvalidRequest: -32600;
+   # MethodNotFound: -32601;
+   # InvalidParams: -32602;
+   # InternalError:  -32603;
+
+   #
+   # Error code indicating that a server received a notification or
+   # request before the server has received the `initialize` request.
+   #
+   # ServerNotInitialized: -32002;
+   # UnknownErrorCode: -32001;
+
+   #
+   # A request failed but it was syntactically correct, e.g the
+   # method name was known and the parameters were valid. The error
+   # message should contain human readable information about why
+   # the request failed.
+   #
+   # RequestFailed: -32803;
+
+   #
+   # The server cancelled the request. This error code should
+   # only be used for requests that explicitly support being
+   # server cancellable.
+   #
+   # ServerCancelled: -32802;
+
+   #
+   # The server detected that the content of a document got
+   # modified outside normal conditions. A server should
+   # NOT send this error code if it detects a content change
+   # in its unprocessed messages. The result even computed
+   # on an older state might still be useful for the client.
+   #
+   # If a client decides that a result is not of any use anymore
+   # the client should cancel the request.
+   #
+   # ContentModified: -32801;
+
+   #
+   # The client has canceled a request and a server has detected
+   # the cancel.
+   #
+   # RequestCancelled: -32800;
+
+   method make_error_response(err_code, err_msg, err_data)
+      delete(json_table, "method", "params", "result")
+      json_table["error"] := [
+         "code" : err_code;
+         "message" : err_msg;
+         "data" : \err_data | ""
+      ]
+      if msg := tojson(json_table) then
+         return self
+   end
+
+   initially
+      kind := "unknown"
+end
+
+
+class JRPC_HTTPSocket(sock)
+   #
+   # parse the http header in the form of
+   #   ...
+   #   Content-Length: <SIZE>
+   #   ...
+   #   \r\n\r\n
+   # and return the length of the rpc message
+   method get_http_header(timeout)
+      local len, data := "", size := 22
+      /timeout := -1
+      repeat {
+         # Wait for a message to arrive, read the header
+         # assume the min header size is 22, because the shortest jrpc
+         # msgs will be at least 2 digits, I.e header size >=22
+         *select(sock, timeout) > 0  | fail
+         data ||:= ready(sock, size-*data)
+         data ~== "" | fail
+         if *data < size then next
+
+         data ? {
+            if = CONTENT_LENGTH then {
+               len := integer(tab(many(&digits))) | fail
+               # Make sure we have the whole header.
+               # For long messages, 5 digits size, read one byte at a time until we
+               # find end. This should be very uncommon
+               ="\r\n\r\n" & return len
+               size +:=1
+            }
+            else
+               data := tab(find(CONTENT_LENGTH)) | ""
+         }
+      }
+   end
+
+   method get_data(size, timeout)
+      local data := ""
+      /timeout := -1
+      while *data < size do {
+         *select(sock, timeout) > 0 | fail
+         data ||:= ready(sock, size-*data)
+         data ~== "" | fail
+         }
+         return data
+   end
+
+   method get_msg(timeout)
+      local msg_body, len
+      len := get_http_header(timeout) | fail
+      msg_body := get_data(len, timeout) | fail
+      if msg_body[1] == "{" & msg_body[-1] == "}" then {
+         return JRPC_Message().parse_json(msg_body)
+      }
+   end
+
+   method send_msg(msg)
+      local data
+      data := msg.get_content()
+      writes(sock, CONTENT_LENGTH, *data, "\r\n\r\n", data)
+   end
+
+   initially(addr, opt)
+      if string(addr) then
+         sock := open(addr,opt)
+      else
+         sock := addr
+
+end

@@ -23,96 +23,76 @@ class Server(
    signatureHandler,
    hoverHandler,
    definitionHandler,
-   lsp_database                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
+   lsp_database,                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
+   jrpc_handler
    )
 
+   method handle_request(msg)
+      local meth, params, id
+      meth := msg.get_method()
+      params := msg.get_params()
+      id := msg.get_id()
+
+      Logger.info("jrpc:request: ", meth, " id=", id)
+      Logger.debug5_kind("jrpc:request:params ", ximage(params))
+
+      meth ?
+         if ="$/" then {
+            # per LSP spec, this is a protocol implementation dependent request.
+            # We can ignore it. However, we need to still send back a response
+            handle_unsupported(msg)
+            fail
+         }
+
+      case meth of {
+         "initialize" : initialize(msg)
+         "textDocument/completion" : completion(msg)
+         "textDocument/signatureHelp" : signatureHelp(msg)
+         "textDocument/hover" : hoverHelp(msg)
+         "textDocument/definition" : definitionHelp(msg)
+         default: {
+            handle_unsupported(msg)
+         }
+      }
+   end
+
+   method handle_unsupported(msg)
+      Logger.debug1_kind("jrpc", "Unsupported request: ", image(msg.get_method()))
+      Logger.debug5_kind("jrpc", "Unsupported request: ", image(msg.get_content()))
+      msg.make_error_response(-32601, "Method not found")
+      jrpc_handler.send_msg(msg)
+   end
+
+   # notifications has only  "method" and "params"
+   method handle_notification(msg)
+      local params
+      Logger.info("jrpc:notification ", msg.get_method())
+      params := msg.get_params()
+      case msg.get_method() of {
+         "textDocument/didOpen" : didOpen(params)
+         "textDocument/didClose" : didClose(params)
+         "textDocument/didChange" : didChange(params)
+         default:
+            Logger.debug1_kind("jrpc:notification:unsupported", msg.get_method())
+      }
+   end
+
    method run()
-      local request_body, jsontable, request_method, request_params, request_id
-
-      repeat {
-         every request_body := get_request(sock) do {
-            jsontable := jtou(request_body) | next
-
-            request_method := jsontable["method"]
-            request_params := jsontable["params"]
-            request_id := jsontable["id"]
-
-            Logger.debug2_kind("lsp:jrpc:request", "-----------------------------------------")
-            Logger.debug2_kind("lsp:jrpc:request", request_method)
-            Logger.debug2_kind("lsp:jrpc:request", "-----------------------------------------")
-            Logger.debug5_kind("lsp:jrpc:request:", image(request_body) )
-
-            case request_method of {
-               # requests
-               "initialize" : initialize(request_id)
-               "textDocument/didOpen" : didOpen(request_params)
-               "textDocument/didClose" : didClose(request_params)
-               "textDocument/didChange" : didChange(request_params)
-               "textDocument/completion" : completion(request_id, request_params)
-               "textDocument/signatureHelp" : signatureHelp(request_id, request_params)
-               "textDocument/hover" : hoverHelp(request_id, request_params)
-               "textDocument/definition" : definitionHelp(request_id, request_params)
-
-               # notifications
-               "initialized" : Logger.debug2_kind("lsp:jrpc:notification:", image(request_body))
-
-               # utils?
-               "$/cancelRequest" : cancelRequest(request_id)
-               default: {
-                  Logger.debug1_kind("lsp:jrpc", "Unsupported request: ", image(request_method), ">>", image(request_body))
-                  }
+      local msg
+      jrpc_handler := JRPC_HTTPSocket(sock)
+      repeat 
+         if msg := jrpc_handler.get_msg() then {
+            #Logger.info("msg= ", image(msg.get_content()))
+            case msg.get_kind() of {
+               "request" : handle_request(msg)
+               "notification" : handle_notification(msg)
+               default:
+                  # we shouldn't get anything else, maybe?
+                   Logger.debug2_kind("lsp:jrpc:msg:" || msg.get_kind(), image(msg.get_content()))
             }
          }
-      }
    end
 
-#################################################################################
-#                               Get Request                                     #
-#################################################################################
-
-   method get_request(sock)
-      local request_body, msg, len
-
-      while /request_body | request_body == "" do {
-
-         # Block and get message on socket
-         select(sock)
-         msg := ready(sock)
-
-         # Handling socket reading anomoly: header alone or header + request_body
-         while msg ~== "" do {
-            msg ? {
-               tab(find("Content-Length:") + 16)
-               len := integer(tab(many(&digits)))
-               tab(upto("\r\n\r\n") + 4)
-               if pos(0) then {
-                  request_body := ready(sock, len)
-               }
-               else {
-                  request_body := move(len)
-               }
-               until *request_body = len do {
-                  (*select(sock, 5000) ~= 0) | break
-                  request_body ||:= ready(sock, len)
-               }
-               msg := tab(0)
-            }
-            suspend request_body
-         }
-      }
-   end
-
-#################################################################################
-#                               Build Response                                  #
-#################################################################################
-
-   method build_response(id, results)
-      local responseBody, responseHeader
-      /results := "{}"
-      responseBody := "{\"jsonrpc\":\"2.0\",\"id\":"||id||",\"result\":"||results||"}"
-      responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
-      return responseHeader || responseBody
-   end
 
 
 #################################################################################
@@ -131,8 +111,8 @@ class Server(
 # As you add more capabilities to the language server (i.e. hover, go to declaration, etc.) add these to the results string below.
 # Follow the LSP specifications on how to add a particular capability to your initialize string.
 
-   method initialize(request_id)
-      local capabilitiesTable, result
+   method initialize(msg)
+      local capabilitiesTable
 
       capabilitiesTable := [
          "capabilities": [
@@ -149,9 +129,8 @@ class Server(
          ]
       ]
 
-      result := build_response(request_id, tojson(capabilitiesTable))
-      write(result)
-      writes(sock, result)
+      msg.make_result_response(capabilitiesTable)
+      jrpc_handler.send_msg(msg)
    end
 
 ########################################################
@@ -220,70 +199,54 @@ class Server(
 #                textDocument/completion               #
 ########################################################
 
-   method completion(request_id, request_params)
-      local uri, workspace_object, result, res
-      uri := request_params["textDocument"]["uri"]
-      workspace_object := openFiles[\uri]
-      completionHandler.setVariables(workspace_object, request_params)
+   method completion(msg)
+      local workspace_object, result
+      workspace_object := openFiles[\msg.get_param_uri()]
+      completionHandler.setVariables(workspace_object, msg.get_params())
       result := completionHandler.run()
-      res := build_response(request_id, result)
-      writes(sock, res)
+      msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
    end
 
 ########################################################
 #              textDocument/signatureHelp              #
 ########################################################
 
-   method signatureHelp(request_id, request_params)
-      local uri, workspace_object, result, res
-      uri := request_params["textDocument"]["uri"]
-      workspace_object := openFiles[\uri]
-      signatureHandler.setVariables(workspace_object, request_params)
+   method signatureHelp(msg)
+      local workspace_object, result
+      workspace_object := openFiles[\msg.get_param_uri()]
+      signatureHandler.setVariables(workspace_object, msg.get_params())
       result := signatureHandler.run()
-      res := build_response(request_id, result)
-      writes(sock, res)
+      msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
    end
 
 ########################################################
 #              textDocument/hover                      #
 ########################################################
 
-   method hoverHelp(request_id, request_params)
-      local uri, workspace_object, result, res
-      uri := request_params["textDocument"]["uri"]
-      workspace_object := openFiles[\uri]
-      hoverHandler.setVariables(workspace_object, request_params)
+   method hoverHelp(msg)
+      local workspace_object, result
+      workspace_object := openFiles[\msg.get_param_uri()]
+      hoverHandler.setVariables(workspace_object, msg.get_params())
       result := hoverHandler.run()
-      res := build_response(request_id, result)
-      writes(sock, res)
+      msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
    end
 
 ########################################################
 #                textDocument/definition               #
 ########################################################
 
-   method definitionHelp(request_id, request_params)
-      local uri, workspace_object, result, res
-      uri := request_params["textDocument"]["uri"]
-      workspace_object := openFiles[\uri]
-      definitionHandler.setVariables(workspace_object, request_params)
+   method definitionHelp(msg)
+      local workspace_object, result
+      workspace_object := openFiles[\msg.get_param_uri()]
+      definitionHandler.setVariables(workspace_object, msg.get_params())
       result := definitionHandler.run()
-      res := build_response(request_id, result)
-      writes(sock, res)
+      msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
    end
 
-########################################################
-#                  $/cancelRequest                     #
-########################################################
-# TODO:
-#       One thread for communication
-#       Spin up thread(s) for processing requests and tie request_id to thread
-# Handling cancel requests:
-#       kill thread associated with request_id
-
-   method cancelRequest(request_id)
-      write("We received a cancel request. We need to implement this still...")
-   end
 
    method shutdown()
 
@@ -297,7 +260,6 @@ class Server(
       signatureHandler := SignatureHandler()
       hoverHandler := HoverHandler()
       definitionHandler := DefinitionHandler()
-
    end
 
 

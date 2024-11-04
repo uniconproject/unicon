@@ -29,13 +29,13 @@ class SignatureHandler(
      # Collect context information (inside comment, space before, object before, no object before) #
       context := workspace.getContext(line, character)
       desired_line := context.line
-      \desired_line | return createResults(results_table)
-      \params["context"] | return createResults(results_table)
+      \desired_line | return results_table
+      \params["context"] | return results_table
 
       # Handle an active signature #
       if \params["context"]["activeSignatureHelp"] then {
          handleActiveSignature(params, results_table, context)
-         return createResults(results_table)
+         return results_table
       }
 
       # If any signatures still active #
@@ -59,8 +59,7 @@ class SignatureHandler(
          listPos +:= 1
       }
 
-      # Convert and return finished table #
-      return createResults(results_table)
+      return results_table
    end
 
    # Handle a new signature #
@@ -325,13 +324,6 @@ class SignatureHandler(
       # Return results #
       results_table["activeSignature"] := *signatures - 1
       results_table["signatures"] := signatures
-   end
-
-   # Convert results to json #
-   method createResults(results_table)
-      local results
-      results := tojson(results_table)
-      return results
    end
 
    # Update the results table #

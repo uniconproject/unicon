@@ -33,8 +33,8 @@ class DefinitionHandler(
       signatureHandler.handleNewSignature(context)
 
       possibleItems := signatureHandler.getCurrentSigItems()
-      \possibleItems | return tojson(results_table)
-      member(item := possibleItems[1], "source") | return tojson(results_table)
+      \possibleItems | return results_table
+      member(item := possibleItems[1], "source") | return results_table
 
       if source := open(item["source"]) then {
          every line := !source do {
@@ -58,6 +58,6 @@ class DefinitionHandler(
       results_table["uri"] := item["source"]
       results_table["range"] := ["start":["line":i;"character":startPos];"end":["line":i;"character":endPos]]
 
-      return tojson(results_table)
+      return results_table
    end
 end

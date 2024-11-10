@@ -15,10 +15,12 @@ export IPATH=$(UNI)/unidoc
 .PHONY: all
 
 all: $(prog)
-
 $(prog): $(OBJ)
 	$(UC) -o $(prog) $(OBJ)
 	$(CP) $(prog)$(EXE) ../../bin
+
+jsonrpc-test: jsonrpc-test.u jsonrpc.u
+	$(UC) -o jsonrpc-test jsonrpc-test.u jsonrpc.u
 
 launch-lsp.u:launch-lsp.icn workspace.u database.u server.u completion.u signature.u hover.u definition.u
 

@@ -1439,6 +1439,7 @@ end
 }
 
 \subsection*{A simple thread pool}
+\label{SimpleThreadPool}
 In some cases the explicit creation of a thread for each concurrent activity is
 the simplest and most transparent way of writing the program, especially if the
 threads need access to the local variables of the procedure that created them.
@@ -1450,7 +1451,7 @@ four procedures.
 \bigskip\hrule\vspace{0.1cm}
 \noindent\makebox[1.5in][l]{\texttt{MakePool(n)}\vspace{0.75in}}
 Create a pool of \texttt{n} worker threads. The default value for \texttt{n} is
-2 + the number of processors reported in \texttt{\&features}.There is usually
+2 + the number of processors reported in \texttt{\&features}. There is usually
 not much to be gained by having many more active threads than the number of
 available processors (unless a significant number are idle, waiting for an event
 to happen).
@@ -1489,8 +1490,19 @@ thread pool.
 
 The thread pool is minimalist by design. There are a number of extra facilities
 that could, perhaps, be added --- cancellation of a task, place a task at the
-front of the queue, rather than the rear --- but these are left as an exercise
-for the reader who needs them.
+front of the queue, rather than the rear. % --- but these are left as an exercise
+%for the reader who needs them.
+A \texttt{ThreadPool} class, which is also in the \texttt{threads} package
+and described on page \pageref{ThreadPoolClass}, provides some extra
+functionality. The main features are
+\begin{itemize}
+\item
+  It allows several pools to be created, with different characteristics.
+\item
+  Tasks may have a priority that controls whereabouts in the queue the
+  task is placed: higher priority tasks will be started before lower
+  priority tasks.
+\end{itemize}
 
 \subsection*{Thread-local storage}
 It is notable that thread--local storage can be implemented in Unicon without

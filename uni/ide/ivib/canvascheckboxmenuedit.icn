@@ -15,27 +15,27 @@ $include "guih.icn"
 #
 #
 class CanvasCheckBoxMenuEdit : MenuComponentEdit(
-   c,                       #         
+   c,                       #
    tab_basic,
    tab_images,
-   browse_up,               #                     
-   browse_down,             #                     
+   browse_up,               #
+   browse_down,             #
    icon_up,
    icon_down,
    cp_img,
-   label,                   #             
-   right_icon,              #                  
-   browse_right,            #                    
-   right_label,             #                   
-   use_right_label,         #                       
-   use_right_icon,          #                      
-   use_right_neither,       #                         
-   img_right,               #                 
-   cbg_right,               #                 
-   shaded,                  #              
-   browse_custom,           #                     
-   group_list,              #                  
-   in_checkbox_group,       #                          
+   label,                   #
+   right_icon,              #
+   browse_right,            #
+   right_label,             #
+   use_right_label,         #
+   use_right_icon,          #
+   use_right_neither,       #
+   img_right,               #
+   cbg_right,               #
+   shaded,                  #
+   browse_custom,           #
+   group_list,              #
+   in_checkbox_group,       #
    initially_checked        #
    )
 
@@ -53,7 +53,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
          }
       }
    end
-   
+
    method on_browse_up()
       local fd, s
       fd := FileDialog()
@@ -87,7 +87,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
    method on_okay()
       if img_width(icon_up.img) ~= img_width(icon_down.img) then
          return alert_error("Up/down image widths differ")
-      
+
       if img_height(icon_up.img) ~= img_height(icon_down.img) then
          return alert_error("Up/down image heights differ")
 
@@ -100,7 +100,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
       # a different one.
       #
       if (\c.parent_check_box_group).which_one === c then
-         c.parent_check_box_group.which_one := &null                 
+         c.parent_check_box_group.which_one := &null
 
       if in_checkbox_group.is_checked() then {
          #
@@ -108,7 +108,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
          #
          c.set_parent_check_box_group(c.parent_component.parent_Canvas.checkbox_groups.group_number(group_list.get_selection()))
          if initially_checked.is_checked() then {
-            #      
+            #
             # Turn off current one on, if any; turn self on.
             #
             (\c.parent_check_box_group.which_one).is_checked_flag := &null
@@ -129,12 +129,12 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
             c.img_right := &null
             c.set_label_right(right_label.get_contents())
          }
-         
+
          use_right_icon : {
             c.set_img_right(self.img_right)
             c.label_right := &null
          }
-         
+
          use_right_neither : {
             c.img_right := c.label_right := &null
          }
@@ -167,7 +167,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
       fd.set_fields(global_attribs)
       fd.show_modal(self)
       self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
-      if self.img_right := util_read_icon(self, fd.get_result()) then 
+      if self.img_right := util_read_icon(self, fd.get_result()) then
          right_icon.set_img(self.img_right)
    end
 
@@ -330,7 +330,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
       right_label.set_is_shaded()
       right_label.set_contents(\c.label_right)
       p_right.add(right_label)
-      
+
       use_right_icon := CheckBox()
       use_right_icon.connect(self, "on_use_right_icon", ACTION_EVENT)
       use_right_icon.set_pos(50, "50%")
@@ -349,7 +349,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
       right_icon.set_img(self.img_right)
       p_right.add(right_icon)
 
-      browse_right := TextButton() 
+      browse_right := TextButton()
       browse_right.connect(self, "on_browse_right", ACTION_EVENT)
       browse_right.set_label("Browse...")
       browse_right.set_pos(250, "50%")

@@ -1,9 +1,9 @@
 # -------------------------------------------------------------------------
-# ---------------------- Workspace Class ----------------------------------
+# ---------------------- Filespace Class ----------------------------------
 # -------------------------------------------------------------------------
 #
 # Description:
-#    -Contains all items related to a particular opened workspace file.
+#    -Contains all items related to a particular opened filespace file.
 #    -This includes:
 #       -The uri of the file
 #       -The contents of the file (synchronized contents coming from client - updating in textDocument/didChange)
@@ -29,7 +29,7 @@ import parser
 
 global identifiers
 
-class Workspace(
+class Filespace(
    uri,
    lsp_database,
    temp_file,
@@ -53,7 +53,7 @@ class Workspace(
    context
    )
 
-   method updateWorkspace()
+   method updateFilespace()
       setLinks()
       setImports()
       setPackage()
@@ -599,7 +599,7 @@ class Workspace(
       identifiers := &letters ++ &digits ++ '_' ++ '-'
 end
 
-class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase, packageName)
+class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase, packageName, totalFileLines)
    method getDesiredLine(lineNum)
       line := uniAll.getUniFileLine(uri, lineNum)
    end
@@ -767,12 +767,21 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
    end
 
    initially(uniAll, uri, lineNum, charNum)
+      local uniFile, uniLine, uniFileIndex := 0
       self.uniAll := uniAll
       self.uri := uri
       self.lineNum := lineNum
       self.charNum := charNum
       line := getDesiredLine(lineNum)
       contextCase := findContext()
+      uniFile := ((\uniAll.uniFilez)[uri]) | fail
+      totalFileLines := 0
+      if \uniFile then {
+         while uniLine := (uniFile.Read(uniFileIndex +:= 1) || "\n") do
+         {
+            totalFileLines +:= 1
+         }
+      }
 end
 
 # Creates a working comments

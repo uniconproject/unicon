@@ -589,8 +589,9 @@ as:
 critical region: x := x + 1
 }
 
-The critical region syntax only unlocks the mutex if it executes to the end. If
-there is a \texttt{return} or \texttt{break} in the region's body, it is the
+Prior to Unicon release 13.3,
+the critical region syntax only unlocked the mutex if it executed to the end. If
+there was a \texttt{return} or \texttt{break} in the region's body, it was the
 programmer's responsibility to explicitly unlock the mutex.  For example:
 
 \iconcode{
@@ -599,13 +600,27 @@ critical region: \{ \\
 \>   x := x + 1 \\
 \>   \}
 }
+\noindent
+Release 13.3 removes that obligation: the mutex is automatically unlocked no
+matter how the region is left, allowing the programmer to write
+\iconcode{
+critical region: \{ \\
+\>   if x {\textgreater} 100 then return\\
+\>   x := x + 1 \\
+\>   \}
+}
+\noindent
+Another change introduced in release 13.3 is that \texttt{critical mtx: expr}
+produces the value of \texttt{expr} (previously, it produced the value of
+\texttt{mtx}).
 
+\bigskip
 In some situations, a thread might have several tasks to finish and may not want
 to block waiting for a mutex that is locked by another thread. For example, if a
 thread is creating items that can be inserted in one of several shared queues,
 the thread can insert every new item in the first queue that it
 acquires. \texttt{trylock()} is an alternative \emph{non-blocking} function for
-locking.n If the thread cannot acquire the mutex immediately, the function
+locking. If the thread cannot acquire the mutex immediately, the function
 fails. The most suitable way to use \texttt{trylock()} is to combine it with an
 \texttt{if} statement, where the \texttt{then} body unlocks the mutex after
 finishing the work on the protected object, as follows:

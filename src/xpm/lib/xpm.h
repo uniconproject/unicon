@@ -57,7 +57,10 @@
 #define XpmRevision 11
 #define XpmIncludeVersion ((XpmFormat * 100 + XpmVersion) * 100 + XpmRevision)
 
+/* Check we aren't running macOS on Apple's processors */
+#if !(defined(__APPLE__) && defined(__arm64))
 #define _POSIX_C_SOURCE 200809L
+#endif /* macOS on Apple silicon */
 
 #ifdef FOR_MSW
 # define SYSV                   /* uses memcpy string.h etc. */

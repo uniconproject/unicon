@@ -1,0 +1,435 @@
+#################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+# --------------------------------------------------------------------------------
+# A test harness for auto-unlocking of critical regions
+# 
+#         Don Ward
+#         December 2024
+# --------------------------------------------------------------------------------
+
+global M                        # A table of "mutexes"
+global failures
+global mtx1,mtx2,mtx3,mtx4      # pseudo mutex variables
+
+# ------------------------------------------------------------
+# Replacements for lock and unlock.
+# They're not quite the same interface: they return the lock
+# value rather than the lock itself, so lock(lock(x)) won't work.
+# Returning the lock value is more useful when tracing.
+procedure lock(mtx)
+   return 0+(M[mtx] +:= 1)
+end
+
+procedure unlock(mtx)
+   return 0+(M[mtx] -:= 1)
+end
+
+# ------------------------------------------------------------
+procedure setup()
+   mtx1:="mtx1"; mtx2:="mtx2"; mtx3:="mtx3"; mtx4:="mtx4"
+   failures := 0
+   reset()
+end
+
+# ------------------------------------------------------------
+# Prevent failures in one test from cascading into the next
+procedure reset()
+   M := table(0)
+end
+
+# ------------------------------------------------------------
+# Report a failure and bump count of failures
+procedure Err(m[])
+   push(m, &errout)
+   put(m, "\n")
+   writes ! m
+   failures +:= 1
+end
+
+# ------------------------------------------------------------
+# Check that the mutexes in m have the expected values in v
+procedure check_lock_values( mess : string : "", m, v)
+   local n, L, e := 0
+   if type(m) == "list" & type(v) == "list" & *m = *v then {
+      L := []
+      every n := 1 to *m do {
+         put(L, m[n], "=", M[m[n]], " ")
+         if  M[m[n]] ~= v[n] then e+:=1
+      }
+      if e = 0 then return
+      push(L, "Lock values are [", mess); put(L, "] should be [")
+      every put(L, !v, " "); put(L, "]")
+      Err ! L         
+   } else {
+      Err("check_lock_values: parameter error")
+   }
+end
+
+# ------------------------------------------------------------
+# Check that all mutexes are unlocked
+procedure check_all_unlocked(mess : string : "")
+   local m, bad
+   every m := key(M) do {
+      if M[m] > 0 then {Err(mess, "Mutex ", m , " is locked (", M[m], ")"); bad := 1 }
+      if M[m] < 0 then {Err(mess, "Mutex ", m , " is over unlocked (", M[m], ")"); bad := 1 }
+   }
+   if /bad then return
+   # else fail
+end
+
+# ------------------------------------------------------------
+# Test procedures start here
+
+# Test that the lock and unlock replacements work as expected
+procedure test_lock_unlock()
+   local mtx := "mtx"
+   lock(mtx)
+   if M[mtx] ~= 1 then {
+      Err("Failure in lock()",
+          " Value should be 1 but is ", M[mtx])
+      fail
+   }
+   unlock(mtx)
+   if M[mtx] ~= 0 then {
+      Err("Failure in unlock()",
+          " Value should be 0 but is ", M[mtx])
+      fail
+   }
+   return # success
+end
+
+# ------------------------------------------------------------
+# Test auto lock/unlock of a single critical region
+procedure test_critical()
+   local mtx := "mtx"
+   critical mtx: {
+      if M["mtx"] ~= 1 then Err("Auto-lock failure in critical section: lock value = ", M[mtx])
+   }
+   if M["mtx"] ~= 0 then Err("Auto-unlock failure in critical section: lock value = ", M[mtx])
+end
+
+# ------------------------------------------------------------
+# test two nested critical regions
+procedure test_nested_critical2()
+   local mtx1 := "mtx1", mtx2 := "mtx2"
+   critical mtx1: {
+      check_lock_values("crit2 lock: ", ["mtx1","mtx2"], [1,0])
+      critical mtx2: {
+         check_lock_values("crit2 lock: ", ["mtx1","mtx2"], [1,1])
+      }
+      check_lock_values("crit2 unlock: ", ["mtx1","mtx2"], [1,0])
+   }
+   check_all_unlocked("crit2 ")
+end
+
+# ------------------------------------------------------------
+# Test slightly more complicated nesting
+procedure test_nested_critical4()
+   critical mtx1: {
+      check_lock_values("crit4 lock: ", ["mtx1","mtx2","mtx3","mtx4"], [1,0,0,0])
+      critical mtx2: {
+         check_lock_values("crit4 lock: ", ["mtx1","mtx2","mtx3","mtx4"], [1,1,0,0])
+         critical mtx3: {
+            check_lock_values("crit4 lock: ", ["mtx1","mtx2","mtx3","mtx4"], [1,1,1,0])
+         }
+         check_lock_values("crit4 unlock: ", ["mtx1","mtx2","mtx3","mtx4"], [1,1,0,0])
+         critical mtx4: {
+            check_lock_values("crit4 unlock: ", ["mtx1","mtx2","mtx3","mtx4"], [1,1,0,1])
+         }
+         check_lock_values("crit4 unlock: ", ["mtx1","mtx2","mtx3","mtx4"], [1,1,0,0])
+      }
+      check_lock_values("crit4 unlock: ", ["mtx1","mtx2","mtx3","mtx4"], [1,0,0,0])
+   }
+   check_all_unlocked("crit4 ")
+end
+
+# ------------------------------------------------------------
+# Test that fail, return, and return expr unlock as expected
+procedure fail_return(x)
+   if x = 1 then fail
+   check_lock_values("fail/return 1 ", [mtx1,mtx2], [0,0])
+   if x = 2 then return
+   check_lock_values("fail/return 2 ", [mtx1,mtx2], [0,0])
+   if x = 3 then return 3
+   check_lock_values("fail/return 3 ", [mtx1,mtx2], [0,0])
+   critical mtx1: {
+      check_lock_values("fail/return mtx1 1 ", [mtx1,mtx2], [1,0])
+      if x = 4 then fail
+      check_lock_values("fail/return mtx1 2 ", [mtx1,mtx2], [1,0])
+      if x = 5 then return
+      check_lock_values("fail/return mtx1 3 ", [mtx1,mtx2], [1,0])
+      if x = 6 then return 3
+      check_lock_values("fail/return mtx1 4 ", [mtx1,mtx2], [1,0])
+      critical mtx2: {
+         check_lock_values("fail/return mtx1 mtx2 1 ", [mtx1,mtx2], [1,1])
+         if x = 7 then fail
+         check_lock_values("fail/return mtx1 mtx2 2 ", [mtx1,mtx2], [1,1])
+         if x = 8 then return
+         check_lock_values("fail/return mtx1 mtx2 3 ", [mtx1,mtx2], [1,1])
+         if x = 9 then return 3
+         check_lock_values("fail/return mtx1 mtx2 4 ", [mtx1,mtx2], [1,1])
+      }
+      check_lock_values("fail/return mtx2 unlock ", [mtx1,mtx2], [1,0])
+   }
+   check_lock_values("fail/return mtx2 unlock ", [mtx1,mtx2], [0,0])
+end
+
+procedure test_fail_return()
+   local n
+   every n := 1 to 10 do { fail_return(n); check_all_unlocked("check_fail/return ") }
+end
+
+# ------------------------------------------------------------
+# Test break and next in a single critical region
+procedure test_brknxt(b, n, bn, bb)
+   local x, rpt := 0
+
+   repeat {
+      if 2 <= (rpt +:= 1) then break; # Ensure we don't get stuck
+      check_all_unlocked("check_break ")
+      critical mtx1: {
+         every x := 1 to 4 do {
+            check_lock_values("check_break 1 ", [mtx1], [1])
+            if x = b then break;
+            if x = n then next;
+            if x = bn then break next;
+            if x = bb then break break;
+            }
+         check_lock_values("check_break 2 ", [mtx1], [1])
+         if x = b then b := 0
+      }
+      check_all_unlocked("check_break 3 ")
+   }
+   check_all_unlocked("check_break 4 ")
+end
+
+procedure test_brk_expr(x)
+   return repeat {
+      critical mtx4: {
+         repeat {
+            break break check_lock_values("brk expr ", [mtx4], [1]) & x
+         }
+      }
+   }
+end
+
+procedure test_brk_expr1(x)
+   critical mtx4: {
+      return repeat {
+         critical mtx1: {
+            critical mtx2: {
+               repeat {
+                  critical mtx3: {
+                     break break check_lock_values("brk expr1 ", [mtx1,mtx2,mtx3], [1,1,1]) & x
+                  }
+               }
+            }
+         }
+      }
+   }
+end
+
+procedure test_break_next()
+   test_brknxt(1,0,0,4)
+   test_brknxt(0,1,0,4)
+   test_brknxt(0,0,2,4)
+   test_brknxt(0,0,0,2)
+   if test_brk_expr(42) ~= 42 then Err("break break expr: wrong value")
+   check_all_unlocked("test_break_next 1 ")
+   if test_brk_expr1(1001) ~= 1001 then Err("break break expr 1: wrong value")
+   check_all_unlocked("test_break_next 2 ")
+end
+
+# ------------------------------------------------------------
+# test suspend
+procedure test_susp0()
+   suspend 1 to 2
+   check_lock_values("susp0 1,2 ", [mtx1,mtx2], [0,0])
+   critical mtx1: {
+      suspend 3 to 4
+      check_lock_values("susp0 3,4 ", [mtx1,mtx2], [1,0])
+      critical mtx2: {
+         suspend 5 to 6
+         check_lock_values("susp0 5 6 ", [mtx1,mtx2], [1,1])
+      }
+   }
+end
+
+procedure test_suspDo()
+   local x := 0
+   suspend 1 to 2 do {x +:= 1}
+   critical mtx1: {
+      suspend 3 to 4 do check_lock_values("suspDo 3,4 ", [mtx1,mtx2], [1,0]) & x+:=1
+      critical mtx2: {
+         suspend 5 to 6 do check_lock_values("suspDo 5,6 ", [mtx1,mtx2], [1,1]) & x+:=1
+      }
+   }
+   return x+1
+end
+
+procedure test_suspend()
+   local x, ans
+
+   x := 0
+   every ans := test_susp0() do {
+      check_all_unlocked("test_suspend ")
+      if ans ~= (x+:=1) then Err("Suspend return error (", ans, " ~= ", x, ")")
+   }
+   check_all_unlocked("test_suspend 1 ")
+   if ans ~= 6 then Err("Suspend: Final answer should be 6, is ", ans)
+
+   x := 0
+   every ans := test_suspDo() do {
+      check_all_unlocked("test_suspend 2 ")
+      if ans ~= (x+:=1) then Err("Suspend-do return error (", ans, " ~= ", x, ")")
+   }
+   check_all_unlocked("§test_suspend 3 ")
+
+end
+
+# ------------------------------------------------------------
+# Test lock/unlock inside methods
+
+class A_Class (mtx)
+
+   method a(v)
+      critical mtx: {
+         check_lock_values("A.a() ", [mtx], [v+1])
+      }
+      check_lock_values("A.a() ", [mtx], [v])
+   end
+
+   method b()
+      critical mtx: {
+         a(1)
+      }
+   end
+
+   method c(x)
+      critical mtx: {
+         check_lock_values("A.c() 1 ", [mtx], [1])
+         if 0 = x%2 then return x+1
+         check_lock_values("A.c() 2 ", [mtx], [1])
+      }
+      check_lock_values("A.c() 3 ", [mtx], [0])
+      return x
+   end
+
+   method d()
+      critical mtx: {
+         suspend 8 to 10
+      }
+   end
+
+   initially()
+       mtx := "A_mtx"
+end
+
+procedure test_methods()
+   local c := A_Class(), n
+
+   c.a(0);  check_all_unlocked("test_methods 1 ")
+   c.b();   check_all_unlocked("test_methods 2 ")
+   every c.c(n := 3 to 7) do check_all_unlocked("test_methods " || n || " ")
+   every n := c.d() do check_all_unlocked("test_methods " || n || " ")
+end
+
+# ------------------------------------------------------------
+procedure test_invoke_1(n)
+   return n (
+             1,
+             critical mtx1: check_lock_values("invoke_1 ", [mtx1], [1]) & 2,
+             3)\1
+end
+
+procedure test_invoke_2(n)
+   critical mtx2:
+   return n (
+             1 & 1,
+             critical mtx1: 2,
+             3)\1
+end
+
+procedure test_invoke_4(n)
+   critical mtx4:
+   return n (
+             critical mtx1: 1,
+             critical mtx2: 2,
+             critical mtx4: critical mtx3: 4 & 3
+             )\1
+end
+
+procedure test_invocation (args)
+   local n, ans
+   every n := 1 to 3 do {
+      ans := test_invoke_1(n)
+      check_all_unlocked("invoke 1 ")
+      if ans ~= n then Err("invoke_1 answer should be ", n, " but is ", ans)
+   }
+
+   # This test always fails because of data backtracking when the selection expr
+   # is outside the range of expressions from which to select something.
+   # Haven't found a magic formula to stop that happening.
+   if *args > 0 then {
+      if test_invoke_1(4) then Err("test_invoke_1(4) should fail")
+      check_all_unlocked("invoke 1 (fail) ")
+   }
+   reset()
+   
+   every n := 1 to 3 do {
+      ans := test_invoke_2(n)
+      check_all_unlocked("invoke 2 ")
+      if ans ~= n then Err("invoke_2 answer should be ", n, " but is ", ans)
+   }
+   if test_invoke_2(4) then Err("test_invoke_2(4) should fail")
+   check_all_unlocked("invoke 2 (fail) ")
+   reset()
+   
+   every n := 1 to 3 do {
+      ans := test_invoke_4(n)
+      check_all_unlocked("invoke 4 ")
+      if ans ~= n then Err("invoke_4 answer should be ", n, " but is ", ans)
+   }
+
+   # This test always fails because of data backtracking when the selection expr
+   # is outside the range of expressions from which to select something.
+   # Haven't found a magic formula to stop that happening.
+   if *args > 0 then {
+      if test_invoke_4(4) then Err("test_invoke_4(4) should fail")
+      check_all_unlocked("invoke 4 (fail) ")
+   }
+   reset()
+end
+
+procedure test_explicit_unlock()
+   critical mtx1: {
+      if reset() then unlock(mtx1) # Should generate a compiler warning
+   }
+end
+
+   
+
+# ------------------------------------------------------------
+# To do all tests (even ones that always fail) supply an argument. Anything will do.
+procedure main (args)
+   setup()
+   if *args = 0 then {
+      if "string"  ~== type(critical mtx1: "hello") then stop("This program requires auto-unlock of critical regions")
+   }
+
+   if test_lock_unlock() then { # If lock or unlock fail then there is no point in carrying on
+      test_critical(); reset()
+      test_nested_critical2(); reset()
+      test_nested_critical4(); reset()
+      test_fail_return(); reset()
+      test_break_next(); reset()
+      test_suspend(); reset()
+      test_methods(); reset()
+      test_invocation(args); reset()
+   }
+
+   if failures = 0 then write(&errout, "No errors")
+end

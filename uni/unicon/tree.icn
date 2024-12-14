@@ -6,9 +6,14 @@ $include "ytab_h.icn"
 # it might make sense to someday turn it into a class.
 #
 
-record treenode(label, children)
+record treenode(label, parent, children)
 procedure node(label, kids[])
-   return treenode(label, kids)
+   local k, parent
+   parent := treenode(label, &null, kids)
+   every k := !kids do { # not all children are treenodes, some are tokens
+      if type(\k) == "treenode" then k.parent := parent
+   }
+   return parent
 end
 procedure leaf(label)
    return treenode(label)
@@ -1080,7 +1085,8 @@ procedure print_node(node, childindex, indent)
       }
       "integer"|
       "string": {  write(s, type(node), ": ", image(node)) }
-      "token": {   write(s, "token(", node.tok, "): ", image(node.s)) }
+      "token": {   write(s, "token(", node.tok, "): ", image(node.s), 
+                         " [", node.filename, " ", node.line, ".", node.column, "]") }
       "null"|
       "declaration__state"|
       "argList__state": { write(s, image(node)) }

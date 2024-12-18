@@ -381,15 +381,28 @@ int co_chng(struct b_coexpr *ncp,
     * Enter the program state of the co-expression being activated
     */
    ENTERPSTATE(ncp->program);
-#ifdef Concurrent
+
+#ifdef PthreadCoswitch
    /*
-    * Enter the threadstate of the co-expression being activated
+    * Enter the threadstate of the co-expression being activated.
+    * With native coswitch, the same posix thread is used for both
+    * old and new co-expressions, we only need to switch state if
+    * we are switching programs.
+    * With Non native coswitch, we fallback to Pthread coswitch.
+    * Each co-expression has its own posix thread. So always switch
+    * to the new thread state when changing co-expressions.
     */
+#ifdef NativeCoSwitch
    if (ccp->program != ncp->program) {
       curtstate = ncp->tstate;
       global_curtstate = ncp->tstate;
       }
-#endif                                  /* Concurrent */
+#else                                   /* NativeCoswitch */
+   curtstate = ncp->tstate;
+   global_curtstate = ncp->tstate;
+#endif                                  /* NativeCoswitch */
+
+#endif                                  /* PthreadCoswitch */
 #endif                                  /* !COMPILER */
 
 
@@ -472,10 +485,10 @@ int co_chng(struct b_coexpr *ncp,
     * like ccp might not be correct after the coswitch.  We used to dodge
     * this by using the global, k_current, but that's not global anymore.
     */
-#ifdef Concurrent
+#ifdef PthreadCoswitch
    curtstate =  global_curtstate ? global_curtstate :
       pthread_getspecific(tstate_key);
-#endif                                  /* Concurrent */
+#endif                                  /* PthreadCoswitch */
 
    return BlkD(k_current,Coexpr)->coexp_act;
 

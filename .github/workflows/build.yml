@@ -79,7 +79,8 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: macos-13, name: 'macOS', opt: '--enable-werror CC=clang CXX=clang++' }
+        -  { os: macos-13, name: 'macOS x86', opt: '--enable-werror CC=clang CXX=clang++' }
+        -  { os: macos-latest, name: 'macOS arm', opt: 'CC=clang CXX=clang++' }
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -125,7 +126,7 @@ jobs:
         case "${{ matrix.cfg.os }}" in
            ubuntu*|debian*)
               apt-get update -q -y
-              DEBIAN_FRONTEND="noninteractive" apt-get install -q -y build-essential make autotools-dev libc6 libgcc1 libgl1-mesa-glx
+              DEBIAN_FRONTEND="noninteractive" apt-get install -q -y build-essential make autotools-dev libc6 libgcc1 libgl1-mesa-dev
               DEBIAN_FRONTEND="noninteractive" apt-get install -q -y libssl-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev libxft-dev
               DEBIAN_FRONTEND="noninteractive" apt-get install -q -y libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev libfreetype6-dev
               ;;
@@ -173,15 +174,21 @@ jobs:
     strategy:
       matrix:
         platform:
-         -  { arch: aarch64 }
-         -  { arch: armv7 }
+         -  { arch: aarch64 } # emulated
+         -  { arch: armv7 }   # emulated
+         -  { arch: riscv64 } # emulated
          -  { arch: x86 }
     steps:
+    - name: Install extra dependencies
+      shell: 'sh'
+      run: |
+        sudo apt update && sudo apt install -y binfmt-support
+
     - name: alpine
       uses: jirutka/setup-alpine@v1
       with:
         arch:  ${{ matrix.platform.arch }}
-        branch: v3.19
+        branch: v3.20
         packages: >
           build-base
           diffutils
@@ -232,6 +239,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update -q -y
+        sudo apt install -y binfmt-support
         if [[ "${{ matrix.cfg.name }}" = "Ubuntu 32-bit" ]]
         then
         # Install tools to cross compile 32-bit

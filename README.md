@@ -83,7 +83,7 @@ Most of these libraries are listed below for common Linux distibutions.
 
 Debian/Ubuntu:
 ```
-apt install libgl1-mesa-glx libssl-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev
+apt install libgl1-mesa-dev libssl-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev
             libxft-dev libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev
 	    libfreetype6-dev
 ```

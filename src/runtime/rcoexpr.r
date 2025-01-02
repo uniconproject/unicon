@@ -392,7 +392,7 @@ int co_chng(struct b_coexpr *ncp,
     * Each co-expression has its own posix thread. So always switch
     * to the new thread state when changing co-expressions.
     */
-#ifdef NativeCoSwitch
+#ifdef NativeCoswitch
    if (ccp->program != ncp->program) {
       curtstate = ncp->tstate;
       global_curtstate = ncp->tstate;
@@ -444,15 +444,13 @@ int co_chng(struct b_coexpr *ncp,
    /*
     * Time to switch context to the new co-expression.
     * the type of switch depends on whether the new co-expression
-    * has its own attached thread or not or if it is of type
-    * posix and being activated for the first time
+    * has its own attached thread or not.
     */
 
     MUTEX_LOCKBLK(ncp, "lock co-expression");
 
 #ifdef PthreadCoswitch
    if (IS_TS_ATTACHED(ncp->status)) {
-      SET_FLAG(ncp->status, Ts_Attached);
       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
       pthreadcoswitch(ccp, ncp, ccp->status, ncp->status );
       }

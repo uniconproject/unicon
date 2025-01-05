@@ -831,19 +831,20 @@ int handle_misc(wdp wd, wbp w)
              */
             struct descrip d;
             int ret = 0;
-            if (w && (evwin == w->window->win)) ret = 1;
-            if (ws->inputmask & WindowClosureMask) {
-               MakeInt(WINDOWCLOSED, &d);
-               qevent(wb->window, &d, 0, 0, 0, 0);
+            if (w && (evwin == w->window->win))
+               ret = 1;
+            MakeInt(WINDOWCLOSED, &d);
+            qevent(ws, &d, 0, 0, 0, 0);
+            if (ws->inputmask & WindowClosureMask)
                return 1;
-               }
+
             SETCLOSED((wbp)wb);
             wclose(wb);
-            MakeInt(WINDOWCLOSED, &d);
-            qevent(wb->window, &d, 0, 0, 0, 0);
             BlkD(lastEventWin,File)->status &= ~(Fs_Write);
-            if (ret) return 1;
-            break;
+            if (ret)
+               return 1;
+            else
+               break;
             }
          case DestroyNotify:
             if (!ISZOMBIE(wb)) return -1; /* error #141 */

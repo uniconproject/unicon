@@ -279,6 +279,51 @@ jobs:
         cat unicon-config.log
         cat unicon-features.log
 
+  FreeBSD:
+   runs-on: ubuntu-latest
+   name: FreeBSD
+
+   steps:
+   - uses: actions/checkout@v4
+   - name: Start FreeBSD VM
+     id: vm
+     uses: vmactions/freebsd-vm@v1
+     with:
+      usesh: true # default shell is csh, switch to sh
+      prepare: |
+        pkg install -y -f autoconf gmake lang/gcc git
+
+   - name: Configure
+     shell: freebsd {0}
+     run: |
+      cd $GITHUB_WORKSPACE
+      git config --global --add safe.directory $GITHUB_WORKSPACE
+      ./configure
+
+   - name: Make
+     shell: freebsd {0}
+     run: cd $GITHUB_WORKSPACE && gmake
+
+   - name: HtmlDoc
+     shell: freebsd {0}
+     run: cd $GITHUB_WORKSPACE && gmake htmldoc
+
+   - name: Test
+     shell: freebsd {0}
+     run: cd $GITHUB_WORKSPACE && gmake Test
+
+   - name: TestReport
+     shell: freebsd {0}
+     run: cd $GITHUB_WORKSPACE && gmake -C tests Report
+
+   - name: Summary
+     shell: freebsd {0}
+     run: |
+      cd $GITHUB_WORKSPACE
+      cat unicon-config.log
+      cat unicon-features.log
+
+
   DebianPkg:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}

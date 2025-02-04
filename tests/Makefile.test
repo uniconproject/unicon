@@ -44,8 +44,14 @@ ifeq ($(TOS),Darwin)
 $(MACOSSKIP):
 	-@echo "[Testing $@]... Skip on Mac OS"
 else
+ifeq ($(TOS),FreeBSD)
+#skip on FreeBSD
+$(BSDSKIP):
+	-@echo "[Testing $@]... Skip on $(TOS)"
+else
 $(LINUXSKIP):
 
+endif
 endif
 endif
 

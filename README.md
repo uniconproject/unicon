@@ -97,7 +97,7 @@ dnf install libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-
 Go into the Unicon directory and run:
 ```
 ./configure
-make
+make -j
 ```
 After that you can add `unicon/bin` to the $PATH environment variable or install Unicon instead:
 ```
@@ -115,6 +115,19 @@ explicitly set the compiler as follows:
 If you want access to the graphics facilities of Unicon, you also need to download
 and install the XQuartz package from https://www.xquartz.org/.
 
+### *BSD
+
+installl build dependencies. Make sure to use GNU `gmake` when building.
+```
+pkg install -y -f autoconf gmake lang/gcc git
+```
+
+Configure, make, and optionally install unicon:
+```
+./configure
+gmake -j
+gmake install
+```
 
 ### Windows
 There are two possibilities depending on the choice of the C runtime library.  You can choose

@@ -6,31 +6,31 @@ include ../Makedefs
 ifdef Verbose
 TEE=tee
 else
-TEE=cat - > 
+TEE=cat - >
 endif
 
-# 
+#
 # for verbose progress, run as:
-# make verbose
-# or 
-# Verbose=1 make -e [target ...]
+# $(MAKE) verbose
+# or
+# Verbose=1 $(MAKE) -e [target ...]
 #
 
 DIFFTST = moveco co
-GREPTST = cobench 
-GREPODTST = stressCo 
+GREPTST = cobench
+GREPODTST = stressCo
 GREPDIFFTST = stressCollectCo
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 #IGNORE=$(COTST)
-# ^ skipped. 
+# ^ skipped.
 TARGETS= $(DIFFTST) $(GREPTST) $(GREPODTST) $(GREPDIFFTST)
 
 # Do the tests
 Test: DoTest
 
-Uniconc : 
-	SKIP=moveco Verbose=1 UC="$(UCC)" make -e Test
-#  moveco does coexpr(), not supported by iconc yet, skip. 
+Uniconc :
+	SKIP=moveco Verbose=1 UC="$(UCC)" $(MAKE) -e Test
+#  moveco does coexpr(), not supported by iconc yet, skip.
 
 
 ${GREPTST} : % : %.icn local stand/%.std
@@ -54,7 +54,7 @@ ${GREPDIFFTST} : % : %.icn local stand/%.std stand/%.grep
 	grep -f stand/$@.grep local/$@.out | diff -wy stand/$@.std - > $@.diff; \
 	fi || true
 	-@rm -f $@$(EXE)
-# This will pass if all lines of .out with ANY part matching any line in .grep match .std 
+# This will pass if all lines of .out with ANY part matching any line in .grep match .std
 
 ${GREPODTST} : % : %.icn local stand/%.std stand/%.grep
 	-@$E -n "[Testing $@]... "
@@ -66,7 +66,7 @@ ${GREPODTST} : % : %.icn local stand/%.std stand/%.grep
 	grep -o -f stand/$@.grep local/$@.out | diff -wy stand/$@.std - > $@.diff; \
 	fi || true
 	-@rm -f $@$(EXE)
-# This will pass if all parts of lines of .out  matching any line in .grep match .std 
+# This will pass if all parts of lines of .out  matching any line in .grep match .std
 
 
 include ../Makefile.test
@@ -74,13 +74,13 @@ include ../Makefile.test
 #icont Icont Test-icont :
 #	SKIP=stressCollectCo IC=$(BIN)/icont sh Test-icon $(COTST)
 
-icont Icont : 
-	SKIP=stressCollectCo UC="$(BIN)/icont" make -e Test
+icont Icont :
+	SKIP=stressCollectCo UC="$(BIN)/icont" $(MAKE) -e Test
 
-iconc Iconc : 
-	SKIP="moveco stressCollectCo" Verbose=1 UC="$(BIN)/iconc" make -e Test
-#  moveco does coexpr(), not supported by iconc yet, skip. 
+iconc Iconc :
+	SKIP="moveco stressCollectCo" Verbose=1 UC="$(BIN)/iconc" $(MAKE) -e Test
+#  moveco does coexpr(), not supported by iconc yet, skip.
 
-Verbose verbose: 
+Verbose verbose:
 	Verbose=1 $(MAKE) -e
 

@@ -6,6 +6,8 @@ IGNORE=rusage
 
 WINSKIP=pty_uni tcp rusage kill wait
 
+BSDSKIP=pty_uni
+
 # default is to run all tests, using icont
 Test:  DoTest
 

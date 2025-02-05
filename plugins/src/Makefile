@@ -45,19 +45,19 @@ macos: $(PCMN) $(PMOS)
 
 # Build cross platforms plugins
 $(PCMN): $(LIBD)/uso.u
-	make -C $@
+	$(MAKE) -C $@
 
 # Build Windows plugins
 $(PWIN): $(LIBD)/uso.u
-	make -C $@
+	$(MAKE) -C $@
 
 # Build *nix plugins
 $(PNIX): $(LIBD)/uso.u
-	make -C $@
+	$(MAKE) -C $@
 
 # Build Mac OS plugins
 $(PMOS): $(LIBD)/uso.u
-	make -C $@
+	$(MAKE) -C $@
 
 # Unicon interface
 $(LIBD)/%.u:	%.icn $(CSRC)

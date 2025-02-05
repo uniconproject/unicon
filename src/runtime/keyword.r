@@ -231,6 +231,8 @@ keyword{2} dateline
 
 #ifdef _UCRT
       _get_timezone(&tz_sec);
+#elif defined(FreeBSD)
+       tz_sec = ct->tm_gmtoff;
 #elif defined(SUN) || NT || defined(HAVE_TIMEZONE)
       tz_sec = timezone;
 #else

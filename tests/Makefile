@@ -15,13 +15,13 @@ Test: Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir; \
 	done
-	@make -s Summary
+	@$(MAKE) -s Summary
 
 all: Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir all; \
 	done
-	@make -s Summary
+	@$(MAKE) -s Summary
 
 Hdr:
 	@echo
@@ -29,7 +29,7 @@ Hdr:
 	@echo "           Unicon Test Suite"
 	@$E -n "    "
 	@$(UC) -version
-	@echo "   ====================================="	
+	@echo "   ====================================="
 	@echo
 
 Summary: Hdr summary
@@ -43,7 +43,7 @@ Report:  Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir Report; \
 	done
-	@make -s Summary
+	@$(MAKE) -s Summary
 	@echo "====================================="
 	@echo " This Unicon Build:"
 	@$(UC) -features
@@ -54,7 +54,7 @@ UNAME=$(shell uname )
 RNAME=unicon-$(UNAME)-$(ARCH).report
 
 publish:
-	make -s Report > $(RNAME)
+	$(MAKE) -s Report > $(RNAME)
 	scp $(RNAME) web.sf.net:/home/project-web/unicon/htdocs/test/auto/
 
 Test-icont:	; cd general; $(MAKE) Test; cd ../posix; $(MAKE) Test

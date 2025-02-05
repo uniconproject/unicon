@@ -316,7 +316,7 @@ AC_CFLAG([-fno-omit-frame-pointer])
 
 AC_CFLAG([-fno-strict-aliasing])
 
-if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" ; then
+if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" || test x"$unicon_os" = x"freebsd" ; then
    AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
 fi
 

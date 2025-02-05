@@ -2,7 +2,7 @@
 
 # Do the tests
 DoTest: clean TestHdr $(TARGETS)
-	@make -s Summary
+	@$(MAKE) -s Summary
 
 %.u: %.icn
 	@$(UC) $(UFLAGS) $<
@@ -44,8 +44,14 @@ ifeq ($(TOS),Darwin)
 $(MACOSSKIP):
 	-@echo "[Testing $@]... Skip on Mac OS"
 else
+ifeq ($(TOS),FreeBSD)
+#skip on FreeBSD
+$(BSDSKIP):
+	-@echo "[Testing $@]... Skip on $(TOS)"
+else
 $(LINUXSKIP):
 
+endif
 endif
 endif
 
@@ -77,7 +83,7 @@ ICNFILES=$(patsubst %.diff,%.icn,$(wildcard *.diff))
 %.report: %.diff %.icn
 	@echo "++++++++++++++++++++++++++++"
 	@echo " *** Test: $(filter-out $<,$^) ***"
-	@echo 
+	@echo
 	@echo "----- Expected Output ---------------------------------------- Actual Output -----"
 	@cat $<
 	@echo
@@ -86,7 +92,7 @@ TestHdr:
 	@echo
 	@echo "========================="
 	@echo "   $(TESTNAME) Test Suite"
-	@echo "========================="	
+	@echo "========================="
 	@echo
 
 Summary:

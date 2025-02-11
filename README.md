@@ -150,7 +150,8 @@ pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86
 - Install the optional libraries for a full build (Unicon will build without them but some features
 will be absent).
 ```
-pacman -S mingw-w64-ucrt-x86_64-openssl  mingw-w64-ucrt-x86_64-libpng mingw-w64-ucrt-x86_64-libjpeg-turbo 
+pacman -S mingw-w64-ucrt-x86_64-openssl  mingw-w64-ucrt-x86_64-libpng
+pacman -S mingw-w64-ucrt-x86_64-libjpeg-turbo mingw-w64-ucrt-x86_64-freetype
 ```
 
 - Clone the Unicon repository:
@@ -162,7 +163,7 @@ git clone --config core.autocrlf=input https://github.com/uniconproject/unicon
 
 -  Configure Unicon:
 ```
-./configure --build=x86_64-w64-mingw32
+./configure --build=x86_64-w64-mingw32 CPPFLAGS=-I/ucrt64/include/freetype2
 ```
 The option `x86_64-w64-mingw32` ensures the build is 64-bit. After the script finishes do:
 ```

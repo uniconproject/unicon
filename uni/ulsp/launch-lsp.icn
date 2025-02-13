@@ -66,7 +66,11 @@ procedure main(args)
 
    if member(opts, "-build-lsif") then {
       lsp_database := LSPDB()
-      lsp_database.build(opts["-build-lsif"])
+      if (opts["-build-lsif"] == "all") then {
+         lsp_database.build();
+      } else {
+         lsp_database.build(opts["-build-lsif"])
+      }
       indexer := LSIFIndexer(lsp_database)
       indexer.build_index()
       exit(1)
@@ -83,7 +87,7 @@ procedure main(args)
    # Set mode for server to run in, based on opts.
    member(opts, mode := "c") | (mode := "s")
 
-   fail
+   #fail
    ulsp_server := Server(sock, mode)
    ulsp_server.run()
 

@@ -8,18 +8,24 @@ global projectID, documentID, resultSetID, rangeID, range_list, document_list, r
 #  Generates LSIF information by going through the packages in the database and create LSIF vertices and edges
 #  from each project, file, hover info, etc. 
 #  TODO:
-#        Make extension save vertices/edges per document rather than entire
-#        References/goToDefinition across documents
-#        Fix definition.icn getting confused, like with multiple start()s in different classes
-#        Fix issue with installed unicon rather than normal way
 #        Have .lsif file be saved within extension rather than in ulsp
-#        
+#        Fix definition.icn getting confused, like with multiple start()s in different classes
+#        Begin work on BASE protocol implementation
+#
 #        Completed:
-#        Fixed Project Vertex "name" field, fixed document end vertex, integrated into unicon-lsp-main
-#        extension, changed it to load automatically once LSP starts, made it check the projectRoot
-#        in the metaData vertex of the .lsif file to make sure the unicon root directory matches,
-#        and if not then it checks the workspace you're in for a .lsif file and change all references
-#        of URI's to match the unicon root directory the user is currently in
+#        Fixed bug where LSP would crash when hovering over output.lsif file
+#        Finished abstract for poster 
+#        Generated an updated full LSIF output file from all directories 
+#        Read through all of Base Protocol Specification
+#        
+#
+#        Plan for next meeting:
+#        Merge changes to extension and Unicon
+#        Get started on Base Protocol:
+#        https://microsoft.github.io/language-server-protocol/specifications/base/0.9/specification/
+#        
+#        
+#
 #
 
 class LSIFIndexer(
@@ -68,20 +74,6 @@ class LSIFIndexer(
                fake_params["position"]["character"] := 0
                range_list := []
                uri := path || "/" || file_in_pack.getName()
-               #JUST FOR TESTING
-               #if (test == 3) then break
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/unicon_built_in_functions.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/test.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/completion.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/lsif.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/hover.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/launch-lsp.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/database.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/filespace.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/server.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/signature.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/logger.icn") then next
-               if (uri == "c:/msys64/home/nshap/unicon/uni/ulsp/definition.icn") then next
 
                Logger.info("[LSIF] Processing: " || uri)
                createDocumentVertex(uri)
@@ -141,8 +133,6 @@ class LSIFIndexer(
                if \range_list then {
                   createContainsEdge(documentID, range_list)
                }
-               #JUST FOR TESTING
-               #test +:= 1
             }
          }
          if \resultSet_table then {
@@ -161,7 +151,6 @@ class LSIFIndexer(
                }
             }
          }
-         #write(ximage(resultSet_table) || "\n\n\nREFERENCES:\n\n\n" || ximage(reference_table))
          if \document_list then {
             every documentID := !document_list do {
                createEventVertex("document", "end", documentID)
@@ -169,8 +158,6 @@ class LSIFIndexer(
             createContainsEdge(projectID, document_list)
          }
          createEventVertex("project", "end", projectID)
-         #JUST FOR TESTING
-         #fail
       }
       close(outFile)
    end

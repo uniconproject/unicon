@@ -250,6 +250,7 @@ class JRPC_HTTPSocket(sock)
    method send_msg(msg)
       local data
       data := msg.get_content()
+      data := replace(data, "c:/", "/c%3A/") #BUG FIX check for windows
       writes(sock, CONTENT_LENGTH, *data, "\r\n\r\n", data)
    end
 

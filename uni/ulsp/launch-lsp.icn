@@ -8,6 +8,7 @@
 #   -Instantiates Server class and calls run() to start server on validated port number.
 #
 import ulsp
+import json
 link options
 link basename
 link ximage
@@ -28,15 +29,16 @@ procedure usage()
    write("\t --logfile <filename> : log file")
    write("\t --loglevel <level> : log level from 0-17. log levels 8-17 are used for debugging")
    write("\t --debug-kind  <kind>: debug kind to log")
+   write("\t --build-lsif <directory> : directory to parse for LSIF information")
    write("\t -h : show this help\n")
    exit(-1)
 end
 
 procedure validate_args(args)
    local opts
-   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-kind: -h! -c! -s!", usage)
+   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-kind: -h! -c! -s! --build-lsif:", usage)
    if *opts = 0 then usage()
-   member(opts, "-socket") | usage()
+   member(opts, "-socket") | member(opts, "-build-lsif") | usage()
    return opts
 end
 
@@ -50,7 +52,7 @@ procedure ulsp_sig_handler(siganl)
 end
 
 procedure main(args)
-   local opts, sock, mode
+   local opts, sock, mode, lsp_database, indexer, lsif_responder
 
    trap("SIGINT", ulsp_sig_handler)
 
@@ -62,6 +64,17 @@ procedure main(args)
    if \opts["-debug-kind"] then
       Logger.add_debug_kind(opts["-debug-kind"])
 
+   if member(opts, "-build-lsif") then {
+      lsp_database := LSPDB()
+      if (opts["-build-lsif"] == "all") then {
+         lsp_database.build();
+      } else {
+         lsp_database.build(opts["-build-lsif"])
+      }
+      indexer := LSIFIndexer(lsp_database)
+      indexer.build_index()
+      exit(1)
+   }
    # Allow passing full host:port as an arg
    sock := opts["-socket"]
    if &features == ("MacOS" | "MS Windows NT") then {
@@ -74,6 +87,9 @@ procedure main(args)
    # Set mode for server to run in, based on opts.
    member(opts, mode := "c") | (mode := "s")
 
+   #fail
    ulsp_server := Server(sock, mode)
    ulsp_server.run()
+
 end
+

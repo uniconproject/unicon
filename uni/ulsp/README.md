@@ -78,19 +78,19 @@ Figure 3: New Extension Host Window After Launch
 Figure 4: Integrated Terminal Window
 ![tempsnip](https://user-images.githubusercontent.com/80660221/201923571-fdae86a1-7de5-4206-821c-d704e3f98b79.png)
 
-- To see any activity between client and server, we must activate our server through an activation event. This activation event can be found in the /package.json file under the "activationEvents" property. The current configuration uses the value "onLanguage:plaintext". This event type monitors the workspace for files opened with the plaintext (basically any file extension - .txt, .icn, .pl, etc.) extension and triggers the activation of our server.
-- Assuming you have an empty workspace such that no files are "opened" in the workspace (right panel) of your vs code extension development host window, your extension development host window will look similar to that of figure 5 (below). Importantly, if your workspace is empty, your server will not be activated. Attempting to view the trace logs will be futile. 
+- To see any activity between client and server, we must activate our server through an activation event. This activation event can be found in the /package.json file under the "activationEvents" property. The current configuration uses the value "onLanguage:plaintext". This event type monitors the filespace for files opened with the plaintext (basically any file extension - .txt, .icn, .pl, etc.) extension and triggers the activation of our server.
+- Assuming you have an empty filespace such that no files are "opened" in the filespace (right panel) of your vs code extension development host window, your extension development host window will look similar to that of figure 5 (below). Importantly, if your filespace is empty, your server will not be activated. Attempting to view the trace logs will be futile. 
 
 <br />
 
-Figure 5: Empty Workspace
+Figure 5: Empty Filespace
 ![tempsnip](https://user-images.githubusercontent.com/80660221/201932122-f4634c5b-1724-4a5c-b6cb-7dcb7767ee31.png)
 
-- To activate the server, simply open or create a file (preferrably with extension type .icn) within the extention development host window. Your workspace will no longer be empty and you should notice the "Unicon Language Server" option in the dropdown menu containing logs (illustrated in figure 5). See figure 6 below for visual representation.
+- To activate the server, simply open or create a file (preferrably with extension type .icn) within the extention development host window. Your filespace will no longer be empty and you should notice the "Unicon Language Server" option in the dropdown menu containing logs (illustrated in figure 5). See figure 6 below for visual representation.
 
 <br />
 
-Figure 6: Non-empty Workspace
+Figure 6: Non-empty Filespace
 ![tempsnip](https://user-images.githubusercontent.com/80660221/201933614-f40a86a2-e720-41cc-9ddb-cd852dc792a3.png)
 
 

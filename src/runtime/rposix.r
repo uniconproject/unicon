@@ -1259,7 +1259,7 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 
 
    if ((s = sock_get(addr)) < 0) {
-     char *p;
+     char *p, fname[BUFSIZ];
 
      /*
       * If the first argument is just a name, it's a unix domain socket.
@@ -1267,9 +1267,11 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
       * empty, it means on any interface.
       */
 
-      if ((p=strrchr(addr, ':')) != NULL) {
+      SAFE_strncpy(fname,addr, sizeof(fname));
+
+      if ((p=strrchr(fname, ':')) != NULL) {
          *p = 0;
-         res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener == 1, af_fam);
+         res0 = uni_getaddrinfo(fname, p+1, is_udp_or_listener == 1, af_fam);
          *p = ':';
 
          if (!res0)

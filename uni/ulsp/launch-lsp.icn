@@ -28,15 +28,16 @@ procedure usage()
    write("\t --logfile <filename> : log file")
    write("\t --loglevel <level> : log level from 0-17. log levels 8-17 are used for debugging")
    write("\t --debug-kind  <kind>: debug kind to log")
+   write("\t --build-lsif <directory> : directory to parse for LSIF information or \"all\" for all directories")
    write("\t -h : show this help\n")
    exit(-1)
 end
 
 procedure validate_args(args)
    local opts
-   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-kind: -h! -c! -s!", usage)
+   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-kind: -h! -c! -s! --build-lsif:", usage)
    if *opts = 0 then usage()
-   member(opts, "-socket") | usage()
+   member(opts, "-socket") | member(opts, "-build-lsif") | usage()
    return opts
 end
 
@@ -50,7 +51,7 @@ procedure ulsp_sig_handler(siganl)
 end
 
 procedure main(args)
-   local opts, sock, mode
+   local opts, sock, mode, lsp_database, indexer
 
    trap("SIGINT", ulsp_sig_handler)
 
@@ -62,6 +63,17 @@ procedure main(args)
    if \opts["-debug-kind"] then
       Logger.add_debug_kind(opts["-debug-kind"])
 
+   if member(opts, "-build-lsif") then {
+      lsp_database := LSPDB()
+      if (opts["-build-lsif"] == "all") then {
+         lsp_database.build();
+      } else {
+         lsp_database.build(opts["-build-lsif"])
+      }
+      indexer := LSIFIndexer(lsp_database)
+      indexer.build_index()
+      exit(0)
+   }
    # Allow passing full host:port as an arg
    sock := opts["-socket"]
    if &features == ("MacOS" | "MS Windows NT") then {

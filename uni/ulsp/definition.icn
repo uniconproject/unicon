@@ -5,12 +5,12 @@ link regexp
 link ximage
 
 class DefinitionHandler(
-   workspace,
+   filehandler,
    params
    )
 
-   method setVariables(new_workspace, new_params)
-      workspace := new_workspace
+   method setVariables(new_filehandler, new_params)
+      filehandler := new_filehandler
       params := new_params
    end
 
@@ -26,10 +26,10 @@ class DefinitionHandler(
       line := params["position"]["line"] + 1
       character := params["position"]["character"] + 1
 
-      context := workspace.getContext(line, character)
+      context := filehandler.getContext(line, character)
 
       signatureHandler := SignatureHandler()
-      signatureHandler.setVariables(workspace)
+      signatureHandler.setVariables(filehandler)
       signatureHandler.handleNewSignature(context)
 
       possibleItems := signatureHandler.getCurrentSigItems()

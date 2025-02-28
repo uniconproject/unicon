@@ -11,7 +11,6 @@
 package ulsp
 
 import UniDoc
-
 link paths
 
 global Logger
@@ -24,19 +23,23 @@ class LSPDB(
    syntax_reserved_words,        # List containing the syntax reserved words (subset of reserved words)
    keywords,                     # List containing all keywords
    preprocessors,                # List containing all preprocessors
-
+   dir_list,
    unicon_dir
    )
 
 
-   method build()
+   method build(lsif_path)
 
       built_in_functions := table()
       package_db := table()
+      dir_list := []
 
       if \unicon_dir then {
          build_bnf()
-         build_package_db()
+         if \lsif_path then
+            build_package_db(lsif_path)
+         else
+            build_package_db()
       }
       else {
          write(&errout, "Unable to find Unicon envirionment.")
@@ -97,11 +100,17 @@ class LSPDB(
       }
    end
 
-   method build_package_db()
+   method build_package_db(lsif_path)
       local dirPath, db_paths := [], dir
 
       dirPath := unicon_dir
-
+      if (\lsif_path) then {
+         lsif_path := map(lsif_path, "\\", "/")
+         put(dir_list, lsif_path)
+         Logger.debug2_kind("db:path", "Processing ", lsif_path)
+         build_by_path(lsif_path)
+         return
+      }
       every dir := !ipaths_get() do
          # remove the current dir, also skip parser due to a unidoc bug
          if not((dir == ("." | "")) | find("uni/parser"|"uni\\parser", dir))then
@@ -112,15 +121,23 @@ class LSPDB(
 
       Logger.debug1_kind("db", "Looking in unicon paths")
       every dir := !db_paths do {
+         dir := map(dir, "\\", "/")
+         put(dir_list, dir)
          Logger.debug2_kind("db:path", "Processing ", dir)
          build_by_path(dir)
       }
+      put(dir_list, unicon_dir || "uni/ulsp")
    end
 
    method build_by_path(path)
       local idoc, x, pack, file_in_pack, file_without_ext, import_in_file, procedure_in_file, param_in_procedure,
-         paramName, paramType, paramDef, class_in_file, method_in_class, param_in_method, class_param, class_comment,
-         constructor_param
+         paramName, paramType, paramDef, class_in_file, method_in_class, param_in_method, class_param,
+         class_comment, constructor_param, package_table, file_table, file_wo_ext_table, import_table,
+         procedure_table, procedure_in_file_table, param_table, classes_table, class_in_file_table,
+         constructor_table, method_table, attributes_table, comments_table, superclass_table, src_table,
+         cons_name_table, cons_comments_table, cons_params_table, method_name_table, method_name_comments_table,
+         method_name_params_table
+
       idoc := UniAll()
 
       idoc.setSourcePath(path)
@@ -132,8 +149,13 @@ class LSPDB(
          Logger.debug3_kind("db:path:package", "Processing ", pack.getName())
 
          if /package_db[pack.getName()] then {
-            package_db[pack.getName()] := table()
-            package_db[pack.getName()]["files"] := table()
+            package_db[pack.getName()] := package_table := table()
+            package_table["files"] := file_table := table()
+         }
+         if /package_table then {
+               package_db[pack.getName()] := package_table := table()
+               package_table["files"] := file_table := table()
+               Logger.debug4_kind("db:path:package", "Initialize package table for package ", pack.getName())
          }
 
          every file_in_pack := pack.getFiles().get() do {
@@ -143,70 +165,73 @@ class LSPDB(
                file_without_ext := tab(upto("."))
             }
 
-            package_db[pack.getName()]["files"][file_without_ext] := table()
-            if /package_db[pack.getName()]["files"][file_without_ext]["imports"] then package_db[pack.getName()]["files"][file_without_ext]["imports"] := []
+
+            file_table[file_without_ext] := table()
+
+            /file_table[file_without_ext]["imports"] := []
+            import_table := file_table[file_without_ext]["imports"]
             every import_in_file := file_in_pack.getImports().get() do {
-               put(package_db[pack.getName()]["files"][file_without_ext]["imports"], import_in_file.getName())
+               put(import_table, import_in_file.getName())
             }
 
-            if /package_db[pack.getName()]["files"][file_without_ext]["procedures"] then package_db[pack.getName()]["files"][file_without_ext]["procedures"] := table()
+            if /file_table[file_without_ext]["procedures"] then file_table[file_without_ext]["procedures"] := procedure_table := table()
             every procedure_in_file := file_in_pack.getProcedures().get() do {
                procedure_in_file.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
-               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()] := table()
-               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["comments"] := makeComment(procedure_in_file)
+               procedure_table[procedure_in_file.getName()] := procedure_in_file_table := table()
+               procedure_in_file_table["comments"] := makeComment(procedure_in_file)
 
-               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"] := []
+               procedure_in_file_table["params"] := param_table := []
                every param_in_procedure := procedure_in_file.getParams().get() do {
                   paramName := param_in_procedure.getName()
                   paramType := param_in_procedure.getTypeValue() | &null
                   paramDef := param_in_procedure.getDefValue() | &null
-                  put(package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["params"], table(
+                  put(param_table, table(
                      "name", paramName,
                      "type", paramType,
                      "default", paramDef))
                }
 
-               package_db[pack.getName()]["files"][file_without_ext]["procedures"][procedure_in_file.getName()]["source"] := procedure_in_file.getSrcFile()
+               procedure_in_file_table["source"] := procedure_in_file.getSrcFile()
             }
 
-            if /package_db[pack.getName()]["files"][file_without_ext]["classes"] then package_db[pack.getName()]["files"][file_without_ext]["classes"] := table()
+            if /file_table[file_without_ext]["classes"] then file_table[file_without_ext]["classes"] := classes_table := table()
             every class_in_file := file_in_pack.getClasses().get() do {
                class_in_file.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()] := table()
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"] := table()
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"] := []
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"] := []
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["superclass"] := []
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["source"] := class_in_file.getSrcFile()
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"] := table()
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["name"] := class_in_file.getConstructor().getName()
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["comments"] := makeComment(class_in_file)
-               package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"] := []
+               file_table[file_without_ext]["classes"][class_in_file.getName()] := class_in_file_table := table()
+               class_in_file_table["methods"] := method_table := table()
+               class_in_file_table["attributes"] := attributes_table := []
+               class_in_file_table["comments"] := comments_table := []
+               class_in_file_table["superclass"] := superclass_table := []
+               class_in_file_table["source"] := src_table := class_in_file.getSrcFile()
+               class_in_file_table["constructor"] := constructor_table := table()
+               constructor_table["name"] := cons_name_table := class_in_file.getConstructor().getName()
+               constructor_table["comments"] := cons_comments_table := makeComment(class_in_file)
+               constructor_table["params"] := cons_params_table := []
 
                every method_in_class := class_in_file.getMethods().get() do {
                   method_in_class.setSrcFile(idoc.getTargetDir() || file_in_pack.getName())
-                  package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()] := table()
-                  package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["comments"] := makeComment(method_in_class)
+                  method_table[method_in_class.getName()] := method_name_table := table()
+                  method_name_table["comments"] := method_name_comments_table := makeComment(method_in_class)
 
-                  package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"] := []
+                  method_name_table["params"] := method_name_params_table := []
                   every param_in_method := method_in_class.getParams().get() do {
                      paramName := param_in_method.getName()
                      paramType := param_in_method.getTypeValue() | &null
                      paramDef := param_in_method.getDefValue() | &null
-                     put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["params"], table(
+                     put(method_name_params_table, table(
                         "name", paramName,
                         "type", paramType,
                         "default", paramDef))
                   }
 
-                  package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["methods"][method_in_class.getName()]["source"] := method_in_class.getSrcFile()
+                  method_name_table["source"] := method_in_class.getSrcFile()
                }
 
                every class_param := class_in_file.getParams().get() do {
                   paramName := class_param.getName()
                   paramType := class_param.getTypeValue() | &null
                   paramDef := class_param.getDefValue() | &null
-                  put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["attributes"], table(
+                  put(attributes_table, table(
                      "name", paramName,
                      "type", paramType,
                      "default", paramDef))
@@ -216,21 +241,21 @@ class LSPDB(
                   paramName := constructor_param.getName()
                   paramType := constructor_param.getTypeValue() | &null
                   paramDef := constructor_param.getDefValue() | &null
-                  put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["constructor"]["params"], table(
+                  put(cons_params_table, table(
                      "name", paramName,
                      "type", paramType,
                      "default", paramDef))
                }
 
                every class_comment := class_in_file.getComments().get() do {
-                  put(package_db[pack.getName()]["files"][file_without_ext]["classes"][class_in_file.getName()]["comments"], class_comment.get())
+                  put(comments_table, class_comment.get())
                }
             }
          }
       }
    end
 
-   initially
 
-      unicon_dir := ulibprefix()
+   initially
+      unicon_dir := map(ulibprefix(), "\\", "/")
 end

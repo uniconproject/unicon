@@ -80,7 +80,7 @@ class Server(
    method run()
       local msg
       jrpc_handler := JRPC_HTTPSocket(sock)
-      repeat 
+      repeat
          if msg := jrpc_handler.get_msg() then {
             #Logger.info("msg= ", image(msg.get_content()))
             case msg.get_kind() of {
@@ -138,7 +138,7 @@ class Server(
 ########################################################
 
    method didOpen(request_params)
-      local fname, uri, f, initial_file_contents, workspace_object
+      local fname, uri, f, initial_file_contents, filehandler_object
       if \(uri := request_params["textDocument"]["uri"]) then {
          # uri: file://<PATH>
          uri ? {
@@ -151,11 +151,14 @@ class Server(
             close(f)
          }
       }
-
-      openFiles[\uri] := Workspace(fname, lsp_database)
-      workspace_object := openFiles[\uri]
-      workspace_object.setFile()
-      workspace_object.updateWorkspace()
+      # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
+      if &features == ("MS Windows NT") then {
+         fname := fname[2] || ":" || fname[6:0]
+      }
+      openFiles[\uri] := FileHandler(fname, lsp_database)
+      filehandler_object := openFiles[\uri]
+      filehandler_object.setFile()
+      filehandler_object.updateFileHandler()
 
    end
 
@@ -174,7 +177,7 @@ class Server(
 ########################################################
 
    method didChange(request_params)
-      local fname, uri, f, file_contents, workspace_object, initial_file_contents
+      local fname, uri, f, file_contents, filehandler_object, initial_file_contents
       if \(uri := request_params["textDocument"]["uri"]) then {
          # uri: file://<PATH>
          uri ? {
@@ -190,9 +193,9 @@ class Server(
 
       uri := request_params["textDocument"]["uri"]
       file_contents := request_params["contentChanges"][1]["text"]
-      workspace_object := openFiles[\uri]
-      workspace_object.updateUniDoc(fname, file_contents)
-      workspace_object.updateWorkspace()
+      filehandler_object := openFiles[\uri]
+      filehandler_object.updateUniDoc(fname, file_contents)
+      filehandler_object.updateFileHandler()
    end
 
 ########################################################
@@ -200,9 +203,9 @@ class Server(
 ########################################################
 
    method completion(msg)
-      local workspace_object, result
-      workspace_object := openFiles[\msg.get_param_uri()]
-      completionHandler.setVariables(workspace_object, msg.get_params())
+      local filehandler_object, result
+      filehandler_object := openFiles[\msg.get_param_uri()]
+      completionHandler.setVariables(filehandler_object, msg.get_params())
       result := completionHandler.run()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
@@ -213,9 +216,9 @@ class Server(
 ########################################################
 
    method signatureHelp(msg)
-      local workspace_object, result
-      workspace_object := openFiles[\msg.get_param_uri()]
-      signatureHandler.setVariables(workspace_object, msg.get_params())
+      local filehandler_object, result
+      filehandler_object := openFiles[\msg.get_param_uri()]
+      signatureHandler.setVariables(filehandler_object, msg.get_params())
       result := signatureHandler.run()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
@@ -226,9 +229,9 @@ class Server(
 ########################################################
 
    method hoverHelp(msg)
-      local workspace_object, result
-      workspace_object := openFiles[\msg.get_param_uri()]
-      hoverHandler.setVariables(workspace_object, msg.get_params())
+      local filehandler_object, result
+      filehandler_object := openFiles[\msg.get_param_uri()]
+      hoverHandler.setVariables(filehandler_object, msg.get_params())
       result := hoverHandler.run()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
@@ -239,10 +242,11 @@ class Server(
 ########################################################
 
    method definitionHelp(msg)
-      local workspace_object, result
-      workspace_object := openFiles[\msg.get_param_uri()]
-      definitionHandler.setVariables(workspace_object, msg.get_params())
+      local filehandler_object, result
+      filehandler_object := openFiles[\msg.get_param_uri()]
+      definitionHandler.setVariables(filehandler_object, msg.get_params())
       result := definitionHandler.run()
+      \result["uri"] := replace(result["uri"], "c:/", "/c%3A/")
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end

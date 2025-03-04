@@ -11,7 +11,7 @@
 # and/or utr18.pdf.
 #
 
-FILES=utr3.pdf utr15.pdf utr16.pdf utr18.pdf utr19.pdf utr22.pdf utr20.pdf
+FILES=utr3.pdf utr15.pdf utr16.pdf utr18.pdf utr19.pdf utr22.pdf utr20.pdf utr23.pdf
 
 all: $(FILES)
 

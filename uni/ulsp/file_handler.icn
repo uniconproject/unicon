@@ -1,9 +1,9 @@
 # -------------------------------------------------------------------------
-# ---------------------- Workspace Class ----------------------------------
+# ---------------------- FileHandler Class ----------------------------------
 # -------------------------------------------------------------------------
 #
 # Description:
-#    -Contains all items related to a particular opened workspace file.
+#    -Contains all items related to a particular opened filehandler file.
 #    -This includes:
 #       -The uri of the file
 #       -The contents of the file (synchronized contents coming from client - updating in textDocument/didChange)
@@ -29,7 +29,7 @@ import parser
 
 global identifiers
 
-class Workspace(
+class FileHandler(
    uri,
    lsp_database,
    temp_file,
@@ -53,7 +53,7 @@ class Workspace(
    context
    )
 
-   method updateWorkspace()
+   method updateFileHandler()
       setLinks()
       setImports()
       setPackage()
@@ -295,7 +295,7 @@ class Workspace(
                   "type", paramType,
                   "default", paramDef))
             }
-            
+
             internal_classes[_class.getName()]["methods"][_method.getName()]["source"] := uri
          }
 
@@ -599,7 +599,7 @@ class Workspace(
       identifiers := &letters ++ &digits ++ '_' ++ '-'
 end
 
-class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase, packageName)
+class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase, packageName, totalFileLines)
    method getDesiredLine(lineNum)
       line := uniAll.getUniFileLine(uri, lineNum)
    end
@@ -767,12 +767,19 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
    end
 
    initially(uniAll, uri, lineNum, charNum)
+      local f
       self.uniAll := uniAll
       self.uri := uri
       self.lineNum := lineNum
       self.charNum := charNum
       line := getDesiredLine(lineNum)
       contextCase := findContext()
+      totalFileLines := 0
+      f := open(uri) | fail
+      reads(f, stat(uri).size) ?
+         every upto('\n') do
+            totalFileLines +:= 1
+      f := close(f)
 end
 
 # Creates a working comments

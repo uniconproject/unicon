@@ -4,13 +4,13 @@ import json
 global triggerCharLoc
 
 class SignatureHandler(
-   workspace,
+   filehandler,
    params,
    currentSigItems
    )
 
-   method setVariables(new_workspace, new_params)
-      workspace := new_workspace
+   method setVariables(new_filehandler, new_params)
+      filehandler := new_filehandler
       params := new_params
    end
 
@@ -27,7 +27,7 @@ class SignatureHandler(
       results_table["activeSignature"] := &null
 
      # Collect context information (inside comment, space before, object before, no object before) #
-      context := workspace.getContext(line, character)
+      context := filehandler.getContext(line, character)
       desired_line := context.line
       \desired_line | return results_table
       \params["context"] | return results_table
@@ -77,10 +77,10 @@ class SignatureHandler(
 
       /triggerCharLoc := charNum
 
-      linked_classes := workspace.getLinkedClasses()
-      imported_classes := workspace.getImportedClasses()
-      internal_classes := workspace.getInternalClasses()
-      package_classes := workspace.getPackageClasses()
+      linked_classes := filehandler.getLinkedClasses()
+      imported_classes := filehandler.getImportedClasses()
+      internal_classes := filehandler.getInternalClasses()
+      package_classes := filehandler.getPackageClasses()
 
       case _context of {
 
@@ -90,7 +90,7 @@ class SignatureHandler(
             objectName := context.objectName
             methodName := context.methodName
 
-            objects := workspace.getObjects()
+            objects := filehandler.getObjects()
             className := objects[objectName]
 
             # Check if function is a method of a linked class #
@@ -131,11 +131,11 @@ class SignatureHandler(
 
             methodName := context.methodName
 
-            built_in_functions := workspace.getBuiltInFunctions()
-            linked_procedures := workspace.getLinkedProcedures()
-            imported_procedures := workspace.getImportedProcedures()
-            internal_procedures := workspace.getInternalProcedures()
-            package_procedures := workspace.getPackageProcedures()
+            built_in_functions := filehandler.getBuiltInFunctions()
+            linked_procedures := filehandler.getLinkedProcedures()
+            imported_procedures := filehandler.getImportedProcedures()
+            internal_procedures := filehandler.getInternalProcedures()
+            package_procedures := filehandler.getPackageProcedures()
 
             # Check if function is an internal procedure #
             if member(internal_procedures, methodName) then {
@@ -263,7 +263,7 @@ class SignatureHandler(
                move(-1)
             }
 
-            temp_context := workspace.getContext(params["position"]["line"] + 1, &pos)
+            temp_context := filehandler.getContext(params["position"]["line"] + 1, &pos)
             new_signatures |||:= handleNewSignature(temp_context, results_table)
          }
       }

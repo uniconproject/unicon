@@ -1,0 +1,119 @@
+package ulsp
+
+link regexp
+link ximage
+
+#  Processes all folding ranges in a document and constructs a result to return to the client.
+class FoldingRangeHandler(filehandler)
+
+   #  Sets the class variables for the FoldingRangeHandler.
+   #  Params: new_filehandler - The filehandler object created from the parameters of the
+   #                             request sent by the client.
+   method setVariables(new_filehandler)
+      filehandler := new_filehandler
+   end
+
+   #  Searches through the provided filehandler for all internal positions of symbols and
+   #  constructs a result to send back to the client for all folding ranges.
+   method run()
+      local results_list, tokenKind, tokenName, entry, startLine, endLine, result
+
+      results_list := []
+
+      every tokenKind := key(filehandler.internal_positions) do {
+         every tokenName := key(filehandler.internal_positions[tokenKind]) do {
+            entry := filehandler.internal_positions[tokenKind][tokenName]
+
+            if member(entry, "range") then {
+               startLine := entry["range"]["start"][1]
+               endLine := entry["range"]["end"][1] - 1
+
+               if tokenKind == "initially" then endLine+:=1
+               if startLine < endLine then {
+                  put(results_list, table(
+                     "startLine", startLine,
+                     "endLine", endLine
+                  ))
+               }
+            }
+         }
+      }
+
+      return results_list |||:= findFoldingRanges()
+   end
+
+   #  Parse through the filehandler's temp_idoc parser to find all regions that are
+   #  large blocks of comments, large blocks of imports or links, and open sections
+   #  between curly brackets.
+   #  <i>This is intended for internal use only!</i>
+   method findFoldingRanges()
+      local lineNum, _line, commentBlock, commentLine, results_list, open_blocks, startLine, character, ch,
+            single_quote, double_quote, importBlock, importLine
+
+      lineNum := 1
+      commentBlock := 0
+      importBlock := 0
+      results_list := []
+      open_blocks := []
+      while _line := filehandler.temp_idoc.getUniFileLine(filehandler.uri, lineNum) do {
+         if ReMatch("^\\s*#.*$", _line) then {
+            commentBlock +:= 1
+            if commentBlock = 1 then commentLine := lineNum
+         } else {
+            if commentBlock > 1 then {
+               put(results_list, table(
+                  "startLine", commentLine-1,
+                  "endLine", lineNum-2
+               ))
+            }
+            commentBlock := 0
+            if ReMatch("^(link|import)\\s+.*", _line) then {
+               importBlock +:= 1
+               if importBlock = 1 then importLine := lineNum
+            } else {
+               if importBlock > 1 then {
+                  put(results_list, table(
+                     "startLine", importLine-1,
+                     "endLine", lineNum-2
+                  ))
+               }
+               importBlock := 0
+            }
+            if *open_blocks > 0 & character := ReMatch(".*\\}", _line) then {
+               _line ? {
+                  single_quote := 0
+                  double_quote := 0
+                  while (&pos < character) do {
+                     ch := move(1) | break
+                     if (ch == "\'" & (_line[&pos-2] ~== "\\")) then single_quote +:= 1
+                     if (ch == "\"" & (_line[&pos-2] ~== "\\")) then double_quote +:= 1
+                  }
+                  if (single_quote % 2) = 0 && (double_quote % 2) = 0 then {
+                     startLine := pop(open_blocks)
+                     put(results_list, table(
+                        "startLine", startLine-1,
+                        "endLine", lineNum-2
+                     ))
+                  }
+               }
+            }
+            if character := ReMatch(".*\\{", _line) then {
+               _line ? {
+                  single_quote := 0
+                  double_quote := 0
+                  while (&pos < character) do {
+                     ch := move(1) | break
+                     if (ch == "\'" & (_line[&pos-2] ~== "\\")) then single_quote +:= 1
+                     if (ch == "\"" & (_line[&pos-2] ~== "\\")) then double_quote +:= 1
+                  }
+                  if (single_quote % 2) = 0 && (double_quote % 2) = 0 then {
+                     push(open_blocks, lineNum)
+                  }
+               }
+            }
+         }
+         lineNum +:= 1
+      }
+      return results_list
+   end
+end

@@ -23,8 +23,13 @@ class Server(
    signatureHandler,
    hoverHandler,
    definitionHandler,
+   symbolHandler,
+   foldingRangeHandler,
    lsp_database,                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
-   jrpc_handler
+   jrpc_handler,
+   stoploop,
+   renewSymbols,
+   cacheSymbols
    )
 
    method handle_request(msg)
@@ -50,6 +55,9 @@ class Server(
          "textDocument/signatureHelp" : signatureHelp(msg)
          "textDocument/hover" : hoverHelp(msg)
          "textDocument/definition" : definitionHelp(msg)
+         "textDocument/documentSymbol" : symbolHelp(msg)
+         "textDocument/foldingRange" : foldingRangeHelp(msg)
+         "shutdown" : shutdown(msg)
          default: {
             handle_unsupported(msg)
          }
@@ -72,6 +80,9 @@ class Server(
          "textDocument/didOpen" : didOpen(params)
          "textDocument/didClose" : didClose(params)
          "textDocument/didChange" : didChange(params)
+         "textDocument/didSave" : renewSymbols := 1
+         "exit" : stoploop := 1
+
          default:
             Logger.debug1_kind("jrpc:notification:unsupported", msg.get_method())
       }
@@ -80,7 +91,7 @@ class Server(
    method run()
       local msg
       jrpc_handler := JRPC_HTTPSocket(sock)
-      repeat
+      repeat {
          if msg := jrpc_handler.get_msg() then {
             #Logger.info("msg= ", image(msg.get_content()))
             case msg.get_kind() of {
@@ -91,6 +102,11 @@ class Server(
                    Logger.debug2_kind("lsp:jrpc:msg:" || msg.get_kind(), image(msg.get_content()))
             }
          }
+         if \stoploop then {
+            Logger.info("Shutting down ULSP.")
+            break
+         }
+      }
    end
 
 
@@ -125,8 +141,12 @@ class Server(
                "triggerCharacters": ["("]
             ];
             "hoverProvider": "__true__";
-            "definitionProvider": "__true__"
-         ]
+            "definitionProvider": "__true__";
+            "documentSymbolProvider": "__true__";
+            "foldingRangeProvider": "__true__"
+
+         ];
+         "processId": getpid()
       ]
 
       msg.make_result_response(capabilitiesTable)
@@ -251,9 +271,54 @@ class Server(
       jrpc_handler.send_msg(msg)
    end
 
+########################################################
+#                textDocument/documentSymbol           #
+########################################################
 
-   method shutdown()
+   method symbolHelp(msg)
+      local filehandler_object, uri, result
+      
+      if \(uri := msg.get_param_uri()) then {
+         filehandler_object := openFiles[uri]
+         symbolHandler.setVariables(filehandler_object)
+         if renewSymbols = 1 then {
+            Logger.debug2_kind("Getting new symbols for " || uri)
+            result := symbolHandler.run()
+            cacheSymbols[uri] := result
+         } else {
+            if \cacheSymbols[uri] then {
+               Logger.debug2_kind("Getting cached symbols for " || uri)
+               result := cacheSymbols[uri]
+            } else {
+               Logger.debug2_kind("Getting new symbols for " || uri)
+               result := symbolHandler.run()
+               cacheSymbols[uri] := result
+            }
+         }
+      }
+      renewSymbols := 0
+      msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
+   end
 
+
+########################################################
+#                textDocument/foldingRange             #
+########################################################
+
+   method foldingRangeHelp(msg)
+      local filehandler_object, result
+      filehandler_object := openFiles[\msg.get_param_uri()]
+      foldingRangeHandler.setVariables(filehandler_object)
+      result := foldingRangeHandler.run()
+      msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
+   end
+
+   method shutdown(msg)
+      local result
+      msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
    end
 
    method loadDB()
@@ -264,12 +329,16 @@ class Server(
       signatureHandler := SignatureHandler()
       hoverHandler := HoverHandler()
       definitionHandler := DefinitionHandler()
+      symbolHandler := SymbolHandler()
+      foldingRangeHandler := FoldingRangeHandler()
    end
 
 
    initially
       local openopt := "n", mstring := "server"
 
+      renewSymbols := 1
+      cacheSymbols := table()
       case mode of {
          "s" : { openopt ||:= "a" }
          "c" : { mstring := "client" }
@@ -295,4 +364,3 @@ class Server(
          exit(1)
       }
 end
-

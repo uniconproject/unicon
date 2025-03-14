@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# ---------------------- FileHandler Class ----------------------------------
+# ---------------------- FileHandler Class --------------------------------
 # -------------------------------------------------------------------------
 #
 # Description:
@@ -50,7 +50,8 @@ class FileHandler(
    package_classes,
    m_uni_file,
    temp_idoc,
-   context
+   context,
+   internal_positions
    )
 
    method updateFileHandler()
@@ -67,6 +68,7 @@ class FileHandler(
       setPackageClasses()
       setObjects()
       setVariables()
+      setInternalPositions()
    end
 
    method setFile()
@@ -247,7 +249,7 @@ class FileHandler(
    end
 
 # -------------------------------------------------------------------------------------------------
-# ---------------- Package Procedures (get, set, update) -----------------------------------------
+# ---------------- Package Procedures (get, set, update) ------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
    method setPackageProcedures()
@@ -377,7 +379,7 @@ class FileHandler(
    end
 
 # -------------------------------------------------------------------------------------------------
-# ---------------- Package Classes (get, set, update) --------------------------------------------
+# ---------------- Package Classes (get, set, update) ---------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
    method setPackageClasses()
@@ -427,7 +429,7 @@ class FileHandler(
    end
 
 # -------------------------------------------------------------------------------------------------
-# ---------------- Variables (get, set, update) -----------------------------------------------------
+# ---------------- Variables (get, set, update) ---------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
    method setVariables()
@@ -484,6 +486,140 @@ class FileHandler(
 
    method getGlobalVariables()
       return global_variables
+   end
+
+# -------------------------------------------------------------------------------------------------
+# ---------------- Ranges (get, set) --------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
+
+   method setInternalPositions()
+      local lineNum, _line, procedureName, startPos, endPos, className, methodName, variableName,
+            open_blocks, ending, currentClass
+
+      internal_positions := [
+         "classes" : table();
+         "procedures" : table();
+         "methods" : table();
+         "variables" : table();
+         "initially" : table()
+      ]
+      open_blocks := []
+
+      lineNum := 1
+      while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
+         # Check for procedures
+         every procedureName := key(internal_procedures) do {
+            if ReMatch("procedure\\s+" || procedureName || "\\s*\\(", _line) then {
+               startPos := find(procedureName, _line)
+               endPos := startPos + *procedureName - 1
+               push(open_blocks, ["procedures", procedureName])
+               internal_positions["procedures"][procedureName] := [
+                  "type" : "procedure";
+                  "range" : [
+                     "start" : [lineNum-1, 0];
+                     "end" : [lineNum-1, 0]
+                  ];
+                  "selectionRange" : [
+                     "start" : [lineNum-1, startPos];
+                     "end" : [lineNum-1, endPos]
+                  ]
+               ]
+            }
+         }
+
+         # Check for classes
+         every className := key(internal_classes) do {
+            if ReMatch("class\\s+" || className || "\\s*\\(", _line) then {
+               currentClass := className
+               startPos := find(className, _line)
+               endPos := startPos + *className - 1
+               push(open_blocks, ["classes", className])
+               internal_positions["classes"][className] := [
+                  "type" : "class";
+                  "range" : [
+                     "start" : [lineNum-1, 0];
+                     "end" : [lineNum-1, 0]
+                  ];
+                  "selectionRange" : [
+                     "start" : [lineNum-1, startPos];
+                     "end" : [lineNum-1, endPos]
+                  ]
+               ]
+            }
+
+            # Check for methods
+            every methodName := key(internal_classes[className]["methods"]) do {
+               if ReMatch(".*method\\s+" || methodName || "\\s*\\(", _line) then {
+                  startPos := find(methodName, _line)
+                  endPos := startPos + *methodName - 1
+                  push(open_blocks, ["methods", methodName])
+                  internal_positions["methods"][methodName] := [
+                     "type" : "method";
+                     "range" : [
+                        "start" : [lineNum-1, 0];
+                        "end" : [lineNum-1, 0]
+                     ];
+                     "selectionRange" : [
+                        "start" : [lineNum-1, startPos];
+                        "end" : [lineNum-1, endPos]
+                     ]
+                  ]
+               }
+            }
+         }
+
+         # Check for "initially" sections
+         if ReMatch("^\\s*initially\\s*(\\(.*\\))?$", _line) then {
+            startPos := find("initially", _line)
+            endPos := startPos + 9
+            push(open_blocks, ["initially", currentClass])
+            internal_positions["initially"][currentClass] := [
+               "type" : "method";
+               "range" : [
+                  "start" : [lineNum-1, 0];
+                  "end" : [lineNum-1, 0]
+               ];
+               "selectionRange" : [
+                  "start" : [lineNum-1, startPos];
+                  "end" : [lineNum-1, endPos]
+               ]
+            ]
+         }
+
+         # Check for keyword "end"
+         if ReMatch("^\\s*end\\s*$", _line) then {
+            if *open_blocks > 0 then {
+               ending := pop(open_blocks)
+               if ending[1] == "initially" then {
+                  internal_positions[ending[1]][ending[2]]["range"]["end"] := [lineNum-2, *temp_idoc.getUniFileLine(uri, lineNum-1)]
+                  ending := pop(open_blocks)
+                  internal_positions[ending[1]][ending[2]]["range"]["end"] := [lineNum-1, *_line]
+               } else {
+                  internal_positions[ending[1]][ending[2]]["range"]["end"] := [lineNum-1, *_line]
+               }
+            }
+         }
+
+         # Check for variables
+         every variableName := key(variables) do {
+            if ReMatch("^\\s*" || variableName || "\\s*\\:=", _line) then {
+               startPos := find(variableName, _line)
+               endPos := startPos + *variableName - 1
+               internal_positions["variables"][variableName] := table(
+                  "type", "variable",
+                  "selectionRange", table(
+                     "start", [lineNum-1, startPos-1],
+                     "end", [lineNum-1, endPos]
+                     )
+                  )
+            }
+         }
+         lineNum +:= 1
+      }
+   end
+
+   method getInternalPositions()
+      return internal_positions
    end
 
 # -------------------------------------------------------------------------------------------------
@@ -604,7 +740,7 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       line := uniAll.getUniFileLine(uri, lineNum)
    end
 
-   # Retrive object name #
+   # Retrieve object name #
    method getObjectName()
       local temp, c, name
       line ? {

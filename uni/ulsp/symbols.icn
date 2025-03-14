@@ -1,0 +1,207 @@
+package ulsp
+
+link ximage
+
+#  Processes all symbols in a document and constructs a result to return to the client.
+class SymbolHandler(filehandler)
+
+   #  Sets the class variables for the SymbolHandler.
+   #  Params: new_filehandler - The filehandler object created from the parameters of the
+   #                             request sent by the client.
+   method setVariables(new_filehandler)
+      filehandler := new_filehandler
+   end
+
+   #  Searches through the provided filehandler for all procedures, classes, methods, and
+   #  variables and constructs a result to send back to the client of all document symbols.
+   method run()
+      local procedure_name, procedure_table, procedure_range, procedure_selectionRange,
+            class_name, class_table, class_range, class_selectionRange, method_name,
+            method_table, method_range, method_selectionRange, variable_name, class_symbol,
+            method_symbol, pos_table, sl, sc, el, ec, entity_table, proc_symbol, var_symbol,
+            initially_table, initially_range, initially_selectionRange, variable_selectionRange, 
+            results_list
+      results_list := []
+      pos_table := filehandler.getInternalPositions()
+      entity_table := table()
+
+      # Get procedures from filehandler
+      every procedure_name := key(filehandler.getInternalProcedures()) do {
+         if \(procedure_table := pos_table["procedures"][procedure_name]) then {
+            procedure_range := procedure_table["range"]
+            procedure_selectionRange := procedure_table["selectionRange"]
+
+            proc_symbol := constructResult(
+               procedure_name,
+               12,
+               procedure_range["start"][1],
+               procedure_range["start"][2],
+               procedure_range["end"][1],
+               procedure_range["end"][2],
+               procedure_selectionRange["start"][1],
+               procedure_selectionRange["start"][2],
+               procedure_selectionRange["end"][1],
+               procedure_selectionRange["end"][2],
+               []
+            )
+            entity_table[procedure_name] := proc_symbol
+            put(results_list, proc_symbol)
+         }
+      }
+
+      # Get classes and their methods from filehandler
+      every class_name := key(filehandler.getInternalClasses()) do {
+         if \(class_table := pos_table["classes"][class_name]) then {
+            class_range := class_table["range"]
+            class_selectionRange := class_table["selectionRange"]
+
+            class_symbol := constructResult(
+               class_name,
+               5,
+               class_range["start"][1],
+               class_range["start"][2],
+               class_range["end"][1],
+               class_range["end"][2],
+               class_selectionRange["start"][1],
+               class_selectionRange["start"][2],
+               class_selectionRange["end"][1],
+               class_selectionRange["end"][2],
+               []
+            )
+         }
+
+         # Get methods inside classes from filehandler
+         every method_name := key(filehandler.getInternalClasses()[class_name]["methods"]) do {
+            if \(method_table := pos_table["methods"][method_name]) then {
+               method_range := method_table["range"]
+               method_selectionRange := method_table["selectionRange"]
+
+               method_symbol := constructResult(
+                  method_name,
+                  6,
+                  method_range["start"][1],
+                  method_range["start"][2],
+                  method_range["end"][1],
+                  method_range["end"][2],
+                  method_selectionRange["start"][1],
+                  method_selectionRange["start"][2],
+                  method_selectionRange["end"][1],
+                  method_selectionRange["end"][2],
+                  []
+               )
+               entity_table[method_name] := method_symbol
+               put(class_symbol["children"], method_symbol)
+            }
+         }
+
+         # Get initially sections inside classes from filehandler
+         if \(initially_table := pos_table["initially"][class_name]) then {
+            initially_range := initially_table["range"]
+            initially_selectionRange := initially_table["selectionRange"]
+
+            method_symbol := constructResult(
+               "initially",
+               9,
+               initially_range["start"][1],
+               initially_range["start"][2],
+               initially_range["end"][1],
+               initially_range["end"][2],
+               initially_selectionRange["start"][1],
+               initially_selectionRange["start"][2],
+               initially_selectionRange["end"][1],
+               initially_selectionRange["end"][2],
+               []
+            )
+            entity_table["initially" || class_name] := method_symbol
+            put(class_symbol["children"], method_symbol)
+         }
+
+         put(results_list, class_symbol)
+      }
+
+      # Get variables from filehandler
+      every variable_name := key(filehandler.getVariables()) do {
+         if \(variable_selectionRange := pos_table["variables"][variable_name]["selectionRange"]) then {
+            sl := variable_selectionRange["start"][1]
+            sc := variable_selectionRange["start"][2]
+            el := variable_selectionRange["end"][1]
+            ec := variable_selectionRange["end"][2]
+            var_symbol := constructResult(variable_name, 13, sl, sc, el, ec, sl, sc, el, ec, [])
+            parent := find_parent_entity(sl, sc, el, ec, entity_table)
+            if \parent then {
+               put(parent["children"], var_symbol)
+            } else {
+               put(results_list, var_symbol)
+            }
+         }
+      }
+
+      return results_list
+   end
+
+   #  Finds a parent of a variable, if one exists.
+   #  Params: v_rsl - The variable's starting line of its range.
+   #          v_rsc - The variable's starting character of its range.
+   #          v_rel - The variable's ending line of its range.
+   #          v_rec - The variable's ending character of its range.
+   #          entity_table - A table containing all entities in the document, i.e. classes, methods, procedures.
+   #  <i>This is intended for internal use only!</i>
+   method find_parent_entity(v_rsl, v_rsc, v_rel, v_rec, entity_table)
+      local range, parent, p_rsl, p_rsc, p_rel, p_rec
+      every range := (parent := !entity_table)["range"] do {
+         p_rsl := range["start"]["line"]
+         p_rsc := range["start"]["character"]
+         p_rel := range["end"]["line"]
+         p_rec := range["end"]["character"]
+
+         if (p_rsl < v_rsl | (p_rsl == v_rsl & p_rsc <= v_rsc)) &
+            (p_rel > v_rel | (p_rel == v_rel & p_rec >= v_rec)) then {
+            return parent
+         }
+      }
+      return
+   end
+
+   #  Constructs a result table with all of the selected parameters.
+   #  Params: nam - The name of the symbol.
+   #          kin - An integer code for the type of symbol.
+   #          rsl - The starting line for the range of the entire symbol.
+   #          rsc - The starting character for the range of the entire symbol.
+   #          rel - The ending line for the range of the entire symbol.
+   #          rec - The ending character for the range of the entire symbol.
+   #          ssl - The starting line of the selection range of the symbol's name.
+   #          ssc - The starting character of the selection range of the symbol's name.
+   #          sel - The ending line of the selection range of the symbol's name.
+   #          sec - The ending character of the selection range of the symbol's name.
+   #          chi - A list of results of children of this symbol, i.e. a method belonging to a class.
+   #  <i>This is intended for internal use only!</i>
+   method constructResult(nam, kin, rsl, rsc, rel, rec, ssl, ssc, sel, sec, chi)
+      local results_table := [
+         "name" : nam;
+         "kind" : kin;
+         "range" : [
+            "start" : [
+               "line" : rsl;
+               "character" : rsc
+            ];
+            "end" : [
+               "line" : rel;
+               "character" : rec
+            ]
+         ];
+         "selectionRange" : [
+            "start" : [
+               "line" : ssl;
+               "character" : ssc
+            ];
+            "end" : [
+               "line" : sel;
+               "character" : sec
+            ]
+         ];
+         "children" : chi
+      ]
+
+      return results_table
+   end
+end

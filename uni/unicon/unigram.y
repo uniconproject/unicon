@@ -198,10 +198,15 @@ procedure Clone1stToken(n)
 end
 
 global outline, outcol, outfilename,package_level_syms,package_level_class_syms
+global printAST
 
 procedure Progend(x1)
-   static printAST, lockAST
-   initial { printAST := getenv("PRINT_AST"); if not getenv("NO_LOCK_AST") then lockAST := 1 }
+   static lockAST, debugAutoLock
+   initial {
+      /printAST := getenv("PRINT_AST")
+      if not getenv("NO_LOCK_AST") then lockAST := 1
+      # debugAutoLock := 1  # uncomment this to force printing of the AST before auto insertion of lock/unlock
+   }
 
    if *\parsingErrors > 0 then {
       every pe := !parsingErrors do {
@@ -266,7 +271,7 @@ procedure Progend(x1)
   # generate output
   #
 #  iwrite("Generating code:")
-   if \printAST then print_node(x1)
+   if \printAST then if \debugAutoLock | /lockAST then print_node(x1)
    if \lockAST then { InsertLocks(x1, []); if \printAST then print_node(x1)}
    yyprint(x1)
    write(yyout)
@@ -1504,7 +1509,7 @@ procedure mkLockUnlock(expr, mtx, locn)
    # so, rather than the code for the general case,just return expr
    # Note that this analysis deliberately ignores the possibility of lock and unlock being replaced
    # by procedures with side effects with the purpose of something like
-   #    mutual mtx: 0
+   #    critical mtx: 0
    # being to invoke lock(mtx) and then unlock(mtx) just for the side effects.
 
    if type(expr)=="token" then return expr

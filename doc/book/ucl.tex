@@ -956,3 +956,140 @@ An OverlaySet is a set of OverlayItems.
 \texttt{set\_which\_one(x)} sets the currently displayed OverlayItem;
 default is the first.\\
 \texttt{add(c:OverlayItem)} adds the given OverlayItem to the OverlaySet.
+
+\newpage
+\section{The \texttt{ThreadPool} class}
+\label{ThreadPoolClass}
+The \texttt{ThreadPool} class is a development of the original (global) thread pool
+in the \texttt{threads} package described on page \pageref{SimpleThreadPool}.
+The interface is broadly the same, with methods in place of the procedures of
+the global pool, plus extra methods for additional functionality.
+The main extra facilities provided are
+\begin{itemize}
+\item
+  More than one pool may be created with different characteristics -- number
+  of worker threads, initial string, block and stack size, priority queuing
+  (or not).
+\item
+  Tasks may have an optional numerical priority (real or integer) that controls
+  the position that the task is placed in the queue to be dispatched.
+\item
+  Worker threads may be added after the pool is created. One possible use
+  is to create a pool with no workers, build up a body of work by adding
+  tasks to the queue in an arbitrary order (but using priority to control
+  the position in the queue) and, once all the tasks have been added, add
+  worker threads to execute the tasks.
+\end{itemize}
+Note that the task priority is not a runtime execution priority: it only
+controls the order in which tasks are started.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[2.5in][l]{\texttt{ThreadPool(n, pr, blk, str, stk)}\vspace{0.75in}}
+
+Create an instance of a thread pool with \texttt{n} worker threads (\texttt{n}
+can be zero which means create no threads).
+If \texttt{n} is null the number of threads will be the default of 2 + the
+number of processors reported in \texttt{\&features}.
+
+If \texttt{pr} is negative then tasks with lower numerical values of priority
+will be dequeued before those having a higher value; i.e. \texttt{0} is the most
+important.
+%
+If \texttt{pr} is positive then tasks with a higher numerical priority will be
+dequeued before those with a lower value.
+%
+If \texttt{pr} is zero the pool has no priority.
+%
+If \texttt{pr} is not supplied, its default value is \texttt{-1}.
+%
+Tasks with no value of priority are dequeued after tasks with a priority,
+irrespective of the value of \texttt{pr}.
+
+\texttt{blk}, \texttt{str} and \texttt{stk} are optional and provide non-default
+values for the block space, string space, and stack space for each worker
+thread.\\
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1.5in][l]{\texttt{MakePool(n)}\vspace{0.75in}}
+
+Create \texttt{n} worker threads and add them to the pool.  If \texttt{n} is
+zero or absent, the default number will be added. The threads will have the
+amount of stack space, block space and string space specified in the arguments
+supplied to the class constructor.
+
+%\pagebreak[2]
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[2.5in][l]{\texttt{Dispatch([pr,] proc, params, ...)}\vspace{0.75in}}
+
+Queue a task to be executed by a thread from the pool. If a thread is available
+the procedure will be called immediately with the supplied parameters, otherwise
+it will be called when a thread becomes available. If \texttt{pr} is not
+supplied, The task has the lowest possible priority. The position in the queue
+depends on whether the pool was created with priority or without.
+If the pool has priority queueing, the task will be placed after any higher
+priority tasks and before any lower priority tasks.
+If the pool has no priority a ``simple'' rule applies: tasks with a positive
+priority will be placed at the front (LIFO) and zero (or no) priority tasks will
+be placed at the back (FIFO).
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[2.5in][l]{\texttt{DispatchMethod([pr,] obj, name, params, ...)}\vspace{0.75in}}
+
+Queue a method (given by a class instance and a method name) to queue a task to
+be executed by a thread from the pool. The treatment of the optional priority
+value is the same as \texttt{Dispatch}.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1in][l]{\texttt{Active()}\vspace{0.75in}}
+
+Returns the number of worker threads in the pool that are not idle.\\
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1in][l]{\texttt{Capacity()}\vspace{0.75in}}
+
+Returns the number of worker threads in the pool.\\
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1in][l]{\texttt{Cancel()}\vspace{0.75in}}
+
+Removes all tasks from the queue. Tasks that are active will continue.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1in][l]{\texttt{isIdle()}\vspace{0.75in}}
+
+Succeeds if no worker threads are active and there are no tasks in the queue.\\
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1.5in][l]{\texttt{ClosePool()}\vspace{0.75in}}
+
+Shuts down the pool after remaining tasks have finished
+(including those that are in the queue). \texttt{ClosePool} does not return
+until the pool has been shut down and all the threads have finished, which
+provides a simple way of synchronizing the concurrent activities with the
+controller thread (often \texttt{\&main}).
+\texttt{ClosePool} should not be called from a thread in the pool: in particular,
+\texttt{DispatchMethod(self,ClosePool)} will deadlock because the task will be
+waiting for itself to terminate.\\
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1.5in][l]{\texttt{Running(depth)}\vspace{0.75in}}
+
+Returns a list of the procedures that are being run by the active worker threads
+(i.e. the procedures that were supplied to \texttt{Dispatch}) The stack of each
+worker is searched up to a limit of \texttt{depth} frames for a variable that is
+known to exist in the top level procedure of a worker thread, so a task with deeply
+nested procedures might be missed. The default value for \texttt{depth} is 10.\\
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1.5in][l]{\texttt{Snapshot(depth)}\vspace{0.75in}}
+
+Calls \texttt{Running(depth)}, formats the result and prints it out to the
+standard error output.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1.5in][l]{\texttt{DefaultPoolSize()}\vspace{0.75in}}
+
+Returns the default number of threads in a pool (also available by calling the
+\linebreak% forbid hyphenation of default_pool_size
+\texttt{default\_pool\_size()} procedure.
+

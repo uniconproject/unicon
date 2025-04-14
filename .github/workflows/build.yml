@@ -114,9 +114,11 @@ jobs:
         cfg:
         -  { os: 'ubuntu:20.04',  name: 'Ubuntu 20.04',   opt: '--enable-werror' }
         -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04',   opt: '--enable-werror' }
-        -  { os: 'fedora:latest', name: 'Fedora Latest',  opt: '--enable-werror' }
+        -  { os: 'ubuntu:24.04',  name: 'Ubuntu 24.04',   opt: '--enable-werror' }
+        -  { os: 'fedora:41', name: 'Fedora 41',  opt: '--enable-werror' }
         -  { os: 'debian:11',     name: 'Debian 11',      opt: '--enable-werror' }
         -  { os: 'debian:12',     name: 'Debian 12',      opt: '--enable-werror' }
+        -  { os: 'rockylinux:9',  name: 'Rocky Linux 9',  opt: '--enable-werror' }
         -  { os: 'oraclelinux:8', name: 'Oracle Linux 8', opt: '--enable-werror' }
         -  { os: 'alpine:latest', name: 'Alpine Latest',  opt: '' }
     steps:
@@ -134,6 +136,11 @@ jobs:
               dnf -y update
               dnf -y install git gcc make diffutils libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
               dnf -y install openssl-devel unixODBC-devel freetype-devel libXft-devel
+              ;;
+           rocky*)
+              dnf -y update
+              dnf -y install git gcc make diffutils libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
+              dnf -y install openssl-devel freetype-devel libXft-devel
               ;;
            fedora*)
               dnf -y update
@@ -174,8 +181,6 @@ jobs:
     strategy:
       matrix:
         platform:
-         -  { arch: aarch64 } # emulated
-         -  { arch: armv7 }   # emulated
          -  { arch: riscv64 } # emulated
          -  { arch: x86 }
     steps:
@@ -224,7 +229,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        #-  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
+        # -  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
         -  { os: ubuntu-latest, name: 'Clang',          opt: 'CC=clang CXX=clang++ --enable-werror' }
         -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics --enable-werror' }
         -  { os: ubuntu-latest, name: 'No 3D Graphics', opt: '--disable-graphics3d --enable-werror' }
@@ -232,7 +237,9 @@ jobs:
         -  { os: ubuntu-latest, name: 'Heap Test',      opt: '--enable-debugheap  --enable-verifyheap --enable-werror' }
         -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin --enable-werror' }
         -  { os: ubuntu-latest, name: 'Dev Mode',       opt: '--enable-devmode' }
-        -  { os: ubuntu-24.04-arm, name: 'Ubuntu ARM',  opt: '--enable-werror' }
+        -  { os: ubuntu-24.04-arm, name: 'Ubuntu arm64',  opt: '--enable-werror' }
+        # -  { os: ubuntu-24.04-arm, name: 'Ubuntu arm32',  opt: '--host=armv7-unknown-linux-gnueabihf --build=armv7-unknown-linux-gnueabihf --enable-werror' }
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -246,9 +253,18 @@ jobs:
         # Install tools to cross compile 32-bit
         sudo dpkg --add-architecture i386
         sudo apt-get update
+        # sudo apt install -q -y i686-pc-linux-gnu-gcc
         sudo apt-get install -q -y gcc-multilib g++-multilib
         sudo apt install libssl-dev:i386
         fi
+
+        if [[ "${{ matrix.cfg.name }}" = "Ubuntu arm32" ]]
+        then
+        # Install tools to cross compile 32-bit
+        sudo apt-get update
+        sudo apt install -q -y gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
+        fi
+
         # Easy way to install all dependencies
         sudo apt-get install -q -y devscripts equivs
         sudo mk-build-deps --install debian/control
@@ -322,7 +338,6 @@ jobs:
       cd $GITHUB_WORKSPACE
       cat unicon-config.log
       cat unicon-features.log
-
 
   DebianPkg:
     runs-on: ${{ matrix.cfg.os }}

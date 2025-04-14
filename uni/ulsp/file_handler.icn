@@ -509,7 +509,7 @@ class FileHandler(
       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
          # Check for procedures
          every procedureName := key(internal_procedures) do {
-            if ReMatch("procedure\\s+" || procedureName || "\\s*\\(", _line) then {
+            if ReMatch("^\\s*procedure\\s+" || procedureName || "\\s*\\(", _line) then {
                startPos := find(procedureName, _line)
                endPos := startPos + *procedureName - 1
                push(open_blocks, ["procedures", procedureName])
@@ -529,7 +529,7 @@ class FileHandler(
 
          # Check for classes
          every className := key(internal_classes) do {
-            if ReMatch("class\\s+" || className || "\\s*\\(", _line) then {
+            if ReMatch("^\\s*class\\s+" || className || ".*\\(", _line) then {
                currentClass := className
                startPos := find(className, _line)
                endPos := startPos + *className - 1
@@ -549,7 +549,7 @@ class FileHandler(
 
             # Check for methods
             every methodName := key(internal_classes[className]["methods"]) do {
-               if ReMatch(".*method\\s+" || methodName || "\\s*\\(", _line) then {
+               if ReMatch("^\\s*method\\s+" || methodName || "\\s*\\(", _line) then {
                   startPos := find(methodName, _line)
                   endPos := startPos + *methodName - 1
                   push(open_blocks, ["methods", methodName])
@@ -912,9 +912,11 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       contextCase := findContext()
       totalFileLines := 0
       f := open(uri) | fail
-      reads(f, stat(uri).size) ?
-         every upto('\n') do
-            totalFileLines +:= 1
+      if stat(uri).size > 0 then {
+         reads(f, stat(uri).size) ?
+            every upto('\n') do
+               totalFileLines +:= 1
+      }
       f := close(f)
 end
 

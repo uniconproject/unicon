@@ -3,18 +3,24 @@ package ulsp
 link regexp
 link ximage
 
+#<p>
 #  Processes all folding ranges in a document and constructs a result to return to the client.
+#</p>
 class FoldingRangeHandler(filehandler)
 
-   #  Sets the class variables for the FoldingRangeHandler.
-   #  Params: new_filehandler - The filehandler object created from the parameters of the
-   #                             request sent by the client.
+   #<p>
+   #   Sets the class variables for the FoldingRangeHandler.
+   #   <[param new_filehandler the filehandler object created using the request sent by the client]>
+   #   <[param new_params passed through the message request]>
+   #</p>
    method setVariables(new_filehandler)
       filehandler := new_filehandler
    end
 
+   #<p>
    #  Searches through the provided filehandler for all internal positions of symbols and
    #  constructs a result to send back to the client for all folding ranges.
+   #</p>
    method run()
       local results_list, tokenKind, tokenName, entry, startLine, endLine, result
 
@@ -42,10 +48,13 @@ class FoldingRangeHandler(filehandler)
       return results_list |||:= findFoldingRanges()
    end
 
-   #  Parse through the filehandler's temp_idoc parser to find all regions that are
-   #  large blocks of comments, large blocks of imports or links, and open sections
-   #  between curly brackets.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Parse through the filehandler's temp_idoc parser to find all regions that are
+   #   large blocks of comments, large blocks of imports or links, and open sections
+   #   between curly brackets.
+   #   <i>Used internally.</i>
+   #   <[returns a list of all folding ranges.]>
+   #</p>
    method findFoldingRanges()
       local lineNum, _line, commentBlock, commentLine, results_list, open_blocks, startLine, character, ch,
             single_quote, double_quote, importBlock, importLine

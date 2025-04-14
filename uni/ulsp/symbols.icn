@@ -2,18 +2,23 @@ package ulsp
 
 link ximage
 
+#<p>
 #  Processes all symbols in a document and constructs a result to return to the client.
+#</p>
 class SymbolHandler(filehandler)
 
-   #  Sets the class variables for the SymbolHandler.
-   #  Params: new_filehandler - The filehandler object created from the parameters of the
-   #                             request sent by the client.
+   #<p>
+   #   Sets the class variables for the SymbolHandler.
+   #   <[param new_filehandler the filehandler object created using the request sent by the client]>
+   #</p>
    method setVariables(new_filehandler)
       filehandler := new_filehandler
    end
 
-   #  Searches through the provided filehandler for all procedures, classes, methods, and
-   #  variables and constructs a result to send back to the client of all document symbols.
+   #<p>
+   #   Searches through the provided filehandler for all procedures, classes, methods, and
+   #   variables and constructs a result to send back to the client of all document symbols.
+   #</p>
    method run()
       local procedure_name, procedure_table, procedure_range, procedure_selectionRange,
             class_name, class_table, class_range, class_selectionRange, method_name,
@@ -139,13 +144,16 @@ class SymbolHandler(filehandler)
       return results_list
    end
 
-   #  Finds a parent of a variable, if one exists.
-   #  Params: v_rsl - The variable's starting line of its range.
-   #          v_rsc - The variable's starting character of its range.
-   #          v_rel - The variable's ending line of its range.
-   #          v_rec - The variable's ending character of its range.
-   #          entity_table - A table containing all entities in the document, i.e. classes, methods, procedures.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Finds a parent of a variable, if one exists.
+   #   <i>Used internally.</i>
+   #   <[param v_rsl The variable's starting line of its range.]>
+   #   <[param v_rsc The variable's starting character of its range.]>
+   #   <[param v_rel The variable's ending line of its range.]>
+   #   <[param v_rec The variable's ending character of its range.]>
+   #   <[param entity_table A table containing all entities in the document, i.e. classes, methods, procedures.]>
+   #   <[returns the parent entity of a variable, if one exists.]>
+   #</p>
    method find_parent_entity(v_rsl, v_rsc, v_rel, v_rec, entity_table)
       local range, parent, p_rsl, p_rsc, p_rel, p_rec
       every range := (parent := !entity_table)["range"] do {
@@ -162,19 +170,22 @@ class SymbolHandler(filehandler)
       return
    end
 
-   #  Constructs a result table with all of the selected parameters.
-   #  Params: nam - The name of the symbol.
-   #          kin - An integer code for the type of symbol.
-   #          rsl - The starting line for the range of the entire symbol.
-   #          rsc - The starting character for the range of the entire symbol.
-   #          rel - The ending line for the range of the entire symbol.
-   #          rec - The ending character for the range of the entire symbol.
-   #          ssl - The starting line of the selection range of the symbol's name.
-   #          ssc - The starting character of the selection range of the symbol's name.
-   #          sel - The ending line of the selection range of the symbol's name.
-   #          sec - The ending character of the selection range of the symbol's name.
-   #          chi - A list of results of children of this symbol, i.e. a method belonging to a class.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Constructs a result table with all of the selected parameters.
+   #   <i>Used internally.</i>
+   #   <[param nam The name of the symbol.]>
+   #   <[param kin An integer code for the type of symbol.]>
+   #   <[param rsl The starting line for the range of the entire symbol.]>
+   #   <[param rsc The starting character for the range of the entire symbol.]>
+   #   <[param rel The ending line for the range of the entire symbol.]>
+   #   <[param rec The ending character for the range of the entire symbol.]>
+   #   <[param ssl The starting line of the selection range of the symbol's name.]>
+   #   <[param ssc The starting character of the selection range of the symbol's name.]>
+   #   <[param sel The ending line of the selection range of the symbol's name.]>
+   #   <[param sec The ending character of the selection range of the symbol's name.]>
+   #   <[param chi A list of results of children of this symbol, i.e. a method belonging to a class.]>
+   #   <[returns the table with the selected parameters.]>
+   #</p>
    method constructResult(nam, kin, rsl, rsc, rel, rec, ssl, ssc, sel, sec, chi)
       local results_table := [
          "name" : nam;

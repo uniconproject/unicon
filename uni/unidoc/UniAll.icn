@@ -388,7 +388,7 @@ class UniAll : Object (files, packages,
     method processPackage(f)
         local pName
 
-        pName := getName(f.nextToken())
+        pName := getName(f.nextToken()) | fail
         /packages[pName] := UPackage(pName, curFile)
         curPackage := packages[pName]
         curPackage.mergeComments(curComments)
@@ -405,7 +405,7 @@ class UniAll : Object (files, packages,
     method processImport(f)
         local iName, iList, imp, token, sawComma
 
-        iName := getName(f.nextToken())
+        iName := getName(f.nextToken()) | fail
         iList := iName
         insert(importSet, iName)           # Remember for later processing
         imp := UImport(iName, curFile, curComments)
@@ -444,7 +444,7 @@ class UniAll : Object (files, packages,
     method processLink(f)
         local lName, lList, lnk, token, sawComma
 
-        lName := getName(f.nextToken())
+        lName := getName(f.nextToken()) | fail
         lList := lName
         lName := delSuffix(lName, ".icn")||".icn"
         insert(linkSet, lName)             # Remember for later processing
@@ -485,7 +485,7 @@ class UniAll : Object (files, packages,
     method processClass(f)
         local cName, const, scList, token, scName, pList, field
 
-        cName := getName(f.nextToken())
+        cName := getName(f.nextToken()) | fail
         curClass := UClass(cName, curFile, curComments)
         addTag(curClass)
 
@@ -667,8 +667,8 @@ class UniAll : Object (files, packages,
     # <i>This is intended for internal use only!</i>
     method processMethod(f)
         local mName, pList, met, token, param
-
-        mName := getName(f.nextToken())
+        if /curClass then fail
+        mName := getName(f.nextToken()) | fail
         pList := ""
         met := UMethod(mName, curClass, curComments)
         addTag(met)
@@ -721,7 +721,7 @@ class UniAll : Object (files, packages,
     method processProcedure(f)
         local pName, pList, proced, token, param
 
-        pName := getName(f.nextToken())
+        pName := getName(f.nextToken()) | fail
         pList := ""
         proced := UProc(pName, curFile, curComments)
         addTag(proced)
@@ -775,7 +775,7 @@ class UniAll : Object (files, packages,
         local gName, gList, glob, token, sawComma
         gList := ""
 
-        glob := getGlobal(f, f.nextToken(), curFile, curComments)
+        glob := getGlobal(f, f.nextToken(), curFile, curComments) | fail
         gList ||:= " " || glob.getName()
         curComments := Comments()
         while not f.EOS() do {
@@ -808,7 +808,7 @@ class UniAll : Object (files, packages,
     method processRecord(f)
         local rName, pList, rec, token, field
 
-        rName := getName(f.nextToken())
+        rName := getName(f.nextToken()) | fail
         pList := ""
         rec := URecord(rName, curFile, curComments)
         addTag(rec)

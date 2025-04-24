@@ -982,9 +982,9 @@ procedure makeComment(_function)
                   _line := _line[1:firstKey+6] || "*" || _line[firstKey+6:firstKey+6+*paramList[paramCounter]] || "*:" || _line[firstKey+6+*paramList[paramCounter]:*_line+1]
 
                if(paramCounter == 1) then
-                  _line := replace(_line, "param", "\n **Parameters:**  \n \\\\>" || tabCharacter)
+                  _line := replace(_line[1:firstKey+5], "param", "\n **Parameters:**  \n \\\\>" || tabCharacter) || _line[firstKey+6:0]
                else
-                  _line := replace(_line, "param", "\n \\\\>" || tabCharacter)
+                  _line := replace(_line[1:firstKey+5], "param", "\n \\\\>" || tabCharacter) || _line[firstKey+6:0]
 
 
                paramCounter +:= 1
@@ -993,33 +993,33 @@ procedure makeComment(_function)
             }
             else if ((find("returns", _line[firstKey:firstKey+7]) & (find("<[", _line)))) then {
                if(returnCounter == 0) then {
-                  _line := replace(_line, "returns", "\n **Returns:**  \n " || tabCharacter)
+                  _line := replace(_line[1:firstKey+7], "returns", "\n **Returns:**  \n " || tabCharacter) || _line[firstKey+8:0]
                   returnCounter +:= 1
                }
                else
-                  _line := replace(_line, "returns", "\n " || tabCharacter)
+                  _line := replace(_line[1:firstKey+7], "returns", "\n " || tabCharacter) || _line[firstKey+8:0]
 
                returnComment ||:= _line
                currentType := 2
             }
             else if ((find("fails", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
                if(failsCounter == 0) then {
-                  _line := replace(_line, "fails", "\n **Fails:**  \n " || tabCharacter)
+                  _line := replace(_line[1:firstKey+5], "fails", "\n **Fails:**  \n " || tabCharacter) || _line[firstKey+6:0]
                   failsCounter +:= 1
                }
                else
-                  _line := replace(_line, "fails", "\n " || tabCharacter)
+                  _line := replace(_line[1:firstKey+5], "fails", "\n " || tabCharacter) || _line[firstKey+6:0]
 
                failsComment ||:= _line
                currentType := 3
             }
             else if ((find("generates", _line[firstKey:firstKey+9]) & (find("<[", _line)))) then {
                if(genCounter == 0) then {
-                  _line := replace(_line, "generates", "\n **Generates:**  \n " || tabCharacter)
+                  _line := replace(_line[1:firstKey+9], "generates", "\n **Generates:**  \n " || tabCharacter) || _line[firstKey+10:0]
                   genCounter +:= 1
                }
                else
-                  _line := replace(_line, "generates", "\n " || tabCharacter)
+                  _line := replace(_line[1:firstKey+9], "generates", "\n " || tabCharacter) || _line[firstKey+10:0]
 
                genComment ||:= _line
                currentType := 4
@@ -1037,7 +1037,7 @@ procedure makeComment(_function)
             else if currentType = 4 then genComment ||:= _line
          }
          else if ReMatch("^[\ ]*Source: ", _line) then {
-            sourceComment := replace(_line, "Source:", "\n **Source:**")
+            sourceComment := replace(_line, "Source:", "\n\n **Source:**")
          }
          else
             normalComment ||:= _line
@@ -1045,7 +1045,7 @@ procedure makeComment(_function)
    }
 
    if srcFile := _function.getSrcFile() & sourceComment == "" then
-      sourceComment := "\n **Source:** " || srcFile
+      sourceComment := "\n\n **Source:** " || srcFile
 
    fullComment := normalComment || "\n \n --- \n \n" || " " || returnComment || " " || paramComment || " " || failsComment || " " || genComment || " " || sourceComment
    fullComment := replacem(fullComment, "<p>", "", "</p>", "")

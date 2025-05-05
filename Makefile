@@ -281,6 +281,20 @@ install Install:
 	@$(INST) -m 644 README.md $(DESTDIR)$(docdir)
 	@echo "Installing $(DESTDIR)$(docdir) ..."
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)
+#   Sign code if we are running MacOS on Apple's processors
+	@case `uname` in \
+	Darwin )\
+	    case `bin/unicon -features | grep Arch | cut -d " " -f 2` in \
+	    arm_64 )\
+	        for f in $(Tbins); do \
+	            case "$$f" in \
+	            $(UNICONX) | $(UNICONWX) | $(UNICONT) | $(UNICONWT) | $(UNICONC) | $(PATCHSTR) | iyacc )\
+	                echo signing  $(DESTDIR)$(bindir)/$$f ; \
+	                codesign -s - $(DESTDIR)$(bindir)/$$f ;;\
+	            esac; \
+	        done;; \
+	    esac;; \
+	esac
 
 # Bundle up for binary distribution.
 PKGDIR=$(PKG_TARNAME).$(PKG_VERSION)

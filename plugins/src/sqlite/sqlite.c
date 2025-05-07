@@ -15,7 +15,7 @@
  *
  *----------------------------------------------------------------------
  */
-#include "../icall.h"
+#include "icall.h"
 /*
  * sqlite3.h (which contains the definitions for the API of SQLite version 3
  * https://sqlite.org/index.html) is required.

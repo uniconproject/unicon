@@ -24,7 +24,7 @@
  *
  */
 
-#include "../icall.h"
+#include "icall.h"
 #include "./RFC6234/sha.h"
 
 #undef SHA_TRACING

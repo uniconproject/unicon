@@ -5,7 +5,7 @@
  * source directory in the file COPYING.
  *
  */
-#include "../icall.h"
+#include "icall.h"
 
 RTEX int bor(UARGS);
 RTEX int bxor(UARGS);

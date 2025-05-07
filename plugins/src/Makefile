@@ -6,6 +6,7 @@ default: default_target
 include $(TOPDIR)/Makedefs
 
 LIBD=$(TOPDIR)/plugins/lib
+ICALLDIR=$(TOPDIR)/uni/icall
 
 UC=$(TOPDIR)/bin/unicon
 WUC=$(TOPDIR)/bin/unicon -G
@@ -33,8 +34,8 @@ default_target:   icall.$(O) $(LIBD)/uso.u $(PCMN)
 
 all: uso.u icall.$(O)
 
-icall.$(O): icall.h icall.c
-	$(CC) $(CFDYN2) -c icall.c
+icall.$(O): $(ICALLDIR)/icall.h $(ICALLDIR)/icall.c
+	$(CC) $(CFDYN2) -c $(ICALLDIR)/icall.c
 	$(CP) icall.$(O) ../lib/
 
 windows: $(PCMN) $(PWIN)

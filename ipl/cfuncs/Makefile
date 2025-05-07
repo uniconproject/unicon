@@ -5,6 +5,7 @@
 
 
 TOPDIR=../..
+ICALLDIR=$(TOPDIR)/uni/icall
 
 default: default_target
 
@@ -45,7 +46,7 @@ windows:
 $(FUNCLIB):	$(FUNCS)
 		$(CC) $(LDDYN) -o $(FUNCLIB) $(CFDYN) $(FUNCS)
 
-$(FUNCS):	icall.h
+$(FUNCS):	$(ICALLDIR)/icall.h
 
 # Icon interface
 cfunc.u:	cfunc.icn

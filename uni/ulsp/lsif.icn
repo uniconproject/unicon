@@ -3,13 +3,16 @@ import ulsp
 import json
 link ximage
 
+#<p>
 #  Generates LSIF information by going through the packages in the database and create LSIF vertices and edges
 #  from each project, file, hover info, etc.
+#</p>
 class LSIFIndexer(
       db,                         # The provided database to index
       outFile                     # The file to output to
       )
 
+   #<p>
    #  The main method of the LSIFIndexer class; this method will take the assigned database (db) and
    #  use it to build an index file of all relevant information in each of the files and output it
    #  to a directed file in LSIF JSON format.
@@ -20,6 +23,7 @@ class LSIFIndexer(
    #  a range vertex. It then checks the definitionHandler. If the requested position is a definition
    #  it creates a definition vertex. If it's defined elsewhere, it will save it in a table to check
    #  later. At the end it will go through all the references and match them up with definitions.
+   #</p>
    method build_index()
       local i, j, k, idoc, path, x, pack, file_in_pack, uri, filehandler_object, fake_params, result, hoverHandler,
             context, char_end, line_end, definitionHandler, result2, resultSet_table, resultSet, reference,
@@ -146,16 +150,21 @@ class LSIFIndexer(
       close(outFile)
    end
 
-   #  Iterates nextID up one.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Iterates nextID up one.
+   #   <i>Used internally.</i>
+   #   <[returns the new nextID.]>
+   #</p>
    method getNextID()
       static nextID := 0
       return nextID +:= 1
    end
 
-   #  Creates a metaData vertex with the given information and outputs it to the output file.
-   #  Params: path - The path of the main Unicon directory.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a metaData vertex with the given information and outputs it to the output file.
+   #   <i>Used internally.</i>
+   #   <[param path The path of the main Unicon directory.]>
+   #</p>
    method createMetaDataVertex(path)
       local lsif_table
 
@@ -170,10 +179,13 @@ class LSIFIndexer(
       write(outFile, tojson(lsif_table))
    end
 
-   #  Creates a Project vertex with the given information and outputs it to the output file.
-   #  Params: path - The path of the project.
-   #          dir_name - The name of the directory for the project.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a Project vertex with the given information and outputs it to the output file.
+   #   <i>Used internally.</i>
+   #   <[param path The path of the main Unicon directory.]>
+   #   <[param dir_name The name of the directory for the project.]>
+   #   <[returns the project ID.]>
+   #</p>
    method createProjectVertex(path, dir_name)
       local lsif_table, proID := getNextID()
       lsif_table := [
@@ -188,11 +200,13 @@ class LSIFIndexer(
       return proID
    end
 
-   #  Creates an Event vertex with the given information and outputs it to the output file.
-   #  Params: scope - The scope of this event, i.e. project or document.
-   #          kind - Whether this event is a begin or an end event.
-   #          scopeID - The ID for the project or document that the scope belongs to.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates an Event vertex with the given information and outputs it to the output file.
+   #   <i>Used internally.</i>
+   #   <[param scope The scope of this event, i.e. project or document.]>
+   #   <[param kind Whether this event is a begin or an end event.]>
+   #   <[param scopeID The ID for the project or document that the scope belongs to.]>
+   #</p>
    method createEventVertex(scope, kind, scopeID)
       local lsif_table
 
@@ -207,10 +221,13 @@ class LSIFIndexer(
       write(outFile, tojson(lsif_table))
    end
 
-   #  Creates a Document vertex and the associated contains edge that links it to
-   #  the project that it is a part of.
-   #  Params: uri - The uri of the file of the document vertex.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a Document vertex and the associated contains edge that links it to
+   #   the project that it is a part of.
+   #   <i>Used internally.</i>
+   #   <[param uri The uri of the file of the document vertex.]>
+   #   <[returns the document ID.]>
+   #</p>
    method createDocumentVertex(uri)
       local lsif_table, docID := getNextID()
 
@@ -225,8 +242,10 @@ class LSIFIndexer(
       return docID
    end
 
-   #  Creates a resultSet vertex that will link relevant information together.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a resultSet vertex that will link relevant information together.
+   #   <i>Used internally.</i>
+   #</p>
    method createResultSetVertex()
       local lsif_table, resID := getNextID()
 
@@ -239,11 +258,14 @@ class LSIFIndexer(
       return resID
    end
 
-   #  Creates a range vertex with the relevant data.
-   #  Params: lineNum - The line number that the token is located on.
-   #          startCharNum - The starting character position.
-   #          endCharNum - The ending character position.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a range vertex with the relevant data.
+   #   <i>Used internally.</i>
+   #   <[param lineNum The line number that the token is located on.]>
+   #   <[param startCharNum The starting character position.]>
+   #   <[param endCharNum The ending character position.]>
+   #   <[returns the range ID.]>
+   #</p>
    method createRangeVertex(lineNum, startCharNum, endCharNum)
       local lsif_table, ranID := getNextID()
 
@@ -258,11 +280,12 @@ class LSIFIndexer(
       return ranID
    end
 
-   #  Creates a hoverResult vertex, along with a range vertex and a textdocument/hover edge.
-   #  Params: value - The value of the token that is being hovered over.
-   #          outID - For regular hover results, it will be the rangeID. For hover results linked to a resultSet,
-   #                  it will be the resultSetID.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a hoverResult vertex, along with a range vertex and a textdocument/hover edge.
+   #   <i>Used internally.</i>
+   #   <[param value The line number that the token is located on.]>
+   #   <[param outID For regular hover results, it will be the rangeID. For hover results linked to a resultSet, it will be the resultSetID.]>
+   #</p>
    method createHoverResultVertex(value, outID)
       local lsif_table, hoverID := getNextID()
 
@@ -283,10 +306,12 @@ class LSIFIndexer(
       write(outFile, tojson(lsif_table))
    end
 
-   #  Creates a next edge that links a given range vertex to a resultSet vertex.
-   #  Params: rangeID - The range of the token that is being hovered over.
-   #          resultSetID - The result set belonging to that range.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a next edge that links a given range vertex to a resultSet vertex.
+   #   <i>Used internally.</i>
+   #   <[param rangeID The range of the token that is being hovered over.]>
+   #   <[param resultSetID The result set belonging to that range.]>
+   #</p>
    method createNextEdge(rangeID, resultSetID)
       local lsif_table
 
@@ -300,12 +325,14 @@ class LSIFIndexer(
       write(outFile, tojson(lsif_table))
    end
 
-   #  Creates a definitionResult vertex and a textDocument/definition edge that links a given range
-   #  vertex to a resultSet vertex.
-   #  Params: resultSetID - The result set of the token that is being hovered over.
-   #          rangeID - The range of the token that is being hovered over.
-   #          documentID - The ID of the associated document.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a definitionResult vertex and a textDocument/definition edge that links a given range
+   #   vertex to a resultSet vertex.   
+   #   <i>Used internally.</i>
+   #   <[param resultSetID The result set of the token that is being hovered over.]>
+   #   <[param rangeID The range of the token that is being hovered over.]>
+   #   <[param documentID The ID of the associated document.]>
+   #</p>
    method createDefinitionResultVertex(resultSetID, rangeID, documentID)
       local lsif_table, definitionID := getNextID()
 
@@ -326,13 +353,16 @@ class LSIFIndexer(
       createItemEdge(definitionID, rangeID, documentID)
    end
 
-   #  Creates a referenceResult vertex and a textDocument/references edge that links a given range
-   #  vertex to a resultSet vertex.
-   #  Params: outID - The result set that this reference belongs to.
-   #          property - Either "definitions" or "references".
-   #          rangeID - The range of the token that is being hovered over.
-   #          documentID - The ID of the associated document.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a referenceResult vertex and a textDocument/references edge that links a given range
+   #   vertex to a resultSet vertex.  
+   #   <i>Used internally.</i>
+   #   <[param outID The result set that this reference belongs to.]>
+   #   <[param property Either "definitions" or "references".]>
+   #   <[param rangeID The range of the token that is being hovered over.]>
+   #   <[param documentID The ID of the associated document.]>
+   #   <[returns the reference ID.]
+   #</p>
    method createReferenceResultVertex(outID, property, rangeID, documentID)
       local lsif_table, refID := getNextID()
 
@@ -354,12 +384,14 @@ class LSIFIndexer(
       return refID
    end
 
-   #  Creates an item edge that links a given range vertex to a definitionResult.
-   #  Params: outID - The ID for the definitionResult or referenceResult associated with this edge.
-   #          ItemRangeID - The ID of the range that this Item edge belongs to
-   #          docID - The ID for the document that this Item edge belongs to
-   #          property - Whether this edge belongs to definitions or references
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates an item edge that links a given range vertex to a definitionResult.
+   #   <i>Used internally.</i>
+   #   <[param outID The ID for the definitionResult or referenceResult associated with this edge.]>
+   #   <[param ItemRangeID The ID of the range that this Item edge belongs to.]>
+   #   <[param docID The ID for the document that this Item edge belongs to.]>
+   #   <[param property Whether this edge belongs to definitions or references.]>
+   #</p>
    method createItemEdge(outID, ItemRangeID, docID, property)
       local lsif_table, ranges
 
@@ -377,11 +409,13 @@ class LSIFIndexer(
       write(outFile, tojson(lsif_table))
    end
 
-   #  Creates a contains edge that links all of the ranges in a document to that document,
-   #  or all the documents to a project.
-   #  Params: outID - The ID that this edge is pointing out from, either the document or project ID.
-   #          contains_table - The table with ID's of all ranges in a document or documents in a project.
-   #  <i>This is intended for internal use only!</i>
+   #<p>
+   #   Creates a contains edge that links all of the ranges in a document to that document,
+   #   or all the documents to a project.
+   #   <i>Used internally.</i>
+   #   <[param outID The ID that this edge is pointing out from, either the document or project ID.]>
+   #   <[param contains_table The table with ID's of all ranges in a document or documents in a project.]>
+   #</p>
    method createContainsEdge(outID, contains_table)
       local lsif_table
 

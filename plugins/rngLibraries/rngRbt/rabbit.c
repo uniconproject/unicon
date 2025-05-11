@@ -41,6 +41,10 @@
 #include "ecrypt-sync.h"
 #include "ecrypt-portable.h"
 
+#ifdef ECRYPT_UNKNOWN
+#warning Neither ECRYPT_BIG_ENDIAN nor ECRYPT_LITTLE_ENDIAN is defined
+#endif
+
 /* -------------------------------------------------------------------------- */
 
 /* Square a 32-bit unsigned integer to obtain the 64-bit result and return */

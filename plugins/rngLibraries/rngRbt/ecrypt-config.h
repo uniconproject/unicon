@@ -13,15 +13,27 @@
 #define ECRYPT_CONFIG
 
 /* ------------------------------------------------------------------------- */
+/* Try standard-ish macros for endianness */
+#if defined (__LITTLE_ENDIAN__)
+#define ECRYPT_LITTLE_ENDIAN
+#elif defined (__BIG_ENDIAN__)
+#define ECRYPT_BIG_ENDIAN
+#elif defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define ECRYPT_LITTLE_ENDIAN
+#elif defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define ECRYPT_BIG_ENDIAN
+#elif defined(__FLOAT_WORD_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && (__FLOAT_WORD_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define ECRYPT_LITTLE_ENDIAN
+#elif defined(__FLOAT_WORD_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && (__FLOAT_WORD_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define ECRYPT_BIG_ENDIAN
+#endif
 
-/* Guess the endianness of the target architecture. */
-
+/* Guess the endianness of the target architecture if not already determined. */
+#if !defined(ECRYPT_LITTLE_ENDIAN) && !defined(ECRYPT_BIG_ENDIAN)
 /*
  * The LITTLE endian machines:
  */
-#if defined (__LITTLE_ENDIAN__)
-#define ECRYPT_LITTLE_ENDIAN
-#elif defined(__ultrix)           /* Older MIPS */
+#if defined(__ultrix)           /* Older MIPS */
 #define ECRYPT_LITTLE_ENDIAN
 #elif defined(__alpha)          /* Alpha */
 #define ECRYPT_LITTLE_ENDIAN
@@ -44,6 +56,10 @@
 /*
  * The BIG endian machines:
  */
+#elif defined(__ARMEB__)
+#define ECRYPT_BIG_ENDIAN
+#elif defined(__AARCH64EB__)
+#define ECRYPT_BIG_ENDIAN
 #elif defined(sun)              /* Newer Sparc's */
 #define ECRYPT_BIG_ENDIAN
 #elif defined(__ppc__)          /* PowerPC */
@@ -65,7 +81,7 @@
 #else                           /* Any other processor */
 #define ECRYPT_UNKNOWN
 #endif
-
+#endif      /* !defined(ECRYPT_LITTLE_ENDIAN) && !defined(ECRYPT_BIG_ENDIAN) */
 /* ------------------------------------------------------------------------- */
 
 /*

@@ -666,7 +666,9 @@ XPM
 XL
 GRAPHICS
 XLIBS
+GSLRNG
 SQLITE
+RNGLIBS
 LIBOBJS
 HTMLDOC
 UDOC
@@ -788,6 +790,7 @@ enable_iconcurrency
 enable_ovld
 enable_udbtools
 enable_progs
+enable_rnglibs
 enable_verbosebuild
 enable_doc
 enable_htmldoc
@@ -1466,6 +1469,7 @@ Optional Features:
   --enable-ovld           Enable operator overloading
   --enable-udbtools       Enable Unicon debugger tools
   --enable-progs          Enable Unicon programs
+  --enable-rnglibs        Enable loadable random number generators
   --enable-verbosebuild   Show full CC build lines with all compiler arguments
   --enable-doc            Add makefile rule to build documentation
   --enable-htmldoc        Add makefile rule to html documentation
@@ -3737,6 +3741,13 @@ else $as_nop
   verifyheap=no
 fi
 
+# Check whether --enable-rnglibs was given.
+if test "${enable_rnglibs+set}" = set; then :
+  enableval=$enable_rnglibs; rnglibs=yes
+else
+  rnglibs=no
+fi
+
 # Check whether --enable-devmode was given.
 if test ${enable_devmode+y}
 then :
@@ -5209,6 +5220,14 @@ if test x"$verifyheap" = x"yes" ; then
 printf "%s\n" "#define VerifyHeap 1" >>confdefs.h
 
     verifyheapreport="VerifyHeap"
+fi
+
+if test x"$rnglibs" = x"yes" ; then
+
+$as_echo "#define RngLibrary 1" >>confdefs.h
+
+RNGLIBS=1
+
 fi
 
 if test x"$udbtools" = x"yes" ; then
@@ -8692,7 +8711,7 @@ then :
 fi
 
 
-# we don't need sqlite to be added to $LIBS, not yet at least
+# Check for libs for plugin use, don't add to these to $LIBS
 saved_libs="$LIBS"
 ac_fn_c_check_header_compile "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes
@@ -8744,6 +8763,63 @@ then :
 
 fi
 
+for ac_header in gsl/gsl_rng.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "gsl/gsl_rng.h" "ac_cv_header_gsl_gsl_rng_h" "$ac_includes_default"
+if test "x$ac_cv_header_gsl_gsl_rng_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GSL_GSL_RNG_H 1
+_ACEOF
+
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gsl_rng_set in -lgsl" >&5
+$as_echo_n "checking for gsl_rng_set in -lgsl... " >&6; }
+if ${ac_cv_lib_gsl_gsl_rng_set+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgsl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gsl_rng_set ();
+int
+main ()
+{
+return gsl_rng_set ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gsl_gsl_rng_set=yes
+else
+  ac_cv_lib_gsl_gsl_rng_set=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gsl_gsl_rng_set" >&5
+$as_echo "$ac_cv_lib_gsl_gsl_rng_set" >&6; }
+if test "x$ac_cv_lib_gsl_gsl_rng_set" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGSL 1
+_ACEOF
+
+  LIBS="-lgsl $LIBS"
+
+fi
+
+
 LIBS="$saved_libs"
 
 if test "x$ac_cv_header_sqlite3_h" = "xyes" -a  "x$ac_cv_lib_sqlite3_sqlite3_config" = "xyes"; then
@@ -8751,6 +8827,14 @@ if test "x$ac_cv_header_sqlite3_h" = "xyes" -a  "x$ac_cv_lib_sqlite3_sqlite3_con
 else
   SQLITE=""
 fi
+
+if test "x$ac_cv_header_gsl_gsl_rng_h" = "xyes" -a  "x$ac_cv_lib_gsl_gsl_rng_set" = "xyes"; then
+  GSLRNG="gsl"
+else
+  GSLRNG=""
+fi
+
+
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing getaddrinfo" >&5

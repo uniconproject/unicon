@@ -1,0 +1,367 @@
+package ulsp
+
+link regexp
+link ximage
+
+#<p>
+#  Processes all formatting changes to be made to a document and constructs a result to return to the client.
+#</p>
+class FormattingHandler(filehandler, params)
+
+   #<p>
+   #   Sets the class variables for the FormattingHandler.
+   #   <[param new_filehandler the filehandler object created using the request sent by the client]>
+   #   <[param new_params passed through the message request]>
+   #</p>
+   method setVariables(new_filehandler, new_params)
+      filehandler := new_filehandler
+      params := new_params
+   end
+
+   #<p>
+   #   Searches through the provided filehandler for any incorrect formatting and
+   #   constructs a result to send back to the client for any changes to be made.
+   #</p>
+   method run()
+      local results_list, result, lineNum, _line, foldingRangeHandler,
+            foldingResult, tabSize, tabLevel, entry, structuredComment,
+            ch, open_blocks, addedTabs, position, trimmedLine, previousLine,
+            nextLineTab
+
+      results_list := []
+      open_blocks := []
+      foldingRangeHandler := FoldingRangeHandler()
+      foldingRangeHandler.setVariables(filehandler)
+      foldingResult := foldingRangeHandler.run()
+      tabSize := params["options"]["tabSize"]
+      structuredComment := 0
+      addedTabs := 0
+      nextLineTab := 0
+      lineNum := 1
+
+      while _line := filehandler.temp_idoc.getUniFileLine(filehandler.uri, lineNum) do {
+         # Ignore structured Ivib comments
+         if match("### Ivib-v2 layout ##", _line) then
+            structuredComment := 1
+         if structuredComment = 1 then {
+            if match("#", _line) then {
+               lineNum +:= 1
+               next
+            } else
+               structuredComment := 0
+         }
+
+         trimmedLine := trim(_line)
+         ch := trimmedLine[-1]
+
+         # Fix any curly bracket issues
+         if ch == "{" then {
+            trimmedLine ? {
+               tab(many(" "))
+               if trimmedLine[&pos] == "{" then {
+                  move(1)
+                  if not move(1) then {
+                     previousLine := filehandler.temp_idoc.getUniFileLine(filehandler.uri, lineNum - 1)
+                     put(results_list, createResult(lineNum - 1, *previousLine, lineNum, *trimmedLine, " {"))
+                     lineNum +:= 1
+                     next
+                  }
+               }
+            }
+         }
+         every position := find("{", trimmedLine) do {
+            if withinQuotes(trimmedLine, position) ~== 1 && trimmedLine[position - 1] ~== " " then
+               put(results_list, createResult(lineNum, position - 1, lineNum, position - 1, " "))
+         }
+
+         # Clear whitespace in line
+         if structuredComment = 0 & \(result := clearTrailingWhitespace(_line, lineNum)) then
+            put(results_list, result)
+
+         # Ignore if the trimmed line is empty
+         if *trimmedLine = 0 then {
+            lineNum +:= 1
+            next
+         }
+
+         # Get rid of any extra spaces
+         if \(result := clearExtraSpaces(trimmedLine, lineNum)) then
+            every put(results_list, !result)
+
+         # Find closing blocks
+         if ch == ("]" | ")") | (ch == ";" & trimmedLine[-2] == ("]" | ")")) then {
+            if not find(("[" | "("), trimmedLine) then
+               pop(open_blocks)
+         }
+
+         # Fix indentation as needed
+         tabLevel := 0 + addedTabs + nextLineTab
+         nextLineTab := 0
+         if match(("link" | "import"), trimmedLine) then {
+            tabLevel := 0
+         } else {
+            if position := find(("then" | "else" | "do"), trimmedLine) then {
+               if trimmedLine[position - 1] == " " then {
+                  trimmedLine ? {
+                     &pos := position
+                     if tab(many(&letters)) == ("then" | "else" | "do") then {
+                        if &pos > *trimmedLine then nextLineTab := 1
+                     }
+                  }
+               }
+            }
+            every entry := !foldingResult do {
+               if entry["startLine"] + 1 < lineNum < entry["endLine"] + 2 then
+                  tabLevel +:= 1
+            }
+            every entry := !open_blocks do tabLevel +:= 1
+         }
+         if \(result := fixIndentation(trimmedLine, lineNum, tabSize * tabLevel)) then
+            put(results_list, result)
+
+         # Find open blocks
+         if ch == ("[" | "(") then {
+            push(open_blocks, ch)
+         }
+
+         # Add extra tabs to following line for multi-line variables and strings
+         if (ReMatch("^[\\s]*local.*$", trimmedLine) & ch == ",") | ch == "_" then {
+            addedTabs := 2
+         } else if addedTabs = 2 & ch ~== "," then
+            addedTabs := 0
+
+         every result := !insertSpaces(trimmedLine, lineNum) do put(results_list, result)
+
+         lineNum +:= 1
+      }
+      return results_list
+   end
+
+   #<p>
+   #   Clears a specific line of all trailing whitespace (if there is any).
+   #   <i>Used internally.</i>
+   #   <[param _line The actual content of the line.]>
+   #   <[param lineNum The line number to check.]>
+   #   <[returns the line cleared of any trailing whitespace]>
+   #</p>
+   method clearTrailingWhitespace(_line, lineNum)
+      local position, ch, spaces := 0
+      _line ? {
+         while ch := move(1) do {
+            if ch == " " then {
+               if spaces == 0 then
+                  position := &pos - 2
+               spaces := 1
+            } else spaces := 0
+         }
+      }
+      if spaces = 1 then
+         return createResult(lineNum, position, lineNum, *_line, "")
+   end
+
+   #<p>
+   #   Checks the indentation and returns a result fixing any errors based on the
+   #   level of the line and the tab size set in VsCode.
+   #   <i>Used internally.</i>
+   #   <[param _line The actual content of the line.]>
+   #   <[param lineNum The line number to check.]>
+   #   <[param tabAmount The level of the line multiplied by the tab size.]>
+   #   <[returns the line with the proper amount of indentation.]>
+   #</p>
+   method fixIndentation(_line, lineNum, tabAmount)
+      local correctSpaces, actualSpaces, ch
+
+      correctSpaces := repl(" ", tabAmount)
+      actualSpaces := 0
+      _line ? {
+         while ch := move(1) do {
+            if ch == "#" then
+               return
+            if ch ~== " " then
+               break
+            actualSpaces +:= 1
+         }
+         if actualSpaces ~= tabAmount then
+            return createResult(lineNum, 0, lineNum, &pos - 2, correctSpaces)
+      }
+   end
+
+   #<p>
+   #   Looks through each operator in the line and adds spaces before/after when appropriate.
+   #   <i>Used internally.</i>
+   #   <[param _line The actual content of the line.]>
+   #   <[param lineNum The line number to check.]>
+   #   <[returns the line with corrected spacing between operators.]>
+   #</p>
+   method insertSpaces(_line, lineNum)
+      local res, charOps, cpos
+
+      res := []
+      charOps := ':=+-/*^%~<>?|-@'
+
+      _line ? {
+         while tab(upto(charOps)) do {
+            if withinQuotes(_line, &pos) = 0 then {
+               case _line[&pos] of {
+                  ":" : {
+                     if _line[&pos - 1] ~== " " then {
+                        cpos := &pos - 1
+                        if *tab(many(charOps)) > 1 then {
+                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                           if _line[&pos] ~== " " then {
+                              cpos := &pos - 1
+                              if _line[&pos - 1] == "-" && _line[&pos - 2] == "=" then
+                                 cpos -:= 1
+                              put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                           }
+                        } else
+                           tab(many(charOps))
+                     } else {
+                        tab(many(charOps))
+                        if _line[&pos] ~== " " then {
+                           cpos := &pos - 1
+                           if _line[&pos - 1] == "-" && _line[&pos - 2] == "=" then
+                              cpos -:= 1
+                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                        }
+                     }
+                  }
+                  "@" : {
+                     if \_line[&pos + 1] && _line[&pos + 1] == ">" then {
+                        put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
+                        tab(many(charOps))
+                        if _line[&pos] ~== " " then {
+                           cpos := &pos - 1
+                           if _line[&pos - 1] == "-" && _line[&pos - 2] == "=" then
+                              cpos -:= 1
+                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                        }
+                     } else
+                        tab(many(charOps))
+                  }
+                  "-" | "*" | "/" : {
+                     if not (_line[&pos - 1] == (" " | "(" | "[")) then {
+                        put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
+                        tab(many(charOps))
+                        if _line[&pos] ~== " " then {
+                           cpos := &pos - 1
+                           if _line[&pos - 1] == "-" && _line[&pos - 2] == "=" then
+                              cpos -:= 1
+                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                        }
+                     } else
+                        tab(many(charOps))
+                  }
+                  default : {
+                     if _line[&pos - 1] ~== " " then {
+                        put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
+                        tab(many(charOps))
+                        if _line[&pos] ~== " " then {
+                           cpos := &pos - 1
+                           if _line[&pos - 1] == "-" && _line[&pos - 2] == "=" then
+                              cpos -:= 1
+                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                        }
+                     } else
+                        tab(many(charOps))
+                  }
+               }
+            } else
+               tab(many(charOps))
+         }
+      }
+      return res
+   end
+
+   #<p>
+   #   Clears any instances of extra spaces where there shouldn't be.
+   #   <i>Used internally.</i>
+   #   <[param _line The actual content of the line.]>
+   #   <[param lineNum The line number to check.]>
+   #   <[returns the line with extra spaces cleared.]>
+   #</p>
+   method clearExtraSpaces(_line, lineNum)
+      local newLine, leadingWhitespaceCount, position, ch, open_blocks, results_list := []
+
+      open_blocks := []
+      _line ? {
+         tab(many(' \t'))
+         leadingWhitespaceCount := &pos
+         newLine := _line[&pos:0]
+      }
+      newLine ? {
+         while tab(upto(" ")) do {
+            open_blocks := 0
+            position := &pos - 2
+            if newLine[&pos - 1] == "(" then {
+               open_blocks := 1
+            }
+            ch := tab(many(' '))
+            if newLine[&pos] == "#" | withinQuotes(newLine, &pos) = 1 then
+               next
+            if newLine[&pos] == ("(" | ")") then {
+               open_blocks := 1
+            }
+            if open_blocks = 1 then
+               put(results_list, createResult(lineNum, position + leadingWhitespaceCount, lineNum, &pos - 2 + leadingWhitespaceCount, ""))
+            else if *ch > 1 then
+               put(results_list, createResult(lineNum, position + leadingWhitespaceCount, lineNum, &pos - 2 + leadingWhitespaceCount, " "))
+         }
+      }
+      return results_list
+   end
+
+   #<p>
+   #   Checks if the selected position is between quotation marks or is part of a comment.
+   #   <i>Used internally.</i>
+   #   <[param _line The actual content of the line.]>
+   #   <[param position The position in the line to check.]>
+   #   <[returns 1 for positions within quotes or a comment, 0 for positions that are not.]>
+   #</p>
+   method withinQuotes(_line, position)
+      local single_quote, double_quote, ch
+      _line ? {
+         single_quote := 0
+         double_quote := 0
+         while (&pos < position) do {
+            ch := move(1) | break
+            if (ch == "\'" & (_line[&pos - 2] ~== "\\")) then
+               single_quote +:= 1
+            if (ch == "\"" & (_line[&pos - 2] ~== "\\")) then
+               double_quote +:= 1
+            if (ch == "#") & ((single_quote % 2) == 0 & (double_quote % 2) == 0) then
+               return 1
+         }
+         if (single_quote % 2) ~== 0 | (double_quote % 2) ~== 0 then
+            return 1
+      }
+      return 0
+   end
+
+   #<p>
+   #   Constructs a result table with all of the selected parameters.
+   #   <i>Used internally.</i>
+   #   <[param sLine The starting line for the range of the section to be editted.]>
+   #   <[param sChar The starting character for the range of the section to be editted.]>
+   #   <[param eLine The ending line for the range of the section to be editted.]>
+   #   <[param eChar The ending character for the range of the section to be editted.]>
+   #   <[param newtext The new text to replace the text in the selected range.]>
+   #   <[returns the constructed table.]>
+   #</p>
+   method createResult(sLine, sChar, eLine, eChar, newText)
+      local result := [
+         "range" : [
+            "start" : [
+               "line" : sLine - 1;
+               "character" : sChar
+            ];
+            "end" : [
+               "line" : eLine - 1;
+               "character" : eChar
+            ]
+         ];
+         "newText" : newText
+      ]
+      return result
+   end
+end

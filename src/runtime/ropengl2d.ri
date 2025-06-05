@@ -1306,7 +1306,13 @@ int init_2dcanvas(wbp w)
     */
    if (glIsEnabled(GL_STENCIL_TEST) == GL_FALSE)
       glEnable(GL_STENCIL_TEST);
-   setpattern2d(w, NULL);
+
+   /*
+    * FIXME: setpattern2d() seems to casue issues with 3D windows
+    * Disbale for now
+    */
+   if (!ws->is_3D)
+      setpattern2d(w, NULL);
 
    /*
     * Clipping
@@ -1402,18 +1408,12 @@ int init_2dcontext(wcp wc)
    /* default fg is black */
    SetColor(wc->glfg, 0, 0, 0, 65535, 0);
    sprintf(wc->glfg.name,"black");
-#ifdef XWindows
-   wc->glfg.c = wd->colors[0].c;
-   wd->colors[0].refcount++;
-#endif                                  /* XWindows */
+
 
    /* default bg is white */
    SetColor(wc->glbg, 65535, 65535, 65535, 65535, 0);
    sprintf(wc->glbg.name,"white");
-#ifdef XWindows
-   wc->glbg.c = wd->colors[1].c;
-   wd->colors[1].refcount++;
-#endif                                  /* XWindows */
+
 
    wc->rgbmode = 2;
    wc->gamma = wd->gamma;
@@ -1486,15 +1486,20 @@ int copy_2dcontext(wcp wcdest, wcp wcsrc)
       wcdest->leading = wcsrc->leading;
       }
 
-   if (wcdest->patternname) {
-      if (strcmp(wcdest->patternname,wcsrc->patternname)) {
-         free(wcdest->patternname);
+   if (wcsrc->patternname != NULL)
+      if (wcdest->patternname) {
+         if (strcmp(wcdest->patternname,wcsrc->patternname)) {
+            free(wcdest->patternname);
+            wcdest->patternname = strdup(wcsrc->patternname);
+            }
+         }
+      else {
          wcdest->patternname = strdup(wcsrc->patternname);
          }
-      }
-   else {
-      wcdest->patternname = strdup(wcsrc->patternname);
-      }
+   else if (wcdest->patternname != NULL) {
+         free(wcdest->patternname);
+         wcdest->patternname = NULL;
+         }
 
    wcdest->fillstyle = wcsrc->fillstyle;
    wcdest->linestyle = wcsrc->linestyle;
@@ -3167,9 +3172,15 @@ int setpattern2d(wbp w, struct b_record *rp)
          }
       }
    else {
-     update = 1;
-     s = wcr->patternname;
-     slen = strlen(wcr->patternname);
+      update = 1;
+      /* "black" is default pattern */
+      if (wcr->patternname == NULL) {
+         return Failed;
+         wcr->patternname = strdup("black");
+         if (!wcr->patternname) return RunError;
+         }
+      s = wcr->patternname;
+      slen = strlen(wcr->patternname);
      }
 
    if (update) {
@@ -6683,7 +6694,9 @@ static wfp loadfont(wdp wd, char *s, int len)
    wf->size = size; /* in pixels */
    wf->ascent = FT_ASCENT(wf->face);
    wf->descent = FT_DESCENT(wf->face);
+   #ifdef XWindows
    wf->maxwidth = FT_FWIDTH(wf->face);
+   #endif                                  /* XWindows */
    wf->height = FT_FHEIGHT(wf->face);
 
    /*
@@ -7296,7 +7309,7 @@ wcp gl_clone_context(wbp w)
    wcp wc, rv;
 
    wc = w->context;
-   Protect(rv = gl_alc_context(w), return NULL);
+   Protect(rv = alc_context(w), return NULL);
 
    copy_2dcontext(rv, wc);
    copy_3dcontext(wc, rv);
@@ -7472,28 +7485,6 @@ int gl_wputc(int ci, wbp w)
  *******************************************************/
 
 
-
-
-/*
- * allocate a context.  Can't be called until w has a display and window.
- */
-wcp gl_alc_context(wbp w)
-   {
-   wcp wc;
-
-   wc = alc_context(w); /* platform-specific init */
-   if (!wc) return NULL;
-
-   /* set defaults here */
-   init_2dcontext(wc);
-   init_3dcontext(wc);
-
-   return wc;
-   }
-
-
-
-
 /*
  * allocate a display on machine s
  */
@@ -7515,9 +7506,19 @@ wdp gl_alc_display(char *s)
       wd->maxTexIds = 256;
       wd->numTexIds = 0;
       wd->texIds = (unsigned int *)malloc(wd->maxTexIds*sizeof(unsigned int));
-      if (!wd->texIds) return NULL;
+      if (!wd->texIds) {
+          free(wd);
+          return NULL;
+         }
       }
+   return wd;
+   }
 
+/*
+ * allocate font for a display
+ */
+wdp gl_alc_display_font(wdp wd)
+{
    if (!wd->glfonts) {
       wd->numFonts = 1;
       wd->glfonts = loadfont(wd,DEFAULTFONTNAME,strlen(DEFAULTFONTNAME));
@@ -7527,7 +7528,8 @@ wdp gl_alc_display(char *s)
          }
       }
    return wd;
-   }
+}
+
 
 
 

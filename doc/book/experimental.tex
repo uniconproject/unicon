@@ -50,9 +50,46 @@ rebuilding the Unicon system.
 This feature allows the programmer to choose from a portfolio of different
 random number generators (in addition to the one provided by Icon). It is also
 possible to implement other generators and use them without rebuilding Unicon.
-More than one generator may be in use at the same time.
-It may be enabled by defining the C preprocessor symbol \texttt{RngLibrary}
-before rebuilding the Unicon system.
+
+More than one generator may be in use at the same time.  It may be enabled by
+using the \texttt{-{}-enable-rnglibs} option to \texttt{configure} before
+rebuilding the Unicon system.
+
+If the extension is enabled four new standard functions are defined:
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf loadrng(s) : string? } \hfill {\bf load PRNG}
+
+\noindent
+\texttt{loadrng(s)} replaces the generator in use by the current thread with the generator
+denoted by \texttt{s}. \texttt{loadrng("rngIcon")} will reload the default generator.
+\texttt{loadrng()} returns the name of the generator in use. The \texttt{?} operator will
+use the loaded generator to produce random numbers.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf rngbits(i) : array? } \hfill {\bf return random bits}
+
+\noindent
+\texttt{rngbits(n)} returns an integer array that contains at least \texttt{n} randomly
+generated bits. If \texttt{n} is negative no bits are returned but the generator will skip
+ahead as if the bits were actually returned. If \texttt{n} is zero it is an invitation to
+supply the ``natural size'' of the generator (which is probably a power of two).
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf rngbitstring(i) : string? } \hfill {\bf return random bits}
+
+\noindent
+\texttt{rngbitstring(n)} returns a string that contains \texttt{n}
+randomly generated \texttt{0} and \texttt{1} characters.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf rngval() : integer? } \hfill {\bf return random value}
+
+\noindent
+\texttt{rngval()} returns a  randomly generated integer value.
 
 \section{Plugins}
 \index{Plugins}
@@ -1046,4 +1083,3 @@ utility procedures of the plugin.
 %% \texttt{Close} method.
 %%
 %----------------------------------------------------------------------
-

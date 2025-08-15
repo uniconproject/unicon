@@ -28,10 +28,10 @@ end
 #<p>
 #  <[param m number of rows]>
 #  <[param n number of columns]>
-#  <[param x initial value of every element]>
+#  <[param x initial value of every element (defaults to 0)]>
 #  <[returns a <tt>m</tt> x <tt>n<tt> matrix with <tt>x</tt> everywhere]>
 #</p>
-procedure m_constant(m,n,x:0.0)
+procedure m_constant(m,n,x:0)
    local A
    /n := m
 
@@ -44,11 +44,11 @@ end
 #  Creates a m x n matrix with ones on the diagonal and zeros everywhere else
 #  <[param m number of rows]>
 #  <[param n number of columns]>
-#  <[param zero (<i>optional</i>) can be used in place of <tt>0.0</tt>]>
-#  <[param one (<i>optional</i>) can be used in place of <tt>1.0</tt>]>
+#  <[param zero (<i>optional</i>) can be used in place of <tt>0</tt>]>
+#  <[param one (<i>optional</i>) can be used in place of <tt>1</tt>]>
 #  <[returns <tt>m</tt>X<tt>n</tt> identify matrix]>
 #</p>
-procedure m_identity(m,n, zero:0.0,one:1.0)
+procedure m_identity(m,n, zero:0,one:1)
    local A, i
    /n := m
 
@@ -106,17 +106,18 @@ end
 #  <[param M1 first matrix]>
 #  <[param M2 second matrix]>
 #  <[param op binary operation to invoke]>
+#  <[param zero (<i>optional</i>) can be used in place of <tt>0</tt>]>
 #  <[returns <tt>M1 op M2</tt>, with <tt>op</tt> defaulting to
 #    <tt>proc("+",2)</tt>]>
 #</p>
-procedure m_binop(M1, M1, op)
+procedure m_binop(M1, M1, op, zero:0)
    local R, i, j
    /op := ::proc("+", 2)
 
    if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
       ::runerr(500, "nonequal matrix dimensions to m_binop")
 
-   R = m_constant(*M1, *M1[1])
+   R = m_constant(*M1, *M1[1],zero)
    every (i := 1 to *M1, j := 1 to *M1[1]) do
       R[i,j] := invokeFcn(op,M1[i,j],M2[i,j])
    return R
@@ -148,14 +149,15 @@ end
 #  Generic unary operation across a matrix.
 #  <[param M matrix]>
 #  <[param op unary operation to invoke]>
+#  <[param zero (<i>optional</i>) can be used in place of <tt>0</tt>]>
 #  <[returns <tt>op M</tt>, with <tt>op</tt> defaulting to
 #            <tt>proc("-",1)</tt>]>
 #<p>
-procedure m_unaryop(M, op)
+procedure m_unaryop(M, op, zero:0)
    local R, i, j
    /op := ::proc("-", 1)
 
-   R = m_constant(*M, *M[1])
+   R = m_constant(*M, *M[1], zero)
    every (i := 1 to *M, j := 1 to *M[1]) do
       R[i,j] := invokeFcn(op, M[i,j])
    return R
@@ -185,7 +187,7 @@ procedure m_multiply(M1, M2, addident:0, addfcn, mulfcn)
    if (*M1[1] ~= *M2) then
       ::runerr(500, "incompatible matrix dimensions to m_multiply")
 
-   R := m_constant(*M1, *M2[1])
+   R := m_constant(*M1, *M2[1], addident)
    every (i := 1 to *R, j := 1 to *R[1]) do {
       R[i,j] := addident
       every k := 1 to *M2 do
@@ -204,7 +206,7 @@ end
 #  by overriding various functions and constants used internally.
 #</p>
 procedure m_lupDecomposition(M, subfcn, mulfcn, divfcn,
-                             invertMetric, addident:0.0, mulident:1.0)
+                             invertMetric, addident:0, mulident:1)
    local n, i, b, k, k2, p, j, L, U
    /subfcn := ::proc("-", 2)
    /mulfcn := ::proc("*", 2)
@@ -252,7 +254,7 @@ end
 #  Additional optional arguments allow you to customize the operation
 #  by overriding various functions and constants used internally.
 #</p>
-procedure m_lupSolve(L,U,p,b,addfun,subfun,mulfun,divfun,addident:0.0)
+procedure m_lupSolve(L,U,p,b,addfun,subfun,mulfun,divfun,addident:0)
    local n, i, j, y, x
    /addfun := ::proc("+", 2)
    /subfun := ::proc("-", 2)

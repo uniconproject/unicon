@@ -474,6 +474,8 @@ AC_SUBST(BITS)
 AC_SUBST(unicon_os)
 AC_SUBST(unicon_osdist)
 AC_SUBST(unicon_osrel)
+AC_SUBST(unicon_cpu)
+AC_SUBST(unicon_host)
 
 AC_SUBST(CC)
 AC_SUBST(RLINK)

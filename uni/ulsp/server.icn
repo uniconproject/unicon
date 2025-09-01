@@ -175,7 +175,9 @@ class Server(
          }
       }
       # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
-      fname := replace(fname[2:0], "%3A", ":")
+      if &features == ("MS Windows NT") then {
+         fname := replace(fname[2:0], "%3A", ":")
+      }
       openFiles[\uri] := FileHandler(fname, lsp_database)
       filehandler_object := openFiles[\uri]
       filehandler_object.setFile()
@@ -212,7 +214,9 @@ class Server(
          }
       }
       # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
-      fname := replace(fname[2:0], "%3A", ":")
+      if &features == ("MS Windows NT") then {
+         fname := replace(fname[2:0], "%3A", ":")
+      }
       uri := request_params["textDocument"]["uri"]
       file_contents := request_params["contentChanges"][1]["text"]
       filehandler_object := openFiles[\uri]

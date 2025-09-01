@@ -81,11 +81,11 @@ class LSIFIndexer(
                      fake_params["position"]["character"] := k
                      hoverHandler.setVariables(filehandler_object, fake_params)
                      definitionHandler.setVariables(filehandler_object, fake_params)
-                     result := hoverHandler.run("lsif")
+                     result := hoverHandler.getResult("lsif")
                      if \result & *result ~= 0 then {
                         rangeID := createRangeVertex(result["line"], result["begins"], result["ends"])
                         put(range_list, rangeID)
-                        result2 := definitionHandler.run()
+                        result2 := definitionHandler.getResult()
                         if \result2 & *result2 ~= 0 & result2["uri"] == uri then {
                            if (result2["range"]["start"]["line"] <= j <= result2["range"]["end"]["line"] &&
                                result2["range"]["start"]["character"] <= k <= result2["range"]["end"]["character"]) then {

@@ -18,17 +18,18 @@ class HoverHandler(
 
    method run(lsif)
       local line, character, desired_line, hover_item, signatureHandler, sig_table, results_table, _context, context
-      if /filehandler then return
+      if /filehandler then fail
       results_table := table()
 
       line := params["position"]["line"] + 1
       character := params["position"]["character"] + 1
 
-      context := filehandler.getContext(line, character)
+      context := filehandler.getContext(line, character) | fail
+
       desired_line := context.line
       character := context.charNum
 
-      if /desired_line | /character then return
+      if /desired_line | /character then fail
 
       signatureHandler := SignatureHandler()
       signatureHandler.setVariables(filehandler)

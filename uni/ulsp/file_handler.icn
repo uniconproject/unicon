@@ -720,8 +720,9 @@ class FileHandler(
    end
 
    method getContext(lineNum, charNum)
-      if (/context | (context.isNewContext(lineNum, charNum))) then {
-         context := Context(temp_idoc, uri, lineNum, charNum)
+      if /context | context.isNewContext(lineNum, charNum) then {
+         # The constructor could fail if the file doesn't exist
+         context := Context(temp_idoc, uri, lineNum, charNum) | fail
       }
       return context
    end
@@ -735,7 +736,7 @@ class FileHandler(
       identifiers := &letters ++ &digits ++ '_' ++ '-'
 end
 
-class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextCase, packageName, totalFileLines)
+class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, contextType, packageName, totalFileLines)
    method getDesiredLine(lineNum)
       line := uniAll.getUniFileLine(uri, lineNum)
    end
@@ -783,7 +784,7 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       }
    end
 
-   method findContext()
+   method detectContextType()
       local objectName, single_quote, double_quote, ch, backslash_count, temppos, c
 
       #-----------------------------------------------#
@@ -886,20 +887,12 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
    end
 
    method isNewContext(lineNumber, charNumber)
-      local newContext
-      if lineNum ~= lineNumber then {
-         newContext := "Yes"
-      } else if charNum ~= charNumber then {
-         newContext := "Yes"
-      } else {
-         newContext := &null
-      }
-
-      return newContext
+      if lineNum ~= lineNumber | charNum ~= charNumber then
+        return
    end
 
    method getCase()
-      return contextCase
+      return contextType
    end
 
    initially(uniAll, uri, lineNum, charNum)
@@ -909,7 +902,7 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       self.lineNum := lineNum
       self.charNum := charNum
       line := getDesiredLine(lineNum)
-      contextCase := findContext()
+      contextType := detectContextType()
       totalFileLines := 0
       f := open(uri) | fail
       if stat(uri).size > 0 then {

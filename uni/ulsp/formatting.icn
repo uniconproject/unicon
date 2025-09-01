@@ -22,7 +22,7 @@ class FormattingHandler(filehandler, params)
    #   Searches through the provided filehandler for any incorrect formatting and
    #   constructs a result to send back to the client for any changes to be made.
    #</p>
-   method run()
+   method getResult()
       local results_list, result, lineNum, _line, foldingRangeHandler,
             foldingResult, tabSize, tabLevel, entry, structuredComment,
             ch, open_blocks, addedTabs, position, trimmedLine, previousLine,
@@ -32,7 +32,7 @@ class FormattingHandler(filehandler, params)
       open_blocks := []
       foldingRangeHandler := FoldingRangeHandler()
       foldingRangeHandler.setVariables(filehandler)
-      foldingResult := foldingRangeHandler.run()
+      foldingResult := foldingRangeHandler.getResult()
       tabSize := params["options"]["tabSize"]
       structuredComment := 0
       addedTabs := 0

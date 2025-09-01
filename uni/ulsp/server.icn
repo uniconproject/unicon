@@ -232,7 +232,7 @@ class Server(
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
       completionHandler.setVariables(filehandler_object, msg.get_params())
-      result := completionHandler.run()
+      result := completionHandler.getResult()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end
@@ -245,7 +245,7 @@ class Server(
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
       signatureHandler.setVariables(filehandler_object, msg.get_params())
-      result := signatureHandler.run()
+      result := signatureHandler.getResult()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end
@@ -258,7 +258,7 @@ class Server(
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
       hoverHandler.setVariables(filehandler_object, msg.get_params())
-      result := hoverHandler.run()
+      result := hoverHandler.getResult()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end
@@ -271,8 +271,8 @@ class Server(
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
       definitionHandler.setVariables(filehandler_object, msg.get_params())
-      result := definitionHandler.run()
-      \result["uri"] := replace(result["uri"], "c:/", "/c%3A/")
+      if result := definitionHandler.getResult() then
+         \result["uri"] := replace(result["uri"], "c:/", "/c%3A/")
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end
@@ -289,7 +289,7 @@ class Server(
          symbolHandler.setVariables(filehandler_object)
          if renewSymbols = 1 then {
             Logger.debug2_kind("Getting new symbols for " || uri)
-            result := symbolHandler.run()
+            result := symbolHandler.getResult()
             cacheSymbols[uri] := result
          } else {
             if \cacheSymbols[uri] then {
@@ -297,7 +297,7 @@ class Server(
                result := cacheSymbols[uri]
             } else {
                Logger.debug2_kind("Getting new symbols for " || uri)
-               result := symbolHandler.run()
+               result := symbolHandler.getResult()
                cacheSymbols[uri] := result
             }
          }
@@ -316,7 +316,7 @@ class Server(
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
       foldingRangeHandler.setVariables(filehandler_object)
-      result := foldingRangeHandler.run()
+      result := foldingRangeHandler.getResult()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end
@@ -329,7 +329,7 @@ class Server(
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
       formattingHandler.setVariables(filehandler_object, msg.get_params())
-      result := formattingHandler.run()
+      result := formattingHandler.getResult()
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end

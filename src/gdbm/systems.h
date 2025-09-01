@@ -153,7 +153,7 @@
 /* Default block size.  Some systems do not have blocksize in their
    stat record. This code uses the BSD blocksize from stat. */
 
-#if HAVE_ST_BLKSIZE
+#if HAVE_STRUCT_STAT_ST_BLKSIZE
 #define STATBLKSIZE file_stat.st_blksize
 #else
 #define STATBLKSIZE 1024

@@ -12,13 +12,13 @@ class CompletionHandler(
       params := new_params
    end
 
-   method run()
+   method getResult()
       local _context, line, character, results_table, results, desired_line, objectName, context
 
       line := params["position"]["line"] + 1
       character := params["position"]["character"] + 1
 
-      context := filehandler.getContext(line, character)
+      context := filehandler.getContext(line, character) | fail
       desired_line := context.line
       _context := context.getCase()
 

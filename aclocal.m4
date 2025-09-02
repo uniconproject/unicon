@@ -425,19 +425,28 @@ fi
 AC_DEFUN([AC_VAR_TIMEZONE_EXTERNALS],
 [  AC_REQUIRE([AC_STRUCT_TIMEZONE])dnl
    AC_CACHE_CHECK(for timezone external, mb_cv_var_timezone,
-   [  AC_TRY_LINK([#include <time.h>], [return (int)timezone;],
-         mb_cv_var_timezone=yes,
-         mb_cv_var_timezone=no)
+   [  AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([[#include <time.h>]],
+               [[return (int)timezone;]])],
+      mb_cv_var_timezone=yes,
+      mb_cv_var_timezone=no
+      )
    ])
    AC_CACHE_CHECK(for altzone external, mb_cv_var_altzone,
-   [  AC_TRY_LINK([#include <time.h>], [return (int)altzone;],
-         mb_cv_var_altzone=yes,
-         mb_cv_var_altzone=no)
+   [  AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([[#include <time.h>]],
+               [[return (int)altzone;]])],
+      mb_cv_var_altzone=yes,
+      mb_cv_var_altzone=no
+      )
    ])
    AC_CACHE_CHECK(for daylight external, mb_cv_var_daylight,
-   [  AC_TRY_LINK([#include <time.h>], [return (int)daylight;],
-         mb_cv_var_daylight=yes,
-         mb_cv_var_daylight=no)
+   [  AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([[#include <time.h>]],
+               [[return (int)daylight;]])],
+      mb_cv_var_daylight=yes,
+      mb_cv_var_daylight=no
+      )
    ])
    if test $mb_cv_var_timezone = yes; then
       AC_DEFINE([HAVE_TIMEZONE], 1,
@@ -460,9 +469,9 @@ do
    AC_MSG_CHECKING([for global variable ${ac_global}])
    AC_CACHE_VAL(ac_cv_global_$ac_global,
    [
-    AC_TRY_LINK(dnl
-    [/* no includes */],
-    [ extern long int $ac_global;  exit((int)$ac_global)],
+    AC_LINK_IFELSE(dnl
+    [AC_LANG_PROGRAM([[/* no includes */]],
+               [[extern long int $ac_global;  exit((int)$ac_global)]])],
     eval "ac_cv_global_${ac_global}=yes",
     eval "ac_cv_global_${ac_global}=no"
     )

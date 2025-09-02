@@ -14,7 +14,7 @@ class DefinitionHandler(
       params := new_params
    end
 
-   method run()
+   method getResult()
       local line, character, results_table := table(), context,
       signatureHandler, possibleItems, source, selectedLine := 0,
       i := 0, startPos := 0, endPos := 0, item
@@ -26,7 +26,7 @@ class DefinitionHandler(
       line := params["position"]["line"] + 1
       character := params["position"]["character"] + 1
 
-      context := filehandler.getContext(line, character)
+      context := filehandler.getContext(line, character) | fail
 
       signatureHandler := SignatureHandler()
       signatureHandler.setVariables(filehandler)

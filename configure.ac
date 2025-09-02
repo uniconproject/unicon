@@ -333,7 +333,7 @@ AC_PROG_CPP
 AC_PROG_RANLIB
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)
-#AC_HEADER_STDC
+
 AC_CHECK_HEADERS(errno.h netdb.h unistd.h strings.h arpa/inet.h net/errno.h \
 		 stdlib.h string.h fcntl.h memory.h sys/file.h sys/resource.h \
                  netinet/in.h sys/errno.h sys/socket.h sys/types.h)
@@ -348,7 +348,7 @@ AC_C_CONST
 AC_TYPE_SIZE_T
 AC_FUNC_ALLOCA
 AC_TYPE_OFF_T
-AC_ST_BLKSIZE
+
 AC_CHECK_TYPE(ssize_t, signed)
 
 case $ac_cv_sizeof_int_p in

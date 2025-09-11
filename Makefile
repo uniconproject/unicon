@@ -203,9 +203,15 @@ UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon$(EXE) icont$(EXE) iconx$(EXE) iconc$(EXE) unicont$(EXE) uniconx$(EXE) \
-      uniconc$(EXE) udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) \
-      ulsp$(EXE) patchstr$(EXE) iyacc$(EXE) rt.a rt.h
+
+# runtime binaries, variants of iconx, icont, and iconc
+RTbins=$(UNICONX)$(EXE) $(UNICONWX)$(EXE) $(UNICONT)$(EXE) $(UNICONWT)$(EXE) $(UNICONC)$(EXE)
+ADDONbins=udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) ulsp$(EXE)
+UTILbins=patchstr$(EXE) iyacc$(EXE)
+ALLbins=$(RTbins) unicon$(EXE) $(ADDONbins) $(UTILbins) rt.a rt.h
+# binaries that should be signed after install, only needed on arm macOS for now
+SIGNbins=$(RTbins) $(UTILbins)
+
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser ulsp
 IPLdirs=lib incl gincl mincl procs
@@ -218,7 +224,7 @@ uninstall Uninstall:
 	   rm -rf $$d; \
 	done
 #	delete the binaries we installed from  unicon/bin
-	@for f in $(Tbins); do \
+	@for f in $(ALLbins); do \
 	   echo "Uninstalling $(DESTDIR)$(bindir)/$$f ..."; \
 	   rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
@@ -241,7 +247,7 @@ install Install:
 	    (echo "Creating dir $(DESTDIR)$(ULB)/$$d") && (mkdir -p $(DESTDIR)$(ULB)/$$d); \
 	done
 #	install unicon/bin
-	@for f in $(Tbins); do \
+	@for f in $(ALLbins); do \
 	  if test -f "bin/$$f"; then \
 	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
 	    if test "$$f" = $(UNICONT)$(EXE) ; then \
@@ -281,6 +287,13 @@ install Install:
 	@$(INST) -m 644 README.md $(DESTDIR)$(docdir)
 	@echo "Installing $(DESTDIR)$(docdir) ..."
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)
+#   Sign code if we are running MacOS on Apple's processors
+	if test "$(UNICONHOST)" = "arm_64_macos"; then \
+		for f in $(SIGNbins); do \
+			echo signing  $(DESTDIR)$(bindir)/$$f ; \
+			codesign -s - $(DESTDIR)$(bindir)/$$f ;\
+		done; \
+	fi
 
 # Bundle up for binary distribution.
 PKGDIR=$(PKG_TARNAME).$(PKG_VERSION)

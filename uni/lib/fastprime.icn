@@ -1,0 +1,92 @@
+#<p>
+# Efficient support for large primes.
+#</p>
+
+link factors   # Need to get <i>prime</i> generator
+
+#<p>
+# Generate all primes >= <i>n</i>.
+# <[param n start looking for primes >= <i>n</> (defaults to 2)]>
+#</p>
+procedure genprimes(n)
+   /n := 2
+   if n = 2 then suspend 2
+   if n%2 = 0 then n +:= 1
+   suspend is_prime(seq(n,2))
+end
+
+#<p>
+# Is <i>n</i> probably prime at least to some large probability?
+# Fully accurate for <i>n</i> < 341550071728321.  Accuracy above that
+# value depends on value of <i>precision</i>.  The default value for
+# <i>precision</i> is generally sufficient.
+# Google the <b>Miller-Rabin primality test</b> for details on the
+# algorithm.
+# <[param n integer value to test for primality.]> 
+# <[param precision degree of confidence to use (defaults to 16).]>
+#</p>
+procedure is_prime(n, precision)
+   static known_primes, k_primes_set
+   initial {
+      /precision := 16
+      every put(known_primes := [], prime()\17)
+      k_primes_set := set(known_primes)
+      }
+    /precision := 16
+      
+    if n <= 1 then fail
+    # Fast check for small n
+    if member(k_primes_set, n) then return n
+    if (n % known_primes[1 to precision]) = 0 then fail
+
+    # d and s are needed for primetest()
+    (d := n-1, s := 0)
+    while d%2 = 0 do (d /:= 2, s +:= 1)
+    # Returns exact according to http://primes.utm.edu/prove/prove2_3.html
+    if n < 1373653 then return  primetest(n, known_primes[1:2], d, s)
+    if n < 25326001 then return primetest(n, known_primes[1:3], d, s)
+    if n < 118670087467 then
+        if n ~= 3215031751 then return primetest(n, known_primes[1:4], d, s)
+        else fail
+    if n < 2152302898747 then return primetest(n, known_primes[1:5], d, s)
+    if n < 3474749660383 then return primetest(n, known_primes[1:6], d, s)
+    if n < 341550071728321 then return primetest(n, known_primes[1:7], d, s)
+    # otherwise
+    return primetest(n, known_primes[1:precision], d, s)
+end
+
+#<p>
+# Efficient implementation of <i>(b^e)%m</i>.
+# <[param b base]>
+# <[param e exponent]>
+# <[param m modulus]>
+#</p>
+procedure pow(b,e,m)
+   r := 1
+   while e > 0 do
+      if e%2 = 0 then (e /:= 2, b := (b*b)%m)
+      else (e -:= 1, r := (r*b)%m, e /:= 2, b := (b*b)%m)
+   return r
+end
+
+#<p>
+# Is <i>n</i> probably prime, based on the known primes in <i>A</i>?
+#  (Used to simplify the code in <b>is_prime</b> as it just wraps
+#   and inverts <b>try_composite</b>.)
+# <b>Internal use only unless you know how to compute <i>d</i> and <i>s</i>.</b>
+#</p>
+procedure primetest(n,A,d,s)
+   if try_composite(n,!A,d,s) then fail
+   return n
+end
+
+#<p>
+# Succeed if <i>n</i> might be a composite, based solely on the value
+# of <i>a</i>.
+# <b>Internal use only unless you know how to compute <i>d</i> and <i>s</i>.</b>
+#</p>
+procedure try_composite(n, a, d, s)
+    if pow(a,d,n) = 1 then fail
+    every i := 0 to (s-1) do if pow(a,(2^i)*d,n) = n-1 then fail
+    return n
+end

@@ -1177,3 +1177,19 @@ constant '\
 \340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\
 \360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
 end
+
+"&proc - the function reference to proc"
+keyword{1} proc
+   abstract {
+      return proc
+      }
+   body {
+      struct b_proc *prc;
+      struct descrip x;
+
+      StrLen(x) = 4;
+      StrLoc(x) = "proc";
+      prc = bi_strprc(&x, 0);
+      return proc(prc);
+      }
+end

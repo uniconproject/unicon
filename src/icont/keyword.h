@@ -56,6 +56,7 @@
 #define K_PI          46
 #define K_PICK        47
 #define K_POS         48
+#define K_PROC        68
 #define K_PROGNAME    49
 #define K_RANDOM      50
 #define K_RDRAG       51

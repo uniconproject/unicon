@@ -757,6 +757,22 @@ keyword{1} pos
       }
 end
 
+"&proc - the function reference to proc()."
+keyword{1} proc
+   abstract {
+      return proc
+      }
+   body {
+      struct b_proc *prc;
+      struct descrip x;
+
+      StrLen(x) = 4;
+      StrLoc(x) = "proc";
+      prc = bi_strprc(&x, 0);
+      return proc(prc);
+      }
+end
+
 "&progname - a variable containing the program name."
 keyword{1} progname
    abstract {

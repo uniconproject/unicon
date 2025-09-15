@@ -164,7 +164,7 @@ procedure Keyword(x1,x2)
                        "errno","window","col","row","x","y","interval",
                        "control","shift","meta","lpress","mpress","rpress",
                        "lrelease","mrelease","rrelease","ldrag","mdrag",
-                       "rdrag","resize","ascii","cset"])
+                       "rdrag","resize","ascii","cset","proc"])
       }
 
    # verify that x2 is a valid keyword

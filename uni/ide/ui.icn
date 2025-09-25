@@ -29,11 +29,13 @@
 
 import gui
 $include "guih.icn"
+
 link mainbar
 link getpaths
 link classbrowser
 link enqueue, preferences
 link stddlg
+link ivibtab
 
 $ifdef _MS_WINDOWS_NT
 $define SL "\\"
@@ -48,8 +50,14 @@ $endif
 link unigram, idol, tree, preproce, unilex, unicon, yyerror
 
 global linebreak, uidlog, browser, browserversion, docpath, UIDE_VERS,
-       is_MSWindows, PATHSEP, env, win_position,
+       is_MSWindows, PATHSEP, env, win_position, ivib_maindialog,
        fontname
+
+#####
+# Required version markers for ivib to generate its code according to which version of ivib is currently in use.
+# For new versions, just add new maker here and set it in the initially() below.
+###
+global v1_marker, v2_marker
 
 #$define lpr "enscript -b \" \" -1 -Plex3normal"
 ##$define HELP_PATH "help"
@@ -61,9 +69,9 @@ class UIDE : Dialog(
    startfile,
    pnlToolbar, menubar,
    MsgBox, EditBox, PtyBox,
-   FileTabSet,ClassTabSet, DevTabSet,
-   FileBrowser,
-   tab_item_1, tab_item_2, tab_item_3, tab_item_4,
+   FileTabSet,ClassTabSet, DevTabSet, IvibTabPanel,
+   FileBrowser, ivib_maindialog,
+   tab_item_1, tab_item_2, tab_item_3, tab_item_4, tab_item_5,
    ui_Preferences
    )
 
@@ -195,16 +203,16 @@ class UIDE : Dialog(
       menubar.set_font()
       # queue up an lpress to set the initial focus to the editor buffer
       if \win then {
-         Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
-         }
+               Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
+            }
    end
 
 # Proposed function key bindings. Still under construction.
 # Loosely based on Borland-style IDE keybindings.
 #
-#  Key  Base            Control     Alt         Shift
+#  Key  Base            Control     Alt                 Shift
 #  F1   Help            search@crsr help/srch   help index
-#  F2   Save file       restart     Find(next)  grep
+#  F2   Save file       restart             Find(next)  grep
 #  F3   Open file       callstack   closewin    New file
 #  F4   Run to cursor
 #  F5   Toggle breakpt              User screen
@@ -223,19 +231,19 @@ class UIDE : Dialog(
    #
    method on_function_key(ev)
       case ev.param of {
-         Key_F1:   ide_key_file_menu()
-         Key_F2:   ide_key_help_menu()
-         Key_F3:   ide_handle_save()
-         Key_F4:   ide_handle_open()
-         Key_F5:   ide_prev_tab()
-         Key_F6:   ide_next_tab()
-         Key_F7:   ""#ide_handle_compile()
-         Key_F8:   ""#ide_handle_run()
-         Key_F9:    ""
-         Key_F10:   ""
-         Key_F11:   ""
-         Key_F12:  ide_handle_exit()
-         }
+                        Key_F1:   ide_key_file_menu()
+                        Key_F2:   ide_key_help_menu()
+                        Key_F3:   ide_handle_save()
+                        Key_F4:   ide_handle_open()
+                        Key_F5:   ide_prev_tab()
+                        Key_F6:   ide_next_tab()
+                        Key_F7:   ""#ide_handle_compile()
+                        Key_F8:   ""#ide_handle_run()
+                        Key_F9:    ""
+                        Key_F10:   ""
+                        Key_F11:   ""
+                        Key_F12:  ide_handle_exit()
+             }
    end
 
    #
@@ -347,8 +355,8 @@ class UIDE : Dialog(
       self.min_width := 645
       self.min_height := 485
       self.set_attribs("size="||width||","||height, "pos="||win_position,
-                       "bg=pale gray",
-                       "label=Unicon IDE", "font=mono,16", "resize=on")
+                       "bg=pale gray", "label=Unicon IDE", "font=mono,16",
+                                   "resize=on")
 
       DevTabSet := TabSet()
       DevTabSet.set_pos("0", "100%-110")
@@ -413,6 +421,20 @@ class UIDE : Dialog(
       ClassTabSet.set_which_one(tab_item_3)
       self.add(ClassTabSet)
 
+      #
+      # Build Ivib components to be added to IvibTabPanel.
+      #
+      IvibTabPanel := Panel()
+      IvibTabPanel.set_pos("0", "110%")
+      IvibTabPanel.set_size("0", "0")
+      ivib_maindialog := IvibTab()
+      ivib_maindialog.set_pos("2", "2")
+      ivib_maindialog.set_size("100%-4", "100%-4")
+      ivib_maindialog.set_draw_border()
+      ivib_maindialog.set_attribs("bg=white")
+      IvibTabPanel.add(ivib_maindialog)
+      self.add(IvibTabPanel)
+
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
       pnlToolbar.set_size("100%", "4.5%")
@@ -424,8 +446,12 @@ class UIDE : Dialog(
 initially(initfile)
    self.Dialog.initially()
 
+   # Initialize version markers for ivib.
+   v1_marker := "### Ivib layout ###"
+   v2_marker := "### Ivib-v2 layout ##"
+
    # contains the main ide functions
-   ide := IDE(FileTabSet, ClassTabSet, FileBrowser)
+   ide := IDE(FileTabSet, ClassTabSet, IvibTabPanel, FileBrowser, ivib_maindialog)
    uidlog := self
    menubar := Mainbar(UProject())
    startfile := initfile
@@ -516,7 +542,7 @@ end
 #Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Compo
 #nent|1|Children|list|1|class|CanvasTabItem|28|Parent Canvas|1|Name|str
 #ing|tab_item_2|Class Name|string|TabItem|Import Name|string|gui|X Fix|
-#null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X 
+#null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X
 #Spec|integer|0|Y Spec|integer|0|W Spec|string|100%|H Spec|string|100%|
 #X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|nu
 #ll|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handl
@@ -546,7 +572,7 @@ end
 #Children|list|1|class|CanvasTree|29|Parent Canvas|1|Name|string|FileBr
 #owser|Class Name|string|ClassBrowser|Import Name|string|gui|X Fix|null
 #|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec
-#|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4|X 
+#|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4|X
 #Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null
 #|Draw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|Acc
 #el|null|Event Handlers|list|0|Class Variable|integer|1|Parent Componen

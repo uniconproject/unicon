@@ -117,7 +117,7 @@ procedure m_binop(M1, M1, op, zero:0)
    if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
       ::runerr(500, "nonequal matrix dimensions to m_binop")
 
-   R = m_constant(*M1, *M1[1],zero)
+   R := m_constant(*M1, *M1[1],zero)
    every (i := 1 to *M1, j := 1 to *M1[1]) do
       R[i,j] := invokeFcn(op,M1[i,j],M2[i,j])
    return R
@@ -157,7 +157,7 @@ procedure m_unaryop(M, op, zero:0)
    local R, i, j
    /op := ::proc("-", 1)
 
-   R = m_constant(*M, *M[1], zero)
+   R := m_constant(*M, *M[1], zero)
    every (i := 1 to *M, j := 1 to *M[1]) do
       R[i,j] := invokeFcn(op, M[i,j])
    return R

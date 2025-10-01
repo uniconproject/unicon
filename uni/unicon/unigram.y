@@ -181,7 +181,6 @@ initial { set_of_all_fields := set(); dummyrecno := 1 }
    if \iconc then {
       if type(x3) == "token" then {
          insert(set_of_all_fields, x3.s)
-#        write(&errout, "field ", image(x3.s))
          }
       }
 
@@ -808,7 +807,7 @@ regex: neregex { $$ := regexp($1) }
 
 /* nonempty regexp */
 neregex: neregex2a
-        | neregex2a BAR neregex { $$ := node("regexbar", $1, $2, $3) }
+        | neregex2a BAR regex { $$ := node("regexbar", $1, $2, $3) }
         ;
 
 neregex2a: neregex2
@@ -864,16 +863,35 @@ neregex3:  IDENT
         ;
 
 brackchars: brackchars2
+        | MINUS brackchars2 {
+           # sometimes a MINUS is just a MINUS
+	   if type($2) == "treenode" then {
+	     c2 := csetify($2)
+	     $$ = copy($2)
+	     while type($$) == "treenode" do {
+	       $$ := copy($$.children[1])
+	       }
+	     $$.s := "-" || c2
+	     }
+	   else {
+	     $$.s := "-" || $2.s
+	   }
+          }
         | brackchars MINUS brackchars2 { $$ := node("brackchars", $1, $2, $3) }
         | brackchars brackchars2 {
+  #
+  # build $$ result that is a token with $$.s being the cset
+  #
            if type($1) == "treenode" then {
              c1 := csetify($1)
              }
            if type($2) == "treenode" then c2 := csetify($2)
 
            $$ := copy($1)
-           while type($$) == "treenode" do {
-              $$ := copy($$.children[1])
+           if (type($$)=="treenode") then {
+              while type($$) == "treenode" do {
+                 $$ := copy($$.children[1])
+                 }
               $$.s := c1
               }
            if type($$) ~== "token" then stop("regex type ", image($$))
@@ -883,7 +901,7 @@ brackchars: brackchars2
            }
         ;
 
-brackchars2: IDENT | INTLIT | REALLIT | DOT
+brackchars2: IDENT | INTLIT | REALLIT | DOT | PLUS
         | BACKSLASH IDENT { # ordinary escape char
            $$ := $2
            $$.column := $1.column
@@ -1201,7 +1219,6 @@ procedure InsertLocks(nd,crl)
       if type(nd) == "treenode" then {
          case nd.label of {
             "critical" : {
-               #-- write("Entering critical region ", image(nd.children[2].s))
                push(crl, nd.children[2])
                InsertLocks(nd.children[4], crl)
                pop(crl)
@@ -1211,13 +1228,11 @@ procedure InsertLocks(nd,crl)
                # (which means the code there that inserts lock and unlock calls won't be triggered)
                # but the break/next/return etc. analysis is done before the replacement.
                nd.parent.children[n] := mkLockUnlock(nd.children[4], nd.children[2], tokLocn(nd.children[1]))
-               #-- write("Leaving critical region ", image(nd.children[2].s))
             }
 
             "return": {
                InsertLocks(nd.children[2],crl)
                if *crl > 0 then {
-                  #-- write("return found in critical region")
                   if /nd.children[2] then { # plain return,  (no expression)
                      n := findNodeIndex(nd, nd.parent.children)
                      nd.parent.children[n] := mkUnlock(nd, crl, tokLocn(nd.children[1]))
@@ -1230,7 +1245,6 @@ procedure InsertLocks(nd,crl)
             "Suspend0": {
                InsertLocks(\nd.children[2], crl)
                if *crl > 0 then {
-                  #-- write("suspend found in critical region")
                   n := findNodeIndex(nd, nd.parent.children)
                   nd.parent.children[n] := mkUnlockSusp(nd, crl, tokLocn(nd.children[1]))
                }
@@ -1240,7 +1254,6 @@ procedure InsertLocks(nd,crl)
                InsertLocks(\nd.children[2],crl)
                InsertLocks(\nd.children[4],crl)
                if *crl > 0 then {
-                  #-- write("suspend-do found in critical region")
                   n := findNodeIndex(nd, nd.parent.children)
                   nd.parent.children[n] := mkUnlockSuspDo(nd, crl, tokLocn(nd.children[1]))
                }
@@ -1248,7 +1261,6 @@ procedure InsertLocks(nd,crl)
 
             "Break" : {
                if *crl > 0 then {
-                  #-- write("break found in critical region")
                   undo := loopUnlocks(nd, crl)
                   if undo.unlocks > 0 then {
                      n := findNodeIndex(nd, nd.parent.children)
@@ -1264,7 +1276,6 @@ procedure InsertLocks(nd,crl)
 
             "Next" : {
                if *crl > 0 then {
-                  #-- write("next found in critical region")
                   undo := loopUnlocks(nd, crl)
                   if undo.unlocks > 0 then {
                      n := findNodeIndex(nd, nd.parent.children)
@@ -1289,9 +1300,7 @@ procedure InsertLocks(nd,crl)
             }
 
             default: {
-               #-- write("found a ", nd.label)
                every InsertLocks(!nd.children, crl)
-               #-- write("finished ", nd.label)
             }
          }
 
@@ -1299,20 +1308,16 @@ procedure InsertLocks(nd,crl)
          if *crl > 0 & /noKids then {
             every k := nd.children[n := 1 to *nd.children] do {
                if type(k) == "token" & k.tok == FAIL then {
-                  #-- write("fail found in critical region at ", k.filename, " line ", k.line)
                   nd.children[n] := mkUnlock(k, crl, tokLocn(k))
                }
             }
          }
       } else if type(nd) == "Class__state" then {
-         #-- write("Class found")
          every k := !nd.foreachmethod() do {
             if type(k) == "Method__state" then {
                InsertLocks(k.procbody, crl)
             }
          }
-  #-- } else {
-  #--    write("Found a ", type(nd))
       }
    }
 

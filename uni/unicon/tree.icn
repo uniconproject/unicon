@@ -37,7 +37,9 @@ procedure yyvarlists(node)
             every yyvarlists(!node.children)
             }
          else if node.label === "error" then fail
-         else write("leaf, ", node.label)
+         else {
+	    write("leaf, ", node.label)
+            }
      }
    }
 end
@@ -69,7 +71,9 @@ procedure yystalists(node)
             every yystalists(!node.children)
             }
          else if node.label === "error" then fail
-         else write("leaf, ", node.label)
+         else {
+            write("leaf, ", node.label)
+            }
      }
    }
 end
@@ -1191,7 +1195,7 @@ procedure regexp(n)
    case type(n) of {
       "token": {
          case n.tok of {
-            IDENT: {
+            IDENT | INTLIT: {
                return "\"" || n.s || "\""
                }
             STRINGLIT | CSETLIT: {
@@ -1358,16 +1362,13 @@ procedure csetify(n)
    if type(n) ~== "treenode" then {
       if type(n) == "token" then {
          case n.tok of {
-            # The two cases handled, leave as a string in order to
-            # preserve escapes. Calling code will append ' ' around it.
-            IDENT: {
-               return n.s
-               }
-            INTLIT: {
+            # Leave as a string in order to preserve escapes.
+            # Calling code will append ' ' around it.
+            IDENT | INTLIT | DOT | MINUS | PLUS: {
                return n.s
                }
             default: {
-               stop("csetify ", image(n.tok))
+               stop("stopping on csetify ", image(n.tok))
                }
             }
          }

@@ -24,6 +24,7 @@ end
 # algorithm.
 # <[param n integer value to test for primality.]> 
 # <[param precision degree of confidence to use (defaults to 16).]>
+# <[return n if n is prime, fails otherwise.]>
 #</p>
 procedure is_prime(n, precision)
    static known_primes, k_primes_set
@@ -60,8 +61,9 @@ end
 # <[param b base]>
 # <[param e exponent]>
 # <[param m modulus]>
+# <[return (b^e)%m]>
 #</p>
-procedure pow(b,e,m)
+procedure powm(b,e,m)
    r := 1
    while e > 0 do
       if e%2 = 0 then (e /:= 2, b := (b*b)%m)
@@ -86,7 +88,53 @@ end
 # <b>Internal use only unless you know how to compute <i>d</i> and <i>s</i>.</b>
 #</p>
 procedure try_composite(n, a, d, s)
-    if pow(a,d,n) = 1 then fail
-    every i := 0 to (s-1) do if pow(a,(2^i)*d,n) = n-1 then fail
+    if powm(a,d,n) = 1 then fail
+    every i := 0 to (s-1) do if powm(a,(2^i)*d,n) = n-1 then fail
     return n
+end
+
+#<p>
+# Produce a list of all the factors of <i>n</i> using Pollard's rho algorithm.
+# Note that some factors may repeat, e.g. if <i>n = 5^2</i>.
+# <[param n number to factor]>
+# <[return list of all the factors of <i>n</i>]>
+#</p>
+procedure all_factors(n)
+   flist := []
+   f := getfactor(n)
+   if f = n then return (put(flist,n), flist)
+   flist |||:= all_factors(f) ||| all_factors(n/f)
+   suspend sort(flist)
+end
+
+#<p>
+# Generate the prime factors of <i>n</i> using Pollard's rho algorithm.
+# <[param n number to factor]>
+# <[generate the prime factors of n]>
+#</p>
+procedure gen_factors(n)
+   suspend !sort(set(all_factors(n)))
+end
+
+#<p>
+# Produce a factor of <i>n</i> using Pollard's rho algorithm.
+# <[param n number to factor]>
+# <[return one factor of <i>n</i>, or <i>n</i> if unable to find a factor.]>
+#</p>
+procedure getfactor(n)
+static sprimes
+initial sprimes := [: prime()\100 :]
+   if n == 1 then return n
+   if n%(i := !sprimes) == 0 then return i  # Speed up for small factors
+   y := x := rand_num()%(n-2) + 2
+   c := rand_num()%(n-1) + 1
+   d := 1
+   while d = 1 do {
+      x := (powm(x,2,n)+c+n)%n
+      every (y|y) := (powm(y,2,n)+c+n)%n
+      k := +(x-y)%n
+      every (z := k) *:= |k\99
+      d := gcd(z%n,n)
+      }
+   return d
 end

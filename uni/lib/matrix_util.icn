@@ -117,7 +117,7 @@ procedure m_binop(M1, M1, op, zero:0)
    if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
       ::runerr(500, "nonequal matrix dimensions to m_binop")
 
-   R = m_constant(*M1, *M1[1],zero)
+   R := m_constant(*M1, *M1[1],zero)
    every (i := 1 to *M1, j := 1 to *M1[1]) do
       R[i,j] := invokeFcn(op,M1[i,j],M2[i,j])
    return R
@@ -157,7 +157,7 @@ procedure m_unaryop(M, op, zero:0)
    local R, i, j
    /op := ::proc("-", 1)
 
-   R = m_constant(*M, *M[1], zero)
+   R := m_constant(*M, *M[1], zero)
    every (i := 1 to *M, j := 1 to *M[1]) do
       R[i,j] := invokeFcn(op, M[i,j])
    return R
@@ -357,4 +357,16 @@ procedure m_write(args[])   # Matrices and output files
          }
       }
    ::write(outfile)
+end
+
+#<p>
+# A simplification of m_write() that (a) only writes a single matrix to stdout
+# and (b) allows column width specifiction for pretty-printing the matrix.
+# <[param m matrix to output]>
+# <[param w width of each column (default: 5)]>
+#</p>
+procedure writem(m,w)
+   local i
+   /w := 5
+   every i := !m do every ::writes(::right(!i,3)|"\n")
 end

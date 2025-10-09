@@ -1,0 +1,639 @@
+################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+################################################################################
+#
+#    A "confidence test" of rng libraries:
+#
+#  a) Test that the &random state may be saved and restored.
+#  b) Check the default library and the transmission of the main thread's library
+#     to other threads on creation.
+#  c) Check that the rng library structures survive garbage collection.
+#  d) Check that different threads may have different libraries.
+#  e) Test the loading of libraries that
+#     (i) Don't exist.
+#     (ii) Exist but have essential routines missing.
+#  f) Test custom errors returned by a generator.
+#  g) Test the outputs from rngbits() and rngbitstring().
+#
+#  Note that the tests are not performed in the order listed above.
+#
+#    Don Ward
+#    August 2019
+#
+#    February 2022  Made the tests MUCH quieter.
+#
+################################################################################
+
+import threads
+
+# Comment this definition away to miss out calls to debugging routines that
+# don't exist in a production build of Unicon. e.g. dbgrng() and dbgbrk()
+# $define RNGDBG 1
+
+global IconNumber, IconExNumber, RbtNumber
+global Rbt1000000, Icon1000000
+
+procedure main(args)
+$ifndef _RNG_LIBRARY
+   write(&errout, "RNG libraries are not available")
+$else
+   local state, n, differences, duplicates
+   local bits,bitstring
+   local a, unRbt, x
+
+   &error := -1              # Errors are expected
+
+   banner("Initial testing")    # ----------------------------------------
+   write("The default library at the start of main is <", loadrng(), ">")
+   printGC("main at start")
+   printLibChain("main at start: ")
+
+   if "loadable RNGs" == &features then {
+      write("&features has \"loadable RNGs\"")
+   } else {
+      stop(" **** &features does NOT have \"loadable RNGs\" (Error) ***")
+   }
+
+   # It would be a catastrophe if this didn't work with the built-in generator
+   banner("Assignment to &random") # ----------------------------------------
+   doRepeat()
+   &random := 42; every 1 to 1000000 do Icon1000000 := ?0 # Used (much) later
+
+   banner("Non-existent rng library") # ----------------------------------------
+   if "frimble" == loadrng("frimble") then {
+      Failure("**** A non-existent library has been loaded (Error) ****")
+   } else {
+      writes("loadrng(\"frimble\") failed as expected:")
+      write(" &errornumber = ", &errornumber, ", &errortext = \"", &errortext, "\"")
+   }
+   printGC("After failed load (1)")
+   printLibChain("After failed load (1): ")
+   write("The current rng library is <", loadrng(), ">")
+
+   banner("Library exists but isn't a rng Library") # ---------------------------
+   if "upexample" == loadrng("upexample") then {
+      Failure("**** A library has been loaded that isn't a PRNG (Error) ****")
+   } else {
+      writes("loadrng(\"upexample\") failed as expected:")
+      write(" &errornumber = ", &errornumber, ", &errortext = \"", &errortext, "\"")
+   }
+   printGC("After failed load (2)")
+   printLibChain("After failed load (2): ")
+   write("The current rng library is <", loadrng(), ">")
+
+   &error := 0      # We want to know if an error is generated when we expect failure
+   banner("rngIcon rngbits()")  # ----------------------------------------
+   if \bits := rngbits(0) then {
+      Failure("**** rngbits returned a value with the built-in generator (Error) ****")
+   } else {
+      write(,"rngbits() failed as expected")
+   }
+
+   banner("rngIcon rngbitstring()") # ----------------------------------------
+   if \bitstring := rngbitstring(0) then {
+      Failure("**** rngbitstring() returned a value with the built-in generator (Error) ****")
+   } else {
+      write(,"rngbitstring() failed as expected")
+   }
+
+   &error := -1
+   # Set up a list of random numbers for later comparison
+   banner("100 numbers from the built-in generator") # ------------------------------
+   &random := 42
+   IconNumber := list()
+   writes("&random = ", &random, " -->")
+   every 1 to 100 do { put(IconNumber, ?0) }
+   every n := 1 to 3 do writes(" ", IconNumber[n])
+   write(" ..."); writes(repl(" ",16))
+   every n := 98 to 100 do writes(" ", IconNumber[n])
+   write()
+
+
+   banner(" Load rngIconEx")    # ----------------------------------------
+   if not("rngIconEx" == loadrng("rngIconEx")) then {
+      Failure("**** loadrng(\"rngIconEx\") failed ***")
+      write(" &errornumber = ", &errornumber, ", &errortext = \"", &errortext, "\"")
+      exit()
+   }
+   printGC("After loadrng(\"rngIconEx\")")
+   printLibChain("After loadrng(\"rngIconEx\"): ")
+   write("The current rng library is <", loadrng(), ">")
+
+   banner("rngbits() and rngbitstring() before initialization") # --------------------
+   if \ (bits := rngbits(0)) then {
+      writes("rngbits(0) ="); every writes(" ", !bits); write()
+   } else {
+      Failure("**** rngbits(0) failed (Error) ****")
+   }
+   if \ (bitstring := rngbitstring(0)) then {
+      write("rngbitstring(0) = <", bitstring, ">")
+   } else {
+      Failure("**** rngbitstring(0) failed (Error) ****")
+   }
+   &error := -1
+
+   banner("100 numbers from rngIconEx") # ------------------------------
+   # If we just assign to state like this
+   #    state := &random
+   # state just points to the &random array (and when we restore the state nothing happens;
+   # the sequence isn't reset). We need a copy of &random.
+   &random := 42; state := copyArray(&random)
+   writes("&random ="); every writes(" ", !&random); write()
+   writes("&state ="); every writes(" ", !state); write()
+   IconExNumber := list()
+   writes("&random = ", &random[2], " -->") # Note indexing of &random: it's an array
+   every 1 to 100 do { put(IconExNumber, ?0) }
+   every n := 1 to 3 do writes(" ", IconExNumber[n])
+   write(" ..."); writes(repl(" ",16))
+   every n := 98 to 100 do writes(" ", IconExNumber[n])
+   write()
+
+   differences := 0.0
+   every n := 1 to 100 do differences +:= abs(IconNumber[n] - IconExNumber[n])
+   if differences = 0.0 then {
+      write("There were no differences between rngIcon and rngIconEx")
+   } else {
+      write("*** Different sequence (Error) ***")
+      writes("Differences at ")
+      every n := 1 to 100 do { if IconNumber[n] ~= IconExNumber[n] then writes(" ",n) }
+      write()
+   }
+
+   banner("restore &random state") # ----------------------------------------
+   if not (&random := state) then {
+      Failure("**** restoration of &random state failed (Error) ****")
+   }
+   differences := 0
+   every n := 1 to 100 do {
+      if IconExNumber[n] ~= ?0 then differences +:= 1
+   }
+   if differences > 0 then {
+      Failure("**** there were ", n, " differences (Error) ****")
+   } else {
+      write("There were no differences after the state was restored")
+   }
+
+   banner("rngbits() and rngbitstring() after initialization") # --------------------
+   &random := 42
+   writes("&random = ", &random[2], " rngbits(0) --> ")
+   if /(bits := rngbits(0)) then {
+      Failure("**** rngbits() failed  (Error) ****")
+   } else {
+      write(bits[1])     # bits is always an array, even if it only has one element
+   }
+   &random := 42
+   writes("&random = ", &random[2], " rngbitstring(0) --> ")
+   if /(bitstring := rngbitstring(0)) then {
+      Failure("**** rngbits() failed  (Error) ****")
+   } else {
+      write("<", bitstring, ">")
+   }
+
+   banner("Load rngRbt")        # ----------------------------------------
+   if not("rngRbt" == loadrng("rngRbt")) then {
+      Failure("**** loadrng(\"rngRbt\") failed ***")
+      write(" &errornumber = ", &errornumber, ", &errortext = \"", &errortext, "\"")
+      exit()
+   }
+   printGC("After loadrng(\"rngRbt\")")
+   printLibChain("After loadrng(\"rngRbt\"): ")
+   write("The current rng library is <", loadrng(), ">")
+
+   unRbt := copyArray(&random)   # Save unitialized state for later tests
+
+   banner(" rngbits() and rngbitstring() before initialization") # --------------------
+   writes("&random = ", &random[2], " ... rngbits(0) --> ")
+   if /(bits := rngbits(0)) then {
+      Failure("**** rngbits() failed  (Error) ****")
+   } else {
+      every writes(!bits, " "); write()
+   }
+
+   writes("&random = ", &random[2], " ... rngbitstring(0) --> ")
+   if /(bitstring := rngbitstring(0)) then {
+      Failure("**** rngbits() failed  (Error) ****")
+   } else {
+      write("<", bitstring, ">")
+   }
+
+   banner("100 numbers from rngRbt") # ------------------------------
+   &random := unRbt  # Set back to uninitialized state
+   &random := 42; state := copyArray(&random) # note copy, not state := &random
+   printRandomState()
+
+   RbtNumber := list()
+   every 1 to 100 do { put(RbtNumber, ?0) }
+   writes(repl(" ",9))
+   every n := 1 to 3 do writes(" ", RbtNumber[n])
+   write(" ..."); writes(repl(" ",9))
+   every n := 98 to 100 do writes(" ", RbtNumber[n])
+   write()
+
+   differences := 0.0; n := 0
+   every n := 1 to 100 do {
+      differences +:= abs(IconNumber[n] - RbtNumber[n])
+      if IconNumber ~= RbtNumber then n+:= 1
+   }
+   if differences = 0.0 then {
+      Failure("**** There were no differences between rngIcon and rngRbt  (Error) ****")
+   } else {
+      write("There were ", n, " differences") # assume n > 1
+      write("The average difference between rngIcon and rngRbt was ", differences/100.0)
+   }
+
+   banner("restore &random state") # ----------------------------------------
+   printRandomState()
+   if not (&random := state) then {
+      Failure("**** restoration of &random state failed (Error) ****")
+   }
+   printRandomState()
+   differences := 0
+   every n := 1 to 100 do {
+      if RbtNumber[n] ~= ?0 then differences +:= 1
+   }
+   if differences > 0 then {
+      Failure("**** there were ", n, " differences (Error) ****")
+   } else {
+      write("There were no differences in the sequence after the state was restored")
+   }
+
+   banner("rngbits() and rngbitstring() after initialization") # --------------------
+   &random := 42
+   writes("&random = ", &random[2], " ... rngbits(0) --> ")
+   if /(bits := rngbits(0)) then {
+      Failure("**** rngbits() failed  (Error) ****")
+   } else {
+      every writes(!bits, " "); write()
+   }
+
+   &random := 42
+   writes("&random = ", &random[2], " ... rngbitstring(0) --> ")
+   if /(bitstring := rngbitstring(0)) then {
+      Failure("**** rngbits() failed  (Error) ****")
+   } else {
+      write("<", bitstring, ">")
+   }
+
+   banner("Swap back to the built-in generator") # ------------------------------
+   if "rngIcon" ~= loadrng("rngIcon") then {
+      Failure("**** Reload of rngIcon failed (Error) ****")
+   } else {
+      &random := 42
+      differences := 0.0
+      every n := 1 to 100 do differences +:= abs(IconNumber[n] - ?0)
+      if differences = 0.0 then {
+         write("There were no differences in the random sequence")
+      } else {
+         write("*** Different sequence (Error) ***")
+      }
+   }
+   printGC("After loadrng(\"rngIcon\")")
+   printLibChain("After loadrng(\"rngIcon\"): ")
+   write("The current rng library is <", loadrng(), ">")
+
+   banner("Initialization with an array") # ----------------------------------------
+   # If the generator has not been initialized and an integer is given, the Rabbit putSeed()
+   # routine "stretches" the value by copying the value into each element of an array and then
+   # initializes the generator with that. So this should give the same results
+   #
+   # We have to reload the generator for this test to work (if the generator has been used
+   # before, an assignment of an integer to &random keeps the key and just changes the IV)
+
+   if not("rngRbt" == loadrng("rngRbt")) then {
+      write(**** "loadrng(\"rngRbt\") failed (Error) ****")
+   } else {
+      a := array(192/intBits(),42)
+      if intBits() = 32 then {
+         a[2] := a[4] := a[6] := 0
+      }
+      if not (&random := a) then {
+         Failure("**** Initialization with an array failed (Error) ****")
+      } else {
+         printRandomState()
+         differences := 0
+         every n := 1 to 100 do {
+            if RbtNumber[n] ~= ?0 then differences +:= 1
+         }
+         if differences > 0 then {
+            Failure("**** there were ", differences, " differences (Error) ****")
+         } else {
+            write("There were no differences in the sequence after the state was initialized")
+         }
+      }
+
+      printGC("After loadrng(\"rngRbt\")")
+      printLibChain("After loadrng(\"rngRbt\"): ")
+      write("The current rng library is <", loadrng(), ">")
+
+      # Change a single bit
+      a[1] := 43
+      &random := a
+      duplicates := differences := 0
+      every n := 1 to 100 do {
+         if RbtNumber[n] ~= (x := ?0) then differences +:= 1
+         every if x = !RbtNumber then duplicates +:= 1
+      }
+      if differences > 0 then {
+            write("There were ", differences,
+                  " differences after a single bit was changed in key/IV")
+         } else {
+            write("*** There were no differences after a ",
+                  "single bit was changed in key/IV (Error) ****")
+         }
+      if duplicates = 0 then {
+         write("There were no duplicates")
+      } else {
+         write("There were ", duplicates, " duplicates ?") # possible but very unlikely
+      }
+   }
+
+   banner("Not enough bits supplied to Rbt initialization") # ------------------------------
+   if not(&random := array(2,42)) then {
+      write("Initialization with array(2,42) failed as expected")
+      write(" &errornumber = ", &errornumber, ", &errortext = \"", &errortext, "\"")
+   } else {
+      Failure("**** Initialization with array(2,42) unexpectedly succeeded (Error) ****")
+   }
+
+
+   # ------------------------------ Tests with threads ------------------------------
+
+   banner("sequence test in parallel") # ----------------------------------------
+   loadrng("rngIcon")
+   printGC("After loadrng(\"rngIcon\")")
+   printLibChain("After loadrng(\"rngIcon\"): ")
+   write("The current rng library is <", loadrng(), ">")
+   MakePool()
+   printGC("After MakePool()")
+   printLibChain("After MakePool(): ")
+   write("The current rng library is <", loadrng(), ">")
+
+   write(repl("-",60))
+   write("Note that the threads start with the same generator as main")
+   write("but subsequent activations have the value that was set last time")
+
+   Dispatch(checkSequence, IconNumber, "rngIcon")
+   Dispatch(checkSequence, IconExNumber, "rngIconEx")
+   Dispatch(checkSequence, RbtNumber, "rngRbt")
+
+   write("main waiting ...")
+   every 1 to 3 do <<@
+   printGC("After sequence test")
+   printLibChain("After sequence test: ")
+   write("The current rng library is <", loadrng(), ">")
+
+   Dispatch(checkSequence, IconExNumber, "rngIconEx")
+   Dispatch(checkSequence, RbtNumber, "rngRbt")
+   Dispatch(checkSequence, IconNumber, "rngIcon")
+
+   write("main waiting ...")
+   every 1 to 3 do <<@
+   printGC("After 2nd sequence test")
+   printLibChain("After 2nd sequence test: ")
+   write("The current rng library is <", loadrng(), ">")
+
+   banner("Change main's rng")
+   loadrng("rngRbt")
+   write("The current rng library is <", loadrng(), ">")
+   Dispatch(checkSequence, IconNumber, "rngIcon")
+   Dispatch(checkSequence, IconExNumber, "rngIconEx")
+   Dispatch(checkSequence, RbtNumber, "rngRbt")
+
+   write("main waiting ...")
+   every 1 to 3 do <<@
+
+   printGC("After 3rd sequence test")
+   printLibChain("After 3rd sequence test: ")
+   write("The current rng library is <", loadrng(), ">")
+   write(repl("-",60))
+   write("Threads that haven't been used before will have the rng that")
+   write("main had when they were created, not the current one")
+   every 1 to 6 do {
+      Dispatch(checkSequence, IconNumber, "rngIcon")
+      Dispatch(checkSequence, IconExNumber, "rngIconEx")
+      Dispatch(checkSequence, RbtNumber, "rngRbt")
+   }
+   write("main waiting ...")
+   every 1 to 18 do <<@
+   printGC("After 4th sequence test")
+   printLibChain("After 4th sequence test: ")
+   write("The current rng library is <", loadrng(), ">")
+
+   # One round of ClosePool(); MakePool() is usually enough to cause the
+   # invocatiotion of the garbage collector
+   ClosePool()
+   MakePool(18)
+
+   printGC("After recreating thread pool")
+   printLibChain("After recreating thread pool: ")
+   write("The current rng library is <", loadrng(), ">")
+
+   write(repl("-",60))
+   write("All threads should start with rngRBt")
+
+   every 1 to 6 do {
+      Dispatch(checkSequence, IconNumber, "rngIcon")
+      Dispatch(checkSequence, IconExNumber, "rngIconEx")
+      Dispatch(checkSequence, RbtNumber, "rngRbt")
+   }
+   write("main waiting ...")
+   every 1 to 18 do <<@
+   printGC("After 5th sequence test")
+   printLibChain("After 5th sequence test: ")
+   write("The current rng library is <", loadrng(), ">")
+
+   # reload the library to guarantee a clean start
+   alterRng(loadrng())
+   &random := 42
+   every 1 to 1000000 do Rbt1000000 := ?0
+   write("The value of the millionth number after 42 is ", Rbt1000000)
+
+   banner("Run Rbt in parallel")
+   every n := 1 to 16 do {
+      every 1 to n do Dispatch(check1000000,5, "rngRbt", Rbt1000000)
+      write("main waiting ...")
+      every 1 to n do <<@
+   }
+   banner("Run Iconx in parallel")
+   every n := 1 to 16 do {
+      every 1 to n do Dispatch(check1000000,5, "rngIconEx", Icon1000000)
+      write("main waiting ...")
+      every 1 to n do <<@
+   }
+   banner("Run a combination of all three in parallel")
+   every n := 1 to 6 do {
+      every 1 to n do {
+         Dispatch(check1000000,5, "rngRbt", Rbt1000000)
+         Dispatch(check1000000,5, "rngIconEx", Icon1000000)
+         Dispatch(check1000000,5, "rngIcon", Icon1000000)
+      }
+      write("main waiting ...")
+      every 1 to n*3 do <<@
+   }
+
+   write(repl("-",10), " End of tests ", repl("-",10))
+   Failure()                    # Produce Final Summary
+$endif
+end
+
+# See if the generated sequence matches the one given
+procedure checkSequence(seq, rnglib)
+   local differences, n
+   alterRng(rnglib)
+   &random := 42
+   differences := 0
+   every 1 to 100 do if seq[n] ~= ?0 then differences +:= 1
+
+   if (differences = 0) then {
+      write("Thread ", serial(&current), " (", rnglib, ") no differences")
+   } else {
+      Failure("Thread ", serial(&current),
+            "**** There were ", differences, " differences (Error) ****")
+   }
+   wait(10)
+   @>&main
+end
+
+# Generate 1000000 numbers starting from 42 and check that the last number
+# matches the one we prepared earlier. Repeat the test the specified number
+# of times.
+procedure check1000000(limit, rnglib, theLastOne)
+   local x, differences
+   differences := 0
+   every 1 to limit do {
+      # Force a new copy of the library by loading something else
+     loadrng(if rnglib == "rngIcon" then "rngRbt" else "rngIcon")
+     loadrng(rnglib)
+      &random := 42
+      every 1 to 1000000 do x := ?0
+      if x ~= theLastOne then {
+         differences +:= 1
+         write("Thread ", serial(&current), " ", x, " ~= ", theLastOne)
+      }
+   }
+
+   if differences = 0 then {
+      write("Thread ", serial(&current), " (", rnglib, ") no differences")
+   } else {
+      Failure("Thread ", serial(&current), " (", rnglib, ") ",
+            " **** ", differences, " differences (Error) ****")
+   }
+   @>&main
+end
+
+
+# Load a library showing before and after
+procedure alterRng(lib)
+   write("In thread ", serial(&current), " : pre-value of loadrng() is <", loadrng(), ">")
+   loadrng(lib)
+   write("In thread ", serial(&current), " : post-value of loadrng() is <", loadrng(), ">")
+end
+
+procedure doRepeat(state :integer: 42)
+   local n
+   every 1 to 2 do {
+      &random := state
+      writes("&random = ", &random, " -->")
+      every n := 1 to 10 do writes(" ", ?1000)
+      write()
+   }
+end
+
+procedure banner(s)
+      write(repl("-",10), " ", s, " ... ", repl("-",10))
+end
+
+# Print out the rng library structures. A higher level means more information.
+procedure printLibChain(s, level : integer : 3)
+$ifdef RNGDBG
+   dbgrng(s,level)              # writes to &errout
+$endif
+end
+
+procedure debugBreak()
+$ifdef RNGDBG
+   dbgbrk()
+$endif
+end
+
+# Print out garbage collector stats.
+procedure printGC(s)
+   local Heap, Static, String, Block
+   Heap := &collections
+   every Static := &collections \ 2
+   every String := &collections \ 3
+   every Block := &collections \4
+   write(s, ": GC heap: ", Heap, " static: ", Static, " string: ", String, " block: ", Block)
+end
+
+# Print out value of &random (or a copy)
+# Note: not to be used when the built-in generator is selected
+procedure printRandomState(name : string, state)
+   if /name then {
+      writes("&random ="); every writes(" ", !&random); write()
+   } else {
+      writes(name, " ="); every writes(" ",!state); write()
+   }
+end
+
+# This procedure should NOT be necessary !!
+procedure copyArray(a)
+   local ans := array(*a, 0)
+   local n
+   every n := 1 to *a do ans[n] := a[n]
+   return ans
+end
+
+ # return the number of bits in an integer
+ procedure intBits()
+    local str, errs, test
+    static bits
+    initial {
+$ifdef _LARGE_INTEGERS
+       errs := &error
+       &error := -1
+$endif
+       bits := 0; str := ""
+       repeat {
+          bits +:= 1; str ||:= "1"
+          test := integer("2R" || str)
+$ifdef _LARGE_INTEGERS
+          # If large integers are configured we have to test an operation that fails on them
+          if not seq(test) then {&error := errs; break}
+$else
+          # If large integers are not configured this will detect overflow
+          if ishift(ishift(test,+1),-1) ~= test then break
+$endif
+       }
+    }
+    return bits
+ end
+
+# Note failures as we go along and produce a summary at the end
+procedure Failure(msg[])
+   local m
+   static FT, total
+   initial { FT := mutex(table(0)) ; total := 0}
+   if *msg > 0 then {
+      m := ""; every m ||:= !msg
+      write(&errout, m)
+      critical FT: {
+         FT[m] +:= 1
+         total +:= 1
+      }
+   } else { # Produce a Final summary
+      if total = 0 then {
+         write(&errout, "All tests passed")
+      } else {
+         write(&errout, total, " test", if total = 1 then " failed" else "s failed")
+         every m := key(FT) do {
+            write(&errout, left(FT[m],6), m)
+         }
+         write(&errout, "Verbose output is on stdout")
+      }
+   }
+end

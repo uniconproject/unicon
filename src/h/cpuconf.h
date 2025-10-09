@@ -57,6 +57,9 @@
       #define F_Typecode  0x2000000000000000    /* set if dword incls typecode*/
    #endif                               /* F_Typecode */
 
+   #ifdef RngLibrary
+      #define F_RngState  0x0800000000000000 /* set if RNG state */
+   #endif                               /* RngLibrary */
 #endif                                  /* WordBits == 64 */
 
 /*
@@ -67,6 +70,18 @@
 
    #define MaxLong  ((long int)017777777777L)   /* largest long integer */
    #define MinLong  ((long int)020000000000L)   /* smallest long integer */
+
+   #define MaxNegInt "-2147483648"
+
+   #define MaxStrLen     0777777777     /* maximum string length */
+
+   #define F_Nqual      0x80000000      /* set if NOT string qualifier */
+   #define F_Var        0x40000000      /* set if variable */
+   #define F_Ptr        0x10000000      /* set if value field is pointer */
+   #define F_Typecode   0x20000000      /* set if dword includes type code */
+#ifdef RngLibrary
+   #define F_RngState   0x08000000     /* set if RNG state */
+#endif                                 /*RngLibrary */
 
    #define MaxNegInt "-2147483648"
 
@@ -119,7 +134,7 @@
    #define MaxInt       077777                  /* largest int */
 
    #ifndef MaxListSlots
-      #define MaxListSlots 8000         /* largest list-element block */
+      #define MaxListSlots 8000                 /* largest list-element block */
    #endif                               /* MaxListSlots */
 
    /*

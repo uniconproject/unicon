@@ -1040,7 +1040,7 @@ oneop:
       fprintf(stderr,"; coexpression_%ld failed to thread_%ld\n",
                         (long)ccp->id, (long)ncp->id);
    else
-#endif
+#endif                                 /* Concurrent */
       fprintf(stderr,"; co-expression_%ld failed to co-expression_%ld\n",
                         (long)ccp->id, (long)ncp->id);
    fflush(stderr);

@@ -108,7 +108,7 @@
 #	pathfind(fname, path)
 #		returns the full path of fname if found along the list of
 #		directories in "path", else fails.  If no path is given,
-#		getenv("DPATH") || getenv("PATH") is the default. As is 
+#		getenv("DPATH") || getenv("PATH") is the default. As is
 #               customary in Icon path searching, "." is prepended to the path.
 #
 #	pathload(fname, entry)
@@ -159,32 +159,32 @@
 #
 #  DOS helpers:
 #
-#	dosdir(diropts)	generates records of type dirinfo for each file 
+#	dosdir(diropts)	generates records of type dirinfo for each file
 #			found in the directory, failing when no more files
 #			are available, as in
 #
-#				every dirent := dosdir("*.*") do .... 
+#				every dirent := dosdir("*.*") do ....
 #
 # 	known problems:
 #
-#     	When used to traverse directories and sub-directories in nested every 
+#     	When used to traverse directories and sub-directories in nested every
 #     	loops it doesn't work as expected - requires further investigation.
-#     	Bypass by building lists of the subdirectories to be traversed. 
+#     	Bypass by building lists of the subdirectories to be traversed.
 #
 #	dosdirlist( dpath, dpart2, infotab )
 # 	    	returns a list containing the qualified file names for files
 #		in dpath and matching file patterns and/or options specified
-#		in dpart2. For example, 
+#		in dpart2. For example,
 #
 #        	   dirlist := dosdirlist( "..", "*.* /o:n /a:r-d" )
 #
-#     		returns a list of all read-only-non-directory files in the 
+#     		returns a list of all read-only-non-directory files in the
 #    		parent directory on a MS-DOS compatible system.
 #
-#     	If the optional infotab is specified, 
+#     	If the optional infotab is specified,
 #
-#     	(1)   it must be a table or a run time error will result 
-#     	(2)   the contents of the table will be updated as follows   
+#     	(1)   it must be a table or a run time error will result
+#     	(2)   the contents of the table will be updated as follows
 #             a dirinfo record will be created for each filename
 #     	(3)   the filename will be the key to the table
 #
@@ -283,17 +283,17 @@ procedure DOS_FileParts(filename)	#: parse DOSfile name
 
 local dev, path, name, ext, p, d
 
-filename   ? { 
+filename   ? {
                dev := 1( tab( upto(':') ), move(1) ) | ""
                d := &pos - 1
-               tab(0) 
+               tab(0)
          } ? {
-               p := 1 
-               path := tab( ( every p := upto('\\') + 1 ) |  p ) 
+               p := 1
+               path := tab( ( every p := upto('\\') + 1 ) |  p )
                tab(0)
          } ? {
                name := 1( tab( upto('.') ), move(1) ) | tab(0)
-               ext := tab(0) 
+               ext := tab(0)
          }
 
 
@@ -359,7 +359,7 @@ procedure Write(s)			#: write in buffered mode
    initial buffer_out := []
 
    push(buffer_out,s)
- 
+
    return s
 
 end
@@ -383,8 +383,8 @@ procedure dopen(s)			#: open file on DPATH
    if file := open(s) then return file		# look in current directory
 
    paths := getenv("DPATH") | "."
-       
-   if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+
+   if (binpath := (&config ? (="Binaries at " & tab(0)))) |
       ((f := open((binpath:=getpaths()) ||
 		  ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
       close(\f)
@@ -407,25 +407,25 @@ procedure dopen(s)			#: open file on DPATH
 end
 
 procedure dosdir( diropts )		#: process DOS directory
-   local de, line 
+   local de, line
 
    static tempfn, tempf, dosdir_ver
 
 initial {
 
    close(open(tempfn := tempname(),"w"))
-   
+
    system("ver > " || tempfn)
-   
-   (tempf := open(tempfn,"r")) | 
+
+   (tempf := open(tempfn,"r")) |
        stop("Unable to open ",tempfn," from dosdir.")
-   
-   while line := read(tempf) do 
+
+   while line := read(tempf) do
 
       if find("MS-DOS",line) then
          if find("6.20",line) then
             dosdir_ver := dosdir_62
-         else 
+         else
             dosdir_ver := dosdir_xx
 
    close(tempf)
@@ -439,10 +439,10 @@ system("dir " || diropts || " > " || tempfn)                # get dir
 tempf := open(tempfn,"r")                               # open file
 
 while line := map(read(tempf)) do {
-   line ? 
+   line ?
       if de := dosdir_ver() then
          suspend de
-      else 
+      else
          next
    }
 
@@ -459,7 +459,7 @@ initial nb := ~' '
 
 if *&subject = 43  & (tab(any(nb)), move(-1)) then {
    de := dirinfo()
-   (de.name := trim(move(8)), move(1), 
+   (de.name := trim(move(8)), move(1),
    de.ext  := trim(move(3)), move(1),
    de.size := move(13), move(1),
    de.date := move(8), move(2),
@@ -478,7 +478,7 @@ initial nb := ~' '
 
 if *&subject = 39  & (tab(any(nb)), move(-1)) then {
    de := dirinfo()
-   (de.name := trim(move(8)), move(1), 
+   (de.name := trim(move(8)), move(1),
    de.ext  := trim(move(3)), move(1),
    de.size := integer(move(9)), move(1),
    de.date := move(8), move(2),
@@ -499,7 +499,7 @@ dpath ||:= dpath[-1] ~== "\\"
 /dpart2 := "*.*"
 
 dl := []
-every di := dosdir( dpath || dpart2 ) do        
+every di := dosdir( dpath || dpart2 ) do
    if not ( di.name == ("." | "..") ) then {
       put( dl, fn := ( dpath || di.name || "." || trim(di.ext) ) )
       (\infotab)[fn] := di
@@ -510,26 +510,26 @@ every di := dosdir( dpath || dpart2 ) do
 end
 
 $ifdef _MSDOS
- 
+
 procedure dosfiles(pfn)			#: DOS file names
    local asciiz, fnr, prefix, k, name
    local ds, dx, result, fnloc, string_block
- 
+
 # Get Disk Transfer Address; filename locn is 30 beyond that.
- 
+
    result := Int86([16r21, 16r2f00] ||| list(7,0))
    # pointer arithmetic wrong: fnloc := 16 * result[8] + result[3]+ 30
    fnloc := ishift( result[8], 16 ) + result[3] + 30
- 
+
 # Get the generalized filename.
- 
+
    fnr := reverse(pfn)
    k := upto("\\:", fnr) | *fnr + 1
    prefix := reverse(fnr[k:0])
    name := "" ~== reverse(fnr[1:k]) | "*.*"
- 
+
 # Get the first file in the sequence.
- 
+
    asciiz := prefix || name || "\x00"
    Poke(string_block := GetSpace(*asciiz), asciiz) |
       stop( "dosfiles(): GetSpace() failed." )
@@ -545,19 +545,19 @@ procedure dosfiles(pfn)			#: DOS file names
       default : stop("I/O Error ", result[2])
       }
    suspend prefix || extract_name(fnloc)
- 
+
 # Get the remaining files in the sequence.
- 
+
    while Int86([16r21, 16r4f00, 0, 0, 0, 0, 0, 0, 0])[2] = 0 do
       suspend prefix || extract_name(fnloc)
 end
 
 $endif
- 
+
 procedure dosname(namein)		#: convert file name to DOS format
 
     local prefix, base, extension, pair, extended_name
-    
+
     namein := replace(namein, "/", "\\")
     pair := tail(namein, "\\")
     prefix := pair[1]
@@ -565,12 +565,12 @@ procedure dosname(namein)		#: convert file name to DOS format
     pair := suffix(extended_name)
     base := pair[1]
     extension := pair[2]
-    
+
     base := base[1:9]
     extension := extension[1:4]
-    
+
     return map(prefix || "\\" || base || "." || extension)
-    
+
 end
 
 procedure dpath(s)			#: full path to file on DPATH
@@ -607,7 +607,7 @@ procedure directory(name)		#: succeed if name is a directory
 end
 
 $ifdef _MSDOS
- 
+
 procedure extract_name(fnloc)
    local asciiz
    asciiz := Peek(fnloc, 13)
@@ -663,7 +663,7 @@ procedure filetext(f)			#: read file into list
    return text
 
 end
- 
+
 $ifdef _MSDOS
 
 procedure getdrive()			#: get current DOS drive
@@ -703,9 +703,9 @@ procedure pathfind(fname, path, psep)		#: find file on path
       /psep := ':'
    $else
    $ifdef _MS_WINDOWS_NT
-      /psep := ';' 
+      /psep := ';'
    $else
-      /psep := ' ' 
+      /psep := ' '
    $endif
    $endif
 
@@ -742,19 +742,19 @@ $ifdef _UNIX
    psep := ":"
 $else
 $ifdef _MS_WINDOWS_NT
-   psep := ";" 
+   psep := ";"
 $else
    psep := " "
 $endif
 $endif
-   
+
    path := getenv("FPATH") | "."
-   if match("Binaries at ", sfeat := &features) then {
+   if match("Binaries at ", sfeat := &config) then {
        path || " " || sfeat[13:0]
    }
-# ^ Binaries at can be patched by: 
+# ^ Binaries at can be patched by:
 # patchstr iconx newpath
-   found := pathfind(fname, path, " ") # pathfind prepends "." 
+   found := pathfind(fname, path, " ") # pathfind prepends "."
 
    if /found then
       stop ("cannot find \"", fname, "\" on path \". ", path, "\"")
@@ -810,7 +810,7 @@ procedure suffix(s,separator)		#: find suffix of file name
    return [s[1:i],s[(*s >= i) + 1:0] | &null]
 end
 
-procedure tail(s,separator)		#: find tail of file name 
+procedure tail(s,separator)		#: find tail of file name
    local i
    /separator := "/"
    i := 0
@@ -836,7 +836,7 @@ procedure tempname(			#: get temporary file name
 
    /prefix := ""
    /suffix := ""
-   exists(\path) | 
+   exists(\path) |
        (path :=  getenv("TEMP") | (if exists("/tmp") then "/tmp") | ".")
 
    if find("MS-DOS"|"MS Windows NT", &features) then

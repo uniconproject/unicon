@@ -1,7 +1,7 @@
 #!/bin/sh
 
-UNICON_VERSION=13.3
-UNICON_VERSION_DATE="December 22, 2020"
+UNICON_VERSION=13.4
+UNICON_VERSION_DATE="October 03, 2025"
 
 # Interested in version only
 if [ "x$1" = "xversion"  ]; then
@@ -23,14 +23,14 @@ if [ -d .git ]; then
   REPO_REV_COUNT=`git rev-list --first-parent --count HEAD`
   REPO_REV_HASH=`git rev-parse --short HEAD`
   REPO_REV=${REPO_REV_COUNT}_${REPO_REV_HASH}
-    
-  if test ! -z ${REPO_REV} ; then 
+
+  if test ! -z ${REPO_REV} ; then
       echo "#define REPO_REVISION \"${REPO_REV}\"" > $REV_FILE
   elif test ! -f $REV_FILE ; then
       echo "#define REPO_REVISION \"0\"" > $REV_FILE
   fi
 
-  if test -z ${REPO_REV_DESCR} ; then 
+  if test -z ${REPO_REV_DESCR} ; then
       echo "#define gitDescription \"commit ${REPO_REV_HASH}\"" >> $REV_FILE
   else
       echo "#define gitDescription \"${REPO_REV_DESCR}\"" >> $REV_FILE
@@ -49,10 +49,10 @@ else # not under git revision control
       echo "#define gitBranch \"0\"" >> $REV_FILE
       echo "#define UNICON_VERSION \"${UNICON_VERSION}\"" >> $REV_FILE
       echo "#define UNICON_VERSION_DATE \"${UNICON_VERSION_DATE}\"" >> $REV_FILE
-  fi 
+  fi
 
   REPO_REV=`cat src/h/revision.h | sed -n -e 's/^.*REPO_REVISION //p'`
-  
+
 fi
 
 # Interested in version only

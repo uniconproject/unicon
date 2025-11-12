@@ -1,8 +1,8 @@
-#  
+#
 #  srcfile.icn: Handles the collected Source Files from the Icode
 #  Author:      Ziad Al-Sharif, zsharif@gmail.com
 #  Contributor: Gigi Young
-# 
+#
 
 $include "defaults.icn"
 
@@ -13,14 +13,14 @@ link basename
 
 #
 # It is used to index the loaded source files in the srcText list
-# 
+#
 record fileIndex(
    fbegin, # where the source file index starts in srcText
    fend    # where the source file index ends in srcText
    )
 
 #
-# Contains all of the source files issues such as found files and so  
+# Contains all of the source files issues such as found files and so
 #
 class SourceFile(
    procMainFile, # The Source File that has the procedure main
@@ -32,7 +32,7 @@ class SourceFile(
    libFiles,     # a set of the loaded library files
    incFiles,     # a set of the loaded included files
    foundFiles,   # Set with all file names that were found - loaded
-   missingFiles, # Set with all file names that were not found - not loaded 
+   missingFiles, # Set with all file names that were not found - not loaded
 
    fileNames,    # List with all source file names that are in the binary
    fileText,      # Table mapping filenames to lists of their contents by lineno
@@ -83,7 +83,7 @@ method loadSourceFiles(fname, src)
 end
 
 #
-# Reads the contents of filename to fileText (table mapping filename to a 
+# Reads the contents of filename to fileText (table mapping filename to a
 # list of strings)
 #
 method storeFileText(filename)
@@ -110,7 +110,7 @@ end
 method findDirectory(filename)
    local path, s, file
 
-   # source 
+   # source
    srcPath ? {
       while path := tab(find(";") | 0) do {
          s := path||PS||filename
@@ -118,15 +118,15 @@ method findDirectory(filename)
          if st := stat(s) then {
             #debug("\tfound '",s,"'")
             insert(userFiles,filename)
-            if p := getAbsDirectory(path) then 
+            if p := getAbsDirectory(path) then
                path := p
             return path
             }
          tab(many(';')) | break
          }
-      } 
+      }
 
-   # library files 
+   # library files
    libPath ? {
       while path := tab(find(";") | 0) do {
          s := path||PS||filename
@@ -134,15 +134,15 @@ method findDirectory(filename)
          if st := stat(s) then {
             #debug("\tfound '",s,"'")
             insert(libFiles,filename)
-            if p := getAbsDirectory(path) then 
-               path := p 
-            return path 
+            if p := getAbsDirectory(path) then
+               path := p
+            return path
             }
          tab(many(';')) | break
          }
-      } 
+      }
 
-   # includes 
+   # includes
    incPath ? {
       while path := tab(find(";") | 0) do {
          s := path||PS||filename
@@ -150,7 +150,7 @@ method findDirectory(filename)
          if st := stat(s) then {
             #debug("\tfound '",s,"'")
             insert(incFiles,filename)
-            if p := getAbsDirectory(path) then 
+            if p := getAbsDirectory(path) then
                path := p
             return path
             }
@@ -171,14 +171,14 @@ method getAbsDirectory(dir)
       }
 end
 
-# 
+#
 # Updates (curr_symtab) to reflect the execution of the given program
 # This includes changes made by commands 'up', 'down', and 'coexp'
 #
-method updateCurrSymtab(coState) 
+method updateCurrSymtab(coState)
    local filename, line
 
-   # normal program execution 
+   # normal program execution
    if coState.curr.val === coState.target.val then {
       filename := keyword("file",coState.curr.val,coState.curr.curr_frame)
       line := keyword("line",coState.curr.val,coState.curr.curr_frame)
@@ -191,7 +191,7 @@ method updateCurrSymtab(coState)
 
    # lookup symbol table scope with file/line
    if symt := symtab.lookup_fileline(filename, line) then {
-      curr_symtab := symt 
+      curr_symtab := symt
       #debug("current symbol table: ",curr_symtab.tag," ",curr_symtab.label)
       return
       }
@@ -210,7 +210,7 @@ end
 #
 method findProc(pname)
    if symt := symtab.lookup_name(pname) then {
-      if symt.tag == "proc" then 
+      if symt.tag == "proc" then
          return [symt.filename, symt.start_line, symt.end_line]
       }
 end
@@ -224,7 +224,7 @@ method findProcMethod(name)
    if type(x := curr_symtab.lookup_scope_name(name)) == "Symtab__state" &
       x.tag == ("proc"|"method") then {
       #debug(image(name),": ",x.tag," ",x.label)
-      return [x.filename, x.start_line, x.end_line] 
+      return [x.filename, x.start_line, x.end_line]
       }
 end
 
@@ -236,9 +236,9 @@ method findClassMethod(cls, mthd)
    local symt
    if symt := symtab.lookup_name(cls) then {
       if symt.tag == "class" & (symt := symt.lookup_name(mthd)) then {
-         if symt.tag == "method" then 
+         if symt.tag == "method" then
             return [symt.filename, symt.start_line, symt.end_line]
-         } 
+         }
       }
 end
 
@@ -254,7 +254,7 @@ method findPkgProc(pkg, pname)
          }
       }
 end
- 
+
 #
 # Looks for a class method (mthd) within package (pkg)
 #
@@ -285,9 +285,9 @@ method isProcedure(pname, pkg)
    local symt := symtab
    if \pkg then {
       if /(symt := symtab.pkgtab[pkg]) then fail
-      } 
+      }
    if \(x := symt.nametab[pname]) & type(x) == "Symtab__state" then {
-      if x.tag == "proc" & x.label == pname then return pname 
+      if x.tag == "proc" & x.label == pname then return pname
       }
 end
 
@@ -299,18 +299,18 @@ method isClass(cls, pkg)
    local symt := symtab
    if \pkg then {
       if /(symt := symtab.pkgtab[pkg]) then fail
-      } 
+      }
    if \(x := symt.nametab[cls]) & type(x) == "Symtab__state" then {
       if x.tag == "class" & x.label == cls then return cls
       }
 end
 
 #
-# Checks if var is global. If (pkg) is given, checks if var is global in (pkg). 
+# Checks if var is global. If (pkg) is given, checks if var is global in (pkg).
 #
 method isGlobal(var, pkg)
    local x, symt := symtab
-  
+
    if \pkg then {
       if /(symt := symtab.pkgtab[pkg]) then fail
       }
@@ -346,14 +346,14 @@ end
 # returns a list of all built-in functions used in the loaded program
 #
 method getFunctions()
-   local f, names := [] 
+   local f, names := []
 
    if *functions > 0 then{
       every f := !functions do
          push(names, f)
       return sortf(names)
       }
-   else 
+   else
       fail
 end
 
@@ -363,7 +363,7 @@ end
 #
 method isFunction(name)
 
-   if member(functions, name) then 
+   if member(functions, name) then
       return
    fail
 end
@@ -385,7 +385,7 @@ end
 #
 method isLocal(var)
    local x
-   if curr_symtab.tag ~== "global" & 
+   if curr_symtab.tag ~== "global" &
       \(x := curr_symtab.nametab[var]) & type(x) == "string" then {
       if x == "local" then return var
       }
@@ -395,7 +395,7 @@ end
 # Checks whether var is static in the current scope
 #
 method isStatic(var)
-   local x 
+   local x
    if \(x := curr_symtab.nametab[var]) & type(x) == "string" then {
       if x == "static" then return var
       }
@@ -418,7 +418,7 @@ end
 method getCurrGlobals()
    local globals := [], symt
 
-   symt := curr_symtab 
+   symt := curr_symtab
    while symt := \symt.parent do {
       if symt.tag == "package" then {
          #debug("found package ",symt.label)
@@ -457,7 +457,7 @@ method getCurrParams()
 end
 
 #
-# If pkg is null, returns all global variables outside of packages. 
+# If pkg is null, returns all global variables outside of packages.
 # If a package is specified, returns global variables from pkg.
 #
 method getGlobals(pkg)
@@ -465,9 +465,9 @@ method getGlobals(pkg)
 
    if /pkg then globals |||:= symtab.locals
    else {
-      if \(symt := symtab.pkgtab[pkg]) then 
+      if \(symt := symtab.pkgtab[pkg]) then
          every x := !symt.locals do put(globals, pkg||"__"||x)
-      } 
+      }
    return globals
 end
 
@@ -477,12 +477,12 @@ end
 #
 method getPackages(pkg)
    local globnames := [], prefix := ""
-   if /pkg then 
+   if /pkg then
       globnames |||:= symtab.packages
    else {
       if \(symt := symtab.pkgtab[pkg]) then {
             prefix := pkg||"__"
-         every x := !symt.globals do put(globnames, prefix||x) 
+         every x := !symt.globals do put(globnames, prefix||x)
          every x := !symt.procs do put(globnames,"procedure "||prefix||x)
          every x := !symt.records do put(globnames,"record "||prefix||x)
          every x := !symt.classes do put(globnames,"class "||prefix||x)
@@ -492,37 +492,37 @@ method getPackages(pkg)
 end
 
 #
-# If pkg is null, returns all procedures outside of packages. 
+# If pkg is null, returns all procedures outside of packages.
 # If a package is specified, returns procedures from pkg.
 #
 method getProcedures(pkg)
    local procs := [], symt
-   
+
    if /pkg then procs |||:= symtab.procs
    else {
-      if \(symt := symtab.pkgtab[pkg]) then 
+      if \(symt := symtab.pkgtab[pkg]) then
          every x := !symt.procs do put(procs, pkg||"__"||x)
       }
    return procs
 end
 
 #
-# If pkg is null, returns all records outside of packages. 
+# If pkg is null, returns all records outside of packages.
 # If a package is specified, returns records from pkg.
 #
 method getRecords(pkg)
    local records := [], symt
-   
+
    if /pkg then records |||:= symtab.records
    else {
-      if \(symt := symtab.pkgtab[pkg]) then 
-         every x := !symt.records do put(records, pkg||"__"||x) 
+      if \(symt := symtab.pkgtab[pkg]) then
+         every x := !symt.records do put(records, pkg||"__"||x)
       }
    return records
 end
 
 #
-# If pkg is null, returns all classes outside of packages. If a package is 
+# If pkg is null, returns all classes outside of packages. If a package is
 # specified, returns classes from pkg.
 # If cls is specified, then returns all members and methods from that class
 # if it exists (from pkg if specified, or from global scope if not).
@@ -546,11 +546,11 @@ method getClasses(pkg, cls)
       # get class fields
       if \(symt := symt.nametab[cls]) then {
          if type(symt) == "Symtab__state" & symt.tag == "class" then {
-            every x := !symt.locals do put(names,x) 
+            every x := !symt.locals do put(names,x)
             every x := !symt.methods do put(names,"method "||x)
-            return names  
-            } 
-         } 
+            return names
+            }
+         }
       else {
          write("\n   Could not find class",prefix,cls,". Please try again.")
          fail
@@ -560,8 +560,8 @@ method getClasses(pkg, cls)
    else if /pkg then classes |||:= symtab.classes
    # returns all classes from package [pkg] - /cls & \pkg
    else {
-      if \(symt := symtab.pkgtab[pkg]) then 
-         every x := !symt.classes do put(classes, pkg||"__"||x) 
+      if \(symt := symtab.pkgtab[pkg]) then
+         every x := !symt.classes do put(classes, pkg||"__"||x)
       }
    return classes
 end
@@ -576,7 +576,7 @@ end
 method isSrcFile(fname)
 
   if \fname then{
-     if not find(".icn", fname) then fname ||:= ".icn" 
+     if not find(".icn", fname) then fname ||:= ".icn"
      if member(foundFiles, fname) | member(missingFiles, fname) then
         return
      }
@@ -608,7 +608,7 @@ method getSourceFileSize(f)
   fstat := stat(f) | fail
   fsize := fstat.size
 
-  return fsize 
+  return fsize
 end
 
 #
@@ -649,14 +649,14 @@ method getSrcCode(fname)
    if not member(fileText, fname) then fail
 
    if \(text := fileText[fname]) then {
-      every line := 1 to *text do 
+      every line := 1 to *text do
          put(code, line||"\t"||text[line])
       return code
       }
 end
 
 #
-# returns a sorted list of all opend src file names 
+# returns a sorted list of all opend src file names
 #
 method getFoundFiles()
    local L
@@ -666,7 +666,7 @@ method getFoundFiles()
       return L
       }
    else
-      fail  
+      fail
 end
 
 #
@@ -695,7 +695,7 @@ end
 method getMissingFiles()
    local L
 
-   if *missingFiles > 0 then{ 
+   if *missingFiles > 0 then{
       L := sortf(missingFiles)
       return L
       }
@@ -708,7 +708,7 @@ end
 #
 method getSourceFiles()
    local L
-   
+
    if *fileNames > 0 then{
       L := sortf(fileNames)
       return L
@@ -722,7 +722,7 @@ end
 #
 method getUserFiles()
    local L
-   
+
    if *userFiles > 0 then{
       L := sortf(userFiles)
       return L
@@ -736,7 +736,7 @@ end
 #
 method getLibFiles()
    local L
-   
+
    if *libFiles > 0 then{
       L := sortf(libFiles)
       return L
@@ -751,7 +751,7 @@ end
 method getBinPath()
    local f
 
-   if (binPath := (&features ? (="Binaries at " & tab(0)))) |
+   if (binPath := (&config ? (="Binaries at " & tab(0)))) |
       ((f := open((binPath:=getpaths()) ||
                   ("iconx"|"iconx.exe"|"wiconx.exe")))) then
       close(\f)
@@ -763,10 +763,10 @@ end
 #
 method getSrcPath()
    local path
-   comp_dir := chdir(".")  
+   comp_dir := chdir(".")
    path := ". " || comp_dir
 
-   return path 
+   return path
 end
 
 #
@@ -817,7 +817,7 @@ end
 #
 # NOTE: need to add cmd to show dirs.. gdb: show directories | dir
 #
-method cmdShowDir(cmd) 
+method cmdShowDir(cmd)
    if *cmd = 2 then {
       write("Source directories: ",srcPath)
       return
@@ -826,7 +826,7 @@ method cmdShowDir(cmd)
       Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
                  "\n   Try \"help\" for assistance."
       write(Message)
-      } 
+      }
 end
 
 method reinit()

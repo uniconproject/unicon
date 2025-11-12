@@ -389,7 +389,7 @@ keyword{0,1} eventvalue
 end
 
 
-"&features - generate strings identifying features in this version of Icon"
+"&features - generate strings identifying runtime features in this version of Unicon"
 keyword{1,*} features
    abstract {
       return string
@@ -430,6 +430,7 @@ keyword{1,*} features
          if (findonpath(UNICONX, patchpath+18, MaxPath)) {
             refpath = patchpath+18;
             patchpath[strlen(patchpath)-strlen(UNICONX)] = '\0';
+            fprintf(stderr,"&features: patchpath %s\n", patchpath);
             }
          else {
             int c;
@@ -461,93 +462,6 @@ keyword{1,*} features
 
 #include "../h/feature.h"
 
-{
-    char *s = alcstr(NULL, 33);
-    if (get_CCompiler(s))
-       suspend C_string s;
-}
-
-{
-        char *s = alcstr(NULL, 44);
-#if NT
-        unsigned long long int l = physicalmemorysize();
-#else                                           /* NT */
-        unsigned long l = physicalmemorysize();
-#endif                                          /* NT */
-        if (l > 0) {
-#if NT
-           sprintf(s, "Physical memory: %llu bytes", l);
-#else                                          /* NT */
-           sprintf(s, "Physical memory: %lu bytes", l);
-#endif                                         /* NT */
-           suspend C_string s;
-           }
-}
-
-#ifdef REPO_REVISION
-{
-         char *s = alcstr(NULL, strlen(REPO_REVISION) + strlen("Revision ") + 1);
-         sprintf(s, "Revision %s", REPO_REVISION);
-         suspend C_string s;
-}
-#endif                                  /* REPO_REVISION */
-
-{
-void get_arch(char *);
-         char *s = alcstr(NULL, 20);
-         get_arch(s);
-         suspend C_string s;
-}
-
-{
-         char *s = alcstr(NULL, 20);
-         if (num_cpu_cores > 0) {
-            sprintf(s, "CPU cores %d", num_cpu_cores );
-            suspend C_string s;
-            }
-}
-
-#if defined(MSWindows) && defined(SM_DIGITIZER)
-      {
-      int value = GetSystemMetrics(SM_DIGITIZER);
-      if (value & NID_READY){ /* stack ready */
-         if (value  & NID_MULTI_INPUT){ /* digitizer is multitouch */
-            suspend C_string "Multitouch input";
-            }
-         else if (value & (NID_INTEGRATED_TOUCH|NID_EXTERNAL_TOUCH)){
-            suspend C_string "Touch input";
-            }
-         else if (value & (NID_INTEGRATED_PEN|NID_EXTERNAL_PEN)){
-            suspend C_string "Pen input";
-            }
-         }
-}
-#endif                                  /* MSWindows && SM_DIGITIZER */
-
-      if (refpath && strlen(refpath) > 0) {
-         char *s;
-         if (!strcmp(refpath+strlen(refpath)-strlen(UNICONX_EXE), UNICONX_EXE)) {
-            refpath[strlen(refpath)-strlen(UNICONX_EXE)] = '\0';
-            /*
-             * Trim prefix letters in front of iconx, if any
-             */
-            while ((strlen(refpath)>0) && isalpha(refpath[strlen(refpath)-1]))
-               refpath[strlen(refpath)-1] = '\0';
-            }
-
-         s = alcstr(NULL, strlen(refpath) + strlen("Binaries at ") + 1);
-         strcpy(s, "Binaries at ");
-         strcat(s, refpath);
-         suspend C_string s;
-         }
-
-      if ((int)strlen(uniroot) > 18) {
-         char *s;
-         s = alcstr(NULL, strlen(uniroot+18) + strlen("Libraries at ") + 1);
-         strcpy(s, "Libraries at ");
-         strcat(s, uniroot+18);
-         suspend C_string s;
-         }
 
       fail;
       }
@@ -1176,4 +1090,198 @@ constant '\
 \320\321\322\323\324\325\326\327\330\331\332\333\334\335\336\337\
 \340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\
 \360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
+end
+
+"&proc - the function reference to proc()."
+keyword{1} proc
+   abstract {
+      return proc
+      }
+   body {
+      struct b_proc *prc;
+      struct descrip x;
+
+      StrLen(x) = 4;
+      StrLoc(x) = "proc";
+      prc = bi_strprc(&x, 0);
+      return proc(prc);
+      }
+end
+
+
+"&config - generate strings identifying configuration features in this version of Unicon"
+keyword{1,*} config
+   abstract {
+      return string
+      }
+   body {
+#ifdef RefPath
+      char *refpath = RefPath;
+#else                                   /* RefPath */
+      char *refpath = "";
+#endif                                  /* RefPath */
+
+      CURTSTATVAR();
+
+      if ((int)strlen(patchpath) > 18) refpath = patchpath+18;
+      else if (strlen(refpath)==0) {
+         struct stat buffer;
+         char *iconx;
+         int xnamelen;
+
+         iconx = relfile(StrLoc(kywd_prog), "/../" UNICONX_EXE);
+         xnamelen = strlen(UNICONX_EXE); /* "iconx.exe" */
+
+         // check if we have iconx on a path relative to us
+         if ((stat(iconx,&buffer)) == 0) {
+            refpath = patchpath+18;
+            strcpy(refpath, iconx);
+            patchpath[strlen(patchpath)-xnamelen] = '\0';
+            }
+         }
+      else {
+#if MSDOS
+         if (pathFind(UNICONX_EXE, patchpath+18, MaxPath)) {
+            refpath = patchpath+18;
+            patchpath[strlen(patchpath)-strlen(UNICONX_EXE)] = '\0';
+            }
+#endif                                  /* MSDOS */
+#if UNIX
+         if (findonpath(UNICONX, patchpath+18, MaxPath)) {
+            refpath = patchpath+18;
+            patchpath[strlen(patchpath)-strlen(UNICONX)] = '\0';
+            }
+         else {
+            int c;
+            FILE *f = fopen(StrLoc(kywd_prog), "r");
+            if (f != NULL) {
+               /*
+                * look for iconx in our icode file (could also try the dir
+                * containing &progname). Should fix to look rather at argv[0]
+                * or save iconx path from icode when icode is loaded.
+                */
+               while ((c = getc(f)) && (c != EOF) && (c != '\n'));
+               refpath = patchpath+18;
+               if (fscanf(f, "IXBIN=%s\n", refpath) != 1) refpath = "";
+               fclose(f);
+               }
+            else {
+               fprintf(stderr,"&config: can't open '%s' to look for iconx\n",
+                       StrLoc(kywd_prog));
+               }
+            }
+#endif                                  /* UNIX */
+         }
+
+{
+    char *s = alcstr(NULL, 33);
+    if (get_CCompiler(s))
+       suspend C_string s;
+}
+
+{
+        char *s = alcstr(NULL, 44);
+#if NT
+        unsigned long long int l = physicalmemorysize();
+#else                                           /* NT */
+        unsigned long l = physicalmemorysize();
+#endif                                          /* NT */
+        if (l > 0) {
+#if NT
+           sprintf(s, "Physical memory: %llu bytes", l);
+#else                                          /* NT */
+           sprintf(s, "Physical memory: %lu bytes", l);
+#endif                                         /* NT */
+           suspend C_string s;
+           }
+}
+
+#ifdef REPO_REVISION
+{
+         char *s = alcstr(NULL, strlen(REPO_REVISION) + strlen("Revision ") + 1);
+         sprintf(s, "Revision %s", REPO_REVISION);
+         suspend C_string s;
+}
+#endif                                  /* REPO_REVISION */
+
+{
+void get_arch(char *);
+         char *s = alcstr(NULL, 20);
+         get_arch(s);
+         suspend C_string s;
+}
+
+{
+         char *s = alcstr(NULL, 20);
+         if (num_cpu_cores > 0) {
+            sprintf(s, "CPU cores %d", num_cpu_cores );
+            suspend C_string s;
+            }
+}
+
+#if defined(MSWindows) && defined(SM_DIGITIZER)
+      {
+      int value = GetSystemMetrics(SM_DIGITIZER);
+      if (value & NID_READY){ /* stack ready */
+         if (value  & NID_MULTI_INPUT){ /* digitizer is multitouch */
+            suspend C_string "Multitouch input";
+            }
+         else if (value & (NID_INTEGRATED_TOUCH|NID_EXTERNAL_TOUCH)){
+            suspend C_string "Touch input";
+            }
+         else if (value & (NID_INTEGRATED_PEN|NID_EXTERNAL_PEN)){
+            suspend C_string "Pen input";
+            }
+         }
+}
+#endif                                  /* MSWindows && SM_DIGITIZER */
+
+      if (refpath && strlen(refpath) > 0) {
+         char *s;
+         if (!strcmp(refpath+strlen(refpath)-strlen(UNICONX_EXE), UNICONX_EXE)) {
+            refpath[strlen(refpath)-strlen(UNICONX_EXE)] = '\0';
+            /*
+             * Trim prefix letters in front of iconx, if any
+             */
+            while ((strlen(refpath)>0) && isalpha(refpath[strlen(refpath)-1]))
+               refpath[strlen(refpath)-1] = '\0';
+            }
+
+         s = alcstr(NULL, strlen(refpath) + strlen("Binaries at ") + 1);
+         strcpy(s, "Binaries at ");
+         strcat(s, refpath);
+         suspend C_string s;
+         }
+
+      if ((int)strlen(uniroot) > 18) {
+         char *s;
+         s = alcstr(NULL, strlen(uniroot+18) + strlen("Libraries at ") + 1);
+         strcpy(s, "Libraries at ");
+         strcat(s, uniroot+18);
+         suspend C_string s;
+         }
+
+      fail;
+      }
+end
+
+
+"&child - returns all threads created by the current thread - just fail at this time"
+keyword{0} child
+   abstract {
+      return empty_type
+      }
+   inline {
+      fail;
+      }
+end
+
+"&parent - return the parent of the current thread - just fail at this time"
+keyword{0} parent
+   abstract {
+      return empty_type
+      }
+   inline {
+      fail;
+      }
 end

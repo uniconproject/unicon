@@ -1,0 +1,90 @@
+############################################################################
+#
+#       File:     lsp_test_suite.icn
+#
+#       Subject:  LSP Test Suite Runner
+#                 Creates a UniconTestSuite and adds individual test files as Tests
+#
+#       Author:   Jafar Al-Gharaibeh
+#
+#       Date:     November 2025
+#
+############################################################################
+
+import ulsp
+import json
+import logger
+import unittest
+import util
+
+link test_lsp_message
+link test_lsp_feature
+link test_lsp_protocol
+link test_jsonrpc
+link printf
+
+global verbose_mode  # Set to true for verbose output
+global current_output_style  # Output style to pass to sub-suites
+
+procedure main(args)
+   local suite, arg, output_style
+   local feature_test, message_test, protocol_test, jsonrpc_test
+
+   # Default to short style
+   output_style := "short"
+
+   every arg := !args do {
+      if arg == ("-v" | "--verbose") then verbose_mode := 1
+      if arg == ("-l" | "--long") then {
+         output_style := "long"
+         break
+      }
+      if arg == ("-d" | "--debug") then {
+         output_style := "debug"
+         break
+      }
+   }
+   if getenv("ULSP_TEST_VERBOSE") then verbose_mode := 1
+
+   Logger(if \verbose_mode then 8 else 6)
+
+   # Set global output style for sub-suites
+   current_output_style := output_style
+
+   # Create top-level test suite
+   suite := UniconTestSuite()
+   if \verbose_mode then
+      suite.set_verbose(1)
+
+   suite.set_output_style(output_style)
+
+   # Add test instances to the suite
+   jsonrpc_test := JSONRPCTest()
+   suite.add_test(jsonrpc_test)
+
+   message_test := LSPMessageTest()
+   suite.add_test(message_test)
+
+   feature_test := LSPFeatureTest()
+   suite.add_test(feature_test)
+
+   protocol_test := LSPProtocolTest()
+   suite.add_test(protocol_test)
+
+   # Run all tests (timing is tracked internally by each test instance)
+   suite.run_all_tests()
+
+   # Print overall summary using suite's print_summary method
+   suite.print_summary()
+
+   if suite.get_total_fail_count() = 0 then {
+      write("🎉 ALL TESTS PASSED! 🎉")
+      exit(0)
+   } else {
+      write("❌ SOME TESTS FAILED ❌")
+      exit(1)
+   }
+end
+
+# Note: Test execution is now handled by the suite.run_all_tests() call above
+# Each test file's setup_tests() method has already registered its tests with the suite

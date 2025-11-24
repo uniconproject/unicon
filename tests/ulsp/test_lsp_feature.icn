@@ -1,0 +1,406 @@
+############################################################################
+#
+#       File:     test_lsp_feature.icn
+#
+#       Subject:  LSP Feature Test Suite
+#                 Tests specific LSP features with realistic Unicon code
+#
+#       Author:   Jafar Al-Gharaibeh
+#
+#       Date:     November 2025
+#
+############################################################################
+
+import ulsp
+import json
+import logger
+import unittest
+import util
+
+link ximage
+
+global test_file_content
+global feat_test_count, feat_pass_count, feat_fail_count
+global verbose_mode  # Set to true for verbose output
+
+# Database shared across all tests (built once)
+global feature_test_db
+
+class LSPFeatureTest : UniconTest(db)
+
+   method setup()
+      # Build database once for all tests (expensive operation)
+      if /feature_test_db then {
+         if \verbose_mode then
+            write("Building database (this may take a while)...")
+         feature_test_db := LSPDB()
+         feature_test_db.build()
+
+         if \verbose_mode then
+            write("Database build complete.")
+      }
+      db := feature_test_db
+
+      # Create test file
+      if not (test_file_content := create_test_file()) then {
+         write("FAIL: Could not create test file")
+         fail
+      }
+   end
+
+   method register_tests()
+      # Add this test file as a Test
+      add_test("LSP Feature Tests")
+
+      # Add test sections
+      add_test_section("Completion Features")
+      add_test_case("test_completion_features", test_completion_features,
+                    "Test completion at different positions")
+
+      add_test_section("Hover Features")
+      add_test_case("test_hover_features", test_hover_features,
+                    "Test hover over procedure and variable")
+
+      add_test_section("Definition Features")
+      add_test_case("test_definition_features", test_definition_features, "Test definition lookup")
+
+      add_test_section("Symbol Features")
+      add_test_case("test_symbol_features", test_symbol_features, "Test document symbols")
+
+      add_test_section("Formatting Features")
+      add_test_case("test_formatting_features", test_formatting_features, "Test code formatting")
+
+      add_test_section("Folding Features")
+      add_test_case("test_folding_features", test_folding_features, "Test folding ranges")
+
+      add_test_section("Signature Help Features")
+      add_test_case("test_signature_help_features", test_signature_help_features,
+                    "Test signature help")
+   end
+
+   method teardown()
+      # Cleanup test file
+      cleanup_test_file()
+   end
+
+   method create_test_file()
+      local f, content
+
+      content := "procedure main()\n" ||
+                "    local x, y, result\n" ||
+                "    x := 10\n" ||
+                "    y := 20\n" ||
+                "    result := calculate(x, y)\n" ||
+                "    write(\"Result: \", result)\n" ||
+                "    return 0\n" ||
+                "end\n\n" ||
+                "procedure calculate(a, b)\n" ||
+                "    local sum, product\n" ||
+                "    sum := a + b\n" ||
+                "    product := a * b\n" ||
+                "    return sum + product\n" ||
+                "end\n\n" ||
+                "class TestClass()\n" ||
+                "    method new()\n" ||
+                "        return self\n" ||
+                "    end\n" ||
+                "    \n" ||
+                "    method get_value()\n" ||
+                "        return 42\n" ||
+                "    end\n" ||
+                "end\n"
+
+      f := open("test_feature.icn", "w")
+      if \f then {
+         writes(f, content)
+         close(f)
+         return content
+      }
+      else {
+         write("FAIL: Could not create test file")
+         fail
+      }
+   end
+
+   method cleanup_test_file()
+      remove("test_feature.icn")
+   end
+
+end
+
+# Convert test methods to procedures for UniconTestSuite
+procedure test_completion_features()
+   local filehandler, completion_handler, result
+
+   # Use global database
+   if /feature_test_db then {
+      write(&errout, "Error: Database not initialized")
+      fail
+   }
+
+   # Create file handler
+   filehandler := FileHandler("test_feature.icn", feature_test_db)
+   filehandler.setFile()
+   filehandler.updateFileHandler()
+
+   # Test completion at different positions
+   completion_handler := CompletionHandler()
+
+   # Test completion after 'write' keyword
+   completion_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "position": ["line": 4; "character": 10]
+   ])
+
+   result := completion_handler.getResult()
+   assert_not_null(result, "Completion result should not be null") | fail
+   assert{member(result, "items"), "Completion result should have items"} | fail
+
+   # Test completion after 'local' keyword
+   completion_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "position": ["line": 1; "character": 10]
+   ])
+
+   result := completion_handler.getResult()
+   assert_not_null(result, "Completion result should not be null") | fail
+   assert{member(result, "items"), "Completion result should have items"} | fail
+
+   return
+end
+
+procedure test_hover_features()
+   local filehandler, hover_handler, result
+
+   if /feature_test_db then {
+      write(&errout, "Error: Database not initialized")
+      fail
+   }
+
+   # Create file handler
+   filehandler := FileHandler("test_feature.icn", feature_test_db)
+   filehandler.setFile()
+   filehandler.updateFileHandler()
+
+   # Test hover over procedure name
+   hover_handler := HoverHandler()
+   hover_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "position": ["line": 0; "character": 10]
+   ])
+
+   result := hover_handler.getResult()
+   assert_not_null(result, "Hover result should not be null") | fail
+   assert{member(result, "contents"), "Hover result should have contents"} | fail
+
+   # Test hover over variable
+   hover_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "position": ["line": 1; "character": 8]
+   ])
+
+   result := hover_handler.getResult()
+   # Hover might not always return content for variables
+
+   return
+end
+
+procedure test_definition_features()
+   local filehandler, definition_handler, result
+
+   if /feature_test_db then {
+      write(&errout, "Error: Database not initialized")
+      fail
+   }
+
+   # Create file handler
+   filehandler := FileHandler("test_feature.icn", feature_test_db)
+   filehandler.setFile()
+   filehandler.updateFileHandler()
+
+   # Test definition of procedure - position on "calculate" in "result := calculate(x, y)"
+   definition_handler := DefinitionHandler()
+   definition_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "position": ["line": 4; "character": 15]
+   ])
+
+   result := definition_handler.getResult()
+   # Definition might return empty result if not found (valid per LSP spec)
+   # But if it returns a result, it should have a uri
+   if *result > 0 then
+      assert{member(result, "uri"), "Definition result should have uri if non-empty"} | fail
+
+   return
+end
+
+procedure test_symbol_features()
+   local filehandler, symbol_handler, result, found_main, found_calculate, found_testclass, symbol
+
+   if /feature_test_db then {
+      write(&errout, "Error: Database not initialized")
+      fail
+   }
+
+   # Create file handler
+   filehandler := FileHandler("test_feature.icn", feature_test_db)
+   filehandler.setFile()
+   filehandler.updateFileHandler()
+
+   # Test document symbols
+   symbol_handler := SymbolHandler()
+   symbol_handler.setVariables(filehandler)
+
+   result := symbol_handler.getResult()
+   # LSP spec: documentSymbol returns a list directly, not a table with "symbols" key
+   assert_equal(type(result), "list", "Symbol result should be a list") | fail
+   assert{*result > 0, "Symbol result should not be empty"} | fail
+
+   # Check if we found expected symbols
+   every symbol := !result do {
+      case symbol["name"] of {
+         "main": found_main := 1
+         "calculate": found_calculate := 1
+         "TestClass": found_testclass := 1
+      }
+   }
+
+   assert{\found_main, "Should find main procedure"} | fail
+   assert{\found_calculate, "Should find calculate procedure"} | fail
+   assert{\found_testclass, "Should find TestClass"} | fail
+
+   return
+end
+
+procedure test_formatting_features()
+   local filehandler, formatting_handler, result
+
+   if /feature_test_db then {
+      write(&errout, "Error: Database not initialized")
+      fail
+   }
+
+   # Create file handler
+   filehandler := FileHandler("test_feature.icn", feature_test_db)
+   filehandler.setFile()
+   filehandler.updateFileHandler()
+
+   # Test formatting
+   formatting_handler := FormattingHandler()
+   formatting_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "options": [
+         "tabSize": 4;
+         "insertSpaces": "__true__"
+      ]
+   ])
+
+   result := formatting_handler.getResult()
+   # LSP spec: formatting returns TextEdit[] directly (a list)
+   assert_equal(type(result), "list", "Formatting result should be a list") | fail
+   # Empty list is valid (no formatting edits needed)
+
+   return
+end
+
+procedure test_folding_features()
+   local filehandler, folding_handler, result
+
+   if /feature_test_db then {
+      write(&errout, "Error: Database not initialized")
+      fail
+   }
+
+   # Create file handler
+   filehandler := FileHandler("test_feature.icn", feature_test_db)
+   filehandler.setFile()
+   filehandler.updateFileHandler()
+
+   # Test folding ranges
+   folding_handler := FoldingRangeHandler()
+   folding_handler.setVariables(filehandler)
+
+   result := folding_handler.getResult()
+   # LSP spec: foldingRange returns FoldingRange[] directly (a list)
+   assert_equal(type(result), "list", "Folding result should be a list") | fail
+   # Empty list is valid (no folding ranges)
+
+   return
+end
+
+procedure test_signature_help_features()
+   local filehandler, signature_handler, result
+
+   if /feature_test_db then {
+      write(&errout, "Error: Database not initialized")
+      fail
+   }
+
+   # Create file handler
+   filehandler := FileHandler("test_feature.icn", feature_test_db)
+   filehandler.setFile()
+   filehandler.updateFileHandler()
+
+   # Test signature help at procedure call position
+   signature_handler := SignatureHandler()
+   signature_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "position": ["line": 3; "character": 20];
+      "context": [
+         "triggerKind": 1;
+         "isRetrigger": "__false__"
+      ]
+   ])
+
+   result := signature_handler.getResult()
+   assert_not_null(result, "Signature help result should not be null") | fail
+   assert{member(result, "signatures"), "Signature help result should have signatures"} | fail
+   assert_equal(type(result["signatures"]), "list", "Signatures should be a list") | fail
+
+   # Test signature help at method call position
+   signature_handler.setVariables(filehandler, [
+      "textDocument": ["uri": "file:///test_feature.icn"];
+      "position": ["line": 0; "character": 15];
+      "context": [
+         "triggerKind": 1;
+         "isRetrigger": "__false__"
+      ]
+   ])
+
+   result := signature_handler.getResult()
+   assert_not_null(result, "Signature help result should not be null") | fail
+   assert{member(result, "signatures"), "Signature help result should have signatures"} | fail
+
+   return
+end
+
+$ifdef STANDALONE
+procedure main(args)
+   local test_suite, success, arg, output_style
+
+   # Default to short style
+   output_style := "short"
+
+   every arg := !args do {
+      if arg == ("-v" | "--verbose") then verbose_mode := 1
+      if arg == ("-l" | "--long") then {
+         output_style := "long"
+         break
+      }
+      if arg == ("-d" | "--debug") then {
+         output_style := "debug"
+         break
+      }
+   }
+   if getenv("ULSP_TEST_VERBOSE") then verbose_mode := 1
+
+   Logger(if \verbose_mode then 8 else 6)
+   test_suite := LSPFeatureTest()
+   success := test_suite.run_all_tests(output_style)
+
+   if \success then
+      exit(0)
+   else
+      exit(1)
+end
+$endif

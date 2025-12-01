@@ -16,6 +16,7 @@ Test: Hdr
 	$(MAKE) -C $$dir; \
 	done
 	@$(MAKE) -s Summary
+	@$(MAKE) -C ulsp Test
 
 all: Hdr
 	@for dir in $(TESTS); do \
@@ -80,6 +81,7 @@ distclean:
 		-cd pattern &&	$(MAKE) distclean
 		-cd thread &&	$(MAKE) distclean
 		-cd coexpr &&	$(MAKE) distclean
+		-cd ulsp &&	$(MAKE) distclean
 		-rm -f posix/x.icn
 		-rm -f posix/1
 
@@ -97,3 +99,4 @@ clean Clean Pure:
 		-cd pattern &&	$(MAKE) Clean
 		-cd thread &&	$(MAKE) Clean
 		-cd coexpr &&	$(MAKE) Clean
+		-cd ulsp &&	$(MAKE) Clean

@@ -32,26 +32,28 @@ procedure ulibprefix()
       if path := (&features ? (="Libraries at " & tab(upto(';') | 0))) then
          prefix := path || "/"
       else if (path := (&features ? (="Binaries at " & tab(0)))) |
-	  ((f := open((path := getpaths()) || ("uniconx" | "iconx" |
-					       "uniconx.exe" |"iconx.exe" |
-					       "wuniconx.exe" | "wiconx.exe"))))
+          ((f := open((path := getpaths()) || ("uniconx" | "iconx" |
+                                               "uniconx.exe" |"iconx.exe" |
+                                               "wuniconx.exe" | "wiconx.exe"))))
       then {
-	 close(\f)
-	 # The returned path has the form  /path/unicon/bin/
-	 # Drop the bin directory from the path to get the root
-	 # unicon directory
+         close(\f)
+         # The returned path has the form  /path/unicon/bin/
+         # Drop the bin directory from the path to get the root
+         # unicon directory
 
-	 # remove the trailing slash it could be / or \
-	 c := path[-1:0]
-	 path := path[1:-1]
-	 # find the previous slash and copy the path up to it including the slash
+         # remove the trailing slash it could be / or \
+         c := path[-1:0]
+         path := path[1:-1]
+         # find the previous slash and copy the path up to it including the slash
          every i:= find(c, path)
-	 prefix := path[1:i+1]
+         prefix := path[1:i+1]
          }
       if &features=="MS Windows NT" then
-	  prefix:=map(prefix, '/', '\\')
+          prefix:=map(\prefix, '/', '\\')
       }
-   return prefix
+
+   if \prefix then
+      return prefix
 end
 
 # unicon library paths
@@ -62,16 +64,16 @@ procedure ulibpaths()
       sep := pathsep()
       prefix := ulibprefix()
       libpath :=
-	  prefix || "ipl/lib"     || sep ||
-	  prefix || "uni/lib"     || sep ||
-	  prefix || "uni/gui"     || sep ||
-	  prefix || "uni/xml"     || sep ||
-	  prefix || "uni/parser"  || sep ||
-	  prefix || "uni/3d"      || sep ||
-	  prefix || "plugins/lib" || sep
+          prefix || "ipl/lib"     || sep ||
+          prefix || "uni/lib"     || sep ||
+          prefix || "uni/gui"     || sep ||
+          prefix || "uni/xml"     || sep ||
+          prefix || "uni/parser"  || sep ||
+          prefix || "uni/3d"      || sep ||
+          prefix || "plugins/lib" || sep
 
       if &features=="MS Windows NT" then
-	  libpath:=map(libpath, '/', '\\')
+          libpath:=map(libpath, '/', '\\')
       }
    return libpath
 end
@@ -105,7 +107,7 @@ local sep, prefix
 
       pathstr := (semicolonpath("LPATH") | ".") || sep || pathstr
       if &features=="MS Windows NT" then
-	  pathstr:=map(pathstr, '/', '\\')
+          pathstr:=map(pathstr, '/', '\\')
       }
    return pathstr
 end

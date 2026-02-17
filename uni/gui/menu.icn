@@ -18,13 +18,13 @@ $include "guih.icn"
 # within it are formatted within the menu automatically.
 #
 class Menu : SubMenu(
-   w,                       #         
-   h,                       #         
-   max_label_left_w,        #                        
-   max_label_mid_w,         #                       
-   max_label_right_w,       #                         
-   temp_win,                #                
-   which_open,              #                  
+   w,                       #
+   h,                       #
+   max_label_left_w,        #
+   max_label_mid_w,         #
+   max_label_right_w,       #
+   temp_win,                #
+   which_open,              #
    which_highlight,         #
    children                 #
    )
@@ -43,7 +43,7 @@ class Menu : SubMenu(
    # @          is appended to the end.
    #
    method add(c, i)
-      if /i then 
+      if /i then
          put(self.children, c)
       else
          self.children := self.children[1 : i] ||| [c] ||| self.children[i : 0]
@@ -152,7 +152,7 @@ class Menu : SubMenu(
       #
       every c := !self.children do {
          c.display_label(self.max_label_left_w, self.max_label_mid_w, self.max_label_right_w)
-         if c === \self.which_highlight then 
+         if c === \self.which_highlight then
             DrawRaisedRectangle(cw, c.label_x, c.label_y, self.w - 2 * BORDER_WIDTH, c.label_h)
       }
       CopyArea(cw, self.parent_component.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
@@ -231,7 +231,7 @@ class Menu : SubMenu(
          self.which_open.handle_event(e)
          return
       }
- 
+
       every m := !children do {
          if \last & m === which_highlight then {
             set_which_highlight(last)
@@ -244,7 +244,7 @@ class Menu : SubMenu(
 
    method handle_key_down(e)
       local m, t, first
-      
+
       if \self.which_open then {
          self.which_open.handle_event(e)
          return
@@ -265,7 +265,7 @@ class Menu : SubMenu(
    end
 
    method handle_key_right(e)
-      if \self.which_open then 
+      if \self.which_open then
          self.which_open.handle_event(e)
       else if /self.which_highlight then
          self.cursor_on() | parent_component.go_right()
@@ -277,7 +277,7 @@ class Menu : SubMenu(
    end
 
    method handle_key_left(e)
-      if \self.which_open then 
+      if \self.which_open then
          self.which_open.handle_event(e)
       else if /parent then
          parent_component.go_left()
@@ -286,7 +286,7 @@ class Menu : SubMenu(
    end
 
    method handle_key_escape(e)
-      if \self.which_open then 
+      if \self.which_open then
          self.which_open.handle_event(e)
       else if /parent then
          parent_component.make_partial()
@@ -295,7 +295,7 @@ class Menu : SubMenu(
    end
 
    method handle_key_return(e)
-      if \self.which_open then 
+      if \self.which_open then
          self.which_open.handle_event(e)
       else if \self.which_highlight then {
          if self.which_highlight.is_sub_menu() then {
@@ -351,7 +351,7 @@ class Menu : SubMenu(
                self.which_highlight.succeed(e)
          } else
             #
-            # Close completely, don't pass on event. 
+            # Close completely, don't pass on event.
             #
             close_all(1)
       } else {
@@ -406,7 +406,7 @@ class Menu : SubMenu(
             #
             # Clear present selection, except sub-menus.
             #
-            self.drag_off()        
+            self.drag_off()
       }
    end
 
@@ -435,11 +435,11 @@ class Menu : SubMenu(
    end
 
    method handle_event(e)
-      if e === (&lpress | &rpress | &mpress) then 
+      if e === (&lpress | &rpress | &mpress) then
          handle_press(e)
-      else if e === (&lrelease | &rrelease | &mrelease) then 
+      else if e === (&lrelease | &rrelease | &mrelease) then
          handle_release(e)
-      else if e === (-12 | &ldrag | &rdrag | &mdrag) then 
+      else if e === (-12 | &ldrag | &rdrag | &mdrag) then
          handle_drag(e)
       else {
          case e of {

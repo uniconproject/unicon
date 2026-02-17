@@ -29,7 +29,7 @@ global fixName
 #  The UniAll class holds the entire internal form of a Unicon
 #    documentation set.
 #</p>
-class UniAll : Object (files, packages, 
+class UniAll : Object (files, packages,
                       curFile, curClass, curPackage, curComments, fileHead,
                       uniFile, resolveFlag, targetDir, saveSrcFlag,
                       importSet, linkSet, badFiles, sourcePath, uniFilez)
@@ -83,7 +83,7 @@ class UniAll : Object (files, packages,
     #
     method addFile(fName)
         if curFile := /files[fName] := UFile(fName) then {
-            if \saveSrcFlag then 
+            if \saveSrcFlag then
                 curFile.setSrcFile(uniFile.getFilename())
             return curFile
             }
@@ -94,7 +94,7 @@ class UniAll : Object (files, packages,
     # </p>
     method addTag(obj)
         if uniFile.hasSource() then {
-            if \saveSrcFlag then 
+            if \saveSrcFlag then
                 obj.setSrcFile(uniFile.getFilename())
             tag := obj.getFormType()||"_"||obj.getName()
             uniFile.setTag(tag)
@@ -165,7 +165,7 @@ class UniAll : Object (files, packages,
                    UniFile(fName, genDirs(\sourcePath)) | {
                    insert(badFiles, fName)
                    fail
-                   } 
+                   }
 
         if \contents then {
             if \uniFile := uniFilez[fName] then {
@@ -190,9 +190,9 @@ class UniAll : Object (files, packages,
 
             uniFilez[fName] := uniFile
             }
-        
+
         # See if we need to resolve imports and links...
-        
+
         if \resolveFlag then {     # Yep...
 
             cleanSets()
@@ -209,7 +209,7 @@ class UniAll : Object (files, packages,
 
             }
 
-            
+
     end
 
     #<p>
@@ -316,17 +316,17 @@ class UniAll : Object (files, packages,
         token := uniFile.nextToken() | fail
 
         #write("token = " || ximage(token))
-    
+
         case token.Type() of {
             "UniDoc::BlankLine" : processBlank(uniFile)
             "UniDoc::Comment"   : processComment(uniFile, token.value)
             "UniDoc::Keyword"   : processKeyword(uniFile, token.value)
             }
-    
+
         uniFile.clearLine()
         return
     end
-    
+
     # <p>
     #   Process a blank line.  Blank lines are only interesting
     #   in that they serve to distinguish comment blocks.
@@ -339,7 +339,7 @@ class UniAll : Object (files, packages,
             }
         curComments := Comments()    # discard current comment block
     end
-    
+
     # <p>
     #   Process a comment.
     # </p>
@@ -347,7 +347,7 @@ class UniAll : Object (files, packages,
     method processComment(f, s)
         curComments.add(s)
     end
-    
+
     # <p>
     # Process a keyword.  Not all keywords are interesting.  Many
     # are simply ignored.
@@ -366,7 +366,7 @@ class UniAll : Object (files, packages,
             "record"    : processRecord(f)
             }
     end
-    
+
     # <p>
     # There are places in a Unicon program where an entity may be
     # represented by either a <i>name</i> or a <i>string</i>.
@@ -397,7 +397,7 @@ class UniAll : Object (files, packages,
         curPackage.addFile(curFile)
         packages["(main)"].delFile(curFile.getName())
     end
-    
+
     # <p>
     # Process an import statement.
     # </p>
@@ -434,9 +434,9 @@ class UniAll : Object (files, packages,
                 sawComma := &null
                 }
             }
-    
+
     end
-    
+
     # <p>
     # Process a link statement.
     # </p>
@@ -474,9 +474,9 @@ class UniAll : Object (files, packages,
                 sawComma := &null
                 }
             }
-    
+
     end
-    
+
     # <p>
     # Process a class header.  If there's an <b>initially</b> clause that
     # will get tacked on later.
@@ -539,7 +539,7 @@ class UniAll : Object (files, packages,
                 curClass.addField(field)
                 }
             }
-    
+
         if not f.EOS() then {
             token := f.nextToken()
             if token.Type() == "UniDoc::Comment" then {
@@ -607,7 +607,7 @@ class UniAll : Object (files, packages,
 
         return glob
     end
-    
+
     # <p>
     # Process an initially clause, treating it as a class
     # constructor.
@@ -646,7 +646,7 @@ class UniAll : Object (files, packages,
         else {
             f.pushback(token)
             }
-    
+
         if not f.EOS() then {
             token := f.nextToken()
             if token.Type() == "UniDoc::Comment" then {
@@ -654,13 +654,13 @@ class UniAll : Object (files, packages,
                 }
             else f.pushback(token)
             }
-        
+
         # No param list on constructor, so assume all fields!
         if /const.getParams() then {
             const.setParams(curClass.getParams())
             }
     end
-    
+
     # <p>
     # Process a method definition.
     # </p>
@@ -684,7 +684,7 @@ class UniAll : Object (files, packages,
         else if token.Type() ~== "UniDoc::LParen" then {
             f.pushback(token)
             }
-        
+
         while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
             if token.Type() == "UniDoc::Comma" then {
                 next
@@ -703,7 +703,7 @@ class UniAll : Object (files, packages,
                 met.addParam(param)
                 }
             }
-    
+
         if not f.EOS() then {
             token := f.nextToken()
             if token.Type() == "UniDoc::Comment" then {
@@ -711,9 +711,9 @@ class UniAll : Object (files, packages,
                 }
             else f.pushback(token)
             }
-        
+
     end
-    
+
     # <p>
     # Process a procedure definition.
     # </p>
@@ -738,7 +738,7 @@ class UniAll : Object (files, packages,
         else if token.Type() ~== "UniDoc::LParen" then {
             f.pushback(token)
             }
-        
+
         while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
             if token.Type() == "UniDoc::Comma" then {
                 next
@@ -757,7 +757,7 @@ class UniAll : Object (files, packages,
                 proced.addParam(param)
                 }
             }
-    
+
         if not f.EOS() then {
             token := f.nextToken() | fail
             if token.Type() == "UniDoc::Comment" then {
@@ -766,7 +766,7 @@ class UniAll : Object (files, packages,
             else f.pushback(token)
             }
     end
-    
+
     # <p>
     # Process a global statement.
     # </p>
@@ -800,7 +800,7 @@ class UniAll : Object (files, packages,
 
             uniFile.setInside()                # re-enable Unicon keywords
     end
-    
+
     # <p>
     # Process a record definition.
     # </p>
@@ -825,7 +825,7 @@ class UniAll : Object (files, packages,
         else if token.Type() ~== "UniDoc::LParen" then {
             f.pushback(token)
             }
-        
+
         while (token := f.nextToken()).className() ~== "UniDoc::RParen" do {
             if token.Type() == "UniDoc::Comma" then {
                 next
@@ -844,7 +844,7 @@ class UniAll : Object (files, packages,
                 rec.addField(field)
                 }
             }
-    
+
         if not f.EOS() then {
             token := f.nextToken()
             if token.Type() == "UniDoc::Comment" then {
@@ -852,13 +852,13 @@ class UniAll : Object (files, packages,
                 }
             else f.pushback(token)
             }
-        
+
             uniFile.setInside()                # re-enable Unicon keywords
     end
 
     # <p>
     # Produce a table of all methods that are inherited by
-    #   a class.  Keys are superclasses, entries are 
+    #   a class.  Keys are superclasses, entries are
     #   UniDoc::Set()s of methods.
     # </p>
     method inherited(aClass)
@@ -888,7 +888,7 @@ class UniAll : Object (files, packages,
     #    given a table whose keys are superclasses.
     # </p>
     method makeNameTab(aTab)
-        
+
         nTab := table()
         every sc := key(aTab) do {
             nTab[sc.getName()] := sc
@@ -896,7 +896,7 @@ class UniAll : Object (files, packages,
         every put(nList := [], (!sort(nTab))[2])
         return nList
     end
-            
+
     # <p>
     # Produce a list of <i>all</i> packages.
     # </p>

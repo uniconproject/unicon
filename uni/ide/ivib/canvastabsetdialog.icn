@@ -14,20 +14,20 @@ $include "guih.icn"
 #
 #
 class CanvasTabSetDialog : CanvasComponentDialog(
-   c,                       #         
-   add_col,                 #               
-   delete,                  #              
-   apply,                   #             
-   struct,                  #              
-   edit_label,              #                  
-   os,                      #          
-   os_on,                   #             
-   os_off,                  #              
+   c,                       #
+   add_col,                 #
+   delete,                  #
+   apply,                   #
+   struct,                  #
+   edit_label,              #
+   os,                      #
+   os_on,                   #
+   os_off,                  #
    item_var_category0,      # Checkboxes for item variable category
-   item_var_category1,             
-   item_var_category_cbg,        
-   col_name,                #                
-   item_shaded,                                
+   item_var_category1,
+   item_var_category_cbg,
+   col_name,                #
+   item_shaded,
    which_one                #
    )
 
@@ -62,7 +62,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
       local new, l, nl, line, nlines
       new := CanvasTabItem()
       new.set_name(c.parent_Canvas.get_new_name(new.name))
-      new.set_label("Edit me") 
+      new.set_label("Edit me")
       new.set_parent(c)
       new.init()
       new.set_parent_Canvas(c.parent_Canvas)
@@ -71,12 +71,12 @@ class CanvasTabSetDialog : CanvasComponentDialog(
       if *l = 0 | nl > *c.children then {
          put(c.children, new)
          struct.set_contents(c.string_rep())
-         struct.goto_pos(*c.children)                             
+         struct.goto_pos(*c.children)
          struct.set_selections([*c.children])
          struct.set_cursor(*c.children)
       } else {
          c.children := c.children[1:nl] ||| [new] ||| c.children[nl:0]
-         struct.set_contents(c.string_rep())      
+         struct.set_contents(c.string_rep())
          line := struct.get_first_line()
          nlines := struct.get_curr_lines()
          if nl > line + nlines - 1 then
@@ -86,7 +86,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
          struct.goto_pos(line)
          struct.set_selections([nl])
          struct.set_cursor(nl)
-      }                              
+      }
       if \new.class_variable then
          item_var_category_cbg.set_which_one(item_var_category0)
       else
@@ -208,7 +208,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
       os_off := OverlayItem()
       os.add(os_off)
 
-      os_on := OverlayItem() 
+      os_on := OverlayItem()
       os.add(os_on)
 
       b := Border()
@@ -224,7 +224,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
       l.set_pos(20, 30)
       l.set_align("l", "c")
       b.add(l)
-      
+
       edit_label := TextField()
       edit_label.set_align("l", "c")
       edit_label.set_pos(70, 30)

@@ -33,7 +33,7 @@ import parser
 # their package is removed from this set.  If the final value is non-empty, then an
 # error occurs.  This prevents compilation errors when a file tries to import
 # an un-needed package before any files have been added to that package.
-# 
+#
 class FileArg(file,
               parsed_program,
               local_package_level_syms,
@@ -116,12 +116,12 @@ class FileArg(file,
    # objects.  The table's contents are later added to the global
    # symbol table, before init2() is called.
    #
-   method init1(file) 
+   method init1(file)
       local sym, si, cl, fc
       self.file := file
       self.parsed_program := ParsedProgram(parse_unicon(file)) |
 	 err("Couldn't parse " || file)
-      
+
       self.local_package_level_syms := table()
       self.local_package_level_class_syms := table()
 
@@ -136,7 +136,7 @@ class FileArg(file,
          si.file := self.file
          si.name := sym
          si.package_name := \parsed_program.package_name
-         si.filearg := self 
+         si.filearg := self
          insert(local_package_level_syms, sym, si)
 	 }
 
@@ -162,7 +162,7 @@ class FileArg(file,
 
       return
    end
-   
+
    #
    # The second init stage creates a table of imported symbols.  This
    # is a map from symbol name to a list of SymbolInfo objects.  So if
@@ -184,7 +184,7 @@ class FileArg(file,
          # Process each symbol in the package.
          every x := !sort(t) do {
             if member(imported_syms, x[1]) then
-               l := imported_syms[x[1]] 
+               l := imported_syms[x[1]]
             else {
                l := []
                insert(imported_syms, x[1], l)
@@ -194,7 +194,7 @@ class FileArg(file,
             # Same for the classes table, if it is a class.
             if \x[2].is_class then {
                if member(imported_class_syms, x[1]) then
-                  l := imported_class_syms[x[1]] 
+                  l := imported_class_syms[x[1]]
                else {
                   l := []
                   insert(imported_class_syms, x[1], l)
@@ -239,7 +239,7 @@ class FileArg(file,
             add_deps_for_function(m, fc.get_inherited_syms())
       }
       every p := !parsed_program.procedures do
-         add_deps_for_function(p) 
+         add_deps_for_function(p)
 
       include_files := get_include_dependencies(self.file)
 
@@ -334,7 +334,7 @@ class FileArg(file,
                         if member(t, node.children[3].s) then {
                            si := t[node.children[3].s]
                            if \si.filearg then {
-                              if \debug then 
+                              if \debug then
                                  write("creating dependency on absolute ",
 				       "reference si=", si.to_string())
                               add_dep(si)
@@ -389,7 +389,7 @@ class FileArg(file,
 
          node := lhs
       }
-      
+
       scopecheck_expr(node, res1, res2, local_vars, self_vars)
    end
 
@@ -411,7 +411,7 @@ class FileArg(file,
       local l
       \symbol_info.filearg | stop("internal error")
 
-      if symbol_info.filearg === self then 
+      if symbol_info.filearg === self then
          return
 
       if member(filearg_dependencies, symbol_info.filearg) then

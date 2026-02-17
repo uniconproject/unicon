@@ -1,5 +1,5 @@
 #
-# memory.icn 
+# memory.icn
 # Ziad Al-Sharif
 # June 1, 2008
 #
@@ -8,7 +8,7 @@ $include "evdefs.icn"
 
 #
 # The main Memeory Monitoring class:
-# It Handles the memory managment of an Icon/Unicon perogram 
+# It Handles the memory managment of an Icon/Unicon perogram
 #
 $ifndef StandAlone
 class Memory : Listener(
@@ -19,7 +19,7 @@ $endif
    eventMask,      # The monitored events
    collectMask,    # The garbage collection mask
    allocMask,      # The heap memory allcation mask
- 
+
    BlockRegion,    # Total memory allocated for the block region
    StringRegion,   # Total memory allocated for the String Region
 
@@ -91,7 +91,7 @@ method update_AllocStateInfo()
   # 1- *** | 2-Lists | 3-Tables | 4-Sets | 5-Csets | 6-Records |
   # 7-Large Int | 8-Real
 
-  #AllocStateInfo[1][1] := "Total" 
+  #AllocStateInfo[1][1] := "Total"
    AllocStateInfo[1][2] := Talloc_total[E_List]
    AllocStateInfo[1][3] := Talloc_total[E_Table]
    AllocStateInfo[1][4] := Talloc_total[E_Set]
@@ -149,14 +149,14 @@ method write_AllocStateInfo()
 end
 
 #
-# update the current memory state whenever it is needed 
+# update the current memory state whenever it is needed
 #
 method update_MemoryStateInfo()
 
   # Fields description:
   # 1-Region | 2-Total Memory | 3-Allocated |  4-Allocated % |
   # 5-# Allocation | 6-Avg Allocation | 7-# of GC
-   
+
   #MemoryStateInfo[1][1] := "String Region"
   #MemoryStateInfo[1][2] := StringRegion / 1000000
    MemoryStateInfo[1][3] := AllocStrTotal
@@ -210,9 +210,9 @@ method get_AllocPercentage(k)
     if k == E_String then{
        return AllocStrTotal * 100 / StringRegion
        }
-    else{ # anything other than strings 
+    else{ # anything other than strings
        return Talloc_total[k] * 100 / AllocBlkTotal
-       } 
+       }
 end
 
 #
@@ -223,9 +223,9 @@ method get_AllocAvg(k)
     if k == E_String then{
        return AllocStrTotal / ((0 < Talloc_count[E_String]) | 1)
        }
-    else{ # any thing other than strings 
+    else{ # any thing other than strings
        return Talloc_total[k] / ((0 < Talloc_count[k]) | 1)
-       } 
+       }
 end
 
 # takes a table that maps events to their total allocations
@@ -251,7 +251,7 @@ method get_Total(T)
    local k, total := 0
 
    every k := key(T) do total +:= T[k]
-   return total  
+   return total
 end
 
 #
@@ -296,7 +296,7 @@ $endif
    # Fields description:
    # 1-Region       | 2-Total Memory   | 3-Allocated |  4-Allocated % |
    # 5-# Allocation | 6-Avg Allocation | 7-# of GC
-   MemoryStateInfo := 
+   MemoryStateInfo :=
            [["String Region",StringRegion / 1000000||" MB",0,0,0,0,0],
             ["Block Region" ,BlockRegion  / 1000000||" MB",0,0,0,0,0]]
 
@@ -314,7 +314,7 @@ end
 #
 # StandAlone is defined when this tool is used as a stand-alone monitor.
 #  Otherwise, this tool can be statically linked into the main utop/udb
-#  source code 
+#  source code
 #
 $ifdef StandAlone
 
@@ -323,10 +323,10 @@ link evinit
 #
 # This main procedure is only used in the standalone mode
 # or udb's external co-expression mode
-# 
+#
 procedure main(arg)
    local obj
-   
+
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
    obj := Memory()
 
@@ -347,17 +347,17 @@ end
 #global obj
 
 #
-# This handle_Events procedure is only used udb's external 
+# This handle_Events procedure is only used udb's external
 # inter-program procedure calls
 #
 procedure handle_Events(code, value)
    static obj
-   
+
    initial{
-      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
       obj := Memory()
       return obj.eventMask
-      } 
+      }
 
    &eventcode  := code
    &eventvalue := value

@@ -12,13 +12,13 @@ link graphics
 $include "guih.icn"
 
 #
-# This class implements a Text label.  The default width and 
+# This class implements a Text label.  The default width and
 # height are determined by dimensions of text
 #
 class Label : Component(
-   label,                   #             
-   internal_alignment,      #                          
-   tx,                      #          
+   label,                   #
+   internal_alignment,      #
+   tx,                      #
    tw,                      #
    linked_accel
    )
@@ -82,7 +82,7 @@ class Label : Component(
    method display(buffer_flag)
       local yoff, key, dwin
 
-      dwin := if /self.transparent then cbwin else cwin 
+      dwin := if /self.transparent then cbwin else cwin
 
       if /self.transparent then
          EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
@@ -100,12 +100,12 @@ class Label : Component(
          "l" : left_string(dwin, self.tx, yoff, self.label, key)
          "r" : right_string(dwin, self.tx + self.tw, yoff, self.label, key)
          default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
-      }         
+      }
 
       Clip(dwin)
 
       if \self.has_focus then {
-         DashedRectangle(dwin, self.tx - HIGHLIGHT_TEXT_SPACING, self.y, 
+         DashedRectangle(dwin, self.tx - HIGHLIGHT_TEXT_SPACING, self.y,
                          self.tw + 2 * HIGHLIGHT_TEXT_SPACING, self.h)
       }
 

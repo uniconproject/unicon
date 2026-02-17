@@ -1,5 +1,5 @@
 #
-# procprofile.icn 
+# procprofile.icn
 # Ziad Al-Sharif
 # June 1, 2008
 #
@@ -42,7 +42,7 @@ $endif
    procMostName,    # a record tracks the name of the most used proc activity
 
    totalCall,       # acumulates the total calls + resumes
-   totalRet,        # acumulates the total returns+fails+suspends+removes  
+   totalRet,        # acumulates the total returns+fails+suspends+removes
 
    ProcProfileInfo  # A list with the procedure's profile info
    )
@@ -65,13 +65,13 @@ method handle_Events()
           }
       E_Pfail:{
           totalRet  +:= 1
-          procTotal.Fail +:= 1 
+          procTotal.Fail +:= 1
           if procMostNum.Fail <:= procFailCount[pname] +:= 1 then
              procMostName.Fail := pname
           }
       E_Pret:{
           totalRet  +:= 1
-          procTotal.Return +:= 1 
+          procTotal.Return +:= 1
           if procMostNum.Return <:= procReturnCount[pname] +:= 1 then
              procMostName.Return := pname
           }
@@ -83,17 +83,17 @@ method handle_Events()
           }
       E_Psusp:{
           totalRet  +:= 1
-          procTotal.Suspend +:= 1 
+          procTotal.Suspend +:= 1
           if procMostNum.Suspend <:= procSuspendCount[pname] +:= 1 then
-             procMostName.Suspend := pname 
+             procMostName.Suspend := pname
           }
       E_Prem:{
           totalRet  +:= 1
-          procTotal.Remove +:= 1 
+          procTotal.Remove +:= 1
           if procMostNum.Remove <:= procRemoveCount[pname] +:= 1 then
              procMostName.Remove := pname
           }
-      } 
+      }
 end
 
 #
@@ -104,7 +104,7 @@ method update_Info()
   # Fields description for procedure profiles:
   # 1-Action | 2-Total | 3-Total % | 4-Most Used
 
-  #procProfileInfo[1][1] := "Call" 
+  #procProfileInfo[1][1] := "Call"
    ProcProfileInfo[1][2] := procTotal.Call
    ProcProfileInfo[1][3] := procTotal.Call * 100 / totalCall
    ProcProfileInfo[1][4] := procMostName.Call||"-"||procMostNum.Call
@@ -119,12 +119,12 @@ method update_Info()
    ProcProfileInfo[3][3] := procTotal.Suspend * 100 / totalRet
    ProcProfileInfo[3][4] := procMostName.Suspend||"-"||procMostNum.Suspend
 
-  #ProcProfileInfo[4][1] := "Return" 
+  #ProcProfileInfo[4][1] := "Return"
    ProcProfileInfo[4][2] := procTotal.Return
-   ProcProfileInfo[4][3] := procTotal.Return * 100 / totalRet 
+   ProcProfileInfo[4][3] := procTotal.Return * 100 / totalRet
    ProcProfileInfo[4][4] := procMostName.Return||"-"||procMostNum.Return
 
-  #ProcProfileInfo[5][1] := "Fail" 
+  #ProcProfileInfo[5][1] := "Fail"
    ProcProfileInfo[5][2] := procTotal.Fail
    ProcProfileInfo[5][3] := procTotal.Fail * 100 / totalRet
    ProcProfileInfo[5][4] := procMostName.Fail||"-"||procMostNum.Fail
@@ -220,7 +220,7 @@ $ifndef StandAlone
 $endif
 
    eventMask := cset(E_Exit || E_Error) ++ ProcMask
- 
+
    procCallCount    := table(0)
    procResumeCount  := table(0)
    procSuspendCount := table(0)
@@ -236,7 +236,7 @@ $endif
    totalRet     := 1
 
    # Fields description for procedure profiles:
-   # 1-Action | 2-Total | 3-Total % | 4-Most Used 
+   # 1-Action | 2-Total | 3-Total % | 4-Most Used
    ProcProfileInfo := [["Call"   ,0,0,0],
                        ["Resume" ,0,0,0],
                        ["Suspend",0,0,0],
@@ -248,7 +248,7 @@ end
 #
 # StandAlone is defined when this tool is used as a stand-alone monitor.
 #  Otherwise, this tool can be statically linked into the main utop/udb
-#  source code 
+#  source code
 #
 $ifdef StandAlone
 
@@ -257,11 +257,11 @@ link evinit
 #
 # This main procedure is only used in the standalone mode
 # or udb's external co-expression mode
-# 
+#
 procedure main(arg)
    local obj
-   
-   EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
    obj := ProcProfile()
 
    while EvGet(obj.eventMask) do{
@@ -275,17 +275,17 @@ procedure main(arg)
 end
 
 #
-# This handle_Events procedure is only used udb's external 
+# This handle_Events procedure is only used udb's external
 # inter-program procedure calls
 #
 procedure handle_Events(code, value)
    static obj
-   
+
    initial{
-      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
       obj := ProcProfile()
       return obj.eventMask
-      } 
+      }
 
    &eventcode  := code
    &eventvalue := value

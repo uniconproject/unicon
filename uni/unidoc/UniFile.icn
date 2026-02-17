@@ -213,13 +213,13 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
                         return line
                         }
                     else {  # Hard cases, might have continuation
-    
+
                         if ="#" then {          # Easy
                             line := buffer
                             clearBuffer()
                             return line
                             }
-    
+
                         if =";" then {          # Not too hard
                             #  (We're not going to care about anything
                             #  else on the line...)
@@ -236,7 +236,7 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
                                 break
                                 }
                             }
-    
+
                         if ="\"" then {         # Harder
                             if not (line ||:= matchString()) then {
                                 # Must be a continued string!
@@ -246,19 +246,19 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
                                 break
                                 }
                             }
-    
+
                         }
                     }
                 }
                 lineNum +:= 1
             }
-            
-    
+
+
         if *buffer > 0 then {
             line := buffer
             clearBuffer()
             }
-    
+
     end
 
     # <p>
@@ -331,15 +331,15 @@ class UniFile : Object (iKeySet, uKeySet, oldTokens, buffer, line, fName,
         cBuf := CodeBuf()
         setSaveSrc("yes")
         lineNum := 0
-        # String scanning to populate something that is storing all the file contents when the file is closed 
+        # String scanning to populate something that is storing all the file contents when the file is closed
         contents ? {
                 while  curLine := tab(upto('\n') | 0) do {
-                    cBuf.add(curLine) 
+                    cBuf.add(curLine)
                     ="\n" | break
-                }          
+                }
             }
-    end 
-    
+    end
+
     method readFile(f)
         cBuf := CodeBuf()
         while line := read(f) do cBuf.add(line)

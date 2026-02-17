@@ -1,10 +1,10 @@
 # service.icn
-#   Model a service as a consumer relative to the client because 
+#   Model a service as a consumer relative to the client because
 #     the service should not be permitted to miss the first value transmitted
 #     by the client, i.e., the client should open a Stream for the service
 #     using the filemode "w".
-#   Note that the first required argument must supply the name of 
-#     one of the provided functions. 
+#   Note that the first required argument must supply the name of
+#     one of the provided functions.
 
 link Stream
 
@@ -18,7 +18,7 @@ procedure main( argv )
   local routine, source
 
   source := &source # save the first source
-  
+
   # enable tracing if applicable (if so, must be argv[1])
   if
     ( type(argv[1]) == "string", argv[1] == "-t" )
@@ -26,18 +26,18 @@ procedure main( argv )
     StreamC_trace := "service.icn"
     pop( argv )
   }
-  
-  # enable logging if applicable (if so, the -o logstream 
-  #   argument must appear after tracing and 
+
+  # enable logging if applicable (if so, the -o logstream
+  #   argument must appear after tracing and
   #   before the string naming function to be executed)
   if
     ( type(argv[1]) == "string", argv[1] == "-o" )
   then {
     pop( argv )
-    logstream := Stream( pop( argv ), "w" ) | 
+    logstream := Stream( pop( argv ), "w" ) |
       stop( "service.icn: could not open log Stream" )
   }
-  
+
   # get the callback routine
   if
     type( argv[1] ) == "string"
@@ -45,10 +45,10 @@ procedure main( argv )
     routine := argv[1]
   else
     stop( "service.icn: fatal error - argv[1] is " || image(argv[1]) )
-  
+
   # start the service (never returns)
   service( routine, argv[2:0] | &null, source )
-  
+
   # next line never is reached
   stop( "FATAL ERROR: ... service stops" )
 end

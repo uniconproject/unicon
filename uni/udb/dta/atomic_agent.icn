@@ -10,7 +10,7 @@ $include "evdefs.icn"
 $include "../defaults.icn"
 
 #
-# This class represents the operands in the assertion body. 
+# This class represents the operands in the assertion body.
 # Each operand is either a 1) LITERAL, 2) VARIABLE, or 3) MACRO
 #
 class AtomicAgent(
@@ -21,7 +21,7 @@ class AtomicAgent(
    line,        # The operand's line number
    kind,        # The operand type (LITERAL | VARIABLE | MACRO)
    name,        # The string name as seen by the programmer
-   pname,       # The variable's procedure name (scope)  
+   pname,       # The variable's procedure name (scope)
    iNames,      # A set with all potential internal names (foo^x, foo-x,foo:x)
 
    values,      # A stack list with all encountered values
@@ -30,7 +30,7 @@ class AtomicAgent(
 
    eventMask,   # a cset with the operand's monitored events
    #valueMask,  # a table with the operands monitored event values
-   msg          # a string with the latest message from this class   
+   msg          # a string with the latest message from this class
    )
 
 #
@@ -38,7 +38,7 @@ class AtomicAgent(
 #
 method currentProcName(val)
    local pimage, pname, i
-   
+
    if type(val) == "procedure" then{
       pimage := image(val)
       i := find(" ", pimage)+1
@@ -56,7 +56,7 @@ method currentProcName(val)
 end
 
 #
-# receives a list of var info, i.e. [x], [foo,::,x], [class,::,foo,::,x] 
+# receives a list of var info, i.e. [x], [foo,::,x], [class,::,foo,::,x]
 # it sets the variable name, pname, and inames
 #
 method analyzeVarInfo(Var)
@@ -123,7 +123,7 @@ method analyzeVarInfo(Var)
             }
          }
       }
-   else fail 
+   else fail
    ready  := FALSE
 end
 
@@ -180,7 +180,7 @@ method currentVarValue(var)
 end
 
 #
-# returns the list of values found by the agent 
+# returns the list of values found by the agent
 #
 method getValue()
    #write("-getValue->"||image(values))
@@ -191,7 +191,7 @@ method getValue()
 end
 
 #
-# returns the list of values found by the agent 
+# returns the list of values found by the agent
 #
 method refreshData()
    #write("-getValue->"||image(values))
@@ -209,7 +209,7 @@ method getName()
 end
 
 #
-# returns the agent's ID 
+# returns the agent's ID
 #
 method getID()
    return id
@@ -260,7 +260,7 @@ method handle_event()
 end
 
 #
-# receives a list of var info, i.e. [foo], [class,::,foo] 
+# receives a list of var info, i.e. [foo], [class,::,foo]
 # it sets the variable name, pname, and inames
 #
 method analyzeProcInfo(Var)
@@ -284,10 +284,10 @@ method analyzeProcInfo(Var)
          values := 0
       insert(iNames, x)
       }
-   else fail 
+   else fail
    ready  := FALSE
 end
- 
+
 #
 # The class Constructor
 #
@@ -296,7 +296,7 @@ initially(DebugState, Fname, Line, Var)
    self.AtomicAgent.initially(DebugState, Fname, Line, AGENT)#, Var)
 
    analyzeProcInfo(Var)
-   id         := "the calling counter of procedure "||name 
+   id         := "the calling counter of procedure "||name
    eventMask  := cset(E_Pcall)
 end
 
@@ -323,7 +323,7 @@ method handle_event()
 end
 
 #
-# receives a list of var info, i.e. [foo], [class,::,foo] 
+# receives a list of var info, i.e. [foo], [class,::,foo]
 # it sets the variable name, pname, and inames
 #
 method analyzeProcInfo(Var)
@@ -342,7 +342,7 @@ method analyzeProcInfo(Var)
             fail
       insert(iNames, x)
       }
-   else fail 
+   else fail
    ready  := FALSE
 end
 
@@ -457,7 +457,7 @@ end
 class _Max : AtomicAgent()
 
 #
-# returns the agent's value 
+# returns the agent's value
 #
 method getValue()
    local maximum
@@ -486,7 +486,7 @@ end
 # This class handles the maximum variable value
 #
 class _NewMax : AtomicAgent(
-   new_max # a flag that becomes a non-null value when a new max is encountered 
+   new_max # a flag that becomes a non-null value when a new max is encountered
    )
 
 method handle_event()
@@ -519,7 +519,7 @@ method handle_event()
 end
 
 #
-# returns the agent's value 
+# returns the agent's value
 #
 method getValue()
    if \new_max then{
@@ -553,7 +553,7 @@ end
 class _Min : AtomicAgent()
 
 #
-# returns the agent's value 
+# returns the agent's value
 #
 method getValue()
    local minimum
@@ -580,10 +580,10 @@ end
 
 #
 # This class handles the new minimum of a variable value
-# 
+#
 class _NewMin : AtomicAgent(
    id,     # the string name of this agent
-   new_min # a flag that becomes a non-null value when new min is encountered 
+   new_min # a flag that becomes a non-null value when new min is encountered
    )
 
 method handle_event()
@@ -597,7 +597,7 @@ method handle_event()
 #      }
 #   else{
     if &eventcode == E_Assign & member(iNames, &eventvalue) then
-       var := 1 
+       var := 1
     else if &eventcode == E_Value & \var then{
        if /values then{
           values := &eventvalue
@@ -650,7 +650,7 @@ end
 class _Initial : AtomicAgent()
 
 #
-# returns the agent's value 
+# returns the agent's value
 #
 method getValue()
    return values[1]
@@ -705,7 +705,7 @@ method getValue()
       return values[-2]
    #else if *values = 1 then
    #   return values[1]
-   else 
+   else
       fail
 end
 
@@ -770,7 +770,7 @@ method handle_event()
 end
 
 #
-# returns the agent's value 
+# returns the agent's value
 #
 method getValue()
    if \flag then{
@@ -918,15 +918,15 @@ method handle_event()
    if &eventcode == E_Syntax then{
       #write("----->",evnames(&eventcode), ": ", syntname(&eventvalue))
       if name == (syntax := syntname(&eventvalue)) then{
-         if line  =  keyword("&line", Monitored) & 
+         if line  =  keyword("&line", Monitored) &
             fname == keyword("&file", Monitored) then
             values +:= 1
          }
       else if syntax == endLoop then
          values -:= 1
       }
-   else if &eventcode == E_Line & &eventvalue = line & 
-      fname == keyword("&file", Monitored)           & 
+   else if &eventcode == E_Line & &eventvalue = line &
+      fname == keyword("&file", Monitored)           &
       name  == syntname(keyword("syntax", Monitored)) then
       values +:= 1
 end

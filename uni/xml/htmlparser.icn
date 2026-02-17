@@ -15,7 +15,7 @@ class Tag : Node(name, closed, attributes, empty)
    # Set the name of the tag, which is converted to upper case.  Any
    # leading "/" should be omitted.
    #
-   method set_name(s) 
+   method set_name(s)
       return name := map(s, &lcase, &ucase)
    end
 
@@ -100,13 +100,13 @@ class HtmlParser : Parser(doc)
             node := parse_node() | break
 
             case node.get_type() of {
-               "doctype" : 
+               "doctype" :
                   doc.add_child(node)
 
                "comment" : {
                   doc.add_child(node)
                }
-               
+
                "tag" : {
                   if not(node.is_closed()) & (node.name == "HTML") then {
                      #
@@ -154,12 +154,12 @@ class HtmlParser : Parser(doc)
       res.name := start_tag.name
       res.attributes := start_tag.attributes
 
-      if \debug then 
+      if \debug then
          print_debug("Parsing node ", start_tag.name)
 
       if start_tag.name == "PLAINTEXT" then
          res.add_child("" ~== remove_entities(tab(0)))
-      else if not(start_tag.is_empty() | 
+      else if not(start_tag.is_empty() |
                   html_is_standalone_tag(start_tag.name)) then {
          repeat {
             res.add_child("" ~== remove_entities(move_to_node()))
@@ -170,7 +170,7 @@ class HtmlParser : Parser(doc)
             node := parse_node(res) | break
 
             if node.get_type() == "tag" then {
-               if start_tag.balances(node) then 
+               if start_tag.balances(node) then
                   break
 
                if html_is_autoclose_tag(start_tag.name) & start_tag.name == node.name then {
@@ -197,7 +197,7 @@ class HtmlParser : Parser(doc)
                      print_debug("Skipping closing tag", node.to_string())
                } else {
                   res.add_child(n := parse_element(node, res))
-                  if \debug then 
+                  if \debug then
                      print_debug("Adding node ", n.to_string() || " to" || start_tag.to_string())
                }
             } else {
@@ -205,10 +205,10 @@ class HtmlParser : Parser(doc)
                # It's either a coment, or something else; just add it to the list of children
                #
                res.add_child(node)
-            }            
+            }
          }
       }
-      if \debug then 
+      if \debug then
          print_debug("Finished parsing node ", start_tag.to_string())
       return res
    end
@@ -325,7 +325,7 @@ class HtmlParser : Parser(doc)
          s ||:= move(1)
       }
 
-      if \debug then 
+      if \debug then
          print_debug("Moved to node")
 
       return s
@@ -432,9 +432,9 @@ procedure html_is_standalone_tag(name)
    static s
    initial {
       s := set()
-      every insert(s, "IMG" | "BR" | "HR" | "META" | "BASE" | "INPUT" | "AREA" | 
-                   "OPTION" | "BASEFONT" | "BGSOUND" | "COL" | "COLGROUP" | "ISINDEX" | 
-                   "LINK" | "NEXTID" | "SPACER" | "TBODY" | "TFOOT" | 
+      every insert(s, "IMG" | "BR" | "HR" | "META" | "BASE" | "INPUT" | "AREA" |
+                   "OPTION" | "BASEFONT" | "BGSOUND" | "COL" | "COLGROUP" | "ISINDEX" |
+                   "LINK" | "NEXTID" | "SPACER" | "TBODY" | "TFOOT" |
                    "THEAD" | "WBR")
    }
    return member(s, name)

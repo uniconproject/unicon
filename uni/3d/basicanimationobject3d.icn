@@ -13,29 +13,29 @@ $include "graphics3dh.icn"
 #
 class BasicAnimationObject3D : BasicObject3D (
 
-      velocity,         # Vector3 , directional           
+      velocity,         # Vector3 , directional
       rot_speed,        # Vector3
-      
-      speed_inc,         #  
+
+      speed_inc,         #
       max_speed,
-      
+
       strength,
-      health           
+      health
    )
-           
+
    method animate_move()
       loc.add(velocity)
 # ??
       Txyz := Translate(loc.x, loc.y, loc.z)
    end
-   
+
    method animate_rotate()
       orientation_angles.add(rot_speed)
       Rx.angle := rot_speed.x
       Ry.angle := rot_speed.y
       Rz.angle := rot_speed.z
    end
-   
+
    method animate()
       animate_move()
       animate_rotate()
@@ -51,17 +51,17 @@ class BasicAnimationObject3D : BasicObject3D (
    method set_velocity (v)
       velocity.set(v)
    end
-   
+
    method set_velocityxyz (x, y, z)
       velocity.setxyz (x, y, z)
    end
-   
+
    method add_velocity(v)
       velocity.add(v)
    end
-   
+
    method adjust_with_frame_rate()
-   
+
    end
 
    initially ( myname )
@@ -74,6 +74,6 @@ class BasicAnimationObject3D : BasicObject3D (
       # objects during collision, that is why strength is 0.
       # Also, a very small value for health guarantees that the object
       # will die in the first collision.
-      /health := .0000000001    # new born, barely alive! 
-      /strength := 0            # and has no strength!      
+      /health := .0000000001    # new born, barely alive!
+      /strength := 0            # and has no strength!
 end

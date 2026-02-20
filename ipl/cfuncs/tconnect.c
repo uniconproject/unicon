@@ -43,6 +43,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#ifdef __FreeBSD__
+#include <arpa/inet.h>
+#endif
 
 #include "icall.h"
 

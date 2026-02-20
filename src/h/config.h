@@ -124,6 +124,7 @@
 #define HAVE_GETHOSTNAME 1
 #define HAVE_GETPWUID 1
 #define HAVE_GETUID 1
+#define PROFIL_CHAR_P
 #endif                                  /* FreeBSD */
 
 

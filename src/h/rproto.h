@@ -1154,3 +1154,8 @@ int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
 void set_errortext_with_val(int i, char* errval);
 #endif                                  /* HAVE_LIBSSL */
+
+#ifdef GenericBSD
+/* in common/save.c */
+int wrtexec(int ef);
+#endif                                  /* GenericBSD */

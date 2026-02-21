@@ -13,11 +13,11 @@
 
 #ifdef GenericBSD
 #include <a.out.h>
-wrtexec(ef)
-int ef;
+#include <arpa/inet.h>
+int wrtexec(int ef)
 {
    struct exec hdr;
-   extern environ, etext;
+   extern int environ, etext;
    int tsize, dsize;
 
    /*
@@ -33,7 +33,7 @@ int ef;
 
    tsize = (int)&etext;
    hdr.a_text = (tsize + 1024) & ~(1024-1);
-   dsize = sbrk(0) - (int)&environ;
+   dsize = (int)sbrk(0) - (int)&environ;
    hdr.a_data = (dsize + 1024) & ~(1024-1);
    hdr.a_bss = 0;
    hdr.a_syms = 0;
@@ -69,11 +69,10 @@ int ef;
 
 #ifdef SUN
 #include <a.out.h>
-wrtexec(ef)
-int ef;
+int wrtexec(int ef)
 {
    struct exec *hdrp, hdr;
-   extern environ, etext;
+   extern int environ, etext;
    int tsize, dsize;
 
    hdrp = (struct exec *)PAGSIZ;

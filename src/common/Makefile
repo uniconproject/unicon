@@ -11,7 +11,7 @@ HDRS= $(AUTO_H) ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
 OBJS=   long.$(O) getopt.$(O) time.$(O) filepart.$(O) identify.$(O) strtbl.$(O) rtdb.$(O)\
 	mlocal.$(O) literals.$(O) rswitch.$(O) alloc.$(O) \
 	save.$(O) redirerr.$(O) xwindow.$(O) dlrgint.$(O) ipp.$(O) drawstring3d.$(O) \
-	ssl_dtls.$(O) entropy.$(O) ucanvas.$(O)
+	ssl_dtls.$(O) entropy.$(O) ucanvas.$(O) usdlwin.$(O)
 
 PROGS= libucommon.a doincl$(EXE) patchstr$(EXE) libuconsole.a $(LIBWUCONSOLE)
 
@@ -79,6 +79,8 @@ dconsole.$(O): dconsole.c
 identify.$(O): ../h/version.h
 
 ucanvas.$(O): ../h/ucanvas.h
+
+usdlwin.$(O): ../h/ucanvas.h ../h/usdlwin.h
 
 ipp.$(O): ../h/feature.h
 

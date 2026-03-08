@@ -449,6 +449,12 @@
    #define Graphics 1
    #endif
 
+   /* the SDL3 backend (configure --enable-sdl-graphics) replaces X11 */
+   #ifdef SDLGraphics
+   #undef Graphics
+   #define Graphics 1
+   #endif                               /* SDLGraphics */
+
 #if defined(MSWindows) || defined(WICONT)
    #undef Graphics
    #define Graphics 1
@@ -465,10 +471,10 @@
       #undef HAVE_LIBXPM
    #endif                               /* NoXpmFormat */
 
-   #ifndef MSWindows
+   #if !defined(MSWindows) && !defined(SDLGraphics)
          #undef XWindows
          #define XWindows 1
-   #endif                               /* MSWindows */
+   #endif                               /* !MSWindows && !SDLGraphics */
 
    #undef LineCodes
    #define LineCodes

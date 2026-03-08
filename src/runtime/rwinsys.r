@@ -25,6 +25,10 @@ void checkpollevent(){
 #else
 #endif                                  /* MSWindows */
 
+#ifdef SDLGraphics
+#include "rsdlwin.ri"
+#endif                                  /* SDLGraphics */
+
 #ifdef Graphics3D
 #include "rwin3d.ri"
 #if HAVE_LIBGL

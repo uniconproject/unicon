@@ -722,6 +722,29 @@ int checkOpenConsole( FILE *w, char *s );
 
    #endif                               /* XWindows */
 
+   #ifdef SDLGraphics
+      /*
+       * Implementation routines specific to the SDL backend
+       */
+      struct ucgc *sdl_gc       (wbp w);
+      int       sdl_displaysize (int which);
+      wdp       alc_display     (char *s);
+      void      free_display    (wdp wd);
+      void      unsetclip       (wbp w);
+      int       resizePixmap    (wbp w, int width, int height);
+      int       moveResizeWindow(wbp w, int x, int y, int wd, int h);
+      int       seticonimage    (wbp w, dptr dp);
+      void      wflushall       (void);
+      void      drawarcs        (wbp w, XArc *arcs, int narcs);
+      void      drawlines       (wbp w, XPoint *points, int npoints);
+      void      drawpoints      (wbp w, XPoint *points, int npoints);
+      void      drawrectangles  (wbp w, XRectangle *recs, int nrecs);
+      void      drawsegments    (wbp w, XSegment *segs, int nsegs);
+      void      drawstrng       (wbp w, int x, int y, char *s, int slen);
+      void      fillarcs        (wbp w, XArc *arcs, int narcs);
+      void      fillpolygon     (wbp w, XPoint *pts, int npts);
+   #endif                               /* SDLGraphics */
+
    int setglXVisual(wdp wd);
 
    #ifdef Graphics3D

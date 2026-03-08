@@ -346,10 +346,10 @@ extern stringint attribs[], drawops[];
       extern uword xmod_control, xmod_shift, xmod_meta;
    #endif                               /* MultiProgram */
 
-   #ifdef XWindows
+   #if defined(XWindows) || defined(SDLGraphics)
       extern struct _wdisplay * wdsplys;
       extern stringint cursorsyms[];
-   #endif                               /* XWindows */
+   #endif                               /* XWindows || SDLGraphics */
 
    #ifdef MSWindows
       extern HINSTANCE mswinInstance;

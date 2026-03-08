@@ -12,6 +12,10 @@
    #include "../h/mswin.h"
 #endif                                  /* MSWindows */
 
+#ifdef SDLGraphics
+   #include "../h/sdlwin.h"
+#endif                                  /* SDLGraphics */
+
 #if Graphics3D
 #if HAVE_LIBGL
 #include "../h/opengl.h"
@@ -257,6 +261,14 @@ typedef struct _wfont {
   LONG          charwidth;
   LONG          height;
 #endif                                  /* MSWindows */
+#ifdef SDLGraphics
+  char        * name;                   /* name for WAttrib and fontsearch */
+  int           ascent;                 /* font dimensions */
+  int           descent;
+  int           height;
+  int           maxwidth;               /* max width of one char */
+  struct ucfont *uf;                    /* canvas font */
+#endif                                  /* SDLGraphics */
 } wfont, *wfp;
 
 /*
@@ -347,6 +359,10 @@ typedef struct _wdisplay {
   char          name[MAXDISPLAYNAME];
 #endif                                  /* MSWindows*/
 
+#ifdef SDLGraphics
+  char          name[MAXDISPLAYNAME];
+#endif                                  /* SDLGraphics */
+
 #ifdef XWindows
   char          name[MAXDISPLAYNAME];
   Display *     display;
@@ -416,6 +432,16 @@ typedef struct _wcontext {
   char          *fgname, *bgname;
   int           leading, bkmode;
 #endif                                  /* MSWindows*/
+#ifdef SDLGraphics
+  unsigned long fg, bg;                 /* 0x00RRGGBB, gamma corrected */
+  char          *fgname, *bgname;       /* as set, for WAttrib */
+  int           linestyle;
+  int           linewidth;
+  int           leading;                /* inter-line leading */
+  int           patw, path;             /* pattern size and bits */
+  unsigned int  pat[UC_MAXPATTERN];
+  struct ucgc   gc;                     /* scratch state for drawing */
+#endif                                  /* SDLGraphics */
 
 #ifdef Graphics3D
 
@@ -580,6 +606,14 @@ typedef struct _wstate {
   int           nChildren;
   childcontrol *child;
 #endif                                  /* MSWindows */
+#ifdef SDLGraphics
+  struct usdlwin *win;                  /* on-screen window, if any */
+  struct ucanvas *pix;                  /* the canvas: all drawing goes here */
+  struct ucanvas *initialPix;           /* image= contents, before mapping */
+  int           iconic;                 /* NormalState, IconicState, ... */
+  int           iconx, icony;           /* icon position (recorded only) */
+  int           cursor;                 /* usdl cursor shape */
+#endif                                  /* SDLGraphics */
 #ifdef Graphics3D
   int            is_3D;        /* flag for 3D windows */
   struct descrip funclist;    /* descriptor to hold list of 3d functions */

@@ -1,0 +1,2650 @@
+/*
+ * File: rsdlwin.ri - SDL3 specific graphics routines
+ *
+ * All drawing goes to a software canvas (src/common/ucanvas.c); windows
+ * on screen (src/common/usdlwin.c) just display it.  The canvas plays
+ * the role of the X backend's backing pixmap, so a window can be hidden,
+ * resized or covered without losing its contents, and pixel reads,
+ * copies and drawing operations are the same on every platform.
+ *
+ * The structure and the semantics follow rxwin.ri, so that programs
+ * behave the same way they do under X11.
+ */
+
+wdp wdsplys;
+
+int GraphicsHome  = 0xFF50;
+int GraphicsLeft  = 0xFF51;
+int GraphicsUp    = 0xFF52;
+int GraphicsRight = 0xFF53;
+int GraphicsDown  = 0xFF54;
+int GraphicsPrior = 0xFF55;
+int GraphicsNext  = 0xFF56;
+int GraphicsEnd   = 0xFF57;
+
+stringint drawops[] = {
+   { 0, 16},
+   {"and",              DRAWOP_AND},
+   {"andInverted",      DRAWOP_ANDINVERTED},
+   {"andReverse",       DRAWOP_ANDREVERSE},
+   {"clear",            DRAWOP_CLEAR},
+   {"copy",             DRAWOP_COPY},
+   {"copyInverted",     DRAWOP_COPYINVERTED},
+   {"equiv",            DRAWOP_EQUIV},
+   {"invert",           DRAWOP_INVERT},
+   {"nand",             DRAWOP_NAND},
+   {"noop",             DRAWOP_NOOP},
+   {"nor",              DRAWOP_NOR},
+   {"or",               DRAWOP_OR},
+   {"orInverted",       DRAWOP_ORINVERTED},
+   {"orReverse",        DRAWOP_ORREVERSE},
+   {"set",              DRAWOP_SET},
+   {"xor",              DRAWOP_XOR},
+};
+
+/*
+ * The X cursor names programs use, mapped to the shapes SDL offers.
+ */
+stringint cursorsyms[] = {
+  { 0, NUMCURSORSYMS},
+  {"X cursor",           USDL_CURSOR_NO},
+  {"arrow",              USDL_CURSOR_ARROW},
+  {"based arrow down",   USDL_CURSOR_NS},
+  {"based arrow up",     USDL_CURSOR_NS},
+  {"boat",               USDL_CURSOR_ARROW},
+  {"bogosity",           USDL_CURSOR_NO},
+  {"bottom left corner", USDL_CURSOR_NESW},
+  {"bottom right corner",USDL_CURSOR_NWSE},
+  {"bottom side",        USDL_CURSOR_NS},
+  {"bottom tee",         USDL_CURSOR_NS},
+  {"box spiral",         USDL_CURSOR_ARROW},
+  {"center ptr",         USDL_CURSOR_ARROW},
+  {"circle",             USDL_CURSOR_NO},
+  {"clock",              USDL_CURSOR_WAIT},
+  {"coffee mug",         USDL_CURSOR_WAIT},
+  {"cross",              USDL_CURSOR_CROSSHAIR},
+  {"cross reverse",      USDL_CURSOR_CROSSHAIR},
+  {"crosshair",          USDL_CURSOR_CROSSHAIR},
+  {"diamond cross",      USDL_CURSOR_CROSSHAIR},
+  {"dot",                USDL_CURSOR_CROSSHAIR},
+  {"dotbox",             USDL_CURSOR_CROSSHAIR},
+  {"double arrow",       USDL_CURSOR_NS},
+  {"draft large",        USDL_CURSOR_ARROW},
+  {"draft small",        USDL_CURSOR_ARROW},
+  {"draped box",         USDL_CURSOR_CROSSHAIR},
+  {"exchange",           USDL_CURSOR_MOVE},
+  {"fleur",              USDL_CURSOR_MOVE},
+  {"gobbler",            USDL_CURSOR_ARROW},
+  {"gumby",              USDL_CURSOR_ARROW},
+  {"hand1",              USDL_CURSOR_HAND},
+  {"hand2",              USDL_CURSOR_HAND},
+  {"heart",              USDL_CURSOR_ARROW},
+  {"icon",               USDL_CURSOR_ARROW},
+  {"iron cross",         USDL_CURSOR_CROSSHAIR},
+  {"left ptr",           USDL_CURSOR_ARROW},
+  {"left side",          USDL_CURSOR_EW},
+  {"left tee",           USDL_CURSOR_EW},
+  {"leftbutton",         USDL_CURSOR_ARROW},
+  {"ll angle",           USDL_CURSOR_NESW},
+  {"lr angle",           USDL_CURSOR_NWSE},
+  {"man",                USDL_CURSOR_ARROW},
+  {"middlebutton",       USDL_CURSOR_ARROW},
+  {"mouse",              USDL_CURSOR_ARROW},
+  {"pencil",             USDL_CURSOR_CROSSHAIR},
+  {"pirate",             USDL_CURSOR_NO},
+  {"plus",               USDL_CURSOR_CROSSHAIR},
+  {"question arrow",     USDL_CURSOR_ARROW},
+  {"right ptr",          USDL_CURSOR_ARROW},
+  {"right side",         USDL_CURSOR_EW},
+  {"right tee",          USDL_CURSOR_EW},
+  {"rightbutton",        USDL_CURSOR_ARROW},
+  {"rtl logo",           USDL_CURSOR_ARROW},
+  {"sailboat",           USDL_CURSOR_ARROW},
+  {"sb down arrow",      USDL_CURSOR_NS},
+  {"sb h double arrow",  USDL_CURSOR_EW},
+  {"sb left arrow",      USDL_CURSOR_EW},
+  {"sb right arrow",     USDL_CURSOR_EW},
+  {"sb up arrow",        USDL_CURSOR_NS},
+  {"sb v double arrow",  USDL_CURSOR_NS},
+  {"shuttle",            USDL_CURSOR_ARROW},
+  {"sizing",             USDL_CURSOR_NWSE},
+  {"spider",             USDL_CURSOR_ARROW},
+  {"spraycan",           USDL_CURSOR_CROSSHAIR},
+  {"star",               USDL_CURSOR_ARROW},
+  {"target",             USDL_CURSOR_CROSSHAIR},
+  {"tcross",             USDL_CURSOR_CROSSHAIR},
+  {"top left arrow",     USDL_CURSOR_ARROW},
+  {"top left corner",    USDL_CURSOR_NWSE},
+  {"top right corner",   USDL_CURSOR_NESW},
+  {"top side",           USDL_CURSOR_NS},
+  {"top tee",            USDL_CURSOR_NS},
+  {"trek",               USDL_CURSOR_ARROW},
+  {"ul angle",           USDL_CURSOR_NWSE},
+  {"umbrella",           USDL_CURSOR_ARROW},
+  {"ur angle",           USDL_CURSOR_NESW},
+  {"watch",              USDL_CURSOR_WAIT},
+  {"xterm",              USDL_CURSOR_TEXT},
+  {"num glyphs",         USDL_CURSOR_ARROW},
+};
+
+int patbits[] = {
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFE,0xFF,0xEF,0xFF,0xFE,0xFF,0xEF,0xFF,
+  0x77,0xDD,0x77,0xDD,0x77,0xDD,0x77,0xDD,
+  0x55,0xAA,0x55,0xAA,0x55,0xAA,0x55,0xAA,
+  0x11,0x44,0x11,0x44,0x11,0x44,0x11,0x44,
+  0x01,0x00,0x10,0x00,0x01,0x00,0x10,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+
+  0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,
+  0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01,
+  0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0x00,
+  0x10,0x10,0x10,0xFF,0x10,0x10,0x10,0x10,
+  0x82,0x44,0x28,0x10,0x28,0x44,0x82,0x01,
+
+  0x0F,0x0F,0x0F,0x0F,0xF0,0xF0,0xF0,0xF0,
+  0x1B,0x18,0x81,0xB1,0x36,0x06,0x60,0x63,
+  0x02,0x02,0x05,0xF8,0x20,0x20,0x50,0x8F,
+  0x03,0x84,0x48,0x30,0x03,0x84,0x48,0x30,
+};
+
+/*
+ * pattern symbols
+ */
+stringint siPatternSyms[] = {
+  {0,           16},
+  { "black",     0},
+  { "checkers",  12},
+  { "darkgray",  2},
+  { "diagonal",  8},
+  { "grains",    13},
+  { "gray",      3},
+  { "grid",      10},
+  { "horizontal",9},
+  { "lightgray", 4},
+  { "scales",    14},
+  { "trellis",   11},
+  { "vertical",  7},
+  { "verydark",  1},
+  { "verylight", 5},
+  { "waves",     15},
+  { "white",     6},
+};
+
+int wmap(wbp w);
+static int sdl_mapwindow(wbp w);
+static void handle_event(struct usdl_event *ev);
+static void present(wsp ws, int force);
+
+/*
+ * ------------------------------------------------------------------
+ * Helpers
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * Convert a linear Unicon color (16 bits per channel) to a display RGB
+ * value, applying the context's gamma correction.
+ */
+static unsigned long sdl_rgb(wbp w, long r, long g, long b)
+{
+   double gamma = w->context->gamma;
+   if (gamma != 1.0 && gamma > 0.0) {
+      double inv = 1.0 / gamma;
+      r = (long)(65535 * pow(r / 65535.0, inv));
+      g = (long)(65535 * pow(g / 65535.0, inv));
+      b = (long)(65535 * pow(b / 65535.0, inv));
+      }
+   return ((unsigned long)(r >> 8) << 16) | ((unsigned long)(g >> 8) << 8) |
+          (unsigned long)(b >> 8);
+}
+
+/*
+ * The inverse: display RGB to a linear 16-bit color.
+ */
+static void sdl_lcolor(wbp w, unsigned long c, long *r, long *g, long *b)
+{
+   double gamma = w->context->gamma;
+   *r = ((c >> 16) & 0xFF) * 257;
+   *g = ((c >> 8) & 0xFF) * 257;
+   *b = (c & 0xFF) * 257;
+   if (gamma != 1.0 && gamma > 0.0) {
+      *r = (long)(65535 * pow(*r / 65535.0, gamma));
+      *g = (long)(65535 * pow(*g / 65535.0, gamma));
+      *b = (long)(65535 * pow(*b / 65535.0, gamma));
+      }
+}
+
+/*
+ * Bring the context's canvas drawing state up to date and return it.
+ */
+struct ucgc *sdl_gc(wbp w)
+{
+   wcp wc = w->context;
+   struct ucgc *gc = &wc->gc;
+   int i;
+
+   gc->fg = (unsigned int)(ISXORREVERSE(w) ? (wc->fg ^ wc->bg) : wc->fg);
+   gc->bg = (unsigned int)wc->bg;
+   gc->op = ISXORREVERSE(w) ? UC_OP_XOR : wc->drawop;
+   gc->linewidth = wc->linewidth;
+   gc->linestyle = wc->linestyle;
+   gc->fillstyle = wc->fillstyle;
+   gc->patw = wc->patw;
+   gc->path = wc->path;
+   for (i = 0; i < wc->path && i < UC_MAXPATTERN; i++)
+      gc->pat[i] = wc->pat[i];
+   gc->clipon = (wc->clipw >= 0);
+   gc->clipx = wc->clipx;
+   gc->clipy = wc->clipy;
+   gc->clipw = wc->clipw;
+   gc->cliph = wc->cliph;
+   return gc;
+}
+
+int sdl_displaysize(int which)
+{
+   int w, h;
+   usdl_display_size(&w, &h);
+   return which ? w : h;
+}
+
+/*
+ * Show the canvas of window state ws on screen, if it has a window.
+ */
+static void present(wsp ws, int force)
+{
+   if (ws && ws->win && ws->pix)
+      usdl_present(ws->win, ws->pix, force);
+}
+
+/*
+ * The binding (window value) of a window state, used to deliver events.
+ */
+static wbp binding_of(wsp ws)
+{
+   wbp wb;
+   for (wb = wbndngs; wb; wb = wb->next)
+      if (wb->window == ws)
+         return wb;
+   return NULL;
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Text output to a window (WWrite and friends)
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * write some text at the window's text position
+ */
+void xdis(wbp w, char *s, int n)
+   {
+   int delta_x;
+   CURTSTATE();
+   STDLOCALS(w);
+
+   pollctr>>=1; pollctr++;
+   delta_x = uc_text_width(wc->font->uf, s, n);
+   uc_draw_text(stdpix, stdgc, wc->font->uf, ws->x, ws->y, s, n, 1);
+   ws->x += delta_x;
+   }
+
+int wputc(int ci, wbp w)
+   {
+   int lh, width, height, over;
+   char c = (char)ci;
+   struct ucgc bggc;
+   STDLOCALS(w);
+
+   lh = wc->leading;
+   width = ws->width;
+   height = ws->height;
+   bggc = *stdgc;
+   bggc.op = UC_OP_COPY;
+   bggc.fillstyle = UC_FILL_SOLID;
+   bggc.fg = (unsigned int)wc->bg;
+
+   switch(c) {
+   case '\r': {
+      ws->x = wc->dx;
+      break;
+      }
+   case '\n': {
+      if (ISCEOLON(w)) {
+         /*
+          * Clear the rest of the line, like a terminal would.
+          */
+         uc_fill_rect(stdpix, &bggc, ws->x, ws->y - ASCENT(w),
+                      width - ws->x, lh);
+         }
+      ws->y += lh;
+      ws->x = wc->dx;
+      /*
+       * Scroll the window if the new line is past the bottom.
+       */
+      over = ws->y + DESCENT(w) - height;
+      if (over > 0) {
+         ws->y -= over;
+         uc_copy_area(stdpix, 0, over, width, height - over,
+                      stdpix, stdgc, 0, 0);
+         uc_fill_rect(stdpix, &bggc, 0, height - over, width, over);
+         }
+      break;
+      }
+   case '\t': {
+      xdis(w, "        ", 8 - ((XTOCOL(w,ws->x))&7));
+      break;
+      }
+   /*
+    * Handle backspaces.  This implements cooked mode echo handling.
+    */
+   case '\177':
+   case '\010': {
+      int i = 0, pre_x;
+      /*
+       * Start with the last character queued up.
+       */
+      i--;
+      /*
+       * Trot back to the control-H itself.
+       */
+      while ((i>-EQUEUELEN) && (EVQUESUB(w,i) != c)) i--;
+      if (i == -EQUEUELEN) break;
+      /*
+       * Go past the control-H.
+       */
+      i--;
+      /*
+       * Go back through any number of control-H's from prior lifetimes.
+       */
+      while((i > -EQUEUELEN) && !isprint(EVQUESUB(w,i))) i--;
+      if (i == -EQUEUELEN) break;
+
+      /*
+       * OK, here's the character we're actually rubbing out.  Back up.
+       */
+      c = EVQUESUB(w,i);
+      pre_x = ws->x;
+      ws->x -= uc_text_width(wc->font->uf, &c, 1);
+      /*
+       * Physically erase the character from the queue.  This results in
+       * two control-H's present in the queue.
+       */
+      *evquesub(w,i) = '\010';
+      /*
+       * Save the backed-up position, and draw spaces through the erased.
+       */
+      i = ws->x;
+      while(ws->x < pre_x) xdis(w," ",1);
+      ws->x = i;
+      break;
+      }
+   default: {
+      xdis(w,&c,1);
+      }
+   }
+   return 1;
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Events
+ * ------------------------------------------------------------------
+ */
+
+static int lastbutton;                  /* most recently pressed button */
+
+/*
+ * Bring a window's knowledge of its configuration up to date after the
+ * user resized it; queue a resize event for the program.
+ */
+static void handle_config(wbp w, int width, int height)
+   {
+   struct descrip d;
+   wsp ws = w->window;
+
+   ws->x = Min(ws->x, width - FWIDTH(w));
+   ws->y = Min(ws->y, height);
+
+   if (width == (int)ws->width && height == (int)ws->height)
+      return;
+   ws->width = width;
+   ws->height = height;
+   resizePixmap(w, width, height);
+
+   if (!ISEXPOSED(w))
+      return;
+   MakeInt(RESIZED, &d);
+   qevent(ws, &d, ws->width, ws->height, ~(uword)0, 0);
+   }
+
+static long modflags(int mods)
+{
+   long f = 0;
+   if (mods & USDL_MOD_SHIFT) f |= ShiftMask;
+   if (mods & USDL_MOD_CTRL)  f |= ControlMask;
+   if (mods & USDL_MOD_META)  f |= Mod1Mask;
+   return f;
+}
+
+static void handle_event(struct usdl_event *ev)
+   {
+   struct descrip d;
+   wsp ws;
+   wbp wb;
+   int ecode = 0;
+
+   if (ev->type == USDL_EV_NONE || ev->owner == NULL) return;
+   /* make sure the canvas is still one of ours */
+   for (ws = wstates; ws; ws = ws->next)
+      if (ws == (wsp)ev->owner) break;
+   if (ws == NULL || ws->win == NULL) return;
+   if ((wb = binding_of(ws)) == NULL) return;
+
+   switch (ev->type) {
+   case USDL_EV_KEYDOWN:
+   case USDL_EV_KEYUP:
+      if (ev->type == USDL_EV_KEYUP && !(ws->inputmask & KeyReleaseMask))
+         return;
+      ws->pointerx = ev->x;
+      ws->pointery = ev->y;
+      if (ev->ischar) {
+         int c = ev->key & 0xFF;
+         if (ev->type == USDL_EV_KEYUP)
+            MakeInt(-c - 128, &d);
+         else {
+            StrLen(d) = 1;
+            StrLoc(d) = (char *)&allchars[FromAscii(c) & 0xFF];
+            }
+         }
+      else {
+         if (ev->type == USDL_EV_KEYUP)
+            MakeInt(-ev->key - 128, &d);
+         else
+            MakeInt(ev->key, &d);
+         }
+      qevent(ws, &d, ev->x, ev->y, (uword)ev->time, modflags(ev->mods));
+      break;
+
+   case USDL_EV_BDOWN:
+   case USDL_EV_BUP:
+      if (ev->type == USDL_EV_BDOWN)
+         lastbutton = ev->button;
+      switch (ev->button) {
+         case 1: ecode = MOUSELEFT;  break;
+         case 2: ecode = MOUSEMID;   break;
+         case 3: ecode = MOUSERIGHT; break;
+         default: return;
+         }
+      if (ev->type == USDL_EV_BUP)
+         ecode -= (MOUSELEFT - MOUSELEFTUP);
+      ws->pointerx = ev->x;
+      ws->pointery = ev->y;
+      MakeInt(ecode, &d);
+      qevent(ws, &d, ev->x, ev->y, (uword)ev->time, modflags(ev->mods));
+      break;
+
+   case USDL_EV_MOTION:
+      ws->pointerx = ev->x;
+      ws->pointery = ev->y;
+      if (ev->buttons) {
+         int b = lastbutton;
+         if (b < 1 || b > 3 || !(ev->buttons & (1 << (b - 1))))
+            b = (ev->buttons & 1) ? 1 : ((ev->buttons & 2) ? 2 : 3);
+         ecode = (b == 1) ? MOUSELEFTDRAG :
+                ((b == 2) ? MOUSEMIDDRAG : MOUSERIGHTDRAG);
+         }
+      else if (ws->inputmask & PointerMotionMask)
+         ecode = MOUSEMOVED;
+      else
+         return;
+      MakeInt(ecode, &d);
+      qevent(ws, &d, ev->x, ev->y, (uword)ev->time, modflags(ev->mods));
+      break;
+
+   case USDL_EV_WHEEL:
+      MakeInt(ev->wheel > 0 ? SCROLLUP : SCROLLDOWN, &d);
+      qevent(ws, &d, ev->x, ev->y, (uword)ev->time, modflags(ev->mods));
+      break;
+
+   case USDL_EV_RESIZE:
+      handle_config(wb, ev->w, ev->h);
+      break;
+
+   case USDL_EV_MOVE:
+      ws->posx = ev->x;
+      ws->posy = ev->y;
+      break;
+
+   case USDL_EV_EXPOSE:
+      SETEXPOSED(wb);
+      break;
+
+   case USDL_EV_STATE:
+      switch (usdl_state(ws->win)) {
+         case USDL_STATE_ICONIC:    ws->iconic = IconicState;    break;
+         case USDL_STATE_MAXIMIZED: ws->iconic = MaximizedState; break;
+         case USDL_STATE_HIDDEN:    ws->iconic = HiddenState;    break;
+         default:                   ws->iconic = NormalState;    break;
+         }
+      break;
+
+   case USDL_EV_CLOSE:
+      MakeInt(WINDOWCLOSED, &d);
+      qevent(ws, &d, 0, 0, 0, 0);
+      if (ws->inputmask & WindowClosureMask)
+         break;
+      SETCLOSED(wb);
+      if (is:file(ws->filep))
+         BlkD(ws->filep,File)->status &= ~(Fs_Write);
+      wclose(wb);
+      break;
+      }
+   }
+
+/*
+ * poll for available events on all windows.
+ * this is where the interpreter calls into the window system.
+ */
+int pollevent()
+   {
+   struct usdl_event ev;
+   wsp ws;
+   unsigned long now;
+   static unsigned long lastpoll;
+#ifdef Concurrent
+   int isbusy;
+   MUTEX_TRYLOCKID(MTX_POLLEVENT, isbusy);
+   if (isbusy) return POLL_INTERVAL;
+#endif                                    /* Concurrent */
+   /*
+    * The interpreter calls this very often; asking the window system
+    * for events more than every few milliseconds only costs time.
+    */
+   now = usdl_ticks();
+   if (wdsplys != NULL && now - lastpoll >= 4) {
+      lastpoll = now;
+      while (usdl_poll(&ev))
+         handle_event(&ev);
+      for (ws = wstates; ws; ws = ws->next)
+         present(ws, 0);
+      }
+   MUTEX_UNLOCKID(MTX_POLLEVENT);
+   return POLL_INTERVAL;
+   }
+
+/*
+ * Draw/erase the text cursor.  The cursor is xor-ed onto the canvas while
+ * the program waits for input and removed before anything else happens.
+ */
+static void togglecursor(wbp w)
+   {
+   struct ucgc gc;
+   wcp wc = w->context;
+   wsp ws = w->window;
+   if (!ws->pix) return;
+   uc_gc_init(&gc);
+   gc.op = UC_OP_XOR;
+   gc.fg = (unsigned int)(wc->fg ^ wc->bg);
+   uc_fill_rect(ws->pix, &gc, ws->x, ws->y, FWIDTH(w), DESCENT(w));
+   }
+
+/*
+ * get a single item from w's pending queue; wait at most t milliseconds
+ * if t > 0.  Returns 1, or -1 if the window died, -2 if time ran out.
+ */
+int wgetq(wbp w, dptr res, int t)
+   {
+   struct usdl_event ev;
+   unsigned long deadline = 0;
+   int cursor = 0, r;
+   wsp ws;
+
+   if (t > 0)
+      deadline = usdl_ticks() + t;
+   while (1) {
+      if (!EVQUEEMPTY(w)) {
+         if (cursor) togglecursor(w);
+         EVQUEGET(w,*res);
+         if (cursor) present(w->window, 1);
+         return 1;
+         }
+      if (ISCLOSED(w)) {
+         if (cursor) togglecursor(w);
+         return -1;
+         }
+      if (ISCURSORON(w) && !cursor && w->window->win) {
+         togglecursor(w);
+         cursor = 1;
+         }
+      for (ws = wstates; ws; ws = ws->next)
+         present(ws, 1);
+      if (t > 0) {
+         unsigned long now = usdl_ticks();
+         if (now >= deadline) {
+            if (cursor) togglecursor(w);
+            return -2;
+            }
+         r = usdl_wait(&ev, (int)(deadline - now));
+         }
+      else
+         r = usdl_wait(&ev, 100);
+      if (r) {
+         handle_event(&ev);
+         while (usdl_poll(&ev))
+            handle_event(&ev);
+         }
+      else if (wdsplys == NULL)
+         idelay(10);
+      }
+   }
+
+/*
+ * wclose - close a window.  Its canvas lives on while the program still
+ * has references to it.
+ */
+int wclose(wbp w)
+   {
+   wbp tmp_wb;
+   wbp p;
+   struct wbind_list *wbl, *t, *b;
+   wsp ws = w->window;
+
+   while (ws->children) {
+      tmp_wb = ws->children->child;
+      wbl = ws->children;
+      ws->children = ws->children->next;
+      tmp_wb->refcount--;
+      tmp_wb->window->parent = NULL;
+      w->refcount--;
+      SETCLOSED(tmp_wb);
+      wbl->next = NULL;
+      free(wbl);
+      }
+   p = ws->parent;
+   if (p) {
+      t = p->window->children;
+      b = NULL;
+      while (t) {
+         if (t->child->window == w->window) {
+            if (b == NULL)
+               p->window->children = t->next;
+            else b->next = t->next;
+            t->next = NULL;
+            t->child = NULL;
+            free(t);
+            w->refcount--;
+            break;
+            }
+         b = t;
+         t = t->next;
+         }
+      ws->parent = NULL;
+      p->refcount--;
+      }
+
+   if (ws->win && ws->refcount > 1) {
+      usdl_close(ws->win);
+      ws->win = NULL;
+      ws->refcount--;
+      }
+   else {
+      free_binding(w);
+      }
+   return 0;
+   }
+
+/*
+ * flush a window: put its canvas on screen now
+ */
+void wflush(wbp w)
+   {
+   present(w->window, 1);
+   }
+
+/*
+ * flush all windows
+ */
+void wflushall()
+   {
+   wsp ws;
+   for (ws = wstates; ws; ws = ws->next)
+      present(ws, 1);
+   }
+
+/*
+ * sync: flush and let the window system catch up
+ */
+void wsync(wbp w)
+   {
+   if (w == NULL)
+      wflushall();
+   else {
+      wflush(w);
+      usdl_sync(w->window->win);
+      }
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Opening windows
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * open a window
+ * This routine really just allocates a window data structure.
+ * The interesting part is done in wmap, after the user preferences
+ * passed to Icon have been parsed.  Returns NULL on error/failure;
+ * err_index is set to one of:
+ *  >= 0: the index of an offending attribute value
+ *  -1  : ordinary failure
+ *  -2  : out of memory
+ */
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int is_3d)
+   {
+   wbp w;
+   wsp ws;
+   wcp wc;
+   char dispchrs[256];
+   char answer[128];
+   char *display = NULL;
+   int i;
+   tended struct b_list *tlp;
+   tended struct descrip attrrslt;
+
+   tlp = lp;
+   for(i=0;i<n;i++) {
+      if (is:string(attr[i]) &&
+          (StrLen(attr[i])>8) &&
+          !strncmp("display=",StrLoc(attr[i]),8)) {
+         word dlen = StrLen(attr[i]) - 8;
+         /*
+          * The value is not terminated, and the NUL is written at
+          * dlen.  Reject a value that does not fit, including that NUL.
+          */
+         if (dlen >= (word)sizeof(dispchrs)) {
+            *err_index = i;
+            return NULL;
+            }
+         memcpy(dispchrs, StrLoc(attr[i]) + 8, dlen);
+         dispchrs[dlen] = '\0';
+         display = dispchrs;
+         }
+      }
+
+   if (!usdl_init()) {
+      *err_index = -1;
+      set_errortext(145);
+      return NULL;
+      }
+
+   if ((w = alc_wbinding()) == NULL) {
+      *err_index = -2;
+      return NULL;
+      }
+   if ((w->window = alc_winstate()) == NULL) {
+      *err_index = -2;
+      free_binding(w);
+      return NULL;
+      }
+
+   if ((w->window->display = alc_display(display)) == NULL) {
+      *err_index = -1;
+      free_binding(w);
+      set_errortext(145);
+      return NULL;
+      }
+   ws = w->window;
+   ws->children = NULL;
+   ws->parent = NULL;
+
+   ws->listp.dword = D_List;
+   BlkLoc(ws->listp) = (union block *)tlp;
+
+   /*
+    * some attributes of the display and window are used in the context
+    */
+   if ((wc = w->context = alc_context(w)) == NULL) {
+      *err_index = -2;
+      free_binding(w);
+      return NULL;
+      }
+
+   /*
+    * some attributes of the context determine window defaults
+    */
+   ws->height = wc->font->height * 12;
+   ws->width  = wc->font->maxwidth * 80;
+   ws->y = wc->font->ascent;
+   ws->x = 0;
+   ws->y += wc->dy;
+   ws->x += wc->dx;
+
+   /*
+    * Loop through any remaining arguments.
+    */
+   for (i = 0; i < n; i++){
+      /*
+       * write the attribute,
+       *  except "display=" attribute, which is done earlier
+       */
+      if((StrLen(attr[i])<9)||strncmp(StrLoc(attr[i]),"display=",8)) {
+         switch (wattrib((wbp) w, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt,
+                         answer)) {
+         case RunError:
+            *err_index = i;
+            return NULL;
+         case Failed:
+            free_binding((wbp)w);
+            *err_index = -1;
+            set_errortext(145);
+            return NULL;
+            }
+         }
+      }
+   if (ws->windowlabel == NULL) {
+      ws->windowlabel = salloc(name);
+      if (ws->windowlabel == NULL) { /* out of memory */
+         *err_index = -2;
+         return NULL;
+         }
+      }
+   if ((i = wmap(w)) != Succeeded) {
+      if (i == Failed) {
+         *err_index = -1;
+         }
+      else *err_index = 0;
+      return NULL;
+      }
+   return (FILE *)w;
+   }
+
+/*
+ * Create the on-screen window for a canvas.
+ */
+static int sdl_mapwindow(wbp w)
+   {
+   wsp ws = w->window;
+   int flags = 0, x, y;
+
+   if (ws->win) return Succeeded;
+   if (ISRESIZABLE(w)) flags |= USDL_RESIZABLE;
+   if (!ISTITLEBAR(ws)) flags |= USDL_BORDERLESS;
+   if (ws->iconic == IconicState) flags |= USDL_MINIMIZED;
+   if (ws->iconic == MaximizedState) flags |= USDL_MAXIMIZED;
+   x = (ws->posx == -(MaxInt)) ? USDL_POS_UNDEFINED : ws->posx;
+   y = (ws->posy == -(MaxInt)) ? USDL_POS_UNDEFINED : ws->posy;
+
+   ws->win = usdl_open(ws->windowlabel ? ws->windowlabel : "", x, y,
+                       ws->width, ws->height, flags, (void *)ws);
+   if (ws->win == NULL) {
+      set_errortext(144);
+      return Failed;
+      }
+   if (ws->windowlabel)
+      usdl_set_title(ws->win, ws->windowlabel);
+   if (ws->minwidth || ws->minheight)
+      usdl_set_min_size(ws->win, ws->minwidth, ws->minheight);
+   usdl_set_cursor(ws->win, ws->cursor);
+   usdl_sync(ws->win);
+   if (ws->posx == -(MaxInt) || ws->posy == -(MaxInt))
+      usdl_get_position(ws->win, &ws->posx, &ws->posy);
+   if (ws->iconic != IconicState && ws->iconic != MaximizedState)
+      ws->iconic = NormalState;
+   SETEXPOSED(w);
+   present(ws, 1);
+   return Succeeded;
+   }
+
+/*
+ * Create the canvas for a window state, and its window unless the
+ * canvas starts out hidden.
+ */
+int wmap(wbp w)
+   {
+   struct imgdata *imd;
+   int r;
+   wcp wc = w->context;
+   wsp ws = w->window;
+
+   /*
+    *  Create a canvas for this window if there isn't one already.
+    */
+   if (ws->pix == NULL) {
+      if (ws->initialPix) {
+         ws->pix = ws->initialPix;
+         ws->initialPix = NULL;
+         }
+      else {
+         ws->pix = uc_canvas_new(ws->width, ws->height,
+                                 (unsigned int)wc->bg);
+         if (ws->pix == NULL) {
+            set_errortext(305);
+            return Failed;
+            }
+         }
+      ws->pixwidth = ws->pix->width;
+      ws->pixheight = ws->pix->height;
+      }
+
+   imd = &ws->initimage;
+   if (imd->width) {
+      r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
+         imd->data, (word)imd->width * (word)imd->height, 0);
+      if (imd->paltbl)
+         free((pointer)imd->paltbl);
+      free((pointer)imd->data);
+      imd->width = 0;
+      if (r < 0) {
+         set_errortext(145);
+         return Failed;
+         }
+      }
+
+   imd = &ws->initicon;                 /* no icon windows; just free it */
+   if (imd->width) {
+      if (imd->paltbl)
+         free((pointer)imd->paltbl);
+      free((pointer)imd->data);
+      imd->width = 0;
+      }
+
+   if (wc->patternname != NULL) {
+      if (SetPattern(w, wc->patternname, strlen(wc->patternname)) != Succeeded) {
+         set_errortext(145);
+         return Failed;
+         }
+      }
+
+   if (ws->iconic == HiddenState || ws->iconic == RootState)
+      return Succeeded;
+   return sdl_mapwindow(w);
+   }
+
+int do_config(wbp w, int status)
+   {
+   wsp ws = w->window;
+
+   if (!resizePixmap(w, ws->width, ws->height))
+      return Failed;
+   if (ws->win) {
+      if (status == 1)
+         usdl_set_position(ws->win, ws->posx, ws->posy);
+      else {
+         usdl_set_size(ws->win, ws->width, ws->height);
+         if (status == 3 && ws->posx != -(MaxInt) && ws->posy != -(MaxInt))
+            usdl_set_position(ws->win, ws->posx, ws->posy);
+         }
+      usdl_sync(ws->win);
+      if (pollevent() == -1) return Failed;
+      present(ws, 1);
+      }
+   return Succeeded;
+   }
+
+int moveResizeWindow(wbp w, int x, int y, int width, int height)
+   {
+   wsp ws = w->window;
+   ws->width = width;
+   ws->height = height;
+   if (x != -(MaxInt)) ws->posx = x;
+   if (y != -(MaxInt)) ws->posy = y;
+   return do_config(w, (x == -(MaxInt) || y == -(MaxInt)) ? 2 : 3);
+   }
+
+/*
+ * resizePixmap(w,width,height) -- ensure w's canvas is at least
+ * width x height pixels.  Returns 0 on failure.
+ */
+int resizePixmap(wbp w, int width, int height)
+   {
+   wsp ws = w->window;
+   if (ws->pix == NULL) return 1;
+   if (width > ws->pixwidth || height > ws->pixheight) {
+      int nw = Max(ws->pixwidth, width), nh = Max(ws->pixheight, height);
+      if (!uc_canvas_resize(ws->pix, nw, nh, (unsigned int)w->context->bg))
+         return 0;
+      ws->pixwidth = nw;
+      ws->pixheight = nh;
+      }
+   return 1;
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Window attributes
+ * ------------------------------------------------------------------
+ */
+
+int setheight(wbp w, SHORT new_height)
+   {
+   if (new_height < 0) return Failed;
+   w->window->height = new_height;
+   return Succeeded;
+   }
+
+int setwidth(wbp w, SHORT new_width)
+   {
+   if (new_width < 0) return Failed;
+   w->window->width = new_width;
+   return Succeeded;
+   }
+
+int setgeometry(wbp w, char *geo)
+   {
+   int width = 0, height = 0;
+   int x = 0, y = 0, status;
+   wsp ws = w->window;
+
+   if ((status = parsegeometry(geo, &x, &y, &width, &height)) == 0)
+      return RunError;
+   if (status & 1) {
+      ws->width = width;
+      ws->height = height;
+      }
+   /*
+    * can't set position on hidden windows (but can on opening ones)
+    */
+   if ((ws->win || !ws->pix) && (status & 2)) {
+      ws->posx = x;
+      ws->posy = y;
+      }
+   return Succeeded;
+   }
+
+int allowresize(wbp w, int on)
+   {
+   if (on)
+      SETRESIZABLE(w);
+   else
+      CLRRESIZABLE(w);
+   if (w->window->win)
+      usdl_set_resizable(w->window->win, on);
+   return Succeeded;
+   }
+
+void warpPointer(wbp w, int x, int y)
+   {
+   if (w->window->win)
+      usdl_warp_pointer(w->window->win, x, y);
+   }
+
+int seticonlabel(wbp w, char *val)
+   {
+   wsp ws = w->window;
+   CURTSTATE();
+   if (ws->iconlabel != NULL) free(ws->iconlabel);
+   if ((ws->iconlabel = salloc(val)) == NULL)
+      ReturnErrNum(305, RunError);
+   return Succeeded;
+   }
+
+int setwindowlabel(wbp w, char *s)
+   {
+   wsp ws = w->window;
+   CURTSTATE();
+   if (ws->windowlabel != NULL) free(ws->windowlabel);
+   if ((ws->windowlabel = salloc(s)) == NULL)
+      ReturnErrNum(305, RunError);
+   if (ws->win)
+      usdl_set_title(ws->win, ws->windowlabel);
+   return Succeeded;
+   }
+
+/*
+ * setcursor() - turn the text cursor on or off
+ */
+int setcursor(wbp w, int on)
+   {
+   if (on)
+      SETCURSORON(w);
+   else
+      CLRCURSORON(w);
+   return Succeeded;
+   }
+
+/*
+ * setpointer() - define a mouse pointer shape
+ */
+int setpointer(wbp w, char *val)
+   {
+   int i = si_s2i(cursorsyms, val);
+   wsp ws = w->window;
+
+   if (i < 0) return Failed;
+   if (ws->cursorname) free(ws->cursorname);
+   ws->cursorname = salloc(val);
+   ws->cursor = i;
+   if (ws->win)
+      usdl_set_cursor(ws->win, i);
+   return Succeeded;
+   }
+
+/*
+ * setdrawop() - set the drawing operation
+ */
+int setdrawop(wbp w, char *val)
+   {
+   wcp wc = w->context;
+
+   if (!strcmp(val,"reverse")) {
+      if (!ISXORREVERSE(w)) {
+         SETXORREVERSE(w);
+         wc->drawop = DRAWOP_XOR;
+         }
+      }
+   else {
+      if (ISXORREVERSE(w))
+         CLRXORREVERSE(w);
+      wc->drawop = si_s2i(drawops,val);
+      if (wc->drawop == -1) { wc->drawop = DRAWOP_COPY; return RunError; }
+      }
+   return Succeeded;
+   }
+
+/*
+ * rebind() - bind w's context to that of w2.
+ */
+int rebind(wbp w, wbp w2)
+   {
+   if (w->window->display != w2->context->display) return Failed;
+   w->context = w2->context;
+   return Succeeded;
+   }
+
+/*
+ * Clipping is read from the context whenever something is drawn.
+ */
+void setclip(wbp w)
+   {
+   }
+
+void unsetclip(wbp w)
+   {
+   }
+
+void getcanvas(wbp w, char *s)
+   {
+   if (w->window->win == NULL) sprintf(s, "hidden");
+   else
+      switch (w->window->iconic) {
+      case NormalState:
+         sprintf(s, "normal");
+         break;
+      case IconicState:
+         sprintf(s, "iconic");
+         break;
+      case MaximizedState:
+         sprintf(s, "maximal");
+         break;
+      case HiddenState:
+         sprintf(s, "hidden");
+         break;
+      default:
+         sprintf(s, "???");
+      }
+   }
+
+/*
+ * The selection is the system clipboard.  WAttrib() copies the result
+ * and frees it.
+ */
+char *getselection(wbp w, char *buf)
+   {
+   return usdl_get_clipboard();
+   }
+
+int setselection(wbp w, dptr val)
+   {
+   if (!usdl_set_clipboard(StrLoc(*val), StrLen(*val)))
+      return Failed;
+   return Succeeded;
+   }
+
+int setinputmask(wbp w, char *val)
+   {
+   wsp ws = w->window;
+   if (strchr(val,'k'))
+      ws->inputmask |= KeyReleaseMask;
+   else
+      ws->inputmask &= ~KeyReleaseMask;
+   if (strchr(val,'m'))
+      ws->inputmask |= PointerMotionMask;
+   else
+      ws->inputmask &= ~PointerMotionMask;
+   if (strchr(val,'c'))
+      ws->inputmask |= WindowClosureMask;
+   else
+      ws->inputmask &= ~WindowClosureMask;
+   return Succeeded;
+   }
+
+/*
+ *  Set the canvas type, either during open (canvas is null, set a flag)
+ *   or change an existing canvas to a different type.
+ */
+int setcanvas(wbp w, char *s)
+   {
+   wsp ws = w->window;
+
+   if (!strcmp(s, "iconic")) {
+      if (ws->pix == NULL)
+         ws->iconic = IconicState;
+      else {
+         if (ws->win == NULL) {
+            ws->iconic = IconicState;
+            if (sdl_mapwindow(w) != Succeeded) return Failed;
+            }
+         else if (ws->iconic != IconicState)
+            usdl_minimize(ws->win);
+         ws->iconic = IconicState;
+         }
+      }
+   else if (!strcmp(s, "normal")) {
+      if (ws->pix == NULL)
+         ws->iconic = NormalState;
+      else {
+         if (ws->win == NULL) {
+            ws->iconic = NormalState;
+            if (sdl_mapwindow(w) != Succeeded) return Failed;
+            }
+         else {
+            if (ws->iconic == IconicState || ws->iconic == MaximizedState)
+               usdl_restore(ws->win);
+            usdl_show(ws->win);
+            ws->iconic = NormalState;
+            }
+         }
+      }
+   else if (!strcmp(s, "maximal")) {
+      if (ws->pix == NULL)
+         ws->iconic = MaximizedState;
+      else {
+         if (ws->win == NULL) {
+            ws->iconic = MaximizedState;
+            if (sdl_mapwindow(w) != Succeeded) return Failed;
+            }
+         else {
+            usdl_show(ws->win);
+            usdl_maximize(ws->win);
+            }
+         ws->iconic = MaximizedState;
+         }
+      }
+   else if (!strcmp(s, "hidden")) {
+      if (ws->pix == NULL)
+         ws->iconic = HiddenState;
+      else if (ws->win) {
+         usdl_hide(ws->win);
+         ws->iconic = HiddenState;
+         }
+      }
+   else return RunError;
+   if (ws->win) {
+      usdl_sync(ws->win);
+      present(ws, 1);
+      }
+   return Succeeded;
+   }
+
+int seticonicstate(wbp w, char *s)
+   {
+   wsp ws = w->window;
+
+   if (!strcmp(s, "icon")) {
+      if (ws->pix == NULL)
+         ws->iconic = IconicState;
+      else if (ws->win) {
+         usdl_minimize(ws->win);
+         ws->iconic = IconicState;
+         }
+      }
+   else if (!strcmp(s, "window")) {
+      if (ws->win && ws->iconic == IconicState) {
+         usdl_restore(ws->win);
+         ws->iconic = NormalState;
+         }
+      }
+   else if (!strcmp(s, "root"))
+      return Failed;
+   else return RunError;
+   return Succeeded;
+   }
+
+int seticonpos(wbp w, char *s)
+   {
+   char *s2;
+   wsp ws = w->window;
+
+   s2 = s;
+   ws->iconx = atol(s2);
+   while (isspace(*s2)) s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2++ != ',') return Failed;
+   ws->icony = atol(s2);
+   return Succeeded;
+   }
+
+int geticonpos(wbp w, char *s)
+   {
+   wsp ws = w->window;
+   sprintf(s, "%d,%d", ws->iconx, ws->icony);
+   return Succeeded;
+   }
+
+/*
+ * Window icons are not supported; remember the name for WAttrib.
+ */
+int seticonimage(wbp w, dptr dp)
+   {
+   wsp ws = w->window;
+   CURTSTATE();
+   if (!is:string(*dp)) return Failed;
+   if (ws->iconimage) free(ws->iconimage);
+   ws->iconimage = malloc(StrLen(*dp) + 1);
+   if (ws->iconimage == NULL) ReturnErrNum(305, RunError);
+   strncpy(ws->iconimage, StrLoc(*dp), StrLen(*dp));
+   ws->iconimage[StrLen(*dp)] = '\0';
+   return Succeeded;
+   }
+
+/*
+ * Set the context's fill style by name.
+ */
+int setfillstyle(wbp w, char *s)
+   {
+   wcp wc = w->context;
+
+   if (!strcmp(s, "solid")) {
+      wc->fillstyle = FS_SOLID;
+      }
+   else if (!strcmp(s, "masked")
+            || !strcmp(s, "stippled") || !strcmp(s, "patterned")) {
+      wc->fillstyle = FS_STIPPLE;
+      }
+   else if (!strcmp(s, "textured")
+      || !strcmp(s, "opaquestippled") || !strcmp(s, "opaquepatterned")) {
+      wc->fillstyle = FS_OPAQUESTIPPLE;
+      }
+   else return RunError;
+   return Succeeded;
+   }
+
+/*
+ * Set the context's line style by name.
+ */
+int setlinestyle(wbp w, char *s)
+   {
+   wcp wc = w->context;
+
+   if (!strcmp(s, "solid")) {
+      wc->linestyle = UC_LINE_SOLID;
+      }
+   else if (!strcmp(s, "onoff") || !strcmp(s, "dashed")) {
+      wc->linestyle = UC_LINE_DASHED;
+      }
+   else if (!strcmp(s, "doubledash") || !strcmp(s, "striped")) {
+      wc->linestyle = UC_LINE_STRIPED;
+      }
+   else return RunError;
+   return Succeeded;
+   }
+
+/*
+ * Set the context's line width
+ */
+int setlinewidth(wbp w, LONG linewid)
+   {
+   if (linewid < 0) return RunError;
+   w->context->linewidth = linewid;
+   return Succeeded;
+   }
+
+/*
+ * Set the context's foreground color by name.
+ */
+int setfg(wbp w, char *s)
+   {
+   long r, g, b, a;
+   wcp wc = w->context;
+   if (parsecolor(w, s, &r, &g, &b, &a) != Succeeded)
+      return Failed;
+   wc->fg = sdl_rgb(w, r, g, b);
+   if (wc->fgname == NULL || strcmp(wc->fgname, s)) {
+      if (wc->fgname) free(wc->fgname);
+      wc->fgname = salloc(s);
+      }
+   return Succeeded;
+   }
+
+/*
+ * Set the context's foreground color by a 24-bit value; negative
+ * values name mutable colors, which this backend does not have.
+ */
+int isetfg(wbp w, int fg)
+   {
+   char tmp[32];
+   if (fg < 0) return Failed;
+   sprintf(tmp, "%d,%d,%d", ((fg >> 16) & 255) * 257, ((fg >> 8) & 255) * 257,
+           (fg & 255) * 257);
+   return setfg(w, tmp);
+   }
+
+/*
+ * Set the window context's background color by name.
+ */
+int setbg(wbp w, char *s)
+   {
+   long r, g, b, a;
+   wcp wc = w->context;
+   if (parsecolor(w, s, &r, &g, &b, &a) != Succeeded)
+      return Failed;
+   wc->bg = sdl_rgb(w, r, g, b);
+   if (wc->bgname == NULL || strcmp(wc->bgname, s)) {
+      if (wc->bgname) free(wc->bgname);
+      wc->bgname = salloc(s);
+      }
+   return Succeeded;
+   }
+
+int isetbg(wbp w, int bg)
+   {
+   char tmp[32];
+   if (bg < 0) return Failed;
+   sprintf(tmp, "%d,%d,%d", ((bg >> 16) & 255) * 257, ((bg >> 8) & 255) * 257,
+           (bg & 255) * 257);
+   return setbg(w, tmp);
+   }
+
+/*
+ * Set the gamma correction value.
+ */
+int setgamma(wbp w, double gamma)
+   {
+   wcp wc = w->context;
+   char *fg = wc->fgname ? salloc(wc->fgname) : NULL;
+   char *bg = wc->bgname ? salloc(wc->bgname) : NULL;
+   wc->gamma = gamma;
+   if (fg) { setfg(w, fg); free(fg); }         /* reinterpret current Fg/Bg */
+   if (bg) { setbg(w, bg); free(bg); }
+   return Succeeded;
+   }
+
+/*
+ * Set the display by name; only possible before the window is mapped.
+ */
+int setdisplay(wbp w, char *s)
+   {
+   wdp d;
+   if (w->window->pix != NULL)
+      return Failed;
+   Protect(d = alc_display(s), return 0);
+   w->window->display = d;
+   return Succeeded;
+   }
+
+int setleading(wbp w, int i)
+   {
+   w->context->leading = i;
+   return Succeeded;
+   }
+
+/*
+ * image= for formats the generic code cannot read: none here.
+ */
+int setimage(wbp w, char *val)
+   {
+   return Failed;
+   }
+
+void toggle_fgbg(wbp w)
+   {
+   wcp wc = w->context;
+   unsigned long tmp;
+   char *stmp;
+   tmp = wc->fg; wc->fg = wc->bg; wc->bg = tmp;
+   stmp = wc->fgname; wc->fgname = wc->bgname; wc->bgname = stmp;
+   }
+
+void getdisplay(wbp w, char *answer)
+   {
+   wdp wd = w->window->display;
+   if (!strcmp(wd->name, "")) {
+      if (getenv_r("DISPLAY", answer, 256) == -1)
+         *answer = '\0';
+      }
+   else sprintf(answer, "%s", wd->name);
+   }
+
+int getvisual(wbp w, char *answer)
+   {
+   sprintf(answer, "%d,%d,%d", 4, 8, 256);      /* TrueColor, 8 bits */
+   return Succeeded;
+   }
+
+/*
+ * getpos() - update the window state's notion of its current position
+ */
+int getpos(wbp w)
+   {
+   wsp ws = w->window;
+   if (!ws->win) return Failed;
+   usdl_get_position(ws->win, &ws->posx, &ws->posy);
+   return Succeeded;
+   }
+
+void getfg(wbp w, char *answer)
+   {
+   sprintf(answer, "%s", w->context->fgname ? w->context->fgname : "black");
+   }
+
+void getbg(wbp w, char *answer)
+   {
+   sprintf(answer, "%s", w->context->bgname ? w->context->bgname : "white");
+   }
+
+void getlinestyle(wbp w, char *answer)
+   {
+   wcp wc = w->context;
+   sprintf(answer,"%s",
+           (wc->linestyle==UC_LINE_SOLID)?"solid":
+           ((wc->linestyle==UC_LINE_DASHED)?"dashed":"striped"));
+   }
+
+void getfntnam(wbp w, char *answer)
+   {
+   sprintf(answer,"%s", w->context->font->name);
+   }
+
+void getpointername(wbp w, char *answer)
+   {
+   strcpy(answer, w->window->cursorname ? w->window->cursorname : "left ptr");
+   }
+
+void getdrawop(wbp w, char *answer)
+   {
+   char *s;
+   if (ISXORREVERSE(w)) s = "reverse";
+   else s = si_i2s(drawops, w->context->drawop);
+   if (s) sprintf(answer, "%s", s);
+   else strcpy(answer, "copy");
+   }
+
+void geticonic(wbp w, char *answer)
+   {
+   switch (w->window->iconic) {
+   case NormalState:
+   case MaximizedState:
+     sprintf(answer, "window");
+     break;
+   case IconicState:
+     sprintf(answer, "icon");
+     break;
+   default:
+     sprintf(answer, "???");
+   }
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Fonts
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * Open the font described by an Icon font spec ("family,styles,size").
+ * The family may also be the path of a TrueType or OpenType file.
+ */
+static wfp sdl_mkfont(char *s)
+   {
+   char family[MAXFONTWORD+1], name[256], *p;
+   int style, size, tp, flags = 0, n;
+   struct ucfont *uf;
+   wfp f;
+
+   if (!parsefont(s, family, &style, &size, &tp))
+      return NULL;
+
+   /* parsefont lowercases the family; keep the case for file names */
+   while (isspace(*s)) s++;
+   for (p = s, n = 0; *p && *p != ',' && n < (int)sizeof(name) - 1; p++)
+      name[n++] = *p;
+   while (n > 0 && isspace(name[n-1])) n--;
+   name[n] = '\0';
+   if (!strchr(name, '/') && !strchr(name, '.'))
+      strcpy(name, family);
+
+   if (style & (FONTFLAG_BOLD | FONTFLAG_DEMI)) flags |= UC_FONT_BOLD;
+   if (style & (FONTFLAG_ITALIC | FONTFLAG_OBLIQUE)) flags |= UC_FONT_ITALIC;
+   if (style & FONTFLAG_MONO) flags |= UC_FONT_MONO;
+   if (size <= 0)
+      size = strcmp(family, "fixed") ? DEFAULTFONTSIZE : 13;
+
+   uf = uc_font_open(name, flags, size);
+   if (uf == NULL)
+      return NULL;
+   f = calloc(1, sizeof(struct _wfont));
+   if (f == NULL) {
+      uc_font_close(uf);
+      return NULL;
+      }
+   f->refcount = 1;
+   f->name = salloc(s);
+   f->size = size;
+   f->uf = uf;
+   f->ascent = uc_font_ascent(uf);
+   f->descent = uc_font_descent(uf);
+   f->height = f->ascent + f->descent;
+   f->maxwidth = uc_font_maxwidth(uf);
+   return f;
+   }
+
+static void sdl_freefont(wfp f)
+   {
+   if (f == NULL || --f->refcount > 0) return;
+   uc_font_close(f->uf);
+   if (f->name) free(f->name);
+   free(f);
+   }
+
+/*
+ * Set the window's font by name.
+ */
+int setfont(wbp w, char **s)
+   {
+   wfp tmp;
+   wcp wc = w->context;
+   wsp ws = w->window;
+
+   Protect(tmp = sdl_mkfont(*s), return Failed);
+   sdl_freefont(wc->font);
+   wc->font = tmp;
+   wc->leading = tmp->height;
+
+   if (ws->pix == NULL) {
+      ws->y = wc->font->ascent;
+      ws->x = 0;
+      }
+   return Succeeded;
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Drawing
+ * ------------------------------------------------------------------
+ */
+
+void drawarcs(wbp w, XArc *arcs, int narcs)
+   {
+   int i;
+   STDLOCALS(w);
+   for (i = 0; i < narcs; i++)
+      uc_draw_arc(stdpix, stdgc, arcs[i].x, arcs[i].y, arcs[i].width,
+                  arcs[i].height, arcs[i].angle1, arcs[i].angle2);
+   }
+
+void fillarcs(wbp w, XArc *arcs, int narcs)
+   {
+   int i;
+   STDLOCALS(w);
+   for (i = 0; i < narcs; i++)
+      uc_fill_arc(stdpix, stdgc, arcs[i].x, arcs[i].y, arcs[i].width,
+                  arcs[i].height, arcs[i].angle1, arcs[i].angle2);
+   }
+
+void drawlines(wbp w, XPoint *points, int npoints)
+   {
+   STDLOCALS(w);
+   uc_draw_lines(stdpix, stdgc, (struct ucpoint *)points, npoints);
+   }
+
+void drawpoints(wbp w, XPoint *points, int npoints)
+   {
+   STDLOCALS(w);
+   uc_draw_points(stdpix, stdgc, (struct ucpoint *)points, npoints);
+   }
+
+void drawsegments(wbp w, XSegment *segs, int nsegs)
+   {
+   STDLOCALS(w);
+   uc_draw_segments(stdpix, stdgc, (struct ucpoint *)segs, nsegs);
+   }
+
+void drawrectangles(wbp w, XRectangle *recs, int nrecs)
+   {
+   int i;
+   STDLOCALS(w);
+   for (i = 0; i < nrecs; i++)
+      uc_draw_rect(stdpix, stdgc, recs[i].x, recs[i].y, recs[i].width,
+                   recs[i].height);
+   }
+
+void fillrectangles(wbp w, XRectangle *recs, int nrecs)
+   {
+   int i;
+   STDLOCALS(w);
+   for (i = 0; i < nrecs; i++)
+      uc_fill_rect(stdpix, stdgc, recs[i].x, recs[i].y, recs[i].width,
+                   recs[i].height);
+   }
+
+void fillpolygon(wbp w, XPoint *pts, int npts)
+   {
+   STDLOCALS(w);
+   uc_fill_polygon(stdpix, stdgc, (struct ucpoint *)pts, npts);
+   }
+
+void drawstrng(wbp w, int x, int y, char *s, int slen)
+   {
+   STDLOCALS(w);
+   uc_draw_text(stdpix, stdgc, wc->font->uf, x, y, s, slen, 0);
+   }
+
+/*
+ * erase an area
+ */
+void eraseArea(wbp w, int x, int y, int width, int height)
+   {
+   struct ucgc gc;
+   STDLOCALS(w);
+
+   /*
+    * if width >= window width or height >= window height, clear any
+    * offscreen portion of the canvas as well.
+    */
+   if (x + width  >= (int)ws->width)  width  = ws->pixwidth - x;
+   if (y + height >= (int)ws->height) height = ws->pixheight - y;
+
+   gc = *stdgc;
+   gc.op = UC_OP_COPY;
+   gc.fillstyle = UC_FILL_SOLID;
+   gc.fg = (unsigned int)wc->bg;
+   uc_fill_rect(stdpix, &gc, x, y, width, height);
+   }
+
+/*
+ * copy an area; parts of the source outside its canvas come out in
+ * the destination's background color
+ */
+int copyArea(wbp w, wbp w2, int x, int y, int width, int height, int x2, int y2)
+   {
+   int lpad, rpad, tpad, bpad;
+   struct ucanvas *src = w->window->pix;
+   struct ucgc gc;
+   wsp ws1 = w->window;
+   STDLOCALS(w2);
+
+   if (src == NULL || stdpix == NULL) return Failed;
+   gc = *stdgc;
+   gc.op = UC_OP_COPY;
+   gc.fillstyle = UC_FILL_SOLID;
+   gc.fg = (unsigned int)wc->bg;
+
+   if (x+width<0 || y+height<0 || x>=ws1->pixwidth || y>=ws1->pixheight) {
+      /* source is entirely offscreen */
+      uc_fill_rect(stdpix, &gc, x2, y2, width, height);
+      return Succeeded;
+      }
+
+   lpad = rpad = tpad = bpad = 0;
+   if (x < 0) {                   /* source extends past left edge */
+      lpad = -x;
+      width -= lpad;
+      x2 += lpad;
+      x = 0;
+      }
+   if (x + width > ws1->pixwidth) {  /* source extends past right edge */
+      rpad = x + width - ws1->pixwidth;
+      width -= rpad;
+      }
+   if (y < 0) {                   /* source extends above top edge */
+      tpad = -y;
+      height -= tpad;
+      y2 += tpad;
+      y = 0;
+      }
+   if (y + height > ws1->pixheight) {  /* source extends below bottom */
+      bpad = y + height - ws1->pixheight;
+      height -= bpad;
+      }
+
+   uc_copy_area(src, x, y, width, height, stdpix, &gc, x2, y2);
+
+   if (lpad > 0)
+      uc_fill_rect(stdpix, &gc, x2-lpad, y2-tpad, lpad, tpad+height+bpad);
+   if (rpad > 0)
+      uc_fill_rect(stdpix, &gc, x2+width, y2-tpad, rpad, tpad+height+bpad);
+   if (tpad > 0)
+      uc_fill_rect(stdpix, &gc, x2, y2-tpad, width, tpad);
+   if (bpad > 0)
+      uc_fill_rect(stdpix, &gc, x2, y2+height, width, bpad);
+   return Succeeded;
+   }
+
+int getdefault(wbp w, char *prog, char *opt, char *answer)
+   {
+   return Failed;                       /* no resource database */
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Colors.  The display is true color: there are no mutable colors and
+ * nothing to allocate or free.
+ * ------------------------------------------------------------------
+ */
+
+int mutable_color(wbp w, dptr argv, int ac, int *retval)
+   {
+   return Failed;
+   }
+
+char *get_mutable_name(wbp w, int mute_index)
+   {
+   return NULL;
+   }
+
+int set_mutable(wbp w, int i, char *s)
+   {
+   return Failed;
+   }
+
+void free_mutable(wbp w, int mute_index)
+   {
+   }
+
+void freecolor(wbp w, char *s)
+   {
+   }
+
+/*
+ * X11 color names, so programs written for X keep their colors.
+ * Spaces and case are ignored; grayN and greyN are computed.
+ */
+static struct { char *name; unsigned long rgb; } xcolors[] = {
+   {"aliceblue", 0xF0F8FF},
+   {"antiquewhite", 0xFAEBD7},
+   {"aquamarine", 0x7FFFD4},
+   {"azure", 0xF0FFFF},
+   {"beige", 0xF5F5DC},
+   {"bisque", 0xFFE4C4},
+   {"black", 0x000000},
+   {"blanchedalmond", 0xFFEBCD},
+   {"blue", 0x0000FF},
+   {"blueviolet", 0x8A2BE2},
+   {"brown", 0xA52A2A},
+   {"burlywood", 0xDEB887},
+   {"cadetblue", 0x5F9EA0},
+   {"chartreuse", 0x7FFF00},
+   {"chocolate", 0xD2691E},
+   {"coral", 0xFF7F50},
+   {"cornflowerblue", 0x6495ED},
+   {"cornsilk", 0xFFF8DC},
+   {"cyan", 0x00FFFF},
+   {"darkblue", 0x00008B},
+   {"darkcyan", 0x008B8B},
+   {"darkgoldenrod", 0xB8860B},
+   {"darkgray", 0xA9A9A9},
+   {"darkgreen", 0x006400},
+   {"darkgrey", 0xA9A9A9},
+   {"darkkhaki", 0xBDB76B},
+   {"darkmagenta", 0x8B008B},
+   {"darkolivegreen", 0x556B2F},
+   {"darkorange", 0xFF8C00},
+   {"darkorchid", 0x9932CC},
+   {"darkred", 0x8B0000},
+   {"darksalmon", 0xE9967A},
+   {"darkseagreen", 0x8FBC8F},
+   {"darkslateblue", 0x483D8B},
+   {"darkslategray", 0x2F4F4F},
+   {"darkslategrey", 0x2F4F4F},
+   {"darkturquoise", 0x00CED1},
+   {"darkviolet", 0x9400D3},
+   {"debianred", 0xD70751},
+   {"deeppink", 0xFF1493},
+   {"deepskyblue", 0x00BFFF},
+   {"dimgray", 0x696969},
+   {"dimgrey", 0x696969},
+   {"dodgerblue", 0x1E90FF},
+   {"firebrick", 0xB22222},
+   {"floralwhite", 0xFFFAF0},
+   {"forestgreen", 0x228B22},
+   {"gainsboro", 0xDCDCDC},
+   {"ghostwhite", 0xF8F8FF},
+   {"gold", 0xFFD700},
+   {"goldenrod", 0xDAA520},
+   {"gray", 0xBEBEBE},
+   {"green", 0x00FF00},
+   {"greenyellow", 0xADFF2F},
+   {"grey", 0xBEBEBE},
+   {"honeydew", 0xF0FFF0},
+   {"hotpink", 0xFF69B4},
+   {"indianred", 0xCD5C5C},
+   {"ivory", 0xFFFFF0},
+   {"khaki", 0xF0E68C},
+   {"lavender", 0xE6E6FA},
+   {"lavenderblush", 0xFFF0F5},
+   {"lawngreen", 0x7CFC00},
+   {"lemonchiffon", 0xFFFACD},
+   {"lightblue", 0xADD8E6},
+   {"lightcoral", 0xF08080},
+   {"lightcyan", 0xE0FFFF},
+   {"lightgoldenrod", 0xEEDD82},
+   {"lightgoldenrodyellow", 0xFAFAD2},
+   {"lightgray", 0xD3D3D3},
+   {"lightgreen", 0x90EE90},
+   {"lightgrey", 0xD3D3D3},
+   {"lightpink", 0xFFB6C1},
+   {"lightsalmon", 0xFFA07A},
+   {"lightseagreen", 0x20B2AA},
+   {"lightskyblue", 0x87CEFA},
+   {"lightslateblue", 0x8470FF},
+   {"lightslategray", 0x778899},
+   {"lightslategrey", 0x778899},
+   {"lightsteelblue", 0xB0C4DE},
+   {"lightyellow", 0xFFFFE0},
+   {"limegreen", 0x32CD32},
+   {"linen", 0xFAF0E6},
+   {"magenta", 0xFF00FF},
+   {"maroon", 0xB03060},
+   {"mediumaquamarine", 0x66CDAA},
+   {"mediumblue", 0x0000CD},
+   {"mediumorchid", 0xBA55D3},
+   {"mediumpurple", 0x9370DB},
+   {"mediumseagreen", 0x3CB371},
+   {"mediumslateblue", 0x7B68EE},
+   {"mediumspringgreen", 0x00FA9A},
+   {"mediumturquoise", 0x48D1CC},
+   {"mediumvioletred", 0xC71585},
+   {"midnightblue", 0x191970},
+   {"mintcream", 0xF5FFFA},
+   {"mistyrose", 0xFFE4E1},
+   {"moccasin", 0xFFE4B5},
+   {"navajowhite", 0xFFDEAD},
+   {"navy", 0x000080},
+   {"navyblue", 0x000080},
+   {"oldlace", 0xFDF5E6},
+   {"olivedrab", 0x6B8E23},
+   {"orange", 0xFFA500},
+   {"orangered", 0xFF4500},
+   {"orchid", 0xDA70D6},
+   {"palegoldenrod", 0xEEE8AA},
+   {"palegreen", 0x98FB98},
+   {"paleturquoise", 0xAFEEEE},
+   {"palevioletred", 0xDB7093},
+   {"papayawhip", 0xFFEFD5},
+   {"peachpuff", 0xFFDAB9},
+   {"peru", 0xCD853F},
+   {"pink", 0xFFC0CB},
+   {"plum", 0xDDA0DD},
+   {"powderblue", 0xB0E0E6},
+   {"purple", 0xA020F0},
+   {"red", 0xFF0000},
+   {"rosybrown", 0xBC8F8F},
+   {"royalblue", 0x4169E1},
+   {"saddlebrown", 0x8B4513},
+   {"salmon", 0xFA8072},
+   {"sandybrown", 0xF4A460},
+   {"seagreen", 0x2E8B57},
+   {"seashell", 0xFFF5EE},
+   {"sienna", 0xA0522D},
+   {"skyblue", 0x87CEEB},
+   {"slateblue", 0x6A5ACD},
+   {"slategray", 0x708090},
+   {"slategrey", 0x708090},
+   {"snow", 0xFFFAFA},
+   {"springgreen", 0x00FF7F},
+   {"steelblue", 0x4682B4},
+   {"tan", 0xD2B48C},
+   {"thistle", 0xD8BFD8},
+   {"tomato", 0xFF6347},
+   {"turquoise", 0x40E0D0},
+   {"violet", 0xEE82EE},
+   {"violetred", 0xD02090},
+   {"wheat", 0xF5DEB3},
+   {"white", 0xFFFFFF},
+   {"whitesmoke", 0xF5F5F5},
+   {"yellow", 0xFFFF00},
+   {"yellowgreen", 0x9ACD32},
+};
+
+int nativecolor(wbp w, char *s, long *r, long *g, long *b)
+   {
+   char key[64];
+   int i, n = 0, lo, hi;
+   unsigned long c;
+
+   for (; *s && n < (int)sizeof(key) - 1; s++)
+      if (!isspace(*s))
+         key[n++] = tolower((unsigned char)*s);
+   key[n] = '\0';
+
+   if ((!strncmp(key, "gray", 4) || !strncmp(key, "grey", 4)) &&
+       isdigit(key[4])) {
+      int pct = atoi(key + 4);
+      if (pct > 100) return 0;
+      *r = *g = *b = (long)(pct * 65535L / 100);
+      return 1;
+      }
+
+   lo = 0; hi = sizeof(xcolors) / sizeof(xcolors[0]) - 1;
+   while (lo <= hi) {
+      int cmp;
+      i = (lo + hi) / 2;
+      cmp = strcmp(key, xcolors[i].name);
+      if (cmp == 0) {
+         c = xcolors[i].rgb;
+         if (w)
+            sdl_lcolor(w, c, r, g, b);
+         else {
+            *r = ((c >> 16) & 255) * 257;
+            *g = ((c >> 8) & 255) * 257;
+            *b = (c & 255) * 257;
+            }
+         return 1;
+         }
+      if (cmp < 0) hi = i - 1; else lo = i + 1;
+      }
+   return 0;
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Images
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * Draw a bi-level image.  The hex digits fill the rows right to left.
+ */
+int blimage(wbp w, int x, int y, int width, int height, int ch, unsigned char *s, word len)
+   {
+   unsigned int m, msk1, c, ix, iy;
+   struct ucgc gc;
+   STDLOCALS(w);
+
+   gc = *stdgc;
+   gc.op = UC_OP_COPY;
+
+   m = width % 4;
+   if (m == 0)
+      msk1 = 8;
+   else
+      msk1 = 1 << (m - 1);              /* mask for first byte of row */
+
+   ix = width;
+   iy = 0;
+   m = msk1;
+   while (len--) {
+      if (isxdigit(c = *s++)) {         /* if hexadecimal character */
+         if (!isdigit(c))               /* fix bottom 4 bits if necessary */
+            c += 9;
+         while (m > 0) {                /* set (usually) 4 pixel values */
+            --ix;
+            if (c & m)
+               uc_put_pixel(stdpix, &gc, x + ix, y + iy, (unsigned int)wc->fg);
+            else if (ch != TCH1)        /* if zeroes aren't transparent */
+               uc_put_pixel(stdpix, &gc, x + ix, y + iy, (unsigned int)wc->bg);
+            m >>= 1;
+            }
+         if (ix == 0) {                 /* if end of row */
+            ix = width;
+            iy++;
+            m = msk1;
+            }
+         else
+            m = 8;
+         }
+      }
+   if (ix > 0 && ch != TCH1)            /* pad final row if incomplete */
+      while (ix < (unsigned int)width)
+         uc_put_pixel(stdpix, &gc, x + ix++, y + iy, (unsigned int)wc->bg);
+   return Succeeded;
+   }
+
+/*
+ * Draw a character-per-pixel image (palette e) or, if e is NULL,
+ * an image of 8-bit RGB triples.
+ */
+int strimage(wbp w, int x, int y, int width, int height,
+             struct palentry *e, unsigned char *s, word len, int on_icon)
+   {
+   int c, v;
+   unsigned int ix, iy;
+   unsigned long carray[256];
+   struct ucgc gc;
+   STDLOCALS(w);
+
+   if (on_icon) return 0;               /* no icon windows */
+   gc = *stdgc;
+   gc.op = UC_OP_COPY;
+
+   if (e) {
+      for (c = 0; c < 256; c++)
+         if (e[c].used && e[c].valid)
+            carray[c] = sdl_rgb(w, e[c].clr.red, e[c].clr.green,
+                                e[c].clr.blue);
+
+      /*
+       * Read the image string and set the pixel values.
+       */
+      ix = iy = 0;
+      while (len--) {
+         c = *s++;
+         v = e[c].valid;
+         if (v)                         /* put char if valid */
+            uc_put_pixel(stdpix, &gc, x + ix, y + iy, (unsigned int)carray[c]);
+         if (v || e[c].transpt) {       /* advance if valid or transparent */
+            if (++ix >= (unsigned int)width) {
+               ix = 0;                  /* reset for new row */
+               iy++;
+               }
+            }
+         }
+      if (ix > 0) {                     /* pad final row if incomplete */
+         while (ix < (unsigned int)width)
+            uc_put_pixel(stdpix, &gc, x + ix++, y + iy, (unsigned int)wc->bg);
+         }
+      }
+   else {
+      for (iy = 0; iy < (unsigned int)height; iy++)
+         for (ix = 0; ix < (unsigned int)width; ix++) {
+            unsigned int r = *s++, g = *s++, b = *s++;
+            uc_put_pixel(stdpix, &gc, x + ix, y + iy, (r << 16) | (g << 8) | b);
+            }
+      }
+   return 0;
+   }
+
+static int rgbcmp(const void *a, const void *b)
+   {
+   unsigned long x = *(const unsigned long *)a, y = *(const unsigned long *)b;
+   return (x < y) ? -1 : (x > y);
+   }
+
+/*
+ * getimstr(w, x, y, width, height, paltbl, data) -- get image as a string.
+ *
+ * Stores the specified subimage in data, one pixel per byte, and sets
+ * entries in paltbl corresponding to the pixel values that were used.
+ * With more than 256 colors, the image is mapped onto a 6x7x6 color cube.
+ */
+int getimstr(wbp w, int x, int y, int width, int height,
+             struct palentry paltbl[DMAXCOLORS], unsigned char *data)
+   {
+   unsigned long *clist, px;
+   int i, j, n = 0, cube = 0;
+   struct ucanvas *c = w->window->pix;
+   unsigned long bg = w->context->bg;
+
+   if (c == NULL) return 0;
+   clist = malloc(DMAXCOLORS * sizeof(unsigned long));
+   if (clist == NULL) return 0;
+
+   /* collect the distinct colors, up to 256 */
+   for (j = 0; j < height && !cube; j++)
+      for (i = 0; i < width; i++) {
+         int k;
+         px = (x+i < 0 || y+j < 0 || x+i >= c->width || y+j >= c->height) ?
+            bg : uc_get_pixel(c, x + i, y + j);
+         for (k = 0; k < n; k++)
+            if (clist[k] == px) break;
+         if (k == n) {
+            if (n == DMAXCOLORS) { cube = 1; break; }
+            clist[n++] = px;
+            }
+         }
+
+   if (cube) {
+      n = 0;
+      for (i = 0; i < 6; i++)
+         for (j = 0; j < 7; j++) {
+            int k;
+            for (k = 0; k < 6; k++)
+               clist[n++] = ((unsigned long)(i * 51) << 16) |
+                  ((unsigned long)(j * 255 / 6) << 8) | (unsigned long)(k * 51);
+            }
+      }
+   else
+      qsort(clist, n, sizeof(unsigned long), rgbcmp);
+
+   for (j = 0; j < height; j++)
+      for (i = 0; i < width; i++) {
+         int k;
+         px = (x+i < 0 || y+j < 0 || x+i >= c->width || y+j >= c->height) ?
+            bg : uc_get_pixel(c, x + i, y + j);
+         if (cube)
+            k = (int)(((px >> 16) & 255) + 25) / 51 * 42 +
+                (int)((((px >> 8) & 255) * 6 + 127) / 255) * 6 +
+                (int)((px & 255) + 25) / 51;
+         else {
+            unsigned long *lp = bsearch(&px, clist, n, sizeof(unsigned long),
+                                        rgbcmp);
+            k = lp ? (int)(lp - clist) : 0;
+            }
+         *data++ = k;
+         paltbl[k].used = 1;
+         }
+
+   for (i = 0; i < DMAXCOLORS && i < n; i++)
+      if (paltbl[i].used) {
+         sdl_lcolor(w, clist[i], &paltbl[i].clr.red, &paltbl[i].clr.green,
+                    &paltbl[i].clr.blue);
+         paltbl[i].valid = 1;
+         }
+   free(clist);
+   return 1;
+   }
+
+/*
+ * getimstr24 -- get an image as a string of RGB tuples.
+ */
+int getimstr24(wbp w, int xx, int yy, int width, int height, unsigned char *data)
+   {
+   int x, y;
+   unsigned long px;
+   struct ucanvas *c = w->window->pix;
+   if (c == NULL) return 0;
+   for (y = 0; y < height; y++)
+      for (x = 0; x < width; x++) {
+         px = uc_get_pixel(c, xx + x, yy + y);
+         *data++ = (px >> 16) & 0xFF;
+         *data++ = (px >> 8) & 0xFF;
+         *data++ = px & 0xFF;
+         }
+   return 1;
+   }
+
+/*
+ * Image files the generic code cannot read: none.
+ */
+int readimage(wbp w, char *filename, int x, int y, int *status)
+   {
+   return Failed;
+   }
+
+/*
+ * Image files the generic code cannot write: none (GIF, BMP, PNG and
+ * JPEG are written by the generic code).
+ */
+int dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
+              unsigned int width, unsigned int height)
+   {
+   return NoCvt;
+   }
+
+/*
+ * Pixels are read straight from the canvas.
+ */
+int getpixel_init(wbp w, struct imgmem *imem)
+   {
+   return Succeeded;
+   }
+
+int getpixel_term(wbp w, struct imgmem *imem)
+   {
+   return Succeeded;
+   }
+
+int getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem)
+   {
+   unsigned long c;
+   long r, g, b;
+   struct ucanvas *cv = w->window->pix;
+
+   if (cv == NULL || x < imem->x || x >= imem->x + imem->width ||
+       y < imem->y || y >= imem->y + imem->height ||
+       x < 0 || y < 0 || x >= cv->width || y >= cv->height)
+      c = w->context->bg;
+   else
+      c = uc_get_pixel(cv, x, y);
+   sdl_lcolor(w, c, &r, &g, &b);
+   *rv = 1;
+   sprintf(s, "%ld,%ld,%ld", r, g, b);
+   return Succeeded;
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Pointer, stacking, bell
+ * ------------------------------------------------------------------
+ */
+
+int query_pointer(wbp w, XPoint *pp)
+   {
+   wsp ws = w->window;
+   int x, y;
+   if (ws->win == NULL) return Failed;
+   usdl_pointer(ws->win, &x, &y);
+   pp->x = ws->pointerx = x;
+   pp->y = ws->pointery = y;
+   return Succeeded;
+   }
+
+int query_rootpointer(XPoint *pp)
+   {
+   int x, y;
+   usdl_global_pointer(&x, &y);
+   pp->x = x;
+   pp->y = y;
+   return Succeeded;
+   }
+
+int raiseWindow(wbp w)
+   {
+   if (w->window->win)
+      usdl_raise(w->window->win);
+   return Succeeded;
+   }
+
+int lowerWindow(wbp w)
+   {
+   return Succeeded;                    /* SDL cannot lower a window */
+   }
+
+int walert(wbp w, int volume)
+   {
+   fputc('\a', stderr);
+   fflush(stderr);
+   return Succeeded;
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Patterns
+ * ------------------------------------------------------------------
+ */
+
+int SetPattern(wbp w, char *name, int len)
+   {
+   int width, nbits;
+   int i;
+   int symbol;
+   C_integer bits[MAXXOBJS];
+   char *neu;
+   wcp wc = w->context;
+   CURTSTATE();
+
+   /*
+    * wmap reapplies the pattern just stored, passing that same pointer.
+    * Copy before freeing, or the parse below reads freed memory.
+    */
+   if (name != wc->patternname) {
+      neu = malloc(len + 1);
+      if (neu == NULL) ReturnErrNum(305, RunError);
+      memcpy(neu, name, len);
+      neu[len] = '\0';
+      free(wc->patternname);
+      wc->patternname = neu;
+      name = neu;
+      }
+
+   /*
+    * If the pattern starts with a number it is a width , bits encoding
+    */
+   if ((len > 0) && isdigit(name[0])) {
+      nbits = MAXXOBJS;
+      switch (parsepattern(name, len, &width, &nbits, bits)) {
+      case Failed:
+         return Failed;
+      case RunError:
+         ReturnErrNum(145, RunError);
+         }
+      return SetPatternBits(w, width, bits, nbits);
+      }
+
+   /*
+    * Otherwise, it is a named pattern.  Find the symbol id.
+    */
+   if ((symbol = si_s2i(siPatternSyms, wc->patternname)) >= 0) {
+      for(i = 0; i < 8; i++)
+         bits[i] = patbits[symbol * 8 + i];
+      return SetPatternBits(w, 8, bits, 8);
+      }
+   return Failed;
+   }
+
+/*
+ * Row values have the leftmost pixel in their low bit.
+ */
+int SetPatternBits(wbp w, int width, C_integer *bits, int nbits)
+   {
+   int i;
+   wcp wc = w->context;
+   if (width > 32 || nbits > UC_MAXPATTERN) return Failed;
+   wc->patw = width;
+   wc->path = nbits;
+   for (i = 0; i < nbits; i++)
+      wc->pat[i] = (unsigned int)bits[i] &
+                   (width >= 32 ? 0xFFFFFFFFu : ((1u << width) - 1));
+   return Succeeded;
+   }
+
+/*
+ * ------------------------------------------------------------------
+ * Resources: displays, contexts and window states
+ * ------------------------------------------------------------------
+ */
+
+wdp alc_display(char *s)
+   {
+   wdp wd;
+   char tmp[256];
+   CURTSTATE();
+
+   if ((s == NULL) && (getenv_r("DISPLAY", tmp, 255) == 0))
+      s = tmp;
+   if (s == NULL) s = "";
+   for(wd = wdsplys; wd; wd = wd->next)
+      if (!strcmp(wd->name,s)) {
+         wd->refcount++;
+         return wd;
+         }
+
+   GRFX_ALLOC(wd, _wdisplay);
+   if (strlen(s) >= MAXDISPLAYNAME)
+      s = "";
+   strcpy(wd->name, s);
+   wd->gamma = GammaCorrection;
+   GRFX_LINK(wd, wdsplys);
+   return wd;
+   }
+
+void free_display(wdp wd)
+   {
+   wd->refcount--;
+   if (wd->refcount <= 0) {
+      GRFX_UNLINK(wd, wdsplys);
+      }
+   }
+
+/*
+ * allocate a context.  Can't be called until w has a window.
+ */
+wcp alc_context(wbp w)
+   {
+   wcp wc;
+   char fnt[256], *spec = "fixed";
+   CURTSTATE();
+
+   GRFX_ALLOC(wc, _wcontext);
+   wc->serial = ++context_serial;
+   wc->display = w->window->display;
+   wc->display->refcount++;
+   wc->fg = 0x000000;
+   wc->bg = 0xFFFFFF;
+   wc->fgname = salloc("black");
+   wc->bgname = salloc("white");
+   wc->drawop = DRAWOP_COPY;
+   wc->fillstyle = FS_SOLID;
+   wc->linestyle = UC_LINE_SOLID;
+   wc->linewidth = 1;
+   wc->rgbmode = 2;
+   wc->gamma = wc->display->gamma;
+   wc->clipx = wc->clipy = 0;
+   wc->clipw = wc->cliph = -1;
+   uc_gc_init(&wc->gc);
+
+   if (getenv_r("ICONFONT", fnt, 255) == 0)
+      spec = fnt;
+   wc->font = sdl_mkfont(spec);
+   if (wc->font == NULL && spec == fnt)
+      wc->font = sdl_mkfont("fixed");   /* ICONFONT not found */
+   if (wc->font == NULL) {
+      if (*uc_font_error())
+         fprintf(stderr, "Unicon graphics: %s\n", uc_font_error());
+      free(wc->fgname);
+      free(wc->bgname);
+      free(wc);
+      return NULL;
+      }
+   wc->leading = wc->font->height;
+
+   GRFX_LINK(wc, wcntxts);
+   return wc;
+   }
+
+/*
+ * allocate a context, cloning attributes from an existing context
+ */
+wcp clone_context(wbp w)
+   {
+   wcp wc, rv;
+   int i;
+   CURTSTATE();
+
+   wc = w->context;
+   GRFX_ALLOC(rv, _wcontext);
+   rv->serial = ++context_serial;
+   rv->display = wc->display;
+   rv->display->refcount++;
+   rv->dx = wc->dx;
+   rv->dy = wc->dy;
+   rv->clipx = wc->clipx;
+   rv->clipy = wc->clipy;
+   rv->clipw = wc->clipw;
+   rv->cliph = wc->cliph;
+   rv->fg = wc->fg;
+   rv->bg = wc->bg;
+   rv->fgname = salloc(wc->fgname ? wc->fgname : "black");
+   rv->bgname = salloc(wc->bgname ? wc->bgname : "white");
+   rv->font = wc->font;
+   rv->font->refcount++;
+   rv->fillstyle = wc->fillstyle;
+   rv->linestyle = wc->linestyle;
+   rv->linewidth = wc->linewidth;
+   rv->leading = wc->leading;
+   rv->drawop = wc->drawop;
+   rv->rgbmode = wc->rgbmode;
+   rv->gamma = wc->gamma;
+   rv->bits = wc->bits;
+   rv->patw = wc->patw;
+   rv->path = wc->path;
+   for (i = 0; i < UC_MAXPATTERN; i++)
+      rv->pat[i] = wc->pat[i];
+   if (wc->patternname)
+      rv->patternname = salloc(wc->patternname);
+   uc_gc_init(&rv->gc);
+
+   GRFX_LINK(rv, wcntxts);
+   return rv;
+   }
+
+/*
+ * allocate a window state structure
+ */
+wsp alc_winstate()
+   {
+   wsp ws;
+   CURTSTATE();
+   GRFX_ALLOC(ws, _wstate);
+   ws->serial = ++canvas_serial;
+   ws->bits = 1024;                             /* echo ON; others OFF */
+   ws->filep = nulldesc;
+   ws->listp = nulldesc;
+   ws->cursorname = salloc("left ptr");
+   ws->cursor = USDL_CURSOR_ARROW;
+   SETTITLEBAR(ws);
+   ws->inputmask = 0;
+   ws->iconic = NormalState;
+   ws->posx = ws->posy = -(MaxInt);
+   ws->minwidth = ws->minheight = 0;
+   GRFX_LINK(ws, wstates);
+   return ws;
+   }
+
+/*
+ * free a window state
+ */
+int free_window(wsp ws)
+   {
+   ws->refcount--;
+   if(ws->refcount == 0) {
+      if (ws->win) {
+         usdl_close(ws->win);
+         ws->win = NULL;
+         }
+      if (ws->pix) {
+         uc_canvas_free(ws->pix);
+         ws->pix = NULL;
+         }
+      if (ws->initialPix) {
+         uc_canvas_free(ws->initialPix);
+         ws->initialPix = NULL;
+         }
+      if (ws->windowlabel) { free(ws->windowlabel); ws->windowlabel = NULL; }
+      if (ws->iconlabel) { free(ws->iconlabel); ws->iconlabel = NULL; }
+      if (ws->iconimage) { free(ws->iconimage); ws->iconimage = NULL; }
+      if (ws->cursorname) { free(ws->cursorname); ws->cursorname = NULL; }
+      if (ws->display) free_display(ws->display);
+      GRFX_UNLINK(ws, wstates);
+      }
+   return 0;
+   }
+
+/*
+ * free a window context
+ */
+void free_context(wcp wc)
+   {
+   wc->refcount--;
+   if(wc->refcount == 0) {
+      sdl_freefont(wc->font);
+      wc->font = NULL;
+      if (wc->patternname) free(wc->patternname);
+      wc->patternname = NULL;
+      if (wc->fgname) free(wc->fgname);
+      wc->fgname = NULL;
+      if (wc->bgname) free(wc->bgname);
+      wc->bgname = NULL;
+      if (wc->display) free_display(wc->display);
+      GRFX_UNLINK(wc, wcntxts);
+      }
+   }
+
+/*
+ * Child windows (subwindows of a canvas) have a canvas but no window
+ * of their own.
+ */
+char child_window_stuff(wbp w, wbp wp, int child_window)
+   {
+   wsp ws;
+   if (child_window_generic(w, wp, child_window) == 0)
+      return 0;
+   ws = w->window;
+   if (ws->pix == NULL) {
+      ws->pix = uc_canvas_new(Max(ws->width, 1), Max(ws->height, 1),
+                              (unsigned int)w->context->bg);
+      if (ws->pix == NULL) return 0;
+      ws->pixwidth = ws->pix->width;
+      ws->pixheight = ws->pix->height;
+      }
+   return 1;
+   }
+
+char my_wmap(wbp w)
+   {
+   return wmap(w) == Succeeded;
+   }

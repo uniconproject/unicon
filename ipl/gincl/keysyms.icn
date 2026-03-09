@@ -23,7 +23,17 @@
 #
 ############################################################################
 
+#
+#  The SDL graphics backend reports outboard keys with their X11 values.
+#
 $ifdef _X_WINDOW_SYSTEM
+$define _X_KEYSYMS 1
+$endif
+$ifdef _SDL_GRAPHICS
+$define _X_KEYSYMS 1
+$endif
+
+$ifdef _X_KEYSYMS
 $define Shift_Tab               65056
 
 $define Key_Compose		65312
@@ -110,6 +120,7 @@ $define Key_PgDn_Release       -65494
 $endif
 
 $ifdef _MS_WINDOWS_NT
+$ifndef _SDL_GRAPHICS
 $define Key_Down		40
 $define Key_End			35
 $define Key_ScrollLock		145
@@ -159,6 +170,7 @@ $define Key_Left_Release       -165
 $define Key_Up_Release         -166
 $define Key_Right_Release      -167
 $define Key_Down_Release       -168
+$endif
 $endif
 
 $ifdef _JAVA

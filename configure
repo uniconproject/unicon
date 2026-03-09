@@ -672,6 +672,7 @@ DRAWSTRING
 XL
 GRAPHICS
 XLIBS
+PKG_CONFIG
 SQLITE
 LIBOBJS
 HTMLDOC
@@ -783,6 +784,7 @@ ac_user_opts='
 enable_option_checking
 enable_graphics
 enable_graphics3d
+enable_sdl_graphics
 enable_multiprograms
 enable_native_coswitch
 enable_concurrency
@@ -816,8 +818,10 @@ enable_msan
 enable_hwasan
 enable_uniconx
 with_zlib
-with_xlib
+with_SDL3
 with_freetype
+with_fontconfig
+with_xlib
 with_Xft
 with_jpeg
 with_png
@@ -1470,6 +1474,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-graphics      No graphics subsystem
   --disable-graphics3d    No 3D graphics support
+  --enable-sdl-graphics   2D graphics through SDL3 instead of X11 (default on
+                          macOS when SDL3 is found)
   --disable-multiprograms No multi programs support
   --disable-native-coswitch
                           Use pthread-based coswitch instead of native rswitch
@@ -1523,8 +1529,10 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-zlib[=DIR]       Use zlib package (DIR: custom library path)
-  --with-xlib[=DIR]       Use xlib package (DIR: custom library path)
+  --with-SDL3[=DIR]       Use SDL3 package (DIR: custom library path)
   --with-freetype[=DIR]   Use freetype package (DIR: custom library path)
+  --with-fontconfig[=DIR] Use fontconfig package (DIR: custom library path)
+  --with-xlib[=DIR]       Use xlib package (DIR: custom library path)
   --with-Xft[=DIR]        Use Xft package (DIR: custom library path)
   --with-jpeg[=DIR]       Use jpeg package (DIR: custom library path)
   --with-png[=DIR]        Use png package (DIR: custom library path)
@@ -3624,6 +3632,14 @@ then :
   enableval=$enable_graphics3d; graphics3d=$enableval
 else $as_nop
   graphics3d=on
+fi
+
+# Check whether --enable-sdl-graphics was given.
+if test ${enable_sdl_graphics+y}
+then :
+  enableval=$enable_sdl_graphics; sdlgraphics=$enableval
+else $as_nop
+  sdlgraphics=auto
 fi
 
 # Check whether --enable-multiprograms was given.
@@ -10950,19 +10966,29 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 if ! test "x$graphics" = "xno"; then
 
+  # The SDL3 backend replaces X11 for 2D graphics.  It is the default
+  # on macOS when SDL3 is installed; elsewhere it is asked for.
+  if test "x$sdlgraphics" = "xauto" ; then
+    if test "x$unicon_os" = "xmacos" ; then
+      sdlgraphics=try
+    else
+      sdlgraphics=no
+    fi
+  fi
+  if test "x$sdlgraphics" != "xno" ; then
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if xlib is wanted" >&5
-printf %s "checking if xlib is wanted... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if SDL3 is wanted" >&5
+printf %s "checking if SDL3 is wanted... " >&6; }
 
-# Check whether --with-xlib was given.
-if test ${with_xlib+y}
+# Check whether --with-SDL3 was given.
+if test ${with_SDL3+y}
 then :
-  withval=$with_xlib; if test x$withval != xno ; then
+  withval=$with_SDL3; if test x$withval != xno ; then
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
       if test x$withval != xyes ; then
-         xlib_HOME="$withval"
+         SDL3_HOME="$withval"
       fi
     else
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -10975,28 +11001,64 @@ fi
 
 
 
+if test "x$with_SDL3" != "xno"; then
 
-if test "x$with_xlib" != "xno"; then
-  if test "x$xlib_HOME" = "x" ; then
-    XLIB_HOME=/usr/X11
-    if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
-       XLIB_HOME=/usr/X11R6
-       if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
-          XLIB_HOME=/usr/openwin
-	  if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
-	     XLIB_HOME=/opt/X11
-	     if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
-	        XLIB_HOME=/usr/local
-             fi
-	  fi
-       fi
-    fi
-  else
-    XLIB_HOME=$xlib_HOME
+if test "x$SDL3_HOME" = "x" ; then
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_PKG_CONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
   fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+printf "%s\n" "$PKG_CONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
 
 
-if test  x${XLIB_HOME} != "x"
+  if test -n "$PKG_CONFIG" && $PKG_CONFIG --exists sdl3 ; then
+    pkg_prefix=`$PKG_CONFIG --variable=prefix sdl3`
+    if test -n "$pkg_prefix" && test "x$pkg_prefix" != "x/usr" ; then
+      SDL3_HOME=$pkg_prefix
+    fi
+  fi
+fi
+
+
+if test  x${SDL3_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -11004,7 +11066,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${XLIB_HOME}/include
+	for part in -I${SDL3_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11020,7 +11082,7 @@ then
 		fi
 	done
 
-  	for part in -L${XLIB_HOME}/lib
+  	for part in -L${SDL3_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -11038,15 +11100,12 @@ then
 
 
 	cv_libthislib_h=yes
-	       for ac_header in X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h
+	       for ac_header in SDL3/SDL.h
 do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
+  ac_fn_c_check_header_compile "$LINENO" "SDL3/SDL.h" "ac_cv_header_SDL3_SDL_h" "$ac_includes_default"
+if test "x$ac_cv_header_SDL3_SDL_h" = xyes
 then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+  printf "%s\n" "#define HAVE_SDL3_SDL_H 1" >>confdefs.h
 
 else $as_nop
   cv_libthislib_h=no
@@ -11066,7 +11125,7 @@ done
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${XLIB_HOME}
+	for part in -I${SDL3_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11082,7 +11141,7 @@ done
 		fi
 	done
 
-  	for part in -L${XLIB_HOME}
+  	for part in -L${SDL3_HOME}
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -11101,8 +11160,8 @@ done
 
 	   # dash rejects == in test and skips this branch, so a header that
 	   # lives directly under DIR is never tried. Also drop the cached
-	   # miss for ${XLIB_HOME}/include; the check below must compile with -I${XLIB_HOME}.
-	   for ac_header in X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h
+	   # miss for ${SDL3_HOME}/include; the check below must compile with -I${SDL3_HOME}.
+	   for ac_header in SDL3/SDL.h
 	   do
 	     as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
 	     as_fn_unset $as_ac_Header
@@ -11157,15 +11216,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
-               for ac_header in X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h
+               for ac_header in SDL3/SDL.h
 do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
+  ac_fn_c_check_header_compile "$LINENO" "SDL3/SDL.h" "ac_cv_header_SDL3_SDL_h" "$ac_includes_default"
+if test "x$ac_cv_header_SDL3_SDL_h" = xyes
 then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+  printf "%s\n" "#define HAVE_SDL3_SDL_H 1" >>confdefs.h
 
 else $as_nop
   cv_libthislib_h=no
@@ -11173,9 +11229,9 @@ fi
 
 done
 	if test x$cv_libthislib_h != xno ;  then
-	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing XAllocColorCells" >&5
-printf %s "checking for library containing XAllocColorCells... " >&6; }
-if test ${ac_cv_search_XAllocColorCells+y}
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing SDL_CreateWindow" >&5
+printf %s "checking for library containing SDL_CreateWindow... " >&6; }
+if test ${ac_cv_search_SDL_CreateWindow+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
@@ -11186,16 +11242,16 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
    builtin and then its argument prototype would still apply.  */
-char XAllocColorCells ();
+char SDL_CreateWindow ();
 int
 main (void)
 {
-return XAllocColorCells ();
+return SDL_CreateWindow ();
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' X11
+for ac_lib in '' SDL3
 do
   if test -z "$ac_lib"; then
     ac_res="none required"
@@ -11205,39 +11261,39 @@ do
   fi
   if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_search_XAllocColorCells=$ac_res
+  ac_cv_search_SDL_CreateWindow=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext
-  if test ${ac_cv_search_XAllocColorCells+y}
+  if test ${ac_cv_search_SDL_CreateWindow+y}
 then :
   break
 fi
 done
-if test ${ac_cv_search_XAllocColorCells+y}
+if test ${ac_cv_search_SDL_CreateWindow+y}
 then :
 
 else $as_nop
-  ac_cv_search_XAllocColorCells=no
+  ac_cv_search_SDL_CreateWindow=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_XAllocColorCells" >&5
-printf "%s\n" "$ac_cv_search_XAllocColorCells" >&6; }
-ac_res=$ac_cv_search_XAllocColorCells
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_SDL_CreateWindow" >&5
+printf "%s\n" "$ac_cv_search_SDL_CreateWindow" >&6; }
+ac_res=$ac_cv_search_SDL_CreateWindow
 if test "$ac_res" != no
 then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  cv_libX11=yes
-	      if test -n HAVE_LIBX11 ; then
+  cv_libSDL3=yes
+	      if test -n HAVE_LIBSDL3 ; then
 
-printf "%s\n" "#define HAVE_LIBX11 1" >>confdefs.h
+printf "%s\n" "#define HAVE_LIBSDL3 1" >>confdefs.h
 
 	      fi
 
 else $as_nop
-  cv_libX11=no
+  cv_libSDL3=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -11245,8 +11301,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib X11 in (${XLIB_HOME})" >&5
-printf %s "checking for lib X11 in (${XLIB_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib SDL3 in (${SDL3_HOME})" >&5
+printf %s "checking for lib SDL3 in (${SDL3_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -11260,8 +11316,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib X11 in (${XLIB_HOME})" >&5
-printf %s "checking for lib X11 in (${XLIB_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib SDL3 in (${SDL3_HOME})" >&5
+printf %s "checking for lib SDL3 in (${SDL3_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -11275,9 +11331,65 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
-  # if we have X11 or if we are running on MS Windows check for graphics libs
-  if test "x$cv_libX11" = xyes -o "ms$unicon_os" = "mswindows" ; then
+    if test "x$cv_libSDL3" = "xyes" ; then
+      # the canvas draws text with FreeType; find it where SDL3 came from
+      if test "x$freetype_HOME" = "x" ; then
 
+if test "x$freetype_HOME" = "x" ; then
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_PKG_CONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+printf "%s\n" "$PKG_CONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+  if test -n "$PKG_CONFIG" && $PKG_CONFIG --exists freetype2 ; then
+    pkg_prefix=`$PKG_CONFIG --variable=prefix freetype2`
+    if test -n "$pkg_prefix" && test "x$pkg_prefix" != "x/usr" ; then
+      freetype_HOME=$pkg_prefix
+    fi
+  fi
+fi
+
+      fi
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freetype is wanted" >&5
@@ -11608,12 +11720,1049 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
    fi
 fi
 
+      if test "x$cv_libfreetype" = "xyes" ; then
+        sdlgraphics=yes
+      elif test "x$sdlgraphics" = "xyes" ; then
+        as_fn_error $? "SDL graphics requires FreeType (libfreetype-dev or equivalent)" "$LINENO" 5
+      else
+        sdlgraphics=no
+      fi
+    elif test "x$sdlgraphics" = "xyes" ; then
+      as_fn_error $? "SDL graphics requires SDL3 (libsdl3-dev or equivalent)" "$LINENO" 5
+    else
+      sdlgraphics=no
+    fi
+  fi
+
+  if test "x$sdlgraphics" = "xyes" ; then
+
+printf "%s\n" "#define SDLGraphics 1" >>confdefs.h
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if fontconfig is wanted" >&5
+printf %s "checking if fontconfig is wanted... " >&6; }
+
+# Check whether --with-fontconfig was given.
+if test ${with_fontconfig+y}
+then :
+  withval=$with_fontconfig; if test x$withval != xno ; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+      if test x$withval != xyes ; then
+         fontconfig_HOME="$withval"
+      fi
+    else
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    fi
+else $as_nop
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+
+
+if test "x$with_fontconfig" != "xno"; then
+
+if test "x$fontconfig_HOME" = "x" ; then
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_PKG_CONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+printf "%s\n" "$PKG_CONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+  if test -n "$PKG_CONFIG" && $PKG_CONFIG --exists fontconfig ; then
+    pkg_prefix=`$PKG_CONFIG --variable=prefix fontconfig`
+    if test -n "$pkg_prefix" && test "x$pkg_prefix" != "x/usr" ; then
+      fontconfig_HOME=$pkg_prefix
+    fi
+  fi
+fi
+
+
+if test  x${fontconfig_HOME} != "x"
+then
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${fontconfig_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${fontconfig_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+	cv_libthislib_h=yes
+	       for ac_header in fontconfig/fontconfig.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "fontconfig/fontconfig.h" "ac_cv_header_fontconfig_fontconfig_h" "$ac_includes_default"
+if test "x$ac_cv_header_fontconfig_fontconfig_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_FONTCONFIG_FONTCONFIG_H 1" >>confdefs.h
+
+else $as_nop
+  cv_libthislib_h=no
+fi
+
+done
+	if test x$cv_libthislib_h = xno ;  then
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${fontconfig_HOME}
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${fontconfig_HOME}
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+	   # dash rejects == in test and skips this branch, so a header that
+	   # lives directly under DIR is never tried. Also drop the cached
+	   # miss for ${fontconfig_HOME}/include; the check below must compile with -I${fontconfig_HOME}.
+	   for ac_header in fontconfig/fontconfig.h
+	   do
+	     as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+	     as_fn_unset $as_ac_Header
+	   done
+	fi
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	# If we have multiple headers, any missing one will set this to no
+	cv_libthislib_h=yes
+               for ac_header in fontconfig/fontconfig.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "fontconfig/fontconfig.h" "ac_cv_header_fontconfig_fontconfig_h" "$ac_includes_default"
+if test "x$ac_cv_header_fontconfig_fontconfig_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_FONTCONFIG_FONTCONFIG_H 1" >>confdefs.h
+
+else $as_nop
+  cv_libthislib_h=no
+fi
+
+done
+	if test x$cv_libthislib_h != xno ;  then
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing FcFontMatch" >&5
+printf %s "checking for library containing FcFontMatch... " >&6; }
+if test ${ac_cv_search_FcFontMatch+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char FcFontMatch ();
+int
+main (void)
+{
+return FcFontMatch ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' fontconfig
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_FcFontMatch=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_FcFontMatch+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_FcFontMatch+y}
+then :
+
+else $as_nop
+  ac_cv_search_FcFontMatch=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_FcFontMatch" >&5
+printf "%s\n" "$ac_cv_search_FcFontMatch" >&6; }
+ac_res=$ac_cv_search_FcFontMatch
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  cv_libfontconfig=yes
+	      if test -n HAVE_LIBFONTCONFIG ; then
+
+printf "%s\n" "#define HAVE_LIBFONTCONFIG 1" >>confdefs.h
+
+	      fi
+
+else $as_nop
+  cv_libfontconfig=no
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib fontconfig in (${fontconfig_HOME})" >&5
+printf %s "checking for lib fontconfig in (${fontconfig_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+printf "%s\n" "failed" >&6; }
+
+fi
+
+        else
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib fontconfig in (${fontconfig_HOME})" >&5
+printf %s "checking for lib fontconfig in (${fontconfig_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+printf "%s\n" "failed" >&6; }
+
+	fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+fi
+
+  else
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if xlib is wanted" >&5
+printf %s "checking if xlib is wanted... " >&6; }
+
+# Check whether --with-xlib was given.
+if test ${with_xlib+y}
+then :
+  withval=$with_xlib; if test x$withval != xno ; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+      if test x$withval != xyes ; then
+         xlib_HOME="$withval"
+      fi
+    else
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    fi
+else $as_nop
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+
+
+
+if test "x$with_xlib" != "xno"; then
+  if test "x$xlib_HOME" = "x" ; then
+    XLIB_HOME=/usr/X11
+    if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+       XLIB_HOME=/usr/X11R6
+       if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+          XLIB_HOME=/usr/openwin
+	  if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+	     XLIB_HOME=/opt/X11
+	     if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+	        XLIB_HOME=/usr/local
+             fi
+	  fi
+       fi
+    fi
+  else
+    XLIB_HOME=$xlib_HOME
+  fi
+
+
+if test  x${XLIB_HOME} != "x"
+then
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${XLIB_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${XLIB_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+	cv_libthislib_h=yes
+	       for ac_header in X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else $as_nop
+  cv_libthislib_h=no
+fi
+
+done
+	if test x$cv_libthislib_h = xno ;  then
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${XLIB_HOME}
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${XLIB_HOME}
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+	   # dash rejects == in test and skips this branch, so a header that
+	   # lives directly under DIR is never tried. Also drop the cached
+	   # miss for ${XLIB_HOME}/include; the check below must compile with -I${XLIB_HOME}.
+	   for ac_header in X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h
+	   do
+	     as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+	     as_fn_unset $as_ac_Header
+	   done
+	fi
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	# If we have multiple headers, any missing one will set this to no
+	cv_libthislib_h=yes
+               for ac_header in X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else $as_nop
+  cv_libthislib_h=no
+fi
+
+done
+	if test x$cv_libthislib_h != xno ;  then
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing XAllocColorCells" >&5
+printf %s "checking for library containing XAllocColorCells... " >&6; }
+if test ${ac_cv_search_XAllocColorCells+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char XAllocColorCells ();
+int
+main (void)
+{
+return XAllocColorCells ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' X11
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_XAllocColorCells=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_XAllocColorCells+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_XAllocColorCells+y}
+then :
+
+else $as_nop
+  ac_cv_search_XAllocColorCells=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_XAllocColorCells" >&5
+printf "%s\n" "$ac_cv_search_XAllocColorCells" >&6; }
+ac_res=$ac_cv_search_XAllocColorCells
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  cv_libX11=yes
+	      if test -n HAVE_LIBX11 ; then
+
+printf "%s\n" "#define HAVE_LIBX11 1" >>confdefs.h
+
+	      fi
+
+else $as_nop
+  cv_libX11=no
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib X11 in (${XLIB_HOME})" >&5
+printf %s "checking for lib X11 in (${XLIB_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+printf "%s\n" "failed" >&6; }
+
+fi
+
+        else
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib X11 in (${XLIB_HOME})" >&5
+printf %s "checking for lib X11 in (${XLIB_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+printf "%s\n" "failed" >&6; }
+
+	fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+fi
+
+  fi
+
+  # if we have X11 or SDL3, or are running on MS Windows, check for graphics libs
+  if test "x$cv_libX11" = xyes -o "x$sdlgraphics" = "xyes" -o "ms$unicon_os" = "mswindows" ; then
+
+    if test "x$sdlgraphics" != "xyes" ; then
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freetype is wanted" >&5
+printf %s "checking if freetype is wanted... " >&6; }
+
+# Check whether --with-freetype was given.
+if test ${with_freetype+y}
+then :
+  withval=$with_freetype; if test x$withval != xno ; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+      if test x$withval != xyes ; then
+         freetype_HOME="$withval"
+      fi
+    else
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    fi
+else $as_nop
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+
+
+
+
+if test "x$freetype_HOME" = "x" ; then
+   FREETYPE_HOME=/usr/X11
+   if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
+      FREETYPE_HOME=/usr/local
+      if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
+        FREETYPE_HOME=/usr
+      fi
+   fi
+#   AC_PATH_PROG(FREETYPE_CONFIG,freetype-config)
+else
+   FREETYPE_HOME=$freetype_HOME
+#   AC_PATH_PROG(FREETYPE_CONFIG,freetype-config,,[$freetype_HOME/bin:$PATH])
+fi
+
+if test "x$with_freetype" != "xno"; then
+  ftsave_CPPFLAGS=$CPPFLAGS
+#  if test -n "$FREETYPE_CONFIG"; then
+#     FREETYPE_CFLAGS=`$FREETYPE_CONFIG --cflags`
+#     FREETYPE_LIBS=`$FREETYPE_CONFIG --libs`
+#     echo $FREETYPE_CONFIG reports cflags=$FREETYPE_CFLAGS  libs=$FREETYPE_LIBS
+#  else
+     FREETYPE_CFLAGS="-I$FREETYPE_HOME/include/freetype2"
+#  fi
+
+  CPPFLAGS="$CPPFLAGS $FREETYPE_CFLAGS "
+
+
+if test  x${freetype_HOME} != "x"
+then
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${freetype_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${freetype_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+	cv_libthislib_h=yes
+	       for ac_header in freetype/fttypes.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "freetype/fttypes.h" "ac_cv_header_freetype_fttypes_h" "$ac_includes_default"
+if test "x$ac_cv_header_freetype_fttypes_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_FREETYPE_FTTYPES_H 1" >>confdefs.h
+
+else $as_nop
+  cv_libthislib_h=no
+fi
+
+done
+	if test x$cv_libthislib_h = xno ;  then
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${freetype_HOME}
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${freetype_HOME}
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+	   # dash rejects == in test and skips this branch, so a header that
+	   # lives directly under DIR is never tried. Also drop the cached
+	   # miss for ${freetype_HOME}/include; the check below must compile with -I${freetype_HOME}.
+	   for ac_header in freetype/fttypes.h
+	   do
+	     as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+	     as_fn_unset $as_ac_Header
+	   done
+	fi
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	# If we have multiple headers, any missing one will set this to no
+	cv_libthislib_h=yes
+               for ac_header in freetype/fttypes.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "freetype/fttypes.h" "ac_cv_header_freetype_fttypes_h" "$ac_includes_default"
+if test "x$ac_cv_header_freetype_fttypes_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_FREETYPE_FTTYPES_H 1" >>confdefs.h
+
+else $as_nop
+  cv_libthislib_h=no
+fi
+
+done
+	if test x$cv_libthislib_h != xno ;  then
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing FT_Open_Face" >&5
+printf %s "checking for library containing FT_Open_Face... " >&6; }
+if test ${ac_cv_search_FT_Open_Face+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char FT_Open_Face ();
+int
+main (void)
+{
+return FT_Open_Face ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' freetype
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_FT_Open_Face=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_FT_Open_Face+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_FT_Open_Face+y}
+then :
+
+else $as_nop
+  ac_cv_search_FT_Open_Face=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_FT_Open_Face" >&5
+printf "%s\n" "$ac_cv_search_FT_Open_Face" >&6; }
+ac_res=$ac_cv_search_FT_Open_Face
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  cv_libfreetype=yes
+	      if test -n HAVE_LIBFREETYPE ; then
+
+printf "%s\n" "#define HAVE_LIBFREETYPE 1" >>confdefs.h
+
+	      fi
+
+else $as_nop
+  cv_libfreetype=no
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib freetype in (${freetype_HOME})" >&5
+printf %s "checking for lib freetype in (${freetype_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+printf "%s\n" "failed" >&6; }
+
+fi
+
+        else
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib freetype in (${freetype_HOME})" >&5
+printf %s "checking for lib freetype in (${freetype_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+printf "%s\n" "failed" >&6; }
+
+	fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+   if test "x$cv_libfreetype" = "xno" ; then
+      CPPFLAGS=$ftsave_CPPFLAGS
+   fi
+fi
+
+    fi
     # iconc must pass -I.../freetype2 so gcc finds ft2build.h from rt.h
     if test "x$cv_libfreetype" = "xyes" ; then
 
 printf "%s\n" "#define ICONC_FREETYPE_CPPFLAGS \"$FREETYPE_CFLAGS\"" >>confdefs.h
 
     fi
+    if test "x$sdlgraphics" != "xyes" ; then
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if Xft is wanted" >&5
@@ -11914,6 +13063,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
+    fi
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if jpeg is wanted" >&5
@@ -12520,6 +13670,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
+
+    # 3D graphics still needs GLX or WGL; the SDL backend is 2D only for now
+    if test "x$sdlgraphics" = "xyes" ; then
+      graphics3d=no
+    fi
 
     if ! test "x$graphics3d" = "xno"; then
        # assume we have opengl on windows
@@ -13244,7 +14399,7 @@ printf "%s\n" "#define NoGraphics3D 1" >>confdefs.h
     echo "Building with graphics..."
     GRAPHICS=graphics
 
-    if test "ms$unicon_os" != "mswindows" ; then
+    if test "ms$unicon_os" != "mswindows" -a "x$sdlgraphics" != "xyes" ; then
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if xpm is wanted" >&5
@@ -13587,7 +14742,9 @@ fi
      *bsd*)
         ;;
      *macos*)
-        XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lX11"
+        if test "x$sdlgraphics" != "xyes" ; then
+          XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lX11"
+        fi
 	;;
      *windows*)
         ;;
@@ -19077,6 +20234,7 @@ ICONC_LDFLAGS_STR=`iconc_c_escape "$LDFLAGS"`
 
 
 
+
 ac_config_files="$ac_config_files Makefile:Makefile.in"
 
 ac_config_files="$ac_config_files Makedefs:Makedefs.in"
@@ -20373,7 +21531,13 @@ fi
 # want graphics
 if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
   gtmp="Graphics           :"
-  if test "x$cv_libX11"    = "xyes" ; then
+  if test "x$sdlgraphics" = "xyes" ; then
+    if test "x$cv_libfontconfig" = "xyes" ; then
+      gtmp=" + $gtmp +SDL3 +fontconfig "
+    else
+      gtmp=" + $gtmp +SDL3 "
+    fi
+  elif test "x$cv_libX11"    = "xyes" ; then
     gtmp=" + $gtmp +X11 "
   else
     if test "x$graphics" = "xyes" ; then
@@ -20387,8 +21551,10 @@ if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
 
   if test "x$cv_libpng"  = "xyes" ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
 
-  if test "x$cv_libXft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
-  if test "ms$unicon_os" != "mswindows" ; then
+  if test "x$sdlgraphics" != "xyes" ; then
+    if test "x$cv_libXft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
+  fi
+  if test "ms$unicon_os" != "mswindows" -a "x$sdlgraphics" != "xyes" ; then
     if test "x$cv_libXpm" = "xyes" ; then gtmp="$gtmp +XPM " ; else gtmp="$gtmp -XPM " ; fi
   fi
   if test "x$cv_libfreetype"   = "xyes" ; then

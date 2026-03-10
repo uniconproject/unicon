@@ -6,10 +6,15 @@ on:
     paths-ignore:
     - 'docs/**'
 
+concurrency:
+  group: packages-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   Windows:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
+    timeout-minutes: 60
     strategy:
       matrix:
         cfg:
@@ -38,7 +43,7 @@ jobs:
       shell: bash
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -51,7 +56,7 @@ jobs:
         make WinInstaller
 
     - name: Publish
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: unicon-${{ matrix.cfg.name}}
         path: Output/setup-unicon*.exe
@@ -60,6 +65,7 @@ jobs:
   Ubuntu:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
+    timeout-minutes: 60
     strategy:
       matrix:
         cfg:
@@ -69,7 +75,14 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
+
+    - name: Cache apt packages
+      uses: actions/cache@v5
+      with:
+        path: /var/cache/apt/archives/*.deb
+        key: apt-packages-${{ matrix.cfg.os }}-${{ hashFiles('debian/control') }}
+        restore-keys: apt-packages-${{ matrix.cfg.os }}-
 
     - name: Install dependencies
       run: |
@@ -92,7 +105,7 @@ jobs:
         cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
 
     - name: Publish
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: unicon-${{ matrix.cfg.name}}
         path: debian-pkg/unicon_*

@@ -1,0 +1,446 @@
+############################################################################
+#
+#       File:     test_lsp_message.icn
+#
+#       Subject:  LSP Message Type Test Suite
+#                 Tests individual LSP message types and their JSON-RPC structure
+#
+#       Author:   Jafar Al-Gharaibeh
+#
+#       Date:     November 2025
+#
+############################################################################
+
+import ulsp
+import json
+import logger
+import unittest
+
+link ximage
+
+global test_results
+global msg_test_count, msg_pass_count, msg_fail_count
+global verbose_mode  # Set to true for verbose output
+
+# Convert test methods to procedures for UniconTestSuite
+procedure test_jsonrpc_parsing()
+   local msg, json_str
+
+   # Test valid request
+   json_str := "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",_
+               \"params\":{\"processId\":1234}}"
+   msg := JRPC_Message().parse_json(json_str)
+   assert_not_null(msg, "parse_json should return message for valid request") | fail
+   assert_equal(msg.get_kind(), "request", "Request message kind") | fail
+   assert_equal(msg.get_id(), 1, "Request message ID") | fail
+   assert_equal(msg.get_method(), "initialize", "Request method name") | fail
+
+   # Test valid notification
+   msg := &null
+   json_str := "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",_
+               \"params\":{\"textDocument\":{\"uri\":\"file://test.icn\"}}}"
+   msg := JRPC_Message().parse_json(json_str)
+   assert_not_null(msg, "parse_json should return message for valid notification") | fail
+   assert_equal(msg.get_kind(), "notification", "Notification message kind") | fail
+   assert_equal(msg.get_method(), "textDocument/didOpen", "Notification method name") | fail
+
+   # Test valid response
+   msg := &null
+   json_str := "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":_
+               {\"capabilities\":{\"completionProvider\":true}}}"
+   msg := JRPC_Message().parse_json(json_str)
+   assert_not_null(msg, "parse_json should return message for valid response") | fail
+   assert_equal(msg.get_kind(), "response", "Response message kind") | fail
+   assert_equal(msg.get_id(), 1, "Response message ID") | fail
+   return
+end
+
+procedure test_initialize_request()
+   local msg, params, result
+
+   params := [
+      "processId": getpid();
+      "rootUri": "file:///test";
+      "capabilities": [
+         "textDocument": [
+            "completion": ["dynamicRegistration": "__false__"]
+         ]
+      ]
+   ]
+
+   msg := JRPC_Message().make_request(1, "initialize", params)
+   assert_not_null(msg, "make_request should create message") | fail
+   result := msg.make_result_response([
+      "capabilities": [
+         "completionProvider": ["triggerCharacters": [".", ":"]];
+         "textDocumentSync": 1
+      ]
+   ])
+   assert_not_null(result, "make_result_response should create response") | fail
+   assert_equal(result.get_kind(), "response", "Response kind") | fail
+   assert{member(result.get_result(), "capabilities"), "Response should have capabilities"} | fail
+   return
+end
+
+procedure test_completion_request()
+   local msg, params, result
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ];
+      "position": [
+         "line": 0;
+         "character": 5
+      ]
+   ]
+
+   msg := JRPC_Message().make_request(2, "textDocument/completion", params)
+   assert_not_null(msg, "make_request should create message") | fail
+   result := msg.make_result_response([
+      "isComplete": "__true__";
+      "items": [
+         [
+            "label": "write";
+            "kind": 1;
+            "detail": "procedure"
+         ]
+      ]
+   ])
+   assert_not_null(result, "make_result_response should create response") | fail
+   assert_equal(result.get_kind(), "response", "Response kind") | fail
+   assert{member(result.get_result(), "items"), "Response should have items"} | fail
+   return
+end
+
+procedure test_hover_request()
+   local msg, params, result
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ];
+      "position": [
+         "line": 0;
+         "character": 10
+      ]
+   ]
+
+   msg := JRPC_Message().make_request(3, "textDocument/hover", params)
+   assert_not_null(msg, "make_request should create message") | fail
+   result := msg.make_result_response([
+      "contents": [
+         [
+            "language": "unicon";
+            "value": "procedure main()\n    # Main procedure\nend"
+         ]
+      ]
+   ])
+   assert_not_null(result, "make_result_response should create response") | fail
+   assert_equal(result.get_kind(), "response", "Response kind") | fail
+   assert{member(result.get_result(), "contents"), "Response should have contents"} | fail
+   return
+end
+
+procedure test_definition_request()
+   local msg, params, result
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ];
+      "position": [
+         "line": 0;
+         "character": 10
+      ]
+   ]
+
+   msg := JRPC_Message().make_request(4, "textDocument/definition", params)
+   assert_not_null(msg, "make_request should create message") | fail
+   result := msg.make_result_response([
+      "uri": "file:///test.icn";
+      "range": [
+         "start": [
+            "line": 0;
+            "character": 0
+         ];
+         "end": [
+            "line": 0;
+            "character": 15
+         ]
+      ]
+   ])
+   assert_not_null(result, "make_result_response should create response") | fail
+   assert_equal(result.get_kind(), "response", "Response kind") | fail
+   assert{member(result.get_result(), "uri"), "Response should have uri"} | fail
+   return
+end
+
+procedure test_document_symbol_request()
+   local msg, params, result
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ]
+   ]
+
+   msg := JRPC_Message().make_request(5, "textDocument/documentSymbol", params)
+   assert_not_null(msg, "make_request should create message") | fail
+   # LSP spec: documentSymbol returns a list directly, not a table with "symbols" key
+   result := msg.make_result_response([
+      [
+         "name": "main";
+         "kind": 12;
+         "range": [
+            "start": ["line": 0; "character": 0];
+            "end": ["line": 0; "character": 15]
+         ]
+      ]
+   ])
+   assert_not_null(result, "make_result_response should create response") | fail
+   assert_equal(result.get_kind(), "response", "Response kind") | fail
+   assert_equal(type(result.get_result()), "list", "Response result should be a list") | fail
+   return
+end
+
+procedure test_folding_range_request()
+   local msg, params, result
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ]
+   ]
+
+   msg := JRPC_Message().make_request(6, "textDocument/foldingRange", params)
+   assert_not_null(msg, "make_request should create message") | fail
+   # LSP spec: foldingRange returns a list directly, not a table with "ranges" key
+   result := msg.make_result_response([
+      [
+         "startLine": 0;
+         "endLine": 2
+      ]
+   ])
+   assert_not_null(result, "make_result_response should create response") | fail
+   assert_equal(result.get_kind(), "response", "Response kind") | fail
+   assert_equal(type(result.get_result()), "list", "Response result should be a list") | fail
+   return
+end
+
+procedure test_formatting_request()
+   local msg, params, result
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ];
+      "options": [
+         "tabSize": 4;
+         "insertSpaces": "__true__"
+      ]
+   ]
+
+   msg := JRPC_Message().make_request(7, "textDocument/formatting", params)
+   assert_not_null(msg, "make_request should create message") | fail
+   # LSP spec: formatting returns a list directly, not a table with "edits" key
+   result := msg.make_result_response([
+      [
+         "range": [
+            "start": ["line": 0; "character": 0];
+            "end": ["line": 0; "character": 0]
+         ];
+         "newText": "procedure main()\n    write(\"Hello\")\nend\n"
+      ]
+   ])
+   assert_not_null(result, "make_result_response should create response") | fail
+   assert_equal(result.get_kind(), "response", "Response kind") | fail
+   assert_equal(type(result.get_result()), "list", "Response result should be a list") | fail
+   return
+end
+
+procedure test_did_open_notification()
+   local msg, params
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn";
+         "languageId": "unicon";
+         "version": 1;
+         "text": "procedure main()\n    write(\"Hello\")\nend\n"
+      ]
+   ]
+
+   msg := JRPC_Message()
+   assert_not_null(msg, "JRPC_Message() should create message") | fail
+   msg.set_method("textDocument/didOpen")
+   msg.set_params(params)
+
+   assert_equal(msg.get_kind(), "notification", "Notification message kind") | fail
+   assert_equal(msg.get_method(), "textDocument/didOpen", "Notification method name") | fail
+   return
+end
+
+procedure test_did_change_notification()
+   local msg, params
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn";
+         "version": 2
+      ];
+      "contentChanges": [
+         [
+            "text": "procedure main()\n    local x\n    x := 42\n    write(x)\nend\n"
+         ]
+      ]
+   ]
+
+   msg := JRPC_Message()
+   assert_not_null(msg, "JRPC_Message() should create message") | fail
+   msg.set_method("textDocument/didChange")
+   msg.set_params(params)
+
+   assert_equal(msg.get_kind(), "notification", "Notification message kind") | fail
+   return
+end
+
+procedure test_did_close_notification()
+   local msg, params
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ]
+   ]
+
+   msg := JRPC_Message()
+   assert_not_null(msg, "JRPC_Message() should create message") | fail
+   msg.set_method("textDocument/didClose")
+   msg.set_params(params)
+
+   assert_equal(msg.get_kind(), "notification", "Notification message kind") | fail
+   return
+end
+
+procedure test_did_save_notification()
+   local msg, params
+
+   params := [
+      "textDocument": [
+         "uri": "file:///test.icn"
+      ]
+   ]
+
+   msg := JRPC_Message()
+   assert_not_null(msg, "JRPC_Message() should create message") | fail
+   msg.set_method("textDocument/didSave")
+   msg.set_params(params)
+
+   assert_equal(msg.get_kind(), "notification", "Notification message kind") | fail
+   return
+end
+
+procedure test_error_response()
+   local msg, result
+
+   msg := JRPC_Message().make_request(1, "test", [])
+   assert_not_null(msg, "make_request should create message") | fail
+   result := msg.make_error_response(-32601, "Method not found", "The method 'test' was not found")
+   assert_not_null(result, "make_error_response should create error response") | fail
+   assert_equal(result.get_kind(), "error", "Error response kind") | fail
+   assert{member(result.get_error(), "code"), "Error should have code"} | fail
+   assert_equal(result.get_error()["code"], -32601, "Error code should be -32601") | fail
+   return
+end
+
+procedure test_malformed_message()
+   local msg
+
+   # Test invalid JSON - parse_json should return null for invalid JSON
+   msg := &null
+   msg := JRPC_Message().parse_json("{bad:json}")
+   assert_null(msg, "parse_json should return null for invalid JSON") | fail
+
+   # Test invalid JSONRPC
+   msg := &null
+   msg := JRPC_Message().parse_json("{\"max\" : 2}")
+   assert_not_null(msg, "parse_json should return message for invalid JSONRPC") | fail
+   assert_equal(msg.get_kind(), "unknown", "Invalid JSONRPC should have unknown kind") | fail
+
+   # Test empty message
+   msg := &null
+   msg := JRPC_Message().parse_json("")
+   assert_null(msg, "parse_json should return null for empty message") | fail
+   return
+end
+
+# Wrapper class for backward compatibility
+class LSPMessageTest : UniconTest()
+   method register_tests()
+      # Add this test file as a Test
+      add_test("LSP Message Tests")
+
+      # Add test sections
+      add_test_section("JSON-RPC Message Parsing")
+      add_test_case("test_jsonrpc_parsing", test_jsonrpc_parsing, "Test JSON-RPC message parsing")
+
+      add_test_section("LSP Request Messages")
+      add_test_case("test_initialize_request", test_initialize_request, "Test initialize request")
+      add_test_case("test_completion_request", test_completion_request, "Test completion request")
+      add_test_case("test_hover_request", test_hover_request, "Test hover request")
+      add_test_case("test_definition_request", test_definition_request, "Test definition request")
+      add_test_case("test_document_symbol_request", test_document_symbol_request,
+                    "Test document symbol request")
+      add_test_case("test_folding_range_request", test_folding_range_request,
+                    "Test folding range request")
+      add_test_case("test_formatting_request", test_formatting_request, "Test formatting request")
+
+      add_test_section("LSP Notification Messages")
+      add_test_case("test_did_open_notification", test_did_open_notification,
+                    "Test didOpen notification")
+      add_test_case("test_did_change_notification", test_did_change_notification,
+                    "Test didChange notification")
+      add_test_case("test_did_close_notification", test_did_close_notification,
+                    "Test didClose notification")
+      add_test_case("test_did_save_notification", test_did_save_notification,
+                    "Test didSave notification")
+
+      add_test_section("Error Handling")
+      add_test_case("test_error_response", test_error_response, "Test error response")
+      add_test_case("test_malformed_message", test_malformed_message,
+                    "Test malformed message handling")
+   end
+
+end
+
+$ifdef STANDALONE
+procedure main(args)
+   local test_suite, success, arg, output_style
+
+   # Default to short style
+   output_style := "short"
+
+   every arg := !args do {
+      if arg == ("-v" | "--verbose") then verbose_mode := 1
+      if arg == ("-l" | "--long") then {
+         output_style := "long"
+         break
+      }
+      if arg == ("-d" | "--debug") then {
+         output_style := "debug"
+         break
+      }
+   }
+   if getenv("ULSP_TEST_VERBOSE") then verbose_mode := 1
+
+   Logger(if \verbose_mode then 8 else 6)
+   test_suite := LSPMessageTest()
+   success := test_suite.run_all_tests(output_style)
+
+   if \success then
+      exit(0)
+   else
+      exit(1)
+end
+$endif

@@ -1,0 +1,397 @@
+############################################################################
+#
+#       File:     test_unicon_test.icn
+#
+#       Subject:  Test file for unicon_test.icn framework
+#                 Tests all three output styles and multiple test instances
+#
+#       Author:   Jafar Al-Gharaibeh
+#
+#       Date:     November 2025
+#
+############################################################################
+
+import unittest
+
+############################################################################
+# First Test Class: Basic Functionality Tests
+############################################################################
+class BasicFunctionalityTest : UniconTest()
+   method register_tests()
+      add_test("Basic Functionality Tests")
+
+      add_test_section("Arithmetic Operations")
+      add_test_case("test_basic_math", test_basic_math, "Verify basic arithmetic")
+      add_test_case("test_advanced_math", test_advanced_math, "Verify advanced math operations")
+      add_test_case("test_math_edge_cases", test_math_edge_cases, "Verify math edge cases")
+
+      add_test_section("String Operations")
+      add_test_case("test_string_ops", test_string_ops, "Verify string operations")
+      add_test_case("test_string_concatenation", test_string_concatenation,
+                    "Verify string concatenation")
+      add_test_case("test_string_comparison", test_string_comparison, "Verify string comparison")
+
+      add_test_section("List Operations")
+      add_test_case("test_list_ops", test_list_ops, "Verify list operations")
+      add_test_case("test_list_manipulation", test_list_manipulation, "Verify list manipulation")
+      add_test_case("test_list_iteration", test_list_iteration, "Verify list iteration")
+   end
+end
+
+############################################################################
+# Second Test Class: Assertion Tests
+############################################################################
+class AssertionTest : UniconTest()
+   method register_tests()
+      add_test("Assertion Tests")
+
+      add_test_section("Basic Assertions")
+      add_test_case("test_assertions", test_assertions, "Verify assertion helpers")
+      add_test_case("test_assert_equal", test_assert_equal, "Verify assert_equal")
+      add_test_case("test_assert_not_equal", test_assert_not_equal, "Verify assert_not_equal")
+
+      add_test_section("Null Assertions")
+      add_test_case("test_null_assertions", test_null_assertions, "Verify null assertions")
+      add_test_case("test_not_null_assertions", test_not_null_assertions,
+                    "Verify not null assertions")
+
+      add_test_section("Boolean Assertions")
+      add_test_case("test_boolean_assertions", test_boolean_assertions, "Verify boolean assertions")
+   end
+end
+
+############################################################################
+# Third Test Class: Framework Features Tests
+############################################################################
+class FrameworkFeaturesTest : UniconTest()
+   method register_tests()
+      add_test("Framework Features Tests")
+
+      add_test_section("Test Sections")
+      add_test_case("test_section_organization", test_section_organization,
+                    "Verify test section organization")
+
+      add_test_section("Nested Sections")
+      add_test_subsection("Nested Level 1")
+      add_test_case("test_nested_section_1", test_nested_section_1, "Verify nested section level 1")
+      add_test_subsection("Nested Level 2")
+      add_test_case("test_nested_section_2", test_nested_section_2, "Verify nested section level 2")
+
+      add_test_section("Multiple Test Cases")
+      add_test_case("test_case_1", test_case_1, "First test case in section")
+      add_test_case("test_case_2", test_case_2, "Second test case in section")
+      add_test_case("test_case_3", test_case_3, "Third test case in section")
+   end
+end
+
+############################################################################
+# Fourth Test Class: Edge Cases and Error Handling
+############################################################################
+class EdgeCasesTest : UniconTest()
+   method register_tests()
+      add_test("Edge Cases and Error Handling Tests")
+
+      add_test_section("Type Handling")
+      add_test_case("test_type_comparison", test_type_comparison, "Verify type comparison")
+      add_test_case("test_mixed_types", test_mixed_types, "Verify mixed type handling")
+      add_test_case("test_intentional_failure_1", test_intentional_failure_1,
+                    "Test that intentionally fails")
+
+      add_test_section("Empty Values")
+      add_test_case("test_empty_list", test_empty_list, "Verify empty list handling")
+      add_test_case("test_skipped_1", test_skipped_1, "Test that is skipped")
+      add_test_case("test_empty_string", test_empty_string, "Verify empty string handling")
+
+      add_test_section("Boundary Conditions")
+      add_test_case("test_boundary_values", test_boundary_values, "Verify boundary value handling")
+      add_test_case("test_intentional_failure_2", test_intentional_failure_2,
+                    "Another test that intentionally fails")
+      add_test_case("test_skipped_2", test_skipped_2, "Another test that is skipped")
+   end
+end
+
+procedure main(args)
+   local suite, test1, test2, test3, test4, style, arg
+
+   # Default to short style, but allow command-line override
+   style := "short"
+   every arg := !args do {
+      if arg == ("-l" | "--long") then {
+         style := "long"
+         break
+      }
+      if arg == ("-v" | "--verbose" | "-d" | "--debug") then {
+         style := "debug"
+         break
+      }
+   }
+
+   write("Testing Unicon Test Framework with style: ", style)
+   write()
+
+   # Create suite
+   suite := UniconTestSuite()
+   suite.set_output_style(style)
+
+   # Add multiple test instances
+   test1 := BasicFunctionalityTest()
+   suite.add_test(test1)
+
+   test2 := AssertionTest()
+   suite.add_test(test2)
+
+   test3 := FrameworkFeaturesTest()
+   suite.add_test(test3)
+
+   test4 := EdgeCasesTest()
+   suite.add_test(test4)
+
+   # Run tests
+   if suite.run_all_tests() then {
+      exit(0)
+   } else {
+      exit(1)
+   }
+end
+
+############################################################################
+# Test Procedures for BasicFunctionalityTest
+############################################################################
+procedure test_basic_math()
+   assert_equal(1 + 1, 2, "Addition should work")
+   assert_equal(5 - 3, 2, "Subtraction should work")
+   assert_equal(2 * 3, 6, "Multiplication should work")
+   assert_equal(6 / 2, 3, "Division should work")
+   return
+end
+
+procedure test_advanced_math()
+   assert_equal(2 ^ 3, 8, "Exponentiation should work")
+   assert_equal(10 % 3, 1, "Modulo should work")
+   assert_equal(integer(3.7), 3, "Integer conversion should work")
+   return
+end
+
+procedure test_math_edge_cases()
+   assert_equal(0 + 0, 0, "Zero addition")
+   assert_equal(1 * 0, 0, "Multiplication by zero")
+   assert_equal(10 / 1, 10, "Division by one")
+   return
+end
+
+procedure test_string_ops()
+   assert_equal("hello" || " " || "world", "hello world", "String concatenation")
+   assert_not_equal("foo", "bar", "Different strings should not be equal")
+   return
+end
+
+procedure test_string_concatenation()
+   local s1, s2, s3
+   s1 := "Hello"
+   s2 := " "
+   s3 := "World"
+   assert_equal(s1 || s2 || s3, "Hello World", "Multiple string concatenation")
+   return
+end
+
+procedure test_string_comparison()
+   # Test the framework's assertion helpers with string comparisons
+   local s1, s2, s3
+   
+   s1 := "hello"
+   s2 := "hello"
+   s3 := "world"
+   
+   # Test assert_equal with strings
+   assert_equal(s1, s2, "Equal strings should be equal")
+   
+   # Test assert_not_equal with strings
+   assert_not_equal(s1, s3, "Different strings should not be equal")
+   
+   # Test assert_not_null with strings
+   assert_not_null(s1, "String should not be null")
+   assert_not_null(s2, "String should not be null")
+   assert_not_null(s3, "String should not be null")
+   
+   return
+end
+
+procedure test_list_ops()
+   local L
+   L := [1, 2, 3]
+   assert_not_null(L, "List should not be null")
+   assert_equal(*L, 3, "List should have 3 elements")
+   return
+end
+
+procedure test_list_manipulation()
+   local L
+   L := [1, 2, 3]
+   put(L, 4)
+   assert_equal(*L, 4, "List should have 4 elements after put")
+   assert_equal(L[4], 4, "Last element should be 4")
+   return
+end
+
+procedure test_list_iteration()
+   local L, sum, x
+   L := [1, 2, 3, 4, 5]
+   sum := 0
+   every x := !L do
+      sum +:= x
+   assert_equal(sum, 15, "Sum of list elements should be 15")
+   return
+end
+
+############################################################################
+# Test Procedures for AssertionTest
+############################################################################
+procedure test_assertions()
+   assert{1 = 1, "True assertion"}
+   assert_not{1 = 2, "False assertion"}
+   assert_null(&null, "Null assertion")
+   assert_not_null("not null", "Not null assertion")
+   return
+end
+
+procedure test_assert_equal()
+   assert_equal(5, 5, "Equal integers")
+   assert_equal("test", "test", "Equal strings")
+   assert_equal(3.14, 3.14, "Equal reals")
+   return
+end
+
+procedure test_assert_not_equal()
+   assert_not_equal(5, 6, "Different integers")
+   assert_not_equal("test", "TEST", "Different strings")
+   assert_not_equal(3.14, 3.15, "Different reals")
+   return
+end
+
+procedure test_null_assertions()
+   local x
+   assert_null(&null, "Null value should be null")
+   assert_null(x, "Uninitialized variable should be null")
+   return
+end
+
+procedure test_not_null_assertions()
+   assert_not_null(0, "Zero should not be null")
+   assert_not_null("", "Empty string should not be null")
+   assert_not_null([], "Empty list should not be null")
+   return
+end
+
+procedure test_boolean_assertions()
+   assert{1 = 1, "True condition"}
+   assert{"a" == "a", "True string comparison"}
+   assert_not{1 = 2, "False condition"}
+   assert_not{"a" == "b", "False string comparison"}
+   return
+end
+
+############################################################################
+# Test Procedures for FrameworkFeaturesTest
+############################################################################
+procedure test_section_organization()
+   # This test verifies that sections are properly organized
+   assert{1, "Section organization test"}
+   return
+end
+
+procedure test_nested_section_1()
+   assert_equal(1 + 1, 2, "Nested section level 1 test")
+   return
+end
+
+procedure test_nested_section_2()
+   assert_equal(2 + 2, 4, "Nested section level 2 test")
+   return
+end
+
+procedure test_case_1()
+   assert_equal(1, 1, "First test case")
+   return
+end
+
+procedure test_case_2()
+   assert_equal(2, 2, "Second test case")
+   return
+end
+
+procedure test_case_3()
+   assert_equal(3, 3, "Third test case")
+   return
+end
+
+############################################################################
+# Test Procedures for EdgeCasesTest
+############################################################################
+procedure test_type_comparison()
+   # Different types should not be equal
+   assert_not_equal(1, "1", "Integer and string should not be equal")
+   assert_not_equal(1, 1.0, "Integer and real should not be equal (type-wise)")
+   return
+end
+
+procedure test_mixed_types()
+   local mixed
+   mixed := [1, "two", 3.0]
+   assert_equal(*mixed, 3, "Mixed type list should have 3 elements")
+   assert_equal(type(mixed[1]), "integer", "First element should be integer")
+   assert_equal(type(mixed[2]), "string", "Second element should be string")
+   return
+end
+
+procedure test_empty_list()
+   local L
+   L := []
+   assert_not_null(L, "Empty list should not be null")
+   assert_equal(*L, 0, "Empty list should have 0 elements")
+   return
+end
+
+procedure test_empty_string()
+   local s
+   s := ""
+   assert_not_null(s, "Empty string should not be null")
+   assert_equal(*s, 0, "Empty string should have 0 length")
+   return
+end
+
+procedure test_boundary_values()
+   assert_equal(0, 0, "Zero boundary")
+   assert_equal(-1, -1, "Negative boundary")
+   assert_equal(999999, 999999, "Large positive boundary")
+   return
+end
+
+procedure test_intentional_failure_1()
+   # This test intentionally fails to test failure handling
+   # In Unicon, if assert_equal fails, it calls fail which causes the procedure to fail
+   # We need to ensure the failure propagates - check the result
+   if not (assert_equal(1, 2, "This should fail - 1 is not equal to 2")) then
+      fail
+   # This line should never be reached
+   return
+end
+
+procedure test_intentional_failure_2()
+   # This test intentionally fails - directly call fail
+   fail
+end
+
+procedure test_skipped_1()
+   # Skip this test by setting the skip flag and returning
+   # In a real scenario, you might skip based on environment, feature flags, etc.
+   test_skipped_flag := 1
+   return
+end
+
+procedure test_skipped_2()
+   # Another skipped test - using a different pattern
+   # In practice, you'd check for conditions like: platform, feature availability, etc.
+   test_skipped_flag := 1
+   return
+end
+

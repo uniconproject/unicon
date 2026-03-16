@@ -1,0 +1,42 @@
+################################################################################
+#
+# This file is released under the terms of the GNU LIBRARY GENERAL PUBLIC LICENSE
+# (LGPL) version 2. The licence may be found in the root directory of the Unicon
+# source directory in the file COPYING.
+#
+################################################################################
+#
+#    A program to recreate test vectors for the rngIconEx generator.
+#
+#    The generator may be tested by
+#    Unicon -s test-vectors.icn
+#    ./test-vectors > test-output
+#    diff Icon.test-vectors test.output
+#
+#    The Icon.test-vectors file was created by running the same program using
+#    an Icon system (version 9.5.1)
+#
+#    Don Ward
+#    August 2019
+#
+################################################################################
+# This unicon program is also an icon program
+procedure main(args)
+   local n
+   local seeds
+
+$ifdef _RNG_LIBRARY
+   loadrng("rngIconEx") | stop(&errout, "Cannot load the rngIconEx library")
+$else
+   # any program argument overrides the error exit
+   if *args = 0 then stop(&errout, "RNG libraries are not available")
+$endif
+
+   # Produce some random numbers
+   seeds := [0, 42, 250151, 999]
+   while n := pop(seeds) do {
+      write("&random = ", n)
+      &random := n
+      every n := 1 to 100 do { write(? 16R7FFFFFF) }
+   }
+end

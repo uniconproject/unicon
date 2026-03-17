@@ -1,6 +1,6 @@
 
 #
-# proctime.icn 
+# proctime.icn
 # Ziad Al-Sharif
 # June 1, 2008
 #
@@ -8,9 +8,9 @@
 $include "evdefs.icn"
 
 #
-# This class handles the procedure calling time, 
+# This class handles the procedure calling time,
 # it associates all names fo called procedures with
-# their acumulated elapsed time from all calls. 
+# their acumulated elapsed time from all calls.
 #
 $ifndef StandAlone
 class ProcTime : Listener(
@@ -23,7 +23,7 @@ $endif
    callMask,         # The monitored events for the calls + resumes
    retMask,          # The monitored events for the ret+rem+susp+fail
 
-   procCallCount,    # Table maps each proc name into its number of calls 
+   procCallCount,    # Table maps each proc name into its number of calls
    procLastCallTime, # Table maps each procedure name into its last call time
    procTime,         # Table maps each proc+call sequence into its elapsed time
 
@@ -31,7 +31,7 @@ $endif
    )
 
 #
-# Counts the total time spent during the execution of procedures 
+# Counts the total time spent during the execution of procedures
 #
 method handle_Events()
    local pname
@@ -43,18 +43,18 @@ method handle_Events()
       procCallCount[pname] +:= 1
       procLastCallTime[pname] := keyword("time",Monitored)
       }
-   # == (E_Pret | E_Pfail | E_Psusp | E_Prem) 
+   # == (E_Pret | E_Pfail | E_Psusp | E_Prem)
    else if member(retMask,&eventcode) then{
       pname := image(proc(Monitored,0))
       pname := pname[find(" ", pname)+1: 0]
-      procTime[pname] +:= (procLastCallTime[pname] := 
+      procTime[pname] +:= (procLastCallTime[pname] :=
                            keyword("time",Monitored) - procLastCallTime[pname])
       }
 end
 
 #
 # updates the procedure time info,
-# it receives the param j which is the most important j procedures 
+# it receives the param j which is the most important j procedures
 #
 method update_Info(j)
    local i:=1, pname
@@ -62,13 +62,13 @@ method update_Info(j)
    if \procTime & *procTime > 0 then{
       if /j then j := *procTime + 1
       else  j >=:= *procTime + 1
-  
+
       ProcTimeInfo := reverse(sort(procTime,2))[1:j]
       # 1-"Seq Num"      | # 2-"Procedure Name"    | # 3-"Total Time"
       # 4-"Num of Calls" | # 5-"Avg Time/Num-Call" | # 6-"Last Call Time"
       while i <= j  & \ProcTimeInfo do{
          pname := ProcTimeInfo[i][1]
-         push(ProcTimeInfo[i],i)                     
+         push(ProcTimeInfo[i],i)
          put(ProcTimeInfo[i],
              procCallCount[pname],
              ProcTimeInfo[i][3] / procCallCount[pname],
@@ -80,7 +80,7 @@ method update_Info(j)
 end
 
 #
-# Prints out the total time of a procedure call in ms 
+# Prints out the total time of a procedure call in ms
 # It is to be used in a console based application such as UDB
 #
 method write_Info( num )
@@ -133,7 +133,7 @@ end
 #
 # StandAlone is defined when this tool is used as a stand-alone monitor.
 #  Otherwise, this tool can be statically linked into the main utop/udb
-#  source code 
+#  source code
 #
 $ifdef StandAlone
 
@@ -142,12 +142,12 @@ link evinit
 #
 # This main procedure is only used in the standalone mode
 # or udb's external co-expression mode
-# 
+#
 procedure main(arg)
    local obj
-   
+
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   obj := ProcTime()   
+   obj := ProcTime()
 
    while EvGet(obj.eventMask) do{
       if &eventcode == (E_Exit | E_Error) then
@@ -159,17 +159,17 @@ procedure main(arg)
 end
 
 #
-# This handle_Events procedure is only used udb's external 
+# This handle_Events procedure is only used udb's external
 # inter-program procedure calls
 #
 procedure handle_Events(code, value)
    static obj
-   
+
    initial{
       #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-      obj := ProcTime()   
+      obj := ProcTime()
       return obj.eventMask
-      } 
+      }
 
    &eventcode  := code
    &eventvalue := value

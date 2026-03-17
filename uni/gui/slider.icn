@@ -21,7 +21,7 @@ $define TICK_H 10
 #
 # Component representing the slider area
 # @p
-class SliderArea : Component(inner_x, inner_y, inner_w, inner_h, slider_x, slider_y, slider_w, slider_h) 
+class SliderArea : Component(inner_x, inner_y, inner_w, inner_h, slider_x, slider_y, slider_w, slider_h)
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
       DrawSunkenRectangle(self.cbwin, self.inner_x, self.inner_y, self.inner_w, self.inner_h)
@@ -39,7 +39,7 @@ end
 #
 # @example
 # @ s := Slider()
-# @ s.set_pos("85%", "25%")      
+# @ s.set_pos("85%", "25%")
 # @ s.set_size(, "40%") # Width defaults for a vertical slider
 # @ s.set_range(0,5)
 # @ s.set_value(2)
@@ -49,14 +49,14 @@ end
 # @ self.add(s)
 #
 class Slider : Component(
-   value,                   
+   value,
    slider_down,
    slider_down_offset,
    slider_area,
    slider_pos,
    slider_area_pos,
    slider_area_size,
-   is_horizontal_flag,                                
+   is_horizontal_flag,
    discrete_vals,
    ticks,
    labels,
@@ -65,9 +65,9 @@ class Slider : Component(
    labels_pos,
    is_paging,
    increment_size,
-   repeat_delay,            
-   hi,                                
-   lo                                 
+   repeat_delay,
+   hi,
+   lo
 )
 
    #
@@ -85,7 +85,7 @@ class Slider : Component(
    end
 
    #
-   # Configure so that on release after a drag, the value will snap to 
+   # Configure so that on release after a drag, the value will snap to
    # the nearest multiple of n.
    #
    method set_snaps(n)
@@ -210,17 +210,17 @@ class Slider : Component(
             self.slider_down_offset := &y - self.slider_pos
          else
             self.slider_down_offset := &x - self.slider_pos
-         fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)
       } else if (/self.is_horizontal_flag & (self.slider_area.x <= &x < self.slider_area.x + self.slider_area.w) & (self.slider_area.y  <= &y < self.slider_area.slider_y)) | ((self.slider_area.y <= &y < self.slider_area.y + self.slider_area.h) & (self.slider_area.x  <= &x < self.slider_area.slider_x)) then {
          self.move_value(self.get_value() - self.increment_size)
          self.set_pos_from_value()
          start_paging(1)
-         fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)
       } else  if (/self.is_horizontal_flag & (self.slider_area.x <= &x < self.slider_area.x + self.slider_area.w) & ( self.slider_area.slider_y + self.slider_area.slider_h  <= &y <  self.slider_area.y + self.slider_area.h)) | ((self.slider_area.y <= &y < self.slider_area.y + self.slider_area.h) & ( self.slider_area.slider_x + self.slider_area.slider_w  <= &x <  self.slider_area.x + self.slider_area.w)) then {
          self.move_value(self.get_value() + self.increment_size)
          self.set_pos_from_value()
          start_paging(2)
-         fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)
       }
    end
 
@@ -234,14 +234,14 @@ class Slider : Component(
             self.value +:= self.snaps / 2
             self.set_value(self.value - (self.value % snaps))
          }
-         fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)
       } else if \self.is_paging then
          stop_paging()
    end
 
    method tick()
       if dispatcher.curr_time_of_day() > self.repeat_delay then {
-         if self.is_paging === 1 then 
+         if self.is_paging === 1 then
             self.move_value(self.get_value() - self.increment_size)
          else
             self.move_value(self.get_value() + self.increment_size)
@@ -270,13 +270,13 @@ class Slider : Component(
       else
          self.move_slider_pos(&x - self.slider_down_offset)
       self.set_value_from_pos()
-      fire(SLIDER_DRAGGED_EVENT, e)     
+      fire(SLIDER_DRAGGED_EVENT, e)
    end
 
    method handle_event(e)
-      if e === (&lpress | &rpress | &mpress) then 
+      if e === (&lpress | &rpress | &mpress) then
          handle_press()
-      else if e === (&lrelease | &rrelease | &mrelease) then 
+      else if e === (&lrelease | &rrelease | &mrelease) then
          handle_release()
       else if \self.slider_down & (e === (&ldrag | &rdrag | &mdrag)) then
          handle_drag()
@@ -426,7 +426,7 @@ class Slider : Component(
 
    method set_one(attr, val)
       case attr of {
-         "is_horizontal" : if test_flag(attr, val) then 
+         "is_horizontal" : if test_flag(attr, val) then
             set_is_horizontal()
          else
             clear_is_horizontal()

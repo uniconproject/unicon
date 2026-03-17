@@ -1,5 +1,5 @@
 #
-# This class is used to find out the methods in the 
+# This class is used to find out the methods in the
 # internal monitor and its event mask
 # Author : Dr. Jeffery, modified by Ziad Al-Sharif
 #
@@ -32,7 +32,7 @@ method Forward()
 end
 
 #
-# performas an on-demand analysis in the listener monitor 
+# performas an on-demand analysis in the listener monitor
 #
 method AnalyzeInof(tag)
    local foo, foolist
@@ -44,7 +44,7 @@ method AnalyzeInof(tag)
 end
 
 #
-# performas an on-demand output from the listener monitor 
+# performas an on-demand output from the listener monitor
 #
 method WriteInfo(tag)
    local foo, foolist
@@ -56,11 +56,11 @@ method WriteInfo(tag)
 end
 
 #
-# reads the derived class and finds out which methods start with 
+# reads the derived class and finds out which methods start with
 # on of the prefixes (handle_, update, or write)
 # It is used to automatically register the internal monitors
 # based on the assumptions:
-# event handler starts with the prefix "handle_" 
+# event handler starts with the prefix "handle_"
 # method analazer starts withe the prefix: "analyze" | "update"
 # method writer starts withe the prefix  : "write"   | "print"
 #
@@ -70,7 +70,7 @@ method AutoRegister(name, id, state)
    Name  := name
    Id    := id
    State := state
-   
+
    every (methodName := key(self.__m)) & not match("__",methodName) do {
        if (eventcode := symtab[methodName ? (="handle_" & tab(0))]) &
           eventcode ~== "E_????" then {
@@ -83,7 +83,7 @@ method AutoRegister(name, id, state)
           RegisterAnalyzer(methodName)
        else if find("write"|"print", methodName) then
           RegisterWriter(methodName)
-       }  
+       }
    if *mask > 0 then eventMask := cset(mask)
 end
 
@@ -91,7 +91,7 @@ end
 # Registers the event handler of the monitoring tool
 #
 method RegisterHandler(methodname, mask)
-   local eventcode 
+   local eventcode
 
    if \mask then{
       every eventcode := !mask do
@@ -99,16 +99,16 @@ method RegisterHandler(methodname, mask)
       eventMask := mask
       }
    else{
-      /methtab["handler"] := [ ] 
+      /methtab["handler"] := [ ]
       put(methtab["handler"], get_Method(methodname))
-      }  
+      }
 end
 
 #
 # Registers the analyzer handler of the monitoring tool
 #
 method RegisterAnalyzer(methodname)
-   /methtab["analyzer"] := [ ] 
+   /methtab["analyzer"] := [ ]
    put(methtab["analyzer"], get_Method(methodname))
 end
 
@@ -116,7 +116,7 @@ end
 # Registers the analyzer handler of the monitoring tool
 #
 method RegisterWriter(methodname)
-   /methtab["writer"] := [ ] 
+   /methtab["writer"] := [ ]
    put(methtab["writer"], get_Method(methodname))
 end
 
@@ -124,7 +124,7 @@ end
 # Registers the analyzer handler of the monitoring tool
 #
 method RegisterEventMask(mask)
-   /eventMask := cset() 
+   /eventMask := cset()
    eventMask ++:= mask
 end
 
@@ -133,18 +133,18 @@ end
 #
 method get_Method(name)
    local methodname
-   
+
    every (methodname := key(self.__m)) & not match("__",methodname) do
        if find(name, methodname) then
           return self.__m[methodname]
-   fail 
+   fail
 end
 #
-# reads the derived class and finds out which methods start with 
+# reads the derived class and finds out which methods start with
 # on of the prefixes (handle, update, or write)
 #
 initially(name, id,state)
-   
+
    Name  := name
    Id    := id
    State := state

@@ -2,7 +2,7 @@
 #
 # structaliases.icn
 # Ziad Al-Sharif
-# June 1, 2008 
+# June 1, 2008
 #
 
 $include "evdefs.icn"
@@ -59,7 +59,7 @@ method handle_Events()
               insert(tRalias[i],x||"^"||pname)
               }
            }# end case
-         } 
+         }
       }
    else if &eventcode == E_Assign then{
       assigned_var := &eventvalue
@@ -103,7 +103,7 @@ method get_Info(k,i)
      E_Table: { t := tTalias  }
      E_Record:{ t := tRalias  }
      E_Set:   { t := tSalias  }
-     } 
+     }
 
    if \t[i] then{
       every x := !t[i] do result ||:= x||", "
@@ -123,16 +123,16 @@ $endif
 
    eventMask := cset(E_Exit || E_Error) ++ cset(E_Pcall || E_Assign || E_Value)
 
-   tLalias := table() 
-   tTalias := table() 
-   tSalias := table() 
+   tLalias := table()
+   tTalias := table()
+   tSalias := table()
    tRalias := table()
 end
 
 #
 # StandAlone is defined when this tool is used as a stand-alone monitor.
 #  Otherwise, this tool can be statically linked into the main utop/udb
-#  source code 
+#  source code
 #
 $ifdef StandAlone
 
@@ -141,10 +141,10 @@ link evinit
 #
 # This main procedure is only used in the standalone mode
 # or udb's external co-expression mode
-# 
+#
 procedure main(arg)
    local obj
-   
+
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
    obj := StructAliases()
 
@@ -152,23 +152,23 @@ procedure main(arg)
       if &eventcode == (E_Exit | E_Error) then
          obj.write_Info()
       else
-         obj.handle_Events() 
+         obj.handle_Events()
       }
    handle_Events() #fake call
 end
 
 #
-# This handle_Events procedure is only used udb's external 
+# This handle_Events procedure is only used udb's external
 # inter-program procedure calls
 #
 procedure handle_Events(code, value)
    static obj
-   
+
    initial{
       #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
       obj := StructAliases()
       return obj.eventMask
-      } 
+      }
 
    &eventcode  := code
    &eventvalue := value
@@ -176,7 +176,7 @@ procedure handle_Events(code, value)
    if &eventcode == (E_Exit | E_Error) then
       obj.write_Info()
    else
-      obj.handle_Events() 
+      obj.handle_Events()
 end
 
 $endif

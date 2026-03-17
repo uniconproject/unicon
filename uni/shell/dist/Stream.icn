@@ -16,7 +16,7 @@
 #   The freedom of its content is protected by the Lesser GNU public
 #     license, version 2.1, February 1999,
 #     http://www.gnu.org/licenses/lgpl.html
-#   which means you are granted permission to use this in any way that 
+#   which means you are granted permission to use this in any way that
 #   does not limit others' freedom to use it.
 #
 ############################################################################
@@ -25,7 +25,7 @@
 #  with lists, files, and coexpressions.
 #   - Stream( L ) produces an instance of StreamL
 #   - Stream( f ) and Stream(args[ ]) produce an instance of Streamf
-#      where args are the arguments to the open( ) function 
+#      where args are the arguments to the open( ) function
 #   - Stream( C, "r" | "w" ) produces an instance of C
 #   - Stream( StreamL ) produces StreamL
 #
@@ -44,8 +44,8 @@
 #   Select  *      *      *      Produces &null if Get will produce a value
 #   Type    *      *      *      Produces "list" | "file" | "co-expression"
 #
-#   When a producer coexpression uses StreamC to transmit values to a 
-#   consumer coexpression that receives them using StreamC, the values 
+#   When a producer coexpression uses StreamC to transmit values to a
+#   consumer coexpression that receives them using StreamC, the values
 #   transmitted will be the same regardless of whether the producer or
 #   the consumer was activated first.
 #
@@ -57,7 +57,7 @@
 
 # set tracking which coexpression-streams' coexpressions have been activated
 # friend: shell.icn - variable is manipulated by shell.icn
-global StreamC_activated 
+global StreamC_activated
 
 # set StreamC_trace to a non-null value to enable tracing of StreamC methods
 global StreamC_trace
@@ -74,7 +74,7 @@ global trace
 #   invokes shell.icn recursively, the child shell's children
 #   are may be "1.1", "1.2", etc.
 # friend: shell.icn - variable is manipulated by shell.icn
-global trace_task_id 
+global trace_task_id
 
 # trace_task_symbol is a table where:
 #   the key is a co-expression
@@ -161,18 +161,18 @@ class Streamf : Stream_Abstract ( file, mode, readfunc )
     local arglist
     readfunc := read
     /ushpath := [""]
-    if 
+    if
       ( /p_argv[2], \p_argv[3] )
     then # args are filename and filemode, only
       file := p_argv[1]
     else {
       # flilemode defaults to "r" to be like open
       mode := \p_argv[2] | "r"
-      if 
+      if
         p_argv[1] == "-"
       then {
         # user requested either stdin or stdout
-        if 
+        if
           find( mode, "r t u " )
         then
           file := &input
@@ -180,9 +180,9 @@ class Streamf : Stream_Abstract ( file, mode, readfunc )
           file := &output
       }
       else {
-        if 
+        if
           mode ? ="n" || ( ="a" | "" ) || ="u"
-        then 
+        then
           readfunc := receive
         # user requested a file by name; search the ushpath
         ( arglist <- [ !ushpath || p_argv[1] ] ||| p_argv[2:0]
@@ -260,7 +260,7 @@ class StreamC : Stream_Abstract( queue, coexp, hasFailed, write_mode, tracing_pr
     # first activation, with optional tracing
     if
       \tracing_prefix
-    then 
+    then
       if   put( queue, coactrace( pop(p_item)\1, coexp, tracing_prefix )\1 )
       then {
              hasFailed := &null
@@ -328,8 +328,8 @@ class StreamC : Stream_Abstract( queue, coexp, hasFailed, write_mode, tracing_pr
            ": _____ StreamC.Close cofailing stream opened for " ||
            ( if \write_mode then "w" else "r")
          )
-    if 
-      \write_mode 
+    if
+      \write_mode
     then {
       write_mode := &null
       return cofail( coexp )\1 | &null
@@ -343,12 +343,12 @@ class StreamC : Stream_Abstract( queue, coexp, hasFailed, write_mode, tracing_pr
   if
     \StreamC_trace
   then
-    ( tracing_prefix := 
+    ( tracing_prefix :=
       ( trace_task_id := ( \trace_task_id | "0" )\1
       , " ______ (" || trace_task_id || ") " || StreamC_trace
-      ) | 
+      ) |
       " ______ " || StreamC_trace
-    , trace := \trace | write 
+    , trace := \trace | write
     )
 
   # default mode is read
@@ -385,13 +385,13 @@ end # class StreamC
 # coactrace acts like "value @ coexpr", but traces info to &output
 procedure coactrace( value, coexpr, label )
   local result, cnt
-  
+
   cnt := 1
 
   (\trace) ( " ... coactrace: " || label || " is transmitting: " ||
          ( image(\value) | "&null" )
        )
-  
+
   every  result := value @ coexpr  do {
     (\trace) ( " ... coactrace: " || label ||
            ( " received result "||cnt||": "||image(\result) |
@@ -417,10 +417,10 @@ procedure cofailtrace( coexpr, label )
     cnt +:= 1
     suspend result
   }
-  (\trace)(" XXX cofailtrace [ " || label || " ]: " || 
-           trace_task_symbol[ &current ] || 
+  (\trace)(" XXX cofailtrace [ " || label || " ]: " ||
+           trace_task_symbol[ &current ] ||
            " received failure from " || trace_task_symbol[&source] )
-  &current ~=== &source  &  fail 
+  &current ~=== &source  &  fail
   stop( "fatal error: infinite failure - task "||label||" failing to self")
 end # procedure cofailtrace
 
@@ -430,12 +430,12 @@ procedure service( callback, moreargs, source )
 
   # sanity check
   \callback | fail
-  
+
   ( # calculate the tracing prefix if applicable
     tracing_prefix := " ______ " || \StreamC_trace
     # and set the tracing procedure identifier
     #   if applicable and not yet set
-  , /trace := write 
+  , /trace := write
   )
 
   # save the &source if it was not supplied as an argument
@@ -443,32 +443,32 @@ procedure service( callback, moreargs, source )
 
   # repeat endlessly
   repeat {
-    
+
     # transmit result to source, and get next operand from source
     #   1. if source transmits failure, abort
-    (\trace)( (\tracing_prefix | \trace_task_id | "unknown") || 
-              ": about to activate or cofail source" ) 
-    if 
-      not ( 
-        result := if   /failed 
-                  then (result @ source)\1 
+    (\trace)( (\tracing_prefix | \trace_task_id | "unknown") ||
+              ": about to activate or cofail source" )
+    if
+      not (
+        result := if   /failed
+                  then (result @ source)\1
                   else cofail( source )\1
       )
-    then 
-      stop( ) # terminate task and yield control of execution 
+    then
+      stop( ) # terminate task and yield control of execution
               #   back to parent (main) task
-    
+
     #  2. save the &source for the current resumption before invoking
-    #     the callback (in case the callback needs to resume other 
+    #     the callback (in case the callback needs to resume other
     #     services or co-expressions before returning)
     source := &source
-    
+
     #  3. invoke callback to produce next result (or failure)
-    ((/failed,\trace))( (\tracing_prefix | \trace_task_id | "unknown") || 
-                        ": about to invoke callback" ) 
-    if 
+    ((/failed,\trace))( (\tracing_prefix | \trace_task_id | "unknown") ||
+                        ": about to invoke callback" )
+    if
       result := callback( result, moreargs )\1
-    then 
+    then
       failed := &null
     else
       failed := 1

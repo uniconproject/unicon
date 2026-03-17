@@ -1,7 +1,7 @@
 #
 # varprofile.icn
 # Ziad Al-Sharif
-# June 1, 2008 
+# June 1, 2008
 #
 
 $include "evdefs.icn"
@@ -16,7 +16,7 @@ $else
 class VarProfile(
 $endif
 
-   eventMask,      # A cset of the Monitored events 
+   eventMask,      # A cset of the Monitored events
 
    procCallCount,  # Table maps procedur names to their number of calls
 
@@ -25,7 +25,7 @@ $endif
    GlobalVarType,  # Table maps local var names into their last type change
    GlobalVarTCount,# Table maps local var names into their number type change
 
-   LocalVar,       # A table with all of the local variables info 
+   LocalVar,       # A table with all of the local variables info
    LocalVarCount,  # Table maps local var names into their number of Deref
    LocalVarType,   # Table maps local var names into their last type change
    LocalVarTCount, # Table maps local var names into their number type change
@@ -36,12 +36,12 @@ $endif
 
 #
 # Checks for Dead Variables
-# The monitored events are E_Pcall, E_Deref 
+# The monitored events are E_Pcall, E_Deref
 #
 method handle_Events()
    static fname, pname
    local i,x, vtype
-   
+
    if &eventcode == E_Pcall then{
       pname := image(&eventvalue)
       pname := pname[find(" ", pname)+1: 0]
@@ -64,30 +64,30 @@ method handle_Events()
       else if i := find("-",&eventvalue) then{
          x := &eventvalue[1: i]
          if vtype := type(variable(x,Monitored,0)) then{
-            /LocalVarType[&eventvalue] := vtype 
+            /LocalVarType[&eventvalue] := vtype
             if LocalVarType[&eventvalue] ~==:= vtype then
                LocalVarTCount[&eventvalue] +:= 1
             LocalVarCount[&eventvalue] +:= 1
             fname := keyword("file",Monitored)
             LocalVar[&eventvalue] := fname||":"||&eventvalue
-            } 
-         } 
+            }
+         }
       }
 end
 
 #
 # Updates the Local variabls info,
-# it receives the param j which is the most important j Variables 
+# it receives the param j which is the most important j Variables
 #
 method update_LocalVarInfo(j)
    local i:=1, k,name, var, pname, fname, last_type
-   
+
    if \LocalVarCount & *LocalVarCount > 0 then {
       if /j then j := *LocalVarCount + 1
       else  j >=:= *LocalVarCount + 1
-  
+
       LocalVarInfo := reverse(sort(LocalVarCount,2))[1:j]
-      # 1-"File Name" | # 2-"Proc Name"   | # 3-"#Call"  | # 4-"Var Name" 
+      # 1-"File Name" | # 2-"Proc Name"   | # 3-"#Call"  | # 4-"Var Name"
       # 5-"Last Type" | # 6-"Change Type" | # 7-"#Deref" | # 8-"Avg(Deref/Call)"
       while i <= j  & \LocalVarInfo & LocalVarInfo[i][2] > 1 do{
          name := LocalVar[LocalVarInfo[i][1]]
@@ -108,12 +108,12 @@ method update_LocalVarInfo(j)
               fname
               )
          i +:= 1
-         } 
+         }
       }
 end
 
 #
-# Prints out the total time of a procedure call in ms 
+# Prints out the total time of a procedure call in ms
 # It is to be used in a console based application such as UDB
 #
 method write_LocalVarInfo( num )
@@ -121,7 +121,7 @@ method write_LocalVarInfo( num )
 
    update_LocalVarInfo(num)
    num := *LocalVarInfo + 1
-  
+
    write("\n-------------------------------------------------------------")
    write("\n---- [The Most (",num,") Local Variables] ----")
    write(left("File Name",10),  " : ",
@@ -149,17 +149,17 @@ end
 
 #
 # updates the Global variabls info,
-# it receives the param j which is the most important j Variables 
+# it receives the param j which is the most important j Variables
 #
 method update_GlobalVarInfo(j)
    local i:=1, k,name, var, pname, fname
-   
+
    if \GlobalVarCount & *GlobalVarCount > 0 then{
       if /j then j := *GlobalVarCount + 1
       else  j >=:= *GlobalVarCount + 1
-  
+
       GlobalVarInfo := reverse(sort(GlobalVarCount,2))[1:j]
-      # 1-"File Name" | # 2-"Proc Name"   | # 3-"#Call"  | # 4-"Var Name" 
+      # 1-"File Name" | # 2-"Proc Name"   | # 3-"#Call"  | # 4-"Var Name"
       # 5-"Last Type" | # 6-"Change Type" | # 7-"#Deref" | # 8-"Avg(Deref/Call)"
       while i <= j  & \GlobalVarInfo & GlobalVarInfo[i][2] > 1 do{
          name := GlobalVar[GlobalVarInfo[i][1]]
@@ -180,12 +180,12 @@ method update_GlobalVarInfo(j)
               fname
               )
          i +:= 1
-         } 
+         }
       }
 end
 
 #
-# Prints out the total time of a procedure call in ms 
+# Prints out the total time of a procedure call in ms
 # It is to be used in a console based application such as UDB
 #
 method write_GlobalVarInfo( num )
@@ -223,7 +223,7 @@ end
 # Initialize the global variables count,
 # This way will eliminate the built ins and the user defined procedures:)
 # This technique is not needed for the local variables.
-# 
+#
 method init_GlobalVarCount()
    local x
 
@@ -264,7 +264,7 @@ end
 #
 # StandAlone is defined when this tool is used as a stand-alone monitor.
 #  Otherwise, this tool can be statically linked into the main utop/udb
-#  source code 
+#  source code
 #
 $ifdef StandAlone
 
@@ -276,9 +276,9 @@ link evinit
 #
 procedure main(arg)
    local obj
-   
+
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   obj := VarProfile()   
+   obj := VarProfile()
 
    while EvGet(obj.eventMask) do{
       if &eventcode == (E_Exit | E_Error) then{
@@ -292,13 +292,13 @@ procedure main(arg)
 end
 
 #
-# This handle_Events procedure is only used udb's external 
+# This handle_Events procedure is only used udb's external
 # inter-program procedure calls
 #
 procedure handle_Events(code, value)
    static obj
 
-   initial{   
+   initial{
       #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
       obj := VarProfile()
       return obj.eventMask
@@ -306,7 +306,7 @@ procedure handle_Events(code, value)
 
    &eventcode  := code
    &eventvalue := value
- 
+
    if &eventcode == (E_Exit | E_Error) then{
       obj.write_LocalVarInfo(10)
       obj.write_GlobalVarInfo(10)

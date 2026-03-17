@@ -21,7 +21,7 @@ class Diversion(id, subject, pos)
 end
 
 class XmlParser : Parser : Error(doc,
-                                  resolver, 
+                                  resolver,
                                   error_handler,
                                   current_divert_id,
                                   divert_stack,
@@ -197,7 +197,7 @@ class XmlParser : Parser : Error(doc,
    # If quiet is non-null, just fail silently on error.
    #
    # @p
-   method parse_names(quiet) 
+   method parse_names(quiet)
       local l
 
       l := []
@@ -206,7 +206,7 @@ class XmlParser : Parser : Error(doc,
          looking_at_space_then_cset(xml_name_start) | break
          spaces()
       }
-      
+
       return l
    end
 
@@ -237,7 +237,7 @@ class XmlParser : Parser : Error(doc,
    # If quiet is non-null, just fail silently on error.
    #
    # @p
-   method parse_nmtokens(quiet) 
+   method parse_nmtokens(quiet)
       local l
 
       l := []
@@ -246,7 +246,7 @@ class XmlParser : Parser : Error(doc,
          looking_at_space_then_cset(xml_name_char) | break
          spaces()
       }
-      
+
       return l
    end
 
@@ -262,7 +262,7 @@ class XmlParser : Parser : Error(doc,
       repeat {
          if any('%') then {
             # Can't reference a pe in the internal subset; see ibm test ibm29n04.xml
-            if /in_ext_subset then 
+            if /in_ext_subset then
                return err("cannnot reference a parameter entity in the internal subset")
             # In an entity value, perefs (%..;) are always expanded
             res ||:= resolve_entity(lookup_pe_reference(parse_pe_reference())) | fail
@@ -278,7 +278,7 @@ class XmlParser : Parser : Error(doc,
             res ||:= move(1) | return err("Unexpected eof")
       }
    end
-   
+
    #
    # [10] AttValue ::= '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
    #
@@ -358,7 +358,7 @@ class XmlParser : Parser : Error(doc,
             } else if any('&') then {
                # Char refs aren't recursively treated; entity refs are.
                if match("&#") then
-                  res ||:= parse_char_ref(1) | fail 
+                  res ||:= parse_char_ref(1) | fail
                else {
                   ref := parse_entity_ref() | fail
                   if member(\circle, ref) then
@@ -417,7 +417,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # [11] SystemLiteral ::= ('"' [^"]* '"') | ("'" [^']* "'") 
+   # [11] SystemLiteral ::= ('"' [^"]* '"') | ("'" [^']* "'")
    #
    # @p
    method parse_system_literal()
@@ -508,7 +508,7 @@ class XmlParser : Parser : Error(doc,
    #
    # [18] CDSect ::= CDStart CData CDEnd
    # [19] CDStart ::= '<![CDATA['
-   # [20] CData ::= (Char* - (Char* ']]>' Char*)) 
+   # [20] CData ::= (Char* - (Char* ']]>' Char*))
    # [21] CDEnd ::= ']]>'
    #
    # @p
@@ -544,7 +544,7 @@ class XmlParser : Parser : Error(doc,
    # [23] XMLDecl ::= '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
    #
    # @p
-   method parse_xml_decl() 
+   method parse_xml_decl()
       local res
       res := XmlDecl()
       ="<?xml" | return err("'<?xml' expected")
@@ -594,7 +594,7 @@ class XmlParser : Parser : Error(doc,
       ="=" | return err("'=' expected")
       opt_spaces()
       return
-   end      
+   end
 
    #
    # [26] VersionNum ::= ([a-zA-Z0-9_.:] | '-')+
@@ -665,7 +665,7 @@ class XmlParser : Parser : Error(doc,
       =">" | return err("'>' expected")
 
       if \res.external_id then {
-         # Resolve and parse the external subset 
+         # Resolve and parse the external subset
          s := resolve(res.external_id) | fail
          start_divert(res.external_id.to_string())
          in_ext_subset := 1
@@ -675,7 +675,7 @@ class XmlParser : Parser : Error(doc,
          }
          in_ext_subset := &null
          end_divert()
-      } 
+      }
 
       return res
    end
@@ -684,7 +684,7 @@ class XmlParser : Parser : Error(doc,
    # Parse (markupdecl | DeclSep) *
    #
    # [28a] DeclSep ::= PEReference | S
-   # [29] markupdecl ::= elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+   # [29] markupdecl ::= elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment
    #
    # @p
    method parse_markup_decls()
@@ -706,7 +706,7 @@ class XmlParser : Parser : Error(doc,
             # Recursively parse the value of the pe.
             ref := parse_pe_reference() | fail
             o := lookup_pe_reference(ref) | fail
-            if \o.str then { 
+            if \o.str then {
                start_divert("macro")
                normalize_eol(o.str) ? {
                   parse_markup_decls() | fail
@@ -727,12 +727,12 @@ class XmlParser : Parser : Error(doc,
             }
          } else if any(xml_space) then
             spaces()
-         else 
+         else
             break
       }
       return
    end
-   
+
    #
    # [30] extSubset ::= TextDecl? extSubsetDecl
    #
@@ -768,7 +768,7 @@ class XmlParser : Parser : Error(doc,
             # Recursively parse the value of the pe.
             ref := parse_pe_reference() | fail
             o := lookup_pe_reference(ref) | fail
-            if \o.str then { 
+            if \o.str then {
                start_divert("macro")
                normalize_eol(o.str) ? {
                   parse_ext_subset_decl() | fail
@@ -789,14 +789,14 @@ class XmlParser : Parser : Error(doc,
             }
          } else if any(xml_space) then
             spaces()
-         else 
+         else
             break
       }
       return
    end
 
    #
-   # [32] SDDecl ::= S 'standalone' Eq (("'" ('yes' | 'no') "'") | ('"' ('yes' | 'no') '"')) 
+   # [32] SDDecl ::= S 'standalone' Eq (("'" ('yes' | 'no') "'") | ('"' ('yes' | 'no') '"'))
    #
    # @p
    method parse_sdecl()
@@ -898,7 +898,7 @@ class XmlParser : Parser : Error(doc,
       parse_eq() | fail
 
       #
-      # Try to get the AttributeDef for this attribute.  
+      # Try to get the AttributeDef for this attribute.
       #
       attdef := (\attlist).attribute_defs[att]
 
@@ -949,7 +949,7 @@ class XmlParser : Parser : Error(doc,
                #
                if \doc.standalone & \o.in_ext_subset then
                   return err("cannot reference an entity declared externally, in a standalone document")
-               if \o.str then { 
+               if \o.str then {
                   # Simple expansion, parsed as content.
                   start_divert("macro")
                   normalize_eol(o.str) ? {
@@ -1025,11 +1025,11 @@ class XmlParser : Parser : Error(doc,
          invalid("Multiple element declarations for element " || name)
       else
          insert(doc.element_declarations, name, element_decl)
-      return 
+      return
    end
 
    #
-   # [46] contentspec ::= 'EMPTY' | 'ANY' | Mixed | children 
+   # [46] contentspec ::= 'EMPTY' | 'ANY' | Mixed | children
    #
    # @p
    method parse_content_spec()
@@ -1122,7 +1122,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # [51] Mixed ::= '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
+   # [51] Mixed ::= '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')'
    # Converts to a string with spaces removed.
    #
    # @p
@@ -1132,7 +1132,7 @@ class XmlParser : Parser : Error(doc,
       tab(dtd_match("(")) | return err("( expected")
       dtd_opt_spaces()
       a := ContentSpec(tab(dtd_match("#PCDATA"))) | return err("'#PCDATA' expected")
-       
+
       dtd_opt_spaces()
 
       seen := set()
@@ -1221,10 +1221,10 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # [54] AttType ::= StringType | TokenizedType | EnumeratedType 
+   # [54] AttType ::= StringType | TokenizedType | EnumeratedType
    # [55] StringType ::= 'CDATA'
    # [56] TokenizedType ::= 'ID' | 'IDREF'| 'IDREFS' | 'ENTITY' | 'ENTITIES' | 'NMTOKEN' | 'NMTOKENS'
-   # [57] EnumeratedType ::= NotationType | Enumeration 
+   # [57] EnumeratedType ::= NotationType | Enumeration
    #
    # @p
    method parse_att_type(attribute_def)
@@ -1245,7 +1245,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # [58] NotationType ::= 'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
+   # [58] NotationType ::= 'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')'
    #
    # @p
    method parse_notation_type()
@@ -1345,11 +1345,11 @@ class XmlParser : Parser : Error(doc,
                if val ? not(parse_nmtokens(1) & pos(0)) then
                   invalid("default attribute value " || val || " must be comprised of valid nmtokens")
             }
-            "ENUMERATION" : { 
+            "ENUMERATION" : {
                if not(member(attribute_def.def_set, val)) then
                   invalid("default attribute value " || val || " is not one of the declared enumerations")
             }
-            "NOTATION" : { 
+            "NOTATION" : {
                if not(member(attribute_def.def_set, val)) then
                   invalid("default attribute value " || val || " is not one of the declared notations")
             }
@@ -1359,8 +1359,8 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # [61] conditionalSect ::= includeSect | ignoreSect 
-   # [62] includeSect ::= '<![' S? 'INCLUDE' S? '[' extSubsetDecl ']]>' 
+   # [61] conditionalSect ::= includeSect | ignoreSect
+   # [62] includeSect ::= '<![' S? 'INCLUDE' S? '[' extSubsetDecl ']]>'
    # [63] ignoreSect ::= '<![' S? 'IGNORE' S? '[' ignoreSectContents* ']]>'
    #
    # @p
@@ -1375,7 +1375,7 @@ class XmlParser : Parser : Error(doc,
          dtd_opt_spaces()
          tab(dtd_match("[")) | return err("'[' expected")
          parse_ignore_sect_contents() | fail
-      } else 
+      } else
          return err("'INCLUDE' or 'IGNORE' expected")
 
       tab(dtd_match("]]>")) | return err("']]>' expected")
@@ -1385,13 +1385,13 @@ class XmlParser : Parser : Error(doc,
 
    #
    # [64] ignoreSectContents ::= Ignore ('<![' ignoreSectContents ']]>' Ignore)*
-   # [65] Ignore ::= Char* - (Char* ('<![' | ']]>') Char*) 
+   # [65] Ignore ::= Char* - (Char* ('<![' | ']]>') Char*)
    #
    # @p
    method parse_ignore_sect_contents()
       repeat {
          tab(upto('<]')) | return err("ignore section not closed")
-         if match("]]>") then 
+         if match("]]>") then
             return
          else if ="<![" then {
             parse_ignore_sect_contents() | fail
@@ -1413,20 +1413,20 @@ class XmlParser : Parser : Error(doc,
 
       if any('x') then {
          s ||:= move(1)
-         c := &digits ++ 'abcdefABCDEF' 
+         c := &digits ++ 'abcdefABCDEF'
          any(c) | return err(c || " expected")
-         digs := tab(many(c)) 
+         digs := tab(many(c))
          i := format_string_to_int(digs, 16) | 63
       } else {
          c := &digits
          any(c) | return err(c || " expected")
-         digs := tab(many(c)) 
+         digs := tab(many(c))
          i := integer(digs) | 63
       }
       s ||:= digs
       s ||:= =";" | return err("';' expected")
 
-      if /expand then 
+      if /expand then
          return s
       else {
          if i = (16r9 | 16rA | 16rD) | (16r20 <= i <= 16rFF) then
@@ -1541,13 +1541,13 @@ class XmlParser : Parser : Error(doc,
       } else {
          name := dtd_parse_name() | fail
          dtd_spaces() | fail
-         val := parse_entity_def() | fail 
+         val := parse_entity_def() | fail
          # Second and subsequent definitions generate a warning, and are ignored.
          if member(doc.general_entities, name) then
             warn("multiple parameter entity definitions for " || name)
          else
             insert(doc.general_entities, name, val)
-      }         
+      }
       dtd_opt_spaces()
       tab(dtd_match(">")) | return err("'>' expected")
       return
@@ -1569,11 +1569,11 @@ class XmlParser : Parser : Error(doc,
             res.notation := parse_ndata_decl() | fail
             member(doc.notation_declarations, res.notation) | invalid("NDATA declaration " || res.notation || " not declared as a NOTATION")
          }
-      } else 
+      } else
          res.str := parse_entity_value() | fail
       return res
    end
-   
+
    #
    # [74] PEDef ::= EntityValue | ExternalID
    # return a string or an ExternalID
@@ -1581,19 +1581,19 @@ class XmlParser : Parser : Error(doc,
    # @p
    method parse_pe_def()
       local res
-         
+
       res := EntityDef()
       res.in_ext_subset := in_ext_subset
       if dtd_match("SYSTEM" | "PUBLIC") then
          res.external_id := parse_external_id() | fail
-      else 
+      else
          res.str := parse_entity_value() | fail
       return res
    end
 
    #
    #
-   # [75] ExternalID ::= 'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
+   # [75] ExternalID ::= 'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral
    #
    # @p
    method parse_external_id()
@@ -1634,7 +1634,7 @@ class XmlParser : Parser : Error(doc,
 
       if looking_at_space_then("version") then
          parse_version_info() | fail
-      
+
       parse_encoding_decl() | fail
 
       opt_spaces()
@@ -1655,7 +1655,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # [80] EncodingDecl ::= S 'encoding' Eq ('"' EncName '"' | "'" EncName "'" ) 
+   # [80] EncodingDecl ::= S 'encoding' Eq ('"' EncName '"' | "'" EncName "'" )
    #
    # @p
    method parse_encoding_decl()
@@ -1690,7 +1690,7 @@ class XmlParser : Parser : Error(doc,
 
    #
    # [82] NotationDecl ::= '<!NOTATION' S Name S (ExternalID | PublicID) S? '>'
-   # [83] PublicID ::= 'PUBLIC' S PubidLiteral 
+   # [83] PublicID ::= 'PUBLIC' S PubidLiteral
    #
    # @p
    method parse_notation_decl()
@@ -1752,7 +1752,7 @@ class XmlParser : Parser : Error(doc,
    #
    # Validate the given element child content; this may fail on error or just emit a warning
    #
-   method validate_children(el, parent_el) 
+   method validate_children(el, parent_el)
       local element_decl, xs, tl
 
       #
@@ -1760,7 +1760,7 @@ class XmlParser : Parser : Error(doc,
       #
       if not member(doc.element_declarations, el.name) then {
          invalid(el.name || " is an undeclared element name")
-         return 
+         return
       }
 
       element_decl := doc.element_declarations[el.name]
@@ -1836,7 +1836,7 @@ class XmlParser : Parser : Error(doc,
                # Insert any default value.
                insert(el.attributes, x[1], \x[2].default_value)
             }
-         }       
+         }
       }
 
       #
@@ -1851,7 +1851,7 @@ class XmlParser : Parser : Error(doc,
       }
    end
 
-   method validate_attribute_value(element_name, attdef, name, val) 
+   method validate_attribute_value(element_name, attdef, name, val)
       local l, entity_def, n
       case attdef.def_type of {
          "CDATA" : {
@@ -1908,18 +1908,18 @@ class XmlParser : Parser : Error(doc,
             if val ? not(parse_nmtokens(1) & pos(0)) then
                invalid("attribute value " || val || " must be comprised of valid nmtokens")
          }
-         "ENUMERATION" : { 
+         "ENUMERATION" : {
             if not(member(attdef.def_set, val)) then
                invalid("attribute value " || val || " is not one of the declared enumerations")
          }
-         "NOTATION" : { 
+         "NOTATION" : {
             if not(member(attdef.def_set, val)) then
                invalid("attribute value " || val || " is not one of the declared notations")
          }
       }
    end
 
-   method start_divert(id) 
+   method start_divert(id)
       push(divert_stack, Diversion(current_divert_id, &subject, &pos))
       current_divert_id := id
    end
@@ -1934,7 +1934,7 @@ class XmlParser : Parser : Error(doc,
    method warn(s)
       local stack
       # No warnings after a fatal error.
-      if \reason then 
+      if \reason then
          fail
 
       stack := copy(divert_stack)
@@ -1955,7 +1955,7 @@ class XmlParser : Parser : Error(doc,
          fail
 
       # None after a fatal error.
-      if \reason then 
+      if \reason then
          fail
 
       stack := copy(divert_stack)
@@ -1972,7 +1972,7 @@ class XmlParser : Parser : Error(doc,
       local stack
 
       # Ensure only one fatal error is ever sent.
-      if \reason then 
+      if \reason then
          fail
 
       error(s)
@@ -2069,7 +2069,7 @@ class XmlParser : Parser : Error(doc,
          try_dtd_insert(i) | fail
       }
    end
-   
+
    #
    # Equivalent to any(), but checks for pe expansions
    #
@@ -2127,7 +2127,7 @@ class XmlParser : Parser : Error(doc,
          if /in_ext_subset then {
             # Only show an error once; this prevents the same error message
             # being produced several times.
-            if /dtd_insert_shown_error then 
+            if /dtd_insert_shown_error then
                invalid("Cannot reference a pe except in the external dtd")
             dtd_insert_shown_error := 1
             fail
@@ -2154,13 +2154,13 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # This method post-processes the parsed tree to fill in the 
+   # This method post-processes the parsed tree to fill in the
    # global names in the XmlElement structures.
    #
    # @p
    method do_namespace_processing()
       local t
-      
+
       t := table()
       insert(t, "xml", "http://www.w3.org/XML/1998/namespace")
 
@@ -2230,7 +2230,7 @@ class XmlParser : Parser : Error(doc,
             if ="xmlns" then {
                next
             }
-            insert(el.attributes_global_name, 
+            insert(el.attributes_global_name,
                    convert_name(resolve_table, k), el.attributes[k]) | fail
          }
       }
@@ -2239,7 +2239,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    #
-   # Given a name "eg SOAP-ENV:Envelope", return the global name, using the 
+   # Given a name "eg SOAP-ENV:Envelope", return the global name, using the
    # given resolve table for the conversion.  The returned value is a
    # GlobalName instance.
    #
@@ -2266,9 +2266,9 @@ class XmlParser : Parser : Error(doc,
       }
    end
 
-   # 
+   #
    # Make a map of namespace id's to uri's from the attributes in the
-   # given element.  
+   # given element.
    #
    # @p
    method make_declarations_map(el)
@@ -2325,7 +2325,7 @@ procedure init_xml_globals()
       xml_letter ++:= char(c)
    # [4] NameChar ::= Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender
    xml_name_char := xml_letter ++ &digits ++ '.-_:'
-   xml_name_start := xml_letter ++ '_:' 
+   xml_name_start := xml_letter ++ '_:'
    # [13] PubidChar ::= #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
    xml_pubid_char := ' \n\r' ++ &lcase ++ &ucase ++ &digits ++ '-\'()+,./:=?;!*#@$_%'
 end

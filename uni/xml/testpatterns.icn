@@ -13,57 +13,57 @@ global p
 procedure main()
    p := XmlParser()
 
-   test("(a,b,c)", 
-        ["abc"], 
+   test("(a,b,c)",
+        ["abc"],
         ["ab", "xy", ""])
 
 
-   test("(a|b|c|d)", 
-        ["a","b","c","d"], 
+   test("(a|b|c|d)",
+        ["a","b","c","d"],
         ["ab", "xy", ""])
 
-   test("(a|b|c|d)*", 
-        ["","abcddababab","cccccc","dddbababbad"], 
+   test("(a|b|c|d)*",
+        ["","abcddababab","cccccc","dddbababbad"],
         ["abx", "xy", "aaaax"])
 
-   test("(a,b?,c)", 
-        ["abc","ac"], 
+   test("(a,b?,c)",
+        ["abc","ac"],
         ["ab", "xy", ""])
 
-   test("(a,(x|y),c)", 
-        ["axc","ayc"], 
+   test("(a,(x|y),c)",
+        ["axc","ayc"],
         ["ab", "ac", ""])
 
-   test("(a*)*", 
-        ["aaa","a","aa",""], 
+   test("(a*)*",
+        ["aaa","a","aa",""],
         ["adb", "xy", "z"])
 
-   test("(a*)+", 
-        ["aaa","a","aa",""], 
+   test("(a*)+",
+        ["aaa","a","aa",""],
         ["adb", "xy", "z"])
 
-   test("(a+)", 
-        ["aaa","a","aa"], 
+   test("(a+)",
+        ["aaa","a","aa"],
         ["adb", "xy", "z",""])
 
-   test("(a*,b*)", 
-        ["aaabb","a","b","", "aab"], 
+   test("(a*,b*)",
+        ["aaabb","a","b","", "aab"],
         ["adb", "xy", "z"])
 
-   test("(a*,b+)*", 
-        ["bbb","","b","abbabbbbbbabbbbabbab", "ab"], 
+   test("(a*,b+)*",
+        ["bbb","","b","abbabbbbbbabbbbabbab", "ab"],
         ["bbbbbaabbbbaaadb", "xy", "z"])
 
-   test("(x*,a,x*,b,x*,c,x*)", 
+   test("(x*,a,x*,b,x*,c,x*)",
         ["xxabxxxxc"],
         ["bbbbbaabbbbaaadb", "xy", "z"])
 
-   test("(x*,x,x,x,x*)", 
+   test("(x*,x,x,x,x*)",
         ["xxx","xxxx","xxxxx"],
         ["", "x", "xx", "z"])
 
-   test("((a|b),(a|d),(a|e))", 
-        ["aaa","ade","ada"], 
+   test("((a|b),(a|d),(a|e))",
+        ["aaa","ade","ada"],
         ["adb", "xy", "z",""])
 
    write("ok")

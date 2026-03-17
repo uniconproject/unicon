@@ -20,7 +20,7 @@ $endif
 #
 #
 # File dialog class.  This class provides a standard file dialog.
-# 
+#
 # @example
 # @ d := FileDialog()
 # @ d.show()
@@ -29,13 +29,13 @@ $endif
 class FileDialog : Dialog(
    init_dir,                # Initial directory name
    init_file,               # Initial file name
-   res,                     # Resulting file path          
+   res,                     # Resulting file path
    dir,                     # TextField directory
    file,                    # TextField filename
-   dlist,                   # TextList of directories            
-   flist,                   # TextList of files            
-   okay,                    #            
-   cancel                   #              
+   dlist,                   # TextList of directories
+   flist,                   # TextList of files
+   okay,                    #
+   cancel                   #
    )
 
    #
@@ -68,7 +68,7 @@ class FileDialog : Dialog(
 
    #
    # Set the initial file/directory from a whole path.
-   # 
+   #
    method set_path(s)
       self.init_dir := directory_name(s)
       self.init_file := file_name(s)
@@ -82,9 +82,9 @@ class FileDialog : Dialog(
    method set_result()
       local path_to_file
       path_to_file := file.get_contents()
-      self.res := if ((\path_to_file)[1] == PATHCHAR) then 
+      self.res := if ((\path_to_file)[1] == PATHCHAR) then
                      path_to_file
-                  else 
+                  else
                      self.get_std_dir() || path_to_file
    end
 
@@ -124,7 +124,7 @@ class FileDialog : Dialog(
       #
       # Go to parent directory (unless at root directory)
       #
-      if value == (".." || PATHCHAR) then {    
+      if value == (".." || PATHCHAR) then {
          if s ~== PATHCHAR then {
             s[-1] := ""
             while s[-1] ~== PATHCHAR do s[-1] := ""
@@ -171,7 +171,7 @@ class FileDialog : Dialog(
    method init_dialog()
       self.set_focus(file)
    end
-   
+
    method component_setup()
       local l
 
@@ -248,7 +248,7 @@ $else
    if (*s > 1) & (s[-1] == PATHCHAR)
 $endif
    then s[-1] := ""
- 
+
    p := open(s) | {
        write(&errout, "get_directory_list: can't open ", image(s))
        fail
@@ -269,7 +269,7 @@ $endif
    close(p)
    return [sort(dir_list), sort(file_list)]
 end
- 
+
 #
 # Return the directory name of the file name s, including the trailing /
 #
@@ -278,7 +278,7 @@ procedure directory_name(s)
    every i := find(PATHCHAR, s)
    return s[1:\i + 1] | ""
 end
- 
+
 #
 # Return the file name of s
 #

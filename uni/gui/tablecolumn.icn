@@ -25,8 +25,8 @@ $define MIN_BUTTON_WIDTH 20
 # parent class, {TextButton}.
 #
 class TableColumn : TextButton(
-   column_width,  
-   is_resizing,       
+   column_width,
+   is_resizing,
    pointer_flag
    )
 
@@ -52,14 +52,14 @@ class TableColumn : TextButton(
 
    method handle_event(e)
       if e === -12 then {
-         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) & 
+         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) &
             self.in_region() &
             (self.x + self.w - CHANGE_SIZE_BORDER <= &x < self.x + self.w) then
             pointer_on()
          else
             pointer_off()
       } else if e === (&lpress | &rpress | &mpress) then {
-         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) & 
+         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) &
             self.in_region() then {
             if(self.x + self.w - CHANGE_SIZE_BORDER <= &x < self.x + self.w) then {
                self.is_resizing := 1
@@ -112,13 +112,13 @@ class TableColumn : TextButton(
          "l" : left_string(self.cbwin, self.tx, yoff, self.label)
          "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label)
          default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
-      }         
+      }
 
       if \self.is_down then {
          cw := Clone(self.cbwin, "drawop=reverse")
          FillRectangle(cw, self.x, self.y, self.w - CHANGE_SIZE_BORDER, self.h)
          Uncouple(cw)
-      } 
+      }
       DrawRaisedRectangle(self.cbwin, self.x + self.w - CHANGE_SIZE_BORDER, self.y + BORDER_WIDTH, CHANGE_SIZE_BORDER, self.h - 2 * BORDER_WIDTH)
 
       Clip(self.cbwin)

@@ -1,6 +1,6 @@
 
 #
-# looptime.icn 
+# looptime.icn
 # Ziad Al-Sharif
 # June 1, 2008
 #
@@ -10,7 +10,7 @@ link syntname
 
 #
 # This class handles loops times,
-# It finds the most n loops took time during the execution 
+# It finds the most n loops took time during the execution
 #
 $ifndef StandAlone
 class LoopTime : Listener(
@@ -19,14 +19,14 @@ class LoopTime (
 $endif
 
    eventMask,         # The monitored events for this detection
-    
+
    procCallCount,     # Table maps each proc name into its number of calls
    loopCount,         # Table maps each used loop into its number of use
 
    loopLastIteration, # Table tracks each loop last num of iterations
    loopIteration,     # Table maps each loop name into its number of iterations
 
-   loopLastTime,      # Table tracks each loop last elapsed time 
+   loopLastTime,      # Table tracks each loop last elapsed time
    loopTime,          # Table maps each loop name into its elapsed time
 
    LoopTimeInfo       # A list with loop times information
@@ -39,8 +39,8 @@ method handle_Events()
    static loopStart := "while every repeat until"
    static loopEnd   := "endwhile endevery endrepeat enduntil"
    static fname, line, pname, k
-   local  loop 
-   
+   local  loop
+
    if &eventcode == E_Pcall then{
       pname := image(&eventvalue)
       pname := pname[find(" ", pname)+1: 0]
@@ -76,9 +76,9 @@ method handle_Events()
          # Here is where the loop ends
          loopLastTime[k] := keyword("time",Monitored) - loopLastTime[k]
          loopTime[k] +:= loopLastTime[k]
-         loopIteration[k] +:= loopLastIteration[k] 
+         loopIteration[k] +:= loopLastIteration[k]
          }
-      } 
+      }
    else if &eventcode == E_Line then{
       loop := syntname(keyword("syntax",Monitored))
       if find(loop,loopStart) then{
@@ -90,30 +90,30 @@ method handle_Events()
               #procCallCount[pname]||"): "||
               loop
          # Here is where the loop iterates
-         loopLastIteration[k] +:=1 
+         loopLastIteration[k] +:=1
          }
       }
 end
 
 #
 # updates the loop time info,
-# it receives the param j which is the most elapsed j loops 
+# it receives the param j which is the most elapsed j loops
 #
 method update_Info(j)
    local i:=1, loop
-   
+
    if /j then j := *loopTime + 1
    else  j >=:= *loopTime + 1
-  
+
    LoopTimeInfo := reverse(sort(loopTime,2))[1:j]
-   # 1-"Seq Num"    | 
+   # 1-"Seq Num"    |
    # 2-"Loop Name"  | # 3-"Total Time" |
    # 4-"loop Count" |
    # 5-"Total Iterations" | # 6-"Avg Time/Iteration" |
    # 7-"Last elapsed Time"| # 8-"Last # Iterations"
    while i <= j  do{
       loop := LoopTimeInfo[i][1]
-      push(LoopTimeInfo[i],i)                     
+      push(LoopTimeInfo[i],i)
       put(LoopTimeInfo[i],
           loopCount[loop],
           procCallCount[loop[find("{",loop)+1:find("}",loop)]],
@@ -127,7 +127,7 @@ method update_Info(j)
 end
 
 #
-# Prints out the total elapsed of a loop in ms 
+# Prints out the total elapsed of a loop in ms
 # It is to be used in a console based application such as UDB
 #
 method write_Info( num )
@@ -139,7 +139,7 @@ method write_Info( num )
    write("\n-------------------------------------------------------------")
    write("\n---- Loop's Time info [The Most (",num,") Loops] ----")
    write(left("Num",3)," | ",
-         left("fname(line){Proc}-Loop Name",30)," : ",        
+         left("fname(line){Proc}-Loop Name",30)," : ",
          left("Total Time",10)," : ",
          left("Loop Count",10)," : ",
          left("Proc Calls",10)," : ",
@@ -187,7 +187,7 @@ end
 #
 # StandAlone is defined when this tool is used as a stand-alone monitor.
 #  Otherwise, this tool can be statically linked into the main utop/udb
-#  source code 
+#  source code
 #
 $ifdef StandAlone
 
@@ -196,11 +196,11 @@ link evinit
 #
 # This main procedure is only used in the standalone mode
 # or udb's external co-expression mode
-# 
+#
 procedure main(arg)
    local obj
-   
-   EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
    obj := LoopTime()
 
    while EvGet(obj.eventMask) do{
@@ -214,17 +214,17 @@ procedure main(arg)
 end
 
 #
-# This handle_Events procedure is only used udb's external 
+# This handle_Events procedure is only used udb's external
 # inter-program procedure calls
 #
 procedure handle_Events(code, value)
    static obj
-   
+
    initial{
-      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
       obj := LoopTime()
       return obj.eventMask
-      } 
+      }
 
    &eventcode  := code
    &eventvalue := value

@@ -20,7 +20,7 @@ global fullPath, visited
 
 import util
 link printf
- 
+
 $define CELL   20                                   # cell size in pixels
 $define BORDER 30                                   # border size in pixels
 
@@ -46,12 +46,12 @@ procedure main(A)
     mw := Args().getOpt("cols") | 88              # Maze width (columns)
     delayms := Args().getOpt("delay")             # Delay between mice creations
     fullPath := []                                # Points in best path
- 
+
     mz := DisplayMaze(GenerateMaze(mh,mw))   # Build and show maze
- 
+
     QMouse(mz.maze,findStart(mz.maze),&null,0)   # Start first quantum mouse
     waitForCompletion() # block until all quantum mice have finished
- 
+
     # Mark the best path into the maze and display it.
     if showPath(mz.maze) then DisplayMazeSolution(mz)
     else {   # Give the person time to examine the failed maze search...
@@ -80,7 +80,7 @@ record Position(r,c)
 # Must match values used in maze generation!
 $define FINISH 64 # exit
 $define START  32 # entrance
-$define PATH  128 
+$define PATH  128
 $define SEEN   16 # bread crumbs for generator
 $define NORTH   8 # sides ...
 $define EAST    4
@@ -202,9 +202,9 @@ end
 procedure waitForCompletion()
    critical qMiceEmpty: while *qMice > 0 do wait(qMiceEmpty)
 end
- 
+
 procedure GenerateMaze(r,c)     # Non-recursive depth first maze generation
-local maze,h,w,rd 
+local maze,h,w,rd
    /h := integer(1 < r) | runerr(r,205)      # valid size 2x2 or better
    /w := integer(1 < c) | runerr(r,205)
    # The maze is a 2-D array implemented as a list of lists, where each cell
@@ -218,17 +218,17 @@ local maze,h,w,rd
    start  := [?h,?w,?4-1,START]              # random [r,c] start & finish
    finish := [?h,?w,(start[3]+2)%4,FINISH]   # w/ opposite side exponent
    every x := start | finish do {
-      case x[3] := 2 ^ x[3] of {             # get side from exponent and 
+      case x[3] := 2 ^ x[3] of {             # get side from exponent and
          NORTH : x[1] := 1                   # project r,c to selected edge
          EAST  : x[2] := w
-         SOUTH : x[1] := h         
+         SOUTH : x[1] := h
          WEST  : x[2] := 1
-         }   
+         }
       maze[x[1],x[2]] +:= x[3] + x[4]        # transcribe s/f to maze
       }
    maze[start[1],start[2]] +:= SEEN
    push(visited := [], Position(start[1],start[2]))
-   rd := [NORTH, EAST, SOUTH, WEST]          # initial list of directions     
+   rd := [NORTH, EAST, SOUTH, WEST]          # initial list of directions
    while *visited > 0 do {
       p := pop(visited)
       r := p.r
@@ -273,27 +273,27 @@ procedure chkPos(maze,r,c,p,wall)
       return Position(r,c)
       }
 end
- 
+
 record mazeinfo(window,maze,filename)               # keepers
- 
+
 procedure DisplayMaze(maze)                         #: show it off
     if CELL < 8 then runerr(205,CELL)                   # too small
- 
+
     wh := (ch := (mh := *maze  ) * CELL) + 2 * BORDER   # win, cell, maze height
     ww := (cw := (mw := *maze[1]) * CELL) + 2 * BORDER  # win, cell, maze width
- 
+
     wparms := [ sprintf("Maze %dx%d",*maze,*maze[1]),   # window parameters
-                "g","bg=white","canvas=hidden",      
+                "g","bg=white","canvas=hidden",
                 sprintf("size=%d,%d",ww,wh),
                 sprintf("dx=%d",BORDER),
                 sprintf("dy=%d",BORDER)]
- 
+
     &window := open!wparms | stop("Unable to open Window")
- 
+
     Fg("black")                                         # Draw full grid
     every DrawLine(x := 0 to cw by CELL,0,x,ch+1)       # . verticals
     every DrawLine(0,y := 0 to ch by CELL,cw+1,y)       # . horizontals
- 
+
     Fg("white")                                         # Set to erase lines
     every y := CELL*((r := 1 to mh)-1) & x := CELL*((c := 1 to mw)-1) do {
        WAttrib("dx="||x+BORDER,"dy="||y+BORDER)         # position @ cell r,c
@@ -301,8 +301,8 @@ procedure DisplayMaze(maze)                         #: show it off
        if iand(maze[r,c],EAST)  ~= EMPTY then DrawLine(CELL,2,CELL,CELL-1)
        if iand(maze[r,c],SOUTH) ~= EMPTY then DrawLine(2,CELL,CELL-1,CELL)
        if iand(maze[r,c],WEST)  ~= EMPTY then DrawLine(0,2,0,CELL-1)
-       }   
- 
+       }
+
     WAttrib(&window,"canvas=normal")
     WAttrib("dx="||(dxy:=BORDER+CELL/2),"dy="||dxy)
     colorCell(start[1],start[2], "red", 3)
@@ -310,7 +310,7 @@ procedure DisplayMaze(maze)                         #: show it off
     until Event() == &lpress
     return mazeinfo(&window,maze,sprintf("maze-%dx%d-%d.gif",r,c,&now))
 end
- 
+
 procedure DisplayMazeSolution(mz)                  #: draw marked PATH
     &window := mz.window
     maze := mz.maze

@@ -20,7 +20,7 @@ $include "guih.icn"
 #
 class Dispatcher : Object(
    dialogs,
-   tickers, 
+   tickers,
    idle_sleep,
    idle_sleep_min,
    idle_sleep_max
@@ -38,7 +38,7 @@ class Dispatcher : Object(
    # @p
    method compute_idle_sleep()
       local n
-      if *tickers = 0 then 
+      if *tickers = 0 then
          idle_sleep := idle_sleep_max
       else {
          #
@@ -85,7 +85,7 @@ class Dispatcher : Object(
 
    #
    # Add a ticker, or reset its time to a new value.
-   # 
+   #
    # @p
    method start_ticker(t, n, d, c)
       insert(tickers, t)
@@ -102,7 +102,7 @@ class Dispatcher : Object(
    #
    # Change a ticker's tick rate, to take effect after its
    # next tick.
-   # 
+   #
    # @p
    method retime_ticker(t, n)
       if \t.ticker_rate then {
@@ -154,7 +154,7 @@ class Dispatcher : Object(
                while *Pending(d.win) > 0 do {
                   #
                   # Discard the event and beep in the window.
-                  # 
+                  #
                   e := ::Event(d.win)
                   if not(e === (-12 | &lrelease | &rrelease | &mrelease | &ldrag | &rdrag | &mdrag)) then
                      Alert(d.win)
@@ -230,7 +230,7 @@ class Dispatcher : Object(
    method find_dialog(class_name)
       local d
       every d := !dialogs do {
-         if /d.is_blocked_flag & 
+         if /d.is_blocked_flag &
             (/class_name | lang::is_instance(d, class_name)) then
              suspend d
       }

@@ -19,10 +19,15 @@ on:
   # Allow running this workflow manually from the Actions tab.
   workflow_dispatch:
 
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   Windows:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
+    timeout-minutes: 45
     strategy:
       matrix:
         cfg:
@@ -51,7 +56,7 @@ jobs:
       shell: bash
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -66,9 +71,18 @@ jobs:
       run: make Test
 
     - name: TestReport
-      run: make -C tests Report
+      if: always()
+      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-report-Windows-${{ matrix.cfg.name }}
+        path: tests/test-report.txt
 
     - name: Summary
+      if: always()
       run: |
         cat unicon-config.log
         cat unicon-features.log
@@ -76,6 +90,7 @@ jobs:
   macOS:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
+    timeout-minutes: 45
     strategy:
       matrix:
         cfg:
@@ -83,7 +98,7 @@ jobs:
         -  { os: macos-latest, name: 'macOS arm', opt: 'CC=clang CXX=clang++' }
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -101,9 +116,18 @@ jobs:
       run: make Test
 
     - name: TestReport
-      run: make -C tests Report
+      if: always()
+      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-report-macOS-${{ matrix.cfg.name }}
+        path: tests/test-report.txt
 
     - name: Summary
+      if: always()
       run: |
         cat unicon-config.log
         cat unicon-features.log
@@ -112,19 +136,47 @@ jobs:
     runs-on: ubuntu-latest
     name: ${{ matrix.cfg.name }}
     container: ${{ matrix.cfg.os }}
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         cfg:
-        -  { os: 'ubuntu:20.04',  name: 'Ubuntu 20.04',   opt: '--enable-werror' }
         -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04',   opt: '--enable-werror' }
         -  { os: 'ubuntu:24.04',  name: 'Ubuntu 24.04',   opt: '--enable-werror' }
-        -  { os: 'fedora:41', name: 'Fedora 41',  opt: '--enable-werror' }
-        -  { os: 'debian:11',     name: 'Debian 11',      opt: '--enable-werror' }
+        -  { os: 'fedora:41',     name: 'Fedora 41',      opt: '--enable-werror' }
+        -  { os: 'debian:13',     name: 'Debian 13',      opt: '--enable-werror' }
         -  { os: 'debian:12',     name: 'Debian 12',      opt: '--enable-werror' }
         -  { os: 'rockylinux:9',  name: 'Rocky Linux 9',  opt: '--enable-werror' }
         -  { os: 'oraclelinux:8', name: 'Oracle Linux 8', opt: '--enable-werror' }
         -  { os: 'alpine:latest', name: 'Alpine Latest',  opt: '' }
     steps:
+
+    - name: Install git for checkout
+      run: |
+        case "${{ matrix.cfg.os }}" in
+           ubuntu*|debian*)
+              apt-get update -q -y
+              DEBIAN_FRONTEND="noninteractive" apt-get install -q -y git
+              ;;
+           oracle*|rocky*|fedora*)
+              dnf -y install git
+              ;;
+           alpine*)
+              apk update
+              apk add git
+              ;;
+        esac
+
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Cache apt packages
+      if: "contains(matrix.cfg.os, 'ubuntu') || contains(matrix.cfg.os, 'debian')"
+      uses: actions/cache@v5
+      with:
+        path: /var/cache/apt/archives/*.deb
+        key: apt-linux-${{ matrix.cfg.os }}-${{ hashFiles('debian/control') }}
+        restore-keys: apt-linux-${{ matrix.cfg.os }}-
 
     - name: Install dependencies
       run: |
@@ -156,9 +208,6 @@ jobs:
               ;;
             esac
 
-    - name: Checkout
-      uses: actions/checkout@v3
-
     - name: Configure
       run: ./configure ${{ matrix.cfg.opt }}
 
@@ -175,15 +224,25 @@ jobs:
       run: make Test
 
     - name: TestReport
-      run: make -C tests Report
+      if: always()
+      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-report-Linux-${{ matrix.cfg.name }}
+        path: tests/test-report.txt
 
     - name: Summary
+      if: always()
       run: |
         cat unicon-config.log
         cat unicon-features.log
 
   Alpine:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       matrix:
         platform:
@@ -196,7 +255,7 @@ jobs:
         sudo apt update && sudo apt install -y binfmt-support
 
     - name: alpine
-      uses: jirutka/setup-alpine@v1
+      uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050
       with:
         arch:  ${{ matrix.platform.arch }}
         branch: v3.20
@@ -205,7 +264,7 @@ jobs:
           diffutils
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
 
     - name: Configure
       run: ./configure --disable-iconc
@@ -220,10 +279,19 @@ jobs:
       shell: alpine.sh {0}
 
     - name: TestReport
-      run: make -C tests Report
+      if: always()
+      run: make -C tests Report 2>&1 | tee tests/test-report.txt
       shell: alpine.sh {0}
 
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-report-Alpine-${{ matrix.platform.arch }}
+        path: tests/test-report.txt
+
     - name: Summary
+      if: always()
       run: |
         cat unicon-config.log
         cat unicon-features.log
@@ -232,6 +300,7 @@ jobs:
   Features:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
+    timeout-minutes: 45
     strategy:
       matrix:
         cfg:
@@ -248,12 +317,20 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
+
+    - name: Cache apt packages
+      uses: actions/cache@v5
+      with:
+        path: /var/cache/apt/archives/*.deb
+        key: apt-features-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('debian/control') }}
+        restore-keys: apt-features-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Install dependencies
       run: |
         sudo apt-get update -q -y
-        sudo apt install -y binfmt-support
+        # binfmt-support is not needed for native builds, re-add if needed for cross builds
+        # sudo apt install -y binfmt-support
         if [[ "${{ matrix.cfg.name }}" = "Ubuntu 32-bit" ]]
         then
         # Install tools to cross compile 32-bit
@@ -294,9 +371,18 @@ jobs:
         VRFY: -2
 
     - name: TestReport
-      run: make -C tests Report
+      if: always()
+      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-report-Features-${{ matrix.cfg.name }}
+        path: tests/test-report.txt
 
     - name: Summary
+      if: always()
       run: |
         cat unicon-config.log
         cat unicon-features.log
@@ -304,12 +390,13 @@ jobs:
   FreeBSD:
    runs-on: ubuntu-latest
    name: FreeBSD
+   timeout-minutes: 45
 
    steps:
-   - uses: actions/checkout@v4
+   - uses: actions/checkout@v6
    - name: Start FreeBSD VM
      id: vm
-     uses: vmactions/freebsd-vm@v1
+     uses: vmactions/freebsd-vm@a2e6d1b21dba89e42e9fb08dc4eecb028147a534
      with:
       usesh: true # default shell is csh, switch to sh
       prepare: |
@@ -335,10 +422,19 @@ jobs:
      run: cd $GITHUB_WORKSPACE && gmake Test
 
    - name: TestReport
+     if: always()
      shell: freebsd {0}
-     run: cd $GITHUB_WORKSPACE && gmake -C tests Report
+     run: cd $GITHUB_WORKSPACE && gmake -C tests Report 2>&1 | tee tests/test-report.txt
+
+   - name: Upload test report
+     if: always()
+     uses: actions/upload-artifact@v6
+     with:
+       name: test-report-FreeBSD
+       path: tests/test-report.txt
 
    - name: Summary
+     if: always()
      shell: freebsd {0}
      run: |
       cd $GITHUB_WORKSPACE
@@ -348,6 +444,7 @@ jobs:
   DebianPkg:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
+    timeout-minutes: 45
     strategy:
       matrix:
         cfg:
@@ -355,7 +452,14 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
+
+    - name: Cache apt packages
+      uses: actions/cache@v5
+      with:
+        path: /var/cache/apt/archives/*.deb
+        key: apt-debianpkg-${{ matrix.cfg.os }}-${{ hashFiles('debian/control') }}
+        restore-keys: apt-debianpkg-${{ matrix.cfg.os }}-
 
     - name: Install dependencies
       run: |
@@ -383,3 +487,14 @@ jobs:
       run: make Test
       env:
         UC: unicon
+
+    - name: TestReport
+      if: always()
+      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-report-DebianPkg
+        path: tests/test-report.txt

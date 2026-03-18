@@ -1,12 +1,14 @@
 link ximage
 link strings
 link findre
+link dap_message
 import json
 global seq, lastUdbCmd, waitingForTerminal, requestQueue, cmdQueue, currStructuredVars, hideConsoleMsg
 
 class Adapter(
    port,
    sock,
+   json_handler,
    dapcomSock,
    filePath,
    shellProcessId,
@@ -39,9 +41,25 @@ class Adapter(
                process_udb_output_table(res)
    end
 
+   #<p>
    # Get the next command in cmdQueue.
+   # example: let's assume VS Code sends this:
+   # {
+   #    "seq": 1,
+   #    "type": "request",
+   #    "command": "initialize",
+   #    "arguments": {}
+   # }
+   #</p>
    method getNextCommand()
-      local request_body, request_seq, request_command, request_arguments, cmdElement, cmd, req
+      local msg, cmdElement, cmd, req, command
+         #<p>
+         # msg: the incoming DAP message object (already parsed JSON)  
+         # cmdElement: a table stored in cmdQueue with fields like "command", "request", and "showResult"
+         # cmd: the actual command to be executed by udb
+         # req: used when draining queued requests
+         # command: the DAP command name like "initialize", "launch", "runInTerminal"
+         #</p>
 
       repeat {
          if *cmdQueue ~= 0 then {
@@ -53,46 +71,48 @@ class Adapter(
             #write("udb command: "||cmd||"\n")
             return cmd
          }
-         every request_body := get_request(sock) do {
-$ifdef VERBOSE
-            write("client -> udb:\n" || request_body)
-$endif
+         every msg := get_request() do {
+            command := msg.get_command()
+
             if \waitingForTerminal then {
-                  if jtou(request_body)["command"] ~== "runInTerminal" then {
-                     #write("put "||jtou(request_body)["command"])
-                     put(requestQueue, request_body)
+                  if command ~== "runInTerminal" then {
+                     #write("put "||jtou(msg)["command"])
+                     # store the message in a queue to be processed later
+                     put(requestQueue, msg)
                      #write(ximage(requestQueue))
                      next
                   }
                   else {
                      waitingForTerminal := &null
-                     process_request(request_body)
+                     process_request(msg)
                      load_cmds()
 
+                     # drain any requests that came in while waiting for the terminal and process them in order
                      while req := \pop(requestQueue) do {
                         process_request(req)
                      }
                   }
             }
+            # if not waiting for terminal, process the request immediately
             else {
-               process_request(request_body)
+               process_request(msg)
             }
          }
       }
    end
 
-   method put_cmdQueue(cmd, requestBody, hideResult)
+   method put_cmdQueue(cmd, msg, hideResult)
       local cmdElement := table(), showResult
       cmdElement["command"] := cmd
-      cmdElement["request"] := \requestBody
+      cmdElement["request"] := \msg
       if /hideResult then cmdElement["showResult"] := "__true__"
       put(cmdQueue, cmdElement)
    end
 
-   method push_cmdQueue(cmd, requestBody, hideResult)
+   method push_cmdQueue(cmd, msg, hideResult)
       local cmdElement := table(), showResult
       cmdElement["command"] := cmd
-      cmdElement["request"] := \requestBody
+      cmdElement["request"] := \msg
       if /hideResult then cmdElement["showResult"] := "__true__"
       push(cmdQueue, cmdElement)
    end
@@ -120,72 +140,46 @@ $endif
     end
 
    # Given a DAP client request body, process that request.
-   method process_request(request_json)
-      local request_body, request_seq, request_command, request_arguments, response_body
+   method process_request(msg)
+      local request_seq, request_command, request_arguments, response_body
 
-      request_body := jtou(request_json) | fail
-
-      request_seq := request_body["seq"]
-      request_command := request_body["command"]
-      request_arguments := request_body["arguments"]
-      response_body := request_body["body"]
+      request_seq := msg.get_seq()
+      request_command := msg.get_command()
+      request_arguments := msg.get_arguments()
+      response_body := msg.get_body()
 
       #write("client -> udap: " || request_json||"\n")
 
       case request_command of {
          "initialize": { initialize(request_seq, request_command, request_arguments) }
          "launch" : { launch(request_seq, request_command, request_arguments) }
-         "setBreakpoints" : { set_breakpoints(request_body, request_seq, request_command, request_arguments) }
-         "setDataBreakpoints" : { set_watchpoints(request_body, request_seq, request_command, request_arguments) }
-         "dataBreakpointInfo" : { watchpoint_info(request_body, request_seq, request_command, request_arguments)}
-         "configurationDone" : { put_cmdQueue("run", request_body); if /udbError then acknowledge(request_seq, request_command) }
+         "setBreakpoints" : { set_breakpoints(msg, request_seq, request_command, request_arguments) }
+         "setDataBreakpoints" : { set_watchpoints(msg, request_seq, request_command, request_arguments) }
+         "dataBreakpointInfo" : { watchpoint_info(msg, request_seq, request_command, request_arguments)}
+         "configurationDone" : { put_cmdQueue("run", msg); if /udbError then acknowledge(request_seq, request_command) }
          "threads" : { threads(request_seq, request_command, 1) }
-         "continue" : { put_cmdQueue("cont", request_body); if /udbError then acknowledge(request_seq, request_command) }
-         "next" : { put_cmdQueue("next", request_body); if /udbError then acknowledge(request_seq, request_command) }
-         "stepIn" : { put_cmdQueue("step", request_body); if /udbError then acknowledge(request_seq, request_command) }
-         "stepOut" : { put_cmdQueue("return", request_body); if /udbError then acknowledge(request_seq, request_command) }
-         "stackTrace" : { put_cmdQueue("bt", request_body, 1)}
-         "scopes" : { put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1);
-                     every put_cmdQueue(![: "print -"||!"glsp" :], request_body, 1) }
-         "variables" : { variables(request_body, request_seq, request_command, request_arguments) }
-         "setVariable": { setVariable(request_body, request_arguments) }
+         "continue" : { put_cmdQueue("cont", msg); if /udbError then acknowledge(request_seq, request_command) }
+         "next" : { put_cmdQueue("next", msg); if /udbError then acknowledge(request_seq, request_command) }
+         "stepIn" : { put_cmdQueue("step", msg); if /udbError then acknowledge(request_seq, request_command) }
+         "stepOut" : { put_cmdQueue("return", msg); if /udbError then acknowledge(request_seq, request_command) }
+         "stackTrace" : { put_cmdQueue("bt", msg, 1)}
+         "scopes" : { put_cmdQueue("frame "||request_arguments["frameId"], msg, 1);
+                     every put_cmdQueue(![: "print -"||!"glsp" :], msg, 1) }
+         "variables" : { variables(msg, request_seq, request_command, request_arguments) }
+         "setVariable": { setVariable(msg, request_arguments) }
          "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
-         "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"] }
-         "evaluate" : { evaluate(request_body, request_seq, request_command, request_arguments) }
+         "runInTerminal" : { if \response_body & member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"]}
+         "evaluate" : { evaluate(msg, request_seq, request_command, request_arguments) }
          default: { write("Don't know what to do with: ", request_command) }
       }
    end
 
    # Attempt to read messages from client given a socket and returns each message as a generator.
-   method get_request(sock)
-      local request_body, msg, len
-
-      while /request_body | request_body == "" do {
-
-         select(sock)
-
-         msg := ready(sock)
-
-         # Handling socket reading anomoly: header alone or header + request_body
-         while msg ~== "" do {
-            msg ? {
-               tab(find("Content-Length:") + 16)
-               len := integer(tab(many(&digits)))
-               tab(upto("\r\n\r\n") + 4)
-               if pos(0) then {
-                  request_body := ready(sock, len)
-               }
-               else {
-                  request_body := move(len)
-               }
-               until *request_body = len do {
-                  (*select(sock, 5000) ~= 0) | break
-                  request_body ||:= ready(sock, len)
-               }
-               msg := tab(0)
-            }
-            suspend request_body
-         }
+   method get_request()
+      local t, msg
+      while t := json_handler.get_msg() do {
+         if msg := DAP_Message().from_table(t) then
+         suspend msg
       }
    end
 
@@ -333,7 +327,7 @@ $endif
    end
 
    # Handles all the things required from a client "setBreakpoints" request.
-   method set_breakpoints(request_body, request_seq, request_command, request_arguments)
+   method set_breakpoints(msg, request_seq, request_command, request_arguments)
       local pth, filename
 
       if member(request_arguments["source"], "path") then
@@ -350,18 +344,18 @@ $endif
          filename := tab(0)
       }
 
-      put_cmdQueue("clear break " || filename || " all", request_body, 1)
+      put_cmdQueue("clear break " || filename || " all", msg, 1)
       numBreakpoints +:= 1
 
       if member(request_arguments, "breakpoints") then {
          every bp := !request_arguments["breakpoints"] do {
-            put_cmdQueue("b " || filename || ":" || bp["line"], request_body)
+            put_cmdQueue("b " || filename || ":" || bp["line"], msg)
             numBreakpoints +:= 1
          }
       }
       else if member(request_arguments, "lines") then {
          every line := !request_arguments["lines"] do {
-            put_cmdQueue("b " || filename || ":" || line, request_body)
+            put_cmdQueue("b " || filename || ":" || line, msg)
             numBreakpoints +:= 1
          }
       }
@@ -372,11 +366,11 @@ $endif
       }
    end
 
-   method set_watchpoints(request_body, request_seq, request_command, request_arguments)
+   method set_watchpoints(msg, request_seq, request_command, request_arguments)
       local watchType, condition, silentCount
       watchpoints := request_arguments["breakpoints"]
 
-      put_cmdQueue("clear watch", request_body, 1)
+      put_cmdQueue("clear watch", msg, 1)
       numWatchpoints +:= 1
 
       every wp := !watchpoints do {
@@ -386,15 +380,15 @@ $endif
          }
          condition := \wp["condition"] | ""
          silentCount := "-silent "||\wp["hitCondition"] | ""
-         put_cmdQueue(watchType||" "||silentCount||" "||wp["dataId"]||" "||condition, request_body)
+         put_cmdQueue(watchType||" "||silentCount||" "||wp["dataId"]||" "||condition, msg)
          numWatchpoints +:= 1
       }
 
    end
 
-   method watchpoint_info(request_body, request_seq, request_command, request_arguments)
+   method watchpoint_info(msg, request_seq, request_command, request_arguments)
    local res, body
-      #write(ximage(request_body))
+      #write(ximage(msg))
 
       body := [
          "dataId": request_arguments["name"]
@@ -424,11 +418,11 @@ $endif
       writes(sock, res)
    end
 
-   method variables(request_body, request_seq, request_command, request_arguments)
+   method variables(msg, request_seq, request_command, request_arguments)
       local reqRef, keyName
       reqRef := request_arguments["variablesReference"]
       if reqRef < 5 then
-         put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], request_body, 1)
+         put_cmdQueue("print -" || "glsp"[request_arguments["variablesReference"]], msg, 1)
       else {
          # any ref passed by vscode has already been stored in currStructuredVars, so just process what's stored in there
          struct := currStructuredVars[reqRef]["value"]
@@ -463,7 +457,7 @@ $endif
       }
    end
 
-   method setVariable(request_body, request_arguments)
+   method setVariable(msg, request_arguments)
       local varName, varVal, reqRef
       varVal := request_arguments["value"]
       reqRef := request_arguments["variablesReference"]
@@ -473,7 +467,7 @@ $endif
          varName := ""
       varName ||:= request_arguments["name"]
 
-      put_cmdQueue("e "||varName||" := "||varVal, request_body, 1)
+      put_cmdQueue("e "||varName||" := "||varVal, msg, 1)
    end
 
    # Default response for request that only requires an acknowledgement.
@@ -489,7 +483,7 @@ $endif
    method process_udb_output_table(outputTable)
       local udbRes := "", event, curCmd, body
 
-      curCmd := (\currentRequestBody)["command"] | "none"
+      curCmd := (\currentRequestBody).get_command() | "none"
 
       udbRes := outputTable["consoleMsg"]
 
@@ -574,7 +568,7 @@ $endif
    method processBreakpointResult(res)
       local body
       if \res["success"] == "__false__" then {
-         response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+         response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
          writes(sock, response)
          return
       }
@@ -593,7 +587,7 @@ $endif
       }
       if bpSuccess == numBreakpoints then {
          body := table("breakpoints", breakpointList)
-         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+         response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
          writes(sock, response)
 
          bpSuccess := 0
@@ -624,7 +618,7 @@ $endif
       }
       if wpSuccess == numWatchpoints then {
          body := table("breakpoints", watchpointList)
-         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+         response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
          writes(sock, response)
 
          wpSuccess := 0
@@ -637,7 +631,7 @@ $endif
       static frames := []
 
       if \res["success"] == "__false__" then {
-         response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+         response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
          writes(sock, response)
          return
       }
@@ -648,7 +642,7 @@ $endif
             put(frames, res)
 
             if *frames = res["levels"] then {
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("stackFrames", frames))
+               response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), table("stackFrames", frames))
                writes(sock, response)
                frames := []
             }
@@ -685,7 +679,7 @@ $endif
          }
       }
       if numScopes = 5 then {
-         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("scopes", scopesList))
+         response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), table("scopes", scopesList))
          writes(sock, response)
 
          numScopes := 0
@@ -722,20 +716,20 @@ $endif
                }
             }
          }
-         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], table("variables", variables))
+         response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), table("variables", variables))
          writes(sock, response)
       }
    end
 
    method addStructuredVar(val)
       local varName, reqRef
-      reqRef := currentRequestBody["arguments"]["variablesReference"]
+      reqRef := currentRequestBody.get_arguments()["variablesReference"]
       if type(val) == ("list" | "table" ) | match("record"|"object", image(val)) then {
          if reqRef >= 5 then
             varName := currStructuredVars[reqRef]["name"]
          else
             varName := ""
-         varName ||:= currentRequestBody["arguments"]["name"]
+         varName ||:= currentRequestBody.get_arguments()["name"]
          put(currStructuredVars, [
             "name": varName
             "value": val
@@ -750,7 +744,7 @@ $endif
       local response, body, ref
       if res["type"] == "eval" then {
          if \res["success"] == "__false__" then {
-            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
             writes(sock, response)
             return
          }
@@ -762,7 +756,7 @@ $endif
             "type": type(res["result"])
             "variablesReference": ref
          ]
-         response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+         response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
          writes(sock, response)
       }  
       
@@ -784,7 +778,7 @@ $endif
       if res["type"] == "eval" then {
          if res["success"] == "__true__" then {
             if \noBody then {
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+               response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command())
             }
             else {
                body := [
@@ -792,7 +786,7 @@ $endif
                   "type": type(res["result"])
                   "variablesReference": ref
                ]
-               response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+               response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
             }
             writes(sock, response)
          }
@@ -801,7 +795,7 @@ $endif
                "result": replace(res["result"], "\"", "\\\"")
                "variablesReference": ref
             ]
-            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"], body)
+            response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
             writes(sock, response)
          }
       }
@@ -812,11 +806,11 @@ $endif
                "type": replace((type(res["result"])), "\"", "\\\"")
                "variablesReference": ref
             ]
-            response := build_response(currentRequestBody["seq"], "__true__", currentRequestBody["command"])
+            response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command())
             writes(sock, response)
          }
          else {
-            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
             writes(sock, response)
          }
       }
@@ -837,7 +831,7 @@ $endif
             writes(sock, event)
          }
          else {
-            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
             writes(sock, response)
          }
       }
@@ -858,14 +852,14 @@ $endif
             writes(sock, event)
          }
          else {
-            response := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"])
+            response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
             writes(sock, response)
          }
       }
    end
 
    # Handles all the things required from a client "evaluate" request.
-   method evaluate(request_body, request_seq, request_command, request_arguments)
+   method evaluate(msg, request_seq, request_command, request_arguments)
       local res, expression, result := "", isEvalExp
       if request_arguments["context"] == "repl" then {
          expression := request_arguments["expression"]
@@ -886,13 +880,13 @@ $endif
          }
 
          if member(request_arguments, "frameId") then
-            put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
-         put_cmdQueue(expression, request_body, hideConsoleMsg)
+            put_cmdQueue("frame "||request_arguments["frameId"], msg, 1)
+         put_cmdQueue(expression, msg, hideConsoleMsg)
       }
       else if request_arguments["context"] == "watch" then {
          expression := "e "||request_arguments["expression"]
-         put_cmdQueue("frame "||request_arguments["frameId"], request_body, 1)
-         put_cmdQueue(expression, request_body, 1)
+         put_cmdQueue("frame "||request_arguments["frameId"], msg, 1)
+         put_cmdQueue(expression, msg, 1)
       }
    end
 
@@ -901,7 +895,7 @@ $endif
       local errorText, errorMessageTable, res, event
       udbError := "__true__"
 
-      errorText := "Unicon Debugger experienced an error during " || currentRequestBody["command"] || " request. "
+      errorText := "Unicon Debugger experienced an error during " || currentRequestBody.get_command() || " request. "
       if \outputTable then {
          errorText ||:= "Error number: " || outputTable["errornumber"] || ". "
          if member(outputTable, "errortext") then errorText ||:= "Error text: " || outputTable["errortext"] || ". "
@@ -913,7 +907,7 @@ $endif
       if \outputTable then errorMessageTable["id"] := outputTable["errornumber"]
       else errorMessageTable["id"] := 0
 
-      res := build_response(currentRequestBody["seq"], "__false__", currentRequestBody["command"], ["error": errorMessageTable])
+      res := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command(), ["error": errorMessageTable])
       writes(sock, res)
 
       event := build_event("terminated")
@@ -956,6 +950,7 @@ $endif
       local names := [: "-"||!"glsp" :], values := ["Globals", "Locals", "Statics", "Params"]
       sock := open_sock(port)
       if /sock then stop("failed to connect to ",port)
+      json_handler := JSON_HTTPSocket(sock)
 
       seq := 1
       currStructuredVars := []
@@ -972,7 +967,7 @@ $endif
       breakpointList := []
       bpSuccess := 0
       numWatchpoints := 0
-      watchpointsList := []
+      watchpointList := []
       wpSuccess := 0
       scopesList := []
       numScopes := 0

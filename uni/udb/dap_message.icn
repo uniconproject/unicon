@@ -1,0 +1,47 @@
+   #<p>
+   #   <[param t The parsed message as a json table.]>
+   #</p>
+class DAP_Message(t)
+
+   #<p>
+   #   Converts the raw JSON string into a parsed DAP message object. 
+   #   <[param s Json String.]>
+   #   <[returns the current object instance.]>
+   #</p>
+   method parse(s)
+      t := jtous(s) | fail
+      if /t["type"] then
+         fail
+      return self
+   end
+
+   method get_seq()
+      return t["seq"]
+   end
+
+   method get_type()
+      return t["type"]
+   end
+
+   method get_command()
+      return t["command"] | t["event"] 
+   end
+
+   method get_arguments()
+      return \t["arguments"] | table()
+   end
+
+   method get_body()
+      return \t["body"] | table()
+   end
+
+   method has_field(name)
+      return member(t, name)
+   end
+
+   method from_table(tab)
+      t := tab
+      if \t["type"] then
+         return self
+   end
+end

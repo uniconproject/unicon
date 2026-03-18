@@ -1,0 +1,114 @@
+import json
+
+class DAP_TestClient(sock, pending)
+
+   method connect(port)
+      sock := open("127.0.0.1:" || port, "n") | stop("failed to connect")
+      pending := ""
+      return self
+   end
+
+   method send_request(seq, command, arguments)
+      local req, body
+
+      req := table()
+      req["seq"] := seq
+      req["type"] := "request"
+      req["command"] := command
+      req["arguments"] := \arguments | table()
+
+      body := tojson(req) | stop("json encode failed")
+      writes(sock, "Content-Length: ", *body, "\r\n\r\n", body)
+   end
+
+   method read_header()
+      local len, data, chunk, p, rest
+
+      data := pending
+      pending := ""
+
+      repeat {
+         if p := find("Content-Length:", data) then {
+            rest := data[p:0]
+            rest ? {
+               ="Content-Length:"
+               tab(upto(&digits))
+               len := integer(tab(many(&digits))) | fail
+               ="\r\n\r\n" | fail
+               pending := tab(0)
+               return len
+            }
+         }
+
+         *select(\sock, 5000) > 0 | fail
+         chunk := ready(sock)
+         \chunk | fail
+         chunk ~== "" | fail
+         data ||:= chunk
+      }
+   end
+
+   method read_body(len)
+      local body, chunk
+
+      body := pending
+      pending := ""
+
+      while *body < len do {
+         *select(\sock, 5000) > 0 | fail
+         chunk := ready(sock, len - *body)
+         \chunk | fail
+         chunk ~== "" | fail
+         body ||:= chunk
+      }
+
+      if *body > len then {
+         pending := body[len+1:0]
+         body := body[1:len+1]
+      }
+
+      return body
+   end
+
+   method read_msg()
+      local len
+      len := read_header() | fail
+      return read_body(len)
+   end
+
+end
+
+procedure main(args)
+   local client, port, resp, cmd, seq
+
+   if *args = 0 then
+      stop("usage: test_adapter <port>")
+
+   port := args[1]
+   client := DAP_TestClient().connect(port)
+   seq := 1
+
+   repeat {
+      writes("command> ")
+      cmd := read() | break
+
+      if cmd == "quit" then break
+
+      client.send_request(seq, cmd, table())
+      seq +:= 1
+
+      if resp := client.read_msg() then {
+         write("response:")
+         write(resp)
+      } else {
+         write("no response received")
+      }
+
+      if resp := client.read_msg() then {
+         write("event:")
+         write(resp)
+      } else {
+         write("no event received")
+      }
+   }
+end

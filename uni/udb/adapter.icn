@@ -206,7 +206,7 @@ class Adapter(
          "message": "Failed to convert response to json."
          ])
 
-      responseHeader := "Content-Length:" || *responseBody || "\r\n\r\n"
+      responseHeader := "Content-Length: " || *responseBody || "\r\n\r\n"
 
       seq +:= 1
 
@@ -229,7 +229,7 @@ $endif
       requestTable["arguments"] := \arguments
 
       requestBody := tojson(requestTable)
-      requestHeader := "Content-Length:" || *requestBody || "\r\n\r\n"
+      requestHeader := "Content-Length: " || *requestBody || "\r\n\r\n"
 
       seq +:= 1
 
@@ -256,7 +256,7 @@ $endif
          "type": "event";
          "event": event
          ])
-      eventHeader := "Content-Length:" || *eventBody || "\r\n\r\n"
+      eventHeader := "Content-Length: " || *eventBody || "\r\n\r\n"
 
       seq +:= 1
 
@@ -293,11 +293,16 @@ $endif
       local res, pth, event, dapPort
 
       pth := request_arguments["program"]
-      pth ? {
+      \pth ? {
          tab(match("^\"\\"))
          pth := tab(find(".icn"))
       }
       filePath := \pth | request_arguments["program"]
+      if /filePath then {
+         res := build_response(request_seq, "__false__", request_command, &null, "launch request missing 'program'")
+         writes(sock, res)
+         return
+      }
 
       if member(request_arguments, "args") then {
          tpArgs := request_arguments["args"]

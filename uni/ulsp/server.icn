@@ -51,6 +51,7 @@ class Server(
             fail
          }
 
+      # Route each method name to its handler.
       case meth of {
          "initialize" : initialize(msg)
          "textDocument/completion" : completion(msg)
@@ -136,12 +137,15 @@ class Server(
 
       capabilitiesTable := [
          "capabilities": [
+            # Trigger completion when user types "." or ":".
             "completionProvider": [
                "triggerCharacters": [".", ":"]
             ];
+            # Full document sync.
             "textDocumentSync": 1;
             "signatureHelpProvider": [
                "contextSupport": "__true__";
+               # Trigger signature help when user types "(".
                "triggerCharacters": ["("]
             ];
             "hoverProvider": "__true__";
@@ -378,16 +382,19 @@ class Server(
 
       case mode of {
          "s" : {
+            # "na" => open network socket as server and accept a client.
             openopt ||:= "a"
             mstring := "server"
          }
          "c" : {
+            # "n" => open network socket as client and connect out.
             mstring := "client"
          }
          default: { Logger.error("Unknown mode: " || mode) }
       }
 
       Logger.info("Starting Unicon LSP in ", mstring, " mode at ", port)
+      # Retry a few times in case client/server starts a little late.
       every 1 to 5 do {
          if sock := open(port, openopt) then
             break

@@ -1,0 +1,74 @@
+import json
+link jsonrpc
+
+class DAP_TestClient : JSON_HTTPSocket()
+
+   method connect(port)
+      sock := open("127.0.0.1:" || port, "n") | stop("failed to connect")
+      return self
+   end
+
+   method send_request(seq, command, arguments)
+      local req
+
+      req := table()
+      req["seq"] := seq
+      req["type"] := "request"
+      req["command"] := command
+      req["arguments"] := \arguments | table()
+      return send_msg(req)
+   end
+
+end
+
+procedure main(args)
+   local client, port, msg, cmd, seq, kind
+
+   if *args = 0 then
+      stop("usage: test_adapter <port>")
+
+   port := args[1]
+   client := DAP_TestClient().connect(port)
+   seq := 1
+
+   repeat {
+      writes("command> ")
+      cmd := read() | break
+
+      if cmd == "quit" then
+         break
+
+      client.send_request(seq, cmd, table())
+      seq +:= 1
+
+      msg := client.get_msg(5000) | {
+         write("no message received")
+         next
+      }
+
+      repeat {
+         kind := \msg["type"] | "unknown"
+
+         case kind of {
+            "response": {
+               write("response:")
+               write(tojson(msg))
+            }
+            "event": {
+               write("event:")
+               write(tojson(msg))
+            }
+            "request": {
+               write("request:")
+               write(tojson(msg))
+            }
+            default: {
+               write("message:")
+               write(tojson(msg))
+            }
+         }
+
+         msg := client.get_msg(200) | break
+      }
+   }
+end

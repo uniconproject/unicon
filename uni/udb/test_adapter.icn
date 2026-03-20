@@ -1,85 +1,28 @@
 import json
+link jsonrpc
 
-class DAP_TestClient(sock, pending)
+class DAP_TestClient : JSON_HTTPSocket()
 
    method connect(port)
       sock := open("127.0.0.1:" || port, "n") | stop("failed to connect")
-      pending := ""
       return self
    end
 
    method send_request(seq, command, arguments)
-      local req, body
+      local req
 
       req := table()
       req["seq"] := seq
       req["type"] := "request"
       req["command"] := command
       req["arguments"] := \arguments | table()
-
-      body := tojson(req) | stop("json encode failed")
-      writes(sock, "Content-Length: ", *body, "\r\n\r\n", body)
-   end
-
-   method read_header()
-      local len, data, chunk, p, rest
-
-      data := pending
-      pending := ""
-
-      repeat {
-         if p := find("Content-Length:", data) then {
-            rest := data[p:0]
-            rest ? {
-               ="Content-Length:"
-               tab(upto(&digits))
-               len := integer(tab(many(&digits))) | fail
-               ="\r\n\r\n" | fail
-               pending := tab(0)
-               return len
-            }
-         }
-
-         *select(\sock, 5000) > 0 | fail
-         chunk := ready(sock)
-         \chunk | fail
-         chunk ~== "" | fail
-         data ||:= chunk
-      }
-   end
-
-   method read_body(len)
-      local body, chunk
-
-      body := pending
-      pending := ""
-
-      while *body < len do {
-         *select(\sock, 5000) > 0 | fail
-         chunk := ready(sock, len - *body)
-         \chunk | fail
-         chunk ~== "" | fail
-         body ||:= chunk
-      }
-
-      if *body > len then {
-         pending := body[len+1:0]
-         body := body[1:len+1]
-      }
-
-      return body
-   end
-
-   method read_msg()
-      local len
-      len := read_header() | fail
-      return read_body(len)
+      return send_msg(req)
    end
 
 end
 
 procedure main(args)
-   local client, port, resp, cmd, seq
+   local client, port, msg, cmd, seq, kind
 
    if *args = 0 then
       stop("usage: test_adapter <port>")
@@ -92,23 +35,40 @@ procedure main(args)
       writes("command> ")
       cmd := read() | break
 
-      if cmd == "quit" then break
+      if cmd == "quit" then
+         break
 
       client.send_request(seq, cmd, table())
       seq +:= 1
 
-      if resp := client.read_msg() then {
-         write("response:")
-         write(resp)
-      } else {
-         write("no response received")
+      msg := client.get_msg(5000) | {
+         write("no message received")
+         next
       }
 
-      if resp := client.read_msg() then {
-         write("event:")
-         write(resp)
-      } else {
-         write("no event received")
+      repeat {
+         kind := \msg["type"] | "unknown"
+
+         case kind of {
+            "response": {
+               write("response:")
+               write(tojson(msg))
+            }
+            "event": {
+               write("event:")
+               write(tojson(msg))
+            }
+            "request": {
+               write("request:")
+               write(tojson(msg))
+            }
+            default: {
+               write("message:")
+               write(tojson(msg))
+            }
+         }
+
+         msg := client.get_msg(200) | break
       }
    }
 end

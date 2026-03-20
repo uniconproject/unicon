@@ -1,7 +1,7 @@
 BASE=../..
 include $(BASE)/Makedefs.uni
 
-EXEs    = udb
+EXEs    = udb test_adapter
 DEL     = -rm
 CLEAN   = clean
 cflags  = $(UFLAGS) -c 
@@ -53,9 +53,12 @@ Assertions:
 tools:
 	cd $(LIB); $(MAKE) tools
 
-udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
-	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
+udb: $(UFILES) $(LIBRARY) $(DTA_UFILES) ../lib/jsonrpc.u
+	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) ../lib/jsonrpc.u -o udb
 	$(CP) udb$(EXE) ../../bin
+
+test_adapter: test_adapter.u ../lib/jsonrpc.u
+	$(UC) $(ldflags) test_adapter.u ../lib/jsonrpc.u -o test_adapter
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb

@@ -3,18 +3,6 @@
    #</p>
 class DAP_Message(t)
 
-   #<p>
-   #   Converts the raw JSON string into a parsed DAP message object. 
-   #   <[param s Json String.]>
-   #   <[returns the current object instance.]>
-   #</p>
-   method parse(s)
-      t := jtous(s) | fail
-      if /t["type"] then
-         fail
-      return self
-   end
-
    method get_seq()
       return t["seq"]
    end
@@ -24,7 +12,7 @@ class DAP_Message(t)
    end
 
    method get_command()
-      return t["command"] | t["event"] 
+      return \t["command"] | t["event"] 
    end
 
    method get_arguments()

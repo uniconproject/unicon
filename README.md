@@ -127,6 +127,9 @@ Go into the Unicon directory and run:
 ./configure
 make -j
 ```
+Graphics use X11 by default on Linux. `./configure --enable-sdl-graphics` uses
+SDL3 instead (it needs the SDL3 and FreeType development packages; fontconfig
+is used to find fonts when it is installed). The SDL backend is 2D only.
 After that you can add `unicon/bin` to the $PATH environment variable or install Unicon instead:
 ```
 make install
@@ -140,8 +143,15 @@ explicitly set the compiler as follows:
 ```
 ./configure CC=clang CXX=clang++
 ```
-If you want access to the graphics facilities of Unicon, you also need to download
-and install the XQuartz package from https://www.xquartz.org/.
+For the graphics facilities of Unicon, install SDL3 and FreeType, for example
+with Homebrew:
+```
+brew install pkg-config sdl3 freetype
+```
+configure then builds the native SDL graphics backend; no X server is needed.
+Without SDL3, configure falls back to X11, which needs the XQuartz package from
+https://www.xquartz.org/. `./configure --disable-sdl-graphics` asks for X11
+even when SDL3 is installed.
 For native SSH/SFTP support, install libssh (for example `brew install libssh`).
 
 ### *BSD

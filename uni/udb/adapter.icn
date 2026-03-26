@@ -157,7 +157,7 @@ class Adapter(
          "setDataBreakpoints" : { set_watchpoints(msg, request_seq, request_command, request_arguments) }
          "dataBreakpointInfo" : { watchpoint_info(msg, request_seq, request_command, request_arguments)}
          "configurationDone" : { put_cmdQueue("run", msg); if /udbError then acknowledge(request_seq, request_command) }
-         "threads" : { threads(request_seq, request_command, 1) }
+         "threads" : { threads(request_seq, request_command) }
          "continue" : { put_cmdQueue("cont", msg); if /udbError then acknowledge(request_seq, request_command) }
          "next" : { put_cmdQueue("next", msg); if /udbError then acknowledge(request_seq, request_command) }
          "stepIn" : { put_cmdQueue("step", msg); if /udbError then acknowledge(request_seq, request_command) }
@@ -168,7 +168,7 @@ class Adapter(
          "variables" : { variables(msg, request_seq, request_command, request_arguments) }
          "setVariable": { setVariable(msg, request_arguments) }
          "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
-         "runInTerminal" : { if \response_body & member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"]}
+         "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"]}
          "evaluate" : { evaluate(msg, request_seq, request_command, request_arguments) }
          default: { write("Don't know what to do with: ", request_command) }
       }
@@ -185,7 +185,7 @@ class Adapter(
 
    # Create and return a response for client in json format.
    method build_response(request_seq, success, request_command, body, message)
-      local responseTable, responseBody, responseHeader
+      local responseTable, responseText
 
       responseTable := [
          "seq": seq;
@@ -197,29 +197,19 @@ class Adapter(
       responseTable["message"] := \message
       responseTable["body"] := \body
 
-      responseBody := tojson(responseTable) | tojson([
-         "seq": seq;
-         "type": "response";
-         "request_seq": request_seq;
-         "success": "__false__";
-         "command": request_command;
-         "message": "Failed to convert response to json."
-         ])
-
-      responseHeader := "Content-Length: " || *responseBody || "\r\n\r\n"
-
-      seq +:= 1
+      responseText := tojson(responseTable) | ximage(responseTable)
 
 $ifdef VERBOSE
-      write("udb -> client:\n" || responseBody)
+      write("udb -> client:\n" || responseText)
 $endif
 
-      return responseHeader || responseBody
+      seq +:= 1
+      return responseTable
    end
 
    # Create and return a request for client in json format.
    method build_request(command, arguments)
-      local requestTable, requestBody, requestHeader
+      local requestTable, requestText
 
       requestTable := [
          "seq": seq;
@@ -228,21 +218,19 @@ $endif
       ]
       requestTable["arguments"] := \arguments
 
-      requestBody := tojson(requestTable)
-      requestHeader := "Content-Length: " || *requestBody || "\r\n\r\n"
-
-      seq +:= 1
+      requestText := tojson(requestTable) | ximage(requestTable)
 
 $ifdef VERBOSE
-      write("udb -> client:\n" || requestBody)
+      write("udb -> client:\n" || requestText)
 $endif
 
-      return requestHeader || requestBody
+      seq +:= 1
+      return requestTable
    end
 
    # Create and return an event for client in json format.
    method build_event(event, body)
-      local eventTable, eventBody, eventHeader
+      local eventTable, eventText
 
       eventTable := [
          "seq": seq;
@@ -251,25 +239,19 @@ $endif
       ]
       eventTable["body"] := \body
 
-      eventBody := tojson(eventTable) | tojson([
-         "seq": seq;
-         "type": "event";
-         "event": event
-         ])
-      eventHeader := "Content-Length: " || *eventBody || "\r\n\r\n"
-
-      seq +:= 1
+      eventText := tojson(eventTable) | ximage(eventTable)
 
 $ifdef VERBOSE
-      write("udb -> client:\n" || eventBody)
+      write("udb -> client:\n" || eventText)
 $endif
 
-      return eventHeader || eventBody
+      seq +:= 1
+      return eventTable
    end
 
    # Handles all the things required from a client "initialize" request.
    method initialize(request_seq, request_command, request_arguments)
-      local capabilitiesTable, res, udbPort, startRes, event, req
+      local capabilitiesTable, res, event
 
       clientDetails := \request_arguments
 
@@ -282,10 +264,10 @@ $endif
       ]
 
       res := build_response(request_seq, "__true__", request_command, capabilitiesTable)
-      writes(sock, res)
+      json_handler.send_msg(res)
 
       event := build_event("initialized")
-      writes(sock, event)
+      json_handler.send_msg(event)
    end
 
    # Handles all the things required from a client "launch" request.
@@ -300,7 +282,7 @@ $endif
       filePath := \pth | request_arguments["program"]
       if /filePath then {
          res := build_response(request_seq, "__false__", request_command, &null, "launch request missing 'program'")
-         writes(sock, res)
+         json_handler.send_msg(res)
          return
       }
 
@@ -316,19 +298,19 @@ $endif
          "title": "udbTerminal";
          "args": ["udb --dapproxy " || dapPort];
          "argsCanBeInterpretedByShell": "__true__"])
-      writes(sock, event)
+      json_handler.send_msg(event)
       waitingForTerminal := 1
 
       dapcomSock := open_sock(dapPort)
 
       if /dapcomSock then {
          res := build_response(request_seq, "__false__", request_command, &null, "udap failed to open dapcomSock: " || dapPort)
-         writes(sock, res)
+         json_handler.send_msg(res)
          return
       }
 
       res := build_response(request_seq, "__true__", request_command)
-      writes(sock, res)
+      json_handler.send_msg(res)
    end
 
    # Handles all the things required from a client "setBreakpoints" request.
@@ -339,7 +321,7 @@ $endif
          pth := request_arguments["source"]["path"]
       else {
          res := build_response(request_seq, "__false__", request_command, &null, "SetBreakpoints source.path not given.")
-         writes(sock, res)
+         json_handler.send_msg(res)
          return
       }
 
@@ -366,7 +348,7 @@ $endif
       }
       else {
          res := build_response(request_seq, "__false__", request_command, &null, "SetBreakpoints breakpoints not specified")
-         writes(sock, res)
+         json_handler.send_msg(res)
          return
       }
    end
@@ -405,7 +387,7 @@ $endif
       ]
 
       res := build_response(request_seq, "__true__", request_command, body)
-      writes(sock, res)
+      json_handler.send_msg(res)
    end
 
    # Handles all the things required from a client "threads" request.
@@ -420,7 +402,7 @@ $endif
       ]
 
       res := build_response(request_seq, "__true__", request_command, threadsTable)
-      writes(sock, res)
+      json_handler.send_msg(res)
    end
 
    method variables(msg, request_seq, request_command, request_arguments)
@@ -458,7 +440,7 @@ $endif
          }
 
          response := build_response(request_seq, "__true__", request_command, table("variables", vars))
-         writes(sock, response)
+         json_handler.send_msg(response)
       }
    end
 
@@ -480,7 +462,7 @@ $endif
       local res
 
       res := build_response(request_seq, "__true__", request_command)
-      writes(sock, res)
+      json_handler.send_msg(res)
    end
 
    # Given a udb output table as 'outputTable', process that table.
@@ -500,26 +482,26 @@ $endif
                "description": udbRes;
                "hitBreakpointIds": [outputTable["id"]];
                "threadId": 1])
-            writes(sock, event)
+            json_handler.send_msg(event)
          }
          else if outputTable["type"] == "step" then {
             event := build_event("stopped", [
                "reason": "step";
                "threadId": 1])
-            writes(sock, event)
+            json_handler.send_msg(event)
          }
          else if outputTable["type"] == "watchpoint" then {
             event := build_event("stopped", [
                "reason": "data breakpoint";
                "threadId": 1])
-            writes(sock, event)
+            json_handler.send_msg(event)
          }
          if \showResult then {
             body := [
                "category": "console";
                "output": udbRes]
             event := build_event("output", body)
-            writes(sock, event)
+            json_handler.send_msg(event)
          }
          case curCmd of {
             "setBreakpoints": processBreakpointResult(outputTable)
@@ -535,19 +517,19 @@ $endif
          event := build_event("output", [
             "category": "stderr";
             "output": udbRes])
-         writes(sock, event)
+         json_handler.send_msg(event)
          event := build_event("stopped", [
             "reason": "exception";
             "description": udbRes;
             "text": udbRes;
             "threadId": 1])
-         writes(sock, event)
+         json_handler.send_msg(event)
          cmdQueue := []
          # If error happened before execution even started, abort immediately
          if member(outputTable, "state") then {
             if outputTable["state"] = 0 then {
                event := build_event("terminated")
-               writes(sock, event)
+               json_handler.send_msg(event)
             }
          }
       }
@@ -555,7 +537,7 @@ $endif
          event := build_event("exited", [
             "exitCode",
             outputTable["exitCode"]])
-         writes(sock, event)
+         json_handler.send_msg(event)
       }
       else if outputTable["type"] == "crash" then {
          handle_error(outputTable)
@@ -565,7 +547,7 @@ $endif
          event := build_event("output", [
             "category": "console";
             "output": "[answered Y; input not from terminal]\n"])
-         writes(sock, event)
+         json_handler.send_msg(event)
          push_cmdQueue("Y")
       }
    end
@@ -574,7 +556,7 @@ $endif
       local body
       if \res["success"] == "__false__" then {
          response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
-         writes(sock, response)
+         json_handler.send_msg(response)
          return
       }
 
@@ -593,7 +575,7 @@ $endif
       if bpSuccess == numBreakpoints then {
          body := table("breakpoints", breakpointList)
          response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
-         writes(sock, response)
+         json_handler.send_msg(response)
 
          bpSuccess := 0
          breakpointList := []
@@ -603,7 +585,7 @@ $endif
    method processWatchpointResult(res)
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
-         writes(sock, response)
+         json_handler.send_msg(response)
          return
       }
 
@@ -624,7 +606,7 @@ $endif
       if wpSuccess == numWatchpoints then {
          body := table("breakpoints", watchpointList)
          response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
-         writes(sock, response)
+         json_handler.send_msg(response)
 
          wpSuccess := 0
          watchpointList := []
@@ -637,7 +619,7 @@ $endif
 
       if \res["success"] == "__false__" then {
          response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
-         writes(sock, response)
+         json_handler.send_msg(response)
          return
       }
 
@@ -648,7 +630,7 @@ $endif
 
             if *frames = res["levels"] then {
                response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), table("stackFrames", frames))
-               writes(sock, response)
+               json_handler.send_msg(response)
                frames := []
             }
          }
@@ -659,7 +641,7 @@ $endif
       local response
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
-         writes(sock, response)
+         json_handler.send_msg(response)
          return
       }
 
@@ -685,7 +667,7 @@ $endif
       }
       if numScopes = 5 then {
          response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), table("scopes", scopesList))
-         writes(sock, response)
+         json_handler.send_msg(response)
 
          numScopes := 0
          scopesList := []
@@ -697,7 +679,7 @@ $endif
       local response, variables, var
       if \res["success"] == "__false__" then {
          response := build_response(request_seq, "__false__", request_command)
-         writes(sock, response)
+         json_handler.send_msg(response)
          return
       }
 
@@ -722,7 +704,7 @@ $endif
             }
          }
          response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), table("variables", variables))
-         writes(sock, response)
+         json_handler.send_msg(response)
       }
    end
 
@@ -750,7 +732,7 @@ $endif
       if res["type"] == "eval" then {
          if \res["success"] == "__false__" then {
             response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
-            writes(sock, response)
+            json_handler.send_msg(response)
             return
          }
          
@@ -762,7 +744,7 @@ $endif
             "variablesReference": ref
          ]
          response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
-         writes(sock, response)
+         json_handler.send_msg(response)
       }  
       
    end
@@ -793,7 +775,7 @@ $endif
                ]
                response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
             }
-            writes(sock, response)
+            json_handler.send_msg(response)
          }
          else {
             body := [
@@ -801,7 +783,7 @@ $endif
                "variablesReference": ref
             ]
             response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
-            writes(sock, response)
+            json_handler.send_msg(response)
          }
       }
       else if res["type"] == "assignVar" then {
@@ -812,11 +794,11 @@ $endif
                "variablesReference": ref
             ]
             response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command())
-            writes(sock, response)
+            json_handler.send_msg(response)
          }
          else {
             response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
-            writes(sock, response)
+            json_handler.send_msg(response)
          }
       }
       else if res["type"] == "setBreakpoint" then {
@@ -833,11 +815,11 @@ $endif
                ]
             ]
             event := build_event("breakpoint", body)
-            writes(sock, event)
+            json_handler.send_msg(event)
          }
          else {
             response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
-            writes(sock, response)
+            json_handler.send_msg(response)
          }
       }
       else if res["type"] == "clearBreakpoint" then {
@@ -854,11 +836,11 @@ $endif
                ]
             ]
             event := build_event("breakpoint", body)
-            writes(sock, event)
+            json_handler.send_msg(event)
          }
          else {
             response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
-            writes(sock, response)
+            json_handler.send_msg(response)
          }
       }
    end
@@ -913,10 +895,10 @@ $endif
       else errorMessageTable["id"] := 0
 
       res := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command(), ["error": errorMessageTable])
-      writes(sock, res)
+      json_handler.send_msg(res)
 
       event := build_event("terminated")
-      writes(sock, event)
+      json_handler.send_msg(event)
    end
 
    # Disconnect from client and udb and end session.

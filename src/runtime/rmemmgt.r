@@ -53,6 +53,8 @@ static void vrfy_Table(struct b_table *b);
 static void vrfy_Selem(struct b_selem *b);
 static void vrfy_Telem(struct b_telem *b);
 static void vrfy_Slots(struct b_slots *b);
+
+static void vrfyGcLayoutTables(void);
 #endif                  /* VerifyHeap */
 
 /*
@@ -81,6 +83,9 @@ int qualfail;                   /* flag: qualifier list overflow */
       postqual(&(d)); \
    else if (Pointer(d))\
       markblock(&(d));
+
+/* Offset helper for GC metadata tables and sanity checks. */
+#passthru #define GC_OFFSETOF(type, member) ((int)offsetof(type, member))
 
 /*
  * Allocated block size table (sizes given in bytes).  A size of -1 is used
@@ -349,6 +354,62 @@ uword segsize[] = {
    ((uword)HSlots) << 18,               /* segment 19 */
    };
 
+#ifdef VerifyHeap
+/*
+ * Validate key GC metadata table entries against actual struct layout.
+ * This catches silent drift when block headers change.
+ */
+#passthru static void vrfyGcLayoutTables(void)
+#passthru {
+#passthru   if (firstd[T_Refresh] != GC_OFFSETOF(struct b_refresh, elems))
+#passthru      syserr("firstd[T_Refresh] does not match struct b_refresh layout");
+#passthru
+#passthru   if (firstd[T_Proc] != GC_OFFSETOF(struct b_proc, pname))
+#passthru      syserr("firstd[T_Proc] does not match struct b_proc layout");
+#passthru
+#passthru   if (firstd[T_Record] != GC_OFFSETOF(struct b_record, fields))
+#passthru      syserr("firstd[T_Record] does not match struct b_record layout");
+#passthru   if (firstp[T_Record] != GC_OFFSETOF(struct b_record, recdesc))
+#passthru      syserr("firstp[T_Record] does not match struct b_record layout");
+#passthru   if (ptrno[T_Record] != 1)
+#passthru      syserr("ptrno[T_Record] is not 1");
+#passthru   if (firstd[T_Table] != GC_OFFSETOF(struct b_table, defvalue))
+#passthru      syserr("firstd[T_Table] does not match struct b_table layout");
+#passthru   if (firstp[T_Table] != GC_OFFSETOF(struct b_table, hdir))
+#passthru      syserr("firstp[T_Table] does not match struct b_table layout");
+#passthru   if (ptrno[T_Table] != HSegs)
+#passthru      syserr("ptrno[T_Table] is not HSegs");
+#passthru
+#passthru   if (firstd[T_Lelem] != GC_OFFSETOF(struct b_lelem, lslots))
+#passthru      syserr("firstd[T_Lelem] does not match struct b_lelem layout");
+#passthru   if (firstp[T_Lelem] != GC_OFFSETOF(struct b_lelem, listprev))
+#passthru      syserr("firstp[T_Lelem] does not match struct b_lelem layout");
+#passthru   if (ptrno[T_Lelem] != 2)
+#passthru      syserr("ptrno[T_Lelem] is not 2");
+#passthru
+#passthru   if (firstd[T_Telem] != GC_OFFSETOF(struct b_telem, tref))
+#passthru      syserr("firstd[T_Telem] does not match struct b_telem layout");
+#passthru   if (firstp[T_Telem] != GC_OFFSETOF(struct b_telem, clink))
+#passthru      syserr("firstp[T_Telem] does not match struct b_telem layout");
+#passthru   if (ptrno[T_Telem] != 1)
+#passthru      syserr("ptrno[T_Telem] is not 1");
+#passthru
+#passthru   if (firstd[T_Tvtbl] != GC_OFFSETOF(struct b_tvtbl, tref))
+#passthru      syserr("firstd[T_Tvtbl] does not match struct b_tvtbl layout");
+#passthru   if (firstp[T_Tvtbl] != GC_OFFSETOF(struct b_tvtbl, clink))
+#passthru      syserr("firstp[T_Tvtbl] does not match struct b_tvtbl layout");
+#passthru   if (ptrno[T_Tvtbl] != 1)
+#passthru      syserr("ptrno[T_Tvtbl] is not 1");
+#passthru
+#passthru   if (firstd[T_Tvsubs] != GC_OFFSETOF(struct b_tvsubs, ssvar))
+#passthru      syserr("firstd[T_Tvsubs] does not match struct b_tvsubs layout");
+#passthru   if (firstp[T_Tvsubs] != 0)
+#passthru      syserr("firstp[T_Tvsubs] is not 0");
+#passthru   if (ptrno[T_Tvsubs] != -1)
+#passthru      syserr("ptrno[T_Tvsubs] is not -1");
+#passthru }
+#endif                                  /* VerifyHeap */
+
 /*
  * initalloc - initialization routine to allocate memory regions
  */
@@ -382,6 +443,10 @@ void initalloc(word codesize)
       error(NULL,
          "insufficient memory, corrupted icode file, or wrong platform");
 #endif                                  /* COMPILER */
+
+#ifdef VerifyHeap
+   vrfyGcLayoutTables();
+#endif                                  /* VerifyHeap */
 
    /*
     * Set up allocated memory.  The regions are:

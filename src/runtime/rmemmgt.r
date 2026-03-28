@@ -154,11 +154,7 @@ int firstd[] = {
      3*WordSize,              /* T_File (5), file block */
 #endif
 
-#ifdef MultiProgram
-     8*WordSize,              /* T_Proc (6), procedure block */
-#else                           /* MultiProgram */
      7*WordSize,              /* T_Proc (6), procedure block */
-#endif                          /* MultiProgram */
 
 #ifdef Concurrent
      6*WordSize,              /* T_Record (7), record block */

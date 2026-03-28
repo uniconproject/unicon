@@ -1,7 +1,7 @@
 BASE=../..
 include $(BASE)/Makedefs.uni
 
-EXEs    = udb test_adapter
+EXEs    = udb
 DEL     = -rm
 CLEAN   = clean
 cflags  = $(UFLAGS) -c 
@@ -53,12 +53,9 @@ Assertions:
 tools:
 	cd $(LIB); $(MAKE) tools
 
-udb: $(UFILES) $(LIBRARY) $(DTA_UFILES) 
+udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
 	$(CP) udb$(EXE) ../../bin
-
-test_adapter: test_adapter.u 
-	$(UC) $(ldflags) test_adapter.u -o test_adapter
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb

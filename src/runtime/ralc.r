@@ -882,6 +882,10 @@ alcrecd_macro(alcrecd,0)
    struct b_refresh *blk;
    CURTSTATE();
 
+  /*
+   * n_desc counts only elems[] descriptors. Header words (nargs/ntemps/wrk_size)
+   * are part of sizeof(struct b_refresh) and are accounted for by AlcVarBlk.
+   */
    AlcVarBlk(blk, b_refresh, T_Refresh, na + nl)
    blk->nlocals = nl;
    blk->nargs = na;

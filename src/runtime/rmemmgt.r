@@ -180,7 +180,7 @@ int firstd[] = {
      3*WordSize,              /* T_Tvsubs (16), substring trapped variable */
 
 #if COMPILER
-     2*WordSize,              /* T_Refresh (17), refresh block */
+     6*WordSize,              /* T_Refresh (17), refresh block */
 #else                           /* COMPILER */
      (4+Wsizeof(struct pf_marker))*WordSize, /* T_Refresh (17), refresh block */
 #endif                          /* COMPILER */

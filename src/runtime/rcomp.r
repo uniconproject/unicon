@@ -19,7 +19,12 @@ int anycmpBase(dptr dp1,dptr dp2,int sortType)
    {
    register int o1, o2;
    register int t1, t2;
-   register long v1, v2, lresult;
+   /*
+    * Use Icon word-sized temporaries for integer comparisons.
+    * On LLP64 platforms (e.g. Windows), C long is 32-bit while
+    * Icon integers may be 64-bit, which can corrupt comparisons.
+    */
+   register word v1, v2, lresult;
    int iresult;
    double rres1, rres2, rresult;
 

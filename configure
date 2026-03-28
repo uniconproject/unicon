@@ -3420,37 +3420,51 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 #AC_CANONICAL_TARGET
 
 case $host_cpu in
-     *armv7* | *armv6* | *aarch32*)
+    *armv7* | *armv6* | *aarch32*)
         unicon_cpu="arm_32"
-	ARCHBITS="32"
+        ARCHBITS="32"
 
 printf "%s\n" "#define ARM 1" >>confdefs.h
 
         ;;
-     *armv8* | *aarch64*)
+    *armv8* | *aarch64*)
         unicon_cpu="arm_64"
-	ARCHBITS="64"
+        ARCHBITS="64"
 
 printf "%s\n" "#define ARM 1" >>confdefs.h
 
         ;;
-     *riscv64*)
+    *riscv64*)
         unicon_cpu="riscv_64"
-	ARCHBITS="64"
+        ARCHBITS="64"
 
 printf "%s\n" "#define RISCV 1" >>confdefs.h
 
         ;;
-     *i386* | *i686*)
+    *i386* | *i686*)
         unicon_cpu="x86_32"
-	ARCHBITS="32"
+        ARCHBITS="32"
 
 printf "%s\n" "#define X86 1" >>confdefs.h
 
-	;;
-     *)
+        ;;
+    *powerpc64* | *ppc64*)
+        unicon_cpu="ppc64"
+        ARCHBITS="64"
+
+printf "%s\n" "#define PPC64 1" >>confdefs.h
+
+        ;;
+    *powerpc* | *ppc*)
+        unicon_cpu="ppc"
+        ARCHBITS="32"
+
+printf "%s\n" "#define PPC 1" >>confdefs.h
+
+        ;;
+    *)
         unicon_cpu="$host_cpu"
-	ARCHBITS="64"
+        ARCHBITS="64"
         ;;
 esac
 

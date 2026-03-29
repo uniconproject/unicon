@@ -769,6 +769,7 @@ end
 
 "&random - a variable containing the current seed for random operations."
 keyword{1} random
+#ifndef RngLibrary
    abstract {
       return kywdint
       }
@@ -779,6 +780,22 @@ keyword{1} random
 #endif                                  /* !ConcurrentCOMPILER */
       return kywdint(&kywd_ran);
       }
+#else
+   abstract {
+     return any_value
+     }
+   inline {
+    CURTSTATE();
+    if (curtstate->rng == NULL) {
+      return kywdint(&kywd_ran);
+    } else {
+      if (curtstate->Kywd_ran.dword == D_Null) {
+        if (no_rng_state()) runerr(0);
+       }
+      return curtstate->Kywd_ran;
+    }
+   }
+#endif					/* RngLibrary */
 end
 
 "&regions - generates regions sizes"

@@ -558,10 +558,6 @@ if test "x$thin" = "xyes"; then
       plugins=no
    fi
 
-   if test "x$database" = "xon"; then
-      database=no
-   fi
-
    if test "x$ssl" = "xon"; then
       ssl=no
    fi

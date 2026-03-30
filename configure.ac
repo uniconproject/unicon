@@ -15,29 +15,39 @@ AH_BOTTOM([#endif          /* __AUTO_CONFIG_H  */])
 #AC_CANONICAL_TARGET
 
 case $host_cpu in
-     *armv7* | *armv6* | *aarch32*)
+    *armv7* | *armv6* | *aarch32*)
         unicon_cpu="arm_32"
-	ARCHBITS="32"
-	AC_DEFINE([ARM], [1], [ARM platform])
+        ARCHBITS="32"
+        AC_DEFINE([ARM], [1], [ARM platform])
         ;;
-     *armv8* | *aarch64*)
+    *armv8* | *aarch64*)
         unicon_cpu="arm_64"
-	ARCHBITS="64"
-	AC_DEFINE([ARM], [1], [ARM platform])
+        ARCHBITS="64"
+        AC_DEFINE([ARM], [1], [ARM platform])
         ;;
-     *riscv64*)
+    *riscv64*)
         unicon_cpu="riscv_64"
-	ARCHBITS="64"
-	AC_DEFINE([RISCV], [1], [RISC-V platform])
+        ARCHBITS="64"
+        AC_DEFINE([RISCV], [1], [RISC-V platform])
         ;;
-     *i386* | *i686*)
+    *i386* | *i686*)
         unicon_cpu="x86_32"
-	ARCHBITS="32"
-	AC_DEFINE([X86], [1], [X86 platform])
-	;;
-     *)
+        ARCHBITS="32"
+        AC_DEFINE([X86], [1], [X86 platform])
+        ;;
+    *powerpc64* | *ppc64*)
+        unicon_cpu="ppc64"
+        ARCHBITS="64"
+        AC_DEFINE([PPC64], [1], [PowerPC 64 platform])
+        ;;
+    *powerpc* | *ppc*)
+        unicon_cpu="ppc"
+        ARCHBITS="32"
+        AC_DEFINE([PPC], [1], [PowerPC platform])
+        ;;
+    *)
         unicon_cpu="$host_cpu"
-	ARCHBITS="64"
+        ARCHBITS="64"
         ;;
 esac
 

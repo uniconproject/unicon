@@ -1,0 +1,73 @@
+$define SUM(a,b) ((a) + (b))
+$define MUL(a,b) ((a) * (b))
+$define TWICE(x) SUM(x,x)
+$define ZERO() 0
+$define PICK2(a,b) b
+$define CALL_WITH_SPACE(x,y) SUM (x,y)
+$define ID(x) x
+$define WRAP3(a,b,c) ((a) || "|" || (b) || "|" || (c))
+$define A(x) B(x)
+$define B(x) C(x)
+$define C(x) D(x)
+$define D(x) E(x)
+$define E(x) ((x) + 1)
+$define TEMP(x) x
+$define ASSERT_TRUE(cond,label) if not (cond) then stop("ASSERT_TRUE failed: " || (label))
+$define ASSERT_EQ(expected,actual,label) if (expected) ~=== (actual) then stop("ASSERT_EQ failed: " || (label) || " expected=" || image(expected) || " actual=" || image(actual))
+
+$ifdef SUM
+$define HAS_SUM 1
+$else
+$define HAS_SUM 0
+$endif
+
+$undef TEMP
+$ifdef TEMP
+$define TEMP_IS_DEFINED 1
+$else
+$define TEMP_IS_DEFINED 0
+$endif
+
+procedure compile_fails(src, needle)
+   local p, line, uc, cmd
+   # compile and match the error message
+   uc := getenv("UNICON") | "../../bin/unicon"
+   cmd := uc || " -s " || src || " 2>&1"
+   p := open(cmd, "p") | stop("cannot open compiler command: " || cmd)
+   while line := read(p) do {
+      if find(needle, line) then {
+         close(p)
+         return 1
+      }
+   }
+   close(p)
+end
+
+procedure main()
+   write(SUM(2, 3))
+   write(MUL(3, 4))
+   write(TWICE(5))
+   write(ZERO())
+   write(PICK2(SUM(1,2), MUL(2,3)))
+   write(CALL_WITH_SPACE(10, 20))
+   write(ID("a,b"))
+   write(ID("x,(y),z"))
+   write(WRAP3("a,b", "c(d)", "e"))
+   write(SUM(MUL(2, 3), 6))
+   write(A(5))
+   write(ZERO( ))
+   write(HAS_SUM)
+   write(TEMP_IS_DEFINED)
+   ASSERT_EQ(5, SUM(2, 3), "sum")
+   ASSERT_EQ(12, MUL(3, 4), "mul")
+   ASSERT_EQ(0, ZERO(), "zero-arg")
+   ASSERT_TRUE(HAS_SUM = 1, "ifdef on function macro")
+   ASSERT_TRUE(TEMP_IS_DEFINED = 0, "undef function macro")
+   ASSERT_TRUE(compile_fails("data/macros_bad_too_few.icn", "wrong number of args in macro call to SUM"), "too few args should fail")
+   ASSERT_TRUE(compile_fails("data/macros_bad_too_many.icn", "wrong number of args in macro call to SUM"), "too many args should fail")
+   ASSERT_TRUE(compile_fails("data/macros_bad_omitted.icn", "wrong number of args in macro call to SUM"), "omitted arg should fail")
+   ASSERT_TRUE(compile_fails("data/macros_bad_empty_middle.icn", "empty macro argument"), "empty middle arg should fail")
+   ASSERT_TRUE(compile_fails("data/macros_bad_dup_params.icn", "duplicate parameter name in $define"), "duplicate parameter names should fail")
+   write("arity-checks-ok")
+   write("asserts-ok")
+end

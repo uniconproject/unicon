@@ -54,8 +54,8 @@ AC_DEFUN([restore_flags],
 AC_DEFUN([fail_and_restore],
 [
 	restore_flags()
-	AC_MSG_CHECKING(checking lib $1)
-	AC_MSG_RESULT(failed)
+	AC_MSG_CHECKING([for lib $1])
+	AC_MSG_RESULT([failed])
 ])
 
 # 

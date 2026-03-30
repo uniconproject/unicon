@@ -30,6 +30,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -1076,6 +1077,64 @@ static int find_file(char *stem, int flags, char *path, int len, int *index)
    return best;
 }
 
+/*
+ * Reduce a name to lower case letters and digits, for comparing family
+ * names with file names ("DejaVu Sans" matches DejaVuSans-Bold.ttf).
+ */
+static void squash(const char *s, char *buf, int len)
+{
+   int n = 0;
+   for (; *s && n < len - 1; s++)
+      if (isalnum((unsigned char)*s))
+         buf[n++] = tolower((unsigned char)*s);
+   buf[n] = '\0';
+}
+
+/*
+ * Last resort for a named family: look through the font directories
+ * for files whose names start with the family name, ignoring case,
+ * spaces and punctuation.
+ */
+static int scan_dirs(char *family, int flags, char *path, int len,
+                     int *index)
+{
+   char dir[512], want[128], have[256], cand[1024];
+   int d, best = -1, idx, sc;
+   size_t wl;
+   DIR *dp;
+   struct dirent *de;
+
+   squash(family, want, sizeof(want));
+   wl = strlen(want);
+   if (wl == 0) return -1;
+   for (d = 0; font_dirs[d]; d++) {
+      expand_home(font_dirs[d], dir, sizeof(dir));
+      if ((dp = opendir(dir)) == NULL) continue;
+      while ((de = readdir(dp)) != NULL) {
+         size_t nl = strlen(de->d_name);
+         if (nl < 5) continue;
+         if (!strieq(de->d_name + nl - 4, ".ttf") &&
+             !strieq(de->d_name + nl - 4, ".ttc") &&
+             !strieq(de->d_name + nl - 4, ".otf"))
+            continue;
+         squash(de->d_name, have, sizeof(have));
+         if (strncmp(have, want, wl)) continue;
+         snprintf(cand, sizeof(cand), "%s/%s", dir, de->d_name);
+         sc = best_face(cand, flags, &idx);
+         /* prefer the plain family over longer names (Arial Narrow) */
+         if (strlen(have) - 3 == wl) sc += 2;
+         if (sc > best) {
+            best = sc;
+            snprintf(path, len, "%s", cand);
+            *index = idx;
+            }
+         }
+      closedir(dp);
+      if (best >= 20) break;
+      }
+   return best;
+}
+
 #ifdef HAVE_LIBFONTCONFIG
 /*
  * Ask fontconfig.  If exact is set, the family of the match must be the
@@ -1181,6 +1240,8 @@ static int resolve_font(char *family, int flags, int size, char *path,
       sc = find_fontconfig(family, flags, size, 1, path, len, index);
       if (sc >= 0) return sc;
       }
+#else                                   /* HAVE_LIBFONTCONFIG */
+   (void)fcname;
 #endif                                  /* HAVE_LIBFONTCONFIG */
 
    if (stems) {
@@ -1195,7 +1256,10 @@ static int resolve_font(char *family, int flags, int size, char *path,
          }
       return best;
       }
-   return find_file(family, flags, path, len, index);
+   sc = find_file(family, flags, path, len, index);
+   if (sc < 0)
+      sc = scan_dirs(family, flags, path, len, index);
+   return sc;
 }
 
 static int ceil26(long v)

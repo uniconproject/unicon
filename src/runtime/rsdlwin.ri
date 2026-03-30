@@ -1600,22 +1600,32 @@ void geticonic(wbp w, char *answer)
  */
 static wfp sdl_mkfont(char *s)
    {
-   char family[MAXFONTWORD+1], name[256], *p;
+   char family[MAXFONTWORD+1], name[256], rest[256], *p;
    int style, size, tp, flags = 0, n;
    struct ucfont *uf;
    wfp f;
 
-   if (!parsefont(s, family, &style, &size, &tp))
-      return NULL;
-
-   /* parsefont lowercases the family; keep the case for file names */
-   while (isspace(*s)) s++;
-   for (p = s, n = 0; *p && *p != ',' && n < (int)sizeof(name) - 1; p++)
+   /*
+    * The first word is the family, or a font file.  parsefont()
+    * lowercases the family and limits its length, so a file name is
+    * taken as written and only the rest of the spec is parsed.
+    */
+   for (p = s; isspace(*p); p++)
+      ;
+   for (n = 0; *p && *p != ',' && n < (int)sizeof(name) - 1; p++)
       name[n++] = *p;
    while (n > 0 && isspace(name[n-1])) n--;
    name[n] = '\0';
-   if (!strchr(name, '/') && !strchr(name, '.'))
+   if (strchr(name, '/') || strchr(name, '.')) {
+      snprintf(rest, sizeof(rest), "file%s", p);
+      if (!parsefont(rest, family, &style, &size, &tp))
+         return NULL;
+      }
+   else {
+      if (!parsefont(s, family, &style, &size, &tp))
+         return NULL;
       strcpy(name, family);
+      }
 
    if (style & (FONTFLAG_BOLD | FONTFLAG_DEMI)) flags |= UC_FONT_BOLD;
    if (style & (FONTFLAG_ITALIC | FONTFLAG_OBLIQUE)) flags |= UC_FONT_ITALIC;

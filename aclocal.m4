@@ -471,7 +471,7 @@ do
    [
     AC_LINK_IFELSE(dnl
     [AC_LANG_PROGRAM([[/* no includes */]],
-               [[extern long int $ac_global;  exit((int)$ac_global)]])],
+               [[extern long int $ac_global; return (int)$ac_global]])],
     eval "ac_cv_global_${ac_global}=yes",
     eval "ac_cv_global_${ac_global}=no"
     )

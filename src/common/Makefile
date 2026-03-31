@@ -85,7 +85,7 @@ literals.$(O): ../h/esctab.h
 
 rtdb.$(O): ../h/version.h icontype.h
 
-#FIX: we are using $(O) everywhere but the string below is hradcoded to .o
+#FIX: we are using $(O) everywhere but the string below is hardcoded to .o
 drawstring3d.$(O): drawstring3d.cc
 	@if test "`which $(CXX)`" != "" ; then \
 		echo "Got C++, building drawstring3d.o"; \

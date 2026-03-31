@@ -5,8 +5,8 @@
 /*
  * System-specific definitions are in define.h
  * update June 2017::
- *    System-specific definitions are being handleded
- *    by the confure script. Some remaining definitions are
+ *    System-specific definitions are being handled
+ *    by the configure script. Some remaining definitions are
  *    moved here so they are all in one place for all systems.
  *    Many of these options will be automated as well.
  */
@@ -232,7 +232,7 @@
 #endif                                  /* VMS */
 
 /*
- * The following definitions serve to cast common conditionals is
+ * The following definitions serve to cast common conditionals in
  *  a positive way, while allowing defaults for the cases that
  *  occur most frequently.  That is, if co-expressions are not supported,
  *  NoCoExpr is defined in define.h, but if they are supported, no

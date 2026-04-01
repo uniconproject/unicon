@@ -87,7 +87,7 @@ fi
 	  AC_SEARCH_LIBS([$4], [$1],
 	     [cv_lib$1=yes
 	      if test -n $5 ; then
-	        AC_DEFINE([$5], [1], [Define to 1 if you lib $1])
+	        AC_DEFINE([$5], [1], [Define to 1 if you have lib $1])
 	      fi
 	     ],
 	     [cv_lib$1=no
@@ -409,7 +409,7 @@ fi
 	if test x$cv_libodbc32_h != xno ;  then
 	  AC_SEARCH_LIBS([SQLConnect], [odbc32],
 	     [cv_libodbc=yes
-	      AC_DEFINE([HAVE_LIBODBC], [1], [Define to 1 if you lib odbc])
+	      AC_DEFINE([HAVE_LIBODBC], [1], [Define to 1 if you have lib odbc])
 	     ],
 	     [cv_libodbc=no
 	       fail_and_restore([odbc32 in (${odbc_HOME})])

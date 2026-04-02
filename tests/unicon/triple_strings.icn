@@ -1,0 +1,129 @@
+procedure main()
+   local x
+
+   if &line ~=== 4 then stop("line@single expected 4, got ", &line) else write("line@single=", &line)
+   x := """ This is a multi-line string in Unicon"""
+   write(x)
+
+   if &line ~=== 8 then stop("line@multi_inline expected 8, got ", &line) else write("line@multi_inline=", &line)
+   x := """ This is a
+              multi-line
+              string in Unicon"""
+   write(x)
+
+   if &line ~=== 14 then stop("line@multi_block expected 14, got ", &line) else write("line@multi_block=", &line)
+   x :=
+"""
+This is a
+multi-line
+string in Unicon
+"""
+   write(x)
+
+   if &line ~=== 23 then stop("line@mixed_indent expected 23, got ", &line) else write("line@mixed_indent=", &line)
+   x := """
+    This is a
+   multi-line string in
+Unicon
+"""
+   write(x)
+
+   x := "contains \"\"\" literally"
+   write(x)
+
+   x := "\"\"\""
+   write(x)
+
+   x := """contains 'single' and "double" quotes"""
+   write(x)
+
+   x := """escaped triple: \"\"\" inside"""
+   write(x)
+
+   x := """ends-with-backslash\"""
+   write("[", x, "]")
+
+   x :=
+"""
+line one
+escaped marker: \"\"\"
+line three
+"""
+   write(x)
+
+   x :=
+"""
+$ifdef __debug__
+inside triple
+$endif
+"""
+   write(x)
+
+   x :=
+"""
+# this looks like a comment, but is string content
+"""
+   write(x)
+
+   verify_del_byte_roundtrip()
+end
+
+procedure verify_del_byte_roundtrip()
+   local src, base, ufile, exewin, f, got, uc, exe, nullsink
+
+   src := "local/triple_del_probe.icn"
+   base := "triple_del_probe"
+   ufile := base || ".u"
+   exewin := base || ".exe"
+
+   if not stat("local") then
+      mkdir("local") | stop("cannot create local")
+
+   f := open(src, "w") | stop("cannot open ", src)
+   write(f, "procedure main()")
+   write(f, "   local x")
+   writes(f, "   x := \"\"\"")
+   writes(f, char(127))
+   write(f, "\"\"\"")
+   write(f, "   write(ord(x[1]))")
+   write(f, "end")
+   close(f)
+
+   uc := safe_uc_cmd()
+   if &features == ("MS Windows NT") then {
+      exe := exewin
+      nullsink := "NUL"
+   }
+   else {
+      exe := "./" || base
+      nullsink := "/dev/null"
+   }
+
+   remove(base)
+   remove(ufile)
+   remove(exewin)
+   if system(uc || " " || src || " >" || nullsink || " 2>&1") ~= 0 then
+      stop("compile failed for DEL probe")
+   f := open(exe, "p") | stop("run failed for DEL probe")
+   got := read(f)
+   close(f)
+
+   remove(src)
+   remove(base)
+   remove(ufile)
+   remove(exewin)
+   if got ~== "127" then
+      stop("expected DEL ord 127, got ", image(got))
+   write("del-octal-ok")
+end
+
+procedure safe_uc_cmd()
+   local uc
+
+   uc := getenv("UC") | "../../bin/unicon"
+   if find(" ", uc) | find("\t", uc) | find(";", uc) | find("&", uc) |
+      find("|", uc) | find("<", uc) | find(">", uc) | find("`", uc) |
+      find("$", uc) | find("\"", uc) | find("'", uc) then
+      stop("unsafe UC env value: ", image(uc))
+   return uc
+end

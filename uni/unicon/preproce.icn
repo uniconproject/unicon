@@ -406,6 +406,7 @@ procedure preproc_scan_text(done_set)
         interesting_chars := '#"\'_' ++ &letters
     }
     if /preproc_if_state then {
+        preproc_rewrite_triple_strings()
         if *preproc_sym_table > 0 | *preproc_fun_table > 0 then {
             &pos := q := 1
             result := ""
@@ -537,6 +538,145 @@ procedure preproc_read_result( )
       return pop(preproc_file)
    else
       return read(preproc_file)
+end
+
+#
+# Quote arbitrary text as a Unicon string literal.
+#
+procedure preproc_quote_string(s)
+   local r, c, n
+   r := "\""
+   s ? while c := move(1) do {
+      # Re-emit control/special bytes as explicit escapes so rewritten
+      # triple strings remain compiler-safe and portable across scanners.
+      case c of {
+         "\\": r ||:= "\\\\"
+         "\"": r ||:= "\\\""
+         "\b": r ||:= "\\b"
+         "\d": r ||:= "\\d"
+         "\e": r ||:= "\\e"
+         "\f": r ||:= "\\f"
+         "\n": r ||:= "\\n"
+         "\t": r ||:= "\\t"
+         "\r": r ||:= "\\r"
+         "\v": r ||:= "\\v"
+         default: {
+            n := ord(c)
+            if (0 <= n < 32) then # n=127 is DEL, handled above in case "\d"
+               r ||:= preproc_octal_escape(n)
+            else
+               r ||:= c
+         }
+      }
+   }
+   return r || "\""
+end
+
+#
+# Format an integer byte value as a 3-digit octal escape.
+#
+procedure preproc_octal_escape(n)
+   static digits
+   initial digits := "01234567"
+
+   return "\\" ||
+      digits[1 + iand(ishift(n, -6), 7)] ||
+      digits[1 + iand(ishift(n, -3), 7)] ||
+      digits[1 + iand(n, 7)]
+end
+
+#
+# Rewrite triple-quoted strings into normal Unicon strings.
+# Supports multiline blocks by pulling additional lines with preproc_read().
+# Content between delimiters is preserved verbatim.
+#
+procedure preproc_rewrite_triple_strings()
+   local src, out, i, quote, c, body
+
+   src := &subject
+   if not find("\"\"\"", src) then
+      return
+
+   out := ""
+   i := 1
+   while i <= *src do {
+      if i + 2 <= *src & src[i+:3] == "\"\"\"" then {
+         # Collect raw triple-quoted text, spanning multiple source lines.
+         i +:= 3
+         body := ""
+         repeat {
+            if i > *src then {
+               body ||:= "\n"
+               # Continuation lines are literal triple-string content.
+               # Any preprocessor directives in them are not executed.
+               src := preproc_read() | {
+                  preproc_error("unterminated triple-quoted string")
+                  fail
+               }
+               i := 1
+            }
+            else if i + 5 <= *src & src[i] == "\\" &
+                  src[i+1] == "\"" & src[i+2] == "\\" &
+                  src[i+3] == "\"" & src[i+4] == "\\" &
+                  src[i+5] == "\"" then {
+               # Allow \"\"\" (backslash before each quote) as literal content.
+               # Note: the ambiguous 4-char form \""" is intentionally not
+               # supported, so strings ending in a single '\' remain representable.
+               body ||:= "\"\"\""
+               i +:= 6
+            }
+            else if i + 2 <= *src & src[i+:3] == "\"\"\"" then {
+               i +:= 3
+               break
+            }
+            else {
+               body ||:= src[i]
+               i +:= 1
+            }
+         }
+         out ||:= preproc_quote_string(body)
+         next
+      }
+
+      c := src[i]
+      if c == "#" then {
+         out ||:= src[i:0]
+         break
+      }
+
+      if c == "\"" | c == "'" then {
+         # Copy normal quoted strings verbatim; a literal """ sequence
+         # inside them is treated as plain text, not a triple-string start.
+         # Example: x := "contains \"\"\" literally"
+         quote := c
+         out ||:= c
+         i +:= 1
+         while i <= *src do {
+            c := src[i]
+            out ||:= c
+            i +:= 1
+            if c == "\\" then {
+               if i <= *src then {
+                  c := src[i]
+                  out ||:= c
+                  i +:= 1
+                  if c == "^" & i <= *src then {
+                     out ||:= src[i]
+                     i +:= 1
+                  }
+               }
+               next
+            }
+            if c == quote then
+               break
+         }
+         next
+      }
+
+      out ||:= c
+      i +:= 1
+   }
+   &subject := out
 end
 
 #

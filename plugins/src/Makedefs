@@ -27,7 +27,7 @@ $(LNAME): $(TLIB) $(LIBD)/$(LNAME).u
 	cp  $(TLIB) $(LIBD)/
 
 $(TLIB): $(COBJ)
-	$(CC) $(LDDYN2) -o $(TLIB) $(CFDYN2) $(COBJ) ../../lib/icall.$(O) $(MYLIBS) $(XLIBS)
+	$(CC) $(LDDYN2) -o $(TLIB) $(CFDYN2) $(COBJ) ../../lib/icall.$(O) $(LDFLAGS) $(MYLIBS) $(XLIBS)
 	cp $(TLIB) $(LIBD)
 	
 # Unicon interface
@@ -37,7 +37,7 @@ $(LIBD)/%.u: %.icn  $(TLIB)
 	rm $(LIBD)/$<
 
 %.o: %.c
-	$(CC) $(CFDYN2) -c $<
+	$(CC) $(CFDYN2) $(CFLAGS) -c $<
 
 zip:
 	 zip $(LNAME).zip Makefile *.icn *.c *.h

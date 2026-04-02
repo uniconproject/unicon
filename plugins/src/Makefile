@@ -16,7 +16,7 @@ UFLAGS=-s -u -c
 
 CFDYN2= $(CFDYN)
 
-# plaform independent  plugins
+# platform-independent plugins
 PCMN=upexample SHA bitman $(SQLITE)
 
 # Windows 
@@ -25,7 +25,7 @@ PWIN=
 # *nix OS
 PNIX=lxcunicon
 
-# MacOS
+# macOS
 PMOS=
 
 .PHONY: clean zip $(PCMN) $(PWIN) $(PNIX) $(PMOS) windows linux macos
@@ -44,7 +44,7 @@ linux: $(PCMN) $(PNIX)
 
 macos: $(PCMN) $(PMOS)
 
-# Build cross platforms plugins
+# Build cross-platform plugins
 $(PCMN): $(LIBD)/uso.u
 	$(MAKE) -C $@
 
@@ -56,7 +56,7 @@ $(PWIN): $(LIBD)/uso.u
 $(PNIX): $(LIBD)/uso.u
 	$(MAKE) -C $@
 
-# Build Mac OS plugins
+# Build macOS plugins
 $(PMOS): $(LIBD)/uso.u
 	$(MAKE) -C $@
 

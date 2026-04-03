@@ -673,7 +673,8 @@ if ! test "x$graphics" = "xno"; then
      *linux*)
         ;;
      *solaris*)
-        XLIBS = -L/usr/X11R6/lib/64 -R/usr/X11R6/lib/64 -lXpm -lX11       ;;
+        XLIBS="-L/usr/X11R6/lib/64 -R/usr/X11R6/lib/64 -lXpm -lX11"
+        ;;
      *aix*)
         ;;
      *bsd*)

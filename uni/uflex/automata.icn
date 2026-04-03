@@ -8,6 +8,7 @@ record edge(symbol, destinations)
 record anode(label, rulenum, edges, epsilon, dot, semaction)
 record anodelist(current, _next)
 record automata(start, states, accepting)
+record automatadfa(start, states, accepting, dfatable)
 
 procedure alcedge(sym)
    return edge(sym)
@@ -175,9 +176,7 @@ procedure createicon(myautomata)
                   escapify(edge.symbol))
             else fprintf(outfile, "   tempedge.symbol := \"%s\"\n",
               escapify(edge.symbol))
-          }
-
-
+         }
 
          fprintf(outfile, "   tempedge.destinations := []\n")
 
@@ -193,7 +192,7 @@ procedure createicon(myautomata)
                     states2.current.label)
             states2 := states2._next
             }
-         }
+	 }
 
       states := states._next
       }
@@ -242,11 +241,13 @@ end
 # Escape things that appeared in Lex source code for
 # semantic preservation within a Unicon string literal.
 # Should do all legal lex escapes, many of which are
-# identical in a Unicon string literal.  Maybe applied
+# identical in a Unicon string literal.  May be applied
 # at present only to single-characters by themselves,
 # and entire square bracket cset [].
 # Escapify rules might be different in [] re-csets
-# might also want to to flex octal, hex, and nul here
+# Might also want to do flex octal, hex, and nul here.
+# Note: The flex manual defines as \a having the ANSI-C
+# interpretation, but \a is famously not in Icon.
 procedure escapify(s)
    if *s > 1 then {
       if s[1] == "\\" then {
@@ -269,7 +270,7 @@ procedure escapify(s)
       return escapify(s[1])||escapify(s[2:0])
       }
    case s of  {
-      "\a": { return "\\a"; }
+#      "\a": { return "\\a"; } # doesn't work \a is a in Unicon
       "\b": { return "\\b"; }
       "\f": { return "\\f"; }
       "\n": { return "\\n"; }

@@ -206,15 +206,17 @@ write(&errout, "treeprint")
             listptr._next.current := newnode2
 
             if getsinglechar == "\\" then {
-tempstring := tempstring[2:0]
-echar := tempstring[1]
-write("eureka \\", echar)
-case echar of {
-    "t": getsinglechar := "\t"
-    "n": getsinglechar := "\n"
-    "\\": getsinglechar := "\\"
-    default: stop("unhandled escape in flex string literal \\", tempstring)
-}
+               tempstring := tempstring[2:0]
+               echar := tempstring[1]
+               case echar of {
+                  "t": getsinglechar := "\t"
+                  "n": getsinglechar := "\n"
+                  "\\": getsinglechar := "\\"
+                  "\"": getsinglechar := "\""
+                  "\'": getsinglechar := "\'"
+                  default: stop("unhandled escape in flex string literal \\",
+                                tempstring)
+                   }
                }
 
             newnode1.edges := [ alcedge(getsinglechar) ]
@@ -232,7 +234,6 @@ case echar of {
       }
 
     BACKSLASH: {
-#write("got to BACKSLASH")
         #
         # This case is handled by creating a two state automata with the edge
         # labelled directly with the character that follows the backslash.
@@ -249,7 +250,6 @@ case echar of {
         listptr._next.current := newnode2
 
         tr.text := tr.text[2:0] # skip over \
-#        write(" tr.text "||image(tr.text))
 
         if tr.text[1] == "n" then tr.text[1] := "\n"
         else if tr.text[1] == "t" then tr.text[1] := "\t"
@@ -272,35 +272,55 @@ case echar of {
       }
 
     CSET: {
-        #
-        # This case is handled by creating an automata with a start state and
-        # transitioning to a final state and the edge is labelled with the
-        # entire string representing the cset. This becomes a special case in
-        # handling the simulation of the automata.
-        #
-
         returnvalue := alcautomata()
         returnvalue.start := alcanode(0)
         returnvalue.states := alcnodelist()
         returnvalue.accepting := alcnodelist()
 
         returnvalue.accepting.current := alcanode(0)
-
         returnvalue.states.current := returnvalue.start
         returnvalue.states._next := alcnodelist()
         returnvalue.states._next.current := returnvalue.accepting.current
+        returnvalue.start.edges := [ ]
 
-        returnvalue.start.edges := [ alcedge(tr.text) ]
-        returnvalue.start.edges[1].destinations := alcnodelist()
-        returnvalue.start.edges[1].destinations.current :=
-          returnvalue.accepting.current
-
+        cse := csetfromrecset(tr.text)
+        every c := !cse do {
+            put(returnvalue.start.edges, alcedge(image(c)[2:-1]))
+            returnvalue.start.edges[-1].destinations := alcnodelist()
+            returnvalue.start.edges[-1].destinations.current :=
+                returnvalue.accepting.current
+        }
         return returnvalue
+
+#	#
+#	# This case is handled by creating an automata with a start state and
+#	# transitioning to a final state and the edge is labelled with the
+#	# entire string representing the cset. This becomes a special case in
+#	# handling the simulation of the automata.
+#	#
+#
+#	returnvalue := alcautomata()
+#	returnvalue.start := alcanode(0)
+#	returnvalue.states := alcnodelist()
+#	returnvalue.accepting := alcnodelist()
+#
+#	returnvalue.accepting.current := alcanode(0)
+#
+#	returnvalue.states.current := returnvalue.start
+#	returnvalue.states._next := alcnodelist()
+#	returnvalue.states._next.current := returnvalue.accepting.current
+#
+#	returnvalue.start.edges := [ alcedge(tr.text) ]
+#	returnvalue.start.edges[1].destinations := alcnodelist()
+#	returnvalue.start.edges[1].destinations.current :=
+#	  returnvalue.accepting.current
+#
+#	return returnvalue
       }
 
     CHARACTER: {
         #
-        # The most striaghtforward case - create a two state automata that
+        # The most straightforward case - create a two state automata that
         # transitions from the start to the final state on the specified
         # character.
         #
@@ -623,6 +643,19 @@ case echar of {
         " text ", image(tr.text), " kids ",image(tr.children))
 end
 
+# "hexVal" == "hexadecimal value"
+procedure hexVal(ch)
+   if any(&digits, ch) then return ord(ch)-ord("0")
+   return case ch of {
+      "a"|"A": 10
+      "b"|"B": 11
+      "c"|"C": 12
+      "d"|"D": 13
+      "e"|"E": 14
+      "f"|"F": 15
+   }
+end
+
 #
 # What could possibly go wrong with including this procedure from the uflexskel
 # into the uflex program itself, in order to compute some compile-time csets?
@@ -655,12 +688,37 @@ local rv, lastchar, origcset := recset
                "n":  recset[1] := "\n"
                "t":  recset[1] := "\t"
                "r":  recset[1] := "\r"
-               "f":  recset[1] := "\f"
+               "v":  recset[1] := "\v"
                "'":  recset[1] := "\'"
+               "-":  recset[1] := "-"
+               "+":  recset[1] := "+"
+               "f":  recset[1] := "\f"
+               "\'":  recset[1] := "\'"
                "\"":  recset[1] := "\""
                "\\": recset[1] := "\\"
+               "0": {
+                     if any('01234567', recset[2]) then {
+                        if any('01234567', recset[3]) then {
+                           o := char(recset[1]*64+recset[2]*8+recset[3])
+                           recset := o || recset[4:0]
+                        }
+                        else stop("argh2 ", image(recset))
+                        }
+                     else
+                        recset[1] := "\\0"
+                  }
+               "x": {
+                     if any('0123456789abcdefABCDEF', recset[2]) then {
+                        if any('0123456789abcdefABCDEF', recset[3]) then {
+                           o := char(hexVal(recset[2])*16+hexVal(recset[3]))
+                           recset := o || recset[4:0]
+                        }
+                        else stop("arghx ", image(recset))
+                        }
+                     else stop("arghx2 ", image(recset))
+                  }
                # should handle all escapes here, and error on bogus ones
-               default: stop("unrecognized escape ", image(recset[1]))
+               default: stop("unrecognized Escape ", image(recset[1]))
                }
             }
 

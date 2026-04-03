@@ -40,9 +40,12 @@ global rulenumber
 %token EXPRTREE
 %token NEWLINE
 %token CONCATEXPR
-%token CONCAT
 %token CSETUNION
 %token CSETDIFFERENCE
+
+%left OR
+%left CONCAT
+%right OPTIONAL ZEROORMORE ONEORMORE
 
 %%
 
@@ -93,8 +96,8 @@ Expr    : QUOTES       { $$ := alcleaf(QUOTES, yylval.s) }
         | Question
         | Star
         | Plus
-        | Expr OR Expr { $$ := alcnode(OREXPR, $1, alcleaf(OR), $3) }
-        | Expr Expr    { $$ := alcnode(CONCATEXPR, $1, alcleaf(CONCAT), $2) }
+        | Expr Expr %prec CONCAT { $$ :=alcnode(CONCATEXPR,$1,alcleaf(CONCAT),$2) }
+	| Expr OR Expr { $$ := alcnode(OREXPR, $1, alcleaf(OR), $3) }
         | Parenthetic
         | ForSlash
         | Occurrence

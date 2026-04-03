@@ -19,7 +19,9 @@ fprintf(f, "%s",
    # it could parse and what rule accepted the string.\n_
    #\n_
    \n_
-   global stringseq\n\n")
+   global stringseq\n_
+   global dfatable\n_
+   global accepttable\n\n")
 
 fprintf(f, "%s",
   "procedure yyulex(aut)\n_
@@ -29,7 +31,7 @@ fprintf(f, "%s",
    initial {\n_
       \ \ \ if /yyin then yyin := &input\n_
       \ \ \ readfrom := yyin\n_
-   \n_
+      \ \ \ do_create()\n_
       \ \ \ stringseq := read(readfrom) || \"\\n\"\n_
    \n_
       \ \ \ while getln := read(readfrom) do\n_
@@ -56,6 +58,7 @@ fprintf(f, "%s",
    \         stringseq := stringseq[maxleng+1:0]\n_
    \         if yychar := (\semantic_action)[maxrule] () then return yychar\n_
    \      } else {\n_
+   \         writes(stringseq[1]) # copy to stdout\n_
    \         stringseq := stringseq[2:0]\n_
    \      }\n_
    \   }\n_
@@ -64,135 +67,141 @@ fprintf(f, "%s",
 fprintf(f, "%s",
    "#\n_
    # simulate(automata, word) determines whether or not the word\n_
-   # would be accepted by the given automata. It gets the possible\n_
-   # destinations at each symbol of the string and then adds on wherever it\n_
-   # could also get if we use any epsilon transitions out of those states.\n_
-   # Then the list of accepting states is compared to the reachable set\n_
-   # of states to determine if the word was accepted and by which rule.\n_
+   # would be accepted by the given automata. It starts at state 1\n_
+   # and continues through the automata with each symbol of the string\n_
+   # until it cannot find a state for that symbol. The last reached state\n_
+   # is checked to see if it is a member of accepting states.If it is an\n_
+   # an accepting state, the rule number is returned.\n_
    #\n_
    procedure simulate(myaut, word)\n_
-   local first, currstates, acceptcheck, currsymbol, build, rv\n_
+   local currstates, currsymbol, rv, value2\n_
    \   currstates := list(0) # should be set()\n_
-   \   put(currstates, myaut.start) # insert(currstates, myaut.start)\n_
-   \   acceptcheck := copy(myaut.accepting)\n_
+   \   start :=  anode(1, 0, [], [], [])\n_
+   \   put(currstates, start)\n_
    \   currsymbol := word\n_
+   \n_
    \   while *currsymbol > 0 do {\n_
-   \      currstates := getdestinations(currstates, currsymbol)\n_
+   \      currstates := getdestination(currstates, currsymbol)\n_
    \      if *currstates = 0 then\n_
    \         fail\n_
    \      currsymbol := currsymbol[2:0]\n_
    \      }\n_
-   \   while *acceptcheck > 0 do {\n_
-   \      value1 := pop(acceptcheck)\n_
-   \      check2 := copy(currstates)\n_
    \n_
-   \      while *check2 > 0 do {\n_
-   \         value2 := pop(check2)\n_
-   \n_
-   \         if value1.label = value2.label then {\n_
-   \            if /rv | rv > value1.rulenum then\n_
-   \               rv := value1.rulenum\n_
-   \            }\n_
-   \         }\n_
-   \      }\n_
+   \   if *currstates = 1 then {\n_
+   \      value2 := currstates[1]\n_
+   \      if member(accepttable,integer(value2.label)) then \n_
+   \         rv := accepttable[integer(value2.label)]\n_
+   \   }\n_
    \   if \\yydebug>0 then write(\"simulate() returns \", image(\\rv)|0)\n_
    \   return \\rv | -(currstates[1].label)\n_
    end\n\n")
 
 fprintf(f, "%s",
-   "#\n_
-    # like |||:= except no duplicates. Destructive of L1 but not L2\n_
-    #\n_
-    procedure yyunionin(L1, L2)\n_
-    t1 := table()\n_
-    \  every x := !L1 do {\n_
-    \     t1[x.label] := x\n_
-    \     }\n_
-    \  every x := !L2 do {\n_
-    \     if /t1[x.label] then {\n_
-    \        t1[x.label] := x\n_
-    \         put(L1, x)\n_
-    \         }\n_
-    \      }\n_
-    end\n_
-    procedure yyonein(L1, L2)\n_
-    \  if (!L1).label === L2[1].label then fail\n_
-    \  put(L1, L2[1])\n_
-    end\n\n");
-
-fprintf(f, "%s",
 
   "#\n_
-   # getdestinations uses the current set of states and\n_
+   # getdestination uses the current list containing a state\n_
    # simulates one step of automata computation on the given\n_
-   # string and returns the resulting set of destinations\n_
+   # string and returns the resulting set of destination\n_
    #\n_
-   procedure getdestinations(currstates, currsymbol)\n_
-   local result, current, buildresult, reached\n_
-   \n_
-   \   result := list(0)\n_
-   \   if *currstates ~= 0 then {\n_
-   \n_
-   \      buildresult := copy(currstates)\n_
-   \      while *buildresult > 0 do {\n_
-   \          reached := reach(pop(buildresult), currsymbol)\n_
-   \          if *reached>0 then {\n_
-   \             yyunionin(result, reached)\n_
-   \             }\n_
-   \          }\n_
-   \       }\n_
-   \    return result\n_
+   procedure getdestination(currstates, currsymbol)\n_
+   local reached\n_
+   \   reached := list(0)\n_
+   \   if *currstates = 1 then {\n_
+   \      reached := reach(currstates[1], currsymbol)\n_
+   \   }\n_
+   \   return reached\n_
    end\n\n")
 
 fprintf(f, "%s",
   "#\n_
-   # reach returns the list of states that can be reached\n_
-   # on character symbol from the state state.\n_
+   # reach returns the state that can be reached\n_
+   # on character symbol from the previous state.\n_
    #\n_
    procedure reach(state, symbol)\n_
-   local edgeset, answer, edgesymbol, bound1, bound2, curredge\n_
+   local j, new, dest\n_
    \n_
-   \   edgeset := copy(state.edges)\n_
-   \   answer := list(0)\n_
-   \n_
-   \   while *edgeset > 0 do {\n_
-   \      curredge := pop(edgeset)\n_
-   \      edgesymbol := copy(curredge.symbol)\n_
-   \      if type(edgesymbol) == \"cset\" then {\n_
-   \         if any(edgesymbol, symbol[1]) then {\n_
-   \            yyunionin(answer, curredge.destinations)\n_
-   \          }\n_
+   \   dest := list(0)\n_
+   \   j := state.label\n_
+   \   key2 :=  j || \":\" || symbol[1]\n_
+   \   if member(dfatable,key2) then {  \n_
+   \      new :=  anode(dfatable[key2], 0, [], [], [])\n_
+   \      put(dest,new)\n_
+   \   }\n_
+   \   else {\n_
+   \      key2 := \"\"\n_
+   \      if (symbol[1] == \"\\n\") then\n_
+   \         key2 :=  j || \":\" || \"\\\\n\"\n_
+   \      else if (symbol[1] == \"\\t\") then\n_
+   \         key2 :=  j || \":\" || \"\\\\t\"\n_
+   \      else if (symbol[1] == \"\\r\") then\n_
+   \         key2 :=  j || \":\" || \"\\\\r\"\n_
+   \      else if (symbol[1] == \"\\f\") then\n_
+   \         key2 :=  j || \":\" || \"\\\\f\"\n_
+   \      else if (symbol[1] == \"\\\\\") then\n_
+   \         key2 :=  j || \":\" || \"\\\\\\\\\" \n_
+   \      if key2 ~== \"\" then {\n_
+   \         if member(dfatable,key2) then {  \n_
+   \            new :=  anode(dfatable[key2], 0, [], [], [])\n_
+   \            put(dest,new)\n_
+   \         }\n_
    \      }\n_
-   \      else {\n_
-   \      if (edgesymbol[1] == symbol[1] ~== \"[\") |\n_
-   \         (edgesymbol == symbol[1] == \"[\") then # sometimes a [ is just a [\n_
-   \             yyunionin(answer, curredge.destinations)\n_
+   \   }\n_
    \n_
-   \      else if edgesymbol[1] == \"\\\\\" then {\n_
-   \         if (edgesymbol[2] == \"n\") & (symbol[1] == \"\\n\") then\n_
-   \            yyunionin(answer, curredge.destinations)\n_
-   \         else if (edgesymbol[2] == \"t\") & (symbol[1] == \"\\t\") then\n_
-   \            yyunionin(answer, curredge.destinations)\n_
-   \         else if (edgesymbol[2] == \"r\") & (symbol[1] == \"\\r\") then\n_
-   \            yyunionin(answer, curredge.destinations)\n_
-   \         else if (edgesymbol[2] == \"f\") & (symbol[1] == \"\\f\") then\n_
-   \            yyunionin(answer, curredge.destinations)\n_
-   \         else if (edgesymbol[2] == \"\\\\\") & (symbol[1] == \"\\\\\") then\n_
-   \            yyunionin(answer, curredge.destinations)\n_
-   \         # should handle all escapes here, and error on bogus ones\n_
-   \         else if edgesymbol[2] == symbol[1] then\n_
-   \            yyunionin(answer, curredge.destinations)\n_
-   \         } # escape\n\n_
-   \n_
-   \      }\n_
-   \n_
-   \      } # while edgeset > 0\n_
-   \   if *(state.dot)>0 then {\n_
-   \      yyunionin(answer, state.dot)\n_
-   \      }\n_
-   \   return answer\n_
+   \   return dest\n_
    end\n\n");
-   
+
+fprintf(f, "%s",
+   "# \"hexVal\" == \"hexadecimal value\"\n_
+    procedure hexVal(ch)\n_
+   \   if any(&digits, ch) then return ord(ch)-ord(\"0\")\n_
+   \   return case ch of {\n_
+   \      \"a\"|\"A\": 10\n_
+   \      \"b\"|\"B\": 11\n_
+   \      \"c\"|\"C\": 12\n_
+   \      \"d\"|\"D\": 13\n_
+   \      \"e\"|\"E\": 14\n_
+   \      \"f\"|\"F\": 15\n_
+   \   }\n_
+    end\n\n");
+
+fprintf(f, "%s",
+   "procedure print_statestable(myaut,dfatable)\n_
+   local lst, stateset, state, key2, input, nextstate\n_
+   \   lst := list()\n_
+   \   stateset := set()\n_
+   \   nextstate := 0\n_
+   \   input := \"\"\n_
+   \   key2 :=  \"\"\n_
+   \n_
+   \   lst := sort(dfatable)\n_
+   \   write(\"printstates size \", *lst)\n_
+   \n_
+   \   every j := 1 to *lst do {\n_
+   \      key2 := lst[j][1]\n_
+   \      nextstate := lst[j][2]\n_
+   \      p1 := upto(\":\",key2)\n_
+   \      input := key2[p1+1:0]\n_
+   \      state := key2[1:p1]\n_
+   \n_
+   \      if not member(stateset, state) then {\n_
+   \         insert(stateset,state)\n_
+   \         write()\n_
+   \         write(\" state: \"||state)\n_
+   \      }\n_
+   \      writes(image(input)||\" -> \"||nextstate||\",\")\n_
+   \   }\n_
+   \   write()\n_
+   \   lst := sort(accepttable)\n_
+   \   write(\" Number of Accepting States \"||*lst)\n_
+   \   every j := 1 to *lst do\n_
+   \      write(\"Accepting State:\"||lst[j][1]||\" rule:\"||lst[j][2])\n_
+   \   write()\n_
+   \   write(\"Automata Number of states \"||*stateset)\n_
+   \   write(\"Accepting: \")\n_
+   \   every j := 1 to *(myaut.accepting) do\n_
+   \      write(myaut.accepting[j].label||\" rule: \"||myaut.accepting[j].rulenum)\n_
+   end\n")
+
 fprintf(f, "%s",
    "# \"recset\" == \"regular expression cset\"\n_
     procedure csetfromrecset(recset)\n_
@@ -219,6 +228,7 @@ fprintf(f, "%s",
    \               \"r\":  recset[1] := \"\\r\"\n_
    \               \"v\":  recset[1] := \"\\v\"\n_
    \               \"-\":  recset[1] := \"\\-\"\n_
+   \               \"+\":  recset[1] := \"\\+\"\n_
    \               \"f\":  recset[1] := \"\\f\"\n_
    \               \"'\":  recset[1] := \"\\'\"\n_
    \               \"\\\"\":  recset[1] := \"\\\"\"\n_
@@ -232,6 +242,16 @@ fprintf(f, "%s",
    \                     else stop(\"argh2 \", image(recset))\n_
    \                     }\n_
    \                  else recset[1] := \"\\0\"\n_
+   \               }\n_
+   \               \"x\": {\n_
+   \                  if any('0123456789abcdefABCDEF', recset[2]) then {\n_
+   \                     if any('0123456789abcdefABCDEF', recset[3]) then {\n_
+   \                        o := char(hexVal(recset[2])*16+hexVal(recset[3]))\n_
+   \                        recset := o || recset[4:0]\n_
+   \                     }\n_
+   \                     else stop(\"arghx \", image(recset))\n_
+   \                     }\n_
+   \                  else stop(\"arghX \", image(recset))\n_
    \               }\n_
    \               # should handle all escapes here, and error on bogus ones\n_
    \               default: stop(\"unrecognized escape \", image(recset[1]))\n_
@@ -253,8 +273,6 @@ fprintf(f, "%s",
    \       }\n\n_
    \   return rv\n_
     end\n\n");
-
-
 
 
 fprintf(f, "%s",
@@ -311,5 +329,3 @@ fprintf(f, "%s",
    \    else write(\"state list is empty\")\n_
    end\n")
 end
-
-

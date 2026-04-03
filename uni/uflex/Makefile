@@ -10,11 +10,14 @@ include $(BASE)/Makedefs.uni
 
 PROGRAM = uflex$(EXE)
 
-all: $(PROGRAM)
+all: $(PROGRAM) tst
 
-$(PROGRAM): flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u automatadfa.u uflexskel.u
+# why ulpp.icn not ulpp.u ?
+$(PROGRAM): flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u tree.u convert.u automatadfa.u ulpp.icn
 	$(UNICON) -s -o uflex flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u convert.u automatadfa.u ulpp.icn
 	@$(CP) $(PROGRAM) ../../bin/
+
+tst:
 	@cd test; $(MAKE)
 
 flexgram.icn flexgram_tab.icn: flexgram.y
@@ -28,6 +31,10 @@ dfa2auto: dfa2auto.icn dfa2auto.icn ulexskel.icn
 
 convert.u: convert.icn flexgram_tab.icn
 
+tree.u: tree.icn flexgram_tab.icn
+
+zip:
+	zip uflex.zip *.icn *.l *.y Makefile test/Makefile test/*.l test/*.icn test/hello*.*
 
 clean:
 	$(RM) *.u uflex$(EXE) nfa2dfa$(EXE) dfa2auto$(EXE)

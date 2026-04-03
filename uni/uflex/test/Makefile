@@ -120,4 +120,4 @@ punylex punylex.tst: punylex.l Makefile
 	@if diff --strip-trailing-cr local/punylex.out stand/punylex.std ; then echo "++++++++++++++++++++ Passed"; else echo "-------------------- Failed"; fi
 
 clean:
-	$(RM) *.u nnws$(EXE) j0$(EXE) local/j0.out local/nnws.out
+	$(RM) *.u nnws$(EXE) j0$(EXE) toy$(EXE) k0$(EXE) go$(EXE) fec$(EXE) ucc$(EXE) 120$(EXE) ubug$(EXE) uniflex$(EXE) punylex$(EXE) local/j0.out local/nnws.out local/toy.out local/k0.out local/go.out local/fec.out local/c.out local/cpp.out local/ubug.out local/uniflex.out local/punylex.out

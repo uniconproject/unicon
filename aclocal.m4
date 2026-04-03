@@ -1,6 +1,6 @@
 
 
-# arsgs: additionals cflags, ldflags and cppflags.  
+# args: additional cflags, ldflags and cppflags.
 AC_DEFUN([save_flags],
 [
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -54,16 +54,16 @@ AC_DEFUN([restore_flags],
 AC_DEFUN([fail_and_restore],
 [
 	restore_flags()
-	AC_MSG_CHECKING(checking lib $1)
-	AC_MSG_RESULT(failed)
+	AC_MSG_CHECKING([for lib $1])
+	AC_MSG_RESULT([failed])
 ])
 
 # 
 # $1 libname
-# $2 path to the libraray
+# $2 path to the library
 # $3 headers to check 
 # $4 function to check in the library
-# $5 the symobol to define if the function/lib exist
+# $5 the symbol to define if the function/lib exists
 # $6 lang (C or C++)
 AC_DEFUN([do_lib_check],
 [
@@ -80,14 +80,14 @@ else
 	save_flags([], [], [])
 fi
         AC_LANG_PUSH([$6])
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
         AC_CHECK_HEADERS([$3], [], [cv_libthislib_h=no], [])
 	if test x$cv_libthislib_h != xno ;  then
 	  AC_SEARCH_LIBS([$4], [$1],
 	     [cv_lib$1=yes
 	      if test -n $5 ; then
-	        AC_DEFINE([$5], [1], [Define to 1 if you lib $1])
+	        AC_DEFINE([$5], [1], [Define to 1 if you have lib $1])
 	      fi
 	     ],
 	     [cv_lib$1=no
@@ -398,7 +398,7 @@ else
 	save_flags([], [], [])
 fi
         AC_LANG_PUSH([C])
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libodbc32_h=yes
 	AC_CHECK_HEADERS([sqlext.h], [], [cv_libodbc32_h=no],
         [[
@@ -409,7 +409,7 @@ fi
 	if test x$cv_libodbc32_h != xno ;  then
 	  AC_SEARCH_LIBS([SQLConnect], [odbc32],
 	     [cv_libodbc=yes
-	      AC_DEFINE([HAVE_LIBODBC], [1], [Define to 1 if you lib odbc])
+	      AC_DEFINE([HAVE_LIBODBC], [1], [Define to 1 if you have lib odbc])
 	     ],
 	     [cv_libodbc=no
 	       fail_and_restore([odbc32 in (${odbc_HOME})])
@@ -471,7 +471,7 @@ do
    [
     AC_LINK_IFELSE(dnl
     [AC_LANG_PROGRAM([[/* no includes */]],
-               [[extern long int $ac_global;  exit((int)$ac_global)]])],
+               [[extern long int $ac_global; return (int)$ac_global]])],
     eval "ac_cv_global_${ac_global}=yes",
     eval "ac_cv_global_${ac_global}=no"
     )

@@ -15,29 +15,39 @@ AH_BOTTOM([#endif          /* __AUTO_CONFIG_H  */])
 #AC_CANONICAL_TARGET
 
 case $host_cpu in
-     *armv7* | *armv6* | *aarch32*)
+    *armv7* | *armv6* | *aarch32*)
         unicon_cpu="arm_32"
-	ARCHBITS="32"
-	AC_DEFINE([ARM], [1], [ARM platform])
+        ARCHBITS="32"
+        AC_DEFINE([ARM], [1], [ARM platform])
         ;;
-     *armv8* | *aarch64*)
+    *armv8* | *aarch64*)
         unicon_cpu="arm_64"
-	ARCHBITS="64"
-	AC_DEFINE([ARM], [1], [ARM platform])
+        ARCHBITS="64"
+        AC_DEFINE([ARM], [1], [ARM platform])
         ;;
-     *riscv64*)
+    *riscv64*)
         unicon_cpu="riscv_64"
-	ARCHBITS="64"
-	AC_DEFINE([RISCV], [1], [RISC-V platform])
+        ARCHBITS="64"
+        AC_DEFINE([RISCV], [1], [RISC-V platform])
         ;;
-     *i386* | *i686*)
+    *i386* | *i686*)
         unicon_cpu="x86_32"
-	ARCHBITS="32"
-	AC_DEFINE([X86], [1], [X86 platform])
-	;;
-     *)
+        ARCHBITS="32"
+        AC_DEFINE([X86], [1], [X86 platform])
+        ;;
+    *powerpc64* | *ppc64*)
+        unicon_cpu="ppc64"
+        ARCHBITS="64"
+        AC_DEFINE([PPC64], [1], [PowerPC 64 platform])
+        ;;
+    *powerpc* | *ppc*)
+        unicon_cpu="ppc"
+        ARCHBITS="32"
+        AC_DEFINE([PPC], [1], [PowerPC platform])
+        ;;
+    *)
         unicon_cpu="$host_cpu"
-	ARCHBITS="64"
+        ARCHBITS="64"
         ;;
 esac
 
@@ -311,7 +321,7 @@ fi
 #  AC_CFLAG([-Wmissing-declarations])
 #fi
 
-# We always want these CFLAGS if available, the second one is neseccary for a stable runtime
+# We always want these CFLAGS if available; the second one is necessary for a stable runtime
 AC_CFLAG([-fno-omit-frame-pointer])
 
 AC_CFLAG([-fno-strict-aliasing])
@@ -548,11 +558,7 @@ if test "x$thin" = "xyes"; then
       plugins=no
    fi
 
-   if test "x$database" = "xon"; then
-      database=no
-   fi
-
-   if test "x$databse" = "xon"; then
+   if test "x$ssl" = "xon"; then
       ssl=no
    fi
 
@@ -860,7 +866,7 @@ if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
   if test "x$cv_libfreetype"   = "xyes" ; then
     gtmp="$gtmp+Freetype " ; else gtmp="$gtmp-FreeType " ; fi
 else
-#disbaled graphics
+#disabled graphics
   gtmp=" ! Graphics"
 fi
 
@@ -893,12 +899,12 @@ if test "x$graphics3d" = "xyes" || test "x$graphics3d" = "xon" ; then
     gdtmp=" + Graphics3D         : $gdtmp"
   else
     if test "x$graphics3d" = "xyes" ; then
-        AC_MSG_ERROR("3D graphics requires opengl librarry")
+        AC_MSG_ERROR("3D graphics requires opengl library")
      fi
     gdtmp=" - Graphics3D         : $gdtmp"
   fi
 else
-#disbaled graphics3D
+#disabled graphics3D
   gdtmp=" ! Graphics3D"
 fi
 
@@ -980,7 +986,7 @@ if test "x$audio" = "xyes" || test "x$audio" = "xon" ; then
   fi
 
 else
-#disbaled Audio
+#disabled Audio
   atmp=" ! Audio"
 fi
 
@@ -1023,7 +1029,7 @@ if test "x$voip" = "xyes" || test "x$voip" = "xon" ; then
   fi
 
 else
-#disbaled Voip
+#disabled Voip
   vtmp=" ! VOIP"
 fi
 
@@ -1042,8 +1048,8 @@ if test "x$database" = "xyes" || test "x$database" = "xon" ; then
   fi
   fi
 else
-#disbaled databse
-  dtmp=" ! Databse"
+#disabled database
+  dtmp=" ! Database"
 fi
 
 # want ssl
@@ -1052,12 +1058,12 @@ if test "x$ssl" = "xyes" || test "x$ssl" = "xon" ; then
      stmp=" + SSL                : +ssl"
   else
      if test "x$ssl" = "xyes" ; then
-        AC_MSG_ERROR("ssl requirels libssl-dev or equivalent")
+        AC_MSG_ERROR("ssl requires libssl-dev or equivalent")
      fi
      stmp=" - SSL                : -ssl"
   fi
 else
-#disbaled ssl
+#disabled ssl
   stmp=" ! SSL"
 fi
 
@@ -1110,7 +1116,7 @@ fi
 
 if test "x$iconc"  = "xyes" || test "x$iconc" = "xon" ; then
   if test "x$coniconc"      = "xyes" ; then
-     echo " + Compiler: with concurrency >> unicon-config.log"
+     echo " + Compiler: with concurrency" >> unicon-config.log
   else
      echo " + Compiler: no concurrency" >> unicon-config.log
   fi

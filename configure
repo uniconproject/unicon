@@ -3420,37 +3420,51 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 #AC_CANONICAL_TARGET
 
 case $host_cpu in
-     *armv7* | *armv6* | *aarch32*)
+    *armv7* | *armv6* | *aarch32*)
         unicon_cpu="arm_32"
-	ARCHBITS="32"
+        ARCHBITS="32"
 
 printf "%s\n" "#define ARM 1" >>confdefs.h
 
         ;;
-     *armv8* | *aarch64*)
+    *armv8* | *aarch64*)
         unicon_cpu="arm_64"
-	ARCHBITS="64"
+        ARCHBITS="64"
 
 printf "%s\n" "#define ARM 1" >>confdefs.h
 
         ;;
-     *riscv64*)
+    *riscv64*)
         unicon_cpu="riscv_64"
-	ARCHBITS="64"
+        ARCHBITS="64"
 
 printf "%s\n" "#define RISCV 1" >>confdefs.h
 
         ;;
-     *i386* | *i686*)
+    *i386* | *i686*)
         unicon_cpu="x86_32"
-	ARCHBITS="32"
+        ARCHBITS="32"
 
 printf "%s\n" "#define X86 1" >>confdefs.h
 
-	;;
-     *)
+        ;;
+    *powerpc64* | *ppc64*)
+        unicon_cpu="ppc64"
+        ARCHBITS="64"
+
+printf "%s\n" "#define PPC64 1" >>confdefs.h
+
+        ;;
+    *powerpc* | *ppc*)
+        unicon_cpu="ppc"
+        ARCHBITS="32"
+
+printf "%s\n" "#define PPC 1" >>confdefs.h
+
+        ;;
+    *)
         unicon_cpu="$host_cpu"
-	ARCHBITS="64"
+        ARCHBITS="64"
         ;;
 esac
 
@@ -5508,7 +5522,7 @@ fi
 #  AC_CFLAG([-Wmissing-declarations])
 #fi
 
-# We always want these CFLAGS if available, the second one is neseccary for a stable runtime
+# We always want these CFLAGS if available; the second one is necessary for a stable runtime
 {
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -8011,11 +8025,7 @@ if test "x$thin" = "xyes"; then
       plugins=no
    fi
 
-   if test "x$database" = "xon"; then
-      database=no
-   fi
-
-   if test "x$databse" = "xon"; then
+   if test "x$ssl" = "xon"; then
       ssl=no
    fi
 
@@ -9076,7 +9086,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in zlib.h
 do :
@@ -9163,8 +9173,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
-printf %s "checking checking lib z in (${zlib_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib z in (${zlib_HOME})" >&5
+printf %s "checking for lib z in (${zlib_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -9178,8 +9188,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
-printf %s "checking checking lib z in (${zlib_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib z in (${zlib_HOME})" >&5
+printf %s "checking for lib z in (${zlib_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -9393,7 +9403,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h
 do :
@@ -9483,8 +9493,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${XLIB_HOME})" >&5
-printf %s "checking checking lib X11 in (${XLIB_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib X11 in (${XLIB_HOME})" >&5
+printf %s "checking for lib X11 in (${XLIB_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -9498,8 +9508,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${XLIB_HOME})" >&5
-printf %s "checking checking lib X11 in (${XLIB_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib X11 in (${XLIB_HOME})" >&5
+printf %s "checking for lib X11 in (${XLIB_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -9718,7 +9728,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in freetype/fttypes.h
 do :
@@ -9805,8 +9815,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib freetype in (${freetype_HOME})" >&5
-printf %s "checking checking lib freetype in (${freetype_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib freetype in (${freetype_HOME})" >&5
+printf %s "checking for lib freetype in (${freetype_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -9820,8 +9830,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib freetype in (${freetype_HOME})" >&5
-printf %s "checking checking lib freetype in (${freetype_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib freetype in (${freetype_HOME})" >&5
+printf %s "checking for lib freetype in (${freetype_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -10013,7 +10023,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in X11/Xft/Xft.h
 do :
@@ -10100,8 +10110,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib Xft in (${Xft_HOME})" >&5
-printf %s "checking checking lib Xft in (${Xft_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib Xft in (${Xft_HOME})" >&5
+printf %s "checking for lib Xft in (${Xft_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -10115,8 +10125,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib Xft in (${Xft_HOME})" >&5
-printf %s "checking checking lib Xft in (${Xft_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib Xft in (${Xft_HOME})" >&5
+printf %s "checking for lib Xft in (${Xft_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -10308,7 +10318,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in jpeglib.h jerror.h
 do :
@@ -10398,8 +10408,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg in (${jpeg_HOME})" >&5
-printf %s "checking checking lib jpeg in (${jpeg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib jpeg in (${jpeg_HOME})" >&5
+printf %s "checking for lib jpeg in (${jpeg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -10413,8 +10423,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg in (${jpeg_HOME})" >&5
-printf %s "checking checking lib jpeg in (${jpeg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib jpeg in (${jpeg_HOME})" >&5
+printf %s "checking for lib jpeg in (${jpeg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -10603,7 +10613,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in png.h
 do :
@@ -10690,8 +10700,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib png in (${png_HOME})" >&5
-printf %s "checking checking lib png in (${png_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib png in (${png_HOME})" >&5
+printf %s "checking for lib png in (${png_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -10705,8 +10715,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib png in (${png_HOME})" >&5
-printf %s "checking checking lib png in (${png_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib png in (${png_HOME})" >&5
+printf %s "checking for lib png in (${png_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -11113,8 +11123,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib OpenGL" >&5
-printf %s "checking checking lib OpenGL... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib OpenGL" >&5
+printf %s "checking for lib OpenGL... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -11306,7 +11316,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in FTGL/FTGLExtrdFont.h
 do :
@@ -11392,8 +11402,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl in (${ftgl_HOME})" >&5
-printf %s "checking checking lib ftgl in (${ftgl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ftgl in (${ftgl_HOME})" >&5
+printf %s "checking for lib ftgl in (${ftgl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -11407,8 +11417,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl in (${ftgl_HOME})" >&5
-printf %s "checking checking lib ftgl in (${ftgl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ftgl in (${ftgl_HOME})" >&5
+printf %s "checking for lib ftgl in (${ftgl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -11799,7 +11809,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in ogg/ogg.h
 do :
@@ -11886,8 +11896,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ogg in (${ogg_HOME})" >&5
-printf %s "checking checking lib ogg in (${ogg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ogg in (${ogg_HOME})" >&5
+printf %s "checking for lib ogg in (${ogg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -11901,8 +11911,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ogg in (${ogg_HOME})" >&5
-printf %s "checking checking lib ogg in (${ogg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ogg in (${ogg_HOME})" >&5
+printf %s "checking for lib ogg in (${ogg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -12063,7 +12073,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in vorbis/codec.h
 do :
@@ -12150,8 +12160,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis in (${ogg_HOME})" >&5
-printf %s "checking checking lib vorbis in (${ogg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib vorbis in (${ogg_HOME})" >&5
+printf %s "checking for lib vorbis in (${ogg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -12165,8 +12175,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis in (${ogg_HOME})" >&5
-printf %s "checking checking lib vorbis in (${ogg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib vorbis in (${ogg_HOME})" >&5
+printf %s "checking for lib vorbis in (${ogg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -12327,7 +12337,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in vorbis/vorbisfile.h
 do :
@@ -12414,8 +12424,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile in (${ogg_HOME})" >&5
-printf %s "checking checking lib vorbisfile in (${ogg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib vorbisfile in (${ogg_HOME})" >&5
+printf %s "checking for lib vorbisfile in (${ogg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -12429,8 +12439,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile in (${ogg_HOME})" >&5
-printf %s "checking checking lib vorbisfile in (${ogg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib vorbisfile in (${ogg_HOME})" >&5
+printf %s "checking for lib vorbisfile in (${ogg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -12619,7 +12629,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in SDL/SDL_audio.h
 do :
@@ -12706,8 +12716,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib SDL in (${SDL_HOME})" >&5
-printf %s "checking checking lib SDL in (${SDL_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib SDL in (${SDL_HOME})" >&5
+printf %s "checking for lib SDL in (${SDL_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -12721,8 +12731,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib SDL in (${SDL_HOME})" >&5
-printf %s "checking checking lib SDL in (${SDL_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib SDL in (${SDL_HOME})" >&5
+printf %s "checking for lib SDL in (${SDL_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -12911,7 +12921,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in smpeg.h
 do :
@@ -12998,8 +13008,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg in (${smpeg_HOME})" >&5
-printf %s "checking checking lib smpeg in (${smpeg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib smpeg in (${smpeg_HOME})" >&5
+printf %s "checking for lib smpeg in (${smpeg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -13013,8 +13023,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg in (${smpeg_HOME})" >&5
-printf %s "checking checking lib smpeg in (${smpeg_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib smpeg in (${smpeg_HOME})" >&5
+printf %s "checking for lib smpeg in (${smpeg_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -13203,7 +13213,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in AL/al.h
 do :
@@ -13290,8 +13300,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib openal in (${openal_HOME})" >&5
-printf %s "checking checking lib openal in (${openal_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib openal in (${openal_HOME})" >&5
+printf %s "checking for lib openal in (${openal_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -13305,8 +13315,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib openal in (${openal_HOME})" >&5
-printf %s "checking checking lib openal in (${openal_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib openal in (${openal_HOME})" >&5
+printf %s "checking for lib openal in (${openal_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -13467,7 +13477,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in AL/alut.h
 do :
@@ -13554,8 +13564,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib alut in (${openal_HOME})" >&5
-printf %s "checking checking lib alut in (${openal_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib alut in (${openal_HOME})" >&5
+printf %s "checking for lib alut in (${openal_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -13569,8 +13579,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib alut in (${openal_HOME})" >&5
-printf %s "checking checking lib alut in (${openal_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib alut in (${openal_HOME})" >&5
+printf %s "checking for lib alut in (${openal_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -14019,8 +14029,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib voip in $JVOIPLIB_HOME" >&5
-printf %s "checking checking lib voip in $JVOIPLIB_HOME... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib voip in $JVOIPLIB_HOME" >&5
+printf %s "checking for lib voip in $JVOIPLIB_HOME... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -14160,7 +14170,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libodbc32_h=yes
 	       for ac_header in sqlext.h
 do :
@@ -14250,8 +14260,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib odbc32 in (${odbc_HOME})" >&5
-printf %s "checking checking lib odbc32 in (${odbc_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib odbc32 in (${odbc_HOME})" >&5
+printf %s "checking for lib odbc32 in (${odbc_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -14266,8 +14276,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib odbc32 in (${odbc_HOME})" >&5
-printf %s "checking checking lib odbc32 in (${odbc_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib odbc32 in (${odbc_HOME})" >&5
+printf %s "checking for lib odbc32 in (${odbc_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -14456,7 +14466,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in sqlext.h
 do :
@@ -14543,8 +14553,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc in (${odbc_HOME})" >&5
-printf %s "checking checking lib iodbc in (${odbc_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib iodbc in (${odbc_HOME})" >&5
+printf %s "checking for lib iodbc in (${odbc_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -14558,8 +14568,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc in (${odbc_HOME})" >&5
-printf %s "checking checking lib iodbc in (${odbc_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib iodbc in (${odbc_HOME})" >&5
+printf %s "checking for lib iodbc in (${odbc_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -14722,7 +14732,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in sqlext.h
 do :
@@ -14809,8 +14819,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib odbc in (${odbc_HOME})" >&5
-printf %s "checking checking lib odbc in (${odbc_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib odbc in (${odbc_HOME})" >&5
+printf %s "checking for lib odbc in (${odbc_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -14824,8 +14834,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib odbc in (${odbc_HOME})" >&5
-printf %s "checking checking lib odbc in (${odbc_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib odbc in (${odbc_HOME})" >&5
+printf %s "checking for lib odbc in (${odbc_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15023,7 +15033,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in pthread.h
 do :
@@ -15110,8 +15120,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib pthread in (${pthread_HOME})" >&5
-printf %s "checking checking lib pthread in (${pthread_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib pthread in (${pthread_HOME})" >&5
+printf %s "checking for lib pthread in (${pthread_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15125,8 +15135,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib pthread in (${pthread_HOME})" >&5
-printf %s "checking checking lib pthread in (${pthread_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib pthread in (${pthread_HOME})" >&5
+printf %s "checking for lib pthread in (${pthread_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15317,7 +15327,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in openssl/bio.h
 do :
@@ -15404,8 +15414,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
-printf %s "checking checking lib crypto in (${ssl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib crypto in (${ssl_HOME})" >&5
+printf %s "checking for lib crypto in (${ssl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15419,8 +15429,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
-printf %s "checking checking lib crypto in (${ssl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib crypto in (${ssl_HOME})" >&5
+printf %s "checking for lib crypto in (${ssl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15581,7 +15591,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in openssl/ssl.h
 do :
@@ -15668,8 +15678,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
-printf %s "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ssl in (${ssl_HOME})" >&5
+printf %s "checking for lib ssl in (${ssl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15683,8 +15693,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
-printf %s "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ssl in (${ssl_HOME})" >&5
+printf %s "checking for lib ssl in (${ssl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15846,7 +15856,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	# If we have mulltiple headers, any missing one will set this to no
+	# If we have multiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
                for ac_header in openssl/ssl.h
 do :
@@ -15933,8 +15943,8 @@ else $as_nop
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
-printf %s "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ssl in (${ssl_HOME})" >&5
+printf %s "checking for lib ssl in (${ssl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -15948,8 +15958,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
-printf %s "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lib ssl in (${ssl_HOME})" >&5
+printf %s "checking for lib ssl in (${ssl_HOME})... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 printf "%s\n" "failed" >&6; }
 
@@ -16090,7 +16100,7 @@ else $as_nop
 int
 main (void)
 {
-extern long int $ac_global;  exit((int)$ac_global)
+extern long int $ac_global; return (int)$ac_global
   ;
   return 0;
 }
@@ -16134,7 +16144,7 @@ else $as_nop
 int
 main (void)
 {
-extern long int $ac_global;  exit((int)$ac_global)
+extern long int $ac_global; return (int)$ac_global
   ;
   return 0;
 }
@@ -17748,7 +17758,7 @@ if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
   if test "x$cv_libfreetype"   = "xyes" ; then
     gtmp="$gtmp+Freetype " ; else gtmp="$gtmp-FreeType " ; fi
 else
-#disbaled graphics
+#disabled graphics
   gtmp=" ! Graphics"
 fi
 
@@ -17781,12 +17791,12 @@ if test "x$graphics3d" = "xyes" || test "x$graphics3d" = "xon" ; then
     gdtmp=" + Graphics3D         : $gdtmp"
   else
     if test "x$graphics3d" = "xyes" ; then
-        as_fn_error $? "\"3D graphics requires opengl librarry\"" "$LINENO" 5
+        as_fn_error $? "\"3D graphics requires opengl library\"" "$LINENO" 5
      fi
     gdtmp=" - Graphics3D         : $gdtmp"
   fi
 else
-#disbaled graphics3D
+#disabled graphics3D
   gdtmp=" ! Graphics3D"
 fi
 
@@ -17868,7 +17878,7 @@ if test "x$audio" = "xyes" || test "x$audio" = "xon" ; then
   fi
 
 else
-#disbaled Audio
+#disabled Audio
   atmp=" ! Audio"
 fi
 
@@ -17911,7 +17921,7 @@ if test "x$voip" = "xyes" || test "x$voip" = "xon" ; then
   fi
 
 else
-#disbaled Voip
+#disabled Voip
   vtmp=" ! VOIP"
 fi
 
@@ -17930,8 +17940,8 @@ if test "x$database" = "xyes" || test "x$database" = "xon" ; then
   fi
   fi
 else
-#disbaled databse
-  dtmp=" ! Databse"
+#disabled database
+  dtmp=" ! Database"
 fi
 
 # want ssl
@@ -17940,12 +17950,12 @@ if test "x$ssl" = "xyes" || test "x$ssl" = "xon" ; then
      stmp=" + SSL                : +ssl"
   else
      if test "x$ssl" = "xyes" ; then
-        as_fn_error $? "\"ssl requirels libssl-dev or equivalent\"" "$LINENO" 5
+        as_fn_error $? "\"ssl requires libssl-dev or equivalent\"" "$LINENO" 5
      fi
      stmp=" - SSL                : -ssl"
   fi
 else
-#disbaled ssl
+#disabled ssl
   stmp=" ! SSL"
 fi
 
@@ -17998,7 +18008,7 @@ fi
 
 if test "x$iconc"  = "xyes" || test "x$iconc" = "xon" ; then
   if test "x$coniconc"      = "xyes" ; then
-     echo " + Compiler: with concurrency >> unicon-config.log"
+     echo " + Compiler: with concurrency" >> unicon-config.log
   else
      echo " + Compiler: no concurrency" >> unicon-config.log
   fi

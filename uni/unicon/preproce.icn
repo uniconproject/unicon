@@ -23,7 +23,10 @@ global preproc_sym_table,preproc_if_stack,preproc_file_stack,preproc_if_state,
         preproc_file,preproc_filename,preproc_line,preproc_print_line,
         preproc_word_chars,preproc_nest_level,preproc_include_name,
         preproc_include_set,preproc_print_filename,preproc_command,
-        preproc_err_count, preproc_dollar_or_pound
+        preproc_err_count, preproc_dollar_or_pound, preproc_fun_table,
+        preproc_fmacro_parse_error
+
+record preproc_fmacro(params, body)
 
 procedure predefs()
     local s, t
@@ -168,6 +171,7 @@ procedure preproc_new(fname,predefined_syms)
       preproc_filename := preproc_include_name := fname
       }
    preproc_sym_table := copy(\predefined_syms) |table()
+   preproc_fun_table := table()
    preproc_if_stack := []
    preproc_file_stack := []
    preproc_if_state := &null
@@ -176,6 +180,9 @@ procedure preproc_new(fname,predefined_syms)
    preproc_print_filename := &null
    preproc_nest_level := 0
    preproc_err_count := 0
+   # Tracks whether function-like $define parsing hit a syntax error; used
+   # to suppress object-like fallback for malformed function-style input.
+   preproc_fmacro_parse_error := 0
    return
 end
 
@@ -185,7 +192,7 @@ end
 procedure preproc_done()
     preproc_sym_table := preproc_if_stack := preproc_file_stack :=
             preproc_filename := preproc_print_filename :=
-            preproc_file := preproc_include_set := &null
+            preproc_file := preproc_include_set := preproc_fun_table := &null
     return
 end
 
@@ -207,15 +214,29 @@ procedure preproc_scan_directive()
       "define": {
          if /preproc_if_state then {
             if sym := preproc_word() then {
-               if value := preproc_scan_define_value() then {
+               # Reset per-directive parse state before trying function-like
+               # parsing and possible fallback to object-like value parsing.
+               preproc_fmacro_parse_error := 0
+               if value := preproc_scan_define_fmacro() then {
+                  if \(old := preproc_fun_table[sym]) &
+                        not preproc_same_fmacro(old, value) then {
+                     preproc_error("redefinition of " || sym)
+                  } else {
+                     preproc_fun_table[sym] := value
+                     delete(preproc_sym_table, sym)
+                  }
+               } else if preproc_fmacro_parse_error = 0 &
+                     (value := preproc_scan_define_value()) then {
+                  # Only fall back when no function-like syntax error occurred;
+                  # otherwise we would create a spurious object-like binding.
                   if \(old := preproc_sym_table[sym]) ~=== value then {
                      preproc_error("redefinition of " || sym || " = " ||
                                    old)
-                     }
-                  else {
+                  } else {
                      preproc_sym_table[sym] := value
-                     }
+                     delete(preproc_fun_table, sym)
                   }
+               }
                }
             else {
                preproc_error()
@@ -227,6 +248,7 @@ procedure preproc_scan_directive()
                 if sym := preproc_word() &
                         preproc_at_end() then {
                     delete(preproc_sym_table,sym)
+                    delete(preproc_fun_table,sym)
                 } else {
                     preproc_error()
                 }
@@ -237,7 +259,7 @@ procedure preproc_scan_directive()
             if sym := preproc_word() &
                     preproc_at_end() then {
                 if /preproc_if_state then {
-                    value := (\preproc_sym_table[sym] & &null) | "false"
+                    value := (\preproc_defined(sym) & &null) | "false"
                     if match("n",preproc_command,3) then {
                         value := (\value & &null) | "false"
                     }
@@ -378,13 +400,14 @@ end
 # a_Scans and make substitutions in a text line.
 #
 procedure preproc_scan_text(done_set)
-    local q,result,p,interesting_in_quotes,ident,value
+    local q,result,p,interesting_in_quotes,ident,value,fmacro,save_pos
     static interesting_chars
     initial {
         interesting_chars := '#"\'_' ++ &letters
     }
     if /preproc_if_state then {
-        if *preproc_sym_table > 0 then {
+        preproc_rewrite_triple_strings()
+        if *preproc_sym_table > 0 | *preproc_fun_table > 0 then {
             &pos := q := 1
             result := ""
             while tab(upto(interesting_chars)) do {
@@ -429,10 +452,34 @@ procedure preproc_scan_text(done_set)
                         move(-1)
                         p := &pos
                         ident := tab(many(preproc_word_chars))
+                        save_pos := &pos
+                        if fmacro := \preproc_fun_table[ident] then {
+                            # done_set tracks the active expansion chain to
+                            # prevent recursive self-expansion loops.
+                            if /done_set |
+                                    {type(done_set) == "string" &
+                                        done_set := set([done_set])
+                                    not member(done_set,ident)} |
+                                    {type(done_set) == "set" &
+                                    not member(done_set,ident)} then {
+                                if value := preproc_expand_fmacro_call(
+                                      ident, fmacro,
+                                      insert(copy(\done_set), ident) | ident) then {
+                                    result ||:= &subject[q:p] || value
+                                    q := &pos
+                                    next
+                                }
+                            }
+                            # If call parsing fails, rewind so this token can
+                            # still be treated as plain/object-like text.
+                            &pos := save_pos
+                        }
                         if value := \preproc_sym_table[ident] then {
                             if /done_set |
                                     {type(done_set) == "string" &
                                         done_set := set([done_set])
+                                    not member(done_set,ident)} |
+                                    {type(done_set) == "set" &
                                     not member(done_set,ident)} then {
                                 value ? value :=
                                     preproc_scan_text(insert(copy(\done_set),
@@ -494,6 +541,145 @@ procedure preproc_read_result( )
 end
 
 #
+# Quote arbitrary text as a Unicon string literal.
+#
+procedure preproc_quote_string(s)
+   local r, c, n
+   r := "\""
+   s ? while c := move(1) do {
+      # Re-emit control/special bytes as explicit escapes so rewritten
+      # triple strings remain compiler-safe and portable across scanners.
+      case c of {
+         "\\": r ||:= "\\\\"
+         "\"": r ||:= "\\\""
+         "\b": r ||:= "\\b"
+         "\d": r ||:= "\\d"
+         "\e": r ||:= "\\e"
+         "\f": r ||:= "\\f"
+         "\n": r ||:= "\\n"
+         "\t": r ||:= "\\t"
+         "\r": r ||:= "\\r"
+         "\v": r ||:= "\\v"
+         default: {
+            n := ord(c)
+            if (0 <= n < 32) then # n=127 is DEL, handled above in case "\d"
+               r ||:= preproc_octal_escape(n)
+            else
+               r ||:= c
+         }
+      }
+   }
+   return r || "\""
+end
+
+#
+# Format an integer byte value as a 3-digit octal escape.
+#
+procedure preproc_octal_escape(n)
+   static digits
+   initial digits := "01234567"
+
+   return "\\" ||
+      digits[1 + iand(ishift(n, -6), 7)] ||
+      digits[1 + iand(ishift(n, -3), 7)] ||
+      digits[1 + iand(n, 7)]
+end
+
+#
+# Rewrite triple-quoted strings into normal Unicon strings.
+# Supports multiline blocks by pulling additional lines with preproc_read().
+# Content between delimiters is preserved verbatim.
+#
+procedure preproc_rewrite_triple_strings()
+   local src, out, i, quote, c, body
+
+   src := &subject
+   if not find("\"\"\"", src) then
+      return
+
+   out := ""
+   i := 1
+   while i <= *src do {
+      if i + 2 <= *src & src[i+:3] == "\"\"\"" then {
+         # Collect raw triple-quoted text, spanning multiple source lines.
+         i +:= 3
+         body := ""
+         repeat {
+            if i > *src then {
+               body ||:= "\n"
+               # Continuation lines are literal triple-string content.
+               # Any preprocessor directives in them are not executed.
+               src := preproc_read() | {
+                  preproc_error("unterminated triple-quoted string")
+                  fail
+               }
+               i := 1
+            }
+            else if i + 5 <= *src & src[i] == "\\" &
+                  src[i+1] == "\"" & src[i+2] == "\\" &
+                  src[i+3] == "\"" & src[i+4] == "\\" &
+                  src[i+5] == "\"" then {
+               # Allow \"\"\" (backslash before each quote) as literal content.
+               # Note: the ambiguous 4-char form \""" is intentionally not
+               # supported, so strings ending in a single '\' remain representable.
+               body ||:= "\"\"\""
+               i +:= 6
+            }
+            else if i + 2 <= *src & src[i+:3] == "\"\"\"" then {
+               i +:= 3
+               break
+            }
+            else {
+               body ||:= src[i]
+               i +:= 1
+            }
+         }
+         out ||:= preproc_quote_string(body)
+         next
+      }
+
+      c := src[i]
+      if c == "#" then {
+         out ||:= src[i:0]
+         break
+      }
+
+      if c == "\"" | c == "'" then {
+         # Copy normal quoted strings verbatim; a literal """ sequence
+         # inside them is treated as plain text, not a triple-string start.
+         # Example: x := "contains \"\"\" literally"
+         quote := c
+         out ||:= c
+         i +:= 1
+         while i <= *src do {
+            c := src[i]
+            out ||:= c
+            i +:= 1
+            if c == "\\" then {
+               if i <= *src then {
+                  c := src[i]
+                  out ||:= c
+                  i +:= 1
+                  if c == "^" & i <= *src then {
+                     out ||:= src[i]
+                     i +:= 1
+                  }
+               }
+               next
+            }
+            if c == quote then
+               break
+         }
+         next
+      }
+
+      out ||:= c
+      i +:= 1
+   }
+   &subject := out
+end
+
+#
 # a_Scans an identifier.
 #
 procedure preproc_word()
@@ -501,7 +687,8 @@ procedure preproc_word()
     initial {
         word_starters := &letters ++ '_'
     }
-    suspend any(word_starters) & tab(many(preproc_word_chars))
+    any(word_starters) | fail
+    return tab(many(preproc_word_chars))
 end
 
 #
@@ -524,10 +711,6 @@ procedure preproc_scan_define_value()
    static interesting_chars
    initial interesting_chars := '#"\''
 
-   if ="(" then {
-      preproc_error("no space before (; args are not supported.")
-      fail      # "$define name(" is specifically prohibited; needs whitespace
-      }
     preproc_space()
     q := &pos
     (while tab(upto(interesting_chars)) do {
@@ -554,6 +737,229 @@ procedure preproc_scan_define_value()
         }
     }) | tab(0)
     return trim(&subject[q:&pos],' \t\f\r')
+end
+
+#
+# true if a symbol name is defined as either object-like or function-like macro.
+#
+procedure preproc_defined(sym)
+   return \preproc_sym_table[sym] | \preproc_fun_table[sym]
+end
+
+#
+# compares function-like macro definitions for equivalence.
+#
+procedure preproc_same_fmacro(m1, m2)
+   local i
+   if /m1 | /m2 then fail
+   if *m1.params ~== *m2.params then fail
+   every i := 1 to *m1.params do
+      if m1.params[i] ~=== m2.params[i] then fail
+   return m1.body === m2.body
+end
+
+#
+# scans optional function-like parameter list in $define.
+#
+procedure preproc_scan_define_fmacro()
+   local params, pname, body, start_pos
+   # Preserve caller position so invalid function-like syntax can
+   # cleanly fall back to object-like $define parsing.
+   start_pos := &pos
+   if not ="(" then
+      fail
+   params := []
+   preproc_opt_space()
+   if =")" then {
+      body := preproc_scan_define_value() | ""
+      return preproc_fmacro(params, body)
+   }
+   repeat {
+      preproc_opt_space()
+      pname := preproc_word() | {
+         # Mark hard parse failure so caller does not treat this as
+         # "not function-like" and attempt object-like fallback.
+         preproc_fmacro_parse_error := 1
+         &pos := start_pos
+         preproc_error("expected parameter name in $define")
+         fail
+      }
+      if pname === !params then {
+         # Duplicate names are invalid and should abort function-like parsing
+         # without synthesizing any fallback macro entry.
+         preproc_fmacro_parse_error := 1
+         &pos := start_pos
+         preproc_error("duplicate parameter name in $define: " || pname)
+         fail
+      }
+      put(params, pname)
+      preproc_opt_space()
+      if =")" then break
+      if not ="," then {
+         preproc_fmacro_parse_error := 1
+         &pos := start_pos
+         preproc_error("expected ',' or ')' in $define parameter list")
+         fail
+      }
+   }
+   body := preproc_scan_define_value() | ""
+   return preproc_fmacro(params, body)
+end
+
+#
+# scans and expands a function-like macro invocation at current position.
+# returns fail and restores &pos if this is not an invocation.
+#
+procedure preproc_expand_fmacro_call(name, fmacro, done_set)
+   local start_pos, args, expanded
+   # start_pos points just after macro name; restore it on any non-call
+   # parse path so outer scanner can continue without losing sync.
+   start_pos := &pos
+   preproc_opt_space()
+   if not ="(" then {
+      &pos := start_pos
+      fail
+   }
+   args := preproc_scan_macro_args() | {
+      &pos := start_pos
+      fail
+   }
+   if *args ~== *fmacro.params then {
+      preproc_error("wrong number of args in macro call to " || name)
+      fail
+   }
+   expanded := preproc_subst_fmacro(fmacro, args)
+   # Re-scan expansion so nested macro calls are expanded in one pass.
+   expanded ? return preproc_scan_text(done_set)
+end
+
+#
+# scans argument expressions in a function-like macro invocation.
+# called with &pos immediately after '(' and returns with &pos after ')'.
+#
+procedure preproc_scan_macro_args()
+   local args, depth, q, c, quote, s
+   args := []
+   depth := 0
+   q := &pos
+   repeat {
+      c := move(1) | {
+         preproc_error("unterminated macro invocation")
+         fail
+      }
+      case c of {
+         "\"" | "'": {
+            # Quoted strings are scanned as opaque chunks so commas and
+            # parentheses inside them do not split arguments.
+            quote := c
+            repeat {
+               c := move(1) | {
+                  preproc_error("unterminated string in macro invocation")
+                  fail
+               }
+               if c == "\\" then {
+                  # Consume one escaped char after "\"; if that char is "^",
+                  # consume one more to cover control escapes like "\^A".
+                  c := move(1) | {
+                     preproc_error("unterminated escape in macro invocation")
+                     fail
+                  }
+                  if c == "^" then {
+                     move(1) | {
+                        preproc_error("unterminated escape in macro invocation")
+                        fail
+                     }
+                  }
+               }
+               else if c == quote then
+                  break
+            }
+         }
+         "(": depth +:= 1
+         ")": {
+            if depth = 0 then {
+               if &pos - 1 > q then {
+                  s := trim(&subject[q:&pos-1], ' \t\f\r')
+                  # Ignore whitespace-only segments so ZERO( ) is treated
+                  # as zero args and SUM(1, ) reports omitted arg count.
+                  if *s > 0 then
+                     put(args, s)
+               }
+               return args
+            }
+            depth -:= 1
+         }
+         ",": {
+            if depth = 0 then {
+               s := trim(&subject[q:&pos-1], ' \t\f\r')
+               if *s > 0 then
+                  put(args, s)
+               else {
+                  preproc_error("empty macro argument")
+                  fail
+               }
+               # q marks the start of the next top-level argument slice.
+               q := &pos
+            }
+         }
+      }
+   }
+end
+
+#
+# substitutes function-like macro parameters in macro body text.
+#
+procedure preproc_subst_fmacro(fmacro, args)
+   local amap, i, q, p, ident, result
+   local interesting_in_quotes
+   static interesting_chars
+   initial interesting_chars := '"\'_' ++ &letters
+
+   amap := table()
+   # Build direct parameter->argument map before body scan.
+   every i := 1 to *fmacro.params do
+      amap[fmacro.params[i]] := args[i]
+
+   result := ""
+   fmacro.body ? {
+      &pos := q := 1
+      while tab(upto(interesting_chars)) do {
+         case move(1) of {
+            "\"" | "'": {
+               interesting_in_quotes := '\\' ++ &subject[&pos - 1]
+               repeat {
+                  while tab(upto(interesting_in_quotes)) do {
+                     case move(1) of {
+                        "\\": {
+                           case move(1) of {
+                              "^": move(1)
+                           }
+                        }
+                        # break out of both scanning loops once the matching
+                        # quote delimiter is reached.
+                        default: break break
+                     }
+                  }
+                  preproc_error("unterminated string in macro body")
+                  fail
+               }
+            }
+            default: {
+               move(-1)
+               p := &pos
+               # "| next" avoids stale ident reuse if scanning fails after
+               # interesting_chars is expanded in the future.
+               ident := tab(many(preproc_word_chars)) | next
+               # Substitute only whole identifiers, not substrings.
+               if member(amap, ident) then {
+                  result ||:= &subject[q:p] || amap[ident]
+                  q := &pos
+               }
+            }
+         }
+      }
+      return if q = 1 then .&subject else result || &subject[q:0]
+   }
 end
 
 #

@@ -1256,9 +1256,9 @@ void tlschain_remove(struct threadstate *tstate)
 
 /*
  * reuse_region - search region chain for a region having at least nbytes available
- * updated Mar 8 2017: Relax the requirments to only require the region size
+ * updated Mar 8 2017: Relax the requirements to only require the region size
  *                     to be >= nbytes but not necessarily nbytes/4 >= freebytes.
- *                     The rational is that some of that memory could be reclaimed
+ *                     The rationale is that some of that memory could be reclaimed
  *                     after doing a garbage collection.
  */
 static struct region *reuse_region(word nbytes, int region)

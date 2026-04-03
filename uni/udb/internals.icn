@@ -1,6 +1,6 @@
 #
 # internals.icn
-# handles the internals (built-in) monitores that can be used 
+# handles the internals (built-in) monitores that can be used
 # during the debugging session with UDB
 # Author  : Ziad Al-Sharif
 # Date    : Feb 24, 2008
@@ -51,7 +51,7 @@ end
 
 #
 # Registers an internal monitor: i.e.
-# register("test", obj,  
+# register("test", obj,
 #          [handle_event1, handle_event2], [analyze_events], [write1, write2])
 method register(name, client, handler, analyzer, writer, mask)
    local methodName
@@ -60,23 +60,23 @@ method register(name, client, handler, analyzer, writer, mask)
    Clients[name] := client
    insert(disabledClients, name)
    client.AutoRegister(name, count, DISABLED)
-   
-   #handler: is a list of method names from the internal monitor 
+
+   #handler: is a list of method names from the internal monitor
    if \handler then
       every methodName := !handler do
          client.RegisterHandler(methodName)
 
-   #analyzer: is a list of method names from the internal monitor 
+   #analyzer: is a list of method names from the internal monitor
    if \analyzer then
       every methodName := !analyzer do
          client.RegisterAnalyzer(methodName)
 
-   #writer: is a list of method names from the internal monitor 
+   #writer: is a list of method names from the internal monitor
    if \writer then
       every methodName := !writer do
          client.RegisterHandler(methodName)
 
-   #mask: is the set of events needed by the internal monitor 
+   #mask: is the set of events needed by the internal monitor
    if \mask then
       client.RegisterEventMask(mask)
 end
@@ -86,7 +86,7 @@ end
 # to be used under UDB
 #
 method Init()
-   
+
    register("counter_syntax",EventCounterSyntax())   ##  TEST
    register("counter_line",EventCounterLine())       ##  TEST
    register("counter_pcall",EventCounterPcall())     ##  TEST
@@ -122,7 +122,7 @@ method Init()
            cset(E_Exit || E_Error || E_Line || E_Syntax || E_Pcall))
 
    register("deadvar", DeadVar(),
-            ["handle_Events"], ,["write_Info"], 
+            ["handle_Events"], ,["write_Info"],
             cset(E_Exit || E_Error || E_Pcall || E_Assign || E_Deref))
 
    register("typechange", TypeChange(),
@@ -131,7 +131,7 @@ method Init()
 
    register("structusage", StructUsage(),
             ["handle_Events"], ,["write_Info"],
-            cset(E_Exit || E_Error) ++ 
+            cset(E_Exit || E_Error) ++
             cset(ListMask ++ TableMask ++ SetMask ++ RecordMask))
 end
 
@@ -142,5 +142,5 @@ initially()
 
    self.Agent.initially("internal")
    Init()
-   
+
 end

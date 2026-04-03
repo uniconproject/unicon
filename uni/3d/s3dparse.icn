@@ -51,7 +51,7 @@ end
 
 
 method load(filename, m3d)
-   local fin, s, face, mesh, new_frames, frame, tri, s3dpart, i, frm, j, 
+   local fin, s, face, mesh, new_frames, frame, tri, s3dpart, i, frm, j,
          tex_fname, tex_fname2, newMaterial, p
 
    fin := open(filename) | stop("can't open ", filename)
@@ -66,7 +66,7 @@ method load(filename, m3d)
       S3Dparse()
       }
 
-   new_frames := [] 
+   new_frames := []
       every s3dpart := !partRecs do
          {
 
@@ -84,7 +84,7 @@ method load(filename, m3d)
             every tex_fname := !textureRecs do
             {
                if tex_fname[-1] == "\r" then tex_fname := tex_fname[1:-1]
-               if map(tex_fname[-4:0]) ~== ".gif" then 
+               if map(tex_fname[-4:0]) ~== ".gif" then
                      tex_fname := map(tex_fname[1:-4])||".gif"
 
                if not exists(tex_fname) then{
@@ -100,7 +100,7 @@ method load(filename, m3d)
                newMaterial := Material()
                newMaterial.textureFileName := tex_fname
                put (mesh.lsTexture, tex_fname)
-               
+
                put (mesh.lst_material, newMaterial)
             }
 
@@ -111,10 +111,10 @@ method load(filename, m3d)
 
 
             j:=(frm-1)*s3dpart.vertexCount
-            
+
             every i:= (s3dpart.firstVertexIndex+1 ) to ( s3dpart.firstVertexIndex + s3dpart.vertexCount) do{
-               #  if i%100 = 0 then write( "  x=",vertexRecs[i+j].x, 
-               #                            "  y=",vertexRecs[i+j].y, 
+               #  if i%100 = 0 then write( "  x=",vertexRecs[i+j].x,
+               #                            "  y=",vertexRecs[i+j].y,
                #                            "  z=",vertexRecs[i+j].z)
                 put( mesh.lst_vertex, Vector3( vertexRecs[i+j].x, vertexRecs[i+j].y, vertexRecs[i+j].z ))
              }
@@ -122,7 +122,7 @@ method load(filename, m3d)
             every i := s3dpart.firstTriIndex+1 to ( s3dpart.firstTriIndex + s3dpart.triCount) do {
                  face := Face()
                  tri := triangleRecs[i]
-                 put( face.lst_vertex_index, (tri.vi1+1) ) 
+                 put( face.lst_vertex_index, (tri.vi1+1) )
                  put( face.lst_vertex_index, (tri.vi2+1) )
                  put( face.lst_vertex_index, (tri.vi3+1) )
 

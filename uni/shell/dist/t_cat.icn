@@ -10,16 +10,16 @@ procedure main( argv )
   # handle tracing option
   if ( type(argv[1]) == "string", argv[1] == "-t" )
   then { StreamC_trace := "t_cat.icn" ; pop( argv ) }
-  
+
   # pull the output task or file off the end of the arg list
   outp := pull( argv )
   0 == *argv & stop( usage )
-  S_out := Stream( outp, "w" ) | 
+  S_out := Stream( outp, "w" ) |
     stop( "could not open output " || image(outp) || "\n" || usage )
-    
+
   # send each input task or file (left to right) to output
   while inp := pop( argv ) do {
-    S_in  := Stream(inp,"r") | 
+    S_in  := Stream(inp,"r") |
       stop( "could not open input " || image(inp) || "\n" || usage )
     while S_out.Put( S_in.Get( ) )
   }

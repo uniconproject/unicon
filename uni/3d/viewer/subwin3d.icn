@@ -55,7 +55,7 @@ class Dispatcher3D : Dispatcher(subwins)
    method add_subwin(sw)
       insert(subwins, sw)
    end
-   
+
    method message_loop(r)
       if /r then {
          while *dispatcher.dialogs > 0 do
@@ -65,13 +65,13 @@ class Dispatcher3D : Dispatcher(subwins)
             do_event() | do_validate() | do_ticker() | world.handle_event() | delay(10)
       }
    end
-   
+
    initially
-   
+
       self.Dispatcher.initially()
       subwins := set()
    #tickers := set()
-   
+
 
 end
 
@@ -82,13 +82,13 @@ global subwins3d
 class Subwindow3D : Component (xbtn_x, xbtn_y)
    method resize()
      compute_absolutes()
-     self.invalidate()  
+     self.invalidate()
      WAttrib(cwin, "pos="||x||","||y)
      WAttrib(cwin, "size="||w||","||h)
    end
    method display()
-   
-      
+
+
     Refresh(cwin)
    end
    method init()
@@ -105,7 +105,7 @@ class Subwindow3D : Component (xbtn_x, xbtn_y)
                self.attribs))
 
       /subwins3d := set()
-      insert(subwins3d, self.cwin)      
+      insert(subwins3d, self.cwin)
 
       set_accepts_focus()
       dispatcher.add_subwin(self.cwin)

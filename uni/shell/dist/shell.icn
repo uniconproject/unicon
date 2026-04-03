@@ -16,7 +16,7 @@
 #   The freedom of its content is protected by the Lesser GNU public
 #     license, version 2.1, February 1999,
 #     http://www.gnu.org/licenses/lgpl.html
-#   which means you are granted permission to use this in any way that 
+#   which means you are granted permission to use this in any way that
 #   does not limit others' freedom to use it.
 #
 ##########################################################################
@@ -26,7 +26,7 @@
 #   option -s path: search path for icode and shell files
 #   option -i file: take input from file instead of standard input
 #   option -p prog: invoke prog as preprocessor, passing arguments to it
-#                   prog will be invoked with a task that is a recursive 
+#                   prog will be invoked with a task that is a recursive
 #                   instance of shell.icn as the first argument and a list
 #                   for enqueueing results as the second argument; any
 #                   arguments appearing afterward will be passed through
@@ -43,10 +43,10 @@
 #   monitor the execution of the tasks' co-expressions and intervene to
 #   prevent "infinite loops of failure".  Tasks co-operatively yield control
 #   by activating co-expressions and gain control, receiving results of the
-#   activation.  
+#   activation.
 #
-# Although tasks may directly exchange results with other tasks, the 
-#   StreamC.Get and StreamC.Put methods defined in Stream.icn provide a 
+# Although tasks may directly exchange results with other tasks, the
+#   StreamC.Get and StreamC.Put methods defined in Stream.icn provide a
 #   convenient interface that ensures that producers will transmit the same
 #   result sequences to the consumers regardless of whether the producer or
 #   the consumer is activated first.
@@ -72,11 +72,11 @@
 #
 # Grammar for input file lines:
 #
-#   input_file_line         ::= task_declaration | 
-#                               list_symbol_declaration | 
+#   input_file_line         ::= task_declaration |
+#                               list_symbol_declaration |
 #                               task_activation |
 #                               comment
-# 
+#
 #   task_declaration        ::= lvalue ":=" <program_name> arguments
 #
 #   list_symbol_declaration ::= "list" lvalues
@@ -86,22 +86,22 @@
 #   comment                 ::= "#" many(<&cset>)
 #
 #   arguments               ::= arguments argument | argument | <nothing>
-# 
+#
 #   argument                ::= lvalue | "$" many(<&digits>) | alphanum
 #
 #   lvalues                 ::= lvalues lvalue | lvalue
 #
 #   lvalue                  ::= alphanum
-#   
+#
 #   alphanum                ::= many(<&letters> ++ <&digits>)
 #
 #   many(c)                 ::= c many(c) | c
 #
 # The following further rules apply to scripts:
-# 
-#   Names of programs that are not in the current working directory must 
-#     include relative or absolute path information suitable for the 
-#     platform; the program name supplied is passed directly to the 
+#
+#   Names of programs that are not in the current working directory must
+#     include relative or absolute path information suitable for the
+#     platform; the program name supplied is passed directly to the
 #     load( ) function.
 #
 #   List symbols must be declared before they are used.
@@ -109,13 +109,13 @@
 #   Task declarations may include forward references to other tasks.
 #
 #   Task activations must be deferred until all referenced tasks
-#     have been declared. The convert_tasks( ) procedure loads the tasks, 
+#     have been declared. The convert_tasks( ) procedure loads the tasks,
 #     wraps them with a monitoring co-expression (which is created by via
 #     the monitor_task( ) procedure), and activates them.
 #
-#   Once a task has terminated, it must be redeclared before it can be 
-#     reactivated.  Once one task has been redeclared, all must be 
-#     redeclared before they are activated.  List symbols need not be 
+#   Once a task has terminated, it must be redeclared before it can be
+#     reactivated.  Once one task has been redeclared, all must be
+#     redeclared before they are activated.  List symbols need not be
 #     redeclared, however, but the lists that they represent
 #     are replaced with empty lists when convert_tasks( ) is executed.
 #
@@ -123,7 +123,7 @@
 #     way permitted by the balq(s) procedure (from the scan.icn file in
 #     the Icon Program Library), where balq(s) is invoked with a single
 #     argument.
-# 
+#
 ############################################################################
 #
 #  Links:  Stream, scan
@@ -170,7 +170,7 @@ global task_table        # key: task-symbols
 global invalid_task      # a co-expression representing an invalid task
 global t_task_symbol     # table mapping tasks to task symbols
 global task_counter      # increment by one for each task created; start at 1
-global ushpath           # [ "", "./" ] ||| parsed -s option ||| 
+global ushpath           # [ "", "./" ] ||| parsed -s option |||
                          #    parsed USHPATH envar (shared with Stream)
 
 # main program - parser that consumes tokens and dispatches the tasks
@@ -240,13 +240,13 @@ procedure main( argv )
 
   # fetch each token generated by token( ) and feed it to parsing logic
   input_files := [ ]
-  if type(\opt_tab["i"]) == "string" 
+  if type(\opt_tab["i"]) == "string"
     then every put( input_files, !path_list( opt_tab["i"] ) )
     else put( input_files, \opt_tab["i"] | "-" )
 
   every
     file := !input_files
-  do every 
+  do every
     tok := token( Stream( file, "r" ) )
   do {
     # (\trace)("token = "||tok) # uncomment to observe tokens in trace
@@ -426,8 +426,8 @@ procedure main( argv )
                  ( integer(tok) |
                      stop(" argument index " || tok || " is not an integer")
                  )\1
-               ] | 
-               stop(" arglist[ " || tok || " ] '" || 
+               ] |
+               stop(" arglist[ " || tok || " ] '" ||
                  arglist[integer(tok)] || "'does not exist")
              )
 
@@ -459,7 +459,7 @@ procedure put_ushpath( s )
     then put( ushpath, s )
 end
 
-# options extracter - different from options( ) routine 
+# options extracter - different from options( ) routine
 #   in the Icon Program Library
 procedure shell_options( argv )
   local topt, argc, i, arg, result_list
@@ -498,14 +498,14 @@ procedure shell_options( argv )
                                         , &null
                                         , invalid_task
                                         , &progname
-                                        , [ "-i", "_SCRIPT_", "_LIST_" ] 
+                                        , [ "-i", "_SCRIPT_", "_LIST_" ]
                                         )
           task_table["_SCRIPT_"] := task( "_SCRIPT_"
                                         , &null
                                         , invalid_task
                                         , arglist[1]
                                         , [ "_SHELL_", "_LIST_" ] |||
-                                          arglist[2:0] 
+                                          arglist[2:0]
                                         )
           arglist := argv := [ ]
           topt["i"] := [ "@ _SHELL_" ]
@@ -529,7 +529,7 @@ procedure shell_options( argv )
           every trace("argv["||(i := 1 to argc) ||"] = "||image(argv[i]))
           pop( argv )
         }
-      default : 
+      default :
         break # once options end, the arguments follow
     }
   every put_ushpath( !path_list( getenv( USHPATH ) ) || "/" )
@@ -547,7 +547,7 @@ procedure token( S_in )
 
   lineno := 0
   # get a line
-  # prepend a space so the "while tab( many( ws ) )" 
+  # prepend a space so the "while tab( many( ws ) )"
   #   will always succeed at the beginning of a line
   # append " EOL" to line because "s ? balq( ws )" fails if s has no spaces
   while
@@ -631,20 +631,20 @@ procedure convert_tasks( )
   t_task_symbol := table("TASK_SYMBOL_UNDIFINED")
   t_task_symbol[ &main ] := "SHELL_MAIN"
   every task_key := key( task_table ) do {
-    task_record := task_table[task_key] 
+    task_record := task_table[task_key]
     \task_record | stop("no task record exists for key: " || task_key)
     if task_record.monitor ~=== invalid_task then {
       (\trace)("task "||task_key||" may still be active")
       next
     }
     \task_record.argv    | stop("task_table[ " || task_key || " ].argv IS NULL")
-    if /task_record.program 
+    if /task_record.program
       then write(&errout, "warning - task_table[ " || task_key || " ].program IS NULL")
       else {
-        task_record.coexp := 
-          load( !ushpath || task_record.program, task_record.argv ) | 
+        task_record.coexp :=
+          load( !ushpath || task_record.program, task_record.argv ) |
             {
-              write( &progname || ": Could not find task " || 
+              write( &progname || ": Could not find task " ||
                      task_record.program || " on path" )
               every write( "  " || !ushpath )
               stop( )
@@ -682,12 +682,12 @@ procedure path_list( s )
         tab(many(' '))
         if pos(0) then
            break
-        put(pathList, 
+        put(pathList,
           {
             dir := &null
-            ="'" || (dir := tab( upto('\'') | break ) ) || move(1) | 
-              (dir := tab(upto(' '))) ||move(1) | 
-              (dir := tab(0)) | 
+            ="'" || (dir := tab( upto('\'') | break ) ) || move(1) |
+              (dir := tab(upto(' '))) ||move(1) |
+              (dir := tab(0)) |
               break
             \dir
           }
@@ -701,27 +701,27 @@ end
 #
 # To avoid "infinite failure" scenarios, shell.icn invokes each
 #   task via a separate co-expression that the monitor_task procedure
-#   creates.  This co-expression refuses to resume a task that has 
-#   "cofailed to it" (i.e., the task either (1) explicitly transmitted 
+#   creates.  This co-expression refuses to resume a task that has
+#   "cofailed to it" (i.e., the task either (1) explicitly transmitted
 #   failure to the monitoring co-expression using the cofail( ) function
-#   or (2) implicitly failed by either (a) by falling off the end of the 
+#   or (2) implicitly failed by either (a) by falling off the end of the
 #   main( ) procedure, or (b) by executing fail in the main( ) procedure,
-#   or (c) by invoking the stop( ) function in any procedure 
+#   or (c) by invoking the stop( ) function in any procedure
 #   or co-expression).
-# 
-# The specific logic implemented by the co-expression that the 
-# monitor_task procedure creates is as follows:
-# 
-# (1) The monitoring co-expression repeatedly transmits values to
-# other tasks the values that were transmitted to it.  
 #
-# (2) (a) USUALLY the task to which the monitoring co-expression transmits 
+# The specific logic implemented by the co-expression that the
+# monitor_task procedure creates is as follows:
+#
+# (1) The monitoring co-expression repeatedly transmits values to
+# other tasks the values that were transmitted to it.
+#
+# (2) (a) USUALLY the task to which the monitoring co-expression transmits
 #         a value is the monitored task.
 #     (b) However, if the monitoring co-expression transmits a value
 #         to the monitored task and the monitored task either transmits a
 #         value back to (or cofails back to) &current (the task's &source),
-#         then the monitoring co-expression should transmit the value  
-#         received back to (or cofail back to) the task that formerly 
+#         then the monitoring co-expression should transmit the value
+#         received back to (or cofail back to) the task that formerly
 #         activated it before it transmitted a value to the monitored task.
 #         If there are no such previous activations, or if the monitoring
 #         co-expression was activated by &main, then iteration should stop.
@@ -729,10 +729,10 @@ end
 # Thus:
 #
 # If the monitoring co-expression receives a value (or failure) from a task
-#   other than the monitored task, it pushes a reference to the transmitting 
+#   other than the monitored task, it pushes a reference to the transmitting
 #   task to a stack and transmits the value (or failure) to the monitored task.
 #
-# If the monitoring co-expression receives a value (or failure) from the 
+# If the monitoring co-expression receives a value (or failure) from the
 #   monitored task, and if it cannot pop a reference to a task from the stack,
 #   it ceases cofails to &main; otherwise it transmits the value (or failure)
 #   to the task referenced by the value popped from the stack.
@@ -755,7 +755,7 @@ procedure monitor_task( task, task_key )
   /task     & write("monitor_task: null task argument") & fail
   /task_key & stop("monitor_task: null task_key argument")
 
-  # friends share the activation table 
+  # friends share the activation table
   variable( "StreamC_activated", task ) := StreamC_act_shell
   # friends share the task/script/file search path
   variable( "ushpath", task ) := ushpath
@@ -822,14 +822,14 @@ procedure monitor_task( task, task_key )
 
     repeat {
       # The monitoring co-expression transmits to other tasks
-      #    those values that were transmitted to it.  
+      #    those values that were transmitted to it.
 
       # 1. Trace results if applicable.
       if
         \trace
       then {
         next_rslt :=
-          
+
           if
             /failed # failed is not null when activation failed
           then { # did not fail
@@ -841,11 +841,11 @@ procedure monitor_task( task, task_key )
             # reset failed flag
             failed := &null
             # preceding activation/resumption failed
-            cofailtrace( next_task, task_symbol || " (to next_task)" )\1 | 
+            cofailtrace( next_task, task_symbol || " (to next_task)" )\1 |
               break
           }
         if
-          \failed 
+          \failed
         then { # did fail
           ( &source === task , \trace )
             ( " ... monitor_task: " || trace_task_symbol[task] ||
@@ -879,8 +879,8 @@ procedure monitor_task( task, task_key )
             # reset failed flag
             failed := &null
             # preceding activation/resumption failed
-            cofail( next_task )\1 | 
-            break 
+            cofail( next_task )\1 |
+            break
           }
       }
 
@@ -891,7 +891,7 @@ procedure monitor_task( task, task_key )
       then
         break
 
-      # 3. Test for each of the following cases in the following order: 
+      # 3. Test for each of the following cases in the following order:
       #   * another task succeeded and produced a value
       #   * own task succeeded and produced a value
       #   * another task cofailed
@@ -904,7 +904,7 @@ procedure monitor_task( task, task_key )
           ( &source ~=== task )
         then {
           # If the monitoring co-expression receives a value from a task
-          # other than the monitored task, it continues iterating, transmiting 
+          # other than the monitored task, it continues iterating, transmiting
           # that value to the monitored task.
           last_rslt := next_rslt
           next_task := task
@@ -912,9 +912,9 @@ procedure monitor_task( task, task_key )
           next
         }
         else { # therefore &source === task
-          # If the monitoring co-expression receives a value from the 
+          # If the monitoring co-expression receives a value from the
           # monitored task, it transmits that value
-          # to the last task that activated it before it activated 
+          # to the last task that activated it before it activated
           # the monitored task and received a value from that task.
           last_rslt := next_rslt
           next_task := last_task
@@ -927,7 +927,7 @@ procedure monitor_task( task, task_key )
           ( &source ~=== task )
         then {
           # If the monitoring co-expression receives failure from a task
-          # other than the monitored task, it continues iterating, transmiting 
+          # other than the monitored task, it continues iterating, transmiting
           # failure to the monitored task.
           last_rslt := &null
           next_task := task
@@ -935,8 +935,8 @@ procedure monitor_task( task, task_key )
           next
         }
         else { # therefore &source === task
-          # If the monitoring co-expression receives failure from the 
-          # monitored task, and if it cannot transmit failure to 
+          # If the monitoring co-expression receives failure from the
+          # monitored task, and if it cannot transmit failure to
           # the last task that activated it before it activated the monitored
           # task and received failure from that task, it ceases iterating.
           last_rslt := &null
@@ -969,7 +969,7 @@ procedure monitor_task( task, task_key )
       \trace
     then {
       cofailtrace( \last_task, task_symbol || " (to last_task)" )\1 |
-        cofailtrace( monitor, task_symbol || " (to monitor)" )\1 
+        cofailtrace( monitor, task_symbol || " (to monitor)" )\1
     }
     else  {
       cofail( \last_task )\1 |

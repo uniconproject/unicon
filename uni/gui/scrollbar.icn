@@ -16,11 +16,11 @@ $define MIN_BAR_SIZE 8
 #
 # Component representing the bar area
 #
-class BarArea : Component( 
-   bar_x,                   #             
-   bar_y,                   #             
-   bar_w,                   #             
-   bar_h                    #             
+class BarArea : Component(
+   bar_x,                   #
+   bar_y,                   #
+   bar_w,                   #
+   bar_h                    #
 )
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
@@ -43,7 +43,7 @@ end
 # be set with the {set_value()} method.
 # @example
 # @ vb := ScrollBar()
-# @ vb.set_pos("85%", "25%")      
+# @ vb.set_pos("85%", "25%")
 # @ vb.set_size(20, "40%")
 # @ vb.set_total_size(130)
 # @ vb.set_page_size(30)
@@ -61,7 +61,7 @@ end
 # range settings if desired.
 # @example
 # @ vb := ScrollBar()
-# @ vb.set_pos("85%", "25%")      
+# @ vb.set_pos("85%", "25%")
 # @ vb.set_size(20, "40%")
 # @ vb.set_range(2, 25)
 # @ vb.set_value(10)
@@ -76,24 +76,24 @@ end
 # listen for SCROLLBAR_PRESSED_EVENT.
 #
 class ScrollBar : Component(
-   value,                   #             
-   page_size,               #                 
-   increment_size,          #                      
-   total_size,              #                  
-   hi,                      #          
-   lo,                      #          
-   bar_down,                #                
+   value,                   #
+   page_size,               #
+   increment_size,          #
+   total_size,              #
+   hi,                      #
+   lo,                      #
+   bar_down,                #
    is_paging,               #
    repeat_delay,            #
-   bar_down_offset,         #                       
+   bar_down_offset,         #
    bar_area,                #
-   b1,                      #          
-   b2,                      #          
-   is_horizontal_flag,      #                          
+   b1,                      #
+   b2,                      #
+   is_horizontal_flag,      #
    bar_pos,                 #  Orientation independent bar pos
-   bar_size,                #                
+   bar_size,                #
    bar_area_pos,            #  Orientation independent bararea pos
-   bar_area_size,           #                     
+   bar_area_size,           #
    is_range_flag            #
    )
 
@@ -194,7 +194,7 @@ class ScrollBar : Component(
       if /self.is_horizontal_flag then
          self.bar_area.bar_y := self.bar_pos
       else
-         self.bar_area.bar_x := self.bar_pos        
+         self.bar_area.bar_x := self.bar_pos
       self.bar_area.invalidate()
    end
 
@@ -228,17 +228,17 @@ class ScrollBar : Component(
             self.bar_down_offset := &y - self.bar_area.bar_y
          else
             self.bar_down_offset := &x - self.bar_area.bar_x
-         fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)
       } else if (/self.is_horizontal_flag & (self.bar_area.x <= &x < self.bar_area.x + self.bar_area.w) & (self.bar_area.y  <= &y < self.bar_area.bar_y)) | ((self.bar_area.y <= &y < self.bar_area.y + self.bar_area.h) & (self.bar_area.x  <= &x < self.bar_area.bar_x)) then {
          self.move_value(self.get_value() - self.page_size)
          self.set_pos_from_value()
          start_paging(1)
-         fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)
       } else  if (/self.is_horizontal_flag & (self.bar_area.x <= &x < self.bar_area.x + self.bar_area.w) & ( self.bar_area.bar_y + self.bar_area.bar_h  <= &y <  self.bar_area.y + self.bar_area.h)) | ((self.bar_area.y <= &y < self.bar_area.y + self.bar_area.h) & ( self.bar_area.bar_x + self.bar_area.bar_w  <= &x <  self.bar_area.x + self.bar_area.w)) then {
          self.move_value(self.get_value() + self.page_size)
          self.set_pos_from_value()
          start_paging(2)
-         fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)
       }
    end
 
@@ -248,19 +248,19 @@ class ScrollBar : Component(
          # Released; clear flag
          #
          self.bar_down := &null
-         fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)
       } else if \self.is_paging then
          stop_paging()
    end
 
    method tick()
       if dispatcher.curr_time_of_day() > self.repeat_delay then {
-         if self.is_paging === 1 then 
+         if self.is_paging === 1 then
             self.move_value(self.get_value() - self.page_size)
          else
             self.move_value(self.get_value() + self.page_size)
          self.set_pos_from_value()
-         fire(SCROLLBAR_PRESSED_EVENT)     
+         fire(SCROLLBAR_PRESSED_EVENT)
       }
    end
 
@@ -302,15 +302,15 @@ class ScrollBar : Component(
       else
          self.move_bar_pos(&x - self.bar_down_offset)
       self.set_value_from_pos()
-      fire(SCROLLBAR_DRAGGED_EVENT, e)     
+      fire(SCROLLBAR_DRAGGED_EVENT, e)
    end
 
    method handle_event(e)
       b1.handle_event(e)
       b2.handle_event(e)
-      if e === (&lpress | &rpress | &mpress) then 
+      if e === (&lpress | &rpress | &mpress) then
          handle_press(e)
-      else if e === (&lrelease | &rrelease | &mrelease) then 
+      else if e === (&lrelease | &rrelease | &mrelease) then
          handle_release(e)
       else if \self.bar_down & (e === (&ldrag | &rdrag | &mdrag)) then
          handle_drag(e)
@@ -380,7 +380,7 @@ class ScrollBar : Component(
             # Total <= page; these settings produce an immovable full size bar.
             #
             self.hi := 0
-            self.bar_size := self.bar_area_size 
+            self.bar_size := self.bar_area_size
          }
       } else {
          #
@@ -430,7 +430,7 @@ class ScrollBar : Component(
          self.bar_area_pos := self.bar_area.y
          self.bar_area.bar_w := self.bar_area.w
          self.bar_area_size := self.bar_area.h
-   
+
          #
          # Set button positions
          #
@@ -458,15 +458,15 @@ class ScrollBar : Component(
          b2.set_img(img_style("arrow_right"))
       }
 
-      b1.resize()      
-      b2.resize()      
+      b1.resize()
+      b2.resize()
 
       reconfigure()
    end
 
    method set_one(attr, val)
       case attr of {
-         "is_horizontal" : if test_flag(attr, val) then 
+         "is_horizontal" : if test_flag(attr, val) then
             set_is_horizontal()
          else
             clear_is_horizontal()

@@ -1,6 +1,6 @@
 #
-# Author: Gigi Young 
-# Date:   5-31-2018 
+# Author: Gigi Young
+# Date:   5-31-2018
 # e-mail: kzyoung93@gmail.com
 #
 
@@ -8,8 +8,8 @@
 # class for an individual co-expression
 #
 class Coexp(
-   id,         # string with the number N in "co-expression_N()" 
-   tag,        # a string used "pretty printing" 
+   id,         # string with the number N in "co-expression_N()"
+   tag,        # a string used "pretty printing"
    val,        # the value of the co-expression
    src_val,    # the value of the calling co-expression (optional?)
    file,       # optional?
@@ -17,10 +17,10 @@ class Coexp(
    stk_info,   # string containing file:line info for current execution
    curr_frame  # int containing current frame within stack for frame cmd
    )
- 
-   # 
+
+   #
    # updates the stack frame status
-   # 
+   #
    method update_stk_info()
       local pname, levels_up := 0 , s := "", paren := "(", temp
 
@@ -29,7 +29,7 @@ class Coexp(
       if \pname then {
          pname := pname[find(" ",pname)+1:0]
 #         write("currently in procedure ",pname)
-         s ||:= pname  
+         s ||:= pname
 
          # get proc parameter info
          every x := paramnames(val,levels_up) do {
@@ -42,7 +42,7 @@ class Coexp(
             s ||:= paren || " at "
             }
          else if *paren = 1 then {
-            s ||:= "() at " 
+            s ||:= "() at "
             }
          }
 
@@ -105,14 +105,14 @@ class CoexpState(
    #
    # Returns a coexp id (integer string representation of coexp number)
    # given a coexp value
-   # 
+   #
    method get_id(C)
       local s
       image(C) ? { tab(upto(&digits)\1) & s := tab(find("(")\1) }
       return s
       #return image(C) ? tab(find("(")\1)
    end
-   
+
    #
    # Returns a "pretty printing" tag given a coexp value
    #
@@ -122,25 +122,25 @@ class CoexpState(
       #return "Co-expression " || s
       return "Coexp #" || s
    end
- 
+
    #
    # Returns an instance of class Coexp given that it is an active coexp,
    # otherwise returns null
    #
    method get_coexp(x)
-      local i, c_id 
-      
+      local i, c_id
+
       #write("get_coexp() - type of C is: ",type(x))
-      case type(x) of {  
+      case type(x) of {
          "co-expression": { c_id := get_id(x) }
          #"integer": { c_id := "co-expression_" || image(x) }
          "integer": { c_id := image(x) }
-         #"string": { c_id := "co-expression_" || x } 
-         "string": { c_id := x } 
+         #"string": { c_id := "co-expression_" || x }
+         "string": { c_id := x }
          default: {  return &null }
          }
 
-      every i := 1 to *active_list do 
+      every i := 1 to *active_list do
          if c_id == active_list[i].id then {
             #write("found coexp ",c_id)
             return active_list[i]
@@ -155,7 +155,7 @@ class CoexpState(
       if \C then {
          # go to next state
          prev := curr
-         if /(curr := get_coexp(C)) then 
+         if /(curr := get_coexp(C)) then
             curr := Coexp(get_id(C),get_tag(C),C,keyword("source",C))
          target := curr
 
@@ -173,22 +173,22 @@ class CoexpState(
 #      else write("failed to change coexp target")
    end
 
-   # 
+   #
    # Adds a coexp to the list of active coexps
-   # 
+   #
    method add_coexp(val,src_val)
       local coexp
       if \val then {
          coexp := Coexp(get_id(val),get_tag(val),val,src_val)
-         put(active_list,coexp) 
+         put(active_list,coexp)
          write("[New co-expression ",coexp.id,"]")
          #return put(active_list,Coexp(get_id(val),val,keyword("source",val)))
          }
    end
 
-   # 
+   #
    # Removes a coexp from the list of active coexps
-   # 
+   #
    method remove_coexp(C)
       local i, c_id := get_id(C)
 
@@ -196,7 +196,7 @@ class CoexpState(
          if c_id == active_list[i].id then {
             # found, move to end of list and pull off
             active_list[i] :=: active_list[-1]
-            return pull(active_list) 
+            return pull(active_list)
             }
          }
    end
@@ -211,7 +211,7 @@ class CoexpState(
          if c_id == active_list[i].id then {
             # found, move to end of list and pull off
             active_list[i] :=: active_list[-1]
-            return pull(active_list) 
+            return pull(active_list)
             }
          }
    end
@@ -227,7 +227,7 @@ class CoexpState(
                "\n   in order to view activated co-expressions.")
          return
          }
-      
+
       every coexp := !active_list do {
          if \target & target.id == coexp.id then writes(" *  ")
          else writes("    ")

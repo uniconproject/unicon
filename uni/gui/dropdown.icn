@@ -11,7 +11,7 @@ link graphics
 
 $include "guih.icn"
 
-class DropDownTextList : TextList(drag_flag) 
+class DropDownTextList : TextList(drag_flag)
    #
    # Determine an appropriate size for the drop-down list.
    #
@@ -25,7 +25,7 @@ class DropDownTextList : TextList(drag_flag)
       #
       mw := get_subject_width()
 
-      # 
+      #
       # Set the width needed, ensuring within min/max dimensions requested
       #
       self.w_spec := mw + 2 * get_view_x_padding()
@@ -61,10 +61,10 @@ end
 # This class is just a superclass of {List} and {EditList}.
 #
 class DropDown : Component(
-   b,                           
-   selection,               #                 
-   selection_list,          #                      
-   tl,                      #          
+   b,
+   selection,               #
+   selection_list,          #
+   tl,                      #
    temp_win                 #
    )
 
@@ -94,7 +94,7 @@ class DropDown : Component(
    end
 
    #
-   # Convenient method to get the string currently selected. 
+   # Convenient method to get the string currently selected.
    #
    method get_string_selection()
       return self.selection_list[self.selection]
@@ -131,7 +131,7 @@ class DropDown : Component(
       #
       tmp := tl.get_selections()[1]
       self.close_textlist()
-      self.unique_end(1)  
+      self.unique_end(1)
       go_to(\tmp, ev)
    end
 
@@ -201,7 +201,7 @@ class DropDown : Component(
       #
       if \self.tl then {
          self.close_textlist()
-         self.unique_end()  
+         self.unique_end()
       }
       self.Component.finally()
    end
@@ -210,11 +210,11 @@ class DropDown : Component(
       if \tl then {
          b.handle_event(e)
          (\tl).handle_event(e)
-         if \tl & ((e === "\e") | 
+         if \tl & ((e === "\e") |
                    ((e === (&lpress | &rpress | &mpress)) & not(tl.in_region()))) then {
             #
             # Mouse click outside textlist.  Close.
-            # 
+            #
             self.close_textlist()
             self.unique_end()
          }

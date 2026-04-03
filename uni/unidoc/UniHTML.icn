@@ -315,7 +315,7 @@ class UniHTML : Object (title, idoc, mainIndex, linkPath,
         outputUrlList(page, "Methods:",          mkList(aClass.getMethods()))
         outputInheritedMethods(page, aClass)
         outputUrlList(page, "Fields:",           mkList(aClass.getParams()))
-        sRef := displaySrcURL(aClass, "Source code.") 
+        sRef := displaySrcURL(aClass, "Source code.")
         if sRef ~== "Source code." then {
             write(page, "<b><i>", sRef, "</i></b><p></p>")
             }
@@ -391,7 +391,7 @@ class UniHTML : Object (title, idoc, mainIndex, linkPath,
         write(page, "<p>This file is part of the <b>",
                         displayURL(getURL(p), p.getName()),
                        "</b> package.</p>")
-        sRef := displaySrcURL(aFile, "Source code.") 
+        sRef := displaySrcURL(aFile, "Source code.")
         if sRef ~== "Source code." then {
             write(page, "<b><i>", sRef, "</i></b><p></p>")
             }
@@ -414,7 +414,7 @@ class UniHTML : Object (title, idoc, mainIndex, linkPath,
     # </p>
     method outputMethods(page, label, aClass)
         local metd, mList
-    
+
         mList := mkList(aClass.getMethods())
         if *mList > 0 then {
             outputHeading(page, label, "+2", "#eeeeff")
@@ -468,7 +468,7 @@ class UniHTML : Object (title, idoc, mainIndex, linkPath,
                 }
             }
     end
-    
+
     # <p>
     # <i>This is intended for internal use only!</i>
     # </p>
@@ -495,7 +495,7 @@ class UniHTML : Object (title, idoc, mainIndex, linkPath,
             outputUrlList(page, &null, aList)
             }
     end
-    
+
     # <p>
     # <i>This is intended for internal use only!</i>
     # </p>
@@ -523,13 +523,13 @@ class UniHTML : Object (title, idoc, mainIndex, linkPath,
         /fileMap[obj] := mkURL(obj)
         return fileMap[obj]
     end
-    
+
     # <p>
     # <i>This is intended for internal use only!</i>
     # </p>
     method mkURL(obj)
         local bName, pName, cat, p, nObj
-    
+
         bName := obj.getName()
         case obj.className() of {
             "UniDoc::ULink"       |
@@ -659,7 +659,7 @@ end
 procedure getTagFromURL(url)
     reverse(url) ? return reverse(tab(upto('#'))||move(1))
 end
-        
+
 # <p>
 # <i>This is intended for internal use only!</i>
 # </p>
@@ -815,7 +815,7 @@ procedure stripParagraph(s)
                2(="<pre>\n",tab(-*"</pre>\n"),="</pre>\n")
     return s
 end
-        
+
 
 # <p>
 # <i>This is intended for internal use only!</i>
@@ -833,31 +833,31 @@ procedure cmts2html(comments)
             s ||:= if cblock.isLegacy() then "</pre>\n"
             }
         s := checkSpecial(s, keyMap)
-        if \(throws := keyMap["throws"]) then {   
+        if \(throws := keyMap["throws"]) then {
             t := "\n<b>Throws:</b> "
             t ||:= "<table>\n"
             while t ||:= ::get(throws)
             s1 := t || "\n</table>\n" || s1
             }
-        if \(fails := keyMap["fails"]) then {   
+        if \(fails := keyMap["fails"]) then {
             t := "\n<b>Fails:</b> "
             t ||:= "<table>\n"
             while t ||:= ::get(fails)
             s1 := t || "\n</table>\n" || s1
             }
-        if \(returns := keyMap["returns"]) then {   
+        if \(returns := keyMap["returns"]) then {
             t := "\n<b>Returns:</b> "
             t ||:= "<table>\n"
             while t ||:= ::get(returns)
             s1 := t || "\n</table>\n" || s1
             }
-        if \(generates := keyMap["generates"]) then {   
+        if \(generates := keyMap["generates"]) then {
             t := "\n<b>Generates:</b> "
             t ||:= "<table>\n"
             while t ||:= ::get(generates)
             s1 := t || "\n</table>\n" || s1
             }
-        if \(params := keyMap["params"]) then {   
+        if \(params := keyMap["params"]) then {
             t := "\n<b>Parameter"||(if *params > 1 then "s" else "")||":</b> "
             t ||:= "<table>\n"
             while t ||:= ::get(params)

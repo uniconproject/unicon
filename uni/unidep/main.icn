@@ -41,20 +41,20 @@ procedure main(a)
       symbol_table.dump()
 
    every a := !all_fileargs do
-      a.init2() 
+      a.init2()
 
    every a := !all_fileargs do
-      a.init3() 
+      a.init3()
 
    every a := !all_fileargs do
-      a.init4() 
-      
+      a.init4()
+
    if \debug then
       write("doing final checks")
 
    every a := !all_fileargs do {
       a.check_for_unused_imports()
-      a.circle_check() 
+      a.circle_check()
    }
 
    if \opts["r"] then {
@@ -75,7 +75,7 @@ procedure main(a)
             t ||:= " " || convert_filename(fa.file) | err("expected a .icn file:" || fa.file)
          put(lines, t)
       }
-      if s := \opts["f"] then 
+      if s := \opts["f"] then
          output_to(s, lines)
       else {
          if stat("makefile") then
@@ -84,7 +84,7 @@ procedure main(a)
             output_to("Makefile", lines)
          else
             stop("No makefile to output to", lines)
-      }         
+      }
    }
 
    return

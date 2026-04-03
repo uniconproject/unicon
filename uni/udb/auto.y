@@ -14,7 +14,7 @@ $include "evdefs.icn"
 $define UNINIT 0
 $define INIT 1
 
-global convCount 
+global convCount
 global gcStart
 global gcEnd
 global programStart
@@ -56,7 +56,7 @@ events : event {
 event : conv_attempt |
         garbage_start |
         garbage_end |
-        initialize_var { 
+        initialize_var {
    $$ := node( "event", "", $1 )
    };
 
@@ -70,7 +70,7 @@ event : var_read {
 
    if uninitState == ON & varState[ $1.varName ] == UNINIT then {
       write( "Target program reads from uninitialized variable: " ||
-             $1.varName[1: upto('-', $1.varName )] || " at " || 
+             $1.varName[1: upto('-', $1.varName )] || " at " ||
              keyword( "line", Monitored ) || ":" ||
              keyword( "file", Monitored ) )
       }

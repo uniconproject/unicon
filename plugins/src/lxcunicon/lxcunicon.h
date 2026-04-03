@@ -7,7 +7,7 @@
  ***
  *  This file is in the public domain.
  ***
- *  Describtion: provides basic function for creating and
+ *  Description: provides basic function for creating and
  *               managing LXC containers 
  ***
  * compile:  gcc -std=c99 -shared -fpic -o luxicon.so luxicon.c -llxc

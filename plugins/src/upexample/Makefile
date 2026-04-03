@@ -8,11 +8,11 @@
 # @Replace: What is the name of this library?
 LNAME=upexample
 
-# @Replace: add any additionl (non-standard name) c source file(s) here
+# @Replace: add any additional (non-standard name) c source file(s) here
 COBJ = $(LNAME).o 
 CSRC = $(LNAME).c
 
-# @Replace: If additinal libraries need to be linked in append them here:
+# @Replace: If additional libraries need to be linked in append them here:
 MYLIBS=$(LIBS)
 
 # Relative to top level

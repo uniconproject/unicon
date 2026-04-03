@@ -45,9 +45,9 @@
  *  @function{1} foo(value@i)
  *  @return : i
  *
- *  One line describtion: does this and that
+ *  One line description: does this and that
  *
- *  elaborate describon does this and that
+ *  elaborate description does this and that
  *  and even more
  *  but can't do these
  *

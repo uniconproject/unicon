@@ -1,0 +1,39 @@
+   #<p>
+   #   <[param msg The parsed message as a json table.]>
+   #</p> 
+class DAP_Message(msg)
+
+   method get_seq()
+      return msg["seq"]
+   end
+
+   method get_type()
+      return msg["type"]
+   end
+
+   method get_command()
+      return \msg["command"] | msg["event"] 
+   end
+
+   method get_arguments()
+      return \msg["arguments"] | table()
+   end
+
+   method get_body()
+      if \msg["body"] then
+         return msg["body"] 
+   end
+
+   method has_field(name)
+      return member(msg, name)
+   end
+
+   method from_table(tab)
+      if /tab then fail
+      if type(tab) ~== "table" then fail
+
+      msg := tab
+      if \msg["type"] then
+         return self
+   end
+end

@@ -19,13 +19,14 @@ SRC       = udb.icn icode.icn srcfile.icn state.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
             evaluator.icn session.icn adapter.icn console.icn defaults.icn help.icn \
-	    coexp.icn symtab.icn system.icn exparser.icn
+	    coexp.icn symtab.icn system.icn exparser.icn dap_message.icn
 
 UFILES    = udb.u icode.u srcfile.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
-            evaluator.u session.u adapter.u console.u help.u coexp.u symtab.u system.u exparser.u
+            evaluator.u session.u adapter.u console.u help.u coexp.u symtab.u system.u exparser.u \
+				dap_message.u
 
 LIB       = lib
 LIBRARY   = $(LIB)/listener.u      $(LIB)/memory.u     $(LIB)/structaliases.u \
@@ -59,8 +60,11 @@ udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb
 
-adapter.u: adapter.icn
+adapter.u: adapter.icn dap_message.u
 	$(UC) $(cflags) adapter
+
+dap_message.u: dap_message.icn
+	$(UC) $(cflags) dap_message
 
 console.u: console.icn defaults.icn state.u session.u evaluator.u adapter.u
 	$(UC) $(cflags) console

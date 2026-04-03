@@ -261,24 +261,28 @@ class JRPC_Message(msg, kind, json_table)
 end
 
 
-class JRPC_HTTPSocket(sock)
+class JSON_HTTPSocket(sock)
    #
    # parse the http header in the form of
    #   ...
    #   Content-Length: <SIZE>
    #   ...
    #   \r\n\r\n
-   # and return the length of the rpc message
+   # and return the length of the message
    method get_http_header(timeout)
-      local len, data := "", size := 22
+      local len, data := "", size := 22, chunk
       /timeout := -1
       repeat {
          # Wait for a message to arrive, read the header
-         # assume the min header size is 22, because the shortest jrpc
+         # assume the min header size is 22, because the shortest
          # msgs will be at least 2 digits, I.e header size >=22
          *select(\sock, timeout) > 0  | fail
-         data ||:= ready(sock, size-*data)
-         data ~== "" | fail
+         
+         chunk := ready(sock, size-*data)
+         \chunk | fail
+         chunk ~== "" | fail
+         data ||:= chunk
+
          if *data < size then next
 
          data ? {
@@ -298,15 +302,44 @@ class JRPC_HTTPSocket(sock)
 
    # Get the data from the socket
    method get_data(size, timeout)
-      local data := ""
+      local data := "", chunk
       /timeout := -1
       while *data < size do {
          *select(sock, timeout) > 0 | fail
-         data ||:= ready(sock, size-*data)
-         data ~== "" | fail
-         }
-         return data
+         
+         chunk := ready(sock, size - *data)
+         \chunk | fail
+         chunk ~== "" | fail
+         data ||:= chunk
+      }
+      return data
    end
+
+   method get_msg(timeout)
+      local len, body, t
+      len := get_http_header(timeout) | fail
+      body := get_data(len, timeout) | fail
+      t := jtous(body) | fail
+      return t
+   end
+
+   method send_msg(t)
+      local body
+      body := tojson(t) | fail
+      writes(sock, CONTENT_LENGTH, *body, "\r\n\r\n", body)
+   end
+
+   # Initialize the JSON HTTPSocket
+   initially(addr, opt)
+      if string(addr) then
+         sock := open(addr,opt)
+      else
+         sock := addr
+
+end
+
+
+class JRPC_HTTPSocket : JSON_HTTPSocket()
 
    # Get the JSON RPC message from the socket
    method get_msg(timeout)
@@ -325,11 +358,7 @@ class JRPC_HTTPSocket(sock)
       writes(sock, CONTENT_LENGTH, *data, "\r\n\r\n", data)
    end
 
-   # Initialize the JSON RPC HTTPSocket
    initially(addr, opt)
-      if string(addr) then
-         sock := open(addr,opt)
-      else
-         sock := addr
-
+      return self.JSON_HTTPSocket.initially(addr, opt)
+      
 end

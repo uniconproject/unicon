@@ -12,7 +12,6 @@ PROGRAM = uflex$(EXE)
 
 all: $(PROGRAM) tst
 
-# why ulpp.icn not ulpp.u ?
 $(PROGRAM): flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u convert.u automatadfa.u ulpp.icn
 	$(UNICON) -s -o uflex flexgram.u main.u uflex-lex.u ulexskel.u uflexskel.u automata.u tree.u convert.u automatadfa.u ulpp.icn
 	@$(CP) $(PROGRAM) ../../bin/

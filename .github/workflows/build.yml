@@ -80,12 +80,21 @@ jobs:
       with:
         name: test-report-Windows-${{ matrix.cfg.name }}
         path: tests/test-report.txt
+        if-no-files-found: warn
 
     - name: Summary
       if: always()
       run: |
-        cat unicon-config.log
-        cat unicon-features.log
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
 
   macOS:
     runs-on: ${{ matrix.cfg.os }}
@@ -125,12 +134,21 @@ jobs:
       with:
         name: test-report-macOS-${{ matrix.cfg.name }}
         path: tests/test-report.txt
+        if-no-files-found: warn
 
     - name: Summary
       if: always()
       run: |
-        cat unicon-config.log
-        cat unicon-features.log
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
 
   Linux:
     runs-on: ubuntu-latest
@@ -233,12 +251,21 @@ jobs:
       with:
         name: test-report-Linux-${{ matrix.cfg.name }}
         path: tests/test-report.txt
+        if-no-files-found: warn
 
     - name: Summary
       if: always()
       run: |
-        cat unicon-config.log
-        cat unicon-features.log
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
 
   Alpine:
     runs-on: ubuntu-latest
@@ -289,12 +316,21 @@ jobs:
       with:
         name: test-report-Alpine-${{ matrix.platform.arch }}
         path: tests/test-report.txt
+        if-no-files-found: warn
 
     - name: Summary
       if: always()
       run: |
-        cat unicon-config.log
-        cat unicon-features.log
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
       shell: alpine.sh {0}
 
   Features:
@@ -380,12 +416,21 @@ jobs:
       with:
         name: test-report-Features-${{ matrix.cfg.name }}
         path: tests/test-report.txt
+        if-no-files-found: warn
 
     - name: Summary
       if: always()
       run: |
-        cat unicon-config.log
-        cat unicon-features.log
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
 
   FreeBSD:
    runs-on: ubuntu-latest
@@ -432,14 +477,23 @@ jobs:
      with:
        name: test-report-FreeBSD
        path: tests/test-report.txt
+       if-no-files-found: warn
 
    - name: Summary
      if: always()
      shell: freebsd {0}
      run: |
       cd $GITHUB_WORKSPACE
-      cat unicon-config.log
-      cat unicon-features.log
+      if [ -f unicon-config.log ]; then
+        cat unicon-config.log
+      else
+        echo "unicon-config.log: (not present)"
+      fi
+      if [ -f unicon-features.log ]; then
+        cat unicon-features.log
+      else
+        echo "unicon-features.log: (not present)"
+      fi
 
   DebianPkg:
     runs-on: ${{ matrix.cfg.os }}
@@ -481,7 +535,14 @@ jobs:
         cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
 
     - name: Install
-      run: sudo apt install ./debian-pkg/*.deb
+      run: |
+        shopt -s nullglob
+        debs=(./debian-pkg/*.deb)
+        if [ "${#debs[@]}" -eq 0 ]; then
+          echo "No .deb packages under debian-pkg/; did the Deb step succeed?"
+          exit 1
+        fi
+        sudo apt install -y "${debs[@]}"
 
     - name: Test
       run: make Test
@@ -498,3 +559,4 @@ jobs:
       with:
         name: test-report-DebianPkg
         path: tests/test-report.txt
+        if-no-files-found: warn

@@ -21,7 +21,7 @@ runtests:
 	./120 hello.cpp > local/cpp.out
 	./ubug foo.icn > local/ubug.out
 	./uniflex -p hello.icn > local/uniflex.out
-	./punylex > local/punylex.out
+	./punylex hello.py > local/punylex.out
 
 numbers.u: numbers.icn
 	$(UNICON) -c numbers.icn

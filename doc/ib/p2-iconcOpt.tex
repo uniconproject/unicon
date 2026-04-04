@@ -19,7 +19,7 @@ elimination, constant folding, loop unrolling, and strength reduction.
 Another level of optimization is machine specific, including efficient
 register assignments, use of platform-specific instructions that offer
 greater performance, or doing peephole transformations [ASU86]. The
-optimizations implemented thusfar for the Icon compiler are not
+optimizations implemented thus far for the Icon compiler are not
 platform-specific because iconc translates Icon code into C code which
 then calls the native C compiler to finish the job.
 
@@ -363,7 +363,7 @@ of type \texttt{C\_Goto} may reference the removed node.
 
 \section{Icon Literals and Constant Propagation}
 
-Constant progagation was the second most difficult optimization to
+Constant propagation was the second most difficult optimization to
 implement next to the new type representation because the Icon
 compiler generates a complex data structure that contains Icon values,
 including literals. These Icon literals are assigned into this tended
@@ -415,7 +415,7 @@ into the descriptor table. The same thing holds true for the second
 example. The string \texttt{{\textquotedbl}foo{\textquotedbl}} is
 assigned its own location. Because both these values are only literals
 in the Icon code, they are given temporary locations in the tended
-desciptor table that may be used over again.
+descriptor table that may be used over again.
 
 \begin{iconcode}
 \>   if (x\_val = 2.4) then \\
@@ -500,7 +500,7 @@ locations that are either reused at some point or are modified is some
 way. The value \texttt{LIMITED\_TO\_INT} is similar except that
 special care must be taken when propagating this constant. For
 example, a constant such as a string should not be propagated
-everywhere an interger may be propagated.
+everywhere an integer may be propagated.
 
 Lastly, the value \texttt{NO\_TOUCH} refers to descriptor locations
 that should not be propagated. These descriptor locations often
@@ -692,7 +692,7 @@ by reference to any functions.
 \iconline{ novalue propagate\_literals(void) }
 
 This function steps through each entry in the literal table and begins
-to replace occurences of the descriptor location with the literal
+to replace occurrences of the descriptor location with the literal
 between the \texttt{struct code} structures from the \texttt{initial}
 field to the \texttt{end} field.  The function \texttt{eval\_code} is
 called to do the actual propagation.
@@ -833,8 +833,8 @@ Overall, the optimizations improved the execution speed by a modest
 amount. The improvement is roughly between 6-8.25\%.  While this is
 not a great as was hoped, it still is an improvement. The code size of
 both the intermediate code and the generated executable are
-suprisingly smaller. The loop unrolling seemed to be offset by the
-constant progagation which eliminated unnecessary assigments and
+surprisingly smaller. The loop unrolling seemed to be offset by the
+constant propagation which eliminated unnecessary assignments and
 references. The size of the executables were reduced by approximately
 4-8\% for large programs, but there was no change in executable size
 for small programs (20 lines). The size of the generated C file was
@@ -1383,7 +1383,7 @@ into
 \noindent where \texttt{onedesc} is a single descriptor that already
 contains the values of the \texttt{dword} and \texttt{vword} being
 assigned. This could be performed by creating several constant
-decriptors for the common values such as 0 or 1.  Like the previous
+descriptors for the common values such as 0 or 1.  Like the previous
 optimization, this change will offer a smaller improvement to
 execution speed because global descriptor assignments occur much less
 frequently.
@@ -1394,7 +1394,7 @@ frequently.
 When a variable is dereferenced, it is often the case that the
 variable location is passed in for both parameters to the
 \texttt{deref} function. For example, in the following code example,
-\texttt{r\_frame.tend.d[7]} is the variable being derefenced and the
+\texttt{r\_frame.tend.d[7]} is the variable being dereferenced and the
 location where the dereferenced value is to be placed. This can be
 simplified by creating another version of \texttt{deref}, perhaps
 named \texttt{deref1}, that takes a single argument, dereferences it,

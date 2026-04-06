@@ -11,9 +11,13 @@
 
 # Note: -lsocket is not available on some Linux systems,
 # but if your system has it you might need to add it to RLIBS
-# Useful development flags: -g -Wall -Wno-missing-braces -fsanitize=address -fno-omit-frame-pointer
-# -g and -fsanitize=address should also be added to the linker flags
-# make sure to also change the optimization to level 0 or 1
+# AddressSanitizer: configure with --enable-asan (and usually --enable-debug for -g).
+# ThreadSanitizer: configure with --enable-tsan (pick at most one of asan/tsan/msan/hwasan).
+# UndefinedBehaviorSanitizer: --enable-ubsan (combinable with asan or tsan).
+# MemorySanitizer: --enable-msan (exclusive with asan/tsan/hwasan; needs MSan-aware toolchain).
+# HardwareAssisted AddressSanitizer: --enable-hwasan (exclusive with asan/tsan/msan; AArch64-oriented).
+# Manual flags if needed: -g -Wall -Wno-missing-braces -fsanitize=address -fno-omit-frame-pointer;
+# sanitizer must be passed to the linker as well; prefer -O0 or -O1 with ASan.
 
 CC = @CC@
 CXX = @CXX@
@@ -73,7 +77,9 @@ UNICONHOST=@unicon_host@
 
 # commands
 SHELL = /bin/sh
-RTT=../../bin/urtt
+# Prepend detect_leaks=0 for urtt so LSan does not fail the build when ASan is on;
+# merge with any ASAN_OPTIONS the user already set (e.g. abort_on_error=1).
+RTT=env ASAN_OPTIONS="detect_leaks=0$${ASAN_OPTIONS:+:$${ASAN_OPTIONS}}" ../../bin/urtt
 RM = rm -f
 CP = cp -f
 AR = ar

@@ -278,6 +278,12 @@ void pop_src()
          cs = sp->u.cs;
          if (cs->f != NULL)
             fclose(cs->f);
+         if (cs->char_buf != NULL)
+            free((char *)cs->char_buf);
+         if (cs->line_buf != NULL)
+            free((char *)cs->line_buf);
+         if (cs->tok_sav != NULL)
+            free_t(cs->tok_sav);
          free((char *)cs);
          break;
       case MacExpand:
@@ -293,6 +299,20 @@ void pop_src()
          --me->m->recurse;
          free_m(me->m);
          free((char *)me);
+         break;
+      case TokLst:
+         free_t_lst(sp->u.tlst);
+         break;
+      case PasteLsts:
+         {
+         struct paste_lsts *plst, *plstn;
+
+         for (plst = sp->u.plsts; plst != NULL; plst = plstn) {
+            plstn = plst->next;
+            free_t_lst(plst->tlst);
+            free((char *)plst);
+            }
+         }
          break;
       }
 

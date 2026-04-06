@@ -800,6 +800,11 @@ enable_verifyheap
 enable_devmode
 enable_werror
 enable_warnings
+enable_asan
+enable_tsan
+enable_ubsan
+enable_msan
+enable_hwasan
 enable_uniconx
 with_zlib
 with_xlib
@@ -1480,6 +1485,23 @@ Optional Features:
                           options
   --enable-werror         Change compiler warnings to errors
   --enable-warnings       Turn on most types of compiler warnings
+  --enable-asan           Enable AddressSanitizer (-fsanitize=address); use
+                          with --enable-debug for symbols; uses -O1 when
+                          CFLAGS is unset and debug is off
+  --enable-tsan           Enable ThreadSanitizer (-fsanitize=thread);
+                          incompatible with --enable-asan; use with
+                          --enable-debug for symbols; uses -O1 when CFLAGS is
+                          unset and debug is off
+  --enable-ubsan          Enable UndefinedBehaviorSanitizer
+                          (-fsanitize=undefined); may be combined with
+                          --enable-asan or --enable-tsan
+  --enable-msan           Enable MemorySanitizer (-fsanitize=memory);
+                          incompatible with ASan/TSan/HWASan; typically needs
+                          an MSan-instrumented libc; uses -O1 when CFLAGS is
+                          unset and debug is off
+  --enable-hwasan         Enable HardwareAssisted AddressSanitizer
+                          (-fsanitize=hwaddress); AArch64-oriented alternative
+                          to ASan; incompatible with ASan/TSan/MSan
   --enable-uniconx        Change executable names to co-exist with Icon
 
 Optional Packages:
@@ -3778,6 +3800,46 @@ else $as_nop
   warn=no
 fi
 
+# Check whether --enable-asan was given.
+if test ${enable_asan+y}
+then :
+  enableval=$enable_asan; asan=$enableval
+else $as_nop
+  asan=no
+fi
+
+# Check whether --enable-tsan was given.
+if test ${enable_tsan+y}
+then :
+  enableval=$enable_tsan; tsan=$enableval
+else $as_nop
+  tsan=no
+fi
+
+# Check whether --enable-ubsan was given.
+if test ${enable_ubsan+y}
+then :
+  enableval=$enable_ubsan; ubsan=$enableval
+else $as_nop
+  ubsan=no
+fi
+
+# Check whether --enable-msan was given.
+if test ${enable_msan+y}
+then :
+  enableval=$enable_msan; msan=$enableval
+else $as_nop
+  msan=no
+fi
+
+# Check whether --enable-hwasan was given.
+if test ${enable_hwasan+y}
+then :
+  enableval=$enable_hwasan; hwasan=$enableval
+else $as_nop
+  hwasan=no
+fi
+
 
 # Check whether --enable-uniconx was given.
 if test ${enable_uniconx+y}
@@ -5227,6 +5289,15 @@ printf "%s\n" "#define VerifyHeap 1" >>confdefs.h
     verifyheapreport="VerifyHeap"
 fi
 
+sancount=0
+test x"$asan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$tsan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$msan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$hwasan" = x"yes" && sancount=`expr $sancount + 1`
+if test "$sancount" -gt 1 ; then
+  as_fn_error $? "Only one of --enable-asan, --enable-tsan, --enable-msan, or --enable-hwasan may be enabled. --enable-ubsan may be combined with one of them." "$LINENO" 5
+fi
+
 if test x"$udbtools" = x"yes" ; then
   UDBTOOLS=udbtools
 fi
@@ -5283,7 +5354,55 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
-     {
+     if test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+        test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+       {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -O1"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O1" >&5
+printf %s "checking whether $CC supports -O1... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     else
+       {
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5294,6 +5413,54 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 	CFLAGS="$CFLAGS -O0"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O0" >&5
 printf %s "checking whether $CC supports -O0... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     fi
+  elif test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+       test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+     {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -O1"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O1" >&5
+printf %s "checking whether $CC supports -O1... " >&6; }
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5421,6 +5588,251 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
   fi
+fi
+
+if test x"$asan" = x"yes" ; then
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=address"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=address" >&5
+printf %s "checking whether $CC supports -fsanitize=address... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "AddressSanitizer (-fsanitize=address) is not supported by $CC" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=address"
+fi
+
+if test x"$tsan" = x"yes" ; then
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=thread"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=thread" >&5
+printf %s "checking whether $CC supports -fsanitize=thread... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "ThreadSanitizer (-fsanitize=thread) is not supported by $CC" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=thread"
+fi
+
+if test x"$msan" = x"yes" ; then
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=memory"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=memory" >&5
+printf %s "checking whether $CC supports -fsanitize=memory... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "MemorySanitizer (-fsanitize=memory) is not supported by $CC" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=memory"
+fi
+
+if test x"$hwasan" = x"yes" ; then
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=hwaddress"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=hwaddress" >&5
+printf %s "checking whether $CC supports -fsanitize=hwaddress... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "HardwareAssisted AddressSanitizer (-fsanitize=hwaddress) is not supported by $CC" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=hwaddress"
+fi
+
+if test x"$ubsan" = x"yes" ; then
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=undefined"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=undefined" >&5
+printf %s "checking whether $CC supports -fsanitize=undefined... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "UndefinedBehaviorSanitizer (-fsanitize=undefined) is not supported by $CC" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=undefined"
 fi
 
 if test x"$warn" = x"yes" ; then
@@ -6779,6 +7191,21 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+if test x"$asan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=address"
+fi
+if test x"$tsan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=thread"
+fi
+if test x"$msan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=memory"
+fi
+if test x"$hwasan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=hwaddress"
+fi
+if test x"$ubsan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
+fi
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7903,6 +8330,27 @@ case $unicon_host in
        ICONCEXE=$UNICONC.exe
         ;;
 esac
+
+if test x"$asan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=address"
+  LDDYN="$LDDYN -fsanitize=address"
+fi
+if test x"$tsan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=thread"
+  LDDYN="$LDDYN -fsanitize=thread"
+fi
+if test x"$msan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=memory"
+  LDDYN="$LDDYN -fsanitize=memory"
+fi
+if test x"$hwasan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=hwaddress"
+  LDDYN="$LDDYN -fsanitize=hwaddress"
+fi
+if test x"$ubsan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=undefined"
+  LDDYN="$LDDYN -fsanitize=undefined"
+fi
 
 if test "x$iconc" = "xyes" || test "x$iconc" = "xon" ; then
        ICONCTARGET=Iconc
@@ -17962,6 +18410,14 @@ fi
 
 revision=`./config/scripts/version.sh "revision"`
 
+san_summary=""
+test x"$asan" = x"yes" && san_summary="$san_summary${san_summary:+ }ASan"
+test x"$tsan" = x"yes" && san_summary="$san_summary${san_summary:+ }TSan"
+test x"$ubsan" = x"yes" && san_summary="$san_summary${san_summary:+ }UBSan"
+test x"$msan" = x"yes" && san_summary="$san_summary${san_summary:+ }MSan"
+test x"$hwasan" = x"yes" && san_summary="$san_summary${san_summary:+ }HWASan"
+test -z "$san_summary" && san_summary=no
+
 cat << EOF  > unicon-config.log
 --------------------------------------------------
     $PACKAGE_STRING Configuration Summary
@@ -17980,6 +18436,7 @@ LDDYN    : $LDDYN
 prefix   :  $prefix
 Verbose  :  $verbosebuild
 Debug    :  $debug $debugheapreport $verifyheapreport
+San      :  $san_summary
 Warnings :  $warn
 Werror   :  $werror
 Devmode  :  $devmode

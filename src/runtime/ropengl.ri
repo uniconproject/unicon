@@ -1305,21 +1305,21 @@ int traversefunctionlist(wbp w)
 /* OK, at this point, k1 has been preset to refer to the int code */
 
          if (funclist->size-1 > vsize) {
-           /*
-            * gcc complains about the else branch, saying
-            *   ropengl.ri: warning: ‘realloc’ called on unallocated object ‘v2’ [-Wfree-nonheap-object]
-            * but it's too dim to notice that the if condition protects against that exact scenario.
-            */
-            if (v == v2)
-               v = calloc(funclist->size, sizeof (double));
-            else {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
-              v = realloc(v, funclist->size * sizeof (double));
-#pragma GCC diagnostic pop
+            /*
+             * realloc(NULL, n) behaves like malloc; never pass v2 (stack) to realloc.
+             * Match old calloc path by zeroing when moving off the stack buffer.
+             */
+            size_t n = funclist->size;
+            double *newv = realloc((v == v2) ? NULL : v, n * sizeof (double));
+            if (newv == NULL)
+               return RunError;
+            if (v == v2) {
+               size_t zi;
+               for (zi = 0; zi < n; zi++)
+                  newv[zi] = 0.0;
                }
-            vsize = funclist->size-1;
-            if (v == NULL) return RunError;
+            v = newv;
+            vsize = funclist->size - 1;
             }
 
          switch(tmp & ~0xf) {

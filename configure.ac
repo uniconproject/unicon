@@ -212,6 +212,18 @@ AC_ARG_ENABLE([warnings],
 AC_ARG_ENABLE([asan],
 	[AS_HELP_STRING([--enable-asan], [Enable AddressSanitizer (-fsanitize=address); use with --enable-debug for symbols; uses -O1 when CFLAGS is unset and debug is off])],
 			[asan=$enableval], [asan=no])
+AC_ARG_ENABLE([tsan],
+	[AS_HELP_STRING([--enable-tsan], [Enable ThreadSanitizer (-fsanitize=thread); incompatible with --enable-asan; use with --enable-debug for symbols; uses -O1 when CFLAGS is unset and debug is off])],
+			[tsan=$enableval], [tsan=no])
+AC_ARG_ENABLE([ubsan],
+	[AS_HELP_STRING([--enable-ubsan], [Enable UndefinedBehaviorSanitizer (-fsanitize=undefined); may be combined with --enable-asan or --enable-tsan])],
+			[ubsan=$enableval], [ubsan=no])
+AC_ARG_ENABLE([msan],
+	[AS_HELP_STRING([--enable-msan], [Enable MemorySanitizer (-fsanitize=memory); incompatible with ASan/TSan/HWASan; typically needs an MSan-instrumented libc; uses -O1 when CFLAGS is unset and debug is off])],
+			[msan=$enableval], [msan=no])
+AC_ARG_ENABLE([hwasan],
+	[AS_HELP_STRING([--enable-hwasan], [Enable HardwareAssisted AddressSanitizer (-fsanitize=hwaddress); AArch64-oriented alternative to ASan; incompatible with ASan/TSan/MSan])],
+			[hwasan=$enableval], [hwasan=no])
 
 AC_ARG_ENABLE([uniconx],
 	[AS_HELP_STRING([--enable-uniconx], [Change executable names to co-exist with Icon])],
@@ -293,6 +305,16 @@ if test x"$verifyheap" = x"yes" ; then
     verifyheapreport="VerifyHeap"
 fi
 
+dnl At most one of address / thread / memory / hardware address sanitizers.
+sancount=0
+test x"$asan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$tsan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$msan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$hwasan" = x"yes" && sancount=`expr $sancount + 1`
+if test "$sancount" -gt 1 ; then
+  AC_MSG_ERROR([Only one of --enable-asan, --enable-tsan, --enable-msan, or --enable-hwasan may be enabled. --enable-ubsan may be combined with one of them.])
+fi
+
 if test x"$udbtools" = x"yes" ; then
   UDBTOOLS=udbtools
 fi
@@ -302,10 +324,19 @@ if test x"$progs" = x"yes" ; then
 fi
 
 # honor custom flags
+dnl -O1 recommended when using heavyweight sanitizers (asan/tsan/msan/hwasan) and CFLAGS was not preset.
 if test "z$orig_cflags" = "z"; then
   if test x"$debug" = x"yes" ; then
      AC_CFLAG([-g])
-     AC_CFLAG([-O0])
+     if test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+        test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+       AC_CFLAG([-O1])
+     else
+       AC_CFLAG([-O0])
+     fi
+  elif test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+       test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+     AC_CFLAG([-O1])
   else
     AC_CFLAG([-O2], [
     AC_CFLAG([-Os])
@@ -314,11 +345,28 @@ if test "z$orig_cflags" = "z"; then
 fi
 
 if test x"$asan" = x"yes" ; then
-  if test "z$orig_cflags" = "z" && test x"$debug" != x"yes" ; then
-    AC_CFLAG([-O1])
-  fi
   AC_CFLAG([-fsanitize=address], [AC_MSG_ERROR([AddressSanitizer (-fsanitize=address) is not supported by $CC])])
   LDFLAGS="$LDFLAGS -fsanitize=address"
+fi
+
+if test x"$tsan" = x"yes" ; then
+  AC_CFLAG([-fsanitize=thread], [AC_MSG_ERROR([ThreadSanitizer (-fsanitize=thread) is not supported by $CC])])
+  LDFLAGS="$LDFLAGS -fsanitize=thread"
+fi
+
+if test x"$msan" = x"yes" ; then
+  AC_CFLAG([-fsanitize=memory], [AC_MSG_ERROR([MemorySanitizer (-fsanitize=memory) is not supported by $CC])])
+  LDFLAGS="$LDFLAGS -fsanitize=memory"
+fi
+
+if test x"$hwasan" = x"yes" ; then
+  AC_CFLAG([-fsanitize=hwaddress], [AC_MSG_ERROR([HardwareAssisted AddressSanitizer (-fsanitize=hwaddress) is not supported by $CC])])
+  LDFLAGS="$LDFLAGS -fsanitize=hwaddress"
+fi
+
+if test x"$ubsan" = x"yes" ; then
+  AC_CFLAG([-fsanitize=undefined], [AC_MSG_ERROR([UndefinedBehaviorSanitizer (-fsanitize=undefined) is not supported by $CC])])
+  LDFLAGS="$LDFLAGS -fsanitize=undefined"
 fi
 
 if test x"$warn" = x"yes" ; then
@@ -352,6 +400,18 @@ AC_PROG_CC
 AC_PROG_CXX
 if test x"$asan" = x"yes" ; then
   CXXFLAGS="$CXXFLAGS -fsanitize=address"
+fi
+if test x"$tsan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=thread"
+fi
+if test x"$msan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=memory"
+fi
+if test x"$hwasan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=hwaddress"
+fi
+if test x"$ubsan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
 fi
 AC_PROG_CPP
 AC_PROG_RANLIB
@@ -454,6 +514,22 @@ esac
 if test x"$asan" = x"yes" ; then
   CFDYN="$CFDYN -fsanitize=address"
   LDDYN="$LDDYN -fsanitize=address"
+fi
+if test x"$tsan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=thread"
+  LDDYN="$LDDYN -fsanitize=thread"
+fi
+if test x"$msan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=memory"
+  LDDYN="$LDDYN -fsanitize=memory"
+fi
+if test x"$hwasan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=hwaddress"
+  LDDYN="$LDDYN -fsanitize=hwaddress"
+fi
+if test x"$ubsan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=undefined"
+  LDDYN="$LDDYN -fsanitize=undefined"
 fi
 
 if test "x$iconc" = "xyes" || test "x$iconc" = "xon" ; then
@@ -1089,6 +1165,14 @@ fi
 
 revision=`./config/scripts/version.sh "revision"`
 
+san_summary=""
+test x"$asan" = x"yes" && san_summary="$san_summary${san_summary:+ }ASan"
+test x"$tsan" = x"yes" && san_summary="$san_summary${san_summary:+ }TSan"
+test x"$ubsan" = x"yes" && san_summary="$san_summary${san_summary:+ }UBSan"
+test x"$msan" = x"yes" && san_summary="$san_summary${san_summary:+ }MSan"
+test x"$hwasan" = x"yes" && san_summary="$san_summary${san_summary:+ }HWASan"
+test -z "$san_summary" && san_summary=no
+
 cat << EOF  > unicon-config.log
 --------------------------------------------------
     $PACKAGE_STRING Configuration Summary
@@ -1107,7 +1191,7 @@ LDDYN    : $LDDYN
 prefix   :  $prefix
 Verbose  :  $verbosebuild
 Debug    :  $debug $debugheapreport $verifyheapreport
-ASan     :  $asan
+San      :  $san_summary
 Warnings :  $warn
 Werror   :  $werror
 Devmode  :  $devmode

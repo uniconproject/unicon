@@ -204,8 +204,8 @@ make
 ```
 
 
-AddressSanitizer (ASan)
------------------------
+Compiler sanitizers
+-------------------
 
 [AddressSanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer) helps find
 out-of-bounds accesses, use-after-free, and related memory bugs in the Unicon runtime and
@@ -219,6 +219,22 @@ stack traces and debuggers are usable:
 make -j
 ```
 
+Other configure switches select additional LLVM/GCC sanitizers (flags are applied to compile
+and link steps, including shared libraries):
+
+| Option | Effect |
+|--------|--------|
+| `--enable-asan` | AddressSanitizer (`-fsanitize=address`) |
+| `--enable-tsan` | ThreadSanitizer (`-fsanitize=thread`) |
+| `--enable-ubsan` | UndefinedBehaviorSanitizer (`-fsanitize=undefined`) |
+| `--enable-msan` | MemorySanitizer (`-fsanitize=memory`) |
+| `--enable-hwasan` | HardwareAssisted AddressSanitizer (`-fsanitize=hwaddress`; common on AArch64) |
+
+Use **at most one** of `--enable-asan`, `--enable-tsan`, `--enable-msan`, and `--enable-hwasan`.
+**`--enable-ubsan`** may be combined with `--enable-asan` or `--enable-tsan`. MSan usually needs
+a toolchain (and often libc) built for MemorySanitizer. After `./configure`, `unicon-config.log`
+shows a single summary line such as `San: ASan UBSan`, or `San: no` when none of these are enabled.
+
 **Optional runtime tuning** via `ASAN_OPTIONS`, for example:
 
 ```
@@ -227,10 +243,9 @@ export ASAN_OPTIONS=abort_on_error=1:verbosity=1
 ```
 
 **LeakSanitizer** runs with ASan on typical Linux setups and treats any allocation
-still live at exit as a leak, which can cause `make` to fail while building (for
-example when `urtt` runs many times). The preprocessor was also fixed to release
-character-source buffers when popping the source stack. If remaining leak reports
-are only a distraction while you care about **memory safety errors** (not leaks),
+still live at exit as a leak, which can cause `make` to fail while building.
+If remaining leak reports are only a distraction while you care about
+**memory safety errors** (not leaks),
 you can disable leak detection for the whole build:
 
 ```

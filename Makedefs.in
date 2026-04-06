@@ -73,7 +73,9 @@ UNICONHOST=@unicon_host@
 
 # commands
 SHELL = /bin/sh
-RTT=../../bin/urtt
+# Prepend detect_leaks=0 for urtt so LSan does not fail the build when ASan is on;
+# merge with any ASAN_OPTIONS the user already set (e.g. abort_on_error=1).
+RTT=env ASAN_OPTIONS="detect_leaks=0$${ASAN_OPTIONS:+:$${ASAN_OPTIONS}}" ../../bin/urtt
 RM = rm -f
 CP = cp -f
 AR = ar

@@ -2,7 +2,7 @@ BASE=../..
 UNICON_TOP_BUILDDIR ?= $(BASE)
 include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
-EXEs    = udb
+EXEs    = udb test_adapter
 DEL     = -rm
 CLEAN   = clean
 cflags  = $(UFLAGS) -c 
@@ -57,6 +57,9 @@ tools:
 udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
 	$(CP) udb$(EXE) ../../bin
+
+test_adapter: test_adapter.u
+	$(UC) $(ldflags) test_adapter.u -o test_adapter
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb

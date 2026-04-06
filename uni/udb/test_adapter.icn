@@ -1,0 +1,346 @@
+import json
+link jsonrpc
+
+class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq)
+
+   method find_port()
+      return string(5000 + ?1000)
+   end
+
+   method start_udb_adapter()
+      local cmd
+
+      cmd := "./udb --adapter " || udb_port || " &"
+      system(cmd)
+      delay(500)
+      return self
+   end
+
+   method connect_to_adapter()
+      if sock := open(udb_addr || ":" || udb_port, "n") then
+         return self
+      fail
+   end
+
+   method start_client_connection()
+      every 1 to 20 do {
+         if connect_to_adapter() then
+            return self
+         write("Waiting for udb adapter to start...")
+         delay(500)
+      }
+
+      fail
+   end
+
+   method start_adapter_and_connect()
+      every attempt := 1 to 5 do {
+         if attempt > 1 then
+            write("Retrying adapter startup with another port...")
+         udb_port := find_port()
+         start_udb_adapter()
+         if start_client_connection() then
+            return self
+      }
+
+      stop("failed to connect to udb adapter")
+   end
+
+   method send_request(command, arguments)
+      local req
+
+      req := table()
+      req["seq"] := seq
+      req["type"] := "request"
+      req["command"] := command
+      req["arguments"] := \arguments | table()
+
+      send_msg(req)
+      seq +:= 1
+      return self
+   end
+
+   method send_response(request_msg, success, body)
+      local resp
+
+      resp := table()
+      resp["seq"] := seq
+      resp["type"] := "response"
+      resp["request_seq"] := request_msg["seq"]
+      resp["success"] := success
+      resp["command"] := request_msg["command"]
+      resp["body"] := \body
+
+      send_msg(resp)
+      seq +:= 1
+      return self
+   end
+
+   method handle_incoming(msg)
+      local kind, cmd, body, args, run_cmd
+
+      kind := \msg["type"] | "unknown"
+
+      case kind of {
+         "response": {
+            write("response:")
+            write(tojson(msg))
+         }
+         "event": {
+            write("event:")
+            write(tojson(msg))
+         }
+         "request": {
+            write("request:")
+            write(tojson(msg))
+
+            cmd := \msg["command"] | ""
+            if cmd == "runInTerminal" then {
+               args := \msg["arguments"]["args"]
+               if type(args) == "list" & *args > 0 then {
+                  run_cmd := args[1]
+                  if run_cmd[1:4] == "udb " then
+                     run_cmd := "./" || run_cmd
+                  system(run_cmd || " &")
+                  delay(500)
+               }
+               body := table()
+               body["shellProcessId"] := 1
+               send_response(msg, "__true__", body)
+            }
+         }
+         default: {
+            write("message:")
+            write(tojson(msg))
+         }
+      }
+
+      return self
+   end
+
+   method drain_messages(timeout)
+      local msg
+
+      while msg := get_msg(timeout) do
+         handle_incoming(msg)
+
+      return self
+   end
+
+   method expect_response(command)
+      local msg, got_type, got_command
+
+      msg := get_msg(5000) | {
+         write("FAIL: no response for ", command)
+         fail
+      }
+
+      repeat {
+         got_type := \msg["type"] | ""
+         got_command := \msg["command"] | ""
+
+         if got_type == "response" & got_command == command then {
+            if /msg["success"] | msg["success"] ~== "__true__" then {
+               write("FAIL: request failed for ", command)
+               write(tojson(msg))
+               fail
+            }
+            return msg
+         }
+
+         handle_incoming(msg)
+         msg := get_msg(1000) | {
+            write("FAIL: no response for ", command)
+            fail
+         }
+      }
+   end
+
+   method test_initialize()
+      local msg, evt
+
+      write("\nTEST initialize\n")
+      send_request("initialize", table())
+
+      msg := expect_response("initialize") | stop("initialize failed")
+
+      evt := get_msg(1000) | {
+         write("FAIL: missing initialized event")
+         stop("initialize failed")
+      }
+
+      if /evt["type"] | evt["type"] ~== "event" then {
+         write("FAIL: expected initialized event")
+         write("got:")
+         write(tojson(evt))
+         stop("initialize failed")
+      }
+
+      if /evt["event"] | evt["event"] ~== "initialized" then {
+         write("FAIL: wrong event after initialize")
+         write("got: ", image(evt["event"]))
+         stop("initialize failed")
+      }
+
+      write("event:")
+      write(tojson(evt))
+
+      drain_messages(200)
+      return self
+   end
+
+   method test_threads()
+      local msg, body, threads
+
+      write("\nTEST threads\n")
+      send_request("threads", table())
+
+      msg := expect_response("threads") | stop("threads failed")
+
+      body := msg["body"] | {
+         write("FAIL: threads response missing body")
+         stop("threads failed")
+      }
+
+      threads := body["threads"] | {
+         write("FAIL: threads response missing threads")
+         stop("threads failed")
+      }
+
+      if type(threads) ~== "list" then {
+         write("FAIL: threads field is not a list")
+         stop("threads failed")
+      }
+
+      if *threads = 0 then {
+         write("FAIL: threads list is empty")
+         stop("threads failed")
+      }
+
+      write("response:")
+      write(tojson(msg))
+
+      drain_messages(200)
+      return self
+   end
+
+#   method test_setBreakpoints()
+#      local args, msg
+#
+#      write("\nTEST setBreakpoints\n")
+#
+#      args := table()
+#      args["source"] := table()
+#      args["source"]["path"] := "../progs/complex_ex.icn"
+#      args["breakpoints"] := [ ["line": 10] ]
+#
+#      send_request("setBreakpoints", args)
+#
+#      msg := expect_response("setBreakpoints") | stop("setBreakpoints failed")
+#
+#      write("response:")
+#      write(tojson(msg))
+#
+#      drain_messages(200)
+#      return self
+#   end
+
+   method test_launch()
+      local args, msg
+
+      write("\nTEST launch\n")
+
+      args := table()
+      args["program"] := "../progs/complex_ex.icn"
+
+      send_request("launch", args)
+
+      msg := expect_response("launch") | stop("launch failed")
+
+      write("response:")
+      write(tojson(msg))
+
+      drain_messages(200)
+      return self
+   end
+
+   method test_configurationDone()
+      local msg
+
+      write("\nTEST configurationDone\n")
+
+      send_request("configurationDone", table())
+
+      msg := expect_response("configurationDone") | stop("configurationDone failed")
+
+      write("response:")
+      write(tojson(msg))
+
+      drain_messages(200)
+      return self
+   end
+
+   method test_continue()
+      local args, msg
+
+      write("\nTEST continue\n")
+
+      args := table()
+      args["threadId"] := 1
+
+      send_request("continue", args)
+
+      msg := expect_response("continue") | stop("continue failed")
+
+      write("response:")
+      write(tojson(msg))
+
+      drain_messages(200)
+      return self
+   end
+
+   method test_disconnect()
+      local msg
+      
+      write("\nTEST disconnect\n")
+
+      send_request("disconnect", table())
+
+      msg := expect_response("disconnect") | stop("disconnect failed")
+
+      write("response:")
+      write(tojson(msg))
+
+      return self
+   end
+
+   method run_tests()
+      test_initialize()
+      test_launch()
+      test_configurationDone()
+      test_threads()
+      test_continue()
+      test_disconnect()
+      write("\nALL TESTS PASSED")
+      return self
+   end
+
+   initially
+      seq := 1
+
+      if &features == ("MacOS" | "MS Windows NT") then
+         udb_addr := "127.0.0.1"
+      else
+         udb_addr := ""
+
+      udb_port := find_port()
+
+end
+
+procedure main(args)
+   local client
+
+   client := DAP_TestClient()
+   client.start_adapter_and_connect()
+   client.run_tests()
+end

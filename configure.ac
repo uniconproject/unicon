@@ -209,6 +209,9 @@ AC_ARG_ENABLE([werror],
 AC_ARG_ENABLE([warnings],
 	[AS_HELP_STRING([--enable-warnings], [Turn on most types of compiler warnings])],
 			[warn=yes], [warn=no])
+AC_ARG_ENABLE([asan],
+	[AS_HELP_STRING([--enable-asan], [Enable AddressSanitizer (-fsanitize=address); use with --enable-debug for symbols; uses -O1 when CFLAGS is unset and debug is off])],
+			[asan=$enableval], [asan=no])
 
 AC_ARG_ENABLE([uniconx],
 	[AS_HELP_STRING([--enable-uniconx], [Change executable names to co-exist with Icon])],
@@ -310,6 +313,14 @@ if test "z$orig_cflags" = "z"; then
   fi
 fi
 
+if test x"$asan" = x"yes" ; then
+  if test "z$orig_cflags" = "z" && test x"$debug" != x"yes" ; then
+    AC_CFLAG([-O1])
+  fi
+  AC_CFLAG([-fsanitize=address], [AC_MSG_ERROR([AddressSanitizer (-fsanitize=address) is not supported by $CC])])
+  LDFLAGS="$LDFLAGS -fsanitize=address"
+fi
+
 if test x"$warn" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces])
@@ -339,6 +350,9 @@ fi
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
 AC_PROG_CC
 AC_PROG_CXX
+if test x"$asan" = x"yes" ; then
+  CXXFLAGS="$CXXFLAGS -fsanitize=address"
+fi
 AC_PROG_CPP
 AC_PROG_RANLIB
 AC_CHECK_LIB(socket, socket)
@@ -436,6 +450,11 @@ case $unicon_host in
        ICONCEXE=$UNICONC.exe
         ;;
 esac
+
+if test x"$asan" = x"yes" ; then
+  CFDYN="$CFDYN -fsanitize=address"
+  LDDYN="$LDDYN -fsanitize=address"
+fi
 
 if test "x$iconc" = "xyes" || test "x$iconc" = "xon" ; then
        ICONCTARGET=Iconc
@@ -1088,6 +1107,7 @@ LDDYN    : $LDDYN
 prefix   :  $prefix
 Verbose  :  $verbosebuild
 Debug    :  $debug $debugheapreport $verifyheapreport
+ASan     :  $asan
 Warnings :  $warn
 Werror   :  $werror
 Devmode  :  $devmode

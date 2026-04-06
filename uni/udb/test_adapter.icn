@@ -1,18 +1,28 @@
 import json
 link jsonrpc
 
-class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq)
+class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid)
 
    method find_port()
       return string(5000 + ?1000)
    end
 
    method start_udb_adapter()
-      local cmd
+      local cmd, p
 
-      cmd := "./udb --adapter " || udb_port || " &"
-      system(cmd)
+      cmd := "./udb --adapter " || udb_port || " & echo $!"
+      p := open(cmd, "p") | stop("failed to start udb adapter")
+      adapter_pid := integer(read(p))
+      close(p)
       delay(500)
+      return self
+   end
+
+   method stop_udb_adapter()
+      if \adapter_pid then 
+         system("kill -9 " || adapter_pid)
+         adapter_pid := &null
+      
       return self
    end
 
@@ -37,12 +47,13 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq)
       every attempt := 1 to 5 do {
          if attempt > 1 then
             write("Retrying adapter startup with another port...")
+         stop_udb_adapter()
          udb_port := find_port()
          start_udb_adapter()
          if start_client_connection() then
             return self
       }
-
+      stop_udb_adapter()
       stop("failed to connect to udb adapter")
    end
 
@@ -99,7 +110,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq)
                args := \msg["arguments"]["args"]
                if type(args) == "list" & *args > 0 then {
                   run_cmd := args[1]
-                  if run_cmd[1:4] == "udb " then
+                  if run_cmd[1:5] == "udb " then
                      run_cmd := "./" || run_cmd
                   system(run_cmd || " &")
                   delay(500)
@@ -224,26 +235,26 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq)
       return self
    end
 
-#   method test_setBreakpoints()
-#      local args, msg
-#
-#      write("\nTEST setBreakpoints\n")
-#
-#      args := table()
-#      args["source"] := table()
-#      args["source"]["path"] := "../progs/complex_ex.icn"
-#      args["breakpoints"] := [ ["line": 10] ]
-#
-#      send_request("setBreakpoints", args)
-#
-#      msg := expect_response("setBreakpoints") | stop("setBreakpoints failed")
-#
-#      write("response:")
-#      write(tojson(msg))
-#
-#      drain_messages(200)
-#      return self
-#   end
+   method test_setBreakpoints()
+      local args, msg
+
+      write("\nTEST setBreakpoints\n")
+
+      args := table()
+      args["source"] := table()
+      args["source"]["path"] := "../progs/complex_ex.icn"
+      args["breakpoints"] := [ ["line": 10] ]
+
+      send_request("setBreakpoints", args)
+
+      msg := expect_response("setBreakpoints") | stop("setBreakpoints failed")
+
+      write("response:")
+      write(tojson(msg))
+
+      drain_messages(200)
+      return self
+   end
 
    method test_launch()
       local args, msg

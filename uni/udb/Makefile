@@ -2,13 +2,14 @@ BASE=../..
 UNICON_TOP_BUILDDIR ?= $(BASE)
 include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
-EXEs    = udb test_adapter
+EXEs    = udb
+TEST_EXEs = test_adapter
 DEL     = -rm
 CLEAN   = clean
 cflags  = $(UFLAGS) -c 
 ldflags = -u
 
-.PHONY: all
+.PHONY: all test
 #
 # Add dependency on system include "evdefs.icn" because it is really sad
 # if udb gets broken.
@@ -53,6 +54,8 @@ Assertions:
 
 tools:
 	cd $(LIB); $(MAKE) tools
+
+test: $(TEST_EXEs)
 
 udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
@@ -141,6 +144,7 @@ Clean: clean
 clean:
 	$(DEL) *.u
 	$(DEL) $(EXEs) 
+	$(DEL) $(TEST_EXEs)
 	$(DEL) *.exe
 	$(DEL) *.dir
 	$(DEL) *.pag

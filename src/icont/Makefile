@@ -53,7 +53,7 @@ common: $(COBJS) ../common/dconsole.$(O)
 	$(MAKE) -C ../common dconsole.$(O)
 
 $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
-		   ../h/proto.h ../h/mproto.h ../h/auto.h \
+		   ../h/proto.h ../h/mproto.h $(AUTO_H) \
 		   ../h/typedefs.h ../h/cstructs.h tproto.h
 
 %.o: %.c

@@ -22,13 +22,18 @@
 CC = @CC@
 CXX = @CXX@
 
+# Set by top Makefile when building out-of-tree; defaults to source tree.
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+# auto.h is generated in the configure directory (see AC_CONFIG_HEADERS).
+AUTO_H = $(UNICON_TOP_BUILDDIR)/src/h/auto.h
+
 RTDIR=$(TOPDIR)/rt
 
 CFLAGS = @CFLAGS@ -I$(RTDIR)/include
 CXXFLAGS = @CXXFLAGS@
 LDFLAGS= -L$(RTDIR)/lib @LDFLAGS@
 LIBS= @LIBS@
-CPPFLAGS = @CPPFLAGS@
+CPPFLAGS = @CPPFLAGS@ -I$(dir $(AUTO_H))
 
 JV_LDFLAGS = @JV_LDFLAGS@
 GL_CFLAGS = @GL_CFLAGS@

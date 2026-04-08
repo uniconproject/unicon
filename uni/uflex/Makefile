@@ -6,7 +6,8 @@
 # Based on Katie Ray's Project: ulex, March 15, 2003.
 #
 BASE=../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 PROGRAM = uflex$(EXE)
 

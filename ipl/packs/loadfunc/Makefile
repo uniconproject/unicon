@@ -2,7 +2,9 @@
 #
 #  It is assumed that the standard C functions will be found by iconx.
 
-include ../../../Makedefs
+TOPDIR = ../../..
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 CFLAGS = -O $(CFDYN) -I../../cfuncs 
 
 ICONT = icont

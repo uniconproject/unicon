@@ -3,7 +3,8 @@ TOPDIR=../..
 
 default: default_target
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 LIBD=$(TOPDIR)/plugins/lib
 ICALLDIR=$(TOPDIR)/uni/icall

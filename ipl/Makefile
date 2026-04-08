@@ -1,6 +1,8 @@
 #  Makefile for the Icon Program Library
 
-include ../Makedefs.uni
+TOPDIR = ..
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 #  Make a library distribution (portable ucode and include files).
 

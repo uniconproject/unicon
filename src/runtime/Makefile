@@ -4,7 +4,8 @@ TOPDIR=../..
 
 default: all
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\

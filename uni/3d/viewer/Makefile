@@ -1,5 +1,6 @@
 BASE=../../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 UFILES= u3dviewer.u world.u subwin3d.u
 

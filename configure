@@ -655,6 +655,7 @@ GL_LDFLAGS
 GL_CFLAGS
 JV_LDFLAGS
 PLUGINS
+RSWITCH_REL
 STRIP
 DASHG
 DASHS
@@ -11950,21 +11951,21 @@ fi
 
 
 
-if test -f src/asm/$unicon_host-rswitch.s; then
-    echo "Native coswitch detected"
-    cp src/asm/$unicon_host-rswitch.s src/common/rswitch.s
+# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).
+if test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
+    echo "Native coswitch (assembler) available for $unicon_host"
+    RSWITCH_REL=src/asm/$unicon_host-rswitch.s
+elif test -f "$srcdir/src/asm/$unicon_host-rswitch.c"; then
+    echo "Native coswitch (C) available for $unicon_host"
+    RSWITCH_REL=src/asm/$unicon_host-rswitch.c
 else
-   if test -f src/asm/$unicon_host-rswitch.c; then
-      echo "Native coswitch detected"
-      cp src/asm/$unicon_host-rswitch.c src/common/rswitch.c
-   else
-      echo "No native coswitch for $unicon_host , switching to pthreadcoswitch..."
+    echo "No native coswitch for $unicon_host; build will use pthreadcoswitch.c"
 
 printf "%s\n" "#define NoNativeCoswitch 1" >>confdefs.h
 
-      cp src/common/pthreadcoswitch.c src/common/rswitch.c
-   fi
+    RSWITCH_REL=src/common/pthreadcoswitch.c
 fi
+
 
 if ! test "x$plugins" = "xno"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5

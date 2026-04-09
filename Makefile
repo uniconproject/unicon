@@ -1,7 +1,11 @@
 #  Top Level Makefile for Unicon
 #
-# Out-of-tree builds: run ../configure from a build directory; TOPDIR is the
-# source tree, UNICON_TOP_BUILDDIR is where Makedefs (and build products) live.
+# Keep Makefile.in in sync with this file except for the first two assignments (srcdir/TOPDIR).
+#
+# Out-of-tree builds: run configure from a build directory (e.g. ../configure).
+# TOPDIR is the source tree; UNICON_TOP_BUILDDIR is the configure/build directory (Makedefs,
+# auto.h, config.status). Object files and binaries still go under TOPDIR in this phase; switch
+# to UNICON_TOP_BUILDDIR paths when the build fully migrates out of the source tree.
 srcdir = .
 TOPDIR = .
 export UNICON_TOP_BUILDDIR := $(CURDIR)
@@ -28,6 +32,7 @@ default_target: allsrc
 	$(MAKE) docrule
 	$(MAKE) htmldocrule
 	@echo ============ Build Features ============ > unicon-features.log
+	# Binaries still under TOPDIR/bin until the tree emits them in UNICON_TOP_BUILDDIR.
 	$(TOPDIR)/bin/unicon -features >> unicon-features.log
 	@echo ======================================== >> unicon-features.log
 	@cat unicon-features.log
@@ -430,6 +435,10 @@ Benchmark-icont:
 ##################################################################
 #
 # Clean-up.
+#
+# Out-of-tree: clean/distclean/Pure still recurse into $(TOPDIR) because artifacts currently
+# live in the source tree, so "make clean" from a build directory cleans under the source tree.
+# Revisit when objects and binaries are only written under UNICON_TOP_BUILDDIR.
 #
 # "make Clean" removes intermediate files, leaving executables and library.
 # "make Pure"  also removes binaries, library, and configured files.

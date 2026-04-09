@@ -804,7 +804,9 @@ fi
   AC_SUBST(DASHG)
   AC_SUBST(STRIP)
 
-# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).
+# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).  We do not copy
+# into src/common/rswitch.[csS]; leftover files from older configure runs are removed by
+# distclean/Pure in the top Makefile.
 if test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
     echo "Native coswitch (assembler) available for $unicon_host"
     RSWITCH_REL=src/asm/$unicon_host-rswitch.s

@@ -6,6 +6,13 @@ including most Linux distributions, Windows, macOS, and BSD systems. It also sup
 most modern CPU architectures such as i386, amd64, armhf, arm64, and ppc64el.
 
 
+Documentation
+-------------
+Shipped manuals, technical reports, and other files are indexed under **[`doc/`](doc/)** — see **[`doc/README.md`](doc/README.md)** for the full list. More books and UTRs are linked from [unicon.sourceforge.io](https://unicon.sourceforge.io/).
+
+**GitHub Pages:** [uniconproject.github.io/unicon](https://uniconproject.github.io/unicon/) (this README) · **[`doc/`](doc/)** for the documentation index.
+
+
 Installation
 ------------
 The latest sources are available from Unicon's git repositories on SourceForge and GitHub.

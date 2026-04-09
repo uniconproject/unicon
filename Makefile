@@ -45,6 +45,8 @@ default_target: allsrc
 Makedefs: $(srcdir)/Makedefs.in $(wildcard config.status)
 	@if test -f ./config.status; then \
 	  $(SHELL) ./config.status Makedefs; \
+	else \
+	  echo "Warning: config.status missing; Makedefs not regenerated. Run configure first." >&2; \
 	fi
 
 update_rev:

@@ -1,0 +1,67 @@
+# Single GitHub Pages site: README.md → site index; doc/README.md → doc/index.html.
+# Repo Settings → Pages → Source: GitHub Actions.
+
+name: Pages
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'README.md'
+      - 'doc/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.repository == 'uniconproject/unicon'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Pandoc
+        uses: pandoc/setup-pandoc@v3
+
+      - name: Build site
+        run: |
+          set -e
+          SITE=_site
+          rm -rf "$SITE"
+          mkdir -p "$SITE/doc"
+          pandoc README.md -o "$SITE/index.html" \
+            --standalone \
+            --metadata title="Unicon" \
+            -t html5
+          cp -a doc/. "$SITE/doc/"
+          pandoc doc/README.md -o "$SITE/doc/index.html" \
+            --standalone \
+            --metadata title="Unicon documentation" \
+            -t html5
+          touch "$SITE/.nojekyll"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

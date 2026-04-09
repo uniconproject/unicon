@@ -4,6 +4,18 @@ This page indexes manuals, technical reports, and HTML shipped under `doc/` in t
 
 **On the web:** the [Unicon project site](https://unicon.sourceforge.io/) hosts a [Books](https://unicon.sourceforge.io/ubooks.html) page and a [Technical Reports](https://unicon.sourceforge.io/reports.html) index with downloads and mirrors for many of the same works.
 
+## Contents
+
+- [Programming with Unicon](#programming-with-unicon)
+- [The Icon Programming Language Implementation](#the-icon-programming-language-implementation)
+- [Unicon Technical Reports (UTRs)](#unicon-technical-reports-utrs)
+  - [Unicode reference data (for UTF-8 / UTR work)](#unicode-reference-data-for-utf-8-utr-work)
+- [Other documentation](#other-documentation)
+  - [General Unicon pages](#general-unicon-pages)
+  - [Icon 9.3 legacy](#icon-93-legacy)
+  - [UDB — Unicon debugger](#udb-unicon-debugger)
+- [Building PDFs from LaTeX](#building-pdfs-from-latex)
+
 ---
 
 ## Programming with Unicon
@@ -42,7 +54,7 @@ Standard Markdown tables use equal column widths, so a narrow “#” column sti
 - **UTR #7** — [HTML](utr/utr7.html) — *Version 13.1 of Unicon for Microsoft Windows*
 - **UTR #8** — [HTML](unicon/utr8.html), [PDF](unicon/utr8.pdf) — *Unicon Language Reference*
 - **UTR #9** — [HTML](utr/utr9.html), [PDF](utr/utr9c.pdf) — *Unicon 3D Graphics User's Guide and Reference Manual*
-- **UTR #10** — [HTML](utr/utr10.html), [HTML](udb/utr10.html), [PDF](udb/utr10.pdf), [Word](udb/utr10.docx) — *Debugging With UDB*
+- **UTR #10** — [HTML (utr)](utr/utr10.html), [HTML (udb)](udb/utr10.html), [PDF](udb/utr10.pdf), [Word](udb/utr10.docx) — *Debugging With UDB*
 - **UTR #11** — [HTML](unicon/utr11.html) — *Unicon Manual Page*
 - **UTR #12** — [HTML](utr/utr12.html) — *UI: a Unicon Development Environment*
 - **UTR #13** — [OpenDocument](utr/utr13.odt) — *The Unicon Messaging Facilities*

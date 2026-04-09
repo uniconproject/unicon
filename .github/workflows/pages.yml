@@ -1,4 +1,8 @@
-# Single GitHub Pages site: README.md → site index; doc/README.md → doc/index.html.
+# GitHub Pages (single _site/ artifact):
+#   README.md           → index.html
+#   doc/**              → doc/… (plus doc/README.md → doc/index.html)
+#   CONTRIBUTING.md     → CONTRIBUTING.md + CONTRIBUTING.html
+#   COPYING             → COPYING
 # Repo Settings → Pages → Source: GitHub Actions.
 
 name: Pages
@@ -10,6 +14,8 @@ on:
       - main
     paths:
       - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'COPYING'
       - 'doc/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -35,7 +41,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Pandoc
-        uses: pandoc/setup-pandoc@v3
+        uses: pandoc/setup-pandoc@ad820d1f3dfae86543ea82e92b6aaf21c9e12f69 # v3
 
       - name: Build site
         run: |
@@ -51,6 +57,12 @@ jobs:
           pandoc doc/README.md -o "$SITE/doc/index.html" \
             --standalone \
             --metadata title="Unicon documentation" \
+            -t html5
+          test -f CONTRIBUTING.md && test -f COPYING
+          cp CONTRIBUTING.md COPYING "$SITE/"
+          pandoc CONTRIBUTING.md -o "$SITE/CONTRIBUTING.html" \
+            --standalone \
+            --metadata title="Contributing to Unicon" \
             -t html5
           touch "$SITE/.nojekyll"
 

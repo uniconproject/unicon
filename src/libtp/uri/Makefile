@@ -4,7 +4,8 @@ TOPDIR=../../..
 
 default: all
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 RM = rm -f
 AR = ar

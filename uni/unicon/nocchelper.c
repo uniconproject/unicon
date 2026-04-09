@@ -1,6 +1,6 @@
 /* Write a unicon procedure that reflects whether NoConcurrentCOMPILER has been defined */
 #include <stdio.h>
-#include "../../src/h/auto.h"
+#include "auto.h"
 
 int main(void)
 {

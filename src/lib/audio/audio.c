@@ -4,7 +4,7 @@
  * StartAudioThread(filename) is the main function where
  * filename is any of the three formats.
  */
-#include "../../h/auto.h"
+#include "auto.h"
 
 #if (defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG)) || (defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG) ) || (defined(HAVE_LIBOGG) && defined(WIN32))
 

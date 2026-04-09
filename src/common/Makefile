@@ -2,9 +2,10 @@ TOPDIR=../..
 
 default: all
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
-HDRS= ../h/auto.h ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
+HDRS= $(AUTO_H) ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
 	  ../h/typedefs.h ../h/proto.h ../h/cpuconf.h
 
 OBJS=   long.$(O) getopt.$(O) time.$(O) filepart.$(O) identify.$(O) strtbl.$(O) rtdb.$(O)\
@@ -97,13 +98,13 @@ drawstring3d.$(O): drawstring3d.cc
 		rm drawstring3d.c ; \
 	fi
 
-dlrgint.$(O): ../h/auto.h ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
+dlrgint.$(O): $(AUTO_H) ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
 
-xwindow.$(O): ../h/auto.h ../h/graphics.h ../h/xwin.h
+xwindow.$(O): $(AUTO_H) ../h/graphics.h ../h/xwin.h
 
-rswitch.$(O): FORCE
-	$(SLNT) $(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-command-line-argument -c rswitch.[cs]
-FORCE:
+rswitch.$(O): $(RSWITCH_SRC)
+	$(CMNT)@echo "   [COMMON] rswitch ($<)"
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-command-line-argument -c -o $@ $<
 
 distclean clean:
 	$(RM) $(PROGS) *.o core junk*

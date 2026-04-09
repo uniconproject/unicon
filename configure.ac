@@ -804,19 +804,21 @@ fi
   AC_SUBST(DASHG)
   AC_SUBST(STRIP)
 
-if test -f src/asm/$unicon_host-rswitch.s; then
-    echo "Native coswitch detected"
-    cp src/asm/$unicon_host-rswitch.s src/common/rswitch.s
+# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).  We do not copy
+# into src/common/rswitch.[csS]; leftover files from older configure runs are removed by
+# distclean/Pure in the top Makefile.
+if test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
+    echo "Native coswitch (assembler) available for $unicon_host"
+    RSWITCH_REL=src/asm/$unicon_host-rswitch.s
+elif test -f "$srcdir/src/asm/$unicon_host-rswitch.c"; then
+    echo "Native coswitch (C) available for $unicon_host"
+    RSWITCH_REL=src/asm/$unicon_host-rswitch.c
 else
-   if test -f src/asm/$unicon_host-rswitch.c; then
-      echo "Native coswitch detected"
-      cp src/asm/$unicon_host-rswitch.c src/common/rswitch.c
-   else
-      echo "No native coswitch for $unicon_host , switching to pthreadcoswitch..."
-      AC_DEFINE([NoNativeCoswitch], [1], [No Native coswitch])
-      cp src/common/pthreadcoswitch.c src/common/rswitch.c
-   fi
+    echo "No native coswitch for $unicon_host; build will use pthreadcoswitch.c"
+    AC_DEFINE([NoNativeCoswitch], [1], [No Native Coswitch])
+    RSWITCH_REL=src/common/pthreadcoswitch.c
 fi
+AC_SUBST([RSWITCH_REL])
 
 if ! test "x$plugins" = "xno"; then
   AC_SEARCH_LIBS([dlopen], [dl dld],

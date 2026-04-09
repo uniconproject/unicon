@@ -1,5 +1,6 @@
 BASE=../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 all:	ivibmigrate$(EXE)
 

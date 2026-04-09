@@ -10,7 +10,7 @@
 #include "ccode.h"
 #include "cproto.h"
 #include "ca.h"
-#include "../h/auto.h"
+#include "auto.h"
 
 /*
  * Prototypes.

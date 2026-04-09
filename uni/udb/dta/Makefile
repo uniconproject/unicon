@@ -5,7 +5,8 @@
 # June 2009
 #
 BASE=../../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 CFLAGS     = $(UFLAGS) -c
 

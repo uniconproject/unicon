@@ -8,7 +8,8 @@ TOPDIR=../../..
 
 default: libXpm.a
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 ## if your system doesn't provide strcasecmp add -DNEED_STRCASECMP
 ## if your system doesn't provide pipe remove -DZPIPE

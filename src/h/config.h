@@ -49,7 +49,7 @@
  * autoconf-generated symbols.
  */
 #ifndef NoAuto
-#include "../h/auto.h"
+#include "auto.h"
 #endif                                  /* NoAuto */
 
 /*

@@ -1,6 +1,6 @@
 #include "../h/define.h"
 #ifndef NoAuto
-#include "../h/auto.h"
+#include "auto.h"
 #endif
 
 #include <stdio.h>

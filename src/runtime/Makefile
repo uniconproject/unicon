@@ -4,12 +4,13 @@ TOPDIR=../..
 
 default: all
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
-	  ../h/rmacros.h ../h/rexterns.h ../h/rstructs.h ../h/auto.h\
+	  ../h/rmacros.h ../h/rexterns.h ../h/rstructs.h $(AUTO_H)\
 	  ../h/rproto.h ../h/mproto.h ../h/version.h ../h/sys.h
 
 GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h
@@ -98,9 +99,10 @@ CONSOLE:
 	$(RM) $(CONSOLEOBJS)	
 
 
+# urtt's preprocessor does not see $(CPPFLAGS); pass -I so config.h finds auto.h (iconx and iconc).
 x%.$(O): %.r $(HDRS)
 	$(CMNT)	@echo "   [ICONX RTT] $<"
-	$(SLNT)$(RTT) $(NTCONSOLE) -x $<
+	$(SLNT)$(RTT) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) $<
 	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c x$*.c
 	$(SLNT)$(RM) x$*.c
 
@@ -112,7 +114,7 @@ xfwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 
 xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONX RTT] $< "
-	$(SLNT)$(RTT) $(NTCONSOLE) -x keyword.r
+	$(SLNT)$(RTT) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) keyword.r
 	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
 
@@ -150,18 +152,18 @@ comp_all comp_all_uniconc: update_rev
 
 rt.a: ../../rt/lib/libucommon.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a ../../rt/lib/libuconsole.a $(COBJS)
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
-	$(RTT) $(DASHS) -A -O  "$(COBJS) f_*.$(O) o_*$(O)"
+	$(RTT) $(DASHS) -I$(dir $(AUTO_H)) -A -O  "$(COBJS) f_*.$(O) o_*$(O)"
 	$(RANLIB) $@
 	$(CP) rt.a ../common/dlrgint.$(O) ../../rt/lib/
 	$(CP) rt.db ../../rt/lib/
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "
-	$(SLNT)$(RTT) $(DASHS) -c -O "$(CFLAGS) $(CPPFLAGS)" keyword.r
+	$(SLNT)$(RTT) $(DASHS) -I$(dir $(AUTO_H)) -c -O "$(CFLAGS) $(CPPFLAGS)" keyword.r
 
 %.$(O): %.r $(HDRS)
 	$(CMNT)@echo "   [ICONC RTT] $<"
-	$(SLNT)$(RTT) $(DASHS) $(WCONSOLE) -c -O "$(CFLAGS) $(CPPFLAGS)"  $<
+	$(SLNT)$(RTT) $(DASHS) $(WCONSOLE) -I$(dir $(AUTO_H)) -c -O "$(CFLAGS) $(CPPFLAGS)"  $<
 
 fwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 

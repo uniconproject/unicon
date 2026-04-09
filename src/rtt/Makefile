@@ -5,7 +5,8 @@ TOPDIR=../..
 
 default: all
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 ROBJS = rttparse.o rttmain.o rttlex.o rttsym.o rttnode.o rttout.o rttmisc.o\
 	  rttdb.o rttinlin.o rttilc.o yyerror.o

@@ -3,7 +3,8 @@ TOPDIR=../..
 
 default: pp
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 POBJS = pout.o pchars.o perr.o pmem.o bldtok.o macro.o preproc.o evaluate.o\
 	files.o gettok.o pinit.o

@@ -1,5 +1,6 @@
 BASE=../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 UFILES = filearg.u fileargclass.u main.u symbolinfo.u symboltable.u util.u
 

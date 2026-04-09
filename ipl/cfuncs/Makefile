@@ -9,7 +9,8 @@ ICALLDIR=$(TOPDIR)/uni/icall
 
 default: default_target
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 ICONT = icont
 IFLAGS = -us

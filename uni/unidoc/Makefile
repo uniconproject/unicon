@@ -1,6 +1,7 @@
 SHELL=/bin/sh
 BASE=../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 ########################################################
 # Manage the construction of the UniDoc program        #

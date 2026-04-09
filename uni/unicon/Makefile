@@ -1,5 +1,7 @@
 BASE=../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
+AUTO_H = $(UNICON_TOP_BUILDDIR)/src/h/auto.h
 
 export PATH:=$(BIN):$(PATH)
 
@@ -38,7 +40,7 @@ nocc.icn : nocchelper$(EXE)
 nocchelper$(EXE) : nocchelper.c
 # The explicit action helps Windows make do the right thing.
 # Use gcc explicitly because Makedefs.uni does not have a definition of $(CC).
-	gcc $^ -o $@
+	gcc -I$(dir $(AUTO_H)) $^ -o $@
 
 ../lib/unilex.u: unilex.u
 	$(CP) unilex.u ../lib

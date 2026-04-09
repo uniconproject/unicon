@@ -2,8 +2,9 @@ TOPDIR=..
 
 default: all
 
-include $(TOPDIR)/Makedefs
-include $(TOPDIR)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 .PHONY: all unicon lib xml gui
 

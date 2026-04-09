@@ -2,7 +2,8 @@
 # uflex test directory makefile
 #
 BASE=../../..
-include $(BASE)/Makedefs.uni
+UNICON_TOP_BUILDDIR ?= $(BASE)
+include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 UFLEX=../uflex
 
 tests: nnws.tst j0.tst

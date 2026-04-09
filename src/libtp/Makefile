@@ -6,7 +6,8 @@ TOPDIR=../..
 
 default: all
 
-include $(TOPDIR)/Makedefs
+UNICON_TOP_BUILDDIR ?= $(TOPDIR)
+include $(UNICON_TOP_BUILDDIR)/Makedefs
 
 SHTOOL = shtool/shtool
 RANLIB=ranlib
@@ -72,11 +73,11 @@ dist: Makefile distclean
 	$(CMNT)@echo "   [TP] $<"
 	$(SLNT)$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 
-tp.o: tp.c ../h/auto.h ../h/auto.h tp.h util.h uri/uri.h
-tpdunix.o: tpdunix.c ../h/auto.h ../h/config.h util.h tp.h uri/uri.h tpdunix.h
-tpdssl.o: tpdssl.c ../h/auto.h ../h/config.h util.h tp.h uri/uri.h tpdssl.h
-tpmdaytm.o: tpmdaytm.c ../h/auto.h ../h/config.h tp.h util.h uri/uri.h
-tpmfinge.o: tpmfinge.c ../h/auto.h ../h/config.h tp.h util.h uri/uri.h
-tpmhttp.o: tpmhttp.c ../h/auto.h ../h/config.h tp.h uri/uri.h util.h
-tpmsmtp.o: tpmsmtp.c ../h/auto.h ../h/config.h tp.h uri/uri.h util.h
-util.o: util.c ../h/auto.h ../h/config.h
+tp.o: tp.c $(AUTO_H) tp.h util.h uri/uri.h
+tpdunix.o: tpdunix.c $(AUTO_H) ../h/config.h util.h tp.h uri/uri.h tpdunix.h
+tpdssl.o: tpdssl.c $(AUTO_H) ../h/config.h util.h tp.h uri/uri.h tpdssl.h
+tpmdaytm.o: tpmdaytm.c $(AUTO_H) ../h/config.h tp.h util.h uri/uri.h
+tpmfinge.o: tpmfinge.c $(AUTO_H) ../h/config.h tp.h util.h uri/uri.h
+tpmhttp.o: tpmhttp.c $(AUTO_H) ../h/config.h tp.h uri/uri.h util.h
+tpmsmtp.o: tpmsmtp.c $(AUTO_H) ../h/config.h tp.h uri/uri.h util.h
+util.o: util.c $(AUTO_H) ../h/config.h

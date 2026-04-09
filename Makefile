@@ -1,7 +1,14 @@
 #  Top Level Makefile for Unicon
 #
-
-TOPDIR=.
+# Keep Makefile.in in sync with this file except for the first two assignments (srcdir/TOPDIR).
+#
+# Out-of-tree builds: run configure from a build directory (e.g. ../configure).
+# TOPDIR is the source tree; UNICON_TOP_BUILDDIR is the configure/build directory (Makedefs,
+# auto.h, config.status). Object files and binaries still go under TOPDIR in this phase; switch
+# to UNICON_TOP_BUILDDIR paths when the build fully migrates out of the source tree.
+srcdir = .
+TOPDIR = .
+export UNICON_TOP_BUILDDIR := $(CURDIR)
 
 default: default_target
 
@@ -19,24 +26,29 @@ unicwd=`basename \`pwd\``
 
 
 default_target: allsrc
-	$(MAKE) -C ipl/lib
-	$(MAKE) -C uni
-	$(MAKE) -C plugins
+	$(MAKE) -C $(TOPDIR)/ipl/lib
+	$(MAKE) -C $(TOPDIR)/uni
+	$(MAKE) -C $(TOPDIR)/plugins
 	$(MAKE) docrule
 	$(MAKE) htmldocrule
 	@echo ============ Build Features ============ > unicon-features.log
-	bin/unicon -features >> unicon-features.log
+	# Binaries still under TOPDIR/bin until the tree emits them in UNICON_TOP_BUILDDIR.
+	$(TOPDIR)/bin/unicon -features >> unicon-features.log
 	@echo ======================================== >> unicon-features.log
 	@cat unicon-features.log
-	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
+	@echo "add $(shell cd $(TOPDIR) && pwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
 .PHONY: plugins update_rev doc config help
 
-Makedefs: Makedefs.in configure
-	sh configure
+# Optional $(wildcard config.status): do not require config.status before it exists
+# (e.g. debian/rules clean / dh_auto_clean runs make distclean without configuring).
+Makedefs: $(srcdir)/Makedefs.in $(wildcard config.status)
+	@if test -f ./config.status; then \
+	  $(SHELL) ./config.status Makedefs; \
+	fi
 
 update_rev:
-	@./config/scripts/version.sh
+	@$(TOPDIR)/config/scripts/version.sh
 
 #
 # if you make any changes to configure.ac or aclocal.m4 run  autoreconf -i
@@ -44,8 +56,8 @@ update_rev:
 #configure: configure.ac aclocal.m4
 #	autoreconf -i
 
-config: configure
-	sh configure
+config: config.status
+	$(SHELL) ./config.status --recheck
 
 help:
 	@echo
@@ -56,6 +68,8 @@ help:
 	@echo "  UNIX/macOS:"
 	@echo "        ./configure"
 	@echo "        make"
+	@echo "  Out-of-tree (build dir next to the source tree):"
+	@echo "        mkdir build && cd build && ../configure && make"
 	@echo
 	@echo "  Windows:"
 	@echo "        sh configure --build=x86_64-w64-mingw32"
@@ -69,7 +83,7 @@ help:
 All:	Icont Ilib Ibin
 
 allsrc: Makedefs update_rev
-	$(MAKE) -C src
+	$(MAKE) -C $(TOPDIR)/src
 
 
 ##################################################################
@@ -87,12 +101,12 @@ INNOSETUP="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
 winbin WinInstaller:
 
-	@echo "#define PkgName \"$(PKG_TARNAME)\"" > config/win32/gcc/unicon_version.iss
-	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> config/win32/gcc/unicon_version.iss
-	@echo "#define AppRevision \""`./config/scripts/version.sh "revision"`"\"" \
-		>> config/win32/gcc/unicon_version.iss
-	@echo "#define PATCHSTR \"$(PATCHSTR)\"" >> config/win32/gcc/unicon_version.iss
-	$(INNOSETUP) config/win32/gcc/unicon.iss
+	@echo "#define PkgName \"$(PKG_TARNAME)\"" > $(TOPDIR)/config/win32/gcc/unicon_version.iss
+	@echo "#define AppVersion \"$(PKG_VERSION)\"" >> $(TOPDIR)/config/win32/gcc/unicon_version.iss
+	@echo "#define AppRevision \""`$(TOPDIR)/config/scripts/version.sh "revision"`"\"" \
+		>> $(TOPDIR)/config/win32/gcc/unicon_version.iss
+	@echo "#define PATCHSTR \"$(PATCHSTR)\"" >> $(TOPDIR)/config/win32/gcc/unicon_version.iss
+	$(INNOSETUP) $(TOPDIR)/config/win32/gcc/unicon.iss
 
 
 ##################################################################
@@ -104,11 +118,11 @@ build:
 	if test "$(TERM)" = "dumb" ; then \
 		echo "No building on dumb terminals, use make Configure"; \
 	elif [ -f /usr/lib/libcurses.so ] ; then \
-		gcc src/common/build.c -lcurses -o build; \
+		gcc $(TOPDIR)/src/common/build.c -lcurses -o build; \
 		./build $(name) ; \
 		rm build; \
 	elif [ -f /usr/include/curses.h ] ; then \
-		gcc src/common/build.c -lncurses -o build; \
+		gcc $(TOPDIR)/src/common/build.c -lncurses -o build; \
 		./build $(name) ; \
 		rm build; \
 	else \
@@ -131,45 +145,45 @@ Status:
 # The OO translator. Add a line for uni/iyacc if you modify the Unicon grammar
 
 Unicon:		Icont
-		cd ipl/lib; $(MAKE)
-		cd uni ; $(MAKE)
+		cd $(TOPDIR)/ipl/lib; $(MAKE)
+		cd $(TOPDIR)/uni ; $(MAKE)
 
 # The interpreter: icont and iconx.
 
 Icont bin/icont:
-		$(MAKE) -C src Icont
+		$(MAKE) -C $(TOPDIR)/src Icont
 
 # The compiler: rtt, the run-time system, and iconc.
 
 Iconc Uniconc bin/iconc:
-		$(MAKE) -C src Iconc
+		$(MAKE) -C $(TOPDIR)/src Iconc
 
 # Common components.
 
 Common:
-		$(MAKE) -C src Common
+		$(MAKE) -C $(TOPDIR)/src Common
 
 # The Icon program library.
 
-Ilib:		bin/icont
-		$(MAKE) -C ipl
+Ilib:		$(TOPDIR)/bin/icont
+		$(MAKE) -C $(TOPDIR)/ipl
 
-Ibin:		bin/icont
-		$(MAKE) -C ipl Ibin
+Ibin:		$(TOPDIR)/bin/icont
+		$(MAKE) -C $(TOPDIR)/ipl Ibin
 
 # Common components.
 
 plugins:
-		$(MAKE) -C plugins
+		$(MAKE) -C $(TOPDIR)/plugins
 
 # Documentation
 
 docrule: $(UDOC)
 doc:
-		$(MAKE) -C doc
+		$(MAKE) -C $(TOPDIR)/doc
 
 # build full html documentation using unidoc
-UBASE=$(shell pwd)
+UBASE=$(shell cd $(TOPDIR) && pwd)
 SBASE=$(UBASE)/uni
 TBASE=$(UBASE)/doc/uni-api
 # SRCDIRS is a space-separated list, SDIRS and LDIRS are comma-separated lists
@@ -177,7 +191,7 @@ SRCDIRS="$(SBASE)/progs $(SBASE)/gprogs $(SBASE)/lib $(UBASE)/ipl/procs $(UBASE)
 SDIRS="$(SBASE)/progs,$(SBASE)/gprogs,$(SBASE)/lib,$(UBASE)/ipl/procs,$(UBASE)/progs,$(UBASE)/gprogs,$(SBASE)/unidoc"
 LDIRS="$(TBASE)/lib"
 basetitle="Unicon API "
-cdir=$(shell pwd)
+cdir=$(shell cd $(TOPDIR) && pwd)
 TD=$(TBASE)
 title=$(basetitle)
 
@@ -188,7 +202,7 @@ htmldoc:
 		@echo ""
 #		$(MAKE) -C uni/unidoc htmldoc
 		mkdir -p ${TD}
-		./bin/unidoc --title=$(title) --linkSrc --sourcePath="$(SDIRS)" --linkPath="$(LDIRS)" --resolve --targetDir=$(TD) "$(SRCDIRS)"
+		$(TOPDIR)/bin/unidoc --title=$(title) --linkSrc --sourcePath="$(SDIRS)" --linkPath="$(LDIRS)" --resolve --targetDir=$(TD) "$(SRCDIRS)"
 
 ##################################################################
 #
@@ -248,8 +262,8 @@ install Install:
 	done
 #	install unicon/bin
 	@for f in $(ALLbins); do \
-	  if test -f "bin/$$f"; then \
-	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
+	  if test -f "$(TOPDIR)/bin/$$f"; then \
+	    (echo "Installing bin/$$f") && ($(INST) $(TOPDIR)/bin/$$f $(DESTDIR)$(bindir)); \
 	    if test "$$f" = $(UNICONT)$(EXE) ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/$(UNICONX) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
@@ -264,29 +278,29 @@ install Install:
 	done
 #	install unicon/rt
 	@echo "Installing unicon/rt to $(DESTDIR)$(RTDIR) ..."
-	@$(INST) -m 644 rt/lib/* $(DESTDIR)$(RTDIR)/lib
-	@$(INST) -m 644 rt/include/*.h $(DESTDIR)$(RTDIR)/include
-	@$(INST) -m 644 rt/include/uri/*.h $(DESTDIR)$(RTDIR)/include/uri
+	@$(INST) -m 644 $(TOPDIR)/rt/lib/* $(DESTDIR)$(RTDIR)/lib
+	@$(INST) -m 644 $(TOPDIR)/rt/include/*.h $(DESTDIR)$(RTDIR)/include
+	@$(INST) -m 644 $(TOPDIR)/rt/include/uri/*.h $(DESTDIR)$(RTDIR)/include/uri
 #	install unicon/ipl
 	@echo "Installing unicon/ipl to $(DESTDIR)$(UIPL) ..."
-	@$(INST) -m 644 ipl/lib/*.u $(DESTDIR)$(UIPL)/lib
-	@$(INST) -m 644 ipl/incl/*.icn $(DESTDIR)$(UIPL)/incl
-	@$(INST) -m 644 ipl/gincl/*.icn $(DESTDIR)$(UIPL)/gincl
-	@$(INST) -m 644 ipl/mincl/*.icn $(DESTDIR)$(UIPL)/mincl
-	@$(INST) -m 644 ipl/procs/*.icn $(DESTDIR)$(UIPL)/procs
+	@$(INST) -m 644 $(TOPDIR)/ipl/lib/*.u $(DESTDIR)$(UIPL)/lib
+	@$(INST) -m 644 $(TOPDIR)/ipl/incl/*.icn $(DESTDIR)$(UIPL)/incl
+	@$(INST) -m 644 $(TOPDIR)/ipl/gincl/*.icn $(DESTDIR)$(UIPL)/gincl
+	@$(INST) -m 644 $(TOPDIR)/ipl/mincl/*.icn $(DESTDIR)$(UIPL)/mincl
+	@$(INST) -m 644 $(TOPDIR)/ipl/procs/*.icn $(DESTDIR)$(UIPL)/procs
 #	install unicon/uni
 	@for d in $(Udirs); do \
 	  echo "Installing uni/$$d to $(DESTDIR)$(ULB)/$$d ..."; \
-	  $(INST) -m 644 uni/$$d/*.* $(DESTDIR)$(ULB)/$$d; \
+	  $(INST) -m 644 $(TOPDIR)/uni/$$d/*.* $(DESTDIR)$(ULB)/$$d; \
 	done
 #       plugins
-	@$(INST) -m 644 plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
+	@$(INST) -m 644 $(TOPDIR)/plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
 #	docs and man
 	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 ..."
-	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1/
-	@$(INST) -m 644 README.md $(DESTDIR)$(docdir)
+	@$(INST) -m 644 $(TOPDIR)/doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1/
+	@$(INST) -m 644 $(TOPDIR)/README.md $(DESTDIR)$(docdir)
 	@echo "Installing $(DESTDIR)$(docdir) ..."
-	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)
+	@$(INST) -m 644 $(TOPDIR)/doc/unicon/*.* $(DESTDIR)$(docdir)
 #   Sign code if we are running MacOS on Apple's processors
 	if test "$(UNICONHOST)" = "arm_64_macos"; then \
 		for f in $(SIGNbins); do \
@@ -397,11 +411,11 @@ rpmsrc:
 #
 # Tests.
 
-Test    Test-icont:	; cd tests; $(MAKE) Test
-Samples Samples-icont:	; cd tests; $(MAKE) Samples
+Test    Test-icont:	; cd $(TOPDIR)/tests; $(MAKE) Test
+Samples Samples-icont:	; cd $(TOPDIR)/tests; $(MAKE) Samples
 
-Test-iconc:		; cd tests; $(MAKE) Test-iconc
-Samples-iconc:		; cd tests; $(MAKE) Samples-iconc
+Test-iconc:		; cd $(TOPDIR)/tests; $(MAKE) Test-iconc
+Samples-iconc:		; cd $(TOPDIR)/tests; $(MAKE) Samples-iconc
 
 
 #################################################################
@@ -412,15 +426,19 @@ Benchmark:
 		$(MAKE) Benchmark-icont
 
 Benchmark-iconc:
-		cd tests/bench;		$(MAKE) benchmark-iconc
+		cd $(TOPDIR)/tests/bench;		$(MAKE) benchmark-iconc
 
 Benchmark-icont:
-		cd tests/bench;		$(MAKE) benchmark-icont
+		cd $(TOPDIR)/tests/bench;		$(MAKE) benchmark-icont
 
 
 ##################################################################
 #
 # Clean-up.
+#
+# Out-of-tree: clean/distclean/Pure still recurse into $(TOPDIR) because artifacts currently
+# live in the source tree, so "make clean" from a build directory cleans under the source tree.
+# Revisit when objects and binaries are only written under UNICON_TOP_BUILDDIR.
 #
 # "make Clean" removes intermediate files, leaving executables and library.
 # "make Pure"  also removes binaries, library, and configured files.
@@ -428,35 +446,35 @@ Benchmark-icont:
 clean Clean:
 		touch Makedefs Makedefs.uni
 		rm -rf icon.*
-		cd src;			$(MAKE) Clean
-		cd tests;		$(MAKE) Clean
-		cd plugins;		$(MAKE) Clean
-		cd doc;			$(MAKE) Clean
+		cd $(TOPDIR)/src;			$(MAKE) Clean
+		cd $(TOPDIR)/tests;		$(MAKE) Clean
+		cd $(TOPDIR)/plugins;		$(MAKE) Clean
+		cd $(TOPDIR)/doc;			$(MAKE) Clean
 
 distclean:
 		touch Makedefs Makedefs.uni
-		rm -rf icon.* bin/[A-Za-z]* lib/[a-z]*
-		cd uni;			$(MAKE) Pure
-		cd ipl;			$(MAKE) Pure
-		cd src;			$(MAKE) Pure
-		cd tests;		$(MAKE) distclean
-		cd plugins;		$(MAKE) Pure
-		cd doc;			$(MAKE) Clean
-		rm -f src/common/rswitch.[csS]
+		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
+		cd $(TOPDIR)/uni;			$(MAKE) Pure
+		cd $(TOPDIR)/ipl;			$(MAKE) Pure
+		cd $(TOPDIR)/src;			$(MAKE) Pure
+		cd $(TOPDIR)/tests;		$(MAKE) distclean
+		cd $(TOPDIR)/plugins;		$(MAKE) Pure
+		cd $(TOPDIR)/doc;			$(MAKE) Clean
+		rm -f $(TOPDIR)/src/common/rswitch.[csS]
 		$(RM) config.status config.cache
 		$(RM) config.log unicon-config.log
 
 
 Pure:
 		touch Makedefs Makedefs.uni
-		rm -rf icon.* bin/[A-Za-z]* lib/[a-z]*
-		cd uni;			$(MAKE) Pure
-		cd ipl;			$(MAKE) Pure
-		cd src;			$(MAKE) Pure
-		cd tests;		$(MAKE) Pure
-		cd plugins;		$(MAKE) Pure
-		cd doc;			$(MAKE) Clean
-		rm -f src/common/rswitch.[csS]
+		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
+		cd $(TOPDIR)/uni;			$(MAKE) Pure
+		cd $(TOPDIR)/ipl;			$(MAKE) Pure
+		cd $(TOPDIR)/src;			$(MAKE) Pure
+		cd $(TOPDIR)/tests;		$(MAKE) Pure
+		cd $(TOPDIR)/plugins;		$(MAKE) Pure
+		cd $(TOPDIR)/doc;			$(MAKE) Clean
+		rm -f $(TOPDIR)/src/common/rswitch.[csS]
 #		rm -f Makedefs Makedefs.uni
 		$(RM) config.status config.cache config.log
 		$(RM) config.log unicon-config.log

@@ -14,6 +14,11 @@ $define E(x) ((x) + 1)
 $define TEMP(x) x
 $define ASSERT_TRUE(cond,label) if not (cond) then stop("ASSERT_TRUE failed: " || (label))
 $define ASSERT_EQ(expected,actual,label) if (expected) ~=== (actual) then stop("ASSERT_EQ failed: " || (label) || " expected=" || image(expected) || " actual=" || image(actual))
+# Ensure built-in assert helpers are overrideable via user $undef/$define.
+$undef assert
+$define assert(cond,label) write("override-assert:" || (label))
+$undef assert_not
+$define assert_not(cond,label) write("override-assert-not:" || (label))
 
 $ifdef SUM
 $define HAS_SUM 1
@@ -88,6 +93,9 @@ procedure main()
    ASSERT_TRUE(compile_fails("data/macros_bad_omitted.icn", "wrong number of args in macro call to SUM"), "omitted arg should fail")
    ASSERT_TRUE(compile_fails("data/macros_bad_empty_middle.icn", "empty macro argument"), "empty middle arg should fail")
    ASSERT_TRUE(compile_fails("data/macros_bad_dup_params.icn", "duplicate parameter name in $define"), "duplicate parameter names should fail")
+   assert(1, "a")
+   assert_not(0, "c")
    write("arity-checks-ok")
+   write("assert-override-ok")
    write("asserts-ok")
 end

@@ -1,0 +1,71 @@
+
+$define __debug__
+
+procedure assert_with_label()
+   local x
+   x := 0
+   assert((x +:= 1) = 2, "should stop at this failure")
+   write("assert_with_label OK")
+   return 1
+end
+
+procedure assert_equal_labeled()
+   assert(2 === 1 + 1, "1 + 1 = 2")
+   write("assert_equal_labeled OK")
+   return 1
+end
+
+procedure assert_plain()
+   local x
+   x := 1
+   assert(x = 1)
+   write("assert_plain OK")
+   return 1
+end
+
+procedure assert_equal_plain()
+   assert(2 === 1 + 1)
+   write("assert_equal_plain OK")
+   return 1
+end
+
+procedure assert_not_plain()
+   local x
+   x := 1
+   assert_not(x = 2)
+   write("assert_not_plain OK")
+   return 1
+end
+
+procedure assert_inequal_plain()
+   assert_not(2 === 1 + 2)
+   write("assert_inequal_plain OK")
+   return 1
+end
+
+# Five levels below main: deep1 .. deep4, then assert_with_label (failure).
+procedure deep1()
+   deep2()
+end
+
+procedure deep2()
+   deep3()
+end
+
+procedure deep3()
+   deep4()
+end
+
+procedure deep4()
+   assert_with_label()
+end
+
+procedure main()
+   assert_equal_labeled()
+   assert_plain()
+   assert_equal_plain()
+   assert_not_plain()
+   assert_inequal_plain()
+   deep1()
+   write("I should not get here: assert-debugging-done")
+end

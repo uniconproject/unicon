@@ -156,7 +156,7 @@ shows a single summary line such as `San: ASan UBSan`, or `San: no` when none of
 
 ```sh
 export ASAN_OPTIONS=abort_on_error=1:verbosity=1
-./bin/iconx prog.icn
+./prog
 ```
 
 **LeakSanitizer** runs with ASan on typical Linux setups and treats any allocation
@@ -170,10 +170,22 @@ export ASAN_OPTIONS=detect_leaks=0
 make -j
 ```
 
-**Debug under GDB** as usual; the process is already instrumented:
+**Debug under GDB** as usual; the process is already instrumented. To debug the **interpreter** (`iconx`) itself, use **`gdb --args`** so `iconx` and its argv are set in one shell line; then **`run`** / **`r`** at the `(gdb)` prompt starts with those arguments:
 
 ```sh
-gdb --args ./bin/iconx prog.icn
+gdb --args ./bin/iconx prog
+```
+
+Replace `prog` with your icode file or executable name. If the Unicon **program** also needs its own command-line arguments, add them after `prog` (they are passed through to your code):
+
+```sh
+gdb --args ./bin/iconx prog arg1 arg2
+```
+
+Or start GDB on `iconx` without `--args`, then pass everything from the **`run`** command:
+
+```text
+(gdb) run prog arg1 arg2
 ```
 
 Use the same `ASAN_OPTIONS` in the environment GDB passes to the program if you need
@@ -183,6 +195,6 @@ specific sanitizer behavior while stepping.
 
 ## Further reading
 
-- Shipped documentation index: [`doc/README.md`](doc/README.md)
+- Shipped documentation index: [documentation index](doc/)
 - Continuous integration: [`.github/workflows/build.yml`](.github/workflows/build.yml)
 - Heap / verification details in the implementation book: `doc/ib/` (e.g. discussion of `VRFY` in the appendices)

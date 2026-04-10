@@ -14,7 +14,7 @@ Unicon is a very high level programming language descended from [Icon](https://w
 
 ## Documentation
 
-Shipped manuals, technical reports, and other files are indexed under **[`doc/`](doc/)** — see **[`doc/README.md`](doc/README.md)** for the full list. On [unicon.sourceforge.io](https://unicon.sourceforge.io/), **[Books](https://unicon.sourceforge.io/ubooks.html)** lists editions and free PDFs (including *Programming with Unicon* and related titles), and **[Unicon Programming](https://unicon.sourceforge.io/up/index.html)** is an example-oriented online guide. **[Rosetta Code](https://rosettacode.org/wiki/Category:Unicon)** has Unicon solutions for many programming tasks. More technical reports and resources are linked from the project site.
+Shipped manuals, technical reports, and other files are indexed under **[`doc/`](doc/)** (the documentation index — use its table of contents for the full list). On [unicon.sourceforge.io](https://unicon.sourceforge.io/), **[Books](https://unicon.sourceforge.io/ubooks.html)** lists editions and free PDFs (including *Programming with Unicon* and related titles), and **[Unicon Programming](https://unicon.sourceforge.io/up/index.html)** is an example-oriented online guide. **[Rosetta Code](https://rosettacode.org/wiki/Category:Unicon)** has Unicon solutions for many programming tasks. More technical reports and resources are linked from the project site.
 
 **GitHub Pages:** [uniconproject.github.io/unicon](https://uniconproject.github.io/unicon/) (this README) · **[`doc/`](doc/)** for the documentation index.
 
@@ -22,7 +22,7 @@ Shipped manuals, technical reports, and other files are indexed under **[`doc/`]
 
 **Syntax highlighting:** [`config/editor/`](config/editor/) ships highlighting and editor integration files for several environments (GNU Emacs, Sublime Text, Notepad++, and others); see [`config/editor/README`](config/editor/README) for installation notes.
 
-**Visual Studio Code:** a [`.vscode/`](.vscode/) directory in this repository holds workspace settings (tasks, launch, optional recommendations). Unicon support is available in three extensions: [**Unicon Helper**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-lsp), [**Unicon Debugger**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-debugger), and [**Unicon Syntax**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-syntax) — or search the [Marketplace](https://marketplace.visualstudio.com/search?term=unicon&target=VSCode) for “Unicon”.
+**Visual Studio Code:** the **[`.vscode/`](https://github.com/uniconproject/unicon/tree/master/.vscode)** directory in this repository holds workspace settings (tasks, launch, optional recommendations). Unicon support is available in three extensions: [**Unicon Helper**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-lsp), [**Unicon Debugger**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-debugger), and [**Unicon Syntax**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-syntax) — or search the [Marketplace](https://marketplace.visualstudio.com/search?term=unicon&target=VSCode) for “Unicon”.
 
 
 ## Installation

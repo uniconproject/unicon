@@ -26,3 +26,6 @@ tester.u: data/tester.icn
 	cp tester.u data/tester.u
 
 list_test FxPtTest: | tester.u
+
+# Built-in assert modes set on the command line.
+assert_cmdline_test: UFLAGS += -D__test__

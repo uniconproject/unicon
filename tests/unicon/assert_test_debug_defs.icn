@@ -1,0 +1,19 @@
+# __test__ implies __debug__; an explicit __debug__ replaces the implied one,
+# and $undef __test__ removes only the __debug__ it implied.
+
+$define __test__
+$undef __test__
+$ifdef __debug__
+$error __debug__ outlived the __test__ that implied it
+$endif
+
+$define __test__
+$define __debug__ 2
+$undef __test__
+$ifndef __debug__
+$error the explicit __debug__ was removed with __test__
+$endif
+
+procedure main()
+   write("__debug__ is ", __debug__)
+end

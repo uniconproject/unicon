@@ -1,0 +1,79 @@
+# GitHub Pages (single _site/ artifact):
+#   README.md           → index.html
+#   doc/**              → doc/… (plus doc/README.md → doc/index.html)
+#   CONTRIBUTING.md     → CONTRIBUTING.md + CONTRIBUTING.html
+#   COPYING             → COPYING
+# Repo Settings → Pages → Source: GitHub Actions.
+
+name: Pages
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'COPYING'
+      - 'doc/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.repository == 'uniconproject/unicon'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Pandoc
+        uses: pandoc/setup-pandoc@ad820d1f3dfae86543ea82e92b6aaf21c9e12f69 # v3
+
+      - name: Build site
+        run: |
+          set -e
+          SITE=_site
+          rm -rf "$SITE"
+          mkdir -p "$SITE/doc"
+          pandoc README.md -o "$SITE/index.html" \
+            --standalone \
+            --metadata title="Unicon" \
+            -t html5
+          cp -a doc/. "$SITE/doc/"
+          pandoc doc/README.md -o "$SITE/doc/index.html" \
+            --standalone \
+            --metadata title="Unicon documentation" \
+            -t html5
+          test -f CONTRIBUTING.md && test -f COPYING
+          cp CONTRIBUTING.md COPYING "$SITE/"
+          pandoc CONTRIBUTING.md -o "$SITE/CONTRIBUTING.html" \
+            --standalone \
+            --metadata title="Contributing to Unicon" \
+            -t html5
+          touch "$SITE/.nojekyll"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

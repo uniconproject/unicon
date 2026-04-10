@@ -1,25 +1,40 @@
-Unicon
-======
+# Unicon
 
-Unicon is a very high level programming language. It runs on many operating systems
-including most Linux distributions, Windows, macOS, and BSD systems. It also supports
-most modern CPU architectures such as i386, amd64, armhf, arm64, and ppc64el.
+Unicon is a very high level programming language descended from [Icon](https://www.cs.arizona.edu/icon/): expression-based, **goal-directed** evaluation, rich string and structure handling, and integrated graphics and systems programming features. It is a **general-purpose** language with object-oriented extensions, concurrency, and database and network libraries, used for teaching, research, and applications. It runs on many operating systems (Linux, Windows, macOS, BSD) and on common CPU architectures (e.g. i386, amd64, arm64).
+
+**License:** the project is distributed under the **GNU General Public License**; see the [COPYING](COPYING) file in this repository (Debian packaging references **GPL-2+** in `debian/copyright`).
+
+## Contents
+
+- [Documentation](#documentation)
+- [Installation](#installation)
+- [Build Instructions](#build-instructions)
+- [Contributing](#contributing)
+- [Help](#help)
+
+## Documentation
+
+Shipped manuals, technical reports, and other files are indexed under **[`doc/`](doc/)** — see **[`doc/README.md`](doc/README.md)** for the full list. On [unicon.sourceforge.io](https://unicon.sourceforge.io/), **[Books](https://unicon.sourceforge.io/ubooks.html)** lists editions and free PDFs (including *Programming with Unicon* and related titles), and **[Unicon Programming](https://unicon.sourceforge.io/up/index.html)** is an example-oriented online guide. **[Rosetta Code](https://rosettacode.org/wiki/Category:Unicon)** has Unicon solutions for many programming tasks. More technical reports and resources are linked from the project site.
+
+**GitHub Pages:** [uniconproject.github.io/unicon](https://uniconproject.github.io/unicon/) (this README) · **[`doc/`](doc/)** for the documentation index.
+
+### Editors and IDEs
+
+**Syntax highlighting:** [`config/editor/`](config/editor/) ships highlighting and editor integration files for several environments (GNU Emacs, Sublime Text, Notepad++, and others); see [`config/editor/README`](config/editor/README) for installation notes.
+
+**Visual Studio Code:** a [`.vscode/`](.vscode/) directory in this repository holds workspace settings (tasks, launch, optional recommendations). Unicon support is available in three extensions: [**Unicon Helper**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-lsp), [**Unicon Debugger**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-debugger), and [**Unicon Syntax**](https://marketplace.visualstudio.com/items?itemName=jafar.unicon-syntax) — or search the [Marketplace](https://marketplace.visualstudio.com/search?term=unicon&target=VSCode) for “Unicon”.
 
 
-Installation
-------------
-The latest sources are available from Unicon's git repositories on SourceForge and GitHub.
+## Installation
+
+The latest sources are available from Unicon's git repositories and GitHub.
 To get the sources from either repo do:
 
 ```
 git clone https://github.com/uniconproject/unicon.git
 
 ```
-or
 
-```
-git clone git://git.code.sf.net/p/unicon/unicon
-```
 On Windows systems it is advised to add the `--config core.autocrlf=input` option to the `git` command.
 `git` is available on Linux via the standard package managers, for example on a Debian system:
 
@@ -27,14 +42,13 @@ On Windows systems it is advised to add the `--config core.autocrlf=input` optio
 sudo apt install git
 ```
 On macOS git is available with Xcode. On Windows you can install and set up git using the instructions:
-[here](http://unicon.org/git.html)
+[here](https://unicon.org/git.html)
 
-For source tarballs and binary distributions, see unicon.org
-[download page](http://unicon.org/downloads.html)
+For source tarballs and binary distributions, see the unicon.org
+[download page](https://unicon.org/downloads.html).
 
 
-Build Instructions
-------------------
+## Build Instructions
 
 _Prerequisites_
 - Gnu/Unix utilities such as shell, make, grep, etc.
@@ -58,7 +72,7 @@ can be turned off by doing `--disable-FEATURE`, for example:
 disables all graphics support. On the other hand, some features are disabled by default. Those can
 be turned on by doing `--enable-FEATURE`, for example, to enable operator overloading:
 ```
---configure --enable-ovld
+./configure --enable-ovld
 ```
 One other aspect to consider is that the configure script is opportunistic when it comes to turning on features.
 Features that are enabled by default will be disabled automatically if they are missing dependencies. If you want
@@ -204,67 +218,12 @@ make
 ```
 
 
-Compiler sanitizers
--------------------
+## Contributing
 
-[AddressSanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer) helps find
-out-of-bounds accesses, use-after-free, and related memory bugs in the Unicon runtime and
-in native code. It is supported when building with GCC or Clang on typical Unix-like hosts.
-
-**Configure and build** with ASan enabled. Adding `--enable-debug` gives debug symbols so
-stack traces and debuggers are usable:
-
-```
-./configure --enable-asan --enable-debug
-make -j
-```
-
-Other configure switches select additional LLVM/GCC sanitizers (flags are applied to compile
-and link steps, including shared libraries):
-
-| Option | Effect |
-|--------|--------|
-| `--enable-asan` | AddressSanitizer (`-fsanitize=address`) |
-| `--enable-tsan` | ThreadSanitizer (`-fsanitize=thread`) |
-| `--enable-ubsan` | UndefinedBehaviorSanitizer (`-fsanitize=undefined`) |
-| `--enable-msan` | MemorySanitizer (`-fsanitize=memory`) |
-| `--enable-hwasan` | HardwareAssisted AddressSanitizer (`-fsanitize=hwaddress`; common on AArch64) |
-
-Use **at most one** of `--enable-asan`, `--enable-tsan`, `--enable-msan`, and `--enable-hwasan`.
-**`--enable-ubsan`** may be combined with `--enable-asan` or `--enable-tsan`. MSan usually needs
-a toolchain (and often libc) built for MemorySanitizer. After `./configure`, `unicon-config.log`
-shows a single summary line such as `San: ASan UBSan`, or `San: no` when none of these are enabled.
-
-**Optional runtime tuning** via `ASAN_OPTIONS`, for example:
-
-```
-export ASAN_OPTIONS=abort_on_error=1:verbosity=1
-./bin/iconx prog.icn
-```
-
-**LeakSanitizer** runs with ASan on typical Linux setups and treats any allocation
-still live at exit as a leak, which can cause `make` to fail while building.
-If remaining leak reports are only a distraction while you care about
-**memory safety errors** (not leaks),
-you can disable leak detection for the whole build:
-
-```
-export ASAN_OPTIONS=detect_leaks=0
-make -j
-```
-
-**Debug under GDB** as usual; the process is already instrumented:
-
-```
-gdb --args ./bin/iconx prog.icn
-```
-
-Use the same `ASAN_OPTIONS` in the environment GDB passes to the program if you need
-specific sanitizer behavior while stepping.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for reporting issues, pull requests, and **developer builds** (compiler sanitizers, GDB, `ASAN_OPTIONS`, etc.).
 
 
-Help
-----
+## Help
 
-Questions and comments to: jeffery@unicon.org
-
+- **GitHub:** [Issues](https://github.com/uniconproject/unicon/issues) for bugs and feature requests.
+- **Email:** [jeffery@unicon.org](mailto:jeffery@unicon.org) for other questions and comments.

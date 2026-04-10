@@ -4,6 +4,8 @@
 #   CONTRIBUTING.md     → CONTRIBUTING.md + CONTRIBUTING.html
 #   COPYING             → COPYING
 # Repo Settings → Pages → Source: GitHub Actions.
+#
+# Pull requests run build only (no deploy) so you can verify before merge.
 
 name: Pages
 
@@ -18,30 +20,32 @@ on:
       - 'COPYING'
       - 'doc/**'
       - '.github/workflows/pages.yml'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'COPYING'
+      - 'doc/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     if: github.repository == 'uniconproject/unicon'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install Pandoc
-        uses: pandoc/setup-pandoc@ad820d1f3dfae86543ea82e92b6aaf21c9e12f69 # v3
+        run: sudo apt-get update && sudo apt-get install -y pandoc
 
       - name: Build site
         run: |
@@ -65,6 +69,30 @@ jobs:
             --metadata title="Contributing to Unicon" \
             -t html5
           touch "$SITE/.nojekyll"
+
+      - name: Upload site artifact (for deploy job)
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: _site
+          retention-days: 3
+
+  deploy:
+    if: github.repository == 'uniconproject/unicon' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: _site
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

@@ -1,8 +1,8 @@
-# GitHub Pages (single _site/ artifact):
-#   README.md           → index.html
-#   doc/**              → doc/… (plus doc/README.md → doc/index.html)
-#   CONTRIBUTING.md     → CONTRIBUTING.md + CONTRIBUTING.html
-#   COPYING             → COPYING
+# GitHub Pages (single _site/ artifact); built by config/scripts/gh-pages/build-gh-pages-site.sh:
+#   Shared nav + CSS under config/scripts/gh-pages/; assets at /unicon/assets/site.css
+#   README.md → index.html; doc/** mirrored; doc/README.md → doc/index.html
+#   CONTRIBUTING / COPYING → .md + .html; config/editor/**; doc/book, doc/icon, doc/ib indexes
+#   Link pass: internal .md/COPYING/README paths → /unicon/… HTML routes
 # Repo Settings → Pages → Source: GitHub Actions.
 #
 # Pull requests run build only (no deploy) so you can verify before merge.
@@ -19,6 +19,8 @@ on:
       - 'CONTRIBUTING.md'
       - 'COPYING'
       - 'doc/**'
+      - 'config/editor/**'
+      - 'config/scripts/gh-pages/**'
       - '.github/workflows/pages.yml'
   pull_request:
     paths:
@@ -26,6 +28,8 @@ on:
       - 'CONTRIBUTING.md'
       - 'COPYING'
       - 'doc/**'
+      - 'config/editor/**'
+      - 'config/scripts/gh-pages/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -48,27 +52,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y pandoc
 
       - name: Build site
-        run: |
-          set -e
-          SITE=_site
-          rm -rf "$SITE"
-          mkdir -p "$SITE/doc"
-          pandoc README.md -o "$SITE/index.html" \
-            --standalone \
-            --metadata title="Unicon" \
-            -t html5
-          cp -a doc/. "$SITE/doc/"
-          pandoc doc/README.md -o "$SITE/doc/index.html" \
-            --standalone \
-            --metadata title="Unicon documentation" \
-            -t html5
-          test -f CONTRIBUTING.md && test -f COPYING
-          cp CONTRIBUTING.md COPYING "$SITE/"
-          pandoc CONTRIBUTING.md -o "$SITE/CONTRIBUTING.html" \
-            --standalone \
-            --metadata title="Contributing to Unicon" \
-            -t html5
-          touch "$SITE/.nojekyll"
+        run: bash config/scripts/gh-pages/build-gh-pages-site.sh _site
 
       - name: Upload site artifact (for deploy job)
         uses: actions/upload-artifact@v4

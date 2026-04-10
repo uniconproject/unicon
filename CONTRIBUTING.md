@@ -195,6 +195,6 @@ specific sanitizer behavior while stepping.
 
 ## Further reading
 
-- Shipped documentation index: [`doc/README.md`](doc/README.md)
+- Shipped documentation index: [documentation index](doc/)
 - Continuous integration: [`.github/workflows/build.yml`](.github/workflows/build.yml)
 - Heap / verification details in the implementation book: `doc/ib/` (e.g. discussion of `VRFY` in the appendices)

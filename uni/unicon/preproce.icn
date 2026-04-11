@@ -25,7 +25,8 @@ global preproc_sym_table,preproc_if_stack,preproc_file_stack,preproc_if_state,
         preproc_include_set,preproc_print_filename,preproc_command,
         preproc_err_count, preproc_dollar_or_pound, preproc_fun_table,
         preproc_builtin_fun_table,
-        preproc_fmacro_parse_error, preproc_assert_uid
+        preproc_fmacro_parse_error, preproc_assert_uid,
+        preproc_ml_anchor
 
 record preproc_fmacro(params, body)
 
@@ -146,7 +147,7 @@ procedure preprocessor(fname,predefined_syms)
     }
     preproc_line +:= 1
     suspend preproc_sync_lines()
-    if type(fname) ~== "list" then
+    if type(fname) ~== "list" & \preproc_file & preproc_file ~=== &input then
       close(preproc_file)
     preproc_done()
 end
@@ -190,6 +191,8 @@ procedure preproc_new(fname,predefined_syms)
    # Suffix for assert macro temporaries: distinct per expansion (icont has no
    # block-local vars in expression-level `{...}` compounds).
    preproc_assert_uid := 0
+   # First physical line of a multiline macro call (for &line / #line sync).
+   preproc_ml_anchor := &null
 
    preproc_install_builtin_macros()
    return
@@ -540,7 +543,15 @@ procedure preproc_scan_text(done_set)
             #suspend image(preproc_filename) || ":" ||
             #        preproc_line || " " || &subject
         }
-        preproc_print_line := preproc_line
+        # If this line pulled continuation lines for a macro call, keep
+        # print_line on the call's first line so the next source line syncs
+        # past those continuations (e.g. &line 7 for the call, then 9).
+        if \preproc_ml_anchor then {
+           preproc_print_line := preproc_ml_anchor
+           preproc_ml_anchor := &null
+           }
+        else
+           preproc_print_line := preproc_line
     }
 end
 
@@ -557,8 +568,13 @@ procedure preproc_read()
          until *preproc_if_stack <= preproc_nest_level do
             preproc_if_state := pop(preproc_if_stack)
          }
-      if type(preproc_file) ~== "list" & preproc_file ~=== &input then
+      if \preproc_file & type(preproc_file) ~== "list" &
+            preproc_file ~=== &input then {
          close(preproc_file)
+         # Avoid runerr 212 if a caller retries read after EOF (e.g. after a
+         # failed `\` continuation while the outer preprocessor loop continues).
+         preproc_file := &null
+         }
       delete(preproc_include_set,preproc_include_name)
       (preproc_nest_level := pop(preproc_file_stack) &
        preproc_line := pop(preproc_file_stack) &
@@ -572,6 +588,8 @@ end
 
 # Auxiliary read method; "reads" from a file or an in-memory list of strings.
 procedure preproc_read_result( )
+   if /preproc_file then
+      fail
    if type(preproc_file) == "list" then
       return pop(preproc_file)
    else
@@ -742,39 +760,75 @@ procedure preproc_qword()
 end
 
 #
+# Append the next preprocessor line when a $define value continues with `\`
+# at end of line.  Unlike macro-arg continuation, a $define produces no
+# output tokens, so do not adjust preproc_print_line here — otherwise each
+# continued definition line under-counts toward the next #line / &line sync.
+#
+procedure preproc_define_value_next_line()
+   local line, oldlen
+   line := preproc_read() | fail
+   oldlen := *(&subject)
+   &subject := &subject || "\n" || line
+   &pos := oldlen + 2
+   return
+end
+
+#
 # a_Scans the value of a $define.
+# A backslash as the very last character on a line continues the value onto
+# the next physical line (C preprocessor line splice): the `\` and newline
+# are dropped and no whitespace is trimmed.  A `\` with trailing spaces is
+# not a continuation.  Leading space on the first line only is skipped via
+# preproc_space().
 #
 procedure preproc_scan_define_value()
-   local q,interesting_in_quotes
+   local q, interesting_in_quotes, acc, piece, need_space
    static interesting_chars
    initial interesting_chars := '#"\''
 
-    preproc_space()
-    q := &pos
-    (while tab(upto(interesting_chars)) do {
-        case move(1) of {
+   acc := ""
+   need_space := 1
+   repeat {
+      if \need_space then {
+         preproc_space()
+         need_space := &null
+      }
+      q := &pos
+      (while tab(upto(interesting_chars)) do {
+         case move(1) of {
             "#": {
-                move(-1)
-                break
+               move(-1)
+               break
             }
             default: {
-                interesting_in_quotes := '\\' ++ &subject[&pos - 1]
-                repeat {
-                    while tab(upto(interesting_in_quotes)) do {
-                        case move(1) of {
-                            "\\": move(1)
-                            default: {
-                                break break
-                            }
+               interesting_in_quotes := '\\' ++ &subject[&pos - 1]
+               repeat {
+                  while tab(upto(interesting_in_quotes)) do {
+                     case move(1) of {
+                        "\\": move(1)
+                        default: {
+                           break break
                         }
-                    }
-                    preproc_error("unterminated string in $define")
-                    fail # end of line inside quotes!!
-                }
+                     }
+                  }
+                  preproc_error("unterminated string in $define")
+                  fail # end of line inside quotes!!
+               }
             }
-        }
-    }) | tab(0)
-    return trim(&subject[q:&pos],' \t\f\r')
+         }
+      }) | tab(0)
+      piece := &subject[q:&pos]
+      if *piece > 0 & piece[-1] == "\\" then {
+         # Drop only the trailing `\`; keep all other characters (C splice).
+         acc ||:= piece[1:-1]
+         preproc_define_value_next_line() | {
+            preproc_error("unterminated $define (line continuation)")
+            fail
+         }
+      } else
+         return acc || piece
+   }
 end
 
 #
@@ -889,7 +943,9 @@ procedure preproc_expand_fmacro_call(name, fmacro, done_set)
       else
          # No __debug__/__test__: drop the call entirely (zero run-time cost).
          expanded := ""
-      expanded ? return preproc_scan_text(done_set)
+      # Assign (not return) inside ? so &subject/&pos of the caller are restored.
+      expanded ? expanded := preproc_scan_text(done_set)
+      return expanded
    }
    "assert_not": {
       if *args = 1 then {
@@ -908,15 +964,16 @@ procedure preproc_expand_fmacro_call(name, fmacro, done_set)
             "\"] assertion failed (\", " || preproc_quote_string(args[1]) || ", \")\", " ||
             "(if " || pfx || "_lbl == \"\" then \"\" else \" \" || " || pfx || "_lbl)); fail}})"
       else if preproc_sym_enabled("__debug__") then
-         # __debug__: runerr(220, …) only — err_msg prints [file:line] assertion failed: … (errmsg.r).
+         # __debug__: runerr(219, …) — leading char(29) marks assert_not for traceback (rdebug.r).
          expanded := "({if (" || args[1] || ") then { " || pfx ||
-            "_lbl := ((" || args[2] || ") | \"\"); runerr(220, " ||
+            "_lbl := ((" || args[2] || ") | \"\"); runerr(219, char(29) || " ||
             preproc_quote_string(args[1]) || " || (if " || pfx || "_lbl == \"\" then \"\" else char(30) || " ||
             pfx || "_lbl))}})"
       else
          # No __debug__/__test__: drop the call entirely (zero run-time cost).
          expanded := ""
-      expanded ? return preproc_scan_text(done_set)
+      expanded ? expanded := preproc_scan_text(done_set)
+      return expanded
    }
    }
    if *args ~== *fmacro.params then {
@@ -925,7 +982,30 @@ procedure preproc_expand_fmacro_call(name, fmacro, done_set)
    }
    expanded := preproc_subst_fmacro(fmacro, args)
    # Re-scan expansion so nested macro calls are expanded in one pass.
-   expanded ? return preproc_scan_text(done_set)
+   # Assign (not return) inside ? so &subject/&pos of the caller are restored.
+   expanded ? expanded := preproc_scan_text(done_set)
+   return expanded
+end
+
+#
+# Append the next preprocessor input line to &subject when a macro call or
+# string inside it spans physical lines.  Matches the line-sync idea used for
+# underscore string continuation: preproc_print_line := preproc_line - 1 so
+# #line / &line stay anchored to the first line of the invocation.
+#
+procedure preproc_macro_arg_next_line()
+   local line, oldlen
+   line := preproc_read() | fail
+   oldlen := *(&subject)
+   &subject := &subject || "\n" || line
+   # Continue scanning at the first character of the new line (skip the
+   # inserted newline).  Matches preproc_define_value_next_line().
+   &pos := oldlen + 2
+   # Anchor &line / #line to the first physical line of the call.
+   if /preproc_ml_anchor then
+      preproc_ml_anchor := preproc_line - 1
+   preproc_print_line := preproc_ml_anchor
+   return
 end
 
 #
@@ -938,9 +1018,13 @@ procedure preproc_scan_macro_args()
    depth := 0
    q := &pos
    repeat {
-      c := move(1) | {
-         preproc_error("unterminated macro invocation")
-         fail
+      repeat {
+         if c := move(1) then
+            break
+         preproc_macro_arg_next_line() | {
+            preproc_error("unterminated macro invocation")
+            fail
+         }
       }
       case c of {
          "\"" | "'": {
@@ -948,21 +1032,33 @@ procedure preproc_scan_macro_args()
             # parentheses inside them do not split arguments.
             quote := c
             repeat {
-               c := move(1) | {
-                  preproc_error("unterminated string in macro invocation")
-                  fail
+               repeat {
+                  if c := move(1) then
+                     break
+                  preproc_macro_arg_next_line() | {
+                     preproc_error("unterminated string in macro invocation")
+                     fail
+                  }
                }
                if c == "\\" then {
                   # Consume one escaped char after "\"; if that char is "^",
                   # consume one more to cover control escapes like "\^A".
-                  c := move(1) | {
-                     preproc_error("unterminated escape in macro invocation")
-                     fail
-                  }
-                  if c == "^" then {
-                     move(1) | {
+                  repeat {
+                     if c := move(1) then
+                        break
+                     preproc_macro_arg_next_line() | {
                         preproc_error("unterminated escape in macro invocation")
                         fail
+                     }
+                  }
+                  if c == "^" then {
+                     repeat {
+                        if move(1) then
+                           break
+                        preproc_macro_arg_next_line() | {
+                           preproc_error("unterminated escape in macro invocation")
+                           fail
+                        }
                      }
                   }
                }
@@ -974,7 +1070,7 @@ procedure preproc_scan_macro_args()
          ")": {
             if depth = 0 then {
                if &pos - 1 > q then {
-                  s := trim(&subject[q:&pos-1], ' \t\f\r')
+                  s := trim(&subject[q:&pos-1], ' \t\f\r\n')
                   # Ignore whitespace-only segments so ZERO( ) is treated
                   # as zero args and SUM(1, ) reports omitted arg count.
                   if *s > 0 then
@@ -986,7 +1082,7 @@ procedure preproc_scan_macro_args()
          }
          ",": {
             if depth = 0 then {
-               s := trim(&subject[q:&pos-1], ' \t\f\r')
+               s := trim(&subject[q:&pos-1], ' \t\f\r\n')
                if *s > 0 then
                   put(args, s)
                else {

@@ -881,26 +881,11 @@ procedure preproc_expand_fmacro_call(name, fmacro, done_set)
             "\"] AssertionFailed (\", " || preproc_quote_string(args[1]) || ", \")\", " ||
             "(if " || pfx || "_lbl == \"\" then \"\" else \" \" || " || pfx || "_lbl)); fail}})"
       else if preproc_sym_enabled("__debug__") then
-         # __debug__: human-readable line on &errout, then runerr(100, expr) — runtime Traceback (errmsg.r).
+         # __debug__: runerr(219, …) only — err_msg prints [file:line] AssertionFailed: … (errmsg.r).
          expanded := "({(" || args[1] || ") | { " || pfx ||
-            "_lbl := ((" || args[2] || ") | \"\"); write(&errout, \"[\", &file, \":\", &line, " ||
-            "\"] AssertionFailed (\", " || preproc_quote_string(args[1]) || ", \")\", " ||
-            "(if " || pfx || "_lbl == \"\" then \"\" else \" \" || " || pfx || "_lbl)); runerr(100, " ||
-            preproc_quote_string(args[1]) || ")}})"
-         # Alternate — manual Traceback (no run-time error banner); replace the expanded := above with this:
-         # expanded := "({(" || args[1] || ") | { " || pfx ||
-         #    "_lbl := ((" || args[2] || ") | \"\"); write(&errout, \"[\", &file, \":\", &line, " ||
-         #    "\"] AssertionFailed (\", " || preproc_quote_string(args[1]) || ", \")\", " ||
-         #    "(if " || pfx || "_lbl == \"\" then \"\" else \" \" || " || pfx || "_lbl)); " ||
-         #    "write(&errout, \"Traceback:\"); " ||
-         #    pfx || "_tr := &level - 1; " ||
-         #    "while " || pfx || "_tr >= 0 do { " ||
-         #    pfx || "_p := proc(&current, " || pfx || "_tr); " ||
-         #    pfx || "_nm := (image(" || pfx || "_p) ? {=\"procedure \"; tab(0)}) | image(" || pfx || "_p); " ||
-         #    "if " || pfx || "_tr = &level - 1 then write(&errout, \"   \", " || pfx || "_nm, \"()\") else " ||
-         #    "write(&errout, \"   \", " || pfx || "_nm, \"() from line \", keyword(\"&line\", &current, " ||
-         #    pfx || "_tr), \" in \", keyword(\"&file\", &current, " || pfx || "_tr)); " ||
-         #    pfx || "_tr -:= 1 }; exit(1)}})"
+            "_lbl := ((" || args[2] || ") | \"\"); runerr(219, " ||
+            preproc_quote_string(args[1]) || " || (if " || pfx || "_lbl == \"\" then \"\" else char(30) || " ||
+            pfx || "_lbl))}})"
       else
          # No __debug__/__test__: drop the call entirely (zero run-time cost).
          expanded := ""
@@ -923,27 +908,13 @@ procedure preproc_expand_fmacro_call(name, fmacro, done_set)
             "\"] AssertionFailed (\", " || preproc_quote_string(args[1]) || ", \")\", " ||
             "(if " || pfx || "_lbl == \"\" then \"\" else \" \" || " || pfx || "_lbl)); fail}})"
       else if preproc_sym_enabled("__debug__") then
-         # Same as assert: write(&errout,...); runerr(100, expr). Alternate block below.
+         # __debug__: runerr(220, …) only — err_msg prints [file:line] AssertionFailed: … (errmsg.r).
          expanded := "({if (" || args[1] || ") then { " || pfx ||
-            "_lbl := ((" || args[2] || ") | \"\"); write(&errout, \"[\", &file, \":\", &line, " ||
-            "\"] AssertionFailed (\", " || preproc_quote_string(args[1]) || ", \")\", " ||
-            "(if " || pfx || "_lbl == \"\" then \"\" else \" \" || " || pfx || "_lbl)); runerr(100, " ||
-            preproc_quote_string(args[1]) || ")}})"
-         # Alternate — manual Traceback; replace the expanded := above with this:
-         # expanded := "({if (" || args[1] || ") then { " || pfx ||
-         #    "_lbl := ((" || args[2] || ") | \"\"); write(&errout, \"[\", &file, \":\", &line, " ||
-         #    "\"] AssertionFailed (\", " || preproc_quote_string(args[1]) || ", \")\", " ||
-         #    "(if " || pfx || "_lbl == \"\" then \"\" else \" \" || " || pfx || "_lbl)); " ||
-         #    "write(&errout, \"Traceback:\"); " ||
-         #    pfx || "_tr := &level - 1; " ||
-         #    "while " || pfx || "_tr >= 0 do { " ||
-         #    pfx || "_p := proc(&current, " || pfx || "_tr); " ||
-         #    pfx || "_nm := (image(" || pfx || "_p) ? {=\"procedure \"; tab(0)}) | image(" || pfx || "_p); " ||
-         #    "if " || pfx || "_tr = &level - 1 then write(&errout, \"   \", " || pfx || "_nm, \"()\") else " ||
-         #    "write(&errout, \"   \", " || pfx || "_nm, \"() from line \", keyword(\"&line\", &current, " ||
-         #    pfx || "_tr), \" in \", keyword(\"&file\", &current, " || pfx || "_tr)); " ||
-         #    pfx || "_tr -:= 1 }; exit(1)}})"
+            "_lbl := ((" || args[2] || ") | \"\"); runerr(220, " ||
+            preproc_quote_string(args[1]) || " || (if " || pfx || "_lbl == \"\" then \"\" else char(30) || " ||
+            pfx || "_lbl))}})"
       else
+         # No __debug__/__test__: drop the call entirely (zero run-time cost).
          expanded := ""
       expanded ? return preproc_scan_text(done_set)
    }

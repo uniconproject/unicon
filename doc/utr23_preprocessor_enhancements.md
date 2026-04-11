@@ -279,7 +279,7 @@ Checks run only when a preprocessor symbol requests them:
 
 | Mode | How you enable it | On assertion failure |
 |------|-------------------|----------------------|
-| **Debugging** | **`$define __debug__`** (or **`-D__debug__`**) | **`write(&errout, …)`** a line of the form **`[file:line] AssertionFailed (expr) label`**, then **`runerr(100, expr)`** so the runtime reports error 100 and a **Traceback** as in **`errmsg.r`**. The **`runerr`** second argument is the assertion **expression** as a string. An alternate expansion (manual traceback via **`proc`** / **`keyword`**, **`exit(1)`**, without **`runerr`**) is **commented** in **`preproce.icn`** for maintainers who prefer that behavior. |
+| **Debugging** | **`$define __debug__`** (or **`-D__debug__`**) | **`write(&errout, …)`** a line of the form **`[file:line] AssertionFailed (expr) label`**, then **`runerr(219, …)`** / **`runerr(220, …)`** (see **`src/runtime/data.r`**). The **`runerr`** value is the expression string, optionally followed by **`char(30)`** and the label so the traceback can show **`assert(expr, "label")`** when the label is non-empty. The last traceback line is **`assert`/`assert_not`** syntax (not **`runerr`**); see **`ttrace()`** in **`src/runtime/rdebug.r`**. An alternate expansion (manual traceback) is **commented** in **`preproce.icn`**. |
 | **Testing** | **`$define __test__`** (or **`-D__test__`**) | Same **`write`** style, then **`fail`** — Unicon **failure**, not **`stop`**, so surrounding code can catch failure and continue (e.g. accumulate multiple test failures). Defining **`__test__`** also enables **`__debug__`** for the preprocessor so conditions are still compiled. |
 
 If **neither** **`__debug__`** nor **`__test__`** is defined, **`assert(...)`** / **`assert_not(...)`** expand to **nothing**: no tokens, no run-time cost. Therefore use them only as **standalone statements**, not as subexpressions (e.g. **`y := assert(x)`** becomes invalid after stripping).
@@ -287,7 +287,7 @@ If **neither** **`__debug__`** nor **`__test__`** is defined, **`assert(...)`** 
 | Preprocessor symbols | Expansion |
 |----------------------|-----------|
 | neither | *(empty — call removed)* |
-| `__debug__` only | check; on failure **`write(&errout, …)`** then **`runerr(100, expr)`** + traceback |
+| `__debug__` only | check; on failure **`write(&errout, …)`** then **`runerr(219, expr)`** (**`assert`**) or **`runerr(220, expr)`** (**`assert_not`**) + traceback |
 | `__test__` | check; on failure **`write(...)`** then **`fail`** |
 
 If both **`__test__`** and **`__debug__`** are defined, the **testing** path (**`write`** + **`fail`**) wins.
@@ -348,17 +348,12 @@ end
 **Sample failure output (`__debug__`)** — from `tests/unicon/assert_debugging.icn` / `stand/assert_debugging.std`:
 
 ```text
-[assert_debugging.icn:7] AssertionFailed ((x +:= 1) = 2) should stop at this failure
-
-Run-time error 100
-File assert_debugging.icn; Line 7
-
-offending value: "(x +:= 1) = 2"
+[assert_debugging.icn:7] AssertionFailed: (x +:= 1) = 2, x must be two after an increment
 Traceback:
    main()
    deep1() from line 69 in assert_debugging.icn
    ...
-   runerr(100,"(x +:= 1) = 2") from line 7 in assert_debugging.icn
+   assert((x +:= 1) = 2, "x must be two after an increment") from line 7 in assert_debugging.icn
 ```
 
 **Override example:**
@@ -372,7 +367,7 @@ A bare **`$define assert`** without a parameter list defines an **object-like** 
 
 ### 4.5 Implementation sketch
 
-With **`__debug__`** or **`__test__`**, expansions use uniquified names such as **`__preproc_assert_1_lbl`**. **`assert`** uses alternation **`(expr) | { …failure… }`** so a succeeding expression is evaluated once. **`assert_not`** uses **`if (expr) then { …failure… }`**. The label expression is evaluated **only** on the failure path, via **`_lbl := ((label_expr) | "")`** in the generated code. See **`preproc_expand_fmacro_call()`** in **`preproce.icn`**.
+With **`__debug__`** or **`__test__`**, expansions use uniquified names such as **`__preproc_assert_1_lbl`**. **`assert`** uses alternation **`(expr) | { …failure… }`** so a succeeding expression is evaluated once. **`assert_not`** uses **`if (expr) then { …failure… }`**. The label expression is evaluated **only** on the failure path, via **`_lbl := ((label_expr) | "")`** in the generated code. In **`__debug__`** mode, failure calls **`runerr(219, …)`** or **`runerr(220, …)`** (runtime errors **219** / **220**) with no preceding **`write`**; **`err_msg()`** prints **`[file:line] AssertionFailed: …`**. In **`__test__`** mode, failure **`write`**s a line with **`AssertionFailed`** and **`fail`**s instead of **`runerr`**. The second argument is the assertion expression as a string, optionally followed by **`char(30)`** (ASCII record separator) and the label string so **`ttrace()`** can print **`assert(expr, "label")`** in the traceback (**`rdebug.r`**); **`err_msg()`** sets **`&errortext`** to **`AssertionFailed: <expr>[, <label>]`** (ASCII **30** between expr and label is shown as **`, `**) and does not emit a separate **`offending value`** line for **219**/**220** (**`errmsg.r`**). See **`preproc_expand_fmacro_call()`** in **`preproce.icn`**, **`errtab`** in **`src/runtime/data.r`**, **`err_msg()`** in **`src/runtime/errmsg.r`** (no **`Run-time error N`** line for **219**/**220**), **`runerr()`** in **`src/runtime/fmisc.r`**, and **`ttrace()`** in **`src/runtime/rdebug.r`**.
 
 ---
 
@@ -393,10 +388,11 @@ The preprocessor runs **before** the main compiler front end; output is a stream
 | Document or artifact | Role |
 |----------------------|------|
 | [UTR #8 — *Unicon Language Reference*](unicon/utr8.html) | Core string literal rules and underscore continuation; contrast with Section 2 of this report |
-| `uni/unicon/preproce.icn` | Implementation |
+| `uni/unicon/preproce.icn` | Preprocessor implementation |
+| `src/runtime/rdebug.r` | Traceback: **`assert(expr)`** / **`assert(expr, "label")`** / **`assert_not(…)`** for **`runerr(219/220, …)`** (label via **`char(30)`** suffix in the value string) |
 | `tests/unicon/triple_strings.icn`, `tests/unicon/stand/triple_strings.std` | Multiline string regression |
 | `tests/unicon/macros.icn`, `tests/unicon/stand/macros.std`, `tests/unicon/data/macros_bad_*.icn` | Macro regression and errors |
-| `tests/unicon/assert_debugging.icn`, `tests/unicon/assert_testing.icn`, `tests/unicon/assert_strip.icn`, `tests/unicon/assert_failing_label.icn`, related `stand/*.std` | Assertion behavior |
+| `tests/unicon/assert_debugging.icn`, `tests/unicon/assert_testing.icn`, `tests/unicon/assert_strip.icn`, `tests/unicon/assert_failing_label.icn`, `tests/unicon/assert_not_failing.icn`, related `stand/*.std` | Assertion behavior |
 
 ---
 
@@ -406,3 +402,7 @@ The preprocessor runs **before** the main compiler front end; output is a stream
 |---------|------|--------|
 | 1.0 | April 2026 | Initial UTR #23; consolidates documentation for merges **1f12c135** (triple strings), **a47bdfc** (macros), and existing assert design. |
 | 1.1 | April 2026 | Assert label guard (failure path: alternation with `""` if label expr fails); **`tests/unicon/assert_failing_label.icn`**. |
+| 1.2 | April 2026 | Runtime errors **219**/**220**; traceback last line uses **`assert`/`assert_not`** syntax (**`rdebug.r`** **`ttrace()`**). |
+| 1.3 | April 2026 | **`err_msg()`** (**`errmsg.r`**) omits the generic **`Run-time error N`** banner for **219**/**220**. |
+| 1.4 | April 2026 | **`err_msg()`** (**`errmsg.r`**) prints one combined line for **219**/**220** (no separate **`offending value`** line). |
+| 1.5 | April 2026 | **`errtab`** / **`&errortext`** use **`AssertionFailed`**; combined text is **`AssertionFailed: <expr>[, <label>]`** with **30** → **`, `**. |

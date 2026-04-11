@@ -18,6 +18,9 @@ concurrency:
   group: packages-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  RTT_JOBS: "16"
+
 jobs:
   Windows:
     runs-on: ${{ matrix.cfg.os }}
@@ -26,7 +29,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: windows-2022,  name: 'Windows_64-bit',  opt: '--disable-iconc' }
+        -  { os: windows-2022,  name: 'Windows_64-bit',  opt: '' }
         #-  { os: windows-latest,  name: 'Windows_32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
 
     defaults:

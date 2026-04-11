@@ -1,7 +1,5 @@
 #  Top Level Makefile for Unicon
 #
-# Keep Makefile in sync with this file except for the first two assignments (srcdir/TOPDIR).
-#
 # Out-of-tree builds: run configure from a build directory (e.g. ../configure).
 # TOPDIR is the source tree; UNICON_TOP_BUILDDIR is the configure/build directory (Makedefs,
 # auto.h, config.status). Object files and binaries still go under TOPDIR in this phase; switch

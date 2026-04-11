@@ -7,6 +7,11 @@ default: all
 UNICON_TOP_BUILDDIR ?= $(TOPDIR)
 include $(UNICON_TOP_BUILDDIR)/Makedefs
 
+# Sub-makes often get --jobserver-auth without -jN in MAKEFLAGS; export N so runtime/urtt matches top-level -j.
+ifneq ($(filter -j%,$(MAKEFLAGS)),)
+export RTT_CC_JOBS := $(patsubst -j%,%,$(filter -j%,$(MAKEFLAGS)))
+endif
+
 # Common components.
 
 all: Common Icont iyacc Iconx $(WICONTTARGET) $(WICONXTARGET) $(ICONCTARGET)
@@ -49,7 +54,7 @@ wunicont wicont Wicont: Wiconx
 Iconc: Common Iconx
 	$(RM) iconc/*.$(O)
 	$(RM) common/doincl$(EXE)
-	$(MAKE) -j1 -C runtime comp_all_uniconc
+	$(MAKE) -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
 	$(MAKE) -C common doincl
 
@@ -59,7 +64,7 @@ FreshIconc:
 	$(RM) iconc/*.$(O)
 	$(RM) ../bin/rt.h
 	$(RM) common/doincl$(EXE)
-	$(MAKE) -j1 -C runtime comp_all_uniconc
+	$(MAKE) -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
 	$(MAKE) -C common doincl
 
@@ -73,7 +78,7 @@ clean Clean:
 	cd common;	$(RM) *.o doincl$(EXE) patchstr$(EXE)
 	cd preproc;	$(RM) *.o pp$(EXE)
 	cd rtt;		$(RM) *.o rtt$(EXE)
-	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst $(UNICONX)$(EXE) $(UNICONWX)$(EXE)
+	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst compiler-rtl-stamp $(UNICONX)$(EXE) $(UNICONWX)$(EXE)
 	cd icont;	$(RM) *.o $(UNICONT)$(EXE) $(UNICONWT)$(EXE)
 	cd xpm;		$(RM) *.o *.a
 	cd xpm/lib;	$(RM) *.o *.a

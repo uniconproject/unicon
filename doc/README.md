@@ -62,6 +62,7 @@ Standard Markdown tables use equal column widths, so a narrow “#” column sti
 - **UTR #21** — [HTML](utr/utr21.html) — *Configuring and Building Version 13 of Unicon*
 - **UTR #22** — [LaTeX](utr/utr22.tex) — *Unicon OpenGL 2D and 2D/3D Graphics User's Guide*
 - **UTR #23** — [Markdown](utr23_preprocessor_enhancements.md) — *Preprocessor enhancements: triple-quoted strings, function-like macros, and assertion macros*
+- **UTR #24** — [Markdown](utr24_preprocessor_design.md) — *Design of the Unicon preprocessor*
 
 ### Unicode reference data (for UTF-8 / UTR work)
 

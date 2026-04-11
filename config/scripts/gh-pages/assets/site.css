@@ -56,14 +56,43 @@ body {
 .unicon-site-nav a:hover { text-decoration: underline; }
 .unicon-site-nav .sep { color: var(--muted); user-select: none; }
 .unicon-site-nav .home { margin-right: 0.25rem; }
-/* Main prose: keep readable line length (pandoc standalone: block siblings between nav and footer) */
-body > *:not(.unicon-site-nav):not(.unicon-site-footer) {
+
+/* Main column: pandoc emits flat body children between nav and footer.
+   :where() keeps specificity low so body > p / body > pre rules below win for max-width. */
+body > :where(*:not(.unicon-site-nav):not(.unicon-site-footer)) {
   max-width: var(--max);
   margin-left: auto;
   margin-right: auto;
   padding-left: 1rem;
   padding-right: 1rem;
 }
+
+/* Full column width: code blocks, tables, highlighted code (div.sourceCode), figures */
+body > pre,
+body > table,
+body > div.sourceCode,
+body > figure {
+  max-width: var(--max);
+}
+
+/* ~65ch measure for body text, headings, lists, TOC */
+body > p,
+body > ul,
+body > ol,
+body > dl,
+body > h1,
+body > h2,
+body > h3,
+body > h4,
+body > h5,
+body > h6,
+body > blockquote,
+body > hr,
+body > header,
+body > nav#TOC {
+  max-width: min(65ch, calc(100% - 2rem));
+}
+
 #title-block-header,
 header {
   padding-top: 1.25rem;

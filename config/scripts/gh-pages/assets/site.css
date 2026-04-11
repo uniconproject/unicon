@@ -6,42 +6,49 @@
   --border: #d1d9e0;
   --link: #0969da;
   --nav-bg: #ffffff;
-  /* Default: comfortable measure for phones/small laptops */
+  /* One knob for content width — applied on body below (no competing body > * max-width). */
   --max: 52rem;
 }
 
-/* Use more horizontal space on wide screens (avoids a “phone column” on desktop) */
 @media (min-width: 1100px) {
   :root {
-    --max: min(72rem, 92vw);
+    --max: min(72rem, 94vw);
   }
 }
 
 @media (min-width: 1600px) {
   :root {
-    --max: min(82rem, 90vw);
+    --max: min(85rem, 92vw);
   }
 }
+
 * { box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+}
+
 body {
-  margin: 0;
+  margin: 0 auto;
+  max-width: var(--max);
+  padding-left: 1rem;
+  padding-right: 1rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.55;
   color: var(--text);
   background: var(--bg);
 }
+
 .unicon-site-nav {
   background: var(--nav-bg);
   border-bottom: 1px solid var(--border);
-  padding: 0.65rem 1rem;
+  padding: 0.65rem 0;
   position: sticky;
   top: 0;
   z-index: 10;
 }
 .unicon-site-nav-inner {
-  max-width: var(--max);
-  margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -56,42 +63,6 @@ body {
 .unicon-site-nav a:hover { text-decoration: underline; }
 .unicon-site-nav .sep { color: var(--muted); user-select: none; }
 .unicon-site-nav .home { margin-right: 0.25rem; }
-
-/* Main column: pandoc emits flat body children between nav and footer.
-   :where() keeps specificity low so body > p / body > pre rules below win for max-width. */
-body > :where(*:not(.unicon-site-nav):not(.unicon-site-footer)) {
-  max-width: var(--max);
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-/* Full column width: code blocks, tables, highlighted code (div.sourceCode), figures */
-body > pre,
-body > table,
-body > div.sourceCode,
-body > figure {
-  max-width: var(--max);
-}
-
-/* ~65ch measure for body text, headings, lists, TOC */
-body > p,
-body > ul,
-body > ol,
-body > dl,
-body > h1,
-body > h2,
-body > h3,
-body > h4,
-body > h5,
-body > h6,
-body > blockquote,
-body > hr,
-body > header,
-body > nav#TOC {
-  max-width: min(65ch, calc(100% - 2rem));
-}
 
 #title-block-header,
 header {
@@ -112,9 +83,8 @@ pre {
   border-radius: 6px;
 }
 .unicon-site-footer {
-  max-width: var(--max);
-  margin: 2rem auto 0;
-  padding: 1rem;
+  margin: 2rem 0 0;
+  padding: 1rem 0;
   border-top: 1px solid var(--border);
   font-size: 0.875rem;
   color: var(--muted);

@@ -27,4 +27,5 @@ cd "$TMP"
 
 echo "Open: http://127.0.0.1:${PORT}/unicon/"
 echo "CSS and nav use /unicon/... paths (same as github.io). Ctrl+C to stop."
+echo "After changing the site, run build-gh-pages-site.sh again, then restart this script (copy is one-time)."
 exec python3 -m http.server "$PORT"

@@ -742,39 +742,73 @@ procedure preproc_qword()
 end
 
 #
+# Append the next preprocessor line when a $define value continues with `\`
+# at end of line.  Same #line / preproc_print_line adjustment as macro-arg
+# continuation (see preproc_macro_arg_next_line).
+#
+procedure preproc_define_value_next_line()
+   local line, oldlen
+   line := preproc_read() | fail
+   oldlen := *(&subject)
+   &subject := &subject || "\n" || line
+   &pos := oldlen + 2
+   preproc_print_line := preproc_line - 1
+   return
+end
+
+#
 # a_Scans the value of a $define.
+# A backslash as the last non-space character on a line continues the value
+# onto the next physical line (C-style line splice); leading space on the
+# first line only is skipped via preproc_space().
 #
 procedure preproc_scan_define_value()
-   local q,interesting_in_quotes
+   local q, interesting_in_quotes, acc, piece, need_space
    static interesting_chars
    initial interesting_chars := '#"\''
 
-    preproc_space()
-    q := &pos
-    (while tab(upto(interesting_chars)) do {
-        case move(1) of {
+   acc := ""
+   need_space := 1
+   repeat {
+      if \need_space then {
+         preproc_space()
+         need_space := &null
+      }
+      q := &pos
+      (while tab(upto(interesting_chars)) do {
+         case move(1) of {
             "#": {
-                move(-1)
-                break
+               move(-1)
+               break
             }
             default: {
-                interesting_in_quotes := '\\' ++ &subject[&pos - 1]
-                repeat {
-                    while tab(upto(interesting_in_quotes)) do {
-                        case move(1) of {
-                            "\\": move(1)
-                            default: {
-                                break break
-                            }
+               interesting_in_quotes := '\\' ++ &subject[&pos - 1]
+               repeat {
+                  while tab(upto(interesting_in_quotes)) do {
+                     case move(1) of {
+                        "\\": move(1)
+                        default: {
+                           break break
                         }
-                    }
-                    preproc_error("unterminated string in $define")
-                    fail # end of line inside quotes!!
-                }
+                     }
+                  }
+                  preproc_error("unterminated string in $define")
+                  fail # end of line inside quotes!!
+               }
             }
-        }
-    }) | tab(0)
-    return trim(&subject[q:&pos],' \t\f\r')
+         }
+      }) | tab(0)
+      piece := trim(&subject[q:&pos], ' \t\f\r')
+      if *piece > 0 & piece[-1] == "\\" then {
+         piece := trim(piece[1:-1], ' \t\f\r')
+         acc ||:= piece
+         preproc_define_value_next_line() | {
+            preproc_error("unterminated $define (line continuation)")
+            fail
+         }
+      } else
+         return acc || piece
+   }
 end
 
 #
@@ -929,6 +963,20 @@ procedure preproc_expand_fmacro_call(name, fmacro, done_set)
 end
 
 #
+# Append the next preprocessor input line to &subject when a macro call or
+# string inside it spans physical lines.  Matches the line-sync idea used for
+# underscore string continuation: preproc_print_line := preproc_line - 1 so
+# #line / &line stay anchored to the first line of the invocation.
+#
+procedure preproc_macro_arg_next_line()
+   local line
+   line := preproc_read() | fail
+   &subject := &subject || "\n" || line
+   preproc_print_line := preproc_line - 1
+   return
+end
+
+#
 # scans argument expressions in a function-like macro invocation.
 # called with &pos immediately after '(' and returns with &pos after ')'.
 #
@@ -938,9 +986,13 @@ procedure preproc_scan_macro_args()
    depth := 0
    q := &pos
    repeat {
-      c := move(1) | {
-         preproc_error("unterminated macro invocation")
-         fail
+      repeat {
+         if c := move(1) then
+            break
+         preproc_macro_arg_next_line() | {
+            preproc_error("unterminated macro invocation")
+            fail
+         }
       }
       case c of {
          "\"" | "'": {
@@ -948,21 +1000,33 @@ procedure preproc_scan_macro_args()
             # parentheses inside them do not split arguments.
             quote := c
             repeat {
-               c := move(1) | {
-                  preproc_error("unterminated string in macro invocation")
-                  fail
+               repeat {
+                  if c := move(1) then
+                     break
+                  preproc_macro_arg_next_line() | {
+                     preproc_error("unterminated string in macro invocation")
+                     fail
+                  }
                }
                if c == "\\" then {
                   # Consume one escaped char after "\"; if that char is "^",
                   # consume one more to cover control escapes like "\^A".
-                  c := move(1) | {
-                     preproc_error("unterminated escape in macro invocation")
-                     fail
-                  }
-                  if c == "^" then {
-                     move(1) | {
+                  repeat {
+                     if c := move(1) then
+                        break
+                     preproc_macro_arg_next_line() | {
                         preproc_error("unterminated escape in macro invocation")
                         fail
+                     }
+                  }
+                  if c == "^" then {
+                     repeat {
+                        if move(1) then
+                           break
+                        preproc_macro_arg_next_line() | {
+                           preproc_error("unterminated escape in macro invocation")
+                           fail
+                        }
                      }
                   }
                }
@@ -974,7 +1038,7 @@ procedure preproc_scan_macro_args()
          ")": {
             if depth = 0 then {
                if &pos - 1 > q then {
-                  s := trim(&subject[q:&pos-1], ' \t\f\r')
+                  s := trim(&subject[q:&pos-1], ' \t\f\r\n')
                   # Ignore whitespace-only segments so ZERO( ) is treated
                   # as zero args and SUM(1, ) reports omitted arg count.
                   if *s > 0 then
@@ -986,7 +1050,7 @@ procedure preproc_scan_macro_args()
          }
          ",": {
             if depth = 0 then {
-               s := trim(&subject[q:&pos-1], ' \t\f\r')
+               s := trim(&subject[q:&pos-1], ' \t\f\r\n')
                if *s > 0 then
                   put(args, s)
                else {

@@ -10,7 +10,7 @@ April 2026 · Unicon Project · [https://unicon.org](https://unicon.org)
 
 ## Abstract
 
-The Unicon compiler applies a source preprocessor (`uni/unicon/preproce.icn`) before lexical analysis and parsing. Recent work adds three related facilities: **triple-quoted string literals** that can span multiple physical lines and hold arbitrary verbatim text; **function-like `$define` macros** with parameter substitution and nested expansion; and **built-in `assert` / `assert_not` macros** that compile away unless debugging or test modes are enabled. This report describes the user-visible behavior, design rationale, and implementation touchpoints. It complements the language reference ([UTR #8](unicon/utr8.html)) by documenting features that are implemented in the preprocessor rather than in the core string grammar.
+The Unicon compiler applies a source preprocessor (`uni/unicon/preproce.icn`) before lexical analysis and parsing. Recent work adds three related facilities: **triple-quoted string literals** that can span multiple lines and hold arbitrary verbatim text; **function-like `$define` macros** with parameter substitution and nested expansion; and **built-in `assert` / `assert_not` macros** that compile away unless debugging or test modes are enabled. This report describes the user-visible behavior, design rationale, and implementation touchpoints. It complements the language reference ([UTR #8](unicon/utr8.html)) by documenting features that are implemented in the preprocessor rather than in the core string grammar.
 
 **Keywords:** Unicon, preprocessor, multiline strings, macros, assertions, technical report.
 
@@ -45,7 +45,7 @@ Triple-quoted delimiters **`"""`** … **`"""`** denote a string literal whose b
 
 ### 2.2 Discussion
 
-**Relation to the language reference.** [UTR #8](unicon/utr8.html) (*Unicon Language Reference*) describes classic Icon/Unicon string literals and the older **line continuation** convention: a trailing underscore on a line continues a string onto the next line, discarding the newline and leading whitespace on the continuation. Triple-quoted strings serve a different need: they preserve **newlines and indentation** inside the string and do not require each continuation line to end with `_`. They are well suited to multiline messages, snippets of data, or text where the physical layout in the source file should match the string value.
+**Relation to the language reference.** [UTR #8](unicon/utr8.html) (*Unicon Language Reference*) describes classic Icon/Unicon string literals and the older **line continuation** convention: a trailing underscore on a line continues a string onto the next line, discarding the newline and leading whitespace on the continuation. Triple-quoted strings serve a different need: they preserve **newlines and indentation** inside the string and do not require each continuation line to end with `_`. They are well suited to multiline messages, snippets of data, or text where the layout in the source file should match the string value.
 
 **Preprocessor vs. core lexer.** Implementing triple quotes in the **preprocessor** keeps the existing compiler string lexer unchanged and centralizes rewriting in one place. The body is first accumulated as raw text (including lines that *look* like comments or directives); only after the closing delimiter is the content turned into escapes for a normal quoted literal. That choice makes the semantics explicit: **continuation lines inside a triple-quoted string are never interpreted as preprocessor directives**—a `$ifdef` or `#` line inside the block is literal text, which is essential for embedding examples or generated fragments without accidental macro expansion.
 
@@ -140,13 +140,25 @@ Function-like macros extend object-like `$define` names with a **parameter list*
 $define NAME(p1, p2, ...)  replacement text through end of line / scanning rules
 ```
 
+The replacement body may continue on the next line if the line ends with a **backslash** **`\`** as the last non-space character (C-style line splice): the **`\`** and the following newline are dropped and **`preproc_scan_define_value()`** in **`preproce.icn`** reads the next line into the same spliced value. Leading space is trimmed only before the **first** line of the body; indentation on continuation lines is kept. Object-like **`$define`** values use the same rule.
+
 A call **`NAME(arg1, arg2, ...)`** expands by substituting each formal parameter with the corresponding argument text in the body. Substitution applies to **whole identifiers** only (`preproc_subst_fmacro()`), not to arbitrary substrings inside longer names. After substitution, the expansion is **rescanned** so nested macro calls can expand in one pass (`preproc_expand_fmacro_call()`).
 
 Argument lists are parsed with **parenthesis depth** and **string awareness**: text inside `"..."` or `'...'` is opaque, so commas and parentheses inside strings do not split arguments (`preproc_scan_macro_args()`). Empty arguments (two commas with nothing between) are errors; arity must match the definition; duplicate parameter names in a `$define` are rejected.
 
 Zero-argument macros use **`$define NAME() body`** and **`NAME()`** at the call site (whitespace before `(` is allowed in forms exercised by `tests/unicon/macros.icn`).
 
+### 3.1.1 Definitions, calls, and line numbers (design decision)
+
+**Definitions.** The parameter list **`(p1, p2, …)`** must still appear on the same line as the macro name (same scanning rules as before). The **replacement body** may span lines only by ending a line with **`\`** (last non-space character); each continuation appends the next source line via **`preproc_define_value_next_line()`**, with **`preproc_print_line := preproc_line - 1`** after each read—the same **`#line`** / **`preproc_print_line`** adjustment as for **macro-argument** continuation and **underscore** string continuation—so the preprocessor’s own line bookkeeping stays consistent while the **`$define`** directive is read.
+
+**Calls.** A macro invocation **`NAME(...)`** may **span more than one line** without a trailing **`\`**: if the closing **`)`** has not yet been seen at end-of-line, **`preproc_scan_macro_args()`** appends the next input line (see **`preproc_macro_arg_next_line()`**). That mechanism is separate from **`\`** continuation, which applies only to **`$define`** values.
+
+**`&line` / `#line`:** Continuation lines for **definitions** and **calls** both adjust **`preproc_print_line`** during scanning. For **runtime `&line`** inside code that came from a macro expansion, the implementation does **not** attach each token to the separate lines where the multiline **`$define`** was written; after **`\`** splicing, the body is one replacement, and **`&line`** behaves like other macros: it reflects the **invocation** line (where **`NAME(`** appears), not separate line numbers for each row of the definition. That keeps semantics simple; preserving per-row definition lines would require emitting extra **`#line`** directives inside the expansion (not done here).
+
 ### 3.2 Discussion
+
+**Definitions vs. calls.** See **§3.1.1**: a trailing **`\`** continues a **`$define`** value; **calls** may span lines without **`\`**; **`&line`** / **`#line`** stay consistent via **`preproc_print_line`** adjustments.
 
 **C preprocessor analogy.** Users familiar with **function-like macros** in C will recognize the pattern: textual substitution before semantic analysis, with token pasting replaced here by identifier-level substitution in the macro body. Unlike a hygienic Lisp macro system, there is **no awareness of Unicon scope or types**—arguments are snippets of source text. That power implies the usual cautions: multiply evaluated arguments if the parameter appears more than once, and surprising interactions if a name in the body is both a parameter and meant to refer to a global.
 
@@ -154,7 +166,7 @@ Zero-argument macros use **`$define NAME() body`** and **`NAME()`** at the call 
 
 **Built-in assertion macros** (`assert`, `assert_not`) use the same function-macro machinery and can be **overridden** with `$undef` / `$define` like user macros.
 
-**Regression tests.** `tests/unicon/macros.icn` and `tests/unicon/stand/macros.std`; negative cases in `tests/unicon/data/macros_bad_*.icn`.
+**Regression tests.** `tests/unicon/macros.icn` and `tests/unicon/stand/macros.std`; **`tests/unicon/macros_multiline_line.icn`** ( **`&line`** before / inside / after a multiline call); **`tests/unicon/macros_define_multiline_line.icn`** ( **`&line`** with a **multiline** **`$define`** body using **`\`**); **`tests/unicon/macros_define_continuation.icn`** (object-like **`$define`** with **`\`**); **`tests/unicon/macros_call_backslash_literal.icn`** (backslash inside a call is not define continuation); **`macros.icn`** also **`compile_fails`** on **`data/macros_bad_define_eof*.icn`**; other negatives in **`tests/unicon/data/macros_bad_*.icn`**.
 
 ### 3.3 Examples
 
@@ -206,6 +218,29 @@ a,b|c(d)|e
 12
 6
 ```
+
+**Multiline definition with `\` and `&line`.** A function-like macro body may span **more than one line** by ending each continued line with **`\`** (the parameter list stays on the same line as the name). After splicing, the stored body is one sequence of tokens. At the call site, every **`&line`** in that expansion evaluates to the **invocation** line (e.g. multiple **`write(&line)`** fragments all print the same number), **not** the distinct lines on which the definition was written—unless the implementation were extended with per-segment **`#line`** (out of scope here).
+
+```text
+# Three-line $define body with \ continuation; each &line equals the REPORT() line.
+$define REPORT() write(&line) \
+   ; write(&line) \
+   ; write(&line)
+
+procedure main()
+   REPORT()
+end
+```
+
+With the leading comment line, the **`REPORT()`** invocation is on **line 7**; sample output is therefore:
+
+```text
+7
+7
+7
+```
+
+Regression: **`tests/unicon/macros_define_multiline_line.icn`** and **`tests/unicon/stand/macros_define_multiline_line.std`**.
 
 **`$ifdef` on a macro name; `$undef`.** After `$define SUM(...)`, `$ifdef SUM` succeeds (the name is defined). `$undef TEMP` removes the macro so `$ifdef TEMP` fails—useful for optional code paths.
 
@@ -282,7 +317,15 @@ Checks run only when a preprocessor symbol requests them:
 | **Debugging** | **`$define __debug__`** (or **`-D__debug__`**) | **`write(&errout, …)`** a line of the form **`[file:line] AssertionFailed (expr) label`**, then **`runerr(219, …)`** / **`runerr(220, …)`** (see **`src/runtime/data.r`**). The **`runerr`** value is the expression string, optionally followed by **`char(30)`** and the label so the traceback can show **`assert(expr, "label")`** when the label is non-empty. The last traceback line is **`assert`/`assert_not`** syntax (not **`runerr`**); see **`ttrace()`** in **`src/runtime/rdebug.r`**. An alternate expansion (manual traceback) is **commented** in **`preproce.icn`**. |
 | **Testing** | **`$define __test__`** (or **`-D__test__`**) | Same **`write`** style, then **`fail`** — Unicon **failure**, not **`stop`**, so surrounding code can catch failure and continue (e.g. accumulate multiple test failures). Defining **`__test__`** also enables **`__debug__`** for the preprocessor so conditions are still compiled. |
 
-If **neither** **`__debug__`** nor **`__test__`** is defined, **`assert(...)`** / **`assert_not(...)`** expand to **nothing**: no tokens, no run-time cost. Therefore use them only as **standalone statements**, not as subexpressions (e.g. **`y := assert(x)`** becomes invalid after stripping).
+If **neither** **`__debug__`** nor **`__test__`** is defined, **`assert(...)`** / **`assert_not(...)`** expand to **nothing**: no tokens, no run-time cost.
+
+### 4.1.1 Statement-only placement (design decision)
+
+The built-in **`assert`** / **`assert_not`** macros are **intended for use as standalone statements**, not as subexpressions inside larger expressions.
+
+- **When checks are disabled**, the call expands to **no tokens**. In **statement** position (e.g. its own line before another statement), that cleanly removes the check with **no run-time cost** and no leftover syntax.
+- **Expression** position is **not** supported. For example, **`if assert(x > 0) then write("ok")`** would preprocess to **`if  then write("ok")`**, which is a **compile-time syntax error**. Similarly, **`y := assert(x)`** leaves **`y :=`** with no right-hand side after stripping. Users should **not** embed these macros in **`if`**, assignments, operators, or other expression contexts—doing so is **outside the supported contract**, not an oversight.
+- **Rationale:** Keeping asserts **statement-only** keeps the model simple: when enabled, a failing assertion **fails** the current expression (**`__test__`**) or raises a **runtime error** (**`__debug__`**); the macros are **not** designed to yield a value (e.g. a Boolean) for the surrounding code. Empty expansion matches that contract and avoids implying that a disabled assert could still behave like a harmless “always true” subexpression. A placeholder expansion (such as a constant like **`1`**) would allow arbitrary expression contexts to compile when asserts are off, but would invite misuse and blur this distinction—so the implementation does **not** do that.
 
 | Preprocessor symbols | Expansion |
 |----------------------|-----------|
@@ -302,6 +345,8 @@ Assertions follow **success** and **failure**, not Boolean truth:
 Example: with **`x := 1`**, **`x = 2`** fails, so **`assert_not(x = 2)`** passes. Use **`===`** / ordinary comparisons for equality checks; there are no separate `assert_eq` builtins.
 
 ### 4.3 Discussion
+
+**Statement-only contract.** See **§4.1.1** (*Statement-only placement*): disabled asserts expand to nothing, which is deliberate and requires **standalone** use; expression embedding is unsupported by design.
 
 **Zero cost in release builds.** Stripping assertions entirely matches the common C idiom of `NDEBUG` and avoids both branch overhead and accidental side effects from unevaluated expressions when assertions are disabled—here, the expression is not even present in the preprocessed source.
 
@@ -378,6 +423,7 @@ With **`__debug__`** or **`__test__`**, expansions use uniquified names such as 
 | Triple-quoted strings | `preproc_rewrite_triple_strings()`, `preproc_quote_string()`, `preproc_octal_escape()` |
 | Function-like macros | `record preproc_fmacro(params, body)`, `preproc_scan_macro_args()`, `preproc_subst_fmacro()`, expansion rescan in `preproc_expand_fmacro_call()` |
 | Assertions | Special cases for `"assert"` and `"assert_not"` in `preproc_expand_fmacro_call()` |
+| `$define` values | `preproc_scan_define_value()` with **`\`** line continuation via `preproc_define_value_next_line()` |
 
 The preprocessor runs **before** the main compiler front end; output is a stream of preprocessed lines with `#line` synchronization as elsewhere in the implementation.
 
@@ -391,7 +437,7 @@ The preprocessor runs **before** the main compiler front end; output is a stream
 | `uni/unicon/preproce.icn` | Preprocessor implementation |
 | `src/runtime/rdebug.r` | Traceback: **`assert(expr)`** / **`assert(expr, "label")`** / **`assert_not(…)`** for **`runerr(219/220, …)`** (label via **`char(30)`** suffix in the value string) |
 | `tests/unicon/triple_strings.icn`, `tests/unicon/stand/triple_strings.std` | Multiline string regression |
-| `tests/unicon/macros.icn`, `tests/unicon/stand/macros.std`, `tests/unicon/data/macros_bad_*.icn` | Macro regression and errors |
+| `tests/unicon/macros.icn`, `tests/unicon/stand/macros.std`, `tests/unicon/macros_multiline_line.icn`, `tests/unicon/macros_define_multiline_line.icn`, `tests/unicon/macros_define_continuation.icn`, `tests/unicon/macros_call_backslash_literal.icn`, `tests/unicon/data/macros_bad_*.icn` | Macro regression, **`&line`** (call + multiline **`\` define**), object-like **`\`**, call literal **`\`**, and errors |
 | `tests/unicon/assert_debugging.icn`, `tests/unicon/assert_testing.icn`, `tests/unicon/assert_strip.icn`, `tests/unicon/assert_failing_label.icn`, `tests/unicon/assert_not_failing.icn`, related `stand/*.std` | Assertion behavior |
 
 ---
@@ -406,3 +452,9 @@ The preprocessor runs **before** the main compiler front end; output is a stream
 | 1.3 | April 2026 | **`err_msg()`** (**`errmsg.r`**) omits the generic **`Run-time error N`** banner for **219**/**220**. |
 | 1.4 | April 2026 | **`err_msg()`** (**`errmsg.r`**) prints one combined line for **219**/**220** (no separate **`offending value`** line). |
 | 1.5 | April 2026 | **`errtab`** / **`&errortext`** use **`AssertionFailed`**; combined text is **`AssertionFailed: <expr>[, <label>]`** with **30** → **`, `**. |
+| 1.6 | April 2026 | **§4.1.1** documents **statement-only** placement for built-in asserts (empty expansion when disabled; expression contexts unsupported by design). |
+| 1.7 | April 2026 | **§3.1.1** first draft: single-line **`$define`** and **`&line`** / **`#line`** rationale. |
+| 1.8 | April 2026 | **§3.1.1** revised: multiline **calls** supported (not multiline **`$define`**); **`preproc_print_line`** continuation matches underscore strings; **`tests/unicon/macros.icn`** multiline **`SUM`** case. |
+| 1.9 | April 2026 | **`\`** line continuation for **`$define`** values (**`preproc_define_value_next_line`**); **`SUM2`** example in **`tests/unicon/macros.icn`**; **§3.1.1** updated. |
+| 1.10 | April 2026 | Extra tests: **`macros_define_continuation`**, **`macros_call_backslash_literal`**, **`data/macros_bad_define_eof*.icn`** + **`compile_fails`** in **`macros.icn`**. |
+| 1.11 | April 2026 | **`macros_define_multiline_line.icn`**: multiline **`$define`** with **`\`** and **`&line`**; **§3.3** example. |

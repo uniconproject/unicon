@@ -11,9 +11,26 @@ cd "$REPO_ROOT"
 
 SITE="${1:-_site}"
 
-HDR=(--include-in-header="$SCRIPT_DIR/includes/header.html")
-BEFORE=(--include-before-body="$SCRIPT_DIR/includes/before-body.html")
-AFTER=(--include-after-body="$SCRIPT_DIR/includes/after-body.html")
+# Path prefix for internal links and static assets (no trailing slash). Default /unicon for GitHub Pages.
+# On Read the Docs, unset UNICON_SITE_PREFIX and set READTHEDOCS_CANONICAL_URL (done by RTD) so the
+# pathname matches /en/latest/, etc.
+if [[ -n "${UNICON_SITE_PREFIX:-}" ]]; then
+  UNICON_SITE_PREFIX="${UNICON_SITE_PREFIX%/}"
+elif [[ -n "${READTHEDOCS_CANONICAL_URL:-}" ]]; then
+  UNICON_SITE_PREFIX=$(python3 -c "from urllib.parse import urlparse; import os; p=urlparse(os.environ['READTHEDOCS_CANONICAL_URL']).path.rstrip('/'); print(p if p else '/unicon')")
+else
+  UNICON_SITE_PREFIX=/unicon
+fi
+
+INCLUDE_TMP=$(mktemp -d)
+cleanup_includes() { rm -rf "$INCLUDE_TMP"; }
+trap cleanup_includes EXIT
+for inc in header.html before-body.html after-body.html; do
+  sed "s|/unicon|${UNICON_SITE_PREFIX}|g" "$SCRIPT_DIR/includes/$inc" > "$INCLUDE_TMP/$inc"
+done
+HDR=(--include-in-header="$INCLUDE_TMP/header.html")
+BEFORE=(--include-before-body="$INCLUDE_TMP/before-body.html")
+AFTER=(--include-after-body="$INCLUDE_TMP/after-body.html")
 # COPYING and many README files have no extension — set reader to avoid pandoc warnings.
 FROM_MD=(--from=markdown)
 
@@ -89,20 +106,21 @@ pandoc "$SCRIPT_DIR/stubs/doc-ib-index.md" -o "$SITE/doc/ib/index.html" \
 
 touch "$SITE/.nojekyll"
 
-# Normalize internal links for static hosting (absolute /unicon/… for site chrome + common mistakes).
+# Normalize internal links for static hosting (same path prefix as nav/includes).
 rewrite_site_links() {
   local f=$1
+  local p="${UNICON_SITE_PREFIX}"
   sed -i \
-    -e 's|href="CONTRIBUTING\.md"|href="/unicon/CONTRIBUTING.html"|g' \
-    -e 's|href="\.\./CONTRIBUTING\.md"|href="/unicon/CONTRIBUTING.html"|g' \
-    -e 's|href="\.\./\.\./CONTRIBUTING\.md"|href="/unicon/CONTRIBUTING.html"|g' \
-    -e 's|href="doc/README\.md"|href="/unicon/doc/"|g' \
-    -e 's|href="\.\./doc/README\.md"|href="/unicon/doc/"|g' \
-    -e 's|href="COPYING"|href="/unicon/COPYING.html"|g' \
-    -e 's|href="book/README"|href="/unicon/doc/book/"|g' \
-    -e 's|href="icon/README"|href="/unicon/doc/icon/"|g' \
-    -e 's|href="config/editor/"|href="/unicon/config/editor/"|g' \
-    -e 's|href="config/editor/README"|href="/unicon/config/editor/"|g' \
+    -e "s|href=\"CONTRIBUTING\\.md\"|href=\"${p}/CONTRIBUTING.html\"|g" \
+    -e "s|href=\"\\.\\./CONTRIBUTING\\.md\"|href=\"${p}/CONTRIBUTING.html\"|g" \
+    -e "s|href=\"\\.\\./\\.\\./CONTRIBUTING\\.md\"|href=\"${p}/CONTRIBUTING.html\"|g" \
+    -e "s|href=\"doc/README\\.md\"|href=\"${p}/doc/\"|g" \
+    -e "s|href=\"\\.\\./doc/README\\.md\"|href=\"${p}/doc/\"|g" \
+    -e "s|href=\"COPYING\"|href=\"${p}/COPYING.html\"|g" \
+    -e "s|href=\"book/README\"|href=\"${p}/doc/book/\"|g" \
+    -e "s|href=\"icon/README\"|href=\"${p}/doc/icon/\"|g" \
+    -e "s|href=\"config/editor/\"|href=\"${p}/config/editor/\"|g" \
+    -e "s|href=\"config/editor/README\"|href=\"${p}/config/editor/\"|g" \
     "$f"
 }
 

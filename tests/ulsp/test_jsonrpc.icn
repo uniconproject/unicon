@@ -1,0 +1,200 @@
+############################################################################
+#
+#       File:     test_jsonrpc.icn
+#
+#       Subject:  JSON-RPC Test Suite
+#                 Tests JSON-RPC protocol with a calculator server
+#
+#       Author:   Jafar Al-Gharaibeh
+#
+#       Date:     November 2025
+#
+############################################################################
+
+import ulsp
+import json
+import unittest
+import util
+
+global work_items
+
+#############################
+# JRPC server Calculator
+#############################
+class JRPC_Calc(jrpc_server)
+
+   method  start(addr)
+      local sock, msg
+      if not (jrpc_server := JRPC_HTTPSocket(addr,"n")) then
+         write("server open(",addr,") ERROR: ", \&errortext | "Unknown") & fail
+
+      repeat {
+         msg := jrpc_server.get_msg() | next
+         case msg.get_kind() of {
+            "request" : thread handle_request(msg)
+            default:
+               write("jrpc:msg: " || msg.get_kind(), image(msg.get_content()))
+         }
+      }
+   end
+
+   method handle_request(msg)
+      local id := msg.get_id(),
+            x := integer(msg.get_params()[1]),
+            y := integer(msg.get_params()[2])
+
+      # uncomment to trigger some test failures
+      #if x = 9 then fail
+      case msg.get_method() of {
+         "+" : {jrpc_server.send_msg(msg.make_result_response(x + y))}
+         "-" : jrpc_server.send_msg(msg.make_result_response(x - y))
+         "*" : jrpc_server.send_msg(msg.make_result_response(x * y))
+         "/" : jrpc_server.send_msg(msg.make_result_response(x / y))
+         default: write("jrpc:request:unsupported: ", msg.get_method())
+      }
+
+   end
+end
+
+###############################
+# client
+###############################
+class JRPC_client(jrpc_client)
+
+   method listen(addr)
+      if not (jrpc_client := JRPC_HTTPSocket(addr,"na")) then
+         stop("client open(", addr, ") ERROR: ", \&errortext | "Unknown")
+   end
+
+   method test(op, params, answer)
+      local id
+      static idx := 0, mtx := mutex()
+      critical mtx: id := idx +:=1
+      jrpc_client.send_msg(JRPC_Message().make_request(id, op, params))
+      work_items[id] := [op, params, answer]
+   end
+
+   method  start()
+      local x := ?9, y := ?8+1
+      test("+", [x, y], x+y)
+      test("-", [x, y], x-y)
+      test("*", [x, y], x*y)
+      test("/", [x, y], x/y)
+   end
+
+end
+
+class JSONRPCTest : UniconTest()
+   method register_tests()
+      # Add this test file as a Test
+      add_test("JSON-RPC Tests")
+
+      # Add a test section and test case
+      # Note: JSON-RPC tests use a different structure (calculator server)
+      # They don't use UniconTestSuite internally, so we wrap run_all_tests() in a test case
+      add_test_section("Calculator Operations")
+      add_test_case("run_jsonrpc_tests", create run_jsonrpc_wrapper(self),
+                    "Run JSON-RPC calculator tests")
+   end
+
+   method run_all_tests()
+      local calc, client, jobset, addr, id, op, x, y, answer,
+            workers, i, response, job
+
+      # Check if POSIX threads are available (required for thread and mutex)
+      if not (&features == "concurrent threads") then {
+         write("JSON-RPC Tests: SKIPPED (concurrent threads not available)")
+         return
+      }
+
+      # Initialize counts using class variables
+      test_count := 0
+      pass_count := 0
+      fail_count := 0
+
+      write(repl("=", *"JSON-RPC Test Suite"))
+      write("JSON-RPC Test Suite")
+      write(repl("=", *"JSON-RPC Test Suite"))
+
+      addr := ":" || 5000 + ?1000
+      if &features == ("MacOS" | "MS Windows NT") then
+         addr := "127.0.0.1" || addr
+
+      client := JRPC_client()
+      calc := JRPC_Calc()
+      thread calc.start(addr)
+      client.listen(addr)
+      workers:=[]
+      work_items := mutex(table())
+      every !4 do put(workers, thread client.start())
+      every wait(!workers)
+      jobset:=set()
+      every insert(jobset, !*work_items)
+
+      every i := !(*work_items*2) do {
+         if *jobset = 0 then break
+         if response := client.jrpc_client.get_msg(100) then {
+            delete(jobset, id:=response.get_id())
+            job := work_items[id]
+            op:=job[1]; x:=job[2][1]; y:=job[2][2]; answer := job[3]
+            test_count +:= 1
+            if response.get_result() = answer then {
+               pass_count +:= 1
+               write(left(id, 2), ":   ", x, " ", op, " ", y, " = ",
+                     right(response.get_result(), 3), "   Pass")
+            } else {
+               fail_count +:= 1
+               write(left(id, 2), ":   ", x, " ", op, " ", y, " = ",
+                     right(response.get_result(), 3), "   Fail (expected ", answer, ")")
+            }
+         }
+      }
+
+      every job := work_items[id:=!jobset] do {
+         op:=job[1]; x:=job[2][1]; y:=job[2][2]
+         test_count +:= 1
+         fail_count +:= 1
+         write(left(id, 2), ":   ", x, " ", op, " ", y, " =  Failed to get a response")
+      }
+
+      # Print results
+      write()
+      write("----------------------------------------")
+      write("Test Results:")
+      write("Total tests: ", test_count)
+      write("Passed: ", pass_count)
+      write("Failed: ", fail_count)
+      if test_count > 0 then {
+         write("Success rate: ", real(pass_count) / real(test_count) * 100, "%")
+      }
+
+      if pass_count = test_count then
+         return
+   end
+end
+
+# Wrapper procedure for JSON-RPC tests (since they don't use UniconTestSuite internally)
+procedure run_jsonrpc_wrapper(test_instance)
+   # Check if POSIX threads are available (required for thread and mutex)
+   if not (&features == "concurrent threads") then {
+      test_skipped_flag := 1
+      return
+   }
+   return test_instance.run_all_tests()
+end
+
+$ifdef STANDALONE
+procedure main()
+   local test_suite
+
+   test_suite := JSONRPCTest()
+   if test_suite.run_all_tests() then {
+      write("✓ All tests passed")
+      exit(0)
+   } else {
+      write("✗ Some tests failed")
+      exit(1)
+   }
+end
+$endif
+

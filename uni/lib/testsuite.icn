@@ -1,0 +1,805 @@
+############################################################################
+#
+#       File:     unicon_test.icn
+#
+#       Subject:  A flexible testing framework with multiple output styles
+#                 (short-style, long-style, debug)
+#
+#       Author:   Jafar Al-Gharaibeh
+#
+#       Date:     November 2025
+#
+############################################################################
+
+package unittest
+
+import util
+link printf
+
+invocable all
+
+# Global reference to current test suite (for assertion helpers)
+global current_test_suite
+global test_skipped_flag  # Flag to mark a test as skipped
+global verbose_mode  # Global verbose mode flag for assertion helpers
+
+############################################################################
+# UniconTest base class
+# Base class for all test classes - handles all test registration and execution
+############################################################################
+class UniconTest(suite, output_style,
+                 test_count, pass_count, fail_count, skipped_count, failed_tests,
+                 start_time, test_times, verbose_mode,
+                 tests, test_cases, test_sections, current_test, current_section, test_number,
+                 test_stack, section_stack, test_number_per_section, test_case_number_per_section,
+                 top_level_test_num, top_level_section_num,
+                 current_test_path, current_test_name, current_section_path, current_section_name,
+                 setup_proc, teardown_proc,
+                 elapsed_time)
+
+   # Framework method: initializes output_style and starting sequence number,
+   #                   then calls register_tests()
+   # Users should NOT override this - override register_tests() instead
+   method _setup_tests(style, start_test_num)
+      self.output_style := \style | "short"
+      
+      # Set starting test number for sequence continuation across test instances
+      if \start_test_num then
+         self.top_level_test_num := start_test_num - 1
+      
+      # Call user's register_tests() method to add tests
+      register_tests()
+   end
+
+   # User override method: register tests
+   # Subclasses must override this to add their tests
+   # Access self.output_style as needed
+   method register_tests()
+      write(&errout, "Warning: register_tests() not implemented in test class")
+   end
+
+   # Framework method: executes the test lifecycle (setup, run, teardown)
+   # Users should NOT override this - override setup(), run(), and teardown() instead
+   method _execute()
+      local exec_start_time, exec_elapsed_time
+      
+      # Track execution time for this test instance
+      exec_start_time := microseconds()
+      
+      # Call user's setup() method for initialization (database, test files, etc.)
+      # Print status if this might take time
+      if \self.current_test_name then {
+         write("  Setting up: ", self.current_test_name)
+      }
+      setup()
+      
+      # Call user's run() method to execute tests
+      # Default run() calls internal run_all_tests(), but users can override for custom execution
+      run()
+      
+      # Call user's teardown() method for cleanup
+      if \self.current_test_name then {
+         write("  Tearing down: ", self.current_test_name)
+      }
+      teardown()
+      
+      # Store elapsed time for this instance
+      exec_elapsed_time := microseconds() - exec_start_time
+      elapsed_time := real(exec_elapsed_time) / 1000000.0
+   end
+
+   # Run method: executes the tests (user-overridable)
+   # Subclasses can override this for custom test execution
+   # Default implementation runs all registered tests
+   method run()
+      # Run all registered tests
+      self._run_test_cases()
+   end
+
+   # Run standalone: allows a test to run independently (not as part of a suite)
+   # This method sets up the test framework, executes tests, and prints summary
+   # @param style: output style ("short", "long", or "debug"), defaults to "short"
+   method run_standalone(style)
+      local elapsed_sec, success_rate
+
+      /style := "short"
+      
+      # Set up the test framework (registers tests)
+      self._setup_tests(style)
+      
+      # Execute the tests (setup, run, teardown)
+      self._execute()
+      
+      # Print summary for standalone execution
+      elapsed_sec := \self.elapsed_time | 0.0
+      write("============================================================")
+      write("TEST RESULTS")
+      write("============================================================")
+      write("Total tests: ", self.test_count)
+      write("Passed: ", self.pass_count)
+      write("Failed: ", self.fail_count)
+      if self.skipped_count > 0 then
+         write("Skipped: ", self.skipped_count)
+      if self.test_count > 0 then {
+         success_rate := real(self.pass_count) / real(self.test_count) * 100.0
+         write("Success rate: ", sprintf("%.1r", success_rate), "%")
+      }
+      write("Elapsed time: ", sprintf("%.3r", elapsed_sec), "s")
+      write()
+      
+      # Print failed tests if any
+      if self.fail_count > 0 & *self.failed_tests > 0 then {
+         write("Failed tests:")
+         every write("  - ", !self.failed_tests)
+         write()
+      }
+   end
+
+   # Setup method: called before tests run (optional)
+   # Subclasses can override this for initialization (database, test files, etc.)
+   method setup()
+      # Default: do nothing
+   end
+
+   # Teardown method: called after tests run (optional)
+   # Subclasses can override this for cleanup
+   method teardown()
+      # Default: do nothing
+   end
+
+   # Set verbose mode
+   method set_verbose(flag)
+      self.verbose_mode := flag
+   end
+
+   # Set output style
+   method set_output_style(style)
+      if style == ("short" | "long" | "debug") then {
+         self.output_style := style
+      } else {
+         write(&errout, "Warning: Unknown output style '", style, "', using 'short'")
+         self.output_style := "short"
+      }
+   end
+
+   # Add a Test (second level in hierarchy: Test Suite → Tests)
+   # Can also be used for backward compatibility: if test_proc is provided, registers a Test Case
+   method add_test(name, test_proc, description)
+      # If test_proc is provided, treat as Test Case (backward compatibility)
+      if \test_proc then {
+         return self.add_test_case(name, test_proc, description)
+      }
+      
+      # Otherwise, register a Test
+      # Start a new Test - increment test counter and reset section counter
+      self.top_level_test_num +:= 1
+      self.top_level_section_num := 0
+      self.test_stack := [self.top_level_test_num]
+      self.section_stack := []
+      self.test_number_per_section := 0
+      self.test_case_number_per_section := 0
+      
+      # Store current test info
+      self.current_test := name
+      self.current_test_path := string(self.top_level_test_num)
+      self.current_test_name := name
+      self.current_section := &null
+      self.current_section_path := ""
+      self.current_section_name := ""
+      
+      # Track this test
+      put(tests, name)
+   end
+
+   method add_test_section(name)
+      local section_path
+      
+      # Ensure we're in a Test context
+      if /self.current_test then {
+          write(&errout, "Warning: add_test_section() called without add_test(). Creating implicit test.")
+         self.add_test("Implicit Test")
+      }
+      
+      put(test_sections, name)
+      current_section := name
+
+      # Start a new section within current test - increment section counter
+      self.top_level_section_num +:= 1
+      self.section_stack := [self.top_level_section_num]
+      self.test_case_number_per_section := 0
+
+      # Build section path string for display (Test.Section format)
+      section_path := self.current_test_path || "." || string(self.top_level_section_num)
+      # Store section info for inline printing during test execution
+      self.current_section_path := section_path
+      self.current_section_name := name
+   end
+
+   # Method to end current section and return to parent (pops stack)
+   method end_test_section()
+      if *self.section_stack > 1 then {
+         # Pop the last level from stack to return to parent section
+         pop(self.section_stack)
+         self.test_number_per_section := 0
+      }
+   end
+
+   # Method to add a nested subsection (adds new level to stack)
+   method add_test_subsection(name)
+      local section_path, subsection_num
+      put(test_sections, name)
+      current_section := name
+
+      # Add as nested section - push new level onto stack
+      if *self.section_stack = 0 then {
+         # No parent section - this shouldn't happen, but treat as top-level
+         self.top_level_section_num +:= 1
+         put(self.section_stack, self.top_level_section_num)
+      } else {
+         # Nested section - add new level starting at 1
+         put(self.section_stack, 1)
+         # Then increment to get the next subsection number
+         subsection_num := get(self.section_stack, *self.section_stack) + 1
+         self.section_stack[*self.section_stack] := subsection_num
+      }
+
+      self.test_number_per_section := 0
+
+      # Build section path string for display (store for later printing)
+      section_path := ""
+      every section_path ||:= string(!self.section_stack) || "."
+      if *section_path > 0 then
+         section_path := section_path[1:-1]  # Remove trailing dot
+      # Store section info for inline printing during test execution
+      self.current_section_path := section_path
+      self.current_section_name := name
+   end
+
+   # Add a Test Case (fourth level: Test Suite → Tests → Test Sections → Test Cases)
+   method add_test_case(name, test_proc, description)
+      local desc, hierarchical_num, section_path
+      desc := \description | name
+
+      # Ensure we're in a Test Section context
+      if /self.current_section then {
+         write(&errout, "Warning: add_test_case() called without add_test_section(). Creating implicit section.")
+         self.add_test_section("Implicit Section")
+      }
+
+      # Generate hierarchical test case number: Test.Section.Case
+      self.test_case_number_per_section +:= 1
+
+      # Build hierarchical number: Test.Section.Case
+      if \self.current_test_path & \self.current_section_path then {
+         hierarchical_num := self.current_section_path || "." ||
+                             string(self.test_case_number_per_section)
+      } else if \self.current_section_path then {
+         hierarchical_num := self.current_section_path || "." ||
+                             string(self.test_case_number_per_section)
+      } else {
+         # Fallback for backward compatibility
+         hierarchical_num := string(self.test_case_number_per_section)
+      }
+
+      # Store test case info with section and test info for inline printing
+      put(test_cases, [name, test_proc, desc, hierarchical_num,
+                       \self.current_test_path | "", \self.current_test_name | "",
+                       \self.current_section_path | "", \self.current_section_name | ""])
+   end
+
+   # Setup/Teardown methods
+   method add_setup(setup_proc)
+      self.setup_proc := setup_proc
+   end
+
+   method add_teardown(teardown_proc)
+      self.teardown_proc := teardown_proc
+   end
+
+   # Internal method: runs all registered test cases
+   method _run_test_cases()
+      local test, test_name, test_proc, description, hierarchical_num, test_start, test_elapsed
+      local success, elapsed_time, elapsed_sec, section_path, section_name, last_section_path
+      local test_success, test_name_display
+
+      start_time := microseconds()
+      test_number := 0
+      last_section_path := ""
+
+
+      # Print header based on output style
+      case self.output_style of {
+         "long" : {
+            write("NUMBER  STAT       TIME   DESCRIPTION")
+            write("----------------------------------------------------------------------")
+         }
+         "short" : {
+            # Use current test name if available, otherwise use first test name
+            test_name_display := \self.current_test_name |
+                                  (if *tests > 0 then tests[1] else "Tests")
+            # Remove " Tests" suffix if present
+            if *test_name_display > 6 & test_name_display[-6:0] == " Tests" then
+               test_name_display := test_name_display[1:-6]
+            write("Test: ", test_name_display, ", registered ", *test_cases, " items")
+            write()
+         }
+         "debug" : {
+            write("Running tests in debug mode...")
+            write()
+         }
+      }
+
+      # Run each test case
+      every test := !test_cases do {
+         test_name := test[1]
+         test_proc := test[2]
+         description := test[3]
+         hierarchical_num := test[4]
+         test_path := test[5] | ""
+         test_name_hier := test[6] | ""
+         section_path := test[7] | ""
+         section_name := test[8] | ""
+
+         # Print section header inline if section changed (empty line before, not after)
+         if self.output_style == "long" & section_path ~== last_section_path &
+            *section_name > 0 then {
+            # Print empty line before section header (except for first section)
+            if *last_section_path > 0 then
+               write()
+            if *section_path > 0 then
+               write(section_path, ". ", section_name, ".")
+            else
+               write(section_name, ".")
+            last_section_path := section_path
+         }
+
+         test_count +:= 1
+         test_number +:= 1
+         test_start := microseconds()
+
+         # Set global reference for assertion helpers
+         current_test_suite := self
+         verbose_mode := \self.verbose_mode
+
+         # Call setup before each test
+         if \self.setup_proc then {
+            if not self.setup_proc() then {
+               write(&errout, "Setup failed for test: ", test_name)
+               fail_count +:= 1
+               put(failed_tests, test_name)
+               test_elapsed := microseconds() - test_start
+               put(test_times, test_elapsed)
+               next  # Skip to next test
+            }
+         }
+
+         # Run the test (test_proc is a procedure)
+         test_success := &null
+
+         # Check if test wants to skip (by setting a special global flag)
+         if test_proc() then {
+            # Check if test was marked as skipped
+            if \test_skipped_flag then {
+               skipped_count +:= 1
+               test_elapsed := microseconds() - test_start
+               put(test_times, test_elapsed)
+               _print_test_result(hierarchical_num, "SKIP", test_elapsed, description)
+               test_skipped_flag := &null  # Reset flag
+            } else {
+               test_success := 1
+               pass_count +:= 1
+               test_elapsed := microseconds() - test_start
+               put(test_times, test_elapsed)
+               _print_test_result(hierarchical_num, "PASS", test_elapsed, description)
+            }
+         } else {
+            test_success := &null
+            fail_count +:= 1
+            test_elapsed := microseconds() - test_start
+            put(test_times, test_elapsed)
+            put(failed_tests, test_name)
+            _print_test_result(hierarchical_num, "FAIL", test_elapsed, description)
+         }
+
+         # Call teardown after each test (even if test failed)
+         if \self.teardown_proc then {
+            @(create self.teardown_proc())  # Ignore teardown result
+         }
+      }
+
+      # Print summary
+      elapsed_time := microseconds() - start_time
+      elapsed_sec := real(elapsed_time) / 1000000.0
+      _print_summary(elapsed_sec)
+
+
+      if pass_count = test_count then
+         return
+   end
+
+   # Internal method: print test result
+   method _print_test_result(name, status, elapsed, description)
+      local elapsed_sec, status_str, num_str, time_str
+      elapsed_sec := real(elapsed) / 1000000.0
+      # Format to 3 decimal places using sprintf
+      if elapsed_sec < 0.001 then {
+         # For very small numbers, show in milliseconds
+         time_str := sprintf("%dms", integer(elapsed_sec * 1000 + 0.5))
+      } else {
+         time_str := sprintf("%.3r", elapsed_sec)
+      }
+
+      case self.output_style of {
+         "short" : {
+            case status of {
+               "PASS" : writes(".")
+               "FAIL" : writes("F")
+               "SKIP" : writes("s")
+               default : writes("?")
+            }
+         }
+         "long" : {
+            # Format: NUMBER     STAT TIME  DESCRIPTION
+            # Use hierarchical number (name is already the hierarchical number like "1.1", "2.3")
+            num_str := name
+            status_str := left(status, 4)
+            writes(left(num_str, 8))
+            writes(left(status_str, 5), " ")
+            writes(sprintf("%10s", time_str), " ")
+            write(description)
+         }
+         "debug" : {
+            write(name, ": ", status)
+            if \description & description ~== name then
+               write("  Description: ", description)
+            if find("ms", time_str) then
+               write("  Time: ", time_str)
+            else
+               write("  Time: ", time_str, "s")
+            write()
+         }
+      }
+   end
+
+   # Internal method: print summary
+   method _print_summary(elapsed_sec)
+      local total_elapsed, script_count, time_str
+      total_elapsed := elapsed_sec
+      # Format to 3 decimal places using sprintf
+      time_str := sprintf("%.3r", total_elapsed)
+
+      case self.output_style of {
+         "short" : {
+            write()
+            writes(repl("=", 30))
+            if fail_count = 0 & skipped_count = 0 then {
+               writes(" ", test_count, " passed")
+            } else if fail_count > 0 then {
+               writes(" ", pass_count, " passed")
+               if fail_count > 0 then writes(", ", fail_count, " failed")
+               if skipped_count > 0 then writes(", ", skipped_count, " skipped")
+            } else {
+               writes(" ", pass_count, " passed")
+               if skipped_count > 0 then writes(", ", skipped_count, " skipped")
+            }
+            writes(" in ", time_str, "s")
+            write(repl("=", 30))
+
+            if *failed_tests > 0 & \verbose_mode then {
+               write("\nFAILED tests:")
+               every write("  ", !failed_tests)
+            }
+         }
+         "long" : {
+            write()
+            write("run stats: ", test_count, " steps, ", pass_count, " pass, ",
+                  fail_count, " fail, ", skipped_count, " abort, ",
+                  time_str, "s elapsed")
+            write("----------------------------------------------------------------------")
+            if *failed_tests > 0 then {
+               every write("FAIL  ", !failed_tests)
+            } else if *test_sections > 0 then {
+               every write("PASS  ", !test_sections)
+            } else {
+               write("PASS  All tests")
+            }
+            write("----------------------------------------------------------------------")
+         }
+         "debug" : {
+            write()
+            write("========================================")
+            write("Test Results:")
+            write("Total tests: ", test_count)
+            write("Passed: ", pass_count)
+            write("Failed: ", fail_count)
+            if skipped_count > 0 then
+               write("Skipped: ", skipped_count)
+            write("Time: ", time_str, "s")
+            write("========================================")
+
+            if *failed_tests > 0 then {
+               write("\nFailed tests:")
+               every write("  - ", !failed_tests)
+            }
+         }
+      }
+   end
+
+   # execute an external command
+   method _exec_cmd(cmd)
+      if f := open(cmd || " 2>/dev/null", "pw") then {
+         write(image(f))
+         #while write(!f)
+         close(f)
+      } else
+       write(&errornumber, ":" ,&errortext)
+   end
+
+   method cmd_service(cmd)
+      # in := pipe()
+      # out := pipe()
+      # err := pipe()
+      return system(cmd, &null, &null, &null, "nowait")
+   end
+
+initially
+   suite := &null
+   output_style := "short"  # Default to short-style
+   test_count := 0
+   pass_count := 0
+   fail_count := 0
+   skipped_count := 0
+   failed_tests := []
+   test_times := []
+   verbose_mode := &null
+   tests := []              # List of Tests (second level)
+   test_cases := []         # List of Test Cases (fourth level)
+   test_sections := []      # List of Test Sections (third level)
+   current_test := &null   # Current Test name
+   current_section := &null
+   test_number := 0
+   test_stack := []         # Stack to track test hierarchy
+   section_stack := []      # Stack to track section hierarchy
+   test_number_per_section := 0
+   test_case_number_per_section := 0
+   top_level_test_num := 0
+   top_level_section_num := 0
+   current_test_path := ""
+   current_test_name := ""
+   current_section_path := ""
+   current_section_name := ""
+   setup_proc := &null
+   teardown_proc := &null
+end
+
+############################################################################
+# UniconTestSuite class
+# Simplified suite that only coordinates UniconTest instances
+############################################################################
+class UniconTestSuite(test_instances, verbose_mode, output_style, total_test_count,
+                      total_pass_count, total_fail_count, total_skipped_count,
+                      current_test_num, elapsed_time, total_elapsed_time)
+
+   # Add a UniconTest instance to the suite
+   method add_test(test_instance)
+      put(test_instances, test_instance)
+   end
+
+   # Set verbose mode (propagates to all test instances)
+   method set_verbose(flag)
+      self.verbose_mode := flag
+      every test := !test_instances do {
+         if test.set_verbose then
+            test.set_verbose(flag)
+      }
+   end
+
+   # Set output style (propagates to all test instances)
+   method set_output_style(style)
+      self.output_style := style
+      every test := !test_instances do {
+         if test.set_output_style then
+            test.set_output_style(style)
+      }
+   end
+
+   # Run all test instances
+   method run_all_tests()
+      local test, start_time, elapsed_sec, success_rate, start_test_num, test_display_name
+
+      start_time := microseconds()
+      current_test_num := 0
+
+      # Setup each test instance with continuing sequence numbers
+      every test := !test_instances do {
+         start_test_num := current_test_num + 1
+         test._setup_tests(self.output_style, start_test_num)
+         # After registration, top_level_test_num contains the number of tests added
+         # Update current_test_num to the highest test number used by this instance
+         if test.top_level_test_num > current_test_num then
+            current_test_num := test.top_level_test_num
+      }
+
+      # Execute each test instance
+      every test := !test_instances do {
+         # Print test name before execution so user knows what's running
+         # This helps when there's a delay during test execution (e.g., server startup)
+         test_display_name := \test.current_test_name
+         if /test_display_name & *test.tests > 0 then
+            test_display_name := test.tests[1]
+         if \test_display_name then {
+            # Remove " Tests" suffix if present for cleaner output
+            if *test_display_name > 6 & test_display_name[-6:0] == " Tests" then
+               test_display_name := test_display_name[1:-6]
+            write("Running Test: ", test_display_name)
+         }
+         test._execute()
+         # Aggregate counts and timing
+         total_test_count +:= test.test_count
+         total_pass_count +:= test.pass_count
+         total_fail_count +:= test.fail_count
+         total_skipped_count +:= test.skipped_count
+         total_elapsed_time +:= \test.elapsed_time | 0.0
+      }
+
+      elapsed_time := microseconds() - start_time
+      elapsed_sec := real(elapsed_time) / 1000000.0
+
+      # Print END RUN message for long format (only at suite level, before overall summary)
+      if self.output_style == "long" then {
+         write()
+         write("END RUN: ", *test_instances, " test instances, ",
+               total_pass_count, " passed, ", total_fail_count, " failed")
+         write()
+      }
+
+      if total_pass_count = total_test_count then
+         return
+   end
+
+   # Print overall test summary
+   method print_summary()
+      local success_rate, non_skipped_count
+
+      write("============================================================")
+      write("OVERALL TEST RESULTS")
+      write("============================================================")
+      write("Total tests: ", *test_instances)
+      write("Total test cases: ", total_test_count)
+      write("Passed: ", total_pass_count)
+      write("Failed: ", total_fail_count)
+      if total_skipped_count > 0 then
+         write("Skipped: ", total_skipped_count)
+      if total_test_count > 0 then {
+         # Calculate success rate based on non-skipped tests only
+         non_skipped_count := total_pass_count + total_fail_count
+         if non_skipped_count > 0 then {
+            success_rate := real(total_pass_count) / real(non_skipped_count) * 100.0
+            # Cap at 100% to avoid showing > 100% due to counting issues
+            if success_rate > 100.0 then success_rate := 100.0
+            write("Success rate: ", sprintf("%.1r", success_rate), "%")
+         }
+      }
+      write("Elapsed time: ", sprintf("%.3r",  real(elapsed_time) / 1000000.0), "s")
+      write()
+   end
+
+   # Getter methods for accessing aggregated counts
+   method get_total_test_count()
+      return total_test_count
+   end
+
+   method get_total_pass_count()
+      return total_pass_count
+   end
+
+   method get_total_fail_count()
+      return total_fail_count
+   end
+
+   method get_total_skipped_count()
+      return total_skipped_count
+   end
+
+   method get_total_elapsed_time()
+      return total_elapsed_time
+   end
+
+initially
+   test_instances := []
+   verbose_mode := &null
+   output_style := "short"
+   total_test_count := 0
+   total_pass_count := 0
+   total_fail_count := 0
+   total_skipped_count := 0
+   total_elapsed_time := 0.0
+   elapsed_time := 0.0
+   current_test_num := 0  # Tracks sequence number across all test instances
+end
+
+############################################################################
+# Assertion helpers (for use within test cases)
+############################################################################
+procedure assert_equal(expected, actual, message)
+   if type(expected) ~== type(actual) then {
+      # Only print detailed messages in verbose mode
+      if \verbose_mode then {
+         if \message then
+            write(&errout, "Assertion failed: ", message)
+         write(&errout, "  Expected type: ", type(expected), ", got: ", type(actual))
+      }
+      fail
+   }
+   if expected ~== actual then {
+      # Only print detailed messages in verbose mode
+      if \verbose_mode then {
+         if \message then
+            write(&errout, "Assertion failed: ", message)
+         write(&errout, "  Expected: ", expected)
+         write(&errout, "  Actual: ", actual)
+      }
+      fail
+   }
+   return
+end
+
+procedure assert_not_equal(unexpected, actual, message)
+   if type(unexpected) === type(actual) & unexpected === actual then {
+      # Only print detailed messages in verbose mode
+      if \verbose_mode then {
+         if \message then
+            write(&errout, "Assertion failed: ", message)
+         write(&errout, "  Unexpected value: ", unexpected)
+         write(&errout, "  Actual: ", actual)
+      }
+      fail
+   }
+   return
+end
+
+procedure assert(args)
+   if @args[1] then
+      return
+
+   if \verbose_mode then
+      write(&errout, "Assertion failed: ", @args[2] | "expected true")
+end
+
+procedure assert_not(args)
+   if not @args[1] then
+      return
+
+   # Only print detailed messages in verbose mode
+   if \verbose_mode then
+      write(&errout, "Assertion failed: ", @args[2] | "expected false")
+
+end
+
+procedure assert_null(value, message)
+   if \value then {
+      # Only print detailed messages in verbose mode
+      if \verbose_mode then {
+         if \message then
+            write(&errout, "Assertion failed: ", message)
+         else
+            write(&errout, "Assertion failed: expected null, got: ", image(value))
+      }
+      fail
+   }
+   return
+end
+
+procedure assert_not_null(value, message)
+   if /value then {
+      # Only print detailed messages in verbose mode
+      if \verbose_mode then {
+         if \message then
+            write(&errout, "Assertion failed: ", message)
+         else
+            write(&errout, "Assertion failed: expected non-null value")
+      }
+      fail
+   }
+   return
+end

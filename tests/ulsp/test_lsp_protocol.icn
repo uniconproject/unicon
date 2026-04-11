@@ -1,0 +1,731 @@
+############################################################################
+#
+#       File:     test_lsp_protocol.icn
+#
+#       Subject:  LSP Test Suite for ULSP (Unicon Language Server Protocol)
+#                 Tests various LSP message types and server responses
+#
+#       Author:   Jafar Al-Gharaibeh
+#
+#       Date:     November 2025
+#
+############################################################################
+# CAPTURING EXPECTED RESULTS:
+# To capture expected results for tests:
+#   1. Run tests with capture mode: ./lsp_protocol_test -c
+#      or set environment: ULSP_CAPTURE_EXPECTED=1 ./lsp_protocol_test
+#   2. The test will output expected results in JSON format:
+#      # EXPECTED RESULT for <method_name> (id=<id>):
+#      # JSON format:
+#      {"capabilities":{"completionProvider":...}}
+#      # To use in test, parse with: jtous("...")
+#   3. Copy the JSON string and parse it with jtous() to get the Unicon structure
+#   4. Add it as the expected_result parameter in send_request()
+#
+# EXAMPLE:
+#   Before: client.send_request("initialize", params, &null)
+#   After capture, you might get:
+#   # EXPECTED RESULT for initialize (id=1):
+#   # JSON format:
+#   {"capabilities":{"completionProvider":true}}
+#   # To use in test, parse with: jtous("{\"capabilities\":{\"completionProvider\":true}}")
+#   Then update to:
+#   client.send_request("initialize", params,
+#                      jtous("{\"capabilities\":{\"completionProvider\":true}}"))
+#
+
+import ulsp
+import json
+import logger
+import unittest
+import util
+
+link ximage
+
+global capture_expected  # Set to true to capture expected results from actual results
+global verbose_mode  # Set to true for verbose output
+global protocol_test_client  # Shared by test procedures
+
+class LSPTestClient(jrpc_client, test_file, ulsp_addr, ulsp_port)
+
+   method is_connected()
+      \self.jrpc_client & \self.jrpc_client.sock & return
+   end
+
+   method connect()
+      local addr := ulsp_addr || ":" || ulsp_port
+
+      if \verbose_mode then
+         write("Connecting client to server at ", addr)
+      self.jrpc_client := JRPC_HTTPSocket(addr,"n")
+      if \self.jrpc_client then {
+         # Verify socket was actually set (open() succeeded)
+         if /self.jrpc_client.sock then {
+            if \verbose_mode then
+               write("ERROR: Socket is null after connection! open() may have failed.")
+            self.jrpc_client := &null
+            fail
+         }
+         if \verbose_mode then
+            write("Client connected successfully")
+         return
+      }
+
+      if \verbose_mode then
+         write("client open(", addr, ") ERROR: ", image(&errortext))
+   end
+
+   method send_request(method_name, params, expected_result)
+      local id, msg, response, result, error, test_name, success
+      static request_id := 0
+
+      if /self.jrpc_client then {
+         write("FAIL: Client not connected for ", method_name)
+         fail
+      }
+
+      id := request_id +:= 1
+      msg := JRPC_Message().make_request(id, method_name, params)
+
+      # Verify socket is still valid before sending
+      if /self.jrpc_client.sock then {
+         write("FAIL: Socket is null for ", method_name)
+         fail
+      }
+
+      self.jrpc_client.send_msg(msg)
+
+      # Wait for response
+      if response := self.jrpc_client.get_msg(5000) then {
+         # Get both result and error (JSON-RPC 2.0: response has either result OR error, not both)
+         result := response.get_result()
+         error := response.get_error()
+         # verify_result handles both success and error cases
+         if success := verify_result(method_name, id, result, expected_result, error) then {
+            return  # Return success
+         } else {
+            if \verbose_mode then {
+               write("FAIL: ", method_name, " - verify_result returned failure")
+               if \error then
+                  write("  Error: ", format_json(error))
+               if \result then
+                  write("  Result: ", format_json(result))
+            }
+            fail  # Fail the procedure
+         }
+      } else {
+         if \verbose_mode then
+            write("FAIL: ", method_name, " - No response received (timeout)")
+         fail  # Fail the procedure
+      }
+   end
+
+   method send_notification(method_name, params)
+      # Notifications don't have an ID - use make_notification
+      if /self.jrpc_client then {
+         write("FAIL: Client not connected for notification ", method_name)
+         fail
+      }
+
+      # Verify socket is still valid before sending
+      if /self.jrpc_client.sock then {
+         write("FAIL: Socket is null for notification ", method_name)
+         fail
+      }
+
+      self.jrpc_client.send_msg(JRPC_Message().make_notification(method_name, params))
+   end
+
+   method disconnect()
+      # Close the socket connection to allow server to exit
+      if \self.jrpc_client & \self.jrpc_client.sock then {
+         close(self.jrpc_client.sock)
+         self.jrpc_client.sock := &null
+      }
+   end
+
+   # Helper to format data as JSON for output
+   method format_json(data)
+      local json_str
+      if /data then return "null"
+      if json_str := tojson(data) then return json_str
+      # Fallback to ximage if JSON conversion fails
+      return ximage(data)
+   end
+
+
+   method verify_result(method_name, id, result, expected, error)
+      # Check for error response first (JSON-RPC 2.0 spec)
+      if \error then {
+         # For error handling tests, an error response is expected
+         # unsupported/method should return -32601 (Method not found)
+         # malformed requests should return -32602 (Invalid params)
+         if method_name == "unsupported/method" then {
+            if member(error, "code") & error["code"] == -32601 then {
+               return
+            } else {
+               if \verbose_mode then
+                  write("FAIL: ", method_name, " - Unexpected error code: ",
+                     \error["code"] | "missing")
+               fail
+            }
+         } else if method_name == ("textDocument/completion" | "textDocument/hover" |
+                           "textDocument/definition" | "textDocument/documentSymbol" |
+                           "textDocument/foldingRange" | "textDocument/formatting") then {
+            if member(error, "code") & error["code"] == -32602 then {
+               # Invalid params error is expected for error handling tests
+               return
+            } else {
+               if \verbose_mode then
+                  write("FAIL: ", method_name, " - Unexpected error response: ",
+                     format_json(error))
+               fail
+            }
+         } else {
+            if \verbose_mode then
+               write("FAIL: ", method_name, " - Unexpected error response: ",
+                  format_json(error))
+            fail
+         }
+      }
+
+      # Successful response - check the result
+      # result can be null for some responses (e.g., shutdown)
+      if /result then {
+         # Some methods like shutdown return null result, which is valid
+         if method_name == "shutdown" then {
+            if \capture_expected then {
+               write("# EXPECTED RESULT for ", method_name, ": &null")
+            }
+            return
+         }
+         fail
+      }
+
+      # If capture_expected mode is on and no expected result provided, output the actual result
+      if \capture_expected & /expected then {
+         write("# EXPECTED RESULT for ", method_name, " (id=", id, "):")
+         write("# JSON format:")
+         write(format_json(result))
+         write("# To use in test, parse with: jtous(\"", format_json(result), "\")")
+      }
+
+      # If expected result is provided, compare against it
+      if \expected then {
+         if not deep_compare(result, expected) then {
+            if \verbose_mode then {
+               write("FAIL: ", method_name, " - Result mismatch")
+               write("  Expected: ", format_json(expected))
+               write("  Got:      ", format_json(result))
+            }
+            fail
+         }
+         return
+      }
+
+      # Fall back to structural validation if no expected result provided
+      case method_name of {
+         "initialize" : {
+            if not member(result, "capabilities") then {
+               if \verbose_mode then
+                  write("FAIL: ", method_name, " - Missing 'capabilities' in result")
+               fail
+            }
+            if not member(result["capabilities"], "completionProvider") then {
+               if \verbose_mode then
+                  write("FAIL: ", method_name, " - Missing 'completionProvider' in capabilities")
+               fail
+            }
+         }
+         "textDocument/completion" : {
+            if not member(result, "items") then
+               fail
+         }
+         "textDocument/hover" : {
+            if not member(result, "contents") then
+               fail
+         }
+         "textDocument/definition" : {
+            if not member(result, "uri") then
+               fail
+         }
+         "textDocument/documentSymbol" : {
+            # LSP spec: documentSymbol can return either:
+            # 1. A list of SymbolInformation[] directly
+            # 2. A list of DocumentSymbol[] (hierarchical)
+            # The result is the list itself, not a table with "symbols" key
+            if type(result) ~== "list" then
+               fail
+            if *result = 0 then
+               fail
+         }
+         "textDocument/foldingRange" : {
+            # LSP spec: foldingRange returns FoldingRange[] directly (a list)
+            if type(result) ~== "list" then
+               fail
+            # Empty list is valid (no folding ranges)
+         }
+         "textDocument/formatting" : {
+            # LSP spec: formatting returns TextEdit[] directly (a list)
+            # Empty list is valid (no formatting edits needed)
+            if type(result) ~== "list" then
+               fail
+            # Empty list is valid - means no formatting changes needed
+         }
+         "shutdown" : {
+            # Shutdown should return null result per JSON-RPC 2.0 spec
+            if \result then
+               fail
+         }
+      }
+
+      return  # Explicitly return success
+   end
+
+   # Deep comparison function for tables and lists
+   method deep_compare(actual, expected)
+      local key, val, i
+
+      # Both null - equal
+      if /actual & /expected then return
+
+      # One null, one not - not equal
+      if /actual | /expected then fail
+
+      # Type mismatch
+      if type(actual) ~== type(expected) then fail
+
+      # For tables, compare all keys and values
+      if type(actual) == "table" then {
+         every key := !expected do {
+            if not member(actual, key) then fail
+            if not deep_compare(actual[key], expected[key]) then fail
+         }
+         # Check for extra keys in actual
+         every key := !actual do {
+            if not member(expected, key) then fail
+         }
+         return
+      }
+
+      # For lists, compare element by element
+      if type(actual) == "list" then {
+         if *actual ~== *expected then fail
+         every i := 1 to *actual do {
+            if not deep_compare(actual[i], expected[i]) then fail
+         }
+         return
+      }
+
+      # For other types, direct comparison
+      if actual === expected then
+         return
+   end
+
+   # Client methods for test operations - handle parameter setup
+   method test_initialize(expected_result)
+      local params, cwd
+      cwd := chdir(".") | "/"
+      params := [
+         "processId": getpid();
+         "rootUri": "file://" || cwd;
+         "capabilities": [
+            "textDocument": [
+               "completion": ["dynamicRegistration": "__false__"];
+               "hover": ["dynamicRegistration": "__false__"];
+               "definition": ["dynamicRegistration": "__false__"];
+               "documentSymbol": ["dynamicRegistration": "__false__"];
+               "foldingRange": ["dynamicRegistration": "__false__"];
+               "formatting": ["dynamicRegistration": "__false__"]
+            ]
+         ];
+         "clientInfo": [
+            "name": "LSP Test Client";
+            "version": "1.0.0"
+         ]
+      ]
+      if send_request("initialize", params, expected_result) then
+         return
+   end
+
+   method test_document_sync()
+      local params, cwd
+      cwd := chdir(".") | "/"
+      # Test didOpen
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file;
+            "languageId": "unicon";
+            "version": 1;
+            "text": "procedure main()\n    write('Hello')\nend\n"
+         ]
+      ]
+      send_notification("textDocument/didOpen", params)
+
+      # Test didChange
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file;
+            "version": 2
+         ];
+         "contentChanges": [
+            [
+               "text": "procedure main()\n    local x\n    x := 42\n    write(x)\nend\n"
+            ]
+         ]
+      ]
+      send_notification("textDocument/didChange", params)
+
+      # Test didSave
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file
+         ]
+      ]
+      send_notification("textDocument/didSave", params)
+
+      return
+   end
+
+   method test_completion(expected_result)
+      local params, cwd
+      cwd := chdir(".") | "/"
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file
+         ];
+         "position": [
+            "line": 1;
+            "character": 5
+         ];
+         "context": [
+            "triggerKind": 1
+         ]
+      ]
+      if send_request("textDocument/completion", params, expected_result) then
+         return
+   end
+
+   method test_hover(expected_result)
+      local params, cwd
+      cwd := chdir(".") | "/"
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file
+         ];
+         "position": [
+            "line": 0;
+            "character": 10
+         ]
+      ]
+      if send_request("textDocument/hover", params, expected_result) then
+         return
+   end
+
+   method test_definition(expected_result)
+      local params, cwd
+      cwd := chdir(".") | "/"
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file
+         ];
+         "position": [
+            "line": 0;
+            "character": 10
+         ]
+      ]
+      if send_request("textDocument/definition", params, expected_result) then
+         return
+   end
+
+   method test_document_symbols(expected_result)
+      local params, cwd
+      cwd := chdir(".") | "/"
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file
+         ]
+      ]
+      if send_request("textDocument/documentSymbol", params, expected_result) then
+         return
+   end
+
+   method test_folding_ranges(expected_result)
+      local params, cwd
+      cwd := chdir(".") | "/"
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file
+         ]
+      ]
+      if send_request("textDocument/foldingRange", params, expected_result) then
+         return
+   end
+
+   method test_formatting(expected_result)
+      local params, cwd
+      cwd := chdir(".") | "/"
+      params := [
+         "textDocument": [
+            "uri": "file://" || cwd || "/" || test_file
+         ];
+         "options": [
+            "tabSize": 4;
+            "insertSpaces": "__true__"
+         ]
+      ]
+      if send_request("textDocument/formatting", params, expected_result) then
+         return
+   end
+
+   method test_unsupported_method()
+      local params
+      # Test unsupported method - should return error response
+      params := ["test": "value"]
+      if send_request("unsupported/method", params, &null) then
+         return
+   end
+
+   method test_malformed_request()
+      local params
+      # Test malformed request (missing required params) - should return error response
+      params := ["textDocument": ["uri": "file://test.icn"]]
+      if send_request("textDocument/completion", params, &null) then
+         return
+   end
+
+   method test_shutdown()
+      if send_request("shutdown", [], &null) then {
+         # After shutdown, send exit notification per LSP spec
+         send_notification("exit", [])
+
+
+         if \verbose_mode then
+            write("Disconnecting client...")
+         #disconnect()
+         return
+      }
+   end
+
+   method start_ulsp_server()
+      local ulsp_cmd
+      ulsp_cmd := ["ulsp", "--loglevel 6", "-s", "--socket", string(ulsp_port)]
+      if system(ulsp_cmd, &null, &null, &null, "nowait") then {
+         # Give server time to start, load database, and open socket
+         # Database loading can take several seconds
+         delay(5000)
+         return
+      }
+
+      if \verbose_mode then
+         write("Server failed to start:", image(&errortext))
+   end
+
+   method start_client_connection()
+      # Wait for server to be ready (retry connection)
+      if \verbose_mode then
+         write("Connecting client to server...")
+
+      every !20 do
+         if self.connect() then
+            return
+         else
+            delay(1000)
+
+      if \verbose_mode then
+         write("Connection failed after max retries")
+   end
+
+   method create_test_file()
+      local f, test_content
+
+      test_content := "procedure main()\n" ||
+                     "    local x, y\n" ||
+                     "    x := 10\n" ||
+                     "    y := x + 5\n" ||
+                     "    write('Hello, World!')\n" ||
+                     "    return 0\n" ||
+                     "end\n"
+
+      f := open(test_file, "w")
+      if f then {
+         writes(f, test_content)
+         close(f)
+         return
+      }
+   end
+
+   method cleanup()
+      if \test_file then
+         remove(test_file)
+   end
+
+   initially
+
+      test_file := "tmp_test_file.icn"
+      ulsp_port := 5000 + ?1000
+      if &features == ("MacOS" | "MS Windows NT") then
+         ulsp_addr := "127.0.0.1"
+      else
+         ulsp_addr := ""
+end
+
+class LSPProtocolTest : UniconTest(test_file)
+   method register_tests()
+      # Add this test file as a Test
+      add_test("LSP Protocol Tests")
+
+      # Register test sections and test cases
+
+      add_test_section("Start ULSP server and client")
+      add_test_case("test_start_ulsp_server", test_start_ulsp_server_proc, "Test starting ULSP server")
+      add_test_case("test_client_connection", test_client_connection_proc, "Test client connection")
+      add_test_case("test_create_test_file", test_create_test_file_proc, "Test creating test file")
+
+      add_test_section("Initialization")
+      add_test_case("test_initialize", test_initialize_proc, "Test server initialization")
+
+      add_test_section("Document Synchronization")
+      add_test_case("test_document_sync", test_document_sync_proc, "Test document open/change/save")
+
+      add_test_section("Completion")
+      add_test_case("test_completion", test_completion_proc, "Test code completion")
+
+      add_test_section("Hover")
+      add_test_case("test_hover", test_hover_proc, "Test hover information")
+
+      add_test_section("Definition")
+      add_test_case("test_definition", test_definition_proc, "Test definition lookup")
+
+      add_test_section("Document Symbols")
+      add_test_case("test_document_symbols", test_document_symbols_proc, "Test document symbols")
+
+      add_test_section("Folding Ranges")
+      add_test_case("test_folding_ranges", test_folding_ranges_proc, "Test folding ranges")
+
+      add_test_section("Formatting")
+      add_test_case("test_formatting", test_formatting_proc, "Test code formatting")
+
+      add_test_section("Error Handling")
+      add_test_case("test_unsupported_method", test_unsupported_method_proc, "Test unsupported method error")
+      add_test_case("test_malformed_request", test_malformed_request_proc, "Test malformed request error")
+
+      add_test_section("Shutdown")
+      add_test_case("test_shutdown", test_shutdown_proc, "Test server shutdown")
+   end
+
+   method setup()
+      protocol_test_client := LSPTestClient()
+
+      return
+   end
+
+   method teardown()
+      # Test-level teardown: cleans up after protocol tests
+      protocol_test_client.cleanup()
+      return
+   end
+end
+
+# Thin wrapper procedures for UniconTestSuite - just call client methods
+
+procedure test_start_ulsp_server_proc()
+   if protocol_test_client.start_ulsp_server() then
+      return
+end
+
+procedure test_client_connection_proc()
+   if protocol_test_client.start_client_connection() then
+      return
+end
+
+procedure test_create_test_file_proc()
+   if protocol_test_client.create_test_file() then
+      return
+end
+
+procedure test_initialize_proc()
+   if (\protocol_test_client).test_initialize() then
+      return
+end
+
+procedure test_document_sync_proc()
+   if (\protocol_test_client).test_document_sync() then
+      return
+end
+
+procedure test_completion_proc()
+   if (\protocol_test_client).test_completion() then
+      return
+end
+
+procedure test_hover_proc()
+   if (\protocol_test_client).test_hover() then
+      return
+end
+
+procedure test_definition_proc()
+   if (\protocol_test_client).test_definition() then
+      return
+end
+
+procedure test_document_symbols_proc()
+   if (\protocol_test_client).test_document_symbols() then
+      return
+end
+
+procedure test_folding_ranges_proc()
+   if (\protocol_test_client).test_folding_ranges() then
+      return
+end
+
+procedure test_formatting_proc()
+   if (\protocol_test_client).test_formatting() then
+      return
+end
+
+procedure test_unsupported_method_proc()
+   if (\protocol_test_client).test_unsupported_method() then
+      return
+end
+
+procedure test_malformed_request_proc()
+   if (\protocol_test_client).test_malformed_request() then
+      return
+end
+
+procedure test_shutdown_proc()
+   if (\protocol_test_client).test_shutdown() then
+      return
+end
+
+
+$ifdef STANDALONE
+procedure main(args)
+   local test_suite, arg, style := "short"
+
+   # Check for verbose/capture mode
+   every arg := !args do {
+      if arg == ("-v" | "--verbose") then verbose_mode := 1
+      if arg == ("-c" | "--capture") then capture_expected := 1
+      if arg == ("-l" | "--long") then {
+         style := "long" # Output style will be set in run_all_tests
+      }
+      if arg == ("-d" | "--debug") then {
+         style := "debug" # Output style will be set in run_all_tests
+      }
+   }
+
+   # Check environment variable
+   if getenv("ULSP_CAPTURE_EXPECTED") then capture_expected := 1
+   if getenv("ULSP_TEST_VERBOSE") then verbose_mode := 1
+
+   Logger(if \verbose_mode then 8 else 6)
+   test_suite := LSPProtocolTest()
+   # Run standalone (sets up, executes, and prints summary)
+   test_suite.run_standalone(style)
+   # If we get here, tests succeeded
+   exit(0)
+
+end
+$endif

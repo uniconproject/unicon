@@ -20,9 +20,6 @@ $(prog): $(OBJ)
 	$(UC) -o $(prog) $(OBJ)
 	$(CP) $(prog)$(EXE) ../../bin
 
-jsonrpc-test: jsonrpc-test.u
-	$(UC) -o jsonrpc-test jsonrpc-test.u
-
 launch-lsp.u:launch-lsp.icn file_handler.u database.u server.u completion.u signature.u hover.u \
 				 definition.u symbols.u folding.u formatting.u
 

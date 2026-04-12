@@ -156,7 +156,7 @@ if test "x$with_freetype" != "xno"; then
 
   do_lib_check([freetype], [${freetype_HOME}], [freetype/fttypes.h],
 			 [FT_Open_Face], [HAVE_LIBFREETYPE], [C])
-   if test "x$cv_freetype" = "xno" ; then
+   if test "x$cv_libfreetype" = "xno" ; then
       CPPFLAGS=$ftsave_CPPFLAGS
    fi
 fi
@@ -515,4 +515,29 @@ AC_DEFUN([AC_CFLAG], [{
 			$2
 		])
 	AC_LANG_POP([C])
+	}])
+
+dnl Same as AC_CFLAG but for the C++ compiler (CXX / CXXFLAGS). Use for flags that
+dnl should apply to both C and C++ builds (see GitHub issue #577).
+AC_DEFUN([AC_CXXFLAG], [{
+	AC_LANG_PUSH([C++])
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS $1"
+	AC_MSG_CHECKING([[whether $CXX supports $1]])
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([[]])],
+		[
+			AC_MSG_RESULT([yes])
+			m4_if([$3], [], [],
+			[
+				CXXFLAGS="$ac_cxx_flag_save"
+				$3
+			])
+		],
+		[
+			CXXFLAGS="$ac_cxx_flag_save"
+			AC_MSG_RESULT([no])
+			$2
+		])
+	AC_LANG_POP([C++])
 	}])

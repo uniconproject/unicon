@@ -651,6 +651,7 @@ ac_header_c_list=
 ac_unique_file="src/runtime/imain.r"
 ac_func_c_list=
 ac_subst_vars='LTLIBOBJS
+PLUGIN_LDFLAGS
 GL_LDFLAGS
 GL_CFLAGS
 JV_LDFLAGS
@@ -3855,6 +3856,8 @@ fi
 # Save flags
 orig_cflags="${CFLAGS:-}"
 CFLAGS=""
+orig_cxxflags="${CXXFLAGS:-}"
+CXXFLAGS=""
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5027,1064 +5030,6 @@ then :
 
 fi
 
-# Try CC 11
-ac_cc="$CC"
-
-if  test "x$stdc" = "xon" ; then
-   {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -std=c11"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=c11" >&5
-printf %s "checking whether $CC supports -std=c11... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-else
-   if test "x$stdc" = "xyes" ; then
-      {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -std=c11"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=c11" >&5
-printf %s "checking whether $CC supports -std=c11... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-				CFLAGS="$ac_c_flag_save"
-				 CFLAGS="$CFLAGS -std=c11"
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-			as_fn_error $? "\"-std=c11 is required but not available\"" "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-   else
-      if ! test "x$stdc" = "xno" ; then
-         {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -std=$stdc"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=$stdc" >&5
-printf %s "checking whether $CC supports -std=$stdc... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-				CFLAGS="$ac_c_flag_save"
-				 CFLAGS="$CFLAGS -std=$stdc"
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-			as_fn_error $? "\"-std=$stdc is required but not available\"" "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-      fi
-   fi
-fi
-
-# try to add -m32 or -m64
-ARCHFLAG="-m$ARCHBITS"
-{
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS $ARCHFLAG"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports $ARCHFLAG" >&5
-printf %s "checking whether $CC supports $ARCHFLAG... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-				CFLAGS="$ac_c_flag_save"
-
-			 CFLAGS="$CFLAGS $ARCHFLAG"
-			 LDFLAGS="$LDFLAGS $ARCHFLAG"
-			 ASFLAGS="$ASFLAGS $ARCHFLAG"
-
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-			 ARCHFLAG=""
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-
-if test x"$verbosebuild" = x"yes" ; then
-  CMNT="#"
-  SLNT=
-  DASHS=
-else
-  CMNT=
-  SLNT="@"
-  DASHS="-s"
-fi
-
-if test x"$uniconx" = x"yes" ; then
-
-printf "%s\n" "#define UniconX 1" >>confdefs.h
-
-  UNICONX=uniconx
-  UNICONWX=wuniconx
-  UNICONC=uniconc
-  UNICONT=unicont
-  UNICONWT=wunicont
-else
-  UNICONX=iconx
-  UNICONWX=wiconx
-  UNICONC=iconc
-  UNICONT=icont
-  UNICONWT=wicont
-fi
-
-if test x"$devmode" = x"yes" || test x"$devmode" = x"all"; then
-  debug=yes
-  warn=yes
-
-printf "%s\n" "#define DEVELOPMODE 1" >>confdefs.h
-
-  if test x"$devmode" = x"all"; then
-   debugheap=yes
-   verifyheap=yes
-  fi
-fi
-
-if test x"$debugheap" = x"yes" ; then
-
-printf "%s\n" "#define DebugHeap 1" >>confdefs.h
-
-  debugheapreport="DebugHeap"
-fi
-
-if test x"$verifyheap" = x"yes" ; then
-
-printf "%s\n" "#define VerifyHeap 1" >>confdefs.h
-
-    verifyheapreport="VerifyHeap"
-fi
-
-sancount=0
-test x"$asan" = x"yes" && sancount=`expr $sancount + 1`
-test x"$tsan" = x"yes" && sancount=`expr $sancount + 1`
-test x"$msan" = x"yes" && sancount=`expr $sancount + 1`
-test x"$hwasan" = x"yes" && sancount=`expr $sancount + 1`
-if test "$sancount" -gt 1 ; then
-  as_fn_error $? "Only one of --enable-asan, --enable-tsan, --enable-msan, or --enable-hwasan may be enabled. --enable-ubsan may be combined with one of them." "$LINENO" 5
-fi
-
-if test x"$udbtools" = x"yes" ; then
-  UDBTOOLS=udbtools
-fi
-
-if test x"$progs" = x"yes" ; then
-  UNIPROGS=progs
-fi
-
-# honor custom flags
-if test "z$orig_cflags" = "z"; then
-  if test x"$debug" = x"yes" ; then
-     {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -g"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -g" >&5
-printf %s "checking whether $CC supports -g... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-     if test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
-        test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
-       {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -O1"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O1" >&5
-printf %s "checking whether $CC supports -O1... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-     else
-       {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -O0"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O0" >&5
-printf %s "checking whether $CC supports -O0... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-     fi
-  elif test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
-       test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
-     {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -O1"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O1" >&5
-printf %s "checking whether $CC supports -O1... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  else
-    {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -O2"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O2" >&5
-printf %s "checking whether $CC supports -O2... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-    {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Os"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Os" >&5
-printf %s "checking whether $CC supports -Os... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  fi
-fi
-
-if test x"$asan" = x"yes" ; then
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fsanitize=address"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=address" >&5
-printf %s "checking whether $CC supports -fsanitize=address... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-			as_fn_error $? "AddressSanitizer (-fsanitize=address) is not supported by $CC" "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  LDFLAGS="$LDFLAGS -fsanitize=address"
-fi
-
-if test x"$tsan" = x"yes" ; then
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fsanitize=thread"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=thread" >&5
-printf %s "checking whether $CC supports -fsanitize=thread... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-			as_fn_error $? "ThreadSanitizer (-fsanitize=thread) is not supported by $CC" "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  LDFLAGS="$LDFLAGS -fsanitize=thread"
-fi
-
-if test x"$msan" = x"yes" ; then
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fsanitize=memory"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=memory" >&5
-printf %s "checking whether $CC supports -fsanitize=memory... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-			as_fn_error $? "MemorySanitizer (-fsanitize=memory) is not supported by $CC" "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  LDFLAGS="$LDFLAGS -fsanitize=memory"
-fi
-
-if test x"$hwasan" = x"yes" ; then
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fsanitize=hwaddress"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=hwaddress" >&5
-printf %s "checking whether $CC supports -fsanitize=hwaddress... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-			as_fn_error $? "HardwareAssisted AddressSanitizer (-fsanitize=hwaddress) is not supported by $CC" "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  LDFLAGS="$LDFLAGS -fsanitize=hwaddress"
-fi
-
-if test x"$ubsan" = x"yes" ; then
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fsanitize=undefined"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=undefined" >&5
-printf %s "checking whether $CC supports -fsanitize=undefined... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-			as_fn_error $? "UndefinedBehaviorSanitizer (-fsanitize=undefined) is not supported by $CC" "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  LDFLAGS="$LDFLAGS -fsanitize=undefined"
-fi
-
-if test x"$warn" = x"yes" ; then
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Wall"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wall" >&5
-printf %s "checking whether $CC supports -Wall... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Wno-missing-braces"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wno-missing-braces" >&5
-printf %s "checking whether $CC supports -Wno-missing-braces... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-fi
-
-
-#if test x"$devmode" = x"yes" ; then
-#  AC_CFLAG([-Wmissing-prototypes])
-#  AC_CFLAG([-Wmissing-declarations])
-#fi
-
-# We always want these CFLAGS if available; the second one is necessary for a stable runtime
-{
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fno-omit-frame-pointer"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fno-omit-frame-pointer" >&5
-printf %s "checking whether $CC supports -fno-omit-frame-pointer... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-
-{
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fno-strict-aliasing"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fno-strict-aliasing" >&5
-printf %s "checking whether $CC supports -fno-strict-aliasing... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-
-if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" || test x"$unicon_os" = x"freebsd" ; then
-   {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Werror -Wno-parentheses-equality"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Werror -Wno-parentheses-equality" >&5
-printf %s "checking whether $CC supports -Werror -Wno-parentheses-equality... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-				CFLAGS="$ac_c_flag_save"
-				CFLAGS="$CFLAGS -Wno-parentheses-equality"
-
-
-else $as_nop
-
-			CFLAGS="$ac_c_flag_save"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-fi
-
-#if test x"${enable_werror}" = x"yes" ; then
-#  WERROR="-Werror"
-#fi
-
-#AC_USE_SYSTEM_EXTENSIONS
-
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -7192,21 +6137,1804 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+if test "z$orig_cxxflags" = "z" ; then
+  CXXFLAGS=""
+fi
+# Try CC 11
+ac_cc="$CC"
+
+if  test "x$stdc" = "xon" ; then
+   {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -std=c11"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=c11" >&5
+printf %s "checking whether $CC supports -std=c11... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+else
+   if test "x$stdc" = "xyes" ; then
+      {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -std=c11"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=c11" >&5
+printf %s "checking whether $CC supports -std=c11... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				 CFLAGS="$CFLAGS -std=c11"
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "\"-std=c11 is required but not available\"" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+   else
+      if ! test "x$stdc" = "xno" ; then
+         {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -std=$stdc"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -std=$stdc" >&5
+printf %s "checking whether $CC supports -std=$stdc... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				 CFLAGS="$CFLAGS -std=$stdc"
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "\"-std=$stdc is required but not available\"" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+      fi
+   fi
+fi
+
+# try to add -m32 or -m64
+ARCHFLAG="-m$ARCHBITS"
+{
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS $ARCHFLAG"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports $ARCHFLAG" >&5
+printf %s "checking whether $CC supports $ARCHFLAG... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+
+			 CFLAGS="$CFLAGS $ARCHFLAG"
+			 LDFLAGS="$LDFLAGS $ARCHFLAG"
+			 ASFLAGS="$ASFLAGS $ARCHFLAG"
+			 CXXFLAGS="$CXXFLAGS $ARCHFLAG"
+
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+			 ARCHFLAG=""
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+
+if test x"$verbosebuild" = x"yes" ; then
+  CMNT="#"
+  SLNT=
+  DASHS=
+else
+  CMNT=
+  SLNT="@"
+  DASHS="-s"
+fi
+
+if test x"$uniconx" = x"yes" ; then
+
+printf "%s\n" "#define UniconX 1" >>confdefs.h
+
+  UNICONX=uniconx
+  UNICONWX=wuniconx
+  UNICONC=uniconc
+  UNICONT=unicont
+  UNICONWT=wunicont
+else
+  UNICONX=iconx
+  UNICONWX=wiconx
+  UNICONC=iconc
+  UNICONT=icont
+  UNICONWT=wicont
+fi
+
+if test x"$devmode" = x"yes" || test x"$devmode" = x"all"; then
+  debug=yes
+  warn=yes
+
+printf "%s\n" "#define DEVELOPMODE 1" >>confdefs.h
+
+  if test x"$devmode" = x"all"; then
+   debugheap=yes
+   verifyheap=yes
+  fi
+fi
+
+if test x"$debugheap" = x"yes" ; then
+
+printf "%s\n" "#define DebugHeap 1" >>confdefs.h
+
+  debugheapreport="DebugHeap"
+fi
+
+if test x"$verifyheap" = x"yes" ; then
+
+printf "%s\n" "#define VerifyHeap 1" >>confdefs.h
+
+    verifyheapreport="VerifyHeap"
+fi
+
+sancount=0
+test x"$asan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$tsan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$msan" = x"yes" && sancount=`expr $sancount + 1`
+test x"$hwasan" = x"yes" && sancount=`expr $sancount + 1`
+if test "$sancount" -gt 1 ; then
+  as_fn_error $? "Only one of --enable-asan, --enable-tsan, --enable-msan, or --enable-hwasan may be enabled. --enable-ubsan may be combined with one of them." "$LINENO" 5
+fi
+
+if test x"$udbtools" = x"yes" ; then
+  UDBTOOLS=udbtools
+fi
+
+if test x"$progs" = x"yes" ; then
+  UNIPROGS=progs
+fi
+
+# honor custom flags
+if test "z$orig_cflags" = "z"; then
+  if test x"$debug" = x"yes" ; then
+     {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -g"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -g" >&5
+printf %s "checking whether $CC supports -g... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     if test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+        test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+       {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -O1"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O1" >&5
+printf %s "checking whether $CC supports -O1... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     else
+       {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -O0"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O0" >&5
+printf %s "checking whether $CC supports -O0... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     fi
+  elif test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+       test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+     {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -O1"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O1" >&5
+printf %s "checking whether $CC supports -O1... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  else
+    {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -O2"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -O2" >&5
+printf %s "checking whether $CC supports -O2... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+    {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Os"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Os" >&5
+printf %s "checking whether $CC supports -Os... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  fi
+fi
+if test "z$orig_cxxflags" = "z"; then
+  if test x"$debug" = x"yes" ; then
+
+{
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -g"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -g" >&5
+printf %s "checking whether $CXX supports -g... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     if test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+        test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+       {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -O1"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -O1" >&5
+printf %s "checking whether $CXX supports -O1... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     else
+       {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -O0"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -O0" >&5
+printf %s "checking whether $CXX supports -O0... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+     fi
+  elif test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+       test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+     {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -O1"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -O1" >&5
+printf %s "checking whether $CXX supports -O1... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  else
+    {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -O2"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -O2" >&5
+printf %s "checking whether $CXX supports -O2... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+    {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -Os"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -Os" >&5
+printf %s "checking whether $CXX supports -Os... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	}
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  fi
+fi
+
 if test x"$asan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=address"
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=address"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=address" >&5
+printf %s "checking whether $CC supports -fsanitize=address... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "AddressSanitizer (-fsanitize=address) is not supported by $CC" "$LINENO" 5
+
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -fsanitize=address"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -fsanitize=address" >&5
+printf %s "checking whether $CXX supports -fsanitize=address... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "AddressSanitizer (-fsanitize=address) is not supported by $CXX" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=address"
+fi
+
 if test x"$tsan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=thread"
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=thread"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=thread" >&5
+printf %s "checking whether $CC supports -fsanitize=thread... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "ThreadSanitizer (-fsanitize=thread) is not supported by $CC" "$LINENO" 5
+
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -fsanitize=thread"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -fsanitize=thread" >&5
+printf %s "checking whether $CXX supports -fsanitize=thread... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "ThreadSanitizer (-fsanitize=thread) is not supported by $CXX" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=thread"
+fi
+
 if test x"$msan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=memory"
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=memory"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=memory" >&5
+printf %s "checking whether $CC supports -fsanitize=memory... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "MemorySanitizer (-fsanitize=memory) is not supported by $CC" "$LINENO" 5
+
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -fsanitize=memory"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -fsanitize=memory" >&5
+printf %s "checking whether $CXX supports -fsanitize=memory... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "MemorySanitizer (-fsanitize=memory) is not supported by $CXX" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=memory"
+fi
+
 if test x"$hwasan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=hwaddress"
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=hwaddress"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=hwaddress" >&5
+printf %s "checking whether $CC supports -fsanitize=hwaddress... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "HardwareAssisted AddressSanitizer (-fsanitize=hwaddress) is not supported by $CC" "$LINENO" 5
+
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -fsanitize=hwaddress"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -fsanitize=hwaddress" >&5
+printf %s "checking whether $CXX supports -fsanitize=hwaddress... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "HardwareAssisted AddressSanitizer (-fsanitize=hwaddress) is not supported by $CXX" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=hwaddress"
+fi
+
 if test x"$ubsan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fsanitize=undefined"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fsanitize=undefined" >&5
+printf %s "checking whether $CC supports -fsanitize=undefined... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "UndefinedBehaviorSanitizer (-fsanitize=undefined) is not supported by $CC" "$LINENO" 5
+
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -fsanitize=undefined" >&5
+printf %s "checking whether $CXX supports -fsanitize=undefined... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "UndefinedBehaviorSanitizer (-fsanitize=undefined) is not supported by $CXX" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  LDFLAGS="$LDFLAGS -fsanitize=undefined"
+fi
+
+if test x"$warn" = x"yes" ; then
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Wall"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wall" >&5
+printf %s "checking whether $CC supports -Wall... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Wno-missing-braces"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wno-missing-braces" >&5
+printf %s "checking whether $CC supports -Wno-missing-braces... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -Wall"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -Wall" >&5
+printf %s "checking whether $CXX supports -Wall... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -Wno-missing-braces"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -Wno-missing-braces" >&5
+printf %s "checking whether $CXX supports -Wno-missing-braces... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+fi
+
+
+#if test x"$devmode" = x"yes" ; then
+#  AC_CFLAG([-Wmissing-prototypes])
+#  AC_CFLAG([-Wmissing-declarations])
+#fi
+
+# We always want these CFLAGS if available; the second one is necessary for a stable runtime
+{
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fno-omit-frame-pointer"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fno-omit-frame-pointer" >&5
+printf %s "checking whether $CC supports -fno-omit-frame-pointer... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+
+{
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fno-strict-aliasing"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fno-strict-aliasing" >&5
+printf %s "checking whether $CC supports -fno-strict-aliasing... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+{
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -fno-omit-frame-pointer" >&5
+printf %s "checking whether $CXX supports -fno-omit-frame-pointer... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+{
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -fno-strict-aliasing" >&5
+printf %s "checking whether $CXX supports -fno-strict-aliasing... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+
+if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" || test x"$unicon_os" = x"freebsd" ; then
+   {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Werror -Wno-parentheses-equality"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Werror -Wno-parentheses-equality" >&5
+printf %s "checking whether $CC supports -Werror -Wno-parentheses-equality... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				CFLAGS="$CFLAGS -Wno-parentheses-equality"
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+   {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -Werror -Wno-parentheses-equality"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -Werror -Wno-parentheses-equality" >&5
+printf %s "checking whether $CXX supports -Werror -Wno-parentheses-equality... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+				CXXFLAGS="$ac_cxx_flag_save"
+				CXXFLAGS="$CXXFLAGS -Wno-parentheses-equality"
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+fi
+
+#if test x"${enable_werror}" = x"yes" ; then
+#  WERROR="-Werror"
+#fi
+
+#AC_USE_SYSTEM_EXTENSIONS
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -8359,6 +9087,10 @@ fi
 
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
+fi
+
+if test "x$orig_cxxflags" != "x" ; then
+  CXXFLAGS="$CXXFLAGS $orig_cxxflags"
 fi
 
 if test x"$debug" = x"yes" ; then
@@ -10292,11 +11024,17 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-   if test "x$cv_freetype" = "xno" ; then
+   if test "x$cv_libfreetype" = "xno" ; then
       CPPFLAGS=$ftsave_CPPFLAGS
    fi
 fi
 
+    # iconc must pass -I.../freetype2 so gcc finds ft2build.h from rt.h
+    if test "x$cv_libfreetype" = "xyes" ; then
+
+printf "%s\n" "#define ICONC_FREETYPE_CPPFLAGS \"$FREETYPE_CFLAGS\"" >>confdefs.h
+
+    fi
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if Xft is wanted" >&5
@@ -11591,7 +12329,6 @@ fi
        if test "x$CXX" = "xg++" -a "x$GXX" = "xyes"; then
 
 
-
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ftgl is wanted" >&5
 printf %s "checking if ftgl is wanted... " >&6; }
 
@@ -11951,7 +12688,9 @@ fi
 
 
 
-# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).
+# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).  We do not copy
+# into src/common/rswitch.[csS]; leftover files from older configure runs are removed by
+# distclean/Pure in the top Makefile.
 if test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
     echo "Native coswitch (assembler) available for $unicon_host"
     RSWITCH_REL=src/asm/$unicon_host-rswitch.s
@@ -12072,14 +12811,17 @@ then :
   PLUGINS="$PLUGINS lxcunicon"
 fi
 
-
+  else
+    PLUGINS=
   fi
 else
 
 printf "%s\n" "#define NoLoadFunc 1" >>confdefs.h
 
   CFUNCTARGET="disabled"
+  PLUGINS=
 fi
+
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 
@@ -16482,6 +17224,51 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
+  {
+	ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+	ac_cxx_flag_save="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS -Werror"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports -Werror" >&5
+printf %s "checking whether $CXX supports -Werror... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+
+else $as_nop
+
+			CXXFLAGS="$ac_cxx_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
 fi
 
 
@@ -16896,6 +17683,10 @@ printf "%s\n" "#define HAVE_TZNAME 1" >>confdefs.h
 
   fi
 fi
+
+
+PLUGIN_LDFLAGS=`echo " $LDFLAGS " | sed 's/ -no-pie / /g' | sed 's/  */ /g' | sed 's/^ //;s/ $//'`
+
 
 ac_config_files="$ac_config_files Makefile:Makefile.in"
 

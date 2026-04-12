@@ -39,8 +39,7 @@ nocc.icn : nocchelper$(EXE)
 
 nocchelper$(EXE) : nocchelper.c
 # The explicit action helps Windows make do the right thing.
-# Use gcc explicitly because Makedefs.uni does not have a definition of $(CC).
-	gcc -I$(dir $(AUTO_H)) $^ -o $@
+	$(CC) -I$(dir $(AUTO_H)) $^ -o $@
 
 ../lib/unilex.u: unilex.u
 	$(CP) unilex.u ../lib

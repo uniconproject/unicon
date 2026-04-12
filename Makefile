@@ -1,6 +1,6 @@
 #  Top Level Makefile for Unicon
 #
-# Keep Makefile.in in sync with this file except for the first two assignments (srcdir/TOPDIR).
+# Keep Makefile in sync with this file except for the first two assignments (srcdir/TOPDIR).
 #
 # Out-of-tree builds: run configure from a build directory (e.g. ../configure).
 # TOPDIR is the source tree; UNICON_TOP_BUILDDIR is the configure/build directory (Makedefs,
@@ -28,7 +28,7 @@ unicwd=`basename \`pwd\``
 default_target: allsrc
 	$(MAKE) -C $(TOPDIR)/ipl/lib
 	$(MAKE) -C $(TOPDIR)/uni
-	$(MAKE) -C $(TOPDIR)/plugins
+	@if test -n "$(PLUGINS)"; then $(MAKE) -C $(TOPDIR)/plugins; fi
 	$(MAKE) docrule
 	$(MAKE) htmldocrule
 	@echo ============ Build Features ============ > unicon-features.log

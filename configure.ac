@@ -233,8 +233,20 @@ AC_ARG_ENABLE([uniconx],
 # Save flags
 orig_cflags="${CFLAGS:-}"
 CFLAGS=""
+orig_cxxflags="${CXXFLAGS:-}"
+CXXFLAGS=""
 AC_LANG([C])
 AC_USE_SYSTEM_EXTENSIONS
+AC_CONFIG_SRCDIR([src/runtime/imain.r])
+AC_PROG_CC
+dnl Discover CXX before any AC_CXXFLAG; otherwise autoconf inlines AC_PROG_CXX at the
+dnl first C++ compile with empty CXXFLAGS and later resets CXXFLAGS to defaults.
+dnl Do not set CXXFLAGS from orig_cxxflags here (matches CFLAGS): user flags are appended
+dnl once after AC_CXXFLAG probes; a pre-restore would duplicate them at the final append.
+AC_PROG_CXX
+if test "z$orig_cxxflags" = "z" ; then
+  CXXFLAGS=""
+fi
 # Try CC 11
 ac_cc="$CC"
 
@@ -258,6 +270,7 @@ AC_CFLAG([$ARCHFLAG],[
 			 CFLAGS="$CFLAGS $ARCHFLAG"
 			 LDFLAGS="$LDFLAGS $ARCHFLAG"
 			 ASFLAGS="$ASFLAGS $ARCHFLAG"
+			 CXXFLAGS="$CXXFLAGS $ARCHFLAG"
 			 ] )
 
 if test x"$verbosebuild" = x"yes" ; then
@@ -343,35 +356,60 @@ if test "z$orig_cflags" = "z"; then
     ])
   fi
 fi
+if test "z$orig_cxxflags" = "z"; then
+  if test x"$debug" = x"yes" ; then
+     AC_CXXFLAG([-g])
+     if test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+        test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+       AC_CXXFLAG([-O1])
+     else
+       AC_CXXFLAG([-O0])
+     fi
+  elif test x"$asan" = x"yes" || test x"$tsan" = x"yes" || \
+       test x"$msan" = x"yes" || test x"$hwasan" = x"yes" ; then
+     AC_CXXFLAG([-O1])
+  else
+    AC_CXXFLAG([-O2], [
+    AC_CXXFLAG([-Os])
+    ])
+  fi
+fi
 
 if test x"$asan" = x"yes" ; then
   AC_CFLAG([-fsanitize=address], [AC_MSG_ERROR([AddressSanitizer (-fsanitize=address) is not supported by $CC])])
+  AC_CXXFLAG([-fsanitize=address], [AC_MSG_ERROR([AddressSanitizer (-fsanitize=address) is not supported by $CXX])])
   LDFLAGS="$LDFLAGS -fsanitize=address"
 fi
 
 if test x"$tsan" = x"yes" ; then
   AC_CFLAG([-fsanitize=thread], [AC_MSG_ERROR([ThreadSanitizer (-fsanitize=thread) is not supported by $CC])])
+  AC_CXXFLAG([-fsanitize=thread], [AC_MSG_ERROR([ThreadSanitizer (-fsanitize=thread) is not supported by $CXX])])
   LDFLAGS="$LDFLAGS -fsanitize=thread"
 fi
 
 if test x"$msan" = x"yes" ; then
   AC_CFLAG([-fsanitize=memory], [AC_MSG_ERROR([MemorySanitizer (-fsanitize=memory) is not supported by $CC])])
+  AC_CXXFLAG([-fsanitize=memory], [AC_MSG_ERROR([MemorySanitizer (-fsanitize=memory) is not supported by $CXX])])
   LDFLAGS="$LDFLAGS -fsanitize=memory"
 fi
 
 if test x"$hwasan" = x"yes" ; then
   AC_CFLAG([-fsanitize=hwaddress], [AC_MSG_ERROR([HardwareAssisted AddressSanitizer (-fsanitize=hwaddress) is not supported by $CC])])
+  AC_CXXFLAG([-fsanitize=hwaddress], [AC_MSG_ERROR([HardwareAssisted AddressSanitizer (-fsanitize=hwaddress) is not supported by $CXX])])
   LDFLAGS="$LDFLAGS -fsanitize=hwaddress"
 fi
 
 if test x"$ubsan" = x"yes" ; then
   AC_CFLAG([-fsanitize=undefined], [AC_MSG_ERROR([UndefinedBehaviorSanitizer (-fsanitize=undefined) is not supported by $CC])])
+  AC_CXXFLAG([-fsanitize=undefined], [AC_MSG_ERROR([UndefinedBehaviorSanitizer (-fsanitize=undefined) is not supported by $CXX])])
   LDFLAGS="$LDFLAGS -fsanitize=undefined"
 fi
 
 if test x"$warn" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces])
+  AC_CXXFLAG([-Wall])
+  AC_CXXFLAG([-Wno-missing-braces])
 fi
 
 
@@ -384,9 +422,12 @@ fi
 AC_CFLAG([-fno-omit-frame-pointer])
 
 AC_CFLAG([-fno-strict-aliasing])
+AC_CXXFLAG([-fno-omit-frame-pointer])
+AC_CXXFLAG([-fno-strict-aliasing])
 
 if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" || test x"$unicon_os" = x"freebsd" ; then
    AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
+   AC_CXXFLAG([-Werror -Wno-parentheses-equality], [], [CXXFLAGS="$CXXFLAGS -Wno-parentheses-equality"])
 fi
 
 #if test x"${enable_werror}" = x"yes" ; then
@@ -395,24 +436,6 @@ fi
 
 #AC_USE_SYSTEM_EXTENSIONS
 
-AC_CONFIG_SRCDIR([src/runtime/imain.r])
-AC_PROG_CC
-AC_PROG_CXX
-if test x"$asan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=address"
-fi
-if test x"$tsan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=thread"
-fi
-if test x"$msan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=memory"
-fi
-if test x"$hwasan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=hwaddress"
-fi
-if test x"$ubsan" = x"yes" ; then
-  CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
-fi
 AC_PROG_CPP
 AC_PROG_RANLIB
 AC_CHECK_LIB(socket, socket)
@@ -538,6 +561,10 @@ fi
 
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
+fi
+
+if test "x$orig_cxxflags" != "x" ; then
+  CXXFLAGS="$CXXFLAGS $orig_cxxflags"
 fi
 
 if test x"$debug" = x"yes" ; then
@@ -891,6 +918,7 @@ test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
 if test x"$werror" = x"yes" ; then
   AC_CFLAG([-Werror])
+  AC_CXXFLAG([-Werror])
 fi
 
 

@@ -17,6 +17,11 @@ RFCDIR = ./RFC6234
 RFC6234Files = $(RFCDIR)/sha1.o $(RFCDIR)/sha224-256.o ./$(RFCDIR)/sha384-512.o \
 			./$(RFCDIR)/usha.o ./$(RFCDIR)/hkdf.o ./$(RFCDIR)/hmac.o
 
+# One sub-make for all RFC6234 objects (stamp: works on GNU Make 3.81+). Parallel
+# make must not run "cd RFC6234; $(MAKE)" once per .o or sub-makes race on shatest/*.o.
+RFC6234_SRC := $(wildcard $(RFCDIR)/*.c)
+RFC6234_STAMP := $(RFCDIR)/.built
+
 # @Replace: add any additional (non-standard name) c source file(s) here
 COBJ = $(LNAME).o $(RFC6234Files)
 CSRC = $(LNAME).c
@@ -34,8 +39,11 @@ include ../Makedefs
 
 default:	 $(LIBD)/$(LNAME).u
 
-$(RFC6234Files):
-	cd $(RFCDIR); $(MAKE)
+$(RFC6234Files): $(RFC6234_STAMP) ;
+
+$(RFC6234_STAMP): $(RFC6234_SRC) $(RFCDIR)/Makefile
+	cd $(RFCDIR) && $(MAKE)
+	@touch $@
 
 shaPlugTest: shaPlugTest.icn
 	$(TOPDIR)/bin/unicon -s $< -o $@
@@ -45,6 +53,6 @@ test: shaPlugTest
 
 # @Replace: To add plugin specific clean up actions, include a clean:: target
 clean::
-	$(RM) shaPlugTest
+	$(RM) shaPlugTest $(RFC6234_STAMP)
 	cd $(RFCDIR); $(MAKE) $@
 

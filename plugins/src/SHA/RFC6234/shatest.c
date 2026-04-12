@@ -1026,7 +1026,7 @@ int hashHkdf(int testno, int loopno, int hashno,
   int err;
   unsigned char prk[USHAMaxHashSize+1];
   uint8_t okm[255 * USHAMaxHashSize+1];
-  char buf[20];
+  char buf[32];
 
   if (printResults == PRINTTEXT) {
     printf("\nTest %d: Iteration %d\n\tSALT\t'", testno+1, loopno);

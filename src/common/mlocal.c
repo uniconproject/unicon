@@ -530,3 +530,147 @@ void get_arch(char *arch){
 
   sprintf(arch, "Arch %s_%d", s, WordBits);
 }
+
+/*
+ * unicon_win32_cmdline_to_argv / unicon_win32_argv_free --
+ * NT command line to argv (whitespace, quotes, FINDFIRST globs).
+ * Matches rsys.r CmdParamToArgv except Graphics < > redirection.
+ */
+#if defined(NT) && WildCards
+
+#include "../h/filepat.h"
+
+static char *dup_win32_argv(const char *p)
+{
+   char *q = strdup(p);
+
+   if (q == NULL) {
+      fprintf(stderr, "unicon_win32_cmdline_to_argv: out of memory\n");
+      exit(EXIT_FAILURE);
+   }
+   return q;
+}
+
+static void argv_grow(char ***avp, size_t n)
+{
+   char **p = realloc(*avp, n * sizeof(char *));
+
+   if (p == NULL) {
+      fprintf(stderr, "unicon_win32_cmdline_to_argv: out of memory\n");
+      exit(EXIT_FAILURE);
+   }
+   *avp = p;
+}
+
+int unicon_win32_cmdline_to_argv(char *s, char ***avp, int dequote)
+{
+   char tmp[MaxPath];
+   char *t = dup_win32_argv(s);
+   char *t2 = t;
+   int rv = 0;
+
+   *avp = NULL;
+   argv_grow(avp, 2);
+   (*avp)[rv] = NULL;
+
+   while (*t2) {
+      while (*t2 && isspace((unsigned char)*t2))
+         t2++;
+      switch (*t2) {
+      case '\0':
+         break;
+      case '"': {
+         char *t3, c = '\0';
+
+         if (dequote)
+            t3 = ++t2;
+         else
+            t3 = t2++;
+         while (*t2 && (*t2 != '"'))
+            t2++;
+         if (*t2 && !dequote)
+            t2++;
+         if ((c = *t2))
+            *t2++ = '\0';
+         argv_grow(avp, (size_t)rv + 2);
+         (*avp)[rv++] = dup_win32_argv(t3);
+         (*avp)[rv] = NULL;
+         if (!dequote && c)
+            *--t2 = c;
+         break;
+      }
+      default: {
+         FINDDATA_T fd;
+         char *t3 = t2;
+
+         while (*t2 && !isspace((unsigned char)*t2))
+            t2++;
+         if (*t2)
+            *t2++ = '\0';
+         strcpy(tmp, t3);
+
+         if (!strcmp(tmp, ">") || !FINDFIRST(tmp, &fd)) {
+            argv_grow(avp, (size_t)rv + 2);
+            (*avp)[rv++] = dup_win32_argv(t3);
+            (*avp)[rv] = NULL;
+         } else {
+            char dir[MaxPath];
+            int end;
+
+            strcpy(dir, t3);
+            do {
+               end = (int)strlen(dir) - 1;
+               while (end >= 0 && dir[end] != '\\' && dir[end] != '/' &&
+                      dir[end] != ':') {
+                  dir[end] = '\0';
+                  end--;
+               }
+               strcat(dir, FILENAME(&fd));
+               argv_grow(avp, (size_t)rv + 2);
+               (*avp)[rv++] = dup_win32_argv(dir);
+               (*avp)[rv] = NULL;
+            } while (FINDNEXT(&fd));
+            FINDCLOSE(&fd);
+         }
+         break;
+      }
+      }
+   }
+   free(t);
+   return rv;
+}
+
+void unicon_win32_argv_free(int argc, char **argv)
+{
+   int i;
+
+   if (argv == NULL)
+      return;
+   for (i = 0; i < argc; i++)
+      free(argv[i]);
+   free(argv);
+}
+
+#else                                   /* !(NT && WildCards) */
+
+int unicon_win32_cmdline_to_argv(char *s, char ***avp, int dequote)
+{
+   (void)s;
+   (void)dequote;
+   *avp = NULL;
+   return -1;
+}
+
+void unicon_win32_argv_free(int argc, char **argv)
+{
+   int i;
+
+   (void)argc;
+   if (argv == NULL)
+      return;
+   for (i = 0; i < argc; i++)
+      free(argv[i]);
+   free(argv);
+}
+
+#endif                                  /* NT && WildCards */

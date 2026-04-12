@@ -1894,6 +1894,9 @@ void detectRedirection()
  * (e.g. in mswinsystem()).  Behavior differs in that output does not
  * remove double quotes from quoted arguments, otherwise receiving process
  * (if a win32 process) would lose quotedness.
+ *
+ * NT quote and FINDFIRST wildcard expansion match unicon_win32_* in mlocal.c
+ * (unicon_win32_cmdline_to_argv); this routine adds Graphics-related < > redirection.
  */
 int CmdParamToArgv(char *s, char ***avp, int dequote)
 {

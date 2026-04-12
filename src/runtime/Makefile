@@ -7,6 +7,11 @@ default: all
 UNICON_TOP_BUILDDIR ?= $(TOPDIR)
 include $(UNICON_TOP_BUILDDIR)/Makedefs
 
+# Parallel gcc in urtt: only pass -j N when known. Else omit -j so urtt uses MAKEFLAGS/RTT_JOBS (never force -j 1).
+# Parent may export RTT_CC_JOBS (see src/Makefile). ?= keeps an env export from a parallel top-level make.
+RTT_CC_JOBS ?= $(patsubst -j%,%,$(filter -j%,$(MAKEFLAGS)))
+RTT_JFLAG := $(if $(strip $(RTT_CC_JOBS)),-j $(RTT_CC_JOBS),)
+
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
@@ -40,7 +45,8 @@ XOBJS=	xcnv.$(O)     xdata.$(O)    xdef.$(O)     xerrmsg.$(O)  xextcall.$(O) xfc
 	xrsys.$(O)    xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O)   xrwinrsc.$(O)\
 	xrposix.$(O)  xrmsg.$(O)    xraudio.$(O)
 
-COBJS=	cnv.$(O)     data.$(O)    def.$(O)     errmsg.$(O)  extcall.$(O) fconv.$(O)  \
+# Compiler RTL objects from urtt (batched in one invocation); optional drawstring add-on.
+RTL_COBJS=	cnv.$(O)     data.$(O)    def.$(O)     errmsg.$(O)  extcall.$(O) fconv.$(O)  \
 	fload.$(O)   fmath.$(O)   fmisc.$(O)   fmonitr.$(O) fscan.$(O)   fstr.$(O)   \
 	fstranl.$(O) fstruct.$(O) fsys.$(O)    fwindow.$(O) imain.$(O)   imisc.$(O)  \
 	init.$(O)    interp.$(O)  invoke.$(O)  fdb.$(O)     keyword.$(O) lmisc.$(O)  \
@@ -48,7 +54,16 @@ COBJS=	cnv.$(O)     data.$(O)    def.$(O)     errmsg.$(O)  extcall.$(O) fconv.$(
 	oset.$(O)    ovalue.$(O)  ralc.$(O)    rcoexpr.$(O) rcomp.$(O)   rdb.$(O)    \
 	rdebug.$(O)  rlocal.$(O)  rlrgint.$(O) rmemmgt.$(O) rmisc.$(O)   rstruct.$(O)\
 	rsys.$(O)    rgfxsys.$(O) rwinsys.$(O) rwindow.$(O) fxtra.$(O)   rwinrsc.$(O)\
-	rposix.$(O)  rmsg.$(O)    raudio.$(O)  $(COMMONDRAWSTRING)
+	rposix.$(O)  rmsg.$(O)    raudio.$(O)
+
+COBJS=	$(RTL_COBJS) $(COMMONDRAWSTRING)
+
+# All headers that affect any RTL .r translation (must match former explicit rules).
+RTL_BATCH_DEPS = $(RTLSRC) $(HDRS) ../h/feature.h ../h/revision.h \
+	../h/kdefs.h ../h/fdefs.h ../h/odefs.h \
+	$(GRAPHICSHDRS) $(GRAPHICSRI) rxrsc.ri \
+	../h/posix.h ../h/messagin.h \
+	fxposix.ri fxpattrn.ri fxaudio.ri
 
 # These files are affected by NTConsole on Windows
 CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwinsys.$(O) xkeyword.$(O)
@@ -101,8 +116,7 @@ CONSOLE:
 
 # urtt's preprocessor does not see $(CPPFLAGS); pass -I so config.h finds auto.h (iconx and iconc).
 x%.$(O): %.r $(HDRS)
-	$(CMNT)	@echo "   [ICONX RTT] $<"
-	$(SLNT)$(RTT) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) $<
+	$(SLNT)$(RTT) $(RTT_JFLAG) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) $<
 	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c x$*.c
 	$(SLNT)$(RM) x$*.c
 
@@ -113,8 +127,7 @@ xfsys.$(O): fsys.r $(HDRS) $(GRAPHICSHDRS)
 xfwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 
 xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h ../h/revision.h
-	$(CMNT)	@echo "   [ICONX RTT] $< "
-	$(SLNT)$(RTT) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) keyword.r
+	$(SLNT)$(RTT) $(RTT_JFLAG) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) keyword.r
 	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
 
@@ -137,9 +150,10 @@ xrwinrsc.$(O): rwinrsc.r $(HDRS) $(GRAPHICSHDRS) rxrsc.ri
 #
 # Make entries for the compiler library
 #
-RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
+# Order matches RTL_COBJS / COBJS (all compiler RTL .r files).
+RTLSRC= cnv.r data.r def.r errmsg.r extcall.r fconv.r fload.r fmath.r\
 	fmisc.r fmonitr.r fscan.r fstr.r fstranl.r fstruct.r\
-	fsys.r fwindow.r init.r invoke.r keyword.r\
+	fsys.r fwindow.r imain.r imisc.r init.r interp.r invoke.r fdb.r keyword.r\
 	lmisc.r oarith.r oasgn.r ocat.r ocomp.r omisc.r\
 	oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r\
 	rdb.r rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
@@ -152,39 +166,24 @@ comp_all comp_all_uniconc: update_rev
 
 rt.a: ../../rt/lib/libucommon.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a ../../rt/lib/libuconsole.a $(COBJS)
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
-	$(RTT) $(DASHS) -I$(dir $(AUTO_H)) -A -O  "$(COBJS) f_*.$(O) o_*$(O)"
+	$(RTT) $(RTT_JFLAG) $(DASHS) -I$(dir $(AUTO_H)) -A -O  "$(COBJS) f_*.$(O) o_*$(O)"
 	$(RANLIB) $@
 	$(CP) rt.a ../common/dlrgint.$(O) ../../rt/lib/
 	$(CP) rt.db ../../rt/lib/
 
-keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
-	$(CMNT)	@echo "   [ICONC RTT] $< "
-	$(SLNT)$(RTT) $(DASHS) -I$(dir $(AUTO_H)) -c -O "$(CFLAGS) $(CPPFLAGS)" keyword.r
+# One urtt run for all compiler RTL sources: single rt.db load/dump; C compiles parallel in urtt (Unix).
+compiler-rtl-stamp: $(RTL_BATCH_DEPS)
+	$(CMNT)	@echo "   [ICONC RTT batch] $(RTLSRC)"
+	$(RM) rt.db $(RTL_COBJS)
+	$(SLNT)$(RTT) $(RTT_JFLAG) $(DASHS) $(WCONSOLE) -I$(dir $(AUTO_H)) -c -O "$(CFLAGS) $(CPPFLAGS)" $(RTLSRC)
+	@touch compiler-rtl-stamp
 
-%.$(O): %.r $(HDRS)
-	$(CMNT)@echo "   [ICONC RTT] $<"
-	$(SLNT)$(RTT) $(DASHS) $(WCONSOLE) -I$(dir $(AUTO_H)) -c -O "$(CFLAGS) $(CPPFLAGS)"  $<
-
-fwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
-
-rmsg.$(O): rmsg.r $(HDRS) ../h/messagin.h
-
-fxtra.$(O): fxtra.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri fxaudio.ri
-
-raudio.$(O): raudio.r $(HDRS) ../h/posix.h
-
-rposix.$(O): rposix.r $(HDRS) ../h/posix.h
-
-rwinrsc.$(O): rwinrsc.r $(HDRS) $(GRAPHICSHDRS)
-
-rgfxsys.$(O): rgfxsys.r $(HDRS) $(GRAPHICSHDRS)
-
-rwinsys.$(O): rwinsys.r $(HDRS) $(GRAPHICSHDRS)
-
-rwindow.$(O): rwindow.r $(HDRS) $(GRAPHICSHDRS)
+# Objects come from the stamp recipe; if you delete a single $(RTL_COBJS) by hand,
+# also remove compiler-rtl-stamp (or run clean) so urtt runs again.
+$(RTL_COBJS): compiler-rtl-stamp ;
 
 ../common/drawstring3d.o: ../common/drawstring3d.cc
 	cd ../common; $(MAKE) drawstring3d.o
 
 Pure Clean clean:
-	$(RM) *.$(O)
+	$(RM) *.$(O) compiler-rtl-stamp

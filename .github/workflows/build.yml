@@ -40,6 +40,10 @@ concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Parallel gcc inside urtt (HAVE_WORKING_FORK); does not change default local builds.
+env:
+  RTT_JOBS: "16"
+
 jobs:
   Windows:
     runs-on: ${{ matrix.cfg.os }}
@@ -48,7 +52,7 @@ jobs:
     strategy:
       matrix:
         cfg:
-        -  { os: windows-latest,  name: 'Windows 64-bit', pkg: 'Windows_64-bit',  opt: '--disable-iconc --enable-werror' }
+        -  { os: windows-latest,  name: 'Windows 64-bit', pkg: 'Windows_64-bit',  opt: '--enable-werror' }
         #-  { os: windows-latest,  name: 'Windows 32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
 
     defaults:
@@ -290,8 +294,8 @@ jobs:
     strategy:
       matrix:
         platform:
-         -  { arch: riscv64 } # emulated
-         -  { arch: x86 }
+         -  { arch: riscv64, configure_opt: '--disable-iconc' } # emulated; skip iconc
+         -  { arch: x86, configure_opt: "" }
     steps:
     - name: Install extra dependencies
       shell: 'sh'
@@ -311,7 +315,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Configure
-      run: ./configure --disable-iconc
+      run: ./configure ${{ matrix.platform.configure_opt }}
       shell: alpine.sh {0}
 
     - name: Make

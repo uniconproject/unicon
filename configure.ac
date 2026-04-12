@@ -725,6 +725,11 @@ if ! test "x$graphics" = "xno"; then
   if test "x$cv_libX11" = xyes -o "ms$unicon_os" = "mswindows" ; then
 
     CHECK_FREETYPE()
+    # iconc must pass -I.../freetype2 so gcc finds ft2build.h from rt.h
+    if test "x$cv_libfreetype" = "xyes" ; then
+      AC_DEFINE_UNQUOTED([ICONC_FREETYPE_CPPFLAGS], ["$FREETYPE_CFLAGS"],
+        [Extra cpp flags for iconc when compiling user C (ft2build.h).])
+    fi
     CHECK_XFT()
     CHECK_JPEG()
     CHECK_PNG()
@@ -828,12 +833,15 @@ if ! test "x$plugins" = "xno"; then
   if test "x$ac_cv_search_dlopen" != "xno" ; then
     PLUGINS=upexample
     AC_CHECK_LIB(lxc,lxc_get_version,[PLUGINS="$PLUGINS lxcunicon"])
-    AC_SUBST(PLUGINS)
+  else
+    PLUGINS=
   fi
 else
   AC_DEFINE([NoLoadFunc], [1], [No LoadFunc])
   CFUNCTARGET="disabled"
+  PLUGINS=
 fi
+AC_SUBST([PLUGINS])
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 

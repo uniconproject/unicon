@@ -10292,11 +10292,17 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-   if test "x$cv_freetype" = "xno" ; then
+   if test "x$cv_libfreetype" = "xno" ; then
       CPPFLAGS=$ftsave_CPPFLAGS
    fi
 fi
 
+    # iconc must pass -I.../freetype2 so gcc finds ft2build.h from rt.h
+    if test "x$cv_libfreetype" = "xyes" ; then
+
+printf "%s\n" "#define ICONC_FREETYPE_CPPFLAGS \"$FREETYPE_CFLAGS\"" >>confdefs.h
+
+    fi
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if Xft is wanted" >&5
@@ -11951,7 +11957,9 @@ fi
 
 
 
-# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).
+# Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).  We do not copy
+# into src/common/rswitch.[csS]; leftover files from older configure runs are removed by
+# distclean/Pure in the top Makefile.
 if test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
     echo "Native coswitch (assembler) available for $unicon_host"
     RSWITCH_REL=src/asm/$unicon_host-rswitch.s
@@ -12072,14 +12080,17 @@ then :
   PLUGINS="$PLUGINS lxcunicon"
 fi
 
-
+  else
+    PLUGINS=
   fi
 else
 
 printf "%s\n" "#define NoLoadFunc 1" >>confdefs.h
 
   CFUNCTARGET="disabled"
+  PLUGINS=
 fi
+
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 

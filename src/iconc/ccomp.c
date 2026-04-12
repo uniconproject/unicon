@@ -260,7 +260,13 @@ Deliberate Syntax Error
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1,
          " -I/usr/X11/include  -I/usr/X11 -I/usr/X11/include/freetype2 -L/usr/X11/lib");
-#endif
+#else                                   /* MacOS */
+#if HAVE_LIBFREETYPE
+#ifdef ICONC_FREETYPE_CPPFLAGS
+   buf = growcat(buf, &buflen, 2, " ", ICONC_FREETYPE_CPPFLAGS);
+#endif                                  /* ICONC_FREETYPE_CPPFLAGS */
+#endif                                  /* HAVE_LIBFREETYPE */
+#endif                                  /* MacOS */
 #endif                                  /* Graphics */
 
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);

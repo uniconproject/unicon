@@ -963,6 +963,13 @@ AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
 AC_VAR_TIMEZONE_EXTERNALS()
 AC_STRUCT_TIMEZONE()
+
+dnl Plugin shared libraries use -shared; -no-pie (added for musl executables) conflicts with
+dnl -shared on Alpine (undefined reference to main from crt1). Expose linker flags without it.
+dnl Strip only a standalone -no-pie token (space-delimited), not substrings like -Wl,-no-pie.
+PLUGIN_LDFLAGS=`echo " $LDFLAGS " | sed 's/ -no-pie / /g' | sed 's/  */ /g' | sed 's/^ //;s/ $//'`
+AC_SUBST([PLUGIN_LDFLAGS])
+
 AC_CONFIG_FILES([Makefile:Makefile.in],)
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_FILES([Makedefs.uni:Makedefs.uni.in],)

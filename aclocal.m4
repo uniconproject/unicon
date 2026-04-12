@@ -156,7 +156,7 @@ if test "x$with_freetype" != "xno"; then
 
   do_lib_check([freetype], [${freetype_HOME}], [freetype/fttypes.h],
 			 [FT_Open_Face], [HAVE_LIBFREETYPE], [C])
-   if test "x$cv_freetype" = "xno" ; then
+   if test "x$cv_libfreetype" = "xno" ; then
       CPPFLAGS=$ftsave_CPPFLAGS
    fi
 fi

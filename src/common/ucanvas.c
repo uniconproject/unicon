@@ -49,6 +49,20 @@
 #define RGBMASK 0x00FFFFFFu
 
 /*
+ * double to int conversions that stay inside the int range, for
+ * coordinates far off the canvas
+ */
+static int iclamp(double v)
+{
+   if (v > 1e9) return 1000000000;
+   if (v < -1e9) return -1000000000;
+   return (int)v;
+}
+#define iround(v) iclamp(floor((v) + 0.5))
+#define ifloor(v) iclamp(floor(v))
+#define iceil(v)  iclamp(ceil(v))
+
+/*
  * ------------------------------------------------------------------
  * Canvas management
  * ------------------------------------------------------------------
@@ -269,8 +283,8 @@ struct mask {
 static int mask_init(struct mask *mk, struct clip *cl,
                      double bx0, double by0, double bx1, double by1)
 {
-   int x0 = (int)floor(bx0) - 1, y0 = (int)floor(by0) - 1;
-   int x1 = (int)ceil(bx1) + 2, y1 = (int)ceil(by1) + 2;
+   int x0 = ifloor(bx0) - 1, y0 = ifloor(by0) - 1;
+   int x1 = iceil(bx1) + 2, y1 = iceil(by1) + 2;
    if (x0 < cl->x0) x0 = cl->x0;
    if (y0 < cl->y0) y0 = cl->y0;
    if (x1 > cl->x1) x1 = cl->x1;
@@ -344,8 +358,8 @@ static void scan_polygon(struct dpt *p, int n, int ylo, int yhi,
       if (p[i].y < ymin) ymin = p[i].y;
       if (p[i].y > ymax) ymax = p[i].y;
       }
-   y0 = (int)ceil(ymin);
-   y1 = (int)ceil(ymax) - 1;
+   y0 = iceil(ymin);
+   y1 = iceil(ymax) - 1;
    if (y0 < ylo) y0 = ylo;
    if (y1 > yhi) y1 = yhi;
    if (y0 > y1) return;
@@ -363,8 +377,8 @@ static void scan_polygon(struct dpt *p, int n, int ylo, int yhi,
       if (nx < 2) continue;
       qsort(xs, nx, sizeof(double), dcmp);
       for (i = 0; i + 1 < nx; i += 2) {
-         int xa = (int)ceil(xs[i]);
-         int xb = (int)ceil(xs[i + 1]) - 1;
+         int xa = iceil(xs[i]);
+         int xb = iceil(xs[i + 1]) - 1;
          if (xa <= xb)
             fn(arg, y, xa, xb);
          }
@@ -449,9 +463,47 @@ static void thin_line(struct ucanvas *c, struct ucgc *gc, struct clip *cl,
                       struct dash *ds, int x0, int y0, int x1, int y1,
                       int skipfirst, int skiplast)
 {
-   int dx = abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
-   int dy = -abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
-   int err = dx + dy, e2, first = 1;
+   int dx, sx, dy, sy, err, e2, first = 1;
+   double fx = (double)x1 - x0, fy = (double)y1 - y0;
+   double steps = (fabs(fx) > fabs(fy)) ? fabs(fx) : fabs(fy);
+
+   /*
+    * A line much longer than the canvas is first cut down to the part
+    * near the clip region, so that drawing to far-off coordinates does
+    * not walk millions of invisible pixels.  The dash phase is carried
+    * over.  Ordinary lines are drawn exactly as Bresenham has them.
+    */
+   if (steps > 4.0 * (c->width + c->height) + 1024) {
+      double t0 = 0.0, t1 = 1.0;
+      double p[4], q[4];
+      int i;
+      p[0] = -fx; q[0] = x0 - (cl->x0 - 2);
+      p[1] =  fx; q[1] = (cl->x1 + 1) - x0;
+      p[2] = -fy; q[2] = y0 - (cl->y0 - 2);
+      p[3] =  fy; q[3] = (cl->y1 + 1) - y0;
+      for (i = 0; i < 4; i++) {
+         if (p[i] == 0.0) {
+            if (q[i] < 0) t1 = -1.0;            /* parallel and outside */
+            }
+         else {
+            double r = q[i] / p[i];
+            if (p[i] < 0) { if (r > t0) t0 = r; }
+            else          { if (r < t1) t1 = r; }
+            }
+         }
+      if (t0 > t1) {                            /* nothing visible */
+         ds->pos += steps + 1;
+         return;
+         }
+      ds->pos += floor(t0 * steps);
+      if (t0 > 0.0) skipfirst = 0;
+      if (t1 < 1.0) skiplast = 0;
+      x1 = iround(x0 + t1 * fx); y1 = iround(y0 + t1 * fy);
+      x0 = iround(x0 + t0 * fx); y0 = iround(y0 + t0 * fy);
+      }
+   dx = abs(x1 - x0); sx = (x0 < x1) ? 1 : -1;
+   dy = -abs(y1 - y0); sy = (y0 < y1) ? 1 : -1;
+   err = dx + dy;
 
    for (;;) {
       int last = (x0 == x1 && y0 == y1);
@@ -560,11 +612,11 @@ static void polyline(struct ucanvas *c, struct ucgc *gc, struct dpt *p,
    dash_init(&ds, gc);
 
    if (gc->linewidth <= 1) {
-      int px = (int)floor(p[0].x + 0.5), py = (int)floor(p[0].y + 0.5);
+      int px = iround(p[0].x), py = iround(p[0].y);
       if (n == 1)
          thin_line(c, gc, &cl, &ds, px, py, px, py, 0, 0);
       for (i = 1; i < n; i++) {
-         int qx = (int)floor(p[i].x + 0.5), qy = (int)floor(p[i].y + 0.5);
+         int qx = iround(p[i].x), qy = iround(p[i].y);
          /* a closed figure's last point is its first: draw it once */
          thin_line(c, gc, &cl, &ds, px, py, qx, qy, i > 1,
                    closed && i == n - 1);
@@ -594,18 +646,49 @@ static void polyline(struct ucanvas *c, struct ucgc *gc, struct dpt *p,
       for (i = 1; i < n || (n == 1 && i == 1); i++) {
          struct dpt a = p[i - 1], b = p[(n == 1) ? 0 : i];
          double dx = b.x - a.x, dy = b.y - a.y;
-         double len = sqrt(dx * dx + dy * dy), t = 0.0;
+         double len = sqrt(dx * dx + dy * dy), t = 0.0, tend;
          if (len < 1e-9) {
             wide_seg(&mk, a.x, a.y, a.x, a.y, hw, hw, hw, dash_val(&ds));
             continue;
             }
-         while (t < len) {
+         /*
+          * Only walk the dashes of the part of the segment that can
+          * touch the mask; skip the rest, keeping the dash phase.
+          */
+         tend = len;
+         {
+            double pad = hw + 2 * ds.len + 2, t0 = 0.0, t1 = 1.0;
+            double pp[4], qq[4];
+            int k;
+            pp[0] = -dx; qq[0] = a.x - (mk.x0 - pad);
+            pp[1] =  dx; qq[1] = (mk.x0 + mk.w + pad) - a.x;
+            pp[2] = -dy; qq[2] = a.y - (mk.y0 - pad);
+            pp[3] =  dy; qq[3] = (mk.y0 + mk.h + pad) - a.y;
+            for (k = 0; k < 4; k++) {
+               if (pp[k] == 0.0) {
+                  if (qq[k] < 0) t1 = -1.0;
+                  }
+               else {
+                  double r = qq[k] / pp[k];
+                  if (pp[k] < 0) { if (r > t0) t0 = r; }
+                  else           { if (r < t1) t1 = r; }
+                  }
+               }
+            if (t0 > t1) {                      /* entirely off the mask */
+               ds.pos += len;
+               continue;
+               }
+            t = t0 * len;
+            ds.pos += t;
+            tend = t1 * len;
+         }
+         while (t < tend) {
             double period = fmod(ds.pos, 2 * ds.len);
             double left = (period < ds.len) ? ds.len - period
                                             : 2 * ds.len - period;
             double t2 = t + left;
             int v = dash_val(&ds);
-            if (t2 > len) t2 = len;
+            if (t2 > tend) t2 = tend;
             if (v)
                wide_seg(&mk, a.x + dx * t / len, a.y + dy * t / len,
                         a.x + dx * t2 / len, a.y + dy * t2 / len,
@@ -679,12 +762,16 @@ void uc_fill_rect(struct ucanvas *c, struct ucgc *gc,
                   int x, int y, int w, int h)
 {
    struct clip cl;
-   int j;
+   long x0, x1, y0, y1, j;
    if (w <= 0 || h <= 0 || !getclip(c, gc, &cl)) return;
-   if (y < cl.y0) { h -= cl.y0 - y; y = cl.y0; }
-   if (y + h > cl.y1) h = cl.y1 - y;
-   for (j = 0; j < h; j++)
-      hspan(c, gc, &cl, y + j, x, x + w - 1, 1);
+   /* clip in long arithmetic: x + w may not fit in an int */
+   x0 = x; x1 = (long)x + w; y0 = y; y1 = (long)y + h;
+   if (x0 < cl.x0) x0 = cl.x0;
+   if (x1 > cl.x1) x1 = cl.x1;
+   if (y0 < cl.y0) y0 = cl.y0;
+   if (y1 > cl.y1) y1 = cl.y1;
+   for (j = y0; j < y1; j++)
+      hspan(c, gc, &cl, (int)j, (int)x0, (int)x1 - 1, 1);
 }
 
 void uc_draw_rect(struct ucanvas *c, struct ucgc *gc,

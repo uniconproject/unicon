@@ -18,17 +18,18 @@ procedure main()
    write(image(L[1]))
    write(image(L[2]))
 
-   system(["/bin/cat", "-n"], L[1], , , "nowait")
+   # -u: unbuffered stdout so numbered lines appear under file redirection (make test);
+   # without it, libc may hold lines 2–4 until exit; a long delay is then unreliable on CI (e.g. Alpine).
+   system(["/bin/cat", "-u", "-n"], L[1], , , "nowait") |
+      stop("spawn cat: ", \&errortext)
    close(L[1])
-   
+
    system("/bin/ls spawn-test-dir", , L[2])
    close(L[2])
 
-   write("everything written to pipe.")
+   delay(1000)
 
-   # nowait cat shares our stdout; when redirected (make test), libc may fully
-   # buffer cat output. Exit before cat flushes loses lines 2–4 on slow CI (e.g. Alpine).
-   delay(5000)
+   write("everything written to pipe.")
 
    system("rm -rf spawn-test-dir")
 end

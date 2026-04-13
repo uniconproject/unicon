@@ -25,7 +25,10 @@ procedure main(argv)
    every wait(!thrd)
 
    write("sum=",gsum+(x-d*n))
-   # given the block size we use, we should get ~199 GC
+   # Total collections depend on block-region size (see &collections).  Without a fixed
+   # size, the runtime sets it from BLKSIZE or host RAM (init.r), so the count would vary
+   # by machine.  tests/thread/Makefile pins BLKSIZE via GC_BLKSIZE (default 1000000), same
+   # idea as tests/general gc2.icn — expect ~199 GC for that layout.
    write("garbage collection =",
          if 190 < &collections < 210 then "OK" else &collections)
 end

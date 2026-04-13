@@ -189,14 +189,24 @@ void main(int argc, char **argv)
 
 #if UNIX
    /*
-    *  Append to FPATH the bin directory from which iconx was executed.
+    *  Append to FPATH the bin directory from which iconx was executed, and
+    *  when uniroot is patched (packaged installs), the library directory that
+    *  holds libcfunc.so so loadfunc() finds it (see &features "Libraries at").
     */
    {
       char *p = getenv("FPATH");
       char *q = relfile(argv[0], "/..");
-      char *buf = malloc((p?strlen(p):1) + (q?strlen(q):1) + 8);
+      size_t len = (p ? strlen(p) : 1) + (q ? strlen(q) : 1) + 16;
+      char *buf;
+      if ((int)strlen(uniroot) > 18)
+         len += strlen(uniroot + 18);
+      buf = malloc(len);
       if (buf) {
-         sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
+         if ((int)strlen(uniroot) > 18)
+            sprintf(buf, "FPATH=%s %s %s", (p ? p : "."), (q ? q : "."),
+                    uniroot + 18);
+         else
+            sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
          putenv(buf);
          /* buf is part of the environment; don't free it. */
          }

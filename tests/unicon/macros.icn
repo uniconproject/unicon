@@ -28,10 +28,22 @@ $else
 $define TEMP_IS_DEFINED 0
 $endif
 
+link io
+
+procedure unicon_for_tests()
+   # Prefer $UNICON when set and valid; else ../../bin/unicon (tree build); else PATH.
+   local u
+   u := getenv("UNICON")
+   if \u & exists(u) then return u
+   u := "../../bin/unicon"
+   if exists(u) then return u
+   return "unicon"
+end
+
 procedure compile_fails(src, needle)
    local p, line, uc, cmd
    # compile and match the error message
-   uc := getenv("UNICON") | "../../bin/unicon"
+   uc := unicon_for_tests()
    cmd := uc || " -s " || src || " 2>&1"
    p := open(cmd, "p") | stop("cannot open compiler command: " || cmd)
    while line := read(p) do {

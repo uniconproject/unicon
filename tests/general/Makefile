@@ -14,6 +14,11 @@ ifneq ($(UCFEAT),)
 ifeq ($(findstring dynamic loading,$(UCFEAT)),)
 SKIP += cfuncs
 endif
+# utf8 uses uni/lib UTF8 classes; ClassObject init needs proc(&current,...),
+# which requires multiprograms (NoMultiProgram in thin builds).
+ifeq ($(findstring multiple programs,$(UCFEAT)),)
+SKIP += utf8
+endif
 endif
 
 WINSKIP=cfuncs

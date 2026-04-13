@@ -164,7 +164,7 @@ class Adapter(
                      every put_cmdQueue(![: "print -"||!"glsp" :], msg, 1) }
          "variables" : { variables(msg, request_seq, request_command, request_arguments) }
          "setVariable": { setVariable(msg, request_arguments) }
-         "disconnect" : { acknowledge(request_seq, request_command); disconnectPending := 1 }
+         "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
          "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"]}
          "evaluate" : { evaluate(msg, request_seq, request_command, request_arguments) }
          default: { write("Don't know what to do with: ", request_command) }

@@ -1,17 +1,19 @@
 
 $include "posix.icn"
 
+# Look up ntp by name and by port; output must not depend on alias lists (sdump).
 procedure main()
 
-   s := getserv("ntp") | stop("Couldn't get service \"daytime\"")
+   # Second arg fixes order when both tcp and udp exist (e.g. Fedora lists tcp first).
+   s := getserv("ntp", "udp") | stop("Couldn't get service \"ntp\" udp")
    sdump(s)
    port := s.port
-   s := getserv(port) | stop("Couldn't get service for port ", port)
+   s := getserv(integer(port), "udp") | stop("Couldn't get service for port ", port)
    sdump(s)
 
 end
 
 procedure sdump(s)
-   writes(left(s.name, 10), left(s.port || "/" || s.proto, 10))
-   write("[", s.aliases, "]")
+   # Do not print s.aliases: entries differ by OS image (e.g. [] vs [ntp] on Alpine).
+   write(left(s.name, 10) || left(s.port || "/" || s.proto, 10))
 end

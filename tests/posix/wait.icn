@@ -3,6 +3,7 @@ $include "posix.icn"
 
 procedure main()
 
+   # Child exits with code 3; parent reaps and prints wait status string.
    if (child1 := fork()) = 0 then {
       delay(1000)
       exit(3)
@@ -10,18 +11,22 @@ procedure main()
 
    st := wait(child1) | write(&errout, "Wait 1 failed: ", sys_errstr(&errno))
    write(trim(st))
-   
+
+   # Child would exit(5) after a long delay; SIGTERM stops it first (see kill comment).
    if (child2 := fork()) = 0 then {
       delay(10000)
       exit(5)
    }
 
-   kill(child2, "SIGQUIT")
+   # If SIGQUIT is ignored, the child can run exit(5) after delay; expect
+   # terminated:SIGTERM in stand/wait.std instead of terminated:SIGQUIT.
+   kill(child2, "SIGTERM")
    st := wait() | write(&errout, "Wait 2 failed: ", sys_errstr(&errno))
    # some of these will end in :core and some won't
    if st[-5:0] == ":core" then st[-5:0] := ""
    write(trim(st))
 
+   # Stopped with SIGSTOP, waited with WUNTRACED ("u"), then CONT + TERM to finish.
    if (child3 := fork()) = 0 then {
       delay(10000)
       exit(0)
@@ -41,6 +46,7 @@ procedure main()
    system("rm -f core")
 end
 
+# Drop optional ":core" suffix so golden output matches hosts that differ on cores.
 procedure trim(st)
    st ? {
       pid := (integer(tab(many(&digits))) | &null)

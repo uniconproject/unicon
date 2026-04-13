@@ -1,7 +1,40 @@
-procedure main()
+# Golden output is normalized: volatile rusage counters are not printed.
+# We still verify getrusage() returns the expected fields and value types.
+#
+# For human inspection of real counters:  ./rusage debug   (or -debug, --debug)
+
+procedure main(argv)
+   local r, L, k
    every i := 1 to 10 do i*i
    write("after a brief computation:")
    r := getrusage()
+   if debug_args(argv) then {
+      write("# debug: raw getrusage() values")
+      rusage_raw(r)
+   } else {
+      write("getrusage: ok")
+      L := []
+      every put(L, key(r))
+      every k := !sort(L) do
+         if type(r[k]) == "posix_timeval" then {
+            if r[k].sec >= 0 & r[k].usec >= 0 then
+               write(k, ": posix_timeval ok")
+            else
+               write(k, ": posix_timeval BAD")
+         } else if type(r[k]) == "integer" then
+            write(k, ": integer ok")
+         else
+            write(k, ": ", type(r[k]))
+   }
+end
+
+procedure debug_args(argv)
+   return *argv >= 1 & ((argv[1] == "debug") | (argv[1] == "-debug") |
+          (argv[1] == "--debug"))
+end
+
+procedure rusage_raw(r)
+   local k
    write(image(r), ": ",
          r.utime.sec, " seconds, ", r.utime.usec, " microseconds")
    every k := key(r) do

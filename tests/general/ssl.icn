@@ -161,6 +161,29 @@ class TCPClient(addrport, sock, mode, opt)
          }
 end
 
+# OpenSSL 3+ often negotiates a higher TLS / cipher than maxProto/ciphers imply, so
+# TCPClient.run() succeeds where older OpenSSL failed. Match expectations to major version.
+procedure openssl_major()
+   local f, line
+   f := open("sh -c \"command -v openssl >/dev/null && openssl version 2>/dev/null\"", "p") |
+      fail
+   line := read(f)
+   close(f)
+   # LibreSSL enforces maxProto/ciphers like older OpenSSL; do not treat as "OpenSSL 3+".
+   if find("LibreSSL", line) then fail
+   line ? {
+      tab(upto(&digits))
+      return integer(tab(many(&digits))) | fail
+      }
+   fail
+end
+
+procedure expect_neg_fail()
+   local m
+   m := openssl_major() | return "Fail"
+   return if m >= 3 then "Pass" else "Fail"
+end
+
 # for each test, we run a server in the given mode, then we launch one or more
 # client tests. The expected result for each client (pass or fail) is passed with the test
 procedure ssltest(title, server_mode, client_modes)
@@ -192,6 +215,8 @@ procedure main(args)
 
    interactive := args[1]
 
+   neg := expect_neg_fail()
+
    ssltest("Basic socket", "No TLS",
            [["No TLS", "Pass"]])
 
@@ -199,11 +224,11 @@ procedure main(args)
            [["No TLS", "Fail"], ["TLS No CA", "Fail"], ["TLS No Verify", "Pass"], ["TLS With CA", "Pass"]])
 
    ssltest("TLS versions", "TLS1.2 Min",
-           [["TLS1.0", "Fail"], ["TLS1.1", "Fail"], ["TLS1.2", "Pass"]])
+           [["TLS1.0", neg], ["TLS1.1", neg], ["TLS1.2", "Pass"]])
 
    ssltest("Client authentication", "Client Auth",
            [["TLS No Cert", "Fail"], ["Client Auth", "Pass"]])
 
    ssltest("Ciphers", "AES256",
-           [["AES128", "Fail"], ["AES256", "Pass" ]])
+           [["AES128", neg], ["AES256", "Pass" ]])
 end

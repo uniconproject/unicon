@@ -20,11 +20,12 @@ procedure main()
 
    # -u: unbuffered stdout so numbered lines appear under file redirection (make test);
    # without it, libc may hold lines 2–4 until exit; a long delay is then unreliable on CI (e.g. Alpine).
-   system(["/bin/cat", "-u", "-n"], L[1], , , "nowait") |
+   # Use PATH for cat/ls (no /bin/...) so MinGW/Git-Bash Windows CI finds them.
+   system(["cat", "-u", "-n"], L[1], , , "nowait") |
       stop("spawn cat: ", \&errortext)
    close(L[1])
 
-   system("/bin/ls spawn-test-dir", , L[2])
+   system("ls spawn-test-dir", , L[2])
    close(L[2])
 
    delay(1000)

@@ -27,7 +27,11 @@ $endif
    # this was a cause of error difference between what is expected and
    # what was actually obtained
    #
+$ifdef _MS_WINDOWS_NT
+   system(icont || " x.icn > foo.out 2>&1")
+$else
    system(icont || " x.icn &>foo.out")
+$endif
    fin := open("foo.out") | stop("can't open foo.out for reading")
    every write(!fin)
    close(fin)

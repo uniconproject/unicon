@@ -1,25 +1,26 @@
+# select() + reads() on a pipe only (not &input — would raise error 1048).
 $include "posix.icn"
 
 procedure main()
    L := pipe() | stop("Couldn't get pipe: ", sys_errstr(&errno))
 
    if fork() = 0 then {
-      # parent
+      # child: writer end of pipe
       close(L[1])
       delay(10000)
       write(L[2], "Hello,")
       write(L[2], "   world!")
    } else {
+      # parent: reader
       close(L[2])
       while 1 do {
-         while *(L := select(&input, L[1], 1000)) = 0 do
+         # Only select on the pipe: select(&input,...) triggers run-time error 1048
+         # (buffered console read cannot mix with select on &input).
+         while *(L := select(L[1], 1000)) = 0 do
             delay(10)
          (&errno = 0) | stop("Select failed: ", sys_errstr(&errno))
 
-         if L[1] === &input then
-            line := reads()
-         else
-            (line := reads(L[1])) | break
+         (line := reads(L[1])) | break
          write(line)
       }
       write("Everything's ok.")

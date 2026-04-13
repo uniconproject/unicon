@@ -1,8 +1,7 @@
 #SHELL=/bin/bash
 
-# Do the tests
+# Do the tests (Summary is a separate target; list as Test: DoTest Summary in each suite Makefile)
 DoTest: clean TestHdr $(TARGETS)
-	@$(MAKE) -s Summary
 
 %.u: %.icn
 	@$(UC) $(UFLAGS) $<
@@ -19,7 +18,7 @@ local:
 
 #skip rule: don't do these tests
 $(SKIP):
-	-@echo "[Testing $@]... Skip"
+	-@echo "[Testing $@]... SKIP"
 
 $(IGNORE):
 	-@$E -n "[Testing $@]... "
@@ -29,25 +28,25 @@ $(IGNORE):
 	else ./$@ > local/$@.out 2>&1; fi || true
 	-@echo "Expect/ignore these differences in $@:"
 	-@diff stand/$@.std local/$@.out; \
-	if [ $$? -eq 0 ] ; then echo "OK"; \
-	else echo "[Test $@] Ignored"; fi || true
+	if [ $$? -eq 0 ] ; then echo "pass"; \
+	else echo "[Test $@] ignored"; fi || true
 	-@rm $@$(EXE)
 
 # special skip rules for different platforms
 ifeq ($(TOS),Windows)
 #skip on Windows
 $(WINSKIP):
-	-@echo "[Testing $@]... Skip on Windows"
+	-@echo "[Testing $@]... SKIP (Windows)"
 else
 ifeq ($(TOS),Darwin)
 #skip on Mac OS
 $(MACOSSKIP):
-	-@echo "[Testing $@]... Skip on Mac OS"
+	-@echo "[Testing $@]... SKIP (macOS)"
 else
 ifeq ($(TOS),FreeBSD)
 #skip on FreeBSD
 $(BSDSKIP):
-	-@echo "[Testing $@]... Skip on $(TOS)"
+	-@echo "[Testing $@]... SKIP ($(TOS))"
 else
 $(LINUXSKIP):
 
@@ -55,23 +54,40 @@ endif
 endif
 endif
 
+# Tests skipped on this OS (must match $(SKIP) / $(WINSKIP) / ... rules above)
+SKIPPED_TESTS := $(SKIP)
+ifeq ($(TOS),Windows)
+SKIPPED_TESTS += $(WINSKIP)
+else
+ifeq ($(TOS),Darwin)
+SKIPPED_TESTS += $(MACOSSKIP)
+else
+ifeq ($(TOS),FreeBSD)
+SKIPPED_TESTS += $(BSDSKIP)
+else
+SKIPPED_TESTS += $(LINUXSKIP)
+endif
+endif
+endif
+
 # Compile and test, generate a short diff file if there are differences
+# Optional per-target env (e.g. gc2: TEST_ENV := BLKSIZE=... in a suite Makefile).
 %: %.icn local %.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $(UFLAGS) $<
 	@if [ -f data/$@.dat ] ; then \
-	./$@ < data/$@.dat  > local/$@.out 2>&1; \
-	else ./$@ > local/$@.out 2>&1; fi || true
+	$(TEST_ENV) ./$@ < data/$@.dat  > local/$@.out 2>&1; \
+	else $(TEST_ENV) ./$@ > local/$@.out 2>&1; fi || true
 	@if [ x$(EXE) = x.exe ] && [ -f stand/$@.wstd ] ; then \
 	diff -wq stand/$@.wstd local/$@.out >/dev/null; \
-	if [ $$? -eq 0 ] ; then echo "W OK"; \
-	else echo "W Failed"; \
+	if [ $$? -eq 0 ] ; then echo "w pass"; \
+	else echo "w FAIL"; \
 	diff --suppress-common-lines -wy stand/$@.wstd local/$@.out > $@.diff; fi \
 	else diff -wq stand/$@.std local/$@.out >/dev/null; \
-	if [ $$? -eq 0 ] ; then echo "OK"; \
+	if [ $$? -eq 0 ] ; then echo "pass"; \
 	else \
 	if grep -qi "This Program Requires" local/$@.out; then cat local/$@.out; \
-	else echo "Failed"; \
+	else echo "FAIL"; \
 	diff --suppress-common-lines -wy stand/$@.std local/$@.out > $@.diff; fi \
 	fi; \
 	fi || true
@@ -89,26 +105,53 @@ ICNFILES=$(patsubst %.diff,%.icn,$(wildcard *.diff))
 	@echo
 
 TestHdr:
-	@echo
-	@echo "========================="
-	@echo "   $(TESTNAME) Test Suite"
-	@echo "========================="
-	@echo
+	@echo ""
+	@echo "-------------------------- $(TESTNAME) --------------------------"
 
 Summary:
-	@echo
-	@echo "========================"
-	@echo " Test  : $(TESTNAME)"
-	@if [ -n "$(ICNFILES)" ]; then echo " Failed: $(ICNFILES)"; \
-	else echo " Status: All Good"; fi
-	@echo "========================"
-	@echo
+	@tdisp="-"; \
+	if [ -f .suite_duration ]; then tdisp=$$(cat .suite_duration)s; fi; \
+	if [ "$(TARGETS)" = "skip" ]; then \
+		printf "%-10s  %3d %3d %3d  %6s  SKIP (feature unavailable)\n" "$(TESTNAME)" 0 0 1 "$$tdisp"; \
+	elif [ -n "$(ICNFILES)" ]; then \
+		tn=$(words $(TARGETS)); sn=$(words $(SKIPPED_TESTS)); fn=$(words $(ICNFILES)); \
+		pn=`expr $$tn - $$sn - $$fn`; \
+		printf "%-10s  %3d %3d %3d  %6s  FAIL: %s\n" "$(TESTNAME)" $$pn $$fn $$sn "$$tdisp" "$(ICNFILES)"; \
+	else \
+		tn=$(words $(TARGETS)); sn=$(words $(SKIPPED_TESTS)); fn=0; \
+		pn=`expr $$tn - $$sn - $$fn`; \
+		printf "%-10s  %3d %3d %3d  %6s  pass\n" "$(TESTNAME)" $$pn $$fn $$sn "$$tdisp"; \
+	fi
 
-Report: Summary $(FILES)
+# Echo one suite's P, F, S as three integers (for aggregate totals in tests/Makefile).
+print-pfs:
+	@if [ "$(TARGETS)" = "skip" ]; then \
+		echo 0 0 1; \
+	elif [ -n "$(ICNFILES)" ]; then \
+		tn=$(words $(TARGETS)); sn=$(words $(SKIPPED_TESTS)); fn=$(words $(ICNFILES)); \
+		pn=`expr $$tn - $$sn - $$fn`; \
+		echo $$pn $$fn $$sn; \
+	else \
+		tn=$(words $(TARGETS)); sn=$(words $(SKIPPED_TESTS)); fn=0; \
+		pn=`expr $$tn - $$sn - $$fn`; \
+		echo $$pn $$fn $$sn; \
+	fi
+
+# If there are failures, print only the per-test diffs (.report); skip Summary
+# so we do not repeat the one-line "FAIL: ..." table before the diff output.
+# tests/Makefile passes REPORT_FROM_TOP=1 when aggregating; skip per-suite Summary
+# then — the top-level "summary" target prints the table once. Standalone
+# "make Report" in a suite (no REPORT_FROM_TOP) still runs Summary.
+Report:
+	@if [ -n "$(FILES)" ]; then \
+		$(MAKE) $(FILES); \
+	elif [ -z "$(REPORT_FROM_TOP)" ]; then \
+		$(MAKE) Summary; \
+	fi
 
 all: Test Report
 
-.PHONY:  clean Clean Test Test-icon Test-icont Test-iconc Samples $(TESTS)
+.PHONY:  clean Clean Test Test-icon Test-icont Test-iconc Samples print-pfs $(TESTS)
 
 # Delete the default suffixes to avoid implict rules
 .SUFFIXES:
@@ -116,17 +159,17 @@ all: Test Report
 #silent clean
 clean:
 	-@rm -f *.u uniclass.* $(TARGETS)
-	-@rm -f local/*.out *.diff
+	-@rm -f local/*.out *.diff .suite_duration
 
 
 #verbose clean
 Clean:
 	-rm -f *.u uniclass.* $(TARGETS)
-	-rm -f local/*.out *.diff *.exe
+	-rm -f local/*.out *.diff *.exe .suite_duration
 
 distclean:
 	-@rm -f *.u uniclass.* $(TARGETS)
-	-@rm -f local/*.out *.diff *.exe
+	-@rm -f local/*.out *.diff *.exe .suite_duration
 
 
 

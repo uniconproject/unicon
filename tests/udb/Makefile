@@ -114,8 +114,8 @@ TestSuite: $(TESTS)
 	echo; \
 	echo "========================"; \
 	echo " Test  : $(TESTNAME)"; \
-	if [ "$$FF" = "" ]; then echo " Status: All Good"; \
-	else echo " Failed: $$FF"; fi; \
+	if [ "$$FF" = "" ]; then echo " Status: pass"; \
+	else echo " FAIL: $$FF"; fi; \
 	echo "========================"; \
 	echo 
 

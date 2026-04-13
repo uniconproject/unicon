@@ -1,7 +1,17 @@
+# Pipe + nowait: feed `ls` output through the pipe to `cat -n` (numbered lines).
+# Order matters: start `cat` on the read end, then close our L[1], then run `ls`
+# into the write end so bytes flow ls -> pipe -> cat.
 #
 $include "posix.icn"
 
 procedure main()
+
+   # Use a dedicated directory name: ls.icn does `rm -rf test-dir`, which races
+   # with parallel `make -j` if spawn also used test-dir.
+   system("rm -rf spawn-test-dir") | write(&errout, "rm spawn-test-dir: ", sys_errstr(&errno))
+   mkdir("spawn-test-dir") | stop("mkdir spawn-test-dir: ", sys_errstr(&errno))
+   every c := !"abcd" do
+      close(open("spawn-test-dir/" || c, "w") | stop("create spawn-test-dir/", c, ": ", sys_errstr(&errno)))
 
    L := pipe()
 
@@ -11,11 +21,14 @@ procedure main()
    system(["/bin/cat", "-n"], L[1], , , "nowait")
    close(L[1])
    
-   system("/bin/ls test-dir", , L[2])
+   system("/bin/ls spawn-test-dir", , L[2])
    close(L[2])
 
    write("everything written to pipe.")
 
-   delay(1000)
+   # nowait cat shares our stdout; when redirected (make test), libc may fully
+   # buffer cat output. Exit before cat flushes loses lines 2–4 on slow CI (e.g. Alpine).
+   delay(5000)
 
+   system("rm -rf spawn-test-dir")
 end

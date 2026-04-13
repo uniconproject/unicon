@@ -1,8 +1,13 @@
 #unicon program cobench.icn
 # by cvevans
 # benchmarks coexpression performance
+# Progress dots on stderr: ./cobench debug  (or -debug, --debug)
 
-procedure main () 
+procedure main(argv)
+  local dbg, a
+  dbg := 0
+  every a := !argv do
+     if a == "debug" | a == "-debug" | a == "--debug" then dbg := 1
   if not (&features == "co-expressions") then
        stop("This program requires co-expressions.")
   per := 10000
@@ -25,9 +30,9 @@ procedure main ()
       x := ^x
       every 1 to per do 
           n +:= 1; 
-      writes (&errout,".")
+      if dbg = 1 then writes(&errout,".")
   }
-  write(&errout)
+  if dbg = 1 then write(&errout)
   write(n / 1000000 || "M")
   t := &time
   write(t / 1000.0, " seconds overhead.")
@@ -37,9 +42,9 @@ procedure main ()
       x := ^x; 
       while @x do 
           n +:= 1; 
-      writes (&errout,".")
+      if dbg = 1 then writes(&errout,".")
   }
-  write(&errout)
+  if dbg = 1 then write(&errout)
   dt := &time - t
   write(dt / 1000.0, " seconds CPU time,")
   writes(n / 1000000, "M coacts in ")

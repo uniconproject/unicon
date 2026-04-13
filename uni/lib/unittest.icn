@@ -21,6 +21,8 @@
 # TODO: there should be a way to discover and load tests dynamically
 # TODO: implement concurrency, see tests/unicon/tester.icn
 # TODO: how to catch stdin/stdout/stderr within tests, see capture().
+# Summary line: __includeElapsedInSummary / summary() use 1 to print elapsed time
+#     ("ran N tests in X.XXXXXXs") or 0 for stable output ("ran N tests" only).
 # TODO: enable/disable summary.
 # TODO: enable/disable verbosity.
 
@@ -102,7 +104,7 @@ initially
    /__status := STATUS_SUCCESS
 end
 
-class TestSuite(__tests, __testReporter)
+class TestSuite(__tests, __testReporter, __includeElapsedInSummary)
    $define EXIT_SUCCESS 0
    $define EXIT_FAILURE 1
 
@@ -145,7 +147,7 @@ class TestSuite(__tests, __testReporter)
 
       t1 := gettimeofday()
       self.__testReporter.runtime(((t1.sec - t0.sec) * 1000000 + (t1.usec - t0.usec)) / 1000000.0)
-      summary := self.__testReporter.summary()
+      summary := self.__testReporter.summary(self.__includeElapsedInSummary)
 
       return if summary.failed > 0 then EXIT_FAILURE else EXIT_SUCCESS
    end
@@ -157,6 +159,7 @@ class TestSuite(__tests, __testReporter)
 initially
    __tests := []
    /__testReporter := TestReporter()
+   /__includeElapsedInSummary := 1
 end
 
 class TestReporter(__results, __summary)
@@ -178,14 +181,17 @@ class TestReporter(__results, __summary)
       self.__summary.runtime := real(time)
    end
 
-   method summary()
+   method summary(includeElapsed)
       local runtime
-
-      runtime := sprintf("%.6r", self.__summary.runtime)
 
       write("=== TEST SUMMARY ===")
       write("passed: " || self.__summary.passed || ", failed: " || self.__summary.failed)
-      write("ran " || *self.__results || " tests in " || runtime || "s")
+      if includeElapsed = 0 then
+         write("ran " || *self.__results || " tests")
+      else {
+         runtime := sprintf("%.6r", self.__summary.runtime)
+         write("ran " || *self.__results || " tests in " || runtime || "s")
+      }
 
       return self.__summary
    end

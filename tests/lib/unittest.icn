@@ -8,6 +8,7 @@ class TestTestSuite : TestCase(__testSuite)
 
    method setup()
       self.__testSuite := TestSuite()
+      self.__testSuite.__includeElapsedInSummary := 0
    end
 
    method testInitialState()
@@ -230,20 +231,20 @@ class TestTestReporter : TestCase(__reporter)
       local results
 
       assertEqual(0, *self.__reporter.__results)
-      results := self.__reporter.summary()
+      results := self.__reporter.summary(0)
       assertEqual(0, results.passed)
       assertEqual(0, results.failed)
       assertEqual(0.0, results.runtime)
 
       self.__reporter.result(classname(self), "testResult", 0)
       assertEqual(1, *self.__reporter.__results)
-      results := self.__reporter.summary()
+      results := self.__reporter.summary(0)
       assertEqual(1, results[1])
       assertEqual(0, results[2])
 
       self.__reporter.result(classname(self), "testResultFail", 1)
       assertEqual(2, *self.__reporter.__results)
-      results := self.__reporter.summary()
+      results := self.__reporter.summary(0)
       assertEqual(1, results[1])
       assertEqual(1, results[2])
 
@@ -302,6 +303,7 @@ end
 
 procedure main()
    ts := TestSuite()
+   ts.__includeElapsedInSummary := 0
 
    tss := TestTestSuite()
    ts.add(tss)

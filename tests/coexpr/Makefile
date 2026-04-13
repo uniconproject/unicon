@@ -38,8 +38,8 @@ ${GREPTST} : % : %.icn local stand/%.std
 	@$(UC) $(UFLAGS) $<
 	-./$@ | $(TEE) local/$@.out
 	-@grep -f stand/$@.std local/$@.out >/dev/null; \
-	if [ $$? -eq 0 ] ; then echo "OK"; \
-	else echo "$@ Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
+	if [ $$? -eq 0 ] ; then echo "pass"; \
+	else echo "$@ FAIL"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
 	-@rm -f $@$(EXE)
 # ALERT: this will pass if ANY lines in .std match ANY part of any line in .out
 # use GREPDIFFTST for a stricter match
@@ -49,8 +49,8 @@ ${GREPDIFFTST} : % : %.icn local stand/%.std stand/%.grep
 	@$(UC) $(UFLAGS) $<
 	-./$@ | $(TEE) local/$@.out
 	-@grep -f stand/$@.grep local/$@.out | diff stand/$@.std - > /dev/null ; \
-	if [ $$? -eq 0 ] ; then echo "OK"; \
-	else echo "$@ Failed"; \
+	if [ $$? -eq 0 ] ; then echo "pass"; \
+	else echo "$@ FAIL"; \
 	grep -f stand/$@.grep local/$@.out | diff -wy stand/$@.std - > $@.diff; \
 	fi || true
 	-@rm -f $@$(EXE)
@@ -61,8 +61,8 @@ ${GREPODTST} : % : %.icn local stand/%.std stand/%.grep
 	@$(UC) $(UFLAGS) $<
 	-./$@ | $(TEE) local/$@.out
 	-@grep -o -f stand/$@.grep local/$@.out | diff stand/$@.std - > /dev/null ; \
-	if [ $$? -eq 0 ] ; then echo "OK"; \
-	else echo "$@ Failed"; \
+	if [ $$? -eq 0 ] ; then echo "pass"; \
+	else echo "$@ FAIL"; \
 	grep -o -f stand/$@.grep local/$@.out | diff -wy stand/$@.std - > $@.diff; \
 	fi || true
 	-@rm -f $@$(EXE)

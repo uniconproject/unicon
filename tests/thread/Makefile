@@ -13,11 +13,15 @@ TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 else
 skip:
 	@echo "\nConcurrent Threads are not available in this build"
-	@echo "Skipping concurrency test...\n"
+	@echo "SKIP: concurrency test\n"
 
 TARGETS=skip
 endif
 
+
+# Pin block region size so &collections in gc.icn is stable across hosts (see tests/general gc2).
+GC_BLKSIZE ?= 1000000
+gc: TEST_ENV := BLKSIZE=$(GC_BLKSIZE)
 
 # Do the tests
 Test: DoTest

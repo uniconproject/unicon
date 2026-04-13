@@ -11,7 +11,7 @@ TARGETS=$(MTTST)
 else
 skip:
 	@echo "\nMultiple programs are not available in this build"
-	@echo "Skipping multiple programs test...\n"
+	@echo "SKIP: multiple programs test\n"
 
 TARGETS=skip
 endif

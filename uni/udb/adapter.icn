@@ -17,14 +17,12 @@ class Adapter(
    showResult,
    udbError,
    tpArgs,
-   bpSuccess,
-   numBreakpoints,
-   breakpointList,
    wpSuccess,
    numWatchpoints,
    watchpointList,
    numScopes,
-   scopesList
+   scopesList,
+   disconnectPending
    )
 
    # Process a result from udb in table or list form.
@@ -38,7 +36,7 @@ class Adapter(
       else if type(res) == "list" then
          every resTable := !res do
             if type(resTable) == "table" then
-               process_udb_output_table(res)
+               process_udb_output_table(resTable)
    end
 
    #<p>
@@ -63,15 +61,14 @@ class Adapter(
 
       repeat {
          if *cmdQueue ~= 0 then {
-            cmdElement := pop(cmdQueue)
+            cmdElement := get(cmdQueue)
             #write(ximage(cmdElement))
             currentRequestBody := cmdElement["request"]
             showResult := cmdElement["showResult"]
             cmd := cmdElement["command"]
-            #write("udb command: "||cmd||"\n")
             return cmd
          }
-         every msg := get_request() do {
+         if msg := get_request() then {
             command := msg.get_command()
 
             if \waitingForTerminal then {
@@ -88,7 +85,7 @@ class Adapter(
                      load_cmds()
 
                      # drain any requests that came in while waiting for the terminal and process them in order
-                     while req := \pop(requestQueue) do {
+                     while req := \get(requestQueue) do {
                         process_request(req)
                      }
                   }
@@ -153,7 +150,7 @@ class Adapter(
       case request_command of {
          "initialize": { initialize(request_seq, request_command, request_arguments) }
          "launch" : { launch(request_seq, request_command, request_arguments) }
-         "setBreakpoints" : { set_breakpoints(msg, request_seq, request_command, request_arguments) }
+         "setBreakpoints" : { set_breakpoints(request_seq, request_command, request_arguments) }
          "setDataBreakpoints" : { set_watchpoints(msg, request_seq, request_command, request_arguments) }
          "dataBreakpointInfo" : { watchpoint_info(msg, request_seq, request_command, request_arguments)}
          "configurationDone" : { put_cmdQueue("run", msg); if /udbError then acknowledge(request_seq, request_command) }
@@ -167,7 +164,7 @@ class Adapter(
                      every put_cmdQueue(![: "print -"||!"glsp" :], msg, 1) }
          "variables" : { variables(msg, request_seq, request_command, request_arguments) }
          "setVariable": { setVariable(msg, request_arguments) }
-         "disconnect" : { acknowledge(request_seq, request_command); disconnect() }
+         "disconnect" : { acknowledge(request_seq, request_command); disconnectPending := 1 }
          "runInTerminal" : { if member(response_body, "shellProcessId") then shellProcessId := response_body["shellProcessId"]}
          "evaluate" : { evaluate(msg, request_seq, request_command, request_arguments) }
          default: { write("Don't know what to do with: ", request_command) }
@@ -308,8 +305,8 @@ $endif
    end
 
    # Handles all the things required from a client "setBreakpoints" request.
-   method set_breakpoints(msg, request_seq, request_command, request_arguments)
-      local pth, filename
+   method set_breakpoints(request_seq, request_command, request_arguments)
+      local pth, filename, line, dapBreakpoints
 
       if member(request_arguments["source"], "path") then
          pth := request_arguments["source"]["path"]
@@ -319,25 +316,36 @@ $endif
          return
       }
 
+      filename := pth
       pth ? {
          tab(findre("\/[^\/]+$"))
          move()
          filename := tab(0)
       }
 
-      put_cmdQueue("clear break " || filename || " all", msg, 1)
-      numBreakpoints +:= 1
+      put_cmdQueue("clear break " || filename || " all", &null, 1)
+      dapBreakpoints := []
 
       if member(request_arguments, "breakpoints") then {
          every bp := !request_arguments["breakpoints"] do {
-            put_cmdQueue("b " || filename || ":" || bp["line"], msg)
-            numBreakpoints +:= 1
+            line := integer(bp["line"]) | next
+            put_cmdQueue("b " || filename || ":" || line, &null, 1)
+            put(dapBreakpoints, [
+               "verified": "__true__";
+               "source": ["path": pth];
+               "line": line
+            ])
          }
       }
       else if member(request_arguments, "lines") then {
          every line := !request_arguments["lines"] do {
-            put_cmdQueue("b " || filename || ":" || line, msg)
-            numBreakpoints +:= 1
+            line := integer(line) | next
+            put_cmdQueue("b " || filename || ":" || line, &null, 1)
+            put(dapBreakpoints, [
+               "verified": "__true__";
+               "source": ["path": pth];
+               "line": line
+            ])
          }
       }
       else {
@@ -345,6 +353,7 @@ $endif
          json_handler.send_msg(res)
          return
       }
+      processBreakpointResult(request_seq, request_command, dapBreakpoints)
    end
 
    method set_watchpoints(msg, request_seq, request_command, request_arguments)
@@ -498,7 +507,6 @@ $endif
             json_handler.send_msg(event)
          }
          case curCmd of {
-            "setBreakpoints": processBreakpointResult(outputTable)
             "setDataBreakpoints": processWatchpointResult(outputTable)
             "stackTrace": processStackTraceResult(outputTable)
             "scopes": processScopesResult(outputTable)
@@ -529,8 +537,7 @@ $endif
       }
       else if outputTable["type"] == "exited" then {
          event := build_event("exited", [
-            "exitCode",
-            outputTable["exitCode"]])
+            "exitCode": outputTable["exitCode"]])
          json_handler.send_msg(event)
       }
       else if outputTable["type"] == "crash" then {
@@ -546,34 +553,10 @@ $endif
       }
    end
 
-   method processBreakpointResult(res)
-      local body
-      if \res["success"] == "__false__" then {
-         response := build_response(currentRequestBody.get_seq(), "__false__", currentRequestBody.get_command())
-         json_handler.send_msg(response)
-         return
-      }
-
-      bpSuccess +:= 1
-      if res["type"] == "setBreakpoint" then {
-         bp := [
-            "id": res["breakpoint"]["id"];
-            "line": res["breakpoint"]["line"];
-            "verified": "__true__";
-            "source": [
-               "path": filePath||".icn"
-            ]
-         ]
-         push(breakpointList, bp)
-      }
-      if bpSuccess == numBreakpoints then {
-         body := table("breakpoints", breakpointList)
-         response := build_response(currentRequestBody.get_seq(), "__true__", currentRequestBody.get_command(), body)
-         json_handler.send_msg(response)
-
-         bpSuccess := 0
-         breakpointList := []
-      }
+   method processBreakpointResult(request_seq, request_command, breakpoints)
+      local response
+      response := build_response(request_seq, "__true__", request_command, table("breakpoints", breakpoints))
+      json_handler.send_msg(response)
    end
 
    method processWatchpointResult(res)
@@ -944,14 +927,12 @@ $endif
       lastUdbCmd := ""
       requestQueue := []
       cmdQueue := []
-      numBreakpoints := 0
-      breakpointList := []
-      bpSuccess := 0
       numWatchpoints := 0
       watchpointList := []
       wpSuccess := 0
       scopesList := []
       numScopes := 0
+      disconnectPending := &null
    end
 
    initially

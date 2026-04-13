@@ -122,6 +122,11 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       fail
    end
 
+   method require_value(x)
+      /x & fail
+      return x
+   end
+
    method pass_test(test_name)
       write("TEST ", test_name, " ... PASS")
       return self
@@ -207,14 +212,17 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
 
       evt := get_msg(1000) | {
          fail_test(test_name, "missing initialized event", &null)
+         fail
       }
 
       if /evt["type"] | evt["type"] ~== "event" then {
          fail_test(test_name, "expected initialized event", evt)
+         fail
       }
 
       if /evt["event"] | evt["event"] ~== "initialized" then {
          fail_test(test_name, "wrong event after initialize", evt)
+         fail
       }
 
       drain_messages(200)
@@ -226,10 +234,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       local msg, body, threads, test_name
       test_name := "threads"
 
-      msg := run_request_test(test_name, "threads", table(), 200)
-      if /msg then {
-         fail
-      }
+      msg := require_value(run_request_test(test_name, "threads", table(), 200))
 
       body := msg["body"] | {
          fail_test(test_name, "threads response missing body", msg)
@@ -238,14 +243,17 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
 
       threads := body["threads"] | {
          fail_test(test_name, "threads response missing threads", msg)
+         fail
       }
 
       if type(threads) ~== "list" then {
          fail_test(test_name, "threads field is not a list", msg)
+         fail
       }
 
       if *threads = 0 then {
          fail_test(test_name, "threads list is empty", msg)
+         fail
       }
 
       pass_test(test_name)
@@ -261,7 +269,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
          "breakpoints": [["line": TEST_BREAKPOINT_LINE]]
       ]
 
-      msg := run_request_test(test_name, "setBreakpoints", args, 200)
+      msg := require_value(run_request_test(test_name, "setBreakpoints", args, 200))
       pass_test(test_name)
       return self
    end
@@ -273,7 +281,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["program"] := TEST_PROGRAM
 
-      msg := run_request_test(test_name, "launch", args, 200)
+      msg := require_value(run_request_test(test_name, "launch", args, 200))
       pass_test(test_name)
       return self
    end
@@ -282,9 +290,9 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       local msg, evt, test_name
       test_name := "configurationDone"
 
-      msg := run_request_test(test_name, "configurationDone", table())
+      msg := require_value(run_request_test(test_name, "configurationDone", table()))
 
-      evt := expect_event(test_name, "stopped", 20000)
+      evt := require_value(expect_event(test_name, "stopped", 20000))
 
       drain_messages(200)
       pass_test(test_name)
@@ -310,24 +318,27 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["name"] := "i"
 
-      msg := run_request_test(test_name, "dataBreakpointInfo", args, 200)
-      if /msg then {
-         fail
-      }
+      msg := require_value(run_request_test(test_name, "dataBreakpointInfo", args, 200))
 
       body := msg["body"] | {
          fail_test(test_name, "missing body", msg)
          fail
       }
 
-      if /body["dataId"] then
+      if /body["dataId"] then {
          fail_test(test_name, "missing dataId", msg)
+         fail
+      }
 
-      if /body["description"] then
+      if /body["description"] then {
          fail_test(test_name, "missing description", msg)
+         fail
+      }
 
-      if /body["accessTypes"] | type(body["accessTypes"]) ~== "list" then
+      if /body["accessTypes"] | type(body["accessTypes"]) ~== "list" then {
          fail_test(test_name, "missing accessTypes list", msg)
+         fail
+      }
 
       pass_test(test_name)
       return self
@@ -344,10 +355,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["breakpoints"] := [wp]
 
-      msg := run_request_test(test_name, "setDataBreakpoints", args, 200)
-      if /msg then {
-         fail
-      }
+      msg := require_value(run_request_test(test_name, "setDataBreakpoints", args, 200))
 
       body := msg["body"] | {
          fail_test(test_name, "missing body", msg)
@@ -358,8 +366,10 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
          fail
       }
 
-      if type(breakpoints) ~== "list" then
+      if type(breakpoints) ~== "list" then {
          fail_test(test_name, "breakpoints is not a list", msg)
+         fail
+      }
 
       pass_test(test_name)
       return self
@@ -372,10 +382,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["threadId"] := 1
 
-      msg := run_request_test(test_name, "stackTrace", args, 200)
-      if /msg then {
-         fail
-      }
+      msg := require_value(run_request_test(test_name, "stackTrace", args, 200))
 
       body := msg["body"] | {
          fail_test(test_name, "missing body", msg)
@@ -386,14 +393,21 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
          fail
       }
 
-      if type(frames) ~== "list" then
+      if type(frames) ~== "list" then {
          fail_test(test_name, "stackFrames is not a list", msg)
+         fail
+      }
 
-      if *frames = 0 then
+      if *frames = 0 then {
          fail_test(test_name, "stackFrames is empty", msg)
+         fail
+      }
 
       frame := frames[1]
-      last_frame_id := frame["id"] | fail_test(test_name, "first stack frame missing id", msg)
+      last_frame_id := frame["id"] | {
+         fail_test(test_name, "first stack frame missing id", msg)
+         fail
+      }
 
       pass_test(test_name)
       return self
@@ -411,10 +425,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["frameId"] := last_frame_id
 
-      msg := run_request_test(test_name, "scopes", args, 200)
-      if /msg then {
-         fail
-      }
+      msg := require_value(run_request_test(test_name, "scopes", args, 200))
 
       body := msg["body"] | {
          fail_test(test_name, "missing body", msg)
@@ -425,8 +436,10 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
          fail
       }
 
-      if type(scopes) ~== "list" then
+      if type(scopes) ~== "list" then {
          fail_test(test_name, "scopes field is not a list", msg)
+         fail
+      }
 
       every scope := !scopes do {
          case \scope["name"] of {
@@ -459,10 +472,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["variablesReference"] := locals_ref
 
-      msg := run_request_test(test_name, "variables", args, 200)
-      if /msg then {
-         fail
-      }
+      msg := require_value(run_request_test(test_name, "variables", args, 200))
 
       body := msg["body"] | {
          fail_test(test_name, "missing body", msg)
@@ -473,8 +483,10 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
          fail
       }
 
-      if type(vars) ~== "list" then
+      if type(vars) ~== "list" then {
          fail_test(test_name, "variables field is not a list", msg)
+         fail
+      }
 
       pass_test(test_name)
       return self
@@ -494,10 +506,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args["name"] := "i"
       args["value"] := "99"
 
-      msg := run_request_test(test_name, "setVariable", args, 200)
-      if /msg then {
-         fail
-      }
+      msg := require_value(run_request_test(test_name, "setVariable", args, 200))
 
       pass_test(test_name)
       return self
@@ -510,7 +519,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["threadId"] := 1
 
-      msg := run_request_test(test_name, "next", args, 200)
+      msg := require_value(run_request_test(test_name, "next", args, 200))
       pass_test(test_name)
       return self
    end
@@ -526,7 +535,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       if \last_frame_id then
          args["frameId"] := last_frame_id
 
-      msg := run_request_test(test_name, "evaluate", args, 200)
+      msg := require_value(run_request_test(test_name, "evaluate", args, 200))
       pass_test(test_name)
       return self
    end
@@ -538,7 +547,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["threadId"] := 1
 
-      msg := run_request_test(test_name, "stepIn", args, 200)
+      msg := require_value(run_request_test(test_name, "stepIn", args, 200))
       pass_test(test_name)
       return self
    end
@@ -550,7 +559,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       args := table()
       args["threadId"] := 1
 
-      msg := run_request_test(test_name, "stepOut", args, 200)
+      msg := require_value(run_request_test(test_name, "stepOut", args, 200))
 
       pass_test(test_name)
       return self
@@ -560,7 +569,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       local msg, test_name
       test_name := "disconnect"
 
-      msg := run_request_test(test_name, "disconnect", table())
+      msg := require_value(run_request_test(test_name, "disconnect", table()))
 
       pass_test(test_name)
       return self

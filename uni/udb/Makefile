@@ -67,6 +67,9 @@ test_adapter: test_adapter.u
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb
 
+test_adapter.u: test_adapter.icn
+	$(UC) $(cflags) test_adapter
+
 adapter.u: adapter.icn dap_message.u
 	$(UC) $(cflags) adapter
 

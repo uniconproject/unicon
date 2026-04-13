@@ -536,10 +536,14 @@ static void handle_event(struct usdl_event *ev)
       qevent(ws, &d, 0, 0, 0, 0);
       if (ws->inputmask & WindowClosureMask)
          break;
+      /*
+       * The window goes away now; the window value (and its canvas)
+       * stays valid until the program closes it.  Event() stops I/O
+       * on it when it delivers the closed event.
+       */
       SETCLOSED(wb);
-      if (is:file(ws->filep))
-         BlkD(ws->filep,File)->status &= ~(Fs_Write);
-      wclose(wb);
+      usdl_close(ws->win);
+      ws->win = NULL;
       break;
       }
    }

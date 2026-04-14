@@ -18,6 +18,10 @@ Unicon is a community project: improvements to the language, runtime, libraries,
 - Run **`make Test`** when your change can affect the interpreter, compiler, or runtime (CI runs a broad matrix; local `make Test` catches many regressions early).
 - Follow [Code formatting](#code-formatting); avoid unrelated refactors in the same PR.
 
+## Dev containers
+
+You can use **Docker-based dev containers** in **VS Code** to work in a **Linux** environment with multiple **distro** options without installing the full toolchain on your host. See **[`doc/dev-containers.md`](doc/dev-containers.md)** for prerequisites, how to open and switch configurations, and how to build and test inside the container.
+
 ## Pre-submission checklist
 
 Before you open or update a pull request:
@@ -195,6 +199,7 @@ specific sanitizer behavior while stepping.
 
 ## Further reading
 
+- Dev containers (Docker / VS Code): [`doc/dev-containers.md`](doc/dev-containers.md)
 - Shipped documentation index: [documentation index](doc/)
 - Continuous integration: [`.github/workflows/build.yml`](.github/workflows/build.yml)
 - Heap / verification details in the implementation book: `doc/ib/` (e.g. discussion of `VRFY` in the appendices)

@@ -1,0 +1,33 @@
+{
+   "name": "Alpine (musl — behavior may differ from glibc)",
+   "image": "mcr.microsoft.com/devcontainers/base:alpine",
+   "features": {
+      "ghcr.io/devcontainers/features/common-utils:2": {
+         "upgradePackages": false,
+         "username": "vscode"
+      }
+   },
+   "customizations": {
+      "vscode": {
+         "extensions": [
+            "jafar.unicon-syntax",
+            "jafar.unicon-debugger",
+            "jafar.unicon-lsp",
+            "ms-vscode.makefile-tools"
+         ]
+      }
+   },
+   "updateRemoteUserUID": true,
+   "remoteUser": "vscode",
+   "postStartCommand": "sudo chown -R vscode:vscode /unicon",
+   "containerEnv": {
+      "INTERACTIVE": "true",
+      "SOURCE_DIR": "/unicon",
+      "RELEASE_DIR": "/unicon/release/"
+   },
+   "remoteEnv": {
+      "PATH": "${containerEnv:PATH}:/unicon/bin"
+   },
+   "workspaceMount": "source=${localWorkspaceFolder},target=/unicon,type=bind,consistency=cached",
+   "workspaceFolder": "/unicon"
+}

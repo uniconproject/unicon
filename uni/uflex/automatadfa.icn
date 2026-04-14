@@ -233,25 +233,11 @@ local lst := []
 end
 #____________________________________________________________________________
 procedure epsilon_closure(nfastatescell,statecol,ec_tble)
-local lst := []
-local epos := 0
-local ecset := set()
-local ec := ""
-local startnode := ""
-local more := ""
-local elst := []
-   every j := 1 to *statecol do {
-      ecset := set()
-      eclst := []
-      startnode := statecol[j]
+local startnode
+   every startnode := !statecol do {
       eps_key := startnode||":@|#$~@12"
       # Get list of states in last col of nfastatescell state||":@|#$~@12"
-      if member(nfastatescell,eps_key)  then {
-         elst :=  nfastatescell[eps_key]
-         every m := 1 to *elst do {
-            put(eclst,elst[m])
-         }
-         put(eclst,startnode)  # add startnode
+      if eclst := \ (nfastatescell[eps_key]) ||| [startnode] then {
          get_eclosure(startnode,eclst,ec_tble,nfastatescell)
       }
       else {  # empty last col - just insert startnode
@@ -259,38 +245,34 @@ local elst := []
       }
    }
 end
+
 #
-# nfastatescell table cell contains moves on epsilon for each state
-# Use the nfastatescell key node||":@|#$~@12" to get all the moves for each state
-# in the set
-#__________________________________________________
+# nfastatescell table cell contains moves on epsilon for each state.
+# Use the nfastatescell key node||":@|#$~@12" to get all the moves for
+# each state in the set.
+#
 procedure get_eclosure(startnode,eclst,ec_tble,nfastatescell)
-local  lst := []
 local  node := ""
-local  more := 1
 local  doneset := set()
    eclst := []
    put(eclst,startnode)
-   while more = 1 do  { # get and put on eclst to get all states
-      if *eclst = 0 then more := 0
-      else {
-         node := get(eclst)  # pop item off list
-         lst := []
-         eps_key := node||":@|#$~@12"
-         if member(nfastatescell,eps_key)  then {
-            elst :=  nfastatescell[eps_key]
-            every m := 1 to *elst do {
-               if not member(doneset,elst[m]) then {
-                  put(eclst,elst[m])
-                  insert(doneset,elst[m])
-               }
+   repeat  { # get and put on eclst to get all states
+      if *eclst = 0 then break
+
+      node := get(eclst)  # pop item off list
+      eps_key := node||":@|#$~@12"
+      if elst := \ (nfastatescell[eps_key]) then {
+         every m := !elst do {
+            if not member(doneset,m) then {
+               put(eclst,m)
+               insert(doneset,m)
             }
          }
-         else { # no e move adding
-            if not member(doneset,node) then {
-               put(eclst,node)
-               insert(doneset,node)
-            }
+      }
+      else { # no e move adding
+         if not member(doneset,node) then {
+            put(eclst,node)
+            insert(doneset,node)
          }
       }
    }

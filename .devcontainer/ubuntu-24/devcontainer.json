@@ -1,11 +1,10 @@
 {
-   "name": "jammy",
-   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-   "image": "mcr.microsoft.com/devcontainers/base:jammy",
-   // Features to add to the dev container. More info: https://containers.dev/features.
+   "name": "Ubuntu 24.04 LTS (noble)",
+   "image": "mcr.microsoft.com/devcontainers/base:noble",
    "features": {
       "ghcr.io/devcontainers/features/common-utils:2": {
-         "upgradePackages": false
+         "upgradePackages": false,
+         "username": "vscode"
       }
    },
    "customizations": {
@@ -19,12 +18,12 @@
       }
    },
    "updateRemoteUserUID": true,
-   "remoteUser": "dev",
+   "remoteUser": "vscode",
+   "postStartCommand": "sudo chown -R vscode:vscode /unicon",
    "containerEnv": {
       "INTERACTIVE": "true",
       "SOURCE_DIR": "/unicon",
-      "RELEASE_DIR": "/unicon/release/",
-      "DEPENDENCIES": "gcc"
+      "RELEASE_DIR": "/unicon/release/"
    },
    "remoteEnv": {
       "PATH": "${containerEnv:PATH}:/unicon/bin"

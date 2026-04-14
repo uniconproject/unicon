@@ -1,6 +1,5 @@
 %{
-#$include "c:\\jeffery\\unicon\\uni\\unicon\\ytab_h.icn"
-$include "/home/jeffery/unicon/uni/unicon/ytab_h.icn"
+$include "../../unicon/ytab_h.icn"
 $define Beginner 1
 $define Ender 2
 $define Newline 4

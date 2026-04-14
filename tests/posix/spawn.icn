@@ -4,6 +4,26 @@
 #
 $include "posix.icn"
 
+# Poll wait(pid,"n") (WNOHANG) until the child reports a status or ms elapses.
+# Blocking wait() can hang here on some systems; pure delay is race-prone under CI.
+procedure wait_child_timeout(pid, ms)
+   local st, left, step
+   step := 50
+   left := ms
+   while left > 0 do {
+      if st := wait(pid, "n") then {
+         if st == "???" then {
+            delay(step)
+            left -:= step
+         } else return st
+      } else {
+         delay(step)
+         left -:= step
+      }
+   }
+   fail
+end
+
 procedure main()
 
    # Use a dedicated directory name: ls.icn does `rm -rf test-dir`, which races
@@ -18,17 +38,21 @@ procedure main()
    write(image(L[1]))
    write(image(L[2]))
 
-   # -u: unbuffered stdout so numbered lines appear under file redirection (make test);
-   # without it, libc may hold lines 2–4 until exit; a long delay is then unreliable on CI (e.g. Alpine).
+   # -u: unbuffered I/O where supported (helps line-at-a-time behavior under busybox/coreutils).
    # Use PATH for cat/ls (no /bin/...) so MinGW/Git-Bash Windows CI finds them.
-   system(["cat", "-u", "-n"], L[1], , , "nowait") |
+   catpid := system(["cat", "-u", "-n"], L[1], , , "nowait") |
       stop("spawn cat: ", \&errortext)
    close(L[1])
 
    system("ls spawn-test-dir", , L[2])
    close(L[2])
 
-   delay(1000)
+   # Join cat before the next write: non-blocking wait() in a loop (see wait_child_timeout).
+   # Windows uses a fixed delay — NT wait()/spawn semantics differ from POSIX here.
+   if &features == "MS Windows NT" then
+      delay(5000)
+   else
+      wait_child_timeout(catpid, 10000) | delay(1000)
 
    write("everything written to pipe.")
 

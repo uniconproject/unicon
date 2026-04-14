@@ -36,7 +36,7 @@ Uniconc :
 ${GREPTST} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $(UFLAGS) $<
-	-./$@ | $(TEE) local/$@.out
+	-@./$@ | $(TEE) local/$@.out
 	-@grep -f stand/$@.std local/$@.out >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "pass"; \
 	else echo "$@ FAIL"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
@@ -47,7 +47,7 @@ ${GREPTST} : % : %.icn local stand/%.std
 ${GREPDIFFTST} : % : %.icn local stand/%.std stand/%.grep
 	-@$E -n "[Testing $@]... "
 	@$(UC) $(UFLAGS) $<
-	-./$@ | $(TEE) local/$@.out
+	-@./$@ | $(TEE) local/$@.out
 	-@grep -f stand/$@.grep local/$@.out | diff stand/$@.std - > /dev/null ; \
 	if [ $$? -eq 0 ] ; then echo "pass"; \
 	else echo "$@ FAIL"; \
@@ -59,7 +59,7 @@ ${GREPDIFFTST} : % : %.icn local stand/%.std stand/%.grep
 ${GREPODTST} : % : %.icn local stand/%.std stand/%.grep
 	-@$E -n "[Testing $@]... "
 	@$(UC) $(UFLAGS) $<
-	-./$@ | $(TEE) local/$@.out
+	-@./$@ | $(TEE) local/$@.out
 	-@grep -o -f stand/$@.grep local/$@.out | diff stand/$@.std - > /dev/null ; \
 	if [ $$? -eq 0 ] ; then echo "pass"; \
 	else echo "$@ FAIL"; \

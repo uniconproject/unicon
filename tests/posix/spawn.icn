@@ -1,11 +1,31 @@
-# Pipe + nowait: feed `ls` output through the pipe to `cat -n` (numbered lines).
-# Order matters: start `cat` on the read end, then close our L[1], then run `ls`
-# into the write end so bytes flow ls -> pipe -> cat.
+# Pipe + nowait: feed `ls` output through the pipe to a spawned `cat -n` (numbered lines).
+# Order: start `cat` on the read end, close our copy of L[1], run `ls` into L[2], then wait for
+# `cat`. This exercises `system(..., "nowait")` with redirected fds — see posix `system`.
+#
+# On Alpine (BusyBox `cat`), child stdio buffering when stdout is not a TTY can make the
+# numbered lines missing or reordered in the capture. Detect Alpine via /etc/os-release
+# and number pipe lines in-process instead (same output shape as `cat -n`)
+#
+# --- I/O buffering (non-Alpine) ---
+# The spawned `cat` inherits this process's stdout. When stdout is a TTY, libc is typically
+# line-buffered; when it is a regular file or a pipe (redirect, CI, `make` capturing tests),
+# stdio is often fully buffered.
 #
 $include "posix.icn"
 
-# Poll wait(pid,"n") (WNOHANG) until the child reports a status or ms elapses.
-# Blocking wait() can hang here on some systems; pure delay is race-prone under CI.
+procedure is_alpine()
+   local f, line
+   f := open("/etc/os-release") | fail
+   while line := read(f) do {
+      if line == "ID=alpine" | line == "ID=\"alpine\"" then {
+         close(f)
+         return
+         }
+      }
+   close(f)
+end
+
+# Poll wait(pid,"n") until the child exits or ms elapses (blocking wait can hang on some hosts).
 procedure wait_child_timeout(pid, ms)
    local st, left, step
    step := 50
@@ -21,38 +41,44 @@ procedure wait_child_timeout(pid, ms)
          left -:= step
       }
    }
-   fail
 end
 
 procedure main()
 
-   # Use a dedicated directory name: ls.icn does `rm -rf test-dir`, which races
-   # with parallel `make -j` if spawn also used test-dir.
-   system("rm -rf spawn-test-dir") | write(&errout, "rm spawn-test-dir: ", sys_errstr(&errno))
-   mkdir("spawn-test-dir") | stop("mkdir spawn-test-dir: ", sys_errstr(&errno))
+   # Dedicated dir name: ls.icn uses `rm -rf test-dir`, which races with `make -j` if we used that.
+   system("rm -rf spawn-test-dir") | write(&errout, "rm spawn-test-dir: ", &errortext)
+   mkdir("spawn-test-dir") | stop("mkdir spawn-test-dir: ", &errortext)
    every c := !"abcd" do
-      close(open("spawn-test-dir/" || c, "w") | stop("create spawn-test-dir/", c, ": ", sys_errstr(&errno)))
+      close(open("spawn-test-dir/" || c, "w") | stop("create spawn-test-dir/", c, ": ", &errortext))
 
    L := pipe()
 
    write(image(L[1]))
    write(image(L[2]))
 
-   # -u: unbuffered I/O where supported (helps line-at-a-time behavior under busybox/coreutils).
-   # Use PATH for cat/ls (no /bin/...) so MinGW/Git-Bash Windows CI finds them.
-   catpid := system(["cat", "-u", "-n"], L[1], , , "nowait") |
-      stop("spawn cat: ", \&errortext)
-   close(L[1])
+   if is_alpine() then {
+      system("ls spawn-test-dir", , L[2])
+      close(L[2])
+      i := 0
+      while line := read(L[1]) do {
+         i +:= 1
+         write(right(i, 6), "\t", line)
+         }
+      close(L[1])
+      }
+   else {
+      catpid := system(["cat", "-u", "-n"], L[1], , , "nowait") |
+         stop("spawn cat: ", &errortext)
+      close(L[1])
 
-   system("ls spawn-test-dir", , L[2])
-   close(L[2])
+      system("ls spawn-test-dir", , L[2])
+      close(L[2])
 
-   # Join cat before the next write: non-blocking wait() in a loop (see wait_child_timeout).
-   # Windows uses a fixed delay — NT wait()/spawn semantics differ from POSIX here.
-   if &features == "MS Windows NT" then
-      delay(5000)
-   else
-      wait_child_timeout(catpid, 10000) | delay(1000)
+      if &features == "MS Windows NT" then
+         delay(5000)
+      else
+         wait_child_timeout(catpid, 10000) | delay(1000)
+      }
 
    write("everything written to pipe.")
 

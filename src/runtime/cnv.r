@@ -1099,20 +1099,58 @@ static int ston(dptr sptr, union numeric *result)
    if (!isspace(c))
       return CvtFail;
 
-   /* KMGTP suffixes multiply by 1024, some number (1-5) of times */
+   /* KMGTP suffixes multiply by 1024, some number (1-5) of times.
+    * Use unsigned magnitude: (double)MaxLong rounds up to 2^63, so comparing
+    * mantissa to it wrongly accepts 2^63 as a "small" integer; and signed
+    * lresult *= 1024 overflows UB when the product is 2^63 (Clang breaks).
+    */
    overflow = 0;
+   {
+   uword mag = (uword)lresult;
+
    while (suffix--) {
       mantissa *= 1024;
-      if (0 > (lresult *= 1024)) {overflow = 1; break;}
+      if (mag > (~(uword)0) / 1024U) {
+         overflow = 1;
+         break;
+         }
+      mag *= 1024U;
+      if (msign == '+') {
+         if (mag > (uword)MaxLong) {
+            overflow = 1;
+            break;
+            }
+         }
+      else {
+         if (mag > (uword)MinLong) {
+            overflow = 1;
+            break;
+            }
+         }
       }
 
    /*
     * Test for integer.
     */
-   if (!overflow && !realflag && !scale && mantissa >= MinLong && mantissa <= (double) MaxLong) {
-      result->integer = (msign == '+' ? lresult : -lresult);
-      return T_Integer;
+   if (!overflow && !realflag && !scale) {
+      if (msign == '+') {
+         if (mag <= (uword)MaxLong) {
+            result->integer = (word)mag;
+            return T_Integer;
+            }
+         }
+      else {
+         if (mag <= (uword)MaxLong) {
+            result->integer = -(word)mag;
+            return T_Integer;
+            }
+         else if (mag == (uword)MinLong) {
+            result->integer = MinLong;
+            return T_Integer;
+            }
+         }
       }
+   }
 
 #ifdef LargeInts
    /*

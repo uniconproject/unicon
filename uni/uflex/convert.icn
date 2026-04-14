@@ -8,10 +8,8 @@ procedure convert(tr)
    local returnvalue, aut1, aut2, newnode1, newnode2
    local tempstring, getsinglechar, t1, t2, i, listptr, listptr2, elistptr
 
-#write(&errout, "convert")
    if /root := tr then {
       if  \debugtree then {
-write(&errout, "treeprint")
          treeprint(tr)
          exit(0)
          }
@@ -664,12 +662,11 @@ local rv, lastchar, origcset := recset
                "t":  recset[1] := "\t"
                "r":  recset[1] := "\r"
                "v":  recset[1] := "\v"
-               "'":  recset[1] := "\'"
                "-":  recset[1] := "-"
                "+":  recset[1] := "+"
                "f":  recset[1] := "\f"
-               "\'":  recset[1] := "\'"
-               "\"":  recset[1] := "\""
+               "\'": recset[1] := "\'"
+               "\"": recset[1] := "\""
                "\\": recset[1] := "\\"
                "0": {
                      if any('01234567', recset[2]) then {

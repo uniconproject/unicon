@@ -338,13 +338,16 @@ VV=$(PKG_VERSION)$(MV)
 PKG_STRNAME=$(PKG_TARNAME)_$(VV)$(VSUFFIX)
 UTAR=$(PKG_STRNAME).tar.gz
 UTARORIG=$(PKG_STRNAME).orig.tar.gz
+# Tarball, unicondist/, rpmbuild/ go under here (default: parent of repo). If the clone is at
+# /unicon, .. is / (not writable): use e.g. DISTROOT=.dist or a path under your home directory.
+DISTROOT ?= ..
 
 dist: distclean update_rev
 	echo "Building $(UTAR)"
-	tar -czf ../$(UTAR) --exclude-vcs --exclude-backups ../$(unicwd)
+	tar -czf $(DISTROOT)/$(UTAR) --exclude-vcs --exclude-backups ../$(unicwd)
 
 publishdist: dist
-	scp ../$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/download/
+	scp $(DISTROOT)/$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/download/
 
 # Deb Section
 udist=unicondist
@@ -352,59 +355,59 @@ SIGNKEYID=AB194DBF
 SIGNOPT=-k$(SIGNKEYID)
 
 deb: dist
-	mkdir -p ../$(udist)
-	mv ../$(UTAR) ../$(udist)/
-	cp ../$(udist)/$(UTAR) ../$(udist)/$(UTARORIG)
-	@echo unpacking ../$(udist)/$(UTAR)
-	cd ../$(udist) && tar -xf $(UTAR)
-	mv ../$(udist)/unicon ../$(udist)/$(PKG_STRNAME)
+	mkdir -p $(DISTROOT)/$(udist)
+	mv $(DISTROOT)/$(UTAR) $(DISTROOT)/$(udist)/
+	cp $(DISTROOT)/$(udist)/$(UTAR) $(DISTROOT)/$(udist)/$(UTARORIG)
+	@echo unpacking $(DISTROOT)/$(udist)/$(UTAR)
+	cd $(DISTROOT)/$(udist) && tar -xf $(UTAR)
+	mv $(DISTROOT)/$(udist)/unicon $(DISTROOT)/$(udist)/$(PKG_STRNAME)
 	@echo "To finish building the deb package, do"
-	@echo "   cd ../$(udist)/$(PKG_STRNAME)"
+	@echo "   cd $(DISTROOT)/$(udist)/$(PKG_STRNAME)"
 	@echo "Then run:"
 	@echo "	 debuild -us -uc"
 
 debin: deb
-	cd ../$(udist)/$(PKG_STRNAME) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
-	ls -lh ../$(udist)/unicon_*.deb
+	cd $(DISTROOT)/$(udist)/$(PKG_STRNAME) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
+	ls -lh $(DISTROOT)/$(udist)/unicon_*.deb
 
 debsrc: deb
-	cd ../$(udist)/$(PKG_STRNAME) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
-	ls -lh ../$(udist)/$(PKG_TARNAME)_*.dsc
+	cd $(DISTROOT)/$(udist)/$(PKG_STRNAME) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
+	ls -lh $(DISTROOT)/$(udist)/$(PKG_TARNAME)_*.dsc
 
 debsign:
-	cd ../$(udist) && debsign $(PKG_STRNAME)*.changes  $(SIGNOPT)
+	cd $(DISTROOT)/$(udist) && debsign $(PKG_STRNAME)*.changes  $(SIGNOPT)
 
 launchpad:
-	cd ../$(udist) && dput unicon-ppa $(PKG_STRNAME)*_source.changes
+	cd $(DISTROOT)/$(udist) && dput unicon-ppa $(PKG_STRNAME)*_source.changes
 
 
 # RPM section
 rpmdir=rpmbuild
 
 rpm: dist
-	mkdir -p ../$(rpmdir)/SOURCES
-	mkdir -p ../$(rpmdir)/SPECS
-	cp rpm/unicon.spec ../$(rpmdir)/SPECS
-	mv ../$(UTAR) ../$(rpmdir)/SOURCES
+	mkdir -p $(DISTROOT)/$(rpmdir)/SOURCES
+	mkdir -p $(DISTROOT)/$(rpmdir)/SPECS
+	cp rpm/unicon.spec $(DISTROOT)/$(rpmdir)/SPECS
+	mv $(DISTROOT)/$(UTAR) $(DISTROOT)/$(rpmdir)/SOURCES
 	@echo "To finish building the rpm package, do"
-	@echo "   cd ../$(rpmdir)/SPECS"
+	@echo "   cd $(DISTROOT)/$(rpmdir)/SPECS"
 	@echo "Then run:"
 	@echo "	 rpmbuild -ba unicon.spec"
 
 rpmbin: rpm
-	cd ../$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
-	@ls ../$(rpmdir)/RPMS/
-	ls -lh ../$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
+	cd $(DISTROOT)/$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
+	@ls $(DISTROOT)/$(rpmdir)/RPMS/
+	ls -lh $(DISTROOT)/$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
 
 rpmresume: rpm
-	cd ../$(rpmdir) &&  rpmbuild -bi --short-circuit unicon.spec
-	@ls ../$(rpmdir)/RPMS/
-	ls -lh ../$(rpmdir)/RPMS/$(PKG_STRNAME)-$(VV)-*.*.rpm
+	cd $(DISTROOT)/$(rpmdir) &&  rpmbuild -bi --short-circuit unicon.spec
+	@ls $(DISTROOT)/$(rpmdir)/RPMS/
+	ls -lh $(DISTROOT)/$(rpmdir)/RPMS/$(PKG_STRNAME)-$(VV)-*.*.rpm
 
 rpmsrc:
-	cd ../$(rpmdir) &&  rpmbuild -bs unicon.spec
-	@ls ../$(rpmdir)/SRPMS/
-	ls -lh ../$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
+	cd $(DISTROOT)/$(rpmdir) &&  rpmbuild -bs unicon.spec
+	@ls $(DISTROOT)/$(rpmdir)/SRPMS/
+	ls -lh $(DISTROOT)/$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
 
 
 ##################################################################

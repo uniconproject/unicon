@@ -1,28 +1,27 @@
 
 include ../Makedefs
 
-# Like tests/thread/Makefile: do not run FxPtTest* when mutex is unavailable.
+# Concurrent threads: FxPtTest / list_test use testing::tester (mutex).
 CON=$(shell $(UC) -features 2>/dev/null | grep -o "concurrent threads")
 
-TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
+# Not part of `make Test` here. Manual: `make tester.u`, then
+#   $(UC) -s ovld.icn && ./ovld
+#   $(UC) -s FxPtTest_OVLD.icn && ./FxPtTest_OVLD
+MANUAL_ONLY := ovld FxPtTest_OVLD
+TARGETS=$(filter-out $(MANUAL_ONLY),$(patsubst %.icn,%,$(wildcard *.icn)))
 
-SKIP=
-#tester FxPtTests\
-#      audio dbi list_test nlm q rec test testnlm clin_err hello mintest ovld q2 sel to
+UCFEAT := $(shell $(UC) -features 2>/dev/null)
 
 ifneq ($(CON),concurrent threads)
-SKIP += FxPtTest FxPtTest_OVLD
+SKIP += FxPtTest list_test
 endif
 
 Test: DoTest
 
 include ../Makefile.test
 
-FxPtTest: FxPtTest.icn tester.u
+# Precompiled package for import testing (list_test, FxPtTest).
+tester.u: data/tester.icn
+	@$(UC) -s -u -c $^
 
-FxPtTest_OVLD: FxPtTest_OVLD.icn tester.u
-
-tester.u: tester.icn
-	$(UC) -s -u -c $^
-
-
+list_test FxPtTest: | tester.u

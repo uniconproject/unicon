@@ -530,6 +530,8 @@ jobs:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
     timeout-minutes: 45
+    env:
+      DISTROOT: /tmp/unicon
     strategy:
       matrix:
         cfg:
@@ -558,13 +560,14 @@ jobs:
     - name: Deb
       id: build
       run: |
-        make debin
+        mkdir -p "$DISTROOT"
+        make debin DISTROOT="$DISTROOT"
         mkdir debian-pkg
-        cp ../unicondist/unicon_*.deb debian-pkg/
-        cp ../unicondist/unicon_*.changes debian-pkg/
-        cp ../unicondist/unicon_*.dsc debian-pkg/
-        cp ../unicondist/unicon_*.debian.tar.xz debian-pkg/
-        cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
+        cp "$DISTROOT"/unicondist/unicon_*.deb debian-pkg/
+        cp "$DISTROOT"/unicondist/unicon_*.changes debian-pkg/
+        cp "$DISTROOT"/unicondist/unicon_*.dsc debian-pkg/
+        cp "$DISTROOT"/unicondist/unicon_*.debian.tar.xz debian-pkg/
+        cp "$DISTROOT"/unicondist/unicon_*.orig.tar.gz debian-pkg/
 
     - name: Install
       run: |
@@ -577,18 +580,25 @@ jobs:
         sudo apt install -y "${debs[@]}"
 
     - name: Test
-      run: make Test
-      env:
-        UC: unicon
-        UDB: udb
+      run: |
+        set -euo pipefail
+        # loadfunc: libcfunc.so lives under DISTROOT/unicondist/<deb-src-dir>/bin from debuild, not beside apt-installed unicon.
+        debdir=$(ls -d "$DISTROOT"/unicondist/unicon_* 2>/dev/null | head -1 || true)
+        if [ -n "${debdir}" ] && [ -d "${debdir}/bin" ]; then export FPATH="${debdir}/bin"
+        else export FPATH="${{ github.workspace }}/bin"; fi
+        export UC=unicon UDB=udb
+        make Test
 
     # Same as Test: installed package provides `unicon` / `udb` on PATH, not ../bin/...
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
-      run: make -C tests Report 2>&1 | tee tests/test-report.txt
-      env:
-        UC: unicon
-        UDB: udb
+      run: |
+        set -euo pipefail
+        debdir=$(ls -d "$DISTROOT"/unicondist/unicon_* 2>/dev/null | head -1 || true)
+        if [ -n "${debdir}" ] && [ -d "${debdir}/bin" ]; then export FPATH="${debdir}/bin"
+        else export FPATH="${{ github.workspace }}/bin"; fi
+        export UC=unicon UDB=udb
+        make -C tests Report 2>&1 | tee tests/test-report.txt
 
     - name: Upload test report
       if: ${{ steps.build.outcome == 'success' }}

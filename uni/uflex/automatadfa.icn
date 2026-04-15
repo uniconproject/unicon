@@ -190,15 +190,6 @@ procedure nfa2dfa(nfastatescell,statecol,input_row,dfastate_tbl,dfastatescell)
    }  # while no more dfastate_tbl
 write(&errout)
 
-   # The loop above added states in dfastatescell while processing input_row
-   # that contained duplicate nfa states and were not added to dfastate_tble
-   # remove duplicate states at end from dfastatecell
-   every key2 := key(dfastatescell) do {
-      state := key2[1:find(":",key2)]  # Get the state number before ":" in key
-      if not member(dfastate_tbl,integer(state)) then   # Only insert valid dfa states
-         delete(dfastatescell,key2)
-   }
-
 end
 #
 # Go across the input (symbols) columns in the NFA

@@ -6,7 +6,7 @@
 include ../Makedefs
 
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
-SKIP=property_demo
+SKIP=
 IGNORE=
 
 # Do the tests

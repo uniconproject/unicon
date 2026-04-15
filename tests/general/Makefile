@@ -6,7 +6,7 @@ SAMPLES = btrees diffwrds kross meander prefix recogn roman sieve wordcnt
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 
 # Do not include these tests in standard testing
-SKIP=mem01 mem02
+SKIP=
 
 # cfuncs links loadable C code; omit when the runtime has no dynamic loading (e.g. --enable-thin).
 UCFEAT := $(shell $(UC) -features 2>/dev/null)

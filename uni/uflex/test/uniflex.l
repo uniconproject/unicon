@@ -196,9 +196,6 @@ global yylineno, yycolno, yyfilename, tokflags, lastid, buffer, lastchar
 
 %%
 
-
-
-
 procedure lex_error()
    yyerror("token not recognized")
 end

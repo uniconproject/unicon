@@ -5,10 +5,48 @@
 # capability to invoke and control other (console mode) unicon programs.
 # Status: runs on Linux, not on Windows yet.
 #
-link io
+link basename, io
+
+# Same resolution as tests/mt/load.icn compiler_for_mt_load() / unicon_for_tests().
+procedure unicon_for_pty()
+   local p, path, exe
+   exe := if find("NT", &features) then ".exe" else ""
+   p := getenv("UNICON" | "UC")
+   if \p & exists(p) then return p
+
+   p := "../../bin/unicon" || exe
+   if exists(p) then return p
+   if path := (&features ? (="Binaries at " & tab(0))) then {
+      if *path > 0 then {
+         if not (path[-1] == "/" | path[-1] == "\\") then path ||:= "/"
+         p := path || "unicon" || exe
+         if exists(p) then return p
+         }
+      }
+   return "unicon" || exe
+end
+
+# Same pattern as unicon_for_pty(); UDB names the debugger binary (parallel to UNICON/UC).
+procedure udb_for_pty()
+   local p, path, exe
+   exe := if find("NT", &features) then ".exe" else ""
+   p := getenv("UDB")
+   if \p & exists(p) then return p
+
+   p := "../../bin/udb" || exe
+   if exists(p) then return p
+   if path := (&features ? (="Binaries at " & tab(0))) then {
+      if *path > 0 then {
+         if not (path[-1] == "/" | path[-1] == "\\") then path ||:= "/"
+         p := path || "udb" || exe
+         if exists(p) then return p
+         }
+      }
+   return "udb" || exe
+end
 
 procedure main()
-    local fo, fi, unicon
+    local fo, fi, unicon, udb
    #
    # test 1: most trivial Unicon program, compiled w/iconx
    #
@@ -18,13 +56,7 @@ procedure main()
    write(fo, "   write(\"hello, world\")")
    write(fo, "end")
    close(fo)
-$ifdef _MS_WINDOWS_NT
-   unicon := "../../bin/unicon.exe"
-$else
-   unicon := "../../bin/unicon"
-$endif
-   if not exists(unicon) then
-      unicon := "unicon"
+   unicon := unicon_for_pty()
    system(unicon || " -s ptytest")
    fi := open("./ptytest", "prw") | stop("can't open mode prw")
    write("pty gives me: ", image(read(fi)))
@@ -44,8 +76,9 @@ $endif
    # the stand/pty_uni.std has been updated to reflect the changes in the  testing
    # process
    #
-   write("\ntesting interactive read/write with at least a line-at-a-time program\nusing Unicon Debugger\n\n../../bin/udb")
-   fi := open("../../bin/udb", "prw") | stop("can't open udb mode prw")
+   udb := udb_for_pty()
+   write("\ntesting interactive read/write with at least a line-at-a-time program\nusing Unicon Debugger\n\n", basename(udb))
+   fi := open(udb, "prw") | stop("can't open udb mode prw")
    line := ""
    cntnl := 0
    cnt := 0

@@ -580,13 +580,15 @@ jobs:
       run: make Test
       env:
         UC: unicon
+        UDB: udb
 
-    # Same as Test: installed package provides `unicon` on PATH, not ../bin/unicon.
+    # Same as Test: installed package provides `unicon` / `udb` on PATH, not ../bin/...
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
       run: make -C tests Report 2>&1 | tee tests/test-report.txt
       env:
         UC: unicon
+        UDB: udb
 
     - name: Upload test report
       if: ${{ steps.build.outcome == 'success' }}

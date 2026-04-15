@@ -1103,8 +1103,12 @@ static int ston(dptr sptr, union numeric *result)
     * Use unsigned magnitude: (double)MaxLong rounds up to 2^63, so comparing
     * mantissa to it wrongly accepts 2^63 as a "small" integer; and signed
     * lresult *= 1024 overflows UB when the product is 2^63 (Clang breaks).
+    *
+    * On 32-bit, lresult (a word) silently wraps for values > 2^32 during
+    * digit parsing.  Detect this by comparing mantissa (which is exact for
+    * values below Big = 2^53) against the unsigned-word maximum.
     */
-   overflow = 0;
+   overflow = (mantissa > (double)(~(uword)0));
    {
    uword mag = (uword)lresult;
 
@@ -1198,15 +1202,17 @@ static int ston(dptr sptr, union numeric *result)
 #else /* assume 32 bit */
            case 't': case 'T': {
              ssave = "1099511627776"; /*1024*1024*1024*1024 */
-             db.dword = bigradix((int)'+', 10, ssave, ssave+13, result);
-             if (RunError == db.dword) fatalerr(0, NULL);
+             if (bigradix((int)'+', 10, ssave, ssave+13, result) == RunError)
+                fatalerr(0, NULL);
+             db.dword = D_Lrgint;
              BlkLoc(db) = (union block *)(result->big);
              break;
            }
            case 'p': case 'P': {
              ssave = "1125899906842624"; /*1024*1024*1024*1024*1024 */
-             db.dword = bigradix((int)'+', 10, ssave, ssave+16, result);
-             if (RunError == db.dword) fatalerr(0, NULL);
+             if (bigradix((int)'+', 10, ssave, ssave+16, result) == RunError)
+                fatalerr(0, NULL);
+             db.dword = D_Lrgint;
              BlkLoc(db) = (union block *)(result->big);
              break;
            }

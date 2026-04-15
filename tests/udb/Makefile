@@ -17,7 +17,7 @@ PROGS=watchme printme prime scopes
 
 # need more .stds for testing
 #TESTS=basic print watchpoints $(INTERNALS) info assert trace
-TESTS=basic print breakpoints watchpoints $(INTERNALS) coexp scoping
+TESTS=basic print breakpoints watchpoints $(INTERNALS) coexp scoping adapter
 
 # directories
 OUTPUT=local
@@ -38,6 +38,20 @@ prime: foo.icn prime.icn
 
 scopes: scopepkg.icn scopes.icn
 	unicon -o $@ $^
+
+data/test_target: data/test_target.icn
+	@unicon -o $@ $< > /dev/null 2>&1
+
+adapter: adapter.icn data/test_target stand/adapter.std
+	@mkdir -p $(OUTPUT) $(DIFFS)
+	@unicon adapter.icn -o test_adapter > /dev/null 2>&1
+	@./test_adapter > $(OUTPUT)/$@.out 2>&1
+	@printf "[Testing %s]..." "$@"
+	@if diff -du stand/$@.std $(OUTPUT)/$@.out > $(DIFFS)/$@.diff ; then \
+	  echo pass; \
+	else \
+	  echo FAIL; \
+	fi
 
 coexp: prime
 	@./test.sh $< $@
@@ -101,25 +115,45 @@ trace: watchme
 	@./test.sh $< $@
 
 TestHdr:
-	@echo
-	@echo "========================="
-	@echo "   $(TESTNAME) Test Suite"
-	@echo "========================="	
-	@echo
+	@echo ""
+	@echo "-------------------------- UDB Test Suite --------------------------"
 
 TestSuite: $(TESTS) 
-	@FF=""; \
-	for x in $^; do \
-	if [ -s diffs/$$x.diff ]; then FF="$$FF $$x"; fi; done; \
-	echo; \
-	echo "========================"; \
-	echo " Test  : $(TESTNAME)"; \
-	if [ "$$FF" = "" ]; then echo " Status: pass"; \
-	else echo " FAIL: $$FF"; fi; \
-	echo "========================"; \
-	echo 
+	@:
+
+Summary:
+	@p=0; f=0; time="-"; \
+	for x in $(TESTS); do \
+	  if [ -s $(DIFFS)/$$x.diff ]; then \
+	    f=`expr $$f + 1`; \
+	  else \
+	    p=`expr $$p + 1`; \
+	  fi; \
+	done; \
+	if [ -f .suite_duration ]; then time="$$(cat .suite_duration)s"; fi; \
+	if [ $$f -eq 0 ]; then res=pass; else res=FAIL; fi; \
+	if [ $$f -eq 0 ]; then \
+	  printf "%-10s  %3d %3d %3d  %6s  %s\n" "$(TESTNAME)" $$p $$f 0 "$$time" "$$res"; \
+	else \
+	  printf "%-10s  %3d %3d %3d  %6s  FAIL: %d tests\n" "$(TESTNAME)" $$p $$f 0 "$$time" $$f; \
+	fi
+
+print-pfs:
+	@p=0; f=0; \
+	for x in $(TESTS); do \
+	  if [ -s $(DIFFS)/$$x.diff ]; then \
+	    f=`expr $$f + 1`; \
+	  else \
+	    p=`expr $$p + 1`; \
+	  fi; \
+	done; \
+	echo "$$p $$f 0"
 
 # remove diff and output files
 clean:
 	rm $(DIFFS)/*.diff
 	rm $(OUTPUT)/*.out
+	rm -f test_adapter adapter.u test_target.u data/test_target
+
+.PHONY: all debug TestSuite Summary print-pfs clean \
+	basic print breakpoints watchpoints $(INTERNALS) coexp scoping adapter internals

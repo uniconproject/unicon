@@ -130,6 +130,9 @@ AC_ARG_ENABLE([graphics3d],
 AC_ARG_ENABLE([multiprograms],
 	[AS_HELP_STRING([--disable-multiprograms], [No multi programs support])],
 			[multiprograms=$enableval], [multiprograms=on])
+AC_ARG_ENABLE([native-coswitch],
+	[AS_HELP_STRING([--disable-native-coswitch], [Use pthread-based coswitch instead of native rswitch (asm/C)])],
+			[native_coswitch=$enableval], [native_coswitch=yes])
 AC_ARG_ENABLE([concurrency],
 	[AS_HELP_STRING([--disable-concurrency], [No concurrent thread support])],
 			[concurrency=$enableval], [concurrency=on])
@@ -839,7 +842,11 @@ fi
 # Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).  We do not copy
 # into src/common/rswitch.[csS]; leftover files from older configure runs are removed by
 # distclean/Pure in the top Makefile.
-if test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
+if test "x$native_coswitch" = "xno"; then
+    echo "Native coswitch disabled, build will use pthreadcoswitch.c"
+    AC_DEFINE([NoNativeCoswitch], [1], [No Native Coswitch])
+    RSWITCH_REL=src/common/pthreadcoswitch.c
+elif test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
     echo "Native coswitch (assembler) available for $unicon_host"
     RSWITCH_REL=src/asm/$unicon_host-rswitch.s
 elif test -f "$srcdir/src/asm/$unicon_host-rswitch.c"; then
@@ -851,6 +858,9 @@ else
     RSWITCH_REL=src/common/pthreadcoswitch.c
 fi
 AC_SUBST([RSWITCH_REL])
+if test "x$RSWITCH_REL" = "xsrc/common/pthreadcoswitch.c" && test "x$concurrency" = "xno"; then
+  AC_MSG_ERROR([pthread-based co-expression switching requires concurrency])
+fi
 
 if ! test "x$plugins" = "xno"; then
   AC_SEARCH_LIBS([dlopen], [dl dld],

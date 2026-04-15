@@ -17,9 +17,8 @@ coswitch:
         #     x1     new_cstate
         #     x2     first (equals 0 if first activation)
         #
-        #     sp   x31? , in arm32  r13
-        #     pc        , in arm32  r15
-        #     lr is x30 , in arm32  r14
+        #     AArch64: sp is not x31 (xzr); use sp directly
+        #     AArch32: sp=r13, lr=r14, pc=r15
         #
         # args : r0-r7
         # r8 indirect location, c++?
@@ -73,12 +72,10 @@ coswitch:
         ldr     x28, [x1, #104]
 
 
-        # If this the first activation
-        # skip to call new_context()
+        # first==0 -> first activation -> new_context
         cmp     x2, #0
         beq     .L1
 
-        # Ready to return
         ret
 
 .L1:

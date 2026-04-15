@@ -11,6 +11,10 @@
 $0:
 .endmacro
 
+        .section __TEXT,__cstring,cstring_literals
+L_nc_err:
+        .asciz "new_context() returned in coswitch"
+
         .file   "rswitch.s"
         .set    RSIZE, 80               ; room for regs 13-31, rounded up mod16
 
@@ -28,7 +32,7 @@ $0:
         stmw    r13, -RSIZE(r1)         ; GPRs 13-31 (save on stack)
 
         cmpi    0, r5, 0
-        beq     first                   ; if first time
+        beq     first                   ; r5==0 -> first activation
 
                                         ; Restore new context:
         lwz     r1, 0(r4)               ; SP
@@ -48,5 +52,6 @@ first:                                  ; First-time call:
         addi    r3, 0, 0                ; arg1
         addi    r4, 0, 0                ; arg2
         bl      _new_context            ; new_context(0,0)
-        addi    r3, 0, 0
+        lis     r3, L_nc_err@ha
+        addi    r3, r3, L_nc_err@l
         bl      _syserr

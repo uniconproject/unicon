@@ -1,7 +1,6 @@
 #
-#  Assembler source for context switch using gas 1.38.1 + gcc 1.40 on
-#  Xenix/386, revamped slightly for use with Linux by me (Richard Goer-
-#  witz) on 7/25/94.
+#  Assembler source for context switch — 32-bit Windows (cdecl).
+#  Matches x86_32_linux cstate layout: esp, esp, ebp, ebx, esi, edi.
 #
 
 .file   "rswitch.s"
@@ -18,16 +17,23 @@
 
 _coswitch:
         pushl %ebp
-        movl %esp,%ebp
-        movl 8(%ebp),%eax
+        movl 8(%esp),%eax
         movl %esp,0(%eax)
-        movl %ebp,4(%eax)
-        movl 12(%ebp),%eax
+        movl %esp,4(%eax)
+        movl %ebp,8(%eax)
+        movl %ebx,12(%eax)
+        movl %esi,16(%eax)
+        movl %edi,20(%eax)
+        movl %esp,%ebp
+        movl 12(%esp),%eax
         cmpl $0,16(%ebp)
         movl 0(%eax),%esp
         je .L2
 
         movl 4(%eax),%ebp
+        movl 12(%eax),%ebx
+        movl 16(%eax),%esi
+        movl 20(%eax),%edi
         jmp .L1
 
 .L2:

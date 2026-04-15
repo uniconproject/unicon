@@ -20,18 +20,18 @@ procedure main(argv)
    # if this is not the case print the offending values
 
    L := sort([: <<@!thrd  :])
-   r1:= pop(L)
-   every r2 := !L do {
-      if r1 = 0 then
-         write( "A thread thinks it didn't use any memory!!")
-      if r1 ~= r2 then
-         write( r1, " ~= ",  r2)
-      r1 := r2
-      }
+   lo := L[1]
+   hi := L[*L]
+   if lo = 0 then
+      write( "A thread thinks it didn't use any memory!!")
+   # tallocated is per-region (free-base); reuse_region() can hand threads
+   # public heaps with different retained use, so counts need not match exactly.
+   else if hi - lo > 4096 then
+      write( "tallocated spread too large: ", lo, " .. ", hi, " (", hi-lo, ")")
 end
 
 procedure talloc(id)
-    y := keyword("tallocated")
+    collect()
 
     every i := !4  do {
        x := list(8)

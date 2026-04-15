@@ -3,10 +3,10 @@
 #
 
 procedure main()
-   # check for presence of audio feature
-   if not match("Audio", &features) then stop("audio not supported")
+   if not (&features == "Audio") then
+      stop("This program requires Audio.")
 
-   # test a WAV file
+   # test a WAV file (alert.wav lives alongside this source under tests/special/)
    if rv := PlayAudio("alert.wav") then write("alert.wav returned ", image(rv))
    else write("alert.wav failed")
    delay(3000)

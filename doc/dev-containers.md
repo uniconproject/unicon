@@ -20,6 +20,18 @@ Configuration files live under **`.devcontainer/<name>/devcontainer.json`**. The
 | `fedora/` | Fedora |
 | `rockylinux/` | Rocky Linux 9 |
 
+### Alpine 32-bit without the editor remote server
+
+**VS Code** does not ship a remote server for **32-bit Linux** (`linux/386`), so opening the **`alpine-32/`** dev container fails during server install. For the same image and layout (**`/unicon`** bind mount), run a plain Docker shell from the repository root:
+
+```sh
+./docker/alpine/run-i386-shell.sh
+```
+
+The script runs **`apk`** to install the same packages as the **Alpine / x86** CI job (**`build-base`**, **`diffutils`**) plus **`git`** (see **`docker/alpine/run-i386-shell.sh`** header). Then run **`./configure`** and **`make`** as usual. Keep editing in VS Code on the **host**; changes show up under **`/unicon`** in the container.
+
+There is no way to make VS Code “default” to this instead of Dev Containers for that profile—the remote editor always expects a supported architecture. Use **`alpine/`** (64-bit) or another profile when you want **Reopen in Container**; use **`run-i386-shell.sh`** when you specifically need **i386** builds.
+
 ### Workspace path, `PATH`, and extensions
 
 Each profile sets **`workspaceFolder`** to **`/unicon`**. The editor treats that directory as the project root **inside** the container (open files, search, tasks, and the integrated terminal’s current workspace all align with that path).

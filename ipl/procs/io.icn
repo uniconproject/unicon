@@ -738,6 +738,14 @@ end
 
 procedure pathload(fname, entry)	#: load C function from $FPATH
    local path, found, psep, sfeat
+   # avoid io.icn: "loadfunc": undeclared identifier, procedure pathload
+   static loadfunc
+   initial loadfunc := proc("loadfunc")
+
+   # loadfunc is not available in this build
+   if /loadfunc then
+      fail
+
 $ifdef _UNIX
    psep := ":"
 $else

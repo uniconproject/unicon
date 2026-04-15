@@ -1099,20 +1099,62 @@ static int ston(dptr sptr, union numeric *result)
    if (!isspace(c))
       return CvtFail;
 
-   /* KMGTP suffixes multiply by 1024, some number (1-5) of times */
-   overflow = 0;
+   /* KMGTP suffixes multiply by 1024, some number (1-5) of times.
+    * Use unsigned magnitude: (double)MaxLong rounds up to 2^63, so comparing
+    * mantissa to it wrongly accepts 2^63 as a "small" integer; and signed
+    * lresult *= 1024 overflows UB when the product is 2^63 (Clang breaks).
+    *
+    * On 32-bit, lresult (a word) silently wraps for values > 2^32 during
+    * digit parsing.  Detect this by comparing mantissa (which is exact for
+    * values below Big = 2^53) against the unsigned-word maximum.
+    */
+   overflow = (mantissa > (double)(~(uword)0));
+   {
+   uword mag = (uword)lresult;
+
    while (suffix--) {
       mantissa *= 1024;
-      if (0 > (lresult *= 1024)) {overflow = 1; break;}
+      if (mag > (~(uword)0) / 1024U) {
+         overflow = 1;
+         break;
+         }
+      mag *= 1024U;
+      if (msign == '+') {
+         if (mag > (uword)MaxLong) {
+            overflow = 1;
+            break;
+            }
+         }
+      else {
+         if (mag > (uword)MinLong) {
+            overflow = 1;
+            break;
+            }
+         }
       }
 
    /*
     * Test for integer.
     */
-   if (!overflow && !realflag && !scale && mantissa >= MinLong && mantissa <= (double) MaxLong) {
-      result->integer = (msign == '+' ? lresult : -lresult);
-      return T_Integer;
+   if (!overflow && !realflag && !scale) {
+      if (msign == '+') {
+         if (mag <= (uword)MaxLong) {
+            result->integer = (word)mag;
+            return T_Integer;
+            }
+         }
+      else {
+         if (mag <= (uword)MaxLong) {
+            result->integer = -(word)mag;
+            return T_Integer;
+            }
+         else if (mag == (uword)MinLong) {
+            result->integer = MinLong;
+            return T_Integer;
+            }
+         }
       }
+   }
 
 #ifdef LargeInts
    /*
@@ -1160,15 +1202,17 @@ static int ston(dptr sptr, union numeric *result)
 #else /* assume 32 bit */
            case 't': case 'T': {
              ssave = "1099511627776"; /*1024*1024*1024*1024 */
-             db.dword = bigradix((int)'+', 10, ssave, ssave+13, result);
-             if (RunError == db.dword) fatalerr(0, NULL);
+             if (bigradix((int)'+', 10, ssave, ssave+13, result) == RunError)
+                fatalerr(0, NULL);
+             db.dword = D_Lrgint;
              BlkLoc(db) = (union block *)(result->big);
              break;
            }
            case 'p': case 'P': {
              ssave = "1125899906842624"; /*1024*1024*1024*1024*1024 */
-             db.dword = bigradix((int)'+', 10, ssave, ssave+16, result);
-             if (RunError == db.dword) fatalerr(0, NULL);
+             if (bigradix((int)'+', 10, ssave, ssave+16, result) == RunError)
+                fatalerr(0, NULL);
+             db.dword = D_Lrgint;
              BlkLoc(db) = (union block *)(result->big);
              break;
            }

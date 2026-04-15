@@ -2294,19 +2294,17 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
             execl("/bin/sh", "sh", "-c", cmdline, (char *)0);
             }
          else {
-            if (execvp(margv[0], margv) == -1) {
-               free(margv);
-               }
+            execvp(margv[0], margv);
             }
 
           /*
-           * If we returned.... this is the child, so failure is no good;
-           * stop with a runtime error so at least the user will get some
-           * indication of the problem.
+           * Exec failed (shell or target).  Do not call runerr(500) in this child:
+           * after vfork() it shares the parent's address space until exec, and running
+           * the Icon error path corrupts memory (often run-time error 302).  Do not
+           * free(margv) here either — that would free the parent's allocation.
+           * Exit 127 matches common shell convention for "command not found".
            */
-          IntVal(amperErrno) = errno;
-          runerr(500);
-          break;
+          _exit(127);
       case -1:
          if (margv) free(margv);
          set_syserrortext(errno);

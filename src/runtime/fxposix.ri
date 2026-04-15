@@ -1686,6 +1686,16 @@ function{0,1} wait(pid, options)
       }
 #endif                                  /* BSD */
 
+      /*
+       * WNOHANG: waitpid/wait4 return 0 when no child status is available yet.
+       * In that case status is undefined; do not unpack it (avoids flaky strings).
+       * Expose EAGAIN so callers polling with wait(pid,"n") can use &errno / sys_errstr.
+       */
+      if (wpid == 0) {
+         IntVal(amperErrno) = EAGAIN;
+         fail;
+         }
+
       /* Unpack all the fields */
       if (WIFSTOPPED(status))
          sprintf(retval, "%d stopped:%s", wpid,

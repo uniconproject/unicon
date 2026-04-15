@@ -475,12 +475,39 @@ class _FxPt(v, # value as an integer
    # estimate. We use floating point to "guess" the starting value,
    # which looks like cheating, but isn't really.
    method _reciprocal(places)
-      local vp, x
-      static two
-      # start with 10 decimal places
-      initial {two := _FxPt(20000000000,10)}
-      vp := _cnvfpt(1.0/real(self.toString()))
-      x := _FxPt(vp.value,vp.places)
+      local vp, x, iv, guess_places, g, scale
+      static two, scale10
+      # Build 10^10 by repeated multiply, not a single literal: on 32-bit icode a
+      # decimal literal that large can be emitted or narrowed differently from a
+      # value produced by repeated multiply (same bigint path as other large ints).
+      initial {
+         scale10 := 1
+         every !10 do scale10 *:= 10
+         two := _FxPt(20000000000, 10)
+      }
+      # Prefer an integer-based initial estimate when the divisor is an exact
+      # integer at p=0.  Seeding via string(real(...)) uses %g and can differ
+      # across C libraries (e.g. musl vs glibc), which perturbs Newton steps.
+      # If iv > 10^10 then scale10/iv is 0; grow the scale (and place count) so
+      # the integer quotient is still a usable seed.  Large products (e.g.
+      # Nilakantha denominators on 32-bit) hit this; otherwise we fall back to
+      # 1.0/real(...) and libc/libm differences (musl vs glibc) perturb Newton.
+      if self.p = 0 & \ (iv := integer(self.v)) & iv ~= 0 then {
+         guess_places := 10
+         scale := scale10
+         g := scale / iv
+         while g = 0 do {
+            scale *:= 10
+            guess_places +:= 1
+            g := scale / iv
+            }
+         if g ~= 0 then
+            x := _FxPt(g, guess_places)
+      }
+      if /x then {
+         vp := _cnvfpt(1.0/real(self.toString()))
+         x := _FxPt(vp.value,vp.places)
+      }
 $ifdef FXPT_DEBUG
       dbgPV{ "Estimate = ", x.toString() }
 $endif          # FXPT_DEBUG

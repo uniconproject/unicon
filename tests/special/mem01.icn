@@ -1,3 +1,9 @@
+# Stresses memory and string/cset allocation: nested repl() builds large
+# intermediate values; the second line constructs an enormous cset (100^4
+# applications of repl on &cset).  On fixed-region builds without multiple
+# regions, failure may report "inadequate space" instead of the usual
+# out-of-range message—that is expected (see the conditional write block).
+
 procedure main()
    if (&features == "fixed regions") & not(&features == "multiple regions")
       then {

@@ -9,6 +9,26 @@
 #
 #   This probably won't work with a space in the path:
 
+link io
+
+# Resolve unicon without stat(&null).  &features is a generator; ? scans each line.
+procedure compiler_for_mt_load()
+   local p, path, exe
+   exe := if find("NT", &features) then ".exe" else ""
+   p := getenv("UNICON" | "UC")
+   if \p & exists(p) then return p
+   p := "../../bin/unicon" || exe
+   if exists(p) then return p
+   if path := (&features ? (="Binaries at " & tab(0))) then {
+      if *path > 0 then {
+         if not (path[-1] == "/" | path[-1] == "\\") then path ||:= "/"
+         p := path || "unicon" || exe
+         if exists(p) then return p
+         }
+      }
+   return "unicon" || exe
+end
+
 procedure main()
     if not (&features == "multiple programs") then
         stop("This program requires multiple programs.")
@@ -23,16 +43,11 @@ procedure main()
               end")
     close(f)
     write("compiling a.icn")
-#  TODO: when selecticont() is in any lib/, use it
-    icont:= "icont"
-    getenv("ICONT")? (find("icont") , icont:=tab(0))
-    &features ? ( ="Binaries at ", unicon:=tab(0)|| "unicon" )
-    stat(unicon) & icont:=unicon   # if wrong, do not use this.
-    getenv("UC"|"UNICON")? (find("unicon") , icont:=tab(0))
-    if ss := system(icont||" -s a.icn") then {
+    unicon := compiler_for_mt_load()
+    if ss := system(unicon||" -s a.icn") then {
     if ss ~= 0 then stop("compile returned ", image(ss))
         }
-    else stop("system(icont a.icn) failed")
+    else stop("system(unicon a.icn) failed")
 
     write("loading a")
     if (x := load("a")) then write("loaded ", image(x))

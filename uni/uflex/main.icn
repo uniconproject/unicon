@@ -1,7 +1,7 @@
 # uflex main module
-# from a main.c written by Katie Ray
+# Adapted from a main.c written by Katie Ray
 
-$define VERSION "0.41"
+$define VERSION "0.9"
 
 link printf
 
@@ -11,7 +11,8 @@ global outfilename, outfile, debugtoken, debugtree, debugautomaton, begintext, d
 procedure main(argv)
    local ppcmdline, len
    local i, nextchar, nextchar2, arg := 1, pp := 1
-  # yydebug := debugtoken := debugtree := debugautomaton := debugdfa := 1
+  # warning: debugtoken turns off regular codegen
+  # yydebug := debugtree := debugautomaton := debugdfa := 1
   # yydebug  := debugtree := debugautomaton := 1
    yydebug := 0
    yylineno := 1
@@ -20,7 +21,8 @@ procedure main(argv)
    whiteflag := 0
    outfilename := "lex.yy.icn"
 
-   if *argv=0 then stop("usage: uflex [-nopp|-token|-tree|-automaton] file")
+   if *argv=0 | (argv[arg] == ("-help"|"--help")) then
+      stop("usage: uflex [-nopp|-token|-tree|-automaton] file")
    if argv[arg] == "-version" then stop("uflex ", VERSION)
 
    if argv[arg] == "-nopp" then {

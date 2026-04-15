@@ -23,7 +23,7 @@ static printable
 local nextchar, foutfile
 
 initial {
-    printable := &letters++&digits++'\'_'
+    printable := &letters++&digits++'\'_;,@:=<>-&%'
 }
 
    yylval := yylextoken()
@@ -76,7 +76,8 @@ repeat {
          # any thing but ] or \ is a regular cset member
          else if yytext ||:= tab(any(&cset -- ']\\')) then { }
          # generalize to handle all escapes legal in flex:
-         else if yytext ||:= (="\\" || tab(any('tnrfv\"\\-01234567'))) then { }
+         else if yytext ||:= (="\\" || tab(any('tnrfv\"\'\\+-01234567'))) then { }
+         else if yytext ||:= (="\\x" || tab(any('0123456789abcdefABCDEF')) || tab(any('0123456789abcdefABCDEF')) ) then { }
          else {
             fprintf(&errout, "%s:%d: lexical error, broken cset2 regex '%s'\n",
                     yyfilename, yylineno, yytext)
@@ -85,7 +86,7 @@ repeat {
          }
 
       yylval.s := yytext
-#write("CSET ", yylval.s)
+#write("CSET ", image(yylval.s))
       return token(CSET)
       }
    else if yytext := ="." then {
@@ -96,9 +97,11 @@ repeat {
    else if yytext := ="\"" then { #string literal
       while not (yytext ||:= ="\"") do {
          # any thing but " or \ is a regular string character
-         if yytext ||:= tab(any(&cset -- '"\\')) then { }
+         if yytext ||:= tab(any(&cset -- '"\\')) then {
+#           write("yeah2, we matched QUOTES: ", yytext||" img "|| image(yytext))
+            }
          # generalize to handle all escapes legal in flex:
-         else if yytext ||:= (="\\" || tab(any('tnrf\"\\'))) then { }
+         else if yytext ||:= (="\\" || tab(any('tnrf\"\'\\'))) then { }
          else {
             fprintf(&errout, "%s:%d: lexical error, broken string %s\n",
                     yyfilename, yylineno, yytext)
@@ -107,7 +110,7 @@ repeat {
          }
 
       yylval.s := yytext
-#write("yeah, we matched QUOTES: ", yytext)
+#write("QUOTES: ", yytext)
       return token(QUOTES)
       }
    else if yytext := (="\\" || tab(any('01234567'))) then {
@@ -175,7 +178,6 @@ repeat {
    else if yytext := ="{" then {
       grab_semantic_action()
       yylval.s := yytext
-#write("action ", yytext)
       return token(ACTION)
       }
    else if yytext := tab(any(printable)) then { # ordinary letters match selves
@@ -231,8 +233,11 @@ procedure grab_semantic_action()
            fprintf(&errout,"bad/unfinished semantic action\n");
            exit(-1);
            }
-        if nextchar == "\"" & slash = 0 then {
+        if nextchar == "\"" & slash = 0 & (quotemode = (0|1)) then {
            quotemode := 1 - quotemode
+           }
+        if nextchar == "\'" & slash = 0 & (quotemode = (0|2)) then {
+           quotemode := 2 - quotemode
            }
 
         if nextchar == "\\" then {

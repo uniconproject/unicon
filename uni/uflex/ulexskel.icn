@@ -37,44 +37,27 @@ fprintf(f, "%s",
       \ \ \ close(readfrom)\n_
       \ \ \ }\n_
    \n_
-      \ \ \ if stringseq == \"\" then {\n_
-         \ \ \ \ \ \ return yychar := -1\n_
-         \ \ \ \ \ \ }\n_
-   \n_
-      \ \ \ less := 0\n_
-      \ \ \ position := *stringseq + 1\n_
-   \n_
-      \ \ \ foo := 1\n_
-      \ \ \ until (foo = *stringseq+1) | (simulate(aut, stringseq[1:foo])===0) do\n_
-         \ \ \ \ \ \ foo +:= 1\n_
-      \ \ \ less := position - foo - 1\n_
-      \ \ \ if less < 0 then less := 0\n_
-   \n_
-      \ \ \ while *stringseq > 0 do {\n_
-         \ \ \ \ \ \ currstring := stringseq[1:position-less]\n_
-         \ \ \ \ \ \ rulenum := simulate(aut, currstring)\n_
-         \ \ \ \ \ \ if rulenum > 0 then {\n_
-            \         yytext := currstring\n_
-            \         yyleng := *yytext\n_
-            \         stringseq := stringseq[position-less:position]\n_
-            \         position := less + 1\n_
-            \         foo := 1\n_
-            \         until (foo = *stringseq+1) | (simulate(aut, stringseq[1:foo])=== 0) do\n_
-            \            foo +:= 1\n_
-            \         less := position-foo-1\n_
-            \         if less < 0 then less := 0\n_
-   \n_
-            \         if yychar := (\\semantic_action)[rulenum] () then\n_
-            \            return yychar\n_
-            \         }\n_
-         \      else {\n_
-            \         less +:= 1\n_
-            \         if less >= position then {\n_
-            \            writes(stringseq[1]) # didn't match nothin', copy to stdout\n_
-            \            stringseq := stringseq[2:0]\n_
-            \            }\n_
-            \         }\n_
-       \      }\n_
+   \   repeat {\n_
+   \      rulenum := &null\n_
+   \      if stringseq == \"\" then {\n_
+   \         yychar := -1\n_
+   \         fail\n_
+   \         }\n\n_
+   \      s := stringseq\n_
+   \      while *s > 0 do {\n_
+   \         if rulenum := (0 < simulate(aut, s)) then break\n_
+   \         s := s[1:-1]\n_
+   \         }\n_
+   \      if \\rulenum > 0 then {\n_
+   \         yytext := s; yyleng := *s\n_
+   \         stringseq := stringseq[yyleng+1:0]\n_
+   \         if yychar := (\\semantic_action)[rulenum] () then return yychar\n_
+   \         }\n_
+   \      else { # didn't match nothin', copy to stdout and keep going\n_
+   \         writes(stringseq[1])\n_
+   \         stringseq := stringseq[2:0]\n_
+   \         }\n_
+   \      }\n_
    end\n\n")
 
 fprintf(f, "%s",
@@ -101,16 +84,17 @@ fprintf(f, "%s",
    \      build := copy(currstates)\n_
    \      while *build > 0 do {\n_
    \         current := pop(build)\n_
-   \         currstates |||:= copy(current.epsilon)\n_
-   \         build |||:= copy(current.epsilon)\n_
+   \         yyunionin(currstates, current.epsilon)\n_
+   \         yyunionin(build, current.epsilon)\n_
    \         }\n_
    \      }\n_
-   \n_
    \   while *acceptcheck > 0 do {\n_
    \      value1 := pop(acceptcheck)\n_
    \      check2 := copy(currstates)\n_
+   \n_
    \      while *check2 > 0 do {\n_
    \         value2 := pop(check2)\n_
+   \n_
    \         if value1.label = value2.label then {\n_
    \            if /rv | rv > value1.rulenum then\n_
    \               rv := value1.rulenum\n_
@@ -122,6 +106,24 @@ fprintf(f, "%s",
    end\n\n")
 
 fprintf(f, "%s",
+   "#\n_
+    # like |||:= except no duplicates. Destructive of L1 but not L2\n_
+    #\n_
+    procedure yyunionin(L1, L2)\n_
+    t1 := table()\n_
+    \  every x := !L1 do {\n_
+    \     t1[x.label] := x\n_
+    \     }\n_
+    \  every x := !L2 do {\n_
+    \     if /t1[x.label] then {\n_
+    \        t1[x.label] := x\n_
+    \         put(L1, x)\n_
+    \         }\n_
+    \      }\n_
+    end\n\n");
+
+fprintf(f, "%s",
+
   "#\n_
    # getdestinations uses the current set of states and\n_
    # simulates one step of automata computation on the given\n_
@@ -137,18 +139,18 @@ fprintf(f, "%s",
    \      buildresult := copy(currstates)\n_
    \      while *buildresult > 0 do {\n_
    \         current := pop(buildresult)\n_
-   \         currstates |||:= copy(current.epsilon)\n_
-   \         buildresult |||:= copy(current.epsilon)\n_
+   \         yyunionin(currstates, current.epsilon)\n_
+   \         yyunionin(buildresult, current.epsilon)\n_
    \         }\n_
    \n_
    \      buildresult := copy(currstates)\n_
    \      while *buildresult > 0 do\n_
-   \          result |||:= reach(pop(buildresult), currsymbol)\n_
+   \          yyunionin(result, reach(pop(buildresult), currsymbol))\n_
    \      buildresult := copy(result)\n_
    \      while *buildresult > 0 do {\n_
    \         current := pop(buildresult)\n_
-   \         result |||:= copy(current.epsilon)\n_
-   \         buildresult |||:= copy(current.epsilon)\n_
+   \         yyunionin(result, current.epsilon)\n_
+   \         yyunionin(buildresult, current.epsilon)\n_
    \         }\n_
    \    }\n_
    \    return result\n_
@@ -168,56 +170,87 @@ fprintf(f, "%s",
    \   while *edgeset > 0 do {\n_
    \      curredge := pop(edgeset)\n_
    \      edgesymbol := copy(curredge.symbol)\n_
+   \      if type(edgesymbol) == \"cset\" then {\n_
+   \         if any(edgesymbol, symbol[1]) then {\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \          }\n_
+   \      }\n_
+   \      else {\n_
    \      if (edgesymbol[1] == symbol[1] ~== \"[\") |\n_
-   \         (edgesymbol == symbol == \"[\") then # sometimes a [ is just a [\n_
-   \            answer |||:= curredge.destinations\n_
-   \      else if edgesymbol[1] == \"[\" then {\n_
+   \         (edgesymbol == symbol[1] == \"[\") then # sometimes a [ is just a [\n_
+   \             yyunionin(answer, curredge.destinations)\n_
    \n_
-   \t if edgesymbol[2]==\"^\" then {\n_
-   \t    cs := edgesymbol[3:find(\"]\", edgesymbol)]\n_
-   \t    if not find(symbol[1], cs) then\n_
-   \t       answer |||:= curredge.destinations\n_
-   \t    }\n_
-   \t else {\n_
-   \t    while edgesymbol[1] ~== \"]\" do {\n_
-   \t       edgesymbol := edgesymbol[2:0]\n_
+   \      else if edgesymbol[1] == \"\\\\\" then {\n_
+   \         if (edgesymbol[2] == \"n\") & (symbol[1] == \"\\n\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"t\") & (symbol[1] == \"\\t\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"r\") & (symbol[1] == \"\\r\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"f\") & (symbol[1] == \"\\f\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         else if (edgesymbol[2] == \"\\\\\") & (symbol[1] == \"\\\\\") then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         # should handle all escapes here, and error on bogus ones\n_
+   \         else if edgesymbol[2] == symbol[1] then\n_
+   \            yyunionin(answer, curredge.destinations)\n_
+   \         } # escape\n\n_
    \n_
-   \t       if edgesymbol[1] == \"\\\\\" then {\n_
-   \t          edgesymbol := edgesymbol[2:0]\n_
-   \t          if (edgesymbol[1] == \"n\") & (symbol[1] == \"\\n\") then\n_
-   \t             answer |||:= curredge.destinations\n_
-   \t          else if (edgesymbol[1] == \"t\") & (symbol[1] == \"\\t\") then\n_
-   \t             answer |||:= curredge.destinations\n_
-   \t          else if edgesymbol[1] == symbol[1] then\n_
-   \t             answer |||:= curredge.destinations\n_
-   \t          }\n_
+   \      }\n_
    \n_
-   \t       else if edgesymbol[2] == \"-\" then {\n_
-   \t          bound1 := edgesymbol[1]\n_
-   \t          edgesymbol := edgesymbol[3:0]\n_
-   \t          bound2 := edgesymbol[1]\n_
-   \t          if ord(bound1) <= ord(symbol[1]) <= ord(bound2) then\n_
-   \t             answer |||:= curredge.destinations\n_
-   \t          }\n_
-   \t       else if edgesymbol[1] == symbol[1] then\n_
-   \t          answer |||:= curredge.destinations\n_
-   \t       }\n_
-   \t    }\n_
-   \t }\n_
-   \n_
-   \t else if edgesymbol[1] == \"\\\\\" then {\n_
-   \t    if (edgesymbol[2] == \"n\") & (symbol[1] == \"\\n\") then\n_
-   \t       answer |||:= curredge.destinations\n_
-   \t    else if (edgesymbol[2] == \"t\") & (symbol[1] == \"\\t\") then\n_
-   \t       answer |||:= curredge.destinations\n_
-   \t    else if edgesymbol[2] == symbol[1] then\n_
-   \t       answer |||:= curredge.destinations\n_
-   \t    }\n_
-   \t }\n_
-   \n_
-   \   answer |||:= state.dot\n_
+   \      } # while edgeset > 0\n_
+   \   yyunionin(answer, state.dot)\n_
    \   return answer\n_
    end\n\n");
+   
+fprintf(f, "%s",
+   "# \"recset\" == \"regular expression cset\"\n_
+    procedure csetfromrecset(recset)\n_
+    local rv, lastchar, origcset := recset\n_
+   \   if not (recset[1]==\"[\" & recset[-1]==\"]\") then\n_
+   \      stop(\"malformed recset \", image(recset))\n_
+   \   recset := recset[2:-1]\n\n_
+   \   if recset[1]==\"^\" then { # not in this cset, subtract from &cset\n_
+   \      rv := &cset -- csetfromrecset(\"[\"||recset[2:0]||\"]\")\n_
+   \      return rv\n_
+   \      }\n_
+   \   # positive cset construction\n_
+   \   rv := ''\n_
+   \   while *recset>0 do {\n\n_
+   \      if recset[1] == \"-\" & \\lastchar & *recset>1 then\n_
+   \         genrangefrom := lastchar\n_
+   \      else {\n_
+   \         # did not trigger a new range. Process one char\n\n_
+   \         if recset[1] == \"\\\\\" then { # escape\n_
+   \            recset := recset[2:0]\n_
+   \            case recset[1] of {\n_
+   \               \"n\":  recset[1] := \"\\n\"\n_
+   \               \"t\":  recset[1] := \"\\t\"\n_
+   \               \"r\":  recset[1] := \"\\r\"\n_
+   \               \"f\":  recset[1] := \"\\f\"\n_
+   \               \"'\":  recset[1] := \"\\'\"\n_
+   \               \"\\\"\":  recset[1] := \"\\\"\"\n_
+   \               \"\\\\\": recset[1] := \"\\\\\"\n_
+   \               # should handle all escapes here, and error on bogus ones\n_
+   \               default: stop(\"unrecognized escape \", image(recset[1]))\n_
+   \               }\n_
+   \            }\n\n_
+   \         rv ++:= recset[1]\n\n_
+   \         if \\genrangefrom then { #if we have a pending range\n_
+   \            ord1 := ord(genrangefrom)\n_
+   \             ord2 := ord(recset[1])\n_
+   \             while ord1 < ord2 do {\n_
+   \               rv ++:= char(ord1)\n_
+   \               ord1 +:= 1\n_
+   \               }\n_
+   \            genrangefrom := &null\n_
+   \            }\n_
+   \         lastchar := recset[1]\n_
+   \          }\n_
+   \       recset := recset[2:0]\n_
+   \       }\n\n_
+   \   return rv\n_
+    end\n\n");
 
 fprintf(f, "%s",
    "procedure printautomaton(a)\n_
@@ -272,6 +305,6 @@ fprintf(f, "%s",
    \      }\n_
    \    else write(\"state list is empty\")\n_
    end\n")
+
+
 end
-
-

@@ -24,7 +24,9 @@ procedure ulpp()
          }
       else if match("%int", line) then {
          if L[-1] == "%%" then pull(L)
-         perpers_needed := 2
+	 if seen_perper = 1 then
+            perpers_needed := 2
+	 else write("warning: jflex-incompatible %int does not follow %%")
          next
          }
       else if match("%{", line) then {
@@ -35,7 +37,6 @@ procedure ulpp()
          seen_percur -:= 1
          }
       else if seen_perper = perpers_needed-1 then {
-write
          if seen_percur = 0 then {
             line ? {
                if nam := tab(many(&letters++&digits)) then {
@@ -58,9 +59,9 @@ write
          while i := find("{", line) &
                match(k := key(macros),line,i+1) &
                line[i+*k+1]=="}" do {
-            line[i +: *k+2] := macros[k]
+            line[i +: *k+2] := "(" || macros[k] || ")"
             }
-         }
+      }
       put(L, line)
 #write(&errout, "putting ", image(line))
       }

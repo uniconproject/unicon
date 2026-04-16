@@ -491,7 +491,21 @@ jobs:
 
    - name: HtmlDoc
      shell: freebsd {0}
-     run: cd $GITHUB_WORKSPACE && gmake htmldoc
+     run: |
+      cd $GITHUB_WORKSPACE
+      # UniDoc with --resolve is heavy; default stack rlimit has caused intermittent
+      # SIGBUS (Bus error) on FreeBSD CI. vmactions flakes also show up here.
+      ulimit -s unlimited 2>/dev/null || true
+      n=0
+      until gmake htmldoc; do
+        n=$((n + 1))
+        if [ "$n" -ge 3 ]; then
+          echo "gmake htmldoc failed after 3 attempts"
+          exit 1
+        fi
+        echo "gmake htmldoc failed (attempt $n), retrying in 5s..."
+        sleep 5
+      done
 
    - name: Test
      shell: freebsd {0}

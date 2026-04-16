@@ -26,32 +26,32 @@ coswitch:
         #
         #     %rdi     old_cstate
         #     %rsi     new_cstate
-        #     %edx     first (equals 0 if first activation)
+        #     %edx     first (0 => first activation => new_context)
         #
 
-        movq    %rsp, 0(%rdi)      # Old stack pointer -> old_cstate[0]
-        movq    %rbp, 8(%rdi)      # Old base pointer -> old_cstate[1]
-        movq    %rbp, 16(%rdi)      # Old base pointer -> old_cstate[2]
-        movq    %rbx, 24(%rdi)      # Old bx -> old_cstate[3]
-        movq    %r12, 32(%rdi)      # Old r12 -> old_cstate[4]
-        movq    %r13, 40(%rdi)      # Old r13 -> old_cstate[5]
-        movq    %r14, 48(%rdi)      # Old r14 -> old_cstate[6]
-        movq    %r15, 56(%rdi)      # Old r15 -> old_cstate[7]
-        movq    0(%rsi), %rsp      # new_cstate[0] -> new stack pointer
-        movq    8(%rsi), %rbp      # new_cstate[1] -> new base pointer
-        movq    16(%rsi), %rbp      # new_cstate[2] -> new base pointer
-        movq    24(%rsi), %rbx      # new_cstate[3] -> new bx
-        movq    32(%rsi), %r12      # new_cstate[4] -> new r12
-        movq    40(%rsi), %r13      # new_cstate[5] -> new r13
-        movq    48(%rsi), %r14      # new_cstate[6] -> new r14
-        movq    56(%rsi), %r15      # new_cstate[7] -> new r15
+        movq    %rsp, 0(%rdi)      # old %rsp -> old_cstate[0]
+        movq    %rbp, 8(%rdi)      # old %rbp -> old_cstate[1]
+        movq    %rbp, 16(%rdi)     # old %rbp again -> old_cstate[2] (duplicate slot; see runtime)
+        movq    %rbx, 24(%rdi)     # old %rbx -> old_cstate[3]
+        movq    %r12, 32(%rdi)     # old %r12 -> old_cstate[4]
+        movq    %r13, 40(%rdi)     # old %r13 -> old_cstate[5]
+        movq    %r14, 48(%rdi)     # old %r14 -> old_cstate[6]
+        movq    %r15, 56(%rdi)     # old %r15 -> old_cstate[7]
+        movq    0(%rsi), %rsp      # new_cstate[0] -> %rsp
+        movq    8(%rsi), %rbp      # new_cstate[1] -> %rbp
+        movq    16(%rsi), %rbp     # new_cstate[2] -> %rbp (second load, same as [1])
+        movq    24(%rsi), %rbx     # new_cstate[3] -> %rbx
+        movq    32(%rsi), %r12     # new_cstate[4] -> %r12
+        movq    40(%rsi), %r13     # new_cstate[5] -> %r13
+        movq    48(%rsi), %r14     # new_cstate[6] -> %r14
+        movq    56(%rsi), %r15     # new_cstate[7] -> %r15
 
-        orl     %edx, %edx         # Is this the first activation?
-        je      .L1                # If so, skip.
-        ret                        # Otherwise we are done.
-.L1:    xorl    %edi, %edi         # Call new_context((int) 0, (ptr) 0)
-        xorl    %esi, %esi         # (Implicitly zero-extended to 64 bits)
+        orl     %edx, %edx         # ZF set if first==0 (first activation)
+        je      .L1                # first==0 -> new_context path
+        ret                        # first!=0 -> return into restored context
+.L1:    xorl    %edi, %edi         # new_context first arg = 0
+        xorl    %esi, %esi         # new_context second arg = 0
         call    new_context@PLT
-        leaq    .L0(%rip), %rdi    # Call syserr(...)
-        xorl    %eax, %eax         # 0 to return
+        leaq    .L0(%rip), %rdi    # message pointer for syserr (first arg)
+        xorl    %eax, %eax         # clear %rax (ABI hygiene before tail to syserr)
         jmp     syserr@PLT

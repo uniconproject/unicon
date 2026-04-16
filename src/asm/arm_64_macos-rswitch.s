@@ -6,7 +6,7 @@
 #
 
 .data
-.ERR:   .ascii     "new_context() returned in coswitch"
+.ERR:   .string    "new_context() returned in coswitch"
 
 .text
         .p2align    4 ; 16 byte word boundary
@@ -29,10 +29,8 @@ _coswitch:
         # args : x0-x7
         # r8 indirect location, c++?
         # Scratch      : x9-x15
-        # Don't touch  : x18 (platform register - reserved by Rosetta)
-        # Callee-saved : x19-x28 (must be restored if used)
-        # Must save    : xr30, x31
-        # Others       : ?
+        # x18          : platform register (not saved on macOS; layout differs from Linux)
+        # Callee-saved : x19-x28 (saved below); sp, lr (x30), fp (x29) at [0],[8],[16]
         #
         # Old stack pointer -> old_cstate[0]
         # Old link register -> old_cstate[1]
@@ -76,12 +74,10 @@ _coswitch:
         ldr     x28, [x1, #96]
 
 
-        # If this the first activation
-        # skip to call new_context()
+        # first==0 -> first activation -> new_context
         cmp     x2, #0
         beq     .L1
 
-        # Ready to return
         ret
 
 .L1:

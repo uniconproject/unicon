@@ -612,6 +612,35 @@ void coclean(struct b_coexpr *cp) {
 #ifndef NO_COEXPR_SEMAPHORE_FIX
       if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
 #endif                  /* NO_COEXPR_SEMAPHORE_FIX */
+#ifdef Concurrent
+#ifdef PthreadCoswitch
+      if (cp->tstate) {
+         if (cp->have_thread) {
+            /*
+             * Pthread coswitch: dedicated thread was joined above; only the GC
+             * thread runs here (sweep path); mutators are stopped.
+             * No public-heap mutex for swap2publicheap — same stop-the-world
+             * invariant as elsewhere (e.g. rmemmgt.r notes only GC touches the
+             * TLS chain during collection).
+             */
+            if (CHECK_FLAG(cp->status, Ts_Posix) && blkregion) {
+               swap2publicheap(blkregion, NULL, &public_blockregion);
+               swap2publicheap(strregion, NULL, &public_stringregion);
+               }
+            tlschain_remove(cp->tstate);
+            }
+         else {
+            /*
+             * Native coswitch: tstate is shared (curtstate) across coexprs.
+             * Do not tlschain_remove/free; only drop the back-pointer.
+             */
+            if (cp->tstate->c == cp)
+               cp->tstate->c = NULL;
+            }
+         cp->tstate = NULL;
+         }
+#endif                                  /* PthreadCoswitch */
+#endif                  /* Concurrent */
       return;
     }
 

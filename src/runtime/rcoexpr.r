@@ -199,14 +199,21 @@ int co_chng(struct b_coexpr *ncp,
 
    ccp = BlkD(k_current, Coexpr);
 
-#ifndef NativeCoswitch
+#if !defined(NativeCoswitch) && defined(PthreadCoswitch)
    /*
     * We don't have Native co-expressions. If this is the first
     * activation for ncp create a thread for it.
     */
-   if (first == 0)
+   if (first == 0) {
+      unsigned long spin;
       CREATE_CE_THREAD(ncp, 0, "co_chng()");
-#endif                                  /* NativeCoswitch */
+      for (spin = 0; ncp->tstate == NULL; spin++) {
+         if (spin > 60000000UL)
+            syserr("co_chng: ncp->tstate not set (thread init failed?)");
+         usleep(1);
+         }
+      }
+#endif                                  /* !defined(NativeCoswitch) && defined(PthreadCoswitch) */
 
 #if !COMPILER
 #ifdef MultiProgram
@@ -452,6 +459,39 @@ int co_chng(struct b_coexpr *ncp,
 #ifdef PthreadCoswitch
    if (IS_TS_ATTACHED(ncp->status)) {
       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
+#ifndef NativeCoswitch
+      /*
+       * With pthreadcoswitch each co-expression has its own tstate,
+       * so &subject/&pos/&random must be transferred explicitly.  With native
+       * coswitch the tstate is shared and this is unnecessary.
+       * Maintenance: K_level (&level) is assigned by TRANSFER_KLEVEL earlier when
+       * Concurrent is defined — only from the MultiProgram switch (VM, not iconc),
+       * only for A_Coact/A_Coret/A_Cofail, and only if IS_TS_SYNC(ncp->status) &&
+       * ncp->program == ccp->program (see macro); it is not duplicated here.
+       * With NoMultiProgram, TRANSFER_KLEVEL is never called — native coswitch still
+       * shares a single tstate; pthread coswitch may leave K_level out of sync on
+       * switch unless that combination is tightened elsewhere.
+       * Kywd_err (&error) and Kywd_trc (&trace) live in progstate.  Mirror the rest
+       * of the keyword/scanner TLS that native coswitch shares through one tstate.
+       */
+      if (ccp->tstate && ncp->tstate && ccp->tstate != ncp->tstate) {
+         struct threadstate *const from = ccp->tstate;
+         struct threadstate *const to = ncp->tstate;
+         to->ksub = from->ksub;
+         to->Kywd_pos = from->Kywd_pos;
+         to->Kywd_ran = from->Kywd_ran;
+         to->K_errornumber = from->K_errornumber;
+         to->K_errortext = from->K_errortext;
+         to->K_errorvalue = from->K_errorvalue;
+         to->Have_errval = from->Have_errval;
+         to->T_errornumber = from->T_errornumber;
+         to->T_have_val = from->T_have_val;
+         to->T_errorvalue = from->T_errorvalue;
+#ifdef PatternType
+         to->K_patindex = from->K_patindex;
+#endif                                  /* PatternType */
+         }
+#endif                                  /* NativeCoswitch */
       pthreadcoswitch(ccp, ncp, ccp->status, ncp->status );
       }
    else

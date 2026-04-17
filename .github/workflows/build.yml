@@ -46,10 +46,14 @@ env:
   RTT_JOBS: "16"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+# Test jobs are separate jobs per platform (MSYS2 vs Linux containers vs Alpine vs …) because one
+# job cannot mix those environments. They all `needs: all-builds` so tests run only after every
+# *-build job has succeeded (see job `all-builds`).
+
 jobs:
-  Windows:
+  Windows-build:
     runs-on: ${{ matrix.cfg.os }}
-    name: ${{ matrix.cfg.name }}
+    name: ${{ matrix.cfg.name }} (build)
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -92,20 +96,94 @@ jobs:
     - name: HtmlDoc
       run: make htmldoc
 
+    - name: Pack build tree
+      if: success()
+      # MSYS2: use Unix paths for tar; raw D:\... breaks the gzip child ("Cannot connect to D: resolve failed").
+      run: |
+        TARBALL="$(cygpath -u "$RUNNER_TEMP")/ci-build.tar.gz"
+        WS="$(cygpath -u "$GITHUB_WORKSPACE")"
+        tar --exclude='.git' -czf "$TARBALL" -C "$WS" .
+
+    - name: Upload build artifact
+      if: success()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-build-Windows-${{ matrix.cfg.name }}
+        path: ${{ runner.temp }}/ci-build.tar.gz
+        if-no-files-found: error
+
+    - name: Summary
+      if: always()
+      run: |
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
+
+  Windows-test:
+    needs: all-builds
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }} (test)
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        # os + name only: must match Windows-build rows (same artifact name as build job).
+        -  { os: windows-latest,  name: 'Windows 64-bit' }
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-diffutils
+          mingw-w64-ucrt-x86_64-openssl
+          mingw-w64-ucrt-x86_64-libpng
+          mingw-w64-ucrt-x86_64-libjpeg-turbo
+          make
+          git
+
+    - run: git config --global core.autocrlf input
+      shell: bash
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: ci-build-Windows-${{ matrix.cfg.name }}
+        path: ${{ runner.temp }}
+
+    - name: Unpack build tree
+      run: |
+        WS="$(cygpath -u "$GITHUB_WORKSPACE")"
+        mkdir -p "$WS"
+        tar -xzf "$(cygpath -u "$RUNNER_TEMP")/ci-build.tar.gz" -C "$WS"
+
     - name: Test
       run: make Test
 
     # Unlike other platforms, Windows does not fail the job on test failures (still upload report for the combined summary).
     - name: TestReport
-      if: ${{ steps.build.outcome == 'success' }}
       run: |
         make -C tests Report 2>&1 | tee tests/test-report.txt
         # TODO: Re-enable when Windows test suite is green (fail CI on failed tests):
         # sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ always() && steps.build.outcome == 'success' }}
-      uses: actions/upload-artifact@v6
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v7
       with:
         name: test-report-Windows-${{ matrix.cfg.name }}
         path: tests/test-report.txt
@@ -125,9 +203,9 @@ jobs:
           echo "unicon-features.log: (not present)"
         fi
 
-  macOS:
+  macOS-build:
     runs-on: ${{ matrix.cfg.os }}
-    name: ${{ matrix.cfg.name }}
+    name: ${{ matrix.cfg.name }} (build)
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -152,18 +230,68 @@ jobs:
     - name: HtmlDoc
       run: make htmldoc
 
+    - name: Pack build tree
+      if: success()
+      run: tar --exclude='.git' -czf "$RUNNER_TEMP/ci-build.tar.gz" -C "$GITHUB_WORKSPACE" .
+
+    - name: Upload build artifact
+      if: success()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-build-macOS-${{ matrix.cfg.name }}
+        path: ${{ runner.temp }}/ci-build.tar.gz
+        if-no-files-found: error
+
+    - name: Summary
+      if: always()
+      run: |
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
+
+  macOS-test:
+    needs: all-builds
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }} (test)
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        # os + name only: must match macOS-build rows (same artifact name as build job).
+        -  { os: macos-15-intel, name: 'macOS intel' }
+        -  { os: macos-latest, name: 'macOS arm' }
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: ci-build-macOS-${{ matrix.cfg.name }}
+        path: ${{ runner.temp }}
+
+    - name: Unpack build tree
+      run: mkdir -p "$GITHUB_WORKSPACE" && tar -xzf "$RUNNER_TEMP/ci-build.tar.gz" -C "$GITHUB_WORKSPACE"
+
+    - name: Install
+      run: sudo make install
+
     - name: Test
       run: make Test
 
     - name: TestReport
-      if: ${{ steps.build.outcome == 'success' }}
       run: |
         make -C tests Report 2>&1 | tee tests/test-report.txt
         sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ always() && steps.build.outcome == 'success' }}
-      uses: actions/upload-artifact@v6
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v7
       with:
         name: test-report-macOS-${{ matrix.cfg.name }}
         path: tests/test-report.txt
@@ -183,9 +311,9 @@ jobs:
           echo "unicon-features.log: (not present)"
         fi
 
-  Linux:
+  Linux-build:
     runs-on: ubuntu-latest
-    name: ${{ matrix.cfg.name }}
+    name: ${{ matrix.cfg.name }} (build)
     container: ${{ matrix.cfg.os }}
     timeout-minutes: 45
     strategy:
@@ -273,20 +401,78 @@ jobs:
     - name: HtmlDoc
       run: make htmldoc
 
+    - name: Pack build tree
+      if: success()
+      run: tar --exclude='.git' -czf /tmp/ci-build.tar.gz -C "$GITHUB_WORKSPACE" .
+
+    - name: Upload build artifact
+      if: success()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-build-Linux-${{ matrix.cfg.name }}
+        path: /tmp/ci-build.tar.gz
+        if-no-files-found: error
+
+    - name: Summary
+      if: always()
+      run: |
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
+
+  Linux-test:
+    needs: all-builds
+    runs-on: ubuntu-latest
+    name: ${{ matrix.cfg.name }} (test)
+    container: ${{ matrix.cfg.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        # os + name only: must match Linux-build rows (same artifact name as build job).
+        -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04' }
+        -  { os: 'ubuntu:24.04',  name: 'Ubuntu 24.04' }
+        -  { os: 'fedora:41',     name: 'Fedora 41' }
+        -  { os: 'debian:13',     name: 'Debian 13' }
+        -  { os: 'debian:12',     name: 'Debian 12' }
+        -  { os: 'rockylinux:9',  name: 'Rocky Linux 9' }
+        -  { os: 'oraclelinux:8', name: 'Oracle Linux 8' }
+        -  { os: 'alpine:latest', name: 'Alpine Latest' }
+    steps:
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: ci-build-Linux-${{ matrix.cfg.name }}
+        path: /tmp
+
+    - name: Unpack build tree
+      run: mkdir -p "$GITHUB_WORKSPACE" && tar -xzf /tmp/ci-build.tar.gz -C "$GITHUB_WORKSPACE"
+
+    - name: Install
+      run: make install
+
     - name: Test
       run: make Test
 
     # In container jobs, ${{ github.workspace }} is expanded to the runner host path; the shell runs
     # inside the container where the repo lives under $GITHUB_WORKSPACE instead.
     - name: TestReport
-      if: ${{ steps.build.outcome == 'success' }}
       run: |
         make -C tests Report 2>&1 | tee tests/test-report.txt
         sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ always() && steps.build.outcome == 'success' }}
-      uses: actions/upload-artifact@v6
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v7
       with:
         name: test-report-Linux-${{ matrix.cfg.name }}
         path: tests/test-report.txt
@@ -306,8 +492,9 @@ jobs:
           echo "unicon-features.log: (not present)"
         fi
 
-  Alpine:
+  Alpine-build:
     runs-on: ubuntu-latest
+    name: Alpine ${{ matrix.platform.arch }} (build)
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -342,20 +529,84 @@ jobs:
       run: make ${{ matrix.platform.make_flags }}
       shell: alpine.sh {0}
 
+    - name: Pack build tree
+      if: success()
+      run: tar --exclude='.git' -czf "$RUNNER_TEMP/ci-build.tar.gz" -C "$GITHUB_WORKSPACE" .
+      shell: alpine.sh {0}
+
+    - name: Upload build artifact
+      if: success()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-build-Alpine-${{ matrix.platform.arch }}
+        path: ${{ runner.temp }}/ci-build.tar.gz
+        if-no-files-found: error
+
+    - name: Summary
+      if: always()
+      run: |
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
+      shell: alpine.sh {0}
+
+  Alpine-test:
+    needs: all-builds
+    runs-on: ubuntu-latest
+    name: Alpine ${{ matrix.platform.arch }} (test)
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        # arch only: must match Alpine-build rows (same artifact name as build job).
+         -  { arch: riscv64 }
+         -  { arch: x86 }
+    steps:
+    - name: Install extra dependencies
+      shell: 'sh'
+      run: |
+        sudo apt update && sudo apt install -y binfmt-support
+
+    - name: alpine
+      uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050
+      with:
+        arch:  ${{ matrix.platform.arch }}
+        branch: v3.20
+        packages: >
+          build-base
+          diffutils
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: ci-build-Alpine-${{ matrix.platform.arch }}
+        path: ${{ runner.temp }}
+
+    - name: Unpack build tree
+      run: mkdir -p "$GITHUB_WORKSPACE" && tar -xzf "$RUNNER_TEMP/ci-build.tar.gz" -C "$GITHUB_WORKSPACE"
+      shell: alpine.sh {0}
+
     - name: Test
       run: make Test
       shell: alpine.sh {0}
 
     - name: TestReport
-      if: ${{ steps.build.outcome == 'success' }}
       run: |
         make -C tests Report 2>&1 | tee tests/test-report.txt
         sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
       shell: alpine.sh {0}
 
     - name: Upload test report
-      if: ${{ always() && steps.build.outcome == 'success' }}
-      uses: actions/upload-artifact@v6
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v7
       with:
         name: test-report-Alpine-${{ matrix.platform.arch }}
         path: tests/test-report.txt
@@ -376,9 +627,9 @@ jobs:
         fi
       shell: alpine.sh {0}
 
-  Features:
+  Features-build:
     runs-on: ${{ matrix.cfg.os }}
-    name: ${{ matrix.cfg.name }}
+    name: ${{ matrix.cfg.name }} (build)
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -446,21 +697,75 @@ jobs:
     - name: HtmlDoc
       run: make htmldoc
 
+    - name: Pack build tree
+      if: success()
+      run: tar --exclude='.git' -czf "$RUNNER_TEMP/ci-build.tar.gz" -C "$GITHUB_WORKSPACE" .
+
+    - name: Upload build artifact
+      if: success()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-build-Features-${{ matrix.cfg.name }}
+        path: ${{ runner.temp }}/ci-build.tar.gz
+        if-no-files-found: error
+
+    - name: Summary
+      if: always()
+      run: |
+        if [ -f unicon-config.log ]; then
+          cat unicon-config.log
+        else
+          echo "unicon-config.log: (not present)"
+        fi
+        if [ -f unicon-features.log ]; then
+          cat unicon-features.log
+        else
+          echo "unicon-features.log: (not present)"
+        fi
+
+  Features-test:
+    needs: all-builds
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }} (test)
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        # Only os + name: must match Features-build rows (same artifact name as build job).
+        -  { os: ubuntu-latest, name: 'Clang' }
+        -  { os: ubuntu-latest, name: 'No Graphics' }
+        -  { os: ubuntu-latest, name: 'No 3D Graphics' }
+        -  { os: ubuntu-latest, name: 'No Concurrency' }
+        -  { os: ubuntu-latest, name: 'Pthreadcoswitch' }
+        -  { os: ubuntu-latest, name: 'Heap Test' }
+        -  { os: ubuntu-latest, name: 'Thin Build' }
+        -  { os: ubuntu-latest, name: 'Dev Mode' }
+        -  { os: ubuntu-24.04-arm, name: 'Ubuntu arm64' }
+
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: ci-build-Features-${{ matrix.cfg.name }}
+        path: ${{ runner.temp }}
+
+    - name: Unpack build tree
+      run: mkdir -p "$GITHUB_WORKSPACE" && tar -xzf "$RUNNER_TEMP/ci-build.tar.gz" -C "$GITHUB_WORKSPACE"
+
     - name: Test
       run: make Test
-      # set VRFY globally even though it is only needed in the debug test
       env:
         VRFY: -2
 
     - name: TestReport
-      if: ${{ steps.build.outcome == 'success' }}
       run: |
         make -C tests Report 2>&1 | tee tests/test-report.txt
         sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ always() && steps.build.outcome == 'success' }}
-      uses: actions/upload-artifact@v6
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v7
       with:
         name: test-report-Features-${{ matrix.cfg.name }}
         path: tests/test-report.txt
@@ -480,6 +785,7 @@ jobs:
           echo "unicon-features.log: (not present)"
         fi
 
+  # Build and tests share one vmactions VM session (avoids a second VM cold start).
   FreeBSD:
    runs-on: ubuntu-latest
    name: FreeBSD
@@ -555,7 +861,7 @@ jobs:
 
    - name: Upload test report
      if: ${{ always() && steps.build.outcome == 'success' }}
-     uses: actions/upload-artifact@v6
+     uses: actions/upload-artifact@v7
      with:
        name: test-report-FreeBSD
        path: test-report.txt
@@ -577,9 +883,9 @@ jobs:
         echo "unicon-features.log: (not present)"
       fi
 
-  DebianPkg:
+  DebianPkg-build:
     runs-on: ${{ matrix.cfg.os }}
-    name: ${{ matrix.cfg.name }}
+    name: ${{ matrix.cfg.name }} (build)
     timeout-minutes: 45
     env:
       DISTROOT: /tmp/unicon
@@ -630,6 +936,81 @@ jobs:
         fi
         sudo apt install -y "${debs[@]}"
 
+    - name: Pack workspace and distroot for test job
+      if: success()
+      run: |
+        set -euo pipefail
+        mkdir -p /tmp/ci-debianpkg-pack/ws /tmp/ci-debianpkg-pack/distroot
+        cp -a "$GITHUB_WORKSPACE"/. /tmp/ci-debianpkg-pack/ws/
+        cp -a "$DISTROOT"/. /tmp/ci-debianpkg-pack/distroot/
+        tar -C /tmp/ci-debianpkg-pack -czf /tmp/ci-debianpkg.tar.gz .
+
+    - name: Upload build artifact
+      if: success()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-build-DebianPkg
+        path: /tmp/ci-debianpkg.tar.gz
+        if-no-files-found: error
+
+  # Gate: every *-build must succeed before any artifact-based test job runs.
+  all-builds:
+    name: All builds passed
+    needs:
+      - Windows-build
+      - macOS-build
+      - Linux-build
+      - Alpine-build
+      - Features-build
+      - DebianPkg-build
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All platform builds succeeded; running tests."
+
+  DebianPkg-test:
+    needs: all-builds
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }} (test)
+    timeout-minutes: 45
+    env:
+      DISTROOT: /tmp/unicon
+    strategy:
+      matrix:
+        cfg:
+        # os + name only: must match DebianPkg-build.
+        -  { os: ubuntu-22.04,  name: 'Debian-Pkg' }
+
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: ci-build-DebianPkg
+        path: ${{ runner.temp }}
+
+    - name: Unpack and restore layout
+      run: |
+        set -euo pipefail
+        mkdir -p "$GITHUB_WORKSPACE"
+        find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+        mkdir -p /tmp/ci-debianpkg-unpack
+        tar -xzf "$RUNNER_TEMP/ci-debianpkg.tar.gz" -C /tmp/ci-debianpkg-unpack
+        cp -a /tmp/ci-debianpkg-unpack/ws/. "$GITHUB_WORKSPACE"/
+        sudo rm -rf "$DISTROOT"
+        sudo mkdir -p "$DISTROOT"
+        sudo cp -a /tmp/ci-debianpkg-unpack/distroot/. "$DISTROOT"/
+
+    - name: Reinstall packages from tree
+      run: |
+        set -euo pipefail
+        cd "$GITHUB_WORKSPACE"
+        shopt -s nullglob
+        debs=(./debian-pkg/*.deb)
+        if [ "${#debs[@]}" -eq 0 ]; then
+          echo "No .deb packages under debian-pkg/; unpack failed?"
+          exit 1
+        fi
+        sudo apt install -y "${debs[@]}"
+
     - name: Test
       run: |
         set -euo pipefail
@@ -642,7 +1023,6 @@ jobs:
 
     # Same as Test: installed package provides `unicon` / `udb` on PATH, not ../bin/...
     - name: TestReport
-      if: ${{ steps.build.outcome == 'success' }}
       run: |
         set -euo pipefail
         debdir=$(ls -d "$DISTROOT"/unicondist/unicon_* 2>/dev/null | head -1 || true)
@@ -653,8 +1033,8 @@ jobs:
         sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ always() && steps.build.outcome == 'success' }}
-      uses: actions/upload-artifact@v6
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v7
       with:
         name: test-report-DebianPkg
         path: tests/test-report.txt
@@ -665,17 +1045,17 @@ jobs:
     name: Combined test report (all platforms)
     if: always()
     needs:
-      - Windows
-      - macOS
-      - Linux
-      - Alpine
-      - Features
+      - Windows-test
+      - macOS-test
+      - Linux-test
+      - Alpine-test
+      - Features-test
       - FreeBSD
-      - DebianPkg
+      - DebianPkg-test
     runs-on: ubuntu-latest
     steps:
       - name: Download all test-report artifacts
-        uses: actions/download-artifact@v7.0.0
+        uses: actions/download-artifact@v7
         with:
           path: collected
           pattern: test-report-*
@@ -859,7 +1239,7 @@ jobs:
       # and so the gate cannot prevent the artifact from uploading.
       - name: Upload combined report
         if: success()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: all-platforms-test-report
           path: all-platforms-test-report.txt

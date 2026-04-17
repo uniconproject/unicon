@@ -779,6 +779,7 @@ enable_option_checking
 enable_graphics
 enable_graphics3d
 enable_multiprograms
+enable_native_coswitch
 enable_concurrency
 enable_pattern
 enable_database
@@ -1462,6 +1463,9 @@ Optional Features:
   --disable-graphics      No graphics subsystem
   --disable-graphics3d    No 3D graphics support
   --disable-multiprograms No multi programs support
+  --disable-native-coswitch
+                          Use pthread-based coswitch instead of native rswitch
+                          (asm/C)
   --disable-concurrency   No concurrent thread support
   --disable-pattern       No pattern type support
   --disable-database      No database support
@@ -3606,6 +3610,14 @@ then :
   enableval=$enable_multiprograms; multiprograms=$enableval
 else $as_nop
   multiprograms=on
+fi
+
+# Check whether --enable-native-coswitch was given.
+if test ${enable_native_coswitch+y}
+then :
+  enableval=$enable_native_coswitch; native_coswitch=$enableval
+else $as_nop
+  native_coswitch=yes
 fi
 
 # Check whether --enable-concurrency was given.
@@ -12691,7 +12703,13 @@ fi
 # Co-expression switch: path relative to TOPDIR (see Makedefs.in RSWITCH_SRC).  We do not copy
 # into src/common/rswitch.[csS]; leftover files from older configure runs are removed by
 # distclean/Pure in the top Makefile.
-if test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
+if test "x$native_coswitch" = "xno"; then
+    echo "Native coswitch disabled, build will use pthreadcoswitch.c"
+
+printf "%s\n" "#define NoNativeCoswitch 1" >>confdefs.h
+
+    RSWITCH_REL=src/common/pthreadcoswitch.c
+elif test -f "$srcdir/src/asm/$unicon_host-rswitch.s"; then
     echo "Native coswitch (assembler) available for $unicon_host"
     RSWITCH_REL=src/asm/$unicon_host-rswitch.s
 elif test -f "$srcdir/src/asm/$unicon_host-rswitch.c"; then
@@ -12705,6 +12723,9 @@ printf "%s\n" "#define NoNativeCoswitch 1" >>confdefs.h
     RSWITCH_REL=src/common/pthreadcoswitch.c
 fi
 
+if test "x$RSWITCH_REL" = "xsrc/common/pthreadcoswitch.c" && test "x$concurrency" = "xno"; then
+  as_fn_error $? "pthread-based co-expression switching requires concurrency" "$LINENO" 5
+fi
 
 if ! test "x$plugins" = "xno"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5

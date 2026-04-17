@@ -52,6 +52,7 @@ jobs:
     name: ${{ matrix.cfg.name }}
     timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         cfg:
         -  { os: windows-latest,  name: 'Windows 64-bit', pkg: 'Windows_64-bit',  opt: '--enable-werror' }
@@ -94,12 +95,16 @@ jobs:
     - name: Test
       run: make Test
 
+    # Unlike other platforms, Windows does not fail the job on test failures (still upload report for the combined summary).
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
-      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+      run: |
+        make -C tests Report 2>&1 | tee tests/test-report.txt
+        # TODO: Re-enable when Windows test suite is green (fail CI on failed tests):
+        # sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ steps.build.outcome == 'success' }}
+      if: ${{ always() && steps.build.outcome == 'success' }}
       uses: actions/upload-artifact@v6
       with:
         name: test-report-Windows-${{ matrix.cfg.name }}
@@ -125,6 +130,7 @@ jobs:
     name: ${{ matrix.cfg.name }}
     timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         cfg:
         -  { os: macos-15-intel, name: 'macOS intel', opt: '--enable-werror CC=clang CXX=clang++' }
@@ -151,10 +157,12 @@ jobs:
 
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
-      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+      run: |
+        make -C tests Report 2>&1 | tee tests/test-report.txt
+        sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ steps.build.outcome == 'success' }}
+      if: ${{ always() && steps.build.outcome == 'success' }}
       uses: actions/upload-artifact@v6
       with:
         name: test-report-macOS-${{ matrix.cfg.name }}
@@ -268,12 +276,16 @@ jobs:
     - name: Test
       run: make Test
 
+    # In container jobs, ${{ github.workspace }} is expanded to the runner host path; the shell runs
+    # inside the container where the repo lives under $GITHUB_WORKSPACE instead.
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
-      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+      run: |
+        make -C tests Report 2>&1 | tee tests/test-report.txt
+        sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ steps.build.outcome == 'success' }}
+      if: ${{ always() && steps.build.outcome == 'success' }}
       uses: actions/upload-artifact@v6
       with:
         name: test-report-Linux-${{ matrix.cfg.name }}
@@ -298,6 +310,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         platform:
          -  { arch: riscv64, configure_opt: "", make_flags: '-j8' } # emulated
@@ -335,11 +348,13 @@ jobs:
 
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
-      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+      run: |
+        make -C tests Report 2>&1 | tee tests/test-report.txt
+        sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
       shell: alpine.sh {0}
 
     - name: Upload test report
-      if: ${{ steps.build.outcome == 'success' }}
+      if: ${{ always() && steps.build.outcome == 'success' }}
       uses: actions/upload-artifact@v6
       with:
         name: test-report-Alpine-${{ matrix.platform.arch }}
@@ -366,6 +381,7 @@ jobs:
     name: ${{ matrix.cfg.name }}
     timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         cfg:
         # -  { os: ubuntu-latest, name: 'Ubuntu 32-bit',  opt: '--host=i686-pc-linux-gnu' }
@@ -373,6 +389,7 @@ jobs:
         -  { os: ubuntu-latest, name: 'No Graphics',    opt: '--disable-graphics --enable-werror' }
         -  { os: ubuntu-latest, name: 'No 3D Graphics', opt: '--disable-graphics3d --enable-werror' }
         -  { os: ubuntu-latest, name: 'No Concurrency', opt: '--disable-concurrency --enable-werror' }
+        -  { os: ubuntu-latest, name: 'Pthreadcoswitch', opt: '--disable-native-coswitch --enable-werror' }
         -  { os: ubuntu-latest, name: 'Heap Test',      opt: '--enable-debugheap  --enable-verifyheap --enable-werror' }
         -  { os: ubuntu-latest, name: 'Thin Build',     opt: '--enable-thin --enable-werror' }
         -  { os: ubuntu-latest, name: 'Dev Mode',       opt: '--enable-devmode' }
@@ -437,10 +454,12 @@ jobs:
 
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
-      run: make -C tests Report 2>&1 | tee tests/test-report.txt
+      run: |
+        make -C tests Report 2>&1 | tee tests/test-report.txt
+        sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ steps.build.outcome == 'success' }}
+      if: ${{ always() && steps.build.outcome == 'success' }}
       uses: actions/upload-artifact@v6
       with:
         name: test-report-Features-${{ matrix.cfg.name }}
@@ -490,20 +509,52 @@ jobs:
 
    - name: HtmlDoc
      shell: freebsd {0}
-     run: cd $GITHUB_WORKSPACE && gmake htmldoc
+     run: |
+      cd $GITHUB_WORKSPACE
+      # UniDoc with --resolve is heavy; default stack rlimit has caused intermittent
+      # SIGBUS (Bus error) on FreeBSD CI. vmactions flakes also show up here.
+      ulimit -s unlimited 2>/dev/null || true
+      n=0
+      until gmake htmldoc; do
+        n=$((n + 1))
+        if [ "$n" -ge 3 ]; then
+          echo "gmake htmldoc failed after 3 attempts"
+          exit 1
+        fi
+        echo "gmake htmldoc failed (attempt $n), retrying in 5s..."
+        sleep 5
+      done
 
    - name: Test
      shell: freebsd {0}
      run: cd $GITHUB_WORKSPACE && gmake Test
 
    # Tee to repo root so the file is on the runner workspace (vmactions sometimes omits subpaths under tests/).
+   # Like Windows: do not fail the job on test-report failures (still upload for combined summary).
    - name: TestReport
      if: ${{ steps.build.outcome == 'success' }}
      shell: freebsd {0}
-     run: cd $GITHUB_WORKSPACE && gmake -C tests Report 2>&1 | tee test-report.txt
+     run: |
+       cd $GITHUB_WORKSPACE
+       gmake -C tests Report 2>&1 | tee test-report.txt
+       # TODO: Re-enable when FreeBSD test suite is green:
+       # sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" "$GITHUB_WORKSPACE/test-report.txt"
+
+   # Custom `shell: freebsd` steps run over SSH into a persistent VM; the host workspace is not
+   # rsynced after each step (only the initial vmactions action copybacks). Pull the report onto the
+   # runner so upload-artifact can see it.
+   - name: Sync test report from VM to host
+     if: ${{ always() && steps.build.outcome == 'success' }}
+     run: |
+       set -euo pipefail
+       if ssh freebsd "test -f ${GITHUB_WORKSPACE}/test-report.txt"; then
+         rsync -a -e ssh "freebsd:${GITHUB_WORKSPACE}/test-report.txt" "${GITHUB_WORKSPACE}/test-report.txt"
+       else
+         echo "::warning::test-report.txt not found in FreeBSD VM; skipping sync (TestReport may have failed before tee wrote a file)."
+       fi
 
    - name: Upload test report
-     if: ${{ steps.build.outcome == 'success' }}
+     if: ${{ always() && steps.build.outcome == 'success' }}
      uses: actions/upload-artifact@v6
      with:
        name: test-report-FreeBSD
@@ -599,9 +650,10 @@ jobs:
         else export FPATH="${{ github.workspace }}/bin"; fi
         export UC=unicon UDB=udb
         make -C tests Report 2>&1 | tee tests/test-report.txt
+        sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
-      if: ${{ steps.build.outcome == 'success' }}
+      if: ${{ always() && steps.build.outcome == 'success' }}
       uses: actions/upload-artifact@v6
       with:
         name: test-report-DebianPkg
@@ -637,11 +689,10 @@ jobs:
         run: |
           set -euo pipefail
           out=all-platforms-test-report.txt
-          : > failed-platforms.txt
           list=$(mktemp)
-          stats=$(mktemp)
+          stats=combined-platform-stats.tsv
           : > "$stats"
-          trap 'rm -f "$list" "$stats"' EXIT
+          trap 'rm -f "$list"' EXIT
 
           pr_disp="—"
           if [ -n "${PR_NUMBER:-}" ]; then pr_disp="#${PR_NUMBER}"; fi
@@ -654,6 +705,15 @@ jobs:
               return
             fi
             printf '%d:%02d' "$((x / 60))" "$((x % 60))"
+          }
+
+          # Per-suite Summary lines from tests/Makefile.test: "...  FAIL: a.icn b.icn"
+          # (not the aggregate "Result:" line — that has no "FAIL:").
+          failed_icns_from_report() {
+            local f="$1"
+            # grep exits 1 when there are no matches; with pipefail that fails the whole pipeline
+            # and aborts this step under set -e when assigning flist= below.
+            { tr -d '\r' < "$f" | grep 'FAIL:' 2>/dev/null || true; } | sed 's/.*FAIL:[[:space:]]*//' | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g;s/[[:space:]]*$//'
           }
 
           echo "::group::Artifact download layout"
@@ -678,7 +738,7 @@ jobs:
               echo ""
               echo "| Platform | passed | failed | skipped | time (mm:ss) |"
               echo "|----------|--------|--------|---------|--------------|"
-              echo "| *(no artifacts downloaded)* | - | - | - | - |"
+              echo "| *(no artifacts downloaded)* | - | - | - | - | - |"
             } > platform-summary.md
           else
             while IFS= read -r report_file; do
@@ -691,10 +751,10 @@ jobs:
               echo "# ${section}" >> "$out"
               echo "################################################################" >> "$out"
               cat "$report_file" >> "$out"
-              if grep -qiE 'Result:.*FAIL' "$report_file"; then
-                printf '%s\n' "$section" >> failed-platforms.txt
-              fi
-              line=$(grep -E 'Result:.*\([0-9]+ passed,' "$report_file" 2>/dev/null | tail -1 || true)
+              # Do not use grep -i 'FAIL' on the report: -i matches the substring "fail"
+              # inside "0 failed" on PASS lines, so every platform was listed as failed.
+              flist=$(failed_icns_from_report "$report_file")
+              line=$(tr -d '\r' < "$report_file" | grep -E 'Result:.*\([0-9]+ passed,' 2>/dev/null | tail -1 || true)
               if [[ -n "${line:-}" ]] && [[ "$line" =~ \(([0-9]+)\ passed,\ ([0-9]+)\ failed,\ ([0-9]+)\ skipped\) ]]; then
                 p="${BASH_REMATCH[1]}"
                 failed_n="${BASH_REMATCH[2]}"
@@ -703,9 +763,25 @@ jobs:
                 if [[ "$line" =~ in\ ([0-9]+)\ seconds ]]; then
                   tsec="${BASH_REMATCH[1]}"
                 fi
-                printf '%s\t%s\t%s\t%s\t%s\n' "$section" "$p" "$failed_n" "$s" "$tsec" >> "$stats"
+                flist_disp=""
+                if [ "${failed_n}" -gt 0 ]; then
+                  if [ -n "${flist}" ]; then
+                    flist_disp="${flist}"
+                  else
+                    flist_disp="(see full report)"
+                  fi
+                fi
+                printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$section" "$p" "$failed_n" "$s" "$tsec" "$flist_disp" >> "$stats"
               else
-                printf '%s\t-\t-\t-\t-\n' "$section" >> "$stats"
+                flist_disp=""
+                if tr -d '\r' < "$report_file" | grep -qE '^Result:[[:space:]]+FAIL' 2>/dev/null; then
+                  if [ -n "${flist}" ]; then
+                    flist_disp="${flist}"
+                  else
+                    flist_disp="(see full report)"
+                  fi
+                fi
+                printf '%s\t-\t-\t-\t-\t%s\n' "$section" "$flist_disp" >> "$stats"
               fi
             done < "$list"
             _sorttmp=$(mktemp)
@@ -719,13 +795,17 @@ jobs:
               echo "All platforms summary"
               echo "================================================================"
               echo ""
-              printf '%-48s  %8s  %8s  %10s  %12s\n' "Platform" "passed" "failed" "skipped" "time (mm:ss)"
-              printf '%-48s  %8s  %8s  %10s  %12s\n' "----------------------------------------------" "--------" "--------" "----------" "------------"
+              printf '%-32s %5s %5s %5s %8s  %s\n' "Platform" "pass" "fail" "skip" "time" "failed tests (.icn)"
+              printf '%-32s %5s %5s %5s %8s  %s\n' "--------------------------------" "-----" "-----" "-----" "--------" "-------------------------"
               tp=0 tf=0 ts=0 ttot=0 thave=0
-              while IFS=$'\t' read -r sec pp ff ss tt; do
+              while IFS=$'\t' read -r sec pp ff ss tt flrow; do
                 [ -n "${sec:-}" ] || continue
                 ttfmt=$(sec_to_mmss "$tt")
-                printf '%-48s  %8s  %8s  %10s  %12s\n' "$sec" "$pp" "$ff" "$ss" "$ttfmt"
+                fdisp="${flrow:-}"
+                if [[ "${ff:-}" =~ ^[0-9]+$ ]] && [ "${ff}" -eq 0 ]; then
+                  fdisp=""
+                fi
+                printf '%-32s %5s %5s %5s %8s  %s\n' "$sec" "$pp" "$ff" "$ss" "$ttfmt" "$fdisp"
                 if [[ "$pp" =~ ^[0-9]+$ ]]; then tp=$((tp + pp)); fi
                 if [[ "$ff" =~ ^[0-9]+$ ]]; then tf=$((tf + ff)); fi
                 if [[ "$ss" =~ ^[0-9]+$ ]]; then ts=$((ts + ss)); fi
@@ -733,22 +813,27 @@ jobs:
               done < "$stats"
               ttdisp="-"
               if [ "${thave:-0}" -ne 0 ]; then ttdisp=$(sec_to_mmss "$ttot"); fi
-              printf '%-48s  %8s  %8s  %10s  %12s\n' "----------------------------------------------" "--------" "--------" "----------" "------------"
-              printf '%-48s  %8s  %8s  %10s  %12s\n' "Total:" "$tp" "$tf" "$ts" "$ttdisp"
+              printf '%-32s %5s %5s %5s %8s  %s\n' "--------------------------------" "-----" "-----" "-----" "--------" ""
+              printf '%-32s %5s %5s %5s %8s  %s\n' "Total:" "$tp" "$tf" "$ts" "$ttdisp" ""
               echo ""
             } >> "$out"
             {
               echo "### All platforms summary" > platform-summary.md
               echo "" >> platform-summary.md
-              echo "| Platform | passed | failed | skipped | time (mm:ss) |" >> platform-summary.md
-              echo "|----------|--------|--------|---------|--------------|" >> platform-summary.md
-              while IFS=$'\t' read -r sec pp ff ss tt; do
+              echo "| Platform | pass | fail | skip | time | failed tests |" >> platform-summary.md
+              echo "|----------|-----:|-----:|-----:|------|--------------|" >> platform-summary.md
+              while IFS=$'\t' read -r sec pp ff ss tt flrow; do
                 [ -n "${sec:-}" ] || continue
                 ttfmt=$(sec_to_mmss "$tt")
-                echo "| ${sec} | ${pp} | ${ff} | ${ss} | ${ttfmt} |" >> platform-summary.md
+                fdisp="${flrow:-}"
+                if [[ "${ff:-}" =~ ^[0-9]+$ ]] && [ "${ff}" -eq 0 ]; then
+                  fdisp=""
+                fi
+                esc=$(printf '%s' "$fdisp" | sed 's/|/\\|/g')
+                echo "| ${sec} | ${pp} | ${ff} | ${ss} | ${ttfmt} | ${esc} |" >> platform-summary.md
               done < "$stats"
               tp=0 tf=0 ts=0 ttot=0 thave=0
-              while IFS=$'\t' read -r sec pp ff ss tt; do
+              while IFS=$'\t' read -r sec pp ff ss tt flrow; do
                 [ -n "${sec:-}" ] || continue
                 if [[ "$pp" =~ ^[0-9]+$ ]]; then tp=$((tp + pp)); fi
                 if [[ "$ff" =~ ^[0-9]+$ ]]; then tf=$((tf + ff)); fi
@@ -757,18 +842,8 @@ jobs:
               done < "$stats"
               ttdisp="-"
               if [ "${thave:-0}" -ne 0 ]; then ttdisp=$(sec_to_mmss "$ttot"); fi
-              echo "| **Total** | **${tp}** | **${tf}** | **${ts}** | **${ttdisp}** |" >> platform-summary.md
+              echo "| **Total** | **${tp}** | **${tf}** | **${ts}** | **${ttdisp}** | |" >> platform-summary.md
             }
-            {
-              echo ""
-              echo "================================================================"
-              echo "Platforms with failed tests:"
-              if [ ! -s failed-platforms.txt ]; then
-                echo "(none)"
-              else
-                cat failed-platforms.txt
-              fi
-            } >> "$out"
           fi
 
           echo "::group::Combined file stats"
@@ -776,21 +851,24 @@ jobs:
           wc -c "$out"
           echo "::endgroup::"
 
-          echo "::group::Platforms with failed tests (from grep Result: FAIL)"
-          if [ ! -s failed-platforms.txt ]; then
-            echo "(none)"
-          else
-            cat failed-platforms.txt
-          fi
-          echo "::endgroup::"
-
           echo "::group::Combined report preview (first 80 lines; full file in artifact)"
           head -n 80 "$out"
           echo "::endgroup::"
 
+      # Upload before Summary + failure gate so the artifact exists even if a later step errors,
+      # and so the gate cannot prevent the artifact from uploading.
+      - name: Upload combined report
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: all-platforms-test-report
+          path: all-platforms-test-report.txt
+          if-no-files-found: warn
+
       # Step Summary has a ~1MB limit; oversized writes often show up empty. Truncate for the web UI;
       # the full report is always in the all-platforms-test-report artifact.
       - name: Show report in workflow summary
+        if: always()
         shell: bash
         env:
           SUMMARY_MAX_BYTES: '700000'
@@ -798,6 +876,10 @@ jobs:
           PR_NUMBER: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
         run: |
           set -euo pipefail
+          if [ ! -f all-platforms-test-report.txt ]; then
+            echo "No combined report on disk; skipping Step Summary (build may have failed)."
+            exit 0
+          fi
           : "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is not set}"
           pr_disp="—"
           if [ -n "${PR_NUMBER:-}" ]; then pr_disp="#${PR_NUMBER}"; fi
@@ -833,16 +915,6 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          {
-            echo ""
-            echo "### Platforms with failed tests"
-            if [ ! -s failed-platforms.txt ]; then
-              echo "(none)"
-            else
-              sed 's/^/- /' failed-platforms.txt
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
           sz=$(wc -c < "$GITHUB_STEP_SUMMARY" | tr -d ' ')
           echo "Step Summary size (bytes): ${sz}"
 
@@ -858,10 +930,3 @@ jobs:
           echo "::endgroup::"
 
           echo "::notice title=Where to see the full formatted report::On the workflow run page, open job **Combined test report (all platforms)** → tab **Summary** (beside **Logs**). This step also prints the first 400 lines above."
-
-      - name: Upload combined report
-        uses: actions/upload-artifact@v6
-        with:
-          name: all-platforms-test-report
-          path: all-platforms-test-report.txt
-          if-no-files-found: warn

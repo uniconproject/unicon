@@ -530,15 +530,13 @@ jobs:
      run: cd $GITHUB_WORKSPACE && gmake Test
 
    # Tee to repo root so the file is on the runner workspace (vmactions sometimes omits subpaths under tests/).
-   # Like Windows: do not fail the job on test-report failures (still upload for combined summary).
    - name: TestReport
      if: ${{ steps.build.outcome == 'success' }}
      shell: freebsd {0}
      run: |
        cd $GITHUB_WORKSPACE
        gmake -C tests Report 2>&1 | tee test-report.txt
-       # TODO: Re-enable when FreeBSD test suite is green:
-       # sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" "$GITHUB_WORKSPACE/test-report.txt"
+       sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" "$GITHUB_WORKSPACE/test-report.txt"
 
    # Custom `shell: freebsd` steps run over SSH into a persistent VM; the host workspace is not
    # rsynced after each step (only the initial vmactions action copybacks). Pull the report onto the

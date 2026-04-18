@@ -500,6 +500,9 @@ case $unicon_host in
      *aix*)
        ;;
      *bsd*)
+      # Like Linux: iconx must export rt symbols so dlopen'd libcfunc.so can bind cnv_* etc.
+      LDFLAGS="$LDFLAGS -rdynamic "
+      RLINK="-rdynamic -Wl,-E "
         ;;
      *macos*)
        LDDYN="-Xlinker -undefined -Xlinker dynamic_lookup -shared "

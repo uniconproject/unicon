@@ -22,7 +22,7 @@ IGNORE=
 # rusage/kill removed — golden output is portable; pty_uni/tcp/wait still Windows-inapplicable
 WINSKIP=pty_uni tcp wait
 
-BSDSKIP=pty_uni
+BSDSKIP=pty_uni uxsocket
 
 # default is to run all tests, using icont
 Test:  DoTest

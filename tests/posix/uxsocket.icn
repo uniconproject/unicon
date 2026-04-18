@@ -1,37 +1,38 @@
-
 $include "posix.icn"
+link io
 
 procedure main()
-   sock := "revsock" || (?900 + 100)
-   if fork() ~== 0 then {
+   sock := tempname("unicon-uxsocket-", "")
+
+   if fork() ~= 0 then {
       # parent
-      delay(1000)
-      f := open(sock, "n") |
-         stop("Couldn't connect: ",  sys_errstr(&errno))
+      client := &null
+      every !10 do {
+         delay(100)
+         if client := open(sock, "n") then break
+      }
+      if /client then
+         stop("Client couldn't connect " || sock || ":\n",  &errortext | "Unknown")
 
-      write(f, "hello, world!")
-      write(read(f))
+      write(client, "hello, world!")
+      write(read(client))
 
-      delay(1000)
-      close(f)
+      delay(500)
+      close(client)
       exit(0)
    }
 
    # child
-   if f := open(sock, "na") then {
+   if server := open(sock, "na") then {
       if fork() = 0 then {
-         handle(f)
-         close(f)
+         handle(server)
+         close(server)
          exit(0)
       }
-      close(f)
-      if (&features == "MacOS") then
-         # workaround a bug on MacOS where the name is one character shorter
-         system("rm " || sock[1:-1])
-      else
-         system("rm " || sock)
+      close(server)
+      system("rm -f " || sock)
    }
-   (&errno = 0) | stop("Couldn't accept: ", sys_errstr(&errno))
+   (&errno = 0) | stop("Server couldn't accept " || sock || ":\n", &errortext | "Unknown")
 end
    
 procedure handle(f)

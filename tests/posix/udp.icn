@@ -1,8 +1,8 @@
 $include "posix.icn"
 
 procedure main()
-   port:=":1072"
-   if fork() == 0 then {
+   port:="127.0.0.1:1072"
+   if fork() = 0 then {
       f := open(port, "nua")
 
       if r := receive(f) then {
@@ -13,16 +13,20 @@ procedure main()
       exit(0)
    }
 
-   delay(100)
-   if (&features == "MacOS") then
-      port := "localhost" || port
-
-   f := open(port, "nu") |
-      stop("Open failed: ", sys_errstr(&errno))
+   f := &null
+   every !10 do {
+      delay(100)
+      if f := open(port, "nu") then break
+   }
+   if /f then
+      stop("Open failed: ", &errortext | "Unknown")
 
    write(f, "")
-   if *select(f, 5000) = 0 then stop("Connection timed out.")
-   r := receive(f)
+   if *select(f, 5000) = 0 then
+      stop("Connection timed out: ", &errortext | "Unknown")
+
+   r := receive(f) | stop("Receive failed: ", &errortext | "Unknown")
+
    write("Received ", r.msg)
 
 end

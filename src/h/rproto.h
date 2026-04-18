@@ -977,6 +977,7 @@ void closetmpfiles();
 int is_internal(char *s);
 int StartupWinSocket(void);
 void stat2rec                   (struct _stat *st, dptr dp, struct b_record **rp);
+dptr make_pwd_nt                (char *name, C_integer uid, C_integer gid, dptr result);
 #else                                   /* NT */
 void stat2rec                   (struct stat *st, dptr dp, struct b_record **rp);
 dptr make_pwd                   (struct passwd *pw, dptr result);

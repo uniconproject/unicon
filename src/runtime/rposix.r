@@ -1934,6 +1934,45 @@ dptr make_pwd(struct passwd *pw, dptr result)
 }
 #endif                                  /* !NT */
 
+#if NT
+/*
+ * Synthetic posix_passwd for getpw(name) when name matches the logged-in user
+ * (see fxposix.ri getpw). There is no /etc/passwd on Windows.
+ */
+dptr make_pwd_nt(char *name, C_integer uid, C_integer gid, dptr result)
+{
+   tended struct b_record *rp;
+   dptr constr;
+   int nfields;
+   static char emptystr[] = "";
+   char *dir, *sh;
+
+   if (!(constr = rec_structor("posix_passwd")))
+      return 0;
+
+   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+   rp = alcrecd(nfields, BlkLoc(*constr));
+
+   result->dword = D_Record;
+   result->vword.bptr = (union block *)rp;
+   String(rp->fields[0], name);
+   String(rp->fields[1], "x");
+   rp->fields[2].dword = rp->fields[3].dword = D_Integer;
+   IntVal(rp->fields[2]) = uid;
+   IntVal(rp->fields[3]) = gid;
+   String(rp->fields[4], emptystr);
+   dir = getenv("USERPROFILE");
+   if (!dir || !*dir)
+      dir = (char *)emptystr;
+   String(rp->fields[5], dir);
+   sh = getenv("ComSpec");
+   if (!sh || !*sh)
+      sh = (char *)emptystr;
+   String(rp->fields[6], sh);
+   return result;
+}
+#endif                                  /* NT */
+
 void catstrs(char **ptrs, dptr d)
 {
    int nmem = 0, i, n;

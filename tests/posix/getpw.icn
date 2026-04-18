@@ -3,8 +3,16 @@ $include "posix.icn"
 
 procedure main()
 
+$ifdef _MS_WINDOWS_NT
+   # Runtime getpw(name) only matches USERNAME or USER (see fxposix.ri); no /etc/passwd.
+   uname := getenv("USERNAME") | getenv("USER") |
+      stop("no USERNAME or USER in environment")
+   getpw(uname) | stop ("Couldn't get pw for ", image(uname), ".")
+   write("getpw: ok")
+$else
    r:= getpw("root") | stop ("Couldn't get pw for \"root\".")
    pwdump(r)
+$endif
    
 end
 

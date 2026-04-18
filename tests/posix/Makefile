@@ -30,10 +30,8 @@ IGNORE=
 #               All use fork(); same blocker unless rewritten without fork.
 #   uxsocket    Unix-domain sockets + fork; AF_UNIX differs on Windows (and fork).
 #   rusage      getrusage() stubbed on NT (fail); needs a Windows implementation or skip.
-#   system      icont >file under MSYS: mswinsystem()+redirection can fail (rsys.c); run from
-#               cmd or fix runtime, or rewrite test to avoid shell ">" (pipe from Icon).
 #
-WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage system
+WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage
 
 BSDSKIP=pty_uni uxsocket
 

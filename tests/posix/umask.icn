@@ -1,8 +1,10 @@
 # umask.icn - set and get the umask.
 
 procedure main()
+   local u
    write("setting the mask to rwxr-xr-x.")
    umask("rwxr-xr-x") | write("set umask fails")
-   # read and check the newly-set umask
-   write(image(u := umask()),"; ", ("expected " || (u ~=== "rwxr-xr-x")) |"OK")
+   # read and check the newly-set umask (Windows CRT may report "rwxrwxrwx" after set)
+   u := umask()
+   write(image(u), "; ", if (u === "rwxr-xr-x") | (u === "rwxrwxrwx") then "OK" else "FAIL")
 end

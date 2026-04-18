@@ -1,9 +1,14 @@
 # purpose of this test is obviously to test whether !f is working, where
 # f is a directory that has been opened.  Output is sorted because the
 # order the filenames come out of open() is not guaranteed.
+#
+# test-dir may contain a symlink "d" (created by ls.icn).  On Windows, symlink()
+# is not implemented in the runtime (NT stub in fxposix.ri), so "d" never appears;
+# stand/bang.wstd has one fewer line than bang.std.
+#
 procedure main()
     L := []
-    every put(L, ".svn" ~== !open("test-dir"))
+    every put(L, !open("test-dir"))
     L := sort(L)
     every write(!L)
 end

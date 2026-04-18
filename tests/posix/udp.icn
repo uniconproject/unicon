@@ -14,8 +14,10 @@ procedure main()
    }
 
    delay(100)
-   if (&features == "MacOS") then
-      port := "localhost" || port
+   # Bare ":port" uses passive resolution for the client and does not reliably
+   # reach a server bound as ":port" (timeouts on macOS, FreeBSD, etc.).
+   if &features ~== "MS Windows NT" then
+      port := "127.0.0.1" || port
 
    f := open(port, "nu") |
       stop("Open failed: ", sys_errstr(&errno))

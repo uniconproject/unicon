@@ -1,8 +1,10 @@
 
 $include "posix.icn"
+link io
 
 procedure main()
-   sock := "revsock" || (?900 + 100)
+   # tempname() uses getenv("TEMP") / /tmp / "." and the right path separator (see io.icn).
+   sock := tempname("unicon-uxsocket-", "")
    if fork() ~== 0 then {
       # parent
       delay(1000)
@@ -25,11 +27,7 @@ procedure main()
          exit(0)
       }
       close(f)
-      if (&features == "MacOS") then
-         # workaround a bug on MacOS where the name is one character shorter
-         system("rm " || sock[1:-1])
-      else
-         system("rm " || sock)
+      system("rm -f " || sock)
    }
    (&errno = 0) | stop("Couldn't accept: ", sys_errstr(&errno))
 end

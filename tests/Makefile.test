@@ -72,24 +72,29 @@ endif
 
 # Compile and test, generate a short diff file if there are differences
 # Optional per-target env (e.g. gc2: TEST_ENV := BLKSIZE=... in a suite Makefile).
+# Strip CR from captured output so stand/*.std can stay LF-only on Windows (see coexpr).
+# Use local/$@.nr (not diff -) — MSYS diff.exe rejects stdin `-` on Windows.
 %: %.icn local %.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $(UFLAGS) $<
 	@if [ -f data/$@.dat ] ; then \
 	$(TEST_ENV) ./$@ < data/$@.dat  > local/$@.out 2>&1; \
 	else $(TEST_ENV) ./$@ > local/$@.out 2>&1; fi || true
-	@if [ x$(EXE) = x.exe ] && [ -f stand/$@.wstd ] ; then \
-	diff -wq stand/$@.wstd local/$@.out >/dev/null; \
+	@tr -d '\r' < local/$@.out > local/$@.nr; \
+	if [ x$(EXE) = x.exe ] && [ -f stand/$@.wstd ] ; then \
+	diff -wq stand/$@.wstd local/$@.nr >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "w pass"; \
 	else echo "w FAIL"; \
-	diff --suppress-common-lines -wy stand/$@.wstd local/$@.out > $@.diff; fi \
-	else diff -wq stand/$@.std local/$@.out >/dev/null; \
+	diff --suppress-common-lines -wy stand/$@.wstd local/$@.nr > $@.diff; fi \
+	else \
+	diff -wq stand/$@.std local/$@.nr >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "pass"; \
 	else \
 	if grep -qi "This Program Requires" local/$@.out; then cat local/$@.out; \
 	else echo "FAIL"; \
-	diff --suppress-common-lines -wy stand/$@.std local/$@.out > $@.diff; fi \
+	diff --suppress-common-lines -wy stand/$@.std local/$@.nr > $@.diff; fi \
 	fi; \
+	rm -f local/$@.nr; \
 	fi || true
 	-@rm $@$(EXE)
 
@@ -159,17 +164,17 @@ all: Test Report
 #silent clean
 clean:
 	-@rm -f *.u uniclass.* $(TARGETS)
-	-@rm -f local/*.out *.diff .suite_duration
+	-@rm -f local/*.out local/*.nr *.diff .suite_duration
 
 
 #verbose clean
 Clean:
 	-rm -f *.u uniclass.* $(TARGETS)
-	-rm -f local/*.out *.diff *.exe .suite_duration
+	-rm -f local/*.out local/*.nr *.diff *.exe .suite_duration
 
 distclean:
 	-@rm -f *.u uniclass.* $(TARGETS)
-	-@rm -f local/*.out *.diff *.exe .suite_duration
+	-@rm -f local/*.out local/*.nr *.diff *.exe .suite_duration
 
 
 

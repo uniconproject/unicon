@@ -2,9 +2,10 @@
 # by cvevans
 # benchmarks coexpression performance
 # Progress dots on stderr: ./cobench debug  (or -debug, --debug)
+# Default stdout is only the final status line; use debug for description and timings.
 
 procedure main(argv)
-  local dbg, a
+  local dbg, a, t, dt, dtc, coact, n1, n2, per, x, i
   dbg := 0
   every a := !argv do
      if a == "debug" | a == "-debug" | a == "--debug" then dbg := 1
@@ -12,10 +13,13 @@ procedure main(argv)
        stop("This program requires co-expressions.")
   per := 10000
   if &features == "native coswitch" then
-      write ("Native coswitch found") & per := 1000000
-  else 
-      write ("No native coswitch")
-  every write ("With native coswitch, this test does "|
+      per := 1000000
+  if dbg = 1 then {
+      if &features == "native coswitch" then
+          write ("Native coswitch found")
+      else
+          write ("No native coswitch")
+      every write ("With native coswitch, this test does "|
 "100M coswitches in about 8 seconds on an Intel or AMD CPU at 3Ghz,"|
 "doing about 10-15M per second running iconx."|
 "compiling with unicon -C, it should do 20-40M/s"|
@@ -23,36 +27,42 @@ procedure main(argv)
 "Debug builds will be slower."|
 "Without native coswitch, only 1M coswitches will be done."
   )
-# ^ debug builds are half as fast. 
-  n := 0
+  }
+  n1 := 0
   x := create 1 to per
-  every  i := 1 to 50 do { 
+  every  i := 1 to 50 do {
       x := ^x
-      every 1 to per do 
-          n +:= 1; 
+      every 1 to per do
+          n1 +:= 1;
       if dbg = 1 then writes(&errout,".")
   }
   if dbg = 1 then write(&errout)
-  write(n / 1000000 || "M")
+  if dbg = 1 then
+      write(n1 / 1000000 || "M")
   t := &time
-  write(t / 1000.0, " seconds overhead.")
-  n := 0
+  if dbg = 1 then
+      write(t / 1000.0, " seconds overhead.")
+  n2 := 0
   x := create 1 to per
-  every  i := 1 to 50 do { 
-      x := ^x; 
-      while @x do 
-          n +:= 1; 
+  every  i := 1 to 50 do {
+      x := ^x;
+      while @x do
+          n2 +:= 1;
       if dbg = 1 then writes(&errout,".")
   }
   if dbg = 1 then write(&errout)
   dt := &time - t
-  write(dt / 1000.0, " seconds CPU time,")
-  writes(n / 1000000, "M coacts in ")
-#  write(&time )
-  dtc:= &time - t * 2
-  write(dtc / 1000.0, " seconds.")
-  coact := n / dtc
-  write (coact, "K coacts/s")
-  write (coact * 2, "K coswitches/s")
-
-end # main 
+  if dbg = 1 then {
+      write(dt / 1000.0, " seconds CPU time,")
+      writes(n2 / 1000000, "M coacts in ")
+      dtc:= &time - t * 2
+      write(dtc / 1000.0, " seconds.")
+      coact := n2 / dtc
+      write (coact, "K coacts/s")
+      write (coact * 2, "K coswitches/s")
+  }
+  if n1 = 50 * per & n2 = 50 * per then
+      write("cobench: ok")
+  else
+      stop("cobench: count mismatch ", n1, " ", n2, " ", per)
+end # main

@@ -69,12 +69,13 @@ $endif
 end
 
 procedure verify_del_byte_roundtrip()
-   local src, base, ufile, exewin, f, got, uc, exe, nullsink
+   local src, base, ufile, exewin, f, got, uc, nullsink, runexe, outfile
 
    src := "local/triple_del_probe.icn"
    base := "triple_del_probe"
    ufile := base || ".u"
    exewin := base || ".exe"
+   outfile := "local/triple_del_run.txt"
 
    if not stat("local") then
       mkdir("local") | stop("cannot create local")
@@ -91,12 +92,12 @@ procedure verify_del_byte_roundtrip()
 
    uc := safe_uc_cmd()
    if &features == ("MS Windows NT") then {
-      exe := exewin
       nullsink := "NUL"
+      runexe := ".\\" || exewin
    }
    else {
-      exe := "./" || base
       nullsink := "/dev/null"
+      runexe := "./" || base
    }
 
    remove(base)
@@ -104,7 +105,9 @@ procedure verify_del_byte_roundtrip()
    remove(exewin)
    if system(uc || " " || src || " >" || nullsink || " 2>&1") ~= 0 then
       stop("compile failed for DEL probe")
-   f := open(exe, "p") | stop("run failed for DEL probe")
+   if system(runexe || " > " || outfile || " 2>&1") ~= 0 then
+      stop("run failed for DEL probe")
+   f := open(outfile) | stop("run failed for DEL probe (no output file)")
    got := read(f)
    close(f)
 
@@ -112,6 +115,7 @@ procedure verify_del_byte_roundtrip()
    remove(base)
    remove(ufile)
    remove(exewin)
+   remove(outfile)
    if got ~== "127" then
       stop("expected DEL ord 127, got ", image(got))
    write("del-octal-ok")

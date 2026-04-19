@@ -2140,8 +2140,11 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
          while ((s = strstr(s, ">")) != NULL) {
             /*
              * If &> or >& then redirect both stdout and stderr.
+             * Do not treat the '>' in "2>&1" as >& (s[1]=='&'); that would
+             * capture "1" as the filename and break "> file 2>&1".
              */
-            if (((s - cmdline > 0) && s[-1] == '&') || (s[1]=='&')) {
+            if (((s - cmdline > 0) && s[-1] == '&') ||
+                ((s[1] == '&') && (s - cmdline <= 0 || s[-1] != '2'))) {
 
                if ((s - cmdline > 0) && s[-1] == '&') { /* &> */
                   s[-1] = '\0';

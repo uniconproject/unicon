@@ -3,8 +3,14 @@ $include "posix.icn"
 
 procedure main()
 
+$ifdef _MS_WINDOWS_NT
+   # No /bin/echo; use cmd.exe so the test runs outside MSYS too.
+   exec(getenv("ComSpec") | "C:\\Windows\\System32\\cmd.exe",
+        "cmd.exe", "/c", "echo hello, world!")
+$else
    exec("/bin/echo", "echo", "hello,", "world!")
+$endif
 
-   write(sys_errstr(&errno))
+   write("error (", &errno, "): ", &errortext)
 end
 

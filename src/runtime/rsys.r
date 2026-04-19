@@ -2133,9 +2133,12 @@ int mswinsystem(char *s)
       return -1;
       }
 
+   /* getenv_r returns 0 on success; route shell redirection through cmd.exe */
    if (strchr(s, '>')) {
-      if (getenv_r("SystemRoot", prefixed, 384)) strcat(prefixed, "\\System32\\");
-      else prefixed[0] = '\0';
+      if (getenv_r("SystemRoot", prefixed, 384) == 0)
+         strcat(prefixed, "\\System32\\");
+      else
+         prefixed[0] = '\0';
       strcat(prefixed, "cmd /C "); strcat(prefixed, s);
       s = prefixed;
       }

@@ -19,8 +19,19 @@ endif
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 IGNORE=
 
-# rusage/kill removed — golden output is portable; pty_uni/tcp/wait still Windows-inapplicable
-WINSKIP=pty_uni tcp wait
+# Windows (WINSKIP): review case-by-case — many are skipped only because the NT runtime
+# stubs POSIX pieces (see src/runtime/fxposix.ri).  Re-enable when the runtime or test is fixed.
+#
+#   pty_uni     Needs PTY + multitasking (SKIP above already); not Windows-specific only.
+#   tcp, udp    Use fork() for client/server; need fork on NT or rewrite with threads/one process.
+#   wait        fork + wait + signals (SIGTERM, SIGSTOP); mostly Unix semantics.
+#   fork        Exercises fork(); stubbed on NT (immediate fail).
+#   fdup, filepair, kill, pipe-select, select
+#               All use fork(); same blocker unless rewritten without fork.
+#   uxsocket    Unix-domain sockets + fork; AF_UNIX differs on Windows (and fork).
+#   rusage      getrusage() stubbed on NT (fail); needs a Windows implementation or skip.
+#
+WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage
 
 BSDSKIP=pty_uni uxsocket
 

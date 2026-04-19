@@ -2,12 +2,15 @@
 # by cvevans
 # based on stress.icn
 # tests coexpression op
-# Progress dots on stderr: ./stressCo debug  (or -debug, --debug; optional int n >= 10)
+# Optional args: debug | -debug | --debug, and/or int n >= 10 (custom thread count).
+# Any of those turns on "debug": progress dots on stderr, per-coexpr messages,
+# and wall/CPU timing. With debug, &collections is printed after the sum (values
+# vary by GC/threading; not suitable for golden stdout comparison).
 
- global gsum, str, v, w, usermode, a, b, c
+ global gsum, str, v, w, dbg, a, b, c
 
  procedure main(argv)
-   local dbg, a, i
+   local a, i
    if not (&features == "co-expressions") then
        stop("This program requires co-expressions.")
    start := &now
@@ -17,15 +20,14 @@
    thrdL := []
 
    n := 100
-   usermode := &null
-   dbg := 0
+   dbg := &null
    every a := !argv do {
       if a == "debug" | a == "-debug" | a == "--debug" then dbg := 1
       else {
          i := integer(a) | stop("arg must be integer")
          i >= 10 | stop("arg must be >= 10")
          n := i
-         usermode := 1
+         dbg := 1
       }
    }
 
@@ -48,7 +50,7 @@
    @a
    dowork(m, d, x)
    @c
-   if dbg = 1 then {
+   if \dbg then {
       every @1(!thrdL,writes(&errout,"."))
       write(&errout)
    } else
@@ -57,20 +59,20 @@
  # print the sum. (x-d*n) is just an error correction when using "odd"  # of threads.
    write("sum=",gsum + (x - d*n))
 
-   if \usermode then
+   if \dbg then {
       write("time:", &now-t, " seconds")
-#   write (&now - start)
-   endt := gettimeofday()
-   write ( "elasped: ", (endt[1] - stt[1]) + (endt[2] - stt[2])/1000000.0)
-   write ("CPU time: ", &time/1000.0)
-   writes("Collections: ")
-   every writes(&collections, ", ")
-   write()
+      endt := gettimeofday()
+      write ( "elasped: ", (endt[1] - stt[1]) + (endt[2] - stt[2])/1000000.0)
+      write ("CPU time: ", &time/1000.0)
+      writes("Collections: ")
+      every writes(&collections, ", ")
+      write()
+   }
  end # main
 
  procedure dowork(n, d, x)
    thrd := []
-   if \usermode then {
+   if \dbg then {
       write(n , " coexpr(s) will sum ", x, " ones.")
       write("The work will be divided equally between them. Please wait... ")
       }
@@ -91,7 +93,7 @@
     gsum +:= sum
  #      write("collecting:")
  #         collect()
-   if \usermode then
+   if \dbg then
       write("Coexpr ", id , " is done")
 
  end

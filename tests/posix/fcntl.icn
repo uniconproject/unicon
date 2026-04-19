@@ -1,4 +1,9 @@
 # Non-blocking stdin: expect read to fail when no input (message matches fcntl.std).
+#
+# Windows: posix fcntl() is not implemented in the runtime (stub fails with EINVAL);
+# we still run this test so a failed fcntl reports a sensible sys_errstr(&errno)
+# (see stand/fcntl.wstd).
+#
 $include "posix.icn"
 
 procedure main()

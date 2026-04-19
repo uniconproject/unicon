@@ -49,18 +49,23 @@ procedure unicon_for_tests()
 end
 
 procedure compile_fails(src, needle)
-   local p, line, uc, cmd
-   # compile and match the error message
+   local f, line, uc, tmp
+   # Capture compiler stderr+stdout via shell redirection (reliable on Windows;
+   # open(...,"p") with 2>&1 depends on popen/cmd parsing — see tests/posix/chmod, unicon/macros).
    uc := unicon_for_tests()
-   cmd := uc || " -s " || src || " 2>&1"
-   p := open(cmd, "p") | stop("cannot open compiler command: " || cmd)
-   while line := read(p) do {
+   if not stat("local") then mkdir("local") | stop("cannot mkdir local")
+   tmp := "local/macro_compile_out.txt"
+   system(uc || " -s " || src || " > " || tmp || " 2>&1")
+   f := open(tmp) | stop("cannot open macro compile log after: " || uc || " -s " || src)
+   while line := read(f) do {
       if find(needle, line) then {
-         close(p)
+         close(f)
+         remove(tmp)
          return 1
       }
    }
-   close(p)
+   close(f)
+   remove(tmp)
 end
 
 procedure main()

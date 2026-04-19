@@ -816,6 +816,13 @@ function{0,1} fcntl(f, action, options)
 #endif                                  /* HAVE_LIBZ */
 
 #if NT
+      /*
+       * fcntl() is not implemented on NT (no POSIX fcntl path).  Fail without
+       * calling fcntl(2), but set &errno — otherwise fail leaves errno at 0
+       * and sys_errstr(&errno) reports "Success" (same class of bug as missing
+       * errno after a stub failure).
+       */
+      IntVal(amperErrno) = EINVAL;
       fail;
 #else                                   /* NT */
       if ((fd = get_fd(f, 0)) < 0)
@@ -2655,11 +2662,7 @@ end
 
 "getpw() - get password file information."
 
-#if NT
-function{0} getpw(u)
-#else                                   /* NT */
 function{0,1} getpw(u)
-#endif                                  /* NT */
 
    declare {
 #if !NT
@@ -2674,7 +2677,26 @@ function{0,1} getpw(u)
       string: {
          body {
 #if NT
-            fail;
+            tended char* name;
+            int matched;
+            cnv:C_string(u, name);
+            matched = 0;
+            {
+            const char *u1 = getenv("USERNAME");
+            const char *u2 = getenv("USER");
+            if (u1 && _stricmp(name, u1) == 0)
+               matched = 1;
+            else if (u2 && _stricmp(name, u2) == 0)
+               matched = 1;
+            }
+            if (!matched) {
+               IntVal(amperErrno) = EINVAL;
+               fail;
+               }
+            IntVal(amperErrno) = 0;
+            if (make_pwd_nt(name, (C_integer)0, (C_integer)0, &result) == 0)
+               syserr("failed to create posix record constructor");
+            return result;
 #else                                   /* NT */
             tended char* name;
             cnv:C_string(u, name);

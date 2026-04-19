@@ -3,12 +3,6 @@
 BIN=../../bin
 include ../Makedefs
 
-ifdef Verbose
-TEE=tee
-else
-TEE=cat - >
-endif
-
 #
 # for verbose progress, run as:
 # $(MAKE) verbose
@@ -16,14 +10,10 @@ endif
 # Verbose=1 $(MAKE) -e [target ...]
 #
 
-DIFFTST = moveco co
-GREPTST = cobench
-GREPODTST = stressCo
-GREPDIFFTST = stressCollectCo
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 #IGNORE=$(COTST)
 # ^ skipped.
-TARGETS= $(DIFFTST) $(GREPTST) $(GREPODTST) $(GREPDIFFTST)
+TARGETS= moveco co cobench stressCo stressCollectCo
 
 # Do the tests
 Test: DoTest
@@ -31,42 +21,6 @@ Test: DoTest
 Uniconc :
 	SKIP=moveco Verbose=1 UC="$(UCC)" $(MAKE) -e Test
 #  moveco does coexpr(), not supported by iconc yet, skip.
-
-
-${GREPTST} : % : %.icn local stand/%.std
-	-@$E -n "[Testing $@]... "
-	@$(UC) $(UFLAGS) $<
-	-@./$@ | $(TEE) local/$@.out
-	-@grep -f stand/$@.std local/$@.out >/dev/null; \
-	if [ $$? -eq 0 ] ; then echo "pass"; \
-	else echo "$@ FAIL"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
-	-@rm -f $@$(EXE)
-# ALERT: this will pass if ANY lines in .std match ANY part of any line in .out
-# use GREPDIFFTST for a stricter match
-
-${GREPDIFFTST} : % : %.icn local stand/%.std stand/%.grep
-	-@$E -n "[Testing $@]... "
-	@$(UC) $(UFLAGS) $<
-	-@./$@ | $(TEE) local/$@.out
-	-@grep -f stand/$@.grep local/$@.out | diff stand/$@.std - > /dev/null ; \
-	if [ $$? -eq 0 ] ; then echo "pass"; \
-	else echo "$@ FAIL"; \
-	grep -f stand/$@.grep local/$@.out | diff -wy stand/$@.std - > $@.diff; \
-	fi || true
-	-@rm -f $@$(EXE)
-# This will pass if all lines of .out with ANY part matching any line in .grep match .std
-
-${GREPODTST} : % : %.icn local stand/%.std stand/%.grep
-	-@$E -n "[Testing $@]... "
-	@$(UC) $(UFLAGS) $<
-	-@./$@ | $(TEE) local/$@.out
-	-@grep -o -f stand/$@.grep local/$@.out | diff stand/$@.std - > /dev/null ; \
-	if [ $$? -eq 0 ] ; then echo "pass"; \
-	else echo "$@ FAIL"; \
-	grep -o -f stand/$@.grep local/$@.out | diff -wy stand/$@.std - > $@.diff; \
-	fi || true
-	-@rm -f $@$(EXE)
-# This will pass if all parts of lines of .out  matching any line in .grep match .std
 
 
 include ../Makefile.test
@@ -83,4 +37,3 @@ iconc Iconc :
 
 Verbose verbose:
 	Verbose=1 $(MAKE) -e
-

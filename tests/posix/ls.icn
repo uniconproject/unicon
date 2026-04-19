@@ -3,16 +3,6 @@ $include "posix.icn"
 link printf
 
 procedure main()
-   # (re-)create test-dir so that output is predictable
-   system("rm -rf test-dir")
-   umask("rwxr-xr-x") | write("set umask fails")
-   mkdir("test-dir")
-   f := open("test-dir/a","w")
-   close(f)
-   f := open("test-dir/b","w")
-   close(f)
-   f := open("test-dir/c","w")
-   close(f)
 
    chdir("test-dir")
    symlink("a", "d")
@@ -28,7 +18,11 @@ procedure format(p, name)
 
    case p.mode[1] of {
        "-": { # Normal file:
-               return sprintf("%s (file) permissions %s size %8s", name, p.mode, p.size)
+               # On Windows only: symlink("a","d") appears as a regular file; size varies.
+               if find("NT", &features) & name == "d" then
+                  return sprintf("%s (file) permissions %s", name, p.mode)
+               else
+                  return sprintf("%s (file) permissions %s size %8s", name, p.mode, p.size)
             }
        "d": { # Directory: special case ".."
                if name == ".."

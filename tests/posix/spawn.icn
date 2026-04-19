@@ -1,10 +1,11 @@
-# Pipe + nowait: feed `ls` output through the pipe to a spawned `cat -n` (numbered lines).
-# Order: start `cat` on the read end, close our copy of L[1], run `ls` into L[2], then wait for
-# `cat`. This exercises `system(..., "nowait")` with redirected fds — see posix `system`.
+# Pipe + nowait (non-Alpine, non-Windows): feed directory listing through the pipe to a
+# spawned `cat -n` (numbered lines). Order: start `cat` on the read end, close our copy of
+# L[1], write sorted names into L[2], then wait for `cat`. This exercises `system(..., "nowait")`
+# with redirected fds — see posix `system`.
 #
-# On Alpine (BusyBox `cat`), child stdio buffering when stdout is not a TTY can make the
-# numbered lines missing or reordered in the capture. Detect Alpine via /etc/os-release
-# and number pipe lines in-process instead (same output shape as `cat -n`)
+# On Alpine (BusyBox `cat`) or Windows (no `cat` on PATH for native builds), number pipe lines
+# in-process instead (same output shape as `cat -n`). Directory names come from `open`+`sort`,
+# not the external `ls` command, so tests/posix/ls.exe cannot shadow `ls`.
 #
 # --- I/O buffering (non-Alpine) ---
 # The spawned `cat` inherits this process's stdout. When stdout is a TTY, libc is typically
@@ -23,6 +24,17 @@ procedure is_alpine()
          }
       }
    close(f)
+end
+
+# Feed sorted directory names into a pipe (avoids `ls` so tests/posix/ls.exe cannot shadow it).
+procedure pipe_sorted_dir(wpipe, path)
+   local d, line, names
+   d := open(path) | stop("open ", path, ": ", &errortext)
+   names := []
+   while line := read(d) do
+      if not (line == "." | line == "..") then push(names, line)
+   close(d)
+   every line := !sort(names) do writes(wpipe, line || "\n")
 end
 
 # Poll wait(pid,"n") until the child exits or ms elapses (blocking wait can hang on some hosts).
@@ -56,8 +68,9 @@ procedure main()
    write(image(L[1]))
    write(image(L[2]))
 
-   if is_alpine() then {
-      system("ls spawn-test-dir", , L[2])
+   if is_alpine() | (&features == "MS Windows NT") then {
+      # Alpine: BusyBox cat buffering; Windows: no `cat` on PATH for native builds.
+      pipe_sorted_dir(L[2], "spawn-test-dir")
       close(L[2])
       i := 0
       while line := read(L[1]) do {
@@ -74,10 +87,7 @@ procedure main()
       system("ls spawn-test-dir", , L[2])
       close(L[2])
 
-      if &features == "MS Windows NT" then
-         delay(5000)
-      else
-         wait_child_timeout(catpid, 10000) | delay(1000)
+      wait_child_timeout(catpid, 10000) | delay(1000)
       }
 
    write("everything written to pipe.")

@@ -33,6 +33,7 @@
 
 #ifdef NT
 
+#include <string.h>   /* _stricmp (fxposix.ri getpw), strlen in String() etc. */
 #include<ws2tcpip.h>
 
 #include <sys/timeb.h>

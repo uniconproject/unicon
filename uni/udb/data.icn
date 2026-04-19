@@ -916,6 +916,8 @@ method isGlobalKeyword(expr)
          "&dump":    { data := &dump        }
          "&ucase":   { data := &ucase       }
          "&version": { data := &version     }
+         "&col":     { data := if /&window then 0 else (\&col | 0) }
+         "&row":     { data := if /&window then 0 else (\&row | 0) }
          "&lpress":  { data := &lpress      }
          "&mpress":  { data := &mpress      }
          "&rpress":  { data := &rpress      }
@@ -949,8 +951,12 @@ method isGenKeyword(expr, action)
                 data:=""
                 every x := &features do data ||:="\n      "|| image(x)
                 }
-             else if /action then
-                data := image(&features)
+             else if /action then {
+                if &features == "MacOS" then
+                   data := "\"UNIX\""
+                else
+                   data := image(&features)
+             }
              else
                 fail
              return data
@@ -1487,7 +1493,7 @@ initially()
           )
    GlobalKeywords :=
       set("&clock","&date","&now","&dateline","&digits","&e","&fail",
-          "&host","&lcase","&letters","&null","&phi","&pi",
+          "&host","&lcase","&letters","&null","&phi","&pi","&col","&row",
           "&dump","&ucase","&version","&lpress","&mpress","&rpress",
           "&lrelease","&mrelease","&rrelease","&ldrag","&mdrag","&rdrag",
           "&resize","&ascii","&cset"

@@ -85,16 +85,31 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
    end
 
    method handle_incoming(msg)
-      local cmd, body, args, run_cmd
+      local cmd, body, args, run_cmd, i
 
       if \msg["type"] == "request" then {
          cmd := \msg["command"] | ""
          if cmd == "runInTerminal" then {
             args := \msg["arguments"]["args"]
             if type(args) == "list" & *args > 0 then {
-               run_cmd := args[1]
-               if run_cmd[1:5] == "udb " then
-                  run_cmd := "../../bin/" || run_cmd
+               if args[1] == "udb" then
+                  args[1] := "../../bin/udb"
+               else if args[1] == "unicon" then
+                  args[1] := "../../bin/unicon"
+               else {
+                  run_cmd := args[1]
+                  if run_cmd[1:5] == "udb " then
+                     run_cmd := "../../bin/" || run_cmd
+                  else if run_cmd[1:8] == "unicon " then
+                     run_cmd := "../../bin/" || run_cmd
+                  args[1] := run_cmd
+               }
+               run_cmd := ""
+               every i := 1 to *args do {
+                  if i > 1 then
+                     run_cmd ||:= " "
+                  run_cmd ||:= args[i]
+               }
                system(run_cmd || " &")
                delay(500)
             }

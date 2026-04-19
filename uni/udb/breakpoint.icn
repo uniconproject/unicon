@@ -791,12 +791,13 @@ end
 #
 method cmdDisable(cmd)
    local id, x, L, i, j := 0
+   local resultTable := table()
 
    if not cmd[3] then {
       every x := key(breakPoints) do {
          L := breakPoints[x]
          every bp := !L do
-            if bp.state := ENABLED then {
+            if bp.state = ENABLED then {
                bp.state := DISABLED
                j +:= 1
             }
@@ -849,7 +850,7 @@ method cmdDisable(cmd)
    else {
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
            "\n   Try \"help\" for assistance."
-      setResultTable(resultTable, "Undefined Command: "||cmdHistory[1], "__false__", msg)
+      setResultTable(resultTable, "Undefined Command: "||DState.cmdHistory[1], "__false__", msg)
       DState.Write(resultTable)
       fail
    }

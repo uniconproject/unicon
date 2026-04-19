@@ -95,13 +95,11 @@ jobs:
     - name: Test
       run: make Test
 
-    # Unlike other platforms, Windows does not fail the job on test failures (still upload report for the combined summary).
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
       run: |
         make -C tests Report 2>&1 | tee tests/test-report.txt
-        # TODO: Re-enable when Windows test suite is green (fail CI on failed tests):
-        # sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
+        sh "$GITHUB_WORKSPACE/config/scripts/ci-check-test-report.sh" tests/test-report.txt
 
     - name: Upload test report
       if: ${{ always() && steps.build.outcome == 'success' }}

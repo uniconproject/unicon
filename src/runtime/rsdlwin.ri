@@ -549,6 +549,18 @@ static void handle_event(struct usdl_event *ev)
    }
 
 /*
+ * Handle whatever the window system has sent, now (no rate limit);
+ * used after the program changes a window's size or state, so that
+ * WAttrib() sees the result.
+ */
+static void drain_events(void)
+   {
+   struct usdl_event ev;
+   while (usdl_poll(&ev))
+      handle_event(&ev);
+   }
+
+/*
  * poll for available events on all windows.
  * this is where the interpreter calls into the window system.
  */
@@ -983,7 +995,7 @@ int do_config(wbp w, int status)
             usdl_set_position(ws->win, ws->posx, ws->posy);
          }
       usdl_sync(ws->win);
-      if (pollevent() == -1) return Failed;
+      drain_events();
       present(ws, 1);
       }
    return Succeeded;
@@ -1289,6 +1301,7 @@ int setcanvas(wbp w, char *s)
    else return RunError;
    if (ws->win) {
       usdl_sync(ws->win);
+      drain_events();
       present(ws, 1);
       }
    return Succeeded;

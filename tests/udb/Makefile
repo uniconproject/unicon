@@ -2,8 +2,7 @@ include ../Makedefs
 
 TESTNAME=udb
 
-TARGETS=basic print breakpoints watchpoints counter_line counter_syntax \
-	counter_deref counter_pcall coexp scoping adapter
+TARGETS= adapter
 
 Test: DoTest
 

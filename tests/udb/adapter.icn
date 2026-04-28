@@ -2,27 +2,9 @@ import json
 link jsonrpc
 link io
 
-global TEST_PROGRAM, TEST_SOURCE, TEST_BREAKPOINT_LINE, TEST_UNICON
+global TEST_PROGRAM, TEST_SOURCE, TEST_BREAKPOINT_LINE
 
-procedure unicon_for_tests()
-   # Prefer $UNICON/$UC when set and valid; else ../../bin; else Binaries at; else PATH.
-   local u, path, exe
-   exe := if find("NT", &features) then ".exe" else ""
-   u := getenv("UNICON" | "UC")
-   if \u & exists(u) then return u
-   u := "../../bin/unicon" || exe
-   if exists(u) then return u
-   if path := (&features ? (="Binaries at " & tab(0))) then {
-      if *path > 0 then {
-         if not (path[-1] == "/" | path[-1] == "\\") then path ||:= "/"
-         u := path || "unicon" || exe
-         if exists(u) then return u
-         }
-      }
-   return "unicon" || exe
-end
-
-class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, last_frame_id, 
+class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, dapproxy_pid, last_frame_id, 
    locals_ref, globals_ref, statics_ref, params_ref, passed_count, failed_count)
 
    method find_port()
@@ -32,7 +14,7 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
    method start_udb_adapter()
       local cmd, p
 
-      cmd := "../../bin/udb --adapter " || udb_port || " & echo $!"
+      cmd := "udb --adapter " || udb_port || " & echo $!"
       p := open(cmd, "p") | stop("failed to start udb adapter")
       adapter_pid := integer(read(p))
       close(p)
@@ -44,6 +26,11 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
       if \adapter_pid then {
          system("kill -9 " || adapter_pid || " >/dev/null 2>&1")
          adapter_pid := &null
+      }
+
+      if \dapproxy_pid then {
+         system("kill -9 " || dapproxy_pid || " >/dev/null 2>&1")
+         dapproxy_pid := &null
       }
       return self
    end
@@ -104,36 +91,21 @@ class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, las
    end
 
    method handle_incoming(msg)
-      local cmd, body, args, run_cmd, i
+      local args, body, run_cmd, p
 
       if \msg["type"] == "request" then {
-         cmd := \msg["command"] | ""
-         if cmd == "runInTerminal" then {
-            args := \msg["arguments"]["args"]
+         if (\msg["command"] | "") == "runInTerminal" then {
+            args := (\msg["arguments"] | table())["args"]
+
             if type(args) == "list" & *args > 0 then {
-               if args[1] == "udb" then
-                  args[1] := "../../bin/udb"
-               else if args[1] == "unicon" then
-                  args[1] := TEST_UNICON
-               else {
-                  run_cmd := args[1]
-                  if run_cmd[1:5] == "udb " then
-                     run_cmd := "../../bin/" || run_cmd
-                  else if run_cmd[1:8] == "unicon " then
-                     run_cmd := TEST_UNICON || " " || run_cmd[8:0]
-                  args[1] := run_cmd
-               }
-               run_cmd := ""
-               every i := 1 to *args do {
-                  if i > 1 then
-                     run_cmd ||:= " "
-                  run_cmd ||:= args[i]
-               }
-               system(run_cmd || " &")
+               run_cmd := args[1]
+               p := open(run_cmd || " & echo $!", "p") | stop("failed to start dapproxy")
+               dapproxy_pid := integer(read(p))
+               close(p)
                delay(500)
             }
             body := table()
-            body["shellProcessId"] := 1
+            body["shellProcessId"] := \dapproxy_pid | 1
             send_response(msg, "__true__", body)
          }
       }
@@ -654,7 +626,7 @@ procedure main(args)
    TEST_PROGRAM := "./data/test_target"
    TEST_SOURCE := "./data/test_target.icn"
    TEST_BREAKPOINT_LINE := 6
-   TEST_UNICON := unicon_for_tests()
+   
 
    client := DAP_TestClient()
    client.start_adapter_and_connect()

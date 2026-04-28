@@ -32,14 +32,39 @@ class BreakPoint(
 # Check the Monitored file for a breakpoint
 #
 method checkBreakpoint()
-   local  cur_file, cur_line, L, bp, id, bpTable
+   local  cur_file, cur_line, L, bp, id, bpTable, k, cur_base, key_base, lookup_key
    cur_file := keyword("file", MONITORED)
-   if member(breakPoints, cur_file) then {
+   lookup_key := cur_file
+   cur_base := cur_file
+   cur_base ? {
+      if tab(findre("[/\\\\][^/\\\\]+$")) then {
+         move()
+         cur_base := tab(0)
+      }
+   }
+
+   if not member(breakPoints, lookup_key) then {
+      every k := key(breakPoints) do {
+         key_base := k
+         key_base ? {
+            if tab(findre("[/\\\\][^/\\\\]+$")) then {
+               move()
+               key_base := tab(0)
+            }
+         }
+         if k == cur_base | key_base == cur_base then {
+            lookup_key := k
+            break
+         }
+      }
+   }
+
+   if member(breakPoints, lookup_key) then {
       cur_line := keyword("line", MONITORED)
-      L := breakPoints[cur_file]
+      L := breakPoints[lookup_key]
       every bp := !L do {
          if cur_line = bp.line & bp.state = ENABLED &
-            id := isBreakExist(cur_file,cur_line) &
+            id := isBreakExist(lookup_key,cur_line) &
             (/bp.coexp | bp.coexp.id == DState.coState.curr.id)
          then {
             DState.State := PAUSE
@@ -766,12 +791,13 @@ end
 #
 method cmdDisable(cmd)
    local id, x, L, i, j := 0
+   local resultTable := table()
 
    if not cmd[3] then {
       every x := key(breakPoints) do {
          L := breakPoints[x]
          every bp := !L do
-            if bp.state := ENABLED then {
+            if bp.state = ENABLED then {
                bp.state := DISABLED
                j +:= 1
             }
@@ -824,7 +850,7 @@ method cmdDisable(cmd)
    else {
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
            "\n   Try \"help\" for assistance."
-      setResultTable(resultTable, "Undefined Command: "||cmdHistory[1], "__false__", msg)
+      setResultTable(resultTable, "Undefined Command: "||DState.cmdHistory[1], "__false__", msg)
       DState.Write(resultTable)
       fail
    }

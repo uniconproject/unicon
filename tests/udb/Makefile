@@ -1,125 +1,70 @@
-#
-# UDB test makefile
-#
-# UDB is tested non-interactively by redirecting its input from a "script"
-# consisting of the lines a user might type.  The -line option to udb
-# avoid bogus per-input-character console handling.
-#
-# The sample program watchme.icn is compiled and run as the subject being
-# "debugged".
-#
-#
+include ../Makedefs
 
-UDB=udb -line
 TESTNAME=udb
-INTERNALS=counter_line counter_syntax counter_deref counter_pcall
-PROGS=watchme printme prime scopes
 
-# need more .stds for testing
-#TESTS=basic print watchpoints $(INTERNALS) info assert trace
-TESTS=basic print breakpoints watchpoints $(INTERNALS) coexp scoping
+TARGETS= adapter
 
-# directories
-OUTPUT=local
-DIFFS=diffs
+Test: DoTest
 
-all: $(PROGS) TestHdr TestSuite 
+include ../Makefile.test
 
-debug: TestSuite
+define check_output
+	@tr -d '\r' < local/$@.out > local/$@.nr; \
+	if [ x$(EXE) = x.exe ] && [ -f stand/$@.wstd ] ; then \
+	diff -wq stand/$@.wstd local/$@.nr >/dev/null; \
+	if [ $$? -eq 0 ] ; then echo "w pass"; \
+	else echo "w FAIL"; \
+	diff --suppress-common-lines -wy stand/$@.wstd local/$@.nr > $@.diff; fi \
+	else \
+	diff -wq stand/$@.std local/$@.nr >/dev/null; \
+	if [ $$? -eq 0 ] ; then echo "pass"; \
+	else \
+	if grep -qi "This Program Requires" local/$@.out; then cat local/$@.out; \
+	else echo "FAIL"; \
+	diff --suppress-common-lines -wy stand/$@.std local/$@.nr > $@.diff; fi \
+	fi; \
+	fi || true
+endef
+
+basic watchpoints counter_line counter_syntax counter_deref counter_pcall: %: local stand/%.std input/%.udb watchme
+	-@$E -n "[Testing $@]... "
+	@../../bin/udb --line watchme < input/$@.udb > local/$@.out 2>&1 || true
+	$(check_output)
+
+print: %: local stand/%.std input/%.udb printme
+	-@$E -n "[Testing $@]... "
+	@../../bin/udb --line printme < input/$@.udb > local/$@.out 2>&1 || true
+	$(check_output)
+
+breakpoints coexp: %: local stand/%.std input/%.udb prime
+	-@$E -n "[Testing $@]... "
+	@../../bin/udb --line prime < input/$@.udb > local/$@.out 2>&1 || true
+	$(check_output)
+
+scoping: %: local stand/%.std input/%.udb scopes
+	-@$E -n "[Testing $@]... "
+	@../../bin/udb --line scopes < input/$@.udb > local/$@.out 2>&1 || true
+	$(check_output)
 
 watchme: watchme.icn
-	unicon watchme
+	@$(UC) $(UFLAGS) $< > /dev/null 2>&1
 
 printme: printme.icn
-	unicon printme
+	@$(UC) $(UFLAGS) $< > /dev/null 2>&1
 
 prime: foo.icn prime.icn
-	unicon -o $@ $^
+	@$(UC) $(UFLAGS) -o $@ $^ > /dev/null 2>&1
 
 scopes: scopepkg.icn scopes.icn
-	unicon -o $@ $^
+	@$(UC) $(UFLAGS) -o $@ $^ > /dev/null 2>&1
 
-coexp: prime
-	@./test.sh $< $@
+test_adapter: adapter.icn
+	@$(UC) $(UFLAGS) $< -o $@ > /dev/null 2>&1
 
-basic: watchme
-	@./test.sh $< $@
+data/test_target: data/test_target.icn
+	@$(UC) $(UFLAGS) -o $@ $< > /dev/null 2>&1
 
-watchpoints: watchme
-	@./test.sh $< $@
-
-breakpoints: prime
-	@./test.sh $< $@
-
-print: printme
-	@./test.sh $< $@
-
-scoping: scopes
-	@./test.sh $< $@
-
-#internals: watchme
-internals: $(INTERNALS)
-
-counter_line: watchme
-	@./test.sh $< $@
-
-counter_syntax: watchme
-	@./test.sh $< $@
-
-counter_deref: watchme
-	@./test.sh $< $@
-
-counter_pcall: watchme
-	@./test.sh $< $@
-
-#	$(UDB) watchme < counter_line.udb &>counter_line.out
-#	-diff counter_line.std counter_line.out
-#	$(UDB) watchme < counter_syntax.udb &> counter_syntax.out
-#	-diff counter_syntax.std counter_syntax.out
-#	$(UDB) watchme < counter_deref.udb &> counter_deref.out
-#	-diff counter_deref.std counter_deref.out
-#	$(UDB) watchme < counter_pcall.udb &> counter_pcall.out
-#	-diff counter_pcall.std counter_pcall.out
-#	$(UDB) watchme < failedloop.udb
-#	$(UDB) watchme < deadvar.udb
-#	$(UDB) watchme < memory.udb
-#	$(UDB) watchme < structusage.udb
-#	$(UDB) watchme < varprofile.udb
-#	$(UDB) watchme < looptime.udb
-#	$(UDB) watchme < failedsubscript.udb
-#	-$(UDB) watchme < typechange.udb
-#	$(UDB) watchme < proctime.udb
-#	$(UDB) watchme < procprofile.udb
-
-info: watchme
-	@./test.sh $< $@
-
-assert: watchme
-	@./test.sh $< $@
-
-trace: watchme
-	@./test.sh $< $@
-
-TestHdr:
-	@echo
-	@echo "========================="
-	@echo "   $(TESTNAME) Test Suite"
-	@echo "========================="	
-	@echo
-
-TestSuite: $(TESTS) 
-	@FF=""; \
-	for x in $^; do \
-	if [ -s diffs/$$x.diff ]; then FF="$$FF $$x"; fi; done; \
-	echo; \
-	echo "========================"; \
-	echo " Test  : $(TESTNAME)"; \
-	if [ "$$FF" = "" ]; then echo " Status: pass"; \
-	else echo " FAIL: $$FF"; fi; \
-	echo "========================"; \
-	echo 
-
-# remove diff and output files
-clean:
-	rm $(DIFFS)/*.diff
-	rm $(OUTPUT)/*.out
+adapter: local stand/adapter.std data/test_target test_adapter
+	-@$E -n "[Testing $@]... "
+	@./test_adapter > local/$@.out 2>&1 || true
+	$(check_output)

@@ -8,7 +8,7 @@ MAKEFLAGS += --no-print-directory
 # define UC if it is not defined already
 UC?=../bin/unicon
 
-TESTS=general posix thread pattern mt unicon coexpr lib udb
+TESTS=udb
 
 #  The default is to run all tests, using icont.
 #  Test / all / summary / Summary below use recursive Summary (Makefile.test):

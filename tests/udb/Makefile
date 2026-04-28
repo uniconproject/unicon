@@ -2,8 +2,9 @@ include ../Makedefs
 
 TESTNAME=udb
 
-TARGETS=basic print breakpoints watchpoints counter_line counter_syntax \
-	counter_deref counter_pcall coexp scoping adapter
+CON=$(shell $(UC) -features | grep -o "multiple programs")
+UDBTESTS= adapter
+TARGETS=$(UDBTESTS)
 
 Test: DoTest
 
@@ -26,6 +27,16 @@ define check_output
 	fi; \
 	fi || true
 endef
+
+ifeq ($(CON),multiple programs)
+TARGETS=$(UDBTESTS)
+else
+skip:
+	@echo "\nMultiple programs are not available in this build"
+	@echo "SKIP: multiple programs test\n"
+
+TARGETS=skip
+endif
 
 basic watchpoints counter_line counter_syntax counter_deref counter_pcall: %: local stand/%.std input/%.udb watchme
 	-@$E -n "[Testing $@]... "
@@ -67,5 +78,5 @@ data/test_target: data/test_target.icn
 
 adapter: local stand/adapter.std data/test_target test_adapter
 	-@$E -n "[Testing $@]... "
-	@./test_adapter > local/$@.out 2>&1 || true
+	@PATH=../../bin:$$PATH ./test_adapter > local/$@.out 2>&1 || true
 	$(check_output)

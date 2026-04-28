@@ -369,6 +369,8 @@ struct errtab errtab[] = {
    216, "external function not found",
    217, "unsafe inter-program variable assignment",
    218, "invalid file name",
+   219, "AssertionFailed",
+   220, "AssertionFailed",
 
    301, "evaluation stack overflow",
    302, "memory violation",

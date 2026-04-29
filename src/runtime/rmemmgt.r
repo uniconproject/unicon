@@ -144,59 +144,47 @@ int bsizes[] = {
  *  types not allocated, 0 for blocks with no descriptors.
  */
 int firstd[] = {
-    -1,                       /* T_Null (0), not block */
-    -1,                       /* T_Integer (1), not block */
-     0,                       /* T_Lrgint (2), large integer */
-     0,                       /* T_Real (3), real number */
-     0,                       /* T_Cset (4), cset */
-
-#ifdef Concurrent
-     4*WordSize,              /* T_File (5), file block */
-#else                                   /* Concurrent */
-     3*WordSize,              /* T_File (5), file block */
-#endif
-
-     7*WordSize,              /* T_Proc (6), procedure block */
-
-#ifdef Concurrent
-     6*WordSize,              /* T_Record (7), record block */
-#else                                   /* Concurrent */
-     4*WordSize,              /* T_Record (7), record block */
-#endif                                  /* Concurrent */
-     0,                       /* T_List (8), list header block */
-     7*WordSize,              /* T_Lelem (9), list element block */
-     0,                       /* T_Set (10), set header block */
-     3*WordSize,              /* T_Selem (11), set element block */
-#ifdef Concurrent
-     (6+HSegs)*WordSize,      /* T_Table (12), table header block */
-#else                                   /* Concurrent */
-     (4+HSegs)*WordSize,      /* T_Table (12), table header block */
-#endif                                  /* Concurrent */
-     3*WordSize,              /* T_Telem (13), table element block */
-     3*WordSize,              /* T_Tvtbl (14), table element trapped variable */
-     0,                       /* T_Slots (15), set/table hash block */
-     3*WordSize,              /* T_Tvsubs (16), substring trapped variable */
-
-#if COMPILER
-     6*WordSize,              /* T_Refresh (17), refresh block */
-#else                           /* COMPILER */
-     (4+Wsizeof(struct pf_marker))*WordSize, /* T_Refresh (17), refresh block */
-#endif                          /* COMPILER */
-
-    -1,                       /* T_Coexpr (18), co-expression block */
-     0,                       /* T_External (19), external block */
-     -1,                      /* T_Kywdint (20), integer keyword variable */
-     -1,                      /* T_Kywdpos (21), keyword &pos */
-     -1,                      /* T_Kywdsubj (22), keyword &subject */
-     -1,                      /* T_Kywdwin (23), keyword &window */
-     -1,                      /* T_Kywdstr (24), string keyword variable */
-     -1,                      /* T_Kywdevent (25), event keyword variable */
-    0,                          /* T_Pattern (26), pattern block */
-    5*WordSize,              /* T_Pelem (27), pattern element */
-    2*WordSize,                 /* T_Tvmonitored */
-    0,                          /* T_Intarray (29), integer array */
-    0,                          /* T_Realarray (30), real array */
-    0,                          /* T_Cons (31), cons cell */
+    -1,                                   /* T_Null (0), not block */
+    -1,                                   /* T_Integer (1), not block */
+     0,                                   /* T_Lrgint (2), large integer */
+     0,                                   /* T_Real (3), real number */
+     0,                                   /* T_Cset (4), cset */
+     offsetof(struct b_file, fname),      /* T_File (5), file block */
+     offsetof(struct b_proc, pname),      /* T_Proc (6), procedure block */
+     offsetof(struct b_record, fields),   /* T_Record (7), record block */
+     0,                                   /* T_List (8), list header block */
+     offsetof(struct b_lelem, lslots),    /* T_Lelem (9), list element block */
+     0,                                   /* T_Set (10), set header block */
+     offsetof(struct b_selem, setmem),    /* T_Selem (11), set element block */
+     offsetof(struct b_table, defvalue),  /* T_Table (12), table header block */
+     offsetof(struct b_telem, tref),      /* T_Telem (13), table element block */
+     offsetof(struct b_tvtbl, tref),      /* T_Tvtbl (14), table element trapped variable */
+     0,                                   /* T_Slots (15), set/table hash block */
+     offsetof(struct b_tvsubs, ssvar),    /* T_Tvsubs (16), substring trapped variable */
+     offsetof(struct b_refresh, elems),   /* T_Refresh (17), refresh block */
+    -1,                                   /* T_Coexpr (18), co-expression block */
+     0,                                   /* T_External (19), external block */
+    -1,                                   /* T_Kywdint (20), integer keyword variable */
+    -1,                                   /* T_Kywdpos (21), keyword &pos */
+    -1,                                   /* T_Kywdsubj (22), keyword &subject */
+    -1,                                   /* T_Kywdwin (23), keyword &window */
+    -1,                                   /* T_Kywdstr (24), string keyword variable */
+    -1,                                   /* T_Kywdevent (25), event keyword variable */
+#ifdef PatternType
+     0,                                   /* T_Pattern (26), pattern block */
+     offsetof(struct b_pelem, parameter), /* T_Pelem (27), pattern element */
+#else
+    0,
+    0,
+#endif                                  /* PatternType */
+#ifdef EventMon
+     offsetof(struct b_tvmonitored, tv),  /* T_Tvmonitored (28) monitored variable block */
+#else
+    -1,
+#endif                          /* EventMon */
+     0,                                   /* T_Intarray (29), integer array */
+     0,                                   /* T_Realarray (30), real array */
+     0,                                   /* T_Cons (31), cons cell */
     };
 
 /*
@@ -204,47 +192,43 @@ int firstd[] = {
  *  types not allocated, 0 for blocks with no pointers.
  */
 int firstp[] = {
-    -1,                       /* T_Null (0), not block */
-    -1,                       /* T_Integer (1), not block */
-     0,                       /* T_Lrgint (2), large integer */
-     0,                       /* T_Real (3), real number */
-     0,                       /* T_Cset (4), cset */
-     0,                       /* T_File (5), file block */
-     0,                       /* T_Proc (6), procedure block */
-#ifdef Concurrent
-     5*WordSize,              /* T_Record (7), record block */
-     10*WordSize,             /* T_List (8), list header block */
-     2*WordSize,              /* T_Lelem (9), list element block */
-     6*WordSize,              /* T_Set (10), set header block */
-     1*WordSize,              /* T_Selem (11), set element block */
-     6*WordSize,              /* T_Table (12), table header block */
-#else                           /* Concurrent */
-     3*WordSize,              /* T_Record (7), record block */\
-     3*WordSize,              /* T_List (8), list header block */
-     2*WordSize,              /* T_Lelem (9), list element block */
-     4*WordSize,              /* T_Set (10), set header block */
-     1*WordSize,              /* T_Selem (11), set element block */
-     4*WordSize,              /* T_Table (12), table header block */
-#endif                          /* Concurrent */
-     1*WordSize,              /* T_Telem (13), table element block */
-     1*WordSize,              /* T_Tvtbl (14), table element trapped variable */
-     2*WordSize,              /* T_Slots (15), set/table hash block */
-     0,                       /* T_Tvsubs (16), substring trapped variable */
-     0,                       /* T_Refresh (17), refresh block */
-    -1,                       /* T_Coexpr (18), co-expression block */
-     0,                       /* T_External (19), external block */
-     -1,                      /* T_Kywdint (20), integer keyword variable */
-     -1,                      /* T_Kywdpos (21), keyword &pos */
-     -1,                      /* T_Kywdsubj (22), keyword &subject */
-     -1,                      /* T_Kywdwin (23), keyword &window */
-     -1,                      /* T_Kywdstr (24), string keyword variable */
-     -1,                      /* T_Kywdevent (25), event keyword variable */
-    3*WordSize,               /* T_Pattern(26) pattern block*/
-    2*WordSize,               /* T_Pelem(27) pattern element block*/
-    -1,                         /* T_Tvmonitored (28) */
-    2*WordSize,                 /* T_Intarray (29), integer array */
-    2*WordSize,                 /* T_Realarray (30), integer array */
-    1*WordSize,                 /* T_Cons (31), cons cell */
+    -1,                                   /* T_Null (0), not block */
+    -1,                                   /* T_Integer (1), not block */
+     0,                                   /* T_Lrgint (2), large integer */
+     0,                                   /* T_Real (3), real number */
+     0,                                   /* T_Cset (4), cset */
+     0,                                   /* T_File (5), file block */
+     0,                                   /* T_Proc (6), procedure block */
+     offsetof(struct b_record, recdesc),  /* T_Record (7), record block */
+     offsetof(struct b_list, listhead),   /* T_List (8), list header block */
+     offsetof(struct b_lelem, listprev),  /* T_Lelem (9), list element block */
+     offsetof(struct b_set, hdir),        /* T_Set (10), set header block */
+     offsetof(struct b_selem, clink),     /* T_Selem (11), set element block */
+     offsetof(struct b_table, hdir),      /* T_Table (12), table header block */
+     offsetof(struct b_telem, clink),     /* T_Telem (13), table element block */
+     offsetof(struct b_tvtbl, clink),     /* T_Tvtbl (14), table element trapped variable */
+     offsetof(struct b_slots, hslots),    /* T_Slots (15), set/table hash block */
+     0,                                   /* T_Tvsubs (16), substring trapped variable */
+     0,                                   /* T_Refresh (17), refresh block */
+    -1,                                   /* T_Coexpr (18), co-expression block */
+     0,                                   /* T_External (19), external block */
+    -1,                                   /* T_Kywdint (20), integer keyword variable */
+    -1,                                   /* T_Kywdpos (21), keyword &pos */
+    -1,                                   /* T_Kywdsubj (22), keyword &subject */
+    -1,                                   /* T_Kywdwin (23), keyword &window */
+    -1,                                   /* T_Kywdstr (24), string keyword variable */
+    -1,                                   /* T_Kywdevent (25), event keyword variable */
+#ifdef PatternType
+    offsetof(struct b_pattern, pe),       /* T_Pattern(26) pattern block*/
+    offsetof(struct b_pelem, pthen),      /* T_Pelem(27) pattern element block*/
+#else
+   -1,
+   -1,
+#endif                                  /* PatternType */
+   -1,                                    /* T_Tvmonitored (28) */
+    offsetof(struct b_intarray, listp),   /* T_Intarray (29), integer array */
+    offsetof(struct b_realarray, listp),  /* T_Realarray (30), real array */
+    offsetof(struct b_cons, data),        /* T_Cons (31), cons cell */
     };
 
 /*

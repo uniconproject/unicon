@@ -451,4 +451,10 @@
 #define VMS 0
 #endif
 
+
 #endif                                  /* HAVE_LIBSSL */
+
+/* On some systems we get a definition of offsetof() and on some we don't.
+ * Include stddef.h just in case: guards within stddef.h should prevent double inclusion.
+ */
+#include <stddef.h>

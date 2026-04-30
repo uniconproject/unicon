@@ -744,7 +744,7 @@ Deliberate Syntax Error
 #endif                                  /* PPInit */
 
 #ifndef PPDirectives
-   #define PPDirectives {"passthru", PpKeep},
+   #define PPDirectives {"passthru", PpKeep}, {"host", PpKeep}, {"rawc", PpKeep},
 #endif                                  /* PPDirectives */
 
 #ifndef NoPseudoPty

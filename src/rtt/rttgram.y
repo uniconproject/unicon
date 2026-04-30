@@ -323,6 +323,12 @@ no_tdn_init_dcltor
                               {$$ = node2(BinryNd, $2, $1, $3); id_def($1, $3);}
    ;
 
+/*
+ * __declspec: only the MSVC form with a single bare identifier is accepted here
+ * (__declspec(dllexport), __declspec(dllimport), etc.). Nested parentheses such
+ * as __declspec(align(8)) or other composites are parsing errors unless moved
+ * out of RTL (use #passthru / #rawc for raw C emission, if needed).
+ */
 storage_class_spec
    : Typedef  {$$ = node0(PrimryNd, $1); dcl_stk->kind_dcl = IsTypedef;}
    | Extern   {$$ = node0(PrimryNd, $1);}

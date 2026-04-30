@@ -549,8 +549,8 @@ int main(int argc, char **argv)
       refpath = relfile(argv[0], "/../");
 
    /*
-    * Initialize the string table and indicate that File must be treated
-    *  as a typedef name.
+    * Initialize the string table and indicate that FILE must be treated
+    * as a typedef name (opaque typedefs RTT ignores are in grttin.h).
     */
    init_str();
    add_tdef("FILE");

@@ -166,6 +166,7 @@ void init_lex()
       sym_add(TokShort,      spec_str("short"),         OtherDcl, 0);
       sym_add(Signed,        spec_str("signed"),        OtherDcl, 0);
       sym_add(Sizeof,        spec_str("sizeof"),        OtherDcl, 0);
+      sym_add(Offsetof,      spec_str("offsetof"),      OtherDcl, 0);
       sym_add(Static,        spec_str("static"),        OtherDcl, 0);
       sym_add(Struct,        spec_str("struct"),        OtherDcl, 0);
       sym_add(Switch,        spec_str("switch"),        OtherDcl, 0);

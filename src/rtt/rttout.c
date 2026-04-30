@@ -1199,6 +1199,23 @@ int c_walk(struct node *n, int indent, int brace)
                c_walk(n->u[0].child, indent, 0);
                prt_str(")", indent);
                return 1;
+            case Offsetof:
+               /*
+                * Avoid BinryNd infix spacing ( " , " ): use normal offsetof(T, m).
+                */
+               prt_tok(t, indent);
+               prt_str("(", indent);
+               n1 = n->u[0].child;
+               if (n1 != NULL && n1->nd_id == BinryNd && n1->tok != NULL &&
+                   n1->tok->tok_id == ',') {
+                  c_walk(n1->u[0].child, indent, 0);
+                  prt_str(", ", indent);
+                  c_walk(n1->u[1].child, indent, 0);
+                  }
+               else
+                  c_walk(n1, indent, 0);
+               prt_str(")", indent);
+               return 1;
             case '{':
                /*
                 * Initializer list.

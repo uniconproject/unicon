@@ -15,6 +15,22 @@
    long i;
    }
 
+/*
+ * Explicit numeric token codes (257, 258, ...) are not a Bison requirement;
+ * they are a long-standing RTT contract.  The hand-written lexer (rttlex.c)
+ * registers many C and RTL keywords with fixed tok_id values, and runtime
+ * code compares yylval.t->tok_id against those same integers.  Pinning the
+ * core single-char and multi-char tokens here keeps the yacc/bison enum
+ * (ltoken.h / yytokentype) stable when the grammar is edited, instead of
+ * letting the generator renumber everything from YYEMPTY/256 upward on each
+ * regen.  Tokens declared without a number (below) receive the next free code
+ * from Bison and should stay at the end of the list or be paired with lexer
+ * updates when their values change.
+ *
+ * Syntax reminder: Bison allows "%token ... Name N Name2 N2 ..." so each
+ * symbolic token is paired with its numeric code on the same line (e.g.
+ * Identifier 257 StrLit 258 assigns 257 to Identifier and 258 to StrLit).
+ */
 %token <t> Identifier 257 StrLit 258 LStrLit 259 FltConst 260 DblConst 261
 %token <t> LDblConst 262 CharConst 263 LCharConst 264 IntConst 265
 %token <t> UIntConst 266 LIntConst 267 ULIntConst 268 Arrow 269 Incr 270
@@ -43,7 +59,7 @@
 %token <t> Store 356 Type 357 New 358 All_fields 359 Then 360
 %token <t> Type_case 361 Of 362 Len_case 363 Constant 364 Errorfail 365
 %token <t> Declspec 366 B_IProc_Type 367
-%token <t> Offsetof
+%token <t> Offsetof 369 Thread_local 370
 
 %type <t> unary_op assign_op struct_or_union typedefname
 %type <t> identifier op_name key_const union attrb_name
@@ -137,6 +153,10 @@ unary_expr
    | Sizeof unary_expr        {$$ = node1(PrefxNd, $1, $2);}
    | Sizeof '(' type_name ')' {$$ = node1(PrefxNd, $1, $3);
                                free_t($2); free_t($4);}
+   /*
+    * offsetof(T, name) only: a single unqualified identifier.  Nested members or
+    * index expressions need raw C (#rawc / #passthru), same spirit as __declspec limit above.
+    */
    | Offsetof '(' type_name ',' identifier ')'
       {$$ = node1(PrefxNd, $1,
                    node2(BinryNd, $4, $3, node0(PrimryNd, $5)));
@@ -333,8 +353,13 @@ storage_class_spec
    : Typedef  {$$ = node0(PrimryNd, $1); dcl_stk->kind_dcl = IsTypedef;}
    | Extern   {$$ = node0(PrimryNd, $1);}
    | Static   {$$ = node0(PrimryNd, $1);}
+   | Thread_local {$$ = node0(PrimryNd, $1);}
    | Auto     {$$ = node0(PrimryNd, $1);}
    | Register {$$ = node0(PrimryNd, $1);}
+   /*
+    * Inline is also the RTL detail_code prefix "inline { ... }" (see detail_code).
+    * LALR distinguishes that from "inline" as a C function-specifier by context.
+    */
    | Inline   {$$ = node0(PrimryNd, $1);}
    | Declspec '(' identifier ')' {$$ = node2(BinryNd, $4,
                                              node0(PrimryNd, $1),
@@ -814,6 +839,7 @@ identifier
    | IconType
    | Identifier
    | Inline
+   | Thread_local
    | Named_var
    | New
    | Of

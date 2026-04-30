@@ -173,8 +173,8 @@ void init_lex()
       sym_add(Sizeof,        spec_str("sizeof"),        OtherDcl, 0);
       sym_add(Offsetof,      spec_str("offsetof"),      OtherDcl, 0);
       sym_add(Static,        spec_str("static"),        OtherDcl, 0);
-      sym_add(Static,        spec_str("__thread"),      OtherDcl, 0);
-      sym_add(Static,        spec_str("_Thread_local"), OtherDcl, 0);
+      sym_add(Thread_local, spec_str("__thread"),      OtherDcl, 0);
+      sym_add(Thread_local, spec_str("_Thread_local"), OtherDcl, 0);
       sym_add(Struct,        spec_str("struct"),        OtherDcl, 0);
       sym_add(Switch,        spec_str("switch"),        OtherDcl, 0);
       sym_add(Typedef,       spec_str("typedef"),       OtherDcl, 0);

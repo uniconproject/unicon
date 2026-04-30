@@ -3812,8 +3812,8 @@ void keyconst(struct token *t)
 
 /*
  * keepdir - A preprocessor directive to be kept has been encountered.
- *   If it is #passthru, print just the body of the directive, otherwise
- *   print the whole thing.
+ *   If it is a raw-output directive, print just the body of the directive,
+ *   otherwise print the whole thing.
  */
 void keepdir(struct token *t)
    {
@@ -3821,8 +3821,16 @@ void keepdir(struct token *t)
 
    tok_line(t, 0);
    s = t->image;
-   if (strncmp(s, "#passthru", 9) == 0)
-      s = s + 10;
+   if (strncmp(s, "#passthru", 9) == 0) {
+      s = s + 9;
+      if (*s == ' ' || *s == '\t')
+         ++s;
+      }
+   else if (strncmp(s, "#host", 5) == 0 || strncmp(s, "#rawc", 5) == 0) {
+      s = s + 5;
+      if (*s == ' ' || *s == '\t')
+         ++s;
+      }
    fprintf(out_file, "%s\n", s);
    line += 1;
    }

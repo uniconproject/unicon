@@ -145,11 +145,16 @@ void init_lex()
        */
       sym_add(Auto,          spec_str("auto"),          OtherDcl, 0);
       sym_add(Break,         spec_str("break"),         OtherDcl, 0);
+      sym_add(B_IProc_Type,  spec_str("B_IProc"),       OtherDcl, 0);
       sym_add(Case,          spec_str("case"),          OtherDcl, 0);
       sym_add(TokChar,       spec_str("char"),          OtherDcl, 0);
       sym_add(Const,         spec_str("const"),         OtherDcl, 0);
       sym_add(Continue,      spec_str("continue"),      OtherDcl, 0);
       sym_add(Default,       spec_str("default"),       OtherDcl, 0);
+      /*
+       * Parsed form is __declspec(single_identifier) only; see rttgram.y.
+       */
+      sym_add(Declspec,      spec_str("__declspec"),    OtherDcl, 0);
       sym_add(Do,            spec_str("do"),            OtherDcl, 0);
       sym_add(Doubl,         spec_str("double"),        OtherDcl, 0);
       sym_add(Else,          spec_str("else"),          OtherDcl, 0);
@@ -168,6 +173,8 @@ void init_lex()
       sym_add(Sizeof,        spec_str("sizeof"),        OtherDcl, 0);
       sym_add(Offsetof,      spec_str("offsetof"),      OtherDcl, 0);
       sym_add(Static,        spec_str("static"),        OtherDcl, 0);
+      sym_add(Static,        spec_str("__thread"),      OtherDcl, 0);
+      sym_add(Static,        spec_str("_Thread_local"), OtherDcl, 0);
       sym_add(Struct,        spec_str("struct"),        OtherDcl, 0);
       sym_add(Switch,        spec_str("switch"),        OtherDcl, 0);
       sym_add(Typedef,       spec_str("typedef"),       OtherDcl, 0);

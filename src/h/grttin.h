@@ -316,7 +316,7 @@ typedef int DIR;
 #endif                                  /* PosixFns */
 
 #if HAVE_LIBSSL
-typedef int SSL_CTX, SSL;
+typedef int SSL_CTX, SSL, SSL_METHOD;
 #endif                                  /* LIBSSL */
 
 #ifdef Concurrent
@@ -374,6 +374,7 @@ typedef int OggVorbis_File, vorbis_info;
 typedef int stringint, inst;
 #endif
 
+/* stdarg: RTT stubs the name only; keep out of rttmain add_tdef(). */
 typedef int va_list, siptr;
 
 /*

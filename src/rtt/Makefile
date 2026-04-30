@@ -100,6 +100,14 @@ yyerror.c:
 # on some systems, yacc may not have large enough internal tables to
 # translate this grammar.
 #
+# Committed rttparse.c and ltoken.h are generated with GNU Bison (not POSIX
+# yacc); the old pipeline below used yacc -d and renamed y.tab.*.  Bison
+# emits a large parser skeleton, so grammar regen produces a big diff.
+# Checked-in generated sources bootstrap the tree on hosts that do not have
+# Bison installed; after changing rttgram.y, run bison locally and commit the
+# updated rttparse.c and ltoken.h (see repository docs or history for the
+# exact bison -o / --defines= flags used in this tree).
+#
 #rttparse.c ltoken.h: rttgram.y
 #	yacc -d $(YFLAGS) rttgram.y
 #	fgrep -v -x "extern char *malloc(), *realloc();" y.tab.c > rttparse.c

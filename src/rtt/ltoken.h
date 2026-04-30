@@ -166,7 +166,8 @@ extern int yydebug;
     Declspec = 366,                /* Declspec  */
     B_IProc_Type = 367,            /* B_IProc_Type  */
     Offsetof = 369,                /* Offsetof  */
-    IfStmt = 370                   /* IfStmt  */
+    Thread_local = 370,            /* Thread_local  */
+    IfStmt = 371                   /* IfStmt  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -182,7 +183,7 @@ union YYSTYPE
    long i;
    
 
-#line 186 "rttgram.tab.h"
+#line 187 "rttgram.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

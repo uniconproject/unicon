@@ -1355,6 +1355,8 @@ void just_type(struct node *typ, int indent, int ilc)
          case Typedef:
          case Extern:
          case Static:
+         case Thread_local:
+         case Inline:
          case Auto:
          case TokRegister:
          case Const:

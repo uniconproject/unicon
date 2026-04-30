@@ -221,11 +221,8 @@ extern struct descrip amperErrno;
 
 #ifdef Concurrent
    #ifdef HAVE_KEYWORD__THREAD
-   /*
-    * HAVE_KEYWORD__THREAD should be detected by autoconf (and isn't yet).
-    */
-   extern __thread struct threadstate roottstate;
-   extern __thread struct threadstate *curtstate;
+   extern UNICON_THREAD_LOCAL struct threadstate roottstate;
+   extern UNICON_THREAD_LOCAL struct threadstate *curtstate;
    #else                                        /* HAVE_KEYWORD__THREAD */
    extern struct threadstate roottstate;
    #endif                                       /* HAVE_KEYWORD__THREAD */

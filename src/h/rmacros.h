@@ -677,19 +677,31 @@
 #define TURN_ON_CONCURRENT() do if (!is_concurrent) { \
       is_concurrent=1; global_curtstate = NULL; } while (0)
 
-/*
 #ifdef HAVE_KEYWORD__THREAD
+/*
+ * curtstate is a compiler thread-local pointer (see init.r / rexterns.h).
+ * Avoid pthread_getspecific on every CURTSTATE() entry.
+ */
 #define CURTSTATE()
-#define CURTSTATE_CE()
-#else
-*/
+#define CURTSTATE_CE() struct b_coexpr *curtstate_ce = curtstate->c;
+#define CURTSTATE_AND_CE() CURTSTATE_CE()
+#define SYNC_GLOBAL_CURTSTATE()  do if (!is_concurrent) \
+      global_curtstate = curtstate; while (0)
+#define TLS_CURTSTATE_ONLY() ((void)0)
+
+#ifdef NativeCoswitch
+#define SYNC_CURTSTATE_CE() if (curtstate->c != curtstate_ce) curtstate_ce = curtstate->c;
+#else                                   /* NativeCoswitch */
+#define SYNC_CURTSTATE_CE()
+#endif                                  /* NativeCoswitch */
+
+#else                                   /* HAVE_KEYWORD__THREAD */
 
 #define SYNC_GLOBAL_CURTSTATE()  do if (!is_concurrent) global_curtstate = \
       (struct threadstate *) pthread_getspecific(tstate_key); while (0)
 
 #define TLS_CURTSTATE_ONLY()  struct threadstate *curtstate = \
       (struct threadstate *) pthread_getspecific(tstate_key);
-
 
 #define GET_CURTSTATE()  struct threadstate *curtstate = \
     global_curtstate? global_curtstate: \
@@ -706,6 +718,8 @@
 #define CURTSTATE()  GET_CURTSTATE();
 #define CURTSTATE_AND_CE() GET_CURTSTATE(); CURTSTATE_CE();
 
+#endif                                  /* HAVE_KEYWORD__THREAD */
+
 #ifdef TSTATARG
 #define CURTSTATARG curtstate
 #define RTTCURTSTATARG ,curtstate
@@ -719,7 +733,6 @@
 #define CURTSTATVAR()
 #endif                                  /* ConcurrentCOMPILER */
 #endif                                  /* TSTATARG */
-/*#endif*/
 
 #define ssize    (curtstate->Curstring->size)
 #define strbase  (curtstate->Curstring->base)

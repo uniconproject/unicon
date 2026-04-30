@@ -524,8 +524,13 @@ int co_chng(struct b_coexpr *ncp,
     * this by using the global, k_current, but that's not global anymore.
     */
 #ifdef PthreadCoswitch
+#ifdef HAVE_KEYWORD__THREAD
+   if (global_curtstate != NULL)
+      curtstate = global_curtstate;
+#else                                   /* HAVE_KEYWORD__THREAD */
    curtstate =  global_curtstate ? global_curtstate :
       pthread_getspecific(tstate_key);
+#endif                                  /* HAVE_KEYWORD__THREAD */
 #endif                                  /* PthreadCoswitch */
 
    return BlkD(k_current,Coexpr)->coexp_act;
@@ -758,13 +763,16 @@ void makesem(struct b_coexpr *cp) {
 
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
 pthread_key_t tstate_key;
-struct threadstate * alloc_tstate()
+#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+
+#if defined(Concurrent)
+struct threadstate *alloc_tstate(void)
 {
    struct threadstate *ts = malloc(sizeof(struct threadstate));
    if (ts == NULL) syserr("alloc_tstate(): Out of memory");
    return ts;
 }
-#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent */
 
 /*
  * nctramp() -- trampoline for calling new_context(0,0).
@@ -775,7 +783,9 @@ void *nctramp(void *arg)
 #ifdef Concurrent
 /*   sigset_t mask; */
 
-#ifndef HAVE_KEYWORD__THREAD
+#ifdef HAVE_KEYWORD__THREAD
+   curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
+#else                                   /* HAVE_KEYWORD__THREAD */
     struct threadstate *curtstate;
     curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
     pthread_setspecific(tstate_key, (void *) curtstate);

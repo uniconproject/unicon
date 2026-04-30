@@ -152,8 +152,8 @@ struct region *curstring, *curblock;
      struct threadstate *global_curtstate;
 
 #ifdef HAVE_KEYWORD__THREAD
-      __thread struct threadstate roottstate;
-      __thread struct threadstate *curtstate;
+      UNICON_THREAD_LOCAL struct threadstate roottstate;
+      UNICON_THREAD_LOCAL struct threadstate *curtstate;
 #else                                   /* HAVE_KEYWORD__THREAD */
       struct threadstate roottstate;
 #endif                                  /* HAVE_KEYWORD__THREAD */
@@ -1699,11 +1699,18 @@ static word unicon_getrandom(void)
 
    /* + map &time */
 
-#ifndef HAVE_KEYWORD__THREAD
+#if !defined(HAVE_KEYWORD__THREAD)
    ncalls++;
    krandom += millisec() + 1009 * ncalls;
+#elif defined(Concurrent) && (defined(MultiProgram) || defined(ConcurrentCOMPILER))
+   /*
+    * curtstate is only defined here when MultiProgram || ConcurrentCOMPILER
+    */
+   krandom += millisec() + (word)((unsigned long long)1009
+       * (unsigned long long)((uword)(pointer)curtstate % (uword)2147483647));
 #else
-   krandom += millisec() + 1009 * (int) curtstate;
+   ncalls++;
+   krandom += millisec() + 1009 * ncalls;
 #endif
    return krandom;
 #else                                   /* NoRandomize */

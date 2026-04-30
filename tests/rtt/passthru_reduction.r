@@ -1,7 +1,7 @@
-#host #define RTT_HOST_TEST 1
-#host #if defined(__GNUC__)
-#host #define RTT_HOST_COMPILER_SEES_GNUC 1
-#host #endif
+#passthru #define RTT_HOST_TEST 1
+#passthru #if defined(__GNUC__)
+#passthru #define RTT_HOST_COMPILER_SEES_GNUC 1
+#passthru #endif
 
 #host #define RTT_HOST_DIRECTIVE_PROBE 42
 

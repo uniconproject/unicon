@@ -84,9 +84,6 @@ int qualfail;                   /* flag: qualifier list overflow */
    else if (Pointer(d))\
       markblock(&(d));
 
-/* Offset helper for GC metadata tables and sanity checks. */
-#passthru #define GC_OFFSETOF(type, member) ((int)offsetof(type, member))
-
 /*
  * Allocated block size table (sizes given in bytes).  A size of -1 is used
  *  for types that have no blocks; a size of 0 indicates that the
@@ -359,55 +356,55 @@ uword segsize[] = {
  * Validate key GC metadata table entries against actual struct layout.
  * This catches silent drift when block headers change.
  */
-#passthru static void vrfyGcLayoutTables(void)
-#passthru {
-#passthru   if (firstd[T_Refresh] != GC_OFFSETOF(struct b_refresh, elems))
-#passthru      syserr("firstd[T_Refresh] does not match struct b_refresh layout");
-#passthru
-#passthru   if (firstd[T_Proc] != GC_OFFSETOF(struct b_proc, pname))
-#passthru      syserr("firstd[T_Proc] does not match struct b_proc layout");
-#passthru
-#passthru   if (firstd[T_Record] != GC_OFFSETOF(struct b_record, fields))
-#passthru      syserr("firstd[T_Record] does not match struct b_record layout");
-#passthru   if (firstp[T_Record] != GC_OFFSETOF(struct b_record, recdesc))
-#passthru      syserr("firstp[T_Record] does not match struct b_record layout");
-#passthru   if (ptrno[T_Record] != 1)
-#passthru      syserr("ptrno[T_Record] is not 1");
-#passthru   if (firstd[T_Table] != GC_OFFSETOF(struct b_table, defvalue))
-#passthru      syserr("firstd[T_Table] does not match struct b_table layout");
-#passthru   if (firstp[T_Table] != GC_OFFSETOF(struct b_table, hdir))
-#passthru      syserr("firstp[T_Table] does not match struct b_table layout");
-#passthru   if (ptrno[T_Table] != HSegs)
-#passthru      syserr("ptrno[T_Table] is not HSegs");
-#passthru
-#passthru   if (firstd[T_Lelem] != GC_OFFSETOF(struct b_lelem, lslots))
-#passthru      syserr("firstd[T_Lelem] does not match struct b_lelem layout");
-#passthru   if (firstp[T_Lelem] != GC_OFFSETOF(struct b_lelem, listprev))
-#passthru      syserr("firstp[T_Lelem] does not match struct b_lelem layout");
-#passthru   if (ptrno[T_Lelem] != 2)
-#passthru      syserr("ptrno[T_Lelem] is not 2");
-#passthru
-#passthru   if (firstd[T_Telem] != GC_OFFSETOF(struct b_telem, tref))
-#passthru      syserr("firstd[T_Telem] does not match struct b_telem layout");
-#passthru   if (firstp[T_Telem] != GC_OFFSETOF(struct b_telem, clink))
-#passthru      syserr("firstp[T_Telem] does not match struct b_telem layout");
-#passthru   if (ptrno[T_Telem] != 1)
-#passthru      syserr("ptrno[T_Telem] is not 1");
-#passthru
-#passthru   if (firstd[T_Tvtbl] != GC_OFFSETOF(struct b_tvtbl, tref))
-#passthru      syserr("firstd[T_Tvtbl] does not match struct b_tvtbl layout");
-#passthru   if (firstp[T_Tvtbl] != GC_OFFSETOF(struct b_tvtbl, clink))
-#passthru      syserr("firstp[T_Tvtbl] does not match struct b_tvtbl layout");
-#passthru   if (ptrno[T_Tvtbl] != 1)
-#passthru      syserr("ptrno[T_Tvtbl] is not 1");
-#passthru
-#passthru   if (firstd[T_Tvsubs] != GC_OFFSETOF(struct b_tvsubs, ssvar))
-#passthru      syserr("firstd[T_Tvsubs] does not match struct b_tvsubs layout");
-#passthru   if (firstp[T_Tvsubs] != 0)
-#passthru      syserr("firstp[T_Tvsubs] is not 0");
-#passthru   if (ptrno[T_Tvsubs] != -1)
-#passthru      syserr("ptrno[T_Tvsubs] is not -1");
-#passthru }
+static void vrfyGcLayoutTables(void)
+{
+  if (firstd[T_Refresh] != (int)offsetof(struct b_refresh, elems))
+     syserr("firstd[T_Refresh] does not match struct b_refresh layout");
+
+  if (firstd[T_Proc] != (int)offsetof(struct b_proc, pname))
+     syserr("firstd[T_Proc] does not match struct b_proc layout");
+
+  if (firstd[T_Record] != (int)offsetof(struct b_record, fields))
+     syserr("firstd[T_Record] does not match struct b_record layout");
+  if (firstp[T_Record] != (int)offsetof(struct b_record, recdesc))
+     syserr("firstp[T_Record] does not match struct b_record layout");
+  if (ptrno[T_Record] != 1)
+     syserr("ptrno[T_Record] is not 1");
+  if (firstd[T_Table] != (int)offsetof(struct b_table, defvalue))
+     syserr("firstd[T_Table] does not match struct b_table layout");
+  if (firstp[T_Table] != (int)offsetof(struct b_table, hdir))
+     syserr("firstp[T_Table] does not match struct b_table layout");
+  if (ptrno[T_Table] != HSegs)
+     syserr("ptrno[T_Table] is not HSegs");
+
+  if (firstd[T_Lelem] != (int)offsetof(struct b_lelem, lslots))
+     syserr("firstd[T_Lelem] does not match struct b_lelem layout");
+  if (firstp[T_Lelem] != (int)offsetof(struct b_lelem, listprev))
+     syserr("firstp[T_Lelem] does not match struct b_lelem layout");
+  if (ptrno[T_Lelem] != 2)
+     syserr("ptrno[T_Lelem] is not 2");
+
+  if (firstd[T_Telem] != (int)offsetof(struct b_telem, tref))
+     syserr("firstd[T_Telem] does not match struct b_telem layout");
+  if (firstp[T_Telem] != (int)offsetof(struct b_telem, clink))
+     syserr("firstp[T_Telem] does not match struct b_telem layout");
+  if (ptrno[T_Telem] != 1)
+     syserr("ptrno[T_Telem] is not 1");
+
+  if (firstd[T_Tvtbl] != (int)offsetof(struct b_tvtbl, tref))
+     syserr("firstd[T_Tvtbl] does not match struct b_tvtbl layout");
+  if (firstp[T_Tvtbl] != (int)offsetof(struct b_tvtbl, clink))
+     syserr("firstp[T_Tvtbl] does not match struct b_tvtbl layout");
+  if (ptrno[T_Tvtbl] != 1)
+     syserr("ptrno[T_Tvtbl] is not 1");
+
+  if (firstd[T_Tvsubs] != (int)offsetof(struct b_tvsubs, ssvar))
+     syserr("firstd[T_Tvsubs] does not match struct b_tvsubs layout");
+  if (firstp[T_Tvsubs] != 0)
+     syserr("firstp[T_Tvsubs] is not 0");
+  if (ptrno[T_Tvsubs] != -1)
+     syserr("ptrno[T_Tvsubs] is not -1");
+}
 #endif                                  /* VerifyHeap */
 
 /*
@@ -2050,26 +2047,26 @@ void vrfyPrintLog(int nmess)
   }
 }
 
-#passthru /* Use this when continuing is not an option */
-#passthru static void vrfyCrash(const char *fmt, ...)
-#passthru {
-#passthru   va_list args;
-#passthru   va_start(args, fmt);
-#passthru   (void) vsnprintf((char *)&vlog[vlogNext], sizeof(vlogmessage), fmt, args);
-#passthru   va_end(args);
-#passthru   if (++vlogNext > HIGHEST(vlog)) {vlogNext = 0;}
-#passthru
-#passthru   /* gcc and clang define __GNUC__ */
+/* Use this when continuing is not an option */
+static void vrfyCrash(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  (void) vsnprintf((char *)&vlog[vlogNext], sizeof(vlogmessage), fmt, args);
+  va_end(args);
+  if (++vlogNext > HIGHEST(vlog)) {vlogNext = 0;}
+
+  /* gcc and clang define __GNUC__ */
 #passthru #if defined(__GNUC__)
-#passthru   do { __builtin_trap(); } while (1);
+  do { __builtin_trap(); } while (1);
 #passthru #else
-#passthru   /*
-#passthru    * put something here that your compiler will accept
-#passthru    * (surrounded by appropriate #ifdefs) to force a program crash.
-#passthru    */
-#passthru   do { __builtin_trap(); } while (1);
+  /*
+   * put something here that your compiler will accept
+   * (surrounded by appropriate #ifdefs) to force a program crash.
+   */
+  do { __builtin_trap(); } while (1);
 #passthru #endif                   /* __GNUC__ */
-#passthru }
+}
 
 #define PRE_GC  0
 #define IN_GC   1

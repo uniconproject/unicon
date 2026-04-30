@@ -127,7 +127,7 @@ void ExpandArgv(int *argcp, char ***avp)
 #endif                                  /* NT */
 
 #ifdef DLLICONX
-#passthru void __declspec(dllexport) iconx_entry(int argc, char **argv)
+void __declspec(dllexport) iconx_entry(int argc, char **argv)
 #else                                   /* DLLICONX */
 #ifdef INTMAIN
 int main(int argc, char **argv)

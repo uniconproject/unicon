@@ -59,9 +59,9 @@ TRuntime_Status rt_status;
         underef,\
         0,\
         {{sizeof(sname)-1,sname}}},
-#passthru static B_IProc(2) init_op_tbl[] = {
+#rawc static B_IProc(2) init_op_tbl[] = {
 #passthru #include "../h/odefs.h"
-#passthru   };
+#rawc   };
 #undef OpDef
 #endif                                  /* !COMPILER */
 
@@ -152,8 +152,8 @@ struct region *curstring, *curblock;
      struct threadstate *global_curtstate;
 
 #ifdef HAVE_KEYWORD__THREAD
-      #passthru __thread struct threadstate roottstate;
-      #passthru __thread struct threadstate *curtstate;
+      __thread struct threadstate roottstate;
+      __thread struct threadstate *curtstate;
 #else                                   /* HAVE_KEYWORD__THREAD */
       struct threadstate roottstate;
 #endif                                  /* HAVE_KEYWORD__THREAD */

@@ -5,7 +5,8 @@
 
 %{
 #include "rtt1.h"
-#define YYMAXDEPTH 250
+#include "yyerror.h"
+#define YYMAXDEPTH 10000
 %}
 
 %union {
@@ -14,27 +15,52 @@
    long i;
    }
 
-%token <t> Identifier StrLit LStrLit FltConst DblConst LDblConst
-%token <t> CharConst LCharConst IntConst UIntConst LIntConst ULIntConst
-%token <t> Arrow Incr Decr LShft RShft Leq Geq Equal Neq
-%token <t> And Or MultAsgn DivAsgn ModAsgn PlusAsgn
-%token <t> MinusAsgn LShftAsgn RShftAsgn AndAsgn
-%token <t> XorAsgn OrAsgn Sizeof Intersect OpSym
+/*
+ * Explicit numeric token codes (257, 258, ...) are not a Bison requirement;
+ * they are a long-standing RTT contract.  The hand-written lexer (rttlex.c)
+ * registers many C and RTL keywords with fixed tok_id values, and runtime
+ * code compares yylval.t->tok_id against those same integers.  Pinning the
+ * core single-char and multi-char tokens here keeps the yacc/bison enum
+ * (ltoken.h / yytokentype) stable when the grammar is edited, instead of
+ * letting the generator renumber everything from YYEMPTY/256 upward on each
+ * regen.  Tokens declared without a number (below) receive the next free code
+ * from Bison and should stay at the end of the list or be paired with lexer
+ * updates when their values change.
+ *
+ * Syntax reminder: Bison allows "%token ... Name N Name2 N2 ..." so each
+ * symbolic token is paired with its numeric code on the same line (e.g.
+ * Identifier 257 StrLit 258 assigns 257 to Identifier and 258 to StrLit).
+ */
+%token <t> Identifier 257 StrLit 258 LStrLit 259 FltConst 260 DblConst 261
+%token <t> LDblConst 262 CharConst 263 LCharConst 264 IntConst 265
+%token <t> UIntConst 266 LIntConst 267 ULIntConst 268 Arrow 269 Incr 270
+%token <t> Decr 271 LShft 272 RShft 273 Leq 274 Geq 275 Equal 276 Neq 277
+%token <t> And 278 Or 279 MultAsgn 280 DivAsgn 281 ModAsgn 282 PlusAsgn 283
+%token <t> MinusAsgn 284 LShftAsgn 285 RShftAsgn 286 AndAsgn 287
+%token <t> XorAsgn 288 OrAsgn 289 Sizeof 290 Intersect 291 OpSym 292
 
-%token <t> Typedef Extern Static Auto Register Tended
-%token <t> Char Short Int Long Signed Unsigned Float Doubl Const Volatile
-%token <t> Void TypeDefName Struct Union Enum Ellipsis
+%token <t> Typedef 293 Extern 294 Static 295 Auto 296 Register 297 Tended 298
+%token <t> Char 299 Short 300 Int 301 Long 302 Signed 303 Unsigned 304
+%token <t> Float 305 Doubl 306 Const 307 Volatile 308 Void 309
+%token <t> TypeDefName 310 Struct 311 Union 312 Enum 313 Ellipsis 314
 
-%token <t> Case Default If Else Switch While Do For Goto Continue Break Return
+%token <t> Case 315 Default 316 If 317 Else 318 Switch 319 While 320 Do 321
+%token <t> For 322 Goto 323 Continue 324 Break 325 Return 326
 
 %token <t> '%' '&' '(' ')' '*' '+' ',' '-' '.' '/' '{' '|' '}' '~' '[' ']'
 %token <t> '^' ':' ';' '<' '=' '>' '?' '!' '@' '\\'
 
-%token <t> Runerr Is Cnv Def Exact Empty_type IconType Component Variable
-%token <t> Any_value Named_var Struct_var C_Integer Arith_case
-%token <t> C_Double C_String Tmp_string Tmp_cset Body End Function Keyword
-%token <t> Operator Underef Declare Suspend Fail Inline Abstract Store
-%token <t> Type New All_fields Then Type_case Of Len_case Constant Errorfail
+%token <t> Runerr 327 Is 328 Cnv 329 Def 330 Exact 331 Empty_type 332
+%token <t> IconType 333 Component 334 Variable 335 Any_value 336
+%token <t> Named_var 337 Struct_var 338 C_Integer 339 Arith_case 340
+%token <t> C_Double 341 C_String 342 Tmp_string 343 Tmp_cset 344 Body 345
+%token <t> End 346 Function 347 Keyword 348 Operator 349 Underef 350
+%token <t> Declare 351 Suspend 352 Fail 353 Inline 354 Abstract 355
+%token <t> Store 356 Type 357 New 358 All_fields 359 Then 360
+%token <t> Type_case 361 Of 362 Len_case 363 Constant 364 Errorfail 365
+%token <t> Declspec 366 B_IProc_Type 367
+/* 368 is reserved by Bison 3.8.2 as YYUNDEF; do not assign a token here. */
+%token <t> Offsetof 369 Thread_local 370
 
 %type <t> unary_op assign_op struct_or_union typedefname
 %type <t> identifier op_name key_const union attrb_name
@@ -128,6 +154,14 @@ unary_expr
    | Sizeof unary_expr        {$$ = node1(PrefxNd, $1, $2);}
    | Sizeof '(' type_name ')' {$$ = node1(PrefxNd, $1, $3);
                                free_t($2); free_t($4);}
+   /*
+    * offsetof(T, name) only: a single unqualified identifier.  Nested members or
+    * index expressions need raw C (#rawc / #passthru), same spirit as __declspec limit above.
+    */
+   | Offsetof '(' type_name ',' identifier ')'
+      {$$ = node1(PrefxNd, $1,
+                   node2(BinryNd, $4, $3, node0(PrimryNd, $5)));
+       free_t($2); free_t($6);}
    ;
 
 unary_op
@@ -310,12 +344,28 @@ no_tdn_init_dcltor
                               {$$ = node2(BinryNd, $2, $1, $3); id_def($1, $3);}
    ;
 
+/*
+ * __declspec: only the MSVC form with a single bare identifier is accepted here
+ * (__declspec(dllexport), __declspec(dllimport), etc.). Nested parentheses such
+ * as __declspec(align(8)) or other composites are parsing errors unless moved
+ * out of RTL (use #passthru / #rawc for raw C emission, if needed).
+ */
 storage_class_spec
    : Typedef  {$$ = node0(PrimryNd, $1); dcl_stk->kind_dcl = IsTypedef;}
    | Extern   {$$ = node0(PrimryNd, $1);}
    | Static   {$$ = node0(PrimryNd, $1);}
+   | Thread_local {$$ = node0(PrimryNd, $1);}
    | Auto     {$$ = node0(PrimryNd, $1);}
    | Register {$$ = node0(PrimryNd, $1);}
+   /*
+    * Inline is also the RTL detail_code prefix "inline { ... }" (see detail_code).
+    * LALR distinguishes that from "inline" as a C function-specifier by context.
+    */
+   | Inline   {$$ = node0(PrimryNd, $1);}
+   | Declspec '(' identifier ')' {$$ = node2(BinryNd, $4,
+                                             node0(PrimryNd, $1),
+                                             node0(PrimryNd, $3));
+                                  free_t($2);}
    ;
 
 type_spec
@@ -335,6 +385,9 @@ stnd_type
    | Unsigned            {$$ = node0(PrimryNd, $1);}
    | struct_or_union_spec
    | enum_spec
+   | B_IProc_Type '(' constant_expr ')' {$$ = node2(BinryNd, $4,
+                                                    node0(PrimryNd, $1), $3);
+                                         free_t($2);}
    ;
 
 struct_or_union_spec
@@ -557,6 +610,7 @@ direct_abstract_dcltor
 
 initializer
    : assign_expr
+   | '{' '}'             {$$ = node1(PrefxNd, $1, NULL); free_t($2);}
    | '{' initializer_lst '}'
                         {$$ = node1(PrefxNd, $1, $2); free_t($3);}
    | '{' initializer_lst ',' '}'
@@ -628,6 +682,7 @@ tended_type
 stmt_lst
    : stmt
    | stmt_lst stmt {$$ = node2(ConCatNd, NULL, $1, $2);}
+   | stmt_lst local_dcl {$$ = ($2 == NULL ? $1 : node2(ConCatNd, NULL, $1, $2));}
    ;
 
 opt_stmt_lst
@@ -785,6 +840,7 @@ identifier
    | IconType
    | Identifier
    | Inline
+   | Thread_local
    | Named_var
    | New
    | Of

@@ -1355,6 +1355,8 @@ void just_type(struct node *typ, int indent, int ilc)
          case Typedef:
          case Extern:
          case Static:
+         case Thread_local:
+         case Inline:
          case Auto:
          case TokRegister:
          case Const:
@@ -1368,6 +1370,16 @@ void just_type(struct node *typ, int indent, int ilc)
 #endif                                  /* Rttx */
          }
       }
+   /*
+    * __declspec(id) is a BinryNd (tok ')'), not PrimryNd; strip it like other
+    * declaration-specifiers so just_type does not emit __declspec in type-only paths.
+    */
+   else if (typ->nd_id == BinryNd && typ->tok != NULL &&
+            typ->tok->tok_id == ')' && typ->u[0].child != NULL &&
+            typ->u[0].child->nd_id == PrimryNd &&
+            typ->u[0].child->tok != NULL &&
+            typ->u[0].child->tok->tok_id == Declspec)
+      return;
    else {
       c_walk(typ, indent, 0);
 #ifndef Rttx

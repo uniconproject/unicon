@@ -1676,8 +1676,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
      SSL_is_initialized = 1;
    }
 
-   /* the compiler wants "const", but rtt doesn't know it, just pass it through */
-#passthru const SSL_METHOD *method;
+   const SSL_METHOD *method;
 
    switch (type) {
 

@@ -651,6 +651,9 @@
 
 #ifdef Concurrent
 
+#define UNICON_THREAD_CALL_LOAD() \
+   atomic_load_explicit(&thread_call, memory_order_relaxed)
+
    #define CE_INBOX_SIZE        1024
    #define CE_OUTBOX_SIZE       1024
    #define CE_CEQUEUE_SIZE      64
@@ -778,12 +781,12 @@
 #ifdef Graphics
 #define Poll() do{ \
   if (!pollctr--) pollctr = pollevent(); \
-  if (thread_call){ \
+  if (UNICON_THREAD_CALL_LOAD()){ \
     thread_control(TC_ANSWERCALL);}\
 }while (0)
    #else                                /* Graphics */
 #define Poll() do{ \
-  if (thread_call){ \
+  if (UNICON_THREAD_CALL_LOAD()){ \
   thread_control(TC_ANSWERCALL);\
   }\
   } while (0)

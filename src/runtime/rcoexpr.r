@@ -848,7 +848,7 @@ void *nctramp(void *arg)
 
 pthread_mutexattr_t rmtx_attr;  /* recursive mutex attr ready to be used */
 pthread_t TCthread;
-int thread_call;
+atomic_int thread_call;
 int NARthreads;
 pthread_cond_t cond_tc;
 
@@ -1052,7 +1052,7 @@ void thread_control(int action)
                MUTEX_LOCKID(MTX_NARTHREADS);
                NARthreads--;
                MUTEX_UNLOCKID(MTX_NARTHREADS);
-               CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+               CV_WAIT_ON_EXPR(atomic_load_explicit(&thread_call, memory_order_relaxed), &cond_tc, MTX_COND_TC);
                MUTEX_UNLOCKID(MTX_COND_TC);
 
                /*
@@ -1085,7 +1085,7 @@ void thread_control(int action)
             /* wake up another TCthread and go to sleep */
             sem_post(sem_tcp);
 
-            CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+            CV_WAIT_ON_EXPR(atomic_load_explicit(&thread_call, memory_order_relaxed), &cond_tc, MTX_COND_TC);
 
             MUTEX_UNLOCKID(MTX_COND_TC);
 
@@ -1102,7 +1102,7 @@ void thread_control(int action)
           * reset (post) sem_gc to be ready for the next GC round
           */
 
-         thread_call = 0;
+         atomic_store_explicit(&thread_call, 0, memory_order_relaxed);
          NARthreads++;
          sem_post(sem_tcp);
          action_in_progress = TC_NONE;
@@ -1193,7 +1193,7 @@ void thread_control(int action)
          MUTEX_LOCKID(MTX_THREADCONTROL);
 
          TCthread = pthread_self();
-         thread_call = 1;
+         atomic_store_explicit(&thread_call, 1, memory_order_relaxed);
          /* NARthreads should reach and stay at zero during TC*/
          while (1) {
             MUTEX_LOCKID(MTX_NARTHREADS);
@@ -1227,7 +1227,7 @@ void thread_control(int action)
          }
       case TC_KILLALLTHREADS:{
          /* wait until only this thread is running  */
-         thread_call = 1;
+         atomic_store_explicit(&thread_call, 1, memory_order_relaxed);
          action_in_progress = action;
          while (1) {
             if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/

@@ -1009,7 +1009,8 @@ Deliberate Syntax Error
    mainhead->status = Ts_Main | Ts_Attached | Ts_Async;
 
 #ifdef Concurrent
-   thread_call=0;               /* The thread who requested a GC */
+   atomic_store_explicit(&thread_call, 0, memory_order_relaxed);
+                                  /* The thread who requested a GC */
    NARthreads=1;        /* Number of Async Running threads*/
 
    if (alcce_queues(mainhead) == Failed)

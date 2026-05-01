@@ -59,6 +59,7 @@
 %token <t> Store 356 Type 357 New 358 All_fields 359 Then 360
 %token <t> Type_case 361 Of 362 Len_case 363 Constant 364 Errorfail 365
 %token <t> Declspec 366 B_IProc_Type 367
+/* 368 is reserved by Bison 3.8.2 as YYUNDEF; do not assign a token here. */
 %token <t> Offsetof 369 Thread_local 370
 
 %type <t> unary_op assign_op struct_or_union typedefname

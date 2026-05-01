@@ -12,12 +12,44 @@
  */
 
 #include "../h/rt.h"
+#include <string.h>
 
 void    doinclude       (char *fname);
 
 #define MAXLINE 500     /* maximum line length */
+#define MAXPATH 4096    /* resolved #include "..." paths */
 
 FILE *outfile;          /* output file */
+
+/*
+ * Copy directory prefix of fname (through final '/') into dir, or "" if none.
+ * Matches how the C preprocessor resolves #include "x" relative to the file.
+ */
+static void file_dirname(const char *fname, char *dir, size_t dlen)
+   {
+   const char *slash;
+
+   if (fname == NULL || *fname == '\0' || dlen == 0) {
+      if (dlen > 0)
+         dir[0] = '\0';
+      return;
+      }
+   slash = strrchr(fname, '/');
+   if (slash == NULL) {
+      dir[0] = '\0';
+      return;
+      }
+   {
+   size_t n = (size_t)(slash - fname) + 1;
+
+   if (n >= dlen) {
+      fprintf(stderr, "%s: directory prefix too long for doincl buffer\n", fname);
+      n = dlen - 1;
+      }
+   memcpy(dir, fname, n);
+   dir[n] = '\0';
+   }
+   }
 
 int main(int argc, char *argv[])
    {
@@ -51,6 +83,9 @@ void doinclude(char *fname)
    {
    FILE *f;
    char line[MAXLINE], newname[MAXLINE], *p;
+   char dir[MAXPATH], fullpath[MAXPATH];
+
+   file_dirname(fname, dir, sizeof(dir));
 
    fprintf(outfile, "\n\n/****************************************");
    fprintf(outfile, "  from %s:  */\n\n", fname);
@@ -60,7 +95,24 @@ void doinclude(char *fname)
             for (p = newname; *p != '\0' && *p != '"'; p++)
                ;
             *p = '\0';                          /* strip off trailing '"' */
-            doinclude(newname);                 /* include file */
+            if (newname[0] == '/') {
+               doinclude(newname);              /* absolute path */
+               }
+            else {
+               int plen = snprintf(fullpath, sizeof(fullpath), "%s%s", dir, newname);
+
+               if (plen < 0) {
+                  fprintf(stderr, "%s: cannot build include path\n", fname);
+                  fprintf(outfile, "/* [file not found] */\n");
+                  }
+               else if ((size_t)plen >= sizeof(fullpath)) {
+                  fprintf(stderr, "%s: include path too long: %s%s\n",
+                          fname, dir, newname);
+                  fprintf(outfile, "/* [file not found] */\n");
+                  }
+               else
+                  doinclude(fullpath);         /* relative to this file */
+               }
             }
          else
             fputs(line, outfile);               /* not an include directive */

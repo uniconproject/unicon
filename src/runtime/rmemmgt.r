@@ -674,7 +674,12 @@ void initalloc(word codesize)
    /* turn the non-concurrent maps2 and maps3 code into a loop over all threads */
    {
    struct threadstate *curtstate;     /* do NOT change this name, the maps[23] macros depend on it */
-   for (curtstate = &roottstate; curtstate != NULL; curtstate = curtstate->next) {
+#if defined(HAVE_KEYWORD__THREAD) && defined(MultiProgram)
+   struct threadstate *root_ts = rootpstate.tstate;
+#else
+   struct threadstate *root_ts = &roottstate;
+#endif
+   for (curtstate = root_ts; curtstate != NULL; curtstate = curtstate->next) {
 #endif
         if (Qual(maps2))                     /*  caution: the cached arguments of */
            postqual(&maps2);                 /*  map may not be strings. */
@@ -843,8 +848,13 @@ static void markthread(struct threadstate *tcp)
 static void markthreads()
 {
    struct threadstate *t;
-   markthread(&roottstate);
-   for (t = roottstate.next; t != NULL; t = t->next)
+#if defined(HAVE_KEYWORD__THREAD) && defined(MultiProgram)
+   struct threadstate *root_ts = rootpstate.tstate;
+#else
+   struct threadstate *root_ts = &roottstate;
+#endif
+   markthread(root_ts);
+   for (t = root_ts->next; t != NULL; t = t->next)
       if (t->c && (IS_TS_THREAD(t->c->status))){
          markthread(t);
          }

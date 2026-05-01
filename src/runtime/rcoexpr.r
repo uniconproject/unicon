@@ -525,8 +525,23 @@ int co_chng(struct b_coexpr *ncp,
     */
 #ifdef PthreadCoswitch
 #ifdef HAVE_KEYWORD__THREAD
+   /*
+    * Native coswitch may not preserve the TLS curtstate register; sync from
+    * global_curtstate when set.  After TURN_ON_CONCURRENT(), global_curtstate
+    * is NULL while native coswitch still runs on one OS thread — recover from
+    * the active co-expression's tstate (same role as pthread_getspecific below).
+    */
    if (global_curtstate != NULL)
       curtstate = global_curtstate;
+   else {
+      struct b_coexpr *const kce = (struct b_coexpr *)BlkLoc(k_current);
+      if (kce != NULL && kce->tstate != NULL)
+         curtstate = kce->tstate;
+      else {
+         /* global_curtstate NULL and no usable kce->tstate: keep TLS curtstate.
+          * It is already correct for this resume (set earlier in co_chng where needed). */
+         }
+      }
 #else                                   /* HAVE_KEYWORD__THREAD */
    curtstate =  global_curtstate ? global_curtstate :
       pthread_getspecific(tstate_key);
@@ -1293,11 +1308,22 @@ void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
  * program root tstate, ie. tstate->pstate->tstate
  * GC should know about this change as well
  */
+#if defined(HAVE_KEYWORD__THREAD) && defined(MultiProgram)
+   /*
+    * roottstate is compiler TLS: each pthread has its own instance; only the
+    * main thread's was initialized in icon_init().  Anchor the chain from the
+    * shared progstate threadstate (same memory main uses for chain links).
+    */
+   struct threadstate *root_ts = cp->program->tstate;
+#else                                   /* HAVE_KEYWORD__THREAD && MultiProgram */
+   struct threadstate *root_ts = &roottstate;
+#endif                                  /* HAVE_KEYWORD__THREAD && MultiProgram */
+
    MUTEX_LOCKID(MTX_TLS_CHAIN);
-   tstate->prev = roottstate.prev;
+   tstate->prev = root_ts->prev;
    tstate->next = NULL;
-   roottstate.prev->next = tstate;
-   roottstate.prev = tstate;
+   root_ts->prev->next = tstate;
+   root_ts->prev = tstate;
    if (cp){
       cp->tstate = tstate;
       tstate->c = cp;

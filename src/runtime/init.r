@@ -154,6 +154,14 @@ struct region *curstring, *curblock;
 #ifdef HAVE_KEYWORD__THREAD
       UNICON_THREAD_LOCAL struct threadstate roottstate;
       UNICON_THREAD_LOCAL struct threadstate *curtstate;
+#ifndef MultiProgram
+      /*
+       * Chain anchor for tlschain_add / GC when roottstate is TLS: all pthreads
+       * must use this pointer (set once on main to &roottstate), not &roottstate
+       * literally, which would name each thread's own TLS slot.
+       */
+      struct threadstate *unicon_tlschain_root;
+#endif                                  /* !MultiProgram */
 #else                                   /* HAVE_KEYWORD__THREAD */
       struct threadstate roottstate;
 #endif                                  /* HAVE_KEYWORD__THREAD */
@@ -1038,6 +1046,9 @@ Deliberate Syntax Error
    roottstate.next = NULL;
    mainhead->isProghead = 1;
    mainhead->tstate = &roottstate;
+#if defined(HAVE_KEYWORD__THREAD) && !defined(MultiProgram)
+   unicon_tlschain_root = &roottstate;
+#endif                                  /* HAVE_KEYWORD__THREAD && !MultiProgram */
 #endif                                  /* Concurrent */
 }
 #endif                                  /* PthreadCoswitch */
@@ -2008,6 +2019,16 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    init_progstate(pstate);
 
    init_threadstate(tstate);
+#if defined(HAVE_KEYWORD__THREAD) && defined(MultiProgram)
+   /*
+    * tlschain_add() anchors the TLS threadstate chain from program->tstate.
+    * Main's roottstate gets roottstate.prev = &roottstate in icon_init();
+    * loaded programs must bootstrap the same way or the first tlschain_add
+    * (nctramp with pthread coswitch) dereferences NULL prev.
+    */
+   tstate->prev = tstate;
+   tstate->next = NULL;
+#endif                                  /* HAVE_KEYWORD__THREAD && MultiProgram */
    pstate->Kywd_time_elsewhere = millisec();
    pstate->Kywd_time_out = 0;
    pstate->Mainhead= ((struct b_coexpr *)pstate)-1;

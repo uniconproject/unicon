@@ -98,7 +98,11 @@ extern struct threadstate *global_curtstate;
 
 #ifndef HAVE_KEYWORD__THREAD
    extern pthread_key_t tstate_key;
-#endif
+#else                                   /* HAVE_KEYWORD__THREAD */
+#ifndef MultiProgram
+   extern struct threadstate *unicon_tlschain_root;
+#endif                                  /* !MultiProgram */
+#endif                                  /* HAVE_KEYWORD__THREAD */
 
 #if ConcurrentCOMPILER
 extern struct region *Public_stringregion;

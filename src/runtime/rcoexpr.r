@@ -1315,9 +1315,11 @@ void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
     * shared progstate threadstate (same memory main uses for chain links).
     */
    struct threadstate *root_ts = cp->program->tstate;
-#else                                   /* HAVE_KEYWORD__THREAD && MultiProgram */
+#elif defined(HAVE_KEYWORD__THREAD)
+   struct threadstate *root_ts = unicon_tlschain_root;
+#else                                   /* HAVE_KEYWORD__THREAD */
    struct threadstate *root_ts = &roottstate;
-#endif                                  /* HAVE_KEYWORD__THREAD && MultiProgram */
+#endif                                  /* HAVE_KEYWORD__THREAD variants */
 
    MUTEX_LOCKID(MTX_TLS_CHAIN);
    tstate->prev = root_ts->prev;

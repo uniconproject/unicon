@@ -89,8 +89,19 @@ pinit.o: $(PP_DIR)pinit.c $(P_DOT_H)
 # The following entry is to help everyone remember how to run the
 # merr program when it is needed.
 #
+# Build uni/unicon/merr first (cd ../../uni/unicon && unicon -s merr.icn).
+# Run from this directory with urtt already built (make urtt).  With only the
+# driver name below, merr defaults the fragment suffix file to m_err.c (-B).
+# Optionally pass a second path to override that suffix.
+# The historical name is "rtt"; the binary is ./urtt.  Pass -r so
+# headers resolve when merr invokes the driver from varying cwd, for example:
+#   ../../uni/unicon/merr -B -F "yylval.t->fname" -I rtt.h -L "yylval.t->line" \
+#       -T "yylval.t->image" -s "make urtt$(EXE)" ./urtt -r ../../bin/
+# After regeneration, set yymaxstate and errtab[] size to match YYNSTATES in
+# rttparse.c (see yyerror.c header comment).
+#
 yyerror.c:
-	merr -B -F "yylval.t->fname" -I rtt.h -L "yylval.t->line" -T "yylval.t->image" rtt foo.r
+	merr -B -F "yylval.t->fname" -I rtt.h -L "yylval.t->line" -T "yylval.t->image" rtt
 
 #
 # The following entry is commented out because it is not normally

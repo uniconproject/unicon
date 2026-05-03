@@ -728,6 +728,7 @@ int checkOpenConsole( FILE *w, char *s );
        */
       struct ucgc *sdl_gc       (wbp w);
       int       sdl_displaysize (int which);
+      int       sdl_delay       (int n);
       wdp       alc_display     (char *s);
       void      free_display    (wdp wd);
       void      unsetclip       (wbp w);

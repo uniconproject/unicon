@@ -4371,8 +4371,18 @@ function{0,1} delay(n)
       }
 
    inline {
+#ifdef SDLGraphics
+      /*
+       * Under X11 the server shows what was drawn and keeps windows
+       * alive while the program sleeps; the SDL backend shows canvases
+       * and handles window events itself, during the delay too.
+       */
+      if (sdl_delay(n) == Failed)
+        fail;
+#else                                   /* SDLGraphics */
       if (idelay(n) == Failed)
         fail;
+#endif                                  /* SDLGraphics */
 #ifdef Graphics
 {
 #if !ConcurrentCOMPILER

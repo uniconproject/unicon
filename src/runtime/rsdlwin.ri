@@ -592,6 +592,32 @@ int pollevent()
    }
 
 /*
+ * delay() while windows are open: keep handling window-system events
+ * during the delay, so windows stay responsive and repaint.
+ */
+int sdl_delay(int n)
+   {
+   struct usdl_event ev;
+   unsigned long deadline, now;
+   wsp ws;
+
+   if (wdsplys == NULL || n <= 0)
+      return idelay(n);
+   wflushall();
+   deadline = usdl_ticks() + n;
+   while ((now = usdl_ticks()) < deadline) {
+      if (usdl_wait(&ev, (int)(deadline - now))) {
+         handle_event(&ev);
+         while (usdl_poll(&ev))
+            handle_event(&ev);
+         for (ws = wstates; ws; ws = ws->next)
+            present(ws, 0);
+         }
+      }
+   return Succeeded;
+   }
+
+/*
  * Draw/erase the text cursor.  The cursor is xor-ed onto the canvas while
  * the program waits for input and removed before anything else happens.
  */

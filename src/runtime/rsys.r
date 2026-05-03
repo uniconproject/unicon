@@ -152,9 +152,9 @@ int getstrg(register char *buf, int maxi, dptr file)
       }
 #endif                                  /* Messaging */
 
-#ifdef XWindows
+#if defined(XWindows) || defined(SDLGraphics)
    wflushall();
-#endif                                  /* XWindows */
+#endif                                  /* XWindows || SDLGraphics */
 #if NT
    if (BlkD(*file,File)->status & Fs_Pipe) {
       if (feof(fd) || (fgets(buf, maxi, fd) == NULL)) {
@@ -363,9 +363,9 @@ word longread(char *s, int width,  word len, FILE *fd)
    word pos = ftell(fd);
 #endif                                  /* NT */
 
-#ifdef XWindows
+#if defined(XWindows) || defined(SDLGraphics)
    if (isatty(fileno(fd))) wflushall();
-#endif                                  /* XWindows */
+#endif                                  /* XWindows || SDLGraphics */
 
    while (len > 0) {
       n = fread(ts, width, (int)((len < MaxIn) ? len : MaxIn), fd);

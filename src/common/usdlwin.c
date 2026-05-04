@@ -42,6 +42,22 @@ static int sdl_ready;
 static char errbuf[512];
 
 /*
+ * On macOS, AppKit may only be used from the main thread, and SDL's
+ * Cocoa layer crashes otherwise.  There, calls from other threads that
+ * would touch the window system are refused (open) or deferred
+ * (events and presents happen when the main thread next polls).
+ * Elsewhere SDL is called from whichever thread asks, as Xlib is.
+ */
+static int offmain(void)
+{
+#ifdef __APPLE__
+   return sdl_ready && !SDL_IsMainThread();
+#else
+   return 0;
+#endif
+}
+
+/*
  * Translated events waiting to be returned (one SDL event can produce
  * several, e.g. a multi-character text input event).
  */
@@ -116,6 +132,11 @@ struct usdlwin *usdl_open(char *title, int x, int y, int w, int h,
    SDL_WindowFlags wf = 0;
 
    if (!usdl_init()) return NULL;
+   if (offmain()) {
+      snprintf(errbuf, sizeof(errbuf),
+               "windows can only be opened by the main thread");
+      return NULL;
+      }
    uw = calloc(1, sizeof(struct usdlwin));
    if (uw == NULL) return NULL;
    if (flags & USDL_RESIZABLE)  wf |= SDL_WINDOW_RESIZABLE;
@@ -150,8 +171,16 @@ struct usdlwin *usdl_open(char *title, int x, int y, int w, int h,
       SDL_SetWindowPosition(uw->win,
          x == USDL_POS_UNDEFINED ? (int)SDL_WINDOWPOS_UNDEFINED : x,
          y == USDL_POS_UNDEFINED ? (int)SDL_WINDOWPOS_UNDEFINED : y);
-   if (!(flags & USDL_HIDDEN))
+   if (!(flags & USDL_HIDDEN)) {
       SDL_ShowWindow(uw->win);
+      /*
+       * A program started from a terminal is not the active
+       * application on macOS; bring its new window to the front, as
+       * a window manager does for a new X11 window.
+       */
+      if (!(flags & USDL_MINIMIZED))
+         SDL_RaiseWindow(uw->win);
+      }
    SDL_StartTextInput(uw->win);
    return uw;
 }
@@ -249,7 +278,7 @@ void usdl_present(struct usdlwin *uw, struct ucanvas *c, int force)
    int ww, wh;
    SDL_FRect r;
 
-   if (uw == NULL || c == NULL) return;
+   if (uw == NULL || c == NULL || offmain()) return;
    if (!c->dirty && !uw->redraw) return;
    now = SDL_GetTicks();
    if (!force && now - uw->last_present < 30) return;
@@ -689,7 +718,7 @@ static void translate(SDL_Event *e)
 int usdl_poll(struct usdl_event *ev)
 {
    SDL_Event e;
-   if (!sdl_ready) return 0;
+   if (!sdl_ready || offmain()) return 0;
    for (;;) {
       while (pop_event(ev))
          if (ev->type != USDL_EV_NONE) return 1;
@@ -706,6 +735,10 @@ int usdl_wait(struct usdl_event *ev, int timeout_ms)
    SDL_Event e;
    Uint64 deadline = SDL_GetTicks() + (timeout_ms < 0 ? 0 : timeout_ms);
    if (!sdl_ready) return 0;
+   if (offmain()) {                     /* the main thread gets events */
+      SDL_Delay((timeout_ms < 0 || timeout_ms > 10) ? 10 : timeout_ms);
+      return 0;
+      }
    for (;;) {
       Sint32 left;
       while (pop_event(ev))

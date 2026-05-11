@@ -6,22 +6,31 @@
 #
 
 procedure main()
+   local muType
+
    if not (&features == "concurrent threads") then
       stop("This program requires concurrent threads.")
 
    write("Testing mutex functions..")
    write(" calling mutex()...")
    x := mutex()
-   write("mutex() returned x=", image(x), " This is",
-         if integer(x)>0 then "" else " NOT", " OK" )
+   muType := type(x)
+   writes("mutex() returned a value of type ",muType, " This is ")
+   if muType == "integer" & x > 0 then {
+      write("OK")
+   } else {
+      write("NOT OK (value is ", integer(x) | "not an integer", ")")
+      write("Test failed")
+      return
+   }
    write()
    write(" calling lock(x)...")
    y:=lock(x)
-   write("lock(x) returned y=", image(y))
+   write("lock(x) returned ", if y = x then "x" else image(y))
    write()
    write(" calling unlock(x)...")
    y:=unlock(x)
-   write("unlock(x) returned y=", image(y))
+   write("unlock(x) returned ", if y = x then "x" else image(y))
    write()
    write("Done! exiting peacefully...")
 end

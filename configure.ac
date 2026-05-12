@@ -573,6 +573,43 @@ if test "x$orig_cxxflags" != "x" ; then
   CXXFLAGS="$CXXFLAGS $orig_cxxflags"
 fi
 
+dnl When concurrency is enabled, prefer compiler TLS for curtstate (faster than
+dnl pthread_getspecific on hot paths). HAVE_KEYWORD__THREAD is the legacy name.
+dnl Run after CFLAGS are finalized so e.g. -std=c11 is visible to the probe.
+if test "x$concurrency" != "xno"; then
+  AC_CACHE_CHECK([for C11 _Thread_local],
+    [ac_cv_c11_thread_local],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_SOURCE([[
+static _Thread_local int utls_x;
+int main(void) { utls_x = 1; return utls_x; }
+]])],
+      [ac_cv_c11_thread_local=yes],
+      [ac_cv_c11_thread_local=no])])
+  if test "x$ac_cv_c11_thread_local" = "xyes"; then
+    AC_DEFINE([HAVE_KEYWORD__THREAD], [1],
+      [Define if compiler TLS is used for per-thread curtstate (not pthread_getspecific)])
+    AC_DEFINE_UNQUOTED([UNICON_THREAD_LOCAL], [_Thread_local],
+      [Storage class for per-thread curtstate/roottstate])
+  else
+    AC_CACHE_CHECK([for GNU __thread],
+      [ac_cv_gnu___thread],
+      [AC_COMPILE_IFELSE(
+        [AC_LANG_SOURCE([[
+static __thread int utls_y;
+int main(void) { utls_y = 1; return utls_y; }
+]])],
+        [ac_cv_gnu___thread=yes],
+        [ac_cv_gnu___thread=no])])
+    if test "x$ac_cv_gnu___thread" = "xyes"; then
+      AC_DEFINE([HAVE_KEYWORD__THREAD], [1],
+        [Define if compiler TLS is used for per-thread curtstate])
+      AC_DEFINE_UNQUOTED([UNICON_THREAD_LOCAL], [__thread],
+        [Storage class for per-thread curtstate/roottstate])
+    fi
+  fi
+fi
+
 if test x"$debug" = x"yes" ; then
   STRIP="@\#strip"
 else

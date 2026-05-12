@@ -85,7 +85,7 @@ extern word maxmutexes;
 extern pthread_mutexattr_t rmtx_attr;
 
 extern pthread_t GCthread;
-extern int thread_call;
+extern atomic_int thread_call;
 extern int NARthreads;
 
 extern pthread_cond_t **condvars;
@@ -98,7 +98,11 @@ extern struct threadstate *global_curtstate;
 
 #ifndef HAVE_KEYWORD__THREAD
    extern pthread_key_t tstate_key;
-#endif
+#else                                   /* HAVE_KEYWORD__THREAD */
+#ifndef MultiProgram
+   extern struct threadstate *unicon_tlschain_root;
+#endif                                  /* !MultiProgram */
+#endif                                  /* HAVE_KEYWORD__THREAD */
 
 #if ConcurrentCOMPILER
 extern struct region *Public_stringregion;
@@ -221,11 +225,8 @@ extern struct descrip amperErrno;
 
 #ifdef Concurrent
    #ifdef HAVE_KEYWORD__THREAD
-   /*
-    * HAVE_KEYWORD__THREAD should be detected by autoconf (and isn't yet).
-    */
-   extern __thread struct threadstate roottstate;
-   extern __thread struct threadstate *curtstate;
+   extern UNICON_THREAD_LOCAL struct threadstate roottstate;
+   extern UNICON_THREAD_LOCAL struct threadstate *curtstate;
    #else                                        /* HAVE_KEYWORD__THREAD */
    extern struct threadstate roottstate;
    #endif                                       /* HAVE_KEYWORD__THREAD */

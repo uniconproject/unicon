@@ -1216,6 +1216,13 @@ int c_walk(struct node *n, int indent, int brace)
                   c_walk(n1, indent, 0);
                prt_str(")", indent);
                return 1;
+            case Atomic:
+               /* C11 atomic-type-specifier: _Atomic ( type-name ) */
+               prt_tok(t, indent);
+               prt_str("(", indent);
+               c_walk(n->u[0].child, indent, 0);
+               prt_str(")", indent);
+               return 1;
             case '{':
                /*
                 * Initializer list.

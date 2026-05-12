@@ -524,8 +524,28 @@ int co_chng(struct b_coexpr *ncp,
     * this by using the global, k_current, but that's not global anymore.
     */
 #ifdef PthreadCoswitch
+#ifdef HAVE_KEYWORD__THREAD
+   /*
+    * Native coswitch may not preserve the TLS curtstate register; sync from
+    * global_curtstate when set.  After TURN_ON_CONCURRENT(), global_curtstate
+    * is NULL while native coswitch still runs on one OS thread — recover from
+    * the active co-expression's tstate (same role as pthread_getspecific below).
+    */
+   if (global_curtstate != NULL)
+      curtstate = global_curtstate;
+   else {
+      struct b_coexpr *const kce = (struct b_coexpr *)BlkLoc(k_current);
+      if (kce != NULL && kce->tstate != NULL)
+         curtstate = kce->tstate;
+      else {
+         /* global_curtstate NULL and no usable kce->tstate: keep TLS curtstate.
+          * It is already correct for this resume (set earlier in co_chng where needed). */
+         }
+      }
+#else                                   /* HAVE_KEYWORD__THREAD */
    curtstate =  global_curtstate ? global_curtstate :
       pthread_getspecific(tstate_key);
+#endif                                  /* HAVE_KEYWORD__THREAD */
 #endif                                  /* PthreadCoswitch */
 
    return BlkD(k_current,Coexpr)->coexp_act;
@@ -758,13 +778,16 @@ void makesem(struct b_coexpr *cp) {
 
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
 pthread_key_t tstate_key;
-struct threadstate * alloc_tstate()
+#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+
+#if defined(Concurrent)
+struct threadstate *alloc_tstate(void)
 {
    struct threadstate *ts = malloc(sizeof(struct threadstate));
    if (ts == NULL) syserr("alloc_tstate(): Out of memory");
    return ts;
 }
-#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent */
 
 /*
  * nctramp() -- trampoline for calling new_context(0,0).
@@ -775,7 +798,9 @@ void *nctramp(void *arg)
 #ifdef Concurrent
 /*   sigset_t mask; */
 
-#ifndef HAVE_KEYWORD__THREAD
+#ifdef HAVE_KEYWORD__THREAD
+   curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
+#else                                   /* HAVE_KEYWORD__THREAD */
     struct threadstate *curtstate;
     curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
     pthread_setspecific(tstate_key, (void *) curtstate);
@@ -838,7 +863,7 @@ void *nctramp(void *arg)
 
 pthread_mutexattr_t rmtx_attr;  /* recursive mutex attr ready to be used */
 pthread_t TCthread;
-int thread_call;
+atomic_int thread_call;
 int NARthreads;
 pthread_cond_t cond_tc;
 
@@ -1042,7 +1067,7 @@ void thread_control(int action)
                MUTEX_LOCKID(MTX_NARTHREADS);
                NARthreads--;
                MUTEX_UNLOCKID(MTX_NARTHREADS);
-               CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+               CV_WAIT_ON_EXPR(atomic_load_explicit(&thread_call, memory_order_relaxed), &cond_tc, MTX_COND_TC);
                MUTEX_UNLOCKID(MTX_COND_TC);
 
                /*
@@ -1075,7 +1100,7 @@ void thread_control(int action)
             /* wake up another TCthread and go to sleep */
             sem_post(sem_tcp);
 
-            CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+            CV_WAIT_ON_EXPR(atomic_load_explicit(&thread_call, memory_order_relaxed), &cond_tc, MTX_COND_TC);
 
             MUTEX_UNLOCKID(MTX_COND_TC);
 
@@ -1092,7 +1117,7 @@ void thread_control(int action)
           * reset (post) sem_gc to be ready for the next GC round
           */
 
-         thread_call = 0;
+         atomic_store_explicit(&thread_call, 0, memory_order_relaxed);
          NARthreads++;
          sem_post(sem_tcp);
          action_in_progress = TC_NONE;
@@ -1183,7 +1208,7 @@ void thread_control(int action)
          MUTEX_LOCKID(MTX_THREADCONTROL);
 
          TCthread = pthread_self();
-         thread_call = 1;
+         atomic_store_explicit(&thread_call, 1, memory_order_relaxed);
          /* NARthreads should reach and stay at zero during TC*/
          while (1) {
             MUTEX_LOCKID(MTX_NARTHREADS);
@@ -1217,7 +1242,7 @@ void thread_control(int action)
          }
       case TC_KILLALLTHREADS:{
          /* wait until only this thread is running  */
-         thread_call = 1;
+         atomic_store_explicit(&thread_call, 1, memory_order_relaxed);
          action_in_progress = action;
          while (1) {
             if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
@@ -1283,11 +1308,24 @@ void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
  * program root tstate, ie. tstate->pstate->tstate
  * GC should know about this change as well
  */
+#if defined(HAVE_KEYWORD__THREAD) && defined(MultiProgram)
+   /*
+    * roottstate is compiler TLS: each pthread has its own instance; only the
+    * main thread's was initialized in icon_init().  Anchor the chain from the
+    * shared progstate threadstate (same memory main uses for chain links).
+    */
+   struct threadstate *root_ts = cp->program->tstate;
+#elif defined(HAVE_KEYWORD__THREAD)
+   struct threadstate *root_ts = unicon_tlschain_root;
+#else                                   /* HAVE_KEYWORD__THREAD */
+   struct threadstate *root_ts = &roottstate;
+#endif                                  /* HAVE_KEYWORD__THREAD variants */
+
    MUTEX_LOCKID(MTX_TLS_CHAIN);
-   tstate->prev = roottstate.prev;
+   tstate->prev = root_ts->prev;
    tstate->next = NULL;
-   roottstate.prev->next = tstate;
-   roottstate.prev = tstate;
+   root_ts->prev->next = tstate;
+   root_ts->prev = tstate;
    if (cp){
       cp->tstate = tstate;
       tstate->c = cp;

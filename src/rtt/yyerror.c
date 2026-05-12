@@ -6,14 +6,14 @@
  * parser state index is in range for _yyerror's errtab lookup.  Slots without
  * merr-generated rows remain zero-initialized; see yyerror_init below.
  */
-int yyerror_isinitialized, yymaxstate = 842;
+int yyerror_isinitialized, yymaxstate = 848;
 struct errtable {
    int i;
    union {
       char *msg;
       struct errtable *p;
       } u;
-   } errtab[843];
+   } errtab[849];
 void yyerror_init()
 {
    errtab[167].i = 1;

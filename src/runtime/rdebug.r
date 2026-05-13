@@ -669,6 +669,51 @@ extern struct b_proc *opblks[];
          nargs = xnargs;
          if (xargp[0].dword == D_Proc) {
             bp = BlkD(*xargp, Proc);
+            /*
+             * Preprocessor assert / assert_not use runerr(219/220, expr_string).
+             * Optional label is concatenated after char(30) (see preproce.icn).
+             * Show a source-like line instead of runerr(219,...).
+             */
+            if (bp && StrLen(bp->pname) == 6 &&
+                !strncmp(StrLoc(bp->pname), "runerr", 6) &&
+                nargs >= 2 && (k_errornumber == 219 || k_errornumber == 220)) {
+               dptr a2 = xargp + 2;
+               if (is:string(*a2)) {
+                  if (k_errornumber == 219)
+                     fprintf(f, "assert(");
+                  else
+                     fprintf(f, "assert_not(");
+                  {
+                     word slen = StrLen(*a2);
+                     char *spexpr = StrLoc(*a2);
+                     word i;
+                     for (i = 0; i < slen; i++)
+                        if ((unsigned char)spexpr[i] == 30)
+                           break;
+                     if (i < slen) {
+                        if (i > 0)
+                           fwrite(spexpr, sizeof(char), (size_t)i, f);
+                        fprintf(f, ", \"");
+                        {
+                           word j;
+                           for (j = i + 1; j < slen; j++) {
+                              char c = spexpr[j];
+                              if (c == '"' || c == '\\')
+                                 putc('\\', f);
+                              putc(c, f);
+                              }
+                        }
+                        fprintf(f, "\"");
+                        }
+                     else {
+                        if (slen > 0)
+                           fwrite(spexpr, sizeof(char), (size_t)slen, f);
+                        }
+                  }
+                  fprintf(f, ")");
+                  break;
+               }
+               }
             if (bp)
             putstr(f, &(bp->pname));
             else fprintf(f,"???");

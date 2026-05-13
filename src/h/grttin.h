@@ -386,6 +386,13 @@ typedef int va_list, siptr;
    typedef int XRectangle, XPoint, XSegment, XArc, SysColor, LinearColor;
    typedef int LONG, SHORT;
 
+   #ifdef GraphicsGL
+   #ifdef HAVE_LIBFREETYPE
+   typedef int FT_Library, FT_Face, FT_CharMap, FT_GlyphSlot, FT_Bitmap;
+   typedef int FT_Matrix, FT_Vector;
+   #endif                               /* HAVE_LIBFREETYPE */
+   #endif                               /* GraphicsGL */
+
    #ifdef XWindows
       typedef int Atom, Time, XSelectionEvent, XErrorEvent, XErrorHandler;
       typedef int XGCValues, XColor, XFontStruct, XWindowAttributes, XEvent;
@@ -547,7 +554,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
  */
    #begdef EnsureWindow3D(w)
    {
-     if (w->context->is_3D == 0) {
+     if (w->context->rendermode == UGL2D) {
        if (warg == 0)
          runerr(150, kywd_xwin[XKey_Window]);
        else
@@ -594,7 +601,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
    typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean, GLenum;
    typedef int XWindowChanges, XStandardColormap, XMappingEvent, _GLUfuncptr;
    typedef int GLXContext, GLUquadricObj, GLUtesselator, GLubyte, GLuint;
-   typedef int GLXFBConfig, GLXWindow;
+   typedef int GLXFBConfig, GLXWindow, GLXPixmap, GLXPbuffer;
 #ifdef MSWindows
    typedef int HGLRC, PIXELFORMATDESCRIPTOR;
 #endif

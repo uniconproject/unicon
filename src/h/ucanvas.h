@@ -51,11 +51,17 @@
 #define UC_FONT_TYPEWRITER      32
 
 /*
- * The pixel buffer.  Pixels are 0x00RRGGBB, row-major, stride == width.
- * dirty and the bounding box track what changed since the last present.
+ * The pixel buffer.  Coordinates are logical pixels (Unicon's); each
+ * logical pixel is scale x scale device pixels, so a canvas shown on a
+ * high-density (Retina) display keeps Unicon's geometry while text is
+ * rendered at the display's resolution.  px holds pw x ph device
+ * pixels, 0x00RRGGBB, row-major.  dirty and the bounding box (logical
+ * pixels) track what changed since the last present.
  */
 struct ucanvas {
-   int width, height;
+   int width, height;                   /* logical size */
+   int scale;                           /* device pixels per logical */
+   int pw, ph;                          /* device size */
    unsigned int *px;
    int dirty;
    int dx0, dy0, dx1, dy1;              /* dirty box, inclusive */
@@ -83,8 +89,11 @@ struct ucpoint {
 struct ucfont;
 
 /*
- * Canvas management.
+ * Canvas management.  uc_set_scale sets the scale of canvases and
+ * fonts created afterwards (1 to 4; 1 unless a display needs more).
  */
+void uc_set_scale(int scale);
+int  uc_get_scale(void);
 struct ucanvas *uc_canvas_new(int width, int height, unsigned int bg);
 void uc_canvas_free(struct ucanvas *c);
 int  uc_canvas_resize(struct ucanvas *c, int width, int height,

@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <stdint.h>
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
@@ -68,22 +70,69 @@ static int iclamp(double v)
  * ------------------------------------------------------------------
  */
 
+static int dscale = 1;                  /* scale for new canvases/fonts */
+
+void uc_set_scale(int scale)
+{
+   if (scale < 1) scale = 1;
+   if (scale > 4) scale = 4;
+   dscale = scale;
+}
+
+int uc_get_scale(void)
+{
+   return dscale;
+}
+
+/*
+ * Bytes for a width x height canvas at this scale, or 0 if that does
+ * not fit.  pw * ph * sizeof(unsigned int) wraps a 32-bit size_t for a
+ * 16384 square at scale 2, and malloc(0) would then be written past.
+ * On success *pw and *ph are the device size.
+ */
+static size_t canvas_bytes(int width, int height, int scale, int *pw, int *ph)
+{
+   long long a, b, n;
+
+   if (scale < 1) scale = 1;
+   a = (long long)width * scale;
+   b = (long long)height * scale;
+   if (a < 1 || b < 1 || a > INT_MAX || b > INT_MAX || a > LLONG_MAX / b)
+      return 0;
+   n = a * b;
+   /*
+    * SIZE_MAX does not fit in a signed long long, so cast it only after
+    * the division.  (long long)SIZE_MAX is -1, and every canvas was rejected.
+    */
+   if (n > LONG_MAX ||
+       (unsigned long long)n > SIZE_MAX / sizeof(unsigned int))
+      return 0;
+   *pw = (int)a;
+   *ph = (int)b;
+   return (size_t)n * sizeof(unsigned int);
+}
+
 struct ucanvas *uc_canvas_new(int width, int height, unsigned int bg)
 {
    struct ucanvas *c;
    long i, n;
+   size_t nbytes;
+   int pw, ph;
 
    if (width < 1) width = 1;
    if (height < 1) height = 1;
    c = calloc(1, sizeof(struct ucanvas));
    if (c == NULL)
       return NULL;
-   n = (long)width * height;
-   c->px = malloc(n * sizeof(unsigned int));
-   if (c->px == NULL) {
+   c->scale = dscale;
+   nbytes = canvas_bytes(width, height, c->scale, &pw, &ph);
+   if (nbytes == 0 || (c->px = malloc(nbytes)) == NULL) {
       free(c);
       return NULL;
       }
+   c->pw = pw;
+   c->ph = ph;
+   n = (long)pw * ph;
    for (i = 0; i < n; i++)
       c->px[i] = bg & RGBMASK;
    c->width = width;
@@ -111,25 +160,31 @@ int uc_canvas_resize(struct ucanvas *c, int width, int height,
                      unsigned int bg)
 {
    unsigned int *np;
-   int x, y;
+   int x, y, pw, ph;
+   size_t nbytes;
 
    if (width < 1) width = 1;
    if (height < 1) height = 1;
    if (width == c->width && height == c->height)
       return 1;
-   np = malloc((long)width * height * sizeof(unsigned int));
+   nbytes = canvas_bytes(width, height, c->scale, &pw, &ph);
+   if (nbytes == 0)
+      return 0;
+   np = malloc(nbytes);
    if (np == NULL)
       return 0;
-   for (y = 0; y < height; y++) {
-      unsigned int *row = np + (long)y * width;
-      for (x = 0; x < width; x++)
-         row[x] = (x < c->width && y < c->height) ?
-            c->px[(long)y * c->width + x] : (bg & RGBMASK);
+   for (y = 0; y < ph; y++) {
+      unsigned int *row = np + (long)y * pw;
+      for (x = 0; x < pw; x++)
+         row[x] = (x < c->pw && y < c->ph) ?
+            c->px[(long)y * c->pw + x] : (bg & RGBMASK);
       }
    free(c->px);
    c->px = np;
    c->width = width;
    c->height = height;
+   c->pw = pw;
+   c->ph = ph;
    c->dirty = 1;
    c->dx0 = c->dy0 = 0;
    c->dx1 = width - 1;
@@ -234,32 +289,40 @@ static void hspan(struct ucanvas *c, struct ucgc *gc, struct clip *cl,
                   int y, int x0, int x1, int which)
 {
    unsigned int *row, color;
-   int x, op = gc->op;
+   int x, k, dy, s = c->scale, op = gc->op;
 
    if (y < cl->y0 || y >= cl->y1) return;
    if (x0 < cl->x0) x0 = cl->x0;
    if (x1 >= cl->x1) x1 = cl->x1 - 1;
    if (x0 > x1) return;
    mark(c, x0, y, x1, y);
-   row = c->px + (long)y * c->width;
    color = (which == 1) ? gc->fg : gc->bg;
 
-   if (gc->fillstyle == UC_FILL_SOLID || gc->patw <= 0) {
-      if (op == UC_OP_COPY) {
-         for (x = x0; x <= x1; x++) row[x] = color & RGBMASK;
+   /* each logical pixel is an s x s block of device pixels */
+   for (dy = 0; dy < s; dy++) {
+      row = c->px + (long)(y * s + dy) * c->pw;
+      if (gc->fillstyle == UC_FILL_SOLID || gc->patw <= 0) {
+         if (op == UC_OP_COPY) {
+            for (x = x0 * s; x < (x1 + 1) * s; x++) row[x] = color & RGBMASK;
+            }
+         else {
+            for (x = x0 * s; x < (x1 + 1) * s; x++)
+               row[x] = rop(op, color, row[x]);
+            }
          }
-      else {
-         for (x = x0; x <= x1; x++) row[x] = rop(op, color, row[x]);
+      else if (gc->fillstyle == UC_FILL_STIPPLED) {
+         for (x = x0; x <= x1; x++)
+            if (patbit(gc, x, y))
+               for (k = x * s; k < (x + 1) * s; k++)
+                  row[k] = rop(op, color, row[k]);
          }
-      }
-   else if (gc->fillstyle == UC_FILL_STIPPLED) {
-      for (x = x0; x <= x1; x++)
-         if (patbit(gc, x, y))
-            row[x] = rop(op, color, row[x]);
-      }
-   else {                                       /* opaque stipple */
-      for (x = x0; x <= x1; x++)
-         row[x] = rop(op, patbit(gc, x, y) ? gc->fg : gc->bg, row[x]);
+      else {                                    /* opaque stipple */
+         for (x = x0; x <= x1; x++) {
+            unsigned int col = patbit(gc, x, y) ? gc->fg : gc->bg;
+            for (k = x * s; k < (x + 1) * s; k++)
+               row[k] = rop(op, col, row[k]);
+            }
+         }
       }
 }
 
@@ -892,7 +955,7 @@ unsigned int uc_get_pixel(struct ucanvas *c, int x, int y)
 {
    if (x < 0 || y < 0 || x >= c->width || y >= c->height)
       return 0;
-   return c->px[(long)y * c->width + x];
+   return c->px[(long)y * c->scale * c->pw + (long)x * c->scale];
 }
 
 void uc_put_pixel(struct ucanvas *c, struct ucgc *gc, int x, int y,
@@ -900,24 +963,28 @@ void uc_put_pixel(struct ucanvas *c, struct ucgc *gc, int x, int y,
 {
    struct clip cl;
    unsigned int *p;
+   int i, j, s = c->scale;
    if (!getclip(c, gc, &cl)) return;
    if (x < cl.x0 || y < cl.y0 || x >= cl.x1 || y >= cl.y1) return;
-   p = c->px + (long)y * c->width + x;
-   *p = gc ? rop(gc->op, rgb, *p) : (rgb & RGBMASK);
+   for (j = 0; j < s; j++) {
+      p = c->px + (long)(y * s + j) * c->pw + (long)x * s;
+      for (i = 0; i < s; i++, p++)
+         *p = gc ? rop(gc->op, rgb, *p) : (rgb & RGBMASK);
+      }
    mark(c, x, y, x, y);
 }
 
 /*
- * Copy a w x h block from src at (sx,sy) to dst at (dx,dy).  The source
- * must already be clipped to src's bounds by the caller; the destination
- * is clipped here (canvas and gc clip).  Pixels are copied verbatim.
+ * Copy a w x h block from src at (sx,sy) to dst at (dx,dy).  The
+ * destination is clipped (canvas and gc clip), as is the source.
+ * Pixels are copied verbatim (device pixels, when the scales agree).
  */
 void uc_copy_area(struct ucanvas *src, int sx, int sy, int w, int h,
                   struct ucanvas *dst, struct ucgc *gc, int dx, int dy)
 {
    struct clip cl;
    unsigned int *tmp;
-   int j, x0, x1, y0, y1;
+   int i, j, x0, x1, y0, y1, s, ss, ds, tw, th;
 
    if (w <= 0 || h <= 0 || !getclip(dst, gc, &cl)) return;
    x0 = dx; y0 = dy; x1 = dx + w; y1 = dy + h;
@@ -932,17 +999,27 @@ void uc_copy_area(struct ucanvas *src, int sx, int sy, int w, int h,
    if (y1 > dy - sy + src->height) y1 = dy - sy + src->height;
    if (x0 >= x1 || y0 >= y1) return;
 
+   ss = src->scale; ds = dst->scale;
+   s = ds;                              /* work in destination pixels */
+   tw = (x1 - x0) * s; th = (y1 - y0) * s;
+
    /* go through a temporary buffer so overlapping copies work */
-   tmp = malloc((long)(x1 - x0) * (y1 - y0) * sizeof(unsigned int));
+   tmp = malloc((long)tw * th * sizeof(unsigned int));
    if (tmp == NULL) return;
-   for (j = y0; j < y1; j++)
-      memcpy(tmp + (long)(j - y0) * (x1 - x0),
-             src->px + (long)(j - dy + sy) * src->width + (x0 - dx + sx),
-             (x1 - x0) * sizeof(unsigned int));
-   for (j = y0; j < y1; j++)
-      memcpy(dst->px + (long)j * dst->width + x0,
-             tmp + (long)(j - y0) * (x1 - x0),
-             (x1 - x0) * sizeof(unsigned int));
+   for (j = 0; j < th; j++) {
+      long sy2 = (long)(y0 - dy + sy) * ss + (long)j * ss / ds;
+      unsigned int *srow = src->px + sy2 * src->pw;
+      if (ss == ds)
+         memcpy(tmp + (long)j * tw, srow + (long)(x0 - dx + sx) * ss,
+                tw * sizeof(unsigned int));
+      else
+         for (i = 0; i < tw; i++)
+            tmp[(long)j * tw + i] =
+               srow[(long)(x0 - dx + sx) * ss + (long)i * ss / ds];
+      }
+   for (j = 0; j < th; j++)
+      memcpy(dst->px + ((long)y0 * s + j) * dst->pw + (long)x0 * s,
+             tmp + (long)j * tw, tw * sizeof(unsigned int));
    free(tmp);
    mark(dst, x0, y0, x1 - 1, y1 - 1);
 }
@@ -953,6 +1030,12 @@ void uc_copy_area(struct ucanvas *src, int sx, int sy, int w, int h,
  * ------------------------------------------------------------------
  */
 
+/*
+ * Glyphs are rendered at the font's device resolution (scale device
+ * pixels per logical pixel); w, h, left and top are device pixels.  The
+ * advance is in logical pixels, rounded per glyph, so a string is as
+ * wide drawn in pieces as drawn whole.
+ */
 struct ucglyph {
    int loaded;
    int w, h, left, top, advance;
@@ -964,8 +1047,9 @@ struct ucfont {
    int refcount;
    char *path;
    int index, size, synth;              /* synth: 1 bold, 2 italic */
+   int scale;                           /* device pixels per logical */
    FT_Face face;
-   int ascent, descent, maxwidth;
+   int ascent, descent, maxwidth;       /* logical pixels */
    struct ucglyph glyphs[256];
    };
 
@@ -1387,7 +1471,7 @@ struct ucfont *uc_font_open(char *family, int flags, int size)
 
    for (f = fonts; f; f = f->next)
       if (f->size == size && f->index == index && f->synth == synth &&
-          !strcmp(f->path, path)) {
+          f->scale == dscale && !strcmp(f->path, path)) {
          FT_Done_Face(face);
          f->refcount++;
          return f;
@@ -1399,16 +1483,17 @@ struct ucfont *uc_font_open(char *family, int flags, int size)
    f->index = index;
    f->size = size;
    f->synth = synth;
+   f->scale = dscale;
    f->face = face;
    f->refcount = 1;
 
    if (FT_IS_SCALABLE(face))
-      FT_Set_Pixel_Sizes(face, 0, size);
+      FT_Set_Pixel_Sizes(face, 0, size * f->scale);
    else {
       int best = 0, j;                  /* bitmap font: nearest strike */
       for (j = 1; j < face->num_fixed_sizes; j++)
-         if (abs(face->available_sizes[j].height - size) <
-             abs(face->available_sizes[best].height - size))
+         if (abs(face->available_sizes[j].height - size * f->scale) <
+             abs(face->available_sizes[best].height - size * f->scale))
             best = j;
       FT_Select_Size(face, best);
       }
@@ -1419,8 +1504,10 @@ struct ucfont *uc_font_open(char *family, int flags, int size)
       FT_Set_Transform(face, &shear, NULL);
       }
 
-   f->ascent = ceil26(face->size->metrics.ascender);
-   f->descent = ceil26(-face->size->metrics.descender);
+   f->ascent = (ceil26(face->size->metrics.ascender) + f->scale - 1) /
+               f->scale;
+   f->descent = (ceil26(-face->size->metrics.descender) + f->scale - 1) /
+                f->scale;
    if (f->ascent + f->descent < size) {
       /* some fonts report tiny metrics; keep lines at least size tall */
       f->descent = size - f->ascent;
@@ -1451,6 +1538,7 @@ static struct ucglyph *glyph(struct ucfont *f, unsigned char ch)
    struct ucglyph *g = &f->glyphs[ch];
    FT_GlyphSlot slot;
    FT_UInt gi;
+   FT_Pos adv0;
    int r;
 
    if (g->loaded) return g;
@@ -1461,11 +1549,22 @@ static struct ucglyph *glyph(struct ucfont *f, unsigned char ch)
        != 0)
       return g;
    slot = f->face->glyph;
+   adv0 = slot->advance.x;
    if (f->synth & 1)
       FT_GlyphSlot_Embolden(slot);
    if (FT_Render_Glyph(slot, FT_RENDER_MODE_LIGHT) != 0)
       return g;
-   g->advance = (int)((slot->advance.x + 32) >> 6);
+   if (f->scale == 1)
+      g->advance = (int)((slot->advance.x + 32) >> 6);
+   else {
+      /*
+       * Use the unhinted advance scaled down, so text is as wide as it
+       * is on a standard-density display and layouts do not change.
+       */
+      double adv = slot->linearHoriAdvance / 65536.0 +
+                   (slot->advance.x - adv0) / 64.0;
+      g->advance = (int)floor(adv / f->scale + 0.5);
+      }
    if (ch < 32 || (ch >= 127 && ch < 160)) {
       g->advance = 0;                   /* control characters: invisible */
       return g;
@@ -1519,13 +1618,16 @@ int uc_text_width(struct ucfont *f, char *s, int n)
  * Draw n characters with the baseline at y, starting at x.  If image is
  * set, first fill the character cells with the background (as X11's
  * XDrawImageString does); image text always uses the copy operation.
+ *
+ * Glyphs are placed at logical positions but drawn at the canvas's
+ * device resolution, so text is sharp on high-density displays.
  */
 void uc_draw_text(struct ucanvas *c, struct ucgc *gc, struct ucfont *f,
                   int x, int y, char *s, int n, int image)
 {
    struct clip cl;
-   int i, gx, gy, op;
-   int blend;
+   int i, gx, gy, op, blend, cs = c->scale, fs = f->scale;
+   long dx0, dy0, dx1, dy1;             /* device clip, half-open */
 
    if (n <= 0 || !getclip(c, gc, &cl)) return;
    op = gc->op;
@@ -1540,19 +1642,25 @@ void uc_draw_text(struct ucanvas *c, struct ucgc *gc, struct ucfont *f,
       }
    blend = (op == UC_OP_COPY) &&
            (image || gc->fillstyle == UC_FILL_SOLID || gc->patw <= 0);
+   dx0 = (long)cl.x0 * cs; dx1 = (long)cl.x1 * cs;
+   dy0 = (long)cl.y0 * cs; dy1 = (long)cl.y1 * cs;
 
    for (i = 0; i < n; i++) {
       struct ucglyph *g = glyph(f, (unsigned char)s[i]);
-      int ox = x + g->left, oy = y - g->top;
-      for (gy = 0; gy < g->h; gy++) {
-         int py = oy + gy;
-         unsigned int *row;
-         if (py < cl.y0 || py >= cl.y1) continue;
-         row = c->px + (long)py * c->width;
-         for (gx = 0; gx < g->w; gx++) {
-            int px = ox + gx;
-            unsigned int a = g->bits[(long)gy * g->w + gx];
-            if (a == 0 || px < cl.x0 || px >= cl.x1) continue;
+      /* glyph origin in device pixels of the canvas */
+      long ox = (long)x * cs + (long)g->left * cs / fs;
+      long oy = (long)y * cs - (long)g->top * cs / fs;
+      long ex = ox + (long)g->w * cs / fs, ey = oy + (long)g->h * cs / fs;
+      long py, px;
+
+      for (py = (oy > dy0 ? oy : dy0); py < ey && py < dy1; py++) {
+         unsigned int *row = c->px + py * c->pw;
+         gy = (int)((py - oy) * fs / cs);
+         for (px = (ox > dx0 ? ox : dx0); px < ex && px < dx1; px++) {
+            unsigned int a;
+            gx = (int)((px - ox) * fs / cs);
+            a = g->bits[(long)gy * g->w + gx];
+            if (a == 0) continue;
             if (blend) {
                unsigned int d = row[px], fg = gc->fg, r, gg, b;
                r = ((d >> 16) & 255) * (255 - a) + ((fg >> 16) & 255) * a;
@@ -1562,24 +1670,26 @@ void uc_draw_text(struct ucanvas *c, struct ucgc *gc, struct ucfont *f,
                          (((gg + 127) / 255) << 8) | ((b + 127) / 255);
                }
             else if (a >= 128) {
-               if (gc->fillstyle == UC_FILL_STIPPLED && !patbit(gc, px, py))
+               int lx = (int)(px / cs), ly = (int)(py / cs);
+               if (gc->fillstyle == UC_FILL_STIPPLED && !patbit(gc, lx, ly))
                   continue;
                if (gc->fillstyle == UC_FILL_OPAQUESTIPPLED &&
-                   !patbit(gc, px, py))
+                   !patbit(gc, lx, ly))
                   row[px] = rop(op, gc->bg, row[px]);
                else
                   row[px] = rop(op, gc->fg, row[px]);
                }
             }
          }
-      if (g->h > 0)
-         mark(c, ox < 0 ? 0 : ox, oy < 0 ? 0 : oy,
-              ox + g->w - 1, oy + g->h - 1);
+      if (g->h > 0 && g->w > 0 && ex > dx0 && ox < dx1 && ey > dy0 &&
+          oy < dy1) {
+         long lx0 = (ox > dx0 ? ox : dx0) / cs, ly0 = (oy > dy0 ? oy : dy0) / cs;
+         long lx1 = ((ex < dx1 ? ex : dx1) - 1) / cs;
+         long ly1 = ((ey < dy1 ? ey : dy1) - 1) / cs;
+         mark(c, (int)lx0, (int)ly0, (int)lx1, (int)ly1);
+         }
       x += g->advance;
       }
-   /* keep the dirty box inside the canvas */
-   if (c->dx1 >= c->width) c->dx1 = c->width - 1;
-   if (c->dy1 >= c->height) c->dy1 = c->height - 1;
 }
 
 #else                                   /* SDLGraphics */

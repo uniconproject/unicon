@@ -87,6 +87,25 @@ char *usdl_error(void)
    return errbuf;
 }
 
+/*
+ * Device pixels per Unicon pixel: the primary display's pixel density
+ * (2 on a Retina display), or UNICON_SCALE if it is set.  Canvases are
+ * kept at this resolution so text is as sharp as the display allows.
+ */
+static int display_scale(void)
+{
+   const SDL_DisplayMode *m;
+   char *e = getenv("UNICON_SCALE");
+   int scale = 1;
+   if (e != NULL && *e)
+      scale = atoi(e);
+   else if ((m = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay())) != NULL)
+      scale = (int)(m->pixel_density + 0.5f);
+   if (scale < 1) scale = 1;
+   if (scale > 4) scale = 4;
+   return scale;
+}
+
 int usdl_init(void)
 {
    if (sdl_ready) return 1;
@@ -103,6 +122,7 @@ int usdl_init(void)
       return 0;
       }
    sdl_ready = 1;
+   uc_set_scale(display_scale());
    return 1;
 }
 
@@ -143,6 +163,7 @@ struct usdlwin *usdl_open(char *title, int x, int y, int w, int h,
    if (flags & USDL_BORDERLESS) wf |= SDL_WINDOW_BORDERLESS;
    if (flags & USDL_MINIMIZED)  wf |= SDL_WINDOW_MINIMIZED;
    if (flags & USDL_MAXIMIZED)  wf |= SDL_WINDOW_MAXIMIZED;
+   if (uc_get_scale() > 1)      wf |= SDL_WINDOW_HIGH_PIXEL_DENSITY;
    wf |= SDL_WINDOW_HIDDEN;             /* shown once positioned */
    if (w < 1) w = 1;
    if (h < 1) h = 1;
@@ -271,28 +292,31 @@ int usdl_state(struct usdlwin *uw)
  * uploaded.  Unless force is set, presents are limited to one every
  * 30ms per window; the canvas stays dirty and a later call shows it.
  * (WFlush() and waiting for an event force a present.)
+ *
+ * The canvas holds scale x scale device pixels per Unicon pixel; on a
+ * high-density display they map one to one onto the window's pixels.
  */
 void usdl_present(struct usdlwin *uw, struct ucanvas *c, int force)
 {
    Uint64 now;
-   int ww, wh;
-   SDL_FRect r;
+   int ww, wh, ow, oh, vw, vh, s = c ? c->scale : 1;
+   SDL_FRect src, dst;
 
    if (uw == NULL || c == NULL || offmain()) return;
    if (!c->dirty && !uw->redraw) return;
    now = SDL_GetTicks();
    if (!force && now - uw->last_present < 30) return;
 
-   if (uw->tex == NULL || uw->tw != c->width || uw->th != c->height) {
+   if (uw->tex == NULL || uw->tw != c->pw || uw->th != c->ph) {
       if (uw->tex) SDL_DestroyTexture(uw->tex);
       uw->tex = SDL_CreateTexture(uw->ren, SDL_PIXELFORMAT_XRGB8888,
-                                  SDL_TEXTUREACCESS_STREAMING,
-                                  c->width, c->height);
+                                  SDL_TEXTUREACCESS_STREAMING, c->pw, c->ph);
       if (uw->tex == NULL) return;
-      SDL_SetTextureScaleMode(uw->tex, SDL_SCALEMODE_NEAREST);
-      uw->tw = c->width;
-      uw->th = c->height;
-      SDL_UpdateTexture(uw->tex, NULL, c->px, c->width * 4);
+      SDL_SetTextureScaleMode(uw->tex, (s > 1) ? SDL_SCALEMODE_LINEAR :
+                                                 SDL_SCALEMODE_NEAREST);
+      uw->tw = c->pw;
+      uw->th = c->ph;
+      SDL_UpdateTexture(uw->tex, NULL, c->px, c->pw * 4);
       }
    else if (c->dirty) {
       SDL_Rect d;
@@ -300,20 +324,29 @@ void usdl_present(struct usdlwin *uw, struct ucanvas *c, int force)
       int x1 = c->dx1 >= c->width ? c->width - 1 : c->dx1;
       int y1 = c->dy1 >= c->height ? c->height - 1 : c->dy1;
       if (x0 <= x1 && y0 <= y1) {
-         d.x = x0; d.y = y0; d.w = x1 - x0 + 1; d.h = y1 - y0 + 1;
-         SDL_UpdateTexture(uw->tex, &d, c->px + (long)y0 * c->width + x0,
-                           c->width * 4);
+         d.x = x0 * s; d.y = y0 * s;
+         d.w = (x1 - x0 + 1) * s; d.h = (y1 - y0 + 1) * s;
+         SDL_UpdateTexture(uw->tex, &d,
+                           c->px + (long)d.y * c->pw + d.x, c->pw * 4);
          }
       }
    c->dirty = 0;
 
+   /* the visible part of the canvas, in Unicon pixels */
    SDL_GetWindowSize(uw->win, &ww, &wh);
+   if (!SDL_GetCurrentRenderOutputSize(uw->ren, &ow, &oh)) {
+      ow = ww; oh = wh;
+      }
+   vw = ww < c->width ? ww : c->width;
+   vh = wh < c->height ? wh : c->height;
+   src.x = 0; src.y = 0;
+   src.w = (float)(vw * s); src.h = (float)(vh * s);
+   dst.x = 0; dst.y = 0;
+   dst.w = (float)vw * ow / (ww > 0 ? ww : 1);
+   dst.h = (float)vh * oh / (wh > 0 ? wh : 1);
    SDL_SetRenderDrawColor(uw->ren, 0, 0, 0, 255);
    SDL_RenderClear(uw->ren);
-   r.x = 0; r.y = 0;
-   r.w = (float)(ww < c->width ? ww : c->width);
-   r.h = (float)(wh < c->height ? wh : c->height);
-   SDL_RenderTexture(uw->ren, uw->tex, &r, &r);
+   SDL_RenderTexture(uw->ren, uw->tex, &src, &dst);
    SDL_RenderPresent(uw->ren);
    uw->redraw = 0;
    uw->last_present = now;

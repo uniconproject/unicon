@@ -928,6 +928,8 @@ static int sdl_mapwindow(wbp w)
       }
    if (ws->windowlabel)
       usdl_set_title(ws->win, ws->windowlabel);
+   if (ws->iconpix)
+      usdl_set_icon(ws->win, ws->iconpix);
    if (ws->minwidth || ws->minheight)
       usdl_set_min_size(ws->win, ws->minwidth, ws->minheight);
    usdl_set_cursor(ws->win, ws->cursor);
@@ -1378,20 +1380,106 @@ int geticonpos(wbp w, char *s)
    return Succeeded;
    }
 
+#define XIMG_CLEAR 0x01000000U         /* a transparent (None) XPM pixel */
+static unsigned int *ximg_load(char *filename, unsigned int fg,
+                               unsigned int bg, int *width, int *height);
+
 /*
- * Window icons are not supported; remember the name for WAttrib.
+ * The window's icon: an image file (any format ReadImage() reads) or
+ * the contents of another window.
  */
+static struct ucanvas *iconcanvas(wbp w, char *filename)
+   {
+   struct imgdata imd;
+   struct ucanvas *c;
+   struct ucgc gc;
+   unsigned int *px;
+   int i, j, width, height;
+
+   uc_gc_init(&gc);
+   imd.format = UCOLOR_RGB;
+   imd.is_bottom_up = 0;
+   imd.paltbl = NULL;
+   imd.data = NULL;
+   if (readImage(filename, 0, &imd) == Succeeded) {
+      unsigned char *d = imd.data;
+      c = uc_canvas_new(imd.width, imd.height, (unsigned int)w->context->bg);
+      if (c) {
+         for (j = 0; j < imd.height; j++)
+            for (i = 0; i < imd.width; i++) {
+               unsigned int rgb;
+               if (imd.paltbl) {
+                  struct palentry *e = &imd.paltbl[*d++];
+                  if (!e->valid) continue;  /* transparent */
+                  /* file colors are already the ones to show */
+                  rgb = ((unsigned int)(e->clr.red >> 8) << 16) |
+                        ((unsigned int)(e->clr.green >> 8) << 8) |
+                        (unsigned int)(e->clr.blue >> 8);
+                  }
+               else {
+                  rgb = (d[0] << 16) | (d[1] << 8) | d[2];
+                  d += 3;
+                  }
+               uc_put_pixel(c, &gc, i, j, rgb);
+               }
+         }
+      free(imd.paltbl);
+      free(imd.data);
+      return c;
+      }
+
+   px = ximg_load(filename, (unsigned int)w->context->fg,
+                  (unsigned int)w->context->bg, &width, &height);
+   if (px == NULL) return NULL;
+   c = uc_canvas_new(width, height, (unsigned int)w->context->bg);
+   if (c)
+      for (j = 0; j < height; j++)
+         for (i = 0; i < width; i++)
+            if (px[(long)j * width + i] != XIMG_CLEAR)
+               uc_put_pixel(c, &gc, i, j, px[(long)j * width + i]);
+   free(px);
+   return c;
+   }
+
 int seticonimage(wbp w, dptr dp)
    {
+   tended char *tmp;
+   {
    wsp ws = w->window;
-   CURTSTATE();
-   if (!is:string(*dp)) return Failed;
+   struct ucanvas *c = NULL;
+   char *name;
+   struct ucgc gc;
+
+   if (is:file(*dp) && (BlkD(*dp,File)->status & Fs_Window)) {
+      wbp x = BlkLoc(*dp)->File.fd.wb;
+      struct ucanvas *src = x->window->pix;
+      if (src == NULL) return Failed;
+      uc_gc_init(&gc);
+      c = uc_canvas_new(src->width, src->height, 0xFFFFFF);
+      if (c == NULL) ReturnErrNum(305, RunError);
+      uc_copy_area(src, 0, 0, src->width, src->height, c, &gc, 0, 0);
+      name = x->window->windowlabel ? x->window->windowlabel : "";
+      }
+   else if (is:string(*dp)) {
+      if (!cnv:C_string(*dp, tmp))
+         ReturnErrVal(103, *dp, RunError);
+      if ((c = iconcanvas(w, tmp)) == NULL)
+         return Failed;
+      name = tmp;
+      }
+   else
+      return Failed;
+
    if (ws->iconimage) free(ws->iconimage);
-   ws->iconimage = malloc(StrLen(*dp) + 1);
-   if (ws->iconimage == NULL) ReturnErrNum(305, RunError);
-   strncpy(ws->iconimage, StrLoc(*dp), StrLen(*dp));
-   ws->iconimage[StrLen(*dp)] = '\0';
+   if ((ws->iconimage = salloc(name)) == NULL) {
+      uc_canvas_free(c);
+      ReturnErrNum(305, RunError);
+      }
+   if (ws->iconpix) uc_canvas_free(ws->iconpix);
+   ws->iconpix = c;
+   if (ws->win) usdl_set_icon(ws->win, c);
    return Succeeded;
+   }
    }
 
 /*
@@ -2599,8 +2687,6 @@ static int xpm_keycmp(const void *a, const void *b)
    return strncmp(*(char * const *)a, *(char * const *)b, xpm_cpp);
    }
 
-#define XIMG_CLEAR 0x01000000U         /* a transparent (None) pixel */
-
 /*
  * Load an XBM or XPM file as width x height pixels (0x00RRGGBB, or
  * XIMG_CLEAR): XBM 1 bits in fg and 0 bits in bg, XPM pixels in their
@@ -3180,6 +3266,10 @@ int free_window(wsp ws)
       if (ws->initialPix) {
          uc_canvas_free(ws->initialPix);
          ws->initialPix = NULL;
+         }
+      if (ws->iconpix) {
+         uc_canvas_free(ws->iconpix);
+         ws->iconpix = NULL;
          }
       if (ws->windowlabel) { free(ws->windowlabel); ws->windowlabel = NULL; }
       if (ws->iconlabel) { free(ws->iconlabel); ws->iconlabel = NULL; }

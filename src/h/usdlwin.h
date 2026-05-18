@@ -66,6 +66,7 @@ struct usdlwin *usdl_open(char *title, int x, int y, int w, int h,
                           int flags, void *owner);
 void usdl_close(struct usdlwin *win);
 void usdl_set_title(struct usdlwin *win, char *title);
+void usdl_set_icon(struct usdlwin *win, struct ucanvas *c);
 void usdl_set_position(struct usdlwin *win, int x, int y);
 void usdl_get_position(struct usdlwin *win, int *x, int *y);
 void usdl_set_size(struct usdlwin *win, int w, int h);

@@ -610,6 +610,7 @@ typedef struct _wstate {
   struct usdlwin *win;                  /* on-screen window, if any */
   struct ucanvas *pix;                  /* the canvas: all drawing goes here */
   struct ucanvas *initialPix;           /* image= contents, before mapping */
+  struct ucanvas *iconpix;              /* iconimage= contents */
   int           iconic;                 /* NormalState, IconicState, ... */
   int           iconx, icony;           /* icon position (recorded only) */
   int           cursor;                 /* usdl cursor shape */

@@ -239,6 +239,21 @@ void usdl_set_title(struct usdlwin *uw, char *title)
    SDL_SetWindowTitle(uw->win, buf);
 }
 
+/*
+ * Use the pixels of a canvas as the window's icon (on macOS, the
+ * application's Dock icon).
+ */
+void usdl_set_icon(struct usdlwin *uw, struct ucanvas *c)
+{
+   SDL_Surface *s;
+   if (uw == NULL || c == NULL || offmain()) return;
+   s = SDL_CreateSurfaceFrom(c->pw, c->ph, SDL_PIXELFORMAT_XRGB8888,
+                             c->px, c->pw * 4);
+   if (s == NULL) return;
+   SDL_SetWindowIcon(uw->win, s);
+   SDL_DestroySurface(s);
+}
+
 void usdl_set_position(struct usdlwin *uw, int x, int y)
 {
    SDL_SetWindowPosition(uw->win, x, y);

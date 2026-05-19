@@ -732,6 +732,12 @@ void f(dptr s, dptr d)
          }
 
       default: {
+#ifdef RngLibrary
+        if (CHECK_FLAG(s->dword, F_RngState)) {
+          /* Dereference &random */
+          *d = *s;
+        } else
+#endif					/* RngLibrary */
 #ifdef Arrays
          if (Offset(*s) > 0) {
             if (BlkLoc(*s)->Realarray.title == T_Realarray) {

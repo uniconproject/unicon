@@ -144,8 +144,8 @@
 
 %token  SND          /* @>       */
 %token  SNDBK        /* @>>      */
-%token  RCV          /* @<       */
-%token  RCVBK        /* @<<      */
+%token  RCV          /* <@       */
+%token  RCVBK        /* <<@      */
 
 %{
 

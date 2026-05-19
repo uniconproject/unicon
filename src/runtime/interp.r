@@ -1013,8 +1013,8 @@ L_astatic:
             DerefArg(2);
             Call_Cond(e_ofail);
 
-         case Op_Rcv:           /* e1 @< e2 */
-         case Op_RcvBk:         /* e1 @<< e2 */
+         case Op_Rcv:           /* e1 <@ e2 */
+         case Op_RcvBk:         /* e1 <<@ e2 */
          case Op_Snd:           /* e1 @> e2 */
          case Op_SndBk:         /* e1 @>> e2 */
             Setup_Op(2, e_ocall);

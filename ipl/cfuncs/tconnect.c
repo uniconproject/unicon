@@ -97,6 +97,9 @@ int tconnect(int argc, descriptor *argv)	/*: connect to TCP socket */
       Fail;
 
    /* return Icon file */
-   snprintf(filename, sizeof(filename), "%s:%d", hostname, port);
+   if (snprintf(filename, sizeof(filename), "%s:%d", hostname, port) >= (int)sizeof(filename)) {
+      fclose(fp);
+      Fail;
+      }
    RetFile(fp, Fs_Read | Fs_Write, filename);
    }

@@ -97,6 +97,6 @@ int tconnect(int argc, descriptor *argv)	/*: connect to TCP socket */
       Fail;
 
    /* return Icon file */
-   sprintf(filename, "%s:%d", hostname, port);
+   snprintf(filename, sizeof(filename), "%s:%d", hostname, port);
    RetFile(fp, Fs_Read | Fs_Write, filename);
    }

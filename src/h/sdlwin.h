@@ -104,6 +104,17 @@ typedef struct {
    double angle1, angle2;               /* radians, Unicon orientation */
    } XArc;
 
+/*
+ * Colors recently asked for, by display value, for Pixel().
+ */
+#define SDLCOLORS 1024
+#define SDLCOLORHASH(px) \
+   ((unsigned int)(((px) & 0xFFFFFF) * 2654435761U) >> 22)
+struct sdlcolor {
+   unsigned int pixel;
+   unsigned short r, g, b, used;
+   };
+
 #define STDLOCALS(w) \
    wcp wc = (w)->context; \
    wsp ws = (w)->window; \

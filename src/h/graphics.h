@@ -361,6 +361,7 @@ typedef struct _wdisplay {
 
 #ifdef SDLGraphics
   char          name[MAXDISPLAYNAME];
+  struct sdlcolor *colors;              /* colors asked for, for Pixel() */
 #endif                                  /* SDLGraphics */
 
 #ifdef XWindows

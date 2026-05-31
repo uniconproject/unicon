@@ -189,14 +189,34 @@ static void present(wsp ws, int force);
 static unsigned long sdl_rgb(wbp w, long r, long g, long b)
 {
    double gamma = w->context->gamma;
+   long r0 = r, g0 = g, b0 = b;
+   unsigned long px;
+   wdp wd = w->context->display;
+
    if (gamma != 1.0 && gamma > 0.0) {
       double inv = 1.0 / gamma;
       r = (long)(65535 * pow(r / 65535.0, inv));
       g = (long)(65535 * pow(g / 65535.0, inv));
       b = (long)(65535 * pow(b / 65535.0, inv));
       }
-   return ((unsigned long)(r >> 8) << 16) | ((unsigned long)(g >> 8) << 8) |
-          (unsigned long)(b >> 8);
+   px = ((unsigned long)(r >> 8) << 16) | ((unsigned long)(g >> 8) << 8) |
+        (unsigned long)(b >> 8);
+
+   /*
+    * Remember the color asked for, so that Pixel() reports it for this
+    * display value, as the X11 color table does.
+    */
+   if (wd->colors == NULL)
+      wd->colors = calloc(SDLCOLORS, sizeof(struct sdlcolor));
+   if (wd->colors) {
+      struct sdlcolor *e = &wd->colors[SDLCOLORHASH(px)];
+      e->pixel = (unsigned int)px;
+      e->r = (unsigned short)r0;
+      e->g = (unsigned short)g0;
+      e->b = (unsigned short)b0;
+      e->used = 1;
+      }
+   return px;
 }
 
 /*
@@ -2973,7 +2993,17 @@ int getpixel(wbp w, int x, int y, long *rv, char *s, struct imgmem *imem)
       c = w->context->bg;
    else
       c = uc_get_pixel(cv, x, y);
-   sdl_lcolor(w, c, &r, &g, &b);
+   {
+   wdp wd = w->context->display;
+   struct sdlcolor *e = wd->colors ? &wd->colors[SDLCOLORHASH(c)] : NULL;
+   if (e && e->used && e->pixel == c) {
+      r = e->r;
+      g = e->g;
+      b = e->b;
+      }
+   else
+      sdl_lcolor(w, c, &r, &g, &b);
+   }
    *rv = 1;
    sprintf(s, "%ld,%ld,%ld", r, g, b);
    return Succeeded;
@@ -3129,6 +3159,8 @@ void free_display(wdp wd)
    {
    wd->refcount--;
    if (wd->refcount <= 0) {
+      free(wd->colors);
+      wd->colors = NULL;
       GRFX_UNLINK(wd, wdsplys);
       }
    }

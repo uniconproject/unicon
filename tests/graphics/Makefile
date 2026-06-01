@@ -1,14 +1,35 @@
+#
+# Graphics tests that check pixels rather than look at a screen: drawing,
+# colors, events, and image file round trips.  The other programs here
+# (gpxtest.icn and friends) are run by hand; see README.
+#
+# SDL graphics runs on SDL's offscreen video driver, so these need no
+# display; X11 needs one ($DISPLAY).  Other window systems are skipped.
+#
 
-TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
+include ../Makedefs
 
-what:
-		@echo "what do you want to make?"
+GFXTESTS = gfxbasic imgrw
 
-Clean:
-		rm -f $(TARGETS) *.c *.h
+UCFEAT := $(shell $(UC) -features 2>/dev/null)
 
-clean:
-		@rm -f $(TARGETS) *.c *.h
+ifneq ($(findstring SDL graphics,$(UCFEAT)),)
+TARGETS = $(GFXTESTS)
+TEST_ENV = SDL_VIDEODRIVER=offscreen
+else
+ifneq ($(and $(findstring X Windows,$(UCFEAT)),$(DISPLAY)),)
+TARGETS = $(GFXTESTS)
+else
+skip:
+	@echo ""
+	@echo "Graphics tests need SDL graphics, or X11 with a display."
+	@echo "SKIP: graphics tests"
 
-distclean Dist-clean:
-		rm -f .*K* .emacs*
+TARGETS = skip
+endif
+endif
+
+# Test must be the first goal so `make -C graphics` runs the suite.
+Test: DoTest
+
+include ../Makefile.test

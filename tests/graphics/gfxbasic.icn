@@ -1,0 +1,109 @@
+#
+# Basic 2D drawing, checked pixel by pixel: shapes, drawing ops, clipping,
+# copying, patterns, image strings, colors and the event queue.
+#
+link enqueue
+
+global w, ref
+
+procedure main()
+   w := open("gfxbasic", "g", "size=60,40", "canvas=hidden", "bg=white",
+             "fg=black") | stop("no window")
+   ref := open("ref", "g", "size=1,1", "canvas=hidden") | stop("no window")
+   write("size ", WAttrib(w, "width"), "x", WAttrib(w, "height"))
+
+   FillRectangle(w, 10, 5, 7, 3)
+   report("fill", "black")
+   DrawLine(w, 2, 30, 12, 30)
+   DrawLine(w, 50, 2, 50, 9)
+   report("lines", "black")
+   EraseArea(w)
+   DrawRectangle(w, 20, 10, 5, 4)
+   report("rect", "black")
+   EraseArea(w)
+   DrawPoint(w, 0, 0, 59, 39, 30, 20)
+   report("points", "black")
+   EraseArea(w)
+
+   Fg(w, "red")
+   FillRectangle(w, 5, 5, 20, 10)
+   WAttrib(w, "drawop=reverse")
+   FillRectangle(w, 10, 8, 30, 20)
+   FillRectangle(w, 10, 8, 30, 20)
+   WAttrib(w, "drawop=copy")
+   report("reverse twice", "red")
+   EraseArea(w)
+
+   Clip(w, 10, 10, 8, 6)
+   FillRectangle(w)
+   Clip(w)
+   report("clip", "red")
+   CopyArea(w, 10, 10, 8, 6, 40, 30)
+   report("copy", "red")
+   EraseArea(w)
+
+   Fg(w, "blue")
+   WAttrib(w, "fillstyle=textured", "pattern=checkers")
+   FillRectangle(w, 0, 0, 16, 16)
+   WAttrib(w, "fillstyle=solid")
+   report("pattern", "blue")
+   EraseArea(w)
+
+   DrawImage(w, 3, 4, "4,c1,0123456789AB3210")
+   every c := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" |
+              "A" | "B" do
+      report("image " || c, PaletteColor("c1", c))
+   EraseArea(w)
+
+   every c := "black" | "white" | "red" | "dark green" | "light blue" |
+              "50,100,200" | "#c0ffee" | "medium purplish gray" do {
+      Fg(w, c)
+      DrawPoint(w, 1, 1)
+      write("color ", c, ": ", Fg(w), " ",
+            if near(Pixel(w, 1, 1, 1, 1), ColorValue(c)) then "ok"
+            else Pixel(w, 1, 1, 1, 1) || " is not " || ColorValue(c))
+      }
+
+   Enqueue(w, "a", 3, 4)
+   Enqueue(w, &lpress, 7, 8)
+   write("pending ", *Pending(w))
+   e := Event(w)
+   write("event ", image(e), " ", &x, ",", &y)
+   e := Event(w)
+   write("event ", image(e), " ", &x, ",", &y)
+   close(w)
+end
+
+# the number and bounding box of the pixels of color c
+procedure report(what, c)
+   local n, x, y, x0, y0, x1, y1, p
+   c := colorpixel(c)
+   n := 0
+   x := 0; y := 0
+   every p := Pixel(w) do {
+      if p == c then {
+         n +:= 1
+         /x0 := x1 := x; /y0 := y1 := y
+         x0 >:= x; x1 <:= x; y0 >:= y; y1 <:= y
+         }
+      if (x +:= 1) >= WAttrib(w, "width") then { x := 0; y +:= 1 }
+      }
+   write(what, ": ", n, " ", (\x0 || "," || y0 || "-" || x1 || "," || y1) | "")
+end
+
+# what Pixel() reports for a pixel drawn in color c
+procedure colorpixel(c)
+   Fg(ref, c)
+   DrawPoint(ref, 0, 0)
+   return Pixel(ref, 0, 0, 1, 1)
+end
+
+# are two colors the same, to within what a display can show?
+procedure near(c1, c2)
+   local a, b, i
+   a := []; c1 ? while put(a, tab(many(&digits))) do move(1)
+   b := []; c2 ? while put(b, tab(many(&digits))) do move(1)
+   every i := 1 to 3 do
+      if abs(a[i] - b[i]) > 3 then fail
+   return
+end

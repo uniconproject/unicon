@@ -1,0 +1,63 @@
+#
+# Round trips of window contents through the image file formats:
+# WriteImage() then ReadImage() into a second window must give back
+# every pixel (JPEG is lossy: only its size is checked).
+#
+procedure main()
+   w := open("imgrw", "g", "size=64,48", "canvas=hidden") | stop("no window")
+   paint(w)
+   r := open("back", "g", "size=64,48", "canvas=hidden") | stop("no window")
+   every f := "gif" | "bmp" | "png" | "jpg" | "xpm" do
+      roundtrip(w, r, f)
+
+   # XBM holds black and white only
+   Bg(w, "white")
+   EraseArea(w)
+   Fg(w, "black")
+   FillRectangle(w, 3, 2, 20, 9)
+   DrawLine(w, 0, 47, 63, 0)
+   FillCircle(w, 40, 30, 10)
+   roundtrip(w, r, "xbm")
+end
+
+procedure paint(w)
+   local i
+   Bg(w, "light gray")
+   EraseArea(w)
+   every i := 0 to 7 do {
+      Fg(w, ["red", "green", "blue", "yellow", "cyan", "magenta", "orange",
+             "dark gray"][i + 1])
+      FillRectangle(w, i * 8, 0, 8, 12)
+      DrawLine(w, 0, 14 + i, 63, 30 - i)
+      }
+   Fg(w, "black")
+   DrawCircle(w, 32, 34, 12)
+   Fg(w, "brown")
+   FillArc(w, 4, 30, 20, 16, 0, 3.0)
+   Fg(w, "white")
+   DrawRectangle(w, 44, 30, 16, 14)
+end
+
+procedure roundtrip(w, r, f)
+   local fn, n, a, i, p
+   if (f == "png" & not (&features == "PNG images")) |
+      (f == "jpg" & not (&features == "JPEG images")) then
+      return write(f, ": ok")           # not built in
+   fn := "local/imgrw." || f
+   WriteImage(w, fn) | return write(f, ": write failed")
+   Bg(r, "black")
+   EraseArea(r)
+   Fg(r, "black")                       # XBM 1 bits
+   Bg(r, "white")                       # XBM 0 bits
+   ReadImage(r, fn) | return write(f, ": read failed")
+   remove(fn)
+   if f == "jpg" then
+      return write(f, ": ok")
+   n := 0
+   a := []
+   every put(a, Pixel(w))
+   i := 0
+   every p := Pixel(r) do
+      if p ~== a[i +:= 1] then n +:= 1
+   write(f, ": ", if n = 0 then "ok" else n || " pixels differ")
+end

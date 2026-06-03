@@ -249,20 +249,18 @@ procedure add_way()
    local name
 
    repeat {
-      repeat {
-         if TextDialog("Add color:", "name", , 60) == "Cancel" then return
-         if \cw.table[dialog_value[1]] then {
-            Notice("Name is in use.")
-            next
-            }
-         name := dialog_value[1]
-         if ColorDialog("Choose color:") == "Cancel" then return
-         cw.table[name] := dialog_value
-         win_cw()
-         cw_touched := 1
-         next
-         }
-      }
+	  if TextDialog("Add color:", "name", , 60) == "Cancel" then return
+	  if \cw.table[dialog_value[1]] then {
+		 Notice("Name is in use.")
+		 next
+		 }
+	  name := dialog_value[1]
+	  if ColorDialog("Choose color:") == "Cancel" then return
+	  cw.table[name] := dialog_value
+	  win_cw()
+	  cw_touched := 1
+	  next
+	  }
 
 end
 
@@ -352,10 +350,6 @@ end
 
 procedure new_cw()
 
-   if /cw_touched then {
-	# ask if colorway is to be saved first
-      }
-
    cw := colorway(table())
    win_cw()
    cw_touched := &null
@@ -406,10 +400,6 @@ procedure save_cw_as()
 end
 
 procedure quit()
-
-   if \cw_touched then {
-				# ask for save if touched
-      }
 
    exit()
 

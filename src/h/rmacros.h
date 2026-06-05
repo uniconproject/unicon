@@ -1381,16 +1381,21 @@
    #define MTX_BLOCKTOTAL       35
    #define MTX_COLL             36
 
+#ifdef RngLibrary
+   #define MTX_RNG_CHAIN        37
 
-   /* This should be the last mutex, becasue it has special initialization*/
+   /* This should be the last mutex, because it has special initialization*/
+   #define MTX_INITIAL          38
+
+   /* total is:  */
+   #define NUM_STATIC_MUTEXES   39
+#else
+   /* This should be the last mutex, because it has special initialization*/
    #define MTX_INITIAL          37
-
 
    /* total is:  */
    #define NUM_STATIC_MUTEXES   38
-
-   /* used by wait4GC function*/
-
+#endif                                  /* RngLibrary */
 
    #define TC_NONE -1
 

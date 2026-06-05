@@ -255,6 +255,22 @@ unsigned char allchars[256] = {
    240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,
 };
 
+
+/*
+ * Definitions for loadable RNGs
+ *    rngDefInfo starts at "rngIcon" but may be changed by the main thread.
+ *    rngIconInfo is the default values for "rngIcon" and never changes thereafter
+ *                which gives an easy test for whether the RNG is the default.
+ *    New threads start with whatever is in rngDefInfo.
+ *    Each library's properties is stored in rngLibs.
+ */
+#ifdef RngLibrary
+struct rnglibchain *rngDefInfo;     /* Default properties of RNG */
+word rngIconId;
+struct descrip rngIconName;
+struct b_cons *rngLibs;         /* chain of loaded libraries */
+#endif                                  /* RngLibrary */
+
 /*
  * Run-time error numbers and text.
  */
@@ -394,6 +410,24 @@ struct errtab errtab[] = {
 
    500, "program malfunction",          /* for use by runerr() */
    600, "vidget usage error",           /* yeah! */
+
+#ifdef RngLibrary
+   700, "PRNG error 1",         /* Boilerplate error messages */
+   701, "PRNG error 2",         /* replaced by text from each */
+   702, "PRNG error 3",         /* library by calling the     */
+   703, "PRNG error 4",         /* getErrorText() routine.    */
+   704, "PRNG error 5",
+   /* Although only 5 are defined here, the putErrorCode routine
+    * assumes there might be up to 50, so don't use 700 .. 749
+    * for anything else. If any RNG wants more than 5 error messages,
+    * add some more boilerplate messages to the above.
+    */
+
+   750, "Library not loaded",
+   751, "Function not found in PRNG library",
+   752, "startRng() failed",
+
+#endif                                  /* RngLibrary */
 
 #ifdef PosixFns
    1040, "socket error",

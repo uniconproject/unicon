@@ -1,0 +1,850 @@
+\documentclass[letterpaper,12pt]{article}
+\usepackage{utr}
+\usepackage{graphicx}
+\usepackage{url}
+%
+\title{Extending Unicon's Random\\ Number Generator}
+\author{Don Ward}
+\trnumber{??}
+\date{2022-03-10}
+%
+\begin{document}
+\abstract{
+\affiliation{~}
+{
+  This report describes an experimental facility that allows the replacement
+  of Unicon's built-in random number generator with one or more alternatives.
+}
+}
+\maketitle
+%
+% The &random keyword is used a lot, so save some typing
+\newcommand{\rndkwd}{{\sf \&random}\ }
+% If the name "rnglib" is changed, don't forget to also replace it
+% in the verbatim environments
+\newcommand{\rndlibkwd}{{\sf \&rnglib}\ }
+% A convenient way to get a consistent style of error messages.
+\newcommand{\UniconError}[2]{{\sf#1} --- {\sf #2}}
+% Smaller urls
+\newcommand{\surl}[1]{{\small\url{#1}}}
+%
+\section{Introduction}
+A lot of progress has been made in the field of random number generation since Icon's
+generator was invented back in the 1980s. Although the generator works perfectly well to
+introduce some variability into the results of a program, there are some applications --
+Monte-Carlo simulation and cryptography are obvious examples -- that demand a much higher
+quality source of random numbers.
+
+Two extra generators are provided by default and, if the GNU Scientific Library is
+installed, access is given to a further sixty or so, depending on the version of the
+library.
+
+All of the generators discussed here are {\em pseudo} random rather than genuinely random%
+\footnote{
+  A genuinely random generator requires access to a high quality supply of
+  entropy provided either by hardware, often external, or by using software
+  that gathers entropy from the operation of the computer system itself
+  such as the \texttt{/dev/random} device in modern Unix systems.
+}.
+For this reason, the abbreviation PRNG will usually be used in the rest of this report.
+
+\section{Available PRNGs}
+
+The generators may be loaded at runtime by calling a new standard function \texttt{loadrng}.
+
+The loaded generator is specific to a thread and different threads may use different
+generators. Newly created threads inherit the generator used by the main thread at the
+time the new thread is created. The generator may be changed in each thread at any time.
+
+The available generators are:
+\begin{description}
+\item[\texttt{rngIcon}] is the familiar generator built in to Icon (and Unicon).\\
+  \texttt{loadrng("rngIcon")} may be used to reset a thread's generator to the default.
+
+\item[\texttt{rngRlx++}] is a re-implementation in C of the
+  Ranlux++\cite{Hahnfeld:Ranlux++} generator. It provides extremely high quality random
+  numbers relatively efficiently and has proven theoretical properties: for example,
+  different seeds are {\em guaranteed\/} to produce different random sequences.
+
+\item[\texttt{rngRbt}] is a cryptographically secure generator from the eSTREAM project%
+\footnote{
+The eSTREAM project\cite{eStream} was a multi-year effort, running from
+2004 to 2008, to promote the design of efficient and compact stream ciphers
+suitable for widespread adoption.
+}
+
+\item[\texttt{rngGSL}] is not a generator as such, but it provides access to the sixty or
+  so generators that come with the GNU Scientific Library\cite{GnuScientificLibrary} and
+  allows the familiar interface ( \rndkwd and the \texttt{?} operator) to be used to
+  generate random numbers. An appendix lists the generators that are provided in version
+  2.7.1 of the library. In particular, there are three versions of the Mersenne
+  Twister\cite{ImprovedMT}.
+\end{description}
+
+
+\section{New features and changes}
+The presence (or not) of the extensions to \rndkwd may be detected at compile time or at
+run time. If the extensions are present, the Unicon preprocessor will have a predefined symbol
+\texttt{\_RNG\_LIBRARY}. An alternative available at run time is to detect the string
+\texttt{"loadable RNGs"} in \texttt{\&features}.
+
+\subsection{The type of \rndkwd}
+An assignment to \rndkwd seeds the generator -- as before -- and the value of \rndkwd
+returns the current state of the generator, which enables the random sequence to be reset
+to a previous point but, because the state is no longer just an integer, the type of
+\rndkwd has to change. All of the present generators (except the built-in \texttt{rngIcon})
+return the state as an array of integer values but that isn't a requirement: the type
+depends on the generator in use and, if a new generator is implemented, it could be
+arbitrary.
+
+The wisest course is to treat it as an opaque value and not depend on it being an array.
+The only time it might be necessary to know something about what's inside \rndkwd is when
+the value is stored in a file for resumption of the random sequence in a later run of a
+program. In that case something like
+\begin{verbatim}
+      every write(f, !&random)
+\end{verbatim}
+will be needed to store the entire array. The array must be reconstructed before
+assigning it to \rndkwd.
+\begin{verbatim}
+    L := list(); f := open( ... )
+    every put(L, integer(!f)); &random := list(L)
+\end{verbatim}
+
+The type of the values that are assigned to \rndkwd when seeding the generator must
+also change because what is needed depends on the generator in use.
+
+\subsection{New functions}
+Four new standard functions are provided.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf loadrng(s) : string? } \hfill {\bf load PRNG}
+
+\noindent
+\texttt{loadrng(s)} replaces the generator in use by the current thread with the generator
+denoted by \texttt{s}. \texttt{loadrng("rngIcon")} will reload the default generator.
+\texttt{loadrng()} returns the name of the generator in use.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf rngbits(i) : array? } \hfill {\bf return random bits}
+
+\noindent
+\texttt{rngbits(n)} returns an integer array that contains at least \texttt{n} randomly
+generated bits. If \texttt{n} is negative no bits are returned but the generator will skip
+ahead as if the bits were actually returned. If \texttt{n} is zero it is an invitation to
+supply the ``natural size'' of the generator (which is probably a power of two).
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf rngbitstring(i) : string? } \hfill {\bf return random bits}
+
+\noindent
+\texttt{rngbitstring(n)} returns a string that contains \texttt{n}
+randomly generated \texttt{0} and \texttt{1} characters.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf rngval() : integer? } \hfill {\bf return random value}
+
+\noindent
+\texttt{rngval()} returns a  randomly generated integer value.
+
+\bigskip
+\texttt{rngval}, \texttt{rngbits} and \texttt{rngbitstring} are optional.  If the
+capability to return bits is not implemented by the generator in use they will fail.
+Note that the default built-in generator does {\em not} implement them.
+
+\texttt{rngbits} and \texttt{rngbitstring} are naturally big-Endian -- the first
+generated bits will be at the start of the string (or in the first array element) and
+subsequently generated values will follow on later.  This also applies if fewer bits are
+requested than will fit into an integer array element: in this case the bits will be in
+the most significant end of the (only) array element. Thus, if a random 16 bit unsigned
+integer is needed on a 64 bit machine, it can be obtained by
+\begin{verbatim}
+  iand(ishift(rngbits(16)[1], -48), 16RFFFF)
+\end{verbatim}
+Another way of achieving the same result is
+\begin{verbatim}
+   integer("2R" || rngbitstring(16))
+\end{verbatim}
+Two more ways of generating a 16-bit random value are
+\begin{verbatim}
+  iand(rngval(), 16RFFFF)
+\end{verbatim}
+and
+\begin{verbatim}
+  ?65535
+\end{verbatim}
+although the values produced are different%
+\footnote{
+The differences arise because, in the \texttt{rngval} case, the least significant bits from
+the random value will be used, rather than the most. In the last case the underlying
+generator is asked to produce a random floating point number which is then scaled to the
+appropriate range.
+}
+to the first two methods.
+
+Assuming that the generator creates more than one bit at a time, there may be some bits
+``left over'' after calling \texttt{rngbits} or \texttt{rngbitstring}.  There is no
+requirement to retain these bits for the next operation; so given
+\begin{verbatim}
+    x := &random
+    s1 := rngbitstring(10)
+    s2 := rngbitstring(20)
+    &random := x
+    s3 := rngbitstring(30)
+\end{verbatim}
+it is not guaranteed that \texttt{s3 == (s1 || s2)}.
+
+A similar consideration exists for \texttt{rngval} if the underlying generator creates
+more bits than will fit into an integer.  It {\em could} store the extra bits for later, but
+there is no requirement to do so.
+
+\subsection{New Error codes}
+There is a case for extending the list of standard error codes to cover a
+PRNG error that might plausibly be returned by several generators, such as
+\begin{quote}
+  \UniconError{700}{Sequence limit reached: re-initialization is required}%
+  \footnote{
+    There is no implication here that a PRNG is {\em required} to detect
+    such a case, merely that some might wish to do so.
+    }.
+\end{quote}
+Other error codes might only apply to particular generators
+\begin{quote}
+  %Admittedly, this is funnier if the reader knows what a Norn is.
+  %Especially if they recall that Thursday comes from "Thor's day"
+  \UniconError{666}
+  {It's a Thursday: I can't provide random numbers on Thursdays because
+  the Norns don't like it.}
+\end{quote}
+To allow for these situations five standard error codes have been
+added which any PRNG may use. They don't have to be used but, if they are, the PRNG should
+specify what they mean by providing a suitable string for use by the run-time.
+\begin{quote}
+  \UniconError{700}{PRNG error 1}\\
+  \UniconError{701}{PRNG error 2}\\
+  \UniconError{702}{PRNG error 3}\\
+  \UniconError{703}{PRNG error 4}\\
+  \UniconError{704}{PRNG error 5}
+\end{quote}
+The program that is using the PRNG may recover the string from the \texttt{\&errortext}
+keyword.  No specific extra error codes have been added, only the five generic codes
+above.
+
+\section{New generators}
+\subsection{\texttt{rngRlx++}}
+The original Ranlux generators were introduced in 1994 by L\"uscher\cite{Luscher:1994}.
+They are highly thought of, but considered to be slow. A second generation, using floating
+point rather than integer arithmetic, is available and gives better performance: typically
+between a factor of two and four\cite{Luscher:Ranlux2}. All Ranlux generators offer the
+user some choice in the trade-off between statistical quality and speed called {\em
+luxury}. Higher values of luxury mean better (or very much better) statistical quality
+but lower speed. All versions of Ranlux are incorporated in the GNU Scientific
+Library\cite{GnuScientificLibrary}.  The generators have a solid theoretical foundation in
+the theory of chaotic systems.
+
+Ranlux++ is a reimplementation of the Ranlux algorithm\cite{Sibidanov:Ranlux++}.  It can
+generate the same sequences as the original algorithm but is reported to be an order of
+magnitude faster {\em and} can achieve even higher luxury levels. It achieves this by a
+``clever algorithm'' to do multiple precision arithmetic, combined with some assembly
+level coding.
+
+More recently, the algorithm has been implemented in C++, which greatly increases the
+portability. The authors\cite{Hahnfeld:Ranlux++} report a similar performance to the
+assembler version.  The \texttt{rngRlx++} generator is a re-implementation of this code in
+C (which makes its incorporation into Unicon easier to achieve).
+
+Although it is likely to happen at some point in the future, Ranlux++ is not presently
+provided in the GNU Scientific Library.
+
+The \texttt{rngRlx++}  generator is seeded by a 32-bit number. Moving ahead in the random
+sequence is relatively efficient -- compared to actually generating the numbers.
+
+\subsection{\texttt{rngRbt}}
+Rabbit is a cryptographically secure generator from profile 1 (software)%
+\footnote{
+  The eSTREAM portfolio ciphers fall into two profiles. Profile 1
+  contains stream ciphers more suitable for software applications with high
+  throughput requirements. Profile 2 stream ciphers are particularly
+  suitable for hardware applications with restricted resources such as
+  limited storage, gate count, or power consumption.
+}
+of the eSTREAM project\cite{eStream}. It uses a 128 bit key and 64 bit IV to
+seed the generator which produces a stream of 128 bit blocks.
+
+The \texttt{rngRbt} generator may be seeded in one of three ways:
+\begin{description}
+\item[Integer array] The array should contain at least 192 bits.
+\item[Hexadecimal string] The string should be either 16 or 48 characters and contain only
+  valid hexadecimal characters (case is not significant).
+\item[Integer] If the generator has been previously seeded, an integer value will retain
+  the key and alter the IV only. If it has not been previously seeded, the integer is
+  ``stretched'' to provide values for both key and IV.
+\end{description}
+
+Although the underlying generator produces 128 bits at a time, the \texttt{rngRbt}
+generator returns those bits in in 64-bit units (and remembers the second lot of bits for
+a subsequent operation).
+
+There is no efficient way of moving ahead in the random sequence: it's about as expensive
+as generating the numbers, although there is still a benefit from calling \texttt{rngbits}
+with a negative parameter if the number is large -- a correspondingly large buffer is not
+required.
+
+\subsection{\texttt{rngGSL}}
+
+\texttt{rngGSL} provides access to the generators in the GNU Scientific
+Library\cite{GnuScientificLibrary}. If the library is not installed on the system used to
+build Unicon, it will not be available and \texttt{loadrng("rngGSL")} will fail.
+
+To select a generator from the library, assign a string that contains the name of the
+generator to \rndkwd. Afterwards, seed the selected generator by assigning a 32-bit value to
+\rndkwd.
+
+\texttt{rngGSL} stores the state of the underlying generator, which can vary between 6
+bytes and 128Kbytes. It makes provision for the largest possible state.  To avoid
+consuming a potentially large amount of unneeded memory, the user can select the maximum
+size of state that will be needed by using an environment variable
+\texttt{GSL\_STATE\_MAX}. Generators whose state is larger than the value specified will
+not be loaded.  The default value if \texttt{GSL\_STATE\_MAX} is not defined is 1024. A
+value of 0 will suppress the checking for state size.
+
+A small program written in C may be used to display the names of the available generators
+and the size of their state. Its output from using version 2.7.1 of the library is given
+in appendix B.
+
+
+ Appendix A contains some preliminary performance figures.
+
+\begin{thebibliography}{99}
+
+%---------- Pre 1980
+%---------- 1980
+%---------- 1981
+%% \bibitem{Knuth:SemiNumerical2}
+%% \begin{samepage}
+%%   Knuth D.E.\\*
+%%   "Seminumerical Algorithms'', Second edition. Volume 2 of ``The Art of Computer
+%%   Programming''
+%%   (Adison Wesley 1981)
+%% \end{samepage}
+%---------- 1982
+%% \bibitem{WichmannHill:1982}
+%%   Wichmann B.A, Hill I.D. (1982). "Algorithm AS 183: An Efficient and
+%%   Portable Pseudo-Random Number Generator".
+%%   Journal of the Royal Statistical Society. Series C (Applied Statistics). 31 (2): 1  88–190.
+
+%---------- 1983
+%---------- 1984
+%---------- 1985
+%---------- 1986
+%% \bibitem{IconImplementationBook}
+%% \begin{samepage}
+%%   Griswold R., Griswold M.\\*
+%%   ``The Implementation of the Icon Programming Language''
+%%   Available via \surl{https://www2.cs.arizona.edu/icon/ftp/doc/ib1up.pdf}
+%% \end{samepage}
+
+%---------- 1987
+%---------- 1988
+%% \bibitem{ParkAndMiller}
+%% \begin{samepage}
+%%   Park S.K. and Miller K.W\\*
+%%   ``Portable Random Generators: Good Ones Are Hard To Find''.
+%%   Communications of the ACM  (1988) Vol 31, pp 1192-1201
+%% \end{samepage}
+
+%---------- 1989
+%---------- 1990
+%---------- 1991
+%---------- 1992
+%% \bibitem{PressEtAl:numericalRecipes-2}
+%% \begin{samepage}
+%%   Press W.H., Teukolsky S.A., Vetterling W.T., Flannery B.P.\\*
+%%   ``Numerical Recipes in C, second edition'' (Cambridge University Press 1992).
+%% \end{samepage}
+
+%---------- 1993
+%---------- 1994
+\bibitem{Luscher:1994}
+\begin{samepage}
+  L\"uscher M.\\*
+  ``A  Portable  High-Quality  Random  Number  Generator  for
+  Lattice Field Theory Simulations''
+  Computer Physics Communications 79(1994) 100 - 110
+\end{samepage}
+
+%---------- 1995
+%% \bibitem{Marsarglia:Diehard}
+%%   Marsarglia G.\\*
+%%   ``The Marsaglia Random Number CDROM including the Diehard Battery of Tests
+%%   of Randomness''\\*
+%%   Available from \surl{http://www.stat.fsu.edu/pub/diehard}\\*
+%%   Use the wayback machine\cite{WayBack} and get a copy from circa 2015 or before.
+
+%---------- 1996
+%% \bibitem{IconBook}
+%% \begin{samepage}
+%%   Griswold R., Griswold M.\\*
+%%   ``The Icon Programming Language (Third Edition)''
+%%   Available via \surl{https://www2.cs.arizona.edu/icon/ftp/doc/lb1up.pdf}
+%% \end{samepage}
+
+%---------- 1997
+%---------- 1998
+%---------- 1999
+%---------- 2000
+%---------- 2001
+%---------- 2002
+\bibitem{ImprovedMT}
+\begin{samepage}
+  ``Mersenne Twister with improved initialization''\\*
+  Available from\\*
+  \surl{http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html}
+\end{samepage}
+
+%---------- 2003
+%% \bibitem{Schneier:PracticalCryptography}
+%% \begin{samepage}
+%%   Schneier B. and Ferguson N,\\*
+%%   ``Practical Cryptography''
+%%   John Wiley and Sons (2003)
+%% \end{samepage}
+
+%---------- 2004
+%---------- 2005
+%---------- 2006
+%% \bibitem{WichmannHill:2006}
+%%   Wichmann B.A, Hill I.D.\\*
+%%   ``Generating good pseudo-random numbers''
+%%   Computational Statistics \& Data Analysis 51 (2006) 1614 – 1622.
+
+%% \bibitem{McCullough:TESTU01}
+%%   McCullough B.D.\\*
+%%   ``A review of TESTU01''.
+%%   Journal Of Applied Econometrics (2006)  21: 677 – 682
+
+%% \bibitem{PannetonEtAl:WELL}
+%% \begin{samepage}
+%%   Panneton F., l'Ecuyer P., Matsumoto M. (March 2006).\\*
+%%   "Improved long-period generators based on linear recurrences modulo~2".\\*
+%%   ACM Transactions on Mathematical Software. 32 (1): 1–16.
+%% \end{samepage}
+
+%---------- 2007
+%% \bibitem{PressEtAl:numericalRecipes}
+%% \begin{samepage}
+%%   Press W.H., Teukolsky S.A., Vetterling W.T., Flannery B.P.\\*
+%%   ``Numerical Recipes, third edition'' (Cambridge University Press 2007).
+%% \end{samepage}
+
+%% \bibitem{Schneier:BackDoor}
+%% \begin{samepage}
+%%   Schneier B.\\*
+%%   ``Did NSA Put a Secret Backdoor in New Encryption Standard?''\\*
+%%   Wired : November 15 2007. Available from\\*
+%%   \surl{https://www.schneier.com/essays/archives/2007/11/did_nsa_put_a_secret.html}
+%% \end{samepage}
+
+%% \bibitem{L'Ecuyer:TESTU01}
+%%   Pierre L’Ecuyer P, Simard R\\*
+%%   "TestU01: A Software Library in ANSI C for Empirical Testing of Random
+%%   Number Generators",
+%%   ACM Transactions on Mathematical Software (2007), 33: 22.
+
+%-------- 2008
+%% \bibitem{Matsumoto:MersenneTwister}
+%% \begin{samepage}
+%%   Matsumoto M, Nishimura T.\\*
+%%   "Mersenne Twister: a 623-dimensionally equi-distributed uniform
+%%   pseudo-random number generator".\\*
+%%   ACM Transactions on Modeling and Computer Simulation (1988). ACM. 8 (1):
+%%   3–30.\\*
+%%   Available from\\*
+%%   \surl{http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/ARTICLES/mt.pdf}
+%% \end{samepage}
+
+%% \bibitem{HiroshiEtAl:EfficientJumping}
+%% \begin{samepage}
+%%   Hiroshi Haramoto H.; Makoto Matsumoto M.; Takuji Nishimura T.;  Panneton F.;
+%%   Pierre L’Ecuyer.\\*
+%%   "Efficient Jump Ahead for F2-Linear Random Number Generators"\\*
+%%   Available from\\*
+%%   \surl{http://www.iro.umontreal.ca/~lecuyer/myftp/papers/jumpf2.pdf}
+%% \end{samepage}
+
+\bibitem{eStream}
+\begin{samepage}
+  The home page of the eSTREAM project is at\newline
+  \surl{https://www.ecrypt.eu.org/stream/index.html}
+\end{samepage}
+
+%% \bibitem{Bernstein:cypherSpeed}
+%% \begin{samepage}
+%%   Bernstein D.\\*
+%%   ``Which phase-3 eSTREAM ciphers provide the best software speeds?''
+%%     Available via \surl{cr.yp.to/streamciphers/phase3speed-20080331.pdf}.
+%% \end{samepage}
+
+%---------- 2009
+%---------- 2010
+%% \bibitem{BassinghamEtAl:Statistical}
+%%   Bassingham L. et al\\*
+%%   ``A Statistical Test Suite for Random and Pseudorandom Number Generators
+%%   for Cryptographic Applications''
+%%   Available from\\*
+%%   \surl{https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final}
+
+%---------- 2011
+%---------- 2012
+%---------- 2013
+%---------- 2014
+%% \bibitem{Brown:Dieharder}
+%%   Brown R.G, EdelBuettel D, Bauer D\\*
+%%   ``Dieharder: A Random Number Test Suite''
+%%   Available from\\*
+%%   \surl{https://webhome.phy.duke.edu/~rgb/General/dieharder.php}
+
+%% \bibitem{DodisEtAl:Entropy}
+%% \begin{samepage}
+%%   Y. Dodis, A. Shamir, N. Stephens-Davidowitz, D. Wichs\\*
+%%   ``How to Eat Your Entropy and Have it Too---Optimal Recovery Strategies for
+%%   Compromised RNGs',
+%%   Cryptology ePrint Archive, Report 2014/167, 2014.
+%% \end{samepage}
+
+%% \bibitem{Knuth:SemiNumerical3}
+%% \begin{samepage}
+%%   Knuth D.E.\\*
+%%   "Seminumerical Algorithms'', Third edition. Volume 2 of ``The Art of Computer
+%%   Programming''
+%%   (Adison Wesley 2014)
+%% \end{samepage}
+
+%---------- 2015
+%---------- 2016
+%---------- 2017
+\bibitem{Sibidanov:Ranlux++}
+  Sibidanov A.\\*
+  ``A revision of the subtract-with-borrow random number generators'',
+  Comput. Phys. Comm. 221 (2017) 299-303
+  Code available from \surl{https://github.com/sibidanov/ranluxpp/}
+
+%---------- 2018
+\bibitem{GnuScientificLibrary}
+\begin{samepage}
+  GSL -- the GNU Scientific Library\\*
+  Available from \surl{https://www.gnu.org/software/gsl}
+\end{samepage}
+
+%---------- 2019
+%% \bibitem{James:HighQualityRNGs}
+%% \begin{samepage}
+%%   James F. and Moneta L.\\*
+%%   ``Review of High-Quality Random Number Generators'' (March 2019)\\*
+%%   Available from \surl{https://arxiv.org/pdf/1903.01247.pdf}
+%% \end{samepage}
+
+\bibitem{Luscher:Ranlux2}
+\begin{samepage}
+  L\"uscher M.\\*
+  ``User's guide for ranlxs and ranlxd v3.4'' (May 2019)
+  Available from \surl{http://luscher.web.cern.ch/luscher/ranlux}
+\end{samepage}
+
+%% \bibitem{CplusplusStd:N4820}
+%% \begin{samepage}
+%%   Working Draft, Standard for Programming Language C++\\*
+%%   Document N4820 (July 2019)\\*
+%%   Available from \surl{https://github.com/cplusplus/draft/raw/master/papers/n4820.pdf}
+%% \end{samepage}
+%---------- 2020
+
+%% \bibitem{WayBack}
+%%   The Internet Archive ``WayBack Machine'' is available at\\*
+%%   \surl{https://web.archive.org}
+
+%---------- 2021
+\bibitem{Hahnfeld:Ranlux++}
+  Hahnfeld J., Moneta L.\\*
+  ``A Portable Implementation of RANLUX++*, vCHEP2021''
+  preprint \surl{https://arxiv.org/pdf/2106.02504.pdf}
+
+
+\end{thebibliography}
+
+
+\bibliographystyle{abbrv}
+
+\appendix
+\renewcommand{\thesection}{Appendix \Alph{section}}
+\pagebreak
+\section*{Appendix A: Performance Results}
+This program was used to measure the performance of the generators.
+{\small
+\begin{verbatim}
+link printf
+
+procedure main(args)
+$ifdef _RNG_LIBRARY
+   local rng := args[1] | "rngIcon"     # Default generator is the built-in one.
+   local limit := args[2] | 100000000   # Default number of iterations
+   local total := 0.0
+   local t0, t1, t2, ms, rate
+   local generator
+
+   generator := loadrng(rng)
+   if generator=="rngGSL" then generator ||:= "(" || getenv("GSL_RNG_TYPE") || ")"
+
+   # The generator is not seeded explicitly. Generators using rngGSL will get the
+   # value from an environment variable GSL_RNG_SEED.  Other generators will use
+   # a random-ish value provided by the runtime.
+
+   t0 := &time
+   every 1 to limit do { total +:= 0.5 }
+   t1 := &time          # Measure the loop overhead
+   every 1 to limit do { total +:= ?0 }
+   t2 := &time
+
+   ms := (t2 -t1) - (t1 - t0)
+   if ms <= 0 then stop("Too few iterations")
+   rate := 0.001 * (real(limit)/real(ms)) # K doubles/sec
+   printf("%-20s: %5dmS (%-5.1rK/sec)\n", generator, ms, rate)
+   fprintf(open("./speedtest.csv", "a"),
+           "%s,%s,%d,%d,%d,%d,%-6.2r\n",
+           &dateline, generator, limit, t2, t1, t0, rate)
+$else
+   write(&errout, "RNG libraries are not available")
+$endif
+end
+\end{verbatim}
+}
+\newpage\noindent
+The program was run on an Apple intel machine. The compiler was clang v12.0.0 using
+-O2. Each generator was run ten times and the average taken of the performance figures.
+{\sf rngIcon} is the built-in generator; {\sf rngIconEx} is a reimplementation of the
+built-in generator as a loadable library.  Its purpose is to act as an example for future
+additions to the portfolio of generators. It also serves to determine the overhead of a
+loadable generator.
+
+\begin{center}
+\begin{tabular}{|lcccc|}
+  \hline
+  & {\sf rngIcon} & {\sf rngIconEx} & {\sf rngRbt} & {\sf rngRlx++}\\
+  Time (ms)    & 2091 & 2461 & 4238 & 4626\\
+  K doubles/sec& 47.8 & 40.6 & 23.6 & 21.6\\
+  \hline
+  & \multicolumn{4}{c|}{Using {\sf rngGSL}}\\
+  \hline
+  & {\sf ranlux} & {\sf ranlxs2} & {\sf ranlxd2} & {\sf mt19937}\\
+  Time (ms)    & 6915 & 9819 & 16518 & 2796\\
+  K doubles/sec& 14.5 & 10.2 & 6.1   & 35.8\\
+  \hline
+\end{tabular}
+\end{center}
+
+Thus, comparing {\sf rngIconEx} with {\sf rngIcon}, the overhead of a loadable library
+is around 15\%.
+
+The performance of Rabbit and Ranlux++ compared to the built-in generator is really quite
+good --- giving just under or just over 50\% of the random numbers/sec (depending on
+whether the overhead of the loadable library is taken into account). For comparison, the
+performance of the Ranlux generators in the GSL is slower (or much slower) than Ranlux++
+despite being of lower quality. The performance of the Mersenne Twister is very good,
+being only about 25\% slower than Unicon's built-in generator (12\% slower compared to
+{\sf rngIconEx}).
+
+Note that all of these numbers are around 20 times slower than the performance reported in
+the GNU Scientific Library documentation, but that is not a fair comparison: we are
+comparing the performance of an optimised C program repeatedly calling a generator with
+the Unicon interpreter doing the same thing.
+
+\pagebreak
+\section*{Appendix B: Generators in the GNU Scientific Library}
+\texttt{rngList.c} is C code that interrogates the library and returns the name of each
+generator together with the range of returned values and the size of its state. It uses
+the same criteria as the \texttt{rngGSL} generator to limit the size of the stored
+state. So, by setting \texttt{GSL\_STATE\_MAX} to the appropriate value, the user may
+see which generators are available. This is the listing from version 2.7.1 of the
+library with \texttt{GSL\_STATE\_MAX} set to 0 (i.e. all generators),
+\texttt{GSL\_RNG\_TYPE} set to \texttt{"mrg"} and
+\texttt{GSL\_RNG\_SEED} set to \texttt{"123"}.
+    
+{\small
+\begin{verbatim}
+Default generator is mrg
+Default seed is 123
+Available generators:
+Generator                   Min    Max          State
+borosh13                     1 4294967295          8
+cmrg                         0 2147483646         48
+coveyou                      2 4294967294          8
+fishman18                    1 2147483646          8
+fishman20                    1 2147483646          8
+fishman2x                    0 2147483646         24
+gfsr4                        0 4294967295     131080
+knuthran                     0 1073741823      16880
+knuthran2                    0 2147483646         16
+knuthran2002                 0 1073741823       8880
+lecuyer21                    1 2147483398          8
+minstd                       1 2147483646          8
+mrg                          0 2147483646         40   <----
+mt19937                      0 4294967295       5000
+mt19937_1999                 0 4294967295       5000
+mt19937_1998                 0 4294967295       5000
+r250                         0 4294967295       2008
+ran0                         1 2147483646          8
+ran1                         1 2147483646        272
+ran2                         1 2147483562        280
+ran3                         0 1000000000        456
+rand                         0 2147483647          8
+rand48                       0 4294967295          6
+random128-bsd                0 2147483647        256
+random128-glibc2             0 2147483647        256
+random128-libc5              0 2147483647        256
+random256-bsd                0 2147483647        512
+random256-glibc2             0 2147483647        512
+random256-libc5              0 2147483647        512
+random32-bsd                 0 2147483647         64
+random32-glibc2              0 2147483647         64
+random32-libc5               0 2147483647         64
+random64-bsd                 0 2147483647        128
+random64-glibc2              0 2147483647        128
+random64-libc5               0 2147483647        128
+random8-bsd                  0 2147483647          8
+random8-glibc2               0 2147483647          8
+random8-libc5                0 2147483647          8
+random-bsd                   0 2147483647        256
+random-glibc2                0 2147483647        256
+random-libc5                 0 2147483647        256
+randu                        1 2147483647          8
+ranf                         0 4294967295          6
+ranlux                       0 16777215          216
+ranlux389                    0 16777215          216
+ranlxd1                      0 4294967295        120
+ranlxd2                      0 4294967295        120
+ranlxs0                      0 16777215          320
+ranlxs1                      0 16777215          320
+ranlxs2                      0 16777215          320
+ranmar                       0 16777215          792
+slatec                       0 4194303            16
+taus                         0 4294967295         24
+taus2                        0 4294967295         24
+taus113                      0 4294967295         32
+transputer                   1 4294967295          8
+tt800                        0 4294967295        208
+uni                          0 32766             144
+uni32                        0 2147483646        144
+vax                          0 4294967295          8
+waterman14                   1 4294967295          8
+zuf                          0 16777215         4864
+Largest state = 131080 (gfsr4)
+\end{verbatim}
+}
+\pagebreak
+\section*{Appendix C: The PRNG API}
+All library routines except \texttt{startRng} {\em must} be re-entrant.
+``\texttt{get}'' and ``\texttt{put}'' are from the perspective of the
+caller:\\
+In the ``Called by run-time'' section  ( $\Rightarrow$ means ``supplies data to'')\\
+\indent
+``\texttt{get}'' means PRNG $\Rightarrow$ run-time;
+``\texttt{put}'' means run-time $\Rightarrow$ PRNG.\\
+In the ``Called by PRNG'' section it's the other way around\\
+\indent
+``\texttt{put}'' means PRNG $\Rightarrow$ run-time;
+``\texttt{get}'' means run-time $\Rightarrow$ PRNG.\\\\
+
+\noindent
+\begin{tabular*}{12.5cm}{|l|p{10.5cm}|}
+  \cline{1-2} %\hline doesn't work
+  \multicolumn{2}{|c|}{Called by run-time}\\
+  \cline{1-2}
+%
+  \texttt{startRng()} & Called once only, after the library is first loaded.
+  May be used to perform PRNG initialization. Returns the maximum number of
+  {\em bits} needed to store the PRNG state and the types that are expected
+  in an assignment to \rndkwd that reinitializes the generator.\\
+%
+% [DPW] remove this for now. We don't unload libraries so, any resource
+%        allocation done in start cannot be undone.
+  %% \texttt{stop()} & Is this useful (or needed)?\\
+%
+    \texttt{putSeed()} & Supply the value assigned to \rndkwd --- a nil value
+    means that no value has been assigned to \rndkwd in this thread since
+    the library was loaded.\\
+%
+    \texttt{getRandomBits()} & Return the requested number of random bits.
+    This routine is {\em optional}.\\
+%
+    \texttt{getRandomInt()} & Return the random bits from a single cycle
+    of the generator (up to as many as will fit into a Unicon integer
+    value). This routine is {\em optional}.\\
+%
+  \texttt{getRandomFpt()} & Return a random floating point number in the
+  range $[0,1)$.\\
+%
+  \texttt{getErrorText()} & Return the string associated with one of the PRNG
+  error codes.\\
+  \cline{1-2}
+\end{tabular*}\\
+
+
+One possibility for \texttt{startRng} might be computing the values of a
+large array that is used (read-only) to assist the generation of random
+numbers. Whatever is done in \texttt{startRng} should not be specific to a
+thread because it is called once only, not once per thread.
+
+\texttt{putSeed} is called by the run-time with a nil value if the
+random operator is used but there has been no assignment to \rndkwd in the
+current thread since the library was loaded. The call will occur before the
+call to \texttt{getRandomFpt}, \texttt{getRandomBits} or \texttt{getRandomInt}.
+
+\noindent
+\begin{tabular*}{10cm}{|l|p{8cm}|}
+  \cline{1-2}
+  \multicolumn{2}{|c|}{Called by PRNG}\\
+  \cline{1-2}
+%
+  \texttt{putErrorCode()} & Set the value of \texttt{\&error}.\\
+%
+  \texttt{getRngState()} & Get a pointer to where the PRNG state is
+  stored. Needed at the start of each generation. Cannot be called from
+  within \texttt{startRng}.\\
+%
+  \texttt{getInitialBits()} & Get 32 bits of ``random'' data.\\
+%
+  \cline{1-2}
+\end{tabular*}\\
+
+%% Calls to \texttt{getRngState} will fail if they occur before the call to
+%% \texttt{getSize} because it is only after that call that the runtime will
+%% have created the state vector.
+
+
+%\pagebreak
+\section*{Appendix D: Open Questions}
+This appendix lists the open issues that are raised in this report. As time
+passes the questions should be answered. In an ideal world this appendix
+will eventually vanish.
+
+\subsection*{How should PRNGs be bundled into a standalone executable?}
+This is a general question that applies to plugins as well as PRNG
+libraries. Further work is needed to see the best way to proceed.
+
+\subsection*{Licensing}
+Ranlux++ is licensed with LGPL2.1, Rabbit is licensed with LGPL2; so the bulk of the rng
+library code may also be licensed with LGPL2 -- i.e. the same license that applies to the
+distributable parts of the runtime like iconx etc.. But the GNU Scientific Library is
+licensed with GPL3 (not LGPL3). So the question arises of what license should be applied
+to the rngGSL code.
+
+The rngGSL library is not built in to the rest of the system and, at present, is only
+built if the GSL is installed -- implying that the user has accepted the terms of that
+licence.  Even if a LGPL2 licence is permissable under these circumstances, it is likely
+to preclude including the rngGSL library in a binary distribution.
+
+\end{document}

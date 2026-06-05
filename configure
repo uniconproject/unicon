@@ -9108,6 +9108,72 @@ if test "x$orig_cxxflags" != "x" ; then
   CXXFLAGS="$CXXFLAGS $orig_cxxflags"
 fi
 
+if test "x$concurrency" != "xno"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for C11 _Thread_local" >&5
+printf %s "checking for C11 _Thread_local... " >&6; }
+if test ${ac_cv_c11_thread_local+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+static _Thread_local int utls_x;
+int main(void) { utls_x = 1; return utls_x; }
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_c11_thread_local=yes
+else $as_nop
+  ac_cv_c11_thread_local=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c11_thread_local" >&5
+printf "%s\n" "$ac_cv_c11_thread_local" >&6; }
+  if test "x$ac_cv_c11_thread_local" = "xyes"; then
+
+printf "%s\n" "#define HAVE_KEYWORD__THREAD 1" >>confdefs.h
+
+
+printf "%s\n" "#define UNICON_THREAD_LOCAL _Thread_local" >>confdefs.h
+
+  else
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GNU __thread" >&5
+printf %s "checking for GNU __thread... " >&6; }
+if test ${ac_cv_gnu___thread+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+static __thread int utls_y;
+int main(void) { utls_y = 1; return utls_y; }
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_gnu___thread=yes
+else $as_nop
+  ac_cv_gnu___thread=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gnu___thread" >&5
+printf "%s\n" "$ac_cv_gnu___thread" >&6; }
+    if test "x$ac_cv_gnu___thread" = "xyes"; then
+
+printf "%s\n" "#define HAVE_KEYWORD__THREAD 1" >>confdefs.h
+
+
+printf "%s\n" "#define UNICON_THREAD_LOCAL __thread" >>confdefs.h
+
+    fi
+  fi
+fi
+
 if test x"$debug" = x"yes" ; then
   STRIP="@\#strip"
 else

@@ -53,6 +53,14 @@
 #endif                                  /* NoAuto */
 
 /*
+ * If you set HAVE_KEYWORD__THREAD manually without running configure, also
+ * define UNICON_THREAD_LOCAL (e.g. __thread or thread_local) before rt.h.
+ */
+#if defined(HAVE_KEYWORD__THREAD) && !defined(UNICON_THREAD_LOCAL)
+#define UNICON_THREAD_LOCAL _Thread_local
+#endif
+
+/*
  *  Avoid name conflicts with Icon by using unicon-specific names
  */
 #ifdef UniconX
@@ -313,9 +321,9 @@
    #define PthreadCoswitch 1
    #define TSLIST
    /*
-    * The default at present does not use __thread.
-    * To use __thread, uncomment the following line
-    * "#define HAVE_KEYWORD__THREAD"
+    * HAVE_KEYWORD__THREAD / UNICON_THREAD_LOCAL: when concurrency is enabled,
+    * ./configure probes for thread_local or __thread and defines these in auto.h
+    * so curtstate uses compiler TLS instead of pthread_getspecific.
     */
 #endif                          /* Concurrent */
 

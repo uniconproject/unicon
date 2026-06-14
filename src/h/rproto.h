@@ -715,7 +715,6 @@ int checkOpenConsole( FILE *w, char *s );
       void      wflushall               (void);
       void      postcursor              (wbp);
       void      scrubcursor             (wbp);
-      void      mkfont                  (char *s, char is_3D);
 #ifdef HAVE_XFT
       void      drawstrng               (wbp w, int x, int y, char *str, int slen);
 #endif                                  /* HAVE_XFT */
@@ -808,6 +807,7 @@ int checkOpenConsole( FILE *w, char *s );
       void sphere(double radius, double x, double y, double z,
                   int slices, int rings, int gen);
       wfp srch_3dfont(char *fname, int fsize, char ftype);
+      void mkfont3d(char *s);
       int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2);
       int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height);
       int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height,

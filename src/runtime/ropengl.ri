@@ -3090,6 +3090,90 @@ srch_3dfont(char *fname, int fsize, char ftype)
   return 0;
 }
 
+/*
+ * Select the 3D (FTGL) font for Unicon font spec s: the TrueType files
+ * in dat/fonts stand in for the standard families.
+ */
+void mkfont3d(char *s)
+{
+   int flags, size, tp;
+   char family[MAXFONTWORD+1], fn[80];
+   char *stdfam = NULL;
+
+   if (parsefont(s, family, &flags, &size, &tp)) {
+      /*
+       * This is a legal Unicon font spec.
+       * Check first for special "standard" family names.
+       */
+      if (!strcmp(family, "mono")) {
+         stdfam = "Lucida Console";
+         flags |= FONTFLAG_MONO + FONTFLAG_SANS;
+         }
+      else if ( !strcmp(family, "fixed")) {
+         stdfam = "Lucida Sans";
+         flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
+         }
+      else if (!strcmp(family, "typewriter")) {
+         stdfam = "Courier New"; /* was "courier" */
+         flags |= FONTFLAG_MONO + FONTFLAG_SERIF;
+         }
+      else if (!strcmp(family, "sans")) {
+         stdfam = "Arial"; /* was "swiss" */
+         flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
+         }
+      else if (!strcmp(family, "serif")) {
+         stdfam = "Times New Roman";
+         flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SERIF;
+         }
+      else stdfam = NULL;
+      {
+        if (stdfam) {
+              if (strcmp(stdfam, "Arial")==0) {
+              strcpy(fn,"nimbu" /* "arial" */);
+              if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+                strcat(fn, "17" /* "b"*/);
+              else if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_NORMAL)))
+                strcat(fn,"15" /* "b" */);
+              else if (flags & FONTFLAG_BOLD) strcat(fn, "15" /* "bd" */);
+              else if (flags & FONTFLAG_ITALIC) strcat(fn, "16" /* "i" */);
+              else strcat(fn, "14");
+              }
+           else if (strcmp(stdfam, "Times New Roman")==0) {
+              strcpy(fn,"nimbu" /* "times" */);
+              if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+                strcat(fn, "25" /* "b" */);
+              else if (flags & FONTFLAG_BOLD) strcat(fn, "23" /*"bd"*/);
+              else if (flags & FONTFLAG_ITALIC) strcat(fn, "24"/*"i"*/);
+              else strcat(fn, "22");
+              }
+           else if ((strcmp(stdfam, "Courier New")==0) ||
+                    (strcmp(stdfam, "Lucida Sans")==0)
+                    ) {
+              strcpy(fn,"nimbu" /* "cour" */);
+              if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+                strcat(fn, "29" /* "b" */);
+              else if (flags & FONTFLAG_BOLD) strcat(fn, "27" /* "bd" */);
+              else if (flags & FONTFLAG_ITALIC) strcat(fn, "28" /* "i" */);
+              else strcat(fn, "26");
+              }
+           strcat(fn, ".ttf");
+           }
+        else {
+           strcpy(fn,family);
+           if (flags & (FONTFLAG_BOLD+FONTFLAG_ITALIC)) strcat(fn, "BI");
+           else if (flags & FONTFLAG_BOLD) strcat(fn, "BD");
+           else if (flags & FONTFLAG_ITALIC) strcat(fn, "I");
+           strcat(fn, ".TTF");
+           }
+        curr_font = srch_3dfont(fn, size, tp);
+        if (!curr_font) {
+          add_3dfont(fn, size, tp);
+          curr_font = end_font;
+          }
+      }
+    }
+}
+
 int setmeshmode(wbp w, char* s)
 {
    int draw_code, t=0;

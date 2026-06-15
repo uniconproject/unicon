@@ -615,6 +615,10 @@ typedef struct _wstate {
   int           iconic;                 /* NormalState, IconicState, ... */
   int           iconx, icony;           /* icon position (recorded only) */
   int           cursor;                 /* usdl cursor shape */
+  struct ucanvas *comp;                 /* canvas plus subwindows, shown */
+  int           recompose;              /* subwindows changed */
+  int           border;                 /* subwindow border width, color */
+  unsigned long bordercolor;
 #endif                                  /* SDLGraphics */
 #ifdef Graphics3D
   int            is_3D;        /* flag for 3D windows */

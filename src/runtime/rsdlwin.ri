@@ -270,12 +270,143 @@ int sdl_displaysize(int which)
 }
 
 /*
- * Show the canvas of window state ws on screen, if it has a window.
+ * Subwindows have no window of their own: they are drawn over their
+ * parent's canvas, later ones on top, when the top-level window is shown.
+ */
+#define ISSUBWIN(ws) ((ws)->parent != NULL)
+
+static int subwin_shown(wsp ws)
+{
+   return ws->pix && ws->iconic != HiddenState
+#ifdef Graphics3D
+      && ws->type != TEXTURE_WSTATE
+#endif                                  /* Graphics3D */
+      ;
+}
+
+/* does ws or any subwindow need showing again? clears the flags */
+static int subwin_dirty(wsp ws)
+{
+   struct wbind_list *c;
+   int d = (ws->pix && ws->pix->dirty) || ws->recompose;
+   if (ws->pix) ws->pix->dirty = 0;
+   ws->recompose = 0;
+   for (c = ws->children; c; c = c->next)
+      if (c->child && c->child->window && subwin_shown(c->child->window))
+         d |= subwin_dirty(c->child->window);
+   return d;
+}
+
+/* draw the subwindows of ws, at (ox,oy) in comp, clipped to clip */
+static void subwin_draw(wsp ws, struct ucanvas *comp, int ox, int oy,
+                        struct ucgc *clip)
+{
+   struct wbind_list *c;
+   wsp v[64];
+   int n = 0;
+
+   /* the list is newest first; draw oldest first */
+   for (c = ws->children; c && n < 64; c = c->next)
+      if (c->child && c->child->window && subwin_shown(c->child->window))
+         v[n++] = c->child->window;
+   while (n-- > 0) {
+      wsp cw = v[n];
+      struct ucgc gc = *clip;
+      int b = cw->border;
+      int x = ox + (cw->posx == -(MaxInt) ? 0 : cw->posx);
+      int y = oy + (cw->posy == -(MaxInt) ? 0 : cw->posy);
+      int x1, y1;
+      if (b > 0) {                      /* the border, then inside it */
+         gc.fg = (unsigned int)cw->bordercolor;
+         gc.op = UC_OP_COPY;
+         gc.fillstyle = UC_FILL_SOLID;
+         uc_fill_rect(comp, &gc, x, y, cw->width + 2 * b, cw->height + 2 * b);
+         x += b;
+         y += b;
+         }
+      x1 = Min(gc.clipx + gc.clipw, x + (int)cw->width);
+      y1 = Min(gc.clipy + gc.cliph, y + (int)cw->height);
+      gc.clipx = Max(gc.clipx, x);
+      gc.clipy = Max(gc.clipy, y);
+      gc.clipw = x1 - gc.clipx;
+      gc.cliph = y1 - gc.clipy;
+      if (gc.clipw <= 0 || gc.cliph <= 0) continue;
+      uc_copy_area(cw->pix, 0, 0, cw->width, cw->height, comp, &gc, x, y);
+      subwin_draw(cw, comp, x, y, &gc);
+      }
+}
+
+/*
+ * Show the canvas of window state ws on screen; a subwindow is shown by
+ * showing its top-level window.
  */
 static void present(wsp ws, int force)
 {
-   if (ws && ws->win && ws->pix)
+   struct ucgc gc;
+
+   while (ws && ISSUBWIN(ws))
+      ws = ws->parent->window;
+   if (ws == NULL || ws->win == NULL || ws->pix == NULL)
+      return;
+   if (ws->children == NULL && ws->comp == NULL) {
       usdl_present(ws->win, ws->pix, force);
+      return;
+      }
+
+   /* with subwindows, what is shown is a composite canvas */
+   if (ws->comp && (ws->comp->width != ws->pix->width ||
+                    ws->comp->height != ws->pix->height)) {
+      uc_canvas_free(ws->comp);
+      ws->comp = NULL;
+      }
+   if (ws->comp == NULL) {
+      if ((ws->comp = uc_canvas_new(ws->pix->width, ws->pix->height, 0)) == NULL)
+         return;
+      ws->recompose = 1;
+      }
+   if (subwin_dirty(ws)) {
+      uc_copy_area(ws->pix, 0, 0, ws->pix->width, ws->pix->height,
+                   ws->comp, NULL, 0, 0);
+      uc_gc_init(&gc);
+      gc.clipon = 1;
+      gc.clipx = gc.clipy = 0;
+      gc.clipw = ws->pix->width;
+      gc.cliph = ws->pix->height;
+      subwin_draw(ws, ws->comp, 0, 0, &gc);
+      }
+   usdl_present(ws->win, ws->comp, force);
+}
+
+/*
+ * The subwindow of top-level window ws under (*x,*y), with the point
+ * made relative to it; ws itself if none.
+ */
+static wsp subwin_at(wsp ws, int *x, int *y)
+{
+   struct wbind_list *c;
+   for (c = ws->children; c; c = c->next) {  /* newest (topmost) first */
+      wsp cw = (c->child) ? c->child->window : NULL;
+      int cx, cy;
+      if (cw == NULL || !subwin_shown(cw)) continue;
+      cx = (cw->posx == -(MaxInt)) ? 0 : cw->posx;
+      cy = (cw->posy == -(MaxInt)) ? 0 : cw->posy;
+      if (*x >= cx && *y >= cy && *x < cx + (int)cw->width + 2 * cw->border &&
+          *y < cy + (int)cw->height + 2 * cw->border) {
+         *x -= cx + cw->border;
+         *y -= cy + cw->border;
+         return subwin_at(cw, x, y);
+         }
+      }
+   return ws;
+}
+
+/* the subwindows of ws must be drawn again */
+static void subwin_changed(wsp ws)
+{
+   while (ws && ISSUBWIN(ws)) {
+      ws = ws->parent->window;
+      ws->recompose = 1;
+      }
 }
 
 /*
@@ -461,6 +592,15 @@ static void handle_event(struct usdl_event *ev)
    for (ws = wstates; ws; ws = ws->next)
       if (ws == (wsp)ev->owner) break;
    if (ws == NULL || ws->win == NULL) return;
+
+   /* input goes to the subwindow under the pointer, as under X11 */
+   switch (ev->type) {
+   case USDL_EV_KEYDOWN: case USDL_EV_KEYUP: case USDL_EV_BDOWN:
+   case USDL_EV_BUP: case USDL_EV_MOTION: case USDL_EV_WHEEL:
+      if (ws->children)
+         ws = subwin_at(ws, &ev->x, &ev->y);
+      break;
+      }
    if ((wb = binding_of(ws)) == NULL) return;
 
    switch (ev->type) {
@@ -745,6 +885,8 @@ int wclose(wbp w)
          }
       ws->parent = NULL;
       p->refcount--;
+      p->window->recompose = 1;
+      present(p->window, 1);
       }
 
    if (ws->win && ws->refcount > 1) {
@@ -1023,6 +1165,20 @@ int wmap(wbp w)
          }
       }
 
+   if (ISSUBWIN(ws)) {
+      if (ws->posx == -(MaxInt)) ws->posx = 0;
+      if (ws->posy == -(MaxInt)) ws->posy = 0;
+      /* as X11 makes them: 2D subwindows have a border in the fg color */
+      ws->border = 1;
+#ifdef Graphics3D
+      if (ws->is_3D) ws->border = 0;
+#endif                                  /* Graphics3D */
+      ws->bordercolor = wc->fg;
+      subwin_changed(ws);
+      SETEXPOSED(w);
+      present(ws, 1);
+      return Succeeded;
+      }
    if (ws->iconic == HiddenState || ws->iconic == RootState)
       return Succeeded;
    return sdl_mapwindow(w);
@@ -1044,6 +1200,10 @@ int do_config(wbp w, int status)
          }
       usdl_sync(ws->win);
       drain_events();
+      present(ws, 1);
+      }
+   else if (ISSUBWIN(ws)) {
+      subwin_changed(ws);
       present(ws, 1);
       }
    return Succeeded;
@@ -1110,9 +1270,10 @@ int setgeometry(wbp w, char *geo)
       ws->height = height;
       }
    /*
-    * can't set position on hidden windows (but can on opening ones)
+    * can't set position on hidden windows (but can on opening ones);
+    * a subwindow is placed in its parent, shown or not
     */
-   if ((ws->win || !ws->pix) && (status & 2)) {
+   if ((ws->win || !ws->pix || ISSUBWIN(ws)) && (status & 2)) {
       ws->posx = x;
       ws->posy = y;
       }
@@ -1293,6 +1454,21 @@ int setinputmask(wbp w, char *val)
 int setcanvas(wbp w, char *s)
    {
    wsp ws = w->window;
+
+   if (ISSUBWIN(ws)) {                  /* shown or not, over the parent */
+      if (!strcmp(s, "hidden"))
+         ws->iconic = HiddenState;
+      else if (!strcmp(s, "normal") || !strcmp(s, "iconic") ||
+               !strcmp(s, "maximal"))
+         ws->iconic = NormalState;
+      else
+         return RunError;
+      if (ws->pix) {
+         subwin_changed(ws);
+         present(ws, 1);
+         }
+      return Succeeded;
+      }
 
    if (!strcmp(s, "iconic")) {
       if (ws->pix == NULL)
@@ -1675,6 +1851,7 @@ int getvisual(wbp w, char *answer)
 int getpos(wbp w)
    {
    wsp ws = w->window;
+   if (ISSUBWIN(ws)) return Succeeded;  /* posx, posy are in the parent */
    if (!ws->win) return Failed;
    usdl_get_position(ws->win, &ws->posx, &ws->posy);
    return Succeeded;
@@ -3303,6 +3480,10 @@ int free_window(wsp ws)
          uc_canvas_free(ws->iconpix);
          ws->iconpix = NULL;
          }
+      if (ws->comp) {
+         uc_canvas_free(ws->comp);
+         ws->comp = NULL;
+         }
       if (ws->windowlabel) { free(ws->windowlabel); ws->windowlabel = NULL; }
       if (ws->iconlabel) { free(ws->iconlabel); ws->iconlabel = NULL; }
       if (ws->iconimage) { free(ws->iconimage); ws->iconimage = NULL; }
@@ -3334,22 +3515,14 @@ void free_context(wcp wc)
    }
 
 /*
- * Child windows (subwindows of a canvas) have a canvas but no window
- * of their own.
+ * Child windows (subwindows of a canvas) have a canvas but no window of
+ * their own; wmap() makes the canvas once the attributes are known, and
+ * they are shown over their parent.
  */
 char child_window_stuff(wbp w, wbp wp, int child_window)
    {
-   wsp ws;
    if (child_window_generic(w, wp, child_window) == 0)
       return 0;
-   ws = w->window;
-   if (ws->pix == NULL) {
-      ws->pix = uc_canvas_new(Max(ws->width, 1), Max(ws->height, 1),
-                              (unsigned int)w->context->bg);
-      if (ws->pix == NULL) return 0;
-      ws->pixwidth = ws->pix->width;
-      ws->pixheight = ws->pix->height;
-      }
    return 1;
    }
 

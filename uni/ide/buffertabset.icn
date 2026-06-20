@@ -31,14 +31,14 @@ class BufferTabSet : TabSet()
 
       if /last_on_a_line then
          DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 2,
-                  x + w - 1, y + tab_h - 2)
+		  x + w - 1, y + tab_h - 2)
 
       Fg(cw, "black")
       DrawLine(cw, x, y + tab_h - 1, which_one.label_x, y + tab_h - 1)
 
       if /last_on_a_line then
          DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 1,
-                  x + w - 2, y + tab_h - 1)
+		  x + w - 2, y + tab_h - 1)
 
       Uncouple(cw)
 
@@ -60,8 +60,18 @@ class BufferTabSet : TabSet()
    # associated with current tab item
    #
    method set_which_one(x)
+      local currentFile
       self.TabSet.set_which_one(x)
       uidlog.set_focus(ide.CurrentEditBox())
+      if \uidlog.ivib_maindialog then if \uidlog.FileTabSet.get_which_one().filename then {
+         if \uidlog.FileTabSet.get_which_one().filedirectory then {
+            currentFile := uidlog.FileTabSet.get_which_one().filedirectory || uidlog.FileTabSet.get_which_one().filename
+         } else {
+            currentFile := uidlog.FileTabSet.get_which_one().filename
+         }
+         uidlog.ivib_maindialog.op_open_file(currentFile)
+         uidlog.ivib_maindialog.canvas.restore()
+      }
       return x
    end
 

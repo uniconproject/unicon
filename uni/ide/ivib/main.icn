@@ -104,7 +104,8 @@ end
 #
 $define CANVAS_SURROUND 30
 #
-class Main : CommonDialog(
+class Main : CommonDialog (
+   my_ui,                   # Was this opened from UI?
    quit,                    # Quit function
    about,                   # Program version info
    bg,                      # Button group of tool bar buttons
@@ -177,7 +178,7 @@ class Main : CommonDialog(
    grid_button,
    copy_button,
    last_icn_dir,
-   source                   # source file (list of strings)
+   source		    # source file (list of strings)
    )
 
    method show_tooltip(x, y, label)
@@ -708,7 +709,11 @@ class Main : CommonDialog(
          #
          # Set modified flag of all in undo/redo buffer
          every (!self.undo_list | !self.redo_list).modified := 1
-      } else {
+         #If opened from UI tell UI to reload file.
+         if \my_ui then
+              my_ui.updatefile(self.canvas.filename)
+         }
+         else {
          c := self.canvas.gen_code()
          c.output_code(self.canvas.filename) | fail
          self.canvas.clear_modified()
@@ -720,6 +725,10 @@ class Main : CommonDialog(
          # Clear new flag of all in undo/redo buffer
          every (!self.undo_list | !self.redo_list).new_file_flag := &null
          self.canvas.new_file_flag := &null
+         #If opened from UI tell UI to reload file.
+         if \my_ui then {
+                my_ui.updatefile(self.canvas.filename)
+         }
       }
       return
    end
@@ -788,34 +797,34 @@ class Main : CommonDialog(
       local s
       source := [ ]
       repeat {
-         if not (s := read(f)) then {
-            cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
-            cd.show_modal()
-            if not cd.result() then fail
-            # no ivib layout, need to append
-            close(f)
-            if f := open(fname, "w") then {
-               # write L
-               every write(f, !source)
-               # write the empty layout
-               append_ivib(f)
-               close(f)
-               source := [ ]
-               if f := open(fname) then {
-                  alert_error("added an Ivib interface")
-                  next
-                  }
-               else return alert_error("Failed to append layout to " || fname)
-               }
-            else
-               return alert_error("No Ivib layout in " || fname)
-            }
-         if s == v1_marker then
-            return load_v1(f, fname)
-         if s == v2_marker then
-            return load_v2(f, fname)
-         put(source, s)
-         }
+	 if not (s := read(f)) then {
+	    cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
+	    cd.show_modal()
+	    if not cd.result() then fail
+	    # no ivib layout, need to append
+	    close(f)
+	    if f := open(fname, "w") then {
+	       # write L
+	       every write(f, !source)
+	       # write the empty layout
+	       append_ivib(f)
+	       close(f)
+	       source := [ ]
+	       if f := open(fname) then {
+		  alert_error("added an Ivib interface")
+		  next
+		  }
+	       else return alert_error("Failed to append layout to " || fname)
+	       }
+	    else
+	       return alert_error("No Ivib layout in " || fname)
+	    }
+	 if s == v1_marker then
+	    return load_v1(f, fname)
+	 if s == v2_marker then
+	    return load_v2(f, fname)
+	 put(source, s)
+	 }
    end
 
    #
@@ -833,6 +842,8 @@ class Main : CommonDialog(
       "   end",
       "",
       "   method end_dialog()",
+      "      #To close overall program use: exit(0)",
+      "      #To close a single dialog window use: dispose()",
       "   end",
       "",
       "   method init_dialog()",
@@ -844,6 +855,7 @@ class Main : CommonDialog(
       "",
       "   initially",
       "      self.Dialog.initially()",
+      "      self.connect(self, \"dispose\", CLOSE_BUTTON_EVENT)",
       "end",
       "",
       "#You can invoke your ivib layout with something like this:",
@@ -872,7 +884,7 @@ class Main : CommonDialog(
       local s, t
       t := ""
       while s := read(f) do {
-         put(source, s)
+	 put(source, s)
          if s[1] == "#" then
             t ||:= s[2:0]
          else
@@ -1052,6 +1064,7 @@ class Main : CommonDialog(
          "\^w" : op_save_as()
          "\^d" : op_dialog()
          "\^n" : op_new()
+         "\^i" : op_handleUI()
          "\^u" : op_select_up()
          "\^s" : if /save.is_shaded_flag then op_save()
          "\^z" : if /undo.is_shaded_flag then op_Undo()
@@ -1101,10 +1114,11 @@ class Main : CommonDialog(
       self.add(c)
 
       x := 0
-      y := 25
+      y := -45
 
       mb := MenuBar()
-      mb.set_size(, y)
+      mb.set_size(, 25)
+      mb.set_pos(0, y)
       self.add(mb)
 
       set_tooltip_start_delay(0)
@@ -1141,6 +1155,15 @@ class Main : CommonDialog(
       new.set_accel("n")
       new.set_label_right("Ctrl-n")
       file.add(new)
+
+      #
+      # Menu item button for switching to Unicon IDE.
+      #
+      open_UI := TextMenuItem()
+      open_UI.set_label("Unicon IDE")
+      open_UI.set_accel("i")
+      open_UI.set_label_right("Ctrl-i")
+      file.add(open_UI)
 
       prog_preferences := TextMenuItem()
       prog_preferences.set_label("Preferences...")
@@ -1342,7 +1365,7 @@ class Main : CommonDialog(
       mb.add(objects_menu)
 
       tb := CustomToolBar()
-      tb.set_pos(0, y)
+      tb.set_pos(0, y+25)
 
       every ui := !uis do {
          listener := ObjectActionListener(self, ui)
@@ -1442,21 +1465,21 @@ class Main : CommonDialog(
       button_name_label := Label()
       button_name_label.set_size(150, 25)
       button_name_label.set_draw_border()
-      button_name_label.set_pos(0, y)
+      button_name_label.set_pos(0, y+25)
       button_name_label.set_label("")
       self.add(button_name_label)
 
       filename_label := Label()
       filename_label.set_size(150, 25)
       filename_label.set_draw_border()
-      filename_label.set_pos(150, y)
+      filename_label.set_pos(150, y+25)
       filename_label.set_label("")
       self.add(filename_label)
 
       info_label := Label()
       info_label.set_size("100%-425", 25)
       info_label.set_draw_border()
-      info_label.set_pos(300, y)
+      info_label.set_pos(300, y+25)
       info_label.set_label("")
       self.add(info_label)
 
@@ -1464,7 +1487,7 @@ class Main : CommonDialog(
       pos_label.set_attribs("font=serif,10")
       pos_label.set_size(125, 25)
       pos_label.set_draw_border()
-      pos_label.set_pos("100%-125", y)
+      pos_label.set_pos("100%-125", y+25)
       pos_label.set_label("")
       self.add(pos_label)
 
@@ -1563,10 +1586,10 @@ class Main : CommonDialog(
       mdelete.connect(self, "op_Delete", ACTION_EVENT)
       self.connect(self, "op_quit", CLOSE_BUTTON_EVENT)
 
-      self.tool_area_height := y + 25
+      self.tool_area_height := y + 50
 
       height := 600
-      self.set_attribs("label=Ivib", "size=" || width || "," || height)
+      self.set_attribs("label=Ivib", "size=" || width || "," || height + 50)
       self.set_min_size(width, height)
 
       #

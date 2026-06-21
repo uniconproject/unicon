@@ -368,11 +368,16 @@
 #endif                                  /* ConsoleWindow */
 
 #if HAVE_LIBGL
+#if defined(__APPLE__) && defined(SDLGraphics)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else                                   /* __APPLE__ && SDLGraphics */
 #include <GL/gl.h>
 #ifdef XWindows
 #include <GL/glx.h>
 #endif                                  /* XWindows */
 #include <GL/glu.h>
+#endif                                  /* __APPLE__ && SDLGraphics */
 #if HAVE_LIBFREETYPE
    #include <ft2build.h>
    #include FT_FREETYPE_H

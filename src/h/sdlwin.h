@@ -28,6 +28,8 @@
 #define DRAWOP_SET                      UC_OP_SET
 #define DRAWOP_XOR                      UC_OP_XOR
 
+#define MAXCOLORNAME 40
+
 #define TEXTWIDTH(w,s,n) uc_text_width((w)->context->font->uf, s, n)
 #define SCREENDEPTH(w) 24
 #define ASCENT(w) ((w)->context->font->ascent)
@@ -103,6 +105,14 @@ typedef struct {
    int x, y, width, height;
    double angle1, angle2;               /* radians, Unicon orientation */
    } XArc;
+
+#ifdef Graphics3D
+/*
+ * ropengl.ri swaps buffers to show a frame; here the frame is copied
+ * into the window's canvas.
+ */
+#define glXSwapBuffers(dpy, win) sdl_gl_swap(w)
+#endif                                  /* Graphics3D */
 
 /*
  * Colors recently asked for, by display value, for Pixel().

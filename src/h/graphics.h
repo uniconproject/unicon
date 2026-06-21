@@ -615,6 +615,7 @@ typedef struct _wstate {
   int           iconic;                 /* NormalState, IconicState, ... */
   int           iconx, icony;           /* icon position (recorded only) */
   int           cursor;                 /* usdl cursor shape */
+  struct usdlgl *gl;                    /* 3D: OpenGL context, framebuffer */
   struct ucanvas *comp;                 /* canvas plus subwindows, shown */
   int           recompose;              /* subwindows changed */
   int           border;                 /* subwindow border width, color */

@@ -92,6 +92,22 @@ char *usdl_error(void)
  * (2 on a Retina display), or UNICON_SCALE if it is set.  Canvases are
  * kept at this resolution so text is as sharp as the display allows.
  */
+#if defined(Graphics3D) && HAVE_LIBGL
+/*
+ * SDL's renderer may use OpenGL as well, making its own context current;
+ * keep a 3D window's context current across renderer calls.
+ */
+static SDL_Window *glwin;               /* hidden; 3D contexts need a window */
+#define GLSAVE SDL_GLContext glsaved = SDL_GL_GetCurrentContext()
+#define GLRESTORE do { \
+   if (glsaved && SDL_GL_GetCurrentContext() != glsaved) \
+      SDL_GL_MakeCurrent(glwin, glsaved); \
+   } while (0)
+#else                                   /* Graphics3D && HAVE_LIBGL */
+#define GLSAVE
+#define GLRESTORE
+#endif                                  /* Graphics3D && HAVE_LIBGL */
+
 static int display_scale(void)
 {
    const SDL_DisplayMode *m;
@@ -175,9 +191,13 @@ struct usdlwin *usdl_open(char *title, int x, int y, int w, int h,
       free(uw);
       return NULL;
       }
+   {
+   GLSAVE;
    uw->ren = SDL_CreateRenderer(uw->win, NULL);
    if (uw->ren == NULL)
       uw->ren = SDL_CreateRenderer(uw->win, SDL_SOFTWARE_RENDERER);
+   GLRESTORE;
+   }
    if (uw->ren == NULL) {
       snprintf(errbuf, sizeof(errbuf), "SDL_CreateRenderer: %s",
                SDL_GetError());
@@ -215,8 +235,12 @@ void usdl_close(struct usdlwin *uw)
       struct usdl_event *e = &pending[(pend_head + i) % PENDMAX];
       if (e->owner == uw->owner) e->type = USDL_EV_NONE;
       }
+   {
+   GLSAVE;
    if (uw->tex) SDL_DestroyTexture(uw->tex);
    if (uw->ren) SDL_DestroyRenderer(uw->ren);
+   GLRESTORE;
+   }
    SDL_ClearProperty(SDL_GetWindowProperties(uw->win), OWNER_PROP);
    SDL_DestroyWindow(uw->win);
    free(uw);
@@ -311,22 +335,33 @@ int usdl_state(struct usdlwin *uw)
  * The canvas holds scale x scale device pixels per Unicon pixel; on a
  * high-density display they map one to one onto the window's pixels.
  */
+static void present(struct usdlwin *uw, struct ucanvas *c, Uint64 now);
+
 void usdl_present(struct usdlwin *uw, struct ucanvas *c, int force)
 {
    Uint64 now;
-   int ww, wh, ow, oh, vw, vh, s = c ? c->scale : 1;
-   SDL_FRect src, dst;
 
    if (uw == NULL || c == NULL || offmain()) return;
    if (!c->dirty && !uw->redraw) return;
    now = SDL_GetTicks();
    if (!force && now - uw->last_present < 30) return;
+   present(uw, c, now);
+}
+
+static void present(struct usdlwin *uw, struct ucanvas *c, Uint64 now)
+{
+   int ww, wh, ow, oh, vw, vh, s = c->scale;
+   SDL_FRect src, dst;
+   GLSAVE;
 
    if (uw->tex == NULL || uw->tw != c->pw || uw->th != c->ph) {
       if (uw->tex) SDL_DestroyTexture(uw->tex);
       uw->tex = SDL_CreateTexture(uw->ren, SDL_PIXELFORMAT_XRGB8888,
                                   SDL_TEXTUREACCESS_STREAMING, c->pw, c->ph);
-      if (uw->tex == NULL) return;
+      if (uw->tex == NULL) {
+         GLRESTORE;
+         return;
+         }
       SDL_SetTextureScaleMode(uw->tex, (s > 1) ? SDL_SCALEMODE_LINEAR :
                                                  SDL_SCALEMODE_NEAREST);
       uw->tw = c->pw;
@@ -363,6 +398,7 @@ void usdl_present(struct usdlwin *uw, struct ucanvas *c, int force)
    SDL_RenderClear(uw->ren);
    SDL_RenderTexture(uw->ren, uw->tex, &src, &dst);
    SDL_RenderPresent(uw->ren);
+   GLRESTORE;
    uw->redraw = 0;
    uw->last_present = now;
 }
@@ -805,6 +841,217 @@ int usdl_wait(struct usdl_event *ev, int timeout_ms)
       translate(&e);
       }
 }
+
+#if defined(Graphics3D) && HAVE_LIBGL
+/*
+ * ------------------------------------------------------------------
+ * OpenGL for 3D windows
+ * ------------------------------------------------------------------
+ *
+ * Each 3D window has its own OpenGL context, which renders into a
+ * framebuffer object the size of the window.  A finished frame is read
+ * back into the window's canvas and shown like 2D drawing, so 3D windows,
+ * hidden 3D windows and 3D subwindows all work the same way, and Pixel(),
+ * WriteImage() and CopyArea() see what was drawn.  The contexts are made
+ * against one hidden window and share their textures.
+ */
+#include <SDL3/SDL_opengl.h>
+
+struct usdlgl {
+   SDL_GLContext ctx;
+   GLuint fbo, color, depth;            /* framebuffer and its storage */
+   int w, h;
+   unsigned int *buf;                   /* read-back buffer */
+   };
+
+static SDL_GLContext glroot;            /* never deleted; others share it */
+
+static PFNGLGENFRAMEBUFFERSPROC          gl_GenFramebuffers;
+static PFNGLDELETEFRAMEBUFFERSPROC       gl_DeleteFramebuffers;
+static PFNGLBINDFRAMEBUFFERPROC          gl_BindFramebuffer;
+static PFNGLGENRENDERBUFFERSPROC         gl_GenRenderbuffers;
+static PFNGLDELETERENDERBUFFERSPROC      gl_DeleteRenderbuffers;
+static PFNGLBINDRENDERBUFFERPROC         gl_BindRenderbuffer;
+static PFNGLRENDERBUFFERSTORAGEPROC      gl_RenderbufferStorage;
+static PFNGLFRAMEBUFFERRENDERBUFFERPROC  gl_FramebufferRenderbuffer;
+static PFNGLCHECKFRAMEBUFFERSTATUSPROC   gl_CheckFramebufferStatus;
+
+/* a framebuffer object function: the OpenGL 3.0 name, else the EXT one */
+static SDL_FunctionPointer glproc(const char *core)
+{
+   char ext[64];
+   SDL_FunctionPointer f = SDL_GL_GetProcAddress(core);
+   if (f == NULL) {
+      snprintf(ext, sizeof(ext), "%sEXT", core);
+      f = SDL_GL_GetProcAddress(ext);
+      }
+   return f;
+}
+
+static int glsetup(void)
+{
+   if (glwin) return 1;
+   if (!usdl_init()) return 0;
+   if (offmain()) {
+      snprintf(errbuf, sizeof(errbuf),
+               "3D windows can only be opened by the main thread");
+      return 0;
+      }
+   /* the fixed-function pipeline: a compatibility (macOS: legacy) context */
+   SDL_GL_ResetAttributes();
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                       SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+   glwin = SDL_CreateWindow("Unicon 3D", 16, 16,
+                            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+   if (glwin == NULL) {
+      snprintf(errbuf, sizeof(errbuf), "OpenGL: %s", SDL_GetError());
+      return 0;
+      }
+   glroot = SDL_GL_CreateContext(glwin);
+   if (glroot == NULL) {
+      snprintf(errbuf, sizeof(errbuf), "OpenGL: %s", SDL_GetError());
+      SDL_DestroyWindow(glwin);
+      glwin = NULL;
+      return 0;
+      }
+   gl_GenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)glproc("glGenFramebuffers");
+   gl_DeleteFramebuffers =
+      (PFNGLDELETEFRAMEBUFFERSPROC)glproc("glDeleteFramebuffers");
+   gl_BindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)glproc("glBindFramebuffer");
+   gl_GenRenderbuffers =
+      (PFNGLGENRENDERBUFFERSPROC)glproc("glGenRenderbuffers");
+   gl_DeleteRenderbuffers =
+      (PFNGLDELETERENDERBUFFERSPROC)glproc("glDeleteRenderbuffers");
+   gl_BindRenderbuffer =
+      (PFNGLBINDRENDERBUFFERPROC)glproc("glBindRenderbuffer");
+   gl_RenderbufferStorage =
+      (PFNGLRENDERBUFFERSTORAGEPROC)glproc("glRenderbufferStorage");
+   gl_FramebufferRenderbuffer =
+      (PFNGLFRAMEBUFFERRENDERBUFFERPROC)glproc("glFramebufferRenderbuffer");
+   gl_CheckFramebufferStatus =
+      (PFNGLCHECKFRAMEBUFFERSTATUSPROC)glproc("glCheckFramebufferStatus");
+   if (!gl_GenFramebuffers || !gl_DeleteFramebuffers || !gl_BindFramebuffer ||
+       !gl_GenRenderbuffers || !gl_DeleteRenderbuffers ||
+       !gl_BindRenderbuffer || !gl_RenderbufferStorage ||
+       !gl_FramebufferRenderbuffer || !gl_CheckFramebufferStatus) {
+      snprintf(errbuf, sizeof(errbuf),
+               "OpenGL has no framebuffer objects (version %s)",
+               (char *)glGetString(GL_VERSION));
+      SDL_GL_DestroyContext(glroot);
+      glroot = NULL;
+      SDL_DestroyWindow(glwin);
+      glwin = NULL;
+      return 0;
+      }
+   return 1;
+}
+
+struct usdlgl *usdl_gl_open(void)
+{
+   struct usdlgl *g;
+
+   if (!glsetup()) return NULL;
+   if ((g = calloc(1, sizeof(struct usdlgl))) == NULL) {
+      snprintf(errbuf, sizeof(errbuf), "out of memory");
+      return NULL;
+      }
+   SDL_GL_MakeCurrent(glwin, glroot);
+   SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+   g->ctx = SDL_GL_CreateContext(glwin);
+   SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+   if (g->ctx == NULL || !SDL_GL_MakeCurrent(glwin, g->ctx)) {
+      snprintf(errbuf, sizeof(errbuf), "OpenGL: %s", SDL_GetError());
+      if (g->ctx) SDL_GL_DestroyContext(g->ctx);
+      free(g);
+      return NULL;
+      }
+   gl_GenFramebuffers(1, &g->fbo);
+   gl_GenRenderbuffers(1, &g->color);
+   gl_GenRenderbuffers(1, &g->depth);
+   gl_BindFramebuffer(GL_FRAMEBUFFER, g->fbo);
+   return g;
+}
+
+/*
+ * Make g's context current (in this thread) and draw into its window.
+ */
+int usdl_gl_current(struct usdlgl *g)
+{
+   if (g == NULL) return 0;
+   if (SDL_GL_GetCurrentContext() != g->ctx &&
+       !SDL_GL_MakeCurrent(glwin, g->ctx))
+      return 0;
+   gl_BindFramebuffer(GL_FRAMEBUFFER, g->fbo);
+   return 1;
+}
+
+/*
+ * Size the framebuffer to w x h pixels (its contents are then undefined):
+ * 2 if the size changed, 1 if it was already that size, 0 on failure.
+ */
+int usdl_gl_size(struct usdlgl *g, int w, int h)
+{
+   unsigned int *nb;
+
+   if (w < 1) w = 1;
+   if (h < 1) h = 1;
+   if (!usdl_gl_current(g)) return 0;
+   if (w == g->w && h == g->h) return 1;   /* already: 1; resized: 2 */
+   if ((nb = realloc(g->buf, (size_t)w * h * sizeof(unsigned int))) == NULL)
+      return 0;
+   g->buf = nb;
+   gl_BindRenderbuffer(GL_RENDERBUFFER, g->color);
+   gl_RenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h);
+   gl_BindRenderbuffer(GL_RENDERBUFFER, g->depth);
+   gl_RenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+   gl_BindRenderbuffer(GL_RENDERBUFFER, 0);
+   gl_FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                              GL_RENDERBUFFER, g->color);
+   gl_FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                              GL_RENDERBUFFER, g->depth);
+   if (gl_CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+      snprintf(errbuf, sizeof(errbuf), "OpenGL: incomplete framebuffer");
+      return 0;
+      }
+   g->w = w;
+   g->h = h;
+   return 2;
+}
+
+/*
+ * Copy the rendered frame into canvas c at (x,y).
+ */
+int usdl_gl_show(struct usdlgl *g, struct ucanvas *c, int x, int y)
+{
+   GLint align, rowlen;
+
+   if (c == NULL || g->buf == NULL || !usdl_gl_current(g)) return 0;
+   glGetIntegerv(GL_PACK_ALIGNMENT, &align);
+   glGetIntegerv(GL_PACK_ROW_LENGTH, &rowlen);
+   glPixelStorei(GL_PACK_ALIGNMENT, 4);
+   glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+   glReadPixels(0, 0, g->w, g->h, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, g->buf);
+   glPixelStorei(GL_PACK_ALIGNMENT, align);
+   glPixelStorei(GL_PACK_ROW_LENGTH, rowlen);
+   uc_put_rgb(c, x, y, g->w, g->h, g->buf, g->w, 1);
+   return 1;
+}
+
+void usdl_gl_close(struct usdlgl *g)
+{
+   if (g == NULL) return;
+   if (SDL_GL_MakeCurrent(glwin, g->ctx)) {
+      gl_BindFramebuffer(GL_FRAMEBUFFER, 0);
+      gl_DeleteFramebuffers(1, &g->fbo);
+      gl_DeleteRenderbuffers(1, &g->color);
+      gl_DeleteRenderbuffers(1, &g->depth);
+      }
+   SDL_GL_MakeCurrent(glwin, glroot);
+   SDL_GL_DestroyContext(g->ctx);
+   free(g->buf);
+   free(g);
+}
+#endif                                  /* Graphics3D && HAVE_LIBGL */
 
 #else                                   /* SDLGraphics */
 #pragma GCC diagnostic push

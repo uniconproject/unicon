@@ -10,6 +10,7 @@
 
 struct ucanvas;
 struct usdlwin;
+struct usdlgl;
 
 /* position for usdl_open() that lets the window system choose */
 #define USDL_POS_UNDEFINED (-1000000)
@@ -89,6 +90,13 @@ int  usdl_pointer(struct usdlwin *win, int *x, int *y);
 void usdl_global_pointer(int *x, int *y);
 char *usdl_get_clipboard(void);
 int  usdl_set_clipboard(char *s, int len);
+
+/* OpenGL contexts for 3D windows, rendering into framebuffer objects */
+struct usdlgl *usdl_gl_open(void);
+int  usdl_gl_current(struct usdlgl *g);
+int  usdl_gl_size(struct usdlgl *g, int w, int h);
+int  usdl_gl_show(struct usdlgl *g, struct ucanvas *c, int x, int y);
+void usdl_gl_close(struct usdlgl *g);
 
 int  usdl_poll(struct usdl_event *ev);
 int  usdl_wait(struct usdl_event *ev, int timeout_ms);

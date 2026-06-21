@@ -743,6 +743,9 @@ int checkOpenConsole( FILE *w, char *s );
       void      drawstrng       (wbp w, int x, int y, char *s, int slen);
       void      fillarcs        (wbp w, XArc *arcs, int narcs);
       void      fillpolygon     (wbp w, XPoint *pts, int npts);
+      #ifdef Graphics3D
+         void   sdl_gl_swap     (wbp w);
+      #endif                            /* Graphics3D */
    #endif                               /* SDLGraphics */
 
    int setglXVisual(wdp wd);

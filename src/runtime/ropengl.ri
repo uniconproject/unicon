@@ -3273,6 +3273,10 @@ int setselectionmode(wbp w, char* s)
    glXMakeCurrent(w3d->window->display->display, w3d->window->win, w3d->context->ctx);
 #endif                                  /* XWindows */
 
+#ifdef SDLGraphics
+#define MKCURRENT3D(w3d) makecurrent(w3d);
+#endif                                  /* SDLGraphics */
+
 #ifdef MSWindows
 #define MKCURRENT3D(w3d){ \
    HDC stddc = CreateWinDC(w3d); \
@@ -3802,6 +3806,12 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
          tex[l] = clrcell.red >> 8;
          tex[l+1] = clrcell.green >> 8;
          tex[l+2] = clrcell.blue >> 8;
+#elif defined(SDLGraphics)
+         /* the canvas holds the colors as shown */
+         c = uc_get_pixel(w2d->window->pix, x + i, y + j);
+         tex[l] = RED(c);
+         tex[l+1] = GREEN(c);
+         tex[l+2] = BLUE(c);
 #else                                   /* XWindows */
          char *s2, strout[50];
          long rv;
@@ -3848,6 +3858,11 @@ int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,
    glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height,
                   GL_RGBA, GL_UNSIGNED_BYTE, tex2);
 #endif                                  /* XWindows */
+#ifdef SDLGraphics
+   makecurrent(w3d);
+   glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height,
+                  GL_RGBA, GL_UNSIGNED_BYTE, tex2);
+#endif                                  /* SDLGraphics */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w3d);
@@ -3934,6 +3949,13 @@ int texwindow3D(wbp w1, wbp w2)
    glBindTexture(GL_TEXTURE_2D, w1c->display->stex[w1c->curtexture].texName);
     i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
 #endif                                  /* XWindows */
+#ifdef SDLGraphics
+   makecurrent(w2);
+   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
+   makecurrent(w1);
+   glBindTexture(GL_TEXTURE_2D, w1c->display->stex[w1c->curtexture].texName);
+   i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
+#endif                                  /* SDLGraphics */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w2);
@@ -4034,6 +4056,7 @@ void bindtexture(wbp w, int texturehandle)
    glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
 }
 
+#ifndef SDLGraphics                     /* SDL: in rsdlwin.ri */
 int create3Dcontext(wbp w)
 {
    wcp wc = w->context;
@@ -4050,3 +4073,4 @@ int create3Dcontext(wbp w)
 #endif
    return Succeeded;
 }
+#endif                                  /* SDLGraphics */

@@ -975,6 +975,35 @@ void uc_put_pixel(struct ucanvas *c, struct ucgc *gc, int x, int y,
 }
 
 /*
+ * Store a w x h block of pixels (0x00RRGGBB, stride pixels per row) at
+ * (x,y) as they are: no drawing op, no clip rectangle.  With bottomup,
+ * the first row in rgb is the bottom one, as OpenGL reads them.
+ */
+void uc_put_rgb(struct ucanvas *c, int x, int y, int w, int h,
+                const unsigned int *rgb, int stride, int bottomup)
+{
+   int i, j, k, l, s = c->scale;
+   int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
+   int x1 = (x + w > c->width) ? c->width : x + w;
+   int y1 = (y + h > c->height) ? c->height : y + h;
+
+   if (x0 >= x1 || y0 >= y1) return;
+   for (j = y0; j < y1; j++) {
+      const unsigned int *row =
+         rgb + (long)(bottomup ? h - 1 - (j - y) : j - y) * stride;
+      for (k = 0; k < s; k++) {
+         unsigned int *p = c->px + (long)(j * s + k) * c->pw;
+         for (i = x0; i < x1; i++) {
+            unsigned int v = row[i - x] & RGBMASK;
+            for (l = 0; l < s; l++)
+               p[i * s + l] = v;
+            }
+         }
+      }
+   mark(c, x0, y0, x1 - 1, y1 - 1);
+}
+
+/*
  * Copy a w x h block from src at (sx,sy) to dst at (dx,dy).  The
  * destination is clipped (canvas and gc clip), as is the source.
  * Pixels are copied verbatim (device pixels, when the scales agree).

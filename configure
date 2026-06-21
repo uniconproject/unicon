@@ -13671,11 +13671,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 fi
 
 
-    # 3D graphics still needs GLX or WGL; the SDL backend is 2D only for now
-    if test "x$sdlgraphics" = "xyes" ; then
-      graphics3d=no
-    fi
-
     if ! test "x$graphics3d" = "xno"; then
        # assume we have opengl on windows
        if test "ms$unicon_os" = "mswindows" ; then
@@ -13686,6 +13681,34 @@ fi
 
 	  printf "%s\n" "#define HAVE_LIBGLU 1" >>confdefs.h
 
+       elif test "x$sdlgraphics" = "xyes" -a "x$unicon_os" = "xmacos" ; then
+          # SDL graphics on macOS: 3D through the OpenGL framework
+                 for ac_header in OpenGL/gl.h OpenGL/glu.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ cv_opengl=yes
+else $as_nop
+  cv_opengl=no; break
+fi
+
+done
+          if test "x$cv_opengl" = "xyes" ; then
+             cv_libGL=yes
+             cv_libGLU=yes
+             printf "%s\n" "#define HAVE_LIBGL 1" >>confdefs.h
+
+             printf "%s\n" "#define HAVE_LIBGLU 1" >>confdefs.h
+
+             LIBS="$LIBS -framework OpenGL"
+             # Apple deprecated OpenGL; it still works
+             CFLAGS="$CFLAGS -DGL_SILENCE_DEPRECATION"
+          fi
        else
 
 

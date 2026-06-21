@@ -887,11 +887,6 @@ if ! test "x$graphics" = "xno"; then
     CHECK_JPEG()
     CHECK_PNG()
 
-    # 3D graphics still needs GLX or WGL; the SDL backend is 2D only for now
-    if test "x$sdlgraphics" = "xyes" ; then
-      graphics3d=no
-    fi
-
     if ! test "x$graphics3d" = "xno"; then
        # assume we have opengl on windows
        if test "ms$unicon_os" = "mswindows" ; then
@@ -900,6 +895,19 @@ if ! test "x$graphics" = "xno"; then
 	  cv_opengl=yes
 	  AC_DEFINE([HAVE_LIBGL], [1])
 	  AC_DEFINE([HAVE_LIBGLU], [1])
+       elif test "x$sdlgraphics" = "xyes" -a "x$unicon_os" = "xmacos" ; then
+          # SDL graphics on macOS: 3D through the OpenGL framework
+          AC_CHECK_HEADERS([OpenGL/gl.h OpenGL/glu.h],
+                           [cv_opengl=yes], [cv_opengl=no; break])
+          if test "x$cv_opengl" = "xyes" ; then
+             cv_libGL=yes
+             cv_libGLU=yes
+             AC_DEFINE([HAVE_LIBGL], [1])
+             AC_DEFINE([HAVE_LIBGLU], [1])
+             LIBS="$LIBS -framework OpenGL"
+             # Apple deprecated OpenGL; it still works
+             CFLAGS="$CFLAGS -DGL_SILENCE_DEPRECATION"
+          fi
        else
           CHECK_OPENGL()
        fi

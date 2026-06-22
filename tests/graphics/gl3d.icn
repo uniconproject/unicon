@@ -1,0 +1,84 @@
+#
+# 3D graphics, checked by their pixels: primitives, colors, textures,
+# hidden windows, subwindows, resizing and window contents.
+#
+procedure main()
+   local w, h, c
+
+   w := open("gl3d", "gl", "size=160,120", "bg=black", "canvas=hidden") |
+      stop("no 3D window: ", &errortext)
+   Fg(w, "red");   DrawCube(w, -0.6, 0, -3, 0.5)
+   Fg(w, "green"); DrawSphere(w, 0.6, 0, -3, 0.3)
+   check(w, "background", 5, 5, "black")
+   check(w, "red cube", 52, 60, "red")
+   check(w, "green sphere", 112, 60, "green")
+
+   # a texture from an image string, on a quad that fills the window
+   EraseArea(w)
+   WAttrib(w, "texmode=on")
+   Texture(w, "2,g2,10") | write("texture failed")
+   Texcoord(w, 0,0, 1,0, 1,1, 0,1)
+   FillPolygon(w, -1,-1,-0.25, 1,-1,-0.25, 1,1,-0.25, -1,1,-0.25)
+   WAttrib(w, "texmode=off")
+   check(w, "texture left", 30, 60, "white")
+   check(w, "texture right", 130, 60, "black")
+
+   # another window's contents as a texture
+   h := open("src", "g", "size=8,8", "bg=blue", "canvas=hidden") |
+      stop("no window")
+   c := open("tex", "gl", "size=80,60", "bg=white", "canvas=hidden") |
+      stop("no 3D window")
+   WAttrib(c, "texmode=on")
+   Texture(c, h) | write("window texture failed")
+   Texcoord(c, 0,0, 1,0, 1,1, 0,1)
+   FillPolygon(c, -1,-1,-0.25, 1,-1,-0.25, 1,1,-0.25, -1,1,-0.25)
+   check(c, "window texture", 40, 30, "blue")
+
+   # a 3D subwindow
+   EraseArea(w)
+   c := Clone(w, "gl", "size=40,40", "pos=10,10", "bg=white") |
+      stop("no 3D subwindow")
+   Fg(c, "blue"); DrawSphere(c, 0, 0, -3, 1)
+   check(c, "subwindow", 20, 20, "blue")
+   check(c, "subwindow background", 1, 1, "white")
+
+   # a subwindow moves and resizes within its parent
+   WAttrib(c, "pos=30,20")
+   WAttrib(c, "size=60,50")
+   write("subwindow at ", WAttrib(c, "pos"), " size ", WAttrib(c, "size"))
+   check(c, "resized subwindow", 30, 25, "blue")
+
+   # resizing renders the scene again
+   EraseArea(w)
+   Fg(w, "yellow"); DrawCube(w, 0, 0, -3, 0.6)
+   WAttrib(w, "size=200,200")
+   write("size ", WAttrib(w, "width"), "x", WAttrib(w, "height"))
+   check(w, "resized", 100, 100, "yellow")
+   check(w, "resized background", 195, 195, "black")
+end
+
+# is the pixel at x,y of w (nearly) color c?  Lit surfaces are shaded,
+# so only the hue is compared.
+procedure check(w, what, x, y, c)
+   local p, q
+   p := rgb(Pixel(w, x, y, 1, 1))
+   q := rgb(ColorValue(c))
+   write(what, ": ", if near(p, q) then "ok" else Pixel(w, x, y, 1, 1))
+end
+
+procedure rgb(s)
+   local l
+   l := []
+   s ? while put(l, tab(many(&digits)) / 257) do move(1)
+   return l
+end
+
+procedure near(p, q)
+   local i
+   every i := 1 to 3 do {
+      # a channel that is off must be dark; one that is on must be lit
+      if q[i] = 0 & p[i] > 60 then fail
+      if q[i] = 255 & p[i] < 100 then fail
+      }
+   return
+end

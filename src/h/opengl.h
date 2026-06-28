@@ -142,6 +142,13 @@ struct fontsymbol {
 
 
 /*
+ * Framebuffer pixels per Unicon pixel (see sdlwin.h).
+ */
+#ifndef GLSCALE
+#define GLSCALE 1
+#endif                                  /* GLSCALE */
+
+/*
  * A version of *MakeCurrent that checks for redundant state changes.
  */
 #ifdef XWindows

@@ -97,6 +97,10 @@ int  usdl_gl_current(struct usdlgl *g);
 int  usdl_gl_size(struct usdlgl *g, int w, int h);
 int  usdl_gl_show(struct usdlgl *g, struct ucanvas *c, int x, int y);
 void usdl_gl_close(struct usdlgl *g);
+void usdl_gl_viewport(int x, int y, int w, int h);
+void usdl_gl_linewidth(double w);
+void usdl_gl_readpixels(int x, int y, int w, int h, unsigned int format,
+                        unsigned int type, void *data);
 
 int  usdl_poll(struct usdl_event *ev);
 int  usdl_wait(struct usdl_event *ev, int timeout_ms);

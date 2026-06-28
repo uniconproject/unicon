@@ -986,15 +986,20 @@ int usdl_gl_current(struct usdlgl *g)
 }
 
 /*
- * Size the framebuffer to w x h pixels (its contents are then undefined):
- * 2 if the size changed, 1 if it was already that size, 0 on failure.
+ * Size the framebuffer for a w x h window (its contents are then
+ * undefined): 2 if the size changed, 1 if it was already that size, 0 on
+ * failure.  It has the display's resolution: scale x scale pixels per
+ * Unicon pixel, as the canvas does.
  */
 int usdl_gl_size(struct usdlgl *g, int w, int h)
 {
    unsigned int *nb;
+   int s = uc_get_scale();
 
    if (w < 1) w = 1;
    if (h < 1) h = 1;
+   w *= s;
+   h *= s;
    if (!usdl_gl_current(g)) return 0;
    if (w == g->w && h == g->h) return 1;   /* already: 1; resized: 2 */
    if ((nb = realloc(g->buf, (size_t)w * h * sizeof(unsigned int))) == NULL)
@@ -1033,8 +1038,53 @@ int usdl_gl_show(struct usdlgl *g, struct ucanvas *c, int x, int y)
    glReadPixels(0, 0, g->w, g->h, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, g->buf);
    glPixelStorei(GL_PACK_ALIGNMENT, align);
    glPixelStorei(GL_PACK_ROW_LENGTH, rowlen);
-   uc_put_rgb(c, x, y, g->w, g->h, g->buf, g->w, 1);
+   if (c->scale == uc_get_scale())
+      uc_put_device_rgb(c, x * c->scale, y * c->scale, g->w, g->h, g->buf,
+                        g->w, 1);
+   else if (uc_get_scale() == 1)
+      uc_put_rgb(c, x, y, g->w, g->h, g->buf, g->w, 1);
    return 1;
+}
+
+/*
+ * ropengl.ri's view of the framebuffer is in Unicon pixels; these scale
+ * its viewport, line widths and pixel reads to the display's resolution.
+ */
+void usdl_gl_viewport(int x, int y, int w, int h)
+{
+   int s = uc_get_scale();
+   glViewport(x * s, y * s, w * s, h * s);
+}
+
+void usdl_gl_linewidth(double w)
+{
+   glLineWidth((GLfloat)(w * uc_get_scale()));
+}
+
+/* read Unicon pixels: the middle device pixel of each */
+void usdl_gl_readpixels(int x, int y, int w, int h, unsigned int format,
+                        unsigned int type, void *data)
+{
+   int s = uc_get_scale(), n, i, j, k;
+   unsigned char *big, *out = data;
+
+   if (s == 1 || type != GL_UNSIGNED_BYTE ||
+       (format != GL_RGB && format != GL_RGBA)) {
+      glReadPixels(x, y, w, h, format, type, data);
+      return;
+      }
+   n = (format == GL_RGBA) ? 4 : 3;
+   if ((big = malloc((size_t)w * s * h * s * n)) == NULL) return;
+   glPixelStorei(GL_PACK_ALIGNMENT, 1);
+   glReadPixels(x * s, y * s, w * s, h * s, format, type, big);
+   for (j = 0; j < h; j++)
+      for (i = 0; i < w; i++) {
+         unsigned char *p = big +
+            ((size_t)(j * s + s / 2) * w * s + (size_t)i * s + s / 2) * n;
+         for (k = 0; k < n; k++)
+            *out++ = p[k];
+         }
+   free(big);
 }
 
 void usdl_gl_close(struct usdlgl *g)

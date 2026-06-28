@@ -134,6 +134,8 @@ void uc_copy_area(struct ucanvas *src, int sx, int sy, int w, int h,
                   struct ucanvas *dst, struct ucgc *gc, int dx, int dy);
 void uc_put_rgb(struct ucanvas *c, int x, int y, int w, int h,
                 const unsigned int *rgb, int stride, int bottomup);
+void uc_put_device_rgb(struct ucanvas *c, int x, int y, int w, int h,
+                       const unsigned int *rgb, int stride, int bottomup);
 
 /*
  * Fonts and text.  Strings are bytes; each byte is a Latin-1 character,

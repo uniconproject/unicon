@@ -1004,6 +1004,29 @@ void uc_put_rgb(struct ucanvas *c, int x, int y, int w, int h,
 }
 
 /*
+ * The same with the pixels at the canvas's device resolution: x, y, w
+ * and h are device pixels.
+ */
+void uc_put_device_rgb(struct ucanvas *c, int x, int y, int w, int h,
+                       const unsigned int *rgb, int stride, int bottomup)
+{
+   int i, j, s = c->scale;
+   int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
+   int x1 = (x + w > c->pw) ? c->pw : x + w;
+   int y1 = (y + h > c->ph) ? c->ph : y + h;
+
+   if (x0 >= x1 || y0 >= y1) return;
+   for (j = y0; j < y1; j++) {
+      const unsigned int *row =
+         rgb + (long)(bottomup ? h - 1 - (j - y) : j - y) * stride;
+      unsigned int *p = c->px + (long)j * c->pw;
+      for (i = x0; i < x1; i++)
+         p[i] = row[i - x] & RGBMASK;
+      }
+   mark(c, x0 / s, y0 / s, (x1 - 1) / s, (y1 - 1) / s);
+}
+
+/*
  * Copy a w x h block from src at (sx,sy) to dst at (dx,dy).  The
  * destination is clipped (canvas and gc clip), as is the source.
  * Pixels are copied verbatim (device pixels, when the scales agree).

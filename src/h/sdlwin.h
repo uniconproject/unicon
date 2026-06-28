@@ -112,6 +112,15 @@ typedef struct {
  * into the window's canvas.
  */
 #define glXSwapBuffers(dpy, win) sdl_gl_swap(w)
+
+/*
+ * ropengl.ri works in Unicon pixels; on a high-density display the
+ * framebuffer has scale x scale pixels for each.
+ */
+#define GLSCALE uc_get_scale()
+#define glViewport(x, y, w, h) usdl_gl_viewport(x, y, w, h)
+#define glLineWidth(w) usdl_gl_linewidth(w)
+#define glReadPixels(x, y, w, h, f, t, p) usdl_gl_readpixels(x, y, w, h, f, t, p)
 #endif                                  /* Graphics3D */
 
 /*

@@ -127,6 +127,24 @@
 #define PROFIL_CHAR_P
 #endif                                  /* FreeBSD */
 
+#if OpenBSD
+#define GenericBSD
+#define BSD_4_4_LITE    1	/* This is new, for 4.4Lite specific stuff */
+
+#define NEED_UTIME
+#define Messaging 1
+
+#define SysOpt
+
+#define MaxStatSize 40960
+
+#define LinkLibs " -lm"
+
+#define HAVE_GETHOSTNAME 1
+#define HAVE_GETPWUID 1
+#define HAVE_GETUID 1
+#endif					/* OpenBSD */
+
 
 #if Windows
 

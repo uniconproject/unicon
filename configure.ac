@@ -421,6 +421,9 @@ fi
 #  AC_CFLAG([-Wmissing-declarations])
 #fi
 
+# remove some noise for now
+AC_CFLAG([-Wno-deprecated-non-prototype])
+
 # We always want these CFLAGS if available; the second one is necessary for a stable runtime
 AC_CFLAG([-fno-omit-frame-pointer])
 
@@ -432,6 +435,10 @@ if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" || test x"$unicon_os"
    AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
    AC_CXXFLAG([-Werror -Wno-parentheses-equality], [], [CXXFLAGS="$CXXFLAGS -Wno-parentheses-equality"])
 fi
+AC_CFLAG([-Werror -Wno-deprecated-non-prototype], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-deprecated-non-prototype"])
+AC_CFLAG([-Werror -Wno-parentheses-equality], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-parentheses-equality"])
+AC_CFLAG([-Werror -Wno-unused-value], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-unused-value"])
+AC_CFLAG([-Werror -Wno-return-type], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-return-type"])
 
 #if test x"${enable_werror}" = x"yes" ; then
 #  WERROR="-Werror"
@@ -622,6 +629,7 @@ AC_SUBST(CFDYN)
 AC_SUBST(LDDYN)
 AC_SUBST(SO)
 AC_SUBST(ICONCTARGET)
+AC_SUBST(ICONCCFLAGS)
 
 AC_SUBST(UDBTOOLS)
 AC_SUBST(UNIPROGS)
@@ -987,6 +995,7 @@ AC_CONFIG_FILES([Makefile:Makefile.in],)
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_FILES([Makedefs.uni:Makedefs.uni.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
+AC_CONFIG_FILES([src/iconc/param.c:src/iconc/param.c.in],)
 
 
 AC_OUTPUT

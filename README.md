@@ -2,6 +2,8 @@
 
 Unicon is a very high level programming language descended from [Icon](https://www.cs.arizona.edu/icon/): expression-based, **goal-directed** evaluation, rich string and structure handling, and integrated graphics and systems programming features. It is a **general-purpose** language with object-oriented extensions, concurrency, and database and network libraries, used for teaching, research, and applications. It runs on many operating systems (Linux, Windows, macOS, BSD) and on common CPU architectures (e.g. i386, amd64, arm64).
 
+**Preprocessor:** multi-line strings, function-like macros, and built-in `assert` / `assert_not` are documented in [**UTR #23** — `doc/utr23_preprocessor_enhancements.md`](doc/utr23_preprocessor_enhancements.md).
+
 **License:** the project is distributed under the **GNU General Public License**; see the [COPYING](COPYING) file in this repository (Debian packaging references **GPL-2+** in `debian/copyright`).
 
 ## Contents

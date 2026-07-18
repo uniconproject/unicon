@@ -1,0 +1,53 @@
+$define __test__
+
+procedure assert_with_label()
+   local x
+   x := 0
+   assert((x +:= 1) = 2, "Should continue after this failure")
+   write("assert_with_label OK")
+   return 1
+end
+
+procedure assert_equal_labeled()
+   assert(2 === 1 + 1, "1 + 1 = 2")
+   write("assert_equal_labeled OK")
+   return 1
+end
+
+procedure assert_plain()
+   local x
+   x := 1
+   assert(x = 2)
+   write("assert_plain OK")
+   return 1
+end
+
+procedure assert_equal_plain()
+   assert(2 === 1 + 1)
+   write("assert_equal_plain OK")
+   return 1
+end
+
+procedure assert_not_plain()
+   local x
+   x := 1
+   assert_not(x = 1)
+   write("assert_not_plain OK")
+   return 1
+end
+
+procedure assert_inequal_plain()
+   assert_not(2 === 1 + 2)
+   write("assert_inequal_plain OK")
+   return 1
+end
+
+procedure main()
+   assert_with_label()
+   assert_equal_labeled()
+   assert_plain()
+   assert_equal_plain()
+   assert_not_plain()
+   assert_inequal_plain()
+   write("assert-testing-done")
+end

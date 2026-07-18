@@ -6,6 +6,44 @@ extern struct errtab errtab[];          /* error numbers and messages */
 
 char *logopt;                            /* Log option destination */
 
+#define AssertRunerrSep 30            /* RS: delimiter after expr in runerr(219/220) value */
+
+/*
+ * Set k_errortext to AssertionFailed: <payload> with RS replaced by ", " (expr || RS || label).
+ */
+static int assert_combine_errortext(dptr v)
+{
+   char buf[16384];
+   char *s, *p, *newtxt;
+   word len, j, outlen;
+
+   CURTSTATE();
+
+   if (!is:string(*v))
+      return 0;
+   s = StrLoc(*v);
+   len = StrLen(*v);
+
+   p = buf;
+   memcpy(p, "AssertionFailed: ", 17);
+   p += 17;
+   for (j = 0; j < len && p < buf + sizeof(buf) - 2; j++) {
+      if ((unsigned char)s[j] == AssertRunerrSep) {
+         *p++ = ',';
+         *p++ = ' ';
+         }
+      else
+         *p++ = s[j];
+      }
+   outlen = (word)(p - buf);
+   newtxt = alcstr(buf, outlen);
+   if (newtxt == NULL)
+      return 0;
+   StrLoc(k_errortext) = newtxt;
+   StrLen(k_errortext) = outlen;
+   return 1;
+}
+
 /*
  * set &errornumber and &errortext to a given (run-time error) number
  */
@@ -203,6 +241,7 @@ void err_msg(int n, dptr v)
    register struct errtab *p;
    char *lfile = NULL;
    FILE *logfptr = NULL;
+   int assert_line_done = 0;
 
 #ifdef Messaging
    int saveerrno = errno;
@@ -252,18 +291,45 @@ void err_msg(int n, dptr v)
          break;
          }
 
+   if ((k_errornumber == 219 || k_errornumber == 220) && have_errval &&
+       is:string(k_errorvalue))
+      (void)assert_combine_errortext(&k_errorvalue);
+
    EVVal((word)k_errornumber,E_Error);
 
    if (pfp != NULL) {
       if (IntVal(kywd_err) == 0 || !err_conv) {
-         fprintf(stderr, "\nRun-time error %d\n", k_errornumber);
+         /* Assertion failures (preprocessor assert/assert_not): skip redundant banner. */
+         if (k_errornumber != 219 && k_errornumber != 220)
+            fprintf(stderr, "\nRun-time error %d\n", k_errornumber);
+         if (k_errornumber == 219 || k_errornumber == 220) {
 #if COMPILER
-         if (line_info)
-            fprintf(stderr, "File %s; Line %d\n", file_name, line_num);
+            if (line_info) {
+               fprintf(stderr, "[%s:%d] %.*s\n", file_name, line_num,
+                  (int)StrLen(k_errortext), StrLoc(k_errortext));
+               assert_line_done = 1;
+               }
+            else {
+               fprintf(stderr, "%.*s\n", (int)StrLen(k_errortext),
+                  StrLoc(k_errortext));
+               assert_line_done = 1;
+               }
 #else                                   /* COMPILER */
-         fprintf(stderr, "File %s; Line %ld\n", findfile(ipc.opnd),
-            (long)findline(ipc.opnd));
+            fprintf(stderr, "[%s:%ld] %.*s\n", findfile(ipc.opnd),
+               (long)findline(ipc.opnd), (int)StrLen(k_errortext),
+               StrLoc(k_errortext));
+            assert_line_done = 1;
 #endif                                  /* COMPILER */
+            }
+         else {
+#if COMPILER
+            if (line_info)
+               fprintf(stderr, "File %s; Line %d\n", file_name, line_num);
+#else                                   /* COMPILER */
+            fprintf(stderr, "File %s; Line %ld\n", findfile(ipc.opnd),
+               (long)findline(ipc.opnd));
+#endif                                  /* COMPILER */
+            }
          }
       else {
          IntVal(kywd_err)--;
@@ -274,9 +340,10 @@ void err_msg(int n, dptr v)
       }
    else
       fprintf(stderr, "\nRun-time error %d in startup code\n", n);
-   fprintf(stderr, "%s\n", StrLoc(k_errortext));
+   if (!assert_line_done)
+      fprintf(stderr, "%.*s\n", (int)StrLen(k_errortext), StrLoc(k_errortext));
 
-   if (have_errval) {
+   if (have_errval && k_errornumber != 219 && k_errornumber != 220) {
       fprintf(stderr, "offending value: ");
       outimage(stderr, &k_errorvalue, 0);
       putc('\n', stderr);
@@ -301,16 +368,34 @@ void err_msg(int n, dptr v)
    fprintf(stderr, "Traceback:\n");
 
    if (logfptr != NULL) {
-      fprintf(logfptr, "Run-time error %d\n", k_errornumber);
+      if (k_errornumber != 219 && k_errornumber != 220)
+         fprintf(logfptr, "Run-time error %d\n", k_errornumber);
+      if (k_errornumber == 219 || k_errornumber == 220) {
 #if COMPILER
-      if (line_info)
-         fprintf(logfptr, "File %s; Line %d\n", file_name, line_num);
+         if (line_info)
+            fprintf(logfptr, "[%s:%d] %.*s\n", file_name, line_num,
+                    (int)StrLen(k_errortext), StrLoc(k_errortext));
+         else
+            fprintf(logfptr, "%.*s\n", (int)StrLen(k_errortext),
+                    StrLoc(k_errortext));
 #else                                   /* COMPILER */
-      fprintf(logfptr, "File %s; Line %ld\n", findfile(ipc.opnd),
-              (long)findline(ipc.opnd));
+         fprintf(logfptr, "[%s:%ld] %.*s\n", findfile(ipc.opnd),
+                 (long)findline(ipc.opnd), (int)StrLen(k_errortext),
+                 StrLoc(k_errortext));
 #endif                                  /* COMPILER */
-      fprintf(logfptr, "%s\n", StrLoc(k_errortext));
-      if (have_errval) {
+         }
+      else {
+#if COMPILER
+         if (line_info)
+            fprintf(logfptr, "File %s; Line %d\n", file_name, line_num);
+#else                                   /* COMPILER */
+         fprintf(logfptr, "File %s; Line %ld\n", findfile(ipc.opnd),
+                 (long)findline(ipc.opnd));
+#endif                                  /* COMPILER */
+         fprintf(logfptr, "%.*s\n", (int)StrLen(k_errortext),
+                 StrLoc(k_errortext));
+         }
+      if (have_errval && k_errornumber != 219 && k_errornumber != 220) {
          fprintf(logfptr, "offending value: ");
          outimage(logfptr, &k_errorvalue, 0);
          putc('\n', logfptr);

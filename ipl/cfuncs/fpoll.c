@@ -75,7 +75,9 @@ int fpoll(int argc, descriptor *argv)	/*: await data from file */
 #elif __sun
    /* insert your implementation here */
 #elif __OpenBSD__
-   /* no way to do in OpenBSD, FILEs are opaque, sorry ! */
+#include <stdio_ext.h>
+   if (__freadhead(f) > 0)
+      RetArg(1);
 #else
    if (f->_cnt > 0)
       RetArg(1);

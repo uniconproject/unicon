@@ -1251,7 +1251,9 @@ struct b_coexpr *popact(struct b_coexpr *ce)
     * In that case, setting the actstk to NULL would be counterproductive.
     */
    if ((abp->nactivators == 0)
-#if !COMPILER
+#if COMPILER
+	&& 1 /* XXX prevents warning on (()) with clang */
+#else
         && (abp->astk_nxt
 #ifdef MultiProgram
         || !(curpstate->parent)

@@ -98,6 +98,11 @@ case $host_os in
         unicon_os="aix"
         AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
+     *openbsd*)
+        unicon_os="openbsd"
+	AC_DEFINE([UNIX], [1], [Unix platform])
+	AC_DEFINE([OpenBSD], [1], [OpenBSD OS])
+        ;;
      *bsd*)
         # freebsd for now
         unicon_os="freebsd"

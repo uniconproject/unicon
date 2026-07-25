@@ -2898,6 +2898,15 @@ domain socket. If the host name is null, it represents the current
 host. Mode \texttt{"n"} allows an optional third parameter,
 an integer timeout (in milliseconds) after which \texttt{open()} fails
 if no connection has been established by that time.
+Trailing arguments may also be \texttt{"\textit{name}=\textit{value}"}
+socket attributes (\texttt{join}, \texttt{source}, \texttt{iface},
+\texttt{ttl}, \texttt{mcastloop}, \texttt{reuseaddr},
+\texttt{reuseport}, \texttt{broadcast}, \texttt{rcvbuf},
+\texttt{sndbuf}); boolean values are \texttt{yes} or \texttt{no}.
+Listeners default to \texttt{reuseaddr=yes}. Binding a UDP socket to a
+multicast group joins that group; \texttt{source@group:port} or
+\texttt{source=} performs a source-specific join instead. Sending to
+\texttt{255.255.255.255} enables broadcast. See Chapter~5 for examples.
 
 For a UDP socket, there is not really a connection, but any writes to
 that file will send a datagram to that address, so that the address
@@ -4996,6 +5005,7 @@ length\\
 1306 \ \ \ \ \ \ \ cipher error\\
 1307 \ \ \ \ \ \ \ private key and certificate mismatch\\
 1308 \ \ \ \ \ \ \ unknown protocol\\
+1310 \ \ \ \ \ \ \ bad socket attribute\\
 
 \subsection*{System errors}
 

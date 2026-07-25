@@ -1006,13 +1006,14 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
  * DWIM defaults (overridable with an explicit attribute):
  *   - listeners get reuseaddr=yes (UNIX); multicast binds also get
  *     reuseport=yes where available, and reuseaddr=yes on Windows
- *   - binding a UDP socket to a multicast group address joins it
+ *   - binding a UDP socket to a multicast group address joins it (ASM);
+ *     source@group:port or source= joins that group as SSM instead
  *   - connecting/sending to 255.255.255.255 enables SO_BROADCAST
  */
 
 static char *sock_attr_names[] = {
    "reuseaddr", "reuseport", "broadcast", "rcvbuf", "sndbuf",
-   "join", "ttl", "mcastloop", "iface", NULL
+   "join", "source", "ttl", "mcastloop", "iface", NULL
    };
 
 static char *ssl_attr_names[] = {
@@ -1075,6 +1076,38 @@ static int sockaddr_is_multicast(struct sockaddr *sa)
    if (sa->sa_family == AF_INET6)
       return IN6_IS_ADDR_MULTICAST(&((struct sockaddr_in6 *)sa)->sin6_addr);
    return 0;
+}
+
+/*
+ * Split a "source@group" host part (SSM, matching VLC/ffmpeg and RFC 4607
+ * (S,G) order).  On success returns 1.  With '@': copies the source into
+ * srcbuf, replaces host with the group, and sets *srcp to srcbuf.
+ * Without '@': *srcp is NULL and host is unchanged.  Empty either side
+ * fails with EINVAL.
+ */
+static int sock_split_group_source(char *host, char *srcbuf, size_t srcbuf_sz,
+                                   char **srcp)
+{
+   char *at;
+   size_t slen;
+
+   *srcp = NULL;
+   if ((at = strchr(host, '@')) == NULL)
+      return 1;
+   if (at == host || at[1] == ' ') {
+      errno = EINVAL;
+      return 0;
+      }
+   *at = ' ';
+   slen = strlen(host);
+   if (slen + 1 > srcbuf_sz) {
+      errno = EINVAL;
+      return 0;
+      }
+   memcpy(srcbuf, host, slen + 1);              /* source */
+   memmove(host, at + 1, strlen(at + 1) + 1);   /* group into host */
+   *srcp = srcbuf;
+   return 1;
 }
 
 /*
@@ -1209,14 +1242,18 @@ int sock_attrs_af(dptr attr, int nattr)
  * autojoin, when not NULL, is a multicast group the socket was bound to:
  * it is joined after the post-bind attributes, honoring any iface
  * among them, unless an explicit join attribute takes over memberships.
- * Returns 1 on success; returns 0 with &errortext/errno set on failure.
+ * autosource (from source@group in the address) selects an SSM join of
+ * that group instead of ASM; source= attributes do the same and may be
+ * repeated for multiple sources.  Returns 1 on success; returns 0 with
+ * &errortext/errno set on failure.
  */
-int apply_sock_attrs(int s, int prebind, dptr attr, int nattr, char *autojoin)
+int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
+                     char *autojoin, char *autosource)
 {
    tended char *tmps;
    char abuf[256], *val, *src;
    long ival;
-   int a, rc, on, is_pre, saw_join = 0;
+   int a, rc, on, is_pre, saw_join = 0, saw_source = 0;
    C_integer tmpint;
    struct in_addr mcif4;
    unsigned int mcif6 = 0;
@@ -1351,6 +1388,20 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr, char *autojoin)
             *src++ = '\0';
          rc = sock_join_group(s, val, src, mcif4, mcif6);
          }
+      else if (strcmp(abuf, "source") == 0) {
+         /*
+          * SSM shortcut: join the group this socket was bound to, from
+          * the given source.  Requires a multicast bind address; use
+          * join=group,source when binding a wildcard instead.
+          */
+         if (autojoin == NULL) {
+            errno = 0;
+            set_errortext_with_val(1310, tmps);
+            return 0;
+            }
+         saw_source = 1;
+         rc = sock_join_group(s, autojoin, val, mcif4, mcif6);
+         }
 
       if (rc < 0) {
          set_syserrortext(errno);
@@ -1360,13 +1411,23 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr, char *autojoin)
 
    /*
     * A socket bound to a multicast group address implicitly joins that
-    * group; explicit join attributes take manual control of memberships
-    * and suppress the implicit one.
+    * group (ASM), or does an SSM join when the address was source@group.
+    * Explicit join attributes take manual control and suppress this;
+    * source= attributes already joined above and suppress the ASM default
+    * unless source@group also requests its own SSM membership.
     */
    if (autojoin != NULL && !prebind && !saw_join) {
-      if (sock_join_group(s, autojoin, NULL, mcif4, mcif6) < 0) {
-         set_syserrortext(errno);
-         return 0;
+      if (autosource != NULL) {
+         if (sock_join_group(s, autojoin, autosource, mcif4, mcif6) < 0) {
+            set_syserrortext(errno);
+            return 0;
+            }
+         }
+      else if (!saw_source) {
+         if (sock_join_group(s, autojoin, NULL, mcif4, mcif6) < 0) {
+            set_syserrortext(errno);
+            return 0;
+            }
          }
       }
    return 1;
@@ -1400,7 +1461,17 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
     * find the last colon and get the port.
     */
    if (((p = strrchr(fname, ':')) != 0) ) {
+      char *mcsrc, srcbuf[INET6_ADDRSTRLEN];
+
       *p = 0;
+      /*
+       * source@group:port is an SSM receiver address; for send/connect
+       * the destination is just the group, so keep only the group here.
+       */
+      if (!sock_split_group_source(fname, srcbuf, sizeof(srcbuf), &mcsrc)) {
+         set_syserrortext(errno);
+         return 0;
+         }
       res0 = uni_getaddrinfo(fname, p+1, is_udp, af_fam);
       /* Restore the argument just in case */
       *p = ':';
@@ -1470,8 +1541,8 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
        * Apply any socket attributes.  Client sockets are never bound
        * explicitly, so both attribute passes run back to back here.
        */
-      if (!apply_sock_attrs(s, 1, attr, nattr, NULL) ||
-          !apply_sock_attrs(s, 0, attr, nattr, NULL)) {
+      if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL) ||
+          !apply_sock_attrs(s, 0, attr, nattr, NULL, NULL)) {
          sock_close(s);
          freeaddrinfo(saddrinfo);
          return 0;
@@ -1681,17 +1752,20 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
 
    /* sock_get pins a cached fd until sock_release below */
    if ((s = sock_get(addr)) < 0) {
-     char *p, fname[BUFSIZ], group[INET6_ADDRSTRLEN];
+     char *p, *mcsrc, fname[BUFSIZ], group[INET6_ADDRSTRLEN];
+     char srcbuf[INET6_ADDRSTRLEN];
      int on, is_mc = 0;
      created = 1;
 
      /*
       * If the first argument is just a name, it's a unix domain socket.
       * If there's a : then it's host:port except if the host part is
-      * empty, it means on any interface.
+      * empty, it means on any interface.  host may be source@group for
+      * an SSM join of that group.
       */
 
       SAFE_strncpy(fname,addr, sizeof(fname));
+      mcsrc = NULL;
 
       /* let a join attribute's group address pick the family */
       if (af_fam == AF_UNSPEC)
@@ -1699,6 +1773,10 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
 
       if ((p=strrchr(fname, ':')) != NULL) {
          *p = 0;
+         if (!sock_split_group_source(fname, srcbuf, sizeof(srcbuf), &mcsrc)) {
+            set_syserrortext(errno);
+            return 0;
+            }
          res0 = uni_getaddrinfo(fname, p+1, is_udp_or_listener == 1, af_fam);
          *p = ':';
 
@@ -1736,7 +1814,7 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
 #endif                                  /* UNIX */
 
            /* reuse flags et al. only take effect before bind() */
-           if (!apply_sock_attrs(s, 1, attr, nattr, NULL)) {
+           if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL)) {
              sock_close(s);
              freeaddrinfo(res0);
              return 0;
@@ -1823,9 +1901,11 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
 
          /*
           * Multicast joins and other post-bind socket attributes.  A
-          * socket bound to a multicast group joins it implicitly.
+          * socket bound to a multicast group joins it implicitly (ASM,
+          * or SSM when the address was source@group / source=).
           */
-         if (!apply_sock_attrs(s, 0, attr, nattr, is_mc ? group : NULL)) {
+         if (!apply_sock_attrs(s, 0, attr, nattr,
+                               is_mc ? group : NULL, is_mc ? mcsrc : NULL)) {
            sock_close(s);
            return 0;
          }
@@ -1873,17 +1953,19 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
        * Pass the bind host as autojoin when it is a multicast group so
        * source= works; sock_join_group treats already-member as OK.
        */
-      char hit_fname[BUFSIZ];
-      char *hit_group = NULL, *hit_colon;
+      char hit_fname[BUFSIZ], hit_srcbuf[INET6_ADDRSTRLEN];
+      char *hit_group = NULL, *hit_src = NULL, *hit_colon;
 
       SAFE_strncpy(hit_fname, addr, sizeof(hit_fname));
       if ((hit_colon = strrchr(hit_fname, ':')) != NULL) {
          *hit_colon = '\0';
-         if (host_is_multicast(hit_fname))
+         if (sock_split_group_source(hit_fname, hit_srcbuf, sizeof(hit_srcbuf),
+                                     &hit_src) &&
+             host_is_multicast(hit_fname))
             hit_group = hit_fname;
          }
       if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL) ||
-          !apply_sock_attrs(s, 0, attr, nattr, hit_group, NULL)) {
+          !apply_sock_attrs(s, 0, attr, nattr, hit_group, hit_src)) {
          sock_release(s);
          return 0;
          }
@@ -1916,8 +1998,8 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
        */
       put = sock_put(addr, s);
       if (put == 0) {
-         char hit_fname[BUFSIZ];
-         char *hit_group = NULL, *hit_colon;
+         char hit_fname[BUFSIZ], hit_srcbuf[INET6_ADDRSTRLEN];
+         char *hit_group = NULL, *hit_src = NULL, *hit_colon;
 
          sock_close(s);
          if ((s = sock_get(addr)) < 0)
@@ -1926,11 +2008,13 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
          SAFE_strncpy(hit_fname, addr, sizeof(hit_fname));
          if ((hit_colon = strrchr(hit_fname, ':')) != NULL) {
             *hit_colon = '\0';
-            if (host_is_multicast(hit_fname))
+            if (sock_split_group_source(hit_fname, hit_srcbuf,
+                                        sizeof(hit_srcbuf), &hit_src) &&
+                host_is_multicast(hit_fname))
                hit_group = hit_fname;
             }
          if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL) ||
-             !apply_sock_attrs(s, 0, attr, nattr, hit_group, NULL)) {
+             !apply_sock_attrs(s, 0, attr, nattr, hit_group, hit_src)) {
             sock_release(s);
             return 0;
             }

@@ -986,7 +986,10 @@ dptr make_group                 (struct group *pw, dptr result);
 
 dptr rec_structor               (char *s);
 dptr rec_structor3d             (char *type);
-int sock_connect                (char *s, int udp, int timeout, int af_fam);
+int sock_connect                (char *s, int udp, int timeout, int af_fam, dptr attr, int nattr);
+int apply_sock_attrs            (int s, int prebind, dptr attr, int nattr, char *autojoin);
+int sock_attrs_af               (dptr attr, int nattr);
+int is_sock_attr                (char *name);
 int sock_getstrg                (char *buf, int maxi, dptr file);
 int getmodefd                   (int fd, char *mode);
 int getmodenam                  (char *path, char *mode);
@@ -1004,7 +1007,11 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family);
 void            set_gaierrortext(int i);
 
 dptr make_serv                  (struct servent *pw, dptr result);
-int sock_listen                 (char *s, int udp, int af_fam);
+int sock_listen                 (char *s, int udp, int af_fam, dptr attr, int nattr);
+void sock_close                 (int fd);
+int sock_pin                    (int fd);
+void sock_release               (int fd);
+int sock_purge                  (int fd);
 int sock_name                   (int sock, char* addr, char* addrbuf, int bufsize);
 int sock_me                     (int sock, char* addrbuf, int bufsize);
 int sock_send                   (char* addr, char* msg, int msglen, int af_fam);
@@ -1144,6 +1151,9 @@ int checkTypeInt (dptr da1, dptr da2, word n );
 
 char * getenv_var(const char *name);
 
+/* defined unguarded in errmsg.r; used by socket and SSL attribute code */
+void set_errortext_with_val(int i, char* errval);
+
 #if HAVE_LIBSSL
 #define TLS_SERVER 1
 #define TLS_CLIENT 2
@@ -1153,7 +1163,6 @@ char * getenv_var(const char *name);
 SSL_CTX* create_ssl_context(dptr attr, int n, int type);
 int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
-void set_errortext_with_val(int i, char* errval);
 #endif                                  /* HAVE_LIBSSL */
 
 #ifdef GenericBSD

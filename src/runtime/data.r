@@ -453,6 +453,10 @@ struct errtab errtab[] = {
 
 #endif                                  /* Messaging */
 
+#ifdef PosixFns
+   1310, "bad socket attribute",
+#endif                                  /* PosixFns */
+
 /*
  * End of operating-system specific code.
  */

@@ -2348,10 +2348,20 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
        * If its a listener socket, convert it to the new connection.
        */
       if (status & Fs_Listen) {
+         int lfd = fd;
+         /*
+          * Pin the listener across accept() so a concurrent close()
+          * cannot sock_purge()+sock_close() the descriptor under us
+          * (same protocol as sock_listen()).  If pin fails, the
+          * listener was already closed between select and here.
+          */
+         if (!sock_pin(lfd))
+            return;
          fromlen = sizeof(from);
          DEC_NARTHREADS;
-         fd = accept(fd, (struct sockaddr *)&from, &fromlen);
+         fd = accept(lfd, (struct sockaddr *)&from, &fromlen);
          INC_NARTHREADS_CONTROLLED;
+         sock_release(lfd);
          if (fd < 0)
            return;
          BlkD(*f,File)->fd.fd = fd;

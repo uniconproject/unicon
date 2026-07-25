@@ -989,6 +989,8 @@ dptr rec_structor3d             (char *type);
 int sock_connect                (char *s, int udp, int timeout, int af_fam, dptr attr, int nattr);
 int apply_sock_attrs            (int s, int prebind, dptr attr, int nattr,
                                  char *autojoin, char *autosource);
+int sattrib                     (int s, char *str, long len, dptr answer,
+                                 char *abuf);
 int sock_attrs_af               (dptr attr, int nattr);
 int is_sock_attr                (char *name);
 int sock_getstrg                (char *buf, int maxi, dptr file);

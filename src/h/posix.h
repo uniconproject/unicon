@@ -26,6 +26,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <net/if.h>
+#include <ifaddrs.h>
 #include <pwd.h>
 #include <grp.h>
 #endif                                  /* UNIX */

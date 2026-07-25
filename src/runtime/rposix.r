@@ -1008,12 +1008,15 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
  *     reuseport=yes where available, and reuseaddr=yes on Windows
  *   - binding a UDP socket to a multicast group address joins it (ASM);
  *     source@group:port or source= joins that group as SSM instead
+ *   - no iface=: join on all IPv4 interfaces; multicast send uses the
+ *     first non-loopback IPv4 address (else loopback).  mcastloop (on
+ *     by default) still delivers a local copy on that interface.
  *   - connecting/sending to 255.255.255.255 enables SO_BROADCAST
  */
 
 static char *sock_attr_names[] = {
    "reuseaddr", "reuseport", "broadcast", "rcvbuf", "sndbuf",
-   "join", "source", "ttl", "mcastloop", "iface", NULL
+   "join", "leave", "source", "ttl", "mcastloop", "iface", NULL
    };
 
 static char *ssl_attr_names[] = {
@@ -1094,11 +1097,11 @@ static int sock_split_group_source(char *host, char *srcbuf, size_t srcbuf_sz,
    *srcp = NULL;
    if ((at = strchr(host, '@')) == NULL)
       return 1;
-   if (at == host || at[1] == ' ') {
+   if (at == host || at[1] == '') {
       errno = EINVAL;
       return 0;
       }
-   *at = ' ';
+   *at = '';
    slen = strlen(host);
    if (slen + 1 > srcbuf_sz) {
       errno = EINVAL;
@@ -1130,11 +1133,54 @@ static int sock_split_group_source(char *host, char *srcbuf, size_t srcbuf_sz,
 #passthru #ifdef UNICON_NO_IP_MREQ_SOURCE
 #passthru struct ip_mreq_source { struct in_addr imr_multiaddr, imr_interface, imr_sourceaddr; };
 #passthru #endif
+#passthru #if !defined(IPV6_LEAVE_GROUP) && defined(IPV6_DROP_MEMBERSHIP)
+#passthru #define IPV6_LEAVE_GROUP IPV6_DROP_MEMBERSHIP
+#passthru #endif
+#passthru #ifndef IP_DROP_SOURCE_MEMBERSHIP
+#passthru #define IP_DROP_SOURCE_MEMBERSHIP -1
+#passthru #endif
+
+/*
+ * One ASM/SSM join attempt.  Already-member is success.
+ */
+static int sock_join_on_if(int s, struct in_addr g4, char *src,
+                           struct in_addr if4)
+{
+   int rc;
+
+   if (src == NULL) {
+      struct ip_mreq mreq;
+      memset(&mreq, 0, sizeof(mreq));
+      mreq.imr_multiaddr = g4;
+      mreq.imr_interface = if4;
+      rc = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                      (char *)&mreq, sizeof(mreq));
+      }
+   else {
+      struct ip_mreq_source mreqs;
+      struct in_addr s4;
+      if (inet_pton(AF_INET, src, &s4) != 1) {
+         errno = EINVAL;
+         return -1;
+         }
+      memset(&mreqs, 0, sizeof(mreqs));
+      mreqs.imr_multiaddr = g4;
+      mreqs.imr_sourceaddr = s4;
+      mreqs.imr_interface = if4;
+      rc = setsockopt(s, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP,
+                      (char *)&mreqs, sizeof(mreqs));
+      }
+   if (rc < 0 && (errno == EADDRINUSE || errno == EADDRNOTAVAIL))
+      return 0;
+   return rc;
+}
 
 /*
  * Join a multicast group.  grp is the group address; src, when not
  * NULL, is a source address for a source-specific (SSM) join.  if4/if6
- * select the interface to join on (INADDR_ANY/0 let the kernel choose).
+ * select the interface.  When if4 is INADDR_ANY (no iface= attribute),
+ * join on every IPv4 interface so same-host and multi-homed receives
+ * work without naming a NIC; an explicit iface= still joins only that one.
  */
 static int sock_join_group(int s, char *grp, char *src,
                            struct in_addr if4, unsigned int if6)
@@ -1144,28 +1190,37 @@ static int sock_join_group(int s, char *grp, char *src,
    int rc = -1;
 
    if (inet_pton(AF_INET, grp, &g4) == 1) {
-      if (src == NULL) {
-         struct ip_mreq mreq;
-         memset(&mreq, 0, sizeof(mreq));
-         mreq.imr_multiaddr = g4;
-         mreq.imr_interface = if4;
-         rc = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-                         (char *)&mreq, sizeof(mreq));
-         }
-      else {
-         struct ip_mreq_source mreqs;
-         struct in_addr s4;
-         if (inet_pton(AF_INET, src, &s4) != 1) {
-            errno = EINVAL;
-            return -1;
+      if (if4.s_addr != htonl(INADDR_ANY))
+         return sock_join_on_if(s, g4, src, if4);
+#if UNIX
+      {
+         struct ifaddrs *ifa0 = NULL, *ifa;
+         int ok = 0, saw = 0;
+
+         if (getifaddrs(&ifa0) == 0) {
+            for (ifa = ifa0; ifa != NULL; ifa = ifa->ifa_next) {
+               struct in_addr ifa4;
+               if (ifa->ifa_addr == NULL ||
+                   ifa->ifa_addr->sa_family != AF_INET)
+                  continue;
+               if (!(ifa->ifa_flags & IFF_UP))
+                  continue;
+               ifa4 = ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+               saw = 1;
+               if (sock_join_on_if(s, g4, src, ifa4) == 0)
+                  ok = 1;
+               }
+            freeifaddrs(ifa0);
             }
-         memset(&mreqs, 0, sizeof(mreqs));
-         mreqs.imr_multiaddr = g4;
-         mreqs.imr_sourceaddr = s4;
-         mreqs.imr_interface = if4;
-         rc = setsockopt(s, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP,
-                         (char *)&mreqs, sizeof(mreqs));
+         if (ok)
+            return 0;
+         if (saw) {
+            /* every per-iface join failed; fall through to INADDR_ANY */
+            ;
+            }
          }
+#endif                                  /* UNIX */
+      return sock_join_on_if(s, g4, src, if4);
       }
    else if (inet_pton(AF_INET6, grp, &g6) == 1 && src == NULL) {
       /* IPv6 source-specific joins (MCAST_JOIN_SOURCE_GROUP) not yet supported */
@@ -1175,19 +1230,12 @@ static int sock_join_group(int s, char *grp, char *src,
       mreq6.ipv6mr_interface = if6;
       rc = setsockopt(s, IPPROTO_IPV6, IPV6_JOIN_GROUP,
                       (char *)&mreq6, sizeof(mreq6));
+      if (rc < 0 && (errno == EADDRINUSE || errno == EADDRNOTAVAIL))
+         return 0;
+      return rc;
       }
-   else {
-      errno = EINVAL;
-      return -1;
-      }
-   /*
-    * Re-joining a group the socket already belongs to (cached listener
-    * reopen with the same join=/source@group) is success, not an error.
-    * ASM typically returns EADDRINUSE; macOS SSM returns EADDRNOTAVAIL.
-    */
-   if (rc < 0 && (errno == EADDRINUSE || errno == EADDRNOTAVAIL))
-      return 0;
-   return rc;
+   errno = EINVAL;
+   return -1;
 }
 
 /* True if host is a dotted/numeric multicast address (not a name). */
@@ -1201,6 +1249,204 @@ static int host_is_multicast(char *host)
    if (inet_pton(AF_INET6, host, &a6) == 1)
       return IN6_IS_ADDR_MULTICAST(&a6);
    return 0;
+}
+
+/*
+ * If the caller did not set iface=, pick an outbound multicast interface.
+ * Prefer a non-loopback IPv4 address so packets can leave the host;
+ * IP_MULTICAST_LOOP (kernel default on) still delivers a local copy to
+ * receivers that joined on that interface.  Fall back to 127.0.0.1 when
+ * the host has no other UP address.
+ */
+static void sock_ensure_mcast_if(int s)
+{
+   struct in_addr cur, pick;
+   unsigned int olen;
+
+   if (sock_family(s) != AF_INET)
+      return;
+   olen = sizeof(cur);
+   if (getsockopt(s, IPPROTO_IP, IP_MULTICAST_IF,
+                  (char *)&cur, &olen) == 0 &&
+       cur.s_addr != htonl(INADDR_ANY) && cur.s_addr != 0)
+      return;                           /* explicit iface= already applied */
+
+   pick.s_addr = htonl(INADDR_LOOPBACK);
+#if UNIX
+   {
+      struct ifaddrs *ifa0 = NULL, *ifa;
+      if (getifaddrs(&ifa0) == 0) {
+         for (ifa = ifa0; ifa != NULL; ifa = ifa->ifa_next) {
+            struct in_addr a;
+            if (ifa->ifa_addr == NULL ||
+                ifa->ifa_addr->sa_family != AF_INET)
+               continue;
+            if (!(ifa->ifa_flags & IFF_UP) ||
+                (ifa->ifa_flags & IFF_LOOPBACK))
+               continue;
+            a = ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            if (a.s_addr == htonl(INADDR_ANY))
+               continue;
+            pick = a;
+            break;
+            }
+         freeifaddrs(ifa0);
+         }
+      }
+#endif                                  /* UNIX */
+   setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF,
+              (char *)&pick, sizeof(pick));
+}
+
+/*
+ * Parse an iface value: IPv4 dotted address, numeric interface index,
+ * or (on UNIX) an interface name such as "en0" / "eth0" / "lo0".
+ * On success sets *have4/*have6 and the corresponding if4/if6 values.
+ */
+static int sock_parse_iface(char *val, long ival,
+                              struct in_addr *if4, unsigned int *if6,
+                              int *have4, int *have6)
+{
+   struct in_addr a;
+
+   *have4 = *have6 = 0;
+   if (inet_pton(AF_INET, val, &a) == 1) {
+      *if4 = a;
+      *have4 = 1;
+      return 1;
+      }
+   if (val[0] != '\0' && strspn(val, "0123456789") == strlen(val)) {
+      *if6 = (unsigned int)ival;
+      *have6 = 1;
+      return 1;
+      }
+#if UNIX
+   {
+      unsigned int idx;
+      struct ifaddrs *ifa0, *ifa;
+
+      if ((idx = if_nametoindex(val)) == 0) {
+         errno = EINVAL;
+         return 0;
+         }
+      *if6 = idx;
+      *have6 = 1;
+      if (getifaddrs(&ifa0) == 0) {
+         for (ifa = ifa0; ifa != NULL; ifa = ifa->ifa_next) {
+            if (ifa->ifa_addr == NULL || ifa->ifa_name == NULL)
+               continue;
+            if (ifa->ifa_addr->sa_family != AF_INET)
+               continue;
+            if (strcmp(ifa->ifa_name, val) != 0)
+               continue;
+            *if4 = ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            *have4 = 1;
+            break;
+            }
+         freeifaddrs(ifa0);
+         }
+      return 1;
+      }
+#else                                   /* UNIX */
+   errno = EINVAL;
+   return 0;
+#endif                                  /* UNIX */
+}
+
+/*
+ * Leave a multicast group previously joined with sock_join_group().
+ * DROP must use the same interface as the matching join; when the
+ * caller omits iface= and getsockopt(IP_MULTICAST_IF) did not recover
+ * it (seen on some Linux/musl builds), retry INADDR_ANY and each local
+ * IPv4 address.  Already-not-a-member is success.
+ */
+static int sock_leave_group(int s, char *grp, char *src,
+                            struct in_addr if4, unsigned int if6)
+{
+   struct in_addr g4;
+   struct in6_addr g6;
+   int rc = -1;
+
+   if (inet_pton(AF_INET, grp, &g4) == 1) {
+      if (src == NULL) {
+         struct ip_mreq mreq;
+         memset(&mreq, 0, sizeof(mreq));
+         mreq.imr_multiaddr = g4;
+         mreq.imr_interface = if4;
+         rc = setsockopt(s, IPPROTO_IP, IP_DROP_MEMBERSHIP,
+                         (char *)&mreq, sizeof(mreq));
+         if (rc < 0 && if4.s_addr != htonl(INADDR_ANY)) {
+            mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+            rc = setsockopt(s, IPPROTO_IP, IP_DROP_MEMBERSHIP,
+                            (char *)&mreq, sizeof(mreq));
+            }
+#if UNIX
+         /*
+          * Drop on every iface: a no-iface join membership may exist on
+          * several NICs, and a mismatched single DROP looks like failure.
+          */
+         {
+            struct ifaddrs *ifa0 = NULL, *ifa;
+            int ok = (rc == 0);
+            if (getifaddrs(&ifa0) == 0) {
+               for (ifa = ifa0; ifa != NULL; ifa = ifa->ifa_next) {
+                  if (ifa->ifa_addr == NULL ||
+                      ifa->ifa_addr->sa_family != AF_INET)
+                     continue;
+                  mreq.imr_interface =
+                     ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+                  if (setsockopt(s, IPPROTO_IP, IP_DROP_MEMBERSHIP,
+                                 (char *)&mreq, sizeof(mreq)) == 0)
+                     ok = 1;
+                  }
+               freeifaddrs(ifa0);
+               }
+            if (ok)
+               rc = 0;
+            }
+#endif                                  /* UNIX */
+         }
+      else {
+         struct ip_mreq_source mreqs;
+         struct in_addr s4;
+         if (inet_pton(AF_INET, src, &s4) != 1) {
+            errno = EINVAL;
+            return -1;
+            }
+         memset(&mreqs, 0, sizeof(mreqs));
+         mreqs.imr_multiaddr = g4;
+         mreqs.imr_sourceaddr = s4;
+         mreqs.imr_interface = if4;
+         rc = setsockopt(s, IPPROTO_IP, IP_DROP_SOURCE_MEMBERSHIP,
+                         (char *)&mreqs, sizeof(mreqs));
+         if (rc < 0 && if4.s_addr != htonl(INADDR_ANY)) {
+            mreqs.imr_interface.s_addr = htonl(INADDR_ANY);
+            rc = setsockopt(s, IPPROTO_IP, IP_DROP_SOURCE_MEMBERSHIP,
+                            (char *)&mreqs, sizeof(mreqs));
+            }
+         }
+      }
+   else if (inet_pton(AF_INET6, grp, &g6) == 1 && src == NULL) {
+      struct ipv6_mreq mreq6;
+      memset(&mreq6, 0, sizeof(mreq6));
+      mreq6.ipv6mr_multiaddr = g6;
+      mreq6.ipv6mr_interface = if6;
+      rc = setsockopt(s, IPPROTO_IPV6, IPV6_LEAVE_GROUP,
+                      (char *)&mreq6, sizeof(mreq6));
+      if (rc < 0 && if6 != 0) {
+         mreq6.ipv6mr_interface = 0;
+         rc = setsockopt(s, IPPROTO_IPV6, IPV6_LEAVE_GROUP,
+                         (char *)&mreq6, sizeof(mreq6));
+         }
+      }
+   else {
+      errno = EINVAL;
+      return -1;
+      }
+
+   if (rc < 0 && (errno == EADDRNOTAVAIL || errno == EADDRINUSE))
+      return 0;
+   return rc;
 }
 
 /*
@@ -1256,9 +1502,20 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
    int a, rc, on, is_pre, saw_join = 0, saw_source = 0;
    C_integer tmpint;
    struct in_addr mcif4;
-   unsigned int mcif6 = 0;
+   unsigned int mcif6 = 0, olen;
 
+   /*
+    * Seed the join interface from the socket's current iface, so a
+    * prior Attrib(f, "iface=...") (or setsockopt) is honored by a
+    * later join= in a separate apply_sock_attrs() call.
+    */
    mcif4.s_addr = htonl(INADDR_ANY);
+   olen = sizeof(mcif4);
+   if (getsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char *)&mcif4, &olen) < 0)
+      mcif4.s_addr = htonl(INADDR_ANY);
+   olen = sizeof(mcif6);
+   if (getsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_IF, (char *)&mcif6, &olen) < 0)
+      mcif6 = 0;
 
    for (a = 0; a < nattr; a++) {
       if (is:null(attr[a]))
@@ -1367,19 +1624,38 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          }
       else if (strcmp(abuf, "iface") == 0) {
          struct in_addr ifa;
-         if (inet_pton(AF_INET, val, &ifa) == 1) {
-            mcif4 = ifa;                /* also used by subsequent joins */
-            rc = setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF,
-                            (char *)&ifa, sizeof(ifa));
-            }
-         else if (strspn(val, "0123456789") == strlen(val)) {
-            mcif6 = ival;               /* IPv6 interface index */
-            rc = setsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                            (char *)&mcif6, sizeof(mcif6));
-            }
-         else {
+         unsigned int ifx = 0;
+         int have4 = 0, have6 = 0;
+
+         if (!sock_parse_iface(val, ival, &ifa, &ifx, &have4, &have6)) {
             errno = EINVAL;
             rc = -1;
+            }
+         else {
+            if (have4)
+               mcif4 = ifa;             /* also used by subsequent joins */
+            if (have6)
+               mcif6 = ifx;
+            if (sock_family(s) == AF_INET6) {
+               if (!have6) {
+                  errno = EINVAL;
+                  rc = -1;
+                  }
+               else
+                  rc = setsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                                  (char *)&mcif6, sizeof(mcif6));
+               }
+            else if (have4)
+               rc = setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF,
+                               (char *)&ifa, sizeof(ifa));
+            else if (have6)
+               /* bare numeric index on an IPv4 socket */
+               rc = setsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                               (char *)&mcif6, sizeof(mcif6));
+            else {
+               errno = EINVAL;
+               rc = -1;
+               }
             }
          }
       else if (strcmp(abuf, "join") == 0) {
@@ -1387,6 +1663,11 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          if ((src = strchr(val, ',')) != NULL)
             *src++ = '\0';
          rc = sock_join_group(s, val, src, mcif4, mcif6);
+         }
+      else if (strcmp(abuf, "leave") == 0) {
+         if ((src = strchr(val, ',')) != NULL)
+            *src++ = '\0';
+         rc = sock_leave_group(s, val, src, mcif4, mcif6);
          }
       else if (strcmp(abuf, "source") == 0) {
          /*
@@ -1431,6 +1712,153 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          }
       }
    return 1;
+}
+
+/*
+ * sattrib - get or set a socket attribute, WAttrib-style.
+ *   str with '=' sets; without '=' queries.
+ * Writes the result into *answer (string or integer) using abuf for
+ * string results.  Returns Succeeded, Failed, or RunError.
+ * Membership attributes (join/leave/source) are set-only.
+ */
+int sattrib(int s, char *str, long len, dptr answer, char *abuf)
+{
+   tended struct descrip attrd;
+   char name[256], *eq;
+   int on, v, af;
+   unsigned int u, olen;
+   unsigned char uc;
+   struct in_addr ifa;
+
+   if (len < 1 || len >= (long)sizeof(name))
+      return RunError;
+   memcpy(name, str, (size_t)len);
+   name[len] = '\0';
+
+   if ((eq = strchr(name, '=')) != NULL) {
+      /*
+       * Set: reuse apply_sock_attrs() so open() and Attrib() share one
+       * implementation.  Both passes run so reuse* (pre-bind) and the
+       * post-bind options are all reachable.  Bad names/values are
+       * RunError (error 1310); setsockopt failures are Failed.
+       */
+      MakeStr(str, len, &attrd);
+      {
+      CURTSTATE();
+      k_errornumber = 0;
+      if (!apply_sock_attrs(s, 1, &attrd, 1, NULL, NULL) ||
+          !apply_sock_attrs(s, 0, &attrd, 1, NULL, NULL)) {
+         if (k_errornumber == 1310)
+            return RunError;
+         return Failed;
+         }
+      }
+      return Succeeded;
+      }
+
+   /* query */
+   if (!is_sock_attr(name))
+      return RunError;
+   if (strcmp(name, "join") == 0 || strcmp(name, "leave") == 0 ||
+       strcmp(name, "source") == 0)
+      return Failed;                    /* memberships are not readable */
+
+   af = sock_family(s);
+
+   if (strcmp(name, "reuseaddr") == 0) {
+      olen = sizeof(on);
+      if (getsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, &olen) < 0)
+         return Failed;
+      strcpy(abuf, on ? "yes" : "no");
+      MakeStr(abuf, strlen(abuf), answer);
+      return Succeeded;
+      }
+   if (strcmp(name, "reuseport") == 0) {
+      olen = sizeof(on);
+      if (getsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char *)&on, &olen) < 0)
+         return Failed;
+      strcpy(abuf, on ? "yes" : "no");
+      MakeStr(abuf, strlen(abuf), answer);
+      return Succeeded;
+      }
+   if (strcmp(name, "broadcast") == 0) {
+      olen = sizeof(on);
+      if (getsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&on, &olen) < 0)
+         return Failed;
+      strcpy(abuf, on ? "yes" : "no");
+      MakeStr(abuf, strlen(abuf), answer);
+      return Succeeded;
+      }
+   if (strcmp(name, "rcvbuf") == 0) {
+      olen = sizeof(v);
+      if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&v, &olen) < 0)
+         return Failed;
+      MakeInt(v, answer);
+      return Succeeded;
+      }
+   if (strcmp(name, "sndbuf") == 0) {
+      olen = sizeof(v);
+      if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&v, &olen) < 0)
+         return Failed;
+      MakeInt(v, answer);
+      return Succeeded;
+      }
+   if (strcmp(name, "ttl") == 0) {
+      if (af == AF_INET6) {
+         olen = sizeof(v);
+         if (getsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+                        (char *)&v, &olen) < 0)
+            return Failed;
+         MakeInt(v, answer);
+         }
+      else {
+         olen = sizeof(uc);
+         if (getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL,
+                        (char *)&uc, &olen) < 0)
+            return Failed;
+         MakeInt((word)uc, answer);
+         }
+      return Succeeded;
+      }
+   if (strcmp(name, "mcastloop") == 0) {
+      if (af == AF_INET6) {
+         olen = sizeof(u);
+         if (getsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+                        (char *)&u, &olen) < 0)
+            return Failed;
+         on = u;
+         }
+      else {
+         olen = sizeof(uc);
+         if (getsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP,
+                        (char *)&uc, &olen) < 0)
+            return Failed;
+         on = uc;
+         }
+      strcpy(abuf, on ? "yes" : "no");
+      MakeStr(abuf, strlen(abuf), answer);
+      return Succeeded;
+      }
+   if (strcmp(name, "iface") == 0) {
+      if (af == AF_INET6) {
+         olen = sizeof(u);
+         if (getsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                        (char *)&u, &olen) < 0)
+            return Failed;
+         MakeInt((word)u, answer);
+         }
+      else {
+         olen = sizeof(ifa);
+         if (getsockopt(s, IPPROTO_IP, IP_MULTICAST_IF,
+                        (char *)&ifa, &olen) < 0)
+            return Failed;
+         if (inet_ntop(AF_INET, &ifa, abuf, 64) == NULL)
+            return Failed;
+         MakeStr(abuf, strlen(abuf), answer);
+         }
+      return Succeeded;
+      }
+   return RunError;
 }
 
 /*
@@ -1547,6 +1975,13 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
          freeaddrinfo(saddrinfo);
          return 0;
       }
+
+      /*
+       * Multicast UDP send without iface=: choose a local interface so
+       * the first writes() is not ENETUNREACH (no multicast route).
+       */
+      if (is_udp && sockaddr_is_multicast(sa))
+         sock_ensure_mcast_if(s);
    }
    else {
       /* UNIX domain socket */

@@ -779,6 +779,13 @@ Network calls to \texttt{open()} accept trailing
 SSL and graphics windows. Boolean attributes take \texttt{yes} or
 \texttt{no}. Unknown attributes fail the \texttt{open()} with error
 1310 (\texttt{bad socket attribute}).
+A second \texttt{open()} of the same listener address with no socket
+attributes returns another file handle for the cached socket. An open
+that supplies attributes (\texttt{join=}, \texttt{leave=},
+\texttt{iface=}, and so on) gets its own socket instead, so it cannot
+retune earlier aliases; use \texttt{Attrib()} to change options or leave
+a group on a live shared handle. Closing one alias leaves the others
+usable until the last handle is closed.
 
 \index{IP multicast}IP multicast uses UDP. The common cases need no
 attributes at all: binding a UDP socket to a multicast group address
@@ -816,11 +823,15 @@ end
 For \index{SSM}source-specific multicast (SSM), name the source before
 the group with \texttt{@} --- \texttt{source@group}, matching common
 tooling and RFC~4607 \texttt{(S,G)} order --- or pass a
-\texttt{source=} attribute on a socket already bound to the group:
+\texttt{source=} attribute on a socket already bound to the group.
+Both IPv4 and IPv6 are supported; for IPv6 SSM, pass an explicit
+\texttt{iface=} (name or index) so the join uses a single interface:
 
 \iconcode{
 \>   f := open("192.168.1.1@239.1.1.1:5000", "nua") \\
-\>   f := open("239.1.1.1:5000", "nua", "source=192.168.1.1")
+\>   f := open("239.1.1.1:5000", "nua", "source=192.168.1.1") \\
+\>   f := open("::1@ff3e::1:5000", "nua6", "iface=lo0") \\
+\>   f := open("ff3e::1:5000", "nua6", "iface=lo0", "source=::1")
 }
 
 When binding a wildcard address (or joining additional groups), use

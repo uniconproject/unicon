@@ -1,0 +1,282 @@
+#<p>
+# ICMP packet layouts built on <tt>PacketSpec</tt>.
+#</p>
+#<p>
+# Hierarchy:
+#</p>
+#<pre>
+#  PacketSpec
+#    IcmpPacket          shared IP-header strip / match helpers
+#      IcmpEchoRequest   type 8
+#      IcmpEchoReply     type 0
+#  Ping                  session wrapper (owns proto=icmp socket)
+#</pre>
+#<p>
+# Prefer <tt>Ping(host)</tt> for echo/reply round-trips; use the
+# PacketSpec classes when you need to craft bytes yourself.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+
+package net
+
+#<p>
+# Common ICMP helpers.  Subclasses declare their fixed header in
+# <tt>define()</tt>.
+#</p>
+class IcmpPacket : PacketSpec()
+
+   #<p>
+   # Strip an IPv4 header from a <tt>SOCK_RAW</tt> receive buffer,
+   # returning the ICMP message.
+   # <[param pkt IP+ICMP byte string from receive()]>
+   # <[returns ICMP message bytes]>
+   # <[fails if the buffer is too short]>
+   #</p>
+   method strip_ip(pkt  # IP+ICMP byte string from receive()
+                   )
+      local body
+      body := strip_ipv4(pkt) | fail
+      if *body < 8 then
+         fail
+      return body
+   end
+
+   #<p>
+   # Decode an IP+ICMP datagram and check type / id / seq.
+   # <[param pkt IP+ICMP byte string]>
+   # <[param want_type required ICMP type]>
+   # <[param id optional identifier to match]>
+   # <[param seq optional sequence number to match]>
+   # <[returns decode() table for the ICMP message]>
+   # <[fails if the header is short or fields do not match]>
+   #</p>
+   method match(pkt,        # IP+ICMP byte string
+                want_type,  # required ICMP type
+                id,         # optional identifier to match
+                seq         # optional sequence number to match
+                )
+      local body, v
+      body := strip_ip(pkt) | fail
+      v := decode(body) | fail
+      if v["type"] ~== want_type then
+         fail
+      if \id & v["id"] ~== id then
+         fail
+      if \seq & v["seq"] ~== seq then
+         fail
+      return v
+   end
+
+   #<p>
+   # Chain to <tt>PacketSpec</tt> construction (runs <tt>define()</tt>).
+   #</p>
+   initially()
+      self.PacketSpec.initially()
+end
+
+#<p>
+# ICMP echo request (type 8).
+#</p>
+class IcmpEchoRequest : IcmpPacket()
+
+   #<p>
+   # Declare the echo-request header fields.
+   #</p>
+   method define()
+      field("type", 1, 8)
+      field("code", 1, 0)
+      checksum_field("checksum")
+      field("id", 2)
+      field("seq", 2)
+   end
+
+   #<p>
+   # Build an echo request with identifier, sequence, and optional payload.
+   # <[param id ICMP identifier]>
+   # <[param seq sequence number]>
+   # <[param payload optional data after the header]>
+   # <[returns complete ICMP echo-request bytes]>
+   #</p>
+   method echo(id,       # ICMP identifier
+               seq,      # sequence number
+               payload   # optional data after the header
+               )
+      return set("id", id).set("seq", seq).build(, payload)
+   end
+
+   #<p>
+   # Chain to <tt>IcmpPacket</tt> construction.
+   #</p>
+   initially()
+      self.IcmpPacket.initially()
+end
+
+#<p>
+# ICMP echo reply (type 0) — same layout as the request.
+#</p>
+class IcmpEchoReply : IcmpPacket()
+
+   #<p>
+   # Declare the echo-reply header fields.
+   #</p>
+   method define()
+      field("type", 1, 0)
+      field("code", 1, 0)
+      checksum_field("checksum")
+      field("id", 2)
+      field("seq", 2)
+   end
+
+   #<p>
+   # Succeed with the decode table when <tt>pkt</tt> is an echo reply
+   # for the given id/seq.
+   # <[param pkt IP+ICMP byte string from receive()]>
+   # <[param id expected identifier]>
+   # <[param seq expected sequence number]>
+   # <[returns decode() table]>
+   # <[fails if not a matching echo reply]>
+   #</p>
+   method match_echo(pkt,  # IP+ICMP byte string from receive()
+                     id,   # expected identifier
+                     seq   # expected sequence number
+                     )
+      return match(pkt, 0, id, seq)
+   end
+
+   #<p>
+   # Chain to <tt>IcmpPacket</tt> construction.
+   #</p>
+   initially()
+      self.IcmpPacket.initially()
+end
+
+#<p>
+# High-level ICMP echo session.  Opens a raw <tt>proto=icmp</tt>
+# socket so callers need not know mode <tt>"nr"</tt> or build
+# packets by hand.
+#</p>
+#<pre>
+#  p := Ping("8.8.8.8") | stop(&errortext)
+#  if v := p.echo() then
+#     write("rtt=", v["rtt"], "ms from ", v["addr"])
+#  p.close()
+#</pre>
+class Ping(host, f, id, seqn, req, reply, timeout, ttl)
+
+   #<p>
+   # Short summary for REPL discovery (host, id, timeout, and the
+   # request layout from <tt>describe()</tt> on the echo request).
+   # <[returns description string]>
+   #</p>
+   method describe()
+      return "Ping(" || host || ") id=" || id ||
+             " timeout=" || timeout || "ms  " || req.describe()
+   end
+
+   #<p>
+   # Set the default wait time in milliseconds for <tt>echo()</tt>.
+   # Chainable.
+   # <[param ms timeout in milliseconds]>
+   # <[returns self]>
+   #</p>
+   method set_timeout(ms  # timeout in milliseconds
+                      )
+      timeout := integer(ms) | timeout
+      return self
+   end
+
+   #<p>
+   # Send an echo request and wait for a matching reply.
+   # If <tt>seq</tt> is omitted, a per-session sequence number is
+   # incremented.  On success returns the reply decode table with
+   # extra keys <tt>rtt</tt> (ms, real), <tt>rtt_us</tt>,
+   # <tt>ttl</tt> (from the IPv4 header), and <tt>addr</tt>.
+   # Round-trip time uses wall-clock <tt>gettimeofday()</tt>, not
+   # <tt>&time</tt> (CPU time), which barely advances while blocked
+   # in <tt>select()</tt>/<tt>receive()</tt>.
+   # <[param seq optional sequence number; auto-incremented if omitted]>
+   # <[param payload optional echo data; default 56 bytes]>
+   # <[param wait_ms optional timeout in ms; default from set_timeout()]>
+   # <[returns decode table plus rtt, rtt_us, ttl, and addr]>
+   # <[fails on send error or timeout]>
+   #</p>
+   method echo(seq,      # optional sequence number
+               payload,  # optional echo data
+               wait_ms   # optional timeout in ms
+               )
+      local pkt, t0, t1, r, v, us, slice, elapsed_ms
+
+      payload := \payload | repl("\0", 56)
+      wait_ms := integer(\wait_ms) | timeout
+      if /seq then {
+         seqn +:= 1
+         if seqn > 16rFFFF then
+            seqn := 0
+         seq := seqn
+         }
+      pkt := req.echo(id, seq, payload)
+      t0 := gettimeofday()
+      writes(f, pkt) | fail
+      while 1 do {
+         t1 := gettimeofday()
+         us := (t1.sec - t0.sec) * 1000000 + (t1.usec - t0.usec)
+         elapsed_ms := us / 1000
+         if elapsed_ms >= wait_ms then
+            fail
+         slice := wait_ms - elapsed_ms
+         if slice < 1 then
+            slice := 1
+         if slice > 100 then
+            slice := 100
+         if *select(f, slice) = 0 then
+            next
+         r := receive(f) | next
+         if v := reply.match_echo(r.msg, id, seq) then {
+            t1 := gettimeofday()
+            us := (t1.sec - t0.sec) * 1000000 + (t1.usec - t0.usec)
+            if us < 0 then
+               us := 0
+            v["rtt_us"] := us
+            v["rtt"] := real(us) / 1000.0
+            v["ttl"] := ipv4_ttl(r.msg)
+            v["addr"] := r.addr
+            return v
+            }
+         }
+   end
+   #<p>
+   # Close the raw socket.  Chainable; further <tt>echo()</tt> calls
+   # will fail until a new <tt>Ping</tt> is created.
+   # <[returns self]>
+   #</p>
+   method close()
+      if \f then {
+         ::close(f)
+         f := &null
+         }
+      return self
+   end
+
+   #<p>
+   # Open a raw ICMP socket to <tt>host</tt>.
+   # <[param h destination host or address]>
+   # <[param t IP TTL; defaults to 64]>
+   # <[param to default echo wait in ms; defaults to 2000]>
+   # <[fails if the raw socket cannot be opened]>
+   #</p>
+   initially(h,    # destination host or address
+             t,    # IP TTL; defaults to 64
+             wms   # default echo wait in ms; defaults to 2000
+             )
+      # Param names differ from fields so defaults assign to the instance.
+      host := \h | fail
+      ttl := integer(\t) | 64
+      timeout := integer(\wms) | 2000
+      id := iand(?100000 | 1, 16rFFFF)
+      seqn := 0
+      req := IcmpEchoRequest()
+      reply := IcmpEchoReply()
+      f := open(host, "nr", "proto=icmp", "ttl=" || ttl) | fail
+end

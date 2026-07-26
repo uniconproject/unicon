@@ -1,0 +1,825 @@
+#<p>
+# IGMP packet layouts built on <tt>PacketSpec</tt>
+# (IGMPv2: RFC 2236; IGMPv3: RFC 3376).
+#</p>
+#<p>
+# Hierarchy:
+#</p>
+#<pre>
+#  PacketSpec
+#    IgmpPacket             shared IP-header strip / match helpers
+#      Igmpv2Query          type 0x11 (8-byte query)
+#      Igmpv2Report         type 0x16
+#      Igmpv2Leave          type 0x17
+#      Igmpv3Query          type 0x11 (12+ byte query + sources)
+#      Igmpv3Report         type 0x22 (group records)
+#  Igmp                     session wrapper (owns proto=igmp socket)
+#</pre>
+#<p>
+# IGMPv2 messages are a fixed 8-byte header.  IGMPv3 queries add
+# flags/QQIC/source lists; IGMPv3 reports carry one or more group
+# records (ASM join/leave and SSM source filters).  Prefer
+# <tt>Igmp()</tt> for sniff/send sessions; use the PacketSpec classes
+# when crafting bytes yourself.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+
+package net
+
+# Message type codes and IGMPv3 group-record types (RFC 3376 §4.2.12).
+# Initialized by ensure_igmp_constants() on first IgmpPacket construction.
+global IGMP_MEMBERSHIP_QUERY
+global IGMP_V1_MEMBERSHIP_REPORT
+global IGMP_V2_MEMBERSHIP_REPORT
+global IGMP_V2_LEAVE_GROUP
+global IGMP_V3_MEMBERSHIP_REPORT
+global IGMP_MODE_IS_INCLUDE
+global IGMP_MODE_IS_EXCLUDE
+global IGMP_CHANGE_TO_INCLUDE_MODE
+global IGMP_CHANGE_TO_EXCLUDE_MODE
+global IGMP_ALLOW_NEW_SOURCES
+global IGMP_BLOCK_OLD_SOURCES
+
+#<p>
+# Initialize exported IGMP constants (idempotent).
+#</p>
+procedure ensure_igmp_constants()
+   static ready
+   if \ready then
+      return
+   ready := 1
+   IGMP_MEMBERSHIP_QUERY := 16r11
+   IGMP_V1_MEMBERSHIP_REPORT := 16r12
+   IGMP_V2_MEMBERSHIP_REPORT := 16r16
+   IGMP_V2_LEAVE_GROUP := 16r17
+   IGMP_V3_MEMBERSHIP_REPORT := 16r22
+   IGMP_MODE_IS_INCLUDE := 1
+   IGMP_MODE_IS_EXCLUDE := 2
+   IGMP_CHANGE_TO_INCLUDE_MODE := 3
+   IGMP_CHANGE_TO_EXCLUDE_MODE := 4
+   IGMP_ALLOW_NEW_SOURCES := 5
+   IGMP_BLOCK_OLD_SOURCES := 6
+end
+
+#<p>
+# Pack a list of IPv4 addresses as concatenated 4-byte strings.
+# <[param L list of dotted-quads / integers / raw addresses]>
+# <[returns byte string]>
+# <[fails if any element is not a valid IPv4 address]>
+#</p>
+procedure pack_ipv4_list(L  # list of IPv4 addresses
+                         )
+   local buf, a
+   buf := ""
+   L := \L | []
+   every a := !L do
+      buf ||:= to_ipv4(a) | fail
+   return buf
+end
+
+#<p>
+# Read <tt>n</tt> IPv4 addresses starting at index <tt>i</tt>.
+# <[param s byte string]>
+# <[param n number of addresses]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns list of dotted-quad strings]>
+# <[fails if s is too short]>
+#</p>
+procedure get_ipv4_list(s,  # byte string
+                        n,  # number of addresses
+                        i   # 1-based start index; defaults to 1
+                        )
+   local L, j
+   i := \i | 1
+   n := \n | 0
+   if n > 0 & i + 4 * n - 1 > *s then
+      fail
+   L := []
+   every !n do {
+      put(L, get_ipv4(s, i) | fail)
+      i +:= 4
+      }
+   return L
+end
+
+#<p>
+# Encode one IGMPv3 group record (RFC 3376 §4.2.4).
+# <[param rectype record type (IGMP_MODE_IS_INCLUDE, …)]>
+# <[param group multicast group address]>
+# <[param sources list of source addresses; defaults to empty]>
+# <[param aux optional auxiliary data; length must be a multiple of 4]>
+# <[returns record byte string]>
+# <[fails if an address is invalid or aux length is not a multiple of 4]>
+#</p>
+procedure igmp_group_record(rectype,  # record type code
+                            group,    # multicast group address
+                            sources,  # list of source addresses
+                            aux       # optional auxiliary data
+                            )
+   local srcbytes
+   ensure_igmp_constants()
+   sources := \sources | []
+   aux := \aux | ""
+   if *aux % 4 ~= 0 then
+      fail
+   srcbytes := pack_ipv4_list(sources) | fail
+   return u8(rectype) || u8(*aux / 4) || u16(*sources) ||
+          ipv4(group) || srcbytes || aux
+end
+
+#<p>
+# Decode one IGMPv3 group record at index <tt>i</tt>.
+# <[param s byte string containing records]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns table with type, group, sources, aux, and after (index after record)]>
+# <[fails if the record is truncated]>
+#</p>
+procedure get_igmp_group_record(s,  # byte string containing records
+                                i   # 1-based start index; defaults to 1
+                                )
+   local rectype, auxlen, ns, group, sources, aux
+   i := \i | 1
+   if i + 7 > *s then
+      fail
+   rectype := get_u8(s, i)
+   auxlen := get_u8(s, i + 1)          # 32-bit words
+   ns := get_u16(s, i + 2)
+   group := get_ipv4(s, i + 4) | fail
+   i +:= 8
+   sources := get_ipv4_list(s, ns, i) | fail
+   i +:= 4 * ns
+   if auxlen > 0 & i + 4 * auxlen - 1 > *s then
+      fail
+   if auxlen > 0 then
+      aux := s[i+:4 * auxlen]
+   else
+      aux := ""
+   i +:= 4 * auxlen
+   return table("type", rectype,
+                "group", group,
+                "sources", sources,
+                "aux", aux,
+                "after", i)
+end
+
+#<p>
+# Common IGMP helpers.  Subclasses declare their fixed header in
+# <tt>define()</tt>.
+#</p>
+class IgmpPacket : PacketSpec()
+
+   #<p>
+   # Strip an IPv4 header from a <tt>SOCK_RAW</tt> receive buffer,
+   # returning the IGMP message.
+   # <[param pkt IP+IGMP byte string from receive()]>
+   # <[returns IGMP message bytes]>
+   # <[fails if the buffer is too short]>
+   #</p>
+   method strip_ip(pkt  # IP+IGMP byte string from receive()
+                   )
+      local body
+      body := strip_ipv4(pkt) | fail
+      if *body < 8 then
+         fail
+      return body
+   end
+
+   #<p>
+   # Decode an IP+IGMP datagram and check type / group.
+   # <[param pkt IP+IGMP byte string]>
+   # <[param want_type required IGMP type]>
+   # <[param group optional group address to match (dotted-quad)]>
+   # <[returns decode() table for the IGMP message]>
+   # <[fails if the header is short or fields do not match]>
+   #</p>
+   method match(pkt,        # IP+IGMP byte string
+                want_type,  # required IGMP type
+                group       # optional group address to match
+                )
+      local body, v
+      body := strip_ip(pkt) | fail
+      v := decode(body) | fail
+      if v["type"] ~== want_type then
+         fail
+      if \group & v["group"] ~== ::string(group) then
+         fail
+      return v
+   end
+
+   #<p>
+   # Shared 8-byte IGMPv2 header skeleton used by subclasses.
+   # <[param typ IGMP type byte]>
+   # <[param max_resp default max response time; 0 for reports/leaves]>
+   #</p>
+   method define_v2(typ,       # IGMP type byte
+                    max_resp   # default max response time
+                    )
+      max_resp := \max_resp | 0
+      field("type", 1, typ)
+      field("max_resp_time", 1, max_resp)
+      checksum_field("checksum")
+      ipv4_field("group")
+   end
+
+   #<p>
+   # Chain to <tt>PacketSpec</tt> construction (runs <tt>define()</tt>).
+   #</p>
+   initially()
+      ensure_igmp_constants()
+      self.PacketSpec.initially()
+end
+
+#<p>
+# IGMPv2 membership query (type 0x11).  A general query uses group
+# <tt>0.0.0.0</tt>; a group-specific query names the group.
+# Length is 8 octets (IGMPv3 queries are longer — see <tt>Igmpv3Query</tt>).
+#</p>
+class Igmpv2Query : IgmpPacket()
+
+   #<p>
+   # Declare the membership-query header fields.
+   #</p>
+   method define()
+      define_v2(IGMP_MEMBERSHIP_QUERY, 100)   # 10.0s default max resp
+   end
+
+   #<p>
+   # Build a membership query.
+   # <[param group group address, or omit / 0.0.0.0 for a general query]>
+   # <[param max_resp_time max response time in units of 0.1s; default 100]>
+   # <[returns complete IGMP query bytes]>
+   #</p>
+   method query(group,          # group address; 0.0.0.0 = general query
+                max_resp_time   # max response time (0.1s units)
+                )
+      group := \group | "0.0.0.0"
+      max_resp_time := \max_resp_time | 100
+      return set("group", group).set("max_resp_time", max_resp_time).build()
+   end
+
+   #<p>
+   # Succeed with the decode table when <tt>pkt</tt> is an 8-byte
+   # membership query, optionally for <tt>group</tt>.
+   # <[param pkt IP+IGMP byte string from receive()]>
+   # <[param group optional group address to match]>
+   # <[returns decode() table]>
+   # <[fails if not a matching v2-sized query]>
+   #</p>
+   method match_query(pkt,    # IP+IGMP byte string from receive()
+                      group   # optional group address to match
+                      )
+      local body
+      body := strip_ip(pkt) | fail
+      if *body ~= 8 then
+         fail
+      return match(pkt, IGMP_MEMBERSHIP_QUERY, group)
+   end
+
+   #<p>
+   # Chain to <tt>IgmpPacket</tt> construction.
+   #</p>
+   initially()
+      self.IgmpPacket.initially()
+end
+
+#<p>
+# IGMPv2 membership report (type 0x16).
+#</p>
+class Igmpv2Report : IgmpPacket()
+
+   #<p>
+   # Declare the membership-report header fields.
+   #</p>
+   method define()
+      define_v2(IGMP_V2_MEMBERSHIP_REPORT, 0)
+      require("group")
+   end
+
+   #<p>
+   # Build a membership report for <tt>group</tt>.
+   # <[param group multicast group address]>
+   # <[returns complete IGMP report bytes]>
+   #</p>
+   method report(group  # multicast group address
+                 )
+      return set("group", group).build()
+   end
+
+   #<p>
+   # Succeed with the decode table when <tt>pkt</tt> is a membership
+   # report for <tt>group</tt>.
+   # <[param pkt IP+IGMP byte string from receive()]>
+   # <[param group optional group address to match]>
+   # <[returns decode() table]>
+   # <[fails if not a matching report]>
+   #</p>
+   method match_report(pkt,    # IP+IGMP byte string from receive()
+                       group   # optional group address to match
+                       )
+      return match(pkt, IGMP_V2_MEMBERSHIP_REPORT, group)
+   end
+
+   #<p>
+   # Chain to <tt>IgmpPacket</tt> construction.
+   #</p>
+   initially()
+      self.IgmpPacket.initially()
+end
+
+#<p>
+# IGMPv2 leave-group (type 0x17).
+#</p>
+class Igmpv2Leave : IgmpPacket()
+
+   #<p>
+   # Declare the leave-group header fields.
+   #</p>
+   method define()
+      define_v2(IGMP_V2_LEAVE_GROUP, 0)
+      require("group")
+   end
+
+   #<p>
+   # Build a leave-group message for <tt>group</tt>.
+   # <[param group multicast group address]>
+   # <[returns complete IGMP leave bytes]>
+   #</p>
+   method leave(group  # multicast group address
+                )
+      return set("group", group).build()
+   end
+
+   #<p>
+   # Succeed with the decode table when <tt>pkt</tt> is a leave-group
+   # for <tt>group</tt>.
+   # <[param pkt IP+IGMP byte string from receive()]>
+   # <[param group optional group address to match]>
+   # <[returns decode() table]>
+   # <[fails if not a matching leave]>
+   #</p>
+   method match_leave(pkt,    # IP+IGMP byte string from receive()
+                      group   # optional group address to match
+                      )
+      return match(pkt, IGMP_V2_LEAVE_GROUP, group)
+   end
+
+   #<p>
+   # Chain to <tt>IgmpPacket</tt> construction.
+   #</p>
+   initially()
+      self.IgmpPacket.initially()
+end
+
+#<p>
+# IGMPv3 membership query (type 0x11, RFC 3376 §4.1).
+# Fixed header is 12 octets, followed by <tt>N</tt> source addresses.
+#</p>
+class Igmpv3Query : IgmpPacket()
+
+   #<p>
+   # Declare the 12-byte IGMPv3 query header.
+   #</p>
+   method define()
+      field("type", 1, IGMP_MEMBERSHIP_QUERY)
+      field("max_resp_code", 1, 100)
+      checksum_field("checksum")
+      ipv4_field("group")
+      field("flags", 1, 2)          # Resv=0, S=0, QRV=2
+      field("qqic", 1, 125)         # Querier's Query Interval Code
+      field("nsources", 2, 0)
+   end
+
+   #<p>
+   # Pack the Resv/S/QRV flags byte.
+   # <[param qrv Querier's Robustness Variable (0..7); default 2]>
+   # <[param s_flag suppress router-side processing; default 0]>
+   # <[returns flags byte as integer]>
+   #</p>
+   method make_flags(qrv,     # QRV 0..7; default 2
+                     s_flag   # S flag; default 0
+                     )
+      qrv := \qrv | 2
+      s_flag := \s_flag | 0
+      return ior(ishift(iand(s_flag, 1), 3), iand(qrv, 7))
+   end
+
+   #<p>
+   # Build an IGMPv3 membership query.
+   # <[param group group address; 0.0.0.0 = general query]>
+   # <[param sources optional list of source addresses]>
+   # <[param max_resp_code Max Resp Code; default 100]>
+   # <[param qrv QRV; default 2]>
+   # <[param s_flag S flag; default 0]>
+   # <[param qqic QQIC; default 125]>
+   # <[returns complete IGMPv3 query bytes]>
+   #</p>
+   method query(group,          # group; 0.0.0.0 = general query
+                sources,        # optional source list
+                max_resp_code,  # Max Resp Code; default 100
+                qrv,            # QRV; default 2
+                s_flag,         # S flag; default 0
+                qqic            # QQIC; default 125
+                )
+      local srcbytes, vals
+      group := \group | "0.0.0.0"
+      sources := \sources | []
+      max_resp_code := \max_resp_code | 100
+      qqic := \qqic | 125
+      srcbytes := pack_ipv4_list(sources) | fail
+      vals := table("group", group,
+                    "max_resp_code", max_resp_code,
+                    "flags", make_flags(qrv, s_flag),
+                    "qqic", qqic,
+                    "nsources", *sources)
+      return build(vals, srcbytes)
+   end
+
+   #<p>
+   # Decode an IGMPv3 query body (no IP header).
+   # <[param s IGMP message bytes]>
+   # <[returns table with header fields plus sources list]>
+   # <[fails if shorter than 12 octets or source list is truncated]>
+   #</p>
+   method decode(s  # IGMP message bytes
+                 )
+      local v, n
+      if *s < 12 then
+         fail
+      v := self.PacketSpec.decode(s) | fail
+      n := v["nsources"]
+      v["sources"] := get_ipv4_list(v["payload"], n) | fail
+      v["qrv"] := iand(v["flags"], 7)
+      v["s_flag"] := iand(ishift(v["flags"], -3), 1)
+      return v
+   end
+
+   #<p>
+   # Succeed when <tt>pkt</tt> is an IGMPv3 query (length &gt;= 12),
+   # optionally for <tt>group</tt>.
+   # <[param pkt IP+IGMP byte string from receive()]>
+   # <[param group optional group address to match]>
+   # <[returns decode() table]>
+   # <[fails if not a matching v3 query]>
+   #</p>
+   method match_query(pkt,    # IP+IGMP byte string from receive()
+                      group   # optional group address to match
+                      )
+      local body, v
+      body := strip_ip(pkt) | fail
+      if *body < 12 then
+         fail
+      v := decode(body) | fail
+      if v["type"] ~== IGMP_MEMBERSHIP_QUERY then
+         fail
+      if \group & v["group"] ~== ::string(group) then
+         fail
+      return v
+   end
+
+   #<p>
+   # Chain to <tt>IgmpPacket</tt> construction.
+   #</p>
+   initially()
+      self.IgmpPacket.initially()
+end
+
+#<p>
+# IGMPv3 membership report (type 0x22, RFC 3376 §4.2).
+# Fixed header is 8 octets, followed by <tt>M</tt> group records.
+#</p>
+class Igmpv3Report : IgmpPacket()
+
+   #<p>
+   # Declare the 8-byte IGMPv3 report header.
+   #</p>
+   method define()
+      field("type", 1, IGMP_V3_MEMBERSHIP_REPORT)
+      field("reserved1", 1, 0)
+      checksum_field("checksum")
+      field("reserved2", 2, 0)
+      field("nrecords", 2, 0)
+   end
+
+   #<p>
+   # Build one group-record byte string (see <tt>igmp_group_record</tt>).
+   # <[param rectype record type]>
+   # <[param group multicast group]>
+   # <[param sources source list]>
+   # <[param aux optional auxiliary data]>
+   # <[returns record bytes]>
+   #</p>
+   method group_record(rectype,  # record type
+                       group,    # multicast group
+                       sources,  # source list
+                       aux       # optional aux data
+                       )
+      return igmp_group_record(rectype, group, sources, aux)
+   end
+
+   #<p>
+   # Build a membership report from a list of group-record byte strings
+   # (from <tt>group_record()</tt> / <tt>igmp_group_record()</tt>).
+   # <[param records list of record byte strings]>
+   # <[returns complete IGMPv3 report bytes]>
+   #</p>
+   method report(records  # list of group-record byte strings
+                 )
+      local body, grec
+      records := \records | []
+      body := ""
+      every grec := !records do
+         body ||:= ::string(grec)
+      return build(table("nrecords", *records), body)
+   end
+
+   #<p>
+   # ASM join: <tt>CHANGE_TO_EXCLUDE_MODE</tt> with an empty source list.
+   # <[param group multicast group address]>
+   # <[returns complete IGMPv3 report bytes]>
+   #</p>
+   method join(group  # multicast group address
+               )
+      return report([group_record(IGMP_CHANGE_TO_EXCLUDE_MODE, group, [])])
+   end
+
+   #<p>
+   # ASM leave: <tt>CHANGE_TO_INCLUDE_MODE</tt> with an empty source list.
+   # <[param group multicast group address]>
+   # <[returns complete IGMPv3 report bytes]>
+   #</p>
+   method leave(group  # multicast group address
+                )
+      return report([group_record(IGMP_CHANGE_TO_INCLUDE_MODE, group, [])])
+   end
+
+   #<p>
+   # SSM / source-filter join: <tt>CHANGE_TO_INCLUDE_MODE</tt> with sources.
+   # <[param group multicast group address]>
+   # <[param sources list of source addresses]>
+   # <[returns complete IGMPv3 report bytes]>
+   #</p>
+   method join_sources(group,    # multicast group address
+                       sources   # list of source addresses
+                       )
+      return report([group_record(IGMP_CHANGE_TO_INCLUDE_MODE, group, sources)])
+   end
+
+   #<p>
+   # Allow additional sources (<tt>ALLOW_NEW_SOURCES</tt>).
+   # <[param group multicast group address]>
+   # <[param sources list of source addresses]>
+   # <[returns complete IGMPv3 report bytes]>
+   #</p>
+   method allow(group,    # multicast group address
+                sources   # list of source addresses
+                )
+      return report([group_record(IGMP_ALLOW_NEW_SOURCES, group, sources)])
+   end
+
+   #<p>
+   # Block sources (<tt>BLOCK_OLD_SOURCES</tt>).
+   # <[param group multicast group address]>
+   # <[param sources list of source addresses]>
+   # <[returns complete IGMPv3 report bytes]>
+   #</p>
+   method block(group,    # multicast group address
+                sources   # list of source addresses
+                )
+      return report([group_record(IGMP_BLOCK_OLD_SOURCES, group, sources)])
+   end
+
+   #<p>
+   # Decode an IGMPv3 report body (no IP header).
+   # <[param s IGMP message bytes]>
+   # <[returns table with header fields plus records list]>
+   # <[fails if truncated]>
+   #</p>
+   method decode(s  # IGMP message bytes
+                 )
+      local v, recs, pos, rec, i
+      if *s < 8 then
+         fail
+      v := self.PacketSpec.decode(s) | fail
+      recs := []
+      pos := 1
+      every i := 1 to v["nrecords"] do {
+         rec := get_igmp_group_record(v["payload"], pos) | fail
+         put(recs, rec)
+         pos := rec["after"]
+         }
+      v["records"] := recs
+      return v
+   end
+
+   #<p>
+   # Succeed when <tt>pkt</tt> is an IGMPv3 report, optionally containing
+   # <tt>group</tt> in some record.
+   # <[param pkt IP+IGMP byte string from receive()]>
+   # <[param group optional group address that must appear in a record]>
+   # <[returns decode() table]>
+   # <[fails if not a matching v3 report]>
+   #</p>
+   method match_report(pkt,    # IP+IGMP byte string from receive()
+                       group   # optional group address to match
+                       )
+      local body, v, rec
+      body := strip_ip(pkt) | fail
+      v := decode(body) | fail
+      if v["type"] ~== IGMP_V3_MEMBERSHIP_REPORT then
+         fail
+      if \group then {
+         every rec := !v["records"] do
+            if rec["group"] == ::string(group) then
+               return v
+         fail
+         }
+      return v
+   end
+
+   #<p>
+   # Chain to <tt>IgmpPacket</tt> construction.
+   #</p>
+   initially()
+      self.IgmpPacket.initially()
+end
+
+#<p>
+# High-level IGMP session.  Opens a raw <tt>proto=igmp</tt> socket
+# (default bind <tt>0.0.0.0</tt>) for sniffing and sending, so callers
+# need not know mode <tt>"nr"</tt>.
+#</p>
+#<pre>
+#  g := Igmp() | stop(&errortext)
+#  write(g.describe())
+#  if v := g.recv(1000) then
+#     write(v["kind"], " from ", v["addr"])
+#  g.report("239.1.1.1")    # IGMPv2 membership report
+#  g.close()
+#</pre>
+class Igmp(host, f, q2, q3, r2, leave2, r3, timeout)
+
+   #<p>
+   # Short summary for REPL discovery.
+   # <[returns description string]>
+   #</p>
+   method describe()
+      return "Igmp(" || host || ") timeout=" || timeout ||
+             "ms  proto=igmp (v2 query/report/leave, v3 query/report)"
+   end
+
+   #<p>
+   # Set the default wait time in milliseconds for <tt>recv()</tt>.
+   # Chainable.
+   # <[param ms timeout in milliseconds]>
+   # <[returns self]>
+   #</p>
+   method set_timeout(ms  # timeout in milliseconds
+                      )
+      timeout := integer(ms) | timeout
+      return self
+   end
+
+   #<p>
+   # Classify an IP+IGMP receive buffer.  Returns a decode table with
+   # <tt>kind</tt> set to one of
+   # <tt>v3_report</tt>, <tt>v3_query</tt>, <tt>v2_query</tt>,
+   # <tt>v2_report</tt>, <tt>v2_leave</tt>, or <tt>unknown</tt>.
+   # <[param msg IP+IGMP byte string from receive()]>
+   # <[returns table with kind and decoded fields]>
+   #</p>
+   method classify(msg  # IP+IGMP byte string from receive()
+                   )
+      local v
+      if v := r3.match_report(msg) then {
+         v["kind"] := "v3_report"
+         return v
+         }
+      if v := q3.match_query(msg) then {
+         v["kind"] := "v3_query"
+         return v
+         }
+      if v := q2.match_query(msg) then {
+         v["kind"] := "v2_query"
+         return v
+         }
+      if v := r2.match_report(msg) then {
+         v["kind"] := "v2_report"
+         return v
+         }
+      if v := leave2.match_leave(msg) then {
+         v["kind"] := "v2_leave"
+         return v
+         }
+      return table("kind", "unknown")
+   end
+
+   #<p>
+   # Wait up to <tt>wait_ms</tt> for one IGMP datagram, classify it,
+   # and return a table with <tt>kind</tt>, <tt>addr</tt>, <tt>msg</tt>,
+   # <tt>len</tt>, plus decoded fields when recognized.
+   # <[param wait_ms optional timeout in ms; default from set_timeout()]>
+   # <[returns classified receive table]>
+   # <[fails on timeout or receive error]>
+   #</p>
+   method recv(wait_ms  # optional timeout in ms
+               )
+      local r, v
+      wait_ms := integer(\wait_ms) | timeout
+      if *select(f, wait_ms) = 0 then
+         fail
+      r := receive(f) | fail
+      v := classify(r.msg)
+      v["addr"] := r.addr
+      v["msg"] := r.msg
+      v["len"] := *r.msg
+      return v
+   end
+
+   #<p>
+   # Send raw IGMP bytes on the session socket.  Chainable.
+   # <[param pkt IGMP message bytes]>
+   # <[returns self]>
+   # <[fails on write error]>
+   #</p>
+   method send(pkt  # IGMP message bytes
+               )
+      writes(f, pkt) | fail
+      return self
+   end
+
+   #<p>
+   # Send an IGMPv2 membership report for <tt>group</tt>.  Chainable.
+   #</p>
+   method report(group  # multicast group address
+                 )
+      return send(r2.report(group))
+   end
+
+   #<p>
+   # Send an IGMPv2 leave-group for <tt>group</tt>.  Chainable.
+   #</p>
+   method leave(group  # multicast group address
+                )
+      return send(leave2.leave(group))
+   end
+
+   #<p>
+   # Send an IGMPv2 membership query.  Chainable.
+   #</p>
+   method query(group,          # group; omit / 0.0.0.0 = general query
+                max_resp_time   # max response time (0.1s units)
+                )
+      return send(q2.query(group, max_resp_time))
+   end
+
+   #<p>
+   # Send an IGMPv3 ASM join (CHANGE_TO_EXCLUDE empty sources).
+   # Chainable.
+   #</p>
+   method join(group  # multicast group address
+               )
+      return send(r3.join(group))
+   end
+
+   #<p>
+   # Send an IGMPv3 ASM leave (CHANGE_TO_INCLUDE empty sources).
+   # Chainable.
+   #</p>
+   method leave3(group  # multicast group address
+                 )
+      return send(r3.leave(group))
+   end
+
+   #<p>
+   # Close the raw socket.  Chainable.
+   # <[returns self]>
+   #</p>
+   method close()
+      if \f then {
+         ::close(f)
+         f := &null
+         }
+      return self
+   end
+
+   #<p>
+   # Open a raw IGMP socket.
+   # <[param h bind/destination host; defaults to 0.0.0.0]>
+   # <[param to default recv wait in ms; defaults to 1000]>
+   # <[fails if the raw socket cannot be opened]>
+   #</p>
+   initially(h,    # bind/destination host; defaults to 0.0.0.0
+             wms   # default recv wait in ms; defaults to 1000
+             )
+      # Param names differ from fields so defaults assign to the instance.
+      host := \h | "0.0.0.0"
+      timeout := integer(\wms) | 1000
+      q2 := Igmpv2Query()
+      q3 := Igmpv3Query()
+      r2 := Igmpv2Report()
+      leave2 := Igmpv2Leave()
+      r3 := Igmpv3Report()
+      f := open(host, "nr", "proto=igmp") | fail
+end

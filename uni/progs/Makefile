@@ -3,7 +3,8 @@ UNICON_TOP_BUILDDIR ?= $(BASE)
 include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 BINPROGS=ie uprof  umake 
-PROGS= idxGen uget splitmail csv genAcc heap_demo mapStrings rpn $(BINPROGS)
+PROGS= idxGen uget splitmail csv genAcc heap_demo mapStrings rpn \
+	uping uigmp $(BINPROGS)
 
 all: $(PROGS)
 	$(CP) $(BINPROGS) ../../bin
@@ -43,6 +44,12 @@ idxGen: idxGen.icn
 
 splitmail: splitmail.icn
 	$(UNICON) $(UFLAGS) splitmail
+
+uping: uping.icn
+	$(UNICON) $(UFLAGS) uping
+
+uigmp: uigmp.icn
+	$(UNICON) $(UFLAGS) uigmp
 
 clean Clean:
 	@$(RM) $(PROGS) *.exe uniclass.pag uniclass.dir uniclass.db

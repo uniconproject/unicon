@@ -101,6 +101,7 @@ extern stringint signalnames[];
  */
 #define SOCK_T_STREAM 0                 /* TCP */
 #define SOCK_T_DGRAM  1                 /* UDP */
+#define SOCK_T_RAW    2                 /* SOCK_RAW */
 
 #ifdef IRIS4D
 #include <limits.h>

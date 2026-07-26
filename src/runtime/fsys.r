@@ -332,7 +332,7 @@ Deliberate Syntax Error
 #endif                                  /* MSDOS || ... */
 
 #ifdef PosixFns
-      int sock_type = SOCK_T_STREAM;    /* TCP / UDP */
+      int sock_type = SOCK_T_STREAM;    /* TCP / UDP / RAW */
 #endif                                  /* PosixFns */
 #if defined(PosixFns) || defined(Messaging)
       int is_ipv4 = 0;
@@ -409,6 +409,16 @@ Deliberate Syntax Error
                continue;
             case 'r':
             case 'R':
+#ifdef PosixFns
+               /*
+                * After 'n', 'r' means SOCK_RAW (like 'u' for UDP).
+                * Otherwise it remains the ordinary read mode bit.
+                */
+               if (status & Fs_Socket) {
+                  sock_type = SOCK_T_RAW;
+                  continue;
+                  }
+#endif                                  /* PosixFns */
                status |= Fs_Read;
                continue;
             case 'w':
@@ -1011,7 +1021,7 @@ Deliberate Syntax Error
                      timeout = 0;
                }
 #endif                                  /* Graphics || Messaging || ISQL */
-               /* connect to a port */
+               /* connect to a port (or raw destination) */
                DEC_NARTHREADS;
                fd = sock_connect(fnamestr, sock_type, timeout,
                                  af_fam, attr, n);

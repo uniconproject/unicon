@@ -1000,7 +1000,7 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
  * set between socket() and bind(); those are applied in a "prebind"
  * pass and everything else after the socket is bound/created.
  * Attributes are applied in the order given, which matters for
- * multicast: a "iface" attribute selects the interface used by any
+ * multicast: an "iface" attribute selects the interface used by any
  * "join" attributes that follow it.
  *
  * DWIM defaults (overridable with an explicit attribute):
@@ -1097,11 +1097,11 @@ static int sock_split_group_source(char *host, char *srcbuf, size_t srcbuf_sz,
    *srcp = NULL;
    if ((at = strchr(host, '@')) == NULL)
       return 1;
-   if (at == host || at[1] == '') {
+   if (at == host || at[1] == '\0') {
       errno = EINVAL;
       return 0;
       }
-   *at = '';
+   *at = '\0';
    slen = strlen(host);
    if (slen + 1 > srcbuf_sz) {
       errno = EINVAL;
@@ -1804,6 +1804,7 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
       return Succeeded;
       }
    if (strcmp(name, "ttl") == 0) {
+      /* report the multicast hop limit; set writes both uni and mcast */
       if (af == AF_INET6) {
          olen = sizeof(v);
          if (getsockopt(s, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,

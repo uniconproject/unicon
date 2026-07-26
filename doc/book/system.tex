@@ -784,23 +784,32 @@ SSL and graphics windows. Boolean attributes take \texttt{yes} or
 attributes at all: binding a UDP socket to a multicast group address
 joins that group (any-source multicast, ASM), and listeners default to
 \texttt{reuseaddr=yes} so a restarted server can rebind its port.
-Sending to the limited broadcast address \texttt{255.255.255.255}
-enables \texttt{SO\_BROADCAST} automatically.
+When \texttt{iface=} is omitted, a join covers every UP IPv4
+interface, and a multicast send uses the first non-loopback IPv4
+address (or loopback if that is all the host has); kernel multicast
+loopback remains on by default, so a local receiver still sees the
+packets. Sending to the limited broadcast address
+\texttt{255.255.255.255} enables \texttt{SO\_BROADCAST} automatically.
 
-A multicast receiver that binds the group and a sender that transmits
-to it look like this:
+Here is a minimal receiver that joins a group and prints each
+datagram, and a matching sender. Run the receiver in one terminal and
+the sender in another:
 
 \iconcode{
 procedure main() \\
-\>   group := "239.1.1.1" \\
-\>   port := "5000" \\
-\>   f := open(group {\textbar}{\textbar} ":" {\textbar}{\textbar} port, "nua") {\textbar} \\
-\>\>\>\>stop(\&errortext) \\
-\>   s := open(group {\textbar}{\textbar} ":" {\textbar}{\textbar} port, "nu") {\textbar} \\
-\>\>\>\>stop(\&errortext) \\
-\>   writes(s, "hello") \\
-\>   if *select(f, 5000) {\textgreater} 0 then \\
-\>\>\>write("Received ", receive(f).msg) \\
+\>   local f, r \\
+\>   f := open("239.1.1.1:5000", "nua") {\textbar} stop(\&errortext) \\
+\>   while r := receive(f) do \\
+\>\>\>write(r.addr, "  ", r.msg) \\
+end
+}
+
+\iconcode{
+procedure main() \\
+\>   local f, i \\
+\>   f := open("239.1.1.1:5000", "nu") {\textbar} stop(\&errortext) \\
+\>   every i := 1 to 5 do \\
+\>\>\>writes(f, "hello-" {\textbar}{\textbar} i) \& delay(500) \\
 end
 }
 
@@ -817,9 +826,12 @@ tooling and RFC~4607 \texttt{(S,G)} order --- or pass a
 When binding a wildcard address (or joining additional groups), use
 \texttt{join=} attributes. The form \texttt{join=\textit{group}} is ASM;
 \texttt{join=\textit{group},\textit{source}} is SSM. Attributes may be
-repeated, and ASM and SSM joins may be mixed in the same call. A
-\texttt{iface=} attribute selects the interface used by
-\texttt{join=} attributes that follow it:
+repeated, and ASM and SSM joins may be mixed in the same call. An
+explicit \texttt{iface=} restricts join and send to one interface
+instead of the defaults above; the value may be an IPv4 address, a
+numeric interface index, or an interface name such as \texttt{en0} or
+\texttt{eth0}. An \texttt{iface=} before a \texttt{join=} selects the
+interface used by that join:
 
 \iconcode{
 \>   f := open(":5000", "nua", \\
@@ -828,11 +840,54 @@ repeated, and ASM and SSM joins may be mixed in the same call. A
 \>\>\>"join=232.1.1.1,10.0.0.5")
 }
 
-Other socket attributes include \texttt{reuseaddr}, \texttt{reuseport},
-\texttt{broadcast}, \texttt{rcvbuf}, \texttt{sndbuf}, \texttt{ttl}
-(IPv6 hop limit), and \texttt{mcastloop}. Explicit attributes always
-override the defaults. On send or connect, a \texttt{source@group:port}
-address keeps only the group so the destination is the group address.
+The remaining socket attributes are:
+
+\begin{description}
+\item[\texttt{reuseaddr=yes{\textbar}no}]
+Allows the local address to be reused while a previous binding is
+still in \texttt{TIME\_WAIT}. Listeners default to \texttt{yes} on
+UNIX.
+\item[\texttt{reuseport=yes{\textbar}no}]
+Where the platform provides \texttt{SO\_REUSEPORT}, allows several
+sockets to bind the same address and port (useful when sharing a
+multicast group among processes). Multicast binds enable it by
+default when available.
+\item[\texttt{broadcast=yes{\textbar}no}]
+Enables sending to the limited broadcast address. Opening
+\texttt{255.255.255.255} sets this automatically.
+\item[\texttt{ttl=\textit{n}}]
+Sets both the unicast and multicast hop limits (IPv4 TTL /
+IPv6 hops) to integer \texttt{\textit{n}}.
+\item[\texttt{mcastloop=yes{\textbar}no}]
+Controls whether a host receives its own multicast transmissions.
+The kernel default is \texttt{yes}.
+\item[\texttt{rcvbuf=\textit{n}}, \texttt{sndbuf=\textit{n}}]
+Set the socket receive and send buffer sizes in bytes.
+\end{description}
+
+Explicit attributes always override the defaults. On send or connect,
+a \texttt{source@group:port} address keeps only the group so the
+destination is the group address.
+
+After \texttt{open()}, the same attributes can be read or changed with
+\index{Attrib()}\texttt{Attrib()}, using the same
+\texttt{"\textit{name}"} / \texttt{"\textit{name}=\textit{value}"} style
+as \texttt{WAttrib()}:
+
+\iconcode{
+\>   Attrib(f, "ttl=4") \\
+\>   write(Attrib(f, "ttl")) \\
+\>   Attrib(f, "join=239.1.1.2") \\
+\>   Attrib(f, "iface=127.0.0.1", "leave=239.1.1.1")
+}
+
+\texttt{join} and \texttt{leave} add or drop memberships on an existing
+socket (forms match \texttt{open()}: \texttt{group} or
+\texttt{group,source}); pass \texttt{iface=} before \texttt{leave=}
+when the membership was joined on a specific interface. Memberships
+cannot be queried. Bare names for the other attributes return
+\texttt{yes}/\texttt{no}, an integer, or (for IPv4 \texttt{iface}) a
+dotted address; \texttt{source} cannot be queried either.
 
 \subsection*{Secure Sockets}
 

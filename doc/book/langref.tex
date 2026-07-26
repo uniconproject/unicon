@@ -1903,6 +1903,27 @@ hyperbolic tangent of \texttt{r}. Arguments are given in radians.
 
 \bigskip
 \hrule\vspace{0.1cm}
+\index{Attrib}
+\noindent
+{\bf Attrib(x, ...) : x* } \hfill {\bf get or set attributes}
+
+\noindent
+\texttt{Attrib()} gets or sets attributes of its first argument.
+For a network socket file, trailing string arguments use the same
+\texttt{"\textit{name}"} / \texttt{"\textit{name}=\textit{value}"} form
+as \texttt{open()} socket attributes and \texttt{WAttrib()}: assignments
+set options (including \texttt{join}/\texttt{leave} for multicast
+memberships); bare names query the current value except for
+\texttt{join}, \texttt{leave}, and \texttt{source}, which fail.
+Boolean values are \texttt{yes}/\texttt{no}; numeric values are
+integers. Socket attributes do not require the Concurrent build
+feature.
+For a co-expression or list, integer attribute codes from
+\texttt{threadh.icn} query or set thread inbox/outbox and channel limits
+(see Chapter~8; requires Concurrent).
+
+\bigskip
+\hrule\vspace{0.1cm}
 \index{bal}
 \noindent
 {\bf bal(cs:\&cset, cs:'(', cs:')', s, i, i) : integer* } \hfill {\bf balance string}
@@ -2899,14 +2920,24 @@ host. Mode \texttt{"n"} allows an optional third parameter,
 an integer timeout (in milliseconds) after which \texttt{open()} fails
 if no connection has been established by that time.
 Trailing arguments may also be \texttt{"\textit{name}=\textit{value}"}
-socket attributes (\texttt{join}, \texttt{source}, \texttt{iface},
-\texttt{ttl}, \texttt{mcastloop}, \texttt{reuseaddr},
-\texttt{reuseport}, \texttt{broadcast}, \texttt{rcvbuf},
-\texttt{sndbuf}); boolean values are \texttt{yes} or \texttt{no}.
-Listeners default to \texttt{reuseaddr=yes}. Binding a UDP socket to a
-multicast group joins that group; \texttt{source@group:port} or
+socket attributes (\texttt{join}, \texttt{leave}, \texttt{source},
+\texttt{iface}, \texttt{ttl}, \texttt{mcastloop},
+\texttt{reuseaddr}, \texttt{reuseport}, \texttt{broadcast},
+\texttt{rcvbuf}, \texttt{sndbuf}); boolean values are \texttt{yes} or
+\texttt{no}. \texttt{iface} accepts an IPv4 address, a numeric
+interface index, or (on UNIX) an interface name; when omitted, a
+multicast join covers every UP IPv4 interface and a multicast send
+uses the first non-loopback IPv4 address (else loopback).
+\texttt{ttl} sets unicast and multicast hop limits;
+\texttt{mcastloop} controls delivery of the host's own multicasts
+(default on); \texttt{rcvbuf}/\texttt{sndbuf} take a byte size.
+Listeners default to \texttt{reuseaddr=yes}; multicast binds also
+get \texttt{reuseport=yes} where available. Binding a UDP socket to
+a multicast group joins that group; \texttt{source@group:port} or
 \texttt{source=} performs a source-specific join instead. Sending to
-\texttt{255.255.255.255} enables broadcast. See Chapter~5 for examples.
+\texttt{255.255.255.255} enables broadcast. The same attributes can be
+read or changed after \texttt{open()} with \texttt{Attrib()}. See
+Chapter~5 for examples.
 
 For a UDP socket, there is not really a connection, but any writes to
 that file will send a datagram to that address, so that the address

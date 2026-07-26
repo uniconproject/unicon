@@ -37,6 +37,7 @@
 
 #include <string.h>   /* _stricmp (fxposix.ri getpw), strlen in String() etc. */
 #include<ws2tcpip.h>
+#include <iphlpapi.h>                   /* if_nametoindex for iface= */
 
 #include <sys/timeb.h>
 #include <sys/locking.h>

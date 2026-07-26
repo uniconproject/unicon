@@ -988,7 +988,8 @@ dptr rec_structor               (char *s);
 dptr rec_structor3d             (char *type);
 int sock_connect                (char *s, int udp, int timeout, int af_fam, dptr attr, int nattr);
 int apply_sock_attrs            (int s, int prebind, dptr attr, int nattr,
-                                 char *autojoin, char *autosource);
+                                 char *autojoin, char *autosource,
+                                 int join_only);
 int sattrib                     (int s, char *str, long len, dptr answer,
                                  char *abuf);
 int sock_attrs_af               (dptr attr, int nattr);
@@ -1012,9 +1013,11 @@ void            set_gaierrortext(int i);
 dptr make_serv                  (struct servent *pw, dptr result);
 int sock_listen                 (char *s, int udp, int af_fam, dptr attr, int nattr);
 void sock_close                 (int fd);
-int sock_pin                    (int fd);
+int sock_pin                    (int fd, word gen);
 void sock_release               (int fd);
 int sock_purge                  (int fd);
+void sock_unclaim               (int fd, word gen);
+word sock_listener_gen          (int fd);
 int sock_name                   (int sock, char* addr, char* addrbuf, int bufsize);
 int sock_me                     (int sock, char* addrbuf, int bufsize);
 int sock_send                   (char* addr, char* msg, int msglen, int af_fam);

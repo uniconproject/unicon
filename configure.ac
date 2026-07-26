@@ -522,7 +522,7 @@ case $unicon_host in
        DASHG="-G"
        LDFLAGS="$LDFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
-       LIBS="$LIBS -lgdi32 -lws2_32"
+       LIBS="$LIBS -lgdi32 -lws2_32 -liphlpapi"
 
        WSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
        WGLIBS="-lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinmm"

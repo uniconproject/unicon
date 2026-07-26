@@ -878,6 +878,8 @@ dptr rec_structor(char *name)
 
 static int sock_get (char *);
 static int sock_put (char *, int);
+static int sock_claim (int);
+static int sock_track (int);
 
 /*
  * We also stash the sockaddr structs we created with host and port info for
@@ -1139,6 +1141,104 @@ static int sock_split_group_source(char *host, char *srcbuf, size_t srcbuf_sz,
 #passthru #ifndef IP_DROP_SOURCE_MEMBERSHIP
 #passthru #define IP_DROP_SOURCE_MEMBERSHIP -1
 #passthru #endif
+#passthru #ifndef MCAST_JOIN_SOURCE_GROUP
+#passthru #define MCAST_JOIN_SOURCE_GROUP -1
+#passthru #define MCAST_LEAVE_SOURCE_GROUP -1
+#passthru #define UNICON_NO_GROUP_SOURCE_REQ 1
+#passthru #endif
+#passthru #ifdef UNICON_NO_GROUP_SOURCE_REQ
+#passthru struct group_source_req {
+#passthru    unsigned int gsr_interface;
+#passthru    struct sockaddr_storage gsr_group;
+#passthru    struct sockaddr_storage gsr_source;
+#passthru };
+#passthru #endif
+
+/*
+ * Fill a group_source_req for an IPv6 SSM join/leave.
+ */
+static int sock_fill_gsr6(struct group_source_req *gsr, char *grp, char *src,
+                          unsigned int if6)
+{
+   struct sockaddr_in6 *g6, *s6;
+
+   if (src == NULL)
+      return -1;
+   memset(gsr, 0, sizeof(*gsr));
+   gsr->gsr_interface = if6;
+   g6 = (struct sockaddr_in6 *)&gsr->gsr_group;
+   s6 = (struct sockaddr_in6 *)&gsr->gsr_source;
+   g6->sin6_family = AF_INET6;
+   s6->sin6_family = AF_INET6;
+   /*
+    * sin6_len exists on BSD/macOS.  Use config macros rtt can see,
+    * not SIN6_LEN: #passthru ifdefs do not wrap following statements
+    * inside functions (file-scope only).
+    */
+#if defined(BSD_4_4_LITE) || defined(MacOS)
+   g6->sin6_len = sizeof(*g6);
+   s6->sin6_len = sizeof(*s6);
+#endif                                  /* BSD_4_4_LITE || MacOS */
+   if (inet_pton(AF_INET6, grp, &g6->sin6_addr) != 1 ||
+       inet_pton(AF_INET6, src, &s6->sin6_addr) != 1) {
+      errno = EINVAL;
+      return -1;
+      }
+   return 0;
+}
+
+/*
+ * Winsock socket calls often leave errno 0; pull WSAGetLastError() so
+ * soft-success checks and set_syserrortext() see the real code.
+ */
+static void sock_winsock_errno(void)
+{
+#if NT
+   if (errno == 0) {
+      int wsa = WSAGetLastError();
+      if (wsa != 0)
+         errno = wsa;
+      }
+#endif                                  /* NT */
+}
+
+/*
+ * True if errno means an idempotent multicast membership change
+ * (already a member / already not a member).  CRT EINVAL (22) and
+ * WSAEINVAL (10022) are different values on Windows.
+ */
+static int sock_mcast_idempotent_err(void)
+{
+   sock_winsock_errno();
+   if (errno == EADDRINUSE || errno == EADDRNOTAVAIL || errno == EINVAL)
+      return 1;
+#if NT
+   if (errno == WSAEINVAL)
+      return 1;
+#endif                                  /* NT */
+   return 0;
+}
+
+/*
+ * IPv6 SSM join or leave via MCAST_JOIN/LEAVE_SOURCE_GROUP.
+ * One setsockopt only: no multi-iface walks or ifindex retries.
+ * Those patterns have triggered macOS kernel panics in IPv6 source
+ * filter teardown (in6_mcast).  Prefer an explicit iface= so if6 is
+ * non-zero; already-member / already-gone is success.
+ */
+static int sock_ssm6(int s, char *grp, char *src, unsigned int if6, int join)
+{
+   struct group_source_req gsr;
+   int rc, opt;
+
+   if (sock_fill_gsr6(&gsr, grp, src, if6) < 0)
+      return -1;
+   opt = join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
+   rc = setsockopt(s, IPPROTO_IPV6, opt, (char *)&gsr, sizeof(gsr));
+   if (rc < 0 && sock_mcast_idempotent_err())
+      return 0;
+   return rc;
+}
 
 /*
  * One ASM/SSM join attempt.  Already-member is success.
@@ -1170,7 +1270,7 @@ static int sock_join_on_if(int s, struct in_addr g4, char *src,
       rc = setsockopt(s, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP,
                       (char *)&mreqs, sizeof(mreqs));
       }
-   if (rc < 0 && (errno == EADDRINUSE || errno == EADDRNOTAVAIL))
+   if (rc < 0 && sock_mcast_idempotent_err())
       return 0;
    return rc;
 }
@@ -1222,17 +1322,22 @@ static int sock_join_group(int s, char *grp, char *src,
 #endif                                  /* UNIX */
       return sock_join_on_if(s, g4, src, if4);
       }
-   else if (inet_pton(AF_INET6, grp, &g6) == 1 && src == NULL) {
-      /* IPv6 source-specific joins (MCAST_JOIN_SOURCE_GROUP) not yet supported */
+   else if (inet_pton(AF_INET6, grp, &g6) == 1) {
+      if (src != NULL)
+         return sock_ssm6(s, grp, src, if6, 1);
+      {
       struct ipv6_mreq mreq6;
       memset(&mreq6, 0, sizeof(mreq6));
       mreq6.ipv6mr_multiaddr = g6;
       mreq6.ipv6mr_interface = if6;
       rc = setsockopt(s, IPPROTO_IPV6, IPV6_JOIN_GROUP,
                       (char *)&mreq6, sizeof(mreq6));
-      if (rc < 0 && (errno == EADDRINUSE || errno == EADDRNOTAVAIL))
+      if (rc < 0 && sock_mcast_idempotent_err())
          return 0;
+      if (rc < 0)
+         sock_winsock_errno();
       return rc;
+      }
       }
    errno = EINVAL;
    return -1;
@@ -1300,7 +1405,9 @@ static void sock_ensure_mcast_if(int s)
 
 /*
  * Parse an iface value: IPv4 dotted address, numeric interface index,
- * or (on UNIX) an interface name such as "en0" / "eth0" / "lo0".
+ * or an interface name ("en0" / "eth0" / "lo0" on UNIX; "loopback_0"
+ * etc. on Windows).  "lo" and "lo0" are accepted as the IPv6 loopback
+ * interface on Windows too (mapped via if_nametoindex("loopback_0")).
  * On success sets *have4/*have6 and the corresponding if4/if6 values.
  */
 static int sock_parse_iface(char *val, long ival,
@@ -1308,6 +1415,7 @@ static int sock_parse_iface(char *val, long ival,
                               int *have4, int *have6)
 {
    struct in_addr a;
+   unsigned int idx;
 
    *have4 = *have6 = 0;
    if (inet_pton(AF_INET, val, &a) == 1) {
@@ -1320,17 +1428,25 @@ static int sock_parse_iface(char *val, long ival,
       *have6 = 1;
       return 1;
       }
+   idx = if_nametoindex(val);
+#if NT
+   /*
+    * UNIX-style loopback names show up in portable examples/tests;
+    * Windows exports the NDIS name "loopback_0" instead.
+    */
+   if (idx == 0 && (strcmp(val, "lo") == 0 || strcmp(val, "lo0") == 0))
+      idx = if_nametoindex("loopback_0");
+#endif                                  /* NT */
+   if (idx == 0) {
+      errno = EINVAL;
+      return 0;
+      }
+   *if6 = idx;
+   *have6 = 1;
 #if UNIX
    {
-      unsigned int idx;
       struct ifaddrs *ifa0, *ifa;
 
-      if ((idx = if_nametoindex(val)) == 0) {
-         errno = EINVAL;
-         return 0;
-         }
-      *if6 = idx;
-      *have6 = 1;
       if (getifaddrs(&ifa0) == 0) {
          for (ifa = ifa0; ifa != NULL; ifa = ifa->ifa_next) {
             if (ifa->ifa_addr == NULL || ifa->ifa_name == NULL)
@@ -1345,12 +1461,9 @@ static int sock_parse_iface(char *val, long ival,
             }
          freeifaddrs(ifa0);
          }
-      return 1;
       }
-#else                                   /* UNIX */
-   errno = EINVAL;
-   return 0;
 #endif                                  /* UNIX */
+   return 1;
 }
 
 /*
@@ -1426,7 +1539,10 @@ static int sock_leave_group(int s, char *grp, char *src,
             }
          }
       }
-   else if (inet_pton(AF_INET6, grp, &g6) == 1 && src == NULL) {
+   else if (inet_pton(AF_INET6, grp, &g6) == 1) {
+      if (src != NULL)
+         return sock_ssm6(s, grp, src, if6, 0);
+      {
       struct ipv6_mreq mreq6;
       memset(&mreq6, 0, sizeof(mreq6));
       mreq6.ipv6mr_multiaddr = g6;
@@ -1439,13 +1555,25 @@ static int sock_leave_group(int s, char *grp, char *src,
                          (char *)&mreq6, sizeof(mreq6));
          }
       }
+      }
    else {
       errno = EINVAL;
       return -1;
       }
 
-   if (rc < 0 && (errno == EADDRNOTAVAIL || errno == EADDRINUSE))
+   /*
+    * Already-not-a-member: success.  Linux uses EADDRNOTAVAIL; some
+    * stacks (macOS) report EINVAL for DROP when the group was never
+    * joined; Windows often reports WSAEINVAL, or fails with errno left
+    * at 0 and nothing useful in WSAGetLastError().
+    */
+   if (rc < 0 && sock_mcast_idempotent_err())
       return 0;
+   if (rc < 0) {
+      sock_winsock_errno();
+      if (errno == 0)
+         return 0;
+      }
    return rc;
 }
 
@@ -1482,6 +1610,37 @@ int sock_attrs_af(dptr attr, int nattr)
 }
 
 /*
+ * True if open() was given at least one socket attribute (not SSL and
+ * not a leading timeout integer).  Used to decide whether a cache hit
+ * can be a pure File alias or needs an independent socket.
+ */
+static int sock_open_has_attrs(dptr attr, int nattr)
+{
+   tended char *tmps;
+   char abuf[256], *eq;
+   int a;
+   C_integer tmpint;
+
+   for (a = 0; a < nattr; a++) {
+      if (is:null(attr[a]))
+         continue;
+      if (a == 0 && cnv:C_integer(attr[a], tmpint))
+         continue;
+      if (!cnv:C_string(attr[a], tmps))
+         continue;
+      if (strlen(tmps) < 3 || strlen(tmps) >= sizeof(abuf))
+         continue;
+      strcpy(abuf, tmps);
+      if ((eq = strchr(abuf, '=')) == NULL || eq == abuf || eq[1] == '\0')
+         continue;
+      *eq = '\0';
+      if (is_sock_attr(abuf))
+         return 1;
+      }
+   return 0;
+}
+
+/*
  * Parse and apply "name=value" socket attributes from open()'s trailing
  * arguments to socket s.  Attributes belonging to the other pass, SSL
  * attributes, and a leading integer timeout argument are skipped.
@@ -1494,7 +1653,7 @@ int sock_attrs_af(dptr attr, int nattr)
  * &errortext/errno set on failure.
  */
 int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
-                     char *autojoin, char *autosource)
+                     char *autojoin, char *autosource, int join_only)
 {
    tended char *tmps;
    char abuf[256], *val, *src;
@@ -1550,6 +1709,18 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          if (is_ssl_attr(abuf))
             continue;                   /* handled by create_ssl_context() */
          errno = 0;                     /* &errortext carries the error */
+         set_errortext_with_val(1310, tmps);
+         return 0;
+         }
+
+      /*
+       * Cache-hit opens share the kernel socket with earlier aliases.
+       * Only additive membership (join=/source=) is allowed; leave= and
+       * option changes would retune traffic for every live File.
+       */
+      if (join_only &&
+          strcmp(abuf, "join") != 0 && strcmp(abuf, "source") != 0) {
+         errno = 0;
          set_errortext_with_val(1310, tmps);
          return 0;
          }
@@ -1685,6 +1856,7 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          }
 
       if (rc < 0) {
+         sock_winsock_errno();
          set_syserrortext(errno);
          return 0;
          }
@@ -1746,8 +1918,8 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
       {
       CURTSTATE();
       k_errornumber = 0;
-      if (!apply_sock_attrs(s, 1, &attrd, 1, NULL, NULL) ||
-          !apply_sock_attrs(s, 0, &attrd, 1, NULL, NULL)) {
+      if (!apply_sock_attrs(s, 1, &attrd, 1, NULL, NULL, 0) ||
+          !apply_sock_attrs(s, 0, &attrd, 1, NULL, NULL, 0)) {
          if (k_errornumber == 1310)
             return RunError;
          return Failed;
@@ -1970,8 +2142,8 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
        * Apply any socket attributes.  Client sockets are never bound
        * explicitly, so both attribute passes run back to back here.
        */
-      if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL) ||
-          !apply_sock_attrs(s, 0, attr, nattr, NULL, NULL)) {
+      if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL, 0) ||
+          !apply_sock_attrs(s, 0, attr, nattr, NULL, NULL, 0)) {
          sock_close(s);
          freeaddrinfo(saddrinfo);
          return 0;
@@ -2183,11 +2355,30 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
    struct sockaddr *sa;
    unsigned int fromlen;
    struct sockaddr_storage from;
-   int created = 0, uncached = 0;
+   int created = 0, uncached = 0, parallel = 0, retried = 0;
+   int has_attrs = sock_open_has_attrs(attr, nattr);
 
+again:
+   created = 0;
+   uncached = 0;
 
-   /* sock_get pins a cached fd until sock_release below */
-   if ((s = sock_get(addr)) < 0) {
+   /*
+    * Cache hit with no socket attributes: pure File alias of the
+    * shared listener (owner refcount).  Cache hit with attributes:
+    * release the pin and create an independent socket so join/leave/
+    * ttl/iface/etc. cannot retune earlier aliases (reuseaddr lets the
+    * second bind succeed).  sock_get pins until claim/release below.
+    * After a failed claim (entry closing under us), retried!=0 forces
+    * a fresh create rather than failing open().
+    */
+   s = sock_get(addr);
+   if (s >= 0 && (has_attrs || retried)) {
+      sock_release(s);
+      parallel = 1;
+      s = -1;
+      }
+
+   if (s < 0) {
      char *p, *mcsrc, fname[BUFSIZ], group[INET6_ADDRSTRLEN];
      char srcbuf[INET6_ADDRSTRLEN];
      int on, is_mc = 0;
@@ -2232,25 +2423,29 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
            /*
             * Listeners default to reuseaddr=yes so a restarted server
             * can rebind through TIME_WAIT; an explicit reuseaddr=no
-            * attribute overrides it below.  On Windows SO_REUSEADDR
-            * instead allows a second live bind of a busy port, so only
-            * multicast receivers, which must share their port, get it
-            * there.  Multicast receivers also get reuseport where
-            * available (needed on BSD/macOS to share a group address);
-            * both defaults are best effort.
+            * attribute overrides it below.  On UNIX also set reuseport
+            * (best effort): BSD/macOS need it on every sharer to bind the
+            * same UDP port, including a later parallel open with attrs
+            * beside a cached listener.  On Windows SO_REUSEADDR instead
+            * allows a second live bind, so only multicast receivers and
+            * parallel opens get it there.
             */
            on = 1;
 #if UNIX
            setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
-           if (is_mc)
-              setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on));
+           setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on));
 #else                                   /* UNIX */
-           if (is_mc)
+           /*
+            * Windows: REUSEADDR on every UDP listener so a later
+            * parallel/attr open can bind the same port.  Also for
+            * multicast binds and any parallel create (TCP or UDP).
+            */
+           if (is_mc || parallel || is_udp_or_listener == 1)
               setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
 #endif                                  /* UNIX */
 
            /* reuse flags et al. only take effect before bind() */
-           if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL)) {
+           if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL, 0)) {
              sock_close(s);
              freeaddrinfo(res0);
              return 0;
@@ -2341,7 +2536,7 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
           * or SSM when the address was source@group / source=).
           */
          if (!apply_sock_attrs(s, 0, attr, nattr,
-                               is_mc ? group : NULL, is_mc ? mcsrc : NULL)) {
+                               is_mc ? group : NULL, is_mc ? mcsrc : NULL, 0)) {
            sock_close(s);
            return 0;
          }
@@ -2382,30 +2577,6 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
        * a failed listener.
        */
    }
-   else {
-      /*
-       * Cache hit: still apply this open()'s attributes so a later
-       * open with different join=/iface=/etc. is not ignored.
-       * Pass the bind host as autojoin when it is a multicast group so
-       * source= works; sock_join_group treats already-member as OK.
-       */
-      char hit_fname[BUFSIZ], hit_srcbuf[INET6_ADDRSTRLEN];
-      char *hit_group = NULL, *hit_src = NULL, *hit_colon;
-
-      SAFE_strncpy(hit_fname, addr, sizeof(hit_fname));
-      if ((hit_colon = strrchr(hit_fname, ':')) != NULL) {
-         *hit_colon = '\0';
-         if (sock_split_group_source(hit_fname, hit_srcbuf, sizeof(hit_srcbuf),
-                                     &hit_src) &&
-             host_is_multicast(hit_fname))
-            hit_group = hit_fname;
-         }
-      if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL) ||
-          !apply_sock_attrs(s, 0, attr, nattr, hit_group, hit_src)) {
-         sock_release(s);
-         return 0;
-         }
-      }
    /*
     * Cached listeners are already pinned by sock_get.  Newly created
     * sockets are not in the map yet, so close cannot race listen.
@@ -2416,6 +2587,13 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
         * Not yet in sock_map when created==1, so a failed listen cannot
         * leave a stale cached descriptor.
         */
+#if NT
+       if (errno == 0) {
+          int wsa = WSAGetLastError();
+          if (wsa != 0)
+             errno = wsa;
+          }
+#endif                                  /* NT */
        if (created)
           sock_close(s);
        else
@@ -2428,31 +2606,26 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
       int put;
       /*
        * Another thread may have registered the same address first
-       * (SO_REUSEADDR).  Drop our socket and use the cached listener.
+       * (SO_REUSEADDR).  For a plain open (no attrs), drop our socket
+       * and use the cached listener.  When this open requested socket
+       * attributes (parallel), keep our configured socket uncached so
+       * those attrs stay independent of the cached aliases.
        * Cache full (-1): keep this listener uncached rather than
        * closing a valid socket.
        */
       put = sock_put(addr, s);
       if (put == 0) {
-         char hit_fname[BUFSIZ], hit_srcbuf[INET6_ADDRSTRLEN];
-         char *hit_group = NULL, *hit_src = NULL, *hit_colon;
-
-         sock_close(s);
-         if ((s = sock_get(addr)) < 0)
-            return 0;
-         /* attrs were applied to the discarded socket; redo on cached */
-         SAFE_strncpy(hit_fname, addr, sizeof(hit_fname));
-         if ((hit_colon = strrchr(hit_fname, ':')) != NULL) {
-            *hit_colon = '\0';
-            if (sock_split_group_source(hit_fname, hit_srcbuf,
-                                        sizeof(hit_srcbuf), &hit_src) &&
-                host_is_multicast(hit_fname))
-               hit_group = hit_fname;
-            }
-         if (!apply_sock_attrs(s, 1, attr, nattr, NULL, NULL) ||
-             !apply_sock_attrs(s, 0, attr, nattr, hit_group, hit_src)) {
-            sock_release(s);
-            return 0;
+         if (parallel || has_attrs)
+            uncached = 1;
+         else {
+            sock_close(s);
+            if ((s = sock_get(addr)) < 0) {
+               if (retried)
+                  return 0;
+               retried = 1;
+               parallel = 1;
+               goto again;
+               }
             }
          }
       else if (put < 0)
@@ -2460,8 +2633,30 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
       }
 
    if (is_udp_or_listener) {
-     if (!uncached)
-        sock_release(s);
+     if (!uncached) {
+        /*
+         * Convert the sock_get/sock_put pin into File ownership under
+         * the cache lock.  If claim fails the entry is closing or gone:
+         * drop the pin (may finish the close) and retry once with a
+         * replacement listener instead of failing a valid open().
+         */
+        if (!sock_claim(s)) {
+           sock_release(s);
+           if (retried)
+              return 0;
+           retried = 1;
+           parallel = 1;
+           goto again;
+           }
+        }
+     else if (!sock_track(s)) {
+        /*
+         * Cannot track for select()/accept pin protection.  Do not
+         * return a gen-0 listener that accept() would use unpinned.
+         */
+        sock_close(s);
+        return 0;
+        }
      return s;
      }
 
@@ -2469,6 +2664,13 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
    DEC_NARTHREADS;
    if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0) fd = 0;
    INC_NARTHREADS_CONTROLLED;
+#if NT
+   if (fd == 0 && errno == 0) {
+      int wsa = WSAGetLastError();
+      if (wsa != 0)
+         errno = wsa;
+      }
+#endif                                  /* NT */
 
    if (uncached)
       sock_close(s);                    /* not retained in the cache */
@@ -2674,10 +2876,13 @@ int sock_write(int f, char *msg, int n)
 static struct {
    char *name;
    int fd;
+   unsigned gen;        /* identity; distinguishes fd number reuse */
    int pins;            /* sock_get / sock_pin holds across listen/accept */
+   int owners;          /* File objects holding this cached listener */
    int closing;         /* close deferred until pins drop to 0 */
-} sock_map[64] = { {0, 0, 0, 0} };
+} sock_map[64] = { {0, 0, 0, 0, 0, 0} };
 static int nsock = 0;
+static unsigned sock_gen_seq = 1;       /* 0 reserved for "not cached" */
 
 /*
  * Lookup a socket by name and pin it.  Caller must sock_release().
@@ -2718,7 +2923,11 @@ static int sock_put(char *s, int fd)
    sock_map[nsock].fd = fd;
    sock_map[nsock].name = (char*) malloc(strlen(s) + 1);
    strcpy(sock_map[nsock].name, s);
+   if (sock_gen_seq == 0)
+      sock_gen_seq = 1;                /* skip 0 after wrap */
+   sock_map[nsock].gen = sock_gen_seq++;
    sock_map[nsock].pins = 1;           /* installed and pinned */
+   sock_map[nsock].owners = 0;
    sock_map[nsock].closing = 0;
    nsock++;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
@@ -2726,21 +2935,162 @@ static int sock_put(char *s, int fd)
 }
 
 /*
- * Pin a live cached listener.  Returns 1 if pinned, or 0 if the fd is
- * not in the map (already purged/closed) — callers must not use the fd.
+ * Generation of a live tracked listener fd (named cache or nameless
+ * track entry), or 0 if not in the map.  Stored on the File at open so
+ * sock_pin can reject a reused fd number.
  */
-int sock_pin(int fd)
+word sock_listener_gen(int fd)
 {
-   int i, ok = 0;
+   int i;
+   word gen = 0;
+
    MUTEX_LOCKID(MTX_SOCK_MAP);
    for (i = 0; i < nsock; i++)
-      if (sock_map[i].fd == fd && sock_map[i].name != NULL) {
+      if (sock_map[i].fd == fd && !sock_map[i].closing) {
+         gen = (word)sock_map[i].gen;
+         break;
+         }
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
+   return gen;
+}
+
+/*
+ * Convert a temporary pin into File ownership.  Returns 1 on success.
+ * Fails (0) if the entry is closing or no longer visible — caller must
+ * sock_release() the pin and not use the fd.  Doing owners++ and pins--
+ * under one lock avoids release-then-own closing the descriptor when the
+ * last prior File is purged concurrently.
+ */
+static int sock_claim(int fd)
+{
+   int i, ok = 0;
+
+   MUTEX_LOCKID(MTX_SOCK_MAP);
+   for (i = 0; i < nsock; i++) {
+      if (sock_map[i].fd != fd)
+         continue;
+      if (sock_map[i].name == NULL || sock_map[i].closing)
+         break;
+      sock_map[i].owners++;
+      if (sock_map[i].pins > 0)
+         sock_map[i].pins--;
+      ok = 1;
+      break;
+      }
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
+   return ok;
+}
+
+/*
+ * Track an uncached listener (parallel/attr or map-full) so select()
+ * can pin it.  Hidden from sock_get (name NULL).  owners starts at 1.
+ * If the map is full, reclaim an idle named entry (owners==0, pins==0)
+ * left after select()-accept (genserve).  Returns 1 if tracked, 0 if
+ * no slot can be freed.
+ */
+static int sock_track(int fd)
+{
+   int i, j;
+   int victim = -1;
+   int do_close = 0;
+   int oldfd = -1;
+
+   MUTEX_LOCKID(MTX_SOCK_MAP);
+   if (nsock >= (int)(sizeof(sock_map) / sizeof(sock_map[0]))) {
+      for (i = 0; i < nsock; i++)
+         if (sock_map[i].name != NULL && sock_map[i].owners == 0 &&
+             sock_map[i].pins == 0 && !sock_map[i].closing) {
+            victim = i;
+            break;
+            }
+      if (victim < 0) {
+         MUTEX_UNLOCKID(MTX_SOCK_MAP);
+         return 0;
+         }
+      oldfd = sock_map[victim].fd;
+      free(sock_map[victim].name);
+      for (j = victim + 1; j < nsock; j++)
+         sock_map[j - 1] = sock_map[j];
+      nsock--;
+      do_close = 1;
+      }
+   sock_map[nsock].fd = fd;
+   sock_map[nsock].name = NULL;
+   if (sock_gen_seq == 0)
+      sock_gen_seq = 1;
+   sock_map[nsock].gen = sock_gen_seq++;
+   sock_map[nsock].pins = 0;
+   sock_map[nsock].owners = 1;
+   sock_map[nsock].closing = 0;
+   nsock++;
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
+   if (do_close)
+      sock_close(oldfd);
+   return 1;
+}
+
+/*
+ * Pin a live tracked listener that still matches gen (from open /
+ * sock_listener_gen).  Returns 1 if pinned.  Fails if the fd was closed
+ * and the number reused for a different cache entry, or if gen is 0.
+ * Named and nameless (sock_track) entries are both eligible.
+ */
+int sock_pin(int fd, word gen)
+{
+   int i, ok = 0;
+
+   if (gen == 0)
+      return 0;
+   MUTEX_LOCKID(MTX_SOCK_MAP);
+   for (i = 0; i < nsock; i++)
+      if (sock_map[i].fd == fd && !sock_map[i].closing &&
+          sock_map[i].gen == (unsigned)gen) {
          sock_map[i].pins++;
          ok = 1;
          break;
          }
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
    return ok;
+}
+
+/*
+ * Drop File ownership after select() converts a listener File into an
+ * accepted connection.  Named cache entries with owners==0 stay in the
+ * map for the next open() (genserve).  Nameless track entries are
+ * closed when the last owner and pin drop — nothing else references them.
+ */
+void sock_unclaim(int fd, word gen)
+{
+   int i, j;
+   int do_close = 0;
+
+   if (gen == 0)
+      return;
+   MUTEX_LOCKID(MTX_SOCK_MAP);
+   for (i = 0; i < nsock; i++) {
+      if (sock_map[i].fd != fd || sock_map[i].gen != (unsigned)gen)
+         continue;
+      if (sock_map[i].owners > 0)
+         sock_map[i].owners--;
+      if (sock_map[i].owners > 0)
+         break;
+      if (sock_map[i].pins > 0) {
+         if (sock_map[i].name == NULL)
+            sock_map[i].closing = 1;    /* release() will close */
+         break;
+         }
+      if (sock_map[i].name != NULL)
+         break;                         /* stay cached for sock_get */
+      /* nameless track entry: remove and close */
+      for (j = i + 1; j < nsock; j++)
+         sock_map[j - 1] = sock_map[j];
+      nsock--;
+      do_close = 1;
+      break;
+      }
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
+   if (do_close)
+      sock_close(fd);
 }
 
 /*
@@ -2772,10 +3122,9 @@ void sock_release(int fd)
 }
 
 /*
- * Drop listener-cache entries for fd so a later open() of the same
- * address does not reuse a stale descriptor.  Returns 1 if the caller
- * should close fd now, or 0 if a pin is still held (close runs from
- * sock_release when the pin drops).
+ * Drop one File ownership of a cached listener.  Returns 1 if the
+ * caller should close fd now, or 0 if other owners remain or a pin is
+ * still held (close runs from sock_release when the last pin drops).
  */
 int sock_purge(int fd)
 {
@@ -2786,6 +3135,14 @@ int sock_purge(int fd)
    for (i = j = 0; i < nsock; i++) {
       if (sock_map[i].fd != fd) {
          sock_map[j++] = sock_map[i];
+         continue;
+         }
+      if (sock_map[i].owners > 0)
+         sock_map[i].owners--;
+      if (sock_map[i].owners > 0) {
+         /* other live File aliases still use this descriptor */
+         sock_map[j++] = sock_map[i];
+         defer = 1;
          continue;
          }
       if (sock_map[i].pins > 0) {

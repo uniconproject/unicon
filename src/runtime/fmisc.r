@@ -3148,8 +3148,8 @@ function{*} Attrib(argv[argc])
             if (nset > 0) {
                CURTSTATE();
                k_errornumber = 0;
-               if (!apply_sock_attrs(s, 1, setv, nset, NULL, NULL) ||
-                   !apply_sock_attrs(s, 0, setv, nset, NULL, NULL)) {
+               if (!apply_sock_attrs(s, 1, setv, nset, NULL, NULL, 0) ||
+                   !apply_sock_attrs(s, 0, setv, nset, NULL, NULL, 0)) {
                   if (k_errornumber == 1310)
                      runerr(1310, setv[0]);
                   fail;

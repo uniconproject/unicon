@@ -71,6 +71,7 @@ function{0,1} close(f)
            }
 #endif                                  /* LIBSSL */
          BlkLoc(f)->File.status = 0;
+         BlkLoc(f)->File.sock_gen = 0;
          StrLoc(BlkLoc(f)->File.fname) = "closed socket";
          StrLen(BlkLoc(f)->File.fname) = 13;
          /* drop any listener-cache entries pointing at this fd */
@@ -1078,6 +1079,16 @@ Deliberate Syntax Error
             else
 #endif                                  /* HAVE_LIBSSL */
               fl->fd.fd = fd;
+#ifdef PosixFns
+            /*
+             * Remember the listener-cache generation so select()/accept
+             * can refuse a descriptor number reused by a later open.
+             */
+            if (status & Fs_Listen)
+               fl->sock_gen = sock_listener_gen(fd);
+            else
+               fl->sock_gen = 0;
+#endif                                  /* PosixFns */
 
             return file(fl);
             }

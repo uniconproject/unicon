@@ -967,12 +967,11 @@ char* print_sockaddrport(struct sockaddr* sa, char* buf, int buflen ) {
   return NULL;
 }
 
-struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
-  int port = atoi(p);
-  int nohost = 0, rc;
+struct addrinfo *uni_getaddrinfo(char* addr, char* p, int sock_type, int family){
+  int nohost = 0, rc, sock, proto;
   struct addrinfo hints, *res0;
 
-  if (port == 0) {
+  if (p == NULL || p[0] == '\0' || atoi(p) == 0) {
     errno = ENXIO;
     return NULL;
   }
@@ -983,8 +982,16 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
   if (!StartupWinSocket()) return 0;
 #endif                                  /*NT*/
 
-  INIT_ADDRINFO_HINTS(hints, family, (is_udp? SOCK_DGRAM : SOCK_STREAM),
-                      (nohost?AI_PASSIVE:0), (is_udp?IPPROTO_UDP:IPPROTO_TCP));
+  if (sock_type == SOCK_T_DGRAM) {
+     sock = SOCK_DGRAM;
+     proto = IPPROTO_UDP;
+     }
+  else {
+     sock = SOCK_STREAM;
+     proto = IPPROTO_TCP;
+     }
+
+  INIT_ADDRINFO_HINTS(hints, family, sock, (nohost?AI_PASSIVE:0), proto);
   if ( (rc = getaddrinfo((nohost?NULL:addr), p, &hints, &res0)) != 0) {
     set_gaierrortext(rc);
     return NULL;
@@ -2042,7 +2049,7 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
 }
 */
 
-int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
+int sock_connect(char *fn, int sock_type, int timeout, int af_fam,
                  dptr attr, int nattr)
 {
   int saveflags, rc, s, len;
@@ -2073,7 +2080,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
          set_syserrortext(errno);
          return 0;
          }
-      res0 = uni_getaddrinfo(fname, p+1, is_udp, af_fam);
+      res0 = uni_getaddrinfo(fname, p+1, sock_type, af_fam);
       /* Restore the argument just in case */
       *p = ':';
 
@@ -2132,7 +2139,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
        * default SO_BROADCAST to on so the first write doesn't fail with
        * EACCES.  An explicit broadcast=no attribute overrides it below.
        */
-      if (is_udp && sa->sa_family == AF_INET &&
+      if (sock_type == SOCK_T_DGRAM && sa->sa_family == AF_INET &&
           ((struct sockaddr_in *)sa)->sin_addr.s_addr == htonl(INADDR_BROADCAST)) {
          int on = 1;
          setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&on, sizeof(on));
@@ -2153,7 +2160,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
        * Multicast UDP send without iface=: choose a local interface so
        * the first writes() is not ENETUNREACH (no multicast route).
        */
-      if (is_udp && sockaddr_is_multicast(sa))
+      if (sock_type == SOCK_T_DGRAM && sockaddr_is_multicast(sa))
          sock_ensure_mcast_if(s);
    }
    else {
@@ -2162,7 +2169,8 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
       return 0;
 #endif
 #if UNIX
-      if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
+      if (sock_type != SOCK_T_STREAM ||
+          (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
          return 0;
       saddr_un.sun_family = AF_UNIX;
       strncpy(saddr_un.sun_path, fname, pathbuf_len);
@@ -2178,7 +2186,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
    }
 
    /* We don't connect UDP sockets but always use sendto(2). */
-   if (is_udp) {
+   if (sock_type == SOCK_T_DGRAM) {
       /* save the sockaddr struct */
       saddrs = realloc(saddrs, (s+1) * (sizeof(struct addrinfo *)));
       if (saddrs == NULL) {
@@ -2347,7 +2355,7 @@ ip_version(const char *src) {
  * including UDP sockets and non-blocking "listener" sockets on which a
  * later select() may turn up an accept.
  */
-int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
+int sock_listen(char *addr, int sock_type, int keep_listener, int af_fam,
                 dptr attr, int nattr)
 {
   int fd, s, len;
@@ -2357,6 +2365,7 @@ int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
    struct sockaddr_storage from;
    int created = 0, uncached = 0, parallel = 0, retried = 0;
    int has_attrs = sock_open_has_attrs(attr, nattr);
+   int is_dgram = (sock_type == SOCK_T_DGRAM);
 
 again:
    created = 0;
@@ -2404,7 +2413,7 @@ again:
             set_syserrortext(errno);
             return 0;
             }
-         res0 = uni_getaddrinfo(fname, p+1, is_udp_or_listener == 1, af_fam);
+         res0 = uni_getaddrinfo(fname, p+1, sock_type, af_fam);
          *p = ':';
 
          if (!res0)
@@ -2440,7 +2449,7 @@ again:
             * parallel/attr open can bind the same port.  Also for
             * multicast binds and any parallel create (TCP or UDP).
             */
-           if (is_mc || parallel || is_udp_or_listener == 1)
+           if (is_mc || parallel || sock_type == SOCK_T_DGRAM)
               setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
 #endif                                  /* UNIX */
 
@@ -2551,7 +2560,7 @@ again:
          struct sockaddr_un saddr_un;
          int pathbuf_len;
 
-         if ((is_udp_or_listener==1) ||
+         if (sock_type != SOCK_T_STREAM ||
              (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
             return 0;
 
@@ -2581,7 +2590,7 @@ again:
     * Cached listeners are already pinned by sock_get.  Newly created
     * sockets are not in the map yet, so close cannot race listen.
     */
-   if (is_udp_or_listener != 1) {
+   if (!is_dgram) {
      if (listen(s, SOMAXCONN) < 0) {
        /*
         * Not yet in sock_map when created==1, so a failed listen cannot
@@ -2632,7 +2641,7 @@ again:
          uncached = 1;
       }
 
-   if (is_udp_or_listener) {
+   if (is_dgram || keep_listener) {
      if (!uncached) {
         /*
          * Convert the sock_get/sock_put pin into File ownership under
@@ -2774,7 +2783,7 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
       host = hostname;
    }
 
-   res0 = uni_getaddrinfo(host, p+1, 1, af_fam);
+   res0 = uni_getaddrinfo(host, p+1, SOCK_T_DGRAM, af_fam);
    *p = ':';
 
    if (!res0)

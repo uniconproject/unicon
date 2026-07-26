@@ -986,7 +986,7 @@ dptr make_group                 (struct group *pw, dptr result);
 
 dptr rec_structor               (char *s);
 dptr rec_structor3d             (char *type);
-int sock_connect                (char *s, int udp, int timeout, int af_fam, dptr attr, int nattr);
+int sock_connect                (char *s, int sock_type, int timeout, int af_fam, dptr attr, int nattr);
 int apply_sock_attrs            (int s, int prebind, dptr attr, int nattr,
                                  char *autojoin, char *autosource,
                                  int join_only);
@@ -1007,11 +1007,12 @@ dptr make_group                 (struct group *pw, dptr result);
 dptr make_host                  (struct hostent *pw, dptr result);
 
 dptr make_host_from_addrinfo(char *name, struct addrinfo *inforesult, dptr result);
-struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family);
+struct addrinfo *uni_getaddrinfo(char* addr, char* p, int sock_type, int family);
 void            set_gaierrortext(int i);
 
 dptr make_serv                  (struct servent *pw, dptr result);
-int sock_listen                 (char *s, int udp, int af_fam, dptr attr, int nattr);
+int sock_listen                 (char *s, int sock_type, int keep_listener,
+                                 int af_fam, dptr attr, int nattr);
 void sock_close                 (int fd);
 int sock_pin                    (int fd, word gen);
 void sock_release               (int fd);

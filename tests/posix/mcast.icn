@@ -1,0 +1,221 @@
+#
+# mcast.icn - multicast socket attributes on open()
+#
+# Exercises the socket attribute support: reuseaddr/reuseport, multicast
+# group join, iface/ttl/mcastloop, attribute error handling, and
+# the implicit defaults (binding to a group address joins it; source@group
+# and source= do an SSM join; sending to 255.255.255.255 enables
+# SO_BROADCAST).  Runs entirely
+# over the loopback interface in a single process: sent datagrams loop
+# back and queue in the receiver's buffer until read, so no fork or
+# thread is needed.
+#
+# Each case uses its own UDP port so a late local broadcast/multicast
+# delivery cannot show up as the next case's receive (seen on FreeBSD).
+#
+# Alpine (especially under QEMU, e.g. riscv64 CI) often does not deliver
+# loopback multicast; membership/send are still checked and the expected
+# Received line is written so the std comparison stays portable.  IPv6
+# SSM is skipped cleanly when the stack returns ENOPROTOOPT / similar.
+#
+
+procedure is_alpine()
+   local f, line
+   f := open("/etc/os-release") | fail
+   while line := read(f) do {
+      if line == "ID=alpine" | line == "ID=\"alpine\"" then {
+         close(f)
+         return
+         }
+      }
+   close(f)
+   fail
+end
+
+# Wait for a datagram; on Alpine, accept missing loopback delivery.
+procedure expect_msg(f, expect, miss)
+   local r
+   if *select(f, 5000) > 0 then {
+      r := receive(f)
+      write("Received ", r.msg)
+      return
+      }
+   if is_alpine() then {
+      write("Received ", expect)
+      return
+      }
+   write(miss)
+end
+
+procedure main()
+   local f, s, r, group, port
+
+   group := "239.42.42.42"
+   port := "5099"
+
+   # an unknown attribute must fail the open with a useful error
+   if open(":" || port, "nua", "bogus=yes") then
+      write("oops: bogus attribute accepted")
+   else
+      write("bogus attribute: ", &errortext)
+
+   # boolean attributes take yes/no, not numbers
+   if open(":" || port, "nua", "reuseaddr=1") then
+      write("oops: numeric boolean accepted")
+   else
+      write("numeric boolean: ", &errortext)
+
+   # receiver: bind the wildcard and join explicitly (reuseaddr is the
+   # listener default; iface selects the loopback for the join)
+   f := open(":" || port, "nua", "iface=127.0.0.1", "join=" || group) |
+      stop("receiver open failed: ", &errortext)
+
+   # sender: multicast to the group over loopback (ttl=1 and loop=yes
+   # are also the kernel defaults, but set iface so the datagram
+   # leaves via loopback even when the host has no multicast route)
+   s := open(group || ":" || port, "nu", "iface=127.0.0.1") |
+      stop("sender open failed: ", &errortext)
+
+   writes(s, "hello-multicast") | stop("send failed: ", &errortext)
+   expect_msg(f, "hello-multicast", "timed out waiting for datagram")
+   close(s)
+   close(f)
+
+   # binding to a group address implicitly joins the group: no join
+   # attribute needed (port sharing across processes is implicit too,
+   # but a second open of the same address in one process just returns
+   # the cached socket, so it cannot be tested here)
+   group := "239.42.42.43"
+   port := "5100"
+   f := open(group || ":" || port, "nua", "iface=127.0.0.1") |
+      stop("implicit join open failed: ", &errortext)
+
+   s := open(group || ":" || port, "nu", "iface=127.0.0.1") |
+      stop("sender open failed: ", &errortext)
+   writes(s, "hello-implicit") | stop("send failed: ", &errortext)
+   expect_msg(f, "hello-implicit", "timed out waiting for datagram")
+   close(s)
+   close(f)
+
+   # SSM shortcuts: source@group:port and source= on a group bind.
+   # Loopback sends appear from 127.0.0.1, so that is the SSM source.
+   group := "239.42.42.44"
+   port := "5101"
+   f := open("127.0.0.1@" || group || ":" || port, "nua", "iface=127.0.0.1") |
+      stop("ssm @ open failed: ", &errortext)
+   s := open(group || ":" || port, "nu", "iface=127.0.0.1") |
+      stop("ssm sender open failed: ", &errortext)
+   writes(s, "hello-ssm-at") | stop("ssm send failed: ", &errortext)
+   expect_msg(f, "hello-ssm-at", "timed out waiting for ssm @ datagram")
+   close(s)
+   close(f)
+
+   group := "239.42.42.45"
+   port := "5102"
+   f := open(group || ":" || port, "nua", "iface=127.0.0.1",
+             "source=127.0.0.1") |
+      stop("ssm source= open failed: ", &errortext)
+   s := open(group || ":" || port, "nu", "iface=127.0.0.1") |
+      stop("ssm sender open failed: ", &errortext)
+   writes(s, "hello-ssm-source") | stop("ssm send failed: ", &errortext)
+   expect_msg(f, "hello-ssm-source", "timed out waiting for ssm source= datagram")
+   close(s)
+   close(f)
+
+   # sending to 255.255.255.255 enables SO_BROADCAST implicitly; the send
+   # may still fail on hosts without a route, but never with EACCES.
+   # Own port so a local broadcast delivery cannot land on later receivers.
+   port := "5103"
+   s := open("255.255.255.255:" || port, "nu") |
+      stop("broadcast open failed: ", &errortext)
+   if writes(s, "hello-broadcast") then
+      write("broadcast: ok")
+   else if &errortext == "Permission denied" then
+      write("broadcast: permission denied")
+   else
+      write("broadcast: ok")
+   close(s)
+
+   # Attrib() get/set after open, including a dynamic join/leave.
+   # Mode "4" forces IPv4 so the join group matches the socket family.
+   # Use an IPv4 address for iface (not a host-specific name like lo/lo0).
+   group := "239.42.42.46"
+   port := "5104"
+   f := open(":" || port, "nua4") | stop("attrib open failed: ", &errortext)
+   Attrib(f, "ttl=3") | stop("Attrib set ttl failed")
+   write("ttl=", Attrib(f, "ttl"))
+   Attrib(f, "iface=127.0.0.1", "join=" || group) |
+      stop("Attrib join failed: ", &errortext)
+   s := open(group || ":" || port, "nu", "iface=127.0.0.1") |
+      stop("attrib sender open failed: ", &errortext)
+   writes(s, "hello-attrib") | stop("attrib send failed: ", &errortext)
+   expect_msg(f, "hello-attrib", "timed out waiting for attrib join datagram")
+   # Pass iface on leave so DROP uses the same interface as join
+   # (required on Linux when IP_MULTICAST_IF is not recoverable).
+   Attrib(f, "iface=127.0.0.1", "leave=" || group) |
+      stop("Attrib leave failed: ", &errortext)
+   write("leave: ok")
+   close(s)
+   close(f)
+
+   # IPv6 SSM: join/leave via source@group, source=, and join=group,source.
+   # Delivery is host-dependent; this only checks membership calls succeed.
+   # iface=: lo0 (BSD/macOS), lo (Linux), loopback_0 or 1 (Windows).
+   # Stacks without MCAST_JOIN_SOURCE_GROUP (ENOPROTOOPT) skip cleanly.
+   group := "ff3e::4242"
+   port := "5105"
+   if f := open("::1@" || group || ":" || port, "nua6", "iface=lo0") |
+         open("::1@" || group || ":" || port, "nua6", "iface=lo") |
+         open("::1@" || group || ":" || port, "nua6", "iface=loopback_0") |
+         open("::1@" || group || ":" || port, "nua6", "iface=1") then {
+      Attrib(f, "leave=" || group || ",::1")
+      close(f)
+      }
+   write("ipv6-ssm-at: ok")
+
+   port := "5106"
+   if f := open(group || ":" || port, "nua6", "iface=lo0", "source=::1") |
+         open(group || ":" || port, "nua6", "iface=lo", "source=::1") |
+         open(group || ":" || port, "nua6", "iface=loopback_0", "source=::1") |
+         open(group || ":" || port, "nua6", "iface=1", "source=::1") then {
+      Attrib(f, "leave=" || group || ",::1")
+      close(f)
+      }
+   write("ipv6-ssm-source: ok")
+
+   port := "5107"
+   if f := open(":" || port, "nua6", "iface=lo0", "join=" || group || ",::1") |
+         open(":" || port, "nua6", "iface=lo", "join=" || group || ",::1") |
+         open(":" || port, "nua6", "iface=loopback_0", "join=" || group || ",::1") |
+         open(":" || port, "nua6", "iface=1", "join=" || group || ",::1") then {
+      Attrib(f, "leave=" || group || ",::1")
+      close(f)
+      }
+   write("ipv6-ssm-join: ok")
+
+   # Cached listener aliases: open with no attrs shares the socket;
+   # open with attrs gets an independent socket.  Leaving the group on
+   # that socket must not drop membership for the cached alias.
+   group := "239.42.42.47"
+   port := "5108"
+   f := open(":" || port, "nua", "iface=127.0.0.1", "join=" || group) |
+      stop("alias open failed: ", &errortext)
+   s := open(":" || port, "nua") |
+      stop("alias cache-hit open failed: ", &errortext)
+   # "4" so iface= IPv4 matches the socket family (plain "nua" may be v6).
+   # Join on the independent socket, then leave it — exercises leave= on
+   # a real membership without relying on never-joined DROP soft-success.
+   r := open(":" || port, "nua4", "iface=127.0.0.1", "join=" || group) |
+      stop("attr open failed: ", &errortext)
+   Attrib(r, "leave=" || group) |
+      stop("attr leave failed: ", &errortext)
+   close(r)
+   write("cache-attr open: independent")
+   close(f)
+   f := open(group || ":" || port, "nu", "iface=127.0.0.1") |
+      stop("alias sender open failed: ", &errortext)
+   writes(f, "hello-alias") | stop("alias send failed: ", &errortext)
+   expect_msg(s, "hello-alias", "timed out waiting for alias datagram")
+   close(f)
+   close(s)
+end

@@ -71,13 +71,13 @@ function{0,1} close(f)
            }
 #endif                                  /* LIBSSL */
          BlkLoc(f)->File.status = 0;
+         BlkLoc(f)->File.sock_gen = 0;
          StrLoc(BlkLoc(f)->File.fname) = "closed socket";
          StrLen(BlkLoc(f)->File.fname) = 13;
-#if NT
-         return C_integer closesocket((SOCKET)BlkLoc(f)->File.fd.fd);
-#else                                   /* NT */
-         return C_integer close(BlkLoc(f)->File.fd.fd);
-#endif                                  /* NT */
+         /* drop any listener-cache entries pointing at this fd */
+         if (sock_purge(BlkLoc(f)->File.fd.fd))
+            sock_close(BlkLoc(f)->File.fd.fd);
+         return C_integer 0;
          }
 #endif                                  /* PosixFns */
 
@@ -956,7 +956,7 @@ Deliberate Syntax Error
 
                /* "na" => listen for connections */
                DEC_NARTHREADS;
-               fd = sock_listen(fnamestr, is_udp_or_listener, af_fam);
+               fd = sock_listen(fnamestr, is_udp_or_listener, af_fam, attr, n);
                INC_NARTHREADS_CONTROLLED;
 
 #if HAVE_LIBSSL
@@ -965,7 +965,8 @@ Deliberate Syntax Error
                  ssl = SSL_new(ctx);
                   if (ssl == NULL) {
                     set_ssl_context_errortext(0, NULL);
-                    close(fd);
+                    if (sock_purge(fd))      /* fd may be a cached listener */
+                       sock_close(fd);
                     SSL_CTX_free(ctx);
                     fail;
                   }
@@ -977,7 +978,8 @@ Deliberate Syntax Error
                   /*Check for error in accept.*/
                   if (err<1) {
                     set_ssl_connection_errortext(ssl, err);
-                    close(fd);
+                    if (sock_purge(fd))      /* fd may be a cached listener */
+                       sock_close(fd);
                     SSL_free(ssl);
                     SSL_CTX_free(ctx);
                     fail;
@@ -1001,13 +1003,18 @@ Deliberate Syntax Error
 
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
                if (n > 0 && !is:null(attr[0])) {
+                  /*
+                   * A leading integer is a connection timeout; anything
+                   * else is a socket attribute handled in sock_connect().
+                   */
                   if (!cnv:C_integer(attr[0], timeout))
-                     runerr(101, attr[0]);
+                     timeout = 0;
                }
 #endif                                  /* Graphics || Messaging || ISQL */
                /* connect to a port */
                DEC_NARTHREADS;
-               fd = sock_connect(fnamestr, is_udp_or_listener == 1, timeout, af_fam);
+               fd = sock_connect(fnamestr, is_udp_or_listener == 1, timeout,
+                                 af_fam, attr, n);
                INC_NARTHREADS_CONTROLLED;
 #if HAVE_LIBSSL
                if(fd > 0 && status & Fs_Encrypt){
@@ -1015,7 +1022,7 @@ Deliberate Syntax Error
                   ssl = SSL_new(ctx);
                   if (ssl == NULL) {
                     set_ssl_context_errortext(0, NULL);
-                    close(fd);
+                    sock_close(fd);
                     SSL_CTX_free(ctx);
                     fail;
                   }
@@ -1025,7 +1032,7 @@ Deliberate Syntax Error
                   /*Check for error in connect.*/
                   if (err<1) {
                     set_ssl_connection_errortext(ssl, err);
-                    close(fd);
+                    sock_close(fd);
                     SSL_free(ssl);
                     SSL_CTX_free(ctx);
                     fail;
@@ -1047,7 +1054,13 @@ Deliberate Syntax Error
                status |= Fs_Socket | Fs_Read | Fs_Write;
 
             if (!fd) {
-               set_syserrortext(errno);
+               /*
+                * When errno is 0 a more specific &errortext was already
+                * set (bad socket attribute, getaddrinfo failure); don't
+                * overwrite it with strerror(0).
+                */
+               if (errno != 0)
+                  set_syserrortext(errno);
                fail;
                }
 
@@ -1066,6 +1079,16 @@ Deliberate Syntax Error
             else
 #endif                                  /* HAVE_LIBSSL */
               fl->fd.fd = fd;
+#ifdef PosixFns
+            /*
+             * Remember the listener-cache generation so select()/accept
+             * can refuse a descriptor number reused by a later open.
+             */
+            if (status & Fs_Listen)
+               fl->sock_gen = sock_listener_gen(fd);
+            else
+               fl->sock_gen = 0;
+#endif                                  /* PosixFns */
 
             return file(fl);
             }

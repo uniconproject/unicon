@@ -152,6 +152,9 @@ struct b_file {                 /* file block */
 #ifdef Concurrent
    word mutexid;
 #endif                          /* Concurrent */
+#ifdef PosixFns
+   word sock_gen;               /* listener-cache generation; 0 = none */
+#endif                          /* PosixFns */
    struct descrip fname;        /*   file name (string qualifier) */
    };
 

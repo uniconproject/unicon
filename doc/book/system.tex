@@ -9,7 +9,7 @@ with the operating system. This chapter shows how to
   \item Launch and interact with other programs
   \item Handle abnormal events that would otherwise terminate your program
   \item Write \index{Internet}Internet \index{client}client and
-    \index{server}server applications.
+    \index{server}server applications, including multicast
 \end{itemize}
 
 \section{The Role of the System Interface}
@@ -771,6 +771,134 @@ protocol, you can do it on top of TCP or UDP; if your program needs to
 use a standard Internet protocol, you should check first to see if the
 protocol is built-in to the language as part of the messaging
 facilities, described in the next section.
+
+\subsection*{Multicast and Socket Attributes}
+\index{multicast}\index{socket attributes}
+Network calls to \texttt{open()} accept trailing
+\texttt{"\textit{name}=\textit{value}"} attributes, in the same style as
+SSL and graphics windows. Boolean attributes take \texttt{yes} or
+\texttt{no}. Unknown attributes fail the \texttt{open()} with error
+1310 (\texttt{bad socket attribute}).
+A second \texttt{open()} of the same listener address with no socket
+attributes returns another file handle for the cached socket. An open
+that supplies attributes (\texttt{join=}, \texttt{leave=},
+\texttt{iface=}, and so on) gets its own socket instead, so it cannot
+retune earlier aliases; use \texttt{Attrib()} to change options or leave
+a group on a live shared handle. Closing one alias leaves the others
+usable until the last handle is closed.
+
+\index{IP multicast}IP multicast uses UDP. The common cases need no
+attributes at all: binding a UDP socket to a multicast group address
+joins that group (any-source multicast, ASM), and listeners default to
+\texttt{reuseaddr=yes} so a restarted server can rebind its port.
+When \texttt{iface=} is omitted, a join covers every UP IPv4
+interface, and a multicast send uses the first non-loopback IPv4
+address (or loopback if that is all the host has); kernel multicast
+loopback remains on by default, so a local receiver still sees the
+packets. Sending to the limited broadcast address
+\texttt{255.255.255.255} enables \texttt{SO\_BROADCAST} automatically.
+
+Here is a minimal receiver that joins a group and prints each
+datagram, and a matching sender. Run the receiver in one terminal and
+the sender in another:
+
+\iconcode{
+procedure main() \\
+\>   local f, r \\
+\>   f := open("239.1.1.1:5000", "nua") {\textbar} stop(\&errortext) \\
+\>   while r := receive(f) do \\
+\>\>\>write(r.addr, "  ", r.msg) \\
+end
+}
+
+\iconcode{
+procedure main() \\
+\>   local f, i \\
+\>   f := open("239.1.1.1:5000", "nu") {\textbar} stop(\&errortext) \\
+\>   every i := 1 to 5 do \\
+\>\>\>writes(f, "hello-" {\textbar}{\textbar} i) \& delay(500) \\
+end
+}
+
+For \index{SSM}source-specific multicast (SSM), name the source before
+the group with \texttt{@} --- \texttt{source@group}, matching common
+tooling and RFC~4607 \texttt{(S,G)} order --- or pass a
+\texttt{source=} attribute on a socket already bound to the group.
+Both IPv4 and IPv6 are supported; for IPv6 SSM, pass an explicit
+\texttt{iface=} (name or index) so the join uses a single interface:
+
+\iconcode{
+\>   f := open("192.168.1.1@239.1.1.1:5000", "nua") \\
+\>   f := open("239.1.1.1:5000", "nua", "source=192.168.1.1") \\
+\>   f := open("::1@ff3e::1:5000", "nua6", "iface=lo0") \\
+\>   f := open("ff3e::1:5000", "nua6", "iface=lo0", "source=::1")
+}
+
+When binding a wildcard address (or joining additional groups), use
+\texttt{join=} attributes. The form \texttt{join=\textit{group}} is ASM;
+\texttt{join=\textit{group},\textit{source}} is SSM. Attributes may be
+repeated, and ASM and SSM joins may be mixed in the same call. An
+explicit \texttt{iface=} restricts join and send to one interface
+instead of the defaults above; the value may be an IPv4 address, a
+numeric interface index, or an interface name such as \texttt{en0} or
+\texttt{eth0}. An \texttt{iface=} before a \texttt{join=} selects the
+interface used by that join:
+
+\iconcode{
+\>   f := open(":5000", "nua", \\
+\>\>\>"iface=192.168.1.10", \\
+\>\>\>"join=239.1.1.1", \\
+\>\>\>"join=232.1.1.1,10.0.0.5")
+}
+
+The remaining socket attributes are:
+
+\begin{description}
+\item[\texttt{reuseaddr=yes{\textbar}no}]
+Allows the local address to be reused while a previous binding is
+still in \texttt{TIME\_WAIT}. Listeners default to \texttt{yes} on
+UNIX.
+\item[\texttt{reuseport=yes{\textbar}no}]
+Where the platform provides \texttt{SO\_REUSEPORT}, allows several
+sockets to bind the same address and port (useful when sharing a
+multicast group among processes). Multicast binds enable it by
+default when available.
+\item[\texttt{broadcast=yes{\textbar}no}]
+Enables sending to the limited broadcast address. Opening
+\texttt{255.255.255.255} sets this automatically.
+\item[\texttt{ttl=\textit{n}}]
+Sets both the unicast and multicast hop limits (IPv4 TTL /
+IPv6 hops) to integer \texttt{\textit{n}}.
+\item[\texttt{mcastloop=yes{\textbar}no}]
+Controls whether a host receives its own multicast transmissions.
+The kernel default is \texttt{yes}.
+\item[\texttt{rcvbuf=\textit{n}}, \texttt{sndbuf=\textit{n}}]
+Set the socket receive and send buffer sizes in bytes.
+\end{description}
+
+Explicit attributes always override the defaults. On send or connect,
+a \texttt{source@group:port} address keeps only the group so the
+destination is the group address.
+
+After \texttt{open()}, the same attributes can be read or changed with
+\index{Attrib()}\texttt{Attrib()}, using the same
+\texttt{"\textit{name}"} / \texttt{"\textit{name}=\textit{value}"} style
+as \texttt{WAttrib()}:
+
+\iconcode{
+\>   Attrib(f, "ttl=4") \\
+\>   write(Attrib(f, "ttl")) \\
+\>   Attrib(f, "join=239.1.1.2") \\
+\>   Attrib(f, "iface=127.0.0.1", "leave=239.1.1.1")
+}
+
+\texttt{join} and \texttt{leave} add or drop memberships on an existing
+socket (forms match \texttt{open()}: \texttt{group} or
+\texttt{group,source}); pass \texttt{iface=} before \texttt{leave=}
+when the membership was joined on a specific interface. Memberships
+cannot be queried. Bare names for the other attributes return
+\texttt{yes}/\texttt{no}, an integer, or (for IPv4 \texttt{iface}) a
+dotted address; \texttt{source} cannot be queried either.
 
 \subsection*{Secure Sockets}
 

@@ -2348,14 +2348,42 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
        * If its a listener socket, convert it to the new connection.
        */
       if (status & Fs_Listen) {
+         int lfd = fd;
+         word gen = BlkD(*f, File)->sock_gen;
+         /*
+          * Pin the listener across accept() so a concurrent close()
+          * cannot sock_purge()+sock_close() the descriptor under us.
+          * gen ties the pin to this File's cache entry so a reused fd
+          * number for a different listener is rejected.  gen==0 means
+          * the listener was not tracked (map full) — accept without pin.
+          */
+         if (gen != 0 && !sock_pin(lfd, gen))
+            return;
          fromlen = sizeof(from);
          DEC_NARTHREADS;
-         fd = accept(fd, (struct sockaddr *)&from, &fromlen);
+         fd = accept(lfd, (struct sockaddr *)&from, &fromlen);
          INC_NARTHREADS_CONTROLLED;
+         if (gen != 0)
+            sock_release(lfd);
          if (fd < 0)
            return;
+         /*
+          * Concurrent close() may have cleared this File while we were
+          * in accept(); do not resurrect it.  Drop listener ownership
+          * so the cache entry can be reused (genserve) or the nameless
+          * track entry can close.
+          */
+         if (!(BlkD(*f, File)->status & Fs_Listen)) {
+            sock_close(fd);
+            if (gen != 0)
+               sock_unclaim(lfd, gen);
+            return;
+            }
+         if (gen != 0)
+            sock_unclaim(lfd, gen);
          BlkD(*f,File)->fd.fd = fd;
          BlkLoc(*f)->File.status = Fs_Socket | Fs_Read | Fs_Write;
+         BlkLoc(*f)->File.sock_gen = 0;
          }
       c_put(ldp, f);
       }

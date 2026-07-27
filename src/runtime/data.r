@@ -457,6 +457,15 @@ struct errtab errtab[] = {
    1310, "bad socket attribute",
 #endif                                  /* PosixFns */
 
+#ifdef HAVE_LIBSSH
+   1320, "SSH error",
+   1321, "bad ssh attribute",
+   1322, "SSH authentication error",
+   1323, "SSH host key verification error",
+   1324, "SSH channel error",
+   1325, "SFTP error",
+#endif                                  /* HAVE_LIBSSH */
+
 /*
  * End of operating-system specific code.
  */

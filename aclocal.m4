@@ -326,6 +326,24 @@ fi
 ])
 
 
+AC_DEFUN([CHECK_LIBSSH],
+[
+do_arg_with([libssh])
+if test "x$with_libssh" != "xno"; then
+  # FreeBSD and Homebrew keep headers under a non-default prefix.
+  # Without -I/-L, later compiles can miss <libssh/libssh.h>.
+  if test "x$libssh_HOME" = "x"; then
+    if test -f /usr/local/include/libssh/libssh.h; then
+      libssh_HOME=/usr/local
+    elif test -f /opt/homebrew/include/libssh/libssh.h; then
+      libssh_HOME=/opt/homebrew
+    fi
+  fi
+  do_lib_check([ssh], [${libssh_HOME}], [libssh/libssh.h], [ssh_new], [HAVE_LIBSSH], [C])
+fi
+])
+
+
 AC_DEFUN([CHECK_OPENGL],
 [
 

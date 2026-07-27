@@ -150,6 +150,9 @@ AC_ARG_ENABLE([database],
 AC_ARG_ENABLE([ssl],
 	[AS_HELP_STRING([--disable-ssl], [No SSL support])],
 			[ssl=$enableval], [ssl=on])
+AC_ARG_ENABLE([ssh],
+	[AS_HELP_STRING([--disable-ssh], [No SSH support])],
+			[ssh=$enableval], [ssh=on])
 AC_ARG_ENABLE([audio],
 	[AS_HELP_STRING([--disable-audio], [No audio support])],
 			[audio=$enableval], [audio=on])
@@ -695,6 +698,10 @@ if test "x$thin" = "xyes"; then
       ssl=no
    fi
 
+   if test "x$ssh" = "xon"; then
+      ssh=no
+   fi
+
    if test "x$multiprograms" = "xon"; then
       multiprograms=no
    fi
@@ -927,6 +934,10 @@ if ! test "x$ssl" = "xno" ; then
    CHECK_OPENSSL()
 else
    AC_DEFINE([NoDatabase], [1], [No Database])
+fi
+
+if ! test "x$ssh" = "xno" ; then
+   CHECK_LIBSSH()
 fi
 
 # autoconf does this too late, so just do it now...
@@ -1226,6 +1237,21 @@ else
   stmp=" ! SSL"
 fi
 
+# want ssh
+if test "x$ssh" = "xyes" || test "x$ssh" = "xon" ; then
+  if test "x$cv_libssh"      = "xyes" ; then
+     sshtmp=" + SSH                : +ssh"
+  else
+     if test "x$ssh" = "xyes" ; then
+        AC_MSG_ERROR("ssh requires libssh-dev or equivalent")
+     fi
+     sshtmp=" - SSH                : -ssh"
+  fi
+else
+#disabled ssh
+  sshtmp=" ! SSH"
+fi
+
 revision=`./config/scripts/version.sh "revision"`
 
 san_summary=""
@@ -1269,6 +1295,7 @@ $atmp
 $vtmp
 $dtmp
 $stmp
+$sshtmp
 EOF
 
 

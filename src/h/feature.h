@@ -179,6 +179,10 @@
    Feature(1, "_SSL", "secure sockets layer encryption")
 #endif                  /* HAVE_LIBSSL */
 
+#ifdef HAVE_LIBSSH
+   Feature(1, "_SSH", "secure shell")
+#endif                  /* HAVE_LIBSSH */
+
 #ifdef HAVE_VOICE
    Feature(1, "_VOIP", "Voice Over IP")
 #endif                  /* HAVE_VOICE */

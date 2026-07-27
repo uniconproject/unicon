@@ -596,6 +596,30 @@ solution is that this particular collaborative whiteboard application
 would work fine across differing platforms (Linux, Microsoft Windows,
 and so on) and require only a couple hundred lines of code!
 
+\section{Raw IP Examples: uping and uigmp}
+\index{uping}\index{uigmp}\index{raw socket}
+
+Chapter~5 describes mode \texttt{"nr"} and the \texttt{PacketSpec}
+library in package \texttt{net}. Two small programs in
+\texttt{uni/progs} show the same ideas end to end. They need
+privileges suitable for \texttt{SOCK\_RAW}:
+
+\iconcode{
+\>   unicon uping \\
+\>   unicon uigmp \\
+\>   sudo ./uping host [count] \\
+\>   sudo ./uigmp [seconds] \\
+\>   sudo ./uping -v host    \# also show open()/Ping API demos \\
+\>   sudo ./uigmp -v         \# also show open()/Igmp API demos
+}
+
+\texttt{uping} and \texttt{uigmp} behave like small network tools by
+default (\texttt{Ping}/\texttt{Igmp} session APIs). Pass
+\texttt{-v} or \texttt{-d} to also exercise the lower-level
+\texttt{open(..., "nr", ...)} plus PacketSpec path and print
+\texttt{describe()} output. They need raw-socket privileges and are
+teaching clients, not replacements for system ping(8) or tcpdump(1).
+
 \section{Summary}
 
 Writing Internet programs can be easy and fun, although it is easy to
